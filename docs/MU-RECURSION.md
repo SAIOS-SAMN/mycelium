@@ -209,7 +209,7 @@ These are not restated in each chapter; every chapter assumes them.
     lamina is the sensor's token, never the mind's carrier** (ruled
     2026-09-17, evening): a chain's links `(r, c, before, after)` and a
     support's laminae `(r, c, k, hue)` are read once at intake (`perceive`,
-    `germinate`, A5's centering), computed on only where a sentence is
+    `germinate`, A5's centring), computed on only where a sentence is
     replayed against what the sensor read (`chain::replay_operators`, the
     court's `vertices_carry_frames`) and where a grid is written
     (`speak_rule`, `orbit`), and between those places they are carried as
@@ -281,15 +281,15 @@ shape is not reviewed further; it is returned.
 | # | rule | looks like (refused) | write instead |
 |---|---|---|---|
 | 1 | **A pair loop is allowed only over one site's own vertices or one loop's own faces.** Iterating `i < j` over bodies, vertices, charts, hyphae, or peers is a correspondence search over a product the carrier already names. | `for i in 0..n { for j in i+1..n { if related(i, j) … } }`; `bodies_in.iter().find(…)` for every `bodies_out`; `for lane in 0..4 { for h in hyphae … }` where the lane is not a fixed physical size | build one keyed occupancy once, `Keyed<site key → Vec<vertex>>`, read pairs out of sites holding two or more vertices, probe a ring site into the same key; a site's own vertices and a loop's own faces are its boundary and may be walked |
-| 2 | **A count is never a branch.** A decision that reads `len()`, `count()`, or `n <= k` is a boolean gate on a count, and the count is not a measurement of anything. | `if n_words <= 1 { all bodies }`; `if germs.len() >= 2 { true }`; `if counts.len() == n_pairs` as the whole test | the fibre decides: `atlas.fiber(class)` names the bodies a vertex speaks to and an empty fibre is remainder, never "everything"; presence is read from a keyed set, not from a length |
+| 2 | **A count is never a branch.** A decision that reads `len()`, `count()`, or `n <= k` is a boolean gate on a count, and the count is not a measurement of anything. | `if n_words <= 1 { all bodies }`; `if germs.len() >= 2 { true }`; `if counts.len() == n_pairs` as the whole test | the fibre decides: `atlas.fibre(class)` names the bodies a vertex speaks to and an empty fibre is remainder, never "everything"; presence is read from a keyed set, not from a length |
 | 3 | **Equality is `same_vertex`, `projective_eq`, or class-vector equality.** `==` on `Element`, `Versor`, a tape, a `Word` outside M1, or a struct that contains one is byte identity and forks or merges meanings; equality of two digests is the same fault one step removed. | `old == g` on a versor; `self.word == other.word`; `#[derive(PartialEq)]` on a type holding rotors or chains; `address() == address()` as the test of sameness; `x.class_key() == y.class_key()` | `a.same_vertex(&b)`; `r.projective_eq(&s)` (either sign); `x.class_vector() == y.class_vector()` coordinatewise on exact ℚ; an address compare only where the address is the intended identity (a citation) and the address is the M2 composite of A21 |
 | 4 | **Nothing is chosen by a scalar.** No `min_by`, `max_by`, `sort_by` over candidates, no "lowest order first", no "closest", no threshold. | `chords.sort_by_key(order)` then take the first; `candidates.iter().min_by_key(cost)`; `if remainder.len() < best` | read the class vector, list its occupied axes in the fixed order (12.6), try each, keep every certified discharge, hold incomparable ones as a vortex; dominance on μ⃗ certifies after the fact and never selects |
 | 5 | **No literal durations, no counts as generations, no free constants.** A number that is not a letter exponent, a rational read from the data, a site coordinate, or a physical size of a carrier is a constant someone will have to remove. | `Duration::from_secs(1)`; `SystemTime::now()` or `Instant::now()` read by a kernel; `gen = genome_len + dialect_len`; `depth.min(8)`; `ratio: ((1,1),(1,1))` as a placeholder; `m = 1024` | a ratio of measured transport, the round trip counted in the kernel's own strokes (`from_transport(rtt_floor, aperture_cycle())`, 45.4); a root of content (the stalk digest of the working atlas); the value the tape carries; refuse when the value is not there |
 | 6 | **Keys are canonical coordinates written out, never a digest of them, never bytes or pointers.** A memo, an address, a class, or a cache keyed by a hash of anything mathematical, of a tape, a serialisation, a file path, or a pointer is identity by bytes in disguise; hashing the canonical form is the same fault with a better excuse, because the key can no longer be read, composed, restricted, or peeled (1.7, A21). A cached key stored beside the coordinates it was computed from is the same fault again: it goes stale on the first mutation and the object and its name diverge. | `blake3(canonical coefficients)` as `Rotor::key`, `Mv::key`, `Word::class_key`, `ClassVector::class_key`, `Element::address`, `Invariant::key`, `listing_key`; `blake3(path)`; `a_ptr == b_ptr`; `format!("{s:?}")` hashed | the coordinates themselves, length-prefixed, in the fixed order of A21: the eight reduced rationals of the canonical rotor (M1), the M2 composite of a form, the chart's axes, the class vector, the canonical chain of a listing, `Sel::to_bytes`; a `Keyed` trie over those bytes, where a prefix is a stratum |
 | 7 | **Meaning is never demoted to "fibre" to make a key stable.** If two tapes that mean different things get one key, the key is wrong, whatever the comment says. | dropping the bundle's agreed shift or a contact from a sentence key because "placement is a fibre coordinate" | a body's absolute position is quotiented; a relative placement inside a sentence is a face and is identity; contact is on the form and in its key (chapter 1.5) |
 | 8 | **No shims with placeholders.** A wrapper that fills a field with a constant so a call compiles is a defect that will ship. | `sentence_rule_of` with `ratio: ((1,1),(1,1))` and empty sections; `set_magnitude([0,0,0,1])` | carry the field on the tape and read it; measure the magnitude by speaking the form over its bundle; if the value cannot be measured, the form is not spoken |
-| 9 | **Carriers are `Keyed` or `Vec` of relations.** `HashMap`, `BTreeMap`, `HashSet` do not appear in cognition; a flat map keyed by a digest collapses a dimension, and a `Keyed` trie keyed by a digest is a `HashMap` in disguise. | `HashMap<Key, Vec<Candidate>>` buckets; `std::collections::*` in a transducer or kernel file; `Keyed<[u8; 32]>` over `blake3(...)` | `Keyed<V>` (PATRICIA over the canonical coordinate bytes of A21, so `fiber(prefix)` reads a stratum), `Keyed<Keyed<()>>` for incidence, `Vec<(a, b, relation)>` for a relational field |
-| 16 | **An action is an algebra element, never a matrix.** A `QMatrix` fibre, an affine block, a matrix product as composition, or matrix equality as identity is a linear representation on squared coordinates: it flattens the blades it represents and adds a frame's rigidity (law 11). | `fibers: Vec<(u16, QMatrix)>`; `realize()`; `same_action = realize() == realize()`; `affine_of(versor)`; `Letters::affine`; `Element::identity(GERM_DIM)` | one versor per element (`carriage · linear_versor(word)`), a hue permutation, an extent, shell coordinates; `geo` for composition, `inverse` that refuses, `projective_eq` for identity; a dimension as a span's grade (`core::span`), never a matrix rank; a matrix only in A3's sensor-plane block |
+| 9 | **Carriers are `Keyed` or `Vec` of relations.** `HashMap`, `BTreeMap`, `HashSet` do not appear in cognition; a flat map keyed by a digest collapses a dimension, and a `Keyed` trie keyed by a digest is a `HashMap` in disguise. | `HashMap<Key, Vec<Candidate>>` buckets; `std::collections::*` in a transducer or kernel file; `Keyed<[u8; 32]>` over `blake3(...)` | `Keyed<V>` (PATRICIA over the canonical coordinate bytes of A21, so `fibre(prefix)` reads a stratum), `Keyed<Keyed<()>>` for incidence, `Vec<(a, b, relation)>` for a relational field |
+| 16 | **An action is an algebra element, never a matrix.** A `QMatrix` fibre, an affine block, a matrix product as composition, or matrix equality as identity is a linear representation on squared coordinates: it flattens the blades it represents and adds a frame's rigidity (law 11). | `fibres: Vec<(u16, QMatrix)>`; `realize()`; `same_action = realize() == realize()`; `affine_of(versor)`; `Letters::affine`; `Element::identity(GERM_DIM)` | one versor per element (`carriage · linear_versor(word)`), a hue permutation, an extent, shell coordinates; `geo` for composition, `inverse` that refuses, `projective_eq` for identity; a dimension as a span's grade (`core::span`), never a matrix rank; a matrix only in A3's sensor-plane block |
 | 10 | **Every loop spends a `Budget` or walks a boundary.** A loop whose bound is neither a `Budget` nor the size of one site's or one simplex's boundary is unbounded work in disguise. | `while !done { … }`; `for peer in all_peers { exchange(peer) }` on one stroke | `while budget.spend() { … }`; a `Keyed::cursor(from, &mut budget)`; one peer per spend with a resume cursor |
 | 11 | **Exact or refused.** No float, no rounding, no saturation, no `unwrap_or(default)` that invents a value. | `ratio_axes` saturating to `u64::MAX`; `unwrap_or_else(identity)` on a versor that failed to invert | `Option`/refusal that propagates to a logged refusal string; an inexact square root refuses; an unspellable block is a remainder |
 | 12 | **Naturality over cloning.** When a carrier splits, restrict it; never clone it into both halves and rekey. | `complexes.insert(child_a, c.clone()); complexes.insert(child_b, c)`; `rekey_cocycles` without recomputation | `restrict` per child, `straddling` written as faces between children, each class recomputed and carried or discharged (15.5) |
@@ -1474,7 +1474,7 @@ in one landing (chapter 41, 0.11):
 | `src/transducer/alphabet/rotor.rs` (`Rotor::key`), `src/transducer/alphabet/word.rs` (`Word::class_key`), `src/transducer/alphabet/plane.rs` (`PlaneForm::key`) | blake3 over canonical coefficients or conjugacy invariants | the coefficients and invariants written out (A21) |
 | `src/transducer/cga/multivector.rs` (`Mv::key`) | blake3 over canonical versor coefficients | the coefficients written out |
 | `src/transducer/element/vertex.rs` (`Element::address`, `form_key_bytes`); `src/transducer/element/residual.rs` (`listing_key`) | blake3 over the M2 composite | the M2 composite itself (17.2) |
-| `src/transducer/stalk/chart.rs` (`Invariant::key`) | blake3 over the exact axes before the trie sees them | the axes' bytes, so `fiber_under` is a prefix read |
+| `src/transducer/stalk/chart.rs` (`Invariant::key`) | blake3 over the exact axes before the trie sees them | the axes' bytes, so `fibre_under` is a prefix read |
 | `src/transducer/sentence/class.rs` (`ClassVector::class_key`, `CLOSED_KEY`) | blake3 over the class vector | the class vector's coordinates; closed is the zero vector |
 | `src/transducer/sentence/form/keys.rs` (`hue_section_key`, `vertex_transport_key`, `class_key_of_versor`) | blake3 over conjugacy ‖ gauge | the conjugacy coordinates ‖ the gauge |
 | `src/transducer/sentence/chart.rs` (`form_vertex_key`); `src/transducer/family/correspondence.rs` (`TransportClass::key`) | blake3 over kind ‖ class | kind ‖ class coordinates |
@@ -2506,7 +2506,7 @@ than another except by exact dominance.
 | placement residue | the translator component (the `e_i ∧ e_∞` blades) of the orbit's canonical holonomy versor after the tree gauge | a translator versor | its inverse translator, a translation word |
 | dilation residue | the `e_o ∧ e_∞` component of the same versor | a dilator versor | its inverse dilator |
 | off-plane invariants | `(a²/w, p²/w, sign a, sign p)` of the rotor (15.3) | exact rationals and signs | glue of a held form with that class, else a demand |
-| the fibre: sections and torsion cycles, the reach | `sections` and `torsion` on the loop's words (25), `fiber_span` (S9.13) | exact counts and periods | torse ℓ sections that form a cycle into one generator of period ℓ; puncture a member onto the fibre |
+| the fibre: sections and torsion cycles, the reach | `sections` and `torsion` on the loop's words (25), `fibre_span` (S9.13) | exact counts and periods | torse ℓ sections that form a cycle into one generator of period ℓ; puncture a member onto the fibre |
 
 **Which regime is primary.** The holonomy is a rotor, and its conjugacy
 class in Cl(4,0) (15.3, `(a²/w, p²/w, sign a, sign p)`) is read for
@@ -2846,7 +2846,7 @@ nothing reads a hue there (law 12).
 
 `Court::glue_fetched` (`src/server/cognition/court/glue.rs`) is this computation with `A` =
 the hypha's own complex on chart `inv` (`self.complexes` at `inv.key()`,
-sections for `self_id` and every hypha in `cover.fiber(lane, &inv)` it
+sections for `self_id` and every hypha in `cover.fibre(lane, &inv)` it
 already holds) and `B` = the peer's section (one vertex, `peer`, gamma from
 a `TRANSLATION_TAG` element when one is spoken). Today it builds edges from
 every held section to `peer` by `transition` and calls
@@ -3333,7 +3333,7 @@ three-coordinate base `(r, c, k)` (51.2, ruled 2026-09-17), whose rotation
 planes are `e1e2`, `e1e3`, `e2e3` — the rotor chart's `(0,1)`, `(0,3)`,
 `(1,3)` — and whose translators `e_i ∧ e_∞` commute. A body that occupies
 one frame has `k = 0` on every lamina, which is its coordinate and not a
-default. THE FRAME AXIS'S ORIGIN LIES AT THE LAMINAE'S CENTERS: a lamina
+default. THE FRAME AXIS'S ORIGIN LIES AT THE LAMINAE'S CENTRES: a lamina
 of row `r` covers `[r, r+1)` and its centre is carried at `r + ½`, while
 a lamina of frame `k` stands at `k` exactly — 51.1 gives the frame origin
 no meaning, and this is the choice that keeps a dilation what 42.6 says it
@@ -3900,7 +3900,7 @@ class vector, chart invariants, listing keys, certificates and every
    Every field is length-delimited, so no key is a proper prefix of
    another key of the same kind except as a stratum prefix, and the
    decoder is total on well-formed keys and refuses otherwise.
-2. **Strata.** Coordinates are ordered so that `Keyed::fiber(prefix)` reads
+2. **Strata.** Coordinates are ordered so that `Keyed::fibre(prefix)` reads
    a stratum: a chart key is its axes coarsest first (`peel` is dropping
    the last axis); a class-vector key is the rotor's conjugacy invariants,
    then the hue cycle type, then the placement and dilation residues, then
@@ -3933,7 +3933,7 @@ class vector, chart invariants, listing keys, certificates and every
 `simplex_key`, `cocycle_key`, `sel_key`, the certificate key, and
 `Keyed<K>` keyed by `&[u8]` (variable length); `CLOSED_KEY` is deleted and
 closure is `ClassVector::is_zero`. Tests: `every_key_decodes_to_its_object`,
-`fiber_of_prefix_reads_its_stratum`, `no_blake3_in_cognition` (the gate),
+`fibre_of_prefix_reads_its_stratum`, `no_blake3_in_cognition` (the gate),
 `put_class_record_round_trips_key_and_order`.
 
 ## 17. Master algorithms
@@ -4422,7 +4422,7 @@ hue permutation, its profile and key, the transition versor, and the
 fibre of assignments a body can be spoken with; `residual.rs` A5's
 `canonical_chain` and every constructor that reads a chain; `record.rs` the
 generation magic, the four tags, and the codec; `sensor.rs` the four
-functions permitted a coordinate pair (`site_of`, `carry_center`,
+functions permitted a coordinate pair (`site_of`, `carry_centre`,
 `carry_lamina`, `pullback`), named in the squaring gate's allow-list. Tests
 are under `element/tests/`, with `tests/common.rs` holding the fixture
 constructors.
@@ -4433,8 +4433,8 @@ constructors.
 `same_vertex` (M1); `address()` is M2.
 
 **The action is a versor, never a matrix.** `Element` once carried the
-Δ core's representation: `fibers: Vec<(u16, QMatrix)>` with
-`FIBER_SPATIAL` a `GERM_DIM × GERM_DIM` rational matrix holding a 3×3
+Δ core's representation: `fibres: Vec<(u16, QMatrix)>` with
+`FIBRE_SPATIAL` a `GERM_DIM × GERM_DIM` rational matrix holding a 3×3
 affine block plus a hue permutation block, `realize()` as a matrix
 product, `compose` and `inverse` as matrix arithmetic, `same_action` as
 matrix equality, and `derive_spatial` rebuilding the matrix from the tape
@@ -4608,7 +4608,7 @@ Inside `extract_rule_with`, in order:
 No pass reads laminae; every comparison is M1.
 
 `speak_rule(rule, x)` (`src/transducer/family/speak.rs`): `perceive(x)`
-once; match bodies to rule vertices by class through `Stalks::fiber`
+once; match bodies to rule vertices by class through `Stalks::fibre`
 (`src/transducer/stalk/`), several bodies
 on one vertex being a section; `Word` vertices emit through `conformal_of`
 and `carry_lamina` (element/sensor.rs) at the placement solved from the face to
@@ -5002,7 +5002,7 @@ tape or in an address carries it, and two minds compare bubbles by address
 as before. No prefix of the address is an index key: a fixed byte count is
 a constant (rule 5) and the shortest distinguishing prefix moves as
 bubbles arrive, so neither is a coordinate; the strata of an address are
-the schema's, read by `Keyed::fiber`, and are for readers of the forms'
+the schema's, read by `Keyed::fibre`, and are for readers of the forms'
 own trie. A form the voice extracted is moved into its bubble, never
 cloned into it.
 
@@ -5288,7 +5288,7 @@ A candidate's monodromy over the frames the family measured is the product of it
 The ambient gauge connection $\gamma^c$ lives on the carried charts of the family bundle that occupy $\ge 2$ frames, never on the deformation demand's own chart (a demand is a singularity where moduli changed, so its chart does not persist across frames by construction).
 The monodromy is evaluated over the bundle's connection-bearing charts using exact algebraic order (`Rotor::order()`):
 - $\text{Order::Finite}(1)$: Flat. $V$ commutes with the ambient connection $\gamma^c$ and stands on chart $c$.
-- $\text{Order::Finite}(\ell \ge 2)$: Torsion. Fiber twisted by $\ell$, closing after $\ell$ circuits. Filed into `Bubble.torsion` (and `Form.torsion`) under $M^c$'s class key with period $\ell$ and `chord = 0` (bundle connection orbit). $V$ stands on chart $c$.
+- $\text{Order::Finite}(\ell \ge 2)$: Torsion. Fibre twisted by $\ell$, closing after $\ell$ circuits. Filed into `Bubble.torsion` (and `Form.torsion`) under $M^c$'s class key with period $\ell$ and `chord = 0` (bundle connection orbit). $V$ stands on chart $c$.
 - $\text{Order::Infinite}$: Rupture. Fails to close on chart $c$. Chart $c$ leaves $V$'s sub-cover.
 
 A candidate stands on the sub-cover of connection charts where its order is finite. It dissolves from `Bubble.candidates` if and only if its sub-cover is empty (ruptured to `Infinite` on every measured connection chart in the bundle). A bubble with no measured connection charts in its bundle leaves every candidate standing (rule 11: nothing dies on an unmeasured monodromy).
@@ -5413,7 +5413,7 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
 
 - `reduce_excluding`: `cited_by` non-empty is a use.
 - `shorter_form(&self, addr) -> Option<[u8;32]>` **new**: a ruled form on
-  the same classes (`ruled.fiber` per class) with the same `cited_by`
+  the same classes (`ruled.fibre` per class) with the same `cited_by`
   bundles whose vertices' tapes are strictly shorter in total (A2 for
   off-plane words); found → `relocate_cavity(addr)` with the address kept
   in `ruled_addrs`; `resolve_form` reads `cavity_book`; `serve_ruled` never
@@ -6318,7 +6318,7 @@ a test that a translation across a cyclic overlap is refused.
 4c. `sentence::tests::form_vertex_key_carries_ratio_and_sections` (ratio, sections, torsion on the tape; zero denominator refused).
 5. `family::tests::extract_rule_by_class_with_sections` (a class in some pairs is a section).
 6. `family::tests::extract_rule_with_glues_held_form` (depth 1, one `Glued`, fewer `Word` vertices than the flat rule).
-6b. `family::tests::apply_form_leaves_empty_fiber_unspoken`.
+6b. `family::tests::apply_form_leaves_empty_fibre_unspoken`.
 7. `family::tests::extract_rule_with_unfolds_grow_to_frame` (one form, `Unfolded{Occupied}`, no step count on the tape).
 8. A test of an orbit contact and of no orbit.
 9. `verdict::tests::replay_form_refuses_unruled_glue_and_replays_resolved`.
@@ -8951,7 +8951,7 @@ src/transducer/sentence/pivot/trial.rs    files at any period, 0 included
 src/transducer/sentence/pivot/drive.rs    NoneDischarged files an orbit of any order; the Standing demand rides beside the filing
 src/court/verdict/replay.rs           no face refused for an edge word's order; a filed orbit of any order replays
 src/transducer/family/percept.rs      52.5: the frames perceived once, the fibre quotient per frame, the sections along e₃, the covers and demands, the faces
-src/transducer/family/fiber.rs        the fibres of a side and the demands an unreached frame leaves
+src/transducer/family/fibre.rs        the fibres of a side and the demands an unreached frame leaves
 src/transducer/family/extract.rs      the percept memo and moves 3 to 7
 src/transducer/family/pair.rs         the scenery: vertices with a support per member, the meet's edge, the cover's demand
 src/transducer/family/pairing.rs      the incidence (star_and_site_faces) and the hue carrier; the scene's greedy pairing deleted
@@ -11586,7 +11586,7 @@ its row.
    pose and its motion together.
 3. **The span is a stratum of `e₃`, and it is content before it is a
    reading** (amended 2026-09-23 on the implementor's three questions,
-   FR2: a stratum here is a keyed FIBER of `e₃` coordinates, a set of
+   FR2: a stratum here is a keyed FIBRE of `e₃` coordinates, a set of
    sections, not a contiguous prefix; a cycle's span is the INTERSECTION
    of its vertices' sections, the sections on which every transport it
    composes exists, since a transport between two members exists only
@@ -12793,7 +12793,7 @@ Code: `src/transducer/address.rs` (`put_addr`), `src/chronometry/receipt.rs` (`C
 
 The ledger has several dimensions (the tick `h`, the four lanes `S:G:T:H`, `K`, depth across signers, width across peers) and is a partial order of frames (45.3: causal, partial, never totalised, T15); writing it as a one-dimensional byte tape is the blob defect one level down and is ruled out. A receipt records that one act happened at its stamp after the parents it cites and never carries or binds the form; the append order is one reader's trajectory through the carrier, never the carrier.
 
-- **(a) The carrier.** The ledger is a `Keyed` structure over its own coordinates (A21, rule 9) whose key is the STAMP, coarsest first: the tick `h`, the signer `vk`, then `K` and the act's place `i` (78.23 as amended). A node holds the act's kind, the frame `S:G:T:H` it measured, its parents as stamps (the DAG's edges) and its citation (LD0). `fiber(h)` is everything the mesh did at one tick (its width), `fiber(h‖vk)` one signer at it; the frontier and DEPTH (L15) are read by prefix, never by an index keyed by bytes. A peer's receipt held as a parent is held once, at its own stamp.
+- **(a) The carrier.** The ledger is a `Keyed` structure over its own coordinates (A21, rule 9) whose key is the STAMP, coarsest first: the tick `h`, the signer `vk`, then `K` and the act's place `i` (78.23 as amended). A node holds the act's kind, the frame `S:G:T:H` it measured, its parents as stamps (the DAG's edges) and its citation (LD0). `fibre(h)` is everything the mesh did at one tick (its width), `fibre(h‖vk)` one signer at it; the frontier and DEPTH (L15) are read by prefix, never by an index keyed by bytes. A peer's receipt held as a parent is held once, at its own stamp.
 - **(b) The citation lands on that carrier.** A receipt IS the node at its stamp; the stamp is the key, not a printed field, and the console prints the key. EC1: a ruling's economy (release, demotion, slash) is applied on admitting the Ruling receipt, on the same carrier.
 - **(c) The hash.** `chain_hash` is per receipt, a Merkle DAG over the partial order: each hash is taken over the receipt's own canonical coordinates (stamp with `vk`, kind, frame, `prev`, parents' stamps and hashes, cites, operator hash), never over a concatenation in append order; the equivocation proof (two receipts by one key at one place with two hashes) is unchanged. The ledger is persisted as the trie, each key once as a path (LDG1), and restored as the trie.
 - **LD2, the design.** (P1) the stamp is written by its own `put_canonical`, integers big-endian so key order is numeric order; readers asking by signer and place read through one keyed relation over coordinates only, the signer's line `vk‖K‖i`, and every anchor a carrier persists or the wire sends is the stamp itself. (P2) a node is `{kind, frame, prev: (Stamp, hash), parents: [(Stamp, hash)], cites, operator_hash, chain_hash}`, a peer's node held once beside the local node's own in one trie. (P3) the hash as in (c), `vk` included. (P4) `Cite` is a sum over what an act names (`Word { chart, class, at }`, `Root { at, hash }`, ...), and a Learned act is N word cites, never a blob. (2a) a form has no one class record, so its fibre is its chart alone (`chart_of`), class `None`, the admitting stamp the exact locator; a letter or word with a rotor carries its class record. (2b) `admitted_at: Stamp` is the locator, held on every row that holds a word (basis, provisional, cavity, pending; the voice's genome and epigenome), set by the act that first names the word, by the home receipt's stamp at an install from a peer's offer, by the syllabus stamp at teach, and copied when a word moves from provisional to basis. (2c) an act sealed after its word left its carrier reads the word's `admitted_at` and chart before the removal; no act cites by bytes a word it no longer holds. (P5) the ledger persists as its keys, each once, with the node behind each. (P6) order readers compare stamps, never `Vec` indices. (P7) the console prints `h:S:G:T:H:K.i` from the node. (P8) EC1's reading rides on it.
@@ -14157,7 +14157,7 @@ Amendments that stand:
   (a held word's chain is centred, so its distance is no placement).
 
 Code: `src/physics/capacitor.rs` (`Fibre`, `Fibre::split`, `Fibre::charge`,
-`strength`, `capacity`, `shape_of`), `src/transducer/family/fibres.rs`
+`strength`, `capacity`, `shape_of`), `src/transducer/family/torsion_quotient.rs`
 (`read_pieces`, `binding_certainty`), `src/transducer/cech/coboundary.rs`
 (`release_vertex`, `vent_vertex`, `descend`, `drain`),
 `src/transducer/stalk/chart.rs` (`congruent_all`),
@@ -14194,7 +14194,7 @@ frames or through the Euclidean rotor. Its clauses:
 - (7) *A refusal inverted*: a lifted fibre in a frame whose pivots fix a geoid
   gives a source at each pivot its geoid-keeping lift moves, read into the
   percept's tubes as null flux and counted `sourced` (signal) or `unsourced`
-  (noise) (`fibres::read_pieces`). As the nilpotent certificate, a source
+  (noise) (`torsion_quotient::read_pieces`). As the nilpotent certificate, a source
   `1 + N`, `N² = 0`, extrapolates to `Ωᵐ ∝ 1 + m·N` (78.70).
 - (8) *The pivots' outflow*: a drain, a descent and the fill writer's seal
   each hands back its motion, one Cl(4,1) element (`Simplex::motion`), to

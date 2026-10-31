@@ -215,7 +215,7 @@ impl Vertex {
     /// ONE member takes it — the scalar collapse arrives back through the
     /// accessor, silently, at every site — and no audit finds those sites
     /// reliably. Deleted, the compiler names all of them, exactly as
-    /// `Keyed::fiber` taking a non-empty `Prefix` named the walk sites in X3.
+    /// `Keyed::fibre` taking a non-empty `Prefix` named the walk sites in X3.
     /// The type does the enumeration.
     pub fn acts(&self) -> Option<&Keyed<super::Acting, coord::Section>> {
         match self {
@@ -266,7 +266,7 @@ impl Vertex {
     /// A vertex acting on nothing or on one chart has no vertical
     /// transition and yields none; that is an absence, never a flat
     /// reading (rule 11).
-    pub fn fiber_holonomy(&self) -> Vec<super::FiberTransition> {
+    pub fn fibre_holonomy(&self) -> Vec<super::FibreTransition> {
         let Some(acts) = self.acts() else {
             return Vec::new();
         };
@@ -280,7 +280,7 @@ impl Vertex {
         }
         let inv = first.carriage.reverse();
         rest.iter()
-            .map(|m| super::FiberTransition {
+            .map(|m| super::FibreTransition {
                 from: first.chart.clone(),
                 to: m.chart.clone(),
                 carriage: m.carriage.geo(&inv),
@@ -293,7 +293,7 @@ impl Vertex {
     /// GRADE 0 — IS THE FIBRE OVER THIS VERTEX PURE CARRIAGE? (54.5, as
     /// ruled 2026-09-20.)
     ///
-    /// THE PREDICATE IS A READING OF [`Self::fiber_holonomy`] AND NEVER A
+    /// THE PREDICATE IS A READING OF [`Self::fibre_holonomy`] AND NEVER A
     /// CARRIER OF ITS OWN (law 12). It exists for the one caller that
     /// genuinely asks a yes-or-no — "is this vertex a single 0-cell" — and
     /// every caller that wants to ACT on the answer takes the transitions
@@ -332,7 +332,7 @@ impl Vertex {
     /// transition and coheres vacuously. A τ whose base action cannot be
     /// READ is refused rather than assumed flat (rule 11).
     pub fn body_coheres(&self) -> bool {
-        self.fiber_holonomy().iter().all(|t| t.is_vertical())
+        self.fibre_holonomy().iter().all(|t| t.is_vertical())
     }
 
     /// THE MEMBER AT A NAMED CHART: a keyed read, which is the only honest

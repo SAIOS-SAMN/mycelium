@@ -16,7 +16,7 @@ impl crate::transducer::family::Crystal for Epigenome {
         // 24.2: the closed forms this mind holds at a CITED FORM's chart,
         // which is `chart_of_form`. The glue's read is `on_body`.
         self.working_atlas()
-            .fiber(class)
+            .fibre(class)
             .into_iter()
             .filter_map(|(a, st)| {
                 // THE FORM IS A FIELD OF THE HELD WORD (L16). The tape was

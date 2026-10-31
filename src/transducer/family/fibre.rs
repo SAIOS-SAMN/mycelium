@@ -1,4 +1,4 @@
-// 52.5 item 2, 50.5 — the fibers of a side, keyed chart → frame → bodies,
+// 52.5 item 2, 50.5 — the fibres of a side, keyed chart → frame → bodies,
 // and the demands a frame's quotient leaves where it reaches nothing.
 
 use super::perceive::{frame_of_body, Demanded};
@@ -6,16 +6,16 @@ use super::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::sentence::Demand;
 
-/// THE FIBERS CARRIER'S OWN KEY: a frame as `i64`, little-endian, keying
-/// `fibers`'s inner trie. It is NOT [`crate::transducer::sentence::frame_key`],
+/// THE FIBRES CARRIER'S OWN KEY: a frame as `i64`, little-endian, keying
+/// `fibres`'s inner trie. It is NOT [`crate::transducer::sentence::frame_key`],
 /// which is the frame COORDINATE a section is read at — big-endian, `u16`,
 /// and in succession order. Two keys of one frame for two carriers, named
 /// apart so a reader cannot take one for the other.
-pub(super) fn fiber_key(k: i64) -> [u8; 8] {
+pub(super) fn fibre_key(k: i64) -> [u8; 8] {
     k.to_le_bytes()
 }
 
-pub(super) fn fiber_frame_of_key(k: &[u8]) -> Option<i64> {
+pub(super) fn fibre_frame_of_key(k: &[u8]) -> Option<i64> {
     Some(i64::from_le_bytes(k.try_into().ok()?))
 }
 
@@ -33,10 +33,10 @@ pub(super) fn compartments_of(bodies: &[Body]) -> Vec<Compartment> {
     bodies.iter().flat_map(|b| b.compartments.iter().cloned()).collect()
 }
 
-/// THE FIBERS OF A SIDE: chart key → the chart, and frame → the sections
+/// THE FIBRES OF A SIDE: chart key → the chart, and frame → the sections
 /// of that chart standing there (Y4, 24.4, 52.5 item 2). Keyed reads all
 /// the way down; nothing is read whole to find a body.
-pub(super) fn fibers(bodies: &[Body]) -> Keyed<(Invariant, Keyed<Vec<Body>>)> {
+pub(super) fn fibres(bodies: &[Body]) -> Keyed<(Invariant, Keyed<Vec<Body>>)> {
     let mut out: Keyed<(Invariant, Keyed<Vec<Body>>)> = Keyed::new();
     for b in bodies {
         let Some(k) = frame_of_body(b) else { continue };
@@ -45,17 +45,17 @@ pub(super) fn fibers(bodies: &[Body]) -> Keyed<(Invariant, Keyed<Vec<Body>>)> {
             out.insert(&ck, (b.moduli.clone(), Keyed::new()));
         }
         let Some((_, frames)) = out.get_mut(&ck) else { continue };
-        match frames.get_mut(&fiber_key(k)) {
+        match frames.get_mut(&fibre_key(k)) {
             Some(v) => v.push(b.clone()),
             None => {
-                frames.insert(fiber_key(k), vec![b.clone()]);
+                frames.insert(fibre_key(k), vec![b.clone()]);
             }
         }
     }
     out
 }
 
-/// The demands a cover leaves on the union of a chart's fiber at one frame
+/// The demands a cover leaves on the union of a chart's fibre at one frame
 /// (50.5, 50.8 case 4). An output compartment no piece reached is what a
 /// `Source` over the chart stands for, with the number of input instances
 /// standing there, every one of them standing and none first-found: the

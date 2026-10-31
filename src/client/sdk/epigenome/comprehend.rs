@@ -80,9 +80,9 @@ impl Epigenome {
         }
         if utterance.is_connection() && utterance.sub().is_empty() {
             let inv = crate::transducer::stalk::invariant_of(utterance);
-            let fibre = self.working_atlas().fiber(&inv);
+            let fibre = self.working_atlas().fibre(&inv);
             // M6 STEP 3, A12: the incoming word is factored through the
-            // WHOLE fiber, not tested against one representative at a time.
+            // WHOLE fibre, not tested against one representative at a time.
             // A mind speaks what it can re-derive from what it holds
             // (chapter 6), and a word may be a product of several held words
             // while matching none of them — the pairwise transition test
@@ -208,7 +208,7 @@ impl Epigenome {
         // Located through the atlas and the versor, never searched. A taught
         // word is one piece: one stroke locates it.
         let located = self.locate(utterance.sub(), None, budget);
-        // The remainder decides: no residual and no fiber to deepen is the
+        // The remainder decides: no residual and no fibre to deepen is the
         // understood arm; anything left over is the novelty, measured.
         match (located.residual.len(), located.punctures.len()) {
             (0, 0) => {

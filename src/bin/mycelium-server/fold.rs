@@ -24,7 +24,7 @@ pub(crate) fn fold_round(kernel: &Mutex<Court>, mesh: &Mesh) {
     let proposal = dialogue::FoldProposal { after: p.after, root: p.root, epochs: p.epochs.clone(), section: section.clone() };
     let Some(body) = dialogue::encode_fold(&proposal) else { return };
     // 47.3: a witness holds bond — room on some lane — and is not this
-    // court. The rooms fiber is the peers this court has heard from, in key
+    // court. The rooms fibre is the peers this court has heard from, in key
     // order; each is asked once per round, one per spend.
     let witnesses: Vec<([u8; 32], String)> = match (mesh.rooms.lock(), mesh.addrs.lock()) {
         (Ok(rooms), Ok(addrs)) => rooms

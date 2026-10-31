@@ -704,7 +704,7 @@ impl Court {
         // The dislocation stays: a versor relating the base shape to the
         // residual's is a fibre fact and belongs on the word.
         if let (Some(held), Some(v)) = (self.pending.get_mut(target), v_disloc) {
-            held.record_dislocation(element::assignment(&residual), v, element::FIBER_SPATIAL);
+            held.record_dislocation(element::assignment(&residual), v, element::FIBRE_SPATIAL);
         }
         // What the speech SETTLED: the tension it removed, per lane, and
         // nothing on a lane where the residual stands as high as before.

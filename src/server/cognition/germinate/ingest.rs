@@ -79,7 +79,7 @@ impl Court {
         exclude: Option<&[u8]>,
         budget: &mut crate::physics::Budget,
     ) -> NormalForm {
-        // A held residual word is a CENTERED COBOUNDARY CHAIN: the chain
+        // A held residual word is a CENTRED COBOUNDARY CHAIN: the chain
         // reduction decomposes it over the other held words. The group path
         // below remains for pure-algebra elements.
         let sub = g.substance();

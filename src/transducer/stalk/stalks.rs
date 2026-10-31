@@ -57,8 +57,8 @@ impl Stalks {
 
     /// The stratum over `inv`: every held address whose base point could
     /// be this one. The versor decides on these alone.
-    pub fn fiber(&self, inv: &Invariant) -> Vec<Vec<u8>> {
-        self.root.fiber(&inv.0)
+    pub fn fibre(&self, inv: &Invariant) -> Vec<Vec<u8>> {
+        self.root.fibre(&inv.0)
     }
 
     /// Peel `inv` to a coarser chart (drop the deepest axis).
@@ -68,9 +68,9 @@ impl Stalks {
 
     /// Members at prefix depth `d` of `inv`. A read on the trie; chart-space
     /// neighbourhood is prefix depth, never a norm.
-    pub fn fiber_at_depth(&self, inv: &Invariant, d: usize) -> Vec<Vec<u8>> {
+    pub fn fibre_at_depth(&self, inv: &Invariant, d: usize) -> Vec<Vec<u8>> {
         let n = d.min(inv.0.len());
-        self.root.fiber(&inv.0[..n])
+        self.root.fibre(&inv.0[..n])
     }
 
     /// One-step outward charts from `inv`: the child axes of this node.
@@ -92,13 +92,13 @@ impl Stalks {
     // `Bubble::expand_with`, which read outward from an idea's chart to meet
     // whatever the trie held nearby. An idea's overlaps are the charts its own
     // vertices stand on, which are coordinates it already holds, so the
-    // expansion reads `fiber` at those charts and this outward read has no caller.
-    // `fiber_under` below is the remaining trie collect, and it answers a
+    // expansion reads `fibre` at those charts and this outward read has no caller.
+    // `fibre_under` below is the remaining trie collect, and it answers a
     // question about one chart rather than paging a stratum.
 
     /// Every address under `inv`, including finer charts. A trie collect.
-    pub fn fiber_under(&self, inv: &Invariant) -> Vec<Vec<u8>> {
-        self.root.fiber_under(&inv.0)
+    pub fn fibre_under(&self, inv: &Invariant) -> Vec<Vec<u8>> {
+        self.root.fibre_under(&inv.0)
     }
 
     /// The chart a held address sits on.
@@ -169,7 +169,7 @@ impl Stalks {
     /// Re-admit members of `inv` under the refined chart, splitting the
     /// stratum by the new axes. Prefix only: other charts are untouched.
     pub fn split_stratum(&mut self, inv: &Invariant, mut coordinate_of: impl FnMut(&[u8]) -> Vec<ChartAxis>) {
-        let members = self.fiber(inv);
+        let members = self.fibre(inv);
         for addr in members {
             let next = Self::refine_axes(inv, &coordinate_of(&addr));
             self.root.remove(&inv.0, &addr);

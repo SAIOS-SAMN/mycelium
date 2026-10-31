@@ -73,7 +73,7 @@ fn components_join_by_adjacency_across_hues() {
     assert_eq!(apart.len(), 2, "a gap separates bodies");
     let across = components(&sites_with_hue(&[(0, 0, 0, 1), (0, 0, 1, 1)]));
     assert_eq!(across.len(), 1, "one site in two consecutive frames is one body (51.3)");
-    // THE HUE IS NOT LOST, IT MOVES TO THE FIBER. `Blade.gauge` carries it
+    // THE HUE IS NOT LOST, IT MOVES TO THE FIBRE. `Blade.gauge` carries it
     // as sorted `(hue, count)` relations — which is where every reader
     // downstream of perception already looked for it.
     let body = lift(&compartments(&[(0, 0, 1), (0, 1, 2)]));

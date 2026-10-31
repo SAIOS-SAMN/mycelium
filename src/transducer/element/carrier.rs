@@ -1,4 +1,4 @@
-// 18.3 — THE CARRIER: the element's four strata and the fibers it opens.
+// 18.3 — THE CARRIER: the element's four strata and the fibres it opens.
 //
 //! `Action` is the four-lane action (S a versor, G a hue permutation, T an
 //! extent in receipts, H a shell coordinate) plus the germinated axes;
@@ -7,12 +7,12 @@
 use super::*;
 
 /// Stratum tags on torsion and transitions (not matrix fibre indices).
-pub const FIBER_SPATIAL: u16 = 0;
-pub const FIBER_GAUGE: u16 = 1;
-pub const FIBER_TEMPORAL: u16 = 2;
-pub const FIBER_SHELL: u16 = 3;
+pub const FIBRE_SPATIAL: u16 = 0;
+pub const FIBRE_GAUGE: u16 = 1;
+pub const FIBRE_TEMPORAL: u16 = 2;
+pub const FIBRE_SHELL: u16 = 3;
 /// First index of a germinated axis (a versor, never a matrix).
-pub const FIBER_GERMINATED: u16 = 4;
+pub const FIBRE_GERMINATED: u16 = 4;
 
 /// Hue states on the gauge (ARC palette 0..9; 0 = absent).
 pub const PALETTE: usize = 10;
@@ -161,7 +161,7 @@ pub struct TorsionCycle {
     /// ≈ 2⁵⁴, past `u32` (the sensor's PALETTE is site 4's constant, not
     /// this width's provenance).
     pub period: u64,
-    /// The fibre it lives on: `FIBER_SPATIAL`, or a germinated axis.
+    /// The fibre it lives on: `FIBRE_SPATIAL`, or a germinated axis.
     pub fibre: u16,
     /// RM1, 78.37(4) — THE REMAINDER the cycle closed up to, where a
     /// Congruent fill measured one: `None` is not measured (a cycle an
@@ -399,7 +399,7 @@ pub struct Element {
     pub(crate) action: Action,
     /// Per-lane support, exact from the description.
     pub(crate) mag: [u64; 4],
-    /// The CENTERED COBOUNDARY CHAIN — the residual's substance with geometry
+    /// The CENTRED COBOUNDARY CHAIN — the residual's substance with geometry
     /// preserved up to translation: `(row, col, before, after)` over the changed
     /// sites, min-corner framed to the origin, sorted. Empty for a closed word.
     ///
@@ -410,24 +410,24 @@ pub struct Element {
     /// `canonical_chain` is the only constructor, and the tape goes through
     /// it.
     pub(crate) sub: CanonicalChain,
-    /// THE PUNCTURED AXIS — sections along the germinated fiber pierced through
+    /// THE PUNCTURED AXIS — sections along the germinated fibre pierced through
     /// this thought: alternative per-site transition ASSIGNMENTS over the SAME
     /// base positions. A recurring family (same geometry, different transitions)
     /// collapses into sections of this one bundle instead of sibling cards —
     /// growth as +axis (volume), not +card (area). The base `sub`'s own
     /// assignment is the implicit zeroth section. Vec-of-relations; empty until
-    /// the axis is pierced. (The FREE part of the fiber; cycles condense into
+    /// the axis is pierced. (The FREE part of the fibre; cycles condense into
     /// `torsion` below.)
     pub(crate) sections: Vec<Vec<(u8, u8)>>,
-    /// THE TORSION OF THE AXIS — CE's law reaching the germinated fiber ("colors
+    /// THE TORSION OF THE AXIS — CE's law reaching the germinated fibre ("colors
     /// are torsion fields, not lookup tables"; the torsion_order is the period of
     /// the generating fold). When sections form the ORBIT of one hue-map
     /// generator σ (derived from the witnessed family link by link, exactly as peel
-    /// derives offsets — never an enumerated plane), the fiber condenses from a
+    /// derives offsets — never an enumerated plane), the fibre condenses from a
     /// free list to a TORSION CYCLE: `(σ relations from↦to, period ℓ)`. The
     /// orbit {base, σ·base, σ²·base, …} of length ℓ is spoken in O(1) storage —
     /// and a CLOSED cycle (σ^ℓ = id on its support) speaks orbit members never
-    /// individually witnessed: capacity earned by exact structure. The fiber is
+    /// individually witnessed: capacity earned by exact structure. The fibre is
     /// thus ℤ^r ⊕ ⊕ᵢ ℤ/tᵢ — free sections ⊕ torsion cycles.
     pub(crate) torsion: Vec<TorsionCycle>,
     /// THE SPEAKER'S ATTESTATION ABOUT THIS WORD'S CYCLES (54.5, as ruled
@@ -471,7 +471,7 @@ pub struct Element {
     /// All three rode `description` — the tape — which is precisely why the
     /// tape could not be retired. See [`crate::transducer::element::receipts`].
     pub(crate) receipts: crate::transducer::element::ReceiptsEnvelope,
-    /// THE ANCHOR FIBER (Step 7) — γ = (π_anchor, Δ_substance): the recursive
+    /// THE ANCHOR FIBRE (Step 7) — γ = (π_anchor, Δ_substance): the recursive
     /// selection term restricting WHERE this word's substance applies on a
     /// scene. None = ⊤, the unconstrained carrier (pure topological actions,
     /// and every word born before selection entered the language).
@@ -566,8 +566,8 @@ impl Element {
         // largest seat is the carrier's last has no seat left: refused,
         // never a second axis pinned onto the last one.
         let i = match self.action.germinated.iter().map(|(i, _)| *i).max() {
-            Some(m) => m.checked_add(1)?.max(FIBER_GERMINATED),
-            None => FIBER_GERMINATED,
+            Some(m) => m.checked_add(1)?.max(FIBRE_GERMINATED),
+            None => FIBRE_GERMINATED,
         };
         self.action.germinated.push((i, v));
         self.address.take();
@@ -599,7 +599,7 @@ impl Element {
         let moves = self.versor().is_some_and(|v| !same_versor(&v, &identity_versor()))
             || self.carried_rotor().is_some_and(|r| !r.is_identity());
         if moves {
-            a.push(FIBER_SPATIAL);
+            a.push(FIBRE_SPATIAL);
         }
         let g = if let Some(letters) = self.letters() {
             letters.sigma
@@ -607,13 +607,13 @@ impl Element {
             self.action.gauge.clone()
         };
         if !g.is_empty() {
-            a.push(FIBER_GAUGE);
+            a.push(FIBRE_GAUGE);
         }
         if self.action.temporal != 0 {
-            a.push(FIBER_TEMPORAL);
+            a.push(FIBRE_TEMPORAL);
         }
         if self.action.shell != 0 {
-            a.push(FIBER_SHELL);
+            a.push(FIBRE_SHELL);
         }
         for (i, _) in &self.action.germinated {
             a.push(*i);
@@ -667,13 +667,13 @@ impl Element {
             && self.axes().is_empty()
     }
 
-    /// The centered coboundary chain (empty for pure-algebra elements).
-    /// The anchor fiber — None is ⊤ (the unconstrained carrier).
+    /// The centred coboundary chain (empty for pure-algebra elements).
+    /// The anchor fibre — None is ⊤ (the unconstrained carrier).
     pub fn anchor(&self) -> Option<&crate::transducer::anchor::Sel> {
         self.anchor.as_ref()
     }
 
-    /// Bind the anchor fiber (germination writes it at birth; the court's
+    /// Bind the anchor fibre (germination writes it at birth; the court's
     /// refinement rebinds it).
     pub fn with_anchor(mut self, pi: crate::transducer::anchor::Sel) -> Self {
         self.anchor = Some(pi);
@@ -825,7 +825,7 @@ impl Element {
     /// The fibre's span ABOVE ITS BASE — free sections plus every torsion
     /// orbit's members past the one it opens on. The volume metric proper, and
     /// a reader that wants it asks for it here: a caller subtracting the base
-    /// off `fiber_span` to recover this is decomposing a composite by
+    /// off `fibre_span` to recover this is decomposing a composite by
     /// arithmetic, which says the composite was the wrong granularity for that
     /// reader, not that the reader owed a subtraction.
     ///
@@ -847,9 +847,9 @@ impl Element {
         Some(volume)
     }
 
-    /// The fiber's total spoken span — base + the volume above it (cycles
+    /// The fibre's total spoken span — base + the volume above it (cycles
     /// count each cycle's full period). `None` past the carrier.
-    pub fn fiber_span(&self) -> Option<u64> {
+    pub fn fibre_span(&self) -> Option<u64> {
         self.fibre_volume()?.checked_add(1)
     }
 
@@ -888,7 +888,7 @@ impl Element {
                 for &i in spanned.iter().rev() {
                     self.sections.remove(i);
                 }
-                self.torsion.push(TorsionCycle { generator: Generator::Hue(sigma), period, fibre: FIBER_SPATIAL, remainder: None });
+                self.torsion.push(TorsionCycle { generator: Generator::Hue(sigma), period, fibre: FIBRE_SPATIAL, remainder: None });
                 self.profiles.take();
                 return spanned.len();
             }
@@ -932,7 +932,7 @@ impl Element {
         let Some(asg) = pullback(&positions(&self.sub), &sibling.sub, g) else { return 0 };
         let gained = self.puncture(asg.clone()) as usize;
         if !self.transitions.iter().any(|t| t.asg == asg && same_versor(&t.gauge, g)) {
-            self.transitions.push(Transition { asg, gauge: g.clone(), fibre: FIBER_SPATIAL });
+            self.transitions.push(Transition { asg, gauge: g.clone(), fibre: FIBRE_SPATIAL });
         }
         gained
     }
@@ -987,7 +987,7 @@ impl Element {
 pub const MEASURE_BOUND: &str =
     "each lane of a chain's measure is at most five times its links; a sum over resident chains cannot pass u64";
 
-/// The perceptual lane projection of a centered coboundary chain — the
+/// The perceptual lane projection of a centred coboundary chain — the
 /// per-lane magnitude MEASURED from the chain's geometry, never funneled
 /// onto one axis:
 ///   𝒮 spatial:  occupancy transformation — sites where support appears or

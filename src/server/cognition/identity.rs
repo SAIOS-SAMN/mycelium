@@ -17,7 +17,7 @@ impl crate::transducer::family::Crystal for Court {
         crate::transducer::stalk::Standing,
     )> {
         self.ruled
-            .fiber(class)
+            .fibre(class)
             .into_iter()
             .filter_map(|addr| {
                 // The court's ruled word, read off the word it HOLDS (L16):

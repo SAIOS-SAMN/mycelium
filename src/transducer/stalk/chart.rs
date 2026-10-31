@@ -147,7 +147,7 @@ impl ChartAxis {
     /// ONE COORDINATE'S OWN BYTES: its kind, its length, its payload. This
     /// is the unit the chart key is built from AND the unit the stratum
     /// trie branches on, so the coordinate a chart writes and the
-    /// coordinate a fiber reads are one construction (law 12).
+    /// coordinate a fibre reads are one construction (law 12).
     ///
     /// The payload's length is written by its own coordinate (STD1 3c-2,
     /// ruled (d)): a ratio's payload grows with its limbs, and the two bytes
@@ -268,7 +268,7 @@ impl Invariant {
     /// whole chart has, and a chart's prefix has fewer — so the prefix's
     /// key would differ from the full key in its first bytes and would stop
     /// being a BYTE prefix of it. `Keyed` is a PATRICIA trie over these
-    /// bytes and `fiber_under`, `link` and `peel` are byte-prefix reads, so
+    /// bytes and `fibre_under`, `link` and `peel` are byte-prefix reads, so
     /// a header count would break the one property A21 asserts. Each
     /// coordinate carrying its own length is enough to parse: the decode is
     /// self-delimiting without anything knowing the total ahead of it.
@@ -471,7 +471,7 @@ pub fn congruent<'a>(
     spoken: &element::Element,
     budget: &mut crate::physics::Budget,
 ) -> Option<(crate::transducer::address::Address, Versor)> {
-    let fibre = stalks.fiber(&invariant_of(spoken));
+    let fibre = stalks.fibre(&invariant_of(spoken));
     if spoken.is_connection() {
         let held = fibre.iter().find_map(|a| at(a).filter(|w| w.address() != spoken.address() && !w.axes().is_empty()).map(|w| (a.clone(), w)))?;
         let g = crate::transducer::cech::transition(held.1, spoken)?;
@@ -510,7 +510,7 @@ pub fn congruent_all<'a>(
     }
     let Some(shape) = element::shape_of_chain(spoken.sub()) else { return Vec::new() };
     stalks
-        .fiber(&invariant_of(spoken))
+        .fibre(&invariant_of(spoken))
         .iter()
         .filter_map(|a| at(a).filter(|w| !w.sub().is_empty()).map(|w| (a.clone(), w)))
         .filter_map(|(a, w)| element::transition_from_shape(&shape, w.sub(), budget).map(|v| (crate::transducer::address::Address::from(a), v)))
@@ -527,7 +527,7 @@ pub fn congruent_shaped<'a>(
     budget: &mut crate::physics::Budget,
 ) -> Option<(crate::transducer::address::Address, Versor)> {
     let shape = element::shape_of_chain(chain)?;
-    let fibre = stalks.fiber(&invariant(chain));
+    let fibre = stalks.fibre(&invariant(chain));
     // EXACTLY ONE RELATING WORD: a second relates it too and nothing is
     // located; a stroke spent before the fibre was read locates nothing —
     // an unread member is never counted as unrelated.

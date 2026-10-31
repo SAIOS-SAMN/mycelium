@@ -48,7 +48,7 @@ const REFUSED: &[(&str, &str)] = &[
     ("rtree", "rule 15: a subdivision index is a position; charts are the engine's partition"),
     ("r_tree", "rule 15: a subdivision index is a position; charts are the engine's partition"),
     ("spatial_hash", "law 2 and Anti-Flattening 1: a digest is transport, never a coordinate"),
-    ("grid_cell", "Anti-Flattening 3: axes are fiber coordinates, not standalone cell tables"),
+    ("grid_cell", "Anti-Flattening 3: axes are fibre coordinates, not standalone cell tables"),
     ("voxel", "Anti-Flattening 5: a fixed lattice bin flattens the 4D degrees of freedom"),
 ];
 

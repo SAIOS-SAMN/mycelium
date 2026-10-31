@@ -161,7 +161,7 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
 
 /// Perceive one frame of a family as the sections of its bodies (51.4,
 /// 52.5): the hue-blind 4-connected components in that frame, every
-/// compartment standing at `k`. The section is the unit the pairing's fiber is
+/// compartment standing at `k`. The section is the unit the pairing's fibre is
 /// keyed by, because its chart is the chart speech and the court perceive
 /// when they read a frame alone; a body stacked along `e₃` has a chart
 /// that depends on its extent there, and a vertex keyed by it would find
@@ -456,7 +456,7 @@ pub(crate) fn word_or_demand(
 }
 
 /// The same reading on a NAMED CHART (52.5): the two bodies are the union
-/// of a chart's fiber at one frame, whose own moduli are the union's and
+/// of a chart's fibre at one frame, whose own moduli are the union's and
 /// not the chart the vertex acts on, so the chart is the caller's.
 pub(crate) fn word_or_demand_on_chart(
     a: &Body,
@@ -833,30 +833,30 @@ pub fn painted_within_grid(painted: &[Painted], g: &Grid) -> bool {
 }
 
 /// The scene's bodies, each indexed by its own chart (Y4, 24.4, 20).
-/// A chart whose fiber holds exactly one body is "the unique one", read as
-/// `fiber.iter().nth(1).is_none()` (W10), without a count compared to a literal.
+/// A chart whose fibre holds exactly one body is "the unique one", read as
+/// `fibre.iter().nth(1).is_none()` (W10), without a count compared to a literal.
 pub fn bodies_by_chart(bodies: &[Body]) -> crate::network::nerve::Keyed<Vec<&Body>> {
-    let mut fibers: crate::network::nerve::Keyed<Vec<&Body>> = crate::network::nerve::Keyed::new();
+    let mut fibres: crate::network::nerve::Keyed<Vec<&Body>> = crate::network::nerve::Keyed::new();
     for b in bodies {
         let k = b.moduli.key();
-        match fibers.get_mut(&k) {
+        match fibres.get_mut(&k) {
             Some(v) => v.push(b),
             None => {
-                fibers.insert(k, vec![b]);
+                fibres.insert(k, vec![b]);
             }
         }
     }
-    fibers
+    fibres
 }
 
-/// The chart whose fiber in the scene holds exactly one body (Y4, 24.4, 21 step 1, W10).
-/// Answers "the chart whose fiber holds one" without a count compared to a literal.
+/// The chart whose fibre in the scene holds exactly one body (Y4, 24.4, 21 step 1, W10).
+/// Answers "the chart whose fibre holds one" without a count compared to a literal.
 pub fn chart_holding_one(bodies: &[Body]) -> Option<crate::transducer::stalk::Invariant> {
-    let fibers = bodies_by_chart(bodies);
-    let mut singletons = fibers
+    let fibres = bodies_by_chart(bodies);
+    let mut singletons = fibres
         .scoped()
-        .filter_map(|(_, fiber)| {
-            let mut it = fiber.iter();
+        .filter_map(|(_, fibre)| {
+            let mut it = fibre.iter();
             let first = it.next()?;
             if it.next().is_none() {
                 Some(first.moduli.clone())

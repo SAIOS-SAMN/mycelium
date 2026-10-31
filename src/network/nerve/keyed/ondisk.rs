@@ -7,7 +7,7 @@
 //! number naming a place in a carrier on the cognition path, which is rule
 //! 15's defect wearing a file's costume, and it is the shape Z9 spent four
 //! commits deleting from memory. The genome file is not transport — under
-//! Z11 it backs every fiber read — so the same law binds it as binds the
+//! Z11 it backs every fibre read — so the same law binds it as binds the
 //! carriers.
 //!
 //! So the file IS the trie. A reader starts at the root and follows the

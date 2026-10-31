@@ -164,7 +164,7 @@ impl Session {
     }
 
     /// Home a word by its chart and magnitude. Occluded edges drop out of
-    /// the fiber so incidence falls.
+    /// the fibre so incidence falls.
     /// `None` where neither the cover nor the router names a hypha: 0.11c's
     /// own ruling on this reader — a destination that is not known is
     /// absent, never the empty address, which every caller would then have

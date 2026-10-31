@@ -58,7 +58,7 @@ enum Posted {
 /// Every one is a NECESSARY condition of `same_vertex`: that test requires
 /// the rotors to be projectively equal (M1), the canonical chains to be
 /// equal (A5), and it decides two sentence forms by address alone. So two
-/// words that are one vertex share this key, and a fiber read under it
+/// words that are one vertex share this key, and a fibre read under it
 /// holds every candidate. It is not sufficient — the exact test still
 /// decides — which is A21 §3's own shape.
 ///
@@ -560,14 +560,14 @@ impl Mind {
         }
         // THE STRATUM, THEN THE EXACT TEST, never a walk of every word this
         // mind uttered (law 3). `taught_at` names the words that COULD be
-        // one vertex with this one; the exact test decides over that fiber
+        // one vertex with this one; the exact test decides over that fibre
         // and nothing else, on each word as the language holds it. A sentence
         // is one vertex by its address, answered above.
         if word.is_sentence() {
             return self.epigenome.same_vertex_in_genome(word).is_some() || self.touched_in_dialect(word);
         }
-        if let Some(fiber) = vertex_stratum(word).and_then(|at| self.taught_at.get(&at)) {
-            let candidates: Vec<Vec<u8>> = fiber.scoped().map(|(k, _)| k).collect();
+        if let Some(fibre) = vertex_stratum(word).and_then(|at| self.taught_at.get(&at)) {
+            let candidates: Vec<Vec<u8>> = fibre.scoped().map(|(k, _)| k).collect();
             for a in candidates {
                 if self.epigenome.working_word(&a).is_some_and(|h| h.element().same_vertex(word)) {
                     return true;

@@ -15,7 +15,7 @@
 //! front has already reached by another path closes a RING, and the two
 //! arrivals are compared on both halves. Holonomy 1: the ring COLLAPSES — its
 //! 2-simplex fills through the one fill path and 13.12's merge runs where the
-//! component closes, as `decide_neighbors` runs it. Holonomy ≠ 1: the ring is
+//! component closes, as `decide_neighbours` runs it. Holonomy ≠ 1: the ring is
 //! HELD, its class — the ray of the reverse product `B·Ã`, never an inverse
 //! (78.32(1)) — written into both thoughts' horizons, and the front STOPS
 //! there. No spanning tree: every edge is walked and every second arrival
@@ -318,7 +318,7 @@ impl Contemplation {
                     self.transport.collapsed_filled += 1;
                 }
             }
-            self.decide_neighbors(&there.at);
+            self.decide_neighbours(&there.at);
             return;
         }
         self.transport.held += 1;

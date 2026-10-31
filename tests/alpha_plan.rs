@@ -127,7 +127,7 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
         atlas.admit(&body.moduli, addr);
     }
     assert_eq!(
-        acts.scoped().map(|(_, a)| atlas.fiber(&a.chart).len()).sum::<usize>(),
+        acts.scoped().map(|(_, a)| atlas.fibre(&a.chart).len()).sum::<usize>(),
         3,
         "on the test grid the charts this vertex acts on hold three bodies between them"
     );

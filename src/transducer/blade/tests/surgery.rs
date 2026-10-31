@@ -5,7 +5,7 @@ use num_rational::BigRational;
 /// A fill-hole surgery, detected from a ring to a solid square, reduces the genus by one.
 #[test]
 fn detect_fills_hole_reducing_genus() {
-    // 3x3 ring with center (1, 1) empty: beta_0 = 1, beta_1 = 1
+    // 3x3 ring with centre (1, 1) empty: beta_0 = 1, beta_1 = 1
     let ring = at_frame_0(&[
         (0, 0), (0, 1), (0, 2),
         (1, 0),         (1, 2),

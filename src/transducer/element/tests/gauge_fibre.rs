@@ -1,4 +1,4 @@
-// 21 step 1 — the gauge fiber: sections that close condense into a torsion
+// 21 step 1 — the gauge fibre: sections that close condense into a torsion
 // cycle, and the cycle speaks orbit members no witness ever supplied.
 
 use crate::transducer::element::*;
@@ -25,7 +25,7 @@ fn torse_speaks_unwitnessed_orbit_members() {
     let unwitnessed = vec![(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)];
     assert!(t.matches_chain(&unwitnessed), "capacity beyond the evidence, exactly");
     assert!(!t.matches_chain(&[(0, 0, 5, 6), (0, 1, 1, 2), (0, 2, 2, 3)]), "no hallucination");
-    assert_eq!(t.fiber_span(), Some(3), "the volume counts the full orbit");
+    assert_eq!(t.fibre_span(), Some(3), "the volume counts the full orbit");
 }
 
 /// A SWAP is the smallest torsion (ℤ/2): one witnessed section closes at
@@ -169,7 +169,7 @@ fn record_cycle_refuses_hue_at_twice_read_period() {
     let mut t = from_canonical(&germinate(&a, &b).unwrap());
     let sigma = vec![(1, 2), (2, 3), (3, 1)];
     assert_eq!(orbit_period(&sigma, &assignment(t.sub())), Ok(3), "the period read");
-    let twice = TorsionCycle { generator: Generator::Hue(sigma.clone()), period: 6, fibre: FIBER_SPATIAL, remainder: None };
+    let twice = TorsionCycle { generator: Generator::Hue(sigma.clone()), period: 6, fibre: FIBRE_SPATIAL, remainder: None };
     assert_eq!(t.record_cycle(twice.clone()), Filed::Misspoken, "filed at twice its period: refused by name");
     assert!(t.torsion().is_empty(), "and nothing stands");
     // The same claim on a record: written, then refused where it is read.
@@ -178,7 +178,7 @@ fn record_cycle_refuses_hue_at_twice_read_period() {
     assert!(Element::from_bytes(&bytes, &mut 0).is_none(), "the record refuses a period it cannot read off σ");
     // At its read period the cycle stands, and the record carries it.
     let mut s = from_canonical(&germinate(&a, &b).unwrap());
-    let read = TorsionCycle { generator: Generator::Hue(sigma), period: 3, fibre: FIBER_SPATIAL, remainder: None };
+    let read = TorsionCycle { generator: Generator::Hue(sigma), period: 3, fibre: FIBRE_SPATIAL, remainder: None };
     assert_eq!(s.record_cycle(read), Filed::New);
     let back = Element::from_bytes(&s.to_bytes().expect("writes"), &mut 0).expect("reads back");
     assert_eq!(back.torsion()[0].period, 3);
@@ -194,13 +194,13 @@ fn record_cycle_refuses_holonomy_at_twice_order() {
     let generator = Generator::Holonomy(Box::new(turn_90));
     assert_eq!(generator.order(), Some(4), "a 90° turn's order");
     let mut w = Element::identity();
-    let twice = TorsionCycle { generator: generator.clone(), period: 8, fibre: FIBER_SPATIAL, remainder: None };
+    let twice = TorsionCycle { generator: generator.clone(), period: 8, fibre: FIBRE_SPATIAL, remainder: None };
     assert_eq!(w.record_cycle(twice.clone()), Filed::Misspoken, "at twice its order: refused by name");
     w.torsion.push(twice);
     let bytes = w.to_bytes().expect("the record writes");
     assert!(Element::from_bytes(&bytes, &mut 0).is_none(), "and a record carrying it is refused");
     let mut v = Element::identity();
-    let read = TorsionCycle { generator, period: 4, fibre: FIBER_SPATIAL, remainder: None };
+    let read = TorsionCycle { generator, period: 4, fibre: FIBRE_SPATIAL, remainder: None };
     assert_eq!(v.record_cycle(read), Filed::New, "at its order it stands");
 }
 

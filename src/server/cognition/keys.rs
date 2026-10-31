@@ -73,7 +73,7 @@ pub(crate) fn chart_footprint_key(_inv: &crate::transducer::stalk::Invariant, ch
     buf
 }
 
-/// A 1-simplex is exactly two vertices. Any other fiber is not an edge.
+/// A 1-simplex is exactly two vertices. Any other fibre is not an edge.
 pub(crate) fn edge_pair(addrs: &[Address]) -> Option<(Address, Address)> {
     match addrs {
         [a, b] => Some((a.clone(), b.clone())),

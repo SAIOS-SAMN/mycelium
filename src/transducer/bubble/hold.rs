@@ -190,8 +190,8 @@ impl Contemplation {
         let key = match seen {
             true => super::resonance::perceived_key(form_key, &spores),
             false => {
-                let perceptions: Vec<Vec<u8>> = match self.bubbles.fiber_at(form_key.as_bytes()) {
-                    Some(fiber) => fiber.map(|(k, _)| k).filter(|k| k.len() > form_key.len()).collect(),
+                let perceptions: Vec<Vec<u8>> = match self.bubbles.fibre_at(form_key.as_bytes()) {
+                    Some(fibre) => fibre.map(|(k, _)| k).filter(|k| k.len() > form_key.len()).collect(),
                     None => Vec::new(),
                 };
                 if !perceptions.is_empty() {

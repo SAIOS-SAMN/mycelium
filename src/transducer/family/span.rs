@@ -1,7 +1,7 @@
 // 72.1c(3), FR2 — THE SPAN OF A CELL ALONG `e₃`: the sections its relation
 // closes over, read from the form's sections at the read and never stored.
 //
-//! A stratum here is a keyed FIBER of `e₃` coordinates — a set of sections,
+//! A stratum here is a keyed FIBRE of `e₃` coordinates — a set of sections,
 //! not a contiguous run — keyed by `frame_key` as a member's frames are.
 //! A transport between two members exists only where both stand (51.4), so a
 //! cycle's span is the INTERSECTION of its members' sections: the sections

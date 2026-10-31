@@ -57,7 +57,7 @@ impl Court {
     /// behind here would have compared a hash against a concatenation and
     /// dropped every heard address on every confirm.
     pub(crate) fn stratum_root_of(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<u8> {
-        crate::transducer::sheaf::stratum_root(&self.ruled.fiber(inv))
+        crate::transducer::sheaf::stratum_root(&self.ruled.fibre(inv))
     }
 
     /// Whether this court has marked `addr` heard. A heard mark says the
@@ -72,7 +72,7 @@ impl Court {
         let root = self.stratum_root_of(inv);
         let chart = inv.key().into_vec();
         // Re-marked under another chart, the address leaves the old chart's
-        // fiber: an index that only ever grows would answer a stratum with
+        // fibre: an index that only ever grows would answer a stratum with
         // addresses that are no longer heard under it.
         if let Some((was, _)) = self.heard.get(addr) {
             if was != &chart {
@@ -87,7 +87,7 @@ impl Court {
     }
 
     /// An address is no longer heard: it leaves both the set and the chart
-    /// fiber that indexes it.
+    /// fibre that indexes it.
     pub(crate) fn heard_forget(&mut self, addr: &[u8]) {
         if let Some((chart, _)) = self.heard.remove(addr) {
             if let Some(inner) = self.heard_at.get_mut(&chart) {
@@ -499,12 +499,12 @@ impl Court {
         let mut germinate: Option<element::Versor> = None;
         let mut torse = false;
         for (_, vs) in asgs.scoped() {
-            match fiber_holonomy(vs) {
+            match fibre_holonomy(vs) {
                 // Closed: the orbit is torsion the language already carries.
                 Some(h) if h.projective_eq(&element::identity_versor()) => torse = true,
                 // Held: the germ is the holonomy itself, the exact thing the
                 // orbit failed to close by, not a transition read off the end
-                // of the fiber.
+                // of the fibre.
                 Some(h) if twisted => germinate = Some(h),
                 _ => {}
             }
@@ -524,7 +524,7 @@ impl Court {
         let Some(seed) = word.versor() else {
             let asg = element::assignment(word.sub());
             if let Some(w) = self.word_mut(addr) {
-                w.update(|e| e.record_dislocation(asg, fail.clone(), element::FIBER_SPATIAL));
+                w.update(|e| e.record_dislocation(asg, fail.clone(), element::FIBRE_SPATIAL));
             }
             self.touch_at(addr);
             return;
@@ -795,7 +795,7 @@ impl Court {
         self.held_at.get(at).cloned()
     }
 
-    /// The in-flight indexes forget a stamp: its chart's fiber, its pending
+    /// The in-flight indexes forget a stamp: its chart's fibre, its pending
     /// emission and its witnesses.
     pub(crate) fn leave_flight(&mut self, at: &[u8]) {
         if let Some(chart) = self.flight.remove(at) {
@@ -890,7 +890,7 @@ impl Court {
     }
 
     /// A TRANSITION ON A CHART — a peer's cover admitting it — carries every
-    /// word in flight under that chart: one fiber, read by the chart's key.
+    /// word in flight under that chart: one fibre, read by the chart's key.
     pub fn carry_chart(&mut self, chart: &crate::transducer::stalk::Invariant) {
         let Some(on_chart) = self.offered.get(chart.key().as_bytes()) else { return };
         let words: Vec<Address> = on_chart.scoped().filter_map(|(at, ())| self.word_of_stamp(&at)).collect();

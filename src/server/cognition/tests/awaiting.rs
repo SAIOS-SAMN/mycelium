@@ -219,7 +219,7 @@ fn ruled_admit_absent_word_rehears_nothing() {
 /// `chart_of_form`, which leads with `2` and is a projection of what the
 /// form holds. `candidates_for` asks the crystal under the charts an
 /// orbit's face vertices act on, which are body charts leading `1`, and
-/// `on_axis_of` peels rather than descending a fiber, so no peel from a
+/// `on_axis_of` peels rather than descending a fibre, so no peel from a
 /// body chart can ever reach a form chart. Everything this court filed
 /// was unreachable by the only reader of the carrier.
 ///

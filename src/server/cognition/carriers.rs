@@ -110,9 +110,9 @@ impl Court {
             deflations,
             unframed: _,
             withheld: _,
-            word_fibers,
-            fiber_key_at,
-            remainder_fibers,
+            word_fibres,
+            fibre_key_at,
+            remainder_fibres,
             remainder_keys,
             remainders_refused: _,
             remainders_past_carrier: _,
@@ -310,9 +310,9 @@ impl Court {
         c.count("speech_task", speech_task.len());
         c.count("refusals", refusals.len());
         c.count("deflations", deflations.len());
-        c.count("word_fibers", word_fibers.len());
-        c.count("fiber_key_at", fiber_key_at.len());
-        c.count("remainder_fibers", remainder_fibers.len());
+        c.count("word_fibres", word_fibres.len());
+        c.count("fibre_key_at", fibre_key_at.len());
+        c.count("remainder_fibres", remainder_fibres.len());
         c.count("remainder_keys", lists(remainder_keys));
         c.count("awaiting_rulings", lists(awaiting_rulings));
         c.count("deferred_words", deferred_words.len());

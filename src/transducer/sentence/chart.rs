@@ -115,7 +115,7 @@ impl SentenceRule {
         let Some(at) = crate::network::nerve::Prefix::new(&prefix) else {
             return Vec::new();
         };
-        self.form.hue_maps.fiber(at).map(|(_, g)| g.clone()).collect()
+        self.form.hue_maps.fibre(at).map(|(_, g)| g.clone()).collect()
     }
 
     /// Carriage of a transport class, read from the form's carriages.

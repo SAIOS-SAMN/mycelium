@@ -1,5 +1,5 @@
 // 21 as ruled in 52.5 — EXTRACTION: the family's one form. Every chart's
-// fiber is read frame by frame as a quotient in the frame's own
+// fibre is read frame by frame as a quotient in the frame's own
 // coordinates; frames that read one versor are one vertex, frames that
 // read another are sections along e₃, and what no quotient reaches is a
 // cover or a demand. No correspondence, no candidate list, no search.

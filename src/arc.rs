@@ -465,9 +465,9 @@ pub fn family_cover(train: &[(Grid, Grid)]) -> Option<[u64; 4]> {
 // coboundary is supported on the codomain complex: every site of K_out reads
 // the input through ρ⁻¹ (the input site containing the output site's min
 // corner — the substrate's framing convention, the same min-corner quotient
-// every chain is centered by) and differs, or not, from the output. No common refinement
+// every chain is centred by) and differs, or not, from the output. No common refinement
 // is materialized: the support is bounded by |K_out|, and ρ rides as the
-// word's frame fiber. Uniform for every ratio including (1,1), which is the
+// word's frame fibre. Uniform for every ratio including (1,1), which is the
 // planar delta bit-for-bit. Banned surface: no branch anywhere on ratio
 // VALUES — the map is total.
 

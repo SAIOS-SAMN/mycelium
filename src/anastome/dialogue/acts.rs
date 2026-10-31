@@ -31,7 +31,7 @@ pub const ACT_SETTLE: u8 = Action::Settle.byte();
 /// the exchange and its back-fill (45.2, 47.2), never as a message.
 /// 78.94: retired — encoded, never handled; the table refuses it at the door.
 pub const ACT_DOCKET: u8 = Action::Docket.byte();
-/// Step 7c: the court pulls the selection fiber's accumulated birth evidence.
+/// Step 7c: the court pulls the selection fibre's accumulated birth evidence.
 pub const ACT_EVIDENCE: u8 = Action::Evidence.byte();
 /// POUW dispatch: a client pulls a SIGNED WORK ENVELOPE — the hypha's
 /// authoritative registry chooses; clients never arbitrate raw corpus.
@@ -473,7 +473,7 @@ pub struct Offer {
 /// `refused`, and the home then told the arms apart by
 /// `!w.refused.is_empty()` and by whether `reached` decoded — checklist
 /// (b), "any `len()`, `count()`, `is_empty()` that decides a branch rather
-/// than an emptiness of a fiber". Neither vector is a fiber; both were
+/// than an emptiness of a fibre". Neither vector is a fibre; both were
 /// flags in a longer form, and the doc above them claimed the arms were
 /// "read off the content and never off a flag" while the content that
 /// named the arm was two lengths.
@@ -618,7 +618,7 @@ pub const SOLVE_NOTHING: u8 = 0;
 /// 2026-10-09).
 pub const SOLVE_UNREAD: u8 = 3;
 
-/// One link of a centered coboundary chain: `(row, col, before, after)`.
+/// One link of a centred coboundary chain: `(row, col, before, after)`.
 pub type Link = (i64, i64, u8, u8);
 
 /// One quoted work item: the listing's address, its priced μ⃗, the listing

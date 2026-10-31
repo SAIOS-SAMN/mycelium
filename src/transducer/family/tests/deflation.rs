@@ -24,7 +24,7 @@ let before = element::measure_lanes(
     &crate::transducer::family::refine::refine_delta(&x, &y).expect("delta"),
 );
 assert_eq!(pay, before, "deflation of an empty remainder is the closed delta");
-// H1, 70.4 — `"23"` is ONE body of two hues once hue moves to the fiber,
+// H1, 70.4 — `"23"` is ONE body of two hues once hue moves to the fibre,
 // so the second pair's intent (an output the rule cannot explain) is
 // written with a gap rather than a colour change.
 let x2 = grid(&["100"]);

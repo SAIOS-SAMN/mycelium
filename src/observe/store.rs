@@ -4,7 +4,7 @@
 //! A reading is keyed `[source kind][vk 32][reading tag]` — the source's
 //! own identity, then what the reading answers — so a query by prefix reads
 //! one source, or one kind of source, or everything, and never reads more
-//! than the fiber it names (rule 1).
+//! than the fibre it names (rule 1).
 //!
 //! ONE STORE PER PROCESS, beside the thread-local tallies it is fed from.
 //! Those are taken by the tallies' one reader where a stroke ends and folded in
@@ -104,14 +104,14 @@ pub fn replace(source: Source, reading: Reading) -> bool {
 }
 
 /// Every reading held under `prefix`, in key order; the empty prefix reads
-/// the whole store, which is itself the one fiber the console asks for.
+/// the whole store, which is itself the one fibre the console asks for.
 pub fn readings(prefix: &[u8]) -> Vec<Held> {
     let Ok(s) = STORE.lock() else { return Vec::new() };
-    let fiber = match s.fiber_at(prefix) {
+    let fibre = match s.fibre_at(prefix) {
         Some(f) => f,
         None => s.scoped(),
     };
-    fiber.map(|(k, r)| (k.to_vec(), r.clone())).collect()
+    fibre.map(|(k, r)| (k.to_vec(), r.clone())).collect()
 }
 
 /// Count one act served, by its kind.

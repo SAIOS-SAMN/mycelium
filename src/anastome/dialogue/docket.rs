@@ -268,7 +268,7 @@ pub fn decode_evidence_deposit(body: &[u8]) -> Option<EvidenceDeposit> {
 }
 
 /// evidence reply: `[n u32] ( [addr][nf u32][fp (r i64,c i64)·nf]
-/// [ns u32][scene (r i64,c i64,h u8)·ns] )…` — the selection fiber's birth
+/// [ns u32][scene (r i64,c i64,h u8)·ns] )…` — the selection fibre's birth
 /// evidence, count-guarded at every level.
 /// `None` where an address cannot be framed: the whole reply is refused,
 /// never a partial one (LD0, rule 11).

@@ -4,7 +4,7 @@
 //
 //! Rule 6 requires a key to be the canonical coordinates written out, in a
 //! fixed order, in a trie "where a prefix is a stratum". `Keyed` provides
-//! the prefix read (`fiber`) and refuses the empty coordinate in the type
+//! the prefix read (`fibre`) and refuses the empty coordinate in the type
 //! (`Prefix`), and stops there: it holds no record of WHICH coordinate
 //! system its keys belong to or WHERE one coordinate ends and the next
 //! begins. So every coarse reader had to rebuild the prefix by hand, from a
@@ -162,7 +162,7 @@ impl<V> Stratified<V> {
     }
 
     /// The exact read, which needs every coordinate. A caller holding only
-    /// a coarse coordinate is asking for a FIBER and is told so here rather
+    /// a coarse coordinate is asking for a FIBRE and is told so here rather
     /// than receiving the empty answer that a missing key and a wrong depth
     /// both used to produce.
     pub fn get(&self, key: &[u8]) -> Result<Option<&V>, Refusal> {
@@ -184,7 +184,7 @@ impl<V> Stratified<V> {
         Ok(self.get(key)?.is_some())
     }
 
-    /// THE FIBER OVER A COARSER COORDINATE, named by DEPTH.
+    /// THE FIBRE OVER A COARSER COORDINATE, named by DEPTH.
     ///
     /// `key` may be a whole path or any key of this system that spells at
     /// least `depth` coordinates; only the first `depth` of them are read,
@@ -198,7 +198,7 @@ impl<V> Stratified<V> {
     /// says so there; the full depth is an exact read, which is
     /// [`Stratified::get`]. Both are refused here so that a site cannot ask
     /// for a projection and receive one of those by accident.
-    pub fn fiber_at_depth(&self, key: &[u8], depth: usize) -> Result<Fiber<'_, V>, Refusal> {
+    pub fn fibre_at_depth(&self, key: &[u8], depth: usize) -> Result<Fibre<'_, V>, Refusal> {
         if depth == 0 {
             return Err(Refusal {
                 system: self.schema.system,
@@ -222,7 +222,7 @@ impl<V> Stratified<V> {
             });
         };
         match Prefix::new(prefix) {
-            Some(p) => Ok(self.trie.fiber(p)),
+            Some(p) => Ok(self.trie.fibre(p)),
             None => Err(Refusal {
                 system: self.schema.system,
                 segment: "",
@@ -233,7 +233,7 @@ impl<V> Stratified<V> {
 
     /// THE WHOLE CARRIER, asserted as one stratum's reading exactly as
     /// [`Keyed::scoped`] is.
-    pub fn scoped(&self) -> Fiber<'_, V> {
+    pub fn scoped(&self) -> Fibre<'_, V> {
         self.trie.scoped()
     }
 

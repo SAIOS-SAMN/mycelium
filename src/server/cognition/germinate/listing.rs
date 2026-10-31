@@ -363,7 +363,7 @@ impl Court {
     /// this asked whether the ALGEBRA closes the cycle, never whether the
     /// speaker did, so `Order::Infinite` was the only thing that charged and
     /// this corpus produces none. A filed cycle is one no candidate
-    /// discharged, which is `Physics::pivot`'s own "demand for a new fiber".
+    /// discharged, which is `Physics::pivot`'s own "demand for a new fibre".
     /// That much stands.
     ///
     /// What D10 got wrong is that it then charged UNCONDITIONALLY. A bare
@@ -408,7 +408,7 @@ impl Court {
                 // discharge: `file_orbit` writes `Form.torsion` only where no
                 // candidate discharged the orbit, so it stands as a class
                 // awaiting a word — which is exactly what `Physics::pivot`
-                // calls "the demand for a new fiber". It is keyed by the
+                // calls "the demand for a new fibre". It is keyed by the
                 // holonomy's class, the same key this reader has in hand.
                 //
                 // ITS ORDER SAYS WHETHER THE ALGEBRA CLOSES IT; THE FILING

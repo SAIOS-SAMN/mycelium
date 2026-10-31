@@ -16,7 +16,7 @@ impl Form {
     /// vertices, in one pass. Two gauges on one word class are two hue
     /// sections, each kept. Two carriages on one transport class stay two
     /// sections. Two Word vertices on one chart are both on that chart's
-    /// fiber (24.1).
+    /// fibre (24.1).
     pub fn reindex(&mut self) {
         let mut by_class: Keyed<Vec<coord::VertexAt>, coord::Chart> = Keyed::new();
         let mut by_transport: Keyed<Vec<coord::VertexAt>, coord::Transport> = Keyed::new();
@@ -31,7 +31,7 @@ impl Form {
         for (_, v) in self.vertices.scoped() {
             let Vertex::Word { derivation, .. } = v else { continue };
             let Some(prefix) = hue_class_prefix_of(&derivation.rotor()) else { continue };
-            for (k, g) in held_maps.fiber_at(&prefix).into_iter().flatten() {
+            for (k, g) in held_maps.fibre_at(&prefix).into_iter().flatten() {
                 hue_maps.insert(&k, g.clone());
             }
         }
@@ -127,7 +127,7 @@ impl Form {
     /// [`Form::demands`] reads the demands.
     pub fn glued_vertices(&self) -> impl Iterator<Item = (coord::VertexAt, &Vertex)> {
         self.vertices
-            .fiber_at(&[coord::VertexAt::GLUED])
+            .fibre_at(&[coord::VertexAt::GLUED])
             .into_iter()
             .flatten()
             .filter_map(|(k, v)| Some((coord::VertexAt::decode(&k).ok()?, v)))
@@ -138,7 +138,7 @@ impl Form {
     /// kind, so every demand stands under one prefix.
     pub fn demands(&self) -> impl Iterator<Item = (coord::VertexAt, &Vertex)> {
         self.vertices
-            .fiber_at(&[coord::VertexAt::DEMAND])
+            .fibre_at(&[coord::VertexAt::DEMAND])
             .into_iter()
             .flatten()
             .filter_map(|(k, v)| Some((coord::VertexAt::decode(&k).ok()?, v)))

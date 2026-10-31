@@ -351,7 +351,7 @@ pub(crate) fn cover_deformation(
         }
         let Some(ip) = ins.at(ki) else { break 'piece };
         for pv in &propagate {
-            // WHERE THIS VERSOR PUTS THE PIECE. Each compartment's center is
+            // WHERE THIS VERSOR PUTS THE PIECE. Each compartment's centre is
             // carried and the output piece holding it is read by position;
             // a compartment whose image the lattice does not hold is one this
             // reader did not carry (W6) and names nothing.

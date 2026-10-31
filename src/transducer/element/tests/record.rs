@@ -7,7 +7,7 @@ use crate::transducer::element::*;
 use num_bigint::BigInt;
 use crate::transducer::germinate::germinate;
 
-/// γ = (π, Δ): the anchor fiber survives serde exactly; pre-anchor bytes
+/// γ = (π, Δ): the anchor fibre survives serde exactly; pre-anchor bytes
 /// (no tail) parse to the ⊤ carrier — full backward compatibility.
 #[test]
 fn from_bytes_round_trips_anchor_and_defaults_top() {
@@ -33,7 +33,7 @@ fn from_bytes_round_trips_anchor_and_defaults_top() {
     assert!(old.transitions().is_empty(), "absent connection = none recorded");
 }
 
-/// The transposition quotient is the CENTERED chain: the same deformation at
+/// The transposition quotient is the CENTRED chain: the same deformation at
 /// any position is ONE substance (min-corner framed to origin), while a
 /// deformation with the SAME hue tally but DIFFERENT geometry stays DISTINCT —
 /// the Step-1 conflation, cured (the tally never decides substance).
@@ -140,7 +140,7 @@ fn from_bytes_round_trips_germ() {
         let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
         assert_eq!(pos, bytes.len(), "consumed exactly");
         assert_eq!(back.address(), g.address(), "the reloaded word is the same citation");
-        assert_eq!(back.sub(), g.sub(), "the centered chain survives");
+        assert_eq!(back.sub(), g.sub(), "the centred chain survives");
         assert!(back.carriage(g, &mut super::common::budget()).is_some(), "the thought survives: the identity carriage relates them");
     }
 }
@@ -266,7 +266,7 @@ fn from_bytes_refuses_lane_past_carrier() {
     let cycle = TorsionCycle {
         generator: Generator::Hue(vec![(1, 2), (2, 3), (3, 1)]),
         period: 3,
-        fibre: FIBER_SPATIAL,
+        fibre: FIBRE_SPATIAL,
         remainder: None,
     };
     assert_eq!(full.record_cycle(cycle), Filed::PastCarrier, "a cycle past the carrier is refused by name");

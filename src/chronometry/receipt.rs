@@ -284,7 +284,7 @@ pub struct ClassRecord {
 impl ClassRecord {
     /// The class record of a word with a rotor: the rotor's class key and
     /// its order (`0` infinite). A form has none (78.24 (2a)): its element
-    /// carries the identity and its classes are a set, so its fiber is its
+    /// carries the identity and its classes are a set, so its fibre is its
     /// chart alone.
     pub fn of(w: &crate::transducer::element::Element) -> Option<ClassRecord> {
         if w.is_sentence() {
@@ -301,7 +301,7 @@ impl ClassRecord {
 }
 
 impl Cite {
-    /// A WORD'S CITATION: its fiber, read off the word, and the stamp of
+    /// A WORD'S CITATION: its fibre, read off the word, and the stamp of
     /// the act that admitted it.
     pub fn word(w: &crate::transducer::element::Element, at: Stamp) -> Cite {
         Cite::word_charted(w, crate::transducer::stalk::invariant_of(w), at)
@@ -318,8 +318,8 @@ impl Cite {
 /// never a copy of it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Cite {
-    /// A word or a form by its FIBER — its chart, and for a word with a
-    /// rotor its class record; a form's fiber is its chart alone — and the
+    /// A word or a form by its FIBRE — its chart, and for a word with a
+    /// rotor its class record; a form's fibre is its chart alone — and the
     /// stamp of the act that admitted it, which locates it exactly.
     Word { chart: Invariant, class: Option<ClassRecord>, at: Stamp },
     /// A fold's root (45.8): the stamp of the archived prefix's head and
@@ -349,7 +349,7 @@ pub enum Cite {
         residue: Option<crate::transducer::cga::Mv>,
         cover: Option<Vec<Vec<u8>>>,
     },
-    /// 78.93 B0 — A REFUSAL ON THE RECORD: the refused sentence by its fiber
+    /// 78.93 B0 — A REFUSAL ON THE RECORD: the refused sentence by its fibre
     /// (its chart) and the kind of the refusal (`RefusalKind::to_byte`). It
     /// is located by the stamp of the act that carries it; the coordinate
     /// inside the sentence went to the voice with the verdict, and the

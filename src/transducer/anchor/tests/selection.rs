@@ -9,7 +9,7 @@ fn block() -> Vec<(i64, i64, u8)> {
 }
 
 /// Interior and coboundary are DERIVED terms (K ∖ δK and δK), never tags:
-/// the center of a block derives to Minus(Hue, Delta(Hue)) and re-evaluates
+/// the centre of a block derives to Minus(Hue, Delta(Hue)) and re-evaluates
 /// exactly on a larger scene of the same species.
 #[test]
 fn derive_interior_transfers_to_larger_scene() {

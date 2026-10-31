@@ -471,7 +471,7 @@ impl Physics {
         self.relieve(&since);
     }
 
-    /// A pivot on `lane` — a torsion charge (the demand for a new fiber). An
+    /// A pivot on `lane` — a torsion charge (the demand for a new fibre). An
     /// unattributable pivot charges all lanes (its resisting axis is unknown).
     pub fn pivot(&mut self, lanes: [bool; 4]) {
         let any = lanes.iter().any(|&b| b);
@@ -483,7 +483,7 @@ impl Physics {
     }
 
     /// TORSE RELIEF — the mathematical torsion extraction dissipates the PHYSICAL
-    /// torsion charge: condensing a fiber's sections into a cycle converts
+    /// torsion charge: condensing a fibre's sections into a cycle converts
     /// accumulated disorder into structure, per lane (the spanned count applied
     /// on the active lanes only — polytonic, never a summed scalar), and books
     /// the same amount as syntropic order built.
@@ -681,7 +681,7 @@ impl Physics {
 
     /// THE ORDER FLUX — per-lane syntropic minus entropic. Positive: the mesh is
     /// building structure on that lane (settling faster than it pivots);
-    /// negative: it is losing ground (a lane demanding a new fiber). The dynamic
+    /// negative: it is losing ground (a lane demanding a new fibre). The dynamic
     /// entropic/syntropic metabolism (#34), reported hypha→client each exchange.
     ///
     /// Exact over the whole of both counters (STD1), as `Metabolism::flux`

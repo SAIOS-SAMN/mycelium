@@ -581,7 +581,7 @@ A compartment's centre stands half a unit inside its site on each grid
 axis, so a dilator about a frame point fixes the frame.
 
 Sources: MU-RECURSION 16.4. Code:
-`src/transducer/element/sensor.rs::carry_site_center`, `::carry_site`,
+`src/transducer/element/sensor.rs::carry_site_centre`, `::carry_site`,
 `::site_at`.
 
 #### 2.25 The lattice step of a carriage

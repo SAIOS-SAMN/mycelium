@@ -1,4 +1,4 @@
-// A13, A21 — the keyed relation: what a fiber, a link and a meet read, and
+// A13, A21 — the keyed relation: what a fibre, a link and a meet read, and
 // that each is a walk of structure rather than a search.
 
 
@@ -36,32 +36,32 @@ fn keyed_binds_rebinds_and_unbinds_exactly() {
 /// A prefix of a key is its stratum, and the empty prefix is not a
 /// coordinate.
 #[test]
-fn fiber_of_prefix_reads_its_stratum() {
+fn fibre_of_prefix_reads_its_stratum() {
     let mut k: Keyed<u8> = Keyed::new();
     k.insert([1u8, 10, 0], 1);
     k.insert([1u8, 10, 1], 2);
     k.insert([1u8, 11, 0], 3);
     k.insert([2u8, 0, 0], 4);
     let at = |p: &'static [u8]| Prefix::new(p).expect("a coordinate");
-    let coarse: Vec<_> = k.fiber(at(&[1])).map(|(key, v)| (key.to_vec(), *v)).collect();
+    let coarse: Vec<_> = k.fibre(at(&[1])).map(|(key, v)| (key.to_vec(), *v)).collect();
     assert_eq!(coarse.len(), 3, "prefix [1] is the chart's coarse stratum");
     assert!(coarse.iter().all(|(key, _)| key.starts_with(&[1])));
-    let mid: Vec<_> = k.fiber(at(&[1, 10])).map(|(key, _)| key.to_vec()).collect();
+    let mid: Vec<_> = k.fibre(at(&[1, 10])).map(|(key, _)| key.to_vec()).collect();
     assert_eq!(mid.len(), 2);
     assert!(mid.iter().all(|key| key.starts_with(&[1, 10])));
-    assert_eq!(k.fiber(at(&[1, 10, 0])).count(), 1);
+    assert_eq!(k.fibre(at(&[1, 10, 0])).count(), 1);
     assert_eq!(k.get(&[2, 0, 0]), Some(&4));
     // AN EMPTY PREFIX IS NOT A COORDINATE and cannot be built: the whole
     // carrier is `scoped`, which says so at its site (X3).
     assert!(Prefix::new(&[]).is_none(), "the empty prefix is not a coordinate");
-    assert!(k.fiber_at(&[]).is_none(), "and a fiber cannot be asked for it");
-    assert_eq!(k.fiber_at(&[1]).map(Iterator::count), Some(3), "a coordinate reads its stratum");
+    assert!(k.fibre_at(&[]).is_none(), "and a fibre cannot be asked for it");
+    assert_eq!(k.fibre_at(&[1]).map(Iterator::count), Some(3), "a coordinate reads its stratum");
 }
 
 /// X3 — THE PREFIX READ RETURNS WHAT THE FILTER RETURNED, on every prefix of
 /// every key, over tries of many shapes.
 ///
-/// `fiber` used to push the root and test each leaf against the prefix on
+/// `fibre` used to push the root and test each leaf against the prefix on
 /// the way out; it now reaches a subtree by the prefix and tests the leaves of that
 /// subtree. The second is the first only if the pruning is exact, and the
 /// primitive was changed on an ARGUMENT — that below a branch at bit `b`
@@ -81,7 +81,7 @@ fn fiber_of_prefix_reads_its_stratum() {
 /// end of a key, so a short key sits among long ones as though padded, and
 /// a representative shorter than the prefix answers for nothing.
 #[test]
-fn fiber_matches_filter_for_every_trie_shape() {
+fn fibre_matches_filter_for_every_trie_shape() {
     // A spread of keys: shared prefixes, one a proper prefix of another,
     // lengths from one byte to four, and a byte value that differs only in
     // its lowest bit (adjacent branch points).
@@ -139,7 +139,7 @@ fn fiber_matches_filter_for_every_trie_shape() {
         assert_eq!(k.len(), keys.len(), "order {which}: every key is held");
         for p in &prefixes {
             let mut got: Vec<Vec<u8>> = k
-                .fiber(Prefix::new(p).expect("a coordinate"))
+                .fibre(Prefix::new(p).expect("a coordinate"))
                 .map(|(key, _)| key)
                 .collect();
             got.sort();
@@ -154,21 +154,21 @@ fn fiber_matches_filter_for_every_trie_shape() {
     }
 }
 
-/// X3, rule 1 — A FIBER READ COSTS ITS FIBER, NOT THE CARRIER. `fiber`
+/// X3, rule 1 — A FIBRE READ COSTS ITS FIBRE, NOT THE CARRIER. `fibre`
 /// pushed the root node whatever the prefix was and filtered the leaves on
 /// the way out, so reading one stratum walked every node of the trie: the
 /// whole-carrier read arriving through the reader that is supposed to
-/// replace it, and the reason `fiber(ROOT)` was the only honest spelling
+/// replace it, and the reason `fibre(ROOT)` was the only honest spelling
 /// in 280 places.
 ///
 /// Measured here as the EXTENT of the walk — trie nodes visited, which is
 /// its own counter because `work::total` counts keyed reads and writes and
-/// a walk takes neither. One key's fiber out of a thousand keys visits a
+/// a walk takes neither. One key's fibre out of a thousand keys visits a
 /// handful of nodes; before the prefix read it visited every one of them, and
 /// the reading stays true whatever the trie's shape, since the assertion
 /// is against the carrier's own size and not a constant.
 #[test]
-fn fiber_visits_own_subtree_not_carrier() {
+fn fibre_visits_own_subtree_not_carrier() {
     use crate::network::nerve::keyed::work;
     let mut k: Keyed<u32> = Keyed::new();
     for i in 0u32..1000 {
@@ -176,36 +176,36 @@ fn fiber_visits_own_subtree_not_carrier() {
     }
     assert_eq!(k.len(), 1000);
 
-    // One key, by its whole coordinate: the fiber is that one entry.
+    // One key, by its whole coordinate: the fibre is that one entry.
     let whole = 500u32.to_be_bytes();
     work::reset();
-    let one: Vec<_> = k.fiber(Prefix::new(&whole).expect("a coordinate")).map(|(_, v)| *v).collect();
+    let one: Vec<_> = k.fibre(Prefix::new(&whole).expect("a coordinate")).map(|(_, v)| *v).collect();
     let narrow = work::visits();
-    assert_eq!(one, vec![500], "the fiber of a whole key is that key");
+    assert_eq!(one, vec![500], "the fibre of a whole key is that key");
     assert!(
         narrow < 64,
-        "a one-entry fiber visits its own subtree: {narrow} nodes of a thousand-key trie"
+        "a one-entry fibre visits its own subtree: {narrow} nodes of a thousand-key trie"
     );
 
     // A coarse stratum: the first two bytes of a u32 are zero for every
-    // key here, so this fiber IS the carrier and visits it -- which is the
+    // key here, so this fibre IS the carrier and visits it -- which is the
     // honest cost of the reading, and the reading the rest of X3 names.
     work::reset();
-    let coarse = k.fiber(Prefix::new(&[0u8, 0]).expect("a coordinate")).count();
+    let coarse = k.fibre(Prefix::new(&[0u8, 0]).expect("a coordinate")).count();
     let wide = work::visits();
     assert_eq!(coarse, 1000, "every key carries this prefix");
     assert!(wide > narrow, "the wider stratum costs more: {wide} against {narrow}");
 
-    // And `scoped` is that same whole: the carrier's own fiber, which is
+    // And `scoped` is that same whole: the carrier's own fibre, which is
     // the reading where the carrier was reached by a key already.
     work::reset();
     assert_eq!(k.scoped().count(), 1000);
     assert_eq!(work::visits(), wide, "the scoped whole and the prefix every key carries are one walk");
 
-    // A prefix no key carries is an EMPTY fiber, not an empty walk: the
+    // A prefix no key carries is an EMPTY fibre, not an empty walk: the
     // prefix read fails at a missing child and nothing is visited at all.
     work::reset();
-    assert_eq!(k.fiber(Prefix::new(&[0xff, 0xff]).expect("a coordinate")).count(), 0);
+    assert_eq!(k.fibre(Prefix::new(&[0xff, 0xff]).expect("a coordinate")).count(), 0);
     assert_eq!(work::visits(), 0, "absence costs the prefix read and no walk");
 }
 

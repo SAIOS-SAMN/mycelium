@@ -99,7 +99,7 @@ fn stratum_reads_factoring_basis_coarser_than_chart() {
 
     let exact = crate::transducer::stalk::invariant_of(&ask);
     assert!(
-        epi.working_atlas().fiber(&exact).is_empty(),
+        epi.working_atlas().fibre(&exact).is_empty(),
         "the exact chart of another rotation holds nothing to factor through"
     );
     let (at, generators) = epi.working_atlas().stratum(&exact);

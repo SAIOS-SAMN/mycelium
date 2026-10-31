@@ -277,31 +277,31 @@ assert!(
 }
 
 /// G4b. An orbit's obstruction is the product around it (10.3), never a
-/// transition read off the end of the fiber. The distinction is not
+/// transition read off the end of the fibre. The distinction is not
 /// cosmetic on a distributed mesh: the geometric product is not
 /// commutative, so a member picked by position is a different object on
-/// every node that holds the fiber in a different insertion order, and
+/// every node that holds the fibre in a different insertion order, and
 /// two nodes would breed two germs from identical mathematics.
 #[test]
-fn fiber_holonomy_is_composite_not_member() {
+fn fibre_holonomy_is_composite_not_member() {
 use crate::transducer::alphabet::{LetterId, Word};
 let q = LetterId::turn_90((0, 1)).expect("90° turn");
 let one = rotor_versor(&Word::from_letters(&[(q, false)]).rotor()).expect("versor");
 let inv = rotor_versor(&Word::from_letters(&[(q, true)]).rotor()).expect("inverse versor");
 let id = element::identity_versor();
 
-assert!(fiber_holonomy(std::slice::from_ref(&one)).is_none(), "a singleton is not an orbit");
-assert!(fiber_holonomy(&[]).is_none(), "an empty fiber is not an orbit");
+assert!(fibre_holonomy(std::slice::from_ref(&one)).is_none(), "a singleton is not an orbit");
+assert!(fibre_holonomy(&[]).is_none(), "an empty fibre is not an orbit");
 
-let closed = fiber_holonomy(&[one.clone(), inv]).expect("an orbit");
+let closed = fibre_holonomy(&[one.clone(), inv]).expect("an orbit");
 assert!(closed.projective_eq(&id), "q then q-inverse closes");
 
 // Three 90° turns on one plane: the product is the obstruction,
-// and it is not any member of the fiber.
-let held = fiber_holonomy(&[one.clone(), one.clone(), one.clone()]).expect("an orbit");
+// and it is not any member of the fibre.
+let held = fibre_holonomy(&[one.clone(), one.clone(), one.clone()]).expect("an orbit");
 assert!(!held.projective_eq(&id), "three 90° turns do not close");
 assert!(
     !held.projective_eq(&one),
-    "the holonomy is the composite, not the transition the fiber ends on"
+    "the holonomy is the composite, not the transition the fibre ends on"
 );
 }

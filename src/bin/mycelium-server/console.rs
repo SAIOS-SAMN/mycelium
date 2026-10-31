@@ -25,7 +25,7 @@
 //!   frame by act tag, and the largest of each (LD1).
 //!
 //! CQ1 — `--court HEX` (a key or a hex prefix of it) asks one source's
-//! fiber, and `--reading NAME` one kind of reading: the hypha serves only
+//! fibre, and `--reading NAME` one kind of reading: the hypha serves only
 //! the prefix asked, and the console reads nothing else.
 
 use mycelium::observe::{self, Court, Memory, Reading, Source};
@@ -105,7 +105,7 @@ impl Ask<'_> {
 /// ASK, RENDER, EXIT. Exit 0 with a rendering, 2 where no hypha answered —
 /// the rendering then says why, so a `watch` shows the refusal in place.
 /// CQ1 — the question is the prefix the operator names; the hypha serves
-/// only that fiber.
+/// only that fibre.
 pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
     let (prefix, keep) = match ask.prefix() {
         Ok(p) => p,

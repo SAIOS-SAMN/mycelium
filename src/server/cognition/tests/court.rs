@@ -335,7 +335,7 @@ let one_pair = vec![(x.clone(), y.clone())];
 let rule = extract_rule(&one_pair, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour is a rule");
 let word = mint_sentence(&rule, &one_pair, &NoCrystal, 0).expect("it closes its own pair");
 let addr = word.address();
-// H1, 70.4 — separated: `"23"` is ONE two-hue body once hue is a fiber.
+// H1, 70.4 — separated: `"23"` is ONE two-hue body once hue is a fibre.
 let wider = vec![(x, y), (grid(&["100"]), grid(&["203"]))];
 
 let mut refusing = Court::new();

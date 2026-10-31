@@ -25,7 +25,7 @@
 //! - Two perceptions related by ONE transition on the chart are joined by an
 //!   edge of the meet complex carrying its rotor and carriage; the complex's
 //!   own fill classifies it (Filled, Congruent at its period, a class), and
-//!   `decide_neighbors` acts on the fill. That edge is the THOUGHT.
+//!   `decide_neighbours` acts on the fill. That edge is the THOUGHT.
 //! - Two perceptions related by SEVERAL transitions hold no one edge — none
 //!   is chosen (rule 15); each transition's classification is filed at its
 //!   class coordinate (`index_congruent`), so the congruences stand by class.
@@ -796,7 +796,7 @@ impl Contemplation {
     /// From the chart, one axis is peeled at a time — a prefix of the key is a
     /// coarser stratum (A21) — and the first stratum at which another held
     /// perception stands on a different chart is the DEEPEST SHARED ONE: the
-    /// chart's nearest neighbourhood, read as a keyed fibre (`fiber_at`), no
+    /// chart's nearest neighbourhood, read as a keyed fibre (`fibre_at`), no
     /// index added. The root, every body, is never read (law 3). Each body
     /// there is read against this perception's bodies where the two charts
     /// PART: at a Betti axis a surgery may carry one onto the other
@@ -807,8 +807,8 @@ impl Contemplation {
         let Some(here) = stalk::Invariant::from_key(chart) else { return true };
         let mut at = here.peel();
         while !at.0.is_empty() {
-            let near: Vec<(Vec<u8>, Vec<u8>)> = match self.by_chart.fiber_at(at.key().as_bytes()) {
-                Some(fiber) => fiber
+            let near: Vec<(Vec<u8>, Vec<u8>)> = match self.by_chart.fibre_at(at.key().as_bytes()) {
+                Some(fibre) => fibre
                     .filter(|(c, _)| c.as_slice() != chart)
                     .flat_map(|(c, members)| {
                         members
@@ -1095,7 +1095,7 @@ impl Contemplation {
         }
         let reopened = self.complex.coboundary_on_link(key, |verts| volume_of(&rems, verts));
         self.note_decohered(reopened, super::meet::Adjunct::Candidate);
-        self.decide_neighbors(key);
+        self.decide_neighbours(key);
     }
 
     /// A.10.1 — THE CONSOLIDATION GATE, before any thought is formed. The

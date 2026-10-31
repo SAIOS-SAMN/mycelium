@@ -103,7 +103,7 @@ fn record_cycle_refuses_unwitnessed_period() {
     let claimed = crate::transducer::element::TorsionCycle {
         generator: crate::transducer::element::Generator::Hue(vec![(1, 9)]),
         period: 8,
-        fibre: crate::transducer::element::FIBER_SPATIAL,
+        fibre: crate::transducer::element::FIBRE_SPATIAL,
         remainder: None,
     };
     assert_eq!(t.record_cycle(claimed), crate::transducer::element::Filed::Misspoken, "refused by name");

@@ -1083,7 +1083,7 @@ impl Mind {
     }
 
     /// The mind's working atlas: genome ∪ dialect ∪ the held forms' words,
-    /// each fiber member carrying its standing; the Held stratum is read
+    /// each fibre member carrying its standing; the Held stratum is read
     /// from the contemplation at the chart asked (24.1).
     pub(crate) fn working_atlas(&self) -> WorkingAtlas<'_> {
         self.epigenome.working_atlas_with(&self.contemplation)
@@ -1129,10 +1129,10 @@ impl Mind {
         promoted
     }
 
-    /// Working incidence: a non-empty fiber on the working atlas.
+    /// Working incidence: a non-empty fibre on the working atlas.
     #[cfg(test)]
     pub(crate) fn incident_chart(&self, c: &crate::transducer::stalk::Invariant) -> bool {
-        !self.working_atlas().fiber(c).is_empty()
+        !self.working_atlas().fibre(c).is_empty()
     }
 
     pub(crate) fn ideas_len(&self) -> usize {

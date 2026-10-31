@@ -55,14 +55,14 @@ impl Epigenome {
         // none), so a remainder with no ray has no producer.
         for (r, ray) in e.remainder_rays() {
             let k = r.index_key();
-            match self.remainder_fibers.get(&k) {
+            match self.remainder_fibres.get(&k) {
                 Some(a) if a == addr => keys.push(k),
                 Some(_) => self.remainders_coincident += 1,
                 None => {
                     if let Some(ray) = ray {
                         self.receive(addr, r, ray);
                     }
-                    self.remainder_fibers.insert(&k, addr.clone());
+                    self.remainder_fibres.insert(&k, addr.clone());
                     keys.push(k);
                 }
             }
@@ -94,7 +94,7 @@ impl Epigenome {
             return;
         }
         let prefix = Remainder::class_prefix(&r.class);
-        let standing: Vec<(Vec<u8>, Address)> = match self.remainder_fibers.fiber_at(&prefix) {
+        let standing: Vec<(Vec<u8>, Address)> = match self.remainder_fibres.fibre_at(&prefix) {
             Some(f) => f.map(|(k, a)| (k, a.clone())).collect(),
             None => Vec::new(),
         };
@@ -171,13 +171,13 @@ impl Epigenome {
         }
         if let Some(keys) = self.remainder_keys.remove(addr) {
             for k in keys {
-                self.remainder_fibers.remove(&k);
+                self.remainder_fibres.remove(&k);
             }
         }
         // Its re-fill marks leave with it: they stand under its address.
         let mut word = Vec::new();
         crate::transducer::address::put_key_bytes(&mut word, addr);
-        let marks: Vec<Vec<u8>> = match self.refilled.fiber_at(&word) {
+        let marks: Vec<Vec<u8>> = match self.refilled.fibre_at(&word) {
             Some(f) => f.map(|(k, _)| k).collect(),
             None => Vec::new(),
         };
@@ -191,7 +191,7 @@ impl Epigenome {
     #[cfg(test)]
     pub(crate) fn remainders_at(&self, at: &[Vec<u8>], class: &crate::transducer::sentence::ClassVector) -> Vec<Address> {
         let probe = Remainder { class: Box::new(class.clone()), at: at.to_vec(), answered: None };
-        match self.remainder_fibers.get(&probe.index_key()) {
+        match self.remainder_fibres.get(&probe.index_key()) {
             Some(a) => vec![a.clone()],
             None => Vec::new(),
         }
@@ -200,7 +200,7 @@ impl Epigenome {
     /// Remainders indexed.
     #[cfg(test)]
     pub(crate) fn remainders_len(&self) -> usize {
-        self.remainder_fibers.len()
+        self.remainder_fibres.len()
     }
 
     /// RM1 (c) — THE OPEN REMAINDERS OF A CLASS: one prefix read under κ,
@@ -210,8 +210,8 @@ impl Epigenome {
         class: &crate::transducer::sentence::ClassVector,
     ) -> Vec<(Address, Vec<Vec<u8>>, crate::transducer::alphabet::Rotor)> {
         let prefix = Remainder::class_prefix(class);
-        let Some(fiber) = self.remainder_fibers.fiber_at(&prefix) else { return Vec::new() };
-        let hits: Vec<(Vec<u8>, Address)> = fiber.map(|(k, a)| (k, a.clone())).collect();
+        let Some(fibre) = self.remainder_fibres.fibre_at(&prefix) else { return Vec::new() };
+        let hits: Vec<(Vec<u8>, Address)> = fibre.map(|(k, a)| (k, a.clone())).collect();
         let mut out = Vec::new();
         for (key, addr) in hits {
             let Some(chain) = Remainder::chain_of_key(&key) else { continue };

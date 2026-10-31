@@ -29,8 +29,8 @@ disallowed-methods = [
     # engine never picks silently by a scalar. It never limits a mind: a
     # comparison a mind's rule states (largest, rank, majority, in an order
     # it names, ties included) carries an #[expect] citing Concordance 1.10.
-    { path = "core::iter::Iterator::max", reason = "rule 4 (engine code): nothing is chosen silently by a scalar; read the fiber, or cite Concordance 1.10 for a comparison a mind states" },
-    { path = "core::iter::Iterator::min", reason = "rule 4 (engine code): nothing is chosen silently by a scalar; read the fiber, or cite Concordance 1.10 for a comparison a mind states" },
+    { path = "core::iter::Iterator::max", reason = "rule 4 (engine code): nothing is chosen silently by a scalar; read the fibre, or cite Concordance 1.10 for a comparison a mind states" },
+    { path = "core::iter::Iterator::min", reason = "rule 4 (engine code): nothing is chosen silently by a scalar; read the fibre, or cite Concordance 1.10 for a comparison a mind states" },
     { path = "core::iter::Iterator::max_by", reason = "rule 4 (engine code): nothing is chosen silently by a scalar" },
     { path = "core::iter::Iterator::min_by", reason = "rule 4 (engine code): nothing is chosen silently by a scalar" },
     { path = "core::iter::Iterator::max_by_key", reason = "rule 4 (engine code): nothing is chosen silently by a scalar" },

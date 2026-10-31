@@ -137,7 +137,7 @@ fn q(n: i64) -> Q {
 /// THE CENTRE OF AN `R × C` GRID WHERE THE SENSOR READS IT. In site indices
 /// the centre is `((R − 1)/2, (C − 1)/2)`; the sensor carries a
 /// compartment by its CENTRE, the site plus ½ on each grid axis
-/// (`element::carry_site_center`), so the index centre stands at
+/// (`element::carry_site_centre`), so the index centre stands at
 /// `(R − 1)/2 + ½ = R/2` in the coordinates the versor acts on. Exact.
 fn centre((rows, cols): (usize, usize)) -> Option<[Q; 2]> {
     let half = Q::new(num_bigint::BigInt::from(1), num_bigint::BigInt::from(2));

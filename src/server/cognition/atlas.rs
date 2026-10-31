@@ -273,8 +273,8 @@ impl Atlas {
         if from.origin != to.origin {
             return None;
         }
-        let fiber = self.ladder.fiber_at(&origin_key(to))?;
-        let n = fiber.filter(|(_, p)| p.h > from.h && p.h <= to.h).count();
+        let fibre = self.ladder.fibre_at(&origin_key(to))?;
+        let n = fibre.filter(|(_, p)| p.h > from.h && p.h <= to.h).count();
         u64::try_from(n).ok()
     }
 }
@@ -597,9 +597,9 @@ impl Court {
     /// throat with its two ends' places read off its frames — every place
     /// through the one mapped-place reading. Sealing nothing.
     pub fn map_reading(&self, domain: &[u8; 32]) -> Vec<MapEntry> {
-        let Some(fiber) = self.atlas.records.fiber_at(domain) else { return Vec::new() };
+        let Some(fibre) = self.atlas.records.fibre_at(domain) else { return Vec::new() };
         let place = |p: &Place| self.mapped_place(domain, p).and_then(|m| m.place);
-        fiber
+        fibre
             .map(|(_, held)| {
                 let places = match &held.record {
                     MapRecord::Mouth { place: p, .. } => place(p).into_iter().collect(),

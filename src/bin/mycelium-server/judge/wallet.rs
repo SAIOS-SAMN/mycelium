@@ -31,7 +31,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     }
     if let Some(s) = decode_stake(&frame.body) {
         let body = match crate::held::held!(door.kernel) {
-            // Reads the staker's own claims (a fiber), constant per claim.
+            // Reads the staker's own claims (a fibre), constant per claim.
             Ok(mut h) => encode_stake_reply(&h.run(|k, _| k.stake(&s))),
             Err(_) => return,
         };

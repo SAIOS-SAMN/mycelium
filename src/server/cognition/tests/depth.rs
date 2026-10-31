@@ -80,7 +80,7 @@ fn depth_of_counts_two_signers_as_two() {
     );
 }
 
-/// A citation of a word admitted at `at`, its fiber the root chart.
+/// A citation of a word admitted at `at`, its fibre the root chart.
 fn cite(at: crate::chronometry::Stamp) -> crate::chronometry::Cite {
     crate::chronometry::Cite::Word { chart: crate::transducer::stalk::Invariant::default(), class: None, at }
 }

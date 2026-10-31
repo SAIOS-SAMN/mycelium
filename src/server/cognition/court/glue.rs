@@ -440,7 +440,7 @@ impl Court {
         let asg = element::assignment(spoken.sub());
         if let Some((rep, v)) = placed {
             if let Some(w) = self.word_mut(&rep) {
-                w.update(|e| e.record_dislocation(asg.clone(), v, element::FIBER_SPATIAL));
+                w.update(|e| e.record_dislocation(asg.clone(), v, element::FIBRE_SPATIAL));
                 self.touch_at(&rep);
             }
         }
@@ -450,7 +450,7 @@ impl Court {
             self.basis_push(spoken.clone(), peer, budget);
         }
         if let Some(w) = self.word_mut(&addr) {
-            w.update(|e| e.record_dislocation(asg, element::identity_versor(), element::FIBER_SPATIAL));
+            w.update(|e| e.record_dislocation(asg, element::identity_versor(), element::FIBRE_SPATIAL));
             self.touch_at(&addr);
         }
         self.append_step(crate::chronometry::ActKind::Install, &addr, peer);
@@ -497,7 +497,7 @@ impl Court {
     }
 
     /// [`Court::confirm_peer_holds`] ON THE HOLD'S STROKE (78.153b): one read
-    /// per stratum the peer named, before its ruled fiber is read and rooted.
+    /// per stratum the peer named, before its ruled fibre is read and rooted.
     /// A stroke spent ends the confirmation at the stratum it reached, and
     /// the peer's next digest resumes PAST it (`confirm_cursor`, by peer,
     /// volatile), wrapping once round — so every stratum is confirmed in
@@ -517,13 +517,13 @@ impl Court {
         };
         let (reached, rest) = remote.split_at(from);
         // index: the peer's digest charts, from the cursor round once; members
-        // from ruled fiber
+        // from ruled fibre
         for d in rest.iter().chain(reached) {
             if !budget.spend() {
                 return;
             }
             self.confirm_cursor.insert(peer, d.inv.key().as_bytes().to_vec());
-            let members = self.ruled.fiber(&d.inv);
+            let members = self.ruled.fibre(&d.inv);
             if crate::transducer::sheaf::stratum_root(&members) == d.root {
                 let held: Vec<Vec<u8>> = members.into_iter().filter(|a| self.provisional.contains(a)).collect();
                 for addr in held {
@@ -772,7 +772,7 @@ fn cover_vertices(
     verts.insert(self_id, ());
     verts.insert(peer, ());
     for lane in crate::network::nerve::occupied_lanes(&spoken.magnitude()) {
-        for v in cover.fiber(lane, inv) {
+        for v in cover.fibre(lane, inv) {
             verts.insert(v, ());
         }
     }

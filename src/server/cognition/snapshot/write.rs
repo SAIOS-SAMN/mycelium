@@ -77,7 +77,7 @@ struct Refused {
     unruled: u64,
     /// Words whose citation cannot be written (a class key at its wall).
     unciteable: u64,
-    /// Two words at one citation — one fiber, one admitting act.
+    /// Two words at one citation — one fibre, one admitting act.
     coincident: u64,
     /// Per-word fields on a word no node holds, by carrier: awards,
     /// deflations, hot fields, cold fields, rank closures — named apart, so
@@ -314,7 +314,7 @@ impl Court {
     }
 
     /// T1 — THE WORDS: every word this court holds on any row, one node at
-    /// its citation — its fiber and the act that admitted it — the element
+    /// its citation — its fibre and the act that admitted it — the element
     /// held once with the rows it stands on, and each per-word field a leaf.
     fn put_words(&self, out: &mut Vec<u8>, refused: &mut Refused) {
         let mut drafts: Keyed<Draft> = Keyed::new();

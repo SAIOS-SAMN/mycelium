@@ -202,7 +202,7 @@ pub struct MarketView {
     /// The last sealed rank regardless of currency — the memo a fresh
     /// measurement reuses closures from at the same basis generation.
     pub prior: std::sync::Arc<Rank>,
-    /// Listings keyed by chart, so rank_over's moved set is a fiber.
+    /// Listings keyed by chart, so rank_over's moved set is a fibre.
     pub chart_listings: std::sync::Arc<crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>>,
 }
 

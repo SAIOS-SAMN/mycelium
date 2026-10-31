@@ -31,14 +31,14 @@ pub struct Complex {
     pub(crate) remainder: Keyed<()>,
     /// Congruent fills keyed by the orbit's whole class key (15.4, rule 6).
     /// Court torsion reads this by the rotor's conjugacy key, which is that
-    /// key's depth-one stratum, so the read is a fiber; remember and fill
+    /// key's depth-one stratum, so the read is a fibre; remember and fill
     /// write it.
     pub(crate) congruent: Keyed<(Rotor, u32)>,
     /// Congruent fills whose carriage had no canonical ray: not filed.
     pub(crate) congruent_unfiled: u64,
     /// THE ORBITS OF EACH SIMPLEX, one per chord, each at its OWN
     /// coordinate: `simplex_key ++ vertex_i ++ vertex_j` (law 2, A21), so
-    /// a simplex's orbits are the fiber under its key and a reader moves to
+    /// a simplex's orbits are the fibre under its key and a reader moves to
     /// them rather than reading a list through.
     ///
     /// One `Ω` per chord and never the product of the `Ω`s. 11.3 holds each `H¹`
@@ -85,7 +85,7 @@ pub struct Complex {
     /// (`cauterize_frozen`) the moment one is shed. Volatile.
     pub(crate) frozen: Keyed<Simplex>,
     /// The frozen classes standing on each vertex, keyed by the vertex
-    /// (length-prefixed) and then the class's key: one fiber per vertex, so
+    /// (length-prefixed) and then the class's key: one fibre per vertex, so
     /// a vertex shed reads its frozen classes and nothing else (rule 1).
     pub(crate) frozen_on: Keyed<()>,
     /// 78.112 H7b — THE TORSION HEARING WOUND AT EACH VERTEX: the crossings of
@@ -115,7 +115,7 @@ pub enum Cut {
 
 /// The coordinate of ONE orbit: the simplex it closes on, then the two
 /// vertices its chord runs between, each written out (A21). A prefix of it
-/// is the simplex, which is what makes `orbits_of` a fiber read.
+/// is the simplex, which is what makes `orbits_of` a fibre read.
 pub(crate) fn orbit_key(simplex: &[u8], i: &[u8], j: &[u8]) -> crate::transducer::address::Address {
     let mut buf = simplex.to_vec();
     crate::transducer::address::put_key_bytes(&mut buf, i);
@@ -356,12 +356,12 @@ impl Complex {
     /// writes the rotor's conjugacy invariants FIRST — proven, not
     /// assumed, by `class_key_leads_with_rotor_class`
     /// — so the rotor class a court asks by is this key's depth-one
-    /// stratum and the ask is a fiber read under it.
+    /// stratum and the ask is a fibre read under it.
     ///
     /// It filed at the rotor class alone. Every congruent orbit of one
     /// conjugacy class landed on ONE key, so the last writer won and every
     /// finer coordinate of the orbits before it was unreachable: a whole
-    /// fiber stored as its most recent member.
+    /// fibre stored as its most recent member.
     ///
     /// AND WHERE THE ORBIT STANDS UNDER ITS CLASS (78.49(4)): the class key,
     /// then the canonical ray of the class vector's carriage — where the turn
@@ -383,25 +383,25 @@ impl Complex {
         }
     }
 
-    /// THE CONGRUENT ORBITS UNDER A CLASS COORDINATE — a fiber read, not a
+    /// THE CONGRUENT ORBITS UNDER A CLASS COORDINATE — a fibre read, not a
     /// lookup. `class` may be a rotor's conjugacy key (the depth-one
     /// stratum) or a whole class key; either way the answer is every filed
     /// orbit standing at or below that coordinate, at whatever finer
     /// coordinates they hold. Empty when the chart holds none.
     pub fn congruent(&self, class: &[u8]) -> Vec<(Rotor, u32)> {
-        match self.congruent.fiber_at(class) {
-            Some(fiber) => fiber.map(|(_, v)| v.clone()).collect(),
+        match self.congruent.fibre_at(class) {
+            Some(fibre) => fibre.map(|(_, v)| v.clone()).collect(),
             None => Vec::new(),
         }
     }
 
-    /// THE ORBITS ON ONE SIMPLEX — the fiber under its key. Each is one
+    /// THE ORBITS ON ONE SIMPLEX — the fibre under its key. Each is one
     /// chord's `Ω`, classified on its own, so a simplex whose 1-skeleton
     /// closes two independent orbits answers with two classes and not with
     /// one composite that is the holonomy of neither.
     pub fn orbits_of(&self, simplex: &[u8]) -> Vec<Fill> {
-        match self.orbits.fiber_at(simplex) {
-            Some(fiber) => fiber.map(|(_, f)| f.clone()).collect(),
+        match self.orbits.fibre_at(simplex) {
+            Some(fibre) => fibre.map(|(_, f)| f.clone()).collect(),
             None => Vec::new(),
         }
     }
@@ -584,7 +584,7 @@ impl Complex {
     /// simplices by these keys and never clones a rotor.
     pub fn link_of(&self, vertex: &[u8]) -> Vec<Vec<u8>> {
         let mut out = Vec::new();
-        // index: keyed fiber of star(vertex)
+        // index: keyed fibre of star(vertex)
         for (k, _) in self.star.link(vertex) {
             if self.by_key.contains(&k) {
                 out.push(k);
@@ -662,8 +662,8 @@ impl Complex {
             }
             // A dropped simplex's orbits leave with it: they stand at
             // coordinates its key prefixes, and nothing else reads them.
-            let orbits: Vec<Vec<u8>> = match self.orbits.fiber_at(&k) {
-                Some(fiber) => fiber.map(|(ok, _)| ok).collect(),
+            let orbits: Vec<Vec<u8>> = match self.orbits.fibre_at(&k) {
+                Some(fibre) => fibre.map(|(ok, _)| ok).collect(),
                 None => Vec::new(),
             };
             for ok in orbits {

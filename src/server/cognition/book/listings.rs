@@ -308,7 +308,7 @@ impl Court {
         };
         if word.is_sentence() {
             let inv = crate::transducer::stalk::invariant_of(&word);
-            let members: Vec<Vec<u8>> = self.stalks.fiber(&inv).iter().filter(|&a| a != addr).cloned().collect();
+            let members: Vec<Vec<u8>> = self.stalks.fibre(&inv).iter().filter(|&a| a != addr).cloned().collect();
             if let Some(na) = crate::transducer::sentence::from_element_form(&word) {
                 let mut survivor = crate::transducer::address::Address::from_bytes(addr);
                 for sib in members {
@@ -481,7 +481,7 @@ impl Court {
     /// forms that cite what this one cites: a keyed read at each address
     /// `new` names, never a whole-carrier read.
     ///
-    /// THE STRATUM IS NOT THE SCOPE. This read `stalks.fiber(&inv)` — every
+    /// THE STRATUM IS NOT THE SCOPE. This read `stalks.fibre(&inv)` — every
     /// member of the stratum — which was invisibly cheap only because the
     /// chart was the object serialised and every form was a stratum of one.
     /// With a chart that is the rank and the orbit classes (A21 §2), a tree
@@ -705,7 +705,7 @@ impl Court {
             // projection of what the form holds — while `candidates_for`
             // asks under the charts an orbit's face vertices act on, which
             // are body charts leading `1`. No prefix bridges the two, and
-            // `on_axis_of` peels rather than following a fiber's prefix, so
+            // `on_axis_of` peels rather than following a fibre's prefix, so
             // everything this court filed was unreachable by the one
             // reader of the index. `admit_words_acting` is the same
             // admission the voice makes (L8r); a connection carries no

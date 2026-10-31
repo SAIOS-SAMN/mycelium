@@ -41,14 +41,14 @@ impl Court {
         }
     }
 
-    /// The SELECTION-FIBER critical pairs awaiting the court's anchor
+    /// The SELECTION-FIBRE critical pairs awaiting the court's anchor
     /// refinement (7c) — (word address, Q_anchor, scene). Draining is the
     /// court's move; the queue is bounded and in-memory.
     pub fn anchor_mismatch_dockets(&self) -> &[crate::transducer::anchor::AddressedEvidence] {
         &self.anchor_mismatches
     }
 
-    /// The selection fiber's birth evidence (word address, footprint, scene) —
+    /// The selection fibre's birth evidence (word address, footprint, scene) —
     /// what the court's refinement derives π over.
     pub fn anchor_evidence(&self) -> &[crate::transducer::anchor::AddressedEvidence] {
         &self.anchor_evidence
@@ -76,7 +76,7 @@ impl Court {
     /// EC1 — A RETIREMENT IS A RULING, sealed as `Ruling(Retired)` citing
     /// what a court admitting its receipt needs to replay it (78.33, as
     /// ruled): the retired word as it stood, then the rewrite it rests on
-    /// and every word that speaks for it, each by its fiber and admitting
+    /// and every word that speaks for it, each by its fibre and admitting
     /// stamp. A cite this court cannot write — a word no act admitted — is
     /// not invented. A word left on no row takes its stamp with it.
     pub(crate) fn seal_retirement(
@@ -177,7 +177,7 @@ impl Court {
     }
 
     /// PUNCTURE held words from a verified utterance's carried bodies: the
-    /// fiber deepens on what the hypha verified. A deepened basis moves the
+    /// fibre deepens on what the hypha verified. A deepened basis moves the
     /// basis generation so the language snapshot refreshes.
     pub fn puncture_from(&mut self, cites: &[crate::anastome::dialogue::CiteWire]) -> usize {
         let deepened = crate::transducer::sentence::puncture_from(&mut self.basis, cites);

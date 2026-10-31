@@ -431,12 +431,12 @@ impl Complex {
         Frozen::Held(fill)
     }
 
-    /// The frozen classes standing on `v`: one keyed fiber, never a read of
+    /// The frozen classes standing on `v`: one keyed fibre, never a read of
     /// the vacuum.
     pub fn frozen_on(&self, v: &[u8]) -> Vec<Vec<u8>> {
         let mut prefix = Vec::new();
         crate::transducer::address::put_key_bytes(&mut prefix, v);
-        match self.frozen_on.fiber_at(&prefix) {
+        match self.frozen_on.fibre_at(&prefix) {
             Some(f) => f.filter_map(|(k, ())| k.get(prefix.len()..).map(<[u8]>::to_vec)).collect(),
             None => Vec::new(),
         }

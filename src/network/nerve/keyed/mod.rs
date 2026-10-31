@@ -1,7 +1,7 @@
 // A13, A21 — THE KEYED RELATION: a radix trie over variable-length A21
 // keys, and the walks that read it.
 //
-//! A key is the object's own coordinates written out, so a fiber, a link,
+//! A key is the object's own coordinates written out, so a fibre, a link,
 //! a cursor and a shell are reads of structure rather than searches over a
 //! list. `meet_nodes` intersects two relations by following both along the
 //! trajectory the two relations' shared coordinates trace, together.

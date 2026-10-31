@@ -86,7 +86,7 @@ pub struct Sentence {
     /// PUNCTURES: bodies a held word carries by shape under a gauge the
     /// word does not yet hold — (word, versor, the word's links under the
     /// body's own transitions). Spoken as sections of the word, not as new
-    /// words: the fiber deepens instead of the vocabulary widening.
+    /// words: the fibre deepens instead of the vocabulary widening.
     pub punctures: Vec<Puncture>,
     /// HELD CITES: bodies a held form's word reconstructs (24.1), one per
     /// body, each derived at the body's chart when the reading asked.
@@ -99,7 +99,7 @@ pub struct Sentence {
 
 impl Sentence {
     /// Closure: every body spoken by held words as held, nothing left over
-    /// and no fiber to deepen.
+    /// and no fibre to deepen.
     pub fn is_closed(&self) -> bool {
         self.residual.is_empty() && self.punctures.is_empty()
     }
@@ -118,7 +118,7 @@ impl Sentence {
     }
 
     /// What the language does not yet hold: the residual, together with the
-    /// bodies spoken only as punctures — novelty in the fiber is novelty.
+    /// bodies spoken only as punctures — novelty in the fibre is novelty.
     /// Measured as the replay of the citations alone over the chain.
     pub fn open_at<'a>(&self, word_at: &impl Fn(&[u8]) -> Option<&'a Element>, chain: &[Link]) -> Vec<Link> {
         match self.punctures.is_empty() {
@@ -130,7 +130,7 @@ impl Sentence {
 
 /// PUNCTURE the held words a sentence's carried bodies name: a carried body
 /// on a word's own support under transitions the word does not yet hold
-/// becomes a section of that word. Returns how many fibers deepened. The
+/// becomes a section of that word. Returns how many fibres deepened. The
 /// receiving side of speech: the hearer's language deepens on what it
 /// verified, never on what it was told.
 pub fn puncture_from(
@@ -372,7 +372,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<Vec<(u8, u
     let landed: Vec<(u8, u8)> = pos
         .iter()
         .filter_map(|&(wr, wc)| {
-            let p = element::carry_center(v, wr, wc, 0)?;
+            let p = element::carry_centre(v, wr, wc, 0)?;
             let (tr, tc, tk) = element::site_of(&p)?;
             if tk != 0 {
                 return None;
@@ -387,7 +387,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<Vec<(u8, u
     }
     for assignment in word.assignments_by_profile(&element::gauge_key(&landed)) {
         let ok = pos.iter().zip(&assignment).all(|(&(wr, wc), &(wb, wa))| {
-            let Some(p) = element::carry_center(v, wr, wc, 0) else { return true };
+            let Some(p) = element::carry_centre(v, wr, wc, 0) else { return true };
             // A centre off the base, or off the section's frame, lands on
             // no site to disagree with.
             let Some((tr, tc, tk)) = element::site_of(&p) else { return true };
@@ -431,7 +431,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Ve
     }
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
-            let Some(p) = element::carry_center(v, wr, wc, 0) else { continue };
+            let Some(p) = element::carry_centre(v, wr, wc, 0) else { continue };
             let Some((tr, tc, tk)) = element::site_of(&p) else { continue };
             if tk != 0 {
                 continue;

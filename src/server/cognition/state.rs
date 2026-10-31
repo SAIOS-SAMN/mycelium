@@ -22,13 +22,13 @@ pub struct Court {
     /// Empty-sub group words by M1 action key, written on admit.
     pub(crate) by_action: crate::network::nerve::Keyed<crate::transducer::address::Address>,
     /// Chart+footprint → addresses on that base, written on admit.
-    /// same_base reads the canonical member; condense reads the fiber.
+    /// same_base reads the canonical member; condense reads the fibre.
     pub(crate) by_footprint: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// The discoverer of each basis germ, keyed by the word's address —
     /// retire must not shift a parallel Vec.
     pub(crate) discoverers: crate::network::nerve::Keyed<[u8; 32]>,
     /// The stalk space over `basis` (index-aligned): congruence lookup on
-    /// the orbit quotient selects the fiber over a support's invariant and
+    /// the orbit quotient selects the fibre over a support's invariant and
     /// runs the exact orbit test there. Measured from the basis, never
     /// persisted; every basis mutation passes through `basis_push`,
     /// `basis_remove`, `basis_clear` so the alignment holds. Arc so a
@@ -260,7 +260,7 @@ pub struct Court {
     /// fetch). Dropped when confirm_peer_holds sees that root move.
     pub(crate) heard: crate::network::nerve::Keyed<(Vec<u8>, Vec<u8>)>,
     /// Heard addresses keyed by the chart they were heard under, so the
-    /// two readers that want one chart's heard addresses read a fiber
+    /// two readers that want one chart's heard addresses read a fibre
     /// instead of the whole set — as `chart_listings` is to listings.
     ///
     /// `fetch_have` unioned ALL of `heard` into every chart's have-list,
@@ -353,22 +353,22 @@ pub struct Court {
     /// the same tick, so the close was withheld (78.23 as amended). Since
     /// boot.
     pub(crate) withheld: u64,
-    /// LD3-a — THE WORDS BY FIBER, AT RUNTIME: T1's own key — a word's
+    /// LD3-a — THE WORDS BY FIBRE, AT RUNTIME: T1's own key — a word's
     /// `Cite::Word{chart, class, at}` written by its `put_canonical` — to
     /// the word's address, filed where `admitted_at` is filed and rebuilt
-    /// from T1 at restore. A prefix read by `chart‖class` is the fiber read.
-    pub(crate) word_fibers: crate::network::nerve::Keyed<crate::transducer::address::Address>,
-    /// Each admitting stamp's fiber key, so a word that leaves its last row
-    /// takes its fiber entry with it once its element is gone.
-    pub(crate) fiber_key_at: crate::network::nerve::Keyed<Vec<u8>>,
+    /// from T1 at restore. A prefix read by `chart‖class` is the fibre read.
+    pub(crate) word_fibres: crate::network::nerve::Keyed<crate::transducer::address::Address>,
+    /// Each admitting stamp's fibre key, so a word that leaves its last row
+    /// takes its fibre entry with it once its element is gone.
+    pub(crate) fibre_key_at: crate::network::nerve::Keyed<Vec<u8>>,
     /// RM1, 78.37(4) — THE REMAINDERS BY WHERE THEY WERE PERCEIVED: the
     /// residue's chart ‖ κ → the word whose torsion record carries it,
-    /// derived from the records where a word is filed at its fiber and at
-    /// restore (the word_fibers pattern); each word's keys; each refusal of a
+    /// derived from the records where a word is filed at its fibre and at
+    /// restore (the word_fibres pattern); each word's keys; each refusal of a
     /// Torse mint by its own name — the record refused the remainder, nothing
     /// priced it, the mint refused it, the book did not take it — and
     /// remainders coinciding with one standing (one per class at a chart).
-    pub(crate) remainder_fibers: crate::network::nerve::Keyed<crate::transducer::address::Address>,
+    pub(crate) remainder_fibres: crate::network::nerve::Keyed<crate::transducer::address::Address>,
     pub(crate) remainder_keys: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
     pub(crate) remainders_refused: u64,
     pub(crate) remainders_past_carrier: u64,
@@ -393,7 +393,7 @@ pub struct Court {
     /// simplex written Filled, the rewrite's remainder answered, the pressure
     /// minted under POUW), and refused by why.
     pub(crate) refills: super::court::fills::RefillTally,
-    /// THE STAMP ALIASES filed on a word: the peer admitting stamps a fiber
+    /// THE STAMP ALIASES filed on a word: the peer admitting stamps a fibre
     /// read located at this word (`held_at` entries beside its own), dropped
     /// with the word. Re-derived at restore from the ledger's peer nodes.
     pub(crate) aliases: crate::network::nerve::Keyed<Vec<crate::chronometry::Stamp>>,
@@ -632,7 +632,7 @@ pub struct Court {
     pub(crate) refine_cursor: Option<Vec<u8>>,
     /// This hypha's cover, admitted in write_field; own_cover_charts reads it.
     pub(crate) own_cover: crate::network::nerve::Cover,
-    /// Listings keyed by chart, so rank_over's moved set is a fiber.
+    /// Listings keyed by chart, so rank_over's moved set is a fibre.
     pub(crate) chart_listings: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Ruled addresses beside the ruled cover trie.
     pub(crate) ruled_addrs: crate::network::nerve::Keyed<()>,
@@ -657,12 +657,12 @@ pub struct Court {
     pub(crate) lane_listings: [crate::network::nerve::Keyed<()>; 4],
     /// Anchor evidence membership keyed by address+footprint.
     pub(crate) evidence_at: crate::network::nerve::Keyed<()>,
-    /// SELECTION-FIBER CRITICAL PAIRS (Step 7): Q_anchor residuals — a word's
+    /// SELECTION-FIBRE CRITICAL PAIRS (Step 7): Q_anchor residuals — a word's
     /// substance matched a defect but its π refused the support. (word address,
     /// the symmetric difference, the scene it arose in). The court's admission
     /// docket refines these into rebound anchors. Bounded; in-memory work queue.
     pub(crate) anchor_mismatches: Vec<crate::transducer::anchor::AddressedEvidence>,
-    /// BIRTH EVIDENCE for the selection fiber: (word address, the footprint it
+    /// BIRTH EVIDENCE for the selection fibre: (word address, the footprint it
     /// spoke on, the scene) — every germination and every witnessed placement
     /// deposits one; the court's refinement derives π over the accumulated
     /// family (one evidence never binds). Bounded; in-memory.
@@ -1020,7 +1020,7 @@ impl Court {
                 // rulings it hears.
                 let mut budget = self.physics.stroke();
                 // LD3-a: a word the peer's act admitted, located here by its
-                // fiber where exactly one word stands on it.
+                // fibre where exactly one word stands on it.
                 self.alias_admitting(r, &mut budget);
                 self.settle_own_attestation(r);
                 // EC1: a peer's ruling applies at the node that admits its

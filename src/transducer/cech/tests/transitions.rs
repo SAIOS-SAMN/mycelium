@@ -78,7 +78,7 @@ fn transition_between_sentences_answers_agreed_rotor() {
     // AND THE ELEMENT CARRYING IT IS NOT THE IDENTITY ELEMENT: `is_identity`
     // reads the axes, and this transition has a spatial axis though it has
     // no versor, so `glue_fetched`'s identity arm does not discard it.
-    assert_eq!(g.axes(), vec![crate::transducer::element::FIBER_SPATIAL]);
+    assert_eq!(g.axes(), vec![crate::transducer::element::FIBRE_SPATIAL]);
     assert!(!g.is_identity(), "a turn the sensor cannot see is still a turn");
 
     // A FORM WHOSE VERTICES DISAGREE HAS NO ONE ROTOR, and says so rather
@@ -322,7 +322,7 @@ fn congruent_is_read_by_class_key() {
     c.file_congruent(v(1), v(2), q.clone(), 4);
     // The index is keyed by the orbit's WHOLE class key and asked here by
     // the rotor's conjugacy key, which is that key's depth-one stratum:
-    // the answer is the fiber under it, holding the one orbit filed.
+    // the answer is the fibre under it, holding the one orbit filed.
     let got = c.congruent(ck.as_bytes());
     let [(rotor, ell)] = got.as_slice() else {
         panic!("one Congruent orbit stands under the 90° turn's conjugacy class, got {got:?}")

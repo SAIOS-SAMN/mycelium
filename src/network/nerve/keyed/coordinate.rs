@@ -112,7 +112,7 @@ pub trait Coordinate: Eq + Clone + std::fmt::Debug + Send + Sync + 'static {
 /// A fibre read follows the prefix of a coarse coordinate — every section over one
 /// chart, every member of one class — and that is only meaningful where
 /// the coarse system's bytes are genuinely an opening segment of the fine
-/// system's. Declaring it is what makes `fiber_over` a stratum read rather
+/// system's. Declaring it is what makes `fibre_over` a stratum read rather
 /// than a byte-prefix coincidence.
 pub trait Stratum<Fine: Coordinate>: Coordinate {
     /// THE OPENING BYTES OF A FINE KEY THAT THIS COARSE COORDINATE FIXES.

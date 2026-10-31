@@ -117,7 +117,7 @@ fn solve_gauge_two_chords_return_two_cocycles() {
 
 /// THE ORBITS REACH THE COMPLEX, EACH AT ITS OWN COORDINATE. A degree-2
 /// simplex whose chord disagrees files that chord's `Ω` under
-/// `simplex_key ++ vertex_i ++ vertex_j`, so `orbits_of` is a fiber read
+/// `simplex_key ++ vertex_i ++ vertex_j`, so `orbits_of` is a fibre read
 /// on the simplex and `classes()` carries what it holds. The simplex's
 /// own fill is untouched: the orbits are filed BESIDE it.
 #[test]

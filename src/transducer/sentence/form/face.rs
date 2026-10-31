@@ -15,8 +15,8 @@ pub(crate) fn overlaps_leaving(faces: &Faces, v: &coord::VertexAt) -> Vec<coord:
     let mut prefix = vec![1u8];
     crate::transducer::address::put_key_bytes(&mut prefix, v.encode().as_bytes());
     match v {
-        coord::VertexAt::Frame => faces.fiber_at(&[0u8]),
-        _ => faces.fiber_at(&prefix),
+        coord::VertexAt::Frame => faces.fibre_at(&[0u8]),
+        _ => faces.fibre_at(&prefix),
     }
     .into_iter()
     .flatten()

@@ -311,7 +311,7 @@ impl Mind {
             // the landing's stroke: a page past it is absorbed, and its glue
             // read on a later fetch.
             let epigenome = &self.epigenome;
-            let representative = epigenome.atlas.fiber(&inv).iter().filter_map(|a| epigenome.word_at(a)).fold(None, |least: Option<&Element>, held| {
+            let representative = epigenome.atlas.fibre(&inv).iter().filter_map(|a| epigenome.word_at(a)).fold(None, |least: Option<&Element>, held| {
                 if held.address() == fetched.address() || held.axes().is_empty() {
                     return least;
                 }

@@ -16,7 +16,7 @@ use crate::transducer::sentence::{
 fn voice_family() -> Vec<TrainPair> {
     // H1, 70.4 — two bodies are two SEPARATED regions, not two touching
     // colours: `"11200"` is one body carrying two hues once hue moves to
-    // the fiber. The gap restores the fixture's intent, two bodies both
+    // the fibre. The gap restores the fixture's intent, two bodies both
     // translating by `+2`.
     vec![(digits(&["1100200"]), digits(&["0011002"]))]
 }

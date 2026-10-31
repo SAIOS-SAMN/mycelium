@@ -103,7 +103,7 @@ impl Contemplation {
     /// keeps both and writes each into the other's horizon. Remainder volume
     /// is what two thoughts share unexplained — a 2-cell's measure, never
     /// the edge's decision: under a volume gate a perfect match never merged.
-    pub(crate) fn decide_neighbors(&mut self, key: &[u8]) {
+    pub(crate) fn decide_neighbours(&mut self, key: &[u8]) {
         let keys = self.complex.link(key, 1);
         for ck in keys {
             let Some((fill, vertices)) = self.complex.simplex(&ck).map(|c| (c.fill.clone(), c.vertices.clone())) else {
@@ -170,7 +170,7 @@ impl Contemplation {
                         let cycle = crate::transducer::element::TorsionCycle {
                             generator: crate::transducer::element::Generator::Holonomy(g),
                             period: u64::from(ell),
-                            fibre: crate::transducer::element::FIBER_SPATIAL,
+                            fibre: crate::transducer::element::FIBRE_SPATIAL,
                             remainder: at.map(|at| crate::transducer::element::Remainder { class: kappa, at, answered: None }),
                         };
                         // STD1 (PH1) — the claim is the Torse's one yield,

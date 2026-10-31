@@ -301,7 +301,7 @@ impl Rotor {
     ///
     /// ONE PRODUCER, SO THE STRATA STAY ALIGNED (law 12). `class_key` is
     /// the `Conjugacy` segment of `ClassVector::class_schema` — the
-    /// depth-one stratum that `Complex::congruent` reads as a FIBER — and
+    /// depth-one stratum that `Complex::congruent` reads as a FIBRE — and
     /// `holonomy_key` is the same bytes declared as a coordinate. Moving
     /// one of the three and not the others is what desynchronised the
     /// coarse coordinate from the fine one; they are all this function.
@@ -414,7 +414,7 @@ impl Rotor {
     /// coordinate, and those bytes are read in `Cl(4,1)` because
     /// [`Rotor::class_invariants`] is. One producer feeds the conjugacy
     /// segment, the transport class and this, so the coarse stratum stays
-    /// a byte prefix of the fine one and `Complex::congruent`'s fiber read
+    /// a byte prefix of the fine one and `Complex::congruent`'s fibre read
     /// keeps working.
     ///
     /// §10 — IT IS A LAYOUT CHANGE. Every filed orbit, opened axis and

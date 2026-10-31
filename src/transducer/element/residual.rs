@@ -1,7 +1,7 @@
-// A5, 16.11 — THE RESIDUAL: the centered coboundary chain and the words
+// A5, 16.11 — THE RESIDUAL: the centred coboundary chain and the words
 // built from one.
 //
-//! A5 centers a chain to its minimum corner and sorts it, so the same
+//! A5 centres a chain to its minimum corner and sorts it, so the same
 //! deformation at any position is one substance: that canonicalisation, the
 //! constructors that read a chain, and the listing key naming it in a frame.
 
@@ -11,7 +11,7 @@ use num_bigint::BigInt;
 use num_traits::One;
 use super::*;
 
-/// The positions skeleton of a centered chain (its base geometry).
+/// The positions skeleton of a centred chain (its base geometry).
 pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
     chain.iter().map(|(r, c, _, _)| (*r, *c)).collect()
 }
@@ -21,15 +21,15 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
 /// eye measured, and every "rotation"/"recolour" the mesh will ever speak is a
 /// germinated pattern, never a named solver.
 ///
-/// The chain is CENTERED — the changed sites framed with the sites' min-corner at the
+/// The chain is CENTRED — the changed sites framed with the sites' min-corner at the
 /// origin (the substrate's transposition projection, hypha-side per the ruling) —
 /// so the same deformation at any position is ONE word, while geometry (the
 /// relative offsets between changed sites) is preserved exactly: equal-tally,
-/// different-geometry residuals stay distinct. The word/identity IS the centered
+/// different-geometry residuals stay distinct. The word/identity IS the centred
 /// chain; the antisymmetric hue tally is kept only as the δ-algebra lens.
 /// A5: translate min-corner to origin, sort, dedup. None when two
 /// distinct transitions occupy one site.
-/// A5'S CHAIN: centered on its min corner, sorted, and carrying at most
+/// A5'S CHAIN: centred on its min corner, sorted, and carrying at most
 /// one transition per site. [`canonical_chain`] is its only constructor,
 /// so a value of this type IS the proof A5 accepted the chain, and every
 /// reading that needs one takes it by type rather than re-deriving it.
@@ -37,8 +37,8 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
 pub struct CanonicalChain(Vec<(i64, i64, u8, u8)>);
 
 impl CanonicalChain {
-    /// The links left when the named sites are dropped, re-centered. Total:
-    /// a subset of a conflict-free set is conflict-free, and centering and
+    /// The links left when the named sites are dropped, re-centred. Total:
+    /// a subset of a conflict-free set is conflict-free, and centring and
     /// sorting are total.
     pub fn without(&self, drop: &[(i64, i64)]) -> CanonicalChain {
         let kept: Vec<(i64, i64, u8, u8)> = self
@@ -47,7 +47,7 @@ impl CanonicalChain {
             .copied()
             .filter(|(r, c, _, _)| !drop.contains(&(*r, *c)))
             .collect();
-        CanonicalChain(center(&kept))
+        CanonicalChain(centre(&kept))
     }
 
     /// Both chains' links. `None` where the two name one site with
@@ -167,7 +167,7 @@ fn corner_translator(links: &[(i64, i64, u8, u8)]) -> Versor {
     clippy::disallowed_methods,
     reason = "rule 4 — the min corner is the chain's extent, content: A5 translates it to the origin so two nodes address one chain alike"
 )]
-fn center(links: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
+fn centre(links: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
     let (Some(min_r), Some(min_c)) = (
         links.iter().map(|(r, _, _, _)| *r).min(),
         links.iter().map(|(_, c, _, _)| *c).min(),
@@ -184,7 +184,7 @@ fn center(links: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
 }
 
 pub fn canonical_chain(links: &[(i64, i64, u8, u8)]) -> Option<CanonicalChain> {
-    let out = center(links);
+    let out = centre(links);
     for w in out.windows(2) {
         if w[0].0 == w[1].0 && w[0].1 == w[1].1 && (w[0].2, w[0].3) != (w[1].2, w[1].3) {
             return None;
@@ -197,7 +197,7 @@ pub fn canonical_chain(links: &[(i64, i64, u8, u8)]) -> Option<CanonicalChain> {
 /// chain: two distinct transitions on one site (A5 step 3).
 ///
 /// A germ `canonical_chain` refuses has no address, because the address IS
-/// the centered chain (law 2) and there is no centering of a chain that
+/// the centred chain (law 2) and there is no centring of a chain that
 /// says two things at one site. The refusal travels.
 pub fn from_residual(g: &ResidualGerm) -> Option<Element> {
     Some(from_canonical(&canonical_chain(g)?))
@@ -214,10 +214,10 @@ pub fn from_canonical(chain: &CanonicalChain) -> Element {
     e
 }
 
-/// A residual germ with its FRAME FIBER: the exact frame map
+/// A residual germ with its FRAME FIBRE: the exact frame map
 /// ρ = (h_out/h_in, w_out/w_in) ∈ ℚ² enters the spatial generator's
 /// diagonal, so a word at ρ ≠ (1,1) is a different word from its planar
-/// shadow (identity and substance both carry the fiber; only translation is
+/// shadow (identity and substance both carry the fibre; only translation is
 /// quotiented). `frame` is (h_in, w_in, h_out, w_out).
 /// The unique listing key of a demand: the address of the framed residual.
 /// Intake, the book, quote, attest, probe, settle, task, and the nerve
@@ -463,7 +463,7 @@ impl Element {
 }
 
 /// The description of a connection: its spelling in the alphabet at its
-/// dilation, the placement, the gauge map, and the centered remainder. The
+/// dilation, the placement, the gauge map, and the centred remainder. The
 /// doc said "description" and the name said `word`; the doc was right.
 pub(crate) fn connection_description(
     spelling: &crate::transducer::alphabet::Spelling,

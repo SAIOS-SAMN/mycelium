@@ -1012,7 +1012,7 @@ assert_eq!(
 /// NOT recover it, because these bars meet edge-on and not at a corner.
 ///
 /// WHAT RECOVERS IT IS H3. The distinction did not vanish — it moved to
-/// the fiber, as the ruling says. The seam between the hues is a
+/// the fibre, as the ruling says. The seam between the hues is a
 /// discontinuity in the body's own gauge section, and a reader of that
 /// section can say where one sub-object ends. Until H3 lands, nothing
 /// reads it, and this test stands as the record of what is owed.
@@ -1100,7 +1100,7 @@ assert!(rule.form.is_closed(), "and the rule, owing nothing, is closed");
 /// FRAME OCCUPIED. `edge_between` read `for k in 0..n`, probing every
 /// integer up to the family's pair count and skipping each miss: a scan
 /// over a range, where the frames a member stands on are named by its own
-/// fiber of `bodies_at`. The occupied set may skip, repeat or reorder in ℤ,
+/// fibre of `bodies_at`. The occupied set may skip, repeat or reorder in ℤ,
 /// and a frame outside `0..n` was never read at all.
 ///
 /// The order is the COORDINATE'S. It was not the trie's while the frame was
@@ -1147,14 +1147,14 @@ fn occupied_frames_reads_member_frames_in_coordinate_order() {
         put(&mut at, &seven, b"chart-a", k);
     }
     // A second member, and the same vertex on another chart: neither is
-    // this member's fiber.
+    // this member's fibre.
     put(&mut at, &nine, b"chart-a", 3);
     put(&mut at, &seven, b"chart-b", 4);
 
     let occ = occupied_frames(&at, &seven, b"chart-a");
     assert_eq!(occ, vec![0, 1, 2, 5, 256], "the occupied set, in coordinate order");
     assert!(occ.contains(&256), "a frame outside 0..n is occupied and is read");
-    assert!(!occ.contains(&3), "another member's frame is not in this member's fiber");
+    assert!(!occ.contains(&3), "another member's frame is not in this member's fibre");
     assert!(!occ.contains(&4), "nor the same vertex's frame on another chart");
     // THE ORDERING IS LOAD-BEARING. Under the little-endian spelling the
     // trie's own order read 256 as `[0, 1]` and 1 as `[1, 0]`, putting 256
@@ -1163,14 +1163,14 @@ fn occupied_frames_reads_member_frames_in_coordinate_order() {
     assert_ne!(vec![0u64, 256, 1, 2, 5], occ, "the little-endian order is not coordinate order");
 }
 
-/// 52.5, 51.3 — THE FACE IS MEASURED ON THE FIBER'S UNION SHAPES. A
-/// member's fiber is one body on `(r, c, k)`, and `union_quotient` is that
+/// 52.5, 51.3 — THE FACE IS MEASURED ON THE FIBRE'S UNION SHAPES. A
+/// member's fibre is one body on `(r, c, k)`, and `union_quotient` is that
 /// body's quotient: every compartment the member stands on across its occupied
 /// frames, read at its own `k` and never flattened to frame zero.
 ///
 /// The two assertions are the point. A member whose frames all read one
 /// motion HAS a union quotient, and that quotient's bodies carry the frame
-/// extent — three distinct `k` on a three-frame fiber — which is what a
+/// extent — three distinct `k` on a three-frame fibre — which is what a
 /// reading taken at one frame cannot carry at all. A member whose frames
 /// read different motions has NO union quotient, and the per-frame reading
 /// stands instead rather than a union invented for it (rule 11).
@@ -1178,7 +1178,7 @@ fn occupied_frames_reads_member_frames_in_coordinate_order() {
 fn union_quotient_reads_one_motion_or_refuses() {
     use crate::transducer::family::union_quotient;
     // Three frames, each a bar translated by the same vector: one motion
-    // over the whole fiber.
+    // over the whole fibre.
     let ins: Vec<Compartment> = [
         (0i64, 0i64, 0i64, 1u8),
         (0, 1, 0, 1),
@@ -1197,18 +1197,18 @@ fn union_quotient_reads_one_motion_or_refuses() {
     let outs: Vec<Compartment> = ins.iter().map(|l| moved(l, 2)).collect();
     let shift = element::translator_versor(0, 2);
     let (a, b, v) =
-        union_quotient(ins.clone(), outs, &shift).expect("one motion carries the whole fiber");
+        union_quotient(ins.clone(), outs, &shift).expect("one motion carries the whole fibre");
     let frames: Vec<i64> = {
         let mut f: Vec<i64> = a.compartments.iter().filter_map(|l| l.site.axis(2)).collect();
         f.sort_unstable();
         f.dedup();
         f
     };
-    assert_eq!(frames, vec![0, 1, 2], "the union body stands on every frame of the fiber");
+    assert_eq!(frames, vec![0, 1, 2], "the union body stands on every frame of the fibre");
     assert_eq!(b.compartments.len(), a.compartments.len(), "and carries the whole of it");
     assert!(
         element::same_versor(&v, &shift),
-        "the fiber's quotient is the one translation, verified on the union"
+        "the fibre's quotient is the one translation, verified on the union"
     );
     // The same three frames with the middle one moved the other way: no
     // single motion carries the union.
@@ -1218,7 +1218,7 @@ fn union_quotient_reads_one_motion_or_refuses() {
         .collect();
     assert!(
         union_quotient(ins, mixed, &shift).is_none(),
-        "a fiber that is not one motion along e₃ has no union quotient"
+        "a fibre that is not one motion along e₃ has no union quotient"
     );
 }
 

@@ -390,9 +390,9 @@ impl Court {
                     continue;
                 }
                 kernel.file_admitted(&addr, admitted, &mut budget);
-                // The words by fiber, rebuilt from T1's own key; and RM1's
+                // The words by fibre, rebuilt from T1's own key; and RM1's
                 // remainders, rebuilt from the element's torsion record.
-                kernel.file_fiber(&addr, admitted, key.clone());
+                kernel.file_fibre(&addr, admitted, key.clone());
                 kernel.file_remainders(&addr, elem.remainders().map(|r| r.index_key()).collect());
                 if members & MEMBER_BASIS != 0 {
                     let who: [u8; 32] = leaf(leaves, LEAF_DISCOVERER)?.try_into().ok()?;

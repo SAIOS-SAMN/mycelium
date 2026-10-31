@@ -438,7 +438,7 @@ impl Element {
             out.push(KIND_CHAIN);
         }
         // The key IS the chain (law 2), and the chain is A5's by type: one
-        // that says two things at a site has no centering and is refused
+        // that says two things at a site has no centring and is refused
         // where the element is built. Its count is a coordinate of the key,
         // written by its own coordinate (STD1 3c-2, ruled (d)).
         crate::transducer::address::put_key_count(&mut out, self.sub.len());

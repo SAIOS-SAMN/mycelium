@@ -105,7 +105,7 @@ pub(crate) fn emit_carried(
     }
 }
 
-pub(crate) fn hue_from_neighbors(r: i64, c: i64, occ: &crate::network::nerve::Keyed<u8>) -> Option<u8> {
+pub(crate) fn hue_from_neighbours(r: i64, c: i64, occ: &crate::network::nerve::Keyed<u8>) -> Option<u8> {
     let mut held: Option<u8> = None;
     for (nr, nc) in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)] {
         let Some(&h) = occ.get(&site_key(nr, nc)) else {
@@ -120,8 +120,8 @@ pub(crate) fn hue_from_neighbors(r: i64, c: i64, occ: &crate::network::nerve::Ke
     held
 }
 
-/// Speak a form onto a grid: each vertex kind emits; the class fiber
-/// names the bodies. An empty fiber is unspoken, never every body.
+/// Speak a form onto a grid: each vertex kind emits; the class fibre
+/// names the bodies. An empty fibre is unspoken, never every body.
 pub fn apply_form(
     f: &Form,
     x: &Grid,
@@ -358,7 +358,7 @@ fn speak_on_scene(
                         continue;
                     };
 
-                    let hits = atlas.fiber(&member.chart);
+                    let hits = atlas.fibre(&member.chart);
                     if hits.is_empty() {
                         continue;
                     }
@@ -512,7 +512,7 @@ fn speak_on_scene(
                     let Some(versor) = element::conformal_of_rotor(&r, &composed) else {
                         continue;
                     };
-                    let hits = atlas.fiber(&member.chart);
+                    let hits = atlas.fibre(&member.chart);
                     if hits.is_empty() {
                         continue;
                     }
@@ -575,7 +575,7 @@ fn speak_on_scene(
                 if hues.contains(&site_key(r, c)) {
                     continue;
                 }
-                match hue_from_neighbors(r, c, &hues) {
+                match hue_from_neighbours(r, c, &hues) {
                     Some(h) => {
                         painted.push((r, c, h));
                         grew = true;
@@ -635,7 +635,7 @@ pub struct Speech {
     pub frame: (usize, usize),
     pub painted: Vec<Painted>,
     pub remainder: Vec<Painted>,
-    /// The vertices, by coordinates, whose class fiber was empty on
+    /// The vertices, by coordinates, whose class fibre was empty on
     /// this grid.
     pub unspoken: Vec<crate::network::nerve::coord::VertexAt>,
     /// The cited forms, by address, the speaking crystal does not hold: the

@@ -29,7 +29,7 @@ fn carry_compartment_refuses_pythagorean_tilt_keeps_turn_90() {
     };
     assert_eq!(*frame, 0, "in its own frame");
     assert_eq!(
-        site_of(&carry_center(&w, 2, 3, 0).expect("the centre lands")),
+        site_of(&carry_centre(&w, 2, 3, 0).expect("the centre lands")),
         Some((*i, *j, *frame)),
         "the compartment its centre lands in"
     );

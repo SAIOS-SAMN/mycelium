@@ -277,7 +277,7 @@ impl Court {
             return;
         };
         let locate = |k: &Self, chart, cls, at| {
-            k.word_admitted_at(at).cloned().or_else(|| match k.fiber_read(chart, cls).as_slice() {
+            k.word_admitted_at(at).cloned().or_else(|| match k.fibre_read(chart, cls).as_slice() {
                 [one] => Some(one.clone()),
                 _ => None,
             })
@@ -384,7 +384,7 @@ impl Court {
         let cycle = element::TorsionCycle {
             generator: element::Generator::Holonomy(g.clone()),
             period: u64::from(ell),
-            fibre: element::FIBER_SPATIAL,
+            fibre: element::FIBRE_SPATIAL,
             remainder: Some(element::Remainder { class: kappa, at: vec![inv.key().into_vec()], answered: None }),
         };
         let Some(mu) = self.treasury.price_torse(std::slice::from_ref(&cycle)) else {

@@ -87,7 +87,7 @@ pub struct CoherenceSpectrum {
     pub gauge_cycles: Vec<(coord::VertexAt, CycleType)>,
     /// GRADE 0, `𝒮` — a fibre whose vertical transition is NOT a pure
     /// displacement. Provably empty for a vertex whose members share a
-    /// transport (see `FiberTransition`), so an entry here means the
+    /// transport (see `FibreTransition`), so an entry here means the
     /// transport-class keying itself broke.
     pub twisted_fibres: Vec<coord::VertexAt>,
     /// GRADE 1, `𝒮` and `𝒯` — each cycle's periods, on its own planes.
@@ -128,13 +128,13 @@ impl Form {
     /// Nothing here consults a filing. Every note is a theorem of the
     /// complex: `orbit_classes` reads the holonomy and classifies it
     /// through `cech::classify`'s fixed-point gate, `plane_periods` splits
-    /// the rotor into its two commuting factors, and `fiber_holonomy`
+    /// the rotor into its two commuting factors, and `fibre_holonomy`
     /// reads the vertical transitions. A `Form.torsion` entry records that
     /// a stroke happened, which is mind-state, and it is not asked.
     pub fn spectrum(&self) -> CoherenceSpectrum {
         let mut s = CoherenceSpectrum::default();
         // GRADE 0. The gauge half is `𝒢`; the spatial half is a guard.
-        for (i, t) in self.fiber_transitions() {
+        for (i, t) in self.fibre_transitions() {
             if let Some(g) = t.gauge() {
                 let ct = CycleType::of(&g);
                 if !matches!(ct, CycleType::Identity) {

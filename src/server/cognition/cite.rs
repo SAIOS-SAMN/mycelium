@@ -1,7 +1,7 @@
 // 45.1, 78.22, 78.24 — THIS COURT'S ACTS ON THE LEDGER: each a node at its
 // stamp, naming what it acts on by coordinates the reader already holds.
 //
-//! A word is named by its FIBER — its chart, and for a word with a rotor
+//! A word is named by its FIBRE — its chart, and for a word with a rotor
 //! its class record — and by the stamp of the act that ADMITTED it
 //! (`admitted_at`, the ruled locator on every word row). The act that
 //! first names a word no act has admitted is the act that admits it: it
@@ -11,7 +11,7 @@ use super::*;
 use crate::chronometry::{ActKind, Cite, KStepReceipt, Parent, Stamp};
 
 impl Court {
-    /// THE CITATION OF A WORD THIS COURT HOLDS: its fiber and the stamp of
+    /// THE CITATION OF A WORD THIS COURT HOLDS: its fibre and the stamp of
     /// the act that admitted it. `None` where the word is not held, or no
     /// act has admitted it yet.
     pub(crate) fn cite_of(&self, addr: &[u8]) -> Option<Cite> {
@@ -94,15 +94,15 @@ impl Court {
         if self.provisional.contains(addr) {
             self.enter_flight(addr.as_bytes(), &key);
         }
-        // LD3-a: the word by its fiber, where a row holds it to read the
-        // fiber off; a restore files it from T1's key instead.
-        let fiber = self.named_word(addr).and_then(|w| {
+        // LD3-a: the word by its fibre, where a row holds it to read the
+        // fibre off; a restore files it from T1's key instead.
+        let fibre = self.named_word(addr).and_then(|w| {
             let mut key = Vec::new();
             Cite::word(w, at).put_canonical(&mut key)?;
             Some(key)
         });
-        if let Some(key) = fiber {
-            self.file_fiber(addr, at, key);
+        if let Some(key) = fibre {
+            self.file_fibre(addr, at, key);
         }
         // RM1: and its remainders, by where each was perceived.
         let keys: Vec<Vec<u8>> = match self.named_word(addr) {
@@ -115,11 +115,11 @@ impl Court {
         true
     }
 
-    /// FILE A WORD AT ITS FIBER KEY — T1's own key — beside its admitting
+    /// FILE A WORD AT ITS FIBRE KEY — T1's own key — beside its admitting
     /// stamp.
-    pub(crate) fn file_fiber(&mut self, addr: &Address, at: Stamp, key: Vec<u8>) {
-        self.fiber_key_at.insert(at.key(), key.clone());
-        self.word_fibers.insert(key, addr.clone());
+    pub(crate) fn file_fibre(&mut self, addr: &Address, at: Stamp, key: Vec<u8>) {
+        self.fibre_key_at.insert(at.key(), key.clone());
+        self.word_fibres.insert(key, addr.clone());
     }
 
     /// RM1 — FILE A WORD'S REMAINDERS at the remainders' index keys (the residue's
@@ -129,11 +129,11 @@ impl Court {
     pub(crate) fn file_remainders(&mut self, addr: &Address, keys: Vec<Vec<u8>>) {
         let mut filed = Vec::new();
         for k in keys {
-            match self.remainder_fibers.get(&k) {
+            match self.remainder_fibres.get(&k) {
                 Some(a) if a == addr => filed.push(k),
                 Some(_) => self.remainders_coincident += 1,
                 None => {
-                    self.remainder_fibers.insert(&k, addr.clone());
+                    self.remainder_fibres.insert(&k, addr.clone());
                     filed.push(k);
                 }
             }
@@ -146,13 +146,13 @@ impl Court {
     /// RM1 — the words whose remainder of this class was perceived on this
     /// chart chain: a keyed read.
     pub fn remainder_at(&self, key: &[u8]) -> Option<&Address> {
-        self.remainder_fibers.get(key)
+        self.remainder_fibres.get(key)
     }
 
-    /// LD3-a — THE FIBER READ: every word this court holds on the fiber
+    /// LD3-a — THE FIBRE READ: every word this court holds on the fibre
     /// `chart‖class`, whatever act admitted it — a prefix read on the words
-    /// by fiber, never a scan. Each word once.
-    pub fn fiber_read(
+    /// by fibre, never a scan. Each word once.
+    pub fn fibre_read(
         &self,
         chart: &crate::transducer::stalk::Invariant,
         class: &Option<crate::chronometry::ClassRecord>,
@@ -162,11 +162,11 @@ impl Court {
         if probe.put_canonical(&mut key).is_none() {
             return Vec::new();
         }
-        // The fiber is the citation without its stamp, which is written
+        // The fibre is the citation without its stamp, which is written
         // last and fixed in length.
         key.truncate(key.len() - Stamp::LEN);
         let mut out: crate::network::nerve::Keyed<Address> = crate::network::nerve::Keyed::new();
-        if let Some(hits) = self.word_fibers.fiber_at(&key) {
+        if let Some(hits) = self.word_fibres.fibre_at(&key) {
             for (_, addr) in hits {
                 out.insert(addr.as_bytes(), addr.clone());
             }
@@ -177,7 +177,7 @@ impl Court {
     /// LD3-a — THE STAMP ALIAS (EC1's gap, as ruled): a peer node admitted
     /// here whose own act admits a word — a `Cite::Word` at the node's own
     /// stamp — names that word by a stamp this court did not admit it at.
-    /// Where the fiber read here yields EXACTLY ONE word, the peer's stamp
+    /// Where the fibre read here yields EXACTLY ONE word, the peer's stamp
     /// is filed as an alias of it: one word, two admissions, both stamps
     /// held (rule 15: never a choice). Where it yields several, nothing is
     /// filed — the word waits for the syllabus to teach it with its home
@@ -189,7 +189,7 @@ impl Court {
             if *at != r.stamp || self.word_admitted_at(at).is_some() {
                 continue;
             }
-            let hits = self.fiber_read(chart, class);
+            let hits = self.fibre_read(chart, class);
             let [one] = hits.as_slice() else { continue };
             let one = one.clone();
             self.held_at.insert(at.key(), one.clone());
@@ -226,14 +226,14 @@ impl Court {
             self.held_at.remove(&key);
             // Its depth is read at its stamp, and leaves with it.
             self.attestors.remove(&key);
-            if let Some(key) = self.fiber_key_at.remove(&at.key()) {
-                self.word_fibers.remove(&key);
+            if let Some(key) = self.fibre_key_at.remove(&at.key()) {
+                self.word_fibres.remove(&key);
             }
         }
         // Its remainders leave the index by the keys it filed.
         if let Some(keys) = self.remainder_keys.remove(addr) {
             for k in keys {
-                self.remainder_fibers.remove(&k);
+                self.remainder_fibres.remove(&k);
             }
         }
         // Its aliases leave with it, and the depth read at each.
@@ -271,8 +271,8 @@ impl Court {
             }
         }
         let width = addr.len() + 32;
-        let taught: Vec<Vec<u8>> = match self.taught_voice.fiber_at(addr) {
-            Some(fiber) => fiber.map(|(key, ())| key).filter(|key| key.len() == width).collect(),
+        let taught: Vec<Vec<u8>> = match self.taught_voice.fibre_at(addr) {
+            Some(fibre) => fibre.map(|(key, ())| key).filter(|key| key.len() == width).collect(),
             None => Vec::new(),
         };
         for key in taught {
@@ -299,7 +299,7 @@ impl Court {
 
     /// A K-STEP naming ONE WORD by its address, linked to the court: the
     /// operator digest folds the acting voice with the court head last
-    /// ruled here. The word is cited by its fiber and admitting stamp; a
+    /// ruled here. The word is cited by its fibre and admitting stamp; a
     /// held word no act has admitted is admitted by this one.
     ///
     /// WHAT THE ACT MEASURED is read here from this court's own carriers at
@@ -362,7 +362,7 @@ impl Court {
         }
     }
 
-    /// A K-STEP naming what it names by citations already read: the fiber
+    /// A K-STEP naming what it names by citations already read: the fibre
     /// and stamp of a word read BEFORE it left its carrier (78.24 (2c)),
     /// the root a fold leaves, the words a page taught.
     pub(super) fn append_cited(&mut self, kind: ActKind, cites: Vec<Cite>, mu: [u64; 4], voice: [u8; 32]) {
@@ -370,7 +370,7 @@ impl Court {
     }
 
     /// 78.93 B0 — A REFUSAL SEALED ON THIS COURT'S LINE: the refused
-    /// sentence by its fiber and the refusal's kind, so a "no" and why
+    /// sentence by its fibre and the refusal's kind, so a "no" and why
     /// outlive the process that said it. The act measured nothing it admits,
     /// so its frame is the zero reading. Its receipt, or `None` where the
     /// line could not take it — the refusal then stands in memory alone and

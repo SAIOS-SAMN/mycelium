@@ -741,7 +741,7 @@ fn orbit_chord_is_never_star_face() {
 
 /// 18.2, 24.1 — A CHART NAMES THE WORD VERTICES ON IT. `reindex` files each
 /// Word vertex under its class in the one pass it already makes, so a
-/// listing body's chart reads its fiber of vertices and never reads the
+/// listing body's chart reads its fibre of vertices and never reads the
 /// whole form; a chart no vertex is on names nothing, and a Demand vertex on a
 /// chart is not a word there.
 #[test]
@@ -774,7 +774,7 @@ fn by_class_names_word_vertices_on_chart() {
     assert_eq!(f.by_class.at(&chart_key(&stalk::Invariant::counts(&[9]))), None, "a chart no vertex is on names nothing");
     for (chart, on) in f.by_class.scoped() {
         for i in on {
-            let v = f.vertices.at(i).expect("a coordinate the fiber names is a vertex");
+            let v = f.vertices.at(i).expect("a coordinate the fibre names is a vertex");
             // THE FIBRE IS ASKED, not a representative read off the vertex:
             // `acts` holds every chart the vertex acts on, and the claim is
             // that this chart is among them (D7's whole point — one of two
@@ -789,7 +789,7 @@ fn by_class_names_word_vertices_on_chart() {
 }
 
 /// 21 step 1 — A TRANSPORT CLASS NAMES THE WORD VERTICES OF THAT CLASS, and
-/// it names them ACROSS CHARTS, which is the whole reason the chart fiber
+/// it names them ACROSS CHARTS, which is the whole reason the chart fibre
 /// above cannot serve correspondence: the two vertices here carry the same
 /// word on two different charts, so `by_class` splits them into two entries
 /// and `by_transport` holds them as the one class they are.
@@ -831,7 +831,7 @@ fn by_transport_names_word_vertices_across_charts() {
         Some(&vec![q_at.clone()]),
         "the 90° turn is its own class on a chart another vertex is also on"
     );
-    // The chart fiber cannot answer the same question: it splits the one
+    // The chart fibre cannot answer the same question: it splits the one
     // class over two charts and merges two classes on one chart.
     let chart_key = |i: &stalk::Invariant| {
         coord::Chart(i.clone())
@@ -842,11 +842,11 @@ fn by_transport_names_word_vertices_across_charts() {
         "chart near: two classes, got {on_near:?}"
     );
     assert_eq!(f.by_class.at(&chart_key(&far)), Some(&vec![id_at.clone()]), "chart far: one of the identity class");
-    // Every coordinate the fiber names is a Word of that class, and every
+    // Every coordinate the fibre names is a Word of that class, and every
     // Word is named by its own: the relation is total in both directions.
     for (k, on) in f.by_transport.entries() {
         for i in on {
-            let v = f.vertices.at(i).expect("a coordinate the fiber names is a vertex");
+            let v = f.vertices.at(i).expect("a coordinate the fibre names is a vertex");
             assert_eq!(
                 crate::transducer::family::transport_class(v).map(|c| c.key()),
                 Some(k.clone()),
@@ -860,7 +860,7 @@ fn by_transport_names_word_vertices_across_charts() {
         };
         assert!(
             f.by_transport.at(&k).is_some_and(|on| on.contains(&i)),
-            "vertex {i:?} carries a transport class and the fiber names it"
+            "vertex {i:?} carries a transport class and the fibre names it"
         );
     }
 }

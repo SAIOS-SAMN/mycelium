@@ -115,7 +115,7 @@ fn rotor_key_merges_candidate_and_negation() {
 /// idea.
 #[test]
 fn pivot_on_glues_crystallized_form() {
-    use crate::transducer::element::FIBER_SPATIAL;
+    use crate::transducer::element::FIBRE_SPATIAL;
     let mut c = Contemplation::new();
     let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
     c.hold(rem);
@@ -131,7 +131,7 @@ fn pivot_on_glues_crystallized_form() {
         word.record_cycle(crate::transducer::element::TorsionCycle {
             generator: crate::transducer::element::Generator::Holonomy(Box::new(turn_90)),
             period: 4,
-            fibre: FIBER_SPATIAL,
+            fibre: FIBRE_SPATIAL,
             remainder: None,
         }),
         crate::transducer::element::Filed::New,
@@ -516,7 +516,7 @@ fn monodromy_order_reads_flat_period_or_rupture() {
 }
 
 /// 52.5 READING 6 — THE FRAME KEY CARRIES THE ORDER. `frame_connections`
-/// reads the frames a chart's fiber occupies from a `Keyed`, whose walk is
+/// reads the frames a chart's fibre occupies from a `Keyed`, whose walk is
 /// its key bytes. A frame written little-endian sorts by its low byte, so
 /// 256 (`[0, 1, …]`) would read before 1 (`[1, 0, …]`) and the succession
 /// would not be the family's. Written big-endian with the sign bit flipped,

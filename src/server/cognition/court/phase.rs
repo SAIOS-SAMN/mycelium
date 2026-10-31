@@ -113,7 +113,7 @@ pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverRe
                 }
             }
             None => {
-                // index: the refinements of a gone stratum, a keyed fiber.
+                // index: the refinements of a gone stratum, a keyed fibre.
                 // The root stratum refines into nothing — it has no
                 // coordinate to descend on — so it reads as no refinement
                 // rather than as every stratum there is.
@@ -122,7 +122,7 @@ pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverRe
                 let Some(at) = crate::network::nerve::Prefix::new(&k0) else {
                     continue;
                 };
-                for (k1, &n1) in at_h1.strata.fiber(at) {
+                for (k1, &n1) in at_h1.strata.fibre(at) {
                     if k1.len() > k0.len() {
                         any = true;
                         under += n1 as u64;

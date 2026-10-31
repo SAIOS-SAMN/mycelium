@@ -427,7 +427,7 @@ fn from_element_form_round_trips_nerve() {
 ///
 /// The repetition a tape can carry — one word gluing one form at many
 /// vertices — is real and is not the encoder's to shorten: 53.4's
-/// quantified citation removes it in kind, one citation per fiber (K2).
+/// quantified citation removes it in kind, one citation per fibre (K2).
 #[test]
 fn glue_cites_whole_address_and_re_derives() {
     use crate::transducer::sentence::{as_element_form, from_element_form, Vertex};

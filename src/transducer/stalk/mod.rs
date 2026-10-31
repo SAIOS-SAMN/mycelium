@@ -37,7 +37,7 @@ pub trait AtlasRead {
 
 impl AtlasRead for Stalks {
     fn members(&self, inv: &Invariant) -> Vec<Vec<u8>> {
-        self.fiber(inv)
+        self.fibre(inv)
     }
 }
 

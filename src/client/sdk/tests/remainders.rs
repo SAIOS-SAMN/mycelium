@@ -2,7 +2,7 @@
 // a restart whole, the address untouched, and the index rebuilt from it.
 
 use crate::client::sdk::*;
-use crate::transducer::element::{Element, Filed, Generator, Remainder, TorsionCycle, FIBER_SPATIAL};
+use crate::transducer::element::{Element, Filed, Generator, Remainder, TorsionCycle, FIBRE_SPATIAL};
 
 fn turn_90() -> crate::transducer::alphabet::Rotor {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
@@ -25,7 +25,7 @@ fn remainder(at: &[&[u8]]) -> Remainder {
 fn cycle_by(ray: crate::transducer::alphabet::Rotor, r: Option<Remainder>) -> TorsionCycle {
     let generator = Generator::Holonomy(Box::new(ray));
     let period = generator.order().expect("a remainder's ray is a finite-order rotor, as a Congruent fill files it");
-    TorsionCycle { generator, period, fibre: FIBER_SPATIAL, remainder: r }
+    TorsionCycle { generator, period, fibre: FIBRE_SPATIAL, remainder: r }
 }
 
 /// Two incomparable chart chains, and a chain nested in the first: each the
@@ -138,7 +138,7 @@ fn stand_calluses_raises_callus_only_for_one_twist_two_vantages() {
     let claimed = TorsionCycle {
         generator: Generator::Holonomy(Box::new(pi17())),
         period: 4,
-        fibre: FIBER_SPATIAL,
+        fibre: FIBRE_SPATIAL,
         remainder: Some(r),
     };
     assert_eq!(w.record_cycle(claimed), Filed::Misspoken, "a period the ray does not have, refused by name");

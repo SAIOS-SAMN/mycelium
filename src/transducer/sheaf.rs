@@ -78,7 +78,7 @@ pub fn discordant<'a>(remote: &'a [StratumDigest], local: &[StratumDigest]) -> V
 /// The addresses this holder already has in the stratum over `inv`, sent
 /// with a fetch so only the lacking words travel.
 pub fn have(stalks: &Stalks, inv: &Invariant) -> Vec<crate::transducer::address::Address> {
-    stalks.fiber(inv).into_iter().map(crate::transducer::address::Address::from).collect()
+    stalks.fibre(inv).into_iter().map(crate::transducer::address::Address::from).collect()
 }
 
 /// Serve a fetch: the words in the stratum over `inv` whose address the
@@ -99,7 +99,7 @@ pub fn serve<'a>(
     for h in have {
         held.insert(h, ());
     }
-    for a in stalks.fiber(inv) {
+    for a in stalks.fibre(inv) {
         if held.contains(&a) {
             continue;
         }

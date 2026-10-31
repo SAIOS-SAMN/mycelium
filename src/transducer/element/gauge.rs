@@ -1,5 +1,5 @@
 // 10.2, 21 step 1 — THE GAUGE: the hue permutation, its profile, and the
-// fiber of assignments one body can be spoken with.
+// fibre of assignments one body can be spoken with.
 //
 //! A gauge is a set of (before, after) hue pairs: its profile and key,
 //! permutation composition and inversion, the hue map between two
@@ -295,7 +295,7 @@ pub fn derive_hue_map(a: &[(u8, u8)], b: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
     Some(sigma)
 }
 
-/// The transition assignment of a centered chain (its fiber coordinate),
+/// The transition assignment of a centred chain (its fibre coordinate),
 /// index-aligned with [`positions`] (chains sort by position first).
 pub fn assignment(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
     chain.iter().map(|(_, _, b, a)| (*b, *a)).collect()
@@ -326,15 +326,15 @@ pub fn assignment_key(asg: &[(u8, u8)]) -> Vec<u8> {
 }
 
 /// One transition class, or several keyed by the pair.
-pub enum GaugeFibers {
+pub enum GaugeFibres {
     One((u8, u8), Vec<(i64, i64, u8, u8)>),
     Many(crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>>),
 }
 
-/// THE GAUGE FIBERS of a chain: the chain opened along its fiber
+/// THE GAUGE FIBRES of a chain: the chain opened along its fibre
 /// coordinate, one sub-chain per transition class. Indexed by the pair
 /// key. One class is `One`; two or more is `Many`. Empty is `None`.
-pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibers> {
+pub fn gauge_fibres(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibres> {
     if chain.is_empty() {
         return None;
     }
@@ -343,7 +343,7 @@ pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibers> {
     for &link in chain {
         let k = hue_pair_key(link.2, link.3);
         match idx.get_mut(&k) {
-            Some(fiber) => fiber.push(link),
+            Some(fibre) => fibre.push(link),
             None => {
                 idx.insert(k, vec![link]);
             }
@@ -354,9 +354,9 @@ pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibers> {
     // The index this function just built, keyed by hue pair: the question
     // is whether it holds ONE class or more, so it is read as a whole and
     // the read stops at the second.
-    for (k, fiber) in idx.scoped() {
+    for (k, fibre) in idx.scoped() {
         match first {
-            None => first = Some((hue_pair_of(&k)?, fiber.clone())),
+            None => first = Some((hue_pair_of(&k)?, fibre.clone())),
             Some(_) => {
                 many = true;
                 break;
@@ -364,8 +364,8 @@ pub fn gauge_fibers(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibers> {
         }
     }
     match (many, first) {
-        (false, Some((class, links))) => Some(GaugeFibers::One(class, links)),
-        _ => Some(GaugeFibers::Many(idx)),
+        (false, Some((class, links))) => Some(GaugeFibres::One(class, links)),
+        _ => Some(GaugeFibres::Many(idx)),
     }
 }
 
@@ -458,7 +458,7 @@ impl Element {
         out
     }
 
-    /// Does a centered chain SIT on this thought — same base positions, and its
+    /// Does a centred chain SIT on this thought — same base positions, and its
     /// assignment is the base's, a free section's, or a member of a torsion
     /// cycle's orbit, decided ON THE CYCLES ([`on_orbit`], 78.43(2)): the
     /// orbit is never generated to ask whether one assignment is on it.

@@ -34,7 +34,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let body = match crate::held::held!(door.kernel) {
         // 78.153b — on the hold's stroke: a LEDGER entry's ladder pruning
         // spends it; MAP and TRAVERSE read what the frame carries; READ-MAP
-        // walks one universe's records (a fiber), owed to the shelf.
+        // walks one universe's records (a fibre), owed to the shelf.
         Ok(mut h) => h.run(|k, reads| match request {
             DomainRequest::Genesis(domain) => encode_domain_reply(&k.admit_domain(&domain)),
             DomainRequest::Reserve(r) => encode_domain_reply(&k.designate_reserve(&r)),

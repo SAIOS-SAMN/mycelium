@@ -108,7 +108,7 @@ pub(crate) fn still() -> Mv {
 /// carries each by one integer vector. `None` for any other motion.
 pub(crate) fn lattice_step(motion: &Mv) -> Option<(i64, i64)> {
     let land = |r: i64, c: i64| -> Option<(Q, Q)> {
-        let p = element::carry_site_center(motion, &Site::of([r, c, 0]))?;
+        let p = element::carry_site_centre(motion, &Site::of([r, c, 0]))?;
         let [pr, pc, pk] = p.as_slice() else { return None };
         (pk == &q(0)).then(|| (pr.clone(), pc.clone()))
     };

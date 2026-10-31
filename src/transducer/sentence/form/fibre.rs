@@ -52,7 +52,7 @@ use super::*;
 /// between them. That relative permutation is this fibre's gauge holonomy,
 /// and its cycle type is the `ℤ/ℓℤ` the pivot may open on `𝒢`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FiberTransition {
+pub struct FibreTransition {
     /// The chart the transition leaves: the fibre's least, its own
     /// coordinate order (rule 15).
     pub from: stalk::Invariant,
@@ -69,7 +69,7 @@ pub struct FiberTransition {
     pub gauge_from: Vec<(u8, u8)>,
 }
 
-impl FiberTransition {
+impl FibreTransition {
     /// `R_gauge` — the relative rotation of the two frame bases, over all
     /// six planes of `Cl(4,0)`. `None` where the transition's base action
     /// cannot be read at all, which is a refusal and never a flat rotor

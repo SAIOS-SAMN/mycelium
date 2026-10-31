@@ -179,7 +179,7 @@ pub(crate) fn carriage_of(
     // another's is exactly what this trace exists to name, and one carriage per
     // address could not say it.
     // The Word vertices are one fibre of the atlas, read at the kind's tag.
-    for (_, w) in form.vertices.fiber_at(&[crate::network::nerve::coord::VertexAt::WORD]).into_iter().flatten() {
+    for (_, w) in form.vertices.fibre_at(&[crate::network::nerve::coord::VertexAt::WORD]).into_iter().flatten() {
         let crate::transducer::sentence::Vertex::Word { address, .. } = w else {
             continue;
         };

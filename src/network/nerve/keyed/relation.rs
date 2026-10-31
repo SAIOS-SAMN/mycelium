@@ -115,7 +115,7 @@ impl std::error::Error for SchemaRefusal {}
 
 /// A KEYED RELATION over A21 coordinate bytes: a value reached by its
 /// key's bits, O(bits) per read and write, never a scan. A prefix of a
-/// key is a coarser stratum (`fiber`). Digests are not keys.
+/// key is a coarser stratum (`fibre`). Digests are not keys.
 ///
 /// `C` IS THE COORDINATE THIS INDEX ANSWERS (§4.4). It defaults to
 /// [`coord::Any`], which is what every carrier in the tree was: undeclared,
@@ -209,8 +209,8 @@ impl<V, C: Coordinate> Keyed<V, C> {
         Ok(self.get_raw(key))
     }
 
-    /// Read a fiber under the declared coordinate system, refusing on a foreign system (Rule 11).
-    pub fn read_fiber<'a>(&'a self, prefix: Prefix<'a>) -> Result<Fiber<'a, V>, SchemaRefusal> {
+    /// Read a fibre under the declared coordinate system, refusing on a foreign system (Rule 11).
+    pub fn read_fibre<'a>(&'a self, prefix: Prefix<'a>) -> Result<Fibre<'a, V>, SchemaRefusal> {
         if self.system != CoordinateSystem::Any {
             if let Some(tag) = crate::transducer::address::tag_of(prefix.as_bytes()) {
                 if let Some(expected) = self.system.tag() {
@@ -223,7 +223,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
                 }
             }
         }
-        Ok(self.fiber(prefix))
+        Ok(self.fibre(prefix))
     }
 
     /// Truncate a canonical coordinate key by depth (Rule 6).
@@ -346,16 +346,16 @@ impl<V, C: Coordinate> Keyed<V, C> {
         self.remove_raw(k.as_bytes())
     }
 
-    /// THE FIBER OVER A DECLARED COARSER COORDINATE.
+    /// THE FIBRE OVER A DECLARED COARSER COORDINATE.
     ///
     /// `D: Stratum<C>` is the declaration that `D`'s opening bytes are the
     /// opening of a `C` key — a chart under a carrier of sections. Without
     /// the bound there is no fibre read, so a byte-prefix coincidence
     /// cannot be mistaken for a stratum.
-    pub fn fiber_over<D: Stratum<C>>(&self, coarse: &D) -> Result<Fiber<'_, V>, CoordinateError> {
+    pub fn fibre_over<D: Stratum<C>>(&self, coarse: &D) -> Result<Fibre<'_, V>, CoordinateError> {
         let opening = coarse.opening();
         match Prefix::new(opening.as_bytes()) {
-            Some(p) => Ok(self.fiber(p)),
+            Some(p) => Ok(self.fibre(p)),
             None => Err(D::refuse("the coordinate is empty, which names no stratum")),
         }
     }
@@ -449,7 +449,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// trajectory the two keys' own coordinates trace together (A13). A key
     /// is its path, so where the two tries' paths part they share nothing
     /// below and that branch is not read; the cost is the structure the two
-    /// share, never a product of the two fibers. The trajectory has no
+    /// share, never a product of the two fibres. The trajectory has no
     /// preferred direction and chooses nothing: it follows whichever branches
     /// both carriers hold, and the meet is the same set in any order of
     /// reading.
@@ -465,9 +465,9 @@ impl<V, C: Coordinate> Keyed<V, C> {
     ///
     /// THE WALK IS THE SUBTREE, NOT THE CARRIER. This pushed the root for
     /// every prefix and filtered the leaves as they came out — `stack` held
-    /// `self.root` whatever the prefix was, and `Fiber` carried the prefix
+    /// `self.root` whatever the prefix was, and `Fibre` carried the prefix
     /// only to test each leaf against it —
-    /// so a fiber read of one stratum cost the whole trie — every node of
+    /// so a fibre read of one stratum cost the whole trie — every node of
     /// it, to yield the handful of keys under the prefix. That is rule 1's
     /// whole-carrier read arriving through the very reader the doctrine
     /// says replaces it, and it is why the rest of X3 existed: the empty
@@ -477,26 +477,26 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// under one node, and `subtree` reaches it by the prefix in O(bits). The leaf
     /// filter stays: path compression leaves bits between branch points
     /// untested, so the subtree can hold keys that diverge from the prefix
-    /// at one of them, and `key_in_fiber` is what decides. What changes is
+    /// at one of them, and `key_in_fibre` is what decides. What changes is
     /// the extent — the walk visits that subtree and nothing above it.
-    pub fn fiber(&self, prefix: Prefix<'_>) -> Fiber<'_, V> {
+    pub fn fibre(&self, prefix: Prefix<'_>) -> Fibre<'_, V> {
         let prefix = prefix.as_bytes();
         let mut stack = Vec::new();
         if let Some(node) = self.subtree(prefix) {
             stack.push(node);
         }
-        Fiber { stack, prefix: prefix.to_vec() }
+        Fibre { stack, prefix: prefix.to_vec() }
     }
 
-    /// The fiber under `prefix`, or the reading of an EMPTY prefix, which
-    /// is not a fiber: `None`. Sites that build a key from coordinates and
+    /// The fibre under `prefix`, or the reading of an EMPTY prefix, which
+    /// is not a fibre: `None`. Sites that build a key from coordinates and
     /// cannot prove it non-empty at the type level ask here and refuse the
     /// empty case themselves (rule 11), rather than reading the whole carrier.
-    pub fn fiber_at(&self, prefix: &[u8]) -> Option<Fiber<'_, V>> {
-        Prefix::new(prefix).map(|p| self.fiber(p))
+    pub fn fibre_at(&self, prefix: &[u8]) -> Option<Fibre<'_, V>> {
+        Prefix::new(prefix).map(|p| self.fibre(p))
     }
 
-    /// THE WHOLE OF A CARRIER THAT IS ITSELF A FIBER — one bubble's charts,
+    /// THE WHOLE OF A CARRIER THAT IS ITSELF A FIBRE — one bubble's charts,
     /// one vertex's star, one chart's incidence, one form's cited
     /// addresses. Calling this ASSERTS that scoping: the carrier was
     /// reached by a key already, so its whole content is one stratum's
@@ -506,12 +506,12 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// to follow or is already at one, and which of the two it is
     /// should be legible without reading the carrier's provenance. The
     /// empty prefix said neither.
-    pub fn scoped(&self) -> Fiber<'_, V> {
+    pub fn scoped(&self) -> Fibre<'_, V> {
         let mut stack = Vec::new();
         if let Some(root) = self.root.as_deref() {
             stack.push(root);
         }
-        Fiber { stack, prefix: Vec::new() }
+        Fibre { stack, prefix: Vec::new() }
     }
 
     /// 78.153 — THE KEYS STRICTLY AFTER `from`, in key order, reached by
@@ -528,9 +528,9 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// (exactly that long) is a prefix of `from` and not after it; `from`'s
     /// next bit picks the child to follow, and a 1-side sibling of a 0 step
     /// is wholly after.
-    pub(crate) fn after(&self, from: &[u8]) -> Fiber<'_, V> {
+    pub(crate) fn after(&self, from: &[u8]) -> Fibre<'_, V> {
         // Taken in descent order: each subtree taken lies before every one
-        // taken above it, so the last taken is the least, and the fiber's
+        // taken above it, so the last taken is the least, and the fibre's
         // stack yields from its top.
         let mut taken: Vec<&Node<V>> = Vec::new();
         let from_bits = Node::<V>::bits(from);
@@ -570,14 +570,14 @@ impl<V, C: Coordinate> Keyed<V, C> {
                 },
             }
         }
-        Fiber { stack: taken, prefix: Vec::new() }
+        Fibre { stack: taken, prefix: Vec::new() }
     }
 
     /// The node every key carrying `prefix` hangs under, by following the
-    /// prefix's own bits. `None` where no key carries it — an empty fiber,
+    /// prefix's own bits. `None` where no key carries it — an empty fibre,
     /// which is the reading of absence and not an empty walk of the trie.
     ///
-    /// The empty prefix is the root node: a carrier that is itself a fiber
+    /// The empty prefix is the root node: a carrier that is itself a fibre
     /// has its whole content under one node, and that is the one case where
     /// reading the whole carrier is the reading (the rest of X3 names those sites).
     fn subtree(&self, prefix: &[u8]) -> Option<&Node<V>> {
@@ -628,7 +628,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
                     }
                     let p = parent?;
                     return Some(Shell {
-                        fiber: Fiber { stack: vec![p], prefix: Vec::new() },
+                        fibre: Fibre { stack: vec![p], prefix: Vec::new() },
                         prefix: clear_after_bit(key, parent_bit),
                     });
                 }
@@ -639,7 +639,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
                             return None;
                         }
                         return Some(Shell {
-                            fiber: Fiber { stack: vec![node], prefix: Vec::new() },
+                            fibre: Fibre { stack: vec![node], prefix: Vec::new() },
                             prefix: clear_after_bit(key, *bit),
                         });
                     }
@@ -675,7 +675,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
             // it walked every key at or before `from` and dropped them, free
             // of the budget, on every stroke — the whole docket prefix, under
             // the kernel's lock. The walk now starts on `from`'s own path.
-            fiber: match from.as_deref() {
+            fibre: match from.as_deref() {
                 Some(f) => self.after(f),
                 None => self.scoped(),
             },
@@ -738,12 +738,12 @@ impl<V> Keyed<Keyed<V>> {
     }
 }
 
-/// A NON-EMPTY KEY PREFIX — the coordinate a fiber read follows.
+/// A NON-EMPTY KEY PREFIX — the coordinate a fibre read follows.
 ///
 /// The empty slice is not a coordinate: it names the whole carrier, and
-/// the whole carrier is not a fiber unless the carrier is one already.
+/// the whole carrier is not a fibre unless the carrier is one already.
 /// Keeping the two apart in the TYPE is what makes rule 1 readable at a
-/// site: `fiber(Prefix)` reaches somewhere by a prefix, `scoped()` says this
+/// site: `fibre(Prefix)` reaches somewhere by a prefix, `scoped()` says this
 /// carrier is somewhere.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Prefix<'a>(&'a [u8]);

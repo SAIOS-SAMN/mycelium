@@ -55,7 +55,7 @@ pub fn count_extend() {
 /// TRIE NODES A WALK HAS VISITED. Its own reading and not part of
 /// [`total`]: that is the count of keyed READS AND WRITES, one per `get`
 /// or `insert`, and a walk that steps through a node takes neither. What
-/// this measures is the EXTENT of a fiber — how much of the carrier the
+/// this measures is the EXTENT of a fibre — how much of the carrier the
 /// walk touched to yield what it yielded — which is the quantity rule 1
 /// is about and the one nothing counted.
 pub fn visits() -> u64 {

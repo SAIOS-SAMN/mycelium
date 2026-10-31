@@ -12,20 +12,20 @@ fn inv(axes: &[u64]) -> Invariant {
 /// The cover's longest common prefix is the plane both hyphae cover, and a
 /// miss at the first axis is novel.
 #[test]
-fn fiber_reads_plane_and_first_axis_miss_as_novel() {
+fn fibre_reads_plane_and_first_axis_miss_as_novel() {
     let mut c = Cover::new();
     let a = [1u8; 32];
     let b = [2u8; 32];
     c.admit(0, &inv(&[1, 2, 3]), a);
     c.admit(0, &inv(&[1, 2, 9]), b);
-    let plane = c.fiber(0, &inv(&[1, 2]));
+    let plane = c.fibre(0, &inv(&[1, 2]));
     assert!(plane.iter().any(|x| x.as_slice() == a.as_slice()) && plane.iter().any(|x| x.as_slice() == b.as_slice()), "prefix 1,2 is the plane both cover");
-    assert_eq!(c.fiber(0, &inv(&[1, 2, 3])), vec![a.to_vec()], "exact chart is one hypha");
+    assert_eq!(c.fibre(0, &inv(&[1, 2, 3])), vec![a.to_vec()], "exact chart is one hypha");
     assert_eq!(c.multiplicity(0, &inv(&[1, 2])), 2, "multiplicity is the vertex count");
-    assert!(c.fiber(0, &inv(&[7, 8])).is_empty(), "a first-axis miss is novel");
+    assert!(c.fibre(0, &inv(&[7, 8])).is_empty(), "a first-axis miss is novel");
     let refined = inv(&[1, 2, 3, 7]);
     c.rehome(0, &inv(&[1, 2, 3]), &refined, a);
-    assert_eq!(c.fiber(0, &refined), vec![a.to_vec()], "the hypha re-homes under the refined prefix");
+    assert_eq!(c.fibre(0, &refined), vec![a.to_vec()], "the hypha re-homes under the refined prefix");
     assert_eq!(c.multiplicity(0, &inv(&[1, 2])), 2, "the plane still has both covering vertices");
 }
 
@@ -41,7 +41,7 @@ fn nearer(chart: &Invariant, a: [u8; 32], b: [u8; 32]) -> [u8; 32] {
     }
 }
 
-/// Home is chosen by room, then by the chart's nearness on the fiber, and by
+/// Home is chosen by room, then by the chart's nearness on the fibre, and by
 /// room when the chart is novel.
 #[test]
 fn home_ranks_room_then_chart_nearness() {
@@ -87,7 +87,7 @@ fn home_ranks_room_then_chart_nearness() {
     rooms.insert(lo, [8, 0, 8, 8]);
     rooms.insert(hi, [0, 3, 0, 0]);
     let (id, _) = home(&c, &inv(&[4]), &[0, 1, 0, 0], &rooms, &addrs, None);
-    assert_eq!(id, hi, "fiber ∩ room: covering without room loses to covering with room");
+    assert_eq!(id, hi, "fibre ∩ room: covering without room loses to covering with room");
 }
 
 /// COURTS BONDED ALIKE SHARE THE CHARTS (2026-10-14): three hyphae with equal
@@ -118,14 +118,14 @@ fn home_shares_charts_among_equal_rooms() {
     assert!(counts.iter().all(|&n| n > 0), "every court bonded alike homes some charts: {counts:?}");
 }
 
-/// Retracting a hypha leaves no stale chart on its fiber.
+/// Retracting a hypha leaves no stale chart on its fibre.
 #[test]
 fn retract_hypha_leaves_no_stale_charts() {
     let mut c = Cover::new();
     let a = [1u8; 32];
     c.admit(0, &inv(&[1]), a);
     c.retract_hypha(&a);
-    assert!(c.fiber(0, &inv(&[1])).is_empty());
+    assert!(c.fibre(0, &inv(&[1])).is_empty());
 }
 
 /// Three covers over one corpus: each listing homes at one hypha, and
@@ -212,7 +212,7 @@ fn witnesses_are_covering_hyphae_not_every_peer() {
 
     // A form occupying lane 0 only.
     let w = c.witnesses(&chart, &[3, 0, 0, 0], &home);
-    // `witnesses` returns the witness set for one chart: a fiber already.
+    // `witnesses` returns the witness set for one chart: a fibre already.
     let mut got: Vec<Vec<u8>> = w.scoped().map(|(k, _)| k).collect();
     got.sort();
     assert_eq!(

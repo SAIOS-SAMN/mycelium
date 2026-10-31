@@ -388,7 +388,7 @@ impl Epigenome {
             &mut crate::physics::Budget,
         ) -> Vec<crate::transducer::sentence::HeldCite>,
     {
-        // THE READING RUNS OVER WHAT IS DECODED. Under Z11 the fiber read
+        // THE READING RUNS OVER WHAT IS DECODED. Under Z11 the fibre read
         // decodes what it reaches before the closures are built; today
         // every word the index holds is resident and the two are the same
         // set.
@@ -413,9 +413,9 @@ impl Epigenome {
                 None => dialect.get(a).and_then(|d| d.shape.as_ref()),
             }
         };
-        let fiber_of = |inv: &crate::transducer::stalk::Invariant| {
-            let mut v = atlas.fiber(inv);
-            for a in dialect_atlas.fiber(inv) {
+        let fibre_of = |inv: &crate::transducer::stalk::Invariant| {
+            let mut v = atlas.fibre(inv);
+            for a in dialect_atlas.fibre(inv) {
                 if !v.iter().any(|b| b == &a) {
                     v.push(a);
                 }
@@ -425,7 +425,7 @@ impl Epigenome {
         crate::transducer::sentence::deconstruct_on(
             &crate::transducer::sentence::Reading {
                 word_at: &word_at,
-                fiber_of: &fiber_of,
+                fibre_of: &fibre_of,
                 shape_at: &shape_at,
                 held_at,
             },

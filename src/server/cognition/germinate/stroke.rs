@@ -56,7 +56,7 @@ impl Court {
                 self.syntropic_cursor = Some(k.to_vec());
             }
         }
-        // index: ruled cover fiber
+        // index: ruled cover fibre
         let ruled: Vec<Vec<u8>> = self.ruled_addrs.scoped().map(|(a, _)| a).collect();
         for addr in &ruled {
             if !budget.spend() {
@@ -73,7 +73,7 @@ impl Court {
                 // Canonical, not positional: the least address on the chart.
                 // Two hyphae holding one chart must condense the same word,
                 // or the distributed language forks along insertion order.
-                if let Some(a) = self.stalks.fiber(&inv).iter().min().cloned() {
+                if let Some(a) = self.stalks.fibre(&inv).iter().min().cloned() {
                     let _ = self.condense_on(&a, &mut budget);
                 }
             }
@@ -84,7 +84,7 @@ impl Court {
                 // Canonical, not positional: the least address on the chart.
                 // Two hyphae holding one chart must condense the same word,
                 // or the distributed language forks along insertion order.
-                if let Some(a) = self.stalks.fiber(&inv).iter().min().cloned() {
+                if let Some(a) = self.stalks.fibre(&inv).iter().min().cloned() {
                     self.torse_at(&a);
                     self.refine_stratum(&a);
                 }
@@ -176,16 +176,16 @@ impl Court {
         if !word.sub().is_empty() {
             let inv = crate::transducer::stalk::invariant_of(&word);
             let fk = chart_footprint_key(&inv, word.sub());
-            let mut fiber: Vec<Vec<u8>> = self
+            let mut fibre: Vec<Vec<u8>> = self
                 .by_footprint
                 .link(&fk)
                 .map(|(a, _)| a)
                 .filter(|a| a.as_slice() != own.as_bytes())
                 .collect();
-            if fiber.is_empty() {
-                fiber = self
+            if fibre.is_empty() {
+                fibre = self
                     .stalks
-                    .fiber(&inv)
+                    .fibre(&inv)
                     .iter().filter(|&a| a.as_slice() != own.as_bytes()).cloned()
                     .collect();
             }
@@ -195,8 +195,8 @@ impl Court {
             // distance between two words' chains is the canonical form's,
             // never a placement, and a strength read off it would sever by an
             // artifact. Tethers are measured where pivots stand where they
-            // are: the percept's pieces (`family::fibres`).
-            for sibling in fiber {
+            // are: the percept's pieces (`family::torsion_quotient`).
+            for sibling in fibre {
                 if !spend.spend() {
                     break;
                 }

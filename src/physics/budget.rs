@@ -47,7 +47,7 @@ pub fn halted() -> bool {
 }
 
 /// Linear token for one stroke's keyed reads. Non-Copy, non-Clone: a
-/// function that wants more than a fiber must take a Budget in its
+/// function that wants more than a fibre must take a Budget in its
 /// signature. Constructed only by [`super::Physics::stroke`].
 #[derive(Debug)]
 pub struct Budget {

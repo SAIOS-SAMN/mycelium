@@ -444,7 +444,7 @@ pub fn lift(comp: &[Compartment]) -> Blade {
 /// structure of single objects, and its 188 cycles were loops WITHIN
 /// polychrome shapes rather than between anything.
 ///
-/// THE DEFECT WAS FIBER DATA IN THE BASE. Everything downstream already
+/// THE DEFECT WAS FIBRE DATA IN THE BASE. Everything downstream already
 /// treats hue as a gauge the body carries — `Carriage.sigma`, the `𝒢`
 /// lane, `CycleType::of(gauge)`, `hue_pair_key` — and `Blade.gauge`
 /// already carries a body's hues as sorted `(hue, count)` relations. A

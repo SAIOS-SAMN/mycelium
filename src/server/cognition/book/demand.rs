@@ -80,7 +80,7 @@ impl Court {
         let placement = crate::transducer::alphabet::Word::identity();
         // WHAT THE DEMAND STILL ASKS FOR, over all the cites the court can
         // speak: a link is still demanded only where NOTHING said its
-        // after colour. That is a fiber — the links no citation reached —
+        // after colour. That is a fibre — the links no citation reached —
         // and never the shortest of several leftovers: choosing the cite
         // with the fewest links left would be a count deciding a branch
         // (rule 2), and it would throw away what the other cites did say.

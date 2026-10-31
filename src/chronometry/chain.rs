@@ -2,8 +2,8 @@
 // the stamp, and the order two receipts stand in.
 //
 //! Every node this court holds — its own line and the peer receipts it
-//! admitted — sits ONCE at its stamp `h‖vk‖K‖i`. `fiber(h)` is the mesh at
-//! one tick, `fiber(h‖vk)` one signer at it. A signer's line is read by
+//! admitted — sits ONCE at its stamp `h‖vk‖K‖i`. `fibre(h)` is the mesh at
+//! one tick, `fibre(h‖vk)` one signer at it. A signer's line is read by
 //! `vk‖K‖i`, the one relation the range readers ask by (78.24 P1), and the
 //! append order is one reader's trajectory through the carrier, never the
 //! carrier. A node holds what its act carries and references for what its
@@ -189,7 +189,7 @@ impl ReceiptChain {
     fn orbit_acts(&self, vk: &[u8; 32], k: u64) -> Vec<(Stamp, &node::Node)> {
         let mut prefix = vk.to_vec();
         prefix.extend_from_slice(&k.to_be_bytes());
-        let Some(orbit) = self.lines.fiber_at(&prefix) else { return Vec::new() };
+        let Some(orbit) = self.lines.fibre_at(&prefix) else { return Vec::new() };
         orbit
             .filter_map(|(key, &h)| {
                 let mut p = 32usize;
@@ -229,11 +229,11 @@ impl ReceiptChain {
     }
 
     /// EVERY ORBIT CLOSED AT ONE TICK, read off the close nodes in
-    /// `fiber(h)`: the signer, its `K` and the orbit's frame as the close
+    /// `fibre(h)`: the signer, its `K` and the orbit's frame as the close
     /// carries it. An orbit whose close this ledger does not hold is not
     /// here: unmeasured, never compared (rule 11).
     pub fn orbits_closed_at(&self, h: u64) -> Vec<([u8; 32], u64, [u64; 4])> {
-        let Some(tick) = self.nodes.fiber_at(&h.to_be_bytes()) else { return Vec::new() };
+        let Some(tick) = self.nodes.fibre_at(&h.to_be_bytes()) else { return Vec::new() };
         tick.filter(|(_, n)| n.kind == ActKind::Orbit)
             .filter_map(|(key, n)| Some((Stamp::from_key(&key)?, n.mu)))
             .map(|(at, mu)| (at.vk, at.k, mu))
@@ -311,7 +311,7 @@ impl ReceiptChain {
     /// `after` (from the line's start where `None`) up to and including
     /// `upto`, in line order, at most `n`.
     fn line_stamps(&self, vk: &[u8; 32], after: Option<Place>, upto: Place, n: usize) -> Vec<Stamp> {
-        let Some(line) = self.lines.fiber_at(vk) else { return Vec::new() };
+        let Some(line) = self.lines.fibre_at(vk) else { return Vec::new() };
         line.filter_map(|(key, &h)| {
             let mut p = 32usize;
             let at = Place::take_canonical(&key, &mut p)?;
@@ -334,7 +334,7 @@ impl ReceiptChain {
     /// unpacked one at a time until it is met, never the span read whole
     /// first ([`ReceiptChain::line_between`]'s nodes, the first that holds).
     pub fn first_between(&self, vk: &[u8; 32], after: Option<Place>, upto: Place, pred: impl Fn(&KStepReceipt) -> bool) -> Option<KStepReceipt> {
-        let line = self.lines.fiber_at(vk)?;
+        let line = self.lines.fibre_at(vk)?;
         line.filter_map(|(key, &h)| {
             let mut p = 32usize;
             let at = Place::take_canonical(&key, &mut p)?;
@@ -568,7 +568,7 @@ impl ReceiptChain {
     fn own_stamps(&self) -> Vec<Stamp> {
         let vk = self.vk;
         self.lines
-            .fiber_at(&vk)
+            .fibre_at(&vk)
             .into_iter()
             .flatten()
             .filter_map(|(key, &h)| {
@@ -633,7 +633,7 @@ impl ReceiptChain {
 
     /// EVERY NODE AT ONE TICK — the mesh's width at `h`.
     pub fn at_tick(&self, h: u64) -> Vec<KStepReceipt> {
-        let Some(tick) = self.nodes.fiber_at(&h.to_be_bytes()) else { return Vec::new() };
+        let Some(tick) = self.nodes.fibre_at(&h.to_be_bytes()) else { return Vec::new() };
         tick.filter_map(|(key, n)| self.unpack(Stamp::from_key(&key)?, n)).collect()
     }
 

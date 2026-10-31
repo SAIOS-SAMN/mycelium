@@ -243,7 +243,7 @@ assert!(
 /// A HAVE-LIST IS ONE CHART'S, NOT THE WHOLE OF `heard`. `fetch_have`
 /// unioned every heard address into every chart's have-list, and it is
 /// called once per stratum, per peer, per exchange cycle. A peer serving
-/// the fetch skips an address only when it stands in the fiber over that
+/// the fetch skips an address only when it stands in the fibre over that
 /// `inv` (`sheaf::serve`), so an address heard under another chart could
 /// never match — it filtered nothing and cost wire, allocation and a read
 /// of a set that grows with peers × corpus.
@@ -262,14 +262,14 @@ let have = k.fetch_have(&here);
 assert!(have.contains(&heard_here), "the address heard under this chart is held: {have:?}");
     assert!(!have.contains(&other), "the address heard under another chart could never match a fetch here: {have:?}");
 
-    // Re-marked under another chart, an address leaves the old fiber: an
+    // Re-marked under another chart, an address leaves the old fibre: an
     // index that only grows answers a stratum with addresses no longer heard
     // under it.
     k.heard_mark(&heard_here, &elsewhere);
     let have = k.fetch_have(&here);
     assert!(
         !have.contains(&heard_here),
-        "it moved charts and left this one's fiber: {have:?}"
+        "it moved charts and left this one's fibre: {have:?}"
     );
     assert!(k.fetch_have(&elsewhere).contains(&heard_here), "and joined the other's");
 }

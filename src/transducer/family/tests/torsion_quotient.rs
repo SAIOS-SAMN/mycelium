@@ -1,12 +1,12 @@
 // 78.74 (as amended) — THE FIBRES OF A FRAME AND THE QUOTIENT BY TORSION
-// (`family/fibres.rs`): pieces as pivots, each piece's coordinates checked against
+// (`family/torsion_quotient.rs`): pieces as pivots, each piece's coordinates checked against
 // its own versor, relative motions read on fibres, classes merged only
 // where every fibre agreed — never blindly transitive — and the certainty of
 // the moving algorithm held across percepts, exact.
 
 use crate::transducer::base::Site;
 use crate::transducer::cga::{self, Mv, E1, E2};
-use crate::transducer::family::fibres::{aligned, piece_of, read_pieces, take_last, vertex_point, Piece, Said};
+use crate::transducer::family::torsion_quotient::{aligned, piece_of, read_pieces, take_last, vertex_point, Piece, Said};
 use num_rational::BigRational;
 
 fn q(n: i64, d: i64) -> BigRational {
@@ -39,7 +39,7 @@ fn wide() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(1 << 16)
 }
 
-fn said(q: &crate::transducer::family::fibres::Quotient, a: &[u8], b: &[u8]) -> Option<Said> {
+fn said(q: &crate::transducer::family::torsion_quotient::Quotient, a: &[u8], b: &[u8]) -> Option<Said> {
     q.said.iter().find(|((x, y), _)| x.as_slice() == a && y.as_slice() == b).map(|(_, s)| s.clone())
 }
 
@@ -199,7 +199,7 @@ fn section(from: Mv, to: Mv, carriage: Mv) -> Piece {
 ///   source; and a pair on one source reads no fibre, so it stands.
 #[test]
 fn relate_sections_tells_copy_motion_or_second_algorithm() {
-    use crate::transducer::family::fibres::{relate_sections, Sections};
+    use crate::transducer::family::torsion_quotient::{relate_sections, Sections};
     let t = |x: i64, y: i64| cga::translator_at(&[q(x, 1), q(y, 1)]);
     let first = section(at(0, 0), at(3, 4), t(3, 4));
     let b = &mut wide();

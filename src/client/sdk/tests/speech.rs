@@ -70,7 +70,7 @@ fn vertex_stratum_is_one_per_vertex_however_spelled() {
     );
     assert!(!here.same_vertex(&there), "and the exact test still tells them apart");
 
-    // A DIFFERENT ROTOR IS A DIFFERENT STRATUM, so the fiber a lookup
+    // A DIFFERENT ROTOR IS A DIFFERENT STRATUM, so the fibre a lookup
     // reads is the words at one vertex and not the mind's whole output.
     let other = conn(&Word::from_letters(&[(p5, false)]), 0);
     assert_ne!(

@@ -2,10 +2,10 @@
 // which read a site of ℚⁿ exactly or refuse.
 //
 //! The functions permitted a site's coordinates: a conformal point read to
-//! the site whose compartment holds it, a compartment's center and a whole
+//! the site whose compartment holds it, a compartment's centre and a whole
 //! compartment carried by a versor, and a sibling's assignment pulled back
 //! onto a base's sites. A compartment (16.4) is the unit square standing on
-//! the grid axes at a site, with its center carried at the site plus ½ on each grid axis and
+//! the grid axes at a site, with its centre carried at the site plus ½ on each grid axis and
 //! the site's own coordinate on every other axis.
 //!
 //! THIS IS THE BOUNDARY WHERE THE CORPUS'S COORDINATES BECOME SITES (71.2(1)).
@@ -63,11 +63,11 @@ pub fn site_of(p: &Point) -> Option<(i64, i64, i64)> {
     }
 }
 
-/// Carry a compartment's center by V and read the base point back (None at
-/// infinity). The center stands at the site plus ½ on each grid axis: the
-/// other axes' origins lie at the compartments' centers (16.4), so a dilator
+/// Carry a compartment's centre by V and read the base point back (None at
+/// infinity). The centre stands at the site plus ½ on each grid axis: the
+/// other axes' origins lie at the compartments' centres (16.4), so a dilator
 /// about a point of the frame fixes the frame. At the site's own `n`.
-pub fn carry_site_center(v: &Versor, s: &Site) -> Option<Vec<num_rational::BigRational>> {
+pub fn carry_site_centre(v: &Versor, s: &Site) -> Option<Vec<num_rational::BigRational>> {
     let half = num_rational::BigRational::new(BigInt::from(1), BigInt::from(2));
     let x: Vec<num_rational::BigRational> = s
         .axes()
@@ -84,14 +84,14 @@ pub fn carry_site_center(v: &Versor, s: &Site) -> Option<Vec<num_rational::BigRa
     crate::transducer::cga::base_at(&v.sandwich(&crate::transducer::cga::point_at(&x)), s.n())
 }
 
-/// The site a compartment's carried center lands in.
+/// The site a compartment's carried centre lands in.
 pub fn carry_site(v: &Versor, s: &Site) -> Option<Site> {
-    site_at(&carry_site_center(v, s)?)
+    site_at(&carry_site_centre(v, s)?)
 }
 
-/// Carry a compartment's center at the corpus's three coordinates.
-pub fn carry_center(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
-    match carry_site_center(v, &Site::of([r, c, k]))?.as_slice() {
+/// Carry a compartment's centre at the corpus's three coordinates.
+pub fn carry_centre(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
+    match carry_site_centre(v, &Site::of([r, c, k]))?.as_slice() {
         [x, y, z] => Some((x.clone(), y.clone(), z.clone())),
         _ => None,
     }
@@ -193,10 +193,10 @@ pub fn carry_compartment(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64,
 }
 
 /// THE PULLBACK of a sibling's assignment onto a base support through the
-/// versor V carrying the sibling onto the base: each base site's center is
+/// versor V carrying the sibling onto the base: each base site's centre is
 /// carried back by V⁻¹ to the sibling's frame, and the sibling link whose
 /// square contains it speaks the transition. Both are sections in each one's
-/// own canonical frame (16.5), so a center carried out of that frame lands
+/// own canonical frame (16.5), so a centre carried out of that frame lands
 /// on no site. Exact at every scale (a dilated sibling's block, a shrunken
 /// sibling's shared site); None when a base site lands outside the sibling.
 pub fn pullback(
@@ -211,7 +211,7 @@ pub fn pullback(
     sorted.sort_unstable();
     base.iter()
         .map(|&(r, c)| {
-            let (sr, sc, sk) = site_of(&carry_center(&inv, r, c, 0)?)?;
+            let (sr, sc, sk) = site_of(&carry_centre(&inv, r, c, 0)?)?;
             if sk != 0 {
                 return None;
             }

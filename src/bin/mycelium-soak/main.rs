@@ -633,7 +633,7 @@ fn read_engine(epi: &mut Epigenome, r: &mut Reading) {
         };
         charts.insert(mycelium::transducer::stalk::invariant_of(e).key(), ());
         // One form's torsion carrier, and one genome's charts below: both
-        // are fibers already, the first by the form that holds it and the
+        // are fibres already, the first by the form that holds it and the
         // second by being built here.
         r.simplices_filled += f.torsion.scoped().count() as u64;
         for (_, v) in f.vertices.scoped() {

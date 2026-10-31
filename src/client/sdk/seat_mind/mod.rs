@@ -150,7 +150,7 @@ fn same_carrier(a: &Mv, b: &Mv) -> bool {
 
 /// WHERE A SERIES STANDS: the record's coordinates and the argument's
 /// position. Written `[kind u16 BE][keys u8][key 32…][occurrence u32
-/// BE][position u8]` — self-delimiting, so a record's series are one fiber
+/// BE][position u8]` — self-delimiting, so a record's series are one fibre
 /// under its prefix.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Locator {
@@ -630,13 +630,13 @@ impl SeatMind {
     }
 
     /// A RECORD'S PERIOD: the lcm of its arguments' (a fixed one counts one),
-    /// read over the record's fiber; `None` where one of them has not
+    /// read over the record's fibre; `None` where one of them has not
     /// returned, or the lcm passes its carrier.
     pub fn record_period(&self, kind: u16, keys: &[[u8; 32]], occurrence: u32) -> Option<u64> {
         let prefix = Locator::record_prefix(kind, keys, occurrence)?;
         let mut lcm = 1u64;
         let mut any = false;
-        for (_, s) in self.series.fiber_at(&prefix)? {
+        for (_, s) in self.series.fibre_at(&prefix)? {
             any = true;
             let p = s.orbit()?.period();
             let g = num_integer::Integer::gcd(&lcm, &p);

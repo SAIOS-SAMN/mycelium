@@ -121,7 +121,7 @@ impl<'a> Frame<'a> {
         Frame { y, bodies, images, by_chart, image_at }
     }
 
-    /// The bodies of `x` on one chart: a keyed read of the fiber.
+    /// The bodies of `x` on one chart: a keyed read of the fibre.
     pub(crate) fn on_chart(&self, chart: &stalk::Invariant) -> Vec<&Body> {
         match self.by_chart.get(chart.key().as_bytes()) {
             Some(on) => on.iter().filter_map(|&i| self.bodies.get(i)).collect(),
@@ -166,7 +166,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
     //
     // A member whose chart this frame carries nothing on is silent, not a
     // fault; a vertex silent on every member is `Silent` exactly as one with
-    // an empty fiber was.
+    // an empty fibre was.
     let mut spoke = false;
     // The chart every refusal below names is THE MEMBER'S OWN, so the court
     // refuses at the coordinate that actually failed.
@@ -179,15 +179,15 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
         let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else {
             return Carried::Fails(FAIL_NO_VERSOR, at());
         };
-        let fiber = here.on_chart(&member.chart);
-        if fiber.is_empty() {
+        let fibre = here.on_chart(&member.chart);
+        if fibre.is_empty() {
             continue;
         }
         spoke = true;
-        for body in fiber {
+        for body in fibre {
             for l in &body.compartments {
                 let h = l.hue;
-                let Some(p) = element::carry_site_center(&versor, &l.site) else {
+                let Some(p) = element::carry_site_centre(&versor, &l.site) else {
                     return Carried::Fails(FAIL_NO_CARRY, at());
                 };
 
@@ -496,8 +496,8 @@ fn motor_carries(
 ) -> Result<Option<Refusal>, Unbounded> {
     use crate::transducer::base::FRAME_AXIS;
     let at = |k: u64| usize::try_from(k).ok().and_then(|i| frames.get(i));
-    let placed = |fiber: &[&Body], k: i64| -> Option<Vec<crate::transducer::base::Site>> {
-        let mut s: Vec<_> = fiber
+    let placed = |fibre: &[&Body], k: i64| -> Option<Vec<crate::transducer::base::Site>> {
+        let mut s: Vec<_> = fibre
             .iter()
             .flat_map(|b| b.compartments.iter())
             .map(|l| l.site.with_axis(FRAME_AXIS, k))
@@ -654,9 +654,9 @@ pub(crate) fn edges_rederive_frames_from(
         // THE OVERLAP'S OWN FRAME, by its coordinate: a frame of the family
         // the court replays against, or none it can ask.
         if let Some(at) = usize::try_from(x.frame).ok().and_then(|k| frames.get(k)) {
-            let fiber_i = at.on_chart(class_i);
-            let fiber_j = at.on_chart(class_j);
-            let ([a_i], [a_j]) = (fiber_i.as_slice(), fiber_j.as_slice()) else {
+            let fibre_i = at.on_chart(class_i);
+            let fibre_j = at.on_chart(class_j);
+            let ([a_i], [a_j]) = (fibre_i.as_slice(), fibre_j.as_slice()) else {
                 continue;
             };
             let (Some(bi), Some(bj)) = (image_body(a_i, &v_i, at), image_body(a_j, &v_j, at)) else {

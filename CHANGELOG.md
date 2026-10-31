@@ -54,6 +54,15 @@ such change is named here.
   `sdk::Mind`. "Kernel" now names only a program that runs a world. The
   unused `mycelium::voice` module (a second `Voice`, used only by its own
   test) is removed; `sdk::Voice` is the one voice type.
+- One spelling, British, in identifiers, file names, comments, strings and
+  documentation: fibre, centre, centred, neighbour (a 0.x API change).
+  `Keyed::fiber` is `Keyed::fibre`, the walk `Fiber` is `Fibre`, and
+  `FiberTransition`, `GaugeFibers`, `fiber_at_depth`, `carry_center`,
+  `carry_site_center` and `decide_neighbors` follow, with the tests that
+  name them. `src/transducer/family/fiber.rs` is `fibre.rs` (the fibres of
+  a side) and `src/transducer/family/fibres.rs`, the quotient by torsion,
+  is `torsion_quotient.rs`, with its tests; `sentence/form/fiber.rs` is
+  `fibre.rs`. No wire or persisted format changes.
 
 ### Documentation
 - One naming scheme for the specifications: every document under `docs/`

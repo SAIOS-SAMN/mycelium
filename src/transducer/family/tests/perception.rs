@@ -785,10 +785,10 @@ assert!(carriage(&a[0], &b[0], &mut super::common::budget()).is_some(), "a verso
 }
 
 /// Y4 (24.4, 20, 21 step 1, W10, Rule 2):
-/// A scene of five bodies on three charts answers "the chart whose fiber holds one"
+/// A scene of five bodies on three charts answers "the chart whose fibre holds one"
 /// without a count compared to a literal.
 #[test]
-fn chart_holding_one_finds_singleton_fiber() {
+fn chart_holding_one_finds_singleton_fibre() {
     let g = grid(&[
         "110333",
         "000000",
@@ -798,13 +798,13 @@ fn chart_holding_one_finds_singleton_fiber() {
     ]);
     let bodies = perceive(&g);
     assert_eq!(bodies.len(), 5, "five bodies perceived: {bodies:?}");
-    let fibers = crate::transducer::family::perceive::bodies_by_chart(&bodies);
-    assert_eq!(fibers.len(), 3, "three charts represented: {fibers:?}");
+    let fibres = crate::transducer::family::perceive::bodies_by_chart(&bodies);
+    assert_eq!(fibres.len(), 3, "three charts represented: {fibres:?}");
 
     let dot = bodies.iter().find(|b| b.compartments == vec![Compartment::from((4i64, 2i64, 0i64, 5u8))]).expect("the dot");
     let chart = crate::transducer::family::perceive::chart_holding_one(&bodies)
         .expect("unique chart holding one body");
-    assert_eq!(chart, dot.moduli, "answers the chart whose fiber holds one");
+    assert_eq!(chart, dot.moduli, "answers the chart whose fibre holds one");
 }
 
 /// Y4: A family whose rule selects that body extracts a rule where it

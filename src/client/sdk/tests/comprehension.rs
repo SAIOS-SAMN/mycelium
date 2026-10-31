@@ -227,7 +227,7 @@ assert!(
 }
 
 /// A citer whose cited class is held under another spelling is Understood
-/// through that held form; standing is read from the atlas fiber.
+/// through that held form; standing is read from the atlas fibre.
 #[test]
 fn comprehend_understands_through_held_class() {
 use crate::transducer::alphabet::Word;

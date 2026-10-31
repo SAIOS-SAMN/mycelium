@@ -22,7 +22,7 @@ use crate::transducer::stalk::{self, Stalks};
 /// reading takes the lookups rather than the language itself, and a caller
 /// can point them at the genome, the dialect, a working atlas, or all three.
 ///
-/// IT WAS FIVE, AND THE FIFTH WAS A CARTESIAN ROUND TRIP. `fiber_of`
+/// IT WAS FIVE, AND THE FIFTH WAS A CARTESIAN ROUND TRIP. `fibre_of`
 /// answers a chart with ADDRESSES; `index_of` turned each address into an
 /// offset into whatever vector the caller happened to hold, and `word_at`
 /// turned the offset back into a word. The offsets existed only to be
@@ -34,7 +34,7 @@ use crate::transducer::stalk::{self, Stalks};
 /// round trip and all three carriers are gone.
 pub struct Reading<'r, W, F, S, H> {
     pub word_at: &'r W,
-    pub fiber_of: &'r F,
+    pub fibre_of: &'r F,
     pub shape_at: &'r S,
     pub held_at: &'r H,
 }
@@ -114,7 +114,7 @@ fn vertex_cites_by(
     let linear = element::conformal_of_rotor(&rotor, &element::dilator_of(carriage)?)?;
     let v = blade::versor_carrying(&shape_in, &shape_out, &linear, budget).ok()?.versor;
     for &(r, c, h) in &before {
-        let p = element::carry_center(&v, r, c, 0)?;
+        let p = element::carry_centre(&v, r, c, 0)?;
         let (tr, tc, tk) = element::site_of(&p)?;
         if tk != 0 {
             return None;
@@ -159,9 +159,9 @@ pub fn locate_or_puncture_at<'a>(
     exclude: Option<&[u8]>,
     budget: &mut crate::physics::Budget,
 ) -> Located {
-    let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
+    let fibre_of = |inv: &stalk::Invariant| atlas.fibre(inv);
     locate_or_puncture_on(
-        &Reading { word_at, fiber_of: &fiber_of, shape_at, held_at: &no_held },
+        &Reading { word_at, fibre_of: &fibre_of, shape_at, held_at: &no_held },
         piece,
         exclude,
         budget,
@@ -174,7 +174,7 @@ fn unlocated(multiplicity: usize) -> Located {
     Located { cite: None, puncture: None, held: None, multiplicity }
 }
 
-/// Locate against an arbitrary fiber — the working atlas, not only the
+/// Locate against an arbitrary fibre — the working atlas, not only the
 /// genome. Ruled first, then Stood, then Held (24.1): the Held stratum is
 /// read only where no ruled or stood word is on the body's chart, and
 /// there exactly one held form's word must reconstruct the body; several
@@ -191,7 +191,7 @@ where
     S: Fn(&[u8]) -> Option<&'a Shape>,
     H: Fn(&stalk::Invariant, &[Link], &mut crate::physics::Budget) -> Vec<HeldCite>,
 {
-    let &Reading { word_at, fiber_of, shape_at, held_at } = read;
+    let &Reading { word_at, fibre_of, shape_at, held_at } = read;
     let Some(shape) = element::shape_of_chain(piece) else {
         return unlocated(0);
     };
@@ -199,7 +199,7 @@ where
     let key = element::gauge_key(&element::assignment(piece));
     // THE STRATUM IS ADDRESSES, WHICH IS WHAT THE ATLAS ANSWERS WITH. It
     // was converted to offsets here and converted back one line later.
-    let stratum: Vec<Vec<u8>> = fiber_of(&chart)
+    let stratum: Vec<Vec<u8>> = fibre_of(&chart)
         .into_iter()
         .filter(|a| Some(a.as_slice()) != exclude)
         .filter(|a| word_at(a).is_some_and(|w| !w.assignments_by_profile(&key).is_empty()))
@@ -286,16 +286,16 @@ fn place_located<'a, W, F, S, H>(
         (Some(c), _, _) => out.cites.push(c),
         (None, Some(p), _) => out.punctures.push(p),
         (None, None, Some(h)) => out.held.push(h),
-        (None, None, None) => match element::gauge_fibers(body) {
+        (None, None, None) => match element::gauge_fibres(body) {
             None => {}
-            Some(element::GaugeFibers::One(_, links)) => {
+            Some(element::GaugeFibres::One(_, links)) => {
                 out.residual.extend(links);
             }
-            Some(element::GaugeFibers::Many(idx)) => {
-                // One body's gauge fibers, each read in turn: a piece left
+            Some(element::GaugeFibres::Many(idx)) => {
+                // One body's gauge fibres, each read in turn: a piece left
                 // out is a piece nothing places.
-                for (_, fiber) in idx.scoped() {
-                    for sub in pieces(fiber) {
+                for (_, fibre) in idx.scoped() {
+                    for sub in pieces(fibre) {
                         let loc = locate_or_puncture_on(read, &sub, exclude, budget);
                         place_located(out, loc, &sub, read, exclude, budget);
                     }
@@ -319,16 +319,16 @@ pub fn deconstruct_at<'a>(
     exclude: Option<&[u8]>,
     budget: &mut crate::physics::Budget,
 ) -> Sentence {
-    let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
+    let fibre_of = |inv: &stalk::Invariant| atlas.fibre(inv);
     deconstruct_on(
-        &Reading { word_at, fiber_of: &fiber_of, shape_at, held_at: &no_held },
+        &Reading { word_at, fibre_of: &fibre_of, shape_at, held_at: &no_held },
         chain,
         exclude,
         budget,
     )
 }
 
-/// Deconstruct over a fiber the caller names — genome, dialect, or both —
+/// Deconstruct over a fibre the caller names — genome, dialect, or both —
 /// and over the held words the caller reads at each body's chart.
 pub fn deconstruct_on<'a, W, F, S, H>(
     read: &Reading<'_, W, F, S, H>,

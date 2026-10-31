@@ -84,7 +84,7 @@ pub enum Measure {
 /// chord is a face of this form and a fibre index is a stratum of an element's
 /// axis, so carrying one across as the other means inventing a coordinate the
 /// source never held. `Element::adopt_torsion` did exactly that, writing
-/// `FIBER_SPATIAL` in the chord's place, and is deleted. A form's cycles are
+/// `FIBRE_SPATIAL` in the chord's place, and is deleted. A form's cycles are
 /// read where they are filed.
 /// THE TWO-PLANE SPECTRUM OF A HOLONOMY: one period per invariant plane
 /// of the double rotation, `None` where that factor does not close.
@@ -248,7 +248,7 @@ impl Closes {
 /// The chart rides the member as well as keying it, which is how every
 /// keyed carrier in this tree holds a coordinate that a reader needs back
 /// — `finish`'s `by_demand` holds `(kind, chart, links)` under
-/// `demand_key(kind, chart)` for the same reason. `Stalks::fiber` takes an
+/// `demand_key(kind, chart)` for the same reason. `Stalks::fibre` takes an
 /// `Invariant` and not a key, so the member must carry the chart it is
 /// filed under or the reader cannot ask the atlas anything.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -348,7 +348,7 @@ pub enum Vertex {
         /// vertex's class is the section coordinate", which is one
         /// `Invariant` and holds one of the bodies' charts. Measured on
         /// `05f2a901`: two bodies, two charts, one transport class, and
-        /// `speak_rule`'s `atlas.fiber(class)` reaching one of the two. A
+        /// `speak_rule`'s `atlas.fibre(class)` reaching one of the two. A
         /// section coordinate that is single-valued cannot carry a section.
         ///
         /// 18.2 already names the carrier and its intent in one line — two
@@ -908,7 +908,7 @@ pub struct Form {
     /// Incomparable discharges held as candidates until a glue or ruling.
     /// Outer key is the after class; inner is the discharging rotor A1 key.
     pub vortex: Keyed<Keyed<PivotCertificate>>,
-    /// Chart key → the Word vertices on that chart (18.2): the fiber a
+    /// Chart key → the Word vertices on that chart (18.2): the fibre a
     /// listing body's chart reads when a cite asks what this form holds
     /// there (24.1 as ruled 2026-09-09). Derived by `reindex`, never on
     /// the tape.
@@ -926,14 +926,14 @@ pub struct Form {
     /// TRANSPORT CLASS KEY → the Word vertices of that class (21 step 1).
     /// Derived by `reindex`, never on the tape.
     ///
-    /// The fiber correspondence needs, and it did not exist. Correspondence
+    /// The fibre correspondence needs, and it did not exist. Correspondence
     /// matches by TRANSPORT CLASS — kind and the conjugacy of the word, never
     /// the hue map and never the body's moduli, which are section coordinates
     /// — and none of this form's carriers was keyed by it: `by_class` is
     /// keyed by the CHART, and one class spans several charts (`05f2a901`:
     /// one class, two charts), so it cannot say which vertices correspond;
     /// `carriages` holds versors rather than indices and its key carries the
-    /// gauge, which 21 step 1 excludes from matching. Lacking the fiber,
+    /// gauge, which 21 step 1 excludes from matching. Lacking the fibre,
     /// extraction read every pair form's vertices and accumulated the
     /// correspondence itself — a second producer of one fact, beside the
     /// indexer whose job it is (law 12, 13.1).

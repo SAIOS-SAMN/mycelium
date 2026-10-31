@@ -170,8 +170,8 @@ lints.
 
 `Keyed` (`network/nerve/keyed/`) exposes `get`, `get_mut`, `insert`,
 `remove`, `contains`, `len`, and four ways to obtain more than one entry:
-`fiber(prefix)`, `peel(key)`, `link(key)` and `cursor(from, budget)`.
-`fiber` takes a `Prefix`, which cannot be empty, so a whole carrier is
+`fibre(prefix)`, `peel(key)`, `link(key)` and `cursor(from, budget)`.
+`fibre` takes a `Prefix`, which cannot be empty, so a whole carrier is
 read only through `cursor` under a `Budget`. Persistence walks a carrier
 through the crate-private `keyed_persist_walk`. The work counters
 (`network/nerve/keyed/work.rs`), incremented in test builds on `Keyed` get

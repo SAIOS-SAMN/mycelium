@@ -8,7 +8,7 @@ use super::*;
 /// scanned among siblings); the members are the addresses whose chart
 /// ends here.
 ///
-/// X3: BOTH CARRIERS ARE ALREADY ONE NODE'S FIBER, and every iteration
+/// X3: BOTH CARRIERS ARE ALREADY ONE NODE'S FIBRE, and every iteration
 /// below reads them with `scoped`. A `Stratum` is reached by following the
 /// chart's axes — `branches.get(&axis_key(a))`, one keyed read per axis —
 /// so `members` is the addresses at THIS chart and `branches` is this
@@ -25,7 +25,7 @@ pub(crate) struct Stratum {
 /// A STRATUM BRANCHES ON A WHOLE COORDINATE (A21 as ruled 2026-09-18).
 /// The branch key is the coordinate's own kind-tagged, length-prefixed
 /// bytes — the same unit `Invariant::key` writes — so the chart a word is
-/// filed under and the path a fiber follows are one construction (law 12).
+/// filed under and the path a fibre follows are one construction (law 12).
 /// It was eight bare bytes, which is one `u64` limb and not one coordinate.
 pub(crate) fn axis_key(a: &ChartAxis) -> Vec<u8> {
     a.key_bytes()
@@ -70,13 +70,13 @@ impl Stratum {
         }
     }
 
-    pub(crate) fn fiber(&self, axes: &[ChartAxis]) -> Vec<Vec<u8>> {
+    pub(crate) fn fibre(&self, axes: &[ChartAxis]) -> Vec<Vec<u8>> {
         match axes.split_first() {
             None => self.members.scoped().map(|(k, _)| k).collect(),
             // A stratum with no branch on this axis holds no members
-            // under it: the empty fiber is that reading (0.11c).
+            // under it: the empty fibre is that reading (0.11c).
             Some((a, rest)) => match self.branches.get(&axis_key(a)) {
-                Some(s) => s.fiber(rest),
+                Some(s) => s.fibre(rest),
                 None => Vec::new(),
             },
         }
@@ -176,7 +176,7 @@ impl Stratum {
     // `branches_at(axes)` stood here and handed out a stratum's whole branch
     // carrier so `each_child` could page it. Both are gone with the outward
     // read they existed for: an idea meets the charts its own vertices stand
-    // on, and a chart's members are `fiber`, not a page of its siblings.
+    // on, and a chart's members are `fibre`, not a page of its siblings.
     // Nothing else in the tree ever asked a stratum for its branches.
 
     pub(crate) fn collect_members(&self, out: &mut Vec<Vec<u8>>) {
@@ -188,7 +188,7 @@ impl Stratum {
         }
     }
 
-    pub(crate) fn fiber_under(&self, axes: &[ChartAxis]) -> Vec<Vec<u8>> {
+    pub(crate) fn fibre_under(&self, axes: &[ChartAxis]) -> Vec<Vec<u8>> {
         match axes.split_first() {
             None => {
                 let mut out = Vec::new();
@@ -197,7 +197,7 @@ impl Stratum {
             }
             // No branch on this axis, no members under it.
             Some((a, rest)) => match self.branches.get(&axis_key(a)) {
-                Some(s) => s.fiber_under(rest),
+                Some(s) => s.fibre_under(rest),
                 None => Vec::new(),
             },
         }

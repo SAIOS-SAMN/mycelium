@@ -44,7 +44,7 @@ fn compose_carries_rotor_and_transition_answers_one() {
         !same_versor(&b.versor().expect("a versor"), &identity_versor()),
         "a (1,3) rotation is active in the conformal algebra of the base"
     );
-    assert_eq!(b.axes(), vec![FIBER_SPATIAL], "the turn occupies S");
+    assert_eq!(b.axes(), vec![FIBRE_SPATIAL], "the turn occupies S");
     assert!(!b.is_identity(), "a 90° turn is not the identity word");
 
     let c = a.compose(&b).expect("the composite forms");
@@ -105,7 +105,7 @@ fn same_action_is_projective_versor_equality() {
     assert!(!a.same_action(&other), "distinct versors are distinct actions");
 }
 
-/// The substance of a germinated element is its centered chain: one
+/// The substance of a germinated element is its centred chain: one
 /// deformation at any position is one address, while an equal tally with
 /// different geometry stays distinct.
 #[test]

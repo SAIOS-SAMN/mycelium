@@ -1,22 +1,22 @@
-// A13 — THE WALKS: a fiber, a link, a cursor and a shell, each a read of
+// A13 — THE WALKS: a fibre, a link, a cursor and a shell, each a read of
 // structure rather than a search over a list.
 
 use super::*;
 
 /// Subtree under a key prefix. The only read of more than one entry that
 /// is not a link, a peel, or a budgeted cursor.
-pub struct Fiber<'a, V> {
+pub struct Fibre<'a, V> {
     pub(crate) stack: Vec<&'a Node<V>>,
     pub(crate) prefix: Vec<u8>,
 }
 
-impl<'a, V> Fiber<'a, V> {
+impl<'a, V> Fibre<'a, V> {
     fn empty() -> Self {
-        Fiber { stack: Vec::new(), prefix: Vec::new() }
+        Fibre { stack: Vec::new(), prefix: Vec::new() }
     }
 }
 
-impl<'a, V> Iterator for Fiber<'a, V> {
+impl<'a, V> Iterator for Fibre<'a, V> {
     type Item = (Vec<u8>, &'a V);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -25,7 +25,7 @@ impl<'a, V> Iterator for Fiber<'a, V> {
             work::count_visit();
             match node {
                 Node::Leaf(k, v) => {
-                    if key_in_fiber(k, &self.prefix) {
+                    if key_in_fibre(k, &self.prefix) {
                         return Some((k.to_vec(), v));
                     }
                 }
@@ -37,7 +37,7 @@ impl<'a, V> Iterator for Fiber<'a, V> {
                         self.stack.push(c);
                     }
                     if let Some((k, v)) = end.as_deref() {
-                        if key_in_fiber(k, &self.prefix) {
+                        if key_in_fibre(k, &self.prefix) {
                             return Some((k.to_vec(), v));
                         }
                     }
@@ -50,13 +50,13 @@ impl<'a, V> Iterator for Fiber<'a, V> {
 
 /// Entries incident to one key: the inner trie at that key.
 pub struct Link<'a, V> {
-    pub(crate) fiber: Fiber<'a, V>,
+    pub(crate) fibre: Fibre<'a, V>,
 }
 
 impl<'a, V> Iterator for Link<'a, V> {
     type Item = (Vec<u8>, &'a V);
     fn next(&mut self) -> Option<Self::Item> {
-        self.fiber.next()
+        self.fibre.next()
     }
 }
 
@@ -64,11 +64,11 @@ impl<T> Keyed<Keyed<T>> {
     /// The inner trie at `key` — simplices on a vertex, bubbles on a chart.
     pub fn link(&self, key: &[u8]) -> Link<'_, T> {
         Link {
-            fiber: match self.get(key) {
+            fibre: match self.get(key) {
                 // The inner trie AT a key: `get` follows the key, so what it
-                // returns is already one stratum's fiber.
+                // returns is already one stratum's fibre.
                 Some(inner) => inner.scoped(),
-                None => Fiber::empty(),
+                None => Fibre::empty(),
             },
         }
     }
@@ -84,7 +84,7 @@ impl<T> Keyed<Keyed<T>> {
 /// completed circuit of the carrier, which the stroke counts as its circuit.
 pub struct Cursor<'a, V, C: Coordinate = coord::Any> {
     pub(crate) keyed: &'a Keyed<V, C>,
-    pub(crate) fiber: Fiber<'a, V>,
+    pub(crate) fibre: Fibre<'a, V>,
     pub(crate) budget: &'a mut crate::physics::Budget,
     /// The key the walk began after; `None` began at the first key.
     pub(crate) from: Option<Vec<u8>>,
@@ -114,7 +114,7 @@ impl<'a, V, C: Coordinate> Iterator for Cursor<'a, V, C> {
             if self.done || self.budget.remaining() == 0 {
                 return None;
             }
-            let Some((k, v)) = self.fiber.next() else {
+            let Some((k, v)) = self.fibre.next() else {
                 // The end of the key order. An empty carrier has no
                 // circuit; a walk from the first key has completed one and
                 // ends; a walk from `from` continues from the first key.
@@ -127,7 +127,7 @@ impl<'a, V, C: Coordinate> Iterator for Cursor<'a, V, C> {
                     self.done = true;
                     return None;
                 }
-                self.fiber = self.keyed.scoped();
+                self.fibre = self.keyed.scoped();
                 continue;
             };
             match (&self.from, self.wrapped) {
@@ -154,7 +154,7 @@ impl<'a, V, C: Coordinate> Iterator for Cursor<'a, V, C> {
 
 /// One shell: the parent prefix of a peel, and the entries at that branch.
 pub struct Shell<'a, V> {
-    pub(crate) fiber: Fiber<'a, V>,
+    pub(crate) fibre: Fibre<'a, V>,
     pub(crate) prefix: Vec<u8>,
 }
 
@@ -167,6 +167,6 @@ impl<'a, V> Shell<'a, V> {
 impl<'a, V> Iterator for Shell<'a, V> {
     type Item = (Vec<u8>, &'a V);
     fn next(&mut self) -> Option<Self::Item> {
-        self.fiber.next()
+        self.fibre.next()
     }
 }

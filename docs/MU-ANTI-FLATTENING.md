@@ -109,7 +109,7 @@ in persistence and transport as in cognition.
     bounding boxes, quadtrees, octrees, k-d trees, R-trees, spatial hashes,
     grid cells, voxels), the flat-box shapes of clauses 3 and 5. It reads
     names, not structure.
-- **By type:** `Keyed::fiber` takes a `Prefix` that cannot be empty, and
+- **By type:** `Keyed::fibre` takes a `Prefix` that cannot be empty, and
   the μ⃗ type `Mu` implements neither `PartialEq` nor `PartialOrd`, so a
   four-lane reading cannot be collapsed to one comparison.
 - **By review:** everything else — a `bool` deciding a branch in

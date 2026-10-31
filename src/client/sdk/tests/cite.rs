@@ -27,10 +27,10 @@ assert!(
 entity.remember_spoken(&e1);
 let inv = crate::transducer::stalk::invariant_of(&e1);
 assert!(entity.incident_chart(&inv), "a dialect chart is working incidence");
-let fiber = entity.working_atlas().fiber(&inv);
+let fibre = entity.working_atlas().fibre(&inv);
 assert!(
-    fiber.iter().any(|(_, s)| *s == Standing::Stood),
-    "a dialect fiber carries Stood, not a boolean"
+    fibre.iter().any(|(_, s)| *s == Standing::Stood),
+    "a dialect fibre carries Stood, not a boolean"
 );
 assert!(
     !entity.incident_chart(&crate::transducer::stalk::Invariant::counts(&[99])),
@@ -42,8 +42,8 @@ let idea = crate::transducer::stalk::invariant(&idea_chain);
 assert!(entity.ideas_len() > 0, "the idea is held");
 assert!(entity.incident_chart(&idea), "an idea chart is working incidence");
 assert!(
-    entity.working_atlas().fiber(&idea).iter().any(|(_, s)| *s == Standing::Held),
-    "an idea fiber carries Held"
+    entity.working_atlas().fibre(&idea).iter().any(|(_, s)| *s == Standing::Held),
+    "an idea fibre carries Held"
 );
 let (ruled, stood, held) = entity.atlas_standing_counts();
 assert_eq!(ruled, 0, "genome empty");

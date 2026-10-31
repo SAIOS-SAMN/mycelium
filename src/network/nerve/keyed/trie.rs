@@ -314,7 +314,7 @@ pub(crate) fn remove_at<V>(slot: &mut Option<Box<Node<V>>>, key: &[u8]) -> Optio
     removed
 }
 
-pub(crate) fn key_in_fiber(key: &[u8], prefix: &[u8]) -> bool {
+pub(crate) fn key_in_fibre(key: &[u8], prefix: &[u8]) -> bool {
     prefix.is_empty() || key.starts_with(prefix)
 }
 

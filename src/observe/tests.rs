@@ -403,7 +403,7 @@ fn judged_slot_is_bijection_onto_judged_table() {
 
 /// LD1, 78.24 — A LEDGER'S NODES ARE MEASURED BY THE ACT KIND THAT SEALED
 /// THEM, and a node citing a word carries the same bytes whatever the size
-/// of the word: the citation is the word's fiber and admitting stamp, never
+/// of the word: the citation is the word's fibre and admitting stamp, never
 /// a copy of it.
 #[test]
 fn of_chain_measures_nodes_by_kind_flat_in_word() {

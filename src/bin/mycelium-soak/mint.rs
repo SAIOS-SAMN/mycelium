@@ -44,7 +44,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     // closure's yield from it.
     //
     // IT IS READ OFF THE FORM, which is the carrier. The first cut of this
-    // instrument read `Element::fiber_span` on the minted word and reported 1
+    // instrument read `Element::fibre_span` on the minted word and reported 1
     // on every family — not a measurement of the corpus but a constant by
     // construction, because a minted sentence's element leaves its own two
     // fibre fields empty and carries the cycles on its form. A measurement that
@@ -320,9 +320,9 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // COUNT TWO: WHAT `speak_rule` MATCHES THE RULE'S VERTEX AGAINST.
         // `apply_form` perceives the input, admits every body into a
         // scratch atlas by its moduli, and for each Word vertex takes
-        // `atlas.fiber(class)` — so one vertex CAN speak several bodies
+        // `atlas.fibre(class)` — so one vertex CAN speak several bodies
         // (21's design). This counts the bodies present and the bodies the
-        // fiber reaches, and reads `unspoken` for a vertex whose fiber was
+        // fibre reaches, and reads `unspoken` for a vertex whose fibre was
         // empty.
         for (i, (x, y)) in task.train.iter().enumerate() {
             let bodies = mycelium::transducer::family::perceive(x);
@@ -342,7 +342,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                         v.acts()
                             .into_iter()
                             .flat_map(|k| k.scoped())
-                            .map(|(_, a)| atlas.fiber(&a.chart).len())
+                            .map(|(_, a)| atlas.fibre(&a.chart).len())
                             .sum::<usize>(),
                     ),
                     _ => None,
@@ -350,7 +350,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 .collect();
             let spoken = mycelium::transducer::family::speak_rule(&rule, x, &empty);
             println!(
-                "  mint {name} speak {i}: bodies perceived {} | fiber hits per word vertex {hits:?} \
+                "  mint {name} speak {i}: bodies perceived {} | fibre hits per word vertex {hits:?} \
                  | unspoken {:?} | painted sites emitted {} | residual vs observed {}",
                 bodies.len(),
                 spoken.as_ref().map(|s| s.unspoken.len()),
@@ -461,7 +461,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     // S9.13's reach over the minting families, as a distribution, read off
     // the form. Zero reach on all of them says no family on this slice filed a
     // cycle — which is a reading of the corpus, where the same line over
-    // `Element::fiber_span` was a reading of the mint path's construction.
+    // `Element::fibre_span` was a reading of the mint path's construction.
     println!(
         "  mint reach: {} minting families, form reach 0 on {reach_one}, above 0 on {reach_more} \
          | form carriers over them: sections {form_sections} torsion {form_torsion}",

@@ -146,7 +146,7 @@ impl Court {
         let torsion_words = self
             .basis
             .scoped()
-            .filter(|(_, w)| w.element().torsion().iter().any(|t| t.fibre == crate::transducer::element::FIBER_SPATIAL))
+            .filter(|(_, w)| w.element().torsion().iter().any(|t| t.fibre == crate::transducer::element::FIBRE_SPATIAL))
             .count() as u64;
         let read = crate::transducer::cech::RemainderReading {
             refused: self.remainders_refused,

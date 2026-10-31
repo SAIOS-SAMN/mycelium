@@ -265,7 +265,7 @@ impl Complex {
 
     /// Climb the link of one vertex: the candidate at degree k+1 is the
     /// intersection of the links of existing k-simplices with the link of
-    /// one more neighbour, never a subset of the fiber. Stops when the next
+    /// one more neighbour, never a subset of the fibre. Stops when the next
     /// degree produces no volume. Simplices are read by key; rotors are
     /// not cloned.
     ///
@@ -737,7 +737,7 @@ impl Complex {
         self.by_key.remove(key);
         // Its chords' orbit readings stand under its key: they go with it,
         // or a released cell would leave readings no cell holds (78.74).
-        let orbits: Vec<Vec<u8>> = match self.orbits.fiber_at(key) {
+        let orbits: Vec<Vec<u8>> = match self.orbits.fibre_at(key) {
             Some(f) => f.map(|(k, _)| k).collect(),
             None => Vec::new(),
         };
@@ -882,7 +882,7 @@ impl Complex {
     pub fn classes(&self) -> Vec<(crate::transducer::sentence::ClassVector, Rotor, usize)> {
         let mut out = Vec::new();
         // EVERY standing class, as the name says: the simplices of this
-        // complex, which is one chart's nerve and a fiber already.
+        // complex, which is one chart's nerve and a fibre already.
         for (k, d) in self.by_key.scoped() {
             let d = *d;
             if let Some(c) = self.degrees.get(d).and_then(|l| l.get(&k)) {
@@ -892,7 +892,7 @@ impl Complex {
             }
             // AND THE ORBITS ON IT, each one its own standing class (11.3:
             // an `H¹` orbit is held with its class vector). Read as the
-            // fiber under the simplex's key, at the degree the simplex
+            // fibre under the simplex's key, at the degree the simplex
             // already carries — the orbits were stored and unread, which is
             // inert (24), and folding them was worse.
             for fill in self.orbits_of(&k) {

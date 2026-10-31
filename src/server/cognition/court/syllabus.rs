@@ -4,7 +4,7 @@
 use crate::cognition::*;
 
 /// WHAT THIS COURT TAUGHT A VOICE, keyed by the word then the voice: the
-/// word's marks are its own fiber, and leave with it.
+/// word's marks are its own fibre, and leave with it.
 pub(crate) fn taught_key(addr: &[u8], voice: &[u8; 32]) -> Vec<u8> {
     let mut key = addr.to_vec();
     key.extend_from_slice(voice);
@@ -371,12 +371,12 @@ impl Court {
     }
 
     /// THE STRATUM FETCH ON THE HOLD'S STROKE (78.153b): the words of the
-    /// fiber over `inv` the asker lacks — over `seed`, the ruled addresses
+    /// fibre over `inv` the asker lacks — over `seed`, the ruled addresses
     /// coarsest chart first, where `inv` names no axes (the binary hands the
     /// published seed, read off the shelf, so no copy of every ruled address
     /// is made under the kernel) — up to `budget` bytes. The reading of what
     /// a peer is served (`read_fetched`) spends `reads`, the hold's stroke,
-    /// never a stroke minted here. OWED: the walk over the fiber is keyed
+    /// never a stroke minted here. OWED: the walk over the fibre is keyed
     /// reads bounded by the stratum, and a word the asker cannot pay for is
     /// still written out before its deferral (its width is read first).
     ///
@@ -406,12 +406,12 @@ impl Court {
             held.insert(h, ());
         }
         // An empty mind is seeded from the root: coarsest ruled words first.
-        let fiber: Vec<Vec<u8>>;
+        let fibre: Vec<Vec<u8>>;
         let addrs: &[Vec<u8>] = if inv.0.is_empty() {
             seed
         } else {
-            fiber = self.ruled.fiber(inv);
-            &fiber
+            fibre = self.ruled.fibre(inv);
+            &fibre
         };
         for addr in addrs {
             let addr = addr.clone();
@@ -510,7 +510,7 @@ impl Court {
     }
 
     pub fn ruled_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
-        self.ruled.fiber(inv).to_vec()
+        self.ruled.fibre(inv).to_vec()
     }
 
     /// Ruled addresses, coarsest chart first — the syllabus seed of an
@@ -553,7 +553,7 @@ impl Court {
     ///
     /// THE HEARD ADDRESSES ARE THIS CHART'S, NOT ALL OF THEM. This unioned
     /// the WHOLE of `heard` into every chart's have-list. A peer serving
-    /// the fetch skips an address only when it stands in the fiber over
+    /// the fetch skips an address only when it stands in the fibre over
     /// `inv` (`sheaf::serve`), so an address heard under any other chart
     /// could never match: it filtered nothing and was pure wire, pure
     /// allocation, and pure read.
@@ -561,10 +561,10 @@ impl Court {
     /// It is called once per stratum, per peer, per exchange cycle, and
     /// `heard` grows with peers × corpus — so the mesh paid O(P² · S · C)
     /// for addresses that could not be used. Read from the chart's own
-    /// fiber, the cost is the stratum.
+    /// fibre, the cost is the stratum.
     pub fn fetch_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
         let mut h: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for a in self.ruled.fiber(inv) {
+        for a in self.ruled.fibre(inv) {
             h.insert(a, ());
         }
         if let Some(here) = self.heard_at.get(inv.key().as_bytes()) {
@@ -676,7 +676,7 @@ impl Court {
     /// METERED (2026-10-09): each held word read against `addr` spends one
     /// read of `reads`, and a spent stroke ends the reading at the strongest
     /// relation met so far. Unmetered, a fetch of a large chart solved the
-    /// conjugators against every ruled word of the fiber, for every word it
+    /// conjugators against every ruled word of the fibre, for every word it
     /// served, under the kernel — hypha c held the kernel 20+ minutes at the
     /// stratum fetch (`judge/syllabus.rs`), twice, and every act waited.
     fn relation_to(
@@ -693,7 +693,7 @@ impl Court {
         };
         // The strongest relation met so far, as its place on the readings.
         let mut best = 5usize;
-        for held in self.ruled.fiber(&inv) {
+        for held in self.ruled.fibre(&inv) {
             if held.as_slice() == addr || !holds(&held) {
                 continue;
             }

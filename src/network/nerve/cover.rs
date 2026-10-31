@@ -15,7 +15,7 @@ use crate::transducer::stalk::ChartAxis;
 // `ChartAxis::key_bytes`, which is the one construction the chart key, this
 // cover's trie and the stalk's stratum all branch on (law 12).
 
-/// Cover trie: per lane, nested Keyed by invariant axes. The fiber at a
+/// Cover trie: per lane, nested Keyed by invariant axes. The fibre at a
 /// node is the hyphas covering that plane (this prefix and every finer
 /// chart beneath it). Own charts and peer charts share the trie.
 #[derive(Clone, Debug)]
@@ -84,7 +84,7 @@ impl CoverNode {
     }
 
     fn collect_into(&self, out: &mut Keyed<()>) {
-        // Each carrier here is ALREADY one stratum's fiber: `here` is the set
+        // Each carrier here is ALREADY one stratum's fibre: `here` is the set
         // of hyphae standing at this plane, `next` is this node's own
         // children. The prefix that scoped them is the axis path above.
         for (id, _) in self.here.scoped() {
@@ -103,8 +103,8 @@ impl CoverNode {
     }
 
     /// Longest common prefix: follow it while axes match. A miss after some
-    /// match returns the fiber at that plane. A miss at the first axis is
-    /// novel — empty. The empty chart (no axes) is the root fiber.
+    /// match returns the fibre at that plane. A miss at the first axis is
+    /// novel — empty. The empty chart (no axes) is the root fibre.
     fn lcp(&self, axes: &[ChartAxis], matched: bool) -> Vec<Vec<u8>> {
         match axes.split_first() {
             None => self.collect(),
@@ -251,17 +251,17 @@ impl Cover {
         self.roots
     }
 
-    /// Fiber at the deepest matching prefix on `lane`. Empty at every
+    /// Fibre at the deepest matching prefix on `lane`. Empty at every
     /// prefix means the chart is novel to the mesh. Ordered by the trie's
     /// walk: these identities are the vertices simplex keys are built from.
-    pub fn fiber(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
+    pub fn fibre(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
         self.lanes[(lane as usize) & 3].lcp(&inv.0, false)
     }
 
     /// Cover multiplicity of a chart: the vertex count of the Čech nerve,
     /// not the word count. Read, never chosen; the room vector is untouched.
     pub fn multiplicity(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> usize {
-        self.fiber(lane, inv).len()
+        self.fibre(lane, inv).len()
     }
 
     /// 47.3, 42.6: THE HYPHAE THAT MAY WITNESS A FORM — those covering its
@@ -287,7 +287,7 @@ impl Cover {
     ) -> crate::network::nerve::Keyed<()> {
         let mut out: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for lane in crate::network::nerve::occupied_lanes(mag) {
-            for v in self.fiber(lane, inv) {
+            for v in self.fibre(lane, inv) {
                 if v.as_slice() != home.as_slice() {
                     out.insert(&v, ());
                 }
@@ -413,7 +413,7 @@ fn xor_nearer(key: &[u8; 32], a: &[u8; 32], b: &[u8; 32]) -> bool {
     false
 }
 
-/// Home by incidence: intersection of cover fibers on every occupied lane,
+/// Home by incidence: intersection of cover fibres on every occupied lane,
 /// then remaining-room dominance on those lanes (a hypha wins only when its
 /// room is ≥ on every occupied lane and > on one), then, when rooms are
 /// equal or incomparable, the hypha XOR-NEAREST THE CHART — the router's
@@ -446,21 +446,21 @@ pub fn home(
         }
         rooms.get(id).copied()
     };
-    // Intersection of fibers across occupied lanes, as a trie union/meet.
-    let mut fiber: Option<Keyed<()>> = None;
+    // Intersection of fibres across occupied lanes, as a trie union/meet.
+    let mut fibre: Option<Keyed<()>> = None;
     for l in &lanes {
-        let f = cover.fiber(*l, inv);
+        let f = cover.fibre(*l, inv);
         let mut next = Keyed::new();
         for id in f {
-            if fiber.as_ref().is_none_or(|acc| acc.contains(&id)) {
+            if fibre.as_ref().is_none_or(|acc| acc.contains(&id)) {
                 next.insert(id, ());
             }
         }
-        fiber = Some(next);
+        fibre = Some(next);
     }
-    // A magnitude occupying no lane has no fiber to intersect, and the
-    // empty set is what that reads as — not a fiber put there for it.
-    let fiber = match fiber {
+    // A magnitude occupying no lane has no fibre to intersect, and the
+    // empty set is what that reads as — not a fibre put there for it.
+    let fibre = match fibre {
         Some(f) => f,
         None => Keyed::new(),
     };
@@ -494,9 +494,9 @@ pub fn home(
         }
     };
     // THE INTERSECTION THIS FUNCTION JUST BUILT: the hyphae standing on
-    // every occupied lane of this chart. It is a fiber by construction --
-    // `cover.fiber(lane, inv)` scoped each one and the meet narrowed them.
-    for (id, _) in fiber.scoped() {
+    // every occupied lane of this chart. It is a fibre by construction --
+    // `cover.fibre(lane, inv)` scoped each one and the meet narrowed them.
+    for (id, _) in fibre.scoped() {
         let Some(vk) = <[u8; 32]>::try_from(id.as_slice()).ok() else { continue };
         if let Some(room) = room_of(&vk) {
             if fits(&room) {
@@ -509,7 +509,7 @@ pub fn home(
     if let Some((id, addr, _)) = best {
         return (id, addr);
     }
-    // No covering hypha with room: novel (or the fiber is full), room then the chart's nearness.
+    // No covering hypha with room: novel (or the fibre is full), room then the chart's nearness.
     if let Some((sid, sroom, saddr)) = self_id {
         if fits(sroom) {
             consider(&mut best, *sid, saddr.to_string(), *sroom);

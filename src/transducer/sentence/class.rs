@@ -582,15 +582,15 @@ impl ClassVector {
                 _ => None,
             }
         };
-        // ONE FIBER OR TWO. The placements compatible with a rotation `R`
+        // ONE FIBRE OR TWO. The placements compatible with a rotation `R`
         // are constrained by `R` — `T(p − Rp)` is a base point under one
         // rotor and an unremoved slip under another — so comparing two
         // translations by magnitude is only meaningful when the ROTATION
         // held. It compared them always, which read a vector standing in
-        // one fiber against a vector standing in another and called the
+        // one fibre against a vector standing in another and called the
         // difference a rise.
         //
-        // Same base: the fiber did not move and componentwise comparison
+        // Same base: the fibre did not move and componentwise comparison
         // is a reading of one space. Base moved: no magnitude comparison
         // exists, and what is readable is the discrete transition — a
         // base point becoming a residue is a rise, a residue becoming a

@@ -61,7 +61,7 @@ pub struct GenomeRefused {
     pub unstamped: u64,
     /// Words whose citation cannot be written (a class key at its wall).
     pub unciteable: u64,
-    /// Two words at one citation — one fiber, one admitting act.
+    /// Two words at one citation — one fibre, one admitting act.
     pub coincident: u64,
     /// STD1 3c — words whose record passes a length its field writes.
     pub unwritable: u64,

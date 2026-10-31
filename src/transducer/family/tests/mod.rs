@@ -17,7 +17,7 @@ mod deflation;
 mod derivation;
 mod elements;
 mod extraction;
-mod fibres;
+mod torsion_quotient;
 mod flux;
 mod ground;
 mod hyperfluid;

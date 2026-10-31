@@ -25,7 +25,7 @@ fn invariant_of_reads_rotor_not_matrix() {
     assert!(!inv.0.is_empty(), "a connection has a chart");
     // A SOURCE-TEXT GATE STOOD HERE and it is deleted. It `include_str!`d
     // four production files and asserted the files' BYTES did not contain
-    // "word.fiber(" or "GERM_DIM" — two spellings that exist nowhere in the
+    // "word.fibre(" or "GERM_DIM" — two spellings that exist nowhere in the
     // tree, so the assertion could only ever pass, and what it checked was
     // the text of the engine rather than the behaviour of it. That is §4.6,
     // and it is the gate disease reappearing inside the test suite after
@@ -49,7 +49,7 @@ fn invariant_of_reads_rotor_not_matrix() {
 }
 
 /// A prefix of a chart's key is its coarser stratum, and the coarse key's
-/// fiber holds every finer chart under it.
+/// fibre holds every finer chart under it.
 #[test]
 fn key_prefix_is_coarser_stratum() {
     let coarse = Invariant::counts(&[1]).key();
@@ -66,9 +66,9 @@ fn key_prefix_is_coarser_stratum() {
     k.insert(fine.as_bytes(), 1);
     k.insert(sib.as_bytes(), 2);
     let at = crate::network::nerve::Prefix::new(coarse.as_bytes()).expect("a coarse key is a coordinate");
-    let fiber: Vec<_> = k.fiber(at).map(|(key, v)| (key, *v)).collect();
-    assert_eq!(fiber.len(), 3, "the coarse key's fiber is the coarser stratum");
-    assert!(fiber.iter().all(|(key, _)| key.starts_with(coarse.as_bytes())));
+    let fibre: Vec<_> = k.fibre(at).map(|(key, v)| (key, *v)).collect();
+    assert_eq!(fibre.len(), 3, "the coarse key's fibre is the coarser stratum");
+    assert!(fibre.iter().all(|(key, _)| key.starts_with(coarse.as_bytes())));
 }
 
 /// The chart is invariant under translation, rotation, reflection, and
@@ -127,7 +127,7 @@ fn congruent_finds_base_point_and_versor() {
     let l_reflected = from_canonical(&chain(&[(3, 3), (3, 2), (4, 3)]));
     assert_eq!(congruent(&stalks, at, &l_reflected, &mut budget).map(|(a, _)| a), Some(held[1].address()));
     let zigzag = from_canonical(&chain(&[(0, 0), (0, 1), (1, 1), (1, 2)]));
-    assert!(stalks.fiber(&invariant_of(&zigzag)).is_empty(), "an empty stratum is novelty");
+    assert!(stalks.fibre(&invariant_of(&zigzag)).is_empty(), "an empty stratum is novelty");
     assert_eq!(congruent(&stalks, at, &zigzag, &mut budget), None);
     stalks.remove(&held[1].address());
     assert_eq!(stalks.len(), 2);
@@ -189,7 +189,7 @@ fn split_stratum_rehomes_by_new_coordinate() {
     );
     let mut stalks = Stalks::over_elements([&a, &b].into_iter());
     let inv = invariant_of(&a);
-    assert_eq!(stalks.fiber(&inv).len(), 2);
+    assert_eq!(stalks.fibre(&inv).len(), 2);
     let class_coord = 7u64;
     stalks.split_stratum(&inv, |addr| {
         if a.address().as_bytes() == addr {
@@ -198,9 +198,9 @@ fn split_stratum_rehomes_by_new_coordinate() {
             vec![ChartAxis::Count(class_coord)]
         }
     });
-    assert!(stalks.fiber(&inv).is_empty(), "the coarse chart is empty after the split");
-    assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[ChartAxis::Count(0)])), vec![a.address().into_vec()]);
-    assert_eq!(stalks.fiber(&Stalks::refine_axes(&inv, &[ChartAxis::Count(class_coord)])), vec![b.address().into_vec()]);
+    assert!(stalks.fibre(&inv).is_empty(), "the coarse chart is empty after the split");
+    assert_eq!(stalks.fibre(&Stalks::refine_axes(&inv, &[ChartAxis::Count(0)])), vec![a.address().into_vec()]);
+    assert_eq!(stalks.fibre(&Stalks::refine_axes(&inv, &[ChartAxis::Count(class_coord)])), vec![b.address().into_vec()]);
     let peeled = Stalks::peel(&Stalks::refine_axes(&inv, &[ChartAxis::Count(class_coord)]));
     assert_eq!(peeled, inv, "peel drops the class axis");
     // The prefixes run coarse-last, so the tail is the root stratum.
@@ -214,7 +214,7 @@ fn split_stratum_rehomes_by_new_coordinate() {
 
 /// A21 as ruled 2026-09-18 — A PREFIX OF A CHART'S KEY IS A COARSER
 /// STRATUM'S KEY, in bytes. `Keyed` is a PATRICIA trie over these bytes and
-/// `fiber_under`, `link` and `peel` are byte-prefix reads, so this is the
+/// `fibre_under`, `link` and `peel` are byte-prefix reads, so this is the
 /// one property the encoding has to hold. A count in the key's header would
 /// break it — a chart and its prefix would differ in the first bytes —
 /// which is why the key carries none and each coordinate carries its own

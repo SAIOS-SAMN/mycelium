@@ -1,6 +1,6 @@
 // 50.3, 52.5 — THE INCIDENCE: what a face between two members measures.
 //
-//! A member's fiber is one body along `e₃`, and the quotient of its union
+//! A member's fibre is one body along `e₃`, and the quotient of its union
 //! shapes is what a face above it carries; the frames it stands on are read
 //! at its own coordinate, and the per-frame readings are the section. What
 //! a face was offered and what became of it is counted here and nowhere
@@ -20,7 +20,7 @@ fn same_transport(a: &Transport, b: &Transport) -> bool {
         && a.gauge == b.gauge
 }
 
-/// THE QUOTIENT OF A FIBER'S UNION SHAPES (52.5): every compartment the member
+/// THE QUOTIENT OF A FIBRE'S UNION SHAPES (52.5): every compartment the member
 /// stands on across its occupied frames, read at its own `(r, c, k)` and
 /// never at frame zero, with the versor that carries the one union onto
 /// the other — VERIFIED here, on the union, compartment by compartment.
@@ -37,13 +37,13 @@ fn same_transport(a: &Transport, b: &Transport) -> bool {
 /// component, so the frame it acts at rides along and `v` carries `a_k`
 /// onto `b_k` at every `k` the member stands on, hence the union onto the
 /// union. Calling `carriage` here would run `versor_between` over the whole
-/// fiber's moments to re-derive a versor already in hand — measured on the
+/// fibre's moments to re-derive a versor already in hand — measured on the
 /// 60-task slice at 4 000 000 stroke: 32.5 s to 38.9 s, +19% wall clock for
 /// a reading identical in every count.
 ///
 /// It is verified rather than asserted (rule 11, law 12): every compartment of
 /// the union is carried and its image read, which is `carriage`'s own check
-/// without `carriage`'s search, and a fiber the versor does not carry
+/// without `carriage`'s search, and a fibre the versor does not carry
 /// whole has no union quotient. `None` also where either side is empty.
 pub(crate) fn union_quotient(
     mut ins: Vec<Compartment>,
@@ -67,7 +67,7 @@ pub(crate) fn union_quotient(
 
 /// THE FRAMES A MEMBER OCCUPIES, read at its own coordinate (52.5 reading
 /// 6). `bodies_at` is keyed `member ‖ frame`, so the frames this member
-/// stands on are the fiber under its own member prefix and the remaining key
+/// stands on are the fibre under its own member prefix and the remaining key
 /// IS the frame, by its own spelling (AT1 Q4) — whose byte order is the
 /// frames' order, so the trie's walk is the succession along `e₃` and nothing
 /// sorts.
@@ -76,10 +76,10 @@ pub(crate) fn union_quotient(
 /// beside them (law 12).
 pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, v: &coord::VertexAt, ck: &[u8]) -> Vec<u64> {
     let prefix = member_key(v, ck);
-    let Some(fiber) = bodies_at.fiber_at(&prefix) else {
+    let Some(fibre) = bodies_at.fibre_at(&prefix) else {
         return Vec::new();
     };
-    fiber
+    fibre
         .filter_map(|(k, _)| crate::transducer::sentence::frame_of_key(k.get(prefix.len()..)?))
         .collect()
 }
@@ -100,7 +100,7 @@ type BodiesCarried = (Body, Body, Versor);
 /// does along the frame axis. That is the shape of the flatness measured
 /// at epoch 70 — 292 of 292 orbits flat — and no amount of classifying
 /// downstream recovers a bivector the reading never had. The union of a
-/// member's fiber has the extent by construction (51.3: the family is one
+/// member's fibre has the extent by construction (51.3: the family is one
 /// body on `(r, c, k)`), and it is what the face carries here.
 ///
 /// The per-frame readings below stay, and are the SECTION: the frames on
@@ -109,7 +109,7 @@ type BodiesCarried = (Body, Body, Versor);
 /// coordinates and a frame's is placed in that frame's — asking a slice to
 /// equal the whole would report every face as claiming nothing.
 ///
-/// A pair whose fibers have no union between them — a cover piece stands
+/// A pair whose fibres have no union between them — a cover piece stands
 /// at one frame and has none — falls to the per-frame edge, and a pair
 /// with no common frame and no union carries none.
 pub(crate) fn edge_between(
@@ -138,7 +138,7 @@ pub(crate) fn edge_between(
     // reading 6, ruled 2026-09-18). This read `for k in 0..n`, probing every
     // integer up to the family's pair count and `continue`-ing on each miss:
     // a linear scan over a range, where the frames a member actually stands
-    // on are named by its own fiber of `bodies_at`. The occupied set may
+    // on are named by its own fibre of `bodies_at`. The occupied set may
     // skip, repeat or reorder in ℤ, and the integers between it are not
     // coordinates of anything.
     for k in occupied_frames(bodies_at, i, cik) {
@@ -177,7 +177,7 @@ pub(crate) fn edge_between(
             _ => (None, None),
         };
     }
-    // The union edge is the face's where the two fibers have one; the
+    // The union edge is the face's where the two fibres have one; the
     // per-frame edge stands where they do not.
     (union_edge.or(edge), pairs)
 }

@@ -412,7 +412,7 @@ pub(crate) fn carried(v: &Versor, r: usize, c: usize) -> Result<(i64, i64), Unst
         i64::try_from(c).map_err(|_| Unstated::OffLattice)?,
         0,
     ]);
-    let p = element::carry_site_center(v, &site).ok_or(Unstated::OffLattice)?;
+    let p = element::carry_site_centre(v, &site).ok_or(Unstated::OffLattice)?;
     let half = Q::new(1.into(), 2.into());
     let [pr, pc, pk] = p.as_slice() else { return Err(Unstated::OffLattice) };
     let (ir, ic) = (pr - &half, pc - &half);

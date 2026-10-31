@@ -77,7 +77,7 @@ fn admit_line_applies_peer_ruling_through_receipt() {
 /// LD3-a — THE STAMP ALIAS CLOSES EC1'S GAP. Courts a and c each docketed
 /// the same word on its own stroke, so each holds it at its OWN admitting
 /// stamp, and a's ruling cites a's. When c admits a's line, a's admitting
-/// act names the word by a stamp c never filed; c's fiber read yields
+/// act names the word by a stamp c never filed; c's fibre read yields
 /// exactly one word there, so a's stamp is filed as an alias — one word,
 /// two admissions, both stamps held — and a's ruling, located by it,
 /// applies at c. The alias is not persisted and comes back at restore,
@@ -108,12 +108,12 @@ fn admit_line_aliases_peer_stamp_to_one_word() {
     assert!(!c.provisional.contains(addr.as_bytes()), "the word left c's docket");
 }
 
-/// LD3-a — SEVERAL WORDS ON ONE FIBER ARE NEVER CHOSEN BETWEEN. A peer's
-/// admitting act naming a fiber this court holds two words on files no
+/// LD3-a — SEVERAL WORDS ON ONE FIBRE ARE NEVER CHOSEN BETWEEN. A peer's
+/// admitting act naming a fibre this court holds two words on files no
 /// alias: the word waits for the syllabus to teach it with its home stamp
 /// (78.24 (2b)), and nothing is picked by arrival or order (rule 15).
 #[test]
-fn admit_line_files_no_alias_on_shared_fiber() {
+fn admit_line_files_no_alias_on_shared_fibre() {
     use crate::chronometry::{Cite, ReceiptChain, Stamp};
     let mut c = Court::new();
     c.bind_identity([0xc2; 32]);
@@ -124,9 +124,9 @@ fn admit_line_files_no_alias_on_shared_fiber() {
         let at = Stamp::new(u64::from(n), [0xc2; 32], crate::chronometry::Place { k: 0, i: u64::from(n) });
         let mut key = Vec::new();
         Cite::Word { chart: chart.clone(), class: None, at }.put_canonical(&mut key).expect("a citation");
-        c.file_fiber(&addr, at, key);
+        c.file_fibre(&addr, at, key);
     }
-    assert_eq!(c.fiber_read(&chart, &None).len(), 2, "two words on the fiber");
+    assert_eq!(c.fibre_read(&chart, &None).len(), 2, "two words on the fibre");
     let key = super::common::court_key("ambiguous peer");
     let mut peer = ReceiptChain::with_vk(key.vk_bytes());
     let at = peer.next_stamp(&[]).expect("its first stamp");
@@ -138,7 +138,7 @@ fn admit_line_files_no_alias_on_shared_fiber() {
 }
 
 /// LD3-a, 78.64 H1 — ONE ALIAS PER SIGNER. A peer that admits the one word
-/// on a fiber twice, by two acts, cites it by the later stamp from then on:
+/// on a fibre twice, by two acts, cites it by the later stamp from then on:
 /// the later alias replaces the earlier, which leaves with its depth, so a
 /// word's aliases are bounded by its signers and not by the signers' acts.
 #[test]
@@ -149,9 +149,9 @@ fn admit_line_later_admission_replaces_alias() {
     let chart = crate::transducer::stalk::Invariant::counts(&[3, 1]);
     let addr = crate::transducer::address::Address::from_bytes([0x73u8; 3]);
     let own_stamp = Stamp::new(1, [0xc3; 32], crate::chronometry::Place { k: 0, i: 1 });
-    let mut fiber = Vec::new();
-    Cite::Word { chart: chart.clone(), class: None, at: own_stamp }.put_canonical(&mut fiber).expect("a citation");
-    c.file_fiber(&addr, own_stamp, fiber);
+    let mut fibre = Vec::new();
+    Cite::Word { chart: chart.clone(), class: None, at: own_stamp }.put_canonical(&mut fibre).expect("a citation");
+    c.file_fibre(&addr, own_stamp, fibre);
     let key = super::common::court_key("twice-admitting peer");
     let mut peer = ReceiptChain::with_vk(key.vk_bytes());
     let mut stamps = Vec::new();

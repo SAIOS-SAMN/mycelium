@@ -241,7 +241,7 @@ pub fn retract_words(index: &mut AxisIndex, chart: &stalk::Invariant, words: &[T
     if mid.is_empty() { index.remove(&ck); }
 }
 
-/// The fiber of the axis index at (chart, axis), coarsening the CHART until
+/// The fibre of the axis index at (chart, axis), coarsening the CHART until
 /// the read is not empty — exactly as `generators_under` coarsens, and for
 /// the same reason.
 ///
@@ -264,7 +264,7 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
     let slot = axis_slot(axis);
     // ONE PREFIX READ PER STRATUM, AND THE STRATA ARE THE RANK'S. `AxisIndex`
     // is `Keyed<Keyed<Keyed<Word>>>` — chart, then axis slot, then the
-    // words — so `get` on the chart hands back the WHOLE fiber over that
+    // words — so `get` on the chart hands back the WHOLE fibre over that
     // base and the slot is read off it without touching the trie again.
     //
     // The read is bounded by the base's own width, which `chart_of_form`
@@ -276,7 +276,7 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
     let mut at = chart.clone();
     loop {
         let held: Vec<Word> = match index.get(&at.key()) {
-            Some(fiber) => match fiber.get(&slot) {
+            Some(fibre) => match fibre.get(&slot) {
                 // Two keyed reads reached this bucket -- the base, then the
                 // axis slot -- so what it holds is the words on that axis,
                 // all of them.
@@ -553,7 +553,7 @@ pub fn generator_key(
     k
 }
 
-/// THE BASIS ON ONE LANE (42.6 as amended): the fiber of that lane's
+/// THE BASIS ON ONE LANE (42.6 as amended): the fibre of that lane's
 /// index under that lane's axes alone, coarsened by `peel` exactly as
 /// `generators_under` coarsens.
 pub fn generators_under_lane(
@@ -589,8 +589,8 @@ pub fn retract_generators(
 
 /// THE GENERATORS UNDER A CHART PREFIX: (form address, vertex address).
 /// A chart key is `TAG_CHART ‖ axes`, so a peeled chart's key is a byte
-/// prefix of the finer one's and `Keyed::fiber` reads the whole subtree —
-/// the same read `Stalks::fiber_under` performs. Read with `get` on the
+/// prefix of the finer one's and `Keyed::fibre` reads the whole subtree —
+/// the same read `Stalks::fibre_under` performs. Read with `get` on the
 /// exact key instead, every level answered only its own node and the
 /// coarsest level had to be special-cased into a scan of everything held
 /// (law 3).
@@ -609,7 +609,7 @@ pub fn generators_at(
     let Some(at) = crate::network::nerve::Prefix::new(key.as_bytes()) else {
         return out;
     };
-    for (_, bucket) in index.fiber(at) {
+    for (_, bucket) in index.fibre(at) {
         for (v, f) in bucket.scoped() {
             if !budget.spend() {
                 return out;

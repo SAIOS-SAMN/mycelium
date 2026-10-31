@@ -361,8 +361,8 @@ impl Contemplation {
     pub fn span_of(&self, form: &crate::transducer::sentence::Form) -> Option<Deliberation> {
         let key = super::idea::idea_key(form);
         let mut since: Option<u64> = None;
-        if let Some(fiber) = self.bubbles.fiber_at(key.as_bytes()) {
-            for (_, b) in fiber {
+        if let Some(fibre) = self.bubbles.fibre_at(key.as_bytes()) {
+            for (_, b) in fibre {
                 since = Some(match since {
                     Some(s) if s <= b.moved_k => s,
                     _ => b.moved_k,
@@ -505,7 +505,7 @@ impl Contemplation {
         inv: &crate::transducer::stalk::Invariant,
     ) -> Option<Vec<Vec<u8>>> {
         let k = inv.key();
-        Some(self.cavity.fiber_at(k.as_bytes())?.map(|(k, _)| k).collect())
+        Some(self.cavity.fibre_at(k.as_bytes())?.map(|(k, _)| k).collect())
     }
 
     pub fn remainders(&self) -> Vec<&[Link]> {
@@ -955,18 +955,18 @@ impl Contemplation {
             Section::at(crate::transducer::address::Address::from(key.clone()), Rotor::identity()),
             vol0,
         );
-        let mut neighbors = Keyed::new();
+        let mut neighbours = Keyed::new();
         for ck in &charts {
             for (id, _) in self.by_chart.link(ck) {
                 let Some(addr) = Self::ordinal_of_key(&id).and_then(|o| self.address_at(o)) else {
                     continue;
                 };
                 if addr != key.as_slice() {
-                    neighbors.insert(addr, ());
+                    neighbours.insert(addr, ());
                 }
             }
         }
-        let nbs: Vec<Vec<u8>> = neighbors.scoped().map(|(k, _)| k).collect();
+        let nbs: Vec<Vec<u8>> = neighbours.scoped().map(|(k, _)| k).collect();
         let mut rems: Keyed<Vec<Link>> = Keyed::new();
         // Overlap is read in the SCENE: the chain carried through its own
         // translator (§2.1). Two bubbles holding one chain at two
@@ -1005,7 +1005,7 @@ impl Contemplation {
         }
         let reopened = self.complex.coboundary_on_link(&key, |verts| volume_of(&rems, verts));
         self.note_decohered(reopened, adjunct);
-        self.decide_neighbors(&key);
+        self.decide_neighbours(&key);
     }
 
     /// Hold a form as an idea (chapter 30 step 5): the form is the carrier,
@@ -1158,11 +1158,11 @@ impl Contemplation {
             forms.push(b.form.as_ref()?);
         }
         // The component arrives in KEY ORDER (`component_of` reads it off a
-        // keyed fiber), so the head is its least vertex and every node
+        // keyed fibre), so the head is its least vertex and every node
         // forms the thought on the same one.
         #[expect(
             clippy::disallowed_methods,
-            reason = "rule 15 — canonical key order: the component is a keyed fiber, so its head is the least address in it"
+            reason = "rule 15 — canonical key order: the component is a keyed fibre, so its head is the least address in it"
         )]
         let &f = forms.first()?;
         if !f.is_cauterized() {

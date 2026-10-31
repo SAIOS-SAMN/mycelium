@@ -1,10 +1,10 @@
 // 52.5 items 1–4 — THE PERCEPT of a family: every frame the stroke reaches
-// is perceived once, every chart's fiber is read frame by frame as a
+// is perceived once, every chart's fibre is read frame by frame as a
 // quotient, and what no quotient reaches is a cover or a demand.
 
 use super::chord::dispiration;
 use super::cover::cover_deformation;
-use super::fiber::{body_key, fiber_frame_of_key, fiber_key, fibers, compartments_of, unreached_demands, vanished};
+use super::fibre::{body_key, fibre_frame_of_key, fibre_key, fibres, compartments_of, unreached_demands, vanished};
 use super::pair::{delta_links, Covered, Scenery};
 use super::perceive::{
     at_frame_zero, demand_vertex, differing_axes, frame_of_body, support_at,
@@ -39,7 +39,7 @@ pub(crate) struct Percept {
 /// WHAT ONE FRAME'S QUOTIENT OF ONE CHART MEASURED: the frame, the versor
 /// with its hue map, the two union bodies in the frame's own coordinates,
 /// and the same two bodies, each at its own `(r, c, k)` — the compartments the
-/// fiber's union shape is built from (52.5).
+/// fibre's union shape is built from (52.5).
 struct Quotient {
     /// The frame, by its own coordinate (AT1 Q4): no width walls it.
     frame: u64,
@@ -52,7 +52,7 @@ struct Quotient {
 
 /// ONE MEMBER OF A CLASS'S VERTEX (D7): the chart, what it acts by there,
 /// the frames its versor holds on, the bodies at each of them, the output
-/// support over those frames, the union shape its fiber occupies along
+/// support over those frames, the union shape its fibre occupies along
 /// `e₃` with the versor carrying it, and the frame-axis steps its input body
 /// took between consecutive occupied frames (MT1), each the overlap the
 /// atlas adds between the member's two charts (AT1 Q3).
@@ -171,7 +171,7 @@ struct ClassRead {
 }
 
 /// THE PERCEPT (52.5 items 1 to 4), under the stroke (rule 10): every
-/// frame the budget reaches is perceived once; every chart's fiber is read
+/// frame the budget reaches is perceived once; every chart's fibre is read
 /// frame by frame; a budget that ends leaves the frames it did not measure
 /// as the demands of `finish` and says so.
 pub(super) fn family_percept(
@@ -201,8 +201,8 @@ pub(super) fn family_percept(
         outs.extend(b_bodies.iter().cloned());
     }
     let n_reached = n - unreached.len();
-    let fib_in = fibers(&ins);
-    let fib_out = fibers(&outs);
+    let fib_in = fibres(&ins);
+    let fib_out = fibres(&outs);
     let mut charts: Keyed<Invariant> = Keyed::new();
     for (k, (c, _)) in fib_in.scoped() {
         charts.insert(&k, c.clone());
@@ -222,7 +222,7 @@ pub(super) fn family_percept(
         out_bodies.insert(bk, b.clone());
     }
 
-    trace::trace("extract/1 fibers", trace::Wrote::Nothing, Some(budget));
+    trace::trace("extract/1 fibres", trace::Wrote::Nothing, Some(budget));
     let mut reads: Keyed<ClassRead, coord::Transport> = Keyed::new();
     let mut demanded: Vec<Demanded> = Vec::new();
     let mut covers: Vec<Covered> = Vec::new();
@@ -236,7 +236,7 @@ pub(super) fn family_percept(
     let mut out_reached: Keyed<()> = Keyed::new();
     let mut cut = false;
     // Z1b — THE MOVES OF THE PERCEPT ARE EACH A LINE OF ITS OWN. `extract/1
-    // fibers` held one span over four moves and a reader of the timeline
+    // fibres` held one span over four moves and a reader of the timeline
     // could not tell which of them cost the seconds; a line that names four
     // moves at once is a reading of the instrument, not of the engine.
     //
@@ -262,7 +262,7 @@ pub(super) fn family_percept(
         }
         let mut quotients: Vec<Quotient> = Vec::new();
         for (fk, ()) in frames.scoped() {
-            let Some(k) = fiber_frame_of_key(&fk) else { continue };
+            let Some(k) = fibre_frame_of_key(&fk) else { continue };
             let (Some(ai), Some(bo)) = (
                 in_frames.and_then(|f| f.get(&fk)),
                 out_frames.and_then(|f| f.get(&fk)),
@@ -275,9 +275,9 @@ pub(super) fn family_percept(
                 break 'charts;
             }
             let mut ak = ck.clone();
-            ak.extend_from_slice(&fiber_key(k));
+            ak.extend_from_slice(&fibre_key(k));
             attempted.insert(&ak, ());
-            // The fiber's bodies were heard when they were perceived, and a
+            // The fibre's bodies were heard when they were perceived, and a
             // union of heard sections at the sections' `n` is heard; a union that is
             // not is no quotient to read (38.2, BQ4).
             let (Some(a_k), Some(b_k), Some(a0), Some(b0)) = (
@@ -524,7 +524,7 @@ pub(super) fn family_percept(
             if unreached.contains(&k) {
                 continue;
             }
-            let fk = fiber_key(k as i64);
+            let fk = fibre_key(k as i64);
             let mut short = false;
             for (ck, _) in charts.scoped() {
                 let both = fib_in.get(&ck).is_some_and(|(_, f)| f.contains(&fk))
@@ -557,7 +557,7 @@ pub(super) fn family_percept(
             if unreached.contains(&k) {
                 continue;
             }
-            let fk = fiber_key(k as i64);
+            let fk = fibre_key(k as i64);
             let ins_k: Vec<Body> = fib_in
                 .scoped()
                 .filter_map(|(_, (_, f))| f.get(&fk).cloned())
@@ -651,7 +651,7 @@ pub(super) fn family_percept(
     // the member by its vertex's coordinate and its chart, the frame by its
     // own spelling (AT1).
     let mut bodies_at: Keyed<(Body, Body, Versor)> = Keyed::new();
-    // THE UNION SHAPE OF EACH MEMBER'S FIBER, keyed as its support is —
+    // THE UNION SHAPE OF EACH MEMBER'S FIBRE, keyed as its support is —
     // `member_key(vertex, chart)` — and holding no frame, because the union
     // is what the member occupies ACROSS its frames and not a reading at any
     // one of them. `bodies_at` keys the same prefix with the frame after it,
@@ -669,7 +669,7 @@ pub(super) fn family_percept(
     // 78.74 — each field line's transport class, and every carried piece as
     // a pivot.
     let mut line_classes: Vec<Vec<u8>> = Vec::new();
-    let mut pieces: Vec<super::fibres::Piece> = Vec::new();
+    let mut pieces: Vec<super::torsion_quotient::Piece> = Vec::new();
     // AT1 A2 — the class's steps across two charts.
     let mut cross_steps: Vec<CrossStep> = Vec::new();
     // 53.6 — A COVER'S CARRIED PIECES ARE GROUPED BY TRANSPORT CLASS,
@@ -690,7 +690,7 @@ pub(super) fn family_percept(
     // as two vertices and never as two members.
     let mut piece_seen: Keyed<Vec<u8>> = Keyed::new();
     // 78.74 — the first section each class ‖ chart carried, by its member key.
-    let mut first_section: Keyed<super::fibres::Piece> = Keyed::new();
+    let mut first_section: Keyed<super::torsion_quotient::Piece> = Keyed::new();
     for c in &covers {
         let Ok(frame) = u64::try_from(c.frame) else { continue };
         for (_, (v, versor, sup)) in c.cover.carried.scoped() {
@@ -698,7 +698,7 @@ pub(super) fn family_percept(
             let (Some(chart), Some(tc)) = (v.face_chart(), transport_class(v)) else { continue };
             // 78.74 — THE PIECE AS A PIVOT of its frame's fibres: carried from
             // its domain by its own versor, in its class.
-            let this_piece = super::fibres::piece_of(frame, tc.key().encode().as_bytes().to_vec(), versor, &sup.domain, &sup.codomain);
+            let this_piece = super::torsion_quotient::piece_of(frame, tc.key().encode().as_bytes().to_vec(), versor, &sup.domain, &sup.codomain);
             if let Some(piece) = &this_piece {
                 pieces.push(piece.clone());
             }
@@ -726,10 +726,10 @@ pub(super) fn family_percept(
                     // a standing pair, or one whose sections do not read,
                     // demands it.
                     let relation = match (first_section.get(&mk), &this_piece) {
-                        (Some(first), Some(second)) => super::fibres::relate_sections(first, second, budget),
-                        _ => super::fibres::Sections::Standing,
+                        (Some(first), Some(second)) => super::torsion_quotient::relate_sections(first, second, budget),
+                        _ => super::torsion_quotient::Sections::Standing,
                     };
-                    if relation == super::fibres::Sections::Standing {
+                    if relation == super::torsion_quotient::Sections::Standing {
                         let links: Vec<Link> = support
                             .iter()
                             .filter_map(|s| on_grid(s).map(|(r, cc)| (r, cc, 0u8, 0u8)))
@@ -856,7 +856,7 @@ pub(super) fn family_percept(
                 // through each chart's body at its frame (covers exist only
                 // for deformations), carried by the member's own versor.
                 if let Some(point) = a0.shape.blade.vertex_point() {
-                    pieces.push(super::fibres::Piece {
+                    pieces.push(super::torsion_quotient::Piece {
                         frame: *k,
                         class: class.clone(),
                         point,
@@ -1309,7 +1309,7 @@ pub(super) fn family_percept(
     // the field: a class merged into another's algorithm with certainty —
     // every fibre between them torsion — turns free beyond the group's
     // charged member; nothing partial is eliminated.
-    let quotient = super::fibres::read_pieces(&pieces, budget);
+    let quotient = super::torsion_quotient::read_pieces(&pieces, budget);
     for (line, class) in word_transports.iter_mut().zip(&line_classes) {
         line.free = quotient.free.contains(class);
     }

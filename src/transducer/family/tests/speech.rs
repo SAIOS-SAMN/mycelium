@@ -105,9 +105,9 @@ assert!(
 );
 }
 
-/// An empty class fiber speaks nothing for that vertex and lists it unspoken.
+/// An empty class fibre speaks nothing for that vertex and lists it unspoken.
 #[test]
-fn apply_form_leaves_empty_fiber_unspoken() {
+fn apply_form_leaves_empty_fibre_unspoken() {
 let x = grid(&["1100", "0000"]);
 let y = grid(&["0011", "0000"]);
 let mut f = cipher_form(&x, &y);
@@ -151,7 +151,7 @@ let spoken = apply_form(
 .expect("a miss is unspoken, not a refusal");
 assert!(
     spoken.painted.is_empty(),
-    "empty fiber speaks no site, got {:?}",
+    "empty fibre speaks no site, got {:?}",
     spoken.painted
 );
 assert!(
@@ -376,7 +376,7 @@ assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spok
 assert_eq!(spoken.grid(), Some(train_out));
 assert!(
     rule.form.vertices.scoped().any(|(_, v)| matches!(v, Vertex::Word { .. })),
-    "the recolour class is one vertex; the chart fiber names the three squares"
+    "the recolour class is one vertex; the chart fibre names the three squares"
 );
 let minted = mint_sentence(&rule, &family, &NoCrystal, 0).expect("the family mints");
 let mu = minted.magnitude();

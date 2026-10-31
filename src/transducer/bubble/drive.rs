@@ -147,7 +147,7 @@ impl Contemplation {
         // THE CAVITY IS READ AT THE CHART, not copied and filtered:
         // `cavity_key` files a retired remainder under its chart first, so
         // the entries a chart can re-hold are the SUBTREE under that chart's
-        // key — `Keyed::fiber`, one keyed read per prefix of the word's chart.
+        // key — `Keyed::fibre`, one keyed read per prefix of the word's chart.
         // The cavity grows by one on every retirement, every stroke, and
         // drains only here, so a read that cloned every entry to find the
         // few whose chart matched would grow without bound while the thing
@@ -155,7 +155,7 @@ impl Contemplation {
         let mut back: Vec<(Vec<u8>, Vec<Link>)> = Vec::new();
         for p in inv.prefixes() {
             let pk = p.key();
-            let Some(f) = self.cavity.fiber_at(pk.as_bytes()) else {
+            let Some(f) = self.cavity.fibre_at(pk.as_bytes()) else {
                 continue;
             };
             for (k, rem) in f {
@@ -275,7 +275,7 @@ impl Contemplation {
             let chart = stalk::invariant_of(word);
             adjoined.extend(self.collapse_on(&carried, &chart, "glue"));
         }
-        // index: by_chart fiber at the word's chart and peels
+        // index: by_chart fibre at the word's chart and peels
         for bk in &bubble_keys {
             if budget.remaining() == 0 {
                 break;
@@ -385,7 +385,7 @@ impl Contemplation {
                             // RM1 — this arm mints no Torse rewrite, so the
                             // remainder it perceived is recorded nowhere:
                             // counted, A.17's refusal never dropped. Whether
-                            // it mints as decide_neighbors' arm does is ruled
+                            // it mints as decide_neighbours' arm does is ruled
                             // on this count.
                             self.remainders.unrecorded += 1;
                             // KB1 (C) — the class between the two thoughts

@@ -308,7 +308,7 @@ assert_eq!(
 let rem_inv = crate::transducer::stalk::invariant(&rem);
 assert_eq!(k.face_of(&target).cloned(), Some(rem_inv.clone()));
 assert!(
-    k.listing_atlas.fiber(&rem_inv).iter().any(|a| a.as_slice() == target.as_bytes()),
+    k.listing_atlas.fibre(&rem_inv).iter().any(|a| a.as_slice() == target.as_bytes()),
     "the remainder chart admits the listing"
 );
 let base_inv = crate::transducer::stalk::invariant(&listed);
@@ -351,7 +351,7 @@ assert_eq!(
     "relocating a listing does not rewrite what it measured"
 );
 assert!(
-    k.listing_atlas.fiber(&rem_inv).iter().any(|a| a.as_slice() == target.as_bytes()),
+    k.listing_atlas.fibre(&rem_inv).iter().any(|a| a.as_slice() == target.as_bytes()),
     "drain relocates: the listing stays on the atlas"
 );
 assert_eq!(

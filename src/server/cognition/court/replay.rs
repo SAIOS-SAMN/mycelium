@@ -533,7 +533,7 @@ impl Court {
             return None;
         }
         for (class, ell_periods, rep) in cycles {
-            // THE WHOLE FIBER UNDER THE ROTOR'S CONJUGACY CLASS, not one
+            // THE WHOLE FIBRE UNDER THE ROTOR'S CONJUGACY CLASS, not one
             // member of it. `congruent` is keyed by the orbit's full class
             // key now and `class` is its depth-one stratum, so the ask
             // returns every filed orbit of that conjugacy class at whatever
@@ -652,7 +652,7 @@ impl Court {
                 continue;
             };
             if let Some(w) = self.word_mut(key) {
-                w.update(|e| e.record_dislocation(asg, v.clone(), element::FIBER_SPATIAL));
+                w.update(|e| e.record_dislocation(asg, v.clone(), element::FIBRE_SPATIAL));
             }
             self.touch_at(key);
         }
@@ -664,7 +664,7 @@ impl Court {
         class: crate::transducer::alphabet::Rotor,
         degree: usize,
     ) {
-        let members: Vec<Vec<u8>> = self.listing_atlas.fiber(inv);
+        let members: Vec<Vec<u8>> = self.listing_atlas.fibre(inv);
         for addr in members {
             let Some(mag) = self.tension.get(&addr).copied() else {
                 continue;
@@ -707,7 +707,7 @@ impl Court {
             }
             vec![crate::transducer::stalk::ChartAxis::Count(0)]
         };
-        let before: Vec<Vec<u8>> = self.listing_atlas.fiber(inv);
+        let before: Vec<Vec<u8>> = self.listing_atlas.fibre(inv);
         let before_mag: Vec<(Vec<u8>, [u64; 4])> = before
             .iter()
             .filter_map(|a| self.tension.get(a).copied().map(|t| (a.clone(), t)))
@@ -717,7 +717,7 @@ impl Court {
         self.listing_atlas.split_stratum(inv, coord_of);
         if let Some(cover) = cover.as_mut() {
             for lane in 0..4u8 {
-                let hyphas = cover.fiber(lane, inv);
+                let hyphas = cover.fibre(lane, inv);
                 for h in hyphas {
                     // A hypha the complex holds no section for sits on the
                     // leading axis, as one whose gamma is the identity does.

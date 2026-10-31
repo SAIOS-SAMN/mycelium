@@ -93,10 +93,10 @@ pub struct Dialect {
     pub missing: Vec<Vec<u8>>,
 }
 
-/// Standing of a fiber member on the working atlas.
+/// Standing of a fibre member on the working atlas.
 pub use crate::transducer::stalk::Standing;
 
-/// One working atlas, three strata. A fiber read is `(address, Standing)`,
+/// One working atlas, three strata. A fibre read is `(address, Standing)`,
 /// never a boolean. Genome-only `atlas()` remains for persistence. The
 /// Held stratum is the contemplation's forms, read at the coordinate
 /// (24.1 as ruled 2026-09-09): the Word vertices its held forms hold on
@@ -115,14 +115,14 @@ impl<'a> WorkingAtlas<'a> {
     /// Addresses on this chart, each carrying the stratum it came from.
     /// Ruled first, then Stood, then Held; an address appears once, at its
     /// strongest standing.
-    pub fn fiber(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<(Vec<u8>, Standing)> {
+    pub fn fibre(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<(Vec<u8>, Standing)> {
         let mut out: Vec<(Vec<u8>, Standing)> = Vec::new();
         let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for a in self.genome.fiber(inv) {
+        for a in self.genome.fibre(inv) {
             have.insert(&a, ());
             out.push((a, Standing::Ruled));
         }
-        for a in self.dialect.fiber(inv) {
+        for a in self.dialect.fibre(inv) {
             if have.contains(&a) {
                 continue;
             }
@@ -149,12 +149,12 @@ impl<'a> WorkingAtlas<'a> {
     /// on it is ruled, else whether any stands, else held.
     ///
     /// No member is taken. 24.1 puts several words on one stratum as
-    /// multiplicity, so the head of the fiber is one of possibly many
+    /// multiplicity, so the head of the fibre is one of possibly many
     /// ruled words, and taking it would be a choice (rule 15) even though
     /// the value read off it is the same for all of them. The reading is
-    /// over the fiber, so the multiplicity never has to be resolved.
+    /// over the fibre, so the multiplicity never has to be resolved.
     pub fn standing_on(&self, inv: &crate::transducer::stalk::Invariant) -> Standing {
-        let on = self.fiber(inv);
+        let on = self.fibre(inv);
         if on.iter().any(|(_, s)| matches!(s, Standing::Ruled)) {
             Standing::Ruled
         } else if on.iter().any(|(_, s)| matches!(s, Standing::Stood)) {
@@ -168,13 +168,13 @@ impl<'a> WorkingAtlas<'a> {
     /// under a prefix of `inv`, coarsened one axis at a time until the read
     /// is not empty, with the stratum it was found at.
     ///
-    /// A12's basis is "the held words on the chart's fiber", and read at the
+    /// A12's basis is "the held words on the chart's fibre", and read at the
     /// EXACT chart that basis is almost always empty or a single word: a
     /// connection's chart is its rotor's trace and determinant (M4 step 2),
     /// so every distinct rotation is its own chart and the only words a mind
     /// could factor through were the powers of one word. The lattice could
     /// never have more than one generator and the whole Hermite computation
-    /// was decorative. A stratum is the fiber under a PREFIX — "a demand is
+    /// was decorative. A stratum is the fibre under a PREFIX — "a demand is
     /// reduced against the generators of one stratum, never the language"
     /// — and `peel` is what reaches it.
     ///
@@ -187,7 +187,7 @@ impl<'a> WorkingAtlas<'a> {
     ) -> (crate::transducer::stalk::Invariant, Vec<(Vec<u8>, Standing)>) {
         let mut at = inv.clone();
         loop {
-            let held = self.fiber_under(&at);
+            let held = self.fibre_under(&at);
             if !held.is_empty() || at.0.is_empty() {
                 return (at, held);
             }
@@ -236,17 +236,17 @@ impl<'a> WorkingAtlas<'a> {
     }
 
     /// Every address under a chart prefix, not only those exactly at it:
-    /// `fiber` reads one node's own members, and a stratum is the subtree
+    /// `fibre` reads one node's own members, and a stratum is the subtree
     /// (A21 §2). Ruled first, then Stood, then Held, each address once.
-    pub fn fiber_under(
+    pub fn fibre_under(
         &self,
         inv: &crate::transducer::stalk::Invariant,
     ) -> Vec<(Vec<u8>, Standing)> {
         let mut out: Vec<(Vec<u8>, Standing)> = Vec::new();
         let mut have: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for (addrs, st) in [
-            (self.genome.fiber_under(inv), Standing::Ruled),
-            (self.dialect.fiber_under(inv), Standing::Stood),
+            (self.genome.fibre_under(inv), Standing::Ruled),
+            (self.dialect.fibre_under(inv), Standing::Stood),
         ] {
             for a in addrs {
                 if have.contains(&a) {
@@ -290,7 +290,7 @@ impl<'a> WorkingAtlas<'a> {
 /// across strokes.
 impl crate::transducer::stalk::AtlasRead for WorkingAtlas<'_> {
     fn members(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
-        self.fiber(inv).into_iter().map(|(a, _)| a).collect()
+        self.fibre(inv).into_iter().map(|(a, _)| a).collect()
     }
 }
 
@@ -419,7 +419,7 @@ pub struct Epigenome {
     /// Dialects dropped this process.
     pub(crate) shed_n: u64,
     /// Held words keyed by (chart, axis). Filled at atlas/dialect admit,
-    /// emptied at remove/shed/retire. `on_axis` is one fiber read.
+    /// emptied at remove/shed/retire. `on_axis` is one fibre read.
     pub(crate) axis_index: crate::transducer::sentence::AxisIndex,
     /// Missing cited address → citing dialect sentences. Filled when
     /// Withheld is banked; resolve_withheld reads this, never the dialect.
@@ -427,7 +427,7 @@ pub struct Epigenome {
     /// CLOSED FORMS BY THE CHART OF A BODY THEY CARRY (21 step 3, 24.1):
     /// body chart → the addresses of held forms with a `Word` vertex on
     /// that chart. It is the epigenome's `Form.by_class` (18.2) — "the
-    /// fiber a listing body's chart reads" — one level up, filled and
+    /// fibre a listing body's chart reads" — one level up, filled and
     /// emptied beside `axis_index`.
     ///
     /// The glue asks the crystal at a perceived body's moduli, and the
@@ -464,9 +464,9 @@ pub struct Epigenome {
     /// RM1, 78.37(4) — THE REMAINDERS BY WHERE THEY WERE PERCEIVED: the
     /// residue's chart chain ‖ κ → the word whose torsion record carries it,
     /// over resident and dialect words alike; derived from the records at
-    /// every admission and at restore (the word_fibers pattern), and each
+    /// every admission and at restore (the word_fibres pattern), and each
     /// word's keys, so it leaves by them.
-    pub(crate) remainder_fibers: crate::network::nerve::Keyed<crate::transducer::address::Address>,
+    pub(crate) remainder_fibres: crate::network::nerve::Keyed<crate::transducer::address::Address>,
     pub(crate) remainder_keys: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
     pub(crate) remainders_coincident: u64,
     /// RM1's RECEPTOR: a remainder arriving where one of its class stands at
@@ -566,7 +566,7 @@ pub struct Mind {
     ///
     /// The key is NECESSARY and not sufficient: `same_vertex` requires the
     /// rotors to be projectively equal, so two words that are one vertex
-    /// share this key, and the exact test still decides over the fiber it
+    /// share this key, and the exact test still decides over the fibre it
     /// names. That is A21 §3's own shape — "equal keys are necessary for
     /// two classes to be the same; sufficiency … is `solve_gauge_between`".
     pub(crate) taught_at: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,

@@ -40,8 +40,8 @@ skeleton, and nothing else.
 
 1.4 **The sensor boundary** (law 11). Only the sensor reads or writes a
 site's integer coordinates. The permitted readers are the functions of
-`transducer::element::sensor` (`site_of`, `site_at`, `carry_center`,
-`carry_compartment`, `carry_site`, `carry_site_center`,
+`transducer::element::sensor` (`site_of`, `site_at`, `carry_centre`,
+`carry_compartment`, `carry_site`, `carry_site_centre`,
 `carry_compartment_site`, `pullback`), `transducer::element::letters::carriage`,
 `transducer::blade::carry::carry`, `Blade::centroid` in
 `transducer/blade/body.rs`, `transducer::alphabet::letters::rotor_pair`,
@@ -351,7 +351,7 @@ allows nothing is a build failure. There is no module-level allowance
 file is named in any configuration.
 
 4.4 **What the gate cannot read is a type or a review item.** Where a
-type can hold a rule, it does: `Keyed::fiber` takes a `Prefix`, which
+type can hold a rule, it does: `Keyed::fibre` takes a `Prefix`, which
 cannot be empty, so a whole carrier is read only through `Keyed::cursor`
 under a `Budget`; `Mu` implements neither `PartialEq` nor `PartialOrd`, so
 two lane vectors are compared only by `lane_moves`. Everything else is

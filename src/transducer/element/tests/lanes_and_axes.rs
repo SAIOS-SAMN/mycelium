@@ -40,7 +40,7 @@ fn open_axis_twice_answers_one_seat() {
     assert_eq!(e.opened_axes(), vec![first, second]);
 }
 
-// ─── THE GERM CARRIER: centered coboundary chains (post-excision) ───────
+// ─── THE GERM CARRIER: centred coboundary chains (post-excision) ───────
 
 /// THE RESIDUAL GERMINATES: a pivot that no motor closes becomes a first-class
 /// germ on the residual lane — the description that used to be discarded. Its
@@ -89,22 +89,22 @@ fn germinate_keeps_canceling_swap_nonidentity() {
 }
 
 /// Multi-axial: distinct axes compose INDEPENDENTLY (no cross-talk, no cap on
-/// how many axes germinate). A germinated fiber extends without disturbing others.
+/// how many axes germinate). A germinated fibre extends without disturbing others.
 #[test]
 fn compose_keeps_axes_independent_and_extensible() {
     let mut spatial = elem_from_versor(translator_versor(1, 0));
     let mut germ = Element::identity();
     germ.open_axis(translator_versor(0, 1)).expect("a seat");
     let both = spatial.compose(&germ).expect("the composite forms");
-    assert_eq!(both.axes(), vec![FIBER_SPATIAL, FIBER_GERMINATED], "both axes present");
+    assert_eq!(both.axes(), vec![FIBRE_SPATIAL, FIBRE_GERMINATED], "both axes present");
     assert!(same_versor(
         &both.versor().expect("S"),
         &spatial.versor().expect("S")
     ));
-    assert_eq!(both.max_axis(), Some(FIBER_GERMINATED));
+    assert_eq!(both.max_axis(), Some(FIBRE_GERMINATED));
     assert!(!both.same_action(&spatial), "a germinated axis is a new generator, not a new digest");
     spatial.open_axis(translator_versor(2, 0)).expect("a seat");
-    assert_eq!(spatial.opened_axes(), vec![FIBER_GERMINATED]);
+    assert_eq!(spatial.opened_axes(), vec![FIBRE_GERMINATED]);
 }
 
 /// STD1 — A WORD WHOSE LARGEST AXIS SEAT IS THE CARRIER'S LAST HAS NO SEAT
@@ -154,7 +154,7 @@ fn reduction_magnitude_agrees_with_axes() {
     let w = Word::from_letters(&[(LetterId::turn_90((2, 3)).expect("offplane 90° turn"), false)]);
     let mut e = Element::identity();
     e.action.rotor = Some(w.rotor());
-    assert_eq!(e.axes(), vec![FIBER_SPATIAL], "axes reports occupied spatial stratum");
+    assert_eq!(e.axes(), vec![FIBRE_SPATIAL], "axes reports occupied spatial stratum");
     assert_eq!(e.reduction_magnitude()[0], 1, "reduction_magnitude reports spatial=1 in exact parity with axes");
 
     // Letters with sigma permutation from a connection
@@ -162,6 +162,6 @@ fn reduction_magnitude_agrees_with_axes() {
     let remainder = vec![(0, 0, 1u8, 2u8)];
     let conn = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &remainder, [0, 1, 0, 0])
         .expect("connection spells");
-    assert_eq!(conn.axes(), vec![FIBER_GAUGE], "axes reports occupied gauge stratum");
+    assert_eq!(conn.axes(), vec![FIBRE_GAUGE], "axes reports occupied gauge stratum");
     assert_eq!(conn.reduction_magnitude()[1], 1, "reduction_magnitude reports gauge=1 in exact parity with axes");
 }

@@ -41,10 +41,10 @@ fn moduli_prefix_is_topological_stratum() {
     let mut atlas = Stalks::default();
     atlas.admit(&ia, wa.clone());
     atlas.admit(&ib, wb.clone());
-    assert_eq!(atlas.fiber(&ia).len(), 1, "the exact chart holds one word");
-    // The stratum is the fibre UNDER the prefix (A21 §2): `fiber` reads one
+    assert_eq!(atlas.fibre(&ia).len(), 1, "the exact chart holds one word");
+    // The stratum is the fibre UNDER the prefix (A21 §2): `fibre` reads one
     // node's own members and holds nothing at a prefix no word sits on.
-    let stratum = atlas.fiber_under(&Invariant(a[..depth].to_vec()));
+    let stratum = atlas.fibre_under(&Invariant(a[..depth].to_vec()));
     assert!(
         stratum.contains(&wa.clone().into_vec()) && stratum.contains(&wb.clone().into_vec()),
         "the topological stratum holds both: {} members",
@@ -55,7 +55,7 @@ fn moduli_prefix_is_topological_stratum() {
         at = at.peel();
     }
     assert_eq!(at.0, a[..depth], "peel reaches the topological stratum");
-    assert_eq!(atlas.fiber_under(&at).len(), 2, "and the stratum's fibre is read under that prefix");
+    assert_eq!(atlas.fibre_under(&at).len(), 2, "and the stratum's fibre is read under that prefix");
 }
 
 /// N7 as corrected by A21 (ruled 2026-09-18) — A RATIO IS ONE COORDINATE,

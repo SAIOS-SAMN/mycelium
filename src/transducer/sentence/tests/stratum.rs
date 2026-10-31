@@ -23,7 +23,7 @@ fn turn_90() -> Word {
 /// The schema parses the boundary out of the bytes the writer wrote, so
 /// this is a fact about the two writers and not about a length anyone
 /// remembered: if either changes its framing, this fails here instead of
-/// silently emptying a fiber on a deployment.
+/// silently emptying a fibre on a deployment.
 #[test]
 fn class_key_leads_with_rotor_class() {
     let w = turn_90();
@@ -50,7 +50,7 @@ fn class_key_leads_with_rotor_class() {
     assert_eq!(schema.depth(), 5, "conjugacy, plane, hue, carriage, placement");
 }
 
-/// A COARSE COORDINATE IS A FIBER AND THE WHOLE PATH IS AN EXACT READ, and
+/// A COARSE COORDINATE IS A FIBRE AND THE WHOLE PATH IS AN EXACT READ, and
 /// the carrier says which is which rather than letting a caller ask for one
 /// and receive the other's empty answer.
 ///
@@ -58,7 +58,7 @@ fn class_key_leads_with_rotor_class() {
 /// stratum and two entries. Read at depth one both answer; read whole, each
 /// answers itself.
 #[test]
-fn fiber_at_depth_answers_every_class_vector_under_stratum() {
+fn fibre_at_depth_answers_every_class_vector_under_stratum() {
     let w = turn_90();
     let here = ClassVector::read(&w, element::identity_versor(), CycleType::Identity)
         .expect("a class vector at the origin");
@@ -72,7 +72,7 @@ fn fiber_at_depth_answers_every_class_vector_under_stratum() {
     held.insert(mk.as_bytes(), 2).expect("and so is the other");
 
     let under: Vec<Vec<u8>> = held
-        .fiber_at_depth(hk.as_bytes(), 1)
+        .fibre_at_depth(hk.as_bytes(), 1)
         .expect("depth one is the conjugacy stratum")
         .map(|(k, _)| k)
         .collect();
@@ -111,17 +111,17 @@ fn stratified_get_refuses_foreign_key_by_name() {
 /// depth is an exact read. A site asking for a projection cannot receive
 /// either by accident.
 #[test]
-fn fiber_at_depth_refuses_depth_zero_and_whole_path() {
+fn fibre_at_depth_refuses_depth_zero_and_whole_path() {
     let w = turn_90();
     let cv = ClassVector::of_word(&w).expect("a class vector");
     let key = cv.class_key();
     let mut held: Stratified<u8> = Stratified::new(ClassVector::class_schema());
     held.insert(key.as_bytes(), 1).expect("bound");
 
-    held.fiber_at_depth(key.as_bytes(), 0)
+    held.fibre_at_depth(key.as_bytes(), 0)
         .err()
         .expect("depth zero is `scoped`");
-    held.fiber_at_depth(key.as_bytes(), 5)
+    held.fibre_at_depth(key.as_bytes(), 5)
         .err()
         .expect("the whole path is `get`");
     assert_eq!(held.scoped().count(), 1, "and the whole carrier is one entry");
@@ -130,7 +130,7 @@ fn fiber_at_depth_refuses_depth_zero_and_whole_path() {
 /// A ROTOR AND ITS INVERSE ARE ONE CONJUGACY STRATUM. `class_invariants`
 /// reads the ray-corrected scalar and pseudoscalar squared over the weight,
 /// and reversion preserves both grades while the weight divides out, so one
-/// fiber answers both. The eliminator in the pivot drive branches on the
+/// fibre answers both. The eliminator in the pivot drive branches on the
 /// side of the chord to compute these separately; this says the two
 /// branches name one coordinate.
 #[test]

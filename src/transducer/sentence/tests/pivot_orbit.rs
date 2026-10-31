@@ -809,7 +809,7 @@ fn pivot_orbit_holds_two_discharges_as_vortex() {
 
 /// A21 §2, R6 — THE BASE IS THE RANK, AND ITS WIDTH DOES NOT GROW WITH THE
 /// FORM. π: P → B, so a form's chart is five coordinates whatever it holds
-/// and the orbits inhabit the fiber over it.
+/// and the orbits inhabit the fibre over it.
 ///
 /// The chart appended one packed coordinate per distinct orbit class. Key
 /// width grew with the orbit count, every `Keyed` entry naming the chart

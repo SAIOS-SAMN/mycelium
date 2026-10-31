@@ -134,10 +134,10 @@ impl Form {
     /// vertical. A reader that answered `Vec<u16>` of "bad" vertices would
     /// have collapsed an exact conformal element to an index and a
     /// judgement, which is the scalar this grade exists to stop making.
-    pub fn fiber_transitions(&self) -> Vec<(coord::VertexAt, crate::transducer::sentence::FiberTransition)> {
+    pub fn fibre_transitions(&self) -> Vec<(coord::VertexAt, crate::transducer::sentence::FibreTransition)> {
         self.vertices
             .entries()
-            .flat_map(|(at, v)| v.fiber_holonomy().into_iter().map(move |t| (at.clone(), t)))
+            .flat_map(|(at, v)| v.fibre_holonomy().into_iter().map(move |t| (at.clone(), t)))
             .collect()
     }
 
@@ -151,8 +151,8 @@ impl Form {
     /// refusal.
     pub fn gauge_obstructions(
         &self,
-    ) -> Vec<(coord::VertexAt, crate::transducer::sentence::FiberTransition, crate::transducer::cech::Fill)> {
-        self.fiber_transitions()
+    ) -> Vec<(coord::VertexAt, crate::transducer::sentence::FibreTransition, crate::transducer::cech::Fill)> {
+        self.fibre_transitions()
             .into_iter()
             .filter(|(_, t)| !t.is_vertical())
             .filter_map(|(i, t)| t.fill().map(|f| (i, t, f)))
@@ -188,7 +188,7 @@ impl Form {
     /// never pinned at the last.
     pub fn depth_of(&self) -> Option<u16> {
         let mut d = 0u16;
-        for (_, v) in self.vertices.fiber_at(&[coord::VertexAt::GLUED]).into_iter().flatten() {
+        for (_, v) in self.vertices.fibre_at(&[coord::VertexAt::GLUED]).into_iter().flatten() {
             if let Vertex::Glued { depth, .. } = v {
                 let next = depth.checked_add(1)?;
                 if next > d {
