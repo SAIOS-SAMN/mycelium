@@ -145,6 +145,10 @@ fn main() {
         eprintln!("mycelium-client: {why}");
         std::process::exit(2)
     };
+    // D2.6 — the boot refuses an uncalibrated host, naming the arm.
+    if let Err(why) = mycelium::physics::calibrate() {
+        refuse(format!("the host is uncalibrated ({why:?}); it does not say what the calibration reads"));
+    }
     let home = match home_dir(&args) {
         Ok(h) => h,
         Err(e) => refuse(e),

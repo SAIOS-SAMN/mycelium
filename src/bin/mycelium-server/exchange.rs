@@ -647,10 +647,7 @@ impl Exchange {
                 let lambda = match crate::transport::rtt_floor(&mesh, &pid) {
                     None => None,
                     Some(floor) => {
-                        match mycelium::physics::from_transport(
-                            floor,
-                            mycelium::physics::aperture_cycle() as u64,
-                        ) {
+                        match mycelium::physics::transport_deadline(floor) {
                             mycelium::physics::Lambda::Strokes(n) => Some(n),
                             mycelium::physics::Lambda::BeyondTheLedger
                             | mycelium::physics::Lambda::Unmeasured => None,
@@ -705,7 +702,7 @@ impl Exchange {
                 match tell_peer_within(&d, req.clone(), patience(&mesh, Some(pid.as_slice()))) {
                     Some((reply, dt)) => {
                         reached += 1;
-                        note_rtt_ok(&mesh, &pid, dt);
+                        note_rtt_ok(&mesh, &pid, dt.get());
                         // 23.8, I36: a full reflex pool's deferral is
                         // impedance, not a digest that failed admission.
                         if crate::transport::is_deferred(&reply) {
@@ -850,7 +847,7 @@ impl Exchange {
                                     note_rtt_timeout(&mesh, &pid);
                                     break;
                                 };
-                                note_rtt_ok(&mesh, &pid, dt3);
+                                note_rtt_ok(&mesh, &pid, dt3.get());
                                 if crate::transport::is_deferred(&page) {
                                     eprintln!("  court exchange deferred by {d}");
                                     break;
@@ -916,7 +913,7 @@ impl Exchange {
                         };
                         match tell_peer_within(&d, fetch, patience(&mesh, Some(pid.as_slice()))) {
                             Some((page, dt2)) => {
-                                note_rtt_ok(&mesh, &pid, dt2);
+                                note_rtt_ok(&mesh, &pid, dt2.get());
                                 if crate::transport::is_deferred(&page) {
                                     eprintln!("  court exchange deferred by {d}");
                                     continue;

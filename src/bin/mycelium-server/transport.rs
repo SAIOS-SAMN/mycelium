@@ -132,27 +132,44 @@ pub(crate) fn is_deferred(reply: &[u8]) -> bool {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Stall {
     /// At most this many consecutive polls that move no byte.
-    Strokes(usize),
+    Strokes(std::num::NonZeroUsize),
     /// Until the stream's own end (end of file or reset): a one-shot ask
     /// whose wait no measurement bounds, or a deadline past the ledger's
     /// count. No poll counter.
     Beyond,
+    /// Nothing measured: no wire of the mesh, no peer's own. A read refuses
+    /// it (`read_budgeted`); an ask resolves it as a first ask is resolved
+    /// (`Stall::resolved`).
+    Unmeasured,
 }
 
 impl Stall {
     /// The stall an aperture `Λ` reads: its strokes; past the ledger, the
-    /// stream's own end; UNMEASURED (no wire of the mesh measured), one
-    /// aperture of strokes, `Λ(1)`, the instrument's own resolution times
-    /// the aperture — the one count the tree holds for a cycle with nothing
-    /// measured (the unmeasured arm of `exchange_due`).
+    /// stream's own end; unmeasured, `Unmeasured` (a zero is no measurement).
     pub(crate) fn of(l: mycelium::physics::Lambda) -> Stall {
         match l {
-            mycelium::physics::Lambda::Strokes(n) => match usize::try_from(n) {
-                Ok(n) => Stall::Strokes(n),
+            mycelium::physics::Lambda::Strokes(n) => match usize::try_from(n).map(std::num::NonZeroUsize::new) {
+                Ok(Some(n)) => Stall::Strokes(n),
+                Ok(None) => Stall::Unmeasured,
                 Err(_) => Stall::Beyond,
             },
             mycelium::physics::Lambda::BeyondTheLedger => Stall::Beyond,
-            mycelium::physics::Lambda::Unmeasured => Stall::Strokes(mycelium::physics::aperture_cycle() as usize),
+            mycelium::physics::Lambda::Unmeasured => Stall::Unmeasured,
+        }
+    }
+
+    /// AN ASK WITH NOTHING MEASURED IS A FIRST ASK (D2.6, D2.7, D4.1): a
+    /// court's waits one aperture of strokes, `Λ(1)` — the instrument's own
+    /// resolution times the aperture, the one count the tree holds for a
+    /// cycle with nothing measured (the unmeasured arm of `exchange_due`) —
+    /// so one silent peer never stops a court thread.
+    pub(crate) fn resolved(self) -> Stall {
+        match self {
+            Stall::Unmeasured => match std::num::NonZeroUsize::new(mycelium::physics::aperture_cycle() as usize) {
+                Some(a) => Stall::Strokes(a),
+                None => Stall::Unmeasured,
+            },
+            s => s,
         }
     }
 }
@@ -220,7 +237,7 @@ impl AskWindow {
     /// One ask at the window's stall, its round trip noted.
     pub(crate) fn ask(&mut self, endpoint: &str, body: Vec<u8>) -> Option<Vec<u8>> {
         let (reply, rtt) = tell_peer_within(endpoint, body, self.stall())?;
-        self.note(rtt);
+        self.note(rtt.get());
         Some(reply)
     }
 }
@@ -239,12 +256,12 @@ pub(crate) fn voice_at(mesh: &Mesh, endpoint: &str) -> Option<[u8; 32]> {
 /// measured prior where it has none; and what it saw is recorded under that
 /// key. An endpoint whose voice is not yet known is asked at the prior and
 /// records nothing: its measurement has no coordinate to stand at.
-pub(crate) fn tell_peer_measured(mesh: &Mesh, endpoint: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
+pub(crate) fn tell_peer_measured(mesh: &Mesh, endpoint: &str, body: Vec<u8>) -> Option<(Vec<u8>, std::num::NonZeroU64)> {
     let voice = voice_at(mesh, endpoint);
     let reply = tell_peer_within(endpoint, body, patience(mesh, voice.as_ref().map(|v| v.as_slice())));
     if let Some(v) = voice {
         match &reply {
-            Some((_, dt)) => note_rtt_ok(mesh, v, *dt),
+            Some((_, dt)) => note_rtt_ok(mesh, v, dt.get()),
             None => note_rtt_timeout(mesh, v),
         }
     }
@@ -253,9 +270,11 @@ pub(crate) fn tell_peer_measured(mesh: &Mesh, endpoint: &str, body: Vec<u8>) -> 
 
 /// Speak one act to a peer, its silence bounded by `stall` (an aperture of
 /// the peer's measured round trip, `patience`; or the stream's own end for a
-/// one-shot ask). The reply and its round trip in strokes, or `None`: the
-/// peer is silent.
-pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> Option<(Vec<u8>, u64)> {
+/// one-shot ask; `Unmeasured` resolved as a first ask). The reply and its
+/// round trip in strokes — never zero: the poll that read the first byte is
+/// counted (D2.6) — or `None`: the peer is silent.
+pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> Option<(Vec<u8>, std::num::NonZeroU64)> {
+    let stall = stall.resolved();
     let mut s = std::net::TcpStream::connect(endpoint).ok()?;
     let _ = s.set_nodelay(true);
     // A PEER THAT SAYS NOTHING IS SILENT, NOT AUTHORITATIVE. `read_exact`
@@ -282,7 +301,7 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> O
     // wire and `transport_deadline(1)` was eight yields -- microseconds,
     // refusing a peer that had merely not been scheduled. The body's read
     // is the frame's length, not the transport, and is not in the measure.
-    let rtt = read_budgeted(&mut s, &mut head, stall)?;
+    let rtt = std::num::NonZeroU64::new(read_budgeted(&mut s, &mut head, stall)?)?;
     let (_, pointed) = mycelium::network::wire::read_lane(head[0])?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
     if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::LEN {
@@ -309,11 +328,16 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> O
 /// measures nothing, which reads as zero strokes. Under `Stall::Beyond` no
 /// poll is counted: the read ends at the stream's own end (the boundary it
 /// walks), or filled.
+/// An `Unmeasured` stall is refused: a read is never begun on no bound and
+/// no measurement (D2.6; `tell_peer_within` resolves it as a first ask).
 pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: Stall) -> Option<u64> {
     let fresh = || match stall {
-        Stall::Strokes(n) => Some(mycelium::physics::Physics::default().stroke_n(n)),
-        Stall::Beyond => None,
+        Stall::Strokes(n) => Some(mycelium::physics::Physics::default().stroke_n(n.get())),
+        Stall::Beyond | Stall::Unmeasured => None,
     };
+    if stall == Stall::Unmeasured {
+        return None;
+    }
     let mut budget = fresh();
     let mut got = 0usize;
     let mut polls = 0u64;

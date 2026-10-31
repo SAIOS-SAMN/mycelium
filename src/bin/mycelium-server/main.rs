@@ -342,6 +342,12 @@ struct ReflexJob {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    // D2.6 — a host that does not say is fixed by its operator, never run on
+    // a guess: the boot refuses, naming the arm it cannot read.
+    if let Err(why) = mycelium::physics::calibrate() {
+        eprintln!("mycelium-server: the host is uncalibrated ({why:?}); it does not say what the calibration reads");
+        std::process::exit(2)
+    }
     // 45.5: H_genesis is written ONCE, by the first hypha started on a fresh
     // state, and PROVISIONED to every other node the way the bootstrap peer
     // list is. Self-adoption from a node's own first receipt is not that:
@@ -619,7 +625,7 @@ fn main() {
             }
             let _ = admit_peer_digest(&mesh, &reply, &router);
             if let Some(v) = crate::transport::voice_at(&mesh, p).filter(|v| rtt_floor(&mesh, v).is_none()) {
-                note_rtt_ok(&mesh, v, dt);
+                note_rtt_ok(&mesh, v, dt.get());
             }
         }
     }

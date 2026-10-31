@@ -34,6 +34,11 @@ fn aperture() -> usize {
     aperture_cycle() as usize
 }
 
+/// A stall of exactly `n` strokes.
+fn strokes(n: usize) -> Stall {
+    Stall::Strokes(std::num::NonZeroUsize::new(n).expect("non-zero"))
+}
+
 /// AN UNMEASURED PEER WAITS THE MESH'S MEASURED FLOOR: windows with floors
 /// 3 and 7 on two peers' keys; a third peer, never measured, is asked at an
 /// aperture of 3 — the floor the rtt window holds, never a literal.
@@ -44,18 +49,19 @@ fn tell_peer_waits_mesh_floor_for_unmeasured_peer() {
         note_rtt_ok(&m, [1u8; 32], s);
     }
     note_rtt_ok(&m, [2u8; 32], 7);
-    assert_eq!(patience(&m, Some(&[9u8; 32])), Stall::Strokes(3 * aperture()));
-    assert_eq!(patience(&m, None), Stall::Strokes(3 * aperture()));
+    assert_eq!(patience(&m, Some(&[9u8; 32])), strokes(3 * aperture()));
+    assert_eq!(patience(&m, None), strokes(3 * aperture()));
 }
 
-/// AN EMPTY MESH WAITS ONE APERTURE: `Lambda::Unmeasured` is read live, and
-/// its stall is the aperture itself, `Λ(1)`.
+/// AN EMPTY MESH WAITS ONE APERTURE: `Lambda::Unmeasured` is read live, its
+/// stall `Unmeasured`, and an ask resolves it to the aperture itself, `Λ(1)`.
 #[test]
 fn tell_peer_empty_mesh_waits_one_aperture() {
     let m = mesh();
     assert_eq!(crate::transport::prior(&m), mycelium::physics::Lambda::Unmeasured);
-    assert_eq!(patience(&m, None), Stall::Strokes(aperture()));
-    assert_eq!(Stall::of(transport_deadline(1)), Stall::Strokes(aperture()), "the same as one stroke's aperture");
+    assert_eq!(patience(&m, None), Stall::Unmeasured);
+    assert_eq!(patience(&m, None).resolved(), strokes(aperture()));
+    assert_eq!(Stall::of(transport_deadline(1)), strokes(aperture()), "the same as one stroke's aperture");
 }
 
 /// ONE KEY PER PEER, THE VOICE: a round trip noted under a peer's voice is
@@ -90,7 +96,38 @@ fn page_loop_asks_at_measured_floor() {
     for s in [9, 3, 7] {
         w.note(s);
     }
-    assert_eq!(w.stall(), Stall::Strokes(3 * aperture()));
+    assert_eq!(w.stall(), strokes(3 * aperture()));
+}
+
+/// D2.6 — A READ ON NO BOUND AND NO MEASUREMENT IS REFUSED: `Unmeasured`
+/// begins no read; an ask resolves it to one aperture (a first ask).
+#[test]
+fn read_budgeted_refuses_unmeasured_stall() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+    let addr = listener.local_addr().expect("addr");
+    let mut s = std::net::TcpStream::connect(addr).expect("connect");
+    let mut buf = [0u8; 1];
+    assert_eq!(crate::transport::read_budgeted(&mut s, &mut buf, Stall::Unmeasured), None);
+    assert_eq!(Stall::Unmeasured.resolved(), Stall::of(transport_deadline(1)), "a first ask waits one aperture");
+}
+
+/// D2.6 — A MEASURED ROUND TRIP IS NEVER ZERO: a reply present on the first
+/// poll measures the poll that read it.
+#[test]
+fn rtt_is_nonzero_by_measurement() {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+    let addr = listener.local_addr().expect("addr").to_string();
+    let responder = std::thread::spawn(move || {
+        let (mut s, _) = listener.accept().expect("accept");
+        let mut head = [0u8; 6];
+        s.read_exact(&mut head).expect("the act");
+        let frame = mycelium::network::wire::Frame { lane: mycelium::network::wire::Stratum::Spatial, body: vec![7] };
+        s.write_all(&frame.encode().expect("encode")).expect("write");
+    });
+    let (_, rtt) = tell_peer_within(&addr, vec![0x10], Stall::Beyond).expect("answered");
+    assert!(rtt.get() >= 1);
+    responder.join().expect("join");
 }
 
 /// A CLI'S FIRST ASK READS TO THE STREAM'S END: a peer that takes the act

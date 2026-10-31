@@ -134,7 +134,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D2.3 | `surface + 1` (read price) | `server/cognition/crossing.rs:57–64` | μ, admission | High | `p = κ + y/R`, scale-free | yes | S | 21, 3 |
 | D2.4 | `UNIT_BOND = [1, 1, 1, 1]` | `economy/treasury.rs:163` | none (test fixture) | Low | deleted, not derived | no | S | 3 |
 | D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` | yes | M | 14 |
-| D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name | yes | M | 14 |
+| D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name (**Built** 2026-10-31 but the reserve's memory and cores terms, D2.5's organ) | yes | M | 14 |
 | D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state (**Built** 2026-10-31: a CLI's first ask to the stream's end, a court's the mesh floor) | yes | S–M | 5 |
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111; **Built**) | yes | S | 7 |
 | D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w` (**Built**, O1 (a)) | no | M | 7 |
@@ -174,7 +174,7 @@ entry's derivation and needs no ruling unless marked.
 | 10 | The `−64` page reserve is not a signature (no reply at those sites carries one), and at four sites it double-counts a header the encoder already counts | D4.6 | Medium |
 | 11 | `gamma_p` at large `x` and `exp`/`powq` at large positive argument return proven but uninformative enclosures (an absolute grid on a value of scale `2^{±x·log₂e}`); to confirm by the fixtures named in D4.8 | D4.8 | Low (no caller) / Medium (`exp`) |
 | 12 | The yield surface adds a reserve deficit (reserve units, bounded by `R`) to an entropic excess (an event count, unbounded and unscaled); the same mismatch sits inside the POWV share. The soak reading in D2.3 decides whether it is material | D2.3 | High |
-| 13 | `transport_deadline` never returns `Lambda::Unmeasured`, so its `usize::MAX` arm is dead; `from_transport_counts_rtt_in_strokes` asserts a same-stroke reply reads 0, which the measurement cannot produce | D4.1, D2.6 | Low |
+| 13 | `transport_deadline` never returns `Lambda::Unmeasured`, so its `usize::MAX` arm is dead; `from_transport_counts_rtt_in_strokes` asserts a same-stroke reply reads 0, which the measurement cannot produce; **fixed** (2026-10-31): `Unmeasured` is live (the mesh prior, a zero rtt), the `usize::MAX` arm is gone, the assertion retired with the `NonZeroU64` type | D4.1, D2.6 | Low |
 
 ---
 
@@ -1431,6 +1431,29 @@ stroke) has a size of a GiB. The ratio algebra
 ---
 
 ### D2.6 Calibration fallbacks — 1 core, 0 GiB, 1 ns, 1 stroke, `usize::MAX`
+
+**Status.** **Built** (2026-10-31, the live-readings ruling) for the
+physics and transport arms; the reserve's own `Calibration` organ (its
+memory term and the cores it multiplies) is D2.5's and lands with it.
+`physics::calibrate() -> Result<(), Uncalibrated>` reads every arm the
+host must say, `Uncalibrated::{Cores, StrokeFloor}`; the server, client and
+soak binaries refuse to boot naming the arm, so `reserve_max`'s one-core
+arm is reached by no booted binary. `stroke_floor_of(hz, slack)`: one tick
+where `CONFIG_HZ` is published, else the thread's `timerslack_ns`, else
+refused (the one-nanosecond ask is deleted; an unbooted uncalibrated
+library parks nothing). `idle_park(Option<NonZeroU64>)` parks the floor, the
+unit, where nothing is measured; `from_transport(NonZeroU64, NonZeroU64)`
+drops its `max(1)`, and a zero handed to a deadline reads `Unmeasured`.
+The transport's round trip is `NonZeroU64` at the measurement, and
+`Stall::{Strokes(NonZeroUsize), Beyond, Unmeasured}`: `read_budgeted`
+refuses `Unmeasured`, `tell_peer_within` resolves it as a first ask (one
+aperture, D4.1). Tests: `physics::tests::calibration`
+(`calibration_refuses_unread_cores`, `stroke_floor_reads_slack_where_hz_unpublished`),
+`physics::tests::lambda::from_transport_counts_rtt_in_strokes` (its
+same-stroke-zero claim dropped, §2 item 13), `mycelium-server tests::patience`
+(`read_budgeted_refuses_unmeasured_stall`, `rtt_is_nonzero_by_measurement`;
+`cli_first_ask_reads_to_stream_end` is the `Beyond` claim). The text below is
+the derivation as specified.
 
 **Site.** Each fallback as it stands:
 

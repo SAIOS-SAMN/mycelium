@@ -58,6 +58,6 @@ fn tell_peer_within_reads_reply_and_counts_strokes() {
     let out = tell_peer_within(&addr, vec![0x10, 1, 2], Stall::Beyond);
     let (reply, rtt) = out.expect("a peer that answers is not silence");
     assert_eq!(reply, echo, "the reply is read whole");
-    assert!(rtt >= 1, "a round trip takes at least the one poll that read it: {rtt}");
+    assert!(rtt.get() >= 1, "a round trip takes at least the one poll that read it: {rtt}");
     assert_eq!(responder.join().expect("join"), vec![0x10, 1, 2], "and the act arrived whole");
 }

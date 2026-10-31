@@ -79,7 +79,7 @@ pub(crate) fn fold_round(court: &Mutex<Court>, mesh: &Mesh) {
             unmeasured(&vk);
             continue;
         };
-        note_rtt_ok(mesh, vk, dt);
+        note_rtt_ok(mesh, vk, dt.get());
         if crate::transport::is_deferred(&reply) {
             observe::note_fold(FoldOutcome::Unmeasured);
             unmeasured(&vk);

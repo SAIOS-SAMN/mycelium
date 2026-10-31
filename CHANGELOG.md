@@ -89,6 +89,14 @@ such change is named here.
   no longer passes `reserve_max()` as a round trip: a first ask reads to
   the stream's end, and the ledger's later pages wait an aperture of the
   floor its own asks measured.
+- **Calibration refuses what the host does not say** (D2.6). The server,
+  client and soak binaries refuse to boot on an uncalibrated host, naming
+  the arm (`physics::calibrate`, `Uncalibrated::{Cores, StrokeFloor}`); the
+  stroke floor is one scheduler tick, else the thread's timer slack, never
+  a one-nanosecond ask; `idle_park` takes `Option<NonZeroU64>`,
+  `from_transport` two `NonZeroU64` (a zero rtt reads `Unmeasured`); the
+  transport's round trip is `NonZeroU64` and its stall
+  `Stall::{Strokes, Beyond, Unmeasured}`, a read refusing `Unmeasured`.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

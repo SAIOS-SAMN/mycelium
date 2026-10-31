@@ -1,19 +1,21 @@
 use super::super::*;
+use std::num::NonZeroU64;
 
-/// A measured round trip is counted in strokes, and a same-stroke reply
-/// reads zero, not a floor.
+fn nz(n: u64) -> NonZeroU64 {
+    NonZeroU64::new(n).expect("non-zero")
+}
+
+/// A measured round trip is counted in strokes, times a non-zero factor: the
+/// measurement counts the poll that read its first byte, so no zero is
+/// passed (the claim that a same-stroke reply reads zero is dropped with it,
+/// MU-DERIVATIONS §2 item 13); a zero handed to a deadline is no
+/// measurement, read `Unmeasured`.
 #[test]
 fn from_transport_counts_rtt_in_strokes() {
-    assert_eq!(from_transport(3, 4), Lambda::Strokes(12), "measured rtt × strokes");
-    assert_eq!(from_transport(3, 0), Lambda::Strokes(3), "zero strokes is still one transport");
-    assert_eq!(
-        from_transport(0, 4),
-        Lambda::Strokes(0),
-        "a same-stroke reply is zero, not a floor"
-    );
-    let (Lambda::Strokes(quiet), Lambda::Strokes(one)) =
-        (digest_ceiling(3), from_transport(3, 1))
-    else {
+    assert_eq!(from_transport(nz(3), nz(4)), Lambda::Strokes(12), "measured rtt × strokes");
+    assert_eq!(from_transport(nz(3), nz(1)), Lambda::Strokes(3), "one stroke's factor is one transport");
+    assert_eq!(transport_deadline(0), Lambda::Unmeasured, "a zero is no measurement");
+    let (Lambda::Strokes(quiet), Lambda::Strokes(one)) = (digest_ceiling(3), from_transport(nz(3), nz(1))) else {
         panic!("a measured round trip has a horizon the ledger counts");
     };
     assert!(quiet >= one);
@@ -28,12 +30,12 @@ fn from_transport_counts_rtt_in_strokes() {
 #[test]
 fn from_transport_reads_overflow_as_beyond_ledger() {
     assert_eq!(
-        from_transport(u64::MAX, 2),
+        from_transport(nz(u64::MAX), nz(2)),
         Lambda::BeyondTheLedger,
         "a product that does not fit is beyond the ledger, not a saturated extent"
     );
     assert_ne!(
-        from_transport(u64::MAX, 2),
+        from_transport(nz(u64::MAX), nz(2)),
         Lambda::Unmeasured,
         "and it is not the same reading as a transport nobody measured"
     );
