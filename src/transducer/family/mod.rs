@@ -50,6 +50,7 @@ pub mod span;
 pub mod speak;
 pub mod statement;
 pub mod trace;
+pub mod transduce;
 mod train;
 
 #[cfg(test)]
