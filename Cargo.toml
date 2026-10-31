@@ -11,6 +11,16 @@ repository = "https://github.com/SAIOS-SAMN/mycelium"
 readme = "README.md"
 rust-version = "1.82"
 
+# MU-PRECURSORS §4 P1 — ONE WORKSPACE, ONE LOCK: the library and its
+# binaries, the law forms and the client SDK build together, so the server
+# and the SDK cannot drift. The gate (`xtask/`) stays a crate of its own: it
+# reads this tree from outside it. The root package is a member by being
+# the root; naming it "." would also claim every directory under it, and
+# `exclude` could not keep `xtask` out.
+[workspace]
+members = ["forms", "sdk"]
+exclude = ["xtask"]
+
 [dependencies]
 # Current kernel.rs dependency graph
 # Core arithmetic — exact rational over Q
@@ -64,10 +74,15 @@ drill-undurable = []
 proptest = "1.4"
 tempfile = "3.27.0"
 
-[lints.rust]
+[lints]
+workspace = true
+
+# The lints every crate of the workspace written to these standards takes
+# (`[lints] workspace = true`): the library and the SDK.
+[workspace.lints.rust]
 unsafe_code = "deny"
 
-[lints.clippy]
+[workspace.lints.clippy]
 float_arithmetic    = "deny"
 cast_precision_loss = "deny"
 # STD1 3c-5: A WIDTH IS A PROVENANCE, NEVER A HOPE. A narrowing `as` stands

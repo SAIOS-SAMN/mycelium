@@ -6,6 +6,34 @@ such change is named here.
 
 ## Unreleased
 
+### SDK
+- The repository is a Cargo workspace: `mycelium`, `forms` and the new
+  `mycelium-sdk` (`sdk/`), under one lock file (`forms/Cargo.lock` is
+  removed) and one lint table (`[workspace.lints]`); `xtask` stays outside
+  it. The gate's source checks cover `forms/src/` and `sdk/src/`, and its
+  clippy reading runs with `--workspace` (MU-PRECURSORS §4, P1).
+- `mycelium-sdk` 0.3.0-dev: the curated client surface, every item the
+  library's, in the modules `voice`, `session`, `task`, `rule`, `seat`,
+  `wallet`, `readings`, `mind`, `wire`, `forms` and `prelude`. Its `wire`
+  module carries `WIRE_VERSION` and `ACT_TABLE`, the `(code, name)` of
+  every act the SDK may send, from the library's `ACT_*` constants.
+  `examples/sdk_client.rs` moves to `sdk/examples/client.rs` and depends on
+  `mycelium-sdk` alone.
+- `anastome::dialogue::WIRE_VERSION` (`0x0104`, wire v1.4): the wire's
+  version, `major << 8 | minor`.
+- The chatter frame's codec and framing move to Anastome
+  (`anastome::dialogue::chatter`: `Chatter`, `Said`, the word types,
+  `read_frame`, `write_frame`, `send`, `ask`); `sdk::chatter` re-exports
+  them beside the loop readers, the post and the rendezvous. The server
+  imports the frame from Anastome only.
+- API changes: `Chatter::open` (verify a frame) is `Chatter::verify`;
+  `chatter::Post::open` (listen) is `Post::listen`; `Mind::open` is
+  public; `Mind::open_persistent` returns `(Mind, GenomeReading)` and
+  prints nothing; `Session::{list_seats, take, call, read_mail, mail,
+  seat_post}` are public. Internal: the seat mind's call awaiting its
+  outcome is `PendingCall`, and the mind's carrier end of a hypha session
+  is `HyphaLink`.
+
 ### Carried forward from precursor implementations (MU-PRECURSORS)
 - `docs/MU-PRECURSORS.md`: the plan for every component brought over from
   precursor implementations, each with its gap, design under the laws,

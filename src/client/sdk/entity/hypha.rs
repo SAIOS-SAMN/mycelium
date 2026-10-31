@@ -17,7 +17,7 @@
 //! carried, the impedance, the round trip. The carrier publishes them after
 //! every exchange; the field reads the last published.
 //!
-//! Every carrier wakes the field when an answer lands (`Hypha::rest`), so a
+//! Every carrier wakes the field when an answer lands (`HyphaLink::rest`), so a
 //! resting mind takes what landed as it arrives, never a park later.
 
 use crate::client::sdk::*;
@@ -99,7 +99,7 @@ impl View {
 /// THE FIELD'S END OF THE HYPHA CARRIER: the carrier over the one session
 /// this mind holds to the nerve, the wire's last readings, what wakes the
 /// resting field, and the voice this mind speaks as.
-pub(crate) struct Hypha {
+pub(crate) struct HyphaLink {
     carrier: Carrier<Session>,
     view: Arc<Mutex<View>>,
     woken: Receiver<()>,
@@ -109,12 +109,12 @@ pub(crate) struct Hypha {
     voice: Voice,
 }
 
-impl Hypha {
+impl HyphaLink {
     /// THE CARRIER OPENED on `session`, on its own thread, where it
     /// discovers the nerve before it carries the first ask: a court still
     /// waking holds the carrier, never the mind's boot.
-    pub(crate) fn open(session: Session) -> Hypha {
-        Hypha::open_waking(session, None)
+    pub(crate) fn open(session: Session) -> HyphaLink {
+        HyphaLink::open_waking(session, None)
     }
 
     /// A CARRIER BESIDE THE MIND'S, whose landings wake the mind's own rest
@@ -122,11 +122,11 @@ impl Hypha {
     /// mind blocks on its main hypha alone, and a seat's answer woke a
     /// channel no one waited on, so a percept the house filed sat unread
     /// until something else woke the mind (2026-10-23: n4, 31 minutes).
-    pub(crate) fn open_beside(session: Session, mind: Sender<()>) -> Hypha {
-        Hypha::open_waking(session, Some(mind))
+    pub(crate) fn open_beside(session: Session, mind: Sender<()>) -> HyphaLink {
+        HyphaLink::open_waking(session, Some(mind))
     }
 
-    fn open_waking(session: Session, mind: Option<Sender<()>>) -> Hypha {
+    fn open_waking(session: Session, mind: Option<Sender<()>>) -> HyphaLink {
         let voice = session.voice().clone();
         let view = Arc::new(Mutex::new(View::of(&session)));
         let (own, woken) = channel::<()>();
@@ -150,7 +150,7 @@ impl Hypha {
             },
             move |s: &mut Session| publish(&every, s),
         );
-        Hypha { carrier, view, woken, wake, voice }
+        HyphaLink { carrier, view, woken, wake, voice }
     }
 
     pub(crate) fn voice(&self) -> &Voice {

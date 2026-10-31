@@ -8,6 +8,15 @@
 use super::*;
 use crate::physics::actions::Action;
 
+/// THE WIRE'S VERSION, `major << 8 | minor`: the act layouts this tree
+/// speaks, as the wire's chapters number them — v1.2 the task citation on
+/// ACT_TASK and ACT_SOLVE (78.146), v1.4 the seat wire's sub-origins and
+/// relay epoch (78.155 §5c, 78.156), the latest. No act carries it on the
+/// wire; a client states it in its compatibility statement (MU-PRECURSORS
+/// §4.2), and a layout version defined per act (`EQUIVOCATION_VERSION`)
+/// stands beside it.
+pub const WIRE_VERSION: u16 = 0x0104;
+
 /// Act tags — frame `body[0]`. 78.94: EVERY TAG IS AN ACTION'S COORDINATE,
 /// spelled here and held by the one table (`physics::actions::Action`), which
 /// says what kind of action each is, whether a court seals it, and the laws

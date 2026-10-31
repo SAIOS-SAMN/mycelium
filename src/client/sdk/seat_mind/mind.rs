@@ -9,7 +9,7 @@ use num_rational::BigRational as Q;
 /// A CALL MADE AND NOT YET READ: what the quantities stood at when it was
 /// made, and the house's answer once it comes.
 #[derive(Clone, Debug)]
-pub(crate) struct Pending {
+pub(crate) struct PendingCall {
     pub(crate) fn_id: u16,
     pub(crate) args: Vec<Arg>,
     pub(crate) reference: [u8; 32],
@@ -34,7 +34,7 @@ pub struct SeatMind {
     pub(crate) series: Keyed<Series>,
     pub(crate) counsel: Vec<Counsel>,
     pub(crate) experience: Keyed<Experience>,
-    pub(crate) pending: Option<Pending>,
+    pub(crate) pending: Option<PendingCall>,
     /// 78.148 — its own seat's functions as the listing names them (`own`).
     pub(crate) repertoire: Vec<Own>,
     /// 78.148 — what each call, a function AT ITS ARGUMENTS, was seen to do
@@ -230,7 +230,7 @@ impl SeatMind {
             .collect();
         let held = args.clone();
         self.with_experience(fn_id, |e| e.args = Some(held));
-        self.pending = Some(Pending { fn_id, args, reference, before, applied: None, percepts_since: 0 });
+        self.pending = Some(PendingCall { fn_id, args, reference, before, applied: None, percepts_since: 0 });
     }
 
     /// The call this mind awaits an answer or a reading for.

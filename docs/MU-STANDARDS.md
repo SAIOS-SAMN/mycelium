@@ -18,8 +18,8 @@ corrected.
 
 ## 1. Files and modules
 
-1.1 **The reading bound.** No source file under `src/` or `xtask/`
-exceeds 2500 lines. The gate checks it (§4.1) and names each file over the
+1.1 **The reading bound.** No source file under `src/`, `forms/src/`,
+`sdk/src/` or `xtask/` exceeds 2500 lines. The gate checks it (§4.1) and names each file over the
 bound with its line count. There is no list of exceptions: a file over
 the bound is split before anything else lands in it. The bound exists so
 that a reviewer reads a file whole; it never decides where an organ is
@@ -312,7 +312,8 @@ no `build.rs`; the gate runs only from `xtask`. It takes two readings,
 reports both whatever the first said, and exits non-zero if either
 refuses:
 
-1. **The source checks** (`xtask/lint/`), over `src/` and `xtask/`:
+1. **The source checks** (`xtask/lint/`), over `src/`, `forms/src/`,
+   `sdk/src/` and `xtask/`:
    - *the reading bound* (`lint/length.rs`): every `.rs` file over 2500
      lines is named with its count;
    - *the Euclidean vocabulary* (`lint/euclidean.rs`): a code line (not a
@@ -322,8 +323,9 @@ refuses:
      subdivision trees (`quadtree`, `octree`, k-d trees, R-trees),
      spatial hashes, grid cells and voxels. It reads names, not structure.
 2. **The warning gate** (`lint/warnings.rs`):
-   `cargo clippy --release --all-targets -- -D warnings`, every target,
-   tests included, rustc's warnings denied. A warning is a defect with a
+   `cargo clippy --release --workspace --all-targets -- -D warnings`,
+   every workspace member (`mycelium`, `forms`, `mycelium-sdk`) and every
+   target, tests included, rustc's warnings denied. A warning is a defect with a
    line number.
 
 4.2 **The pattern rules are clippy configuration.** The crate-wide

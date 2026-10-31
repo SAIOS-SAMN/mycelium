@@ -15833,6 +15833,7 @@ voice's court-ratified dominance. Its items:
 The hypha carries and judges no chatter; minds exchange it client to client.
 A mind still never takes another's word into its genome. The frames and
 hearing are specified in MU-CLIENT §5.3 (as amended by 78.163). Code:
+`src/anastome/dialogue/chatter.rs` (the frame),
 `src/client/sdk/chatter.rs`, `src/client/sdk/entity/chatter.rs`,
 `src/server/cognition/book/agreement.rs`,
 `src/server/cognition/court/vantage_install.rs` (`cited_shares`).

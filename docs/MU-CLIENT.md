@@ -1669,7 +1669,7 @@ is abbreviated `entity/`, and `transducer/` is abbreviated `t/`.
 | deferral by an owed citation | §5.3(4) | `entity/contract.rs` (`owe_citation`) |
 | evidence: every scene under its family's citation | §5.4 | `server/registry.rs` (`citation`); `entity/court.rs` |
 | words installed beside the sentence that taught them | §5.4 | `server/cognition/court/vantage_install.rs` (`install_taught_words`) |
-| convergence V1–V4, K1–K2 | §5.5 | `client/sdk/chatter.rs` (`Evidence`, `mycelium chatter v6`); `entity/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
+| convergence V1–V4, K1–K2 | §5.5 | `anastome/dialogue/chatter.rs` (`Evidence`, `mycelium chatter v6`); `entity/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
 | the measures W, C, S; D2′ shares read locally; E2–E4 | §5.6 | `t/family/local.rs` (`word_local`, `spoken_section`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/court/vantage_install.rs` (`cited_deflation`); `server/cognition/book/demand.rs` (`pay_convergence`); `server/cognition/court/task.rs` (`grow_grants_by_paid`) |
 | the Rewrite (court side) | §5.4 | `server/cognition/book/rewrite.rs` (`offer_rewrite`) |
 | the modes carrier: μ as exact modes keyed by canonical coordinates, drawn whole or refused naming the mode short; read off a motion or a hue map; carried on a solve's verdict | §5.6 M | `economy/modes.rs` (`Mode`, `Modes::of_motion`, `of_gauge`, `take`); `anastome/dialogue/percept.rs` (`encode_solve_verdict`); `server/cognition/identity.rs` (`measured_replay_read`) |

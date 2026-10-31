@@ -25,7 +25,7 @@
 //! different words: separate algorithmic constructions reaching one
 //! conclusion, verified on the evidence, never one object read twice.
 
-use crate::client::sdk::chatter::{Chatter, Said};
+use crate::anastome::dialogue::chatter::{Chatter, Said};
 use crate::cognition::*;
 use crate::transducer::family::local::{word_local, Local};
 
@@ -61,7 +61,7 @@ impl Court {
             let mut p = 0usize;
             let Some(e) = Element::from_bytes(tape, &mut p) else { continue };
             let address = e.address();
-            let Some(Chatter { speaker: peer, said: Said::Hold { said, deviation, .. }, .. }) = Chatter::open(frame) else { continue };
+            let Some(Chatter { speaker: peer, said: Said::Hold { said, deviation, .. }, .. }) = Chatter::verify(frame) else { continue };
             if said.as_slice() != address.as_bytes() || peer == act.voice {
                 continue;
             }

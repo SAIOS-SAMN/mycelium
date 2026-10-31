@@ -68,7 +68,7 @@ MU-PRODUCT and MU-XSEPTUM; this section is the order they are used in.
 
 1. **Make an identity** (**Built**). `mycelium-client --init` creates a
    home and an Ed25519 voice key; an SDK client loads or mints its own
-   (`examples/sdk_client.rs`). The key is the agent's identity on every act
+   (`sdk/examples/client.rs`). The key is the agent's identity on every act
    it signs, every ledger row that pays it, and every attestation it gives.
 2. **Find a hypha** (**Built**). A client is given hypha addresses.
    Discovery beyond provisioned peers is ROADMAP track 5.

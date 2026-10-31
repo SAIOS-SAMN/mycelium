@@ -388,7 +388,7 @@ fn say_carries_shared_word_to_court_with_hold() {
     let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads");
     assert_eq!(spoken.address(), said.address(), "the thing said");
     let [Some(frame)] = act.agreements.as_slice() else { panic!("carrying one agreement") };
-    let Some(Chatter { speaker, said: Said::Hold { said: held, deviation, .. }, .. }) = Chatter::open(frame) else { panic!("a signed HOLD") };
+    let Some(Chatter { speaker, said: Said::Hold { said: held, deviation, .. }, .. }) = Chatter::verify(frame) else { panic!("a signed HOLD") };
     assert_eq!(speaker, Voice::named("hearer").id(), "signed by the mind that agreed");
     assert_eq!(held.as_slice(), said.address().as_bytes(), "naming exactly the word");
     let zero = num_rational::BigRational::from_integer(0.into());

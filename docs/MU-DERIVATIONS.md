@@ -2022,10 +2022,10 @@ counts as generations").
 
 **Implementation scope.**
 
-- `src/client/sdk/seat_mind/mind.rs` (`Pending.made_at`; `read_pending` by
+- `src/client/sdk/seat_mind/mind.rs` (`PendingCall.made_at`; `read_pending` by
   distance; `Perceived.abandoned` carrying the distance; the `Display`
   line), `src/client/sdk/tests/seat_mind.rs`.
-- Wire / ledger / snapshot: none on the wire; if `Pending` is in a
+- Wire / ledger / snapshot: none on the wire; if `PendingCall` is in a
   seat-mind snapshot, the field changes (check the epigenome persistence
   at implementation). Concordance: none.
 - Tests:
