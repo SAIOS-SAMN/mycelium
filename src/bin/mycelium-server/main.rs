@@ -37,7 +37,7 @@ use crate::genesis::Genesis;
 use crate::persist::{persist, persist_if_due};
 use crate::syllabus::{syllabus_admit, Syllabus};
 use crate::transport::{answer, arm_deadline, note_rtt_ok, note_rtt_timeout, read_frame, tell_peer};
-use mycelium::cognition::{outcome_code, Court, Outcome};
+use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh::{self};
 use mycelium::network::nerve::{Cover, Keyed, Router};
@@ -858,7 +858,7 @@ fn main() {
                     continue;
                 }
                 let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
-                let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &deficit);
+                let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
                 answer(&mut stream, Frame { lane: frame.lane, body });
             }
         });
@@ -927,7 +927,7 @@ fn main() {
                     continue;
                 }
                 let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
-                let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &deficit);
+                let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
                 answer(&mut stream, Frame { lane: frame.lane, body });
             }
         });
@@ -955,7 +955,7 @@ fn main() {
             let Ok(deficit) = mesh.deficit.lock().map(|d| *d) else {
                 continue;
             };
-            let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &deficit);
+            let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
             answer(&mut s, Frame { lane: mycelium::network::wire::Stratum::Spatial, body });
         }
     }

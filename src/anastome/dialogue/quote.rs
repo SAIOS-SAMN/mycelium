@@ -94,11 +94,18 @@ fn outcome_head(code: u8, height: u64, pressure: &[u64; 4]) -> Vec<u8> {
     body
 }
 
+/// THE PENDING OUTCOME CODE: the one byte a reply leads with where nothing
+/// was ruled and the voice speaks again (`cognition::outcome_code` of a
+/// pending, deferred or awaiting outcome). A deferral is this code with no
+/// height and nothing taught.
+pub const PENDING_CODE: u8 = 2;
+
 /// The deferral a full judge answers every act with (23.8, ruled
 /// 2026-09-09): the pending outcome, no height, the door's per-lane reserve
 /// deficit as its four lanes, nothing taught. For a percept or a demand it
 /// is a verdict; for any other act it is impedance; either way the asker
-/// dwells on the lanes it carries and never counts deferrals.
+/// dwells on the lanes it carries and never counts deferrals. The code is
+/// [`PENDING_CODE`]; 43 bytes: `[code][height 0 u64][deficit 4×u64][0 u16]`.
 pub fn encode_deferral(code: u8, deficit: &[u64; 4]) -> Vec<u8> {
     encode_outcome(code, 0, deficit)
 }

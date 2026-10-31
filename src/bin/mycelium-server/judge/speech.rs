@@ -10,7 +10,6 @@
 use crate::door::Door;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::cognition::{outcome_code, Outcome};
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
 
@@ -54,7 +53,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                 return;
             }
         },
-        Err(lanes) => dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &lanes),
+        Err(lanes) => dialogue::encode_deferral(dialogue::PENDING_CODE, &lanes),
     };
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);

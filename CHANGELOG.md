@@ -11,6 +11,21 @@ such change is named here.
   `extraction_spend`, so a client sizes its own extraction stroke from the
   family it reads (asked for by a peer kernel's offline extractor,
   netstratum#10). Additive.
+- **The deferral** (mycelium#14; `docs/MU-CONFORMANCE.md` §5, version 3):
+  the new `mycelium_sdk::deferral` module carries the 43-byte reply a
+  hypha with a full worker pool gives every act — `read_deferral(reply)`
+  returning `Deferral { deficit }`, `deferral_of` for the `WouldBlock`
+  refusal `Session::speak` answers a deferral with, `PENDING_CODE`, and
+  `is_deferral`, `deferral_lanes`, `encode_deferral`. The pending code is
+  now the library constant `anastome::dialogue::PENDING_CODE`, used by the
+  server. The library's `Deferral` field `lanes` is renamed `deficit`.
+  Conformance: every profile MUST recognise a deferral; `check_codecs`
+  checks it as the finding `DEFERRAL`, and `run` reports a deferred act as
+  the new `Finding::Deferred { act, deficit }`, never as a reply that did
+  not decode (no retry: the session exposes no measured round trip).
+  `examples/client.rs` and `examples/house.rs` read and print a deferral.
+- `decode_task_envelope` refuses bytes after the last test input: read
+  leniently, the deferral of a zero deficit decoded as an empty envelope.
 
 ## 0.3.0-rc.2 — 2026-10-31 (release candidate)
 

@@ -86,7 +86,10 @@ pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
     for _ in 0..nx {
         tests.push(read_grid(body, &mut p)?);
     }
-    Some(TaskEnvelope { id, train, tests })
+    // NOTHING AFTER THE LAST TEST INPUT: an envelope is read whole or
+    // refused. Read leniently, the 43-byte deferral of a zero deficit was an
+    // envelope of no train pair and no test input.
+    (p == body.len()).then_some(TaskEnvelope { id, train, tests })
 }
 
 /// 78.146 — GRIDS AS THE SOLVE ACT WRITES THEM: `[n u8][grid·n]`. `None`

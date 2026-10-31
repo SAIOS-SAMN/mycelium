@@ -46,7 +46,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>, asked: &str) -> ! {
         // 78.92 — THE DOOR WAS FULL: the question is left for the court's
         // next stroke, which answers it under its own lock; asked again, the
         // answer is served.
-        None if mycelium::anastome::dialogue::is_deferral(&reply, mycelium::cognition::outcome_code(&mycelium::cognition::Outcome::GermPending)) => {
+        None if mycelium::anastome::dialogue::is_deferral(&reply, mycelium::anastome::dialogue::PENDING_CODE) => {
             println!("{endpoint}'s door was full: the question is left for its next stroke — ask again for the answer");
             std::process::exit(3)
         }

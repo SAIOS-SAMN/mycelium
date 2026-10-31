@@ -398,6 +398,47 @@ fn observe_query() -> Result<String, String> {
     Ok("the query decodes to its prefix".to_string())
 }
 
+/// Whether a MUST act's reply decoder reads `reply` as a reply: `None`
+/// where the act is not a MUST act of either profile.
+fn reply_reads(act: &str, reply: &[u8]) -> Option<bool> {
+    use d::{endowment, universe};
+    Some(match act {
+        "task" => d::decode_task_envelope(reply).is_some(),
+        "solve" => d::decode_solve_verdict(reply).is_some(),
+        "laws register" => laws::decode_register_reply(reply).is_some(),
+        "laws statement" => d::conformance::decode_statement_reply(reply).is_some(),
+        "laws concordance" => laws::decode_concordance_reply(reply).is_some(),
+        "laws signature" => laws::decode_signature_reply(reply).is_some(),
+        "laws clock" => laws::decode_clock_reply(reply).is_some(),
+        "laws verify" => laws::decode_verify_reply(reply).is_some(),
+        "domain founding" => dom::decode_domain_reply(reply).is_some(),
+        "domain manifest" => endowment::decode_grant_reply(reply).is_some(),
+        "domain universe" => universe::decode_universe_reading(reply).is_some(),
+        _ => return None,
+    })
+}
+
+/// THE DEFERRAL, MUST for every profile: a deferral reads back as one with
+/// its exact deficit, and no MUST act's reply decoder of a declared profile
+/// reads its bytes as a reply — a decoder that does is an ambiguity, and
+/// fails by the act's name.
+fn deferral(profiles: &[Profile]) -> Result<String, String> {
+    use crate::deferral::{encode_deferral, read_deferral, Deferral, PENDING_CODE};
+    let musts: Vec<ActRequirement> = STATEMENT.union(profiles).into_iter().filter(|a| a.need == Need::Must).collect();
+    for deficit in [[0; 4], [1, 0, 2, 3]] {
+        let bytes = encode_deferral(PENDING_CODE, &deficit);
+        same("the deferral", read_deferral(&bytes), Deferral { deficit })?;
+        for a in &musts {
+            match reply_reads(a.name, &bytes) {
+                Some(true) => return Err(format!("the deferral's bytes read as a {} reply by {}: an ambiguity", a.name, a.reply)),
+                Some(false) => {}
+                None => return Err(format!("no reply decoder held for the MUST act {}", a.name)),
+            }
+        }
+    }
+    Ok(format!("the deferral reads back with its deficit; none of {} MUST reply decoders reads it as a reply", musts.len()))
+}
+
 /// The in-process check of one act, where there is one.
 fn check(a: &ActRequirement) -> Option<Result<String, String>> {
     Some(match a.name {
@@ -444,7 +485,8 @@ fn check(a: &ActRequirement) -> Option<Result<String, String>> {
 /// profiles): each act it speaks is checked through both ends of its codec;
 /// each MUST act of a declared profile it does not speak fails by name. A
 /// MAY act with no in-process check is unread; an act no declared profile
-/// names is never asked.
+/// names is never asked. Every declared profile is held to recognise the
+/// deferral, checked last as the finding [`super::DEFERRAL`].
 pub fn check_codecs(profiles: &[Profile], speaks: impl Fn(&ActRequirement) -> bool) -> Report {
     let mut report = Report::of(profiles);
     for a in STATEMENT.union(profiles) {
@@ -457,6 +499,9 @@ pub fn check_codecs(profiles: &[Profile], speaks: impl Fn(&ActRequirement) -> bo
                 None => report.unread(a.name, "no in-process check for this act"),
             },
         }
+    }
+    if !profiles.is_empty() {
+        report.record(super::DEFERRAL, deferral(profiles));
     }
     report
 }

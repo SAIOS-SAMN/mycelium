@@ -6,7 +6,8 @@
 // and a client that omits a MUST act of a declared profile fails by that
 // act's name.
 
-use mycelium_sdk::conformance::{check_codecs, ActRequirement, Finding, Need, Profile, STATEMENT};
+use mycelium_sdk::conformance::{check_codecs, ActRequirement, Finding, Need, Profile, DEFERRAL, STATEMENT};
+use mycelium_sdk::deferral::{deferral_of, encode_deferral, read_deferral, Deferral, PENDING_CODE};
 use mycelium_sdk::wire::ACT_TABLE;
 
 /// A client speaking exactly the named acts.
@@ -131,6 +132,48 @@ fn report_without_profile_does_not_conform() {
 fn finding_names_act() {
     let passed = Finding::Passed { act: "task", read: String::new() };
     let unread = Finding::Unread { act: "solve", reason: String::new() };
+    let deferred = Finding::Deferred { act: "task", deficit: [1, 0, 2, 0] };
     assert_eq!((passed.act(), passed.passed()), ("task", true));
     assert_eq!((unread.act(), unread.passed()), ("solve", false));
+    assert_eq!((deferred.act(), deferred.passed()), ("task", false));
+}
+
+/// Every profile is held to the deferral: it is checked, MUST, and passes
+/// — no MUST reply decoder reads a deferral's bytes as a reply.
+#[test]
+fn check_codecs_holds_every_profile_to_deferral() {
+    for profiles in [&[Profile::Mind][..], &[Profile::Kernel], &Profile::ALL] {
+        let report = check_codecs(profiles, |_| true);
+        assert_eq!(report.need(DEFERRAL), Some(Need::Must));
+        assert!(report.findings.iter().any(|f| f.act() == DEFERRAL && f.passed()), "{report}");
+    }
+}
+
+/// A deferral reads back with the exact deficit the door stated; an answer
+/// that carries a height, and a frame cut short, are not deferrals; and a
+/// deferral reads as no task envelope and no verdict.
+#[test]
+fn read_deferral_round_trips_deficit() {
+    for deficit in [[0; 4], [1, 0, 2, 3], [u64::MAX, 0, 0, 1]] {
+        let bytes = encode_deferral(PENDING_CODE, &deficit);
+        assert_eq!(read_deferral(&bytes), Some(Deferral { deficit }));
+        assert!(read_deferral(&bytes[..bytes.len() - 1]).is_none());
+        assert!(mycelium_sdk::task::decode_task_envelope(&bytes).is_none());
+        assert!(mycelium_sdk::task::decode_solve_verdict(&bytes).is_none());
+    }
+    // The height is the eight bytes after the code: a pending outcome at
+    // height 3 is an answer.
+    let mut answer = encode_deferral(PENDING_CODE, &[1, 0, 0, 0]);
+    answer[1] = 3;
+    assert!(read_deferral(&answer).is_none(), "a pending outcome with a height is an answer");
+}
+
+/// A session's refusal carries the deferral where `speak` met one, and no
+/// other refusal reads as one.
+#[test]
+fn deferral_of_reads_session_refusal() {
+    let d = Deferral { deficit: [0, 4, 0, 1] };
+    assert_eq!(deferral_of(&std::io::Error::new(std::io::ErrorKind::WouldBlock, d)), Some(d));
+    assert_eq!(deferral_of(&std::io::Error::new(std::io::ErrorKind::WouldBlock, "full")), None);
+    assert_eq!(deferral_of(&std::io::Error::new(std::io::ErrorKind::TimedOut, d)), None);
 }

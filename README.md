@@ -865,7 +865,7 @@ beside the `mycelium` library: one curated surface, every item the
 library's own, re-exported, so the server and the SDK cannot drift. The
 reference mind (`mycelium-client`) is one client built on the library.
 [`sdk/examples/client.rs`](sdk/examples/client.rs) is a complete client of
-about 150 lines, with `mycelium-sdk` as its only Mycelium dependency.
+about 200 lines, with `mycelium-sdk` as its only Mycelium dependency.
 
 ### Dependency
 
@@ -880,6 +880,7 @@ mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0" 
 |---|---|
 | `voice` | `Voice`, the voice key (`VoiceKey`, `load_or_mint`), `SigningKey`, the mesh record of a voice home (`load_or_migrate_voice`) |
 | `session` | `Session` (`open`, `speak`, `speak_keyed`, `tuniversal`), `TransportAperture`, `TPoint` |
+| `deferral` | The deferral a hypha with a full worker pool answers every act with, which every client MUST recognise and retry: `read_deferral` (`Deferral { deficit }`), `deferral_of` on a `speak` refusal, `PENDING_CODE` ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) §5) |
 | `task` | Task request and envelope; `encode_solve_with_rule`; `decode_solve_verdict` and the `SOLVE_*` codes |
 | `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element`, `Grid` |
 | `seat` | `SeatName`, `MindMail`, `MindRead`, the seat posts; `Session::{list_seats, take, call, mail, read_mail, seat_post}` |

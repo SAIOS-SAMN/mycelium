@@ -3,7 +3,7 @@
 // THE CONFORMANCE REPORT: one finding per act checked, each named, read
 // against the profiles the client declared.
 
-use super::{Need, Profile, STATEMENT};
+use super::{Need, Profile, DEFERRAL, STATEMENT};
 
 /// WHAT ONE ACT'S CHECK CAME TO, named by the act's statement name.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -31,13 +31,22 @@ pub enum Finding {
         /// Why the act was not exercised.
         reason: String,
     },
+    /// The hypha's worker pool was full and it answered the act with the
+    /// deferral (see [`crate::deferral`]): nothing was ruled, and the act is
+    /// spoken again later. Never a pass, and never a failure to decode.
+    Deferred {
+        /// The act's name in the statement.
+        act: &'static str,
+        /// The door's reserve deficit on the lanes S, G, T, H.
+        deficit: [u64; 4],
+    },
 }
 
 impl Finding {
     /// The act the finding names.
     pub fn act(&self) -> &'static str {
         match self {
-            Finding::Passed { act, .. } | Finding::Failed { act, .. } | Finding::Unread { act, .. } => act,
+            Finding::Passed { act, .. } | Finding::Failed { act, .. } | Finding::Unread { act, .. } | Finding::Deferred { act, .. } => act,
         }
     }
 
@@ -65,8 +74,11 @@ impl Report {
     }
 
     /// The need the declared profiles give an act, or none where none of
-    /// them names it.
+    /// them names it. The [`DEFERRAL`] read is MUST for every profile.
     pub fn need(&self, act: &str) -> Option<Need> {
+        if act == DEFERRAL && !self.profiles.is_empty() {
+            return Some(Need::Must);
+        }
         STATEMENT.union(&self.profiles).into_iter().find(|a| a.name == act).map(|a| a.need)
     }
 
@@ -99,6 +111,19 @@ impl Report {
         self.findings.push(Finding::Unread { act, reason: reason.into() });
     }
 
+    pub(crate) fn deferred(&mut self, act: &'static str, deficit: [u64; 4]) {
+        self.findings.push(Finding::Deferred { act, deficit });
+    }
+
+    /// Every act the hypha deferred, `(act, deficit)`, in order: each is
+    /// spoken again once the door has room.
+    pub fn deferrals(&self) -> impl Iterator<Item = (&'static str, [u64; 4])> + '_ {
+        self.findings.iter().filter_map(|f| match f {
+            Finding::Deferred { act, deficit } => Some((*act, *deficit)),
+            _ => None,
+        })
+    }
+
     /// One check's outcome: `Ok` the read, `Err` the reason.
     pub(crate) fn record(&mut self, act: &'static str, outcome: Result<String, String>) {
         match outcome {
@@ -120,6 +145,7 @@ impl std::fmt::Display for Report {
                 Finding::Passed { act, read } => writeln!(f, "passed  {need} {act}: {read}")?,
                 Finding::Failed { act, reason } => writeln!(f, "failed  {need} {act}: {reason}")?,
                 Finding::Unread { act, reason } => writeln!(f, "unread  {need} {act}: {reason}")?,
+                Finding::Deferred { act, deficit } => writeln!(f, "deferred {need} {act}: the hypha's pool is full, deficit S:G:T:H {deficit:?}; speak it again")?,
             }
         }
         let verdict = match self.conforms() {

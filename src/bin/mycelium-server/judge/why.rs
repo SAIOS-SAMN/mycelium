@@ -53,7 +53,7 @@ pub(crate) fn serve_left(stream: &mut TcpStream, frame: &Frame, door: &Door) -> 
         *left = Some(ask);
     }
     if let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) {
-        let body = mycelium::anastome::dialogue::encode_deferral(mycelium::cognition::outcome_code(&mycelium::cognition::Outcome::GermPending), &deficit);
+        let body = mycelium::anastome::dialogue::encode_deferral(mycelium::anastome::dialogue::PENDING_CODE, &deficit);
         answer(stream, Frame { lane: frame.lane, body });
     }
     true
