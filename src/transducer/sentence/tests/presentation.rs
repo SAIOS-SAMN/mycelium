@@ -26,7 +26,7 @@ fn a_held_slide_cites_a_longer_slide_on_its_hole_and_composes_to_it() {
     let mut p = Presentation::default();
     let form = Address::from(vec![7u8; 8]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
-    assert!(p.file_form(&form, &held, &mut budget) > 0, "the held slide's vertex is filed under its hole");
+    assert!(!p.file_form(&form, &held, &mut budget).filed.is_empty(), "the held slide's vertex is filed under its hole");
     let target = motions(&three.0, &three.1);
     let [m] = target.as_slice() else { panic!("one moving vertex in the longer slide, read {}", target.len()) };
     let d = p.deconstruct(m, &mut budget).expect("the slide's coordinates read");
@@ -53,7 +53,7 @@ fn a_slide_is_read_on_the_null_lane_and_a_held_slide_re_derives_its_cube() {
     let held = crate::transducer::family::cipher_form(&one.0, &one.1);
     let mut p = Presentation::default();
     let form = Address::from(vec![5u8; 8]);
-    assert!(p.learn_form(&form, &held, false) > 0, "the dialect's slide is learned");
+    assert!(!p.learn_form(&form, &held, false).filed.is_empty(), "the dialect's slide is learned");
     let target = motions(&three.0, &three.1);
     let [m] = target.as_slice() else { panic!("one moving vertex in the longer slide") };
     let r = p.read_word(m, &[], false).expect("the slide reads");
@@ -98,4 +98,97 @@ fn a_motion_on_a_hole_nothing_holds_is_residue_and_composes_to_nothing() {
     // And unfiled, the held slide cites nothing.
     p.unfile_form(&form, &held);
     assert!(p.is_empty());
+}
+
+/// The coordinate and the vertex of a form's one word vertex.
+fn the_word(f: &crate::transducer::sentence::Form) -> (Vec<u8>, Vertex) {
+    let words: Vec<(Vec<u8>, Vertex)> =
+        f.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).map(|(k, v)| (k, v.clone())).collect();
+    let [w] = words.as_slice() else { panic!("one word vertex in the scene, read {}", words.len()) };
+    w.clone()
+}
+
+/// The one word vertex of a scene, at its own coordinate, as its address.
+fn scene_word(a: &[Vec<u8>], b: &[Vec<u8>]) -> (Vec<u8>, Vertex, Address) {
+    let (at, w) = the_word(&crate::transducer::family::cipher_form(&a.to_vec(), &b.to_vec()));
+    let Vertex::Word { address, .. } = &w else { panic!("a word vertex") };
+    let address = address.clone();
+    (at, w, address)
+}
+
+#[test]
+fn a_form_whose_every_word_reads_is_filed_whole_with_no_refusal() {
+    use crate::transducer::sentence::generator_key;
+    let one = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0, 0, 0]]);
+    let held = crate::transducer::family::cipher_form(&one.0, &one.1);
+    let mut p = Presentation::default();
+    let form = Address::from(vec![3u8; 8]);
+    let learned = p.learn_form(&form, &held, true);
+    assert!(learned.refused.is_empty(), "every word vertex reads, read {:?}", learned.refused);
+    assert_eq!(p.refusals_len(), 0);
+    // Every vertex stands in exactly one of the three.
+    assert_eq!(learned.filed.len() + learned.not_words.len(), held.vertices.len());
+    assert_eq!(learned.filed.len(), p.len(), "each filed vertex is one generator");
+    let (_, w) = the_word(&held);
+    let Vertex::Word { address, .. } = &w else { panic!("a word vertex") };
+    assert_eq!(learned.filed, vec![address.clone()]);
+    let g = p.generator(&generator_key(&form, address)).expect("held at its generator key");
+    assert!(g.ruled && !is_still(&g.motion), "the slide moves, as ruled");
+}
+
+#[test]
+fn an_unreadable_word_is_refused_by_name_at_its_coordinate_and_the_rest_is_filed() {
+    use crate::transducer::sentence::generator_key;
+    use crate::transducer::sentence::presentation::{Refused, Unlearned};
+    let one = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0, 0, 0]]);
+    let three = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 0, 0, 1, 0, 0, 0]]);
+    let mut f = crate::transducer::family::cipher_form(&one.0, &one.1);
+    let (_, _, kept) = scene_word(&one.0, &one.1);
+    // A turn by 90°, its least member's hue listing sending hue 1 two ways:
+    // no map (rule 11). Its motion reads; its hue map does not.
+    let ell = vec![vec![0u8, 0, 0, 0, 0], vec![0, 2, 2, 2, 0], vec![0, 2, 0, 0, 0], vec![0, 0, 0, 0, 0], vec![0, 0, 0, 0, 0]];
+    let quarter = vec![vec![0u8, 0, 0, 0, 0], vec![0, 2, 2, 0, 0], vec![0, 0, 2, 0, 0], vec![0, 0, 2, 0, 0], vec![0, 0, 0, 0, 0]];
+    let (no_map_at, mut v, no_map) = scene_word(&ell, &quarter);
+    if let Vertex::Word { acts, .. } = &mut v {
+        let (k, _) = acts.entries().next().expect("the turn has a member");
+        acts.at_mut(&k).expect("its member").gauge = vec![(1, 2), (1, 3)];
+    }
+    f.vertices.put(&v.at().expect("a word vertex has a coordinate"), v);
+    // A turn by 180° stripped of its members: no chart to read a motion off.
+    let half = vec![vec![0u8, 0, 0, 0, 0], vec![0, 0, 0, 0, 0], vec![0, 0, 0, 2, 0], vec![0, 2, 2, 2, 0], vec![0, 0, 0, 0, 0]];
+    let (bare_at, mut v, bare) = scene_word(&ell, &half);
+    let at = v.at().expect("a word vertex has a coordinate");
+    if let Vertex::Word { acts, .. } = &mut v {
+        let keys: Vec<_> = acts.entries().map(|(k, _)| k).collect();
+        for k in keys {
+            acts.drop_at(&k);
+        }
+    }
+    f.vertices.put(&at, v);
+    assert_eq!(f.vertices.len(), 4, "the frame and three word vertices, each at its own coordinate");
+    let mut p = Presentation::default();
+    let form = Address::from(vec![4u8; 8]);
+    let learned = p.learn_form(&form, &f, false);
+    assert_eq!(learned.filed, vec![kept.clone()], "the readable slide is filed");
+    // Each unreadable word is refused once, by its reason at its coordinate.
+    let expected = [
+        Refused { at: no_map_at, vertex: no_map.clone(), reason: Unlearned::NoMap },
+        Refused { at: bare_at, vertex: bare.clone(), reason: Unlearned::NoMember },
+    ];
+    assert_eq!(learned.refused.len(), expected.len(), "two refusals, read {:?}", learned.refused);
+    assert!(expected.iter().all(|r| learned.refused.contains(r)), "each unreadable word is refused by its reason at its coordinate, read {:?}", learned.refused);
+    assert_eq!(learned.filed.len() + learned.refused.len() + learned.not_words.len(), f.vertices.len());
+    // Each refusal is held where its generator would have stood, and nothing is held there.
+    assert_eq!(p.refusal(&generator_key(&form, &no_map)), Some(Unlearned::NoMap));
+    assert_eq!(p.refusal(&generator_key(&form, &bare)), Some(Unlearned::NoMember));
+    assert!(p.generator(&generator_key(&form, &no_map)).is_none());
+    assert_eq!(p.refusal(&generator_key(&form, &kept)), None);
+    // What was filed reads as before: the held slide cubed re-derives the longer one.
+    let target = motions(&three.0, &three.1);
+    let [m] = target.as_slice() else { panic!("one moving vertex in the longer slide") };
+    assert!(p.read_word(m, &[], false).expect("the slide reads").composes);
+    // Unfiled, the form leaves no generator and no refusal.
+    p.unfile_form(&form, &f);
+    assert!(p.is_empty());
+    assert_eq!(p.refusals_len(), 0);
 }

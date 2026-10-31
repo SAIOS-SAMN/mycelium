@@ -46,6 +46,63 @@ pub struct Presentation {
     /// exactly (`conjugate_of`). A generator that turns nothing has no class
     /// here.
     classes: Keyed<Keyed<()>>,
+    /// THE WORD VERTICES A FORM OFFERED AND THE PRESENTATION REFUSED, by
+    /// [`super::generator_key`] — the key each would have been held at — and
+    /// the reader that could not answer for it. Filed and unfiled with the
+    /// form, so one key is held or refused, never both.
+    refusals: Keyed<Unlearned>,
+}
+
+/// WHY A WORD VERTEX OF A FORM IS NOT HELD: the reader that could not answer
+/// for it, by name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Unlearned {
+    /// The word acts on no chart: no member to read a motion off.
+    NoMember,
+    /// Its rotor has no base action at its least member's carriage
+    /// (`conformal_of_rotor`).
+    NoBaseAction,
+    /// Its motion is no versor, or the stroke its modes need is past the
+    /// stroke's carrier (`cga::modes_need`).
+    Unsized,
+    /// Its motion's coordinates did not read ([`Unread`]).
+    Unread(Unread),
+    /// Its hue listing sends a hue two ways: no map (rule 11).
+    NoMap,
+    /// It moves nothing and recolours nothing: nothing to be read by.
+    Inert,
+}
+
+/// ONE WORD VERTEX REFUSED: its coordinate in the form (its key in
+/// `Form::vertices`), its address, and why.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Refused {
+    pub at: Vec<u8>,
+    pub vertex: Address,
+    pub reason: Unlearned,
+}
+
+/// WHAT A FORM GAVE THE PRESENTATION, vertex by vertex: the word vertices
+/// filed (by address), the word vertices refused (each by name), and the
+/// coordinates of the vertices that are no word (a frame, a boundary, a
+/// demand) and carry no motion to file. Every vertex of the form stands in
+/// exactly one of the three.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Learned {
+    pub filed: Vec<Address>,
+    pub refused: Vec<Refused>,
+    pub not_words: Vec<Vec<u8>>,
+}
+
+/// A hue listing: each hue and the hue it is carried to.
+type HueListing = Vec<(u8, u8)>;
+
+/// A WORD VERTEX'S ADDRESS AND ITS LEAST MEMBER'S HUE MAP — the member the
+/// vertex's own key order puts first, as [`vertex_motion`] reads; no hue map
+/// where it has no member. `None` for a vertex that is no word.
+fn word_of(v: &Vertex) -> Option<(&Address, Option<HueListing>)> {
+    let Vertex::Word { address, acts, .. } = v else { return None };
+    Some((address, acts.scoped().next().map(|(_, a)| a.gauge.clone())))
 }
 
 /// The class key of a motion's turn: its rotor's conjugacy class, where it
@@ -302,42 +359,84 @@ impl Presentation {
     }
 
     /// FILE A FORM'S WORD VERTICES under the holes their motions wind about,
-    /// each motion's coordinates read under the stroke. A vertex that moves
-    /// nothing has no hole and is not filed; one whose modes do not read on
-    /// this stroke is not filed either, and the count says how many were.
-    pub fn file_form(&mut self, form: &Address, f: &Form, budget: &mut crate::physics::Budget) -> usize {
-        let mut filed = 0usize;
-        for (_, v) in f.vertices.scoped() {
-            let Some(motion) = vertex_motion(v) else { continue };
-            let coords = match is_still(&motion) {
-                true => Coordinates { holes: Vec::new() },
-                false => match Coordinates::of(&motion, budget) {
-                    Ok(c) => c,
-                    Err(_) => continue,
-                },
-            };
-            filed += usize::from(self.file_vertex(form, v, motion, coords, true));
-        }
-        filed
+    /// each motion's coordinates read under the given stroke, as ruled. Each
+    /// word vertex is filed or refused by name ([`Learned`]); a vertex that
+    /// moves nothing and recolours nothing is [`Unlearned::Inert`], one whose
+    /// modes do not read on this stroke [`Unlearned::Unread`].
+    pub fn file_form(&mut self, form: &Address, f: &Form, budget: &mut crate::physics::Budget) -> Learned {
+        self.take_form(form, f, Some(budget), true)
     }
 
-    /// FILE ONE WORD VERTEX under the holes its motion winds about and the
-    /// modes of its hue map. A vertex that moves nothing and recolours nothing
-    /// has nothing to be read by and is not filed.
-    fn file_vertex(&mut self, form: &Address, v: &Vertex, motion: Mv, coords: Coordinates, ruled: bool) -> bool {
-        let Vertex::Word { address, acts, .. } = v else { return false };
-        let gauge = match acts.scoped().next() {
-            Some((_, a)) => a.gauge.clone(),
-            None => Vec::new(),
+    /// EVERY VERTEX OF A FORM, filed, refused by name, or passed as no word:
+    /// each motion read on `stroke` where one is given, else on the stroke
+    /// its own modes need. A refusal is held at the key the vertex would
+    /// have been held at, and a vertex filed leaves any refusal there.
+    fn take_form(&mut self, form: &Address, f: &Form, mut stroke: Option<&mut crate::physics::Budget>, ruled: bool) -> Learned {
+        let mut out = Learned::default();
+        for (at, v) in f.vertices.scoped() {
+            let Some((address, gauge)) = word_of(v) else {
+                out.not_words.push(at);
+                continue;
+            };
+            let key = super::generator_key(form, address);
+            match self.take_vertex(&key, form, address, v, gauge, stroke.as_deref_mut(), ruled) {
+                Ok(()) => {
+                    self.refusals.remove(&key);
+                    out.filed.push(address.clone());
+                }
+                Err(reason) => {
+                    self.refusals.insert(&key, reason);
+                    out.refused.push(Refused { at, vertex: address.clone(), reason });
+                }
+            }
+        }
+        out
+    }
+
+    /// ONE WORD VERTEX READ AND FILED at `key`: its whole motion, that
+    /// motion's coordinates (on `stroke`, or the stroke its modes need), and
+    /// its hue map's modes. `Err` names the first reader that could not
+    /// answer.
+    #[expect(clippy::too_many_arguments, reason = "the vertex, its key, address and least hue map read once by the form's walk, the stroke and the ruling")]
+    fn take_vertex(
+        &mut self,
+        key: &[u8],
+        form: &Address,
+        address: &Address,
+        v: &Vertex,
+        gauge: Option<HueListing>,
+        stroke: Option<&mut crate::physics::Budget>,
+        ruled: bool,
+    ) -> Result<(), Unlearned> {
+        let gauge = gauge.ok_or(Unlearned::NoMember)?;
+        let motion = vertex_motion(v).ok_or(Unlearned::NoBaseAction)?;
+        let coords = match (is_still(&motion), stroke) {
+            (true, _) => Coordinates { holes: Vec::new() },
+            (false, Some(budget)) => Coordinates::of(&motion, budget).map_err(Unlearned::Unread)?,
+            (false, None) => {
+                let need = crate::transducer::cga::modes_need(&motion).ok_or(Unlearned::Unsized)?;
+                let mut budget = crate::physics::Physics::default().stroke_n(need);
+                Coordinates::of(&motion, &mut budget).map_err(Unlearned::Unread)?
+            }
         };
         // A listing that is no map has no modes to be read by (rule 11).
-        let Some(modes) = gauge_modes(&gauge) else { return false };
+        let modes = gauge_modes(&gauge).ok_or(Unlearned::NoMap)?;
         if coords.holes.is_empty() && modes.is_empty() {
-            return false;
+            return Err(Unlearned::Inert);
         }
-        let key = super::generator_key(form, address);
-        self.admit(&key, &modes, Generator { form: form.clone(), vertex: address.clone(), motion, coords, gauge, ruled });
-        true
+        self.admit(key, &modes, Generator { form: form.clone(), vertex: address.clone(), motion, coords, gauge, ruled });
+        Ok(())
+    }
+
+    /// The refusal held at `key` ([`super::generator_key`]), where the word
+    /// vertex there was offered and not filed.
+    pub fn refusal(&self, key: &[u8]) -> Option<Unlearned> {
+        self.refusals.get(key).copied()
+    }
+
+    /// How many offered word vertices stand refused.
+    pub fn refusals_len(&self) -> usize {
+        self.refusals.len()
     }
 
     /// ONE GENERATOR ADMITTED at `key`: under its holes and its hue map's
@@ -413,27 +512,14 @@ impl Presentation {
     /// read by its own modes on a stroke sized by what those modes need
     /// (`cga::modes_need`, 78.111 C1b) — never by a stroke sized for
     /// something else — and filed under its holes and its hue map's modes;
-    /// `ruled` where a court ruled the form, else the mind's dialect. What
-    /// does not read (no base action, a motion past its carrier) is not
-    /// filed.
-    pub fn learn_form(&mut self, form: &Address, f: &Form, ruled: bool) -> usize {
-        let mut heard = 0usize;
-        for (_, v) in f.vertices.scoped() {
-            let Some(motion) = vertex_motion(v) else { continue };
-            let coords = match is_still(&motion) {
-                true => Coordinates { holes: Vec::new() },
-                false => {
-                    let Some(need) = crate::transducer::cga::modes_need(&motion) else { continue };
-                    let mut budget = crate::physics::Physics::default().stroke_n(need);
-                    match Coordinates::of(&motion, &mut budget) {
-                        Ok(c) => c,
-                        Err(_) => continue,
-                    }
-                }
-            };
-            heard += usize::from(self.file_vertex(form, v, motion, coords, ruled));
-        }
-        heard
+    /// `ruled` where a court ruled the form, else the mind's dialect. A word
+    /// vertex that does not read (no member, no base action, a motion past
+    /// its carrier, coordinates that do not read, a hue listing that is no
+    /// map, nothing moved) is refused by name ([`Unlearned`]), at its
+    /// coordinate in the form, and the refusal is held where the generator
+    /// would have been ([`Presentation::refusal`]).
+    pub fn learn_form(&mut self, form: &Address, f: &Form, ruled: bool) -> Learned {
+        self.take_form(form, f, None, ruled)
     }
 
     /// 78.161 — A LETTER LEARNED into the vocabulary: a word spelled by
@@ -559,11 +645,16 @@ impl Presentation {
         self.deconstruct(motion, &mut budget).ok()
     }
 
-    /// The mirror of [`Presentation::file_form`], vertex for vertex.
+    /// The mirror of [`Presentation::file_form`] and
+    /// [`Presentation::learn_form`], vertex for vertex: each word vertex's
+    /// generator leaves, and its refusal with it. A vertex that is no word
+    /// was never filed.
     pub fn unfile_form(&mut self, form: &Address, f: &Form) {
         for (_, v) in f.vertices.scoped() {
             let Vertex::Word { address, .. } = v else { continue };
-            self.retire(&super::generator_key(form, address));
+            let key = super::generator_key(form, address);
+            self.retire(&key);
+            self.refusals.remove(&key);
         }
     }
 
