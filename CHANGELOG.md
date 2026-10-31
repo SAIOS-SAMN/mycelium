@@ -26,6 +26,10 @@ such change is named here.
   `BODY_BUDGET`, `ACCOUNT_SHARDS`, `P_SERIES_CAP`, `NESTING`,
   `CANDIDATES_PER_PAIR`, and the soak instruments' strokes and calibration
   count. A mutation-audit entry strips a registered tag.
+- **The gate is a workspace of its own** (D1.4): `xtask/Cargo.toml` holds
+  an empty `[workspace]`, so a checkout nested under another one (the
+  mutation audit's worktree) builds the gate's suites instead of being
+  claimed by the outer root.
 - **The challenge window is a sealed reach and return** (D1.1; law
   version 5, `LAW_VERSION` 4 → 5; Concordance 4.5 and 5.4, agreement
   version 4; MU-RECURSION 78.125 and 78.126 amended forward). A window
