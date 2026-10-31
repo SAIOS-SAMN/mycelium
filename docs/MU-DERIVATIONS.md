@@ -146,7 +146,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused (**Built** 2026-10-31; `0 × 0` admitted) | yes | S | 14 |
 | D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration (**Built** 2026-10-31: (iii), both producers' depths closed forms) | yes | M/L | 14 |
 | D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book (**REGISTERED** 2026-10-31 as `POOL_DIVISOR`: the off-lock strokes are unmetered) | yes | M | 5 |
-| D4.6 | `checked_sub(64)` | nine page sites | protocol size | Medium | each reply's own header length `H_kind` | no | S | 5 |
+| D4.6 | `checked_sub(64)` | nine page sites | protocol size | Medium | each reply's own header length `H_kind` (**Built** 2026-10-31, the sites with D1.3) | no | S | 5 |
 | D4.7 | `0..10`, `>= 10` | `transducer/stalk/chart.rs:404–421` | cognition; an abort | High | `element::carrier::PALETTE`, guarded | no | S | 14 |
 | D4.8 | `P_SERIES_CAP`, `14_000`, `w + 256`, guard bits, `stop_at` | `core/certified.rs` | certified mathematics | Low/Medium | term counts metered by `Budget`; guards per operation | yes | M/L | 12 |
 
@@ -171,7 +171,7 @@ entry's derivation and needs no ruling unless marked.
 | 7 | The evidence reply serves the first 32 items forever: no cursor, so item 33 onward is never served | D4.2 | Medium |
 | 8 | `push_grid` writes ragged and zero-width grids that `read_grid` cannot read back; **fixed** (2026-10-31): `push_grid` refuses them | D4.3 | Medium |
 | 9 | Recursive `Drop`, `Clone`, `PartialEq`, `Debug`, the encoders and `Selection::eval` of `Pred`/`Selection` overflow the stack at depths the bytes allow; the parse bound is the only guard; **fixed** (2026-10-31): the parse bound is the language's own height, which bounds every walker of a decoded tree | D4.4 | High |
-| 10 | The `−64` page reserve is not a signature (no reply at those sites carries one), and at four sites it double-counts a header the encoder already counts | D4.6 | Medium |
+| 10 | The `−64` page reserve is not a signature (no reply at those sites carries one), and at four sites it double-counts a header the encoder already counts; **fixed** (2026-10-31): each site reads its codec's own header | D4.6 | Medium |
 | 11 | `gamma_p` at large `x` and `exp`/`powq` at large positive argument return proven but uninformative enclosures (an absolute grid on a value of scale `2^{±x·log₂e}`); to confirm by the fixtures named in D4.8 | D4.8 | Low (no caller) / Medium (`exp`) |
 | 12 | The yield surface adds a reserve deficit (reserve units, bounded by `R`) to an entropic excess (an event count, unbounded and unscaled); the same mismatch sits inside the POWV share. The soak reading in D2.3 decides whether it is material | D2.3 | High |
 | 13 | `transport_deadline` never returns `Lambda::Unmeasured`, so its `usize::MAX` arm is dead; `from_transport_counts_rtt_in_strokes` asserts a same-stroke reply reads 0, which the measurement cannot produce; **fixed** (2026-10-31): `Unmeasured` is live (the mesh prior, a zero rtt), the `usize::MAX` arm is gone, the assertion retired with the `NonZeroU64` type | D4.1, D2.6 | Low |
@@ -2786,6 +2786,23 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 ---
 
 ### D4.6 `frame_budget().checked_sub(64)` — the reply header reserve
+
+**Status.** **Built** (2026-10-31, the live-readings ruling). The nine
+sites read their reply's own header, built with D1.3: the encoders that
+count their own header (rows, observe, the mind's chatter replies) take the
+frame whole; the rest subtract `RECEIPTS_REPLY_HEADER` (with the
+`READING_HEIGHT_LEN` behind it), `SYLLABUS_REPLY_HEADER` (and
+`CLASS_RECORDS_HEADER` for a fetch), `atlas::LEDGER_PAGE_HEADER`,
+`CITED_REQUEST_HEADER`, and the presentation's own answer width. Where a
+signature rides a body, the receipt section's `[sig 64]`, the length is
+`ED25519_SIGNATURE_LEN = ed25519_dalek::SIGNATURE_LENGTH`, citing RFC 8032
+§5.1.6; the other codecs' `[u8; 64]` signature fields are field widths of
+their `take_*`/`decode_*` writings (N6 reads codecs as field widths) and are
+left for the sweep that types each signed act. Tests
+(`anastome::dialogue::tests::receipts_range`):
+`receipts_page_fills_budget_less_header`, `rows_reply_counts_own_header`,
+`page_envelope_equals_codec_header`. The text below is the derivation as
+specified.
 
 **Site.** Nine sites: `src/server/cognition/court/era.rs:102`
 (`receipts_frame`), `src/server/cognition/atlas.rs:623`

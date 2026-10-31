@@ -119,6 +119,11 @@ such change is named here.
   `POOL_DIVISOR`, open until a worker act's off-lock strokes are metered;
   the cores are read through the boot's calibration, never defaulted to
   one.
+- **A signature's length is the standard's** (D4.6): the receipt
+  section's signature is `ED25519_SIGNATURE_LEN`
+  (`ed25519_dalek::SIGNATURE_LENGTH`, RFC 8032 §5.1.6), and every page
+  site reads its own reply's header (built with D1.3), never a `64`
+  reserve standing for a signature no page carries.
 
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and

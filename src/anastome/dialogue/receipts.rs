@@ -31,7 +31,7 @@ use crate::chronometry::Place;
 /// whose section cannot be framed is not spoken (rule 11).
 pub fn encode_receipt_section(
     prefix: &crate::court::admission::SignedPrefix,
-    sig: &[u8; 64],
+    sig: &[u8; ED25519_SIGNATURE_LEN],
     receipt: &crate::chronometry::KStepReceipt,
 ) -> Option<Vec<u8>> {
     if !prefix.fits() {
@@ -61,8 +61,8 @@ pub fn decode_receipt_section(body: &[u8], at: usize) -> Option<ReceiptSection> 
     p += 2;
     let prefix = crate::court::admission::SignedPrefix::read(body.get(p..p + plen)?)?;
     p += plen;
-    let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
-    p += 64;
+    let sig: [u8; ED25519_SIGNATURE_LEN] = body.get(p..p + ED25519_SIGNATURE_LEN)?.try_into().ok()?;
+    p += ED25519_SIGNATURE_LEN;
     let rlen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
     let rb = body.get(p..p + rlen)?;
@@ -306,6 +306,12 @@ pub fn decode_receipts_reply(body: &[u8]) -> Option<Vec<crate::chronometry::KSte
 /// behind the answer, eight bytes, so the asker knows how fresh it is.
 /// FORMAT: reading-height field length, 8 bytes.
 pub const READING_HEIGHT_LEN: usize = 8;
+
+/// THE LENGTH OF AN ED25519 SIGNATURE where one rides a body — the receipt
+/// section's `[sig 64]` — as the dependency states it (RFC 8032 §5.1.6: a
+/// signature is 64 octets). Never a page's reserve: no page reply carries a
+/// reply-level signature (MU-DERIVATIONS D4.6).
+pub const ED25519_SIGNATURE_LEN: usize = ed25519_dalek::SIGNATURE_LENGTH;
 
 /// THE RECEIPTS REPLY'S HEADER: `[n u32]` ahead of the receipts' tapes.
 /// FORMAT: `encode_receipts_reply`'s count field, 4 bytes.

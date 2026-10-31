@@ -64,6 +64,33 @@ fn encode_receipts_reply_refuses_head_over_budget() {
     assert_eq!(decode_receipts_reply(&page), Some(line), "at the budget exactly, it rides");
 }
 
+/// D4.6 — THE RECEIPTS PAGE FILLS THE FRAME LESS ITS ENVELOPES: the tapes'
+/// budget is the frame less the reading height behind the reply and the
+/// reply's own count, and the page holds as many of the smallest tape as fit
+/// it — no reserve of 64 beside them.
+#[test]
+fn receipts_page_fills_budget_less_header() {
+    let b = crate::network::wire::frame_budget();
+    let (at_most, bytes) = crate::cognition::Court::receipts_frame().expect("a frame");
+    assert_eq!(bytes, b - READING_HEIGHT_LEN - RECEIPTS_REPLY_HEADER);
+    assert_eq!(at_most, bytes / crate::chronometry::KStepReceipt::MIN_TAPE);
+    assert_eq!(crate::cognition::Court::receipts_reply_budget(), Some(b - READING_HEIGHT_LEN));
+}
+
+/// D4.6 — THE ROWS REPLY COUNTS ITS OWN HEADER: given the frame whole, a page
+/// of more rows than fit holds exactly `⌊(B − 12)/TAPE⌋`.
+#[test]
+fn rows_reply_counts_own_header() {
+    use crate::economy::{Entry, Kind};
+    let b = crate::network::wire::frame_budget();
+    let fit = (b - ROWS_REPLY_HEADER) / Entry::TAPE;
+    let row = Entry { kind: Kind::Mint, who: [1; 32], mu: [1, 0, 0, 0], at: crate::chronometry::Stamp { h: 3, vk: [2; 32], k: 3, i: 0 }, receipt: [0; 32], arm: None };
+    let rows = vec![row; fit + 1];
+    let page = encode_rows_reply(0, &rows, b).expect("the page counts");
+    assert_eq!(decode_rows_reply(&page).map(|(_, r)| r.len()), Some(fit));
+    assert!(page.len() <= b);
+}
+
 /// D1.3, D4.6 — EVERY PAGE'S ENVELOPE IS ITS CODEC'S OWN HEADER: an empty
 /// page of each reply is exactly the header its budget is read beside.
 #[test]
