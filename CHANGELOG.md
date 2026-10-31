@@ -25,6 +25,10 @@ such change is named here.
   pairs (law 2); `extraction_spend` adds each non-trivial pair's need and
   `finish` stands an unrefined pair as a demand (rule 7). The mutation
   audit catalogue gains a mutant on `task_address`'s refusal arm.
+- `rule::sentence` constructs a rule's linear part under the stroke its
+  modes need (`rule::construction_stroke`, `cga::modes_need`, 78.111) in
+  place of `stroke_n(1 << 16)` (MU-DERIVATIONS D3.1); a non-versor gets an
+  empty stroke and is refused `NotVersor` with no read spent.
 
 ### SDK
 - The repository is a Cargo workspace: `mycelium`, `forms` and the new

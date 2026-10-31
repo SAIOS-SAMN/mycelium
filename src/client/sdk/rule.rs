@@ -363,6 +363,19 @@ fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn 
     family::mint_sentence_why(&rule, family, crystal, 0).map_err(NoRule::Mint)
 }
 
+/// 78.111 — THE STROKE A SENTENCE'S LINEAR PART IS CONSTRUCTED UNDER, read
+/// off the linear part (MU-DERIVATIONS D3.1): `cga::modes_need`, the bound
+/// on every read `construct` makes, so no rule is refused for a stroke sized
+/// for something else. Where there is none to read (no versor, or a need
+/// past the carrier) the stroke is empty and `construct` refuses by its own
+/// name, never with a fallback number.
+pub(crate) fn construction_stroke(linear: &cga::Mv) -> usize {
+    match cga::modes_need(linear) {
+        Some(n) => n,
+        None => 0,
+    }
+}
+
 /// THE SENTENCE OF A RULE ON A FAMILY. The steps compose to ONE action —
 /// the motion and the hue map the court will ask every body to be carried
 /// by — and that action is placed as one acting vertex: the derivation the
@@ -399,7 +412,7 @@ pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) 
     if let Some(linear) = element::versor_of_word(&word) {
         let identity = linear.sub(&element::identity_versor()).is_zero();
         if !identity {
-            let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+            let mut budget = crate::physics::Physics::default().stroke_n(construction_stroke(&linear));
             cga::construct(&linear, &mut budget).map_err(NoRule::Unconstructed)?;
         }
     }

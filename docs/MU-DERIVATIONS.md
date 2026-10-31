@@ -7,7 +7,7 @@
 > **Components:** every numeric item and literal site under `src/`, `forms/src/` and `xtask/`; the register of open physics (`src/physics/axioms/founding.rs`) and its gate (`xtask/lint/`).
 
 **Status:** specification, version 1 (2026-10-31). Every entry is
-**Specified** but D3.2, which is **Built**. Each entry states the number as it
+**Specified** but D3.1 and D3.2, which are **Built**. Each entry states the number as it
 stands, what it decides, why it is underived, a derivation exact over ℤ or
 ℚ (or, where the documents and the code do not settle one, the candidates
 and the reading that decides between them), and the scope of the change.
@@ -112,7 +112,7 @@ code locate a site when lines move.
 | D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` | yes | M | 14 |
 | D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name | yes | M | 14 |
 | D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state | yes | S–M | 5 |
-| D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111) | yes | S | 7 |
+| D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111; **Built**) | yes | S | 7 |
 | D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w` (**Built**, O1 (a)) | no | M | 7 |
 | D3.3 | `truncate(32)` | `transducer/anchor/derive.rs:182` | court admission (π*) | High | keep every carrying term, keyed; metered | yes | M | 7 |
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state | no | S | 10 |
@@ -1532,6 +1532,18 @@ its residue, `cga::modes_need`"); MU-STANDARDS §4.2 (the rule 4, 11 and
 10) unless a lane of `Reserve` (S, G, T, H) is named.
 
 ### D3.1 `stroke_n(1 << 16)` — the T1 construction stroke of a sentence's linear part
+
+**Status.** **Built**, sized by 78.111 (O1 (a)): `sentence` constructs its
+linear part under `stroke_n(construction_stroke(&linear))`, and
+`rule::construction_stroke` is `match cga::modes_need(linear) { Some(n) =>
+n, None => 0 }`, the `think.rs` form. Tests (`client::sdk::tests::rule`):
+`sentence_stroke_equals_modes_need`,
+`sentence_refuses_non_versor_without_spending`, and
+`construction_stroke_constructs_wide_coefficient_versor` (a versor whose
+need passes `1 << 16` constructs under its need; its reads stay under
+`1 << 16`, so a fixture the former stroke refused is still to find, and the
+mutation entry below waits on it). O1 (b)/(c), drawing the reads from a
+caller's token, stays open. The text below is the derivation as specified.
 
 **Site.** `src/client/sdk/rule.rs:402` (in `sentence`), value 65 536:
 
@@ -2979,7 +2991,7 @@ is non-substantive and carries no release of its own.
 
 1. **Defect fixes that need no ruling.** D4.7 (the palette guard); the
    D1.3 defect (`encode_receipts_reply` against the caller's budget); D3.1
-   (the stroke is `modes_need`, applying 78.111); D3.4 (the keyed,
+   (the stroke is `modes_need`, applying 78.111; **Built**); D3.4 (the keyed,
    metered, tri-state reproduction check); D4.3 (the grid predicate and
    `push_grid`'s refusal); D4.6 (each reply's own header length); D2.4
    (`UNIT_BOND` deleted). One commit each.

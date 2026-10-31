@@ -308,3 +308,61 @@ fn would_judge_refuses_citation_no_court_admitted() {
     let home = would_judge(&spoken, &family, &court_words, &admitted);
     assert!(!matches!(home, Err(NoRule::CitesUnheld(_))), "a court-stamped word resolves: {home:?}");
 }
+
+/// An exact rational, for the construction fixtures.
+fn q(n: i64) -> num_rational::BigRational {
+    num_rational::BigRational::from_integer(num_bigint::BigInt::from(n))
+}
+
+/// MU-DERIVATIONS D3.1, 78.111 — THE STROKE A SENTENCE CONSTRUCTS ITS LINEAR
+/// PART UNDER IS `modes_need` OF THAT PART, read off it, and it suffices:
+/// on a turn of order 4 (`1 + e₁e₂`, 90° in the `e₁e₂` plane) and on a
+/// dilation by 2, `construct` certifies the versor under exactly that stroke.
+#[test]
+fn sentence_stroke_equals_modes_need() {
+    use crate::transducer::cga::{E1, E2};
+    let turn = Mv::scalar(q(1)).add(&Mv::blade(E1 | E2, q(1)));
+    let dilation = cga::dilator(&q(2));
+    for v in [turn, dilation] {
+        let need = cga::modes_need(&v).expect("a versor's modes have a need");
+        assert_eq!(crate::client::sdk::rule::construction_stroke(&v), need);
+        let mut stroke = crate::physics::Physics::default().stroke_n(need);
+        assert!(cga::construct(&v, &mut stroke).is_ok(), "the need suffices");
+    }
+}
+
+/// A NON-VERSOR HAS NO MODES TO NEED: its stroke is empty and `construct`
+/// refuses it by its own name, `NotVersor`, before any read — never
+/// `Unbounded`, which would name a stroke spent where none was owed.
+#[test]
+fn sentence_refuses_non_versor_without_spending() {
+    use crate::transducer::cga::{E1, E2};
+    let mixed = Mv::scalar(q(1)).add(&Mv::blade(E1, q(1))).add(&Mv::blade(E1 | E2, q(1)));
+    assert_eq!(crate::client::sdk::rule::construction_stroke(&mixed), 0);
+    let before = crate::physics::spent_here();
+    let mut stroke = crate::physics::Physics::default().stroke_n(0);
+    let got = cga::construct(&mixed, &mut stroke).map(|_| ());
+    assert_eq!(got, Err(cga::NotConstructed::NotVersor));
+    assert_eq!(crate::physics::spent_here(), before, "no read was granted");
+}
+
+/// A WIDE-COEFFICIENT VERSOR CONSTRUCTS under the stroke its modes need,
+/// a need past the former `1 << 16`. Two turns in the orthogonal planes
+/// `e₁e₂` and `e₃e₊`, `(1 + 2ᵏ e₁e₂)(1 + 2ᵏ⁺¹ e₃e₊)`, give the symmetric
+/// part three distinct values, so `m = 3` and `need = 8ρ + 34`; at
+/// `k = 700` the monic substitute's coefficients pass the `ρ > 8 187` bits
+/// at which `1 << 16` is short of the need (MU-DERIVATIONS D3.1). The need
+/// bounds the reads; this fixture's reads stay under `1 << 16`, so it shows
+/// the sized stroke suffices, not that the former one refused.
+#[test]
+fn construction_stroke_constructs_wide_coefficient_versor() {
+    use crate::transducer::cga::{E1, E2, E3, EP};
+    let big = |k: usize| num_rational::BigRational::from_integer(num_bigint::BigInt::from(1) << k);
+    let wide = Mv::scalar(q(1))
+        .add(&Mv::blade(E1 | E2, big(700)))
+        .geo(&Mv::scalar(q(1)).add(&Mv::blade(E3 | EP, big(701))));
+    let need = crate::client::sdk::rule::construction_stroke(&wide);
+    assert!(need > 1 << 16, "the need passes the former stroke: {need}");
+    let mut sized = crate::physics::Physics::default().stroke_n(need);
+    assert!(cga::construct(&wide, &mut sized).is_ok(), "the stroke read off it constructs it");
+}
