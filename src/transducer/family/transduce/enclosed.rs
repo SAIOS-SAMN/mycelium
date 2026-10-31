@@ -68,21 +68,7 @@ impl Enclosed {
     /// where its rows disagree. One read per site at the sensor, then the
     /// bands and bodies on boundaries alone.
     pub fn of(g: &Grid) -> Result<Enclosed, TransductionRefusal> {
-        // The width is read from the rows themselves, and the question is
-        // whether they agree (rule 15): never one row taken by position.
-        let mut width: Option<usize> = None;
-        for row in g {
-            match width {
-                None => width = Some(row.len()),
-                Some(n) if n == row.len() => {}
-                Some(_) => return Err(TransductionRefusal::Ragged),
-            }
-        }
-        let cols = match width {
-            Some(w) if w > 0 => w,
-            _ => return Err(TransductionRefusal::Empty),
-        };
-        let enclosure = Enclosure { rows: g.len(), cols };
+        let enclosure = Enclosure::of(g)?;
         let mut bands: Vec<Band> = Vec::new();
         // The bands open at the previous row, `(from, to, hue, band)`, in
         // column order.
@@ -126,6 +112,27 @@ impl Enclosed {
     /// The hue of body `body`: every band of a body has one.
     pub fn body_hue(&self, body: usize) -> Option<u8> {
         self.body_bands(body).map(|(_, b)| b.hue).next()
+    }
+
+    /// PROJECT (D3.2 §E) — THE FRAME SPOKEN ONTO ANOTHER ENCLOSURE by the
+    /// re-period alone: each band written over the output sites its turns
+    /// land on. Every band boundary turn must land on a boundary of `to`, or
+    /// the projection refuses `OffSite` naming the first that does not (a
+    /// boundary inside an output compartment would speak two hues there,
+    /// and none is chosen). This is a speech: a grid is written, `to.rows ×
+    /// to.cols` sites, and nowhere else does this organ write one.
+    pub fn spoken_onto(&self, to: Enclosure) -> Result<Grid, TransductionRefusal> {
+        let mut out: Grid = vec![vec![0; to.cols]; to.rows];
+        for b in &self.bands {
+            let [r0, r1, c0, c1] = b.turns(&self.enclosure);
+            let (r0, r1, c0, c1) = (r0.lands(to.rows)?, r1.lands(to.rows)?, c0.lands(to.cols)?, c1.lands(to.cols)?);
+            for row in out.iter_mut().take(r1).skip(r0) {
+                for site in row.iter_mut().take(c1).skip(c0) {
+                    *site = b.hue;
+                }
+            }
+        }
+        Ok(out)
     }
 
     /// THE FRAME'S FULL CONTENT AS ITS BOUNDARY RECORDS (O3): the two

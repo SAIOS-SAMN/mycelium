@@ -102,10 +102,6 @@ fn incidences_project_to_delta_on_equal_extents() {
         let t = record(&x, &y);
         assert!(t.is_planar());
         assert_eq!(t.projected().expect("one enclosure projects"), planar_delta(&x, &y), "{x:?} → {y:?}");
-        let need = crate::transducer::family::refine::need_of(&x, &y).expect("both frames stand");
-        let mut lattice = crate::transducer::family::refine::refine_delta(&x, &y, &mut stroke(need)).expect("refines");
-        lattice.sort_unstable();
-        assert_eq!(planar_delta(&x, &y), lattice, "today's δ on one enclosure");
     }
     let dir = crate::arc::corpus("training");
     let entries = std::fs::read_dir(&dir).expect("the corpus stands");
@@ -148,29 +144,22 @@ fn share_of_one_changed_site_is_lcm_free() {
     assert_eq!(t.projected(), Ok(vec![(1, 2, 1, 5)]));
 }
 
-/// TRANSITIONAL, deleted with `refine` — THE RECORD HOLDS WHAT `K_lcm` WROTE:
-/// the share of the frame a pair changed, times the `L_h · L_w` cells of
-/// the common refinement, is the number of cells its cochain wrote, on the
-/// reported pair (`14 045`), on coprime and commensurate extents.
+/// THE RECORD PROJECTED IS THE IDENTITY'S SPEECH AGAINST THE OUTPUT: where
+/// the input's turns land, the record read back on the output frame equals
+/// the input's bands spoken onto the output enclosure (`spoken_onto`)
+/// compared site for site with the output — two readers, one residue.
 #[test]
-fn share_equals_lcm_cell_count() {
-    let (x, y) = reported_pair();
-    let t = record(&x, &y);
-    assert_eq!(t.share() * crate::core::Q::from_integer(21_546.into()), crate::core::Q::from_integer(14_045.into()));
+fn projection_agrees_with_spoken_frame() {
     let pairs = [
-        (grid(&["20222", "22220", "00220"]), grid(&["0333", "3330"])),
-        (grid(&["12", "34"]), grid(&["123", "456", "789"])),
-        (grid(&["10", "02"]), grid(&["1100", "1100", "0022", "0022"])),
-        (grid(&["1"]), grid(&["22"])),
-        (grid(&["11"]), grid(&["22"])),
+        (grid(&["10", "02"]), grid(&["1100", "1100", "0022", "0002"])),
+        (grid(&["12"]), grid(&["111222", "112222"])),
+        (grid(&["1", "2", "3"]), grid(&["1", "1", "2", "2", "3", "0"])),
+        (grid(&["11", "11"]), grid(&["111", "121", "111"])),
     ];
     for (x, y) in pairs {
         let t = record(&x, &y);
-        let need = crate::transducer::family::refine::need_of(&x, &y).expect("both frames stand");
-        let cells = crate::transducer::family::refine::refine_delta(&x, &y, &mut stroke(need)).expect("refines").len();
-        let l = |a: usize, b: usize| a / num_integer::gcd(a, b) * b;
-        let lattice = l(x.len(), y.len()) * l(x[0].len(), y[0].len());
-        assert_eq!(t.share() * crate::core::Q::from_integer(lattice.into()), crate::core::Q::from_integer(cells.into()));
+        let spoken = Enclosed::of(&x).expect("stands").spoken_onto(t.to.enclosure).expect("the turns land");
+        assert_eq!(t.projected(), Ok(planar_delta(&spoken, &y)), "{x:?} → {y:?}");
     }
 }
 

@@ -20,15 +20,7 @@ assert!(
     "an exact speak leaves empty remainders, got {rems:?}"
 );
 assert_ne!(pay, [0; 4], "exact speak measures the closed delta");
-let before = element::measure_lanes(
-    &crate::transducer::family::refine::refine_delta(
-        &x,
-        &y,
-        &mut crate::physics::Physics::default()
-            .stroke_n(crate::transducer::family::refine::need_of(&x, &y).expect("both extents stand")),
-    )
-    .expect("delta"),
-);
+let before = element::measure_lanes(&crate::transducer::family::speak::residual_of(Some(&x), &y));
 assert_eq!(pay, before, "deflation of an empty remainder is the closed delta");
 // H1, 70.4 — `"23"` is ONE body of two hues once hue moves to the fibre,
 // so the second pair's intent (an output the rule cannot explain) is
@@ -301,4 +293,60 @@ fn mint_refusal_line_names_arm_proof_kind_demands() {
         mint_refusal_line(ObstructionRefusal::MintNothingActs, &Form::default()),
         "mint refused (integrity): nothing in the form acts [N] demands []"
     );
+}
+
+/// MU-DERIVATIONS D3.2 — WHAT A PAIR DEMANDED IS READ ON THE OUTPUT'S SITES,
+/// the unit its speech's residue is read in. Across `29 × 29 → 30 × 30`
+/// the input is one band whose turns are seams, so the identity's speech
+/// lands, and one changed output site is one link — where `K_lcm` wrote its
+/// `29 × 29` block of 841. A `2 × 2` doubled to `4 × 4` with one input body
+/// recoloured demands the body's four output sites. A shrink whose input
+/// boundary falls inside an output compartment lays down no grid, and the
+/// pair demands its whole output against nothing, never a corner reading.
+#[test]
+fn unspoken_residue_is_read_on_output_sites() {
+    let residue = |x: &crate::arc::Grid, y: &crate::arc::Grid| {
+        let need = crate::transducer::family::transduce::need_of(x, y).expect("both frames stand");
+        crate::transducer::family::deflation::unspoken_residue(x, y, &mut crate::physics::Physics::default().stroke_n(need))
+    };
+    let x: crate::arc::Grid = vec![vec![1; 29]; 29];
+    let mut y: crate::arc::Grid = vec![vec![1; 30]; 30];
+    y[1][2] = 5;
+    assert_eq!(residue(&x, &y), vec![(1, 2, 1, 5)]);
+    assert_eq!(
+        residue(&grid(&["10", "00"]), &grid(&["2200", "2200", "0000", "0000"])),
+        vec![(0, 0, 1, 2), (0, 1, 1, 2), (1, 0, 1, 2), (1, 1, 1, 2)]
+    );
+    let shrink = grid(&["12"]);
+    let out = grid(&["3"]);
+    assert_eq!(
+        residue(&grid(&["1", "2"]), &grid(&["1", "1", "3"])),
+        crate::transducer::family::speak::residual_of(None, &grid(&["1", "1", "3"]))
+    );
+    assert_eq!(residue(&shrink, &out), vec![(0, 0, 0, 3)]);
+}
+
+/// MU-DERIVATIONS D3.2 — A CLOSED PAIR PAYS WHAT IT DEMANDED, ON ONE RECORD:
+/// on a family of unequal enclosures (`2 × 2 → 4 × 4`), where the form
+/// leaves every remainder empty the pay is the measure of each pair's
+/// unspoken residue on the output's sites — before and after read in one
+/// unit.
+#[test]
+fn deflation_closure_pays_before_on_one_record() {
+    let family = vec![
+        (grid(&["10", "00"]), grid(&["2200", "2200", "0000", "0000"])),
+        (grid(&["00", "01"]), grid(&["0000", "0000", "0022", "0022"])),
+    ];
+    let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a scaled recolour extracts");
+    let (pay, rems) = form_deflation(&rule.form, &family, &NoCrystal);
+    assert!(rems.iter().all(Vec::is_empty), "the form closes both pairs: {rems:?}");
+    let mut before = [0u64; 4];
+    for (x, y) in &family {
+        let need = crate::transducer::family::transduce::need_of(x, y).expect("both frames stand");
+        let r = crate::transducer::family::deflation::unspoken_residue(x, y, &mut crate::physics::Physics::default().stroke_n(need));
+        for (b, m) in before.iter_mut().zip(element::measure_lanes(&r)) {
+            *b += m;
+        }
+    }
+    assert_eq!(pay, crate::economy::deflation_of(&crate::economy::lane_moves(&[0; 4], &before)));
 }

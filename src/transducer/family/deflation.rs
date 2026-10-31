@@ -296,21 +296,43 @@ fn form_motions(form: &Form) -> Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)>
     out
 }
 
-/// WHAT A PAIR DEMANDED BEFORE ANY FORM SPOKE: the exact cochain on the
-/// pair's common refinement, under the stroke its own extents need
-/// (`refine::need_of`, 78.111), so no lcm is capped; the raw residue of the
-/// two grids where the pair has no refinement (no extent). Both are
-/// measured on the pair.
+/// WHAT A PAIR DEMANDED BEFORE ANY FORM SPOKE: the residue the identity's
+/// speech leaves against the observed output — the pair's transduction
+/// (`transduce::Transduction`) projected onto the output frame, the input
+/// re-periodded and nothing else said (MU-DERIVATIONS D3.2 §E). It is read
+/// on the output's own sites, as every speech's residue is, so a deflation
+/// subtracts one unit from one unit. On one enclosure the identity's speech
+/// is the input itself, and the residue is the planar coboundary, which is
+/// the record projected link for link (`transduce` tests) and needs no
+/// stroke.
+///
+/// A projection is taken here because this reader compares a speech with
+/// the observed grid, which is where a grid is written. Where the identity
+/// lays down no grid — a boundary turn of the input lands inside an
+/// output compartment (`OffSite`), the input has no enclosure, or the
+/// stroke ends first — the residue is read against what it said: nothing,
+/// as for any speech that does not fit its frame. The record is drawn
+/// under `budget`, sized by `transduce::need_of`.
+pub(crate) fn unspoken_residue(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> Vec<(i64, i64, u8, u8)> {
+    use crate::transducer::family::transduce::{Enclosure, Transduction};
+    if let (Ok(p), Ok(q)) = (Enclosure::of(x), Enclosure::of(y)) {
+        if p.is_same_periods(&q) {
+            return residual_of(Some(x), y);
+        }
+    }
+    match Transduction::of(x, y, budget).and_then(|t| t.projected()) {
+        Ok(chain) => chain,
+        Err(_) => residual_of(None, y),
+    }
+}
+
+/// [`unspoken_residue`] under the stroke the pair's own periods need.
 fn before_chain_of(x: &Grid, y: &Grid) -> Vec<(i64, i64, u8, u8)> {
-    use crate::transducer::family::refine::{need_of, refine_delta};
-    let mut stroke = crate::physics::Physics::default().stroke_n(match need_of(x, y) {
+    let need = match crate::transducer::family::transduce::need_of(x, y) {
         Some(n) => n,
         None => 0,
-    });
-    match refine_delta(x, y, &mut stroke) {
-        Ok(chain) => chain,
-        Err(_) => residual_of(Some(x), y),
-    }
+    };
+    unspoken_residue(x, y, &mut crate::physics::Physics::default().stroke_n(need))
 }
 
 /// THE MASS A PAIR CARRIED: the 𝒮 measure of what its before side demanded
@@ -357,8 +379,7 @@ fn pair_measure_read(
     y: &Grid,
     spoken: Option<&Speech>,
 ) -> ([u64; 4], crate::transducer::germinate::ResidualGerm, bool) {
-    // The exact cochain where the pair refines on K_lcm; the raw residual
-    // of the two grids where it does not. Both are measured on the pair.
+    // The identity's residue and the form's, both on the output's sites.
     let before_chain = before_chain_of(x, y);
     // A speech that does not fit its own frame lays down no grid, so the
     // residual is measured against what the form actually said: nothing.
@@ -591,18 +612,25 @@ pub fn declare_unspoken(
     let mut declared = form.clone();
     let mut any = false;
     let void = crate::arc::ground();
-    for ((x, _), rem) in family.iter().zip(remainders) {
+    for ((x, y), rem) in family.iter().zip(remainders) {
+        // THE INPUT ON THE OUTPUT'S SITES: the identity's speech of it
+        // (`Enclosed::spoken_onto`, the re-period alone) — the input itself
+        // on one enclosure. Never the input read at the output's indices
+        // from a shared corner, which is an arbitrary origin (78.56).
+        use crate::transducer::family::transduce::{Enclosed, Enclosure};
+        let image = Enclosure::of(y).and_then(|to| Enclosed::of(x)?.spoken_onto(to)).ok();
         let links: Vec<Link> = rem
             .iter()
             .filter(|&&(r, c, spoken, observed)| {
                 spoken == void && undeclared.binary_search(&(r, c, spoken, observed)).is_ok()
             })
             .map(|&(r, c, _, observed)| {
-                // The hue the input holds at the site. Outside the input
-                // frame there is none, and absence is the scene's ground in
-                // this encoding — `residual_of`'s own reading, not a floor.
+                // The hue the input's speech holds at the site. Where it
+                // lays down no grid there is none, and absence is the
+                // scene's ground in this encoding — `residual_of`'s own
+                // reading, not a floor.
                 let before = match (usize::try_from(r), usize::try_from(c)) {
-                    (Ok(ur), Ok(uc)) => match x.get(ur).and_then(|row| row.get(uc)) {
+                    (Ok(ur), Ok(uc)) => match image.as_ref().and_then(|g| g.get(ur)).and_then(|row| row.get(uc)) {
                         Some(h) => *h,
                         None => void,
                     },

@@ -26,6 +26,6 @@ mod turn;
 mod tests;
 
 pub use enclosed::{Band, Enclosed};
-pub use record::{arcs, need, need_of, Incidence, Transduction};
+pub use record::{arcs, family_share, need, need_of, Incidence, Transduction};
 pub use refusal::TransductionRefusal;
 pub use turn::{Enclosure, Turn};

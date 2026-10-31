@@ -84,9 +84,42 @@ pub struct Enclosure {
 }
 
 impl Enclosure {
+    /// THE PERIODS A GRID CLAIMS: `Ragged` where its rows disagree (the
+    /// width is read from every row, never one taken by position, rule 15),
+    /// `Empty` where it has no row or no column.
+    pub fn of(g: &crate::transducer::family::perceive::Grid) -> Result<Enclosure, TransductionRefusal> {
+        let mut width: Option<usize> = None;
+        for row in g {
+            match width {
+                None => width = Some(row.len()),
+                Some(n) if n == row.len() => {}
+                Some(_) => return Err(TransductionRefusal::Ragged),
+            }
+        }
+        match width {
+            Some(cols) if cols > 0 => Ok(Enclosure { rows: g.len(), cols }),
+            _ => Err(TransductionRefusal::Empty),
+        }
+    }
+
     /// Is the re-period from `self` onto `to` the identity (each circle
     /// keeps its period)?
     pub fn is_same_periods(&self, to: &Enclosure) -> bool {
         self == to
+    }
+
+    /// THE RE-PERIOD OF EACH CIRCLE from `self` onto `to`, as two exact
+    /// ratios `(h′/h, w′/w)` in lowest terms, `(numerator, denominator)`.
+    /// The turns do not change; only the enclosure does. `None` on a zero
+    /// period.
+    pub fn reperiod(&self, to: &Enclosure) -> Option<((usize, usize), (usize, usize))> {
+        let lowest = |n: usize, d: usize| -> Option<(usize, usize)> {
+            let g = num_integer::gcd(n, d);
+            Some((n.checked_div(g)?, d.checked_div(g)?))
+        };
+        if self.rows == 0 || self.cols == 0 || to.rows == 0 || to.cols == 0 {
+            return None;
+        }
+        Some((lowest(to.rows, self.rows)?, lowest(to.cols, self.cols)?))
     }
 }

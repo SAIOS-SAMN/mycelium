@@ -189,17 +189,19 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             rule.ratio,
         );
         for (i, (x, y)) in task.train.iter().enumerate() {
-            // The pair as the trajectory sees it: the delta where the pair
-            // refines under the stroke its extents need, and the refusal
-            // `refine_delta` names where it does not — reported as the
-            // engine's own reading and not re-derived here.
+            // The pair as the trajectory sees it: its transduction under the
+            // stroke its periods need — incidences, the share of the frame
+            // it changes, and the μ of its projection onto the output frame
+            // where the input's turns land — or the refusal it names,
+            // reported as the engine's own reading and not re-derived here.
             let mut stroke = mycelium::physics::Physics::default().stroke_n(
-                match mycelium::transducer::family::refine::need_of(x, y) {
+                match mycelium::transducer::family::transduce::need_of(x, y) {
                     Some(n) => n,
                     None => 0,
                 },
             );
-            let refined = mycelium::arc::refine_delta(x, y, &mut stroke);
+            use mycelium::transducer::family::transduce::Transduction;
+            let record = Transduction::of(x, y, &mut stroke);
             // A grid's width is its rows' common length, and the slice
             // pattern reads the row the shape is stated by without taking
             // a member by position (rule 15).
@@ -208,16 +210,23 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 None => 0,
             };
             println!(
-                "  mint {name} pair {i}: in {}x{} out {}x{} | refine_delta {} | delta mu {:?}",
+                "  mint {name} pair {i}: in {}x{} out {}x{} | transduction {} | share {} | projected mu {}",
                 x.len(),
                 wide(x),
                 y.len(),
                 wide(y),
-                match &refined {
-                    Ok(_) => "some".to_string(),
+                match &record {
+                    Ok(t) => format!("{} incidences ({} changed)", t.incidences.len(), t.changed().count()),
                     Err(u) => format!("{u:?}"),
                 },
-                refined.as_ref().ok().map(|r| measure_lanes(&r.delta)),
+                match &record {
+                    Ok(t) => t.share().to_string(),
+                    Err(_) => "-".to_string(),
+                },
+                match record.as_ref().map_err(|u| *u).and_then(Transduction::projected) {
+                    Ok(chain) => format!("{:?}", measure_lanes(&chain)),
+                    Err(u) => format!("{u:?}"),
+                },
             );
         }
 

@@ -458,15 +458,13 @@ pub fn family_cover(train: &[(Grid, Grid)]) -> Option<[u64; 4]> {
     any.then_some(cover)
 }
 
-// ── #97: CROSS-COMPLEX CHAINS ────────────────────────────────────────────────
+// ── #97: THE MEASURED FRAME ──────────────────────────────────────────────────
 //
-// A pair of complexes K_in (h_in × w_in) and K_out (h_out × w_out) is related
-// by the exact frame map ρ = (h_out/h_in, w_out/w_in) ∈ ℚ². The cross-frame
-// coboundary is read on the common refinement K_lcm (`family::refine`): each
-// input site is an integer block of it and each output site another, and
-// the chain is the per-cell difference there, written cell by cell. Its
-// support is at most |K_lcm|, not |K_out|. Equal frames yield the planar
-// delta bit-for-bit, and ρ rides as the word's frame fibre.
+// A pair of frames h_in × w_in and h_out × w_out is related by the re-period
+// of each circle, ρ = (h_out/h_in, w_out/w_in) ∈ ℚ², read on its
+// transduction (`family::transduce`): bodies' bands in turns, never a common
+// lattice. Equal frames are the planar coboundary, and ρ rides as the word's
+// frame fibre.
 
 pub(super) fn gcd(a: usize, b: usize) -> usize {
     if b == 0 { a } else { gcd(b, a % b) }
@@ -506,36 +504,5 @@ pub fn frame_ratio(f: &Frame) -> ((usize, usize), (usize, usize)) {
         _ => (0, 0),
     };
     (hr, wr)
-}
-
-
-/// WHAT REFINING A PAIR YIELDS.
-pub struct Refined {
-    /// The coboundary: the sites that changed, each with the hue it came
-    /// from and the hue it went to.
-    pub delta: Vec<(i64, i64, u8, u8)>,
-    /// The frame it was read in.
-    pub frame: Frame,
-}
-
-/// THE CROSS-COMPLEX COBOUNDARY on the common refinement K_lcm: the
-/// per-cell difference of the two grids' block embeddings
-/// (`refine::bipartite_cochain`), with the measured frame. Total for all
-/// dims ≥ 1; equal frames yield exactly the planar delta. Support ≤
-/// |K_lcm|.
-///
-/// Under the caller's stroke, sized by
-/// [`crate::transducer::family::refine::need_of`]: the cochain spends at
-/// most that need, and a stroke that ends first refuses `Spent { need }`
-/// with nothing returned.
-pub fn refine_delta(
-    a: &Grid,
-    b: &Grid,
-    budget: &mut crate::physics::Budget,
-) -> Result<Refined, crate::transducer::family::refine::Unrefined> {
-    let refn = crate::transducer::family::refine::of_grids(a, b)?;
-    let chain = refn.bipartite_cochain(a, b, budget)?;
-    let (hi, wi, ho, wo) = (a.len(), grid_width(a), b.len(), grid_width(b));
-    Ok(Refined { delta: chain, frame: Frame::new(hi, wi, ho, wo) })
 }
 

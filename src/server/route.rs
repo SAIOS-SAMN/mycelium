@@ -38,22 +38,27 @@ pub struct PairRoute {
 /// hands them out.
 pub type TaskRoutes = Arc<Vec<PairRoute>>;
 
-/// THE ROUTES OF A TASK, read: each train pair refined under the stroke its
-/// own extents need (no lcm is capped, 78.111), its chain in canonical
-/// order, its residue formed in the pair's frame, charted, and cut into the
-/// pieces the court lists. A pair with no common refinement or no A5 form
-/// cannot be addressed, so it has no route (U14).
+/// THE ROUTES OF A TASK, read: each train pair of one enclosure as its
+/// planar coboundary, in canonical order, its residue formed in the pair's
+/// frame, charted, and cut into the pieces the court lists. A pair with no
+/// A5 form cannot be addressed, so it has no route (U14).
+///
+/// A PAIR OF UNEQUAL ENCLOSURES HAS NO ROUTE YET. Its relation is its
+/// transduction (`transduce::Transduction`, bodies' bands in turns), and
+/// the listing's readers — the chart and the pieces — read a chain site by
+/// site; the record is not rebuilt as cells to feed them (MU-DERIVATIONS
+/// D3.2, the operator's ruling that no lattice stands past the sensor).
+/// The turn-native chart that will list it is its own entry (O8).
 pub fn routes_of(task: &Task) -> Vec<PairRoute> {
+    use crate::transducer::family::transduce::Enclosure;
     let mut out = Vec::with_capacity(task.train.len());
     for (a, b) in &task.train {
-        let mut stroke = crate::physics::Physics::default().stroke_n(match crate::transducer::family::refine::need_of(a, b) {
-            Some(n) => n,
-            None => 0,
-        });
-        let Ok(crate::arc::Refined { delta: mut chain, frame, .. }) = crate::arc::refine_delta(a, b, &mut stroke) else {
+        let (Ok(p), Ok(q)) = (Enclosure::of(a), Enclosure::of(b)) else { continue };
+        if !p.is_same_periods(&q) {
             continue;
-        };
-        chain.sort_unstable();
+        }
+        let chain = crate::transducer::family::speak::residual_of(Some(a), b);
+        let frame = crate::arc::Frame::new(p.rows, p.cols, q.rows, q.cols);
         let Some(residue) = crate::transducer::element::from_residual_framed(&chain, &frame) else {
             continue;
         };

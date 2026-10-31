@@ -52,33 +52,31 @@ pub fn need(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Option<usiz
     arcs(h_in, h_out)?.checked_mul(arcs(w_in, w_out)?)
 }
 
-/// The periods a grid claims, or `None` on an empty or ragged grid.
-fn periods(g: &Grid) -> Option<(usize, usize)> {
-    let mut width: Option<usize> = None;
-    for row in g {
-        match width {
-            None => width = Some(row.len()),
-            Some(n) if n == row.len() => {}
-            Some(_) => return None,
-        }
-    }
-    match width {
-        Some(w) if w > 0 => Some((g.len(), w)),
-        _ => None,
-    }
-}
-
 /// [`need`] on the periods two grids claim; `None` where either has none.
 pub fn need_of(x: &Grid, y: &Grid) -> Option<usize> {
-    let (h, w) = periods(x)?;
-    let (h2, w2) = periods(y)?;
-    need(h, w, h2, w2)
+    let p = Enclosure::of(x).ok()?;
+    let q = Enclosure::of(y).ok()?;
+    need(p.rows, p.cols, q.rows, q.cols)
 }
 
 /// The overlap of two arcs, as its two boundary turns.
 fn overlap(a: (usize, usize), p: usize, b: (usize, usize), q: usize) -> (Turn, Turn) {
     let (a0, a1, b0, b1) = (Turn::new(a.0, p), Turn::new(a.1, p), Turn::new(b.0, q), Turn::new(b.1, q));
     (if a0 < b0 { b0 } else { a0 }, if a1 < b1 { a1 } else { b1 })
+}
+
+/// O1 — THE SHARE A FAMILY CHANGES: the sum over its pairs of the share of
+/// each frame its transduction changes ([`Transduction::share`]), exact.
+/// `None` where a pair has no enclosure or its record does not read whole
+/// under the stroke its periods need. This is the reading μ switches to
+/// once the lanes carry rationals; until then it stands beside the count.
+pub fn family_share(family: &[(Grid, Grid)]) -> Option<crate::core::Q> {
+    let mut share = crate::core::Q::from_integer(0.into());
+    for (x, y) in family {
+        let mut stroke = crate::physics::Physics::default().stroke_n(need_of(x, y)?);
+        share += Transduction::of(x, y, &mut stroke).ok()?.share();
+    }
+    Some(share)
 }
 
 impl Transduction {
