@@ -366,8 +366,8 @@ such change is named here.
   register's carrier and a `syn` gate that refuses an unclassified
   number; 32 open questions with the reading that decides each; and the
   order of work, ROADMAP track 22. It lists thirteen defects found while
-  deriving, among them a panic on a hue past the palette in
-  `connection_chart`, a receipts page checked against the frame budget
+  deriving, among them a latent panic on a hue past the palette in
+  `connection_chart` (fixed: the chart refuses the hue), a receipts page checked against the frame budget
   rather than the caller's, a task address formed with a pair skipped
   (law 2), a selector truncation that can change the anchor term,
   unbounded recursion in the `Pred`/`Sel` walkers, a page reserve of 64

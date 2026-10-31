@@ -158,6 +158,19 @@ fn invariant_of_charts_connection_on_fibres() {
     assert_eq!(congruent(&stalks, at, &c, &mut budget), None, "c has no other word on its chart");
 }
 
+/// A gauge read off a tape may name a hue past the palette; such a word has
+/// no conjugacy stratum, and the chart refuses it rather than index past the
+/// palette's slots.
+#[test]
+fn connection_chart_refuses_hue_past_palette() {
+    let past = u8::try_from(element::PALETTE + 2).expect("a hue byte");
+    let word = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(0, 2), &[(past, 3), (3, past)], &Vec::new(), [4, 2, 0, 0])
+        .expect("the tape carries any hue byte");
+    assert_eq!(connection_chart(&word), None, "a hue past the palette names no slot");
+    assert!(!word.is_connection(), "and the word is no connection, so it charts at the root");
+    assert_eq!(invariant_of(&word).0, Vec::new(), "unstratified");
+}
+
 /// Connecting the bundle: a rotated, differently-hued sibling attaches
 /// to the base as a section pulled back through V, the connection records
 /// (assignment, V), a second observation adds nothing, and the whole

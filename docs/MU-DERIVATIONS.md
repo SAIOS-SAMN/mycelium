@@ -138,7 +138,7 @@ entry's derivation and needs no ruling unless marked.
 
 | # | Defect | Entry | Severity |
 |---|---|---|---|
-| 1 | `connection_chart` indexes `image[f as usize]` with `f` read from a word's description bytes and no bound check; a hue `f ≥ PALETTE` panics, an abort in cognition (MU-STANDARDS §2.4) | D4.7 | High |
+| 1 | `connection_chart` indexes `image[f as usize]` with `f` read from a word's description bytes and no bound check; a hue `f ≥ PALETTE` panics, an abort in cognition (MU-STANDARDS §2.4). The one caller, `invariant_of`, reaches it only after `is_connection` (whose `gauge_is_perm` refuses such a hue), so the panic was latent; **fixed**: the chart refuses the hue itself | D4.7 | Medium (latent) |
 | 2 | `encode_receipts_reply` admits the head receipt against `BODY_BUDGET`, not the caller's `budget`; with the 8-byte reading height appended, a lone receipt within 12 bytes of the budget builds a body `Frame::encode` refuses, and the asker reads silence on that receipt every time | D1.3 | Medium |
 | 3 | A pair refused by `MAX_LCM_*` makes `task_address` skip it (two tasks one identity, law 2) and `finish` drop it (remainders discarded, rule 7) | D3.2 | High |
 | 4 | `truncate(32)` can cut a term common to every evidence, so `derive_pi` binds another term or returns `None`: π* changes with the cut | D3.3 | High |

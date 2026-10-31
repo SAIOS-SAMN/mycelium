@@ -401,14 +401,20 @@ pub(crate) fn connection_chart(word: &element::Element) -> Option<Invariant> {
     // between (A21 §2).
     let mut axes = vec![ChartAxis::Count(0)];
     axes.extend(rotor_axes(&letters.spelling.word.rotor())?);
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the identity image of the hues, each below PALETTE = 10 (the array's ten slots)")]
-    let mut image: [u8; 10] = std::array::from_fn(|i| i as u8);
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the identity image of the hues, each below PALETTE (the array's slots)")]
+    let mut image: [u8; element::PALETTE] = std::array::from_fn(|i| i as u8);
+    // The gauge is read off the word's tape: a hue past the palette names
+    // no slot, and the word has no conjugacy stratum (refused, never an
+    // index past the array).
     for &(f, t) in &letters.sigma {
+        if (f as usize) >= element::PALETTE || (t as usize) >= element::PALETTE {
+            return None;
+        }
         image[f as usize] = t;
     }
-    let mut seen = [false; 10];
+    let mut seen = [false; element::PALETTE];
     let mut cycles: Vec<u64> = Vec::new();
-    for start in 0..10 {
+    for start in 0..element::PALETTE {
         if seen[start] {
             continue;
         }
@@ -417,7 +423,7 @@ pub(crate) fn connection_chart(word: &element::Element) -> Option<Invariant> {
             seen[i] = true;
             len += 1;
             i = image[i] as usize;
-            if i >= 10 {
+            if i >= element::PALETTE {
                 return None;
             }
         }
