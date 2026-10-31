@@ -332,6 +332,9 @@ impl Exchange {
                 while route_corpus(&court, &shelf, &mesh, &registry) {
                     std::thread::yield_now();
                 }
+                if let Ok(r) = registry.lock() {
+                    eprintln!("  court corpus routed: {} tasks", r.len());
+                }
             });
         }
         std::thread::spawn(move || self.run());
