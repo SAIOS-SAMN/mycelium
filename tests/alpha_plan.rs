@@ -218,11 +218,11 @@ fn extract_rule_closes_single_recolour_as_one_word() {
 }
 
 /// 28, 78.27, 45.8: the snapshot names its layout — the mind as keyed
-/// tries, its line and eras on disk beside it, MYT2 — and the tapes before
-/// it do not re-read: MYT1 and MYC7 are refused by name, an older one as
-/// what it is.
+/// tries, its line and eras on disk beside it, every μ an exact rational
+/// per lane, MYT3 — and the tapes before it do not re-read: MYT2, MYT1 and
+/// MYC7 are refused by name, an older one as what it is.
 #[test]
-fn snapshot_writes_myt2_and_refuses_older_layouts() {
+fn snapshot_writes_myt3_and_refuses_older_layouts() {
     let mut k = Court::new();
     // A voice's sentence for a recolour, spoken through the one door an
     // utterance has (law 8): a listing on the book to snapshot.
@@ -235,11 +235,11 @@ fn snapshot_writes_myt2_and_refuses_older_layouts() {
     let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "the sentence is listed");
     let snap = k.snapshot();
-    assert_eq!(&snap[..4], b"MYT2");
+    assert_eq!(&snap[..4], b"MYT3");
     let mut k2 = Court::new();
     assert!(k2.restore(&snap));
     assert_eq!(k2.occupancy(), [0, 0, 0, 0], "cold listings exert zero occupancy");
-    for magic in [b"MYT1", b"MYC7", b"MYC6"] {
+    for magic in [b"MYT2", b"MYT1", b"MYC7", b"MYC6"] {
         let mut old = snap.clone();
         old[..4].copy_from_slice(magic);
         assert!(!Court::new().restore(&old), "an old file is refused");
