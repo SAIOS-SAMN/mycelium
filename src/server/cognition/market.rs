@@ -102,6 +102,7 @@ impl Court {
     /// ratifying voice is the discoverer of record — real provenance, no
     /// sentinel identity. On the stroke the adoption was replayed under
     /// (65.5): the deliberation worker's `adopt` is the act's root.
+    /// The other install: the vantage install in `court/vantage_install.rs`.
     pub fn install_adopted(&mut self, word: &Element, ratifier: [u8; 32], budget: &mut crate::physics::Budget) -> Adoption {
         // The orbit check at the mint: an arriving word's torsion cycles are
         // run round before they enter the genome. Only a witnessed closed orbit

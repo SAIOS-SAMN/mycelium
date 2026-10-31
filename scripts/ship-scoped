@@ -1,41 +1,33 @@
 #!/usr/bin/env bash
-# SHIP ON SCOPED GREEN (ruled 2026-10-08: no full suites). One heavy-lock
-# hold: clippy on the crate, the scoped tests named as arguments, and — only if
-# both are clean — the release build, an in-place upgrade of hyphae a/b/c
-# (`--check` each home first; no recut, homes kept, never --mint-genesis) and a
-# restart of the voices. Usage: scripts/ship-scoped <test filter>...
+# SHIP-SCOPED — the scoped check for a change: clippy on the crate, then the
+# library tests named by the filters given, each suite's `test result` line
+# printed. MU-STANDARDS §3.9: a change runs the suites of the modules it
+# touches; `scripts/check` is the whole check before a pull request.
+#
+# Usage: scripts/ship-scoped <test filter>...
+#   e.g. scripts/ship-scoped transducer::family::tests::elements
+#   CARGO_TARGET_DIR is honoured; the test log is kept at $SHIP_LOG
+#   (default: a temporary file).
 set -u
 cd "$(dirname "$0")/.." || exit 1
-LOG="${SHIP_LOG:-/tmp/ship-scoped.log}"
-export CARGO_BUILD_JOBS=4 RUST_TEST_THREADS=4
-inner() {
-  echo "head $(git log --oneline -1)"
-  if CARGO_TARGET_DIR=target/gate cargo clippy --release --lib --bins --tests 2>&1 | grep -E "^error" -A12 ; then
-    echo "SHIP STOPPED: clippy"; return 1
-  fi
-  CARGO_TARGET_DIR=target/gate cargo test --release --lib -- "$@" > "$LOG" 2>&1
-  grep -E "^test result" "$LOG"
-  if grep -qE "FAILED|panicked|^error" "$LOG"; then
-    grep -E "FAILED|panicked" "$LOG" | head -5; echo "SHIP STOPPED: tests"; return 1
-  fi
-  cargo build --release --bin mycelium-server --bin mycelium-client 2>&1 | grep -E "^error|Finished"
-  # ROLLING: one hypha down at a time, so two always serve (2026-10-08: the
-  # stop-all-then-check-all order left 7500-7502 dark for six minutes).
-  for h in a b c; do
-    systemctl --user stop "mycelium-server@$h"
-    echo "$h $(timeout 300 target/release/mycelium-server --home "var/$h" --check 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | tail -1)"
-    systemctl --user start "mycelium-server@$h"
-  done
-  systemctl --user restart mycelium-client@1 mycelium-client@2 mycelium-client@3 mycelium-client@4 mycelium-client@5
-  echo "SHIPPED $(git log --oneline -1 | cut -d' ' -f1) at $(date +%H:%M:%S)"
-}
-export -f inner
-export LOG
-# The shared heavy lock is `$HEAVY_LOCK`, by default xyl-heavy.lock under
-# `$XDG_RUNTIME_DIR`. SHIP_NOLOCK=1 runs outside it — only when explicitly
-# authorised (2026-10-09: the compile may run in parallel, outside the lock).
-if [ "${SHIP_NOLOCK:-0}" = "1" ]; then
-  nice -n 10 bash -c 'inner "$@"' _ "$@"
-else
-  nice -n 10 flock -o -w 7200 "${HEAVY_LOCK:-${XDG_RUNTIME_DIR:-/tmp}/xyl-heavy.lock}" bash -c 'inner "$@"' _ "$@"
+
+if [ "$#" -eq 0 ]; then
+  echo "usage: scripts/ship-scoped <test filter>..." >&2
+  exit 2
 fi
+
+LOG="${SHIP_LOG:-$(mktemp "${TMPDIR:-/tmp}/ship-scoped.XXXXXX")}"
+
+echo "head $(git log --oneline -1)"
+if cargo clippy --release --lib --bins --tests 2>&1 | grep -E "^error" -A12; then
+  echo "STOPPED: clippy"
+  exit 1
+fi
+cargo test --release --lib -- "$@" >"$LOG" 2>&1
+grep -E "^test result" "$LOG"
+if grep -qE "FAILED|panicked|^error" "$LOG"; then
+  grep -E "FAILED|panicked|^error" "$LOG" | head -5
+  echo "STOPPED: tests (log $LOG)"
+  exit 1
+fi
+echo "GREEN: clippy and the scoped tests (log $LOG)"

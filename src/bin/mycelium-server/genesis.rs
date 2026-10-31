@@ -59,7 +59,7 @@ pub(crate) fn parse_manifest(path: &Path) -> Option<(PathBuf, [u8; 32], [u8; 64]
 /// -- which is what a unit drop-in carrying it did to this deployment, walking
 /// it to epoch 3 one restart at a time. Exiting makes that impossible: a
 /// unit that carries the flag flaps visibly instead of quietly
-/// re-originating the mesh under everyone. `scripts/recut` runs it once.
+/// re-originating the mesh under everyone. The operator runs it once.
 pub(crate) fn recut(mesh_rec: &mut MeshRecord, home: &Path, hypha_key: &HyphaKey, tag: &str) {
     match mesh_rec.genesis {
         Some(_) => {

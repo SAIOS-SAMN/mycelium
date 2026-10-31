@@ -293,9 +293,10 @@ cargo test --release --lib -- <module path filter>...
 
 A run is green only when its saved output contains no `FAILED`,
 `panicked` or `error` line. `scripts/ship-scoped <filter>...` runs clippy
-and the scoped tests in sequence under `CARGO_TARGET_DIR=target/gate`;
-past those two steps it rebuilds and restarts a locally managed
-deployment, which a contribution does not need.
+and the scoped tests in sequence. Before a pull request, `scripts/check`
+runs the gate (§4.1) and the workspace tests with `--no-fail-fast` and
+summarises both; without the ARC-AGI-2 corpus at `data/arc-agi-2`, its
+17 corpus-dependent tests are known exceptions, and the summary says so.
 
 ## 4. The gate
 

@@ -1,30 +1,45 @@
 #!/usr/bin/env bash
-# OBSERVER — the deployment's pane, read from the running binaries: every mind
+# OBSERVER — a mesh's pane, read from the running binaries: every mind
 # asked on its own post for its reading (its hearing, what it built, what it
 # holds), and every court for the agreements it attested, per speaker →
 # hearer, with each pair's exact deviation. Typed readings only; no log is read.
 #
-# Usage: scripts/observer [SECONDS]     (a live pane, refreshed every SECONDS, default 5)
-#        scripts/observer once          (one frame, then exit)
+# Usage: scripts/observer [SECONDS|once] HOME...
+#   HOME     a hypha's home directory; the first is asked for the minds'
+#            reading, and every one for its court's readings
+#   SECONDS  a live pane, refreshed every SECONDS (default 5)
+#   once     one frame, then exit
+#   MYCELIUM_SERVER names the server binary (default
+#   <repository>/target/release/mycelium-server).
 set -uo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-BIN="$REPO/target/release/mycelium-server"
-HYPHAE=(a b c)
+BIN="${MYCELIUM_SERVER:-$REPO/target/release/mycelium-server}"
+
+usage() {
+  echo "usage: scripts/observer [SECONDS|once] HOME..." >&2
+  exit 2
+}
+
+MODE="5"
+case "${1:-}" in
+  once | [0-9]*) MODE="$1"; shift ;;
+esac
+[ "$#" -gt 0 ] || usage
 
 frame() {
-  "$BIN" --console --minds --home "$REPO/var/a" --reading mind
-  for h in "${HYPHAE[@]}"; do
+  "$BIN" --console --minds --home "$1" --reading mind
+  for h in "$@"; do
     # The first question leaves it for the court's stroke; the second reads
     # what the stroke published, its age said beside it.
-    "$BIN" --console --home "$REPO/var/$h" --reading asked >/dev/null
-    "$BIN" --console --home "$REPO/var/$h" --reading acts
-    "$BIN" --console --home "$REPO/var/$h" --reading agreements
+    "$BIN" --console --home "$h" --reading asked >/dev/null
+    "$BIN" --console --home "$h" --reading acts
+    "$BIN" --console --home "$h" --reading agreements
   done
 }
 
-if [ "${1:-}" = "once" ]; then
-  frame
+if [ "$MODE" = "once" ]; then
+  frame "$@"
   exit 0
 fi
-exec watch -c -t -n "${1:-5}" "$0" once
+exec watch -c -t -n "$MODE" "$(printf '%q ' "$0" once "$@")"

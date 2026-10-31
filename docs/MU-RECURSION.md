@@ -7499,7 +7499,7 @@ rotor is its own item.
 
 `confirm_peer_holds` (`src/server/cognition/court/glue.rs`) becomes the request for the
 witness's signature over the install prefix after the witness's own replay;
-`home_install` (`src/server/cognition/court/install.rs`) writes the ruled root and the mint only when both
+`home_install` (`src/server/cognition/court/vantage_install.rs`) writes the ruled root and the mint only when both
 signatures are held, and the install receipt cites the witness's receipt as
 a parent. Log `court witness {vk} co-signed {addr}`. Identities are free;
 room is not. A node running two hyphae has two keys and one bond, and the
@@ -12254,7 +12254,7 @@ two acts added to the anastome, the question offer and the citing
 contraction (an anastome change); CV5 the typed observer readings — open, closed
 and permanent questions by row and chart, the closing perspective, the
 distinct perspectives per class, replication per peer, adjudication by
-kind — which replace the grep lines of `scripts/readings`.
+kind — which replace grep lines read off the journal.
 
 ## 75. Closures per mode: parabolic and hyperbolic orbits as measurements (ruled 2026-09-23)
 
@@ -14412,7 +14412,7 @@ worlds in a universe on the network.
 
 Code: `src/chronometry/chain/mod.rs` (`ReceiptChain::fold_before`,
 `ReceiptChain::prove_from_era`), `src/server/backfill.rs`,
-`src/client/sdk/voice.rs` (`Voice`), `src/client/sdk/types.rs` (`Mind`).
+`src/client/sdk/voice.rs` (`Voice`), `src/client/sdk/mind.rs` (`Mind`).
 
 ### 78.88 The frame at the sensor, the plexus read upward and across the family, and the progenitor's role
 
@@ -15800,7 +15800,7 @@ The mind's own **vocabulary** files every word it takes in by the holes
 its word vertices' whole motions wind about (`learn_form`), filed where it
 is admitted and unfiled where it retires: the language a motion is
 deconstructed over with no court asked. It is derived, never persisted
-(`client/sdk/types.rs`; MU-CLIENT §4.9).
+(`client/sdk/genome.rs`; MU-CLIENT §4.9).
 
 ### 78.161 Chatter: each mind speaks its dialect to other minds, and μ is distributed by union
 
@@ -15835,7 +15835,7 @@ A mind still never takes another's word into its genome. The frames and
 hearing are specified in MU-CLIENT §5.3 (as amended by 78.163). Code:
 `src/client/sdk/chatter.rs`, `src/client/sdk/entity/chatter.rs`,
 `src/server/cognition/book/agreement.rs`,
-`src/server/cognition/court/install.rs` (`cited_shares`).
+`src/server/cognition/court/vantage_install.rs` (`cited_shares`).
 
 ### 78.162 The inverse-Sisyphus protocol: μ is modes, never counts
 

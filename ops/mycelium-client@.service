@@ -1,8 +1,10 @@
 [Unit]
 Description=mycelium voice %i
-# A systemd user-unit template: one mind per instance, its home under
-# ~/.mycelium/%i. The checkout is assumed at ~/mycelium; edit both paths
-# to where the repository is built.
+# EXAMPLE systemd user-unit template, not installed by anything: one mind
+# per instance, its home under ~/.mycelium/%i. Before use, edit
+# WorkingDirectory and the binary path in ExecStart to where the repository
+# is built (assumed here at ~/mycelium), and the --home path to where the
+# mind's home is kept; then copy it to ~/.config/systemd/user/.
 [Service]
 WorkingDirectory=%h/mycelium
 ExecStart=%h/mycelium/target/release/mycelium-client --home %h/.mycelium/%i

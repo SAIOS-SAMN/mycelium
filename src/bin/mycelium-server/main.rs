@@ -249,7 +249,7 @@ fn check_home(home: &Path) -> ! {
                 println!(
                     "  ledger: {} bytes, DOES NOT RESTORE — the refusal above names the magic and \
                      the byte. A ledger written by an older build is expected to refuse; §10's \
-                     road is `scripts/recut`, which deletes it.",
+                     road is a recut onto a fresh genesis, which deletes it.",
                     b.len()
                 );
                 refuses = true;
@@ -359,7 +359,7 @@ fn main() {
     // -- which is what a unit drop-in carrying it did to this deployment, walking
     // it to epoch 3 one restart at a time. Exiting makes that impossible: a
     // unit that carries the flag flaps visibly instead of quietly
-    // re-originating the mesh under everyone. `scripts/recut` runs it once.
+    // re-originating the mesh under everyone. The operator runs it once.
     let recut = args.iter().any(|a| a == "--recut");
     let home = match home_dir(&args) {
         Ok(h) => h,
@@ -498,7 +498,7 @@ fn main() {
                         "the ledger at {state_path} did not restore -- the magic, section and \
                          byte are named above. This court's memory is NOT dropped and nothing is \
                          written over it. This build reads MYC7; a ledger written by an older \
-                         build is EXPECTED to refuse, and §10's road for that is `scripts/recut`, \
+                         build is EXPECTED to refuse, and §10's road for that is a recut onto a fresh genesis, \
                          which the operator runs. `--check` on this home reports the same reading \
                          without starting anything."
                     ),

@@ -1556,7 +1556,7 @@ or a constant:
   demand over those sites alone. A letter standing at no frame touches no
   site and stays zero (78.149(c) stands for letters). D2′'s base and use
   shares read the local discharge (`cited_deflation`, in
-  `server/cognition/court/install.rs`).
+  `server/cognition/court/vantage_install.rs`).
 - **C — a conjugate's TRANSPORT** (`Court::transport_on`, in
   `server/cognition/identity.rs`). A conjugate `g·W·g̃` is spoken under the
   scene its residue was taught on and paid what its conjugator ADDED: its
@@ -1668,9 +1668,9 @@ is abbreviated `entity/`, and `transducer/` is abbreviated `t/`.
 | hearing as sound and word; questions one order down; vantage; given meanings | §5.3 | `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `distinct_vantage`, `learn_by`, `learn_given`, `re_reduce_given`); `entity/chatter.rs` (`price_hearings`, `sound_of`) |
 | deferral by an owed citation | §5.3(4) | `entity/contract.rs` (`owe_citation`) |
 | evidence: every scene under its family's citation | §5.4 | `server/registry.rs` (`citation`); `entity/court.rs` |
-| words installed beside the sentence that taught them | §5.4 | `server/cognition/court/install.rs` (`install_taught_words`) |
+| words installed beside the sentence that taught them | §5.4 | `server/cognition/court/vantage_install.rs` (`install_taught_words`) |
 | convergence V1–V4, K1–K2 | §5.5 | `client/sdk/chatter.rs` (`Evidence`, `mycelium chatter v6`); `entity/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
-| the measures W, C, S; D2′ shares read locally; E2–E4 | §5.6 | `t/family/local.rs` (`word_local`, `spoken_section`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/court/install.rs` (`cited_deflation`); `server/cognition/book/demand.rs` (`pay_convergence`); `server/cognition/court/task.rs` (`grow_grants_by_paid`) |
+| the measures W, C, S; D2′ shares read locally; E2–E4 | §5.6 | `t/family/local.rs` (`word_local`, `spoken_section`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/court/vantage_install.rs` (`cited_deflation`); `server/cognition/book/demand.rs` (`pay_convergence`); `server/cognition/court/task.rs` (`grow_grants_by_paid`) |
 | the Rewrite (court side) | §5.4 | `server/cognition/book/rewrite.rs` (`offer_rewrite`) |
 | the modes carrier: μ as exact modes keyed by canonical coordinates, drawn whole or refused naming the mode short; read off a motion or a hue map; carried on a solve's verdict | §5.6 M | `economy/modes.rs` (`Mode`, `Modes::of_motion`, `of_gauge`, `take`); `anastome/dialogue/percept.rs` (`encode_solve_verdict`); `server/cognition/identity.rs` (`measured_replay_read`) |
 | the seat's call chosen from what calls did; no enumeration | §6 | `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat_mind/own.rs` (`SeatMind::reach`); `client/sdk/seat.rs` (`SeatHold`) |
