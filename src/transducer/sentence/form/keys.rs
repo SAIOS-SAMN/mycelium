@@ -59,7 +59,7 @@ pub(crate) fn vertex_transport_key_of(
     rotor: &crate::transducer::alphabet::Rotor,
     gauge: &[(u8, u8)],
 ) -> Option<crate::transducer::address::Address> {
-    let mut buf = vec![crate::transducer::address::TAG_WORD, ShellKind::Whole.as_u8()];
+    let mut buf = vec![crate::transducer::address::TAG_WORD, ShellKind::Whole.byte()];
     rotor.put_class_coordinates(&mut buf)?;
     crate::transducer::address::put_key_count(&mut buf, gauge.len());
     for &(b, a) in gauge {

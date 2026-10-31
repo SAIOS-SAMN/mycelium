@@ -23,11 +23,11 @@ pub enum Standing {
 }
 
 impl Standing {
-    pub fn as_u8(self) -> u8 {
+    pub fn byte(self) -> u8 {
         self as u8
     }
 
-    pub fn from_u8(v: u8) -> Option<Self> {
+    pub fn of(v: u8) -> Option<Self> {
         match v {
             0 => Some(Standing::Ruled),
             1 => Some(Standing::Stood),

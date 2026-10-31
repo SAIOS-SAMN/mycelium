@@ -302,7 +302,7 @@ impl ClassVector {
     pub fn put_canonical(&self, buf: &mut Vec<u8>) {
         alphabet::put_q(buf, &self.offplane.0);
         alphabet::put_q(buf, &self.offplane.1);
-        buf.push(self.offplane.2.as_u8());
+        buf.push(self.offplane.2.byte());
         match self.plane {
             None => buf.push(0),
             Some(pl) => {
@@ -373,7 +373,7 @@ impl ClassVector {
         // 54.7 — THE BYTE NAMES A BIVECTOR READING OR THE VECTOR DOES NOT
         // DECODE. It was carried as a raw `u8`, so a tape could spell a
         // type that is not one of the four and be believed (rule 11).
-        let sp = crate::network::nerve::coord::BivectorKind::from_u8(*k.get(p)?)?;
+        let sp = crate::network::nerve::coord::BivectorKind::of(*k.get(p)?)?;
         p += 1;
         let plane = match *k.get(p)? {
             0 => {

@@ -87,14 +87,14 @@ fn why_answers_refusal_act_on_ledger() {
     assert_eq!(head.kind, ActKind::Refused);
     assert_eq!(head.chain_hash, *receipt, "the voice is answered the refusal's own receipt");
     let chart = crate::transducer::stalk::invariant_of(&s);
-    let cite = Cite::Refusal { chart: chart.clone(), kind: kind.to_byte() };
+    let cite = Cite::Refusal { chart: chart.clone(), kind: kind.byte() };
     assert_eq!(head.cites, vec![cite.clone()]);
     let mut bytes = Vec::new();
     cite.put_canonical(&mut bytes).expect("a refusal's coordinates write");
     assert_eq!(Cite::take_canonical(&bytes, &mut 0), Some(cite));
     let why = k.why(WhyAsk::Of(head.stamp)).expect("the refusal is on the ledger");
     let [r] = why.refused.as_slice() else { panic!("one refusal: {why:?}") };
-    assert_eq!((r.kind, r.chart), (kind.to_byte(), head_of(chart.key().as_bytes())));
+    assert_eq!((r.kind, r.chart), (kind.byte(), head_of(chart.key().as_bytes())));
     assert!(why.named.is_empty(), "a refusal admits no word");
     assert_eq!(decode_why_reply(&encode_why_reply(Some(&why))), Some(Some(why)));
 }

@@ -14,7 +14,7 @@
 //! never dropped. Each is counted on the clock by arm:
 //! admitted = applied + awaiting + refused.
 
-use crate::chronometry::{KStepReceipt, Ruled, RulingRefused, Stamp};
+use crate::chronometry::{KStepReceipt, Ruled, RulingRefusal, Stamp};
 use crate::cognition::*;
 
 /// What a peer's ruling came to here.
@@ -26,7 +26,7 @@ enum Heard {
     Waits(Stamp),
     Applied,
     /// The replay did not re-derive, by its typed reason (F5).
-    Refused(RulingRefused),
+    Refused(RulingRefusal),
 }
 
 impl Court {
@@ -107,7 +107,7 @@ impl Court {
         }
         match self.apply_verdict_by(addr.as_bytes(), verdict, author, budget) {
             true => Heard::Applied,
-            false => Heard::Refused(RulingRefused::NoParty),
+            false => Heard::Refused(RulingRefusal::NoParty),
         }
     }
 
@@ -152,11 +152,11 @@ impl Court {
                 None => self.provisional.get(a.as_bytes()).is_some_and(|w| w.is_rewrite()),
             };
             if !is_rewrite && !self.ruled_contains(a.as_bytes()) {
-                return Heard::Refused(RulingRefused::SpeakerNotRuled);
+                return Heard::Refused(RulingRefusal::SpeakerNotRuled);
             }
         }
         if !matches!(self.reduce_excluding(&word, Some(addr.as_bytes()), budget), NormalForm::Decomposed(_)) {
-            return Heard::Refused(RulingRefused::DoesNotDecompose);
+            return Heard::Refused(RulingRefusal::DoesNotDecompose);
         }
         let freed = word.magnitude();
         let retired = self.cite_of(addr.as_bytes());

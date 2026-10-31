@@ -430,10 +430,10 @@ fn of_chain_measures_nodes_by_kind_flat_in_word() {
     chain.append(ActKind::List, [0; 4], vec![cite(&large)], [0; 32], Vec::new()).expect("appends");
     let mut c = Carriage::default();
     c.of_chain(&chain);
-    let listed = c.rows.iter().find(|r| r.kind == ActKind::List.to_byte()).expect("the listing nodes");
+    let listed = c.rows.iter().find(|r| r.kind == ActKind::List.byte()).expect("the listing nodes");
     assert_eq!(listed.records, 2);
     assert_eq!(listed.largest * 2, listed.bytes, "both carry the same bytes, whatever the word they cite");
-    assert!(c.rows.iter().any(|r| r.kind == ActKind::Attest.to_byte() && r.records == 1), "and the attest node by its own kind");
+    assert!(c.rows.iter().any(|r| r.kind == ActKind::Attest.byte() && r.records == 1), "and the attest node by its own kind");
 }
 
 /// 78.152 — A COURT'S TUNIVERSAL STANDING TRAVELS EXACTLY: three keepers

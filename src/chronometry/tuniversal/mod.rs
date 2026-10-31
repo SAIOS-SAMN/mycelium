@@ -16,7 +16,7 @@ pub mod shelf;
 #[cfg(test)]
 mod tests;
 
-pub use keepers::{Admitted, Edge, Keepers, Refused, Residual};
+pub use keepers::{Admitted, Edge, KeeperRefusal, Keepers, Residual};
 pub use point::{Origin, TPoint};
 pub use reading::{Cited, Tick, TickReading};
 pub use record::{LastSigned, Recorded};

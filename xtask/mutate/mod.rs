@@ -21,7 +21,7 @@ use std::process::{Command, Output};
 
 /// Why the audit could not be taken at all.
 #[derive(Debug)]
-pub enum MutateError {
+pub enum MutateRefusal {
     /// The repository root could not be read off the xtask manifest.
     NoRepo,
     /// A git step failed.
@@ -38,20 +38,20 @@ pub enum MutateError {
     BaselineEmpty { suite: String },
 }
 
-impl fmt::Display for MutateError {
+impl fmt::Display for MutateRefusal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            MutateError::NoRepo => write!(f, "mutate refused: the xtask manifest has no parent repository"),
-            MutateError::Git { step, detail } => write!(f, "mutate refused: git {step} failed: {detail}"),
-            MutateError::Io { path, detail } => write!(f, "mutate refused: {}: {detail}", path.display()),
-            MutateError::Cargo { detail } => write!(f, "mutate refused: cargo could not run: {detail}"),
-            MutateError::BaselineUnbuilt { suite, detail } => {
+            MutateRefusal::NoRepo => write!(f, "mutate refused: the xtask manifest has no parent repository"),
+            MutateRefusal::Git { step, detail } => write!(f, "mutate refused: git {step} failed: {detail}"),
+            MutateRefusal::Io { path, detail } => write!(f, "mutate refused: {}: {detail}", path.display()),
+            MutateRefusal::Cargo { detail } => write!(f, "mutate refused: cargo could not run: {detail}"),
+            MutateRefusal::BaselineUnbuilt { suite, detail } => {
                 write!(f, "mutate refused: suite `{suite}` does not build at HEAD:\n{detail}")
             }
-            MutateError::BaselineRed { suite, failing } => {
+            MutateRefusal::BaselineRed { suite, failing } => {
                 write!(f, "mutate refused: suite `{suite}` fails at HEAD: {}", failing.join(", "))
             }
-            MutateError::BaselineEmpty { suite } => {
+            MutateRefusal::BaselineEmpty { suite } => {
                 write!(f, "mutate refused: suite `{suite}` runs no test at HEAD")
             }
         }
@@ -60,7 +60,7 @@ impl fmt::Display for MutateError {
 
 /// What one mutant's suite said.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Verdict {
+pub enum MutantVerdict {
     /// The suite failed: the law is guarded, by these tests.
     Killed(Vec<String>),
     /// The suite passed with the law broken: a guard gap.
@@ -68,22 +68,22 @@ pub enum Verdict {
     /// The `before` span was not found exactly once.
     Stale(String),
     /// The mutated tree did not compile: the guard is not proven.
-    Error(String),
+    Unbuilt(String),
 }
 
-impl Verdict {
+impl MutantVerdict {
     fn word(&self) -> &'static str {
         match self {
-            Verdict::Killed(_) => "KILLED",
-            Verdict::Survived => "SURVIVED",
-            Verdict::Stale(_) => "STALE",
-            Verdict::Error(_) => "ERROR",
+            MutantVerdict::Killed(_) => "KILLED",
+            MutantVerdict::Survived => "SURVIVED",
+            MutantVerdict::Stale(_) => "STALE",
+            MutantVerdict::Unbuilt(_) => "UNBUILT",
         }
     }
 
     /// Whether this verdict leaves its law unproven.
     fn unproven(&self) -> bool {
-        !matches!(self, Verdict::Killed(_))
+        !matches!(self, MutantVerdict::Killed(_))
     }
 }
 
@@ -94,14 +94,14 @@ struct Worktree {
 }
 
 impl Worktree {
-    fn add(repo: &Path, path: &Path) -> Result<Worktree, MutateError> {
+    fn add(repo: &Path, path: &Path) -> Result<Worktree, MutateRefusal> {
         // A worktree left by an interrupted audit is removed first.
         if path.exists() {
             remove_worktree(repo, path);
         }
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)
-                .map_err(|e| MutateError::Io { path: parent.to_path_buf(), detail: e.to_string() })?;
+                .map_err(|e| MutateRefusal::Io { path: parent.to_path_buf(), detail: e.to_string() })?;
         }
         let out = Command::new("git")
             .arg("-C")
@@ -110,9 +110,9 @@ impl Worktree {
             .arg(path)
             .arg("HEAD")
             .output()
-            .map_err(|e| MutateError::Git { step: "worktree add", detail: e.to_string() })?;
+            .map_err(|e| MutateRefusal::Git { step: "worktree add", detail: e.to_string() })?;
         if !out.status.success() {
-            return Err(MutateError::Git { step: "worktree add", detail: tail(&out.stderr, 8) });
+            return Err(MutateRefusal::Git { step: "worktree add", detail: tail(&out.stderr, 8) });
         }
         let tree = Worktree { repo: repo.to_path_buf(), path: path.to_path_buf() };
         // The corpus is untracked: a suite that reads it reads the repository's.
@@ -151,13 +151,13 @@ fn remove_worktree(repo: &Path, path: &Path) {
 }
 
 #[cfg(unix)]
-fn symlink_dir(from: &Path, to: &Path) -> Result<(), MutateError> {
-    std::os::unix::fs::symlink(from, to).map_err(|e| MutateError::Io { path: to.to_path_buf(), detail: e.to_string() })
+fn symlink_dir(from: &Path, to: &Path) -> Result<(), MutateRefusal> {
+    std::os::unix::fs::symlink(from, to).map_err(|e| MutateRefusal::Io { path: to.to_path_buf(), detail: e.to_string() })
 }
 
 #[cfg(not(unix))]
-fn symlink_dir(_from: &Path, to: &Path) -> Result<(), MutateError> {
-    Err(MutateError::Io { path: to.to_path_buf(), detail: "a corpus symlink needs a unix host".to_string() })
+fn symlink_dir(_from: &Path, to: &Path) -> Result<(), MutateRefusal> {
+    Err(MutateRefusal::Io { path: to.to_path_buf(), detail: "a corpus symlink needs a unix host".to_string() })
 }
 
 /// The last `n` lines of a process stream, for a refusal's detail.
@@ -167,7 +167,7 @@ fn tail(bytes: &[u8], n: usize) -> String {
     lines[lines.len().saturating_sub(n)..].join("\n")
 }
 
-/// The compiler's error lines, for an ERROR verdict.
+/// The compiler's error lines, for an UNBUILT verdict.
 fn compile_errors(bytes: &[u8]) -> String {
     let text = String::from_utf8_lossy(bytes);
     let errors: Vec<&str> = text.lines().filter(|l| l.starts_with("error")).take(4).collect();
@@ -207,7 +207,7 @@ struct Bench {
 }
 
 impl Bench {
-    fn cargo(&self, m: &Mutant, build_only: bool) -> Result<Output, MutateError> {
+    fn cargo(&self, m: &Mutant, build_only: bool) -> Result<Output, MutateRefusal> {
         let mut cmd = Command::new("cargo");
         cmd.args(["test", "--release"]).args(m.target);
         match build_only {
@@ -217,28 +217,28 @@ impl Bench {
         cmd.current_dir(&self.tree)
             .env("CARGO_TARGET_DIR", &self.target_dir)
             .output()
-            .map_err(|e| MutateError::Cargo { detail: e.to_string() })
+            .map_err(|e| MutateRefusal::Cargo { detail: e.to_string() })
     }
 
-    /// Build, then run: a mutant that does not build is ERROR, one whose
+    /// Build, then run: a mutant that does not build is UNBUILT, one whose
     /// suite fails is KILLED, one whose suite passes SURVIVED.
-    fn judge(&self, m: &Mutant) -> Result<Verdict, MutateError> {
+    fn judge(&self, m: &Mutant) -> Result<MutantVerdict, MutateRefusal> {
         let built = self.cargo(m, true)?;
         if !built.status.success() {
-            return Ok(Verdict::Error(compile_errors(&built.stderr)));
+            return Ok(MutantVerdict::Unbuilt(compile_errors(&built.stderr)));
         }
         let ran = self.cargo(m, false)?;
         let (failing, _) = read_run(&ran);
         match ran.status.success() {
-            true => Ok(Verdict::Survived),
-            false if failing.is_empty() => Ok(Verdict::Killed(vec![format!("(the run exited non-zero: {})", tail(&ran.stderr, 1))])),
-            false => Ok(Verdict::Killed(failing)),
+            true => Ok(MutantVerdict::Survived),
+            false if failing.is_empty() => Ok(MutantVerdict::Killed(vec![format!("(the run exited non-zero: {})", tail(&ran.stderr, 1))])),
+            false => Ok(MutantVerdict::Killed(failing)),
         }
     }
 
     /// Every distinct suite, on the unmutated tree, builds, passes and runs
     /// at least one test.
-    fn baseline(&self, catalogue: &[Mutant]) -> Result<(), MutateError> {
+    fn baseline(&self, catalogue: &[Mutant]) -> Result<(), MutateRefusal> {
         let mut seen: Vec<String> = Vec::new();
         for m in catalogue {
             let suite = suite_name(m);
@@ -248,15 +248,15 @@ impl Bench {
             eprintln!("mutate: baseline `{suite}`");
             let built = self.cargo(m, true)?;
             if !built.status.success() {
-                return Err(MutateError::BaselineUnbuilt { suite, detail: compile_errors(&built.stderr) });
+                return Err(MutateRefusal::BaselineUnbuilt { suite, detail: compile_errors(&built.stderr) });
             }
             let ran = self.cargo(m, false)?;
             let (failing, passed) = read_run(&ran);
             if !ran.status.success() {
-                return Err(MutateError::BaselineRed { suite, failing });
+                return Err(MutateRefusal::BaselineRed { suite, failing });
             }
             if passed == 0 {
-                return Err(MutateError::BaselineEmpty { suite });
+                return Err(MutateRefusal::BaselineEmpty { suite });
             }
             seen.push(suite);
         }
@@ -264,63 +264,63 @@ impl Bench {
     }
 
     /// One mutant applied, judged, and the file restored before any answer.
-    fn apply(&self, m: &Mutant) -> Result<Verdict, MutateError> {
+    fn apply(&self, m: &Mutant) -> Result<MutantVerdict, MutateRefusal> {
         let path = self.tree.join(m.file);
         let original = match std::fs::read_to_string(&path) {
             Ok(text) => text,
-            Err(e) => return Ok(Verdict::Stale(format!("the file does not read: {e}"))),
+            Err(e) => return Ok(MutantVerdict::Stale(format!("the file does not read: {e}"))),
         };
         if m.before == m.after {
-            return Ok(Verdict::Stale("the mutant changes nothing".to_string()));
+            return Ok(MutantVerdict::Stale("the mutant changes nothing".to_string()));
         }
         match original.matches(m.before).count() {
             1 => {}
-            0 => return Ok(Verdict::Stale("the before span is not in the file".to_string())),
-            n => return Ok(Verdict::Stale(format!("the before span occurs {n} times, not once"))),
+            0 => return Ok(MutantVerdict::Stale("the before span is not in the file".to_string())),
+            n => return Ok(MutantVerdict::Stale(format!("the before span occurs {n} times, not once"))),
         }
         let mutated = original.replacen(m.before, m.after, 1);
-        std::fs::write(&path, mutated).map_err(|e| MutateError::Io { path: path.clone(), detail: e.to_string() })?;
+        std::fs::write(&path, mutated).map_err(|e| MutateRefusal::Io { path: path.clone(), detail: e.to_string() })?;
         let verdict = self.judge(m);
-        std::fs::write(&path, &original).map_err(|e| MutateError::Io { path: path.clone(), detail: e.to_string() })?;
+        std::fs::write(&path, &original).map_err(|e| MutateRefusal::Io { path: path.clone(), detail: e.to_string() })?;
         verdict
     }
 }
 
 /// One report line per mutant.
-fn line(m: &Mutant, v: &Verdict) -> String {
+fn line(m: &Mutant, v: &MutantVerdict) -> String {
     let detail = match v {
-        Verdict::Killed(tests) => format!(" — caught by: {}", tests.join(", ")),
-        Verdict::Survived => " — NO TEST NOTICED: the law is unguarded".to_string(),
-        Verdict::Stale(why) | Verdict::Error(why) => format!(" — {why}"),
+        MutantVerdict::Killed(tests) => format!(" — caught by: {}", tests.join(", ")),
+        MutantVerdict::Survived => " — NO TEST NOTICED: the law is unguarded".to_string(),
+        MutantVerdict::Stale(why) | MutantVerdict::Unbuilt(why) => format!(" — {why}"),
     };
     format!("{:<9}{} [{}] ({}){detail}", v.word(), m.law, m.file, suite_name(m))
 }
 
 /// The summary, and whether the audit passes: every mutant KILLED.
-fn summary(verdicts: &[Verdict]) -> (String, bool) {
+fn summary(verdicts: &[MutantVerdict]) -> (String, bool) {
     let count = |w: &str| verdicts.iter().filter(|v| v.word() == w).count();
     let text = format!(
-        "mutation audit: {} mutants — {} killed, {} survived, {} stale, {} error",
+        "mutation audit: {} mutants — {} killed, {} survived, {} stale, {} unbuilt",
         verdicts.len(),
         count("KILLED"),
         count("SURVIVED"),
         count("STALE"),
-        count("ERROR")
+        count("UNBUILT")
     );
-    (text, !verdicts.iter().any(Verdict::unproven))
+    (text, !verdicts.iter().any(MutantVerdict::unproven))
 }
 
 /// The repository root the gate binary was built from.
-fn repo_root() -> Result<PathBuf, MutateError> {
+fn repo_root() -> Result<PathBuf, MutateRefusal> {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     if manifest.join("src/server").is_dir() {
         return Ok(manifest);
     }
-    manifest.parent().map(Path::to_path_buf).ok_or(MutateError::NoRepo)
+    manifest.parent().map(Path::to_path_buf).ok_or(MutateRefusal::NoRepo)
 }
 
 /// Run the whole catalogue. `Ok(true)` when every mutant was killed.
-pub fn run() -> Result<bool, MutateError> {
+pub fn run() -> Result<bool, MutateRefusal> {
     let repo = repo_root()?;
     let target_dir = repo.join("target/mutate");
     let tree = Worktree::add(&repo, &target_dir.join("worktree"))?;
@@ -366,9 +366,9 @@ mod tests {
     /// stale anchor or an unbuilt mutant each leave it red.
     #[test]
     fn summary_passes_only_when_every_mutant_killed() {
-        let killed = Verdict::Killed(vec!["t".to_string()]);
+        let killed = MutantVerdict::Killed(vec!["t".to_string()]);
         assert!(summary(&[killed.clone(), killed.clone()]).1);
-        for gap in [Verdict::Survived, Verdict::Stale("moved".into()), Verdict::Error("e".into())] {
+        for gap in [MutantVerdict::Survived, MutantVerdict::Stale("moved".into()), MutantVerdict::Unbuilt("e".into())] {
             assert!(!summary(&[killed.clone(), gap]).1);
         }
     }

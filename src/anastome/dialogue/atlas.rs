@@ -224,7 +224,7 @@ impl LedgerRefusal {
         LedgerRefusal::LineRefused,
     ];
 
-    pub fn code(self) -> u8 {
+    pub fn byte(self) -> u8 {
         match self {
             LedgerRefusal::NotReserve => 1,
             LedgerRefusal::UnknownDomain => 2,
@@ -239,7 +239,7 @@ impl LedgerRefusal {
     }
 
     pub fn of(code: u8) -> Option<LedgerRefusal> {
-        LedgerRefusal::ALL.into_iter().find(|r| r.code() == code)
+        LedgerRefusal::ALL.into_iter().find(|r| r.byte() == code)
     }
 }
 
@@ -262,7 +262,7 @@ pub fn encode_ledger_reply(r: &Ledgered) -> Vec<u8> {
             point.put(&mut out);
             out
         }
-        Ledgered::Refused(why) => vec![0, why.code()],
+        Ledgered::Refused(why) => vec![0, why.byte()],
     }
 }
 
@@ -648,7 +648,7 @@ impl MapRefusal {
         MapRefusal::Unplaced,
     ];
 
-    pub fn code(self) -> u8 {
+    pub fn byte(self) -> u8 {
         match self {
             MapRefusal::NotReserve => 1,
             MapRefusal::UnknownDomain => 2,
@@ -668,7 +668,7 @@ impl MapRefusal {
     }
 
     pub fn of(code: u8) -> Option<MapRefusal> {
-        MapRefusal::ALL.into_iter().find(|r| r.code() == code)
+        MapRefusal::ALL.into_iter().find(|r| r.byte() == code)
     }
 }
 
@@ -689,7 +689,7 @@ pub fn encode_map_reply(r: &Mapped) -> Vec<u8> {
             point.put(&mut out);
             out
         }
-        Mapped::Refused(why) => vec![0, why.code()],
+        Mapped::Refused(why) => vec![0, why.byte()],
     }
 }
 

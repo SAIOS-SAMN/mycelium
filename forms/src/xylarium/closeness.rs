@@ -34,7 +34,7 @@ use num_traits::{One, Signed, Zero};
 
 /// WHY SHARES OR A CLOSENESS ARE REFUSED, by name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Refused {
+pub enum ClosenessRefusal {
     /// A share below nothing.
     Negative,
     /// Shares that do not sum to the whole turning.
@@ -53,12 +53,12 @@ pub struct Shares {
 impl Shares {
     /// The shares `w`, refused where one is negative or they do not sum to
     /// one.
-    pub fn of(w: &[Q]) -> Result<Shares, Refused> {
+    pub fn of(w: &[Q]) -> Result<Shares, ClosenessRefusal> {
         if w.iter().any(Signed::is_negative) {
-            return Err(Refused::Negative);
+            return Err(ClosenessRefusal::Negative);
         }
         if w.iter().fold(Q::zero(), |acc, x| acc + x) != Q::one() {
-            return Err(Refused::Unsummed);
+            return Err(ClosenessRefusal::Unsummed);
         }
         Ok(Shares { w: w.to_vec() })
     }
@@ -71,9 +71,9 @@ impl Shares {
     /// THE TWO-SIDED CLOSENESS to `other`, the phases `delta` (in turns, one
     /// per plane) between them, exactly. Refused where the two bodies, or the
     /// phases, are over different planes.
-    pub fn closeness(&self, other: &Shares, delta: &[Q]) -> Result<Q, Refused> {
+    pub fn closeness(&self, other: &Shares, delta: &[Q]) -> Result<Q, ClosenessRefusal> {
         if other.w.len() != self.w.len() || delta.len() != self.w.len() {
-            return Err(Refused::Unmatched);
+            return Err(ClosenessRefusal::Unmatched);
         }
         let two = Q::from_integer(2.into());
         let mut held = Q::zero();
@@ -93,12 +93,12 @@ impl Shares {
 impl Shares {
     /// THE CLOSENESS READ IN AN OBSERVER'S FRAME: the exact reading carried
     /// by the frame form, never floored. Refused where the closeness is, or
-    /// the frame does not carry it (`crate::frame::Refused`, by its name).
+    /// the frame does not carry it (`crate::frame::FrameRefusal`, by its name).
     pub fn closeness_in(&self, other: &Shares, delta: &[Q], frame: &crate::frame::Frame) -> Result<Q, InFrame> {
         let read = self.closeness(other, delta).map_err(InFrame::Closeness)?;
         match frame.carry(std::slice::from_ref(&read)).map_err(InFrame::Frame)?.as_slice() {
             [x] => Ok(x.clone()),
-            _ => Err(InFrame::Frame(crate::frame::Refused::Unmatched)),
+            _ => Err(InFrame::Frame(crate::frame::FrameRefusal::Unmatched)),
         }
     }
 }
@@ -107,8 +107,8 @@ impl Shares {
 /// the frame's.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InFrame {
-    Closeness(Refused),
-    Frame(crate::frame::Refused),
+    Closeness(ClosenessRefusal),
+    Frame(crate::frame::FrameRefusal),
 }
 
 /// A phase difference in turns, reduced to `[−½, ½]` and read as its size.
@@ -156,11 +156,11 @@ mod tests {
     /// unmatched.
     #[test]
     fn shares_of_and_closeness_refuse_by_name() {
-        assert_eq!(Shares::of(&qs(&[(-1, 3), (4, 3)])), Err(Refused::Negative));
-        assert_eq!(Shares::of(&qs(&[(1, 2), (1, 3)])), Err(Refused::Unsummed));
+        assert_eq!(Shares::of(&qs(&[(-1, 3), (4, 3)])), Err(ClosenessRefusal::Negative));
+        assert_eq!(Shares::of(&qs(&[(1, 2), (1, 3)])), Err(ClosenessRefusal::Unsummed));
         let (a, b) = (Shares::of(&qs(&[(1, 1)])).expect("a"), Shares::of(&qs(&[(1, 2), (1, 2)])).expect("b"));
-        assert_eq!(a.closeness(&b, &qs(&[(0, 1), (0, 1)])), Err(Refused::Unmatched));
-        assert_eq!(b.closeness(&b, &qs(&[(0, 1)])), Err(Refused::Unmatched));
+        assert_eq!(a.closeness(&b, &qs(&[(0, 1), (0, 1)])), Err(ClosenessRefusal::Unmatched));
+        assert_eq!(b.closeness(&b, &qs(&[(0, 1)])), Err(ClosenessRefusal::Unmatched));
     }
 
     /// THE JOINT READ (the landing rule): xylarium's vector of 2026-10-20 —

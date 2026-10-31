@@ -156,7 +156,7 @@ impl Mind {
                         continue;
                     }
                     let target = crate::transducer::sentence::demand_at(cluster.address.as_bytes(), demand);
-                    let cite = crate::anastome::dialogue::CiteWire { addr: word.address(), standing: st.as_u8(), transport: crate::transducer::element::identity_versor(), body: links.clone() };
+                    let cite = crate::anastome::dialogue::CiteWire { addr: word.address(), standing: st.byte(), transport: crate::transducer::element::identity_versor(), body: links.clone() };
                     StrokeOutcome::add(&mut outcome.uttered, &mag);
                     self.ask(
                         move |s| s.probe(&target, std::slice::from_ref(&cite)),

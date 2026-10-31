@@ -113,7 +113,7 @@ pub fn rule(
     budget: &mut crate::physics::Budget,
 ) -> Ruling {
     let Some(spoken) = spoken else {
-        return Ruling::Slashed("unparseable word");
+        return Ruling::Slashed(REFUSE_UNPARSEABLE_WORD);
     };
     // PROOF OF CONVERGENCE: a word is ratified for what it settled. Two
     // voices installed it, and the install measured the deflation of a
@@ -122,7 +122,7 @@ pub fn rule(
     // from the genesis chain carries no settlement measurement (None) and
     // is judged on its form and congruence alone.
     if deflation.is_some_and(|d| d.iter().all(|&x| x == 0)) {
-        return Ruling::Slashed("no deflation on a listed demand");
+        return Ruling::Slashed(REFUSE_DEMAND_UNDEFLATED);
     }
     if let Some(reason) = blind_replay(spoken, budget) {
         return Ruling::Slashed(reason);
@@ -159,7 +159,7 @@ pub fn rule(
                         match (cech::transition(spoken, z), cech::transition(z, held)) {
                             (Some(g_sz), Some(g_zh)) => match cech::holonomy(&g, &g_sz, &g_zh) {
                                 Some(h) => Some(h),
-                                None => return Ruling::Slashed("the closing holonomy's counts pass the carrier"),
+                                None => return Ruling::Slashed(REFUSE_HOLONOMY_PAST_CARRIER),
                             },
                             _ => Some(g),
                         }
@@ -175,7 +175,7 @@ pub fn rule(
                 [] => Element::identity(),
                 _ => match element::from_residual(&diff) {
                     Some(e) => e,
-                    None => return Ruling::Slashed("obstruction chain has no canonical form"),
+                    None => return Ruling::Slashed(REFUSE_OBSTRUCTION_UNCANONICAL),
                 },
             };
             if let Some(h) = group_view {

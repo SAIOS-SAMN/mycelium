@@ -224,7 +224,7 @@ fn read_chamber_names_unread_circuit_round_and_none() {
     let unread = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Err(CircuitUnread::NotRigid)]), &[], &mut stroke());
     assert_eq!((unread.congruence, unread.coherence), (Congruence::Unread { unread: 1 }, Coherence::Unread));
     assert_eq!(unread.circuits_unread, vec![CircuitUnread::NotRigid], "the circuit is unread by OR3's reason");
-    assert_eq!(unread.capacity, Err(CapacityRefused::NoneRead), "and no circuit read for the capacity");
+    assert_eq!(unread.capacity, Err(CapacityRefusal::NoneRead), "and no circuit read for the capacity");
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
     let bare = read_chamber(1, None, None, &at(vec![Ok(turn)]), &[], &mut stroke());
     assert_eq!(
@@ -234,7 +234,7 @@ fn read_chamber_names_unread_circuit_round_and_none() {
     );
     assert_eq!(bare.gram, Err(NucleiUnread), "and no Gram form, by the same content");
     let none = read_chamber(1, Some(&m), Some(&nuclei), &[], &[], &mut stroke());
-    assert_eq!((none.congruence, none.capacity), (Congruence::NoCircuit, Err(CapacityRefused::NoneRead)));
+    assert_eq!((none.congruence, none.capacity), (Congruence::NoCircuit, Err(CapacityRefusal::NoneRead)));
 }
 
 /// 78.26(2) — A CELL'S CLOSED ALGEBRA CONTAINS WHAT ITS CIRCUITS GENERATE AND
@@ -268,7 +268,7 @@ fn read_chamber_spent_capacity_names_product() {
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
     let mut starved = crate::physics::Physics::default().stroke_n(0);
     let cell = read_chamber(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn)]), &[], &mut starved);
-    assert_eq!(cell.capacity, Err(CapacityRefused::Spent { product: 1 }), "spent at the first product");
+    assert_eq!(cell.capacity, Err(CapacityRefusal::Spent { product: 1 }), "spent at the first product");
 }
 
 /// STD1 (PH1) — THE SPAN'S GRADE AT ANY SIZE: entries of 200 bits, far past
@@ -327,7 +327,7 @@ fn lie_close_closes_under_commutator() {
     let again = lie_close(&so3, &[e12.scale(&q(3, 1))], &mut stroke()).expect("closes");
     assert_eq!(again.len(), 3, "a generator already spanned adds nothing");
     let mut starved = crate::physics::Physics::default().stroke_n(0);
-    assert_eq!(lie_close(&[], &[e12, e23], &mut starved), Err(LieRankRefused::Spent { bracket: 1 }), "the stroke is read per bracket");
+    assert_eq!(lie_close(&[], &[e12, e23], &mut starved), Err(LieRankRefusal::Spent { bracket: 1 }), "the stroke is read per bracket");
 }
 
 /// 78.110 E2 — THE CIRCUITS CROSSING ONE CELL MEET, BOTH WAYS. Two read

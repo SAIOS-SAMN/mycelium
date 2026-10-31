@@ -159,7 +159,7 @@ pub const ACT_TICK: u8 = Action::Tick.byte();
 /// The ring was admitted, or held already.
 pub const TICK_HEARD: u8 = 1;
 /// The frame did not read whole, its keeper is no known peer court, or a
-/// reading of the ring was refused (`tuniversal::Refused`).
+/// reading of the ring was refused (`tuniversal::KeeperRefusal`).
 pub const TICK_REFUSED: u8 = 0;
 /// AN EQUIVOCATION PROOF (47.4, `MU-XSEPTUM.md` §5.5): any node presents two
 /// receipt sections it holds under one key at one K with two chain
@@ -337,7 +337,7 @@ pub const ACT_DEMAND_ROUTED: u8 = Action::DemandRouted.byte();
 pub struct CiteWire {
     /// The word cited, by address.
     pub addr: crate::transducer::address::Address,
-    /// Its STANDING (`Standing::as_u8`): Ruled, Stood or Held. A
+    /// Its STANDING (`Standing::byte`): Ruled, Stood or Held. A
     /// coordinate, so a hypha can weight a held idea below a ruled word —
     /// never a filter that drops one.
     pub standing: u8,

@@ -401,7 +401,7 @@ pub fn product_class(p: &CoxeterProduct) -> Option<Vec<u8>> {
     let Some(Ok(ms)) = &p.modes else { return None };
     let mut k = vec![p.det? as u8];
     for m in ms {
-        k.push(m.kind.as_u8());
+        k.push(m.kind.byte());
         #[expect(
             clippy::cast_possible_truncation,
             reason = "STD1 C1 — the algebra's range: a mode's planes, at most the C(n + 2, 2) bivector planes of Cl(n+1,1)"

@@ -366,7 +366,7 @@ impl Court {
             | Handoff::Mouth(_)
             | Handoff::Close { .. }
             | Handoff::Feed { .. }
-            | Handoff::Draw { .. } => return refuse(R::Unknown),
+            | Handoff::Draw { .. } => return refuse(R::UnknownId),
             Handoff::Offer(o) | Handoff::Traverse { offer: o, .. } => {
                 if h.who != o.from_tier {
                     return refuse(R::NotTheTier);
@@ -409,7 +409,7 @@ impl Court {
                 None
             }
             Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. } => {
-                let Some(held) = self.handoffs.held.get(&id) else { return refuse(R::Unknown) };
+                let Some(held) = self.handoffs.held.get(&id) else { return refuse(R::UnknownId) };
                 let State::Offered { until } = held.state else { return refuse(R::Answered) };
                 let expiring = matches!(h.handoff, Handoff::Expire { .. });
                 let filer = if expiring { held.offer.from_tier } else { held.offer.to_tier };
@@ -460,7 +460,7 @@ impl Court {
             | Handoff::Mouth(_)
             | Handoff::Close { .. }
             | Handoff::Feed { .. }
-            | Handoff::Draw { .. } => return refuse(R::Unknown),
+            | Handoff::Draw { .. } => return refuse(R::UnknownId),
         };
         let cite = Cite::Handoff { id, kind };
         let Some(r) = self.seal_step(ActKind::Handoff, [0; 4], h.who, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
@@ -488,7 +488,7 @@ impl Court {
                 self.settle_toll(&id, s == State::Accepted, anchor);
                 s
             }
-            (None, _) => return refuse(R::Unknown),
+            (None, _) => return refuse(R::UnknownId),
         };
         self.mark_persist();
         Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state: now }
@@ -533,7 +533,7 @@ impl Court {
                 nets.extend(c.nets());
                 continue;
             }
-            let Some(h) = self.handoffs.held.get(id) else { return Err((index, SideRefusal::Unknown)) };
+            let Some(h) = self.handoffs.held.get(id) else { return Err((index, SideRefusal::UnknownHandoff)) };
             let (owner, taken) = match (side, h.state) {
                 (Side::Out, _) => (h.offer.from_tier, &h.out),
                 (Side::In, State::Accepted) => (h.offer.to_tier, &h.inn),

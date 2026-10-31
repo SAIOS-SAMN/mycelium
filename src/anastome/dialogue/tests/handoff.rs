@@ -137,7 +137,7 @@ fn mouth_acts_and_loops_round_trip_whole() {
     for r in [
         HandoffRefusal::NoMouth,
         HandoffRefusal::Degenerate,
-        HandoffRefusal::BadKeeper,
+        HandoffRefusal::NotKeeper,
         HandoffRefusal::NotTheMouth,
         HandoffRefusal::Untariffed(Untariffed::ZeroDenominator),
         HandoffRefusal::Untariffed(Untariffed::Unordered),
@@ -145,7 +145,7 @@ fn mouth_acts_and_loops_round_trip_whole() {
         HandoffRefusal::Untariffed(Untariffed::Flat),
         HandoffRefusal::NotALine,
         HandoffRefusal::NotIsometry,
-        HandoffRefusal::BadTube,
+        HandoffRefusal::MalformedTube,
         HandoffRefusal::NotSupersedable,
         HandoffRefusal::Untethered,
         HandoffRefusal::Starved,

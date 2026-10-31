@@ -129,14 +129,14 @@ pub enum Pole {
 }
 
 impl Pole {
-    pub fn as_u8(self) -> u8 {
+    pub fn byte(self) -> u8 {
         match self {
             Pole::Infinity => 0,
             Pole::Origin => 1,
         }
     }
 
-    pub fn from_u8(b: u8) -> Option<Pole> {
+    pub fn of(b: u8) -> Option<Pole> {
         match b {
             0 => Some(Pole::Infinity),
             1 => Some(Pole::Origin),

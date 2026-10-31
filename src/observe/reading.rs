@@ -670,7 +670,7 @@ impl Replication {
 
 /// ADJUDICATION BY KIND (CV5): the sentences this court ratified, stood,
 /// docketed to await a citation, and deferred, and those it refused by the
-/// refusal's own kind (`RefusalKind::to_byte`), ascending.
+/// refusal's own kind (`RefusalKind::byte`), ascending.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Adjudication {
     pub ratified: u64,

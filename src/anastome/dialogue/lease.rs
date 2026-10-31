@@ -203,7 +203,7 @@ pub enum LeaseRefusal {
     /// 6 — a job is already under an open lease to this provider.
     Leased,
     /// 7 — no open lease of this payer by that name.
-    Unknown,
+    UnknownLease,
 }
 
 const REFUSALS: [LeaseRefusal; 7] = [
@@ -213,11 +213,11 @@ const REFUSALS: [LeaseRefusal; 7] = [
     LeaseRefusal::Short,
     LeaseRefusal::Oneself,
     LeaseRefusal::Leased,
-    LeaseRefusal::Unknown,
+    LeaseRefusal::UnknownLease,
 ];
 
 impl LeaseRefusal {
-    fn code(self) -> u8 {
+    fn byte(self) -> u8 {
         match self {
             LeaseRefusal::Unsigned => 1,
             LeaseRefusal::Spent => 2,
@@ -225,7 +225,7 @@ impl LeaseRefusal {
             LeaseRefusal::Short => 4,
             LeaseRefusal::Oneself => 5,
             LeaseRefusal::Leased => 6,
-            LeaseRefusal::Unknown => 7,
+            LeaseRefusal::UnknownLease => 7,
         }
     }
 }
@@ -243,13 +243,13 @@ pub fn encode_lease_reply(r: &LeaseReply) -> Vec<u8> {
             put_lanes(&mut out, mu);
             out
         }
-        Err(why) => vec![0, why.code()],
+        Err(why) => vec![0, why.byte()],
     }
 }
 
 pub fn decode_lease_reply(b: &[u8]) -> Option<LeaseReply> {
     match b {
-        [0, code] => Some(Err(REFUSALS.into_iter().find(|r| r.code() == *code)?)),
+        [0, code] => Some(Err(REFUSALS.into_iter().find(|r| r.byte() == *code)?)),
         [1, rest @ ..] => {
             let mut p = 0;
             let lease = take32(rest, &mut p)?;
@@ -294,7 +294,7 @@ mod tests {
         assert_eq!(decode_close(&cbytes), Some(close), "the close reads back");
         assert!(decode_lease(&cbytes).is_none(), "and never as a lease");
 
-        for r in [Ok(([5; 32], [1, 2, 3, 4])), Err(LeaseRefusal::Leased), Err(LeaseRefusal::Unknown)] {
+        for r in [Ok(([5; 32], [1, 2, 3, 4])), Err(LeaseRefusal::Leased), Err(LeaseRefusal::UnknownLease)] {
             assert_eq!(decode_lease_reply(&encode_lease_reply(&r)), Some(r), "the reply reads back");
         }
     }

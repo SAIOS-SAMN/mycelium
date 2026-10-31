@@ -319,9 +319,9 @@ impl Court {
         let (mouth, mu_s, seq, feeding) = match h.handoff {
             Handoff::Feed { mouth, mu_s, seq } => (mouth, mu_s, seq, true),
             Handoff::Draw { mouth, mu_s, seq } => (mouth, mu_s, seq, false),
-            _ => return refuse(R::Unknown),
+            _ => return refuse(R::UnknownId),
         };
-        let Some(held) = self.handoffs.mouths.get(&mouth).cloned() else { return refuse(R::Unknown) };
+        let Some(held) = self.handoffs.mouths.get(&mouth).cloned() else { return refuse(R::UnknownId) };
         if held.mouth.tube.is_none() {
             return refuse(R::Untethered);
         }
@@ -352,7 +352,7 @@ impl Court {
             match held.mouth.tube.as_ref().zip(after).and_then(|(t, m)| fits_both(t, &m)) {
                 Some(true) => {}
                 Some(false) => return refuse(R::TooWide),
-                None => return refuse(R::BadTube),
+                None => return refuse(R::MalformedTube),
             }
         } else {
             // Never to zero: the mass after must stay positive.
@@ -587,7 +587,7 @@ impl Court {
                     false => own_reserve == Some(m.keeper),
                 };
                 if !keeper_ok {
-                    return refuse(R::BadKeeper);
+                    return refuse(R::NotKeeper);
                 }
                 if !m.frames_hold() {
                     return refuse(R::Degenerate);
@@ -599,7 +599,7 @@ impl Court {
                 // open untethered one of the same pair.
                 let Some(t) = &m.tube else { return refuse(R::Untethered) };
                 if !t.holds() {
-                    return refuse(R::BadTube);
+                    return refuse(R::MalformedTube);
                 }
                 let Some((from_place, to_place)) = m.places() else { return refuse(R::NotIsometry) };
                 // A ROAD INSIDE ONE GALAXY (one universe is one domain) joins
@@ -612,7 +612,7 @@ impl Court {
                 match fits_both(t, &num_rational::BigRational::new(t.mass.0.into(), t.mass.1.into())) {
                     Some(true) => {}
                     Some(false) => return refuse(R::TooWide),
-                    None => return refuse(R::BadTube),
+                    None => return refuse(R::MalformedTube),
                 }
                 if let Some(old) = &t.supersedes {
                     let same_pair = |o: &Mouth| (o.from_tier, o.to_tier) == (m.from_tier, m.to_tier) || (o.from_tier, o.to_tier) == (m.to_tier, m.from_tier);
@@ -636,7 +636,7 @@ impl Court {
                         return refuse(R::NotReserve);
                     }
                     if m.keeper != m.from_tier {
-                        return refuse(R::BadKeeper);
+                        return refuse(R::NotKeeper);
                     }
                     if self.origins.get(&dx).is_none() {
                         return refuse(R::NotAUniverse);
@@ -660,7 +660,7 @@ impl Court {
                 }
                 // 78.135 — the throat held open by matter set aside: the
                 // offerer banks `⌈m⌉` μ-S, or the tube is not offered.
-                let Some(bank) = ceil_mass(t.mass) else { return refuse(R::BadTube) };
+                let Some(bank) = ceil_mass(t.mass) else { return refuse(R::MalformedTube) };
                 let short = crate::economy::shortfall(&[bank, 0, 0, 0], &self.treasury.balance_mu(&h.who));
                 if !crate::economy::lanes_short(&short).is_empty() {
                     return refuse(R::HolderShort);
@@ -668,7 +668,7 @@ impl Court {
                 7
             }
             Handoff::Close { .. } => {
-                let Some(held) = self.handoffs.mouths.get(&id) else { return refuse(R::Unknown) };
+                let Some(held) = self.handoffs.mouths.get(&id) else { return refuse(R::UnknownId) };
                 if h.who != held.mouth.from_tier && h.who != held.mouth.to_tier {
                     return refuse(R::NotTheTier);
                 }
@@ -678,7 +678,7 @@ impl Court {
                 8
             }
             Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. } => {
-                let Some(held) = self.handoffs.mouths.get(&id) else { return refuse(R::Unknown) };
+                let Some(held) = self.handoffs.mouths.get(&id) else { return refuse(R::UnknownId) };
                 let State::Offered { until } = held.state else { return refuse(R::Answered) };
                 let expiring = matches!(h.handoff, Handoff::Expire { .. });
                 let filer = if expiring { held.mouth.from_tier } else { held.mouth.to_tier };
@@ -694,7 +694,7 @@ impl Court {
                     _ => 3,
                 }
             }
-            _ => return refuse(R::Unknown),
+            _ => return refuse(R::UnknownId),
         };
         let cite = Cite::Handoff { id, kind };
         let Some(r) = self.seal_step(ActKind::Handoff, [0; 4], h.who, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };

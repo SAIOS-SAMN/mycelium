@@ -180,7 +180,7 @@ pub fn adopt(
     // One stroke of this court's own metabolism — the first hold's, handed on
     // whole (78.153b) — reads the replay and the derivability below.
     let Ok(mut g) = held!(k) else {
-        return Adoption::Refused("kernel unavailable");
+        return Adoption::Refused(crate::verdict::REFUSE_COURT_UNAVAILABLE);
     };
     // A form cites ruled forms and is bound to a family: its replay reads
     // the cover and the trains, so it takes the lock (23.8); every other
@@ -206,7 +206,7 @@ pub fn adopt(
         crate::verdict::Replayed::Unread => return Adoption::Unread,
         crate::verdict::Replayed::Clean => {}
     }
-    let Ok(mut g) = held!(k) else { return Adoption::Refused("kernel unavailable") };
+    let Ok(mut g) = held!(k) else { return Adoption::Refused(crate::verdict::REFUSE_COURT_UNAVAILABLE) };
     // The install spends the adoption's stroke, carried in; this hold's own
     // stroke goes unspent.
     let held = g.run(|g, _| match g.word_at(&word.address()).is_some() {
@@ -234,7 +234,7 @@ pub fn adopt(
     if let ([], [], [_, ..]) = (sentence.residual.as_slice(), sentence.punctures.as_slice(), sentence.cites.as_slice()) {
         return Adoption::Derivable;
     }
-    let Ok(mut g) = held!(k) else { return Adoption::Refused("kernel unavailable") };
+    let Ok(mut g) = held!(k) else { return Adoption::Refused(crate::verdict::REFUSE_COURT_UNAVAILABLE) };
     g.run(|g, _| g.install_adopted(word, ratifier, &mut budget))
 }
 

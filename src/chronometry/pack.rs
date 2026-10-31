@@ -114,7 +114,7 @@ impl Packer {
         let operator = Self::index(&mut self.operators, out, OPERATOR, &r.operator_hash);
         let mut rec = vec![NODE];
         put_var(&mut rec, signer);
-        rec.push(r.kind.to_byte());
+        rec.push(r.kind.byte());
         for lane in r.mu {
             put_var(&mut rec, lane);
         }
@@ -257,7 +257,7 @@ impl Unpacker {
 
     fn node(&mut self, b: &[u8], p: &mut usize) -> Option<KStepReceipt> {
         let vk = Self::key(&self.signers, b, p)?;
-        let kind = ActKind::from_byte(*b.get(*p)?)?;
+        let kind = ActKind::of_sealed(*b.get(*p)?)?;
         *p += 1;
         let mut mu = [0u64; 4];
         for lane in &mut mu {

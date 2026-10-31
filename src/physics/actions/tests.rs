@@ -20,13 +20,13 @@ fn action_of_reads_each_byte_back_once() {
     }
     // 0x3F is the challenge's (78.125), 0x07 the handoff's (78.126), 0x53
     // the seat relay's (78.145); 0x0A and 0x0F are reserved.
-    assert_eq!(Action::of_tag(0x53), Some(Action::Seat), "the relay is asked on the wire");
-    assert_eq!(Action::of_tag(0x23), Some(Action::Tick), "a keeper's ring is pushed on the wire (78.152b)");
+    assert_eq!(Action::of_wire(0x53), Some(Action::Seat), "the relay is asked on the wire");
+    assert_eq!(Action::of_wire(0x23), Some(Action::Tick), "a keeper's ring is pushed on the wire (78.152b)");
     assert!(!Action::Tick.sealed(), "and seals nothing");
     for unassigned in [0x0Au8, 0x0F, 0x54, 0xFF] {
         assert_eq!(Action::of(unassigned), None);
     }
-    assert_eq!(Action::of_tag(Action::Orbit.byte()), None, "a court act is never asked for");
+    assert_eq!(Action::of_wire(Action::Orbit.byte()), None, "a court act is never asked for");
 }
 
 /// WHAT A COURT SEALS is exactly its own acts, the syllabus page and the
@@ -41,7 +41,7 @@ fn sealed_excludes_observations_and_transitions_answer_every_law() {
             Kind::Observation | Kind::Retired | Kind::Relay => {
                 assert!(a.laws().is_empty());
                 assert!(!a.sealed(), "{a:?}");
-                assert_eq!(Action::from_byte(a.byte()), None);
+                assert_eq!(Action::of_sealed(a.byte()), None);
             }
             Kind::Transition | Kind::Exchange | Kind::Court => {
                 assert_eq!(a.laws(), &crate::physics::laws::LAWS);
@@ -58,7 +58,7 @@ fn sealed_excludes_observations_and_transitions_answer_every_law() {
 /// THE WIRE'S SPELLINGS ARE THE TABLE'S COORDINATES: each `ACT_*` names the
 /// action the table holds at that byte, of the kind the table says.
 #[test]
-fn of_tag_reads_each_wire_spelling_as_table_action() {
+fn of_wire_reads_each_wire_spelling_as_table_action() {
     let spelled = [
         (d::ACT_SPEECH, Action::Speech, Kind::Transition),
         (d::ACT_PROBE, Action::Probe, Kind::Transition),
@@ -76,7 +76,7 @@ fn of_tag_reads_each_wire_spelling_as_table_action() {
         (d::ACT_DOCKET, Action::Docket, Kind::Retired),
     ];
     for (tag, action, kind) in spelled {
-        assert_eq!(Action::of_tag(tag), Some(action));
+        assert_eq!(Action::of_wire(tag), Some(action));
         assert_eq!(action.kind(), kind, "{action:?}");
     }
     // A sealed act's name is unchanged by the table, so every operator

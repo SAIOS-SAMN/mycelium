@@ -30,7 +30,7 @@ pub enum RewriteKind {
 }
 
 impl RewriteKind {
-    pub fn from_u8(v: u8) -> Option<Self> {
+    pub fn of(v: u8) -> Option<Self> {
         Some(match v {
             0 => RewriteKind::Condense,
             1 => RewriteKind::Torse,
@@ -153,7 +153,7 @@ impl Rewrite {
         if crate::transducer::address::tag_of(b) != Some(REWRITE_TAG) {
             return None;
         }
-        let kind = RewriteKind::from_u8(*b.get(1)?)?;
+        let kind = RewriteKind::of(*b.get(1)?)?;
         let mut pos = 2usize;
         // A rewrite names WHAT IT REWROTE. One that names nothing rewrote
         // nothing, which is not a rewrite with an empty before — it is a

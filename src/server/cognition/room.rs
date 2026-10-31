@@ -14,22 +14,22 @@ use super::*;
 /// count; a cover or a credit whose sum passes its carrier is PAST CARRIER.
 /// Each is counted on the kernel where the read answers `None`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RoomRefused {
+pub enum RoomRefusal {
     Broken,
     PastCarrier,
 }
 
 impl Court {
     /// A room read's answer, its refusal counted by name.
-    fn room_answer(&self, r: Result<[u64; 4], RoomRefused>) -> Option<[u64; 4]> {
+    fn room_answer(&self, r: Result<[u64; 4], RoomRefusal>) -> Option<[u64; 4]> {
         use std::sync::atomic::Ordering::Relaxed;
         match r {
             Ok(v) => Some(v),
-            Err(RoomRefused::Broken) => {
+            Err(RoomRefusal::Broken) => {
                 self.room_broken.fetch_add(1, Relaxed);
                 None
             }
-            Err(RoomRefused::PastCarrier) => {
+            Err(RoomRefusal::PastCarrier) => {
                 self.room_overflowed.fetch_add(1, Relaxed);
                 None
             }
@@ -55,17 +55,17 @@ impl Court {
         self.room_answer(self.cover_of(voice))
     }
 
-    fn cover_of(&self, voice: &[u8; 32]) -> Result<[u64; 4], RoomRefused> {
+    fn cover_of(&self, voice: &[u8; 32]) -> Result<[u64; 4], RoomRefusal> {
         if let Some(cap) = self.lane_cap {
             return Ok(cap);
         }
-        let credit = self.use_credit(voice).ok_or(RoomRefused::PastCarrier)?;
+        let credit = self.use_credit(voice).ok_or(RoomRefusal::PastCarrier)?;
         let bond = match self.treasury.bond_of(voice) {
             Some(b) => b,
             None if credit.iter().all(|&c| c == 0) => return Ok([0; 4]),
             None => [0; 4],
         };
-        crate::core::lanes::lanes_add(bond, credit).ok_or(RoomRefused::PastCarrier)
+        crate::core::lanes::lanes_add(bond, credit).ok_or(RoomRefusal::PastCarrier)
     }
 
     /// `None` on a lane occupied beyond its cover: that is a broken count,
@@ -76,7 +76,7 @@ impl Court {
         self.room_answer(self.room_of(voice))
     }
 
-    fn room_of(&self, voice: &[u8; 32]) -> Result<[u64; 4], RoomRefused> {
+    fn room_of(&self, voice: &[u8; 32]) -> Result<[u64; 4], RoomRefusal> {
         // A voice that has drawn nothing occupies nothing: the reading of
         // absence on a keyed carrier, exactly zero per lane by definition.
         let occ = match self.drawn.get(voice) {
@@ -88,7 +88,7 @@ impl Court {
             // admitted against room that was not there.
             let mut free = [0u64; 4];
             for (l, f) in free.iter_mut().enumerate() {
-                *f = cap[l].checked_sub(occ[l]).ok_or(RoomRefused::Broken)?;
+                *f = cap[l].checked_sub(occ[l]).ok_or(RoomRefusal::Broken)?;
             }
             return Ok(free);
         }
@@ -102,17 +102,17 @@ impl Court {
         // voice with a use and no bond has the room its language earned
         // it, which is the whole of what E2 says a use is worth: the bond
         // is what a voice staked, the credit is what its language did.
-        let credit = self.use_credit(voice).ok_or(RoomRefused::PastCarrier)?;
+        let credit = self.use_credit(voice).ok_or(RoomRefusal::PastCarrier)?;
         let bond = match self.treasury.bond_of(voice) {
             Some(b) => b,
             None if credit.iter().all(|&c| c == 0) => return Ok([0; 4]),
             None => [0; 4],
         };
-        let cover = crate::core::lanes::lanes_add(bond, credit).ok_or(RoomRefused::PastCarrier)?;
+        let cover = crate::core::lanes::lanes_add(bond, credit).ok_or(RoomRefusal::PastCarrier)?;
         // A voice drawn BEYOND its cover is a broken count, as above.
         let mut free = [0u64; 4];
         for (l, f) in free.iter_mut().enumerate() {
-            *f = cover[l].checked_sub(occ[l]).ok_or(RoomRefused::Broken)?;
+            *f = cover[l].checked_sub(occ[l]).ok_or(RoomRefusal::Broken)?;
         }
         Ok(free)
     }
@@ -317,7 +317,7 @@ impl Court {
         for (l, c) in cap.iter_mut().enumerate() {
             match room[l].checked_add(self.occupancy[l]) {
                 Some(v) => *c = v,
-                None => return self.room_answer(Err(RoomRefused::PastCarrier)),
+                None => return self.room_answer(Err(RoomRefusal::PastCarrier)),
             }
         }
         Some(cap)

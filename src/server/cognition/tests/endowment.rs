@@ -118,7 +118,7 @@ fn manifest_refuses_grant_by_name() {
     let mut zero = manifest(1);
     zero.nuclei[0].1 = BigUint::from(0u8);
     assert_eq!(k.manifest(&signed(zero, RESERVE)), Granted::Refused(GrantRefusal::Malformed));
-    assert_eq!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Refused(GrantRefusal::EndowmentShort), "a court that earned nothing grants nothing");
+    assert_eq!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Refused(GrantRefusal::Short), "a court that earned nothing grants nothing");
 }
 
 /// THE GRANTS SURVIVE A RESTART: written on the court's own node and read

@@ -259,7 +259,7 @@ pub enum CrossRefusal {
     /// 12 — a declaration's signature is not its reserve's.
     DeclarationUnsigned(Side),
     /// 13 — the payer's stake does not cover the map fee, on a lane.
-    StakeShort,
+    Short,
     /// 14 — two of the cited points stand at different origins.
     Origins,
     /// 15 — a gas lane or the fee passes its carrier.
@@ -285,7 +285,7 @@ impl CrossRefusal {
             CrossRefusal::OneSided => [10, 0],
             CrossRefusal::Mismatched => [11, 0],
             CrossRefusal::DeclarationUnsigned(s) => [12, s.byte()],
-            CrossRefusal::StakeShort => [13, 0],
+            CrossRefusal::Short => [13, 0],
             CrossRefusal::Origins => [14, 0],
             CrossRefusal::Overflow => [15, 0],
             CrossRefusal::LineRefused => [16, 0],
@@ -308,7 +308,7 @@ impl CrossRefusal {
             (10, 0) => CrossRefusal::OneSided,
             (11, 0) => CrossRefusal::Mismatched,
             (12, _) => CrossRefusal::DeclarationUnsigned(s()?),
-            (13, 0) => CrossRefusal::StakeShort,
+            (13, 0) => CrossRefusal::Short,
             (14, 0) => CrossRefusal::Origins,
             (15, 0) => CrossRefusal::Overflow,
             (16, 0) => CrossRefusal::LineRefused,

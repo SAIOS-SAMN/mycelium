@@ -50,7 +50,7 @@ fn blind_replay_accepts_clean_rule_slashes_unparseable() {
         matches!(rule(&[], &Keyed::new(), &Stalks::default(),&w.address(), Some(&w), Some(&[0; 4]), &mut super::common::budget()), Ruling::Slashed(_)),
         "a word that deflated nothing on the book is slashed"
     );
-    assert_eq!(ruling, Ruling::Slashed("unparseable word"));
+    assert_eq!(ruling, Ruling::Slashed(REFUSE_UNPARSEABLE_WORD));
     assert_eq!(ruling.code(), dialogue::RULING_SLASHED);
 }
 

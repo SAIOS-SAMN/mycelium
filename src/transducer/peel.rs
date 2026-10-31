@@ -82,7 +82,7 @@ where
 /// ORDERED AND HASHABLE because it is a coordinate of [`coord::Piece`]
 /// (§4.4 E8): a piece's address opens with its kind, and a seam's two ends
 /// are stored in canonical order, so the kind has to compare. The order is
-/// the declaration's own and is the same one `as_u8` writes.
+/// the declaration's own and is the same one `byte` writes.
 ///
 /// [`coord::Piece`]: crate::network::nerve::coord::Piece
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -121,7 +121,7 @@ struct SectionShell {
 impl ShellKind {
     pub const FRAME: ShellKind = ShellKind::Frame;
 
-    pub fn as_u8(self) -> u8 {
+    pub fn byte(self) -> u8 {
         match self {
             ShellKind::Whole => 0,
             ShellKind::Outline => 1,
@@ -137,7 +137,7 @@ impl ShellKind {
         }
     }
 
-    pub fn from_u8(v: u8) -> Option<Self> {
+    pub fn of(v: u8) -> Option<Self> {
         Some(match v {
             0 => ShellKind::Whole,
             1 => ShellKind::Outline,

@@ -238,31 +238,31 @@ impl Ruled {
 /// here; the retired word does not decompose over this court's basis without
 /// it. Each an I (78.9), counted by arm and by reason on the clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RulingRefused {
+pub enum RulingRefusal {
     NoParty,
     SpeakerNotRuled,
     DoesNotDecompose,
 }
 
-impl RulingRefused {
+impl RulingRefusal {
     /// Every reason, in the order the rulings reading carries them.
-    pub const ALL: [RulingRefused; 3] =
-        [RulingRefused::NoParty, RulingRefused::SpeakerNotRuled, RulingRefused::DoesNotDecompose];
+    pub const ALL: [RulingRefusal; 3] =
+        [RulingRefusal::NoParty, RulingRefusal::SpeakerNotRuled, RulingRefusal::DoesNotDecompose];
 
     /// Where the reason is carried in the rulings reading.
     pub fn index(self) -> usize {
         match self {
-            RulingRefused::NoParty => 0,
-            RulingRefused::SpeakerNotRuled => 1,
-            RulingRefused::DoesNotDecompose => 2,
+            RulingRefusal::NoParty => 0,
+            RulingRefusal::SpeakerNotRuled => 1,
+            RulingRefusal::DoesNotDecompose => 2,
         }
     }
 
     pub fn name(self) -> &'static str {
         match self {
-            RulingRefused::NoParty => "no party",
-            RulingRefused::SpeakerNotRuled => "speaker not ruled",
-            RulingRefused::DoesNotDecompose => "does not decompose",
+            RulingRefusal::NoParty => "no party",
+            RulingRefusal::SpeakerNotRuled => "speaker not ruled",
+            RulingRefusal::DoesNotDecompose => "does not decompose",
         }
     }
 }
@@ -271,7 +271,7 @@ impl RulingRefused {
 /// the one table of actions (`physics::actions::Action`). Its coordinate
 /// byte is the action's own, in the node's chain hash, so a phase (45.9) and
 /// a fold (45.8) read the ledger by kind; a byte naming no action a court
-/// seals refuses the read (`Action::from_byte`).
+/// seals refuses the read (`Action::of_sealed`).
 pub use crate::physics::actions::Action as ActKind;
 
 /// A19 — A CLASS RECORD: the class key's coordinates and the order.
@@ -350,7 +350,7 @@ pub enum Cite {
         cover: Option<Vec<Vec<u8>>>,
     },
     /// 78.93 B0 — A REFUSAL ON THE RECORD: the refused sentence by its fibre
-    /// (its chart) and the kind of the refusal (`RefusalKind::to_byte`). It
+    /// (its chart) and the kind of the refusal (`RefusalKind::byte`). It
     /// is located by the stamp of the act that carries it; the coordinate
     /// inside the sentence went to the voice with the verdict, and the
     /// sentence itself is never copied here (LD0).
@@ -807,7 +807,7 @@ impl KStepReceipt {
     /// frame, predecessor, parents, citations and operator, in that order.
     fn put_body(&self, out: &mut Vec<u8>) -> Option<()> {
         self.stamp.put_canonical(out);
-        out.push(self.kind.to_byte());
+        out.push(self.kind.byte());
         for lane in &self.mu {
             out.extend_from_slice(&lane.to_le_bytes());
         }
@@ -860,7 +860,7 @@ impl KStepReceipt {
 
     pub fn read(b: &[u8], pos: &mut usize) -> Option<Self> {
         let stamp = Stamp::take_canonical(b, pos)?;
-        let kind = ActKind::from_byte(*b.get(*pos)?)?;
+        let kind = ActKind::of_sealed(*b.get(*pos)?)?;
         *pos += 1;
         let mut mu = [0u64; 4];
         for lane in mu.iter_mut() {

@@ -224,7 +224,7 @@ domain's reserve:
   universe's ledger has applied the last.
 - **Every grant is drawn from what the court has earned** (its fees and
   tolls), never minted. Genesis is earned-only; a grant the court's
-  earnings cannot cover is refused by name (`EndowmentShort`).
+  earnings cannot cover is refused by name (`GrantRefusal::Short`).
 
 Clients do not receive grants. A client earns μ from zero by verified work
 (§2), or is funded in a mesh's genesis allocation.

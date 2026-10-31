@@ -100,7 +100,7 @@ impl Theorem {
     pub fn saturated(
         holonomies: &[Mv],
         budget: &mut crate::physics::Budget,
-    ) -> Result<Theorem, crate::transducer::cech::LieRankRefused> {
+    ) -> Result<Theorem, crate::transducer::cech::LieRankRefusal> {
         let refs: Vec<Option<&Mv>> = holonomies.iter().map(Some).collect();
         let gens = crate::transducer::cech::cayley_generators(&refs, budget)?;
         let basis = crate::transducer::cech::lie_close(&[], &gens, budget)?;

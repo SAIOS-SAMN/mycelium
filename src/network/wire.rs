@@ -63,7 +63,7 @@ pub enum Stratum {
 impl Stratum {
     pub const ALL: [Stratum; 4] = [Stratum::Spatial, Stratum::Gauge, Stratum::Temporal, Stratum::Harmonic];
 
-    pub fn as_u8(self) -> u8 {
+    pub fn byte(self) -> u8 {
         match self {
             Stratum::Spatial => 0,
             Stratum::Gauge => 1,
@@ -72,7 +72,7 @@ impl Stratum {
         }
     }
 
-    pub fn from_u8(b: u8) -> Option<Stratum> {
+    pub fn of(b: u8) -> Option<Stratum> {
         match b {
             0 => Some(Stratum::Spatial),
             1 => Some(Stratum::Gauge),
@@ -98,7 +98,7 @@ pub const POINTED: u8 = 0x80;
 
 /// A lane byte read: the lane, and whether the frame carries a point.
 pub fn read_lane(byte: u8) -> Option<(Stratum, bool)> {
-    Some((Stratum::from_u8(byte & !POINTED)?, byte & POINTED != 0))
+    Some((Stratum::of(byte & !POINTED)?, byte & POINTED != 0))
 }
 
 /// A FRAME'S BODY AND ITS POINT: where the lane byte said the frame carries
@@ -139,8 +139,8 @@ impl Frame {
         let len = u32::try_from(self.body.len().checked_add(extra)?).ok()?;
         let mut out = Vec::with_capacity(5 + self.body.len() + extra);
         out.push(match point {
-            Some(_) => self.lane.as_u8() | POINTED,
-            None => self.lane.as_u8(),
+            Some(_) => self.lane.byte() | POINTED,
+            None => self.lane.byte(),
         });
         out.extend_from_slice(&len.to_le_bytes());
         out.extend_from_slice(&self.body);
@@ -208,7 +208,7 @@ mod tests {
         let (g, n) = Frame::decode(&f.encode().unwrap()).unwrap();
         assert_eq!(f, g);
         assert_eq!(n, 9);
-        assert_eq!(g.lane.as_u8(), 1);
+        assert_eq!(g.lane.byte(), 1);
     }
 
     /// A body over the MTU budget is refused by the encoder, never truncated.
@@ -238,7 +238,7 @@ mod tests {
         let point = TPoint { origin: Origin { genesis: [7; 32], epoch: 146 }, h: 40_961, lanes: [3, 0, 9, 1], k: 812 };
         let f = Frame { lane: Stratum::Temporal, body: vec![0x53, 1, 2] };
         let bytes = f.encode_at(Some(&point)).unwrap();
-        assert_eq!(Stratum::from_u8(bytes[0]), None, "a pre-78.152 lane read refuses the pointed frame");
+        assert_eq!(Stratum::of(bytes[0]), None, "a pre-78.152 lane read refuses the pointed frame");
         let (g, at, n) = Frame::decode_at(&bytes).unwrap();
         assert_eq!((g, at, n), (f.clone(), Some(point), 5 + 3 + TPoint::LEN));
         let (h, none, _) = Frame::decode_at(&f.encode().unwrap()).unwrap();

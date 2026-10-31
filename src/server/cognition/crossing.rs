@@ -46,7 +46,7 @@ pub enum Unretrieved {
     /// The point is not final in this court's view.
     NotFinal,
     /// The stake does not cover the read cost on a lane.
-    StakeShort,
+    Short,
     /// A cost passes its carrier, or the claim's id is drawn already.
     Overflow,
 }
@@ -177,13 +177,13 @@ impl Court {
         let fee = [fs, fg, ft, fh];
         let staked = self.treasury.stake_of(&t.payer).map_or([0; 4], |s| s);
         if !crate::economy::lanes_short(&crate::economy::shortfall(&fee, &staked)).is_empty() {
-            return refuse(R::StakeShort);
+            return refuse(R::Short);
         }
         let cite = Cite::Stated { domain: t.from, kind: crate::anastome::dialogue::atlas::KIND_TRAVERSE, body: crossing };
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], t.payer, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
         let Some(court) = fin else { return refuse(R::NotFinal) };
         if self.draw_claim(t.payer, &crossing, fee, &r).is_none() {
-            return refuse(R::StakeShort);
+            return refuse(R::Short);
         }
         let edge = Edge { from: t.from, to, mouth: t.mouth, at: t.at, u_a: t.u_a, u_entry: t.u_b, u_applied: None };
         self.atlas.edges.insert(crossing, edge);
@@ -278,7 +278,7 @@ impl Court {
         let fee = [0, 0, 0, units.checked_mul(price[3]).ok_or(Unretrieved::Overflow)?];
         let staked = self.treasury.stake_of(&staker).map_or([0; 4], |s| s);
         if !crate::economy::lanes_short(&crate::economy::shortfall(&fee, &staked)).is_empty() {
-            return Err(Unretrieved::StakeShort);
+            return Err(Unretrieved::Short);
         }
         let mut id = b"retrieve".to_vec();
         p.put(&mut id);

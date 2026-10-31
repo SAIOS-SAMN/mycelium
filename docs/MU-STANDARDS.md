@@ -157,7 +157,9 @@ a scalar ([MU-ANTI-FLATTENING.md](MU-ANTI-FLATTENING.md)).
 
 - *Refusals*: a refusal type is an `<Object>Refusal` enum with named
   variants (`Not<State>`, `Unknown<Noun>`, `Short { lane }`, `Repeated`,
-  `Mismatched`, `Malformed`, `Unsigned`); a free-text reason is a
+  `Mismatched`, `Malformed`, `Unsigned`; `<Noun>Short` where one type
+  names two shortfalls), or an `<Object>Refusal` struct where the refusal
+  carries its coordinate beside its reason; a free-text reason is a
   `REFUSE_*` constant (§2.4). Never `Error`, `Fail`, `Failed` or `Bad*`.
   A struct of counts is a `*Tally`.
 - *Identity*: `address` / `Address` is an object's composite coordinates;

@@ -393,7 +393,7 @@ The reply is `[1][lease 32][μ]` or `[0][refusal]`. The refusals are:
 - `Short`
 - `Oneself`
 - `Leased`
-- `Unknown`
+- `UnknownLease`
 
 **Code:**
 - `Court::open_lease`, `close_lease`, `pay_lease` (called from

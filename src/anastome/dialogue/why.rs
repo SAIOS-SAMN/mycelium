@@ -33,7 +33,7 @@ pub struct Named {
 }
 
 /// 78.93 B0 — ONE REFUSAL THE ACT RECORDS: its kind
-/// (`RefusalKind::to_byte`) and the head of the refused sentence's chart.
+/// (`RefusalKind::byte`) and the head of the refused sentence's chart.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Refusal {
     pub kind: u8,
@@ -128,7 +128,7 @@ pub fn encode_why_reply(why: Option<&Why>) -> Vec<u8> {
     };
     out.push(1);
     w.at.put_canonical(&mut out);
-    out.push(w.kind.to_byte());
+    out.push(w.kind.byte());
     put_u64s(&mut out, &w.mu);
     put_u64s(&mut out, &[w.unheld]);
     crate::transducer::address::put_key_count(&mut out, w.named.len());
@@ -169,7 +169,7 @@ pub fn decode_why_reply(body: &[u8]) -> Option<Option<Why>> {
         return (p == body.len()).then_some(None);
     }
     let at = Stamp::take_canonical(body, &mut p)?;
-    let kind = ActKind::from_byte(*body.get(p)?)?;
+    let kind = ActKind::of_sealed(*body.get(p)?)?;
     p += 1;
     let mu = [take_u64(body, &mut p)?, take_u64(body, &mut p)?, take_u64(body, &mut p)?, take_u64(body, &mut p)?];
     let unheld = take_u64(body, &mut p)?;

@@ -319,21 +319,12 @@ pub struct Signature {
     pub tones: Vec<Tone>,
 }
 
-fn kind_byte(k: BivectorKind) -> u8 {
-    match k {
-        BivectorKind::Trivial => 0,
-        BivectorKind::Elliptic => 1,
-        BivectorKind::Hyperbolic => 2,
-        BivectorKind::Parabolic => 3,
-    }
-}
-
 impl Signature {
     /// The tones in the tones' content order: by class, planes, point, order —
     /// the reading's own coordinates, never an arrival.
     fn of_tones(mut tones: Vec<Tone>) -> Signature {
         #[expect(clippy::disallowed_methods, reason = "rule 4 — a sort by canonical coordinates: the tone's class, planes, point and order")]
-        tones.sort_by(|a, b| (kind_byte(a.kind), a.planes, &a.c, a.order).cmp(&(kind_byte(b.kind), b.planes, &b.c, b.order)));
+        tones.sort_by(|a, b| (a.kind.byte(), a.planes, &a.c, a.order).cmp(&(b.kind.byte(), b.planes, &b.c, b.order)));
         Signature { tones }
     }
 
@@ -349,7 +340,7 @@ impl Signature {
     pub fn put(&self, out: &mut Vec<u8>) {
         crate::transducer::address::put_key_count(out, self.tones.len());
         for t in &self.tones {
-            out.push(kind_byte(t.kind));
+            out.push(t.kind.byte());
             crate::transducer::address::put_key_count(out, t.planes);
             Mv::scalar(t.c.clone()).to_bytes(out);
         }

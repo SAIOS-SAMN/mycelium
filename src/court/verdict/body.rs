@@ -30,7 +30,7 @@ pub(crate) enum Carried {
     /// grammar, and it is the chart of the member that failed — never the
     /// vertex's representative member, which would refuse a vertex acting
     /// on two charts at whichever chart the trie orders first (D10 item 13).
-    Fails(&'static str, stalk::Invariant),
+    Refused(&'static str, stalk::Invariant),
 }
 
 /// What a vertex failed at, for the journal. Coordinates, not a verdict.
@@ -177,7 +177,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
         }
         let at = || member.chart.clone();
         let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else {
-            return Carried::Fails(FAIL_NO_VERSOR, at());
+            return Carried::Refused(FAIL_NO_VERSOR, at());
         };
         let fibre = here.on_chart(&member.chart);
         if fibre.is_empty() {
@@ -188,7 +188,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
             for l in &body.compartments {
                 let h = l.hue;
                 let Some(p) = element::carry_site_centre(&versor, &l.site) else {
-                    return Carried::Fails(FAIL_NO_CARRY, at());
+                    return Carried::Refused(FAIL_NO_CARRY, at());
                 };
 
                 // A centre the sensor cannot convert is not a compartment at all
@@ -196,29 +196,29 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
                 // a centre carried into another frame is no compartment of the
                 // grid this frame is replayed against.
                 let Some(t) = element::site_at(&p) else {
-                    return Carried::Fails(FAIL_NO_COMPARTMENT, at());
+                    return Carried::Refused(FAIL_NO_COMPARTMENT, at());
                 };
                 let (Some((tr, tc)), true) = (on_grid(&t), same_frame(&t, &l.site)) else {
-                    return Carried::Fails(FAIL_NO_COMPARTMENT, at());
+                    return Carried::Refused(FAIL_NO_COMPARTMENT, at());
                 };
                 // Before the origin, and past the extent, are two different
                 // statements about the rule: the first about its placement,
                 // the second about its scale.
                 let (Ok(ur), Ok(uc)) = (usize::try_from(tr), usize::try_from(tc)) else {
-                    return Carried::Fails(FAIL_BEFORE_FRAME, at());
+                    return Carried::Refused(FAIL_BEFORE_FRAME, at());
                 };
                 let Some(&observed) = y.get(ur).and_then(|row| row.get(uc)) else {
-                    return Carried::Fails(FAIL_PAST_FRAME, at());
+                    return Carried::Refused(FAIL_PAST_FRAME, at());
                 };
                 // The gauge is asked for ONE image and refuses where it
                 // names two: a vertex whose listing sends one hue to two is
                 // not carrying its body by a hue map at all, and reading the
                 // first entry of the list made that a silent choice.
                 let Some(want) = crate::transducer::sentence::hue_of(&member.gauge, h) else {
-                    return Carried::Fails(FAIL_GAUGE_AMBIGUOUS, at());
+                    return Carried::Refused(FAIL_GAUGE_AMBIGUOUS, at());
                 };
                 if observed != want {
-                    return Carried::Fails(FAIL_HUE, at());
+                    return Carried::Refused(FAIL_HUE, at());
                 }
                 landed.insert(site_key(tr, tc), ());
             }
@@ -239,7 +239,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
             // The image body is reached in part BY THE FIBRE AS A WHOLE, so the
             // chart named is the image's own: no one member is at fault and the
             // court says which image it is, which is the coordinate 50.9 wants.
-            return Carried::Fails(FAIL_PART, image.moduli.clone());
+            return Carried::Refused(FAIL_PART, image.moduli.clone());
         }
     }
     Carried::Carries
@@ -378,7 +378,7 @@ fn carry_frames_from(
             if !meter.spend() {
                 return Err(Halt::Spent(i));
             }
-            if let Carried::Fails(why, chart) = vertex_carries_frame(v, at, frame) {
+            if let Carried::Refused(why, chart) = vertex_carries_frame(v, at, frame) {
                 if why == FAIL_PART {
                     // The coverage read walks the form's carriages over the
                     // frame's images: one read of its own.

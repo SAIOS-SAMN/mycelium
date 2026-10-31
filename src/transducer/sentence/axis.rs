@@ -19,7 +19,7 @@ pub enum Axis {
 
 impl Axis {
     /// One tape byte: the kind in the high bits, the slot plane in the low.
-    pub(crate) fn to_byte(self) -> u8 {
+    pub(crate) fn byte(self) -> u8 {
         match self {
             Axis::Orientation(p) => p,
             Axis::Unit(p) => (1 << 3) | p,
@@ -92,7 +92,7 @@ impl Axis {
         }
     }
 
-    pub(crate) fn from_byte(b: u8) -> Option<Axis> {
+    pub(crate) fn of(b: u8) -> Option<Axis> {
         let p = b & 7;
         match (b >> 3, p) {
             (0, p) if p < 6 => Some(Axis::Orientation(p)),

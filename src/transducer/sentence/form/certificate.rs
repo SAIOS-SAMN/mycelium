@@ -128,7 +128,7 @@ impl PivotCertificate {
     pub fn key(&self) -> Vec<u8> {
         let mut buf = vec![crate::transducer::address::TAG_CERT];
         put_overlap(&mut buf, &self.chord);
-        buf.push(self.axis.to_byte());
+        buf.push(self.axis.byte());
         crate::transducer::address::put_key_bytes(&mut buf, &self.before);
         crate::transducer::address::put_key_bytes(&mut buf, &self.after);
         put_rank_move(&self.rank_move, &mut buf);
@@ -182,7 +182,7 @@ impl PivotCertificate {
 
     fn put_record(&self, out: &mut Vec<u8>) -> Option<()> {
         put_overlap(out, &self.chord);
-        out.push(self.axis.to_byte());
+        out.push(self.axis.byte());
         crate::transducer::address::put_addr(out, &self.before)?;
         crate::transducer::address::put_addr(out, &self.after)?;
         put_rank_move(&self.rank_move, out);
@@ -233,7 +233,7 @@ impl PivotCertificate {
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<PivotCertificate> {
         let chord = take_overlap(b, pos)?;
-        let axis = Axis::from_byte(*b.get(*pos)?)?;
+        let axis = Axis::of(*b.get(*pos)?)?;
         *pos += 1;
         let before = crate::transducer::address::take_addr(b, pos)?;
         let after = crate::transducer::address::take_addr(b, pos)?;
@@ -341,7 +341,7 @@ pub enum RefusalKind {
 }
 
 impl RefusalKind {
-    pub fn to_byte(self) -> u8 {
+    pub fn byte(self) -> u8 {
         match self {
             RefusalKind::VertexBody => 0,
             RefusalKind::EdgeHolonomy => 1,
@@ -353,7 +353,7 @@ impl RefusalKind {
         }
     }
 
-    pub fn from_byte(b: u8) -> Option<RefusalKind> {
+    pub fn of(b: u8) -> Option<RefusalKind> {
         Some(match b {
             0 => RefusalKind::VertexBody,
             1 => RefusalKind::EdgeHolonomy,
@@ -520,7 +520,7 @@ impl Contraction {
     /// `None` where a cited address reaches the u16 wall; nothing is
     /// written then (LD0).
     pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
-        let mut rec = vec![self.kind.to_byte()];
+        let mut rec = vec![self.kind.byte()];
         self.at.to_bytes(&mut rec)?;
         crate::transducer::address::put_addr(&mut rec, &self.before)?;
         crate::transducer::address::put_addr(&mut rec, &self.after)?;
@@ -530,7 +530,7 @@ impl Contraction {
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Contraction> {
-        let kind = RefusalKind::from_byte(*b.get(*pos)?)?;
+        let kind = RefusalKind::of(*b.get(*pos)?)?;
         *pos += 1;
         let at = At::from_bytes(b, pos)?;
         let before = crate::transducer::address::take_addr(b, pos)?;

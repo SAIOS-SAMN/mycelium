@@ -86,7 +86,7 @@ pub struct NerveReading {
     pub shared: usize,
     /// The certified cells, one per standing set.
     pub certified: Vec<Cell>,
-    pub refused: Vec<crate::network::nerve::keyed::CoordinateError>,
+    pub refused: Vec<crate::network::nerve::keyed::CoordinateRefusal>,
     /// Members standing at a witness whose coordinates did not read (KB1).
     pub unkeyed: u64,
     /// Witnesses whose members are one by the members' coordinates (KB1 R1).
@@ -214,7 +214,7 @@ pub struct NerveTotals {
     pub shared: usize,
     /// `(cover ordinal, cell)`.
     pub certified: Vec<(usize, Cell)>,
-    pub refused: Vec<crate::network::nerve::keyed::CoordinateError>,
+    pub refused: Vec<crate::network::nerve::keyed::CoordinateRefusal>,
     pub unkeyed: u64,
     pub singular: u64,
 }

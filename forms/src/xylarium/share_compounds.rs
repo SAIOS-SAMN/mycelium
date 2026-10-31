@@ -28,7 +28,7 @@ use num_traits::{One, Zero};
 
 /// WHY A SHARE OR A COUNT IS REFUSED, by name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Refused {
+pub enum ShareRefusal {
     /// A share below nothing: a ring takes no negative part of what remains.
     Negative,
     /// A share not below one: a share of what REMAINS leaves something, so
@@ -57,19 +57,19 @@ impl Remaining {
     /// run where its share is the same, a new run where it is not. Refused
     /// where `x` is not a share of what remains, or the count passes its
     /// carrier.
-    pub fn after(mut self, x: &Q, rings: u64) -> Result<Remaining, Refused> {
+    pub fn after(mut self, x: &Q, rings: u64) -> Result<Remaining, ShareRefusal> {
         if x < &Q::zero() {
-            return Err(Refused::Negative);
+            return Err(ShareRefusal::Negative);
         }
         if x >= &Q::one() {
-            return Err(Refused::Whole);
+            return Err(ShareRefusal::Whole);
         }
         if rings == 0 {
             return Ok(self);
         }
         let left = Q::one() - x;
         match self.factors.last_mut() {
-            Some((was, n)) if *was == left => *n = n.checked_add(rings).ok_or(Refused::Uncounted)?,
+            Some((was, n)) if *was == left => *n = n.checked_add(rings).ok_or(ShareRefusal::Uncounted)?,
             _ => self.factors.push((left, rings)),
         }
         Ok(self)
@@ -78,10 +78,10 @@ impl Remaining {
     /// THE COMPOSITION: this history, then `later`'s. The runs are joined,
     /// the seam folded where the two runs that meet there have one share —
     /// so how a history was cut into pieces leaves no trace in what remains.
-    pub fn then(mut self, later: &Remaining) -> Result<Remaining, Refused> {
+    pub fn then(mut self, later: &Remaining) -> Result<Remaining, ShareRefusal> {
         for (left, rings) in &later.factors {
             match self.factors.last_mut() {
-                Some((was, n)) if was == left => *n = n.checked_add(*rings).ok_or(Refused::Uncounted)?,
+                Some((was, n)) if was == left => *n = n.checked_add(*rings).ok_or(ShareRefusal::Uncounted)?,
                 _ => self.factors.push((left.clone(), *rings)),
             }
         }
@@ -191,10 +191,10 @@ mod tests {
     /// remains or more, and a count past its carrier — never clamped.
     #[test]
     fn after_refuses_by_name() {
-        assert_eq!(Remaining::whole().after(&q(-1, 5), 1), Err(Refused::Negative));
-        assert_eq!(Remaining::whole().after(&Q::one(), 1), Err(Refused::Whole));
-        assert_eq!(Remaining::whole().after(&q(3, 2), 1), Err(Refused::Whole));
+        assert_eq!(Remaining::whole().after(&q(-1, 5), 1), Err(ShareRefusal::Negative));
+        assert_eq!(Remaining::whole().after(&Q::one(), 1), Err(ShareRefusal::Whole));
+        assert_eq!(Remaining::whole().after(&q(3, 2), 1), Err(ShareRefusal::Whole));
         let full = Remaining::whole().after(&q(1, 9), u64::MAX).expect("a share");
-        assert_eq!(full.after(&q(1, 9), 1), Err(Refused::Uncounted));
+        assert_eq!(full.after(&q(1, 9), 1), Err(ShareRefusal::Uncounted));
     }
 }

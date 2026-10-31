@@ -157,7 +157,7 @@ impl Reasons {
         for l in &self.loops {
             out.push(u8::from(l.curved));
             put_key_count(out, l.axes.len());
-            out.extend(l.axes.iter().map(|a| a.to_byte()));
+            out.extend(l.axes.iter().map(|a| a.byte()));
         }
         put_key_count(out, self.open.len());
         for o in &self.open {
@@ -201,7 +201,7 @@ impl Reasons {
             let curved = flag(p)?;
             let mut axes = Vec::new();
             for _ in 0..take_key_count(b, p)? {
-                axes.push(super::Axis::from_byte(byte(p)?)?);
+                axes.push(super::Axis::of(byte(p)?)?);
             }
             loops.push(LoopReason { curved, axes });
         }

@@ -2,7 +2,7 @@
 // reading is signed in the court loop with no digest asked, and a peer's ring
 // pushed as ACT_TICK is heard at the door with no kernel.
 
-use crate::tshelf::{hear_tick, sign_tick, TickRefused};
+use crate::tshelf::{hear_tick, sign_tick, TickRefusal};
 use crate::Mesh;
 use ed25519_dalek::SigningKey;
 use mycelium::anastome::dialogue::encode_tick;
@@ -61,7 +61,7 @@ fn sign_tick_needs_no_digest_and_hear_tick_no_kernel() {
     assert_eq!(kb.read_own(&b, Tick { h: 12, lanes: [0, 5, 0, 0], k: 3 }), Some(true));
     let body = encode_tick(&vb, &kb.own_ring()).expect("a tick writes");
 
-    assert_eq!(hear_tick(&m, &body), Err(TickRefused::Stranger), "a keeper no signed digest named");
+    assert_eq!(hear_tick(&m, &body), Err(TickRefusal::Stranger), "a keeper no signed digest named");
     m.addrs.lock().expect("addrs").insert(vb, "127.0.0.1:2".to_string());
     assert_eq!(hear_tick(&m, &body), Ok(Admitted::Anchored), "a known peer court's ring is heard");
     assert_eq!(hear_tick(&m, &body), Ok(Admitted::Stale), "and heard once");
@@ -73,10 +73,10 @@ fn sign_tick_needs_no_digest_and_hear_tick_no_kernel() {
 
     // This court's own ring, and a frame that does not read, are refused.
     let own = encode_tick(&va, &[]).expect("writes");
-    assert_eq!(hear_tick(&m, &own), Err(TickRefused::Stranger));
+    assert_eq!(hear_tick(&m, &own), Err(TickRefusal::Stranger));
     let mut long = body.clone();
     long.push(0);
-    assert_eq!(hear_tick(&m, &long), Err(TickRefused::Unreadable));
+    assert_eq!(hear_tick(&m, &long), Err(TickRefusal::Unreadable));
 
     assert_eq!(crate::held::holds_here(), holds, "no kernel was taken: not by the signing, not by the door");
 }

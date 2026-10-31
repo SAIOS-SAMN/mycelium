@@ -110,10 +110,10 @@ impl Court {
             match witness {
                 crate::transducer::torsion_witness::HolonomicOrbitWitness::Closed { period, .. } if period == stored => {}
                 crate::transducer::torsion_witness::HolonomicOrbitWitness::Closed { .. } => {
-                    return Adoption::Refused("torsion period does not re-derive — the winding was misspoken")
+                    return Adoption::Refused(crate::verdict::REFUSE_TORSION_PERIOD)
                 }
                 crate::transducer::torsion_witness::HolonomicOrbitWitness::Open { .. } => {
-                    return Adoption::Refused("torsion cycle does not close — the period was a filing")
+                    return Adoption::Refused(crate::verdict::REFUSE_TORSION_UNCLOSED)
                 }
             }
         }

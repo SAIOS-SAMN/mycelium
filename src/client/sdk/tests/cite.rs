@@ -65,7 +65,7 @@ assert!(
 let mut b = entity.stroke();
 let (cites, _rem) = entity.cite(&next, &mut b);
 assert!(
-    cites.iter().any(|c| c.standing == Standing::Stood.as_u8()),
+    cites.iter().any(|c| c.standing == Standing::Stood.byte()),
     "the stood residual is cited with standing Stood, got {cites:?}"
 );
 
@@ -81,7 +81,7 @@ assert_eq!(self_rem, residual, "the remainder stays the residual");
 let mut b = held.stroke();
 let (cites, _rem) = held.cite(&next, &mut b);
 assert!(
-    cites.iter().any(|c| c.standing == Standing::Held.as_u8()),
+    cites.iter().any(|c| c.standing == Standing::Held.byte()),
     "the held remainder is cited with standing Held, got {cites:?}"
 );
 }
@@ -113,7 +113,7 @@ let vertex = vertex.clone();
 let mut b = entity.stroke();
 let (cites, residual) = entity.cite(&listing, &mut b);
 assert_eq!(cites.len(), 1, "one held word deflates the listing, got {cites:?}");
-assert_eq!(cites[0].standing, Standing::Held.as_u8(), "with standing Held");
+assert_eq!(cites[0].standing, Standing::Held.byte(), "with standing Held");
 assert_eq!(cites[0].addr, vertex, "and it is the vertex's address: the word");
 assert_ne!(cites[0].addr, chain_word(&listing).address(), "never the listing chain's key");
 assert_eq!(cites[0].body, listing[..2].to_vec(), "it carries the body the vertex's action reconstructed, in the listing's frame");
@@ -147,7 +147,7 @@ let mut held = Mind::open("127.0.0.1:1", Voice::named("listing-held"));
 held.hold_chain(prefix);
 let Concluded { cites, residual, .. } = held.conclude_listing(&listing);
 assert!(
-    cites.iter().any(|c| c.standing == Standing::Held.as_u8()),
+    cites.iter().any(|c| c.standing == Standing::Held.byte()),
     "a held word deflates the listing, got {cites:?}"
 );
 let r = crate::transducer::element::measure_lanes(&residual);

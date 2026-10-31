@@ -9,7 +9,7 @@ use crate::transducer::sentence::address::from_element_form;
 pub type AxisIndex = Keyed<Keyed<Keyed<Word>>>;
 
 pub(crate) fn axis_slot(axis: Axis) -> Vec<u8> {
-    vec![axis.to_byte()]
+    vec![axis.byte()]
 }
 
 /// WHAT A FORM SPEAKS, AND WHAT EACH WORD ACTS BY: one [`Transport`] per
@@ -356,7 +356,7 @@ pub fn lane_chart(
         .coordinates()
         .into_iter()
         .filter(|a| a.lane() == lane)
-        .map(|a| a.to_byte() as u64)
+        .map(|a| a.byte() as u64)
         .collect();
     if occupied.is_empty() {
         return None;

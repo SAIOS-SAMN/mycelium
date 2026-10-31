@@ -54,7 +54,7 @@ pub(crate) fn genome_refused(bytes: &[u8]) -> Option<&'static str> {
 /// WHAT THE GENOME WRITER REFUSED (LD0, T1's rule at the genome): each word
 /// named once by its reason and counted, never written with a `0` tag.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub struct GenomeRefused {
+pub struct GenomeWriteTally {
     /// Words held with no court's admitting stamp: no court admitted them,
     /// so they are not crystallized knowledge and have no coordinates to be
     /// filed at.
@@ -95,7 +95,7 @@ pub(crate) fn is_residual(e: &Element) -> bool {
     !e.sub().is_empty() && matches!(e.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL)
 }
 
-impl GenomeRefused {
+impl GenomeWriteTally {
     #[cfg(test)]
     pub(crate) fn total(&self) -> u64 {
         self.unstamped + self.unciteable + self.coincident + self.unwritable
@@ -160,9 +160,9 @@ impl Epigenome {
     /// each word at its citation `Cite::word(element, admitted)`, its one
     /// leaf the element. A word no court admitted has no coordinates and is
     /// refused by name and counted, never written.
-    pub(crate) fn crystallize(&self) -> (Vec<u8>, GenomeRefused) {
+    pub(crate) fn crystallize(&self) -> (Vec<u8>, GenomeWriteTally) {
         let mut out = GENOME_MAGIC.to_vec();
-        let mut refused = GenomeRefused::default();
+        let mut refused = GenomeWriteTally::default();
         let mut nodes: crate::network::nerve::Keyed<Leaves> = crate::network::nerve::Keyed::new();
         crate::snapshot::persist(&self.resident, |_, g| {
             let elem = g.held.element();

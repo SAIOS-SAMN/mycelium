@@ -173,7 +173,7 @@ fn admit_uplink_refuses_unproved_child_by_name() {
     let mut altered = part(&child, &at, child.rows.clone(), child.declared.clone(), 1, 1);
     altered.rows[0].1 = g(11);
     let parent = |c: ChildNet| fold(&p, 2, vec![(who(1), g(6))], Vec::new(), vec![c]);
-    assert_eq!(carry(&mut k, parent(altered), &p), Uplinked::ChildRefused { index: 0, why: ChildRefusal::Mismatch });
+    assert_eq!(carry(&mut k, parent(altered), &p), Uplinked::ChildRefused { index: 0, why: ChildRefusal::Mismatched });
     let nowhere = FoldAt { stamp: Stamp { h: 99, ..at.stamp }, path: vec![0] };
     let lost = part(&child, &nowhere, child.rows.clone(), child.declared.clone(), 1, 1);
     assert_eq!(carry(&mut k, parent(lost), &p), Uplinked::ChildRefused { index: 0, why: ChildRefusal::NotOnLine });
@@ -283,7 +283,7 @@ fn admit_uplink_carries_nested_line_in_one_receipt() {
     assert_eq!(k.ledgers.records.get(&p_at.key()).map(|r| r.tier), Some(vk(&p)));
     assert_eq!(k.line_head(&vk(&a)), (child.prefix, Some(a_at)), "A's line advanced, never touching the court");
     let empty_span = fold(&p, 2, Vec::new(), Vec::new(), Vec::new());
-    assert_eq!(carry(&mut k, empty_span, &p), Uplinked::ChildRefused { index: 0, why: ChildRefusal::Repeat }, "a span over its own head");
+    assert_eq!(carry(&mut k, empty_span, &p), Uplinked::ChildRefused { index: 0, why: ChildRefusal::Repeated }, "a span over its own head");
     let unbonded = key(31);
     let forged = fold(&q, 9, Vec::new(), Vec::new(), Vec::new()).sign(&unbonded);
     let carried = ChildNet { rows: Vec::new(), declared: Vec::new(), child: Child::Carried(Box::new(forged)), included_rows: Vec::new(), included_declared: Vec::new(), rate: [(1, 1); 4] };

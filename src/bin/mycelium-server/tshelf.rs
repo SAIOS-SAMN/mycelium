@@ -10,7 +10,7 @@
 //! at all.
 
 use crate::Mesh;
-use mycelium::chronometry::tuniversal::{record, Admitted, Keepers, LastSigned, Origin, Recorded, Refused, Residual, TPoint, TShelf, Tick, TickReading};
+use mycelium::chronometry::tuniversal::{record, Admitted, Keepers, LastSigned, Origin, KeeperRefusal, Recorded, Residual, TPoint, TShelf, Tick, TickReading};
 use mycelium::observe;
 use std::sync::{LazyLock, Mutex};
 
@@ -189,7 +189,7 @@ pub(crate) fn sign_tick(mesh: &Mesh, tick: Option<Tick>) -> Option<Vec<TickReadi
 
 /// 78.152b — WHY A PUSHED TICK WAS NOT HEARD.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum TickRefused {
+pub(crate) enum TickRefusal {
     /// The frame does not read whole as `ACT_TICK`.
     Unreadable,
     /// Its keeper is no peer court this mesh knows (one whose signed digest
@@ -198,7 +198,7 @@ pub(crate) enum TickRefused {
     /// This court has adopted no origin: no reading verifies here yet.
     NoOrigin,
     /// The ring did not admit (TU-2), by name.
-    Ring(Refused),
+    Ring(KeeperRefusal),
 }
 
 /// 78.152b — A KEEPER'S RING PUSHED AS `ACT_TICK`, HEARD AT THE DOOR WITH NO
@@ -206,15 +206,15 @@ pub(crate) enum TickRefused {
 /// as a digest's ring is (`hear_ring`). It takes the mesh's peer table, the
 /// origin and the keepers' own lock, one at a time, and never the kernel —
 /// it is not handed one.
-pub(crate) fn hear_tick(mesh: &Mesh, body: &[u8]) -> Result<Admitted, TickRefused> {
-    let (vk, ring) = mycelium::anastome::dialogue::decode_tick(body).ok_or(TickRefused::Unreadable)?;
+pub(crate) fn hear_tick(mesh: &Mesh, body: &[u8]) -> Result<Admitted, TickRefusal> {
+    let (vk, ring) = mycelium::anastome::dialogue::decode_tick(body).ok_or(TickRefusal::Unreadable)?;
     let known = vk != mesh.vk && mesh.addrs.lock().is_ok_and(|a| a.contains(&vk));
     if !known {
-        return Err(TickRefused::Stranger);
+        return Err(TickRefusal::Stranger);
     }
     match hear_ring(mesh, vk, ring) {
-        None => Err(TickRefused::NoOrigin),
-        Some(r) => r.map_err(TickRefused::Ring),
+        None => Err(TickRefusal::NoOrigin),
+        Some(r) => r.map_err(TickRefusal::Ring),
     }
 }
 
@@ -222,7 +222,7 @@ pub(crate) fn hear_tick(mesh: &Mesh, body: &[u8]) -> Result<Admitted, TickRefuse
 /// admitted, a refusal counted by name, the final point raised (TU-3), and
 /// the residual (TU-4) written to the journal where it moved. `None` before
 /// an origin is adopted.
-pub(crate) fn hear_ring(mesh: &Mesh, vk: [u8; 32], ring: Vec<TickReading>) -> Option<Result<Admitted, Refused>> {
+pub(crate) fn hear_ring(mesh: &Mesh, vk: [u8; 32], ring: Vec<TickReading>) -> Option<Result<Admitted, KeeperRefusal>> {
     let origin = origin(mesh)?;
     with_keepers(mesh, origin, |k, last| {
         let out = k.admit(vk, ring);

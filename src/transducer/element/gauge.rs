@@ -172,7 +172,7 @@ pub(crate) type ChargeRow = (Vec<u8>, Vec<Assignment>);
 
 /// WHY A HUE MAP HAS NO PERIOD ON A BASE, by name (78.43(2)).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PeriodRefused {
+pub enum PeriodRefusal {
     /// A hue the base carries is not in the map's domain: the orbit ends at
     /// the first step (the traversal's `apply_hue_map` answered `None`).
     OffDomain,
@@ -192,20 +192,20 @@ pub enum PeriodRefused {
 ///
 /// `u64` by the type's domain: a permutation of the u8 hues has order up to
 /// Landau's g(256) ≈ 2⁵⁴. A base of no moving hue returns at once: 1.
-pub fn orbit_period(sigma: &[(u8, u8)], base: &[(u8, u8)]) -> Result<u64, PeriodRefused> {
+pub fn orbit_period(sigma: &[(u8, u8)], base: &[(u8, u8)]) -> Result<u64, PeriodRefusal> {
     let listed = |h: u8| sigma.iter().any(|(f, _)| *f == h);
     if !base.iter().all(|&(b, a)| listed(b) && listed(a)) {
-        return Err(PeriodRefused::OffDomain);
+        return Err(PeriodRefusal::OffDomain);
     }
     if !gauge_is_perm(sigma) {
-        return Err(PeriodRefused::NotAPermutation);
+        return Err(PeriodRefusal::NotAPermutation);
     }
     let carried = |c: &[u8]| base.iter().any(|&(b, a)| c.contains(&b) || c.contains(&a));
     let mut period = 1u64;
     for c in crate::transducer::sentence::hue_cycles(sigma).iter().filter(|c| carried(c)) {
-        let len = u64::try_from(c.len()).map_err(|_| PeriodRefused::PastCarrier)?;
+        let len = u64::try_from(c.len()).map_err(|_| PeriodRefusal::PastCarrier)?;
         let g = num_integer::Integer::gcd(&period, &len);
-        period = (period / g).checked_mul(len).ok_or(PeriodRefused::PastCarrier)?;
+        period = (period / g).checked_mul(len).ok_or(PeriodRefusal::PastCarrier)?;
     }
     Ok(period)
 }

@@ -503,7 +503,7 @@ pub enum ChildRefusal {
     /// Its stamp names no admitted fold on this court's line.
     NotOnLine,
     /// Its rows do not prove against the commitment its receipt holds.
-    Mismatch,
+    Mismatched,
     /// It was folded by a tier of another domain.
     ForeignDomain,
     /// What this parent includes passes what the child has left, on this
@@ -519,7 +519,7 @@ pub enum ChildRefusal {
     Broken,
     /// 78.138 — a carried line's fold over its line's current head: an empty
     /// span claiming nets.
-    Repeat,
+    Repeated,
 }
 
 /// WHAT THE COURT ANSWERED.
@@ -549,7 +549,7 @@ pub enum Uplinked {
     /// head whose commitments differ from the fold admitted there: an empty
     /// span claiming nets. (A fold byte-identical to it is answered with
     /// its original receipt, sealing nothing.)
-    Repeat,
+    Repeated,
     /// 78.138 — only the ancients uplink: the folding tier is not its
     /// domain's reserve. A line's fold is carried in its reserve's.
     NotReserve,
@@ -581,7 +581,7 @@ pub enum TaxRefusal {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SideRefusal {
     /// No handoff of that id on this court.
-    Unknown,
+    UnknownHandoff,
     /// The side is not this fold's tier's: OUT is the sender's; IN the
     /// receiver's once accepted, the sender's once returned.
     NotThisTier,
@@ -594,11 +594,11 @@ pub enum SideRefusal {
 }
 
 impl SideRefusal {
-    const ALL: [SideRefusal; 5] = [SideRefusal::Unknown, SideRefusal::NotThisTier, SideRefusal::NotYet, SideRefusal::Consumed, SideRefusal::Repeated];
+    const ALL: [SideRefusal; 5] = [SideRefusal::UnknownHandoff, SideRefusal::NotThisTier, SideRefusal::NotYet, SideRefusal::Consumed, SideRefusal::Repeated];
 
     fn byte(self) -> u8 {
         match self {
-            SideRefusal::Unknown => 0,
+            SideRefusal::UnknownHandoff => 0,
             SideRefusal::NotThisTier => 1,
             SideRefusal::NotYet => 2,
             SideRefusal::Consumed => 3,
@@ -644,13 +644,13 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
             out.extend_from_slice(&index.to_le_bytes());
             let (code, lane) = match why {
                 ChildRefusal::NotOnLine => (0u8, 0usize),
-                ChildRefusal::Mismatch => (1, 0),
+                ChildRefusal::Mismatched => (1, 0),
                 ChildRefusal::ForeignDomain => (2, 0),
                 ChildRefusal::OverIncluded { lane } => (3, *lane),
                 ChildRefusal::Unsigned => (4, 0),
                 ChildRefusal::Unbonded => (5, 0),
                 ChildRefusal::Broken => (6, 0),
-                ChildRefusal::Repeat => (7, 0),
+                ChildRefusal::Repeated => (7, 0),
             };
             out.push(code);
             out.extend_from_slice(&lane.to_le_bytes()[..1]);
@@ -660,7 +660,7 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
             out.extend_from_slice(&index.to_le_bytes());
             out.push(why.byte());
         }
-        Uplinked::Repeat => out.push(8),
+        Uplinked::Repeated => out.push(8),
         Uplinked::NotReserve => out.push(9),
         Uplinked::Tax(why) => {
             out.push(10);
@@ -723,13 +723,13 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
             p = 7;
             let why = match code {
                 0 => ChildRefusal::NotOnLine,
-                1 => ChildRefusal::Mismatch,
+                1 => ChildRefusal::Mismatched,
                 2 => ChildRefusal::ForeignDomain,
                 3 => ChildRefusal::OverIncluded { lane },
                 4 => ChildRefusal::Unsigned,
                 5 => ChildRefusal::Unbonded,
                 6 => ChildRefusal::Broken,
-                7 => ChildRefusal::Repeat,
+                7 => ChildRefusal::Repeated,
                 _ => return None,
             };
             Uplinked::ChildRefused { index, why }
@@ -740,7 +740,7 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
             p = 6;
             Uplinked::HandoffRefused { index, why: SideRefusal::ALL.into_iter().find(|r| r.byte() == code)? }
         }
-        8 => Uplinked::Repeat,
+        8 => Uplinked::Repeated,
         9 => Uplinked::NotReserve,
         10 => {
             let (code, lane) = (*b.get(1)?, usize::from(*b.get(2)?));

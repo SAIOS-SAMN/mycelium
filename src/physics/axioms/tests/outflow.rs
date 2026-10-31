@@ -3,7 +3,7 @@
 // on n = 3, coefficient for coefficient, and on S⁶⁰ and S³⁶⁰ each plane's own
 // outflow, read exactly.
 
-use crate::physics::outflow::{keeping, outflow_planes, Bivector, NullPoint, Plane, Refused, SourceN, Vector};
+use crate::physics::outflow::{keeping, outflow_planes, Bivector, NullPoint, Plane, OutflowRefusal, SourceN, Vector};
 use crate::physics::source::{geoid_vector, Source};
 use crate::transducer::cga::{self, Mv, E1, E2, E3, EM, EP};
 use num_rational::BigRational;
@@ -121,21 +121,21 @@ fn outflow_planes_reads_each_plane_at_any_dimension() {
 fn source_n_refuses_by_name() {
     let (sigma, p, l) = turned(61, 49, 7);
     let zero = vec![BigRational::zero(); 63];
-    assert_eq!(NullPoint::new(zero.clone()), Err(Refused::NotNull));
+    assert_eq!(NullPoint::new(zero.clone()), Err(OutflowRefusal::NotNull));
     let mut off = zero.clone();
     off[0] = BigRational::one();
-    assert_eq!(NullPoint::new(off), Err(Refused::NotNull), "e₁ is no null point");
+    assert_eq!(NullPoint::new(off), Err(OutflowRefusal::NotNull), "e₁ is no null point");
     let mut light = zero.clone();
     (light[61], light[62]) = (BigRational::one(), BigRational::one());
     let light = Vector::new(light).expect("a vector");
-    assert_eq!(keeping(&light, &l), Err(Refused::NoSphere), "e₊ + e₋ squares to zero: a point, not a sphere");
+    assert_eq!(keeping(&light, &l), Err(OutflowRefusal::NoSphere), "e₊ + e₋ squares to zero: a point, not a sphere");
     let mut tilted = zero.clone();
     // 1 + 4 + 4 + 16 − 25 = 0: null, with an e₊ part.
     (tilted[0], tilted[1], tilted[2], tilted[61], tilted[62]) = (q(1, 1), q(2, 1), q(2, 1), q(4, 1), q(5, 1));
     let tilted = NullPoint::new(tilted).expect("null");
-    assert_eq!(SourceN::of(&sigma, &tilted, &l), Err(Refused::OffGeoid), "on e₊ the pivot's e₊ part puts it off");
+    assert_eq!(SourceN::of(&sigma, &tilted, &l), Err(OutflowRefusal::OffGeoid), "on e₊ the pivot's e₊ part puts it off");
     let far = Bivector::new(61, vec![(59, 60, BigRational::one())]).expect("the last plane");
-    assert_eq!(SourceN::of(&sigma, &p, &far), Err(Refused::Still), "a plane holding nothing of the pivot moves it not");
-    assert_eq!(Bivector::new(61, vec![(0, 63, BigRational::one())]), Err(Refused::Axis));
-    assert_eq!(keeping(&Vector::new(vec![BigRational::one(); 5]).expect("n = 3"), &l), Err(Refused::Dimension));
+    assert_eq!(SourceN::of(&sigma, &p, &far), Err(OutflowRefusal::Still), "a plane holding nothing of the pivot moves it not");
+    assert_eq!(Bivector::new(61, vec![(0, 63, BigRational::one())]), Err(OutflowRefusal::Axis));
+    assert_eq!(keeping(&Vector::new(vec![BigRational::one(); 5]).expect("n = 3"), &l), Err(OutflowRefusal::Dimension));
 }

@@ -68,7 +68,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>, asked: &str) -> ! {
     // 78.93 B0 — a refusal on the record, by its kind and the refused
     // sentence's chart.
     for r in &why.refused {
-        let kind = match mycelium::transducer::sentence::RefusalKind::from_byte(r.kind) {
+        let kind = match mycelium::transducer::sentence::RefusalKind::of(r.kind) {
             Some(k) => k.label(),
             None => "a kind this build does not name",
         };

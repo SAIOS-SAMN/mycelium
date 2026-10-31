@@ -44,7 +44,7 @@ type Q = BigRational;
 
 /// WHY THE LAW REFUSED, BY NAME.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Refused {
+pub enum OutflowRefusal {
     /// Fewer than three coordinates: no base axis beside `e₊`, `e₋`.
     NoBase,
     /// Two objects of different dimension.
@@ -83,10 +83,10 @@ pub struct Vector {
 impl Vector {
     /// The vector of `coords`; `n = coords.len() − 2` read off them. Refused
     /// where there is no base axis.
-    pub fn new(coords: Vec<Q>) -> Result<Vector, Refused> {
+    pub fn new(coords: Vec<Q>) -> Result<Vector, OutflowRefusal> {
         match coords.len() >= 3 {
             true => Ok(Vector { coords }),
-            false => Err(Refused::NoBase),
+            false => Err(OutflowRefusal::NoBase),
         }
     }
 
@@ -105,9 +105,9 @@ impl Vector {
     }
 
     /// THE INNER PRODUCT, in the model's metric. Refused across dimensions.
-    pub fn dot(&self, o: &Vector) -> Result<Q, Refused> {
+    pub fn dot(&self, o: &Vector) -> Result<Q, OutflowRefusal> {
         if o.n() != self.n() {
-            return Err(Refused::Dimension);
+            return Err(OutflowRefusal::Dimension);
         }
         let n = self.n();
         Ok(self.coords.iter().zip(&o.coords).enumerate().fold(Q::zero(), |acc, (a, (x, y))| acc + x * y * square(n, a)))
@@ -123,11 +123,11 @@ impl Vector {
 pub struct NullPoint(Vector);
 
 impl NullPoint {
-    pub fn new(coords: Vec<Q>) -> Result<NullPoint, Refused> {
+    pub fn new(coords: Vec<Q>) -> Result<NullPoint, OutflowRefusal> {
         let v = Vector::new(coords)?;
         match !v.is_zero() && v.dot(&v)?.is_zero() {
             true => Ok(NullPoint(v)),
-            false => Err(Refused::NotNull),
+            false => Err(OutflowRefusal::NotNull),
         }
     }
 
@@ -149,14 +149,14 @@ impl Bivector {
     /// The bivector `Σ c eᵢ ∧ eⱼ` over `n` base axes: a pair given `i > j` is
     /// `−c eⱼ ∧ eᵢ`, one with `i = j` is zero, pairs given twice add. Refused
     /// where an axis is past the coordinates or there is no base axis.
-    pub fn new(n: usize, terms: Vec<(usize, usize, Q)>) -> Result<Bivector, Refused> {
+    pub fn new(n: usize, terms: Vec<(usize, usize, Q)>) -> Result<Bivector, OutflowRefusal> {
         if n == 0 {
-            return Err(Refused::NoBase);
+            return Err(OutflowRefusal::NoBase);
         }
         let mut out: Vec<(usize, usize, Q)> = Vec::with_capacity(terms.len());
         for (i, j, c) in terms {
             if i > n + 1 || j > n + 1 {
-                return Err(Refused::Axis);
+                return Err(OutflowRefusal::Axis);
             }
             let (i, j, c) = match i < j {
                 true => (i, j, c),
@@ -201,9 +201,9 @@ impl Bivector {
     }
 
     /// THE OUTER PRODUCT `a ∧ b`: on each pair `i < j`, `aᵢbⱼ − aⱼbᵢ`.
-    pub fn wedge(a: &Vector, b: &Vector) -> Result<Bivector, Refused> {
+    pub fn wedge(a: &Vector, b: &Vector) -> Result<Bivector, OutflowRefusal> {
         if a.n() != b.n() {
-            return Err(Refused::Dimension);
+            return Err(OutflowRefusal::Dimension);
         }
         let d = a.coords.len();
         let mut terms = Vec::new();
@@ -219,9 +219,9 @@ impl Bivector {
     }
 
     /// THE LEFT CONTRACTION `x·B`: `x·(eᵢ ∧ eⱼ) = (x·eᵢ) eⱼ − (x·eⱼ) eᵢ`.
-    pub fn contracted_by(&self, x: &Vector) -> Result<Vector, Refused> {
+    pub fn contracted_by(&self, x: &Vector) -> Result<Vector, OutflowRefusal> {
         if x.n() != self.n {
-            return Err(Refused::Dimension);
+            return Err(OutflowRefusal::Dimension);
         }
         let n = self.n;
         let mut out = vec![Q::zero(); n + 2];
@@ -232,7 +232,7 @@ impl Bivector {
         Ok(Vector { coords: out })
     }
 
-    fn sub(&self, o: &Bivector) -> Result<Bivector, Refused> {
+    fn sub(&self, o: &Bivector) -> Result<Bivector, OutflowRefusal> {
         let mut terms = self.terms.clone();
         terms.extend(o.terms.iter().map(|(i, j, c)| (*i, *j, -c.clone())));
         Bivector::new(self.n, terms)
@@ -242,16 +242,16 @@ impl Bivector {
 /// THE PART OF `l` THAT KEEPS THE GEOID `sigma`: `½(L + σLσ⁻¹) = L −
 /// σ∧(σ·L)/σ²`, verified to commute with `σ` (`σ·K = 0`). Refused where `σ`
 /// is null (a point, not a sphere) or the dimensions differ.
-pub fn keeping(sigma: &Vector, l: &Bivector) -> Result<Bivector, Refused> {
+pub fn keeping(sigma: &Vector, l: &Bivector) -> Result<Bivector, OutflowRefusal> {
     let s2 = sigma.dot(sigma)?;
     if s2.is_zero() {
-        return Err(Refused::NoSphere);
+        return Err(OutflowRefusal::NoSphere);
     }
     let across = Bivector::wedge(sigma, &l.contracted_by(sigma)?.scaled(&(Q::one() / s2)))?;
     let k = l.sub(&across)?;
     match k.contracted_by(sigma)?.is_zero() {
         true => Ok(k),
-        false => Err(Refused::Unverified),
+        false => Err(OutflowRefusal::Unverified),
     }
 }
 
@@ -288,17 +288,17 @@ impl SourceN {
     /// THE SOURCE AT `p` ON THE GEOID `sigma`, pushed by the kept generator
     /// `k`: `N = P ∧ (P·K)`, verified non-zero, null, fixing `P` and keeping
     /// `σ`; refused by name otherwise.
-    pub fn of(sigma: &Vector, p: &NullPoint, k: &Bivector) -> Result<SourceN, Refused> {
+    pub fn of(sigma: &Vector, p: &NullPoint, k: &Bivector) -> Result<SourceN, OutflowRefusal> {
         let pv = p.vector();
         if sigma.dot(sigma)?.is_zero() {
-            return Err(Refused::NoSphere);
+            return Err(OutflowRefusal::NoSphere);
         }
         if !pv.dot(sigma)?.is_zero() {
-            return Err(Refused::OffGeoid);
+            return Err(OutflowRefusal::OffGeoid);
         }
         let v = k.contracted_by(pv)?;
         if v.is_zero() {
-            return Err(Refused::Still);
+            return Err(OutflowRefusal::Still);
         }
         let n = Bivector::wedge(pv, &v)?;
         // N² = (P·v)² − P²v² for the blade P ∧ v; P² = 0 was checked at entry.
@@ -308,7 +308,7 @@ impl SourceN {
         let keeps = n.contracted_by(sigma)?.is_zero();
         match null && fixes && keeps {
             true => Ok(SourceN { at: p.clone(), velocity: v, generator: n }),
-            false => Err(Refused::Unverified),
+            false => Err(OutflowRefusal::Unverified),
         }
     }
 
@@ -332,7 +332,7 @@ impl SourceN {
 /// `sigma` (the module's law): the part of `l` keeping the geoid, the source
 /// it opens at `p`, and that source's outflow and direction on every base
 /// plane.
-pub fn outflow_planes(sigma: &Vector, p: &NullPoint, l: &Bivector) -> Result<Vec<PlaneFlow>, Refused> {
+pub fn outflow_planes(sigma: &Vector, p: &NullPoint, l: &Bivector) -> Result<Vec<PlaneFlow>, OutflowRefusal> {
     let k = keeping(sigma, l)?;
     Ok(SourceN::of(sigma, p, &k)?.planes())
 }

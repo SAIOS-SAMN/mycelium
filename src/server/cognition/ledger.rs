@@ -693,7 +693,7 @@ impl Court {
         };
         Some(match original() {
             Some(resent) => resent,
-            None => Uplinked::Repeat,
+            None => Uplinked::Repeated,
         })
     }
 
@@ -801,7 +801,7 @@ impl Court {
                 Child::Sealed(at) => {
                     let Some(sealed) = self.sealed_fold(at) else { return Err(refuse(ChildRefusal::NotOnLine)) };
                     if sealed.2 != c.rows_hash() {
-                        return Err(refuse(ChildRefusal::Mismatch));
+                        return Err(refuse(ChildRefusal::Mismatched));
                     }
                     (Place::On(at.key()), sealed)
                 }
@@ -816,7 +816,7 @@ impl Court {
                 return Err(refuse(ChildRefusal::ForeignDomain));
             }
             let (Some(rows), Some(declared)) = (Lanes::of(&c.rows), Lanes::of(&c.declared)) else {
-                return Err(refuse(ChildRefusal::Mismatch));
+                return Err(refuse(ChildRefusal::Mismatched));
             };
             let (Some(inc_rows), Some(inc_declared)) = (Lanes::of(&c.included_rows), Lanes::of(&c.included_declared)) else {
                 return Err(refuse(ChildRefusal::OverIncluded { lane: 0 }));
@@ -873,7 +873,7 @@ impl Court {
             return Err(refuse(ChildRefusal::Unbonded));
         }
         if fold.rows != c.rows || fold.declared != c.declared {
-            return Err(refuse(ChildRefusal::Mismatch));
+            return Err(refuse(ChildRefusal::Mismatched));
         }
         // Its span advances its line: over the head the court holds for it
         // (or this admission's last fold of it), never an empty span.
@@ -882,7 +882,7 @@ impl Court {
             None => self.ledgers.heads.get(&fold.tier).map_or([0; 32], |h| *h),
         };
         if head == fold.prefix {
-            return Err(refuse(ChildRefusal::Repeat));
+            return Err(refuse(ChildRefusal::Repeated));
         }
         if fold.handoffs.iter().any(|s| plan.sides.contains(s)) {
             return Err(refuse(ChildRefusal::Broken));

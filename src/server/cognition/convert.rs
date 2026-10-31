@@ -435,7 +435,7 @@ impl Court {
                 Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state: State::Offered { until } }
             }
             Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. } => {
-                let Some(held) = self.handoffs.conversions.get(&id).cloned() else { return refuse(R::Unknown) };
+                let Some(held) = self.handoffs.conversions.get(&id).cloned() else { return refuse(R::UnknownId) };
                 let State::Offered { until } = held.state else { return refuse(R::Answered) };
                 let expiring = matches!(h.handoff, Handoff::Expire { .. });
                 let filer = if expiring { held.holder } else { held.tier };
@@ -473,7 +473,7 @@ impl Court {
             | Handoff::Close { .. }
             | Handoff::Traverse { .. }
             | Handoff::Feed { .. }
-            | Handoff::Draw { .. } => refuse(R::Unknown),
+            | Handoff::Draw { .. } => refuse(R::UnknownId),
         }
     }
 

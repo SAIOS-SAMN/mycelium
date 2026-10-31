@@ -98,7 +98,7 @@ impl Carriage {
                 Some(()) => b.len() as u64,
                 None => 0,
             };
-            self.add(CARRIER_DELTA, r.kind.to_byte(), len);
+            self.add(CARRIER_DELTA, r.kind.byte(), len);
         }
     }
 

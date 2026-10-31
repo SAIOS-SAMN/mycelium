@@ -38,7 +38,7 @@ impl Mesh {
     }
 
     /// Court `to` admits `from`'s ring, as a digest carries it.
-    fn hear(&mut self, to: usize, from: usize) -> Result<Admitted, Refused> {
+    fn hear(&mut self, to: usize, from: usize) -> Result<Admitted, KeeperRefusal> {
         let ring = self.courts[from].own_ring();
         let keeper = vk(&self.keys[from]);
         self.courts[to].admit(keeper, ring)
@@ -104,18 +104,18 @@ fn admit_refuses_forged_signature_and_broken_parent() {
     // A reading signed by c's key presented as a's.
     let forged = TickReading::sign(&m.keys[2], &ORIGIN, tick(20, [9, 0, 0, 0], 1), [0; 32], Vec::new()).expect("writes");
     let as_a = TickReading { keeper: vk(&m.keys[0]), ..forged };
-    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![as_a.clone()]), Err(Refused::Signature));
+    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![as_a.clone()]), Err(KeeperRefusal::Signature));
     // A lane altered after signing.
     let mut altered = m.courts[0].own_ring().into_iter().next_back().expect("a reading");
     altered.tick.lanes[0] = 3;
-    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![altered]), Err(Refused::Signature));
+    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![altered]), Err(KeeperRefusal::Signature));
     // Signed by a, naming a parent that is not its last reading.
     let broken = TickReading::sign(&m.keys[0], &ORIGIN, tick(12, [3, 0, 0, 0], 1), [0xee; 32], Vec::new()).expect("writes");
-    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![broken]), Err(Refused::BrokenParent));
+    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![broken]), Err(KeeperRefusal::BrokenParent));
     // Another universe's reading does not verify here.
     let elsewhere = Origin { genesis: [1; 32], epoch: 146 };
     let r = TickReading::sign(&m.keys[0], &elsewhere, tick(13, [3, 0, 0, 0], 1), [0; 32], Vec::new()).expect("writes");
-    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![r]), Err(Refused::Signature));
+    assert_eq!(m.courts[1].admit(vk(&m.keys[0]), vec![r]), Err(KeeperRefusal::Signature));
     // And the honest line still extends.
     m.read(0, tick(14, [4, 0, 0, 0], 2));
     assert_eq!(m.hear(1, 0), Ok(Admitted::Extended(1)));

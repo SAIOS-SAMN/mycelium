@@ -148,7 +148,7 @@ fn factor_core(
                 )),
                 // Named and counted where it forms (A.17, 78.9).
                 false => {
-                    let _ = crate::transducer::sentence::Refused::CitationsDoNotCompose.noted();
+                    let _ = crate::transducer::sentence::ObstructionRefusal::CitationsDoNotCompose.noted();
                     return None;
                 }
             }

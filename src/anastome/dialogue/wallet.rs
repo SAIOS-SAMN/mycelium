@@ -186,7 +186,7 @@ pub enum StakeRefusal {
 }
 
 impl StakeRefusal {
-    fn code(self) -> u8 {
+    fn byte(self) -> u8 {
         match self {
             StakeRefusal::Unsigned => 1,
             StakeRefusal::Short => 2,
@@ -205,7 +205,7 @@ pub fn encode_stake_reply(r: &Result<[u64; 4], StakeRefusal>) -> Vec<u8> {
             put_lanes(&mut out, stake);
             out
         }
-        Err(why) => vec![0, why.code()],
+        Err(why) => vec![0, why.byte()],
     }
 }
 
@@ -213,7 +213,7 @@ pub fn decode_stake_reply(b: &[u8]) -> Option<Result<[u64; 4], StakeRefusal>> {
     match b {
         [0, code] => {
             let all = [StakeRefusal::Unsigned, StakeRefusal::Short, StakeRefusal::Claimed, StakeRefusal::Nothing, StakeRefusal::Spent];
-            Some(Err(all.into_iter().find(|r| r.code() == *code)?))
+            Some(Err(all.into_iter().find(|r| r.byte() == *code)?))
         }
         [1, rest @ ..] => {
             let mut p = 0;

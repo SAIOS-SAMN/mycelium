@@ -52,7 +52,7 @@ use num_traits::{One, Zero};
 
 /// WHY A FRAME OR A READING CARRIED BY IT IS REFUSED, by name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Refused {
+pub enum FrameRefusal {
     /// A move's vector, or the reading, over a different number of axes.
     Unmatched,
     /// A dilation by a ratio not above one (an expand or a contract is named
@@ -111,10 +111,10 @@ impl Move {
     }
 
     /// The point `x` carried by this move.
-    pub fn apply(&self, x: &[Q]) -> Result<Vec<Q>, Refused> {
+    pub fn apply(&self, x: &[Q]) -> Result<Vec<Q>, FrameRefusal> {
         let matched = |v: &[Q]| match v.len() == x.len() {
             true => Ok(()),
-            false => Err(Refused::Unmatched),
+            false => Err(FrameRefusal::Unmatched),
         };
         match self {
             Move::Stretch(t) => {
@@ -125,17 +125,17 @@ impl Move {
                 matched(v)?;
                 let vv = dot(v, v);
                 if vv.is_zero() {
-                    return Err(Refused::NoMirror);
+                    return Err(FrameRefusal::NoMirror);
                 }
                 if v.iter().filter(|c| !c.is_zero()).count() != 1 {
-                    return Err(Refused::NotAxial);
+                    return Err(FrameRefusal::NotAxial);
                 }
                 let k = Q::from_integer(2.into()) * dot(v, x) / vv;
                 Ok(x.iter().zip(v).map(|(a, b)| a - &k * b).collect())
             }
             Move::Expand(r) | Move::Contract(r) => {
                 if r <= &Q::one() {
-                    return Err(Refused::Ratio);
+                    return Err(FrameRefusal::Ratio);
                 }
                 let s = match self {
                     Move::Expand(_) => r.clone(),
@@ -148,15 +148,15 @@ impl Move {
                 let xx = dot(x, x);
                 let den = Q::one() + Q::from_integer(2.into()) * dot(b, x) + dot(b, b) * &xx;
                 if den.is_zero() {
-                    return Err(Refused::AtPole);
+                    return Err(FrameRefusal::AtPole);
                 }
                 Ok(x.iter().zip(b).map(|(a, c)| (a + c * &xx) / &den).collect())
             }
             Move::Turn { plane: (i, j), degrees } => {
                 if i == j || *i >= x.len() || *j >= x.len() {
-                    return Err(Refused::NoPlane);
+                    return Err(FrameRefusal::NoPlane);
                 }
-                let (c, s) = quarter_turn(degrees).ok_or(Refused::Inexact)?;
+                let (c, s) = quarter_turn(degrees).ok_or(FrameRefusal::Inexact)?;
                 let mut out = x.to_vec();
                 let (xi, xj) = (x[*i].clone(), x[*j].clone());
                 out[*i] = &xi * &c - &xj * &s;
@@ -226,7 +226,7 @@ impl Frame {
     /// consecutive turns in one plane composed first by adding the turns'
     /// degrees, so a run that sums to whole 90° turns carries exactly
     /// even where its parts would not.
-    pub fn carry(&self, x: &[Q]) -> Result<Vec<Q>, Refused> {
+    pub fn carry(&self, x: &[Q]) -> Result<Vec<Q>, FrameRefusal> {
         self.composed().iter().try_fold(x.to_vec(), |p, m| m.apply(&p))
     }
 
@@ -250,7 +250,7 @@ pub trait ReadIn {
     fn reading_point(&self) -> Vec<Q>;
 
     /// The form's reading carried into `frame`.
-    fn read_in(&self, frame: &Frame) -> Result<Vec<Q>, Refused> {
+    fn read_in(&self, frame: &Frame) -> Result<Vec<Q>, FrameRefusal> {
         frame.carry(&self.reading_point())
     }
 }
@@ -317,7 +317,7 @@ mod tests {
         assert_eq!(half_turn.carry(&x), Move::Turn { plane: (0, 1), degrees: q(180, 1) }.apply(&x), "the turn of 180°");
         let one = Move::Twist(v(&[(0, 1), (3, 1)])).apply(&x).expect("reflected");
         assert_eq!(dot(&one, &one), dot(&x, &x), "a twist keeps the distance");
-        assert_eq!(Move::Twist(v(&[(2, 1), (1, 1)])).apply(&x), Err(Refused::NotAxial), "a mirror off the axes: refused");
+        assert_eq!(Move::Twist(v(&[(2, 1), (1, 1)])).apply(&x), Err(FrameRefusal::NotAxial), "a mirror off the axes: refused");
     }
 
     /// AN ORDERED TURN IN DEGREES: held exactly as its angle, undone by its
@@ -331,10 +331,10 @@ mod tests {
         assert_eq!(quarter.apply(&x), Ok(v(&[(2, 7), (3, 5), (1, 1)])), "a 90° turn from axis 0 toward axis 1");
         assert_eq!(quarter.inverse().apply(&quarter.apply(&x).expect("turned")), Ok(x.clone()), "undone by its negation");
         let thirty = Move::Turn { plane: (0, 1), degrees: q(30, 1) };
-        assert_eq!(thirty.apply(&x), Err(Refused::Inexact), "30° alone: refused, never rounded");
+        assert_eq!(thirty.apply(&x), Err(FrameRefusal::Inexact), "30° alone: refused, never rounded");
         let three = Frame::identity().then(thirty.clone()).then(thirty.clone()).then(thirty);
         assert_eq!(three.carry(&x), quarter.apply(&x), "three turns of 30° in one plane compose to 90°, exactly");
-        assert_eq!(Move::Turn { plane: (1, 1), degrees: q(90, 1) }.apply(&x), Err(Refused::NoPlane));
+        assert_eq!(Move::Turn { plane: (1, 1), degrees: q(90, 1) }.apply(&x), Err(FrameRefusal::NoPlane));
     }
 
     /// REFUSED BY NAME: a bend's pole carried to infinity, a mirror of zero, a
@@ -342,10 +342,10 @@ mod tests {
     #[test]
     fn move_apply_refuses_by_name() {
         // The pole of a bend by b is x = −b/|b|².
-        assert_eq!(Move::Bend(v(&[(1, 2), (0, 1)])).apply(&v(&[(-2, 1), (0, 1)])), Err(Refused::AtPole));
-        assert_eq!(Move::Twist(v(&[(0, 1), (0, 1)])).apply(&v(&[(1, 1), (1, 1)])), Err(Refused::NoMirror));
-        assert_eq!(Move::Expand(q(1, 1)).apply(&v(&[(1, 1)])), Err(Refused::Ratio));
-        assert_eq!(Move::Contract(q(1, 2)).apply(&v(&[(1, 1)])), Err(Refused::Ratio));
-        assert_eq!(Move::Stretch(v(&[(1, 1)])).apply(&v(&[(1, 1), (1, 1)])), Err(Refused::Unmatched));
+        assert_eq!(Move::Bend(v(&[(1, 2), (0, 1)])).apply(&v(&[(-2, 1), (0, 1)])), Err(FrameRefusal::AtPole));
+        assert_eq!(Move::Twist(v(&[(0, 1), (0, 1)])).apply(&v(&[(1, 1), (1, 1)])), Err(FrameRefusal::NoMirror));
+        assert_eq!(Move::Expand(q(1, 1)).apply(&v(&[(1, 1)])), Err(FrameRefusal::Ratio));
+        assert_eq!(Move::Contract(q(1, 2)).apply(&v(&[(1, 1)])), Err(FrameRefusal::Ratio));
+        assert_eq!(Move::Stretch(v(&[(1, 1)])).apply(&v(&[(1, 1), (1, 1)])), Err(FrameRefusal::Unmatched));
     }
 }

@@ -335,7 +335,7 @@ impl Rotor {
         let (x, y, kind) = self.class_invariants()?;
         put_q(out, &x);
         put_q(out, &y);
-        out.push(kind.as_u8());
+        out.push(kind.byte());
         Some(())
     }
 
@@ -348,11 +348,11 @@ impl Rotor {
         let mut key = vec![crate::transducer::address::TAG_CLASS];
         let x = take_q(b, &mut p)?;
         let y = take_q(b, &mut p)?;
-        let kind = crate::network::nerve::coord::BivectorKind::from_u8(*b.get(p)?)?;
+        let kind = crate::network::nerve::coord::BivectorKind::of(*b.get(p)?)?;
         p += 1;
         put_q(&mut key, &x);
         put_q(&mut key, &y);
-        key.push(kind.as_u8());
+        key.push(kind.byte());
         *pos = p;
         Some(crate::transducer::address::Address::new(key))
     }

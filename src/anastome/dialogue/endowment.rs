@@ -150,7 +150,7 @@ pub enum GrantRefusal {
     /// The domain's last grant is not yet applied in its ledger: one in flight.
     InFlight,
     /// What the court has earned does not cover the grant on a lane.
-    EndowmentShort,
+    Short,
     /// A price or a sum passes its carrier.
     Overflow,
     /// The court's line could not take the act.
@@ -170,7 +170,7 @@ impl GrantRefusal {
             GrantRefusal::Malformed => 5,
             GrantRefusal::Granted => 6,
             GrantRefusal::InFlight => 7,
-            GrantRefusal::EndowmentShort => 8,
+            GrantRefusal::Short => 8,
             GrantRefusal::Overflow => 9,
             GrantRefusal::LineRefused => 10,
             GrantRefusal::NoNewClosures => 11,
@@ -186,7 +186,7 @@ impl GrantRefusal {
             GrantRefusal::Malformed,
             GrantRefusal::Granted,
             GrantRefusal::InFlight,
-            GrantRefusal::EndowmentShort,
+            GrantRefusal::Short,
             GrantRefusal::Overflow,
             GrantRefusal::LineRefused,
             GrantRefusal::NoNewClosures,

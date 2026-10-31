@@ -5595,7 +5595,7 @@ A mind's diagnostics are typed readings (CV5), never tagged log lines.
 What still binds from this section: a refusal kind, its coordinate and a
 demand kind are written by the same words as in 34.2; a probe reply is a
 reading, the settled μ⃗ per lane, the closure with its versor and the
-remaining μ⃗, with no outcome code; and a mint refusal is a typed `Refused`
+remaining μ⃗, with no outcome code; and a mint refusal is a typed `ObstructionRefusal`
 arm, whose one line `mint refused ({arm}): {proof} [{kind}] demands
 [{kinds}]` is written by `mint_refusal_line`
 (`src/transducer/family/deflation.rs`).
@@ -14607,7 +14607,7 @@ line, or both. Each action states, as its type:
 `ActKind` is the ledger's name for `Action` (a re-export of `Action`),
 and every `ACT_*` is the wire's spelling of a table coordinate
 (`Action::X.byte()`), never a second carrier. The court's dispatch reads
-`Action::of_tag`: a byte that names no action is not answered, a retired
+`Action::of_wire`: a byte that names no action is not answered, a retired
 action is refused, and the one sealing door (`append`, `admit`) refuses an
 action no court seals, so an observation cannot write a receipt, as a type
 fact. No measurement is free: an observation's stroke is the court's
@@ -14615,12 +14615,12 @@ metabolism spent on the asker's question, metered per action, and charged
 to the asker's wallet as the tax of 78.93 (d) once the financial mind
 stands; until then the court bears and counts it. Code:
 `src/physics/actions.rs` (`Action`, `Kind`, `ACTIONS`, `COURT_RANGE`,
-`Action::of_tag`, `Action::laws`), `src/chronometry/receipt.rs` (`ActKind`),
+`Action::of_wire`, `Action::laws`), `src/chronometry/receipt.rs` (`ActKind`),
 `src/anastome/dialogue/acts.rs`, `src/chronometry/chain.rs`,
 `src/bin/mycelium-server/judge/mod.rs`; tests in
 `src/physics/actions/tests.rs` (`action_of_reads_each_byte_back_once`,
 `sealed_excludes_observations_and_transitions_answer_every_law`,
-`of_tag_reads_each_wire_spelling_as_table_action`).
+`of_wire_reads_each_wire_spelling_as_table_action`).
 
 ### 78.95 Words, not letters: the progenitor's board builds words, and advanced linguistics lives in the anastome
 
@@ -15301,7 +15301,7 @@ A fold's rows stay with its tier (LD0) and its receipt commits to them by hash; 
 - **The challenge act**, `ACT_CHALLENGE` (0x3F), signed by its filer and sealed by `Cite::Challenge` (tag 8): *Demand* (the tier must publish its prefix within `W`; one demand per fold); *Evidence* (the court replays at once: `Σ own rows = rows − Σ rate · included rows` per identity per lane in exact rationals and `Σ own declared = declared`; UPHELD seals the line head reached, otherwise FALSIFIED; the entries are not held); *Open* and *Parts* (a span larger than one frame's `BODY_BUDGET` is published in parts and judged once its head reaches the prefix; a single act past the budget is refused by name, a frame past it refused at the door); *Default* (a demand's deadline passed unpublished falsifies the fold); *Correction* (the tier whose fold closed an arbitrage books it as a declared G source to a named holder, discharging the obstruction); *Withdraw* (kind 9: the fold's own tier withdraws its own demand once, before any default is claimed, reopening `W`; an external challenger's demand is never withdrawn). Reads, sealing nothing: a fold's finality, a domain's open obstructions, a tier's line head.
 - **Reversal.** A falsified fold and every fold that netted it, transitively, are reversed: each one's netting returns to the children's remainders, its edges leave the domain's gauge (re-derived, law 12), its bookings go; the ancestors read UNWOUND and must refile, never silently re-netted. The bond's slash is 78.129.
 - **Finality is recursive, read and never stored.** A fold is FINAL when its window and any demand's deadline have passed, no demand stands defaulted and unclaimed, no open obstruction was closed by it, and every fold it nets is final, so a child can never be falsified after an ancestor reads final. Final carries UPHELD or unchallenged; otherwise a fold reads provisional, blocked, falsified, unwound, unrecorded, or PRE-LINE (sealed before this law: grandfathered as final and unchallenged, demands against it refused).
-- **Nothing is sealed twice.** A fold over its tier's current head is answered without sealing: byte-identical to the fold admitted there it is a resend, answered with the original receipt; otherwise `Uplinked::Repeat`. A resent handoff offer and a resent demand by the same filer are each answered with the original receipt; the SDK never resends a sealing act once written.
+- **Nothing is sealed twice.** A fold over its tier's current head is answered without sealing: byte-identical to the fold admitted there it is a resend, answered with the original receipt; otherwise `Uplinked::Repeated`. A resent handoff offer and a resent demand by the same filer are each answered with the original receipt; the SDK never resends a sealing act once written.
 - **The windows settle.** At each orbit's close `settle_windows` prunes a record read final to a stub (its coordinates and whether it was upheld); a stub leaves once the fold has no value in flight, no unfinished fold nets it and the hot line no longer holds its receipt; finished streams and empty remainders leave. What stays is each fold within its window and the open remainders.
 
 Code: `src/physics/laws.rs` (`CHALLENGE_WINDOW`), `src/anastome/dialogue/challenge.rs`, `src/server/cognition/challenge.rs` (`finality`, `settle_windows`, `reconstructs`); held in the `LEAF_CHALLENGES` leaf.
@@ -15370,7 +15370,7 @@ Code: `src/server/cognition/mouth.rs` (`throat_key`), `src/server/cognition/hand
 
 The ancients rarely travel; the progenitor lines build the highways and wormholes, and the ancients keep them.
 
-- **A line offers.** A mouth or tube may be offered by any tier of its domain, a progenitor line or the reserve; the far end is accepted by its domain's reserve (`NotReserve` otherwise). Where a line builds, its own reserve is the keeper (`BadKeeper` otherwise); a reserve building across domains may name either reserve. The builder banks the throat (78.135) from its own μ-S, and the toll's split may pay the building line (78.133).
+- **A line offers.** A mouth or tube may be offered by any tier of its domain, a progenitor line or the reserve; the far end is accepted by its domain's reserve (`NotReserve` otherwise). Where a line builds, its own reserve is the keeper (`NotKeeper` otherwise); a reserve building across domains may name either reserve. The builder banks the throat (78.135) from its own μ-S, and the toll's split may pay the building line (78.133).
 - **A road inside one domain.** A mouth may join two distinct places of one domain's curved space (`Unbound` where its frames' base points coincide), the reserve keeping both ends. Matter and words cross within a domain only along such a road; a plain offer within one domain is no handoff. Contiguity means exactly this: two places are joined where a tube runs between them.
 - **Succession by the sitting reserve.** The domain key designates the reserve once, at founding; every redesignation after is signed by the sitting reserve, never by the founder's key alone (`Unsigned`).
 
@@ -15384,7 +15384,7 @@ Code: `src/chronometry/chain/line.rs` (`replace_durably`), `src/bin/mycelium-ser
 
 ### 78.138 Only the ancients uplink; a line is carried inline
 
-Not every civilization is uplinked, or the uplink would be overloaded: a domain's reserve (its ancients) alone folds onto the court (`Uplinked::NotReserve` for any other tier), and a progenitor line's fold is CARRIED INLINE in the reserve's. A child is `Child::Sealed(FoldAt)`, a fold already on the court, or `Child::Carried(SignedFold)`, the line's whole fold with its own signature, which may carry its own lines in turn, recursively, never flattened. The court seals one receipt, the reserve's (`Cite::Chained`), and holds each carried line where it stands, `FoldAt { stamp, path }`; each line keeps its own head, record, window (the parent's) and finality. Before anything is sealed every carried line is read in full: its signature (`ChildRefusal::Unsigned`), the same domain (`ForeignDomain`), a bond of its own (`Unbonded`: each answers for its own work), its rows as its parent states them (`Mismatch`), a span advancing its line (`Repeat`), its handoff sides and continuity, then its own children; a refusal anywhere refuses the whole fold. A demand on a carried line is answered by RECONSTRUCTION (Concordance 4.4: the line's entries stepped to its committed prefix, each step checked against the one before, nothing re-run); falsified, the line's record is reversed, the carrying reserve fold is unwound and refiles without it, its tolls are refunded, and the LINE's bond is slashed, never the reserve's. `Cite::Challenge` keeps tag 8 for a fold the court sealed and takes tag 13 with its path for a line inside.
+Not every civilization is uplinked, or the uplink would be overloaded: a domain's reserve (its ancients) alone folds onto the court (`Uplinked::NotReserve` for any other tier), and a progenitor line's fold is CARRIED INLINE in the reserve's. A child is `Child::Sealed(FoldAt)`, a fold already on the court, or `Child::Carried(SignedFold)`, the line's whole fold with its own signature, which may carry its own lines in turn, recursively, never flattened. The court seals one receipt, the reserve's (`Cite::Chained`), and holds each carried line where it stands, `FoldAt { stamp, path }`; each line keeps its own head, record, window (the parent's) and finality. Before anything is sealed every carried line is read in full: its signature (`ChildRefusal::Unsigned`), the same domain (`ForeignDomain`), a bond of its own (`Unbonded`: each answers for its own work), its rows as its parent states them (`Mismatched`), a span advancing its line (`Repeated`), its handoff sides and continuity, then its own children; a refusal anywhere refuses the whole fold. A demand on a carried line is answered by RECONSTRUCTION (Concordance 4.4: the line's entries stepped to its committed prefix, each step checked against the one before, nothing re-run); falsified, the line's record is reversed, the carrying reserve fold is unwound and refiles without it, its tolls are refunded, and the LINE's bond is slashed, never the reserve's. `Cite::Challenge` keeps tag 8 for a fold the court sealed and takes tag 13 with its path for a line inside.
 
 Code: `src/anastome/dialogue/uplink.rs` (`Child`, `FoldAt`, `ChildRefusal`), `src/server/cognition/ledger.rs`, `src/server/cognition/challenge.rs` (`Reconstruction`, `reconstructs`).
 
@@ -15679,12 +15679,12 @@ stated upward.
   `n` kinds of nuclei is granted the court's READ PRICE (78.154) for `n`
   units of gas on every lane, enough to stake for its first crossing's
   coordinates. Refusals by name: NotFounded, NotAUniverse, NotReserve,
-  Unsigned, Malformed, Granted, InFlight, EndowmentShort, Overflow,
+  Unsigned, Malformed, Granted, InFlight, Short, Overflow,
   LineRefused, NoNewClosures.
 - **The endowment is what the court has earned.** No pot is set aside by a
   chosen sum (that would be a constant): the court's own balance of fees and
   tolls is the endowment, a grant draws on it at the act and refuses
-  `EndowmentShort` where it falls short, and the founding and growth
+  `GrantRefusal::Short` where it falls short, and the founding and growth
   endowments are read off the grants made (law 12).
 - **The element account is read off the grants.** A universe holds the
   nuclei its granted manifests carry; the hypha's account is the negative of

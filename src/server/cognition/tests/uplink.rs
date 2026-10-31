@@ -164,7 +164,7 @@ fn admit_uplink_answers_resend_and_refuses_repeat() {
     assert_eq!(k.chain.head_height(), height, "nothing sealed twice");
     let mut other = fold.clone();
     other.rows = vec![(who(1), [6, 0, 0, 0]), (who(2), [-6, 0, 0, 0])];
-    assert_eq!(k.admit_uplink(&other.sign(&key)), Uplinked::Repeat, "another fold over the same head");
+    assert_eq!(k.admit_uplink(&other.sign(&key)), Uplinked::Repeated, "another fold over the same head");
     let next = TierFold { prefix: [8u8; 32], ..fold };
     assert!(matches!(k.admit_uplink(&next.sign(&key)), Uplinked::Admitted { at: n, .. } if n != at));
 }

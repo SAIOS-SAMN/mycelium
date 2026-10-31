@@ -50,7 +50,7 @@ pub fn encode_speech_standing(
             // Stood, which is what speaking it claims.
             standing: match standing.get(i) {
                 Some(s) => *s,
-                None => crate::transducer::stalk::Standing::Stood.as_u8(),
+                None => crate::transducer::stalk::Standing::Stood.byte(),
             },
             contraction: None,
             agreement: None,
@@ -157,7 +157,7 @@ pub fn encode_speech_reply(adjudications: &[Adjudication]) -> Option<Vec<u8>> {
                 }
                 match a {
                     Adjudication::Refused { kind, at, .. } => {
-                        out.push(kind.to_byte());
+                        out.push(kind.byte());
                         at.to_bytes(&mut out)?;
                     }
                     // 78.93 B0 — where the word stands, where an act
@@ -208,7 +208,7 @@ pub fn decode_speech_reply(body: &[u8]) -> Option<Vec<Adjudication>> {
             SPEECH_STOOD => Adjudication::Stood { receipt, at: stood_at(&mut pos)? },
             SPEECH_RATIFIED => Adjudication::Ratified { receipt, at: stood_at(&mut pos)? },
             SPEECH_REFUSED => {
-                let kind = crate::transducer::sentence::RefusalKind::from_byte(*body.get(pos)?)?;
+                let kind = crate::transducer::sentence::RefusalKind::of(*body.get(pos)?)?;
                 pos += 1;
                 let at = crate::transducer::sentence::At::from_bytes(body, &mut pos)?;
                 Adjudication::Refused { kind, at, receipt }

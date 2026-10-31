@@ -27,7 +27,7 @@ use super::*;
 /// this coordinate" is a reading, and "that was not a coordinate of this
 /// carrier" is not (rule 11, exact or refused).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Refusal {
+pub struct StratumRefusal {
     /// The coordinate system the carrier declares.
     pub system: &'static str,
     /// The coordinate the key failed at, or the empty name where the
@@ -73,9 +73,9 @@ impl Schema {
     /// reads its own framing, so a key whose coordinate is longer or
     /// shorter than another's is handled by construction, and a key that is
     /// not of this system fails at the coordinate it fails at and says so.
-    pub fn boundary(&self, key: &[u8], depth: usize) -> Result<usize, Refusal> {
+    pub fn boundary(&self, key: &[u8], depth: usize) -> Result<usize, StratumRefusal> {
         if depth > self.segments.len() {
-            return Err(Refusal {
+            return Err(StratumRefusal {
                 system: self.system,
                 segment: "",
                 why: "asked past the last coordinate of this system",
@@ -86,7 +86,7 @@ impl Schema {
         // asked — the carrier's own declaration and not a search (rule 1).
         for seg in self.segments.iter().take(depth) {
             if seg.skip(key, &mut pos).is_none() {
-                return Err(Refusal {
+                return Err(StratumRefusal {
                     system: self.system,
                     segment: seg.name(),
                     why: "the key does not spell this coordinate",
@@ -99,10 +99,10 @@ impl Schema {
     /// A key of this system spells every coordinate and carries nothing
     /// past the last. Trailing bytes are not a longer key: they are a key
     /// of something else (law 2).
-    pub fn whole(&self, key: &[u8]) -> Result<(), Refusal> {
+    pub fn whole(&self, key: &[u8]) -> Result<(), StratumRefusal> {
         let end = self.boundary(key, self.depth())?;
         if end != key.len() {
-            return Err(Refusal {
+            return Err(StratumRefusal {
                 system: self.system,
                 segment: "",
                 why: "the key carries bytes past its last coordinate",
@@ -156,7 +156,7 @@ impl<V> Stratified<V> {
     /// Bind a WHOLE coordinate path. A key short of the last coordinate is
     /// not a sparser entry; it is a coordinate of a coarser space, and the
     /// carrier does not hold those.
-    pub fn insert(&mut self, key: &[u8], value: V) -> Result<Option<V>, Refusal> {
+    pub fn insert(&mut self, key: &[u8], value: V) -> Result<Option<V>, StratumRefusal> {
         self.schema.whole(key)?;
         Ok(self.trie.insert(key, value))
     }
@@ -165,22 +165,22 @@ impl<V> Stratified<V> {
     /// a coarse coordinate is asking for a FIBRE and is told so here rather
     /// than receiving the empty answer that a missing key and a wrong depth
     /// both used to produce.
-    pub fn get(&self, key: &[u8]) -> Result<Option<&V>, Refusal> {
+    pub fn get(&self, key: &[u8]) -> Result<Option<&V>, StratumRefusal> {
         self.schema.whole(key)?;
         Ok(self.trie.get(key))
     }
 
-    pub fn get_mut(&mut self, key: &[u8]) -> Result<Option<&mut V>, Refusal> {
+    pub fn get_mut(&mut self, key: &[u8]) -> Result<Option<&mut V>, StratumRefusal> {
         self.schema.whole(key)?;
         Ok(self.trie.get_mut(key))
     }
 
-    pub fn remove(&mut self, key: &[u8]) -> Result<Option<V>, Refusal> {
+    pub fn remove(&mut self, key: &[u8]) -> Result<Option<V>, StratumRefusal> {
         self.schema.whole(key)?;
         Ok(self.trie.remove(key))
     }
 
-    pub fn contains(&self, key: &[u8]) -> Result<bool, Refusal> {
+    pub fn contains(&self, key: &[u8]) -> Result<bool, StratumRefusal> {
         Ok(self.get(key)?.is_some())
     }
 
@@ -198,16 +198,16 @@ impl<V> Stratified<V> {
     /// says so there; the full depth is an exact read, which is
     /// [`Stratified::get`]. Both are refused here so that a site cannot ask
     /// for a projection and receive one of those by accident.
-    pub fn fibre_at_depth(&self, key: &[u8], depth: usize) -> Result<Fibre<'_, V>, Refusal> {
+    pub fn fibre_at_depth(&self, key: &[u8], depth: usize) -> Result<Fibre<'_, V>, StratumRefusal> {
         if depth == 0 {
-            return Err(Refusal {
+            return Err(StratumRefusal {
                 system: self.schema.system,
                 segment: "",
                 why: "depth zero is the whole carrier, which is `scoped`",
             });
         }
         if depth >= self.schema.depth() {
-            return Err(Refusal {
+            return Err(StratumRefusal {
                 system: self.schema.system,
                 segment: "",
                 why: "the whole path is an exact read, which is `get`",
@@ -215,7 +215,7 @@ impl<V> Stratified<V> {
         }
         let end = self.schema.boundary(key, depth)?;
         let Some(prefix) = key.get(..end) else {
-            return Err(Refusal {
+            return Err(StratumRefusal {
                 system: self.schema.system,
                 segment: "",
                 why: "the coordinate ends past the key",
@@ -223,7 +223,7 @@ impl<V> Stratified<V> {
         };
         match Prefix::new(prefix) {
             Some(p) => Ok(self.trie.fibre(p)),
-            None => Err(Refusal {
+            None => Err(StratumRefusal {
                 system: self.schema.system,
                 segment: "",
                 why: "the coordinate is empty, which names no stratum",

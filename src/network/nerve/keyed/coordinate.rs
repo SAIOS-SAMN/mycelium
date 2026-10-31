@@ -68,20 +68,20 @@ impl CompactBytes {
 /// The empty answer and the refusal are different facts, and naming which
 /// coordinate failed is what keeps them apart (rule 11).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CoordinateError {
+pub struct CoordinateRefusal {
     /// The system the bytes were read against.
     pub system: &'static str,
     /// What the bytes did not spell.
     pub why: &'static str,
 }
 
-impl std::fmt::Display for CoordinateError {
+impl std::fmt::Display for CoordinateRefusal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} coordinate: {}", self.system, self.why)
     }
 }
 
-impl std::error::Error for CoordinateError {}
+impl std::error::Error for CoordinateRefusal {}
 
 /// A COORDINATE: a value that is its own canonical bytes, both ways.
 ///
@@ -97,13 +97,13 @@ pub trait Coordinate: Eq + Clone + std::fmt::Debug + Send + Sync + 'static {
     const SYSTEM: CoordinateSystem;
 
     fn encode(&self) -> CompactBytes;
-    fn decode(bytes: &[u8]) -> Result<Self, CoordinateError>
+    fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal>
     where
         Self: Sized;
 
     /// The refusal this system raises, so implementors say it in one line.
-    fn refuse(why: &'static str) -> CoordinateError {
-        CoordinateError { system: Self::NAME, why }
+    fn refuse(why: &'static str) -> CoordinateRefusal {
+        CoordinateRefusal { system: Self::NAME, why }
     }
 }
 
@@ -128,11 +128,11 @@ pub trait Stratum<Fine: Coordinate>: Coordinate {
 
 /// THE COORDINATE SYSTEMS, as values.
 pub mod coord {
-    use super::{CompactBytes, Coordinate, CoordinateError, CoordinateSystem, Stratum};
+    use super::{CompactBytes, Coordinate, CoordinateRefusal, CoordinateSystem, Stratum};
     use crate::transducer::address as a;
 
     /// Read the A21 tag and refuse a foreign one in a single line.
-    fn tagged<C: Coordinate>(bytes: &[u8], want: u8) -> Result<usize, CoordinateError> {
+    fn tagged<C: Coordinate>(bytes: &[u8], want: u8) -> Result<usize, CoordinateRefusal> {
         match a::tag_of(bytes) {
             Some(t) if t == want => Ok(1),
             Some(_) => Err(C::refuse("the key opens with another system's tag")),
@@ -171,7 +171,7 @@ pub mod coord {
             CompactBytes::written(self.0.clone())
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             Ok(Any(bytes.to_vec()))
         }
     }
@@ -191,7 +191,7 @@ pub mod coord {
             CompactBytes::shared(self.0.key().shared())
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             tagged::<Self>(bytes, a::TAG_CHART)?;
             crate::transducer::stalk::Invariant::from_key(bytes)
                 .map(Chart)
@@ -245,11 +245,11 @@ pub mod coord {
     }
 
     impl BivectorKind {
-        pub const fn as_u8(self) -> u8 {
+        pub const fn byte(self) -> u8 {
             self as u8
         }
 
-        pub const fn from_u8(b: u8) -> Option<BivectorKind> {
+        pub const fn of(b: u8) -> Option<BivectorKind> {
             match b {
                 0 => Some(BivectorKind::Trivial),
                 1 => Some(BivectorKind::Elliptic),
@@ -268,11 +268,11 @@ pub mod coord {
             let mut buf = vec![a::TAG_CLASS];
             crate::transducer::alphabet::put_q(&mut buf, &self.i1);
             crate::transducer::alphabet::put_q(&mut buf, &self.i2);
-            buf.push(self.kind.as_u8());
+            buf.push(self.kind.byte());
             CompactBytes::written(buf)
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let mut pos = tagged::<Self>(bytes, a::TAG_CLASS)?;
             let i1 = crate::transducer::alphabet::take_q(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the first invariant does not spell an exact ℚ"))?;
@@ -281,7 +281,7 @@ pub mod coord {
             let kind = bytes
                 .get(pos)
                 .copied()
-                .and_then(BivectorKind::from_u8)
+                .and_then(BivectorKind::of)
                 .ok_or_else(|| Self::refuse("the type byte names no bivector reading"))?;
             if pos + 1 != bytes.len() {
                 return Err(Self::refuse("the key carries bytes past its last coordinate"));
@@ -340,7 +340,7 @@ pub mod coord {
             clippy::disallowed_methods,
             reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
         )]
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let refuse = || Self::refuse("a lamina cell is a tag byte and a site, n first");
             match bytes.first() {
                 Some(7u8) => {
@@ -386,7 +386,7 @@ pub mod coord {
             CompactBytes::written(k)
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             use crate::transducer::sentence::Measure;
             match bytes {
                 [4u8, 0] => Ok(Unfolded(Measure::Occupied)),
@@ -424,7 +424,7 @@ pub mod coord {
             CompactBytes::written(buf)
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let mut pos = 0usize;
             let kb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the demand kind is not length-delimited"))?;
@@ -469,7 +469,7 @@ pub mod coord {
             CompactBytes::written(k)
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let mut pos = 0usize;
             let cb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the chart is not length-delimited"))?;
@@ -502,7 +502,7 @@ pub mod coord {
         const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
 
         fn encode(&self) -> CompactBytes {
-            let mut buf = vec![self.kind.as_u8()];
+            let mut buf = vec![self.kind.byte()];
             a::put_key_bytes(&mut buf, self.class.encode().as_bytes());
             CompactBytes::written(buf)
         }
@@ -511,11 +511,11 @@ pub mod coord {
             clippy::disallowed_methods,
             reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
         )]
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let kind = bytes
                 .first()
                 .copied()
-                .and_then(crate::transducer::peel::ShellKind::from_u8)
+                .and_then(crate::transducer::peel::ShellKind::of)
                 .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
             let mut pos = 1usize;
             let cb = a::take_key_bytes(bytes, &mut pos)
@@ -560,14 +560,14 @@ pub mod coord {
             clippy::disallowed_methods,
             reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
         )]
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             // The class is itself length-framed at its tail, so the member
             // coordinates are parsed after it rather than at a remembered
             // offset (A21 §2).
             let kind = bytes
                 .first()
                 .copied()
-                .and_then(crate::transducer::peel::ShellKind::from_u8)
+                .and_then(crate::transducer::peel::ShellKind::of)
                 .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
             let mut pos = 1usize;
             let cb = a::take_key_bytes(bytes, &mut pos)
@@ -635,7 +635,7 @@ pub mod coord {
             }
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             match MemberSection::decode(bytes) {
                 Ok(m) => Ok(SectionAt::Member(Box::new(m))),
                 Err(_) => Transport::decode(bytes)
@@ -675,7 +675,7 @@ pub mod coord {
             CompactBytes::shared(self.0.shared())
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             tagged::<Self>(bytes, a::TAG_FORM)?;
             match bytes.get(1) {
                 Some(1) => Ok(Member(crate::transducer::address::Address::from_bytes(bytes))),
@@ -706,7 +706,7 @@ pub mod coord {
             clippy::disallowed_methods,
             reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
         )]
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             // `put_vertex` writes the kind discriminant first, and a
             // citation is kind 2.
             match bytes.first() {
@@ -736,7 +736,7 @@ pub mod coord {
             CompactBytes::written(k)
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             tagged::<Self>(bytes, a::TAG_WORD)?;
             // The chart is the last length-delimited run; the transport
             // prefix is what precedes it, parsed by finding that frame.
@@ -830,7 +830,7 @@ pub mod coord {
     impl Piece {
         fn put(&self, buf: &mut Vec<u8>) {
             buf.push(a::TAG_PIECE);
-            buf.push(self.kind.as_u8());
+            buf.push(self.kind.byte());
             put_support(buf, &self.support);
         }
 
@@ -841,7 +841,7 @@ pub mod coord {
                 Some(&t) if t == a::TAG_PIECE => *pos += 1,
                 _ => return None,
             }
-            let kind = crate::transducer::peel::ShellKind::from_u8(*bytes.get(*pos)?)?;
+            let kind = crate::transducer::peel::ShellKind::of(*bytes.get(*pos)?)?;
             *pos += 1;
             Some(Piece { kind, support: take_support(bytes, pos)? })
         }
@@ -857,7 +857,7 @@ pub mod coord {
             CompactBytes::written(buf)
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let mut pos = 0usize;
             let p = Piece::take(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the bytes do not spell a kind and a support"))?;
@@ -933,7 +933,7 @@ pub mod coord {
             CompactBytes::written(buf)
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let mut pos = 0usize;
             let c = Carriage::take(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the bytes do not spell a domain and a codomain"))?;
@@ -986,7 +986,7 @@ pub mod coord {
             clippy::disallowed_methods,
             reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
         )]
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let mut pos = match bytes.first() {
                 Some(&t) if t == a::TAG_MEET => 1usize,
                 Some(_) => return Err(Self::refuse("the key opens with another system's tag")),
@@ -1141,7 +1141,7 @@ pub mod coord {
         }
 
         #[expect(clippy::disallowed_methods, reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen")]
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let (Some(&tag), Some(body)) = (bytes.first(), bytes.get(1..)) else {
                 return Err(Self::refuse("an empty key spells no vertex"));
             };
@@ -1302,7 +1302,7 @@ pub mod coord {
             CompactBytes::written(buf)
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let mut pos = 0usize;
             let c = ChartAt::take(bytes, &mut pos).ok_or_else(|| Self::refuse("the bytes spell no chart of the atlas"))?;
             match pos == bytes.len() {
@@ -1333,7 +1333,7 @@ pub mod coord {
             CompactBytes::written(buf)
         }
 
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let mut pos = 0usize;
             let refuse = || Self::refuse("the bytes do not spell two charts");
             let from = ChartAt::take(bytes, &mut pos).ok_or_else(refuse)?;

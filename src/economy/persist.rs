@@ -32,7 +32,7 @@ impl Entry {
             Kind::Epoch => 22,
         };
         out.push(tag);
-        out.push(Arm::to_byte(self.arm));
+        out.push(Arm::byte(self.arm));
         out.extend_from_slice(&self.who);
         for m in &self.mu {
             out.extend_from_slice(&m.to_le_bytes());
@@ -63,7 +63,7 @@ impl Entry {
             22 => Kind::Epoch,
             _ => return None,
         };
-        let arm = Arm::from_byte(*b.get(*pos)?)?;
+        let arm = Arm::of(*b.get(*pos)?)?;
         *pos += 1;
         let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;

@@ -76,7 +76,7 @@ pub enum Unlearned {
 /// ONE WORD VERTEX REFUSED: its coordinate in the form (its key in
 /// `Form::vertices`), its address, and why.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Refused {
+pub struct LearnRefusal {
     pub at: Vec<u8>,
     pub vertex: Address,
     pub reason: Unlearned,
@@ -90,7 +90,7 @@ pub struct Refused {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Learned {
     pub filed: Vec<Address>,
-    pub refused: Vec<Refused>,
+    pub refused: Vec<LearnRefusal>,
     pub not_words: Vec<Vec<u8>>,
 }
 
@@ -386,7 +386,7 @@ impl Presentation {
                 }
                 Err(reason) => {
                     self.refusals.insert(&key, reason);
-                    out.refused.push(Refused { at, vertex: address.clone(), reason });
+                    out.refused.push(LearnRefusal { at, vertex: address.clone(), reason });
                 }
             }
         }

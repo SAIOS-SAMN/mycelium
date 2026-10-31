@@ -51,7 +51,7 @@ pub struct CourtClock {
     /// slashed, retired): `[admitted, applied, awaiting, refused]`, where
     /// admitted = applied + awaiting + refused.
     pub rulings: [[u64; 4]; 4],
-    /// F5 — the refused rulings per arm by reason (`RulingRefused::ALL`):
+    /// F5 — the refused rulings per arm by reason (`RulingRefusal::ALL`):
     /// no party, a speaker not ruled, does not decompose.
     pub ruling_refusals: [[u64; 3]; 4],
     /// Its orbits against the peers' (OK1).

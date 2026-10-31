@@ -57,7 +57,7 @@ pub enum NoiseRefusal {
     /// The XX handshake did not complete: a message failed to build or to
     /// authenticate, or the pattern itself would not resolve.
     #[error("noise handshake failed")]
-    HandshakeFailed,
+    Handshake,
     /// The handshake ended without the peer's static key of `KEY_LEN` bytes.
     #[error("noise peer presented no static key")]
     NoPeerStatic,
@@ -66,7 +66,7 @@ pub enum NoiseRefusal {
     PeerKeyChanged { peer: String, pinned: [u8; KEY_LEN], presented: [u8; KEY_LEN] },
     /// A peer address the pin store cannot hold as one line.
     #[error("noise peer address {0:?} cannot be pinned")]
-    PeerLabelMalformed(String),
+    PeerLabel(String),
     /// A Noise message past `MESSAGE_MAX`.
     #[error("noise message of {len} bytes over the {MESSAGE_MAX}-byte ceiling")]
     MessageTooLarge { len: usize },
@@ -83,7 +83,7 @@ pub enum NoiseRefusal {
     Decrypt,
     /// A transport message that would not seal.
     #[error("noise transport message failed to seal")]
-    EncryptFailed,
+    Encrypt,
     /// A key file that holds anything other than one `KEY_LEN`-byte key.
     #[error("noise key file {0} is not a {KEY_LEN}-byte key")]
     KeyFileMalformed(PathBuf),
@@ -102,7 +102,7 @@ impl From<std::io::Error> for NoiseRefusal {
 }
 
 fn builder() -> Result<snow::Builder<'static>, NoiseRefusal> {
-    let params = PATTERN.parse().map_err(|_| NoiseRefusal::HandshakeFailed)?;
+    let params = PATTERN.parse().map_err(|_| NoiseRefusal::Handshake)?;
     Ok(snow::Builder::new(params))
 }
 
@@ -112,9 +112,9 @@ fn public_of(private: &[u8; KEY_LEN]) -> Result<[u8; KEY_LEN], NoiseRefusal> {
     use snow::resolvers::CryptoResolver;
     let mut dh = snow::resolvers::DefaultResolver
         .resolve_dh(&snow::params::DHChoice::Curve25519)
-        .ok_or(NoiseRefusal::HandshakeFailed)?;
+        .ok_or(NoiseRefusal::Handshake)?;
     dh.set(private);
-    <[u8; KEY_LEN]>::try_from(dh.pubkey()).map_err(|_| NoiseRefusal::HandshakeFailed)
+    <[u8; KEY_LEN]>::try_from(dh.pubkey()).map_err(|_| NoiseRefusal::Handshake)
 }
 
 /// A HOST'S NOISE HOME: its static key and its pins, under one directory.
@@ -188,7 +188,7 @@ impl NoiseHome {
     /// peer agree on the line that won.
     pub fn pin(&self, peer: &str, presented: &[u8; KEY_LEN]) -> Result<(), NoiseRefusal> {
         if peer.is_empty() || peer.contains(['\t', '\n', '\r']) {
-            return Err(NoiseRefusal::PeerLabelMalformed(peer.to_string()));
+            return Err(NoiseRefusal::PeerLabel(peer.to_string()));
         }
         let held = match self.pinned(peer)? {
             Some(k) => k,
@@ -225,8 +225,8 @@ fn read_key(path: &Path) -> Result<Option<[u8; KEY_LEN]>, NoiseRefusal> {
 /// process's reads the key that won.
 fn mint_key(path: &Path) -> Result<[u8; KEY_LEN], NoiseRefusal> {
     use std::os::unix::fs::OpenOptionsExt;
-    let kp = builder()?.generate_keypair().map_err(|_| NoiseRefusal::HandshakeFailed)?;
-    let private = <[u8; KEY_LEN]>::try_from(kp.private.as_slice()).map_err(|_| NoiseRefusal::HandshakeFailed)?;
+    let kp = builder()?.generate_keypair().map_err(|_| NoiseRefusal::Handshake)?;
+    let private = <[u8; KEY_LEN]>::try_from(kp.private.as_slice()).map_err(|_| NoiseRefusal::Handshake)?;
     match std::fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(path) {
         Ok(mut f) => {
             f.write_all(&private)?;
@@ -273,17 +273,17 @@ pub fn initiate<S: Read + Write>(mut stream: S, home: &NoiseHome, peer: &str) ->
     let mut hs = builder()?
         .local_private_key(&home.private)
         .and_then(|b| b.build_initiator())
-        .map_err(|_| NoiseRefusal::HandshakeFailed)?;
+        .map_err(|_| NoiseRefusal::Handshake)?;
     let mut buf = vec![0u8; MESSAGE_MAX];
-    let n = hs.write_message(&[], &mut buf).map_err(|_| NoiseRefusal::HandshakeFailed)?;
+    let n = hs.write_message(&[], &mut buf).map_err(|_| NoiseRefusal::Handshake)?;
     put_message(&mut stream, &buf[..n])?;
     let m = take_message(&mut stream)?;
-    hs.read_message(&m, &mut buf).map_err(|_| NoiseRefusal::HandshakeFailed)?;
+    hs.read_message(&m, &mut buf).map_err(|_| NoiseRefusal::Handshake)?;
     let remote_static = remote_static_of(&hs)?;
     home.pin(peer, &remote_static)?;
-    let n = hs.write_message(&[], &mut buf).map_err(|_| NoiseRefusal::HandshakeFailed)?;
+    let n = hs.write_message(&[], &mut buf).map_err(|_| NoiseRefusal::Handshake)?;
     put_message(&mut stream, &buf[..n])?;
-    let ts = hs.into_transport_mode().map_err(|_| NoiseRefusal::HandshakeFailed)?;
+    let ts = hs.into_transport_mode().map_err(|_| NoiseRefusal::Handshake)?;
     Ok(NoiseStream::new(stream, ts, remote_static))
 }
 
@@ -295,19 +295,19 @@ pub fn respond<S: Read + Write>(mut stream: S, home: &NoiseHome, peer: Option<&s
     let mut hs = builder()?
         .local_private_key(&home.private)
         .and_then(|b| b.build_responder())
-        .map_err(|_| NoiseRefusal::HandshakeFailed)?;
+        .map_err(|_| NoiseRefusal::Handshake)?;
     let mut buf = vec![0u8; MESSAGE_MAX];
     let m = take_message(&mut stream)?;
-    hs.read_message(&m, &mut buf).map_err(|_| NoiseRefusal::HandshakeFailed)?;
-    let n = hs.write_message(&[], &mut buf).map_err(|_| NoiseRefusal::HandshakeFailed)?;
+    hs.read_message(&m, &mut buf).map_err(|_| NoiseRefusal::Handshake)?;
+    let n = hs.write_message(&[], &mut buf).map_err(|_| NoiseRefusal::Handshake)?;
     put_message(&mut stream, &buf[..n])?;
     let m = take_message(&mut stream)?;
-    hs.read_message(&m, &mut buf).map_err(|_| NoiseRefusal::HandshakeFailed)?;
+    hs.read_message(&m, &mut buf).map_err(|_| NoiseRefusal::Handshake)?;
     let remote_static = remote_static_of(&hs)?;
     if let Some(peer) = peer {
         home.pin(peer, &remote_static)?;
     }
-    let ts = hs.into_transport_mode().map_err(|_| NoiseRefusal::HandshakeFailed)?;
+    let ts = hs.into_transport_mode().map_err(|_| NoiseRefusal::Handshake)?;
     Ok(NoiseStream::new(stream, ts, remote_static))
 }
 
@@ -346,7 +346,7 @@ impl<S: Read + Write> NoiseStream<S> {
     pub fn send(&mut self, plain: &[u8]) -> Result<(), NoiseRefusal> {
         let mut cipher = vec![0u8; MESSAGE_MAX];
         for chunk in plain.chunks(CHUNK) {
-            let n = self.ts.write_message(chunk, &mut cipher).map_err(|_| NoiseRefusal::EncryptFailed)?;
+            let n = self.ts.write_message(chunk, &mut cipher).map_err(|_| NoiseRefusal::Encrypt)?;
             put_message(&mut self.inner, &cipher[..n])?;
         }
         self.inner.flush()?;
@@ -595,7 +595,7 @@ mod tests {
         let (ia, rb) = handshake(&a, &b, "peer", |s| s);
         let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
         let len = BODY_BUDGET + TPoint::LEN + 1;
-        let mut head = vec![Stratum::Spatial.as_u8()];
+        let mut head = vec![Stratum::Spatial.byte()];
         head.extend_from_slice(&u32::try_from(len).unwrap().to_le_bytes());
         ia.write_all(&head).unwrap();
         assert!(matches!(rb.read_frame(), Err(NoiseRefusal::FrameOverBudget { len: l }) if l == len));
@@ -636,7 +636,7 @@ mod tests {
         }
         assert!(rc.is_err(), "the impostor never reaches transport");
         assert_eq!(NoiseHome::open(da.path()).unwrap().pinned("10.0.0.2:7500").unwrap(), Some(b.public()));
-        assert!(matches!(a.pin("a\tb", &c.public()), Err(NoiseRefusal::PeerLabelMalformed(_))));
+        assert!(matches!(a.pin("a\tb", &c.public()), Err(NoiseRefusal::PeerLabel(_))));
     }
 
     /// The static key is minted once, `0600`, and reloads to the same key; a

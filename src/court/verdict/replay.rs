@@ -117,10 +117,10 @@ fn face_rederives(
     f: &Form,
     o: &crate::network::nerve::coord::Overlap,
     face: &crate::transducer::sentence::FormFace,
-) -> Result<(), sentence::Refused> {
-    use sentence::Refused;
+) -> Result<(), sentence::ObstructionRefusal> {
+    use sentence::ObstructionRefusal;
     let (Some(_), Some(_)) = (f.vertices.at(&o.from_vertex()), f.vertices.at(&o.to_vertex())) else {
-        return Err(Refused::FaceEndNotVertex);
+        return Err(ObstructionRefusal::FaceEndNotVertex);
     };
     if face.producer == crate::transducer::sentence::Producer::Motor {
         return Ok(());
@@ -130,8 +130,8 @@ fn face_rederives(
     // is carried in and compared by its presence alone here.
     match f.face_place(&o.from, &o.to, face.place.edge.clone()) {
         Some(p) if same_place(&p, &face.place) => Ok(()),
-        Some(_) => Err(Refused::FacePlaceNotRederived),
-        None => Err(Refused::FacePlaceUnderived),
+        Some(_) => Err(ObstructionRefusal::FacePlaceNotRederived),
+        None => Err(ObstructionRefusal::FacePlaceUnderived),
     }
 }
 
@@ -999,7 +999,7 @@ fn replay_after_perceiving(
 /// AT1): every end of an overlap is a vertex coordinate — a citation's is its
 /// site (54.7 B5a) — so the refusal always has a coordinate to name. Its
 /// obstruction is the branch that refused (A.17), counted with the refusal.
-fn face_at(o: &crate::network::nerve::coord::Overlap, branch: sentence::Refused) -> Refusal {
+fn face_at(o: &crate::network::nerve::coord::Overlap, branch: sentence::ObstructionRefusal) -> Refusal {
     Refusal {
         reason: REFUSE_FACE,
         at: sentence::At::face(o.from_vertex(), o.to_vertex()),

@@ -117,7 +117,7 @@ impl Arm {
     pub const ALL: [Arm; 4] = [Arm::Pouw, Arm::Powc, Arm::Powr, Arm::Powv];
 
     /// The arm as its coordinate on the row: `1..=4`, `0` for none.
-    pub fn to_byte(arm: Option<Arm>) -> u8 {
+    pub fn byte(arm: Option<Arm>) -> u8 {
         match arm {
             None => 0,
             Some(Arm::Pouw) => 1,
@@ -128,7 +128,7 @@ impl Arm {
     }
 
     /// The arm a byte names; a byte naming none refuses the row.
-    pub fn from_byte(b: u8) -> Option<Option<Arm>> {
+    pub fn of(b: u8) -> Option<Option<Arm>> {
         Some(match b {
             0 => None,
             1 => Some(Arm::Pouw),

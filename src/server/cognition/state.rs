@@ -331,7 +331,7 @@ pub struct Court {
     /// the contraction a voice cites next is verified against what this
     /// court actually named. A record leaves when its contraction is
     /// verified. In-memory, never persisted: a restart refuses afresh.
-    pub(crate) refusals: crate::network::nerve::Keyed<crate::court::verdict::Refused>,
+    pub(crate) refusals: crate::network::nerve::Keyed<crate::court::verdict::ReceiptedRefusal>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
     /// the utterance, magnitude before, magnitude after). The court replays
     /// the utterance and measures the deflation itself — proof of
@@ -414,7 +414,7 @@ pub struct Court {
     /// replay did not re-derive (78.9). Per node, since boot.
     pub(crate) rulings: [[u64; 4]; 4],
     /// F5 — THE REFUSED RULINGS BY REASON, per arm (`Ruled::index`) and per
-    /// reason (`RulingRefused::index`); each arm's row sums to its refused.
+    /// reason (`RulingRefusal::index`); each arm's row sums to its refused.
     pub(crate) ruling_refusals: [[u64; 3]; 4],
     /// 78.26(6), TP1 — closed rings of the cover's nerve the glue reopened
     /// because a gauge moved: `[filled, congruent]`, since boot.

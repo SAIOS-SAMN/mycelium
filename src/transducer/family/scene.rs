@@ -41,7 +41,7 @@ impl Reading {
     /// The reading's own byte, ahead of every chart key it names, so two
     /// readings that cut a scene into the same region name two charts and
     /// a `Keyed` of charts under one reading is a stratum of its tag.
-    pub fn tag(self) -> u8 {
+    pub fn byte(self) -> u8 {
         match self {
             Reading::Bands => 0,
         }
@@ -72,7 +72,7 @@ pub type Cover = Keyed<Chart>;
 /// write it after its own tag, which leads the key, so its charts key apart
 /// from these without a second key family (rule 6).
 pub fn chart_key(reading: Reading, support: &[Site]) -> Vec<u8> {
-    let mut k = vec![reading.tag()];
+    let mut k = vec![reading.byte()];
     use crate::network::nerve::Coordinate;
     k.extend_from_slice(super::pieces::piece_at(ShellKind::Frame, support).encode().as_bytes());
     k

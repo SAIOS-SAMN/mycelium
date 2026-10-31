@@ -446,7 +446,7 @@ fn clock(c: &observe::Clock) -> Vec<String> {
                 .filter_map(|arm| {
                     let [admitted, applied, awaiting, refused] = c.rulings[arm.index()];
                     // F5 — each refusal by its reason, where any counted.
-                    let why: Vec<String> = mycelium::chronometry::RulingRefused::ALL
+                    let why: Vec<String> = mycelium::chronometry::RulingRefusal::ALL
                         .iter()
                         .map(|r| (r.name(), c.ruling_refusals[arm.index()][r.index()]))
                         .filter(|(_, n)| *n > 0)
@@ -581,7 +581,7 @@ fn adjudication(a: &observe::Adjudication) -> Vec<String> {
     let refused: Vec<String> = a
         .refused
         .iter()
-        .map(|&(kind, n)| match mycelium::transducer::sentence::RefusalKind::from_byte(kind) {
+        .map(|&(kind, n)| match mycelium::transducer::sentence::RefusalKind::of(kind) {
             Some(k) => format!("{} {n}", k.label()),
             None => format!("kind {kind:#04x} {n}"),
         })
@@ -644,7 +644,7 @@ fn phase(p: &observe::Phase) -> Vec<String> {
 fn carriage(c: &observe::Carriage) -> Vec<String> {
     let kind_name = |carrier: u8, kind: u8| -> String {
         match carrier {
-            observe::CARRIER_DELTA => match mycelium::chronometry::ActKind::from_byte(kind) {
+            observe::CARRIER_DELTA => match mycelium::chronometry::ActKind::of_sealed(kind) {
                 Some(k) => String::from_utf8_lossy(k.name()).into_owned(),
                 None => format!("kind {kind}"),
             },

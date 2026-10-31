@@ -809,8 +809,9 @@ pub enum HandoffRefusal {
     Unbound,
     /// The same offer sealed already.
     Offered,
-    /// No handoff of this id.
-    Unknown,
+    /// No handoff, conversion or mouth of this id, or an act this door does
+    /// not take.
+    UnknownId,
     /// Answered already — accepted or returned.
     Answered,
     /// Accepted or refused past its window; or expiry claimed before it closed.
@@ -832,7 +833,7 @@ pub enum HandoffRefusal {
     /// 78.128 — a mouth frame zero or no versor: no horizon sphere carried.
     Degenerate,
     /// 78.128 — a keeper that is neither of the pair's two reserves.
-    BadKeeper,
+    NotKeeper,
     /// 78.128 — the traversal's tiers are not in the mouth's two domains.
     NotTheMouth,
     /// 78.133 — the tariff is not one, by why; or a tariffed mouth carries a
@@ -846,7 +847,7 @@ pub enum HandoffRefusal {
     NotIsometry,
     /// 78.134 — a tube's mass or a curvature radius not a positive exact
     /// rational.
-    BadTube,
+    MalformedTube,
     /// 78.134 — a superseding tube citing no mouth, a mouth already a tube
     /// or closed, or another pair's.
     NotSupersedable,
@@ -918,7 +919,7 @@ fn refusal_bytes(r: &HandoffRefusal) -> [u8; 2] {
         HandoffRefusal::NotTheTier => [6, 0],
         HandoffRefusal::Unbound => [7, 0],
         HandoffRefusal::Offered => [8, 0],
-        HandoffRefusal::Unknown => [9, 0],
+        HandoffRefusal::UnknownId => [9, 0],
         HandoffRefusal::Answered => [10, 0],
         HandoffRefusal::Window => [11, 0],
         HandoffRefusal::LineRefused => [12, 0],
@@ -928,7 +929,7 @@ fn refusal_bytes(r: &HandoffRefusal) -> [u8; 2] {
         HandoffRefusal::HolderShort => [16, 0],
         HandoffRefusal::NoMouth => [17, 0],
         HandoffRefusal::Degenerate => [18, 0],
-        HandoffRefusal::BadKeeper => [19, 0],
+        HandoffRefusal::NotKeeper => [19, 0],
         HandoffRefusal::NotTheMouth => [20, 0],
         HandoffRefusal::Untariffed(u) => [
             21,
@@ -941,7 +942,7 @@ fn refusal_bytes(r: &HandoffRefusal) -> [u8; 2] {
         ],
         HandoffRefusal::NotALine => [22, 0],
         HandoffRefusal::NotIsometry => [23, 0],
-        HandoffRefusal::BadTube => [24, 0],
+        HandoffRefusal::MalformedTube => [24, 0],
         HandoffRefusal::NotSupersedable => [25, 0],
         HandoffRefusal::Untethered => [26, 0],
         HandoffRefusal::Starved => [27, 0],
@@ -976,7 +977,7 @@ fn refusal_of(code: u8, lane: u8) -> Option<HandoffRefusal> {
         6 => HandoffRefusal::NotTheTier,
         7 => HandoffRefusal::Unbound,
         8 => HandoffRefusal::Offered,
-        9 => HandoffRefusal::Unknown,
+        9 => HandoffRefusal::UnknownId,
         10 => HandoffRefusal::Answered,
         11 => HandoffRefusal::Window,
         12 => HandoffRefusal::LineRefused,
@@ -986,7 +987,7 @@ fn refusal_of(code: u8, lane: u8) -> Option<HandoffRefusal> {
         16 => HandoffRefusal::HolderShort,
         17 => HandoffRefusal::NoMouth,
         18 => HandoffRefusal::Degenerate,
-        19 => HandoffRefusal::BadKeeper,
+        19 => HandoffRefusal::NotKeeper,
         20 => HandoffRefusal::NotTheMouth,
         21 => HandoffRefusal::Untariffed(match lane {
             0 => Untariffed::ZeroDenominator,
@@ -997,7 +998,7 @@ fn refusal_of(code: u8, lane: u8) -> Option<HandoffRefusal> {
         }),
         22 => HandoffRefusal::NotALine,
         23 => HandoffRefusal::NotIsometry,
-        24 => HandoffRefusal::BadTube,
+        24 => HandoffRefusal::MalformedTube,
         25 => HandoffRefusal::NotSupersedable,
         26 => HandoffRefusal::Untethered,
         27 => HandoffRefusal::Starved,

@@ -92,7 +92,7 @@ pub enum SchemaRefusal {
     /// The key opened with this system's tag and did not spell its
     /// coordinates — the refusal that separates a coarse key from a finer
     /// one written over it, which the tag alone cannot.
-    Stratum(Refusal),
+    Stratum(StratumRefusal),
 }
 
 impl std::fmt::Display for SchemaRefusal {
@@ -352,7 +352,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// opening of a `C` key — a chart under a carrier of sections. Without
     /// the bound there is no fibre read, so a byte-prefix coincidence
     /// cannot be mistaken for a stratum.
-    pub fn fibre_over<D: Stratum<C>>(&self, coarse: &D) -> Result<Fibre<'_, V>, CoordinateError> {
+    pub fn fibre_over<D: Stratum<C>>(&self, coarse: &D) -> Result<Fibre<'_, V>, CoordinateRefusal> {
         let opening = coarse.opening();
         match Prefix::new(opening.as_bytes()) {
             Some(p) => Ok(self.fibre(p)),
@@ -377,12 +377,12 @@ impl<V, C: Coordinate> Keyed<V, C> {
 
     /// The keys of this carrier that do NOT decode to its coordinate, each
     /// naming what it failed to spell. Zero on a carrier only `put` wrote.
-    pub fn refusals(&self) -> Vec<CoordinateError> {
+    pub fn refusals(&self) -> Vec<CoordinateRefusal> {
         self.scoped().filter_map(|(k, _)| C::decode(&k).err()).collect()
     }
 
     /// Both readings at once, for a caller that must be total.
-    pub fn decoded(&self) -> (Vec<(C, &V)>, Vec<CoordinateError>) {
+    pub fn decoded(&self) -> (Vec<(C, &V)>, Vec<CoordinateRefusal>) {
         let mut ok = Vec::new();
         let mut bad = Vec::new();
         for (k, v) in self.scoped() {

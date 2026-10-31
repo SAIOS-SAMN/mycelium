@@ -64,7 +64,7 @@ struct Draft {
 
 /// WHAT THE SNAPSHOT REFUSED, per row and per reason: named once, counted.
 #[derive(Default)]
-struct Refused {
+struct SnapshotTally {
     /// Per row — basis, provisional, listing, cavity, federation — the
     /// words held without an admitting stamp.
     unstamped: [u64; 5],
@@ -97,7 +97,7 @@ struct Refused {
     unwritable: u64,
 }
 
-impl Refused {
+impl SnapshotTally {
     fn name(&self) {
         let [b, p, l, c, f] = self.unstamped;
         let rest = [
@@ -137,7 +137,7 @@ impl Court {
     /// its name. What each trie refused is named once, with its count.
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = MAGIC.to_vec();
-        let mut refused = Refused::default();
+        let mut refused = SnapshotTally::default();
         self.put_court(&mut out);
         self.put_ledger(&mut out, &mut refused);
         self.put_words(&mut out, &mut refused);
@@ -235,7 +235,7 @@ impl Court {
     /// the dialect transitions standing there, and the receipt where the
     /// line is in the snapshot. A stamp carrying data and no receipt is a
     /// bare node.
-    fn put_ledger(&self, out: &mut Vec<u8>, refused: &mut Refused) {
+    fn put_ledger(&self, out: &mut Vec<u8>, refused: &mut SnapshotTally) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
         let in_hand = self.chain.nodes().filter(|_| !self.line_held);
         for r in in_hand {
@@ -316,9 +316,9 @@ impl Court {
     /// T1 — THE WORDS: every word this court holds on any row, one node at
     /// its citation — its fibre and the act that admitted it — the element
     /// held once with the rows it stands on, and each per-word field a leaf.
-    fn put_words(&self, out: &mut Vec<u8>, refused: &mut Refused) {
+    fn put_words(&self, out: &mut Vec<u8>, refused: &mut SnapshotTally) {
         let mut drafts: Keyed<Draft> = Keyed::new();
-        let hold = |drafts: &mut Keyed<Draft>, refused: &mut Refused, row: usize, addr: &[u8], elem: &Element, member: u8| {
+        let hold = |drafts: &mut Keyed<Draft>, refused: &mut SnapshotTally, row: usize, addr: &[u8], elem: &Element, member: u8| {
             if !self.admitted_at.contains(addr) {
                 refused.unstamped[row] += 1;
                 return;
@@ -520,7 +520,7 @@ impl Court {
     /// signer and place are the key, and each other coordinate of the era
     /// and its payload are leaves. A filed era is its own frame in the cold
     /// segment, and is not written here.
-    fn put_eras(&self, out: &mut Vec<u8>, refused: &mut Refused) {
+    fn put_eras(&self, out: &mut Vec<u8>, refused: &mut SnapshotTally) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
         for era in self.archive.iter().filter(|e| e.at.is_none()) {
             let key = Stamp::new(era.root.height, era.signer, era.root.at).key();
@@ -567,7 +567,7 @@ impl Court {
     /// own coordinates INLINE (78.27 (7)) — never its key nested as a key —
     /// the gauge as its ray, and the stamp of the receipt the row stood at.
     /// A class key that is not a class's coordinates is refused by name.
-    fn put_cocycles(&self, out: &mut Vec<u8>, refused: &mut Refused) {
+    fn put_cocycles(&self, out: &mut Vec<u8>, refused: &mut SnapshotTally) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
         crate::snapshot::persist(&self.cocycle_at, |key, row| {
             let Some(class) = class_coordinates(&row.class_key) else {

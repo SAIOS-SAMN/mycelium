@@ -180,7 +180,7 @@ fn owe_citation_once_per_court_never_when_sealed() {
     assert_eq!(entity.owed_pending(), courts, "one owed frame per court");
     assert_eq!(
         entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
-        Err(crate::transducer::sentence::Refused::OwedToEveryCourt),
+        Err(crate::transducer::sentence::ObstructionRefusal::OwedToEveryCourt),
         "owed to every court once, the citer waits for its family"
     );
     entity.owed.clear();
@@ -204,7 +204,7 @@ fn owe_citation_once_per_court_never_when_sealed() {
     );
     assert_eq!(
         entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
-        Err(crate::transducer::sentence::Refused::CitedSealed),
+        Err(crate::transducer::sentence::ObstructionRefusal::CitedSealed),
         "a sealed citation is owed to no court"
     );
     assert_eq!(entity.owed_pending(), 0);

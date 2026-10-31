@@ -12,7 +12,7 @@
 
 use super::drive::{class_vectors_on, holonomy_words_on, orbit_holonomy_on, Prior};
 use super::*;
-use crate::transducer::sentence::Refused;
+use crate::transducer::sentence::ObstructionRefusal;
 
 /// WHAT ONE MEMBER PATH OF AN ORBIT CLOSES AT: the class its holonomy stands
 /// in, the period it closes at, and the hue generator it turns by.
@@ -44,9 +44,9 @@ impl Form {
         cand: &Candidate,
         kappa: &ClassVector,
         before: &Prior<'_>,
-    ) -> Result<PivotCertificate, Refused> {
+    ) -> Result<PivotCertificate, ObstructionRefusal> {
         // No orbit, class, seed, row or measure stood to ask: no question.
-        let none = Refused::TrialNoQuestion;
+        let none = ObstructionRefusal::TrialNoQuestion;
         let &Prior { rank_before, crystal, bundle, t_extent, ref mu_before, ref agreements } = before;
         // THE TRIAL OWNS WHAT THE MOVE WRITES AND BORROWS THE REST. A
         // `Word`, `Placement` or `Hue` move writes ONE FACE's transport and
@@ -109,7 +109,7 @@ impl Form {
             }
         });
         if !discharged {
-            return Err(Refused::TrialNotDischarged);
+            return Err(ObstructionRefusal::TrialNotDischarged);
         }
         // THE CERTIFICATE NAMES ONE CLASS AFTER, so it is only writable where
         // every member path agrees on it. The plane and off-plane coordinates
@@ -119,7 +119,7 @@ impl Form {
         for (_, cv) in after.scoped() {
             match &agreed {
                 None => agreed = Some(cv.clone()),
-                Some(h) if h.class_key() != cv.class_key() => return Err(Refused::TrialPathsDisagree),
+                Some(h) if h.class_key() != cv.class_key() => return Err(ObstructionRefusal::TrialPathsDisagree),
                 Some(_) => {}
             }
         }
@@ -177,7 +177,7 @@ impl Form {
         // The audit reads every row, so a sibling on the shared face carried
         // to a new class is a move of this pivot too (R26).
         if let RankMove::Inadmissible { .. } = rank_move {
-            return Err(Refused::TrialRankInadmissible);
+            return Err(ObstructionRefusal::TrialRankInadmissible);
         }
         let mu = match mu_before {
             None => Mu::Unmeasured,
@@ -208,7 +208,7 @@ impl Form {
                 let raised =
                     crate::transducer::family::pairs_raised(pairs_before, &pairs_after).ok_or(none)?;
                 if !raised.is_empty() {
-                    return Err(Refused::TrialLaneRose);
+                    return Err(ObstructionRefusal::TrialLaneRose);
                 }
                 // 12.6, T21 (iv): a candidate that RAISES any lane is
                 // refused, read per lane and named. Strictness is not
@@ -217,7 +217,7 @@ impl Form {
                 let reading = crate::economy::lane_moves(&after, &before);
                 let risen = crate::economy::lanes_risen(&reading);
                 if !risen.is_empty() {
-                    return Err(Refused::TrialLaneRose);
+                    return Err(ObstructionRefusal::TrialLaneRose);
                 }
                 Mu::Measured { before, after }
             }
@@ -229,7 +229,7 @@ impl Form {
         // cell. A pair already non-trivial before does not refuse it.
         let after_agreements = super::Agreements::read(self, &faces, &cycles, &mut super::PerturbTally::default());
         if agreements.split_by(&after_agreements) {
-            return Err(Refused::TrialUnclosed);
+            return Err(ObstructionRefusal::TrialUnclosed);
         }
         Ok(PivotCertificate {
             chord,

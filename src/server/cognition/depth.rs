@@ -38,7 +38,7 @@ fn commits(kind: crate::chronometry::ActKind) -> bool {
 fn attestor_key(vk: &[u8; 32], kind: crate::chronometry::ActKind) -> Vec<u8> {
     let mut k = Vec::with_capacity(33);
     k.extend_from_slice(vk);
-    k.push(kind.to_byte());
+    k.push(kind.byte());
     k
 }
 
@@ -113,7 +113,7 @@ impl Court {
             let [vk @ .., kind] = k.as_slice() else {
                 continue;
             };
-            let Some(kind) = crate::chronometry::ActKind::from_byte(*kind) else {
+            let Some(kind) = crate::chronometry::ActKind::of_sealed(*kind) else {
                 continue;
             };
             if !commits(kind) {

@@ -350,7 +350,7 @@ impl Action {
     }
 
     /// THE ACTION A WIRE TAG NAMES, or none: a court act is never asked for.
-    pub fn of_tag(b: u8) -> Option<Action> {
+    pub fn of_wire(b: u8) -> Option<Action> {
         Action::of(b).filter(|a| a.on_wire())
     }
 
@@ -362,15 +362,8 @@ impl Action {
 
     /// THE SEALED ACT A LEDGER BYTE NAMES, or none: a byte naming an action
     /// no court seals refuses the read (45.1).
-    pub fn from_byte(b: u8) -> Option<Action> {
+    pub fn of_sealed(b: u8) -> Option<Action> {
         Action::of(b).filter(|a| a.sealed())
-    }
-
-    /// The coordinate the node carries (the ledger's spelling of [`byte`]).
-    ///
-    /// [`byte`]: Action::byte
-    pub const fn to_byte(self) -> u8 {
-        self.byte()
     }
 
     /// THE L0 LAWS IT ANSWERS TO: every law for an action that moves

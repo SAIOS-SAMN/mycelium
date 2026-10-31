@@ -294,7 +294,7 @@ pub enum ModesUnread {
 /// k-th product. The `Overflow` and `Elimination` arms retired with the
 /// exact elimination at any size (STD1): nothing can raise them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CapacityRefused {
+pub enum CapacityRefusal {
     NoneRead,
     NotVersor { circuit: usize },
     Spent { product: usize },
@@ -310,7 +310,7 @@ pub struct ChamberRefusals {
     /// Each read circuit whose modes did not read, by why.
     pub modes: Vec<ModesUnread>,
     /// Why the capacity did not read, where it did not.
-    pub capacity: Option<CapacityRefused>,
+    pub capacity: Option<CapacityRefusal>,
     /// ZM1 — the cell's nuclei read and the nuclei's meet is zero: dependent
     /// spheres, or `n + 2` of them. No round, and not congruence.
     pub zero_meet: bool,
@@ -445,11 +445,11 @@ pub struct ChamberAlgebra {
     /// where it did not read, why — none read, a holonomy with no action,
     /// the budget spent at the k-th product, an entry that did not fit the
     /// exact elimination (78.26(4), rule 11).
-    pub capacity: Result<usize, CapacityRefused>,
+    pub capacity: Result<usize, CapacityRefusal>,
     /// Pairs of read circuits whose actions do not commute; where the
     /// stroke was spent before every pair was composed, the pair it was
     /// spent at (`Spent`), never a partial count.
-    pub coupled: Result<usize, CapacityRefused>,
+    pub coupled: Result<usize, CapacityRefusal>,
     /// Every read mode ray against the cell.
     pub modes: Vec<ModeReading>,
     pub congruence: Congruence,
@@ -496,8 +496,8 @@ pub struct ChamberAlgebra {
 fn capacity(
     actions: &[cga::LinearFunction],
     budget: &mut crate::physics::Budget,
-) -> Result<(usize, crate::core::span::Span), CapacityRefused> {
-    let [first, ..] = actions else { return Err(CapacityRefused::NoneRead) };
+) -> Result<(usize, crate::core::span::Span), CapacityRefusal> {
+    let [first, ..] = actions else { return Err(CapacityRefusal::NoneRead) };
     let identity = cga::LinearFunction::identity(first.n());
     let mut span = crate::core::span::Span::new();
     span.join(&identity.as_ray());
@@ -507,7 +507,7 @@ fn capacity(
         for a in actions {
             product += 1;
             if !budget.spend() {
-                return Err(CapacityRefused::Spent { product });
+                return Err(CapacityRefusal::Spent { product });
             }
             let p = b.after(a);
             if span.join(&p.as_ray()) {
@@ -523,7 +523,7 @@ fn capacity(
 /// weight with no rational root), by its circuit; or the stroke spent at the
 /// k-th bracket.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LieRankRefused {
+pub enum LieRankRefusal {
     NoneRead,
     NoChart { circuit: usize },
     Spent { bracket: usize },
@@ -541,11 +541,11 @@ pub enum LieRankRefused {
 /// This is not [`ChamberAlgebra::capacity`], which is the dimension of the
 /// unital ASSOCIATIVE algebra the circuits' actions generate on the space.
 /// The rank-step act (78.68) is a step of this one.
-pub fn lie_rank(circuits: &[ChamberCircuit], budget: &mut crate::physics::Budget) -> Result<usize, LieRankRefused> {
+pub fn lie_rank(circuits: &[ChamberCircuit], budget: &mut crate::physics::Budget) -> Result<usize, LieRankRefusal> {
     let holonomies: Vec<Option<&Mv>> = circuits.iter().map(|c| c.holonomy.as_ref().ok()).collect();
     let gens = cayley_generators(&holonomies, budget)?;
     if gens.is_empty() {
-        return Err(LieRankRefused::NoneRead);
+        return Err(LieRankRefusal::NoneRead);
     }
     Ok(lie_close(&[], &gens, budget)?.len())
 }
@@ -554,11 +554,11 @@ pub fn lie_rank(circuits: &[ChamberCircuit], budget: &mut crate::physics::Budget
 /// unread holonomy (`None`) is passed over; one whose generators do not read
 /// — an odd or non-versor element, or modes the stroke could not split —
 /// refuses by its index.
-pub fn cayley_generators(holonomies: &[Option<&Mv>], budget: &mut crate::physics::Budget) -> Result<Vec<Mv>, LieRankRefused> {
+pub fn cayley_generators(holonomies: &[Option<&Mv>], budget: &mut crate::physics::Budget) -> Result<Vec<Mv>, LieRankRefusal> {
     let mut gens = Vec::new();
     for (circuit, h) in holonomies.iter().enumerate() {
         let Some(h) = h else { continue };
-        gens.extend(flow_generators(h, budget).ok_or(LieRankRefused::NoChart { circuit })?);
+        gens.extend(flow_generators(h, budget).ok_or(LieRankRefusal::NoChart { circuit })?);
     }
     Ok(gens)
 }
@@ -593,7 +593,7 @@ pub fn flow_generators(h: &Mv, budget: &mut crate::physics::Budget) -> Option<Ve
 /// bracket JOINS only where it lies outside the span, and only what joined
 /// is bracketed on, so a held algebra re-closes in no more brackets than its
 /// new dimensions need; one read of the budget per bracket.
-pub fn lie_close(held: &[Mv], new: &[Mv], budget: &mut crate::physics::Budget) -> Result<Vec<Mv>, LieRankRefused> {
+pub fn lie_close(held: &[Mv], new: &[Mv], budget: &mut crate::physics::Budget) -> Result<Vec<Mv>, LieRankRefusal> {
     let n = held.iter().chain(new).fold(0u8, |n, g| n.max(g.n()));
     let mut span = crate::core::span::Span::new();
     let mut basis: Vec<Mv> = Vec::new();
@@ -617,7 +617,7 @@ pub fn lie_close(held: &[Mv], new: &[Mv], budget: &mut crate::physics::Budget) -
         for y in &against {
             bracket += 1;
             if !budget.spend() {
-                return Err(LieRankRefused::Spent { bracket });
+                return Err(LieRankRefusal::Spent { bracket });
             }
             // [X, Y] = XY − YX, a bivector again: the commutator of two
             // bivectors has no scalar or grade-4 part.
@@ -683,8 +683,8 @@ fn permutation(ray: &Mv, nuclei: &[Mv], index: &Keyed<usize>) -> Option<Vec<usiz
 /// the unital algebra they generate with its closed basis — or why not.
 #[derive(Clone, Debug)]
 pub struct ChamberRank {
-    actions: Result<Vec<cga::LinearFunction>, CapacityRefused>,
-    rank: Result<(usize, crate::core::span::Span), CapacityRefused>,
+    actions: Result<Vec<cga::LinearFunction>, CapacityRefusal>,
+    rank: Result<(usize, crate::core::span::Span), CapacityRefusal>,
 }
 
 /// READ A CELL'S RANK — the cell's dimension — off its crossing circuits,
@@ -696,10 +696,10 @@ pub fn read_rank(circuits: &[ChamberCircuit], budget: &mut crate::physics::Budge
     // Every action in the one algebra the cell's circuits span — the join of
     // the circuits' algebras, a value never narrowed — so the actions compose.
     let n = read.iter().fold(0u8, |n, h| n.max(h.n()));
-    let actions: Result<Vec<cga::LinearFunction>, CapacityRefused> = read
+    let actions: Result<Vec<cga::LinearFunction>, CapacityRefusal> = read
         .iter()
         .enumerate()
-        .map(|(circuit, h)| cga::action_of(&h.widened(n)).ok_or(CapacityRefused::NotVersor { circuit }))
+        .map(|(circuit, h)| cga::action_of(&h.widened(n)).ok_or(CapacityRefusal::NotVersor { circuit }))
         .collect();
     let rank = actions.as_deref().map_err(|why| *why).and_then(|a| capacity(a, budget));
     ChamberRank { actions, rank }
@@ -790,7 +790,7 @@ pub fn read_chamber_after(
                 for j in (i + 1)..a.len() {
                     product += 1;
                     if !budget.spend() {
-                        count = Err(CapacityRefused::Spent { product });
+                        count = Err(CapacityRefusal::Spent { product });
                         break 'pairs;
                     }
                     if !a[i].after(&a[j]).minus(&a[j].after(&a[i])).is_zero() {

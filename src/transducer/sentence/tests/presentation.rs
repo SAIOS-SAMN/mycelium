@@ -146,7 +146,7 @@ fn learn_form_files_readable_form_whole() {
 #[test]
 fn learn_form_refuses_unreadable_word_by_name() {
     use crate::transducer::sentence::generator_key;
-    use crate::transducer::sentence::presentation::{Refused, Unlearned};
+    use crate::transducer::sentence::presentation::{LearnRefusal, Unlearned};
     let one = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 1, 0, 0, 0, 0, 0]]);
     let three = (vec![vec![1u8, 0, 0, 0, 0, 0, 0]], vec![vec![0u8, 0, 0, 1, 0, 0, 0]]);
     let mut f = crate::transducer::family::cipher_form(&one.0, &one.1);
@@ -179,8 +179,8 @@ fn learn_form_refuses_unreadable_word_by_name() {
     assert_eq!(learned.filed, vec![kept.clone()], "the readable slide is filed");
     // Each unreadable word is refused once, by its reason at its coordinate.
     let expected = [
-        Refused { at: no_map_at, vertex: no_map.clone(), reason: Unlearned::NoMap },
-        Refused { at: bare_at, vertex: bare.clone(), reason: Unlearned::NoMember },
+        LearnRefusal { at: no_map_at, vertex: no_map.clone(), reason: Unlearned::NoMap },
+        LearnRefusal { at: bare_at, vertex: bare.clone(), reason: Unlearned::NoMember },
     ];
     assert_eq!(learned.refused.len(), expected.len(), "two refusals, read {:?}", learned.refused);
     assert!(expected.iter().all(|r| learned.refused.contains(r)), "each unreadable word is refused by its reason at its coordinate, read {:?}", learned.refused);

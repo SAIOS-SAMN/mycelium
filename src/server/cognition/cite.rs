@@ -376,7 +376,7 @@ impl Court {
     /// line could not take it — the refusal then stands in memory alone and
     /// the verdict says so by the head it answers with.
     pub(super) fn seal_refusal(&mut self, s: &Element, kind: crate::transducer::sentence::RefusalKind, voice: [u8; 32]) -> Option<KStepReceipt> {
-        let cite = Cite::Refusal { chart: crate::transducer::stalk::invariant_of(s), kind: kind.to_byte() };
+        let cite = Cite::Refusal { chart: crate::transducer::stalk::invariant_of(s), kind: kind.byte() };
         self.seal_step(ActKind::Refused, [0; 4], voice, |_| vec![cite.clone()])
     }
 

@@ -63,6 +63,36 @@ such change is named here.
   a side) and `src/transducer/family/fibres.rs`, the quotient by torsion,
   is `torsion_quotient.rs`, with its tests; `sentence/form/fiber.rs` is
   `fibre.rs`. No wire or persisted format changes.
+- Refusal types and one-byte codecs follow the code vocabulary (a 0.x API
+  change; no wire byte, persisted format or served string changes):
+  - every refusal type is an `<Object>Refusal` with named variants. The
+    bare `Refused` enums are `FrameRefusal`, `ClosenessRefusal`,
+    `ShareRefusal` (forms), `KeeperRefusal`, `OutflowRefusal`,
+    `ObstructionRefusal` (the mint's, the trial's and the citations'
+    refusals, `transducer::sentence`), `LearnRefusal` and
+    `verdict::ReceiptedRefusal`; `RulingRefused`, `RoomRefused`,
+    `PeriodRefused`, `CapacityRefused`, `LieRankRefused` and `TickRefused`
+    end in `Refusal`; `CoordinateError` is `CoordinateRefusal`, the
+    schema's `Refusal` is `StratumRefusal`, and xtask's `MutateError` and
+    `Verdict` are `MutateRefusal` and `MutantVerdict` (an unbuilt mutant
+    reads `UNBUILT`);
+  - counts are tallies: `GenomeRefused` is `GenomeWriteTally`, the
+    snapshot's count `SnapshotTally`;
+  - variants: `NoiseRefusal::{Handshake, PeerLabel, Encrypt}`,
+    `Carried::Refused`, `ChildRefusal::{Mismatched, Repeated}`,
+    `Uplinked::Repeated`, `HandoffRefusal::{UnknownId, NotKeeper,
+    MalformedTube}`, `LeaseRefusal::UnknownLease`,
+    `SideRefusal::UnknownHandoff`; a sole shortfall is `Short`
+    (`CrossRefusal`, `GrantRefusal`, `Unretrieved`);
+  - the inline `Ruling::Slashed` and `Adoption::Refused` reasons are
+    `REFUSE_*` constants in `court::verdict`, their text unchanged;
+  - a one-byte enum reads `of(u8)` and writes `byte()`: `as_u8`/`from_u8`,
+    `to_byte`/`from_byte` and `code` are retired on `BivectorKind`,
+    `Stratum`, `Pole`, `ShellKind`, `RewriteKind`, `Standing`, `Axis`,
+    `RefusalKind`, `Arm`, the scene `Reading` and the ledger, map, lease
+    and stake refusals; `Action::to_byte` folds into `Action::byte`, and
+    its filtered decoders are `Action::of_wire` (was `of_tag`) and
+    `Action::of_sealed` (was `from_byte`).
 
 ### Documentation
 - One naming scheme for the specifications: every document under `docs/`

@@ -166,6 +166,21 @@ pub const REFUSE_CITATION_CYCLE: &str = "a cited form cites back into its own sp
 /// costs more reads than a stroke grants. Not a reading of the word: N.
 /// A court under its lock never answers this; it answers `Replayed::Unread`.
 pub const REFUSE_UNREAD: &str = "the replay holds a unit no stroke can read";
+/// A ruling's slashed axis: the word does not parse.
+pub const REFUSE_UNPARSEABLE_WORD: &str = "unparseable word";
+/// A ruling's slashed axis: a listed demand carries no deflation.
+pub const REFUSE_DEMAND_UNDEFLATED: &str = "no deflation on a listed demand";
+/// A ruling's slashed axis: the closing holonomy's counts pass their carrier.
+pub const REFUSE_HOLONOMY_PAST_CARRIER: &str = "the closing holonomy's counts pass the carrier";
+/// A ruling's slashed axis: the obstruction chain has no canonical form.
+pub const REFUSE_OBSTRUCTION_UNCANONICAL: &str = "obstruction chain has no canonical form";
+/// An adoption refused at the mint: a torsion cycle closes at a period other
+/// than the one spoken.
+pub const REFUSE_TORSION_PERIOD: &str = "torsion period does not re-derive — the winding was misspoken";
+/// An adoption refused at the mint: a torsion cycle does not close.
+pub const REFUSE_TORSION_UNCLOSED: &str = "torsion cycle does not close — the period was a filing";
+/// An adoption refused because the court's state could not be held.
+pub const REFUSE_COURT_UNAVAILABLE: &str = "kernel unavailable";
 
 /// A REFUSAL WITH ITS COORDINATE (50.9): the reason of 34.1 and where in
 /// the sentence the court found it, as content.
@@ -278,7 +293,7 @@ impl Refusal {
 /// coordinate and the receipt it answered with, keyed by the refused
 /// address, so the contraction the voice cites next can be verified.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Refused {
+pub struct ReceiptedRefusal {
     pub kind: sentence::RefusalKind,
     pub at: sentence::At,
     pub receipt: [u8; 32],

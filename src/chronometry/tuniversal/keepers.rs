@@ -22,7 +22,7 @@ fn window_len() -> usize {
 
 /// WHY A KEEPER'S RING WAS NOT ADMITTED (TU-2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Refused {
+pub enum KeeperRefusal {
     /// A reading's signature does not verify under its keeper at this origin.
     Signature,
     /// A reading does not name its predecessor's hash, or the ring links to
@@ -223,22 +223,22 @@ impl Keepers {
     /// restarted (an empty parent above the held tick), or where a full ring
     /// passed a gap. A ring of this court's own key is not admitted from
     /// another.
-    pub fn admit(&mut self, keeper: [u8; 32], ring: Vec<TickReading>) -> Result<Admitted, Refused> {
+    pub fn admit(&mut self, keeper: [u8; 32], ring: Vec<TickReading>) -> Result<Admitted, KeeperRefusal> {
         if keeper == self.own_key || ring.is_empty() {
             return Ok(Admitted::Stale);
         }
         let mut hashes = Vec::with_capacity(ring.len());
         for (i, r) in ring.iter().enumerate() {
             if r.keeper != keeper || !r.verifies(&self.origin) {
-                return Err(Refused::Signature);
+                return Err(KeeperRefusal::Signature);
             }
-            let at = r.hash(&self.origin).ok_or(Refused::Signature)?;
+            let at = r.hash(&self.origin).ok_or(KeeperRefusal::Signature)?;
             if let Some(prev) = i.checked_sub(1).and_then(|j| ring.get(j)) {
                 if r.tick.h <= prev.tick.h {
-                    return Err(Refused::NotAscending);
+                    return Err(KeeperRefusal::NotAscending);
                 }
                 if hashes.get(i - 1) != Some(&r.parent) {
-                    return Err(Refused::BrokenParent);
+                    return Err(KeeperRefusal::BrokenParent);
                 }
             }
             self.cites_agree(keeper, r)?;
@@ -253,7 +253,7 @@ impl Keepers {
             }
             Link::Stale => return Ok(Admitted::Stale),
         };
-        let n = ring.len().checked_sub(from).ok_or(Refused::BrokenParent)?;
+        let n = ring.len().checked_sub(from).ok_or(KeeperRefusal::BrokenParent)?;
         for (at, r) in hashes.into_iter().zip(ring).skip(from) {
             self.hold(keeper, at, r);
         }
@@ -265,14 +265,14 @@ impl Keepers {
 
     /// Every cite of a reading names another keeper, once, and agrees with
     /// the reading this court holds at that tick, where it holds one.
-    fn cites_agree(&self, keeper: [u8; 32], r: &TickReading) -> Result<(), Refused> {
+    fn cites_agree(&self, keeper: [u8; 32], r: &TickReading) -> Result<(), KeeperRefusal> {
         for (i, c) in r.cites.iter().enumerate() {
             if c.keeper == keeper || r.cites.iter().take(i).any(|d| d.keeper == c.keeper) {
-                return Err(Refused::Cites);
+                return Err(KeeperRefusal::Cites);
             }
             if let Some((held, _)) = self.line(&c.keeper).and_then(|l| l.at_h(c.h)) {
                 if *held != c.reading {
-                    return Err(Refused::Cites);
+                    return Err(KeeperRefusal::Cites);
                 }
             }
         }
@@ -280,7 +280,7 @@ impl Keepers {
     }
 
     /// Where a verified ring stands against the line held.
-    fn link(&self, keeper: &[u8; 32], ring: &[TickReading], hashes: &[[u8; 32]]) -> Result<Link, Refused> {
+    fn link(&self, keeper: &[u8; 32], ring: &[TickReading], hashes: &[[u8; 32]]) -> Result<Link, KeeperRefusal> {
         let Some((held_at, held)) = self.line(keeper).and_then(Line::newest) else { return Ok(Link::Anew) };
         let (Some(first), Some(newest)) = (ring.iter().next(), hashes.iter().next_back()) else { return Ok(Link::Stale) };
         if self.line(keeper).is_some_and(|l| l.holds(newest)) {
@@ -296,7 +296,7 @@ impl Keepers {
         if above && (first.parent == [0u8; 32] || ring.len() == ring_len()) {
             return Ok(Link::Anew);
         }
-        Err(Refused::BrokenParent)
+        Err(KeeperRefusal::BrokenParent)
     }
 
     /// THE HIGHEST TICK OTHER KEEPERS VOUCH FOR ON `keeper`'S LINE: per

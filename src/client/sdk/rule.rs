@@ -102,7 +102,7 @@ pub enum NoRule {
     /// body to act on.
     NoFamily,
     /// The one mint refused the sentence, by its named refusal.
-    Mint(sentence::Refused),
+    Mint(sentence::ObstructionRefusal),
     /// The word is not a sentence the decoder reads, or there is nothing to
     /// judge it against.
     NotASentence,

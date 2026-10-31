@@ -125,7 +125,7 @@ impl Court {
             return Err(LeaseRefusal::Spent);
         }
         if self.atlas.leases.get(&a.lease).is_none_or(|l| l.payer != a.payer) {
-            return Err(LeaseRefusal::Unknown);
+            return Err(LeaseRefusal::UnknownLease);
         }
         let returned = self.end_lease(&a.lease);
         self.atlas.spent.insert(spent, ());

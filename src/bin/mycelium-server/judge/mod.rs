@@ -46,7 +46,7 @@ static REFUSE_COUNT: AtomicU64 = AtomicU64::new(0);
 /// frame is none of them: the caller judges it as before.
 pub(crate) fn serve_published(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     let tag = dialogue::act_tag(&frame.body);
-    let served = match tag.and_then(Action::of_tag) {
+    let served = match tag.and_then(Action::of_wire) {
         Some(Action::Receipts) => {
             receipts::judge(stream, frame, door);
             true
@@ -90,7 +90,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     // 78.94 — THE FRAME IS READ AS AN ACTION OF THE PHYSICS: a byte that
     // names no action, or a court's own act (never asked for), is not
     // answered; a retired action is refused by its kind.
-    let Some(action) = dialogue::act_tag(&frame.body).and_then(Action::of_tag) else { return };
+    let Some(action) = dialogue::act_tag(&frame.body).and_then(Action::of_wire) else { return };
     if action.kind() == Kind::Retired {
         // 26, 50.6 seam 3: raw painted sites and coboundary chains do not
         // reach a court, nor do acts with no handler. Refused with the

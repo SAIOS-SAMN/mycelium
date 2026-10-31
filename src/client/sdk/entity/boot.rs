@@ -224,7 +224,7 @@ impl Mind {
     /// THE GENOME'S BYTES: the words a court admitted, each at its citation. A
     /// word the writer refused is named once with its count (LD0), and the
     /// counts are answered.
-    pub(crate) fn genome_bytes(&self) -> (Vec<u8>, crate::client::sdk::epigenome::GenomeRefused) {
+    pub(crate) fn genome_bytes(&self) -> (Vec<u8>, crate::client::sdk::epigenome::GenomeWriteTally) {
         let (bytes, refused) = self.epigenome.crystallize();
         refused.name();
         (bytes, refused)
@@ -232,7 +232,7 @@ impl Mind {
 
     /// Persist the genome atomically (write-then-rename). Call from the
     /// syntropic phase when the genome has grown.
-    pub(crate) fn save_genome(&mut self, genome_path: &str) -> io::Result<crate::client::sdk::epigenome::GenomeRefused> {
+    pub(crate) fn save_genome(&mut self, genome_path: &str) -> io::Result<crate::client::sdk::epigenome::GenomeWriteTally> {
         let (bytes, refused) = self.genome_bytes();
         // ACT1: where this voice stood when the genome was taken, noted only
         // once the write lands (78.21(3)).

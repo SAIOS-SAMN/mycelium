@@ -917,7 +917,7 @@ fn trial_refuses_move_splitting_agreeing_circuits() {
             continue;
         }
         admitted += 1;
-        if matches!(f.trial(0, cand, &kappa, &perturbed), Err(Refused::TrialUnclosed)) {
+        if matches!(f.trial(0, cand, &kappa, &perturbed), Err(ObstructionRefusal::TrialUnclosed)) {
             refused += 1;
         }
     }

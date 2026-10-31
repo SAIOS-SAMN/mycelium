@@ -247,11 +247,11 @@ assert_eq!(
 /// in which acts is refused as that, with no question standing (78.9, N).
 #[test]
 fn mint_sentence_why_refuses_form_where_nothing_acts() {
-    use crate::transducer::sentence::{ObstructionKind, Refused};
+    use crate::transducer::sentence::{ObstructionKind, ObstructionRefusal};
     let rule = crate::transducer::sentence::rule_of_form(crate::transducer::sentence::Form::default());
     let refused = mint_sentence_why(&rule, &[], &NoCrystal, 0).err();
-    assert_eq!(refused, Some(Refused::MintNothingActs));
-    assert_eq!(refused.map(Refused::kind), Some(ObstructionKind::N));
+    assert_eq!(refused, Some(ObstructionRefusal::MintNothingActs));
+    assert_eq!(refused.map(ObstructionRefusal::kind), Some(ObstructionKind::N));
 }
 
 /// 78.158a U1 — THE MINT'S REFUSAL NAMED WHOLE, on the solve paths as on
@@ -261,7 +261,7 @@ fn mint_sentence_why_refuses_form_where_nothing_acts() {
 /// on the same form, exactly.
 #[test]
 fn mint_refusal_line_names_arm_proof_kind_demands() {
-    use crate::transducer::sentence::{Demand, ObstructionKind, Refused};
+    use crate::transducer::sentence::{Demand, ObstructionKind, ObstructionRefusal};
     let elsewhere: Vec<crate::transducer::sentence::Link> = vec![(5, 5, 0, 9)];
     let chart = crate::transducer::stalk::invariant(&elsewhere);
     let mut f = Form::default();
@@ -269,30 +269,30 @@ fn mint_refusal_line_names_arm_proof_kind_demands() {
     f.reindex();
     let why = mint_sentence_why(&crate::transducer::sentence::rule_of_form(f.clone()), &[], &NoCrystal, 0)
         .expect_err("a form of demands alone is not minted");
-    assert_eq!(why, Refused::MintNothingActs);
+    assert_eq!(why, ObstructionRefusal::MintNothingActs);
     assert_eq!(mint_refusal_line(why, &f), "mint refused (integrity): nothing in the form acts [N] demands [creation]");
     for (r, line) in [
         (
-            Refused::MintVertexNotCarried(ObstructionKind::C, "a lamina lands on the wrong hue"),
+            ObstructionRefusal::MintVertexNotCarried(ObstructionKind::C, "a lamina lands on the wrong hue"),
             "mint refused (carry): a lamina lands on the wrong hue [C] demands [creation]",
         ),
-        (Refused::MintLinksWithoutDemand, "mint refused (demands): links remain and the form declares no demand [I] demands [creation]"),
-        (Refused::MintLinksUndeclared, "mint refused (demands): links undeclared by the form's demands [I] demands [creation]"),
-        (Refused::CitedNotHeld, "mint refused (citation): the cited form is not held here [I] demands [creation]"),
-        (Refused::CitedSealed, "mint refused (citation): the cited address is sealed, owed to no court [I] demands [creation]"),
-        (Refused::OwedToEveryCourt, "mint refused (citation): owed to every court and none rules it [I] demands [creation]"),
-        (Refused::MintNoTape, "mint refused (integrity): the form has no tape at its measure [I] demands [creation]"),
+        (ObstructionRefusal::MintLinksWithoutDemand, "mint refused (demands): links remain and the form declares no demand [I] demands [creation]"),
+        (ObstructionRefusal::MintLinksUndeclared, "mint refused (demands): links undeclared by the form's demands [I] demands [creation]"),
+        (ObstructionRefusal::CitedNotHeld, "mint refused (citation): the cited form is not held here [I] demands [creation]"),
+        (ObstructionRefusal::CitedSealed, "mint refused (citation): the cited address is sealed, owed to no court [I] demands [creation]"),
+        (ObstructionRefusal::OwedToEveryCourt, "mint refused (citation): owed to every court and none rules it [I] demands [creation]"),
+        (ObstructionRefusal::MintNoTape, "mint refused (integrity): the form has no tape at its measure [I] demands [creation]"),
         (
-            Refused::MintAddressUndecoded,
+            ObstructionRefusal::MintAddressUndecoded,
             "mint refused (integrity): the address does not decode, so the court holds no form [I] demands [creation]",
         ),
-        (Refused::TrialLaneRose, "mint refused (other): a lane rose [C] demands [creation]"),
+        (ObstructionRefusal::TrialLaneRose, "mint refused (other): a lane rose [C] demands [creation]"),
     ] {
         assert_eq!(mint_refusal_line(r, &f), line);
     }
     // A form carrying no demand names none.
     assert_eq!(
-        mint_refusal_line(Refused::MintNothingActs, &Form::default()),
+        mint_refusal_line(ObstructionRefusal::MintNothingActs, &Form::default()),
         "mint refused (integrity): nothing in the form acts [N] demands []"
     );
 }

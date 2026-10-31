@@ -108,13 +108,13 @@ fn handoff_mouth_refuses_bad_builders_and_frames() {
     // 78.136 — a line builds, but its own reserve keeps; the far end is the
     // other domain's reserve.
     let line_kept_by_other = Mouth { from_tier: vk(&key(30)), keeper: vk(&reserve(5)), ..mouth(4, 5, one(), one(), [0; 4]) };
-    assert_eq!(offer(&mut k, line_kept_by_other, &key(30)), HandoffRefusal::BadKeeper);
+    assert_eq!(offer(&mut k, line_kept_by_other, &key(30)), HandoffRefusal::NotKeeper);
     let to_a_line = Mouth { to_tier: vk(&key(30)), ..mouth(5, 4, one(), one(), [0; 4]) };
     assert_eq!(offer(&mut k, to_a_line, &reserve(5)), HandoffRefusal::NotReserve, "accepted by the far domain's reserve");
     let same_place = mouth(4, 4, turn(), turn(), [0; 4]);
     assert_eq!(offer(&mut k, same_place, &reserve(4)), HandoffRefusal::Unbound, "a road joins two distinct places");
     let stranger = Mouth { keeper: [9; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
-    assert_eq!(offer(&mut k, stranger, &reserve(4)), HandoffRefusal::BadKeeper);
+    assert_eq!(offer(&mut k, stranger, &reserve(4)), HandoffRefusal::NotKeeper);
     assert_eq!(offer(&mut k, mouth(4, 5, Mv::zero(), one(), [0; 4]), &reserve(4)), HandoffRefusal::Degenerate, "no horizon carried");
     assert_eq!(offer(&mut k, mouth(4, 5, one(), one(), [0; 4]), &reserve(5)), HandoffRefusal::NotTheTier);
 }
@@ -218,7 +218,7 @@ fn tube_of_reads_places_and_levels_on_curved_space() {
     let mirror = Mv::blade(E1, Q::from_integer(1.into()));
     assert_eq!(offer(&mut k, mouth(4, 5, one(), mirror, [0; 4])), Some(HandoffRefusal::NotIsometry), "an odd reflection");
     let massless = Mouth { tube: Some(Tube { mass: (0, 1), ..tube() }), ..mouth(4, 5, one(), one(), [0; 4]) };
-    assert_eq!(offer(&mut k, massless), Some(HandoffRefusal::BadTube));
+    assert_eq!(offer(&mut k, massless), Some(HandoffRefusal::MalformedTube));
     let id = open(&mut k, mouth(4, 5, turn(), one(), [0; 4]), 4, 5);
     let t = k.tube_of(&id).expect("a tube");
     for place in [&t.from_place, &t.to_place] {

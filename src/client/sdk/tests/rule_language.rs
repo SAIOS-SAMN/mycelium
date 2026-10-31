@@ -126,7 +126,7 @@ fn sentence_of_scale_alone_mints_no_word_c59eb873() {
     }
     let got = sentence(&[Step::Scale { up: 2, down: 1 }], &train, &NoCrystal);
     assert!(
-        matches!(got, Err(NoRule::Mint(crate::transducer::sentence::Refused::MintNoTape))),
+        matches!(got, Err(NoRule::Mint(crate::transducer::sentence::ObstructionRefusal::MintNoTape))),
         "a refinement measures no μ and mints nothing: {got:?}"
     );
 }

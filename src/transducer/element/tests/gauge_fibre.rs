@@ -151,10 +151,10 @@ fn on_orbit_matches_walk_on_every_cycle_type() {
 #[test]
 fn orbit_period_refuses_hue_past_palette() {
     let sigma = vec![(1, 10), (10, 1)];
-    assert_eq!(orbit_period(&sigma, &[(1, 10)]), Err(PeriodRefused::NotAPermutation));
+    assert_eq!(orbit_period(&sigma, &[(1, 10)]), Err(PeriodRefusal::NotAPermutation));
     assert!(!on_orbit(&sigma, &[(1, 10)], &[(10, 1)]), "and nothing is on its orbit");
     // A base hue the map does not list ends the orbit at its first step.
-    assert_eq!(orbit_period(&[(1, 2), (2, 1)], &[(1, 3)]), Err(PeriodRefused::OffDomain));
+    assert_eq!(orbit_period(&[(1, 2), (2, 1)], &[(1, 3)]), Err(PeriodRefusal::OffDomain));
 }
 
 /// PD1's return — A STORED PERIOD IS A CLAIM, NEVER A BOUND. A hue cycle

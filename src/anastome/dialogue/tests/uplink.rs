@@ -78,14 +78,14 @@ fn uplink_fold_and_answers_round_trip_whole() {
         Uplinked::Unbound,
         Uplinked::Chained { at, receipt: [9u8; 32], provisional: true, obstructions: 2, open_remainders: 1 },
         Uplinked::ChildRefused { index: 3, why: ChildRefusal::NotOnLine },
-        Uplinked::ChildRefused { index: 0, why: ChildRefusal::Mismatch },
+        Uplinked::ChildRefused { index: 0, why: ChildRefusal::Mismatched },
         Uplinked::ChildRefused { index: 1, why: ChildRefusal::ForeignDomain },
         Uplinked::ChildRefused { index: 2, why: ChildRefusal::OverIncluded { lane: 1 } },
         Uplinked::ChildRefused { index: 0, why: ChildRefusal::Unsigned },
         Uplinked::ChildRefused { index: 0, why: ChildRefusal::Unbonded },
         Uplinked::ChildRefused { index: 0, why: ChildRefusal::Broken },
-        Uplinked::ChildRefused { index: 0, why: ChildRefusal::Repeat },
-        Uplinked::Repeat,
+        Uplinked::ChildRefused { index: 0, why: ChildRefusal::Repeated },
+        Uplinked::Repeated,
         Uplinked::NotReserve,
     ] {
         assert_eq!(decode_uplink_reply(&encode_uplink_reply(&u)), Some(u.clone()), "{u:?}");

@@ -230,7 +230,7 @@ pub enum Verdict {
     Awaiting,
     /// The door deferred the act; nothing was heard.
     Deferred,
-    /// Refused, by the refusal's own kind (`RefusalKind::to_byte`).
+    /// Refused, by the refusal's own kind (`RefusalKind::byte`).
     Refused(u8),
 }
 

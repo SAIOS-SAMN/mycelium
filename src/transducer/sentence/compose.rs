@@ -71,7 +71,7 @@ pub struct Composition {
     pub closure: Closure,
     pub carried: Vec<Mv>,
     pub path: Mv,
-    pub rank: Result<usize, crate::transducer::cech::LieRankRefused>,
+    pub rank: Result<usize, crate::transducer::cech::LieRankRefusal>,
     /// 78.105 N1 — EACH TERM'S WORD `Wᵢ`, read apart from its SPACE `gᵢ`
     /// (the transport to the next word, the non-verbal line), in the
     /// sentence's order: what a lexicon reads a term's rung by. They were

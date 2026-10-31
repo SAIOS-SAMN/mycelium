@@ -1434,7 +1434,7 @@ impl Carrier {
         };
         let spoken = [dialogue::Spoken {
             tape,
-            standing: crate::transducer::stalk::Standing::Stood.as_u8(),
+            standing: crate::transducer::stalk::Standing::Stood.byte(),
             contraction: None,
             agreement: agreement.map(<[u8]>::to_vec),
         }];

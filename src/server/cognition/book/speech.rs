@@ -31,7 +31,7 @@ fn note_verdict_of(a: &crate::anastome::dialogue::Adjudication) {
         Adjudication::Ratified { .. } => Verdict::Ratified,
         Adjudication::Stood { .. } => Verdict::Stood,
         Adjudication::Awaiting { .. } => Verdict::Awaiting,
-        Adjudication::Refused { kind, .. } => Verdict::Refused(kind.to_byte()),
+        Adjudication::Refused { kind, .. } => Verdict::Refused(kind.byte()),
     });
 }
 
@@ -342,7 +342,7 @@ impl Court {
         };
         self.refusals.insert(
             addr,
-            crate::court::verdict::Refused { kind, at: refusal.at.clone(), receipt },
+            crate::court::verdict::ReceiptedRefusal { kind, at: refusal.at.clone(), receipt },
         );
         crate::anastome::dialogue::Adjudication::Refused { kind, at: refusal.at, receipt }
     }

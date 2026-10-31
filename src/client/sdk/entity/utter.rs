@@ -215,7 +215,7 @@ impl Mind {
                 let body = crate::transducer::sentence::cited_pattern(w, &c.assignment)?;
                 Some(dialogue::CiteWire {
                     addr: w.address(),
-                    standing: standing_of(c.word.as_bytes())?.as_u8(),
+                    standing: standing_of(c.word.as_bytes())?.byte(),
                     transport: c.transport,
                     body,
                 })
@@ -226,7 +226,7 @@ impl Mind {
             let Some(st) = standing_of(p.word.as_bytes()) else { continue };
             cites.push(dialogue::CiteWire {
                 addr: w.address(),
-                standing: st.as_u8(),
+                standing: st.byte(),
                 transport: p.transport.clone(),
                 body: p.links.clone(),
             });
@@ -237,14 +237,14 @@ impl Mind {
         for h in located.held {
             cites.push(dialogue::CiteWire {
                 addr: h.address,
-                standing: Standing::Held.as_u8(),
+                standing: Standing::Held.byte(),
                 transport: crate::transducer::element::identity_versor(),
                 body: h.body,
             });
         }
         let k = self.own_k();
         for c in &cites {
-            if c.standing == Standing::Stood.as_u8() {
+            if c.standing == Standing::Stood.byte() {
                 self.epigenome.touch(&c.addr, k);
             }
         }
@@ -494,7 +494,7 @@ impl Mind {
             .map(|&i| {
                 Some(dialogue::Spoken {
                     tape: sentences[i].to_bytes()?,
-                    standing: Standing::Stood.as_u8(),
+                    standing: Standing::Stood.byte(),
                     contraction: self.certificate_for(&sentences[i]),
                     agreement: None,
                 })

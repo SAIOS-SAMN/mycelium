@@ -868,7 +868,7 @@ impl Mind {
             // stands; no versor, P; no reading, unclassified. The same class
             // read D before an adjunction reads derivable after it.
             use crate::transducer::family::{letter_reading, LetterReading};
-            use crate::transducer::sentence::Refused;
+            use crate::transducer::sentence::ObstructionRefusal;
             // The caller's stroke (65.5): the reading is part of its act.
             let reading = letter_reading(&self.epigenome, budget, rotor);
             if reading == LetterReading::Derivable {
@@ -876,7 +876,7 @@ impl Mind {
                 continue;
             }
             if let Some(kind) = reading.kind() {
-                let _ = Refused::RotorMintsNoGenerator(kind).noted();
+                let _ = ObstructionRefusal::RotorMintsNoGenerator(kind).noted();
             }
             // A rotor the mind already stands is not a refusal: the same class
             // is adjoined every stroke it is measured, and after the first the

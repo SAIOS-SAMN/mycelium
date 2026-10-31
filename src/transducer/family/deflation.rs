@@ -453,10 +453,10 @@ pub fn mint_sentence_why(
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
     _stood: u64,
-) -> Result<element::Element, crate::transducer::sentence::Refused> {
+) -> Result<element::Element, crate::transducer::sentence::ObstructionRefusal> {
     // The mint reads its family on the family's own ground, whatever the
     // caller opened (`form_deflation_read`).
-    crate::arc::on_ground_of(family, || mint_or_refuse(rule, family, crystal)).map_err(crate::transducer::sentence::Refused::noted)
+    crate::arc::on_ground_of(family, || mint_or_refuse(rule, family, crystal)).map_err(crate::transducer::sentence::ObstructionRefusal::noted)
 }
 
 /// THE MINT'S REFUSAL BY ARM (78.67): a vertex that does not carry its
@@ -465,13 +465,13 @@ pub fn mint_sentence_why(
 /// with nothing acting, no tape or an address that does not decode is
 /// `integrity`. Exhaustive over the refusals the mint returns; any other is
 /// named `other` rather than folded into one of these.
-pub fn mint_arm(why: crate::transducer::sentence::Refused) -> &'static str {
-    use crate::transducer::sentence::Refused;
+pub fn mint_arm(why: crate::transducer::sentence::ObstructionRefusal) -> &'static str {
+    use crate::transducer::sentence::ObstructionRefusal;
     match why {
-        Refused::MintVertexNotCarried(..) => "carry",
-        Refused::MintLinksWithoutDemand | Refused::MintLinksUndeclared => "demands",
-        Refused::CitedNotHeld | Refused::CitedSealed | Refused::OwedToEveryCourt => "citation",
-        Refused::MintNothingActs | Refused::MintNoTape | Refused::MintAddressUndecoded => "integrity",
+        ObstructionRefusal::MintVertexNotCarried(..) => "carry",
+        ObstructionRefusal::MintLinksWithoutDemand | ObstructionRefusal::MintLinksUndeclared => "demands",
+        ObstructionRefusal::CitedNotHeld | ObstructionRefusal::CitedSealed | ObstructionRefusal::OwedToEveryCourt => "citation",
+        ObstructionRefusal::MintNothingActs | ObstructionRefusal::MintNoTape | ObstructionRefusal::MintAddressUndecoded => "integrity",
         _ => "other",
     }
 }
@@ -483,7 +483,7 @@ pub fn mint_arm(why: crate::transducer::sentence::Refused) -> &'static str {
 /// read "unmeasured span, or the mint refused" and the speech path named
 /// the arm alone, so 456 refusals of "nothing in the form acts" could not
 /// say that every vertex was a demand, nor which.
-pub fn mint_refusal_line(why: crate::transducer::sentence::Refused, form: &crate::transducer::sentence::Form) -> String {
+pub fn mint_refusal_line(why: crate::transducer::sentence::ObstructionRefusal, form: &crate::transducer::sentence::Form) -> String {
     let kinds: Vec<&'static str> = form.demand_vertices().map(|(_, kind, _, _)| kind.label()).collect();
     format!("mint refused ({}): {} [{:?}] demands [{}]", mint_arm(why), why.proof(), why.kind(), kinds.join(", "))
 }
@@ -492,16 +492,16 @@ fn mint_or_refuse(
     rule: &crate::transducer::sentence::SentenceRule,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
-) -> Result<element::Element, crate::transducer::sentence::Refused> {
-    use crate::transducer::sentence::Refused;
+) -> Result<element::Element, crate::transducer::sentence::ObstructionRefusal> {
+    use crate::transducer::sentence::ObstructionRefusal;
     // A form nothing in which acts is not uttered: the speaker's side of
     // `REFUSE_NOT_A_SENTENCE` (23.1 step 3, 50.6), reading the same
     // `Form::acts()` the court reads.
     if !rule.form.acts() {
-        return Err(Refused::MintNothingActs);
+        return Err(ObstructionRefusal::MintNothingActs);
     }
     if let Some((r, why)) = crate::court::verdict::body::vertices_carry_frames(&rule.form, family) {
-        return Err(Refused::MintVertexNotCarried(r.obstruction.kind(), why));
+        return Err(ObstructionRefusal::MintVertexNotCarried(r.obstruction.kind(), why));
     }
     // 50.5 — what the form leaves unspoken on this family is its demand. A
     // citation this mind's crystal does not hold leaves nothing to declare:
@@ -510,10 +510,10 @@ fn mint_or_refuse(
     let spoken = form_deflation_read(&rule.form, family, crystal, &here);
     // 78.153 — a cycle of citations is no composition: no speech of it ends.
     if !spoken.cycled.is_empty() {
-        return Err(Refused::CitationsDoNotCompose);
+        return Err(ObstructionRefusal::CitationsDoNotCompose);
     }
     if !spoken.unresolved.is_empty() {
-        return Err(Refused::CitedNotHeld);
+        return Err(ObstructionRefusal::CitedNotHeld);
     }
     let declared = declare_unspoken(&rule.form, family, &spoken.remainders);
     let form = match declared.as_ref() {
@@ -531,16 +531,16 @@ fn mint_or_refuse(
         &crate::transducer::sentence::form_vertex_key(form),
         &crate::transducer::element::ReceiptsEnvelope::of_form(form),
     )
-    .ok_or(Refused::MintAddressUndecoded)?;
+    .ok_or(ObstructionRefusal::MintAddressUndecoded)?;
     let read = form_deflation_read(&held, family, crystal, &here);
     if !read.cycled.is_empty() {
-        return Err(Refused::CitationsDoNotCompose);
+        return Err(ObstructionRefusal::CitationsDoNotCompose);
     }
     if !read.unresolved.is_empty() {
-        return Err(Refused::CitedNotHeld);
+        return Err(ObstructionRefusal::CitedNotHeld);
     }
     let mag = sentence_measure_why(&held, family, read.pay, &read.remainders)?;
-    crate::transducer::sentence::as_element_form(form, mag).ok_or(Refused::MintNoTape)
+    crate::transducer::sentence::as_element_form(form, mag).ok_or(ObstructionRefusal::MintNoTape)
 }
 
 /// 50.5 — THE UNSPOKEN REMAINDER, DECLARED. A sentence is "the form saying
@@ -680,12 +680,12 @@ pub fn sentence_measure_why(
     family: &[(Grid, Grid)],
     pay: [u64; 4],
     remainders: &[crate::transducer::germinate::ResidualGerm],
-) -> Result<[u64; 4], crate::transducer::sentence::Refused> {
-    use crate::transducer::sentence::Refused;
+) -> Result<[u64; 4], crate::transducer::sentence::ObstructionRefusal> {
+    use crate::transducer::sentence::ObstructionRefusal;
     if form.demand_vertices().next().is_none() {
         let left: usize = remainders.iter().map(|r| r.len()).sum();
         if left != 0 {
-            return Err(Refused::MintLinksWithoutDemand);
+            return Err(ObstructionRefusal::MintLinksWithoutDemand);
         }
         // NO DISCHARGE, NO WORD (ruled 2026-10-08: never give μ away
         // for the possibility of falsification). A span written into T made
@@ -693,13 +693,13 @@ pub fn sentence_measure_why(
         // its price; no span is written now (78.149 (a)), and the work is
         // still read by name.
         if pay.iter().all(|&x| x == 0) {
-            return Err(Refused::MintNoTape);
+            return Err(ObstructionRefusal::MintNoTape);
         }
         return Ok(pay);
     }
     let undeclared = crate::court::verdict::body::undeclared_remainder(remainders, form);
     if !undeclared.is_empty() {
-        return Err(Refused::MintLinksUndeclared);
+        return Err(ObstructionRefusal::MintLinksUndeclared);
     }
     let mut mag = [0u64; 4];
     // The remainders are the ones `form_deflation` measured (law 12); the

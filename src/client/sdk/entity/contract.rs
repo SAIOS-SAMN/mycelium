@@ -156,7 +156,7 @@ impl Mind {
             // A cited form this mind sealed cannot be taught to any court:
             // the frame would refuse it here and carry the citer alone.
             if self.sealed.get(o.form.address().as_bytes()).is_some() {
-                let _ = crate::transducer::sentence::Refused::CitedSealed.noted();
+                let _ = crate::transducer::sentence::ObstructionRefusal::CitedSealed.noted();
                 continue;
             }
             let both = [o.form.clone(), o.citer.clone()];
@@ -191,14 +191,14 @@ impl Mind {
         form: &crate::transducer::address::Address,
         train: &crate::transducer::family::Family,
         task: &[u8],
-    ) -> Result<(), crate::transducer::sentence::Refused> {
-        use crate::transducer::sentence::Refused;
+    ) -> Result<(), crate::transducer::sentence::ObstructionRefusal> {
+        use crate::transducer::sentence::ObstructionRefusal;
         let addr = citer.address();
         if self.sealed.get(form.as_bytes()).is_some() {
-            return Err(Refused::CitedSealed.noted());
+            return Err(ObstructionRefusal::CitedSealed.noted());
         }
         let Some(cited) = self.epigenome.working_word(form.as_bytes()).map(|h| h.element().clone()) else {
-            return Err(Refused::CitedNotHeld.noted());
+            return Err(ObstructionRefusal::CitedNotHeld.noted());
         };
         let courts = self.hypha.courts();
         let tried = match self.owed_tries.get(addr.as_bytes()) {
@@ -207,7 +207,7 @@ impl Mind {
         };
         if tried >= courts {
             self.owed_tries.remove(addr.as_bytes());
-            return Err(Refused::OwedToEveryCourt.noted());
+            return Err(ObstructionRefusal::OwedToEveryCourt.noted());
         }
         self.owed_tries.insert(addr.as_bytes(), tried + 1);
         self.owed.push(crate::client::sdk::Owed {

@@ -40,7 +40,7 @@ impl Mind {
         // incident to the root prefix — the first quote reads the book at
         // depth zero, so a mind need not already hold a word to learn one),
         // and each held bubble's chart with the volume it routes by.
-        let standing = |inv: &crate::transducer::stalk::Invariant| (inv.clone(), self.working_atlas().standing_on(inv).as_u8());
+        let standing = |inv: &crate::transducer::stalk::Invariant| (inv.clone(), self.working_atlas().standing_on(inv).byte());
         let root = crate::transducer::stalk::Invariant(Vec::new());
         let empty = self.atlas_is_empty();
         let plan = QuotePlan {

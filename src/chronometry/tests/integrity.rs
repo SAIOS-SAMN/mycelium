@@ -56,8 +56,8 @@ fn act_kind_rides_tape_and_chain_hash() {
     // EC1: the ruling's arm is its kind byte, so a ruling re-armed is
     // another node, and every arm reads back as itself.
     for arm in Ruled::ALL {
-        let byte = ActKind::Ruling(arm).to_byte();
-        assert_eq!(ActKind::from_byte(byte), Some(ActKind::Ruling(arm)), "{} rides its own byte", arm.name());
+        let byte = ActKind::Ruling(arm).byte();
+        assert_eq!(ActKind::of_sealed(byte), Some(ActKind::Ruling(arm)), "{} rides its own byte", arm.name());
     }
     let upheld = KStepReceipt::seal(
         r.stamp,
@@ -77,7 +77,7 @@ fn act_kind_rides_tape_and_chain_hash() {
     moved.stamp.vk = [2; 32];
     assert!(!moved.rederives(), "and so is the signer: the stamp is the node's key");
     let at = Stamp::LEN;
-    assert_eq!(tape[at], ActKind::Install.to_byte(), "the kind byte follows the stamp");
+    assert_eq!(tape[at], ActKind::Install.byte(), "the kind byte follows the stamp");
     let mut bad = tape.clone();
     bad[at] = 0xEE;
     assert!(KStepReceipt::read(&bad, &mut 0).is_none(), "a byte naming no kind refuses the read");
@@ -91,11 +91,11 @@ fn act_kind_rides_tape_and_chain_hash() {
         ActKind::RankStep,
         ActKind::Reconnect,
     ] {
-        assert_eq!(ActKind::from_byte(k.to_byte()), Some(k), "every kind round-trips its byte");
+        assert_eq!(ActKind::of_sealed(k.byte()), Some(k), "every kind round-trips its byte");
     }
     // 78.94 — a retired kind and an action no court seals name no node.
     for k in [ActKind::Learned, ActKind::Why, ActKind::Speech] {
-        assert_eq!(ActKind::from_byte(k.to_byte()), None, "{} is sealed by no court", String::from_utf8_lossy(k.name()));
+        assert_eq!(ActKind::of_sealed(k.byte()), None, "{} is sealed by no court", String::from_utf8_lossy(k.name()));
     }
 }
 
