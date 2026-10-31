@@ -142,7 +142,7 @@ senses that kernel builds for it.
 |---|---|
 | **Cl(4,1)(ℚ)** | The conformal geometric algebra of three-dimensional space over the rationals. Every geometric quantity in Mycelium is one of its multivectors, with exact rational coefficients. |
 | **Versor** | A product of vectors of Cl(4,1)(ℚ). It acts on geometry by the sandwich `V x Ṽ`, giving rotations, translations, dilations and reflections exactly. |
-| **Letter** | One of seventeen fixed Cayley letters, each an exact versor (`docs/ALPHABET.md`). The alphabet never grows. |
+| **Letter** | An exact rotation from which words are built. The seventeen **seed** letters never change; a court may **admit** a letter for a prime the seed does not reach, and a mind may construct **dialect** letters of its own, which reach the shared language only by a court ruling (`docs/ALPHABET.md`). |
 | **Word** | A product of letters. A word is a vertex whose meaning is its versor. |
 | **Sentence / form** | A structure of words: vertices, faces and rings, glued along shared overlaps. A rule is a sentence. |
 | **Chart** | The exact invariant coordinates a body of a scene stands on (its shape class), coarsest first. |
