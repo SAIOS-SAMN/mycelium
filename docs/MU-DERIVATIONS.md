@@ -7,7 +7,7 @@
 > **Components:** every numeric item and literal site under `src/`, `forms/src/` and `xtask/`; the register of open physics (`src/physics/axioms/founding.rs`) and its gate (`xtask/lint/`).
 
 **Status:** specification, version 1 (2026-10-31). Every entry is
-**Specified** but D3.1 and D3.2, which are **Built**. Each entry states the number as it
+**Specified** but D2.1, D2.2, D3.1 and D3.2, which are **Built**. Each entry states the number as it
 stands, what it decides, why it is underived, a derivation exact over ℤ or
 ℚ (or, where the documents and the code do not settle one, the candidates
 and the reading that decides between them), and the scope of the change.
@@ -44,7 +44,7 @@ rest fall into six classes.
 | 3. External standard | fixed by a published standard or a governing rule outside the physics | ~12 | §9 |
 | 4. Measured | read at run time off the host or the running system | 3 statics + 6 functions | D2.5–D2.7, D4.1 |
 | 5. Underived parameter | a chosen number standing where a reading belongs | ~11 consts + ~12 literal sites | §3–§6 |
-| 6. Derivation specified, not built | a governing document states the derivation; the code still holds the number | 3: `CHALLENGE_WINDOW` (D1.1), `THROAT_GRID` (D1.2), the slash and bounty halves (D2.1, D2.2) | §3–§6 |
+| 6. Derivation specified, not built | a governing document states the derivation; the code still holds the number | 2: `CHALLENGE_WINDOW` (D1.1), `THROAT_GRID` (D1.2); the slash and bounty halves (D2.1, D2.2) are **Built** | §3–§6 |
 
 Classes 1–3 need no derivation (§9), but each carries a class tag the
 gate reads (D1.4). Class 4 numbers are readings, and the entries for them
@@ -105,8 +105,8 @@ code locate a site when lines move.
 | D1.2 | `THROAT_GRID = 64` | `server/cognition/mouth.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet; Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
 | D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page | yes | S/M | 5, 14 |
 | D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) | yes | M | 22 |
-| D2.1 | `held.mu[l] / 2` (slash) | `server/cognition/convert.rs:582` | μ, discipline | High | `cut = ⌊B·D/(B + D)⌋`, defect against bond | yes | M | 3, 14 |
-| D2.2 | `cut[l] / 2` (bounty) | `server/cognition/convert.rs:586` | μ, challenge incentive | High | `bounty = ⌊cut·D/(D + X)⌋` | yes | S | 3, 14 |
+| D2.1 | `held.mu[l] / 2` (slash) | `server/cognition/convert.rs:582` | μ, discipline | High | `cut = B·X/(B + X)`, exposure against bond (**Built**, ruled 2026-10-31) | no | M | 3, 14 |
+| D2.2 | `cut[l] / 2` (bounty) | `server/cognition/convert.rs:586` | μ, challenge incentive | High | `bounty = cut·D/(D + X)` (**Built**, ruled 2026-10-31) | no | S | 3, 14 |
 | D2.3 | `surface + 1` (read price) | `server/cognition/crossing.rs:57–64` | μ, admission | High | `p = κ + y/R`, scale-free | yes | S | 21, 3 |
 | D2.4 | `UNIT_BOND = [1, 1, 1, 1]` | `economy/treasury.rs:163` | none (test fixture) | Low | deleted, not derived | no | S | 3 |
 | D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` | yes | M | 14 |
@@ -868,6 +868,21 @@ deficit plus entropic excess).
 
 ### D2.1 `cut = held.mu[l] / 2` — the slash of a falsified fold against its tier's bond
 
+**Status.** **Built** (ruled 2026-10-31: read against the EXPOSURE, O1
+(b), exact over ℚ with no floor). `cut_l = B_l · X_l / (B_l + X_l)`, `0`
+where `B_l + X_l = 0`, on rational lanes (`economy::forfeit`,
+`Court::slash(tier, challenger, exposure, defect, anchor)`); `X` is
+`Court::exposure_of(key)` as defined below, read before `reverse`; the
+defect `D` is `challenge::defect` (the bool `reconstructs` was this
+reading at zero). Tests (`economy::tests::forfeit`,
+`server::cognition::tests::{bond, challenge}`):
+`slash_is_half_where_exposure_equals_bond`,
+`slash_never_exceeds_bond_or_exposure`, `slash_is_zero_on_unexposed_lane`,
+`defect_is_zero_iff_reconstructs`, `bounty_plus_retired_equals_cut` (with
+`kept + cut = B`, the slash conserving the bond), and
+`challenge_slashes_bond_against_exposure_and_withdrawal_waits` (the audit
+holding through it). The entry below is the derivation as specified.
+
 **Site.** `src/server/cognition/convert.rs:582`, in `Court::slash`
 (called from `src/server/cognition/challenge.rs:296` on a replay that
 does not reconstruct, and `:309` on a default):
@@ -997,6 +1012,16 @@ nowhere in the equations.
 ---
 
 ### D2.2 `bounty = cut[l] / 2` — the challenger's share of the cut
+
+**Status.** **Built** (ruled 2026-10-31: D2.2's form kept, O1 as below — a
+default keeps the half). `bounty_l = cut_l · D_l / (D_l + X_l)` exact, `D`
+the reconstruction's measured defect, `D := X` on a default;
+`retired_l = cut_l − bounty_l`; supply falls by exactly `retired`. Tests:
+`bounty_is_half_on_default`, `bounty_reads_defect_against_exposure`,
+`bounty_plus_retired_equals_cut` (`economy::tests::forfeit`), and the
+supply falling by the retired part in
+`challenge_slashes_bond_against_exposure_and_withdrawal_waits` (the
+bounty taken from the cut, never minted).
 
 **Site.** `src/server/cognition/convert.rs:586`:
 

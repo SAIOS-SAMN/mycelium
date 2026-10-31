@@ -2,6 +2,7 @@
 // names the chapter of MU-RECURSION the claim comes from.
 
 mod fold;
+mod forfeit;
 mod ledger;
 mod modes;
 mod mu;

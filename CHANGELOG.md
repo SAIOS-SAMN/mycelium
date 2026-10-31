@@ -41,6 +41,17 @@ Holding the modes themselves (78.162) remains the next step.
 - **`SOLVE_FLOOR` is renamed `SOLVE_AGAIN`** (same byte, 1): a repeat
   closure is verified and paid nothing (MU-ECONOMY §11.4).
 
+### Governing constants derived (MU-DERIVATIONS, ruled 2026-10-31)
+- **D2.1, the tier slash, read against the exposure**: a falsified fold's
+  tier forfeits `B·X/(B + X)` of its bond per lane, exact, `X` the value
+  the fold's commitment moved (`Court::exposure_of`, read before
+  reversal). It was `⌊B/2⌋` whatever the fold lied by. `economy::forfeit`.
+- **D2.2, the bounty**: the challenger is paid `cut·D/(D + X)`, `D` the
+  defect the reconstruction proved (`challenge::defect`, which the
+  reconstruction's bool now reads at zero); a default proves its whole
+  exposure and pays half the cut. The rest is retired; supply falls by
+  exactly that part.
+
 ### Layout changes
 - **Ledger and snapshot**: every ledger row's μ⃗, every award, and the
   stake, balance and held tries carry the rational lane codec; a row has

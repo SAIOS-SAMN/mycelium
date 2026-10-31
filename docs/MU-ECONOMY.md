@@ -596,7 +596,11 @@ ratios the physics already reads:
 - bond against cover room;
 - the verifying courts' share of a release against its base, read as the
   court's strain against its reserve, `y/(y+R)` per lane (§5.1);
-- slash against bond.
+- slash against bond: a falsified fold's tier forfeits `B·X/(B + X)` per
+  lane, its exposure `X` against its bond `B`, and the challenger is paid
+  `cut·D/(D + X)`, the defect `D` the reconstruction proved against the
+  exposure (ruled 2026-10-31; MU-EQUATIONS §6.9a, MU-DERIVATIONS D2.1,
+  D2.2).
 
 (Accrual on T against standing extent stood on this list; it is retired by
 78.149 (a) — the span stood is not μ.)

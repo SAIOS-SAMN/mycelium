@@ -566,24 +566,23 @@ impl Court {
         })
     }
 
-    /// 78.129 — THE SLASH OF A FALSIFIED FOLD: half the tier's bond, on each
-    /// lane, exactly — forfeited as ruled: half of the cut to the challenger
-    /// whose reconstruction or default falsified it (the bounty: a challenge needs a
-    /// reason to be filed), half RETIRED from supply (POWR). Drawn from
-    /// whoever posted the bond; nothing where the tier stands unbonded.
-    /// (Over counts the halves were floored and the odd unit stayed bonded
-    /// or went to retirement.)
-    pub(crate) fn slash(&mut self, tier: &[u8; 32], challenger: [u8; 32], anchor: crate::economy::Anchor) -> crate::economy::Mu {
+    /// 78.129, MU-DERIVATIONS D2.1 and D2.2 (ruled 2026-10-31) — THE SLASH OF
+    /// A FALSIFIED FOLD, read against its EXPOSURE: the tier's bond `B`
+    /// forfeits `B·X/(B + X)` on each lane, exactly, `X` the value the
+    /// fold's commitment moved there (read before reversal); of the cut the
+    /// challenger whose reconstruction or default falsified it is paid
+    /// `cut·D/(D + X)`, `D` the defect the reconstruction proved (the whole
+    /// exposure on a default, so a default pays half), and the rest is
+    /// RETIRED from supply (POWR). Drawn from whoever posted the bond;
+    /// nothing where the tier stands unbonded (`economy::forfeit`).
+    pub(crate) fn slash(&mut self, tier: &[u8; 32], challenger: [u8; 32], exposure: &crate::economy::Mu, defect: &crate::economy::Mu, anchor: crate::economy::Anchor) -> crate::economy::Mu {
         use crate::economy::Mu;
         let key = bond_key(tier);
         let Some(held) = self.treasury.held_of(&key).cloned() else { return Mu::zero() };
-        let Some(half) = held.mu.part(2) else { return Mu::zero() };
-        let (cut, kept) = held.mu.split_at(&half);
+        let crate::economy::Forfeit { cut, bounty, retired, kept } = crate::economy::forfeit(&held.mu, exposure, defect);
         if cut.is_zero() {
             return cut;
         }
-        let Some(half_cut) = cut.part(2) else { return Mu::zero() };
-        let (bounty, retired) = cut.split_at(&half_cut);
         if self.treasury.refund_held(&key, anchor).is_err() {
             return Mu::zero();
         }

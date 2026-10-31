@@ -6,6 +6,7 @@
 
 pub mod escrow;
 pub mod fold;
+pub mod forfeit;
 pub mod lanes;
 pub mod modes;
 pub mod mu;
@@ -16,6 +17,7 @@ pub mod treasury;
 pub mod verify;
 
 pub use fold::{nets_of, nets_read, Folded, Inexact, Nets};
+pub use forfeit::{forfeit, Forfeit};
 pub use verify::verification_share;
 pub use lanes::*;
 pub use mu::{Mu, MuRefusal};

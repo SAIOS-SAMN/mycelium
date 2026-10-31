@@ -1416,20 +1416,26 @@ Sources: MU-ECONOMY §4, §6; MU-RECURSION 47.4, 42.2 R9. Code:
 #### 6.9a The tier slash
 
 ```text
-cut_l     = B_l / 2           B the tier's bond, per lane, exact
-bounty_l  = cut_l / 2         paid to the challenger
-retired_l = cut_l − bounty_l  burned (POWR)
-kept_l    = B_l − cut_l       still bonded
+cut_l     = B_l · X_l / (B_l + X_l)      B the tier's bond, X the fold's exposure; 0 where B_l + X_l = 0
+bounty_l  = cut_l · D_l / (D_l + X_l)    D the reconstruction's defect (D := X on a default); paid to the challenger
+retired_l = cut_l − bounty_l             burned (POWR)
+kept_l    = B_l − cut_l                  still bonded
+X_l = Σ own rows' positive parts + Σ own declared |·| + Σ netted children's rows⁺ and declared |·|
+D_l = Σ_w | want_{w,l} − have_{w,l} | + Σ_w | declared_{w,l} − own_declared_{w,l} |
 ```
 
-A falsified fold forfeits half its tier's bond, half of that to the
-challenger and half retired; supply falls by the retired part. (Until
-v0.3.0 both halves were floored and the odd unit stayed bonded or went to
-retirement.) MU-DERIVATIONS D2.1 and D2.2 derive the cut and the bounty
-from the readings the court holds.
+A falsified fold forfeits the bond against the value its commitment
+exposed: never more than the bond nor the exposure, exactly half where
+the two are equal (78.129's half). The challenger is paid the share of the
+cut its proof of the defect bears against the exposure — half on a
+default — and the rest is retired; supply falls by the retired part, and
+`kept + bounty + retired = B`. Exact over ℚ. (Until v0.3.0 the cut was
+`⌊B_l / 2⌋` and the bounty `⌊cut_l / 2⌋`, whatever the fold lied by.)
 
-Sources: MU-RECURSION 78.129; MU-DERIVATIONS D2.1, D2.2. Code:
-`src/server/cognition/convert.rs::Court::slash`.
+Sources: MU-RECURSION 78.129; MU-DERIVATIONS D2.1, D2.2 (ruled
+2026-10-31); MU-ECONOMY §8. Code: `src/economy/forfeit.rs::forfeit`;
+`src/server/cognition/convert.rs::Court::slash`;
+`src/server/cognition/challenge.rs` (`defect`, `Court::exposure_of`).
 
 #### 6.10 The invariant
 
