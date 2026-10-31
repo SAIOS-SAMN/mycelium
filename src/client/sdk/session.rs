@@ -485,8 +485,8 @@ impl Session {
             Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                 // A would-block that carries no deferral names no lanes,
                 // and no surface is read off one.
-                let lanes = match e.get_ref().and_then(|inner| inner.downcast_ref::<Deferral>()) {
-                    Some(d) => d.lanes,
+                let lanes = match deferral_of(&e) {
+                    Some(d) => d.deficit,
                     None => [0; 4],
                 };
                 Ok(YieldQuote { height: 0, surface: lanes, k: 0, clusters: Vec::new(), deficit: Some(lanes) })
@@ -544,10 +544,9 @@ impl Session {
     pub(crate) fn exchange_at(&self, endpoint: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let out = self.exchange_inner(endpoint, act_body);
         // A full reflex pool answers every act with the deferral shape (the
-        // pending outcome and four zero lanes): the judge's measured
+        // pending outcome and the door's four deficit lanes): the judge's measured
         // impedance, which the aperture reads as resistance (23.8, S13.4).
-        let deferred = matches!(&out, Ok(b)
-            if dialogue::is_deferral(b, crate::cognition::outcome_code(&crate::cognition::Outcome::GermPending)));
+        let deferred = out.as_ref().ok().and_then(|b| read_deferral(b));
         // Impedance is a running measurement: a clear exchange relaxes it
         // by one stroke, a refused or timed-out one raises it by one, so a
         // judge deferring most of the time reads as sustained resistance
@@ -555,7 +554,7 @@ impl Session {
         {
             let mut r = self.resistance.borrow_mut();
             match (&out, deferred) {
-                (Ok(_), false) => {
+                (Ok(_), None) => {
                     // A success anywhere means the aperture is open: every
                     // hypha's Z decays, and the working path is clear.
                     // EVERY hypha's Z decays on a success anywhere, which
@@ -585,22 +584,10 @@ impl Session {
                 }
             }
         }
-        if deferred {
+        if let Some(deferral) = deferred {
             // 23.8 (S13.4): the deferral carries the door's deficit; the
             // refusal carries it up so the arm dwells on those lanes.
-            let code = crate::cognition::outcome_code(&crate::cognition::Outcome::GermPending);
-            // A DEFERRAL THAT NAMES NO LANE IS NOT A DEFERRAL. Four zero
-            // lanes tell the arm the door deferred and is short on nothing,
-            // which is a deficit reading this reply never made; unmeasured
-            // is what it is, and the arm is told that instead.
-            let Some(lanes) = out.as_ref().ok().and_then(|b| dialogue::deferral_lanes(b, code))
-            else {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "deferral names no lane",
-                ));
-            };
-            return Err(io::Error::new(io::ErrorKind::WouldBlock, Deferral { lanes }));
+            return Err(io::Error::new(io::ErrorKind::WouldBlock, deferral));
         }
         out
     }

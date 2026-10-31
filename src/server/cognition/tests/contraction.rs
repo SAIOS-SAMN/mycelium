@@ -62,7 +62,7 @@ fn hear(k: &mut Court, frame: &[u8]) -> Vec<u8> {
         Ok(adjudicated) => {
             dialogue::encode_speech_reply(&adjudicated).expect("the reply fits its count")
         }
-        Err(lanes) => dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &lanes),
+        Err(lanes) => dialogue::encode_deferral(dialogue::PENDING_CODE, &lanes),
     }
 }
 

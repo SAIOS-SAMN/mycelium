@@ -51,7 +51,7 @@ pub fn outcome_code(o: &Outcome) -> u8 {
         // deferral: nothing was ruled and the voice speaks again. The
         // per-sentence shape that carries the cited address is
         // `Adjudication::Awaiting` on the speech reply, not this byte.
-        Outcome::GermPending | Outcome::Deferred(_) | Outcome::Awaiting(_) => 2,
+        Outcome::GermPending | Outcome::Deferred(_) | Outcome::Awaiting(_) => crate::anastome::dialogue::PENDING_CODE,
         Outcome::Installed(_) => 3,
         Outcome::Sectioned(_) => 6,
         Outcome::Fragmented(_) => 5,

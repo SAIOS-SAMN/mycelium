@@ -19,10 +19,15 @@
 //!    the client never saw and answers a verdict. A replay the court's stroke
 //!    did not finish answers `SOLVE_UNREAD`; the same solve sent again
 //!    resumes it.
+//! 6. Deferral — a hypha whose worker pool is full answers any act with the
+//!    deferral (`deferral::deferral_of` on the session's refusal,
+//!    `deferral::read_deferral` on raw bytes): nothing was ruled, the door's
+//!    per-lane deficit is printed, and the client asks again later.
 //!
 //! Exit 0 where every task asked was answered by the court (solved or
-//! refused by name); 1 where the court could not be reached.
+//! refused by name) or deferred; 1 where the court could not be reached.
 
+use mycelium_sdk::deferral::{deferral_of, read_deferral, Deferral};
 use mycelium_sdk::laws;
 use mycelium_sdk::prelude::*;
 use mycelium_sdk::rule::{extract_rule, mint_sentence_why, speak_rule, Physics};
@@ -39,6 +44,15 @@ enum Outcome {
     NoRule(&'static str),
     /// The court had no task to give.
     NoWork,
+    /// The hypha's worker pool was full and it deferred the act, stating
+    /// its reserve deficit per lane: nothing was ruled; ask again later.
+    Deferred(Deferral),
+}
+
+/// A refusal of `speak`, read: the deferral it carries, or the refusal
+/// named for `what`.
+fn deferred(what: &str, refusal: std::io::Error) -> Result<Deferral, String> {
+    deferral_of(&refusal).ok_or_else(|| format!("{what}: {refusal}"))
 }
 
 /// How many times one solve is sent while the court answers it unread.
@@ -59,12 +73,19 @@ fn verdict_name(code: u8) -> &'static str {
 /// or answered with bytes this build does not read.
 fn one_task(session: &Session, key: &SigningKey) -> Result<(String, Outcome), String> {
     let voice = key.verifying_key().to_bytes();
-    let reply = session.speak(task::encode_task_request(&voice)).map_err(|e| format!("task request: {e}"))?;
+    let reply = match session.speak(task::encode_task_request(&voice)) {
+        Ok(r) => r,
+        Err(e) => return Ok((String::new(), Outcome::Deferred(deferred("task request", e)?))),
+    };
     if reply.is_empty() {
         return Ok((String::new(), Outcome::NoWork));
     }
+    // A client on a transport of its own reads the deferral off the bytes.
+    if let Some(d) = read_deferral(&reply) {
+        return Ok((String::new(), Outcome::Deferred(d)));
+    }
     let Some(envelope) = task::decode_task_envelope(&reply) else {
-        return Err(format!("the court answered the task request with {} bytes that are no task envelope (a deferral: retry later)", reply.len()));
+        return Err(format!("the court answered the task request with {} bytes that are no task envelope", reply.len()));
     };
     let cite = hex32(&envelope.id);
     // THE RULE: read off the train pairs on a stroke of the SDK's own
@@ -95,7 +116,10 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<(String, Outcome), St
     let mut asked = 0u32;
     loop {
         asked += 1;
-        let reply = session.speak(solve.clone()).map_err(|e| format!("solve: {e}"))?;
+        let reply = match session.speak(solve.clone()) {
+            Ok(r) => r,
+            Err(e) => return Ok((cite, Outcome::Deferred(deferred("solve", e)?))),
+        };
         let Some((code, paid, refusal, _modes)) = task::decode_solve_verdict(&reply) else {
             return Err(format!("the court answered the solve with {} bytes that are no verdict", reply.len()));
         };
@@ -137,10 +161,16 @@ fn main() -> ExitCode {
             Some(served) => println!("laws: version {}, {} laws", laws::LAW_VERSION, served.len()),
             None => println!("laws: the hypha's register does not read at version {}", laws::LAW_VERSION),
         },
-        Err(e) => {
-            eprintln!("laws: {e}");
-            return ExitCode::from(1);
-        }
+        Err(e) => match deferral_of(&e) {
+            Some(d) => {
+                println!("laws: a deferral: the hypha's pool is full, deficit S:G:T:H {:?}; retry later", d.deficit);
+                return ExitCode::SUCCESS;
+            }
+            None => {
+                eprintln!("laws: {e}");
+                return ExitCode::from(1);
+            }
+        },
     }
     for _ in 0..tasks {
         match one_task(&session, &key) {
@@ -149,6 +179,10 @@ fn main() -> ExitCode {
                 break;
             }
             Ok((cite, Outcome::NoRule(why))) => println!("task {cite:.16}… not sent: {why}"),
+            Ok((_, Outcome::Deferred(d))) => {
+                println!("a deferral: the hypha's pool is full, deficit S:G:T:H {:?}; retry later", d.deficit);
+                break;
+            }
             Ok((cite, Outcome::Judged { code, paid, refused })) => match refused {
                 Some(why) => println!("task {cite:.16}… {} — refused: {why}", verdict_name(code)),
                 None => println!("task {cite:.16}… {} — paid μ {paid:?}", verdict_name(code)),

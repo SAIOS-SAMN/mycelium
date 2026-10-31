@@ -202,8 +202,8 @@ fn merge_quote(out: &mut Option<YieldQuote>, body: &[u8]) -> io::Result<()> {
 fn settle_quote(out: Option<YieldQuote>, last_err: io::Error) -> io::Result<YieldQuote> {
     match out {
         Some(q) => Ok(q),
-        None if last_err.kind() == io::ErrorKind::WouldBlock => match last_err.get_ref().and_then(|inner| inner.downcast_ref::<Deferral>()) {
-            Some(d) => Ok(YieldQuote { height: 0, surface: d.lanes, k: 0, clusters: Vec::new(), deficit: Some(d.lanes) }),
+        None if last_err.kind() == io::ErrorKind::WouldBlock => match deferral_of(&last_err) {
+            Some(d) => Ok(YieldQuote { height: 0, surface: d.deficit, k: 0, clusters: Vec::new(), deficit: Some(d.deficit) }),
             // A would-block that carries no deferral names no lanes: it is the
             // refusal it is, never a surface read off nothing.
             None => Err(last_err),

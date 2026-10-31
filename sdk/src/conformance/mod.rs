@@ -31,16 +31,33 @@
 //!   and its reply decoded and checked, each failure named.
 //!
 //! A client is aligned with a release where both pass at that release's tag.
+//!
+//! ## The deferral
+//!
+//! Every profile MUST recognise the [deferral](crate::deferral): the one
+//! reply a hypha whose worker pool is full gives every act. [`check_codecs`]
+//! checks it as the finding [`DEFERRAL`]: a deferral reads back with its
+//! exact deficit, and no MUST act's reply decoder of a declared profile
+//! accepts its bytes. In [`run`], an act the hypha defers is reported as
+//! [`Finding::Deferred`] with the deficit the door stated, never as a reply
+//! that did not decode. The suite does not retry it: the SDK's session
+//! exposes no measured round trip to pace a retry by, so the deferral is
+//! reported and the suite is run again once the door has room.
 
 mod codecs;
 mod live;
 mod probes;
 mod report;
+mod speaker;
 mod uplink;
 
 pub use codecs::check_codecs;
 pub use live::run;
 pub use report::{Finding, Report};
+
+/// The name of the deferral's finding: MUST for every profile, checked in
+/// process by [`check_codecs`].
+pub const DEFERRAL: &str = "deferral";
 
 /// The statement, its profiles and acts, the need of each, and the
 /// statement as read off the wire.

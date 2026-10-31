@@ -29,6 +29,15 @@ use mycelium_sdk::session::TPoint as _;
 use mycelium_sdk::session::TransportAperture as _;
 use mycelium_sdk::session::Voice as _;
 
+// deferral
+use mycelium_sdk::deferral::deferral_lanes as _;
+use mycelium_sdk::deferral::deferral_of as _;
+use mycelium_sdk::deferral::encode_deferral as _;
+use mycelium_sdk::deferral::is_deferral as _;
+use mycelium_sdk::deferral::read_deferral as _;
+use mycelium_sdk::deferral::Deferral as _;
+use mycelium_sdk::deferral::PENDING_CODE as _;
+
 // task
 use mycelium_sdk::task::decode_grids as _;
 use mycelium_sdk::task::decode_solve_receipt as _;
@@ -203,6 +212,7 @@ use mycelium_sdk::conformance::run as _;
 use mycelium_sdk::conformance::ActRead as _;
 use mycelium_sdk::conformance::ActRequirement as _;
 use mycelium_sdk::conformance::Finding as _;
+use mycelium_sdk::conformance::DEFERRAL as _;
 use mycelium_sdk::conformance::Need as _;
 use mycelium_sdk::conformance::Profile as _;
 use mycelium_sdk::conformance::ProfileRead as _;

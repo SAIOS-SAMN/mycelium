@@ -72,3 +72,18 @@ fn citation_names_task_past_u16_wall() {
     let solve = decode_solve(&encode_solve(&key, &cite, &[vec![vec![1]]]).expect("writes")).expect("reads");
     assert_eq!((solve.task, solve.signed), (cite, true), "a solve names it by the citation, signed");
 }
+
+/// An envelope is read whole: a byte past the last test input refuses it,
+/// and the deferral of a zero deficit (whose 33rd and 34th bytes read as
+/// counts of none) is never an envelope.
+#[test]
+fn task_envelope_refuses_trailing_bytes_and_deferral() {
+    let cite = [3u8; 32];
+    let tests = vec![toy().test[0].0.clone()];
+    let mut longer = encode_task_envelope(&cite, &toy().train, &tests).expect("writes");
+    longer.push(0);
+    assert!(decode_task_envelope(&longer).is_none(), "a byte left over is no envelope");
+    let deferral = encode_deferral(PENDING_CODE, &[0; 4]);
+    assert!(decode_task_envelope(&deferral).is_none(), "a deferral is no envelope");
+    assert!(is_deferral(&deferral, PENDING_CODE));
+}

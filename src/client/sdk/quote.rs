@@ -36,13 +36,31 @@ pub struct Cluster {
 /// on the lanes the judge named.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Deferral {
-    pub lanes: [u64; 4],
+    /// The door's reserve deficit on the lanes S, G, T, H, as it stated it.
+    pub deficit: [u64; 4],
 }
 
 impl std::fmt::Display for Deferral {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "deferred by the judge: deficit {:?}", self.lanes)
+        write!(f, "deferred by the judge: deficit {:?}", self.deficit)
     }
 }
 
 impl std::error::Error for Deferral {}
+
+/// THE DEFERRAL READ OFF A REPLY'S BYTES: the pending code, no height, the
+/// four lanes of the deficit, nothing taught, nothing after — or `None`
+/// where the reply is any other answer.
+pub fn read_deferral(reply: &[u8]) -> Option<Deferral> {
+    crate::anastome::dialogue::deferral_lanes(reply, crate::anastome::dialogue::PENDING_CODE).map(|deficit| Deferral { deficit })
+}
+
+/// THE DEFERRAL A SESSION'S REFUSAL CARRIES: `Session::speak` answers a
+/// deferral as a `WouldBlock` refusal holding it; any other refusal is
+/// `None`.
+pub fn deferral_of(refusal: &std::io::Error) -> Option<Deferral> {
+    match refusal.kind() {
+        std::io::ErrorKind::WouldBlock => refusal.get_ref().and_then(|inner| inner.downcast_ref::<Deferral>()).copied(),
+        _ => None,
+    }
+}

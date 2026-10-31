@@ -21,6 +21,7 @@
 //! |---|---|
 //! | [`voice`] | The identity: the voice key, loaded or minted; the mesh record of a voice home |
 //! | [`session`] | A session with a hypha; the transport aperture; the TUniversal point |
+//! | [`deferral`] | The deferral a full hypha answers every act with: its code, its reader, its per-lane deficit |
 //! | [`task`] | Task request and envelope; solve with rule; the verdict and its `SOLVE_*` codes |
 //! | [`rule`] | The rule seam: typed steps and clauses, extraction, minting and speaking a rule |
 //! | [`seat`] | Seats in a house: list, take, call, read mail |
@@ -69,6 +70,7 @@
 #![deny(missing_docs)]
 
 pub mod conformance;
+pub mod deferral;
 pub mod house;
 pub mod laws;
 pub mod mind;

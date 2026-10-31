@@ -10,7 +10,8 @@ use mycelium::anastome::dialogue;
 /// for. A pending outcome that carries a height is an answer.
 #[test]
 fn is_deferred_reads_deferral_as_impedance_not_refusal() {
-    let code = mycelium::cognition::outcome_code(&mycelium::cognition::Outcome::GermPending);
+    let code = dialogue::PENDING_CODE;
+    assert_eq!(code, mycelium::cognition::outcome_code(&mycelium::cognition::Outcome::GermPending), "the deferral rides the pending outcome's code");
     let deferral = dialogue::encode_deferral(code, &[0; 4]);
     assert!(is_deferred(&deferral), "the deferral is impedance");
     assert!(
@@ -33,7 +34,7 @@ fn is_deferred_reads_deferral_as_impedance_not_refusal() {
 /// teaches, or carries a height, or is short, is not one.
 #[test]
 fn deferral_lanes_carries_door_deficit_per_lane() {
-    let code = mycelium::cognition::outcome_code(&mycelium::cognition::Outcome::GermPending);
+    let code = dialogue::PENDING_CODE;
     let deficit = [2u64, 0, 1, 0];
     let deferral = dialogue::encode_deferral(code, &deficit);
     assert!(is_deferred(&deferral), "a deferral with lanes is a deferral");

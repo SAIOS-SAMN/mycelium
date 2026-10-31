@@ -3,20 +3,21 @@
 // THE CONFORMANCE SUITE ON THE NETWORK: each MUST act of the declared
 // profiles spoken to a running hypha, its reply decoded and its exact values
 // checked, each failure named; the served statement read against the
-// statement held.
+// statement held. An act the hypha defers is reported deferred, never as a
+// reply that did not decode.
 
+use super::speaker::Speaker;
 use super::{Profile, Report, StatementRead, STATEMENT};
 use crate::rule::{extract_rule, mint_sentence_why, speak_rule, NoCrystal, Physics};
-use crate::session::Session;
-use crate::voice::{SigningKey, Voice};
+use crate::voice::SigningKey;
 use mycelium::anastome::dialogue as d;
 use mycelium::physics::laws::codec as laws;
 
 /// How many times one solve is sent while the court answers it unread.
 const RESUMES: u32 = 16;
 
-fn laws_register(session: &Session) -> Result<String, String> {
-    let reply = session.speak(laws::encode_register_request()).map_err(|e| format!("no answer: {e}"))?;
+fn laws_register(session: &Speaker) -> Result<String, String> {
+    let reply = session.speak(laws::encode_register_request())?;
     let law_version = mycelium::physics::laws::LAW_VERSION;
     let served = laws::decode_register_reply(&reply)
         .ok_or_else(|| format!("{} bytes that do not decode as the register at law version {law_version}", reply.len()))?;
@@ -32,11 +33,11 @@ fn laws_register(session: &Session) -> Result<String, String> {
     Ok(format!("law version {law_version}: {} laws, each at its coordinate with its statement", served.len()))
 }
 
-fn laws_statement(session: &Session, report: &mut Report) {
+fn laws_statement(session: &Speaker, report: &mut Report) {
     let act = "laws statement";
     let reply = match session.speak(laws::encode_statement_request()) {
         Ok(r) => r,
-        Err(e) => return report.unread(act, format!("no answer (a hypha before the statement's mode answers none): {e}")),
+        Err(e) => return session.unread(report, act, format!("{e} (a hypha before the statement's mode answers none)")),
     };
     let outcome = match d::conformance::decode_statement_reply(&reply) {
         None => Err(format!("{} bytes that do not decode as a statement", reply.len())),
@@ -54,11 +55,11 @@ fn laws_statement(session: &Session, report: &mut Report) {
 /// The hypha's Concordance hash against the SDK's, and a signature over it
 /// presented and accepted (MAY for a mind, MUST for a kernel: a hypha before
 /// v0.3.0 answers neither, and they are unread there).
-fn laws_concordance(session: &Session, key: &SigningKey, report: &mut Report) {
+fn laws_concordance(session: &Speaker, key: &SigningKey, report: &mut Report) {
     use mycelium::physics::laws::concordance::{ConcordanceSignature, CONCORDANCE_HASH};
     let hash = match session.speak(laws::encode_concordance_request()) {
         Ok(r) => r,
-        Err(e) => return report.unread("laws concordance", format!("no answer: {e}")),
+        Err(e) => return session.unread(report, "laws concordance", e),
     };
     let outcome = match laws::decode_concordance_reply(&hash) {
         Some(h) if h == CONCORDANCE_HASH => Ok("the served hash equals the SDK's".to_string()),
@@ -68,7 +69,7 @@ fn laws_concordance(session: &Session, key: &SigningKey, report: &mut Report) {
     report.record("laws concordance", outcome);
     let signed = ConcordanceSignature::sign(key, CONCORDANCE_HASH);
     let outcome = match session.speak(laws::encode_signature_request(&signed)) {
-        Err(e) => return report.unread("laws signature", format!("no answer: {e}")),
+        Err(e) => return session.unread(report, "laws signature", e),
         Ok(r) => match laws::decode_signature_reply(&r) {
             Some(Ok(())) => Ok("a signature over the hash, accepted".to_string()),
             Some(Err(refusal)) => Err(format!("a good signature refused as {refusal:?}")),
@@ -95,13 +96,13 @@ fn outputs(envelope: &d::TaskEnvelope) -> (Vec<Vec<Vec<u8>>>, Option<Vec<u8>>) {
     }
 }
 
-fn solve(session: &Session, key: &SigningKey, envelope: &d::TaskEnvelope) -> Result<String, String> {
+fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskEnvelope) -> Result<String, String> {
     let (outputs, tape) = outputs(envelope);
     let act = d::encode_solve_with_rule(key, &envelope.id, &outputs, tape.as_deref()).ok_or("the outputs pass the solve act's fields")?;
     let mut asked = 0u32;
     loop {
         asked += 1;
-        let reply = session.speak(act.clone()).map_err(|e| format!("no answer: {e}"))?;
+        let reply = session.speak(act.clone())?;
         let (code, paid, refusal, _modes) =
             d::decode_solve_verdict(&reply).ok_or_else(|| format!("{} bytes that do not decode as a verdict", reply.len()))?;
         match code {
@@ -123,8 +124,8 @@ fn solve(session: &Session, key: &SigningKey, envelope: &d::TaskEnvelope) -> Res
     }
 }
 
-fn task_by_citation(session: &Session, voice: &[u8; 32], envelope: &d::TaskEnvelope) -> Result<String, String> {
-    let reply = session.speak(d::encode_task_by_citation(voice, &envelope.id)).map_err(|e| format!("no answer: {e}"))?;
+fn task_by_citation(session: &Speaker, voice: &[u8; 32], envelope: &d::TaskEnvelope) -> Result<String, String> {
+    let reply = session.speak(d::encode_task_by_citation(voice, &envelope.id))?;
     let again = d::decode_task_envelope(&reply).ok_or_else(|| format!("{} bytes that do not decode as an envelope", reply.len()))?;
     if again.id != envelope.id || again.train != envelope.train || again.tests != envelope.tests {
         return Err("the task asked by its citation is not the task given".to_string());
@@ -134,12 +135,12 @@ fn task_by_citation(session: &Session, voice: &[u8; 32], envelope: &d::TaskEnvel
 
 /// The mind's loop: a task taken and its envelope decoded, the task asked by
 /// its citation, a solve sent and its verdict decoded.
-fn mind_loop(session: &Session, key: &SigningKey, report: &mut Report) {
+fn mind_loop(session: &Speaker, key: &SigningKey, report: &mut Report) {
     let voice = key.verifying_key().to_bytes();
     let reply = match session.speak(d::encode_task_request(&voice)) {
         Ok(r) => r,
         Err(e) => {
-            report.fail("task", format!("no answer: {e}"));
+            session.fail(report, "task", e);
             return report.unread("solve", "no task to solve");
         }
     };
@@ -155,8 +156,10 @@ fn mind_loop(session: &Session, key: &SigningKey, report: &mut Report) {
         true => report.fail("task", "an envelope with no train pair or no test input"),
         false => report.pass("task", format!("{} train pairs, {} test inputs", envelope.train.len(), envelope.tests.len())),
     }
-    report.record("task by citation", task_by_citation(session, &voice, &envelope));
-    report.record("solve", solve(session, key, &envelope));
+    let by_citation = task_by_citation(session, &voice, &envelope);
+    session.record(report, "task by citation", by_citation);
+    let solved = solve(session, key, &envelope);
+    session.record(report, "solve", solved);
 }
 
 /// THE CONFORMANCE SUITE against the hypha at `endpoint`, spoken as the voice
@@ -168,11 +171,15 @@ fn mind_loop(session: &Session, key: &SigningKey, report: &mut Report) {
 /// and read, its seats posted). A kernel is never asked task or solve unless
 /// it also declares the mind profile. Every MUST act of a declared profile
 /// passes, or its failure is named; a hypha that cannot be reached fails
-/// each act with the reason.
+/// each act with the reason. An act the hypha answers with the deferral
+/// (its worker pool full) is reported [`super::Finding::Deferred`] with the
+/// door's deficit, never retried here: the session exposes no measured
+/// round trip to pace a retry by, so the suite is run again later.
 pub fn run(endpoint: &str, key: &SigningKey, profiles: &[Profile]) -> Report {
     let mut report = Report::of(profiles);
-    let session = Session::open(endpoint, Voice::from_key(key.clone()));
-    report.record("laws register", laws_register(&session));
+    let session = Speaker::open(endpoint, key);
+    let register = laws_register(&session);
+    session.record(&mut report, "laws register", register);
     laws_statement(&session, &mut report);
     laws_concordance(&session, key, &mut report);
     if profiles.contains(&Profile::Kernel) {

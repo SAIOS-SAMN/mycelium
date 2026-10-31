@@ -9,7 +9,9 @@
 //! learns the rest of the nerve. [`Session::speak`] sends one act and reads
 //! its reply; [`Session::speak_keyed`] routes an act to the hypha its key
 //! lives on. Every reply carries the final TUniversal point the session last
-//! heard ([`Session::tuniversal`]).
+//! heard ([`Session::tuniversal`]). A hypha whose worker pool is full
+//! defers every act; `speak` answers a deferral as a `WouldBlock` refusal
+//! that [`crate::deferral::deferral_of`] reads, and the act is spoken again.
 
 /// A mind's session with a hypha: `open`, `speak`, `speak_keyed`,
 /// `tuniversal`; the domain acts `found_domain`, `reserve` and

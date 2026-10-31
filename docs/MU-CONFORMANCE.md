@@ -6,11 +6,11 @@
 >
 > **Components:** the statement (`src/anastome/dialogue/conformance.rs`), served by every hypha on `ACT_LAWS` mode 6; the SDK's `mycelium_sdk::conformance` (the in-process check and the suite on a network) and `mycelium_sdk::house` (a kernel's uplink surface); the runnables `sdk/examples/conformance.rs` and `sdk/examples/house.rs`.
 
-**Status:** specification, version 2 (2026-10-31). This is the published
+**Status:** specification, version 3 (2026-10-31). This is the published
 client conformance read of [MU-HOSTING](MU-HOSTING.md) §2.5 item 4 and
 phase P5 of [MU-PRECURSORS](MU-PRECURSORS.md) §4.3. Each item is marked
 **Built** (in the tree, covered by its suites) or **Specified**. Version 2
-adds the kernel profile.
+adds the kernel profile; version 3 adds the deferral (§5).
 
 ---
 
@@ -169,13 +169,49 @@ the house's domain is the voice's own key, its one tier the same key:
 - the house posts its seats, reads the listing back equal to the post, and
   reads its mail at the relay's standing.
 
-Each finding is `Passed`, `Failed` with its reason, or `Unread` (no task to
-solve, or a hypha that predates the act): a client conforms where it
-declared a profile, every MUST act of its profiles passed, and none failed.
-Run again with the same voice, the kernel suite reads the domain, reserve
-and origin it left and conforms again.
+Each finding is `Passed`, `Failed` with its reason, `Unread` (no task to
+solve, or a hypha that predates the act), or `Deferred` with the door's
+deficit (§5): a client conforms where it declared a profile, every MUST
+act of its profiles passed, and none failed. Run again with the same voice,
+the kernel suite reads the domain, reserve and origin it left and conforms
+again.
 
-## 5. How a client runs it
+## 5. Deferral (**Built**)
+
+A hypha whose worker pool is full answers every act with one reply, the
+**deferral**: nothing was ruled and the act was not read. Every client, of
+either profile, MUST recognise a deferral before it decodes a reply, MUST
+never read one as a reply that did not decode, and MUST speak the act again
+later.
+
+Decoded, a deferral is the outcome reply (`decode_outcome_reply`) with:
+
+| Field | Value |
+|---|---|
+| code | the pending code, `PENDING_CODE` = 2 |
+| height | 0 |
+| deficit | the door's reserve deficit on the lanes S, G, T, H: four `u64`, any values |
+| taught | none (length 0) |
+| after | nothing |
+
+It is 43 bytes. A pending outcome that carries a height, teaches, or has
+bytes after it is an answer, not a deferral.
+
+The SDK's `mycelium_sdk::deferral` carries it: `read_deferral(reply)`
+returns `Deferral { deficit }` off a reply's bytes; `Session::speak`
+recognises it itself and answers it as a `WouldBlock` refusal that
+`deferral_of(refusal)` reads back; `PENDING_CODE`, `is_deferral`,
+`deferral_lanes` and `encode_deferral` are the codec.
+
+`check_codecs` checks the deferral for every declared profile as the
+finding `DEFERRAL` (MUST): a deferral reads back with its exact deficit,
+and no MUST act's reply decoder of a declared profile reads its bytes as a
+reply. `run` reports an act the hypha defers as
+`Finding::Deferred { act, deficit }`, never as a failure; it does not
+retry, since the session exposes no measured round trip to pace a retry
+by, and the suite is run again once the door has room.
+
+## 6. How a client runs it
 
 ```sh
 cargo build --release -p mycelium-sdk --example conformance --example house

@@ -117,17 +117,14 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
 }
 
 /// THE DEFERRAL FRAME, read on a hypha-to-hypha reply (23.8, I36): a full
-/// reflex pool answers every act with the pending outcome and four zero
-/// lanes. On a peer's reply that is impedance — the peer refused nothing
+/// reflex pool answers every act with the pending outcome and the door's
+/// four deficit lanes. On a peer's reply that is impedance — the peer refused nothing
 /// and witnessed nothing — and never a vantage: decoded as an offer reply
 /// its code was arm 2, `Refused` by key `0000…`, and one hypha logged
 /// 4,762 such refusals in ten minutes. A predicate at the wire boundary
 /// (§2.3); every reader of a peer's reply asks it before decoding.
 pub(crate) fn is_deferred(reply: &[u8]) -> bool {
-    mycelium::anastome::dialogue::is_deferral(
-        reply,
-        mycelium::cognition::outcome_code(&mycelium::cognition::Outcome::GermPending),
-    )
+    mycelium::anastome::dialogue::is_deferral(reply, mycelium::anastome::dialogue::PENDING_CODE)
 }
 
 /// Speak one act to a peer on the nerve, bounded by the transport deadline;
