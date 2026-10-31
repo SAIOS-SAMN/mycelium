@@ -1,5 +1,5 @@
 // 78.92 (2) — ACT_WHY: why one act on this court's ledger stands, answered
-// from the kernel's own ledger and the words it holds (`Kernel::why`).
+// from the kernel's own ledger and the words it holds (`Court::why`).
 //
 //! A reading: nothing is admitted, no receipt is written and no book moves.
 //!
@@ -61,7 +61,7 @@ pub(crate) fn serve_left(stream: &mut TcpStream, frame: &Frame, door: &Door) -> 
 
 /// THE COURT STROKE'S SIDE: the question the door left is answered under the
 /// lock the stroke already holds, for its next asking.
-pub(crate) fn answer_left(k: &mycelium::cognition::Kernel) {
+pub(crate) fn answer_left(k: &mycelium::cognition::Court) {
     let Some(ask) = LEFT.lock().ok().and_then(|mut l| l.take()) else { return };
     let why = k.why(ask);
     if let Ok(mut a) = ANSWERED.lock() {

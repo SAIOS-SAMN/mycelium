@@ -6,7 +6,7 @@
 //! genesis key signed, and the cover it measures is the bond the court stakes.
 
 use mycelium::court::identity::{parse_hex32, parse_hex64};
-use mycelium::cognition::Kernel;
+use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh::MeshRecord;
 use std::path::{Path, PathBuf};
@@ -91,7 +91,7 @@ match mesh_rec.genesis {
 pub(crate) fn register_corpora(
     home: &Path,
     state_path: &str,
-    kernel: &Arc<Mutex<Kernel>>,
+    kernel: &Arc<Mutex<Court>>,
     registry: &Arc<Mutex<mycelium::registry::TaskRegistry>>,
     genesis: &Genesis,
     vk: [u8; 32],
@@ -246,7 +246,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
 /// 106). The synthetic economy stands in for the contracts until they are
 /// deployed; the allocation is the corpus's measured cover, never a number
 /// chosen here.
-pub(crate) fn bond_genesis(k: &mut Kernel, vk: [u8; 32], cover: [u64; 4], genesis: &Genesis, tag: &str) {
+pub(crate) fn bond_genesis(k: &mut Court, vk: [u8; 32], cover: [u64; 4], genesis: &Genesis, tag: &str) {
     if k.treasury().bond_of(&vk).is_none() {
         let staked = k.enroll(vk, cover);
         k.fund(vk, cover);
@@ -268,7 +268,7 @@ mod tests {
     /// beside the voices and the court itself; a bond already held stands.
     #[test]
     fn bond_genesis_bonds_every_hypha_and_voice_once() {
-        let mut k = Kernel::new();
+        let mut k = Court::new();
         let (court, peer, other, voice) = ([1u8; 32], [2u8; 32], [3u8; 32], [9u8; 32]);
         let cover = [12u64, 3, 0, 20];
         let genesis = Genesis { hypha: vec![(court, cover), (peer, cover), (other, cover)], voice: vec![(voice, [8, 8, 1, 8])] };

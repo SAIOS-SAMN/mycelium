@@ -19,10 +19,10 @@ fn lists<T>(k: &Keyed<Vec<T>>) -> usize {
     k.scoped().map(|(_, v)| v.len()).sum()
 }
 
-impl Kernel {
+impl Court {
     /// THE COURT'S CARRIERS AT ITS `K`.
     pub fn carriers(&self) -> crate::observe::Carriers {
-        let Kernel {
+        let Court {
             basis,
             by_action,
             by_footprint,

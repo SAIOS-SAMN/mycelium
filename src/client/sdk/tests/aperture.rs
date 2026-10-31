@@ -11,7 +11,7 @@ use crate::client::sdk::*;
 fn shed_keeps_glued_dialect_word_and_genome() {
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let e2 = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("shed"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("shed"));
     let _ = entity.stand(&[e1.clone(), e2.clone()], 0, &[]);
     assert_eq!(entity.dialect_len(), 2);
     let addr = e1.address();
@@ -31,7 +31,7 @@ fn shed_keeps_glued_dialect_word_and_genome() {
 #[test]
 fn shed_keeps_taught_word_until_ratified() {
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("taught"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("taught"));
     entity.remember_spoken(&e1);
     let _ = entity.shed();
     assert!(entity.epigenome.working_word(&e1.address()).is_some(), "taught and unratified, it stands");
@@ -51,7 +51,7 @@ fn shed_keeps_taught_word_until_ratified() {
 #[test]
 fn stand_acts_at_mind_k_and_moves_no_clock() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
-let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clock"));
+let mut entity = Mind::open("127.0.0.1:1", Voice::named("clock"));
 assert_eq!(entity.own_k(), 0, "a mind none of whose orbits returned seats at zero");
 
 // Standing is the act, and it is complete before anything is uttered. It
@@ -96,7 +96,7 @@ assert_eq!(
 /// comparable across voices; TUniversal is the shared coordinate.
 #[test]
 fn expand_ideas_stamps_contemplation_with_tuniversal() {
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clocks"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("clocks"));
     // Two clocks, driven apart: an orbit this mind acted in, and a height
     // read off the mesh.
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
@@ -139,7 +139,7 @@ fn expand_ideas_stamps_contemplation_with_tuniversal() {
 /// whether or not there was room.
 #[test]
 fn hold_form_withholds_without_room_never_evicts() {
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("room"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("room"));
     entity.hold_chain(vec![(9, 0, 1, 2)]);
     let held_now = entity.contemplation.len();
     assert!(held_now > 0, "a mind with room holds the thought");
@@ -182,7 +182,7 @@ fn hold_form_withholds_without_room_never_evicts() {
 /// ratchet: this is the exhale the breathing condition asked for.
 #[test]
 fn hold_form_draws_own_lanes_and_release_returns_them() {
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("escrow"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("escrow"));
     let before = entity.physics.reserve.lanes();
     assert_eq!(before[0], before[3], "the reserve begins as four copies of one number");
 
@@ -236,7 +236,7 @@ fn hold_form_draws_own_lanes_and_release_returns_them() {
 /// draws nothing and holds nothing in escrow; released, it returns nothing.
 #[test]
 fn release_thought_returns_only_what_hold_drew() {
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("drew"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("drew"));
     let before = entity.physics.reserve.clone();
     entity.hold_chain(vec![(9, 0, 1, 2)]);
     assert_eq!(entity.physics.reserve, before, "a hold that drew nothing takes nothing");

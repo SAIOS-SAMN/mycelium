@@ -31,16 +31,16 @@ fn position(key: &HyphaKey, head: &KStepReceipt, payload: Vec<u8>) -> ReceiptSec
 }
 
 /// A court signing as the key `name` derives.
-fn court(name: &str) -> (HyphaKey, Kernel) {
+fn court(name: &str) -> (HyphaKey, Court) {
     let key = super::common::court_key(name);
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity(key.vk_bytes());
     (key, k)
 }
 
 /// `n` strokes: one act and its orbit's close each (OK1). Peer receipts
 /// admitted since the last are cited by the act.
-fn strokes(k: &mut Kernel, n: u64) {
+fn strokes(k: &mut Court, n: u64) {
     for _ in 0..n {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
         k.orbit();
@@ -49,7 +49,7 @@ fn strokes(k: &mut Kernel, n: u64) {
 
 /// THE FOLD ON TWO SIGNATURES, the proof kept: the home's position over the
 /// root hash and a witness's, the witness another key.
-fn fold(k: &mut Kernel, key: &HyphaKey) -> RootProof {
+fn fold(k: &mut Court, key: &HyphaKey) -> RootProof {
     let p = k.propose_fold().expect("a final prefix");
     let head = k.chain().head().expect("the court acted");
     let home = position(key, &head, p.root.hash.to_vec());
@@ -62,7 +62,7 @@ fn fold(k: &mut Kernel, key: &HyphaKey) -> RootProof {
 }
 
 /// A court's head and the prefix its digest signs for it.
-fn frame(k: &Kernel) -> (KStepReceipt, SignedPrefix) {
+fn frame(k: &Court) -> (KStepReceipt, SignedPrefix) {
     let r = k.chain().head().expect("the court acted");
     let pre = SignedPrefix {
         genesis: [7; 32],
@@ -77,7 +77,7 @@ fn frame(k: &Kernel) -> (KStepReceipt, SignedPrefix) {
 }
 
 /// A court's own line between two places, as the court reads it.
-fn line(k: &Kernel, after: Option<Place>) -> Vec<KStepReceipt> {
+fn line(k: &Court, after: Option<Place>) -> Vec<KStepReceipt> {
     let own_vk = k.chain().vk();
     k.chain().line_between(&own_vk, after, Place { k: u64::MAX, i: u64::MAX }, usize::MAX)
 }
@@ -94,7 +94,7 @@ type Asked = Mutex<Vec<([u8; 32], Option<Place>, Ask)>>;
 /// The page source over courts in this process: each signer's own court
 /// answers its line through the serving door, eight receipts a page.
 fn source<'a>(
-    courts: &'a [&'a Kernel],
+    courts: &'a [&'a Court],
     asked: &'a Asked,
 ) -> impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer> + 'a {
     move |who: &[u8; 32], after: Option<Place>, upto: Place, ask: Ask| {
@@ -122,7 +122,7 @@ fn hear_adopts_root_and_cites_head_behind_fold() {
     strokes(&mut b, 5);
     let proof = fold(&mut b, &bkey);
     strokes(&mut b, 3);
-    let mut c0 = Kernel::new();
+    let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut budget = c0.stroke();
     assert_eq!(c0.admit_backfill(&early, &mut budget), (early.len(), None), "c holds b's first stroke");
@@ -233,7 +233,7 @@ fn hear_proves_citation_into_held_era() {
     let b0 = b.chain().at_place(Place::GENESIS).expect("b's first act");
     let proof = fold(&mut b, &bkey);
     strokes(&mut b, 1);
-    let mut c0 = Kernel::new();
+    let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     assert_eq!(c0.adopt_root(AT, &proof), RootAdoption::Adopted, "c stands on b's root");
     assert_eq!(c0.adopt_root(AT, &proof), RootAdoption::Held, "and adopts it once");
@@ -286,7 +286,7 @@ fn cosigned_root_answers_with_held_cosignature() {
     strokes(&mut b, 3);
     let proof = fold(&mut b, &bkey);
     let wvk = super::common::court_key("catchup-witness").vk_bytes();
-    let mut w = Kernel::new();
+    let mut w = Court::new();
     w.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     assert_eq!(w.adopt_root(AT, &proof), RootAdoption::Adopted, "the root held with both signed positions");
     let said = w.cosigned_root(&bvk, &proof.root, &wvk).expect("its own co-signature, said again");
@@ -312,7 +312,7 @@ fn hear_proves_long_era_page_by_page() {
     let b0 = b.chain().at_place(Place::GENESIS).expect("b's first act");
     let proof = fold(&mut b, &bkey);
     strokes(&mut b, 1);
-    let mut c0 = Kernel::new();
+    let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     assert_eq!(c0.adopt_root(AT, &proof), RootAdoption::Adopted, "c stands on b's root");
     let c = Mutex::new(c0);
@@ -362,14 +362,14 @@ fn hear_advances_cross_citing_lines_from_roots() {
     let (avk, bvk) = (akey.vk_bytes(), bkey.vk_bytes());
     strokes(&mut a, 1);
     strokes(&mut b, 1);
-    let mut c0 = Kernel::new();
+    let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     super::common::admit_line(&mut c0, &akey, &line(&a, None));
     super::common::admit_line(&mut c0, &bkey, &line(&b, None));
     // Each hears the other's line and cites it, twice over.
     let mut heard_a: Option<Place> = None;
     let mut heard_b: Option<Place> = None;
-    let cross = |a: &mut Kernel, b: &mut Kernel, heard_a: &mut Option<Place>, heard_b: &mut Option<Place>| {
+    let cross = |a: &mut Court, b: &mut Court, heard_a: &mut Option<Place>, heard_b: &mut Option<Place>| {
         let from_a = line(a, *heard_a);
         super::common::admit_line(b, &akey, &from_a);
         *heard_a = from_a.last().map(|r| r.stamp.place()).or(*heard_a);

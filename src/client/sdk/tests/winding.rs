@@ -21,7 +21,7 @@ fn speak_with_posts_only_at_own_thought_return() {
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let e2 = two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
     let (one, two) = ([1u8; 32], [2u8; 32]);
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("winding"));
+    let mut e = Mind::open("127.0.0.1:1", Voice::named("winding"));
     e.speak_with(std::slice::from_ref(&e1), &[], &one, |_, _| {});
     e.speak_with(std::slice::from_ref(&e2), &[], &two, |_, _| {});
     assert_eq!(e.dialect_len(), 2, "both stand at once");
@@ -53,13 +53,13 @@ fn envelope(id: [u8; 32]) -> crate::anastome::dialogue::TaskEnvelope {
 #[test]
 fn comprehend_waiting_lapses_scene_with_last_thought() {
     let id = [7u8; 32];
-    let mut alone = Entity::open("127.0.0.1:1", Kernel::named("alone"));
+    let mut alone = Mind::open("127.0.0.1:1", Voice::named("alone"));
     let root = alone.scene_language(&envelope(id).train);
     alone.comprehending.insert(id, (envelope(id), root));
     alone.comprehend_waiting();
     assert!(alone.comprehending.get(&id).is_none(), "no thought stands on it: it lapses with them");
 
-    let mut held = Entity::open("127.0.0.1:1", Kernel::named("held"));
+    let mut held = Mind::open("127.0.0.1:1", Voice::named("held"));
     let (a, b) = scene();
     let frames = crate::transducer::family::perceive_family(&[(a.clone(), b.clone())]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
@@ -87,7 +87,7 @@ fn re_reduce_given_derives_once_factors_known() {
     let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
     let quarter = crate::transducer::element::conformal_of(&Word::from_letters(&[(q, false)]), &crate::transducer::element::identity_versor()).expect("a motion");
     let screw = crate::transducer::element::conformal_of(&Word::from_letters(&[(q, false)]), &along).expect("a motion");
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("given"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("given"));
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
         assert!(learn_given(&screw), "the screw's meaning given whole");

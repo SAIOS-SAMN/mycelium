@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 24.3 — THE ENTITY: perceive, think, stand, utter, contract — the stroke,
+//! 24.3 — THE MIND: perceive, think, stand, utter, contract — the stroke,
 //! the quote, the speech, the adjudication, and what each writes.
 
 pub mod body;

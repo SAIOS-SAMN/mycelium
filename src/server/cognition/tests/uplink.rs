@@ -4,7 +4,7 @@
 
 use crate::anastome::dialogue::uplink::{Discontinuous, TierFold, Uplinked};
 use crate::chronometry::{ActKind, Cite};
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
 fn tier_key() -> SigningKey {
@@ -20,9 +20,9 @@ fn domain_key() -> SigningKey {
 }
 
 /// 78.120 — a court on which the tier's domain is founded, naming the tier.
-fn founded() -> Kernel {
+fn founded() -> Court {
     use crate::anastome::dialogue::domain::{Founded, DomainGenesis};
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let g = DomainGenesis { domain: domain_key().verifying_key().to_bytes(), tiers: vec![tier_key().verifying_key().to_bytes()] };
     assert!(matches!(k.admit_domain(&g.sign(&domain_key())), Founded::Sealed { .. }), "the domain founded");
     k
@@ -30,7 +30,7 @@ fn founded() -> Kernel {
 
 /// 78.138 — the domain founded and its one tier designated its RESERVE: the
 /// ancients, the only tier that uplinks.
-fn reserved() -> Kernel {
+fn reserved() -> Court {
     use crate::anastome::dialogue::domain::{Founded, Reservation};
     let mut k = founded();
     let r = Reservation { domain: domain_key().verifying_key().to_bytes(), tier: tier_key().verifying_key().to_bytes(), nonce: [0; 32] };
@@ -75,7 +75,7 @@ fn admit_uplink_seals_fold_coordinates_and_restores() {
     assert_eq!(head.kind, ActKind::Uplink);
     assert_eq!(head.cites, vec![Cite::Uplink { tier: fold.tier, prefix: fold.prefix, rows }]);
     let snap = k.snapshot();
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&snap), "the line with an uplink restores");
     assert_eq!(booted.chain.head().map(|h| h.chain_hash), Some(receipt), "the same head");
     // 78.120 — and the domain restores with it: its tier's next fold admitted.
@@ -104,7 +104,7 @@ fn admit_uplink_refuses_unsigned_fold() {
 #[test]
 fn core_stamp_is_head_stamp_written_wide() {
     use crate::physics::laws::codec::{decode_clock_reply, encode_clock_reply};
-    assert_eq!(Kernel::new().core_stamp(), None, "no act, no head");
+    assert_eq!(Court::new().core_stamp(), None, "no act, no head");
     let k = founded();
     let head = k.chain.head().expect("the genesis");
     let at = k.core_stamp().expect("a head");
@@ -120,7 +120,7 @@ fn core_stamp_is_head_stamp_written_wide() {
 #[test]
 fn admit_uplink_refuses_unbound_tier() {
     let key = tier_key();
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     assert_eq!(k.admit_uplink(&trade(&key).sign(&key)), Uplinked::Unbound);
     assert!(k.chain.head().is_none(), "nothing sealed");
 }

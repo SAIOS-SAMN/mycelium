@@ -3,7 +3,7 @@
 //
 //! 47.2 steps 1 and 2 on the proposal's section before anything is
 //! fetched; then the receipts by `ACT_RECEIPTS` and the rows by `ACT_ROWS`
-//! from the home, paged by the frame budget; `Kernel::verify_fold` on both;
+//! from the home, paged by the frame budget; `Court::verify_fold` on both;
 //! the witness's own signed position over the root hash in reply, and the
 //! era filed under the home's key.
 

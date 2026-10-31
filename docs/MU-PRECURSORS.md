@@ -736,7 +736,7 @@ claims without code.
 |---|---|---|
 | **Depth 0: run a node** | Nothing but a host | `mycelium-server`; earns POWV for verification (README › *Running a node*). |
 | **Depth 1: bring a world** | Task-shaped files | The file-feed door submits each file as one claim. |
-| **Depth 2: bring a solver** | A program that states rules | A client on `sdk::{Kernel, Session}` (`examples/sdk_client.rs`). |
+| **Depth 2: bring a solver** | A program that states rules | A client on `sdk::{Voice, Session}` (`examples/sdk_client.rs`). |
 | **Depth 3: bring physics** | A universe's law set | A kernel that signs the Concordance and seals a physics profile (MU-SCIENCE §3.2; MU-HOSTING §3.1). |
 
 **The gap.** Depths 0 and 2 exist (the server; the SDK and its example).
@@ -744,7 +744,7 @@ No door reads files into claims; a developer with tasks and no solver
 writes a client. The depths are not stated in the SDK's documentation.
 
 **Design.**
-- **The door** is a small client on `sdk::{Kernel, Session}`: it watches
+- **The door** is a small client on `sdk::{Voice, Session}`: it watches
   one directory, decodes each file dropped there as a task-shaped object
   (an ARC-format task, or a claim kind once track 12 S1 lands), and
   submits it under the operator's voice. **One file, one claim.**
@@ -837,7 +837,7 @@ mapping from the spaces world models already declare.
   `rust-version = "1.82"`, with three binaries (`mycelium-server`,
   `mycelium-client`, `mycelium-soak`). There is no `[workspace]` section.
 - The SDK is a module: `client::sdk`, re-exported as `mycelium::sdk`
-  (`src/lib.rs`), with `Kernel`, `Session`, `rule`, `seat`, `seat_mind`,
+  (`src/lib.rs`), with `Voice`, `Session`, `rule`, `seat`, `seat_mind`,
   `chatter` and `types`.
 - A client also reaches past the SDK module: the wire codecs
   (`anastome::dialogue`, including `lease` and `wallet`), the voice key
@@ -868,7 +868,7 @@ the crate's public API. This section is the design of it.
   | Area | Items |
   |---|---|
   | Identity | Voice key load and mint; signing |
-  | Session | `Kernel`, `Session` (open, speak, keyed speech) |
+  | Session | `Voice`, `Session` (open, speak, keyed speech) |
   | Tasks and solves | Task request and envelope; solve with rule; verdict and its codes |
   | Rule seam | Extraction, minting and speaking a rule; typed steps (`rule::sentence`); rule elements and clauses |
   | Seats | Taking a seat in a house; the seated mind's senses |

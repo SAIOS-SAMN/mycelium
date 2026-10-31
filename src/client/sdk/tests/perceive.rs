@@ -20,7 +20,7 @@ use crate::client::sdk::*;
 #[test]
 fn perceive_scene_lands_and_take_demands_binds_escape() {
     let id = [9u8; 32];
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("perceiving"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("perceiving"));
     let [first, second] = two_hours_of_a_slide();
     let mut field = std::mem::take(&mut mind.field);
     let (bound, returned, k) = field.think(|| {
@@ -45,7 +45,7 @@ fn perceive_scene_lands_and_take_demands_binds_escape() {
 #[test]
 fn perceive_scene_stops_once_on_its_own_reading() {
     use crate::client::sdk::entity::perceive::{Stop, STOPS};
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("stopping"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("stopping"));
     let [first, second] = two_hours_of_a_slide();
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
@@ -77,7 +77,7 @@ fn scene_language_moves_only_for_word_on_own_chart() {
         let f = scene_form_on(&NoCrystal, &mut b, x, y, &frames).expect("the pair reads");
         crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word")
     };
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("resting"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("resting"));
     let slide: Vec<(crate::arc::Grid, crate::arc::Grid)> = two_hours_of_a_slide().to_vec();
     let before = mind.scene_language(&slide);
     // A word on a chart elsewhere: one cell stepping a column.
@@ -98,7 +98,7 @@ fn scene_language_moves_only_for_word_on_own_chart() {
 #[test]
 fn perceive_hearing_said_again_waits_once() {
     use crate::client::sdk::entity::converge::Evident;
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("hearing"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("hearing"));
     let speaker = [3u8; 32];
     mind.perceive_hearing(speaker, b"first".to_vec(), Vec::new(), Evident::Unbound);
     assert!(!mind.board.hearing, "coupled to nothing, it is not read");
@@ -118,7 +118,7 @@ fn perceive_hearing_said_again_waits_once() {
 #[test]
 fn act_on_returns_lapses_hearing_unread_across_return() {
     use crate::client::sdk::entity::converge::Evident;
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("lapsing"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("lapsing"));
     let speaker = [4u8; 32];
     for said in [&b"zero"[..], b"one", b"two"] {
         mind.perceive_hearing(speaker, said.to_vec(), Vec::new(), Evident::Unbound);
@@ -147,7 +147,7 @@ fn perceive_hearing_on_hears_at_rest_on_language_charts() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let at = |c: usize| -> crate::arc::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
     let cell = vec![(at(0), at(1))];
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("at rest"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("at rest"));
     let mut field = std::mem::take(&mut mind.field);
     let (elsewhere, on_its_chart) = field.think(|| {
         let mut b = budget();

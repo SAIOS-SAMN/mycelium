@@ -469,7 +469,7 @@ fn judge_solve_solves_act_reader_clauses() {
             Ok(word) => word,
             Err(why) => panic!("{name}: the rule mints over its family: {why:?}"),
         };
-        let mut court = crate::cognition::Kernel::new();
+        let mut court = crate::cognition::Court::new();
         let verdict = court.judge_solve(&minted, &[(grid(held.0), grid(held.1))]);
         assert!(matches!(verdict, crate::cognition::SolveVerdict::Solved { .. }), "{name}: the court solves it on a pair it never saw: {verdict:?}");
     }
@@ -516,7 +516,7 @@ fn judge_solve_solves_reaction_on_unseen_pair() {
             Ok(word) => word,
             Err(why) => panic!("{name}: the rule mints over its family: {why:?}"),
         };
-        let mut court = crate::cognition::Kernel::new();
+        let mut court = crate::cognition::Court::new();
         let verdict = court.judge_solve(&minted, &[(grid(held.0), grid(held.1))]);
         assert!(matches!(verdict, crate::cognition::SolveVerdict::Solved { .. }), "{name}: the court solves it on a pair it never saw: {verdict:?}");
     }
@@ -543,7 +543,7 @@ fn extract_rule_fills_hole_closed_jointly() {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
     let minted = crate::transducer::family::mint_sentence_why(&rule, &family, &NoCrystal, 0).expect("the rule mints over its family");
-    let mut court = crate::cognition::Kernel::new();
+    let mut court = crate::cognition::Court::new();
     let verdict = court.judge_solve(&minted, &[(grid(held.0), grid(held.1))]);
     assert!(matches!(verdict, crate::cognition::SolveVerdict::Solved { .. }), "the court solves it on a pair it never saw: {verdict:?}");
 }

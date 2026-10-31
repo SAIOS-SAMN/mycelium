@@ -22,7 +22,7 @@ fn transcribe_these_spells_taught_turn_as_word() {
     use crate::transducer::sentence::compose::teaches;
     use crate::transducer::sentence::rung::Taught;
     use crate::transducer::sentence::theorem::Theorem;
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("taught"));
+    let mut e = Mind::open("127.0.0.1:1", Voice::named("taught"));
     let one = num_rational::BigRational::from_integer(1.into());
     let w = Mv::scalar(one.clone()).add(&Mv::blade(E2 | E3, one)).widened(3);
     let mut budget = e.stroke();
@@ -48,7 +48,7 @@ fn transcribe_these_spells_taught_turn_as_word() {
 #[test]
 fn transcribe_these_reports_ineffable_word() {
     use crate::transducer::sentence::rung::Taught;
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("ineffable"));
+    let mut e = Mind::open("127.0.0.1:1", Voice::named("ineffable"));
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let w = Mv::scalar(q(4)).add(&Mv::blade(E2 | E3, q(1))).widened(3);
     let mut budget = e.stroke();
@@ -65,7 +65,7 @@ fn transcribe_these_reports_ineffable_word() {
 #[test]
 fn construct_and_adjoin_makes_ineffable_word_sayable() {
     use crate::transducer::sentence::rung::Taught;
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("sovereign"));
+    let mut e = Mind::open("127.0.0.1:1", Voice::named("sovereign"));
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let w = Mv::scalar(q(4)).add(&Mv::blade(E2 | E3, q(1))).widened(3);
     let mut budget = e.stroke();
@@ -89,7 +89,7 @@ fn construct_and_adjoin_makes_ineffable_word_sayable() {
 fn construct_and_adjoin_keeps_dilation_as_motion_letter() {
     use crate::transducer::cga::{at_three::translator, dilator};
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("star"));
+    let mut e = Mind::open("127.0.0.1:1", Voice::named("star"));
     let t = translator(&q(1), &q(0), &q(3));
     let star = t.geo(&dilator(&q(2))).geo(&t.reverse());
     assert!(!e.contemplation.holds_own_letter(&star), "not held before it is made");

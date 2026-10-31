@@ -368,7 +368,7 @@ pub(crate) fn tests_spoken(epi: &Epigenome, rule: &SentenceRule, tests: &[crate:
     (outputs, chains)
 }
 
-impl Entity {
+impl Mind {
     /// SPEAK A RULE AS ITS CRYSTALLIZED FORM (chapter 30 step 4). The
     /// remainder is interpreted in the act that speaks it (78.81): an
     /// inversion the speech accepted IS the form spoken. A form carrying

@@ -331,7 +331,7 @@ pub struct GenomeView<'a> {
 /// removes at the same key, and neither can name a word the other does not.
 #[derive(Clone)]
 pub struct GenomeEntry {
-    /// How often this entity speaks or hears it — the recollection
+    /// How often this mind speaks or hears it — the recollection
     /// efficiency. Content: how often a word was used is not derivable
     /// from the word.
     ///
@@ -399,11 +399,11 @@ pub struct Epigenome {
     pub(crate) unpivoted: crate::network::nerve::Keyed<()>,
     /// Taught words refused because they did not verify (a transition
     /// that is not a versor, a section that does not span the support) —
-    /// the entity's measured discordance with what it was taught.
+    /// the mind's measured discordance with what it was taught.
     pub(crate) refused: u64,
     /// THE EXPRESSED WORDS (ephemeral, never persisted): the residual
-    /// bodies this entity germinated itself, before any court ratified
-    /// them. They let the entity recognise a residual it has already
+    /// bodies this mind germinated itself, before any court ratified
+    /// them. They let the mind recognise a residual it has already
     /// claimed, so a claim is spoken once; a ratified word arrives by
     /// teaching and enters the genome.
     #[cfg(test)]
@@ -441,11 +441,11 @@ pub struct Epigenome {
     /// MU-CLIENT §7.1 — THE RESIDUAL CHAINS A RESTORED GENOME FILE HELD, by
     /// address: a residual is an open question, never a word (ruled
     /// 2026-10-18), so the restore files it here and the boot hands it to the
-    /// mind's carrier at once (`Entity::restore_genome`) — empty after.
+    /// mind's carrier at once (`Mind::restore_genome`) — empty after.
     pub(crate) restored_residuals: Vec<OpenResidual>,
     /// The rewrites the restore read on the file and left out — acts on the
     /// language, never words of it: the file held more than the genome now
-    /// does, and is written again (`Entity::restore_genome`).
+    /// does, and is written again (`Mind::restore_genome`).
     pub(crate) restored_dropped: u64,
     /// 1.8, 50.2 step 2 — THE GENERATORS this mind holds, by the chart of
     /// the versor each carries: versor chart → (vertex address → form
@@ -518,20 +518,20 @@ pub struct Epigenome {
 }
 
 /// ONE SAYING HELD FOR THE MIND'S RETURN: what leaves when it is run there.
-pub(crate) type HeldSaying = Box<dyn FnOnce(&mut Entity)>;
+pub(crate) type HeldSaying = Box<dyn FnOnce(&mut Mind)>;
 
-/// THE ENTITY — a kernel identity with its genome/epigenome, conversing with
+/// THE MIND — a voice with its genome/epigenome, conversing with
 /// its court through the hypha carrier (MU-CLIENT §5.1): it speaks sentences,
 /// learns what the mesh teaches (comprehending, not storing), asks quotes, and
 /// probes listings, and never waits on the answer.
-pub struct Entity {
+pub struct Mind {
     pub(crate) hypha: super::entity::hypha::Hypha,
     /// MU-CLIENT §6 — THE SEAT'S OWN CARRIER: the seat surface's link to the
-    /// hypha on its own thread (`Entity::ask_seat`), so a slow house holds
+    /// hypha on its own thread (`Mind::ask_seat`), so a slow house holds
     /// that carrier and never the mind.
     pub(crate) seat: super::entity::hypha::Hypha,
     /// THE SEAT'S PERCEIVING CARRIER (2026-10-23): the held mail read alone
-    /// (`Entity::ask_held`), on its own thread and session. The court holds
+    /// (`Mind::ask_held`), on its own thread and session. The court holds
     /// that read to its next event; on the seat's carrier it blocked every
     /// take, solve and declination queued behind it, and a call the court
     /// never received could not be the event that released the read.
@@ -540,12 +540,12 @@ pub struct Entity {
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
     /// The rule the court last refused for each task, by task id — so the
-    /// same rule is not sent again (`Entity::solve_task`). One per task.
+    /// same rule is not sent again (`Mind::solve_task`). One per task.
     pub(crate) solve_refused: crate::network::nerve::Keyed<Vec<u8>>,
     /// Words this voice has spoken up for adoption: said once, the judge
     /// decided (installed, derivable, or refused). Membership is vertex
     /// equality, never the digest alone. MU-CLIENT §4.13 — KEYED BY THE
-    /// ADDRESS'S 32-BYTE HASH (`Entity::taught_key`, ruled
+    /// ADDRESS'S 32-BYTE HASH (`Mind::taught_key`, ruled
     /// 2026-10-16: a hash compacts coordinates where nothing is lost), each
     /// with the stratum its vertex was filed under in `taught_at` — none for
     /// a sentence, which is one vertex by its address alone. The word itself
@@ -572,7 +572,7 @@ pub struct Entity {
     pub(crate) taught_at: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// The discordance measured at the last sync (strata whose roots differ
     /// from the hypha's); zero is a glued genome — the condition under which
-    /// this entity speaks proofs. Unmeasured: the open thought's boundary
+    /// this mind speaks proofs. Unmeasured: the open thought's boundary
     /// cochain norm, never usize::MAX.
     pub(crate) discordance: usize,
     pub(crate) discordance_measured: bool,
@@ -663,7 +663,7 @@ pub struct Entity {
     /// MU-CLIENT §4.13 — WHAT THIS MIND HAS SAID AND NO COURT HAS ANSWERED
     /// YET, by address: a speech stood and held for its scene's return, or
     /// posted and not yet landed. Each is an unjudged sentence the dialect
-    /// keeps (`Entity::shed`); it leaves where the court's answer lands.
+    /// keeps (`Mind::shed`); it leaves where the court's answer lands.
     pub(crate) speaking: crate::network::nerve::Keyed<()>,
     /// 78.153 — THE SOLVES THE COURT HAS NOT JUDGED YET (`SOLVE_UNREAD`), by
     /// task: the rule and the outputs, asked again each stroke until the
@@ -754,7 +754,7 @@ pub type Cited = (Vec<crate::anastome::dialogue::CiteWire>, Vec<(i64, i64, u8, u
 
 /// WHAT CONCLUDING A LISTING RETURNS (24.2).
 pub struct Concluded {
-    /// The words this entity cited to speak the chain.
+    /// The words this mind cited to speak the chain.
     pub cites: Vec<crate::anastome::dialogue::CiteWire>,
     /// The chain it could NOT reduce — its own claim, or the whole chain
     /// back when the residual raised a lane or moved nothing and is held
@@ -803,7 +803,7 @@ pub struct Cluster {
     /// links; `Held::of` rebuilds the form and `demand_vertices` names what
     /// it could not spell.
     pub element: Vec<u8>,
-    /// Open (non-flat) charts of the listing's coherence field. The entity
+    /// Open (non-flat) charts of the listing's coherence field. The mind
     /// reads these against its own atlas; several may close, none is ranked.
     pub open: Vec<crate::transducer::stalk::Invariant>,
 }

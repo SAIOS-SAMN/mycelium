@@ -1,4 +1,4 @@
-// 23.8 — THE QUOTE: what the market offers this entity, read across every
+// 23.8 — THE QUOTE: what the market offers this mind, read across every
 // hypha it knows. (The refinement bid it once made over chain words is
 // gone: since MU-CLIENT §7.1's doctrine a chain is an open question and
 // never a genome word, so no genome word was left for it to examine; the
@@ -6,7 +6,7 @@
 
 use crate::client::sdk::*;
 
-impl Entity {
+impl Mind {
     /// ASK THE QUOTE (23.8): the charts this mind is thinking about, each
     /// with the standing it holds there, read on the field; routed to the
     /// hyphae that home them and asked on the carrier. One quote is in flight
@@ -53,7 +53,7 @@ impl Entity {
                 .map(|(_, b)| (standing(&crate::transducer::stalk::invariant(&b.remainder)), b.volume))
                 .collect(),
             empty,
-            voice: self.hypha.kernel().voice(),
+            voice: self.hypha.voice().id(),
         };
         let mut budget = self.physics.stroke();
         self.board.court.quoting = true;

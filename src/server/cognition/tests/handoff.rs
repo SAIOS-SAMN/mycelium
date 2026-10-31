@@ -8,7 +8,7 @@ use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Mouth,
 use crate::anastome::dialogue::uplink::{Discontinuous, Net, SideRefusal, TierFold, Uplinked};
 use crate::chronometry::{ActKind, Stamp};
 use crate::physics::laws::CHALLENGE_WINDOW;
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -37,9 +37,9 @@ fn y() -> SigningKey {
 /// Two domains on one court: X names `x` and `x2`, Y names `y`; the two
 /// reserves `x` and `y` (the ancients) have opened `the_mouth()` between them
 /// — 78.128: nothing crosses between domains but through an open mouth.
-fn founded() -> Kernel {
+fn founded() -> Court {
     use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let mut xs = vec![vk(&x()), vk(&x2())];
     xs.sort_unstable();
     for (d, tiers, reserve) in [(key(4), xs, x()), (key(5), vec![vk(&y())], y())] {
@@ -81,7 +81,7 @@ fn cargo() -> Offer {
     }
 }
 
-fn offered(k: &mut Kernel, o: Offer) -> [u8; 32] {
+fn offered(k: &mut Court, o: Offer) -> [u8; 32] {
     match k.handoff(&through(o).sign(&x())) {
         Handed::Sealed { id, state: State::Offered { .. }, .. } => id,
         other => panic!("offered: {other:?}"),
@@ -92,7 +92,7 @@ fn fold(tier: &SigningKey, prefix: u8, rows: Vec<Net>, handoffs: Vec<([u8; 32], 
     TierFold { tier: vk(tier), prefix: [prefix; 32], rows, declared: Vec::new(), children: Vec::new(), handoffs }
 }
 
-fn pass(k: &mut Kernel, h: u64) {
+fn pass(k: &mut Court, h: u64) {
     while k.chain.head_height() < h {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
     }
@@ -104,7 +104,7 @@ fn pass(k: &mut Kernel, h: u64) {
 #[test]
 fn handoff_refuses_unconserved_offer() {
     let mut k = founded();
-    let refused = |k: &mut Kernel, o: Offer, by: &SigningKey| match k.handoff(&through(o).sign(by)) {
+    let refused = |k: &mut Court, o: Offer, by: &SigningKey| match k.handoff(&through(o).sign(by)) {
         Handed::Refused(r) => r,
         other => panic!("refused: {other:?}"),
     };
@@ -164,7 +164,7 @@ fn admit_uplink_consumes_accepted_handoff_once_per_side() {
         k.admit_uplink(&fold(&x(), 2, leaving, vec![(id, Side::Out)]).sign(&x())),
         Uplinked::HandoffRefused { index: 0, why: SideRefusal::Consumed }
     );
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.handoff_read(&id), Some((State::Accepted, true, true)));
 }

@@ -10,11 +10,11 @@
 use crate::exchange::Mesh;
 use crate::transport::{note_rtt_ok, note_rtt_timeout, rtt_floor, tell_peer, tell_peer_within};
 use mycelium::anastome::dialogue;
-use mycelium::cognition::Kernel;
+use mycelium::cognition::Court;
 use mycelium::observe::{self, FoldOutcome};
 use std::sync::Mutex;
 
-pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
+pub(crate) fn fold_round(kernel: &Mutex<Court>, mesh: &Mesh) {
     // A proposal whose rows moved beneath it is dropped before it is
     // carried again (`pending_fold_stands`).
     let Some(p) = crate::held::held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.pending_fold_stands().then(|| k.fold_proposal().cloned()).flatten())) else {

@@ -37,14 +37,14 @@ except what the pore admits. Here the pore is replay.
 
 ## 2. Terms
 
-- **Voice**: a 32-byte identity of a mind (`Session::kernel().voice()`), a FROST group key over Ed25519 (new, §8; MU-RECURSION 46.1).
+- **Voice**: a 32-byte identity of a mind (`Session::voice().id()`), a FROST group key over Ed25519 (new, §8; MU-RECURSION 46.1).
 - **Hypha**: a server; identity is its ed25519 verifying key (`court::identity::HyphaKey`).
 - **Listing key**: `listing_key(chain, frame)`, the framed residue address of a demand; every priced request is a listing at exactly one home hypha.
 - **Home**: the hypha the cover trie homes the listing to (`nerve::home`).
 - **Witness**: any other hypha whose cover meets the listing's chart; the second organ.
 - **μ⃗**: `[u64; 4]` magnitude on the four lanes.
 - **Escrow**: `Treasury::escrow_award(addr, voices, mu, anchor)`; released by `release_award`, revoked or slashed by `revoke_award`, drawn by `draw_escrow`.
-- **K**: a kernel's own receipt index (`Kernel::k_step`; `Session::voice().k()` for a voice). Orders events inside one kernel. No kernel reads a clock (MU-RECURSION 45).
+- **K**: a kernel's own receipt index (`Court::k_step`; for a voice, the count of its own acts). Orders events inside one kernel. No kernel reads a clock (MU-RECURSION 45).
 - **TUniversal**: the network's one clock, a final point `origin/h:S:G:T:H:K` held by two of its three keepers' verified readings (MU-CHRONOMETRY §1; MU-RECURSION 78.152). The height `h` is one field of that point and is never confused with it. Lane 2 of μ⃗ (temporal) carries verified null-flux discharge, never the span a word or carrier stood: waiting is not μ (MU-ECONOMY §3, MU-RECURSION 78.149).
 - **Receipt prefix**: the bytes every signature covers (MU-RECURSION 47.1): genesis, epoch, previous receipt hash, K, height, chart, payload address.
 - **Λ(chart)**: the aperture of a chart in admitted receipts, `from_transport(rtt_floor, aperture_cycle())` measured in strokes; never a constant.
@@ -108,7 +108,7 @@ named. `len16` is a u16 length prefix; `len32` a u32.
 
 There is no nonce and no clock field. The payee obtains `listing_key`,
 `mu`, `k_home`, `h_home`, `lambda`, `home_vk`, `home_addr` from the home with
-an ordinary `ACT_QUOTE`-style read (new `Kernel::price_request`), which lists
+an ordinary `ACT_QUOTE`-style read (new `Court::price_request`), which lists
 the request as a demand with `bind_listing_task` binding it to the payee's
 task id.
 
@@ -165,7 +165,7 @@ Mode 1, work:
 No countersignature. The word enters the docket like any attested word:
 `blind_replay` at the home, Offer to the overlap, replay at a witness,
 Installed. Release happens on the Installed, through the same path that
-grows the language (`Kernel::home_install` → `release_award`). A word that
+grows the language (`Court::home_install` → `release_award`). A word that
 fails replay is slashed and the payee's stake is debited; the escrow is
 revoked to the payer.
 
@@ -209,7 +209,7 @@ The home verifies both signatures under the common key, equal K, unequal
 hashes, and burns the signer's bond on all four lanes with one `burn` entry
 naming the proof (MU-RECURSION 47.4, MU-ECONOMY §4). Nothing is replayed.
 Reply, as built (`dialogue::Ruled`, the hypha's ruling reply;
-`Kernel::accept_equivocation`): `Applied` when the bond burned, `Inert` when the same proof finds
+`Court::accept_equivocation`): `Applied` when the bond burned, `Inert` when the same proof finds
 no bond left to burn, `Refused` naming `REFUSE_SIGNATURE`, `REFUSE_ORIGIN`,
 `REFUSE_RECEIPT` (a receipt that disagrees with its prefix or does not
 re-derive its hash) or `REFUSE_NOT_EQUIVOCATION` when the two receipts do
@@ -323,7 +323,7 @@ Codes are typed variants in code, never bare integers in cognition.
 
 Built: act 0x35 (`src/anastome/dialogue/equivocation.rs`,
 `encode_equivocation`/`decode_equivocation`; the court's burn in
-`Kernel::accept_equivocation`).
+`Court::accept_equivocation`).
 
 **Specified** — planned paths:
 

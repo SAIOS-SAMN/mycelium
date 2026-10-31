@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-// THE KERNEL LOCK, COUNTED (2026-10-08) AND METERED (78.153b): who blocks
-// whom, and what each hold read. Every reflex worker waited on the kernel
+// THE COURT LOCK, COUNTED (2026-10-08) AND METERED (78.153b): who blocks
+// whom, and what each hold read. Every reflex worker waited on the court
 // while the door deferred nearly every act; no reading said which holder
 // kept it. A lock taken through `held!` names its site as the holder; an
 // attempt that finds the lock taken charges ONE block to the site holding it
@@ -9,17 +9,17 @@
 // is a site that holds long or often.
 //
 //! 78.153b — THE HOLD'S ONE STROKE. The lock audit (MU-RECURSION 78.153)
-//! found no path under the kernel metered end to end: the guard dereferenced
-//! to `Kernel`, so any call under it was one keystroke from an unmetered
+//! found no path under the court metered end to end: the guard dereferenced
+//! to `Court`, so any call under it was one keystroke from an unmetered
 //! walk. A [`Held`] no longer dereferences: `held!` mints the hold's ONE
 //! stroke at the take, and the only way in is [`Held::run`], which hands the
-//! closure the kernel AND that stroke. An input-sized kernel entry point
+//! closure the court AND that stroke. An input-sized court entry point
 //! takes `&mut Budget`, so a call under the guard spends the hold's reads or
-//! does not compile; `Kernel::stroke` is the crate's, never the binary's.
+//! does not compile; `Court::stroke` is the crate's, never the binary's.
 //! The server binary and the library (`synthesis`, `backfill`) take the
-//! kernel through this one guard, so the book counts every hold.
+//! court through this one guard, so the book counts every hold.
 
-use crate::cognition::Kernel;
+use crate::cognition::Court;
 use crate::physics::Budget;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, MutexGuard, OnceLock, TryLockError};
@@ -35,7 +35,7 @@ struct Site {
 
 struct Book {
     holder: Option<&'static str>,
-    /// Which hold this is: every take of the kernel numbered in turn, so two
+    /// Which hold this is: every take of the court numbered in turn, so two
     /// readings of one hold are told from two holds of one site.
     hold: u64,
     /// 78.152 TU-7 — the final-point advances the door's shelf had counted
@@ -68,9 +68,9 @@ fn advances() -> u64 {
 }
 
 /// THE HOLD STANDING NOW: its site and its number, or none. Read without the
-/// kernel (the observer's door), so a court whose kernel one thread holds
+/// court (the observer's door), so a court whose state one thread holds
 /// past every waiter still says WHICH site holds it — hypha c 2026-10-09:
-/// one thread spun 21 minutes under the kernel, thirteen waited, the journal
+/// one thread spun 21 minutes under the court, thirteen waited, the journal
 /// fell silent, and no reading named the site.
 pub fn holding() -> Option<(&'static str, u64)> {
     let b = BOOK.lock().ok()?;
@@ -84,21 +84,21 @@ pub fn holding_since() -> Option<(&'static str, u64, u64)> {
     b.holder.map(|h| (h, b.hold, b.advances_at))
 }
 
-/// Every take of the kernel through `held!` since boot: the book's hold
-/// number. A path that takes no kernel leaves it where it stood (78.152b).
+/// Every take of the court through `held!` since boot: the book's hold
+/// number. A path that takes no court leaves it where it stood (78.152b).
 pub fn holds() -> u64 {
     BOOK.lock().map_or(0, |b| b.hold)
 }
 
 thread_local! {
-    /// The takes of the kernel THIS THREAD made through `held!`: what a path
+    /// The takes of the court THIS THREAD made through `held!`: what a path
     /// run on it took, apart from every other thread's holds in the process
     /// (the book counts them all).
     static HOLDS_HERE: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
-/// Every take of the kernel through `held!` by THIS thread: a path that takes
-/// no kernel leaves it where it stood, whatever other threads take beside it.
+/// Every take of the court through `held!` by THIS thread: a path that takes
+/// no court leaves it where it stood, whatever other threads take beside it.
 pub fn holds_here() -> u64 {
     HOLDS_HERE.with(|h| h.get())
 }
@@ -118,13 +118,13 @@ pub fn stepping() -> &'static str {
     crate::observe::stepping()
 }
 
-/// Threads blocked on the kernel through `held!` right now, and how many
+/// Threads blocked on the court through `held!` right now, and how many
 /// such waits have been served since boot.
 static WAITING: AtomicU64 = AtomicU64::new(0);
 static SERVED: AtomicU64 = AtomicU64::new(0);
 
 /// THE COURT LETS THE QUEUE IN BEFORE IT TAKES THE KERNEL AGAIN. The court
-/// loop re-took the kernel the instant it let go — 14 806 times in five
+/// loop re-took the court the instant it let go — 14 806 times in five
 /// minutes on hypha c — and a std mutex is not fair, so a reflex worker
 /// woken by the release lost the race every time: the workers starved, the
 /// pool filled, and the door deferred nearly every act (2026-10-08). Each
@@ -154,11 +154,11 @@ fn with_site(book: &mut Book, at: &'static str, f: impl FnOnce(&mut Site)) {
 }
 
 /// THE KERNEL, HELD BY ONE NAMED SITE, WITH THE HOLD'S ONE STROKE. Never a
-/// `Deref` to the kernel: [`Held::run`] is the way in, and it hands the
-/// stroke beside the kernel, so an input-sized read under the lock spends
+/// `Deref` to the court: [`Held::run`] is the way in, and it hands the
+/// stroke beside the court, so an input-sized read under the lock spends
 /// it (78.153b).
 pub struct Held<'a> {
-    guard: MutexGuard<'a, Kernel>,
+    guard: MutexGuard<'a, Court>,
     stroke: Budget,
     at: &'static str,
     /// This thread's granted reads at the take (`physics::spent_here`).
@@ -166,11 +166,11 @@ pub struct Held<'a> {
 }
 
 impl Held<'_> {
-    /// THE ONLY WAY IN: the kernel and the hold's stroke, together. A read
+    /// THE ONLY WAY IN: the court and the hold's stroke, together. A read
     /// that walks what grows spends `reads`; a stroke spent ends it with its
     /// unread named (`Replayed::Unread`, a deferral, a page cut short) —
     /// never a wrong answer.
-    pub fn run<R>(&mut self, f: impl FnOnce(&mut Kernel, &mut Budget) -> R) -> R {
+    pub fn run<R>(&mut self, f: impl FnOnce(&mut Court, &mut Budget) -> R) -> R {
         f(&mut self.guard, &mut self.stroke)
     }
 
@@ -208,11 +208,11 @@ impl Drop for Held<'_> {
     }
 }
 
-/// Take the kernel at site `at` with the hold's one stroke (`Kernel::stroke`,
+/// Take the court at site `at` with the hold's one stroke (`Court::stroke`,
 /// the court's own metabolism); `Err(())` where the lock is poisoned, as
 /// `lock()` refuses.
 #[expect(clippy::result_unit_err, reason = "`held!` keeps `lock()`'s shape at every site: a poisoned lock is the one refusal, and it carries nothing to name")]
-pub fn lock<'a>(m: &'a Mutex<Kernel>, at: &'static str) -> Result<Held<'a>, ()> {
+pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<Held<'a>, ()> {
     let (mut guard, waited) = match m.try_lock() {
         Ok(g) => (g, false),
         Err(TryLockError::Poisoned(_)) => return Err(()),
@@ -259,7 +259,7 @@ pub fn lock<'a>(m: &'a Mutex<Kernel>, at: &'static str) -> Result<Held<'a>, ()> 
     Ok(Held { guard, stroke, at, spent_at: crate::physics::spent_here() })
 }
 
-/// `held!(kernel)` — `kernel.lock()` counted at this file and line, with the
+/// `held!(court)` — `court.lock()` counted at this file and line, with the
 /// hold's one stroke.
 macro_rules! held {
     ($m:expr) => {

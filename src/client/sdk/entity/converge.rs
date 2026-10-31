@@ -75,7 +75,7 @@ pub(crate) struct Scenes {
 }
 
 /// A WORD THAT HAS A SECTION: a connection, not a colour word — the words the
-/// court measures, each by its own section (`Kernel::discharge_on`, W).
+/// court measures, each by its own section (`Court::discharge_on`, W).
 pub(crate) fn sectioned(word: &Element) -> bool {
     word.is_connection() && !word.is_colour_word()
 }
@@ -186,7 +186,7 @@ fn charts_heard(evident: Evident, charts: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
     }
 }
 
-impl Entity {
+impl Mind {
     /// RINGS ANOTHER MIND SAID, WITH THE RINGS' EVIDENCE: read on the rings' scene
     /// before they are understood, so the understanding knows whether the
     /// word is true there. A record that is not the word said, or not a word
@@ -216,7 +216,7 @@ impl Entity {
             return;
         }
         self.scenes.pulling.insert(id, ());
-        let act = dialogue::encode_task_by_id(&self.hypha.kernel().voice(), &id);
+        let act = dialogue::encode_task_by_id(&self.hypha.voice().id(), &id);
         self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
             entity.scenes.pulling.remove(&id);
             let family = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| env.train);

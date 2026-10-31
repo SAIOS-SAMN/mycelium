@@ -6,7 +6,7 @@
 use crate::anastome::dialogue::challenge::{line_head, Challenge, Challenged, Entry};
 use crate::anastome::dialogue::domain::{Bond, DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt, TierFold, Uplinked};
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -31,8 +31,8 @@ fn challenger() -> SigningKey {
     key(40)
 }
 
-fn founded() -> Kernel {
-    let mut k = Kernel::new();
+fn founded() -> Court {
+    let mut k = Court::new();
     let mut tiers = vec![vk(&reserve()), vk(&tier())];
     tiers.sort_unstable();
     let g = DomainGenesis { domain: vk(&domain()), tiers };
@@ -66,7 +66,7 @@ fn lying_fold() -> (TierFold, Vec<Entry>) {
 /// 78.138 — THE TIER'S FOLD CARRIED in a fresh fold of its reserve, which
 /// includes none of it: where it stands, `[0]` inside the receipt — or the
 /// refusal.
-fn carry(k: &mut Kernel, f: TierFold, nonce: u8) -> Result<FoldAt, Uplinked> {
+fn carry(k: &mut Court, f: TierFold, nonce: u8) -> Result<FoldAt, Uplinked> {
     let carried = ChildNet {
         rows: f.rows.clone(),
         declared: f.declared.clone(),
@@ -91,7 +91,7 @@ fn bond_posts_from_reserve_and_fold_reads_bonded() {
     let mut k = founded();
     let refused = carry(&mut k, lying_fold().0, 8);
     assert_eq!(refused, Err(Uplinked::ChildRefused { index: 0, why: crate::anastome::dialogue::uplink::ChildRefusal::Unbonded }), "each answers for its own work");
-    let refused = |k: &mut Kernel, b: Bond, by: &SigningKey| k.bond(&b.sign(by));
+    let refused = |k: &mut Court, b: Bond, by: &SigningKey| k.bond(&b.sign(by));
     assert_eq!(refused(&mut k, Bond { reserve: vk(&tier()), ..bond(Some([1, 0, 0, 0]), 1) }, &tier()), Founded::NotReserve);
     assert_eq!(refused(&mut k, bond(Some([1, 0, 0, 0]), 1), &tier()), Founded::Unsigned);
     assert_eq!(refused(&mut k, Bond { tier: [9; 32], ..bond(Some([1, 0, 0, 0]), 1) }, &reserve()), Founded::NotATier);
@@ -106,7 +106,7 @@ fn bond_posts_from_reserve_and_fold_reads_bonded() {
         panic!("admitted")
     };
     assert!(!k.fold_bonded(&FoldAt::sealed(bare)), "an unbacked fold reads unbonded");
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.bond_of(&vk(&tier())), [7, 0, 0, 0], "the bond held across a restart");
 }

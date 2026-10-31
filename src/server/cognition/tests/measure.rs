@@ -37,7 +37,7 @@ fn slide() -> crate::transducer::element::Element {
 /// scene it measures nothing.
 #[test]
 fn discharge_on_pays_changed_sites_not_false_pair() {
-    let court = Kernel::new();
+    let court = Court::new();
     let family = vec![
         (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
         (grid(&["1100", "0000", "0200"]), grid(&["0011", "0000", "0200"])),
@@ -58,7 +58,7 @@ fn discharge_on_pays_changed_sites_not_false_pair() {
 /// W's own pay. A word that is no conjugate of a held word carries none.
 #[test]
 fn transport_on_pays_identity_conjugate_nothing() {
-    let mut court = Kernel::new();
+    let mut court = Court::new();
     let family = vec![(grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the slide extracts");
     let held = mint_sentence(&rule, &family, &NoCrystal, 0).expect("the rule mints");
@@ -99,7 +99,7 @@ fn transport_on_pays_identity_conjugate_nothing() {
 /// family it glues nothing.
 #[test]
 fn gluing_of_reads_closure_beyond_words() {
-    let mut court = Kernel::new();
+    let mut court = Court::new();
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0022"])),

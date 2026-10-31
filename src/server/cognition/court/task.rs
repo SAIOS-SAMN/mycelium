@@ -50,7 +50,7 @@ impl SolveVerdict {
     }
 }
 
-impl Kernel {
+impl Court {
     pub fn bind_listing_task(&mut self, listing: impl AsRef<[u8]>, task: impl AsRef<[u8]>) {
         let listing = Address::from_bytes(listing);
         let task = Address::from_bytes(task);
@@ -107,7 +107,7 @@ impl Kernel {
     /// client's seam, the tests): the act asked again while each asking
     /// moves its replay, exactly as a client asking again would see it. A
     /// replay no stroke moves stays `Unread`. The door judges on its one
-    /// stroke, [`Kernel::judge_solve_on_stroke`].
+    /// stroke, [`Court::judge_solve_on_stroke`].
     pub fn judge_solve(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
         let key = solve_key(rule, withheld);
         loop {
@@ -159,7 +159,7 @@ impl Kernel {
             None => crate::verdict::ReplayCursor::default(),
         };
         let out = {
-            let court: &Kernel = self;
+            let court: &Court = self;
             crate::verdict::replay_resume(
                 rule,
                 &|a| court.resolve_form_ref(a),

@@ -7,7 +7,7 @@
 
 use crate::cognition::*;
 
-impl Kernel {
+impl Court {
     pub(crate) fn recompute_tension(&mut self, addr: &[u8]) {
         let t = if self.open.contains(addr) {
             self.field

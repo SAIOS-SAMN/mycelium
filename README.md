@@ -854,13 +854,13 @@ ed25519-dalek = "2.1"
 ```rust
 use mycelium::anastome::dialogue;
 use mycelium::court::identity::HyphaKey;
-use mycelium::sdk::{Kernel, Session};
+use mycelium::sdk::{Voice, Session};
 use mycelium::transducer::family::{extract_rule, mint_sentence_why, speak::speak_rule, NoCrystal};
 
 // 1. Identity: a voice key, minted once and kept (32-byte Ed25519 seed).
 let key = HyphaKey::load_or_mint("voice.key");
 // 2. Session: one hypha's address.
-let session = Session::open("127.0.0.1:7610", Kernel::from_key(key.sk.clone()));
+let session = Session::open("127.0.0.1:7610", Voice::from_key(key.sk.clone()));
 // 3. Work: the task envelope carries train pairs and test inputs; the test
 //    outputs stay with the court. An empty reply means no work is available.
 let reply = session.speak(dialogue::encode_task_request(&key.vk_bytes()))?;
@@ -915,7 +915,7 @@ pairs:
 
 | Surface | API | Verified |
 |---|---|---|
-| Identity, session, task, solve, verdict | `sdk::{Kernel, Session}`, `anastome::dialogue` | end to end (`examples/sdk_client.rs`) |
+| Identity, session, task, solve, verdict | `sdk::{Voice, Session}`, `anastome::dialogue` | end to end (`examples/sdk_client.rs`) |
 | Rule extraction, minting, speaking | `transducer::family::{extract_rule, mint_sentence_why, speak::speak_rule}` | end to end |
 | Rules from typed steps | `sdk::rule::sentence` | test suite |
 | Seats in another kernel's house | `sdk::seat`, `sdk::seat_mind` | in use by peer kernels; specified in `docs/MU-CLIENT.md` §6 |

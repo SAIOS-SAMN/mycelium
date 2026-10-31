@@ -8,7 +8,7 @@ use crate::transducer::element::{Element, Remainder};
 /// RM1 — A CALLUS THE RECEPTOR RAISED: one class perceived at two
 /// incomparable chart chains with one ray — the mind's own second vantage —
 /// and the two words whose records carry the remainders. The voice stands it
-/// (`Entity::stand_calluses`).
+/// (`Mind::stand_calluses`).
 #[derive(Clone, Debug)]
 pub struct Callus {
     pub class: Box<crate::transducer::sentence::ClassVector>,

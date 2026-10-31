@@ -1,5 +1,5 @@
 // 78.152 TU-6 — WHAT A FINAL POINT LETS ONE DO. PINPOINT, UNPACK and UNROLL
-// are kernel reads (`Kernel::pinpoint`, `unpack`, `unroll`); RESET, BRANCH
+// are kernel reads (`Court::pinpoint`, `unpack`, `unroll`); RESET, BRANCH
 // and SUPERPOSE are typed here with the origin citation each needs — the
 // recut flow that would act on them is not built (78.152, owed).
 

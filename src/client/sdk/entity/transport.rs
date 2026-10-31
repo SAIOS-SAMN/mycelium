@@ -3,9 +3,9 @@
 
 use crate::client::sdk::*;
 
-impl Entity {
+impl Mind {
     /// The perceived transport aperture (see [`TransportAperture`]) — the
-    /// entity's answer to "why can the entity not speak to the server, and
+    /// mind's answer to "why can the mind not speak to the server, and
     /// what can it do?": measured impedance, adapted pacing, and an inward turn under
     /// occlusion.
     pub(crate) fn transport(&self) -> TransportAperture {

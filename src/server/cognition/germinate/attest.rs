@@ -14,7 +14,7 @@ use crate::transducer::element::Element;
 /// The page as the local quote prices it: each listing with its μ⃗.
 pub type Priced = Vec<(Element, [u64; 4])>;
 
-impl Kernel {
+impl Court {
     /// QUOTE — a local reading of the page: listings still on_page, in
     /// atlas order, under one stroke Budget. Tests use this; the wire
     /// quote is an incidence query over the voice's charts. The surface is

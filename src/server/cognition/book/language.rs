@@ -5,7 +5,7 @@ use super::super::language::{Language, LanguageWord};
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
-impl Kernel {
+impl Court {
     /// The digests the court reconciles against: the ruled cover, served to
     /// the court's own voice. Any other asker (an entity's sync) is answered
     /// with the whole language elsewhere.

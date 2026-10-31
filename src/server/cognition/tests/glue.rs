@@ -96,7 +96,7 @@ assert!(
     "the rule cites the held form"
 );
 let spoken = mint_sentence(&rule, &family, &cover, 0).expect("mint through crystal");
-let mut k = Kernel::new();
+let mut k = Court::new();
 let inner_addr = held_e.address();
 assert_eq!(
     k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&held_e)),
@@ -154,7 +154,7 @@ assert!(
 let spoken = mint_sentence(&rule, &family, &epi, 0).expect("minted over the voice's own crystal");
 
 // The court installs the cited form, then the citer.
-let mut k = Kernel::new();
+let mut k = Court::new();
 let inner = held_e.address();
 assert_eq!(
     k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&held_e)),
@@ -194,7 +194,7 @@ assert!(
 /// that chart shows a different root. Home and peer therefore have to build
 /// that root the same way — and they built it in three hand-rolled copies:
 /// `sheaf::root_of`, one inlined in `confirm_peer_holds`, and
-/// `Kernel::stratum_root_of`.
+/// `Court::stratum_root_of`.
 ///
 /// Nothing asserted they agreed. When the root became a root, the copy in
 /// `stratum_root_of` still returned the concatenation, so every heard
@@ -203,7 +203,7 @@ assert!(
 /// install path used the other two copies and this drop path had no test.
 #[test]
 fn confirm_peer_holds_keeps_heard_on_agreeing_root() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
@@ -250,7 +250,7 @@ assert!(
 #[test]
 fn fetch_have_carries_only_this_charts_heard() {
 use crate::transducer::stalk::Invariant;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let here = Invariant::counts(&[1]);
 let elsewhere = Invariant::counts(&[2]);
 let heard_here = vec![0xA1u8; 32];
@@ -284,7 +284,7 @@ fn glue_fetched_records_true_section_geometry() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 
-    let mut own = Kernel::new();
+    let mut own = Court::new();
     own.bind_identity(own_vk);
     assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
@@ -308,7 +308,7 @@ fn glue_fetched_records_true_section_geometry() {
     assert_eq!(own_sec.carriage, exp_carriage);
 
     // A peer arrives with spoken
-    let mut heard = Kernel::new();
+    let mut heard = Court::new();
     heard.bind_identity(own_vk);
     let mut cover = crate::network::nerve::Cover::new();
     let outcome = fetched(&mut heard, &spoken, peer_id, own_vk, &mut cover);
@@ -333,7 +333,7 @@ fn glue_fetched_reads_peer_sentence_against_own_section() {
     let (same_peer, refracting_peer) = ([0x1bu8; 32], [0x1cu8; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-    let mut own = Kernel::new();
+    let mut own = Court::new();
     own.bind_identity(own_vk);
     assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
@@ -389,7 +389,7 @@ fn glue_fetched_holds_attached_word() {
         )
         .expect("a connection")
     };
-    let mut own = Kernel::new();
+    let mut own = Court::new();
     own.bind_identity(own_vk);
     let held = word(1);
     assert_eq!(own.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&held)), vec![crate::anastome::dialogue::SPEECH_STOOD]);

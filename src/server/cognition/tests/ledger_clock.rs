@@ -31,7 +31,7 @@ assert!(!crate::transducer::element::same_versor(&v1, &v2), "two transitions");
 
 // ORDERED: both stand at receipts on this mind's own chain, so the
 // second's frontier dominates the first's and it supersedes.
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
 speak_pair(&mut k, &a, &b, [1; 32]);
@@ -58,7 +58,7 @@ assert_eq!(k.dialect_chain_len(), chain_before + 1, "the superseded one is kept"
 
 // CONCURRENT: the second stands at a PEER's receipt, admitted but never
 // cited, so neither frontier is below the other. Nothing supersedes.
-let mut k = Kernel::new();
+let mut k = Court::new();
 speak_pair(&mut k, &a, &b, [1; 32]);
 let own_head = k.chain().head_stamp().expect("the mind has acted");
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), Some(own_head));
@@ -102,7 +102,7 @@ assert_eq!(
 /// re-derives it from the receipts (T16).
 #[test]
 fn t_extent_replays_from_home_chain() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
 speak_pair(&mut k, &a, &b, [1; 32]);
@@ -115,7 +115,7 @@ assert_eq!(
     Some(7),
     "extent is h_now − h_install on the home chain"
 );
-let mut k2 = Kernel::new();
+let mut k2 = Court::new();
 k2.standing_h.insert(&addr, 4);
 assert_eq!(
     k2.t_extent(addr.as_bytes(), 3),
@@ -132,8 +132,8 @@ assert_eq!(
 /// A court with one provisional word standing, ruled by two voices. The
 /// fixture 45.1's four acts each need, built through the constructors the
 /// production code exports (§3.4).
-fn docketed(own_vk: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
-    let mut k = Kernel::new();
+fn docketed(own_vk: [u8; 32]) -> (Court, crate::transducer::address::Address) {
+    let mut k = Court::new();
     k.bind_identity(own_vk);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
@@ -228,7 +228,7 @@ fn home_install_seals_receipt_per_word() {
 /// zero flux (78.37 (3)).
 #[test]
 fn orbit_seals_lapsed_citation_receipt() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0x5d; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
@@ -257,7 +257,7 @@ fn orbit_seals_lapsed_citation_receipt() {
 fn clock_reads_head_stamp_and_counts() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
 speak_pair(&mut k, &a, &b, [1; 32]);

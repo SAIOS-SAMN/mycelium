@@ -9,7 +9,7 @@
 //! the next stroke's publication: a writer reading its own write lags it by
 //! at most one court stroke.
 
-use mycelium::cognition::{Kernel, Published};
+use mycelium::cognition::{Court, Published};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone)]
@@ -33,7 +33,7 @@ impl Shelf {
     /// THE COURT STROKE'S PUBLICATION, under the kernel it holds: built off
     /// the reading standing, swapped whole where anything moved, and its cost
     /// counted on the observer's serving reading.
-    pub(crate) fn publish(&self, k: &mut Kernel) {
+    pub(crate) fn publish(&self, k: &mut Court) {
         let standing = self.take();
         let Some(next) = k.publish(Some(&standing)) else { return };
         note_cost(&next);

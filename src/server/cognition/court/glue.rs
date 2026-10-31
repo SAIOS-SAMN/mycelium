@@ -60,7 +60,7 @@ struct Fills {
     class: Option<(Rotor, usize)>,
 }
 
-impl Kernel {
+impl Court {
     /// On the stroke of the act that fetched the word (65.5): the exchange's
     /// glue, or the witness door's offer — never one of its own. The acts in
     /// order: the stops; the peer's section; its standing to this court's
@@ -71,7 +71,7 @@ impl Kernel {
     /// marks nothing heard: it waits as dialect (`Glue::Dialect`), as an
     /// unproven colour word does, and the next fetch resumes it. A caller
     /// that must tell that wait from a dialect reading asks
-    /// [`Kernel::glue_fetched_ruled`].
+    /// [`Court::glue_fetched_ruled`].
     pub fn glue_fetched(
         &mut self,
         spoken: Element,
@@ -86,7 +86,7 @@ impl Kernel {
         }
     }
 
-    /// [`Kernel::glue_fetched`], `None` where this court's replay of the word
+    /// [`Court::glue_fetched`], `None` where this court's replay of the word
     /// was unread on the stroke (78.153): nothing was glued, refused or heard.
     pub fn glue_fetched_ruled(
         &mut self,
@@ -467,7 +467,7 @@ impl Kernel {
             // carriage, by its modes, in its tubes' quanta, the mass its
             // support carries (`transport_order`, the voices' one reader).
             // Its flux on 𝒯 is read where every admission is, `ruled_admit`
-            // (`Kernel::step_flux`), against the court's held tubes.
+            // (`Court::step_flux`), against the court's held tubes.
             self.physics.syntropy(&spoken.magnitude());
         }
         self.ruled_admit(&addr, budget);
@@ -496,7 +496,7 @@ impl Kernel {
         self.confirm_peer_holds_on(remote, peer, &mut budget);
     }
 
-    /// [`Kernel::confirm_peer_holds`] ON THE HOLD'S STROKE (78.153b): one read
+    /// [`Court::confirm_peer_holds`] ON THE HOLD'S STROKE (78.153b): one read
     /// per stratum the peer named, before its ruled fiber is read and rooted.
     /// A stroke spent ends the confirmation at the stratum it reached, and
     /// the peer's next digest resumes PAST it (`confirm_cursor`, by peer,
@@ -632,7 +632,7 @@ impl Kernel {
         self.confirm_peer_holds_addrs_on(have, peer, &mut budget);
     }
 
-    /// [`Kernel::confirm_peer_holds_addrs`] ON THE HOLD'S STROKE (78.153b):
+    /// [`Court::confirm_peer_holds_addrs`] ON THE HOLD'S STROKE (78.153b):
     /// one read per provisional the page names, before it is converged. A
     /// stroke spent leaves the rest provisional — awaiting a vantage, as an
     /// unanswered offer leaves it — never refused.
@@ -668,7 +668,7 @@ fn section_of(w: &Element) -> (Rotor, Versor) {
     )
 }
 
-impl Kernel {
+impl Court {
     /// 78.74 — the vent's reading: every cell the court's vantages released.
     pub fn released_cells(&self) -> crate::transducer::cech::Release {
         self.released_cells

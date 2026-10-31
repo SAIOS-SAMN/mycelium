@@ -7,9 +7,9 @@
 //! range, for a gap's back-fill or a court's replay of an era.
 
 use crate::chronometry::{Era, KStepReceipt, Place};
-use crate::cognition::Kernel;
+use crate::cognition::Court;
 
-impl Kernel {
+impl Court {
     /// THE FINALITY READING (45.8 as amended by 78.65): finality is per
     /// item, not per prefix. A listing and a provisional word are located
     /// by the stamp that admitted them, which the fold leaves citable
@@ -42,7 +42,7 @@ impl Kernel {
         self.fold_head_reading(false)
     }
 
-    /// 78.166 2a — THE HEAD A CLOSE ASKS: [`Kernel::fold_head`], but a cut
+    /// 78.166 2a — THE HEAD A CLOSE ASKS: [`Court::fold_head`], but a cut
     /// whose prefix carries no work is no cut and falls past the page.
     /// `propose_fold` asks whether the line CAN fold (the fold's own orbit
     /// can); the close asks whether it SHOULD, and a prefix of a fold and
@@ -233,7 +233,7 @@ pub(crate) trait LineHolder {
     fn hot(&self, signer: &[u8; 32], after: Option<Place>, upto: Place, n: usize) -> Vec<KStepReceipt>;
 }
 
-impl LineHolder for Kernel {
+impl LineHolder for Court {
     fn signs_as(&self) -> [u8; 32] {
         self.identity
     }

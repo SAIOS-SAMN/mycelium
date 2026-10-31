@@ -12,7 +12,7 @@
 //! prefix unpublished by its deadline falsifies the fold by default.
 
 use super::ledger::{count, discharge_key, Standing};
-use super::Kernel;
+use super::Court;
 use crate::anastome::dialogue::challenge::{
     line_head, Challenge, ChallengeRefusal, Challenged, Entry, Finality, SignedChallenge,
 };
@@ -131,7 +131,7 @@ fn reconstructs(rows: &[Net], declared: &[Net], children: &[ChildNet], own_rows:
     })
 }
 
-impl Kernel {
+impl Court {
     /// 78.125 — A CHALLENGE TAKEN: the filer's signature, the fold's record,
     /// its window — then the demand, the replay, the default or the
     /// correction, each sealed by `Cite::Challenge`.

@@ -36,7 +36,7 @@ fn letter_form(
     crate::transducer::sentence::generator_form(&rotor, chart, bodies)
 }
 
-impl Kernel {
+impl Court {
     /// 50.5, 34.2 (L7): the demand vertices of a listed sentence, written
     /// by kind and chart as the court lists them — the market relays and
     /// prices them under the sentence; under L8 they are listed beside its
@@ -208,7 +208,7 @@ impl Kernel {
     /// orbits' orders, and the install waits for the reserve (E3).
     ///
     /// `discharge` is what the sentence discharges on the family it was
-    /// heard for (`Kernel::discharge_on`): every escrow written here is
+    /// heard for (`Court::discharge_on`): every escrow written here is
     /// priced from it and never from the word's magnitude (78.149).
     pub(crate) fn list_sentence(&mut self, word: &Element, voice: [u8; 32], discharge: [u64; 4]) -> Outcome {
         let addr = word.address();

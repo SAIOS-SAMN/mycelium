@@ -4,7 +4,7 @@
 //
 //! The court verifies and teaches; it composes nothing for the mind (law 8).
 //! What it reads is the motion the mind sent, against the presentation it
-//! already holds (`Kernel::presentation`): the holes the motion names select
+//! already holds (`Court::presentation`): the holes the motion names select
 //! the generators, and the exact product of the generators' powers is the certificate.
 //! A generator the mind was already taught is drag — held, free, not sent
 //! again; one it lacks is lift, and the learner pays its magnitude, as the
@@ -18,7 +18,7 @@ pub struct Presented {
     pub answer: crate::anastome::dialogue::PresentationAnswer,
 }
 
-impl Kernel {
+impl Court {
     /// 78.160 P1 — A MIND'S RESIDUE, DECONSTRUCTED: the motion read against
     /// this court's presentation on the hold's stroke, and each cited form
     /// the asker lacks taught, within `bytes`, while its balance pays for it.

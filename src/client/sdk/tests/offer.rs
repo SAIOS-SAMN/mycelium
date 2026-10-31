@@ -22,7 +22,7 @@ fn one_cell_steps() -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
 /// its plan: the mind now holds tension.
 #[test]
 fn pull_task_asks_nothing_settled_and_strained_holds_tension() {
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("settled"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("settled"));
     mind.place_question(b"a question placed", &[(0, 0, 1, 2)]);
     let [first, second] = two_hours_of_a_slide();
     let mut field = std::mem::take(&mut mind.field);
@@ -48,7 +48,7 @@ fn pull_task_asks_nothing_settled_and_strained_holds_tension() {
 /// stands on no chart the mind holds, couples to nothing.
 #[test]
 fn couples_only_to_what_mind_holds() {
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("coupling"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("coupling"));
     let train = two_hours_of_a_slide().to_vec();
     let (id, other) = ([9u8; 32], [8u8; 32]);
     let slide = Offer::of(&train);
@@ -77,7 +77,7 @@ fn couples_only_to_what_mind_holds() {
 #[test]
 fn task_inflow_takes_offer_in_restored_language() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("restored"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("restored"));
     mind.place_question(b"a question placed", &[(0, 0, 1, 2)]);
     let [(x, y)] = <[_; 1]>::try_from(one_cell_steps()).expect("one pair");
     let mut field = std::mem::take(&mut mind.field);
@@ -144,7 +144,7 @@ fn corpus_inflow_meets_corpus_at_field_orbits() {
     use crate::transducer::cech::Thread;
     let families = [("a-three.json", two_cells_swapped(3, 4)), ("b-one.json", two_cells_swapped(1, 2))];
     let still = feed_of("focus-still", &families);
-    let mut quiet = Entity::open("127.0.0.1:1", Kernel::named("quiet"));
+    let mut quiet = Mind::open("127.0.0.1:1", Voice::named("quiet"));
     quiet.open_feed(still.clone());
     let mut field = std::mem::take(&mut quiet.field);
     field.think(|| quiet.corpus_inflow(&mut crate::physics::StrokeOutcome::default()));
@@ -154,7 +154,7 @@ fn corpus_inflow_meets_corpus_at_field_orbits() {
     assert_eq!(stayed.iter().filter(|s| **s).count(), 1, "no orbit, no language: the least chart met, the other undisturbed");
     assert!(quiet.perceiving(), "never frozen: the one met is on the perception carrier");
     let home = feed_of("focus-ringing", &families);
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("ringing"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("ringing"));
     mind.open_feed(home.clone());
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
@@ -185,14 +185,14 @@ fn corpus_inflow_at_rest_meets_language_charts() {
     let home = feed_of("ground-state", &[("a-slide.json", two_hours_of_a_slide().to_vec()), ("b-cell.json", two_cells_swapped(1, 2))]);
     // The word is read on a field of its own: what the restored mind holds is
     // the word, never the field its reading moved.
-    let mut elsewhere = Entity::open("127.0.0.1:1", Kernel::named("elsewhere")).field;
+    let mut elsewhere = Mind::open("127.0.0.1:1", Voice::named("elsewhere")).field;
     let word = elsewhere.think(|| {
         let mut b = budget();
         let frames = perceive_family(&[(x.clone(), y.clone())]);
         let f = scene_form_on(&NoCrystal, &mut b, &x, &y, &frames).expect("the pair reads");
         crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word")
     });
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("ground"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("ground"));
     mind.open_feed(home.clone());
     mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
     let mut field = std::mem::take(&mut mind.field);
@@ -248,7 +248,7 @@ fn curiosity_couples_to_nearest_stratum() {
 /// into thought, and leaves the carrier.
 #[test]
 fn absorb_taught_holds_residual_as_open_question() {
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("questioning"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("questioning"));
     let chain = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (1, 0, 1, 2), (2, 2, 3, 4)];
     let residual = crate::transducer::element::from_residual(&chain).expect("a residual chain");
     let tape = residual.to_bytes().expect("the record writes");
@@ -302,7 +302,7 @@ fn is_residual_only_for_chain_under_tag() {
 /// the observer — with no refusal sent.
 #[test]
 fn task_inflow_leaves_uncoupled_task_to_lapse() {
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("passing"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("passing"));
     let train = one_cell_steps();
     let offer = Offer::of(&train);
     mind.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id: [7; 32], train, tests: Vec::new() }, offer));
@@ -327,7 +327,7 @@ fn task_inflow_leaves_uncoupled_task_to_lapse() {
 /// passed — with no return in between. Every stroke it waited is counted.
 #[test]
 fn lapse_standing_task_at_next_final_in_ground_state() {
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("ground lapse"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("ground lapse"));
     lapses_at_the_next_final(&mut mind);
 }
 
@@ -335,7 +335,7 @@ fn lapse_standing_task_at_next_final_in_ground_state() {
 /// ground state — and the one-cell task on no chart the mind holds.
 #[test]
 fn lapse_standing_task_at_next_final_in_moving_field() {
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("moving lapse"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("moving lapse"));
     let mut field = std::mem::take(&mut mind.field);
     let in_focus = field.think(|| {
         let _ = crate::transducer::mind::with_field(|f| f.orbits.admit_hues(&[(1, 2), (2, 1)], 1, &crate::transducer::cech::Thread::Free));
@@ -346,7 +346,7 @@ fn lapse_standing_task_at_next_final_in_moving_field() {
     lapses_at_the_next_final(&mut mind);
 }
 
-fn lapses_at_the_next_final(mind: &mut Entity) {
+fn lapses_at_the_next_final(mind: &mut Mind) {
     use crate::chronometry::tuniversal::{Origin, TPoint};
     use crate::client::sdk::entity::perceive::Stop;
     let id = [6u8; 32];
@@ -356,7 +356,7 @@ fn lapses_at_the_next_final(mind: &mut Entity) {
     mind.note_task(&id, Reading::Task, |_| {});
     // A final heard on the hypha's carrier, read back off its view once the
     // carrier has published it.
-    let hear = |mind: &mut Entity, h: u64| {
+    let hear = |mind: &mut Mind, h: u64| {
         let p = TPoint { origin: Origin::default(), h, lanes: [1, 0, 0, 0], k: 1 };
         mind.ask(move |s| s.hear_point(Some(p)), |_, ()| {});
         let mut polls = 0u32;
@@ -387,7 +387,7 @@ fn lapses_at_the_next_final(mind: &mut Entity) {
 /// nothing. A task standing on the board is never asked past.
 #[test]
 fn pull_task_asks_only_on_empty_corpus() {
-    let mut vacuum = Entity::open("127.0.0.1:1", Kernel::named("vacuum"));
+    let mut vacuum = Mind::open("127.0.0.1:1", Voice::named("vacuum"));
     let mut field = std::mem::take(&mut vacuum.field);
     let (settled, asked) = field.think(|| {
         let settled = vacuum.strained();
@@ -397,13 +397,13 @@ fn pull_task_asks_only_on_empty_corpus() {
     vacuum.field = field;
     assert!(!settled && vacuum.board.corpus.size().0 == 0, "settled, the corpus empty");
     assert!(asked, "the corpus empty: it asks");
-    let mut held = Entity::open("127.0.0.1:1", Kernel::named("holding"));
+    let mut held = Mind::open("127.0.0.1:1", Voice::named("holding"));
     held.place_question(b"a question placed", &[(0, 0, 1, 2)]);
     let mut field = std::mem::take(&mut held.field);
     field.think(|| held.pull_task());
     held.field = field;
     assert!(!held.board.court.pulling, "its corpus holding: equilibrium, no ask");
-    let mut offered = Entity::open("127.0.0.1:1", Kernel::named("offered"));
+    let mut offered = Mind::open("127.0.0.1:1", Voice::named("offered"));
     let train = one_cell_steps();
     let offer = Offer::of(&train);
     offered.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id: [3; 32], train, tests: Vec::new() }, offer));
@@ -417,7 +417,7 @@ fn pull_task_asks_only_on_empty_corpus() {
 /// 2026-10-24); one that holds nothing owes none and may block.
 #[test]
 fn owes_strokes_only_with_task_on_board() {
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("quiescent"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("quiescent"));
     assert!(!mind.owes_strokes(), "nothing held: quiescent");
     let train = one_cell_steps();
     let offer = Offer::of(&train);

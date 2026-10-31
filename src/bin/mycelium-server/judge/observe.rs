@@ -24,7 +24,7 @@ static UNANSWERED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::
 /// one question is answered off the LAST publication: every hypha a ship
 /// had just restarted answered `--reading acts` with nothing (b and c,
 /// 2026-10-09) until a second question came. Answers whether it published.
-pub(crate) fn answer_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mesh, id: [u8; 32], first: bool) -> bool {
+pub(crate) fn answer_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh, id: [u8; 32], first: bool) -> bool {
     let asked = STANDING_ASKED.swap(false, std::sync::atomic::Ordering::Relaxed);
     if asked || first {
         publish_standing(k, mesh, Source::Court(id));
@@ -35,7 +35,7 @@ pub(crate) fn answer_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exc
 
 /// THE COURT'S OWN STANDING, read off the kernel: what it holds, the
 /// allocator at its own K, its clock, economy, acts and carriage.
-fn publish_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mesh, own: Source) {
+fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh, own: Source) {
     // ACT1: the origin this court adopted.
     let genesis = mesh.origin.lock().ok().and_then(|o| *o);
     // LD1 — the bytes its awards, its receipt deltas and its frames carry.

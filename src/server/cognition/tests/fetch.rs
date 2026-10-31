@@ -17,7 +17,7 @@ use crate::cognition::Asker;
 fn serve_ruled_reads_refraction_against_peer_holdings() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0x3a; 32]);
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     let spoken = k.provisional.scoped().next().expect("a provisional sentence").1.clone();
@@ -57,7 +57,7 @@ fn serve_ruled_reads_refraction_against_peer_holdings() {
 fn serve_ruled_charges_voice_and_defers_short_voice() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0x4a; 32]);
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     let w = k.provisional.scoped().next().expect("a provisional sentence").1.clone();
@@ -101,7 +101,7 @@ fn serve_ruled_charges_voice_and_defers_short_voice() {
 fn awaited_citations_asks_cited_and_serves_installed() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0x6a; 32]);
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     let spoken = k.provisional.scoped().next().expect("a provisional sentence").1.clone();
@@ -136,7 +136,7 @@ fn awaited_citations_asks_cited_and_serves_installed() {
 fn serve_ruled_on_takes_only_words_reply_carries() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0x5a; 32]);
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     let spoken = k.provisional.scoped().next().expect("a provisional sentence").1.clone();

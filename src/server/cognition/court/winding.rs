@@ -224,7 +224,7 @@ pub(crate) struct Earned {
     pub torse: Vec<([u8; 32], [u64; 4])>,
 }
 
-impl Kernel {
+impl Court {
     /// 78.68 — A RING CLOSED: on the simplex `simplex` of chart `inv`, at
     /// period `ell`, its members `addrs`; `remainder` is a Congruent fill's
     /// (κ, g, ℓ), whose first close mints the Torse rewrite. The first close
@@ -715,7 +715,7 @@ impl Kernel {
         (t.len(), net, transport, open, t.helicity())
     }
 
-    /// [`Kernel::tube_reading`] ON THE HOLD'S STROKE (78.153b): the helicity
+    /// [`Court::tube_reading`] ON THE HOLD'S STROKE (78.153b): the helicity
     /// `O(tubes²)` in exact rationals reads one stroke read per tube, and is
     /// `None` — unread — where the stroke runs out (`helicity_on`).
     pub fn tube_reading_on(

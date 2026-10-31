@@ -11,7 +11,7 @@ use crate::client::sdk::*;
 fn vent_into_field_takes_released_tether_strain() {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::cech::Section;
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("vent"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("vent"));
     let mut budget = entity.stroke();
     assert_eq!(entity.vent_into_field(&mut budget), 0, "nothing released yet; the complex now listens");
     let (a, b) = (vec![1u8; 4], vec![2u8; 4]);
@@ -33,7 +33,7 @@ fn vent_into_field_takes_released_tether_strain() {
 fn vent_vertex_unwinds_wound_torsion() {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::cech::Section;
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("unwind"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("unwind"));
     let mut budget = entity.stroke();
     let _ = entity.vent_into_field(&mut budget);
     let v = vec![3u8; 4];
@@ -61,7 +61,7 @@ fn question_lapses_when_field_dissipates_its_residue() {
     use crate::transducer::cech::Thread;
     use crate::transducer::family::pairing::{mark_flux, FieldLine};
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("asking"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("asking"));
     let mut field = std::mem::take(&mut entity.field);
     let (asked, stood, after) = field.think(|| {
         let gain = crate::transducer::cga::dilator(&q(2));
@@ -92,7 +92,7 @@ fn vent_into_field_withholds_open_flux_from_temporal() {
     use crate::transducer::family::pairing::{mark_flux, FieldLine};
     use crate::transducer::rewrite::LANE_TEMPORAL;
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("open flux"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("open flux"));
     let mut field = std::mem::take(&mut entity.field);
     let (before, open, closed) = field.think(|| {
         let slide = crate::transducer::cga::translator_at(&[q(1), q(0), q(0)]);

@@ -13,7 +13,7 @@ use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::seat::*;
 use crate::client::sdk::seat::{mind_mail, MindMail};
 use crate::client::sdk::seat_mind::*;
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use crate::transducer::cga::{point_at, translator_at};
 use ed25519_dalek::SigningKey;
 use num_bigint::BigInt;
@@ -225,8 +225,8 @@ fn orbit_reads_periodic_record_at_exact_period() {
 }
 
 /// A domain founded with two tiers, `house` its sitting reserve.
-fn founded() -> Kernel {
-    let mut k = Kernel::new();
+fn founded() -> Court {
+    let mut k = Court::new();
     let mut tiers = vec![vk(&house()), vk(&tier())];
     tiers.sort_unstable();
     let g = DomainGenesis { domain: vk(&domain()), tiers };
@@ -406,13 +406,13 @@ fn decide_follows_worth_not_counsel_order() {
 
 /// The listing the kernel's relay serves, read as the mind reads it: its
 /// seat's functions.
-fn listed_fns(k: &Kernel, seat: u32) -> (u64, Vec<SeatFn>) {
+fn listed_fns(k: &Court, seat: u32) -> (u64, Vec<SeatFn>) {
     let body = k.seat_listing(&vk(&domain()), None).expect("a listing is held");
     let listing = decode_listing_reply(&body, None).expect("decodes").expect("one SEATS");
     crate::client::sdk::seat::seat_fns(&listing, seat).expect("the seat is listed")
 }
 
-fn list(k: &mut Kernel, epoch: u64, fns: Vec<SeatFn>) {
+fn list(k: &mut Court, epoch: u64, fns: Vec<SeatFn>) {
     let seats = Seats { domain: vk(&domain()), sub_origin: None, epoch, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
     k.seat_post(&Post::Seats(seats).sign(&house()).expect("writes")).expect("listed");
 }
@@ -569,7 +569,7 @@ fn seat_hold_takes_seat_on_house_events() {
     assert!(!h.may_take(None), "no listing names the seat: no take");
     let mut after = 0u64;
     let mut nonce = 0u8;
-    let mut take = |k: &mut Kernel, h: &mut SeatHold, epoch: u64| {
+    let mut take = |k: &mut Court, h: &mut SeatHold, epoch: u64| {
         assert!(h.may_take(Some(epoch)), "the listing names the seat: the take is posted");
         nonce += 1;
         k.seat_post(&Post::Take(Take { domain: d, sub_origin: None, seat: 7, mind: mind_vk, nonce: [nonce; 32] }).sign(&mind()).expect("writes")).expect("relayed");

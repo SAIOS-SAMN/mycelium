@@ -3,7 +3,7 @@
 
 use crate::cognition::*;
 
-impl Kernel {
+impl Court {
     /// A read-only view of the germinated basis in canonical key order — a
     /// display and test seam, never an index for cognition, where every read
     /// of a word is `word_at` by its address. It reads `basis` itself:
@@ -39,7 +39,7 @@ impl Kernel {
     /// already owed on. A sentence's free part is absent, not zero.
     ///
     /// It was `sections_total`, which named one component and returned the
-    /// composite of two (§2.2), and the caller (`Kernel::volume`) always wanted
+    /// composite of two (§2.2), and the caller (`Court::volume`) always wanted
     /// the volume its own doc says it takes.
     ///
     /// In the period's carrier, `u64`, the sum exact or `None` (78.43(2)).

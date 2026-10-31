@@ -67,7 +67,7 @@ fn answer_writes_frame_within_budget_whole() {
 /// A PAGE'S WINDOW IS THE ORDER AFTER A VOICE'S OWN CURSOR, not a copy of
 /// the book (checklist (j)), as many as the wire's count carries; what of it
 /// is served is the court's reserve and the frame's to say
-/// (`Kernel::serve_syllabus`). Each voice has its own cursor.
+/// (`Court::serve_syllabus`). Each voice has its own cursor.
 #[test]
 fn syllabus_window_follows_each_voice_cursor() {
     let mut sy = Syllabus { order: Vec::new(), at: Keyed::new(), served: Keyed::new() };

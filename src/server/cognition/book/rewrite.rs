@@ -7,7 +7,7 @@
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
-impl Kernel {
+impl Court {
     /// Speak an optimisation: refuse a zero vector, docket the Rewrite,
     /// Offer it, and keep it as language. Payment waits on the second organ.
     pub(crate) fn offer_rewrite(&mut self, rw: Element, voice: [u8; 32]) -> bool {

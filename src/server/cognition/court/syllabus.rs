@@ -49,7 +49,7 @@ pub struct ServedPage {
     pub end: PageEnd,
 }
 
-impl Kernel {
+impl Court {
     /// Charts this hypha covers: Twisted or Cavity listings, per occupied lane.
     /// Never the whole pending book — that clone was the last deploy's leak.
     pub fn own_cover_charts(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {

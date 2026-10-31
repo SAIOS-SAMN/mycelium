@@ -6,7 +6,7 @@ use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
 /// 78.53, 78.55 — WHAT PROVES A COLOUR WORD AT THIS COURT
-/// (`Kernel::colour_proof`).
+/// (`Court::colour_proof`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ColourProof {
     /// A scene this court holds shows the relation: the task that did.
@@ -35,7 +35,7 @@ fn note_verdict_of(a: &crate::anastome::dialogue::Adjudication) {
     });
 }
 
-impl Kernel {
+impl Court {
     /// PERCEIVE A FAMILY'S SPEECH — the one door an utterance has (law 8,
     /// ruled 2026-09-10) — read as codes: `SPEECH_STOOD` for a sentence
     /// listed, `SPEECH_RATIFIED` for one already language, `SPEECH_REFUSED`
@@ -55,7 +55,7 @@ impl Kernel {
             .iter()
             .map(|s| crate::cognition::court::replay::replay_key(s, (!s.is_colour_word() && crate::cognition::court::replay::replays_on_family(s)).then_some(task)))
             .collect();
-        let progress = |k: &Kernel| -> Vec<Option<(crate::verdict::Phase, usize, usize)>> {
+        let progress = |k: &Court| -> Vec<Option<(crate::verdict::Phase, usize, usize)>> {
             keys.iter().map(|key| k.replay_cursors.get(key).map(|c| c.progress())).collect()
         };
         loop {
@@ -82,7 +82,7 @@ impl Kernel {
         self.hear_frame_on(act, &mut budget)
     }
 
-    /// [`Kernel::hear_frame`] on the stroke handed in (78.153: a fixture
+    /// [`Court::hear_frame`] on the stroke handed in (78.153: a fixture
     /// that asks what one frame hears hands it a stroke that holds it).
     pub fn hear_frame_on(
         &mut self,
@@ -459,7 +459,7 @@ impl Kernel {
         }
         let discharge = self.discharge_on(s.address().as_bytes(), s, heard_on);
         let out = self.list_sentence(s, voice, discharge);
-        // A SENTENCE SPOKEN FOR ITSELF NAMES NO TASK. `Entity::speak` sends
+        // A SENTENCE SPOKEN FOR ITSELF NAMES NO TASK. `Mind::speak` sends
         // an empty task for a word spoken on its own — an axis germ, a
         // crystallized idea, an adjoined letter — and `[]` is not `[0; 32]`,
         // so the gate let it through: the listing was bound to the empty

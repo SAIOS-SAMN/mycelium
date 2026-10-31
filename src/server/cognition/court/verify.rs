@@ -12,7 +12,7 @@
 
 use crate::cognition::*;
 
-impl Kernel {
+impl Court {
     /// THE VERIFICATION OF A RELEASE PAID to `organs`, the courts whose
     /// replay verified it (this court, and the witness or peer that
     /// re-derived it where there is one): each is minted its share of

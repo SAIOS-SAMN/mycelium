@@ -1,4 +1,4 @@
-// 78.145 — THE SEAT RELAY (`Kernel::seat_post`, `seat_mail`): the house — its
+// 78.145 — THE SEAT RELAY (`Court::seat_post`, `seat_mail`): the house — its
 // domain's sitting reserve — lists seats, a mind takes one, the house reads
 // the take and answers, perceives, the mind calls and reads the outcome; each
 // reader reads only its own mail, an acknowledged piece leaves, and a box
@@ -7,7 +7,7 @@
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::seat::*;
 use crate::server::cognition::seat::mail_bound;
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -33,8 +33,8 @@ fn other() -> SigningKey {
 }
 
 /// A domain founded with two tiers, `house` its sitting reserve.
-fn founded() -> Kernel {
-    let mut k = Kernel::new();
+fn founded() -> Court {
+    let mut k = Court::new();
     let mut tiers = vec![vk(&house()), vk(&tier())];
     tiers.sort_unstable();
     let g = DomainGenesis { domain: vk(&domain()), tiers };
@@ -49,7 +49,7 @@ fn seats(epoch: u64) -> Seats {
     Seats { domain: vk(&domain()), sub_origin: None, epoch, seats: vec![seat] }
 }
 
-fn read(k: &mut Kernel, who: &SigningKey, after: u64) -> Vec<Mail> {
+fn read(k: &mut Court, who: &SigningKey, after: u64) -> Vec<Mail> {
     k.seat_mail(&ReadMail::sign(who, after, [0; 32])).expect("signed").mail
 }
 

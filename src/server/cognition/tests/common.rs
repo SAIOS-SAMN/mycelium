@@ -37,7 +37,7 @@ pub fn sentence_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<Element
 /// task of that family (the voice's own binding, as the task arm binds it),
 /// heard by `perceive_sentence`. `Outcome::Pivot` where the voice has no
 /// sentence to speak. No painted site of the pair reaches the court.
-pub fn speak_pair(k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: [u8; 32]) -> Outcome {
+pub fn speak_pair(k: &mut Court, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voice: [u8; 32]) -> Outcome {
     let Some(e) = sentence_of(a, b) else {
         return Outcome::Pivot;
     };
@@ -70,7 +70,7 @@ pub fn strip_words(spoken: &Element) -> Element {
 /// Two voices speak a pair and `glue_local` glues it: a basis reached
 /// through the fixture's two wire identifiers (§3.4's exception), so a test
 /// built on this proves nothing about 47.3's witness and says so.
-pub fn glue_pair(k: &mut Kernel, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) {
+pub fn glue_pair(k: &mut Court, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) {
 speak_pair(k, a, b, [1; 32]);
 let _ = speak_pair(k, a, b, [2; 32]);
 k.glue_local();
@@ -102,7 +102,7 @@ pub fn verified<'a>(
 /// 47.1 prefix signed by `key` and admitted under origin `([7; 32], 2)`,
 /// in line order. Answers what each admission came to.
 pub fn admit_line(
-    k: &mut Kernel,
+    k: &mut Court,
     key: &crate::court::identity::HyphaKey,
     line: &[crate::chronometry::KStepReceipt],
 ) -> Vec<crate::court::admission::Admitted> {
@@ -139,7 +139,7 @@ pub fn budget() -> crate::physics::Budget {
 /// fetch that rules nothing must have moved the replay, or the glue stalls
 /// and the claim fails. Answers the verdict the replay reached: what a claim
 /// about a glue's verdict asserts on, on any host.
-pub fn fetched(k: &mut Kernel, spoken: &Element, peer: [u8; 32], own_vk: [u8; 32], cover: &mut crate::network::nerve::Cover) -> Glue {
+pub fn fetched(k: &mut Court, spoken: &Element, peer: [u8; 32], own_vk: [u8; 32], cover: &mut crate::network::nerve::Cover) -> Glue {
     loop {
         let before = k.court_replay_progress(spoken);
         let mut stroke = k.stroke();

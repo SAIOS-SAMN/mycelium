@@ -41,7 +41,7 @@ fn sentence_with(w: Word, tag: u8) -> Element {
 /// depth 1 and still `Ruled` at depth 2. Arity is depth, not standing.
 #[test]
 fn depth_of_counts_two_signers_as_two() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let said = sentence_with(turn_90(1), 1);
     let addr = said.address();
     assert_eq!(k.depth_of(addr.as_bytes()), 0, "nothing has committed to it yet");
@@ -90,7 +90,7 @@ fn cite(at: crate::chronometry::Stamp) -> crate::chronometry::Cite {
 /// acting on it again (47.3). Depth is read at the admitting stamp.
 #[test]
 fn depth_at_counts_repeat_signer_once() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
     // A word stands at the stamp: depth is read only where one does.
     k.held_at.insert(at.key(), crate::transducer::address::Address::from(vec![9]));
@@ -107,7 +107,7 @@ fn depth_at_counts_repeat_signer_once() {
 /// stamp nothing reads it at.
 #[test]
 fn note_attestor_files_only_where_word_stands() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
     let r = peer.append(ActKind::Install, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");
@@ -122,7 +122,7 @@ fn note_attestor_files_only_where_word_stands() {
 /// since the voices' chains retired.)
 #[test]
 fn depth_at_ignores_acts_about_word() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let at = crate::chronometry::Stamp { h: 5, vk: [4; 32], k: 4, i: 0 };
     // A word stands at the stamp: depth is read only where one does.
     k.held_at.insert(at.key(), crate::transducer::address::Address::from(vec![9]));
@@ -142,7 +142,7 @@ fn depth_at_ignores_acts_about_word() {
 /// same depths. Nothing about depth is written down (law 12).
 #[test]
 fn rebuild_attestors_rederives_depth_from_chain() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let said = sentence_with(turn_90(1), 1);
     let addr = said.address();
     assert_eq!(
@@ -169,7 +169,7 @@ fn rebuild_attestors_rederives_depth_from_chain() {
 /// relations. Never a total and never an average (law 5).
 #[test]
 fn generators_by_depth_reads_ruled_cover() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     assert!(k.generators_by_depth().is_empty(), "a court that ruled nothing has no rows");
     let said = sentence_with(turn_90(1), 1);
     assert_eq!(

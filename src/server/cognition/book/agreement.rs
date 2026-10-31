@@ -46,12 +46,12 @@ fn empty(l: &Local) -> bool {
     l.sites.iter().all(crate::network::nerve::Keyed::is_empty)
 }
 
-/// A word the court measures by its own section (`Kernel::discharge_on`, W).
+/// A word the court measures by its own section (`Court::discharge_on`, W).
 fn sectioned(word: &Element) -> bool {
     word.is_connection() && !word.is_colour_word()
 }
 
-impl Kernel {
+impl Court {
     /// 78.161(5), MU-CLIENT §5.5 — EVERY AGREEMENT A SPEECH CARRIES, verified
     /// on the evidence and sealed, with the convergences it carries.
     pub fn attest_agreements(&mut self, act: &crate::anastome::dialogue::SpeechAct) -> Vec<Attested> {

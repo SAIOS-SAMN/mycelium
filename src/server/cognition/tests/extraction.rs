@@ -11,7 +11,7 @@ use crate::cognition::*;
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn speak_pair_germinates_novel_substance_then_decomposes() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)]; // L
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // R180 of L — non-trivial substance
 assert_eq!(speak_pair(&mut k, &a, &rot, [1; 32]), Outcome::GermPending);
@@ -31,7 +31,7 @@ assert_eq!(speak_pair(&mut k, &a, &rot, [3; 32]), Outcome::Decomposed(vec![k.bas
 fn optimize_condenses_family_into_one_bundle() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 2)];
 let b = vec![(0, 0, 5), (0, 1, 2)]; // (0,0): 1→5
 k.basis_insert(from_canonical(&germinate(&a, &b).unwrap()), [1; 32]);
@@ -64,7 +64,7 @@ assert!(
 /// by a listing of its links.
 #[test]
 fn speak_pair_lists_nothing_for_unversored_deformation() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)]; // L
 let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)]; // bar — no rigid motor
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::Pivot, "no sentence, no listing");
@@ -78,7 +78,7 @@ assert!(k.pending.is_empty(), "nothing on the book to await consilience");
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn glue_local_installs_two_objects_as_one_word() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1), (5, 5, 2), (5, 6, 2), (6, 5, 2), (6, 6, 2)];
 let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1), (5, 5, 3), (5, 6, 3), (6, 5, 3), (6, 6, 3)];
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending, "one pair, one sentence");
@@ -95,7 +95,7 @@ use crate::transducer::family::{extract_rule_with, grid_of_painted, mint_sentenc
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
 let family = vec![(grid_of_painted(&a), grid_of_painted(&b))];
-let mut k = Kernel::new();
+let mut k = Court::new();
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listed = &k.quote().1;
 assert_eq!(listed.len(), 1, "one pair, one listing");

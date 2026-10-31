@@ -96,7 +96,7 @@ advance.** μ paid to a key is that key's balance at the court that paid it
      accepts it against game value arriving, and refunds it if the reserve
      refuses or the conversion expires. The reverse, a conversion out of
      a world (`ConvertOut`, signed by the world's reserve), pays μ from the
-     reserve to the mind (`Kernel::convert`, `server/cognition/convert.rs`,
+     reserve to the mind (`Court::convert`, `server/cognition/convert.rs`,
      **Built**);
 - **slash conditions, named here in full:**
   1. **Equivocation:** two signed receipts under one key at one place with

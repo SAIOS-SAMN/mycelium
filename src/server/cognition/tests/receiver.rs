@@ -12,8 +12,8 @@ use crate::cognition::*;
 /// mints — nothing is bound by the test.
 #[test]
 fn speak_pair_binds_sentence_to_task_family_and_mints() {
-    let mut home = Kernel::new();
-    let mut peer = Kernel::new();
+    let mut home = Court::new();
+    let mut peer = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
@@ -40,7 +40,7 @@ fn speak_pair_binds_sentence_to_task_family_and_mints() {
 /// painted site is the remainder its demand names, valid and not closed.
 #[test]
 fn court_settle_lists_demands_and_rules_closed_subcomplex() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1)];
     let b = vec![(0, 0, 2), (0, 1, 2), (1, 2, 3)];
     assert_eq!(k.demands_listed(), 0);
@@ -59,7 +59,7 @@ fn court_settle_lists_demands_and_rules_closed_subcomplex() {
 /// is spoken, nothing listed.
 #[test]
 fn speak_pair_unopened_pair_speaks_nothing() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)];
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::Pivot, "no sentence, no listing");

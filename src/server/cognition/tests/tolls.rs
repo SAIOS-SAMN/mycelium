@@ -11,7 +11,7 @@ use crate::anastome::dialogue::uplink::{TierFold, Uplinked};
 use crate::chronometry::ActKind;
 use crate::physics::laws::CHALLENGE_WINDOW;
 use crate::server::cognition::handoff::toll_key;
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -34,8 +34,8 @@ fn line() -> SigningKey {
 }
 
 /// Domains 4 (its reserve and its line) and 5 (its reserve), on one court.
-fn founded() -> Kernel {
-    let mut k = Kernel::new();
+fn founded() -> Court {
+    let mut k = Court::new();
     for d in [4u8, 5] {
         let mut tiers = vec![vk(&reserve(d))];
         if d == 4 {
@@ -83,7 +83,7 @@ fn mouth(t: Tariff) -> Mouth {
     }
 }
 
-fn open(k: &mut Kernel, m: Mouth) -> [u8; 32] {
+fn open(k: &mut Court, m: Mouth) -> [u8; 32] {
     // The throat's bank, funded first so balances read as before.
     let anchor = k.anchor();
     k.treasury.genesis(vk(&reserve(4)), [1, 0, 0, 0], anchor);
@@ -105,16 +105,16 @@ fn passage(s: i128, h: i128, nonce: u8) -> Offer {
     }
 }
 
-fn traverse(k: &mut Kernel, mouth: [u8; 32], o: Offer) -> Handed {
+fn traverse(k: &mut Court, mouth: [u8; 32], o: Offer) -> Handed {
     k.handoff(&Handoff::Traverse { offer: Box::new(o), mouth }.sign(&reserve(5)))
 }
 
-fn fund(k: &mut Kernel, who: [u8; 32], mu: [u64; 4]) {
+fn fund(k: &mut Court, who: [u8; 32], mu: [u64; 4]) {
     let anchor = k.anchor();
     k.treasury.genesis(who, mu, anchor);
 }
 
-fn pass(k: &mut Kernel, h: u64) {
+fn pass(k: &mut Court, h: u64) {
     while k.chain.head_height() < h {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
     }
@@ -168,7 +168,7 @@ fn tariff_parts_sum_exactly_under_adversarial_shares() {
 #[test]
 fn handoff_mouth_refuses_split_beyond_keeper_and_lines() {
     let mut k = founded();
-    let offer = |k: &mut Kernel, m: Mouth| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))) {
+    let offer = |k: &mut Court, m: Mouth| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))) {
         Handed::Refused(r) => Some(r),
         _ => None,
     };
@@ -220,7 +220,7 @@ fn settle_windows_releases_toll_parts_together() {
     fund(&mut k, vk(&reserve(5)), [10, 0, 0, 15]);
     let Handed::Sealed { id, at: traversed, .. } = traverse(&mut k, m, passage(7, 3, 1)) else { panic!() };
     let Handed::Sealed { at: accepted, .. } = k.handoff(&Handoff::Accept { id }.sign(&reserve(4))) else { panic!() };
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.toll_held_for(&vk(&line())), Some([3, 0, 0, 5]), "the toll held across a restart");
     let mut k = booted;

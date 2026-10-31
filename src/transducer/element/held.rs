@@ -83,7 +83,7 @@ impl Held {
     /// 37.7, 45.9 — THE GENERATORS THIS WORD OPENED: its word vertices that
     /// cite nothing (read off the envelope, 54.5 Road (d)) and carry a rotor
     /// the seventeen do not spell. The ONE reader of adjunction (law 12): a
-    /// court sums it over its ruled words (`Kernel::adjoined`), a mind over
+    /// court sums it over its ruled words (`Court::adjoined`), a mind over
     /// its genome (LC1), and the two cannot disagree about what counts.
     pub fn generators_opened(&self) -> u64 {
         let Some(f) = self.form() else { return 0 };

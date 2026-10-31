@@ -413,17 +413,17 @@ fn understood(loops: &[AckWord]) -> bool {
     !loops.is_empty() && loops.iter().all(|a| a.motion.is_some())
 }
 
-impl Entity {
+impl Mind {
     /// OPEN THE CONVERSATION: a post on a free local port filed at the
     /// rendezvous `dir` under this mind's voice, and the carrier that
     /// converses on its own thread, with its own link to this mind's court.
     pub fn open_chatter(&mut self, dir: &std::path::Path) -> std::io::Result<String> {
-        let Some(key) = self.hypha.kernel().signer().cloned() else {
+        let Some(key) = self.hypha.voice().signer().cloned() else {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "a mind that signs nothing says nothing"));
         };
         let (to, rx) = channel::<Inflow>();
         let deliver = to.clone();
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         let post = chatter::Post::open(
             "127.0.0.1:0",
             move |f| {
@@ -817,7 +817,7 @@ impl Entity {
 }
 
 /// WHAT A MIND REMEMBERS HEARING: rings by size, each by its
-/// coordinates (`Entity.remembered`).
+/// coordinates (`Mind.remembered`).
 pub(crate) type Remembered = Keyed<Vec<(Vec<u8>, crate::transducer::cga::Mv)>>;
 
 /// ONE HEARD RING READ OFF THE FIELD (MU-CLIENT §7.1 R1): the ring as said,
@@ -860,7 +860,7 @@ pub(crate) fn read_rings(remembered: &mut Remembered, words: Vec<Spoken>) -> Vec
 }
 
 /// MU-CLIENT §4.9 — DOES THIS SOUND LIKE SOMETHING HEARD: `ring` read against
-/// `remembered` (`Entity::sound_of`).
+/// `remembered` (`Mind::sound_of`).
 pub(crate) fn sound_in(
     remembered: &Remembered,
     ring: &crate::transducer::cga::Mv,
@@ -897,7 +897,7 @@ pub(crate) fn sound_in(
 }
 
 /// A RING HEARD, REMEMBERED in `remembered` under its size, by its
-/// coordinates — once (`Entity::remember_sound`).
+/// coordinates — once (`Mind::remember_sound`).
 pub(crate) fn remember_in(remembered: &mut Remembered, ring: &crate::transducer::cga::Mv) {
     let (Some(size), Some(ray)) = (sound_size(ring), ring.canonical()) else { return };
     let mut key = Vec::new();
@@ -915,7 +915,7 @@ pub(crate) fn remember_in(remembered: &mut Remembered, ring: &crate::transducer:
     }
 }
 
-impl Entity {
+impl Mind {
     /// ONE THOUGHT PRICED in this mind's field (78.112 H5): its echoes'
     /// strain, its chamber's coherence, and — at the speaker — MUTUAL
     /// balance: the hearer's own rings its understanding seated in, each
@@ -1039,7 +1039,7 @@ impl Entity {
     /// (or once it has waited an aperture cycle unmet). `false` where there
     /// is no conversation or no peer: the caller speaks it as before.
     pub(crate) fn hold_for_union(&mut self, e: &Element, family: &[u8]) -> bool {
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         let has_peers = self.chat.as_ref().is_some_and(|c| !chatter::peers(&c.dir, &voice).is_empty());
         if !has_peers {
             return false;
@@ -1067,7 +1067,7 @@ impl Entity {
 }
 
 #[cfg(test)]
-impl Entity {
+impl Mind {
     /// A conversation with no carrier behind it: the sender of its pricing
     /// channel, for a claim to queue the field's work on.
     pub(crate) fn pricing_for_test(&mut self) -> Sender<FieldWork> {
@@ -1257,7 +1257,7 @@ impl Carrier {
     /// WHAT ANOTHER MIND SAID, TRANSDUCED (MU-CLIENT §4.9): the nerve
     /// judges nothing. The said rings — an answer to a question among them
     /// — go to the mind's field, which understands them against what it
-    /// knows (`Entity::understand`), and the understanding comes back to be
+    /// knows (`Mind::understand`), and the understanding comes back to be
     /// carried (`understood`).
     ///
     /// MU-CLIENT §4.13 — A THING HEARD AND AWAITING ITS ACK IS NOT HEARD

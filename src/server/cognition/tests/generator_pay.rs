@@ -64,7 +64,7 @@ fn perceive_speech_waiting_citer_pays_no_generator() {
     let speaker = [3u8; 32];
     let (g, citer) = generator_and_citer();
 
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let anchor = k.anchor_pub();
     k.treasury.mint_claim(&[speaker], [8, 8, 8, 8], anchor);
     let before = k.treasury.balance_mu(&teacher);
@@ -108,7 +108,7 @@ fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
 
 /// Hear a sentence from `voice` on `task` and install it through the two
 /// vantages a home install needs (47.3).
-fn install_on(k: &mut Kernel, voice: [u8; 32], e: &Element, task: &[u8]) {
+fn install_on(k: &mut Court, voice: [u8; 32], e: &Element, task: &[u8]) {
     assert_eq!(
         k.perceive_speech(voice, task, std::slice::from_ref(e)),
         vec![crate::anastome::dialogue::SPEECH_STOOD],
@@ -144,7 +144,7 @@ fn use_credit_raises_teacher_room_without_mint() {
     let g_e = as_element_form(&g, g_mag).expect("a tape");
     let g_addr = g_e.address();
 
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let g_task = [6u8; 32];
     k.bind_task_family(g_task, gen_fam.clone());
     let c_task = [7u8; 32];
@@ -240,8 +240,8 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
     let c_task = [7u8; 32];
 
     // One court teaches both generators; each mind learns its own.
-    let mut school = Kernel::new();
-    let taught = |k: &mut Kernel, fam: &[crate::transducer::family::TrainPair], who: [u8; 32], task: [u8; 32]| {
+    let mut school = Court::new();
+    let taught = |k: &mut Court, fam: &[crate::transducer::family::TrainPair], who: [u8; 32], task: [u8; 32]| {
         let f = cipher_form(&fam[0].0, &fam[0].1);
         let mag = sentence_measure(&f, fam, &NoCrystal, 0).expect("the bar is spoken");
         let e = as_element_form(&f, mag).expect("a tape");
@@ -304,7 +304,7 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
         ([21u8; 32], voice_a, &said_a, teacher_a, &g_a),
         ([22u8; 32], voice_b, &said_b, teacher_b, &g_b),
     ] {
-        let mut k = Kernel::new();
+        let mut k = Court::new();
         k.set_court_voice(court_id);
         k.bind_task_family(c_task, cite_fam.clone());
         let g_task = [13u8; 32];

@@ -585,7 +585,7 @@ never transcripts, so two courts may implement one class with different
 algorithms.
 
 Release and settlement are shared by every class:
-- `Kernel::release_verified` (POUW and POWV);
+- `Court::release_verified` (POUW and POWV);
 - the convergence seal (POWC);
 - `settle_rewrite` (POWR);
 - `pay_lease` (leases).

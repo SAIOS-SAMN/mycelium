@@ -15,7 +15,7 @@
 //! nothing until bonds price it.
 
 use super::challenge::window_end;
-use super::Kernel;
+use super::Court;
 use crate::anastome::dialogue::domain::{Founded, SignedReservation};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Side, SignedHandoff, State};
 use crate::anastome::dialogue::uplink::Net;
@@ -213,7 +213,7 @@ pub(crate) fn take_origins(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], cra
         .collect()
 }
 
-impl Kernel {
+impl Court {
     /// 78.127 — A DOMAIN'S RESERVE TIER DESIGNATED: the domain's signature,
     /// the domain founded here, the tier one its genesis names. A domain with
     /// no reserve takes it at once; otherwise it is pending until the current

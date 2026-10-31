@@ -7,7 +7,7 @@ use super::*;
 use crate::anastome::dialogue::why::{head_of, Named, Refusal, Why, WhyAsk};
 use crate::chronometry::Cite as Cited;
 
-impl Kernel {
+impl Court {
     /// THE ACT AT THE COORDINATES ASKED, AND WHY IT STANDS. A word the act
     /// names is located by the stamp that admitted it; one this court no
     /// longer holds is counted as unheld, never answered with reasons it
@@ -66,7 +66,7 @@ impl Kernel {
             (k, _) if k > 0 => Some(Place { k: k - 1, i: u64::MAX }),
             _ => None,
         };
-        let (_, bytes) = Kernel::receipts_frame()?;
+        let (_, bytes) = Court::receipts_frame()?;
         match self.receipts_page(vk, before, p, 1, bytes).as_slice() {
             [r] if r.stamp.place() == p => Some(r.clone()),
             _ => None,

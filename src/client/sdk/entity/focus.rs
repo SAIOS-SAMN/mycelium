@@ -115,7 +115,7 @@ fn coords_of(train: &crate::transducer::family::Family, fibre: Option<Vec<(u8, u
     coords
 }
 
-impl Entity {
+impl Mind {
     /// AN OPEN QUESTION PLACED on the corpus: its residual chain's scene read
     /// to its bodies' charts, and its hue map's 𝒢 orbit.
     pub(crate) fn place_question(&mut self, addr: &[u8], chain: &[(i64, i64, u8, u8)]) {
@@ -189,7 +189,7 @@ impl Entity {
     }
 }
 
-/// THE CURIOSITY LAW'S SELECTION (`Entity::curiosity_focus`), on the
+/// THE CURIOSITY LAW'S SELECTION (`Mind::curiosity_focus`), on the
 /// language's charts and the corpus's coordinates in key order: the corpus
 /// charts of greatest exact shared-prefix depth with the language; where none
 /// shares a leading axis, the least corpus chart alone.
@@ -237,7 +237,7 @@ pub(crate) fn curiosity(language: &[crate::transducer::stalk::Invariant], coords
     }
 }
 
-impl Entity {
+impl Mind {
     /// THE CORPUS AT A WINDING (the module's rule): the feed's arrivals
     /// placed; then, one scene at a time, the item the focus meets taken in
     /// where the reserve carries its measure — else it waits, and the mind's
@@ -270,7 +270,7 @@ impl Entity {
             Some((t, k)) => (*t, k.to_vec()),
             None => return,
         };
-        let short = |entity: &Entity, mag: &[u64; 4]| !crate::economy::lanes_short(&entity.physics().reserve_shortfall(crate::physics::Physics::lanes_of(mag))).is_empty();
+        let short = |entity: &Mind, mag: &[u64; 4]| !crate::economy::lanes_short(&entity.physics().reserve_shortfall(crate::physics::Physics::lanes_of(mag))).is_empty();
         match tag {
             ITEM_FAMILY => {
                 let Some((path, task)) = self.board.feed.as_ref().and_then(|f| f.take(&key)) else {

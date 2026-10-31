@@ -13,7 +13,7 @@
 //! once found. Existing domains keep working (a ruled grace): they
 //! originate before joining a core tube or converting.
 
-use super::Kernel;
+use super::Court;
 use crate::anastome::dialogue::domain::{Founded, Origin};
 use crate::anastome::dialogue::universe::{basket_holds, Geometry, Genesis, Parent, SignedStatement, Stated, Universe, UniverseReading, KIND_GEOMETRY, KIND_JOIN};
 use crate::anastome::dialogue::handoff::State;
@@ -40,7 +40,7 @@ pub(crate) fn take_universes(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], U
         .collect()
 }
 
-impl Kernel {
+impl Court {
     fn universe_of(&self, domain: &[u8; 32]) -> Universe {
         match self.universes.get(domain) {
             Some(u) => u.clone(),

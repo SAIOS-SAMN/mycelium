@@ -1,15 +1,15 @@
-// 42 — THE KERNEL'S READS: the small accessors a caller outside the
-// book asks the court for. Split from `kernel.rs` at the §1.1 600-line
+// 42 — THE COURT'S READS: the small accessors a caller outside the
+// book asks the court for. Split from `state.rs` at the §1.1 600-line
 // reading bound when the awaiting docket was added (21 step 3); the
 // items are moved, not rewritten (§1.6).
 
 use super::*;
 
-/// The kinds of word a court's language holds, in [`Kernel::basis_kinds`]'s
+/// The kinds of word a court's language holds, in [`Court::basis_kinds`]'s
 /// order.
 pub const HELD_KINDS: [&str; 8] = ["sentences", "letters", "compositions", "connections", "colour words", "rewrites", "translations", "other"];
 
-impl Kernel {
+impl Court {
     pub(crate) fn mark_persist(&mut self) {
         self.persist_due = true;
     }

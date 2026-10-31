@@ -11,7 +11,7 @@
 //! `T` tiers, so the drill is measured on a court's size.
 
 use mycelium::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
-use mycelium::sdk::{Kernel, Session};
+use mycelium::sdk::{Voice, Session};
 use std::process::ExitCode;
 
 /// Domain `i`'s key and its one tier's, distinct for every `i`.
@@ -24,7 +24,7 @@ fn keys(i: u64) -> (ed25519_dalek::SigningKey, ed25519_dalek::SigningKey) {
 }
 
 fn act(addr: &str, i: u64) -> ExitCode {
-    let s = Session::open(addr, Kernel::from_voice([9; 32]));
+    let s = Session::open(addr, Voice::from_voice([9; 32]));
     let (domain, tier) = keys(i);
     let (dv, tv) = (domain.verifying_key().to_bytes(), tier.verifying_key().to_bytes());
     let genesis = DomainGenesis { domain: dv, tiers: vec![tv] }.sign(&domain);
@@ -52,7 +52,7 @@ fn act(addr: &str, i: u64) -> ExitCode {
 /// `tiers` tier keys each (32 bytes a key), from a seed space no drill
 /// domain uses.
 fn prefill(addr: &str, domains: u64, tiers: u64) -> ExitCode {
-    let s = Session::open(addr, Kernel::from_voice([9; 32]));
+    let s = Session::open(addr, Voice::from_voice([9; 32]));
     for d in 0..domains {
         let mut seed = [5u8; 32];
         seed[..8].copy_from_slice(&d.to_le_bytes());
@@ -77,7 +77,7 @@ fn prefill(addr: &str, domains: u64, tiers: u64) -> ExitCode {
 }
 
 fn check(addr: &str, n: u64) -> ExitCode {
-    let s = Session::open(addr, Kernel::from_voice([9; 32]));
+    let s = Session::open(addr, Voice::from_voice([9; 32]));
     let mut lost = 0u64;
     for i in 0..n {
         let (domain, tier) = keys(i);

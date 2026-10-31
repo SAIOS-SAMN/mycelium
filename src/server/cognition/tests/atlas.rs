@@ -17,7 +17,7 @@ use crate::anastome::dialogue::wallet::{StakeAct, StakeRefusal};
 use crate::chronometry::tuniversal::{Origin, TPoint};
 use crate::chronometry::ActKind;
 use crate::physics::laws::CHALLENGE_WINDOW;
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use ed25519_dalek::{Signer, SigningKey};
 
 fn key(b: u8) -> SigningKey {
@@ -43,8 +43,8 @@ fn fp(h: u64) -> TPoint {
 
 /// Domains 4 and 5 founded, each its own reserve, and a tube open between
 /// the two reserves (4 offers and keeps it).
-fn founded() -> (Kernel, [u8; 32], [u8; 32]) {
-    let mut k = Kernel::new();
+fn founded() -> (Court, [u8; 32], [u8; 32]) {
+    let mut k = Court::new();
     for d in [4u8, 5] {
         let g = DomainGenesis { domain: domain(d), tiers: vec![vk(&reserve(d))] };
         assert!(matches!(k.admit_domain(&g.sign(&key(d))), Founded::Sealed { .. }));
@@ -72,12 +72,12 @@ fn founded() -> (Kernel, [u8; 32], [u8; 32]) {
     (k, id, keeper)
 }
 
-fn fund(k: &mut Kernel, who: [u8; 32], mu: [u64; 4]) {
+fn fund(k: &mut Court, who: [u8; 32], mu: [u64; 4]) {
     let anchor = k.anchor();
     k.treasury.genesis(who, mu, anchor);
 }
 
-fn pass(k: &mut Kernel, h: u64) {
+fn pass(k: &mut Court, h: u64) {
     while k.chain.head_height() < h {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
     }
@@ -90,7 +90,7 @@ fn bytes_of(n: u64) -> [u8; 32] {
     b
 }
 
-fn map(k: &mut Kernel, d: u8, h: u64, record: MapRecord) -> Mapped {
+fn map(k: &mut Court, d: u8, h: u64, record: MapRecord) -> Mapped {
     k.map(&MapAct { domain: domain(d), point: fp(h), record, nonce: bytes_of(h) }.sign(&reserve(d)), Some(fp(h)))
 }
 
@@ -104,23 +104,23 @@ fn throat(id: [u8; 32], span: (u64, u64), keeper: [u8; 32]) -> MapRecord {
 
 /// The next entry of `d`'s chain at `u`, made under `fp(h)`, the court's
 /// final point `fp(fin)`; its hash where sealed.
-fn commit(k: &mut Kernel, d: u8, u: u64, h: u64, fin: u64, applied: Vec<([u8; 32], u64)>) -> Ledgered {
+fn commit(k: &mut Court, d: u8, u: u64, h: u64, fin: u64, applied: Vec<([u8; 32], u64)>) -> Ledgered {
     let parent = k.atlas.head(&domain(d)).map_or([0; 32], |e| e.hash);
     let e = LedgerEntry { domain: domain(d), u, commitment: bytes_of(u), events: [0; 32], point: fp(h), parent, applied, nonce: [0; 32] };
     k.ledger(&e.sign(&reserve(d)), Some(fp(fin)))
 }
 
-fn stake(k: &mut Kernel, who: &SigningKey, mu: [u64; 4], unstake: bool, nonce: u8) -> Result<[u64; 4], StakeRefusal> {
+fn stake(k: &mut Court, who: &SigningKey, mu: [u64; 4], unstake: bool, nonce: u8) -> Result<[u64; 4], StakeRefusal> {
     k.stake(&StakeAct { who: vk(who), unstake, mu, nonce: [nonce; 32] }.sign(who))
 }
 
 /// A traverse from domain 4 at `fp(at)`, citing both mouths' points and
 /// both universes' latest entries, over `route`, with `carried` declared by
 /// both reserves (none where `None`).
-fn traverse(k: &mut Kernel, m: [u8; 32], at: u64, route: Vec<[u8; 32]>, carried: Option<[u64; 4]>, nonce: u8) -> Crossed {
-    let head = |k: &Kernel, d: u8| k.atlas.head(&domain(d)).map_or(([0; 32], 0), |e| (e.hash, e.entry.u));
+fn traverse(k: &mut Court, m: [u8; 32], at: u64, route: Vec<[u8; 32]>, carried: Option<[u64; 4]>, nonce: u8) -> Crossed {
+    let head = |k: &Court, d: u8| k.atlas.head(&domain(d)).map_or(([0; 32], 0), |e| (e.hash, e.entry.u));
     let ((entry_a, u_a), (entry_b, u_b)) = (head(k, 4), head(k, 5));
-    let point = |k: &Kernel, d: u8, side: u8| {
+    let point = |k: &Court, d: u8, side: u8| {
         let id = crate::server::cognition::atlas::mouth_id(&domain(d), &m, side);
         k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point)
     };
@@ -239,7 +239,7 @@ fn traverse_refuses_one_sided_or_unequal_declarations() {
     assert!(matches!(commit(&mut k, 4, 1, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
     assert!(matches!(commit(&mut k, 5, 1, 10, 10, Vec::new()), Ledgered::Sealed { .. }));
     let payer = key(60);
-    let base = |k: &Kernel| {
+    let base = |k: &Court| {
         let (a, b) = (k.atlas.head(&domain(4)).expect("A"), k.atlas.head(&domain(5)).expect("B"));
         Traverse {
             from: domain(4),
@@ -304,7 +304,7 @@ fn ledger_chains_refuses_forks_and_reads_dilation() {
     let page = k.ledger_page(&domain(4), 10);
     assert_eq!(page.entries.iter().map(|e| e.entry.u).collect::<Vec<_>>(), vec![13, 19]);
     assert!(!page.more);
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.dilations(&domain(4)), k.dilations(&domain(4)), "the chain across a restart");
     assert_eq!(booted.atlas.head(&domain(4)).map(|e| e.entry.u), Some(19));
@@ -391,7 +391,7 @@ fn slide(x: i64, y: i64) -> Mv {
 }
 
 /// Domain 4's universe a flat torus of periods 30 and 20.
-fn torus_for_4(k: &mut Kernel) {
+fn torus_for_4(k: &mut Court) {
     let space = Geometry::Torus { periods: vec![(30, 1), (20, 1)], metric: Metric::L1 };
     assert!(matches!(k.state(&Statement { domain: domain(4), stated: Stated::Geometry(space) }.sign(&reserve(4))), Founded::Stated { .. }));
 }

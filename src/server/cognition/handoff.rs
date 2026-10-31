@@ -9,7 +9,7 @@
 //! is the law's `W`, the one finality clock.
 
 use super::challenge::window_end;
-use super::Kernel;
+use super::Court;
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Offer, Side, SignedHandoff, State};
 use crate::anastome::dialogue::uplink::{Net, SideRefusal, TierFold};
 use crate::chronometry::{ActKind, Cite, Stamp};
@@ -331,7 +331,7 @@ impl Handoffs {
     }
 }
 
-impl Kernel {
+impl Court {
     /// 78.126 — A HANDOFF ACT TAKEN: the filer's signature, then the offer
     /// (sender; conserving, on S and H only; both tiers bound, to different
     /// domains), the acceptance or refusal (receiver, within the window), or

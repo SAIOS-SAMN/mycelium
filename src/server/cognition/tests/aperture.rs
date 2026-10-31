@@ -12,7 +12,7 @@ use crate::cognition::*;
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn speak_pair_defers_germ_on_depleted_lane() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 // A bar: a body the eyes pair with its image (20 as ruled, L7). An L that
 // lost a site is a body no versor carries — no sentence, no listing.
 let a = vec![(0, 0, 1), (0, 1, 1)];
@@ -71,7 +71,7 @@ match speak_pair(&mut k, &a, &gb, [3; 32]) {
 /// S, G, or H. Eviction is by ACTION POTENTIAL, never FIFO.
 #[test]
 fn lane_room_keeps_spatial_room_under_t_pressure() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 k.bind_identity([1; 32]);
 k.enroll([1; 32], [8, 8, 1, 8]);
 let calm = k.lane_room().expect("an enrolled court's room reads");
@@ -87,7 +87,7 @@ assert_eq!(tense[0], s0, "T pressure does not steal spatial room: {tense:?}");
 /// Extra court strokes of a fixed corpus do not grow the hot set.
 #[test]
 fn court_stroke_idle_keeps_hot_set_fixed() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 k.set_height(5);
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
@@ -133,11 +133,11 @@ use crate::network::nerve::work;
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let admit_after = |n: usize| -> u64 {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     // Distinct SUPPORTS, not distinct positions: A5 centres a chain to
     // its min corner, so words that differ only by placement are one
     // word (1.5) and the base would not grow at all.
-    let fill = |i: usize, k: &mut Kernel| {
+    let fill = |i: usize, k: &mut Court| {
         let a: Vec<(i64, i64, u8)> = (0..=i as i64).map(|c| (0, c, 1u8)).collect();
         let b: Vec<(i64, i64, u8)> = (0..=i as i64).map(|c| (0, c, 2u8)).collect();
         if let Some(g) = germinate(&a, &b) {
@@ -181,7 +181,7 @@ assert_eq!(
 /// depleted lane is owed as F2r1d.
 #[test]
 fn speak_pair_lists_demand_on_depleted_lane() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     // A bar kept and a site painted beside it (20 as ruled, L7): the
     // sentence is the bar's word with a creation demand riding it. H1b,
     // 70.4 — separated, as in the test above.
@@ -258,7 +258,7 @@ fn list_sentence_charges_orbit_orders_on_depleted_lane() {
         .sum();
     assert!(steps > 0, "the orbits name a charge");
 
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     // Admission is room (23.8, S9.6): this fixture bypasses the replay to
     // reach `list_sentence` directly with an unbonded voice, which has
     // room for one claim in flight per lane (§3.1 as ruled, S13.15) —
@@ -400,7 +400,7 @@ fn orbit_words_reads_true_holonomy_not_coboundary() {
     // first exactly as `list_sentence_charges_orbit_orders_on_depleted_lane`
     // spends it.
     let depleted = || {
-        let mut k = Kernel::new();
+        let mut k = Court::new();
         for _ in 0..8 {
             k.physics_mut().spend([true; 4]);
         }

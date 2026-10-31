@@ -11,7 +11,7 @@
 
 pub(crate) use mycelium::server::held::{holding, stepping, yield_to_waiters};
 use mycelium::server::held::Held;
-use mycelium::cognition::Kernel;
+use mycelium::cognition::Court;
 use std::sync::Mutex;
 
 /// 78.152 TU-7 — THE LOCK WATCHDOG: a thread of its own that wakes on each
@@ -58,7 +58,7 @@ pub(crate) fn step(name: &'static str) {
 
 /// Take the kernel at site `at`, with the hold's one stroke; `Err(())` where
 /// the lock is poisoned, as `lock()` refuses.
-pub(crate) fn lock<'a>(m: &'a Mutex<Kernel>, at: &'static str) -> Result<Held<'a>, ()> {
+pub(crate) fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<Held<'a>, ()> {
     mycelium::server::held::lock(m, at)
 }
 

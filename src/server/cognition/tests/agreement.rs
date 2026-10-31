@@ -39,8 +39,8 @@ fn turn_180(r: i64, c: i64) -> Element {
 
 /// A court holding the scene's family, with `words` on its docket bound to
 /// the scene, each discovered by the voice beside it.
-fn court_with(words: &[(&Element, [u8; 32])]) -> Kernel {
-    let mut court = Kernel::new();
+fn court_with(words: &[(&Element, [u8; 32])]) -> Court {
+    let mut court = Court::new();
     court.bind_task_family(SCENE, family());
     for (w, who) in words {
         let addr = w.address();
@@ -70,7 +70,7 @@ fn speech(voice: [u8; 32], e: &Element, agreement: Vec<u8>) -> dialogue::SpeechA
     dialogue::decode_speech(&frame).expect("the frame decodes")
 }
 
-fn attests(k: &Kernel) -> usize {
+fn attests(k: &Court) -> usize {
     k.chain().nodes().filter(|r| r.kind == crate::chronometry::ActKind::Attest).count()
 }
 

@@ -51,8 +51,8 @@ pub const CATALOGUE: &[Mutant] = &[
         filter: "court::admission",
     },
     Mutant {
-        law: "47.4: an equivocation proof burns the signer's bond (Kernel::burn_equivocation)",
-        file: "src/server/cognition/kernel.rs",
+        law: "47.4: an equivocation proof burns the signer's bond (Court::burn_equivocation)",
+        file: "src/server/cognition/state.rs",
         before: "        let burned = self.treasury.burn(vk, bond, anchor);\n",
         after: "        let _ = anchor;\n        let burned = bond;\n",
         target: &["--lib"],

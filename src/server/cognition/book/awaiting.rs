@@ -11,7 +11,7 @@
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
-impl Kernel {
+impl Court {
     /// How many sentences wait on one address. A read for the tests and
     /// for the instrument (45.9): the docket's own size at a coordinate,
     /// never a total and never a branch.

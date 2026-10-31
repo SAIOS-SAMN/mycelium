@@ -46,7 +46,7 @@ fn chains() -> (Chain, Chain, Chain) {
 
 /// A word standing with a remainder of the 90° turn's class at `at`, its ray
 /// `ray`, stood by the mind (an act at its own K) in the dialect.
-fn stand_with(entity: &mut Entity, gauges: [&[(u8, u8)]; 2], at: &[Vec<u8>], ray: crate::transducer::alphabet::Rotor) -> Element {
+fn stand_with(entity: &mut Mind, gauges: [&[(u8, u8)]; 2], at: &[Vec<u8>], ray: crate::transducer::alphabet::Rotor) -> Element {
     let mut r = remainder(&[]);
     r.at = at.to_vec();
     let mut w = super::common::two_body_sentence(gauges);
@@ -58,7 +58,7 @@ fn stand_with(entity: &mut Entity, gauges: [&[(u8, u8)]; 2], at: &[Vec<u8>], ray
 
 /// The one remainder a held word's record carries, and whether this mind
 /// counts it answered.
-fn remainder_of(e: &Entity, w: &Element) -> (Remainder, bool) {
+fn remainder_of(e: &Mind, w: &Element) -> (Remainder, bool) {
     let held = e.epigenome.element_of(w.address().as_bytes()).expect("still held");
     let r = held.remainders().next().expect("its remainder").clone();
     let answered = e.epigenome.answered(w.address().as_bytes(), &r);
@@ -80,7 +80,7 @@ fn stand_calluses_raises_callus_only_for_one_twist_two_vantages() {
         crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor()
     };
 
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("callus"));
+    let mut e = Mind::open("127.0.0.1:1", Voice::named("callus"));
     let w1 = stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, turn_90());
     let w2 = stand_with(&mut e, [&[(5, 6)], &[(7, 8)]], &b, turn_90());
     e.stand_calluses();
@@ -108,14 +108,14 @@ fn stand_calluses_raises_callus_only_for_one_twist_two_vantages() {
     let r = e.meet_graph().remainders;
     assert_eq!((r.calluses, r.answered_skipped), (1, 2), "the receptor skips the answered: {}", r.line());
 
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("nested"));
+    let mut e = Mind::open("127.0.0.1:1", Voice::named("nested"));
     stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, turn_90());
     stand_with(&mut e, [&[(5, 6)], &[(7, 8)]], &nested, turn_90());
     e.stand_calluses();
     let r = e.meet_graph().remainders;
     assert_eq!((r.calluses, r.nested), (0, 1), "one vantage at a finer depth: {}", r.line());
 
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("discordant"));
+    let mut e = Mind::open("127.0.0.1:1", Voice::named("discordant"));
     stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, turn_90());
     stand_with(&mut e, [&[(5, 6)], &[(7, 8)]], &b, other_turn_90());
     e.stand_calluses();
@@ -153,7 +153,7 @@ fn stand_calluses_raises_callus_only_for_one_twist_two_vantages() {
 #[test]
 fn stand_calluses_refills_remainder_answered_by_class_key() {
     let (a, _, _) = chains();
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("answered"));
+    let mut e = Mind::open("127.0.0.1:1", Voice::named("answered"));
     let w = stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, turn_90());
     let class = *remainder(&[]).class;
     let charts: Vec<crate::transducer::stalk::Invariant> =

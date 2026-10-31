@@ -7,7 +7,7 @@
 
 use super::*;
 
-impl crate::transducer::family::Crystal for Kernel {
+impl crate::transducer::family::Crystal for Court {
     fn on_class(
         &self,
         class: &crate::transducer::stalk::Invariant,
@@ -104,7 +104,7 @@ impl crate::transducer::family::Crystal for Kernel {
     }
 }
 
-impl Kernel {
+impl Court {
     /// What a rule measures by speaking every train pair, its cited
     /// forms resolved through this kernel's ruled cover. Any miss is zero:
     /// association with a listing is not a mint.
@@ -116,7 +116,7 @@ impl Kernel {
         )
     }
 
-    /// [`Kernel::measured_replay`] with the modes it discharged (78.162): what
+    /// [`Court::measured_replay`] with the modes it discharged (78.162): what
     /// the closing form moved on the pairs it closed, mode by mode, exact.
     pub(crate) fn measured_replay_read(&self, form: &Element, family: &crate::transducer::family::Family) -> ([u64; 4], crate::economy::modes::Modes) {
         match crate::transducer::sentence::from_element_form(form) {
@@ -254,7 +254,7 @@ impl Kernel {
         pay
     }
 
-    /// [`Kernel::discharge_on`] over the family the word is BOUND to — the
+    /// [`Court::discharge_on`] over the family the word is BOUND to — the
     /// task it was spoken for, or the listing it answers — which is the
     /// family its install measures.
     pub(crate) fn discharge_of(&self, addr: &[u8], word: &Element) -> [u64; 4] {

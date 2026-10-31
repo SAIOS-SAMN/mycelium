@@ -9,7 +9,7 @@ use crate::exchange::{note_root, speak_root_locked, Mesh, RootHear};
 use crate::syllabus::{syllabus_admit, syllabus_window, Syllabus};
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::cognition::Kernel;
+use mycelium::cognition::Court;
 use mycelium::network::nerve::{home, Keyed, Router};
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
@@ -23,7 +23,7 @@ pub(crate) struct Door {
     /// 78.151 — the court's published reading, which the door's reads
     /// answer off without the kernel (`judge::serve_published`).
     pub(crate) published: crate::published::Shelf,
-    pub(crate) kernel: Arc<Mutex<Kernel>>,
+    pub(crate) kernel: Arc<Mutex<Court>>,
     pub(crate) mesh: Mesh,
     pub(crate) router: Arc<Mutex<Router>>,
     pub(crate) id: [u8; 32],
@@ -609,7 +609,7 @@ pub(crate) fn homes_here(mesh: &Mesh, shelf: &crate::published::Shelf, inv: &myc
 }
 
 pub(crate) fn list_task(
-    kernel: &Mutex<Kernel>,
+    kernel: &Mutex<Court>,
     shelf: &crate::published::Shelf,
     mesh: &Mesh,
     tid: impl AsRef<[u8]>,
@@ -641,7 +641,7 @@ pub(crate) fn list_task(
         let addr = residual.address();
         let here = homes_here(mesh, shelf, &inv, &residual.magnitude());
         // The pieces and the pieces' charts are read here, with no kernel held;
-        // the lock below only commits them (`Kernel::intake_prepared`).
+        // the lock below only commits them (`Court::intake_prepared`).
         let prepared = match here {
             true => mycelium::cognition::prepare_intake(&chain, &frame),
             false => Vec::new(),
@@ -669,7 +669,7 @@ pub(crate) fn list_task(
 
 /// First-time listing under a stroke budget until the manifest is exhausted.
 pub(crate) fn intake_corpus(
-    kernel: &Mutex<Kernel>,
+    kernel: &Mutex<Court>,
     shelf: &crate::published::Shelf,
     mesh: &Mesh,
     registry: &Mutex<mycelium::registry::TaskRegistry>,
@@ -686,7 +686,7 @@ pub(crate) fn intake_corpus(
 
 /// Cover-change walk: re-home listings whose key no longer (or now) homes here.
 pub(crate) fn relocate_corpus(
-    kernel: &Mutex<Kernel>,
+    kernel: &Mutex<Court>,
     shelf: &crate::published::Shelf,
     mesh: &Mesh,
     registry: &Mutex<mycelium::registry::TaskRegistry>,

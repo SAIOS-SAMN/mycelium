@@ -153,7 +153,7 @@ impl Seat {
     }
 }
 
-impl Entity {
+impl Mind {
     /// SIT A GAME'S SEATS: `sit` in `domain` (and its sub-origin, v1.4), by
     /// `key`, this mind's own.
     pub fn sit(&mut self, domain: [u8; 32], sub_origin: Option<[u8; 32]>, sit: Sit, key: ed25519_dalek::SigningKey) {
@@ -615,11 +615,11 @@ impl Entity {
     /// to nothing — its charts kept, so it is pulled again only where they
     /// couple.
     fn pull_before(&mut self, at: SeatName, key: ed25519_dalek::SigningKey, id: [u8; 32]) {
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         let act = dialogue::encode_task_by_id(&voice, &id);
         self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
             // A pull that read nothing waits for the next landing (`unpulled`).
-            let unread = |entity: &mut Entity| {
+            let unread = |entity: &mut Mind| {
                 entity.with_body_seat(at, |seat| {
                     seat.unpulled.insert(id, ());
                 })

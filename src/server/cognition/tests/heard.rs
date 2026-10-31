@@ -25,7 +25,7 @@ fn slide_sentence() -> Element {
 #[test]
 fn hear_frame_on_reads_rings_of_unstood_sentence() {
     let e = slide_sentence();
-    let mut court = Kernel::new();
+    let mut court = Court::new();
     court.bind_identity([0x5a; 32]);
     let frame = dialogue::encode_speech_spoken(
         &[0x5b; 32],

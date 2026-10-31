@@ -9,7 +9,7 @@
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
-impl Kernel {
+impl Court {
     /// 47.3: THE HOME INSTALLS on a second vantage. `witness` is the organ
     /// whose re-derivation the install rests on, and it is the author of the
     /// receipt this act seals (45.1): a book that cannot say which vantage
@@ -236,7 +236,7 @@ impl Kernel {
         for (addr, w) in sentences {
             let drawn = self.discoverer_of(&addr);
             let mut budget = self.physics.stroke();
-            let held = |k: &Kernel, word: &Element| k.basis.get(word.address().as_bytes()).is_some();
+            let held = |k: &Court, word: &Element| k.basis.get(word.address().as_bytes()).is_some();
             let words = crate::cognition::book::speech::words_of_sentence(&w, &mut budget);
             let new = words.iter().filter(|word| !held(self, word)).count();
             let _ = self.install_taught_words(&addr, &w, drawn, witness, &mut budget);

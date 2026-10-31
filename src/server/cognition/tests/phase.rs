@@ -92,7 +92,7 @@ fn phase_over_reads_kinds_and_cover_at_window_ends() {
 /// strata, never a phase.
 #[test]
 fn read_phase_on_keeps_only_window_mark() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     assert!(k.phase_mark.is_none(), "nothing before the first circuit");
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
     let b = vec![(0, 0, 2u8), (0, 1, 2)];
@@ -145,7 +145,7 @@ fn read_phase_on_keeps_only_window_mark() {
 /// when the circuit count crosses a multiple of `aperture_cycle()`.
 #[test]
 fn court_stroke_reads_phase_at_circuit_aperture() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let w = crate::transducer::element::from_connection(
         &crate::transducer::alphabet::Word::identity(),
         &crate::transducer::element::translator_versor(2, 0),

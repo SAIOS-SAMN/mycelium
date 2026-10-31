@@ -136,7 +136,7 @@ assert!(
 // as the dialect holds it — withheld on the same address — measuring
 // nothing, with no second replay.
 let bytes = e.to_bytes().expect("the record writes");
-let mut mind = crate::client::sdk::Entity::open("127.0.0.1:1", crate::client::sdk::Kernel::named("withheld"));
+let mut mind = crate::client::sdk::Mind::open("127.0.0.1:1", crate::client::sdk::Voice::named("withheld"));
 assert!(matches!(mind.absorb_taught(&bytes), Some(Comprehension::Withheld { .. })), "learned once: withheld");
 let _ = mind.take_learned_mu();
 match mind.absorb_taught(&bytes) {
@@ -467,7 +467,7 @@ fn speak_stands_known_vertex_without_wire() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let e2 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 assert!(e1.same_vertex(&e2), "two tapes of one form are one vertex");
-let mut entity = Entity::open("127.0.0.1:1", Kernel::named("once"));
+let mut entity = Mind::open("127.0.0.1:1", Voice::named("once"));
 assert!(!entity.already_taught(&e1));
 entity.remember_spoken(&e1);
 assert!(entity.already_taught(&e2), "same vertex is already taught");
@@ -538,7 +538,7 @@ let mut epi = Epigenome::new();
 assert!(epi.learn(&fat.to_bytes().expect("the record writes"), &mut super::common::budget()).is_none(), "a record that fails replay is not learned");
 assert_eq!(epi.genome_len(), 0, "genome stays empty");
 assert!(epi.learn(&honest.to_bytes().expect("the record writes"), &mut super::common::budget()).is_some(), "an honest derivation reads");
-let mut entity = Entity::open("127.0.0.1:1", Kernel::named("syllabus-refuse"));
+let mut entity = Mind::open("127.0.0.1:1", Voice::named("syllabus-refuse"));
 let _ = entity.absorb_taught(&honest.to_bytes().expect("the record writes"));
 assert_eq!((entity.epigenome.genome_len(), entity.dialect_len()), (0, 0), "a residual taught is never learned");
 assert_eq!(entity.board.open_residuals.len(), 1, "it is an open question");
@@ -556,7 +556,7 @@ use crate::transducer::germinate::germinate;
 let residual = from_canonical(
     &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
 );
-let mut entity = Entity::open("127.0.0.1:1", Kernel::named("learned-measured"));
+let mut entity = Mind::open("127.0.0.1:1", Voice::named("learned-measured"));
 let _ = entity.absorb_taught(&residual.to_bytes().expect("the record writes"));
 assert_eq!(entity.take_learned_mu(), [0; 4], "a page of open questions measures nothing");
 let honest = two_body_sentence([&[(1, 2)], &[(3, 4)]]);

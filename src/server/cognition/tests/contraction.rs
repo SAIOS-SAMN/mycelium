@@ -46,8 +46,8 @@ fn task_of(family: &[TrainPair]) -> Address {
         .expect("a grid pair's chain is A5's, so the task has an identity")
 }
 
-fn court(id: u8, task: &Address, family: Vec<TrainPair>) -> Kernel {
-    let mut k = Kernel::new();
+fn court(id: u8, task: &Address, family: Vec<TrainPair>) -> Court {
+    let mut k = Court::new();
     k.bind_identity([id; 32]);
     k.bind_task_family(task, family);
     k
@@ -55,7 +55,7 @@ fn court(id: u8, task: &Address, family: Vec<TrainPair>) -> Kernel {
 
 /// The judge's round trip, through the codec: a speech frame in, a reply
 /// frame out.
-fn hear(k: &mut Kernel, frame: &[u8]) -> Vec<u8> {
+fn hear(k: &mut Court, frame: &[u8]) -> Vec<u8> {
     let act = dialogue::decode_speech(frame).expect("the frame decodes");
     // 78.153: a stroke that holds the frame's replays.
     match k.hear_frame_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
@@ -137,8 +137,8 @@ fn hear_frame_on_reaches_one_standing_on_two_courts() {
     let f_v = voice_family();
     let f_1 = court_family();
     let task = task_of(&f_1);
-    let mut voice = crate::client::sdk::Entity::open("127.0.0.1:1", crate::client::sdk::Kernel::named("voice-a"));
-    let vk = voice.kernel().voice();
+    let mut voice = crate::client::sdk::Mind::open("127.0.0.1:1", crate::client::sdk::Voice::named("voice-a"));
+    let vk = voice.voice().id();
     let mut court1 = court(1, &task, f_1.clone());
     let mut court2 = court(2, &task, f_1);
     let s = sentence_over(&f_v);

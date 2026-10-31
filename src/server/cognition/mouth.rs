@@ -16,7 +16,7 @@
 
 use super::challenge::window_end;
 use super::handoff::toll_key;
-use super::Kernel;
+use super::Court;
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Level, Loop, Mouth, SignedHandoff, State, TubeReading};
 use crate::anastome::dialogue::universe::Geometry;
 use crate::chronometry::{ActKind, Cite, Stamp};
@@ -269,7 +269,7 @@ fn fits_both(t: &crate::anastome::dialogue::handoff::Tube, mass: &num_rational::
     Some(level_in(&t.from_space, mass)?.fits() && level_in(&t.to_space, mass)?.fits())
 }
 
-impl Kernel {
+impl Court {
     /// 78.135 — A TUBE'S MASS NOW: its committed mass, plus what its feeds
     /// added and less what its draws took.
     pub(crate) fn mass_now(&self, mouth: &[u8; 32]) -> Option<num_rational::BigRational> {

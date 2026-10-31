@@ -18,7 +18,7 @@
 
 use super::atlas::record_key;
 use super::challenge::window_end;
-use super::Kernel;
+use super::Court;
 use crate::anastome::dialogue::atlas::MapRecord;
 use crate::anastome::dialogue::crossing::{CrossRefusal, Crossed, Edge, Gas, Side, SignedTraverse};
 use crate::anastome::dialogue::uplink::{Child, TaxRefusal, TierFold, CONNECTION_TAX};
@@ -51,7 +51,7 @@ pub enum Unretrieved {
     Overflow,
 }
 
-impl Kernel {
+impl Court {
     /// THE COURT'S READ PRICE per lane: one μ a unit of gas at rest, and its
     /// pressure on the lane above it. `None` where it passes its carrier.
     pub fn read_price(&self) -> Option<[u64; 4]> {

@@ -153,7 +153,7 @@ impl Epigenome {
         Some(addr)
     }
 
-    /// EXPRESS a residual: germinate it as this entity's own word. Returns
+    /// EXPRESS a residual: germinate it as this mind's own word. Returns
     /// false when the expressed vocabulary already speaks it (the same body
     /// under a transport) — a claim already made, not to be made again.
     /// `k` is the voice's K (law 9); `now_tu` is TUniversal.

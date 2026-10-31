@@ -324,7 +324,7 @@ impl SeatRelay {
     }
 }
 
-impl super::Kernel {
+impl super::Court {
     /// 78.145 — A SEAT POST: checked for its signer, then held (a listing)
     /// or filed for its addressee (a take or a call to the domain's house; a
     /// taken, percept or outcome to the mind it names). Answered by the

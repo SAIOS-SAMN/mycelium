@@ -42,7 +42,7 @@ fn attestor_key(vk: &[u8; 32], kind: crate::chronometry::ActKind) -> Vec<u8> {
     k
 }
 
-impl Kernel {
+impl Court {
     /// Record one receipt on the depth index. Called wherever a receipt
     /// joins this court's chain — its own acts and every peer receipt it
     /// admits — so the index and the chain cannot disagree.

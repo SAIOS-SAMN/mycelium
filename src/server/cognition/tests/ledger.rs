@@ -7,7 +7,7 @@
 
 use crate::anastome::dialogue::uplink::{Child, ChildNet, ChildRefusal, Discontinuous, FoldAt, Net, TierFold, Uplinked};
 use crate::chronometry::Stamp;
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -38,14 +38,14 @@ fn reserve() -> SigningKey {
 }
 
 /// A court on which one domain names the three lines and its reserve.
-fn founded() -> Kernel {
-    let mut k = Kernel::new();
+fn founded() -> Court {
+    let mut k = Court::new();
     found(&mut k);
     k
 }
 
 /// The one domain founded on `k`, its reserve designated, each line bonded.
-fn found(k: &mut Kernel) {
+fn found(k: &mut Court) {
     use crate::anastome::dialogue::domain::{Bond, DomainGenesis, Founded, Reservation};
     let (a, p, q) = tiers();
     let r = reserve();
@@ -75,7 +75,7 @@ fn a_fold() -> TierFold {
 
 /// THE LINE'S FOLD CARRIED in a fresh fold of the reserve, which includes
 /// none of it: the reserve fold's answer.
-fn carry(k: &mut Kernel, f: TierFold, by: &SigningKey) -> Uplinked {
+fn carry(k: &mut Court, f: TierFold, by: &SigningKey) -> Uplinked {
     let carried = ChildNet {
         rows: f.rows.clone(),
         declared: f.declared.clone(),
@@ -92,7 +92,7 @@ fn carry(k: &mut Kernel, f: TierFold, by: &SigningKey) -> Uplinked {
 
 /// The line's fold carried, and where it stands: `[0]` inside the reserve's
 /// receipt.
-fn sealed(k: &mut Kernel, f: TierFold, by: &SigningKey) -> FoldAt {
+fn sealed(k: &mut Court, f: TierFold, by: &SigningKey) -> FoldAt {
     match carry(k, f, by) {
         Uplinked::Chained { at, .. } => FoldAt { stamp: at, path: vec![0] },
         other => panic!("carried: {other:?}"),
@@ -129,7 +129,7 @@ fn admit_uplink_nets_child_whole_and_restores_consumption() {
     let Uplinked::Chained { at: r_at, provisional: false, obstructions: 0, open_remainders: 1, .. } = reply else { panic!("{reply:?}") };
     let p_at = FoldAt { stamp: r_at, path: vec![0] };
     assert_eq!(k.ledgers.records.get(&p_at.key()).and_then(|r| r.children), Some(commitment), "P held by its children's commitment");
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "the ledger tree restores with the line");
     let again = fold(&q, 3, vec![(who(1), g(1))], Vec::new(), vec![part(&child, &at, vec![(who(1), g(1))], Vec::new(), 1, 1)]);
     assert_eq!(
@@ -317,7 +317,7 @@ fn co_sign(name: &str, root_hash: [u8; 32]) -> crate::anastome::dialogue::Receip
 #[test]
 fn admit_uplink_proves_cold_child_by_sealed_coordinates() {
     let (a, p, _) = tiers();
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0x5c; 32]);
     found(&mut k);
     let child = a_fold();
@@ -329,7 +329,7 @@ fn admit_uplink_proves_cold_child_by_sealed_coordinates() {
     };
     k.commit_fold([3u8; 64], &co_sign("w", proposal.root.hash)).expect("the fold sealed");
     assert!(k.chain.node(&at.stamp).is_none(), "the carrying receipt is off the hot line");
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert!(booted.ledgers.folds.contains(&at.key()), "held by its coordinates across the restart");
     let whole = part(&child, &at, child.rows.clone(), child.declared.clone(), 1, 1);

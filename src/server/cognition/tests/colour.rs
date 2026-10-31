@@ -26,8 +26,8 @@ fn json(a: u8, b: u8, c: u8) -> String {
 #[test]
 fn perceive_speech_admits_colour_theorem_by_composition() {
     use crate::transducer::element::{colour_word, derived_colour_word};
-    let mut k = Kernel::new();
-    let install = |k: &mut Kernel, task: u8, from: u8, to: u8| {
+    let mut k = Court::new();
+    let install = |k: &mut Court, task: u8, from: u8, to: u8| {
         let word = colour_word(&[(from, to)]).expect("a colour word");
         k.bind_task_family([task; 32], vec![(vec![vec![from, from]], vec![vec![to, to]])]);
         assert_eq!(k.perceive_speech([1; 32], &[task; 32], std::slice::from_ref(&word)), vec![crate::anastome::dialogue::SPEECH_STOOD]);
@@ -81,7 +81,7 @@ fn glue_fetched_admits_colour_word_by_rederived_witness() {
     use crate::transducer::element::colour_word;
     let family = vec![(vec![vec![1u8, 1]], vec![vec![2u8, 2]])];
     let tid = [30u8; 32];
-    let mut home = Kernel::new();
+    let mut home = Court::new();
     home.bind_task_family(tid, family.clone());
     let word = colour_word(&[(1, 2)]).expect("a colour word");
     assert_eq!(home.perceive_speech([1; 32], &tid, std::slice::from_ref(&word)), vec![crate::anastome::dialogue::SPEECH_STOOD]);
@@ -93,13 +93,13 @@ fn glue_fetched_admits_colour_word_by_rederived_witness() {
     let sent = Element::from_bytes(&tape, &mut 0).expect("and reads back");
     assert_eq!(sent.receipts().witness, held.receipts().witness);
     // A PEER HOLDING THE TASK re-derives it.
-    let mut peer = Kernel::new();
+    let mut peer = Court::new();
     peer.bind_task_family(tid, family);
     let mut cover = crate::network::nerve::Cover::new();
     assert!(!matches!(super::common::fetched(&mut peer, &sent, [1; 32], [2; 32], &mut cover), Glue::Dialect), "proven here");
     // A COURT WITHOUT IT holds it as dialect — ruled so, never a replay the
     // stroke left unread.
-    let mut stranger = Kernel::new();
+    let mut stranger = Court::new();
     assert!(matches!(super::common::fetched(&mut stranger, &sent, [1; 32], [3; 32], &mut cover), Glue::Dialect), "unproven here");
 }
 
@@ -127,7 +127,7 @@ fn colour_word_mints_rules_teaches_and_holds() {
     assert_eq!(word.address(), again.address(), "the same channels, the same word, for every mind");
 
     // THE COURT RULES BY EVIDENCE: its own copy of the family.
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let tid = [3u8; 32];
     k.bind_task_family(tid, task.train.clone());
     // A relation the family does not carry is refused, whoever says it.
@@ -153,7 +153,7 @@ fn colour_word_mints_rules_teaches_and_holds() {
     // TAUGHT AND HELD: the syllabus page carries it; the mind learns it.
     let page = k.serve_syllabus(&[word.address().as_bytes().to_vec()], [7; 32], 1 << 20);
     let [taught] = page.words.as_slice() else { panic!("one word served: {:?}", page.deferred) };
-    let mut mind = crate::client::sdk::Entity::open("127.0.0.1:1", crate::client::sdk::Kernel::named("learner"));
+    let mut mind = crate::client::sdk::Mind::open("127.0.0.1:1", crate::client::sdk::Voice::named("learner"));
     let mut budget = mind.stroke_n(1 << 16);
     assert!(mind.absorb_taught_at(&taught.word, Some(taught.at), &mut budget).is_some(), "learned");
     assert_eq!(mind.epigenome.genome_words().filter(|w| w.is_colour_word()).count(), 1, "the mind holds what its court installed");
@@ -192,7 +192,7 @@ fn fibre_relation_rotates_merge_into_reservoir() {
     let tape = word.to_bytes().expect("the record writes");
     let sent = Element::from_bytes(&tape, &mut 0).expect("and reads back");
     assert_eq!(sent.letters().map(|l| l.sigma.clone()), Some(sigma.clone()), "the record travels with the word");
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let tid = [40u8; 32];
     k.bind_task_family(tid, family);
     let lost = colour_word(&[(2, 1)]).expect("an injection is a word");

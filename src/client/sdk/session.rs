@@ -6,15 +6,15 @@
 
 use super::*;
 
-/// A kernel's session with a hypha. Identity is stable; sockets are pooled
+/// A mind's session with a hypha. Identity is stable; sockets are pooled
 /// keep-alives per destination so a quote/probe/attest does not open a new
 /// TCP handshake for every act.
 pub struct Session {
     pub(crate) addr: String,
-    pub(crate) kernel: Kernel,
+    pub(crate) voice: Voice,
     /// Consecutive failed exchanges per hypha address.
     pub(crate) resistance: RefCell<crate::network::nerve::Keyed<u64>>,
-    /// THE NERVE, as this entity holds it: every hypha it has learned of,
+    /// THE NERVE, as this mind holds it: every hypha it has learned of,
     /// placed by the same XOR router the hyphas use, so an act carrying a
     /// key (a listing, a task, a word) is spoken to that key's home and a
     /// stranger there is the second voice. The dial address is the seed.
@@ -45,13 +45,13 @@ pub struct Session {
 }
 
 impl Session {
-    /// Point a kernel at a hypha address (e.g. `"127.0.0.1:7500"`).
-    pub fn open(addr: &str, kernel: Kernel) -> Self {
+    /// Point a voice at a hypha address (e.g. `"127.0.0.1:7500"`).
+    pub fn open(addr: &str, voice: Voice) -> Self {
         let mut router = crate::network::nerve::Router::new();
-        router.insert(kernel.voice(), addr.to_string());
+        router.insert(voice.id(), addr.to_string());
         Session {
             addr: addr.to_string(),
-            kernel,
+            voice,
             resistance: RefCell::new(crate::network::nerve::Keyed::new()),
             router: RefCell::new(router),
             peers: {
@@ -75,7 +75,7 @@ impl Session {
     /// read off a hypha's door — `origin/h:S:G:T:H:K`, final on two keepers'
     /// verified readings (TU-3) — or `None` before the first. No ask is
     /// spoken: every door reply carries the door's final point, and this is
-    /// the greatest read. A kernel drives its clock by it and stamps what it
+    /// the greatest read. A mind drives its clock by it and stamps what it
     /// publishes with it (`TPoint::print`); its own step clock stays its own.
     pub fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
         self.final_point.get()
@@ -118,7 +118,7 @@ impl Session {
             self.ask_peers(&known[i]);
         }
         if budget.spend() {
-            let voice = self.kernel.voice;
+            let voice = self.voice.id();
             if let Ok(body) = self.exchange_at(&known[i], dialogue::encode_digests_request(&voice)) {
                 if self.absorb_digest(&body) {
                     self.fetch_cover(&known[i]);
@@ -128,7 +128,7 @@ impl Session {
     }
 
     pub(crate) fn ask_peers(&mut self, addr: &str) {
-        let Ok(body) = self.exchange_at(addr, dialogue::encode_peers_request(&self.kernel.voice)) else {
+        let Ok(body) = self.exchange_at(addr, dialogue::encode_peers_request(&self.voice.id())) else {
             return;
         };
         // A reply that does not decode names no peers, and none are
@@ -146,7 +146,7 @@ impl Session {
     /// Digest every learned hypha and absorb its cover. A moved root replaces.
     pub(crate) fn refresh_covers(&mut self) {
         let addrs = self.peers();
-        let voice = self.kernel.voice;
+        let voice = self.voice.id();
         for addr in addrs {
             let Ok(body) = self.exchange_at(&addr, dialogue::encode_digests_request(&voice)) else {
                 continue;
@@ -265,7 +265,7 @@ impl Session {
         while pages > 0 {
             pages -= 1;
             // A cursor past its four bytes asks nothing (STD1 3c).
-            let Some(ask) = crate::anastome::dialogue::encode_cover_request(&self.kernel.voice, &from) else {
+            let Some(ask) = crate::anastome::dialogue::encode_cover_request(&self.voice.id(), &from) else {
                 return;
             };
             let Ok(page) = self.exchange_at(addr, ask) else {
@@ -288,7 +288,7 @@ impl Session {
         }
     }
 
-    /// The hyphas this entity knows.
+    /// The hyphas this mind knows.
     pub(crate) fn peers(&self) -> Vec<String> {
         self.peers.scoped().map(|(_, a)| a.clone()).collect()
     }
@@ -320,8 +320,8 @@ impl Session {
         self.exchange_at(&addr, act_body)
     }
 
-    pub(crate) fn kernel(&self) -> &Kernel {
-        &self.kernel
+    pub(crate) fn voice(&self) -> &Voice {
+        &self.voice
     }
 
     /// The measured impedance Z on THIS SESSION'S OWN WIRE: consecutive
@@ -439,7 +439,7 @@ impl Session {
     /// settles a graded trajectory or closure. Returns its reading (PR1).
     pub(crate) fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<dialogue::ProbeReading> {
         // LD0: a probe whose address cannot be framed is not spoken.
-        let Some(frame) = dialogue::encode_probe(&self.kernel.voice, target, cites) else {
+        let Some(frame) = dialogue::encode_probe(&self.voice.id(), target, cites) else {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "probe refused: an address cannot be framed"));
         };
         let body = self.speak_keyed(target, frame)?;
@@ -449,10 +449,10 @@ impl Session {
 
     /// ASK the quote — "what is the highest-yield work?" The hypha answers with
     /// the yield surface (per-lane, priced off genuine metabolic tension) and the
-    /// open-demand market's top clusters, each carrying its chain so this kernel
+    /// open-demand market's top clusters, each carrying its chain so this mind
     /// can actually attempt the reduction.
     pub(crate) fn quote(&self, charts: &[crate::transducer::stalk::Invariant]) -> io::Result<YieldQuote> {
-        let Some(req) = dialogue::encode_quote_request_charts(&self.kernel.voice, charts) else {
+        let Some(req) = dialogue::encode_quote_request_charts(&self.voice.id(), charts) else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "the ask does not fit the lengths its frame writes",
@@ -528,7 +528,7 @@ impl Session {
 
     /// One framed exchange: dial, speak the act, read the reply body.
     /// The RAW ACT DOOR — speak any encoded dialogue act and receive the reply
-    /// body. The public SDK surface for custom kernels (and the court): the
+    /// body. The public SDK surface for custom minds (and the court): the
     /// wire is the universal language; authority comes from the mathematics,
     /// never the socket.
     pub fn speak(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
@@ -613,7 +613,7 @@ impl Session {
         // 78.152 TU-7: every act carries the last final point this session
         // read — and before it has read one, the zero point, which says only
         // "this speaker reads points": the door answers a pointed speaker with
-        // its own point and an unpointed one (a kernel before 78.152) as it
+        // its own point and an unpointed one (a mind before 78.152) as it
         // always did, so a session that never pointed would never learn one.
         let carried = match self.final_point.get() {
             Some(p) => p,

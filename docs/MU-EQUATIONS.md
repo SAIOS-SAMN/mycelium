@@ -1475,7 +1475,7 @@ equals the base.
 
 Sources: MU-ECONOMY §5.1, §8. Code:
 `src/economy/verify.rs::verification_share`,
-`src/server/cognition/court/verify.rs::Kernel::pay_verification`,
+`src/server/cognition/court/verify.rs::Court::pay_verification`,
 `::release_verified`; `src/economy/lanes.rs::yield_surface`;
 `src/physics/mod.rs::reserve_max`.
 
@@ -1492,7 +1492,7 @@ A lease reserves value against a provider's capacity. Each verified solve
 of a leased job pays the provider out of the hold, at most once per job.
 
 Sources: MU-ECONOMY §5.2. Code: `src/server/cognition/lease.rs`
-(`Kernel::open_lease`, `pay_lease`, `close_lease`, `lapse_leases`);
+(`Court::open_lease`, `pay_lease`, `close_lease`, `lapse_leases`);
 `src/economy/pay.rs::Treasury::draw_held`.
 
 ## 7. The metabolism

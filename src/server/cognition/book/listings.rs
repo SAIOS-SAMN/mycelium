@@ -29,7 +29,7 @@ pub struct Docketed {
     pub k: u64,
 }
 
-impl Kernel {
+impl Court {
     pub(crate) fn drain_unreachable(&mut self) {
         let kappa = crate::physics::aperture_cycle();
         let mut budget = self.physics.stroke();
@@ -778,7 +778,7 @@ impl Kernel {
         crate::transducer::family::Crystal::by_address(self, addr).map(|(_, f)| f.into_owned())
     }
 
-    /// 78.153 — [`Kernel::resolve_form`] BORROWED where the court holds the
+    /// 78.153 — [`Court::resolve_form`] BORROWED where the court holds the
     /// form decoded (an installed word): the replay reads a cited form and
     /// keeps nothing, so it clones nothing. A cavity word is still decoded
     /// from its address at the read.

@@ -10,7 +10,7 @@ use crate::client::sdk::*;
 fn impedance_rises_per_failure_and_transport_occludes() {
 // A session pointed at a port nothing listens on: every exchange
 // fails, so resistance accumulates deterministically.
-let s = Session::open("127.0.0.1:1", Kernel::named("impedance-test"));
+let s = Session::open("127.0.0.1:1", Voice::named("impedance-test"));
 assert_eq!(s.transport(), TransportAperture::Open, "no speech yet — presumed clear");
 let cycle = crate::physics::aperture_cycle() as u64;
 for i in 1..=cycle {
@@ -61,7 +61,7 @@ let h = std::thread::spawn(move || {
         .expect("a one-byte body encodes");
     let _ = s.write_all(&reply);
 });
-let mut s = Session::open("127.0.0.1:1", Kernel::named("z-decay"));
+let mut s = Session::open("127.0.0.1:1", Voice::named("z-decay"));
 let cycle = crate::physics::aperture_cycle() as u64;
 for _ in 0..cycle {
     let _ = s.speak(vec![0xFF]);
@@ -84,9 +84,9 @@ let _ = h.join();
 /// not the bootstrap seed.
 #[test]
 fn route_chart_on_empty_cover_routes_by_chart_key() {
-let mut s = Session::open("127.0.0.1:7500", Kernel::named("fan"));
-s.know_hypha("127.0.0.1:7501", Kernel::named("p1").voice());
-s.know_hypha("127.0.0.1:7502", Kernel::named("p2").voice());
+let mut s = Session::open("127.0.0.1:7500", Voice::named("fan"));
+s.know_hypha("127.0.0.1:7501", Voice::named("p1").id());
+s.know_hypha("127.0.0.1:7502", Voice::named("p2").id());
 let seed = "127.0.0.1:7500";
 let mut saw_other = false;
 for i in 0..64u64 {
@@ -101,11 +101,11 @@ for i in 0..64u64 {
 assert!(saw_other, "chart keys fan out across the known hyphae, not only the seed");
 }
 
-/// A kernel's identity is stable and name-derived; distinct names → distinct
-/// voices (so two named kernels can reach consilience, one cannot with itself).
+/// A voice's identity is stable and name-derived; distinct names → distinct
+/// voices (so two named voices can reach consilience, one cannot with itself).
 #[test]
-fn kernel_named_voice_is_stable_and_distinct() {
-assert_eq!(Kernel::named("sod").voice(), Kernel::named("sod").voice(), "stable seat");
-assert_ne!(Kernel::named("sod").voice(), Kernel::named("net").voice(), "distinct kernels");
+fn named_voice_is_stable_and_distinct() {
+assert_eq!(Voice::named("sod").id(), Voice::named("sod").id(), "stable seat");
+assert_ne!(Voice::named("sod").id(), Voice::named("net").id(), "distinct voices");
 }
 

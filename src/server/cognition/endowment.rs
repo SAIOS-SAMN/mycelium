@@ -27,7 +27,7 @@
 //! of every universe's, so the network's total is zero by construction — no
 //! stock is declared anywhere.
 
-use super::Kernel;
+use super::Court;
 use crate::anastome::dialogue::endowment::{nuclei_hold, put_nuclei, take_manifest, EndowmentReading, GrantRead, GrantRefusal, Granted, Nuclei, SignedManifest, KIND_MANIFEST};
 use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::network::nerve::Keyed;
@@ -150,7 +150,7 @@ fn add_nuclei(a: &Nuclei, b: &Nuclei) -> Nuclei {
     sum.scoped().filter_map(|(k, c)| Some((u16::from_be_bytes(k.as_slice().try_into().ok()?), c.clone()))).collect()
 }
 
-impl Kernel {
+impl Court {
     /// Whether `domain`'s own ledger has applied the grant at `hash`: an
     /// entry citing it among what it applied (as a crossing is applied).
     fn grant_applied(&self, domain: &[u8; 32], hash: &[u8; 32]) -> bool {

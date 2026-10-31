@@ -7,7 +7,7 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::stalk::Invariant;
 
-fn returns(k: &Kernel) -> usize {
+fn returns(k: &Court) -> usize {
     k.chain().nodes().filter(|r| r.kind == ActKind::Return).count()
 }
 
@@ -19,7 +19,7 @@ fn returns(k: &Kernel) -> usize {
 /// order (period zero) never carries.
 #[test]
 fn close_ring_writes_one_return_per_age() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0x5c; 32]);
     let chart = Invariant::counts(&[1, 2]);
     let ring = b"ring";
@@ -73,7 +73,7 @@ fn q(n: i64, d: i64) -> num_rational::BigRational {
 /// theorem, as it does a returning one.
 #[test]
 fn book_outflow_checks_condensing_face_as_proof() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0x7b; 32]);
     let chart = Invariant::counts(&[2, 4]);
     let mut cx = crate::transducer::cech::Complex::new();
@@ -108,15 +108,15 @@ fn book_outflow_steps_chart_holonomy_algebra() {
         let k = t.geo(&Mv::blade(E1, q(1, 1)).geo(&Mv::blade(E3, q(1, 1)))).geo(&t.reverse()).grade(2);
         crate::physics::source::Source::of(&sigma, &pp, &k).expect("a source").sliver(&q(1, 2))
     };
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0x7a; 32]);
     let chart = Invariant::counts(&[2, 3]);
     let mut cx = crate::transducer::cech::Complex::new();
     cx.arm_outflow();
     k.complexes.insert(chart.key(), cx);
-    let rank_steps = |k: &Kernel| k.chain().nodes().filter(|r| r.kind == ActKind::RankStep).count();
+    let rank_steps = |k: &Court| k.chain().nodes().filter(|r| r.kind == ActKind::RankStep).count();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
-    let hand_back = |k: &mut Kernel, m: &Mv| {
+    let hand_back = |k: &mut Court, m: &Mv| {
         if let Some(cx) = k.complexes.get_mut(&chart.key()) {
             cx.flow_out(crate::transducer::cech::Flow { motion: m.clone(), line: crate::transducer::cech::Thread::Free });
         }
@@ -160,7 +160,7 @@ fn step_rank_reads_rederived_sentence_rings() {
     assert_eq!(rings(&minted), rings(&rule.form), "the mint keeps the percept's rings");
     assert!(rings(&minted) > 0, "the slide's form holds rings");
     let addr = word.address();
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0x3c; 32]);
     k.provisional.insert(&addr, word);
     let b = &mut crate::physics::Physics::default().stroke_n(1 << 16);
@@ -205,7 +205,7 @@ fn winding_round_trips_whole() {
 /// times and relieved once, the ratchet that climbed 𝒯 on the courts.
 #[test]
 fn pending_take_relieves_witnessed_charge_whole() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let word = super::common::sentence_of(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).expect("a sentence");
     let addr = word.address();
     k.pending.insert(&addr, word);

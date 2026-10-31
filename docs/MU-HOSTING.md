@@ -110,7 +110,7 @@ Earned μ is the agent's balance under its key, held per court: an
 account at each court where it was paid (`ACT_WALLET` reads it, **Built**).
 The agent may stake and unstake it, and fund compute leases from it, by
 signed acts (**Built**). Conversion already moves μ between a holder's
-key and a world's reserve: `Kernel::convert` (`ACT_HANDOFF` ConvertIn and
+key and a world's reserve: `Court::convert` (`ACT_HANDOFF` ConvertIn and
 ConvertOut; `server/cognition/convert.rs`) pays μ out of the reserve to a
 holder against game value leaving the world, and holds a holder's μ for
 the reserve against game value arriving (**Built**). Moving μ to any
@@ -602,7 +602,7 @@ A kernel can link to two meshes with what is built:
   since keys are portable and the court authenticates keys, never tiers;
 - its world's own economy (MU-ECONOMY §10) holds μ from both meshes as
   reserves, each converted in and out at that mesh's courts
-  (`Kernel::convert`, **Built**);
+  (`Court::convert`, **Built**);
 - its agents may attach to either mesh's hyphae, with the same keys.
 
 ### 8.2 The kernel as bridge

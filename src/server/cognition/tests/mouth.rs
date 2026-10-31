@@ -5,7 +5,7 @@
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Level, Mouth, Offer, State, Tube};
 use crate::anastome::dialogue::universe::Geometry;
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use crate::transducer::cga::Mv;
 use ed25519_dalek::SigningKey;
 use num_rational::BigRational;
@@ -27,8 +27,8 @@ fn reserve(d: u8) -> SigningKey {
 }
 
 /// Domains 4, 5 and 6, each its own reserve, and a second tier of 4's (24 + 1).
-fn founded() -> Kernel {
-    let mut k = Kernel::new();
+fn founded() -> Court {
+    let mut k = Court::new();
     for d in [4u8, 5, 6] {
         let mut tiers = vec![vk(&reserve(d))];
         if d == 4 {
@@ -73,7 +73,7 @@ fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {
 
 /// The pair offered by `a`'s reserve — funded with the throat's bank first,
 /// so balances read as before — and accepted by `b`'s.
-fn open(k: &mut Kernel, m: Mouth, a: u8, b: u8) -> [u8; 32] {
+fn open(k: &mut Court, m: Mouth, a: u8, b: u8) -> [u8; 32] {
     let bank = m.tube.as_ref().map_or(0, |t| t.mass.0.div_ceil(t.mass.1));
     let anchor = k.anchor();
     k.treasury.genesis(vk(&reserve(a)), [bank, 0, 0, 0], anchor);
@@ -101,7 +101,7 @@ fn cargo(a: u8, b: u8, nonce: u8) -> Offer {
 #[test]
 fn handoff_mouth_refuses_bad_builders_and_frames() {
     let mut k = founded();
-    let offer = |k: &mut Kernel, m: Mouth, by: &SigningKey| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(by)) {
+    let offer = |k: &mut Court, m: Mouth, by: &SigningKey| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(by)) {
         Handed::Refused(r) => r,
         other => panic!("refused: {other:?}"),
     };
@@ -190,7 +190,7 @@ fn mouth_loops_records_turning_loop() {
 
 /// An untethered mouth as one opened before tubes stands on the record:
 /// two free frames, open, between `a` and `b`.
-fn legacy(k: &mut Kernel, a: u8, b: u8, from_frame: Mv) -> [u8; 32] {
+fn legacy(k: &mut Court, a: u8, b: u8, from_frame: Mv) -> [u8; 32] {
     let m = Mouth { tube: None, ..mouth(a, b, from_frame, one(), [0; 4]) };
     let id = m.id();
     let held = crate::server::cognition::mouth::MouthHeld { mouth: m, state: State::Accepted, opened: Some(k.chain.head_height()), at: Vec::new() };
@@ -208,7 +208,7 @@ fn tube_of_reads_places_and_levels_on_curved_space() {
     use crate::transducer::cga::{translator_at, E1};
     use num_rational::BigRational as Q;
     let mut k = founded();
-    let offer = |k: &mut Kernel, m: Mouth| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))) {
+    let offer = |k: &mut Court, m: Mouth| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))) {
         Handed::Refused(r) => Some(r),
         _ => None,
     };
@@ -285,7 +285,7 @@ fn handoff_feed_and_draw_keep_throat_bank() {
     assert_eq!(k.treasury.held_of(&throat_key(&id, &offerer)).map(|h| h.mu[0]), Some(3));
     let before = k.tube_of(&id).expect("a tube").from_level;
     k.treasury.genesis(keeper, [4, 0, 0, 0], anchor);
-    let act = |k: &mut Kernel, h: Handoff, by: &SigningKey| k.handoff(&h.sign(by));
+    let act = |k: &mut Court, h: Handoff, by: &SigningKey| k.handoff(&h.sign(by));
     assert_eq!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 0 }, &reserve(4)), Handed::Refused(HandoffRefusal::NotTheTier), "the keeper feeds");
     assert_eq!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 1 }, &reserve(5)), Handed::Refused(HandoffRefusal::Stale));
     assert!(matches!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 0 }, &reserve(5)), Handed::Sealed { .. }));
@@ -294,7 +294,7 @@ fn handoff_feed_and_draw_keep_throat_bank() {
     assert_eq!(fed.mass, (13, 2), "5/2 + 4");
     let (Level::Curved(after), Level::Curved(before)) = (&fed.from_level, &before) else { panic!("curved faces") };
     assert!(after > before, "fed, the throat widens");
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.tube_of(&id), Some(fed), "the bank restored");
     assert_eq!(act(&mut k, Handoff::Draw { mouth: id, mu_s: 7, seq: 1 }, &reserve(5)), Handed::Refused(HandoffRefusal::Starved), "never massless");
@@ -333,7 +333,7 @@ fn handoff_mouth_tube_supersedes_untethered_mouth() {
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(again)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
     let not_legacy = Mouth { tube: Some(Tube { supersedes: Some(tube_id), ..tube() }), nonce: [6; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(not_legacy)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.tube_of(&tube_id), k.tube_of(&tube_id), "the tube restored");
     assert_eq!(booted.tube_of(&old), None, "the untethered record, untethered");

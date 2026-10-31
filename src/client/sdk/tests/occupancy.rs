@@ -69,7 +69,7 @@ fn tests_spoken_withholds_speech_with_unreached_body() {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("the family has a rule");
     use crate::client::sdk::entity::family::tests_spoken;
-    let e = Entity::open("127.0.0.1:1", Kernel::named("withheld"));
+    let e = Mind::open("127.0.0.1:1", Voice::named("withheld"));
     let (reached, _) = tests_spoken(&e.epigenome, &rule, &[grid(&["0010", "0000", "0000"])]);
     assert_eq!(reached.expect("every body reached: the answer stands"), vec![grid(&["0000", "0010", "0000"])]);
     let (unreached, held) = tests_spoken(&e.epigenome, &rule, &[grid(&["0010", "0000", "2220"])]);

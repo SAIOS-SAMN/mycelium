@@ -674,7 +674,7 @@ pub fn sentence_measure_from(
 /// magnitude is the closed sub-complex's deflation AND the measure of the
 /// links its demands ask for: that sum is the listing's ASK, its tension on
 /// the book, and the court never prices it — every escrow and release reads
-/// the discharge (`Kernel::discharge_of`), the ask only capping it (b).
+/// the discharge (`Court::discharge_of`), the ask only capping it (b).
 pub fn sentence_measure_why(
     form: &Form,
     family: &[(Grid, Grid)],

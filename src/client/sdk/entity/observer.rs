@@ -46,7 +46,7 @@ fn lanes(l: &[u64; 4]) -> String {
     format!("{}:{}:{}:{}", l[0], l[1], l[2], l[3])
 }
 
-impl Entity {
+impl Mind {
     /// THE WINDING CARRIER ENTERS `law`, and the calls waiting are answered
     /// at this boundary.
     pub(crate) fn at_law(&mut self, law: &'static str) {

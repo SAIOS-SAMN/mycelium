@@ -549,7 +549,7 @@ impl ReceiptChain {
     }
 
     /// 78.147 — A PEER'S FOLD ROOT ADOPTED, its two signatures verified by
-    /// the caller (`Kernel::adopt_root`): the signer's line stands on it here
+    /// the caller (`Court::adopt_root`): the signer's line stands on it here
     /// as the signer's own line stands on it — the next receipt names it as
     /// its predecessor and its height reads off its stamp — and nothing below
     /// it is asked again. `false` for this chain's own key, or where the line

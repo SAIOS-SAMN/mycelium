@@ -214,7 +214,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
 ///
 /// On the stroke of the offer act that asked (65.5): the door mints it.
 pub(crate) fn witness_vantage(
-    k: &mut mycelium::cognition::Kernel,
+    k: &mut mycelium::cognition::Court,
     cover: &mut mycelium::network::nerve::Cover,
     word: mycelium::transducer::element::Element,
     home: [u8; 32],
@@ -267,7 +267,7 @@ mod tests {
     /// address — asked once and asked again.
     #[test]
     fn witness_vantage_reaches_offered_form_each_ask() {
-        let kernel = std::sync::Mutex::new(mycelium::cognition::Kernel::new());
+        let kernel = std::sync::Mutex::new(mycelium::cognition::Court::new());
         let mut cover = mycelium::network::nerve::Cover::new();
         let (home, witness) = ([2u8; 32], [3u8; 32]);
         let w = word();
@@ -293,7 +293,7 @@ mod tests {
     /// heard mark is not a verdict, the replay is.
     #[test]
     fn witness_vantage_refuses_false_form_by_name_each_ask() {
-        let kernel = std::sync::Mutex::new(mycelium::cognition::Kernel::new());
+        let kernel = std::sync::Mutex::new(mycelium::cognition::Court::new());
         let mut cover = mycelium::network::nerve::Cover::new();
         let (home, witness) = ([2u8; 32], [3u8; 32]);
         let w = false_word();

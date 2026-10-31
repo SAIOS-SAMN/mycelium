@@ -1,6 +1,6 @@
-// 26 — UTTERANCE: what this entity speaks to a court and what it cites.
+// 26 — UTTERANCE: what this mind speaks to a court and what it cites.
 //
-//! A citation is a word this entity holds; a speech is a sentence it has
+//! A citation is a word this mind holds; a speech is a sentence it has
 //! not spoken before. `already_taught` reads what the court has, so the
 //! same word is not spoken twice.
 
@@ -86,7 +86,7 @@ pub(crate) fn vertex_stratum(word: &Element) -> Option<Vec<u8>> {
     }
 }
 
-impl Entity {
+impl Mind {
     /// THE KEY AN UTTERANCE RECEIPT IS FILED UNDER: its address's 32-byte
     /// hash — the address compacted, located exactly by every reader that
     /// holds it (`taught_up`).
@@ -319,7 +319,7 @@ impl Entity {
     /// SPEAK sentences as one act, bound to no family and no task: a word
     /// spoken for itself (an axis germ, a crystallized idea). `heard` takes
     /// the codes when the court's answer lands.
-    pub(crate) fn speak(&mut self, sentences: &[Element], heard: impl FnOnce(&mut Entity, io::Result<Vec<u8>>) + 'static) {
+    pub(crate) fn speak(&mut self, sentences: &[Element], heard: impl FnOnce(&mut Mind, io::Result<Vec<u8>>) + 'static) {
         self.speak_with(sentences, &[], &[], heard)
     }
 
@@ -342,7 +342,7 @@ impl Entity {
         sentences: &[Element],
         train: &crate::transducer::family::Family,
         task: &[u8],
-        heard: impl FnOnce(&mut Entity, io::Result<Vec<u8>>) + 'static,
+        heard: impl FnOnce(&mut Mind, io::Result<Vec<u8>>) + 'static,
     ) {
         // MU-CLIENT §5.5 — every word with a section spoken under a scene is
         // held there, what a word another mind says of that scene is read
@@ -486,7 +486,7 @@ impl Entity {
         if fresh.is_empty() {
             return Ok(Posted::Heard(codes));
         }
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         // STD1 3c: a sentence whose record does not write refuses the speech
         // whole, never a speech with that sentence left out.
         let spoken: Option<Vec<dialogue::Spoken>> = fresh

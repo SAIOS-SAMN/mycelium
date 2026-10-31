@@ -10,7 +10,7 @@ use crate::transducer::element::{self, Element};
 /// reads the book at depth zero.
 #[test]
 fn quote_reads_empty_atlas_at_depth_zero() {
-let k = std::sync::Mutex::new(Kernel::new());
+let k = std::sync::Mutex::new(Court::new());
 {
     let mut g = k.lock().unwrap();
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
@@ -35,7 +35,7 @@ assert!(!quoted.priced.is_empty(), "an empty atlas reads the book at depth zero"
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn speak_pair_reads_transposed_rotation_as_held_word() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // R180 of L at origin
 speak_pair(&mut k, &a, &rot, [1; 32]);
@@ -54,7 +54,7 @@ assert_eq!(k.basis_len(), 1, "transposition mints nothing");
 #[test]
 fn optimize_retires_redundant_generator() {
 use crate::transducer::germinate::germinate;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
 k.basis_insert(element::from_canonical(&germinate(&a, &rot).unwrap()), [1; 32]);
@@ -74,7 +74,7 @@ assert_eq!(k.basis_len(), 1, "an essential generator survives the probe");
 fn refine_stratum_keeps_survivor_at_last_index() {
 use crate::transducer::element::{from_canonical, from_canonical_framed};
 use crate::transducer::germinate::germinate;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
 k.basis_insert(from_canonical(&germinate(&a, &rot).unwrap()), [1; 32]);
@@ -101,7 +101,7 @@ assert!(k.basis_len() < 3, "at least one earlier duplicate retired");
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn prune_basis_to_ruled_drops_leaked_card() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
 glue_pair(&mut k, &a, &b);
@@ -119,7 +119,7 @@ k.leak_unruled(crate::transducer::element::from_canonical(
     &germinate(&[(8, 0, 2), (8, 1, 2)], &[(8, 0, 5), (8, 1, 5)]).unwrap(),
 ));
 let snap = k.snapshot();
-let mut booted = Kernel::new();
+let mut booted = Court::new();
 assert!(booted.restore(&snap));
 assert_eq!(booted.basis_len(), kept, "restore skips the leaked basis and rebuilds from the federation");
 }
@@ -130,18 +130,18 @@ assert_eq!(booted.basis_len(), kept, "restore skips the leaked basis and rebuild
 /// 2026-10-20: the same 9/12/13 words "refused" at every boot).
 #[test]
 fn restore_adopts_federation_word_without_discoverer() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 glue_pair(&mut k, &[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]);
 let kept = k.basis_len();
 let [(ruled, _), ..] = k.court_federation.as_slice() else { panic!("a ruled word") };
 let addr: Vec<u8> = ruled.as_bytes().to_vec();
 k.forget_discoverer(&addr);
 assert!(k.discoverer_of(&addr).is_none(), "its discoverer is gone");
-let mut booted = Kernel::new();
+let mut booted = Court::new();
 assert!(booted.restore(&k.snapshot()));
 assert_eq!(booted.basis_len(), kept, "the word stands in the basis again, adopted from the federation");
 assert!(booted.discoverer_of(&addr).is_none(), "no discoverer invented for it");
-let mut again = Kernel::new();
+let mut again = Court::new();
 assert!(again.restore(&booted.snapshot()), "and it round-trips");
 assert_eq!(again.basis_len(), kept);
 }
@@ -149,7 +149,7 @@ assert_eq!(again.basis_len(), kept);
 /// An append shares the prior word's Arc; it does not clone the basis.
 #[test]
 fn language_append_shares_prior_word_arcs() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let w0 = crate::transducer::element::from_canonical(
     &germinate(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]).unwrap(),
 );
@@ -181,7 +181,7 @@ assert_eq!(
 /// blind replay refuses as a chain (50.6, `REFUSE_NOT_A_SENTENCE`).
 #[test]
 fn glue_fetched_does_not_rerow_heard_slash() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 // The bar recoloured, a site painted beside it (50.5). H1b, 70.4 —
 // separated: at `(0, 2)` the site is one hue-blind piece with the bar.
@@ -194,7 +194,7 @@ let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(fetched(&mut k, &forged, [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
 // The simplices the complexes hold, each by its own key: a row that is not
 // re-filed moves none of them.
-let simplices = |k: &Kernel| k.complexes.scoped().map(|(_, c)| c.by_key.len()).sum::<usize>();
+let simplices = |k: &Court| k.complexes.scoped().map(|(_, c)| c.by_key.len()).sum::<usize>();
 let n = simplices(&k);
 assert!(k.heard.contains(&forged.address()));
 let mut again = k.stroke();
@@ -257,7 +257,7 @@ assert!(!pa.is_empty(), "the book is served");
 /// sentence with its word vertices struck out, as in the test above.
 #[test]
 fn confirm_peer_holds_drops_heard_on_moved_root() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 // Separated, as above (H1b, 70.4).
 let b = vec![(0, 0, 2), (0, 1, 2), (0, 3, 3)];
@@ -287,7 +287,7 @@ assert_eq!(k.heard_len(), 0, "a moved stratum root drops heard");
 #[test]
 fn listings_on_holds_open_listings_on_chart() {
 use crate::transducer::address::Address;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let inv = crate::transducer::stalk::Invariant::counts(&[7]);
 let (v1, v2) = ([1u8; 32], [2u8; 32]);
 let both = Address::from(&b"both"[..]);
@@ -324,7 +324,7 @@ assert_eq!(k.listings_on(&crate::transducer::stalk::Invariant::counts(&[8])).len
 fn serve_ruled_never_teaches_provisional_word() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 2)];
 let b = vec![(0, 0, 5), (0, 1, 2)];
 let w = from_canonical(&germinate(&a, &b).expect("a coboundary"));
@@ -366,7 +366,7 @@ assert_eq!(
 fn serve_syllabus_pays_served_magnitudes() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let w = from_canonical(&germinate(&[(0, 0, 1), (0, 1, 2)], &[(0, 0, 5), (0, 1, 2)]).expect("a coboundary"));
 let v = from_canonical(&germinate(&[(0, 0, 1)], &[(0, 0, 3)]).expect("a coboundary"));
 let (addr, provisional) = (w.address(), v.address());
@@ -433,7 +433,7 @@ let walk = |r: &Rank| {
     }
     (c, i)
 };
-let mut k = Kernel::new();
+let mut k = Court::new();
 assert_eq!(k.closure_now().counts(), (0, 0), "an empty book has neither");
 
 // Two voices on one pair list it; a third voice lists another.
@@ -468,7 +468,7 @@ assert_eq!(rank.counts().0 + rank.counts().1, rank.closure_len());
 // door, so a court that boots reports what it reported before.
 let before = k.closure_now().counts();
 let snap = k.snapshot();
-let mut k2 = Kernel::new();
+let mut k2 = Court::new();
 assert!(k2.restore(&snap), "the ledger restores");
 let back = k2.closure_now();
 assert_eq!(back.counts(), walk(&back), "restored, the counts are the carrier's");

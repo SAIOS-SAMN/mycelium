@@ -61,8 +61,8 @@ fn receive_adjudication_contracts_form_and_seals_address() {
     let (family, e) = two_bars();
     let words = words_of(&e);
     let (refused_addr, refused_chart) = words[0].clone();
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("contracting"));
-    let k_before = entity.kernel().voice();
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("contracting"));
+    let k_before = entity.voice().id();
     let _ = k_before;
     let mut b = entity.stroke();
     let moved = entity.receive_adjudication(
@@ -113,7 +113,7 @@ fn receive_adjudication_contracts_form_and_seals_address() {
 fn speak_refuses_sealed_tape_before_wire() {
     use crate::anastome::dialogue::SPEECH_REFUSED;
     let (family, e) = two_bars();
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("sealed"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("sealed"));
     let mut b = entity.stroke();
     let held = entity.receive_adjudication(
         &e,
@@ -141,7 +141,7 @@ fn speak_refuses_sealed_tape_before_wire() {
 #[test]
 fn receive_adjudication_drops_refused_sentence_from_dialect() {
     let (family, e) = two_bars();
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("refused-leaves"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("refused-leaves"));
     entity.epigenome.stand_dialect_at(e.clone(), 1, 1);
     assert_eq!(entity.dialect_len(), 1, "the sentence stood in the dialect before the utterance");
     let mut b = entity.stroke();
@@ -166,7 +166,7 @@ fn receive_adjudication_drops_refused_sentence_from_dialect() {
 #[test]
 fn owe_citation_once_per_court_never_when_sealed() {
     let (family, cited) = two_bars();
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("owing"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("owing"));
     entity.epigenome.stand_dialect_at(cited.clone(), 1, 1);
     let citer = super::common::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
     let courts = entity.hypha.courts();
@@ -218,7 +218,7 @@ fn certificate_for_reads_contraction_by_minted_address() {
     let (family, e) = two_bars();
     let words = words_of(&e);
     let (refused_addr, refused_chart) = words[0].clone();
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("contracting-cert"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("contracting-cert"));
     let mut b = entity.stroke();
     let moved = entity.receive_adjudication(
         &e,

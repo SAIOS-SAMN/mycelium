@@ -1,5 +1,5 @@
 // 78.126 — ACT_HANDOFF: matter or a word crossing domains on this court — an
-// offer, its acceptance or refusal, its expiry (`Kernel::handoff`), answered
+// offer, its acceptance or refusal, its expiry (`Court::handoff`), answered
 // by the receipt or the refusal by name; or, sealing nothing, a handoff's
 // standing read.
 

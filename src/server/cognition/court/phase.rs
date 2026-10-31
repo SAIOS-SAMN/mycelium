@@ -11,7 +11,7 @@
 //! read the same phase (13.7).
 
 use crate::chronometry::{ActKind, KStepReceipt};
-use crate::cognition::Kernel;
+use crate::cognition::Court;
 use crate::network::nerve::Keyed;
 
 /// The four coordinates of 45.9 over one height window, as counts read off
@@ -38,7 +38,7 @@ pub struct Phase {
     pub axes: u64,
     pub splits: u64,
     /// I1 — ADJOINED BY CLOSURE: the generators this court opened, read off
-    /// its ruled cover at the window's end (`Kernel::adjoined`, 37.7, 45.9)
+    /// its ruled cover at the window's end (`Court::adjoined`, 37.7, 45.9)
     /// — the one number that bears on the architecture, on the running
     /// court's own line.
     pub adjoined_by_closure: u64,
@@ -155,7 +155,7 @@ pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverRe
     p
 }
 
-impl Kernel {
+impl Court {
     /// The cover as it stands now: every ruled stratum with the words it
     /// holds, every chart with the sections this court holds on it.
     pub fn cover_reading(&self) -> CoverReading {
@@ -170,7 +170,7 @@ impl Kernel {
         CoverReading { strata, sections }
     }
 
-    /// 78.153 — [`Kernel::cover_reading`] on a stroke: one read per ruled
+    /// 78.153 — [`Court::cover_reading`] on a stroke: one read per ruled
     /// stratum visited (its COUNT, never its members' addresses) and per
     /// chart's complex. `None` where the stroke ran out first.
     pub(crate) fn cover_reading_on(&self, budget: &mut crate::physics::Budget) -> Option<CoverReading> {
@@ -188,7 +188,7 @@ impl Kernel {
         Some(CoverReading { strata, sections })
     }
 
-    /// 78.153 — [`Kernel::adjoined`] on a stroke: one read per ruled word.
+    /// 78.153 — [`Court::adjoined`] on a stroke: one read per ruled word.
     pub(crate) fn adjoined_on(&self, budget: &mut crate::physics::Budget) -> Option<u64> {
         let mut n = 0u64;
         for (addr, ()) in self.ruled_addrs.scoped() {
@@ -238,7 +238,7 @@ impl Kernel {
         self.read_phase_on(&mut budget)
     }
 
-    /// [`Kernel::read_phase`] on the stroke handed in.
+    /// [`Court::read_phase`] on the stroke handed in.
     pub(crate) fn read_phase_on(&mut self, budget: &mut crate::physics::Budget) -> bool {
         let Some(now) = self.cover_reading_on(budget) else {
             self.phase_unread += 1;

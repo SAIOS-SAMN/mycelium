@@ -16,7 +16,7 @@ let mut spoken = from_canonical(&germinate(&a, &b).unwrap());
 spoken.puncture(vec![(2, 3), (3, 1), (1, 2)]);
 assert_eq!(spoken.torse(), 1);
 let inv = crate::transducer::stalk::invariant_of(&spoken);
-let mut k = Kernel::new();
+let mut k = Court::new();
 k.complexes
     .insert(inv.key(), crate::transducer::cech::Complex::new());
 assert_eq!(
@@ -33,7 +33,7 @@ assert!(
     !filed,
     "the residual arm files nothing when no class can be read"
 );
-let mut k2 = Kernel::new();
+let mut k2 = Court::new();
 let mut cx = crate::transducer::cech::Complex::new();
 cx.file_congruent(
     [1; 32],
@@ -133,7 +133,7 @@ assert_eq!(
     crate::network::nerve::coord::BivectorKind::Trivial,
     "the identity is the absence of a motion, not a null shear"
 );
-let mut k = Kernel::new();
+let mut k = Court::new();
 k.complexes
     .insert(inv.key(), crate::transducer::cech::Complex::new());
 assert_eq!(
@@ -156,7 +156,7 @@ assert_eq!(
 );
 let f = crate::transducer::sentence::from_element_form(&spoken).expect("v2 form");
 let rep = torsion_orbit_rotor(&f, &class).expect("the orbit names the class");
-let mut k2 = Kernel::new();
+let mut k2 = Court::new();
 let mut cx = crate::transducer::cech::Complex::new();
 // 54.7 — A COURT CANNOT HOLD ONE CLASS AT ANOTHER PERIOD ANY MORE, and
 // that is stronger than refusing one that does.
@@ -219,7 +219,7 @@ fn fibre_volume_total_counts_filed_form_cycle() {
             [] => None,
         })
         .expect("the complex derives its own period");
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.basis.insert(held.address(), std::sync::Arc::clone(&held));
     // Three readings of one cycle: the form's own reach, the period it was
     // filed at, and the basis's volume over a basis holding just this word.
@@ -248,7 +248,7 @@ fn fibre_volume_total_counts_filed_form_cycle() {
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn optimize_extracts_swap_cycle_and_relieves_torsion() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 9)];
 let b = vec![(0, 0, 4), (0, 1, 9)]; // (0,0): 1→4
 speak_pair(&mut k, &a, &b, [1; 32]);

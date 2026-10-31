@@ -5,7 +5,7 @@
 
 use crate::Mesh;
 use ed25519_dalek::SigningKey;
-use mycelium::cognition::Kernel;
+use mycelium::cognition::Court;
 use mycelium::network::nerve::{Cover, Keyed};
 use mycelium::observe::{self, Judged, Reading, Source};
 use std::sync::{Arc, Mutex};
@@ -37,7 +37,7 @@ fn answer_standing_publishes_acts_at_first_stroke_unasked() {
     for seed in [0x41u8, 0x42] {
         let sk = SigningKey::from_bytes(&[seed; 32]);
         let m = mesh(&sk);
-        let mut k = Kernel::new();
+        let mut k = Court::new();
         k.note_judged(Judged::NoWork);
         k.note_judged(Judged::Unsigned);
         assert!(crate::judge::observe::answer_standing(&k, &m, m.vk, true), "the first stroke publishes");

@@ -10,7 +10,7 @@
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
-impl Kernel {
+impl Court {
     /// THE BOOK EXTENDS BEFORE IT REFUSES (12.6, S9.7; Stage 12 S12.5c).
     /// The room sweep before a voice's draw: standing extent that aged out
     /// relocates (T-room), and where the voice's room is still short the

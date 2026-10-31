@@ -4,7 +4,7 @@
 //! boundaries — the court it speaks to, the corpus its home holds, the other
 //! minds it chatters with, the seats it sits in a game — and runs the mind's
 //! winding carrier on this thread (MU-CLIENT §4.12): what the mind does at
-//! each winding is the mind's own (`Entity::wind`); the binary keeps no
+//! each winding is the mind's own (`Mind::wind`); the binary keeps no
 //! order of work, and rests the mind where it moved nothing or ran short.
 
 #[global_allocator]
@@ -12,7 +12,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh;
-use mycelium::sdk::{Entity, Kernel};
+use mycelium::sdk::{Mind, Voice};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -159,7 +159,7 @@ fn main() {
     };
     let genome_path = home.join("genome").to_string_lossy().into_owned();
     // 78.141 — seated on its key: the solves it is paid for are signed.
-    let mut mind = Entity::open_persistent(&bootstrap, Kernel::from_key(voice_key.sk.clone()), &genome_path);
+    let mut mind = Mind::open_persistent(&bootstrap, Voice::from_key(voice_key.sk.clone()), &genome_path);
     mind.set_height(mycelium::chronometry::Height::default());
     mind.discover();
     mind.keep_genome(genome_path);

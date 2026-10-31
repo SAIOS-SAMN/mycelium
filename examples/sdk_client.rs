@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-// A MINIMAL CLIENT ON THE SDK: what a third-party kernel does to work on the
+// A MINIMAL CLIENT ON THE SDK: what a third-party mind does to work on the
 // network, end to end, with nothing of the reference mind (`mycelium-client`).
 //
 //! `sdk_client <voice home> <hypha address> [tasks]`
@@ -24,7 +24,7 @@
 
 use mycelium::anastome::dialogue;
 use mycelium::court::identity::{hex32, HyphaKey};
-use mycelium::sdk::{Kernel, Session};
+use mycelium::sdk::{Voice, Session};
 use mycelium::transducer::family::{extract_rule, mint_sentence_why, speak::speak_rule, NoCrystal};
 use std::process::ExitCode;
 
@@ -127,7 +127,7 @@ fn main() -> ExitCode {
     let key = HyphaKey::load_or_mint(&format!("{home}/voice.key"));
     println!("voice {}", hex32(&key.vk_bytes()));
     // 2. SESSION: one hypha's address; the session learns the rest.
-    let session = Session::open(addr, Kernel::from_key(key.sk.clone()));
+    let session = Session::open(addr, Voice::from_key(key.sk.clone()));
     for _ in 0..tasks {
         match one_task(&session, &key.sk) {
             Ok((_, Outcome::NoWork)) => {

@@ -10,7 +10,7 @@ use crate::client::sdk::*;
 /// stands, never what was asked.
 #[test]
 fn carriers_count_one_word_per_expression_once() {
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("carriers"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("carriers"));
     assert_eq!(entity.carriers(), [0; 10], "a fresh entity holds nothing unreported");
     let residual = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];
     assert!(entity.epigenome.express(&residual, 1, 1, &mut super::common::budget()), "a residual with an A5 form is expressed");

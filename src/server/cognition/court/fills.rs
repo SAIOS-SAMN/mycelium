@@ -27,7 +27,7 @@ pub struct RefillTally {
     pub unfilled: u64,
 }
 
-impl Kernel {
+impl Court {
     pub(crate) fn stroke_fills(&mut self, budget: &mut crate::physics::Budget) {
         if budget.remaining() == 0 {
             return;

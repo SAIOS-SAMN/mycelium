@@ -30,7 +30,7 @@ pub(crate) fn replay_key(spoken: &Element, task: Option<&[u8]>) -> Vec<u8> {
     key
 }
 
-impl Kernel {
+impl Court {
     /// APPLY the court's verdict on a provisional word. The ruling is the
     /// closed 3-point vocabulary from the wire (never a product of booleans —
     /// bool×bool spans four states for a three-point space):
@@ -204,7 +204,7 @@ impl Kernel {
         self.court_replay_moved(spoken, budget).0
     }
 
-    /// [`Kernel::court_replay`] with whether the cursor moved: a stroke that
+    /// [`Court::court_replay`] with whether the cursor moved: a stroke that
     /// moved nothing is a stalled replay (`court_stalled`).
     pub(crate) fn court_replay_moved(
         &mut self,
@@ -247,7 +247,7 @@ impl Kernel {
         };
         let before = cursor.progress();
         let out = {
-            let court: &Kernel = self;
+            let court: &Court = self;
             let family = task.and_then(|t| court.task_family.get(t)).map(Vec::as_slice);
             crate::verdict::replay_resume(spoken, &|a| court.resolve_form_ref(a), family, court, budget, &mut cursor, at)
         };
@@ -272,7 +272,7 @@ impl Kernel {
         self.court_stroke_on(&mut budget);
     }
 
-    /// [`Kernel::court_stroke`] ON THE HOLD'S STROKE (78.153b): the binary's
+    /// [`Court::court_stroke`] ON THE HOLD'S STROKE (78.153b): the binary's
     /// court loop hands in the one stroke its kernel hold was taken with.
     pub fn court_stroke_on(&mut self, budget: &mut crate::physics::Budget) {
         // E4 — what every other act paid since the last stroke, counted
@@ -309,7 +309,7 @@ impl Kernel {
             // no longer rides it (78.66): a court whose docket is empty
             // completed no circuit and never folded, however long its
             // history grew. It is proposed at the orbit's close, by what
-            // holding the hot ledger costs (`Kernel::orbit`).
+            // holding the hot ledger costs (`Court::orbit`).
             if let Some(before) = n.checked_sub(u64::from(circuit)) {
                 if n / aperture != before / aperture {
                     crate::observe::step("court stroke: phase");
@@ -448,7 +448,7 @@ impl Kernel {
     /// a stroke moved none.
     #[cfg(test)]
     pub(crate) fn court_settle(&mut self) {
-        let progress = |k: &Kernel| -> Vec<(Vec<u8>, (crate::verdict::Phase, usize, usize))> {
+        let progress = |k: &Court| -> Vec<(Vec<u8>, (crate::verdict::Phase, usize, usize))> {
             k.replay_cursors.scoped().map(|(key, c)| (key, c.progress())).collect()
         };
         loop {

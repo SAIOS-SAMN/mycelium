@@ -7,7 +7,7 @@
 use crate::anastome::dialogue::domain::{Founded, Reservation};
 use crate::anastome::dialogue::handoff::{ConvertIn, ConvertOut, Handed, Handoff, HandoffRefusal, Side, State};
 use crate::anastome::dialogue::uplink::{Discontinuous, Net, SideRefusal, TierFold, Uplinked};
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -35,9 +35,9 @@ fn holder() -> SigningKey {
 /// The in-game holder whose game value converts.
 const PLAYER: [u8; 32] = [7; 32];
 
-fn founded() -> Kernel {
+fn founded() -> Court {
     use crate::anastome::dialogue::domain::DomainGenesis;
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let mut tiers = vec![vk(&x()), vk(&x2())];
     tiers.sort_unstable();
     let g = DomainGenesis { domain: vk(&domain()), tiers };
@@ -45,19 +45,19 @@ fn founded() -> Kernel {
     k
 }
 
-fn designate(k: &mut Kernel, tier: &SigningKey, nonce: u8) -> Founded {
+fn designate(k: &mut Court, tier: &SigningKey, nonce: u8) -> Founded {
     k.designate_reserve(&Reservation { domain: vk(&domain()), tier: vk(tier), nonce: [nonce; 32] }.sign(&domain()))
 }
 
 /// 78.139 — the ancients' survival basket stated by the sitting reserve `x`.
-fn basket(k: &mut Kernel) {
+fn basket(k: &mut Court) {
     use crate::anastome::dialogue::universe::{Statement, Stated};
     let s = Statement { domain: vk(&domain()), stated: Stated::Basket(vec![(1, (1, 1)), (8, (8, 1))]) };
     assert!(matches!(k.state(&s.sign(&x())), Founded::Stated { .. }));
 }
 
 /// μ seeded on a key, as the fixture's genesis seeds its own.
-fn fund(k: &mut Kernel, who: [u8; 32], mu: [u64; 4]) {
+fn fund(k: &mut Court, who: [u8; 32], mu: [u64; 4]) {
     let anchor = k.anchor();
     k.treasury.genesis(who, mu, anchor);
 }
@@ -93,7 +93,7 @@ fn designate_reserve_redesignates_at_reserve_fold() {
     assert!(matches!(k.designate_reserve(&succession), Founded::Reserved { now: false, .. }), "pending, signed by the sitting reserve");
     assert_eq!(k.reserve_of(&vk(&domain())), Some(vk(&x())), "never mid-era");
     assert_eq!(k.reserve_reading(&vk(&domain())).pending, Some(vk(&x2())), "the pending redesignation, read");
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.reserve_of(&vk(&domain())), Some(vk(&x())));
     assert!(matches!(booted.admit_uplink(&fold(1, Vec::new(), Vec::new()).sign(&x())), Uplinked::Admitted { .. }), "the reserve's anchor");
@@ -110,7 +110,7 @@ fn convert_out_pays_from_reserve_never_mints() {
     let mut k = founded();
     assert!(matches!(designate(&mut k, &x(), 1), Founded::Reserved { .. }));
     fund(&mut k, vk(&x()), [8, 0, 0, 0]);
-    let refused = |k: &mut Kernel, c: ConvertOut, by: &SigningKey| match k.handoff(&Handoff::ConvertOut(Box::new(c)).sign(by)) {
+    let refused = |k: &mut Court, c: ConvertOut, by: &SigningKey| match k.handoff(&Handoff::ConvertOut(Box::new(c)).sign(by)) {
         Handed::Refused(r) => r,
         other => panic!("refused: {other:?}"),
     };

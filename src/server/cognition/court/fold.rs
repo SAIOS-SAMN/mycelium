@@ -10,7 +10,7 @@
 //! home's key, so every archived prefix has two holders.
 
 use crate::chronometry::{ActKind, Cite, Era, KStepReceipt, Place, Root, Stamp};
-use crate::cognition::Kernel;
+use crate::cognition::Court;
 use crate::economy::{nets_of, Entry};
 use crate::verdict::{
     REFUSE_FOLD_IDLE, REFUSE_FOLD_INEXACT, REFUSE_FOLD_NO_TRANSITION, REFUSE_FOLD_OPEN, REFUSE_RECEIPT, REFUSE_WITNESS_DEPENDENT,
@@ -44,7 +44,7 @@ pub struct FoldDone {
     pub witness: [u8; 32],
 }
 
-impl Kernel {
+impl Court {
     /// PROPOSE (45.8, 47.3): the finality reading and the nets over the
     /// prefix, without writing; the root is the hot receipt at the prefix
     /// head. A prefix that is not final proposes nothing
@@ -55,7 +55,7 @@ impl Kernel {
         self.propose_fold_at(head)
     }
 
-    /// The proposal at `head`, read as [`Kernel::propose_fold`] reads it.
+    /// The proposal at `head`, read as [`Court::propose_fold`] reads it.
     fn propose_fold_at(&mut self, head: Place) -> Result<Proposal, &'static str> {
         // 78.153b — the rows below the head read ONCE: the audit and the nets
         // `fold_reading` asks, the epochs, and the diagnostic below each read
@@ -335,7 +335,7 @@ impl Kernel {
 }
 
 /// THE ROWS READ over a journal held by the court `identity` — the one
-/// reading the kernel (`Kernel::rows_range`) and the published reading
+/// reading the kernel (`Court::rows_range`) and the published reading
 /// (`Published::rows_range`, which the door answers `ACT_ROWS` with, off
 /// the kernel) share.
 pub(crate) fn rows_range_of(
@@ -371,7 +371,7 @@ pub(crate) fn rows_range_of(
 
 /// THE WITNESS'S RE-DERIVATION, read off what the home sent and whether
 /// this court holds bond (`REFUSE_WITNESS_ROOM` otherwise) — the one reader
-/// the kernel (`Kernel::verify_fold`) and the published reading (78.153b,
+/// the kernel (`Court::verify_fold`) and the published reading (78.153b,
 /// `Published::verify_fold`) share: the receipts fetched are the home's
 /// chain from the place after `after`, each re-deriving and linking to the
 /// one before, ending at the root; the rows' nets are the epochs proposed.

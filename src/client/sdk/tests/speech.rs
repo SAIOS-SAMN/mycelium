@@ -19,7 +19,7 @@ fn withhold_form_stands_no_remainder_as_word() {
     let chain_word = |links: &[(i64, i64, u8, u8)]| {
         from_canonical(&canonical_chain(links).expect("one entry per position is A5's chain"))
     };
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("bodies"));
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("bodies"));
     let form = closed_turn(None);
     let remainder = vec![(0i64, 0i64, 1u8, 2u8), (5, 5, 3u8, 4u8)];
     let mut b = entity.stroke();
@@ -187,8 +187,8 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
         (["000000", "000000", "001100", "000100", "000100"], ["000000", "000000", "000110", "000010", "000010"]),
         (["000000", "000000", "001000", "111000", "000000"], ["000000", "000000", "000100", "011100", "000000"]),
     ];
-    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("bodies"));
-    let spoken = |e: &Entity| {
+    let mut entity = Mind::open("127.0.0.1:1", Voice::named("bodies"));
+    let spoken = |e: &Mind| {
         e.epigenome
             .dialect
             .scoped()

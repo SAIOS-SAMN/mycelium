@@ -1,4 +1,4 @@
-// 23, 24 — THE KERNEL: everything one mind holds, and the reads that say
+// 23, 24 — THE COURT: everything one court holds, and the reads that say
 // how much of it there is.
 //
 //! The struct is the whole of a court's state: the basis of ruled words and
@@ -7,10 +7,10 @@
 
 use super::*;
 
-/// The kernel's evolving state: the installed generator basis + the germ
+/// The court's evolving state: the installed generator basis + the germ
 /// admission ledger + the Čech peer table.
 #[derive(Default)]
-pub struct Kernel {
+pub struct Court {
     /// The germinated basis, each word reached by its address AND HELD WITH
     /// THE FORM ITS TAPE DECODES TO (L16): the decode happens once, where
     /// the court installs the word, not on the first read of its form.
@@ -558,7 +558,7 @@ pub struct Kernel {
     pub(crate) generators: crate::transducer::sentence::GeneratorIndex,
     /// 78.160 P1 — THE PRESENTATION BY HOLES: the ruled forms' word vertices
     /// filed under the holes the vertices' whole Cl(4,1) motions wind about, what a
-    /// mind's residue is deconstructed over (`Kernel::present`). Filled beside
+    /// mind's residue is deconstructed over (`Court::present`). Filled beside
     /// `generators` in `ruled_admit`, emptied in `basis_remove`, re-derived at
     /// restore (law 12); never persisted.
     pub(crate) presentation: crate::transducer::sentence::presentation::Presentation,
@@ -669,17 +669,17 @@ pub struct Kernel {
     pub(crate) anchor_evidence: Vec<crate::transducer::anchor::AddressedEvidence>,
 }
 
-impl Kernel {
+impl Court {
     /// THE FIXTURE KERNEL (§3.4): a bootstrap identity `[0x11; 32]` funded
     /// and staked at the six-family cover below, so a test can list, quote
     /// and settle without registering a corpus. No production path calls
-    /// it: the hypha boots by [`Kernel::boot`], whose cover is measured from
+    /// it: the hypha boots by [`Court::boot`], whose cover is measured from
     /// the corpus that registers and whose bond is the hypha's own key (rule
     /// 8). Booted from here, every live hypha of the 2026-09-08 soak carried
     /// a stake for a key the mesh record never named and dropped it at boot
     /// (I38).
     pub fn new() -> Self {
-        let mut k = Kernel { identity: [0x11; 32], ..Kernel::default() };
+        let mut k = Court { identity: [0x11; 32], ..Court::default() };
         if let Some(cover) = Self::measured_test_cover() {
             k.set_genesis_cover(cover);
             k.enroll([0x11; 32], cover);
@@ -692,7 +692,7 @@ impl Kernel {
     /// it and stakes the hypha's own key), nothing funded and nothing staked
     /// that the mesh record does not name.
     pub fn boot() -> Self {
-        Kernel::default()
+        Court::default()
     }
 
     /// Bootstrap genesis: the lane-wise measure of a named genesis family,

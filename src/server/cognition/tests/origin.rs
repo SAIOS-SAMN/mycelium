@@ -8,7 +8,7 @@ use crate::anastome::dialogue::domain::{
     encode_origin_reading, DomainGenesis, DomainRequest, Founded, Origin,
 };
 use crate::chronometry::receipt::Cite;
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -23,8 +23,8 @@ fn domain() -> SigningKey {
     key(4)
 }
 
-fn founded() -> Kernel {
-    let mut k = Kernel::new();
+fn founded() -> Court {
+    let mut k = Court::new();
     let g = DomainGenesis { domain: vk(&domain()), tiers: vec![vk(&key(21))] };
     assert!(matches!(k.admit_domain(&g.sign(&domain())), Founded::Sealed { .. }));
     k
@@ -54,7 +54,7 @@ fn record_origin_seals_once_never_edited() {
     assert_eq!(k.record_origin(&origin(9).sign(&domain())), Founded::AlreadyOriginated, "once");
     assert_eq!(k.record_origin(&origin(8).sign(&domain())), Founded::AlreadyOriginated, "never an edit");
     assert_eq!(k.origin_of(&d), Some(held), "unchanged");
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.origin_of(&d), Some(held), "the origin survives a restart");
     assert_eq!(booted.record_origin(&origin(8).sign(&domain())), Founded::AlreadyOriginated, "and still once");

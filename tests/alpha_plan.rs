@@ -8,7 +8,7 @@
 )]
 
 use mycelium::anastome::dialogue;
-use mycelium::cognition::Kernel;
+use mycelium::cognition::Court;
 use mycelium::transducer::alphabet::{relators, RelatorKind, Word, LetterId};
 use mycelium::transducer::element::{from_connection, identity_versor, Element};
 use mycelium::transducer::family::{extract_rule, perceive, speak_rule, mint_sentence, NoCrystal};
@@ -171,7 +171,7 @@ fn encode_speech_round_trips_in_one_frame() {
 /// Perceived speech is refused with a reason when the chain is unframed, and a replay-clean word stands.
 #[test]
 fn perceive_speech_refuses_unframed_chain() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let mut bad = mycelium::transducer::element::from_canonical(
         &mycelium::transducer::element::canonical_chain(&[(0, 0, 1u8, 2)])
             .expect("one cell is A5's chain"),
@@ -223,7 +223,7 @@ fn extract_rule_closes_single_recolour_as_one_word() {
 /// what it is.
 #[test]
 fn snapshot_writes_myt2_and_refuses_older_layouts() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     // A voice's sentence for a recolour, spoken through the one door an
     // utterance has (law 8): a listing on the book to snapshot.
     let family = vec![(grid(&["11"]), grid(&["22"]))];
@@ -236,13 +236,13 @@ fn snapshot_writes_myt2_and_refuses_older_layouts() {
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "the sentence is listed");
     let snap = k.snapshot();
     assert_eq!(&snap[..4], b"MYT2");
-    let mut k2 = Kernel::new();
+    let mut k2 = Court::new();
     assert!(k2.restore(&snap));
     assert_eq!(k2.occupancy(), [0, 0, 0, 0], "cold listings exert zero occupancy");
     for magic in [b"MYT1", b"MYC7", b"MYC6"] {
         let mut old = snap.clone();
         old[..4].copy_from_slice(magic);
-        assert!(!Kernel::new().restore(&old), "an old file is refused");
+        assert!(!Court::new().restore(&old), "an old file is refused");
     }
 }
 
@@ -259,7 +259,7 @@ fn snapshot_writes_myt2_and_refuses_older_layouts() {
 /// A sentence spoken once at its home is stood once, with one code back.
 #[test]
 fn perceive_speech_answers_one_code_per_sentence() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let w = moved(&[(1, 2), (2, 1)], [2, 1, 0, 0]);
     let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&w));
     // One sentence was spoken, so one code comes back.

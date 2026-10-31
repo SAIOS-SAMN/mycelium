@@ -22,7 +22,7 @@ fn top_of(chain: &[Vec<u8>]) -> Option<Invariant> {
     Some((*top).clone())
 }
 
-impl Entity {
+impl Mind {
     /// RM1 — THE CALLUSES THE RECEPTOR RAISED, each stood or refused by name.
     /// Run at the orbit's close, before its docket is cited, so a class no
     /// held word spells goes up in this orbit's plan.

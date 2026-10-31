@@ -84,7 +84,7 @@ pub(crate) enum Stop {
     Constructed,
     /// The court refused this rule for this task already.
     RefusedBefore,
-    /// The solve could not be submitted (a kernel seated without its key).
+    /// The solve could not be submitted (a voice seated without its key).
     Unsubmitted,
     /// Submitted to the court.
     Sent,
@@ -307,7 +307,7 @@ pub(crate) struct Hearing {
     charts: Vec<Vec<u8>>,
 }
 
-/// A SOLVE TO BE READ BEFORE IT IS SENT (`Entity::solve_task`'s home check),
+/// A SOLVE TO BE READ BEFORE IT IS SENT (`Mind::solve_task`'s home check),
 /// on the carrier: the scene, the outputs, and the rule minted at its span.
 pub(crate) struct Judge {
     pub(crate) scene: Scene,
@@ -504,7 +504,7 @@ fn judge_on_ground(epi: &Epigenome, j: &Judge) -> Verdict {
     }
 }
 
-impl Entity {
+impl Mind {
     /// The perception carrier, opened where the mind first takes a scene; it
     /// wakes the resting field through the hypha's own waker.
     fn perceiver(&mut self) -> &mut Perceiver {

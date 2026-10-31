@@ -234,7 +234,7 @@ impl Epigenome {
     }
 
     /// Working atlas of genome + dialect. The held forms join at
-    /// `Entity::working_atlas`, read from the contemplation (24.1).
+    /// `Mind::working_atlas`, read from the contemplation (24.1).
     pub fn working_atlas(&self) -> WorkingAtlas<'_> {
         WorkingAtlas {
             genome: &self.atlas,

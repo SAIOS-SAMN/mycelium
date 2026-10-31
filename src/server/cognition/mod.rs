@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 23.2, 47.3 — COGNITION, the kernel loop: a voice's sentence enters by
+//! 23.2, 47.3 — COGNITION, the court loop: a voice's sentence enters by
 //! `perceive_speech`, is replayed by G on the court's copy of its family,
 //! is listed with its demands, and installs only on two-organ CONVERGENCE.
 //! No painted site of a voice's scene reaches the court (law 8, ruled 2026-09-10).
@@ -20,7 +20,6 @@ mod depth;
 mod germinate;
 mod handoff;
 mod identity;
-mod kernel;
 mod keys;
 mod language;
 mod lease;
@@ -34,6 +33,7 @@ mod reduce;
 mod room;
 pub mod seat;
 mod snapshot;
+mod state;
 mod universe;
 mod wallet;
 mod why;
@@ -45,7 +45,7 @@ pub use lease::LeaseReading;
 pub use court::fold::Proposal;
 pub use court::syllabus::{Asker, PageEnd, ServedPage};
 pub use court::task::SolveVerdict;
-pub use kernel::Kernel;
+pub use state::Court;
 pub use published::{PublishCost, Published};
 pub use market::prepare_intake;
 pub(crate) use keys::*;

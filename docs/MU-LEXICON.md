@@ -116,4 +116,4 @@ conversion). Ruled 2026-10-07.
 | **"Planetary"** in four senses (2026-10-30) | *Planetary mind* is civic: a game kernel's simulated people's mind. *Planetary dialect* (MU-RECURSION 80) is the network's **dialect**: a mind's own words. *Planetary mass on a star* (78.86) is the network's **allocation**. *Star, planet, orbit* in a mind's field (MU-CLIENT §4) are that mind's internal geometry. None is interchangeable with another (GLOSSARY, *Components and scope*). |
 | **"Governed world"** / **"Domain"** | A domain's simulation is a **governed world** in prose; the **Domain** is the network object that names it (`ACT_DOMAIN`, §3). |
 | **"Seat"** for a civic office | A **seat** is the network's place in a house (§3, *House*). Steward, Sovereign, Progenitor and Ancient are **offices** (§2). |
-| **"Entity"** | **Entity** is the SDK object holding a mind (`sdk::Entity`); in prose it is the **mind**. A game kernel's simulated being is an **inhabitant**. |
+| **"Entity"** | The SDK object holding a mind is `sdk::Mind`; in prose it is the **mind**. A game kernel's simulated being is an **inhabitant**. |

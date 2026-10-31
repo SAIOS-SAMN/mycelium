@@ -204,7 +204,7 @@ pub struct SeatName {
     pub seat: u32,
 }
 
-impl super::Entity {
+impl super::Mind {
     /// 78.146 — THE MIND AT A SEAT it sits, written: taken from its
     /// coordinate (begun where it was not) and put back there.
     pub(crate) fn with_seat_mind<R>(&mut self, at: SeatName, f: impl FnOnce(&mut super::seat_mind::SeatMind) -> R) -> R {

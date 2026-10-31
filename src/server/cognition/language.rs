@@ -177,7 +177,7 @@ pub enum OfferStanding {
     Answered,
 }
 
-/// The market as seen at one instant (see [`Kernel::market_open`]).
+/// The market as seen at one instant (see [`Court::market_open`]).
 pub struct MarketView {
     pub language: std::sync::Arc<Language>,
     pub pending: std::sync::Arc<crate::network::nerve::Keyed<Element>>,

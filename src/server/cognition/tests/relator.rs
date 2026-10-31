@@ -56,8 +56,8 @@ fn relator_of(h: &Element) -> Word {
 
 /// The three courts. Distinct identities, and they are never introduced to
 /// one another: what they agree on, they agree on because it is content.
-fn three_courts() -> [Kernel; 3] {
-    let mut out = [Kernel::new(), Kernel::new(), Kernel::new()];
+fn three_courts() -> [Court; 3] {
+    let mut out = [Court::new(), Court::new(), Court::new()];
     for (k, id) in out.iter_mut().zip([[31u8; 32], [32u8; 32], [33u8; 32]]) {
         k.set_court_voice(id);
     }
@@ -303,7 +303,7 @@ fn court_torsion_files_relator_at_own_period() {
     // is re-derived from the held ROTOR, so the `99` below reaches no
     // reader. `class_key` and `plane_periods` are both functions of `(a, p)`
     // — one class key, one spectrum.
-    let mut c = Kernel::new();
+    let mut c = Court::new();
     c.set_court_voice([33; 32]);
     let mut cx = crate::transducer::cech::Complex::new();
     cx.file_congruent([31; 32], [32; 32], relator.clone(), 99);
@@ -320,7 +320,7 @@ fn court_torsion_files_relator_at_own_period() {
 /// direct insertion — the claim below is about what the COURTS do with the
 /// rewrite, so the words it is about must be language the same way every
 /// other word is.
-fn install(k: &mut Kernel, voice: [u8; 32], w: &Element) {
+fn install(k: &mut Court, voice: [u8; 32], w: &Element) {
     assert_eq!(
         k.perceive_speech(voice, &[0; 32], std::slice::from_ref(w)),
         vec![crate::anastome::dialogue::SPEECH_STOOD],
@@ -368,7 +368,7 @@ fn mint_rewrite_retire_reaches_one_address_on_two_courts() {
 
     let mut minted: Vec<Address> = Vec::new();
     for (id, voice) in [([31u8; 32], [41u8; 32]), ([32u8; 32], [42u8; 32])] {
-        let mut k = Kernel::new();
+        let mut k = Court::new();
         k.set_court_voice(id);
         install(&mut k, voice, &t);
         install(&mut k, voice, &relator);
@@ -483,7 +483,7 @@ fn admit_line_replays_peer_retirement() {
     let key = super::common::court_key("retirer");
     // Each court signs under its own key, so no two courts' stamps
     // coincide: a stamp names one act of one line.
-    let mut b = Kernel::new();
+    let mut b = Court::new();
     b.bind_identity([0xb3; 32]);
     b.set_court_voice([33; 32]);
     install(&mut b, [43; 32], &t);
@@ -502,7 +502,7 @@ fn admit_line_replays_peer_retirement() {
     assert!(own_head.parents.iter().any(|p| p.at == peer_stamp), "with the peer's receipt among its parents");
 
     let lone = super::common::court_key("lone retirer");
-    let mut e = Kernel::new();
+    let mut e = Court::new();
     e.bind_identity([0xe4; 32]);
     e.set_court_voice([34; 32]);
     install(&mut e, [44; 32], &relator);
@@ -517,7 +517,7 @@ fn admit_line_replays_peer_retirement() {
     assert!(e.basis.contains(r_addr.as_bytes()), "and the word stays");
 
     let early = super::common::court_key("early retirer");
-    let mut w = Kernel::new();
+    let mut w = Court::new();
     w.bind_identity([0x75; 32]);
     w.set_court_voice([35; 32]);
     install(&mut w, [45; 32], &relator);

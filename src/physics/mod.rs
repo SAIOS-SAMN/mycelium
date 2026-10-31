@@ -455,7 +455,7 @@ impl Physics {
     /// MU-CLIENT §4.13 — THE RESERVE ON 𝒯 IS CONSERVED, never drawn and
     /// refilled here: it falls by the flux left open and no more, by the one
     /// lock that withholds what the field holds — the tubes' open flux and
-    /// the reservoirs (`Field::withheld`, `Entity::lock_reservoirs`) — and
+    /// the reservoirs (`Field::withheld`, `Mind::lock_reservoirs`) — and
     /// gives it back exactly as it closes, dissipates or condenses — never by
     /// the condensed ledger, which counts face carriages that drew nothing.
     #[expect(

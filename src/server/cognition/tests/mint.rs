@@ -14,8 +14,8 @@ use crate::transducer::germinate::germinate;
 /// quorum before convergence replaced consensus.
 #[test]
 fn confirm_peer_holds_mints_only_after_witness_rederives() {
-let mut home = Kernel::new();
-let mut peer = Kernel::new();
+let mut home = Court::new();
+let mut peer = Court::new();
 // The whole body recoloured: one hue, one body, one word that closes its
 // pair. What mints on release is the deflation a sentence closes (E2);
 // a sentence of demands closes nothing and mints nothing (50.5).
@@ -54,7 +54,7 @@ assert_eq!(home.treasury().bond_total(), bond, "mint does not debit the stake bo
 /// A stood sentence that closes no listing returns its escrow and mints nothing.
 #[test]
 fn confirm_peer_holds_addrs_mints_nothing_for_unclosing_speech() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 // A restatement that MOVES (one column): motionless, a σ alone is a colour
 // word, which stands only by its family's evidence (78.53).
 let w = crate::transducer::element::from_connection(
@@ -85,7 +85,7 @@ assert_eq!(
 /// Binding a listing to a task does not mint: the form must speak the trains.
 #[test]
 fn bind_listing_task_mints_nothing_without_replay() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let family = vec![(
     digits(&["1100", "0000"]),
     digits(&["0011", "0000"]),
@@ -156,7 +156,7 @@ for l in (0..4).filter(|&l| l != t) {
     assert_eq!(read[l], expect[l], "lane {l}: the form read back from its tape measures the family's coboundary");
 }
 assert_eq!(read[t], spoken.magnitude()[t], "𝒯: the ground the closure covered, as the sentence carries it");
-let mut k = Kernel::new();
+let mut k = Court::new();
 let task = crate::registry::task_id(&crate::arc::Task {
     train: family.clone(),
     test: Vec::new(),
@@ -187,8 +187,8 @@ assert_eq!(
 #[test]
 fn audit_conserves_across_genesis_bond_and_settlement() {
 use crate::transducer::element::from_canonical;
-let mut k = Kernel::new();
-// Kernel::new funds the hypha at genesis and stakes its bond from that.
+let mut k = Court::new();
+// Court::new funds the hypha at genesis and stakes its bond from that.
 let seeded = k.treasury().audit().expect("genesis and its bond conserve");
 assert!(seeded.iter().any(|&x| x > 0), "the hypha is funded");
 assert_eq!(k.treasury().minted().expect("minted"), [0; 4], "seeded is not earned");
@@ -358,7 +358,7 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
         "a sentence of zero word vertices mints nothing"
     );
 
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let task = crate::registry::task_id(&crate::arc::Task {
         train: family.clone(),
         test: Vec::new(),
@@ -392,7 +392,7 @@ fn serve_syllabus_charges_learner_not_reserve() {
     ];
     let rule = crate::transducer::family::extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
     let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::transducer::family::NoCrystal, 0).expect("mint");
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let task = crate::registry::task_id(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task");
     k.bind_task_family(&task, family);
     let addr = spoken.address();

@@ -32,7 +32,7 @@ fn rule_over(family: &[TrainPair]) -> Element {
 /// zero, and not a grid compared.
 #[test]
 fn judge_solve_prices_closing_rule_by_discharge() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let rule = rule_over(&carried());
     match k.judge_solve(&rule, &carried()) {
         SolveVerdict::Solved { pay, modes } => {
@@ -50,7 +50,7 @@ fn judge_solve_prices_closing_rule_by_discharge() {
 /// with its reason and kind — the coordinate the voice learns from.
 #[test]
 fn judge_solve_refuses_rule_leaving_pair_open() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let rule = rule_over(&carried());
     match k.judge_solve(&rule, &recoloured()) {
         SolveVerdict::Refused(r) => assert!(!r.reason.is_empty(), "the refusal names its reason"),
@@ -78,7 +78,7 @@ fn parse_task_reads_permuted_palette_as_other_scene() {
     assert_ne!(task.train, permuted.train, "two scenes at the detector");
     let (rule, again) = (rule_over(&task.train), rule_over(&permuted.train));
     assert_ne!(rule.address(), again.address(), "two colours, two words");
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     assert!(matches!(k.judge_solve(&rule, &task.train), SolveVerdict::Solved { .. }), "each rule closes its own pair");
     assert!(matches!(k.judge_solve(&again, &permuted.train), SolveVerdict::Solved { .. }));
     // AND THE SAME CHANNELS READ THE SAME WORD, whatever mind reads them.
@@ -132,7 +132,7 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
     let turn270 = |g: &Vec<Vec<u8>>| turn(&turn(&turn(g)));
     let turned_mirror = |g: &Vec<Vec<u8>>| turn(&mirror(g));
     let frames: Vec<Frame<'_>> = vec![&turn, &turn180, &turn270, &mirror, &turned_mirror];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let rule = rule_over(&one.train);
     let SolveVerdict::Solved { pay, .. } = k.judge_solve(&rule, &one.train) else { panic!("the rule closes its own pair") };
     for (i, f) in frames.iter().enumerate() {
@@ -156,7 +156,7 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
 /// a closure AGAIN is verified and pays nothing — no floor.
 #[test]
 fn pay_solve_mints_first_closure_only() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let rule = rule_over(&carried());
     let SolveVerdict::Solved { pay, .. } = k.judge_solve(&rule, &carried()) else { panic!("solved") };
     let (task, voice) = ([5u8; 32], [9u8; 32]);
@@ -176,7 +176,7 @@ fn pay_solve_mints_first_closure_only() {
 #[test]
 fn judge_solve_counts_no_work_verdict() {
     use crate::observe::{Judged, JUDGED};
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let rule = rule_over(&carried());
     let idle = vec![(digits(&["0000000"]), digits(&["0000000"]))];
     let verdict = k.judge_solve(&rule, &idle);
@@ -201,7 +201,7 @@ fn judge_solve_counts_no_work_verdict() {
 /// of it, not after.
 #[test]
 fn pay_solve_zero_discharge_acts_on_nothing() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let rule = rule_over(&carried());
     let (task, voice) = ([5u8; 32], [9u8; 32]);
     let paid = k.pay_solve(&task, voice, &rule, [0; 4], true);

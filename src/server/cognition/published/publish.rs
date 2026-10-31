@@ -5,7 +5,7 @@ use super::runs::{Copied, Runs};
 use crate::anastome::dialogue::RootProof;
 use crate::chronometry::{CoreStamp, Era, Filed, KStepReceipt, LineTally, Place, Stamp};
 use crate::cognition::court::era::LineHolder;
-use crate::cognition::Kernel;
+use crate::cognition::Court;
 use crate::economy::{Holdings, Touched};
 use crate::network::nerve::Keyed;
 use std::sync::Arc;
@@ -141,10 +141,10 @@ pub struct Published {
 /// where it did not move.
 #[derive(Clone)]
 pub(crate) struct Own {
-    /// `Kernel::own_cover_charts`, copied where `own_cover_gen` moved.
+    /// `Court::own_cover_charts`, copied where `own_cover_gen` moved.
     pub(crate) cover: Arc<Vec<(u8, crate::transducer::stalk::Invariant)>>,
     pub(crate) cover_mark: u64,
-    /// `Kernel::lane_room`, read at every publication (its credit walk is
+    /// `Court::lane_room`, read at every publication (its credit walk is
     /// the court's own discoveries; the memo sealed at a generation is owed,
     /// `room.rs`).
     pub(crate) room: Option<[u64; 4]>,
@@ -162,7 +162,7 @@ pub(crate) struct Own {
     pub(crate) head_receipt: Option<KStepReceipt>,
 }
 
-/// THE RULED COVER AS PUBLISHED (`Kernel::ruled_reading`).
+/// THE RULED COVER AS PUBLISHED (`Court::ruled_reading`).
 pub(crate) struct Ruled {
     pub(crate) root: [u8; 32],
     pub(crate) digests: Vec<crate::transducer::sheaf::StratumDigest>,
@@ -199,7 +199,7 @@ pub(crate) fn shard_of(who: &[u8; 32]) -> usize {
     usize::from(who[0])
 }
 
-impl Kernel {
+impl Court {
     /// 78.151 — PUBLISH THE READING the door serves without the kernel, at
     /// this court's head: from `prev`, every piece that did not move is
     /// shared, a line that only grew at its end is extended by what it grew,

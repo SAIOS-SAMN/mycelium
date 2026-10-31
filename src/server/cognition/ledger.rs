@@ -25,7 +25,7 @@
 //! from them (law 12), so a reversed fold's edges leave and the potential is
 //! solved again.
 
-use super::Kernel;
+use super::Court;
 use crate::anastome::dialogue::uplink::{Child, ChildRefusal, FoldAt, SignedFold, TierFold, Uplinked};
 use crate::chronometry::{Cite, Stamp};
 use crate::network::nerve::Keyed;
@@ -592,7 +592,7 @@ type PlannedEdge = (Vec<u8>, Vec<u8>, Rates, Vec<u16>);
 /// child will stand.
 type PlannedHold = (Vec<u16>, TierFold, Vec<(Place, Lanes, Lanes)>);
 
-impl Kernel {
+impl Court {
     /// AN ADMITTED FOLD'S SEALED COORDINATES (B′): held from its admission
     /// until a parent nets all of it — whatever the hot line has folded —
     /// or, for a fold admitted before the court held them, read off its

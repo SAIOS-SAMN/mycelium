@@ -14,7 +14,7 @@
 
 use crate::client::sdk::*;
 
-impl Entity {
+impl Mind {
     /// ASK THE COURT for every uncited motion of `form`; each answer, where it
     /// lands, teaches the words the mind lacked and keeps the citations that
     /// compose to the motion exactly. A court that does not answer, or
@@ -39,7 +39,7 @@ impl Entity {
                 motions.push(m);
             }
         }
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         for m in motions {
             let Some(key) = motion_key(&m) else { continue };
             if self.epigenome.asked.contains(&key) || self.epigenome.presented.contains(&key) {

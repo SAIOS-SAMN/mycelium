@@ -277,7 +277,7 @@ impl Contemplation {
 
     /// 78.52 — A THOUGHT THAT CAME ROUND WAITS FOR ITS VOICE: its ground stays
     /// the mind's; the voice transcribes it against its own letters at the
-    /// return (`Entity::transcribe_closed`), and its slips are worked there
+    /// return (`Mind::transcribe_closed`), and its slips are worked there
     /// (`work_returned`). Counted as a first close or as a later return of
     /// its winding.
     fn close_thought(&mut self, (grounded, first): (super::idea::Grounded, bool), thought: &[u8]) {

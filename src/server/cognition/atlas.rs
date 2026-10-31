@@ -13,7 +13,7 @@
 //! final point handed in is held on the LADDER — the advances a crossing's
 //! freshness counts (78.156 §4) are the ladder's points between two ticks.
 
-use super::Kernel;
+use super::Court;
 use crate::anastome::dialogue::atlas::{
     dilation, local_record_id, local_throat_id, HeldEntry, HeldRecord, LedgerPage, LedgerRefusal, Ledgered, MapEntry, MapRecord, MapRefusal, Mapped, Place, Segment, SignedLedger, SignedMap,
     KIND_LEDGER, KIND_MAP,
@@ -279,7 +279,7 @@ impl Atlas {
     }
 }
 
-impl Kernel {
+impl Court {
     /// A FINAL POINT HANDED IN from the door's shelf, held on the ladder.
     pub(crate) fn note_final(&mut self, p: TPoint) {
         let k = ladder_key(&p);
@@ -355,7 +355,7 @@ impl Kernel {
         self.ledger_on(s, fin, &mut reads)
     }
 
-    /// [`Kernel::ledger`] on the hold's stroke (78.153b): the ladder's
+    /// [`Court::ledger`] on the hold's stroke (78.153b): the ladder's
     /// pruning after the seal spends it (`prune_ladder`); the entry's own
     /// checks read what the frame carries.
     pub fn ledger_on(&mut self, s: &SignedLedger, fin: Option<TPoint>, reads: &mut crate::physics::Budget) -> Ledgered {
@@ -519,7 +519,7 @@ impl Kernel {
         if !self.final_in_view(&a.point, fin) {
             return refuse(R::NotFinal);
         }
-        let mapped = |k: &Kernel, place: &Place| k.mapped_place(&a.domain, place).is_some();
+        let mapped = |k: &Court, place: &Place| k.mapped_place(&a.domain, place).is_some();
         match &a.record {
             MapRecord::Mouth { place, .. } => {
                 if place.1 > 1 {

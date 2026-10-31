@@ -17,7 +17,7 @@ fn grid(rows: &[&str]) -> crate::arc::Grid {
 /// finds nothing new.
 #[test]
 fn decompose_held_sentences_adds_words_once() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let speaker = [3u8; 32];
     let family = vec![(grid(&["10", "11"]), grid(&["11", "10"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a rule extracts");
@@ -42,7 +42,7 @@ fn decompose_held_sentences_adds_words_once() {
 /// the sentence.
 #[test]
 fn home_install_holds_sentence_words_in_language() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let speaker = [1u8; 32];
     for family in [vec![(grid(&["11"]), grid(&["22"]))], vec![(grid(&["10", "11"]), grid(&["11", "10"]))]] {
         let Some(rule) = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)) else { continue };

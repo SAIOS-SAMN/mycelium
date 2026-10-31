@@ -99,7 +99,7 @@ pub fn citation(id: &Address) -> [u8; 32] {
 
 // `task_tension` (the train's coboundary volume, the old first-solve
 // bounty) is retired: a solve is priced by what its rule discharges on the
-// withheld pairs (`Kernel::judge_solve`), never by the size of the train.
+// withheld pairs (`Court::judge_solve`), never by the size of the train.
 
 impl Default for TaskRegistry {
     fn default() -> Self {
@@ -410,7 +410,7 @@ impl TaskRegistry {
 
     /// RECORD A CLOSURE THE COURT RULED (the actions' physics, 2026-09-29).
     /// The registry never judges: the court replayed the solve's rule on the
-    /// withheld pairs (`Kernel::judge_solve`) and paid it before this is
+    /// withheld pairs (`Court::judge_solve`) and paid it before this is
     /// asked, so a closure is recorded only after its payment and none is
     /// lost between the two. The first closes the task; later ones are
     /// counted. `None` where this book holds no such task.

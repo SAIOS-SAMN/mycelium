@@ -126,7 +126,7 @@ fn word_form(
     // 78.149 (c): THIS IS THE LETTER'S MEASURE, ITS EXISTENCE AS A WORD, AND
     // NEVER μ. A letter names no body and closes nothing on any family, so
     // its discharge is nothing; every escrow and release reads the discharge
-    // (`Kernel::discharge_of`), and the holonomic unit is never priced.
+    // (`Court::discharge_of`), and the holonomic unit is never priced.
     let mu = match crate::transducer::element::measure_lanes(bodies) {
         m if m.iter().all(|&x| x == 0) => [0, 0, 0, 1],
         m => m,

@@ -10,7 +10,7 @@
 use super::*;
 use crate::chronometry::{ActKind, Cite, KStepReceipt, Parent, Stamp};
 
-impl Kernel {
+impl Court {
     /// THE CITATION OF A WORD THIS COURT HOLDS: its fiber and the stamp of
     /// the act that admitted it. `None` where the word is not held, or no
     /// act has admitted it yet.

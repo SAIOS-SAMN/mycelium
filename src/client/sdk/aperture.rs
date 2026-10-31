@@ -9,7 +9,7 @@
 /// A timeout or refusal is not an anonymous error: it is a measured
 /// physical condition
 /// (an impedance mismatch — a closed door or a saturated manifold). The
-/// entity perceives it, folds it into its metabolic pacing, and adapts its
+/// mind perceives it, folds it into its metabolic pacing, and adapts its
 /// speech instead of redialing blind.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TransportAperture {
@@ -19,7 +19,7 @@ pub enum TransportAperture {
     /// continues, paced by the impedance (the dwell scales by 1 + z).
     Impeded { z: u64 },
     /// Sustained saturation — a full stroke-cycle of consecutive failures
-    /// (the strokes-per-reserve ratio). The entity turns inward this
+    /// (the strokes-per-reserve ratio). The mind turns inward this
     /// stroke: internal study and dialect work instead of speech.
     Occluded { z: u64 },
 }

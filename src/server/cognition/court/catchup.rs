@@ -14,7 +14,7 @@ use crate::anastome::dialogue::{ReceiptSection, ReceiptsAnswer, RootProof};
 use crate::chronometry::{Era, Place};
 use crate::cognition::court::era::{line_page, LineHolder};
 use crate::cognition::court::fold::FoldDone;
-use crate::cognition::Kernel;
+use crate::cognition::Court;
 use crate::observe::{note_replication, note_serve, rep, ServeAxis};
 
 /// WHAT A ROOT ANSWER DID HERE: adopted, the line already standing at or
@@ -26,7 +26,7 @@ pub enum RootAdoption {
     Refused(&'static str),
 }
 
-impl Kernel {
+impl Court {
     /// THE FOLD COMMITTED WITH ITS PROOF KEPT: `commit_fold` on the home's
     /// signature, and the root it sealed held with the home's and the
     /// witness's signed positions, so a catch-up below it is answered with it.

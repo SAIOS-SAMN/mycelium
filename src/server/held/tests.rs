@@ -10,8 +10,8 @@ use std::sync::Mutex;
 /// the stroke goes on whole with what it still grants.
 #[test]
 fn run_spends_holds_one_stroke() {
-    let kernel = Mutex::new(Kernel::new());
-    let stroke = Kernel::new().stroke().remaining();
+    let kernel = Mutex::new(Court::new());
+    let stroke = Court::new().stroke().remaining();
     let mut h = held!(kernel).expect("the kernel");
     assert_eq!(h.remaining(), stroke, "the hold is taken with one stroke of the court");
     let before = crate::physics::spent_here();
@@ -27,7 +27,7 @@ fn run_spends_holds_one_stroke() {
 /// as the binary's.
 #[test]
 fn holds_counts_every_take() {
-    let kernel = Mutex::new(Kernel::new());
+    let kernel = Mutex::new(Court::new());
     let before = holds();
     drop(held!(kernel).expect("the kernel"));
     drop(held!(kernel).expect("the kernel"));
@@ -39,7 +39,7 @@ fn holds_counts_every_take() {
 /// confirmation reaches no stratum and leaves no cursor.
 #[test]
 fn run_on_spent_stroke_ends_work_unread() {
-    let kernel = Mutex::new(Kernel::new());
+    let kernel = Mutex::new(Court::new());
     let mut h = held!(kernel).expect("the kernel");
     h.run(|k, reads| {
         while reads.spend() {}
@@ -62,7 +62,7 @@ fn run_on_spent_stroke_ends_work_unread() {
 /// leaves no cursor.
 #[test]
 fn confirm_peer_holds_on_resumes_past_reached_stratum() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let mut remote: Vec<crate::transducer::sheaf::StratumDigest> = (1..4u64)
         .map(|n| crate::transducer::sheaf::StratumDigest { inv: crate::transducer::stalk::Invariant::counts(&[n]), count: 1, root: n.to_be_bytes().to_vec() })
         .collect();

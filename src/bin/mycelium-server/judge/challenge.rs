@@ -1,5 +1,5 @@
 // 78.125 — ACT_CHALLENGE: a sealed fold challenged within its window — a
-// demand, a replay, a default, a correction (`Kernel::challenge`) — answered
+// demand, a replay, a default, a correction (`Court::challenge`) — answered
 // by the receipt or the refusal by name; or, sealing nothing, a fold's
 // finality and a domain's open arbitrages read.
 

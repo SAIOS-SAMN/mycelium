@@ -27,7 +27,7 @@ fn judge_on_keeps_home_solve_its_train_refutes() {
     let spoken = crate::transducer::family::mint_sentence(&rule, &train, &crate::transducer::family::NoCrystal, 0)
         .expect("and mints");
     use crate::client::sdk::entity::perceive::{judge_on, Judge, Reading, Scene, Verdict};
-    let entity = Entity::open("127.0.0.1:1", Kernel::named("solver"));
+    let entity = Mind::open("127.0.0.1:1", Voice::named("solver"));
     let outs = vec![grid(&["0000", "0000"])];
     // NO RULE: nothing is read, nothing sent — the home check reads a minted
     // rule or nothing (`Judge` carries the rule; a raster is no proof of a

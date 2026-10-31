@@ -13,7 +13,7 @@ use crate::transducer::germinate::germinate;
 /// same lane is not — and admitted once the first closed.
 #[test]
 fn speak_pair_gives_unbonded_voice_one_claim_per_lane() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let seeded = k.treasury().audit().expect("genesis conserves");
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
@@ -48,7 +48,7 @@ assert_eq!(speak_pair(&mut k, &e, &f, [7; 32]), Outcome::GermPending, "admitted 
 /// waits and refuses nothing.
 #[test]
 fn record_recall_short_closes_lane_until_claim_closes() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let cover = k.treasury().bond_of(&[0x11; 32]).expect("the fixture hypha is bonded");
 k.enroll([9; 32], cover);
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
@@ -88,7 +88,7 @@ assert_eq!(
 #[test]
 fn speak_pair_relocates_unreachable_before_refusing_room() {
 use crate::anastome::dialogue::ProbeClosure;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
 let chain = germinate(&a, &b).unwrap();
@@ -136,7 +136,7 @@ assert_eq!(k.pending.len(), 1, "the new listing is on the page");
 /// which stands where it stood; the listings still tension the book.
 #[test]
 fn intake_draws_no_room_from_hypha() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let cover = crate::arc::family_cover(&[(vec![vec![1]], vec![vec![2]])])
     .expect("a one-site pair measures");
 k.bind_identity([9; 32]);
@@ -169,7 +169,7 @@ assert!(
 /// one body lists only the body it adds, and the shared body is one listing.
 #[test]
 fn intake_lists_each_body_as_own_demand() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (5, 5, 3u8)];
 let b = vec![(0, 0, 2u8), (5, 5, 4u8)];
 assert!(k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b).expect("the extent fits")), "the first task lists");
@@ -202,7 +202,7 @@ assert!(
 /// `0 clusters` to quote.
 #[test]
 fn relocate_t_exhausted_skips_uncovered_lane() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let t_lane = 2usize;
 
     // A court with NO cover on 𝒯 — which is every court on this corpus,
@@ -238,7 +238,7 @@ fn relocate_t_exhausted_skips_uncovered_lane() {
 /// disagree and nothing says which is the fact (law 12).
 #[test]
 fn lane_room_of_stays_under_lane_cover() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.set_lane_cap([7, 5, 3, 2]);
     let court_vk = k.identity;
     let cover = k.lane_cover_of(&court_vk).expect("a cap is a cover");
@@ -258,7 +258,7 @@ fn lane_room_of_stays_under_lane_cover() {
 /// under the count a cover past its carrier keeps.
 #[test]
 fn lane_room_of_counts_broken_read_by_reason() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.set_lane_cap([1, 1, 1, 1]);
     let court_vk = k.identity;
     assert!(k.lane_room_of(&court_vk).is_some(), "a voice drawing nothing has its cap");
@@ -273,7 +273,7 @@ fn lane_room_of_counts_broken_read_by_reason() {
 /// empty voice tries are pruned rather than leaked.
 #[test]
 fn discovered_by_stays_synchronized_with_discoverers() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let v1 = [1u8; 32];
     let v2 = [2u8; 32];
     let leak_a = vec![(0, 0, 1u8)];
@@ -336,7 +336,7 @@ fn discovered_by_stays_synchronized_with_discoverers() {
 /// dropped addresses.
 #[test]
 fn prune_basis_to_ruled_synchronizes_discovered_by() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
     super::common::glue_pair(&mut k, &a, &b);

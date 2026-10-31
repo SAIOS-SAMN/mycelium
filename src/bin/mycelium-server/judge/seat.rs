@@ -1,5 +1,5 @@
 // 78.145 — ACT_SEAT: the seat relay. A post is checked for its signer and
-// held or filed (`Kernel::seat_post`), answered `[1][seq]` or the refusal; a
+// held or filed (`Court::seat_post`), answered `[1][seq]` or the refusal; a
 // listing is read; a reader's mail is read past what it acknowledges.
 //
 //! A relay, not a court act: nothing is sealed and nothing is persisted, so

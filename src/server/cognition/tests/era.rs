@@ -48,7 +48,7 @@ fn commit_fold_seals_on_two_signatures() {
 let act = |k: u64| Place { k, i: 0 };
 let close = |k: u64| Place { k, i: 1 };
 let home = [0x5c; 32];
-let mut k = Kernel::new();
+let mut k = Court::new();
 k.bind_identity(home);
 assert_eq!(k.propose_fold(), Err(REFUSE_FOLD_OPEN), "no receipt, nothing to fold");
 k.append_step(ActKind::List, [1; 32], [2; 32]);
@@ -69,13 +69,13 @@ assert_eq!(k.fold_proposal(), Some(&p), "held for the exchange to carry");
 // THE WITNESS re-derives the prefix it fetched.
 let receipts = k.receipts_range(&home, p.after, p.root.at, 10);
 let rows = k.treasury().rows_below(p.root.at);
-let witness = Kernel::new();
+let witness = Court::new();
 assert_eq!(witness.verify_fold(home, &p, &receipts, &rows), Ok(()), "the prefix re-derives");
 let mut wrong = p.clone();
 wrong.epochs.clear();
 assert_eq!(witness.verify_fold(home, &wrong, &receipts, &rows), Err(REFUSE_FOLD_INEXACT), "a net that is not the rows'");
 assert_eq!(witness.verify_fold(home, &p, &receipts[..2], &rows), Err(REFUSE_RECEIPT), "a prefix that does not reach the root");
-assert_eq!(Kernel::boot().verify_fold(home, &p, &receipts, &rows), Err(REFUSE_WITNESS_ROOM), "a witness without bond");
+assert_eq!(Court::boot().verify_fold(home, &p, &receipts, &rows), Err(REFUSE_WITNESS_ROOM), "a witness without bond");
 
 // THE HOME seals only on a signature that verifies, from another key, over this root.
 let home_sig = [3u8; 64];
@@ -127,14 +127,14 @@ assert_eq!(
 );
 
 let snap = k.snapshot();
-let mut back = Kernel::new();
+let mut back = Court::new();
 assert!(back.restore(&snap), "the snapshot carries the root and the era");
 assert_eq!(back.chain().root(), Some(root));
 assert_eq!(back.archive(), k.archive());
 assert!(back.chain().verify_chain_integrity());
 
 // THE WITNESS holds the same era under the home's key and serves it.
-let mut held = Kernel::new();
+let mut held = Court::new();
 held.hold_era(era.clone());
 assert_eq!(held.receipts_range(&home, None, close(2), 10), era.receipts, "a witnessed era is read under its signer's key");
 assert_eq!(held.rows_range(&home, None, act(9), 0, 10).0, 0, "another signer's rows are not this court's to serve");
@@ -152,7 +152,7 @@ assert!(k.commit_fold(home_sig, &co_sign("w", p2.root.hash)).is_ok());
 assert_eq!(k.archive().len(), 2);
 assert_eq!(k.chain().root().map(|r| r.at), Some(close(3)));
 
-let mut open = Kernel::new();
+let mut open = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
 assert_eq!(super::common::speak_pair(&mut open, &a, &b, [7; 32]), Outcome::GermPending);
@@ -160,7 +160,7 @@ assert_eq!(open.final_prefix_head(), None, "no orbit has closed: no cut yet");
 assert_eq!(open.propose_fold(), Err(REFUSE_FOLD_OPEN));
 assert!(open.chain().root().is_none() && open.archive().is_empty(), "nothing was archived");
 
-let mut broken = Kernel::new();
+let mut broken = Court::new();
 broken.append_step(ActKind::List, [1; 32], [2; 32]);
 broken.orbit();
 assert!(broken.treasury.credit([9; 32], [1, 0, 0, 0]), "a credit with room lands");
@@ -178,7 +178,7 @@ fn bind_eras_reads_each_era_own_range() {
     let home = [0x5c; 32];
     let path = std::env::temp_dir().join(format!("mycelium-eras-{}-{}", std::process::id(), line!()));
     let _ = std::fs::remove_file(&path);
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity(home);
     k.bind_eras(path.clone()).expect("a new segment binds");
     for _ in 0..3 {
@@ -192,13 +192,13 @@ fn bind_eras_reads_each_era_own_range() {
     k.commit_fold([3; 64], &co_sign("w", p2.root.hash)).expect("sealed");
     let [first, second] = k.archive() else { panic!("two eras") };
     assert!(first.at.is_some() && second.at.is_some() && first.at != second.at, "each at its own offset");
-    let read = |k: &Kernel, after, upto| k.receipts_range(&home, after, upto, 100).iter().map(|r| r.stamp.place()).collect::<Vec<_>>();
+    let read = |k: &Court, after, upto| k.receipts_range(&home, after, upto, 100).iter().map(|r| r.stamp.place()).collect::<Vec<_>>();
     let one = read(&k, None, close(2));
     let two = read(&k, Some(close(2)), close(3));
     assert!(one.contains(&close(2)) && !one.contains(&close(3)), "the first era answers its own range");
     assert!(two.contains(&close(3)) && !two.contains(&close(2)), "the second era answers its own range, not the first's");
     // The snapshot carries no filed era: the segment does.
-    let mut back = Kernel::new();
+    let mut back = Court::new();
     assert!(back.restore(&k.snapshot()));
     assert!(back.archive().is_empty(), "no filed era in the snapshot");
     back.bind_eras(path.clone()).expect("the segment binds");
@@ -218,7 +218,7 @@ fn bind_eras_reads_each_era_own_range() {
 fn receipts_page_from_root_pages_no_earlier_era() {
     use crate::observe::{serves, ServeAxis};
     let home = [0x6d; 32];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity(home);
     for _ in 0..3 {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
@@ -260,17 +260,17 @@ fn restore_agrees_with_bound_line() {
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).expect("a home");
     let (line, eras) = (dir.join("line"), dir.join("eras"));
-    let bound = |k: &mut Kernel, line: &std::path::Path| {
+    let bound = |k: &mut Court, line: &std::path::Path| {
         k.bind_line(line.to_path_buf()).expect("the line binds");
         k.bind_eras(eras.clone()).expect("the segment binds");
     };
-    let persist = |k: &mut Kernel| -> Vec<u8> {
+    let persist = |k: &mut Court| -> Vec<u8> {
         if let Some((path, w)) = k.take_line().expect("the line writes") {
             assert!(w.land(&path), "the line lands");
         }
         k.snapshot()
     };
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     bound(&mut k, &line);
     k.bind_identity(home);
     for _ in 0..3 {
@@ -284,18 +284,18 @@ fn restore_agrees_with_bound_line() {
     k.orbit();
     let snap = persist(&mut k);
 
-    let mut back = Kernel::new();
+    let mut back = Court::new();
     bound(&mut back, &line);
     assert!(back.restore(&snap), "the snapshot restores on its line");
     assert_eq!((back.chain().head_stamp(), back.chain().root()), (k.chain().head_stamp(), k.chain().root()));
     assert_eq!(back.chain().nodes().collect::<Vec<_>>(), k.chain().nodes().collect::<Vec<_>>());
     assert_eq!(back.archive(), k.archive(), "and the eras from the segment");
 
-    let mut ahead = Kernel::new();
+    let mut ahead = Court::new();
     bound(&mut ahead, &line);
     assert!(ahead.restore(&early), "a line folded past the stamp an older snapshot named restores it");
 
-    let mut lost = Kernel::new();
+    let mut lost = Court::new();
     bound(&mut lost, &dir.join("no-line"));
     assert!(!lost.restore(&snap), "a snapshot whose line does not hold its stamp refuses");
     let _ = std::fs::remove_dir_all(&dir);
@@ -312,7 +312,7 @@ fn admit_backfill_admits_citation_of_folded_receipt() {
     let home = [0x5c; 32];
     let path = std::env::temp_dir().join(format!("mycelium-eras-{}-{}", std::process::id(), line!()));
     let _ = std::fs::remove_file(&path);
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity(home);
     k.bind_eras(path.clone()).expect("a new segment binds");
     for _ in 0..3 {
@@ -345,15 +345,15 @@ fn admit_backfill_admits_citation_of_folded_receipt() {
 #[test]
 fn verify_fold_second_fold_on_fetched_rows() {
     let home = [0x5c; 32];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity(home);
     for _ in 0..3 {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
         k.orbit();
     }
     let p = k.propose_fold().expect("a final prefix");
-    let witness = Kernel::new();
-    let fetched = |k: &Kernel, p: &Proposal| k.rows_range(&home, p.after, p.root.at, 0, usize::MAX).1;
+    let witness = Court::new();
+    let fetched = |k: &Court, p: &Proposal| k.rows_range(&home, p.after, p.root.at, 0, usize::MAX).1;
     let first = k.receipts_range(&home, p.after, p.root.at, 100);
     assert_eq!(witness.verify_fold(home, &p, &first, &fetched(&k, &p)), Ok(()), "the first fold verifies");
     k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
@@ -373,7 +373,7 @@ fn verify_fold_second_fold_on_fetched_rows() {
 #[test]
 fn commit_fold_stands_epoch_rows_at_root() {
     let home = [0x11; 32];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity(home);
     k.append_step(ActKind::List, [1; 32], [2; 32]);
     k.orbit();
@@ -406,7 +406,7 @@ fn commit_fold_stands_epoch_rows_at_root() {
 fn propose_fold_passes_open_listing_and_escrow() {
     // The fixture's bonded identity, which the escrow names.
     let home = [0x11; 32];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity(home);
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
     let b = vec![(0, 0, 2u8), (0, 1, 2)];
@@ -452,7 +452,7 @@ fn propose_fold_passes_open_listing_and_escrow() {
     let line = k.chain().vk();
     let receipts = k.receipts_range(&line, p2.after, p2.root.at, 100);
     assert!(!receipts.is_empty(), "the witness is served the prefix");
-    assert_eq!(Kernel::new().verify_fold(line, &p2, &receipts, &fetched), Ok(()), "and its witness re-derives it");
+    assert_eq!(Court::new().verify_fold(line, &p2, &receipts, &fetched), Ok(()), "and its witness re-derives it");
     k.commit_fold([3; 64], &co_sign("w", p2.root.hash)).expect("sealed");
     assert!(k.treasury().audit().is_ok());
 }
@@ -467,7 +467,7 @@ fn propose_fold_passes_open_listing_and_escrow() {
 #[test]
 fn propose_fold_at_close_cuts_long_orbit_at_close() {
     let home = [0x5d; 32];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity(home);
     for _ in 0..3 {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
@@ -476,7 +476,7 @@ fn propose_fold_at_close_cuts_long_orbit_at_close() {
     let p = k.propose_fold().expect("a final prefix proposes");
     k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("two signatures seal the fold");
     k.orbit();
-    let (at_most, _) = Kernel::receipts_frame().expect("a frame");
+    let (at_most, _) = Court::receipts_frame().expect("a frame");
     // The long orbit changes the algorithm, as b's did (15 670 installs): a
     // generator enters the presentation, then more than a page of lists.
     k.append_step(ActKind::Install, [1; 32], [2; 32]);

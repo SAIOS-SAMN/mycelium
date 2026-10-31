@@ -125,7 +125,7 @@ impl Treasury {
     /// discharge is not minted — a claim escrow is a claim on issuance and
     /// never a transfer (E1), so the excess returns to issuance by never
     /// being issued. The discharge is read by the caller on the closer's own
-    /// replay (`Kernel::discharge_of`, the one reader); a zero discharge
+    /// replay (`Court::discharge_of`, the one reader); a zero discharge
     /// releases the claim and mints nothing.
     ///
     /// Answers the payment released to the voices, per lane, split among

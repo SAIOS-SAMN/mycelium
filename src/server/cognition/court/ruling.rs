@@ -29,7 +29,7 @@ enum Heard {
     Refused(RulingRefused),
 }
 
-impl Kernel {
+impl Court {
     /// EC1 — HEAR A PEER'S RULING whose receipt this court admitted as a
     /// parent, and count what it came to.
     /// Heard inside the act that admitted the receipt, on its stroke (65.5).

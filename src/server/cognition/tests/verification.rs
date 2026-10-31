@@ -7,8 +7,8 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 
 /// A court with a claim of `held` escrowed for `voice` at `addr`.
-fn court_with_claim(addr: &Address, voice: [u8; 32], held: [u64; 4]) -> Kernel {
-    let mut k = Kernel::new();
+fn court_with_claim(addr: &Address, voice: [u8; 32], held: [u64; 4]) -> Court {
+    let mut k = Court::new();
     let anchor = k.anchor();
     k.treasury.escrow_award(addr, vec![voice], held, anchor);
     k

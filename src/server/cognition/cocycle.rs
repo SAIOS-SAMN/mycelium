@@ -23,7 +23,7 @@ pub struct CocycleRow {
     pub class_key: Address,
 }
 
-impl Kernel {
+impl Court {
     pub(crate) fn cocycle_key(
         chart: &crate::transducer::stalk::Invariant,
         a: &[u8],

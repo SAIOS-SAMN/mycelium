@@ -1,9 +1,9 @@
-// 24, 28 — THE ENTITY COMES UP: what it opens, what it restores from disk,
+// 24, 28 — THE MIND COMES UP: what it opens, what it restores from disk,
 // and what it writes back.
 
 use crate::client::sdk::*;
 
-impl Entity {
+impl Mind {
     /// One stroke of this mind's physics, for a caller outside the crate
     /// that must spend a budget on this mind's behalf (rule 10): the
     /// binary's own perception path, which derives against this mind's
@@ -42,19 +42,19 @@ impl Entity {
 
     /// THE MIND OPENED toward the hypha at `addr`: its carrier discovers the
     /// nerve on its own thread before it carries the first ask.
-    pub(crate) fn open(addr: &str, kernel: Kernel) -> Self {
+    pub(crate) fn open(addr: &str, voice: Voice) -> Self {
         // The complex listens from the first pivot (MU-CLIENT §4.5): every
         // tether condensed and face sealed winds its strain into the field.
         let mut contemplation = crate::transducer::bubble::Contemplation::new();
         contemplation.complex.arm_outflow();
         // The seat's carrier lands on the mind's own waker: a house's percept
         // wakes the resting mind that is to take it up.
-        let hypha = super::hypha::Hypha::open(Session::open(addr, kernel.clone()));
-        let seat = super::hypha::Hypha::open_beside(Session::open(addr, kernel.clone()), hypha.waker());
+        let hypha = super::hypha::Hypha::open(Session::open(addr, voice.clone()));
+        let seat = super::hypha::Hypha::open_beside(Session::open(addr, voice.clone()), hypha.waker());
         // The held mail read on a carrier of its own, so it never stands in
         // front of a take, a solve or a declination.
-        let held = super::hypha::Hypha::open_beside(Session::open(addr, kernel), hypha.waker());
-        Entity {
+        let held = super::hypha::Hypha::open_beside(Session::open(addr, voice), hypha.waker());
+        Mind {
             seat,
             held,
             hypha,
@@ -177,8 +177,8 @@ impl Entity {
     /// epigenome, the plan and the mind's K start empty: they are volatile,
     /// the mind's motion, never persisted (78.27, 78.49). An older file, or
     /// one that does not read whole, is refused whole.
-    pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str) -> Self {
-        let mut e = Entity::open(addr, kernel);
+    pub fn open_persistent(addr: &str, voice: Voice, genome_path: &str) -> Self {
+        let mut e = Mind::open(addr, voice);
         let Ok(bytes) = std::fs::read(genome_path) else {
             eprintln!("genome 0 words, epigenome empty");
             return e;
@@ -245,7 +245,7 @@ impl Entity {
     }
 
     #[cfg(test)]
-    pub(crate) fn kernel(&self) -> &Kernel {
-        self.hypha.kernel()
+    pub(crate) fn voice(&self) -> &Voice {
+        self.hypha.voice()
     }
 }

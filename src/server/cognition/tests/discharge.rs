@@ -54,7 +54,7 @@ fn mint_sentence_escrows_discharge_not_span() {
     assert!(d.iter().any(|&x| x > 0), "and discharges something: {d:?}");
     assert_eq!(stood.magnitude(), d, "a closed sentence's magnitude is its discharge, 𝒯 included");
 
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let task = crate::registry::task_id(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task");
     k.bind_task_family(&task, family);
     assert_eq!(
@@ -74,7 +74,7 @@ fn mint_sentence_escrows_discharge_not_span() {
 /// those two vectors and nothing else.
 #[test]
 fn pay_solve_pays_discharge_capped_by_escrow() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let family = carried();
     let rule = rule_over(&family);
     let pay = match k.judge_solve(&rule, &family) {
@@ -115,7 +115,7 @@ fn pay_solve_pays_discharge_capped_by_escrow() {
 #[test]
 fn open_unspellable_letter_escrows_and_pays_nothing() {
     use crate::transducer::alphabet::{LetterId, Word};
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let quarter = LetterId::turn_90((0, 1)).expect("the 90° turn");
     let rotor = Word::from_letters(&[(quarter, false)]).rotor();
     let chart = crate::transducer::stalk::Invariant::counts(&[3]);
@@ -141,7 +141,7 @@ fn open_unspellable_letter_escrows_and_pays_nothing() {
 #[test]
 fn list_sentence_callus_escrows_and_pays_nothing() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let quarter = LetterId::turn_90((0, 1)).expect("the 90° turn");
     let chart = crate::transducer::stalk::Invariant::counts(&[3]);
     let callus = crate::transducer::sentence::callus_form(

@@ -46,7 +46,7 @@ assert!(blind_replay(&empty, &mut super::common::budget()).is_some(), "no eviden
 /// docket takes its standings with it.
 #[test]
 fn offer_standing_pends_until_witness_answers() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
@@ -86,7 +86,7 @@ assert_eq!(
 /// address, never a second listing.
 #[test]
 fn apply_verdict_releases_escrowed_award_once() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
@@ -113,7 +113,7 @@ assert!(!k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD
 /// from the basis and debits the voices' earned balances into the pool.
 #[test]
 fn apply_verdict_slashed_excises_word() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
@@ -131,9 +131,9 @@ assert!(k.dockets().is_empty());
 /// out: a tape of the Frame and a demand, refused as a chain (50.6).
 #[test]
 fn glue_fetched_admits_by_replay_not_signature() {
-let mut home = Kernel::new();
-let mut peer = Kernel::new();
-let mut third = Kernel::new();
+let mut home = Court::new();
+let mut peer = Court::new();
+let mut third = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 // The bar recoloured, a site painted beside it (50.5). H1b, 70.4 —
 // separated: painted at `(0, 2)` the site is one piece with the bar once
@@ -170,7 +170,7 @@ fn conn(shift: i64) -> Element {
     )
     .expect("spells")
 }
-let mut k = Kernel::new();
+let mut k = Court::new();
 let cap = crate::physics::Physics::default().stroke().remaining();
 let mut addrs = Vec::new();
 for i in 0..(cap + 1) {
@@ -181,7 +181,7 @@ for i in 0..(cap + 1) {
     assert!(k.field().get(&addr).is_some(), "adopt writes a field entry");
     addrs.push(addr);
 }
-let ruled_n = |k: &Kernel, addrs: &[crate::transducer::address::Address]| {
+let ruled_n = |k: &Court, addrs: &[crate::transducer::address::Address]| {
     addrs
         .iter()
         .filter(|a| {
@@ -205,7 +205,7 @@ assert_eq!(ruled_n(&k, &addrs), cap + 1, "later listings are not starved by alre
 fn volume_of_simplex_is_open_listings_on_chart() {
 use crate::transducer::address::Address;
 use crate::transducer::stalk::{Closure, Invariant};
-let mut k = Kernel::new();
+let mut k = Court::new();
 let inv = Invariant::counts(&[7]);
 let listed = Address::from(&b"listed"[..]);
 let flat = Address::from(&b"flat"[..]);
@@ -240,7 +240,7 @@ fn conn(shift: i64) -> Element {
     )
     .expect("spells")
 }
-let mut k = Kernel::new();
+let mut k = Court::new();
 let cap = crate::physics::Physics::default().stroke().remaining();
 for i in 0..(cap + 1) {
     let mut adopt = k.stroke();
@@ -276,8 +276,8 @@ assert!(docket.period() >= 1, "the period is measured in strokes: {docket:?}");
 /// The home installs when a peer's ruled digest holds the stratum.
 #[test]
 fn confirm_peer_holds_installs_on_peer_ruled_root() {
-let mut home = Kernel::new();
-let mut peer = Kernel::new();
+let mut home = Court::new();
+let mut peer = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
@@ -299,7 +299,7 @@ assert!(home.provisional.is_empty(), "the provisional leaves the home");
 /// the home installs without waiting for a digest-root match.
 #[test]
 fn confirm_peer_holds_addrs_installs_ruled_provisional() {
-let mut home = Kernel::new();
+let mut home = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
@@ -338,7 +338,7 @@ let addr = word.address();
 // H1, 70.4 — separated: `"23"` is ONE two-hue body once hue is a fiber.
 let wider = vec![(x, y), (grid(&["100"]), grid(&["203"]))];
 
-let mut refusing = Kernel::new();
+let mut refusing = Court::new();
 let task = [7u8; 32];
 refusing.bind_task_family(task, wider);
 refusing.docket_connection(&word, [1; 32]);
@@ -359,7 +359,7 @@ assert!(
     "the stroke's slash is a Ruling(Slashed) node citing the word"
 );
 
-let mut ruling = Kernel::new();
+let mut ruling = Court::new();
 ruling.bind_task_family(task, one_pair);
 ruling.docket_connection(&word, [1; 32]);
 ruling.speech_task.insert(&addr, Address::from_bytes(task));
@@ -368,7 +368,7 @@ assert_eq!(ruling.court_slashed, 0, "the form closes every pair of the family it
 assert!(ruling.ruled_contains(&addr), "and the stroke rules it");
 }
 
-/// A SENTENCE SPOKEN FOR ITSELF IS BOUND TO NO TASK. `Entity::speak` names
+/// A SENTENCE SPOKEN FOR ITSELF IS BOUND TO NO TASK. `Mind::speak` names
 /// an empty task for a word spoken on its own; the gate compared it with
 /// `[0; 32]` alone, so the listing was bound to the empty task and every
 /// reader of the binding asked for the family the empty task has none of.
@@ -376,13 +376,13 @@ assert!(ruling.ruled_contains(&addr), "and the stroke rules it");
 fn perceive_sentence_without_task_binds_none() {
     let e = sentence_of(&[(0, 0, 1)], &[(0, 0, 2)]).expect("a recolour is a sentence");
     let addr = e.address();
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let out = k.perceive_sentence([1; 32], &[], &e);
     assert!(!matches!(out, Outcome::Refused(_) | Outcome::Pivot), "heard, not refused: {out:?}");
     assert!(k.speech_task.get(&addr).is_none(), "no task was named, so none is bound");
     assert!(k.listing_task.get(&addr).is_none());
 
-    let mut bound = Kernel::new();
+    let mut bound = Court::new();
     let task = [7u8; 32];
     let out = bound.perceive_sentence([1; 32], &task, &e);
     assert!(!matches!(out, Outcome::Refused(_) | Outcome::Pivot), "heard, not refused: {out:?}");
@@ -409,7 +409,7 @@ fn perceive_sentence_lists_declared_remainder_demand() {
     // H1, 70.4 — separated, as above.
     let family = vec![(grid(&["1"]), grid(&["2"])), (grid(&["100"]), grid(&["203"]))];
     let s = mint_sentence(&rule, &family, &NoCrystal, 0).expect("spoken with its demand");
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let task = [7u8; 32];
     k.bind_task_family(task, family);
     let out = k.perceive_sentence([1; 32], &task, &s);
@@ -425,7 +425,7 @@ fn perceive_sentence_lists_declared_remainder_demand() {
 #[test]
 fn converge_witness_requires_bonded_hypha() {
     use crate::court::convergence::Converged;
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let peer = [2u8; 32];
     let word = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)])
         .expect("one link is A5's chain");
@@ -454,7 +454,7 @@ fn converge_witness_requires_bonded_hypha() {
 fn glue_fetched_files_offer_at_home_vantage() {
     let home_vk = [1u8; 32];
     let witness_vk = [2u8; 32];
-    let mut home = Kernel::new();
+    let mut home = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     assert_eq!(speak_pair(&mut home, &a, &b, home_vk), Outcome::GermPending);
@@ -465,7 +465,7 @@ fn glue_fetched_files_offer_at_home_vantage() {
     let inv = crate::transducer::stalk::invariant_of(&spoken);
     let offered = spoken.address();
 
-    let mut witness = Kernel::new();
+    let mut witness = Court::new();
     let mut cover = crate::network::nerve::Cover::new();
     assert!(matches!(fetched(&mut witness, &spoken, home_vk, witness_vk, &mut cover), Glue::Admitted));
     let cx = witness.complexes().get(&inv.key()).expect("the class has a complex");
@@ -482,7 +482,7 @@ fn glue_fetched_files_offer_at_home_vantage() {
     // The old read, kept here so the difference is a measurement and not a
     // claim: gluing as oneself files the home's word under this court's own
     // vantage, and the simplex has one vertex where 13.9 needs two.
-    let mut confused = Kernel::new();
+    let mut confused = Court::new();
     let mut cover = crate::network::nerve::Cover::new();
     let _ = fetched(&mut confused, &spoken, witness_vk, witness_vk, &mut cover);
     let cx = confused.complexes().get(&inv.key()).expect("the class has a complex");
@@ -506,7 +506,7 @@ fn glue_fetched_files_offer_at_home_vantage() {
 fn own_section_empty_without_rederivation() {
     let home_vk = [1u8; 32];
     let witness_vk = [2u8; 32];
-    let mut home = Kernel::new();
+    let mut home = Court::new();
     home.bind_identity(home_vk);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
@@ -518,7 +518,7 @@ fn own_section_empty_without_rederivation() {
     let offered = spoken.address();
 
     // A witness that has done no work of its own on this class.
-    let mut witness = Kernel::new();
+    let mut witness = Court::new();
     witness.bind_identity(witness_vk);
     let mut cover = crate::network::nerve::Cover::new();
     assert!(matches!(
@@ -568,7 +568,7 @@ fn own_section_holds_own_ruling_not_peer_word() {
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 
     // ITS OWN: perceived here, replayed here, ruled here on the stroke.
-    let mut own = Kernel::new();
+    let mut own = Court::new();
     own.bind_identity(own_vk);
     assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
@@ -590,7 +590,7 @@ fn own_section_holds_own_ruling_not_peer_word() {
 
     // A PEER'S: the same word, arriving by glue. It is ruled into the
     // cover, and it is filed at the PEER's vantage, never at this one.
-    let mut heard = Kernel::new();
+    let mut heard = Court::new();
     heard.bind_identity(own_vk);
     let mut cover = crate::network::nerve::Cover::new();
     assert!(matches!(

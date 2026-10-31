@@ -58,7 +58,7 @@ fn hear_cites_head_once_gap_closes() {
     let mut b = crate::chronometry::ReceiptChain::with_vk(vk);
     // c has acted on its own line, as a running court has: its height is
     // then `1 + max(prev, parents)` (45.2).
-    let mut c0 = Kernel::new();
+    let mut c0 = Court::new();
     c0.append_step(crate::chronometry::ActKind::Attest, [0xAA; 40], [1; 32]);
     let c = std::sync::Mutex::new(c0);
     const PAGE: u64 = 8;
@@ -138,7 +138,7 @@ fn hear_fetches_cited_signer_then_cites_head() {
     )
     .expect("b cites d");
     let (head, pre) = head_of(&b);
-    let mut c0 = Kernel::new();
+    let mut c0 = Court::new();
     c0.append_step(crate::chronometry::ActKind::Attest, [0xAA; 40], [1; 32]);
     let c = std::sync::Mutex::new(c0);
     let fetch = |who: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place, _| {
@@ -183,7 +183,7 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
     }
     b.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: dh.stamp, hash: dh.chain_hash }]).expect("b cites d");
     let page = b.line_between(&vk, None, b.head().expect("b").stamp.place(), 64);
-    let mut c = Kernel::new();
+    let mut c = Court::new();
     c.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut budget = c.stroke();
     let (n, missing) = c.admit_backfill(&page, &mut budget);
@@ -219,7 +219,7 @@ fn hear_proves_citation_into_closed_era() {
     let cites = vec![Cite::Root { at: Stamp::new(root.height, evk, root.at), hash: root.hash }];
     let folded = e.append(ActKind::Fold, [0; 4], cites, [0; 32], Vec::new()).expect("the fold node");
     // c admits e's line, and its fold sheds what lies below the root.
-    let mut c0 = Kernel::new();
+    let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut line = era.clone();
     line.push(folded);

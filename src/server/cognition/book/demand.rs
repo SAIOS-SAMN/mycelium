@@ -11,7 +11,7 @@
 use crate::cognition::*;
 use crate::transducer::address::Address;
 
-impl Kernel {
+impl Court {
     /// SETTLE A PROBE AGAINST ONE DEMAND VERTEX.
     ///
     /// `at` is the listing; `demand` is the key 50.5 files the vertex

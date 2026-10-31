@@ -348,7 +348,7 @@ is open.
    under one key at one place with different chain hashes are
    self-proving: the court burns the signer's whole bond, from its own admission
    or from a third party's `ACT_EQUIVOCATION` (MU-RECURSION 47.4;
-   `Kernel::accept_equivocation`; `court/admission/tests/equivocation.rs`).
+   `Court::accept_equivocation`; `court/admission/tests/equivocation.rs`).
    No judgement call is involved. The work left: the same self-proving
    slash for every signed act that holds a position (a lease, a Note, a
    fold), and a share of the burn to the presenter, so presenting a proof
@@ -443,7 +443,7 @@ Components from precursor implementations
 - **H1:** the client conformance read is SDK packaging's phase P5
   (track 9).
 - **A file-feed door** on the operator's path: a client on
-  `sdk::{Kernel, Session}` that submits each task-shaped file dropped in a
+  `sdk::{Voice, Session}` that submits each task-shaped file dropped in a
   directory as one claim and answers it beside the file, refusing by name
   what does not decode (depth 1, *bring a world*).
 - **H3:** a world-model onboarding checklist for MU-HOSTING §3.1 step 4,

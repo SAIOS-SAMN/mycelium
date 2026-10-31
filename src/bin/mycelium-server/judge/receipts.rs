@@ -17,7 +17,7 @@ use std::net::TcpStream;
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(req) = dialogue::decode_receipts_request(&frame.body) else { return };
     // A budget smaller than a header serves nothing.
-    let Some((at_most, budget)) = mycelium::cognition::Kernel::receipts_frame() else {
+    let Some((at_most, budget)) = mycelium::cognition::Court::receipts_frame() else {
         return;
     };
     let reading = door.published.take();

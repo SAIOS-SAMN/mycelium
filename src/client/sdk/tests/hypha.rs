@@ -65,14 +65,14 @@ fn held_court() -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>, std:
 #[test]
 fn speak_word_goes_on_while_court_is_slow() {
     let (court, speeches, release) = held_court();
-    let mut mind = Entity::open(&court, Kernel::named("unwaiting"));
+    let mut mind = Mind::open(&court, Voice::named("unwaiting"));
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let said = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
     assert!(matches!(mind.speak_word(&said), Ok(Utterance::Spoken)), "said, and the field goes on");
     // MU-CLIENT §4.4(4) — it leaves when the mind's own field comes round.
     assert!(super::common::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
     let act = speeches.recv().expect("the speech reached the court");
-    assert_eq!(act.voice, Kernel::named("unwaiting").voice(), "spoken by the mind");
+    assert_eq!(act.voice, Voice::named("unwaiting").id(), "spoken by the mind");
     assert_eq!(mind.hypha.in_flight(), 1, "its answer is in flight");
     mind.take_answers();
     assert_eq!(mind.hypha.in_flight(), 1, "the court has not answered: nothing lands");
@@ -90,7 +90,7 @@ fn speak_word_goes_on_while_court_is_slow() {
 /// standing forever on exchanges it no longer makes.
 #[test]
 fn wind_reads_occluded_wire_again() {
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("occluded"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("occluded"));
     // It holds language, so nothing else makes its language due again.
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let taught = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
@@ -128,7 +128,7 @@ fn body_tick_holds_silent_house_on_seat_carriers() {
             held.push(s);
         }
     });
-    let mut mind = Entity::open(&addr, Kernel::named("seated"));
+    let mut mind = Mind::open(&addr, Voice::named("seated"));
     let key = ed25519_dalek::SigningKey::from_bytes(&[7; 32]);
     mind.sit([5; 32], None, crate::client::sdk::entity::body::Sit::Seats(vec![1]), key);
     mind.body_tick();

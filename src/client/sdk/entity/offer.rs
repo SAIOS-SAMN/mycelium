@@ -67,7 +67,7 @@ impl Offer {
     }
 }
 
-impl Entity {
+impl Mind {
     /// THE MIND HOLDS TENSION (the module's rule): a demand on its plan, or a
     /// field that is strained (`Field::strained`). Read where the field
     /// stands in the winding carrier's slots; outside them, the plan alone.

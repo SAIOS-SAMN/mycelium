@@ -1,9 +1,9 @@
-// 25 — THINKING: what this entity holds under contemplation, and what it
+// 25 — THINKING: what this mind holds under contemplation, and what it
 // sheds.
 
 use crate::client::sdk::*;
 
-impl Entity {
+impl Mind {
     /// HOLD A CHAIN AS THE FORM IT IS (50.6 seam 1): a demand this mind has
     /// not closed is held as an idea — the pair form of the scene the chain
     /// describes, its painted sites before against its painted sites after in one frame —
@@ -781,7 +781,7 @@ impl Entity {
     pub(crate) fn expand_ideas(&mut self) -> ([u64; 4], Option<(u64, u64)>) {
         let mut budget = self.physics.stroke();
         // THE CONTEMPLATION'S CLOCK IS TUNIVERSAL, WHICH IS WHAT IT SAYS IT
-        // IS. `Contemplation.now_k` reads "TUniversal the entity last
+        // IS. `Contemplation.now_k` reads "TUniversal the mind last
         // stamped" and `Bubble.moved_k` reads "TUniversal when this bubble's
         // charts last moved"; this stamped both with the mind's own K,
         // which counts the orbits this mind acted in and moves on nothing
@@ -1048,7 +1048,7 @@ impl Entity {
         // held and the genome does not hold it (the genome never holds a
         // dialect word it promoted: promotion drops it from the dialect).
         let taught_up = &self.taught_up;
-        let unratified = |a: &[u8]| taught_up.contains(&Entity::taught_key(a));
+        let unratified = |a: &[u8]| taught_up.contains(&Mind::taught_key(a));
         let (unheard, speaking) = (&self.unheard, &self.speaking);
         let referenced = |a: &[u8], d: &Dialect| {
             c.bubbles.contains(a)
@@ -1161,7 +1161,7 @@ impl Entity {
         m
     }
 
-    /// The sizes of the carriers this entity owns, by count.
+    /// The sizes of the carriers this mind owns, by count.
     #[cfg(test)]
     pub(crate) fn carriers(&self) -> [usize; 10] {
         [

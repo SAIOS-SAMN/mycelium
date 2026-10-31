@@ -6,7 +6,7 @@
 use crate::client::sdk::*;
 use crate::physics::StrokeOutcome;
 
-impl Entity {
+impl Mind {
     pub(crate) fn relax(&mut self, outcome: &mut StrokeOutcome) {
         let _ = self.shed();
         let (pivoted, _) = self.expand_ideas();

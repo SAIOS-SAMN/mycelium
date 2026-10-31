@@ -74,7 +74,7 @@ impl CourtPace {
     }
 }
 
-impl Entity {
+impl Mind {
     /// THE COURT'S WORD FLOWS IN FIRST: every answer the carrier landed is
     /// taken, in the order it was asked, and what the probes it answered
     /// closed and pressed is this tick's.
@@ -271,7 +271,7 @@ impl Entity {
 }
 
 /// DOES THIS HELD FORM ANSWER THE DEMAND (50.5, L8q) — THE COURT'S OWN
-/// READING (`Kernel::settle_demand`): the demand's bodies framed as a scene
+/// READING (`Court::settle_demand`): the demand's bodies framed as a scene
 /// at the bodies' own corner, the form spoken on it at the identity placement
 /// (L14), and every link's AFTER colour said at its own site.
 fn reproduces(epi: &Epigenome, f: &crate::transducer::sentence::Form, links: &[(i64, i64, u8, u8)]) -> bool {

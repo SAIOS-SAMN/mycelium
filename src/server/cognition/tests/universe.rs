@@ -8,7 +8,7 @@ use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Origin, Reservat
 use crate::anastome::dialogue::handoff::{ConvertOut, Handed, Handoff, HandoffRefusal, Level, Mouth, State, Tube};
 use crate::anastome::dialogue::universe::{Genesis, Geometry, Metric, Parent, Statement, Stated};
 use crate::chronometry::Cite;
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use crate::transducer::cga::Mv;
 use ed25519_dalek::SigningKey;
 use num_rational::BigRational as Q;
@@ -38,8 +38,8 @@ fn n(v: i64) -> Q {
 
 /// Domains 4 (the parent) and 5 (the child), each with its reserve and a
 /// line, the reserves designated; nothing originated.
-fn founded() -> Kernel {
-    let mut k = Kernel::new();
+fn founded() -> Court {
+    let mut k = Court::new();
     for d in [4u8, 5] {
         let mut tiers = vec![vk(&reserve(d)), vk(&line(d))];
         tiers.sort_unstable();
@@ -61,7 +61,7 @@ fn origin(d: u8, universe: Option<Genesis>) -> Origin {
     Origin { domain: vk(&domain(d)), kind: 1, version, commitment: [d; 32], universe }
 }
 
-fn state(k: &mut Kernel, d: u8, stated: Stated, by: &SigningKey) -> Founded {
+fn state(k: &mut Court, d: u8, stated: Stated, by: &SigningKey) -> Founded {
     k.state(&Statement { domain: vk(&domain(d)), stated }.sign(by))
 }
 
@@ -94,7 +94,7 @@ fn core_tube(to_r: (u64, u64)) -> Mouth {
     core_to(curved(to_r), crate::transducer::element::identity_versor())
 }
 
-fn open(k: &mut Kernel, m: Mouth) -> [u8; 32] {
+fn open(k: &mut Court, m: Mouth) -> [u8; 32] {
     let id = m.id();
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))), Handed::Sealed { .. }), "offered");
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(5))), Handed::Sealed { state: State::Accepted, .. }), "accepted");
@@ -124,7 +124,7 @@ fn state_records_geometry_and_basket_once() {
     assert_eq!(state(&mut k, 4, Stated::Geometry(torus()), &reserve(4)), Founded::AlreadyStated, "never an edit");
     // The basket gates conversions at the reserve.
     let out = ConvertOut { tier: vk(&reserve(4)), holder: [7; 32], identity: [8; 32], g: 4, rate: [(1, 2), (0, 1), (0, 1), (0, 1)], nonce: [1; 32] };
-    let convert = |k: &mut Kernel, nonce: u8| k.handoff(&Handoff::ConvertOut(Box::new(ConvertOut { nonce: [nonce; 32], ..out.clone() })).sign(&reserve(4)));
+    let convert = |k: &mut Court, nonce: u8| k.handoff(&Handoff::ConvertOut(Box::new(ConvertOut { nonce: [nonce; 32], ..out.clone() })).sign(&reserve(4)));
     assert_eq!(convert(&mut k, 1), Handed::Refused(HandoffRefusal::NoBasket), "the reserve unit is the ancients' basket");
     for bad in [Vec::new(), vec![(8, (3, 1)), (1, (2, 1))], vec![(1, (0, 1))]] {
         assert_eq!(state(&mut k, 4, Stated::Basket(bad), &reserve(4)), Founded::Malformed);
@@ -136,7 +136,7 @@ fn state_records_geometry_and_basket_once() {
     assert!(matches!(convert(&mut k, 2), Handed::Sealed { .. }), "converted once its basket stands");
     let read = k.universe_reading(&vk(&domain(4)));
     assert_eq!((read.originated, read.geometry.clone(), read.parent, read.basket.clone()), (false, Some(space), None, basket.clone()));
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.universe_reading(&vk(&domain(4))), read, "held across a restart");
 }
@@ -204,7 +204,7 @@ fn tube_of_reads_torus_face_flat_and_bounded() {
     use crate::transducer::cga::{base_vector, dilator, geodesic_transvection, hyperbolic_compartment, hyperboloid_pole, translator_at};
     let mut k = founded();
     assert!(matches!(k.record_origin(&origin(4, Some(root())).sign(&domain(4))), Founded::Originated { .. }));
-    let offer = |k: &mut Kernel, m: Mouth| k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4)));
+    let offer = |k: &mut Court, m: Mouth| k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4)));
     let refused = Handed::Refused;
     let step = hyperbolic_compartment(&[n(1), n(0), n(0)], &n(2)).expect("on the sheet");
     let away = geodesic_transvection(&hyperboloid_pole(), &step).expect("a transvection");
@@ -227,7 +227,7 @@ fn tube_of_reads_torus_face_flat_and_bounded() {
     assert!(matches!(k.handoff(&Handoff::Feed { mouth: tube, mu_s: 3, seq: 0 }.sign(&reserve(5))), Handed::Sealed { .. }));
     assert_eq!(k.handoff(&Handoff::Feed { mouth: tube, mu_s: 1, seq: 1 }.sign(&reserve(5))), refused(HandoffRefusal::TooWide));
     let read = k.tube_of(&tube);
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.tube_of(&tube), read, "the same tube across a restart");
     assert!(matches!(booted.handoff(&Handoff::Draw { mouth: tube, mu_s: 1, seq: 1 }.sign(&reserve(5))), Handed::Sealed { .. }), "still a core: its far reserve keeps it");

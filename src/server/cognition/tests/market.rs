@@ -16,7 +16,7 @@ use crate::transducer::germinate::germinate;
 /// witness.
 #[test]
 fn quote_clears_after_consilient_settlement() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending, "voice A speaks the sentence");
@@ -47,7 +47,7 @@ let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
 let c = vec![(1, 0, 3u8)];
 let d = vec![(1, 0, 4u8)];
-let mut short = Kernel::new();
+let mut short = Court::new();
 short.set_lane_cap([8, 1, 8, 8]);
 assert_eq!(speak_pair(&mut short, &a, &b, [1; 32]), Outcome::GermPending, "the first draw covers");
 assert_eq!(short.pending.len(), 1, "the first pair is listed on one vantage");
@@ -69,7 +69,7 @@ assert_eq!(short.provisional.len(), provisional, "nothing provisional");
 assert_eq!(short.treasury().entries().len(), entries, "nothing escrowed");
 assert_eq!(short.k_step(), k, "no receipt sealed for a refused act");
 
-let mut bonded = Kernel::new();
+let mut bonded = Court::new();
 let cover = crate::arc::family_cover(&[(vec![vec![1]], vec![vec![2]])])
     .expect("a one-site pair measures");
 bonded.bind_identity([9; 32]);
@@ -98,7 +98,7 @@ assert_eq!(
 /// listed in and the one after it, it stands.
 #[test]
 fn orbit_lapse_releases_docket_draw() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
@@ -126,7 +126,7 @@ assert!(
 /// exactly when strain is real, and paying members pass.
 #[test]
 fn door_deferral_charges_strain_and_defers_broke() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 // Calm: the door is free — a sentence is heard untouched.
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4)];
@@ -194,7 +194,7 @@ assert!(
 fn settle_probe_settles_residual_then_closure() {
 use crate::anastome::dialogue::ProbeClosure;
 use crate::transducer::sentence::replay_at;
-let mut k = Kernel::new();
+let mut k = Court::new();
 // A coboundary listed on an empty language: a chain listing under a
 // voice's draw — the shape the corpus intake lists (23.8) and a probe
 // settles against (26). No voice speaks a chain (law 8); the fixture
@@ -272,7 +272,7 @@ assert!(k.quote().1.is_empty(), "the listing cleared");
 #[test]
 fn settle_probe_opens_face_and_drain_sheds_unmoved() {
 use crate::anastome::dialogue::ProbeClosure;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
 let chain = germinate(&a, &b).unwrap();
@@ -371,7 +371,7 @@ for e in &listing.entries {
     seen.push(e.chart.clone());
 }
 let bytes = k.snapshot();
-let mut k2 = Kernel::new();
+let mut k2 = Court::new();
 assert!(k2.restore(&bytes), "the field persists beside DEF1");
 assert!(k2.cavity_book.get(&target).is_some(), "a restart keeps the cavity");
 assert!(
@@ -388,14 +388,14 @@ fn speak_pair_relocates_at_tuniversal_independent_of_k() {
 // sentences — the sentence is the rule, and a body's shape is quotiented
 // from its key (1.5), so the same recolour of another shape would be the
 // same listing and draw nothing new.
-let list = |k: &mut Kernel, hue: u8| -> Address {
+let list = |k: &mut Court, hue: u8| -> Address {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, hue), (0, 1, hue), (1, 0, hue)];
     let _ = speak_pair(k, &a, &b, [1; 32]);
     k.pending.scoped().next().expect("listed").1.address()
 };
-let mut ha = Kernel::new();
-let mut hb = Kernel::new();
+let mut ha = Court::new();
+let mut hb = Court::new();
 ha.set_lane_cap([64, 64, 1, 64]);
 hb.set_lane_cap([64, 64, 1, 64]);
 ha.set_height(10);
@@ -433,7 +433,7 @@ assert!(
 /// generation stands, and the quote's market view carries that height.
 #[test]
 fn book_height_is_chain_head_height() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1u8)];
 let b = vec![(0, 0, 2u8)];
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);

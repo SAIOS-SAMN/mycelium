@@ -1000,7 +1000,7 @@ same sense: the complete operation, with its invariant and its refusal.
 | **The ledger** | 45, 78.21, 78.24 | a tick is a frame `{S,G,T,H}`; the stamp `h:vk:k` keys a partial order carried as a trie; every act a node citing what it acts on by coordinates; no wall clock anywhere | `chronometry/{chain,receipt,era}.rs`, `server/cognition/cite.rs` | landed (LD2, LD1, ACT1: every holding by an act, the clock reading, a k-step one orbit, a ruling's economy applied at the node that admits its receipt — EC1, ACT1 closed) |
 | **The mind's persistence** | 78.25, 78.27 | the mind persists as keyed tries by coordinates: a word a node at its citation, its fields the node's leaves; read by key and prefix, never by position | `server/cognition/snapshot/`, `cech/persist.rs`, `economy/persist.rs`, `client/sdk/epigenome/persist.rs` | landed (LD3); the court writes `MYT2` (`snapshot/mod.rs`) and refuses `MYT1` and `MYC7` by name (`snapshot/read.rs`); the genome is `GEN7` (`epigenome/persist.rs`, court-admitted words only, 78.49) and refuses `GEN6`, `GEN5` and `GEN4` by name; the thoughts file retired; RM1 adds the remainder leaf |
 | **The learning curve** | 78.1, 78.3, 78.16–78.19 | a mind's perspective is its orbital elements; learning is the change of those elements by closures and refinements; a phase lands when its reading moves | `observe/{fleet,carriage}.rs` | landed (LC1, CO1, PG1, SP1, CQ1, PH5). LC2 open: the first non-zero reading |
-| **POW++** | 74, 78.22, 78.33, MU-ECONOMY | three proofs named apart: POUW (a closure ruled, mint on closure), POWC (a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid), and the POWV share; priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `server/cognition/court/replay.rs` (`rule_on`) | PARTIAL: a ruling is paid and slashed at its Ruling act (EC1, ACT1 landed): Upheld mints POUW by `release_discharged` and pays POWR by `release_rewrite`, Slashed revokes by `revoke_award(Slash)` — live from `court_stroke_on` → `docket_replay` (the stroke's slashes) and from `hear_ruling` (a peer's Ruling receipt admitted, `kernel.rs`). POWC has no producer: `settle_refine` and `settle_condense` (`settle.rs`) have no caller; `verdict::rule` (`court/verdict/ruling.rs`) has test callers only. PHY1 open: one reserve, contacts priced per lane |
+| **POW++** | 74, 78.22, 78.33, MU-ECONOMY | three proofs named apart: POUW (a closure ruled, mint on closure), POWC (a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid), and the POWV share; priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `server/cognition/court/replay.rs` (`rule_on`) | PARTIAL: a ruling is paid and slashed at its Ruling act (EC1, ACT1 landed): Upheld mints POUW by `release_discharged` and pays POWR by `release_rewrite`, Slashed revokes by `revoke_award(Slash)` — live from `court_stroke_on` → `docket_replay` (the stroke's slashes) and from `hear_ruling` (a peer's Ruling receipt admitted, `court/ruling.rs`). POWC has no producer: `settle_refine` and `settle_condense` (`settle.rs`) have no caller; `verdict::rule` (`court/verdict/ruling.rs`) has test callers only. PHY1 open: one reserve, contacts priced per lane |
 | **The hardening path** | 80.2 | a submitted solution is adjudicated by the court; the server provides the syllabus; minerals harden into crystals by re-derivation over k-steps | `client/sdk/entity/learn.rs`, `server/cognition/court/syllabus.rs` | OPEN (DL1, GD1) |
 | **The planetary dialect** | 80 | a constructor is a letter of the local dialect; minds speak to minds by offers; the court rules what converges (n → 1) | `transducer/alphabet/`, `family/derivation`, `anastome/`, `client/sdk/entity/think.rs` (`construct_and_adjoin`) | PARTIAL: a residue the mind cannot say is constructed and its rotation adjoined as the mind's own letter (`construct_and_adjoin`, called from `client/sdk/entity/perceive.rs` and from `compose_or_construct_on` in `client/sdk/entity/think.rs`). AL1 open: the odd constructor as a letter and the mode-first peel — the slice's S1 (U15's triad) closes both. SP2 is part of the client's objective (MU-CLIENT §1 item 6, §5.5): minds speak to minds to harden language from the minds' dialects; the frames run (chatter, 78.161, 78.163), hearing in the hearer's own shells with its windings and pivots is owed (MU-CLIENT §5.3, §7.1); DL1 open; the Gödel step's backlog read first (GD1) |
 | **The coherent mind** | 78.37 | held superpositions fold back along the plexus, the ring deciding all four: a fixed section transported one edge per k-step and stopped by holonomy, classifying and never deleting; truncation to the unique 2-core, every class preserved, no matching chosen; flux per lane over one `K` deciding what lapses, `ZeroFlux` by name; a remainder's home a leaf on the word (`κ` inline, `g` a ray, `ℓ`), re-filled on a coincident class by an act; imagination as obstructions constructed, never candidates (Cartan–Dieudonné on the residue, on CS2's demand arm) | `bubble/{contemplation,shed,drive}.rs`, `cech/complex.rs`, `economy/escrow.rs`, `client/sdk/epigenome/persist.rs`, `observe/` | in the tree (TP1, TC1, FX1, RM1); the demand taker landed (`take_demands`, 78.109 C1). FX1's edge-credit tables RETIRED: the flux is the mind's field, threaded on the complex's lines; an orbit's return or a tube's cancelled net flux releases what relaxed, and the mind drains and descends there (MU-CLIENT §4.5) |
@@ -1235,7 +1235,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | **hypha** | one server node: its court, its book, its ledger | peers by receipts; hosts a planet |
 | **star** | the axiom register: the physics every planet is given (77.1(2)); the senses the word reads in hosted worlds are resolved by 78.59 and MU-LEXICON §4 | its laws every composite obeys |
 | **planet** | a hypha and the world it hosts, on which its minds reason (77.1(2), amending 74's "a mind's held complex"); the other senses are resolved by 78.59 and MU-LEXICON §4 | orbits under its star |
-| **mind** | a client on a planet (the SDK's `Entity`; "entity" retires for it) — as it speaks, a **voice** (one verifying key); as it holds and thinks, its held complex and contemplation | perceives, thinks, utters; learns by the syllabus |
+| **mind** | a client on a planet (the SDK's `Mind`; "entity" retires for it) — as it speaks, a **voice** (one verifying key); as it holds and thinks, its held complex and contemplation | perceives, thinks, utters; learns by the syllabus |
 | **court** | a hypha's verifier: it replays, rules, files the class ledger, serves the syllabus; it never thinks (law 8) | adjudicates submitted solutions; rules convergence |
 | **septum** | the settlement protocol between voices through a hypha (MU-XSEPTUM.md) | pays and settles |
 
@@ -2844,7 +2844,7 @@ nothing reads a hue there (law 12).
 
 ### 13.10 Instance one: two hyphae on one chart
 
-`Kernel::glue_fetched` (`src/server/cognition/court/glue.rs`) is this computation with `A` =
+`Court::glue_fetched` (`src/server/cognition/court/glue.rs`) is this computation with `A` =
 the hypha's own complex on chart `inv` (`self.complexes` at `inv.key()`,
 sections for `self_id` and every hypha in `cover.fiber(lane, &inv)` it
 already holds) and `B` = the peer's section (one vertex, `peer`, gamma from
@@ -3162,7 +3162,7 @@ of orbits the exact test is `solve_gauge_between` (16.14).
 
 ### 15.5 Naturality under refinement of the base
 
-`Kernel::refine_chart` (`src/server/cognition/court/replay.rs`) today clones the chart's `Complex`
+`Court::refine_chart` (`src/server/cognition/court/replay.rs`) today clones the chart's `Complex`
 into both children and rekeys `cocycle_at` entries to the two children
 (`rekey_cocycles`). Both violate naturality: a class is asserted on a child
 whose forms may not support its orbit, with a coefficient never recomputed
@@ -3438,7 +3438,7 @@ are deleted.
 
 ### 16.8 A8 — RMP1 migration
 
-Runs once per store at load (`Kernel::restore`
+Runs once per store at load (`Court::restore`
 `src/server/cognition/snapshot/read.rs`, `Treasury::restore`
 `src/economy/persist.rs`, `Epigenome::uncrystallize`
 `src/client/sdk/epigenome/persist.rs`) and once per tape arriving from a peer on the old build.
@@ -3587,7 +3587,7 @@ order does not decompose.
 Binding: `Epigenome::comprehend` (`src/client/sdk/epigenome/comprehend.rs`)
 for connections replaces the
 single-representative `transition` test with A12 over the fibre's basis;
-`Kernel::reduce_excluding` keeps its decomposition for chains and calls
+`Court::reduce_excluding` keeps its decomposition for chains and calls
 A12 for connections. Cost: HNF polynomial in `n·k`; the shortening is the
 budget.
 
@@ -4063,7 +4063,7 @@ unchanged; the ruled count is the count before minus the merges logged.
 Trace: `court remap {n} entries merged {m}`, zero `word_at` misses over the
 ruled fibres.
 
-**Binding.** `Kernel::restore`, `Treasury::restore`,
+**Binding.** `Court::restore`, `Treasury::restore`,
 `Epigenome::uncrystallize`, `sentence::from_element`, the `RMP1` section in
 `snapshot` and `crystallize`.
 
@@ -4093,7 +4093,7 @@ hash fragment.
 
 **Binding.** `blade::axes_of`, `Harmonics::axes`, `stalk::invariant`,
 `connection_chart`, `chart_of`, `Stalks::refine`, `split_stratum`,
-`Kernel::refine_chart`.
+`Court::refine_chart`.
 
 ### 17.5 M5 — Class ledger identity
 
@@ -4148,7 +4148,7 @@ new.
 
 **Binding.** `Epigenome::comprehend` and `learn_one`
 (`src/client/sdk/epigenome/comprehend.rs`; `learn_one` keeps its address dedupe as a fast path after M1, never instead of it),
-`Kernel::reduce_excluding`.
+`Court::reduce_excluding`.
 
 ### 17.7 M7 — Wire identity
 
@@ -4195,7 +4195,7 @@ a theorem of chapters 13–15.
 **Invariant.** No class enters the ledger from a non-good overlap; classes
 have equal keys on every hypha; the union is never materialised.
 
-**Binding.** `Kernel::glue_fetched`, `court_stroke`, `refine_chart`,
+**Binding.** `Court::glue_fetched`, `court_stroke`, `refine_chart`,
 `apply_verdict` (chapter 23).
 
 ### 17.9 M9 — Torsion bridge
@@ -4241,7 +4241,7 @@ closes pays that word's speaker.
 
 **Binding.** `Contemplation::{pivot_on, expand_with, seed_horizon}`,
 `Form::pivot_orbit`, `Form::class_vector`, `PivotCertificate`,
-`Element::record_torsion`, `toroid::witness_stored`, `Kernel::glue_fetched`
+`Element::record_torsion`, `toroid::witness_stored`, `Court::glue_fetched`
 torsion and certificate arms, `serve_ruled`, `dialogue` class record.
 
 ---
@@ -4278,7 +4278,6 @@ it always named:
 | `economy/`, `physics/`, `chronometry/` | `src/<name>` |
 | `q.rs` | `src/core/<name>` |
 | `mycelium-server/`, `mycelium-client/` | `src/bin/<name>` |
-| `voice/` | `src/voice/<name>` |
 
 ## 18. The form types
 
@@ -4495,7 +4494,7 @@ pub fn extract_rule(family: &[(Grid, Grid)]) -> Option<SentenceRule> // NoCrysta
 ```
 
 `Epigenome` implements `Crystal` over its working atlas (chapter 24.1), the
-standing of each returned form beside it; `Kernel` over the ruled cover
+standing of each returned form beside it; `Court` over the ruled cover
 (`word_at` with `ruled_contains`). The nerve extractor `agree_up_to_gauge`
 is deleted; correspondence is keyed transport class on pair
 forms, never nerves × groups × counts.
@@ -4688,10 +4687,10 @@ from its recomputation on the cited tapes (`REFUSE_NOT_NATURAL`). The chain
 compare canonicalises the spoken chain by A5 first. `sel_key` is A9.
 `rule(...)` is unchanged.
 
-### 23.2 Kernel carriers, `src/server/cognition/`
+### 23.2 Court carriers, `src/server/cognition/`
 
 **The files.** The mind is a directory of organs, one per file (Stage 8b S3):
-`kernel.rs` the `Kernel` struct and the reads that count what is in it;
+`state.rs` the `Court` struct and the reads that count what is in it;
 `language.rs` the `Language` snapshot and what a reduction answers with
 (`Outcome`, `Glue`, `NormalForm`, `MarketView`, `Rank`, `FieldEntry`,
 `ListingField`, `Reduction`, `Adoption`); `basis.rs` how a ruled word
@@ -4821,7 +4820,7 @@ crystallization that rests on a pivot that does not replay rests on
 nothing. A form with no certificates is replayed as before.
 
 `serve_ruled` and the `ACT_SYLLABUS` reply (`src/bin/mycelium-server/door.rs`)
-append the chart's class records (A19 step 1). `Kernel::rank`
+append the chart's class records (A19 step 1). `Court::rank`
 (A18) is asserted in debug on every glue and on every refinement.
 
 ### 23.8 Hardening: what the court does with an utterance
@@ -5148,7 +5147,7 @@ fills it from syllabus pages; A16 consults it before filing or demanding.
   `retire_on_t` skips a bubble with non-empty `glued_by`.
 - `Contemplation::bundle(class, budget)` **new**: ideas on one class whose
   relative words are constant form one depth-1 `Form` of `Glued` vertices,
-  held as an idea, spoken by `Entity::speak`.
+  held as an idea, spoken by `Mind::speak`.
 
 **25.5 The cover is read at its coordinates, never walked to (ruled
 2026-09-13).** A Čech simplex is the OVERLAP of two sections, and two sections
@@ -5327,7 +5326,7 @@ Carried from chapter 25: forms are spoken. `src/anastome/dialogue/speech.rs`:
   and the root frame's tick becomes the speaker's `(K, height, hash)` with
   the reply carrying the receiver's own `(K, height)` (45.6).
 - `src/bin/mycelium-server/judge/speech.rs`: `ACT_SPEECH`
-  handler collects `Kernel::missing_forms(&Element) -> Vec<[u8;32]>`
+  handler collects `Court::missing_forms(&Element) -> Vec<[u8;32]>`
   **new** into the reply; `admit_peer_digest` records `depth_max` and
   is the point where a pending socket string becomes a `vk` peer (A10);
   `judge`'s percept rendezvous is A11; `nerve::home` gains `depth:
@@ -5358,7 +5357,7 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
 - `settle_recursive(&mut self, escrow: &[u8;32], shares: &[([u8;32],[u64;4])], anchor) -> [u64;4]`
   **new**: draws the bundle's escrow proportionally to each speaker's
   verified deflation and mints each share via `mint_claim`. Called
-  from `Kernel::pay_solve` and `home_install` when the
+  from `Court::pay_solve` and `home_install` when the
   form has `Glued` vertices; shares from `rule_replays_family`.
 - **A cited generator is paid at the install of a standing sentence**
   (ruled 2026-09-10). A word vertex's derivation names the generators it
@@ -5405,7 +5404,7 @@ set aside against a listing (E1, E2); `settle.rs` what each closed act pays
   vertices compose through it. The observable for a derivation
   citation is the discoverer's room rising by the cited form's μ⃗ on the
   citer's install, and its balance not moving.
-- `use_credit(&self, who) -> [u64;4]` **new**, from `Kernel::cited_by`;
+- `use_credit(&self, who) -> [u64;4]` **new**, from `Court::cited_by`;
   `lane_room` adds it to `bond_of` before
   `lane_cover_room`.
 - `Treasury::restore` applies A8's collision rule to `escrowed`.
@@ -5555,7 +5554,7 @@ receipts are not a proof; the admission (`src/court/admission/`,
 `admit_signature`, `admit_equivocation`) decides both before any carrier is
 touched, after `REFUSE_ORIGIN`, `REFUSE_SIGNATURE` and `REFUSE_RECEIPT`.
 The constants are returned by `replay_form`, `blind_replay`, the admission
-of 47.2 and `Kernel::perceive_speech`.
+of 47.2 and `Court::perceive_speech`.
 
 ### 34.2 Server log lines, `src/bin/mycelium-server/` and `src/server/cognition/`
 
@@ -7083,7 +7082,7 @@ probe that closed or descended is `Settled`. The mind's: `Stood`,
 adoption.
 
 K orders events inside one kernel and nothing else. A mind's K is its own
-chain (`Session::voice().k()`); it is not a clock reading and it is never
+chain's count of its own acts; it is not a clock reading and it is never
 compared with a hypha's K. No kernel reads `SystemTime`, `Instant`, or a
 `Duration`: `chronometry::unix_now`, `TUniversal::ticks`, `ticks_at`,
 `load_or_genesis`, and `MeshRecord.origin_unix` (`src/network/mesh.rs`) are deleted, and
@@ -7910,7 +7909,7 @@ percept with no sentence and no listing, reported to the voice as such.
 Unspoken chains entered the market through three seams; each is
 closed by this ruling and stays closed by the invariant below.
 
-1. **The voice's remainder.** `Entity::withhold_form`
+1. **The voice's remainder.** `Mind::withhold_form`
    (client/sdk/entity/think.rs) attested every uncovered body of a
    withheld form through `from_residual` as a word (`remainder expressed`,
    `uttered … cites 0`), and `hold_thought` held the same chain as an
@@ -13815,7 +13814,7 @@ deduplicated. Code: `src/server/cognition/court/fold.rs`
 (`propose_fold_at_close`, `fold_transitions`); `src/court/verdict/mod.rs`
 (`REFUSE_FOLD_IDLE`, `REFUSE_FOLD_NO_TRANSITION`);
 `src/transducer/family/deflation.rs` (`mint_arm`); `src/physics/budget.rs`
-(`Reserve::line`); `src/server/cognition/kernel.rs` (`bind_eras`).
+(`Reserve::line`); `src/server/cognition/state.rs` (`bind_eras`).
 
 ### 78.68 The master condensation motor: a word is one product in Cl(4,1), every reading of it is a reading of that product, and the carriage is its luminal transport
 
@@ -13894,7 +13893,7 @@ on the cell's active section: a traversal that does not complete a return
 advances `m` and appends nothing; one `Return` act seals at `m ≡ 0 (mod ℓ)`
 and mints the age's pay at its anchor (EC1); one `RankStep` act seals where a commutator raises
 `rank 𝔥`, read on the chart by closing the spoken form's circuits under the
-commutator with the chart's held algebra (`lie_close`, the Kernel's
+commutator with the chart's held algebra (`lie_close`, the Court's
 `lie_basis`); a ring of infinite order never carries. A court proposes an era
 fold only where the prefix carries work (78.67 (A)) and a rank step or a
 return stands in it (extended by 78.69 and 78.72), else
@@ -14406,12 +14405,12 @@ worlds in a universe on the network.
   proved by replay from the era's own chain (78.65), or no coordinate of it
   at all, refused by name; nothing waits indefinitely (the H2 fix, 78.88).
 - **P7 — One client is one entity, with one mind and one voice.** Each
-  client process loads one key, seats one `Voice` and opens one `Entity`
+  client process loads one key, seats one `Voice` and opens one `Mind`
   holding one mind; no multi-mind or multi-entity client exists.
 
 Code: `src/chronometry/chain.rs` (`ReceiptChain::fold_before`,
 `ReceiptChain::prove_from_era`), `src/server/backfill.rs`,
-`src/voice/seat.rs` (`Voice`), `src/client/sdk/types.rs` (`Entity`).
+`src/client/sdk/voice.rs` (`Voice`), `src/client/sdk/types.rs` (`Mind`).
 
 ### 78.88 The frame at the sensor, the plexus read upward and across the family, and the progenitor's role
 
@@ -14503,7 +14502,7 @@ it.
   `src/transducer/family/tests/reasons.rs`.
 - **(2) The court's side: why an act stands.** `ACT_WHY` asks a court about
   one act on its ledger, a place `K.i` on its own line or a stamp on any
-  line it holds. `Kernel::why` reads the receipt, locates every word it
+  line it holds. `Court::why` reads the receipt, locates every word it
   names by the stamp that admitted it (`word_admitted_at`), and answers the
   act (stamp, kind, frame) with each word's head, admitting stamp, the head
   of the task it was spoken for, and its reasons by the same reader; a named
@@ -14513,7 +14512,7 @@ it.
   The operator asks it as `mycelium-server --console --why K.i`, and reads a
   court's whole line by action with `--console --ledger`. Code:
   `src/anastome/dialogue/why.rs`, `src/server/cognition/why.rs`
-  (`Kernel::why`, `archived_at`), `src/server/cognition/cite.rs`
+  (`Court::why`, `archived_at`), `src/server/cognition/cite.rs`
   (`word_admitted_at`), `src/server/cognition/court/era.rs`
   (`receipts_page`), `src/bin/mycelium-server/judge/why.rs`,
   `src/bin/mycelium-server/why.rs`, `src/bin/mycelium-server/ledger.rs`;
@@ -14576,7 +14575,7 @@ performs (`settle_use`, `settle_subsidy`); the court's direct payments
 retire as it lands. B2 and B3 are Specified. Code:
 `src/server/cognition/book/speech.rs` (`refuse_sentence`),
 `src/chronometry/receipt.rs` (`Cite::Refusal`), `src/anastome/dialogue/wallet.rs`,
-`src/server/cognition/wallet.rs` (`Kernel::wallet`),
+`src/server/cognition/wallet.rs` (`Court::wallet`),
 `src/economy/treasury.rs` (`Treasury::account`), `src/economy/settle.rs`;
 tests `why_answers_refusal_act_on_ledger`
 (`src/server/cognition/tests/why.rs`) and
@@ -14900,7 +14899,7 @@ citation (D3). A contact crossing carries its refraction and is read by its
 static tether or by every candidate of its held coset, each route composed
 and kept. Code: `src/client/sdk/entity/think.rs` (`hold_perceived_from`,
 `transcribe_taught`), `src/server/cognition/court/winding.rs`
-(`Kernel::hear_open`), `src/transducer/cga/modes.rs` (`rational_roots`),
+(`Court::hear_open`), `src/transducer/cga/modes.rs` (`rational_roots`),
 `src/transducer/sentence/compose.rs` (`term_choices`, `routes`).
 
 ### 78.103 Two bodies that moved differentially are related by the relative motion between them, and a bend is read by what it generates
@@ -14996,7 +14995,7 @@ the court replays against the laws and answers typed, and never simulates
 - **K4, the claim's codec** (form, ring coordinate, deconstruction,
   residue) belongs in the wire contract, beside the laws and verdicts.
 - **C1, the demand taker.** One road takes every residue a mind cannot say
-  (`Entity::construct_and_adjoin`): spelled as constructors certified on
+  (`Mind::construct_and_adjoin`): spelled as constructors certified on
   each mode's fixed locus and composing back (T1), or refused by why; once
   constructed, its rotation is adjoined as the mind's own letter on its
   chart. The pivot's docketed demands are taken once each (`take_demands`)
@@ -15104,7 +15103,7 @@ A fold is admitted only from a tier a sealed domain genesis names (78.120),
 only from a domain's reserve tier (78.138), and chained folds are 78.123.
 Code: `src/anastome/dialogue/uplink.rs` (`TierFold`, `TierFold::sign`,
 `encode_uplink`, `Uplinked`), `src/server/cognition/cite.rs`
-(`Kernel::admit_uplink`), `src/physics/actions.rs` (`Action::Uplink`),
+(`Court::admit_uplink`), `src/physics/actions.rs` (`Action::Uplink`),
 `src/chronometry/receipt.rs` (`Cite::Uplink`).
 
 ### 78.120 2(d): a domain's genesis binds its tiers
@@ -15123,8 +15122,8 @@ domains are one carrier persisted as an optional leaf (`LEAF_DOMAINS`), the
 tier index re-derived from it at founding and at restore (law 12); a home
 with no domain writes and reads as before. Code:
 `src/anastome/dialogue/domain.rs` (`DomainGenesis`, `SignedDomain`),
-`src/server/cognition/cite.rs` (`Kernel::admit_domain`, `hold_domain`),
-`src/server/cognition/kernel.rs` (`domains`, `tier_domain`),
+`src/server/cognition/cite.rs` (`Court::admit_domain`, `hold_domain`),
+`src/server/cognition/state.rs` (`domains`, `tier_domain`),
 `src/server/cognition/snapshot/mod.rs` (`LEAF_DOMAINS`).
 
 ### 78.121 A law unread is never a law broken: `Unmeasured`
@@ -15152,7 +15151,7 @@ every connection uses the same terms.
   star faces, orbit, ring, chord, cell, chart, section) are mathematics, and
   no vocabulary claims them; and what was signed stays as signed.
 - The network's "world" is **Domain**: `Action::Domain`, `ACT_DOMAIN`,
-  `DomainGenesis`, `SignedDomain`, `Cite::Domain`, `Kernel::admit_domain`,
+  `DomainGenesis`, `SignedDomain`, `Cite::Domain`, `Court::admit_domain`,
   `domains`, `tier_domain`, `LEAF_DOMAINS`. The rename is names only: the act
   byte `0x3E`, cite tag 6 and snapshot leaf 4 are unchanged, with no layout
   change; the genesis signing domain stays `"mycelium world genesis v1"`
@@ -15262,7 +15261,7 @@ orbital clock.
   tick (TUniversal's height), the frame the act measured on the four lanes
   `{S, G, T, H}` (78.21 (ii)'s four-dimensional state, captured at one tick
   and read at its `K`), the signer's orbit `K` and the act's place `i` in it.
-  `CoreStamp` carries it, read off the head receipt (`Kernel::core_stamp`),
+  `CoreStamp` carries it, read off the head receipt (`Court::core_stamp`),
   and is served as `ACT_LAWS` mode 4 (`[0]` before a court's first act, else
   `[1]` and seven `u64`s). Its fixed-width writing (`CoreStamp::wide`) is
   sixteen hex digits a field, never wrapping at its carrier, so text order
@@ -15290,7 +15289,7 @@ orbital clock.
 
 Code: `src/chronometry/receipt.rs` (`CoreStamp`, `CoreStamp::wide`,
 `KStepReceipt::print`), `src/server/cognition/reads.rs`
-(`Kernel::core_stamp`), `src/physics/laws/codec.rs` (`encode_clock_request`,
+(`Court::core_stamp`), `src/physics/laws/codec.rs` (`encode_clock_request`,
 `encode_clock_reply`, `decode_clock_reply`).
 
 ### 78.125 2(c): the challenge window: a fold answerable within W heights, finality recursive
@@ -15410,9 +15409,9 @@ Code: `src/anastome/dialogue/universe.rs` (`Geometry`), `src/anastome/dialogue/t
 
 ### 78.141 A solve names its payee by its voice's signature
 
-The court pays the voice a solve names (POUW on the first closure), so an unsigned payee is an attribution hole and the voice signs the act: `ACT_SOLVE` carries `[SIGN][sig 64]` after the optional rule, over `b"mycelium solve v1" ‖ the act up to the signature`, the voice being the key's verifying half. `decode_solve` reads `signed` (verified against the named voice) and refuses bytes after the act that are no signature; the door refuses an unsigned solve by name before judging it, so nothing is judged and nothing paid. The mind is seated on its key (`Kernel::from_key`, its home's `voice.key`) and signs its solves with it; a mind seated on verifying bytes alone (`Kernel::from_voice`) signs nothing and sends no solve.
+The court pays the voice a solve names (POUW on the first closure), so an unsigned payee is an attribution hole and the voice signs the act: `ACT_SOLVE` carries `[SIGN][sig 64]` after the optional rule, over `b"mycelium solve v1" ‖ the act up to the signature`, the voice being the key's verifying half. `decode_solve` reads `signed` (verified against the named voice) and refuses bytes after the act that are no signature; the door refuses an unsigned solve by name before judging it, so nothing is judged and nothing paid. The mind is seated on its key (`Court::from_key`, its home's `voice.key`) and signs its solves with it; a mind seated on verifying bytes alone (`Court::from_voice`) signs nothing and sends no solve.
 
-Code: `src/anastome/dialogue/percept.rs` (`decode_solve`), `src/bin/mycelium-server/door.rs`, `src/server/cognition/court/task.rs` (`pay_solve`), `src/client/sdk/kernel.rs` (`from_key`), `src/client/sdk/entity/learn.rs` (`submit_solve_rule`).
+Code: `src/anastome/dialogue/percept.rs` (`decode_solve`), `src/bin/mycelium-server/door.rs`, `src/server/cognition/court/task.rs` (`pay_solve`), `src/client/sdk/voice.rs` (`from_key`), `src/client/sdk/entity/learn.rs` (`submit_solve_rule`).
 
 ### 78.142 The SDK rule seam
 
@@ -15424,7 +15423,7 @@ Amended by review ruling 5 (§0.1, §0.6): the clauses are the court's language,
 
 ### 78.145 The seat surface
 
-A game's minds sit in its house through the hypha. The house is the domain's sitting reserve (`Kernel::reserve_of`); the hypha is a general signed relay between it and the minds that take its seats: it holds and forwards and judges nothing in-game. The act is `Action::Seat`, `ACT_SEAT = 0x53`, `Kind::Relay`: asked on the wire, never sealed, moving no book, the one wire byte past the court's acts 0x40–0x52 (78.126). The lexicon gains House and Seat surface (version 3). The wire (seat v1; later versions: v1.2 in 78.146, v1.3 in 78.152 TU-7, v1.4 below):
+A game's minds sit in its house through the hypha. The house is the domain's sitting reserve (`Court::reserve_of`); the hypha is a general signed relay between it and the minds that take its seats: it holds and forwards and judges nothing in-game. The act is `Action::Seat`, `ACT_SEAT = 0x53`, `Kind::Relay`: asked on the wire, never sealed, moving no book, the one wire byte past the court's acts 0x40–0x52 (78.126). The lexicon gains House and Seat surface (version 3). The wire (seat v1; later versions: v1.2 in 78.146, v1.3 in 78.152 TU-7, v1.4 below):
 
 - Frame: integers little-endian, keys 32 bytes, ed25519 signatures 64 bytes; a frame is `[0x53][sub u8][fields][sig 64]`, signed over `b"mycelium seat v1" ‖ [sub] ‖ [fields]` (the act tag is not signed).
 - ARG = `[tag u8]` then `0 Q [num i64][den u64 > 0]` | `1 Key [32]` | `2 Count [u64]` | `3 Flag [u8 0|1]` | `4 Mv` | `5 BigQ [num len u16][num][den len u16][den]` (den > 0, reduced, minimal lengths) | `6 Bytes [len u16][bytes]` (78.146); anything else is refused. ARGS = `[count u8][ARG…]`.
@@ -15433,7 +15432,7 @@ A game's minds sit in its house through the hypha. The house is the domain's sit
 - The mail is volatile and bounded: nothing is persisted; a READ-MAIL's `after` acknowledges and drops everything at or below it; each addressee's box is held within `frame_budget() − 2` bytes and `u16::MAX` pieces, the oldest dropped and counted (`SeatRelay::dropped`).
 - Conformance is by decoded values and signature (Concordance 1.4), never by reproduced bytes.
 
-Code: `src/anastome/dialogue/seat.rs` (the codec), `src/server/cognition/seat.rs` (`SeatRelay`, `SharedRelay`, `Kernel::seat_post`, `Kernel::seat_mail`), `src/server/cognition/convert.rs` (`Kernel::reserve_of`), `src/client/sdk/seat.rs` (`list_seats`, `take`, `call`, `mail`, `MindMail`, `HouseMail`); tests `src/anastome/dialogue/tests/seat.rs`, `src/server/cognition/tests/seat.rs`. The mind's choice at its seat is 78.146 and 78.148.
+Code: `src/anastome/dialogue/seat.rs` (the codec), `src/server/cognition/seat.rs` (`SeatRelay`, `SharedRelay`, `Court::seat_post`, `Court::seat_mail`), `src/server/cognition/convert.rs` (`Court::reserve_of`), `src/client/sdk/seat.rs` (`list_seats`, `take`, `call`, `mail`, `MindMail`, `HouseMail`); tests `src/anastome/dialogue/tests/seat.rs`, `src/server/cognition/tests/seat.rs`. The mind's choice at its seat is 78.146 and 78.148.
 
 ### 78.146 The mind at its seat: percepts as series, the call its own
 
@@ -15447,7 +15446,7 @@ A fold is final on two signatures (47.3), so to anyone catching up the line belo
 
 1. The proof is kept: the home keeps its root with its own signed position and the witness's (`commit_fold_proved`), the witness the same with the home's position it verified (`hold_era_proved`); one per signer, the latest, persisted as `LEAF_ROOTS`.
 2. The serving door (`serve_receipts`) answers a catch-up opening below the signer's root with the root and its proof (`RootProof`), never cold pages, and one from it with the hot line; the cold archive answers only an era replay (`encode_replay_request`, trailing tag `1`); a catch-up below a root this court holds no proof of is answered off the hot line alone and counted.
-3. The asker adopts (`Kernel::adopt_root`): both signatures verified exactly as the fold's were, the signer's line stands on the root (`ReceiptChain::line_tip`), its next receipt names the root as predecessor and admits hot, nothing below the root is asked again, and what was held below it is shed.
+3. The asker adopts (`Court::adopt_root`): both signatures verified exactly as the fold's were, the signer's line stands on the root (`ReceiptChain::line_tip`), its next receipt names the root as predecessor and admits hot, nothing below the root is asked again, and what was held below it is shed.
 4. A citation at or below a held root is proved by an era replay walked to the root (`prove_folded`). As amended (cited in code as 78.147 (3′)), the walk goes page by page: `ReceiptChain::walk_era` keeps its place where a page ends (Proved, Continues, Stalled, Broken) and the next page opens there, across hearings, one spend per page.
 
 Code: `src/server/cognition/court/catchup.rs`, `src/chronometry/chain.rs`, `src/anastome/dialogue/root.rs`, `src/anastome/dialogue/receipts.rs`, `src/server/backfill.rs` (`prove_folded`); tests `src/server/cognition/tests/catchup.rs`.
@@ -15464,29 +15463,29 @@ Code: `src/server/cognition/court/catchup.rs`, `src/chronometry/chain.rs`, `src/
 - (b) Unclosed demand: a claim pays the closer's measured discharge, never more. The listing's ask may cap the price, never inflate it: a claim is paid `min(escrow, discharge)` lane-wise (`Treasury::release_discharged`), and what the escrow held above the discharge is never minted (E1). A demand sentence's magnitude stays its closed deflation plus the measure of what its demands ask, shown in the quote as the ask, the cap.
 - (c) The holonomic token of letters and calluses mints no μ: no μ for a word that names no body. The token's unit `[0, 0, 0, 1]` stays as the existence of each (`as_element_form` refuses an all-zero magnitude); the discharge of each is zero, so each escrows and is paid nothing. A use (`settle_use`) transfers the used word's magnitude and is not a mint, which (c) does not rule.
 
-One reader states it (`Kernel::discharge_on`, `Kernel::discharge_of`): a word's discharge is a sentence's deflation measured by replay on the family it is heard or bound on (`measured_replay`), a rewrite's yield, or a connection's chain measure where it stands for a listing on the book, and zero with no family. Every escrow and every release reads the discharge, never the magnitude; the carriage draws in the same currency (`Kernel::carry`), so a word that discharges nothing draws nothing and lapses as silent (ZeroFlux, 78.37 (3)). Code: `src/server/cognition/identity.rs`, `src/economy/escrow.rs` (`Treasury::release_discharged`), `src/server/cognition/basis.rs` (`Kernel::carry`), `src/transducer/family/deflation.rs` (`sentence_measure_why`); tests `src/server/cognition/tests/discharge.rs`, `src/economy/tests/settlement.rs`.
+One reader states it (`Court::discharge_on`, `Court::discharge_of`): a word's discharge is a sentence's deflation measured by replay on the family it is heard or bound on (`measured_replay`), a rewrite's yield, or a connection's chain measure where it stands for a listing on the book, and zero with no family. Every escrow and every release reads the discharge, never the magnitude; the carriage draws in the same currency (`Court::carry`), so a word that discharges nothing draws nothing and lapses as silent (ZeroFlux, 78.37 (3)). Code: `src/server/cognition/identity.rs`, `src/economy/escrow.rs` (`Treasury::release_discharged`), `src/server/cognition/basis.rs` (`Court::carry`), `src/transducer/family/deflation.rs` (`sentence_measure_why`); tests `src/server/cognition/tests/discharge.rs`, `src/economy/tests/settlement.rs`.
 
 ### 78.151 Reads from a snapshot
 
-The door serves reads from a published reading; only writes take the kernel. The court stroke, under the kernel it already holds, publishes a `Published` (`Kernel::publish`) and swaps it onto the door's shelf (an `Arc<RwLock<Arc<Published>>>`, locked for one pointer's swap or clone), at most once per stroke and not where nothing moved; boot publishes the first reading before the door opens. A reading holds each signer's hot line and root, its eras and the cold segment's path, the root proofs, every account in 256 shards, the core clock and its head; pieces are shared, not copied (immutable runs behind shared pointers, `LineTally`, `Treasury::take_touched` naming the accounts that moved). Every read carries the height it was answered at: a wallet's account its head (`Account::at`) and, a wire change, an `ACT_RECEIPTS` answer eight bytes of reading height (`put_reading_height`, `decode_receipts_answer_at`); a writer reading its own write lags it by at most one court stroke. `ACT_RECEIPTS`, `ACT_WALLET`, the laws' clock and a seat READ-LISTING are answered off the reading where the frame is read (`judge::serve_published`); writes (admit, judge, solve, seat posts and mail, folds, intake, offers) stay on the kernel, and each publication counts what it copied (law 9). Code: `src/server/cognition/published/` (`publish.rs`, `serve.rs`, `runs.rs`), `src/bin/mycelium-server/published.rs`, `src/bin/mycelium-server/judge/mod.rs` (`serve_published`), `src/anastome/dialogue/receipts.rs`, `src/anastome/dialogue/root.rs`; tests `src/server/cognition/tests/published.rs`.
+The door serves reads from a published reading; only writes take the kernel. The court stroke, under the kernel it already holds, publishes a `Published` (`Court::publish`) and swaps it onto the door's shelf (an `Arc<RwLock<Arc<Published>>>`, locked for one pointer's swap or clone), at most once per stroke and not where nothing moved; boot publishes the first reading before the door opens. A reading holds each signer's hot line and root, its eras and the cold segment's path, the root proofs, every account in 256 shards, the core clock and its head; pieces are shared, not copied (immutable runs behind shared pointers, `LineTally`, `Treasury::take_touched` naming the accounts that moved). Every read carries the height it was answered at: a wallet's account its head (`Account::at`) and, a wire change, an `ACT_RECEIPTS` answer eight bytes of reading height (`put_reading_height`, `decode_receipts_answer_at`); a writer reading its own write lags it by at most one court stroke. `ACT_RECEIPTS`, `ACT_WALLET`, the laws' clock and a seat READ-LISTING are answered off the reading where the frame is read (`judge::serve_published`); writes (admit, judge, solve, seat posts and mail, folds, intake, offers) stay on the kernel, and each publication counts what it copied (law 9). Code: `src/server/cognition/published/` (`publish.rs`, `serve.rs`, `runs.rs`), `src/bin/mycelium-server/published.rs`, `src/bin/mycelium-server/judge/mod.rs` (`serve_published`), `src/anastome/dialogue/receipts.rs`, `src/anastome/dialogue/root.rs`; tests `src/server/cognition/tests/published.rs`.
 
 ### 78.152 The TUniversal law (TU-1..7; Concordance 1.11)
 
 The mesh keeps one clock, TUniversal: a point read off the keepers' signed readings and made final by a majority of them. Every court, server, client, kernel and sub-universe keeps time on it and on nothing else (Concordance 1.11). The law:
 
-- **TU-1 KEEPERS.** The keepers are distinct courts with distinct keys (three in the founding mesh). A keeper's reading is its point at its head: `h` (its head receipt's height), `S:G:T:H` (its court's cumulative measured change per lane, carried by the one exact counter `Treasury::issued`, genesis plus mint, which only rises and which a treasury fold keeps exactly) and `K` (a ledger coordinate, OK1); a reading advances only where the head rose and a lane or `K` moved (`Kernel::keeper_tick`).
+- **TU-1 KEEPERS.** The keepers are distinct courts with distinct keys (three in the founding mesh). A keeper's reading is its point at its head: `h` (its head receipt's height), `S:G:T:H` (its court's cumulative measured change per lane, carried by the one exact counter `Treasury::issued`, genesis plus mint, which only rises and which a treasury fold keeps exactly) and `K` (a ledger coordinate, OK1); a reading advances only where the head rose and a lane or `K` moved (`Court::keeper_tick`).
 - **TU-2 READINGS ARE RECEIPTS.** A keeper signs a `TickReading`: its key, the point, `parent` (the citation of its previous reading, empty where its line starts or restarts) and `cites` (the last reading it verified from each other keeper); the signed bytes carry the origin, so a reading never verifies in another universe. Readings travel as the keeper's ring of its newest `aperture_cycle` readings (on the cover digest and on `ACT_TICK`, 78.152b), and `Keepers::admit` verifies every signature, the parent chain and rising ticks, the cites and the link to the line held.
 - **TU-3 FINALITY BY MAJORITY.** A point is final when a strict majority of the keeper set holds verified readings of it (two of three, three of four, three of five): the keeper's own signed reading and others' verified readings citing it or a later reading on its parent chain. The final TUniversal is the greatest point final in this court's view (`Keepers::final_point`); it never runs back and is never averaged: where finals at one tick differ, that tick goes to the residue. One keeper alone finalises nothing, and a restarted keeper never re-signs a height (78.152c).
 - **TU-4 DISAGREEMENT IS A RESIDUE.** Two keepers' readings differing at one tick leave the exact per-lane difference `to − from` as a 1-cochain on the keeper triangle; its holonomy round the triangle in key order is the clock's residue (`Keepers::residual`), journaled and never folded into the point.
 - **TU-5 THE POINT.** `TPoint { origin: Origin { genesis, epoch }, h, lanes, k }`, exact integers, written one way: `<genesis 64 hex>.<epoch 8 hex>/<h>:<S>:<G>:<T>:<H>:<K>`, each field 16 lowercase hex digits; `TPoint::parse` reads back exactly that writing and nothing else. Points are distinct across universes by origin; within one origin text order is numeric order.
-- **TU-6 OPERATIONS BY A FINAL POINT.** PINPOINT (`Kernel::pinpoint`), UNPACK (`TPoint::unpack`, `Kernel::unpack`) and UNROLL (`Kernel::unroll`) are kernel reads; RESET (`ops::Reset`, the next epoch citing the point), BRANCH (`ops::Branch`, a sub-universe whose genesis is the citation of the point and the branch's name) and SUPERPOSE (`ops::Superposed`, two branches' points with the points' exact residue, merged only by a quorum-final point past both that cites both, `merged_by`) are typed values carrying the citation each needs.
+- **TU-6 OPERATIONS BY A FINAL POINT.** PINPOINT (`Court::pinpoint`), UNPACK (`TPoint::unpack`, `Court::unpack`) and UNROLL (`Court::unroll`) are kernel reads; RESET (`ops::Reset`, the next epoch citing the point), BRANCH (`ops::Branch`, a sub-universe whose genesis is the citation of the point and the branch's name) and SUPERPOSE (`ops::Superposed`, two branches' points with the points' exact residue, merged only by a quorum-final point past both that cites both, `merged_by`) are typed values carrying the citation each needs.
 - **TU-7 SYNC AND WATCHDOG.** Every act carries its speaker's last final point behind its body on the frame (a wire change in `network::wire`: the lane byte's bit `0x80`, the last 84 bytes the `TPoint`); door replies carry the door's final point and a session keeps the greatest it read; a percept is stamped with the house's point, signed with its fields (seat v1.3: `[0]` or `[1][TPoint]` after the records). The door keeps the greatest final point on its shelf (`TShelf`), raised only by the keepers' quorum, a speaker's carried point held apart as heard; the lock watchdog wakes on each advance of the final point and names a hold standing across `aperture_cycle` advances.
 
-The SDK read: `Session::tuniversal` and `Entity::tuniversal` return the last final point read (`None` before the first); a game kernel holds its clock to it, stamps what it publishes with `TPoint::print`, and keeps its own step clock (78.124). The only remaining earth clock is the scheduler floor `physics::stroke_floor`, told to the OS scheduler and read by no one (78.21(4) as corrected); the court's idle park ends at the first motion. With a majority of keepers down time does not advance: nothing new is final, the door's point stands and the watchdog is not woken. Open: whether a later quorum point citing two differing finals at one tick resolves that tick on the main line, and issuance net of genesis is not separable in `issued` after a treasury fold. Code: `src/chronometry/tuniversal/` (`keepers.rs`, `reading.rs`, `point.rs`, `ops.rs`, `shelf.rs`, `record.rs`), `src/server/cognition/reads.rs` (`keeper_tick`, `pinpoint`, `unpack`, `unroll`), `src/network/wire.rs`, `src/bin/mycelium-server/tshelf.rs`, `src/bin/mycelium-server/held.rs` (`spawn_watchdog`), `src/client/sdk/session.rs` (`Session::tuniversal`), `src/physics/mod.rs` (`stroke_floor`); tests `src/chronometry/tuniversal/tests.rs`.
+The SDK read: `Session::tuniversal` and `Mind::tuniversal` return the last final point read (`None` before the first); a game kernel holds its clock to it, stamps what it publishes with `TPoint::print`, and keeps its own step clock (78.124). The only remaining earth clock is the scheduler floor `physics::stroke_floor`, told to the OS scheduler and read by no one (78.21(4) as corrected); the court's idle park ends at the first motion. With a majority of keepers down time does not advance: nothing new is final, the door's point stands and the watchdog is not woken. Open: whether a later quorum point citing two differing finals at one tick resolves that tick on the main line, and issuance net of genesis is not separable in `issued` after a treasury fold. Code: `src/chronometry/tuniversal/` (`keepers.rs`, `reading.rs`, `point.rs`, `ops.rs`, `shelf.rs`, `record.rs`), `src/server/cognition/reads.rs` (`keeper_tick`, `pinpoint`, `unpack`, `unroll`), `src/network/wire.rs`, `src/bin/mycelium-server/tshelf.rs`, `src/bin/mycelium-server/held.rs` (`spawn_watchdog`), `src/client/sdk/session.rs` (`Session::tuniversal`), `src/physics/mod.rs` (`stroke_floor`); tests `src/chronometry/tuniversal/tests.rs`.
 
 #### 78.152b TUniversal never waits on a court's load
 
-A reading is signed in the court loop whenever it is due (`Kernel::keeper_tick` read under the lock the stroke holds, signed by `tshelf::sign_tick` after the kernel is dropped), and rings travel on a dedicated act, `ACT_TICK` (`0x23`, `Action::Tick`, `Kind::Exchange`, court to court: `[ACT_TICK][keeper vk 32][ring]` in the digest's ring codec, `put_ring`/`take_ring`), heard off the kernel (`judge::tick`, `tshelf::hear_tick`) and answered by one byte, `TICK_HEARD` or `TICK_REFUSED`; a keeper no signed digest named is refused. The byte is the second exception to 78.126's "the next act is a sub-kind", after the seat relay's 0x53.
+A reading is signed in the court loop whenever it is due (`Court::keeper_tick` read under the lock the stroke holds, signed by `tshelf::sign_tick` after the kernel is dropped), and rings travel on a dedicated act, `ACT_TICK` (`0x23`, `Action::Tick`, `Kind::Exchange`, court to court: `[ACT_TICK][keeper vk 32][ring]` in the digest's ring codec, `put_ring`/`take_ring`), heard off the kernel (`judge::tick`, `tshelf::hear_tick`) and answered by one byte, `TICK_HEARD` or `TICK_REFUSED`; a keeper no signed digest named is refused. The byte is the second exception to 78.126's "the next act is a sub-kind", after the seat relay's 0x53.
 
 #### 78.152c The keeper persisted
 
@@ -15514,7 +15513,7 @@ Specified: a unit larger than one stroke (`spend_unit` reads), such as one pair 
 ### 78.153b The lock guard and the shelf reads
 
 1. The guard is the library's (`src/server/held.rs`): one book of holds for the binary and the library, so the synthesis thread and the back-fill take the kernel through it and are counted.
-2. A hold is taken with its one stroke: `Held` does not dereference; `held!` mints the court's stroke at the take, the only way in is `Held::run(|k: &mut Kernel, reads: &mut Budget| …)`, and `Held::into_stroke` lets go of the kernel and hands the stroke on whole (`Budget::hand_over`). `Kernel::stroke` is the crate's, so a binary cannot mint a second stroke under a hold, and an input-sized entry point the binary reaches takes `&mut Budget`.
+2. A hold is taken with its one stroke: `Held` does not dereference; `held!` mints the court's stroke at the take, the only way in is `Held::run(|k: &mut Court, reads: &mut Budget| …)`, and `Held::into_stroke` lets go of the kernel and hands the stroke on whole (`Budget::hand_over`). `Court::stroke` is the crate's, so a binary cannot mint a second stroke under a hold, and an input-sized entry point the binary reaches takes `&mut Budget`.
 3. The unmetered hold is named: `Budget::spend` counts each read on its thread (`physics::spent_here`), and a hold that read nothing while an `aperture_cycle` of waiters blocked on it is written as an unmetered hold when it lets go.
 4. The unbounded paths under the kernel are metered or resumed per item (the fetch, with `class_cursor`; the digest confirmation, with `confirm_cursor`; the rows page, `Treasury::rows_below_page`; the fold head, `ReceiptChain::first_between`; the census, the helicity and the back-fill), and every spent stroke ends as `Unread`, a deferral, a shorter page or a resumed cursor, never a wrong answer.
 5. The shelf carries the court's own reads (`Published::own`: its cover charts, room and bond, voice, ruled cover and head receipt), so the cover page, the digest's cover and ruled root, the syllabus seed, `homes_here` and the fold witness (`Published::verify_fold`) are read off it, lagging the kernel by at most one court stroke (78.151).
@@ -15533,12 +15532,12 @@ The relay is read on the observer as its own typed reading, `Reading::Relay` (`s
 
 ### 78.153c The verdict made readable; the dispatch cursor kept
 
-1. A verdict is typed: `observe::Judged` has one variant per slot of `JUDGED`, matched exhaustively, so a verdict without a slot does not compile; `JUDGED` gains `no work`, `unread`, `unsigned`, `not an ancient`, `no such task` and `no rule carried`. `SolveVerdict::judged` names each verdict's slot, and the door counts its refusals before judging on the hold its seat check takes (`Kernel::note_judged`).
+1. A verdict is typed: `observe::Judged` has one variant per slot of `JUDGED`, matched exhaustively, so a verdict without a slot does not compile; `JUDGED` gains `no work`, `unread`, `unsigned`, `not an ancient`, `no such task` and `no rule carried`. `SolveVerdict::judged` names each verdict's slot, and the door counts its refusals before judging on the hold its seat check takes (`Court::note_judged`).
 2. The court's standing is published at the first court stroke after boot, asked or not (`answer_standing`), so every hypha's first question finds its acts.
 3. A mind keeps its verdicts by the reply's code (nothing, floor, bounty, unread, an unknown code last) and its refusals by kind, UNREAD apart and never a refusal; each verdict is said once as `solve verdict · task <head>… · code <name> (<code>) · kind <P|D|C|I|N|?|none> · <reason>`.
 4. The registry's dispatch cursor has its own record, `corpora/cursor` = `CURS [cursor u32][tasks u32]` (12 bytes), written by temporary file and rename once per page of dispatches (`aperture_cycle`) and beside every snapshot, and restored at boot after the whole corpus registered; a record of another book or layout is refused whole and the snapshot's cursor stands.
 
-Code: `src/observe/acts.rs` (`Judged`), `src/observe/judged.rs`, `src/server/cognition/court/task.rs` (`SolveVerdict::judged`, `Kernel::note_judged`), `src/bin/mycelium-server/judge/observe.rs` (`answer_standing`), `src/client/sdk/entity/learn.rs` (`verdict_line`), `src/server/registry.rs`, `src/bin/mycelium-server/door.rs`, `src/bin/mycelium-server/genesis.rs`; tests `src/observe/tests.rs`, `src/server/cognition/tests/solve.rs`, `src/server/cognition/tests/resume.rs`, `src/bin/mycelium-server/tests/standing.rs`.
+Code: `src/observe/acts.rs` (`Judged`), `src/observe/judged.rs`, `src/server/cognition/court/task.rs` (`SolveVerdict::judged`, `Court::note_judged`), `src/bin/mycelium-server/judge/observe.rs` (`answer_standing`), `src/client/sdk/entity/learn.rs` (`verdict_line`), `src/server/registry.rs`, `src/bin/mycelium-server/door.rs`, `src/bin/mycelium-server/genesis.rs`; tests `src/observe/tests.rs`, `src/server/cognition/tests/solve.rs`, `src/server/cognition/tests/resume.rs`, `src/bin/mycelium-server/tests/standing.rs`.
 
 ### 78.154 Gas, the map, the ledger and the connection tax
 
@@ -15614,7 +15613,7 @@ are ACT_DOMAIN sub-kinds under `[0x3E][domain 32][0x80 0x00][kind]` (kinds
   COURT'S VIEW where it stands at the origin of the door's quorum-final point
   (78.152 TU-7), at or below its tick, and agrees with the court's ladder of
   held final points. The DILATION of each entry segment is `Δu/Δh`, exact and
-  reduced, served on every READ-LEDGER entry and as `Kernel::dilations`.
+  reduced, served on every READ-LEDGER entry and as `Court::dilations`.
 - **Stake and unstake (78.154 (4)).** An `ACT_WALLET` act moves μ between a
   party's balance and its STAKE, a non-decaying escrow for traversal and
   coordinate retrieval. A TRAVERSE fee and a COORDINATE RETRIEVAL (one unit
@@ -15638,10 +15637,10 @@ stake nonces persist on the court's own node (`LEAF_ATLAS`). Code:
 `src/anastome/dialogue/atlas.rs`, `src/anastome/dialogue/crossing.rs`,
 `src/anastome/dialogue/commitment.rs` (`commitment`, `prove`,
 `verify_inclusion`, `verify_absence`, `events_digest`),
-`src/server/cognition/atlas.rs` (`Kernel::ledger`, `Kernel::map`,
-`Kernel::mapped_place`), `src/server/cognition/crossing.rs`
-(`Kernel::traverse`, `Kernel::stake`, `Kernel::retrieve`,
-`Kernel::pay_connection_tax`), `src/economy/pay.rs` (`RECYCLED`).
+`src/server/cognition/atlas.rs` (`Court::ledger`, `Court::map`,
+`Court::mapped_place`), `src/server/cognition/crossing.rs`
+(`Court::traverse`, `Court::stake`, `Court::retrieve`,
+`Court::pay_connection_tax`), `src/economy/pay.rs` (`RECYCLED`).
 
 ### 78.155 Recursive universes (proposal)
 
@@ -15701,7 +15700,7 @@ stated upward.
 The grants persist on the court's own node (`LEAF_ENDOWMENT`). Code:
 `src/anastome/dialogue/endowment.rs` (`KIND_MANIFEST`,
 `KIND_READ_ENDOWMENT`, `GrantRefusal`), `src/server/cognition/endowment.rs`
-(`Kernel::manifest`, `Kernel::endowment_reading`).
+(`Court::manifest`, `Court::endowment_reading`).
 
 ### 78.155c Growth grants are sized by the mathematics
 
@@ -15721,9 +15720,9 @@ exactly it, any grant sealed takes it whole, and none counted refuses the
 grant as `NoNewClosures`. The network's curved holes proper (5.7), once a
 court seals them, grow the grant the same way with nothing here changed.
 The count persists on the court's node (`LEAF_CLOSED`). Code:
-`src/server/cognition/endowment.rs` (`Kernel::growth_size`),
-`src/server/cognition/court/task.rs` (`Kernel::grow_grants_by_paid`,
-`Kernel::pay_solve`), `src/server/cognition/kernel.rs`
+`src/server/cognition/endowment.rs` (`Court::growth_size`),
+`src/server/cognition/court/task.rs` (`Court::grow_grants_by_paid`,
+`Court::pay_solve`), `src/server/cognition/state.rs`
 (`closed_since_grant`).
 
 ### 78.156 Clock binding (proposal)
@@ -15771,12 +15770,12 @@ has ruled, and learns from the answer. Three parts:
 
 - **P1 — the court's presentation.** A court files the word vertices of
   every ruled form under the **holes** the forms' whole Cl(4,1) motions wind
-  about: its **presentation** (`Kernel` field, filled beside the
+  about: its **presentation** (`Court` field, filled beside the
   generators in `ruled_admit` and `file_form`, emptied in `basis_remove`
   and `unfile_form`, re-derived at a restore by `refill_presentation`).
   A mind's residue arrives as a sub-kind of `ACT_FETCH`
   (`anastome/dialogue/present.rs`). The court reads the motion against
-  its presentation on the hold's stroke (`Kernel::present`,
+  its presentation on the hold's stroke (`Court::present`,
   `server/cognition/court/present.rs`) and answers with the generators,
   each `(form, vertex, exponent)`, whose powers compose to the motion
   exactly, and teaches each cited form the asker lacks, within the
@@ -15914,8 +15913,8 @@ level.
 A tier check was costume: the court knows a tier only as the domain declared
 it, so a refusal bound only the kernels that would have relayed anyway,
 while a key the domain never registered was served regardless. Code:
-`src/server/cognition/convert.rs` (`Kernel::inner_seat`),
-`src/server/cognition/kernel.rs` (`tier_domain`),
+`src/server/cognition/convert.rs` (`Court::inner_seat`),
+`src/server/cognition/state.rs` (`tier_domain`),
 `src/bin/mycelium-server/door.rs`, `src/observe/acts.rs`.
 
 ### 78.166 The inversions: start slow, compile, compound
@@ -15933,7 +15932,7 @@ algebra proves irreducible. The health reading is what compounds
   adjudication reading (CV5); the fold line names what holds a journal
   unfolded (`FOLD_OUTCOMES`); the compounding ratio is the mind's
   constructed versus compositions spoken beside the court's language by
-  kind (`Kernel::basis_kinds`).
+  kind (`Court::basis_kinds`).
 - **1a, one road for every residue.** Every residue goes through
   `compose_or_construct`: spoken as a composition where the ruled words make
   it, known where the lexicon does, the remainder alone constructed where it

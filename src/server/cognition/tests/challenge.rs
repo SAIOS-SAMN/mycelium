@@ -9,7 +9,7 @@ use crate::anastome::dialogue::challenge::{line_head, Challenge, ChallengeRefusa
 use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt, Net, TierFold, Uplinked};
 use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::physics::laws::CHALLENGE_WINDOW;
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use crate::transducer::cech::coefficient::Coefficient;
 use ed25519_dalek::SigningKey;
 
@@ -50,13 +50,13 @@ fn domain() -> [u8; 32] {
 /// The domain founded with its three lines and its reserve, the reserve
 /// designated, and each line BONDED by it — a line is carried only with a
 /// bond of its own.
-fn founded() -> Kernel {
+fn founded() -> Court {
     use crate::anastome::dialogue::domain::{Bond, DomainGenesis, Founded, Reservation};
     let (a, p, q) = tiers();
     let r = reserve();
     let mut ts = vec![vk(&a), vk(&p), vk(&q), vk(&r)];
     ts.sort_unstable();
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let genesis = DomainGenesis { domain: domain(), tiers: ts };
     assert!(matches!(k.admit_domain(&genesis.sign(&key(4))), Founded::Sealed { .. }));
     let reservation = Reservation { domain: domain(), tier: vk(&r), nonce: [0; 32] };
@@ -90,7 +90,7 @@ fn a_fold() -> TierFold {
 /// A LINE'S FOLD ON THE COURT: carried inline in a fresh fold of the reserve
 /// that includes none of it, so it stands whole to be netted — where it
 /// stands, `[0]` inside the reserve's receipt.
-fn sealed(k: &mut Kernel, f: TierFold, by: &SigningKey) -> FoldAt {
+fn sealed(k: &mut Court, f: TierFold, by: &SigningKey) -> FoldAt {
     let carried = ChildNet {
         rows: f.rows.clone(),
         declared: f.declared.clone(),
@@ -125,7 +125,7 @@ fn evidence(f: &TierFold, at: &FoldAt, entries: Vec<Entry>) -> Challenge {
 }
 
 /// The court's line carried past `h` by acts of its own.
-fn pass(k: &mut Kernel, h: u64) {
+fn pass(k: &mut Court, h: u64) {
     while k.chain.head_height() < h {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
     }
@@ -165,7 +165,7 @@ fn challenge_upholds_honest_fold_as_final_upheld() {
     assert_eq!(k.finality(&at), Finality::Provisional { until: at.stamp.h + CHALLENGE_WINDOW });
     pass(&mut k, at.stamp.h + CHALLENGE_WINDOW);
     assert_eq!(k.finality(&at), Finality::Final { upheld: true });
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "the windows restore");
     assert_eq!(booted.finality(&at), Finality::Final { upheld: true }, "and read the same");
 }
@@ -271,7 +271,7 @@ fn challenge_falsified_parent_returns_child_netting() {
     let lie = fold(&p, &lying_line, vec![(who(1), g(12))], Vec::new(), vec![whole(&a_fold(), &a_at, 2)]);
     assert_eq!(lie.continuity(), Ok(()), "continuity alone does not catch it");
     let lie_at = sealed(&mut k, lie.clone(), &p);
-    let refile = |k: &mut Kernel, nonce: u8| {
+    let refile = |k: &mut Court, nonce: u8| {
         let qf = TierFold { prefix: [nonce; 32], ..fold(&q, &[], vec![(who(1), g(10)), (who(2), g(-4))], Vec::new(), vec![whole(&a_fold(), &a_at, 1)]) };
         let carried = ChildNet {
             rows: qf.rows.clone(),
@@ -321,7 +321,7 @@ fn challenge_correction_books_arbitrage_by_closing_tier() {
 
 /// The cycle `A → P` at 2, `P → Q` at 1, `A → Q` at 1, sealed on `k`: `Q`'s
 /// fold, and the child vertex of the edge that closed it.
-fn arbitrage(k: &mut Kernel) -> (FoldAt, Vec<u8>) {
+fn arbitrage(k: &mut Court) -> (FoldAt, Vec<u8>) {
     let (a, p, q) = tiers();
     let af = a_fold();
     let a_at = sealed(k, af.clone(), &a);
@@ -436,7 +436,7 @@ fn orbit_prunes_final_child_and_parent_reads_final() {
     assert!(k.ledgers.finals.contains(&a_at.key()), "to a stub its unfinished parent names");
     assert_eq!(k.finality(&a_at), Finality::Final { upheld: false });
     assert_eq!(k.reconstructions.len(), 1, "P's stream stands within its window");
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.finality(&a_at), Finality::Final { upheld: false }, "the stub read final across the restart");
     // P's window closes: final through its pruned child.
@@ -505,7 +505,7 @@ fn line_head_reads_back_with_setting_fold() {
     let f = a_fold();
     let at = sealed(&mut k, f.clone(), &a);
     assert_eq!(k.line_head(&vk(&a)), (f.prefix, Some(at.clone())));
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.line_head(&vk(&a)), (f.prefix, Some(at)), "re-derived from the records");
 }

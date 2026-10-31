@@ -15,7 +15,7 @@
 
 use crate::anastome::dialogue::ReceiptsAnswer;
 use crate::chronometry::Place;
-use crate::cognition::{Kernel, RootAdoption};
+use crate::cognition::{Court, RootAdoption};
 use crate::court::admission::Admitted;
 use crate::observe::{note_replication, rep, set_replication};
 use crate::server::held::held;
@@ -59,13 +59,13 @@ fn place_before(at: Place) -> Option<Place> {
 /// era's own chain: where `p` stands at or below the root this court holds
 /// for its signer's fold, the signer's line is asked from `p` up to that
 /// root — one page, a fold cuts within one — and the ledger walks it
-/// (`Kernel::prove_folded`). `None` where `p` is no citation into a closed
+/// (`Court::prove_folded`). `None` where `p` is no citation into a closed
 /// era (no fold of its signer held, or `p` past the root): the caller reads
 /// it as it always did. `Some(false)` where the stroke, the page or the
 /// proof did not stand: the receipt waits for the next hearing, which asks
 /// again — nothing in a closed era moves, so the answer can only arrive.
 fn prove_folded(
-    kernel: &Mutex<Kernel>,
+    kernel: &Mutex<Court>,
     p: &crate::chronometry::Parent,
     budget: &mut crate::physics::Budget,
     fetch: &mut impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer>,
@@ -107,7 +107,7 @@ fn prove_folded(
 /// 78.147 — A ROOT ANSWERED FOR A CATCH-UP, adopted on its two signatures
 /// at this node's origin: whether the line now stands on it. A root no
 /// origin can verify is refused and counted, never silent.
-fn adopt(kernel: &Mutex<Kernel>, origin: Origin, proof: &crate::anastome::dialogue::RootProof) -> bool {
+fn adopt(kernel: &Mutex<Court>, origin: Origin, proof: &crate::anastome::dialogue::RootProof) -> bool {
     let Some(origin) = origin else {
         note_replication(Some(proof.signer), rep::ROOT_REFUSED, 1);
         return false;
@@ -138,7 +138,7 @@ fn adopt(kernel: &Mutex<Kernel>, origin: Origin, proof: &crate::anastome::dialog
 /// signatures, and the signer's line is paged on from it, hot — nothing
 /// below a root this court holds is asked again (`known_head` reads it).
 pub fn chase(
-    kernel: &Mutex<Kernel>,
+    kernel: &Mutex<Court>,
     origin: Origin,
     vk: [u8; 32],
     to: Place,
@@ -289,7 +289,7 @@ pub fn chase(
 /// whether the head was then admitted as a PARENT — the one admission that
 /// advances this court's height (45.2).
 pub fn hear<E>(
-    kernel: &Mutex<Kernel>,
+    kernel: &Mutex<Court>,
     origin: Origin,
     mut admit: impl FnMut() -> Result<Admitted, E>,
     mut stroke: impl FnMut() -> Option<crate::physics::Budget>,

@@ -72,8 +72,8 @@ fn take_in_conversation_derives_meaning_from_posited_residue() {
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let dir = std::env::temp_dir().join(format!("mycelium-question-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
-    let mut a = Entity::open(&court, Kernel::named("answerer"));
-    let mut b = Entity::open(&court, Kernel::named("asker"));
+    let mut a = Mind::open(&court, Voice::named("answerer"));
+    let mut b = Mind::open(&court, Voice::named("asker"));
     let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
     let quarter = conformal_of_word(&[(q, false)]);
     let screw = crate::transducer::element::conformal_of(&Word::from_letters(&[(q, false)]), &along).expect("a motion");
@@ -94,7 +94,7 @@ fn take_in_conversation_derives_meaning_from_posited_residue() {
     a.say(&said, &[]);
     // MU-CLIENT §4.4(4) — what A says leaves when A's own field comes round.
     assert!(super::common::bind_a_thought(&mut a, &[]) > 0, "A's orbit returned");
-    let derived = |b: &mut Entity| {
+    let derived = |b: &mut Mind| {
         let mut field = std::mem::take(&mut b.field);
         let read = field.think(|| (known(&screw), held_rung(&screw)));
         b.field = field;
@@ -130,7 +130,7 @@ fn compose_or_construct_meets_demand_from_dictionary_first() {
     let half = conformal_of_word(&[(q, false), (q, false)]);
     let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
     let screw = crate::transducer::element::conformal_of(&Word::from_letters(&[(q, false)]), &along).expect("a motion");
-    let mut mind = Entity::open(&court, Kernel::named("composer"));
+    let mut mind = Mind::open(&court, Voice::named("composer"));
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
         learn_by(&quarter, &[]);
@@ -166,7 +166,7 @@ fn compose_or_construct_speaks_remainder_ruled_words_compose() {
     let quarter = conformal_of_word(&[(q, false)]);
     let screw = crate::transducer::element::conformal_of(&Word::from_letters(&[(q, false)]), &twice).expect("a motion");
     let slide = crate::transducer::sentence::motion_letter_form(&along, &chart, &[]).expect("the slide is a letter");
-    let mut mind = Entity::open(&court, Kernel::named("remainder"));
+    let mut mind = Mind::open(&court, Voice::named("remainder"));
     assert!(mind.absorb_taught(&slide.to_bytes().expect("the record writes")).is_some(), "the court's slide is learned");
     let mut field = std::mem::take(&mut mind.field);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
@@ -214,7 +214,7 @@ fn compose_or_construct_speaks_conjugate_as_transported_word() {
     let q03 = LetterId::turn_90((0, 3)).expect("a 90° turn");
     let residue = conformal_of_word(&[(q03, false)]);
     let letter = crate::transducer::sentence::generator_form(&q01, &chart, &[]).expect("the turn is a letter");
-    let mut mind = Entity::open(&court, Kernel::named("conjugator"));
+    let mut mind = Mind::open(&court, Voice::named("conjugator"));
     assert!(mind.absorb_taught(&letter.to_bytes().expect("the record writes")).is_some(), "the court's letter is learned");
     let mut field = std::mem::take(&mut mind.field);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
@@ -265,7 +265,7 @@ fn compose_or_construct_speaks_ruled_composition_to_court() {
     let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
     let twice = crate::transducer::cga::translator_at(&[n(0), n(0), n(2)]);
     let slide = crate::transducer::sentence::motion_letter_form(&along, &chart, &[]).expect("the slide is a letter");
-    let mut mind = Entity::open(&court, Kernel::named("composer"));
+    let mut mind = Mind::open(&court, Voice::named("composer"));
     assert!(mind.absorb_taught(&slide.to_bytes().expect("the record writes")).is_some(), "the court's slide is learned");
     let mut field = std::mem::take(&mut mind.field);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
@@ -317,7 +317,7 @@ fn vantage_reads_word_through_minds_own_words() {
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let quarter = conformal_of_word(&[(q, false)]);
     let half = conformal_of_word(&[(q, false), (q, false)]);
-    let mut mind = Entity::open(&court, Kernel::named("observer"));
+    let mut mind = Mind::open(&court, Voice::named("observer"));
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
         assert!(vantage(&half).is_empty(), "knowing nothing, no vantage");
@@ -347,8 +347,8 @@ fn say_carries_shared_word_to_court_with_hold() {
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let dir = std::env::temp_dir().join(format!("mycelium-conversation-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
-    let mut a = Entity::open(&court, Kernel::named("speaker"));
-    let mut b = Entity::open(&court, Kernel::named("hearer"));
+    let mut a = Mind::open(&court, Voice::named("speaker"));
+    let mut b = Mind::open(&court, Voice::named("hearer"));
     let taught = word(&[(q, false)]);
     let half = conformal_of_word(&[(q, false), (q, false)]);
     for m in [&mut a, &mut b] {
@@ -380,16 +380,16 @@ fn say_carries_shared_word_to_court_with_hold() {
         std::thread::yield_now();
     }
     let act = act.expect("the agreed speech reaches the court");
-    let agreed = |m: &Entity| m.chat.as_ref().is_some_and(|c| c.agreed(said.address().as_bytes()));
+    let agreed = |m: &Mind| m.chat.as_ref().is_some_and(|c| c.agreed(said.address().as_bytes()));
     assert!(agreed(&a), "A holds what it said as agreed language");
-    assert_eq!(act.voice, Kernel::named("speaker").voice(), "spoken by the mind that said it");
+    assert_eq!(act.voice, Voice::named("speaker").id(), "spoken by the mind that said it");
     let [tape] = act.sentences.as_slice() else { panic!("one sentence") };
     let mut p = 0usize;
     let spoken = crate::transducer::element::Element::from_bytes(tape, &mut p).expect("the tape reads");
     assert_eq!(spoken.address(), said.address(), "the thing said");
     let [Some(frame)] = act.agreements.as_slice() else { panic!("carrying one agreement") };
     let Some(Chatter { speaker, said: Said::Hold { said: held, deviation, .. }, .. }) = Chatter::open(frame) else { panic!("a signed HOLD") };
-    assert_eq!(speaker, Kernel::named("hearer").voice(), "signed by the mind that agreed");
+    assert_eq!(speaker, Voice::named("hearer").id(), "signed by the mind that agreed");
     assert_eq!(held.as_slice(), said.address().as_bytes(), "naming exactly the word");
     let zero = num_rational::BigRational::from_integer(0.into());
     assert!(deviation.iter().all(|d| *d == zero), "heard whole: no strain on any lane: {deviation:?}");
@@ -418,7 +418,7 @@ fn sound_of_seats_ring_by_resonance_with_heard() {
         .add(&Mv::blade(E1 | E2, q(1, 2)));
     let slide = crate::transducer::element::translator_versor(5, 0);
     let sounded = |heard: &[&Mv], ring: &Mv| {
-        let mut mind = Entity::open(&court, Kernel::named("listener"));
+        let mut mind = Mind::open(&court, Voice::named("listener"));
         for h in heard {
             mind.remember_sound(h);
         }
@@ -428,7 +428,7 @@ fn sound_of_seats_ring_by_resonance_with_heard() {
     assert_eq!(sounded(&[&third], &half), Some(Seat::Leftover), "a larger sound it divides not: still new");
     assert!(matches!(sounded(&[&slide], &half), Some(Seat::Tilted(_))), "inside the carrier, its echo turned: familiar");
     assert_eq!(sounded(&[&half], &half), Some(Seat::Whole), "heard before: whole");
-    let mut mind = Entity::open(&court, Kernel::named("listener"));
+    let mut mind = Mind::open(&court, Voice::named("listener"));
     mind.remember_sound(&half);
     mind.remember_sound(&half);
     assert_eq!(mind.remembered.scoped().map(|(_, m)| m.len()).sum::<usize>(), 1, "a ring heard twice is held once");
@@ -465,7 +465,7 @@ fn factors_of_answers_question_by_word_factors() {
 #[test]
 fn price_hearings_prices_one_budget_rest_wait() {
     use crate::client::sdk::entity::chatter::FieldWork;
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("pricing"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("pricing"));
     let field = mind.pricing_for_test();
     let reads = crate::physics::Physics::default().stroke().remaining();
     assert!(reads > 0, "a stroke reads something");
@@ -485,7 +485,7 @@ fn price_hearings_prices_one_budget_rest_wait() {
 fn price_hearings_defers_while_task_waits() {
     use crate::client::sdk::entity::chatter::FieldWork;
     use crate::client::sdk::entity::offer::Offer;
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("task first"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("task first"));
     let field = mind.pricing_for_test();
     field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     let train = vec![(vec![vec![1u8, 0], vec![0, 0]], vec![vec![0u8, 1], vec![0, 0]])];
@@ -508,7 +508,7 @@ fn price_hearings_defers_while_task_waits() {
 #[test]
 fn lapse_unpriced_lapses_hearing_at_second_return() {
     use crate::client::sdk::entity::chatter::FieldWork;
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("lapsing hearing"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("lapsing hearing"));
     let field = mind.pricing_for_test();
     field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     mind.board.court.pulling = true;

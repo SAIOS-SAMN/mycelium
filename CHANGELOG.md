@@ -46,6 +46,14 @@ such change is named here.
   `NotThisTier`; `witnesses_carry_their_primes` is `witnesses_carry_primes`.
   Retired terms leave the source comments: "fleet" (mesh or deployment),
   "quarter turn" (90° turn), "harness" (stand-in), "PoUW" (POUW).
+- The core public names follow the vocabulary (a 0.x API change):
+  `sdk::Kernel` is `sdk::Voice` (`src/client/sdk/voice.rs`), its identity
+  read by the public `Voice::id()`, and `Session::kernel()` is
+  `Session::voice()`; `cognition::Kernel`, the court's state, is
+  `cognition::Court` (`src/server/cognition/state.rs`); `sdk::Entity` is
+  `sdk::Mind`. "Kernel" now names only a program that runs a world. The
+  unused `mycelium::voice` module (a second `Voice`, used only by its own
+  test) is removed; `sdk::Voice` is the one voice type.
 
 ### Documentation
 - One naming scheme for the specifications: every document under `docs/`

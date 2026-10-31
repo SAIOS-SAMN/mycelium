@@ -3,7 +3,7 @@
 
 use crate::client::sdk::*;
 
-impl Entity {
+impl Mind {
     /// PULL a signed work envelope from the hypha's authoritative registry —
     /// the client never arbitrates raw corpus; the server decides what is
     /// useful work. One pull is in flight at a time; the envelope lands on
@@ -28,7 +28,7 @@ impl Entity {
             return;
         }
         self.board.court.pulling = true;
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         self.ask(
             move |s| s.speak_keyed(&voice, dialogue::encode_task_request(&voice)),
             |entity, body: io::Result<Vec<u8>>| {
@@ -106,9 +106,9 @@ impl Entity {
     /// (`file_verdict`); a court not reached leaves the solve as it stood.
     pub(crate) fn submit_solve_rule(&mut self, id: &[u8; 32], outputs: &[Grid], rule: &Element) -> io::Result<()> {
         // 78.141 — a solve names its payee by the voice's signature: a
-        // kernel seated without its key sends none.
-        let Some(key) = self.hypha.kernel().signer().cloned() else {
-            return Err(io::Error::new(io::ErrorKind::PermissionDenied, "a kernel seated without its key signs no solve"));
+        // voice seated without its key sends none.
+        let Some(key) = self.hypha.voice().signer().cloned() else {
+            return Err(io::Error::new(io::ErrorKind::PermissionDenied, "a voice seated without its key signs no solve"));
         };
         // A rule whose record does not write is not sent as no rule (STD1 3c).
         let bytes = rule.to_bytes().ok_or_else(|| {
@@ -180,7 +180,7 @@ impl Entity {
             return;
         }
         self.board.court.syncing = true;
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         self.ask(
             move |s| {
                 let body = s.speak_keyed(&voice, dialogue::encode_digests_request(&voice))?;
@@ -205,7 +205,7 @@ impl Entity {
     /// own are fetched, each with this genome's have-list.
     fn fetch_discordant(&mut self, body: &[u8]) {
         use crate::transducer::sheaf;
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         // A reply that does not decode names no strata, and nothing is
         // discordant against a reading nobody took.
         let Some(remote) = dialogue::decode_digests_reply(body) else {
@@ -271,7 +271,7 @@ impl Entity {
     /// elements, and what this genome holds that the hypha lacks taught up.
     /// Answers the chart keys a fetched word stood on.
     fn absorb_fetched(&mut self, body: &[u8], charts: &[dialogue::Chart]) -> crate::network::nerve::Keyed<()> {
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         let mut brought = crate::network::nerve::Keyed::new();
         // The root of this act (the arm's sync): one stroke for every page
         // it absorbs (65.5).
@@ -423,7 +423,7 @@ impl Entity {
             return;
         }
         self.board.court.schooling = true;
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         let req = dialogue::encode_syllabus_request(&voice);
         let empty = self.epigenome.genome_len() == 0 || self.epigenome.atlas_is_empty();
         let mut budget = self.physics.stroke();
@@ -460,7 +460,7 @@ impl Entity {
     /// mind holds language, as served where it holds none — and its class
     /// records seeded.
     fn absorb_syllabus(&mut self, body: &[u8], empty: bool) {
-        let voice = self.hypha.kernel().voice();
+        let voice = self.hypha.voice().id();
         // A reply that does not decode teaches nothing.
         let Some(mut words) = dialogue::decode_syllabus_reply(body) else {
             return;

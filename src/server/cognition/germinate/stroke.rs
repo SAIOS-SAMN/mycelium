@@ -7,7 +7,7 @@
 
 use crate::cognition::*;
 
-impl Kernel {
+impl Court {
     /// THE SYNTROPIC STROKE — one bounded consolidation step, run when a lane's
     /// reserve is depleted. Probe the cursor generator for REDUNDANCY: if the rest
     /// of the basis already derives it (its substance decomposes with it excluded),

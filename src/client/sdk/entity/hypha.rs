@@ -29,7 +29,7 @@ use std::sync::{Arc, Mutex};
 type Job<S> = Box<dyn FnOnce(&mut S) + Send>;
 
 /// One exchange's field half: `true` once its answer landed and was taken.
-type Landing = Box<dyn FnMut(&mut Entity) -> bool>;
+type Landing = Box<dyn FnMut(&mut Mind) -> bool>;
 
 /// ONE CARRIER: where its asks are posted, and the answers not yet taken,
 /// each with the path of the field half that takes it (a reading).
@@ -98,7 +98,7 @@ impl View {
 
 /// THE FIELD'S END OF THE HYPHA CARRIER: the carrier over the one session
 /// this mind holds to the nerve, the wire's last readings, what wakes the
-/// resting field, and the kernel this mind speaks as.
+/// resting field, and the voice this mind speaks as.
 pub(crate) struct Hypha {
     carrier: Carrier<Session>,
     view: Arc<Mutex<View>>,
@@ -106,7 +106,7 @@ pub(crate) struct Hypha {
     /// What wakes the resting field: every carrier that lands something for
     /// it holds a copy.
     wake: Sender<()>,
-    kernel: Kernel,
+    voice: Voice,
 }
 
 impl Hypha {
@@ -127,7 +127,7 @@ impl Hypha {
     }
 
     fn open_waking(session: Session, mind: Option<Sender<()>>) -> Hypha {
-        let kernel = session.kernel().clone();
+        let voice = session.voice().clone();
         let view = Arc::new(Mutex::new(View::of(&session)));
         let (own, woken) = channel::<()>();
         let wake = match mind {
@@ -150,11 +150,11 @@ impl Hypha {
             },
             move |s: &mut Session| publish(&every, s),
         );
-        Hypha { carrier, view, woken, wake, kernel }
+        Hypha { carrier, view, woken, wake, voice }
     }
 
-    pub(crate) fn kernel(&self) -> &Kernel {
-        &self.kernel
+    pub(crate) fn voice(&self) -> &Voice {
+        &self.voice
     }
 
     /// A copy of what wakes the resting field, for another carrier that
@@ -231,7 +231,7 @@ impl Hypha {
 pub(crate) fn post<S: Send + 'static, R: Send + 'static>(
     carrier: &mut Carrier<S>,
     far: impl FnOnce(&mut S) -> R + Send + 'static,
-    then: impl FnOnce(&mut Entity, R) + 'static,
+    then: impl FnOnce(&mut Mind, R) + 'static,
 ) {
     let (tx, rx) = channel::<R>();
     let job: Job<S> = Box::new(move |s| {
@@ -262,7 +262,7 @@ pub(crate) fn post<S: Send + 'static, R: Send + 'static>(
 /// A CARRIER'S ANSWERS TAKEN, in the order they were asked: each that landed
 /// is filed; the first not landed, and all after it, wait. An answer's filing
 /// may ask again; those asks wait behind. A carrier not opened lands nothing.
-pub(crate) fn take_from<S>(entity: &mut Entity, carrier: fn(&mut Entity) -> Option<&mut Carrier<S>>) {
+pub(crate) fn take_from<S>(entity: &mut Mind, carrier: fn(&mut Mind) -> Option<&mut Carrier<S>>) {
     let Some(c) = carrier(entity) else { return };
     let mut waiting = std::mem::take(&mut c.landings);
     while let Some((name, mut landing)) = waiting.pop_front() {
@@ -277,13 +277,13 @@ pub(crate) fn take_from<S>(entity: &mut Entity, carrier: fn(&mut Entity) -> Opti
     }
 }
 
-impl Entity {
+impl Mind {
     /// ASK THE COURT: `wire` runs on the hypha's carrier against the session,
     /// and `then` takes its answer on the field at the next admission.
     pub(crate) fn ask<R: Send + 'static>(
         &mut self,
         wire: impl FnOnce(&mut Session) -> R + Send + 'static,
-        then: impl FnOnce(&mut Entity, R) + 'static,
+        then: impl FnOnce(&mut Mind, R) + 'static,
     ) {
         post(&mut self.hypha.carrier, wire, then);
     }
@@ -293,7 +293,7 @@ impl Entity {
     pub(crate) fn ask_seat<R: Send + 'static>(
         &mut self,
         wire: impl FnOnce(&mut Session) -> R + Send + 'static,
-        then: impl FnOnce(&mut Entity, R) + 'static,
+        then: impl FnOnce(&mut Mind, R) + 'static,
     ) {
         post(&mut self.seat.carrier, wire, then);
     }
@@ -304,11 +304,11 @@ impl Entity {
     }
 
     /// THE HELD MAIL READ, posted on the perceiving carrier alone
-    /// (`Entity::held`), never in front of the seat's own acts.
+    /// (`Mind::held`), never in front of the seat's own acts.
     pub(crate) fn ask_held<R: Send + 'static>(
         &mut self,
         wire: impl FnOnce(&mut Session) -> R + Send + 'static,
-        then: impl FnOnce(&mut Entity, R) + 'static,
+        then: impl FnOnce(&mut Mind, R) + 'static,
     ) {
         post(&mut self.held.carrier, wire, then);
     }

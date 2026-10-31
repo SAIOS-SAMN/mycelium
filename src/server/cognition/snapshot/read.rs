@@ -52,7 +52,7 @@ fn records<T>(v: &[u8], mut read: impl FnMut(&[u8], &mut usize) -> Option<T>) ->
     })
 }
 
-impl Kernel {
+impl Court {
     /// P7 — RESTORE a snapshot into a fresh kernel. Returns `false` on a
     /// bad magic or a trie that does not read whole, leaving the kernel
     /// empty: nothing is partly restored.
@@ -99,7 +99,7 @@ impl Kernel {
         // of the tape's own tries and not a byte offset alone.
         let at = std::cell::Cell::new(COURT_TRIE);
         let mut pos = 4usize;
-        let load = |kernel: &mut Kernel, b: &[u8], pos: &mut usize| -> Option<()> {
+        let load = |kernel: &mut Court, b: &[u8], pos: &mut usize| -> Option<()> {
             // THE ACT'S ROOT (65.5): the restore is one act, and its one
             // stroke is what a ruling re-heard on a filed stamp draws on.
             let mut budget = kernel.physics.stroke();
@@ -175,7 +175,7 @@ impl Kernel {
             // 78.147 — the fold roots with the roots' proofs; a home written before
             // 78.147 carries none.
             if let Some(v) = leaf(leaves, LEAF_ROOTS) {
-                for proof in whole(v, Kernel::take_root_proofs)? {
+                for proof in whole(v, Court::take_root_proofs)? {
                     kernel.root_proofs.insert(proof.signer, proof);
                 }
                 kernel.proofs_mark = crate::chronometry::next_mark();

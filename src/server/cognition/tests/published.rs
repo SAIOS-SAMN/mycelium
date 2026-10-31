@@ -12,15 +12,15 @@ use crate::court::identity::HyphaKey;
 const FAR: Place = Place { k: u64::MAX, i: u64::MAX };
 
 /// A court signing as the key `name` derives.
-fn court(name: &str) -> (HyphaKey, Kernel) {
+fn court(name: &str) -> (HyphaKey, Court) {
     let key = super::common::court_key(name);
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity(key.vk_bytes());
     (key, k)
 }
 
 /// `n` strokes: one act and its orbit's close each (OK1).
-fn strokes(k: &mut Kernel, n: u64) {
+fn strokes(k: &mut Court, n: u64) {
     for _ in 0..n {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
         k.orbit();
@@ -43,7 +43,7 @@ fn position(key: &HyphaKey, head: &KStepReceipt, payload: Vec<u8>) -> ReceiptSec
 }
 
 /// The fold on two signatures, its proof kept.
-fn fold(k: &mut Kernel, key: &HyphaKey) {
+fn fold(k: &mut Court, key: &HyphaKey) {
     let p = k.propose_fold().expect("a final prefix");
     let head = k.chain().head().expect("the court acted");
     let home = position(key, &head, p.root.hash.to_vec());
@@ -63,7 +63,7 @@ fn read(a: ReceiptsAnswer) -> Result<Vec<KStepReceipt>, Place> {
 }
 
 /// The kernel and its published reading answer every ask alike.
-fn alike(k: &Kernel, p: &Published, signer: &[u8; 32], asks: &[(Option<Place>, Place, bool)]) {
+fn alike(k: &Court, p: &Published, signer: &[u8; 32], asks: &[(Option<Place>, Place, bool)]) {
     for &(after, upto, replay) in asks {
         assert_eq!(
             read(p.serve_receipts(signer, after, upto, replay, 8, usize::MAX)),

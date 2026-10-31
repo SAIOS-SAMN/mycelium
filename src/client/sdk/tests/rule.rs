@@ -1,10 +1,10 @@
 // 78.142 — THE SDK RULE SEAM: every rule the seam builds is judged by the
-// REAL court (`Kernel::judge_solve`) on pairs it never saw, and the seam's
+// REAL court (`Court::judge_solve`) on pairs it never saw, and the seam's
 // own `would_judge` agrees with that verdict, solved or refused.
 
 use crate::arc::Grid;
 use crate::client::sdk::rule::{sentence, would_judge, NoRule, Step, Symmetry};
-use crate::cognition::{Kernel, SolveVerdict};
+use crate::cognition::{Court, SolveVerdict};
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::Element;
 use crate::transducer::family::NoCrystal;
@@ -39,9 +39,9 @@ fn shape(g: &Grid) -> (usize, usize) {
 
 /// The court's verdict and the seam's, which must agree.
 fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<(), NoRule>) {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let verdict = k.judge_solve(rule, withheld);
-    let court: &Kernel = &k;
+    let court: &Court = &k;
     let seam = would_judge(rule, withheld, &|a| court.resolve_form(a), court);
     (verdict, seam)
 }
@@ -265,7 +265,7 @@ fn of_refusal_reads_unread_as_unjudged() {
     let refused = crate::verdict::Refusal::of_tape(crate::verdict::REFUSE_NOT_A_SENTENCE, &crossed);
     assert!(matches!(NoRule::of_refusal(refused), NoRule::Refused(r) if r.reason == crate::verdict::REFUSE_NOT_A_SENTENCE));
     let withheld = vec![(grid(&["1100", "0000"]), grid(&["0022", "0000"]))];
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     assert!(matches!(k.judge_solve(&crossed, &withheld), SolveVerdict::Solved { .. }), "the court rules the word");
 }
 

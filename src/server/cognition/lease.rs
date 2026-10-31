@@ -19,7 +19,7 @@
 //! it. A job is under at most one open lease per provider, so a verified
 //! solve pays exactly one lease.
 
-use super::Kernel;
+use super::Court;
 use crate::anastome::dialogue::lease::{LeaseRefusal, SignedClose, SignedLease};
 use crate::chronometry::Stamp;
 use crate::transducer::address::{put_key_count, take_key_count};
@@ -65,7 +65,7 @@ pub(crate) fn hold_key(lease: &[u8; 32]) -> Vec<u8> {
     k
 }
 
-impl Kernel {
+impl Court {
     /// THE LEASE OF `provider` NAMING `job`, if one is open: by its name and
     /// terms, one keyed read of the job index. One per provider and job
     /// (`open_lease` refuses a second).

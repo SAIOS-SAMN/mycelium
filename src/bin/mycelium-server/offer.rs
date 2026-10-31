@@ -5,7 +5,7 @@
 use crate::exchange::Mesh;
 use crate::transport::tell_peer;
 use mycelium::anastome::dialogue;
-use mycelium::cognition::Kernel;
+use mycelium::cognition::Court;
 use mycelium::transducer::address::Address;
 use std::sync::Mutex;
 
@@ -20,7 +20,7 @@ use std::sync::Mutex;
 /// it occupies (42.6, 47.3's nerve distance one); a chart no peer covers has
 /// no eligible witness, and the word waits for a transition that concerns it
 /// — its extent, if nothing does, ends its orbit at its lapse.
-pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, Vec<u8>)>) {
+pub(crate) fn offer(kernel: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec<u8>)>) {
     if offers.is_empty() {
         return;
     }

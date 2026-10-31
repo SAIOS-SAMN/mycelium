@@ -1,6 +1,6 @@
 // 78.119 — ACT_UPLINK: a kernel's settlement tier sends up its fold, and this
 // court — the verifier outside the tier's closure — admits it onto its line
-// (`Kernel::admit_uplink`), answered by the receipt's stamp and chain hash, or
+// (`Court::admit_uplink`), answered by the receipt's stamp and chain hash, or
 // the refusal by name.
 
 use crate::door::Door;

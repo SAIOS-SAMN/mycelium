@@ -84,7 +84,7 @@ fn perceive_speech_opens_one_letter_on_two_courts() {
 
     let mut opened = Vec::new();
     for (court, voice, said) in [([21u8; 32], voice_a, &said_a), ([22u8; 32], voice_b, &said_b)] {
-        let mut k = Kernel::new();
+        let mut k = Court::new();
         k.set_court_voice(court);
         assert_eq!(k.adjoined(), 0, "a court that has heard nothing has opened nothing");
         assert_eq!(
@@ -173,7 +173,7 @@ fn perceive_speech_dockets_standing_rotor_at_one_address() {
     let said_b = demanding_sentence(turn_90(3), 3, standing_eleven());
     let mut opened = Vec::new();
     for (court, voice, said) in [([31u8; 32], [1u8; 32], &said_a), ([32u8; 32], [2u8; 32], &said_b)] {
-        let mut k = Kernel::new();
+        let mut k = Court::new();
         k.set_court_voice(court);
         assert_eq!(
             k.perceive_speech(voice, &[0; 32], std::slice::from_ref(said)),
@@ -208,7 +208,7 @@ fn perceive_speech_dockets_standing_rotor_at_one_address() {
 /// before anything is docketed, so no letter is opened on it.
 #[test]
 fn perceive_speech_refuses_witness_without_prime_at_vertex() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     // 2 + i has norm 5 and is coprime to 17.
     let bad = Demand::RotorPrime { plane: (0, 1), prime: 17, witness: witness(2, 1) };
     let said = demanding_sentence(turn_90(1), 1, bad);
@@ -292,7 +292,7 @@ fn blind_replay_on_composes_letter_citation_from_taught_mind() {
     let said = demanding_sentence(turn_90(1), 1, seventeen());
 
     // 1. THE COURT OPENS IT, from the witness and nothing else.
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     assert_eq!(
         k.perceive_speech(voice, &[0; 32], std::slice::from_ref(&said)),
         vec![crate::anastome::dialogue::SPEECH_STOOD]
@@ -416,7 +416,7 @@ fn serve_ruled_teaches_letter_as_generator() {
     let voice = [1u8; 32];
     let said = demanding_sentence(turn_90(1), 1, seventeen());
 
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     assert_eq!(
         k.perceive_speech(voice, &[0; 32], std::slice::from_ref(&said)),
         vec![crate::anastome::dialogue::SPEECH_STOOD]
@@ -550,14 +550,14 @@ fn letter_reading_flips_derivable_after_adjunction() {
     let Some(Err(demand)) = crate::transducer::alphabet::factor_rotor(&pi) else {
         panic!("the peel types a letter demand for the residue")
     };
-    let mut far = Kernel::new();
+    let mut far = Court::new();
     far.set_court_voice([32u8; 32]);
     assert_eq!(
         far.perceive_speech([2u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(turn_90(3), 3, demand.clone()))),
         vec![crate::anastome::dialogue::SPEECH_STOOD]
     );
     let (far_addr, reached) = docketed_letter(&far, &pi).expect("the far court docketed the letter");
-    let mut home = Kernel::new();
+    let mut home = Court::new();
     home.set_court_voice([31u8; 32]);
     assert_eq!(
         home.perceive_speech([1u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(turn_90(1), 1, demand))),
@@ -585,7 +585,7 @@ fn letter_reading_flips_derivable_after_adjunction() {
 /// found by the vertex it carries — a generator citing nothing whose rotor
 /// is `r` — never by an index into the docket (rule 15).
 fn docketed_letter(
-    k: &Kernel,
+    k: &Court,
     r: &crate::transducer::alphabet::Rotor,
 ) -> Option<(Vec<u8>, crate::transducer::element::Element)> {
     k.provisional.scoped().find_map(|(a, e)| {
@@ -602,7 +602,7 @@ fn docketed_letter(
 
 /// True where this kernel holds `addr` as a generator of its basis: the
 /// word is installed, not merely docketed.
-fn basis_holds(k: &Kernel, addr: &[u8]) -> bool {
+fn basis_holds(k: &Court, addr: &[u8]) -> bool {
     k.basis().iter().any(|w| w.address().as_bytes() == addr)
 }
 
@@ -627,7 +627,7 @@ fn witness_rederived_fresh_installs_letter_on_second_vantage() {
 
     // THE WITNESS ORGAN'S OWN READING, reached from its own voice's demand
     // on its own kernel — not a copy of the home's element.
-    let mut far = Kernel::new();
+    let mut far = Court::new();
     far.set_court_voice([32u8; 32]);
     assert_eq!(
         far.perceive_speech([2u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(turn_90(3), 3, standing_eleven()))),
@@ -637,7 +637,7 @@ fn witness_rederived_fresh_installs_letter_on_second_vantage() {
 
     // THE HOME COURT'S READING of the same rotor, from a different voice
     // and a different sentence.
-    let mut home = Kernel::new();
+    let mut home = Court::new();
     home.set_court_voice([31u8; 32]);
     assert_eq!(
         home.perceive_speech([1u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(turn_90(1), 1, standing_eleven()))),

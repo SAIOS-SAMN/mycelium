@@ -275,7 +275,7 @@ room is not.
 A listing is quoted by `economy::price` on its own measure — its ask — and
 never on the span it has stood; the pool is a bond, not a price basis. A
 requester escrows the price; a claimant's word or solve enters the docket,
-escrowed at its DISCHARGE (`Kernel::discharge_of`, 78.149); release on the
+escrowed at its DISCHARGE (`Court::discharge_of`, 78.149); release on the
 second organ's replay mints the closer's measured discharge, capped lane-wise
 by the escrow, and pays it, discharging the escrow (§3.1) — the escrow was
 the claim, the mint is the payment, and nothing above the discharge is
@@ -339,8 +339,8 @@ The share has these properties:
   to it. Total issuance remains the measured discharge, and supply still
   tracks the language (§3.2).
 
-Code: `economy::verify::verification_share`, `Kernel::pay_verification`
-and `Kernel::release_verified` (`server/cognition/court/verify.rs`). These
+Code: `economy::verify::verification_share`, `Court::pay_verification`
+and `Court::release_verified` (`server/cognition/court/verify.rs`). These
 apply at every POUW release site: the install, the glue, the solve and
 the docket ruling. Rows carry arm POWV, byte 4, and the court's reading
 counts them as "verifications".
@@ -396,7 +396,7 @@ The reply is `[1][lease 32][μ]` or `[0][refusal]`. The refusals are:
 - `Unknown`
 
 **Code:**
-- `Kernel::open_lease`, `close_lease`, `pay_lease` (called from
+- `Court::open_lease`, `close_lease`, `pay_lease` (called from
   `pay_solve`) and `lapse_leases` (`server/cognition/lease.rs`);
 - `Treasury::draw_held` (`economy/pay.rs`);
 - the lease records in the court's atlas, with a derived index by provider
@@ -612,13 +612,13 @@ They are studied off the wire and never tuned on it.
 
 **Discipline and room**
 - Slash on a failed replay, and the equivocation burn of the signer's
-  whole bond (`Kernel::burn_equivocation`).
+  whole bond (`Court::burn_equivocation`).
 - Room per lane; an unbonded voice holds one claim in flight per lane,
   enforced with `REFUSE_ROOM`.
 
 **Other flows**
 - The reading fee and the door's congestion fee, both as burns.
-- §7.1 gas: `Kernel::traverse`, whose map fee is drawn from stake as a
+- §7.1 gas: `Court::traverse`, whose map fee is drawn from stake as a
   claim and paid to the courts keeping the map.
 - §7.2 connection tax: received into the recycled pool, from which a
   closer's POUW is paid first.
@@ -663,7 +663,7 @@ currency, and it reaches a universe only as that universe's reserve:
   its ancients' house; in any other kernel, its designated reserve key.
   The universe's own currencies are issued against that reserve.
 - **Value crosses only by conversion, and conversion never mints**
-  (Concordance 5.3; MU-RECURSION 78.127, **Built**, `Kernel::convert`).
+  (Concordance 5.3; MU-RECURSION 78.127, **Built**, `Court::convert`).
   Convert-out pays μ from the reserve against value leaving the world;
   convert-in holds μ until the reserve accepts it against value arriving,
   or refunds it.

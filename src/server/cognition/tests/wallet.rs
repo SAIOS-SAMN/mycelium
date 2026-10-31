@@ -1,4 +1,4 @@
-// 78.93 B1 — EVERY PARTY HOLDS A WALLET (`Kernel::wallet`, `dialogue::wallet`):
+// 78.93 B1 — EVERY PARTY HOLDS A WALLET (`Court::wallet`, `dialogue::wallet`):
 // a flat per-lane account read off the treasury's carriers, standing at the
 // court's head; across courts, summed per lane exactly or not at all.
 
@@ -14,7 +14,7 @@ use crate::cognition::*;
 /// across two courts owns the per-lane sum of its accounts.
 #[test]
 fn wallet_reads_each_party_and_sums_to_supply() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([1; 32]);
     let anchor = (Stamp::default(), [0u8; 32]);
     let (human, entity, unseen) = ([7u8; 32], [8u8; 32], [9u8; 32]);

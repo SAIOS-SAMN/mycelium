@@ -1,4 +1,4 @@
-// 78.92 (2) — WHY AN ACT STANDS (`Kernel::why`, `dialogue::why`): the court
+// 78.92 (2) — WHY AN ACT STANDS (`Court::why`, `dialogue::why`): the court
 // answers an act on its ledger with every word it names, each with the
 // reasons read off the word it holds — the reasons the speaker read.
 
@@ -30,7 +30,7 @@ fn why_answers_act_with_speakers_reasons() {
     let s = as_element_form(&f, mag).expect("a sentence");
     let spoken = Reasons::of(&s).expect("the speaker's reasons");
     let task = crate::registry::task_id(&crate::arc::Task { train: fam.clone(), test: Vec::new() }).expect("a task");
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([1; 32]);
     k.bind_task_family(&task, fam);
     // 78.153: a stroke that holds the frame's replays.
@@ -76,7 +76,7 @@ fn why_answers_refusal_act_on_ledger() {
     let mag = sentence_measure(&f, &voice_fam, &NoCrystal, 0).expect("every body is spoken");
     let s = as_element_form(&f, mag).expect("a sentence");
     let task = crate::registry::task_id(&crate::arc::Task { train: court_fam.clone(), test: Vec::new() }).expect("a task");
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([2; 32]);
     k.bind_task_family(&task, court_fam);
     // 78.153: a stroke that holds the frame's replays.

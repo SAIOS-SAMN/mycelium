@@ -28,7 +28,7 @@ pub enum Deliberation {
 /// against the listing's chain; the settlement (closure or graded residual)
 /// runs under a brief lock. Returns the probe's reading (PR1).
 pub fn probe(
-    k: &std::sync::Mutex<crate::cognition::Kernel>,
+    k: &std::sync::Mutex<crate::cognition::Court>,
     voice: [u8; 32],
     target: &[u8],
     cites: &[crate::anastome::dialogue::CiteWire],
@@ -96,7 +96,7 @@ pub struct Quoted {
 /// listing atlas. The page width is the body budget. Returns (surface,
 /// priced items with open charts, K, cohesion).
 pub fn quote(
-    k: &std::sync::Mutex<crate::cognition::Kernel>,
+    k: &std::sync::Mutex<crate::cognition::Court>,
     voice: [u8; 32],
     charts: &[crate::transducer::stalk::Invariant],
 ) -> Option<Quoted> {
@@ -162,7 +162,7 @@ pub fn quote(
 /// run under a brief lock, the redundancy probe decomposes the candidate
 /// over a basis snapshot with no lock held, and only the retirement
 /// re-locks. Returns the cards retired.
-pub fn consolidate(k: &std::sync::Mutex<crate::cognition::Kernel>) -> usize {
+pub fn consolidate(k: &std::sync::Mutex<crate::cognition::Court>) -> usize {
     let Ok(mut g) = held!(k) else { return 0 };
     g.run(|k, _| k.consolidate_stroke());
     0
@@ -172,7 +172,7 @@ pub fn consolidate(k: &std::sync::Mutex<crate::cognition::Kernel>) -> usize {
 /// (no lock), derivability probes a basis snapshot (no lock), and only the
 /// brief install re-locks. Returns the deterministic [`Adoption`] status.
 pub fn adopt(
-    k: &std::sync::Mutex<crate::cognition::Kernel>,
+    k: &std::sync::Mutex<crate::cognition::Court>,
     ratifier: [u8; 32],
     word: &crate::transducer::element::Element,
 ) -> crate::cognition::Adoption {
@@ -251,8 +251,8 @@ mod tests {
     /// speech is Refused with the failed axis named.
     #[test]
     fn adopt_maps_every_state_deterministically() {
-        use crate::cognition::{Adoption, Kernel};
-        let k = std::sync::Mutex::new(Kernel::new());
+        use crate::cognition::{Adoption, Court};
+        let k = std::sync::Mutex::new(Court::new());
         let court = [0xAB; 32];
         let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
         let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];

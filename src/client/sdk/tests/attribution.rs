@@ -12,7 +12,7 @@ use crate::client::sdk::*;
 /// stopped where the task's comprehension stopped — never left unattributed.
 #[test]
 fn perceive_scene_keeps_task_by_citation_with_stop() {
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("attributed"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("attributed"));
     let id = [7u8; 32];
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
@@ -32,7 +32,7 @@ fn perceive_scene_keeps_task_by_citation_with_stop() {
 /// citation, untaken, `lapsed uncoupled`.
 #[test]
 fn lapse_offers_keeps_uncoupled_task_as_lapsed() {
-    let mut mind = Entity::open("127.0.0.1:1", Kernel::named("lapsing"));
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("lapsing"));
     let id = [5u8; 32];
     let train = two_hours_of_a_slide().to_vec();
     let offer = Offer::of(&train);

@@ -90,7 +90,7 @@ pub fn admit_signature<'a>(
 
 /// A SIGNATURE THAT VERIFIED, as a value (I17). `Verified` is built here
 /// and nowhere else, so a caller holding one has run 47.2 step 2 over
-/// exactly these prefix bytes under exactly this key. `Kernel::admit_receipt`
+/// exactly these prefix bytes under exactly this key. `Court::admit_receipt`
 /// takes it rather than the bare prefix: the `Equivocation` arm burns a
 /// bond (47.4), and 47.4's condition is two VERIFIED signatures — the held
 /// receipt's when it was admitted, the claimed one's now — which used to

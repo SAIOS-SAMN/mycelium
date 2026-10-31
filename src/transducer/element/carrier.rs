@@ -831,7 +831,7 @@ impl Element {
     ///
     /// It sums THIS element's own two fibre fields. A sentence carries its
     /// cycles on its form, leaves both of these empty, and is read through
-    /// `sentence::form_torsion` (`Kernel::fibre_volume_total`).
+    /// `sentence::form_torsion` (`Court::fibre_volume_total`).
     ///
     /// In the period's own carrier, `u64`, exact or refused (78.43(2)): a
     /// period reaches Landau's g(256), and the volume sums them. `None`

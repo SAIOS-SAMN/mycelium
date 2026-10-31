@@ -22,7 +22,7 @@ fn peer_orbit(vk: [u8; 32], mu: [u64; 4]) -> Vec<crate::chronometry::KStepReceip
 /// closed at the court's closing tick, where there is one.
 #[test]
 fn orbit_withholds_colliding_close_then_seals() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     assert_eq!(k.orbit(), Close::Nothing, "a cycle that acted on nothing closes nothing");
     k.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let (_, own_frame) = k.chain.open_orbit().expect("the court's orbit is open");
@@ -55,7 +55,7 @@ fn orbit_withholds_colliding_close_then_seals() {
 fn orbit_proposes_fold_only_after_transition() {
     use crate::chronometry::Ruled;
     for transition in [ActKind::Return, ActKind::RankStep, ActKind::Reconnect, ActKind::Install, ActKind::Ruling(Ruled::Upheld), ActKind::Adopted] {
-        let mut k = Kernel::new();
+        let mut k = Court::new();
         k.bind_identity([0x5c; 32]);
         for _ in 0..8 {
             k.append_step(ActKind::List, [1; 32], [2; 32]);
@@ -76,7 +76,7 @@ fn orbit_proposes_fold_only_after_transition() {
 /// sum of lanes.
 #[test]
 fn clock_names_per_lane_distance_at_close() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let (_, own_frame) = k.chain.open_orbit().expect("open");
     let peer_frame = [own_frame[0] + 3, own_frame[1], own_frame[2], own_frame[3] + 1];

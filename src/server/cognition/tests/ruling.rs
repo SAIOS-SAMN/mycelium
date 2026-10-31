@@ -8,8 +8,8 @@ use crate::cognition::*;
 use crate::court::admission::Admitted;
 
 /// A court that docketed one word on its own book, bound to `own_vk`.
-fn docketed(own_vk: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
-    let mut k = Kernel::new();
+fn docketed(own_vk: [u8; 32]) -> (Court, crate::transducer::address::Address) {
+    let mut k = Court::new();
     k.bind_identity(own_vk);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
@@ -42,7 +42,7 @@ fn admit_line_applies_peer_ruling_through_receipt() {
     let line: Vec<_> = a.chain().own().collect();
     let upheld = Ruled::Upheld.index();
 
-    let mut b = Kernel::new();
+    let mut b = Court::new();
     b.bind_identity([0xb0; 32]);
     b.provisional.insert(addr.clone(), word.clone());
     let mut filing = b.stroke();
@@ -55,7 +55,7 @@ fn admit_line_applies_peer_ruling_through_receipt() {
     assert!(own_head.parents.iter().any(|p| p.at == ruling.stamp), "with a's receipt among its parents");
     assert_eq!(b.clock(None).rulings[upheld], [1, 1, 0, 0], "admitted and applied");
 
-    let mut c = Kernel::new();
+    let mut c = Court::new();
     c.bind_identity([0xc0; 32]);
     super::common::admit_line(&mut c, &key, &line);
     assert_eq!(c.clock(None).rulings[upheld], [1, 0, 1, 0], "a stamp c does not hold: the ruling waits");
@@ -65,7 +65,7 @@ fn admit_line_applies_peer_ruling_through_receipt() {
     assert_eq!(c.clock(None).rulings[upheld], [1, 1, 0, 0], "heard when a word is filed at that stamp");
     assert!(!c.provisional.contains(addr.as_bytes()), "and applied");
 
-    let mut d = Kernel::new();
+    let mut d = Court::new();
     d.bind_identity([0xd0; 32]);
     d.basis_insert(word, [1; 32]);
     let mut filing = d.stroke();
@@ -96,7 +96,7 @@ fn admit_line_aliases_peer_stamp_to_one_word() {
     super::common::admit_line(&mut c, &key, &before_ruling);
     assert_eq!(c.word_admitted_at(&a_stamp), Some(&addr), "a's stamp is an alias of the word here");
     assert_eq!(c.admitted_at(addr.as_bytes()), Some(c_stamp), "and c's own stamp still holds it");
-    let mut restored = Kernel::new();
+    let mut restored = Court::new();
     assert!(restored.restore(&c.snapshot()), "clean restore");
     assert_eq!(restored.word_admitted_at(&a_stamp), Some(&addr), "the alias is re-derived at restore");
 
@@ -115,7 +115,7 @@ fn admit_line_aliases_peer_stamp_to_one_word() {
 #[test]
 fn admit_line_files_no_alias_on_shared_fiber() {
     use crate::chronometry::{Cite, ReceiptChain, Stamp};
-    let mut c = Kernel::new();
+    let mut c = Court::new();
     c.bind_identity([0xc2; 32]);
     let chart = crate::transducer::stalk::Invariant::counts(&[2, 1]);
     // Two words on the chart, each at its own stamp.
@@ -144,7 +144,7 @@ fn admit_line_files_no_alias_on_shared_fiber() {
 #[test]
 fn admit_line_later_admission_replaces_alias() {
     use crate::chronometry::{Cite, ReceiptChain, Stamp};
-    let mut c = Kernel::new();
+    let mut c = Court::new();
     c.bind_identity([0xc3; 32]);
     let chart = crate::transducer::stalk::Invariant::counts(&[3, 1]);
     let addr = crate::transducer::address::Address::from_bytes([0x73u8; 3]);
@@ -213,7 +213,7 @@ fn file_admitted_keeps_courts_own_stamp() {
     // filing is what a refusal withdraws.
     let (other, stranger) = docketed([0x6b; 32]);
     let word = other.provisional.get(stranger.as_bytes()).cloned().expect("provisional");
-    let mut c = Kernel::new();
+    let mut c = Court::new();
     c.bind_identity([0xc0; 32]);
     c.pending.insert(stranger.clone(), word);
     let mut filing = c.stroke();

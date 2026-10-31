@@ -132,7 +132,7 @@ impl Refused {
     }
 }
 
-impl Kernel {
+impl Court {
     /// P7 — THE MIND AS KEYED TRIES (78.27): the magic, then each trie by
     /// its name. What each trie refused is named once, with its count.
     pub fn snapshot(&self) -> Vec<u8> {

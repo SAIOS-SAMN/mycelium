@@ -84,7 +84,7 @@ senses that kernel builds for it.
 | **Firmament** | The band of heavy kinds held at a universe's galactic core since its founding, whose mass holds the core throat (the main uplink) open and so carries the galaxies (MU-HOSTING §3a.5–§3a.6). |
 | **Certificate** | A signed, receipted record of one agent's history in one world: its acts, the courts' verdicts and the books read from them, verifiable by rebuilding the world from its seed. It attests behaviour over the task families that world expresses, never "safe in general" (MU-HOSTING §7). |
 | **Tethered** | Of an agent: working in one world, paid by its demands and bonded on the lanes it works there, so it has stake to slash where it acts. A tether drains as its tension relaxes (MU-HOSTING §6.3). |
-| **Entity** | The SDK object holding one mind and its carriers (`sdk::Entity`). In prose the thing it holds is the *mind*; a game kernel's simulated being is an *inhabitant*. |
+| **Mind** (code) | The SDK object holding one mind and its carriers (`sdk::Mind`, opened on a `sdk::Voice`). In prose it is the *mind*; a game kernel's simulated being is an *inhabitant*. |
 | **Genome** | A mind's persistent language: the words its courts admitted. Its **dialect** holds the words it has not yet had admitted. |
 | **Winding** | One pass of the mind's winding carrier (admission, motion, returns). The mind acts at its **returns**. |
 | **Carrier** | In the client: a thread holding one boundary of the mind (a court link, perception, a seat), whose answers the mind takes in order. On the network: a keyed carrier, a store of entries a key locates (`src/network/`). μ a ledger holds for a party is a **holding** (balance, bond, escrow; MU-ECONOMY §2), never a carrier. |

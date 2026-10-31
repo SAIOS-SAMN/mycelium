@@ -6,7 +6,7 @@
 
 use super::*;
 
-impl Kernel {
+impl Court {
     pub fn is_home_listing(&self, addr: &[u8], closest_is_self: bool) -> bool {
         let _ = addr;
         closest_is_self
@@ -391,7 +391,7 @@ pub fn prepare_intake(
         .collect()
 }
 
-impl Kernel {
+impl Court {
 
     /// DEPOSIT evidence from the wire (an entity's verified dialect finding):
     /// local thought seeds the court's global refinement — what tasks

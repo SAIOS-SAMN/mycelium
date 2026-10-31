@@ -7,7 +7,7 @@
 
 use crate::Mesh;
 use mycelium::anastome::dialogue;
-use mycelium::cognition::{Kernel, Published};
+use mycelium::cognition::{Court, Published};
 use mycelium::network::nerve::Router;
 use std::sync::Mutex;
 
@@ -61,7 +61,7 @@ pub(crate) fn rebuild_own_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
 /// does not make. `None` too when the prefix does not fit the wire
 /// (`SignedPrefix::fits`): a position that cannot be framed is not signed.
 pub(crate) fn sign_position(
-    kernel: &Mutex<Kernel>,
+    kernel: &Mutex<Court>,
     mesh: &Mesh,
     chart: &mycelium::transducer::stalk::Invariant,
     payload: &[u8],
@@ -91,7 +91,7 @@ pub(crate) fn sign_position(
     Some(dialogue::ReceiptSection { prefix, sig, receipt: head })
 }
 
-pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, shelf: &crate::published::Shelf, mesh: &Mesh) -> Vec<u8> {
+pub(crate) fn sign_cover_digest(kernel: &Mutex<Court>, shelf: &crate::published::Shelf, mesh: &Mesh) -> Vec<u8> {
     // 78.153b — the cover, the room and the ruled root off the published
     // reading; the keeper tick (78.152 TU-1) alone is read on the kernel.
     let read = shelf.take();
@@ -179,11 +179,11 @@ pub(crate) enum NoAdmission {
 /// appended to its digest, and cite what admits.
 ///
 /// The signature (step 2) is checked HERE, over exactly `prefix.bytes()`,
-/// before the mind is asked: `Kernel::admit_receipt` is deliberately not
+/// before the mind is asked: `Court::admit_receipt` is deliberately not
 /// given a key, so no call site can satisfy admission by verifying bytes
 /// and skipping the chain.
 pub(crate) fn admit_peer_receipt(
-    kernel: &Mutex<Kernel>,
+    kernel: &Mutex<Court>,
     mesh: &Mesh,
     body: &[u8],
 ) -> Result<mycelium::court::admission::Admitted, NoAdmission> {

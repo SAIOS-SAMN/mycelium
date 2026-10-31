@@ -155,7 +155,7 @@ An anchor is refused by name (`LedgerRefusal`) if:
 From the chain of anchors the court reads, for every universe:
 - **its position:** the head anchor, its `u` and its final point;
 - **its dilation per segment:** `Δu / Δh` between consecutive anchors,
-  exact, never across a change of origin (`Kernel::dilations`);
+  exact, never across a change of origin (`Court::dilations`);
 - **its pages:** the book after any `u` (`ledger_page`);
 - **its crossings:** each crossing's reconciliation edge, with `u_entry`
   and, once the receiver's anchor applies it, `u_applied`; the residue is

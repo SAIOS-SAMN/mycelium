@@ -14,7 +14,7 @@ fn remainders_reads_congruent_fills_over_complexes() {
         let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
         Word::from_letters(&vec![(q, false); n]).rotor()
     };
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let (a, b) = (vec![1u8; 4], vec![2u8; 4]);
     let mut c = crate::transducer::cech::Complex::new();
     c.file_congruent(&a, &b, turn(1), 4);
@@ -48,7 +48,7 @@ fn hear_refill_fills_congruent_simplex_once() {
         crate::transducer::sentence::CycleType::Identity,
     )
     .expect("a class");
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let inv = crate::transducer::stalk::Invariant::counts(&[1, 2]);
     let (a, b) = (vec![1u8; 8], vec![2u8; 8]);
     let mut cx = crate::transducer::cech::Complex::new();
@@ -139,7 +139,7 @@ fn mint_torse_at_keeps_remainder_through_restart() {
         crate::transducer::sentence::CycleType::Identity,
     )
     .expect("a class");
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let inv = crate::transducer::stalk::Invariant::default();
     let words = vec![Address::from(vec![1u8; 8]), Address::from(vec![2u8; 8])];
     let simplex = b"the simplex's own key".to_vec();
@@ -159,7 +159,7 @@ fn mint_torse_at_keeps_remainder_through_restart() {
     ).expect("the identity's class")), Box::new(crate::transducer::alphabet::Rotor::identity()), 1), &words).is_none());
     assert_eq!(k.remainders().0.unpriced, 1, "unpriced by name");
     let snap = k.snapshot();
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&snap), "clean restore");
     assert_eq!(booted.remainder_at(&key), Some(&rw), "the index is rebuilt from the record");
     let word = booted.named_word(rw.as_bytes()).expect("the rewrite stands");

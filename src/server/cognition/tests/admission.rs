@@ -44,7 +44,7 @@ fn admit_receipt_cites_and_climbs_above_peer_height() {
     use crate::court::admission::Admitted;
     let key = super::common::court_key("peer");
     let peer = peer_line(key.vk_bytes(), 3);
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1)];
     let b = vec![(0, 0, 2), (0, 1, 2)];
     super::common::speak_pair(&mut k, &a, &b, [1; 32]);
@@ -78,7 +78,7 @@ fn admit_receipt_cites_and_climbs_above_peer_height() {
 /// its own author.
 #[test]
 fn bind_identity_seals_under_key_and_refuses_rebind() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     k.bind_identity([0xab; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1)];
     let b = vec![(0, 0, 2), (0, 1, 2)];
@@ -104,7 +104,7 @@ fn admit_receipt_refuses_foreign_origin() {
     use crate::court::admission::{Admitted, REFUSE_ORIGIN};
     let key = super::common::court_key("peer");
     let r = peer_line(key.vk_bytes(), 1).remove(0);
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let mut foreign = pre(&r);
     foreign.genesis = [1; 32];
     assert_eq!(k.admit_receipt(ORIGIN, super::common::verified(&foreign, &key), &r), Admitted::Refused(REFUSE_ORIGIN));
@@ -121,7 +121,7 @@ fn admit_receipt_refuses_signature_by_other_key() {
     let victim = super::common::court_key("victim");
     let forger = super::common::court_key("forger");
     let r = peer_line(victim.vk_bytes(), 1).remove(0);
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     assert_eq!(
         k.admit_receipt(ORIGIN, super::common::verified(&pre(&r), &forger), &r),
         Admitted::Refused(REFUSE_RECEIPT),
@@ -153,7 +153,7 @@ fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
     let (ra, rb) = two_roots(liar);
     assert_eq!(ra.stamp.k, rb.stamp.k, "one K");
     assert_ne!(ra.chain_hash, rb.chain_hash, "two roots");
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let bond = [3u64, 3, 3, 3];
     k.treasury_mut().genesis(liar, bond, before_genesis());
     k.treasury_mut().enroll(liar, bond, before_genesis());
@@ -181,7 +181,7 @@ fn accept_equivocation_burns_bond_once() {
     let key = super::common::court_key("liar");
     let liar = key.vk_bytes();
     let (ra, rb) = two_roots(liar);
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let bond = [3u64, 3, 3, 3];
     k.treasury_mut().genesis(liar, bond, before_genesis());
     k.treasury_mut().enroll(liar, bond, before_genesis());
@@ -213,7 +213,7 @@ fn admit_backfill_closes_gap_as_receipts_arrive() {
     let peer = peer_line(vk, 4);
     let head = peer[3].clone();
     let place = |n: usize| peer[n].stamp.place();
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let first = k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head);
     assert_eq!(first, Admitted::Gap { vk, from: None, to: place(2) }, "from the line's start to the predecessor");
     assert_eq!(k.pending_parents(), 0, "nothing is cited while the chain is gapped");

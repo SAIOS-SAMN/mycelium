@@ -19,7 +19,7 @@ pub enum RoomRefused {
     PastCarrier,
 }
 
-impl Kernel {
+impl Court {
     /// A room read's answer, its refusal counted by name.
     fn room_answer(&self, r: Result<[u64; 4], RoomRefused>) -> Option<[u64; 4]> {
         use std::sync::atomic::Ordering::Relaxed;

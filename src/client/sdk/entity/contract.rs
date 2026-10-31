@@ -12,7 +12,7 @@
 use crate::client::sdk::*;
 use crate::transducer::sentence::{At, Contracted, Contraction, RefusalKind};
 
-impl Entity {
+impl Mind {
     /// RECEIVE A REFUSAL (50.9). Seals the receipt and the address, executes
     /// the move on the spoken form, holds the contracted form as an idea
     /// with its certificate, and queues the contracted sentence for the

@@ -69,7 +69,7 @@ pub(crate) struct Board {
     /// one traversal of the mind's orbit, never by a count: `hearings` are
     /// those heard in the traversal now running, `hearings_crossed` those
     /// that waited across its last return, which lapse at the next
-    /// (`Entity::lapse_hearings`).
+    /// (`Mind::lapse_hearings`).
     pub(crate) hearings: crate::network::nerve::Keyed<super::perceive::Hearing>,
     pub(crate) hearings_crossed: crate::network::nerve::Keyed<super::perceive::Hearing>,
     pub(crate) hearing: bool,
@@ -79,7 +79,7 @@ pub(crate) struct Board {
     /// MU-CLIENT §4.13 — THE RESERVE LOCKED IN THE FIELD'S RESERVOIRS, per
     /// lane: the strain they hold, taken out of the operational reserve at
     /// the vent and given back as it re-forms or condenses
-    /// (`Entity::lock_reservoirs`).
+    /// (`Mind::lock_reservoirs`).
     pub(crate) reservoir_locked: [u64; 4],
     /// MU-CLIENT §7.1 — a feed family that couples waits on the reserve: the
     /// mind's strokes regenerate it, so the mind does not block meanwhile.
@@ -91,7 +91,7 @@ pub(crate) struct Board {
     /// field's work the conversation handed over and no stroke priced yet —
     /// `unpriced` what arrived in the traversal now running, `unpriced_crossed`
     /// what waited across its last return, which lapses unread at the next
-    /// (`Entity::lapse_unpriced`). The sensory buffer, never a ledger: a peer
+    /// (`Mind::lapse_unpriced`). The sensory buffer, never a ledger: a peer
     /// that needs agreement says its word again.
     pub(crate) unpriced: std::collections::VecDeque<super::chatter::FieldWork>,
     pub(crate) unpriced_crossed: std::collections::VecDeque<super::chatter::FieldWork>,
@@ -143,7 +143,7 @@ pub struct Wound {
     pub returns: u64,
 }
 
-impl Entity {
+impl Mind {
     /// THE CORPUS FEED at `home/feed` is a boundary of this mind.
     pub fn open_feed(&mut self, home: std::path::PathBuf) {
         let feed = super::feed::Feed::new(home);
@@ -344,7 +344,7 @@ impl Entity {
     /// return of any orbit), `at` the saying's own coordinates. Said again
     /// before that return, the latest saying stands in the place of the
     /// first — one thing said once.
-    pub(crate) fn hold_for_return(&mut self, at: &[u8], scene: &[u8], say: impl FnOnce(&mut Entity) + 'static) {
+    pub(crate) fn hold_for_return(&mut self, at: &[u8], scene: &[u8], say: impl FnOnce(&mut Mind) + 'static) {
         let held = match self.at_return.get_mut(scene) {
             Some(h) => h,
             None => {

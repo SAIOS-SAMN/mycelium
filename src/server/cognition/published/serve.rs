@@ -29,7 +29,7 @@ impl LineHolder for Published {
             }
             let page = match (&e.payload, e.filed, &self.eras_path) {
                 (Some(p), _, _) => each(p),
-                (None, Some(at), Some(path)) => match crate::cognition::kernel::read_era(path, at) {
+                (None, Some(at), Some(path)) => match crate::cognition::state::read_era(path, at) {
                     Some(p) => each(&p),
                     None => true,
                 },
@@ -65,13 +65,13 @@ impl Published {
     }
 
     /// `ACT_RECEIPTS` answered off this reading, as the court answers it
-    /// under its kernel (`Kernel::serve_receipts`): a range the reading does
+    /// under its kernel (`Court::serve_receipts`): a range the reading does
     /// not yet reach is answered short, at its height.
     pub fn serve_receipts(&self, signer: &[u8; 32], after: Option<Place>, upto: Place, replay: bool, budget: usize, bytes: usize) -> ReceiptsAnswer {
         crate::cognition::court::catchup::serve_receipts(self, signer, after, upto, replay, budget, bytes)
     }
 
-    /// `ACT_WALLET` answered off this reading, as `Kernel::wallet` answers
+    /// `ACT_WALLET` answered off this reading, as `Court::wallet` answers
     /// it, standing at this reading's head: a party it holds no account of
     /// holds zero on every lane (the reading of absence); `None` where the
     /// party's holds pass the holds' carrier.
@@ -87,46 +87,46 @@ impl Published {
     }
 
     /// 78.154 — READ-LEDGER answered off this reading, as
-    /// `Kernel::ledger_page` answers it: the entries after `u`, as many as
+    /// `Court::ledger_page` answers it: the entries after `u`, as many as
     /// fit one frame.
     pub fn ledger_page(&self, domain: &[u8; 32], after: u64) -> crate::anastome::dialogue::atlas::LedgerPage {
         crate::cognition::atlas::Atlas::page(self.ledgers.get(domain), after, crate::cognition::atlas::ledger_budget())
     }
 
-    /// 78.153b — `ACT_ROWS` answered off this reading, as `Kernel::rows_range`
+    /// 78.153b — `ACT_ROWS` answered off this reading, as `Court::rows_range`
     /// answers it: this court's own journal entries below `upto`, a page
     /// from `cursor`, with the count standing there.
     pub fn rows_range(&self, signer: &[u8; 32], from: Option<Place>, upto: Place, cursor: u64, budget: usize) -> (u64, Vec<crate::economy::Entry>) {
         crate::cognition::court::fold::rows_range_of(&self.identity, &self.journal, signer, from, upto, cursor, budget)
     }
 
-    /// The core clock at this reading's head (`Kernel::core_stamp`).
+    /// The core clock at this reading's head (`Court::core_stamp`).
     pub fn clock(&self) -> Option<&CoreStamp> {
         self.clock.as_ref()
     }
 
-    /// 78.153b — `Kernel::own_cover_charts` as published.
+    /// 78.153b — `Court::own_cover_charts` as published.
     pub fn own_cover_charts(&self) -> &[(u8, crate::transducer::stalk::Invariant)] {
         &self.own.cover
     }
 
-    /// 78.153b — `Kernel::lane_room` as published.
+    /// 78.153b — `Court::lane_room` as published.
     pub fn lane_room(&self) -> Option<[u64; 4]> {
         self.own.room
     }
 
-    /// 78.153b — `Kernel::ruled_root` as published.
+    /// 78.153b — `Court::ruled_root` as published.
     pub fn ruled_root(&self) -> [u8; 32] {
         self.own.ruled.root
     }
 
-    /// 78.153b — `Kernel::ruled_digests_for` as published: the ruled cover's
+    /// 78.153b — `Court::ruled_digests_for` as published: the ruled cover's
     /// digests to the court's own voice, none to any other asker.
     pub fn ruled_digests_for(&self, voice: &[u8; 32]) -> Option<&[crate::transducer::sheaf::StratumDigest]> {
         (self.own.voice.as_ref() == Some(voice)).then_some(self.own.ruled.digests.as_slice())
     }
 
-    /// 78.153b — `Kernel::syllabus_seed` as published: the ruled addresses,
+    /// 78.153b — `Court::syllabus_seed` as published: the ruled addresses,
     /// coarsest chart first.
     pub fn syllabus_seed(&self) -> &[Vec<u8>] {
         &self.own.ruled.seed
@@ -138,7 +138,7 @@ impl Published {
         self.own.head_receipt.as_ref()
     }
 
-    /// 78.153b — `Kernel::verify_fold` answered off this reading: the bond it
+    /// 78.153b — `Court::verify_fold` answered off this reading: the bond it
     /// asks of the witness is the published one; the re-derivation reads
     /// only what the home sent.
     pub fn verify_fold(

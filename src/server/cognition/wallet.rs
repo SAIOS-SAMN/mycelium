@@ -4,7 +4,7 @@
 use super::*;
 use crate::anastome::dialogue::wallet::Account;
 
-impl Kernel {
+impl Court {
     /// THE ACCOUNT `who` HOLDS HERE, at this court's head. `None` where its
     /// holds would pass the holds' carrier — unmeasured, never a smaller account.
     pub fn wallet(&self, who: &[u8; 32]) -> Option<Account> {

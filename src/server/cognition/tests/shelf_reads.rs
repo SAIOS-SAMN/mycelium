@@ -8,8 +8,8 @@ use crate::chronometry::{ActKind, Place};
 use crate::cognition::*;
 
 /// A court with ruled words, a voice's listings and a line of acts.
-fn court() -> Kernel {
-    let mut k = Kernel::new();
+fn court() -> Court {
+    let mut k = Court::new();
     k.bind_identity([0x7a; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
@@ -58,7 +58,7 @@ fn publish_own_reads_match_kernel() {
 #[test]
 fn verify_fold_off_shelf_matches_kernel() {
     let home = [0x5d; 32];
-    let mut h = Kernel::new();
+    let mut h = Court::new();
     h.bind_identity(home);
     for _ in 0..3 {
         h.append_step(ActKind::List, [1; 32], [2; 32]);
@@ -67,7 +67,7 @@ fn verify_fold_off_shelf_matches_kernel() {
     let p = h.propose_fold().expect("a final prefix");
     let receipts = h.chain().line_between(&home, p.after, p.root.at, usize::MAX);
     let rows = h.rows_range(&home, p.after, p.root.at, 0, usize::MAX).1;
-    let mut w = Kernel::new();
+    let mut w = Court::new();
     w.bind_identity([0x5e; 32]);
     let read = w.publish(None).expect("published");
     assert_eq!(read.verify_fold(home, &p, &receipts, &rows), w.verify_fold(home, &p, &receipts, &rows), "unbonded");

@@ -1,11 +1,10 @@
-//! mycelium v0.1.0 — the linguistics engine on crystallized forms: the
+//! mycelium — the linguistics engine on crystallized forms: the
 //! exact algebra and its transduction, the wire and the ledger, and the
 //! server, client and court roles that speak over them.
 
 // Shared: exact algebra, transduction, wire, physics, chronometry.
 pub mod core;
 pub mod transducer;
-pub mod voice;
 pub mod network;
 mod snapshot;
 pub mod physics;

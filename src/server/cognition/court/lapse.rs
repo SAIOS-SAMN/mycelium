@@ -3,7 +3,7 @@
 use crate::cognition::*;
 use crate::transducer::address::Address;
 
-impl Kernel {
+impl Court {
     /// The key a held word is filed under: the K of its last flux,
     /// big-endian so the key's order is the orbit's, then its admitting
     /// stamp — a coordinate, never a copy of the address.

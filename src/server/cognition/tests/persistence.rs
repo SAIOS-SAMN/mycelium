@@ -11,7 +11,7 @@ use crate::cognition::*;
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
 fn restore_recalls_basis_without_regermination() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)]; // a rotation (group substance)
 // The L recoloured whole: a second word, its gauge (20 as ruled, L7). A
@@ -28,7 +28,7 @@ let balance = k.treasury().balance_mu(&[2; 32]);
 let snap = k.snapshot();
 
 // A fresh hypha boots from the snapshot.
-let mut booted = Kernel::new();
+let mut booted = Court::new();
 assert!(booted.restore(&snap), "clean restore");
 assert_eq!(booted.basis_len(), 2, "both generators came back");
 assert!(
@@ -53,7 +53,7 @@ assert_eq!(booted.basis_len(), 2, "no re-germination");
 /// hash of the row.
 #[test]
 fn restore_round_trips_cocycle_class_and_stamp() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let inv = crate::transducer::stalk::Invariant::counts(&[1]);
 let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
 let w = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);
@@ -64,7 +64,7 @@ let stood = crate::chronometry::Stamp::new(3, [7; 32], crate::chronometry::Place
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v, ck.clone(), Some(stood));
 let snap = k.snapshot();
 assert!(snap.windows(8).any(|w| w == b"cocycles"), "the tape carries the cocycles trie by its name");
-let mut booted = Kernel::new();
+let mut booted = Court::new();
 assert!(booted.restore(&snap), "clean restore");
 let rows: Vec<(Vec<u8>, crate::cognition::CocycleRow)> = booted.cocycle_at.scoped().map(|(key, row)| (key, row.clone())).collect();
 let [(key, row)] = rows.as_slice() else { panic!("one row written, {} read", rows.len()) };
@@ -77,7 +77,7 @@ assert_eq!(booted.cocycle_receipt.get(key).copied(), Some(stood), "the stamp the
 /// snapshot, so the court does not slash a live provisional as empty.
 #[test]
 fn restore_keeps_docket_deflation() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
@@ -87,7 +87,7 @@ let before = k.dockets();
 assert_eq!(before.len(), 1);
 assert!(before[0].deflation.iter().any(|&x| x > 0), "deflation was measured at install");
 let snap = k.snapshot();
-let mut booted = Kernel::new();
+let mut booted = Court::new();
 assert!(booted.restore(&snap), "clean restore");
 let after = booted.dockets();
 assert_eq!(after.len(), 1, "the provisional survived");
@@ -103,13 +103,13 @@ fn restore_refuses_tape_cut_at_any_trie() {
 use crate::cognition::snapshot::{
     COCYCLES_TRIE, COMPLEXES_TRIE, COURT_TRIE, ERAS_TRIE, LEDGER_TRIE, MAGIC, PRE_TRIE_MAGIC, WORDS_TRIE,
 };
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let snap = k.snapshot();
 assert_eq!(&snap[..4], MAGIC, "one magic names the layout");
-let mut whole = Kernel::new();
+let mut whole = Court::new();
 assert!(whole.restore(&snap), "the tape as written restores");
 
 // Every trie opens with its own name; a tape ending before it is refused.
@@ -127,7 +127,7 @@ for name in tries {
     let Some(at) = snap.windows(name.len()).position(|w| w == name.as_bytes()) else {
         panic!("the tape carries the {name} trie by its name")
     };
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(!booted.restore(&snap[..at]), "a tape ending at the {name} trie is refused");
     assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
 }
@@ -135,7 +135,7 @@ for name in tries {
 // THE POSITIONAL TAPE IS REFUSED BY NAME (78.25, §10).
 let mut older = snap.clone();
 older[..4].copy_from_slice(PRE_TRIE_MAGIC);
-let mut booted = Kernel::new();
+let mut booted = Court::new();
 assert!(!booted.restore(&older), "MYC7 is refused");
 assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
 }
@@ -194,12 +194,12 @@ assert!(take_trie(&dup, &mut 0, "t", &[1]).is_none(), "a key the trie already ho
 /// neighbour looks like — the failure that used to be silent.
 #[test]
 fn restore_refuses_section_off_declared_length() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
 speak_pair(&mut k, &a, &b, [1; 32]);
 let snap = k.snapshot();
-assert!(Kernel::new().restore(&snap), "the tape as written restores");
+assert!(Court::new().restore(&snap), "the tape as written restores");
 
 // The first trie's frame: the magic, its name (`court`, a u64 length and
 // five bytes), then the byte length of its body. Byte 17 opens that length.
@@ -207,7 +207,7 @@ let declared = u64::from_le_bytes(snap[17..25].try_into().expect("the frame is t
 for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
     let mut bent = snap.clone();
     bent[17..25].copy_from_slice(&wrong.to_le_bytes());
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(
         !booted.restore(&bent),
         "a body declaring {wrong} where it holds {declared} is refused"
@@ -267,7 +267,7 @@ assert!(
 /// is refused by name and does not come back.
 #[test]
 fn restore_returns_per_act_data_at_its_stamp() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
@@ -281,7 +281,7 @@ k.dialect_chain.push((b"unstamped".to_vec(), g, None));
 let origin = crate::chronometry::Stamp::new(0, k.chain().vk(), crate::chronometry::Place::GENESIS);
 assert!(k.treasury().entries().iter().any(|e| e.at == origin && e.receipt == [0; 32]), "the boot's rows stand at the origin");
 let snap = k.snapshot();
-let mut back = Kernel::new();
+let mut back = Court::new();
 assert!(back.restore(&snap), "clean restore");
 assert_eq!(back.treasury().entries(), k.treasury().entries(), "every row back, at its stamp, in its order");
 assert!(back.treasury().audit().is_ok(), "and the ledger conserves");
@@ -297,7 +297,7 @@ assert_eq!((key.as_slice(), *at), (b"stood".as_slice(), Some(head)), "the stampe
 #[test]
 fn restore_rederives_federation_order_from_ruling_stamps() {
 use crate::anastome::dialogue::RULING_UPHELD;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 // Two words, each spoken by its own two voices.
 for (hue, voices) in [(4u8, [[1; 32], [2; 32]]), (5, [[3; 32], [4; 32]])] {
@@ -317,7 +317,7 @@ for addr in &docketed {
 }
 let order: Vec<Vec<u8>> = k.court_federation.iter().map(|(a, _)| a.as_bytes().to_vec()).collect();
 assert_eq!(order.len(), 2, "both words ruled into the federation");
-let mut back = Kernel::new();
+let mut back = Court::new();
 assert!(back.restore(&k.snapshot()), "clean restore");
 let again: Vec<Vec<u8>> = back.court_federation.iter().map(|(a, _)| a.as_bytes().to_vec()).collect();
 assert_eq!(again, order, "the order re-derived from the ruling stamps");
@@ -329,7 +329,7 @@ assert_eq!(again, order, "the order re-derived from the ruling stamps");
 /// is named and not written, and the tape does not grow by its address.
 #[test]
 fn snapshot_writes_field_only_on_its_words_row() {
-let mut k = Kernel::new();
+let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
 speak_pair(&mut k, &a, &b, [1; 32]);
@@ -349,7 +349,7 @@ let orphan = crate::transducer::address::Address::from_bytes(vec![9u8; 4096]);
 k.field_cold.insert(&orphan, ListingField { entries: vec![entry], nonflat: 1 });
 let snap = k.snapshot();
 assert_eq!(snap.len(), bare.len(), "a field on a word no row holds writes nothing");
-let mut booted = Kernel::new();
+let mut booted = Court::new();
 assert!(booted.restore(&snap), "clean restore");
 assert!(booted.field_cold.get(&orphan).is_none(), "and restores as nothing");
 let got = booted.field.get(listed.as_bytes()).expect("the listing's field survived on its row");
@@ -369,7 +369,7 @@ assert_eq!(got.nonflat, 1);
 fn snapshot_refuses_word_no_act_admitted() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
-let mut k = Kernel::new();
+let mut k = Court::new();
 let adopted = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
 let mut adopt = k.stroke();
 assert!(matches!(k.install_adopted(&adopted, [1; 32], &mut adopt), Adoption::Installed));
@@ -378,7 +378,7 @@ assert_eq!(k.chain().node(&at).map(|r| r.kind), Some(crate::chronometry::ActKind
 let bare = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
 k.basis_insert(bare.clone(), [7; 32]);
 assert_eq!(k.unstamped(), [1, 0, 0, 0, 0], "held on the basis with no act: the reading names it by row");
-let mut booted = Kernel::new();
+let mut booted = Court::new();
 assert!(booted.restore(&k.snapshot()), "clean restore");
 assert!(booted.word_at(adopted.address().as_bytes()).is_some(), "the admitted word comes back");
 assert_eq!(booted.admitted_at(adopted.address().as_bytes()), Some(at), "at the stamp that admitted it");

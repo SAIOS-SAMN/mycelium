@@ -7,14 +7,14 @@
 
 use super::*;
 
-/// STD1 — the lanes a listing's draw would stand at (`Kernel::occupied_by`).
+/// STD1 — the lanes a listing's draw would stand at (`Court::occupied_by`).
 pub(crate) struct Occupied {
     occupancy: [u64; 4],
     pressure: [u64; 4],
     drawn: Option<([u8; 32], [u64; 4])>,
 }
 
-impl Kernel {
+impl Court {
     /// The heights a listing has stood for. A listing with NO STAMP has
     /// stood for none — 45.4's "accrues nothing", the reading of absence on
     /// a keyed carrier — and that is `Some(0)`.

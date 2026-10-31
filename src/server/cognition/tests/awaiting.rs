@@ -43,7 +43,7 @@ fn sentence_with(d: Derivation, tag: u8) -> Element {
 /// having to speak it a second time.
 #[test]
 fn perceive_speech_defers_unruled_citation_until_ruled() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let generator = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let g_addr = generator.address();
 
@@ -99,7 +99,7 @@ fn perceive_speech_defers_unruled_citation_until_ruled() {
 #[test]
 fn hear_speech_adjudicates_stood_and_awaiting_apart() {
     use crate::anastome::dialogue::{self, Adjudication};
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let generator = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let g_addr = generator.address();
     let citer = sentence_with(
@@ -164,7 +164,7 @@ fn hear_speech_adjudicates_stood_and_awaiting_apart() {
 /// after the call is the reading (§3.2: the move, never the outcome).
 #[test]
 fn ruled_admit_absent_word_rehears_nothing() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     // An address this court holds no word at, and a sentence with nothing
     // to wait on, docketed under it.
     let absent = sentence_with(Derivation::spelled(turn_90(1)), 1).address();
@@ -253,7 +253,7 @@ fn rule_all_provisionals_files_word_at_vertex_chart() {
         .coordinates();
     assert!(!axes.is_empty(), "a 90° turn occupies a coordinate");
 
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     assert_eq!(
         k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&sentence)),
         vec![crate::anastome::dialogue::SPEECH_STOOD],
@@ -297,7 +297,7 @@ fn citer_of(word: &Element, tag: u8) -> Element {
 /// waited (D) is heard, stands, and is itself witnessed and ruled.
 #[test]
 fn witness_rederived_fresh_rules_pressured_word_and_citer() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let word = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let w = word.address();
     assert_eq!(
@@ -350,7 +350,7 @@ fn witness_rederived_fresh_rules_pressured_word_and_citer() {
 /// by name and recorded.
 #[test]
 fn orbit_lapses_zero_flux_word_and_releases_citer() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let word = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let w = word.address();
     assert_eq!(
@@ -386,7 +386,7 @@ fn orbit_lapses_zero_flux_word_and_releases_citer() {
 /// bucket does not grow with repetition (rule 10).
 #[test]
 fn await_citation_dockets_repeated_sentence_once() {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let g_addr = sentence_with(Derivation::spelled(turn_90(1)), 1).address();
     let citer = sentence_with(
         Derivation::compose(

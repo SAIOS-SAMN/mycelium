@@ -19,7 +19,7 @@ fn chain_word(links: &[(i64, i64, u8, u8)]) -> crate::transducer::element::Eleme
 #[test]
 fn incident_chart_reads_working_atlas() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
-let mut entity = Entity::open("127.0.0.1:1", Kernel::named("atlas"));
+let mut entity = Mind::open("127.0.0.1:1", Voice::named("atlas"));
 assert!(
     !entity.incident_chart(&crate::transducer::stalk::invariant_of(&e1)),
     "empty genome and dialect are not incident"
@@ -57,7 +57,7 @@ assert!(held >= 1, "an idea is held");
 fn cite_reads_stood_and_held_words() {
 let residual = vec![(0i64, 0i64, 1u8, 2u8)];
 let next = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
-let mut entity = Entity::open("127.0.0.1:1", Kernel::named("cite-stood"));
+let mut entity = Mind::open("127.0.0.1:1", Voice::named("cite-stood"));
 assert!(
     entity.epigenome.express(&residual, 1, 1, &mut super::common::budget()),
     "the residual stands in the dialect"
@@ -69,7 +69,7 @@ assert!(
     "the stood residual is cited with standing Stood, got {cites:?}"
 );
 
-let mut held = Entity::open("127.0.0.1:1", Kernel::named("cite-held"));
+let mut held = Mind::open("127.0.0.1:1", Voice::named("cite-held"));
 held.hold_chain(residual.clone());
 let mut b = held.stroke();
 let (self_cites, self_rem) = held.cite(&residual, &mut b);
@@ -102,7 +102,7 @@ fn cite_names_held_word_vertex_not_listing_chain() {
 use crate::transducer::sentence::Vertex;
 let scene = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];
 let listing = vec![(4i64, 4i64, 1u8, 2u8), (4, 5, 1, 2), (9, 9, 3u8, 4u8)];
-let mut entity = Entity::open("127.0.0.1:1", Kernel::named("held-word"));
+let mut entity = Mind::open("127.0.0.1:1", Voice::named("held-word"));
 entity.hold_chain(scene.clone());
 let body_chart = crate::transducer::stalk::invariant(&listing[..2]);
 let on_chart = entity.contemplation.held_at(&body_chart);
@@ -132,7 +132,7 @@ fn conclude_listing_expresses_only_when_held_word_deflates() {
 let prefix = vec![(0i64, 0i64, 1u8, 2u8)];
 let listing = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
 
-let mut bare = Entity::open("127.0.0.1:1", Kernel::named("listing-bare"));
+let mut bare = Mind::open("127.0.0.1:1", Voice::named("listing-bare"));
 let Concluded { cites, residual, .. } = bare.conclude_listing(&listing);
 assert!(cites.is_empty(), "nothing deflates an unseen listing, got {cites:?}");
 assert_eq!(residual, listing, "equal residual is the chain");
@@ -143,7 +143,7 @@ assert_eq!(
 );
 assert!(bare.ideas_len() >= 1, "it is held as thought");
 
-let mut held = Entity::open("127.0.0.1:1", Kernel::named("listing-held"));
+let mut held = Mind::open("127.0.0.1:1", Voice::named("listing-held"));
 held.hold_chain(prefix);
 let Concluded { cites, residual, .. } = held.conclude_listing(&listing);
 assert!(
@@ -176,7 +176,7 @@ let family = vec![
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("rule");
 let (mag, rems) = form_deflation(&rule.form, &family, &NoCrystal);
-let mut entity = Entity::open("127.0.0.1:1", Kernel::named("withhold"));
+let mut entity = Mind::open("127.0.0.1:1", Voice::named("withhold"));
 let mut b = entity.stroke();
 entity.withhold_form(rule.form.clone(), &family, &rems, mag, &mut b);
 assert!(entity.dialect_len() >= 1, "the withheld form stands, dialect {}", entity.dialect_len());

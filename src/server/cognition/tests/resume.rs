@@ -27,8 +27,8 @@ fn fixture() -> (Element, Vec<crate::transducer::family::TrainPair>, Vec<crate::
 }
 
 /// A court holding `word` on its docket, bound to `family`.
-fn docketed(word: &Element, family: Vec<crate::transducer::family::TrainPair>) -> Kernel {
-    let mut k = Kernel::new();
+fn docketed(word: &Element, family: Vec<crate::transducer::family::TrainPair>) -> Court {
+    let mut k = Court::new();
     let task = [7u8; 32];
     k.bind_task_family(task, family);
     k.docket_connection(word, [1; 32]);
@@ -102,7 +102,7 @@ fn judge_solve_on_stroke_resumes_unread_solve() {
     // The act's stroke is the host's; asked again and again, the solve
     // resumes and is judged — never refused for a spent stroke — and each
     // `Unread` kept the cursor the next asking resumed.
-    let solve = |k: &mut Kernel| -> ([u64; 4], u64) {
+    let solve = |k: &mut Court| -> ([u64; 4], u64) {
         let mut asked = 0u64;
         loop {
             asked += 1;
@@ -114,9 +114,9 @@ fn judge_solve_on_stroke_resumes_unread_solve() {
             }
         }
     };
-    let mut first = Kernel::new();
+    let mut first = Court::new();
     let (pay, asked) = solve(&mut first);
-    let (again, asked_again) = solve(&mut Kernel::new());
+    let (again, asked_again) = solve(&mut Court::new());
     assert!(pay.iter().any(|&m| m > 0), "the rule discharges its pair: {pay:?}");
     assert_eq!((pay, asked), (again, asked_again), "one verdict, one price, one number of strokes");
     // 78.153c — EVERY UNREAD ASKING IS COUNTED, under "unread": the askings

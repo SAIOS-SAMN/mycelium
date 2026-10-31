@@ -25,8 +25,8 @@ fn a_rule() -> crate::transducer::element::Element {
 
 /// A court holding `fund` on the payer's balance, and a lease of `mu` the
 /// payer signs for `provider` over `jobs` for `window` heights.
-fn court_and_lease(fund: [u64; 4], mu: [u64; 4], provider: [u8; 32], jobs: Vec<[u8; 32]>, window: u64) -> (Kernel, ed25519_dalek::SigningKey, LeaseAct) {
-    let mut k = Kernel::new();
+fn court_and_lease(fund: [u64; 4], mu: [u64; 4], provider: [u8; 32], jobs: Vec<[u8; 32]>, window: u64) -> (Court, ed25519_dalek::SigningKey, LeaseAct) {
+    let mut k = Court::new();
     let payer = key(1);
     let who = payer.verifying_key().to_bytes();
     k.fund(who, fund);

@@ -11,7 +11,7 @@ use crate::persist::persist_if_due;
 use crate::syllabus::{syllabus_admit, Syllabus};
 use crate::transport::{note_rtt_ok, note_rtt_timeout, tell_peer};
 use mycelium::anastome::dialogue;
-use mycelium::cognition::Kernel;
+use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::nerve::{Cover, Keyed, Router};
 use std::path::PathBuf;
@@ -253,7 +253,7 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
 /// thread, which is what the boot order used to do with eleven separate
 /// clones at the call site.
 pub(crate) struct Exchange {
-    pub kernel: Arc<Mutex<Kernel>>,
+    pub kernel: Arc<Mutex<Court>>,
     /// 78.151 — the shelf the court stroke publishes the door's reading to.
     pub published: crate::published::Shelf,
     pub mesh: Mesh,

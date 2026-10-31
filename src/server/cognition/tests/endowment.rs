@@ -5,7 +5,7 @@ use crate::anastome::dialogue::domain::{decode_domain_request, DomainGenesis, Do
 use crate::anastome::dialogue::endowment::{
     decode_endowment_reading, decode_grant_reply, encode_endowment_read, encode_endowment_reading, encode_grant_reply, encode_manifest, GrantRefusal, Granted, Manifest, SignedManifest,
 };
-use crate::server::cognition::Kernel;
+use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 use num_bigint::BigUint;
 
@@ -21,8 +21,8 @@ const DOMAIN: u8 = 7;
 const RESERVE: u8 = 27;
 
 /// A domain founded with its reserve designated; originated where `origin`.
-fn universe(origin: bool) -> Kernel {
-    let mut k = Kernel::new();
+fn universe(origin: bool) -> Court {
+    let mut k = Court::new();
     let mut tiers = vec![vk(&key(RESERVE)), vk(&key(47))];
     tiers.sort_unstable();
     let g = DomainGenesis { domain: vk(&key(DOMAIN)), tiers };
@@ -132,7 +132,7 @@ fn endowment_reading_survives_restart() {
     assert!(matches!(k.manifest(&signed(manifest(1), RESERVE)), Granted::Sealed { .. }));
     let before = k.endowment_reading(&reserve_domain());
     let snap = k.snapshot();
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&snap), "clean restore");
     let after = booted.endowment_reading(&reserve_domain());
     assert_eq!(after.as_ref().map(|r| (&r.founding, &r.grants, &r.nuclei)), before.as_ref().map(|r| (&r.founding, &r.grants, &r.nuclei)));
@@ -158,7 +158,7 @@ fn growth_size_sums_closures_in_universe() {
     assert_eq!(k.growth_size(&domain), Ok([3, 0, 2, 1]), "a key no domain names grows nothing here");
     let _ = k.pay_solve(b"task-c", vk(&key(RESERVE)), &rule, [1, 1, 0, 0], true);
     assert_eq!(k.growth_size(&domain), Ok([4, 1, 2, 1]), "a second closure adds, exact per lane");
-    let mut booted = Kernel::new();
+    let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "clean restore");
     assert_eq!(booted.growth_size(&domain), Ok([4, 1, 2, 1]), "the size survives a restart");
     // A grant sealed takes the closures it answered.

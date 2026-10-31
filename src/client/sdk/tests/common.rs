@@ -86,7 +86,7 @@ pub fn two_hours_of_a_slide() -> [(crate::arc::Grid, crate::arc::Grid); 2] {
 /// winding reads its returns (`act_on_returns`) and acts — what was held for
 /// the scene's return, and for the mind's own, leaves. Answers how many
 /// returned.
-pub fn bind_a_thought(mind: &mut crate::client::sdk::Entity, scene: &[u8]) -> u64 {
+pub fn bind_a_thought(mind: &mut crate::client::sdk::Mind, scene: &[u8]) -> u64 {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let mut field = std::mem::take(&mut mind.field);
     let returned = field.think(|| {

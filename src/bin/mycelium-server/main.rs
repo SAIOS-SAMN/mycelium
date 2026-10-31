@@ -37,7 +37,7 @@ use crate::genesis::Genesis;
 use crate::persist::{persist, persist_if_due};
 use crate::syllabus::{syllabus_admit, Syllabus};
 use crate::transport::{answer, arm_deadline, note_rtt_ok, note_rtt_timeout, read_frame, tell_peer};
-use mycelium::cognition::{outcome_code, Kernel, Outcome};
+use mycelium::cognition::{outcome_code, Court, Outcome};
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh::{self};
 use mycelium::network::nerve::{Cover, Keyed, Router};
@@ -177,7 +177,7 @@ fn check_home(home: &Path) -> ! {
         Ok(b) => {
             // The line and the eras are held first, as the boot holds them;
             // nothing here writes to the home.
-            let mut scratch = Kernel::new();
+            let mut scratch = Court::new();
             let bound = scratch.bind_line(home.join("line")).and_then(|()| scratch.bind_eras(home.join("eras")));
             if let Err(why) = &bound {
                 println!("  line or eras: {why}");
@@ -220,7 +220,7 @@ fn check_home(home: &Path) -> ! {
                         // witness page holds: where the cut can land.
                         let chain_vk = scratch.chain().vk();
                         let after = scratch.chain().root().map(|r| r.at);
-                        if let (Some(top), Some((at_most, bytes))) = (scratch.chain().head_place(), Kernel::receipts_frame()) {
+                        if let (Some(top), Some((at_most, bytes))) = (scratch.chain().head_place(), Court::receipts_frame()) {
                             let page = scratch.receipts_page(&chain_vk, after, top, at_most, bytes);
                             println!("  fold: the witness page holds {} receipts ({at_most} at most, {bytes} bytes)", page.len());
                             for r in scratch.chain().line_between(&chain_vk, after, top, 6) {
@@ -237,7 +237,7 @@ fn check_home(home: &Path) -> ! {
                 // so the next persist is not what was just read.
                 let (again, line) = (scratch.snapshot(), scratch.line_image());
                 drop(scratch);
-                let mut back = Kernel::new();
+                let mut back = Court::new();
                 let held = line.as_deref().map_or(Ok(()), |l| back.hold_line(l));
                 if held.is_ok() && back.restore(&again) {
                     println!("  ledger: as this build writes it, {} bytes beside a line of {}, restores", again.len(), line.map_or(0, |l| l.len()));
@@ -432,7 +432,7 @@ fn main() {
     // measures its cover and its own key is what stakes (rule 8). The
     // fixture kernel funded `[0x11; 32]`, and every live ledger carried a
     // stake for a key the mesh record never named.
-    let kernel = Arc::new(Mutex::new(Kernel::boot()));
+    let kernel = Arc::new(Mutex::new(Court::boot()));
     // C6. `genesis` was written as [0u8; 32] and only ever printed, so the
     // boot line read `genesis 0000… epoch 2` on every node and said nothing.
     // 45.5: H_genesis is the CHAIN HASH OF THE MESH'S FIRST RECEIPT, written

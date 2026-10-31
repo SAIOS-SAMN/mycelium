@@ -1,7 +1,7 @@
 // 78.143 — THE RULE LANGUAGE GROWS: real ARC-AGI-2 TRAINING tasks whose
 // rules need a selection, a region, a creation, a count or a comparison,
 // each stated as Steps, minted by `sentence` over the task's train pairs,
-// and SOLVED by the real `Kernel::judge_solve` on the task's own test pair,
+// and SOLVED by the real `Court::judge_solve` on the task's own test pair,
 // which the rule never saw — `would_judge` agreeing. Refusals by name: an
 // unnamed tie and a predicate on a coordinate that is not exact, at the seam
 // and at the court.
@@ -10,7 +10,7 @@ use crate::arc::Grid;
 use crate::client::sdk::rule::{
     sentence, would_judge, Coord, Create, Extent, NoRule, Order, Paint, Pred, Region, Step, Stop, Tie, Unstated,
 };
-use crate::cognition::{Kernel, SolveVerdict};
+use crate::cognition::{Court, SolveVerdict};
 use crate::transducer::element::Element;
 use crate::transducer::family::NoCrystal;
 
@@ -35,9 +35,9 @@ fn task(id: &str) -> (Pairs, Pairs) {
 }
 
 fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<(), NoRule>) {
-    let mut k = Kernel::new();
+    let mut k = Court::new();
     let verdict = k.judge_solve(rule, withheld);
-    let court: &Kernel = &k;
+    let court: &Court = &k;
     let seam = would_judge(rule, withheld, &|a| court.resolve_form(a), court);
     (verdict, seam)
 }
