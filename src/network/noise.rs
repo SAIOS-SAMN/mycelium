@@ -33,8 +33,10 @@ use crate::chronometry::tuniversal::TPoint;
 /// The one handshake pattern and cipher suite of the channel.
 pub const PATTERN: &str = "Noise_XX_25519_ChaChaPoly_BLAKE2s";
 /// Noise's ceiling on one message, tag included.
+/// EXTERNAL: Noise Protocol Framework rev. 34 §7, message at most 65535 bytes.
 pub const MESSAGE_MAX: usize = 65535;
 /// The AEAD tag every transport message carries.
+/// EXTERNAL: Noise Protocol Framework rev. 34 §7, ChaChaPoly tag 16 bytes.
 pub const TAG_LEN: usize = 16;
 /// The plaintext one transport message carries at most.
 pub const CHUNK: usize = MESSAGE_MAX - TAG_LEN;
@@ -43,6 +45,7 @@ pub const KEY_FILE: &str = "noise.key";
 /// The host's pins: one `peer<TAB>hex(static key)` line per peer address.
 pub const PIN_FILE: &str = "noise.pins";
 /// A Curve25519 key's length.
+/// EXTERNAL: Curve25519/X25519 key, 32 bytes (RFC 7748).
 pub const KEY_LEN: usize = 32;
 
 /// Why the channel refused, by name.

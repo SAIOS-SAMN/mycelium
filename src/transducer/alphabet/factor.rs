@@ -19,6 +19,7 @@ use num_integer::Integer;
 use num_traits::{One, Zero};
 
 /// The order of 50.4: `(Π_01 × Π_23) → (Π_02 × Π_13) → (Π_03 × Π_12)`.
+/// FORMAT: the chart's axis indices `e0..e3`, the complementary plane pairs.
 pub const BLOCK_ORDER: [((u8, u8), (u8, u8)); 3] = [((0, 1), (2, 3)), ((0, 2), (1, 3)), ((0, 3), (1, 2))];
 
 /// Spell `r` in the letters by the ordered peel. `None` when `r` is not a

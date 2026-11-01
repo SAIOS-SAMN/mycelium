@@ -15,8 +15,7 @@ use crate::anastome::dialogue::universe::{Geometry, Metric, Stated, Statement};
 use crate::transducer::cga::Mv;
 use crate::anastome::dialogue::wallet::{StakeAct, StakeRefusal};
 use crate::chronometry::tuniversal::{Origin, TPoint};
-use crate::chronometry::ActKind;
-use crate::physics::laws::CHALLENGE_WINDOW;
+use super::common::close_through;
 use crate::server::cognition::Court;
 use ed25519_dalek::{Signer, SigningKey};
 
@@ -77,10 +76,10 @@ fn fund(k: &mut Court, party: [u8; 32], mu: [u64; 4]) {
     k.treasury.genesis(party, mu, anchor);
 }
 
-fn pass(k: &mut Court, h: u64) {
-    while k.chain.head_height() < h {
-        k.append_step(ActKind::List, [1; 32], [2; 32]);
-    }
+/// Every window the court opened up to its head, closed.
+fn pass(k: &mut Court) {
+    let head = k.chain.head_height();
+    close_through(k, head).expect("the windows close");
 }
 
 /// Thirty-two bytes naming `n` exactly: its little-endian bytes, then zeros.
@@ -187,7 +186,8 @@ fn traverse_pays_exact_gas_to_map_keeper() {
     assert_eq!(k.treasury.balance_mu(&court), court_before, "held, not yet paid");
     let edge = k.crossing_edge(&crossing).expect("the edge on the map");
     assert_eq!((edge.u_a, edge.u_entry, edge.u_applied, edge.residual()), (100, 7, None, None), "pending, never a disagreement");
-    pass(&mut k, h + CHALLENGE_WINDOW);
+    assert!(h <= k.chain.head_height());
+    pass(&mut k);
     k.settle_windows();
     let paid = gained(&k, &court, &court_before);
     assert_eq!(paid, exact, "paid WHOLE to the court keeping the map");
@@ -385,7 +385,8 @@ fn stake_unstakes_only_after_claims_settle() {
     let units = read.len() as u64;
     assert_eq!(k.claims_on(&verifying(&payer)), [0, 0, 2, 1 + units], "one unit of information per receipt read");
     assert_eq!(k.retrieve(verifying(&payer), &fp(13), Some(fp(12)), [2; 32]), Err(crate::server::cognition::crossing::Unretrieved::NotFinal));
-    pass(&mut k, h + CHALLENGE_WINDOW + 1);
+    assert!(h <= k.chain.head_height());
+    pass(&mut k);
     k.settle_windows();
     assert_eq!(k.claims_on(&verifying(&payer)), [0; 4], "settled");
     let left = k.treasury.stake_of(&verifying(&payer)).expect("staked");
@@ -510,7 +511,8 @@ fn traverse_local_throat_pays_and_applies() {
     assert_eq!(k.claims_on(&verifying(&payer)), exact);
     let edge = k.crossing_edge(&crossing).expect("the edge");
     assert_eq!((edge.from, edge.to, edge.u_entry, edge.residual()), (domain(4), domain(4), 100, None), "pending, into its own universe");
-    pass(&mut k, h + CHALLENGE_WINDOW);
+    assert!(h <= k.chain.head_height());
+    pass(&mut k);
     k.settle_windows();
     let paid = gained(&k, &court, &court_before);
     assert_eq!(paid, exact, "paid whole to the court keeping the map");

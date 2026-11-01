@@ -6,9 +6,10 @@
 // decided.
 
 use mycelium::client::sdk::Epigenome;
-use mycelium::transducer::family::confluence::{read_pair, Closes};
+use mycelium::transducer::family::confluence::{read_pair, Closes, Reproduces};
 use mycelium::transducer::family::{extract_rule_with, form_deflation};
 
+/// REGISTERED: STROKE
 const STROKE: usize = 1 << 20;
 
 pub(crate) fn report(dir: &str, names: &[String]) {
@@ -16,6 +17,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     let (mut unframed, mut creation_sites, mut single_sites, mut confluence_sites) = (0u64, 0u64, 0u64, 0u64);
     let (mut creations, mut singles, mut confluences) = (0u64, 0u64, 0u64);
     let (mut mass_kept, mut centre_kept, mut ratio, mut reproduces, mut contains) = (0u64, 0u64, 0u64, 0u64, 0u64);
+    let mut unread = 0u64;
     let mut regimes: Vec<(&'static str, u64)> = Vec::new();
     let mut closes = [0u64; 5];
     let mut inputs_hist = [0u64; 4];
@@ -48,7 +50,8 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                 mass_kept += u64::from(c.mass_in == c.mass_out);
                 centre_kept += u64::from(c.centre_kept);
                 ratio += u64::from(c.ratio.is_some());
-                reproduces += u64::from(c.reproduces);
+                reproduces += u64::from(c.reproduces == Reproduces::Yes);
+                unread += u64::from(c.reproduces == Reproduces::Unread);
                 contains += u64::from(c.contains);
                 match regimes.iter_mut().find(|(n, _)| *n == c.regime) {
                     Some((_, k)) => *k += 1,
@@ -70,7 +73,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                 if shown < 3 {
                     shown += 1;
                     println!(
-                        "    confluence inputs {} mass {} → {} centre kept {} | generator {} ratio {:?} | reproduces {} contains {} | closes {:?} | unsaid {}",
+                        "    confluence inputs {} mass {} → {} centre kept {} | generator {} ratio {:?} | reproduces {:?} contains {} | closes {:?} | unsaid {}",
                         c.inputs, c.mass_in, c.mass_out, c.centre_kept, c.regime, c.ratio, c.reproduces, c.contains, c.closes, c.unsaid
                     );
                 }
@@ -82,7 +85,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         "confluence: unsaid by class: creation {creation_sites} ({creations} bodies) | single carriage {single_sites} ({singles}) | confluence {confluence_sites} ({confluences}) | pairs of another frame {unframed}"
     );
     println!(
-        "confluence bodies {confluences}: inputs 2: {} 3: {} 4–8: {} more: {} | mass kept {mass_kept} centre kept {centre_kept} (concentric ratio read {ratio}) | the inverse generator reproduces {reproduces} | inputs contained {contains}",
+        "confluence bodies {confluences}: inputs 2: {} 3: {} 4–8: {} more: {} | mass kept {mass_kept} centre kept {centre_kept} (concentric ratio read {ratio}) | the inverse generator reproduces {reproduces} (unread on the stroke {unread}) | inputs contained {contains}",
         inputs_hist[0], inputs_hist[1], inputs_hist[2], inputs_hist[3]
     );
     println!("confluence generators by regime: {regimes:?}");

@@ -231,6 +231,7 @@ pub fn frame_fixed(task: Task) -> Task {
 /// every geometric reader here is written ONCE PER AXIS over this count,
 /// never an axis by hand: a lattice of more axes changes this constant and
 /// the grid's own storage, and nothing else.
+/// EXTERNAL: the ARC-AGI task format, a grid of rows and columns.
 pub const AXES: usize = 2;
 
 /// A grid's extent on each lattice axis.

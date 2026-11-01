@@ -84,6 +84,11 @@ struct Reading {
 
 fn main() {
     let argv: Vec<String> = std::env::args().skip(1).collect();
+    // D2.6 — the boot refuses an uncalibrated host, naming the arm.
+    if let Err(why) = mycelium::physics::calibrate() {
+        eprintln!("mycelium-soak: the host is uncalibrated ({why:?}); it does not say what the calibration reads");
+        std::process::exit(2)
+    }
     // Y1 — THE WARM–COLD DELTA, which is the stage's number and is read by
     // `--delta <dir> <limit>`. It walks the slice twice in process and
     // sets its own stroke; the walk below is the level reading and is

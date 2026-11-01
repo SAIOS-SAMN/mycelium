@@ -13,12 +13,17 @@
 //! reserve, never at genesis, where nobody knows it.
 
 /// ACT_DOMAIN's sub-kind mark (as `domain.rs` writes it).
+/// FORMAT: sub-kind mark bytes for ACT_DOMAIN.
 const SUB_KIND: [u8; 2] = [0x80, 0x00];
 /// 78.140 — sub-kind 8 states a GEOMETRY (it stated a bare curvature before
 /// first use).
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a geometry statement.
 pub const KIND_GEOMETRY: u8 = 8;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a basket statement.
 pub const KIND_BASKET: u8 = 9;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a join.
 pub const KIND_JOIN: u8 = 10;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a universe read.
 pub const KIND_READ_UNIVERSE: u8 = 11;
 
 /// A UNIVERSE'S PARENT FACE: the core tube it bounced out of, by the tube's

@@ -1,6 +1,6 @@
 // 78.125 — ACT_CHALLENGE's wire: every challenge, the finality and
 // obstruction reads, and every answer read back whole; a byte left over is
-// no request. And the register's parameters, at law version 4.
+// no request. And the register's parameters, at law version 5.
 
 use crate::anastome::dialogue::challenge::*;
 use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt};
@@ -49,7 +49,8 @@ fn challenge_round_trips_with_answers() {
         assert_eq!(decode_line_head_reply(&encode_line_head_reply(&r)), Some(r));
     }
     for a in [
-        Challenged::Demanded { at: stamp, receipt: [1u8; 32], deadline: 1033 },
+        Challenged::Demanded { at: stamp, receipt: [1u8; 32], deadline: Some(1033) },
+        Challenged::Demanded { at: stamp, receipt: [1u8; 32], deadline: None },
         Challenged::Upheld { at: stamp, receipt: [1u8; 32], prefix: [2u8; 32] },
         Challenged::Falsified { at: stamp, receipt: [1u8; 32], unwound: 3 },
         Challenged::Discharged { at: stamp, receipt: [1u8; 32] },
@@ -57,7 +58,8 @@ fn challenge_round_trips_with_answers() {
         Challenged::Refused(ChallengeRefusal::Demanded),
         Challenged::Refused(ChallengeRefusal::NotOpened),
         Challenged::Streaming { head: [8u8; 32] },
-        Challenged::Reopened { at: stamp, receipt: [1u8; 32], until: 2057 },
+        Challenged::Reopened { at: stamp, receipt: [1u8; 32], closes: Some(2057) },
+        Challenged::Reopened { at: stamp, receipt: [1u8; 32], closes: None },
         Challenged::Refused(ChallengeRefusal::Withdrawn),
         Challenged::Refused(ChallengeRefusal::NotTheDemand),
     ] {
@@ -66,7 +68,8 @@ fn challenge_round_trips_with_answers() {
     for f in [
         Finality::Final { upheld: true },
         Finality::Final { upheld: false },
-        Finality::Provisional { until: 2048 },
+        Finality::Provisional { opened: 1024, closed: Some(2048) },
+        Finality::Provisional { opened: 1024, closed: None },
         Finality::Blocked,
         Finality::Falsified,
         Finality::Unwound,
@@ -94,11 +97,13 @@ fn challenge_round_trips_with_answers() {
     assert_ne!(line_head([0; 32], &[entry.clone(), entry]), head, "each entry steps the head");
 }
 
-/// The register serves its challenge window at law version 4.
+/// The register serves at law version 5 the frame budget, the one open
+/// protocol number, and no challenge window: the window is a sealed reach
+/// and return of every other keeper, not a number.
 #[test]
-fn parameters_reply_serves_challenge_window() {
+fn parameters_reply_serves_frame_budget() {
     use crate::physics::laws::codec::{decode_parameters_reply, encode_parameters_reply};
     let (version, params) = decode_parameters_reply(&encode_parameters_reply()).expect("reads whole");
-    assert_eq!(version, 4);
-    assert_eq!(params, vec![("challenge window".to_string(), crate::physics::laws::CHALLENGE_WINDOW)]);
+    assert_eq!(version, 5);
+    assert_eq!(params, vec![("frame budget".to_string(), crate::network::wire::BODY_BUDGET as u64)]);
 }

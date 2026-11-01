@@ -14,6 +14,7 @@ use crate::core::Q;
 /// The writing's version, its first byte: a reader of another layout refuses
 /// rather than reading one field as another. Version 2 carries the lanes as
 /// exact rationals (ruled 2026-11-01).
+/// FORMAT: the TUniversal standing's layout version.
 pub const TSTANDING_VERSION: u8 = 2;
 
 /// ONE KEEPER AS THIS COURT HOLDS IT: its key, whether it is this court's

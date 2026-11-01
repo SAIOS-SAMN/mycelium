@@ -6,8 +6,8 @@
 use crate::anastome::dialogue::challenge::{line_head, Challenge, Challenged, Entry};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Mouth, Offer, Side, State, Unbalanced};
 use crate::anastome::dialogue::uplink::{Discontinuous, Net, SideRefusal, TierFold, Uplinked};
-use crate::chronometry::{ActKind, Stamp};
-use crate::physics::laws::CHALLENGE_WINDOW;
+use super::common::close_through;
+use crate::chronometry::Stamp;
 use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
@@ -92,11 +92,6 @@ fn fold(tier: &SigningKey, prefix: u8, rows: Vec<Net>, handoffs: Vec<([u8; 32], 
     TierFold { tier: verifying(tier), prefix: [prefix; 32], rows, declared: Vec::new(), children: Vec::new(), handoffs }
 }
 
-fn pass(k: &mut Court, h: u64) {
-    while k.chain.head_height() < h {
-        k.append_step(ActKind::List, [1; 32], [2; 32]);
-    }
-}
 
 /// AN OFFER CONSERVES ACROSS THE BOUNDARY OR IS NO HANDOFF: G or T moving,
 /// out and in not summing to zero, a side running backward, an unordered
@@ -132,7 +127,7 @@ fn handoff_refuses_unconserved_offer() {
     let height = k.chain.head_height();
     assert_eq!(k.handoff(&through(cargo()).sign(&x())), first, "a resent offer: its original receipt");
     assert_eq!(k.chain.head_height(), height, "nothing sealed twice");
-    assert_eq!(k.handoff_read(&id), Some((State::Offered { until: k.chain.head_height() + CHALLENGE_WINDOW }, false, false)));
+    assert_eq!(k.handoff_read(&id), Some((State::Offered { opened: k.chain.head_height() }, false, false)));
 }
 
 /// ACCEPTED WHOLE, EACH SIDE CONSUMED ONCE: X's fold consumes OUT — matter
@@ -189,7 +184,7 @@ fn handoff_returns_refused_or_expired_offer_to_sender() {
     let id = offered(&mut k, cargo());
     assert!(matches!(k.handoff(&Handoff::Expire { id }.sign(&x())), Handed::Refused(HandoffRefusal::Window)), "not yet");
     let now = k.chain.head_height();
-    pass(&mut k, now + CHALLENGE_WINDOW);
+    close_through(&mut k, now).expect("the offer's window closes");
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&y())), Handed::Refused(HandoffRefusal::Window)), "too late");
     assert!(matches!(k.handoff(&Handoff::Expire { id }.sign(&y())), Handed::Refused(HandoffRefusal::NotTheTier)));
     assert!(matches!(k.handoff(&Handoff::Expire { id }.sign(&x())), Handed::Sealed { state: State::Returned, .. }));
@@ -216,7 +211,7 @@ fn challenge_unconsumes_side_and_orbit_releases_handoff() {
         entries,
     };
     assert!(matches!(k.challenge(&evidence(&lie, lie_at, lying_line).sign(&key(40))), Challenged::Falsified { .. }));
-    assert_eq!(k.handoff_read(&id), Some((State::Offered { until: lie_at.h - 1 + CHALLENGE_WINDOW }, false, false)), "OUT open again");
+    assert_eq!(k.handoff_read(&id), Some((State::Offered { opened: lie_at.h - 1 }, false, false)), "OUT open again");
     // Refiled honestly: its line runs on from the falsified fold's head.
     let honest_line = vec![Entry { rows: leaving.clone(), declared: leaving.clone() }];
     let honest = TierFold { prefix: line_head(lie.prefix, &honest_line), ..fold(&x(), 0, leaving, vec![(id, Side::Out)]) };
@@ -226,7 +221,7 @@ fn challenge_unconsumes_side_and_orbit_releases_handoff() {
     let Uplinked::Admitted { at: y_at, .. } = k.admit_uplink(&fold(&y(), 1, vec![(who(8), [5, 0, 0, 1])], vec![(id, Side::In)]).sign(&y())) else {
         panic!("consumed")
     };
-    pass(&mut k, y_at.h + CHALLENGE_WINDOW);
+    close_through(&mut k, y_at.h).expect("the folds' windows close");
     let _ = k.orbit();
     assert_eq!(k.handoff_read(&id), None, "both sides consumed by final folds: let go");
     assert!(k.handoffs.consumed_by.is_empty());

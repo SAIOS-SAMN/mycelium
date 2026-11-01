@@ -122,12 +122,11 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
         println!("{RED}the prefix passes its length field{RESET}");
         std::process::exit(2)
     };
-    // THE OPERATOR WAITS A RESERVE, NOT A PEER'S FLOOR. The console asked
-    // at `tell_peer`'s literal 5 (≈ 40 polls), so a court whose workers were
-    // busy for longer read "did not answer" — hyphae b and c at 12:04 while
-    // they verified a burst of fold prefixes. The console's patience is a
-    // full reserve of polls.
-    let Some((reply, _)) = crate::transport::tell_peer_within(&endpoint, query, mycelium::physics::reserve_max()) else {
+    // THE OPERATOR'S ONE ASK READS TO THE STREAM'S END (D2.7): nothing is
+    // measured before it, so no count bounds it — the reserve it waited was
+    // burst capacity in reads, never a round trip — and the process ends
+    // with the peer.
+    let Some((reply, _)) = crate::transport::tell_peer_within(&endpoint, query, crate::transport::Stall::Beyond) else {
         println!("{RED}{endpoint} did not answer{RESET}");
         std::process::exit(2)
     };

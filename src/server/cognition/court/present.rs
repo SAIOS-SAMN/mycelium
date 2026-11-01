@@ -44,10 +44,20 @@ impl Court {
         if d.composes {
             count(&mut self.acts.fetch, &FETCH, "presentation: composes");
         }
+        let answer = PresentationAnswer { read: true, cites: d.cites, composes: d.composes, residue: d.residue, holes: d.holes };
+        // The words share the frame with the answer behind them: its own
+        // writing's width is kept out of their bytes (D4.6).
+        let bytes = match crate::anastome::dialogue::presentation_answer_len(&answer).and_then(|n| bytes.checked_sub(n)) {
+            Some(room) => room,
+            None => {
+                count(&mut self.acts.fetch, &FETCH, "presentation: answer passes the frame");
+                0
+            }
+        };
         let mut words = Vec::new();
         let mut used = 0usize;
         let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for (form, _, _) in &d.cites {
+        for (form, _, _) in &answer.cites {
             let addr = form.as_bytes();
             if seen.contains(addr) {
                 continue;
@@ -85,7 +95,6 @@ impl Court {
             count(&mut self.acts.fetch, &FETCH, "presentation: words served");
             words.push(Taught { at, word: tape });
         }
-        let answer = PresentationAnswer { read: true, cites: d.cites, composes: d.composes, residue: d.residue, holes: d.holes };
         Presented { words, answer }
     }
 }

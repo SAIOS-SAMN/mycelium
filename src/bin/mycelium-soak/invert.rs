@@ -8,6 +8,7 @@
 use mycelium::client::sdk::Epigenome;
 use mycelium::transducer::family::{extract_rule_with, invert::invert_remainder_as, invert::Painted};
 
+/// REGISTERED: STROKE
 const STROKE: usize = 1 << 20;
 
 pub(crate) fn report(dir: &str, names: &[String], painted: Painted) {

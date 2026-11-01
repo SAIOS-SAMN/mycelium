@@ -12,11 +12,13 @@ use crate::physics::actions::Action;
 /// speaks, as the wire's chapters number them — v1.2 the task citation on
 /// ACT_TASK and ACT_SOLVE (78.146), v1.4 the seat wire's sub-origins and
 /// relay epoch (78.155 §5c, 78.156), v2.0 every μ field as four exact
-/// rational lanes (`economy::Mu`), the latest. A minor step adds and moves
-/// no layout; v2.0 moves the layout of every act and reply carrying μ, so it
-/// is a major step. No act carries it on the wire; a client states it in its
+/// rational lanes (`economy::Mu`) and the challenge window's opened and
+/// closed heights, the latest. A minor step adds and moves no layout; v2.0
+/// moves the layout of every act and reply carrying μ, so it is a major
+/// step. No act carries it on the wire; a client states it in its
 /// compatibility statement (MU-PRECURSORS §4.2), and a layout version
 /// defined per act (`EQUIVOCATION_VERSION`) stands beside it.
+/// FORMAT: wire version, major 2 minor 0.
 pub const WIRE_VERSION: u16 = 0x0200;
 
 /// Act tags — frame `body[0]`. 78.94: EVERY TAG IS AN ACTION'S COORDINATE,
@@ -61,8 +63,10 @@ pub const ACT_SOLVE: u8 = Action::Solve.byte();
 /// Word-tape tag for a translation (gauge between two sections). No new
 /// act: translations and formed thoughts travel as words. Same value as
 /// `element::TRANSLATION_TAG`.
+/// FORMAT: word-tape tag for a translation.
 pub const TRANSLATION_TAG: u8 = 0x13;
 /// Word-tape tag for an optimisation (a Rewrite). Same value as `element::REWRITE_TAG`.
+/// FORMAT: word-tape tag for a rewrite.
 pub const REWRITE_TAG: u8 = 0x14;
 /// Genome-file section holding persisted thought bubbles.
 /// Snapshot section holding Čech complexes (addresses and rotors only).
@@ -78,7 +82,9 @@ pub const ACT_SPEECH: u8 = Action::Speech.byte();
 /// `Adjudication` per sentence.
 pub const SPEECH_STOOD: u8 = 0;
 pub const SPEECH_DIALECT: u8 = 1;
+/// FORMAT: adjudication kind byte for a refusal.
 pub const SPEECH_REFUSED: u8 = 2;
+/// FORMAT: adjudication kind byte for a ratification.
 pub const SPEECH_RATIFIED: u8 = 3;
 
 /// THE JUDICIAL REPLY (50.9, 26): one per sentence sent, in the order
@@ -621,6 +627,7 @@ pub struct CoverDigest {
 /// (`Mu::put`) — code 2 = BOUNTY (first verified solve, paid), 1 = AGAIN (a
 /// repeat closure of a closed task: verified, and paid nothing), 0 = nothing
 /// (wrong or unregistered).
+/// FORMAT: reply code for a solve's first verified bounty.
 pub const SOLVE_BOUNTY: u8 = 2;
 pub const SOLVE_AGAIN: u8 = 1;
 pub const SOLVE_NOTHING: u8 = 0;
@@ -629,6 +636,7 @@ pub const SOLVE_NOTHING: u8 = 0;
 /// refusal — distinct from SOLVE_NOTHING, which since 78.149 is final ("no
 /// work"): a house re-files on this code and drops on that one (ruled
 /// 2026-10-09).
+/// FORMAT: reply code for a solve not yet judged.
 pub const SOLVE_UNREAD: u8 = 3;
 
 /// One link of a centred coboundary chain: `(row, col, before, after)`.
@@ -662,6 +670,7 @@ pub struct WorkItem {
 /// — height is the book generation; the u64 K is receipt-chain head
 /// (verified consensus depth). TUniversal is not this field.
 /// The offset of the served count in a quote reply (act, height, surface, K).
+/// FORMAT: offset of the served-count field in a quote reply.
 pub const QUOTE_COUNT_AT: usize = 1 + 8 + 32 + 8;
 
 /// docket reply: `[n u32] ( [addr 32][elen u32][element][nv u32][voices 32·nv][μ⃗][Δμ⃗ 32] )…`,
@@ -721,6 +730,7 @@ pub struct Settlement {
 
 /// Verdict rulings — the court's closed vocabulary.
 pub const RULING_UPHELD: u8 = 1;
+/// FORMAT: verdict ruling byte for a demotion.
 pub const RULING_DEMOTED: u8 = 2;
 pub const RULING_SLASHED: u8 = 0;
 // 3 and 4 are RETIRED (EC1, 2026-09-24): REBIND carried π* (a Selection term) and
@@ -730,5 +740,6 @@ pub const RULING_SLASHED: u8 = 0;
 // a round) as a cite of the base by its stamp and g as a class record. The
 // bytes are not reused.
 /// Two independent voices verified the same task: a proven root.
+/// FORMAT: verdict ruling byte for a proven root.
 pub const RULING_ROOT: u8 = 5;
 

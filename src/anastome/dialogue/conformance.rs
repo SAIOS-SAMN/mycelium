@@ -308,6 +308,7 @@ impl StatementRead {
 /// wrote its act count: a zero count, then this byte. That form wrote a zero
 /// count only as its last byte (a statement of no acts), so the two forms
 /// never read alike, and an rc.1 reader refuses a profiled statement whole.
+/// FORMAT: magic mark for the profiled statement form.
 pub const FORM_PROFILES: u8 = 2;
 
 /// Every act of one profile: `[count]` then per act `[act][0 | 1 mode][need]

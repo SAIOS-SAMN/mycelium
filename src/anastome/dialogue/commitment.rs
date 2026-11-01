@@ -41,9 +41,11 @@ const NODE: &str = "mycelium ledger node v1";
 const EVENT: &str = "mycelium ledger event v1";
 
 /// The empty subtree, and the root of no records.
+/// FORMAT: hash field width, 32 bytes.
 pub const ZERO: [u8; 32] = [0; 32];
 
 /// The depth a leaf stands at: one level per bit of its path.
+/// FORMAT: leaf path depth, 256 levels (one per hash bit).
 pub const DEPTH: usize = 256;
 
 /// ONE RECORD: the entity's coordinate path within its universe, and its

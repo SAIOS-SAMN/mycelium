@@ -8,7 +8,7 @@
 //! witness again once this court's K has moved (`Mesh::fold_unmeasured_at`).
 
 use crate::exchange::Mesh;
-use crate::transport::{note_rtt_ok, note_rtt_timeout, rtt_floor, tell_peer, tell_peer_within};
+use crate::transport::{note_rtt_ok, note_rtt_timeout, prior, rtt_floor, tell_peer_within, Stall};
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Court;
 use mycelium::observe::{self, FoldOutcome};
@@ -63,13 +63,14 @@ pub(crate) fn fold_round(court: &Mutex<Court>, mesh: &Mesh) {
             break;
         }
         // The witness is asked within an aperture of its measured round trip
-        // (`transport_deadline`), and an unmeasured one as every wire is
-        // first asked, its answer measuring it — no patience chosen here
-        // (PH1).
-        let asked = match rtt_floor(mesh, &vk) {
-            Some(r) => tell_peer_within(&dest, body.clone(), r),
-            None => tell_peer(&dest, body.clone()),
+        // (`transport_deadline`), and an unmeasured one at the mesh's
+        // measured prior (D4.1), its answer measuring it — no patience chosen
+        // here (PH1).
+        let stall = match rtt_floor(mesh, &vk) {
+            Some(r) => Stall::of(mycelium::physics::transport_deadline(r)),
+            None => Stall::of(prior(mesh)),
         };
+        let asked = tell_peer_within(&dest, body.clone(), stall);
         // Every answer is counted by outcome on the court's work reading;
         // silence, a deferral and an undecodable reply measured nothing.
         let Some((reply, dt)) = asked else {
@@ -78,7 +79,7 @@ pub(crate) fn fold_round(court: &Mutex<Court>, mesh: &Mesh) {
             unmeasured(&vk);
             continue;
         };
-        note_rtt_ok(mesh, vk, dt);
+        note_rtt_ok(mesh, vk, dt.get());
         if crate::transport::is_deferred(&reply) {
             observe::note_fold(FoldOutcome::Unmeasured);
             unmeasured(&vk);

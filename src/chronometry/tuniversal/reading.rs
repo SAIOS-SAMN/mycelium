@@ -58,6 +58,7 @@ impl TickReading {
     /// The least bytes one reading takes on the wire: its tick (`h`, four
     /// lanes at `0/1`, eleven bytes each, `K`), parent, cite count and
     /// signature.
+    /// FORMAT: least wire length of one tick reading.
     pub const MIN_WIRE: usize = 8 + 4 * 11 + 8 + 32 + 1 + 64;
 
     /// The bytes the keeper signs: the domain, the ORIGIN (a reading of one

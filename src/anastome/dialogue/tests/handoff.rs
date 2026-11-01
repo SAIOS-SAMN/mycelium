@@ -32,7 +32,7 @@ fn handoff_round_trips_with_answers() {
     assert_eq!(decode_handoff_request(&encode_handoff_read(id)), Some(HandoffRequest::Read(id)));
     let at = Stamp { h: 7, vk: [6u8; 32], k: 2, i: 1 };
     for a in [
-        Handed::Sealed { at, receipt: [1u8; 32], id, state: State::Offered { until: 1031 } },
+        Handed::Sealed { at, receipt: [1u8; 32], id, state: State::Offered { opened: 1031 } },
         Handed::Sealed { at, receipt: [1u8; 32], id, state: State::Accepted },
         Handed::Sealed { at, receipt: [1u8; 32], id, state: State::Returned },
         Handed::Refused(HandoffRefusal::Unbalanced(Unbalanced::Lane { lane: 1 })),
@@ -40,7 +40,7 @@ fn handoff_round_trips_with_answers() {
     ] {
         assert_eq!(decode_handoff_reply(&encode_handoff_reply(&a)), Some(a.clone()), "{a:?}");
     }
-    for r in [None, Some((State::Accepted, true, false)), Some((State::Offered { until: 9 }, false, false))] {
+    for r in [None, Some((State::Accepted, true, false)), Some((State::Offered { opened: 9 }, false, false))] {
         assert_eq!(decode_read_reply(&encode_read_reply(r)), Some(r));
     }
     // A fold consuming sides and netting no children; a fold with neither.

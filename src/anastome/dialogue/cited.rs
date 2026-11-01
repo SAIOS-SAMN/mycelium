@@ -18,6 +18,11 @@ use super::*;
 /// The marker a citation ask writes where a fetch writes its count.
 const CITED: u32 = u32::MAX - 1;
 
+/// THE CITATION ASK'S HEADER: `[act][voice 32][marker u32][count u16]`
+/// ahead of the addresses.
+/// FORMAT: `encode_cited_request`'s header, 1 + 32 + 4 + 2 bytes.
+pub const CITED_REQUEST_HEADER: usize = 1 + 32 + 4 + 2;
+
 /// `None` where a count or an address passes the field that carries it
 /// (STD1 3c): the ask is refused whole, never framed short.
 pub fn encode_cited_request(voice: &[u8; 32], addrs: &[Address]) -> Option<Vec<u8>> {

@@ -3,6 +3,7 @@
 mod deferral;
 mod genesis;
 mod pacing;
+mod patience;
 mod standing;
 mod strokes;
 mod tick;

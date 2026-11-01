@@ -223,8 +223,11 @@ pub enum ChallengeRequest {
     LineHead([u8; 32]),
 }
 
+/// FORMAT: act kind byte for a finality read.
 const KIND_FINALITY: u8 = 4;
+/// FORMAT: act kind byte for an obstructions read.
 const KIND_OBSTRUCTIONS: u8 = 5;
+/// FORMAT: act kind byte for a line-head read.
 const KIND_LINE_HEAD: u8 = 8;
 
 /// `[ACT_CHALLENGE][8][tier 32]`.
@@ -454,17 +457,19 @@ impl ChallengeRefusal {
 /// THE COURT'S ANSWER TO A CHALLENGE.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Challenged {
-    /// The demand sealed; the tier must publish before `deadline` (a height).
-    Demanded { at: Stamp, receipt: [u8; 32], deadline: u64 },
+    /// The demand sealed; the tier must publish before the window the demand
+    /// opened closes: `deadline`, the height it closed at, where it has
+    /// (law version 5: a sealed reach and return of every other keeper).
+    Demanded { at: Stamp, receipt: [u8; 32], deadline: Option<u64> },
     /// The replay upheld the fold; the line's head it reached — the
     /// prefix's content address, the chain of every entry — sealed.
     Upheld { at: Stamp, receipt: [u8; 32], prefix: [u8; 32] },
     /// A streamed publication taken so far, nothing sealed: its line stands
     /// at `head`; the next part continues it.
     Streaming { head: [u8; 32] },
-    /// A self-demand withdrawn, sealed: the evidence window reopened until
-    /// `until` (a height).
-    Reopened { at: Stamp, receipt: [u8; 32], until: u64 },
+    /// A self-demand withdrawn, sealed: the evidence window reopened at the
+    /// withdrawal, closing at `closes` where it has closed.
+    Reopened { at: Stamp, receipt: [u8; 32], closes: Option<u64> },
     /// The fold falsified — by replay or by default — and reversed, with
     /// `unwound` ancestors that netted it returned to provisional.
     Falsified { at: Stamp, receipt: [u8; 32], unwound: u32 },
@@ -479,8 +484,10 @@ pub enum Finality {
     /// Its window passed with nothing open, and every fold it nets is final:
     /// `upheld` where its prefix was replayed and upheld, else unchallenged.
     Final { upheld: bool },
-    /// Its window, or a demand's deadline, runs to this height.
-    Provisional { until: u64 },
+    /// Its window, or a demand's, opened at `opened` and is not yet passed:
+    /// `closed` the height it closes at where its close is sealed (law
+    /// version 5) or fixed (a window opened under version 4).
+    Provisional { opened: u64, closed: Option<u64> },
     /// Its time passed, but an obstruction, a fold it nets, or an unclaimed
     /// default keeps it open.
     Blocked,
@@ -495,6 +502,31 @@ pub enum Finality {
     PreLine,
 }
 
+/// `[0]` or `[1][h u64]`: a height where one is read.
+fn put_height(out: &mut Vec<u8>, h: Option<u64>) {
+    match h {
+        None => out.push(0),
+        Some(h) => {
+            out.push(1);
+            out.extend_from_slice(&h.to_le_bytes());
+        }
+    }
+}
+
+fn take_height(b: &[u8], p: &mut usize) -> Option<Option<u64>> {
+    let flag = *b.get(*p)?;
+    *p += 1;
+    match flag {
+        0 => Some(None),
+        1 => {
+            let h = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            *p += 8;
+            Some(Some(h))
+        }
+        _ => None,
+    }
+}
+
 pub fn encode_challenge_reply(c: &Challenged) -> Vec<u8> {
     let mut out = Vec::new();
     let sealed = |out: &mut Vec<u8>, tag: u8, at: &Stamp, receipt: &[u8; 32]| {
@@ -505,7 +537,7 @@ pub fn encode_challenge_reply(c: &Challenged) -> Vec<u8> {
     match c {
         Challenged::Demanded { at, receipt, deadline } => {
             sealed(&mut out, 0, at, receipt);
-            out.extend_from_slice(&deadline.to_le_bytes());
+            put_height(&mut out, *deadline);
         }
         Challenged::Upheld { at, receipt, prefix } => {
             sealed(&mut out, 1, at, receipt);
@@ -521,9 +553,9 @@ pub fn encode_challenge_reply(c: &Challenged) -> Vec<u8> {
             out.push(5);
             out.extend_from_slice(head);
         }
-        Challenged::Reopened { at, receipt, until } => {
+        Challenged::Reopened { at, receipt, closes } => {
             sealed(&mut out, 6, at, receipt);
-            out.extend_from_slice(&until.to_le_bytes());
+            put_height(&mut out, *closes);
         }
     }
     out
@@ -546,11 +578,7 @@ pub fn decode_challenge_reply(b: &[u8]) -> Option<Challenged> {
     let receipt: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
     p += 32;
     let c = match *tag {
-        0 => {
-            let deadline = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
-            p += 8;
-            Challenged::Demanded { at, receipt, deadline }
-        }
+        0 => Challenged::Demanded { at, receipt, deadline: take_height(b, &mut p)? },
         1 => {
             let prefix: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
             p += 32;
@@ -562,11 +590,7 @@ pub fn decode_challenge_reply(b: &[u8]) -> Option<Challenged> {
             Challenged::Falsified { at, receipt, unwound }
         }
         3 => Challenged::Discharged { at, receipt },
-        6 => {
-            let until = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
-            p += 8;
-            Challenged::Reopened { at, receipt, until }
-        }
+        6 => Challenged::Reopened { at, receipt, closes: take_height(b, &mut p)? },
         _ => return None,
     };
     (p == b.len()).then_some(c)
@@ -605,9 +629,10 @@ pub fn decode_finality_reading(b: &[u8]) -> Option<FinalityReading> {
 pub fn encode_finality_reply(f: &Finality, bonded: bool) -> Vec<u8> {
     let mut out = match f {
         Finality::Final { upheld } => vec![0, u8::from(*upheld)],
-        Finality::Provisional { until } => {
+        Finality::Provisional { opened, closed } => {
             let mut out = vec![1];
-            out.extend_from_slice(&until.to_le_bytes());
+            out.extend_from_slice(&opened.to_le_bytes());
+            put_height(&mut out, *closed);
             out
         }
         Finality::Blocked => vec![2],
@@ -629,7 +654,15 @@ pub fn decode_finality_reply(b: &[u8]) -> Option<(Finality, bool)> {
     let f = match b {
         [0, 0] => Finality::Final { upheld: false },
         [0, 1] => Finality::Final { upheld: true },
-        [1, rest @ ..] => Finality::Provisional { until: u64::from_le_bytes(rest.try_into().ok()?) },
+        [1, rest @ ..] => {
+            let opened = u64::from_le_bytes(rest.get(..8)?.try_into().ok()?);
+            let mut p = 8;
+            let closed = take_height(rest, &mut p)?;
+            if p != rest.len() {
+                return None;
+            }
+            Finality::Provisional { opened, closed }
+        }
         [2] => Finality::Blocked,
         [3] => Finality::Falsified,
         [4] => Finality::Unwound,

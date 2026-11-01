@@ -171,6 +171,33 @@ impl Encl {
     }
 }
 
+/// WHERE AN EXACT RATIONAL `r` STANDS AGAINST A REAL `x`, decided past any
+/// grid (MU-DERIVATIONS D1.2 Phase A): `x`'s enclosure `f(w)` is refined —
+/// `w` doubled from the bits that resolve `r` itself — until it separates
+/// from `r`: `Less` where `r < x`, `Greater` where `r > x`, `Equal` only where
+/// an exact enclosure meets `r`. For an irrational `x` the refinement ends at
+/// a precision bounded by `r`'s own size (`x`'s irrationality measure is
+/// finite: for `π`, `|π − p/q| > q^{−7.103}` past a finite `q₀`,
+/// Zeilberger–Zudilin), so no grid stands and none is capped. `None` only
+/// where the precision would pass its `u32` carrier: undecided, named.
+pub fn separates(r: &Q, f: impl Fn(u32) -> Encl) -> Option<std::cmp::Ordering> {
+    let size = |z: &BigInt| u32::try_from(z.bits()).ok();
+    let mut w = size(r.numer())?.checked_add(size(r.denom())?)?.checked_add(2)?;
+    loop {
+        let x = f(w);
+        if r < &x.lo {
+            return Some(std::cmp::Ordering::Less);
+        }
+        if r > &x.hi {
+            return Some(std::cmp::Ordering::Greater);
+        }
+        if x.lo == x.hi {
+            return Some(std::cmp::Ordering::Equal);
+        }
+        w = w.checked_mul(2)?;
+    }
+}
+
 /// `bits` of a rational's magnitude: enough guard to carry it.
 fn mag_bits(v: &Q) -> u32 {
     let n = v.abs().ceil().to_integer();
@@ -190,7 +217,14 @@ fn exp_point(v: &Q, w: u32) -> Encl {
         r /= q(2);
         m += 1;
     }
-    let w2 = w + 24 + m;
+    // D4.8 (e): the squarings amplify the relative width by `2^m`, and the
+    // absolute width of `e^v` carries the value's own magnitude, `v·log₂e <
+    // 3v/2` bits for `v > 0`; both are read off `v`.
+    let lift = match v.is_positive() {
+        true => u32::try_from((v * q(3) / q(2)).ceil().to_integer()).map_or(u32::MAX >> 4, |b| b),
+        false => 0,
+    };
+    let w2 = w + 24 + m + lift;
     let tiny = stop_at(w2);
     let rr = Encl::exact(r);
     let mut term = Encl::exact(Q::one());
@@ -480,28 +514,54 @@ pub fn lgamma(x: &Encl, w: u32) -> Option<Encl> {
 
 // ———————————————————————————————— P(a, x), erf ————————————————————————————————
 
+/// WHY A CERTIFIED SERIES WAS NOT RUN (D4.8 (a)): the caller's token holds
+/// fewer reads than the series' exact term bound, `needed`; refused before a
+/// term is read, never started and abandoned.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SeriesRefusal {
+    Unmetered { needed: u64 },
+    /// An argument outside the function's domain.
+    Domain,
+}
+
+/// THE TERMS `P(a, x)`'s SERIES RUNS AT MOST, exact (D4.8 (a)): `n₀ =
+/// max(0, ⌈2x − a⌉ − 1)`, the first term past which every ratio is at most
+/// ½, then `w₂ − 8` halvings to the stop. `None` past the carrier.
+pub fn gamma_p_terms(a: &Q, x: &Q, w2: u32) -> Option<u64> {
+    let n0 = (q(2) * x - a).ceil().to_integer() - BigInt::one();
+    let n0 = if n0.is_negative() { 0 } else { u64::try_from(n0).ok()? };
+    n0.checked_add(u64::from(w2.checked_sub(8)?))
+}
+
 /// `P(a, x)` at exact points `a > 0`, `x ≥ 0`: `x^a e^{-x} / Γ(a+1) · S`, `S =
 /// Σ_{n≥0} x^n / ((a+1)…(a+n))`. REMAINDER: once `ρ = x/(a+n+1) ≤ ½`, the
 /// tail after the term `t_n` is `≤ t_n·ρ/(1−ρ) ≤ t_n`, all terms positive.
-fn gamma_p_point(a: &Q, x: &Q, w: u32) -> Option<Encl> {
+/// METERED (D4.8 (a)): one read a term, the token's reads checked against the
+/// exact bound before the first; no cap on `x`. THE PREFACTOR'S PRECISION IS
+/// READ OFF THE SUM (D4.8 (e)): `pre = exp(a·ln x − x − ln Γ(a+1))` is taken
+/// on an absolute grid fine enough that `S·width(pre)` stays within the
+/// result's grid, `w + bits(S) + bits(a + 2) + 2`.
+fn gamma_p_point(a: &Q, x: &Q, w: u32, budget: &mut crate::physics::Budget) -> Result<Encl, SeriesRefusal> {
     if !a.is_positive() || x.is_negative() {
-        return None;
-    }
-    // The series takes O(x) terms: past the cap it is refused, never run
-    // unbounded (as ruled: the funnel's x stay well under).
-    if x > &q(P_SERIES_CAP) {
-        return None;
+        return Err(SeriesRefusal::Domain);
     }
     if x.is_zero() {
-        return Some(Encl::exact(Q::zero()));
+        return Ok(Encl::exact(Q::zero()));
     }
     let w2 = w + 40 + 2 * mag_bits(x);
+    let needed = gamma_p_terms(a, x, w2).ok_or(SeriesRefusal::Domain)?;
+    if u64::try_from(budget.remaining()).is_ok_and(|have| have < needed) {
+        return Err(SeriesRefusal::Unmetered { needed });
+    }
     let tiny = stop_at(w2);
     let half = Q::new(BigInt::one(), BigInt::from(2));
     let mut term = Encl::exact(Q::one());
     let mut sum = term.clone();
     let mut n = 1i64;
     loop {
+        if !budget.spend() {
+            return Err(SeriesRefusal::Unmetered { needed });
+        }
         term = term.scale(&(x / (a + q(n)))).round(w2);
         sum = sum.add(&term).round(w2);
         let rho = x / (a + q(n + 1));
@@ -511,45 +571,89 @@ fn gamma_p_point(a: &Q, x: &Q, w: u32) -> Option<Encl> {
         }
         n += 1;
     }
-    let a1 = Encl::exact(a + Q::one());
-    let log_pre = ln_point(x, w2)?.scale(a).sub(&Encl::exact(x.clone())).sub(&lgamma(&a1, w2)?);
-    let p = exp(&log_pre.round(w2), w2).mul(&sum);
-    Some(p.clamp(&Q::zero(), &Q::one()).round(w))
+    let wp = w + mag_bits(&sum.hi) + mag_bits(&(a + q(2))) + 2;
+    let ln_gamma = ln_gamma_point(&(a + Q::one()), wp).ok_or(SeriesRefusal::Domain)?;
+    let log_pre = ln_point(x, wp).ok_or(SeriesRefusal::Domain)?.scale(a).sub(&Encl::exact(x.clone())).sub(&ln_gamma);
+    let p = exp(&log_pre.round(wp), wp).mul(&sum);
+    Ok(p.clamp(&Q::zero(), &Q::one()).round(w))
+}
+
+/// `ln Γ(y)` at an exact point `y > 0`, EXACTLY WHERE THE ALGEBRA GIVES IT:
+/// at a positive integer `n`, `ln (n − 1)!`; at a half-integer `k + ½`,
+/// `ln((2k)!/(4^k·k!)) + ½ ln π`; elsewhere Stirling (`lgamma`).
+fn ln_gamma_point(y: &Q, w: u32) -> Option<Encl> {
+    let factorial = |n: &BigInt| -> BigInt {
+        let mut f = BigInt::one();
+        let mut i = BigInt::from(2);
+        while &i <= n {
+            f *= &i;
+            i += 1;
+        }
+        f
+    };
+    if y.is_integer() && y.is_positive() {
+        let f = factorial(&(y.to_integer() - BigInt::one()));
+        return match f.is_one() {
+            true => Some(Encl::exact(Q::zero())),
+            false => ln_point(&Q::from_integer(f), w),
+        };
+    }
+    let k = y - Q::new(BigInt::one(), BigInt::from(2));
+    if k.is_integer() && !k.is_negative() {
+        let k = k.to_integer();
+        let ratio = Q::new(factorial(&(&k * BigInt::from(2))), (BigInt::one() << (2 * usize::try_from(&k).ok()?)) * factorial(&k));
+        let half_ln_pi = ln(&pi(w + 8), w + 8)?.scale(&Q::new(BigInt::one(), BigInt::from(2)));
+        return Some(ln_point(&ratio, w + 8)?.add(&half_ln_pi).round(w));
+    }
+    lgamma(&Encl::exact(y.clone()), w)
 }
 
 /// The regularized lower incomplete gamma `P(a, x)` for `a > 0`, `x ≥ 0`:
-/// increasing in `x` and decreasing in `a`, so bounded by its corners.
-pub fn gamma_p(a: &Encl, x: &Encl, w: u32) -> Option<Encl> {
+/// increasing in `x` and decreasing in `a`, so bounded by its corners;
+/// metered by the caller's token (D4.8 (a)).
+pub fn gamma_p(a: &Encl, x: &Encl, w: u32, budget: &mut crate::physics::Budget) -> Result<Encl, SeriesRefusal> {
     if !a.lo.is_positive() || x.lo.is_negative() {
-        return None;
+        return Err(SeriesRefusal::Domain);
     }
-    let lo = gamma_p_point(&a.hi, &x.lo, w)?.lo;
-    let hi = gamma_p_point(&a.lo, &x.hi, w)?.hi;
-    Encl::new(lo, hi)
+    let lo = gamma_p_point(&a.hi, &x.lo, w, budget)?.lo;
+    let hi = gamma_p_point(&a.lo, &x.hi, w, budget)?.hi;
+    Encl::new(lo, hi).ok_or(SeriesRefusal::Domain)
 }
 
-/// THE CAP on `P`'s series argument: `x ≤ 10⁴`, past which `P` is refused.
-pub const P_SERIES_CAP: i64 = 10_000;
-
-/// `erf v = sign(v)·P(½, v²)` at an exact point. Past the series cap (`v² >
-/// 10⁴`), `1 − erf|v| = erfc|v| ≤ e^{−v²}/(|v|√π) < e^{−10⁴} < 2^{−w}` for
-/// every `w < 14 000`: the enclosure `[1 − 2^{−w}, 1]`, proved, not run.
-fn erf_point(v: &Q, w: u32) -> Option<Encl> {
+/// `erf v = sign(v)·P(½, v²)` at an exact point. THE TAIL BY ITS OWN BOUND
+/// (D4.8 (b)): `1 − erf|v| = erfc|v| ≤ e^{−v²}/(|v|√π)`, and `e^{−v²} =
+/// 2^{−v²·log₂e} ≤ 2^{−⌊v²·ℓ⌋}` for `ℓ = 1/ln2.hi ≤ log₂e` read off the
+/// certified `ln 2`; its upper bound `T` with the certified `√π`. Where
+/// `T ≤ 2^{−w}` the enclosure is `[1 − T, 1]`, proved and not run; otherwise
+/// the series runs on the caller's token. No cap on `v` and none on `w`.
+fn erf_point(v: &Q, w: u32, budget: &mut crate::physics::Budget) -> Result<Encl, SeriesRefusal> {
     let v2 = v * v;
-    if v2 > q(P_SERIES_CAP) {
-        if w >= 14_000 {
-            return None;
+    if !v.is_zero() {
+        let log2e_lo = Q::one() / ln2(16).hi;
+        // Fewer halvings than `e^{−v²}` holds is a looser bound and still one:
+        // past the result's grid and a bit, more are not read.
+        let full = (&v2 * &log2e_lo).floor().to_integer();
+        let enough = w.checked_add(9).ok_or(SeriesRefusal::Domain)?;
+        let bits = match u32::try_from(&full) {
+            Ok(b) if b < enough => b,
+            Ok(_) => enough,
+            Err(_) if full.is_negative() => 0,
+            Err(_) => enough,
+        };
+        let root_pi = sqrt(&pi(16), 16).ok_or(SeriesRefusal::Domain)?;
+        let tail = up(&(Q::new(BigInt::one(), pow2(bits)) / (v.abs() * &root_pi.lo)), w + 8);
+        if tail <= Q::new(BigInt::one(), pow2(w)) {
+            let near = Encl { lo: Q::one() - tail, hi: Q::one() };
+            return Ok(if v.is_negative() { near.neg() } else { near });
         }
-        let near = Encl { lo: Q::one() - Q::new(BigInt::one(), pow2(w)), hi: Q::one() };
-        return Some(if v.is_negative() { near.neg() } else { near });
     }
-    let p = gamma_p_point(&Q::new(BigInt::one(), BigInt::from(2)), &v2, w)?;
-    Some(if v.is_negative() { p.neg() } else { p })
+    let p = gamma_p_point(&Q::new(BigInt::one(), BigInt::from(2)), &v2, w, budget)?;
+    Ok(if v.is_negative() { p.neg() } else { p })
 }
 
-/// `erf x`: increasing, by its endpoints.
-pub fn erf(x: &Encl, w: u32) -> Option<Encl> {
-    Encl::new(erf_point(&x.lo, w)?.lo, erf_point(&x.hi, w)?.hi)
+/// `erf x`: increasing, by its endpoints; metered by the caller's token.
+pub fn erf(x: &Encl, w: u32, budget: &mut crate::physics::Budget) -> Result<Encl, SeriesRefusal> {
+    Encl::new(erf_point(&x.lo, w, budget)?.lo, erf_point(&x.hi, w, budget)?.hi).ok_or(SeriesRefusal::Domain)
 }
 
 // ———————————————————————————————— sinh, cosh, logistic ————————————————————————————————
@@ -746,17 +850,36 @@ pub fn planck_tail(x: &Encl, w: u32) -> Option<Encl> {
 
 // ———————————————————————————————— the Poisson quantile ————————————————————————————————
 
+/// THE POISSON QUANTILE AS READ (D4.8 (c)): the step decided, or — the
+/// token spent before the enclosure left `u` — the exact SECTOR it lies in
+/// (law 4): `F(lo − 1) < u` decided and `u` inside `F(lo)`'s enclosure, so the
+/// quantile is `lo` or `lo + 1`; never a guess.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Quantile {
+    At(u64),
+    Sector { lo: u64, hi: u64 },
+}
+
 /// THE INVERSE POISSON CDF: the least `k` with `Σ_{j≤k} e^{−λ} λ^j/j! ≥ u`, for
 /// an exact `λ > 0` and `0 ≤ u < 1`. Each step's CDF is an enclosure; a step
-/// is decided only where its bounds separate from `u`, the precision raised
-/// where they do not, up to `w + 256` bits — beyond that `u` sits on a step
-/// edge to that precision, and the quantile is refused rather than guessed.
-pub fn poisson_quantile(lambda: &Q, u: &Q, w: u32) -> Option<u64> {
+/// is decided only where its bounds separate from `u`. `F(k)` is irrational
+/// (Lindemann: `e^{−λ}` is transcendental), so raising the precision always
+/// decides at last; the precision DOUBLES each round (the total work within
+/// twice the last round's), from `w + ⌈3λ/2⌉ + 32 + bits(λ)` so the leading
+/// term `e^{−λ}` is resolved relative to its own size (`log₂e < 3/2`), and
+/// every term read spends one read of the caller's token. Spent after a
+/// round left a step undecided, that step's exact sector is answered (law
+/// 4). `None` outside the domain, or where the token ends before the first
+/// round reached an undecided step (no sector is yet read).
+pub fn poisson_quantile(lambda: &Q, u: &Q, w: u32, budget: &mut crate::physics::Budget) -> Option<Quantile> {
     if !lambda.is_positive() || u.is_negative() || u >= &Q::one() {
         return None;
     }
-    let mut wp = w + 32 + mag_bits(lambda);
-    while wp <= w + 256 + mag_bits(lambda) {
+    let lift = u32::try_from((lambda * q(3) / q(2)).ceil().to_integer()).ok()?;
+    let mut wp = w.checked_add(lift)?.checked_add(32)?.checked_add(mag_bits(lambda))?;
+    let mut undecided: Option<u64> = None;
+    let sector = |k: Option<u64>| Some(Quantile::Sector { lo: k?, hi: k?.checked_add(1)? });
+    loop {
         let mut term = exp_point(&-lambda.clone(), wp);
         let mut cdf = term.clone();
         let mut k = 0u64;
@@ -766,14 +889,20 @@ pub fn poisson_quantile(lambda: &Q, u: &Q, w: u32) -> Option<u64> {
                 (_, true) => {}
                 _ => break None,
             }
+            if !budget.spend() {
+                return sector(undecided);
+            }
             k = k.checked_add(1)?;
             term = term.scale(&(lambda / Q::from_integer(BigInt::from(k)))).round(wp);
             cdf = cdf.add(&term).round(wp);
         };
-        if decided.is_some() {
-            return decided;
+        match decided {
+            Some(k) => return Some(Quantile::At(k)),
+            None => undecided = Some(k),
         }
-        wp += 64;
+        if !budget.spend() {
+            return sector(undecided);
+        }
+        wp = wp.checked_mul(2)?;
     }
-    None
 }

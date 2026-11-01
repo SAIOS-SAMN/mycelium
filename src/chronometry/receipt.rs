@@ -15,6 +15,7 @@ pub struct Place {
 
 impl Place {
     /// A place's coordinates: the orbit, the act's place in it.
+    /// FORMAT: Place wire length.
     pub const LEN: usize = 8 + 8;
 
     /// A line's first place: the first act of its first orbit.
@@ -87,6 +88,7 @@ pub struct Stamp {
 
 impl Stamp {
     /// A stamp's coordinates: the tick, the key, the orbit, the place.
+    /// FORMAT: Stamp wire length.
     pub const LEN: usize = 8 + 32 + Place::LEN;
 
     /// The stamp of one act: its tick, its signer, its place on the line.
@@ -399,6 +401,13 @@ pub enum Cite {
     /// the coordinate it stands on: the core tube's id for a join, the
     /// statement's hash for a curvature or a basket.
     Stated { domain: [u8; 32], kind: u8, body: [u8; 32] },
+    /// 78.125 (law version 5, ruled 2026-10-31) — A WINDOW CLOSE, sealed:
+    /// every window this court opened at or below `through` has reached
+    /// every other keeper and returned, witnessed by the keepers' own
+    /// readings, each by keeper, hash and tick (a reach reading and its
+    /// return per keeper). The close is read off this receipt, so it
+    /// reconstructs on every boot and every court.
+    Window { through: u64, witnesses: Vec<crate::chronometry::tuniversal::Cited> },
 }
 
 impl Cite {
@@ -418,7 +427,8 @@ impl Cite {
             | Cite::Bond { .. }
             | Cite::Domain { .. }
             | Cite::Origin { .. }
-            | Cite::Stated { .. } => None,
+            | Cite::Stated { .. }
+            | Cite::Window { .. } => None,
         }
     }
 
@@ -437,7 +447,8 @@ impl Cite {
             | Cite::Bond { .. }
             | Cite::Domain { .. }
             | Cite::Origin { .. }
-            | Cite::Stated { .. } => None,
+            | Cite::Stated { .. }
+            | Cite::Window { .. } => None,
         }
     }
 
@@ -531,6 +542,16 @@ impl Cite {
                 rec.push(*kind);
                 rec.extend_from_slice(body);
             }
+            Cite::Window { through, witnesses } => {
+                rec.push(15);
+                rec.extend_from_slice(&through.to_le_bytes());
+                crate::transducer::address::put_key_count(&mut rec, witnesses.len());
+                for c in witnesses {
+                    rec.extend_from_slice(&c.keeper);
+                    rec.extend_from_slice(&c.reading);
+                    rec.extend_from_slice(&c.h.to_le_bytes());
+                }
+            }
             Cite::Class { class, cover, .. } | Cite::Demand { class, cover, .. } => {
                 rec.push(match self {
                     Cite::Class { .. } => 2,
@@ -555,7 +576,8 @@ impl Cite {
                     | Cite::Bond { .. }
                     | Cite::Domain { .. }
                     | Cite::Origin { .. }
-                    | Cite::Stated { .. } => {}
+                    | Cite::Stated { .. }
+                    | Cite::Window { .. } => {}
                 }
                 match cover {
                     None => rec.push(0),
@@ -672,6 +694,21 @@ impl Cite {
                 *p += 65;
                 Some(Cite::Stated { domain, kind, body })
             }
+            15 => {
+                let through = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+                *p += 8;
+                let n = crate::transducer::address::take_key_count(b, p)?;
+                let witnesses = (0..n)
+                    .map(|_| {
+                        let keeper: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                        let reading: [u8; 32] = b.get(*p + 32..*p + 64)?.try_into().ok()?;
+                        let h = u64::from_le_bytes(b.get(*p + 64..*p + 72)?.try_into().ok()?);
+                        *p += 72;
+                        Some(crate::chronometry::tuniversal::Cited { keeper, reading, h })
+                    })
+                    .collect::<Option<Vec<_>>>()?;
+                Some(Cite::Window { through, witnesses })
+            }
             2 | 3 => {
                 let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);
                 let rotor = match tag {
@@ -773,6 +810,7 @@ impl KStepReceipt {
     /// The least tape one node takes: its stamp, kind, frame, no
     /// predecessor, no parent, no citation, and the two hashes — what a
     /// reader allots one node when it bounds an untrusted count.
+    /// FORMAT: least tape length of one node.
     pub const MIN_TAPE: usize = Stamp::LEN + 1 + 32 + 1 + 4 + 4 + 32 + 32;
 
     /// SEAL a node: its chain hash taken over its own canonical

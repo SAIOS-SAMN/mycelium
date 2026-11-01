@@ -227,6 +227,9 @@ impl Court {
         if !self.closed_since_grant.is_empty() {
             leaves.push((LEAF_CLOSED, super::super::endowment::put_closed(&self.closed_since_grant)));
         }
+        // 78.125 (law version 5) — the window book, always: its presence is
+        // what tells a version-5 home from a version-4 one.
+        leaves.push((LEAF_WINDOWS, self.windows.put()));
         nodes.insert(self.chain.signer(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }

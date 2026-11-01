@@ -233,6 +233,7 @@ pub struct SolveRefusal {
 /// The tag a paid verdict's modes ride behind the receipt under: no
 /// obstruction kind (78.9's are below seven) is it, so a refusal and the
 /// modes are told apart by the first byte.
+/// FORMAT: tag marking a solve receipt's modes.
 pub const SOLVE_MODES_TAG: u8 = 0xFE;
 
 /// The receipt and, behind it, the refusal where one was refused, or — paid —

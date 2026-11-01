@@ -50,22 +50,26 @@ pub enum Law {
 /// recommendation adopted): continuity, the white hole
 /// and the black hole published as sources and sinks. Version 4 (78.125, the
 /// ruling on 2(c)): the challenge window, the register's first
-/// PARAMETER.
-pub const LAW_VERSION: u8 = 4;
+/// PARAMETER. Version 5 (78.125 amended, ruled 2026-10-31; MU-DERIVATIONS
+/// D1.1): the window closes at a sealed reach and return of every other
+/// keeper's citations, no parameter.
+/// FORMAT: register wire version.
+pub const LAW_VERSION: u8 = 5;
 
-/// 78.125 — THE CHALLENGE WINDOW, in mesh heights (never a wall clock): how
-/// long after its seal a fold stands open to an availability demand, a
-/// replay or a correction. Every domain of a network universe shares this
-/// one finality clock; it is shorter than any anchoring cadence, so an era's
-/// anchor reads final before the next era's. UNDEFINED PHYSICS, NAMED
-/// (`physics::axioms::OPEN_PHYSICS`): a law parameter every kernel shares;
-/// its derivation — the heights a fold's challenge needs to reach every keeper
-/// and return — is a law amendment.
+/// 78.125, LAW VERSION 4 — THE CHALLENGE WINDOW OF A WINDOW OPENED UNDER
+/// VERSION 4, in heights: such a window closes at its opening plus this, by
+/// the version it was opened under (superseded forward, never reverted).
+/// Every window opened under version 5 closes at the sealed reach and return
+/// of every other keeper (`Cite::Window`), never at a count of heights.
+/// EXTERNAL: the Concordance's law version 4, 78.125 (W = 1024 heights).
 pub const CHALLENGE_WINDOW: u64 = 1024;
 
 /// THE REGISTER'S PARAMETERS at its version, by name: served beside the laws
-/// (`ACT_LAWS` mode 5) so a domain reads its finality clock from the court.
-pub const PARAMETERS: [(&str, u64); 1] = [("challenge window", CHALLENGE_WINDOW)];
+/// (`ACT_LAWS` mode 5), so a kernel reads them from the court. The window is
+/// no parameter at version 5 (a sealed reading); the frame budget is the one
+/// protocol number every node agrees on, open (`OPEN_PHYSICS`,
+/// MU-DERIVATIONS D1.3 O1): served so a kernel reads it, never assumes it.
+pub const PARAMETERS: [(&str, u64); 1] = [("frame budget", crate::network::wire::BODY_BUDGET as u64)];
 
 /// Every law of the register, in its order.
 pub const LAWS: [Law; 6] = [Law::Conformal, Law::Momentum, Law::Rigidity, Law::Time, Law::Reservoir, Law::Continuity];

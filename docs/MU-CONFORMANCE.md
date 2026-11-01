@@ -61,7 +61,7 @@ acts, each once. Each `ActRequirement` names:
 
 `Statement::union(profiles)` is the acts of a client declaring
 `profiles`. At this tree the statement stands at wire `0x0200` (v2.0) and
-law version 4.
+law version 5.
 
 **μ fields (wire v2.0).** Every field that carries μ — the solve verdict's
 and receipt's paid μ, the grant's μ, the wallet's balance, bond and held,

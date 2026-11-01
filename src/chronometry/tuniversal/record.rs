@@ -11,6 +11,7 @@ pub const MAGIC: &[u8; 4] = b"MYKR";
 
 /// The record's layout version: 2 carries the reading's lanes in the
 /// rational lane codec (ruled 2026-11-01); a version-1 record is refused.
+/// FORMAT: the keeper record's layout version.
 pub const VERSION: u16 = 2;
 
 /// THE LAST SIGNED READING, at the origin it was signed at, with its hash

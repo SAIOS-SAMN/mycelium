@@ -88,6 +88,7 @@ pub struct Account {
 
 /// The fewest bytes an account takes: its key and three amounts of eleven
 /// bytes a lane at least (`Mu::put` of zero).
+/// FORMAT: an account's fewest bytes, 164.
 const ACCOUNT_MIN: usize = 32 + 3 * 44;
 
 impl Economy {

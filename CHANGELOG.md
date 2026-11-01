@@ -6,6 +6,138 @@ such change is named here.
 
 ## Unreleased
 
+### Live readings (MU-DERIVATIONS, ruled 2026-10-31)
+- **The principle, written down:** MU-STANDARDS 2.12 and MU-DERIVATIONS
+  §0.5. A governing quantity is a live reading of the current state,
+  derived once per change of its inputs and held keyed by them; the only
+  fixed values are names, invariants of the algebra and external formats;
+  a decision with magnitude is a graded reading; a refusal is named and
+  carries the reading that caused it.
+- **The open-physics register and the numbers gate** (D1.4):
+  `physics::axioms::OPEN_PHYSICS` is now `[OpenNumber; N]` (name, value as
+  written, site, what it governs, governing sections, derivation, kind:
+  physics, protocol or engineering), re-exported with `Governs` and
+  `OpenKind`. The gate gains `xtask/lint/numbers.rs`, read with `syn`: every
+  literal-bearing numeric item carries one class tag (`EXACT:`, `FORMAT:`,
+  `EXTERNAL:`, `MEASURED:`, `REGISTERED:`), and the register agrees with its
+  sites (N1–N5); the inline literals of the law paths (N6) are an inventory
+  (`gate inventory`). Every literal-bearing item of the tree is tagged.
+  Registered beside the challenge window and the throat grid:
+  `BODY_BUDGET`, `ACCOUNT_SHARDS`, `P_SERIES_CAP`, `NESTING`,
+  `CANDIDATES_PER_PAIR`, and the soak instruments' strokes and calibration
+  count. A mutation-audit entry strips a registered tag.
+- **The gate is a workspace of its own** (D1.4): `xtask/Cargo.toml` holds
+  an empty `[workspace]`, so a checkout nested under another one (the
+  mutation audit's worktree) builds the gate's suites instead of being
+  claimed by the outer root.
+- **The challenge window is a sealed reach and return** (D1.1; law
+  version 5, `LAW_VERSION` 4 → 5; Concordance 4.5 and 5.4, agreement
+  version 4; MU-RECURSION 78.125 and 78.126 amended forward). A window
+  closes once every other keeper's signed reading cites the court at or
+  above its opening and that keeper has read again: the court seals one
+  `Cite::Window` (receipt tag 15) naming the witnesses, and every window
+  opened at or below the reach reads closed at that height
+  (`Court::window_close`, `Court::close_windows`,
+  `chronometry::tuniversal::{Reach, WindowRefusal}`). A lone court closes
+  nothing (`NoOtherKeeper`). Wire: `Finality::Provisional { opened, closed }`,
+  `Challenged::Demanded { deadline: Option<u64> }`,
+  `Challenged::Reopened { closes: Option<u64> }`,
+  `State::Offered { opened }`; `ACT_LAWS` mode 5 serves no parameter.
+  Layout: the court's node gains `LEAF_WINDOWS`; tolls, claims and offers
+  hold the height they opened at, and a home written under version 4
+  closes its windows by version 4 (`h₀ + 1024`). New log line
+  `court windows closed through h {n} at h {m}`.
+- **A throat's fit is decided exactly** (D1.2 Phase A; no law change):
+  a sphere face by refining `π` until its enclosure leaves `2m/R`
+  (`core::certified::separates`), a torus face by the meet of the horizon
+  sphere with its image under every period (`Containment::Apart`), a
+  curved face always (`mouth::fits_in`). A cap within the old `2⁻⁶⁴` grid
+  of the antipode is no longer refused `TooWide`. `Level::fits` is removed:
+  a served `Level` is a reading, never the decision.
+- **Every page's envelope is its codec's own header** (D1.3, D4.6). Fixed:
+  `encode_receipts_reply` admitted its head receipt against `BODY_BUDGET`
+  rather than the caller's budget, so a receipt within the reading
+  height's 8 bytes of the frame built a body the frame refused; it is now
+  refused by name. The literal `64`, `66` and `34` reserves are replaced
+  by each reply's header (`RECEIPTS_REPLY_HEADER`, `ROWS_REPLY_HEADER`,
+  `SYLLABUS_REPLY_HEADER`, `CLASS_RECORDS_HEADER`, `CITED_REQUEST_HEADER`,
+  `QUOTE_REPLY_HEADER`, `LEDGER_PAGE_HEADER`, `presentation_answer_len`);
+  encoders that count their own header take the frame whole; a page may
+  carry up to 63 bytes more within the same frame. `BODY_BUDGET` stays an
+  open protocol parameter (a receipt's `u32`-counted fields have no `u16`
+  wall) and is now served on `ACT_LAWS` mode 5 as "frame budget".
+- **π* binds the whole common set** (D3.3, ruled 2026-10-31; L9a closed).
+  `derive_carrying_all` keeps every carrying term, keyed, metered by a
+  `Budget` and refused whole when spent (`CarryingRefusal::Unread`); the
+  cut at 32 terms is gone. `derive_pi(family, withheld, budget)` returns
+  the terms common to every training evidence as a superposition, judged
+  by reconstruction on the withheld pairs, never a head chosen by key.
+- **The confluence's reproduction check is read, never capped** (D3.4):
+  `Confluence::reproduces` is `Reproduces { Yes, No, Unread }`; the
+  output's sites keyed once, each image read back to its lattice site,
+  `2·m` reads on the token; past 400 sites it reads, and a spent token
+  reads `Unread`, never `No`.
+- **A seat mind lets a pending call go by beat distance** (D3.5): at the
+  first percept a whole beat past the call's (`beat − made_at ≥ 2`, the
+  dissipation rule), never at a count of percepts received; a redelivered
+  percept advances nothing, a gap dissipates at once.
+  `Perceived::abandoned` is `Option<(u16, u64)>`, the function and its
+  distance.
+- **A peer's patience is read off the transport** (D4.1, D2.7). The literal
+  `5` of `tell_peer` is gone: an unmeasured peer waits an aperture of the
+  mesh's measured floor, or one aperture where nothing is measured
+  (`Lambda::Unmeasured`, now live); the nerve sender, the digest exchange,
+  cover pages, the cited fetch, the join and offers read the peer's own
+  measured patience; the rtt windows are kept under one key per peer, its
+  voice. The server CLI (`--wallet`, `--why`, the console, `--ledger`)
+  no longer passes `reserve_max()` as a round trip: a first ask reads to
+  the stream's end, and the ledger's later pages wait an aperture of the
+  floor its own asks measured.
+- **Calibration refuses what the host does not say** (D2.6). The server,
+  client and soak binaries refuse to boot on an uncalibrated host, naming
+  the arm (`physics::calibrate`, `Uncalibrated::{Cores, StrokeFloor}`); the
+  stroke floor is one scheduler tick, else the thread's timer slack, never
+  a one-nanosecond ask; `idle_park` takes `Option<NonZeroU64>`,
+  `from_transport` two `NonZeroU64` (a zero rtt reads `Unmeasured`); the
+  transport's round trip is `NonZeroU64` and its stall
+  `Stall::{Strokes, Beyond, Unmeasured}`, a read refusing `Unmeasured`.
+- **The evidence pull's reply fills the frame** (D4.2): the longest prefix
+  of the store that fits the frame by each item's own width
+  (`docket::evidence_page`, `evidence_width`), in place of the first 32
+  items; an item no frame carries is refused by name and the page ends
+  before it. The pull still carries no cursor (a 37-byte pull would be
+  read as the shortest deposit).
+- **A grid on the wire is bounded by its bytes** (D4.3): `read_grid`
+  admits any rectangle whose cells its tape carries, or the empty `0 × 0`,
+  and refuses rows without columns (a four-byte header once reserved
+  1.5 MB); the `1024` caps are gone. `push_grid` refuses ragged and
+  half-empty grids, whose tapes never read back.
+- **A decoded term is no deeper than its language mints** (D4.4 (iii)):
+  `anchor::SELECTION_HEIGHT` (seven levels, the derive's closure) and
+  `form::clause::PRED_HEIGHT` (four, the acts vocabulary and one meet)
+  replace the decoders' `16` and `32`; a frame of nesting opcodes is
+  refused on a 2 MiB thread, and every walker of a decoded tree is bounded
+  with it. `NESTING` leaves the open-physics register.
+- **The door's pool split is named open** (D4.5): the halving of the
+  host's cores between readers and workers is the registered
+  `POOL_DIVISOR`, open until a worker act's off-lock strokes are metered;
+  the cores are read through the boot's calibration, never defaulted to
+  one.
+- **A signature's length is the standard's** (D4.6): the receipt
+  section's signature is `ED25519_SIGNATURE_LEN`
+  (`ed25519_dalek::SIGNATURE_LENGTH`, RFC 8032 §5.1.6), and every page
+  site reads its own reply's header (built with D1.3), never a `64`
+  reserve standing for a signature no page carries.
+- **Certified series are metered, never capped** (D4.8; API change in
+  `core::certified`, callers are tests only). `gamma_p` and `erf` take a
+  `&mut Budget` and refuse `SeriesRefusal::Unmetered { needed }` up front
+  (`gamma_p_terms` is the exact bound); `P_SERIES_CAP` and the `14 000`
+  wall are gone, the erf tail read off its own bound. `poisson_quantile`
+  takes a `Budget`, doubles its precision from one that resolves
+  `e^{−λ}`, and answers `Quantile::{At, Sector}`. `exp` at a positive
+  argument and `P`'s prefactor carry their values' magnitudes, so
+  `exp(100)` and `P(1, 1000)` are within their grids.
+
 ### μ as exact rationals per lane (MU-ECONOMY §1, MU-RECURSION 78.162, phase T1)
 μ is measured as a share of a frame, so every amount of μ is now an exact
 rational per lane: `economy::Mu`, four non-negative rationals S, G, T, H.
@@ -78,7 +210,10 @@ Holding the modes themselves (78.162) remains the next step.
   v2"`, `"mycelium stake v2"`, `"mycelium lease v2"`. Unchanged: the
   septum equivocation (it carries no μ) and the deferral, whose deficit is
   a reserve count (the door reads an unpaid share of a unit as the unit it
-  did not cover).
+  did not cover). The challenge window's readings (D1.1:
+  `Finality::Provisional { opened, closed }`, `Challenged::Demanded`'s and
+  `Challenged::Reopened`'s optional heights, `State::Offered { opened }`)
+  and the fuller pages (D1.3, D4.2) ride the same version; no further bump.
 - **μ is a share of the frame** (ruled 2026-11-01; MU-RECURSION 78.169 O1;
   MU-ECONOMY §1, §3): every amount the ledger is paid from a measured
   discharge — solve receipts and verdicts, escrows, releases, lease

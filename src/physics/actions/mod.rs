@@ -209,6 +209,7 @@ pub const ACTIONS: [Action; 57] = [
 ];
 
 /// The first coordinate of a court's own acts: below it, the wire's.
+/// FORMAT: wire byte boundary between wire acts and court acts.
 pub const COURT_RANGE: u8 = 0x40;
 
 impl Action {

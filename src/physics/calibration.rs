@@ -52,6 +52,7 @@ pub const STROKES_PER_RESERVE: u64 = 1 << (crate::transducer::base::FRAME_AXIS +
 /// regeneration's half of it is a whole unit. The two is the rotor's double
 /// cover — `R` and `−R` are one motion, so a return is earned in halves —
 /// never a number of its own.
+/// EXACT: spend_unit_ratio_is_exact_and_stroke_floor_positive
 const RESERVE_FLOOR: u64 = STROKES_PER_RESERVE * 2;
 
 /// The calibrated reserve ceiling — measured, not declared: burst capacity
@@ -114,10 +115,64 @@ static CALIBRATED_STROKE_FLOOR: std::sync::OnceLock<std::time::Duration> = std::
     reason = "law 9 — the parking floor is told to the scheduler in its own units; no reading is taken from it"
 )]
 pub fn stroke_floor() -> std::time::Duration {
-    *CALIBRATED_STROKE_FLOOR.get_or_init(|| match scheduler_hz() {
-        Some(hz) => std::time::Duration::from_secs(1) / hz,
-        None => shortest_granted_wait(),
+    // An uncalibrated host parks nothing: no floor was read, and the server,
+    // client and soak binaries refuse to boot on it, naming the arm
+    // (`calibrate`). A park of no duration is the scheduler's yield.
+    *CALIBRATED_STROKE_FLOOR.get_or_init(|| match stroke_floor_of(scheduler_hz(), timer_slack_ns()) {
+        Ok(d) => d,
+        Err(_) => std::time::Duration::ZERO,
     })
+}
+
+/// WHY A HOST IS NOT CALIBRATED, by the arm it does not read (MU-DERIVATIONS
+/// D2.6): a host that does not say is fixed by its operator, never run on a
+/// guess.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Uncalibrated {
+    /// The host does not say how many cores it has.
+    Cores,
+    /// The host publishes neither its scheduler tick (`CONFIG_HZ`) nor its
+    /// timer slack (`timerslack_ns`): no floor for a park reads.
+    StrokeFloor,
+}
+
+/// The cores a host's reading names, or the refusal of an unread one.
+pub fn cores_of(read: std::io::Result<std::num::NonZeroUsize>) -> Result<std::num::NonZeroU64, Uncalibrated> {
+    let n = read.map_err(|_| Uncalibrated::Cores)?;
+    std::num::NonZeroU64::new(n.get() as u64).ok_or(Uncalibrated::Cores)
+}
+
+/// THE STROKE FLOOR FROM WHAT THE HOST PUBLISHES (D2.6): one tick, `1 s /
+/// CONFIG_HZ`, where the kernel publishes its tick; else the calling
+/// thread's timer slack, which the kernel rounds every shorter wait up to
+/// (the ask then equals the grant); else refused.
+#[expect(
+    clippy::disallowed_types,
+    reason = "law 9 — the parking floor, in the scheduler's own units, read off what the host publishes"
+)]
+pub fn stroke_floor_of(hz: Option<u32>, slack_ns: Option<u64>) -> Result<std::time::Duration, Uncalibrated> {
+    match (hz, slack_ns) {
+        (Some(hz), _) => Ok(std::time::Duration::from_secs(1) / hz),
+        (None, Some(ns)) if ns > 0 => Ok(std::time::Duration::from_nanos(ns)),
+        _ => Err(Uncalibrated::StrokeFloor),
+    }
+}
+
+/// THE CALLING THREAD'S TIMER SLACK in nanoseconds, as the kernel publishes
+/// it (`/proc/thread-self/timerslack_ns`, Linux 4.6 on; `/proc/self/` on
+/// older paths); `None` where it is unpublished.
+fn timer_slack_ns() -> Option<u64> {
+    ["/proc/thread-self/timerslack_ns", "/proc/self/timerslack_ns"]
+        .iter()
+        .find_map(|p| std::fs::read_to_string(p).ok()?.trim().parse().ok())
+}
+
+/// THE BOOT'S CALIBRATION READ (D2.6): every arm the host must say, or the
+/// first it does not, by name. The binaries refuse to boot on a refusal.
+pub fn calibrate() -> Result<(), Uncalibrated> {
+    cores_of(std::thread::available_parallelism())?;
+    stroke_floor_of(scheduler_hz(), timer_slack_ns())?;
+    Ok(())
 }
 
 /// The kernel's tick rate, from the build configuration it publishes beside
@@ -130,34 +185,18 @@ fn scheduler_hz() -> Option<u32> {
     (hz > 0).then_some(hz)
 }
 
-/// THE SHORTEST WAIT THIS KERNEL GRANTS: one nanosecond ASKED, which the
-/// kernel rounds up to its own timer — the quantity a park needs — so no
-/// wait is measured here at all (78.152: the `Instant` calibration that
-/// timed the grant is retired; the scheduler applies its own floor).
-#[expect(
-    clippy::disallowed_types,
-    reason = "law 9, 78.152 — the least wait asked of the scheduler, in its own units; nothing is measured and no reading is taken"
-)]
-fn shortest_granted_wait() -> std::time::Duration {
-    std::time::Duration::from_nanos(1)
-}
-
 /// How long an idle stroke parks: the measured transport where one has
-/// been measured — `rtt` in polls, the instrument's own resolution, each
-/// poll a stroke of this host — and one stroke where none has, or where the
-/// measured wait passes the duration's carrier. A same-stroke reply (`0`)
-/// is still one stroke: a park is at least the stroke it parks.
+/// been measured — `rtt` in polls, never zero (the poll that read the first
+/// byte is counted), each poll a stroke of this host — and the floor itself,
+/// one stroke, the unit, where none has, or where the measured wait passes
+/// the duration's carrier.
 #[expect(
     clippy::disallowed_types,
     reason = "law 9 — a park is told to the scheduler in its own units; the pace is strokes"
 )]
-pub fn idle_park(rtt: Option<u64>) -> std::time::Duration {
+pub fn idle_park(rtt: Option<std::num::NonZeroU64>) -> std::time::Duration {
     let floor = stroke_floor();
-    let strokes = match rtt {
-        Some(r) => r.max(1),
-        None => 1,
-    };
-    match u32::try_from(strokes).ok().and_then(|n| floor.checked_mul(n)) {
+    match rtt.and_then(|r| u32::try_from(r.get()).ok()).and_then(|n| floor.checked_mul(n)) {
         Some(d) => d,
         None => floor,
     }

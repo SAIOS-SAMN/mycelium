@@ -11,6 +11,7 @@
 use mycelium::transducer::cga::{enclosure, projective_ratio};
 use mycelium::transducer::family::{carriage, perceive};
 
+/// REGISTERED: STROKE
 const STROKE: usize = 1 << 20;
 
 #[derive(Default)]

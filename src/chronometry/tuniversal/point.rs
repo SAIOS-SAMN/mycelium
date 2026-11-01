@@ -43,10 +43,12 @@ impl PartialOrd for TPoint {
 impl TPoint {
     /// The least bytes a point takes on the wire: the genesis, the epoch,
     /// `h`, four lanes at zero (`0/1` each, eleven bytes) and `K`.
+    /// FORMAT: least TPoint wire length.
     pub const MIN_LEN: usize = 32 + 4 + 8 + 4 * 11 + 8;
 
     /// The most bytes a pointed frame adds behind its body (TU-7): a point
     /// of at most `u16::MAX` bytes and its two-byte length.
+    /// FORMAT: TU-7 trailer bound, the u16 count's wall.
     pub const TRAILER_MAX: usize = u16::MAX as usize + 2;
 
     /// THE FIXED WRITING (TU-5), one way only: the origin — the genesis in

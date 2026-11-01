@@ -613,8 +613,9 @@ pub struct SignedHandoff {
 /// WHERE A HANDOFF STANDS.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum State {
-    /// Offered, in flight, awaiting the receiver until `until` (a height).
-    Offered { until: u64 },
+    /// Offered, in flight, awaiting the receiver while the window the offer
+    /// opened at `opened` (a height) stands open (78.125, law version 5).
+    Offered { opened: u64 },
     Accepted,
     Returned,
 }
@@ -632,15 +633,25 @@ pub enum HandoffRequest {
     TubeRead([u8; 32]),
 }
 
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a read.
 const KIND_READ: u8 = 4;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for loops.
 const KIND_LOOPS: u8 = 10;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a tariffed mouth.
 const KIND_TARIFFED_MOUTH: u8 = 11;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a tube.
 const KIND_TUBE: u8 = 12;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a tube read.
 const KIND_TUBE_READ: u8 = 13;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a feed.
 const KIND_FEED: u8 = 14;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a draw.
 const KIND_DRAW: u8 = 15;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a core tube.
 const KIND_CORE_TUBE: u8 = 16;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a spaced tube.
 const KIND_SPACED_TUBE: u8 = 17;
+/// FORMAT: sub-kind byte of ACT_HANDOFF for a spaced core.
 const KIND_SPACED_CORE: u8 = 18;
 
 /// `[ACT_HANDOFF][13][mouth 32]`.
@@ -867,9 +878,9 @@ pub enum Handed {
 
 fn put_state(out: &mut Vec<u8>, s: &State) {
     match s {
-        State::Offered { until } => {
+        State::Offered { opened } => {
             out.push(0);
-            out.extend_from_slice(&until.to_le_bytes());
+            out.extend_from_slice(&opened.to_le_bytes());
         }
         State::Accepted => out.push(1),
         State::Returned => out.push(2),
@@ -881,9 +892,9 @@ fn take_state(b: &[u8], p: &mut usize) -> Option<State> {
     *p += 1;
     Some(match tag {
         0 => {
-            let until = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            let opened = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
             *p += 8;
-            State::Offered { until }
+            State::Offered { opened }
         }
         1 => State::Accepted,
         2 => State::Returned,

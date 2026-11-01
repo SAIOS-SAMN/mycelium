@@ -12,6 +12,7 @@ use mycelium::transducer::family::luminal::{read_pair, Beyond, Stop};
 use mycelium::transducer::family::{extract_rule_with, form_deflation};
 use mycelium::transducer::sentence::{Demand, Vertex};
 
+/// REGISTERED: STROKE
 const STROKE: usize = 1 << 20;
 
 #[derive(Default)]

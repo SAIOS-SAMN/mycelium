@@ -847,6 +847,7 @@ static CLASS_SCHEMA: Schema = Schema {
 
 /// THE WIDTH OF THE FREE ROW: two prime exponents on every pair plane. It
 /// was `12`, which is `PAIR_PLANES` doubled and written out.
+/// FORMAT: the free row's layout, one exponent per prime letter per pair plane.
 pub const FREE_ROW: usize = alphabet::PAIR_PLANES * 2;
 
 /// The free part of a holonomy as one row over ℤ: (m5, m13) per plane.

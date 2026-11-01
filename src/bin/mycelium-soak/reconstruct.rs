@@ -12,6 +12,7 @@ use mycelium::transducer::family::incongruence::single_changes;
 use mycelium::transducer::family::reconstruct::{body_regimes, reconstruct, AXES};
 use mycelium::transducer::family::{extract_rule_with, form_deflation};
 
+/// REGISTERED: STROKE
 const STROKE: usize = 1 << 20;
 
 pub(crate) fn report(dir: &str, names: &[String]) {

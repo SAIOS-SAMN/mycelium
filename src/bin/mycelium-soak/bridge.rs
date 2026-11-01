@@ -8,6 +8,7 @@
 use mycelium::physics::laws::LAWS;
 use mycelium::transducer::family::bridge::{bridge_pair, Bridge};
 
+/// REGISTERED: STROKE
 const STROKE: usize = 1 << 20;
 
 const BREACHES: [&str; mycelium::transducer::family::bridge::BREACH_KINDS] = [

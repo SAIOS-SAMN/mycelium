@@ -205,6 +205,7 @@ impl ChildNet {
 /// 78.138 — THE TAGGED CHILDREN'S MARK, where a count would stand: an
 /// over-long spelling no count is ever written as, so an untagged block
 /// (78.123's) reads as it did.
+/// FORMAT: magic mark for a tagged children block.
 const TAGGED: [u8; 2] = [0x80, 0x00];
 
 /// The children: untagged where every one is a fold the court sealed itself

@@ -21,6 +21,7 @@ use crate::transducer::base::{is_grid_axis, Site};
 /// THE `n` THE GRID PRESENTS (71.2(1)): row, column and frame. It is read
 /// here, at intake, and every site the sensor hands over carries it; a form
 /// extracted from grids stands on this base.
+/// FORMAT: the coordinates of a site the sensor writes, `(r, c, k)`.
 pub const GRID_N: u8 = 3;
 
 /// A point of the base, `(r, c, k)` in ℚ³ (51.1): the corpus's three

@@ -41,6 +41,7 @@ pub const CARRIERS: [(&str, &str); 3] = [
 
 pub const CARRIER_AWARD: u8 = 0;
 pub const CARRIER_DELTA: u8 = 1;
+/// FORMAT: carrier-row enum position for a frame.
 pub const CARRIER_FRAME: u8 = 2;
 
 /// ONE CARRIER UNDER ONE KIND: the act kind for a delta, the act tag for a

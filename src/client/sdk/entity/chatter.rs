@@ -305,9 +305,10 @@ fn observed(voice: &[u8; 32], q: &[u8]) -> Option<Vec<u8>> {
     use crate::observe::{self, ObserveAct, Reading, Source};
     // A CALL (ruled 2026-10-15): answered by the mind out of what it
     // holds, where its winding carrier stands (`observe::live`).
+    // The frame's whole body each time: both encoders count their own
+    // headers against it (D4.6).
     if let Some(line) = observe::live::decode_call(q) {
-        let budget = crate::network::wire::frame_budget().checked_sub(64)?;
-        return observe::live::encode_lines(&observe::live::call(&line), budget);
+        return observe::live::encode_lines(&observe::live::call(&line), crate::network::wire::frame_budget());
     }
     let ObserveAct::Query(prefix) = observe::decode_act(q)?;
     let own = Source::Mind(*voice);
@@ -316,8 +317,7 @@ fn observed(voice: &[u8; 32], q: &[u8]) -> Option<Vec<u8>> {
         observe::publish(own, Reading::Memory(m));
     }
     observe::replace(own, Reading::Mind(Box::new(mind)));
-    let budget = crate::network::wire::frame_budget().checked_sub(64)?;
-    observe::encode_reply(&observe::readings(&prefix), budget)
+    observe::encode_reply(&observe::readings(&prefix), crate::network::wire::frame_budget())
 }
 
 /// A RING'S SIZE AS A SOUND: its return, read off its own coordinates on

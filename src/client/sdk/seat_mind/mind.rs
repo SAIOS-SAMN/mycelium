@@ -15,7 +15,9 @@ pub(crate) struct PendingCall {
     pub(crate) reference: [u8; 32],
     pub(crate) before: Vec<(Vec<u8>, Q)>,
     pub(crate) applied: Option<bool>,
-    pub(crate) percepts_since: u64,
+    /// The beat the call was made in: the house's percept sequence at
+    /// `called`, against which its time is read as a distance (78.43).
+    pub(crate) made_at: u64,
 }
 
 /// THE MIND AT ONE SEAT: its series, the house's latest counsel, what each
@@ -230,7 +232,7 @@ impl SeatMind {
             .collect();
         let held = args.clone();
         self.with_experience(fn_id, |e| e.args = Some(held));
-        self.pending = Some(PendingCall { fn_id, args, reference, before, applied: None, percepts_since: 0 });
+        self.pending = Some(PendingCall { fn_id, args, reference, before, applied: None, made_at: beat });
     }
 
     /// The call this mind awaits an answer or a reading for.
@@ -258,10 +260,10 @@ impl SeatMind {
 
     /// A pending call at a new percept: answered and applied, its effect is
     /// every quantity's change since it was made; answered and refused, it
-    /// moved nothing of its own; unanswered past its beat, it is let go.
+    /// moved nothing of its own; unanswered through one whole beat, it is
+    /// let go, named with the distance it stood (MU-CLIENT §4.13).
     fn read_pending(&mut self, reading: &mut Perceived) {
-        let Some(mut pending) = self.pending.take() else { return };
-        pending.percepts_since += 1;
+        let Some(pending) = self.pending.take() else { return };
         match pending.applied {
             Some(applied) => {
                 if applied {
@@ -279,10 +281,19 @@ impl SeatMind {
                 }
                 reading.learned = Some((pending.fn_id, applied));
             }
-            // The house answers a call within the beat it was made in; a
-            // second percept with no answer lets it go.
-            None if pending.percepts_since >= 2 => reading.abandoned = Some(pending.fn_id),
-            None => self.pending = Some(pending),
+            // THE DISSIPATION RULE (MU-CLIENT §4.13: a beat dissipates what
+            // stood through the previous beat unreturned) on the seat's own
+            // line: the call stood through a whole beat `β` once the house's
+            // sequence has passed one, `made_at < β < beat` — distance along
+            // the sequence, never a count of percepts received (78.43); a
+            // percept at or before the call's beat (a redelivery) advances
+            // nothing (D3.5).
+            None => match self.beat.checked_sub(pending.made_at) {
+                Some(distance) if pending.made_at.checked_add(1).is_some_and(|whole| whole < self.beat) => {
+                    reading.abandoned = Some((pending.fn_id, distance));
+                }
+                _ => self.pending = Some(pending),
+            },
         }
     }
 }

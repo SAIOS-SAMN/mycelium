@@ -75,6 +75,7 @@ impl Era {
 
     /// The descriptor's tape: root, signer, witness, both signatures, the
     /// identities, the first place and the count.
+    /// FORMAT: era descriptor tape length.
     pub const DESCRIPTOR: usize = Root::TAPE + 32 + 32 + 64 + 64 + 8 + Place::LEN + 8;
 
     /// The first place the era holds; the root is its last.
@@ -166,6 +167,7 @@ impl Era {
 
 impl Root {
     /// The root's tape: place, hash, height.
+    /// FORMAT: root tape length.
     pub const TAPE: usize = Place::LEN + 32 + 8;
 
     pub fn write(&self, out: &mut Vec<u8>) {

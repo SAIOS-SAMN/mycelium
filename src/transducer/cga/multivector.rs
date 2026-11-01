@@ -39,14 +39,19 @@ use num_traits::{One, Signed, Zero};
 /// and `e₋` (square −1). These are generators, not counts: a fourth base
 /// axis is [`base_axis`]`(4)`.
 pub const E1: usize = 0b00001;
+/// FORMAT: generator bit mask, basis blade order on the wire.
 pub const E2: usize = 0b00010;
+/// FORMAT: generator bit mask, basis blade order on the wire.
 pub const E3: usize = 0b00100;
+/// FORMAT: generator bit mask, basis blade order on the wire.
 pub const EP: usize = 0b01000;
+/// FORMAT: generator bit mask, basis blade order on the wire.
 pub const EM: usize = 0b10000;
 
 /// THE LARGEST `n` THE ALGEBRA HOLDS: base axis `i ≥ 4` is bit `i + 1` of a
 /// machine-word mask, and the slots of `Cl(n+1, 1)` are `2^{n+2}` masks, so
 /// the last axis whose algebra's masks are all words is `usize::BITS − 3`.
+/// FORMAT: the blade mask layout, three bits below the first base axis.
 #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — usize::BITS − 3 is below 256 on every target")]
 pub const MAX_N: u8 = (usize::BITS - 3) as u8;
 

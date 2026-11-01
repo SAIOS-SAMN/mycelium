@@ -12,30 +12,46 @@
 
 /// A reading's tag, the first byte of its writing and the last byte of its
 /// key.
+/// FORMAT: memory reading tag byte.
 pub const TAG_MEMORY: u8 = 3;
+/// FORMAT: court reading tag byte.
 pub const TAG_COURT: u8 = 4;
+/// FORMAT: replication reading tag byte.
 pub const TAG_REPLICATION: u8 = 5;
+/// FORMAT: adjudication reading tag byte.
 pub const TAG_ADJUDICATION: u8 = 6;
+/// FORMAT: phase reading tag byte.
 pub const TAG_PHASE: u8 = 13;
+/// FORMAT: carriage reading tag byte.
 pub const TAG_CARRIAGE: u8 = 14;
+/// FORMAT: clock reading tag byte.
 pub const TAG_CLOCK: u8 = 15;
+/// FORMAT: economy reading tag byte.
 pub const TAG_ECONOMY: u8 = 16;
 /// 2026-09-29 — a court's acts and metabolism.
+/// FORMAT: acts reading tag byte.
 pub const TAG_ACTS: u8 = 18;
+/// FORMAT: carriers reading tag byte.
 pub const TAG_CARRIERS: u8 = 19;
 /// 78.145 — the seat relay's standing and its posts filed and refused.
+/// FORMAT: relay reading tag byte.
 pub const TAG_RELAY: u8 = 20;
 /// MU-CLIENT §5.3 — a mind's conversation and what it built.
+/// FORMAT: mind reading tag byte.
 pub const TAG_MIND: u8 = 21;
 /// MU-CLIENT §5.5 — the agreed language a court attested, per pair.
+/// FORMAT: agreements reading tag byte.
 pub const TAG_AGREEMENTS: u8 = 22;
 /// The age of a court's published standing, in questions (`Reading::Asked`).
+/// FORMAT: asked reading tag byte.
 pub const TAG_ASKED: u8 = 23;
 /// The dispatch observation (2026-10-22): every task a court
 /// dispatched, by its citation, to whom and at what height.
+/// FORMAT: dispatched reading tag byte.
 pub const TAG_DISPATCHED: u8 = 24;
 /// The judged-solve observation (2026-10-24): every solve a court judged, by
 /// citation and voice, its verdicts and the height of the last.
+/// FORMAT: judged reading tag byte.
 pub const TAG_JUDGED: u8 = 25;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
@@ -546,64 +562,114 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
+/// FORMAT: the replication reading's width; `REPLICATION_AXES` is typed by it.
 pub const REP_AXES: usize = 54;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod replication {
     pub const PARENT: usize = 0;
     pub const BACKFILL: usize = 1;
+    /// FORMAT: axis position in the replication counters array.
     pub const GAP: usize = 2;
+    /// FORMAT: axis position in the replication counters array.
     pub const STALE: usize = 3;
+    /// FORMAT: axis position in the replication counters array.
     pub const EQUIVOCATION: usize = 4;
+    /// FORMAT: axis position in the replication counters array.
     pub const REFUSED_ORIGIN: usize = 5;
+    /// FORMAT: axis position in the replication counters array.
     pub const REFUSED_SIGNATURE: usize = 6;
+    /// FORMAT: axis position in the replication counters array.
     pub const REFUSED_RECEIPT: usize = 7;
+    /// FORMAT: axis position in the replication counters array.
     pub const NO_SECTION: usize = 8;
+    /// FORMAT: axis position in the replication counters array.
     pub const MALFORMED: usize = 9;
+    /// FORMAT: axis position in the replication counters array.
     pub const NO_ORIGIN: usize = 10;
+    /// FORMAT: axis position in the replication counters array.
     pub const DIGEST_UNREADABLE: usize = 11;
+    /// FORMAT: axis position in the replication counters array.
     pub const DIGEST_SIGNATURE: usize = 12;
+    /// FORMAT: axis position in the replication counters array.
     pub const BACKFILL_REACHED: usize = 13;
+    /// FORMAT: axis position in the replication counters array.
     pub const BACKFILL_BUDGET: usize = 14;
+    /// FORMAT: axis position in the replication counters array.
     pub const PARENT_AFTER_BACKFILL: usize = 15;
     /// A LEVEL: set at each report, never summed.
+    /// FORMAT: axis position in the replication counters array.
     pub const LAG: usize = 16;
+    /// FORMAT: axis position in the replication counters array.
     pub const BACKFILL_UNLINKED: usize = 17;
+    /// FORMAT: axis position in the replication counters array.
     pub const BACKFILL_REFUSED: usize = 18;
+    /// FORMAT: axis position in the replication counters array.
     pub const BACKFILL_EQUIVOCATION: usize = 19;
     /// LEVELS, set at each digest, never summed.
+    /// FORMAT: axis position in the replication counters array.
     pub const STRATA: usize = 20;
+    /// FORMAT: axis position in the replication counters array.
     pub const DISCORDANT: usize = 21;
+    /// FORMAT: axis position in the replication counters array.
     pub const RELATION_SAME: usize = 22;
+    /// FORMAT: axis position in the replication counters array.
     pub const RELATION_REFRACTED: usize = 23;
+    /// FORMAT: axis position in the replication counters array.
     pub const RELATION_CONJUGATE: usize = 24;
+    /// FORMAT: axis position in the replication counters array.
     pub const RELATION_UNSPELLABLE: usize = 25;
+    /// FORMAT: axis position in the replication counters array.
     pub const RELATION_DISTINCT: usize = 26;
+    /// FORMAT: axis position in the replication counters array.
     pub const PERCEIVED_COHERENT: usize = 27;
+    /// FORMAT: axis position in the replication counters array.
     pub const PERCEIVED_UNREAD: usize = 28;
     /// The first of the four lane residues, S G T H in order.
+    /// FORMAT: axis position in the replication counters array.
     pub const RESIDUE_S: usize = 29;
+    /// FORMAT: axis position in the replication counters array.
     pub const GLUE_HEARD: usize = 33;
+    /// FORMAT: axis position in the replication counters array.
     pub const GLUE_REPLAY_REFUSED: usize = 34;
+    /// FORMAT: axis position in the replication counters array.
     pub const GLUE_COLOUR_UNPROVEN: usize = 35;
+    /// FORMAT: axis position in the replication counters array.
     pub const GLUE_CITATION_MISSING: usize = 36;
+    /// FORMAT: axis position in the replication counters array.
     pub const GLUE_GATE_REFUSED: usize = 37;
+    /// FORMAT: axis position in the replication counters array.
     pub const GLUE_TORSION_REFUSED: usize = 38;
+    /// FORMAT: axis position in the replication counters array.
     pub const GLUE_CLASS_DIALECT: usize = 39;
+    /// FORMAT: axis position in the replication counters array.
     pub const GLUE_ATTACHED: usize = 40;
+    /// FORMAT: axis position in the replication counters array.
     pub const GLUE_ADMITTED: usize = 41;
+    /// FORMAT: axis position in the replication counters array.
     pub const FOLDED_PARENT: usize = 42;
+    /// FORMAT: axis position in the replication counters array.
     pub const FOLDED_PROVED: usize = 43;
+    /// FORMAT: axis position in the replication counters array.
     pub const MISSING_PARENT: usize = 44;
+    /// FORMAT: axis position in the replication counters array.
     pub const BACKFILL_MISSING_PARENT: usize = 45;
+    /// FORMAT: axis position in the replication counters array.
     pub const BACKFILL_MISSING_UNROOTED: usize = 46;
     /// A LEVEL: set at each stop, never summed.
+    /// FORMAT: axis position in the replication counters array.
     pub const MISSING_DEPTH: usize = 47;
+    /// FORMAT: axis position in the replication counters array.
     pub const ROOT_ADOPTED: usize = 48;
+    /// FORMAT: axis position in the replication counters array.
     pub const ROOT_REFUSED: usize = 49;
+    /// FORMAT: axis position in the replication counters array.
     pub const GLUE_UNREAD: usize = 50;
+    /// FORMAT: axis position in the replication counters array.
     pub const FETCH_SERVED: usize = 51;
+    /// FORMAT: axis position in the replication counters array.
     pub const FETCH_RECEIVED: usize = 52;
+    /// FORMAT: axis position in the replication counters array.
     pub const FETCH_UNANSWERED: usize = 53;
 }
 

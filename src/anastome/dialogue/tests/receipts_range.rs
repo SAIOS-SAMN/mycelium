@@ -45,3 +45,68 @@ fn receipts_request_round_trips_with_reply_within_budget() {
     );
     assert!(decode_receipts_reply(&all[..all.len() - 1]).is_none(), "a reply that does not parse to its end refuses");
 }
+
+/// D1.3 — A HEAD RECEIPT OVER THE CALLER'S BUDGET IS REFUSED: the page is
+/// the reply's header alone, never a body past the budget the frame codec
+/// would refuse after it was built; at the budget exactly, it rides.
+#[test]
+fn encode_receipts_reply_refuses_head_over_budget() {
+    let mut c = ReceiptChain::with_signer([2; 32]);
+    c.append(ActKind::List, [1, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends");
+    let line: Vec<_> = c.own().collect();
+    let mut tape = Vec::new();
+    line[0].write(&mut tape).expect("writes");
+    let whole = RECEIPTS_REPLY_HEADER + tape.len();
+    let short = encode_receipts_reply(&line, whole - 1);
+    assert_eq!(decode_receipts_reply(&short), Some(Vec::new()), "refused: nothing rides");
+    assert_eq!(short.len(), RECEIPTS_REPLY_HEADER, "the header alone");
+    let page = encode_receipts_reply(&line, whole);
+    assert_eq!(decode_receipts_reply(&page), Some(line), "at the budget exactly, it rides");
+}
+
+/// D4.6 — THE RECEIPTS PAGE FILLS THE FRAME LESS ITS ENVELOPES: the tapes'
+/// budget is the frame less the reading height behind the reply and the
+/// reply's own count, and the page holds as many of the smallest tape as fit
+/// it — no reserve of 64 beside them.
+#[test]
+fn receipts_page_fills_budget_less_header() {
+    let b = crate::network::wire::frame_budget();
+    let (at_most, bytes) = crate::cognition::Court::receipts_frame().expect("a frame");
+    assert_eq!(bytes, b - READING_HEIGHT_LEN - RECEIPTS_REPLY_HEADER);
+    assert_eq!(at_most, bytes / crate::chronometry::KStepReceipt::MIN_TAPE);
+    assert_eq!(crate::cognition::Court::receipts_reply_budget(), Some(b - READING_HEIGHT_LEN));
+}
+
+/// D4.6 — THE ROWS REPLY COUNTS ITS OWN HEADER: given the frame whole, a page
+/// of more rows than fit holds exactly `⌊(B − 12)/ℓ⌋`, `ℓ` the row's own
+/// tape length.
+#[test]
+fn rows_reply_counts_own_header() {
+    use crate::economy::{Entry, Kind};
+    let b = crate::network::wire::frame_budget();
+    let row = Entry { kind: Kind::Mint, who: [1; 32], mu: [1, 0, 0, 0].into(), at: crate::chronometry::Stamp { h: 3, vk: [2; 32], k: 3, i: 0 }, receipt: [0; 32], arm: None };
+    let fit = (b - ROWS_REPLY_HEADER) / row.tape_len();
+    let rows = vec![row; fit + 1];
+    let page = encode_rows_reply(0, &rows, b).expect("the page counts");
+    assert_eq!(decode_rows_reply(&page).map(|(_, r)| r.len()), Some(fit));
+    assert!(page.len() <= b);
+}
+
+/// D1.3, D4.6 — EVERY PAGE'S ENVELOPE IS ITS CODEC'S OWN HEADER: an empty
+/// page of each reply is exactly the header its budget is read beside.
+#[test]
+fn page_envelope_equals_codec_header() {
+    let b = crate::network::wire::frame_budget();
+    assert_eq!(encode_receipts_reply(&[], b).len(), RECEIPTS_REPLY_HEADER);
+    assert_eq!(encode_rows_reply(0, &[], b).map(|v| v.len()), Some(ROWS_REPLY_HEADER));
+    let words = encode_syllabus_reply(&[]).expect("an empty page");
+    assert_eq!(words.len(), SYLLABUS_REPLY_HEADER);
+    let mut fetch = words;
+    append_class_records(&mut fetch, &[]).expect("no records");
+    assert_eq!(fetch.len(), SYLLABUS_REPLY_HEADER + CLASS_RECORDS_HEADER);
+    assert_eq!(encode_cited_request(&[1; 32], &[]).map(|v| v.len()), Some(CITED_REQUEST_HEADER));
+    assert_eq!(encode_quote_reply_within(1, &[1, 2, 3, 4], 5, &[], b).map(|v| v.len()), Some(QUOTE_REPLY_HEADER));
+    let mut widest = vec![1u8];
+    crate::transducer::address::put_key_count(&mut widest, usize::MAX);
+    assert_eq!(widest.len(), atlas::LEDGER_PAGE_HEADER, "the more flag and the widest count");
+}

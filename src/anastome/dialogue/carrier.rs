@@ -88,22 +88,32 @@ pub(crate) fn read_invariant(b: &[u8], p: &mut usize) -> Option<crate::transduce
 }
 
 /// `None` where the grid's height or width passes its two bytes (STD1 3c):
-/// a grid is refused, never framed as a smaller one.
+/// a grid is refused, never framed as a smaller one. A ragged grid (a row of
+/// another width than the first) and one with rows but no columns are no
+/// rectangle, and are refused too: their tape would not read back (D4.3).
 #[must_use]
 pub(crate) fn push_grid(out: &mut Vec<u8>, g: &[Vec<u8>]) -> Option<()> {
+    let w = crate::arc::grid_width(g);
+    if g.iter().any(|row| row.len() != w) || (g.is_empty() != (w == 0)) {
+        return None;
+    }
     crate::transducer::address::put_u16_count(out, g.len())?;
-    crate::transducer::address::put_u16_count(out, crate::arc::grid_width(g))?;
+    crate::transducer::address::put_u16_count(out, w)?;
     for row in g {
         out.extend_from_slice(row);
     }
     Some(())
 }
 
+/// A grid read back, its dimensions bounded by the bytes the tape carries
+/// (each cell one byte) and by nothing else (D4.3): a rectangle `h × w` with
+/// both at least one and `h·w` within what remains, or the empty `0 × 0`;
+/// rows without columns, or columns without rows, are no grid.
 pub(crate) fn read_grid(b: &[u8], p: &mut usize) -> Option<Vec<Vec<u8>>> {
-    let h = u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?) as usize;
-    let w = u16::from_le_bytes(b.get(*p + 2..*p + 4)?.try_into().ok()?) as usize;
+    let h = usize::from(u16::from_le_bytes(b.get(*p..*p + 2)?.try_into().ok()?));
+    let w = usize::from(u16::from_le_bytes(b.get(*p + 2..*p + 4)?.try_into().ok()?));
     *p += 4;
-    if h * w > b.len().checked_sub(*p)? || h > 1024 || w > 1024 {
+    if (h == 0) != (w == 0) || h.checked_mul(w)? > b.len().checked_sub(*p)? {
         return None; // untrusted dims
     }
     let mut g = Vec::with_capacity(h);

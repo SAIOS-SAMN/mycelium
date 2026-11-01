@@ -18,7 +18,7 @@ fn selection_key_equals_selection_bytes_never_debug_text() {
     let s = Selection::Hue(3);
     let mut buf = Vec::new();
     s.to_bytes(&mut buf);
-    let k = selection_key(&s);
+    let k = s.key();
     assert_eq!(k.as_bytes()[0], crate::transducer::address::TAG_SEL);
     assert_eq!(&k.as_bytes()[1..], buf.as_slice(), "the key is Selection::to_bytes, never a digest");
     assert_ne!(k.as_bytes(), format!("{s:?}").as_bytes());

@@ -31,7 +31,7 @@ use crate::chronometry::Place;
 /// whose section cannot be framed is not spoken (rule 11).
 pub fn encode_receipt_section(
     prefix: &crate::court::admission::SignedPrefix,
-    sig: &[u8; 64],
+    sig: &[u8; ED25519_SIGNATURE_LEN],
     receipt: &crate::chronometry::KStepReceipt,
 ) -> Option<Vec<u8>> {
     if !prefix.fits() {
@@ -61,8 +61,8 @@ pub fn decode_receipt_section(body: &[u8], at: usize) -> Option<ReceiptSection> 
     p += 2;
     let prefix = crate::court::admission::SignedPrefix::read(body.get(p..p + plen)?)?;
     p += plen;
-    let sig: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
-    p += 64;
+    let sig: [u8; ED25519_SIGNATURE_LEN] = body.get(p..p + ED25519_SIGNATURE_LEN)?.try_into().ok()?;
+    p += ED25519_SIGNATURE_LEN;
     let rlen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
     let rb = body.get(p..p + rlen)?;
@@ -242,9 +242,10 @@ pub fn decode_receipts_request(body: &[u8]) -> Option<ReceiptsRequest> {
 /// receipt and halting on it, so the back-fill could never pass K 1111 and
 /// no peer receipt was ever admitted as a parent.
 ///
-/// The only bound left is `BODY_BUDGET`, which the frame codec refuses
-/// past: a receipt over the protocol ceiling cannot ride any wire, and
-/// that is a refusal rather than a silent short page (rule 11).
+/// The only bound is the caller's `budget` (the reply's share of the frame,
+/// header included): a head receipt over it cannot ride this reply, and that
+/// is a refusal by name, never a body the frame codec refuses after it was
+/// built (MU-DERIVATIONS §2 item 2, D1.3).
 pub fn encode_receipts_reply(receipts: &[crate::chronometry::KStepReceipt], budget: usize) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(&0u32.to_le_bytes());
@@ -263,13 +264,16 @@ pub fn encode_receipts_reply(receipts: &[crate::chronometry::KStepReceipt], budg
     if let Some((head, rest)) = receipts.split_first() {
         let mut rb = Vec::new();
         let size = match head.write(&mut rb) {
-            Some(()) => out.len() + rb.len(),
+            Some(()) => Some(out.len() + rb.len()),
             None => {
                 eprintln!("  receipts page refused: its first node cannot be written");
-                usize::MAX
+                None
             }
         };
-        if size <= crate::network::wire::BODY_BUDGET {
+        if let Some(size) = size.filter(|s| *s > budget) {
+            eprintln!("  receipts page refused: its first node of {size} bytes passes the page budget of {budget}");
+        }
+        if size.is_some_and(|s| s <= budget) {
             out.extend_from_slice(&rb);
             n += 1;
             for r in rest.iter().take(cap) {
@@ -300,7 +304,18 @@ pub fn decode_receipts_reply(body: &[u8]) -> Option<Vec<crate::chronometry::KSte
 /// 78.151 (WIRE-CHANGE) — THE HEIGHT A READ WAS ANSWERED AT: a door that
 /// serves a read off its published reading writes that reading's height
 /// behind the answer, eight bytes, so the asker knows how fresh it is.
+/// FORMAT: reading-height field length, 8 bytes.
 pub const READING_HEIGHT_LEN: usize = 8;
+
+/// THE LENGTH OF AN ED25519 SIGNATURE where one rides a body — the receipt
+/// section's `[sig 64]` — as the dependency states it (RFC 8032 §5.1.6: a
+/// signature is 64 octets). Never a page's reserve: no page reply carries a
+/// reply-level signature (MU-DERIVATIONS D4.6).
+pub const ED25519_SIGNATURE_LEN: usize = ed25519_dalek::SIGNATURE_LENGTH;
+
+/// THE RECEIPTS REPLY'S HEADER: `[n u32]` ahead of the receipts' tapes.
+/// FORMAT: `encode_receipts_reply`'s count field, 4 bytes.
+pub const RECEIPTS_REPLY_HEADER: usize = 4;
 
 /// The published reading's height, written behind a read's answer.
 pub fn put_reading_height(out: &mut Vec<u8>, height: u64) {
