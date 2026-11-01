@@ -43,9 +43,9 @@ fn resume_never_signs_at_or_below_last_height() {
     assert_eq!(LastSigned::decode(&altered), None, "an altered tick does not verify");
     let mut version = bytes.clone();
     if let Some(b) = version.get_mut(4) {
-        *b = 2;
+        *b = 1;
     }
-    assert_eq!(LastSigned::decode(&version), None, "another version is none");
+    assert_eq!(LastSigned::decode(&version), None, "a version-1 record (counts on the lanes) is none");
     // On disk, as the home keeps it: written durably, read back by value.
     let dir = std::env::temp_dir().join(format!("mycelium-keeper-record-{}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("a scratch home");

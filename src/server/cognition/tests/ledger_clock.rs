@@ -309,3 +309,31 @@ let own_h = i64::try_from(c.head[0]).expect("a height");
 assert_eq!(c.peers, vec![(key.verifying_bytes(), pr.stamp.h, own_h - i64::try_from(pr.stamp.h).expect("a height"))]);
 assert_eq!(c.rulings, [[0; 4]; 4], "a List is no ruling");
 }
+
+/// 78.152 TU-1, TU-5 (ruled 2026-11-01) — THE KEEPER TICK CARRIES μ ISSUED
+/// EXACTLY: a mint of `1/900` on S (one changed site of a 30×30 frame) moves
+/// the tick's S lane by exactly `1/900`, never rounded and never refused, and
+/// a keeper signs the tick that holds it once the head has risen past it.
+#[test]
+fn keeper_tick_advances_past_fractional_issuance() {
+use crate::chronometry::tuniversal::{Keepers, Origin};
+use crate::economy::Mu;
+let mut k = Court::new();
+let a = vec![(0, 0, 1), (0, 1, 1)];
+speak_pair(&mut k, &a, &[(0, 0, 2), (0, 1, 2)], [1; 32]);
+let before = k.keeper_tick().expect("the court has acted");
+let q = |n: i64, d: i64| crate::core::Q::new(n.into(), d.into());
+let share = Mu::of([q(1, 900), q(0, 1), q(0, 1), q(0, 1)]).expect("non-negative");
+let at = k.anchor_pub();
+k.treasury.mint_to([3; 32], share.clone(), at, None);
+speak_pair(&mut k, &a, &[(0, 0, 5), (0, 1, 5)], [2; 32]);
+let after = k.keeper_tick().expect("the court has acted");
+assert!(after.h > before.h, "the head rose");
+assert_eq!(after.lanes.lane(0) - before.lanes.lane(0), q(1, 900), "S moved by the share exactly");
+assert!(!after.lanes.is_integral(), "the issuance holds a share of a unit");
+let sk = ed25519_dalek::SigningKey::from_bytes(&[7; 32]);
+let mut keepers = Keepers::new(Origin { genesis: [1; 32], epoch: 0 }, sk.verifying_key().to_bytes());
+assert_eq!(keepers.read_own(&sk, before), Some(true));
+assert_eq!(keepers.read_own(&sk, after.clone()), Some(true), "the fractional tick is signed");
+assert!(keepers.own_ring().iter().any(|r| r.tick == after), "the ring carries the fractional tick");
+}

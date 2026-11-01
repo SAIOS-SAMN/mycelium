@@ -92,7 +92,7 @@ fn perceive_bounds_seat_values_to_one_frame() {
 fn dilation_reads_du_dh_exactly() {
     use crate::chronometry::tuniversal::{Origin, TPoint};
     let origin = Origin { genesis: [6; 32], epoch: 156 };
-    let at = |h: u64| TPoint { origin, h, lanes: [1, 0, 0, 0], k: 1 };
+    let at = |h: u64| TPoint { origin, h, lanes: [1, 0, 0, 0].into(), k: 1 };
     let located = |seq: u64, u: Arg, h: u64| Percept { point: Some(at(h)), ..percept(seq, u, vec![]) };
     let mut m = SeatMind::scoped(verifying(&domain()), Some([3; 32]), 7);
     assert_eq!(m.sub_origin, Some([3; 32]));

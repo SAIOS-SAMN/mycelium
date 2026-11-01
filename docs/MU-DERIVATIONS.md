@@ -574,7 +574,11 @@ read (`wire.rs:171`, `noise.rs:399`, `transport.rs:88, 208`,
 the awaited-citations ask (`exchange.rs:881`), and the seat mind's series
 bound (`seat_mind/mind.rs:170`). A frame is
 `[lane 1][len u32 LE 4][body][TPoint 84]?`
-(`TPoint::LEN = 32 + 4 + 8 + 4·8 + 8 = 84`). Under Noise a frame rides in
+(`TPoint::LEN = 32 + 4 + 8 + 4·8 + 8 = 84`; ruled 2026-11-01, the point's
+lanes are exact rationals and the trailer is `[point][point len u16]`, of
+no fixed length: at least `96 + 2` bytes and at most `TPoint::TRAILER_MAX =
+u16::MAX + 2`, so the `84` below reads as the trailer a given point takes).
+Under Noise a frame rides in
 plaintext chunks of `CHUNK = MESSAGE_MAX − TAG_LEN = 65535 − 16 = 65519`
 bytes (`noise.rs:36–40`).
 
@@ -2735,7 +2739,8 @@ own signature inside its tape), `encode_syllabus_reply` (`[n u8]…`,
 header 1), `encode_cited_request`
 (`[act][voice 32][CITED u?][count u16]…`). The `TPoint` a pointed frame
 carries is outside `B` (the frame admits `B + TPoint::LEN`,
-`wire.rs:171`). So `64` is not a signature here, and naming it
+`wire.rs:171`; from 2026-11-01 the point's lanes are exact rationals and
+the frame admits `B + TPoint::TRAILER_MAX`, the point and its u16 count). So `64` is not a signature here, and naming it
 `ED25519_SIGNATURE_LEN` citing RFC 8032 would put a false citation on the
 wire's size (§2 item 10).
 

@@ -66,9 +66,29 @@ its book.
   point is the network's whole four-dimensional state at that tick
   (78.124), captured on every act. In a ledger fold the same lanes read as
   matter, value, duration and information (MU-LEXICON §3.1).
+
+  **The lanes are exact rationals** (ruled 2026-11-01; MU-RECURSION 78.152
+  TU-1, TU-5, TU-7 amended forward). μ is a share of the frame, so μ issued
+  holds shares of a unit, and the clock carries it exactly: each lane is
+  an `economy::Mu` lane, never rounded and never refused for a share. The
+  writing is canonical and one way only: `h` and `K` in 16 lowercase hex
+  digits; each lane `n/d`, its exact value in lowest terms, numerator and
+  denominator in lowercase hex with no leading zero (`0/1` for none). For
+  example `…/000000000000000a:7/1e:0/1:1/384:2/1:0000000000000003` holds
+  S = 7/30 and T = 1/900. Within one origin the text orders by `h` as the
+  number does; past `h` a lane has no fixed width, so text order is not
+  numeric order there (`1/2` sorts before `1/3`). Two writings are
+  compared by `TPoint::compare_writings`, which reads both back and orders
+  them as points: origin, `h`, each lane by its exact value in lane order,
+  `K`. `TPoint` is no longer `Copy`.
 - **Every act carries it** (TU-7). A client reads the latest final point
   with `Session::tuniversal`, or asks a court for it
-  (`encode_clock_request`); chatter frames carry it.
+  (`encode_clock_request`); chatter frames carry it. A pointed frame is
+  `[lane | 0x80][len u32 LE][body][point][point len u16 LE]`: the point's
+  wire bytes (genesis 32, epoch u32 LE, `h` u64 LE, the four lanes in the
+  rational lane codec, `K` u64 LE), then their count, so a reader finds the
+  point from the frame's end. A point is at least 96 bytes (four lanes at
+  `0/1`) and at most `u16::MAX`.
 - **The core stamp.** A court serves its head's stamp
   `h:S:G:T:H:K.i` (`CoreStamp`, `ACT_LAWS` mode 4), so a kernel can read
   the court's own state at its latest act (78.124).

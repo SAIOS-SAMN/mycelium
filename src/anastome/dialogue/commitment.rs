@@ -176,7 +176,7 @@ pub fn verify_absence(root: &[u8; 32], key: &[u8], siblings: &[[u8; 32]]) -> boo
 /// One event's leaf; `None` past a wall.
 pub fn event_leaf(e: &Event) -> Option<[u8; 32]> {
     let (at, u, key, values) = e;
-    let mut m = Vec::with_capacity(TPoint::LEN + 8);
+    let mut m = Vec::with_capacity(TPoint::MIN_LEN + 8);
     at.put(&mut m);
     m.extend_from_slice(&u.to_le_bytes());
     keyed(&mut m, key, values)?;

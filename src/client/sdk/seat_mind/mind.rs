@@ -99,7 +99,7 @@ impl SeatMind {
     /// point or a quantity `u` locates nothing and leaves the reading as it
     /// stood.
     fn locate(&mut self, p: &Percept, u: Option<&Q>) -> Option<Dilation> {
-        let now = Located { point: p.point?, u: u?.clone() };
+        let now = Located { point: p.point.clone()?, u: u?.clone() };
         let d = self.located.as_ref().and_then(|before| Dilation::between(before, &now));
         self.located = Some(now);
         self.dilation = d.clone();

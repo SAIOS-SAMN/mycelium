@@ -12,7 +12,7 @@ pub(super) fn verifying(k: &SigningKey) -> [u8; 32] {
 pub(super) const ORIGIN: Origin = Origin { genesis: [0x6a; 32], epoch: 146 };
 
 pub(super) fn tick(h: u64, lanes: [u64; 4], k: u64) -> Tick {
-    Tick { h, lanes, k }
+    Tick { h, lanes: lanes.into(), k }
 }
 
 /// Three keepers, one court each, all in this process.

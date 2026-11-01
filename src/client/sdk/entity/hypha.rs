@@ -82,7 +82,7 @@ impl<S: Send + 'static> Carrier<S> {
 }
 
 /// WHAT THE WIRE READ, as the carrier last published it.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct View {
     point: Option<crate::chronometry::tuniversal::TPoint>,
     aperture: TransportAperture,
@@ -164,7 +164,7 @@ impl HyphaLink {
     }
 
     fn view(&self) -> Option<View> {
-        self.view.lock().ok().map(|v| *v)
+        self.view.lock().ok().map(|v| v.clone())
     }
 
     /// The last final point the doors carried (78.152 TU-7).

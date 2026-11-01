@@ -100,7 +100,7 @@ fn prove_verifies_inclusion_and_refuses_wrong_proof() {
 }
 
 fn at(h: u64) -> TPoint {
-    TPoint { origin: Origin { genesis: [4; 32], epoch: 0 }, h, lanes: [h, 0, 0, 0], k: 1 }
+    TPoint { origin: Origin { genesis: [4; 32], epoch: 0 }, h, lanes: [h, 0, 0, 0].into(), k: 1 }
 }
 
 fn event(h: u64, u: u64, key: &str) -> Event {

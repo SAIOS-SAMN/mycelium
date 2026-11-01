@@ -1729,9 +1729,10 @@ prefix). Code: `src/chronometry/receipt.rs::KStepReceipt::seal`, `::hash`,
 
 ```text
 TPoint = { origin: (genesis, epoch), h, S, G, T, H, K }
-writing:  <genesis 64 hex>.<epoch 8 hex>/<h>:<S>:<G>:<T>:<H>:<K>     (each field 16 lowercase hex)
+writing:  <genesis 64 hex>.<epoch 8 hex>/<h>:<S>:<G>:<T>:<H>:<K>     (h, K: 16 lowercase hex; each lane n/d, lowest terms, lowercase hex, no leading zero)
 origin.genesis = the chain hash of the mesh's first receipt
-S:G:T:H  = Treasury::issued per lane at the keeper's court
+S:G:T:H  = Treasury::issued per lane at the keeper's court, exact in ℚ≥0 (ruled 2026-11-01)
+a ≤ b    ⇔  (origin, h, S, G, T, H, K) of a ≤ that of b, each lane by value   (TPoint::compare_writings on writings)
 advances on held  ⇔  nothing held,  or same origin and greater h,  or a later epoch
 ```
 

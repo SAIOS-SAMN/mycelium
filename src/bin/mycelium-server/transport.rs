@@ -85,7 +85,7 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     let mut head = [0u8; 5];
     s.read_exact(&mut head).ok()?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::LEN {
+    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::TRAILER_MAX {
         // REFUSED BY NAME, NOT DROPPED (78.125): the frame names a body past
         // the wire's one budget. Its body is never read — a length is no
         // licence to allocate — but the act is answered refused before the
@@ -202,7 +202,7 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, rtt_hint: u64) -> 
     let rtt = read_budgeted(&mut s, &mut head, stall)?;
     let (_, pointed) = mycelium::network::wire::read_lane(head[0])?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::LEN {
+    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::TRAILER_MAX {
         return None;
     }
     let mut reply = vec![0u8; len];

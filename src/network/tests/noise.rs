@@ -99,7 +99,7 @@ fn initiate_completes_handshake_and_round_trips_frames() {
     assert_ne!(a.public(), b.public());
 
     use crate::chronometry::tuniversal::Origin;
-    let point = TPoint { origin: Origin { genesis: [7; 32], epoch: 146 }, h: 40_961, lanes: [3, 0, 9, 1], k: 812 };
+    let point = TPoint { origin: Origin { genesis: [7; 32], epoch: 146 }, h: 40_961, lanes: [3, 0, 9, 1].into(), k: 812 };
     let ask = Frame { lane: Stratum::Gauge, body: vec![0x53, 1, 2, 3] };
     ia.write_frame(&ask, Some(&point)).unwrap();
     assert_eq!(rb.read_frame().unwrap(), (ask, Some(point)));
@@ -153,7 +153,7 @@ fn read_frame_refuses_head_past_budget() {
     let ((_da, a), (_db, b)) = (home(), home());
     let (ia, rb) = handshake(&a, &b, "peer", |s| s);
     let (mut ia, mut rb) = (ia.unwrap(), rb.unwrap());
-    let len = BODY_BUDGET + TPoint::LEN + 1;
+    let len = BODY_BUDGET + TPoint::TRAILER_MAX + 1;
     let mut head = vec![Stratum::Spatial.byte()];
     head.extend_from_slice(&u32::try_from(len).unwrap().to_le_bytes());
     ia.write_all(&head).unwrap();

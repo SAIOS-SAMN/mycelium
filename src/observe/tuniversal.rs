@@ -5,14 +5,16 @@
 //
 //! A reading on the observer, never folded into the point (TU-4): the final
 //! point is the shelf's, each keeper's `final_of` is the keepers' own, the
-//! residual's edges and holonomy are carried exact (`i128` per lane), never
-//! averaged and never a root.
+//! residual's edges and holonomy are carried exact (a signed rational per
+//! lane), never averaged and never a root.
 
 use crate::chronometry::tuniversal::{Edge, Keepers, Residual, TPoint, Tick};
+use crate::core::Q;
 
 /// The writing's version, its first byte: a reader of another layout refuses
-/// rather than reading one field as another.
-pub const TSTANDING_VERSION: u8 = 1;
+/// rather than reading one field as another. Version 2 carries the lanes as
+/// exact rationals (ruled 2026-11-01).
+pub const TSTANDING_VERSION: u8 = 2;
 
 /// ONE KEEPER AS THIS COURT HOLDS IT: its key, whether it is this court's
 /// own, its newest verified reading's tick (`None` where none is held), and
@@ -41,21 +43,20 @@ pub fn keepers_seen(k: &Keepers) -> Vec<KeeperSeen> {
     let local = k.own_key();
     k.keepers()
         .into_iter()
-        .map(|key| KeeperSeen { key, own: key == local, newest: k.newest(&key).map(|r| r.tick), final_of: k.final_of(&key) })
+        .map(|key| KeeperSeen { key, own: key == local, newest: k.newest(&key).map(|r| r.tick.clone()), final_of: k.final_of(&key) })
         .collect()
 }
 
 fn put_tick(out: &mut Vec<u8>, t: &Tick) {
     out.extend_from_slice(&t.h.to_le_bytes());
-    for l in t.lanes {
-        out.extend_from_slice(&l.to_le_bytes());
-    }
+    t.lanes.put(out);
     out.extend_from_slice(&t.k.to_le_bytes());
 }
 
-fn put_lanes(out: &mut Vec<u8>, d: &[i128; 4]) {
+/// Four signed exact lanes, each as `rotor::put_q` writes a rational.
+fn put_lanes(out: &mut Vec<u8>, d: &[Q; 4]) {
     for l in d {
-        out.extend_from_slice(&l.to_le_bytes());
+        crate::transducer::alphabet::rotor::put_q(out, l);
     }
 }
 
@@ -87,11 +88,10 @@ fn take_key(b: &[u8], p: &mut usize) -> Option<[u8; 32]> {
     Some(v)
 }
 
-fn take_lanes(b: &[u8], p: &mut usize) -> Option<[i128; 4]> {
-    let mut d = [0i128; 4];
+fn take_lanes(b: &[u8], p: &mut usize) -> Option<[Q; 4]> {
+    let mut d: [Q; 4] = Default::default();
     for l in &mut d {
-        *l = i128::from_le_bytes(b.get(*p..*p + 16)?.try_into().ok()?);
-        *p += 16;
+        *l = crate::transducer::alphabet::rotor::take_q(b, p)?;
     }
     Some(d)
 }
@@ -176,10 +176,7 @@ impl TStanding {
                 0 => None,
                 1 => {
                     let h = take_u64(b, p)?;
-                    let mut lanes = [0u64; 4];
-                    for l in &mut lanes {
-                        *l = take_u64(b, p)?;
-                    }
+                    let lanes = crate::economy::Mu::take(b, p).ok()?;
                     Some(Tick { h, lanes, k: take_u64(b, p)? })
                 }
                 _ => return None,
@@ -188,8 +185,9 @@ impl TStanding {
         }
         let m = usize::try_from(u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?)).ok()?;
         *p += 4;
-        // An edge is two keys, a tick and four signed lanes: 136 bytes.
-        if !holds(b, *p, m, 136) {
+        // An edge is two keys, a tick and four signed lanes, each lane at
+        // least its numerator's and denominator's two counts: 80 bytes.
+        if !holds(b, *p, m, 80) {
             return None;
         }
         let mut edges = Vec::with_capacity(m);

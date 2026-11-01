@@ -38,7 +38,7 @@ fn reserve(d: u8) -> SigningKey {
 
 /// A final point of the mesh at tick `h`.
 fn fp(h: u64) -> TPoint {
-    TPoint { origin: Origin { genesis: [9; 32], epoch: 0 }, h, lanes: [h, 0, 0, 0], k: h }
+    TPoint { origin: Origin { genesis: [9; 32], epoch: 0 }, h, lanes: [h, 0, 0, 0].into(), k: h }
 }
 
 /// Domains 4 and 5 founded, each its own reserve, and a tube open between
@@ -135,7 +135,7 @@ fn traverse(k: &mut Court, m: [u8; 32], at: u64, route: Vec<[u8; 32]>, carried: 
     let ((entry_a, u_a), (entry_b, u_b)) = (head(k, 4), head(k, 5));
     let point = |k: &Court, d: u8, side: u8| {
         let id = crate::server::cognition::atlas::mouth_citation(&domain(d), &m, side);
-        k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point)
+        k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point.clone())
     };
     let (point_a, point_b) = (point(k, 4, 0), point(k, 5, 1));
     let payer = key(60);
@@ -305,7 +305,7 @@ fn ledger_chains_refuses_forks_and_reads_dilation() {
     assert_eq!(k.ledger(&entry(12, 13, first).sign(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotFinal), "above the court's point");
     assert_eq!(k.ledger(&entry(12, 12, first).sign(&reserve(4)), None), Ledgered::Refused(LedgerRefusal::NotFinal), "no final point read");
     assert_eq!(k.ledger(&entry(12, 9, first).sign(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::Behind));
-    let other_lanes = TPoint { lanes: [1, 1, 1, 1], ..fp(10) };
+    let other_lanes = TPoint { lanes: [1, 1, 1, 1].into(), ..fp(10) };
     let forged = LedgerEntry { point: other_lanes, ..entry(12, 10, first) };
     assert_eq!(k.ledger(&forged.sign(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotFinal), "a point at a held tick that is not the point held");
     assert_eq!(k.ledger(&entry(12, 12, first).sign(&key(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotReserve), "the founder is not the reserve");

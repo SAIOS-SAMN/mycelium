@@ -6,6 +6,7 @@
 use super::point::{Origin, TPoint};
 use super::reading::{Cited, Tick, TickReading};
 use super::record::LastSigned;
+use crate::core::Q;
 use crate::network::nerve::Keyed;
 
 /// How many recent readings a keeper carries on its digest: an aperture
@@ -76,13 +77,13 @@ impl Line {
 }
 
 /// ONE EDGE OF THE KEEPER TRIANGLE (TU-4): two keepers' readings at one
-/// tick, and the exact lane difference `to − from`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// tick, and the exact lane difference `to − from`, a signed rational.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Edge {
     pub from: [u8; 32],
     pub to: [u8; 32],
     pub h: u64,
-    pub delta: [i128; 4],
+    pub delta: [Q; 4],
 }
 
 /// THE CLOCK'S RESIDUAL (TU-4): each edge of the triangle where its two
@@ -95,7 +96,7 @@ pub struct Edge {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Residual {
     pub edges: Vec<Edge>,
-    pub holonomy: Option<[i128; 4]>,
+    pub holonomy: Option<[Q; 4]>,
 }
 
 /// THE KEEPERS, AS THIS COURT HOLDS THEM.
@@ -345,7 +346,7 @@ impl Keepers {
     /// Held: a point once final stays final after its readings leave the
     /// window — the clock never runs back (raised by `settle`).
     pub fn final_point(&self) -> Option<TPoint> {
-        self.held_final
+        self.held_final.clone()
     }
 
     /// The final point re-read off the readings held and raised where it
@@ -368,7 +369,7 @@ impl Keepers {
         while let Some(p) = finals.get(i) {
             let same: Vec<&TPoint> = finals.iter().filter(|q| q.h == p.h).collect();
             if same.iter().all(|q| **q == *p) {
-                out = Some(*p);
+                out = Some(p.clone());
             }
             i += same.len();
         }
@@ -383,13 +384,9 @@ impl Keepers {
             return Residual::default();
         };
         let (ab, bc, ac) = (self.edge(a, b), self.edge(b, c), self.edge(a, c));
-        // a → b → c → a: the third edge is read backwards. A lane past its
-        // carrier leaves the holonomy unmeasured (rule 11).
-        let holonomy = match (ab, bc, ac) {
-            (Some(ab), Some(bc), Some(ac)) => (0..4)
-                .map(|l| ab.delta[l].checked_add(bc.delta[l])?.checked_sub(ac.delta[l]))
-                .collect::<Option<Vec<i128>>>()
-                .and_then(|v| <[i128; 4]>::try_from(v).ok()),
+        // a → b → c → a: the third edge is read backwards, exactly.
+        let holonomy = match (&ab, &bc, &ac) {
+            (Some(ab), Some(bc), Some(ac)) => Some(std::array::from_fn(|l| &ab.delta[l] + &bc.delta[l] - &ac.delta[l])),
             _ => None,
         };
         Residual { edges: [ab, bc, ac].into_iter().flatten().collect(), holonomy }
@@ -401,7 +398,7 @@ impl Keepers {
         let (lx, ly) = (self.line(&from)?, self.line(&to)?);
         let (_, rx) = lx.readings.iter().rev().find(|(_, r)| ly.at_h(r.tick.h).is_some())?;
         let (_, ry) = ly.at_h(rx.tick.h)?;
-        let delta = std::array::from_fn(|l| i128::from(ry.tick.lanes[l]) - i128::from(rx.tick.lanes[l]));
+        let delta = std::array::from_fn(|l| ry.tick.lanes.lane(l) - rx.tick.lanes.lane(l));
         Some(Edge { from, to, h: rx.tick.h, delta })
     }
 }

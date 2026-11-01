@@ -79,6 +79,23 @@ Holding the modes themselves (78.162) remains the next step.
   septum equivocation (it carries no μ) and the deferral, whose deficit is
   a reserve count (the door reads an unpaid share of a unit as the unit it
   did not cover).
+- **TUniversal's lanes are exact rationals** (ruled 2026-11-01; MU-RECURSION
+  78.152 TU-1, TU-5, TU-7 amended forward; MU-CHRONOMETRY §1). The clock
+  reads μ issued, and μ holds shares of a unit, so `Tick` and `TPoint`
+  carry their four lanes as an `economy::Mu`; `Court::keeper_tick` no
+  longer refuses an issuance holding a share. `TPoint::print` writes `h`
+  and `K` in 16 hex digits and each lane `n/d` in lowest terms, lowercase
+  hex, no leading zero (`0/1` for none); text order is numeric order by `h`
+  and not past it, and `TPoint::compare_writings` compares two writings as
+  points. `TPoint` and `Tick` are no longer `Copy` (`TPoint::LEN` becomes
+  `TPoint::MIN_LEN`, 96). The TU-7 trailer is `[point][point len u16 LE]`
+  (`TPoint::put_trailer`, `take_trailer`; a frame admits `BODY_BUDGET +
+  TPoint::TRAILER_MAX`). The signed tick bytes and the ring carry the
+  lanes in the rational lane codec under `"mycelium tuniversal v2"`; the
+  keeper record is `MYKR` version 2 (version 1 refused by name); the
+  observer's TUniversal standing is version 2, its residue edges and
+  holonomy exact signed rationals; a superposition's difference is
+  `Superposed { lanes, k }`.
 - **Task addresses change again, for every task: full content**
   (MU-RECURSION 78.169, O3). A train pair is written as both frames' full
   content — the four periods and every band of each frame — instead of the
@@ -97,6 +114,11 @@ Holding the modes themselves (78.162) remains the next step.
   `Granted`, `EndowmentReading`, `ReserveReading`, `Bond`, `LineHead`,
   `Crossed`) is a `Mu`. `Account::owned` and `Wallet::owned` return a `Mu`,
   no longer an `Option`.
+- `TPoint` (`session::TPoint`, `house::TPoint`, `prelude::TPoint`) carries
+  its lanes as a `Mu` and is no longer `Copy`; `Session::tuniversal`
+  returns a clone of the last final point read. `TPoint::LEN` is
+  `TPoint::MIN_LEN`; `TPoint::compare_writings`, `to_bytes`, `put_trailer`
+  and `take_trailer` are new.
 - `task::SOLVE_FLOOR` and `prelude::SOLVE_FLOOR` are renamed `SOLVE_AGAIN`.
 - `wire::WIRE_VERSION` is `0x0200`.
 - The conformance read (`docs/MU-CONFORMANCE.md`) checks every μ field on
