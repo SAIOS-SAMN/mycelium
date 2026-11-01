@@ -42,7 +42,7 @@ except what the pore admits. Here the pore is replay.
 - **Listing key**: `listing_key(chain, frame)`, the framed residue address of a demand; every priced request is a listing at exactly one home hypha.
 - **Home**: the hypha the cover trie homes the listing to (`nerve::home`).
 - **Witness**: any other hypha whose cover meets the listing's chart; the second organ.
-- **μ⃗**: `[u64; 4]` magnitude on the four lanes.
+- **μ⃗**: an exact non-negative rational on each of the four lanes (`economy::Mu`).
 - **Escrow**: `Treasury::escrow_award(addr, voices, mu, anchor)`; released by `release_award`, revoked or slashed by `revoke_award`, drawn by `draw_escrow`.
 - **K**: a kernel's own receipt index (`Court::k_step`; for a voice, the count of its own acts). Orders events inside one kernel. No kernel reads a clock (MU-RECURSION 45).
 - **TUniversal**: the network's one clock, a final point `origin/h:S:G:T:H:K` held by two of its three keepers' verified readings (MU-CHRONOMETRY §1; MU-RECURSION 78.152). The height `h` is one field of that point and is never confused with it. Lane 2 of μ⃗ (temporal) carries verified null-flux discharge, never the span a word or carrier stood: waiting is not μ (MU-ECONOMY §3, MU-RECURSION 78.149).

@@ -2,12 +2,71 @@
 // names the chapter of MU-RECURSION the claim comes from.
 
 mod fold;
+mod forfeit;
 mod ledger;
 mod modes;
+mod mu;
 mod pay;
 mod settlement;
 mod surface;
 mod verify;
+
+/// AN AMOUNT READ AS COUNTS, for a claim whose values are whole: each lane
+/// must be the rational `n/1`, or the claim fails there. The claims written
+/// in counts keep each value exactly (`Mu::counts` is the inverse).
+pub(crate) trait Counts {
+    type Out;
+    fn n(self) -> Self::Out;
+}
+
+impl Counts for crate::economy::Mu {
+    type Out = [u64; 4];
+    fn n(self) -> [u64; 4] {
+        self.to_counts().expect("every lane a whole count")
+    }
+}
+
+impl Counts for &crate::economy::Mu {
+    type Out = [u64; 4];
+    fn n(self) -> [u64; 4] {
+        self.to_counts().expect("every lane a whole count")
+    }
+}
+
+impl<T: Counts> Counts for Option<T> {
+    type Out = Option<T::Out>;
+    fn n(self) -> Self::Out {
+        self.map(Counts::n)
+    }
+}
+
+impl<T: Counts, E> Counts for Result<T, E> {
+    type Out = Result<T::Out, E>;
+    fn n(self) -> Self::Out {
+        self.map(Counts::n)
+    }
+}
+
+impl<K, T: Counts> Counts for Vec<(K, T)> {
+    type Out = Vec<(K, T::Out)>;
+    fn n(self) -> Self::Out {
+        self.into_iter().map(|(k, t)| (k, t.n())).collect()
+    }
+}
+
+impl<A: Counts, B: Counts> Counts for (A, B) {
+    type Out = (A::Out, B::Out);
+    fn n(self) -> Self::Out {
+        (self.0.n(), self.1.n())
+    }
+}
+
+impl<A: Counts, B: Counts, C: Counts> Counts for (A, B, C) {
+    type Out = (A::Out, B::Out, C::Out);
+    fn n(self) -> Self::Out {
+        (self.0.n(), self.1.n(), self.2.n())
+    }
+}
 
 /// A word's address, as an award is filed under it.
 pub(super) fn word(b: impl AsRef<[u8]>) -> crate::transducer::address::Address {

@@ -30,8 +30,10 @@ fn treasury_carriage_measures_award_flat_in_word() {
     t.escrow_award(&Address::from_bytes(vec![9u8; 70_000]), vec![[2; 32]], [4, 0, 0, 0], a);
     let mut c = Carriage::default();
     t.carriage(&mut c);
-    // The field: its tag, the voice count, one voice, μ⃗, the stamp, the receipt.
-    let field = 1 + 4 + 32 + 32 + crate::chronometry::Stamp::LEN as u64 + 32;
+    // The field: its tag, the voice count, one voice, μ⃗ (four exact lanes),
+    // the stamp, the receipt.
+    let mu = crate::economy::Mu::counts([4, 0, 0, 0]).to_bytes().len() as u64;
+    let field = 1 + 4 + 32 + mu + crate::chronometry::Stamp::LEN as u64 + 32;
     let [award] = c.rows.as_slice() else { panic!("one carrier, one kind: {:?}", c.rows) };
     assert_eq!((award.records, award.largest, award.bytes), (2, field, 2 * field), "flat in the word's size");
     let mut tries = Vec::new();

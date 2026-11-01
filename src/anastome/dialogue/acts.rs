@@ -11,12 +11,15 @@ use crate::physics::actions::Action;
 /// THE WIRE'S VERSION, `major << 8 | minor`: the act layouts this tree
 /// speaks, as the wire's chapters number them — v1.2 the task citation on
 /// ACT_TASK and ACT_SOLVE (78.146), v1.4 the seat wire's sub-origins and
-/// relay epoch (78.155 §5c, 78.156), the latest. No act carries it on the
-/// wire; a client states it in its compatibility statement (MU-PRECURSORS
-/// §4.2), and a layout version defined per act (`EQUIVOCATION_VERSION`)
-/// stands beside it.
-/// FORMAT: wire version, major 1 minor 4.
-pub const WIRE_VERSION: u16 = 0x0104;
+/// relay epoch (78.155 §5c, 78.156), v2.0 every μ field as four exact
+/// rational lanes (`economy::Mu`) and the challenge window's opened and
+/// closed heights, the latest. A minor step adds and moves no layout; v2.0
+/// moves the layout of every act and reply carrying μ, so it is a major
+/// step. No act carries it on the wire; a client states it in its
+/// compatibility statement (MU-PRECURSORS §4.2), and a layout version
+/// defined per act (`EQUIVOCATION_VERSION`) stands beside it.
+/// FORMAT: wire version, major 2 minor 0.
+pub const WIRE_VERSION: u16 = 0x0200;
 
 /// Act tags — frame `body[0]`. 78.94: EVERY TAG IS AN ACTION'S COORDINATE,
 /// spelled here and held by the one table (`physics::actions::Action`), which
@@ -48,7 +51,7 @@ pub const ACT_EVIDENCE: u8 = Action::Evidence.byte();
 pub const ACT_TASK: u8 = Action::Task.byte();
 /// POUW settlement: a client submits predicted outputs for a dispatched
 /// task's citation; the hypha verifies against its held answers — first verified
-/// solve takes the bounty, replays collapse to the verification floor.
+/// solve takes the bounty; a repeat closure is verified and paid nothing.
 pub const ACT_SOLVE: u8 = Action::Solve.byte();
 
 /// ADOPTION (genome synchronization): the court propagates an upheld word
@@ -620,11 +623,13 @@ pub struct CoverDigest {
 }
 
 
-/// solve receipt: `[code u8][μ⃗ 32]` — code 2 = BOUNTY (first verified solve),
-/// 1 = verification floor (replay), 0 = nothing (wrong or unregistered).
+/// solve receipt: `[code u8][μ⃗]`, the μ⃗ four exact rational lanes
+/// (`Mu::put`) — code 2 = BOUNTY (first verified solve, paid), 1 = AGAIN (a
+/// repeat closure of a closed task: verified, and paid nothing), 0 = nothing
+/// (wrong or unregistered).
 /// FORMAT: reply code for a solve's first verified bounty.
 pub const SOLVE_BOUNTY: u8 = 2;
-pub const SOLVE_FLOOR: u8 = 1;
+pub const SOLVE_AGAIN: u8 = 1;
 pub const SOLVE_NOTHING: u8 = 0;
 /// 78.153 — NOT JUDGED YET: the court's stroke ran out before the replay
 /// ruled; asked again, the replay resumes where it stopped. A RETRY, never a
@@ -668,7 +673,8 @@ pub struct WorkItem {
 /// FORMAT: offset of the served-count field in a quote reply.
 pub const QUOTE_COUNT_AT: usize = 1 + 8 + 32 + 8;
 
-/// docket reply: `[n u32] ( [addr 32][elen u32][element][nv u32][voices 32·nv][μ⃗ 32][Δμ⃗ 32] )…`
+/// docket reply: `[n u32] ( [addr 32][elen u32][element][nv u32][voices 32·nv][μ⃗][Δμ⃗ 32] )…`,
+/// the escrowed μ⃗ four exact rational lanes (`Mu::put`)
 /// — Δμ⃗ is the deflation the word's install measured on a listed demand
 /// (zero when the germ settled nothing on the book): the court's proof of
 /// convergence rides with the word.
@@ -683,7 +689,7 @@ pub struct Docket {
     /// The voices attesting it.
     pub voices: Vec<[u8; 32]>,
     /// The μ⃗ ESCROWED against it: a claim on issuance.
-    pub escrowed: [u64; 4],
+    pub escrowed: crate::economy::Mu,
     /// The DEFLATION its install measured on a listed demand — zero when
     /// the germ settled nothing. The proof of convergence rides with the
     /// word, and this is not the escrow.

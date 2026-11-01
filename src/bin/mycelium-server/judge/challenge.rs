@@ -28,10 +28,8 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                 ChallengeRequest::Obstructions(domain) => Some(encode_obstructions_reply(&k.open_obstructions(&domain))),
                 ChallengeRequest::LineHead(tier) => {
                     let (head, at) = k.line_head(&tier);
-                    // 78.133 — the μ held toward it in toll escrow; a sum past
-                    // its carrier is answered with nothing, never an invented
-                    // value.
-                    let held = k.toll_held_for(&tier)?;
+                    // 78.133 — the μ held toward it in toll escrow, exact.
+                    let held = k.toll_held_for(&tier);
                     Some(encode_line_head_reply(&LineHead { head, at, held }))
                 }
             });

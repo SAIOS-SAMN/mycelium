@@ -186,7 +186,7 @@ pub struct MarketView {
     /// The open book's tension per lane — the denominator every price is a
     /// share of.
     pub pressure: [u64; 4],
-    pub pool: Option<[u64; 4]>,
+    pub pool: Option<crate::economy::Mu>,
     pub k_step: u64,
     /// Receipt-chain head K — the court's own receipt index, packed on Quote.
     pub head_k: u64,

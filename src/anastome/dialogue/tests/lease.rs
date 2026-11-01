@@ -13,7 +13,7 @@ fn encode_lease_round_trips_lease_and_close_signed() {
     let act = LeaseAct {
         payer: payer.verifying_key().to_bytes(),
         provider: [9; 32],
-        mu: [4, 0, 2, 1],
+        mu: crate::economy::Mu::counts([4, 0, 2, 1]).part(3).expect("thirds"),
         window: 50,
         jobs: vec![[7; 32], [8; 32]],
         nonce: [3; 32],
@@ -30,7 +30,7 @@ fn encode_lease_round_trips_lease_and_close_signed() {
     assert_eq!(decode_close(&cbytes), Some(close), "the close reads back");
     assert!(decode_lease(&cbytes).is_none(), "and never as a lease");
 
-    for r in [Ok(([5; 32], [1, 2, 3, 4])), Err(LeaseRefusal::Leased), Err(LeaseRefusal::UnknownLease)] {
+    for r in [Ok(([5; 32], crate::economy::Mu::counts([1, 2, 3, 4]).part(6).expect("sixths"))), Err(LeaseRefusal::Leased), Err(LeaseRefusal::UnknownLease)] {
         assert_eq!(decode_lease_reply(&encode_lease_reply(&r)), Some(r), "the reply reads back");
     }
 }

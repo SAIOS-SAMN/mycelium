@@ -22,6 +22,7 @@
 use super::Court;
 use crate::anastome::dialogue::lease::{LeaseRefusal, SignedClose, SignedLease};
 use crate::chronometry::Stamp;
+use crate::economy::Mu;
 use crate::transducer::address::{put_key_count, take_key_count};
 
 /// A LEASE AS THIS COURT HOLDS IT: its payer and provider, the jobs not yet
@@ -79,7 +80,7 @@ impl Court {
     /// the payer, no job already leased to that provider; `mu` held from the
     /// payer's balance under the lease's name. Answers the lease's name and
     /// what it holds.
-    pub fn open_lease(&mut self, s: &SignedLease) -> Result<([u8; 32], [u64; 4]), LeaseRefusal> {
+    pub fn open_lease(&mut self, s: &SignedLease) -> Result<([u8; 32], Mu), LeaseRefusal> {
         let a = &s.act;
         let (Some(bytes), Some(id)) = (a.signed_bytes(), a.citation()) else { return Err(LeaseRefusal::Malformed) };
         if !crate::court::identity::verify(&a.payer, &bytes, &s.sig) {
@@ -91,7 +92,7 @@ impl Court {
             return Err(LeaseRefusal::Spent);
         }
         let distinct = a.jobs.iter().enumerate().all(|(i, j)| !a.jobs.iter().take(i).any(|k| k == j));
-        if a.mu.iter().all(|m| *m == 0) || a.window == 0 || a.jobs.is_empty() || !distinct {
+        if a.mu.is_zero() || a.window == 0 || a.jobs.is_empty() || !distinct {
             return Err(LeaseRefusal::Malformed);
         }
         if a.payer == a.provider {
@@ -102,19 +103,19 @@ impl Court {
         }
         let Some(until) = self.height().checked_add(a.window) else { return Err(LeaseRefusal::Malformed) };
         let anchor = self.anchor();
-        if self.treasury.hold(a.payer, &hold_key(&id), a.mu, anchor).is_err() {
+        if self.treasury.hold(a.payer, &hold_key(&id), a.mu.clone(), anchor).is_err() {
             return Err(LeaseRefusal::Short);
         }
         self.atlas.hold_lease(id, Lease { payer: a.payer, provider: a.provider, jobs: a.jobs.clone(), until, at: anchor.0 });
         self.atlas.spent.insert(spent, ());
         self.mark_persist();
-        Ok((id, a.mu))
+        Ok((id, a.mu.clone()))
     }
 
     /// MU-ECONOMY §5.2 — A LEASE CLOSED BY ITS PAYER: signed, its nonce
     /// unspent, the lease open and the payer's; what it holds returns to the
     /// payer. Answers the lease's name and what returned.
-    pub fn close_lease(&mut self, s: &SignedClose) -> Result<([u8; 32], [u64; 4]), LeaseRefusal> {
+    pub fn close_lease(&mut self, s: &SignedClose) -> Result<([u8; 32], Mu), LeaseRefusal> {
         let a = &s.act;
         if !crate::court::identity::verify(&a.payer, &a.signed_bytes(), &s.sig) {
             return Err(LeaseRefusal::Unsigned);
@@ -135,12 +136,12 @@ impl Court {
 
     /// A LEASE ENDED: its record leaves, and what its hold has left returns
     /// to the payer. Answers what returned.
-    fn end_lease(&mut self, lease: &[u8; 32]) -> [u64; 4] {
+    fn end_lease(&mut self, lease: &[u8; 32]) -> Mu {
         let _ = self.atlas.drop_lease(lease);
         let anchor = self.anchor();
         match self.treasury.refund_held(&hold_key(lease), anchor) {
             Ok(mu) => mu,
-            Err(_) => [0; 4],
+            Err(_) => Mu::zero(),
         }
     }
 
@@ -150,15 +151,15 @@ impl Court {
     /// the hold has left, and the job is done. A lease whose jobs are done or
     /// whose hold is spent ends, the rest returning to its payer. Answers
     /// what the lease paid.
-    pub(crate) fn pay_lease(&mut self, provider: [u8; 32], job: &[u8; 32], discharge: [u64; 4], at: crate::economy::Anchor) -> [u64; 4] {
-        let Some((id, mut lease)) = self.lease_of(&provider, job) else { return [0; 4] };
+    pub(crate) fn pay_lease(&mut self, provider: [u8; 32], job: &[u8; 32], discharge: [u64; 4], at: crate::economy::Anchor) -> Mu {
+        let Some((id, mut lease)) = self.lease_of(&provider, job) else { return Mu::zero() };
         if self.height() >= lease.until {
             let _ = self.end_lease(&id);
-            return [0; 4];
+            return Mu::zero();
         }
         let paid = match self.treasury.draw_held(&hold_key(&id), provider, discharge, at) {
             Ok(mu) => mu,
-            Err(_) => [0; 4],
+            Err(_) => Mu::zero(),
         };
         // The job is done: its index entry leaves, the rest of the lease
         // stands, or the lease ends where nothing is left to pay or do.
@@ -173,8 +174,8 @@ impl Court {
                 self.atlas.hold_lease(id, lease);
             }
         }
-        if paid.iter().any(|&m| m > 0) {
-            self.acts.pay("lease payments", paid);
+        if !paid.is_zero() {
+            self.acts.pay("lease payments", paid.clone());
         }
         self.mark_persist();
         paid
@@ -209,7 +210,10 @@ impl Court {
             .scoped()
             .filter_map(|(k, l)| {
                 let id = <[u8; 32]>::try_from(k.as_slice()).ok()?;
-                let held = self.treasury.held_of(&hold_key(&id)).map_or([0; 4], |h| h.mu);
+                let held = match self.treasury.held_of(&hold_key(&id)) {
+                    Some(h) => h.mu.clone(),
+                    None => Mu::zero(),
+                };
                 Some(LeaseReading { id, payer: l.payer, provider: l.provider, jobs: l.jobs.len(), until: l.until, held })
             })
             .collect()
@@ -225,5 +229,5 @@ pub struct LeaseReading {
     pub provider: [u8; 32],
     pub jobs: usize,
     pub until: u64,
-    pub held: [u64; 4],
+    pub held: Mu,
 }

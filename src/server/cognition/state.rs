@@ -487,7 +487,7 @@ pub struct Court {
     /// by domain, the measured discharge of every first closure a key of that
     /// domain made, summed exact per lane — what its next growth grant moves.
     /// Taken whole when a grant seals; persisted (`LEAF_CLOSED`).
-    pub(crate) closed_since_grant: crate::network::nerve::Keyed<[u64; 4]>,
+    pub(crate) closed_since_grant: crate::network::nerve::Keyed<crate::economy::Mu>,
     /// 78.145 — THE SEAT RELAY: each domain's latest seat listing and the
     /// mail between its house and the minds seated in it. Volatile and
     /// bounded; never persisted. 78.146: on its own lock, so a door serves a
@@ -605,7 +605,7 @@ pub struct Court {
     /// as ruled 2026-09-09, S13.15): while a claim of the voice is in
     /// flight on a lane it owes on, its room on that lane is closed; the
     /// record clears when that claim closes. Rebuilt from nothing at boot.
-    pub(crate) recall_short: crate::network::nerve::Keyed<[u64; 4]>,
+    pub(crate) recall_short: crate::network::nerve::Keyed<crate::economy::Mu>,
     /// Words installed on two-voice consilience but NOT yet court-final
     /// (Step 5): local dialect awaiting the admission docket, keyed by address.
     pub(crate) provisional: crate::network::nerve::Keyed<Element>,
@@ -742,8 +742,11 @@ impl Court {
     /// HOLD THE CHAIN A LINE CARRIES. A last frame that did not land is
     /// named, and the line stands on the frames before it.
     pub fn hold_line(&mut self, b: &[u8]) -> Result<(), String> {
+        if b.get(0..4) == Some(crate::chronometry::ReceiptChain::PRE_RATIONAL_LINE_MAGIC.as_slice()) {
+            return Err("the line is MYL2, its bond citations' μ four u64 counts — refused by name, the recut is the road".into());
+        }
         let Some((chain, torn)) = crate::chronometry::ReceiptChain::from_line(b) else {
-            return Err("the line does not read whole as MYL1 — the recut is the road for an older layout".into());
+            return Err("the line does not read whole as MYL3 — the recut is the road for an older layout".into());
         };
         if torn {
             eprintln!("  line: its last frame did not land; it stands on the frames before it");
@@ -1148,7 +1151,7 @@ impl Court {
     pub fn accept_equivocation(
         &mut self,
         proof: crate::court::admission::Equivocated,
-    ) -> Option<[u64; 4]> {
+    ) -> Option<crate::economy::Mu> {
         self.burn_equivocation(proof.vk, proof.at)
     }
 
@@ -1176,15 +1179,15 @@ impl Court {
     /// both hold the two verified signatures 47.4 asks for. `Some` is the
     /// vector that left circulation, `None` a signer with nothing left to
     /// burn, for which nothing is written.
-    fn burn_equivocation(&mut self, signer: [u8; 32], at: crate::chronometry::Place) -> Option<[u64; 4]> {
+    fn burn_equivocation(&mut self, signer: [u8; 32], at: crate::chronometry::Place) -> Option<crate::economy::Mu> {
         let bond = self.treasury.bond_of(&signer)?;
         let anchor = self.anchor();
         let burned = self.treasury.burn(signer, bond, anchor);
-        if crate::economy::lanes_short(&burned).is_empty() {
+        if burned.is_zero() {
             return None;
         }
         eprintln!(
-            "  court equivocation {:02x}{:02x}… K {} burned {burned:?}",
+            "  court equivocation {:02x}{:02x}… K {} burned {burned}",
             signer[0],
             signer[1],
             at.print()

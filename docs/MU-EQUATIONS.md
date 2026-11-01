@@ -1275,37 +1275,48 @@ axiom) is docketed, not built.
 #### 6.1 The four lanes and the reading between two measurements
 
 ```text
-μ⃗ = (S, G, T, H)                     never summed, never ordered, never converted across lanes
+μ⃗ = (S, G, T, H) ∈ ℚ≥0⁴              never summed, never ordered, never converted across lanes
+a count n read off a measure enters as the rational n/1
 
 lane_moves(after, before)_l = Fell(before_l − after_l)   if after_l < before_l
                               Held                        if equal
                               Rose(after_l − before_l)    if after_l > before_l
 deflation_l = before_l − after_l  where the lane fell, else 0
 split deflation: refused if any lane rose or none fell
+draw(held, asked) = held − asked  where asked_l ≤ held_l on every lane, else refused naming the first short lane
 ```
 
 A comparison of two lane vectors is a reading per lane and never a verdict.
+Every amount of μ — a holding, a ledger row, a wire field — is four exact
+non-negative rationals; an addition always lands, and a draw past a
+holding is refused by lane, never saturated.
 
-Sources: MU-RECURSION law 5, 12.6; MU-ECONOMY §1. Code:
-`src/economy/lanes.rs::lane_moves`, `::deflation_of`, `::split_deflation`,
-`Mu`.
+Sources: MU-RECURSION law 5, 12.6, 78.162; MU-ECONOMY §1. Code:
+`src/economy/lanes.rs::lane_moves`, `::deflation_of`, `::split_deflation`;
+`src/economy/mu.rs::Mu` (`draw`, `shortfall`, `capped`, `part`,
+`lane_moves`).
 
 #### 6.2 Price and the yield surface
 
 ```text
 price(mag, surface) = mag                                         (per lane)
 surface_l = reserve_deficit_l + max(0, −order_flux_l)
-read price (map fee) = 1 + surface_l  per unit of gas
+read price p_l = 1 + surface_l / R   per unit of gas, exact     (R the calibrated reserve)
 ```
 
 Price is the magnitude on the lane: a verified word is worth what it
 deflated. The yield surface paces pressure and buys room; it never scales a
-mint. The court's read price for coordinate retrieval and traverse is one μ
-per unit of gas at rest plus the surface.
+mint. The court's read price for coordinate retrieval, traverse and the
+founding grant is one μ per unit of gas at rest and two at a full deficit
+(`surface = R`), the strain read against the reserve so the same relative
+strain prices the same on every host. The `1` is the identity from gas,
+measured in the lane's own court unit, to μ (κ = 1, ruled 2026-10-31).
+(Until v0.3.0 the price was `1 + surface_l`, in raw reserve units, so it
+read the host's calibration rather than its strain.)
 
-Sources: MU-ECONOMY §3.3, §5, §7.1; MU-RECURSION 24.3, 78.154. Code:
-`src/economy/lanes.rs::price`, `::yield_surface`;
-`src/server/cognition/crossing.rs` (`read_price`).
+Sources: MU-ECONOMY §3.3, §5, §7.1, §8; MU-RECURSION 24.3, 78.154;
+MU-DERIVATIONS D2.3. Code: `src/economy/lanes.rs::price`, `::yield_surface`,
+`::read_price`; `src/server/cognition/crossing.rs` (`Court::read_price`).
 
 #### 6.3 The shortfall
 
@@ -1366,12 +1377,18 @@ ruled 2026-09-10), 50.5 (Y3). Code: `src/economy/settle.rs::settle_recursive`.
 #### 6.7 Splits among several voices
 
 ```text
-consilience (n ≥ 2 voices):  share_l = ⌊μ_l / n⌋
-assembly:                     μ⃗_composite = Σ μ⃗(Wᵢ) + μ⃗_assembly(overlaps),  share_l = ⌊μ_l / n⌋
+consilience (n ≥ 2 voices):  share_l = μ_l / n                     exact; n · share = μ
+assembly:                     μ⃗_composite = Σ μ⃗(Wᵢ) + μ⃗_assembly(overlaps),  share_l = μ_l / n
+rewrite release (POWR):       share_l = μ_l / n
 ```
 
-Sources: MU-RECURSION 7d; MU-ECONOMY §0. Code:
-`src/economy/settle.rs::settle_consilience`, `::settle_assembly`.
+Every voice takes the same exact part, so the parts are the award: nothing
+is invented and nothing is left unminted. (Until v0.3.0 each share was
+`⌊μ_l / n⌋` and the remainder was never issued.)
+
+Sources: MU-RECURSION 7d; MU-ECONOMY §0, §9. Code:
+`src/economy/settle.rs::settle_consilience`, `::settle_assembly`,
+`::release_rewrite`.
 
 #### 6.8 POWR: retirement and the compression yield
 
@@ -1400,6 +1417,30 @@ nothing. Proven equivocation forfeits the whole bond on all four lanes.
 
 Sources: MU-ECONOMY §4, §6; MU-RECURSION 47.4, 42.2 R9. Code:
 `src/economy/treasury.rs::Treasury::burn`.
+
+#### 6.9a The tier slash
+
+```text
+cut_l     = B_l · X_l / (B_l + X_l)      B the tier's bond, X the fold's exposure; 0 where B_l + X_l = 0
+bounty_l  = cut_l · D_l / (D_l + X_l)    D the reconstruction's defect (D := X on a default); paid to the challenger
+retired_l = cut_l − bounty_l             burned (POWR)
+kept_l    = B_l − cut_l                  still bonded
+X_l = Σ own rows' positive parts + Σ own declared |·| + Σ netted children's rows⁺ and declared |·|
+D_l = Σ_w | want_{w,l} − have_{w,l} | + Σ_w | declared_{w,l} − own_declared_{w,l} |
+```
+
+A falsified fold forfeits the bond against the value its commitment
+exposed: never more than the bond nor the exposure, exactly half where
+the two are equal (78.129's half). The challenger is paid the share of the
+cut its proof of the defect bears against the exposure — half on a
+default — and the rest is retired; supply falls by the retired part, and
+`kept + bounty + retired = B`. Exact over ℚ. (Until v0.3.0 the cut was
+`⌊B_l / 2⌋` and the bounty `⌊cut_l / 2⌋`, whatever the fold lied by.)
+
+Sources: MU-RECURSION 78.129; MU-DERIVATIONS D2.1, D2.2 (ruled
+2026-10-31); MU-ECONOMY §8. Code: `src/economy/forfeit.rs::forfeit`;
+`src/server/cognition/convert.rs::Court::slash`;
+`src/server/cognition/challenge.rs` (`defect`, `Court::exposure_of`).
 
 #### 6.10 The invariant
 
@@ -1435,13 +1476,17 @@ Sources: MU-ECONOMY §1; MU-RECURSION 78.162; MU-CLIENT §5.6 (M). Code:
 `src/economy/modes.rs`; `src/transducer/family/deflation.rs`.
 
 **Specified.** Balances, bonds and escrows holding modes; today they carry
-`[u64; 4]` per lane (MU-ECONOMY §1).
+one exact rational per lane, `economy::Mu` (MU-ECONOMY §1).
 
 #### 6.12 Gas, the map fee and the connection tax
 
 ```text
-map fee_l = gas_l · (1 + surface_l)            S priced on the route's span; G, T, H on gas
-retrieval fee = (0, 0, 0, units · (1 + surface_H))
+map fee_l = gas_l · p_l                        exact; S priced on the route's span (a rational), G, T, H on gas
+retrieval fee = (0, 0, 0, units · p_H)
+founding grant_l = kinds · p_l                 exact (p_l the read price, §6.2)
+tariff charge = (rate_s · mass out, 0, 0, rate_h · information out)      exact
+tariff part   = share · charge per recipient, the keeper the rest       exact; the parts sum to the charge
+convert-out μ_l = rate_l · g                                            exact
 connection tax: a universe's dissipation, per lane, paid from its reserve to the court's recycled pool
 POUW is paid first from the recycled pool; only what the pool cannot cover is minted
 ```
@@ -1449,7 +1494,9 @@ POUW is paid first from the recycled pool; only what the pool cannot cover is mi
 Gas is measured by the route, lane by lane: S the spatial span (geometrized
 Mpc), G the value terms of the mapping, T the TUniversal distance between
 final points, H the information carried. The fee is a transfer to the
-courts keeping the map, never a mint and never a burn.
+courts keeping the map, never a mint and never a burn. (Until v0.3.0 the S
+lane was `⌊span · p_S⌋`, a tariff charge and part were floored, and a
+conversion whose `rate · g` was no integer was refused.)
 
 Sources: MU-ECONOMY §7.1, §7.2; MU-RECURSION 78.154, 78.154a; CONCORDANCE
 5.8, 5.9. Code: `src/server/cognition/crossing.rs`;
@@ -1462,7 +1509,7 @@ Sources: MU-ECONOMY §7.1, §7.2; MU-RECURSION 78.154, 78.154a; CONCORDANCE
 ```text
 M_l   = min(escrow_l, discharge_l)                    the release's base, per lane
 y_l   = deficit_l + entropic_excess_l                 the verifying court's strain (yield surface)
-v_l   = ⌊ ⌊ M_l · y_l / (y_l + R) ⌋ / n ⌋              each of n distinct verifying courts
+v_l   = M_l · y_l / ((y_l + R) · n)                   each of n distinct verifying courts, exact
 closer_l = M_l − n · v_l
 Σ issued_l = M_l                                       issuance-neutral
 ```
@@ -1471,8 +1518,9 @@ Each court whose replay verified a closure is minted `v` as POWV: the
 home, plus the witness or peer that re-derived it on an install or glue.
 `R` is the court's calibrated reserve. A court at rest (`y = 0`) takes
 nothing, and a lane at full deficit (`y = R`) pays verification half the
-lane. What does not divide stays with the closer, and the total issued
-equals the base.
+lane. The closer takes exactly the rest, and the total issued equals the
+base. (Until v0.3.0 the share was `⌊⌊M_l · y_l / (y_l + R)⌋ / n⌋` and
+what did not divide stayed with the closer.)
 
 Sources: MU-ECONOMY §5.1, §8. Code:
 `src/economy/verify.rs::verification_share`,
@@ -1495,6 +1543,21 @@ of a leased job pays the provider out of the hold, at most once per job.
 Sources: MU-ECONOMY §5.2. Code: `src/server/cognition/lease.rs`
 (`Court::open_lease`, `pay_lease`, `close_lease`, `lapse_leases`);
 `src/economy/pay.rs::Treasury::draw_held`.
+
+#### 6.15 The lane amount on the wire
+
+```text
+μ⃗ written:  for each lane S, G, T, H:  [sign u8 = 0][n limbs, key count][n's u64 limbs, least first][d limbs, key count][d's u64 limbs]
+read:       refused where a sign is 1 (negative), where gcd(n, d) ≠ 1 or d = 0 (not in lowest terms; zero is 0/1),
+            or where a limb run's top limb is 0 (a second writing of one value)
+```
+
+One amount has one writing, the writing `ChartAxis::Ratio` gives a
+rational. Every μ field on the wire, in the ledger and in the snapshot is
+this codec.
+
+Sources: MU-ECONOMY §1, §9; MU-RECURSION A21. Code:
+`src/economy/mu.rs::Mu::put`, `::take`.
 
 ## 7. The metabolism
 
@@ -1980,7 +2043,7 @@ id is a hosted shell's own.
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |
 | `LAW-WAVEFRONT` | 1 | netstratum `docs/111` §2–§3 ([netstratum#9](https://github.com/SAIOS-SAMN/netstratum/issues/9)) | netstratum; no Mycelium code |
 
-The six L0 laws share one register version (`LAW_VERSION`, 4): an
+The six L0 laws share one register version (`LAW_VERSION`, 5): an
 amendment to any of them raises it for all, and the register is served
 whole (`ACT_LAWS` mode 0, `decode_register_reply`), decoding only at the
 version the reader holds. The `forms` ids are versioned per shell

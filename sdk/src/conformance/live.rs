@@ -108,7 +108,7 @@ fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskEnvelope) -> Res
         match code {
             d::SOLVE_UNREAD if asked < RESUMES => continue,
             d::SOLVE_UNREAD => return Ok(format!("not judged yet after {asked} asks (a verdict, read)")),
-            d::SOLVE_NOTHING if paid != [0; 4] => return Err(format!("a final refusal paid μ {paid:?}")),
+            d::SOLVE_NOTHING if !paid.is_zero() => return Err(format!("a final refusal paid μ {paid}")),
             d::SOLVE_NOTHING => {
                 let why = match refusal {
                     Some(r) => String::from_utf8_lossy(&r.reason).into_owned(),
@@ -116,9 +116,10 @@ fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskEnvelope) -> Res
                 };
                 return Ok(format!("not solved (final), refused: {why}"));
             }
-            d::SOLVE_BOUNTY | d::SOLVE_FLOOR if refusal.is_some() => return Err(format!("code {code} pays and refuses at once")),
-            d::SOLVE_BOUNTY => return Ok(format!("solved (bounty), paid μ {paid:?}")),
-            d::SOLVE_FLOOR => return Ok(format!("solved again (floor), paid μ {paid:?}")),
+            d::SOLVE_BOUNTY | d::SOLVE_AGAIN if refusal.is_some() => return Err(format!("code {code} pays and refuses at once")),
+            d::SOLVE_AGAIN if !paid.is_zero() => return Err(format!("a repeat closure paid μ {paid}")),
+            d::SOLVE_BOUNTY => return Ok(format!("solved (bounty), paid μ {paid}")),
+            d::SOLVE_AGAIN => return Ok("solved again (a repeat closure, verified, paid nothing)".to_string()),
             other => return Err(format!("verdict code {other} is none of the four the statement names")),
         }
     }

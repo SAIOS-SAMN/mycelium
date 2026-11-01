@@ -39,7 +39,7 @@ use std::process::ExitCode;
 enum Outcome {
     /// The court answered the solve: its verdict code, the μ paid, and the
     /// refusal it named where it refused.
-    Judged { code: u8, paid: [u64; 4], refused: Option<String> },
+    Judged { code: u8, paid: Mu, refused: Option<String> },
     /// The client could not state a rule for the task; nothing was sent.
     NoRule(&'static str),
     /// The court had no task to give.
@@ -62,7 +62,7 @@ const RESUMES: u32 = 16;
 fn verdict_name(code: u8) -> &'static str {
     match code {
         SOLVE_BOUNTY => "solved: first verified closure (bounty)",
-        SOLVE_FLOOR => "solved again: verification floor",
+        SOLVE_AGAIN => "solved again: a repeat closure, verified, paid nothing",
         SOLVE_NOTHING => "not solved (final)",
         SOLVE_UNREAD => "not judged yet (retry resumes the replay)",
         _ => "other",
@@ -185,7 +185,7 @@ fn main() -> ExitCode {
             }
             Ok((cite, Outcome::Judged { code, paid, refused })) => match refused {
                 Some(why) => println!("task {cite:.16}… {} — refused: {why}", verdict_name(code)),
-                None => println!("task {cite:.16}… {} — paid μ {paid:?}", verdict_name(code)),
+                None => println!("task {cite:.16}… {} — paid μ {paid}", verdict_name(code)),
             },
             Err(e) => {
                 eprintln!("{e}");

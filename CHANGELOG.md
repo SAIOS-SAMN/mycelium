@@ -138,6 +138,96 @@ such change is named here.
   argument and `P`'s prefactor carry their values' magnitudes, so
   `exp(100)` and `P(1, 1000)` are within their grids.
 
+### μ as exact rationals per lane (MU-ECONOMY §1, MU-RECURSION 78.162, phase T1)
+μ is measured as a share of a frame, so every amount of μ is now an exact
+rational per lane: `economy::Mu`, four non-negative rationals S, G, T, H.
+A count read off a measure enters as `n/1`, so every value held before is
+held unchanged; only the formulas that floored change value (below).
+Holding the modes themselves (78.162) remains the next step.
+
+- **`economy::Mu`**: exact add, a draw past a holding refused naming the
+  first short lane (`MuRefusal::Short`), the per-lane shortfall, cap,
+  `split_at` and equal `part`s, the per-lane reading `lane_moves`
+  (`LaneMove` is generic over its amount), and no order. The canonical
+  codec writes each lane as `ChartAxis::Ratio` writes a rational (a sign
+  byte, the numerator's and denominator's 64-bit limbs by count) and
+  refuses a negative lane, a lane not in lowest terms (zero is `0/1`) and a
+  second writing of one value (`MuRefusal::{Negative, NotReduced,
+  Malformed}`).
+- **Holdings and ledger**: balances, bonds, holds, escrows, the recycled
+  pool, leases, grants and closures awaiting a grant, claims on stakes,
+  held tolls, conversions, ledger rows, epoch nets and the folded supply
+  are `Mu`. `Treasury::audit` checks both equations of §6 over ℚ. An exact
+  sum has no carrier to pass, so the treasury's overflow refusals and the
+  economy reading's `overflowed` tally are removed. Room reads a bond's
+  whole part, exact for count draws.
+- **Formulas made exact** (each was floored to fit a count; MU-EQUATIONS
+  §6.7, §6.9a, §6.12, §6.13): the POWV share
+  `⌊⌊M·y/(y+R)⌋/n⌋ → M·y/((y+R)·n)`; consilience, assembly and rewrite
+  splits `⌊μ/n⌋ → μ/n`; the tier slash `⌊B/2⌋, ⌊cut/2⌋ → B/2, cut/2`; the
+  map fee's S lane `⌊span·p⌋ → span·p`; a tariff's charge
+  `⌊rate·units⌋ → rate·units` and parts `⌊share·charge⌋ → share·charge`;
+  a conversion's `rate·g`, no longer refused where it is not whole.
+  Unchanged and exact already: the lease payment `min(d, held)`, the
+  release capped by its escrow, the founding grant `kinds·p`.
+- **`SOLVE_FLOOR` is renamed `SOLVE_AGAIN`** (same byte, 1): a repeat
+  closure is verified and paid nothing (MU-ECONOMY §11.4).
+
+### Governing constants derived (MU-DERIVATIONS, ruled 2026-10-31)
+- **D2.1, the tier slash, read against the exposure**: a falsified fold's
+  tier forfeits `B·X/(B + X)` of its bond per lane, exact, `X` the value
+  the fold's commitment moved (`Court::exposure_of`, read before
+  reversal). It was `⌊B/2⌋` whatever the fold lied by. `economy::forfeit`.
+- **D2.2, the bounty**: the challenger is paid `cut·D/(D + X)`, `D` the
+  defect the reconstruction proved (`challenge::defect`, which the
+  reconstruction's bool now reads at zero); a default proves its whole
+  exposure and pays half the cut. The rest is retired; supply falls by
+  exactly that part.
+- **D2.3, the read price, κ = 1**: `p_l = 1 + y_l/R`, exact, the court's
+  strain against its calibrated reserve (`economy::read_price`); it was
+  `1 + y_l` in raw reserve units, which priced the host's calibration. The
+  map fee `g·p`, the retrieval `receipts·p_H` and the founding grant
+  `kinds·p` are exact. `Court::read_price` returns a `Mu`.
+- **D2.4**: `economy::UNIT_BOND` is deleted; nothing in production read
+  it, and each test states its own bond.
+
+### Layout changes
+- **Ledger and snapshot**: every ledger row's μ⃗, every award, and the
+  stake, balance and held tries carry the rational lane codec; a row has
+  no fixed length (`Entry::TAPE` → `Entry::MIN_TAPE`, `Entry::tape_len`).
+  The snapshot's magic is `MYT3`; `MYT2` is refused by name. A bond
+  citation on the line carries μ, so the line's magic is `MYL3`; `MYL2` is
+  refused by name. The recut is the road.
+- **Wire v2.0** (`WIRE_VERSION` `0x0200`, a major step: existing layouts
+  move — MU-ENGINEERING §4): the rational lane codec on the solve receipt
+  and verdict (`encode_solve_receipt`), the wallet reply, the stake act and
+  reply, the lease act and reply, the observe economy and acts readings,
+  the fold proposal's epochs, `ACT_ROWS` rows, the traverse reply's price
+  and fee, the endowment reading and grant reply, the reserve and bond
+  readings, the bond act and `Founded::Bonded`, the line-head reading, a
+  mouth's toll, a conversion in, and the docket's escrow. The signed acts
+  carrying μ name the new layout in the domain strings: `"mycelium bond
+  v2"`, `"mycelium stake v2"`, `"mycelium lease v2"`. Unchanged: the
+  septum equivocation (it carries no μ) and the deferral, whose deficit is
+  a reserve count (the door reads an unpaid share of a unit as the unit it
+  did not cover). The challenge window's readings (D1.1:
+  `Finality::Provisional { opened, closed }`, `Challenged::Demanded`'s and
+  `Challenged::Reopened`'s optional heights, `State::Offered { opened }`)
+  and the fuller pages (D1.3, D4.2) ride the same version; no further bump.
+
+### SDK API changes
+- `mycelium_sdk::wallet::{Mu, MuRefusal}` and `prelude::Mu`; every μ field
+  the SDK reads or writes (`Account`, `Wallet::owned`, `StakeAct`,
+  `LeaseAct`, `LeaseReply`, `decode_solve_verdict`, `decode_solve_receipt`,
+  `Granted`, `EndowmentReading`, `ReserveReading`, `Bond`, `LineHead`,
+  `Crossed`) is a `Mu`. `Account::owned` and `Wallet::owned` return a `Mu`,
+  no longer an `Option`.
+- `task::SOLVE_FLOOR` and `prelude::SOLVE_FLOOR` are renamed `SOLVE_AGAIN`.
+- `wire::WIRE_VERSION` is `0x0200`.
+- The conformance read (`docs/MU-CONFORMANCE.md`) checks every μ field on
+  an amount holding a share of a unit, and the live read refuses a repeat
+  closure that pays.
+
 ### SDK
 - `mycelium_sdk::rule` gains `perceive_family`, `Frames` and
   `extraction_spend`, so a client sizes its own extraction stroke from the

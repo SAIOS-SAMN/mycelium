@@ -31,7 +31,7 @@ let addr = home.provisional.scoped().next().unwrap().0.clone();
 assert!(home.family_of(&addr).is_some(), "the court bound the sentence to its task's family");
 assert!(home.offered(&addr), "the court Offers a first-vantage germ");
 assert!(home.treasury().escrow_of(&addr).is_some(), "the priced magnitude is the claim");
-assert_eq!(home.treasury().minted().expect("minted adds up"), [0; 4], "the claim is not yet payment: nothing minted");
+assert_eq!(home.treasury().minted(), [0; 4], "the claim is not yet payment: nothing minted");
 // 78.153: every stroke the docket's replay takes.
 home.court_settle();
 let spoken = home.provisional.get(&addr).cloned().expect("still provisional until a peer glues");
@@ -39,16 +39,16 @@ let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 let cover = home.genesis_cover().expect("measured");
 home.enroll([2; 32], cover); // 47.3: a witness with room
-let bond = home.treasury().bond_total();
+let bond = home.treasury().bond_total().clone();
 home.confirm_peer_holds(&peer.ruled_digests(), [2; 32]);
 assert!(home.basis_len() >= 1, "the home installs after the peer glues");
 assert!(home.provisional.is_empty(), "the docket clears on install");
 assert!(home.treasury().escrow_of(&addr).is_none(), "the claim is released");
 assert!(
-    home.treasury().minted().expect("minted adds up").iter().any(|&x| x > 0),
+    !home.treasury().minted().is_zero(),
     "release mints the priced vector"
 );
-assert_eq!(home.treasury().bond_total(), bond, "mint does not debit the stake bond");
+assert_eq!(home.treasury().bond_total(), &bond, "mint does not debit the stake bond");
 }
 
 /// A stood sentence that closes no listing returns its escrow and mints nothing.
@@ -76,7 +76,7 @@ k.enroll([2; 32], cover);
 k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
 assert!(k.treasury().escrow_of(&addr).is_none(), "escrow returned");
 assert_eq!(
-    k.treasury().minted().expect("minted adds up"),
+    k.treasury().minted(),
     [0; 4],
     "a restatement that closes nothing pays nothing"
 );
@@ -120,7 +120,7 @@ let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
 k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
 assert_eq!(
-    k.treasury().minted().expect("minted adds up"),
+    k.treasury().minted(),
     [0; 4],
     "a bound listing is not a mint without replay"
 );
@@ -177,7 +177,7 @@ let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
 k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
 assert_eq!(
-    k.treasury().minted().expect("minted adds up"),
+    k.treasury().minted(),
     read,
     "mint is what the form measured over its family — the coboundary and the ground it covered — not a bound listing's magnitude"
 );
@@ -195,8 +195,8 @@ use crate::transducer::element::from_canonical;
 let mut k = Court::new();
 // Court::new funds the hypha at genesis and stakes its bond from that.
 let seeded = k.treasury().audit().expect("genesis and its bond conserve");
-assert!(seeded.iter().any(|&x| x > 0), "the hypha is funded");
-assert_eq!(k.treasury().minted().expect("minted"), [0; 4], "seeded is not earned");
+assert!(!seeded.is_zero(), "the hypha is funded");
+assert_eq!(k.treasury().minted(), [0; 4], "seeded is not earned");
 
 let a = vec![(0, 0, 1), (0, 1, 2)];
 let b = vec![(0, 0, 5), (0, 1, 2)];
@@ -212,7 +212,7 @@ k.treasury().audit().expect("an install conserves");
 let _ = speak_pair(&mut k, &a, &b, [1; 32]);
 let _ = speak_pair(&mut k, &a, &b, [2; 32]);
 let docketed = k.treasury().audit().expect("a claim is not yet supply");
-assert_eq!(k.treasury().minted().expect("minted"), [0; 4], "no claim has been ruled");
+assert_eq!(k.treasury().minted(), [0; 4], "no claim has been ruled");
 
 // NOTHING FUNDS AN ARRIVING IDENTITY (§3.1 as ruled 2026-09-09, S13.15).
 // Supply used to grow from the seed to three times it across these two
@@ -233,8 +233,8 @@ for a in addrs {
 }
 let after = k.treasury().audit().expect("a verdict conserves");
 assert!(
-    after.iter().zip(held.iter()).all(|(x, y)| x >= y),
-    "a ruling mints and never unmakes: {held:?} then {after:?}"
+    held.shortfall(&after).is_zero(),
+    "a ruling mints and never unmakes: {held} then {after}"
 );
 }
 
@@ -378,7 +378,7 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     k.enroll([2; 32], cover);
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
     assert_eq!(
-        k.treasury().minted().expect("minted adds up"),
+        k.treasury().minted(),
         three_closed_deflation,
         "the amount is the deflation those three closed and nothing else"
     );
@@ -426,16 +426,16 @@ fn serve_syllabus_charges_learner_not_reserve() {
     assert_eq!(page.words.len(), 1, "the sentence is taught: cost {cost:?} balance {before:?} deferred {:?} missed {}", page.deferred, page.missed.len());
     assert_eq!(k.physics.reserve.lanes(), reserve, "from the learner's balance, never the court's reserve");
     let after = k.treasury().balance_mu(&rich);
-    assert_eq!(std::array::from_fn::<u64, 4, _>(|l| before[l] - after[l]), cost, "the learner paid the sentence's step");
+    assert_eq!(before.draw(&after).expect("the learner paid"), cost, "the learner paid the sentence's step");
     let court_after = k.treasury().balance_mu(&[0x11; 32]);
-    assert_eq!(std::array::from_fn::<u64, 4, _>(|l| court_after[l] - court[l]), cost, "to the court that taught it");
+    assert_eq!(court_after.draw(&court).expect("the court was paid"), cost, "to the court that taught it");
     assert!(k.treasury().audit().is_ok(), "the ledger conserves");
     // THE ECONOMY READS IT: one payment on the journal, and it is tuition
     // to this court.
     let economy = k.economy().expect("measured");
     let payment = crate::observe::FLOWS.iter().position(|f| *f == "payment").expect("a named flow");
-    assert_eq!(economy.flows[payment], crate::observe::Flow { rows: 1, mu: cost }, "one payment, its vector once");
-    assert_eq!(economy.tuition, crate::observe::Flow { rows: 1, mu: cost }, "paid to this court");
+    assert_eq!(economy.flows[payment], crate::observe::Flow { rows: 1, mu: cost.into() }, "one payment, its vector once");
+    assert_eq!(economy.tuition, crate::observe::Flow { rows: 1, mu: cost.into() }, "paid to this court");
     // 78.60 — the learner held nothing on the sentence's chart from this
     // court: the sentence stood unanchored.
     let acts = k.acts_reading();

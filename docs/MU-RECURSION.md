@@ -15323,7 +15323,7 @@ Code: `src/anastome/dialogue/handoff.rs`, `src/server/cognition/handoff.rs`; hel
 
 ### 78.127 2(e): μ conversion against a domain's reserve, never minted by a rate
 
-μ is made only by the network (allocations and POW++ earnings, four lanes, never summed) and moves only key to key with Σ = 0, so CONVERSION between a domain's game value and μ is an exchange against μ the domain's ancients actually hold, never a mint: a rate is the domain's own FX, but no rate prints μ. Each domain has one RESERVE TIER, designated by the domain's key through an `ACT_DOMAIN` sub-kind sealed by `Cite::Reserve` (tag 10); a redesignation takes effect at the current reserve tier's next admitted fold, never mid-era, and is signed by the sitting reserve (78.136). Conversion is a sub-kind of `ACT_HANDOFF`: *Out* (kind 5), signed by the reserve tier, pays `rate[l] · g` μ (exact and integral on every lane, or refused) from the reserve to the holder only where the reserve holds it (`ReserveShort` otherwise); *In* (kind 6) is two-phase, the holder's μ held until the reserve accepts it whole, refuses it, or it expires past `W` and is refunded. Each G side names the in-game holder and is consumed once by the reserve tier's fold; a resend is answered with its original receipt. A falsified fold's forfeit goes half to the challenger as bounty and half retired from supply (POWR), an odd unit to retirement (bonds, 78.129); a conversion waits on the reserve's stated basket (78.139). ACT_DOMAIN sub-kind 2 reads the reserve without sealing.
+μ is made only by the network (allocations and POW++ earnings, four lanes, never summed) and moves only key to key with Σ = 0, so CONVERSION between a domain's game value and μ is an exchange against μ the domain's ancients actually hold, never a mint: a rate is the domain's own FX, but no rate prints μ. Each domain has one RESERVE TIER, designated by the domain's key through an `ACT_DOMAIN` sub-kind sealed by `Cite::Reserve` (tag 10); a redesignation takes effect at the current reserve tier's next admitted fold, never mid-era, and is signed by the sitting reserve (78.136). Conversion is a sub-kind of `ACT_HANDOFF`: *Out* (kind 5), signed by the reserve tier, pays `rate[l] · g` μ (exact and integral on every lane, or refused) from the reserve to the holder only where the reserve holds it (`ReserveShort` otherwise); *In* (kind 6) is two-phase, the holder's μ held until the reserve accepts it whole, refuses it, or it expires past `W` and is refunded. Each G side names the in-game holder and is consumed once by the reserve tier's fold; a resend is answered with its original receipt. A falsified fold's forfeit goes half to the challenger as bounty and half retired from supply (POWR), an odd unit to retirement (bonds, 78.129); a conversion waits on the reserve's stated basket (78.139). ACT_DOMAIN sub-kind 2 reads the reserve without sealing. (Amended forward 2026-10-31: on rational lanes a conversion's `rate[l] · g` is paid exactly, never refused for a share of a unit, and the forfeit is derived as 78.129 amended.)
 
 Code: `src/server/cognition/convert.rs` (`reserve_of`, `slash`), `src/client/sdk/house.rs` (`Session::reserve`, `Session::reserve_reading`), `src/economy/pay.rs`.
 
@@ -15336,6 +15336,8 @@ Code: `src/anastome/dialogue/handoff.rs`, `src/server/cognition/mouth.rs` (`mout
 ### 78.129 Bonds and the slash: each tier backed by its domain's reserve
 
 The tier that signed a lie is the one at stake, but μ is the ancients': a BOND is per tier, POSTED BY THE DOMAIN'S RESERVE, μ escrowed in the tier's name (a treasury hold under `"bond" ‖ tier`) and topped up by posting again. The acts are `ACT_DOMAIN` sub-kinds signed by the reserve tier and sealed by `Cite::Bond` (tag 11): *post* (kind 3, only the domain's current reserve, for a tier its genesis names, from μ it holds; a bond an earlier reserve posted returns to it), *withdraw* (kind 4, only once every fold of the tier is final: `Outstanding`, `Unbonded` otherwise) and *read* (kind 5, sealing nothing). A falsified fold, by replay or default, slashes HALF its tier's bond on each lane, floored, forfeited as 78.127 rules (half the cut to the challenger, half retired, an odd unit to retirement). Every finality read carries whether the fold's tier stands bonded; an unbonded tier still folds and its folds read provisional through the fold window. A carried line answers with a bond of its own (78.138).
+
+**Amended forward (ruled 2026-10-31; MU-DERIVATIONS D2.1, D2.2).** The halves are derived, and every amount is exact over ℚ (μ on rational lanes, v0.3.0). A falsified fold's tier forfeits `cut_l = B_l · X_l / (B_l + X_l)` of its bond `B` on each lane, `X` the EXPOSURE — the value the fold's commitment moved, read before reversal (`Court::exposure_of`) — so the cut is never more than the bond nor the exposure and is exactly half where they are equal; the challenger is paid `cut_l · D_l / (D_l + X_l)`, `D` the DEFECT the reconstruction proved (the fold's measured lie; on a default `D := X`, so a default pays half the cut); the rest is retired (POWR). Code: `economy::forfeit`, `Court::slash`.
 
 Code: `src/anastome/dialogue/domain.rs`, `src/server/cognition/convert.rs` (`slash`), `src/anastome/dialogue/challenge.rs` (`FinalityReading`).
 
@@ -15880,9 +15882,10 @@ Build order: the `Modes` carrier, then the producers (discharge and measure
 as modes), the economy's internals, the physics, the wire and persisted
 layouts, and the observer. Built: `economy::modes::Modes` (exact
 composition, a draw refused naming the mode, canonical codec) and the
-discharge as modes behind a paid solve's receipt; every value carrier still
-carries μ as `[u64; 4]`, and moving the carriers to held modes is the open
-part (MU-ECONOMY §1). Code: `src/economy/modes.rs` (`Modes`, `Mode`),
+discharge as modes behind a paid solve's receipt; from v0.3.0 every value
+carrier carries μ as four exact rationals per lane (`economy::Mu`, phase
+T1), and moving the carriers to held modes is the open part (MU-ECONOMY
+§1). Code: `src/economy/modes.rs` (`Modes`, `Mode`),
 `src/transducer/family/deflation.rs`.
 
 ### 78.163 SAY is HEARD, the thought is ACKNOWLEDGED, by the loop's holonomy

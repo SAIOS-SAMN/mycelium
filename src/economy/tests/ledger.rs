@@ -1,8 +1,8 @@
 // E1 — the ledger holds: the supply is the sum of the minted deflations,
 // a stake moves value and never creates it, and the audit survives genesis,
-// mint and burn.
+// mint and burn — exactly, over ℚ.
 
-use super::{at, word};
+use super::{at, word, Counts};
 use crate::economy::escrow::Revocation;
 use crate::economy::*;
 
@@ -10,7 +10,8 @@ use crate::economy::*;
 #[test]
 fn supply_sums_minted_deflations() {
     let mut t = Treasury::new();
-    t.enroll([1; 32], UNIT_BOND, at(0, [0; 32]));
+    let bond = [1; 4]; // a stake on every lane
+    t.enroll([1; 32], bond, at(0, [0; 32]));
     let d1 = [4u64, 2, 0, 2];
     let d2 = [0u64, 4, 6, 2];
     t.escrow_award(&word([8; 32]), vec![[1; 32], [2; 32]], d1, at(1, [1; 32]));
@@ -34,13 +35,13 @@ fn supply_sums_minted_deflations() {
 fn slash_debits_bond_and_mints_nothing() {
     let mut t = Treasury::new();
     t.genesis([1; 32], [8, 0, 0, 0], at(0, [0; 32]));
-    let bond = t.enroll([1; 32], [8, 0, 0, 0], at(0, [0; 32]));
+    let bond = t.enroll([1; 32], [8, 0, 0, 0], at(0, [0; 32])).n();
     assert_eq!(bond, [8, 0, 0, 0], "the balance covered the bond asked for");
     let addr = [3u8; 32];
     t.escrow_award(&word(addr), vec![[1; 32]], [8, 0, 0, 0], at(1, [1; 32]));
     assert!(t.revoke_award(&addr, Revocation::Slash(at(2, [1; 32]))).is_some());
     assert_eq!(
-        t.bond_of(&[1; 32]).expect("an enrolled identity holds a bond")[0],
+        t.bond_of(&[1; 32]).expect("an enrolled identity holds a bond").n()[0],
         bond[0].checked_sub(8).expect("the bond covered the revoked award")
     );
     assert_eq!(t.supply().expect("supply adds up"), [0; 4]);
@@ -52,7 +53,8 @@ fn slash_debits_bond_and_mints_nothing() {
 #[test]
 fn treasury_round_trips_bonds_stakes_and_entries() {
     let mut t = Treasury::new();
-    t.enroll([3; 32], UNIT_BOND, at(0, [4; 32]));
+    let bond = [1; 4]; // a bond on every lane, to carry across the tries
+    t.enroll([3; 32], bond, at(0, [4; 32]));
     t.settle_subsidy([3; 32], [0, 0, 5, 0], at(1, [4; 32]));
     t.settle_recall([3; 32], &[0, 0, 3, 0], &[0; 4], at(2, [4; 32]));
     let back = super::round_trip(&t).expect("the treasury round-trips");
@@ -78,22 +80,39 @@ fn audit_survives_genesis_mint_and_burn() {
     assert_eq!(t.supply().expect("supply adds up"), [11, 10, 12, 10]);
 }
 
-/// STD1 (rule 11) — MONEY NEVER TOPS OUT SILENTLY. A mint into a balance
-/// with no room on a lane is refused before its row is written: nothing is
-/// minted, the journal and the supply stand, the audit still holds, and the
-/// refusal is counted on the economy reading.
+/// §6 OVER ℚ — BOTH EQUATIONS HOLD ON SHARES OF A UNIT. A genesis, a mint
+/// of a third, a stake, a hold and a burn each of a share: the supply
+/// is genesis + mint − burn and the carriers sum to it, lane by lane,
+/// exactly, through the persisted form as well; no lane passes a carrier,
+/// so nothing is refused for size.
 #[test]
-fn settle_subsidy_refuses_overflow_and_writes_no_row() {
+fn treasury_audit_holds_over_rationals() {
+    use crate::core::q::Q;
+    use num_bigint::BigInt;
+    let q = |n: i64, d: i64| Q::new(BigInt::from(n), BigInt::from(d));
+    let mu = |l: [(i64, i64); 4]| Mu::of(l.map(|(n, d)| q(n, d))).expect("non-negative");
+    let (a, b, c) = ([0x0au8; 32], [0x0bu8; 32], [0x0cu8; 32]);
     let mut t = Treasury::new();
-    let a = at(1, [1; 32]);
-    t.genesis([1; 32], [u64::MAX, 0, 0, 0], a);
-    let rows = t.entry_count();
-    assert_eq!(t.settle_subsidy([1; 32], [1, 1, 0, 0], a), [0; 4], "a lane with no room refuses the whole mint");
-    assert_eq!(t.entry_count(), rows, "and writes no row");
-    assert_eq!(t.balance_mu(&[1; 32]), [u64::MAX, 0, 0, 0], "the balance stands on every lane");
-    assert_eq!(t.audit().expect("the ledger still conserves"), [u64::MAX, 0, 0, 0]);
-    assert_eq!(t.economy(&[0; 32]).expect("the economy reads").overflowed, 1, "counted, by name");
-    assert_eq!(t.settle_subsidy([2; 32], [1, 1, 0, 0], a), [1, 1, 0, 0], "another balance with room is paid");
+    let seeded = mu([(7, 2), (0, 1), (1, 3), (0, 1)]);
+    t.genesis(a, seeded.clone(), at(0, [0; 32]));
+    // Two holdings whose sum on H passes a u64: nothing to pass, exactly.
+    t.genesis(a, Mu::counts([u64::MAX, 0, 0, u64::MAX]), at(0, [0; 32]));
+    t.genesis(b, Mu::counts([0, 0, 0, u64::MAX]), at(0, [0; 32]));
+    let third = mu([(7, 3), (0, 1), (0, 1), (0, 1)]);
+    t.settle_subsidy(b, third.clone(), at(1, [1; 32]));
+    t.settle_subsidy(c, third.clone(), at(1, [1; 32]));
+    t.enroll(b, mu([(5, 3), (0, 1), (0, 1), (0, 1)]), at(2, [2; 32]));
+    t.hold(a, b"share", mu([(1, 2), (0, 1), (1, 6), (0, 1)]), at(3, [3; 32])).expect("held");
+    t.burn(c, mu([(1, 3), (0, 1), (0, 1), (0, 1)]), at(4, [4; 32]));
+    let issued = Mu::sum([&seeded, &Mu::counts([u64::MAX, 0, 0, u64::MAX]), &Mu::counts([0, 0, 0, u64::MAX]), &third, &third]);
+    let supply = issued.draw(&mu([(1, 3), (0, 1), (0, 1), (0, 1)])).expect("the burn was issued");
+    assert_eq!(t.supply(), Some(supply.clone()), "supply = genesis + mint − burn, exactly");
+    assert_eq!(t.audit(), Ok(supply.clone()), "and the carriers sum to it, exactly");
+    assert_eq!(t.balance_mu(&b), mu([(2, 3), (0, 1), (0, 1), (0, 1)]).add(&Mu::counts([0, 0, 0, u64::MAX])), "7/3 minted less 5/3 staked");
+    assert_eq!(t.balance_mu(&c), Mu::counts([2, 0, 0, 0]), "7/3 minted less 1/3 burned");
+    assert!(!t.supply().expect("adds up").is_integral(), "the supply holds a share of a unit on S");
+    let back = super::round_trip(&t).expect("the rational ledger round-trips");
+    assert_eq!(back.audit(), Ok(supply), "and holds through its persisted form");
 }
 
 /// §4, §6, Stage 12 S12.5a (I38) — A STAKE OUTSIDE THE LIVE GENESIS IS
@@ -110,9 +129,9 @@ fn bind_live_burns_stake_outside_live_genesis() {
     t.enroll([2; 32], [4, 4, 4, 4], a);
     assert!(t.audit().is_ok(), "two bonded identities conserve");
     let burned = t.bind_live(&[[2; 32]], a);
-    assert_eq!(burned, vec![([1; 32], [6, 10, 0, 10])], "the dropped stake is burned whole");
+    assert_eq!(burned.n(), vec![([1; 32], [6, 10, 0, 10])], "the dropped stake is burned whole");
     assert_eq!(t.bond_of(&[1; 32]), None, "the identity is no longer bonded");
-    assert_eq!(t.bond_of(&[2; 32]), Some([4, 4, 4, 4]), "the live bond stands");
+    assert_eq!(t.bond_of(&[2; 32]).n(), Some([4, 4, 4, 4]), "the live bond stands");
     assert_eq!(t.balance_mu(&[1; 32]), [4, 0, 10, 0], "its balance stays; only the bond left");
     assert!(
         t.entries()
@@ -138,7 +157,7 @@ fn release_award_carries_escrowed_amount_unchanged() {
     let mut t = Treasury::new();
     t.escrow_award(&word([7u8; 32]), vec![[2; 32]], [4, 1, 0, 3], at(1, [1; 32]));
     let held = t.release_award(&[7u8; 32]).expect("the claim stood");
-    t.mint_claim(&held.voices, held.mu, at(6, [6; 32]));
+    t.mint_claim(&held.voices, held.mu.clone(), at(6, [6; 32]));
     assert_eq!(held.mu, [4, 1, 0, 3], "no lane grew while it waited");
     assert_eq!(t.balance_mu(&[2; 32]), [4, 1, 0, 3]);
 }
@@ -163,8 +182,8 @@ fn escrow_award_keeps_claim_out_of_supply_until_minted() {
     t.mint_claim(&held.voices, held.mu, held.anchor);
     let after = t.audit().expect("a ruling conserves");
     assert!(
-        after.iter().zip(seeded.iter()).any(|(x, y)| x > y),
-        "a claim released is issuance: {seeded:?} then {after:?}"
+        after.lane_moves(&seeded).iter().any(|m| matches!(m, LaneMove::Rose(_))),
+        "a claim released is issuance: {seeded} then {after}"
     );
 }
 
@@ -183,7 +202,7 @@ fn enroll_moves_value_and_never_creates_it() {
     let staked = t.enroll([1; 32], [4, 0, 0, 0], a);
     assert_eq!(staked, [4, 0, 0, 0], "staked from the balance");
     assert_eq!(t.balance_mu(&[1; 32]), [6, 0, 0, 0], "the balance fell by it");
-    assert_eq!(t.bond_of(&[1; 32]), Some([4, 0, 0, 0]));
+    assert_eq!(t.bond_of(&[1; 32]).n(), Some([4, 0, 0, 0]));
     assert_eq!(t.audit().expect("a stake conserves"), [10, 0, 0, 0], "supply unmoved");
 
     // What the balance cannot cover is not staked.
@@ -211,7 +230,7 @@ fn slash_conserves_supply_with_fees() {
     let mut t = Treasury::new();
     t.genesis([1; 32], [20, 20, 20, 20], at(0, [0; 32]));
     t.enroll([1; 32], [6, 6, 6, 6], at(1, [0; 32]));
-    let issued = t.audit().expect("a funded, bonded voice conserves");
+    let issued = t.audit().expect("a funded, bonded voice conserves").n();
 
     // Lanes by the names the tree gives them, never a bare `[2]` (§2.5).
     use crate::transducer::rewrite::{LANE_GAUGE, LANE_SHELL, LANE_SPATIAL, LANE_TEMPORAL};
@@ -226,7 +245,7 @@ fn slash_conserves_supply_with_fees() {
     let (fee, short) = t.settle_recall([1; 32], &[4, 0, 2, 0], &[0; 4], at(2, [1; 32]));
     assert_eq!(fee, [4, 0, 2, 0], "the structure moved on each lane, not a unit");
     assert_eq!(short, [0; 4], "a balance of 20 covers it on every lane");
-    let after = t.audit().expect("the ledger conserves through a recall fee");
+    let after = t.audit().expect("the ledger conserves through a recall fee").n();
     assert_eq!(
         after,
         less(less(issued, LANE_SPATIAL, 4), LANE_TEMPORAL, 2),
@@ -235,9 +254,9 @@ fn slash_conserves_supply_with_fees() {
     assert_eq!(after[LANE_GAUGE], issued[LANE_GAUGE], "a lane not read is untouched");
 
     // A DOOR FEE.
-    let (paid, short) = t.settle_door([1; 32], [2, 0, 0, 3], at(3, [1; 32]));
-    assert_eq!((paid, short), ([2, 0, 0, 3], [0; 4]));
-    let after2 = t.audit().expect("the ledger conserves through a door fee");
+    let paid_short = t.settle_door([1; 32], [2, 0, 0, 3], at(3, [1; 32]));
+    assert_eq!(paid_short.n(), ([2, 0, 0, 3], [0; 4]));
+    let after2 = t.audit().expect("the ledger conserves through a door fee").n();
     assert_eq!(after2, less(less(after, LANE_SPATIAL, 2), LANE_SHELL, 3));
 
     // A SLASH takes bond, and the entry names what LEFT the bond rather
@@ -246,24 +265,24 @@ fn slash_conserves_supply_with_fees() {
     // The slash reads what left each named voice's bond, and the lanes on
     // which the bond did not cover the ask, rather than clamping to it.
     let r = t.revoke_award(&[7u8; 32], Revocation::Slash(at(4, [2; 32]))).expect("the escrow was there");
-    assert_eq!(r.slashed, vec![([1u8; 32], [6, 0, 0, 0])], "the whole bond, and no more");
-    assert_eq!(r.short, vec![([1u8; 32], [3, 0, 0, 0])], "and the three it could not cover");
-    assert_eq!(t.bond_of(&[1; 32]).expect("still enrolled")[0], 0, "the whole bond went");
-    let after3 = t.audit().expect("the ledger conserves through a slash");
+    assert_eq!(r.slashed.n(), vec![([1u8; 32], [6, 0, 0, 0])], "the whole bond, and no more");
+    assert_eq!(r.short.n(), vec![([1u8; 32], [3, 0, 0, 0])], "and the three it could not cover");
+    assert_eq!(t.bond_of(&[1; 32]).expect("still enrolled").n()[0], 0, "the whole bond went");
+    let after3 = t.audit().expect("the ledger conserves through a slash").n();
     assert_eq!(after3[0], after2[0] - 6, "supply fell by the bond that left, not by the ask");
 
     // WHAT A BALANCE CANNOT COVER IS READ, NOT CLAMPED. `min(fee, held)`
     // returned a value and the caller then guessed the deferral from a zero
     // test; the shortfall says on which lanes, and by how much.
-    let held = t.balance_mu(&[1; 32]);
-    let (paid, short) = t.settle_door([1; 32], [held[0] + 5, 0, 0, 0], at(5, [1; 32]));
+    let held = t.balance_mu(&[1; 32]).n();
+    let (paid, short) = t.settle_door([1; 32], [held[0] + 5, 0, 0, 0], at(5, [1; 32])).n();
     assert_eq!(paid[0], held[0], "everything the balance held went");
     assert_eq!(short[0], 5, "and the five it did not is the reading");
     assert_eq!(crate::economy::lanes_short(&short), vec![0], "named by lane");
     assert!(t.audit().is_ok(), "and it conserves through a partial payment");
 
     // And nothing was minted by any of it: the earned supply never moved.
-    assert_eq!(t.minted().expect("minted adds up"), [0; 4]);
+    assert_eq!(t.minted(), [0; 4]);
 }
 
 /// THE SUPPLY IS FOLDED AS IT IS WRITTEN, not read whole on every call.
@@ -276,7 +295,7 @@ fn slash_conserves_supply_with_fees() {
 fn supply_fold_agrees_with_journal_read() {
     let (a, b) = ([0x11u8; 32], [0x22u8; 32]);
     let mut t = Treasury::new();
-    assert_eq!(t.supply(), Some([0; 4]), "a fresh ledger has issued nothing, measured");
+    assert_eq!(t.supply().n(), Some([0; 4]), "a fresh ledger has issued nothing, measured");
 
     // Every kind that moves the supply, and several that do not.
     t.genesis(a, [10, 10, 10, 10], at(0, [0; 32]));
@@ -288,19 +307,15 @@ fn supply_fold_agrees_with_journal_read() {
     t.revoke_award(&[7u8; 32], Revocation::Slash(at(6, [0; 32]))); // slash
 
     // The whole read this replaced, recomputed here from the rows themselves.
-    let mut issued = [0u64; 4];
-    let mut burned = [0u64; 4];
+    let (mut issued, mut burned) = (Mu::zero(), Mu::zero());
     for e in t.entries() {
-        let into = match e.kind.issues() {
-            Some(true) => &mut issued,
-            Some(false) => &mut burned,
-            None => continue,
-        };
-        for (x, d) in into.iter_mut().zip(&e.mu) {
-            *x += d;
+        match e.kind.issues() {
+            Some(true) => issued.step(&e.mu),
+            Some(false) => burned.step(&e.mu),
+            None => {}
         }
     }
-    let read_whole: [u64; 4] = std::array::from_fn(|l| issued[l] - burned[l]);
+    let read_whole = issued.draw(&burned).expect("the burns were issued");
     assert_eq!(t.supply(), Some(read_whole), "the fold is the whole read, on every kind");
     assert!(t.audit().is_ok(), "and the carriers agree with it");
 
@@ -346,6 +361,25 @@ fn entry_read_refuses_undefined_tag() {
     assert!(Entry::read(&tape, &mut 0).is_none(), "an arm byte that names no proof of work refuses");
 }
 
+/// A ROW CARRYING A LANE OUT OF LOWEST TERMS IS REFUSED: the row codec reads
+/// its μ⃗ by the lane codec, which writes one value one way.
+#[test]
+fn entry_read_refuses_unreduced_lane() {
+    let mut t = Treasury::new();
+    t.genesis([0x44; 32], [1, 0, 0, 0], at(0, [0; 32]));
+    let [row] = t.entries() else { panic!("one row") };
+    let mut tape = Vec::new();
+    row.write(&mut tape);
+    // Lane S is `1/1` at bytes 34.. : sign, numerator count 1 and limb,
+    // denominator count 1 and limb. Writing the denominator's limb as 2
+    // leaves 1/2, reduced; writing both limbs 2 leaves 2/2, refused.
+    let numer_limb = 34 + 1 + 1;
+    let denom_limb = numer_limb + 8 + 1;
+    tape[numer_limb] = 2;
+    tape[denom_limb] = 2;
+    assert!(Entry::read(&tape, &mut 0).is_none(), "2/2 is not the one writing of 1");
+}
+
 /// §4: "a word that fails replay debits the voice that spoke it" — every
 /// voice the escrow names, as `mint_claim` credits every one. It slashed
 /// `voices.first()`, one voice chosen by arrival order, which is rule 15's
@@ -359,26 +393,26 @@ fn revoke_award_slashes_every_named_voice() {
     t.genesis(b, [10, 10, 10, 10], at(0, [0; 32]));
     t.enroll(a, [5, 5, 5, 5], at(1, [0; 32]));
     t.enroll(b, [2, 2, 2, 2], at(1, [0; 32]));
-    let before = t.audit().expect("two bonded voices conserve");
+    let before = t.audit().expect("two bonded voices conserve").n();
 
     t.escrow_award(&word([9u8; 32]), vec![a, b], [4, 0, 0, 0], at(2, [1; 32]));
     let r = t.revoke_award(&[9u8; 32], Revocation::Slash(at(2, [2; 32]))).expect("the escrow was there");
 
     assert_eq!(
-        r.slashed,
+        r.slashed.n(),
         vec![(a, [4, 0, 0, 0]), (b, [2, 0, 0, 0])],
         "both voices are debited, each by what its own bond covered"
     );
     assert_eq!(
-        r.short,
+        r.short.n(),
         vec![(b, [2, 0, 0, 0])],
         "and the lanes one of them could not cover are named, not clamped away"
     );
-    assert_eq!(t.bond_of(&a).expect("a is enrolled")[0], 1, "a had five, four went");
-    assert_eq!(t.bond_of(&b).expect("b is enrolled")[0], 0, "b had two, both went");
+    assert_eq!(t.bond_of(&a).expect("a is enrolled").n()[0], 1, "a had five, four went");
+    assert_eq!(t.bond_of(&b).expect("b is enrolled").n()[0], 0, "b had two, both went");
 
     // Six left the bonds, so six left the supply: §6 holds through it.
-    let after = t.audit().expect("the ledger conserves through a two-voice slash");
+    let after = t.audit().expect("the ledger conserves through a two-voice slash").n();
     assert_eq!(after[0], before[0] - 6, "supply fell by what left the bonds");
 
     // A plain revoke drops the claim and slashes nobody.

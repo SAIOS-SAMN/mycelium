@@ -246,10 +246,11 @@ pub struct LineHead {
     /// The fold that set it — 78.138: where it stands (a line's is carried
     /// inside its reserve's receipt).
     pub at: Option<FoldAt>,
-    pub held: [u64; 4],
+    pub held: crate::economy::Mu,
 }
 
-/// `[head 32][0 | 1 stamp][held 4×u64]`.
+/// `[head 32][0 | 1 stamp][held μ⃗]`, the μ⃗ four exact rational lanes
+/// (`Mu::put`).
 pub fn encode_line_head_reply(r: &LineHead) -> Vec<u8> {
     let mut out = r.head.to_vec();
     match &r.at {
@@ -259,9 +260,7 @@ pub fn encode_line_head_reply(r: &LineHead) -> Vec<u8> {
             s.put_canonical(&mut out);
         }
     }
-    for m in r.held {
-        out.extend_from_slice(&m.to_le_bytes());
-    }
+    r.held.put(&mut out);
     out
 }
 
@@ -273,11 +272,7 @@ pub fn decode_line_head_reply(b: &[u8]) -> Option<LineHead> {
         1 => Some(FoldAt::take_canonical(b, &mut p)?),
         _ => return None,
     };
-    let mut held = [0u64; 4];
-    for m in &mut held {
-        *m = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
-        p += 8;
-    }
+    let held = crate::economy::Mu::take_from(b, &mut p)?;
     (p == b.len()).then_some(LineHead { head, at, held })
 }
 

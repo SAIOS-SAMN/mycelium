@@ -11,12 +11,13 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(req) = dialogue::decode_rows_request(&frame.body) else { return };
     // The frame's whole body: `encode_rows_reply` counts its own header
     // against it, and the rows the page can hold are the body less that
-    // header over a row's tape (D4.6).
+    // header over a row's fewest bytes (D4.6); the reply keeps those that
+    // fit at each row's own length, and says how many it carries.
     let budget = mycelium::network::wire::frame_budget();
     let Some(rows_room) = budget.checked_sub(dialogue::ROWS_REPLY_HEADER) else {
         return;
     };
-    let at_most = rows_room / mycelium::economy::Entry::TAPE;
+    let at_most = rows_room / mycelium::economy::Entry::MIN_TAPE;
     // 78.153b — answered off the published reading, never under the court:
     // a witness's fetch waited on the court behind a busy door, was
     // deferred, and the fold went unmeasured (217–284 an hour per court,

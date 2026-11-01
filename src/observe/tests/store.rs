@@ -77,19 +77,18 @@ fn encode_reply_round_trips_every_reading() {
         // EC1 — a court's payments by proof of work, each arm on its own
         // lanes.
         Reading::Economy(Box::new(Economy {
-            paid: [[5, 0, 2, 0], [0, 1, 0, 0], [0; 4], [1, 0, 0, 2]],
-            burned: [[0; 4], [0; 4], [0, 0, 0, 3], [0; 4]],
-            overflowed: 7,
-            // E3 — each identity's standing travels with it.
+            paid: [[5, 0, 2, 0], [0, 1, 0, 0], [0; 4], [1, 0, 0, 2]].map(crate::economy::Mu::counts),
+            burned: [[0; 4], [0; 4], [0, 0, 0, 3], [0; 4]].map(crate::economy::Mu::counts),
+            // E3 — each identity's standing travels with it, exactly.
             accounts: vec![crate::observe::Account {
                 who: party(9),
-                balance: [3, 1, 0, 2],
-                bond: [12, 3, 0, 20],
-                held: [1, 0, 0, 0],
+                balance: crate::economy::Mu::counts([3, 1, 0, 2]).part(3).expect("thirds"),
+                bond: [12, 3, 0, 20].into(),
+                held: [1, 0, 0, 0].into(),
             }],
             // What moved by kind, and the tuition paid to the court.
-            flows: std::array::from_fn(|i| crate::observe::Flow { rows: i as u64, mu: [i as u64, 0, 1, 2] }),
-            tuition: crate::observe::Flow { rows: 4, mu: [5, 6, 7, 8] },
+            flows: std::array::from_fn(|i| crate::observe::Flow { rows: i as u64, mu: [i as u64, 0, 1, 2].into() }),
+            tuition: crate::observe::Flow { rows: 4, mu: [5, 6, 7, 8].into() },
         })),
     ];
     reads_back(&all);

@@ -30,7 +30,7 @@ fn court_and_lease(fund: [u64; 4], mu: [u64; 4], provider: [u8; 32], jobs: Vec<[
     let payer = key(1);
     let who = payer.verifying_key().to_bytes();
     k.fund(who, fund);
-    let act = LeaseAct { payer: who, provider, mu, window, jobs, nonce: [2; 32] };
+    let act = LeaseAct { payer: who, provider, mu: mu.into(), window, jobs, nonce: [2; 32] };
     (k, payer, act)
 }
 
@@ -73,7 +73,7 @@ fn close_lease_returns_remainder_as_lapse_does() {
     let opened = act.sign(&payer).expect("signs");
     let (id, _) = k.open_lease(&opened).expect("the lease opens");
     let close = CloseLease { payer: who, lease: id, nonce: [3; 32] }.sign(&payer);
-    assert_eq!(k.close_lease(&close), Ok((id, [30, 20, 0, 10])), "the whole hold returns");
+    assert_eq!(k.close_lease(&close), Ok((id, [30, 20, 0, 10].into())), "the whole hold returns");
     assert_eq!(k.treasury().balance_mu(&who), [50, 40, 0, 30], "the payer holds what it held before");
     assert!(k.leases().is_empty());
     assert_eq!(k.close_lease(&close), Err(LeaseRefusal::Spent), "a resend moves nothing");
@@ -81,7 +81,7 @@ fn close_lease_returns_remainder_as_lapse_does() {
     assert_eq!(k.treasury().balance_mu(&who), [50, 40, 0, 30], "and holds nothing again");
 
     // A window of one height: passed once the court moves past it.
-    let lapsing = LeaseAct { payer: who, provider, mu: [5, 0, 0, 0], window: 1, jobs: vec![[6; 32]], nonce: [4; 32] };
+    let lapsing = LeaseAct { payer: who, provider, mu: [5, 0, 0, 0].into(), window: 1, jobs: vec![[6; 32]], nonce: [4; 32] };
     let _ = k.open_lease(&lapsing.sign(&payer).expect("signs")).expect("the lease opens");
     assert_eq!(k.treasury().balance_mu(&who), [45, 40, 0, 30]);
     let mut steps = 0;
@@ -105,7 +105,7 @@ fn open_lease_refuses_unsigned_short_or_repeated_lease() {
     let who = act.payer;
     let forged = act.clone().sign(&key(4)).expect("signs");
     assert_eq!(k.open_lease(&forged), Err(LeaseRefusal::Unsigned));
-    let short = LeaseAct { mu: [11, 0, 0, 0], nonce: [5; 32], ..act.clone() };
+    let short = LeaseAct { mu: [11, 0, 0, 0].into(), nonce: [5; 32], ..act.clone() };
     assert_eq!(k.open_lease(&short.sign(&payer).expect("signs")), Err(LeaseRefusal::Short));
     let none = LeaseAct { jobs: vec![], nonce: [6; 32], ..act.clone() };
     assert_eq!(k.open_lease(&none.sign(&payer).expect("signs")), Err(LeaseRefusal::Malformed));

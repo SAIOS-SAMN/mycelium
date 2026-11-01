@@ -83,7 +83,7 @@ fn core_to(to: Geometry, to_frame: Mv) -> Mouth {
         keeper: verifying(&reserve(4)),
         from_frame: crate::transducer::element::identity_versor(),
         to_frame,
-        toll: [0; 4],
+        toll: [0; 4].into(),
         nonce: [4; 32],
         tariff: None,
         tube: Some(Tube { mass: (1, 1), from_space: curved((1, 1)), to_space: to, supersedes: None, core: true }),

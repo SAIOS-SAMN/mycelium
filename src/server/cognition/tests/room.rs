@@ -59,7 +59,7 @@ assert_eq!(speak_pair(&mut k, &a, &b, [9; 32]), Outcome::GermPending);
 let listed = k.quote().1[0].0.address();
 let lanes = sentence_of(&a, &b).expect("a sentence").lanes();
 let short: [u64; 4] = std::array::from_fn(|l| u64::from(lanes[l]) * 3);
-k.record_recall_short([9; 32], &short);
+k.record_recall_short([9; 32], &short.into());
 assert_eq!(
     speak_pair(&mut k, &c, &d, [9; 32]),
     Outcome::Refused(crate::verdict::REFUSE_ROOM),
@@ -69,7 +69,7 @@ k.unlist(listed.as_bytes(), false);
 assert_eq!(speak_pair(&mut k, &c, &d, [9; 32]), Outcome::GermPending, "the claim closed and the lane reopened");
 let e = vec![(0, 0, 5u8), (0, 1, 5)];
 let f = vec![(0, 0, 6u8), (0, 1, 6)];
-k.record_recall_short([10; 32], &short);
+k.record_recall_short([10; 32], &short.into());
 assert_eq!(
     speak_pair(&mut k, &e, &f, [10; 32]),
     Outcome::GermPending,

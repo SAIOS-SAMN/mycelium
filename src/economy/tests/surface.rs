@@ -22,6 +22,35 @@ fn yield_surface_reads_deficit_and_flux_not_backlog() {
     assert_eq!((surface[0], surface[2], surface[3]), (deficit[0], deficit[2], deficit[3]));
 }
 
+/// MU-DERIVATIONS D2.3 — A UNIT OF GAS AT REST COSTS ONE μ: the read price
+/// of a court with no strain is one on every lane.
+#[test]
+fn read_price_is_one_at_rest() {
+    assert_eq!(crate::economy::read_price(&[0; 4], 496), Some(crate::economy::Mu::counts([1; 4])));
+}
+
+/// AT A FULL DEFICIT (`y = R`) A UNIT OF GAS COSTS TWO, and a share of the
+/// reserve prices exactly between: `y = 1` against `R = 3` is 4/3.
+#[test]
+fn read_price_is_two_at_full_deficit() {
+    use crate::core::q::Q;
+    let q = |n: i64, d: i64| Q::new(n.into(), d.into());
+    let price = crate::economy::read_price(&[496, 0, 1, 248], 496).expect("a reserve");
+    assert_eq!(price, crate::economy::Mu::of([q(2, 1), q(1, 1), q(497, 496), q(3, 2)]).expect("non-negative"));
+    let thirds = crate::economy::read_price(&[1, 0, 0, 0], 3).expect("a reserve");
+    assert_eq!(thirds.lane(0), &q(4, 3));
+    assert_eq!(crate::economy::read_price(&[0; 4], 0), None, "no reserve, no price");
+}
+
+/// THE PRICE IS SCALE-FREE: two hosts at the same relative strain price a
+/// unit of gas alike, whatever the absolute size of their reserves.
+#[test]
+fn read_price_is_scale_free() {
+    let small = crate::economy::read_price(&[8, 4, 0, 16], 16).expect("a reserve");
+    let large = crate::economy::read_price(&[248, 124, 0, 496], 496).expect("a reserve");
+    assert_eq!(small, large);
+}
+
 /// STD1 — THE ORDER FLUX IS EXACT PAST 2⁶³, AND A SURFACE PAST ITS CARRIER
 /// IS REFUSED. A torsion counter above `i64::MAX` wrapped negative under the
 /// `as i64` the flux was read through; in `i128` it reads whole. A lane whose
