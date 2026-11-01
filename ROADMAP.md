@@ -133,6 +133,22 @@ convergence (`docs/MU-CLIENT.md` §5.5). Courts already verify and seal
 convergences. The track makes convergence count as evidence in a word's
 admission and payment, keeping 47.3's rule that a vantage is a court.
 
+- **Reconstruction events** (**Specified**;
+  [MU-SCIENCE §5.0](docs/MU-SCIENCE.md#reconstruction-events)). Every
+  reconstruction's meeting with held state is read as one typed event:
+  Collapse (a superposition reduced to one object by admission), Converse
+  (independent vantages reconstructing the same object from different
+  evidence: POWC, μ by union) or Collision (incompatible claims on one
+  structure, held as a vortex and resolved by content; a duplicate mint
+  burned). The reading is `ReconstructionEvent::{Collapsed, Conversed,
+  Collided}` under `ACT_OBSERVE`, with coordinates, never a scalar or a
+  boolean. It belongs to this track because Converse is convergence
+  itself, and converse against collision across a mesh is the measure of
+  how far the mesh is one language and of partition healing
+  ([MU-RELEASE §9](docs/MU-RELEASE.md#9-convergence-and-collision-bring-the-branches-into-alignment));
+  it reads what the courts already decide and gates nothing, so it is not
+  a security item (track 14).
+
 ## 9. SDK
 
 A stable, versioned client surface (`mycelium::sdk`), narrower than the
@@ -223,6 +239,23 @@ the code. A further documentation commit adds to `docs/MU-EQUATIONS.md` the
 table of refused functionals (squared-norm coherence, scored-argmin
 search, ratios of scalar residuals, ε-bands), so that no port brings them
 over ([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
+
+The documentation now uses the typed vocabulary of
+[MU-SCIENCE §5.0](docs/MU-SCIENCE.md#the-typed-vocabulary) (reconstruction,
+rebuild, replay, resend); the code still names the court's reconstruction
+`replay`. One code commit renames those identifiers to what they do,
+updating every citation in the same commit (MU-STANDARDS 3.1):
+`blind_replay*` → `reconstruct_blind*`, `replay_word` / `replay_resume` /
+`replay_form*` / `replay_certificates_at` → `reconstruct_*`, the module
+`court/verdict/replay.rs` → `reconstruct.rs`, `Replayed` / `ReplayCursor` /
+`replay_cursors` / `replay_memo` → `Reconstructed` /
+`ReconstructionCursor` / `reconstruction_cursors` / `reconstruction_memo`,
+`measured_replay*` → `measured_discharge*`, `encode_replay_request` →
+`encode_era_request`, the outcome names `REPLAY_FAILED` and
+`GLUE_REPLAY_REFUSED` → `RECONSTRUCTION_FAILED` and
+`GLUE_RECONSTRUCTION_REFUSED` (wire bytes unchanged), the fault class
+`Replay` → `Resend`, and the test names that say "replays" for a
+reconstruction. **Specified.**
 
 ## 12. Verified knowledge: science kernels
 
