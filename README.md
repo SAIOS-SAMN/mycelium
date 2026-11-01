@@ -26,11 +26,14 @@ The direction is a network that verifies knowledge
   law register L0, the Concordance, the alphabet, Anastome and exact
   arithmetic.
 - **Verifying.** Its results are translated into the network's exact
-  language and verified by reconstruction: two courts each rebuild the
-  claimed object (a rule's output, a certificate's conclusion, a formal
-  proof's theorem, a computation's output, or a law check under its
-  physics) and must reach the same object. Admission depends on the
-  object, not on the method that produced it.
+  language and verified by reconstruction: two courts each derive the
+  claimed object from its own evidence by the laws (a rule's output, a
+  certificate's conclusion, a formal proof's theorem, a computation's
+  output, or a law check under its physics) and must reach the same exact
+  object. Admission depends on the object, not on the method that produced
+  it; nothing is verified by replaying the method. Reconstruction, rebuild,
+  replay and resend each have one sense
+  ([MU-SCIENCE §5.0](docs/MU-SCIENCE.md#50-reconstruction)).
 - **Paying.** Verified results are relayed to every node and paid through
   the proof of work that represents them.
 - **Libraries.** Mycelium's reference physics is the definitive library;

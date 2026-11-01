@@ -1721,7 +1721,7 @@ completion or a reason to build:
   and nothing else;
 - a test written to show the mind closes tasks, solves more, or earns more —
   a test built for appearance, refused; a guard states an identity of the
-  algebra (a replay, a fixed locus, a refusal by name), never a network
+  algebra (a reconstruction, MU-SCIENCE §5.0; a fixed locus; a refusal by name), never a network
   outcome;
 - a counter rising — solves sent, rules known, closures, μ earned, forecast
   hits — read beside the witness as the observer's diagnosis, never as the

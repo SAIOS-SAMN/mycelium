@@ -81,7 +81,7 @@ type: its coordinates get names.
 
 2.2 **Functions are verbs of the specification's moves.** `glue`,
 `rebase`, `refract`, `pivot`, `regauge`, `unfold`, `orbit`, `speak`,
-`comprehend`, `replay`, `witness`, `lapse`. A function name asserts an
+`comprehend`, `reconstruct`, `witness`, `lapse`. A function name asserts an
 operation; its body performs that operation or refuses.
 `compute_*`, `derive_*`, `classify_*`, `extract_*` and `recover_*` are
 permitted only when the body computes, derives, classifies, extracts or
@@ -259,8 +259,9 @@ algebraic identity on typed values the engine computes, by one of:
 - a **refusal by name**: the input that must be refused is refused with
   the named reason;
 - a **fixed locus**: the object an operation must leave fixed is fixed;
-- a **replay or reconstruction**: the object re-derived from its record
-  equals the object (`decode(key) == object`);
+- a **reconstruction**: the object derived independently from its own
+  evidence equals the object (`decode(key) == object`); never a re-run of a
+  recorded sequence (MU-SCIENCE §5.0, MU-CONCORDANCE 4.4);
 - an **exact identity** the specification states (`δ² = 0`, associativity
   of the geometric product, projective equality of either sign), over
   exact ℚ inputs.

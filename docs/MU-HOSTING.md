@@ -17,7 +17,8 @@ adds. Every item carries one of three marks:
 It builds on [`MU-CONCORDANCE.md`](MU-CONCORDANCE.md) (the agreement every
 kernel signs), [`MU-CLIENT.md`](MU-CLIENT.md) (the mind),
 [`MU-ECONOMY.md`](MU-ECONOMY.md) (μ and POW++) and
-[`MU-SCIENCE.md`](MU-SCIENCE.md) (verification by reconstruction).
+[`MU-SCIENCE.md`](MU-SCIENCE.md) (verification by reconstruction; the
+typed vocabulary of reconstruction, rebuild, replay and resend is its §5.0).
 
 ---
 

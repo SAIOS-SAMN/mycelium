@@ -59,7 +59,7 @@ Mycelium's current types, admission path and treasury.
    with a reason the caller can act on; nothing is dropped silently, and
    nothing aborts (`unwrap_used`, `panic` and the lints beside them are denied).
 6. **Tests as claims by the algebra.** A refusal by name, a fixed locus, a
-   replay or reconstruction, or an exact identity (MU-STANDARDS 3.2). No
+   reconstruction (MU-SCIENCE §5.0), or an exact identity (MU-STANDARDS 3.2). No
    golden bytes (Concordance 1.4), no census diffs, no thresholds.
 7. **Bounded by strokes.** Work that can grow with its input runs under the
    stroke budget and is refused by name (`Unbounded`) or left unread when

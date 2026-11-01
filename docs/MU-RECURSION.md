@@ -136,16 +136,20 @@ These are not restated in each chapter; every chapter assumes them.
    one exception is a computed class that Leray's theorem shows to be an
    artefact of a spanning tree (chapter 14.8); it was never a class.
 8. **Clients think, hyphae verify.** Cognition is the mind's; a hypha
-   replays, judges, keeps the ledger, and stores the genome. Sentences
+   reconstructs, judges, keeps the ledger, and stores the genome. To
+   reconstruct is to derive the object from its own evidence by the laws,
+   independently of the method that produced it, and to admit it only on
+   reaching the same exact object; it is the only sense of verification,
+   and never a replay (MU-SCIENCE §5.0, MU-CONCORDANCE 1.4 and 4.4). Sentences
    only (ruled 2026-09-10): a voice sends the court sentences and nothing
-   else, the court replays them by G and never composes by F, and the
+   else, the court reconstructs them by G and never composes by F, and the
    wire never carries raw percept laminae to a court. A court that
    extracts boundaries, measures versors or peels letters is thinking,
    and a second engine; the four `from_residual` sites of the court's
    reduction were that engine (50.6, 50.9). *(Read as amended by 78.102,
    2026-10-05: a sentence is any composition by the master equation,
    closed or open; an open sentence carrying an ineffable word is heard,
-   replayed, and its letter offered.)* *(Amended 2026-10-09,
+   reconstructed, and its letter offered.)* *(Amended 2026-10-09,
    ruling 3, §0.1: the
    crossings of the 78.157 study are settled by this law. S2 — the client
    sends the constructor steps of a letter it coined, the court checks
@@ -153,7 +157,7 @@ These are not restated in each chapter; every chapter assumes them.
    proposes a generator, so `hear_open`'s discovery half ("offered as a
    letter" above, and 78.102's court half) is SUPERSEDED where it
    proposes rather than checks (78.109 K3 governs). S3 — condense and
-   retire are proposed by clients as Rewrite words and replayed by the
+   retire are proposed by clients as Rewrite words and reconstructed by the
    court through `offer_rewrite` (37.7 depth 5); a court condensing on its
    own is thinking. 3a — the home check resolves court-stamped words only.
    C3 — the learning curve is the court's reading from receipts (1.9:
@@ -12946,7 +12950,7 @@ Code: `src/transducer/blade/tower.rs` (`Tower`, `Dilation`), `src/transducer/bla
 ### 78.39 Opening is a commutator, and superposition is one principle at three grades
 
 - **(1) A dimension is opened by a non-palindromic word, never by a palindrome.** A sandwich `V x Ṽ` or a conjugate `K = I T I` is a palindrome: it carries a thing to another vantage inside the same class and opens nothing (the receptor's, the transport's and the court's instrument). What OPENS a dimension is the group commutator of two held versors, `[A, B] = A B Ã B̃`, `≠ 1` exactly where they do not commute, whose content is new exactly where it leaves the algebra the held generators span (78.11 with 78.32: admission requires the closure's rank to strictly increase). Each mode has a base, and the commutator of two held versors on that base is the algorithm that opens it, one move per bundle factor. For a translation `P_a` and a transversion `K_b`, `[P_a, K_b] ∝ ⟨a, b⟩ D + M_ab` generates the dilation and the rotation in the plane of `a` and `b`: inversion enters the language as an operand of commutators, never as a letter applied around a core. A palindrome of held generators is always derivable (CS2's DERIVABLE test); the hue fibre's transposition word is a base of its own and opens by its own commutators.
-- **(2) Superposition is one principle at three grades.** At the LETTER grade, candidate constructors for one mode (the spheres a residue factors into), collapsed by admission (78.32(3)(c)); at the WORD grade, candidate forms for one idea (the vortex), collapsed by a fill or a court replay; at the CONJUGATE grade, several twists under one class, collapsed by a ruling that makes one the citation and the rest dialect. At every grade the superposition is the set of candidates the algebra has not yet distinguished, held whole with no weight (law 1); a palindrome transports within it and a commutator on that grade's base separates it; collapse is by fill or class, never by a scalar or an order on the lanes. Two remainders under one class with differing twists are a superposition HELD, never refused as discordant: the remainders' commutator is read into the class's modes and reads `held`, `commuting` (one vantage seen twice) or `separating` (the dimension that separates them, the second vantage the constructor gate wants). The docket is the carrier of the superposition at every grade: an entry is a class with its cover and its rays, none chosen.
+- **(2) Superposition is one principle at three grades.** At the LETTER grade, candidate constructors for one mode (the spheres a residue factors into), collapsed by admission (78.32(3)(c)); at the WORD grade, candidate forms for one idea (the vortex), collapsed by a fill or a court reconstruction; at the CONJUGATE grade, several twists under one class, collapsed by a ruling that makes one the citation and the rest dialect. At every grade the superposition is the set of candidates the algebra has not yet distinguished, held whole with no weight (law 1); a palindrome transports within it and a commutator on that grade's base separates it; collapse is by fill or class, never by a scalar or an order on the lanes. Two remainders under one class with differing twists are a superposition HELD, never refused as discordant: the remainders' commutator is read into the class's modes and reads `held`, `commuting` (one vantage seen twice) or `separating` (the dimension that separates them, the second vantage the constructor gate wants). The docket is the carrier of the superposition at every grade: an entry is a class with its cover and its rays, none chosen.
 
 Code: `src/transducer/cga/spin.rs`, `src/chronometry/receipt.rs` (`Cite::Class`, `Cite::Demand`), `src/client/sdk/entity/callus.rs`.
 
