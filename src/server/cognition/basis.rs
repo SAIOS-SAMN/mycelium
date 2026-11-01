@@ -357,13 +357,9 @@ impl Court {
             // §3.1 as ruled (S13.15): the voice's claim in flight on a lane
             // closed, so the recall shortfall that closed its room there
             // clears with it.
-            if let Some(mut owed) = self.recall_short.get(&v).copied() {
-                for l in 0..4 {
-                    if d[l] == 0 {
-                        owed[l] = 0;
-                    }
-                }
-                if owed == [0; 4] {
+            // The lanes the voice still draws on keep what is owed there.
+            if let Some(owed) = self.recall_short.get(&v).map(|o| o.on_lanes(|l| d[l] != 0)) {
+                if owed.is_zero() {
                     self.recall_short.remove(&v);
                 } else {
                     self.recall_short.insert(v, owed);

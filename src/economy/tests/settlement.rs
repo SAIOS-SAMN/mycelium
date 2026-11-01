@@ -1,7 +1,7 @@
 // 26, E2 — the market settles: novelty pays on use and not on existence,
 // and every settlement is a vector of four lanes.
 
-use super::at;
+use super::{at, Counts};
 use crate::economy::*;
 use crate::transducer::element::{from_canonical, Element};
 use crate::transducer::germinate::germinate;
@@ -17,7 +17,9 @@ fn germ() -> Element {
 #[test]
 fn settle_use_pays_novelty_on_use_not_install() {
     let mut t = Treasury::new();
-    t.enroll([1; 32], UNIT_BOND, at(0, [0; 32])); // genesis: the bond must exist
+    // The bond must exist: the smallest vector nonzero on every lane.
+    let bond = [1; 4];
+    t.enroll([1; 32], bond, at(0, [0; 32]));
     let g = germ();
     let anchor: Anchor = at(3, [7; 32]);
     assert!(magnitude(&g).iter().any(|&m| m >= 1), "a germinated pattern has cost on the lanes it moves");
@@ -27,29 +29,34 @@ fn settle_use_pays_novelty_on_use_not_install() {
     t.settle_subsidy([2; 32], [0, 0, 100, 0], anchor); // the demander earned earlier
     t.settle_use([2; 32], [1; 32], magnitude(&g), anchor); // a real demand decomposed through it
     t.settle_use([2; 32], [1; 32], magnitude(&g), anchor);
-    let bal = t.balance_mu(&[1; 32]);
+    let bal = t.balance_mu(&[1; 32]).n();
     assert_eq!(bal[2], 2 * magnitude(&g)[2], "reward flows with real use, per lane");
     assert_eq!(bal[0], 0, "no lane is invented");
-    assert_eq!(t.balance_mu(&[2; 32])[2], 100 - 2 * magnitude(&g)[2], "the demander PAID — a transfer, not a mint");
+    assert_eq!(t.balance_mu(&[2; 32]).n()[2], 100 - 2 * magnitude(&g)[2], "the demander PAID — a transfer, not a mint");
     // Every YIELD entry carries its chronometric anchor — the unforgeable
     // binding (the genesis stake carries its own enrollment anchor).
     assert!(t.entries().iter().filter(|e| e.kind != Kind::Stake).all(|e| (e.at, e.receipt) == at(3, [7; 32])));
 }
 
-/// The dimensional ledger: consilience splits the PRICED μ⃗ per lane (nonzero
-/// lanes never split to zero), and the torse coin books on the holonomic lane.
+/// The dimensional ledger: consilience splits the PRICED μ⃗ per lane exactly
+/// (5 between two voices is 5/2 each, the whole award minted), and the torse
+/// coin books on the holonomic lane.
 #[test]
 fn settle_consilience_settles_with_torse_as_vectors() {
     let mut t = Treasury::new();
-    t.enroll([1; 32], UNIT_BOND, at(0, [0; 32])); // capitalize before settling
+    // Capitalized before settling: the smallest vector nonzero on every lane.
+    let bond = [1; 4];
+    t.enroll([1; 32], bond, at(0, [0; 32]));
     let anchor: Anchor = at(9, [1; 32]);
     t.settle_consilience(&[[1; 32], [2; 32]], [0, 0, 5, 0], anchor);
-    assert_eq!(t.balance_mu(&[1; 32]), [0, 0, 2, 0]);
-    assert_eq!(t.balance_mu(&[2; 32]), [0, 0, 2, 0]);
+    let half = Mu::counts([0, 0, 5, 0]).part(2).expect("halves");
+    assert_eq!(t.balance_mu(&[1; 32]), half);
+    assert_eq!(t.balance_mu(&[2; 32]), half);
+    assert_eq!(t.minted(), [0, 0, 5, 0], "the two halves are the award, nothing unminted");
     t.settle_torse([1; 32], [0, 0, 40, 0], anchor);
     assert_eq!(
-        t.balance_mu(&[1; 32])[2],
-        42,
+        t.balance_mu(&[1; 32]),
+        half.add(&Mu::counts([0, 0, 40, 0])),
         "the torse coin mints the measured vector"
     );
     // The vector ledger round-trips with anchors intact.
@@ -63,13 +70,13 @@ fn mint_claim_pays_when_bond_is_empty() {
     let mut t = Treasury::new();
     let addr = [7u8; 32];
     t.escrow_award(&super::word(addr), vec![[1; 32], [2; 32]], [4, 0, 2, 0], at(1, [9; 32]));
-    assert_eq!(t.bond_total(), Some([0; 4]));
+    assert_eq!(t.bond_total(), &[0; 4]);
     let held = t.release_award(&addr).expect("claim");
     t.mint_claim(&held.voices, held.mu, held.anchor);
     assert_eq!(t.balance_mu(&[1; 32]), [2, 0, 1, 0]);
     assert_eq!(t.balance_mu(&[2; 32]), [2, 0, 1, 0]);
     assert_eq!(t.supply().expect("supply adds up"), [4, 0, 2, 0]);
-    assert_eq!(t.bond_total(), Some([0; 4]), "mint does not touch the stake bond");
+    assert_eq!(t.bond_total(), &[0; 4], "mint does not touch the stake bond");
 }
 
 /// S9.3 — THE READING, PER LANE, AND THE AMOUNT INSIDE IT. Each lane is
@@ -112,6 +119,7 @@ fn release_rewrite_pays_every_named_voice() {
     let released = at(5, [5; 32]);
     let share = t.release_rewrite(&addr, released).expect("two parties stood it");
     assert_eq!(share, [4, 0, 2, 0], "one quantity, split per lane, lanes never meeting");
+    let share = share.n();
     assert_eq!(t.balance_mu(&[1; 32]), share, "the voice that stood it");
     assert_eq!(t.balance_mu(&[2; 32]), share, "and the one that stood it after");
     let mints: Vec<&Entry> = t.entries().iter().filter(|e| e.kind == Kind::Mint).collect();
@@ -133,22 +141,26 @@ fn release_rewrite_refuses_escrow_without_voice() {
     assert_eq!(t.escrowed_remaining(&addr), [8, 0, 0, 0], "the escrow stands");
 }
 
-/// Rule 11: a lane split cannot invent units. An award smaller than the number
-/// of voices does not floor to 1 per voice.
+/// Rule 11: a lane split cannot invent units, and over ℚ it loses none. One
+/// unit split across four voices is a quarter each — never one each (which
+/// minted three units nobody held) and never nothing (which left the unit
+/// unminted); the four parts are the unit.
 #[test]
 fn settle_consilience_split_never_invents_units() {
     let mut t = Treasury::new();
     let anchor: Anchor = at(1, [1; 32]);
-    // 1 unit on lane 2 split across 4 voices: integer quotient is 0, no floor to 1.
-    t.settle_consilience(&[[1; 32], [2; 32], [3; 32], [4; 32]], [0, 0, 1, 0], anchor);
-    assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
-    assert_eq!(t.balance_mu(&[2; 32]), [0; 4]);
-    assert_eq!(t.balance_mu(&[3; 32]), [0; 4]);
-    assert_eq!(t.balance_mu(&[4; 32]), [0; 4]);
+    let voices = [[1; 32], [2; 32], [3; 32], [4; 32]];
+    let quarter = Mu::counts([0, 0, 1, 0]).part(4).expect("quarters");
+    t.settle_consilience(&voices, [0, 0, 1, 0], anchor);
+    for v in &voices {
+        assert_eq!(t.balance_mu(v), quarter, "a quarter each");
+    }
+    assert_eq!(t.minted(), [0, 0, 1, 0], "the parts are the unit");
 
     // Same exact law for settle_assembly
-    t.settle_assembly(&[[1; 32], [2; 32], [3; 32], [4; 32]], [0, 0, 1, 0], anchor);
-    assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
+    t.settle_assembly(&voices, [0, 0, 1, 0], anchor);
+    assert_eq!(t.balance_mu(&[1; 32]), quarter.add(&quarter));
+    assert!(t.audit().is_ok(), "and both equations hold over ℚ");
 }
 
 /// STD1 — paid ≤ held, AND THE DEBIT SHORTS NOTHING. A recall and a door
@@ -163,12 +175,12 @@ fn settle_recall_pays_held_and_reads_short_past_balance() {
     let a = at(1, [1; 32]);
     t.genesis([7; 32], [5, 2, 0, 0], a);
     let rows = t.entry_count();
-    let (paid, short) = t.settle_recall([7; 32], &[8, 1, 0, 0], &[0; 4], a);
-    assert_eq!((paid, short), ([5, 1, 0, 0], [3, 0, 0, 0]), "paid is what was held, the rest is short");
+    let recalled = t.settle_recall([7; 32], &[8, 1, 0, 0], &[0; 4], a);
+    assert_eq!(recalled.n(), ([5, 1, 0, 0], [3, 0, 0, 0]), "paid is what was held, the rest is short");
     assert_eq!(t.balance_mu(&[7; 32]), [0, 1, 0, 0], "the whole of paid left the balance");
     assert_eq!(t.entry_count(), rows + 1, "one burn row, for what left");
-    let (paid, short) = t.settle_door([7; 32], [0, 4, 0, 0], a);
-    assert_eq!((paid, short), ([0, 1, 0, 0], [0, 3, 0, 0]), "the door fee reads the same way");
+    let door = t.settle_door([7; 32], [0, 4, 0, 0], a);
+    assert_eq!(door.n(), ([0, 1, 0, 0], [0, 3, 0, 0]), "the door fee reads the same way");
     assert_eq!(t.balance_mu(&[7; 32]), [0; 4]);
     assert_eq!(t.audit().expect("the ledger still conserves"), [0; 4]);
 }
@@ -185,14 +197,14 @@ fn settle_use_moves_only_what_is_held() {
     t.genesis([1; 32], [3, 1, 0, 0], a);
     t.genesis([2; 32], [0, 0, 0, 0], a);
     assert_eq!(t.settle_use([1; 32], [2; 32], [5, 1, 0, 0], a), [3, 1, 0, 0], "the use moves what the demander held");
-    assert_eq!((t.balance_mu(&[1; 32]), t.balance_mu(&[2; 32])), ([0; 4], [3, 1, 0, 0]));
+    assert_eq!((t.balance_mu(&[1; 32]), t.balance_mu(&[2; 32])).n(), ([0; 4], [3, 1, 0, 0]));
     assert_eq!(t.audit().expect("a transfer conserves"), [3, 1, 0, 0]);
     assert_eq!(t.enroll([2; 32], [9, 9, 0, 0], a), [3, 1, 0, 0], "the enrolment stakes what the balance held");
-    assert_eq!((t.balance_mu(&[2; 32]), t.bond_of(&[2; 32])), ([0; 4], Some([3, 1, 0, 0])));
+    assert_eq!((t.balance_mu(&[2; 32]), t.bond_of(&[2; 32])).n(), ([0; 4], Some([3, 1, 0, 0])));
     assert_eq!(t.audit().expect("a stake conserves"), [3, 1, 0, 0]);
     t.genesis([2; 32], [0, 2, 0, 0], a);
     assert_eq!(t.burn([2; 32], [0, 5, 0, 0], a), [0, 3, 0, 0], "the burn takes the bond, then the balance, no more");
-    assert_eq!((t.balance_mu(&[2; 32]), t.bond_of(&[2; 32])), ([0; 4], Some([3, 0, 0, 0])));
+    assert_eq!((t.balance_mu(&[2; 32]), t.bond_of(&[2; 32])).n(), ([0; 4], Some([3, 0, 0, 0])));
     assert_eq!(t.audit().expect("a burn conserves"), [3, 0, 0, 0]);
 }
 
@@ -211,13 +223,13 @@ fn release_discharged_pays_lesser_of_escrow_and_discharge() {
     let paid = t.release_discharged(&addr, [5, 6, 0, 0], closed).expect("the claim stood");
     assert_eq!(paid, [5, 4, 0, 0], "lane-wise the lesser of the escrow and the discharge");
     assert_eq!(t.balance_mu(&[1; 32]), [5, 4, 0, 0], "the voice the escrow names is paid it");
-    assert_eq!(t.minted().expect("minted adds up"), [5, 4, 0, 0], "and nothing above the discharge was minted");
+    assert_eq!(t.minted(), [5, 4, 0, 0], "and nothing above the discharge was minted");
     assert!(t.escrow_of(&addr).is_none(), "the claim is released");
     assert!(t.release_discharged(&addr, [5, 6, 0, 0], closed).is_none(), "and spent once");
     // A zero discharge releases the claim and mints nothing.
     t.escrow_award(&super::word([6u8; 32]), vec![[2; 32]], [3, 3, 0, 3], at(1, [1; 32]));
-    assert_eq!(t.release_discharged(&[6u8; 32], [0; 4], closed), Some([0; 4]), "a closer that discharged nothing pays nothing");
+    assert_eq!(t.release_discharged(&[6u8; 32], [0; 4], closed).n(), Some([0; 4]), "a closer that discharged nothing pays nothing");
     assert_eq!(t.balance_mu(&[2; 32]), [0; 4]);
-    assert_eq!(t.minted().expect("minted adds up"), [5, 4, 0, 0], "and issues nothing");
+    assert_eq!(t.minted(), [5, 4, 0, 0], "and issues nothing");
 }
 

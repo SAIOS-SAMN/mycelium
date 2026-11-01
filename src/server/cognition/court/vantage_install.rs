@@ -91,17 +91,16 @@ impl Court {
                 // whose re-derivation installed it each a verification share
                 // first; the cited forms, taught words and voices divide the
                 // rest.
-                let pay = match self.treasury.escrow_of(address).map(|e| e.mu) {
+                let pay = match self.treasury.escrow_of(address).map(|e| e.mu.clone()) {
                     Some(held) if measured.iter().any(|&x| x > 0) => {
-                        let above = crate::economy::shortfall(&held, &measured);
-                        let base: [u64; 4] = std::array::from_fn(|l| held[l] - above[l]);
+                        let base = held.capped(&crate::economy::Mu::counts(measured));
                         let organs = [self.identity, witness];
-                        let taken = self.pay_verification(base, &organs, installed);
-                        std::array::from_fn(|l| base[l] - taken[l])
+                        let taken = self.pay_verification(&base, &organs, installed);
+                        base.shortfall(&taken)
                     }
-                    _ => measured,
+                    _ => crate::economy::Mu::counts(measured),
                 };
-                if pay.iter().all(|&x| x == 0) {
+                if pay.is_zero() {
                     // Closes nothing: installed, and mints none.
                     let _ = self.treasury.revoke_award(address, crate::economy::escrow::Revocation::Drop);
                 } else {
@@ -118,7 +117,7 @@ impl Court {
                     // discoverer its use, a new word's its base pay. What the
                     // escrow's voices take after both is the COMPOSITION
                     // PREMIUM — what the sentence discharged beyond its words.
-                    let mut shares = self.cited_shares(address, &w, pay);
+                    let mut shares = self.cited_shares(address, &w, &pay);
                     let word_shares_paid = word_shares.clone();
                     shares.extend(word_shares);
                     // MU-CLIENT §5.6 (S) — a sentence's voices take its
@@ -131,7 +130,7 @@ impl Court {
                         }
                         false => None,
                     };
-                    let taken = self.treasury.settle_recursive(address, &shares, pay, premium, installed);
+                    let taken = self.treasury.settle_recursive(address, &shares, &pay, premium, installed);
                     // The pays by kind, for the observer (MU-CLIENT §5.6).
                     let kind = match (premium.is_some(), w.is_connection(), self.conjugate_of(&w).is_some()) {
                         (true, _, _) => "sentence gluings",
@@ -139,7 +138,7 @@ impl Court {
                         (false, false, true) => "conjugate transports",
                         (false, false, false) => "",
                     };
-                    if taken.iter().any(|&m| m > 0) {
+                    if !taken.is_zero() {
                         self.acts.pay(kind, taken);
                     }
                     for (_, share) in &word_shares_paid {
@@ -265,8 +264,8 @@ impl Court {
     /// ONE SHARE PER CITED VERDICT, not per citation: a form cited by two
     /// vertices closes what it closes once. Keyed by the cited address,
     /// so the second citation of one address is not a second share.
-    fn cited_shares(&self, address: &[u8], w: &Element, pay: [u64; 4]) -> Vec<([u8; 32], [u64; 4])> {
-        if pay.iter().all(|&m| m == 0) {
+    fn cited_shares(&self, address: &[u8], w: &Element, pay: &crate::economy::Mu) -> Vec<([u8; 32], [u64; 4])> {
+        if pay.is_zero() {
             return Vec::new();
         }
         // WHO IS CITED IS READ OFF THE ENVELOPE (54.5 Road (d), B3). This

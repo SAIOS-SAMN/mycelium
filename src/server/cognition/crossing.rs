@@ -25,6 +25,7 @@ use crate::anastome::dialogue::uplink::{Child, TaxRefusal, TierFold, CONNECTION_
 use crate::anastome::dialogue::wallet::{SignedStake, StakeRefusal};
 use crate::chronometry::tuniversal::TPoint;
 use crate::chronometry::{ActKind, Cite, KStepReceipt};
+use crate::economy::Mu;
 use num_rational::BigRational as Q;
 
 /// The escrow key a claim is held under.
@@ -34,10 +35,18 @@ pub(crate) fn claim_key(at: &[u8]) -> Vec<u8> {
     k
 }
 
-/// `⌊q · price⌋` exact, or `None` past the carrier.
-fn priced(q: &Q, price: u64) -> Option<u64> {
-    let f = (q * Q::from_integer(price.into())).floor();
-    u64::try_from(f.to_integer()).ok()
+/// THE MAP FEE, `g_l · p_l` on each lane exactly (MU-DERIVATIONS D2.3): the
+/// route's gas `gas` (S its exact span) at the read price `price`. Never
+/// floored: a span of 11/4 at a price of one is a fee of 11/4 on S.
+fn priced(span: &Q, gas: &Gas, price: &Mu) -> Mu {
+    let q = |n: u64| Q::from_integer(n.into());
+    let fee = [span * price.lane(0), q(gas.g) * price.lane(1), q(gas.t) * price.lane(2), q(gas.h) * price.lane(3)];
+    // A span is a sum of non-negative segments, a price is at least one, and
+    // every other factor a count.
+    match Mu::of(fee) {
+        Ok(fee) => fee,
+        Err(_) => Mu::zero(),
+    }
 }
 
 /// 78.154 (4) — WHY A COORDINATE RETRIEVAL WAS NOT SERVED.
@@ -52,26 +61,24 @@ pub enum Unretrieved {
 }
 
 impl Court {
-    /// THE COURT'S READ PRICE per lane: one μ a unit of gas at rest, and its
-    /// pressure on the lane above it. `None` where it passes its carrier.
-    pub fn read_price(&self) -> Option<[u64; 4]> {
+    /// THE COURT'S READ PRICE per lane, μ per unit of gas: `1 + y_l / R`,
+    /// exact, the court's strain against its calibrated reserve
+    /// (`economy::read_price`, MU-DERIVATIONS D2.3). `None` where the surface
+    /// passes its carrier.
+    pub fn read_price(&self) -> Option<Mu> {
         let surface = crate::economy::yield_surface(&self.physics)?;
-        let mut price = [0u64; 4];
-        for (p, s) in price.iter_mut().zip(surface) {
-            *p = s.checked_add(1)?;
-        }
-        Some(price)
+        crate::economy::read_price(&surface, crate::physics::reserve_max())
     }
 
     /// A claim drawn on `staker`'s stake for `fee`, its parts to this court,
     /// held to the window from the act at `r`. `None` where it cannot be held.
-    fn draw_claim(&mut self, staker: [u8; 32], id: &[u8; 32], fee: [u64; 4], r: &KStepReceipt) -> Option<()> {
-        if fee.iter().all(|m| *m == 0) {
+    fn draw_claim(&mut self, staker: [u8; 32], id: &[u8; 32], fee: Mu, r: &KStepReceipt) -> Option<()> {
+        if fee.is_zero() {
             return Some(());
         }
         let mut at = staker.to_vec();
         at.extend_from_slice(id);
-        self.treasury.claim_stake(staker, &claim_key(&at), fee, (r.stamp, r.chain_hash)).ok()?;
+        self.treasury.claim_stake(staker, &claim_key(&at), fee.clone(), (r.stamp, r.chain_hash)).ok()?;
         let claim = super::atlas::Claim { parts: vec![(self.identity, fee)], until: window_end(r.stamp.h), at: r.stamp, receipt: r.chain_hash };
         self.atlas.claims.insert(at, claim);
         Some(())
@@ -172,17 +179,14 @@ impl Court {
         let ticks = t.point_a.h.abs_diff(t.point_b.h);
         let gas = Gas { s: (sn, sd), g: carried[1], t: ticks, h: carried[3] };
         let Some(price) = self.read_price() else { return refuse(R::Overflow) };
-        let fee = [priced(&span, price[0]), gas.g.checked_mul(price[1]), gas.t.checked_mul(price[2]), gas.h.checked_mul(price[3])];
-        let [Some(fs), Some(fg), Some(ft), Some(fh)] = fee else { return refuse(R::Overflow) };
-        let fee = [fs, fg, ft, fh];
-        let staked = self.treasury.stake_of(&t.payer).map_or([0; 4], |s| s);
-        if !crate::economy::lanes_short(&crate::economy::shortfall(&fee, &staked)).is_empty() {
+        let fee = priced(&span, &gas, &price);
+        if !fee.shortfall(&self.staked(&t.payer)).is_zero() {
             return refuse(R::Short);
         }
         let cite = Cite::Stated { domain: t.from, kind: crate::anastome::dialogue::atlas::KIND_TRAVERSE, body: crossing };
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], t.payer, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
         let Some(court) = fin else { return refuse(R::NotFinal) };
-        if self.draw_claim(t.payer, &crossing, fee, &r).is_none() {
+        if self.draw_claim(t.payer, &crossing, fee.clone(), &r).is_none() {
             return refuse(R::Short);
         }
         let edge = Edge { from: t.from, to, mouth: t.mouth, at: t.at, u_a: t.u_a, u_entry: t.u_b, u_applied: None };
@@ -209,23 +213,30 @@ impl Court {
         paid
     }
 
-    /// The claims standing on `who`'s stake, per lane; `None` past the
-    /// carrier.
-    pub fn claims_on(&self, party: &[u8; 32]) -> Option<[u64; 4]> {
-        let Some(fibre) = self.atlas.claims.fibre_at(party) else { return Some([0; 4]) };
-        let mut total = [0u64; 4];
+    /// The claims standing on `who`'s stake, per lane, exactly.
+    pub fn claims_on(&self, party: &[u8; 32]) -> Mu {
+        let mut total = Mu::zero();
+        let Some(fibre) = self.atlas.claims.fibre_at(party) else { return total };
         for (_, c) in fibre {
             for (_, mu) in &c.parts {
-                total = crate::core::lanes::lanes_add(total, *mu)?;
+                total.step(mu);
             }
         }
-        Some(total)
+        total
+    }
+
+    /// What `party` has staked, exactly: nothing where it holds no stake.
+    fn staked(&self, party: &[u8; 32]) -> Mu {
+        match self.treasury.stake_of(party) {
+            Some(s) => s,
+            None => Mu::zero(),
+        }
     }
 
     /// 78.154 (4) — A STAKE ACT: the party's signature, its nonce unspent,
     /// a nonzero vector; a stake moves it from the balance (whole or
     /// refused), an unstake back — only with no claim standing on the stake.
-    pub fn stake(&mut self, s: &SignedStake) -> Result<[u64; 4], StakeRefusal> {
+    pub fn stake(&mut self, s: &SignedStake) -> Result<Mu, StakeRefusal> {
         let a = &s.act;
         if !crate::court::identity::verify(&a.who, &a.signed_bytes(), &s.sig) {
             return Err(StakeRefusal::Unsigned);
@@ -235,16 +246,15 @@ impl Court {
         if self.atlas.spent.contains(&spent) {
             return Err(StakeRefusal::Spent);
         }
-        if a.mu.iter().all(|m| *m == 0) {
+        if a.mu.is_zero() {
             return Err(StakeRefusal::Nothing);
         }
-        let staked = self.treasury.stake_of(&a.who).map_or([0; 4], |s| s);
+        let staked = self.staked(&a.who);
         let anchor = self.anchor();
         match a.unstake {
             false => {
-                let short = crate::economy::shortfall(&a.mu, &self.treasury.balance_mu(&a.who));
-                let Some(bond) = crate::core::lanes::lanes_add(staked, a.mu) else { return Err(StakeRefusal::Short) };
-                if !crate::economy::lanes_short(&short).is_empty() || self.treasury.enroll(a.who, bond, anchor) != a.mu {
+                let short = a.mu.shortfall(&self.treasury.balance_mu(&a.who));
+                if !short.is_zero() || self.treasury.enroll(a.who, staked.add(&a.mu), anchor) != a.mu {
                     return Err(StakeRefusal::Short);
                 }
             }
@@ -252,15 +262,14 @@ impl Court {
                 if self.atlas.claims.fibre_at(&a.who).is_some_and(|mut f| f.next().is_some()) {
                     return Err(StakeRefusal::Claimed);
                 }
-                let short = crate::economy::shortfall(&a.mu, &staked);
-                if !crate::economy::lanes_short(&short).is_empty() || self.treasury.unstake(a.who, a.mu, anchor) != a.mu {
+                if !a.mu.shortfall(&staked).is_zero() || self.treasury.unstake(a.who, a.mu.clone(), anchor) != a.mu {
                     return Err(StakeRefusal::Short);
                 }
             }
         }
         self.atlas.spent.insert(spent, ());
         self.mark_persist();
-        Ok(self.treasury.stake_of(&a.who).map_or([0; 4], |s| s))
+        Ok(self.staked(&a.who))
     }
 
     /// 78.154 (4) — A COORDINATE RETRIEVAL (TU-6 PINPOINT): the receipts this
@@ -275,9 +284,9 @@ impl Court {
         let read = self.pinpoint(p);
         let units = u64::try_from(read.len()).map_err(|_| Unretrieved::Overflow)?;
         let price = self.read_price().ok_or(Unretrieved::Overflow)?;
-        let fee = [0, 0, 0, units.checked_mul(price[3]).ok_or(Unretrieved::Overflow)?];
-        let staked = self.treasury.stake_of(&staker).map_or([0; 4], |s| s);
-        if !crate::economy::lanes_short(&crate::economy::shortfall(&fee, &staked)).is_empty() {
+        // One unit of information per receipt, on H, at the read price.
+        let fee = Mu::counts([0, 0, 0, units]).on_lanes(|l| l == 3).scaled(price.lane(3)).ok_or(Unretrieved::Overflow)?;
+        if !fee.shortfall(&self.staked(&staker)).is_zero() {
             return Err(Unretrieved::Short);
         }
         let mut id = b"retrieve".to_vec();
@@ -297,7 +306,7 @@ impl Court {
     /// declared under `CONNECTION_TAX` on the reserve's own fold — a sink on
     /// every lane it moves, the reserve holding it — and none on a carried
     /// line. The μ it pays, zero where none is declared.
-    pub(crate) fn connection_tax(&self, fold: &TierFold) -> Result<[u64; 4], TaxRefusal> {
+    pub(crate) fn connection_tax(&self, fold: &TierFold) -> Result<Mu, TaxRefusal> {
         fn carried_declares(f: &TierFold) -> bool {
             f.children.iter().any(|c| match &c.child {
                 Child::Carried(line) => line.fold.declared.iter().any(|(who, _)| *who == CONNECTION_TAX) || carried_declares(&line.fold),
@@ -307,7 +316,7 @@ impl Court {
         if carried_declares(fold) {
             return Err(TaxRefusal::Carried);
         }
-        let Some((_, lanes)) = fold.declared.iter().find(|(who, _)| *who == CONNECTION_TAX) else { return Ok([0; 4]) };
+        let Some((_, lanes)) = fold.declared.iter().find(|(who, _)| *who == CONNECTION_TAX) else { return Ok(Mu::zero()) };
         let mut mu = [0u64; 4];
         for (lane, (m, v)) in mu.iter_mut().zip(lanes).enumerate() {
             if *v > 0 {
@@ -315,7 +324,8 @@ impl Court {
             }
             *m = u64::try_from(v.unsigned_abs()).map_err(|_| TaxRefusal::Source { lane })?;
         }
-        if !crate::economy::lanes_short(&crate::economy::shortfall(&mu, &self.treasury.balance_mu(&fold.tier))).is_empty() {
+        let mu = Mu::counts(mu);
+        if !mu.shortfall(&self.treasury.balance_mu(&fold.tier)).is_zero() {
             return Err(TaxRefusal::Short);
         }
         Ok(mu)
@@ -323,8 +333,8 @@ impl Court {
 
     /// 78.154a — THE CONNECTION TAX PAID, the fold sealed at `anchor`: from
     /// the reserve into this court's recycled pool.
-    pub(crate) fn pay_connection_tax(&mut self, tier: [u8; 32], mu: [u64; 4], anchor: crate::economy::Anchor) {
-        if mu.iter().any(|m| *m > 0) && self.treasury.recycle(tier, self.identity, mu, anchor).is_ok() {
+    pub(crate) fn pay_connection_tax(&mut self, tier: [u8; 32], mu: Mu, anchor: crate::economy::Anchor) {
+        if !mu.is_zero() && self.treasury.recycle(tier, self.identity, mu, anchor).is_ok() {
             self.mark_persist();
         }
     }

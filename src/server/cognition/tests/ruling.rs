@@ -171,19 +171,22 @@ fn admit_line_replaces_alias_on_later_admission() {
 
 /// EC1 — EVERY PAYMENT ROW STANDS AT THE ACT THAT PAID IT. A word upheld
 /// on its own book mints its released claim at the Ruling node, never at
-/// the act that escrowed it, and the row carries the arm it pays (POUW).
+/// the act that escrowed it, and the row carries the arm it pays: POUW to
+/// the closers, and POWV — the exact share of a strained court, never
+/// floored away — to the court whose reconstruction verified it.
 #[test]
 fn apply_verdict_mints_upheld_claim_at_ruling() {
     use crate::anastome::dialogue::RULING_UPHELD;
+    use crate::economy::Arm;
     let (mut k, addr) = docketed([0x5a; 32]);
     let escrowed = k.treasury().escrow_of(addr.as_bytes()).map(|e| e.anchor.0);
     assert!(k.apply_verdict(addr.as_bytes(), RULING_UPHELD), "upheld");
     let ruling = k.chain().head().expect("ruled").stamp;
     let mints: Vec<_> = k.treasury().entries().iter().filter(|e| e.kind == crate::economy::Kind::Mint).collect();
-    assert!(!mints.is_empty(), "the claim was minted");
+    assert!(mints.iter().any(|e| e.arm == Some(Arm::Pouw)), "the claim was minted");
     assert!(
-        mints.iter().all(|e| e.at == ruling && e.arm == Some(crate::economy::Arm::Pouw)),
-        "at the Ruling act (not the escrow's {escrowed:?}), paying POUW"
+        mints.iter().all(|e| e.at == ruling && matches!(e.arm, Some(Arm::Pouw) | Some(Arm::Powv))),
+        "at the Ruling act (not the escrow's {escrowed:?}), paying POUW and its verification"
     );
     let economy = k.economy().expect("measured");
     assert_ne!(economy.paid[crate::economy::Arm::Pouw.index()], [0; 4], "the observer reads it under POUW");

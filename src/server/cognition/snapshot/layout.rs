@@ -1,6 +1,12 @@
 /// THE LAYOUT'S ONE MAGIC (78.27): the mind as keyed tries, its line and
-/// its eras on disk beside it (45.8).
-pub const MAGIC: &[u8; 4] = b"MYT2";
+/// its eras on disk beside it (45.8), every μ an exact rational per lane
+/// (`economy::Mu`).
+pub const MAGIC: &[u8; 4] = b"MYT3";
+
+/// THE TRIES WHOSE μ WAS FOUR `u64` COUNTS, refused BY NAME and never
+/// migrated: every holding, row and award carried counts where the layout
+/// now carries exact rationals. The recut is the road.
+pub const PRE_RATIONAL_MAGIC: &[u8; 4] = b"MYT2";
 
 /// THE TRIES WITH THE LINE AND THE ERAS INSIDE THEM, refused BY NAME: every
 /// receipt and every era descriptor rewritten on every persist. The recut

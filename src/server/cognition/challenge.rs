@@ -105,12 +105,23 @@ fn replay_key(fold: &[u8], filer: &[u8; 32]) -> Vec<u8> {
 /// it nets — on every identity and lane, `Σ own rows = rows − Σ rate ·
 /// included rows` exactly, and `Σ own declared = declared`: conservation,
 /// checked locally, nothing re-run. A parent never re-lists its children's
-/// transfers; each child's are proved by its own records.
-fn reconstructs(rows: &[Net], declared: &[Net], children: &[ChildNet], own_rows: &Lanes, own_declared: &Lanes) -> bool {
-    let Some(declared) = Lanes::of(declared) else { return false };
-    if *own_declared != declared {
-        return false;
-    }
+/// transfers; each child's are proved by its own records. The fold
+/// reconstructs exactly where its defect is zero on every lane.
+///
+/// MU-DERIVATIONS D2.1 — THE DEFECT, the fold's measured lie on each lane:
+///
+/// ```text
+/// D_l = Σ_w | want_{w,l} − have_{w,l} |  +  Σ_w | declared_{w,l} − own_declared_{w,l} |
+/// want_{w,l} = rows_{w,l} − Σ_{c ∈ children} rate_{c,l} · included_{c,w,l}
+/// ```
+///
+/// exact over ℚ, `have` the fold's own entries summed. Zero on every lane
+/// exactly where the fold reconstructs. `None` where the declared nets
+/// cannot be summed — no defect is measured, and the fold does not
+/// reconstruct.
+pub(crate) fn defect(rows: &[Net], declared: &[Net], children: &[ChildNet], own_rows: &Lanes, own_declared: &Lanes) -> Option<crate::economy::Mu> {
+    use num_traits::Signed;
+    let declared = Lanes::of(declared)?;
     // The expected own rows, exact rationals, per identity per lane.
     let mut expected: Keyed<[Q; 4]> = Keyed::new();
     for (who, v) in rows {
@@ -121,14 +132,24 @@ fn reconstructs(rows: &[Net], declared: &[Net], children: &[ChildNet], own_rows:
             bump(&mut expected, who, std::array::from_fn(|l| -(Q::new(c.rate[l].0.into(), c.rate[l].1.into()) * Q::from_integer(v[l].into()))));
         }
     }
-    for (who, _) in own_rows.nets() {
-        bump(&mut expected, who, zero());
+    for (who, v) in own_rows.nets() {
+        bump(&mut expected, who, std::array::from_fn(|l| -Q::from_integer(v[l].into())));
     }
-    expected.scoped().all(|(who, want)| {
-        let Ok(who) = <[u8; 32]>::try_from(who.as_slice()) else { return false };
-        let have = own_rows.net_of(&who);
-        want.iter().zip(have).all(|(w, h)| *w == Q::from_integer(h.into()))
-    })
+    // The declared, less the declared the entries carried.
+    let mut declared_gap: Keyed<[Q; 4]> = Keyed::new();
+    for (who, v) in declared.nets() {
+        bump(&mut declared_gap, who, std::array::from_fn(|l| Q::from_integer(v[l].into())));
+    }
+    for (who, v) in own_declared.nets() {
+        bump(&mut declared_gap, who, std::array::from_fn(|l| -Q::from_integer(v[l].into())));
+    }
+    let mut d = zero();
+    for (_, gap) in expected.scoped().chain(declared_gap.scoped()) {
+        for (t, g) in d.iter_mut().zip(gap.iter()) {
+            *t += g.abs();
+        }
+    }
+    crate::economy::Mu::of(d).ok()
 }
 
 impl Court {
@@ -281,7 +302,8 @@ impl Court {
                 }
                 // THE LINE REACHED THE CITED HEAD: judged once, sealed once,
                 // the head its content address.
-                if reconstructs(&rebuilt.rows, &rebuilt.declared, &rebuilt.children, &rebuilt.own_rows, &rebuilt.own_declared) {
+                let lie = defect(&rebuilt.rows, &rebuilt.declared, &rebuilt.children, &rebuilt.own_rows, &rebuilt.own_declared);
+                if lie.as_ref().is_some_and(crate::economy::Mu::is_zero) {
                     let Some(r) = self.seal_challenge(c, UPHELD, rec.prefix) else { return refuse(R::LineRefused) };
                     if let Some(held) = self.ledgers.records.get_mut(&key) {
                         held.upheld = Some(rec.prefix);
@@ -289,11 +311,18 @@ impl Court {
                     self.mark_persist();
                     return Challenged::Upheld { at: r.stamp, receipt: r.chain_hash, prefix: rec.prefix };
                 }
+                // The exposure is read before reversal moves it; a defect that
+                // cannot be measured stands as the whole exposure.
+                let exposure = self.exposure_of(&key);
+                let lie = match lie {
+                    Some(d) => d,
+                    None => exposure.clone(),
+                };
                 let Some(r) = self.seal_challenge(c, FALSIFIED, rec.prefix) else { return refuse(R::LineRefused) };
                 let unwound = self.reverse(&key, (r.stamp, r.chain_hash));
-                // 78.129 — the slash: half the falsified tier's bond, half of
-                // that to this challenger, half retired.
-                self.slash(&rec.tier, c.who, (r.stamp, r.chain_hash));
+                // 78.129, D2.1–D2.2 — the slash: the bond against the
+                // exposure, its bounty the defect against the exposure.
+                self.slash(&rec.tier, c.who, &exposure, &lie, (r.stamp, r.chain_hash));
                 Challenged::Falsified { at: r.stamp, receipt: r.chain_hash, unwound: count(unwound) }
             }
             Challenge::Default { .. } => {
@@ -304,9 +333,12 @@ impl Court {
                 if head < due {
                     return refuse(R::NotDue);
                 }
+                // A default published nothing: every net the fold asserted
+                // stands unproved, so its defect is its whole exposure.
+                let exposure = self.exposure_of(&key);
                 let Some(r) = self.seal_challenge(c, FALSIFIED, [0; 32]) else { return refuse(R::LineRefused) };
                 let unwound = self.reverse(&key, (r.stamp, r.chain_hash));
-                self.slash(&rec.tier, c.who, (r.stamp, r.chain_hash));
+                self.slash(&rec.tier, c.who, &exposure, &exposure, (r.stamp, r.chain_hash));
                 Challenged::Falsified { at: r.stamp, receipt: r.chain_hash, unwound: count(unwound) }
             }
             Challenge::Correction { child, holder, amount, .. } => {
@@ -342,6 +374,73 @@ impl Court {
         match self.ledgers.withdrawn.get(key) {
             Some(h) => base.max(window_end(*h)),
             None => base,
+        }
+    }
+
+    /// MU-DERIVATIONS D2.1 — THE EXPOSURE of the fold at `key`: the value its
+    /// commitment moved on each lane, the quantity reversal returns, read
+    /// before reversal moves it.
+    ///
+    /// ```text
+    /// own(k) = remaining[k] ∘ Σ_{p ∈ parents(k)} included_p(k)        (rows, declared) as admitted
+    /// X_l    = Σ_{(w,n) ∈ own(k).rows} n_l⁺  +  Σ_{(w,n) ∈ own(k).declared} |n_l|
+    ///          + Σ_{(c, rows, decl) ∈ rec.nets} ( Σ_{(w,n) ∈ rows} n_l⁺ + Σ_{(w,n) ∈ decl} |n_l| )
+    /// ```
+    ///
+    /// Rows move key to key and sum to zero, so their positive part is the
+    /// value transferred, with no `½`; a declared flow is one-sided, so its
+    /// absolute value is its value. Summed exactly: no carrier to pass.
+    pub(crate) fn exposure_of(&self, key: &[u8]) -> crate::economy::Mu {
+        use num_traits::Signed;
+        let Some(rec) = self.ledgers.records.get(key) else { return crate::economy::Mu::zero() };
+        let (mut rows, mut declared): (Keyed<[Q; 4]>, Keyed<[Q; 4]>) = (Keyed::new(), Keyed::new());
+        let gather = |into: &mut Keyed<[Q; 4]>, nets: &[Net]| {
+            for (who, v) in nets {
+                bump(into, who, std::array::from_fn(|l| Q::from_integer(v[l].into())));
+            }
+        };
+        if let Some((r, d)) = self.ledgers.remaining.get(key) {
+            gather(&mut rows, r.nets());
+            gather(&mut declared, d.nets());
+        }
+        for p in &rec.parents {
+            let Some(parent) = self.ledgers.records.get(p) else { continue };
+            for (_, r, d) in parent.nets.iter().filter(|(child, ..)| child.as_slice() == key) {
+                gather(&mut rows, r.nets());
+                gather(&mut declared, d.nets());
+            }
+        }
+        let mut x = zero();
+        let positive = |x: &mut [Q; 4], v: &[Q; 4]| {
+            for (t, n) in x.iter_mut().zip(v.iter()) {
+                if n.is_positive() {
+                    *t += n;
+                }
+            }
+        };
+        let absolute = |x: &mut [Q; 4], v: &[Q; 4]| {
+            for (t, n) in x.iter_mut().zip(v.iter()) {
+                *t += n.abs();
+            }
+        };
+        for (_, v) in rows.scoped() {
+            positive(&mut x, v);
+        }
+        for (_, v) in declared.scoped() {
+            absolute(&mut x, v);
+        }
+        for (_, r, d) in &rec.nets {
+            for (_, v) in r.nets() {
+                positive(&mut x, &std::array::from_fn(|l| Q::from_integer(v[l].into())));
+            }
+            for (_, v) in d.nets() {
+                absolute(&mut x, &std::array::from_fn(|l| Q::from_integer(v[l].into())));
+            }
+        }
+        // A sum of positive parts and absolute values is never negative.
+        match crate::economy::Mu::of(x) {
+            Ok(m) => m,
+            Err(_) => crate::economy::Mu::zero(),
         }
     }
 

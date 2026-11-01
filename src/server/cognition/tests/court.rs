@@ -98,13 +98,13 @@ let dockets = k.dockets();
 assert_eq!(dockets.len(), 1, "the provisional word is on the docket");
 let row = &dockets[0];
 assert_eq!(row.voices.len(), 2, "both attesting voices ride the docket");
-assert!(row.escrowed.iter().any(|&m| m > 0), "the escrowed award is real");
+assert!(!row.escrowed.is_zero(), "the escrowed award is real");
 assert_eq!(row.spoken.address(), row.addr.clone(), "the docket carries the word as spoken");
 let addr = &row.addr;
 // UPHELD: finality releases the award — the voices are paid at last.
 assert!(k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD));
-assert!(k.treasury().balance_mu(&[1; 32]).iter().any(|&m| m > 0), "finality pays voice A");
-assert!(k.treasury().balance_mu(&[2; 32]).iter().any(|&m| m > 0), "finality pays voice B");
+assert!(!k.treasury().balance_mu(&[1; 32]).is_zero(), "finality pays voice A");
+assert!(!k.treasury().balance_mu(&[2; 32]).is_zero(), "finality pays voice B");
 assert!(k.dockets().is_empty(), "the docket cleared");
 assert!(!k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD), "a verdict lands once");
 }

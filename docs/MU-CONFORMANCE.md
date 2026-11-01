@@ -60,8 +60,22 @@ acts, each once. Each `ActRequirement` names:
 - `fields`: the exact fields that decoder reads back.
 
 `Statement::union(profiles)` is the acts of a client declaring
-`profiles`. At this tree the statement stands at wire `0x0104` (v1.4) and
+`profiles`. At this tree the statement stands at wire `0x0200` (v2.0) and
 law version 4.
+
+**μ fields (wire v2.0).** Every field that carries μ — the solve verdict's
+and receipt's paid μ, the grant's μ, the wallet's balance, bond and held,
+the reserve and bond readings, the endowment's earned, founding, growth
+and per-grant μ, the rows' and the economy reading's amounts, a lease's
+and a stake's μ and the replies to each — is four exact non-negative rationals,
+one per lane S, G, T, H, each written as a sign byte and the numerator's
+and denominator's 64-bit limbs by count (`economy::Mu::put`,
+MU-EQUATIONS §6.15). A decoder refuses a lane that is negative, not in
+lowest terms (a zero is `0/1`) or written a second way. A count `n` is
+the rational `n/1`. The in-process read checks each such field on an
+amount holding a share of a unit (`1/2`, `22/7`), so a client that writes
+or reads counts where the wire carries rationals fails the read. A repeat
+closure answers `SOLVE_AGAIN` (code 1) and pays nothing.
 
 ### 2.1 The mind profile
 

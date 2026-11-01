@@ -64,7 +64,7 @@ fn founded() -> Court {
     let anchor = k.anchor();
     k.treasury.genesis(verifying(&r), [12, 0, 0, 0], anchor);
     for (i, line) in [(0u8, &a), (1, &p), (2, &q)] {
-        let bond = Bond { domain: domain(), reserve: verifying(&r), tier: verifying(line), mu: Some([4, 0, 0, 0]), nonce: [i; 32] };
+        let bond = Bond { domain: domain(), reserve: verifying(&r), tier: verifying(line), mu: Some([4, 0, 0, 0].into()), nonce: [i; 32] };
         assert!(matches!(k.bond(&bond.sign(&r)), Founded::Bonded { .. }));
     }
     k
@@ -174,11 +174,19 @@ fn challenge_upholds_honest_fold_as_final_upheld() {
 /// line made 6 and declared it, but its fold reports `w1` at 9 and `w2` at
 /// −3 — the same continuity, other rows. Falsified, reversed, final never;
 /// the reserve fold that carried it unwinds (it refiles without the line),
-/// and the LINE's bond is slashed, never the reserve's.
+/// and the LINE's bond is slashed, never the reserve's — on the lane the
+/// lie moved, against its exposure (D2.1): bonded 6 on G, exposed 15 (9 out
+/// to `w1`, 6 declared), the cut is 6·15/21 = 30/7, so 12/7 stays bonded;
+/// on S, where the fold moved nothing, nothing is cut.
 #[test]
 fn challenge_falsifies_fold_line_does_not_sum_to() {
+    use crate::anastome::dialogue::domain::{Bond, Founded};
     let (a, ..) = tiers();
     let mut k = founded();
+    let anchor = k.anchor();
+    k.treasury.genesis(verifying(&reserve()), [0, 6, 0, 0], anchor);
+    let on_g = Bond { domain: domain(), reserve: verifying(&reserve()), tier: verifying(&a), mu: Some([0, 6, 0, 0].into()), nonce: [9; 32] };
+    assert!(matches!(k.bond(&on_g.sign(&reserve())), Founded::Bonded { .. }), "the line bonded on G too");
     let e = a_entries();
     let lie = fold(&a, &e, vec![(who(1), g(9)), (who(2), g(-3))], e[0].declared.clone(), Vec::new());
     assert_eq!(lie.continuity(), Ok(()), "continuity alone does not catch it");
@@ -188,10 +196,33 @@ fn challenge_falsifies_fold_line_does_not_sum_to() {
     assert!(matches!(reply, Challenged::Falsified { unwound: 1, .. }), "the carrying reserve fold unwound: {reply:?}");
     assert_eq!(k.finality(&at), Finality::Falsified);
     assert_eq!(k.finality(&FoldAt::sealed(at.stamp)), Finality::Unwound, "the reserve refiles without the line");
-    assert_eq!(k.bond_of(&verifying(&a)), [2, 0, 0, 0], "the line's own bond slashed by half");
+    let kept = crate::economy::Mu::counts([28, 12, 0, 0]).part(7).expect("sevenths");
+    assert_eq!(k.bond_of(&verifying(&a)), kept, "the line's own bond slashed on G against its exposure, S untouched");
+    let bounty = crate::economy::Mu::counts([0, 60, 0, 0]).part(119).expect("a part");
+    assert_eq!(k.treasury.balance_mu(&verifying(&challenger())), bounty, "the bounty: the cut times the defect 2 against the exposure 15");
     assert_eq!(k.bond_of(&verifying(&reserve())), reserve_bond, "never the reserve's");
     pass(&mut k, at.stamp.h + CHALLENGE_WINDOW);
     assert_eq!(k.finality(&at), Finality::Falsified, "never final");
+}
+
+/// THE DEFECT IS ZERO EXACTLY WHERE THE FOLD RECONSTRUCTS (D2.1): the honest
+/// fold against its line measures nothing on every lane; the lie's rows
+/// (`w1` 9, `w2` −3 against the line's 10 and −4) measure 1 + 1 on G; a
+/// declared net the line did not carry measures its whole value.
+#[test]
+fn defect_is_zero_iff_reconstructs() {
+    use crate::server::cognition::challenge::defect;
+    use crate::transducer::cech::coefficient::Lanes;
+    let e = a_entries();
+    let own_rows = Lanes::of(&e[0].rows).expect("sums");
+    let own_declared = Lanes::of(&e[0].declared).expect("sums");
+    let honest = defect(&e[0].rows, &e[0].declared, &[], &own_rows, &own_declared).expect("measured");
+    assert!(honest.is_zero(), "the honest fold reconstructs");
+    let lie = defect(&[(who(1), g(9)), (who(2), g(-3))], &e[0].declared, &[], &own_rows, &own_declared).expect("measured");
+    assert_eq!(lie, [0, 2, 0, 0], "the lie on G, by its own residue");
+    let more = vec![(who(9), g(6)), (who(8), g(3))];
+    let undeclared = defect(&e[0].rows, &more, &[], &own_rows, &own_declared).expect("measured");
+    assert_eq!(undeclared, [0, 3, 0, 0], "a declared net the line never carried");
 }
 
 /// AVAILABILITY: a demand gives the tier `W` heights from the demand; a second

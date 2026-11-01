@@ -2,7 +2,8 @@
 //
 //! 26 — THE TASK REGISTRY: the hypha's record of useful work. A task is
 //! named by the listing identity of its train pairs and test inputs; the
-//! first verified solve takes the bounty and every replay the floor.
+//! first verified solve takes the bounty; a repeat is verified and paid
+//! nothing.
 
 use crate::arc::{Grid, Task};
 use crate::network::nerve::Keyed;
