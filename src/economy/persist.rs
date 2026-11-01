@@ -17,6 +17,7 @@ impl Entry {
     /// The fewest bytes a row can take: every lane zero, `0/1`, is eleven
     /// bytes (a sign, an empty numerator, a one-limb denominator). A count
     /// of rows a tape cannot hold at this length reserves nothing.
+    /// FORMAT: a row tape's fewest bytes, 166.
     pub const MIN_TAPE: usize = 1 + 1 + 32 + 4 * 11 + crate::chronometry::Stamp::LEN + 32;
 
     /// This row's tape length.
@@ -271,6 +272,8 @@ pub type Holds = crate::network::nerve::Keyed<super::pay::Held>;
 /// ([`Mu::put`]); a hold's μ⃗ likewise.
 pub const LEAF_MU: u8 = 1;
 /// A hold's payer, the `vk` it was set aside from.
+/// FORMAT: leaf position of a hold's payer within its node.
 pub const LEAF_PAYER: u8 = 2;
 /// The act a hold was set aside at: its stamp, then that act's chain hash.
+/// FORMAT: leaf position of a hold's anchor within its node.
 pub const LEAF_ANCHOR: u8 = 3;

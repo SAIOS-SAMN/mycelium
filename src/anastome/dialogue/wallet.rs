@@ -104,6 +104,7 @@ pub struct StakeAct {
 /// rational lanes.
 const STAKE: &[u8] = b"mycelium stake v2";
 const KIND_STAKE: u8 = 1;
+/// FORMAT: act kind byte for an unstake.
 const KIND_UNSTAKE: u8 = 2;
 
 impl StakeAct {

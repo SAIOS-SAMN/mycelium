@@ -8,16 +8,20 @@
 
 use super::*;
 
+/// FORMAT: tape tag byte.
 pub const CONNECTION_TAG: u8 = 0x11;
 /// A sentence: a nerve of germs. The tape after this tag is the base
 /// connection, then the germ addresses, faces and cycles. Distinct from
 /// CONNECTION_TAG so an opened-axis connection is not replayed as a sentence.
+/// FORMAT: tape tag byte.
 pub const SENTENCE_TAG: u8 = 0x12;
 /// A translation: the gauge between two sections, not a motion of a body.
 /// The court replays it by inversion of the gauge; the syllabus teaches it
 /// by incidence. Same payload as a connection, then the two section addresses.
+/// FORMAT: tape tag byte.
 pub const TRANSLATION_TAG: u8 = 0x13;
 /// An optimisation: a Rewrite the court replays both ways.
+/// FORMAT: tape tag byte.
 pub const REWRITE_TAG: u8 = 0x14;
 
 impl Element {
@@ -26,14 +30,17 @@ impl Element {
     /// sections, torsion, anchor, transitions — each gauge as its canonical
     /// ray — and the action. Every word inside the record is written whole
     /// (`Word::put_whole`), a formed word's action with it.
+    /// FORMAT: magic byte.
     pub const RECORD_MAGIC: u8 = 0xA4;
     /// THE RECORD BEFORE 6(b), refused BY NAME and never migrated: its words
     /// carry letters alone, so under this reader a contact byte or a
     /// carriage's first byte would be read as the whole-word tag — a 0 or 1
     /// continuing into a misparse. One equality refuses it; there is no
     /// reader for it.
+    /// FORMAT: magic byte.
     pub const PRE_WHOLE_MAGIC: u8 = 0xA3;
     /// GEN2, older still, and refused the same way.
+    /// FORMAT: magic byte.
     pub const GEN2_MAGIC: u8 = 0xA2;
 
     /// `None` where a length or a count passes its field (STD1 3c, LD0): the

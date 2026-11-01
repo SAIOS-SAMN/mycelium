@@ -196,8 +196,10 @@ pub fn place_in(space: &Geometry, frame: &Mv) -> Option<Mv> {
 /// SPHERE (2026-10-22), the cap's level `c = cos(2m/R)` — the horizon
 /// `{p : p·v ≥ c}` about the place `v` on `S³`, the LOWER bound of its
 /// certified enclosure so the throat is never undersized — and its RATIO
-/// `(2m/R) / π` (the upper bound), which a fitting throat keeps below `1`:
-/// a cap past the antipode would cover the sphere.
+/// `(2m/R) / π` (the upper bound): a cap past the antipode would cover the
+/// sphere. A level is a READING served to a reader (an instrument): whether a
+/// throat fits its face is decided exactly by the court, never on these
+/// bounds (MU-DERIVATIONS D1.2 Phase A, `server::cognition::mouth::fits_in`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Level {
     Curved(BigRational),
@@ -206,17 +208,6 @@ pub enum Level {
 }
 
 impl Level {
-    /// Whether the throat fits its face: always in a curved face; in a torus
-    /// face, its sphere clear of its own image (`ratio < ½`); in a sphere
-    /// face, its cap short of the antipode (`ratio < 1`).
-    pub fn fits(&self) -> bool {
-        match self {
-            Level::Curved(_) => true,
-            Level::Flat { ratio, .. } => ratio < &BigRational::new(1.into(), 2.into()),
-            Level::Sphere { ratio, .. } => ratio < &BigRational::from_integer(1.into()),
-        }
-    }
-
     fn put(&self, out: &mut Vec<u8>) {
         match self {
             Level::Curved(c) => {

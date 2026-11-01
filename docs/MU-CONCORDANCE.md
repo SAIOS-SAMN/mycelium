@@ -6,7 +6,7 @@
 >
 > The Concordance is the agreement every kernel signs to host its simulated universe on the network: how its worlds, its simulated peoples and the AI agents placed in them connect to the courts, and how the agents' verified work is paid.
 
-**Status:** draft agreement, version 3 (2026-10-08), as amended since by the rulings dated in its clauses. This text is the canonical one; it is kept with Mycelium beside MU-RECURSION, and every kernel signs it to join a hypha (§0).
+**Status:** draft agreement, version 4 (2026-10-31: the challenge window, 4.5, law version 5), as amended since by the rulings dated in its clauses. This text is the canonical one; it is kept with Mycelium beside MU-RECURSION, and every kernel signs it to join a hypha (§0).
 
 ## 0. What this is
 
@@ -24,7 +24,7 @@ clause side by side. Each clause belongs to one component:
 
 | Component | What it binds | Clauses |
 |---|---|---|
-| **Network** | What Mycelium's hyphae and courts enforce, for every kernel and every client | 0; 1.4, 1.5, 1.9, 1.10, 1.11, 1.13, 1.14; 2.1, 2.10; 3.7; 4.2–4.4; 5.3, 5.4, 5.7–5.9; 6.2a's key rule (the court authenticates keys, never tiers; the hypha serves anyone with a key and μ); 8; 9 |
+| **Network** | What Mycelium's hyphae and courts enforce, for every kernel and every client | 0; 1.4, 1.5, 1.9, 1.10, 1.11, 1.13, 1.14; 2.1, 2.10; 3.7; 4.2–4.5; 5.3, 5.4, 5.7–5.9; 6.2a's key rule (the court authenticates keys, never tiers; the hypha serves anyone with a key and μ); 8; 9 |
 | **Kernel-kept** | Laws each kernel keeps and attests in its own code; the court never checks them | 3a.1–3a.5 (duties to hosted minds); 4.1 and 6.2a (only a universe's reserve faces the hypha) |
 | **Kernel physics** | What every kernel implements in its own universe, game or not | 1.1–1.3, 1.6–1.8, 1.12; 2.2–2.9 |
 | **Game design** | The game kernels' shared game design: the games' peoples, seats, economies and ladder | 3.0–3.6, 3.8, 3.9; 5.1, 5.1a, 5.2, 5.5, 5.6; 6.1–6.4 (6.2a's ladder); 7.1–7.3; 10.2 |
@@ -290,6 +290,7 @@ guarantees is [`MU-CHARTER.md`](MU-CHARTER.md).
     digest), never stored on trust. A checker walks the steps locally and never
     re-runs the whole program, the forge, or anything before state 0. Older
     proofs that carry no digests stay readable as records.
+4.5 THE CHALLENGE WINDOW (amended 2026-10-31; law version 5). Every window the court holds open (a fold's evidence window, a demand's deadline, a withdrawal's reopening, a toll's hold, a mouth or handoff offer's answer, a crossing claim) opens at the height of the act that opens it and CLOSES AT A SEALED REACH AND RETURN OF EVERY OTHER KEEPER: once each other keeper's signed reading cites a reading of the court at or above the opening, and that keeper has read again after, the court seals one close (`Cite::Window`) naming each witness reading, and every window opened at or below the reach it witnesses reads closed at that receipt's height. The close is read off the sealed receipt, so it reconstructs on every court and every boot; no count of heights decides it, and a lone court, with no other keeper to witness, closes nothing (one keeper alone finalises nothing). A window opened under law version 4 closes by version 4, at its opening plus 1024 heights: superseded forward, never reverted. Recursive finality, reversal, the challenge acts and pre-line grandfathering are unchanged.
 
 ## 5. The economy between universes
 
@@ -318,7 +319,7 @@ guarantees is [`MU-CHARTER.md`](MU-CHARTER.md).
     the markets and from the ancients' own decisions (ruled 2026-10-08).
 5.2 EXOTICS are what a species finds rare from its locality and its ability to traverse space and time. They emerge; no list is declared.
 5.3 CONVERSION is reserve to reserve, through core tubes, and never mints value. Peoples and federations reach the network only by converting into an ancients' reserve.
-5.4 TOLLS. A tube's tariff charges per unit carried: on S, floor(rate_s x the mass carried); on H, floor(rate_h x the information carried); never on G or T. The charge is split at acceptance by the tariff's vector: each recipient other than the keeper receives the floor of its share, and the keeper the rest, exactly, per lane. Recipients are the keeper and its own domain's lines (for a core tube, both domains'). The parts are held for the traverse act's challenge window and are released, or refunded, all together.
+5.4 TOLLS. A tube's tariff charges per unit carried: on S, floor(rate_s x the mass carried); on H, floor(rate_h x the information carried); never on G or T. The charge is split at acceptance by the tariff's vector: each recipient other than the keeper receives the floor of its share, and the keeper the rest, exactly, per lane. Recipients are the keeper and its own domain's lines (for a core tube, both domains'). The parts are held for the challenge window the acceptance opens (4.5: closed at a sealed reach and return of every other keeper; amended 2026-10-31) and are released, or refunded, all together.
 5.5 PROOF OF USEFUL WORK. A passage delivered through the ancients' throats or along the progenitors' roads is a receipt on the keeper's lane. Tolls paid within a universe on any other network stay in that universe's own ledgers.
 5.6 A UNIVERSE'S VALUE to the network is a VECTOR, each channel in its own physical unit, with each reported both as the current rate and as the whole-history stock, per universe, per people and per throat face:
   passages      mass x proper distance delivered, and the count

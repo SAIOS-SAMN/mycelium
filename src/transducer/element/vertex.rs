@@ -12,8 +12,11 @@ use super::*;
 /// and nothing distinguished them; an inverse could only have guessed.
 pub const KIND_REWRITE: u8 = 0;
 pub const KIND_LETTERS: u8 = 1;
+/// FORMAT: address first byte (kind tag).
 pub const KIND_SPATIAL: u8 = 2;
+/// FORMAT: address first byte (kind tag).
 pub const KIND_SPATIAL_ROTOR: u8 = 3;
+/// FORMAT: address first byte (kind tag).
 pub const KIND_CHAIN: u8 = 4;
 
 impl Element {

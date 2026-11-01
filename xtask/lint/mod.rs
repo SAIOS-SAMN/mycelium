@@ -1,16 +1,19 @@
 // MU-STANDARDS 4.1 — THE GATES THE COMPILER CANNOT READ, over `src/`,
-// `forms/src/`, `sdk/src/` and `xtask/`: the reading bound (§4.1) and the Euclidean grid vocabulary
-// (law 2, rule 15, the Anti-Flattening Law). Every other rule is a clippy
-// lint (§4.2) or a type (§4.4).
+// `forms/src/`, `sdk/src/` and `xtask/`: the reading bound (§4.1), the Euclidean grid vocabulary
+// (law 2, rule 15, the Anti-Flattening Law) and the numbers gate (MU-STANDARDS
+// 2.12, MU-DERIVATIONS D1.4). Every other rule is a clippy lint (§4.2) or a
+// type (§4.4).
 
 pub mod euclidean;
 pub mod length;
+pub mod numbers;
 
 #[cfg(test)]
 mod tests;
 
 use euclidean::lint_euclidean;
 use length::lint_file_length;
+use numbers::lint_numbers;
 
 use std::path::PathBuf;
 
@@ -33,6 +36,18 @@ pub fn run() -> Result<(), String> {
     // subdivision index standing in for a coordinate (law 2, rule 15,
     // the Anti-Flattening Law).
     lint_euclidean(&bounded, &mut hits)?;
+    // NO CONSTANT: every literal-bearing numeric item is classified, and
+    // every underived one is named in the register (N1–N5). N6, the inline
+    // literals of the law paths, is reported and refuses nothing yet.
+    if let Some(repo) = root.parent() {
+        let numbers = lint_numbers(repo)?;
+        eprintln!(
+            "numbers: {} classified numeric items; N6 inventory {} inline literals in the law paths (reported, not enforced; `gate inventory` lists them)",
+            numbers.items,
+            numbers.inventory.len()
+        );
+        hits.extend(numbers.hits);
+    }
     if hits.is_empty() {
         return Ok(());
     }

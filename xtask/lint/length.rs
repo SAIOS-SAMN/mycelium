@@ -17,6 +17,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub(crate) fn lint_file_length(roots: &[PathBuf], hits: &mut Vec<String>) -> Result<(), String> {
+    /// EXTERNAL: MU-STANDARDS 1.1, the reading bound.
     const BOUND: usize = 2500;
     fn walk_len(dir: &Path, hits: &mut Vec<String>) -> Result<(), String> {
         let rd = match fs::read_dir(dir) {

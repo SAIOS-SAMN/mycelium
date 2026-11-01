@@ -149,3 +149,40 @@ pub fn fetched(k: &mut Court, spoken: &Element, peer: [u8; 32], own_vk: [u8; 32]
         assert_ne!(k.court_replay_progress(spoken), before, "an unread glue resumes where it stopped, or it stalls");
     }
 }
+
+/// The origin the window fixtures' keepers sign at.
+pub fn keeper_origin() -> crate::chronometry::tuniversal::Origin {
+    crate::chronometry::tuniversal::Origin { genesis: [3; 32], epoch: 0 }
+}
+
+/// Two readings of the keeper `sk` at `origin`: the first citing `court` at
+/// `carried` (its tick `tick`), the second its successor, citing the same.
+pub fn keeper_line(sk: &ed25519_dalek::SigningKey, court: [u8; 32], carried: u64, tick: u64) -> Vec<crate::chronometry::tuniversal::TickReading> {
+    use crate::chronometry::tuniversal::{Cited, Tick, TickReading};
+    let origin = keeper_origin();
+    let cites = vec![Cited { keeper: court, reading: [9; 32], h: carried }];
+    let first = TickReading::sign(sk, &origin, Tick { h: tick, lanes: [0; 4], k: 0 }, [0; 32], cites.clone()).expect("signed");
+    let at = first.hash(&origin).expect("hashed");
+    let back = TickReading::sign(sk, &origin, Tick { h: tick + 1, lanes: [0; 4], k: 1 }, at, cites).expect("signed");
+    vec![first, back]
+}
+
+/// The reach of `court` over keepers' lines, each `(keeper, readings)`.
+pub fn reach_over(
+    court: [u8; 32],
+    lines: &[([u8; 32], Vec<crate::chronometry::tuniversal::TickReading>)],
+) -> Result<crate::chronometry::tuniversal::Reach, crate::chronometry::tuniversal::WindowRefusal> {
+    use crate::chronometry::tuniversal::{KeeperLine, Reach};
+    Reach::of(keeper_origin(), court, lines.iter().map(|(keeper, l)| KeeperLine { keeper: *keeper, readings: l.iter().collect() }))
+}
+
+/// 78.125 (law version 5) — EVERY WINDOW `k` OPENED AT OR BELOW `through`
+/// CLOSED, as the court loop closes it: two other keepers each cite the court
+/// at `through` and read again after, and the reach they witness is handed to
+/// the court, which seals the close. The receipt sealed, where one was.
+pub fn close_through(k: &mut Court, through: u64) -> Option<crate::chronometry::KStepReceipt> {
+    let keepers = [ed25519_dalek::SigningKey::from_bytes(&[61; 32]), ed25519_dalek::SigningKey::from_bytes(&[62; 32])];
+    let lines: Vec<([u8; 32], Vec<_>)> = keepers.iter().map(|sk| (sk.verifying_key().to_bytes(), keeper_line(sk, k.identity, through, 1))).collect();
+    let reach = reach_over(k.identity, &lines);
+    k.close_windows(&reach)
+}

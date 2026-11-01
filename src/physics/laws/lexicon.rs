@@ -8,6 +8,7 @@
 //! No word belongs to two vocabularies.
 
 /// The lexicon's version: an amendment raises it.
+/// FORMAT: lexicon wire version.
 pub const LEXICON_VERSION: u8 = 5;
 
 /// WHICH VOCABULARY A TERM BELONGS TO.

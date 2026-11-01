@@ -9,12 +9,16 @@ use super::*;
 /// Stratum tags on torsion and transitions (not matrix fibre indices).
 pub const FIBRE_SPATIAL: u16 = 0;
 pub const FIBRE_GAUGE: u16 = 1;
+/// FORMAT: stratum tag.
 pub const FIBRE_TEMPORAL: u16 = 2;
+/// FORMAT: stratum tag.
 pub const FIBRE_SHELL: u16 = 3;
 /// First index of a germinated axis (a versor, never a matrix).
+/// FORMAT: stratum tag.
 pub const FIBRE_GERMINATED: u16 = 4;
 
 /// Hue states on the gauge (ARC palette 0..9; 0 = absent).
+/// EXTERNAL: the ARC-AGI task format, colours 0 to 9.
 pub const PALETTE: usize = 10;
 
 /// WHAT A TORSION CYCLE TURNS BY — its generator, which the period is READ

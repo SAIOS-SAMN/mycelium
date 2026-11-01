@@ -138,47 +138,58 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
     terms
 }
 
+/// WHY A CARRYING SET WAS NOT READ: the token spent before every candidate
+/// term was evaluated on the scene, with how many were — the whole set is
+/// refused, never a part of it (a part intersected would be a choice by
+/// arrival order; MU-DERIVATIONS D3.3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CarryingRefusal {
+    Unread { terms_read: usize },
+}
+
+/// Whether `t` carries the footprint `fp` (sorted) on `scene`, its read
+/// metered: one read per node of the term, each node reading its support of
+/// the scene once. `None` where the token is spent.
+pub(crate) fn carries(t: &Selection, fp: &[(i64, i64)], scene: &[(i64, i64, u8)], budget: &mut crate::physics::Budget) -> Option<bool> {
+    for _ in 0..t.size() {
+        if !budget.spend() {
+            return None;
+        }
+    }
+    let sup = t.eval(scene);
+    Some(fp.iter().all(|p| has(&sup, *p)))
+}
+
+/// Whether `t` carries `footprint` on `scene` — the reconstruction a court
+/// judges a held term by on a withheld pair — metered as [`carries`].
+pub fn carries_footprint(t: &Selection, footprint: &[(i64, i64)], scene: &[(i64, i64, u8)], budget: &mut crate::physics::Budget) -> Option<bool> {
+    carries(t, &sorted(footprint.to_vec()), scene, budget)
+}
+
 /// EVERY term CARRYING the footprint on this scene (eval ⊇ footprint),
-/// ordered by the TERM — node count, then its own A21 key — and capped. Exact terms rank
-/// first automatically (an exact term's eval IS the footprint). A single pair
-/// underdetermines its anchor; the train FAMILY determines it jointly: the
-/// binding term is the first member common to every pair's set — the tightest
-/// common carrier, exact when an exact one is shared (deduction by
-/// intersection, the same move consilience makes across voices). A carrier
-/// that is not exact still confines the word to its subcomplex — the replay
-/// gate downstream decides whether confined speech reproduces the evidence.
-pub fn derive_carrying_all(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Selection> {
+/// keyed by its own A21 key: the closure's every member, none cut (rule 15;
+/// MU-DERIVATIONS D3.3, ruled 2026-10-31). A single pair underdetermines its
+/// anchor; the train FAMILY determines it jointly (`derive_pi`): the terms
+/// common to every pair's set, read by key. The walk is the closure's
+/// boundary, each evaluation metered; a spent token refuses the whole set.
+pub fn derive_carrying_all(
+    footprint: &[(i64, i64)],
+    scene: &[(i64, i64, u8)],
+    budget: &mut crate::physics::Budget,
+) -> Result<crate::network::nerve::Keyed<Selection>, CarryingRefusal> {
+    let mut out = crate::network::nerve::Keyed::new();
     if footprint.is_empty() {
-        return Vec::new();
+        return Ok(out);
     }
     let fp = sorted(footprint.to_vec());
-    let mut ranked: Vec<(usize, crate::transducer::address::Address, Selection)> = candidates(&fp, scene)
-        .into_iter()
-        .filter_map(|t| {
-            let sup = t.eval(scene);
-            if fp.iter().all(|p| has(&sup, *p)) {
-                Some((t.size(), t.key(), t))
-            } else {
-                None
+    for (terms_read, t) in candidates(&fp, scene).into_iter().enumerate() {
+        match carries(&t, &fp, scene, budget) {
+            Some(true) => {
+                out.insert(t.key().as_bytes(), t);
             }
-        })
-        .collect();
-    // ORDERED BY THE TERM, NEVER BY THE SCENE — and the order is still
-    // CONSUMED. The rank was `(sup.len(), t.size())`, the carrier's size on
-    // this scene first, which ranked candidates by a measurement; it is the
-    // term's own coordinates now, so the order is the same on every scene
-    // and every node. But `truncate(32)` below keeps the thirty-two
-    // smallest and drops the rest, which is a choice by the sort key
-    // however canonical the key is. That cut is L9a's row, open since
-    // Stage 14, and this reason says so rather than calling the site
-    // settled.
-    #[expect(
-        clippy::disallowed_methods,
-        reason = "rule 4 — a choice by node count then key, consumed by truncate(32); owed to L9a"
-    )]
-    ranked.sort_by_key(|a| (a.0, a.1.clone()));
-    let mut out: Vec<Selection> = ranked.into_iter().map(|(_, _, t)| t).collect();
-    out.dedup();
-    out.truncate(32);
-    out
+            Some(false) => {}
+            None => return Err(CarryingRefusal::Unread { terms_read }),
+        }
+    }
+    Ok(out)
 }

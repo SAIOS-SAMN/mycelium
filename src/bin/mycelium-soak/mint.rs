@@ -30,6 +30,7 @@ use mycelium::transducer::sentence::{as_element_form, Vertex};
 /// The stroke Y1 set for itself, so the same slice reads the same way
 /// under both instruments and a task that closes for one closes for the
 /// other.
+/// REGISTERED: MINT_STROKE
 const MINT_STROKE: usize = 1 << 20;
 
 /// Walk the slice and trace the mint for every task whose rule form

@@ -112,7 +112,7 @@ impl Court {
                 b,
                 pos,
                 COURT_TRIE,
-                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT, LEAF_CLOSED],
+                &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT, LEAF_CLOSED, LEAF_WINDOWS],
             )?;
             let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
                 court_trie.scoped().map(|(k, l)| (k, l.clone())).collect();
@@ -200,6 +200,13 @@ impl Court {
             if let Some(v) = leaf(leaves, LEAF_ATLAS) {
                 court.atlas = whole(v, super::super::atlas::Atlas::take)?;
             }
+            // 78.125 (law version 5) — the window book; a home written under
+            // version 4 carries none, and its windows close by version 4
+            // (read once the line is held, below).
+            let windows = match leaf(leaves, LEAF_WINDOWS) {
+                Some(v) => Some(whole(v, super::super::window::WindowBook::take)?),
+                None => None,
+            };
             // THE LINE THIS SNAPSHOT STANDS ON: in it, with the root it was
             // folded to; or on disk, held already, which must hold the stamp
             // the snapshot names — or have folded past it.
@@ -363,6 +370,10 @@ impl Court {
 
             court.court_head = head;
             court.chain = chain;
+            match windows {
+                Some(book) => court.windows = book,
+                None => court.read_v4_windows(),
+            }
             court.treasury = crate::economy::Treasury::from_parts(stakes, balances, held, entries);
             court.settlements_cold = settled;
             court.dialect_chain = dialect;

@@ -95,12 +95,20 @@ impl Court {
     }
 
     /// THE PAGE ONE `ACT_RECEIPTS` REPLY CARRIES: at most this many
-    /// receipts and this many bytes of the receipts' tapes — the frame budget less
-    /// the reply's header, and the most of the smallest tape that fits it.
-    /// `None` where the frame is smaller than a header.
+    /// receipts and this many bytes of the receipts' tapes — the reply's
+    /// budget (`receipts_reply_budget`) less its own count header, and the
+    /// most of the smallest tape that fits it. `None` where the frame is
+    /// smaller than the envelopes.
     pub fn receipts_frame() -> Option<(usize, usize)> {
-        let bytes = crate::network::wire::frame_budget().checked_sub(64)?;
+        let bytes = Self::receipts_reply_budget()?.checked_sub(crate::anastome::dialogue::RECEIPTS_REPLY_HEADER)?;
         Some((bytes / KStepReceipt::MIN_TAPE, bytes))
+    }
+
+    /// THE BYTES AN `ACT_RECEIPTS` REPLY MAY TAKE, its header included: the
+    /// frame's body less the reading height the door writes behind it
+    /// (D1.3, D4.6: each envelope its codec's own length).
+    pub fn receipts_reply_budget() -> Option<usize> {
+        crate::network::wire::frame_budget().checked_sub(crate::anastome::dialogue::READING_HEIGHT_LEN)
     }
 
     /// THE PEERS' FOLDED LINES LEAVE THE HOT LEDGER (45.8): each peer's

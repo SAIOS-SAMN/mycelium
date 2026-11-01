@@ -37,9 +37,40 @@ fn main() {
                 std::process::exit(1)
             }
         },
+        Some("inventory") => inventory(),
         Some(other) => {
-            eprintln!("gate: unknown subcommand `{other}`; the subcommands are none (the gate) and `mutate`");
+            eprintln!("gate: unknown subcommand `{other}`; the subcommands are none (the gate), `mutate` and `inventory`");
             std::process::exit(2)
+        }
+    }
+}
+
+/// MU-DERIVATIONS D1.4 N6 — the inline literals of the law paths, one per
+/// line, as the reading the second phase of the numbers gate is enabled on.
+fn inventory() {
+    let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let Some(repo) = manifest.parent() else {
+        eprintln!("xtask has no parent");
+        std::process::exit(1)
+    };
+    match lint::numbers::lint_numbers(repo) {
+        Ok(reading) => {
+            for i in &reading.inventory {
+                println!("{}:{}: {}", i.file, i.line, i.literal);
+            }
+            for h in &reading.hits {
+                eprintln!("{h}");
+            }
+            eprintln!(
+                "N6 inventory: {} inline literals; N1–N5: {} classified items, {} refused",
+                reading.inventory.len(),
+                reading.items,
+                reading.hits.len()
+            );
+        }
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(1)
         }
     }
 }

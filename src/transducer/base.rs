@@ -45,6 +45,7 @@ pub fn plane_index((i, j): (usize, usize)) -> Option<usize> {
 /// THE AXIS A FAMILY'S FRAMES STAND ALONG (51.3): the third coordinate the
 /// grid presents, a frame's place in its family. A section is the compartments
 /// of one value of it, and the frame rides on the pose (16.5).
+/// FORMAT: the index of the frame coordinate `k` in a site `(r, c, k)`.
 pub const FRAME_AXIS: usize = 2;
 
 /// Is axis `i` one the compartment's square spans?

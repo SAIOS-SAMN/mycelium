@@ -281,9 +281,11 @@ pub enum LawsRequest {
 }
 
 /// `[ACT_LAWS][7]`: the Concordance's hash.
+/// FORMAT: ACT_LAWS sub-kind byte.
 pub const MODE_CONCORDANCE: u8 = 7;
 /// `[ACT_LAWS][8][kernel key 32][hash 32][sig 64]`: a kernel's signature
 /// over the Concordance, presented.
+/// FORMAT: ACT_LAWS sub-kind byte.
 pub const MODE_SIGNATURE: u8 = 8;
 
 /// `[ACT_LAWS][7]`: the Concordance's hash, asked by address.
@@ -326,14 +328,18 @@ pub fn decode_signature_reply(b: &[u8]) -> Option<Result<(), super::concordance:
 }
 
 /// `[ACT_LAWS][3]`: the shared lexicon.
+/// FORMAT: ACT_LAWS sub-kind byte.
 pub const MODE_LEXICON: u8 = 3;
 /// `[ACT_LAWS][4]`: the core clock.
+/// FORMAT: ACT_LAWS sub-kind byte.
 pub const MODE_CLOCK: u8 = 4;
 /// `[ACT_LAWS][5]`: the register's parameters.
+/// FORMAT: ACT_LAWS sub-kind byte.
 pub const MODE_PARAMETERS: u8 = 5;
 /// `[ACT_LAWS][6]`: the client conformance statement — an additive mode: a
 /// hypha that predates it answers nothing, as it answers any request it does
 /// not read.
+/// FORMAT: ACT_LAWS sub-kind byte.
 pub const MODE_STATEMENT: u8 = 6;
 
 /// `[ACT_LAWS][6]`: the client conformance statement, asked by address; the
@@ -454,6 +460,7 @@ pub const MODE_REGISTER: u8 = 0;
 /// `[ACT_LAWS][1]`: one transition verified.
 pub const MODE_VERIFY: u8 = 1;
 /// `[ACT_LAWS][2]`: a batch of transitions verified.
+/// FORMAT: ACT_LAWS sub-kind byte.
 pub const MODE_BATCH: u8 = 2;
 
 /// 78.118 — `[ACT_LAWS][2][count][transition …]`: many transitions put to the

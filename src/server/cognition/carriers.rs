@@ -186,6 +186,7 @@ impl Court {
             tier_domain,
             ledgers,
             reconstructions,
+            windows,
             handoffs,
             reserves,
             origins,
@@ -217,6 +218,8 @@ impl Court {
         c.count("ledger.edges", ledgers.edges.scoped().map(|(_, e)| e.len()).sum());
         c.count("ledger.discharged", ledgers.discharged.len());
         c.count("ledger.reconstructions", reconstructions.len());
+        // 78.125 (law version 5) — the window closes sealed and still read.
+        c.count("ledger.window_closes", windows.closes.len());
         // 78.126 — the handoffs held, and the folds' consumed sides.
         c.count("handoffs.held", handoffs.held.len());
         c.count("handoffs.consumed_by", handoffs.consumed_by.len());

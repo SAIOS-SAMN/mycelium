@@ -10,7 +10,9 @@
 //! at all.
 
 use crate::Mesh;
-use mycelium::chronometry::tuniversal::{record, Admitted, Keepers, LastSigned, Origin, KeeperRefusal, Recorded, Residual, TPoint, TShelf, Tick, TickReading};
+use mycelium::chronometry::tuniversal::{
+    record, Admitted, KeeperRefusal, Keepers, LastSigned, Origin, Reach, Recorded, Residual, TPoint, TShelf, Tick, TickReading, WindowRefusal,
+};
 use mycelium::observe;
 use std::sync::{LazyLock, Mutex};
 
@@ -26,6 +28,12 @@ static KEEPERS: Mutex<Option<(Keepers, Residual)>> = Mutex::new(None);
 /// ring's verification under the keepers' own lock.
 static SEEN: Mutex<(Vec<observe::KeeperSeen>, Residual)> =
     Mutex::new((Vec::new(), Residual { edges: Vec::new(), holonomy: None }));
+
+/// 78.125 (law version 5) — THIS COURT'S REACH AS LAST READ BY THE KEEPERS,
+/// with the count of its changes: copied where the keepers' reading moved,
+/// so the court loop hands the court a reach only when it moved (a leaf
+/// lock, never nested with the court's).
+static REACH: Mutex<(u64, Option<Result<Reach, WindowRefusal>>)> = Mutex::new((0, None));
 
 /// Refusals of peers' rings, counted, said at powers of two.
 static REFUSED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -134,7 +142,30 @@ fn with_keepers<R>(mesh: &Mesh, origin: Origin, f: impl FnOnce(&mut Keepers, &mu
         Ok(mut s) => *s = seen,
         Err(p) => *p.into_inner() = seen,
     }
+    let mut r = match REACH.lock() {
+        Ok(r) => r,
+        Err(p) => p.into_inner(),
+    };
+    if r.1.as_ref() != Some(k.reach()) {
+        r.0 = r.0.wrapping_add(1);
+        r.1 = Some(k.reach().clone());
+    }
     Some(out)
+}
+
+/// 78.125 (law version 5) — THIS COURT'S REACH, where it moved since the
+/// change `seen` names (`seen` then names this one). `None` where it has not
+/// moved or no keepers are held yet.
+pub(crate) fn reach_moved(seen: &mut u64) -> Option<Result<Reach, WindowRefusal>> {
+    let r = match REACH.lock() {
+        Ok(r) => r,
+        Err(p) => p.into_inner(),
+    };
+    if r.0 == *seen {
+        return None;
+    }
+    *seen = r.0;
+    r.1.clone()
 }
 
 /// 78.152 — THE COURT'S TUNIVERSAL STANDING for the observer: the shelf's

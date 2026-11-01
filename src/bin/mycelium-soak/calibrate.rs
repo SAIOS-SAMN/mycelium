@@ -76,6 +76,7 @@ pub(crate) fn report(dir: &str, name: &str) {
     // allocator's granularity; a thousand held at once is not, and the
     // per-object figure is the difference divided by the count — which is
     // arithmetic on a measurement, not a measurement of one.
+    /// REGISTERED: N
     const N: usize = 1000;
     let a0 = live();
     let mut held: Vec<mycelium::transducer::element::Versor> = Vec::with_capacity(N);

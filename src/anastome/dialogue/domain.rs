@@ -116,6 +116,7 @@ const RESERVE: &[u8] = b"mycelium domain reserve v1";
 /// a count no genesis can write — `0x80 0x00`, an over-long spelling the key
 /// count refuses — so every genesis frame reads as it did, and an older
 /// reader refuses a designation by name.
+/// FORMAT: sub-kind mark bytes for ACT_DOMAIN.
 const SUB_KIND: [u8; 2] = [0x80, 0x00];
 const KIND_RESERVE: u8 = 1;
 
@@ -191,11 +192,17 @@ pub enum DomainRequest {
     ReadEndowment([u8; 32]),
 }
 
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a reserve read.
 const KIND_READ_RESERVE: u8 = 2;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a bond.
 const KIND_BOND: u8 = 3;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for an unbond.
 const KIND_UNBOND: u8 = 4;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a bond read.
 const KIND_READ_BOND: u8 = 5;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for an origin.
 const KIND_ORIGIN: u8 = 6;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for an origin read.
 const KIND_READ_ORIGIN: u8 = 7;
 
 /// 78.132 — A UNIVERSE'S ORIGIN (as ruled: one network

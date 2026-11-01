@@ -22,6 +22,7 @@ pub const CONCORDANCE_HASH: [u8; 32] = include!(concat!(env!("OUT_DIR"), "/conco
 const SIGNED_CONCORDANCE: &[u8] = b"mycelium concordance v1";
 
 /// The bytes a carried signature takes: key, hash, signature.
+/// FORMAT: length of the carried signature's tape.
 pub const SIGNATURE_LEN: usize = 32 + 32 + 64;
 
 /// A KERNEL'S SIGNATURE OVER A VERSION OF THE CONCORDANCE: its key, the hash

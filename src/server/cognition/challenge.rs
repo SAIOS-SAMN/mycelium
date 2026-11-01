@@ -19,28 +19,17 @@ use crate::anastome::dialogue::challenge::{
 use crate::anastome::dialogue::uplink::{ChildNet, FoldAt, Net, TierFold};
 use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::network::nerve::Keyed;
-use crate::physics::laws::CHALLENGE_WINDOW;
 use crate::transducer::cech::coefficient::{Coefficient, Lanes};
 use num_rational::BigRational as Q;
-
-/// The height a window opened at `h` closes: `h + W`, and at the carrier's
-/// wall a window that never closes, named, never wrapped (rule 11).
-#[expect(
-    clippy::manual_unwrap_or,
-    reason = "rule 11 — `unwrap_or` is the spelling this refuses; a window past the height carrier never closes, named at the wall"
-)]
-pub(super) fn window_end(h: u64) -> u64 {
-    match h.checked_add(CHALLENGE_WINDOW) {
-        Some(end) => end,
-        None => u64::MAX,
-    }
-}
 
 /// The outcome bytes `Cite::Challenge` carries.
 const DEMANDED: u8 = 0;
 const UPHELD: u8 = 1;
+/// FORMAT: outcome byte on `Cite::Challenge`.
 const FALSIFIED: u8 = 2;
+/// FORMAT: outcome byte on `Cite::Challenge`.
 const DISCHARGED: u8 = 3;
+/// FORMAT: outcome byte on `Cite::Challenge`.
 const WITHDRAWN: u8 = 4;
 
 fn zero() -> [Q; 4] {
@@ -169,8 +158,8 @@ impl Court {
             return refuse(R::Closed);
         }
         let head = self.chain.head_height();
-        let window_open = head < self.open_until(&key, rec.sealed);
-        let deadline = rec.demanded.map(window_end);
+        let window_open = self.evidence_open(&key, rec.sealed, head);
+        let deadline_open = rec.demanded.is_some_and(|d| !self.window_closed(d, head));
         match &c.challenge {
             Challenge::Withdraw { demand, .. } => {
                 if c.who != rec.tier {
@@ -202,7 +191,7 @@ impl Court {
                 }
                 self.ledgers.demands.remove(&key);
                 self.ledgers.withdrawn.insert(&key, r.stamp.h);
-                Challenged::Reopened { at: r.stamp, receipt: r.chain_hash, until: window_end(r.stamp.h) }
+                Challenged::Reopened { at: r.stamp, receipt: r.chain_hash, closes: self.window_close(r.stamp.h).ok() }
             }
             Challenge::Demand { .. } => {
                 if rec.upheld.is_some() {
@@ -220,7 +209,7 @@ impl Court {
                         .and_then(|(at, _)| Stamp::from_key(at))
                         .and_then(|at| Some((at, self.chain.node(&at)?.chain_hash)));
                     return match original {
-                        Some((at, receipt)) => Challenged::Demanded { at, receipt, deadline: window_end(at.h) },
+                        Some((at, receipt)) => Challenged::Demanded { at, receipt, deadline: self.window_close(at.h).ok() },
                         None => refuse(R::Demanded),
                     };
                 }
@@ -232,14 +221,14 @@ impl Court {
                     held.demanded = Some(r.stamp.h);
                 }
                 self.ledgers.demands.insert(&key, (r.stamp.key(), c.who));
-                Challenged::Demanded { at: r.stamp, receipt: r.chain_hash, deadline: window_end(r.stamp.h) }
+                Challenged::Demanded { at: r.stamp, receipt: r.chain_hash, deadline: self.window_close(r.stamp.h).ok() }
             }
             Challenge::Evidence { .. } | Challenge::Open { .. } | Challenge::Part { .. } => {
                 if rec.upheld.is_some() {
                     return refuse(R::Published);
                 }
                 // Within the window, or within a standing demand's deadline.
-                if !(window_open || deadline.is_some_and(|d| head < d)) {
+                if !(window_open || deadline_open) {
                     return refuse(R::Closed);
                 }
                 let k = replay_key(&key, &c.who);
@@ -329,8 +318,8 @@ impl Court {
                 if rec.upheld.is_some() {
                     return refuse(R::Published);
                 }
-                let Some(due) = deadline else { return refuse(R::NotDemanded) };
-                if head < due {
+                let Some(demanded) = rec.demanded else { return refuse(R::NotDemanded) };
+                if !self.window_closed(demanded, head) {
                     return refuse(R::NotDue);
                 }
                 // A default published nothing: every net the fold asserted
@@ -367,13 +356,22 @@ impl Court {
         }
     }
 
-    /// Where a fold's evidence window closes: `W` from its seal, or — its
-    /// self-demand withdrawn — `W` from the withdrawal, whichever is later.
-    pub(crate) fn open_until(&self, key: &[u8], sealed: u64) -> u64 {
-        let base = window_end(sealed);
+    /// Whether a fold's evidence window stands open at `head`: the window
+    /// opened at its seal, or — its self-demand withdrawn — the window the
+    /// withdrawal opened, while either has not closed.
+    pub(crate) fn evidence_open(&self, key: &[u8], sealed: u64, head: u64) -> bool {
+        !self.window_closed(sealed, head) || self.ledgers.withdrawn.get(key).is_some_and(|h| !self.window_closed(*h, head))
+    }
+
+    /// The opening of the window a fold's finality waits on: a standing
+    /// demand's, else an open withdrawal's, else its seal's.
+    fn governing_window(&self, key: &[u8], sealed: u64, demanded: Option<u64>, head: u64) -> u64 {
+        if let Some(d) = demanded {
+            return d;
+        }
         match self.ledgers.withdrawn.get(key) {
-            Some(h) => base.max(window_end(*h)),
-            None => base,
+            Some(h) if !self.window_closed(*h, head) => *h,
+            _ => sealed,
         }
     }
 
@@ -546,7 +544,7 @@ impl Court {
             .filter(|k| {
                 let Some(fold) = crate::transducer::address::take_key_bytes(k, &mut 0) else { return true };
                 let live = self.ledgers.records.get(&fold).is_some_and(|r| {
-                    let window = head < self.open_until(&fold, r.sealed) || r.demanded.is_some_and(|d| head < window_end(d));
+                    let window = self.evidence_open(&fold, r.sealed, head) || r.demanded.is_some_and(|d| !self.window_closed(d, head));
                     r.standing == Standing::Open && r.upheld.is_none() && window
                 });
                 !live
@@ -630,6 +628,8 @@ impl Court {
             self.ledgers.withdrawn.remove(k);
         }
         gone += stale.len() + spent.len();
+        // 78.125 (law version 5) — the closes no held window reads.
+        gone += self.settle_closes();
         if gone > 0 {
             self.mark_persist();
         }
@@ -689,17 +689,21 @@ impl Court {
             Standing::Open => {}
         }
         // A withdrawn self-demand reopened the window: provisional through it.
-        let mut until = self.open_until(key, rec.sealed);
-        if let (Some(d), None) = (rec.demanded, rec.upheld) {
-            let due = window_end(d);
-            if head >= due {
-                // The default is due and unclaimed: never final.
-                return Finality::Blocked;
+        let mut open = self.evidence_open(key, rec.sealed, head);
+        let pending = match (rec.demanded, rec.upheld) {
+            (Some(d), None) => {
+                if self.window_closed(d, head) {
+                    // The default is due and unclaimed: never final.
+                    return Finality::Blocked;
+                }
+                open = true;
+                Some(d)
             }
-            until = until.max(due);
-        }
-        if head < until {
-            return Finality::Provisional { until };
+            _ => None,
+        };
+        if open {
+            let opened = self.governing_window(key, rec.sealed, pending, head);
+            return Finality::Provisional { opened, closed: self.window_close(opened).ok() };
         }
         if self.ledgers.open_in(&rec.domain).iter().any(|o| o.by == key) {
             return Finality::Blocked;

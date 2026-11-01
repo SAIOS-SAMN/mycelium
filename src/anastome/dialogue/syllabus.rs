@@ -25,6 +25,14 @@ pub struct Taught {
     pub word: Vec<u8>,
 }
 
+/// THE SYLLABUS REPLY'S HEADER: `[n u8]` ahead of the words.
+/// FORMAT: `encode_syllabus_reply`'s count field, 1 byte.
+pub const SYLLABUS_REPLY_HEADER: usize = 1;
+
+/// THE CLASS RECORDS' HEADER a fetch reply appends: `[count u16]`.
+/// FORMAT: `append_class_records`' count field, 2 bytes.
+pub const CLASS_RECORDS_HEADER: usize = 2;
+
 /// `[n u8]` then per word `[stamp 48][len u32][tape]`. `None` where the
 /// page holds more words than the count can name: a reply that carries 255
 /// of them under a count of 255 is a shorter page than the one served, and

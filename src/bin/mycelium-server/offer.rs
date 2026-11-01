@@ -3,7 +3,7 @@
 // answer.
 
 use crate::exchange::Mesh;
-use crate::transport::tell_peer;
+use crate::transport::tell_peer_measured;
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Court;
 use mycelium::transducer::address::Address;
@@ -95,14 +95,14 @@ pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec
             if let Ok(mut h) = crate::held::held!(court) {
                 h.run(|k, _| k.note_offered(oaddr.as_bytes(), witness, k_now));
             }
-            let Some((reply, dt)) = tell_peer(&d, body) else {
-                crate::transport::note_rtt_timeout(mesh, d.as_bytes());
+            // D4.1 — at the witness's own measured patience, kept under its
+            // voice key.
+            let Some((reply, _)) = tell_peer_measured(mesh, &d, body) else {
                 if let Ok(mut h) = crate::held::held!(court) {
                     h.run(|k, _| k.note_provisional("offers a witness left unanswered"));
                 }
                 continue;
             };
-            crate::transport::note_rtt_ok(mesh, d.as_bytes(), dt);
             offered_out += 1;
             if let Ok(mut h) = crate::held::held!(court) {
                 h.run(|k, _| k.note_provisional("offers sent to witnesses"));

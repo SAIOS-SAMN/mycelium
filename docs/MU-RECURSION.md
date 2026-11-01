@@ -710,9 +710,12 @@ first (`physics/axioms/founding.rs`), each with a test that could fail
   geometry, or it is undefined physics, NAMED in the register's
   `OPEN_PHYSICS` with what will derive it until it is derived. The
   reserve's aperture, declared `8`, is the sensor base's unit cell `2³`; the
-  reserve floor's `2` is the rotor's double cover. Named open: the challenge
-  window `W = 1024` (a law parameter every kernel shares, 78.125) and the
-  throat grid `2⁻⁶⁴` (an enclosure, 78.134). Every number in the tree is
+  reserve floor's `2` is the rotor's double cover. The challenge window is
+  derived (law version 5, 2026-10-31): it closes at a sealed reach and
+  return of every other keeper (78.125 as amended); `W = 1024` stays only
+  as version 4's window for windows opened under it. Named open: the throat
+  grid `2⁻⁶⁴` (an enclosure, 78.134) and the numbers the register names
+  beside it (`OPEN_PHYSICS`). Every number in the tree is
   classified, and every underived one carries a derivation entry, in
   [MU-DERIVATIONS](MU-DERIVATIONS.md).
 - **An orbit is a return** — a mode's flow on its plane, composed exactly,
@@ -1022,7 +1025,7 @@ two is filed where its test is.
 | **Law 11** no squaring; a square looked for inside a circle is the flattening | every reading of a versor's class | SQ1 census; the sandwich divides the weight out (TR1) | governs; SQ1's residue sites ruled one by one |
 | **Axiom C** (59.8, 72.1) | every invariant a ratio of homogeneous forms of equal degree, carried as numerator and denominator, read only where a classification is asked | `cga/multivector.rs` (`class_invariants`), Study's condition on a ray | governs; T7 open: stated in the register with a test per refusal (REG1) |
 | **Precision is the resolution** (78.45, law 4 as amended) | no blob, no approximation, no forward guess: a reading serves the value, the fraction, the rational point, or the sector between two exact marks (the ℚ-protractor, Niven's set; finer marks in `ℚ(ζ_ℓ)`), never a decimal; every master reads the inverse exactly — from the effect to the object — or refuses; the fourth audit question | the whole tree: `Cargo.toml` (`float_arithmetic`, `cast_precision_loss` denied), `core/gaussian.rs` (`rational_sqrt`), `alphabet/rotor.rs` (`half_angle`), Part VI `cyclo` | governs; the tree is float-free (`float_arithmetic` denied); DG1 carries the turn's point-and-sector reading, its decimal retracted |
-| **No constant** (§0.0; was "provenance of a constant", 78.8, checklist (s)) | physics → axiom → theorem → component; a number is read off the field or the geometry, or it is named undefined physics | `physics/axioms/founding.rs` (`NO_CONSTANT`, `OPEN_PHYSICS`), `physics/calibration.rs` | the aperture derived (`2ⁿ` of the sensor base), the floor's `2` the double cover; named open: `W = 1024`, the throat grid `2⁻⁶⁴` |
+| **No constant** (§0.0; was "provenance of a constant", 78.8, checklist (s)) | physics → axiom → theorem → component; a number is read off the field or the geometry, or it is named undefined physics | `physics/axioms/founding.rs` (`NO_CONSTANT`, `OPEN_PHYSICS`), `physics/calibration.rs` | the aperture derived (`2ⁿ` of the sensor base), the floor's `2` the double cover, the challenge window a sealed reach and return (law version 5); named open: the throat grid `2⁻⁶⁴` and the register's other entries |
 
 **Harmonic — a turn returns.**
 
@@ -5570,7 +5573,10 @@ section still written by the code are `court book height`, `court exchange
 asked`, `court exchange deferred by`, `court fold refused`, `court fold
 witnessed`, `court genesis … epoch`, `court nerve deferred by {addr} acts
 {n}`, `court offered {n} germs to the overlap`, `court offer refused`,
-`court offer unmeasured`, `court organs reached` and `court phase h …`.
+`court offer unmeasured`, `court organs reached`, `court phase h …` and
+`court windows closed through h {n} at h {m}` (78.125, law version 5: one
+sealed `Cite::Window` closing every window opened at or below `n`, at
+receipt height `m`; `src/bin/mycelium-server/exchange.rs`).
 
 The two `court offer refused` lines are the two ends of one act: `from`
 is the witness refusing a frame 47.2 would not admit
@@ -15294,7 +15300,7 @@ Code: `src/chronometry/receipt.rs` (`CoreStamp`, `CoreStamp::wide`,
 (`Court::core_stamp`), `src/physics/laws/codec.rs` (`encode_clock_request`,
 `encode_clock_reply`, `decode_clock_reply`).
 
-### 78.125 2(c): the challenge window: a fold answerable within W heights, finality recursive
+### 78.125 2(c): the challenge window: a fold answerable within its window, finality recursive
 
 A fold's rows stay with its tier (LD0) and its receipt commits to them by hash; the challenge window makes that commitment answerable, so a fold that balances and lies can be falsified and a docketed obstruction (78.123) can be discharged. Law version 4; it changes the wire and the court's layout.
 
@@ -15305,12 +15311,13 @@ A fold's rows stay with its tier (LD0) and its receipt commits to them by hash; 
 - **Finality is recursive, read and never stored.** A fold is FINAL when its window and any demand's deadline have passed, no demand stands defaulted and unclaimed, no open obstruction was closed by it, and every fold it nets is final, so a child can never be falsified after an ancestor reads final. Final carries UPHELD or unchallenged; otherwise a fold reads provisional, blocked, falsified, unwound, unrecorded, or PRE-LINE (sealed before this law: grandfathered as final and unchallenged, demands against it refused).
 - **Nothing is sealed twice.** A fold over its tier's current head is answered without sealing: byte-identical to the fold admitted there it is a resend, answered with the original receipt; otherwise `Uplinked::Repeated`. A resent handoff offer and a resent demand by the same filer are each answered with the original receipt; the SDK never resends a sealing act once written.
 - **The windows settle.** At each orbit's close `settle_windows` prunes a record read final to a stub (its coordinates and whether it was upheld); a stub leaves once the fold has no value in flight, no unfinished fold nets it and the hot line no longer holds its receipt; finished streams and empty remainders leave. What stays is each fold within its window and the open remainders.
+- **The window, amended (ruled 2026-10-31; law version 5; MU-DERIVATIONS D1.1; Concordance 4.5).** The window above is superseded forward, never reverted: a window opened under version 4 closes at its opening plus `W = 1024`. A window opened under version 5 closes at a SEALED REACH AND RETURN OF EVERY OTHER KEEPER: when each other keeper's signed reading cites a reading of this court at or above the opening and that keeper has read again after (`Keepers::reach`, held per reading admitted), the court seals one `Cite::Window` (tag 15) naming the witness readings by keeper, hash and tick, and every window opened at or below the reach reads closed at that receipt's height (`Court::window_close`). A lone court closes nothing (`WindowRefusal::NoOtherKeeper`); a keeper silent leaves the window open, naming it (`Unwitnessed`). `ACT_LAWS` mode 5 serves no window at version 5 (it serves the frame budget, MU-DERIVATIONS D1.3). Demands' deadlines, withdrawals, tolls (5.4), mouth and handoff offers (78.126, 78.128) and crossing claims (78.154) read the same close. Open, by reading: majority reach against every keeper (D1.1 O1, ruled every), the cover digest as witness (O2), the return margin (O3), the anchoring cadence (O4).
 
-Code: `src/physics/laws/mod.rs` (`CHALLENGE_WINDOW`), `src/anastome/dialogue/challenge.rs`, `src/server/cognition/challenge.rs` (`finality`, `settle_windows`, `reconstructs`); held in the `LEAF_CHALLENGES` leaf.
+Code: `src/physics/laws/mod.rs` (`LAW_VERSION`, `CHALLENGE_WINDOW` of version 4), `src/chronometry/tuniversal/reach.rs` (`Reach`, `WindowRefusal`), `src/anastome/dialogue/challenge.rs`, `src/server/cognition/challenge.rs` (`finality`, `settle_windows`, `reconstructs`), `src/server/cognition/window.rs` (`close_windows`, `window_close`); held in the `LEAF_CHALLENGES` and `LEAF_WINDOWS` leaves.
 
 ### 78.126 2(b): matter handoffs, two-sided: matter and a word crossing domains on one court
 
-A unit of matter stands in exactly one place (78.59 P2: matter does not net like money), so a crossing between domains is no rate on an edge but a HANDOFF one court serialises: no double-spend on S, conservation across the boundary. `ACT_HANDOFF` (0x07), signed by its filer and sealed by `Cite::Handoff` (tag 9), is two-phase: the sending tier's *Offer* states what leaves its domain and what arrives in the other, summing to zero on every lane, on S (matter) and H (a delivered word, never copied) only (G crosses by rates and μ, T is refused); the receiving tier *Accepts* it whole within `W` or *Refuses* it, and past `W` the sender may *Expire* it; refused or expired, it is returned. Each side is consumed by exactly one fold (`TierFold.handoffs`), and continuity reads `Σ rows − Σ rate · included = Σ declared + Σ sides' nets`; a side consumed twice is refused, a reversed fold (78.125) un-consumes its sides, and the court lets an offer go once both sides are consumed by final folds. 0x07 was the last free wire byte below the court's range: a new act is a sub-kind of an existing one, with two ruled exceptions, the seat relay `ACT_SEAT` (0x53) and `ACT_TICK` (0x23, 78.152). Amended by 78.128 and 78.136: a handoff between domains must be a traversal through an open mouth pair (`NoMouth` otherwise), and within one domain it runs only along a road.
+A unit of matter stands in exactly one place (78.59 P2: matter does not net like money), so a crossing between domains is no rate on an edge but a HANDOFF one court serialises: no double-spend on S, conservation across the boundary. `ACT_HANDOFF` (0x07), signed by its filer and sealed by `Cite::Handoff` (tag 9), is two-phase: the sending tier's *Offer* states what leaves its domain and what arrives in the other, summing to zero on every lane, on S (matter) and H (a delivered word, never copied) only (G crosses by rates and μ, T is refused); the receiving tier *Accepts* it whole within `W` or *Refuses* it, and past `W` the sender may *Expire* it; refused or expired, it is returned. Each side is consumed by exactly one fold (`TierFold.handoffs`), and continuity reads `Σ rows − Σ rate · included = Σ declared + Σ sides' nets`; a side consumed twice is refused, a reversed fold (78.125) un-consumes its sides, and the court lets an offer go once both sides are consumed by final folds. 0x07 was the last free wire byte below the court's range: a new act is a sub-kind of an existing one, with two ruled exceptions, the seat relay `ACT_SEAT` (0x53) and `ACT_TICK` (0x23, 78.152). Amended by 78.128 and 78.136: a handoff between domains must be a traversal through an open mouth pair (`NoMouth` otherwise), and within one domain it runs only along a road. Amended by 78.125's window (2026-10-31, law version 5): "within `W`" and "past `W`" read the window the offer opens, closed at a sealed reach and return of every other keeper; an offer's state carries the height it opened at (`State::Offered { opened }`).
 
 Code: `src/anastome/dialogue/handoff.rs`, `src/server/cognition/handoff.rs`; held in the `LEAF_HANDOFFS` leaf.
 

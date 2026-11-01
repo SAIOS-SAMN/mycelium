@@ -662,3 +662,52 @@ fn decide_probes_no_function_blind() {
     m.perceive(&percept(2, Arg::Count(2), vec![]));
     assert_eq!(m.decide(), Decision::NothingToCall, "nothing read: no probe");
 }
+
+/// A mind that called function 2 in beat 10.
+fn called_at_ten() -> SeatMind {
+    let mut m = SeatMind::new(verifying(&domain()), 7);
+    m.perceive(&percept(10, Arg::Count(10), vec![]));
+    m.called(2, vec![Arg::Count(0)], [1; 32]);
+    m
+}
+
+/// D3.5 — A PENDING CALL STANDS THROUGH ITS OWN BEAT: the beat it was made in
+/// perceived again, and the next beat, leave it standing; no beat stood
+/// whole between.
+#[test]
+fn pending_stands_through_its_own_beat() {
+    let mut m = called_at_ten();
+    assert_eq!(m.perceive(&percept(10, Arg::Count(10), vec![])).abandoned, None);
+    assert_eq!(m.perceive(&percept(11, Arg::Count(11), vec![])).abandoned, None);
+    assert_eq!(m.awaiting(), Some(2));
+}
+
+/// D3.5 — IT DISSIPATES AFTER ONE WHOLE BEAT: the first percept at `b₀ + 2`
+/// lets it go, named with its distance 2.
+#[test]
+fn pending_dissipates_after_one_whole_beat() {
+    let mut m = called_at_ten();
+    assert_eq!(m.perceive(&percept(11, Arg::Count(11), vec![])).abandoned, None);
+    assert_eq!(m.perceive(&percept(12, Arg::Count(12), vec![])).abandoned, Some((2, 2)));
+    assert_eq!(m.awaiting(), None);
+}
+
+/// D3.5 — A GAP IN THE SEQUENCE DISSIPATES IT AT ONCE: the next percept at
+/// `b₀ + 5` lets it go at distance 5, where a count of percepts would have
+/// waited for a second.
+#[test]
+fn pending_gap_in_seq_dissipates_at_once() {
+    let mut m = called_at_ten();
+    assert_eq!(m.perceive(&percept(15, Arg::Count(15), vec![])).abandoned, Some((2, 5)));
+}
+
+/// D3.5 — A REDELIVERED PERCEPT ADVANCES NOTHING: the call's own beat
+/// delivered three times over never dissipates it.
+#[test]
+fn pending_ignores_redelivered_percept() {
+    let mut m = called_at_ten();
+    for _ in 0..3 {
+        assert_eq!(m.perceive(&percept(10, Arg::Count(10), vec![])).abandoned, None);
+    }
+    assert_eq!(m.awaiting(), Some(2));
+}

@@ -14,11 +14,17 @@
 use crate::chronometry::tuniversal::TPoint;
 
 /// ACT_DOMAIN's sub-kind mark (as `domain.rs` writes it).
+/// FORMAT: sub-kind mark bytes for ACT_DOMAIN.
 const SUB_KIND: [u8; 2] = [0x80, 0x00];
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a ledger entry.
 pub const KIND_LEDGER: u8 = 12;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a ledger read.
 pub const KIND_READ_LEDGER: u8 = 13;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a map record.
 pub const KIND_MAP: u8 = 14;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a map read.
 pub const KIND_READ_MAP: u8 = 15;
+/// FORMAT: sub-kind byte of ACT_DOMAIN for a traverse.
 pub const KIND_TRAVERSE: u8 = 16;
 
 const LEDGER: &[u8] = b"mycelium domain ledger v1";
@@ -339,6 +345,11 @@ pub struct LedgerPage {
     pub entries: Vec<HeldEntry>,
     pub more: bool,
 }
+
+/// THE LEDGER PAGE'S HEADER at its widest: `[more u8]` and the entries'
+/// count as `put_key_count` writes it, seven bits a byte over a `usize`.
+/// FORMAT: `encode_ledger_page`'s header, 1 byte and a seven-bit varint.
+pub const LEDGER_PAGE_HEADER: usize = 1 + (usize::BITS as usize).div_ceil(7);
 
 /// `[more u8][count][held entry …]`.
 pub fn encode_ledger_page(page: &LedgerPage) -> Vec<u8> {

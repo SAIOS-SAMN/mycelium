@@ -28,7 +28,10 @@ pub mod tensegrity;
 mod tests;
 
 pub use budget::{halt, halted, spent_here, Budget, Depleted, Reserve};
-pub use calibration::{aperture_cycle, expansion_unit, idle_park, reserve_max, spend_unit, stroke_floor, STROKES_PER_RESERVE};
+pub use calibration::{
+    aperture_cycle, calibrate, cores_of, expansion_unit, idle_park, reserve_max, spend_unit, stroke_floor, stroke_floor_of, Uncalibrated,
+    STROKES_PER_RESERVE,
+};
 pub use circuits::Circuits;
 pub use lambda::{digest_ceiling, from_transport, persist_dwell, transport_deadline, Lambda};
 pub use stroke::{Physics, StrokeOutcome};

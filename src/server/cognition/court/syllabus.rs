@@ -823,6 +823,7 @@ enum Learner {
 }
 
 /// A sentence's kind on `observe::DEFERRED_KINDS`.
+/// FORMAT: word kind byte on the deferred-kinds tape.
 const SENTENCE: u8 = 2;
 
 /// A word's kind on `observe::DEFERRED_KINDS`.

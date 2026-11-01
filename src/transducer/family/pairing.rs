@@ -1013,6 +1013,7 @@ pub(crate) fn named_incidence(
 }
 
 /// Physical size of the hue carrier. Index by hue, never search.
+/// FORMAT: the range of a `u8` hue, `2⁸`.
 pub const PALETTE: usize = 256;
 pub type HueMap = [Option<u8>; PALETTE];
 

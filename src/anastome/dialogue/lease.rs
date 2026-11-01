@@ -19,8 +19,10 @@ use crate::economy::Mu;
 /// rational lanes (`Mu::put`).
 const LEASE: &[u8] = b"mycelium lease v2";
 /// `ACT_WALLET`'s sub-kind for opening a lease.
+/// FORMAT: sub-kind byte of ACT_WALLET for opening a lease.
 pub const KIND_OPEN: u8 = 3;
 /// `ACT_WALLET`'s sub-kind for closing one.
+/// FORMAT: sub-kind byte of ACT_WALLET for closing a lease.
 pub const KIND_CLOSE: u8 = 4;
 
 fn take32(b: &[u8], p: &mut usize) -> Option<[u8; 32]> {

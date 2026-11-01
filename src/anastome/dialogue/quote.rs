@@ -98,6 +98,7 @@ fn outcome_head(code: u8, height: u64, pressure: &[u64; 4]) -> Vec<u8> {
 /// was ruled and the voice speaks again (`cognition::outcome_code` of a
 /// pending, deferred or awaiting outcome). A deferral is this code with no
 /// height and nothing taught.
+/// FORMAT: reply code for a pending outcome.
 pub const PENDING_CODE: u8 = 2;
 
 /// The deferral a full judge answers every act with (23.8, ruled
@@ -144,6 +145,11 @@ pub fn deferral_lanes(body: &[u8], code: u8) -> Option<[u64; 4]> {
 pub fn is_deferral(body: &[u8], code: u8) -> bool {
     deferral_lanes(body, code).is_some()
 }
+
+/// THE QUOTE REPLY'S HEADER: `[act][height u64][surface 4×u64][k u64][count u8]`
+/// ahead of the items.
+/// FORMAT: `encode_quote_reply_within`'s header, 1 + 8 + 32 + 8 + 1 bytes.
+pub const QUOTE_REPLY_HEADER: usize = 1 + 8 + 4 * 8 + 8 + 1;
 
 /// The quote reply filled up to `budget` bytes: items ride in rank order
 /// until the next would not fit. The frame budget decides what a contact

@@ -14,7 +14,6 @@
 //! the identity is two routes disagreeing about how one universe lands in
 //! another — curvature, RECORDED (served as loops), never refused.
 
-use super::challenge::window_end;
 use super::handoff::toll_key;
 use super::Court;
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Level, Loop, Mouth, SignedHandoff, State, TubeReading};
@@ -40,9 +39,9 @@ impl MouthHeld {
         // The flat writing: a tariff is stored beside it (`Handoffs::put`).
         v.extend_from_slice(&self.mouth.legacy_bytes());
         match self.state {
-            State::Offered { until } => {
+            State::Offered { opened } => {
                 v.push(0);
-                v.extend_from_slice(&until.to_le_bytes());
+                v.extend_from_slice(&opened.to_le_bytes());
             }
             State::Accepted => v.push(1),
             State::Returned => v.push(2),
@@ -67,7 +66,7 @@ impl MouthHeld {
         let tag = *b.get(*p)?;
         *p += 1;
         let state = match tag {
-            0 => State::Offered { until: u64_at(b, p)? },
+            0 => State::Offered { opened: u64_at(b, p)? },
             1 => State::Accepted,
             2 => State::Returned,
             _ => return None,
@@ -85,14 +84,15 @@ impl MouthHeld {
 
 /// 78.133 — A TOLL SPLIT AND HELD (as ruled): a tariffed
 /// traversal's charge, divided at acceptance into its exact parts — each
-/// recipient's, the keeper's last — and held whole until the window `W` from
-/// the acceptance closes (paid out, every part together) or the traversal's
-/// OUT-side fold is reversed (back to the traveller, every part together).
-/// The traverse act's stamp and receipt are what each part's rows cite.
+/// recipient's, the keeper's last — and held whole until the window the
+/// acceptance opened at `opened` closes (paid out, every part together) or
+/// the traversal's OUT-side fold is reversed (back to the traveller, every
+/// part together). The traverse act's stamp and receipt are what each part's
+/// rows cite.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct TollHeld {
     pub(crate) parts: Vec<([u8; 32], crate::economy::Mu)>,
-    pub(crate) until: u64,
+    pub(crate) opened: u64,
     pub(crate) traverse: Stamp,
     pub(crate) receipt: [u8; 32],
 }
@@ -104,7 +104,7 @@ impl TollHeld {
             v.extend_from_slice(who);
             mu.put(v);
         }
-        v.extend_from_slice(&self.until.to_le_bytes());
+        v.extend_from_slice(&self.opened.to_le_bytes());
         self.traverse.put_canonical(v);
         v.extend_from_slice(&self.receipt);
     }
@@ -122,11 +122,11 @@ impl TollHeld {
                 Some((who, crate::economy::Mu::take_from(b, p)?))
             })
             .collect::<Option<Vec<_>>>()?;
-        let until = u64_at(b, p)?;
+        let opened = u64_at(b, p)?;
         let traverse = Stamp::take_canonical(b, p)?;
         let receipt: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
         *p += 32;
-        Some(TollHeld { parts, until, traverse, receipt })
+        Some(TollHeld { parts, opened, traverse, receipt })
     }
 }
 
@@ -225,6 +225,7 @@ pub fn sphere_throat(m: &num_rational::BigRational, radius: &num_rational::BigRa
 /// PHYSICS, NAMED (`physics::axioms::OPEN_PHYSICS`): an enclosure on a
 /// declared grid is an approximation; the throat is a `Cl(4,1)` round carried
 /// by its bank's modes, fit by meet, and this grid retires with it.
+/// REGISTERED: THROAT_GRID
 pub const THROAT_GRID: u32 = 64;
 
 /// 78.134 — A THROAT'S HORIZON LEVEL on curved space: the mouth's horizon
@@ -260,7 +261,51 @@ pub fn flat_throat(m: &num_rational::BigRational, shortest_period: &num_rational
 /// 78.140 — whether a throat of `mass` fits both its faces (`None` where a
 /// level does not read).
 fn fits_both(t: &crate::anastome::dialogue::handoff::Tube, mass: &num_rational::BigRational) -> Option<bool> {
-    Some(level_in(&t.from_space, mass)?.fits() && level_in(&t.to_space, mass)?.fits())
+    Some(fits_in(&t.from_space, mass)? && fits_in(&t.to_space, mass)?)
+}
+
+/// 78.134, 78.140 — WHETHER A THROAT OF `mass` FITS A FACE, decided exactly
+/// and never on a grid (MU-DERIVATIONS D1.2 Phase A): a curved face always
+/// holds it; a sphere face holds the cap of angular radius `r = 2m/R` short of
+/// the antipode, `r < π`, decided by refining `π` until its enclosure leaves
+/// `r` (`certified::separates`); a torus face holds the horizon sphere of
+/// radius `2m` APART from its image under every period (`enclosure::
+/// containment`), the meet 78.162 (5) names, no ratio formed. `None` for a
+/// non-positive mass or radius, or a period that does not read.
+pub(crate) fn fits_in(space: &Geometry, mass: &num_rational::BigRational) -> Option<bool> {
+    use num_rational::BigRational as Q;
+    use num_traits::{Signed, Zero};
+    if !mass.is_positive() {
+        return None;
+    }
+    let two = Q::from_integer(2.into());
+    match space {
+        Geometry::Curved((n, d)) => (*n > 0 && *d > 0).then_some(true),
+        Geometry::Sphere((n, d)) => {
+            if *n == 0 || *d == 0 {
+                return None;
+            }
+            let r = &two * mass / Q::new((*n).into(), (*d).into());
+            Some(crate::core::certified::separates(&r, crate::core::certified::pi)? == std::cmp::Ordering::Less)
+        }
+        Geometry::Torus { periods, .. } => {
+            let rho = &two * mass;
+            let origin = vec![Q::zero(); periods.len()];
+            let horizon = crate::transducer::cga::sphere_at(&origin, &(&rho * &rho));
+            for (axis, (n, d)) in periods.iter().enumerate() {
+                if *d == 0 || *n == 0 {
+                    return None;
+                }
+                let mut step = origin.clone();
+                *step.get_mut(axis)? = Q::new((*n).into(), (*d).into());
+                let image = crate::transducer::cga::translator_at(&step).sandwich(&horizon);
+                if crate::transducer::cga::containment(&horizon, &image) != crate::transducer::cga::Containment::Apart {
+                    return Some(false);
+                }
+            }
+            Some(true)
+        }
+    }
 }
 
 impl Court {
@@ -456,7 +501,7 @@ impl Court {
                         .is_some_and(|s| matches!(self.finality(&s), crate::anastome::dialogue::challenge::Finality::Final { .. })),
                     _ => true,
                 };
-                head >= t.until && settled
+                self.window_closed(t.opened, head) && settled
             })
             .map(|(k, t)| (k, t.clone()))
             .collect();
@@ -539,7 +584,7 @@ impl Court {
         let traverse = self.handoffs.offered_at.get(id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash)));
         match (charge.and_then(|c| tariff.parts(&m.keeper, &c)), traverse) {
             (Some(parts), Some((at, receipt))) => {
-                let held = TollHeld { parts, until: window_end(anchor.0.h), traverse: at, receipt };
+                let held = TollHeld { parts, opened: anchor.0.h, traverse: at, receipt };
                 self.handoffs.tolls.insert(id, held);
             }
             // Parts that do not read are no toll: back to the traveller.
@@ -677,13 +722,13 @@ impl Court {
             }
             Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. } => {
                 let Some(held) = self.handoffs.mouths.get(&id) else { return refuse(R::UnknownId) };
-                let State::Offered { until } = held.state else { return refuse(R::Answered) };
+                let State::Offered { opened } = held.state else { return refuse(R::Answered) };
                 let expiring = matches!(h.handoff, Handoff::Expire { .. });
                 let filer = if expiring { held.mouth.from_tier } else { held.mouth.to_tier };
                 if h.who != filer {
                     return refuse(R::NotTheTier);
                 }
-                if expiring != (head >= until) {
+                if expiring != self.window_closed(opened, head) {
                     return refuse(R::Window);
                 }
                 match h.handoff {
@@ -699,8 +744,8 @@ impl Court {
         let anchor = (r.stamp, r.chain_hash);
         let state = match (&h.handoff, kind) {
             (Handoff::Mouth(m), _) => {
-                let until = window_end(r.stamp.h);
-                let held = MouthHeld { mouth: m.as_ref().clone(), state: State::Offered { until }, opened: None, at: r.stamp.key() };
+                let offered = r.stamp.h;
+                let held = MouthHeld { mouth: m.as_ref().clone(), state: State::Offered { opened: offered }, opened: None, at: r.stamp.key() };
                 self.handoffs.mouths.insert(id, held);
                 // 78.135 — the offerer's bank, the throat's first face.
                 if let Some(bank) = m.tube.as_ref().and_then(|t| ceil_mass(t.mass)) {
@@ -708,7 +753,7 @@ impl Court {
                         self.handoffs.throats.insert(id, Throat { feeders: vec![h.who], adjusted: 0, acts: 0 });
                     }
                 }
-                State::Offered { until }
+                State::Offered { opened: offered }
             }
             (_, 1) => {
                 let mut superseded = None;

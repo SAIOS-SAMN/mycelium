@@ -128,10 +128,20 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             return true;
         }
         let Some(_evoice) = dialogue::decode_evidence_request(&frame.body) else { return true };
-        let items: Vec<_> = {
+        // D4.2 — THE PAGE IS FILLED TO THE FRAME, one read of the hold's
+        // stroke an item; an item no frame carries is refused by name and
+        // the page ends before it, never past it.
+        let (items, end): (Vec<_>, _) = {
             let Ok(mut h) = crate::held::held!(door.court) else { return true };
-            h.run(|k, _| k.anchor_evidence().iter().take(32).cloned().collect())
+            h.run(|k, reads| {
+                let store = k.anchor_evidence();
+                let (m, end) = dialogue::evidence_page(store, mycelium::network::wire::frame_budget(), reads);
+                (store.iter().take(m).cloned().collect(), end)
+            })
         };
+        if let dialogue::EvidencePageEnd::Unframable { width } = end {
+            eprintln!("  evidence item passes the frame: {width:?} bytes; the page ends before it");
+        }
         // LD0 — a reply whose address cannot be framed is refused whole,
         // by name, and nothing partial is answered.
         let Some(body) = dialogue::encode_evidence_reply(&items) else {

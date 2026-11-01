@@ -205,7 +205,8 @@ impl HyphaLink {
     /// REST until a carrier lands an answer or the idle park over the
     /// measured round trip (`rtt`, in strokes) passes, whichever is first.
     pub(crate) fn rest(&self, rtt: Option<u64>) {
-        let _ = self.woken.recv_timeout(crate::physics::idle_park(rtt));
+        // A measured round trip counts the poll that read it: never zero.
+        let _ = self.woken.recv_timeout(crate::physics::idle_park(rtt.and_then(std::num::NonZeroU64::new)));
         while self.woken.try_recv().is_ok() {}
     }
 

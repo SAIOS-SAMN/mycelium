@@ -71,6 +71,7 @@ pub fn versor_between(a: &Shape, b: &Shape, budget: &mut crate::physics::Budget)
 /// the fourth harmonic's four 90° turns. The tube's pose tries fewer (a
 /// proper and a mirrored solve, or two signs on two lines). What an
 /// extraction's stroke is sized by per body pair (`extraction_spend`).
+/// REGISTERED: CANDIDATES_PER_PAIR
 pub const CANDIDATES_PER_PAIR: usize = 8;
 
 /// ONE MEMBER OF A TRANSITION BETWEEN TWO SHAPES (ruled 2026-09-26): the

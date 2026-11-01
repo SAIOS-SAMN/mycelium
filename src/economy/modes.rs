@@ -22,7 +22,9 @@ type Q = BigRational;
 /// THE LANES, by place (law 5): S, G, T, H.
 pub const S: u8 = 0;
 pub const G: u8 = 1;
+/// FORMAT: lane byte on the mode's wire and key, T's place in S, G, T, H order.
 pub const T: u8 = 2;
+/// FORMAT: lane byte on the mode's wire and key, H's place in S, G, T, H order.
 pub const H: u8 = 3;
 
 /// ONE EXACT MODE, on the lane its kind names.

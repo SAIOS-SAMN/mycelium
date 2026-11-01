@@ -35,6 +35,7 @@ use mycelium::transducer::sentence::Vertex;
 /// machine stroke on the same twelve). `exhausted` is reported per walk
 /// anyway, so a slice that outgrows it says so rather than reading as a
 /// smaller delta.
+/// REGISTERED: DELTA_STROKE
 const DELTA_STROKE: usize = 1 << 20;
 
 /// What ONE walk of ONE task read, in the engine's own coordinates.

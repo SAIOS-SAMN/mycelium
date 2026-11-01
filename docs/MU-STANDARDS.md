@@ -182,6 +182,33 @@ rewritten with "its", "the X's", a plural noun or another structure;
 "its" and "own" are allowed. Mathematical *I* and Roman numerals are not
 pronouns.
 
+2.12 **Live readings** (ruled 2026-10-31; beside the constants rule 2.6
+and MU-RECURSION §0.0's *No constant*). The environment is dynamic and not
+boolean: a quantity that governs a decision (a window, a deadline, a
+budget, a bound, a price, a pool) is a LIVE READING of the current state,
+derived from the physics, never a constant written at the site.
+
+- *Derived on change, held keyed by its inputs.* A reading is computed
+  once per change of the inputs it reads and held under those inputs'
+  coordinates; every use reads the held value. It is never recomputed per
+  use: recomputation on every read made one reading cost a court its
+  liveness (mycelium#14), and a held value whose inputs moved is stale and
+  is derived again, never served.
+- *What may be fixed.* Only names (wire tags, act bytes, codes, layout
+  versions), invariants of the algebra (each with the test that proves
+  it), and external formats (each citing its standard and clause). Every
+  other number is a reading, or it is NAMED in the open-physics register
+  (`physics::axioms::OPEN_PHYSICS`, MU-DERIVATIONS D1.4) with what will
+  derive it, and the numbers gate (§4.1) refuses it unnamed.
+- *A decision with magnitude is a graded reading.* Where the state admits
+  degrees (how far, how many, how late), the decision returns the graded
+  reading, and a threshold applied to it is a reading of the same state,
+  never a literal.
+- *A refusal is named and carries its cause.* A refusal names itself and
+  carries the reading that caused it (the distance, the shortfall, the
+  missing measurement), never a bare `None` standing in for a number that
+  was not read.
+
 ## 3. Tests
 
 3.1 **A test is a claim; its name names the unit and the behaviour.** One
@@ -313,7 +340,7 @@ reports both whatever the first said, and exits non-zero if either
 refuses:
 
 1. **The source checks** (`xtask/lint/`), over `src/`, `forms/src/`,
-   `sdk/src/` and `xtask/`:
+   `sdk/src/` and `xtask/` (the numbers gate over the three it names):
    - *the reading bound* (`lint/length.rs`): every `.rs` file over 2500
      lines is named with its count;
    - *the Euclidean vocabulary* (`lint/euclidean.rs`): a code line (not a
@@ -321,7 +348,20 @@ refuses:
      with its reason: Morton and Z-order curves, Hilbert curves, bit
      interleaving, bounding boxes (`bbox`, `bounding_box`, `aabb`),
      subdivision trees (`quadtree`, `octree`, k-d trees, R-trees),
-     spatial hashes, grid cells and voxels. It reads names, not structure.
+     spatial hashes, grid cells and voxels. It reads names, not structure;
+   - *the numbers gate* (`lint/numbers.rs`, rule 2.12, MU-DERIVATIONS
+     D1.4): it reads items with `syn`, never lines. Every numeric `const`
+     or `static` under `src/`, `forms/src/` and `xtask/` (outside
+     `#[cfg(test)]` and `tests/`) whose initializer carries an integer
+     literal outside `{0, 1}` carries one class tag as the first token of
+     a doc line: `EXACT: <test fn>`, `FORMAT: <layout>`,
+     `EXTERNAL: <standard and clause>`, `MEASURED: <reading>` (instruments
+     only: `src/bin/`, `src/observe/`, `xtask/`) or `REGISTERED: <NAME>`,
+     whose entry in `physics::axioms::OPEN_PHYSICS` names the item's site
+     and its value as written (N1–N5). A float item is refused outright.
+     The inline literals of the law paths (N6) are reported as an
+     inventory, `(cd xtask && cargo run -- inventory)`, and refuse nothing
+     until it is empty.
 2. **The warning gate** (`lint/warnings.rs`):
    `cargo clippy --release --workspace --all-targets -- -D warnings`,
    every workspace member (`mycelium`, `forms`, `mycelium-sdk`) and every
@@ -373,7 +413,7 @@ touches, in the style of the surrounding code.
 
 4.6 **No new gate by other means.** A new check is a lint entry under 4.2
 with its proof, a type under 4.4, or a proposed change to this document.
-A walker over source text beyond the two of 4.1 is not added. Where
+A walker over source text beyond the three of 4.1 is not added. Where
 `MU-RECURSION.md` or `MU-ENGINEERING.md` names "the enumeration gate",
 "the clock gate", "the blake3 gate", "the squaring gate", "the order
 gate" or "the panics gate", the name means the row of 4.2 or the type or

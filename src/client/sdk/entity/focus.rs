@@ -38,6 +38,7 @@ use crate::network::nerve::Keyed;
 /// An item of the corpus: a feed family, by its citation.
 const ITEM_FAMILY: u8 = 1;
 /// An item of the corpus: an open question, by its residual's address.
+/// FORMAT: corpus item tag.
 const ITEM_QUESTION: u8 = 2;
 /// A coordinate of the corpus: a body chart, by its key.
 const COORD_CHART: u8 = b'c';

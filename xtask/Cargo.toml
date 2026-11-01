@@ -9,6 +9,12 @@ publish = false
 # (MU-STANDARDS 3.3); the crate has no integration tests.
 autotests = false
 
+# The gate is a workspace of its own. The root's `exclude` keeps it out only
+# at the root's own path; a checkout nested under another checkout (the
+# mutation audit's worktree under `target/mutate/`) walks on to the outer
+# root, which names no such exclusion, and cargo refuses the package.
+[workspace]
+
 [[bin]]
 # The binary NAMES WHAT IT DOES: it runs the gate — the reading bound and
 # clippy with warnings denied, both reported (I4). `lint-enumeration` named one rule it has not
@@ -16,6 +22,13 @@ autotests = false
 # line it printed at every commit said so.
 name = "gate"
 path = "main.rs"
+
+[dependencies]
+# MU-DERIVATIONS D1.4 — the numbers gate reads items with `syn`, never raw
+# lines; `span-locations` gives each hit its line.
+syn = { version = "2", features = ["full", "visit"] }
+quote = "1"
+proc-macro2 = { version = "1", features = ["span-locations"] }
 
 [dev-dependencies]
 tempfile = "3"

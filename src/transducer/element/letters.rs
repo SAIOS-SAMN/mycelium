@@ -47,6 +47,7 @@ pub fn conformal_of_rotor(
 /// The rotor chart's blades that are the BASE's own even subalgebra
 /// `⟨1, e₀₁, e₀₃, e₁₃⟩` — `e₀, e₁, e₃` are `r, c, k` (51.2) — and the
 /// versor blades they are read as: `1, e1e2, e1e3, e2e3`.
+/// FORMAT: blade masks of the rotor chart and of the versor algebra.
 const BASE_EVEN: [(usize, usize); 4] = [
     (0, 0),
     (0b0011, crate::transducer::cga::E1 | crate::transducer::cga::E2),
@@ -57,6 +58,7 @@ const BASE_EVEN: [(usize, usize); 4] = [
 /// The 180° turn `e₀₂`: the orientation character (51.2), which flips `e₀`
 /// on the base and nothing else there, and is realised on the base as the
 /// reflector `e1`.
+/// FORMAT: the blade mask of `e₀₂` in the rotor chart.
 const ORIENTATION: usize = 0b0101;
 
 /// THE BASE ACTION OF A ROTOR (51.2, A4): the rotor's action on the three
@@ -467,6 +469,7 @@ pub fn conformal_factors(v: &Versor) -> Result<Conformal, Unfactored> {
 /// c, k`, and `e₂` is off the base. Index 2 of a rotor's action is the row
 /// that says a turn leaves the base, and it is a row of the system here,
 /// never dropped.
+/// FORMAT: the rotor chart's axis indices of `r, c, k`.
 const BASE_AXES: [usize; 3] = [0, 1, 3];
 
 /// THE BASE POINT OF A TURN (12.6; `cech::classify`'s standing note): a

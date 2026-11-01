@@ -11,6 +11,7 @@ pub struct Router {
     leaf: Option<(Vec<u8>, String)>,
 }
 
+/// FORMAT: bit width of the 32-byte identity carrier.
 const XOR_BITS: usize = 256;
 
 fn xor_bit(id: &[u8], i: usize) -> usize {

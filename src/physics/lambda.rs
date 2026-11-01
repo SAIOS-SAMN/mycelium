@@ -19,11 +19,22 @@ pub enum Lambda {
 }
 
 /// A duration in strokes: measured round-trip strokes times a stroke-count
-/// factor. Unmeasured RTT is not passed here.
-pub fn from_transport(rtt: u64, strokes: u64) -> Lambda {
-    match rtt.checked_mul(strokes.max(1)) {
+/// factor, both non-zero by their measurement (D2.6: a measured round trip
+/// counts the poll that read its first byte, and a factor is an aperture or
+/// a reserve).
+pub fn from_transport(rtt: std::num::NonZeroU64, strokes: std::num::NonZeroU64) -> Lambda {
+    match rtt.get().checked_mul(strokes.get()) {
         Some(n) => Lambda::Strokes(n),
         None => Lambda::BeyondTheLedger,
+    }
+}
+
+/// `rtt` round trips times `factor`, where both are measured: a zero is no
+/// measurement, read `Unmeasured`, never one.
+fn of_measured(rtt: u64, factor: u64) -> Lambda {
+    match (std::num::NonZeroU64::new(rtt), std::num::NonZeroU64::new(factor)) {
+        (Some(r), Some(f)) => from_transport(r, f),
+        _ => Lambda::Unmeasured,
     }
 }
 
@@ -35,10 +46,10 @@ pub fn transport_deadline(rtt: u64) -> Lambda {
 
 /// Persist dwell: a full aperture of measured transports, in strokes.
 pub fn persist_dwell(rtt: u64) -> Lambda {
-    from_transport(rtt, aperture_cycle() as u64)
+    of_measured(rtt, u64::from(aperture_cycle()))
 }
 
 /// Quiet-digest ceiling: a full reserve of measured transports, in strokes.
 pub fn digest_ceiling(rtt: u64) -> Lambda {
-    from_transport(rtt, reserve_max())
+    of_measured(rtt, reserve_max())
 }

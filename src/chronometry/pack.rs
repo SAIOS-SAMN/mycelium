@@ -20,15 +20,21 @@ use super::receipt::{ActKind, Cite, KStepReceipt, Parent, Place, Stamp};
 use crate::network::nerve::Keyed;
 
 const SIGNER: u8 = 1;
+/// FORMAT: record kind byte for an operator.
 const OPERATOR: u8 = 2;
+/// FORMAT: record kind byte for a node.
 const NODE: u8 = 3;
+/// FORMAT: record kind byte for an anchor.
 const ANCHOR: u8 = 4;
+/// FORMAT: record kind byte for a root.
 const ROOT: u8 = 5;
+/// FORMAT: record kind byte for gone.
 const GONE: u8 = 6;
 
 /// The predecessor as a packed node names it.
 const PREV_NONE: u8 = 0;
 const PREV_LINE: u8 = 1;
+/// FORMAT: predecessor-naming byte for a named predecessor.
 const PREV_NAMED: u8 = 2;
 
 /// A count or a lane, in seven-bit groups, low first.

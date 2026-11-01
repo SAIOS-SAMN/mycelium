@@ -122,7 +122,9 @@ fn turn_class(motion: &Mv) -> Option<(crate::transducer::alphabet::Rotor, Addres
 /// sum of lanes.
 pub const LANE_S: usize = 0;
 pub const LANE_G: usize = 1;
+/// FORMAT: lane enum position.
 pub const LANE_T: usize = 2;
+/// FORMAT: lane enum position.
 pub const LANE_H: usize = 3;
 
 /// The lane a mode of a motion stands on, by its kind (78.71 F5).

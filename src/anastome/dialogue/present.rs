@@ -57,17 +57,32 @@ pub fn decode_presentation_request(body: &[u8]) -> Option<([u8; 32], Mv)> {
 /// (STD1 3c): the reply is refused whole, never framed short.
 pub fn encode_presentation_reply(words: &[Taught], a: &PresentationAnswer) -> Option<Vec<u8>> {
     let mut out = encode_syllabus_reply(words)?;
+    put_answer(&mut out, a)?;
+    Some(out)
+}
+
+/// The answer behind the words: `[read u8][cites u16 …][composes u8][residue u64][holes u64]`.
+fn put_answer(out: &mut Vec<u8>, a: &PresentationAnswer) -> Option<()> {
     out.push(u8::from(a.read));
-    crate::transducer::address::put_u16_count(&mut out, a.cites.len())?;
+    crate::transducer::address::put_u16_count(out, a.cites.len())?;
     for (form, vertex, e) in &a.cites {
-        put_address(&mut out, form)?;
-        put_address(&mut out, vertex)?;
+        put_address(out, form)?;
+        put_address(out, vertex)?;
         out.extend_from_slice(&e.to_le_bytes());
     }
     out.push(u8::from(a.composes));
     out.extend_from_slice(&a.residue.to_le_bytes());
     out.extend_from_slice(&a.holes.to_le_bytes());
-    Some(out)
+    Some(())
+}
+
+/// THE BYTES THE ANSWER TAKES behind the words, read off its own writing:
+/// the envelope a presentation's words are budgeted beside (D4.6). `None`
+/// where it cannot be written.
+pub fn presentation_answer_len(a: &PresentationAnswer) -> Option<usize> {
+    let mut out = Vec::new();
+    put_answer(&mut out, a)?;
+    Some(out.len())
 }
 
 /// The words and the answer, read whole, or refused: a byte left over is no
