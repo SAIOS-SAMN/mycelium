@@ -332,17 +332,18 @@ pub struct Gas {
 
 /// WHAT THE COURT ANSWERED a traverse: the crossing's hash, the height and
 /// the court's final point it sealed at, the gas, the read price per lane it
-/// was priced at, and the fee — `⌊gas · price⌋` per lane — held as a claim
-/// on the payer's stake and paid whole to the route's courts.
+/// was priced at (μ per unit of gas), and the fee — `⌊gas · price⌋` per lane
+/// — held as a claim on the payer's stake and paid whole to the route's
+/// courts. Price and fee are exact amounts of μ (`Mu`).
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[expect(clippy::large_enum_variant, reason = "the sealed crossing is the answer's content and its common case; a refusal is the rare one")]
 pub enum Crossed {
-    Sealed { crossing: [u8; 32], h: u64, point: TPoint, gas: Gas, price: [u64; 4], fee: [u64; 4] },
+    Sealed { crossing: [u8; 32], h: u64, point: TPoint, gas: Gas, price: crate::economy::Mu, fee: crate::economy::Mu },
     Refused(CrossRefusal),
 }
 
 /// `[1][crossing 32][h u64][point 84][S n u64][S d u64][G u64][T u64][H
-/// u64][price 4×u64][fee 4×u64]` or `[0][code][side]`.
+/// u64][price μ⃗][fee μ⃗]` or `[0][code][side]`, each μ⃗ four exact rational
+/// lanes (`Mu::put`).
 pub fn encode_traverse_reply(c: &Crossed) -> Vec<u8> {
     match c {
         Crossed::Sealed { crossing, h, point, gas, price, fee } => {
@@ -353,8 +354,8 @@ pub fn encode_traverse_reply(c: &Crossed) -> Vec<u8> {
             for x in [gas.s.0, gas.s.1, gas.g, gas.t, gas.h] {
                 out.extend_from_slice(&x.to_le_bytes());
             }
-            put_lanes(&mut out, price);
-            put_lanes(&mut out, fee);
+            price.put(&mut out);
+            fee.put(&mut out);
             out
         }
         Crossed::Refused(r) => {
@@ -375,7 +376,7 @@ pub fn decode_traverse_reply(b: &[u8]) -> Option<Crossed> {
             let point = TPoint::take(rest, &mut p)?;
             let s = (u64_at(rest, &mut p)?, u64_at(rest, &mut p)?);
             let gas = Gas { s, g: u64_at(rest, &mut p)?, t: u64_at(rest, &mut p)?, h: u64_at(rest, &mut p)? };
-            let (price, fee) = (take_lanes(rest, &mut p)?, take_lanes(rest, &mut p)?);
+            let (price, fee) = (crate::economy::Mu::take_from(rest, &mut p)?, crate::economy::Mu::take_from(rest, &mut p)?);
             (p == rest.len()).then_some(Crossed::Sealed { crossing, h, point, gas, price, fee })
         }
         _ => None,

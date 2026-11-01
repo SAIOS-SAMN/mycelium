@@ -199,17 +199,24 @@ pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
 }
 
 
-pub fn encode_solve_receipt(code: u8, mu: &[u64; 4]) -> Vec<u8> {
+/// `[code u8][μ⃗]`: the verdict and what it paid, four exact rational lanes
+/// (`Mu::put`).
+pub fn encode_solve_receipt(code: u8, mu: &crate::economy::Mu) -> Vec<u8> {
     let mut out = vec![code];
-    push_mu(&mut out, mu);
+    mu.put(&mut out);
     out
 }
 
-pub fn decode_solve_receipt(body: &[u8]) -> Option<(u8, [u64; 4])> {
+/// The receipt's code and μ, and where its bytes end.
+fn take_solve_receipt(body: &[u8]) -> Option<(u8, crate::economy::Mu, usize)> {
     let code = act_tag(body)?;
     let mut p = 1usize;
-    let mu = read_mu(body, &mut p)?;
-    Some((code, mu))
+    let mu = crate::economy::Mu::take_from(body, &mut p)?;
+    Some((code, mu, p))
+}
+
+pub fn decode_solve_receipt(body: &[u8]) -> Option<(u8, crate::economy::Mu)> {
+    take_solve_receipt(body).map(|(code, mu, _)| (code, mu))
 }
 
 /// WHY A SOLVE WAS REFUSED, as the court read it (the actions' physics): the
@@ -222,7 +229,7 @@ pub struct SolveRefusal {
     pub kind: u8,
 }
 
-/// `[code][μ 4×u64]` then, for a refusal, `[kind u8][reason, length-prefixed]`.
+/// `[code][μ⃗]` then, for a refusal, `[kind u8][reason, length-prefixed]`.
 /// The tag a paid verdict's modes ride behind the receipt under: no
 /// obstruction kind (78.9's are below seven) is it, so a refusal and the
 /// modes are told apart by the first byte.
@@ -235,7 +242,7 @@ pub const SOLVE_MODES_TAG: u8 = 0xFE;
 /// write.
 pub fn encode_solve_verdict(
     code: u8,
-    mu: &[u64; 4],
+    mu: &crate::economy::Mu,
     refusal: Option<&SolveRefusal>,
     modes: Option<&crate::economy::modes::Modes>,
 ) -> Option<Vec<u8>> {
@@ -252,12 +259,11 @@ pub fn encode_solve_verdict(
 
 /// A VERDICT READ: the receipt, the refusal where one rode behind it, and
 /// the modes where the pay carried them.
-pub type SolveVerdictRead = (u8, [u64; 4], Option<SolveRefusal>, Option<crate::economy::modes::Modes>);
+pub type SolveVerdictRead = (u8, crate::economy::Mu, Option<SolveRefusal>, Option<crate::economy::modes::Modes>);
 
 /// The receipt and, where one rode behind it, the refusal or the modes.
 pub fn decode_solve_verdict(body: &[u8]) -> Option<SolveVerdictRead> {
-    let (code, mu) = decode_solve_receipt(body)?;
-    let mut p = 1 + 32;
+    let (code, mu, mut p) = take_solve_receipt(body)?;
     if p == body.len() {
         return Some((code, mu, None, None));
     }

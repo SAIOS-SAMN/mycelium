@@ -7,6 +7,7 @@
 use crate::anastome::dialogue::domain::{Founded, Reservation};
 use crate::anastome::dialogue::handoff::{ConvertIn, ConvertOut, Handed, Handoff, HandoffRefusal, Side, State};
 use crate::anastome::dialogue::uplink::{Discontinuous, Net, SideRefusal, TierFold, Uplinked};
+use crate::economy::tests::Counts;
 use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;
 
@@ -85,7 +86,7 @@ fn designate_reserve_redesignates_at_reserve_fold() {
     assert_eq!(k.reserve_of(&verifying(&domain())), Some(verifying(&x())));
     fund(&mut k, verifying(&x()), [4, 0, 0, 1]);
     let read = k.reserve_reading(&verifying(&domain()));
-    assert_eq!((read.current, read.pending, read.balance), (Some(verifying(&x())), None, [4, 0, 0, 1]), "the reserve as read");
+    assert_eq!((read.current, read.pending, read.balance.n()), (Some(verifying(&x())), None, [4, 0, 0, 1]), "the reserve as read");
     // 78.136 — succession is the sitting reserve's to sign, never the
     // founder's key alone.
     assert_eq!(designate(&mut k, &x2(), 2), Founded::Unsigned, "the domain designates once");
@@ -101,8 +102,8 @@ fn designate_reserve_redesignates_at_reserve_fold() {
 }
 
 /// CONVERT-OUT PAYS FROM THE RESERVE, NEVER MINTS: 10 of game value at ½ μ
-/// each is exactly 5 μ, paid from the reserve to the holder; a rate that is
-/// not exact, a tier that is not the reserve, a conversion past the reserve
+/// each is exactly 5 μ, paid from the reserve to the holder; a rate over
+/// zero, a tier that is not the reserve, a conversion past the reserve
 /// — each refused; a resend answers with its receipt. The G side leaves the
 /// player's game value in the reserve tier's fold, once.
 #[test]
@@ -116,16 +117,16 @@ fn convert_out_pays_from_reserve_never_mints() {
     };
     assert_eq!(refused(&mut k, out(10, (1, 2), 1), &x()), HandoffRefusal::NoBasket, "78.139: no conversion before the reserve's basket");
     basket(&mut k);
-    assert_eq!(refused(&mut k, out(10, (1, 3), 1), &x()), HandoffRefusal::Inexact, "10/3 is no integer");
+    assert_eq!(refused(&mut k, out(10, (1, 0), 1), &x()), HandoffRefusal::Inexact, "a rate over zero is no rate");
     assert_eq!(refused(&mut k, ConvertOut { tier: verifying(&x2()), ..out(10, (1, 2), 1) }, &x2()), HandoffRefusal::NotReserve);
     assert_eq!(refused(&mut k, out(20, (1, 1), 1), &x()), HandoffRefusal::ReserveShort, "a rate never mints μ");
-    let supply = k.treasury.balance_mu(&verifying(&x()))[0] + k.treasury.balance_mu(&verifying(&holder()))[0];
+    let supply = k.treasury.balance_mu(&verifying(&x())).n()[0] + k.treasury.balance_mu(&verifying(&holder())).n()[0];
     let first = k.handoff(&Handoff::ConvertOut(Box::new(out(10, (1, 2), 1))).sign(&x()));
     let Handed::Sealed { id, state: State::Accepted, .. } = first else { panic!("{first:?}") };
-    assert_eq!((k.treasury.balance_mu(&verifying(&x()))[0], k.treasury.balance_mu(&verifying(&holder()))[0]), (3, 5));
-    assert_eq!(k.treasury.balance_mu(&verifying(&x()))[0] + k.treasury.balance_mu(&verifying(&holder()))[0], supply, "Σ = 0");
+    assert_eq!((k.treasury.balance_mu(&verifying(&x())).n()[0], k.treasury.balance_mu(&verifying(&holder())).n()[0]), (3, 5));
+    assert_eq!(k.treasury.balance_mu(&verifying(&x())).n()[0] + k.treasury.balance_mu(&verifying(&holder())).n()[0], supply, "Σ = 0");
     assert_eq!(k.handoff(&Handoff::ConvertOut(Box::new(out(10, (1, 2), 1))).sign(&x())), first, "a resend");
-    assert_eq!(k.treasury.balance_mu(&verifying(&holder()))[0], 5, "paid once");
+    assert_eq!(k.treasury.balance_mu(&verifying(&holder())).n()[0], 5, "paid once");
     let leaving = vec![(PLAYER, [0, -10, 0, 0])];
     assert!(matches!(k.admit_uplink(&fold(1, leaving.clone(), Vec::new()).sign(&x())), Uplinked::Discontinuous(Discontinuous::Unbalanced { lane: 1 })));
     assert!(matches!(k.admit_uplink(&fold(1, leaving.clone(), vec![(id, Side::Out)]).sign(&x())), Uplinked::Admitted { .. }));
@@ -145,11 +146,11 @@ fn convert_in_holds_escrow_until_reserve_answers() {
     assert!(matches!(designate(&mut k, &x(), 1), Founded::Reserved { .. }));
     basket(&mut k);
     fund(&mut k, verifying(&holder()), [6, 0, 0, 0]);
-    let offer = |nonce: u8| ConvertIn { holder: verifying(&holder()), tier: verifying(&x()), identity: PLAYER, g: 7, mu: [3, 0, 0, 0], nonce: [nonce; 32] };
+    let offer = |nonce: u8| ConvertIn { holder: verifying(&holder()), tier: verifying(&x()), identity: PLAYER, g: 7, mu: [3, 0, 0, 0].into(), nonce: [nonce; 32] };
     let Handed::Sealed { id, state: State::Offered { .. }, .. } = k.handoff(&Handoff::ConvertIn(Box::new(offer(1))).sign(&holder())) else {
         panic!("offered")
     };
-    assert_eq!(k.treasury.balance_mu(&verifying(&holder()))[0], 3, "held from the holder");
+    assert_eq!(k.treasury.balance_mu(&verifying(&holder())).n()[0], 3, "held from the holder");
     let arriving = vec![(PLAYER, [0, 7, 0, 0])];
     assert_eq!(
         k.admit_uplink(&fold(1, arriving.clone(), vec![(id, Side::In)]).sign(&x())),
@@ -157,11 +158,11 @@ fn convert_in_holds_escrow_until_reserve_answers() {
     );
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&holder())), Handed::Refused(HandoffRefusal::NotTheTier)));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&x())), Handed::Sealed { state: State::Accepted, .. }));
-    assert_eq!(k.treasury.balance_mu(&verifying(&x()))[0], 3, "into the reserve");
+    assert_eq!(k.treasury.balance_mu(&verifying(&x())).n()[0], 3, "into the reserve");
     assert!(matches!(k.admit_uplink(&fold(1, arriving, vec![(id, Side::In)]).sign(&x())), Uplinked::Admitted { .. }));
     // Refused: refunded whole.
     let Handed::Sealed { id, .. } = k.handoff(&Handoff::ConvertIn(Box::new(offer(2))).sign(&holder())) else { panic!() };
     assert!(matches!(k.handoff(&Handoff::Refuse { id }.sign(&x())), Handed::Sealed { state: State::Returned, .. }));
-    assert_eq!(k.treasury.balance_mu(&verifying(&holder()))[0], 3, "refunded");
+    assert_eq!(k.treasury.balance_mu(&verifying(&holder())).n()[0], 3, "refunded");
     assert_eq!(k.handoff_read(&id), Some((State::Returned, false, false)));
 }

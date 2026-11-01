@@ -437,15 +437,14 @@ impl Court {
                         Some(c) => Some(c),
                         None => return refuse(R::Untariffed(crate::anastome::dialogue::handoff::Untariffed::ZeroDenominator)),
                     },
-                    None => Some(m.toll),
+                    None => Some(m.toll.clone()),
                 },
                 None => None,
             },
             _ => None,
         };
-        if let (Some(toll), Handoff::Traverse { offer, .. }) = (toll, &h.handoff) {
-            let short = crate::economy::shortfall(&toll, &self.treasury.balance_mu(&offer.from_tier));
-            if !crate::economy::lanes_short(&short).is_empty() {
+        if let (Some(toll), Handoff::Traverse { offer, .. }) = (&toll, &h.handoff) {
+            if !toll.shortfall(&self.treasury.balance_mu(&offer.from_tier)).is_zero() {
                 return refuse(R::HolderShort);
             }
         }
@@ -473,7 +472,7 @@ impl Court {
                 self.handoffs.offered_at.insert(id, r.stamp.key());
                 if let Handoff::Traverse { mouth, .. } = &h.handoff {
                     self.handoffs.through.insert(id, *mouth);
-                    if let Some(toll) = toll.filter(|t| t.iter().any(|m| *m > 0)) {
+                    if let Some(toll) = toll.filter(|t| !t.is_zero()) {
                         let _ = self.treasury.hold(o.from_tier, &toll_key(&id), toll, anchor);
                     }
                 }

@@ -21,7 +21,7 @@ pub struct Docketed {
     /// The voices attesting it — parties to the settlement, never vantages.
     pub voices: Vec<[u8; 32]>,
     /// The μ⃗ escrowed against the word: a claim on issuance (§5).
-    pub escrowed: [u64; 4],
+    pub escrowed: crate::economy::Mu,
     /// The μ⃗ the word measured, per lane. Never fabricated: a word with no
     /// measured deflation is not served.
     pub deflation: [u64; 4],
@@ -817,7 +817,7 @@ impl Court {
                     addr: Address::from(address),
                     spoken: spoken.clone(),
                     voices: held.voices.clone(),
-                    escrowed: held.mu,
+                    escrowed: held.mu.clone(),
                     deflation,
                     k,
                 })

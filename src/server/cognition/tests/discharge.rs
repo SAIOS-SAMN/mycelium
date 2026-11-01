@@ -61,7 +61,7 @@ fn mint_sentence_escrows_discharge_not_span() {
         k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&stood)),
         vec![crate::anastome::dialogue::SPEECH_STOOD]
     );
-    let escrow = k.treasury().escrow_of(stood.address().as_bytes()).map(|e| e.mu).expect("escrowed");
+    let escrow = k.treasury().escrow_of(stood.address().as_bytes()).map(|e| e.mu.clone()).expect("escrowed");
     assert_eq!(escrow, crate::economy::price(&d, &k.physics().pressure), "escrowed at price(d), exactly");
     assert_eq!(k.discharge_of(stood.address().as_bytes(), &stood), d, "the one reader reads the same discharge");
 }
@@ -99,7 +99,7 @@ fn pay_solve_pays_discharge_capped_by_escrow() {
     let _ = k.pay_solve(&task, [9; 32], &rule, pay, false);
     assert_eq!(k.treasury().balance_mu(&rich), pay, "an escrow above the discharge pays the discharge");
     assert_eq!(k.treasury().balance_mu(&poor), held_below, "an escrow below it caps it");
-    let minted = k.treasury().minted().expect("minted adds up");
+    let minted = k.treasury().minted();
     assert_eq!(
         minted,
         std::array::from_fn::<u64, 4, _>(|l| pay[l] + held_below[l]),
@@ -127,12 +127,12 @@ fn open_unspellable_letter_escrows_and_pays_nothing() {
     let voice = [1u8; 32];
     k.open_unspellable(&rotor, &chart, &bodies, &voice);
     assert!(k.provisional.contains(addr.as_bytes()), "the letter is docketed");
-    let escrow = k.treasury().escrow_of(addr.as_bytes()).map(|e| e.mu).expect("escrowed to its voice");
+    let escrow = k.treasury().escrow_of(addr.as_bytes()).map(|e| e.mu.clone()).expect("escrowed to its voice");
     assert_eq!(escrow, [0; 4], "a word that names no body escrows nothing");
 
     assert!(k.apply_verdict(addr.as_bytes(), crate::anastome::dialogue::RULING_UPHELD), "upheld");
     assert_eq!(k.treasury().balance_mu(&voice), [0; 4], "and is paid nothing");
-    assert_eq!(k.treasury().minted().expect("minted adds up"), [0; 4], "nothing is minted");
+    assert_eq!(k.treasury().minted(), [0; 4], "nothing is minted");
 }
 
 /// 78.149 (c) — A CALLUS ESCROWS AND IS PAID NOTHING, even bound to a
@@ -161,10 +161,10 @@ fn list_sentence_callus_escrows_and_pays_nothing() {
 
     let voice = [2u8; 32];
     let _ = k.list_sentence(&callus, voice, discharge);
-    let escrow = k.treasury().escrow_of(addr.as_bytes()).map(|e| e.mu).expect("escrowed to its voice");
+    let escrow = k.treasury().escrow_of(addr.as_bytes()).map(|e| e.mu.clone()).expect("escrowed to its voice");
     assert_eq!(escrow, [0; 4], "and escrows nothing");
 
     assert!(k.apply_verdict(addr.as_bytes(), crate::anastome::dialogue::RULING_UPHELD), "upheld");
     assert_eq!(k.treasury().balance_mu(&voice), [0; 4], "and is paid nothing");
-    assert_eq!(k.treasury().minted().expect("minted adds up"), [0; 4], "nothing is minted");
+    assert_eq!(k.treasury().minted(), [0; 4], "nothing is minted");
 }

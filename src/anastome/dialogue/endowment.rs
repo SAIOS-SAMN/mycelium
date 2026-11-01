@@ -23,6 +23,7 @@
 
 use super::atlas::{byte, head, key32};
 use crate::chronometry::Stamp;
+use crate::economy::Mu;
 use crate::transducer::cga::Mv;
 use num_bigint::BigUint;
 use num_rational::BigRational as Q;
@@ -201,18 +202,17 @@ impl GrantRefusal {
 /// or refused by name.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Granted {
-    Sealed { mu: [u64; 4], founding: bool, at: Stamp, receipt: [u8; 32] },
+    Sealed { mu: Mu, founding: bool, at: Stamp, receipt: [u8; 32] },
     Refused(GrantRefusal),
 }
 
-/// `[0][mu 4×u64][founding u8][stamp][receipt 32]` or `[1][refusal u8]`.
+/// `[0][μ⃗][founding u8][stamp][receipt 32]` or `[1][refusal u8]`, the μ⃗
+/// four exact rational lanes (`Mu::put`).
 pub fn encode_grant_reply(g: &Granted) -> Vec<u8> {
     match g {
         Granted::Sealed { mu, founding, at, receipt } => {
             let mut out = vec![0u8];
-            for m in mu {
-                out.extend_from_slice(&m.to_le_bytes());
-            }
+            mu.put(&mut out);
             out.push(u8::from(*founding));
             at.put_canonical(&mut out);
             out.extend_from_slice(receipt);
@@ -226,10 +226,7 @@ pub fn decode_grant_reply(b: &[u8]) -> Option<Granted> {
     let mut p = 0usize;
     match byte(b, &mut p)? {
         0 => {
-            let mut mu = [0u64; 4];
-            for m in &mut mu {
-                *m = super::atlas::u64_at(b, &mut p)?;
-            }
+            let mu = Mu::take_from(b, &mut p)?;
             let founding = match byte(b, &mut p)? {
                 0 => false,
                 1 => true,
@@ -252,7 +249,7 @@ pub fn decode_grant_reply(b: &[u8]) -> Option<Granted> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GrantRead {
     pub manifest: [u8; 32],
-    pub mu: [u64; 4],
+    pub mu: Mu,
     pub founding: bool,
     pub applied: bool,
 }
@@ -260,39 +257,28 @@ pub struct GrantRead {
 /// WHAT THE COURT CAN GRANT AND HAS GRANTED: its earned μ per lane (the
 /// endowment), the founding and growth grants made to every universe per
 /// lane, this domain's grants, and the nuclei this universe holds by its
-/// grants — the hypha's account is the negative of every universe's.
+/// grants — the hypha's account is the negative of every universe's. Every
+/// amount is exact (`Mu`).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct EndowmentReading {
-    pub earned: [u64; 4],
-    pub founding: [u64; 4],
-    pub growth: [u64; 4],
+    pub earned: Mu,
+    pub founding: Mu,
+    pub growth: Mu,
     pub grants: Vec<GrantRead>,
     pub nuclei: Nuclei,
 }
 
-fn put_lanes(out: &mut Vec<u8>, l: &[u64; 4]) {
-    for m in l {
-        out.extend_from_slice(&m.to_le_bytes());
-    }
-}
-
-fn take_lanes(b: &[u8], p: &mut usize) -> Option<[u64; 4]> {
-    let mut l = [0u64; 4];
-    for m in &mut l {
-        *m = super::atlas::u64_at(b, p)?;
-    }
-    Some(l)
-}
-
+/// `[earned μ⃗][founding μ⃗][growth μ⃗][n u16]([manifest 32][μ⃗][founding u8][applied u8])…[nuclei]`,
+/// each μ⃗ four exact rational lanes (`Mu::put`).
 pub fn encode_endowment_reading(r: &EndowmentReading) -> Option<Vec<u8>> {
     let mut out = Vec::new();
-    put_lanes(&mut out, &r.earned);
-    put_lanes(&mut out, &r.founding);
-    put_lanes(&mut out, &r.growth);
+    r.earned.put(&mut out);
+    r.founding.put(&mut out);
+    r.growth.put(&mut out);
     out.extend_from_slice(&u16::try_from(r.grants.len()).ok()?.to_le_bytes());
     for g in &r.grants {
         out.extend_from_slice(&g.manifest);
-        put_lanes(&mut out, &g.mu);
+        g.mu.put(&mut out);
         out.push(u8::from(g.founding));
         out.push(u8::from(g.applied));
     }
@@ -306,7 +292,7 @@ pub fn encode_endowment_reading(r: &EndowmentReading) -> Option<Vec<u8>> {
 
 pub fn decode_endowment_reading(b: &[u8]) -> Option<EndowmentReading> {
     let mut p = 0usize;
-    let (earned, founding, growth) = (take_lanes(b, &mut p)?, take_lanes(b, &mut p)?, take_lanes(b, &mut p)?);
+    let (earned, founding, growth) = (Mu::take_from(b, &mut p)?, Mu::take_from(b, &mut p)?, Mu::take_from(b, &mut p)?);
     let n = usize::from(u16::from_le_bytes(b.get(p..p + 2)?.try_into().ok()?));
     p += 2;
     let flag = |b: &[u8], p: &mut usize| -> Option<bool> {
@@ -319,7 +305,7 @@ pub fn decode_endowment_reading(b: &[u8]) -> Option<EndowmentReading> {
     let grants = (0..n)
         .map(|_| {
             let manifest = key32(b, &mut p)?;
-            let mu = take_lanes(b, &mut p)?;
+            let mu = Mu::take_from(b, &mut p)?;
             let founding = flag(b, &mut p)?;
             let applied = flag(b, &mut p)?;
             Some(GrantRead { manifest, mu, founding, applied })

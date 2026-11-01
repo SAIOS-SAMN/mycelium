@@ -80,6 +80,10 @@ impl Court {
                 eprintln!("  ledger refused: MYT1, the tries with the line and the eras inside them — refused by name, the recut is the road");
                 return false;
             }
+            Some(m) if m == PRE_RATIONAL_MAGIC => {
+                eprintln!("  ledger refused: MYT2, μ as four u64 counts per holding and row — refused by name, the recut is the road");
+                return false;
+            }
             // A REFUSAL NAMES WHAT IT READ, not only what it wanted: a tape
             // that is not a ledger at all must not read the same as one an
             // older build wrote.

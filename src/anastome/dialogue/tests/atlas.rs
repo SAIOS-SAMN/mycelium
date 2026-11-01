@@ -156,7 +156,7 @@ fn traverse_round_trips() {
     let d = back.traverse.debit.as_ref().expect("the debit");
     assert!(verifies(&key(24), &back.traverse.debit_bytes(&d.lanes), &d.sig));
     for r in [
-        Crossed::Sealed { crossing, h: 30, point: at(9), gas: Gas { s: (11, 4), g: 2, t: 2, h: 3 }, price: [1; 4], fee: [2, 2, 2, 3] },
+        Crossed::Sealed { crossing, h: 30, point: at(9), gas: Gas { s: (11, 4), g: 2, t: 2, h: 3 }, price: [1; 4].into(), fee: crate::economy::Mu::counts([11, 8, 8, 12]).part(4).expect("quarters") },
         Crossed::Refused(CrossRefusal::NotYetAtH(Side::B)),
         Crossed::Refused(CrossRefusal::Unmapped(Side::A)),
         Crossed::Refused(CrossRefusal::Mismatched),
@@ -168,12 +168,12 @@ fn traverse_round_trips() {
 /// A STAKE ACT is a wallet frame no read decodes as; its answer reads back.
 #[test]
 fn stake_act_round_trips_never_as_wallet() {
-    let s = StakeAct { who: key(40).verifying_key().to_bytes(), unstake: true, mu: [1, 2, 3, 4], nonce: [7; 32] }.sign(&key(40));
+    let s = StakeAct { who: key(40).verifying_key().to_bytes(), unstake: true, mu: crate::economy::Mu::counts([1, 2, 3, 4]).part(3).expect("thirds"), nonce: [7; 32] }.sign(&key(40));
     let frame = encode_stake(&s);
     assert_eq!(decode_stake(&frame), Some(s.clone()));
     assert_eq!(decode_wallet(&frame), None, "never read as a wallet read");
     assert!(verifies(&key(40), &s.act.signed_bytes(), &s.sig));
-    for r in [Ok([1, 0, 0, 2]), Err(StakeRefusal::Claimed), Err(StakeRefusal::Spent)] {
+    for r in [Ok(crate::economy::Mu::counts([1, 0, 0, 2]).part(7).expect("sevenths")), Err(StakeRefusal::Claimed), Err(StakeRefusal::Spent)] {
         assert_eq!(decode_stake_reply(&encode_stake_reply(&r)), Some(r));
     }
     for why in [TaxRefusal::Source { lane: 2 }, TaxRefusal::Short, TaxRefusal::Carried] {

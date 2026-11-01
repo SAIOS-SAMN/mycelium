@@ -78,7 +78,7 @@ fn mouth_round_trips_with_loops() {
         keeper: [1u8; 32],
         from_frame: one.clone(),
         to_frame: one.clone(),
-        toll: [3, 0, 0, 0],
+        toll: [3, 0, 0, 0].into(),
         nonce: [4u8; 32],
         tariff: None,
         tube: None,
@@ -87,7 +87,7 @@ fn mouth_round_trips_with_loops() {
     // 78.133 — a tariffed mouth is its own kind, its tariff in its id; the
     // flat mouth's id is what it was.
     let tariff = Tariff { rate_s: (3, 2), rate_h: (1, 7), split: vec![([1u8; 32], (2, 3)), ([5u8; 32], (1, 3))] };
-    let tariffed = Mouth { toll: [0; 4], tariff: Some(tariff.clone()), ..mouth.clone() };
+    let tariffed = Mouth { toll: [0; 4].into(), tariff: Some(tariff.clone()), ..mouth.clone() };
     assert_ne!(tariffed.citation(), Mouth { tariff: None, ..tariffed.clone() }.citation(), "the tariff is in the id");
     let changed = Tariff { split: vec![([1u8; 32], (1, 2)), ([5u8; 32], (1, 2))], ..tariff };
     assert_ne!(tariffed.citation(), Mouth { tariff: Some(changed), ..tariffed.clone() }.citation(), "a new split is a new mouth");
@@ -162,10 +162,12 @@ fn encode_handoff_round_trips_conversions_and_reserve() {
     use crate::anastome::dialogue::domain::{decode_domain_reply, decode_domain_request, encode_domain, encode_domain_reply, encode_reservation, DomainGenesis, DomainRequest, Founded, Reservation};
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let out = ConvertOut { tier: [1u8; 32], holder: [2u8; 32], identity: [3u8; 32], g: 10, rate: [(1, 2), (0, 1), (3, 5), (0, 1)], nonce: [4u8; 32] };
-    assert_eq!(out.mu(), Some([5, 0, 6, 0]));
-    assert_eq!(ConvertOut { rate: [(1, 3), (0, 1), (0, 1), (0, 1)], ..out.clone() }.mu(), None, "10/3 is no integer");
+    assert_eq!(out.mu(), Some([5, 0, 6, 0].into()));
+    let third = crate::economy::Mu::counts([10, 0, 0, 0]).part(3).expect("thirds");
+    assert_eq!(ConvertOut { rate: [(1, 3), (0, 1), (0, 1), (0, 1)], ..out.clone() }.mu(), Some(third), "10/3 exactly, never refused for a share");
+    assert_eq!(ConvertOut { rate: [(1, 0), (0, 1), (0, 1), (0, 1)], ..out.clone() }.mu(), None, "a zero denominator is no rate");
     assert_eq!(ConvertOut { g: 0, ..out.clone() }.mu(), None);
-    let inn = ConvertIn { holder: [2u8; 32], tier: [1u8; 32], identity: [3u8; 32], g: 7, mu: [3, 0, 0, 0], nonce: [9u8; 32] };
+    let inn = ConvertIn { holder: [2u8; 32], tier: [1u8; 32], identity: [3u8; 32], g: 7, mu: crate::economy::Mu::counts([3, 0, 1, 0]).part(2).expect("halves"), nonce: [9u8; 32] };
     assert_ne!(out.citation(), inn.citation());
     for h in [Handoff::ConvertOut(Box::new(out)), Handoff::ConvertIn(Box::new(inn))] {
         let signed = h.sign(&key);
@@ -182,18 +184,19 @@ fn encode_handoff_round_trips_conversions_and_reserve() {
         decode_bond_reading, decode_reserve_reading, encode_bond, encode_bond_read, encode_bond_reading, encode_reserve_read, encode_reserve_reading, Bond,
         ReserveReading,
     };
-    for mu in [Some([4, 0, 2, 0]), None] {
+    for mu in [Some(crate::economy::Mu::counts([4, 0, 2, 0]).part(3).expect("thirds")), None] {
         let b = Bond { domain: [6u8; 32], reserve: [1u8; 32], tier: [2u8; 32], mu, nonce: [3u8; 32] }.sign(&key);
         assert_eq!(decode_domain_request(&encode_bond(&b)), Some(DomainRequest::Bond(b)));
     }
     assert_eq!(decode_domain_request(&encode_bond_read([6u8; 32], [2u8; 32])), Some(DomainRequest::ReadBond { domain: [6u8; 32], tier: [2u8; 32] }));
-    assert_eq!(decode_bond_reading(&encode_bond_reading(&[7, 0, 1, 0])), Some([7, 0, 1, 0]));
-    let bonded = Founded::Bonded { at: Stamp { h: 2, vk: [8u8; 32], k: 1, i: 0 }, receipt: [1u8; 32], bond: [4, 0, 0, 0] };
+    let reading = crate::economy::Mu::counts([7, 0, 1, 0]).part(2).expect("halves");
+    assert_eq!(decode_bond_reading(&encode_bond_reading(&reading)), Some(reading));
+    let bonded = Founded::Bonded { at: Stamp { h: 2, vk: [8u8; 32], k: 1, i: 0 }, receipt: [1u8; 32], bond: [4, 0, 0, 0].into() };
     for f in [bonded, Founded::NotReserve, Founded::Short, Founded::Outstanding, Founded::Unbonded] {
         assert_eq!(decode_domain_reply(&encode_domain_reply(&f)), Some(f.clone()));
     }
     assert_eq!(decode_domain_request(&encode_reserve_read([6u8; 32])), Some(DomainRequest::ReadReserve([6u8; 32])));
-    for r in [ReserveReading::default(), ReserveReading { current: Some([1u8; 32]), pending: Some([2u8; 32]), balance: [3, 0, 9, 1] }] {
+    for r in [ReserveReading::default(), ReserveReading { current: Some([1u8; 32]), pending: Some([2u8; 32]), balance: crate::economy::Mu::counts([3, 0, 9, 1]).part(4).expect("quarters") }] {
         assert_eq!(decode_reserve_reading(&encode_reserve_reading(&r)), Some(r.clone()));
     }
     let at = Stamp { h: 2, vk: [8u8; 32], k: 1, i: 0 };

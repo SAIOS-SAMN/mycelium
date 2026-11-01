@@ -237,7 +237,8 @@ The court answers a manifest with a **grant**, a transfer of μ to the
 domain's reserve:
 - **The founding grant** answers the first manifest after the domain's
   origin. A manifest carrying `n` kinds of nuclei is granted the court's
-  read price for `n` units of gas on every lane: enough to stake for the
+  read price for `n` units of gas on every lane, `n · (1 + y_l/R)` exactly
+  (MU-EQUATIONS §6.2): enough to stake for the
   universe's first crossing's coordinates.
 - **A growth grant** answers each later manifest, sized by the measured
   discharge of the closures the court judged in that universe since its

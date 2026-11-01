@@ -4,17 +4,18 @@
 //! POUW, POWC, POWR and POWV are named apart and never summed across: a row that
 //! pays one carries it (`Entry.arm`), and the reading keeps each arm on its
 //! own four lanes. A row that is no proof of work — genesis, a stake, an
-//! escrow, a revoke or slash, a fee, a subsidy — is in none of them.
+//! escrow, a revoke or slash, a fee, a subsidy — is in none of them. Every
+//! amount is an exact [`Mu`], written by its rational codec.
+
+use crate::economy::Mu;
 
 /// ONE COURT'S PAYMENTS BY ARM (`Arm::index`), per lane.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Economy {
     /// What each arm paid out, per lane.
-    pub paid: [[u64; 4]; crate::economy::Arm::ALL.len()],
+    pub paid: [Mu; crate::economy::Arm::ALL.len()],
     /// What each arm burned, per lane.
-    pub burned: [[u64; 4]; crate::economy::Arm::ALL.len()],
-    /// STD1 — the treasury's operations refused past the operations' carrier.
-    pub overflowed: u64,
+    pub burned: [Mu; crate::economy::Arm::ALL.len()],
     /// E3 — every identity the ledger holds value for: what it can spend,
     /// what it has staked, and what it has set aside, in identity order.
     pub accounts: Vec<Account>,
@@ -49,32 +50,30 @@ pub const FLOWS: [&str; 13] = [
 
 /// ONE KIND OF MOVEMENT: how many rows (pairs, for a transfer) and what
 /// they carried, per lane.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Flow {
     pub rows: u64,
-    pub mu: [u64; 4],
+    pub mu: Mu,
 }
 
 impl Flow {
-    /// One more row of `mu`; `None` where a count or a lane passes its u64
-    /// — unmeasured, never saturated (rule 11).
-    pub fn add(&mut self, mu: &[u64; 4]) -> Option<()> {
+    /// One more row of `mu`; `None` where the row count passes its u64 —
+    /// unmeasured, never saturated (rule 11).
+    pub fn add(&mut self, mu: &Mu) -> Option<()> {
         self.rows = self.rows.checked_add(1)?;
-        for (t, m) in self.mu.iter_mut().zip(mu) {
-            *t = t.checked_add(*m)?;
-        }
+        self.mu.step(mu);
         Some(())
     }
 
     fn put(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(&self.rows.to_le_bytes());
-        put_lanes(out, &self.mu);
+        self.mu.put(out);
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<Flow> {
         let rows = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
         *p += 8;
-        Some(Flow { rows, mu: take_lanes(b, p)? })
+        Some(Flow { rows, mu: Mu::take_from(b, p)? })
     }
 }
 
@@ -82,39 +81,27 @@ impl Flow {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Account {
     pub who: [u8; 32],
-    pub balance: [u64; 4],
-    pub bond: [u64; 4],
-    pub held: [u64; 4],
+    pub balance: Mu,
+    pub bond: Mu,
+    pub held: Mu,
 }
 
-fn put_lanes(out: &mut Vec<u8>, v: &[u64; 4]) {
-    for lane in v {
-        out.extend_from_slice(&lane.to_le_bytes());
-    }
-}
-
-fn take_lanes(b: &[u8], p: &mut usize) -> Option<[u64; 4]> {
-    let mut v = [0u64; 4];
-    for lane in v.iter_mut() {
-        *lane = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-        *p += 8;
-    }
-    Some(v)
-}
+/// The fewest bytes an account takes: its key and three amounts of eleven
+/// bytes a lane at least (`Mu::put` of zero).
+const ACCOUNT_MIN: usize = 32 + 3 * 44;
 
 impl Economy {
     /// `None` where the accounts' count passes its four bytes (STD1 3c).
     pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         for arm in self.paid.iter().chain(&self.burned) {
-            put_lanes(out, arm);
+            arm.put(out);
         }
-        out.extend_from_slice(&self.overflowed.to_le_bytes());
         crate::transducer::address::put_u32_count(out, self.accounts.len())?;
         for a in &self.accounts {
             out.extend_from_slice(&a.who);
-            put_lanes(out, &a.balance);
-            put_lanes(out, &a.bond);
-            put_lanes(out, &a.held);
+            a.balance.put(out);
+            a.bond.put(out);
+            a.held.put(out);
         }
         for f in self.flows.iter().chain([&self.tuition]) {
             f.put(out);
@@ -125,21 +112,19 @@ impl Economy {
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Economy> {
         let mut e = Economy::default();
         for arm in e.paid.iter_mut().chain(e.burned.iter_mut()) {
-            *arm = take_lanes(b, p)?;
+            *arm = Mu::take_from(b, p)?;
         }
-        e.overflowed = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-        *p += 8;
         let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
         *p += 4;
-        // Each account is 32 + 3 × 32 bytes: a count the tape cannot hold
+        // A count the tape cannot hold at the fewest bytes an account takes
         // refuses before anything is allocated for it.
-        if n > b.len().checked_sub(*p)? / 128 {
+        if n > b.len().checked_sub(*p)? / ACCOUNT_MIN {
             return None;
         }
         for _ in 0..n {
             let who: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
             *p += 32;
-            let (balance, bond, held) = (take_lanes(b, p)?, take_lanes(b, p)?, take_lanes(b, p)?);
+            let (balance, bond, held) = (Mu::take_from(b, p)?, Mu::take_from(b, p)?, Mu::take_from(b, p)?);
             e.accounts.push(Account { who, balance, bond, held });
         }
         for f in e.flows.iter_mut() {

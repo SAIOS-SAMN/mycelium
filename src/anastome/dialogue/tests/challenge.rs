@@ -45,7 +45,7 @@ fn challenge_round_trips_with_answers() {
     assert_eq!(decode_challenge_request(&encode_obstructions_request([4u8; 32])), Some(ChallengeRequest::Obstructions([4u8; 32])));
     assert_eq!(decode_challenge_request(&encode_line_head_request([5u8; 32])), Some(ChallengeRequest::LineHead([5u8; 32])));
     for (head, at, held) in [([0u8; 32], None, [0; 4]), ([9u8; 32], Some(FoldAt { stamp, path: vec![1] }), [3, 0, 0, u64::MAX])] {
-        let r = LineHead { head, at, held };
+        let r = LineHead { head, at, held: held.into() };
         assert_eq!(decode_line_head_reply(&encode_line_head_reply(&r)), Some(r));
     }
     for a in [

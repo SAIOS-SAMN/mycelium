@@ -21,6 +21,15 @@ fn voice() -> [u8; 32] {
 
 const CITATION: [u8; 32] = [5u8; 32];
 
+/// AN AMOUNT OF μ WITH A SHARE ON IT: whole on S and H, a share of a unit
+/// on G and T — what each μ field must carry exactly, never rounded.
+fn share() -> Result<mycelium::economy::Mu, String> {
+    use num_bigint::BigInt;
+    use num_rational::BigRational;
+    let q = |n: i64, d: i64| BigRational::new(BigInt::from(n), BigInt::from(d));
+    mycelium::economy::Mu::of([q(1, 1), q(1, 2), q(22, 7), q(3, 1)]).map_err(|r| format!("the share is refused: {r:?}"))
+}
+
 fn train() -> Vec<crate::rule::TrainPair> {
     vec![(vec![vec![1, 0], vec![0, 1]], vec![vec![2, 0], vec![0, 2]]), (vec![vec![3]], vec![vec![4]])]
 }
@@ -65,12 +74,15 @@ fn solve() -> Result<String, String> {
     same("the solve's outputs", Some(act.outputs), outputs)?;
     same("the solve's rule", Some(act.rule), Some(tape))?;
     same("the solve's signature", Some(act.signed), true)?;
-    let paid = d::encode_solve_verdict(d::SOLVE_BOUNTY, &[1, 0, 2, 3], None, None).ok_or("the verdict does not encode")?;
-    same("the paid verdict", d::decode_solve_verdict(&paid), (d::SOLVE_BOUNTY, [1, 0, 2, 3], None, None))?;
+    let paid = d::encode_solve_verdict(d::SOLVE_BOUNTY, &share()?, None, None).ok_or("the verdict does not encode")?;
+    same("the paid verdict", d::decode_solve_verdict(&paid), (d::SOLVE_BOUNTY, share()?, None, None))?;
+    same("the paid receipt", d::decode_solve_receipt(&d::encode_solve_receipt(d::SOLVE_BOUNTY, &share()?)), (d::SOLVE_BOUNTY, share()?))?;
+    let again = d::encode_solve_receipt(d::SOLVE_AGAIN, &mycelium::economy::Mu::zero());
+    same("the repeat closure's receipt", d::decode_solve_receipt(&again), (d::SOLVE_AGAIN, mycelium::economy::Mu::zero()))?;
     let refusal = d::SolveRefusal { reason: b"form leaves a remainder on the family".to_vec(), kind: 1 };
-    let refused = d::encode_solve_verdict(d::SOLVE_NOTHING, &[0; 4], Some(&refusal), None).ok_or("the refusal does not encode")?;
-    same("the refused verdict", d::decode_solve_verdict(&refused), (d::SOLVE_NOTHING, [0; 4], Some(refusal), None))?;
-    Ok("the signed solve and both verdicts decode to the values sent".to_string())
+    let refused = d::encode_solve_verdict(d::SOLVE_NOTHING, &mycelium::economy::Mu::zero(), Some(&refusal), None).ok_or("the refusal does not encode")?;
+    same("the refused verdict", d::decode_solve_verdict(&refused), (d::SOLVE_NOTHING, mycelium::economy::Mu::zero(), Some(refusal), None))?;
+    Ok("the signed solve and the three verdicts decode to the values sent, the paid μ exact".to_string())
 }
 
 fn laws_register() -> Result<String, String> {
@@ -199,7 +211,7 @@ fn domain_statement() -> Result<String, String> {
 
 fn domain_reserve() -> Result<String, String> {
     same("the reserve read", dom::decode_domain_request(&dom::encode_reserve_read(voice())), dom::DomainRequest::ReadReserve(voice()))?;
-    let r = dom::ReserveReading { current: Some(voice()), pending: None, balance: [1, 0, 2, 3] };
+    let r = dom::ReserveReading { current: Some(voice()), pending: None, balance: share()? };
     same("the reserve", dom::decode_reserve_reading(&dom::encode_reserve_reading(&r)), r)?;
     Ok("the read and the reserve decode".to_string())
 }
@@ -218,7 +230,7 @@ fn domain_manifest() -> Result<String, String> {
     let signed = super::probes::manifest(voice()).sign(&key()).ok_or("the manifest does not sign")?;
     let bytes = encode_manifest(&signed).ok_or("the manifest does not encode")?;
     same("the manifest", dom::decode_domain_request(&bytes), dom::DomainRequest::Manifest(Box::new(signed)))?;
-    for g in [Granted::Sealed { mu: [1, 0, 2, 3], founding: true, at: stamp(), receipt: CITATION }, Granted::Refused(GrantRefusal::Short)] {
+    for g in [Granted::Sealed { mu: share()?, founding: true, at: stamp(), receipt: CITATION }, Granted::Refused(GrantRefusal::Short)] {
         same("the grant", decode_grant_reply(&encode_grant_reply(&g)), g.clone())?;
     }
     Ok("the manifest, a grant and a refusal decode".to_string())
@@ -237,8 +249,9 @@ fn domain_endowment() -> Result<String, String> {
     use d::endowment::{decode_endowment_reading, encode_endowment_read, encode_endowment_reading, EndowmentReading, GrantRead};
     same("the endowment read", dom::decode_domain_request(&encode_endowment_read(voice())), dom::DomainRequest::ReadEndowment(voice()))?;
     let m = super::probes::manifest(voice());
-    let grant = GrantRead { manifest: m.hash().ok_or("the manifest has no hash")?, mu: [1, 0, 2, 3], founding: true, applied: false };
-    let r = EndowmentReading { earned: [9, 9, 9, 9], founding: [1, 0, 2, 3], growth: [0; 4], grants: vec![grant], nuclei: m.nuclei };
+    let grant = GrantRead { manifest: m.hash().ok_or("the manifest has no hash")?, mu: share()?, founding: true, applied: false };
+    let earned = mycelium::economy::Mu::counts([9, 9, 9, 9]);
+    let r = EndowmentReading { earned, founding: share()?, growth: share()?.add(&share()?), grants: vec![grant], nuclei: m.nuclei };
     let bytes = encode_endowment_reading(&r).ok_or("the endowment does not encode")?;
     same("the endowment", decode_endowment_reading(&bytes), r)?;
     Ok("the read and the endowment decode".to_string())
@@ -314,7 +327,7 @@ fn rows() -> Result<String, String> {
     let upto = Place { k: 3, i: 4 };
     let want = d::RowsRequest { voice: voice(), signer: CITATION, from: None, upto, cursor: 7 };
     same("the rows request", d::decode_rows_request(&d::encode_rows_request(&voice(), &CITATION, None, upto, 7)), want)?;
-    let row = Entry { kind: Kind::Transfer, who: voice(), mu: [1, 0, 2, 3], at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
+    let row = Entry { kind: Kind::Transfer, who: voice(), mu: share()?, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
     let bytes = d::encode_rows_reply(12, std::slice::from_ref(&row), mycelium::network::wire::BODY_BUDGET).ok_or("the rows do not encode")?;
     same("the rows", d::decode_rows_reply(&bytes), (12, vec![row]))?;
     Ok("the span asked and a page of one row decode".to_string())
@@ -386,9 +399,9 @@ fn speech() -> Result<String, String> {
 
 fn wallet() -> Result<String, String> {
     same("the wallet read", d::wallet::decode_wallet(&d::wallet::encode_wallet(&voice())), voice())?;
-    let account = d::wallet::Account { court: [3; 32], balance: [1, 2, 3, 4], bond: [0, 1, 0, 1], held: [0; 4], at: None };
+    let account = d::wallet::Account { court: [3; 32], balance: share()?, bond: mycelium::economy::Mu::counts([0, 1, 0, 1]), held: mycelium::economy::Mu::zero(), at: None };
     same("the account", d::wallet::decode_wallet_reply(&d::wallet::encode_wallet_reply(&account)), account)?;
-    Ok("the read and the account decode to the values sent".to_string())
+    Ok("the read and the account decode to the values sent, each lane exact".to_string())
 }
 
 fn observe_query() -> Result<String, String> {

@@ -155,13 +155,13 @@ fn publish_wallet_agrees_with_court_at_publication() {
     k.treasury.hold(human, b"lease", [2, 0, 1, 0], anchor).expect("the human holds");
     let p1 = k.publish(None).expect("published");
     for who in [human, entity, unseen] {
-        assert_eq!(p1.wallet(&who), k.wallet(&who), "the account published is the court's");
+        assert_eq!(p1.wallet(&who), Some(k.wallet(&who)), "the account published is the court's");
     }
     k.treasury.pay(human, entity, [1, 1, 1, 0], anchor).expect("pays again");
-    assert_ne!(p1.wallet(&entity), k.wallet(&entity), "a payment after the reading is not in it");
+    assert_ne!(p1.wallet(&entity), Some(k.wallet(&entity)), "a payment after the reading is not in it");
     let p2 = k.publish(Some(&p1)).expect("the accounts moved");
     for who in [human, entity, unseen] {
-        assert_eq!(p2.wallet(&who), k.wallet(&who), "read at the next publication");
+        assert_eq!(p2.wallet(&who), Some(k.wallet(&who)), "read at the next publication");
     }
     assert_eq!(p2.cost().receipts, 0, "no line moved, none copied");
 }

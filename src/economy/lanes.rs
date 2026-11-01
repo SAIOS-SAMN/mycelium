@@ -17,59 +17,23 @@ pub fn magnitude(g: &Element) -> [u64; 4] {
     g.magnitude()
 }
 
-/// A lane vector (Law 5, §2.3, §4.4, X5).
-/// μ⃗ is a type implementing neither `PartialEq` nor `PartialOrd`.
-/// The one comparison is `lane_moves(after, before) -> [LaneMove; 4]`,
-/// and arithmetic is lane-wise `add` and `shortfall`.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Mu(pub [u64; 4]);
-
-impl Mu {
-    pub const ZERO: Self = Mu([0, 0, 0, 0]);
-
-    pub fn new(lanes: [u64; 4]) -> Self {
-        Mu(lanes)
-    }
-
-    pub fn lanes(&self) -> [u64; 4] {
-        self.0
-    }
-
-    pub fn get(&self, lane: usize) -> u64 {
-        self.0[lane]
-    }
-
-    /// Lane-wise, all lanes or none: `None` where a lane would pass its
-    /// carrier (STD1) — money never tops out silently.
-    pub fn add(&self, other: &Mu) -> Option<Mu> {
-        crate::core::lanes::lanes_add(self.0, other.0).map(Mu)
-    }
-
-    pub fn shortfall(&self, room: &Mu) -> Mu {
-        Mu(shortfall(&self.0, &room.0))
-    }
-
-    pub fn lane_moves(&self, before: &Mu) -> [LaneMove; 4] {
-        lane_moves(&self.0, &before.0)
-    }
-}
-
 /// WHAT ONE LANE DID between two measurements. Three states, and the
 /// amount travels inside the two that have one: a lane that fell by three
 /// and a lane that fell by one are not the same reading, and neither is a
-/// lane that held.
+/// lane that held. A measure's lanes move by counts (`u64`); μ's lanes by
+/// exact rationals (`Mu::lane_moves`).
 ///
 /// This is a READING and never a verdict (law 5, 12.6). Nothing in the
 /// engine certifies by a lane falling and nothing selects among certified
 /// discharges by any function of these four values.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LaneMove {
+pub enum LaneMove<A = u64> {
     /// The lane fell by this much: `before − after`.
-    Fell(u64),
+    Fell(A),
     /// The lane did not move.
     Held,
     /// The lane rose by this much: `after − before`.
-    Rose(u64),
+    Rose(A),
 }
 
 impl LaneMove {
@@ -170,6 +134,24 @@ pub fn yield_surface(p: &crate::physics::Physics) -> Option<[u64; 4]> {
         *o = deficit[l].checked_add(entropic)?;
     }
     Some(out)
+}
+
+/// MU-DERIVATIONS D2.3 (ruled 2026-10-31, κ = 1) — THE COURT'S READ PRICE,
+/// μ per unit of gas on each lane: `p_l = 1 + y_l / R`, exact, `y` the
+/// court's strain (`yield_surface`) and `R` its calibrated reserve. At rest
+/// a unit of gas costs one μ — the identity from gas, measured in the
+/// lane's own court unit, to μ — and at full deficit (`y = R`) two; the same
+/// relative strain prices the same on every host, so the price reads the
+/// strain, never the hardware. `None` for a reserve of zero.
+pub fn read_price(surface: &[u64; 4], reserve: u64) -> Option<super::Mu> {
+    use crate::core::q::Q;
+    use num_bigint::BigInt;
+    if reserve == 0 {
+        return None;
+    }
+    let r = BigInt::from(reserve);
+    let price: [Q; 4] = std::array::from_fn(|l| Q::from_integer(1.into()) + Q::new(BigInt::from(surface[l]), r.clone()));
+    super::Mu::of(price).ok()
 }
 
 /// PRICE IS THE MAGNITUDE ON THE LANE: a verified word is worth what it

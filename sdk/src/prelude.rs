@@ -11,7 +11,10 @@ pub use crate::voice::{SigningKey, Voice, VoiceKey};
 pub use crate::session::{Session, TPoint};
 
 /// The task envelope and the verdict codes.
-pub use crate::task::{TaskEnvelope, SOLVE_BOUNTY, SOLVE_FLOOR, SOLVE_NOTHING, SOLVE_UNREAD};
+pub use crate::task::{TaskEnvelope, SOLVE_AGAIN, SOLVE_BOUNTY, SOLVE_NOTHING, SOLVE_UNREAD};
+
+/// An amount of μ, exact per lane.
+pub use crate::wallet::Mu;
 
 /// The rule seam's steps, its refusal, and the carriers a rule acts on.
 pub use crate::rule::{Crystal, Element, Grid, NoCrystal, NoRule, Step, Symmetry};

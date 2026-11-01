@@ -16,7 +16,8 @@ use mycelium::anastome::dialogue::{
     ACT_RECEIPTS, ACT_ROWS, ACT_SEAT, ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY,
 };
 
-/// The wire's version, `major << 8 | minor`: `0x0104` is v1.4.
+/// The wire's version, `major << 8 | minor`: `0x0200` is v2.0, every μ field
+/// four exact rational lanes.
 pub use mycelium::anastome::dialogue::WIRE_VERSION;
 
 /// EVERY ACT THE SDK MAY SEND, `(code, name)`, in code order.

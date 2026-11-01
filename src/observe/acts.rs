@@ -227,8 +227,8 @@ pub struct Acts {
     pub syllabus: [u64; SYLLABUS.len()],
     pub fetch: [u64; FETCH.len()],
     pub judged: [u64; JUDGED.len()],
-    /// What the solves were paid, per lane.
-    pub paid: [u64; 4],
+    /// What the solves were paid, per lane, exactly.
+    pub paid: crate::economy::Mu,
     /// 78.53 — the colour words this court has installed: the ruled set
     /// every mind it teaches converges on.
     pub colours: u64,
@@ -246,24 +246,18 @@ pub struct Acts {
     /// ([`PROVISIONAL`]).
     pub provisional: [u64; PROVISIONAL.len()],
     /// MU-CLIENT §5.6 — each [`PAYS`] kind counted, and what it paid per lane
-    /// (four lanes a kind, in [`PAYS`]'s order).
+    /// (one exact amount a kind, in [`PAYS`]'s order).
     pub pays: [u64; PAYS.len()],
     pub pays_lanes: PayLanes,
 }
 
-/// WHAT EACH [`PAYS`] KIND PAID, four lanes a kind in [`PAYS`]'s order: the
-/// flat array, read and written as it is (it dereferences to it).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PayLanes(pub [u64; PAYS.len() * 4]);
-
-impl Default for PayLanes {
-    fn default() -> Self {
-        PayLanes([0; PAYS.len() * 4])
-    }
-}
+/// WHAT EACH [`PAYS`] KIND PAID, one exact amount a kind in [`PAYS`]'s
+/// order (it dereferences to the array).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PayLanes(pub [crate::economy::Mu; PAYS.len()]);
 
 impl std::ops::Deref for PayLanes {
-    type Target = [u64; PAYS.len() * 4];
+    type Target = [crate::economy::Mu; PAYS.len()];
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -331,7 +325,7 @@ impl Acts {
         put(out, &self.syllabus);
         put(out, &self.fetch);
         put(out, &self.judged);
-        put(out, &self.paid);
+        self.paid.put(out);
         put(out, &[self.colours, self.colours_derived]);
         put(out, &self.provisional);
         // At most DEFERRED_SHOWN rows, so the count is one byte.
@@ -355,14 +349,17 @@ impl Acts {
         // Phase 2's pays, after the rows: a reading written before them ends
         // at the rows and reads as none paid.
         put(out, &self.pays);
-        put(out, &self.pays_lanes.0);
+        for m in self.pays_lanes.iter() {
+            m.put(out);
+        }
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Acts> {
         let [k] = take::<1>(b, p)?;
         let (reserve, drawn, restored) = (take(b, p)?, take(b, p)?, take(b, p)?);
         let refused = take(b, p)?;
-        let (syllabus, fetch, judged, paid) = (take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?);
+        let (syllabus, fetch, judged) = (take(b, p)?, take(b, p)?, take(b, p)?);
+        let paid = crate::economy::Mu::take_from(b, p)?;
         let [colours, colours_derived] = take::<2>(b, p)?;
         let provisional = take(b, p)?;
         let n = usize::from(*b.get(*p)?);
@@ -392,7 +389,14 @@ impl Acts {
         // none read, never a short read past the end.
         let (pays, pays_lanes) = match b.get(*p..) {
             Some([]) | None => ([0; PAYS.len()], PayLanes::default()),
-            Some(_) => (take(b, p)?, PayLanes(take(b, p)?)),
+            Some(_) => {
+                let pays = take(b, p)?;
+                let mut lanes = PayLanes::default();
+                for m in lanes.0.iter_mut() {
+                    *m = crate::economy::Mu::take_from(b, p)?;
+                }
+                (pays, lanes)
+            }
         };
         Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours, colours_derived, deferred, provisional, pays, pays_lanes })
     }
@@ -406,17 +410,14 @@ impl Acts {
             ),
             format!("syllabus: {}", line(&SYLLABUS, &self.syllabus)),
             format!("fetch: {}", line(&FETCH, &self.fetch)),
-            format!("solves: {} · paid {:?}", line(&JUDGED, &self.judged), self.paid),
+            format!("solves: {} · paid {}", line(&JUDGED, &self.judged), self.paid),
             format!("colour words installed: {} · admitted by derivation: {}", self.colours, self.colours_derived),
             format!("provisional: {}", line(&PROVISIONAL, &self.provisional)),
             format!(
                 "pays: {}",
                 PAYS.iter()
                     .enumerate()
-                    .map(|(i, n)| {
-                        let lanes: Vec<u64> = self.pays_lanes.iter().skip(i * 4).take(4).copied().collect();
-                        format!("{n} {} {lanes:?}", self.pays[i])
-                    })
+                    .map(|(i, n)| format!("{n} {} {}", self.pays[i], self.pays_lanes[i]))
                     .collect::<Vec<_>>()
                     .join(" · ")
             ),
@@ -447,7 +448,7 @@ pub struct ActsTally {
     pub syllabus: [u64; SYLLABUS.len()],
     pub fetch: [u64; FETCH.len()],
     pub judged: [u64; JUDGED.len()],
-    pub paid: [u64; 4],
+    pub paid: crate::economy::Mu,
     /// 78.55 — colour words this court admitted by derivation from
     /// ruled colour words, no scene witnessing them.
     pub colours_derived: u64,
@@ -459,17 +460,15 @@ pub struct ActsTally {
 
 impl ActsTally {
     /// MU-CLIENT §5.6 — ONE PAY OF A KIND, counted with what it paid per lane.
-    /// A kind [`PAYS`] does not name counts nothing; a lane past its carrier
-    /// is refused where it stands (STD1).
-    pub fn pay(&mut self, kind: &str, mu: [u64; 4]) {
+    /// A kind [`PAYS`] does not name counts nothing; the amount is summed
+    /// exactly.
+    pub fn pay(&mut self, kind: &str, mu: impl Into<crate::economy::Mu>) {
         let Some(i) = PAYS.iter().position(|n| *n == kind) else { return };
         if let Some(slot) = self.pays.get_mut(i) {
             *slot += 1;
         }
-        for (l, m) in mu.iter().enumerate() {
-            if let Some(slot) = self.pays_lanes.get_mut(i * 4 + l) {
-                let _ = crate::physics::metabolism::step_or_refuse(slot, *m);
-            }
+        if let Some(slot) = self.pays_lanes.0.get_mut(i) {
+            slot.step(&mu.into());
         }
     }
 }

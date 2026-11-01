@@ -42,11 +42,12 @@ impl Court {
     /// 78.152 TU-1 — THIS COURT'S KEEPER TICK: its head's height, its
     /// cumulative issuance per lane (`Treasury::issued`, the one exact
     /// carrier of measured change booked), and `K`, the orbits it closed.
-    /// `None` before its first act, or where the issuance passed its
-    /// carrier.
+    /// `None` before its first act, or where the issuance is not four whole
+    /// counts a frame carries: the frame's lanes are counts, and an issuance
+    /// holding a share of a unit is not rounded onto it.
     pub fn keeper_tick(&self) -> Option<crate::chronometry::tuniversal::Tick> {
         let at = self.chain.head_stamp()?;
-        let lanes = self.treasury.issued()?;
+        let lanes = self.treasury.issued().to_counts()?;
         Some(crate::chronometry::tuniversal::Tick { h: at.h, lanes, k: self.chain.next_step_index() })
     }
 

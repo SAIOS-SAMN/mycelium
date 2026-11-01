@@ -337,11 +337,13 @@ pub struct Bond {
     pub domain: [u8; 32],
     pub reserve: [u8; 32],
     pub tier: [u8; 32],
-    pub mu: Option<[u64; 4]>,
+    pub mu: Option<crate::economy::Mu>,
     pub nonce: [u8; 32],
 }
 
-const BOND: &[u8] = b"mycelium bond v1";
+/// The bond's signed bytes name the layout: v2 writes μ as four exact
+/// rational lanes (`Mu::put`).
+const BOND: &[u8] = b"mycelium bond v2";
 
 impl Bond {
     fn kind(&self) -> u8 {
@@ -355,10 +357,8 @@ impl Bond {
         let mut out = Vec::new();
         out.extend_from_slice(&self.reserve);
         out.extend_from_slice(&self.tier);
-        if let Some(mu) = self.mu {
-            for m in mu {
-                out.extend_from_slice(&m.to_le_bytes());
-            }
+        if let Some(mu) = &self.mu {
+            mu.put(&mut out);
         }
         out.extend_from_slice(&self.nonce);
         out
@@ -386,7 +386,7 @@ pub struct SignedBond {
     pub sig: [u8; 64],
 }
 
-/// `[ACT_DOMAIN][domain 32][0x80 0x00][3|4][reserve 32][tier 32][mu 4×u64 — 3 only][nonce 32][sig 64]`.
+/// `[ACT_DOMAIN][domain 32][0x80 0x00][3|4][reserve 32][tier 32][μ⃗ — 3 only][nonce 32][sig 64]`.
 pub fn encode_bond(b: &SignedBond) -> Vec<u8> {
     let mut out = vec![super::ACT_DOMAIN];
     out.extend_from_slice(&b.bond.domain);
@@ -407,20 +407,14 @@ pub fn encode_bond_read(domain: [u8; 32], tier: [u8; 32]) -> Vec<u8> {
     out
 }
 
-/// A bond as read: its μ per lane (zero where none is posted).
-pub fn encode_bond_reading(mu: &[u64; 4]) -> Vec<u8> {
-    mu.iter().flat_map(|m| m.to_le_bytes()).collect()
+/// A bond as read: its μ per lane (zero where none is posted), four exact
+/// rational lanes.
+pub fn encode_bond_reading(mu: &crate::economy::Mu) -> Vec<u8> {
+    mu.to_bytes()
 }
 
-pub fn decode_bond_reading(b: &[u8]) -> Option<[u64; 4]> {
-    if b.len() != 32 {
-        return None;
-    }
-    let mut mu = [0u64; 4];
-    for (m, c) in mu.iter_mut().zip(b.chunks_exact(8)) {
-        *m = u64::from_le_bytes(c.try_into().ok()?);
-    }
-    Some(mu)
+pub fn decode_bond_reading(b: &[u8]) -> Option<crate::economy::Mu> {
+    crate::economy::Mu::from_bytes(b).ok()
 }
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][2]`.
@@ -439,7 +433,7 @@ pub fn encode_reserve_read(domain: [u8; 32]) -> Vec<u8> {
 pub struct ReserveReading {
     pub current: Option<[u8; 32]>,
     pub pending: Option<[u8; 32]>,
-    pub balance: [u64; 4],
+    pub balance: crate::economy::Mu,
 }
 
 pub fn encode_reserve_reading(r: &ReserveReading) -> Vec<u8> {
@@ -453,9 +447,7 @@ pub fn encode_reserve_reading(r: &ReserveReading) -> Vec<u8> {
             }
         }
     }
-    for m in r.balance {
-        out.extend_from_slice(&m.to_le_bytes());
-    }
+    r.balance.put(&mut out);
     out
 }
 
@@ -475,11 +467,7 @@ pub fn decode_reserve_reading(b: &[u8]) -> Option<ReserveReading> {
         }
     };
     let (current, pending) = (tier()?, tier()?);
-    let mut balance = [0u64; 4];
-    for m in &mut balance {
-        *m = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
-        p += 8;
-    }
+    let balance = crate::economy::Mu::take_from(b, &mut p)?;
     (p == b.len()).then_some(ReserveReading { current, pending, balance })
 }
 
@@ -532,14 +520,7 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
             p += 1;
             let (reserve, tier) = (key(rest, &mut p)?, key(rest, &mut p)?);
             let mu = match k {
-                KIND_BOND => {
-                    let mut mu = [0u64; 4];
-                    for m in &mut mu {
-                        *m = u64::from_le_bytes(rest.get(p..p + 8)?.try_into().ok()?);
-                        p += 8;
-                    }
-                    Some(mu)
-                }
+                KIND_BOND => Some(crate::economy::Mu::take_from(rest, &mut p)?),
                 _ => None,
             };
             let nonce = key(rest, &mut p)?;
@@ -616,7 +597,7 @@ pub enum Founded {
     /// 78.127 — no such domain is founded on this court.
     NotFounded,
     /// 78.129 — a bond posted or withdrawn: sealed, and the tier's bond now.
-    Bonded { at: Stamp, receipt: [u8; 32], bond: [u64; 4] },
+    Bonded { at: Stamp, receipt: [u8; 32], bond: crate::economy::Mu },
     /// 78.129 — the bond's signer is not the domain's reserve tier.
     NotReserve,
     /// 78.129 — the reserve holds less μ than the bond posts.
@@ -730,8 +711,8 @@ pub fn decode_domain_reply(b: &[u8]) -> Option<Founded> {
         9 => {
             let at = Stamp::take_canonical(b, &mut p)?;
             let receipt: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
-            let bond = decode_bond_reading(b.get(p + 32..p + 64)?)?;
-            p += 64;
+            p += 32;
+            let bond = crate::economy::Mu::take_from(b, &mut p)?;
             Founded::Bonded { at, receipt, bond }
         }
         10 => Founded::NotReserve,

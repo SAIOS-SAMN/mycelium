@@ -38,8 +38,9 @@ pub use mycelium::economy::modes::Modes;
 
 /// Verdict code: solved, the first verified closure (the bounty).
 pub use mycelium::anastome::dialogue::SOLVE_BOUNTY;
-/// Verdict code: solved again, paid the verification floor.
-pub use mycelium::anastome::dialogue::SOLVE_FLOOR;
+/// Verdict code: solved again — a repeat closure of a closed task, verified
+/// and paid nothing.
+pub use mycelium::anastome::dialogue::SOLVE_AGAIN;
 /// Verdict code: not solved; final.
 pub use mycelium::anastome::dialogue::SOLVE_NOTHING;
 /// Verdict code: not judged yet; the same solve sent again resumes the

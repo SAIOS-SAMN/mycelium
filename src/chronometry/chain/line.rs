@@ -129,8 +129,13 @@ fn frame(body: Vec<u8>) -> Vec<u8> {
 }
 
 impl ReceiptChain {
-    /// The line file's magic.
-    pub const LINE_MAGIC: &'static [u8; 4] = b"MYL2";
+    /// The line file's magic: MYL3 since a bond citation carries its μ as
+    /// exact rational lanes.
+    pub const LINE_MAGIC: &'static [u8; 4] = b"MYL3";
+
+    /// THE LINE WHOSE BOND CITATIONS CARRIED μ AS FOUR `u64` COUNTS,
+    /// refused by name and never migrated: the recut is the road.
+    pub const PRE_RATIONAL_LINE_MAGIC: &'static [u8; 4] = b"MYL2";
 
     /// THE WHOLE LINE as the file carries it, with the packer that wrote
     /// it: the magic, and one frame of the key this chain signs as — the

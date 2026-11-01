@@ -10,6 +10,7 @@ use crate::syllabus::{syllabus_admit, syllabus_window, Syllabus};
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Court;
+use mycelium::economy::Mu;
 use mycelium::network::nerve::{home, Keyed, Router};
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
@@ -286,16 +287,16 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     Judged::NoSuchTask => "no such task on this book",
                     _ => "a solve carries its rule: a raster is no proof of a motion",
                 };
-                (dialogue::SOLVE_NOTHING, [0; 4], Some(refused(reason, mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
+                (dialogue::SOLVE_NOTHING, Mu::zero(), Some(refused(reason, mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
             }
             // `pre` read these two already (it names them above); the
             // pattern says so to the compiler, by the same reasons.
             (None, None, _) => {
-                (dialogue::SOLVE_NOTHING, [0; 4], Some(refused("no such task on this book", mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
+                (dialogue::SOLVE_NOTHING, Mu::zero(), Some(refused("no such task on this book", mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
             }
             (None, Some(_), None) => (
                 dialogue::SOLVE_NOTHING,
-                [0; 4],
+                Mu::zero(),
                 Some(refused("a solve carries its rule: a raster is no proof of a motion", mycelium::transducer::sentence::ObstructionKind::Integrity)),
                 None,
             ),
@@ -309,21 +310,21 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                         mycelium::cognition::SolveVerdict::Solved { pay, modes } => {
                             // The court names a task by its citation (wire v1.2).
                             let paid = k.pay_solve(&cite, svoice, rule, pay, first);
-                            let code = if first { dialogue::SOLVE_BOUNTY } else { dialogue::SOLVE_FLOOR };
+                            let code = if first { dialogue::SOLVE_BOUNTY } else { dialogue::SOLVE_AGAIN };
                             (code, paid, None, Some((k.height(), modes)))
                         }
                         mycelium::cognition::SolveVerdict::Refused(r) => {
-                            (dialogue::SOLVE_NOTHING, [0; 4], Some(refused(r.reason, r.obstruction.kind())), None)
+                            (dialogue::SOLVE_NOTHING, Mu::zero(), Some(refused(r.reason, r.obstruction.kind())), None)
                         }
                         mycelium::cognition::SolveVerdict::NotARule => (
                             dialogue::SOLVE_NOTHING,
-                            [0; 4],
+                            Mu::zero(),
                             Some(refused("the rule is no sentence", mycelium::transducer::sentence::ObstructionKind::Integrity)),
                             None,
                         ),
                         mycelium::cognition::SolveVerdict::NoWork => (
                             dialogue::SOLVE_NOTHING,
-                            [0; 4],
+                            Mu::zero(),
                             Some(refused("the rule discharges no work on the withheld pairs: nothing is closed or paid", mycelium::transducer::sentence::ObstructionKind::NoQuestion)),
                             None,
                         ),
@@ -331,7 +332,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                         // before the replay ruled; asked again, it resumes.
                         mycelium::cognition::SolveVerdict::Unread => (
                             dialogue::SOLVE_UNREAD,
-                            [0; 4],
+                            Mu::zero(),
                             Some(refused(
                                 "not judged yet: the court's stroke ran out before the replay ruled; ask again and it resumes",
                                 mycelium::transducer::sentence::ObstructionKind::NoQuestion,
@@ -340,7 +341,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                         ),
                         mycelium::cognition::SolveVerdict::Unverifiable => (
                             dialogue::SOLVE_NOTHING,
-                            [0; 4],
+                            Mu::zero(),
                             Some(refused("the task withholds no answer to replay against", mycelium::transducer::sentence::ObstructionKind::NoQuestion)),
                             None,
                         ),

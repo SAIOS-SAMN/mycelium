@@ -14,11 +14,11 @@ use super::*;
 #[derive(Debug, Clone)]
 pub struct Revoked {
     /// The escrow that was dropped.
-    pub released: [u64; 4],
+    pub released: Mu,
     /// What left each voice's bond. Empty on a plain revoke.
-    pub slashed: Vec<([u8; 32], [u64; 4])>,
+    pub slashed: Vec<([u8; 32], Mu)>,
     /// Where a voice's bond did not cover the ask, per lane.
-    pub short: Vec<([u8; 32], [u64; 4])>,
+    pub short: Vec<([u8; 32], Mu)>,
 }
 
 /// HOW AN ESCROW IS REVOKED: dropped, its claim returning nothing; or
@@ -41,7 +41,7 @@ pub struct Escrowed {
     /// is a claim and not a balance until the verdict releases it. It is
     /// priced from the word's discharge alone (78.149) and is a CAP on what
     /// a release pays, never the payment.
-    pub mu: [u64; 4],
+    pub mu: Mu,
     /// The k-step and receipt the claim stands at, so a release books at
     /// the moment it was earned and not the moment it was paid.
     pub anchor: Anchor,
@@ -67,9 +67,10 @@ impl Treasury {
         &mut self,
         word: &crate::transducer::address::Address,
         voices: Vec<[u8; 32]>,
-        mu: [u64; 4],
+        mu: impl Into<Mu>,
         anchor: Anchor,
     ) {
+        let mu = mu.into();
         let address = word.as_bytes();
         match self.escrowed.get_mut(address) {
             Some(row) => {
@@ -103,17 +104,14 @@ impl Treasury {
     /// settled, each at its own measured discharge (78.149 (b),
     /// [`Treasury::release_discharged`]), minted AT `at`, the act that
     /// released them (EC1), never at the acts that escrowed them. The
-    /// released total is a reading: `None`, counted, where it would pass its
-    /// carrier (STD1) — every release still minted, each by its own row.
-    pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[(A, [u64; 4])], at: Anchor) -> Option<[u64; 4]> {
-        let mut released = Some([0u64; 4]);
+    /// released total is a reading, exact: every release minted by its own
+    /// row.
+    pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[(A, [u64; 4])], at: Anchor) -> Mu {
+        let mut released = Mu::zero();
         for (address, discharge) in listings {
             if let Some(paid) = self.release_discharged(address.as_ref(), *discharge, at) {
-                released = released.and_then(|r| crate::core::lanes::lanes_add(r, paid));
+                released.step(&paid);
             }
-        }
-        if released.is_none() {
-            self.overflowed += 1;
         }
         released
     }
@@ -131,14 +129,12 @@ impl Treasury {
     /// Answers the payment released to the voices, per lane, split among
     /// them as `mint_claim` splits it; `None` where the address held no
     /// escrow.
-    pub fn release_discharged(&mut self, address: &[u8], discharge: [u64; 4], at: Anchor) -> Option<[u64; 4]> {
+    pub fn release_discharged(&mut self, address: &[u8], discharge: impl Into<Mu>, at: Anchor) -> Option<Mu> {
         let Escrowed { voices, mu, .. } = self.release_award(address)?;
-        // The shortfall of the claim against the discharge is what the claim
-        // asked beyond it, per lane; the claim less that is the payment —
-        // lane-wise the lesser of the two, read as the shortfall reading.
-        let above = super::shortfall(&mu, &discharge);
-        let paid: [u64; 4] = std::array::from_fn(|l| mu[l] - above[l]);
-        self.mint_claim(&voices, paid, at);
+        // The claim capped by the discharge is the payment — lane-wise the
+        // lesser of the two; what the claim held above it is never issued.
+        let paid = mu.capped(&discharge.into());
+        self.mint_claim(&voices, paid.clone(), at);
         Some(paid)
     }
 
@@ -157,7 +153,7 @@ impl Treasury {
     /// `.first()` that looks like rule 15's tie-break by arrival order even
     /// where, as here, the one voice is the only voice. The shape says
     /// which case it is.
-    pub fn mint_claim(&mut self, voices: &[[u8; 32]], mu: [u64; 4], anchor: Anchor) {
+    pub fn mint_claim(&mut self, voices: &[[u8; 32]], mu: impl Into<Mu>, anchor: Anchor) {
         match voices {
             [] => {}
             [one] => {
@@ -196,27 +192,26 @@ impl Treasury {
     /// of them nothing at all.
     pub fn revoke_award(&mut self, address: &[u8], how: Revocation) -> Option<Revoked> {
         let Escrowed { voices, mu, .. } = self.escrowed.remove(address)?;
-        let mut out = Revoked { released: mu, slashed: Vec::new(), short: Vec::new() };
+        let mut out = Revoked { released: mu.clone(), slashed: Vec::new(), short: Vec::new() };
         let anchor = match how {
             Revocation::Drop => return Some(out),
             Revocation::Slash(at) => at,
         };
         for who in voices {
             let held = match self.stakes.get(&who) {
-                Some(&h) => h,
-                None => [0; 4],
+                Some(h) => h.clone(),
+                None => Mu::zero(),
             };
-            let short = super::shortfall(&mu, &held);
-            let took: [u64; 4] = std::array::from_fn(|l| mu[l] - short[l]);
-            if !super::lanes_short(&short).is_empty() {
+            let short = mu.shortfall(&held);
+            let (took, next) = held.split_at(&mu);
+            if !short.is_zero() {
                 out.short.push((who, short));
             }
-            if super::lanes_short(&took).is_empty() {
+            if took.is_zero() {
                 continue;
             }
-            let next: [u64; 4] = std::array::from_fn(|l| held[l] - took[l]);
             self.stakes.insert(who, next);
-            self.write(Entry { kind: Kind::Slash, who, mu: took, at: anchor.0, receipt: anchor.1, arm: None });
+            self.write(Entry { kind: Kind::Slash, who, mu: took.clone(), at: anchor.0, receipt: anchor.1, arm: None });
             out.slashed.push((who, took));
         }
         if !out.slashed.is_empty() {
@@ -225,12 +220,12 @@ impl Treasury {
         Some(out)
     }
 
-    pub fn stakes(&self) -> Vec<([u8; 32], [u64; 4])> {
+    pub fn stakes(&self) -> Vec<([u8; 32], Mu)> {
         // One entry per staking key: the whole of it is what "the stakes"
         // means, and the bond is refreshed from all of them.
         self.stakes
             .scoped()
-            .filter_map(|(w, mu)| <[u8; 32]>::try_from(w.as_slice()).ok().map(|who| (who, *mu)))
+            .filter_map(|(w, mu)| <[u8; 32]>::try_from(w.as_slice()).ok().map(|who| (who, mu.clone())))
             .collect()
     }
 
@@ -241,21 +236,15 @@ impl Treasury {
     /// Draw a verified-solve payment from an escrowed listing award, so
     /// reduction and solve share one ledger. Remaining escrow stays for
     /// consilience release.
-    pub fn draw_escrow(&mut self, address: &[u8], voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let Some(row) = self.escrowed.get(address) else {
-            return [0; 4];
+    pub fn draw_escrow(&mut self, address: &[u8], voice: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
+        let Some(row) = self.escrowed.get_mut(address) else {
+            return Mu::zero();
         };
-        let held = row.mu;
-        let asked = mu;
-        let take: [u64; 4] = std::array::from_fn(|l| asked[l].min(held[l]));
-        if take.iter().all(|&m| m == 0) {
+        let (take, kept) = row.mu.split_at(&mu.into());
+        if take.is_zero() {
             return take;
         }
-        if let Some(row) = self.escrowed.get_mut(address) {
-            for (h, t) in row.mu.iter_mut().zip(&take) {
-                *h -= t;
-            }
-        }
+        row.mu = kept;
         self.mint_to(voice, take, anchor, Some(Arm::Pouw))
     }
 
@@ -264,31 +253,33 @@ impl Treasury {
     /// per lane, exactly. `None` where no escrow stands; `Err` with the
     /// shortfall per lane where the escrow cannot pay the draw — the word is
     /// exhausted on those lanes, and nothing is drawn.
-    pub fn carry_escrow(&mut self, address: &[u8], draw: [u64; 4]) -> Option<Result<[u64; 4], [u64; 4]>> {
+    pub fn carry_escrow(&mut self, address: &[u8], draw: impl Into<Mu>) -> Option<Result<Mu, Mu>> {
         let row = self.escrowed.get_mut(address)?;
-        let short = super::shortfall(&draw, &row.mu);
-        if !super::lanes_short(&short).is_empty() {
+        let draw = draw.into();
+        let short = draw.shortfall(&row.mu);
+        if !short.is_zero() {
             return Some(Err(short));
         }
-        row.mu = std::array::from_fn(|l| row.mu[l] - draw[l]);
-        Some(Ok(row.mu))
+        let (_, kept) = row.mu.split_at(&draw);
+        row.mu = kept;
+        Some(Ok(row.mu.clone()))
     }
 
     /// PRESSURE ARRIVING: a frame transported to a provisional word (a
     /// sentence that cites it) is credited to its escrow, per lane. `None`
-    /// where no escrow stands or a lane would pass its carrier (STD1).
-    pub fn credit_escrow(&mut self, address: &[u8], mu: [u64; 4]) -> Option<[u64; 4]> {
+    /// where no escrow stands.
+    pub fn credit_escrow(&mut self, address: &[u8], mu: impl Into<Mu>) -> Option<Mu> {
         let row = self.escrowed.get_mut(address)?;
-        row.mu = crate::core::lanes::lanes_add(row.mu, mu)?;
-        Some(row.mu)
+        row.mu.step(&mu.into());
+        Some(row.mu.clone())
     }
 
     #[cfg(test)]
-    pub fn escrowed_remaining(&self, address: &[u8]) -> [u64; 4] {
+    pub fn escrowed_remaining(&self, address: &[u8]) -> Mu {
         // An address with no escrow row holds nothing in escrow.
         match self.escrowed.get(address) {
-            Some(row) => row.mu,
-            None => [0; 4],
+            Some(row) => row.mu.clone(),
+            None => Mu::zero(),
         }
     }
 

@@ -386,11 +386,9 @@ fn economy(e: &observe::Economy) -> Vec<String> {
         .iter()
         .map(|arm| {
             let i = arm.index();
-            format!("  {BOLD}{:<12}{RESET}paid {:?}  burned {:?}", arm.name(), e.paid[i], e.burned[i])
+            format!("  {BOLD}{:<12}{RESET}paid {}  burned {}", arm.name(), e.paid[i], e.burned[i])
         })
         .collect();
-    // STD1 — what the treasury refused past its carrier.
-    out.push(format!("  {BOLD}{:<12}{RESET}{}", "overflowed", e.overflowed));
     // What moved, by kind, on the journal since its last fold; a kind
     // with no row is not printed.
     out.push(format!("  {DIM}flows on the journal since its last fold{RESET}"));

@@ -32,8 +32,7 @@ let mut booted = Court::new();
 assert!(booted.restore(&snap), "clean restore");
 assert_eq!(booted.basis_len(), 2, "both generators came back");
 assert!(
-    booted.treasury().balance_mu(&[2; 32]).iter().any(|&m| m > 0)
-        || balance.iter().any(|&m| m > 0),
+    !booted.treasury().balance_mu(&[2; 32]).is_zero() || !balance.is_zero(),
     "earned μ⃗ survived the snapshot"
 );
 assert!(
@@ -138,6 +137,23 @@ older[..4].copy_from_slice(PRE_TRIE_MAGIC);
 let mut booted = Court::new();
 assert!(!booted.restore(&older), "MYC7 is refused");
 assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
+
+// THE TRIES WHOSE μ WAS FOUR u64 COUNTS ARE REFUSED BY NAME (v0.3.0).
+let mut counted = snap.clone();
+counted[..4].copy_from_slice(crate::cognition::snapshot::PRE_RATIONAL_MAGIC);
+let mut booted = Court::new();
+assert!(!booted.restore(&counted), "MYT2 is refused");
+assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
+}
+
+/// THE LINE WHOSE BOND CITATIONS CARRIED μ AS COUNTS IS REFUSED BY NAME:
+/// MYL2 is named in the refusal, and the line held stands.
+#[test]
+fn hold_line_refuses_pre_rational_line() {
+let mut k = Court::new();
+let tape = crate::chronometry::ReceiptChain::PRE_RATIONAL_LINE_MAGIC.to_vec();
+let refused = k.hold_line(&tape).expect_err("MYL2 is refused");
+assert!(refused.contains("MYL2"), "by name: {refused}");
 }
 
 /// 78.27 — A TRIE IS READ BY KEY, NEVER BY POSITION: a key written twice

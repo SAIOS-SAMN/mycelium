@@ -11,12 +11,13 @@ use super::*;
 use crate::chronometry::{Place, Root};
 use crate::economy::Entry;
 
-/// `[ACT_FOLD][after: tag u8 (+ K‖i)][root K‖i ‖ hash 32 ‖ height u64][n u32][(who 32)(μ⃗ 4×u64)…][receipt section]`
+/// `[ACT_FOLD][after: tag u8 (+ K‖i)][root K‖i ‖ hash 32 ‖ height u64][n u32][(who 32)(μ⃗)…][receipt section]`,
+/// each μ⃗ four exact rational lanes (`Mu::put`).
 #[derive(Clone)]
 pub struct FoldProposal {
     pub after: Option<Place>,
     pub root: Root,
-    pub epochs: Vec<([u8; 32], [u64; 4])>,
+    pub epochs: Vec<([u8; 32], crate::economy::Mu)>,
     pub section: ReceiptSection,
 }
 
@@ -33,7 +34,7 @@ pub fn encode_fold(p: &FoldProposal) -> Option<Vec<u8>> {
     crate::transducer::address::put_u32_count(&mut out, p.epochs.len())?;
     for (who, mu) in &p.epochs {
         out.extend_from_slice(who);
-        push_mu(&mut out, mu);
+        mu.put(&mut out);
     }
     out.extend_from_slice(&super::encode_receipt_section(&p.section.prefix, &p.section.sig, &p.section.receipt)?);
     Some(out)
@@ -52,14 +53,15 @@ pub fn decode_fold(body: &[u8]) -> Option<FoldProposal> {
     let root = Root::read(body, &mut p)?;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    if n > body.len().checked_sub(p)? / 64 {
+    // An epoch is its key and four lanes of eleven bytes at the fewest.
+    if n > body.len().checked_sub(p)? / (32 + 44) {
         return None;
     }
     let mut epochs = Vec::with_capacity(n);
     for _ in 0..n {
         let who: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
         p += 32;
-        let mu = read_mu(body, &mut p)?;
+        let mu = crate::economy::Mu::take_from(body, &mut p)?;
         epochs.push((who, mu));
     }
     let section = super::decode_receipt_section(body, p)?;
@@ -160,10 +162,12 @@ pub fn encode_rows_reply(total: u64, rows: &[Entry], budget: usize) -> Option<Ve
     out.extend_from_slice(&0u32.to_le_bytes());
     let mut m = 0u32;
     for r in rows {
-        if out.len() + Entry::TAPE > budget {
+        let mut tape = Vec::new();
+        r.write(&mut tape);
+        if out.len() + tape.len() > budget {
             break;
         }
-        r.write(&mut out);
+        out.extend_from_slice(&tape);
         m = m.checked_add(1)?;
     }
     out[8..12].copy_from_slice(&m.to_le_bytes());
@@ -174,7 +178,7 @@ pub fn decode_rows_reply(body: &[u8]) -> Option<(u64, Vec<Entry>)> {
     let total = u64::from_le_bytes(body.get(0..8)?.try_into().ok()?);
     let m = u32::from_le_bytes(body.get(8..12)?.try_into().ok()?) as usize;
     let mut p = 12usize;
-    if m > body.len().checked_sub(p)? / Entry::TAPE {
+    if m > body.len().checked_sub(p)? / Entry::MIN_TAPE {
         return None;
     }
     let mut rows = Vec::with_capacity(m);

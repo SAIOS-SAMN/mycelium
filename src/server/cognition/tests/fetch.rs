@@ -80,7 +80,7 @@ fn serve_ruled_charges_voice_and_defers_short_voice() {
     let before = k.treasury().balance_mu(&voice);
     assert_eq!(k.serve_ruled(&inv, &[], 1 << 20, Asker::Voice(voice)).len(), 1, "funded, it is served");
     let after = k.treasury().balance_mu(&voice);
-    assert_eq!(std::array::from_fn::<u64, 4, _>(|l| before[l] - after[l]), mag, "and pays the word's magnitude");
+    assert_eq!(before.draw(&after).expect("the voice paid"), mag, "and pays the word's magnitude");
     assert_eq!(k.acts_reading().fetch[axis("served to voices")], 1);
     assert_eq!(k.physics.reserve.lanes(), reserve, "the court's reserve stands where it stood");
     // A have-list that leaves the word out does not charge for it twice:

@@ -3,8 +3,11 @@
 //
 //! Every entry is a movement with an anchor; the balance is derived from
 //! the entries and never stored beside them. `audit` re-derives the supply
-//! from the ledger and refuses if the two disagree.
+//! from the ledger and refuses if the two disagree. Every amount is a
+//! [`Mu`]: an exact rational per lane, so no sum passes a carrier and both
+//! equations of §6 hold over ℚ.
 
+use super::Mu;
 
 /// THE ACT A LEDGER ROW STANDS AT (78.24): the stamp of the court's head
 /// receipt when the row was written, and that receipt's chain hash — the
@@ -79,8 +82,8 @@ impl Kind {
 pub struct Entry {
     pub kind: Kind,
     pub who: [u8; 32],
-    /// The per-lane vector amount — never a scalar.
-    pub mu: [u64; 4],
+    /// The per-lane amount, exact — never a scalar.
+    pub mu: Mu,
     /// The stamp of the act the row stands at (78.24).
     pub at: crate::chronometry::Stamp,
     /// That act's chain hash (the unforgeable temporal binding).
@@ -159,9 +162,6 @@ impl Arm {
     }
 }
 
-/// Default operator bond when none is chosen — one unit on every lane.
-pub const UNIT_BOND: [u64; 4] = [1, 1, 1, 1];
-
 #[derive(Debug, Clone)]
 pub struct Treasury {
     pub(crate) entries: Vec<Entry>,
@@ -172,32 +172,24 @@ pub struct Treasury {
     /// as the mesh runs (rule 10: a loop whose bound is neither a `Budget`
     /// nor one simplex's boundary is unbounded work in disguise).
     ///
-    /// `None` once a fold overflowed, exactly as the whole read returned `None`
-    /// from `checked_add`: a supply that does not add up is not a smaller
-    /// supply, it is unmeasured (rule 11). `restore` folds the journal once
+    /// `restore` folds the journal once
     /// at load, which is the one O(journal) pass the doctrine sanctions.
-    pub(crate) issued: Option<[u64; 4]>,
-    pub(crate) burned: Option<[u64; 4]>,
+    /// Exact over ℚ: a sum of amounts has no carrier to pass.
+    pub(crate) issued: Mu,
+    pub(crate) burned: Mu,
     /// Sum of live identity bonds. Escrowed awards are `escrowed`, never this.
-    /// `None` once it did not add up (STD1): unmeasured, like the supply.
-    pub(crate) bond_total: Option<[u64; 4]>,
+    pub(crate) bond_total: Mu,
     /// Enrolled identities and the μ⃗ each staked, keyed by identity.
-    pub(crate) stakes: crate::network::nerve::Keyed<[u64; 4]>,
+    pub(crate) stakes: crate::network::nerve::Keyed<Mu>,
     /// AWARDS IN ESCROW (Step 5): consilience settlements held unfinalized —
     /// keyed by germ address. Only the court's verdict releases or revokes.
     pub(crate) escrowed: crate::network::nerve::Keyed<super::escrow::Escrowed>,
     /// Per-voice balances, updated on every entry. Never a scan of the ledger.
-    pub(crate) balances: crate::network::nerve::Keyed<[u64; 4]>,
+    pub(crate) balances: crate::network::nerve::Keyed<Mu>,
     /// E3 — value payers set aside, keyed by what it is held against, until
     /// released or refunded (`pay.rs`). A carrier of supply, unlike an
     /// award in escrow: it was issued, and it is the payer's until it moves.
     pub(crate) held: crate::network::nerve::Keyed<super::pay::Held>,
-    /// STD1 (rule 11) — operations REFUSED because a sum of money would pass
-    /// its carrier: a credit a balance could not hold (the genesis, mint,
-    /// unstake or transfer it belonged to wrote no row), a bond total or a
-    /// released sum that did not add up. Never saturated; read on the
-    /// economy reading. Volatile: a count of this process's refusals.
-    pub(crate) overflowed: u64,
     /// 78.151 — THE PARTIES WHOSE ACCOUNT MOVED since a publisher last took
     /// them (`take_touched`): every row written, every credit and debit
     /// names its party here. A treasury built fresh or read off disk says
@@ -214,7 +206,7 @@ pub struct Treasury {
     /// court counts them toward the growth grant of the universe whose key was
     /// paid. Volatile; drained at every act that pays and on every stroke, so
     /// it holds no more than one stroke's payments.
-    pub(crate) paid_out: Vec<([u8; 32], [u64; 4])>,
+    pub(crate) paid_out: Vec<([u8; 32], Mu)>,
 }
 
 /// 78.151 — which accounts a publisher reads again: every one, or the
@@ -226,27 +218,22 @@ pub enum Touched {
     Parties(crate::network::nerve::Keyed<()>),
 }
 
-/// One party's account at its court: balance, bond and holds, per lane;
-/// `None` where its holds pass the holds' carrier (rule 11).
-pub type Holdings = Option<([u64; 4], [u64; 4], [u64; 4])>;
+/// One party's account at its court: balance, bond and holds, per lane.
+pub type Holdings = (Mu, Mu, Mu);
 
-/// Written out rather than derived: `#[derive(Default)]` gives the folded
-/// supply `None`, and a fresh ledger has issued and burned NOTHING, which
-/// is a measurement of zero and not an absence of one. Derived, every
-/// treasury that was not built by `new()` reported its supply unmeasured
-/// and the audit refused a ledger that added up perfectly.
+/// Written out rather than derived: a fresh ledger has issued and burned
+/// NOTHING, a measurement of zero, and says every party moved.
 impl Default for Treasury {
     fn default() -> Self {
         Treasury {
             entries: Vec::new(),
-            issued: Some([0; 4]),
-            burned: Some([0; 4]),
-            bond_total: Some([0; 4]),
+            issued: Mu::zero(),
+            burned: Mu::zero(),
+            bond_total: Mu::zero(),
             stakes: crate::network::nerve::Keyed::new(),
             escrowed: crate::network::nerve::Keyed::new(),
             balances: crate::network::nerve::Keyed::new(),
             held: crate::network::nerve::Keyed::new(),
-            overflowed: 0,
             touched: Touched::Every,
             journal_mark: 0,
             paid_out: Vec::new(),
@@ -259,52 +246,26 @@ impl Treasury {
         Treasury::default()
     }
 
-    /// The balance `party` would hold after a credit of `mu`, or `None` where
-    /// a lane would pass its carrier (STD1). Read before anything moves, so
-    /// an operation that cannot land moves nothing.
-    pub(crate) fn credited(&self, party: &[u8; 32], mu: [u64; 4]) -> Option<[u64; 4]> {
-        crate::core::lanes::lanes_add(self.balance_of(party), mu)
-    }
-
-    /// CREDIT, WHOLE OR REFUSED: a balance that would pass its carrier on
-    /// any lane is refused and counted (`overflowed`), never saturated —
-    /// money never tops out silently (STD1, rule 11). Called BEFORE the row
-    /// it belongs to is written, so a refused credit leaves no row and §6
-    /// holds.
-    #[must_use]
-    pub(crate) fn credit(&mut self, party: [u8; 32], mu: [u64; 4]) -> bool {
-        match self.credited(&party, mu) {
-            Some(b) => {
-                self.balances.insert(party, b);
-                self.touch(&party);
-                true
-            }
-            None => {
-                self.overflowed += 1;
-                false
-            }
-        }
-    }
-
-    /// THE SHORTFALL OF THE MOVEMENT, per lane: zero where the lane moved,
-    /// and what the balance lacked where it did not. Nothing moves when any
-    /// lane is short — the movement is whole or it is refused — and the
-    /// caller is handed the lanes rather than a bit it would have to
-    /// recompute (§2.3, law 5).
-    ///
-    /// Every caller clamps to the balance before asking, so a non-zero
-    /// reading is a broken clamp; it is returned rather than floored
-    /// because a floor burns the difference against §6's equation.
-    #[must_use]
-    pub(crate) fn debit(&mut self, party: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
-        let b = self.balance_of(&party);
-        let short = crate::economy::shortfall(&mu, &b);
-        if !crate::economy::lanes_short(&short).is_empty() {
-            return short;
-        }
-        self.balances.insert(party, std::array::from_fn(|l| b[l] - mu[l]));
+    /// CREDIT: `mu` added to `party`'s balance, exactly. An exact sum has no
+    /// carrier to pass, so a credit always lands.
+    pub(crate) fn credit(&mut self, party: [u8; 32], mu: &Mu) {
+        let b = self.balance_of(&party).add(mu);
+        self.balances.insert(party, b);
         self.touch(&party);
-        short
+    }
+
+    /// DEBIT, WHOLE OR REFUSED: `mu` drawn from `party`'s balance, or the
+    /// first lane the balance is short on, named, and nothing moved
+    /// (§2.3, law 5).
+    ///
+    /// Every caller clamps to the balance before asking, so a refusal is a
+    /// broken clamp; it is returned rather than floored because a floor
+    /// burns the difference against §6's equation.
+    pub(crate) fn debit(&mut self, party: [u8; 32], mu: &Mu) -> Result<(), super::MuRefusal> {
+        let left = self.balance_of(&party).draw(mu)?;
+        self.balances.insert(party, left);
+        self.touch(&party);
+        Ok(())
     }
 
     /// 78.151 — `party`'s account moved: named for the next publisher.
@@ -339,14 +300,14 @@ impl Treasury {
     /// 78.151 — THE ACCOUNTS OF `parties`, read as `account` reads one, the
     /// holds summed over ONE walk of the held carrier for all of them.
     pub(crate) fn accounts_of(&self, parties: &crate::network::nerve::Keyed<()>) -> Vec<([u8; 32], Holdings)> {
-        let mut held: crate::network::nerve::Keyed<Option<[u64; 4]>> = crate::network::nerve::Keyed::new();
+        let mut held: crate::network::nerve::Keyed<Mu> = crate::network::nerve::Keyed::new();
         crate::snapshot::persist(&self.held, |_, h| {
             if !parties.contains(&h.payer) {
                 return;
             }
             let sum = match held.get(&h.payer) {
-                Some(s) => s.and_then(|t| crate::core::lanes::lanes_add(t, h.mu)),
-                None => Some(h.mu),
+                Some(s) => s.add(&h.mu),
+                None => h.mu.clone(),
             };
             held.insert(h.payer, sum);
         });
@@ -355,10 +316,10 @@ impl Treasury {
             .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
             .map(|party| {
                 let holds = match held.get(&party) {
-                    Some(s) => *s,
-                    None => Some([0; 4]),
+                    Some(s) => s.clone(),
+                    None => Mu::zero(),
                 };
-                (party, holds.map(|h| (self.balance_of(&party), self.staked(&party), h)))
+                (party, (self.balance_of(&party), self.staked(&party), holds))
             })
             .collect()
     }
@@ -367,11 +328,11 @@ impl Treasury {
     /// when the recorded stake is below `bond`. Pool is the sum of bonds;
     /// leftover escrow history does not enter it. Returns the vector added
     /// this call.
-    pub fn enroll(&mut self, party: [u8; 32], bond: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    pub fn enroll(&mut self, party: [u8; 32], bond: impl Into<Mu>, anchor: Anchor) -> Mu {
         let held = self.staked(&party);
         // The top-up IS the shortfall of what is staked against the bond,
         // and that reading already exists: zero where the lane meets it.
-        let asked = crate::economy::shortfall(&bond, &held);
+        let asked = bond.into().shortfall(&held);
         // BOND IS μ AT RISK, STAKED FROM A BALANCE (§4). This inserted the
         // stake and wrote a "stake" row without debiting anything, so bond
         // existed that was never issued and §6's second equation --
@@ -383,13 +344,12 @@ impl Treasury {
         // add ≤ bal on every lane: it is clamped to the balance just read,
         // and it is debited against that same balance — which cannot be
         // short (STD1: the arm that read a short debit could not fire).
-        let add: [u64; 4] = std::array::from_fn(|l| asked[l].min(bal[l]));
-        if add.iter().any(|&x| x > 0) {
-            let unmoved = self.debit(party, add);
-            debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "add ≤ bal, debited against it");
-            let next: [u64; 4] = std::array::from_fn(|l| held[l] + add[l]);
-            self.stakes.insert(party, next);
-            self.write(Entry { kind: Kind::Stake, who: party, mu: add, at: anchor.0, receipt: anchor.1, arm: None });
+        let add = asked.capped(&bal);
+        if !add.is_zero() {
+            let drawn = self.debit(party, &add);
+            debug_assert!(drawn.is_ok(), "add ≤ bal, debited against it");
+            self.stakes.insert(party, held.add(&add));
+            self.write(Entry { kind: Kind::Stake, who: party, mu: add.clone(), at: anchor.0, receipt: anchor.1, arm: None });
         } else if self.stakes.get(&party).is_none() {
             self.stakes.insert(party, held);
         }
@@ -403,48 +363,38 @@ impl Treasury {
     /// holds that rule (MU-PRODUCT §5: unstake when no escrow names the
     /// voice). Conservation holds because the μ⃗ moves between two carriers
     /// of one identity, exactly as staking it did.
-    pub fn unstake(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let held = self.staked(&party);
-        let back: [u64; 4] = std::array::from_fn(|l| mu[l].min(held[l]));
-        if back.iter().all(|&x| x == 0) {
+    pub fn unstake(&mut self, party: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
+        let (back, next) = self.staked(&party).split_at(&mu.into());
+        if back.is_zero() {
             return back;
         }
-        // The credit first: a balance with no room refuses the unstake, and
-        // the bond stays where it was.
-        if !self.credit(party, back) {
-            return [0; 4];
-        }
-        let next: [u64; 4] = std::array::from_fn(|l| held[l] - back[l]);
+        self.credit(party, &back);
         self.stakes.insert(party, next);
-        self.write(Entry { kind: Kind::Unstake, who: party, mu: back, at: anchor.0, receipt: anchor.1, arm: None });
+        self.write(Entry { kind: Kind::Unstake, who: party, mu: back.clone(), at: anchor.0, receipt: anchor.1, arm: None });
         self.refresh_bond();
         back
     }
 
-    /// The sum of live stakes, re-read. `None` — unmeasured, counted — where
-    /// it would pass its carrier (STD1), exactly as the folded supply is.
+    /// The sum of live stakes, re-read, exactly.
     pub(crate) fn refresh_bond(&mut self) {
-        let mut stakes = Vec::new();
-        crate::snapshot::persist(&self.stakes, |_, mu| stakes.push(*mu));
-        self.bond_total = crate::core::lanes::lanes_sum(stakes);
-        if self.bond_total.is_none() {
-            self.overflowed += 1;
-        }
+        let mut total = Mu::zero();
+        crate::snapshot::persist(&self.stakes, |_, mu| total.step(mu));
+        self.bond_total = total;
     }
 
     /// Bond recorded for an identity, if enrolled. None is unbonded.
-    pub fn bond_of(&self, party: &[u8; 32]) -> Option<[u64; 4]> {
-        self.stakes.get(party).copied()
+    pub fn bond_of(&self, party: &[u8; 32]) -> Option<Mu> {
+        self.stakes.get(party).cloned()
     }
 
     /// Bond recorded for an identity, if enrolled.
-    pub fn stake_of(&self, party: &[u8; 32]) -> Option<[u64; 4]> {
+    pub fn stake_of(&self, party: &[u8; 32]) -> Option<Mu> {
         self.bond_of(party)
     }
 
-    /// Sum of live stakes; `None` where it does not add up (STD1).
-    pub fn bond_total(&self) -> Option<[u64; 4]> {
-        self.bond_total
+    /// Sum of live stakes.
+    pub fn bond_total(&self) -> &Mu {
+        &self.bond_total
     }
 
     /// A STAKE OUTSIDE THE LIVE GENESIS IS BURNED (§4: bond is μ⃗ at risk;
@@ -455,12 +405,12 @@ impl Treasury {
     /// what left is returned so the caller can say so. The `Legacy` row this
     /// wrote, at K 0 under a zero receipt, failed `audit` on every live
     /// hypha of the 2026-09-08 soak (I38).
-    pub fn bind_live(&mut self, live: &[[u8; 32]], anchor: Anchor) -> Vec<([u8; 32], [u64; 4])> {
-        let mut drop: Vec<([u8; 32], [u64; 4])> = Vec::new();
+    pub fn bind_live(&mut self, live: &[[u8; 32]], anchor: Anchor) -> Vec<([u8; 32], Mu)> {
+        let mut drop: Vec<([u8; 32], Mu)> = Vec::new();
         crate::snapshot::persist(&self.stakes, |party, mu| {
             let Ok(w) = <[u8; 32]>::try_from(party) else { return };
             if !live.contains(&w) {
-                drop.push((w, *mu));
+                drop.push((w, mu.clone()));
             }
         });
         let mut burned = Vec::with_capacity(drop.len());
@@ -479,17 +429,11 @@ impl Treasury {
     /// leaves circulation and reduces supply by the same vector, so the
     /// equation holds through a forfeiture (47.4, R9).
     ///
-    /// `None` when a lane overflows or a burn exceeds what was issued on it:
-    /// a supply that does not add up is not a smaller supply, it is a
-    /// ledger that does not describe the mesh (rule 11). Summing mint alone
-    /// with `saturating_add`, as this did, could report neither.
-    pub fn supply(&self) -> Option<[u64; 4]> {
-        let (issued, burned) = (self.issued?, self.burned?);
-        let mut s = [0u64; 4];
-        for ((n, i), b) in s.iter_mut().zip(&issued).zip(&burned) {
-            *n = i.checked_sub(*b)?;
-        }
-        Some(s)
+    /// `None` where a burn exceeds what was issued on a lane: a supply that
+    /// does not add up is not a smaller supply, it is a ledger that does
+    /// not describe the mesh (rule 11).
+    pub fn supply(&self) -> Option<Mu> {
+        self.issued.draw(&self.burned).ok()
     }
 
     /// EVERY LEDGER ROW GOES THROUGH HERE, and the two supply sums are
@@ -516,15 +460,7 @@ impl Treasury {
                 return;
             }
         };
-        // An overflow leaves the fold UNMEASURED and it stays unmeasured:
-        // the whole read this replaces returned `None` from `checked_add` on the
-        // same arithmetic (rule 11).
-        *into = into.and_then(|mut t| {
-            for (a, d) in t.iter_mut().zip(&e.mu) {
-                *a = a.checked_add(*d)?;
-            }
-            Some(t)
-        });
+        into.step(&e.mu);
         self.entries.push(e);
     }
 
@@ -532,19 +468,13 @@ impl Treasury {
     /// rows off disk directly, so this is where the two sums come back —
     /// the one O(journal) pass the doctrine sanctions, at load.
     pub(crate) fn refold_supply(&mut self) {
-        let (mut issued, mut burned) = (Some([0u64; 4]), Some([0u64; 4]));
+        let (mut issued, mut burned) = (Mu::zero(), Mu::zero());
         for e in &self.entries {
-            let into = match e.kind.issues() {
-                Some(true) => &mut issued,
-                Some(false) => &mut burned,
-                None => continue,
-            };
-            *into = into.and_then(|mut t| {
-                for (a, d) in t.iter_mut().zip(&e.mu) {
-                    *a = a.checked_add(*d)?;
-                }
-                Some(t)
-            });
+            match e.kind.issues() {
+                Some(true) => issued.step(&e.mu),
+                Some(false) => burned.step(&e.mu),
+                None => {}
+            }
         }
         self.issued = issued;
         self.burned = burned;
@@ -554,9 +484,8 @@ impl Treasury {
     /// mint and the epoch rows that stand for them across a fold — the
     /// discharge it booked as mint on the genesis it stood on. It only rises
     /// (a burn leaves supply, never issuance), and a fold keeps it exactly.
-    /// `None` where it passed its carrier (rule 11).
-    pub fn issued(&self) -> Option<[u64; 4]> {
-        self.issued
+    pub fn issued(&self) -> &Mu {
+        &self.issued
     }
 
     /// EARNED supply alone: the mint rows, without the genesis allocations
@@ -564,17 +493,8 @@ impl Treasury {
     /// verified work and must not be read off `supply()`, which includes
     /// seeded value by construction — a testnet differs from the beta only
     /// in that term.
-    pub fn minted(&self) -> Option<[u64; 4]> {
-        let mut m = [0u64; 4];
-        for e in &self.entries {
-            if e.kind != Kind::Mint {
-                continue;
-            }
-            for (t, d) in m.iter_mut().zip(&e.mu) {
-                *t = t.checked_add(*d)?;
-            }
-        }
-        Some(m)
+    pub fn minted(&self) -> Mu {
+        Mu::sum(self.entries.iter().filter(|e| e.kind == Kind::Mint).map(|e| &e.mu))
     }
 
     /// LD3-a — A LINE REBOUND BEFORE ITS FIRST ACT MOVES ITS ORIGIN: the
@@ -603,8 +523,8 @@ impl Treasury {
     /// A mint of an arm is paid; a burn of an arm is burned. A POWC use is
     /// ONE transfer written as TWO equal rows, its debit and its credit, so
     /// the arm's transfer rows read in pairs and the paid is one of each pair
-    /// — exact, since every pair is two equal vectors. `None` where a lane
-    /// passes its u64: unmeasured, never saturated (rule 11).
+    /// — exact, since every pair is two equal vectors. `None` where a flow's
+    /// row count passes its carrier (rule 11).
     ///
     /// THE FLOWS by kind and the TUITION `court` was paid read off the same
     /// rows: a transfer's two rows are one flow, its debit first and its
@@ -612,7 +532,7 @@ impl Treasury {
     /// names `court` is tuition.
     pub fn economy(&self, court: &[u8; 32]) -> Option<crate::observe::Economy> {
         let mut e = crate::observe::Economy::default();
-        let mut moved = [[0u64; 4]; Arm::ALL.len()];
+        let mut moved: [Mu; Arm::ALL.len()] = Default::default();
         let mut credit = false;
         for row in &self.entries {
             let flow = match (row.kind, row.arm) {
@@ -652,16 +572,11 @@ impl Treasury {
                 Kind::Transfer => &mut moved[arm.index()],
                 _ => continue,
             };
-            for (t, m) in into.iter_mut().zip(&row.mu) {
-                *t = t.checked_add(*m)?;
-            }
+            into.step(&row.mu);
         }
         for (paid, pairs) in e.paid.iter_mut().zip(&moved) {
-            for (t, m) in paid.iter_mut().zip(pairs) {
-                *t = t.checked_add(m / 2)?;
-            }
+            paid.step(&pairs.part(2)?);
         }
-        e.overflowed = self.overflowed;
         // E3 — EVERY IDENTITY'S STANDING, off the carriers themselves: one
         // account per identity holding a balance, a bond or a hold.
         let mut accounts: crate::network::nerve::Keyed<crate::observe::Account> = crate::network::nerve::Keyed::new();
@@ -674,18 +589,9 @@ impl Treasury {
             f(&mut a);
             accounts.insert(party, a);
         };
-        crate::snapshot::persist(&self.balances, |party, mu| at(party, &mut |a| a.balance = *mu));
-        crate::snapshot::persist(&self.stakes, |party, mu| at(party, &mut |a| a.bond = *mu));
-        let mut short = false;
-        crate::snapshot::persist(&self.held, |_, h| {
-            at(&h.payer, &mut |a| match crate::core::lanes::lanes_add(a.held, h.mu) {
-                Some(total) => a.held = total,
-                None => short = true,
-            })
-        });
-        if short {
-            return None;
-        }
+        crate::snapshot::persist(&self.balances, |party, mu| at(party, &mut |a| a.balance = mu.clone()));
+        crate::snapshot::persist(&self.stakes, |party, mu| at(party, &mut |a| a.bond = mu.clone()));
+        crate::snapshot::persist(&self.held, |_, h| at(&h.payer, &mut |a| a.held.step(&h.mu)));
         e.accounts = accounts.scoped().map(|(_, a)| a.clone()).collect();
         Some(e)
     }
@@ -693,15 +599,13 @@ impl Treasury {
     /// A finite, signed allocation at genesis. Its own kind, never a mint:
     /// §6 requires seeded value and earned value to stay separable, and a
     /// testnet differs from the beta only in this term.
-    pub fn genesis(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        if mu.iter().all(|&x| x == 0) {
-            return [0; 4];
+    pub fn genesis(&mut self, party: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
+        let mu = mu.into();
+        if mu.is_zero() {
+            return mu;
         }
-        // The credit first: a balance with no room writes no row (STD1).
-        if !self.credit(party, mu) {
-            return [0; 4];
-        }
-        self.write(Entry { kind: Kind::Genesis, who: party, mu, at: anchor.0, receipt: anchor.1, arm: None });
+        self.credit(party, &mu);
+        self.write(Entry { kind: Kind::Genesis, who: party, mu: mu.clone(), at: anchor.0, receipt: anchor.1, arm: None });
         mu
     }
 
@@ -709,30 +613,26 @@ impl Treasury {
     /// on each lane; supply falls by exactly what left, so §6 holds through
     /// it (R9). Returns the vector actually burned — never more than was
     /// held, and nothing is redistributed.
-    pub fn burn(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        let bond = self.staked(&party);
-        let bal = self.balance_mu(&party);
-        let from_bond: [u64; 4] = std::array::from_fn(|l| mu[l].min(bond[l]));
-        // from_bal ≤ bal on every lane: it is clamped to the balance just
-        // read, and it is debited against that same balance below.
-        let from_bal: [u64; 4] =
-            std::array::from_fn(|l| (mu[l] - from_bond[l]).min(bal[l]));
-        let took: [u64; 4] = std::array::from_fn(|l| from_bond[l] + from_bal[l]);
-        if took.iter().all(|&x| x == 0) {
+    pub fn burn(&mut self, party: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
+        let mu = mu.into();
+        let (from_bond, next) = self.staked(&party).split_at(&mu);
+        // from_bal ≤ bal on every lane: it is the rest of the ask divided at
+        // the balance just read, and it is debited against that same balance.
+        let rest = mu.shortfall(&from_bond);
+        let (from_bal, _) = self.balance_mu(&party).split_at(&rest);
+        let took = from_bond.add(&from_bal);
+        if took.is_zero() {
             return took;
         }
-        if from_bond.iter().any(|&x| x > 0) {
-            let next: [u64; 4] = std::array::from_fn(|l| bond[l] - from_bond[l]);
+        if !from_bond.is_zero() {
             self.stakes.insert(party, next);
             self.refresh_bond();
         }
-        // The debit cannot be short, by `from_bal ≤ bal` (STD1: the arm that
-        // read a short debit could not fire, and it is gone).
-        if from_bal.iter().any(|&x| x > 0) {
-            let unmoved = self.debit(party, from_bal);
-            debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "from_bal ≤ bal, debited against it");
+        if !from_bal.is_zero() {
+            let drawn = self.debit(party, &from_bal);
+            debug_assert!(drawn.is_ok(), "from_bal ≤ bal, debited against it");
         }
-        self.write(Entry { kind: Kind::Burn, who: party, mu: took, at: anchor.0, receipt: anchor.1, arm: None });
+        self.write(Entry { kind: Kind::Burn, who: party, mu: took.clone(), at: anchor.0, receipt: anchor.1, arm: None });
         took
     }
 
@@ -750,32 +650,21 @@ impl Treasury {
     /// the fold of MU-FOLD is admissible only where this holds
     /// at the prefix it folds — a compression whose conservation cannot be
     /// checked is not a compression, it is a loss.
-    pub fn audit(&self) -> Result<[u64; 4], String> {
+    pub fn audit(&self) -> Result<Mu, String> {
         let issued = self
             .supply()
             .ok_or_else(|| "supply does not add up on some lane".to_string())?;
-        let mut held = [0u64; 4];
-        let add = |v: &[u64; 4], held: &mut [u64; 4]| -> Result<(), String> {
-            for l in 0..4 {
-                held[l] = held[l]
-                    .checked_add(v[l])
-                    .ok_or_else(|| format!("carriers overflow lane {l}"))?;
-            }
-            Ok(())
-        };
         // R9's equation. Every escrow is a claim on issuance (§3.1): it
         // holds μ⃗ that does not exist yet, and a ruling mints it rather
-        // than moving it, so no escrow is a carrier of supply.
-        let mut sums: Vec<[u64; 4]> = Vec::new();
-        crate::snapshot::persist(&self.balances, |_, mu| sums.push(*mu));
-        crate::snapshot::persist(&self.stakes, |_, mu| sums.push(*mu));
-        crate::snapshot::persist(&self.held, |_, h| sums.push(h.mu));
-        for v in &sums {
-            add(v, &mut held)?;
-        }
+        // than moving it, so no escrow is a carrier of supply. Both sums are
+        // exact over ℚ.
+        let mut held = Mu::zero();
+        crate::snapshot::persist(&self.balances, |_, mu| held.step(mu));
+        crate::snapshot::persist(&self.stakes, |_, mu| held.step(mu));
+        crate::snapshot::persist(&self.held, |_, h| held.step(&h.mu));
         if held != issued {
             return Err(format!(
-                "supply {issued:?} is not the carriers {held:?}: balances + bond + held must be what was issued"
+                "supply {issued} is not the carriers {held}: balances + bond + held must be what was issued"
             ));
         }
         Ok(issued)
@@ -783,47 +672,45 @@ impl Treasury {
 
     /// A MINT to `party`, standing at the act that minted it and carrying the
     /// proof of work it pays (78.33) — none for a subsidy.
-    pub(crate) fn mint_to(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> [u64; 4] {
-        let paid = self.mint_to_paying(party, mu, anchor, arm);
+    pub(crate) fn mint_to(&mut self, party: [u8; 32], mu: impl Into<Mu>, anchor: Anchor, arm: Option<Arm>) -> Mu {
+        let paid = self.mint_to_paying(party, mu.into(), anchor, arm);
         // E4 — a proof of work paid is a payment the growth grant counts.
-        if matches!(arm, Some(Arm::Pouw) | Some(Arm::Powc)) && paid.iter().any(|&x| x > 0) {
-            self.paid_out.push((party, paid));
+        if matches!(arm, Some(Arm::Pouw) | Some(Arm::Powc)) && !paid.is_zero() {
+            self.paid_out.push((party, paid.clone()));
         }
         paid
     }
 
     /// MU-CLIENT §5.6 (E4) — the proof-of-work payments made since the last
     /// take, drained.
-    pub(crate) fn take_paid_out(&mut self) -> Vec<([u8; 32], [u64; 4])> {
+    pub(crate) fn take_paid_out(&mut self) -> Vec<([u8; 32], Mu)> {
         std::mem::take(&mut self.paid_out)
     }
 
-    fn mint_to_paying(&mut self, party: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> [u64; 4] {
-        if mu.iter().all(|&x| x == 0) {
-            return [0; 4];
+    fn mint_to_paying(&mut self, party: [u8; 32], mu: Mu, anchor: Anchor, arm: Option<Arm>) -> Mu {
+        if mu.is_zero() {
+            return mu;
         }
         // 78.154a — A CLOSER'S POUW IS PAID FIRST FROM THE RECYCLED POOL:
         // what the universes returned as connection tax pays the closure,
         // and only what the pool cannot cover is minted.
         let pooled = match arm {
-            Some(Arm::Pouw) => self.draw_pool(party, mu, anchor, arm),
-            _ => [0; 4],
+            Some(Arm::Pouw) => self.draw_pool(party, &mu, anchor, arm),
+            _ => Mu::zero(),
         };
-        let rest: [u64; 4] = std::array::from_fn(|l| mu[l] - pooled[l]);
-        if rest.iter().all(|&x| x == 0) {
+        // pooled ≤ mu on every lane: the pool pays at most what was asked.
+        let rest = mu.shortfall(&pooled);
+        if rest.is_zero() {
             return pooled;
         }
-        // The credit first: a balance with no room mints nothing (STD1).
-        if !self.credit(party, rest) {
-            return pooled;
-        }
+        self.credit(party, &rest);
         self.write(Entry { kind: Kind::Mint, who: party, mu: rest, at: anchor.0, receipt: anchor.1, arm });
         mu
     }
 
-    /// The POLYTONIC BALANCE — per-lane orientation-weighted sums; there is no
-    /// scalar balance. Mint grows supply; the stake bond is independent.
-    pub fn balance_mu(&self, party: &[u8; 32]) -> [u64; 4] {
+    /// The POLYTONIC BALANCE — per-lane exact amounts; there is no scalar
+    /// balance. Mint grows supply; the stake bond is independent.
+    pub fn balance_mu(&self, party: &[u8; 32]) -> Mu {
         self.balance_of(party)
     }
 
@@ -831,10 +718,10 @@ impl Treasury {
     /// holds nothing on every lane, and that zero is a measurement of the
     /// carrier rather than a value put in place of one. Every balance,
     /// stake and escrow read passes through here.
-    fn balance_of(&self, party: &[u8; 32]) -> [u64; 4] {
+    fn balance_of(&self, party: &[u8; 32]) -> Mu {
         match self.balances.get(party) {
-            Some(b) => *b,
-            None => [0; 4],
+            Some(b) => b.clone(),
+            None => Mu::zero(),
         }
     }
 
@@ -842,26 +729,25 @@ impl Treasury {
     /// seen it — the same reading of absence. `stake_of` above answers
     /// WHETHER there is a bond; this answers HOW MUCH, and an unseen party
     /// holds zero on every lane.
-    fn staked(&self, party: &[u8; 32]) -> [u64; 4] {
+    fn staked(&self, party: &[u8; 32]) -> Mu {
         match self.stakes.get(party) {
-            Some(s) => *s,
-            None => [0; 4],
+            Some(s) => s.clone(),
+            None => Mu::zero(),
         }
     }
 
     /// 78.93 B1 — ONE PARTY'S ACCOUNT, read at the question off the carriers
     /// themselves, as `economy` reads every account: its balance, its bond,
     /// and what it holds against keys, per lane. A party the ledger has never
-    /// seen holds zero on every lane — the reading of absence. `None` where
-    /// its holds would pass the holds' carrier (rule 11).
-    pub fn account(&self, party: &[u8; 32]) -> Option<([u64; 4], [u64; 4], [u64; 4])> {
-        let mut held = Some([0u64; 4]);
+    /// seen holds zero on every lane — the reading of absence.
+    pub fn account(&self, party: &[u8; 32]) -> Holdings {
+        let mut held = Mu::zero();
         crate::snapshot::persist(&self.held, |_, h| {
             if &h.payer == party {
-                held = held.and_then(|t| crate::core::lanes::lanes_add(t, h.mu));
+                held.step(&h.mu);
             }
         });
-        Some((self.balance_of(party), self.staked(party), held?))
+        (self.balance_of(party), self.staked(party), held)
     }
 
     pub fn entries(&self) -> &[Entry] {

@@ -307,7 +307,7 @@ fn witness_rederived_fresh_rules_pressured_word_and_citer() {
     );
     let admitted = k.take_offers();
     assert!(admitted.iter().any(|(a, _)| *a == w), "its admission emitted its offer");
-    let escrow_before = k.treasury().escrow_of(w.as_bytes()).map(|e| e.mu).expect("the word is under escrow");
+    let escrow_before = k.treasury().escrow_of(w.as_bytes()).map(|e| e.mu.clone()).expect("the word is under escrow");
     let citer = citer_of(&word, 9);
     assert_eq!(
         k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&citer)),
@@ -318,9 +318,9 @@ fn witness_rederived_fresh_rules_pressured_word_and_citer() {
     // and one carriage drew the word's own, exactly — its frame read in the
     // escrow's currency, the word's discharge (78.149), which a word heard
     // for no task measures as nothing.
-    let escrow_after = k.treasury().escrow_of(w.as_bytes()).map(|e| e.mu).expect("still under escrow");
+    let escrow_after = k.treasury().escrow_of(w.as_bytes()).map(|e| e.mu.clone()).expect("still under escrow");
     let drawn = k.discharge_of(w.as_bytes(), &word);
-    let expected: [u64; 4] = std::array::from_fn(|l| escrow_before[l] + citer.magnitude()[l] - drawn[l]);
+    let expected = escrow_before.add(&citer.magnitude().into()).draw(&drawn.into()).expect("the draw fits the escrow");
     assert_eq!(escrow_after, expected, "escrow + citer's frame − the carriage's draw, per lane");
     assert!(k.take_offers().iter().any(|(a, _)| *a == w), "and the carriage emitted the word's offer again");
     // A bonded second vantage re-derives the word; the ruling closes its orbit.
