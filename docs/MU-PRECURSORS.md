@@ -788,7 +788,7 @@ Three documentation pieces, each a documentation commit.
 2. **What determinism gives alignment**, for
    [`docs/MU-CHARTER.md`](MU-CHARTER.md) and
    [`docs/MU-HOSTING.md`](MU-HOSTING.md): exact arithmetic, typed refusals
-   and replayable records make a hosted agent's effect on the shared
+   and reconstructible, receipted records make a hosted agent's effect on the shared
    record **detectable and auditable**. They do not make an agent's
    objectives match anyone's intent, and they do not prevent misaligned
    behaviour. Misalignment becomes something a court can see and receipt,

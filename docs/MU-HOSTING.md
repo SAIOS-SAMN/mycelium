@@ -532,7 +532,7 @@ Hosting gives agents a place, and containment bounds each agent's effect. The
 third leg is **certification**: a record of how an agent behaves that any
 third party can re-derive instead of trusting. Mycelium offers it as a
 **certification venue**: seat an agent in a hosted universe under a
-controlled economy, and its standing is a replayable, receipted,
+controlled economy, and its standing is a receipted, reconstructible,
 non-scalar record (**Specified**).
 
 ### 7.1 What evaluation as practiced lacks
@@ -560,10 +560,15 @@ one universe:
 - the books read from those receipts, per lane, never summed;
 - what was refused, each by name.
 
-Anyone can verify a certificate by reconstruction: rebuild the universe from
-its seed over the era, replay the agent's signed acts into it, and check
-that the courts' verdicts and the books follow. The certificate attests
-the record; it does not ask to be trusted.
+Anyone can verify a certificate by reconstruction (MU-SCIENCE §5.0): check
+each receipt's signature and its chain hash up to a signed root;
+reconstruct each cited verdict from its constructors and the claim's
+coordinates, by the class's means (V0–V4), reaching the same exact object;
+and check that the books close per lane (conservation). The universe's
+history is attested by its kernel's signed receipts and is never re-run:
+no universe is rebuilt from its seed and no act is replayed to verify a
+certificate (MU-CONCORDANCE 1.4, 4.4). The certificate attests the record;
+it does not ask to be trusted.
 
 ### 7.3 Scope: what a certificate attests
 

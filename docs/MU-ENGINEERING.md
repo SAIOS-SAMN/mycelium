@@ -63,8 +63,9 @@ corpus manifests (configuration) and the ledger or genome it writes
 
 Inside every hypha (`server/cognition/`, `court/verdict/`):
 
-- `blind_replay` (`court/verdict/blind.rs`) re-derives every kind of word
-  from its own tape; false speech is slashed with a reason.
+- `blind_replay` (`court/verdict/blind.rs`; the name awaits the code
+  rename, it reconstructs) re-derives every kind of word from its own
+  tape; false speech is slashed with a reason.
 - The docket is the field's projection: listings whose closure is not Flat
   with nonzero deflation, read by key under a stroke budget.
 - Gluing across hyphae (`glue_fetched`, `server/cognition/court/glue.rs`)
@@ -217,6 +218,7 @@ Superseded layouts are refused by name and never migrated: `MYC7` (the
 positional tape) and `MYT1` for the snapshot, `GEN4`, `GEN5` and `GEN6` for
 the genome. The one exception is the mesh record, which is configuration:
 an `MSH1` record is read and written back as `MSH2`. Ledgers and genomes
-are rewritten atomically; a restore rebuilds the basis from the lettered
-federation and drops what does not replay. Within one layout, residues,
+are rewritten atomically; a restore rebuilds the basis (a derived index)
+from the lettered federation, and `prune_basis_to_ruled` drops the words
+the court has not ruled. Within one layout, residues,
 thoughts, and dialects are never deleted (`MU-STANDARDS.md` §10).

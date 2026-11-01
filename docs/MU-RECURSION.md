@@ -12783,7 +12783,7 @@ Code: `src/observe/clock.rs` (`CourtClock`, `Clock`), `src/chronometry/receipt.r
 - **Dead writers are deleted, not repaired** (TR1). The verdict act is deleted whole and its code byte left unassigned: a court's ruling reaches a node as a receipt through the exchange and its back-fill (45.2, 47.2), and two courts reach one verdict with no exchange of opinion (13.7, 23).
 - **LD1.** `Reading::Carriage` measures, per carrier and kind, the records, bytes and largest: awards as the treasury persists them, receipt deltas by act kind, wire frames by act tag; the proof of LD0 is a carriage flat in the form's size and bounded by `n` and the rationals' precision.
 - **C4 widened.** The tape check reads every carrier the build under check wrote (genomes, ledgers, registries, eras), not the genomes alone.
-- **Persistence.** The receipt chain is the record; the ledger, registry and eras are derived from it (law 12), and a restart replays the chain from a snapshot's height to the head.
+- **Persistence.** The receipt chain is the record; the ledger, registry and eras are derived from it (law 12). A restart holds the line on disk (`ReceiptChain::from_line`, each anchor re-derived, one that does not re-derive refused) and restores the snapshot whole (`Court::restore`) against the held line (45.8); nothing is re-executed (78.137, Concordance 1.4).
 - **EC1.** A ruling's release, demotion or slash is applied by the node that admits its Ruling receipt (78.24(b)).
 
 Code: `src/transducer/address.rs` (`put_address`), `src/chronometry/receipt.rs` (`Cite`), `src/observe/carriage.rs` (`Carriage`), `src/economy/persist.rs`, `src/economy/escrow.rs`.

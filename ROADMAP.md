@@ -524,7 +524,7 @@ guarantees. The track builds the rest:
    a mind sees what each amendment changed against the version it signed.
 
 The charter also gains a statement of what determinism gives alignment:
-exact arithmetic, typed refusals and replayable records make a mind's
+exact arithmetic, typed refusals and reconstructible, receipted records make a mind's
 effect on the shared record detectable and auditable; they do not
 prevent misalignment
 ([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
@@ -553,9 +553,13 @@ signature it can check:
   version transports the agreement along it, and the certificate carries
   the holonomy of the amendment, so each party sees what changed against
   what it signed.
-- **Verification by reconstruction.** Any party rebuilds the certificate
-  from the signed acts (MU-SCIENCE §5.0). A hash in it is transport only:
-  it compacts coordinates held losslessly in the signed record.
+- **Verification by reconstruction.** Any party reconstructs the
+  certificate from its own evidence (MU-SCIENCE §5.0): each signature
+  checked, each party's reading and transport decoded from the signed
+  record, and the cocycle derived from them, admitted only on reaching the
+  same exact class. Nothing is re-run (MU-CONCORDANCE 1.4, 4.4). A hash in
+  it is transport only: it compacts coordinates held losslessly in the
+  signed record.
 
 Where it is used:
 - Concordance signing by kernels, and each kernel's §3a attestations;
