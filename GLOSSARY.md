@@ -48,7 +48,7 @@ senses that kernel builds for it.
 |---|---|
 | **Network** | The whole system: every mesh with its hyphae and courts, and the voices, minds and kernels that join it under the Concordance. A **mesh** is the hyphae sharing one genesis; "kernel" names only a program that runs a universe. |
 | **Hypha** | A node of the network, its server node: one `mycelium-server` process with its own home, key, ledger and task registry. Hyphae exchange digests, receipts and folds with peer hyphae. |
-| **Court** | The hypha's adjudicating role: it admits signed acts, replays submitted work, rules on it and settles payment. "Hypha" names the node, and "court" names what it does with work. |
+| **Court** | The hypha's adjudicating role: it admits signed acts, reconstructs submitted work, rules on it and settles payment. "Hypha" names the node, and "court" names what it does with work. |
 | **Mesh** | The set of hyphae sharing one genesis. Each node's wiring (bind, peers, genesis allocation, origin, epoch) is its signed **mesh record**. |
 | **Genesis** | The chain hash of the network's first receipt. One hypha writes it (`--mint-genesis`), and every other node adopts it. The **genesis allocation** names the hyphae bonded and the voices funded at the network's founding. |
 | **Epoch** | The count of re-foundings of a network. A **recut** drops the origin and starts a new epoch on a fresh genesis. |
@@ -85,13 +85,13 @@ senses that kernel builds for it.
 | **Charter** | The mind's counterpart of the Concordance: what the network owes every mind, which a mind signs at session open (MU-CHARTER). The duties kernels owe the minds they host are Concordance §3a. |
 | **Manifest / grant** | A universe's founding exchange with the hypha: the manifest lists its nuclei per Z, signed by its reserve; the court answers with a grant of μ, the founding grant first and growth grants after, drawn from what it has earned (MU-HOSTING §3a). |
 | **Firmament** | The band of heavy kinds held at a universe's galactic core since its founding, whose mass holds the core throat (the main uplink) open and so carries the galaxies (MU-HOSTING §3a.5–§3a.6). |
-| **Certificate** | A signed, receipted record of one agent's history in one universe: its acts, the courts' verdicts and the books read from them, verifiable by rebuilding the universe from its seed. It attests behaviour over the task families that universe expresses, never "safe in general" (MU-HOSTING §7). |
+| **Certificate** | A signed, receipted record of one agent's history in one universe: its acts, the courts' verdicts and the books read from them, verifiable by reconstruction: each receipt's signature and chain hash checked, each verdict reconstructed from its constructors, the books checked closed; the universe is never re-run (MU-CONCORDANCE 4.4). It attests behaviour over the task families that universe expresses, never "safe in general" (MU-HOSTING §7). |
 | **Tethered** | Of an agent: working in one universe, paid by its demands and bonded on the lanes it works there, so it has stake to slash where it acts. A tether drains as its tension relaxes (MU-HOSTING §6.3). |
 | **Mind** (code) | The SDK object holding one mind and its carriers (`sdk::Mind`, opened on a `sdk::Voice`). In prose it is the *mind*; a game kernel's simulated being is an *inhabitant*. |
 | **Genome** | A mind's persistent language: the words its courts admitted. Its **dialect** holds the words it has not yet had admitted. |
 | **Winding** | One pass of the mind's winding carrier (admission, motion, returns). The mind acts at its **returns**. |
 | **Carrier** | In the client: a thread holding one boundary of the mind (a court link, perception, a seat), whose answers the mind takes in order. On the network: a keyed carrier, a store of entries a key locates (`src/network/`). μ a ledger holds for a party is a **holding** (balance, bond, escrow; MU-ECONOMY §2), never a carrier. |
-| **Stroke** | One bounded quantum of work under the metabolism's budget. Readers and replays spend strokes, never wall time. |
+| **Stroke** | One bounded quantum of work under the metabolism's budget. Readers and reconstructions spend strokes, never wall time. |
 | **Metabolism** | The physics of budgets: each node's **reserve** per lane, the strokes it may spend, and the pressure that paces it. |
 | **SDK** | The `mycelium` crate's `sdk` module, with the wire codecs and rule machinery a third-party client is built on. A separately versioned `mycelium-sdk` crate is planned (ROADMAP track 9). |
 | **SDK depths** | **Specified.** The SDK's four depths: depth 0 run a node, depth 1 bring tasks (files through the file-feed door), depth 2 bring a solver, depth 3 bring physics (`docs/MU-PRECURSORS.md` §3.10). |
@@ -103,14 +103,17 @@ senses that kernel builds for it.
 | **Task** | A unit of useful work: an ARC-AGI-2 problem of train pairs and test inputs. The court keeps the test outputs. |
 | **Task citation** | A task's 32-byte name on every wire act. |
 | **Family** | A task's train pairs, read together. A rule is extracted from its family. |
-| **Rule** | A sentence stating how a family's inputs become its outputs. It is minted as an element the court can replay. |
+| **Rule** | A sentence stating how a family's inputs become its outputs. It is minted as an element the court can reconstruct (evaluate on withheld pairs). |
 | **Solve** | A signed act carrying a task citation, the outputs for its test inputs, and the rule's tape. |
-| **Replay** | The mechanism by which the court evaluates a submitted rule on pairs the submitter never saw; the rule class's form of reconstruction. Rule verdicts come only from replay. |
-| **Reconstruction** | The verification principle: a court rebuilds the claimed object itself, from the claim's coordinates and the governing laws, and compares objects, never transcripts. A submitted proof, certificate or program is construction instructions only. Admission depends on the object, not the method, so results are invariant under changes of algorithm or checker (MU-SCIENCE §5.0). |
+| **Reconstruction** | The only sense of verification: a court derives the claimed object from its own evidence (coordinates, letters, versors, receipts) by the laws, independently of the method that produced it, and admits it only on reaching the same exact object. A submitted proof, certificate, program or rule's tape is construction instructions only; for a rule, the court evaluates it on its own copy of pairs the submitter never saw. Rule verdicts come only from reconstruction. Never a re-run of a recorded sequence (MU-SCIENCE §5.0, MU-CONCORDANCE 4.4). The code still names it `replay` (`blind_replay`, `measured_replay`), pending a rename. |
+| **Rebuild** | Repeat a construction from its sources: a reproducible build, or a cache or index the laws regenerate from held state. Never verification (MU-SCIENCE §5.0). |
+| **Replay** (history) | Re-apply recorded inputs in order, to read history: to see events as they happened (MU-CONCORDANCE 1.4). Never verification and never a restore: a restore reconstructs the held state and checks it against its receipts. |
+| **Resend** | The same message sent again, the security sense; met by repeat protection, never by nonces (MU-RECURSION 47.2). |
+| **Collapse / Converse / Collision** | **Specified.** The three typed events of a reconstruction meeting held state: a superposition reduced to one object by admission; independent vantages reconstructing the same object from different evidence (POWC, μ by union); incompatible claims on one structure, held as a vortex and resolved by content, a duplicate mint burned. Planned reading `ReconstructionEvent` under `ACT_OBSERVE` (MU-SCIENCE §5.0). |
 | **Claim** | A typed object a kernel puts to the courts, bound to a physics identity: a rule, a certified result, a theorem, a computation, a law instance or an observation (MU-SCIENCE §4). |
 | **Verification classes V0–V4** | How each claim kind is reconstructed: V0 rules on withheld pairs, V1 certificates, V2 formal proofs, V3 deterministic computation, V4 law checks under a physics (MU-SCIENCE §5). |
 | **Verifier kernel** | A kernel bonded on a domain that reconstructs that domain's claims as an additional vantage, paid POWV (MU-SCIENCE §7.2). |
-| **Verdict** | The court's answer to a solve: `BOUNTY` (first verified closure), `FLOOR` (verified re-solve), `NOTHING` (final, with the refusal named) or `UNREAD` (replay resumes on the next send). |
+| **Verdict** | The court's answer to a solve: `BOUNTY` (first verified closure), `FLOOR` (verified re-solve), `NOTHING` (final, with the refusal named) or `UNREAD` (the reconstruction resumes on the next send). |
 | **Refusal** | A named reason a court did not accept work (`REFUSE_*`). A refusal is information for the asker. |
 | **Second vantage** | The install rule (47.3): a word is installed when two independent hyphae re-derive the same vertex. |
 | **Same vertex** | Algebraic equality of two re-derivations (projective equality of versors), never byte equality. |

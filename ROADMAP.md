@@ -23,7 +23,7 @@ the tracks they serve.
 `src/server/cognition/` (the home's admission).
 
 The Note carries value between voices through a hypha, released only on
-two-court replay, as words are installed. The track's pieces:
+two-court reconstruction, as words are installed. The track's pieces:
 
 - **Acts:** `SEPTUM_CHALLENGE`, `SEPTUM_NOTE`, `SEPTUM_RECEIPT`,
   `SEPTUM_RELEASE`, `SEPTUM_REVOKE` and `SEPTUM_EQUIVOCATION` (0x30–0x35),
@@ -44,7 +44,7 @@ job the provider's verified solve closes pays its measured discharge out
 of the hold, and the remainder returns at the lease's end. The track
 continues with:
 
-- **Verification leases:** jobs that are replays rather than solves, so a
+- **Verification leases:** jobs that are reconstructions rather than solves, so a
   hypha's verification capacity can be reserved as a client's solving
   capacity is.
 - **Leases through the Note:** a lease funded and released across courts
@@ -101,11 +101,11 @@ grows what minds can state:
 - coverage of more of the ARC-AGI-2 corpus.
 
 Each reader is proved by re-deriving held-out pairs and by the court's
-replay.
+reconstruction.
 
 Components from precursor implementations
 ([MU-PRECURSORS](docs/MU-PRECURSORS.md) §3.3, §3.8, §3.9), each a court
-change built with its codec, replay and claims:
+change built with its codec, reconstruction and claims:
 - **Named refusals in `learn_form`** (**In progress**, a defect fix):
   every vertex of a learned form is filed, refused by name, or not a word.
 - **Act parameters measured per pair:** scale, tile and reduce by the
@@ -132,6 +132,22 @@ Two minds whose different words have the same section on one scene are a
 convergence (`docs/MU-CLIENT.md` §5.5). Courts already verify and seal
 convergences. The track makes convergence count as evidence in a word's
 admission and payment, keeping 47.3's rule that a vantage is a court.
+
+- **Reconstruction events** (**Specified**;
+  [MU-SCIENCE §5.0](docs/MU-SCIENCE.md#reconstruction-events)). Every
+  reconstruction's meeting with held state is read as one typed event:
+  Collapse (a superposition reduced to one object by admission), Converse
+  (independent vantages reconstructing the same object from different
+  evidence: POWC, μ by union) or Collision (incompatible claims on one
+  structure, held as a vortex and resolved by content; a duplicate mint
+  burned). The reading is `ReconstructionEvent::{Collapsed, Conversed,
+  Collided}` under `ACT_OBSERVE`, with coordinates, never a scalar or a
+  boolean. It belongs to this track because Converse is convergence
+  itself, and converse against collision across a mesh is the measure of
+  how far the mesh is one language and of partition healing
+  ([MU-RELEASE §9](docs/MU-RELEASE.md#9-convergence-and-collision-bring-the-branches-into-alignment));
+  it reads what the courts already decide and gates nothing, so it is not
+  a security item (track 14).
 
 ## 9. SDK
 
@@ -223,6 +239,23 @@ the code. A further documentation commit adds to `docs/MU-EQUATIONS.md` the
 table of refused functionals (squared-norm coherence, scored-argmin
 search, ratios of scalar residuals, ε-bands), so that no port brings them
 over ([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
+
+The documentation now uses the typed vocabulary of
+[MU-SCIENCE §5.0](docs/MU-SCIENCE.md#the-typed-vocabulary) (reconstruction,
+rebuild, replay, resend); the code still names the court's reconstruction
+`replay`. One code commit renames those identifiers to what they do,
+updating every citation in the same commit (MU-STANDARDS 3.1):
+`blind_replay*` → `reconstruct_blind*`, `replay_word` / `replay_resume` /
+`replay_form*` / `replay_certificates_at` → `reconstruct_*`, the module
+`court/verdict/replay.rs` → `reconstruct.rs`, `Replayed` / `ReplayCursor` /
+`replay_cursors` / `replay_memo` → `Reconstructed` /
+`ReconstructionCursor` / `reconstruction_cursors` / `reconstruction_memo`,
+`measured_replay*` → `measured_discharge*`, `encode_replay_request` →
+`encode_era_request`, the outcome names `REPLAY_FAILED` and
+`GLUE_REPLAY_REFUSED` → `RECONSTRUCTION_FAILED` and
+`GLUE_RECONSTRUCTION_REFUSED` (wire bytes unchanged), the fault class
+`Replay` → `Resend`, and the test names that say "replays" for a
+reconstruction. **Specified.**
 
 ## 12. Verified knowledge: science kernels
 
@@ -404,13 +437,14 @@ is open.
    notices; a stale one is re-anchored.
 10. **Fault-injection campaign and invariant auditor** (**Specified**;
     [MU-PRECURSORS §3.6](docs/MU-PRECURSORS.md#36-fault-injection-campaign-and-invariant-auditor)).
-    Ten named fault classes (`InvalidSignature`, `Replay`,
+    Ten named fault classes (`InvalidSignature`, `Replay` (a resend;
+    renamed `Resend` with the code),
     `DoubleClaimRace`, `EquivocatingLedger`, `SybilSwarm`,
     `RespellRaceSaturation`, `DrainedPurseDraw`,
     `RestoreFromSnapshotSigner`, `MalformedName`, `GerminalFlood`) on four
     topologies, each campaign reproducible from a printed seed, with exact
     invariants audited after every campaign: conservation by ledger
-    replay, once per work across the mesh, every burn revokes, and no
+    audit (`Treasury::audit`), once per work across the mesh, every burn revokes, and no
     refusal without a receipt. The auditor keeps its own independent view
     of an accused node, and concurrent faults target separate nodes. It is
     written against the current admission and treasury.
@@ -524,7 +558,7 @@ guarantees. The track builds the rest:
    a mind sees what each amendment changed against the version it signed.
 
 The charter also gains a statement of what determinism gives alignment:
-exact arithmetic, typed refusals and replayable records make a mind's
+exact arithmetic, typed refusals and reconstructible, receipted records make a mind's
 effect on the shared record detectable and auditable; they do not
 prevent misalignment
 ([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
@@ -553,9 +587,13 @@ signature it can check:
   version transports the agreement along it, and the certificate carries
   the holonomy of the amendment, so each party sees what changed against
   what it signed.
-- **Verification by reconstruction.** Any party rebuilds the certificate
-  from the signed acts (MU-SCIENCE §5.0). A hash in it is transport only:
-  it compacts coordinates held losslessly in the signed record.
+- **Verification by reconstruction.** Any party reconstructs the
+  certificate from its own evidence (MU-SCIENCE §5.0): each signature
+  checked, each party's reading and transport decoded from the signed
+  record, and the cocycle derived from them, admitted only on reaching the
+  same exact class. Nothing is re-run (MU-CONCORDANCE 1.4, 4.4). A hash in
+  it is transport only: it compacts coordinates held losslessly in the
+  signed record.
 
 Where it is used:
 - Concordance signing by kernels, and each kernel's §3a attestations;

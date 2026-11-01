@@ -266,6 +266,19 @@ Holding the modes themselves (78.162) remains the next step.
   borrows its pieces. A hypha logs `court corpus routed: N tasks` when its
   intake's thread ends.
 
+### Documentation
+- **Reconstruction, rebuild, replay and resend are typed terms** (MU-SCIENCE
+  §5.0). Verification is reconstruction only: the court derives the object
+  from its own evidence by the laws and admits it on the same exact object;
+  replay is for history (Concordance 1.4), rebuild for reproducible builds
+  and regenerated caches, resend for the security sense. Every document
+  that called the court's verification a replay now says reconstruction;
+  MU-HOSTING §7.2 verifies a certificate by checking receipts and
+  reconstructing verdicts, never by re-running the universe; two restore
+  sentences now state what the code does; reconstruction events (Collapse,
+  Converse, Collision) are specified (ROADMAP track 8), and the code
+  identifiers' rename is listed (track 11).
+
 ## 0.3.0-rc.2 — 2026-10-31 (release candidate)
 
 Kernels conform too: the peer kernels pinning rc.1 found the contract

@@ -295,10 +295,11 @@ holds).
   keepers' citations. Measured, not chosen: the citations are signed TU-2
   receipts. TUniversal, not wall clock (Concordance 1.11, law 9). No
   squaring: comparisons only. Every keeper, as 78.125's text states.
-- *Replay.* Keeper rings travel as `ACT_TICK` (`Kind::Exchange`, heard off
+- *Re-derivation.* Keeper rings travel as `ACT_TICK` (`Kind::Exchange`, heard off
   the court, 78.152b). The rings are not sealed, so a reading of `T(h₀)`
   from the volatile `Keepers` view would differ across restarts and
-  courts, while finality is "read, never stored" and must replay. The
+  courts, while finality is "read, never stored" and must re-derive the same
+  from what is sealed. The
   close is therefore SEALED. At the stroke where `T(h₀)` first holds for
   one or more open windows, the court seals one
   `Cite::Window { opened: [Stamp], witnesses: [(keeper, reading hash, tick h)] }`
@@ -981,7 +982,7 @@ reading at zero). Tests (`economy::tests::forfeit`,
 holding through it). The entry below is the derivation as specified.
 
 **Site.** `src/server/cognition/convert.rs:582`, in `Court::slash`
-(called from `src/server/cognition/challenge.rs:296` on a replay that
+(called from `src/server/cognition/challenge.rs:296` on evidence that
 does not reconstruct, and `:309` on a default):
 
 ```rust
@@ -1025,7 +1026,7 @@ nowhere in the equations.
     value with no `½`; a declared flow is one-sided, so its absolute value
     is its value. Computed in `BigInt`, never on a carrier that can pass.
   - `D_l ∈ ℚ≥0` — the DEFECT, the falsified fold's measured lie on lane
-    `l`. On replay (`Challenge::Evidence` / streamed `Part`), from the
+    `l`. On evidence (`Challenge::Evidence` / streamed `Part`), from the
     exact quantities `reconstructs` (`challenge.rs:109`) already builds
     and then discards as a bool:
     ```text
@@ -1033,7 +1034,7 @@ nowhere in the equations.
     want_{w,l} = rows_{w,l} − Σ_{c ∈ children} rate_{c,l} · included_{c,w,l}        (ℚ: rates are p/q)
     ```
     `reconstructs = true ⇔ D_l = 0 on every lane`, so a falsification by
-    replay has `D_l > 0` on at least one lane. On `Challenge::Default` the
+    reconstruction has `D_l > 0` on at least one lane. On `Challenge::Default` the
     tier published nothing: every net the fold asserted stands unproved,
     so `D_l := X_l` (the unpublished line carries its whole exposure as
     defect).
@@ -1144,7 +1145,7 @@ honesty).
 
 - The challenger's work, as the court holds it, is the part of the fold's
   exposure the challenger's act proved false: the defect `D_l` (D2.1)
-  against the exposure `X_l`. The replay the court ran is the court's own
+  against the exposure `X_l`. The reconstruction the court ran is the court's own
   work, already paid where scarce by POWV (MU-ECONOMY §5.1); it is not
   the challenger's, and it is not paid twice.
 - ```text
@@ -1153,9 +1154,9 @@ honesty).
   ```
   - Default (`D_l = X_l`): `bounty_l = ⌊cut_l / 2⌋`, today's half, so the
     existing reason to file a demand is unchanged.
-  - A replay proving a lie larger than the exposure (`D > X`: fabricated
+  - A reconstruction proving a lie larger than the exposure (`D > X`: fabricated
     rows): the challenger takes more than half, up to the whole cut.
-  - A replay proving a small arithmetic defect on a large fold (`D ≪ X`):
+  - A reconstruction proving a small arithmetic defect on a large fold (`D ≪ X`):
     a small bounty, the rest retired. Filing a challenge over a rounding
     defect pays little, which removes a griefing incentive.
 - Laws answered: no constant; four lanes; exact; taken out of the cut,
@@ -1608,7 +1609,7 @@ empty polls.
 - These sites pass the reserve as if it were a measured round trip; they
   are one shape, and one ruling applies to every site:
   - `src/bin/mycelium-server/wallet.rs:39` — `--wallet`
-  - `src/bin/mycelium-server/ledger.rs:53` — the era-replay page loop
+  - `src/bin/mycelium-server/ledger.rs:53` — the era-page loop
   - `src/bin/mycelium-server/ledger.rs:111` — `fold_root_k`
   - `src/bin/mycelium-server/console.rs:130`
   - `src/bin/mycelium-server/why.rs:35`
@@ -2067,16 +2068,16 @@ checklist (r), 78.43(2) (a cap).
 - The head choice in `derive_pi` is L9a's row proper, outside this
   constant but forced by it: with every common term held, `derive_pi`
   returns the common set (the superposition, the vortex of 3.9), and the
-  court's replay over the withheld pairs collapses it (rule 15, checklist
+  court's reconstruction over the withheld pairs collapses it (rule 15, checklist
   (r): only a court or kernel collapses).
 - **Open:**
   - **O1, whether the court may bind a superposition of anchor terms.**
-    Candidates: (a) π* is the whole common set, judged by replay, every
+    Candidates: (a) π* is the whole common set, judged by reconstruction, every
     term that reproduces the evidence kept (rule 15 strict); (b) π* is the
     meet of the common set, the intersection of the terms' supports, itself a
     term `Inter(…)`, exact and one object (law 12: one dimension); (c) the
     head kept, now as a mind's stated order under Concordance 1.10, not
-    engine code. Deciding reading: on the court's A9 replay over the
+    engine code. Deciding reading: on the court's A9 reconstruction over the
     corpus, whether two common terms ever differ on a withheld pair (if
     never, (b) and (a) coincide and (b) is the one object). A ruling
     closes L9a.
@@ -2098,7 +2099,7 @@ checklist (r), 78.43(2) (a cap).
   - `carrying_set_keeps_thirty_third_term` (a fixture whose shared term
     ranks past 32 on one scene binds in `derive_pi`).
   - `carrying_set_refuses_spent_token_whole` (`Unread`, no partial set).
-  - A replay test per the L9a ruling.
+  - A reconstruction test per the L9a ruling.
 - Mutation audit: an entry on the intersection (guards admission).
 - Dependencies: the L9a ruling (ROADMAP track 7). Size: M.
 
@@ -2249,7 +2250,7 @@ counts as generations").
   ```
   The "2" is not a constant: it is "the beat it was made in (partial) plus
   one whole beat", the dissipation rule's own reading on the seat's line.
-  A percept with `b ≤ b₀` (re-delivery, or a replay from an earlier page)
+  A percept with `b ≤ b₀` (re-delivery, or a resend from an earlier page)
   advances nothing and is not counted.
 - The reading in code: `Pending` carries `made_at: u64`
   (`= self.beat` at `called`) in place of `percepts_since`; `read_pending`

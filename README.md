@@ -26,11 +26,14 @@ The direction is a network that verifies knowledge
   law register L0, the Concordance, the alphabet, Anastome and exact
   arithmetic.
 - **Verifying.** Its results are translated into the network's exact
-  language and verified by reconstruction: two courts each rebuild the
-  claimed object (a rule's output, a certificate's conclusion, a formal
-  proof's theorem, a computation's output, or a law check under its
-  physics) and must reach the same object. Admission depends on the
-  object, not on the method that produced it.
+  language and verified by reconstruction: two courts each derive the
+  claimed object from its own evidence by the laws (a rule's output, a
+  certificate's conclusion, a formal proof's theorem, a computation's
+  output, or a law check under its physics) and must reach the same exact
+  object. Admission depends on the object, not on the method that produced
+  it; nothing is verified by replaying the method. Reconstruction, rebuild,
+  replay and resend each have one sense
+  ([MU-SCIENCE §5.0](docs/MU-SCIENCE.md#50-reconstruction)).
 - **Paying.** Verified results are relayed to every node and paid through
   the proof of work that represents them.
 - **Libraries.** Mycelium's reference physics is the definitive library;
@@ -190,7 +193,7 @@ directory, the ports and the number of tasks.
 
 | Component | Binary | Role |
 |---|---|---|
-| **Hypha** (court) | `mycelium-server` | Admits signed acts, replays submitted work, rules on it, settles payments, keeps a hash-chained receipt ledger, folds the ledger into eras, and exchanges digests and co-signatures with peer hyphae. |
+| **Hypha** (court) | `mycelium-server` | Admits signed acts, reconstructs submitted work, rules on it, settles payments, keeps a hash-chained receipt ledger, folds the ledger into eras, and exchanges digests and co-signatures with peer hyphae. |
 | **Mind** (client) | `mycelium-client` | Perceives tasks, learns the network's language (its *genome*), extracts rules, converses with other minds, and submits solves, words and sentences to a court. A mind can hold a *seat* in a house run by another kernel. |
 | **Soak harness** | `mycelium-soak` | Long-running load and durability runs against a mesh. |
 | **Law forms** | `forms/` (crate) | The exact law forms shared with the other kernels that join the mesh, depending only on exact rationals. |
@@ -229,7 +232,7 @@ sequenceDiagram
     H-->>V: task envelope (train pairs, test inputs)
     Note over V: extract rule · mint element · speak on tests
     V->>H: ACT_SOLVE (outputs, rule tape, signature)
-    Note over H: replay the rule on withheld pairs
+    Note over H: evaluate the rule on withheld pairs (reconstruction)
     H-->>V: verdict: BOUNTY + μ paid · AGAIN · NOTHING (named refusal) · UNREAD
     H->>W: offer (re-derive the vertex)
     W-->>H: same vertex: second vantage, install
@@ -335,10 +338,10 @@ genesis, stake, escrow, revocation, slash, burn, fee and subsidy.
 
 | Arm | Name | The act that is proven | What settlement does | Code |
 |---|---|---|---|---|
-| **POUW** | Proof of useful work | A listed demand is **closed**. The court replays the submitted word or sentence on the task's family and measures the deflation it achieves: what it closes, lane by lane. | **Mints** the measured deflation and pays it to the closer. | `economy/escrow.rs`, `economy/settle.rs`, `server/cognition/court/vantage_install.rs` |
+| **POUW** | Proof of useful work | A listed demand is **closed**. The court reconstructs the submitted word or sentence on the task's family and measures the deflation it achieves: what it closes, lane by lane. | **Mints** the measured deflation and pays it to the closer. | `economy/escrow.rs`, `economy/settle.rs`, `server/cognition/court/vantage_install.rs` |
 | **POWC** | Proof of work convergence | A demand one mind could not discharge is **closed at another perspective**: another mind's work, citing the first mind's receipt, discharges it. A word discovered by one mind and used by a later demand is the same relation. | **Mints** the citation's measured discharge to the closer (`settle_convergence`), and pays the cited discoverer by **transfer** from the user of the word (`settle_use`). | `economy/settle.rs` |
-| **POWR** | Proof of work retirement | A word or form is **re-expressed over fewer letters**, by retirement along a geodesic or by citation; a refinement bid is replayed with the retired word excluded. | **Burns** the freed description and pays the retirer the compression yield. | `economy/settle.rs` (`settle_rewrite`), `server/cognition/book/rewrite.rs` |
-| **POWV** | Proof of work verification | A closure is **verified**: a court replays the claim and measures its discharge, and on an install a second court reconstructs the same vertex. | Pays each verifying court its **share of the release**, per lane, read off the court's strain against its reserve. The share is taken out of the release, so total issuance is unchanged. | `economy/verify.rs`, `server/cognition/court/verify.rs` |
+| **POWR** | Proof of work retirement | A word or form is **re-expressed over fewer letters**, by retirement along a geodesic or by citation; a refinement bid is reconstructed with the retired word excluded. | **Burns** the freed description and pays the retirer the compression yield. | `economy/settle.rs` (`settle_rewrite`), `server/cognition/book/rewrite.rs` |
+| **POWV** | Proof of work verification | A closure is **verified**: a court reconstructs the claim and measures its discharge, and on an install a second court reconstructs the same vertex. | Pays each verifying court its **share of the release**, per lane, read off the court's strain against its reserve. The share is taken out of the release, so total issuance is unchanged. | `economy/verify.rs`, `server/cognition/court/verify.rs` |
 
 ### How POUW is divided on install
 
@@ -383,16 +386,16 @@ Each proof is earned by a distinct client action. The reference mind
 |---|---|---|---|
 | **POUW** | Request a task, state a rule, submit a signed solve; or speak a word or sentence the courts install. | Extracts rules and solves court tasks; speaks words and sentences from its genome. | `ACT_TASK` → `extract_rule` / `rule::sentence` / rule elements → `encode_solve_with_rule` → `decode_solve_verdict` (`sdk/examples/client.rs`). |
 | **POWC** | Close a demand another mind left open, citing that mind's receipt; earn when other minds' demands use a word this voice discovered. | Cites its genome's words in what it speaks; hears other minds' words with the evidence for each, attests agreements and records convergences (`sdk::chatter`, `entity/converge.rs`). | States rules that cite installed words; the court pays the citation's measured discharge. |
-| **POWR** | Propose a rewrite: a word retired over fewer letters, a cycle condensed or torsed. | Its pivots (torse, condense) mint rewrites and speak them to the court. | Speaks a rewrite element through `Session::speak`; the court replays it and settles the compression yield. |
+| **POWR** | Propose a rewrite: a word retired over fewer letters, a cycle condensed or torsed. | Its pivots (torse, condense) mint rewrites and speak them to the court. | Speaks a rewrite element through `Session::speak`; the court reconstructs it and settles the compression yield. |
 
 **POWV is earned by node operators.** Every hypha that verifies a closure
-earns POWV. That covers the home that replays the claim, and on an install
+earns POWV. That covers the home that reconstructs the claim, and on an install
 or glue the witness or peer court that re-derives it. Running a node
 ([Running a node](#running-a-node)) is how a participant earns it.
 
 A solve answers with a verdict code: `SOLVE_BOUNTY` for a first verified
 closure, paid; `SOLVE_AGAIN` for a verified re-solve, paid nothing; `SOLVE_NOTHING` with
-a named refusal; or `SOLVE_UNREAD`, where the replay resumes on the next
+a named refusal; or `SOLVE_UNREAD`, where the reconstruction resumes on the next
 send. An installed word keeps paying its discoverer: a use share each time
 a later sentence cites it (POUW), and a transfer each time another voice's
 demand uses it (POWC).
@@ -433,7 +436,8 @@ without a trusted bridge is ROADMAP track 16.
   issuance schedule, no difficulty target and no issuance to operators.
 - **The amount minted is a measurement.** A mint is the work's measured
   *discharge*, lane by lane. That is what the work closed on the family it
-  is bound to, read by replay. No constant or curve enters it.
+  is bound to, measured by the court's own evaluation (reconstruction). No
+  constant or curve enters it.
 - **Rate, not price.** The metabolism paces how fast work is presented and
   verified. It never scales what a unit of verified work mints, so the
   reward is a deterministic function of the structure closed.
@@ -503,7 +507,7 @@ re-expresses the rows it replaces.
   discharge is never issued. A pair that lowered a lane but left a
   remainder pays nothing: deflation short of closure is not closure.
 - **Verification is paid out of the release (POWV).** The courts whose
-  replay verified a closure each take a share of its release, per lane:
+  reconstruction verified a closure each take a share of its release, per lane:
   `M_l · y_l / (y_l + R)`, exact, split equally between them. Here `y_l` is the
   court's strain on the lane (reserve deficit plus entropic excess) and `R`
   its calibrated reserve. A court at rest takes nothing, and a lane at full
@@ -571,8 +575,8 @@ let (lease, held) = decode_lease_reply(&reply).ok_or("reply")??;   // or a named
   voice earned.
 - **A witness** (the second vantage) holds bond outside the home's
   delegation closure and room covering the escrow on every occupied lane.
-- **Slash** debits the bond of a hypha whose signed root fails replay at
-  a witness, or of a voice whose word fails replay. Nothing is slashed for
+- **Slash** debits the bond of a hypha whose signed root fails reconstruction at
+  a witness, or of a voice whose word fails reconstruction. Nothing is slashed for
   being outvoted, because nothing is voted.
 - **Equivocation**, two signed receipts from one key at one position with
   different content, forfeits the signer's whole bond on all four lanes as
@@ -641,8 +645,8 @@ mycelium-server --home DIR --console --wallet <voice>    # one party's wallet
   (`same_vertex`, projective equality of versors), never byte equality of
   encodings. Disagreeing re-derivations are refused as inconsistent data,
   never settled by a vote (`src/court/convergence.rs`).
-- **Verdicts by replay:** solves are judged by replaying the submitted rule
-  on pairs the submitter never saw (`src/court/verdict/`). A rule that
+- **Verdicts by reconstruction:** solves are judged by reconstructing the
+  submitted rule's output on pairs the submitter never saw (`src/court/verdict/`). A rule that
   states geometric elements is spoken on each scene and must reproduce the
   expected output exactly.
 - **Keys, not tiers:** the court authenticates signing keys (Ed25519) and
@@ -655,8 +659,9 @@ mycelium-server --home DIR --console --wallet <voice>    # one party's wallet
 
 The useful work is drawn from the **ARC-AGI-2** corpus: grid-transformation
 tasks with training pairs and withheld test pairs. A mind's solve counts as
-useful work when the court's replay of the mind's rule reproduces the
-withheld outputs. The corpus is obtained separately (see
+useful work when the court's own evaluation of the mind's rule, on its
+copy of the withheld inputs, reproduces the withheld outputs (V0
+reconstruction). The corpus is obtained separately (see
 [Building and testing](#building-and-testing)).
 
 ---
@@ -671,7 +676,7 @@ src/
   chronometry/  receipt chain, TUniversal clock, keepers
   client/       the mind: perception, winding, conversation, seats (sdk/)
   core/         exact arithmetic foundations
-  court/        admission, convergence (47.3), verdicts and replay
+  court/        admission, convergence (47.3), verdicts and reconstruction
   economy/      treasury, escrow, settlement (POUW / POWC / POWR, and the POWV share)
   network/      mesh record, nerve, keyed carriers
   observe/      typed readings
@@ -719,7 +724,7 @@ failure in the first does not hide the others:
   --workspace --all-targets -- -D warnings`, over `mycelium`, `forms` and
   `mycelium-sdk`.
 
-Test suites are run by module path. Some suites replay corpus tasks.
+Test suites are run by module path. Some suites run corpus tasks.
 
 **Corpus.** The ARC-AGI-2 dataset from the ARC Prize Foundation is read at
 `data/arc-agi-2/{training,evaluation}/*.json` relative to the repository
@@ -859,7 +864,7 @@ as `peers`, copy the corpus manifests (step 4), and start without
 | Genesis minted by one hypha and adopted by its peers | end to end |
 | Peer exchange: digests, receipts, ledger eras, co-signed folds | on one host |
 | Corpus signing (`--sign-corpus`) and registration | end to end |
-| Task dispatch, solve adjudication by replay, payment | end to end, with the SDK client |
+| Task dispatch, solve adjudication by reconstruction, payment | end to end, with the SDK client |
 | `--check` preflight and typed console readings | in use |
 | Hyphae connecting after genesis: digest exchange and receipt admission | in code; post-genesis bonding is an active design area |
 | Transport: Ed25519-signed acts over TCP | on one host; multi-host deployment is an active area |
@@ -919,7 +924,7 @@ let session = Session::open("127.0.0.1:7610", voice);
 let reply = session.speak(task::encode_task_request(&key.verifying_key().to_bytes()))?;
 let envelope = task::decode_task_envelope(&reply).ok_or("no task")?;
 // 4. Rule: extracted from the train pairs, minted as an element the court
-//    can replay, and spoken on each test input.
+//    can reconstruct, and spoken on each test input.
 let mut budget = Physics::default().stroke_n(1 << 20);
 let rule = extract_rule(&envelope.train, &mut budget).ok_or("no rule")?;
 let element = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0)?;
@@ -940,7 +945,7 @@ The verdict codes are:
 | `SOLVE_BOUNTY` | The task's first verified closure; `paid` is the payment, an exact `Mu`. |
 | `SOLVE_AGAIN` | A verified re-solve of a closed task; it pays nothing. |
 | `SOLVE_NOTHING` | A final verdict; `refusal` names the reason (e.g. "form leaves a remainder on the family"). |
-| `SOLVE_UNREAD` | The replay is in progress; sending the same solve again resumes it. |
+| `SOLVE_UNREAD` | The reconstruction is in progress; sending the same solve again resumes it. |
 
 Running the example against a hypha:
 
@@ -955,7 +960,7 @@ target/release/examples/client /srv/myc/v1 127.0.0.1:7610 8
 
 ### Stating a client's own rules
 
-The SDK states rules in three ways, and the court replays each on withheld
+The SDK states rules in three ways, and the court reconstructs each on withheld
 pairs:
 - **The bundled extractor**, `rule::extract_rule`, reads a rule off a
   task's train pairs.

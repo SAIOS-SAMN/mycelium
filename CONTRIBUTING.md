@@ -100,7 +100,8 @@ essentials:
 - A test is a claim proved by the algebra:
   - a refusal by name,
   - a fixed locus,
-  - a replay,
+  - a reconstruction (the object derived independently from its own
+    evidence equals the object; [MU-SCIENCE §5.0](docs/MU-SCIENCE.md#50-reconstruction)),
   - an exact identity.
 - Fixtures are built by the engine's own constructors.
 

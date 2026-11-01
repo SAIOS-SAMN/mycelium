@@ -70,6 +70,8 @@ those physics agree, where they diverge, and what each has proven.
   reconstructs rather than replays: replaying a method certifies that
   method, while reconstructing the object certifies the result
   independently of how it was reached.
+- *Reconstruction*, *rebuild*, *replay* and *resend* each have one sense,
+  defined in §5.0; reconstruction is the only sense of verification.
 
 **P3 — Value follows verification.**
 - μ is minted only for closures a court verified, and the amount is the
@@ -319,6 +321,63 @@ Consequences:
   the divergence is recorded with both objects. It is resolved by finding
   which reconstruction breached the laws, never by preferring a method.
 
+#### The typed vocabulary
+
+Four words name four different acts. Each has one sense, and a defect is a
+sentence that uses one in another's sense. This subsection is the canonical
+definition; every other document points here.
+
+| Term | Sense | Never |
+|---|---|---|
+| **Reconstruction** | Derive an object from its own evidence (coordinates, letters, versors, receipts) by the laws, independently of the method that produced it; admitted only on reaching the same exact object. The only sense of verification. | A re-run of the submitter's steps |
+| **Rebuild** | Repeat a construction from its sources: a reproducible build, or a cache or index the laws regenerate from held state. | Verification |
+| **Replay** | Re-apply recorded inputs in order, to read history: to see events as they happened (MU-CONCORDANCE 1.4). | Verification; a restore (a restore reconstructs the held state and checks it against its receipts) |
+| **Resend** | The same message sent again: the security sense, met by repeat protection (MU-RECURSION 47.2, MU-XSEPTUM). | A recomputation |
+
+Some code identifiers still carry `replay` for the court's reconstruction
+(`blind_replay`, `replay_form`, `measured_replay`, `Replayed`); they name
+reconstruction and follow a code rename ([ROADMAP](../ROADMAP.md) track 11).
+
+#### Grammar alignment
+
+The vocabulary follows the grammar of the language (MU-RECURSION 78.39,
+78.32 (2) and (3)(d), 78.99, and review ruling 3, S2):
+- **A palindrome transports and opens nothing.** A sandwich `V x Ṽ`, a
+  conjugate, or a pair read there and back carries a thing to another
+  vantage within its class. That is the domain of replay and rebuild:
+  they repeat what is held and add no generator.
+- **A generator is opened only by a non-palindromic word**, the commutator
+  `[A, B] = A B Ã B̃`, whose content is new exactly where it leaves the
+  algebra the held generators span.
+- **Many algorithms may construct one generator.** Superposition holds the
+  candidates whole at the letter, word and conjugate grades until one is
+  distinguished.
+- **The court never proposes a generator.** It reconstructs the object from
+  the constructor steps a mind sends and admits it on reaching the same
+  exact object, so admission is independent of the constructing algorithm
+  (P2).
+
+#### Reconstruction events
+
+**Specified**, not built ([ROADMAP](../ROADMAP.md) track 8). Every
+reconstruction is a particle whose meeting with held state is one of three
+typed events:
+- **Collapse.** A superposition is reduced to one object by admission: the
+  candidates at a letter, word or conjugate grade are distinguished and one
+  is admitted.
+- **Converse.** Independent vantages reconstruct the same object from
+  different evidence. This is convergence (POWC, ROADMAP track 8), and its
+  μ is paid by union, never twice.
+- **Collision.** Incompatible claims on one structure. They are held as a
+  vortex and resolved by content (MU-RECURSION 45.3); a duplicate mint is
+  burned (MU-RECURSION 47.4, MU-RELEASE §9).
+
+The planned reading is `ReconstructionEvent::{Collapsed, Conversed,
+Collided}` under `ACT_OBSERVE`. Each event carries the coordinates of the
+object and of the evidence it met, never a scalar or a boolean. Read across
+a mesh, converse against collision measures how far the mesh is one
+language, and is the measure of partition healing.
+
 ### 5.1 The court protocol
 
 Every class follows the same protocol:
@@ -333,7 +392,8 @@ Every class follows the same protocol:
 
 The court evaluates a submitted rule on withheld pairs from its own copy of
 the family, and the output must be the withheld answer (`src/court/verdict/`;
-the mechanism is named *replay* in the code). This is the workload of the current release.
+the code still names this reconstruction `replay`, pending the rename in
+§5.0). This is the workload of the current release.
 
 ### V1 — Certificate checking
 

@@ -27,13 +27,13 @@ replaces the content:
 | x402 | xSEPTUM |
 |---|---|
 | scalar amount in one currency | a four-lane magnitude `μ⃗ = [spatial, gauge, temporal, holonomic]`, never summed, read per lane by `economy::lane_moves` and never ordered |
-| facilitator verifies a signature | the home hypha escrows on a signed Note and releases only after replay by two organs, each signing the release (MU-RECURSION 47.3), exactly as words are installed |
+| facilitator verifies a signature | the home hypha escrows on a signed Note and releases only after reconstruction by two organs, each signing the release (MU-RECURSION 47.3), exactly as words are installed |
 | off-chain balance in a token | `Treasury` balances earned by verified reduction and solves (`economy::balance_mu`) |
 | pay with money only | pay with money (a Note) or with work (a reduction attested on the listing that priced the request) |
-| receipt is a transaction id | receipt is the listing's address on a signed ruled root of the home hypha, verifiable by any node by replay |
+| receipt is a transaction id | receipt is the listing's address on a signed ruled root of the home hypha, verifiable by any node by reconstruction |
 
 A septum is the wall between two hyphal cells with a pore: nothing crosses
-except what the pore admits. Here the pore is replay.
+except what the pore admits. Here the pore is reconstruction.
 
 ## 2. Terms
 
@@ -55,7 +55,7 @@ except what the pore admits. Here the pore is replay.
 - **Payer**: the voice that wants a resource or a result. Pays by Note or by Work.
 - **Payee**: the voice that serves the resource or claims the result. Usually a service running the client SDK.
 - **Home**: escrow holder, first organ.
-- **Witness**: second organ; supplies the replay and the second signature that release escrow. Its bond lies outside the home's delegation closure and its room covers the escrow on every occupied lane (MU-RECURSION 47.3).
+- **Witness**: second organ; supplies the reconstruction and the second signature that release escrow. Its bond lies outside the home's delegation closure and its room covers the escrow on every occupied lane (MU-RECURSION 47.3).
 
 Any node may be payer and payee in different exchanges. Hyphas are never
 payees in an exchange.
@@ -151,7 +151,7 @@ Mode 0, resource:
 
 The payer countersigns after receiving the bytes and checking the digest.
 Two signatures from two distinct voices are the two vantages; the home
-replays only the signatures and the escrow state, then releases.
+verifies the two signatures and reads the escrow state, then releases.
 
 Mode 1, work:
 
@@ -163,10 +163,11 @@ Mode 1, work:
 ```
 
 No countersignature. The word enters the docket like any attested word:
-`blind_replay` at the home, Offer to the overlap, replay at a witness,
+reconstruction at the home (`blind_replay`), Offer to the overlap,
+reconstruction at a witness,
 Installed. Release happens on the Installed, through the same path that
 grows the language (`Court::home_install` → `release_award`). A word that
-fails replay is slashed and the payee's stake is debited; the escrow is
+fails reconstruction is slashed and the payee's stake is debited; the escrow is
 revoked to the payer.
 
 ### 5.4 RELEASE (0x33) and REVOKE (0x34)
@@ -186,7 +187,7 @@ revoked to the payer.
 0x34 ‖ version u8 ‖ listing_key 32 ‖ k_payer u64
 ‖ reason u8               §9
 ‖ returned 4×u64
-‖ slashed 4×u64           nonzero only on a failed replay
+‖ slashed 4×u64           nonzero only on a failed reconstruction
 ‖ k_home u64
 ‖ h_home u64
 ‖ sig_home 64
@@ -194,7 +195,7 @@ revoked to the payer.
 
 The `ruled_root` is the receipt. Anyone holding the home's verifying key
 verifies the release; anyone holding a digest of that root can fetch the
-listing's stratum and replay it. A revocation needs one organ: refusing
+listing's stratum and reconstruct it. A revocation needs one organ: refusing
 needs no second vantage, installing does.
 
 ### 5.5 EQUIVOCATION (0x35)
@@ -224,9 +225,9 @@ Per `(listing_key, payer, K_payer)` at the home:
 ```
 PRICED ──Note verified──▶ ESCROWED ──Receipt mode 0, two sigs──▶ RELEASED
    │                          │
-   │                          ├──Receipt mode 1, word replays at home──▶ SECTIONED
+   │                          ├──Receipt mode 1, word reconstructs at home──▶ SECTIONED
    │                          │        │
-   │                          │        └──Installed (witness replay)──▶ RELEASED
+   │                          │        └──Installed (witness reconstruction)──▶ RELEASED
    │                          │        └──slash──▶ REVOKED(SLASHED)
    │                          └──K_home > k_home + Λ with no receipt──▶ REVOKED(EXPIRED)
    └──K_home > k_home + Λ with no Note──▶ dropped from the book
@@ -260,7 +261,7 @@ attesting a reduction on `listing_key` through `ACT_SETTLE`. The home's
 deflation that covers `mu` on every occupied lane is accepted as the Note
 and the flow continues at ESCROWED with the payer's own deflation as the
 escrow source. This is the proof-of-work path — the work is a closure the
-court replays (`MU-RECURSION.md` 12.6, `MU-ECONOMY.md` §3.2) — and the
+court reconstructs (`MU-RECURSION.md` 12.6, `MU-ECONOMY.md` §3.2) — and the
 reason the protocol needs no token to bootstrap.
 
 ## 7. Canonical forms
@@ -293,7 +294,7 @@ learning it: the reply is signed by the home and the payee returns it in
   receipt (MU-RECURSION 46.2), never tweaks of the group key.
 - Signatures over the receipt prefix of MU-RECURSION 47.1 followed by the
   act's fields only; never over encodings that contain signatures.
-- There are no nonces. Replay protection is the payer's receipt index: a
+- There are no nonces. Repeat protection against a resend is the payer's receipt index: a
   Note is `(payer, K_payer)`, spent once; two different Notes at one
   `K_payer` are an equivocation proof (§5.5).
 
@@ -308,7 +309,7 @@ learning it: the reply is signed by the home and the payee returns it in
 | 5 | NOT_HOME | this hypha does not home the listing; body carries the home's address |
 | 6 | NO_LISTING | the listing key is unknown or dropped |
 | 7 | REPLAY_FAILED | mode 1 word failed `blind_replay`; slashed |
-| 8 | NO_WITNESS | no overlap organ replayed and signed within `Λ`; escrow returned |
+| 8 | NO_WITNESS | no overlap organ reconstructed and signed within `Λ`; escrow returned |
 | 9 | EQUIVOCATION | two signed receipts, one key, one K, two hashes; bond burned (MU-RECURSION 47.4) |
 | 10 | ORIGIN | the prefix names another genesis or epoch (MU-RECURSION 45.5) |
 | 11 | WITNESS_DEPENDENT | the witness's bond lies inside the home's delegation closure |
@@ -359,8 +360,8 @@ Existing, reused unchanged: `escrow_award`, `release_award`, `revoke_award`,
 - Note with a short lane is refused with the lane named; never partially escrowed.
 - Expiry is by the home's K: there is no wall clock to advance; admitting `Λ` receipts past `k_home` revokes, and a home that admits nothing expires nothing.
 - Resource receipt with one signature is refused; with two distinct voices releases exactly `mu`.
-- Work receipt that fails replay slashes the payee and returns the escrow.
-- Work receipt that replays at home but no witness replays and signs within `Λ` admitted receipts returns the escrow with `NO_WITNESS`.
+- Work receipt that fails reconstruction slashes the payee and returns the escrow.
+- Work receipt that reconstructs at home but no witness reconstructs and signs within `Λ` admitted receipts returns the escrow with `NO_WITNESS`.
 - A relayed Note altered by the payee fails `BAD_SIGNATURE`.
 - An identical Note at a spent `K_payer` is ignored after release and after revoke; a different Note at that `K_payer` burns the payer's bond with exactly one `burn` entry and `Treasury::audit` holds.
 - A release with one signature, with a witness inside the home's delegation closure, or with witness room short on an occupied lane is refused with the code named and nothing is drawn.

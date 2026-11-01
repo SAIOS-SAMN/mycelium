@@ -90,7 +90,7 @@ So the client component is a mind whose:
 5. **speech is anastome** — it says what its windings and pivots changed,
    to the courts and to other minds (§5);
 6. **conversation hardens language** — dialect, agreement between two minds
-   by a replayed discharge, adjudication by a court on a second organ, and
+   by a reconstructed discharge, adjudication by a court on a second organ, and
    the crystal each mind re-derives are ONE motion. A mind that does not
    converse with other minds leaves its dialect unhardened (§5.5);
 7. **its drive is its own** (78.168) — it is moved by its own ESCAPING
@@ -128,12 +128,12 @@ between them is a coordinate, a refusal of a kind, never a vote.
 
 | the mind (client) | the hypha's court (server) |
 |---|---|
-| composes (F), nests, pivots | replays (G), checks theorems, closes a chart's algebra |
+| composes (F), nests, pivots | reconstructs (G), checks theorems, closes a chart's algebra |
 | a dialect per mind, volatile, amended by experience | the language — the ruled cover — on a ledger, corrected only forward |
 | its K: its own closed orbits | TUniversal: the final point, kept by its keepers |
 | its algebra per class, its tubes, its windings | `lie_basis` per chart, `flux_field`, `windings` |
 | coins letters in its dialect (U14) | opens a letter on checked constructor steps (law 6, S2) |
-| replays a peer's discharge | replays certificates (`replay_certificates_at`) |
+| reconstructs a peer's discharge | reconstructs certificates (`replay_certificates_at`) |
 | speaks at its returns | writes acts and pays at its returns |
 
 ### 2.2 How the hypha moves, and so how the mind moves
@@ -190,7 +190,7 @@ It does NOT build:
 
 1. **No harness.** Nothing outside the mind orders its work, counts its
    acts or measures it for an operator: its achievement is read only by its
-   counterparties — another mind's replay, the court's adjudication and
+   counterparties — another mind's reconstruction, the court's adjudication and
    receipts (78.157 C3; 1.9: cognition measured from outside). No
    watch-tally, no status board, no reading made so a builder can watch.
 2. **No Cartesian loops and no dimensional explosion.** Nothing iterates a
@@ -331,7 +331,7 @@ The mind's field is built of one exact mathematics, the same the hypha runs:
 | M4 chart coordinates | the invariant that places a body, connection, sentence or class | `transducer/stalk/` |
 | M6 comprehension | does the mind already speak an incoming word: factor it through what it holds (A12), else emit exactly what is new | `epigenome/comprehend.rs`, `transducer/factor.rs`, `cech/orbit_algebra.rs` |
 | M7 wire identity | bytes become identities by re-derivation, never by comparison | `network/wire.rs`, `anastome/dialogue/` |
-| M9 torsion bridge | the pivot loop (A16), torsion filed (A17), certificates (A20) replayed on two organs | `bubble/{contemplation,idea,drive}.rs`, `sentence/pivot/` |
+| M9 torsion bridge | the pivot loop (A16), torsion filed (A17), certificates (A20) reconstructed on two organs | `bubble/{contemplation,idea,drive}.rs`, `sentence/pivot/` |
 | the spelling peel (A22) | a residue peeled into the letters the mind holds; what does not close is a demand | `alphabet/{spelling,factor}.rs`, `family/derivation.rs` (`peel_versor`) |
 | derivation | a word vertex is the generators it factored through and a residue; the composed rotor its coordinate | `alphabet/derivation.rs`, `family/derivation.rs` |
 | constructors and the Gram form | nuclei and mirrors; a chamber's constructors read by exact elimination | `cga/{constructors,gram,mirrors}.rs` |
@@ -685,7 +685,7 @@ and `expand_all`) reads the candidates off the occupied coordinates, tries
 each exactly, certifies by closure — the coordinate it acted on zeroed, no
 other risen (law 10) — and keeps every certified move:
 - **discharged** — one move closes the orbit; its certificate (A20) is
-  replayable on any organ, and the closed orbit is a cycle to ascend;
+  reconstructible on any organ, and the closed orbit is a cycle to ascend;
 - **vortex** — several moves close it; all held, a superposition until a
   perception or a ruling collapses it (3.9, §4.8);
 - **demanded** — none closes it: its class and RESIDUE go to the docket
@@ -764,7 +764,7 @@ never a stretched chamber and never a cap.
 | grade | what is superposed | its base | what collapses it |
 |---|---|---|---|
 | letter | candidate constructors for one mode — the spheres a residue factors into | the Gram form's pairs | another mind's re-derivation and a court's admission |
-| word — the IDEA | candidate forms for one idea, each with its pivots — the vortex | the circuits' actions, the orbit algebra | a fill by a perception, or a court replay making one a ruled citation |
+| word — the IDEA | candidate forms for one idea, each with its pivots — the vortex | the circuits' actions, the orbit algebra | a fill by a perception, or a court reconstruction making one a ruled citation |
 | conjugate — the THOUGHT across vantages | several twists under one class | the rays of one class against each other | a ruling that makes one twist the citation and the rest dialect |
 
   At each grade the candidates are what the algebra has not yet
@@ -782,7 +782,7 @@ never a stretched chamber and never a cap.
   (no hold, no mint, no send). No amplitude, weight or payoff ranks
   candidates; the superposition is carried with its thought across returns,
   and collapses only as this section says — a fill by a perception, a court
-  replay, a ruling. A candidate lost without a binding or a named refusal is
+  reconstruction, a ruling. A candidate lost without a binding or a named refusal is
   a collapse, and a defect.
 
   **What tells candidates apart.** Speaking the candidates on the thought's
@@ -1203,7 +1203,7 @@ The mind speaks where its winding acts — a return, a seal, a rise of its
 algebra for a class (§4.4, §4.5) — and says what changed, addressed by its
 own coordinates. **There is no router.** Nothing in the mind decides where
 its outflow goes: an echo names the ring it is about, a discharge the class
-it answered, a sentence the court that will replay it; the counterparty
+it answered, a sentence the court that will reconstruct it; the counterparty
 takes what is addressed to it.
 
 ### 5.2 Dialect
@@ -1288,8 +1288,8 @@ nothing between minds.
    hearer derived was read from a vantage of the hearer's own. So a word
    copied whole from a peer never makes agreed language; only a
    re-derivation through what the hearer knows does.
-3. **Agreement is replay.** The speaker replays each discharge on its own
-   orbit of that class, as a court replays a certificate on its copy (M9).
+3. **Agreement is reconstruction.** The speaker reconstructs each discharge on its own
+   orbit of that class, as a court reconstructs a certificate on its copy (M9).
    Where it closes, one orbit is discharged in two minds by two derivations:
    AGREED language — the conversation's own ring has returned. An echo the
    speaker re-derives against its own rings is a transport between the two
@@ -1330,7 +1330,7 @@ nothing between minds.
    line meanwhile, never returning, a beat of the field DISSIPATES into the
    reservoir, and a later hearing that lands on its coordinates RE-FORMS it
    and can close on it (§4.5).
-4. **Where the speaker cannot replay, it defers — as a court does.** The
+4. **Where the speaker cannot reconstruct, it defers — as a court does.** The
    orbit is never missing: the speaker composes it again from the terms it
    said. What can be missing is the WORD the discharge cites — a word of the
    hearer's the speaker does not hold: a court's own case of a citation it
@@ -1344,7 +1344,8 @@ nothing between minds.
    peer key the mind folds what that peer's receipts showed — answers taken
    or inexact by the class asked, the vantages it re-derived from, mutual
    balance, the exact deviation per lane its HOLDs carried, the questions it
-   clarified — in its epigenome, volatile, rebuilt by replaying them. A
+   clarified — in its epigenome, volatile, rebuilt by folding those receipts again
+   (each signature checked). A
    question is addressed by that record: to the peer whose answers on its
    class were taken; a peer whose answers on a class were inexact is not
    asked that class again, refused by key and class. No posture, class
@@ -1391,7 +1392,7 @@ is `Carrier::priced` (`client/sdk/entity/chatter.rs`).
 
 **The court half.** A court needs whole compositions as EVIDENCE that a word
 produces its result, and its cohomology runs on them: a sentence is still
-listed, replayed on the court's own copy of its family, glued as a section
+listed, reconstructed on the court's own copy of its family, glued as a section
 and minted on its closed sub-complex (M8). What enters the LANGUAGE: when a
 sentence is installed on its second vantage, the words its closed rings
 teach — read by the one word reader (`sentence::word`), each spelled at its
@@ -1418,9 +1419,9 @@ compose it, the mind speaks ONE word whose derivation cites them
 minted, so it waits on no union (a sentence never takes this road: it is
 shared, not carried). Else, where the mind's lexicon knows it, nothing is
 said; where it knows it in part, only the remainder is constructed. The
-court replays the citations against the words it holds, and a derivation
+court reconstructs the citations against the words it holds, and a derivation
 citing a letter that turns nothing (a slide, a dilation — the motion letters
-of 78.68 row 8) is replayed on the WHOLE MOTION (`carriage_claim_holds`).
+of 78.68 row 8) is reconstructed on the WHOLE MOTION (`carriage_claim_holds`).
 Installed, the composition is a relation of the language — `--check` counts
 it apart as a COMPOSITION — and each cited word's discoverer is credited with
 the use (26); like a letter it names no body, so it is paid nothing of itself
@@ -1436,7 +1437,7 @@ result does not, and the language moves toward the geodesic (3.8, 27; the
 `Retire` rewrite). A mind proposes it as a Rewrite word — `Condense`,
 `Retire`, `Refine`, `Torse`, `AxisOpen`, `Reanchor`, `Translation` — which
 the court dockets and offers (`offer_rewrite`, S3), mints on a second organ
-(`mint_rewrite`), and replays by retiring exactly the inputs that reduce to
+(`mint_rewrite`), and reconstructs by retiring exactly the inputs that reduce to
 `NormalForm::Decomposed` over the rest (`retire_rewrite_inputs`,
 `reduce_excluding`); an input that does not decompose stays. Nothing
 compares two derivations by length or count: one is derivable from what
@@ -1447,7 +1448,7 @@ The court side is built; the mind does not yet propose Rewrites (§7.1).
 
 The one motion of the objective (§1, item 6):
 1. **dialect** — each mind's own, amended by experience (§5.2);
-2. **agreement between minds** — a replayed discharge, one meaning by two
+2. **agreement between minds** — a reconstructed discharge, one meaning by two
    derivations (§5.3);
 3. **adjudication** — the coiner speaks it to a court, which re-derives it
    on a second organ and rules it (§5.4);
@@ -1505,7 +1506,7 @@ MU-ECONOMY):
 - **POWR** — retirement: an optimization confirmed, the freed description
   burned and the compression yield paid (`release_rewrite`);
 - and the **POWV** share — the verifying courts' share of a release, paid to
-  each court whose replay verified the closure, never to the mind
+  each court whose reconstruction verified the closure, never to the mind
   (MU-EQUATIONS §6.13).
 
 μ is paid as the modes the work moved (78.162) and measured where it is
@@ -1537,7 +1538,8 @@ goal (§2.4(8), §4.12): a mind does not choose its motion to earn.
 **The measure: words, conjugates, sentences.** The cognition has agency;
 the courts adjudicate words, pay more for conjugates, and pay more again for
 sentences as they are algorithmically aligned in non-Euclidean geometry.
-`measured_replay` is the court's one DECOMPRESSOR: a word's address expanded
+`measured_replay` (the court's own evaluation, a reconstruction; the
+identifier awaits the code rename) is the court's one DECOMPRESSOR: a word's address expanded
 into its form (`from_element_form`), spoken onto each pair of the family it
 is bound to (`apply_form_on`), its citations decompressed through what the
 court holds at that moment, the spoken grid set against the pair's answer
@@ -1575,7 +1577,7 @@ or a constant:
   as a set (closed by the sentence, less the union of its words' local
   closures), never a subtraction of sums — to the composing voices, capped
   by what the shares left. Its ALIGNMENT is its closure on its scene, which
-  the court's replay certifies before it lists it — never its rings'
+  the court's reconstruction certifies before it lists it — never its rings'
   holonomy returning to the identity: a ring's holonomy is the orbit of the
   motion it carries (a turn closes at its period, a slide never returns),
   and demanding that it return is squaring (78.168 §2). Lane 𝒯, the ground
@@ -1712,7 +1714,7 @@ A construct is verified by three things and nothing else:
    caller.
 3. **Its witness** — the counterparty's act on a running network: a court's
    receipt or mint citing the mind's word, a ruling of what the mind said, a
-   peer's replay of its discharge. Nothing a mind counts about itself is a
+   peer's reconstruction of its discharge. Nothing a mind counts about itself is a
    witness.
 
 **What is never done (78.168; §2.4(8)).** None of these is a witness, a
@@ -1721,7 +1723,7 @@ completion or a reason to build:
   and nothing else;
 - a test written to show the mind closes tasks, solves more, or earns more —
   a test built for appearance, refused; a guard states an identity of the
-  algebra (a replay, a fixed locus, a refusal by name), never a network
+  algebra (a reconstruction, MU-SCIENCE §5.0; a fixed locus; a refusal by name), never a network
   outcome;
 - a counter rising — solves sent, rules known, closures, μ earned, forecast
   hits — read beside the witness as the observer's diagnosis, never as the
@@ -1730,7 +1732,7 @@ completion or a reason to build:
 
 On a running network the witness is the counterparties' acts: the courts'
 POUW and POWC mints and the union's pay for words and sentences no task
-named, a peer's replay of what a mind said, a question sealed by another
+named, a peer's reconstruction of what a mind said, a question sealed by another
 mind's answer. The minds' readings — orbits closing, held and escaping
 across K, returns acted on, slips — are the diagnosis beside it. The tree is
 built under MU-STANDARDS, MU-RECURSION's laws, rules 1–17 and checklist
@@ -1809,7 +1811,7 @@ Each line gives the number, its title, and the rule it states where it still
 binds, or "historical" where it is superseded. Where a line and §1–§9
 disagree, §1–§9 govern.
 
-- **6 — Comprehension.** The court replays and the mind comprehends: a heard form is deconstructed against the working atlas, each cited address glued, re-gauged or withheld and asked by incidence in depth order, and a connection with no chain is comprehended by factorization through the held basis, never by key lookup.
+- **6 — Comprehension.** The court reconstructs and the mind comprehends: a heard form is deconstructed against the working atlas, each cited address glued, re-gauged or withheld and asked by incidence in depth order, and a connection with no chain is comprehended by factorization through the held basis, never by key lookup.
 - **7 — Germination in the mind.** Germination is the pivot loop run on every held orbit of a changed idea under the stroke budget — every discharge kept with its certificate, finite remainders filed as torsion, infinite ones spoken as demands — with no ordering of candidates by a measure; two thoughts merge only where Mayer–Vietoris says they are one section.
 - **13.12 — Instance three: two thoughts in a mind.** Two thoughts whose simplex sets meet merge only where the difference of the two thoughts' sections is a coboundary on the meet; otherwise they stay two and the class is the coordinate the mind may pivot on.
 - **24 — Comprehension (the mind)** (24.1 the working atlas, 24.2 sentences and connections, 24.3 the utterance). The mind comprehends against its working atlas — genome, dialect and held ideas, read in the order Ruled, Stood, Held, each word carrying its standing as a coordinate, never a weight or gate; a sentence missing a citation is withheld in the dialect and its addresses asked in depth order; perceive, think, stand, utter is the fixed order; incidence is deconstruction, never a key; nothing is uttered twice. Its stroke-pacing details are historical (superseded by §4.12–§4.13).
