@@ -1772,7 +1772,8 @@ sensor and where a grid is spoken.
 | Unspoken links, `declare_unspoken` | the input's hue on the output's sites through `spoken_onto`, never off a shared corner |
 | Extraction strokes, `extraction_spend` | `transduce::need` per non-planar pair |
 | Intake routes, `route::routes_of` | planar pairs as before; a pair of unequal enclosures has no route yet (its chart and pieces read a chain site by site, O8) |
-| Family magnitude, `family_magnitude` | the planar pairs' count; `transduce::family_share` reads every pair's exact share beside it (O1) |
+| Family magnitude, `family_magnitude` | the planar pairs' count, the mind's metabolism and not μ, so it stays a count; `transduce::family_share` reads every pair's exact share beside it |
+| μ, the discharge (O1, Built 2026-11-01) | `DeflationRead::mu` and `Local::mu`: per closed pair, S and G over the output frame's `h·w`, H the shell count, T the flux over the carried mass as the frames' share of it (`transduce::share_of_frame`, `Transduction::lane_shares`); every escrow, release and payment reads it (`Court::discharge_on` and its arms, `pay_solve`, `release_verified`, `pay_lease`, `settle_solve`, the install's cited and taught shares and gluing) |
 | `family_ratio`, `Form.ratio` | each circle's re-period (`Enclosure::reperiod`) |
 
 **Readings.**
@@ -1803,10 +1804,38 @@ sensor and where a grid is spoken.
   The re-enclosed class reads each body's shape in its own enclosure and does
   not check position or hue, so it bounds re-enclosure from above.
 
+**O1 wired (ruled 2026-11-01).** μ is a share of the frame. The deflation
+keeps its count beside μ — the word's magnitude, its identity in the tape,
+is the count — and reads μ per closed pair on the output frame its residues
+are read on: S (ground ↔ painted) and G (painted → painted) over `h·w`, H
+the shell count as it stands (topological, already resolution-free), T
+the flux over the carried mass taken as the frames' share of it,
+`T = flux · (Σᵢ mᵢ/(hᵢ·wᵢ)) / Σᵢ mᵢ`. Against today's counts, on pairs of
+one extent a changed site of an `h × w` frame is `1/(h·w)` of it, so every
+test value is the old count over `h·w` on S, G and T and the count on H
+(the `2 × 4` recolour family: `counts / [8, 8, 8, 1]`; the `1 × 7` slide:
+`/ [7, 7, 7, 1]`; the `18 × 12` closed sub-complex: `/ [216, 216, 216,
+1]`; the doubled `2 × 2 → 4 × 4` recolour, read on its 4 × 4 outputs:
+`/ [16, 16, 16, 1]`; a slide closing a `1 × 4` and a `1 × 6` pair: S `4/4 +
+4/6 = 5/3`, T `flux · 5/24`). A discharge with no frame (a rewrite's
+magnitude, a listing bound to no family) keeps its measure as `n/1`. The
+family magnitude feeding the mind's metabolism, a demand's ask and the
+extraction need (a stroke size) are not μ and stay counts. A sentence
+waiting on a word presses the word's escrow by the word's own discharge,
+the carriage it causes, where it pressed the waiting sentence's magnitude
+(a count credited to an escrow held in shares). The keeper tick carries
+the rational issuance (78.152, amended forward). Tests:
+`lane_shares_equal_chain_counts_over_frame`,
+`deflation_reads_mu_as_share_of_each_frame`,
+`keeper_tick_advances_past_fractional_issuance`, and the mint, solve,
+discharge, measure, local and awaiting claims re-derived as above. Mutation
+audit: the frame's `h·w` dropped from `share_of_frame`, the frames' share
+dropped from T, and the S/G split read off one side only.
+
 **Sites still read site by site** (listed, not fed a rebuilt cell record):
 the route's chart and pieces for unequal enclosures (`stalk::invariant_of`,
 `sentence::pieces`; O8, the turn-native chart); the family magnitude's
-count for them (the O1 switch to the share); the demand payload where the
+count for them (a count, the mind's metabolism); the demand payload where the
 identity's speech does not land (O9 (a)); the percept's cross-frame meets
 by equal site keys (`percept.rs` `out_at_site`, `cover.rs` `occ_in`,
 `pair.rs` `delta_links`), ruled to read through incidences under the

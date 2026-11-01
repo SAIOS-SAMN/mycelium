@@ -350,3 +350,24 @@ fn deflation_closure_pays_before_on_one_record() {
     }
     assert_eq!(pay, crate::economy::deflation_of(&crate::economy::lane_moves(&[0; 4], &before)));
 }
+
+/// O1 (ruled 2026-11-01) — μ IS A SHARE OF EACH PAIR'S OWN FRAME. A slide of
+/// two columns closes a `1 × 4` pair and a `1 × 6` pair; each moves four
+/// sites between ground and painted, so S is `4/4 + 4/6 = 5/3`, never the
+/// count 8; each carried a mass of 4, so 𝒯 is the flux over the carried mass
+/// 8 taken as the frames' share of it, `flux · (4/4 + 4/6) / 8 = flux ·
+/// 5/24`; and H, the shell count, stands as the count does.
+#[test]
+fn deflation_reads_mu_as_share_of_each_frame() {
+    let family = vec![(grid(&["1100"]), grid(&["0011"])), (grid(&["110000"]), grid(&["001100"]))];
+    let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the slide extracts");
+    let read = form_deflation_read(&rule.form, &family, &NoCrystal, &crate::transducer::alphabet::Word::identity());
+    assert!(read.remainders.iter().all(Vec::is_empty), "the slide closes both pairs: {:?}", read.remainders);
+    let q = |n: u64, d: u64| crate::core::Q::new(n.into(), d.into());
+    assert_eq!(read.pay[0], 8, "the measure counts eight sites on S");
+    assert_eq!(read.mu.lane(0), &q(5, 3), "μ on S: 4 of 4 and 4 of 6 sites");
+    let t = crate::transducer::sentence::presentation::LANE_T;
+    assert!(read.pay[t] > 0, "the slide carries a flux");
+    assert_eq!(read.mu.lane(t), &(q(read.pay[t], 1) * q(5, 24)), "𝒯: the flux over the carried mass, as the frames' share of it");
+    assert_eq!(read.mu.lane(3), &q(read.pay[3], 1), "H stands as its count");
+}

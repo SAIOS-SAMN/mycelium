@@ -8,10 +8,12 @@ use crate::transducer::element::Element;
 /// WHAT THE COURT READ OF A SOLVE (the actions' physics).
 #[derive(Clone, Debug)]
 pub enum SolveVerdict {
-    /// Replayed clean on every withheld pair; `pay` what it discharged there,
-    /// and `modes` the modes the closing form moved on the pairs it closed
-    /// (78.162), each exact: S boosts, G hue modes, T null fluxes, H turns.
-    Solved { pay: [u64; 4], modes: crate::economy::modes::Modes },
+    /// Replayed clean on every withheld pair; `pay` what it discharged there
+    /// as μ, each closed pair's share of its frame (78.169 O1, ruled
+    /// 2026-11-01), and `modes` the modes the closing form moved on the pairs
+    /// it closed (78.162), each exact: S boosts, G hue modes, T null fluxes,
+    /// H turns.
+    Solved { pay: crate::economy::Mu, modes: crate::economy::modes::Modes },
     /// Refused by the replay, with its reason, coordinate and kind (78.9).
     Refused(crate::verdict::Refusal),
     /// The solve carried no rule: a raster is no proof of a motion.
@@ -184,7 +186,7 @@ impl Court {
         // after `pay_solve` had released every escrow bound to the task and
         // the door had spent the task's first closure on it.
         let (pay, modes) = self.measured_replay_read(rule, withheld);
-        if pay.iter().all(|&x| x == 0) {
+        if pay.is_zero() {
             return SolveVerdict::NoWork;
         }
         SolveVerdict::Solved { pay, modes }
@@ -201,10 +203,10 @@ impl Court {
     /// discharged on the withheld pairs (`pay`), on the task's FIRST closure
     /// only: a repeat is verified and pays nothing — no floor, the decay is
     /// the discharge itself. Answers what the solver was paid, per lane.
-    pub fn pay_solve(&mut self, task: &[u8], voice: [u8; 32], rule: &Element, pay: [u64; 4], first: bool) -> crate::economy::Mu {
+    pub fn pay_solve(&mut self, task: &[u8], voice: [u8; 32], rule: &Element, pay: crate::economy::Mu, first: bool) -> crate::economy::Mu {
         // NO WORK, NO ACT: the check stands before every release, mint,
         // docket and offer (see `SolveVerdict::NoWork`).
-        if pay.iter().all(|&x| x == 0) {
+        if pay.is_zero() {
             return crate::economy::Mu::zero();
         }
         self.docket_connection(rule, voice);
@@ -226,16 +228,16 @@ impl Court {
             // escrow held; nothing above the discharge is minted.
             // POWV: this court's replay on the withheld pairs verified it.
             let organs = [self.identity];
-            let _ = self.release_verified(addr.as_bytes(), pay, &organs, settled);
+            let _ = self.release_verified(addr.as_bytes(), pay.clone(), &organs, settled);
         }
         // MU-ECONOMY §5.2 — a verified solve of a leased job pays its lease:
         // the solve's measured discharge, out of the payer's hold.
         if let Ok(job) = <[u8; 32]>::try_from(task) {
             let at = self.anchor();
-            let _ = self.pay_lease(voice, &job, pay, at);
+            let _ = self.pay_lease(voice, &job, pay.clone(), at);
         }
         self.acts.judge(if first { crate::observe::Judged::FirstClosure } else { crate::observe::Judged::ClosureAgain });
-        if !first || pay.iter().all(|&x| x == 0) {
+        if !first || pay.is_zero() {
             return crate::economy::Mu::zero();
         }
         self.append_step(crate::chronometry::ActKind::Settled, task, voice);

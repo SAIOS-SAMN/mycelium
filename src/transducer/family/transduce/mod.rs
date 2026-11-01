@@ -29,7 +29,7 @@ mod tests;
 
 pub use enclosed::{Band, Enclosed};
 pub use motion::SignedSwap;
-pub use record::{arcs, family_share, need, need_of, Incidence, Transduction};
+pub use record::{arcs, family_share, need, need_of, share_of_frame, Incidence, Transduction};
 pub use refusal::TransductionRefusal;
 pub use relation::{relation_of, PairRelation};
 pub use turn::{Enclosure, Turn};

@@ -51,10 +51,10 @@ fn pay_lease_pays_each_job_once() {
     assert!(k.treasury().audit().is_ok(), "held value is supply");
 
     let rule = a_rule();
-    let discharge = [12, 25, 0, 4];
-    let _ = k.pay_solve(&job_a, other, &rule, discharge, false);
+    let discharge = crate::economy::Mu::counts([12, 25, 0, 4]);
+    let _ = k.pay_solve(&job_a, other, &rule, discharge.clone(), false);
     assert_eq!(k.treasury().balance_mu(&other), [0; 4], "another voice's solve is not the lease's");
-    let _ = k.pay_solve(&job_a, provider, &rule, discharge, false);
+    let _ = k.pay_solve(&job_a, provider, &rule, discharge.clone(), false);
     // Lane G asked 25 of a hold of 20: capped at what was held.
     assert_eq!(k.treasury().balance_mu(&provider), [12, 20, 0, 4], "the job's discharge, capped by the hold");
     let _ = k.pay_solve(&job_a, provider, &rule, discharge, false);

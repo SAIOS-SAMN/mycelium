@@ -847,17 +847,25 @@ impl Court {
     }
 
     /// 76, 78.42 (3) — PRESSURE ON A WORD IN FLIGHT: a sentence that cites it
-    /// transports its frame to the word's escrow, and carries the word — a
+    /// transports a frame to the word's escrow, and carries the word — a
     /// transition concerning it. A word this court does not hold in flight
     /// takes no pressure here.
-    pub(crate) fn press(&mut self, address: &[u8], frame: [u64; 4]) {
+    ///
+    /// The frame is the word's own discharge, the frame its carriage draws
+    /// (`carry`), in the escrow's currency: μ, a share of the frame (78.169
+    /// O1, ruled 2026-11-01). The waiting sentence cites a word this court
+    /// does not rule, so its own discharge cannot be measured here, and its
+    /// magnitude is a count, not μ: crediting it would credit a site count
+    /// to an escrow held in shares.
+    pub(crate) fn press(&mut self, address: &[u8]) {
         if !self.in_flight(address) {
             return;
         }
-        if self.treasury.credit_escrow(address, frame).is_none() {
+        let Some(frame) = self.provisional.get(address).map(|w| self.discharge_of(address, w)) else { return };
+        if self.treasury.credit_escrow(address, frame.clone()).is_none() {
             self.overflowed += 1;
         }
-        self.note_flux(address, frame);
+        self.note_flux(address, &frame);
         self.carry(address);
     }
 
@@ -873,9 +881,9 @@ impl Court {
     /// as silent (ZeroFlux, 78.37 (3)).
     pub(crate) fn carry(&mut self, address: &[u8]) {
         let Some(frame) = self.provisional.get(address).map(|w| self.discharge_of(address, w)) else { return };
-        match self.treasury.carry_escrow(address, frame) {
+        match self.treasury.carry_escrow(address, frame.clone()) {
             Some(Ok(_)) => {
-                self.note_flux(address, frame);
+                self.note_flux(address, &frame);
                 if let Some(at) = self.stamp_key(address) {
                     self.emitted.insert(&at, ());
                 }

@@ -155,7 +155,8 @@ pub fn read_price(surface: &[u64; 4], reserve: u64) -> Option<super::Mu> {
 }
 
 /// PRICE IS THE MAGNITUDE ON THE LANE: a verified word is worth what it
-/// deflated. The surface paces pressure, it does not scale the mint.
-pub fn price(mag: &[u64; 4], _surface: &[u64; 4]) -> [u64; 4] {
-    *mag
+/// deflated. The surface paces pressure, it does not scale the mint. The
+/// same identity whether what deflated is a count or μ's share of a frame.
+pub fn price<M: Clone>(mag: &M, _surface: &[u64; 4]) -> M {
+    mag.clone()
 }

@@ -30,7 +30,10 @@ pub fn assignment_key(a: &crate::transducer::sentence::Acting) -> Vec<u8> {
 /// disagree. Where the identity lays down no grid the residue is the whole
 /// output against nothing: still a remainder (rule 7), never dropped and
 /// never read off a shared corner of two frames. `None` for a pair with no
-/// scene.
+/// scene. The demand it stands as is the sentence's ASK (78.149 (b)), its
+/// links and their count the word's measure, never μ: it may cap what a
+/// closer is paid and is never escrowed or minted, so it stays a count
+/// (ruled 2026-11-01; μ, a share of the frame, is the discharge).
 pub(crate) fn germ_of_pair(
     a: &Grid,
     b: &Grid,
@@ -56,6 +59,9 @@ pub(crate) fn germ_of_pair(
 /// graph on `V` vertices has at most `3V − 6` edges. So `3V` bounds the
 /// pairs a frame pair's `V` bodies can be read in, and the draw is linear in
 /// the bodies — a Cartesian `V²` would license the search rule 1 refuses.
+///
+/// A STROKE SIZE, never μ: the reads an extraction may take, so it counts
+/// reads and feeds no payment (ruled 2026-11-01).
 pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frames) -> usize {
     let mut n = 0usize;
     for (a, b) in family {

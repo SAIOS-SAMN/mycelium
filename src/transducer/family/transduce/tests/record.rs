@@ -144,6 +144,31 @@ fn share_of_one_changed_site_is_lcm_free() {
     assert_eq!(t.projected(), Ok(vec![(1, 2, 1, 5)]));
 }
 
+/// O1 (ruled 2026-11-01) — THE SHARE BY LANE: on one enclosure S is the
+/// sites changed between ground and painted over `h·w` and G the sites
+/// changed from one painted hue to another over `h·w` — the planar
+/// coboundary's spatial and gauge counts over the frame, which is the share
+/// `share_of_frame` reads off a chain — and the two sum to the share.
+/// Across `29 × 29 → 30 × 30` the one site repainted `1 → 5` is `1/900` on G.
+#[test]
+fn lane_shares_equal_chain_counts_over_frame() {
+    for (x, y) in fixtures() {
+        let t = record(&x, &y);
+        let counts = crate::transducer::element::measure_lanes(&planar_delta(&x, &y));
+        let mu = share_of_frame(counts, &y);
+        assert_eq!(t.lane_shares(), [mu.lane(0).clone(), mu.lane(1).clone()], "{x:?} → {y:?}");
+        assert_eq!(t.lane_shares()[0].clone() + t.lane_shares()[1].clone(), t.share());
+        assert_eq!(mu.lane(3), &crate::core::Q::from_integer(counts[3].into()), "H, the shell count, stands as it is");
+    }
+    let x: Grid = vec![vec![1; 29]; 29];
+    let mut y: Grid = vec![vec![1; 30]; 30];
+    y[1][2] = 5;
+    let zero = crate::core::Q::from_integer(0.into());
+    assert_eq!(record(&x, &y).lane_shares(), [zero, crate::core::Q::new(1.into(), 900.into())]);
+    // A frame with no enclosure keeps its measure as n/1 (ruling 3).
+    assert_eq!(share_of_frame([3, 2, 0, 1], &Vec::new()), [3, 2, 0, 1]);
+}
+
 /// THE RECORD PROJECTED IS THE IDENTITY'S SPEECH AGAINST THE OUTPUT: where
 /// the input's turns land, the record read back on the output frame equals
 /// the input's bands spoken onto the output enclosure (`spoken_onto`)

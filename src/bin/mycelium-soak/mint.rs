@@ -191,9 +191,10 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         for (i, (x, y)) in task.train.iter().enumerate() {
             // The pair as the trajectory sees it: its transduction under the
             // stroke its periods need — incidences, the share of the frame
-            // it changes, and the μ of its projection onto the output frame
-            // where the input's turns land — or the refusal it names,
-            // reported as the engine's own reading and not re-derived here.
+            // it changes per lane (S, G), and the μ of its projection onto
+            // the output frame where the input's turns land, a share of that
+            // frame (78.169 O1) — or the refusal it names, reported as the
+            // engine's own reading and not re-derived here.
             let mut stroke = mycelium::physics::Physics::default().stroke_n(
                 match mycelium::transducer::family::transduce::need_of(x, y) {
                     Some(n) => n,
@@ -220,11 +221,14 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                     Err(u) => format!("{u:?}"),
                 },
                 match &record {
-                    Ok(t) => t.share().to_string(),
+                    Ok(t) => {
+                        let [s, g] = t.lane_shares();
+                        format!("{} (S {s} G {g})", t.share())
+                    }
                     Err(_) => "-".to_string(),
                 },
                 match record.as_ref().map_err(|u| *u).and_then(Transduction::projected) {
-                    Ok(chain) => format!("{:?}", measure_lanes(&chain)),
+                    Ok(chain) => mycelium::transducer::family::transduce::share_of_frame(measure_lanes(&chain), y).to_string(),
                     Err(u) => format!("{u:?}"),
                 },
             );

@@ -13,12 +13,15 @@ use crate::transducer::sentence::SentenceRule;
 
 /// The magnitude of a family, per lane: the sum over its pairs of one
 /// enclosure of the planar coboundary's lane magnitudes — what thinking it
-/// through draws. A pair with no enclosure (empty or ragged) draws nothing,
-/// and so, for now, does a pair of unequal enclosures: its coboundary is
-/// its transduction, not a chain of cells, and its count is not rebuilt as
-/// one (MU-DERIVATIONS D3.2). Its measure is the share of the frame it
-/// changes, read beside this count by `transduce::family_share` (O1); the
-/// switch of μ to that share is this one call.
+/// through draws on the mind's own metabolism (`Physics::bump`, the
+/// reserve's shortfall), which is counted in the mind's own units. It is
+/// NOT μ, so it stays a count (ruled 2026-11-01): μ is a share of the frame
+/// (MU-RECURSION 78.169 O1), read where μ is paid (`DeflationRead::mu`,
+/// `Court::discharge_on`). A pair with no enclosure (empty or ragged) draws
+/// nothing, and so does a pair of unequal enclosures: its coboundary is its
+/// transduction, not a chain of cells, and its count is not rebuilt as one
+/// (MU-DERIVATIONS D3.2); the share of the frame it changes is
+/// `transduce::family_share`.
 pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
     use crate::transducer::family::transduce::Enclosure;
     let mut mag = [0u64; 4];

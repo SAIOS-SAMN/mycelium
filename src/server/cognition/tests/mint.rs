@@ -171,9 +171,12 @@ k.rule_all_provisionals();
 let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
 k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+// μ IS A SHARE OF THE FRAME (78.169 O1): every frame is 2×4, so S, G and
+// 𝒯 (the flux over the carried mass) are each over 8 sites, and H, the
+// shell count, stands as it is.
 assert_eq!(
     k.treasury().minted(),
-    read,
+    crate::economy::Mu::counts(read).over([8, 8, 8, 1]).expect("non-zero wholes"),
     "mint is what the form measured over its family — the coboundary and the ground it covered — not a bound listing's magnitude"
 );
 }
@@ -372,9 +375,11 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     let cover = k.genesis_cover().expect("measured");
     k.enroll([2; 32], cover);
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+    // μ IS A SHARE OF THE FRAME (78.169 O1): the frame is 18×12, so the
+    // three recolours' S, G and 𝒯 are over 216 sites and H stands.
     assert_eq!(
         k.treasury().minted(),
-        three_closed_deflation,
+        crate::economy::Mu::counts(three_closed_deflation).over([216, 216, 216, 1]).expect("non-zero wholes"),
         "the amount is the deflation those three closed and nothing else"
     );
 }
@@ -532,8 +537,11 @@ fn measured_reconstruction_equals_client_deflation_on_unequal_enclosures() {
         (digits(&["00", "01"]), digits(&["0000", "0000", "0022", "0022"])),
     ];
     let rule = crate::transducer::family::extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
-    let (pay, _) = crate::transducer::family::form_deflation(&rule.form, &family, &crate::transducer::family::NoCrystal);
-    assert_ne!(pay, [0; 4], "the doubled recolour closes and pays");
-    let tape = crate::transducer::sentence::as_element_form(&rule.form, pay).expect("the form has a tape");
-    assert_eq!(Court::new().measured_replay(&tape, &family), pay, "the court rebuilds the client's pay");
+    let read = crate::transducer::family::form_deflation_read(&rule.form, &family, &crate::transducer::family::NoCrystal, &crate::transducer::alphabet::Word::identity());
+    assert_ne!(read.pay, [0; 4], "the doubled recolour closes and pays");
+    // μ IS A SHARE OF THE FRAME (78.169 O1): both outputs are 4×4, the frame
+    // every residue is read on, so S, G and 𝒯 are over 16 sites and H stands.
+    assert_eq!(read.mu, crate::economy::Mu::counts(read.pay).over([16, 16, 16, 1]).expect("non-zero wholes"), "the client's μ: the deflation over 4·4 sites");
+    let tape = crate::transducer::sentence::as_element_form(&rule.form, read.pay).expect("the form has a tape");
+    assert_eq!(Court::new().measured_replay(&tape, &family), read.mu, "the court rebuilds the client's μ");
 }

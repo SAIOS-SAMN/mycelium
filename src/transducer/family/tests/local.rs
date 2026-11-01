@@ -43,8 +43,11 @@ fn word_local_covers_every_changed_site() {
     let got: Vec<Vec<u8>> = got.scoped().map(|(k, _)| k).collect();
     let want: Vec<Vec<u8>> = changed.scoped().map(|(k, _)| k).collect();
     assert_eq!(got, want, "every painted and every vacated site of the whole before side moved");
-    assert_eq!(read.pay, measure_sites(&family, &[changed]), "paid the pair's demand over its section");
+    assert_eq!((read.pay, read.mu.clone()), measure_sites(&family, &[changed]), "paid the pair's demand over its section");
     assert!(read.pay.iter().any(|&m| m > 0), "a word that says the pair is paid");
+    // μ is a share of the frame (78.169 O1): six sites changed between
+    // ground and painted on a 4×6 frame are 6/24 of it on S.
+    assert_eq!(read.mu.lane(0), &crate::core::Q::new(1.into(), 4.into()), "six of 24 sites on S");
 }
 
 /// W — A WORD THAT SAYS SOMETHING FALSE ON A PAIR IS PAID NOTHING THERE, even
@@ -116,10 +119,13 @@ fn beyond_equals_difference_of_sites() {
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let all = sites(&[(0, 0), (0, 1), (0, 2), (0, 3)]);
     let half = sites(&[(0, 2), (0, 3)]);
-    let whole = Local { pay: measure_sites(&family, std::slice::from_ref(&all)), sites: vec![all] };
-    let part = Local { pay: measure_sites(&family, std::slice::from_ref(&half)), sites: vec![half] };
+    let local = |at: Keyed<()>| {
+        let (pay, mu) = measure_sites(&family, std::slice::from_ref(&at));
+        Local { pay, mu, sites: vec![at] }
+    };
+    let (whole, part) = (local(all), local(half));
     assert!(whole.beyond(&whole, &family).sites.iter().all(|s| s.is_empty()), "beyond itself, nothing");
     assert_eq!(whole.beyond(&Local::union(&[], 1), &family).pay, whole.pay, "beyond nothing, whole");
     let left = whole.beyond(&part, &family);
-    assert_eq!(left.pay, measure_sites(&family, &[sites(&[(0, 0), (0, 1)])]), "the sites left, measured");
+    assert_eq!((left.pay, left.mu), measure_sites(&family, &[sites(&[(0, 0), (0, 1)])]), "the sites left, measured");
 }

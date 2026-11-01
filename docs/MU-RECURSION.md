@@ -16213,7 +16213,18 @@ The operator's rulings on the entry's open questions, all of 2026-10-31:
 - **O1 — μ is a share of the frame.** Wired after the μ lanes carry
   rationals; until then the share is exposed as an exact `Q` beside today's
   count (`transduce::family_share`, `Transduction::share`), so the switch
-  is one call site per reader.
+  is one call site per reader. *Amended forward (ruled 2026-11-01), wired:*
+  S and G are exact shares of the frame's `h·w` (S the sites changed
+  between ground and painted, G from one painted hue to another;
+  `Transduction::lane_shares`, `transduce::share_of_frame`); H stays its
+  shell count, topological and already resolution-free; T is the flux over
+  the carried mass, taken as a share of the frames' mass. A discharge with
+  no frame (a rewrite's magnitude, a listing bound to no family) keeps its
+  own measure as `n/1`. Every reader of μ reads the share
+  (`DeflationRead::mu`, `Local::mu`, `Court::discharge_on` and the payment
+  path); the word's magnitude, the mind's metabolism, a demand's ask and a
+  stroke size stay counts, none being μ; TUniversal's lanes are exact
+  rationals (78.152 as amended).
 - **O2 — (b)**: each circle is centred by its least boundary turn.
 - **O3 — identity is both frames' full content**, `h·w + h′·w′` with the
   four periods: `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]` are two tasks.

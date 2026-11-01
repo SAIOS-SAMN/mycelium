@@ -151,7 +151,7 @@ impl Court {
     /// the hold has left, and the job is done. A lease whose jobs are done or
     /// whose hold is spent ends, the rest returning to its payer. Answers
     /// what the lease paid.
-    pub(crate) fn pay_lease(&mut self, provider: [u8; 32], job: &[u8; 32], discharge: [u64; 4], at: crate::economy::Anchor) -> Mu {
+    pub(crate) fn pay_lease(&mut self, provider: [u8; 32], job: &[u8; 32], discharge: Mu, at: crate::economy::Anchor) -> Mu {
         let Some((id, mut lease)) = self.lease_of(&provider, job) else { return Mu::zero() };
         if self.height() >= lease.until {
             let _ = self.end_lease(&id);

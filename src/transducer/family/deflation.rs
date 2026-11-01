@@ -183,7 +183,16 @@ pub fn form_deflation_at(
 /// word this crystal lacks), never the remainder's.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeflationRead {
+    /// The deflation in counts on the sites it was read on: the word's
+    /// MEASURE (its magnitude, its identity in the tape), never μ.
     pub pay: [u64; 4],
+    /// O1 (ruled 2026-11-01) — THE DISCHARGE AS μ, A SHARE OF THE FRAME:
+    /// per closed pair its S and G counts over the output frame's `h·w`
+    /// and its H shell count as it stands (`transduce::share_of_frame`);
+    /// T the flux over the carried mass, taken as a share of the frames'
+    /// mass: `T = flux · (Σ mᵢ/(hᵢ·wᵢ)) / Σ mᵢ`, `mᵢ` the mass pair `i`
+    /// carried. What every escrow, release and payment reads.
+    pub mu: crate::economy::Mu,
     /// 78.162 — THE DISCHARGE AS MODES: what the closing form moved on the
     /// pairs it closed, mode by mode with exact amounts (S boosts, G hue
     /// modes, T null fluxes, H turns), each pair's at the mass it carried.
@@ -221,15 +230,18 @@ fn form_deflation_read_on_ground(
     let mut cycled: Vec<crate::transducer::address::Address> = Vec::new();
     let mut modes = crate::economy::modes::Modes::new();
     if family.is_empty() {
-        return DeflationRead { pay: [0; 4], modes, remainders: Vec::new(), unresolved, cycled };
+        return DeflationRead { pay: [0; 4], mu: crate::economy::Mu::zero(), modes, remainders: Vec::new(), unresolved, cycled };
     }
     // The form's own motions and hue maps, read once: what each closed pair
     // moves, at that pair's mass.
     let moved = form_motions(form);
     let mut pay = [0u64; 4];
+    let mut mu = crate::economy::Mu::zero();
     let mut closed_count = 0u64;
     // A mass past its carrier leaves 𝒯 unread, never saturated (rule 11).
     let mut carried_mass: Option<u64> = Some(0);
+    // The carried mass as shares of the frames it was carried on.
+    let mut mass_share = crate::core::Q::from_integer(0.into());
     let mut remainders = Vec::with_capacity(family.len());
     for (pi, (x, y)) in family.iter().enumerate() {
         let spoken = apply_form_on(form, x, placement, crystal, Some(pi));
@@ -243,11 +255,15 @@ fn form_deflation_read_on_ground(
             let next = p.saturating_add(*d);
             *p = next;
         }
+        // The residues are read on the output's sites: their share is of
+        // the output frame.
+        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, y));
         if gated {
             // The pair's own work: the links its before side demanded moved
             // (𝒮), the mass the rule's motions carried on it.
             if let Some(m) = pair_mass(x, y) {
                 carried_mass = carried_mass.and_then(|c| c.checked_add(m));
+                mass_share += crate::transducer::family::transduce::share_of_frame([m, 0, 0, 0], y).lane(0);
                 let mass = num_rational::BigRational::from_integer(m.into());
                 for (motion, gauge) in &moved {
                     let mut budget = crate::physics::Physics::default().stroke();
@@ -271,15 +287,23 @@ fn form_deflation_read_on_ground(
     // Weighed by the mass the closed pairs carried: a pair with nothing to
     // carry covers no ground, whatever the rule would move.
     if closed_count > 0 {
-        if let Some(t) = carried_mass.and_then(|m| rule_flux(form, m)) {
+        if let Some((m, t)) = carried_mass.and_then(|m| Some((m, rule_flux(form, m)?))) {
             pay[crate::transducer::sentence::presentation::LANE_T] = t;
+            // O1 (ruled 2026-11-01): the flux over the carried mass, taken
+            // as the share of the frames' mass the closure carried.
+            if m > 0 {
+                let per = mass_share / crate::core::Q::from_integer(m.into());
+                if let Some(share) = crate::economy::Mu::counts([0, 0, t, 0]).scaled(&per) {
+                    mu.step(&share);
+                }
+            }
         }
     }
     unresolved.sort_unstable();
     unresolved.dedup();
     cycled.sort_unstable();
     cycled.dedup();
-    DeflationRead { pay, modes, remainders, unresolved, cycled }
+    DeflationRead { pay, mu, modes, remainders, unresolved, cycled }
 }
 
 /// EVERY WORD VERTEX'S WHOLE MOTION AND HUE MAP, member by member: its

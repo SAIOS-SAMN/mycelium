@@ -154,11 +154,11 @@ fn growth_size_sums_closures_in_universe() {
     assert_eq!(k.growth_size(&domain), Err(GrantRefusal::NoNewClosures), "no closure judged: no growth grant");
     let rule = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)]).expect("a rule");
     let line = verifying(&key(47));
-    let _ = k.pay_solve(b"task-a", line, &rule, [3, 0, 2, 1], true);
+    let _ = k.pay_solve(b"task-a", line, &rule, [3, 0, 2, 1].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([3, 0, 2, 1]), "the closure's measured discharge, a line's key counting for its universe");
-    let _ = k.pay_solve(b"task-b", [0xee; 32], &rule, [9, 9, 9, 9], true);
+    let _ = k.pay_solve(b"task-b", [0xee; 32], &rule, [9, 9, 9, 9].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([3, 0, 2, 1]), "a key no domain names grows nothing here");
-    let _ = k.pay_solve(b"task-c", verifying(&key(RESERVE)), &rule, [1, 1, 0, 0], true);
+    let _ = k.pay_solve(b"task-c", verifying(&key(RESERVE)), &rule, [1, 1, 0, 0].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([4, 1, 2, 1]), "a second closure adds, exact per lane");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "clean restore");

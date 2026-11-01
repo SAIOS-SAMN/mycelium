@@ -92,13 +92,13 @@ impl Court {
                 // first; the cited forms, taught words and voices divide the
                 // rest.
                 let pay = match self.treasury.escrow_of(address).map(|e| e.mu.clone()) {
-                    Some(held) if measured.iter().any(|&x| x > 0) => {
-                        let base = held.capped(&crate::economy::Mu::counts(measured));
+                    Some(held) if !measured.is_zero() => {
+                        let base = held.capped(&measured);
                         let organs = [self.identity, witness];
                         let taken = self.pay_verification(&base, &organs, installed);
                         base.shortfall(&taken)
                     }
-                    _ => crate::economy::Mu::counts(measured),
+                    _ => measured,
                 };
                 if pay.is_zero() {
                     // Closes nothing: installed, and mints none.
@@ -130,9 +130,10 @@ impl Court {
                         }
                         false => None,
                     };
+                    let glued = premium.is_some();
                     let taken = self.treasury.settle_recursive(address, &shares, &pay, premium, installed);
                     // The pays by kind, for the observer (MU-CLIENT §5.6).
-                    let kind = match (premium.is_some(), w.is_connection(), self.conjugate_of(&w).is_some()) {
+                    let kind = match (glued, w.is_connection(), self.conjugate_of(&w).is_some()) {
                         (true, _, _) => "sentence gluings",
                         (false, true, _) => "word sections",
                         (false, false, true) => "conjugate transports",
@@ -142,7 +143,7 @@ impl Court {
                         self.acts.pay(kind, taken);
                     }
                     for (_, share) in &word_shares_paid {
-                        self.acts.pay("word sections", *share);
+                        self.acts.pay("word sections", share.clone());
                     }
                     self.grow_grants_by_paid();
                 }
@@ -180,7 +181,7 @@ impl Court {
         drawn: Option<[u8; 32]>,
         witness: [u8; 32],
         budget: &mut crate::physics::Budget,
-    ) -> Vec<([u8; 32], [u64; 4])> {
+    ) -> Vec<([u8; 32], crate::economy::Mu)> {
         let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address)).cloned();
         let mut shares = Vec::new();
         for word in crate::cognition::book::speech::words_of_sentence(w, budget) {
@@ -205,7 +206,7 @@ impl Court {
                     drawn
                 }
             };
-            if let Some(who) = who.filter(|_| discharge.iter().any(|&m| m > 0)) {
+            if let Some(who) = who.filter(|_| !discharge.is_zero()) {
                 shares.push((who, discharge));
             }
         }
@@ -264,7 +265,7 @@ impl Court {
     /// ONE SHARE PER CITED VERDICT, not per citation: a form cited by two
     /// vertices closes what it closes once. Keyed by the cited address,
     /// so the second citation of one address is not a second share.
-    fn cited_shares(&self, address: &[u8], w: &Element, pay: &crate::economy::Mu) -> Vec<([u8; 32], [u64; 4])> {
+    fn cited_shares(&self, address: &[u8], w: &Element, pay: &crate::economy::Mu) -> Vec<([u8; 32], crate::economy::Mu)> {
         if pay.is_zero() {
             return Vec::new();
         }
@@ -277,7 +278,7 @@ impl Court {
         let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         let mut out = Vec::new();
         let take = |k: &mut crate::network::nerve::Keyed<()>,
-                    out: &mut Vec<([u8; 32], [u64; 4])>,
+                    out: &mut Vec<([u8; 32], crate::economy::Mu)>,
                     form_address: &crate::transducer::address::Address,
                     placement: &crate::transducer::alphabet::Word| {
             if k.contains(form_address.as_bytes()) {
@@ -296,7 +297,7 @@ impl Court {
             // The cited form's own deflation, measured on the CITER's
             // family: what it closes inside this sentence.
             let share = self.cited_deflation(address, &held, placement);
-            if share.iter().all(|&m| m == 0) {
+            if share.is_zero() {
                 return;
             }
             out.push((who, share));
@@ -321,37 +322,38 @@ impl Court {
     /// task names the family (`verified_install_deflation` reads the same
     /// binding for the citer itself), and the cited form is replayed over
     /// it: a generator that closes nothing there is used for nothing
-    /// there, whatever it closes elsewhere.
+    /// there, whatever it closes elsewhere. As μ, each pair's share of its
+    /// frame (78.169 O1, ruled 2026-11-01).
     pub(crate) fn cited_deflation(
         &self,
         citer: &[u8],
         cited: &Element,
         placement: &crate::transducer::alphabet::Word,
-    ) -> [u64; 4] {
+    ) -> crate::economy::Mu {
         let Some(task) = self
             .speech_task
             .get(citer)
             .or_else(|| self.listing_task.get(citer))
             .cloned()
         else {
-            return [0; 4];
+            return crate::economy::Mu::zero();
         };
         let Some(family) = self.task_family.get(&task) else {
-            return [0; 4];
+            return crate::economy::Mu::zero();
         };
         // MU-CLIENT §5.6 (W) — a connection is decompressed by its own
         // letters and measured on its own section of the citer's family; the
         // form decompressor never reached it.
         if cited.is_connection() && !cited.is_colour_word() {
-            return crate::transducer::family::local::word_local(cited, family).pay;
+            return crate::transducer::family::local::word_local(cited, family).mu;
         }
         // A CITED FORM'S USE IS ITS LOCAL DISCHARGE too (§5.6 W: "D2′'s base
         // and use shares read it"): what it closes inside the citer at the
         // citer's placement, its section, never the whole-pair closure a
         // cited word inside a sentence rarely meets alone.
         match crate::transducer::sentence::from_element_form(cited) {
-            Some(f) => crate::transducer::family::local::form_local(&f, family, self, placement).pay,
-            None => [0; 4],
+            Some(f) => crate::transducer::family::local::form_local(&f, family, self, placement).mu,
+            None => crate::economy::Mu::zero(),
         }
     }
 

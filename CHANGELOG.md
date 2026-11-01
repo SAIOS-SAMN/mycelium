@@ -79,6 +79,14 @@ Holding the modes themselves (78.162) remains the next step.
   septum equivocation (it carries no μ) and the deferral, whose deficit is
   a reserve count (the door reads an unpaid share of a unit as the unit it
   did not cover).
+- **μ is a share of the frame** (ruled 2026-11-01; MU-RECURSION 78.169 O1;
+  MU-ECONOMY §1, §3): every amount the ledger is paid from a measured
+  discharge — solve receipts and verdicts, escrows, releases, lease
+  payments, install shares — holds the share of each closed pair's frame,
+  not its site count, so the values on the wire and in the ledger change
+  (one changed site of a `30 × 30` frame pays `1/900`). The layouts are the
+  rational lane codec of wire `0x0200`; no layout moves beyond it. A court
+  state written before this change is adopted by a recut from genesis.
 - **TUniversal's lanes are exact rationals** (ruled 2026-11-01; MU-RECURSION
   78.152 TU-1, TU-5, TU-7 amended forward; MU-CHRONOMETRY §1). The clock
   reads μ issued, and μ holds shares of a unit, so `Tick` and `TPoint`
@@ -106,6 +114,36 @@ Holding the modes themselves (78.162) remains the next step.
 - **The Concordance hash changes**: MU-CONCORDANCE 2.3 gains a note (O11)
   that the clause binds a universe's stated space, not the sensor's
   worksheet. A kernel signs the new hash.
+
+### Economy
+- **μ is a share of the frame** (ruled 2026-11-01; MU-RECURSION 78.169 O1,
+  MU-ECONOMY §1). A discharge read on a family is, per closed pair, S (sites
+  changed between ground and painted) and G (from one painted hue to
+  another) over the frame's `h·w`, H the shell count as it stands
+  (topological, resolution-free), and T the flux over the carried mass
+  taken as the frames' share of it, `flux · (Σ mᵢ/(hᵢ·wᵢ)) / Σ mᵢ`; a
+  discharge with no frame (a rewrite's magnitude, a listing bound to no
+  family) keeps its measure as `n/1`. On frames of one extent a value is
+  the old count over `h·w` on S, G and T and the count on H.
+- New readers: `DeflationRead::mu` (the client's deflation and the court's
+  measured reconstruction, one function, so T1 holds on μ),
+  `Local::mu` (`measure_sites` answers the count and μ),
+  `transduce::share_of_frame`, `Transduction::lane_shares`, `Mu::over`.
+- `Court::discharge_on`, `discharge_of`, `measured_replay`,
+  `measured_replay_read`, `transport_on`, `gluing_of`, `cited_deflation`,
+  `verified_install_deflation`, `pay_solve`, `release_verified`,
+  `pay_lease`, `settle_solve` and `SolveVerdict::Solved { pay }` read and
+  carry `Mu`; `Treasury::settle_recursive` takes `Mu` shares and premium;
+  `economy::price` is generic over what it prices. `measured_replay_at` is
+  removed (nothing read it).
+- A word's magnitude (its measure and identity in the tape), a family's
+  magnitude (the mind's metabolism), a demand's ask and the extraction
+  need (a stroke size) stay counts: none is μ.
+- A sentence waiting on a word presses the word's escrow by the word's own
+  discharge — the carriage it causes — where it pressed its own
+  magnitude, a count credited to an escrow held in shares.
+- `mycelium-soak`'s mint instrument prints each pair's S and G shares and
+  its projection's μ as a share.
 
 ### SDK API changes
 - `mycelium_sdk::wallet::{Mu, MuRefusal}` and `prelude::Mu`; every μ field
@@ -166,10 +204,10 @@ Holding the modes themselves (78.162) remains the next step.
   form's remainder (a `K_lcm` before was subtracted from an output-native
   after). `declare_unspoken` reads the input's hue on the output's sites
   through the re-period, never off a shared corner.
-- A pair of unequal enclosures has no intake route and adds no count to a
-  family's magnitude until the turn-native chart (O8) and μ as a share of
-  the frame (O1); `transduce::family_share` reads the exact share beside
-  the count.
+- A pair of unequal enclosures has no intake route until the turn-native
+  chart (O8), and adds no count to a family's magnitude (the mind's
+  metabolism, not μ); `transduce::family_share` reads the exact share of
+  the frame it changes, and μ reads that share (Economy, above).
 - `mycelium-soak --transduction-census DIR` classes every unequal-extent
   train pair of a corpus by relation (O10).
 

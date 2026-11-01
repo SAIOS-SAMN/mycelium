@@ -68,8 +68,8 @@ fn overlap(a: (usize, usize), p: usize, b: (usize, usize), q: usize) -> (Turn, T
 /// O1 — THE SHARE A FAMILY CHANGES: the sum over its pairs of the share of
 /// each frame its transduction changes ([`Transduction::share`]), exact.
 /// `None` where a pair has no enclosure or its record does not read whole
-/// under the stroke its periods need. This is the reading μ switches to
-/// once the lanes carry rationals; until then it stands beside the count.
+/// under the stroke its periods need. Per lane it is
+/// [`Transduction::lane_shares`].
 pub fn family_share(family: &[(Grid, Grid)]) -> Option<crate::core::Q> {
     let mut share = crate::core::Q::from_integer(0.into());
     for (x, y) in family {
@@ -77,6 +77,27 @@ pub fn family_share(family: &[(Grid, Grid)]) -> Option<crate::core::Q> {
         share += Transduction::of(x, y, &mut stroke).ok()?.share();
     }
     Some(share)
+}
+
+/// O1 (ruled 2026-11-01) — A CHAIN'S MEASURE AS μ, A SHARE OF THE FRAME IT
+/// IS READ ON: S (sites changed between ground and painted) and G (sites
+/// changed from one painted hue to another) are site counts, each over the
+/// frame's `h·w`, so one changed site of a 30×30 frame is `1/900` of it; H
+/// is a shell count, topological and already resolution-free, and stands
+/// as its count `n/1`; T stands as its count too, and a chain carries none
+/// (the deflation reads T off the flux, `deflation::form_deflation_read`).
+/// A frame with no enclosure (empty or ragged) keeps the measure as `n/1`:
+/// a discharge with no frame keeps its own measure (ruling 3).
+pub fn share_of_frame(counts: [u64; 4], frame: &Grid) -> crate::economy::Mu {
+    let whole = crate::economy::Mu::counts(counts);
+    let Ok(e) = Enclosure::of(frame) else { return whole };
+    match e.rows.checked_mul(e.cols).and_then(|a| u64::try_from(a).ok()) {
+        Some(a) => match whole.over([a, a, 1, 1]) {
+            Some(share) => share,
+            None => whole,
+        },
+        None => whole,
+    }
 }
 
 impl Transduction {
@@ -160,15 +181,31 @@ impl Transduction {
     /// product of two circles' measures, never a square). Resolution-free;
     /// on one enclosure it is the changed sites over `h·w`.
     pub fn share(&self) -> crate::core::Q {
+        let [s, g] = self.lane_shares();
+        s + g
+    }
+
+    /// O1 (ruled 2026-11-01) — THE SHARE BY LANE, `[S, G]`: each changed
+    /// incidence's flat measure on the torus face lands on S where exactly
+    /// one of its two hues is the ground (a site changed between ground and
+    /// painted) and on G where both are painted (one painted hue to
+    /// another). The two sum to [`Transduction::share`]; on one enclosure
+    /// they are the planar coboundary's spatial and gauge counts over `h·w`.
+    pub fn lane_shares(&self) -> [crate::core::Q; 2] {
         let (p, q) = (self.from.enclosure, self.to.enclosure);
-        let mut sum = crate::core::Q::from_integer(0.into());
+        let void = crate::arc::ground();
+        let mut lanes = [crate::core::Q::from_integer(0.into()), crate::core::Q::from_integer(0.into())];
         for i in self.changed() {
             let Some((a, b)) = self.bands_of(i) else { continue };
             let (r0, r1) = overlap(a.rows, p.rows, b.rows, q.rows);
             let (c0, c1) = overlap(a.cols, p.cols, b.cols, q.cols);
-            sum += (r1.value() - r0.value()) * (c1.value() - c0.value());
+            let lane = match (i.before == void) != (i.after == void) {
+                true => 0,
+                false => 1,
+            };
+            lanes[lane] += (r1.value() - r0.value()) * (c1.value() - c0.value());
         }
-        sum
+        lanes
     }
 
     /// PROJECT (D3.2 §E) — THE RECORD READ BACK ON THE OUTPUT FRAME: what

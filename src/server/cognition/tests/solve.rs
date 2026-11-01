@@ -36,7 +36,13 @@ fn judge_solve_prices_closing_rule_by_discharge() {
     let rule = rule_over(&carried());
     match k.judge_solve(&rule, &carried()) {
         SolveVerdict::Solved { pay, modes } => {
-            assert!(pay.iter().any(|&m| m > 0), "it discharges something: {pay:?}");
+            assert!(!pay.is_zero(), "it discharges something: {pay}");
+            // μ IS A SHARE OF THE FRAME (78.169 O1): the pair is one 1×7
+            // frame, so the deflation's S, G and T (the flux over the mass it
+            // carried) are each over 7 sites; H, the shell count, stands.
+            let form = crate::transducer::sentence::from_element_form(&rule).expect("a form");
+            let counts = crate::transducer::family::form_deflation_read(&form, &carried(), &k, &crate::transducer::alphabet::Word::identity()).pay;
+            assert_eq!(pay, crate::economy::Mu::counts(counts).over([7, 7, 7, 1]).expect("non-zero wholes"), "the deflation over the frame's 1·7 sites");
             // 78.162 — the slide the rule carried is held as its own mode on
             // T, a null flux with an exact positive amount, never a count of
             // lanes.
@@ -140,7 +146,7 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
         assert_eq!((&other.train, &other.test), (&one.train, &one.test), "frame {i}: one scene through the sensor");
         let again = rule_over(&other.train);
         assert_eq!(again.address(), rule.address(), "frame {i}: one word");
-        assert!(matches!(k.judge_solve(&again, &other.train), SolveVerdict::Solved { pay: p, .. } if p == pay), "frame {i}: one verdict, one price");
+        assert!(matches!(k.judge_solve(&again, &other.train), SolveVerdict::Solved { pay: ref p, .. } if *p == pay), "frame {i}: one verdict, one price");
     }
     // A TASK WITH A POLAR VECTOR: its bodies move one way, so its frame is
     // physical — turned, it is not the same scene.
@@ -160,10 +166,10 @@ fn pay_solve_mints_first_closure_only() {
     let rule = rule_over(&carried());
     let SolveVerdict::Solved { pay, .. } = k.judge_solve(&rule, &carried()) else { panic!("solved") };
     let (task, voice) = ([5u8; 32], [9u8; 32]);
-    let first = k.pay_solve(&task, voice, &rule, pay, true);
+    let first = k.pay_solve(&task, voice, &rule, pay.clone(), true);
     assert_eq!(first, pay, "the first closure is paid its discharge");
     assert_eq!(k.treasury.balance_mu(&voice), pay, "minted to the solver");
-    let again = k.pay_solve(&task, voice, &rule, pay, false);
+    let again = k.pay_solve(&task, voice, &rule, pay.clone(), false);
     assert_eq!(again, [0; 4], "a closure again pays nothing");
     assert_eq!(k.treasury.balance_mu(&voice), pay, "and the balance stands");
 }
@@ -204,7 +210,7 @@ fn pay_solve_acts_on_nothing_at_zero_discharge() {
     let mut k = Court::new();
     let rule = rule_over(&carried());
     let (task, voice) = ([5u8; 32], [9u8; 32]);
-    let paid = k.pay_solve(&task, voice, &rule, [0; 4], true);
+    let paid = k.pay_solve(&task, voice, &rule, crate::economy::Mu::zero(), true);
     assert_eq!(paid, [0; 4], "nothing paid");
     assert_eq!(k.treasury.balance_mu(&voice), [0; 4], "nothing minted");
     assert!(k.take_offers().is_empty(), "nothing docketed or offered");
