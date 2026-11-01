@@ -170,7 +170,7 @@ constructor that refuses instead.
 
 **Acceptance claims.**
 - A frame written on one side of an XX session is read whole on the other
-  (replay; built as `initiate_completes_handshake_and_round_trips_frames`).
+  (round trip; built as `initiate_completes_handshake_and_round_trips_frames`).
 - A changed static key on a pinned host is refused by name (built as
   `pin_refuses_changed_peer_key`).
 - The first static key seen for a peer is the pinned one: a fixed locus
@@ -459,7 +459,7 @@ not a fault campaign.
   | Fault | What it injects |
   |---|---|
   | `InvalidSignature` | An act whose Ed25519 signature does not verify. |
-  | `Replay` | A valid signed act sent twice. |
+  | `Replay` (a resend; the class follows the code rename to `Resend`) | A valid signed act sent twice. |
   | `DoubleClaimRace` | One work claimed at two courts across a partition. |
   | `EquivocatingLedger` | Two signed receipts from one key at one position. |
   | `SybilSwarm` | Many unbonded voices from one operator. |
@@ -472,7 +472,7 @@ not a fault campaign.
 - **Four topologies:** a full battery (every fault on one mesh), a clean
   split, rolling isolation, and an asymmetric partition.
 - **Exact invariants,** audited after every campaign:
-  1. **Conservation by ledger replay:** every node's balances, bonds and
+  1. **Conservation by ledger audit:** every node's balances, bonds and
      holds re-derive from its own ledger rows, and
      `supply = genesis + mint − burn = Σbalance + Σbond + Σheld` holds per
      lane (`Treasury::audit`).
@@ -506,11 +506,12 @@ rules.
 
 **Acceptance claims.**
 - One claim per fault class, each stating what the court must do, for
-  example: a replayed act moves value once; an equivocating ledger
+  example: a resent act moves value once; an equivocating ledger
   forfeits the whole bond; a restored signer re-signing a consumed
   position is named; a malformed name leaves a receipt.
 - Conservation holds after every campaign: an exact identity per lane.
-- A campaign reproduces from its printed seed: replay.
+- A campaign is reproducible from its printed seed (a seeded fixture, a
+  rebuild); it is judged by its exact invariants, never by comparing two runs.
 - A lie routed through the accused is still detected: the auditor's
   independent view.
 
@@ -567,8 +568,8 @@ of acts, and `skip` is not adopted.
 
 **What it is.** Five additions to the clause vocabulary that MU-COGNITION
 §1.3 names as the road, plus clauses learnable as vocabulary. Each changes
-the form language and the court's replay, so each is a court change,
-built with its codec, its replay and its claims.
+the form language and the court's reconstruction, so each is a court change,
+built with its codec, its reconstruction and its claims.
 
 **The current vocabulary** (`src/transducer/sentence/form/clause.rs`):
 predicates `Pred::{All, Hue, Chart, Cmp, Rank, Touches, Not, And, Any}`
@@ -765,7 +766,8 @@ remains the second vantage's (47.3).
 **Acceptance claims.**
 - A file dropped in the feed is one claim, answered beside it.
 - A file that does not decode is refused by name.
-- A restarted door resumes by asking the court: replay.
+- A restarted door resumes from its kept cursor and the court's answer
+  (catch-up).
 
 **Track** 9 (depths in the SDK documentation) and 15 (the door, on the
 operator's path, MU-HOSTING §2). **Effort** medium. **Status** Specified.
@@ -822,7 +824,7 @@ mapping from the spaces world models already declare.
 | Box with float `low` and `high` | Rational bounds and a unit map: each axis an exact rational in `[low, high]` with a declared denominator; a value with no exact representation does not cross |
 | Image (RGB box) | A grid of exact integer channels, or a hue table |
 | Dictionary of spaces | A named product of the above |
-| Episode reset with a seed | Founding from a seed recorded in the domain; reconstruction by rebuilding from it (MU-HOSTING §7) |
+| Episode reset with a seed | Founding from a seed recorded in the domain; the environment is rebuilt from it, a reproducible build, never a verification (MU-HOSTING §7.1) |
 | Step | One reported transition, checked by the profile's laws (track 15, H3) |
 
 **Track** 15 (H3). **Effort** small. **Status** Specified.

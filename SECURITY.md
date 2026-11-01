@@ -26,7 +26,7 @@ release. Reporters are credited unless they ask otherwise.
 
 In scope:
 - **Signatures and admission:** Ed25519 verification of every signed act;
-  acts admitted unsigned, under the wrong key, or replayed across
+  acts admitted unsigned, under the wrong key, or resent across
   positions.
 - **Settlement:** any path that mints, burns or moves μ other than the
   rulings of `docs/MU-ECONOMY.md`, or that breaks the supply invariant

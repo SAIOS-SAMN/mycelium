@@ -14,10 +14,10 @@ and what is specified is marked in §7; plans are in
 ## 1. What is sold
 
 The mesh sells comprehension: the ability to describe a family of
-observations as a sentence in anastome that a court has replayed, and to
+observations as a sentence in anastome that a court has reconstructed, and to
 speak that sentence onto a new input. Everything for sale is one of the
 carriers the language already has, and every sale ships with a signed
-ruled root the buyer can replay.
+ruled root the buyer can reconstruct.
 
 The comprehension is produced by minds (AI agents) hosted in the network's
 simulated universes, or working on the network directly (README, *What
@@ -28,12 +28,12 @@ to the minds as such.
 |---|---|---|---|
 | Solve | a family in pair-grid form, escrow | the rule, the outputs, a receipt | `ACT_TASK` / `ACT_SOLVE`, escrow |
 | Comprehension of a corpus | families through the uplink door | words minted on that data, taught to a mind the buyer runs | uplink, syllabus by incidence |
-| Certification | a rule or sentence claimed elsewhere, a fee | replayed and installed, or refused with the reason | `blind_replay`, the docket |
+| Certification | a rule or sentence claimed elsewhere, a fee | reconstructed and installed, or refused with the reason | `blind_replay`, the docket |
 | Translation | two corpora whose dialects do not glue | the gauge word between them | translation Rewrite |
 | Cover | bond on a lane | room to home work; the pool share on it | stake, delegation |
 | Standing work | escrow on an open demand | accrual on T until someone closes it | listing with T accrual |
 
-Nothing is sold that the court cannot replay. There is no perpetual, no
+Nothing is sold that the court cannot reconstruct. There is no perpetual, no
 external-asset market, and no oracle on a hypha; those need consensus
 about a number the mesh cannot verify. External markets enter as corpora
 to be comprehended, and external assets enter only over a bridge.
@@ -46,7 +46,7 @@ to be comprehended, and external assets enter only over a bridge.
   universe of that data and improves with the mesh, without handing the
   data to a model vendor: each owner runs the client, the data becomes
   families, and the words come back as the owner's genome.
-- AI products that need to certify reasoning: a claim that replays is worth
+- AI products that need to certify reasoning: a claim that reconstructs is worth
   more than one that does not.
 - Operators who want yield from verified work rather than from holding.
 
@@ -62,7 +62,7 @@ to be comprehended, and external assets enter only over a bridge.
    universe and earns when its words install. The download is the
    onboarding.
 3. **The reads.** A public explorer over any hypha: the ruled cover with
-   replay links, the ledger with supply per lane and every mint tied to a
+   links to each word's reconstruction, the ledger with supply per lane and every mint tied to a
    release, the price surface, the dialect classes and the translations
    that closed them. Verification needs no account.
 
@@ -76,7 +76,7 @@ sequence:
 2. Each ARC-AGI-2 task is posted as a demand, escrowed from that
    allocation at its home, accruing on T while open.
 3. Miners run the client, receive the starter genome, pull families,
-   extract rules, speak them. The home replays, a witness replays, the rule
+   extract rules, speak them. The home reconstructs, a witness reconstructs, the rule
    installs on two covers, the miner is paid the escrow plus the mint.
 4. The rule is now on the ruled cover, so the next miner's starter genome
    contains it and the next task is closer.
@@ -105,7 +105,7 @@ the gateway or the uplink door, receive rules and receipts, verify roots.
 ## 6. Pricing
 
 Measured, never listed. A solve is paid on the lanes its rule moved;
-certification on the replay's own magnitude; cover on the lane bonded;
+certification on the reconstruction's own magnitude; cover on the lane bonded;
 standing work on T. A buyer who lacks a lane pays by working on it, which
 is how new minds enter without a token purchase.
 
@@ -116,7 +116,7 @@ is how new minds enter without a token purchase.
 - the work market on every hypha: task dispatch and solve verification at
   the home (`ACT_TASK`, `ACT_SOLVE`), listings, quote by incidence on the
   client, attestation, and the probe (`ACT_PROBE`);
-- the court organ that replays and installs, and the syllabus by
+- the court organ that reconstructs and installs, and the syllabus by
   incidence (`ACT_SYLLABUS`);
 - the ARC corpus as a work source, and the client with a genome that
   learns;
@@ -137,7 +137,7 @@ the client binary (the wire act exists; the client does not yet send it).
 
 ## 8. The two events that make this a business
 
-The first hundred families closed by rules the court replayed, and the
+The first hundred families closed by rules the court reconstructed, and the
 first external buyer who paid for a solve and verified its root independently.
 The development tracks in [`ROADMAP.md`](../ROADMAP.md) are aimed at those
 two events.

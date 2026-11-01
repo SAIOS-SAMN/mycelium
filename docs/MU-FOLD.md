@@ -62,11 +62,13 @@ ruling.
 
 ## Extraction and joining
 
-Any holder serves an archived prefix by K range; a court replays era N by
-fetching and re-deriving. A joiner adopts a fold root the way it adopts a
+Any holder serves an archived prefix by K range; a court proves a citation
+into era N by fetching the era's receipts by K range and re-deriving each
+receipt's hash and predecessor up to the fold root (an era proof). A joiner adopts a fold root the way it adopts a
 genesis: on the two signatures and its own §6 re-derivation over the
 `epoch` rows it received, seeding its chain from the fold's head and
-height; the archive replays on demand, never as a precondition. A chain
+height; the archive is fetched and its chain re-derived on demand, never as
+a precondition. A chain
 is never truncated behind a fold root it did not adopt.
 
 ## Refusals and lines

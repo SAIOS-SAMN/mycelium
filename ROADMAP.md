@@ -23,7 +23,7 @@ the tracks they serve.
 `src/server/cognition/` (the home's admission).
 
 The Note carries value between voices through a hypha, released only on
-two-court replay, as words are installed. The track's pieces:
+two-court reconstruction, as words are installed. The track's pieces:
 
 - **Acts:** `SEPTUM_CHALLENGE`, `SEPTUM_NOTE`, `SEPTUM_RECEIPT`,
   `SEPTUM_RELEASE`, `SEPTUM_REVOKE` and `SEPTUM_EQUIVOCATION` (0x30–0x35),
@@ -44,7 +44,7 @@ job the provider's verified solve closes pays its measured discharge out
 of the hold, and the remainder returns at the lease's end. The track
 continues with:
 
-- **Verification leases:** jobs that are replays rather than solves, so a
+- **Verification leases:** jobs that are reconstructions rather than solves, so a
   hypha's verification capacity can be reserved as a client's solving
   capacity is.
 - **Leases through the Note:** a lease funded and released across courts
@@ -101,11 +101,11 @@ grows what minds can state:
 - coverage of more of the ARC-AGI-2 corpus.
 
 Each reader is proved by re-deriving held-out pairs and by the court's
-replay.
+reconstruction.
 
 Components from precursor implementations
 ([MU-PRECURSORS](docs/MU-PRECURSORS.md) §3.3, §3.8, §3.9), each a court
-change built with its codec, replay and claims:
+change built with its codec, reconstruction and claims:
 - **Named refusals in `learn_form`** (**In progress**, a defect fix):
   every vertex of a learned form is filed, refused by name, or not a word.
 - **Act parameters measured per pair:** scale, tile and reduce by the
@@ -404,13 +404,14 @@ is open.
    notices; a stale one is re-anchored.
 10. **Fault-injection campaign and invariant auditor** (**Specified**;
     [MU-PRECURSORS §3.6](docs/MU-PRECURSORS.md#36-fault-injection-campaign-and-invariant-auditor)).
-    Ten named fault classes (`InvalidSignature`, `Replay`,
+    Ten named fault classes (`InvalidSignature`, `Replay` (a resend;
+    renamed `Resend` with the code),
     `DoubleClaimRace`, `EquivocatingLedger`, `SybilSwarm`,
     `RespellRaceSaturation`, `DrainedPurseDraw`,
     `RestoreFromSnapshotSigner`, `MalformedName`, `GerminalFlood`) on four
     topologies, each campaign reproducible from a printed seed, with exact
     invariants audited after every campaign: conservation by ledger
-    replay, once per work across the mesh, every burn revokes, and no
+    audit (`Treasury::audit`), once per work across the mesh, every burn revokes, and no
     refusal without a receipt. The auditor keeps its own independent view
     of an accused node, and concurrent faults target separate nodes. It is
     written against the current admission and treasury.
