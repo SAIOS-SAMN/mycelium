@@ -4,7 +4,7 @@
 // puncture's inverse on content.
 
 use crate::transducer::alphabet::{LetterId, Rotor, Word};
-use crate::transducer::bubble::*;
+use crate::transducer::field::*;
 use crate::transducer::cech::Section;
 use crate::transducer::element::identity_versor;
 

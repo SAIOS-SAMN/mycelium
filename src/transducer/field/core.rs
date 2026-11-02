@@ -343,7 +343,7 @@ impl Contemplation {
                 return Some(Refusal::HeldByClass);
             }
         }
-        match self.bubbles.get(v) {
+        match self.wells.get(v) {
             Some(b) if !b.glued_by.is_empty() => Some(Refusal::Glued),
             _ => None,
         }
@@ -389,7 +389,7 @@ impl Contemplation {
             for v in &doomed {
                 alive.remove(v);
                 self.truncation.truncated += 1;
-                match self.bubbles.remove(v) {
+                match self.wells.remove(v) {
                     Some(b) => {
                         self.return_escrow(&b.escrow);
                         self.unthreaded.remove(v);

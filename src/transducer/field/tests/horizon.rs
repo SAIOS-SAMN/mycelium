@@ -1,9 +1,9 @@
 // A19, 25.4 — the horizon: a seeded class is recognised, never re-derived,
 // and it is keyed by the class key.
 
-use crate::transducer::bubble::*;
+use crate::transducer::field::*;
 
-/// A class seeded into the horizon is recognised in a held bubble under the
+/// A class seeded into the horizon is recognised in a held well under the
 /// Ruled standing, never re-derived.
 #[test]
 fn seed_horizon_keeps_class_ruled_not_rederived() {
@@ -18,7 +18,7 @@ fn seed_horizon_keeps_class_ruled_not_rederived() {
     };
     assert_eq!(c.seed_horizon(std::slice::from_ref(&rec)), 1);
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
-    let b = c.bubbles.scoped().next().map(|(_, b)| b).expect("bubble");
+    let b = c.wells.scoped().next().map(|(_, b)| b).expect("well");
     let (_, _, st) = b.horizon.get(&rec.key).expect("seeded");
     // RULED, not Held. The syllabus is another mind's court-ratified class
     // and it is the one standing on which waiting for the word is right.
@@ -40,13 +40,13 @@ fn horizon_put_keys_entry_by_class_key() {
     let r = Word::from_letters(&[(q, false)]).rotor();
     let ck = r.class_key().expect("90° turn class");
     let key = {
-        let (k, _) = c.bubbles.scoped().next().expect("bubble");
+        let (k, _) = c.wells.scoped().next().expect("well");
         k
     };
-    if let Some(b) = c.bubbles.get_mut(&key) {
+    if let Some(b) = c.wells.get_mut(&key) {
         horizon_put(&mut b.horizon, r.clone(), Standing::Held);
     }
-    let hb = c.bubbles.get(&key).expect("held");
+    let hb = c.wells.get(&key).expect("held");
     let (got, order, st) = hb.horizon.get(ck.as_bytes()).expect("class key");
     assert_eq!(got.class_key(), Some(ck.clone()));
     assert_eq!(*order, r.order().expect("the 90° turn has an order"));

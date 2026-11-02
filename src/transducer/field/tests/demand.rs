@@ -1,9 +1,9 @@
 // 16.16 step 6, 50.5 — THE ORBIT'S DEMAND REACHES THE HELD FORM: both of
 // the drive's pivot paths write a held orbit of infinite order onto the
-// bubble's form as the demand the peel types its holonomy as.
+// well's form as the demand the peel types its holonomy as.
 
 use crate::transducer::alphabet::{Rotor, Word, Q};
-use crate::transducer::bubble::*;
+use crate::transducer::field::*;
 use crate::transducer::sentence::tests::common::edge_chord_form;
 use crate::transducer::sentence::Demand;
 use crate::transducer::stalk::{Invariant, Stalks};
@@ -63,14 +63,14 @@ fn each_demand_carries(
     }
 }
 
-/// THE EXPAND PATH: a bubble holding a form whose one orbit carries the
+/// THE EXPAND PATH: a well holding a form whose one orbit carries the
 /// weight-11 rotor on its edge, expanded over an empty atlas against a
 /// crystal holding nothing, leaves the form it takes back with a `Standing`
 /// vertex on the orbit's chart, in the holonomy's class.
 #[test]
 fn expand_with_stands_orbit_demand_on_held_form() {
     let form = edge_chord_form(&[Word::formed(eleven())]);
-    let mut b = Bubble { form: Some(form), ..Default::default() };
+    let mut b = Well { form: Some(form), ..Default::default() };
     let atlas = Stalks::default();
     let section_at = |_: &[u8]| None;
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 8);
@@ -82,7 +82,7 @@ fn expand_with_stands_orbit_demand_on_held_form() {
         &mut budget,
         &mut Default::default(),
     );
-    let f = b.form.as_ref().expect("the bubble keeps its form");
+    let f = b.form.as_ref().expect("the well keeps its form");
     each_demand_carries(f, &eleven());
     assert!(!f.is_closed(), "a form carrying a demand is not closed");
 }
@@ -101,8 +101,8 @@ fn pivot_on_stands_orbit_demand_on_held_form() {
     let word = from_canonical(&canonical_chain(&rem).expect("one entry per position is A5's chain"));
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 8);
     let _ = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
-    let held: Vec<&Bubble> = c.bubbles.scoped().map(|(_, b)| b).collect();
-    let [b] = held.as_slice() else { panic!("one bubble holds the form, got {}", held.len()) };
-    let f = b.form.as_ref().expect("the bubble keeps its form");
+    let held: Vec<&Well> = c.wells.scoped().map(|(_, b)| b).collect();
+    let [b] = held.as_slice() else { panic!("one well holds the form, got {}", held.len()) };
+    let f = b.form.as_ref().expect("the well keeps its form");
     each_demand_carries(f, &eleven());
 }

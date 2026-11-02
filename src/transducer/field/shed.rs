@@ -1,33 +1,33 @@
 // 24.1, 25 — THE SHED: what a mind stops holding when the room is spent.
 //
 //! T room is measured in receipts, never in seconds (law 9): the oldest
-//! bubble by receipt index moves to the cavity when the room is short, and
-//! a bubble nothing glues is shed outright.
+//! well by receipt index moves to the cavity when the room is short, and
+//! a well nothing glues is shed outright.
 
 use super::*;
 
-/// THE KEY A RETIRED REMAINDER IS FILED UNDER: its chart, then the bubble it
+/// THE KEY A RETIRED REMAINDER IS FILED UNDER: its chart, then the well it
 /// was. The chart leads because it is what `pivot_on` asks at — a word
 /// arrives on a chart and the cavity entries that chart could re-hold are the
-/// subtree under it, one keyed read. The bubble key follows so two
+/// subtree under it, one keyed read. The well key follows so two
 /// remainders retired at one chart stay two remainders (law 7).
 ///
 /// `stalk::invariant` of the remainder links is the reading `pivot_on` asks
 /// at; making it the key puts that derivation at the write, where it
 /// happens once, and not at the read, where it would happen for every
 /// entry on every call.
-pub(crate) fn cavity_key(rem: &[Link], bubble: &[u8]) -> Vec<u8> {
+pub(crate) fn cavity_key(rem: &[Link], well: &[u8]) -> Vec<u8> {
     let inv = stalk::invariant(rem);
     let mut k = inv.key().into_vec();
-    crate::transducer::address::put_key_bytes(&mut k, bubble);
+    crate::transducer::address::put_key_bytes(&mut k, well);
     k
 }
 
 impl Contemplation {
     // `retire_on_t(room)` STOOD HERE AND IS DELETED (25, Z4b).
     //
-    // It retired ONE bubble per stroke, the one with the largest T extent,
-    // and only when `self.bubbles.len() > room` — with `room` being
+    // It retired ONE well per stroke, the one with the largest T extent,
+    // and only when `self.wells.len() > room` — with `room` being
     // `physics.reserve[2]`. PROBED on this box: `reserve [88, 88, 88, 88]`,
     // `reserve_max 88`, and `reserve_max` is
     // `((cores × (1 + MemAvailable_GiB)).max(16) / 8) × 8` read at boot. So
@@ -49,9 +49,9 @@ impl Contemplation {
 
     /// DOOR 1 OF CHAPTER 25 — LAPSE, ALONG THE CITATION FIBRATION.
     ///
-    /// A bubble stands while what it cites stands. When an address lapses
+    /// A well stands while what it cites stands. When an address lapses
     /// from the working atlas — the dialect shed it, or the court retired
-    /// it — the bubble AT that address and every bubble CITING it are
+    /// it — the well AT that address and every well CITING it are
     /// retired on the same stroke, as a set.
     ///
     /// JOINTLY, NOT BY A LATER SWEEP. A pin that outlives its target is a
@@ -67,21 +67,21 @@ impl Contemplation {
     /// read of the fibration's own boundary (rule 1) and not a search.
     ///
     /// MEASURED before it was written (the 60-task slice): 21 of 51 held
-    /// bubbles cite, every one of the 21 bubbles' pins is LIVE, and none is dead.
+    /// wells cite, every one of the 21 wells' pins is LIVE, and none is dead.
     /// So a dead-pin collector would retire nothing and this door is the
     /// only one that reaches them.
     ///
-    /// Returns how many bubbles left.
+    /// Returns how many wells left.
     pub fn lapse_with(&mut self, lapsed: &[Vec<u8>]) -> usize {
         let mut frontier: Vec<Vec<u8>> = lapsed.to_vec();
         let mut doomed: Keyed<()> = Keyed::new();
         while let Some(addr) = frontier.pop() {
-            // The bubble standing AT the lapsed address.
-            if self.bubbles.contains(&addr) && !doomed.contains(&addr) {
+            // The well standing AT the lapsed address.
+            if self.wells.contains(&addr) && !doomed.contains(&addr) {
                 doomed.insert(&addr, ());
                 frontier.push(addr.clone());
             }
-            // And every bubble citing it, by keyed read of the fibration.
+            // And every well citing it, by keyed read of the fibration.
             let citers: Vec<u16> = match self.cited.get(&Self::cited_at(&addr)) {
                 Some(m) => m.scoped().filter_map(|(k, _)| Self::ordinal_of_key(&k)).collect(),
                 None => Vec::new(),
@@ -101,7 +101,7 @@ impl Contemplation {
         let before = self.shed_before(&keys);
         let touched = self.touched_by(&keys);
         for k in &keys {
-            if let Some(b) = self.bubbles.remove(k) {
+            if let Some(b) = self.wells.remove(k) {
                 self.retract_incidence(k, &b);
                 self.dirty.remove(k);
                 self.unthreaded.remove(k);
@@ -122,12 +122,12 @@ impl Contemplation {
         n
     }
 
-    /// Shed ideas no live glue holds. Returns how many bubbles left.
-    /// Why a bubble was not shed, by the term that rejected it. A
+    /// Shed ideas no live glue holds. Returns how many wells left.
+    /// Why a well was not shed, by the term that rejected it. A
     /// measurement (§8.1), printed only under `MYC_TRACE`, never a branch.
     pub fn shed_census(&self) -> [usize; 4] {
         let mut c = [0usize; 4];
-        for (_, b) in self.bubbles.scoped() {
+        for (_, b) in self.wells.scoped() {
             if !b.glued_by.is_empty() {
                 c[0] += 1;
             } else if !b.glues.is_empty() {
@@ -146,7 +146,7 @@ impl Contemplation {
             let c = self.shed_census();
             eprintln!(
                 "  shed census held {} glued_by {} glues {} dirty {} sheddable {}",
-                self.bubbles.len(), c[0], c[1], c[2], c[3]
+                self.wells.len(), c[0], c[1], c[2], c[3]
             );
         }
         // THE UNGLUED DOOR ACTS ON THOUGHTS ONLY (N4): a perception never
@@ -154,7 +154,7 @@ impl Contemplation {
         // (`line`) or what it cites lapsed — and a thought's glue is also the
         // transition that formed it, an edge of the meet graph.
         let drop: Vec<Vec<u8>> = self
-            .bubbles
+            .wells
             .scoped()
             .filter(|(k, b)| {
                 !b.percept
@@ -170,7 +170,7 @@ impl Contemplation {
         let before = self.shed_before(&drop);
         let touched = self.touched_by(&drop);
         for k in &drop {
-            if let Some(b) = self.bubbles.remove(k) {
+            if let Some(b) = self.wells.remove(k) {
                 self.retract_incidence(k, &b);
                 self.dirty.remove(k);
                 self.unthreaded.remove(k);

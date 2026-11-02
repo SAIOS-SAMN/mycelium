@@ -160,7 +160,7 @@ impl Element {
     ///
     /// A form whose word vertices all speak one rotor up to projective
     /// equality HAS that rotor; one that speaks several has none, and says
-    /// so. That is `Bubble::rotor`'s rule exactly, and it is the rule
+    /// so. That is `Well::rotor`'s rule exactly, and it is the rule
     /// because a representative picked from several would be a different
     /// motion on a node that took the bodies in another order (rule 15).
     /// A form's orbit holonomies are a different object and stay where they

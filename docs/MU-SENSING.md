@@ -179,7 +179,7 @@ axes is *the* plane.
 The operator ruled on 2026-11-02 that the axes are not a flat product of
 circles but are lifted into a curved, enclosed object read through its
 holonomy, and that this object is the **bubble**. The bubble is the object
-the mind already holds (`transducer/bubble/`, MU-CLIENT §4): a percept
+the mind already holds (`transducer/field/`, MU-CLIENT §4): a percept
 and a thought are one bubble at two stages. A bubble can be stretched,
 thinned, flipped, rotated, deflated and re-inflated, and it stays smooth
 under every motion. This is the perceiving side of Concordance 2.10:
@@ -311,7 +311,7 @@ reading holds. Each candidate is a section of the gauge fibre, and none
 is chosen by a scalar (MU-RECURSION 25, 25.12; MU-CLIENT §4.6, §4.8; rule
 15). Every superposition in this document is a vortex: the ground's
 candidates (§3.4), the factorings of an axis (§3.6), a sample's
-perspectives (§4), and a thought's candidate forms (`Bubble.vortex`).
+perspectives (§4), and a thought's candidate forms (`Well.vortex`).
 
 - **A candidate's monodromy** over the family reads one of three ways
   (25.12):
@@ -412,15 +412,15 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 | A percept as a series of located records (seat percepts) | **Built** | `src/anastome/dialogue/seat.rs` (78.146) |
 | The three eyes as a cover, with the sensory verdict | **Specified** | MU-CLIENT 24.4 |
 | Each axis as a circle of turns; re-period between samples | **In progress** for rank 2 only, two circles fixed | v0.3.0 T2, [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) |
-| The bubble: a thought's container in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built**, without a body: no membrane, centre or curvature | `transducer/bubble/idea.rs` (`Bubble`), `bubble/{contemplation, merge, meet, resonance, line}.rs` |
-| The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Bubble.vortex`, `Bubble.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
+| The bubble: a thought's container in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built**, without a body: no membrane, centre or curvature | `transducer/field/idea.rs` (`Well`), `field/{contemplation, merge, meet, resonance, line}.rs` |
+| The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Well.vortex`, `Well.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
 | Orbits with four readings; the court's gravity as drag | **Built**, on flat charts | `cech/orbit.rs` (`Field`, `Field::beat_under`) |
 | Exact motions: rotors by turns, dilators, reflectors, versors of reflections, cyclotomic periods | **Built** | `alphabet/`, `cga/{group, spin, period}.rs` |
 | A sample lifted into a bubble: membrane `S^{2n−1}` held by phases, Hopf-type projection, holonomy as angle excess in turns | **Specified** | Track 26, S4 and S4a (§3.7) |
 | The bubble's body (membrane, centre, inflation as a gauge), its motions as one exact group, its forces (axiomatic gravity's shear of the orthogonal class; the court's pressure), and its orbit's precession | **Specified** | Track 26, S7–S9 |
 | One bubble carrier shared by perception and the physics' shells: LAW-BUBBLE v1 | **Proposed**; to be agreed with the peer kernels | [proposal](proposals/78.171-law-bubble.md); [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) |
 | **Defect:** spheres built Euclidean, from a squared radius with `e∞` | **Built, refused** by §3.7 and law 11 | `cga/embedding.rs` (`sphere_at`, `on_sphere`), `cga/at_three.rs` (`sphere`) |
-| **Defect:** the bubble's stage and state as flags, and its volume and potential as scalar counts | **Built, refused** by §3.7 (never scalar) and constraint I | `Bubble.percept: bool`, `Bubble.dirty: bool`, `Bubble.volume`/`potential: [u64; 4]` |
+| **Defect:** the bubble's stage and state as flags, and its volume and potential as scalar counts | **Built, refused** by §3.7 (never scalar) and constraint I | `Well.percept: bool`, `Well.dirty: bool`, `Well.volume`/`potential: [u64; 4]` |
 | μ as the solid angle a change sweeps | **Awaits a ruling** | §3.7 |
 | The sample as the sensor's only input, of rank `n` | **Specified** | Track 26, S0 |
 | A corpus's decoder outside `src/` | **Specified** | Track 26, S1 |

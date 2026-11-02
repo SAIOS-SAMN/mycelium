@@ -61,7 +61,7 @@ impl<'a, V> Iterator for Link<'a, V> {
 }
 
 impl<T> Keyed<Keyed<T>> {
-    /// The inner trie at `key` — simplices on a vertex, bubbles on a chart.
+    /// The inner trie at `key` — simplices on a vertex, wells on a chart.
     pub fn link(&self, key: &[u8]) -> Link<'_, T> {
         Link {
             fibre: match self.get(key) {

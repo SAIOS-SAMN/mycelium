@@ -13,7 +13,7 @@ fn nerve(n: u8, edges: &[(usize, usize)], escrow: [u64; 4]) -> (Contemplation, V
     let vs: Vec<Vec<u8>> = (1..=n).map(|i| vec![i; 4]).collect();
     for x in &vs {
         c.complex.set_section(x, Section::at(x.clone().into(), Rotor::identity()), [1, 0, 0, 0]);
-        c.bubbles.insert(x, Bubble { escrow, ..Bubble::default() });
+        c.wells.insert(x, Well { escrow, ..Well::default() });
     }
     for &(a, b) in edges {
         c.complex.set_edge(&vs[a], &vs[b], Rotor::identity(), identity_versor(), [1, 0, 0, 0]);
@@ -35,7 +35,7 @@ fn truncate_removes_leaf_and_keeps_ring() {
     assert_eq!((r.free_vertices, r.core, r.h1), (0, 4, 1), "{r:?}");
     let t = c.meet_graph().truncation;
     assert_eq!((t.truncated, t.rank_moved, t.malformed), (1, 0, 0), "{t:?}");
-    assert!(!c.bubbles.contains(&vs[4]), "the leaf left");
+    assert!(!c.wells.contains(&vs[4]), "the leaf left");
     assert_eq!(c.take_returned_escrow(), [1, 2, 3, 4], "its escrow returns");
     assert_eq!(c.take_returned_escrow(), [0; 4], "once");
     assert_eq!(c.cavity_len(), 1, "its remainder at the cavity");
@@ -82,7 +82,7 @@ fn truncate_keeps_class_edge_and_glued_leaves() {
     .expect("a class reads");
     let ek = c.complex.link(&vs[4], 1)[0].clone();
     c.complex.degrees[1].get_mut(&ek).expect("the pendant edge").fill = Fill::Class(Box::new(kappa), Box::new(p));
-    c.bubbles.get_mut(&vs[5]).expect("held").glued_by.insert(&vs[0], ());
+    c.wells.get_mut(&vs[5]).expect("held").glued_by.insert(&vs[0], ());
     c.truncate(&[vs[0].clone(), vs[6].clone()]);
     let t = c.meet_graph().truncation;
     assert_eq!((t.truncated, t.held_by_class, t.glued), (0, 1, 1), "{t:?}");
@@ -107,11 +107,11 @@ fn truncate_agrees_per_component_with_whole_nerve() {
         assert_eq!(within.contains(v), whole.contains(v), "one component's 2-core is the whole nerve's on it");
     }
     c.truncate(std::slice::from_ref(&vs[0]));
-    assert!(!c.bubbles.contains(&vs[4]) && c.bubbles.contains(&vs[9]), "only the changed component truncated");
+    assert!(!c.wells.contains(&vs[4]) && c.wells.contains(&vs[9]), "only the changed component truncated");
     assert_eq!(c.core_reading().free_vertices, 1);
     c.truncate(std::slice::from_ref(&vs[5]));
     let r = c.core_reading();
     assert_eq!((r.free_vertices, r.core, r.h1), (0, 8, 2), "{r:?}");
     let core = c.two_core();
-    assert!(vs.iter().filter(|v| c.bubbles.contains(v)).all(|v| core.contains(v)), "what stands is the whole 2-core");
+    assert!(vs.iter().filter(|v| c.wells.contains(v)).all(|v| core.contains(v)), "what stands is the whole 2-core");
 }

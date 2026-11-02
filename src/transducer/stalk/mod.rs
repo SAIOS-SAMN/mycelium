@@ -21,7 +21,7 @@ pub(crate) use stratum::*;
 ///
 /// `children(inv, after, budget, f)` stood beside it — a budgeted page of
 /// one stratum's siblings, resumed from a cursor — and its only caller was
-/// `Bubble::expand_with`, which used it to read outward from an idea's own
+/// `Well::expand_with`, which used it to read outward from an idea's own
 /// chart and meet whatever it found. That is adjacency in a trie, not
 /// incidence in a sheaf: a Čech simplex is the overlap of two sections over
 /// ONE chart, and an idea's charts are already named by its own vertices.

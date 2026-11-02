@@ -88,7 +88,7 @@ pub fn spores_key(spores: &Spores) -> Vec<u8> {
 
 /// WHERE A HELD FORM IS FILED: a perception at its form's key and its bodies
 /// written out; any other idea at its form's key alone. The one derivation —
-/// the hold, the drive's rekey and every reader of `Bubble::key` go through
+/// the hold, the drive's rekey and every reader of `Well::key` go through
 /// it, so a perception is never refiled under its bare form.
 pub(crate) fn perceived_key(form_key: crate::transducer::address::Address, spores: &Spores) -> crate::transducer::address::Address {
     if spores.is_empty() {
@@ -697,15 +697,15 @@ impl Contemplation {
     /// is filed: a pair's one transition as the edge the complex fills, a
     /// pair's several by class, each incoherence as a demand by class.
     pub(crate) fn perceive_cells(&mut self, key: &[u8], budget: &mut crate::physics::Budget) {
-        let Some(this_bubble) = self.bubbles.get(key) else { return };
+        let Some(this_well) = self.wells.get(key) else { return };
         let Some(ok) = self.ordinals.get(key).copied() else { return };
-        let charts: Vec<(Vec<u8>, Vec<Shape>)> = this_bubble.spores.scoped().map(|(c, b)| (c, b.clone())).collect();
+        let charts: Vec<(Vec<u8>, Vec<Shape>)> = this_well.spores.scoped().map(|(c, b)| (c, b.clone())).collect();
         // 78.56 III — ORBITS ARE STRICTLY INTRA-TASK: a perception meets only
         // perceptions of its own family on a chart. Paired across families,
         // an orbit balanced across disjoint tasks that share no Hamiltonian
         // (τ_ext ≠ 0 by construction), and no thought ever grounded on the
         // deployment; what tasks share lives in the genome, as words.
-        let family = this_bubble.family.clone();
+        let family = this_well.family.clone();
         // Each other idea's rows: per body of this one, its transitions to
         // the other's bodies in the bodies' arrival order, over every chart.
         let mut to: Keyed<Vec<Row>> = Keyed::new();
@@ -716,13 +716,13 @@ impl Contemplation {
                 .filter_map(|(id, _)| Self::ordinal_of_key(&id))
                 .filter_map(|o| self.address_at(o).map(|a| (o, a.to_vec())))
                 .filter(|(_, a)| a.as_slice() != key)
-                .filter(|(_, a)| self.bubbles.get(a).is_some_and(|b| b.family == family))
+                .filter(|(_, a)| self.wells.get(a).is_some_and(|b| b.family == family))
                 .collect();
             let mut circuits: Vec<ChamberCircuit> = Vec::new();
             // The cell's bodies: this perception's and the fibre's on the chart.
             let mut bodies = own_shapes.len();
             for (o, other) in &fibre {
-                let Some(other_shapes) = self.bubbles.get(other).and_then(|b| b.spores.get(chart)).cloned() else { continue };
+                let Some(other_shapes) = self.wells.get(other).and_then(|b| b.spores.get(chart)).cloned() else { continue };
                 bodies += other_shapes.len();
                 for x in own_shapes {
                     let mut row = Row {
@@ -818,7 +818,7 @@ impl Contemplation {
                             .map(move |a| (c.clone(), a))
                             .collect::<Vec<_>>()
                     })
-                    .filter(|(c, a)| self.bubbles.get(a).is_some_and(|b| b.spores.get(c).is_some()))
+                    .filter(|(c, a)| self.wells.get(a).is_some_and(|b| b.spores.get(c).is_some()))
                     .collect(),
                 None => Vec::new(),
             };
@@ -829,7 +829,7 @@ impl Contemplation {
             for (other_chart, other) in near {
                 let Some(there) = stalk::Invariant::from_key(&other_chart) else { continue };
                 let axis = parting(&here, &there);
-                let Some(other_shapes) = self.bubbles.get(&other).and_then(|b| b.spores.get(&other_chart)).cloned() else { continue };
+                let Some(other_shapes) = self.wells.get(&other).and_then(|b| b.spores.get(&other_chart)).cloned() else { continue };
                 for x in own_shapes {
                     for y in &other_shapes {
                         if !topological(axis) {
@@ -969,11 +969,11 @@ impl Contemplation {
     /// Then the complex climbs and decides, as for any held idea.
     fn file_thoughts(&mut self, key: &[u8], to: &Keyed<Vec<Row>>, budget: &mut crate::physics::Budget) {
         let mut rems: Keyed<Vec<Link>> = Keyed::new();
-        if let Some(b) = self.bubbles.get(key) {
+        if let Some(b) = self.wells.get(key) {
             rems.insert(key, b.remainder.placed());
         }
         for (other, rows) in to.scoped() {
-            if let Some(b) = self.bubbles.get(&other) {
+            if let Some(b) = self.wells.get(&other) {
                 rems.insert(&other, b.remainder.placed());
             }
             let all: Vec<&Transition> = rows.iter().flat_map(|r| r.ts.iter().flatten()).collect();
@@ -1344,7 +1344,7 @@ impl Contemplation {
     /// generator admitted on the thought's own line once for each hour seen
     /// (`wind_ground`), so its orbit returns when its winding does.
     fn note_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], generator: &Mv, orbit: bool, budget: &mut crate::physics::Budget) {
-        if self.bubbles.get(other).is_some_and(|b| b.ground.is_some()) {
+        if self.wells.get(other).is_some_and(|b| b.ground.is_some()) {
             return;
         }
         let [first, rest @ ..] = rows else { return self.ungrounded(Ungrounded::Unplaced) };
@@ -1489,7 +1489,7 @@ impl Contemplation {
     /// `join_ground`'s reading: the verdict and the ground's generator.
     fn read_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], budget: &mut crate::physics::Budget) -> Option<(Verdict, Mv)> {
         use crate::physics::tensegrity::{carried_body, coherence, external_torque, hour, metric_defect, Constellation, Refusal};
-        let held = self.bubbles.get(other)?.ground.clone()?;
+        let held = self.wells.get(other)?.ground.clone()?;
         let perceived: Vec<(&Mv, &crate::physics::tensegrity::Body)> = rows
             .iter()
             .filter(|r| r.chart == held.chart)
@@ -1792,9 +1792,9 @@ impl Contemplation {
         };
         if held {
             for v in [a, b] {
-                if let Some(bubble) = self.bubbles.get_mut(v) {
-                    horizon_put(&mut bubble.horizon, rotor.clone(), Standing::Held);
-                    bubble.dirty = true;
+                if let Some(well) = self.wells.get_mut(v) {
+                    horizon_put(&mut well.horizon, rotor.clone(), Standing::Held);
+                    well.dirty = true;
                     self.dirty.insert(v, ());
                 }
             }
@@ -1814,7 +1814,7 @@ impl Contemplation {
             true => self.resonance.phase_slips += 1,
             false => self.resonance.off_orbit += 1,
         }
-        match self.bubbles.get_mut(thought) {
+        match self.wells.get_mut(thought) {
             Some(b) => b.slips.push((chart.to_vec(), residue.clone())),
             None => self.docket_slip(chart, residue),
         }
@@ -1824,7 +1824,7 @@ impl Contemplation {
     /// its residue's class is, on the chart it slipped on, for the demand
     /// taker to construct.
     pub(crate) fn work_slips(&mut self, thought: &[u8]) {
-        let slips = match self.bubbles.get_mut(thought) {
+        let slips = match self.wells.get_mut(thought) {
             Some(b) => std::mem::take(&mut b.slips),
             None => return,
         };

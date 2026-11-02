@@ -1162,7 +1162,7 @@ Each phase is one commit:
    MU-CLIENT 24.4. A mind may ask for a perspective as a demand.
    - Claim: `perspective_shift_is_a_sensor_motion`.
 8. **S7, the bubble's body** (MU-SENSING §3.7; LAW-BUBBLE v1):
-   - The existing `Bubble` (`transducer/bubble/idea.rs`) gains its
+   - The existing `Well` (`transducer/field/idea.rs`) gains its
      membrane (the lifted phases), its centre and its inflation as a
      gauge.
    - Its stage becomes a coordinate. `percept: bool` and `dirty: bool`

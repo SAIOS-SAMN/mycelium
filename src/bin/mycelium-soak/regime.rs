@@ -109,7 +109,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     // census the shed's filter, so the term that rejects is measured and
     // not named from one family.
     {
-        use mycelium::transducer::bubble::contemplation::Contemplation;
+        use mycelium::transducer::field::contemplation::Contemplation;
         let mut hold = Contemplation::new();
         let mut held = 0u64;
         for file in slice {
@@ -131,7 +131,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             epi.working_word(a).and_then(|h| mycelium::transducer::cech::section_of(h.element()))
         };
         // COLUMN 2 — THE VOICE'S OWN STROKE, not a million. `expand_ideas`
-        // passes `physics.stroke()`, so that is what the deployment's bubbles
+        // passes `physics.stroke()`, so that is what the deployment's wells
         // are expanded under; a reading at a million says nothing about
         // whether a voice finishes.
         let mut voiced = physics.stroke();
@@ -168,19 +168,19 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             c[0], c[1], c[2], c[3]
         );
         println!("    budget left {} of {}", b.remaining(), 1u32 << 20);
-        // COLUMN 1 — DEAD PINS. A citing bubble is held by `glues`; is what
+        // COLUMN 1 — DEAD PINS. A citing well is held by `glues`; is what
         // it cites still standing? Live means the mind holds the word, or a
-        // bubble stands at that address. Neither is a count compared to a
+        // well stands at that address. Neither is a count compared to a
         // number: each pin is asked at its own coordinate.
         let (mut pinned, mut live_pins, mut dead_pins, mut all_dead) = (0u64, 0u64, 0u64, 0u64);
-        for (_, bub) in hold.bubbles.scoped() {
-            if bub.glues.is_empty() {
+        for (_, well) in hold.wells.scoped() {
+            if well.glues.is_empty() {
                 continue;
             }
             pinned += 1;
             let (mut l, mut d) = (0u64, 0u64);
-            for (addr, ()) in bub.glues.scoped() {
-                let held = epi.working_word(&addr).is_some() || hold.bubbles.get(&addr).is_some();
+            for (addr, ()) in well.glues.scoped() {
+                let held = epi.working_word(&addr).is_some() || hold.wells.get(&addr).is_some();
                 if held {
                     l += 1;
                 } else {
@@ -194,8 +194,8 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             }
         }
         println!(
-            "    pins: citing bubbles {pinned} | pins live {live_pins} dead {dead_pins} | \
-             bubbles whose every pin is dead {all_dead}"
+            "    pins: citing wells {pinned} | pins live {live_pins} dead {dead_pins} | \
+             wells whose every pin is dead {all_dead}"
         );
         println!("  regime slice shed_unglued retired {}", hold.shed_unglued());
     }
@@ -242,7 +242,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     // A leak is a number that does not come back down across repeats of
     // one pull, and one pull cannot show that whatever it reads.
     {
-        use mycelium::transducer::bubble::contemplation::Contemplation;
+        use mycelium::transducer::field::contemplation::Contemplation;
         // WHERE THE FIRST HOLD'S BYTES GO, component by component, so the
         // fix is aimed at a measurement and not at a guess.
         {

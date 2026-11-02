@@ -8,7 +8,7 @@ such change is named here.
 
 ### The bubble, the vortex, and how a standard reaches the kernels (specification, ruled 2026-11-02)
 - **The bubble** (MU-SENSING §3.7): a sample is lifted into the bubble
-  the mind already holds (`transducer/bubble/`), so a percept and a
+  the mind already holds (`transducer/field/`), so a percept and a
   thought are one bubble at two stages. Its geometry is non-Euclidean:
   the interior is `Hⁿ⁺¹`, and the membrane is its sphere at infinity, so
   no `e∞` stands outside an enclosure. Its motions (rotate, flip,

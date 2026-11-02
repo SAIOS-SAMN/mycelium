@@ -54,13 +54,13 @@ impl Contemplation {
     /// escrow returned, its scene counted — and the components it stood in
     /// truncate. A thought no longer held is gone already.
     pub(crate) fn release_thought(&mut self, key: &[u8]) {
-        if !self.bubbles.contains(key) {
+        if !self.wells.contains(key) {
             return;
         }
         let doomed = vec![key.to_vec()];
         let before = self.shed_before(&doomed);
         let touched = self.touched_by(&doomed);
-        if let Some(b) = self.bubbles.remove(key) {
+        if let Some(b) = self.wells.remove(key) {
             self.retract_incidence(key, &b);
             self.dirty.remove(key);
             self.unthreaded.remove(key);
@@ -79,7 +79,7 @@ impl Contemplation {
     /// grounded thought whose orbit RETURNED winds on (§4.4(2)); every other
     /// release lets the thought go. Answers whether `line` was a thought's.
     pub(crate) fn release_line(&mut self, line: &[u8], why: Released) -> bool {
-        let Some(grounded) = self.bubbles.get(line).map(|b| b.ground.is_some()) else { return false };
+        let Some(grounded) = self.wells.get(line).map(|b| b.ground.is_some()) else { return false };
         match (grounded, why) {
             (true, Released::Returned) => {}
             _ => self.release_thought(line),
@@ -109,7 +109,7 @@ impl Contemplation {
         let fresh: Vec<Vec<u8>> = self.unthreaded.scoped().map(|(k, _)| k).collect();
         self.unthreaded = Keyed::new();
         for key in fresh {
-            let motions: Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)> = match self.bubbles.get(&key) {
+            let motions: Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)> = match self.wells.get(&key) {
                 Some(b) if b.ground.is_none() => match &b.form {
                     Some(f) => f.faces.entries().map(|(_, face)| (face.place.carriage.clone(), face.place.gauge.clone())).collect(),
                     None => continue,

@@ -263,7 +263,7 @@ impl Form {
 
     /// A16 on the form. Certificates and vortex live here.
     /// `bundle` is the pairs the idea germinated from; `t_extent` is how
-    /// long the orbit has been held on the bubble's clock.
+    /// long the orbit has been held on the well's clock.
     pub fn pivot_orbit(
         &mut self,
         idea: impl AsRef<[u8]>,

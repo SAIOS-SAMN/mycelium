@@ -987,7 +987,7 @@ read at the cited function. "Stands" has the same sense in 0.3–0.5.
 | **M6 Comprehension** (17.6) | does a mind already speak an incoming word: factor it through the fibre it holds (A12); otherwise emit exactly what is new as a typed demand, never "unknown" | `client/sdk/epigenome/comprehend.rs`, `transducer/factor.rs`, `server/cognition/reduce.rs`; AMENDED: `cech/orbit_algebra.rs` | 78.11 (CG1): comprehension of a cell is its circuits' bracket-closed orbit algebra, rank = capacity; 78.26 the four losses | landed on the voice; amended by CG1 (landed). CV1b and CB1 open: each refusal carries its content, the cross-cell bracket read |
 | **M7 Wire identity** (17.7) | bytes off the wire become identities by re-derivation (M1, M2, A5), signatures verified (A10), never by comparing bytes | `network/wire.rs` (the frame and its budget; `multiplex`/`demultiplex` have test callers only), `anastome/dialogue/`, `court/verdict/blind.rs`, `bin/mycelium-server/judge/` | 47 receipts, law 2 | landed; governs. The record's magic refuses the pre-6(b) layout |
 | **M8 Court glue** (17.8) | a peer's section for a chart: goodness (14), Mayer–Vietoris (13.9), rulings by 13.10, the ledger by M5, naturality on every change | `server/cognition/court/glue.rs`, `court/verdict/replay.rs`, `cech/{complex,coboundary,nerve}.rs` | 13–15 exact cohomology; 72.1b each relation at the grade of its simplex; 78.10 cells | landed for the 1-skeleton; cells at every grade landed (NB1, AD1, SY1, DF1). E4 open: CV2 (questions held), CV4 (another angle). The reconstruction is `verdict::replay_resume` (`blind.rs`) → `replay_form_resume` → `replay_form_on_resume`, from the court's cursor (`server/cognition/court/replay.rs`), `court/task.rs` and `server/synthesis.rs`; `replay_form`, `replay_form_on`, `derivations_compose_at` and `replay_certificates_at` have test callers only |
-| **M9 Torsion bridge** (17.9) | the pivot orbit (A16), torsion filed (A17), certificates (A20) reconstructed on two organs; a mind's filed torsion is on the mesh before its next stroke | `transducer/bubble/{contemplation,idea,drive}.rs`, `sentence/pivot/{drive,trial,snap}.rs`, `sentence/form/certificate.rs` | A.8 torsional persistence, A18 rank accounting, 62 (ascend/descend), 78.7 viscosity | landed on the mind; the bridge to the mesh is E4 (CV2, CV4). T5 open: the 𝔽₂ kernel collapsing held superpositions (no implementation; `sentence/pivot/refracted.rs` forms candidates one per read and refuses UNBOUNDED). The pivot is `pivot_orbit_read` (`bubble/{drive,idea}.rs`); `pivot_orbit` has test callers only |
+| **M9 Torsion bridge** (17.9) | the pivot orbit (A16), torsion filed (A17), certificates (A20) reconstructed on two organs; a mind's filed torsion is on the mesh before its next stroke | `transducer/field/{contemplation,idea,drive}.rs`, `sentence/pivot/{drive,trial,snap}.rs`, `sentence/form/certificate.rs` | A.8 torsional persistence, A18 rank accounting, 62 (ascend/descend), 78.7 viscosity | landed on the mind; the bridge to the mesh is E4 (CV2, CV4). T5 open: the 𝔽₂ kernel collapsing held superpositions (no implementation; `sentence/pivot/refracted.rs` forms candidates one per read and refuses UNBOUNDED). The pivot is `pivot_orbit_read` (`field/{drive,idea}.rs`); `pivot_orbit` has test callers only |
 
 ## 0.3 The masters ruled after chapter 17 (Stages 18–23)
 
@@ -1012,7 +1012,7 @@ same sense: the complete operation, with its invariant and its refusal.
 | **POW++** | 74, 78.22, 78.33, MU-ECONOMY | three proofs named apart: POUW (a closure ruled, mint on closure), POWC (a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid), and the POWV share; priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `server/cognition/court/replay.rs` (`rule_on`) | PARTIAL: a ruling is paid and slashed at its Ruling act (EC1, ACT1 landed): Upheld mints POUW by `release_discharged` and pays POWR by `release_rewrite`, Slashed revokes by `revoke_award(Slash)` — live from `court_stroke_on` → `docket_replay` (the stroke's slashes) and from `hear_ruling` (a peer's Ruling receipt admitted, `court/ruling.rs`). POWC has no producer: `settle_refine` and `settle_condense` (`settle.rs`) have no caller; `verdict::rule` (`court/verdict/ruling.rs`) has test callers only. PHY1 open: one reserve, contacts priced per lane |
 | **The hardening path** | 80.2 | a submitted solution is adjudicated by the court; the server provides the syllabus; minerals harden into crystals by re-derivation over k-steps | `client/sdk/entity/learn.rs`, `server/cognition/court/syllabus.rs` | OPEN (DL1, GD1) |
 | **The planetary dialect** | 80 | a constructor is a letter of the local dialect; minds speak to minds by offers; the court rules what converges (n → 1) | `transducer/alphabet/`, `family/derivation`, `anastome/`, `client/sdk/entity/think.rs` (`construct_and_adjoin`) | PARTIAL: a residue the mind cannot say is constructed and its rotation adjoined as the mind's own letter (`construct_and_adjoin`, called from `client/sdk/entity/perceive.rs` and from `compose_or_construct_on` in `client/sdk/entity/think.rs`). AL1 open: the odd constructor as a letter and the mode-first peel — the slice's S1 (U15's triad) closes both. SP2 is part of the client's objective (MU-CLIENT §1 item 6, §5.5): minds speak to minds to harden language from the minds' dialects; the frames run (chatter, 78.161, 78.163), hearing in the hearer's own shells with its windings and pivots is owed (MU-CLIENT §5.3, §7.1); DL1 open; the Gödel step's backlog read first (GD1) |
-| **The coherent mind** | 78.37 | held superpositions fold back along the plexus, the ring deciding all four: a fixed section transported one edge per k-step and stopped by holonomy, classifying and never deleting; truncation to the unique 2-core, every class preserved, no matching chosen; flux per lane over one `K` deciding what lapses, `ZeroFlux` by name; a remainder's home a leaf on the word (`κ` inline, `g` a ray, `ℓ`), re-filled on a coincident class by an act; imagination as obstructions constructed, never candidates (Cartan–Dieudonné on the residue, on CS2's demand arm) | `bubble/{contemplation,shed,drive}.rs`, `cech/complex.rs`, `economy/escrow.rs`, `client/sdk/epigenome/persist.rs`, `observe/` | in the tree (TP1, TC1, FX1, RM1); the demand taker landed (`drain_demands`, 78.109 C1). FX1's edge-credit tables RETIRED: the flux is the mind's field, threaded on the complex's lines; an orbit's return or a tube's cancelled net flux releases what relaxed, and the mind drains and descends there (MU-CLIENT §4.5) |
+| **The coherent mind** | 78.37 | held superpositions fold back along the plexus, the ring deciding all four: a fixed section transported one edge per k-step and stopped by holonomy, classifying and never deleting; truncation to the unique 2-core, every class preserved, no matching chosen; flux per lane over one `K` deciding what lapses, `ZeroFlux` by name; a remainder's home a leaf on the word (`κ` inline, `g` a ray, `ℓ`), re-filled on a coincident class by an act; imagination as obstructions constructed, never candidates (Cartan–Dieudonné on the residue, on CS2's demand arm) | `field/{contemplation,shed,drive}.rs`, `cech/complex.rs`, `economy/escrow.rs`, `client/sdk/epigenome/persist.rs`, `observe/` | in the tree (TP1, TC1, FX1, RM1); the demand taker landed (`drain_demands`, 78.109 C1). FX1's edge-credit tables RETIRED: the flux is the mind's field, threaded on the complex's lines; an orbit's return or a tube's cancelled net flux releases what relaxed, and the mind drains and descends there (MU-CLIENT §4.5) |
 
 ## 0.4 The physics over them
 
@@ -1063,7 +1063,7 @@ two is filed where its test is.
 | **A.8** torsional persistence | drain conserves: strain is moved or recorded, never relaxed away | `physics/axioms/imported.rs`, drain | governs; MEM1 open (a tether that drains deposits its record) |
 | **A.16** refraction | a contact's transport is `(θ_bθ_a⁻¹)·γ` | `sentence/pivot/refracted.rs` | landed (BQ5a) |
 | **A.17** conservation of refusal | every refused relation is a named reading on its lane; only a mutable refusal is a demand; nothing dropped by a `continue` | `court/verdict/`, `family/deflation.rs` | landed (CV1); CV1b open |
-| **The signal, the spectrum, the shortcut** (78.44) | the signal is a circuit's holonomy and never travels; its projection on a node's INTERNAL spectrum is its modes (the class node-independent, the planes the node's own); composition runs on the motors in the anastomosis's orbit algebra, held by generators, every route kept, the spectrum re-read off the composite; a word is a shortcut — its class key and its winding vector over the atlas's holes — that a receiver comprehends by re-projecting on its own charts; comprehension read on the census's class and closure counters | `cga/{motion,motor}.rs`, `cech/orbit_algebra.rs`, `sentence/pivot/`, `bubble/`, `anastome/dialogue/` | OPEN (AT1 (iii) the algebra by generators and the winding vectors; WN1 the address as class key + windings; SW1 the shortcut wire; REG1 the invariance statement) |
+| **The signal, the spectrum, the shortcut** (78.44) | the signal is a circuit's holonomy and never travels; its projection on a node's INTERNAL spectrum is its modes (the class node-independent, the planes the node's own); composition runs on the motors in the anastomosis's orbit algebra, held by generators, every route kept, the spectrum re-read off the composite; a word is a shortcut — its class key and its winding vector over the atlas's holes — that a receiver comprehends by re-projecting on its own charts; comprehension read on the census's class and closure counters | `cga/{motion,motor}.rs`, `cech/orbit_algebra.rs`, `sentence/pivot/`, `field/`, `anastome/dialogue/` | OPEN (AT1 (iii) the algebra by generators and the winding vectors; WN1 the address as class key + windings; SW1 the shortcut wire; REG1 the invariance statement) |
 | **The routes** (79) | one circuit against many routes; Stokes on a relator fails; reuse then construct | `physics/axioms/routes.rs` (the register's statements only); read at `sentence/pivot/trajectory.rs`, `sentence/inverse.rs`, `family/comprehend.rs` | landed (AX1, CT1, CT2) |
 | **Lift and drag** (78.46) | a neighbouring generator refracted to an orbit (A.16) splits exactly against the orbit's mode blade into the commuting part, DRAG (the rate: beat, resonance, what does not return recorded — A.8, 78.42), and the anticommuting part, LIFT (the commutator: the tilt of the plane, the precession of the orbital elements — 60.4, 78.11); alignment is the pair of parts, never a scalar; the star is the axiom register, the law every composite obeys, never a generator (77.1(2)); the perturbed orbit is derived in the anastomosis's orbit algebra at every stroke and never stored | `cech/orbit_algebra.rs`, `cga/{modes,motor}.rs`, `sentence/pivot/refracted.rs`, `blade/tether.rs` | OPEN — AT1 (iii)'s three readings; identical holonomies read "unperturbed" by name; the star answered (the axioms, 77.1(2)) |
 
@@ -3745,7 +3745,7 @@ candidate list of an orbit is finite (at most the occupied axes times the
 held words on them); so the orbit makes at most (occupied coordinates)
 applications and (candidates) trials per application, all under `Budget`.
 Cost per trial is one move and one tree walk. Binding:
-`Contemplation::pivot_on` and `expand_all` (bubble/drive.rs) call
+`Contemplation::pivot_on` and `expand_all` (field/drive.rs) call
 `Form::pivot_orbit(&mut self, atlas: &WorkingAtlas, horizon: &Horizon,
 budget: &mut Budget) -> Vec<PivotCertificate>` **new** in `sentence/`;
 `Form::class_vector`, `ClassVector::occupied`, `Form::rank` (A18) are its
@@ -4277,7 +4277,7 @@ it always named:
 
 | short name | absolute path |
 |---|---|
-| `alphabet/`, `sentence/`, `element/`, `cech/`, `stalk/`, `blade/`, `bubble/`, `family/`, `cga/`, `peel.rs`, `anchor/`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `address.rs` | `src/transducer/<name>` |
+| `alphabet/`, `sentence/`, `element/`, `cech/`, `stalk/`, `blade/`, `field/`, `family/`, `cga/`, `peel.rs`, `anchor/`, `sheaf.rs`, `germinate.rs`, `rewrite.rs`, `factor.rs`, `address.rs` | `src/transducer/<name>` |
 | `cognition/`, `registry.rs`, `synthesis.rs` | `src/server/<name>` |
 | `verdict/`, `identity.rs` | `src/court/<name>` |
 | `nerve/`, `mesh.rs`, `wire.rs` | `src/network/<name>` |
@@ -4998,7 +4998,7 @@ Moved to [MU-CLIENT.md](MU-CLIENT.md).
 ## 25. Germination and thoughts
 
 Carried from chapter 24: comprehension re-gauges. Germination pivots, files,
-cauterizes, and wraps (M9). `src/transducer/bubble/`:
+cauterizes, and wraps (M9). `src/transducer/field/`:
 
 **An index names a held thought by its place in the one carrier that
 holds it** (ruled 2026-09-19, Z4). A held form is written once, on its
@@ -5116,7 +5116,7 @@ idea under the stroke `Budget`:
 (A16). Every discharge is logged with its certificate; A18's rank is
 asserted before and after each applied pivot (R2). An orbit with several
 discharging candidates stays a vortex: its candidates remain in
-`Bubble.nerve` (the thought complex), each carrying its certificate, and
+`Well.nerve` (the thought complex), each carrying its certificate, and
 the idea is not `dirty`-cleared. A vortex collapses when: a later
 perception adds a face that one candidate predicted (that candidate is
 applied, the others become dialect candidates); a held form arrives through the
@@ -5141,7 +5141,7 @@ only while `glued_by` is non-empty).
 forms into ideas on meeting charts as `Glued` vertices; the glued form's
 orbits are not re-pivoted (T6). Depth grows by one per wrap.
 
-**25.4 Horizon.** `Bubble.horizon: Keyed<(Rotor, u8)>` becomes
+**25.4 Horizon.** `Well.horizon: Keyed<(Rotor, u8)>` becomes
 `Keyed<(Rotor, Order, Standing)>` keyed by class key; `seed_horizon` (A19)
 fills it from syllabus pages; A16 consults it before filing or demanding.
 
@@ -5152,7 +5152,7 @@ fills it from syllabus pages; A16 consults it before filing or demanding.
   as what the glued form does not speak. Two bubbles merge iff
   `mayer_vietoris` (since removed) returns `OneSection` or `Attached` (13.12);
   `drop_vertex` only then.
-- `Bubble` gains `glues: Keyed<()>` and `glued_by: Keyed<()>`;
+- `Well` gains `glues: Keyed<()>` and `glued_by: Keyed<()>`;
   `retire_on_t` skips a bubble with non-empty `glued_by`.
 - `Contemplation::bundle(class, budget)` **new**: ideas on one class whose
   relative words are constant form one depth-1 `Form` of `Glued` vertices,
@@ -5162,7 +5162,7 @@ fills it from syllabus pages; A16 consults it before filing or demanding.
 2026-09-13).** A Čech simplex is the OVERLAP of two sections, and two sections
 overlap when they are sections over one chart. An idea's charts are already
 named by its own vertices: every `Vertex::Word` carries the charts it acts
-on and the carriage it acts by at each (`Bubble::sections`), so the far side
+on and the carriage it acts by at each (`Well::sections`), so the far side
 of every meet is `AtlasRead::members(chart)` — that chart's fibre, a keyed
 read at an address the idea holds. Both bounds are content: this idea's
 sections, and one chart's own fibre (rule 10).
@@ -5170,7 +5170,7 @@ sections, and one chart's own fibre (rule 10).
 `expand_with` took the idea's chart, peeled UP one stratum, and paged that
 stratum's siblings under a budget, resuming from a stored cursor
 (`AtlasRead::children`, `Stalks::each_child`, `Stratum::branches_at`,
-`Bubble.cursor` — all deleted with it). Three faults, one shape. It was a
+`Well.cursor` — all deleted with it). Three faults, one shape. It was a
 whole-carrier walk (rule 1) with a budget pacing it rather than bounding it,
 and the quantity walked was a stratum's population, which is not the idea's
 content. It met charts the idea stands no section over, which are not
@@ -5178,7 +5178,7 @@ overlaps at all — the cover was being built out of adjacency in a trie
 instead of incidence in the sheaf, and `extend` was asked to classify
 transitions between bodies that share nothing. And it needed a cursor to
 resume, so an idea's expansion depended on where the last stroke stopped, a
-position rather than a coordinate; `Bubble::from_bytes` set that cursor to
+position rather than a coordinate; `Well::from_bytes` set that cursor to
 empty on every restore, which is the tree saying it carried nothing.
 
 `AtlasRead` is one method now. A reader that answers "what is held here"
@@ -5297,10 +5297,10 @@ A candidate's monodromy over the frames the family measured is the product of it
 The ambient gauge connection $\gamma^c$ lives on the carried charts of the family bundle that occupy $\ge 2$ frames, never on the deformation demand's own chart (a demand is a singularity where moduli changed, so its chart does not persist across frames by construction).
 The monodromy is evaluated over the bundle's connection-bearing charts using exact algebraic order (`Rotor::order()`):
 - $\text{Order::Finite}(1)$: Flat. $V$ commutes with the ambient connection $\gamma^c$ and stands on chart $c$.
-- $\text{Order::Finite}(\ell \ge 2)$: Torsion. Fibre twisted by $\ell$, closing after $\ell$ circuits. Filed into `Bubble.torsion` (and `Form.torsion`) under $M^c$'s class key with period $\ell$ and `chord = 0` (bundle connection orbit). $V$ stands on chart $c$.
+- $\text{Order::Finite}(\ell \ge 2)$: Torsion. Fibre twisted by $\ell$, closing after $\ell$ circuits. Filed into `Well.torsion` (and `Form.torsion`) under $M^c$'s class key with period $\ell$ and `chord = 0` (bundle connection orbit). $V$ stands on chart $c$.
 - $\text{Order::Infinite}$: Rupture. Fails to close on chart $c$. Chart $c$ leaves $V$'s sub-cover.
 
-A candidate stands on the sub-cover of connection charts where its order is finite. It dissolves from `Bubble.candidates` if and only if its sub-cover is empty (ruptured to `Infinite` on every measured connection chart in the bundle). A bubble with no measured connection charts in its bundle leaves every candidate standing (rule 11: nothing dies on an unmeasured monodromy).
+A candidate stands on the sub-cover of connection charts where its order is finite. It dissolves from `Well.candidates` if and only if its sub-cover is empty (ruptured to `Infinite` on every measured connection chart in the bundle). A bubble with no measured connection charts in its bundle leaves every candidate standing (rule 11: nothing dies on an unmeasured monodromy).
 When every candidate over a demand dissolves, the residue is prime relative to the alphabet (§37.7) and enters court docketing as witness N4.
 `link_new` keeps the transition it computes; cohesion is flatness of those transitions, and the volume sums leave.
 In the Hopf fibration reading, A22's two quaternion factors are the two fibrations: base the class, fibre the gauge.
@@ -6360,8 +6360,8 @@ a test that rank is conserved under refinement, carried plus discharged (R4);
 a test that the rank of a union is the sum over components (R5);
 a test that a stroke terminates on a zero outcome (T9, T25);
 `cognition::tests::court_torsion_files_nothing_without_class` (23.7);
-`bubble::tests::seed_horizon_keeps_class_ruled_not_rederived` (A19);
-`bubble::tests::seed_horizon_refills_empty_mind_from_syllabus` (A19 step 4);
+`field::tests::seed_horizon_keeps_class_ruled_not_rederived` (A19);
+`field::tests::seed_horizon_refills_empty_mind_from_syllabus` (A19 step 4);
 `verdict::tests::replay_form_replays_filed_torsion_without_taped_forest` (A18).
 
 **Migration (Part V).**
@@ -7168,7 +7168,7 @@ Every duration a kernel reads is a count of its own K or of heights.
   voice accrues nothing, and a home that hears nothing advances nothing. Any
   witness re-derives a home's extents from the home's chain (T16).
 - **The mind.** `Epigenome::shed` (`src/client/sdk/epigenome/shed.rs`) and `retire_on_t`
-  (`src/transducer/bubble/shed.rs`) count the mind's own K; `moved_tu`, `last_used_tu`, `stroke_tu` are
+  (`src/transducer/field/shed.rs`) count the mind's own K; `moved_tu`, `last_used_tu`, `stroke_tu` are
   K values and are renamed `_k`.
 - **Carriers.** Every `_tu` field in the kernel (`provisional_tu`,
   `standing_tu`, `aperture_tu`, the second tuple field of `cocycle_at`, the
@@ -10198,8 +10198,8 @@ src/transducer/family/cover.rs         the meet index reads bare supports; the r
 src/transducer/family/tests/cover.rs   the stroke derived from the run's own spend
 src/transducer/cech/nerve.rs           read_nerve, NerveReading, NerveTotals
 src/network/nerve/keyed/coordinate.rs  Piece, Carriage, Meet; Lamina's third axis named
-src/transducer/bubble/contemplation.rs link_new — the same defect, verified, not yet fixed
-src/transducer/bubble/idea.rs          volume_of — raster intersect at remainder_site_key
+src/transducer/field/contemplation.rs link_new — the same defect, verified, not yet fixed
+src/transducer/field/idea.rs          volume_of — raster intersect at remainder_site_key
 ```
 
 ## 60. The mind's own condensation, and the second stencil (ruled 2026-09-22)
@@ -10456,7 +10456,7 @@ complex (`src/transducer/cech/coboundary.rs` `ascend`, `descend`, `drain`;
 `src/transducer/cech/board.rs` `Pivot`, `Complex::apply`).
 On the mind's own complex (`Contemplation.complex`): a held ring ascends
 and punctures, and seals on collapse or on a discharge of its class
-(`bubble/question.rs`, MU-CLIENT §4.5); a link's tether is written by
+(`field/question.rs`, MU-CLIENT §4.5); a link's tether is written by
 `set_edge` (the climb then ascends its cells); a retracted thought's star
 drains and descends (`vent_vertex`). The construction's process-wide tally is
 deleted: a pivot's outcome is returned to the field that applied it.
@@ -10816,7 +10816,7 @@ denominated in an implementation detail tracks the implementation, and
 every refactor falsifies it without touching the physics.
 
 AND IT COLLAPSES THE FOUR LANES LAW 5 READS SEPARATELY. Attention is
-ALREADY a vector here — `Bubble.escrow` is "the mu-vector drawn from the
+ALREADY a vector here — `Well.escrow` is "the mu-vector drawn from the
 voice's reserve to keep it, per lane", and "a mind rich on `h` and spent on
 `S` holds turns and withholds placements". A single integer expresses
 neither half of that:
@@ -10950,7 +10950,7 @@ Writing `NoPose::Oblique` onto a cell would FREEZE A PERSPECTIVE — the
 verdict of a mind at one moment, preserved past the vocabulary that produced
 it, with nothing to re-read it when the next adjunction makes it false.
 
-P9 already rules the shape and it had not been connected: `Bubble.candidates`
+P9 already rules the shape and it had not been connected: `Well.candidates`
 is "populated at hold time by RE-DERIVATION from the demand's own bodies and
 never stored beside them (law 12)". The demand carries the GEOMETRY, not the
 conclusion, so every hold re-reads against the CURRENT alphabet and a mind
@@ -10986,7 +10986,7 @@ Moved to [MU-CLIENT.md](MU-CLIENT.md); see its Rulings index.
 ```
 transducer/blade/frame.rs               NoPose's arms — sorted by mechanism,
                                         and the permanence axis cuts across them
-transducer/bubble/idea.rs               candidates re-derived at hold, never stored
+transducer/field/idea.rs               candidates re-derived at hold, never stored
 server/cognition/germinate/listing.rs   open_unspellable, docket_letter — the promotion
 ```
 
@@ -11665,7 +11665,7 @@ commit; only by reconstructed closure, and a fibre whose closure no court
 reconstructs lapses with its escrow (Z4d) and is never promoted.
 
 **Binding.** `physics/calibration.rs` (the reserve as the universe), `physics/
-budget.rs` (the draw), `bubble/` (the fibres held), `server/cognition/
+budget.rs` (the draw), `field/` (the fibres held), `server/cognition/
 book/` (the tether ruled), `client/sdk/epigenome/` (the callus, Stood →
 Ruled at the relation).
 
@@ -12828,7 +12828,7 @@ MYC7, a linear snapshot tape whose sections were read by position, is retired (a
 5. **Incongruence, incoherence and decoherence are three grades of one complex.** Grade 0, a body without shape (kind I); grade 1, INCONGRUENT, an invariant separating a pair on both towers (kind P), permanent unless the shape changes, and such a change is a new percept; grade 2 and above, INCOHERENT, every edge of a ring congruent and the ring's gauges not closing (kind D or C, never P), a state held as a class and never permanent, discharged only by an enclosure carrying the bracket, a constructor admitted through the gate (78.32(c)) or another vantage's cover (74, CV4). Incoherence has three levels: HARMONIC (the residue's modes do not resonate), LUMINAL (a gauge does not carry one section to the other along its ray) and HOLONOMIC (the ring's composition does not reconstruct the object). RESONANCE: the residue is classified by its modes' regimes and orders (over ℚ the finite orders are 1, 2, 3, 4 and 6); a RESONANT ring, every mode elliptic of finite order, closes at the joint period and is `Fill::Congruent` at that `ℓ`, a remainder that counts neither D nor C; D is the rosette (an elliptic mode of no order no held word spells), C is parabolic, boost or luminal. A ring is never planar: a 1-cycle's holonomy turns in up to `⌊(n+2)/2⌋` planes at once, and each 2- or 3-cycle carries classes of its own grade. The carrier is `Coherence::Open(Incoherence { ring, class, modes })` and `Fill::Open` carrying the residue by content, never a bare hole.
 6. **Decoherence is an act, and incoherence is its state.** An adjunct (a new candidate with its relative word, a perception that changes a gauge, a ruling that demotes a citation) turns one coherent thought into two coherent thoughts with an incoherence between them; nothing is deleted or forced closed, merge (13.12) is the reverse act and collapse by transport (78.37(1)) is re-coherence. TP1's meet-graph line carries per stroke the thoughts merged, decohered (with the adjunct that cut each and the class it left) and collapsed.
 
-Code: `src/transducer/cech/orbit_algebra.rs` (`Coherence`, `Incoherence`, `NoRound`), `src/transducer/cech/simplex.rs` (`Fill`), `src/transducer/bubble/meet.rs`, `src/transducer/bubble/contemplation.rs`.
+Code: `src/transducer/cech/orbit_algebra.rs` (`Coherence`, `Incoherence`, `NoRound`), `src/transducer/cech/simplex.rs` (`Fill`), `src/transducer/field/meet.rs`, `src/transducer/field/contemplation.rs`.
 
 ### 78.27 LD3's node layout
 
@@ -13178,7 +13178,7 @@ frames stable at the same time.
 
 Code: `src/physics/tensegrity.rs`, the register
 `src/physics/axioms/tensegrity.rs` (a test per clause),
-`src/transducer/bubble/resonance.rs` (`Contemplation::gate`).
+`src/transducer/field/resonance.rs` (`Contemplation::gate`).
 
 ### 78.52 The conformal foam: five rows; Row 1, the hours wind on a Clifford torus, and a body's momentum is carried
 
@@ -13242,7 +13242,7 @@ built from spheres, circles and kissing foam, in five rows, in order:
 Code: `src/physics/tensegrity.rs`, `src/physics/fascicle.rs`,
 `src/transducer/cga/embedding.rs` (`translator_at`),
 `src/transducer/blade/body.rs` (`moment2`),
-`src/transducer/bubble/resonance.rs` (`note_ground`, `join_ground`),
+`src/transducer/field/resonance.rs` (`note_ground`, `join_ground`),
 `src/transducer/alphabet/factor.rs` (`factor_rotor`),
 `src/client/sdk/entity/think.rs` (`transcribe`, `hold_perceived`).
 
@@ -13350,7 +13350,7 @@ constellation locks, and the thought closes and factors into a word in one
 step without search; where it does not, each nonzero component is the
 missing blade itself, filed as its own exact demand. Code:
 `src/physics/tensegrity.rs` (`Defect`, `Defect::closes`, `coherence`,
-`metric_defect`), `src/transducer/bubble/resonance.rs` (`read_ground`,
+`metric_defect`), `src/transducer/field/resonance.rs` (`read_ground`,
 `note_refusal`; refusal `Refusal::Incoherent`).
 
 ### 78.58 The reservoir is the ancilla ray e_∅, and a merge rotates its distinction into it
@@ -14442,7 +14442,7 @@ Code: `src/chronometry/chain/mod.rs` (`ReceiptChain::fold_before`,
   dropped or following the rule is a harness, not cognition; a square's
   holonomy `H = (V′U)⁻¹ W V` is coherence where it is the identity and
   content where it is not, and the mind deduces from the H's (78.11, 78.47;
-  `src/transducer/bubble/resonance.rs` (`perceive_cells`)).
+  `src/transducer/field/resonance.rs` (`perceive_cells`)).
 - **The progenitor, not the steward.** The development builds the mind and
   the entity: it defines the dimensions (the algebra and its planes, the
   lanes, time as height, the L0 physics), the entity's body (senses,
@@ -14782,7 +14782,7 @@ they share (M8), every route kept (78.44).
   until a persisted complex punctures. Code: `src/transducer/cech/hole.rs`
   (`condense`, `puncture`, `seal`), `src/transducer/cech/simplex.rs`; a
   curved cell is punctured where it is read in
-  `src/transducer/bubble/drive.rs`.
+  `src/transducer/field/drive.rs`.
 - **(3) The board and the locality theorem (62.4, 63.2).** A complex's
   BOARD is its coordinates on the three axes: sealed cells by key and fill,
   tethers by key, holes by key and fill. A pivot writes only its cell and
@@ -14803,7 +14803,7 @@ they share (M8), every route kept (78.44).
   gluing over a hole whose boundary lies in the overlap can cap it; a part
   not exact on its own is read modulo its own holonomy. Code:
   `src/transducer/cech/connecting.rs` (`connecting`, `Unglued`); wired at
-  the thought merge in `src/transducer/bubble/merge.rs`.
+  the thought merge in `src/transducer/field/merge.rs`.
 - **(5) The relay carries coordinates**, inflected by the chart transport
   `Γ` (`Coordinates::transported`). Superseded by 78.100 D5: a word crosses
   as its harmonic signature and its deconstruction over the syllabus; the
@@ -15021,7 +15021,7 @@ the court checks against the laws and answers typed, and never simulates
 Code: `src/client/sdk/entity/think.rs` (`hold_perceived_from`,
 `transcribe_these`, `adjoin_letters`, `construct_and_adjoin`),
 `src/transducer/cga/constructors.rs` (`construct`),
-`src/transducer/bubble/docket.rs` (`drain_demands`),
+`src/transducer/field/docket.rs` (`drain_demands`),
 `src/transducer/sentence/chart.rs` (`chart_of_form`),
 `src/transducer/family/derivation.rs` (`letter_reading`),
 `src/physics/laws/mod.rs` (`verify`).

@@ -635,11 +635,11 @@ impl Mind {
 
     /// Hold a withheld form as an idea so the pivot orbit sees it next
     /// stroke (30.2). The contemplation is the one carrier of held forms
-    /// (24.1 as ruled 2026-09-09): its remainders stay on the bubble as
+    /// (24.1 as ruled 2026-09-09): its remainders stay on the well as
     /// what the form does not speak, and its words are read at a chart
     /// when a cite asks — through the form's own `by_class` — never
     /// listed here ahead of the question.
-    /// Z4 item 1: the form is MOVED into the bubble. A caller that needs
+    /// Z4 item 1: the form is MOVED into the well. A caller that needs
     /// it afterwards reads it back from the contemplation by reference.
     pub(crate) fn hold_form(
         &mut self,
@@ -671,7 +671,7 @@ impl Mind {
     ///
     /// Room is `boundary_measure` against this voice's reserve, LANE BY
     /// LANE (law 5): the open thoughts' own four-lane measure, never the
-    /// thoughts' sum, never a count of bubbles, and never the box's memory — which is
+    /// thoughts' sum, never a count of wells, and never the box's memory — which is
     /// what `retire_on_t` read and why it is deleted.
     ///
     /// A LANE WITH NO ROOM WITHHOLDS THE NEW THOUGHT. It does not evict a
@@ -699,7 +699,7 @@ impl Mind {
     pub(crate) fn span_of(
         &self,
         f: &crate::transducer::sentence::Form,
-    ) -> Option<crate::transducer::bubble::contemplation::Deliberation> {
+    ) -> Option<crate::transducer::field::contemplation::Deliberation> {
         self.contemplation.span_of(f)
     }
 
@@ -782,7 +782,7 @@ impl Mind {
         let mut budget = self.physics.stroke();
         // THE CONTEMPLATION'S CLOCK IS TUNIVERSAL, WHICH IS WHAT IT SAYS IT
         // IS. `Contemplation.now_k` reads "TUniversal the mind last
-        // stamped" and `Bubble.moved_k` reads "TUniversal when this bubble's
+        // stamped" and `Well.moved_k` reads "TUniversal when this well's
         // charts last moved"; this stamped both with the mind's own K,
         // which counts the orbits this mind acted in and moves on nothing
         // else (78.49). `absorb_taught` states the rule in one line: "k is
@@ -795,7 +795,7 @@ impl Mind {
         // the wrong clock.
         let tu = self.now_tu();
         self.contemplation.set_now(tu);
-        let crate::transducer::bubble::drive::Expanded {
+        let crate::transducer::field::drive::Expanded {
             pivoted,
             crystallized,
             circuit,
@@ -856,7 +856,7 @@ impl Mind {
     /// the demand — `pivot_orbit` defers on `Standing::Ruled` alone since R11.
     pub(crate) fn adjoin_letters(
         &mut self,
-        adjoined: &crate::transducer::bubble::drive::Adjoined,
+        adjoined: &crate::transducer::field::drive::Adjoined,
         budget: &mut crate::physics::Budget,
     ) {
         for (rotor, chart) in adjoined {
@@ -1031,7 +1031,7 @@ impl Mind {
     pub(crate) fn shed(&mut self) -> usize {
         let c = &self.contemplation;
         let mut glued: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for (_, b) in c.bubbles.scoped() {
+        for (_, b) in c.wells.scoped() {
             for (a, _) in b.glues.scoped() {
                 glued.insert(&a, ());
             }
@@ -1051,7 +1051,7 @@ impl Mind {
         let unratified = |a: &[u8]| taught_up.contains(&Mind::taught_key(a));
         let (unheard, speaking) = (&self.unheard, &self.speaking);
         let referenced = |a: &[u8], d: &Dialect| {
-            c.bubbles.contains(a)
+            c.wells.contains(a)
                 || c.cites(a)
                 || glued.contains(a)
                 || covered.contains(&crate::transducer::stalk::invariant_of(d.sentence.element()).key())
@@ -1067,8 +1067,8 @@ impl Mind {
             self.forget_utterance(a);
         }
         // DOOR 1 (25): the addresses the dialect just dropped have lapsed
-        // from the working atlas, so the bubbles standing at them and the
-        // bubbles citing them lapse on THIS stroke, jointly. `dropped` is
+        // from the working atlas, so the wells standing at them and the
+        // wells citing them lapse on THIS stroke, jointly. `dropped` is
         // the signal and it is already in hand; no sweep discovers these
         // later.
         let lapsed = self.contemplation.lapse_with(&dropped);
@@ -1107,7 +1107,7 @@ impl Mind {
 
     /// DOOR 2 OF CHAPTER 25 — RETIREMENT AT PROMOTION.
     ///
-    /// A form ratified into the genome is held by the atlas; the bubble
+    /// A form ratified into the genome is held by the atlas; the well
     /// still standing for it in the contemplation is a SECOND CARRIER FOR
     /// ONE FACT (law 12), and it is retired here, at the promotion, rather
     /// than left for a later sweep to notice.
@@ -1119,7 +1119,7 @@ impl Mind {
     ///
     /// It goes through door 1's `lapse_with`, because a promoted address is
     /// an address that has left the contemplation's keeping: whatever cited
-    /// it cited a bubble that no longer stands here, and it lapses with it
+    /// it cited a well that no longer stands here, and it lapses with it
     /// on the same stroke.
     pub(crate) fn take_promoted(&mut self) -> Vec<Vec<u8>> {
         let promoted = self.epigenome.take_promoted();
@@ -1142,7 +1142,7 @@ impl Mind {
     /// 78.37(1), TP1 — the contemplation's meet graph as it stands, with its
     /// decoherences since the contemplation began.
     #[cfg(test)]
-    pub(crate) fn meet_graph(&self) -> crate::transducer::bubble::MeetGraph {
+    pub(crate) fn meet_graph(&self) -> crate::transducer::field::MeetGraph {
         let mut m = self.contemplation.meet_graph();
         // RM1 — the remainders the epigenome's index could not file over one
         // standing, beside the contemplation's own.

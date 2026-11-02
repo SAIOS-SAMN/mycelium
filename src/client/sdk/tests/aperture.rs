@@ -16,7 +16,7 @@ fn shed_keeps_glued_dialect_word_and_genome() {
     assert_eq!(entity.dialect_len(), 2);
     let addr = e1.address();
     entity.hold_chain(vec![(9, 0, 1, 2)]);
-    let idea = entity.contemplation.bubbles.scoped().next().map(|(k, _)| k).expect("idea");
+    let idea = entity.contemplation.wells.scoped().next().map(|(k, _)| k).expect("idea");
     entity.contemplation.mark_glue(&idea, addr.clone());
     let _ = entity.shed();
     assert_eq!(entity.dialect_len(), 1, "the unreferenced word sheds; the glued one stands");
@@ -87,7 +87,7 @@ assert_eq!(
 ///
 /// Each carrier says which it wants, and two said one thing and were fed the
 /// other. `Contemplation.now_k` reads "TUniversal the entity last stamped"
-/// and `Bubble.moved_k` reads "TUniversal when this bubble's charts last
+/// and `Well.moved_k` reads "TUniversal when this well's charts last
 /// moved"; both were stamped from the mind's own K. Everything
 /// downstream is a span between two of those stamps —
 /// `held_since(now_k, moved_k)` is `pivot_orbit`'s `t_extent`, `span_of` is
@@ -126,7 +126,7 @@ fn expand_ideas_stamps_contemplation_with_tuniversal() {
 ///
 /// Room is `boundary_measure` against the voice's reserve, LANE BY LANE
 /// (law 5): the open thoughts' own four-lane measure, never the thoughts' sum and
-/// never a count of bubbles. `retire_on_t` read a bubble count against
+/// never a count of wells. `retire_on_t` read a well count against
 /// `reserve_max`, which is the box's RAM at boot — probed at 88 on this
 /// machine — and it is deleted.
 ///
@@ -222,7 +222,7 @@ fn hold_form_draws_lanes_that_release_returns() {
     // MU-CLIENT §7.1 Phase 3 — THE ESCROW RETURNS ONCE, EXACTLY, when the
     // thought is released by its orbit: the reserve stands where it stood
     // before the hold, lane by lane.
-    let held: Vec<Vec<u8>> = entity.contemplation.bubbles.scoped().filter(|(_, b)| b.escrow == drew).map(|(k, _)| k).collect();
+    let held: Vec<Vec<u8>> = entity.contemplation.wells.scoped().filter(|(_, b)| b.escrow == drew).map(|(k, _)| k).collect();
     let [key] = held.as_slice() else { panic!("one thought holds the draw: {}", held.len()) };
     entity.contemplation.release_thought(key);
     entity.physics.reserve.restore(entity.contemplation.take_returned_escrow());
@@ -240,11 +240,11 @@ fn release_thought_returns_only_what_hold_drew() {
     let before = entity.physics.reserve.clone();
     entity.hold_chain(vec![(9, 0, 1, 2)]);
     assert_eq!(entity.physics.reserve, before, "a hold that drew nothing takes nothing");
-    let held: Vec<Vec<u8>> = entity.contemplation.bubbles.scoped().map(|(k, _)| k).collect();
+    let held: Vec<Vec<u8>> = entity.contemplation.wells.scoped().map(|(k, _)| k).collect();
     let [key] = held.as_slice() else { panic!("one thought held: {}", held.len()) };
-    assert_eq!(entity.contemplation.bubbles.get(key).map(|b| b.escrow), Some([0; 4]), "it holds nothing in escrow");
+    assert_eq!(entity.contemplation.wells.get(key).map(|b| b.escrow), Some([0; 4]), "it holds nothing in escrow");
     entity.contemplation.release_thought(key);
-    assert!(entity.contemplation.bubbles.get(key).is_none(), "released");
+    assert!(entity.contemplation.wells.get(key).is_none(), "released");
     entity.physics.reserve.restore(entity.contemplation.take_returned_escrow());
     assert_eq!(entity.physics.reserve, before, "and it returns NOTHING, because nothing was drawn");
 }
