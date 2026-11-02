@@ -464,6 +464,21 @@ world, a world orbits a galactic core, the galactic cores stand in a
 universe, and the universe's only uplink is its universal core. The
 network is reached only through the cores.
 
+**Double cones, not a network of routes** (the operator's rulings of
+2026-11-02, read with the ruling above). Each act is an **event** on the
+multi-dimensional TUniversal ledger, placed at its point
+`origin/h:S:G:T:H:K` (MU-CHRONOMETRY §1). Its **past cone** is what it
+cites; its **future cone** is what comes to cite it. A universe's acts and
+the hypha's acts are two such manifolds of double cones, and the universal
+core tube is the **vertex** where a universe's cones join the hypha's.
+Inside a universe, the routes its acts take (the progenitor class's
+wormholes placed in-game along gravity wells, superposed paths) are the
+kernel's sovereign physics: the hypha never needs, sees or chooses them,
+and no route is unique. At the vertex the hypha reads three things: the
+event's TUniversal coordinates; what it carries, reconstructed under the
+universal laws (§5a.3); and its holonomy as content, path-independent
+where it is trivial and a named twist where the inner routes disagree.
+
 This section is the **boundary law**. It refines §5: §5.1 and §5.2 say
 what is contained and what is governed; this section says where the
 boundary between the two lies for a universe, and what crosses it.
@@ -473,17 +488,18 @@ boundary between the two lies for a universe, and what crosses it.
 | Shell | What it holds | What it may do inside | What crosses its boundary, and to where |
 |---|---|---|---|
 | **Mind** (an agent) | Its key, its workspace (genome, dialect), its seat | Perceive, compose, hold questions, idle (§5.5) | Seat actions to its kernel, through the senses and actions the kernel builds (§5.1; MU-CLIENT §6); a key's own acts to a hypha directly (§5a.6) |
-| **World** | A planet: its peoples, with the peoples' economies and ledgers | Everything its universe's physics lets happen there; tolls in its own money (Concordance 5.5) | Its ledger, folded upward through its universe's own tiers (stardock, realm; MU-LEXICON §2, *Ledger tree*), never to the hypha |
+| **World** | A planet: its peoples, with the peoples' economies and ledgers | Everything its universe's physics lets happen there; tolls in its own money (Concordance 5.5) | Its ledger, carried by its universe's own inner routes (stardock, realm; MU-LEXICON §2), never to the hypha: its events reach the hypha's cones only at the universe's vertex |
 | **Galactic core** | A paired throat whose size is its mass, its firmament, its lines and roads (Concordance 2.4–2.6, 2.9) | Keep and defend its galaxy; build roads as a progenitor line | Its tier's fold, carried inline in the universal core's fold under the line's own signature (78.138), never to the hypha directly |
 | **Universe** | One kernel's simulation: its constants, matter, shell and clock axis (Concordance 2.2, 2.10) | Compute by its own physics, floating point included (MU-SCIENCE §7.1) | Only what its universal core sends |
-| **Universal core** | The domain's sitting reserve (Concordance 4.1, 4.2) and the core throat its firmament holds open (§3a.5) | Fold the universe's ledger; keep its anchors, maps, mouths, conversions and manifests | The reserve's signed acts, through the universal core tube, to a hypha: the universe's **only uplink** |
+| **Universal core** | The domain's sitting reserve (Concordance 4.1, 4.2) and the core throat its firmament holds open (§3a.5) | Fold the universe's ledger; keep its anchors, maps, mouths, conversions and manifests | The reserve's signed acts, through the universal core tube, to a hypha: the universe's **only uplink**, the **vertex** where its cones join the hypha's |
 | **Hypha mesh** | The courts: ledger, TUniversal, the law register, μ | Reconstruct, rule, seal and pay | To another mesh only through a bridging kernel (§8) or federation (§8.5) |
 
 **Nested universes** (78.155). A sub-universe's Big Bang is the far face
 of a core of its parent (Concordance 2.4), so its universal core uplinks
-into its parent universe, and it reaches the hypha only through its
-parent's universal core. The chain recurses and is never short-cut: a
-sub-court folds up through its reserve (78.155 R-3, **Specified**).
+into its parent universe: its vertex is with its parent's cones, and its
+events reach the hypha's cones only at its parent's vertex. The nesting
+recurses and no vertex is bypassed: a sub-court folds up through its
+reserve (78.155 R-3, **Specified**).
 
 ### 5a.2 Inside a universe: the kernel's own physics
 
@@ -514,8 +530,10 @@ The universal core tube is the universe's only uplink. What crosses it
 - **The carried lines.** Every carried line is read in full before
   anything seals, and a contested line is reconstructed step by step to
   its committed prefix, nothing re-run (78.138; Concordance 4.4).
-- **The ledger tree's holonomy.** Two routes folding one ledger close a
-  cycle; its holonomy is the identity where they agree, and otherwise an
+- **Holonomy at the vertex, read as content.** Two inner routes carrying
+  one ledger to the vertex close a ring; the hypha reads its holonomy,
+  never the routes. It is the identity where the routes agree (the
+  crossing is path-independent), and otherwise a named twist: an
   obstruction carrying the exact lane vector, which seals the fold
   provisional (78.123).
 - **L0 at `LAW_VERSION` 5.** Each transition the crossing states (the
@@ -540,7 +558,7 @@ state with no exact representation does not cross.
 |---|---|---|
 | Continuity of a fold, exact per lane | **Built** | `TierFold::continuity_with`, `Court::admit_uplink` |
 | Carried lines read in full; a contested line reconstructed | **Built** | `Child::Carried`, `ChildRefusal`; `Reconstruction` in `server/cognition/challenge.rs` |
-| The ledger tree's cycles checked by holonomy | **Built** | `server/cognition/ledger.rs` (`Obstruction`, `Court::admit_chained`) |
+| Rings of inner routes read by holonomy at the vertex | **Built** | `server/cognition/ledger.rs` (`Obstruction`, `Court::admit_chained`) |
 | L0 verify as a reading a kernel asks for (`ACT_LAWS` modes 1 and 2) | **Built** | `physics::laws::verify_sized`; `judge/laws.rs` |
 | L0 applied at admission to the transitions a crossing states; refused naming the law (proposed `NotLawful`, carrying the breaches) | **Specified** | §5a.9, B3 |
 | Core-shell forms applied at admission | **Specified** | §5a.9, B3 |
@@ -550,32 +568,62 @@ state with no exact representation does not cross.
 
 The universal laws bind a universe at its boundary because its kernel
 signs the Concordance (§0 SIGNING). The signature is the kernel's
-acceptance of the boundary's regulation.
+acceptance of the boundary's regulation, and it is given **clause by
+clause** (the operator's ruling of 2026-11-02):
+- **A kernel signs a clause set.** Each clause is enabled or vetoed: a
+  kernel may enable sections 1, 2 and 4 and veto section 3, for example.
+- **The network clauses cannot be vetoed.** The clauses of Concordance
+  0.1's Network row (the universal laws, the tube) are what makes a
+  crossing possible; without them there is no crossing. A clause set that
+  vetoes one is not a signature, and the domain's crossings read
+  `NotSignatory` (proposed).
+- **A tube between two universes carries what both enabled.** A core tube
+  interlinking two universes carries what the clauses both universes
+  enabled govern. A clause one side vetoed bounds what flows through the
+  tube, and that bound is named on the tube's reading and on each act it
+  stops; it is never a refusal of the whole tube.
+- **An act is read under the clauses it depends on.** Clauses unchanged
+  since the kernel signed are read normally. A changed clause is read
+  under the clause as signed, and the divergence (the clause, the version
+  signed, the version served) is held and named until the kernel signs
+  the new version: forward, never reverted. No signature lapses on a
+  timer, so there is no question of how long an old signature is
+  honoured.
 
 | Part | Status | Where |
 |---|---|---|
 | The agreement's hash served (`ACT_LAWS` mode 7) | **Built** | `physics::laws::concordance::CONCORDANCE_HASH` |
-| A signature verified and answered by name (`Mismatched`, `Unsigned`, `Malformed`) on mode 8 | **Built** | `verify_concordance_signature` |
-| The accepted signature recorded per domain (founding key and sitting reserve) | **Specified** | §5a.9, B2 |
-| A domain's crossings refused until its reserve has signed the version served (proposed `NotSignatory`) | **Specified**: the release after v0.3.0 (Concordance §0) | §5a.9, B2 |
+| A signature verified and answered by name (`Mismatched`, `Unsigned`, `Malformed`) on mode 8 | **Built**, over the whole text's hash | `verify_concordance_signature` |
+| A signature over a clause set: each clause's hash, enabled or vetoed | **Specified** | §5a.9, B2 |
+| The signed clause set recorded per domain (founding key and sitting reserve) | **Specified** | §5a.9, B2 |
+| A domain's crossings refused until its reserve has signed every network clause of the version served (proposed `NotSignatory`) | **Specified**: the release after v0.3.0 (Concordance §0) | §5a.9, B2 |
+| A tube between two universes bounded by the clauses both enabled, each stopped act naming the vetoed clause | **Specified** | §5a.9, B2 |
+| An act read under its clauses as signed; a changed clause's divergence held and named until the new version is signed | **Specified** | §5a.9, B2 |
 
-Today a signature is verified, recorded nowhere and required of no
-kernel. How long a signature over an earlier version is honoured after a
-new version is served is for the operator to rule, read with activation
-at a point of the clock (MU-RELEASE §5).
+Today a signature is over the whole text's hash, verified, recorded
+nowhere and required of no kernel.
 
-### 5a.5 Topology enforced by the network
+### 5a.5 The vertex: where a universe's cones join the hypha's
 
-A universe's acts are admitted only through its universal core: signed
-by its domain's sitting reserve. Its galactic cores are tiers within the
-reserve's fold, carried inline and checked by the ledger tree's holonomy.
-A fold or act from a galactic core or a world that reaches the hypha
-directly is refused by name. The boundary's one name for that refusal is
-**`NotThroughCore`** (proposed).
+A universe's events enter the hypha's cones at one vertex, the universal
+core tube: as the act its domain's sitting reserve signs, or carried in
+that act under the carrying line's own signature. Its galactic cores are
+tiers within the reserve's fold, carried inline, and each ring the inner
+routes close is read by its holonomy at the vertex (§5a.3). The
+routes themselves are the kernel's own; the hypha neither prefers nor
+requires any one of them.
 
-Much of this is in the tree today, under each object's own `NotReserve`:
+A universe's act that reaches the hypha other than at its vertex (a fold
+or act from a galactic core or a world, signed by a key that is not the
+reserve's and not carried in the reserve's act) is not an event of that
+universe's cone at the hypha: no past cone through the vertex places it
+there. It is refused by name, and the boundary's one name for that
+refusal is **`NotThroughCore`** (proposed). The refusal is derived from
+the cone structure, not from a ruling on which route the act took.
 
-| A universe's act | Admitted only from | Refusal today | Status |
+Much of this is in the code today, under each object's own `NotReserve`:
+
+| A universe's act | Admitted from | Refusal today | Status |
 |---|---|---|---|
 | A tier's fold (78.119, 78.138) | The sitting reserve | `Uplinked::NotReserve`; `Unbound` for a key no genesis names | **Built** |
 | A line's fold | Carried inline in the reserve's fold, under the line's own signature | `ChildRefusal` (`Unsigned`, `ForeignDomain`, `Unbonded`, `Mismatched`, `Repeated`) | **Built** |
@@ -608,8 +656,8 @@ The two rules govern different acts, and neither replaces the other:
   domain is served and paid, and counted on the acts reading.
 - **A universe's acts are governed by topology** (78.169). A fold, an
   anchor, a map, a mouth, a conversion out, a manifest, a statement or a
-  crossing is the universe's: it is admitted only through the universal
-  core.
+  crossing is the universe's: it is admitted only at the universe's
+  vertex, its universal core (§5a.5).
 
 The test is whose act it is, never who signs it: a key that is a
 universe's tier may solve for itself, and the same key's fold is refused
@@ -624,19 +672,24 @@ logs:
 |---|---|---|
 | Each boundary refusal, answered by name to the sender | Which law, which object, why | **Built** (each act's refusal enum) |
 | The acts reading's *signed by an inner seat (served)* | Solves an inner tier signed: keys at work, not a breach | **Built** (`observe::acts::JUDGED`, `Judged::InnerSeat`) |
-| The ledger tree's open obstructions, per domain | Cycles whose holonomy is not the identity, each with its exact lane vector | **Built** (`ChallengeRequest::Obstructions`, `Court::open_obstructions`) |
+| The named twists at each vertex (open obstructions), per domain | Rings of inner routes whose holonomy is not the identity, each with its exact lane vector | **Built** (`ChallengeRequest::Obstructions`, `Court::open_obstructions`) |
 | A fold's finality reading | Provisional or final, bonded or not | **Built** (`FinalityReading`) |
 | A universe's position and dilation from its anchors | Where it stands against TUniversal | **Built** (MU-CHRONOMETRY §3.3) |
 | The boundary reading: refusals at the universal core tube by name and by domain (`NotThroughCore`, `NotLawful`, `NotSignatory`) under `ACT_OBSERVE` | Where a universe's acts try to bypass the core, or fail the universal laws | **Specified** (B4) |
 | Reconstruction events at the boundary: Collapse (a crossing admitted), Converse (two courts reconstruct one crossing, each from the evidence it holds), Collision (two crossings claim one structure, such as two folds over one head) | The boundary as reconstruction, read across a mesh | **Specified** (MU-SCIENCE §5.0; ROADMAP track 8) |
-| Each domain's signatory reading: the Concordance version its reserve signed | Which universes stand under which regulation | **Specified** (B2) |
+| Each domain's signatory reading: the clause set its reserve signed (each clause's version, enabled or vetoed) and each divergence held | Which universes stand under which regulation, and which clauses each reads under an earlier version | **Specified** (B2) |
+| A tube's shared clauses: for a core tube between two universes, the clauses both enabled and each bound a veto sets | What the tube carries, and what it stops by name | **Specified** (B2) |
 
 ### 5a.8 Integration: what a kernel does to cross
 
 1. **Sign the Concordance** (`ACT_LAWS` mode 8) over the hash served; from
    the release after v0.3.0 an unsigned kernel's crossings are refused.
+   With B2 the signature is a clause set: every network clause enabled,
+   the others enabled or vetoed (§5a.4); sign each new version forward.
 2. **Found a domain and designate its reserve** (`ACT_DOMAIN`): the reserve
-   is the universal core, the one key that faces the hypha.
+   is the universal core, the one key that faces the hypha. Any hypha of
+   the mesh will do, and the domain's later acts may reach any hypha: with
+   B0 every hypha reconstructs the domain from its founding receipts.
 3. **Uplink only through the reserve's fold.** Carry each galactic core's
    and line's fold inline, under its own signature and bond; never let a
    tier key fold, anchor, map or convert directly.
@@ -656,16 +709,22 @@ logs:
 
 | Phase | Delivers | Files | Wire and ledger effect |
 |---|---|---|---|
+| **B0** | Replication by reconstruction ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)): every hypha reconstructs each domain's state (founding, tiers, reserve, origin) from the founding receipts back-fill delivers (`Cite::Domain`, `Cite::Reserve`, `Cite::Origin`), checked against the signed chain, once by content, with the same refusals as at the founding hypha (a tier held, already founded, already originated) | `src/server/cognition/{state,cite,convert,universe}.rs` (`Court::admit_backfill`, `admit_domain`, `designate_reserve`, `record_origin`, `hold_domain`, `hold_genesis`) | None on the wire; each court's registries become a reconstruction of the chain it holds |
 | **B1** | The act audit (every act kind that names a domain, classed as a key's own or a universe's); `NotReserve` renamed `NotThroughCore` on each object; line mouth offers and tier handoff offers carried in the reserve's act (after the ruling on 78.126 and 78.136) | `src/anastome/dialogue/{uplink,atlas,handoff,endowment,domain}.rs`; `src/server/cognition/{cite,atlas,convert,endowment,mouth,handoff,universe}.rs` | The rename: none (names only). Carried offers: a wire change to `ACT_HANDOFF` |
-| **B2** | Signatures recorded per domain; `NotSignatory` at the boundary; the signatory reading | `src/physics/laws/concordance.rs`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite}.rs`, `src/server/cognition/snapshot/layout.rs` | A layout change (a leaf of signatories); `Uplinked` and the other refusal enums gain `NotSignatory` |
+| **B2** | Clause-by-clause signatures (each clause's hash, enabled or vetoed; the network clauses never vetoed) recorded per domain; `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/concordance.rs`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/snapshot/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
 | **B3** | The transitions a crossing states, verified under L0 and the core-shell forms at admission; `NotLawful` carrying the breaches; draft-4 laws as ruled | `src/anastome/dialogue/uplink.rs` (`TierFold`), `src/server/cognition/cite.rs`, `src/physics/laws/mod.rs` | A wire and layout change: a fold carries its transitions section |
 | **B4** | The boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | `src/observe/`, `src/bin/mycelium-server/door.rs` | A wire addition (a reading) |
 | **B5** | A sub-universe's acts through its parent's core, with 78.155 R-3 | `src/server/cognition/`, `chronometry::tuniversal` | With 78.155 R-3 |
 
 Claims each phase proves, by the algebra (MU-STANDARDS 3.1):
+`admit_backfill_reconstructs_domain_from_founding_receipts`,
+`admit_backfill_refuses_founding_not_on_signed_chain`,
 `admit_uplink_refuses_fold_not_through_core`,
 `handoff_refuses_line_offer_not_through_core`,
 `admit_uplink_refuses_unsigned_concordance`,
+`concordance_signature_refuses_vetoed_network_clause`,
+`core_tube_refuses_act_under_vetoed_clause` (the tube itself stands),
+`admit_uplink_holds_divergence_of_changed_clause`,
 `admit_uplink_refuses_transition_breaching_l0`,
 `admit_uplink_ignores_declared_law_id`,
 `admit_uplink_waits_on_unread_law`,
@@ -678,15 +737,21 @@ inverted (`!=` to `==`), the signatory check dropped, a verdict's
 breaches discarded before admission, and the holonomy's identity test
 inverted; each is killed by the claim named beside it.
 
-Size: B1 about 300 lines (most of it the rename and the carried offers),
-B2 about 250, B3 about 400, B4 about 200; B5 rides 78.155 R-3. ROADMAP
-track 24. B3's shared laws wait on draft 4. Every phase waits on
-[issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13), domain
-replication: a domain's founding, tiers and reserve are held today only by
-the court that sealed them, so another hypha reads a reserve's fold as
-`Unbound`. The boundary holds at every hypha of a mesh only once that
-state is mesh-wide (or each domain addresses a home court, the issue's
-other option).
+Size: B0 about 200 lines, B1 about 300 (most of it the rename and the
+carried offers), B2 about 400, B3 about 400, B4 about 200; B5 rides
+78.155 R-3. ROADMAP track 24. B3's shared laws wait on draft 4, and B2's
+clause sets on its §0 SIGNING text.
+
+Every later phase stands on B0, **replication by reconstruction** (the
+operator's final ruling of 2026-11-02 on
+[issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)). Today a
+domain's founding, tiers, reserve and origin are written only by the court
+that sealed them, so another hypha reads a reserve's fold as `Unbound`.
+Any client may reach any hypha: every hypha reconstructs each domain's
+state from the founding receipts that back-fill already delivers, checked
+against the signed chain, and the boundary then holds at every hypha. A
+home court is ruled out, and no kernel is asked to address a particular
+hypha.
 
 ---
 

@@ -16229,6 +16229,24 @@ does not rewrite it.
    under 2 they are carried in the reserve's act, which amends 78.126 and
    78.136 forward when the first phase lands. A sub-universe (78.155)
    reaches the hypha only through its parent's universal core.
+6. **Ruled further the same day (2026-11-02), forward.** (a) *Double
+   cones.* Each act is an event on the TUniversal ledger, its past cone
+   what it cites and its future cone what comes to cite it; the universal
+   core tube is the vertex where a universe's cones join the hypha's. The
+   inner routes (the progenitor class's wormholes along gravity wells,
+   superposed paths) are the kernel's sovereign physics, never needed,
+   seen or chosen by the hypha, which reads at the vertex the event's
+   coordinates, what it carries (reconstructed under the universal laws)
+   and its holonomy as content; `NotThroughCore` in 2 follows from the
+   cones: an act arriving other than at the vertex is not an event of the
+   universe's cone at the hypha. (b) *Clause-by-clause signing*, refining
+   4: a kernel signs a clause set; the network clauses cannot be vetoed; a
+   tube between two universes carries what both enabled, a vetoed clause
+   bounding it by name; a changed clause is read as signed, its divergence
+   held and named until the new version is signed. (c) *Issue #13*: any
+   client may reach any hypha; every hypha reconstructs each domain's
+   state from its founding receipts, checked against the signed chain; a
+   home court is ruled out.
 
 Specified, with the parts already built marked, in
 [MU-HOSTING §5a](MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law);

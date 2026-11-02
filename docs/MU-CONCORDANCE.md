@@ -489,8 +489,16 @@ PROPOSED, 4.1 (replacing the clause):
 > lines never touch the court, and a line's part is contested through the
 > reserve fold's window. Not every civilization is uplinked: that would
 > overload the uplink. This is a law THE HYPHA ENFORCES AT THE UNIVERSAL
-> CORE TUBE: a universe's act that reaches the hypha other than through
-> its universal core is refused by name (`NotThroughCore`); whatever
+> CORE TUBE. Each act is an event on the TUniversal ledger: its past cone
+> is what it cites, its future cone what comes to cite it, and the
+> universal core tube is the VERTEX where a universe's cones join the
+> hypha's. The universe's inner routes (wormholes, superposed paths) are
+> its own physics, never seen or chosen by the hypha; at the vertex the
+> hypha reads the event's TUniversal coordinates, what it carries, and its
+> holonomy as content (trivial, or a named twist where the inner routes
+> disagree). A universe's act that reaches the hypha other than at its
+> vertex is not an event of that universe's cone at the hypha, and is
+> refused by name (`NotThroughCore`); whatever
 > crosses the tube is RECONSTRUCTED under the universal laws (L0 at its
 > law version, the `forms` core shell, and the shared laws as ruled) and
 > refused by the law's name where it does not hold, never admitted on a
@@ -516,10 +524,23 @@ HYPHA" to "carried by captains"):
 > becomes in the game is the ancients' resource, moved by progenitors'
 > tubes, organised by stewards and carried by captains.
 
-PROPOSED, §0 SIGNING (one sentence added after the status line):
-> The refusal of an unsigned kernel is applied at the universal core tube:
-> a domain whose reserve has not signed the version served has its
-> crossings refused by name (`NotSignatory`).
+PROPOSED, §0 SIGNING (added after the status line; clause-by-clause
+signing, the operator's ruling of 2026-11-02):
+> CLAUSE BY CLAUSE. A kernel signs a clause set: each clause of this
+> agreement, by its hash, enabled or vetoed (for example sections 1, 2 and
+> 4 enabled and 3 vetoed). The NETWORK clauses (0.1's Network row: the
+> universal laws, the tube) cannot be vetoed, for without them there is no
+> crossing. The refusal of an unsigned kernel is applied at the universal
+> core tube: a domain whose reserve has not signed every network clause of
+> the version served has its crossings refused by name (`NotSignatory`).
+> A TUBE interlinking two universes carries what the clauses both
+> universes enabled govern; a clause one side vetoed bounds what flows
+> through the tube, and that bound is named, never a refusal of the whole
+> tube. An act is READ UNDER THE CLAUSES IT DEPENDS ON: a clause unchanged
+> since the kernel signed is read normally; a changed clause is read under
+> the clause as signed, and the divergence is held and named until the
+> kernel signs the new version, forward and never reverted. No signature
+> lapses on a timer.
 
 PROPOSED, 0.1 (the scope map's rows):
 
