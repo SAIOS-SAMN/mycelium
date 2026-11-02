@@ -1146,6 +1146,9 @@ Each phase is one commit:
    - Claims: `torus_absorbed_without_unit_norm`,
      `loop_holonomy_is_angle_excess_in_turns`,
      `flat_product_reads_no_holonomy_where_sphere_reads_it`,
+     `orbit_precesses_by_the_angle_excess_its_attractors_curve`,
+     `zero_precession_orbit_refused_as_loop`,
+     `windings_kept_as_fibre_classes`,
      `rotation_by_rational_turn_exact_over_cyclotomic_field`.
 6. **S5, samples on the wire.**
    - A task carries samples of rank `n`: `n`, the extents, then the
