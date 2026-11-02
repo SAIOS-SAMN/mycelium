@@ -73,6 +73,32 @@ excluded from the reasoning path.
    78.10(a)), never by a member key that names two bodies at once; and a
    held stabilizer is never collapsed by choosing one representative of
    it (78.29(C)).**
+12. **Transduce past the sensor, never re-sample onto a common grid**
+   (operator rulings of 2026-10-31). A raster exists only at the two
+   ends: the sensor's intake and a spoken output. Between them, two
+   frames relate by the motion that carries one state onto the other.
+   Each frame keeps its own resolution, and each body is held by its
+   boundary. A site lifts by enclosure into turns of the frame's own
+   periods: row `r` is the turn `r/h`, held as a fraction in ℚ/ℤ. It is
+   never a point embedding with an unenclosed `e∞` or a squared norm
+   (law 11). Subdividing two frames onto a common grid (the `lcm`
+   refinement of the two extents) is refused. The least common multiple of
+   two periods of turns is not this defect: it is the period of a
+   composed orbit.
+13. **A digest locates and binds; it never admits** (operator ruling of
+   2026-11-02; [MU-HOSTING §5a.10](MU-HOSTING.md#5a10-what-crosses-the-exact-object-never-its-digest)).
+   A digest has three senses. An **address** locates coordinates held
+   losslessly elsewhere. A **link** orders a receipt chain. A
+   **commitment** binds signed bytes. An object is admitted by
+   reconstructing it from its own evidence under the laws. It is never
+   admitted because a digest it carries equals one held. A disagreement
+   is read as a residue: the composed motion, the differing boundary or
+   the differing holonomy. It is never read as unequal bytes.
+14. **Four acts, four words** ([MU-SCIENCE §5.0](MU-SCIENCE.md#the-typed-vocabulary)).
+   Reconstruction verifies, rebuild repeats a construction, replay reads
+   history and resend repeats a message. A defect is a sentence or an
+   identifier that uses one word in another's sense. The remedy is the
+   word for the act, never a ban on a word.
 
 ## Rationale
 
@@ -118,3 +144,35 @@ in persistence and transport as in cognition.
   6), a planar chamber or a chosen representative (clauses 9 and 11) — is a
   review rule, read against the
   `MU-RECURSION.md` review checklist, item (m) above all.
+
+## Drift guards: by structure, never by word
+
+Clauses 12–14 name the regressions that recur: a common grid in place of
+transduction, a digest in place of reconstruction, and replay or rebuild
+in place of reconstruction. A word list cannot guard them. The same word
+names a defect at one site and a law at another. In the tree today,
+`lcm` composes the periods of turns in
+`src/transducer/sentence/coordinates.rs`, which is lawful. It also
+re-samples two frames onto a common grid in
+`src/transducer/family/refine.rs` (`CommonRefinement`), which is the
+defect. So the guards are types, which make the wrong structure
+unwritable, and a register that names each guard and the ruling behind
+it. **Specified** (ROADMAP track 25, phase X0):
+
+| Regression | Guard | How it is proved |
+|---|---|---|
+| A digest compared to admit an object (clause 13) | The bare `[u8; 32]` of a crossing is split into three types: `Address`, `Link` and `Commitment`. None implements `PartialEq`. The comparisons are named methods: `Address::locates`, `Link::follows(&prev)`, and `Commitment::binds(&Reconstructed<T>)`. The last takes the reconstructed object, so a commitment cannot be compared before reconstruction. | A `compile_fail` doc test per type for `==`; the claim `commitment_binds_only_a_reconstructed_object` |
+| Admission without reconstruction (clause 13) | `Reconstructed<T>` has a private constructor, called only by the law's reconstruction. Each `admit_*` takes a `Reconstructed<T>` and never the claimed `T`. | A `compile_fail` doc test that builds one outside the laws; a mutation-audit entry that admits the claim in place of the reconstruction |
+| A common grid past the sensor (clause 12) | The refinement onto a common grid is reachable only from the sensor's intake (`pub(in crate::sensor)`), or removed once the transduction replaces it. A site's lift has one constructor, `Turn::of(r, h)`, held in ℚ/ℤ. | A `compile_fail` doc test that calls the refinement from cognition; the transduction's claims (track 25, X5) |
+| Replay or rebuild used to verify (clause 14) | Identifiers that verify carry `reconstruct` (track 11). A restore returns a `Reconstructed<State>` checked against its receipts, never a replayed one. | The restore claim `restore_reconstructs_and_checks_receipts`; a mutation-audit entry that skips the receipt check |
+
+The register `xtask/lint/drift.rs` lists each guard: the regression, its
+ruling, the guarding type, and the claim and mutation-audit entry that
+prove it. The gate refuses a register entry whose guard type or claim is
+missing from the tree, as `numbers.rs` does for the open numbers. It also
+reads every changed document for a typed term (reconstruction, rebuild,
+replay, resend, digest, hash, lattice, grid) beside an admission verb
+(admit, verify, accept, check). It reports each such sentence for review
+and does not refuse it. The reviewer then confirms the sense the sentence
+uses. Contributors who work with AI coding agents point them at
+[`AGENTS.md`](../AGENTS.md), which states these guards as working rules.

@@ -891,3 +891,124 @@ Depends on: **draft 4** (the amendment's approval and signing; B3's
 shared laws, and B2's clause sets under its §0 SIGNING text). Issue #13
 is no longer an outside dependency: its ruling, **replication by
 reconstruction**, is phase B0. Serves tracks 13, 14 and 15.
+
+## 25. Crossings carried exact; drift guarded by type
+
+**Specified** in
+[`docs/MU-HOSTING.md` §5a.10](docs/MU-HOSTING.md#5a10-what-crosses-the-exact-object-never-its-digest)
+(the operator's ruling of 2026-11-02) and
+[`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) clauses 12–14
+with its section *Drift guards*.
+
+A connection between a universe and the hypha is transduced. It carries
+the exact object and the motion, never a digest in place of them. Each
+crossing carries its place (TUniversal coordinates and past cone), its
+content (each body by its boundary, the motion as a versor or as turns in
+ℚ/ℤ), its holonomy and its clauses. The hypha reconstructs the object
+and admits it only on reaching the same exact object. A disagreement is
+held as a residue (the composed motion, the differing boundary, the
+differing holonomy), never as unequal bytes. A digest keeps exactly
+three senses (address, link, commitment), and none of them admits.
+
+The track begins with the guards, so the work after them cannot drift
+back to a common grid, a digest in place of reconstruction, or replay in
+place of reconstruction. Each guard is a type that makes the wrong
+structure unwritable, never a banned word.
+
+**How to build a phase.** Follow
+[CONTRIBUTING › Getting started](CONTRIBUTING.md#getting-started), then
+for each phase:
+1. Open a branch from `main` (or a `git worktree` beside the checkout)
+   named for the phase, for example `crossing-x0-guards`.
+2. Read the phase's specification whole: MU-HOSTING §5a.10,
+   MU-ANTI-FLATTENING clauses 12–14, MU-SCIENCE §5.0.
+3. Write the claims named below first, as statements of the algebra
+   (MU-STANDARDS 3.1). Include the `compile_fail` doc tests that prove a
+   wrong structure does not compile.
+4. Build the phase. Run the gate (`cd xtask && cargo run`), the scoped
+   tests of the touched modules (`cargo test --release -p <crate>
+   <module>`), and `scripts/check` before the pull request.
+5. Add each phase's mutation-audit entries to
+   `xtask/mutate/catalogue.rs`, and run `(cd xtask && cargo run --
+   mutate)`. Every entry must be killed by the claim named beside it.
+6. Open the pull request with the template's drift checklist ticked. A
+   phase that changes the wire or the ledger layout says so under
+   *Network contract*.
+
+Each phase is one commit:
+
+1. **X0, the drift guards.**
+   - `Address`, `Link` and `Commitment` replace the bare `[u8; 32]` at
+     every crossing site. None implements `PartialEq`. The comparisons
+     are `Address::locates`, `Link::follows`, and
+     `Commitment::binds(&Reconstructed<T>)`.
+   - `Reconstructed<T>` has a private constructor, called only by a
+     law's reconstruction, and every `admit_*` takes it.
+   - The register `xtask/lint/drift.rs` lists each guard (regression,
+     ruling, guarding type, claim, mutation-audit entry). The gate
+     refuses an entry whose type or claim is missing. It reports, without
+     refusing, each changed document's sentence that puts a typed term
+     beside an admission verb.
+   - Claims: `address_has_no_equality` (`compile_fail`),
+     `reconstructed_is_built_only_by_the_laws` (`compile_fail`),
+     `commitment_binds_only_a_reconstructed_object`.
+   - Mutation-audit entry: an admission given the claim in place of its
+     reconstruction.
+2. **X1, the crossing record.** `Crossing { place, content, holonomy,
+   clauses }` in `mycelium_sdk::forms` and on the wire, decoded to exact
+   values (Concordance 1.4). It rides B3's change to the fold, which
+   carries the transitions section (one wire change, not two).
+   - Claims: `crossing_round_trips_exact_values`,
+     `crossing_without_content_is_refused_address_only`.
+3. **X2, admission by reconstruction at the vertex.** `Court::admit_uplink`
+   reconstructs each crossing's object from its place, content and
+   holonomy under the shared clauses, and admits a
+   `Reconstructed<Crossing>`. A crossing that carries only digests is
+   refused `AddressOnly`, or the object is fetched by its address and
+   reconstructed.
+   - Claims: `admit_uplink_reconstructs_crossing`,
+     `admit_uplink_refuses_digest_only_crossing`,
+     `admit_uplink_ignores_matching_state_digest` (an object whose claimed
+     digest matches but whose reconstruction differs is refused).
+4. **X3, the residue.** A refused or collided crossing holds its residue:
+   the motion `M̃_rec · M_claim`, or `t_claim − t_rec` in ℚ/ℤ; the
+   differing boundary breakpoints per circle; the differing holonomy.
+   The residue reads as Collapse, Converse or Collision under
+   `ACT_OBSERVE`, with B4 and track 8.
+   - Claims: `residue_is_identity_exactly_on_agreement`,
+     `residue_of_turns_is_their_difference_mod_one`,
+     `collision_holds_both_crossings_with_their_residue`.
+5. **X4, the digest audit.** Every site that compares digests is typed
+   by its sense and moved to reconstruction where it admits. The sites
+   on `main` to type first:
+   - `src/chronometry/chain/mod.rs`, `chain/node.rs`,
+     `chronometry/receipt.rs`: links, each record reconstructed
+     (`rederives`).
+   - `src/server/backfill.rs` (back-fill's chain-hash check): a link;
+     the record itself is reconstructed with B0.
+   - `src/chronometry/pack.rs` (an anchor read on a top's digest): a
+     restore, reconstructed and checked against its receipts.
+   - `src/server/cognition/state.rs` (eras compared by root and signer):
+     a link or a commitment, typed.
+   - `src/server/cognition/endowment.rs` (a grant already held, by
+     digest): an address in the resend sense, after the grant has been
+     checked.
+   - `src/server/cognition/court/glue.rs` (a stratum root recomputed from
+     its members): a commitment bound to a reconstruction, already in
+     the right order.
+   - `src/client/sdk/entity/learn.rs` (a starved root): an address.
+   - Each peer kernel tracks its counterparts in its own repository.
+6. **X5, the transduction in place of the common grid.** Two frames
+   relate by the motion between them; each keeps its own resolution;
+   each body is held by its boundary; incidences are read between boundary arcs; a site
+   lifts as turns in ℚ/ℤ. `CommonRefinement`
+   (`src/transducer/family/refine.rs`) leaves cognition. It is reachable
+   only from the sensor, or removed. This is the v0.3.0 transduction work
+   (CHANGELOG), and X5 lands its guard.
+   - Claims: `common_refinement_unreachable_from_cognition`
+     (`compile_fail`), `site_lifts_to_turns_of_its_own_periods`,
+     `incidences_read_between_boundary_arcs`.
+
+Depends on: track 24 (X1 rides B3; X3's readings ride B4), track 8 (the
+reconstruction events), track 11 (identifiers that verify carry
+`reconstruct`). X0 depends on nothing and comes first.

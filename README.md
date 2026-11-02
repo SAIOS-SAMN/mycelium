@@ -1132,7 +1132,7 @@ network), **Specified** (stated, not yet built) or **In progress**.
 | [`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) | The client conformance read: the statement of MUST and MAY acts a client pins to, served by every hypha, its in-process check and its suite on a network. |
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The shared vocabulary, served by address beside the law register. |
-| [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) | Structure is never flattened to scalars or flat maps. |
+| [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) | Structure is never flattened to scalars or flat maps; past the sensor frames are transduced, never put on a common grid; a digest never admits; and the drift guards that keep each of these. |
 | [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) | Components carried forward from precursor implementations: for each, the gap, the design under Mycelium's laws, acceptance claims, track and status; SDK packaging; what is not carried forward. |
 | [`docs/MU-DERIVATIONS.md`](docs/MU-DERIVATIONS.md) | Every number in the physics, derived or named until derived: the classes of constant, a derivation entry per underived number, the defects found while deriving, the open questions and the order of work. |
 

@@ -6,6 +6,25 @@ such change is named here.
 
 ## Unreleased
 
+### Crossings carried exact; drift guarded by type (specification, ruled 2026-11-02)
+- **What crosses the vertex** (MU-HOSTING §5a.10): a crossing carries its
+  place, its content as an exact object (each body by its boundary, the
+  motion), its holonomy and its clauses. The hypha admits it only by
+  reconstruction. A digest keeps three senses (address, link,
+  commitment) and never admits. A disagreement is held as a residue,
+  never as a boolean. `AddressOnly` is a proposed refusal name.
+- **Drift guards** (MU-ANTI-FLATTENING clauses 12–14 and *Drift guards*):
+  transduction past the sensor, no admission on a digest, and the four
+  typed words. Each is guarded by a type that makes the wrong structure
+  unwritable, never by a banned word, with a register in
+  `xtask/lint/drift.rs` (specified).
+- **ROADMAP track 25** (X0 guards first, then the crossing record,
+  admission by reconstruction, the residue, the digest audit and the
+  transduction's guard), with the steps to build each phase.
+- **`AGENTS.md`** (and `CLAUDE.md` pointing to it): working rules for AI
+  coding agents, stating the recurring regressions and the structure
+  that replaces each. The pull request template gains a drift checklist.
+
 ### Live readings (MU-DERIVATIONS, ruled 2026-10-31)
 - **The principle, written down:** MU-STANDARDS 2.12 and MU-DERIVATIONS
   §0.5. A governing quantity is a live reading of the current state,
