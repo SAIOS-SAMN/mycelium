@@ -184,11 +184,22 @@ the sphere is read through its holonomy. This is the perceiving side of
 Concordance 2.10: the physics is nested shells, each a sphere `Sⁿ` about
 one centre, never planes side by side. Perception is held the same way.
 
-- **Why.** `n` independent circles form a torus `Tⁿ`, which is flat: a
-  loop on it transports nothing, so curvature, which is content, reads as
-  nothing. A sphere is curved. A loop on it turns what it carries by the
-  angle the loop encloses, so a route's meaning is held as its holonomy
-  (MU-RECURSION 10.3, 12.6; MU-ANTI-FLATTENING clause 6).
+- **Why.** `n` independent circles form a torus `Tⁿ`, which is flat.
+  A loop on it keeps its windings, one integer per circle (its class in
+  `H₁(Tⁿ) = ℤⁿ`, 78.44), but transports nothing. A geodesic on a flat
+  torus is a straight line wound around it. Untouched by gravity, it
+  squares the depth and volume of the manifold into one dimension, and
+  with phases in ℚ/ℤ it closes and returns exactly: the loop a thought
+  must not be (MU-CLIENT 78.168). A sphere is curved. A loop on it turns
+  what it carries by the angle the loop encloses, so a route's meaning is
+  held as its holonomy (MU-RECURSION 10.3, 12.6; MU-ANTI-FLATTENING
+  clause 6).
+- **Gravity curves the perception manifold.** The curvature comes from
+  what the mind holds. Its axioms are the attractors (MU-CLIENT §4.1,
+  78.168), and their mass curves the manifold the percepts lie on. An
+  orbit in perception is therefore bent by gravity and sheared by
+  velocity, never a straight line. Where nothing is held, the manifold is
+  flat there, and an orbit through it reads only its windings.
 - **Absorption.** A sample's `n` circles sit in the sphere `S^{2n−1}` as
   its Clifford torus. Each circle keeps its phase as a turn in ℚ/ℤ (§3.1).
   The point is held projectively: the circles' common scale is a gauge,
@@ -211,6 +222,30 @@ one centre, never planes side by side. Perception is held the same way.
   Exact rational rotors exist only at multiples of 90° (Niven), and
   rational points on a sphere would mean squaring, so neither is used. A
   turn the mind cannot carry exactly is a named residue (78.170).
+- **Orbits.** A thought's orbit lives in the fibration. It is a loop on
+  the base sphere together with a winding in the fibre. On each lap, the
+  base loop's angle excess, which is the curvature the attractors'
+  gravity puts inside it, advances the fibre phase. That advance is the
+  orbit's **precession**: the orbit closes on the base but not in the
+  fibre, so it comes round held and never returns exactly. It reads as
+  one of MU-CLIENT 78.168's four readings:
+  - **held**: precessing and bound;
+  - **closes**: returning at its period;
+  - **open**: a mode escaping its attractor;
+  - **unread**: not reached.
+
+  The windings are kept as the fibres' classes, never lost in the sphere.
+  An orbit with zero precession through flat space returns exactly and is
+  refused as a loop, never taken as settled. A precession of `t/ℓ` turns
+  closes after `ℓ` laps. That full return is the orbit's own period, its
+  age as distance along the orbit (78.43), read once and not repeated. A
+  precession that no turn holds exactly is a named residue.
+- **Whose mind.** Perception and its orbits belong to the mind inside a
+  client (MU-CLIENT 78.168). The hypha has no perceiving mind: it never
+  senses and never orbits a thought. It reconstructs what a mind claims (a
+  holonomy, a winding, a precession) on the same sphere carrier its
+  physics' shells use (§6; Concordance 2.10), which is why one carrier
+  serves both.
 - **μ stays a share of the frame** in this release: the share of the
   sample's sites a change covers (78.170 O1). Measuring μ as the solid
   angle a change sweeps on the base sphere awaits a ruling of its own,

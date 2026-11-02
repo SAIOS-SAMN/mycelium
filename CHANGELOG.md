@@ -20,6 +20,14 @@ such change is named here.
   and **ROADMAP track 26** (S0–S6) cover `src/arc.rs`, the fixed palette,
   the ground of `0`, the fixed axes and the wire's `u16 × u16` cells.
   S0–S5 land in v0.3.0's one break, and T2 merges after S0 and S4.
+- **Orbits under gravity** (MU-SENSING §3.7, ruled 2026-11-02): a
+  geodesic on a flat torus is a straight line that returns exactly. The
+  attractors' gravity curves the perception manifold. A thought's orbit
+  is a base loop plus a fibre winding, its precession per lap is the
+  base loop's angle excess, and the windings are kept as fibre classes.
+  An orbit with zero precession is refused as a loop. Perception and
+  orbits are the client mind's, and the hypha reconstructs claims on the
+  same carrier.
 - **Spheres, not a flat product** (MU-SENSING §3.7, ruled 2026-11-02):
   the circles are absorbed, held projectively with no unit norm, as the
   Clifford torus in `S^{2n−1}`, and read through a Hopf-type projection
