@@ -194,12 +194,22 @@ one centre, never planes side by side. Perception is held the same way.
   what it carries by the angle the loop encloses, so a route's meaning is
   held as its holonomy (MU-RECURSION 10.3, 12.6; MU-ANTI-FLATTENING
   clause 6).
-- **Gravity curves the perception manifold.** The curvature comes from
-  what the mind holds. Its axioms are the attractors (MU-CLIENT §4.1,
-  78.168), and their mass curves the manifold the percepts lie on. An
-  orbit in perception is therefore bent by gravity and sheared by
-  velocity, never a straight line. Where nothing is held, the manifold is
-  flat there, and an orbit through it reads only its windings.
+- **Gravity curves the perception manifold.** It has two sources, and
+  both act in the client mind:
+  - **Axiomatic gravity** (the mind's own). The attractors are the
+    axioms of the star: the register `physics/axioms/` that the client
+    and the hypha share (MU-CLIENT §4.1, 78.168). The mind's held thoughts
+    orbit them, and what the mind holds about each axiom is the mass
+    that curves the manifold the percepts lie on.
+  - **The court's exported gravity** (a reading the mind receives, never
+    a force the court applies). A court's pressure, deficit and dwell
+    reach the mind as the lanes of a deferral or a quote. They act as
+    drag on the orbits that face that court, until the court answers
+    (MU-CLIENT §3.1, §4.13; `Field::beat_under`).
+
+  An orbit in perception is bent by gravity and sheared by velocity,
+  never a straight line. Where nothing is held, the manifold is flat
+  there, and an orbit through it reads only its windings.
 - **Absorption.** A sample's `n` circles sit in the sphere `S^{2n−1}` as
   its Clifford torus. Each circle keeps its phase as a turn in ℚ/ℤ (§3.1).
   The point is held projectively: the circles' common scale is a gauge,
