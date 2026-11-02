@@ -32,8 +32,8 @@ is at `0.3.0-rc.2`. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
-| T2, the transduction core: frames related by the motion between them, μ as a share of the frame | [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) | In progress (maintainers); merges after track 26's S0 and S4, its `Enclosure` holding `n` absorbed circles |
-| Track 26, S0–S5: the sensor for any source at any rank; rows and columns absorbed or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress (maintainers); in v0.3.0's one break. S6 follows v0.3.0. |
+| T2, the transduction core: frames related by the motion between them, μ as a share of the frame | [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) | In review, with track 26's S0 and S4 (the transduction on samples of any rank, `n` phases, no axis privileged); awaits operator approval (wire and ledger change) |
+| Track 26, S0–S5: the sensor for any source at any rank; rows and columns absorbed or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 in review with T2 (S4's family-invariance reading for nesting still open); S1–S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into a bubble (non-Euclidean, never scalar); its body, motions, forces, orbits and vortex ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-BUBBLE v1 ([proposal](docs/proposals/78.171-law-bubble.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready after T2 |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Ready |
