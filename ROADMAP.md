@@ -831,3 +831,47 @@ of long-running open networks, and forks that converge rather than split:
 Four questions need a decision (MU-RELEASE §10): the superposition's
 quorum, which side keeps the shared origin, releases that change address
 computation, and μ minted on a branch.
+
+## 24. The boundary law: topology enforced at the universal core
+
+**Specified** in
+[`docs/MU-HOSTING.md` §5a](docs/MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law)
+(the operator's ruling of 2026-11-02; MU-RECURSION 78.169), with the
+Concordance amendments (4.1, 6.2a, §0, 0.1) proposed in
+[MU-CONCORDANCE §11](docs/MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02).
+
+The security model is topological and the hypha enforces it: a
+universe's only uplink is its universal core, what crosses the universal
+core tube is reconstructed under the universal laws, and a universe's act
+arriving any other way is refused by name. A key's own acts stay governed
+by keys, never tiers (78.165). Built today: the reserve-only fold, anchor,
+map, conversion out, manifest and statement (each refused `NotReserve`),
+lines carried inline, the ledger tree's holonomy, L0 verify as a reading,
+and the Concordance hash served and signatures verified. Each phase is one
+commit:
+
+1. **B1, the act audit and the boundary's name:** every act kind that
+   names a domain classed as a key's own or a universe's; the `NotReserve`
+   variants renamed `NotThroughCore` (names only); a line's mouth offer
+   (78.136) and a tier's handoff offer or traversal (78.126) carried in the
+   reserve's act, after the operator rules on amending those two forward.
+2. **B2, signatories:** a kernel's accepted Concordance signature recorded
+   per domain, and a domain's crossings refused `NotSignatory` until its
+   reserve has signed the version served (Concordance §0's next release); a
+   signatory reading.
+3. **B3, the universal laws at admission:** the transitions a crossing
+   states verified under L0 at `LAW_VERSION` 5 and the `forms` core shell,
+   refused `NotLawful` naming each breach, never admitted on a declared
+   law's name; the draft-4 shared laws as each is ruled.
+4. **B4, the boundary reading:** refusals at the universal core tube by
+   name and domain under `ACT_OBSERVE`, and the reconstruction events
+   (Collapse, Converse, Collision) at the boundary, with track 8.
+5. **B5, nested universes:** a sub-universe's acts only through its
+   parent's universal core, with 78.155 R-3.
+
+Depends on: **draft 4** (the amendment's approval and signing; B3's
+shared laws), and
+[issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13), **domain
+replication**: a domain's founding, tiers and reserve are held today only
+by the court that sealed them, so the boundary holds at every hypha of a
+mesh only once that state is mesh-wide. Serves tracks 13, 14 and 15.

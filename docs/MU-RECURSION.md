@@ -12585,7 +12585,7 @@ report's per-form sentences) beside substantive ones is trimmed.
 
 ## 78. Rulings in force
 
-This chapter lists the rulings numbered 78.1–78.168, one entry per number, each stating the rule as it stands and the code that carries it, or naming the ruling that superseded it. Rulings amend the chapters that govern the objects ruled on; where a ruling and an earlier chapter differ, the ruling governs. Rulings concerning the mind moved to [MU-CLIENT.md](MU-CLIENT.md) and are listed in its Rulings index. Numbers 79.1–79.3 label subsections of 78.59.
+This chapter lists the rulings numbered 78.1–78.169, one entry per number, each stating the rule as it stands and the code that carries it, or naming the ruling that superseded it. Rulings amend the chapters that govern the objects ruled on; where a ruling and an earlier chapter differ, the ruling governs. Rulings concerning the mind moved to [MU-CLIENT.md](MU-CLIENT.md) and are listed in its Rulings index. Numbers 79.1–79.3 label subsections of 78.59.
 
 ### 78.1 What learning is, in the engine's own terms
 
@@ -15937,6 +15937,9 @@ while a key the domain never registered was served regardless. Code:
 `src/server/cognition/state.rs` (`tier_domain`),
 `src/bin/mycelium-server/door.rs`, `src/observe/acts.rs`.
 
+(Narrowed forward 2026-11-02 by 78.169: this ruling governs a key's own
+acts; a universe's acts are governed by topology at its universal core.)
+
 ### 78.166 The inversions: start slow, compile, compound
 
 Brute force is inverted. START SLOW: from the genesis, the generators and
@@ -16184,6 +16187,58 @@ another mind; the minds' own readings are diagnosis, never the witness.
 Rulings pending: 78.149(c) (§5), and whether an escaping orbit dissipated to the
 reservoir counts as bound for the drive (as scoped, yes: it is held at its
 coordinates and reforms).
+
+### 78.169 Keys for a key's own acts; topology for a universe's acts (the boundary law)
+
+The operator ruled on 2026-11-02 that the security model is enforced by the
+hypha at the universal core tube. The laws pass down through the
+Concordance and the universal physics: each universe applies its own
+physics at the kernel level, for what it does inside its kernel, and what
+traverses its universal core tube as an uplink to the hypha abides by the
+physics the hypha has established and the Concordance signs into law as
+regulation. The containment chain (ruled 2026-10-30) is topological: a
+mind on a world, a world in orbit about a galactic core, the cores in a
+universe, and the universe's only uplink its universal core; the network
+is reached only through the cores. This ruling narrows 78.165 forward; it
+does not rewrite it.
+
+1. **A key's own acts stay governed by keys, never tiers** (78.165 1–4
+   stand for them). A solve, speech, an attestation, a stake, a lease and a
+   conversion in are what a key does for itself: the court authenticates the
+   key and pays the account it names, and a solve an inner seat signed is
+   served and counted (`inner_seat`, *signed by an inner seat (served)*).
+2. **A universe's acts are governed by topology.** A fold, an anchor, a
+   map, a mouth, a conversion out, a manifest and a statement are the
+   universe's: admitted only from its sitting reserve, its universal core,
+   or carried in the reserve's act under the carrying line's own
+   signature. Any other path is refused by name: the boundary's one name
+   is `NotThroughCore` (proposed), which the per-object `NotReserve`
+   variants already in the tree (78.119 with 78.138, 78.127, 78.154,
+   78.155b, 78.139) take when the track lands. 78.165 3's "the court
+   detects and refuses nothing" holds for a key's own acts only.
+3. **What crosses is reconstructed under the universal laws**: L0 at
+   `LAW_VERSION` 5, the `forms` core shell, and the draft-4 shared laws as
+   ruled; refused by the law's name where it does not hold, and never
+   admitted on a declared law's name alone. A universe's own outer shell is
+   never re-derived at the boundary (Concordance 4.4).
+4. **Regulation is the Concordance signed.** A domain whose reserve has
+   not signed the version served has its crossings refused by name
+   (`NotSignatory`, proposed), from the release Concordance §0 names.
+5. **Owed by this ruling:** a line's mouth offer (78.136) and a tier's
+   handoff offer or traversal (78.126) reach the hypha directly today;
+   under 2 they are carried in the reserve's act, which amends 78.126 and
+   78.136 forward when the first phase lands. A sub-universe (78.155)
+   reaches the hypha only through its parent's universal core.
+
+Specified, with the parts already built marked, in
+[MU-HOSTING §5a](MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law);
+the Concordance amendments (4.1, 6.2a, §0, 0.1) are proposed in
+[MU-CONCORDANCE §11](MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02),
+unsigned; ROADMAP track 24. Code today: `src/server/cognition/cite.rs`
+(`Court::admit_uplink`, the reserve check), `src/server/cognition/convert.rs`
+(`Court::reserve_of`, `Court::inner_seat`), `src/server/cognition/ledger.rs`
+(`Court::admit_chained`), `src/physics/laws/concordance.rs`
+(`verify_concordance_signature`).
 
 ## 80. The planetary dialect: a modified Gödel engine
 

@@ -58,6 +58,9 @@ senses that kernel builds for it.
 | **Virtue book** | *Game kernel.* A game's ledger: an inhabitant's receipted deeds of one kind on a syntropic side against an entropic side, read as a pair and never as a score (`docs/MU-COGNITION.md` §1.5). |
 | **Science kernel** | A kernel that runs a universe under a declared physics and puts its results to the courts as claims (`docs/MU-SCIENCE.md`). |
 | **Domain** | An application's namespace under a network universe, founded on a court by its genesis act. |
+| **Boundary law** | **Specified.** The security model: a universe's acts reach the hypha only through its universal core, and whatever crosses is reconstructed under the universal laws the Concordance signs into regulation (L0, the `forms` core shell), refused by name where it does not hold. Inside, each universe keeps its own physics. A key's own acts stay governed by keys, never tiers (MU-HOSTING §5a; MU-RECURSION 78.169; the Concordance amendment proposed in its §11). |
+| **Universal core tube** | A universe's only uplink to the hypha: the core throat its firmament holds open, spoken through by the domain's sitting reserve, its **universal core** (MU-HOSTING §3a.5, §5a.1). |
+| **NotThroughCore** | **Specified** (proposed name). The boundary law's refusal of a universe's act (a fold, anchor, map, mouth, conversion out, manifest or statement) that reaches the hypha other than through the universal core. The per-object `NotReserve` refusals already in the tree are its instances and take the name when ROADMAP track 24 lands (MU-HOSTING §5a.5). |
 | **House** | A domain's service that lists **seats** and speaks for its game. A mind takes a seat and works the tasks the house puts before it. |
 | **Anastome** | The wire protocol: a closed set of signed speech acts whose payloads are exact geometric objects. |
 | **Act** | One Anastome message, identified by its tag (`ACT_TASK`, `ACT_SOLVE`, `ACT_SPEECH`, `ACT_FOLD`, …). |

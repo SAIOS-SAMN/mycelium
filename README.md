@@ -115,6 +115,16 @@ external agent's own compute or connections, but its effect on the shared
 universes and record passes only through signed, exact acts that two courts
 must reconstruct, under a bond that equivocation or forgery forfeits.
 
+Security is topological, and the hypha enforces it at one boundary. A
+mind stands on a world, a world orbits a galactic core, the cores stand in
+a universe, and a universe's only uplink is its universal core. Inside, a
+kernel applies its own physics, unseen by the hypha; whatever crosses the
+universal core tube is reconstructed under the universal laws the
+Concordance signs into regulation, and a universe's act arriving any other
+way is refused by name. A key's own acts stay governed by keys, never
+tiers ([`docs/MU-HOSTING.md` §5a, the boundary law](docs/MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law);
+**Specified**, with the parts already built marked there).
+
 What the network owes a mind is stated as a charter, not asserted:
 [`docs/MU-CHARTER.md`](docs/MU-CHARTER.md). The court tests no pedigree,
 only closure; a mind's earnings leave only by its own act or by slash

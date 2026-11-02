@@ -450,4 +450,99 @@ How each kernel's developers organise the kernel's own work (builds, cadence, te
      what is conserved, and what each universe's minds perceive) is to be
      designed; nothing in this agreement may close that door.
 
-(end of draft 3)
+## 11. Proposed amendment (draft 4), 2026-11-02
+
+**Proposed amendment (draft 4): not signed, not in force.** Proposed by
+Mycelium under §0 AMENDING, for the maintainer's approval, from the
+operator's ruling of 2026-11-02 (MU-RECURSION 78.169; the boundary law,
+[MU-HOSTING §5a](MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law)).
+It changes no clause above. Approved, it is written into those clauses as
+a new version, and binds a kernel when that kernel signs that version
+(§0, 9.3). A signature over this text's hash signs the clauses above as
+they stand; this section is a proposal carried in the text, never a
+clause.
+
+THE RULING. The laws pass down through this agreement and the universal
+physics. Each universe applies its own physics at the kernel level, for
+what it does inside its kernel; to traverse its universal core tube as an
+uplink to the hypha, what crosses must abide by the physics the hypha has
+established and this agreement signs into law as regulation. Security is
+topological: a mind on a world, a world in orbit about a galactic core,
+the cores in a universe, and the universe's only uplink its universal
+core; the network is reached only through the cores.
+
+WHAT THE PRESENT TEXT UNDERSTATES. 0.1, 4.1 and 6.2a call the uplink
+rule a law each kernel keeps, and 6.2a says the court refuses nothing for
+other access. The court already refuses a fold from any tier but the
+sitting reserve (MU-RECURSION 78.138), and an anchor, a map, a conversion
+out, a manifest or a statement from any key but the reserve's
+(MU-HOSTING §5a.5). The amendment states the rule as the hypha's, and
+names what it adds.
+
+PROPOSED, 4.1 (replacing the clause):
+> 4.1 ONLY THE UNIVERSAL CORE UPLINKS to the POW++ network: THE BOUNDARY
+> LAW. A domain's reserve tier is its universal core (in a game kernel,
+> its ancients); only the reserve folds onto the court, holds anchors,
+> converts and keeps core tubes, and the universal core tube is the
+> universe's only uplink. A galactic core's or a progenitor line's work is
+> CARRIED INLINE in the reserve's act, under the line's own signature;
+> lines never touch the court, and a line's part is contested through the
+> reserve fold's window. Not every civilization is uplinked: that would
+> overload the uplink. This is a law THE HYPHA ENFORCES AT THE UNIVERSAL
+> CORE TUBE: a universe's act that reaches the hypha other than through
+> its universal core is refused by name (`NotThroughCore`); whatever
+> crosses the tube is RECONSTRUCTED under the universal laws (L0 at its
+> law version, the `forms` core shell, and the shared laws as ruled) and
+> refused by the law's name where it does not hold, never admitted on a
+> declared law's name alone. Inside its boundary each universe applies its
+> own physics (2.10), unseen by the hypha.
+
+PROPOSED, 6.2a (replacing the paragraph from "ONLY THE ANCIENTS FACE THE
+HYPHA" to "carried by captains"):
+> ONLY THE UNIVERSAL CORE FACES THE HYPHA FOR ITS UNIVERSE (ruled
+> 2026-10-08; extended 2026-10-14 to EVERY SIGNATORY; amended 2026-10-14,
+> MU-RECURSION 78.165; amended 2026-11-02, 78.169): a law the hypha
+> enforces at the universal core tube (4.1). KEYS FOR A KEY'S OWN ACTS:
+> the court authenticates keys, never tiers, for what a key does for
+> itself; whoever holds a key may solve, a payment lands in the account
+> its key names, and a solve an inner tier signs is served and counted.
+> TOPOLOGY FOR A UNIVERSE'S ACTS: a universe's folds, anchors, maps,
+> mouths, conversions out, manifests and statements are admitted only from
+> its sitting reserve, or carried in the reserve's act; any other path is
+> refused by name. The hypha serves anyone with a tube connector, a key
+> and μ tokens. Inside a founded universe its other seats reach the hypha
+> for the universe by relay - the progenitors relaying through the
+> stewards to the ancients. μ earned sustains the ancients, and what it
+> becomes in the game is the ancients' resource, moved by progenitors'
+> tubes, organised by stewards and carried by captains.
+
+PROPOSED, §0 SIGNING (one sentence added after the status line):
+> The refusal of an unsigned kernel is applied at the universal core tube:
+> a domain whose reserve has not signed the version served has its
+> crossings refused by name (`NotSignatory`).
+
+PROPOSED, 0.1 (the scope map's rows):
+
+| Component | What it binds | Clauses |
+|---|---|---|
+| **Network** | What Mycelium's hyphae and courts enforce, for every kernel and every client | 0; 1.4, 1.5, 1.9, 1.10, 1.11, 1.13, 1.14; 2.1, 2.10; 3.7; 4.1 (the boundary law, enforced at the universal core tube); 4.2–4.5; 5.3, 5.4, 5.7–5.9 except 5.7(e); 6.2a's two rules (keys for a key's own acts; topology for a universe's acts); 8; 9 |
+| **Kernel-kept** | Laws each kernel keeps and attests in its own code; the court never checks them | 3a.1–3a.5 (duties to hosted minds); 5.7(e) (which seat closes a hole); how a universe relays inside its own boundary (6.2a) |
+
+and the second reading bullet becomes: "**Keys for a key's own acts;
+topology for a universe's** (6.2a, MU-RECURSION 78.165 and 78.169).
+Whoever holds a key may speak to the hypha for itself and is paid to the
+account its key names. A universe speaks to the hypha only through its
+universal core (4.1), which the hypha enforces at the tube."
+
+UNCHANGED, and why:
+- **3a (duties to hosted minds).** The duties govern what a kernel does
+  to the minds inside its own process (senses, workspace, exit, shutdown,
+  the same law for every architecture). The boundary law governs what
+  crosses the universal core, and a mind's own acts stay governed by its
+  key, so the duties stay kernel-kept and unchanged.
+- **5.7(e).** Closing a hole is a solve, a key's own act (78.165), so which
+  seat closes it stays a law each kernel keeps.
+- **1.14, 2.2, 2.10.** The universal laws and each universe's own shell
+  are as stated; the amendment says where the two meet.
+
+(end of draft 4)
