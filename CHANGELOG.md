@@ -294,6 +294,22 @@ Holding the modes themselves (78.162) remains the next step.
   to it. MU-HOSTING §5.2 and §3.1 no longer say the court refuses nothing
   for a tier's access: a fold from any tier but the reserve is refused
   today (78.138).
+- **The boundary law as double cones, clause-by-clause signing, and issue
+  #13 resolved** (the operator's rulings of 2026-11-02). MU-HOSTING §5a
+  reads each act as an event with a past cone (what it cites) and a future
+  cone (what comes to cite it) on the TUniversal ledger; the universal core
+  tube is the vertex where a universe's cones join the hypha's, the inner
+  routes are the kernel's own physics, and `NotThroughCore` is derived
+  from the cones. §5a.4 and the proposed Concordance §0 SIGNING text
+  (§11, draft 4) specify signing clause by clause: the network clauses
+  never vetoed, a tube carrying what both universes enabled, a changed
+  clause read as signed with its divergence named until signed forward.
+  Issue #13 is ruled replication by reconstruction (every hypha
+  reconstructs each domain from its founding receipts), now phase B0 of
+  ROADMAP track 24; the interim "address the founding hypha" contract and
+  the home-court option are withdrawn. MU-RECURSION 78.169 item 6,
+  GLOSSARY (Double cone, Vertex, Shared clauses) and MU-LEXICON §1.1
+  follow.
 
 ## 0.3.0-rc.2 — 2026-10-31 (release candidate)
 

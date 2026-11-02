@@ -840,38 +840,54 @@ computation, and μ minted on a branch.
 Concordance amendments (4.1, 6.2a, §0, 0.1) proposed in
 [MU-CONCORDANCE §11](docs/MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02).
 
-The security model is topological and the hypha enforces it: a
-universe's only uplink is its universal core, what crosses the universal
-core tube is reconstructed under the universal laws, and a universe's act
-arriving any other way is refused by name. A key's own acts stay governed
-by keys, never tiers (78.165). Built today: the reserve-only fold, anchor,
-map, conversion out, manifest and statement (each refused `NotReserve`),
-lines carried inline, the ledger tree's holonomy, L0 verify as a reading,
-and the Concordance hash served and signatures verified. Each phase is one
-commit:
+The security model is topological and the hypha enforces it: each act is
+an event on the TUniversal ledger with a past cone (what it cites) and a
+future cone (what comes to cite it); a universe's universal core tube is
+the vertex where its cones join the hypha's; what crosses there is
+reconstructed under the universal laws and its holonomy read as content;
+and a universe's act arriving other than at its vertex is refused by name.
+A universe's inner routes are its own physics, unseen by the hypha. A
+key's own acts stay governed by keys, never tiers (78.165). The kernel
+signs the Concordance clause by clause, the network clauses never vetoed.
+Built today: the reserve-only fold, anchor, map, conversion out, manifest
+and statement (each refused `NotReserve`), lines carried inline, holonomy
+read on the rings of inner routes, L0 verify as a reading, and the
+Concordance hash served and signatures verified. Each phase is one commit:
 
-1. **B1, the act audit and the boundary's name:** every act kind that
+1. **B0, replication by reconstruction** ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13),
+   ruled 2026-11-02): every hypha reconstructs each domain's state
+   (founding, tiers, reserve, origin) from the founding receipts back-fill
+   already delivers, checked against the signed chain, once by content and
+   with the founding hypha's refusals; any client may reach any hypha, and
+   the boundary holds at every hypha. Every later phase stands on it.
+2. **B1, the act audit and the boundary's name:** every act kind that
    names a domain classed as a key's own or a universe's; the `NotReserve`
    variants renamed `NotThroughCore` (names only); a line's mouth offer
    (78.136) and a tier's handoff offer or traversal (78.126) carried in the
-   reserve's act, after the operator rules on amending those two forward.
-2. **B2, signatories:** a kernel's accepted Concordance signature recorded
-   per domain, and a domain's crossings refused `NotSignatory` until its
-   reserve has signed the version served (Concordance §0's next release); a
-   signatory reading.
-3. **B3, the universal laws at admission:** the transitions a crossing
+   reserve's act, after the operator rules on amending those two forward;
+   `NotThroughCore` derived from the cones (an act arriving other than at
+   its universe's vertex is not an event of that universe's cone at the
+   hypha), never from a ruling on routes.
+3. **B2, signatories, clause by clause:** a kernel's signed clause set
+   (each clause's hash, enabled or vetoed; the network clauses never
+   vetoed) recorded per domain; a domain's crossings refused `NotSignatory`
+   until its reserve has signed every network clause of the version served
+   (Concordance §0's next release); a tube between two universes carrying
+   what both enabled, a vetoed clause's bound named, never a refusal of
+   the whole tube; an act read under its clauses as signed, a changed
+   clause's divergence held and named until the new version is signed;
+   the signatory and shared-clause readings.
+4. **B3, the universal laws at admission:** the transitions a crossing
    states verified under L0 at `LAW_VERSION` 5 and the `forms` core shell,
    refused `NotLawful` naming each breach, never admitted on a declared
    law's name; the draft-4 shared laws as each is ruled.
-4. **B4, the boundary reading:** refusals at the universal core tube by
+5. **B4, the boundary reading:** refusals at the universal core tube by
    name and domain under `ACT_OBSERVE`, and the reconstruction events
    (Collapse, Converse, Collision) at the boundary, with track 8.
-5. **B5, nested universes:** a sub-universe's acts only through its
-   parent's universal core, with 78.155 R-3.
+6. **B5, nested universes:** a sub-universe's acts only at its parent's
+   vertex, with 78.155 R-3.
 
 Depends on: **draft 4** (the amendment's approval and signing; B3's
-shared laws), and
-[issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13), **domain
-replication**: a domain's founding, tiers and reserve are held today only
-by the court that sealed them, so the boundary holds at every hypha of a
-mesh only once that state is mesh-wide. Serves tracks 13, 14 and 15.
+shared laws, and B2's clause sets under its §0 SIGNING text). Issue #13
+is no longer an outside dependency: its ruling, **replication by
+reconstruction**, is phase B0. Serves tracks 13, 14 and 15.
