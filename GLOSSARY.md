@@ -114,6 +114,7 @@ senses that kernel builds for it.
 | **Sample** | **Specified.** What a source hands the sensor: a rank `n`, an extent per axis, a symbol per site, and the sample's place in its family. The sensor's only input; a raster only at intake and at speech (MU-SENSING §2). |
 | **Perspective** | **Specified.** The sensor's assignment of a sample's axes to roles (space, sequence, value). A shift of perspective is a motion of the sensor, never a rewrite of the data; several perspectives of one sample are a cover (MU-SENSING §4). |
 | **Ground (Ω)** | **Specified.** The symbol a family's relations show as ambient, the one the bodies stand on; deduced, never a fixed code, with candidates held in superposition until a relation distinguishes them (MU-SENSING §3.4). |
+| **Absorbed / nested axes** | **Specified.** No axis is a row or a column. A sample's axes are absorbed into the perception manifold as circles with no privileged plane, or an axis of extent `a · b` is taken apart into nested circles of periods `a` and `b` where the family is invariant under the factoring (MU-SENSING §3.6). |
 | **Unread dimension** | **Specified.** A dimension of the world a section does not read. It carries no value, neither zero nor an invented coordinate (MU-SENSING §5). |
 | **Task citation** | A task's 32-byte name on every wire act. |
 | **Family** | A task's train pairs, read together. A rule is extracted from its family. |
