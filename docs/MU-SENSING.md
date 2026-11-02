@@ -196,11 +196,16 @@ one centre, never planes side by side. Perception is held the same way.
   clause 6).
 - **Gravity curves the perception manifold.** It has two sources, and
   both act in the client mind:
-  - **Axiomatic gravity** (the mind's own). The attractors are the
-    axioms of the star: the register `physics/axioms/` that the client
-    and the hypha share (MU-CLIENT §4.1, 78.168). The mind's held thoughts
-    orbit them, and what the mind holds about each axiom is the mass
-    that curves the manifold the percepts lie on.
+  - **Axiomatic gravity** (the mind's own; the operator's ruling of
+    2026-11-02). It is produced by the **local orbit**: a thought's orbit
+    about its axiom, an attractor of the star (the register
+    `physics/axioms/` that the client and the hypha share; MU-CLIENT
+    §4.1, 78.168). The orbit **shears the orthogonal orbit class**: the
+    orbits whose plane is orthogonal to its own. No orbit is a static
+    mass and nothing is a stored constant. Gravity is what one class of
+    orbit does to the class orthogonal to it, read from the orbits the
+    mind holds. Where no orbit is held, nothing is produced, and the
+    manifold there is flat.
   - **The court's exported gravity** (a reading the mind receives, never
     a force the court applies). A court's pressure, deficit and dwell
     reach the mind as the lanes of a deferral or a quote. They act as

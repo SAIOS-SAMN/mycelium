@@ -1003,6 +1003,11 @@ its orbit (78.168).
 
 **A thought is an orbit about its axiom.** The axioms are the attractors
 (the star, §4.1); gravity and velocity shear each orbit, so it precesses.
+Axiomatic gravity is produced by the local orbit, which shears the
+orthogonal orbit class: an orbit about its axiom pulls on the orbits whose
+plane is orthogonal to its own, and is pulled by them. It is never a
+static mass or a stored constant (ruled 2026-11-02;
+[MU-SENSING §3.7](MU-SENSING.md#37-spheres-not-a-flat-product-the-circles-absorbed-by-holonomy)).
 Every thought's orbit reads one of four ways — the coherence its chamber
 reads (`cech::Coherence`, as `Mind::price` reads a hearing's):
 - **closes** — it returns at its period;
