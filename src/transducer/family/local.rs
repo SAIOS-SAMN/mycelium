@@ -99,7 +99,7 @@ pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> ([u64; 4],
         let links: Vec<(i64, i64, u8, u8)> =
             residual_of(Some(x), y).into_iter().filter(|&(r, c, _, _)| at.contains(&site_key(r, c))).collect();
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&[0; 4], &element::measure_lanes(&links)));
-        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, y));
+        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, crate::arc::sample_unplaced(y).ok().as_ref()));
         if let Some(next) = crate::core::lanes::lanes_add(pay, closed) {
             pay = next;
         }

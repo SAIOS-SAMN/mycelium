@@ -65,6 +65,13 @@ impl<'a> Symbol<'a> {
     pub fn width(&self) -> usize {
         self.0.len()
     }
+
+    /// The symbol's bytes, for the two raster ends alone: speech writing a
+    /// sample back, and content written out as an address (A21). Inside
+    /// the crate only; no reader takes them as a number.
+    pub(crate) fn bytes(&self) -> &'a [u8] {
+        self.0
+    }
 }
 
 /// AN AXIS READ OR UNREAD (MU-SENSING §5): an axis of the sample reads its
@@ -190,6 +197,13 @@ impl Sample {
         }
         let from = offset * self.width;
         Ok(Symbol(&self.symbols[from..from + self.width]))
+    }
+
+    /// THE SAMPLE'S SYMBOLS in canonical address order, axis 0 slowest: one
+    /// per site, the order of [`Sample::sites`]. The sensor's one read of
+    /// the raster.
+    pub fn symbols(&self) -> impl Iterator<Item = Symbol<'_>> + '_ {
+        self.symbols.chunks(self.width).map(Symbol)
     }
 
     /// THE SAMPLE'S SITES in canonical address order, axis 0 slowest. Every

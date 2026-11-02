@@ -53,12 +53,13 @@ pub fn routes_of(task: &Task) -> Vec<PairRoute> {
     use crate::transducer::family::transduce::Enclosure;
     let mut out = Vec::with_capacity(task.train.len());
     for (a, b) in &task.train {
-        let (Ok(p), Ok(q)) = (Enclosure::of(a), Enclosure::of(b)) else { continue };
-        if !p.is_same_periods(&q) {
+        let (Ok(x), Ok(y)) = (crate::arc::sample_unplaced(a), crate::arc::sample_unplaced(b)) else { continue };
+        if !Enclosure::of(&x).is_same_periods(&Enclosure::of(&y)) {
             continue;
         }
         let chain = crate::transducer::family::speak::residual_of(Some(a), b);
-        let frame = crate::arc::Frame::new(p.rows, p.cols, q.rows, q.cols);
+        let ([h, w], [h2, w2]) = (crate::arc::extents(a), crate::arc::extents(b));
+        let frame = crate::arc::Frame::new(h, w, h2, w2);
         let Some(residue) = crate::transducer::element::from_residual_framed(&chain, &frame) else {
             continue;
         };

@@ -26,8 +26,8 @@ pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
     use crate::transducer::family::transduce::Enclosure;
     let mut mag = [0u64; 4];
     for (x, y) in train {
-        let (Ok(p), Ok(q)) = (Enclosure::of(x), Enclosure::of(y)) else { continue };
-        if !p.is_same_periods(&q) {
+        let (Ok(a), Ok(b)) = (crate::arc::sample_unplaced(x), crate::arc::sample_unplaced(y)) else { continue };
+        if !Enclosure::of(&a).is_same_periods(&Enclosure::of(&b)) {
             continue;
         }
         let m = crate::transducer::element::measure_lanes(&crate::transducer::family::speak::residual_of(Some(x), y));

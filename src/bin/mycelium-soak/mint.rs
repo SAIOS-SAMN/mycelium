@@ -196,14 +196,21 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             // the output frame where the input's turns land, a share of that
             // frame (78.170 O1) — or the refusal it names, reported as the
             // engine's own reading and not re-derived here.
-            let mut stroke = mycelium::physics::Physics::default().stroke_n(
-                match mycelium::transducer::family::transduce::need_of(x, y) {
+            use mycelium::transducer::family::transduce::{Transduction, TransductionRefusal};
+            let samples = (mycelium::arc::sample_unplaced(x), mycelium::arc::sample_unplaced(y));
+            let mut stroke = mycelium::physics::Physics::default().stroke_n(match &samples {
+                (Ok(a), Ok(b)) => match mycelium::transducer::family::transduce::need_of(a, b) {
                     Some(n) => n,
                     None => 0,
                 },
-            );
-            use mycelium::transducer::family::transduce::Transduction;
-            let record = Transduction::of(x, y, &mut stroke);
+                _ => 0,
+            });
+            let record = match &samples {
+                (Ok(a), Ok(b)) => Transduction::of(a, b, &mut stroke),
+                _ => Err(TransductionRefusal::Empty),
+            };
+            let ground = mycelium::arc::ground_bytes();
+            let ground = mycelium::transducer::sample::Symbol::new(&ground);
             // A grid's width is its rows' common length, and the slice
             // pattern reads the row the shape is stated by without taking
             // a member by position (rule 15).
@@ -223,13 +230,17 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 },
                 match &record {
                     Ok(t) => {
-                        let [s, g] = t.lane_shares();
+                        let [s, g] = t.lane_shares(ground);
                         format!("{} (S {s} G {g})", t.share())
                     }
                     Err(_) => "-".to_string(),
                 },
                 match record.as_ref().map_err(|u| *u).and_then(Transduction::projected) {
-                    Ok(chain) => mycelium::transducer::family::transduce::share_of_frame(measure_lanes(&chain), y).to_string(),
+                    Ok(changes) => mycelium::transducer::family::transduce::share_of_frame(
+                        measure_lanes(&mycelium::arc::links_of(&changes)),
+                        samples.1.as_ref().ok(),
+                    )
+                    .to_string(),
                     Err(u) => format!("{u:?}"),
                 },
             );

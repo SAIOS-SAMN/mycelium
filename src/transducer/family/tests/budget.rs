@@ -186,7 +186,9 @@ fn extraction_spend_includes_transduction_need() {
     };
     let scaled = vec![(grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"]))];
     let frames = perceive_family(&scaled);
-    let need = crate::transducer::family::transduce::need(2, 2, 4, 4).expect("periods stand");
+    use crate::transducer::family::transduce::{need, Enclosure};
+    let periods = |p: Vec<usize>| Enclosure::new(p).expect("periods stand");
+    let need = need(&periods(vec![2, 2]), &periods(vec![4, 4])).expect("periods stand");
     assert_eq!(need, 4 * 4, "R(2, 4) = 2 + 4 − 2 = 4 arcs per circle");
     assert_eq!(extraction_spend(&scaled, &frames), 2 * 2 + 4 * 4 + contacts(&frames) + need);
 

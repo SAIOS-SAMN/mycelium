@@ -77,10 +77,10 @@ pub fn task_address(task: &Task) -> Option<Address> {
     for (a, b) in &task.train {
         let mut pair = Vec::new();
         for g in [a, b] {
-            let Ok(frame) = crate::transducer::family::transduce::Enclosed::of(g) else {
+            let Ok(sample) = crate::arc::sample_unplaced(g) else {
                 return None;
             };
-            frame.put_content(&mut pair);
+            crate::transducer::family::transduce::Enclosed::of(&sample).put_content(&mut pair);
         }
         crate::transducer::address::put_key_bytes(&mut buf, &pair);
     }

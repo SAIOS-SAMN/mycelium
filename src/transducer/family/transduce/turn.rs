@@ -1,9 +1,11 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE TURN AND THE ENCLOSURE: a boundary on one circle of a frame, as an
-//! element of `ℚ/ℤ` held by its index and the period it was read in.
+//! THE TURN AND THE ENCLOSURE: a boundary on one phase of a frame, as an
+//! element of `ℚ/ℤ` held by its index and the period it was read in; and
+//! the frame's `n` phases.
 
 use super::TransductionRefusal;
+use crate::transducer::sample::{AxisReading, Sample};
 use std::cmp::Ordering;
 
 /// A BOUNDARY TURN `index / period` on one circle, `0 ≤ index ≤ period`.
@@ -75,51 +77,88 @@ impl Ord for Turn {
     }
 }
 
-/// THE ENCLOSURE OF A FRAME: the periods of its two circles, rows then
-/// columns. They are the only numbers the lift holds.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// THE ENCLOSURE OF A FRAME: the periods of its `n` phases, one circle of
+/// turns per axis of its sample (MU-SENSING §3.1). They are the only
+/// numbers the lift holds. The axes stand in canonical address order, which
+/// orders them for writing alone: no axis is a role, and none is read
+/// apart from the others (MU-SENSING §3.6).
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Enclosure {
-    pub rows: usize,
-    pub cols: usize,
+    periods: Vec<usize>,
 }
 
 impl Enclosure {
-    /// THE PERIODS A GRID CLAIMS: `Ragged` where its rows disagree (the
-    /// width is read from every row, never one taken by position, rule 15),
-    /// `Empty` where it has no row or no column.
-    pub fn of(g: &crate::transducer::family::perceive::Grid) -> Result<Enclosure, TransductionRefusal> {
-        let mut width: Option<usize> = None;
-        for row in g {
-            match width {
-                None => width = Some(row.len()),
-                Some(n) if n == row.len() => {}
-                Some(_) => return Err(TransductionRefusal::Ragged),
-            }
-        }
-        match width {
-            Some(cols) if cols > 0 => Ok(Enclosure { rows: g.len(), cols }),
-            _ => Err(TransductionRefusal::Empty),
+    /// AN ENCLOSURE OF THE GIVEN PERIODS, or `Empty` where there is no
+    /// phase at all or a phase of period 0 (no site boundary but the seam).
+    pub fn new(periods: Vec<usize>) -> Result<Enclosure, TransductionRefusal> {
+        match periods.is_empty() || periods.contains(&0) {
+            true => Err(TransductionRefusal::Empty),
+            false => Ok(Enclosure { periods }),
         }
     }
 
-    /// Is the re-period from `self` onto `to` the identity (each circle
+    /// THE PERIODS A SAMPLE PRESENTS: one phase per axis, each the axis's
+    /// extent, read through [`Sample::extent`] up to the rank. A sample
+    /// presents at least one axis and no empty one (S0), so every sample
+    /// has its enclosure.
+    pub fn of(sample: &Sample) -> Enclosure {
+        let periods = (0..sample.rank())
+            .filter_map(|axis| match sample.extent(axis) {
+                AxisReading::Read(e) => Some(e),
+                AxisReading::Unread => None,
+            })
+            .collect();
+        Enclosure { periods }
+    }
+
+    /// The count of phases: the sample's rank.
+    pub fn rank(&self) -> usize {
+        self.periods.len()
+    }
+
+    /// The periods, in canonical address order.
+    pub fn periods(&self) -> &[usize] {
+        &self.periods
+    }
+
+    /// The period of phase `axis`, or [`AxisReading::Unread`] past the
+    /// rank: an unread phase has no period, never 0 (MU-SENSING §5).
+    pub fn period(&self, axis: usize) -> AxisReading {
+        match self.periods.get(axis) {
+            Some(&p) => AxisReading::Read(p),
+            None => AxisReading::Unread,
+        }
+    }
+
+    /// THE FRAME'S MEASURE (78.170 O1, at rank `n`): the product of its
+    /// periods, the count of its sites, never a product of two fixed
+    /// extents. `None` past `usize`.
+    pub fn measure(&self) -> Option<usize> {
+        self.periods.iter().try_fold(1usize, |m, &p| m.checked_mul(p))
+    }
+
+    /// Is the re-period from `self` onto `to` the identity (each phase
     /// keeps its period)?
     pub fn is_same_periods(&self, to: &Enclosure) -> bool {
         self == to
     }
 
-    /// THE RE-PERIOD OF EACH CIRCLE from `self` onto `to`, as two exact
-    /// ratios `(h′/h, w′/w)` in lowest terms, `(numerator, denominator)`.
-    /// The turns do not change; only the enclosure does. `None` on a zero
-    /// period.
-    pub fn reperiod(&self, to: &Enclosure) -> Option<((usize, usize), (usize, usize))> {
-        let lowest = |n: usize, d: usize| -> Option<(usize, usize)> {
-            let g = num_integer::gcd(n, d);
-            Some((n.checked_div(g)?, d.checked_div(g)?))
-        };
-        if self.rows == 0 || self.cols == 0 || to.rows == 0 || to.cols == 0 {
+    /// THE RE-PERIOD OF EACH PHASE from `self` onto `to`, one exact ratio
+    /// `p′/p` per axis in lowest terms, `(numerator, denominator)`. The
+    /// turns do not change; only the enclosure does. `None` where the two
+    /// ranks differ: a phase of one frame with none in the other has no
+    /// ratio.
+    pub fn reperiod(&self, to: &Enclosure) -> Option<Vec<(usize, usize)>> {
+        if self.rank() != to.rank() {
             return None;
         }
-        Some((lowest(to.rows, self.rows)?, lowest(to.cols, self.cols)?))
+        self.periods
+            .iter()
+            .zip(&to.periods)
+            .map(|(&p, &q)| {
+                let g = num_integer::gcd(q, p);
+                Some((q.checked_div(g)?, p.checked_div(g)?))
+            })
+            .collect()
     }
 }

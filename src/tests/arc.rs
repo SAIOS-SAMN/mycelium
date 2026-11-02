@@ -83,3 +83,46 @@ fn frame_ratio_totals_over_exact_gcd() {
     assert_eq!(frame_ratio(&Frame::new(0, 0, 0, 0)), ((0, 0), (0, 0)));
     assert_eq!(frame_ratio(&Frame::new(4, 6, 2, 3)), ((1, 2), (1, 2)));
 }
+
+/// TRACK 26, S4 — THE SAMPLE BRIDGE: an ARC grid reaches the transduction
+/// as a sample of rank 2 and width 1 in row-major order, and a spoken
+/// sample returns to the same grid; a ragged grid and an empty one are
+/// refused at intake, never padded.
+#[test]
+fn sample_bridge_reads_grid_as_rank_two_sample() {
+    use crate::transducer::sample::{AxisReading, Place, SampleRefusal};
+    let g: Grid = vec![vec![1, 2, 3], vec![4, 5, 6]];
+    let s = sample_of(&g, Place::new(vec![0])).expect("the grid stands");
+    assert_eq!((s.rank(), s.width(), s.extent(0), s.extent(1)), (2, 1, AxisReading::Read(2), AxisReading::Read(3)));
+    assert_eq!(grid_of(&s), Some(g));
+    assert!(matches!(sample_unplaced(&vec![vec![1, 2], vec![3]]), Err(SampleRefusal::Length { .. })));
+    assert_eq!(sample_unplaced(&Vec::new()), Err(SampleRefusal::EmptyAxis { axis: 0 }));
+}
+
+/// THE BODY-BOUNDARY RECORD READ BACK THROUGH PROJECTION IS TODAY'S δ on
+/// every equal-extent pair of the corpus, read through the bridge: on one
+/// enclosure every turn lands, and the projected record, written back as
+/// planar links, is the planar coboundary link for link.
+#[test]
+fn corpus_pairs_through_bridge_project_to_delta() {
+    use crate::transducer::family::transduce::{need_of, Transduction};
+    let dir = corpus("training");
+    let entries = std::fs::read_dir(&dir).expect("the corpus stands");
+    let mut read = 0usize;
+    for e in entries {
+        let path = e.expect("an entry reads").path();
+        let Some(task) = std::fs::read_to_string(&path).ok().and_then(|s| parse_task(&s)) else { continue };
+        for (x, y) in task.train.iter().chain(task.test.iter().filter(|(_, y)| !y.is_empty())) {
+            if extents(x) != extents(y) {
+                continue;
+            }
+            let (a, b) = (sample_unplaced(x).expect("stands"), sample_unplaced(y).expect("stands"));
+            let need = need_of(&a, &b).expect("one rank");
+            let t = Transduction::of(&a, &b, &mut crate::physics::Physics::default().stroke_n(need)).expect("the need is the stroke");
+            let projected = links_of(&t.projected().expect("one enclosure projects"));
+            assert_eq!(projected, crate::transducer::family::speak::residual_of(Some(x), y), "{}", path.display());
+            read += 1;
+        }
+    }
+    assert!(read > 0, "the corpus held equal-extent pairs");
+}

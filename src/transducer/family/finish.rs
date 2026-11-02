@@ -87,11 +87,12 @@ pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frame
     // A pair of one enclosure visits at most its own sites, already counted
     // above.
     for (a, b) in family {
-        let (Ok(p), Ok(q)) = (super::transduce::Enclosure::of(a), super::transduce::Enclosure::of(b)) else { continue };
+        let (Ok(x), Ok(y)) = (crate::arc::sample_unplaced(a), crate::arc::sample_unplaced(b)) else { continue };
+        let (p, q) = (super::transduce::Enclosure::of(&x), super::transduce::Enclosure::of(&y));
         if p.is_same_periods(&q) {
             continue;
         }
-        let Some(need) = super::transduce::need(p.rows, p.cols, q.rows, q.cols) else { continue };
+        let Some(need) = super::transduce::need(&p, &q) else { continue };
         #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the transduction needs of resident pairs are each a usize (`transduce::need`, checked) and the sum of them cannot pass a 64-bit usize")]
         let next = n.saturating_add(need);
         n = next;

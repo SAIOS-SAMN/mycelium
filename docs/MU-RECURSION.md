@@ -16337,9 +16337,28 @@ The operator's rulings on the entry's open questions, all of 2026-10-31:
 - **O12** — shares on `S^n`, `n ≥ 2`: not in this ruling's work.
 
 Code: `src/transducer/family/transduce/` (`Turn`, `Enclosure`, `Enclosed`,
-`Transduction`, `SignedSwap`, `relation_of`, `TransductionRefusal`);
+`Transduction`, `SignedPermutation`, `relation_of`, `TransductionRefusal`);
 `src/server/registry.rs` (`task_address`); `src/transducer/family/deflation.rs`
 (`unspoken_residue`).
+
+**Amended forward (ROADMAP track 26, S4; MU-SENSING §3.1, §3.6): rank `n`,
+signed permutations.** The transduction takes samples (`transducer::sample`)
+of any rank `n`, never a raster of rows and columns. The enclosure holds `n`
+phases, one period per axis read from the sample's extents; no phase is
+privileged, and the canonical axis order writes addresses and orders the
+reading only. A band (item 2) is an `n`-dimensional box of one symbol,
+compared by equality, and two bands of one symbol are one body where they
+meet through a face of grade `n − 1`. The eight signed swaps of item 3 are
+the rank-2 case of the signed permutations of the `n` phases, the
+hyperoctahedral group of `2ⁿ·n!` elements, generated and never listed;
+`Oblique`, `OffSite`, `Seam`, `Mixed` keep their meaning, and frames of two
+ranks are refused `Rank`. The need is the product over the phases of each
+merge's arcs. O1: S and G are shares of the frame's measure, the product of
+its extents, and the ground is handed to `lane_shares` as a symbol. A cover
+reads its copies per phase. Until S1, an ARC grid reaches the transduction
+through `arc::sample_of` alone, and the projected record returns to planar
+links through `arc::links_of`. A task's content bytes are unchanged for
+rank 2 and width 1, so no task address moves.
 
 ## 80. The planetary dialect: a modified Gödel engine
 

@@ -257,13 +257,14 @@ fn form_deflation_read_on_ground(
         }
         // The residues are read on the output's sites: their share is of
         // the output frame.
-        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, y));
+        let frame = crate::arc::sample_unplaced(y).ok();
+        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, frame.as_ref()));
         if gated {
             // The pair's own work: the links its before side demanded moved
             // (𝒮), the mass the rule's motions carried on it.
             if let Some(m) = pair_mass(x, y) {
                 carried_mass = carried_mass.and_then(|c| c.checked_add(m));
-                mass_share += crate::transducer::family::transduce::share_of_frame([m, 0, 0, 0], y).lane(0);
+                mass_share += crate::transducer::family::transduce::share_of_frame([m, 0, 0, 0], frame.as_ref()).lane(0);
                 let mass = num_rational::BigRational::from_integer(m.into());
                 for (motion, gauge) in &moved {
                     let mut budget = crate::physics::Physics::default().stroke();
@@ -339,20 +340,25 @@ fn form_motions(form: &Form) -> Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)>
 /// under `budget`, sized by `transduce::need_of`.
 pub(crate) fn unspoken_residue(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> Vec<(i64, i64, u8, u8)> {
     use crate::transducer::family::transduce::{Enclosure, Transduction};
-    if let (Ok(p), Ok(q)) = (Enclosure::of(x), Enclosure::of(y)) {
-        if p.is_same_periods(&q) {
-            return residual_of(Some(x), y);
-        }
+    let (Ok(a), Ok(b)) = (crate::arc::sample_unplaced(x), crate::arc::sample_unplaced(y)) else {
+        return residual_of(None, y);
+    };
+    if Enclosure::of(&a).is_same_periods(&Enclosure::of(&b)) {
+        return residual_of(Some(x), y);
     }
-    match Transduction::of(x, y, budget).and_then(|t| t.projected()) {
-        Ok(chain) => chain,
+    match Transduction::of(&a, &b, budget).and_then(|t| t.projected()) {
+        Ok(changes) => crate::arc::links_of(&changes),
         Err(_) => residual_of(None, y),
     }
 }
 
 /// [`unspoken_residue`] under the stroke the pair's own periods need.
 fn before_chain_of(x: &Grid, y: &Grid) -> Vec<(i64, i64, u8, u8)> {
-    let need = match crate::transducer::family::transduce::need_of(x, y) {
+    let need = match (crate::arc::sample_unplaced(x), crate::arc::sample_unplaced(y)) {
+        (Ok(a), Ok(b)) => crate::transducer::family::transduce::need_of(&a, &b),
+        _ => None,
+    };
+    let need = match need {
         Some(n) => n,
         None => 0,
     };
@@ -642,7 +648,10 @@ pub fn declare_unspoken(
         // on one enclosure. Never the input read at the output's indices
         // from a shared corner, which is an arbitrary origin (78.56).
         use crate::transducer::family::transduce::{Enclosed, Enclosure};
-        let image = Enclosure::of(y).and_then(|to| Enclosed::of(x)?.spoken_onto(to)).ok();
+        let image = match (crate::arc::sample_unplaced(x), crate::arc::sample_unplaced(y)) {
+            (Ok(a), Ok(b)) => Enclosed::of(&a).spoken_onto(&Enclosure::of(&b)).ok().and_then(|s| crate::arc::grid_of(&s)),
+            _ => None,
+        };
         let links: Vec<Link> = rem
             .iter()
             .filter(|&&(r, c, spoken, observed)| {
