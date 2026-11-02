@@ -16,6 +16,52 @@ precursor implementations are specified in
 [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) and listed below under
 the tracks they serve.
 
+## Now
+
+This section is the current order of work. It is kept current, not
+appended to: an item leaves when its pull request merges. The numbered
+tracks below say what each piece of work is; this section says which
+pieces come first. Each item is a GitHub issue with its specification,
+its claims and its files. Claim one by commenting on it before starting
+([CONTRIBUTING › How to contribute](CONTRIBUTING.md#how-to-contribute)).
+
+**1. Release in progress: v0.3.0**
+([milestone](https://github.com/SAIOS-SAMN/mycelium/milestone/1)). This is
+the shared contract that Mycelium and the peer kernels pin by git tag. It
+is at `0.3.0-rc.2`. Remaining, in order:
+
+| Item | Issue | State |
+|---|---|---|
+| T2, the transduction core: frames related by the motion between them, μ as a share of the frame | [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) | In progress (maintainers) |
+| T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready after T2 |
+| D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Ready |
+| rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the three above (maintainers) |
+
+**2. Ready to start**
+([milestone `next`](https://github.com/SAIOS-SAMN/mycelium/milestone/2)).
+None of these waits on a ruling:
+
+| Item | Issue | Track | Notes |
+|---|---|---|---|
+| X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | Depends on nothing; the rest of track 25 stands on it |
+| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | The rest of track 24 stands on it |
+| `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | Good first issue |
+| Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Good first issue; after T2 merges |
+
+**3. Waiting on an operator ruling.** Do not start these until the ruling
+is recorded:
+- Concordance draft 4 (the shared laws, and the amendment proposed in
+  MU-CONCORDANCE §11). Track 24's B2 and B3 wait on it.
+- B1: carrying line mouth offers and tier handoff offers in the reserve's
+  act, which amends rulings 78.126 and 78.136.
+- B2: per-clause signatures, a wire change to `ACT_LAWS` mode 8.
+- Proposed names: `NotSignatory`, `AddressOnly`.
+- The open questions of MU-DERIVATIONS §7 and MU-RELEASE §10.
+
+**4. Under investigation:**
+[#14](https://github.com/SAIOS-SAMN/mycelium/issues/14) (an originate act
+unanswered on a long-running mesh). It needs a reproduction.
+
 ## 1. Settlement: the xSEPTUM Note
 
 **Specified** in [`docs/MU-XSEPTUM.md`](docs/MU-XSEPTUM.md). Lands in
@@ -1004,7 +1050,8 @@ Each phase is one commit:
    lifts as turns in ℚ/ℤ. `CommonRefinement`
    (`src/transducer/family/refine.rs`) leaves cognition. It is reachable
    only from the sensor, or removed. This is the v0.3.0 transduction work
-   (CHANGELOG), and X5 lands its guard.
+   ([#25](https://github.com/SAIOS-SAMN/mycelium/issues/25)), and X5
+   lands its guard.
    - Claims: `common_refinement_unreachable_from_cognition`
      (`compile_fail`), `site_lifts_to_turns_of_its_own_periods`,
      `incidences_read_between_boundary_arcs`.
