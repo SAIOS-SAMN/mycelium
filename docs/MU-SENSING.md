@@ -425,6 +425,8 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 | μ as the solid angle a change sweeps | **Awaits a ruling** | §3.7 |
 | The sample as the sensor's only input, of rank `n` | **Built** | `src/transducer/sample.rs` (`Sample`, `Symbol`, `Place`; Track 26, S0) |
 | A corpus's decoder outside `src/` | **Specified** | Track 26, S1 |
+| An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on the branch `transduction-core` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
+| Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
 | Ground, symbol set, axes and gauges deduced | **Specified** | Track 26, S2–S4 |
 | A task on the wire as samples of rank `n` | **Specified** | Track 26, S5 |
 | Perspective as a sensor motion; perspectives as a cover | **Specified** | Track 26, S6 |

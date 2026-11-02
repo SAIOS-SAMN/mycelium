@@ -22,6 +22,7 @@
 
 mod enclosed;
 mod motion;
+mod nest;
 mod record;
 mod refusal;
 mod relation;
@@ -32,6 +33,7 @@ mod tests;
 
 pub use enclosed::{Band, Enclosed};
 pub use motion::{Generated, Sense, SignedPermutation};
+pub use nest::{Factoring, Factorings};
 pub use record::{arcs, family_share, need, need_of, share_of_frame, Incidence, SiteChange, Transduction};
 pub use refusal::TransductionRefusal;
 pub use relation::{relation_of, PairRelation};

@@ -4,6 +4,7 @@
 
 mod enclosed;
 mod motion;
+mod nest;
 mod rank;
 mod record;
 mod relation;

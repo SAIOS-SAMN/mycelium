@@ -31,6 +31,13 @@ such change is named here.
   A task's content bytes (`task_address`) are unchanged at rank 2 and width
   1.
 - **`transducer::sample`** gains `Sample::symbols` (canonical order).
+- **Nesting, the carrier** (`transduce::nest`, MU-SENSING §3.6):
+  `Factoring` (`new`, `nested`, `joined`) maps a site of a phase of period
+  `a · b` onto two nested phases and back, exactly; `Factorings::of(e)`
+  holds every factoring of an extent together, with no choice among them.
+  `TransductionRefusal::Unfactored` names a product that is not the extent.
+  Open: the reading of which factorings a family is invariant under, so no
+  axis is yet taken apart by the transduction.
 
 ### The sample: the sensor's only input, of any rank (ROADMAP track 26, S0)
 - **`transducer::sample`** (new): `Sample` holds its extents (the rank is

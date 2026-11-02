@@ -16358,7 +16358,10 @@ its extents, and the ground is handed to `lane_shares` as a symbol. A cover
 reads its copies per phase. Until S1, an ARC grid reaches the transduction
 through `arc::sample_of` alone, and the projected record returns to planar
 links through `arc::links_of`. A task's content bytes are unchanged for
-rank 2 and width 1, so no task address moves.
+rank 2 and width 1, so no task address moves. O5's sub-enclosures have
+their carrier in `transduce::nest` (an axis of period `a · b` read as two
+nested phases, every factoring held together); the reading of the
+factorings a family is invariant under is open.
 
 ## 80. The planetary dialect: a modified Gödel engine
 

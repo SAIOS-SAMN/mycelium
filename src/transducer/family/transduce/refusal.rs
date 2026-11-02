@@ -29,6 +29,9 @@ pub enum TransductionRefusal {
     /// frame: its image is split across, or merged with, other bodies (O7).
     /// `body` is the body's index in its frame.
     Mixed { body: usize },
+    /// No factoring `extent = coarse · fine` with neither factor 1: the
+    /// phase is not taken apart this way (MU-SENSING §3.6).
+    Unfactored { extent: usize, coarse: usize, fine: usize },
     /// A speech whose sample is refused at writing, named by the sample's
     /// own refusal: a measure past the machine word.
     Sample(crate::transducer::sample::SampleRefusal),
