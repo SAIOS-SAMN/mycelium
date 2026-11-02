@@ -34,6 +34,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 |---|---|---|
 | T2, the transduction core: frames related by the motion between them, μ as a share of the frame | [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) | In progress (maintainers); merges after track 26's S0 and S4, its `Enclosure` holding `n` absorbed circles |
 | Track 26, S0–S5: the sensor for any source at any rank; rows and columns absorbed or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress (maintainers); in v0.3.0's one break. S6 follows v0.3.0. |
+| Track 26, S4a: the circles absorbed into spheres, holonomy as angle excess in turns ([MU-SENSING](docs/MU-SENSING.md) §3.7) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the sphere carrier is to be agreed with the peer kernels, then built with S4 |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready after T2 |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Ready |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the three above (maintainers) |
@@ -57,6 +58,9 @@ is recorded:
   act, which amends rulings 78.126 and 78.136.
 - B2: per-clause signatures, a wire change to `ACT_LAWS` mode 8.
 - Proposed names: `NotSignatory`, `AddressOnly`.
+- μ measured as the solid angle a change sweeps on the base sphere, in
+  place of a share of the frame's sites (MU-SENSING §3.7). It changes what
+  is paid, so it is not in v0.3.0 unless ruled.
 - The open questions of MU-DERIVATIONS §7 and MU-RELEASE §10.
 
 **4. Under investigation:**
@@ -1125,6 +1129,24 @@ Each phase is one commit:
      `no_axis_is_privileged` (the percept is invariant under a
      relabelling of the axes), and
      `axis_taken_apart_only_where_family_invariant`.
+   **S4a, the circles absorbed into spheres** (MU-SENSING §3.7; in the
+   same commit series as S4, after the sphere carrier is agreed with the
+   peer kernels):
+   - The `Enclosure`'s `n` phases are held projectively as the Clifford
+     torus in `S^{2n−1}`, with the scale a gauge. There is no unit norm and
+     no sum of squares.
+   - A Hopf-type projection reads the base sphere, with the circles as
+     fibres. A nested axis adds a level of the tower.
+   - The holonomy of a loop of perception is its angle excess in turns,
+     an exact element of ℚ/ℤ. Motions by rational turns are exact over
+     `ℚ(ζ_ℓ)`.
+   - One sphere carrier serves perception and the physics' shells
+     (MU-TOPOLOGY §6, Concordance 2.10; the `Sphere{n, R}` carriers of
+     MU-RECURSION D4).
+   - Claims: `torus_absorbed_without_unit_norm`,
+     `loop_holonomy_is_angle_excess_in_turns`,
+     `flat_product_reads_no_holonomy_where_sphere_reads_it`,
+     `rotation_by_rational_turn_exact_over_cyclotomic_field`.
 6. **S5, samples on the wire.**
    - A task carries samples of rank `n`: `n`, the extents, then the
      symbols at their width.
@@ -1136,6 +1158,10 @@ Each phase is one commit:
    MU-CLIENT 24.4. A mind may ask for a perspective as a demand.
    - Claim: `perspective_shift_is_a_sensor_motion`.
 
-Depends on: the operator's ruling on the order relative to v0.3.0
-(ROADMAP › Now). It serves track 25 (X5, the transduction's guard), T3 (the
-turn-native chart reads samples) and the reference mind (track 10).
+Order (ruled 2026-11-02): S0–S5 land in v0.3.0's one break, and T2
+merges after S0 and S4. S4a follows the sphere carrier's agreement with
+the peer kernels, and S6 follows v0.3.0. Depends on the peer kernels for
+S4a's carrier (Concordance 2.10's nested shells and the same `Sⁿ`). It
+serves track 25 (X5, the transduction's guard), T3 (the turn-native chart
+reads samples on the base sphere), track 19 (the general conformal
+algebra) and the reference mind (track 10).
