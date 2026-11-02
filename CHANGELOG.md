@@ -6,6 +6,24 @@ such change is named here.
 
 ## Unreleased
 
+### Sensing any source at any rank (specification, ruled 2026-11-02)
+- **`docs/MU-SENSING.md`** (new) states the path from source to
+  perception. A source decodes to a **sample** (rank `n`, extents, symbols,
+  the sample's place in its family). The sensor lifts each axis into a
+  circle of turns of its own period and deduces the connection, the
+  symbols' meaning, the ground and every gauge. A perspective is a sensor
+  motion. A mind holds a lower-dimensional section and every unread
+  dimension as unread. The hypha holds tasks as families of samples and
+  knows no source. A source's decoder lives with its owner, outside
+  `src/`.
+- **The defect** [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32)
+  and **ROADMAP track 26** (S0–S6) cover `src/arc.rs`, the fixed palette,
+  the ground of `0`, the fixed axes and the wire's `u16 × u16` cells. Its
+  order relative to v0.3.0 awaits a ruling (ROADMAP › Now).
+- GLOSSARY (Task, Body and Gauge generalised; Sample, Perspective, Ground,
+  Unread dimension), MU-ANTI-FLATTENING clause 8, AGENTS.md and the README
+  follow.
+
 ### Where to start (documentation)
 - **ROADMAP › Now:** the current order of work, kept current rather than
   appended to. It lists the release in progress (v0.3.0: T2 #25, T3 #26,

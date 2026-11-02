@@ -110,7 +110,11 @@ senses that kernel builds for it.
 
 | Term | Meaning |
 |---|---|
-| **Task** | A unit of useful work: an ARC-AGI-2 problem of train pairs and test inputs. The court keeps the test outputs. |
+| **Task** | A unit of useful work: a family of samples a house posts, each pair an input and an output, with test inputs. The court keeps the test outputs. ARC-AGI-2 is one source of tasks (MU-SENSING §6–§7). |
+| **Sample** | **Specified.** What a source hands the sensor: a rank `n`, an extent per axis, a symbol per site, and the sample's place in its family. The sensor's only input; a raster only at intake and at speech (MU-SENSING §2). |
+| **Perspective** | **Specified.** The sensor's assignment of a sample's axes to roles (space, sequence, value). A shift of perspective is a motion of the sensor, never a rewrite of the data; several perspectives of one sample are a cover (MU-SENSING §4). |
+| **Ground (Ω)** | **Specified.** The symbol a family's relations show as ambient, the one the bodies stand on; deduced, never a fixed code, with candidates held in superposition until a relation distinguishes them (MU-SENSING §3.4). |
+| **Unread dimension** | **Specified.** A dimension of the world a section does not read. It carries no value, neither zero nor an invented coordinate (MU-SENSING §5). |
 | **Task citation** | A task's 32-byte name on every wire act. |
 | **Family** | A task's train pairs, read together. A rule is extracted from its family. |
 | **Rule** | A sentence stating how a family's inputs become its outputs. It is minted as an element the court can reconstruct (evaluate on withheld pairs). |
@@ -163,10 +167,10 @@ senses that kernel builds for it.
 | **Word** | A product of letters. A word is a vertex whose meaning is its versor. |
 | **Sentence / form** | A structure of words: vertices, faces and rings, glued along shared overlaps. A rule is a sentence. |
 | **Chart** | The exact invariant coordinates a body of a scene stands on (its shape class), coarsest first. |
-| **Body** | A connected region of a grid perceived as one object, with its cells and hues. |
+| **Body** | A region of a sensed section that stays connected under the contact the sample shows, perceived as one object and held by its boundary (MU-SENSING §3.2). |
 | **Rule element** | A rule's geometric content (`rule_element.rs`): a **carriage**, a 2-chain, a join, a stamp or a frame operation. |
 | **Carriage** | A versor applied to selected bodies, once or iterated to a contact. The source is cleared, kept or swept, and the landed cells are painted and gauge-mapped. |
-| **Gauge** | A permutation of hues, applied exactly. |
+| **Gauge** | A transformation that leaves a family's relations invariant, applied exactly: a permutation of symbols, or a re-period of a circle. Every gauge is read off the samples, never fixed (MU-SENSING §3.3, §3.5). |
 | **Gloss / clause** | The English name of an element that has one (*slide*, *fill*, *echo*). The element is what goes on the wire, and the clause is its translation. |
 | **Holonomy** | The composite of a circuit around a ring. A ring's holonomy is its content and is never discarded (`docs/MU-ANTI-FLATTENING.md`). |
 | **Orbit** | A return: a mode's flow on its plane, composed exactly, returning where its point is the identity (MU-RECURSION §0.0); the motion of a mind, a court or a provisional word under the physics, as a thought's motion about its attractor, where a held (precessing) orbit is a settled thought (§0.7). A node's `K` is a ledger coordinate, never an orbit. The code's `Orbit` type holds a ring, a form's closed cycle. |
