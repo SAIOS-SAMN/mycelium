@@ -753,6 +753,90 @@ against the signed chain, and the boundary then holds at every hypha. A
 home court is ruled out, and no kernel is asked to address a particular
 hypha.
 
+### 5a.10 What crosses: the exact object, never its digest
+
+**Specified** (the operator's ruling of 2026-11-02; ROADMAP track 25).
+A connection between a universe's cones and the hypha's is transduced: it
+carries the object and the motion that carries one state onto the next.
+A digest has no algebra. It cannot be composed, inverted or transported.
+It erases the holonomy a ring carries, and comparing two digests answers
+only same or not same. So a digest locates and binds at the vertex, but
+never admits.
+
+**What a crossing carries.** Each act that crosses the universal core tube
+carries four parts:
+
+| Part | What | Why the hypha needs it |
+|---|---|---|
+| Place | The event's TUniversal coordinates and its past cone (what it cites) | Where the event stands in the cones (§5a.5) |
+| Content | The exact object: each body held by its boundary (turn breakpoints per circle, extent as a share of the frame) and the motion from the state before to the state after, as a versor of Cl(4,1)(ℚ), or as a pair of turns in ℚ/ℤ where no exact versor exists (Niven) | What is reconstructed |
+| Holonomy | Each ring the crossing closes, with its exact holonomy (§5a.3) | Curvature is content: a route's meaning |
+| Clauses | The clauses the act is read under, and the signatures (§5a.4) | Which laws the reconstruction applies |
+
+**Admission is reconstruction.** The hypha reconstructs the object from
+the place, the content and the holonomy under the shared clauses. It
+admits the crossing only on reaching the same exact object
+([MU-SCIENCE §5.0](MU-SCIENCE.md#50-reconstruction)). A crossing that
+carries only digests where the object belongs is refused **`AddressOnly`**
+(proposed name). The hypha may instead fetch the object by its address and
+reconstruct it.
+
+**The three senses of a digest.** A digest at the vertex has exactly
+three senses, and each permits one comparison:
+
+| Sense | Use | What equality may decide |
+|---|---|---|
+| **Address** | Locates coordinates held losslessly elsewhere: a fetch key or an index entry | Where the object is; never that it is admitted |
+| **Link** | A receipt chain's order: a record names its predecessor's digest | That the chain is unbroken. Each record's content is reconstructed separately (as `rederives` does). |
+| **Commitment** | Bytes a party signs: a signature's message, the Concordance text, a clause | That a reconstructed object is the one committed to, after it has been reconstructed and never instead |
+
+Admitting an object because a digest it carries (a state hash, a root or
+a head) equals one already held, without reconstructing the object, is
+the defect this section refuses.
+
+**A disagreement is a residue, never a boolean.** When the reconstructed
+object differs from the claim, the hypha reads the difference
+algebraically and holds it with the crossing:
+- **Motion:** the claimed versor composed with the reverse of the
+  reconstructed one, `M̃_rec · M_claim`. It is the identity exactly when
+  the two motions agree, and otherwise is a motion of its own, read by
+  its modes. For a turn, the residue is `t_claim − t_rec` in ℚ/ℤ.
+- **Bodies:** the boundary breakpoints that differ, named per circle,
+  with the share of the frame they bound.
+- **Holonomy:** each ring whose holonomy differs, with both values.
+
+The residue is never a scalar distance or a flag. It reads as one of the
+reconstruction events (§5a.7, MU-SCIENCE §5.0):
+- **Collapse:** the crossing is admitted with an identity residue.
+- **Converse:** two hyphae reconstruct the same object from different
+  evidence, and the residue between them is the identity.
+- **Collision:** two crossings claim one structure, and the residue
+  between them is not the identity. Both are held and resolved by
+  content.
+
+**Cost.** The hypha reconstructs only crossings at the vertex, never a
+universe's inner steps (§5a.2). Each body is held by its boundary, so a
+crossing costs in proportion to its boundary, not its interior. The cost
+across a multi-host mesh has not been measured. It is a live reading
+proposed with the boundary reading (B4).
+
+**Status:**
+
+| Item | Status | Where |
+|---|---|---|
+| Receipt chain links compared by digest, each record reconstructed (`rederives`) | **Built** | `src/chronometry/chain/mod.rs` |
+| A domain's stratum root recomputed from its members before comparison | **Built** | `src/server/cognition/court/glue.rs` |
+| The Concordance text's digest served and signatures verified over it | **Built** | `build.rs`, `ACT_LAWS` modes 6–8 |
+| Digests typed by sense (`Address`, `Link`, `Commitment`), with no bare equality | **Specified** | Track 25, X0 |
+| Admission taking only a reconstructed object (`Reconstructed<T>`) | **Specified** | Track 25, X0 |
+| The crossing record (place, content, holonomy, clauses) in the SDK and on the wire | **Specified** | Track 25, X1 (with B3) |
+| `AddressOnly`; the residue held with a refused or collided crossing | **Specified** | Track 25, X2–X3 |
+| Every site that admits on a digest alone, found and moved to reconstruction | **Specified** | Track 25, X4 |
+
+The guards that keep this from drifting back (typed digests, admission by
+a reconstructed type, transduction past the sensor) are
+[MU-ANTI-FLATTENING](MU-ANTI-FLATTENING.md) clauses 12–14.
+
 ---
 
 ## 6. Draw: how universes attract agents (economics)

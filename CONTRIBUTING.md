@@ -115,6 +115,14 @@ essentials:
   to every newly generated file.
 - A file's header names what the file is in the specification's terms.
 
+**AI coding agents**
+- A contribution made with an AI coding agent follows
+  [AGENTS.md](AGENTS.md). It lists the regressions that recur (a common
+  grid in place of transduction, a digest in place of reconstruction,
+  replay in place of reconstruction) and the structure that replaces each
+  ([`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) clauses
+  12–14).
+
 **Commits**
 - One phase per commit.
 - The first line states the change as a claim.

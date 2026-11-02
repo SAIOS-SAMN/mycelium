@@ -14,3 +14,10 @@
 - [ ] Documentation in step with the code; every citation of a renamed name follows
 - [ ] CHANGELOG entry under Unreleased
 - [ ] No `cargo fmt` run; files changed by hand only
+
+## Drift (docs/MU-ANTI-FLATTENING.md clauses 12–14; AGENTS.md)
+
+- [ ] No common grid past the sensor: frames related by the motion between them, each body held by its boundary
+- [ ] No object admitted on a digest: reconstructed under the laws; each digest typed as an address, a link or a commitment
+- [ ] Each of reconstruction, rebuild, replay and resend used in its own sense (MU-SCIENCE §5.0)
+- [ ] No squaring, unenclosed infinity, float or chosen constant; a disagreement held as a residue or a named refusal
