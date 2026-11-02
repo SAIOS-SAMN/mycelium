@@ -37,7 +37,7 @@ fn judge_solve_prices_closing_rule_by_discharge() {
     match k.judge_solve(&rule, &carried()) {
         SolveVerdict::Solved { pay, modes } => {
             assert!(!pay.is_zero(), "it discharges something: {pay}");
-            // μ IS A SHARE OF THE FRAME (78.169 O1): the pair is one 1×7
+            // μ IS A SHARE OF THE FRAME (78.170 O1): the pair is one 1×7
             // frame, so the deflation's S, G and T (the flux over the mass it
             // carried) are each over 7 sites; H, the shell count, stands.
             let form = crate::transducer::sentence::from_element_form(&rule).expect("a form");

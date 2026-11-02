@@ -194,7 +194,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             // stroke its periods need — incidences, the share of the frame
             // it changes per lane (S, G), and the μ of its projection onto
             // the output frame where the input's turns land, a share of that
-            // frame (78.169 O1) — or the refusal it names, reported as the
+            // frame (78.170 O1) — or the refusal it names, reported as the
             // engine's own reading and not re-derived here.
             let mut stroke = mycelium::physics::Physics::default().stroke_n(
                 match mycelium::transducer::family::transduce::need_of(x, y) {

@@ -105,7 +105,7 @@ a family's effects by 78.167 (§2.2). The road's parts:
   ties included (Concordance 1.10: developer standards bind developers,
   not minds).
 
-It changes the form language and the judge's replay (a court change).
+It changes the form language and the judge's reconstruction (a court change).
 Observed on one reader over 40 training tasks: about 15% of ARC-AGI-2
 families need a comparison. Then: (1) the language can state the rule;
 (2) composition over it; (3) learning that grows it (admitted words),
@@ -248,7 +248,7 @@ The pipeline:
    constructs it (`construct_solve`, the same file, which calls `mint_sentence_why`
    in `src/transducer/family/deflation.rs`). Before it is sent, `judge_on`
    (`src/client/sdk/entity/perceive.rs`) strips the overlaps between
-   different frames (`crossing` in `src/client/sdk/rule.rs`) and replays
+   different frames (`crossing` in `src/client/sdk/rule.rs`) and reconstructs
    the rule blind on the training pairs by the judge's own steps
    (`would_judge_with`, the same file). A rule that passes that home check
    is submitted by `admit_verdict` (`src/client/sdk/entity/perceive.rs`)
@@ -315,12 +315,12 @@ rule 4 still binds extraction (the engine does not search by ranking
 candidates); a tie the rule's order does not name is held whole or
 refused, never broken silently; and the coordinate is measured and exact,
 never a μ lane. The clauses are a coordinate of the form's address, which
-the court decodes, speaks on every pair it replays, and judges by
+the court decodes, speaks on every pair it reconstructs, and judges by
 closure.
 
 ### 2.3 The refusal kinds (`transducer/sentence/obstruction.rs`)
 
-| kind | meaning | in a grid rule replayed on withheld pairs | produced by |
+| kind | meaning | in a grid rule reconstructed on withheld pairs | produced by |
 |---|---|---|---|
 | **P** | no versor relates what the closure asks | — | — |
 | **D** dialect-relative | a versor exists, this dialect does not spell it | the motion exists but this mind's alphabet or cover cannot say it | `REFUSE_GLUED_UNRULED`, unspellable vertex/edge versors |
@@ -331,7 +331,7 @@ closure.
 **A defect found by reading (not yet reproduced):** any rule whose shape
 class spans two or more training pairs carries frame-axis motor faces
 naming training frame indices; a withheld family of one test pair has no
-such index, so the judge refuses I, while the client's own blind replay on
+such index, so the judge refuses I, while the client's own blind reconstruction on
 the training pairs passes. Specified: a test that reproduces it, then the fix
 (motor faces are not part of a rule that crosses to unseen pairs).
 
@@ -363,7 +363,7 @@ An empty client kernel (§1.4) fills the same way.
 Anastome is the shared language the courts adjudicate (Concordance
 4.3–4.4). Its payloads are exact geometric objects, never English text,
 and every composed word carries the steps that built it, so a court can
-rebuild it. Today the courts admit letters and words; admitted sentences
+reconstruct it. Today the courts admit letters and words; admitted sentences
 are still mostly single words. Its seventeen letters were restored from an
 earlier project, ipsal-autic ([`MU-ALPHABET.md`](MU-ALPHABET.md)).
 

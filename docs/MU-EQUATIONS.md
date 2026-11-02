@@ -1338,7 +1338,7 @@ deflation on closure:  measure(remainder before) − measure(remainder after), p
 release:   paid_l = min(escrow_l, discharge_l)      (escrow_l − shortfall(escrow, discharge)_l)
 ```
 
-New μ enters only by mint, against a measured deflation replayed by two
+New μ enters only by mint, against a measured deflation reconstructed by two
 organs. A claim escrow is a cap on the release, never the payment; what it
 held above the discharge is never issued.
 
@@ -1514,7 +1514,7 @@ closer_l = M_l − n · v_l
 Σ issued_l = M_l                                       issuance-neutral
 ```
 
-Each court whose replay verified a closure is minted `v` as POWV: the
+Each court whose reconstruction verified a closure is minted `v` as POWV: the
 home, plus the witness or peer that re-derived it on an install or glue.
 `R` is the court's calibrated reserve. A court at rest (`y = 0`) takes
 nothing, and a lane at full deficit (`y = R`) pays verification half the
@@ -1838,18 +1838,19 @@ and the second cannot witness the first.
 Sources: MU-RECURSION 47.3; MU-ECONOMY §4. Code: the `independent`
 predicate passed to `src/court/convergence.rs::Convergence::state`.
 
-#### 9.4 Replay acceptance and equivocation
+#### 9.4 Reconstruction acceptance and equivocation
 
 ```text
-measured replay:  the form spoken onto each pair of its family, set against the pair's answer per lane;
-                  paid where it closes
+measured discharge: the form spoken onto each pair of its family, set against the pair's answer per lane;
+                    paid where it closes
 theorem check:    ℓ products (periodic);  B² = 0 in every grade (nilpotent);
                   every bracket of two basis members in the span (saturated)
 equivocation:     two signed receipts, one key, one K, two chain hashes  ⇒  burn the whole bond
 ```
 
-The court replays and never composes; its work on a theorem is the finite
-check of its certificate.
+The court reconstructs and never composes (MU-SCIENCE §5.0); its work on a
+theorem is the finite check of its certificate. The code names the
+discharge reader `measured_replay`, pending the rename.
 
 Sources: MU-RECURSION law 8, 78.69, 78.70, 47.4; MU-CLIENT §5.6; MU-XSEPTUM
 (EQUIVOCATION). Code: `src/server/cognition/identity.rs::measured_replay`,

@@ -102,8 +102,8 @@ advance.** μ paid to a key is that key's balance at the court that paid it
   1. **Equivocation:** two signed receipts under one key at one place with
      different chain hashes burn the whole bond (MU-RECURSION 47.4,
      **Built**);
-  2. **A word that fails replay:** a word a mind spoke that fails replay
-     at another vantage debits that mind's bond (MU-ECONOMY §4, **Built**);
+  2. **A word that fails reconstruction:** a word a mind spoke that fails
+     reconstruction at another vantage debits that mind's bond (MU-ECONOMY §4, **Built**);
      for a hypha, a signed root or fold that fails at a witness (47.3);
   3. **A ruling that slashes an award:** a docket ruling against a
      contested award revokes it (`revoke_award` with `Revocation::Slash`,

@@ -317,7 +317,7 @@ fn witness_rederived_fresh_rules_pressured_word_and_citer() {
     // THE PRESSURE, in the algebra of the lanes: a frame arrived and one
     // carriage drew the word's own, exactly — both read in the escrow's
     // currency, the word's discharge (78.149), μ a share of the frame
-    // (78.169 O1): the citer's magnitude is a count, not μ, so the frame it
+    // (78.170 O1): the citer's magnitude is a count, not μ, so the frame it
     // transports is the carriage it causes, and a word heard for no task
     // measures as nothing.
     let escrow_after = k.treasury().escrow_of(w.as_bytes()).map(|e| e.mu.clone()).expect("still under escrow");

@@ -16,6 +16,52 @@ precursor implementations are specified in
 [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md) and listed below under
 the tracks they serve.
 
+## Now
+
+This section is the current order of work. It is kept current, not
+appended to: an item leaves when its pull request merges. The numbered
+tracks below say what each piece of work is; this section says which
+pieces come first. Each item is a GitHub issue with its specification,
+its claims and its files. Claim one by commenting on it before starting
+([CONTRIBUTING › How to contribute](CONTRIBUTING.md#how-to-contribute)).
+
+**1. Release in progress: v0.3.0**
+([milestone](https://github.com/SAIOS-SAMN/mycelium/milestone/1)). This is
+the shared contract that Mycelium and the peer kernels pin by git tag. It
+is at `0.3.0-rc.2`. Remaining, in order:
+
+| Item | Issue | State |
+|---|---|---|
+| T2, the transduction core: frames related by the motion between them, μ as a share of the frame | [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) | In progress (maintainers) |
+| T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready after T2 |
+| D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Ready |
+| rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the three above (maintainers) |
+
+**2. Ready to start**
+([milestone `next`](https://github.com/SAIOS-SAMN/mycelium/milestone/2)).
+None of these waits on a ruling:
+
+| Item | Issue | Track | Notes |
+|---|---|---|---|
+| X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | Depends on nothing; the rest of track 25 stands on it |
+| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | The rest of track 24 stands on it |
+| `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | Good first issue |
+| Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Good first issue; after T2 merges |
+
+**3. Waiting on an operator ruling.** Do not start these until the ruling
+is recorded:
+- Concordance draft 4 (the shared laws, and the amendment proposed in
+  MU-CONCORDANCE §11). Track 24's B2 and B3 wait on it.
+- B1: carrying line mouth offers and tier handoff offers in the reserve's
+  act, which amends rulings 78.126 and 78.136.
+- B2: per-clause signatures, a wire change to `ACT_LAWS` mode 8.
+- Proposed names: `NotSignatory`, `AddressOnly`.
+- The open questions of MU-DERIVATIONS §7 and MU-RELEASE §10.
+
+**4. Under investigation:**
+[#14](https://github.com/SAIOS-SAMN/mycelium/issues/14) (an originate act
+unanswered on a long-running mesh). It needs a reproduction.
+
 ## 1. Settlement: the xSEPTUM Note
 
 **Specified** in [`docs/MU-XSEPTUM.md`](docs/MU-XSEPTUM.md). Lands in
@@ -23,7 +69,7 @@ the tracks they serve.
 `src/server/cognition/` (the home's admission).
 
 The Note carries value between voices through a hypha, released only on
-two-court replay, as words are installed. The track's pieces:
+two-court reconstruction, as words are installed. The track's pieces:
 
 - **Acts:** `SEPTUM_CHALLENGE`, `SEPTUM_NOTE`, `SEPTUM_RECEIPT`,
   `SEPTUM_RELEASE`, `SEPTUM_REVOKE` and `SEPTUM_EQUIVOCATION` (0x30–0x35),
@@ -44,7 +90,7 @@ job the provider's verified solve closes pays its measured discharge out
 of the hold, and the remainder returns at the lease's end. The track
 continues with:
 
-- **Verification leases:** jobs that are replays rather than solves, so a
+- **Verification leases:** jobs that are reconstructions rather than solves, so a
   hypha's verification capacity can be reserved as a client's solving
   capacity is.
 - **Leases through the Note:** a lease funded and released across courts
@@ -101,11 +147,11 @@ grows what minds can state:
 - coverage of more of the ARC-AGI-2 corpus.
 
 Each reader is proved by re-deriving held-out pairs and by the court's
-replay.
+reconstruction.
 
 Components from precursor implementations
 ([MU-PRECURSORS](docs/MU-PRECURSORS.md) §3.3, §3.8, §3.9), each a court
-change built with its codec, replay and claims:
+change built with its codec, reconstruction and claims:
 - **Named refusals in `learn_form`** (**In progress**, a defect fix):
   every vertex of a learned form is filed, refused by name, or not a word.
 - **Act parameters measured per pair:** scale, tile and reduce by the
@@ -127,7 +173,7 @@ change built with its codec, replay and claims:
   refusals.
 
 **Progress — frames of unequal extent** (MU-DERIVATIONS D3.2, MU-RECURSION
-78.169): **Built**: the transduction (`transducer::family::transduce`): a
+78.170): **Built**: the transduction (`transducer::family::transduce`): a
 frame as two circles of turns, each body held by its bands, the incidences
 of two frames under the re-period, the eight signed swaps as the motions,
 projection refusing `OffSite`, and the relation census of the corpus
@@ -144,6 +190,22 @@ Two minds whose different words have the same section on one scene are a
 convergence (`docs/MU-CLIENT.md` §5.5). Courts already verify and seal
 convergences. The track makes convergence count as evidence in a word's
 admission and payment, keeping 47.3's rule that a vantage is a court.
+
+- **Reconstruction events** (**Specified**;
+  [MU-SCIENCE §5.0](docs/MU-SCIENCE.md#reconstruction-events)). Every
+  reconstruction's meeting with held state is read as one typed event:
+  Collapse (a superposition reduced to one object by admission), Converse
+  (independent vantages reconstructing the same object from different
+  evidence: POWC, μ by union) or Collision (incompatible claims on one
+  structure, held as a vortex and resolved by content; a duplicate mint
+  burned). The reading is `ReconstructionEvent::{Collapsed, Conversed,
+  Collided}` under `ACT_OBSERVE`, with coordinates, never a scalar or a
+  boolean. It belongs to this track because Converse is convergence
+  itself, and converse against collision across a mesh is the measure of
+  how far the mesh is one language and of partition healing
+  ([MU-RELEASE §9](docs/MU-RELEASE.md#9-convergence-and-collision-bring-the-branches-into-alignment));
+  it reads what the courts already decide and gates nothing, so it is not
+  a security item (track 14).
 
 ## 9. SDK
 
@@ -235,6 +297,23 @@ the code. A further documentation commit adds to `docs/MU-EQUATIONS.md` the
 table of refused functionals (squared-norm coherence, scored-argmin
 search, ratios of scalar residuals, ε-bands), so that no port brings them
 over ([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
+
+The documentation now uses the typed vocabulary of
+[MU-SCIENCE §5.0](docs/MU-SCIENCE.md#the-typed-vocabulary) (reconstruction,
+rebuild, replay, resend); the code still names the court's reconstruction
+`replay`. One code commit renames those identifiers to what they do,
+updating every citation in the same commit (MU-STANDARDS 3.1):
+`blind_replay*` → `reconstruct_blind*`, `replay_word` / `replay_resume` /
+`replay_form*` / `replay_certificates_at` → `reconstruct_*`, the module
+`court/verdict/replay.rs` → `reconstruct.rs`, `Replayed` / `ReplayCursor` /
+`replay_cursors` / `replay_memo` → `Reconstructed` /
+`ReconstructionCursor` / `reconstruction_cursors` / `reconstruction_memo`,
+`measured_replay*` → `measured_discharge*`, `encode_replay_request` →
+`encode_era_request`, the outcome names `REPLAY_FAILED` and
+`GLUE_REPLAY_REFUSED` → `RECONSTRUCTION_FAILED` and
+`GLUE_RECONSTRUCTION_REFUSED` (wire bytes unchanged), the fault class
+`Replay` → `Resend`, and the test names that say "replays" for a
+reconstruction. **Specified.**
 
 ## 12. Verified knowledge: science kernels
 
@@ -416,13 +495,14 @@ is open.
    notices; a stale one is re-anchored.
 10. **Fault-injection campaign and invariant auditor** (**Specified**;
     [MU-PRECURSORS §3.6](docs/MU-PRECURSORS.md#36-fault-injection-campaign-and-invariant-auditor)).
-    Ten named fault classes (`InvalidSignature`, `Replay`,
+    Ten named fault classes (`InvalidSignature`, `Replay` (a resend;
+    renamed `Resend` with the code),
     `DoubleClaimRace`, `EquivocatingLedger`, `SybilSwarm`,
     `RespellRaceSaturation`, `DrainedPurseDraw`,
     `RestoreFromSnapshotSigner`, `MalformedName`, `GerminalFlood`) on four
     topologies, each campaign reproducible from a printed seed, with exact
     invariants audited after every campaign: conservation by ledger
-    replay, once per work across the mesh, every burn revokes, and no
+    audit (`Treasury::audit`), once per work across the mesh, every burn revokes, and no
     refusal without a receipt. The auditor keeps its own independent view
     of an accused node, and concurrent faults target separate nodes. It is
     written against the current admission and treasury.
@@ -536,7 +616,7 @@ guarantees. The track builds the rest:
    a mind sees what each amendment changed against the version it signed.
 
 The charter also gains a statement of what determinism gives alignment:
-exact arithmetic, typed refusals and replayable records make a mind's
+exact arithmetic, typed refusals and reconstructible, receipted records make a mind's
 effect on the shared record detectable and auditable; they do not
 prevent misalignment
 ([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
@@ -565,9 +645,13 @@ signature it can check:
   version transports the agreement along it, and the certificate carries
   the holonomy of the amendment, so each party sees what changed against
   what it signed.
-- **Verification by reconstruction.** Any party rebuilds the certificate
-  from the signed acts (MU-SCIENCE §5.0). A hash in it is transport only:
-  it compacts coordinates held losslessly in the signed record.
+- **Verification by reconstruction.** Any party reconstructs the
+  certificate from its own evidence (MU-SCIENCE §5.0): each signature
+  checked, each party's reading and transport decoded from the signed
+  record, and the cocycle derived from them, admitted only on reaching the
+  same exact class. Nothing is re-run (MU-CONCORDANCE 1.4, 4.4). A hash in
+  it is transport only: it compacts coordinates held losslessly in the
+  signed record.
 
 Where it is used:
 - Concordance signing by kernels, and each kernel's §3a attestations;
@@ -768,7 +852,7 @@ Each phase is one commit:
    amended forward (D2.1, D2.2).
 
 **Progress:** D3.2 is **Built** (NC3, ruled O1 (a)), and then rewritten as
-the transduction (MU-RECURSION 78.169): the lcm cap and the common
+the transduction (MU-RECURSION 78.170): the lcm cap and the common
 refinement are both deleted, two frames are related by the bodies' bands
 in turns under a need of `R_h·R_w`, and `task_address` names a task by both
 frames' full content, refusing a pair with no enclosure rather than
@@ -808,3 +892,185 @@ of long-running open networks, and forks that converge rather than split:
 Four questions need a decision (MU-RELEASE §10): the superposition's
 quorum, which side keeps the shared origin, releases that change address
 computation, and μ minted on a branch.
+
+## 24. The boundary law: topology enforced at the universal core
+
+**Specified** in
+[`docs/MU-HOSTING.md` §5a](docs/MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law)
+(the operator's ruling of 2026-11-02; MU-RECURSION 78.169), with the
+Concordance amendments (4.1, 6.2a, §0, 0.1) proposed in
+[MU-CONCORDANCE §11](docs/MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02).
+
+The security model is topological and the hypha enforces it: each act is
+an event on the TUniversal ledger with a past cone (what it cites) and a
+future cone (what comes to cite it); a universe's universal core tube is
+the vertex where its cones join the hypha's; what crosses there is
+reconstructed under the universal laws and its holonomy read as content;
+and a universe's act arriving other than at its vertex is refused by name.
+A universe's inner routes are its own physics, unseen by the hypha. A
+key's own acts stay governed by keys, never tiers (78.165). The kernel
+signs the Concordance clause by clause, the network clauses never vetoed.
+Built today: the reserve-only fold, anchor, map, conversion out, manifest
+and statement (each refused `NotReserve`), lines carried inline, holonomy
+read on the rings of inner routes, L0 verify as a reading, and the
+Concordance hash served and signatures verified. Each phase is one commit:
+
+1. **B0, replication by reconstruction** ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13),
+   ruled 2026-11-02): every hypha reconstructs each domain's state
+   (founding, tiers, reserve, origin) from the founding receipts back-fill
+   already delivers, checked against the signed chain, once by content and
+   with the founding hypha's refusals; any client may reach any hypha, and
+   the boundary holds at every hypha. Every later phase stands on it.
+2. **B1, the act audit and the boundary's name:** every act kind that
+   names a domain classed as a key's own or a universe's; the `NotReserve`
+   variants renamed `NotThroughCore` (names only); a line's mouth offer
+   (78.136) and a tier's handoff offer or traversal (78.126) carried in the
+   reserve's act, after the operator rules on amending those two forward;
+   `NotThroughCore` derived from the cones (an act arriving other than at
+   its universe's vertex is not an event of that universe's cone at the
+   hypha), never from a ruling on routes.
+3. **B2, signatories, clause by clause:** a kernel's signed clause set
+   (each clause's hash, enabled or vetoed; the network clauses never
+   vetoed) recorded per domain; a domain's crossings refused `NotSignatory`
+   until its reserve has signed every network clause of the version served
+   (Concordance §0's next release); a tube between two universes carrying
+   what both enabled, a vetoed clause's bound named, never a refusal of
+   the whole tube; an act read under its clauses as signed, a changed
+   clause's divergence held and named until the new version is signed;
+   the signatory and shared-clause readings.
+4. **B3, the universal laws at admission:** the transitions a crossing
+   states verified under L0 at `LAW_VERSION` 5 and the `forms` core shell,
+   refused `NotLawful` naming each breach, never admitted on a declared
+   law's name; the draft-4 shared laws as each is ruled.
+5. **B4, the boundary reading:** refusals at the universal core tube by
+   name and domain under `ACT_OBSERVE`, and the reconstruction events
+   (Collapse, Converse, Collision) at the boundary, with track 8.
+6. **B5, nested universes:** a sub-universe's acts only at its parent's
+   vertex, with 78.155 R-3.
+
+Depends on: **draft 4** (the amendment's approval and signing; B3's
+shared laws, and B2's clause sets under its §0 SIGNING text). Issue #13
+is no longer an outside dependency: its ruling, **replication by
+reconstruction**, is phase B0. Serves tracks 13, 14 and 15.
+
+## 25. Crossings carried exact; drift guarded by type
+
+**Specified** in
+[`docs/MU-HOSTING.md` §5a.10](docs/MU-HOSTING.md#5a10-what-crosses-the-exact-object-never-its-digest)
+(the operator's ruling of 2026-11-02) and
+[`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) clauses 12–14
+with its section *Drift guards*.
+
+A connection between a universe and the hypha is transduced. It carries
+the exact object and the motion, never a digest in place of them. Each
+crossing carries its place (TUniversal coordinates and past cone), its
+content (each body by its boundary, the motion as a versor or as turns in
+ℚ/ℤ), its holonomy and its clauses. The hypha reconstructs the object
+and admits it only on reaching the same exact object. A disagreement is
+held as a residue (the composed motion, the differing boundary, the
+differing holonomy), never as unequal bytes. A digest keeps exactly
+three senses (address, link, commitment), and none of them admits.
+
+The track begins with the guards, so the work after them cannot drift
+back to a common grid, a digest in place of reconstruction, or replay in
+place of reconstruction. Each guard is a type that makes the wrong
+structure unwritable, never a banned word.
+
+**How to build a phase.** Follow
+[CONTRIBUTING › Getting started](CONTRIBUTING.md#getting-started), then
+for each phase:
+1. Open a branch from `main` (or a `git worktree` beside the checkout)
+   named for the phase, for example `crossing-x0-guards`.
+2. Read the phase's specification whole: MU-HOSTING §5a.10,
+   MU-ANTI-FLATTENING clauses 12–14, MU-SCIENCE §5.0.
+3. Write the claims named below first, as statements of the algebra
+   (MU-STANDARDS 3.1). Include the `compile_fail` doc tests that prove a
+   wrong structure does not compile.
+4. Build the phase. Run the gate (`cd xtask && cargo run`), the scoped
+   tests of the touched modules (`cargo test --release -p <crate>
+   <module>`), and `scripts/check` before the pull request.
+5. Add each phase's mutation-audit entries to
+   `xtask/mutate/catalogue.rs`, and run `(cd xtask && cargo run --
+   mutate)`. Every entry must be killed by the claim named beside it.
+6. Open the pull request with the template's drift checklist ticked. A
+   phase that changes the wire or the ledger layout says so under
+   *Network contract*.
+
+Each phase is one commit:
+
+1. **X0, the drift guards.**
+   - `Address`, `Link` and `Commitment` replace the bare `[u8; 32]` at
+     every crossing site. None implements `PartialEq`. The comparisons
+     are `Address::locates`, `Link::follows`, and
+     `Commitment::binds(&Reconstructed<T>)`.
+   - `Reconstructed<T>` has a private constructor, called only by a
+     law's reconstruction, and every `admit_*` takes it.
+   - The register `xtask/lint/drift.rs` lists each guard (regression,
+     ruling, guarding type, claim, mutation-audit entry). The gate
+     refuses an entry whose type or claim is missing. It reports, without
+     refusing, each changed document's sentence that puts a typed term
+     beside an admission verb.
+   - Claims: `address_has_no_equality` (`compile_fail`),
+     `reconstructed_is_built_only_by_the_laws` (`compile_fail`),
+     `commitment_binds_only_a_reconstructed_object`.
+   - Mutation-audit entry: an admission given the claim in place of its
+     reconstruction.
+2. **X1, the crossing record.** `Crossing { place, content, holonomy,
+   clauses }` in `mycelium_sdk::forms` and on the wire, decoded to exact
+   values (Concordance 1.4). It rides B3's change to the fold, which
+   carries the transitions section (one wire change, not two).
+   - Claims: `crossing_round_trips_exact_values`,
+     `crossing_without_content_is_refused_address_only`.
+3. **X2, admission by reconstruction at the vertex.** `Court::admit_uplink`
+   reconstructs each crossing's object from its place, content and
+   holonomy under the shared clauses, and admits a
+   `Reconstructed<Crossing>`. A crossing that carries only digests is
+   refused `AddressOnly`, or the object is fetched by its address and
+   reconstructed.
+   - Claims: `admit_uplink_reconstructs_crossing`,
+     `admit_uplink_refuses_digest_only_crossing`,
+     `admit_uplink_ignores_matching_state_digest` (an object whose claimed
+     digest matches but whose reconstruction differs is refused).
+4. **X3, the residue.** A refused or collided crossing holds its residue:
+   the motion `M̃_rec · M_claim`, or `t_claim − t_rec` in ℚ/ℤ; the
+   differing boundary breakpoints per circle; the differing holonomy.
+   The residue reads as Collapse, Converse or Collision under
+   `ACT_OBSERVE`, with B4 and track 8.
+   - Claims: `residue_is_identity_exactly_on_agreement`,
+     `residue_of_turns_is_their_difference_mod_one`,
+     `collision_holds_both_crossings_with_their_residue`.
+5. **X4, the digest audit.** Every site that compares digests is typed
+   by its sense and moved to reconstruction where it admits. The sites
+   on `main` to type first:
+   - `src/chronometry/chain/mod.rs`, `chain/node.rs`,
+     `chronometry/receipt.rs`: links, each record reconstructed
+     (`rederives`).
+   - `src/server/backfill.rs` (back-fill's chain-hash check): a link;
+     the record itself is reconstructed with B0.
+   - `src/chronometry/pack.rs` (an anchor read on a top's digest): a
+     restore, reconstructed and checked against its receipts.
+   - `src/server/cognition/state.rs` (eras compared by root and signer):
+     a link or a commitment, typed.
+   - `src/server/cognition/endowment.rs` (a grant already held, by
+     digest): an address in the resend sense, after the grant has been
+     checked.
+   - `src/server/cognition/court/glue.rs` (a stratum root recomputed from
+     its members): a commitment bound to a reconstruction, already in
+     the right order.
+   - `src/client/sdk/entity/learn.rs` (a starved root): an address.
+   - Each peer kernel tracks its counterparts in its own repository.
+6. **X5, the transduction in place of the common grid.** Two frames
+   relate by the motion between them; each keeps its own resolution;
+   each body is held by its boundary; incidences are read between boundary arcs; a site
+   lifts as turns in ℚ/ℤ. `CommonRefinement`
+   (`src/transducer/family/refine.rs`) leaves cognition. It is reachable
+   only from the sensor, or removed. This is the v0.3.0 transduction work
+   ([#25](https://github.com/SAIOS-SAMN/mycelium/issues/25)), and X5
+   lands its guard.
+   - Claims: `common_refinement_unreachable_from_cognition`
+     (`compile_fail`), `site_lifts_to_turns_of_its_own_periods`,
+     `incidences_read_between_boundary_arcs`.
+
+Depends on: track 24 (X1 rides B3; X3's readings ride B4), track 8 (the
+reconstruction events), track 11 (identifiers that verify carry
+`reconstruct`). X0 depends on nothing and comes first.

@@ -323,7 +323,7 @@ impl Court {
     /// binding for the citer itself), and the cited form is replayed over
     /// it: a generator that closes nothing there is used for nothing
     /// there, whatever it closes elsewhere. As μ, each pair's share of its
-    /// frame (78.169 O1, ruled 2026-11-01).
+    /// frame (78.170 O1, ruled 2026-11-01).
     pub(crate) fn cited_deflation(
         &self,
         citer: &[u8],

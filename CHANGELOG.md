@@ -6,6 +6,38 @@ such change is named here.
 
 ## Unreleased
 
+### Where to start (documentation)
+- **ROADMAP › Now:** the current order of work, kept current rather than
+  appended to. It lists the release in progress (v0.3.0: T2 #25, T3 #26,
+  D2.5 #27, rc.3 #24), the work ready to start (track 25 X0 #28, track 24
+  B0 #13, #16, track 11 #29), what waits on an operator ruling, and what
+  is under investigation (#14).
+- **GitHub:** milestones `v0.3.0` and `next`; labels `track`, `track-N`,
+  `in progress` and `maintainers`; one issue per ready item.
+- **AGENTS.md › Where to start** and **CONTRIBUTING:** orient, pick an
+  issue from Now, claim it with a comment (a claim lapses after 14 days
+  without activity), read its specification whole, build, then one phase
+  per pull request. The README links the Now section.
+
+### Crossings carried exact; drift guarded by type (specification, ruled 2026-11-02)
+- **What crosses the vertex** (MU-HOSTING §5a.10): a crossing carries its
+  place, its content as an exact object (each body by its boundary, the
+  motion), its holonomy and its clauses. The hypha admits it only by
+  reconstruction. A digest keeps three senses (address, link,
+  commitment) and never admits. A disagreement is held as a residue,
+  never as a boolean. `AddressOnly` is a proposed refusal name.
+- **Drift guards** (MU-ANTI-FLATTENING clauses 12–14 and *Drift guards*):
+  transduction past the sensor, no admission on a digest, and the four
+  typed words. Each is guarded by a type that makes the wrong structure
+  unwritable, never by a banned word, with a register in
+  `xtask/lint/drift.rs` (specified).
+- **ROADMAP track 25** (X0 guards first, then the crossing record,
+  admission by reconstruction, the residue, the digest audit and the
+  transduction's guard), with the steps to build each phase.
+- **`AGENTS.md`** (and `CLAUDE.md` pointing to it): working rules for AI
+  coding agents, stating the recurring regressions and the structure
+  that replaces each. The pull request template gains a drift checklist.
+
 ### Live readings (MU-DERIVATIONS, ruled 2026-10-31)
 - **The principle, written down:** MU-STANDARDS 2.12 and MU-DERIVATIONS
   §0.5. A governing quantity is a live reading of the current state,
@@ -214,7 +246,7 @@ Holding the modes themselves (78.162) remains the next step.
   `Finality::Provisional { opened, closed }`, `Challenged::Demanded`'s and
   `Challenged::Reopened`'s optional heights, `State::Offered { opened }`)
   and the fuller pages (D1.3, D4.2) ride the same version; no further bump.
-- **μ is a share of the frame** (ruled 2026-11-01; MU-RECURSION 78.169 O1;
+- **μ is a share of the frame** (ruled 2026-11-01; MU-RECURSION 78.170 O1;
   MU-ECONOMY §1, §3): every amount the ledger is paid from a measured
   discharge — solve receipts and verdicts, escrows, releases, lease
   payments, install shares — holds the share of each closed pair's frame,
@@ -240,7 +272,7 @@ Holding the modes themselves (78.162) remains the next step.
   holonomy exact signed rationals; a superposition's difference is
   `Superposed { lanes, k }`.
 - **Task addresses change again, for every task: full content**
-  (MU-RECURSION 78.169, O3). A train pair is written as both frames' full
+  (MU-RECURSION 78.170, O3). A train pair is written as both frames' full
   content — the four periods and every band of each frame — instead of the
   listing key of its coboundary on the common refinement. Two tasks that
   differ in any pair, by one site or one period, now have two addresses:
@@ -251,7 +283,7 @@ Holding the modes themselves (78.162) remains the next step.
   worksheet. A kernel signs the new hash.
 
 ### Economy
-- **μ is a share of the frame** (ruled 2026-11-01; MU-RECURSION 78.169 O1,
+- **μ is a share of the frame** (ruled 2026-11-01; MU-RECURSION 78.170 O1,
   MU-ECONOMY §1). A discharge read on a family is, per closed pair, S (sites
   changed between ground and painted) and G (from one painted hue to
   another) over the frame's `h·w`, H the shell count as it stands
@@ -321,7 +353,7 @@ Holding the modes themselves (78.162) remains the next step.
 
 ### Cognition
 - **Two frames are related by transduction in turns, never by a common
-  lattice** (MU-DERIVATIONS D3.2, MU-RECURSION 78.169). New organ
+  lattice** (MU-DERIVATIONS D3.2, MU-RECURSION 78.170). New organ
   `transducer::family::transduce`: a frame's axes are two circles of
   turns (`Turn`, `Enclosure`), a frame is held by its bodies' bands
   (`Enclosed`), a pair by the incidences of its bands under the re-period
@@ -362,6 +394,51 @@ Holding the modes themselves (78.162) remains the next step.
   admission, and a cover change re-homes by lookup. `Court::intake_prepared`
   borrows its pieces. A hypha logs `court corpus routed: N tasks` when its
   intake's thread ends.
+
+### Documentation
+- **Reconstruction, rebuild, replay and resend are typed terms** (MU-SCIENCE
+  §5.0). Verification is reconstruction only: the court derives the object
+  from its own evidence by the laws and admits it on the same exact object;
+  replay is for history (Concordance 1.4), rebuild for reproducible builds
+  and regenerated caches, resend for the security sense. Every document
+  that called the court's verification a replay now says reconstruction;
+  MU-HOSTING §7.2 verifies a certificate by checking receipts and
+  reconstructing verdicts, never by re-running the universe; two restore
+  sentences now state what the code does; reconstruction events (Collapse,
+  Converse, Collision) are specified (ROADMAP track 8), and the code
+  identifiers' rename is listed (track 11).
+- **The boundary law: topology enforced at the universal core** (the
+  operator's ruling of 2026-11-02). MU-HOSTING §5a specifies the
+  containment topology (mind, world, galactic core, universe, universal
+  core, hypha mesh) and the boundary law: a universe's own physics stays
+  inside, unseen by the hypha; the universal core tube is its only uplink;
+  what crosses is reconstructed under the universal laws and refused by
+  name where it does not hold; a universe's act arriving other than through
+  its core is refused (`NotThroughCore`, proposed), while a key's own acts
+  stay governed by keys. Each part is marked Built or Specified, with the
+  readings that observe the boundary and the steps a kernel takes to cross.
+  MU-RECURSION 78.169 narrows 78.165 forward; a Concordance amendment to
+  4.1, 6.2a, §0 and 0.1 is proposed in its §11 (draft 4, not signed);
+  ROADMAP track 24; README, GLOSSARY, MU-LEXICON §1.1 and SECURITY.md point
+  to it. MU-HOSTING §5.2 and §3.1 no longer say the court refuses nothing
+  for a tier's access: a fold from any tier but the reserve is refused
+  today (78.138).
+- **The boundary law as double cones, clause-by-clause signing, and issue
+  #13 resolved** (the operator's rulings of 2026-11-02). MU-HOSTING §5a
+  reads each act as an event with a past cone (what it cites) and a future
+  cone (what comes to cite it) on the TUniversal ledger; the universal core
+  tube is the vertex where a universe's cones join the hypha's, the inner
+  routes are the kernel's own physics, and `NotThroughCore` is derived
+  from the cones. §5a.4 and the proposed Concordance §0 SIGNING text
+  (§11, draft 4) specify signing clause by clause: the network clauses
+  never vetoed, a tube carrying what both universes enabled, a changed
+  clause read as signed with its divergence named until signed forward.
+  Issue #13 is ruled replication by reconstruction (every hypha
+  reconstructs each domain from its founding receipts), now phase B0 of
+  ROADMAP track 24; the interim "address the founding hypha" contract and
+  the home-court option are withdrawn. MU-RECURSION 78.169 item 6,
+  GLOSSARY (Double cone, Vertex, Shared clauses) and MU-LEXICON §1.1
+  follow.
 
 ## 0.3.0-rc.2 — 2026-10-31 (release candidate)
 

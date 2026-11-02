@@ -15,12 +15,12 @@ with the ruled form of a letter marked **Specified** (§8).
 
 Every motion a mind states (a rule's rotation, a turn of a body, the
 orientation of a frame) has to reach a court as an exact object the court
-can rebuild and compare by identity. The alphabet is how that is done: a
+can reconstruct and compare by identity. The alphabet is how that is done: a
 small set of exact rotations, the **letters**, from which every motion the
 language can say is built as a product, a **word**.
 
 Because the letters are fixed and exact, two minds that state the same
-motion state the same word, and a court rebuilds the motion from the word
+motion state the same word, and a court reconstructs the motion from the word
 alone. A motion the letters cannot build is not approximated: it is held
 as a **remainder** and named (§5).
 
@@ -113,7 +113,7 @@ and nothing is tried and checked.
    plane and must equal the motion.
 
 **Example.** The rotation by `(−7, 24)/25` spells as one (3,4,5) letter;
-followed by a 90° turn it spells as that letter and one 90° letter. Rebuilding either word from its letters gives back exactly the
+followed by a 90° turn it spells as that letter and one 90° letter. Reconstructing either word from its letters gives back exactly the
 rotation it spelled.
 
 Code: `src/transducer/alphabet/spelling.rs` (`spell`, `spell_on`),

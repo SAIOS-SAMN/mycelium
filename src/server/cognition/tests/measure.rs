@@ -47,7 +47,7 @@ fn discharge_on_pays_changed_sites_not_false_pair() {
     let read = court.discharge_on(addr.as_bytes(), &w, Some(&family));
     let changed = sites(&[(1, 0), (1, 1), (1, 2), (1, 3)]);
     assert_eq!(read, measure_sites(&family, &[changed, Keyed::new()]).1, "the first pair's changed sites, nothing of the false one");
-    // μ is a share of the frame (78.169 O1): four sites changed between
+    // μ is a share of the frame (78.170 O1): four sites changed between
     // ground and painted on a 3×4 frame are 4/12 of it on S.
     assert_eq!(read.lane(0), &crate::core::Q::new(1.into(), 3.into()), "and the word is paid there: 4 of 12 sites on S");
     assert_eq!(court.discharge_on(addr.as_bytes(), &w, None), [0; 4], "on no scene, nothing");

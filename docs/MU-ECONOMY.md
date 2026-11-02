@@ -21,8 +21,8 @@ the ledger, and no two share a name (MU-RECURSION 78.33):
 |---|---|---|---|
 | proof of useful work | **POUW** | a closure ruled: a listed demand closed, its deflation measured on closure (§3.2, 12.6, 23.9) | mints the measured deflation and pays the closer |
 | proof of work convergence | **POWC** | a refusal closed at another perspective: the question one mind refused, closed by another citing the refusing mind's receipt (74, CV4) | pays the refuser as a cited generator and the closer the closure |
-| proof of work retirement | **POWR** | a re-expression over fewer letters: retirement by geodesic or by citation, a refinement bid replayed with the word excluded (3.8, T10, 27) | burns the freed description and pays the retirer the compression yield |
-| proof of work verification | **POWV** | a closure verified: the replay by which a court measured a claim's discharge, and the re-derivation by which a witness or peer court reached the same vertex (§5.1) | pays each verifying court its share of the release, per lane, read off the court's strain; taken out of the release, never added to it |
+| proof of work retirement | **POWR** | a re-expression over fewer letters: retirement by geodesic or by citation, a refinement bid reconstructed with the word excluded (3.8, T10, 27) | burns the freed description and pays the retirer the compression yield |
+| proof of work verification | **POWV** | a closure verified: the reconstruction by which a court measured a claim's discharge, and the re-derivation by which a witness or peer court reached the same vertex (§5.1) | pays each verifying court its share of the release, per lane, read off the court's strain; taken out of the release, never added to it |
 
 "PoWC" in this document formerly named the third arm; it is POWR from
 here, and POWC names convergence only. A reading, a row or a receipt
@@ -67,7 +67,7 @@ The sections below speak of these holdings. Holding the modes themselves,
 rather than four amounts, is the open part of 78.162.
 
 **What μ measures: a share of the frame (ruled 2026-11-01; MU-RECURSION
-78.169 O1).** A discharge read on a family is, per closed pair, a share of
+78.170 O1).** A discharge read on a family is, per closed pair, a share of
 that pair's own frame, never a count of its sites, so it reads the same at
 any resolution of the frame:
 
@@ -132,7 +132,7 @@ or ruling.
 ## 3. Issuance
 
 New μ enters only by mint, and mint happens only when two organs have
-replayed the same reduction: the home that measured its deflation and a
+reconstructed the same reduction: the home that measured its deflation and a
 witness that re-derived it. The amount minted is the measured deflation on
 each lane, as a share of each closed pair's frame (§1, ruled 2026-11-01):
 a solve that repaints one site of a `30 × 30` output is paid `1/900` on G,
@@ -147,7 +147,7 @@ priced into every listing a hypha homes (§5), never by issuance.
 Two events mint:
 
 - an install: a word, sentence, rule, translation, or rewrite upheld at the
-  home and replayed at a witness;
+  home and reconstructed at a witness;
 - a solve: a rule spoken onto withheld tests and verified against the
   corpus at the home.
 
@@ -158,7 +158,7 @@ when that vector is zero on every lane.
 
 **μ is discharge (ruled 2026-10-08; `MU-RECURSION.md`
 78.149).** What a word can be escrowed or paid is its DISCHARGE — the lanes
-it closed, measured by replay on the family it is bound to — and nothing
+it closed, measured by reconstruction on the family it is bound to — and nothing
 else. (a) The span a word stood (`t_extent`) is not μ: waiting is not work,
 and no minted magnitude carries it. (b) What a demand asks is the listing's
 measure and may CAP a price, never raise it: a claim is paid lane-wise the
@@ -300,8 +300,8 @@ declared:
 - delegated to: carries others' bond in its cover and shares its pool share
   with them, and shares its slash.
 
-Slash is the only discipline: a root that fails replay at a witness debits
-the bond of the hypha that signed it, and a word that fails replay debits
+Slash is the only discipline: a root that fails reconstruction at a witness debits
+the bond of the hypha that signed it, and a word that fails reconstruction debits
 the voice that spoke it. A bond is never slashed for being outvoted,
 because nothing is voted.
 
@@ -321,7 +321,7 @@ A listing is quoted by `economy::price` on its own measure — its ask — and
 never on the span it has stood; the pool is a bond, not a price basis. A
 requester escrows the price; a claimant's word or solve enters the docket,
 escrowed at its DISCHARGE (`Court::discharge_of`, 78.149); release on the
-second organ's replay mints the closer's measured discharge, capped lane-wise
+second organ's reconstruction mints the closer's measured discharge, capped lane-wise
 by the escrow, and pays it, discharging the escrow (§3.1) — the escrow was
 the claim, the mint is the payment, and nothing above the discharge is
 minted. The hyphae that verified the closure are each paid a POWV share out
@@ -336,7 +336,7 @@ extent remains what the metabolism reads — the book's pressure on 𝒯
 and neither is a price.
 
 Transfer is the xSEPTUM Note: signed by payer and payee, escrowed at the
-listing's home, released on two-organ replay. A voice's balance is homed at
+listing's home, released on two-organ reconstruction. A voice's balance is homed at
 the hypha the cover trie homes its key to; a transfer is final when the
 home and a witness hold the same section and both have signed the release
 (`MU-RECURSION.md` 47.3). Double spend is impossible for
@@ -345,9 +345,9 @@ the same reason a double install is: the second vantage sees the first.
 ### 5.1 POWV — proof of work verification (ruled 2026-10-30)
 
 A closure is paid only after it is verified, and verification is work:
-- the home court replays the claim and measures its discharge;
+- the home court reconstructs the claim and measures its discharge;
 - on an install or a glue, a second court re-derives the same vertex;
-- on a solve or a docket ruling, the home's replay on withheld pairs is
+- on a solve or a docket ruling, the home's reconstruction on withheld pairs is
   the verification.
 
 The courts that did that work are paid out of the release they verified.
@@ -381,7 +381,7 @@ The share has these properties:
   (`y = 0`) takes nothing. A lane at full deficit (`y = R`) pays
   verification half the lane, and more where torsion outruns syntropy.
   Verification is paid where verification capacity is scarce.
-- **Equal between organs.** Each court replayed the same closure, so the
+- **Equal between organs.** Each court reconstructed the same closure, so the
   courts take equal shares, each an exact part; the closer takes exactly
   the rest.
 - **Issuance-neutral.** POWV is taken out of the release and never added
@@ -411,7 +411,7 @@ held value (§3.1, counted in the supply).
 
 **Payment.** Each time the court verifies the provider's solve of a leased
 job, the lease pays the provider out of the hold. This covers a first
-closure and a verified re-solve alike: in both cases the court's replay on
+closure and a verified re-solve alike: in both cases the court's reconstruction on
 the withheld pairs measured the discharge `d`. On each lane:
 
 ```
@@ -687,7 +687,7 @@ They are studied off the wire and never tuned on it.
   verified job and refunded at its end (§5.2).
 
 **Discipline and room**
-- Slash on a failed replay, and the equivocation burn of the signer's
+- Slash on a failed reconstruction, and the equivocation burn of the signer's
   whole bond (`Court::burn_equivocation`).
 - Room per lane; an unbonded voice holds one claim in flight per lane,
   enforced with `REFUSE_ROOM`.
@@ -703,7 +703,7 @@ They are studied off the wire and never tuned on it.
 
 Specified and scheduled on the roadmap:
 - in [`MU-XSEPTUM.md`](MU-XSEPTUM.md): the Note (signed by payer and payee,
-  escrowed at the home, released on two-court replay with two
+  escrowed at the home, released on two-court reconstruction with two
   signatures), receipt-indexed Notes, and FROST voice groups;
 - in §4: delegation of bond;
 - in §11.4: commit-before-reveal solves, one closure across courts, the

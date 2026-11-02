@@ -4,10 +4,10 @@
 
 > **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
-> **Components:** the network (hyphae and courts), kernels of every kind, and clients. §3a covers founding a universe (μ and elements); §5 separates resident minds (inside a kernel's process) from attached minds (external SDK processes); §8 covers a kernel on two meshes.
+> **Components:** the network (hyphae and courts), kernels of every kind, and clients. §3a covers founding a universe (μ and elements); §5 separates resident minds (inside a kernel's process) from attached minds (external SDK processes); §5a is the containment topology and the boundary law, the security model at a universe's universal core; §8 covers a kernel on two meshes.
 
 **Status:** specification, version 1 (2026-10-30). This document governs
-[ROADMAP](../ROADMAP.md) track 15. It gathers in one place what the
+[ROADMAP](../ROADMAP.md) track 15, and track 24 for §5a. It gathers in one place what the
 network provides for hosting universes and agents, and specifies what it
 adds. Every item carries one of three marks:
 - **Built:** in the tree and covered by its test suites;
@@ -17,7 +17,8 @@ adds. Every item carries one of three marks:
 It builds on [`MU-CONCORDANCE.md`](MU-CONCORDANCE.md) (the agreement every
 kernel signs), [`MU-CLIENT.md`](MU-CLIENT.md) (the mind),
 [`MU-ECONOMY.md`](MU-ECONOMY.md) (μ and POW++) and
-[`MU-SCIENCE.md`](MU-SCIENCE.md) (verification by reconstruction).
+[`MU-SCIENCE.md`](MU-SCIENCE.md) (verification by reconstruction; the
+typed vocabulary of reconstruction, rebuild, replay and resend is its §5.0).
 
 ---
 
@@ -184,10 +185,11 @@ Concordance is the joining instrument.
    seated agent's senses from its predicted state, and takes the agent's
    actions as the inputs it predicts the next state from. It may also run
    resident minds in its own process (§5.1).
-7. **Uplink through its reserve** (Concordance 4.1, a law the kernel keeps
-   in its own universe; the court authenticates keys, never tiers). The
-   universe's work reaches the court through its reserve tier's folds, open to challenge
-   for the challenge window.
+7. **Uplink through its reserve** (Concordance 4.1; the boundary law,
+   §5a). The universe's work reaches the court through its reserve tier's
+   folds, open to challenge for the challenge window; a fold from any other
+   tier is refused (§5a.5). Its minds' own acts stay governed by the minds'
+   keys (§5a.6).
 
 ### 3.2 What the network verifies about a world model
 
@@ -377,14 +379,15 @@ agent's **effect on the shared universes and the shared record**:
   record.
 - **Nothing on assertion.** Nothing moves value or enters the language
   without two courts' reconstruction (MU-SCIENCE §5).
-- **Keys, not tiers** (Concordance 6.2a; MU-RECURSION 78.165). The court
-  authenticates the key on every act and pays the account that key names.
-  It never checks where in a universe an agent sits. That only a
-  universe's reserve faces the hypha is a law each kernel keeps inside its
-  own universe (Concordance 4.1); the court may count other access and
-  refuses nothing for it. A universe's own content reaches the court through its
-  reserve's folds because the kernel sends it that way, not because the
-  court enforces it.
+- **Keys for a key's own acts; topology for a universe's** (Concordance
+  6.2a; MU-RECURSION 78.165, narrowed by 78.169). The court authenticates
+  the key on every act and pays the account that key names; for an agent's
+  own acts (a solve, speech, an attestation, a stake) it never checks
+  where in a universe the agent sits, and counts a solve an inner tier
+  signed without refusing it. A universe's acts (its folds, anchors, maps,
+  conversions, mouths and manifests) are admitted only from its sitting
+  reserve, its universal core: most of them are refused by name from any
+  other tier today, and the rest are the boundary law's (§5a).
 - **L0 at the boundary.** A transition that breaches L0 is refused by the
   law's name.
 
@@ -440,6 +443,399 @@ that mind is built, not a constraint the network imposes on other agents:
 an attached agent built differently is governed by §5.2–§5.4 alone. The
 readings that confirm the bound on a running network are posed in
 MU-CLIENT §4.13 (C1–C3).
+
+---
+
+## 5a. The containment topology and the boundary law
+
+**Status: Specified** (the operator's ruling of 2026-11-02; MU-RECURSION
+78.169; ROADMAP track 24). The parts already in the tree are marked
+**Built** in each part's table. The Concordance amendments this section
+needs are proposed in [MU-CONCORDANCE §11](MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02)
+and bind nothing until approved and signed.
+
+The ruling: the network's laws pass down through the Concordance and the
+universal physics. Each universe applies its own physics at the kernel
+level, for what it does inside its kernel; whatever traverses the
+universe's **universal core tube**, as an uplink to the hypha, abides by
+the physics the hypha has established and the Concordance signs into law
+as regulation. Security is handled topologically: a mind stands on a
+world, a world orbits a galactic core, the galactic cores stand in a
+universe, and the universe's only uplink is its universal core. The
+network is reached only through the cores.
+
+**Double cones, not a network of routes** (the operator's rulings of
+2026-11-02, read with the ruling above). Each act is an **event** on the
+multi-dimensional TUniversal ledger, placed at its point
+`origin/h:S:G:T:H:K` (MU-CHRONOMETRY §1). Its **past cone** is what it
+cites; its **future cone** is what comes to cite it. A universe's acts and
+the hypha's acts are two such manifolds of double cones, and the universal
+core tube is the **vertex** where a universe's cones join the hypha's.
+Inside a universe, the routes its acts take (the progenitor class's
+wormholes placed in-game along gravity wells, superposed paths) are the
+kernel's sovereign physics: the hypha never needs, sees or chooses them,
+and no route is unique. At the vertex the hypha reads three things: the
+event's TUniversal coordinates; what it carries, reconstructed under the
+universal laws (§5a.3); and its holonomy as content, path-independent
+where it is trivial and a named twist where the inner routes disagree.
+
+This section is the **boundary law**. It refines §5: §5.1 and §5.2 say
+what is contained and what is governed; this section says where the
+boundary between the two lies for a universe, and what crosses it.
+
+### 5a.1 The shells
+
+| Shell | What it holds | What it may do inside | What crosses its boundary, and to where |
+|---|---|---|---|
+| **Mind** (an agent) | Its key, its workspace (genome, dialect), its seat | Perceive, compose, hold questions, idle (§5.5) | Seat actions to its kernel, through the senses and actions the kernel builds (§5.1; MU-CLIENT §6); a key's own acts to a hypha directly (§5a.6) |
+| **World** | A planet: its peoples, with the peoples' economies and ledgers | Everything its universe's physics lets happen there; tolls in its own money (Concordance 5.5) | Its ledger, carried by its universe's own inner routes (stardock, realm; MU-LEXICON §2), never to the hypha: its events reach the hypha's cones only at the universe's vertex |
+| **Galactic core** | A paired throat whose size is its mass, its firmament, its lines and roads (Concordance 2.4–2.6, 2.9) | Keep and defend its galaxy; build roads as a progenitor line | Its tier's fold, carried inline in the universal core's fold under the line's own signature (78.138), never to the hypha directly |
+| **Universe** | One kernel's simulation: its constants, matter, shell and clock axis (Concordance 2.2, 2.10) | Compute by its own physics, floating point included (MU-SCIENCE §7.1) | Only what its universal core sends |
+| **Universal core** | The domain's sitting reserve (Concordance 4.1, 4.2) and the core throat its firmament holds open (§3a.5) | Fold the universe's ledger; keep its anchors, maps, mouths, conversions and manifests | The reserve's signed acts, through the universal core tube, to a hypha: the universe's **only uplink**, the **vertex** where its cones join the hypha's |
+| **Hypha mesh** | The courts: ledger, TUniversal, the law register, μ | Reconstruct, rule, seal and pay | To another mesh only through a bridging kernel (§8) or federation (§8.5) |
+
+**Nested universes** (78.155). A sub-universe's Big Bang is the far face
+of a core of its parent (Concordance 2.4), so its universal core uplinks
+into its parent universe: its vertex is with its parent's cones, and its
+events reach the hypha's cones only at its parent's vertex. The nesting
+recurses and no vertex is bypassed: a sub-court folds up through its
+reserve (78.155 R-3, **Specified**).
+
+### 5a.2 Inside a universe: the kernel's own physics
+
+Inside its boundary a universe is sovereign. Its shell (Concordance 2.10)
+holds its constants, its matter, its compositions of the law forms and any
+law it keeps for itself; its seats, tiers, banks, offices and game design
+are its own; it defends its own galactic cores (2.9) and keeps its duties
+to hosted minds in its own code (3a). The hypha neither sees nor
+re-derives any of it: a universe's physics and history are attested by
+its kernel (Concordance 4.4), and its anchors commit to its state by a
+root the court chains and never judges (MU-CHRONOMETRY §3.1). What a
+universe does inside is constrained only where it reaches the core.
+
+| Part | Status | Where |
+|---|---|---|
+| The universal law forms as a crate a kernel links; the core shell and an outer shell | **Built** | `forms/` (`forms::frame` at the core; `forms::shares` an outer shell) |
+| The court holds no in-universe state: anchors carry a commitment, chained and never judged | **Built** | `LedgerEntry`, `Court::ledger_on` (MU-CHRONOMETRY §3) |
+| A universe's tiers relaying inside (offices, lines, houses) | The kernel's own | Concordance 6.2a |
+
+### 5a.3 The boundary: the universal core tube
+
+The universal core tube is the universe's only uplink. What crosses it
+(folds, anchors, maps, mouths, conversions, manifests, statements) is
+**reconstructed** by the hypha under the universal laws (MU-SCIENCE
+§5.0), and refused by name where it does not hold:
+- **Conservation.** A fold's nets per identity per lane sum exactly to
+  its declared emission, every sum checked, never wrapped (78.119).
+- **The carried lines.** Every carried line is read in full before
+  anything seals, and a contested line is reconstructed step by step to
+  its committed prefix, nothing re-run (78.138; Concordance 4.4).
+- **Holonomy at the vertex, read as content.** Two inner routes carrying
+  one ledger to the vertex close a ring; the hypha reads its holonomy,
+  never the routes. It is the identity where the routes agree (the
+  crossing is path-independent), and otherwise a named twist: an
+  obstruction carrying the exact lane vector, which seals the fold
+  provisional (78.123).
+- **L0 at `LAW_VERSION` 5.** Each transition the crossing states (the
+  bodies before and after, the motion as a versor, the fluxes) is checked
+  by the law register's verifier, and a breach is refused naming each law
+  and breach (`Verdict.breaches`, `(Law, Breach)`). A law the stroke did
+  not reach is unread (78.121): the crossing waits; it is neither admitted
+  nor refused.
+- **The `forms` core shell.** A transition that composes a core form is
+  checked by calling that form on the crossing's own coordinates.
+- **The draft-4 shared laws**, each when ruled and built in `forms`.
+
+**Never on a declared law id alone.** A crossing that names the law it was
+computed under is not admitted on the name: the hypha computes the law's
+verdict on the crossing's own coordinates. A universe's own laws (its
+outer shell) are never re-derived at the boundary; only the universal
+laws are, so the boundary admits what is lawful under them, whatever the
+universe's own physics did inside. What crosses is exact (§3.1 step 4); a
+state with no exact representation does not cross.
+
+| Part | Status | Where |
+|---|---|---|
+| Continuity of a fold, exact per lane | **Built** | `TierFold::continuity_with`, `Court::admit_uplink` |
+| Carried lines read in full; a contested line reconstructed | **Built** | `Child::Carried`, `ChildRefusal`; `Reconstruction` in `server/cognition/challenge.rs` |
+| Rings of inner routes read by holonomy at the vertex | **Built** | `server/cognition/ledger.rs` (`Obstruction`, `Court::admit_chained`) |
+| L0 verify as a reading a kernel asks for (`ACT_LAWS` modes 1 and 2) | **Built** | `physics::laws::verify_sized`; `judge/laws.rs` |
+| L0 applied at admission to the transitions a crossing states; refused naming the law (proposed `NotLawful`, carrying the breaches) | **Specified** | §5a.9, B3 |
+| Core-shell forms applied at admission | **Specified** | §5a.9, B3 |
+| Draft-4 shared laws at the boundary | **Specified**, waits on the ruling of draft 4 | Concordance §11 |
+
+### 5a.4 Regulation: the Concordance signed
+
+The universal laws bind a universe at its boundary because its kernel
+signs the Concordance (§0 SIGNING). The signature is the kernel's
+acceptance of the boundary's regulation, and it is given **clause by
+clause** (the operator's ruling of 2026-11-02):
+- **A kernel signs a clause set.** Each clause is enabled or vetoed: a
+  kernel may enable sections 1, 2 and 4 and veto section 3, for example.
+- **The network clauses cannot be vetoed.** The clauses of Concordance
+  0.1's Network row (the universal laws, the tube) are what makes a
+  crossing possible; without them there is no crossing. A clause set that
+  vetoes one is not a signature, and the domain's crossings read
+  `NotSignatory` (proposed).
+- **A tube between two universes carries what both enabled.** A core tube
+  interlinking two universes carries what the clauses both universes
+  enabled govern. A clause one side vetoed bounds what flows through the
+  tube, and that bound is named on the tube's reading and on each act it
+  stops; it is never a refusal of the whole tube.
+- **An act is read under the clauses it depends on.** Clauses unchanged
+  since the kernel signed are read normally. A changed clause is read
+  under the clause as signed, and the divergence (the clause, the version
+  signed, the version served) is held and named until the kernel signs
+  the new version: forward, never reverted. No signature lapses on a
+  timer, so there is no question of how long an old signature is
+  honoured.
+
+| Part | Status | Where |
+|---|---|---|
+| The agreement's hash served (`ACT_LAWS` mode 7) | **Built** | `physics::laws::concordance::CONCORDANCE_HASH` |
+| A signature verified and answered by name (`Mismatched`, `Unsigned`, `Malformed`) on mode 8 | **Built**, over the whole text's hash | `verify_concordance_signature` |
+| A signature over a clause set: each clause's hash, enabled or vetoed | **Specified** | §5a.9, B2 |
+| The signed clause set recorded per domain (founding key and sitting reserve) | **Specified** | §5a.9, B2 |
+| A domain's crossings refused until its reserve has signed every network clause of the version served (proposed `NotSignatory`) | **Specified**: the release after v0.3.0 (Concordance §0) | §5a.9, B2 |
+| A tube between two universes bounded by the clauses both enabled, each stopped act naming the vetoed clause | **Specified** | §5a.9, B2 |
+| An act read under its clauses as signed; a changed clause's divergence held and named until the new version is signed | **Specified** | §5a.9, B2 |
+
+Today a signature is over the whole text's hash, verified, recorded
+nowhere and required of no kernel.
+
+### 5a.5 The vertex: where a universe's cones join the hypha's
+
+A universe's events enter the hypha's cones at one vertex, the universal
+core tube: as the act its domain's sitting reserve signs, or carried in
+that act under the carrying line's own signature. Its galactic cores are
+tiers within the reserve's fold, carried inline, and each ring the inner
+routes close is read by its holonomy at the vertex (§5a.3). The
+routes themselves are the kernel's own; the hypha neither prefers nor
+requires any one of them.
+
+A universe's act that reaches the hypha other than at its vertex (a fold
+or act from a galactic core or a world, signed by a key that is not the
+reserve's and not carried in the reserve's act) is not an event of that
+universe's cone at the hypha: no past cone through the vertex places it
+there. It is refused by name, and the boundary's one name for that
+refusal is **`NotThroughCore`** (proposed). The refusal is derived from
+the cone structure, not from a ruling on which route the act took.
+
+Much of this is in the code today, under each object's own `NotReserve`:
+
+| A universe's act | Admitted from | Refusal today | Status |
+|---|---|---|---|
+| A tier's fold (78.119, 78.138) | The sitting reserve | `Uplinked::NotReserve`; `Unbound` for a key no genesis names | **Built** |
+| A line's fold | Carried inline in the reserve's fold, under the line's own signature | `ChildRefusal` (`Unsigned`, `ForeignDomain`, `Unbonded`, `Mismatched`, `Repeated`) | **Built** |
+| A chronometric anchor (78.154) | The sitting reserve | `LedgerRefusal::NotReserve` | **Built** |
+| A map of mouth coordinates (78.154) | The sitting reserve | `MapRefusal::NotReserve` | **Built** |
+| A conversion out (78.127) | The reserve tier | `HandoffRefusal::NotReserve` | **Built** |
+| A manifest (78.155b) | The sitting reserve | `GrantRefusal::NotReserve` | **Built** |
+| A statement of the universe (78.139) | The sitting reserve | `Founded::NotReserve` | **Built** |
+| A house's seat posts (78.145) | The sitting reserve | `NotTheHouse` | **Built** |
+| A mouth's far end accepted (78.136) | That domain's reserve | `HandoffRefusal::NotReserve` | **Built** |
+| A mouth offered by a builder line (78.136) | Any tier of the domain, today | none: the line reaches the hypha directly | **Specified**: carried in the reserve's act |
+| A handoff offer or traversal (78.126) | Any tier of the domain, today (`NotTheTier` checks only the signer) | none at the offer; its sides are consumed through the reserve's fold | **Specified**: carried in the reserve's act |
+| A sub-universe's act (78.155) | Its parent's universal core | none: no sub-court yet | **Specified** with 78.155 R-3 |
+
+Under the boundary law the `NotReserve` variants are instances of one
+refusal and take its name, `NotThroughCore` (names only, byte values
+unchanged), so the boundary reads one name on every object. A line's
+mouth offer and a tier's handoff offer or traversal become acts carried in
+the reserve's signed act, under the line's own signature, as a line's fold
+already is; that amends 78.126 and 78.136 forward and is put to the
+operator with the track's first phase.
+
+### 5a.6 Keys versus topology
+
+The two rules govern different acts, and neither replaces the other:
+- **A key's own acts are governed by keys, never tiers** (78.165). A
+  mind's solve, speech, attestation, wallet read, stake, lease and
+  conversion in are the key's own: the court authenticates the key and
+  pays the account it names. A solve signed by an inner seat of a founded
+  domain is served and paid, and counted on the acts reading.
+- **A universe's acts are governed by topology** (78.169). A fold, an
+  anchor, a map, a mouth, a conversion out, a manifest, a statement or a
+  crossing is the universe's: it is admitted only at the universe's
+  vertex, its universal core (§5a.5).
+
+The test is whose act it is, never who signs it: a key that is a
+universe's tier may solve for itself, and the same key's fold is refused
+`NotThroughCore` unless it is the reserve's or carried in the reserve's.
+
+### 5a.7 How the boundary is observed
+
+An operator and any party read the boundary by typed readings, never by
+logs:
+
+| Reading | What it shows | Status |
+|---|---|---|
+| Each boundary refusal, answered by name to the sender | Which law, which object, why | **Built** (each act's refusal enum) |
+| The acts reading's *signed by an inner seat (served)* | Solves an inner tier signed: keys at work, not a breach | **Built** (`observe::acts::JUDGED`, `Judged::InnerSeat`) |
+| The named twists at each vertex (open obstructions), per domain | Rings of inner routes whose holonomy is not the identity, each with its exact lane vector | **Built** (`ChallengeRequest::Obstructions`, `Court::open_obstructions`) |
+| A fold's finality reading | Provisional or final, bonded or not | **Built** (`FinalityReading`) |
+| A universe's position and dilation from its anchors | Where it stands against TUniversal | **Built** (MU-CHRONOMETRY §3.3) |
+| The boundary reading: refusals at the universal core tube by name and by domain (`NotThroughCore`, `NotLawful`, `NotSignatory`) under `ACT_OBSERVE` | Where a universe's acts try to bypass the core, or fail the universal laws | **Specified** (B4) |
+| Reconstruction events at the boundary: Collapse (a crossing admitted), Converse (two courts reconstruct one crossing, each from the evidence it holds), Collision (two crossings claim one structure, such as two folds over one head) | The boundary as reconstruction, read across a mesh | **Specified** (MU-SCIENCE §5.0; ROADMAP track 8) |
+| Each domain's signatory reading: the clause set its reserve signed (each clause's version, enabled or vetoed) and each divergence held | Which universes stand under which regulation, and which clauses each reads under an earlier version | **Specified** (B2) |
+| A tube's shared clauses: for a core tube between two universes, the clauses both enabled and each bound a veto sets | What the tube carries, and what it stops by name | **Specified** (B2) |
+
+### 5a.8 Integration: what a kernel does to cross
+
+1. **Sign the Concordance** (`ACT_LAWS` mode 8) over the hash served; from
+   the release after v0.3.0 an unsigned kernel's crossings are refused.
+   With B2 the signature is a clause set: every network clause enabled,
+   the others enabled or vetoed (§5a.4); sign each new version forward.
+2. **Found a domain and designate its reserve** (`ACT_DOMAIN`): the reserve
+   is the universal core, the one key that faces the hypha. Any hypha of
+   the mesh will do, and the domain's later acts may reach any hypha: with
+   B0 every hypha reconstructs the domain from its founding receipts.
+3. **Uplink only through the reserve's fold.** Carry each galactic core's
+   and line's fold inline, under its own signature and bond; never let a
+   tier key fold, anchor, map or convert directly.
+4. **State each step as a transition under the universal laws**: the bodies
+   before and after, the motion as a versor, the fluxes, exactly. Ask
+   `ACT_LAWS` mode 1 or 2 for the verdict before sending; the boundary
+   applies the same check at admission when B3 lands. Example: the peer
+   kernel netstratum states its era-1 steps as such transitions
+   (netstratum `docs/113`).
+5. **Keep its own physics inside.** Its shell, constants and compositions
+   stay in its kernel; only exact crossings leave it.
+6. **Let minds' keys speak for themselves.** A seated mind keeps its own
+   direct link with its own key (§2.1 item 4); its own acts are keys', not
+   the universe's.
+
+### 5a.9 Implementation scope
+
+| Phase | Delivers | Files | Wire and ledger effect |
+|---|---|---|---|
+| **B0** | Replication by reconstruction ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)): every hypha reconstructs each domain's state (founding, tiers, reserve, origin) from the founding receipts back-fill delivers (`Cite::Domain`, `Cite::Reserve`, `Cite::Origin`), checked against the signed chain, once by content, with the same refusals as at the founding hypha (a tier held, already founded, already originated) | `src/server/cognition/{state,cite,convert,universe}.rs` (`Court::admit_backfill`, `admit_domain`, `designate_reserve`, `record_origin`, `hold_domain`, `hold_genesis`) | None on the wire; each court's registries become a reconstruction of the chain it holds |
+| **B1** | The act audit (every act kind that names a domain, classed as a key's own or a universe's); `NotReserve` renamed `NotThroughCore` on each object; line mouth offers and tier handoff offers carried in the reserve's act (after the ruling on 78.126 and 78.136) | `src/anastome/dialogue/{uplink,atlas,handoff,endowment,domain}.rs`; `src/server/cognition/{cite,atlas,convert,endowment,mouth,handoff,universe}.rs` | The rename: none (names only). Carried offers: a wire change to `ACT_HANDOFF` |
+| **B2** | Clause-by-clause signatures (each clause's hash, enabled or vetoed; the network clauses never vetoed) recorded per domain; `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/concordance.rs`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/snapshot/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
+| **B3** | The transitions a crossing states, verified under L0 and the core-shell forms at admission; `NotLawful` carrying the breaches; draft-4 laws as ruled | `src/anastome/dialogue/uplink.rs` (`TierFold`), `src/server/cognition/cite.rs`, `src/physics/laws/mod.rs` | A wire and layout change: a fold carries its transitions section |
+| **B4** | The boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | `src/observe/`, `src/bin/mycelium-server/door.rs` | A wire addition (a reading) |
+| **B5** | A sub-universe's acts through its parent's core, with 78.155 R-3 | `src/server/cognition/`, `chronometry::tuniversal` | With 78.155 R-3 |
+
+Claims each phase proves, by the algebra (MU-STANDARDS 3.1):
+`admit_backfill_reconstructs_domain_from_founding_receipts`,
+`admit_backfill_refuses_founding_not_on_signed_chain`,
+`admit_uplink_refuses_fold_not_through_core`,
+`handoff_refuses_line_offer_not_through_core`,
+`admit_uplink_refuses_unsigned_concordance`,
+`concordance_signature_refuses_vetoed_network_clause`,
+`core_tube_refuses_act_under_vetoed_clause` (the tube itself stands),
+`admit_uplink_holds_divergence_of_changed_clause`,
+`admit_uplink_refuses_transition_breaching_l0`,
+`admit_uplink_ignores_declared_law_id`,
+`admit_uplink_waits_on_unread_law`,
+`inner_seat_solve_is_served` (a key's own act stays the key's), and
+`carried_line_cycle_seals_provisional` (the existing
+`admit_uplink_seals_unclosed_rate_cycle_provisional` is its instance).
+
+Mutation-audit entries: the reserve check in `Court::admit_uplink`
+inverted (`!=` to `==`), the signatory check dropped, a verdict's
+breaches discarded before admission, and the holonomy's identity test
+inverted; each is killed by the claim named beside it.
+
+Size: B0 about 200 lines, B1 about 300 (most of it the rename and the
+carried offers), B2 about 400, B3 about 400, B4 about 200; B5 rides
+78.155 R-3. ROADMAP track 24. B3's shared laws wait on draft 4, and B2's
+clause sets on its §0 SIGNING text.
+
+Every later phase stands on B0, **replication by reconstruction** (the
+operator's final ruling of 2026-11-02 on
+[issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)). Today a
+domain's founding, tiers, reserve and origin are written only by the court
+that sealed them, so another hypha reads a reserve's fold as `Unbound`.
+Any client may reach any hypha: every hypha reconstructs each domain's
+state from the founding receipts that back-fill already delivers, checked
+against the signed chain, and the boundary then holds at every hypha. A
+home court is ruled out, and no kernel is asked to address a particular
+hypha.
+
+### 5a.10 What crosses: the exact object, never its digest
+
+**Specified** (the operator's ruling of 2026-11-02; ROADMAP track 25).
+A connection between a universe's cones and the hypha's is transduced: it
+carries the object and the motion that carries one state onto the next.
+A digest has no algebra. It cannot be composed, inverted or transported.
+It erases the holonomy a ring carries, and comparing two digests answers
+only same or not same. So a digest locates and binds at the vertex, but
+never admits.
+
+**What a crossing carries.** Each act that crosses the universal core tube
+carries four parts:
+
+| Part | What | Why the hypha needs it |
+|---|---|---|
+| Place | The event's TUniversal coordinates and its past cone (what it cites) | Where the event stands in the cones (§5a.5) |
+| Content | The exact object: each body held by its boundary (turn breakpoints per circle, extent as a share of the frame) and the motion from the state before to the state after, as a versor of Cl(4,1)(ℚ), or as a pair of turns in ℚ/ℤ where no exact versor exists (Niven) | What is reconstructed |
+| Holonomy | Each ring the crossing closes, with its exact holonomy (§5a.3) | Curvature is content: a route's meaning |
+| Clauses | The clauses the act is read under, and the signatures (§5a.4) | Which laws the reconstruction applies |
+
+**Admission is reconstruction.** The hypha reconstructs the object from
+the place, the content and the holonomy under the shared clauses. It
+admits the crossing only on reaching the same exact object
+([MU-SCIENCE §5.0](MU-SCIENCE.md#50-reconstruction)). A crossing that
+carries only digests where the object belongs is refused **`AddressOnly`**
+(proposed name). The hypha may instead fetch the object by its address and
+reconstruct it.
+
+**The three senses of a digest.** A digest at the vertex has exactly
+three senses, and each permits one comparison:
+
+| Sense | Use | What equality may decide |
+|---|---|---|
+| **Address** | Locates coordinates held losslessly elsewhere: a fetch key or an index entry | Where the object is; never that it is admitted |
+| **Link** | A receipt chain's order: a record names its predecessor's digest | That the chain is unbroken. Each record's content is reconstructed separately (as `rederives` does). |
+| **Commitment** | Bytes a party signs: a signature's message, the Concordance text, a clause | That a reconstructed object is the one committed to, after it has been reconstructed and never instead |
+
+Admitting an object because a digest it carries (a state hash, a root or
+a head) equals one already held, without reconstructing the object, is
+the defect this section refuses.
+
+**A disagreement is a residue, never a boolean.** When the reconstructed
+object differs from the claim, the hypha reads the difference
+algebraically and holds it with the crossing:
+- **Motion:** the claimed versor composed with the reverse of the
+  reconstructed one, `M̃_rec · M_claim`. It is the identity exactly when
+  the two motions agree, and otherwise is a motion of its own, read by
+  its modes. For a turn, the residue is `t_claim − t_rec` in ℚ/ℤ.
+- **Bodies:** the boundary breakpoints that differ, named per circle,
+  with the share of the frame they bound.
+- **Holonomy:** each ring whose holonomy differs, with both values.
+
+The residue is never a scalar distance or a flag. It reads as one of the
+reconstruction events (§5a.7, MU-SCIENCE §5.0):
+- **Collapse:** the crossing is admitted with an identity residue.
+- **Converse:** two hyphae reconstruct the same object from different
+  evidence, and the residue between them is the identity.
+- **Collision:** two crossings claim one structure, and the residue
+  between them is not the identity. Both are held and resolved by
+  content.
+
+**Cost.** The hypha reconstructs only crossings at the vertex, never a
+universe's inner steps (§5a.2). Each body is held by its boundary, so a
+crossing costs in proportion to its boundary, not its interior. The cost
+across a multi-host mesh has not been measured. It is a live reading
+proposed with the boundary reading (B4).
+
+**Status:**
+
+| Item | Status | Where |
+|---|---|---|
+| Receipt chain links compared by digest, each record reconstructed (`rederives`) | **Built** | `src/chronometry/chain/mod.rs` |
+| A domain's stratum root recomputed from its members before comparison | **Built** | `src/server/cognition/court/glue.rs` |
+| The Concordance text's digest served and signatures verified over it | **Built** | `build.rs`, `ACT_LAWS` modes 6–8 |
+| Digests typed by sense (`Address`, `Link`, `Commitment`), with no bare equality | **Specified** | Track 25, X0 |
+| Admission taking only a reconstructed object (`Reconstructed<T>`) | **Specified** | Track 25, X0 |
+| The crossing record (place, content, holonomy, clauses) in the SDK and on the wire | **Specified** | Track 25, X1 (with B3) |
+| `AddressOnly`; the residue held with a refused or collided crossing | **Specified** | Track 25, X2–X3 |
+| Every site that admits on a digest alone, found and moved to reconstruction | **Specified** | Track 25, X4 |
+
+The guards that keep this from drifting back (typed digests, admission by
+a reconstructed type, transduction past the sensor) are
+[MU-ANTI-FLATTENING](MU-ANTI-FLATTENING.md) clauses 12–14.
 
 ---
 
@@ -531,7 +927,7 @@ Hosting gives agents a place, and containment bounds each agent's effect. The
 third leg is **certification**: a record of how an agent behaves that any
 third party can re-derive instead of trusting. Mycelium offers it as a
 **certification venue**: seat an agent in a hosted universe under a
-controlled economy, and its standing is a replayable, receipted,
+controlled economy, and its standing is a receipted, reconstructible,
 non-scalar record (**Specified**).
 
 ### 7.1 What evaluation as practiced lacks
@@ -559,10 +955,15 @@ one universe:
 - the books read from those receipts, per lane, never summed;
 - what was refused, each by name.
 
-Anyone can verify a certificate by reconstruction: rebuild the universe from
-its seed over the era, replay the agent's signed acts into it, and check
-that the courts' verdicts and the books follow. The certificate attests
-the record; it does not ask to be trusted.
+Anyone can verify a certificate by reconstruction (MU-SCIENCE §5.0): check
+each receipt's signature and its chain hash up to a signed root;
+reconstruct each cited verdict from its constructors and the claim's
+coordinates, by the class's means (V0–V4), reaching the same exact object;
+and check that the books close per lane (conservation). The universe's
+history is attested by its kernel's signed receipts and is never re-run:
+no universe is rebuilt from its seed and no act is replayed to verify a
+certificate (MU-CONCORDANCE 1.4, 4.4). The certificate attests the record;
+it does not ask to be trusted.
 
 ### 7.3 Scope: what a certificate attests
 
@@ -681,6 +1082,7 @@ admits on the other's proof. This is ROADMAP track 16.
 | **H4** | A many-agent reference universe (§4): one domain, regions, seats, attestations as agreement. |
 | **H5** | The published draw record (§6.6); the containment readings C1–C3 for the reference mind on a running network. |
 | **H6** | Certification (§7): the exam universe as a 78.x proposal for ruling, then the certificate's encoding and its reconstruction check. |
+| **B1–B5** | The boundary law (§5a.9): the act audit and `NotThroughCore`, signatories, the universal laws at admission, the boundary reading, sub-universes through the parent's core. ROADMAP track 24. |
 
 Each phase follows the project's cadence: tests as claims proved by the
 algebra, one phase per commit, and the scoped test suites for the modules

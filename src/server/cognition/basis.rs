@@ -852,7 +852,7 @@ impl Court {
     /// takes no pressure here.
     ///
     /// The frame is the word's own discharge, the frame its carriage draws
-    /// (`carry`), in the escrow's currency: μ, a share of the frame (78.169
+    /// (`carry`), in the escrow's currency: μ, a share of the frame (78.170
     /// O1, ruled 2026-11-01). The waiting sentence cites a word this court
     /// does not rule, so its own discharge cannot be measured here, and its
     /// magnitude is a count, not μ: crediting it would credit a site count

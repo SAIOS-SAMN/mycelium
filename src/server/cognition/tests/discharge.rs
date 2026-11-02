@@ -61,7 +61,7 @@ fn mint_sentence_escrows_discharge_not_span() {
         k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&stood)),
         vec![crate::anastome::dialogue::SPEECH_STOOD]
     );
-    // μ IS A SHARE OF THE FRAME (78.169 O1): both frames are 2×4, so S, G
+    // μ IS A SHARE OF THE FRAME (78.170 O1): both frames are 2×4, so S, G
     // and T (the flux over the carried mass, every pair on one extent) are
     // each over 8 sites, and H, the shell count, stands as it is.
     let mu = crate::economy::Mu::counts(d).over([8, 8, 8, 1]).expect("non-zero wholes");

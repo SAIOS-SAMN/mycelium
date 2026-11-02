@@ -16,7 +16,7 @@ use crate::transducer::sentence::SentenceRule;
 /// through draws on the mind's own metabolism (`Physics::bump`, the
 /// reserve's shortfall), which is counted in the mind's own units. It is
 /// NOT μ, so it stays a count (ruled 2026-11-01): μ is a share of the frame
-/// (MU-RECURSION 78.169 O1), read where μ is paid (`DeflationRead::mu`,
+/// (MU-RECURSION 78.170 O1), read where μ is paid (`DeflationRead::mu`,
 /// `Court::discharge_on`). A pair with no enclosure (empty or ragged) draws
 /// nothing, and so does a pair of unequal enclosures: its coboundary is its
 /// transduction, not a chain of cells, and its count is not rebuilt as one

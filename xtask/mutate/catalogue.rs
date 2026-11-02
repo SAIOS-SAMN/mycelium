@@ -163,7 +163,7 @@ pub const CATALOGUE: &[Mutant] = &[
         filter: "server::tests::registry::task_address",
     },
     Mutant {
-        law: "MU-RECURSION 78.169 O1: μ on S and G is a share of the frame's h·w, never a site count",
+        law: "MU-RECURSION 78.170 O1: μ on S and G is a share of the frame's h·w, never a site count",
         file: "src/transducer/family/transduce/record.rs",
         before: "        Some(a) => match whole.over([a, a, 1, 1]) {",
         after: "        Some(a) => match whole.over([1, 1, 1, 1]) {",
@@ -171,7 +171,7 @@ pub const CATALOGUE: &[Mutant] = &[
         filter: "transducer::family::tests::deflation",
     },
     Mutant {
-        law: "MU-RECURSION 78.169 O1: μ on T is the flux over the carried mass, taken as the frames' share of it",
+        law: "MU-RECURSION 78.170 O1: μ on T is the flux over the carried mass, taken as the frames' share of it",
         file: "src/transducer/family/deflation.rs",
         before: "                let per = mass_share / crate::core::Q::from_integer(m.into());",
         after: "                let per = crate::core::Q::from_integer(1.into());",
@@ -179,7 +179,7 @@ pub const CATALOGUE: &[Mutant] = &[
         filter: "transducer::family::tests::deflation",
     },
     Mutant {
-        law: "MU-RECURSION 78.169 O1: a changed incidence lands on S where one hue is ground, on G where both are painted",
+        law: "MU-RECURSION 78.170 O1: a changed incidence lands on S where one hue is ground, on G where both are painted",
         file: "src/transducer/family/transduce/record.rs",
         before: "            let lane = match (i.before == void) != (i.after == void) {",
         after: "            let lane = match i.before == void {",
