@@ -37,10 +37,17 @@ pull request, and only the maintainers in [MAINTAINERS.md](MAINTAINERS.md)
 merge. The full process is [`docs/MU-RELEASE.md`](docs/MU-RELEASE.md)
 Part I.
 
-1. **Find or open an issue.** Each ROADMAP track and each known defect is
-   an issue; `good first issue` marks a contained starting point. A change
-   of behaviour opens a *proposal* issue naming the section of the
+1. **Find or open an issue.** Start from
+   [ROADMAP › Now](ROADMAP.md#now): the release in progress, the work ready
+   to start, and what waits on a ruling. Each item there is an issue with a
+   milestone (`v0.3.0`, `next`) and a track label (`track-N`). `good first
+   issue` marks a contained starting point, `in progress` marks work
+   already claimed, and `maintainers` marks release and operator work. A
+   change of behaviour opens a *proposal* issue naming the section of the
    specification it touches.
+   **Claim the issue** with a comment before starting, so that two
+   contributors do not build one phase. A claim with no pull request or
+   comment for 14 days lapses, and a maintainer may release it.
 2. **Specification first.** A change of behaviour is a change of the
    specification: written as a proposal in
    [`docs/proposals/`](docs/proposals/) and amended into the governing

@@ -10,6 +10,35 @@ as working practice, laws that bind every contribution:
 [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md). Where this file
 and those documents differ, the documents govern.
 
+## Where to start
+
+1. **Orient.** Read [README.md](README.md) (what Mycelium is and how to
+   run it), this file, then [ROADMAP › Now](ROADMAP.md#now): the release
+   in progress, the work ready to start, and what waits on a ruling.
+2. **Pick one issue from the Now section.** Take an item under *Ready to
+   start*, or a v0.3.0 item marked *Ready*. Prefer `good first issue` for a
+   first contribution. Never start an item marked `in progress` or
+   `maintainers`, or one waiting on a ruling. With no item named, the
+   default is the first open item in *Ready to start*.
+   - List them: `gh issue list --milestone next` and
+     `gh issue list --milestone v0.3.0`.
+3. **Claim it** with a comment on the issue, before writing code.
+4. **Read the issue's specification whole**: the sections it names, the
+   ROADMAP track it belongs to, and [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md)'s
+   preamble (the laws). Search for each section a code comment cites
+   before changing that code.
+5. **Build and check the tree** first, as
+   [CONTRIBUTING › Getting started](CONTRIBUTING.md#getting-started)
+   says: `cargo build --release`, then `cd xtask && cargo run`.
+6. **Work one phase**, as the ROADMAP track's *How to build a phase*
+   says where it has one: a branch, the claims first, the build, the
+   gate, the scoped tests, `scripts/check`, then a pull request that
+   names the issue (`Closes #N`).
+
+Questions of design that the specification does not settle are not
+decided by the agent. Ask on the issue, and continue with work the
+specification does settle.
+
 ## The regressions that recur
 
 Agents tend to drift back to the familiar engineering structure. Each

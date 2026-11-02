@@ -6,6 +6,19 @@ such change is named here.
 
 ## Unreleased
 
+### Where to start (documentation)
+- **ROADMAP › Now:** the current order of work, kept current rather than
+  appended to. It lists the release in progress (v0.3.0: T2 #25, T3 #26,
+  D2.5 #27, rc.3 #24), the work ready to start (track 25 X0 #28, track 24
+  B0 #13, #16, track 11 #29), what waits on an operator ruling, and what
+  is under investigation (#14).
+- **GitHub:** milestones `v0.3.0` and `next`; labels `track`, `track-N`,
+  `in progress` and `maintainers`; one issue per ready item.
+- **AGENTS.md › Where to start** and **CONTRIBUTING:** orient, pick an
+  issue from Now, claim it with a comment (a claim lapses after 14 days
+  without activity), read its specification whole, build, then one phase
+  per pull request. The README links the Now section.
+
 ### Crossings carried exact; drift guarded by type (specification, ruled 2026-11-02)
 - **What crosses the vertex** (MU-HOSTING §5a.10): a crossing carries its
   place, its content as an exact object (each body by its boundary, the
