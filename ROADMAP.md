@@ -32,8 +32,8 @@ is at `0.3.0-rc.2`. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
-| T2, the transduction core: frames related by the motion between them, μ as a share of the frame | [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) | In progress (maintainers); held for the ruling on #32 (its `Enclosure` fixes two circles) |
-| The sensor written for one data source: `arc.rs`, a fixed palette, ground `0`, fixed axes ([MU-SENSING](docs/MU-SENSING.md), track 26) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; order relative to T2 and T3 awaits a ruling |
+| T2, the transduction core: frames related by the motion between them, μ as a share of the frame | [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) | In progress (maintainers); merges after track 26's S0 and S4, its `Enclosure` holding `n` absorbed circles |
+| Track 26, S0–S5: the sensor for any source at any rank; rows and columns absorbed or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress (maintainers); in v0.3.0's one break. S6 follows v0.3.0. |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready after T2 |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Ready |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the three above (maintainers) |
@@ -57,9 +57,6 @@ is recorded:
   act, which amends rulings 78.126 and 78.136.
 - B2: per-clause signatures, a wire change to `ACT_LAWS` mode 8.
 - Proposed names: `NotSignatory`, `AddressOnly`.
-- Track 26's place in v0.3.0 (#32): whether S0–S5 land in v0.3.0's one
-  break, with T2's `Enclosure` generalised to `n` circles before T2
-  merges, or after v0.3.0 as a second break. S5 changes the wire.
 - The open questions of MU-DERIVATIONS §7 and MU-RELEASE §10.
 
 **4. Under investigation:**
@@ -1118,9 +1115,16 @@ Each phase is one commit:
    - `GRID_AXES`, `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N`, the
      3-tuple `Point`, `BASE_AXES` and the planar `(rows, cols)` carriers
      are replaced by the sample's rank and a perspective's roles.
-   - The transduction's `Enclosure` holds `n` circles.
+   - The transduction's `Enclosure` holds `n` circles, none of them a row
+     or a column: the axes are absorbed (MU-SENSING §3.6).
+   - An axis is taken apart into nested circles where the family is
+     invariant under the factoring, with candidates held in superposition.
+     The nesting is a coordinate of the percept.
    - Connection is read by grade (MU-RECURSION 71.2 (2)).
-   - Claim: `rank_one_and_rank_three_samples_perceived_by_one_path`.
+   - Claims: `rank_one_and_rank_three_samples_perceived_by_one_path`,
+     `no_axis_is_privileged` (the percept is invariant under a
+     relabelling of the axes), and
+     `axis_taken_apart_only_where_family_invariant`.
 6. **S5, samples on the wire.**
    - A task carries samples of rank `n`: `n`, the extents, then the
      symbols at their width.

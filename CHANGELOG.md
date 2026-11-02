@@ -18,8 +18,13 @@ such change is named here.
   `src/`.
 - **The defect** [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32)
   and **ROADMAP track 26** (S0–S6) cover `src/arc.rs`, the fixed palette,
-  the ground of `0`, the fixed axes and the wire's `u16 × u16` cells. Its
-  order relative to v0.3.0 awaits a ruling (ROADMAP › Now).
+  the ground of `0`, the fixed axes and the wire's `u16 × u16` cells.
+  S0–S5 land in v0.3.0's one break, and T2 merges after S0 and S4.
+- **No rows and no columns** (MU-SENSING §3.6, ruled 2026-11-02): a
+  sample's axes are absorbed into the perception manifold as circles with
+  no privileged plane, or taken apart into nested circles where the family
+  is invariant under the factoring. The nesting is a coordinate of the
+  percept.
 - GLOSSARY (Task, Body and Gauge generalised; Sample, Perspective, Ground,
   Unread dimension), MU-ANTI-FLATTENING clause 8, AGENTS.md and the README
   follow.

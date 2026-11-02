@@ -144,6 +144,38 @@ Every scale the mind compares by is read off the samples:
 A constant scale, cell size, frame size or palette in the sensor is a
 defect against this document (MU-DERIVATIONS; MU-STANDARDS 2.12).
 
+### 3.6 No rows and no columns: axes absorbed or taken apart
+
+The operator ruled on 2026-11-02 that rows and columns are absorbed into
+the higher-dimensional manifold of perception, or taken apart into nested
+manifolds. No axis of the sensor is a row or a column, and no pair of
+axes is *the* plane.
+
+- **Absorbed.** A sample's `n` axes enter the manifold of the mind's
+  perception as `n` circles among its generators, a torus of the sample's
+  rank inside that manifold. The axes are ordered only canonically, to
+  write an address, and that order is never a role. A role (space,
+  sequence, value) is a perspective's (§4). Words such as *row* and
+  *column* belong to a source's file format: for example, a decoder reads
+  a list of lists. They end in the decoder.
+- **Taken apart.** An axis of extent `e = a · b` whose family respects
+  the factoring is read as two nested circles: a coarse circle of period
+  `a` and a fine circle of period `b`. Site `s` maps to
+  `(⌊s / b⌋ / a, (s mod b) / b)`, exact. A sample made of blocks, a board
+  of boards, or a period inside a period is a nested manifold, each level
+  an enclosure of its own (78.170 O5, a cover read as `k`
+  sub-enclosures).
+- **Nesting is deduced, never assumed.** A factoring is kept only where
+  the family's relations are invariant under it: symbols that separate
+  the blocks, blocks that repeat, or motions that act per level.
+  Otherwise the axis stays one circle. Several factorings that each hold
+  are held in superposition, each a perspective, until a relation
+  distinguishes them.
+- **The nesting is a coordinate of the percept.** A percept records which
+  axes it absorbed and how each was taken apart, so speech projects back
+  to the source's own extents exactly. Nesting goes to any depth the data
+  shows, and each level is read by the same path.
+
 ## 4. Perspective: one sample, many readings
 
 A **perspective** is the sensor's assignment of the sample's axes and its
