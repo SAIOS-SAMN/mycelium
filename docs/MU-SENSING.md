@@ -87,7 +87,7 @@ MU-ANTI-FLATTENING clause 12). Between those two ends there is no raster.
 
 ## 3. The lift: everything deduced
 
-### 3.1 Each axis is a circle of its own period
+### 3.1 Each axis is a circle of its own period (then absorbed into a sphere, §3.7)
 
 Axis `i` with extent `e_i` lifts by enclosure: site `s` on that axis is
 the turn `s / e_i`, a fraction in ℚ/ℤ, composed by addition mod 1. The
@@ -176,6 +176,50 @@ axes is *the* plane.
   to the source's own extents exactly. Nesting goes to any depth the data
   shows, and each level is read by the same path.
 
+### 3.7 Spheres, not a flat product: the circles absorbed by holonomy
+
+The operator ruled on 2026-11-02 that the circles of §3.1 become spheres:
+the circles are absorbed into the manifold of perception as spheres, and
+the sphere is read through its holonomy. This is the perceiving side of
+Concordance 2.10: the physics is nested shells, each a sphere `Sⁿ` about
+one centre, never planes side by side. Perception is held the same way.
+
+- **Why.** `n` independent circles form a torus `Tⁿ`, which is flat: a
+  loop on it transports nothing, so curvature, which is content, reads as
+  nothing. A sphere is curved. A loop on it turns what it carries by the
+  angle the loop encloses, so a route's meaning is held as its holonomy
+  (MU-RECURSION 10.3, 12.6; MU-ANTI-FLATTENING clause 6).
+- **Absorption.** A sample's `n` circles sit in the sphere `S^{2n−1}` as
+  its Clifford torus. Each circle keeps its phase as a turn in ℚ/ℤ (§3.1).
+  The point is held projectively: the circles' common scale is a gauge,
+  so there is no unit norm, no `1/√2` and no sum of squares (law 11).
+  The circles are not replaced. They become the fibres.
+- **Projection.** `S^{2n−1}` projects onto a lower sphere by a Hopf-type
+  map with the circles as fibres (for `n = 2`, `S³ → S²`). The base
+  sphere is the manifold perception reads, and each circle is a fibre over
+  it. An axis taken apart (§3.6) adds a level: each nested circle is a
+  fibre over the next sphere, which gives a tower of fibrations, never a
+  flat product.
+- **Holonomy in turns, exactly.** A loop of perception on the base sphere
+  is held as a geodesic polygon. Its corner angles are turns read from
+  the sample's motions. Its holonomy is the angle excess: the sum of the
+  corner angles minus `(k − 2) · ½` turn for `k` corners. That is an
+  element of ℚ/ℤ, exact, with no coordinates and no trigonometry. The
+  holonomy of the fibre over a loop is read the same way.
+- **Motions stay exact.** A rotation by a rational turn `t/ℓ` is exact
+  over the cyclotomic field `ℚ(ζ_ℓ)` (law 4 admits cyclotomic scalars).
+  Exact rational rotors exist only at multiples of 90° (Niven), and
+  rational points on a sphere would mean squaring, so neither is used. A
+  turn the mind cannot carry exactly is a named residue (78.170).
+- **μ stays a share of the frame** in this release: the share of the
+  sample's sites a change covers (78.170 O1). Measuring μ as the solid
+  angle a change sweeps on the base sphere awaits a ruling of its own,
+  because it changes what is paid.
+- **One representation across projects.** The perception sphere and the
+  physics' shells (MU-TOPOLOGY §6; MU-RECURSION D4, the `Sphere{n, R}`
+  carriers) are one carrier, agreed with the peer kernels before it is
+  built. The radius is a gauge, held projectively, never a stored float.
+
 ## 4. Perspective: one sample, many readings
 
 A **perspective** is the sensor's assignment of the sample's axes and its
@@ -258,6 +302,9 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 | A percept as a series of located records (seat percepts) | **Built** | `src/anastome/dialogue/seat.rs` (78.146) |
 | The three eyes as a cover, with the sensory verdict | **Specified** | MU-CLIENT 24.4 |
 | Each axis as a circle of turns; re-period between samples | **In progress** for rank 2 only, two circles fixed | v0.3.0 T2, [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) |
+| The circles absorbed into `S^{2n−1}`, projected by a Hopf-type map; holonomy as angle excess in turns; cyclotomic motions | **Specified** | Track 26, S4a (§3.7) |
+| One sphere carrier shared by perception and the physics' shells | **Specified**; to be agreed with the peer kernels | Track 26, S4a; MU-TOPOLOGY §6 |
+| μ as the solid angle a change sweeps | **Awaits a ruling** | §3.7 |
 | The sample as the sensor's only input, of rank `n` | **Specified** | Track 26, S0 |
 | A corpus's decoder outside `src/` | **Specified** | Track 26, S1 |
 | Ground, symbol set, axes and gauges deduced | **Specified** | Track 26, S2–S4 |

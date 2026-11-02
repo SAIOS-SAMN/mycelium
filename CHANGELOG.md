@@ -20,6 +20,14 @@ such change is named here.
   and **ROADMAP track 26** (S0–S6) cover `src/arc.rs`, the fixed palette,
   the ground of `0`, the fixed axes and the wire's `u16 × u16` cells.
   S0–S5 land in v0.3.0's one break, and T2 merges after S0 and S4.
+- **Spheres, not a flat product** (MU-SENSING §3.7, ruled 2026-11-02):
+  the circles are absorbed, held projectively with no unit norm, as the
+  Clifford torus in `S^{2n−1}`, and read through a Hopf-type projection
+  on the base sphere. A loop's holonomy is its angle excess in turns,
+  exact in ℚ/ℤ, and motions are exact over cyclotomic fields. It is the
+  perceiving side of Concordance 2.10's nested shells. This is ROADMAP
+  track 26 S4a, after the sphere carrier is agreed with the peer kernels.
+  μ as a swept solid angle awaits a ruling.
 - **No rows and no columns** (MU-SENSING §3.6, ruled 2026-11-02): a
   sample's axes are absorbed into the perception manifold as circles with
   no privileged plane, or taken apart into nested circles where the family
