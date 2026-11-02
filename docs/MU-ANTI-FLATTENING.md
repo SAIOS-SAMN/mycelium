@@ -47,7 +47,9 @@ excluded from the reasoning path.
    rule 11's one stated exception (51.2); the curvature itself is read off
    a remainder, never a constant. `Spin(4,0) ⋉ ℚ⁴` is the Euclidean group,
    in which translations commute, and carries no non-commuting displacement.
-8. **The similarity group is derived from the base.** The base has three
+8. **The similarity group is derived from the base.** *(Read through
+   [MU-SENSING](MU-SENSING.md): the base's rank is data, MU-RECURSION 71;
+   three is its value at one source.)* The base has three
    point coordinates `(r, c, k)` (51.2); a fourth is an invented value until
    a corpus writes one (51.11, rule 11). Every scalar is a rational or a
    cyclotomic element (law 4); no finite field enters cognition, and a prime
