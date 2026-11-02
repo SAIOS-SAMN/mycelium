@@ -266,7 +266,7 @@ payloads are exact objects; a refusal reply carries its named reason.
 
 A rule a mind states about a task is a sentence. That sentence carries
 geometric **rule elements** (`src/transducer/sentence/form/rule_element.rs`):
-- a *carriage*: a versor of Cl(4,1)(ℚ) applied once or iterated to a
+- a *carriage*: a versor of `Cl(n+1, 1)` applied once or iterated to a
   contact, with a gauge (hue) map;
 - 2-chains bounded by a selection;
 - 1-chains joining bodies;
@@ -288,8 +288,11 @@ into eras, and witness hyphae co-sign each era's fold
 (`docs/MU-FOLD.md`).
 
 **Structure.** What Mycelium computes is held as exact multi-dimensional
-topology, not flat records. Objects are multivectors of Cl(4,1)(ℚ), with
-motions as versors. Relations are transports, and collections of
+topology, not flat records. Objects are multivectors of `Cl(n+1, 1)`, with
+`n` read from the data. The geometry is non-Euclidean, and the algebra is
+exact and never scalar: a number appears only as the gauge of a
+one-dimensional reading ([MU-SENSING §3.7](docs/MU-SENSING.md#37-the-bubble-non-euclidean-never-scalar)).
+Motions are versors. Relations are transports, and collections of
 relations are complexes of any dimension whose cohomology is read. A
 ring's holonomy is its content. Value and time keep four lanes apart, and
 physics is nested shells `Sⁿ`. A flat record keeps values; this keeps
@@ -1130,6 +1133,7 @@ network), **Specified** (stated, not yet built) or **In progress**.
 | [`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md) | One clock for many universes: TUniversal, who keeps which time, chronometric anchors as every universe's time book, the server's time service, crossings, and what each kernel needs. |
 | [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Universes, kernels and hosted minds: the hosting hierarchy and the kinds of hosted universe, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |
 | [`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) | The client conformance read: the statement of MUST and MAY acts a client pins to, served by every hypha, its in-process check and its suite on a network. |
+| [`docs/MU-SENSING.md`](docs/MU-SENSING.md) | How a client senses and perceives: a source's sample of any rank, the lift into circles of turns, everything (ground, symbols, gauges, axes) deduced, perspective as a sensor motion, and a mind that knows it holds a section of a larger world. |
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The shared vocabulary, served by address beside the law register. |
 | [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) | Structure is never flattened to scalars or flat maps; past the sensor frames are transduced, never put on a common grid; a digest never admits; and the drift guards that keep each of these. |

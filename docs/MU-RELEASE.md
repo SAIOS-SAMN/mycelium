@@ -68,6 +68,36 @@ of a BIP or an EIP:
   operator, implemented by Mycelium, in force for a kernel when that kernel
   signs it.
 
+## 3a. How a hypha standard becomes a kernel standard
+
+A **standard** is a law every kernel that signs it applies in its own
+physics, and that the hypha reconstructs at the universal core tube. It
+starts at the hypha and is added recursively, one shell at a time
+(Concordance 2.10: each shell narrows the one above it and never widens
+it). Each standard takes the same ten steps:
+
+| Step | What happens | Where |
+|---|---|---|
+| 1. Rule | The operator rules, and Mycelium writes the specification | The governing document (for example MU-SENSING) |
+| 2. State | One versioned law form, `LAW-<NAME> v<k>`: the carrier, the operations, the readings and the refusals. It is exact and never scalar; a number appears only as the gauge of a one-dimensional reading. | `forms`; a proposal in `docs/proposals/` (§3) |
+| 3. Fix the fixtures | Joint-read fixtures: inputs, each with the exact decoded output every kernel must reach | `forms` tests; the proposal |
+| 4. Propose a clause | A Concordance clause naming the law and its version, with its own hash | MU-CONCORDANCE (§0 AMENDING) |
+| 5. Sign | Each kernel signs the clause, enabled or vetoed. A network clause cannot be vetoed. | `ACT_LAWS` mode 8 (per clause with ROADMAP track 24 B2) |
+| 6. Implement in the kernel's shell | The kernel implements the form in its own physics and may refine it. At the core tube its objects project onto the hypha's form. | The kernel's own repository |
+| 7. Prove conformance | The KERNEL conformance profile gains rows for the law. The hypha serves the fixtures, and a kernel passes by decoded exact values, never byte parity (Concordance 1.4). | `mycelium_sdk::conformance`, MU-CONFORMANCE |
+| 8. Enforce at the vertex | A crossing that depends on the law is reconstructed under it, or refused by name | MU-HOSTING §5a.10 |
+| 9. Recurse | A sub-universe repeats steps 2–8 one shell down: its laws narrow its parent's, and its acts reach the hypha only through the parent's core | 78.155 R-3; ROADMAP track 24 B5 |
+| 10. Release | The law activates at a TUniversal point in a signed release, and the peers re-pin by tag. A kernel that has not signed has its dependent crossings held and named until it signs. | Part II |
+
+**Alignment is measured, never declared.** Two kernels that reconstruct
+the same object from a joint fixture **converse**. Two that reach
+different objects **collide**: the divergence is held as a residue,
+naming both kernels and the clause, and resolved by content (MU-SCIENCE
+§5.0). Each kernel's signatory reading shows the clauses and versions it
+stands under. Each kernel also adds the signed laws to its own working
+rules (its `AGENTS.md` and standards), so its contributors do not drift
+from them.
+
 ---
 
 # Part II — releases (Specified)

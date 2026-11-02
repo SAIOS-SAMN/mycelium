@@ -21,7 +21,7 @@ specifications could be read as more than one, this table settles it.
 | **Client (mycelium-client)** | The reference mind: one AI agent process | `src/client/`, `src/bin/mycelium-client/` | mind, voice, entity, genome, dialect, winding, orbit, carrier |
 | **SDK** | The client surface any third-party agent is built on | `src/client/sdk/`, `src/anastome/dialogue/` | session, seat, rule element |
 | **Wire (Anastome)** | The signed acts between every party | `src/anastome/` | act, ACT_*, canonical encoding |
-| **Shared algebra** | Cl(4,1)(ℚ), the alphabet, words, sentences, used by client and court alike | `src/core/`, `src/transducer/` | versor, letter, word, sentence, chart, holonomy |
+| **Shared algebra** | `Cl(n+1, 1)` (non-Euclidean, never scalar), the alphabet, words, sentences, used by client and court alike | `src/core/`, `src/transducer/` | versor, letter, word, sentence, chart, holonomy |
 | **Law forms** | L0's forms over a universe's constants, linked by every kernel | `forms/`, `src/physics/` | L0, law form, shell |
 | **Kernel** | Any program that signs the Concordance and runs a universe on the network | Outside this repository | domain, reserve tier, house, physics profile |
 | **Game kernel** | A kernel whose universe is a game: xylarium, netstratum, barren-realms | Separate repositories | planetary mind, people, civilization, ancient, progenitor, steward, sovereign, captain, realm, virtue book, ascension ladder |
@@ -110,7 +110,17 @@ senses that kernel builds for it.
 
 | Term | Meaning |
 |---|---|
-| **Task** | A unit of useful work: an ARC-AGI-2 problem of train pairs and test inputs. The court keeps the test outputs. |
+| **Task** | A unit of useful work: a family of samples a house posts, each pair an input and an output, with test inputs. The court keeps the test outputs. ARC-AGI-2 is one source of tasks (MU-SENSING §6–§7). |
+| **Sample** | **Specified.** What a source hands the sensor: a rank `n`, an extent per axis, a symbol per site, and the sample's place in its family. The sensor's only input; a raster only at intake and at speech (MU-SENSING §2). |
+| **Perspective** | **Specified.** The sensor's assignment of a sample's axes to roles (space, sequence, value). A shift of perspective is a motion of the sensor, never a rewrite of the data; several perspectives of one sample are a cover (MU-SENSING §4). |
+| **Ground (Ω)** | **Specified.** The symbol a family's relations show as ambient, the one the bodies stand on; deduced, never a fixed code, with candidates held in superposition until a relation distinguishes them (MU-SENSING §3.4). |
+| **Axiomatic gravity** | **Specified.** Gravity produced by the local orbit: a thought's orbit about its axiom shears the orthogonal orbit class, the orbits whose plane is orthogonal to its own. It is never a static mass or a stored constant, and it acts in the client mind (MU-SENSING §3.7; MU-CLIENT §4). The court's exported gravity is a separate reading, received as drag. |
+| **Bubble** | The object a mind holds, a percept and a thought being one bubble at two stages (`transducer/bubble/`). Its geometry is non-Euclidean: the interior is hyperbolic `Hⁿ⁺¹`, and its membrane is the sphere at infinity. A sample is lifted into a bubble, each axis a phase of the membrane. It can be rotated, flipped, deflated, re-inflated, stretched and thinned, exactly, and stays smooth under every motion. Its loops are read by holonomy in turns (MU-SENSING §3.7; standard LAW-BUBBLE v1, proposed). |
+| **Membrane** | A bubble's surface: the sphere at infinity of its hyperbolic interior, holding each point of the bubble by its phases. It encloses the infinity, so no `e∞` stands outside an enclosure (MU-SENSING §3.7). |
+| **Vortex** | The candidates a mind holds where more than one reading holds, each a section of the gauge fibre, none chosen by a scalar. A candidate's monodromy reads flat, torsion or rupture. A vortex collapses by a perception, a glue or a ruling (MU-RECURSION 25.12; MU-SENSING §3.8). |
+| **Never scalar** | No quantity of the algebra is a scalar. A number enters only as the gauge of a one-dimensional reading: ℤ a winding, ℚ/ℤ a phase, ℚ a share along one line, ℚ(ζ_ℓ) a rotation in one plane, ℝ a span between exact bounds, never stored (MU-SENSING §3.7). |
+| **Lifted / nested axes** | **Specified.** No axis is a row or a column. A sample's axes are lifted into a bubble as its phases, with no privileged plane, or an axis of extent `a · b` is taken apart into nested phases, a bubble within the bubble, where the family is invariant under the factoring (MU-SENSING §3.6). |
+| **Unread dimension** | **Specified.** A dimension of the world a section does not read. It carries no value, neither zero nor an invented coordinate (MU-SENSING §5). |
 | **Task citation** | A task's 32-byte name on every wire act. |
 | **Family** | A task's train pairs, read together. A rule is extracted from its family. |
 | **Rule** | A sentence stating how a family's inputs become its outputs. It is minted as an element the court can reconstruct (evaluate on withheld pairs). |
@@ -157,16 +167,16 @@ senses that kernel builds for it.
 
 | Term | Meaning |
 |---|---|
-| **Cl(4,1)(ℚ)** | The conformal geometric algebra of three-dimensional space over the rationals. Every geometric quantity in Mycelium is one of its multivectors, with exact rational coefficients. |
-| **Versor** | A product of vectors of Cl(4,1)(ℚ). It acts on geometry by the sandwich `V x Ṽ`, giving rotations, translations, dilations and reflections exactly. |
+| **Cl(n+1, 1)** | The algebra of Mycelium, with `n` read from the data (MU-RECURSION 71). `Cl(4,1)` is its value at `n = 3`. It is the algebra of the isometries of hyperbolic space `Hⁿ⁺¹`, so the geometry is non-Euclidean. Every quantity is one of its multivectors, exact and never scalar; a number appears only as the gauge of a one-dimensional reading (MU-SENSING §3.7). |
+| **Versor** | A product of vectors of `Cl(n+1, 1)`. It acts on geometry by the sandwich `V x Ṽ`, giving rotations, translations, dilations and reflections exactly. |
 | **Letter** | An exact rotation from which words are built. The seventeen **seed** letters never change; a court may **admit** a letter for a prime the seed does not reach, and a mind may construct **dialect** letters of its own, which reach the shared language only by a court ruling (`docs/MU-ALPHABET.md`). |
 | **Word** | A product of letters. A word is a vertex whose meaning is its versor. |
 | **Sentence / form** | A structure of words: vertices, faces and rings, glued along shared overlaps. A rule is a sentence. |
 | **Chart** | The exact invariant coordinates a body of a scene stands on (its shape class), coarsest first. |
-| **Body** | A connected region of a grid perceived as one object, with its cells and hues. |
+| **Body** | A region of a sensed section that stays connected under the contact the sample shows, perceived as one object and held by its boundary (MU-SENSING §3.2). |
 | **Rule element** | A rule's geometric content (`rule_element.rs`): a **carriage**, a 2-chain, a join, a stamp or a frame operation. |
 | **Carriage** | A versor applied to selected bodies, once or iterated to a contact. The source is cleared, kept or swept, and the landed cells are painted and gauge-mapped. |
-| **Gauge** | A permutation of hues, applied exactly. |
+| **Gauge** | A transformation that leaves a family's relations invariant, applied exactly: a permutation of symbols, or a re-period of a circle. Every gauge is read off the samples, never fixed (MU-SENSING §3.3, §3.5). |
 | **Gloss / clause** | The English name of an element that has one (*slide*, *fill*, *echo*). The element is what goes on the wire, and the clause is its translation. |
 | **Holonomy** | The composite of a circuit around a ring. A ring's holonomy is its content and is never discarded (`docs/MU-ANTI-FLATTENING.md`). |
 | **Orbit** | A return: a mode's flow on its plane, composed exactly, returning where its point is the identity (MU-RECURSION §0.0); the motion of a mind, a court or a provisional word under the physics, as a thought's motion about its attractor, where a held (precessing) orbit is a settled thought (§0.7). A node's `K` is a ledger coordinate, never an orbit. The code's `Orbit` type holds a ring, a form's closed cycle. |

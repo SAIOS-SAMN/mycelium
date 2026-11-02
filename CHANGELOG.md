@@ -6,6 +6,75 @@ such change is named here.
 
 ## Unreleased
 
+### The bubble, the vortex, and how a standard reaches the kernels (specification, ruled 2026-11-02)
+- **The bubble** (MU-SENSING §3.7): a sample is lifted into the bubble
+  the mind already holds (`transducer/bubble/`), so a percept and a
+  thought are one bubble at two stages. Its geometry is non-Euclidean:
+  the interior is `Hⁿ⁺¹`, and the membrane is its sphere at infinity, so
+  no `e∞` stands outside an enclosure. Its motions (rotate, flip,
+  deflate, re-inflate, stretch, thin) are exact. "Absorbed circles" is
+  replaced by the lift into a bubble throughout.
+- **Never scalar:** a number enters only as the gauge of a
+  one-dimensional reading (ℤ, ℚ/ℤ, ℚ, ℚ(ζ_ℓ), ℝ as a span). The headline
+  `Cl(4,1)(ℚ)` becomes `Cl(n+1, 1)` in the README and GLOSSARY.
+  MU-ANTI-FLATTENING clause 4 states the exception.
+- **The vortex** (MU-SENSING §3.8): every superposition in perception is
+  a vortex in MU-RECURSION 25.12's sense, with monodromy flat, torsion or
+  rupture. 25.12 is amended forward to `Spin(n+1, 1)`.
+- **MU-SENSING §8** now lists what is built (the bubble without a body,
+  the vortex, orbits, exact motions) and two defects: the Euclidean
+  spheres built from `r²` with `e∞`, and the bubble's flags and scalar
+  counts.
+- **MU-RELEASE §3a:** the ten steps by which a hypha standard becomes a
+  kernel standard, recursively, with alignment measured by converse and
+  collision.
+- **Proposal 78.171, LAW-BUBBLE v1:** the first standard on that path,
+  covering the carrier, the readings, the refusals, the wire and six
+  joint-read fixtures.
+- **ROADMAP track 26:** S4a reworded; S7 (the bubble's body), S8 (its
+  motions) and S9 (forces, orbits, the vortex on the membrane) added.
+- GLOSSARY: Bubble, Membrane, Vortex, Never scalar, Lifted / nested
+  axes, `Cl(n+1, 1)`.
+
+### Sensing any source at any rank (specification, ruled 2026-11-02)
+- **`docs/MU-SENSING.md`** (new) states the path from source to
+  perception. A source decodes to a **sample** (rank `n`, extents, symbols,
+  the sample's place in its family). The sensor lifts each axis into a
+  circle of turns of its own period and deduces the connection, the
+  symbols' meaning, the ground and every gauge. A perspective is a sensor
+  motion. A mind holds a lower-dimensional section and every unread
+  dimension as unread. The hypha holds tasks as families of samples and
+  knows no source. A source's decoder lives with its owner, outside
+  `src/`.
+- **The defect** [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32)
+  and **ROADMAP track 26** (S0–S6) cover `src/arc.rs`, the fixed palette,
+  the ground of `0`, the fixed axes and the wire's `u16 × u16` cells.
+  S0–S5 land in v0.3.0's one break, and T2 merges after S0 and S4.
+- **Orbits under gravity** (MU-SENSING §3.7, ruled 2026-11-02): a
+  geodesic on a flat torus is a straight line that returns exactly. The
+  attractors' gravity curves the perception manifold. A thought's orbit
+  is a base loop plus a fibre winding, its precession per lap is the
+  base loop's angle excess, and the windings are kept as fibre classes.
+  An orbit with zero precession is refused as a loop. Perception and
+  orbits are the client mind's, and the hypha reconstructs claims on the
+  same carrier.
+- **Spheres, not a flat product** (MU-SENSING §3.7, ruled 2026-11-02):
+  the circles are absorbed, held projectively with no unit norm, as the
+  Clifford torus in `S^{2n−1}`, and read through a Hopf-type projection
+  on the base sphere. A loop's holonomy is its angle excess in turns,
+  exact in ℚ/ℤ, and motions are exact over cyclotomic fields. It is the
+  perceiving side of Concordance 2.10's nested shells. This is ROADMAP
+  track 26 S4a, after the sphere carrier is agreed with the peer kernels.
+  μ as a swept solid angle awaits a ruling.
+- **No rows and no columns** (MU-SENSING §3.6, ruled 2026-11-02): a
+  sample's axes are absorbed into the perception manifold as circles with
+  no privileged plane, or taken apart into nested circles where the family
+  is invariant under the factoring. The nesting is a coordinate of the
+  percept.
+- GLOSSARY (Task, Body and Gauge generalised; Sample, Perspective, Ground,
+  Unread dimension), MU-ANTI-FLATTENING clause 8, AGENTS.md and the README
+  follow.
+
 ### Where to start (documentation)
 - **ROADMAP › Now:** the current order of work, kept current rather than
   appended to. It lists the release in progress (v0.3.0: T2 #25, T3 #26,
