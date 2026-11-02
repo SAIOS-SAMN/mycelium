@@ -422,7 +422,7 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 | **Defect:** spheres built Euclidean, from a squared radius with `e∞` | **Built, refused** by §3.7 and law 11 | `cga/embedding.rs` (`sphere_at`, `on_sphere`), `cga/at_three.rs` (`sphere`) |
 | **Defect:** the bubble's stage and state as flags, and its volume and potential as scalar counts | **Built, refused** by §3.7 (never scalar) and constraint I | `Bubble.percept: bool`, `Bubble.dirty: bool`, `Bubble.volume`/`potential: [u64; 4]` |
 | μ as the solid angle a change sweeps | **Awaits a ruling** | §3.7 |
-| The sample as the sensor's only input, of rank `n` | **Specified** | Track 26, S0 |
+| The sample as the sensor's only input, of rank `n` | **Built** | `src/transducer/sample.rs` (`Sample`, `Symbol`, `Place`; Track 26, S0) |
 | A corpus's decoder outside `src/` | **Specified** | Track 26, S1 |
 | Ground, symbol set, axes and gauges deduced | **Specified** | Track 26, S2–S4 |
 | A task on the wire as samples of rank `n` | **Specified** | Track 26, S5 |

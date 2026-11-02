@@ -6,6 +6,17 @@ such change is named here.
 
 ## Unreleased
 
+### The sample: the sensor's only input, of any rank (ROADMAP track 26, S0)
+- **`transducer::sample`** (new): `Sample` holds its extents (the rank is
+  the extents' count, read from the data), one byte buffer of symbols at the
+  source's own width in canonical address order (axis 0 slowest, for
+  addressing only), and its `Place` in its family as the family's
+  coordinate. `Symbol` compares by equality only and has no order. An
+  axis past the rank reads `AxisReading::Unread`, and a site of another
+  rank is refused `RankMismatch`, never padded. Intake refusals are
+  named (`SampleRefusal`, `SiteRefusal`), with checked counts and no cap.
+  MU-SENSING §8 marks the row built. No caller is moved yet (S1–S5).
+
 ### The bubble, the vortex, and how a standard reaches the kernels (specification, ruled 2026-11-02)
 - **The bubble** (MU-SENSING §3.7): a sample is lifted into the bubble
   the mind already holds (`transducer/bubble/`), so a percept and a

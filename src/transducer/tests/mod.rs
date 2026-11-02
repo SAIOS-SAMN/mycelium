@@ -4,5 +4,6 @@ mod factor;
 mod germinate;
 mod peel;
 mod rewrite;
+mod sample;
 mod sheaf;
 mod torsion_witness;
