@@ -21,7 +21,11 @@ excluded from the reasoning path.
    blade (clause 7), not as standalone `*_cells` lookup tables.
 4. An operation that collapses manifold curvature into a flat 0-dimensional
    scalar or hash comparison, bypassing geometric deduction, is a structural
-   violation and is refused.
+   violation and is refused. The algebra is never scalar (ruled
+   2026-11-02): a number enters only as the gauge of a one-dimensional
+   reading on the base algebra, which is ℤ a winding, ℚ/ℤ a phase, ℚ a
+   share along one line, ℚ(ζ_ℓ) a rotation in one plane, or ℝ a span
+   between exact bounds, never stored ([MU-SENSING §3.7](MU-SENSING.md#37-the-bubble-non-euclidean-never-scalar)).
 5. Projections that artificially flatten higher-dimensional kinematics, bivectors,
    or inertia tensors into flat 2D planes (e.g. collapsing Cl(4,0) bivectors
    Λ²(ℝ⁴) to a single E₁ ∧ E₂ blade, forcing transverse temporal coordinates

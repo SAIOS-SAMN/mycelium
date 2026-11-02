@@ -266,7 +266,7 @@ payloads are exact objects; a refusal reply carries its named reason.
 
 A rule a mind states about a task is a sentence. That sentence carries
 geometric **rule elements** (`src/transducer/sentence/form/rule_element.rs`):
-- a *carriage*: a versor of Cl(4,1)(ℚ) applied once or iterated to a
+- a *carriage*: a versor of `Cl(n+1, 1)` applied once or iterated to a
   contact, with a gauge (hue) map;
 - 2-chains bounded by a selection;
 - 1-chains joining bodies;
@@ -288,8 +288,11 @@ into eras, and witness hyphae co-sign each era's fold
 (`docs/MU-FOLD.md`).
 
 **Structure.** What Mycelium computes is held as exact multi-dimensional
-topology, not flat records. Objects are multivectors of Cl(4,1)(ℚ), with
-motions as versors. Relations are transports, and collections of
+topology, not flat records. Objects are multivectors of `Cl(n+1, 1)`, with
+`n` read from the data. The geometry is non-Euclidean, and the algebra is
+exact and never scalar: a number appears only as the gauge of a
+one-dimensional reading ([MU-SENSING §3.7](docs/MU-SENSING.md#37-the-bubble-non-euclidean-never-scalar)).
+Motions are versors. Relations are transports, and collections of
 relations are complexes of any dimension whose cohomology is read. A
 ring's holonomy is its content. Value and time keep four lanes apart, and
 physics is nested shells `Sⁿ`. A flat record keeps values; this keeps

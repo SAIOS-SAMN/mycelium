@@ -5304,6 +5304,7 @@ A candidate stands on the sub-cover of connection charts where its order is fini
 When every candidate over a demand dissolves, the residue is prime relative to the alphabet (§37.7) and enters court docketing as witness N4.
 `link_new` keeps the transition it computes; cohesion is flatness of those transitions, and the volume sums leave.
 In the Hopf fibration reading, A22's two quaternion factors are the two fibrations: base the class, fibre the gauge.
+*Amended forward (ruled 2026-11-02):* the transitions and monodromy are read in `Spin(n+1, 1)` on the bubble's membrane, non-Euclidean, with orders read as windings (ℤ) and phases (ℚ/ℤ), never as scalars, not in `Spin(4,0)(ℚ)`. Every superposition in perception is a vortex in this sense ([MU-SENSING §3.8](MU-SENSING.md#38-the-vortex-every-superposition-in-perception); ROADMAP track 26 S9).
 
 ## 26. Wire and economics
 

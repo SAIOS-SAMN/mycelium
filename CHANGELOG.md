@@ -6,6 +6,36 @@ such change is named here.
 
 ## Unreleased
 
+### The bubble, the vortex, and how a standard reaches the kernels (specification, ruled 2026-11-02)
+- **The bubble** (MU-SENSING §3.7): a sample is lifted into the bubble
+  the mind already holds (`transducer/bubble/`), so a percept and a
+  thought are one bubble at two stages. Its geometry is non-Euclidean:
+  the interior is `Hⁿ⁺¹`, and the membrane is its sphere at infinity, so
+  no `e∞` stands outside an enclosure. Its motions (rotate, flip,
+  deflate, re-inflate, stretch, thin) are exact. "Absorbed circles" is
+  replaced by the lift into a bubble throughout.
+- **Never scalar:** a number enters only as the gauge of a
+  one-dimensional reading (ℤ, ℚ/ℤ, ℚ, ℚ(ζ_ℓ), ℝ as a span). The headline
+  `Cl(4,1)(ℚ)` becomes `Cl(n+1, 1)` in the README and GLOSSARY.
+  MU-ANTI-FLATTENING clause 4 states the exception.
+- **The vortex** (MU-SENSING §3.8): every superposition in perception is
+  a vortex in MU-RECURSION 25.12's sense, with monodromy flat, torsion or
+  rupture. 25.12 is amended forward to `Spin(n+1, 1)`.
+- **MU-SENSING §8** now lists what is built (the bubble without a body,
+  the vortex, orbits, exact motions) and two defects: the Euclidean
+  spheres built from `r²` with `e∞`, and the bubble's flags and scalar
+  counts.
+- **MU-RELEASE §3a:** the ten steps by which a hypha standard becomes a
+  kernel standard, recursively, with alignment measured by converse and
+  collision.
+- **Proposal 78.171, LAW-BUBBLE v1:** the first standard on that path,
+  covering the carrier, the readings, the refusals, the wire and six
+  joint-read fixtures.
+- **ROADMAP track 26:** S4a reworded; S7 (the bubble's body), S8 (its
+  motions) and S9 (forces, orbits, the vortex on the membrane) added.
+- GLOSSARY: Bubble, Membrane, Vortex, Never scalar, Lifted / nested
+  axes, `Cl(n+1, 1)`.
+
 ### Sensing any source at any rank (specification, ruled 2026-11-02)
 - **`docs/MU-SENSING.md`** (new) states the path from source to
   perception. A source decodes to a **sample** (rank `n`, extents, symbols,
