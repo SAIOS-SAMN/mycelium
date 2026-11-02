@@ -37,6 +37,11 @@ pub fn encode_peers_reply(addrs: &[String]) -> Option<Vec<u8>> {
 }
 
 pub fn decode_peers_reply(body: &[u8]) -> Option<Vec<String>> {
+    // A door deferral is 43 bytes that can look like a tiny peers list if we
+    // stop early; read WHOLE or refuse, and never take the deferral shape (#16).
+    if is_deferral(body, PENDING_CODE) {
+        return None;
+    }
     let mut p = 0usize;
     let n = u16::from_le_bytes(body.get(p..p + 2)?.try_into().ok()?) as usize;
     p += 2;
@@ -47,7 +52,7 @@ pub fn decode_peers_reply(body: &[u8]) -> Option<Vec<String>> {
         out.push(String::from_utf8(body.get(p..p + len)?.to_vec()).ok()?);
         p += len;
     }
-    Some(out)
+    (p == body.len()).then_some(out)
 }
 
 /// The task is named by its 32-byte citation (`registry::citation`), the
