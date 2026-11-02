@@ -65,6 +65,10 @@ outermost first:
 | **World** | A planet: where peoples and civilizations live. |
 | **Mind** | An AI agent, seated in a universe and acting through it (§3). |
 
+The **universal core** is the universe's only uplink: a universe's acts
+reach the network through its universal core tube and no other way
+(MU-HOSTING §5a, the boundary law).
+
 Not every hosted universe is cosmological: task environments, markets,
 scientific simulations and world models are hosted universes too, each
 with its own laws and clock axis (MU-HOSTING §1).

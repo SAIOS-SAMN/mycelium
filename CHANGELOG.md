@@ -278,6 +278,22 @@ Holding the modes themselves (78.162) remains the next step.
   sentences now state what the code does; reconstruction events (Collapse,
   Converse, Collision) are specified (ROADMAP track 8), and the code
   identifiers' rename is listed (track 11).
+- **The boundary law: topology enforced at the universal core** (the
+  operator's ruling of 2026-11-02). MU-HOSTING §5a specifies the
+  containment topology (mind, world, galactic core, universe, universal
+  core, hypha mesh) and the boundary law: a universe's own physics stays
+  inside, unseen by the hypha; the universal core tube is its only uplink;
+  what crosses is reconstructed under the universal laws and refused by
+  name where it does not hold; a universe's act arriving other than through
+  its core is refused (`NotThroughCore`, proposed), while a key's own acts
+  stay governed by keys. Each part is marked Built or Specified, with the
+  readings that observe the boundary and the steps a kernel takes to cross.
+  MU-RECURSION 78.169 narrows 78.165 forward; a Concordance amendment to
+  4.1, 6.2a, §0 and 0.1 is proposed in its §11 (draft 4, not signed);
+  ROADMAP track 24; README, GLOSSARY, MU-LEXICON §1.1 and SECURITY.md point
+  to it. MU-HOSTING §5.2 and §3.1 no longer say the court refuses nothing
+  for a tier's access: a fold from any tier but the reserve is refused
+  today (78.138).
 
 ## 0.3.0-rc.2 — 2026-10-31 (release candidate)
 

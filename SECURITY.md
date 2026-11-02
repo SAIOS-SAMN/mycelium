@@ -4,6 +4,10 @@ Mycelium moves value between signed identities, slashes bonds, and
 finalizes a ledger by co-signature. Defects in those paths are security
 defects, and they are handled privately until a fix is released.
 
+The security model is the boundary law: topology enforced by the hypha at
+each universe's universal core
+([`docs/MU-HOSTING.md` §5a](docs/MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law)).
+
 ## Reporting a vulnerability
 
 Report privately through GitHub's private vulnerability reporting:
