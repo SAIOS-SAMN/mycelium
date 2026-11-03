@@ -6,6 +6,16 @@ such change is named here.
 
 ## Unreleased
 
+### Naming alignment, planned (issue #55, ruled 2026-11-04)
+- ROADMAP track 11 gains phases N1–N7: verification named reconstruction,
+  files by function, one name per meaning, retired terms and person
+  words, GLOSSARY rows, "residual" retired (N6, in v0.3.0's break), and
+  the two wire names (N7, with S5). Each phase renames names only.
+- GLOSSARY: **Section** is a section of a bundle or sheaf, and the sites
+  a word changes are its **support**.
+- AGENTS.md: a doctrine term may name a type, never a file. One name has
+  one meaning. Strict matrix "row" and geometric "arc" are exempt.
+
 ### File names by function (plan)
 - AGENTS.md: a file is named for what its area does, at a high level,
   never a metaphor, a dataset or one instance.
