@@ -6,6 +6,15 @@ such change is named here.
 
 ## Unreleased
 
+### Perception as an adjudicated claim, in the roadmap (ruled 2026-11-04)
+- ROADMAP track 26 gains reflective claims. S3 adds a symbol meaning
+  stated as a relation. S6 adds a claim stating its perspective, and two
+  perspectives compared as a cover. S9 adds holonomy, precession and
+  vortex monodromy stated by a mind and reconstructed by a court.
+- ROADMAP track 10 gains the sovereign-mind phase. Its test is thinking
+  about adjudicated perception, never a solve rate. It follows S7–S9 and
+  has five claims and a live run of `mycelium-client`.
+
 ### The symbol set, the wire's limits and the orthogonal class, derived (specification)
 - **S3** (MU-SENSING §3.3): a family's symbol set `Σ` is its distinct
   symbols. An index is the order of first appearance in address order,
