@@ -153,6 +153,14 @@ The payer countersigns after receiving the bytes and checking the digest.
 Two signatures from two distinct voices are the two vantages; the home
 verifies the two signatures and reads the escrow state, then releases.
 
+*Open review.* A digest never admits (MU-ANTI-FLATTENING 13;
+MU-HOSTING §5a.10): `delivery_digest` is a commitment that binds the
+delivered bytes to the payer's countersignature, and the release follows
+the receipts' reconstruction, the digest only linking. How mode 0 states
+that reconstruction for delivered bytes (what the home reconstructs, and
+from which receipts) is not yet specified; this section is held for that
+review before it is built.
+
 Mode 1, work:
 
 ```

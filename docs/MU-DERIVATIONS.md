@@ -632,8 +632,8 @@ codec's own header, a FORMAT constant beside the encoder
 (`RECEIPTS_REPLY_HEADER`, `ROWS_REPLY_HEADER`, `SYLLABUS_REPLY_HEADER`,
 `CLASS_RECORDS_HEADER`, `CITED_REQUEST_HEADER`, `QUOTE_REPLY_HEADER`,
 `atlas::LEDGER_PAGE_HEADER`, `presentation_answer_len`): the literal `64`,
-`66` and `34` are gone, and the encoders that count their own header
-(rows, observe, the mind's chatter replies) take the frame whole. O1 read:
+`66` and `34` are gone, and the encoders that count the reply's header
+themselves (rows, observe, the mind's chatter replies) take the frame whole. O1 read:
 a receipt carries `u32`-counted parents, cites and cover blobs, no `u16`
 wall, so `MAX_WIRE(receipt)` is not finite in the derivation's sense and
 candidate (b) holds: `BODY_BUDGET` stays REGISTERED as an open protocol
@@ -1844,42 +1844,47 @@ neither writing its frame) gave two tasks one address (law 2); μ counted
 state is bodies and motions, and per-site values are written only at the
 sensor and where a grid is spoken.
 
-- **LIFT** (`turn.rs`, `enclosed.rs`). A frame of extent `h × w` is two
-  circles of turns, `ℚ/ℤ`, with periods `h` and `w` (`Enclosure`). A
-  boundary is the `Turn` `index / period`, compared with another by integer
+- **LIFT** (`turn.rs`, `enclosed.rs`), at rank `n`. A sample of extents
+  `e₁, …, eₙ` is `n` phases of turns, `ℚ/ℤ`, each of its own period
+  (`Enclosure`, read from the sample: `Enclosure::of`). A boundary is the
+  `Turn` `index / period`, compared with another by integer
   cross-multiplication, never reduced, never a `(cos, sin)` point, never a
   conformal point; the seam `0 ≡ 1` is held, never wrapped. The sensor reads
-  the raster once into BANDS (`Enclosed::of`): maximal runs of one hue whose
-  column boundary turns stand over consecutive row arcs. Every band edge is a
-  boundary of its body somewhere along it, so a body (bands of one hue
-  meeting along a row boundary) is held by its boundary record, O(perimeter),
-  never by its interior. `put_content` writes the frame's full content as
-  its periods and bands, losslessly.
+  the sample once into BANDS (`Enclosed::of`): `n`-dimensional boxes of one
+  symbol, read in canonical address order as the maximal runs along the
+  last axis, each continued along every earlier axis while the slice before
+  shows the same box. Every band boundary is a boundary of its body
+  somewhere along it, so a body is held by its boundary record,
+  O(perimeter), never by its interior. `put_content` writes the frame's
+  full content as its periods and bands, losslessly.
 - **ACT** (`record.rs`, `motion.rs`). `Transduction::of(x, y, budget)`
   records the INCIDENCES between the input's bands and the output's under
-  the re-period of each circle: the pairs of bands whose arcs overlap with
-  positive length on both circles. Each visit holds an arc of each merged
-  circle no other visit holds, so the spend is bounded by `need =
-  R_h·R_w`, `R(a, b) = a + b − gcd(a, b)` (`transduce::need`, `need_of`).
-  An anisotropic scale is a re-period per circle, carried by no versor
-  (Liouville: a versor's differential is a scalar times an orthogonal map).
-  `share` is the changed share of the frame, exact (O1). `carried` reads a
-  body carried whole onto one output body, else `Mixed`. The motions keeping
-  the seams are the eight signed swaps of the two circles (`SignedSwap`:
-  identity, two flips, 180°, two transposes, 90°, 270°), read from an
-  integer matrix (`of_matrix`) or off an alphabet word's images of `e₀, e₁`
-  on the sensor's plane (`of_word`); anything else (a shear, a `(3, 4, 5)`
-  letter) is `Oblique`. A turn carries no period, so a 90° turn followed by
-  any re-period is exact on turns.
+  the re-period of each phase: the pairs of bands whose arcs overlap with
+  positive length on every phase. Each visit holds an arc of every phase's
+  merge no other visit holds, so the spend is bounded by `need = Π R_k`,
+  `R(a, b) = a + b − gcd(a, b)` the arcs of phase `k`'s merge
+  (`transduce::need`, `need_of`; at rank 2, `R_h·R_w`). An anisotropic
+  scale is a re-period per phase, carried by no versor (Liouville: a
+  versor's differential is a scalar times an orthogonal map). `share` is
+  the changed share of the frame, exact (O1). `carried` reads a body
+  carried whole onto one output body, else `Mixed`. The motions keeping the
+  seams are the `2ⁿ·n!` signed permutations of the `n` phases
+  (`SignedPermutation`, generated, the identity one element among them;
+  eight at rank 2), read from an integer matrix (`of_matrix`) or off an
+  alphabet word's images of the sensor plane's two generators (`of_word`);
+  anything else (a shear, a `(3, 4, 5)` letter) is `Oblique`. A turn
+  carries no period, so a quarter turn followed by any re-period is exact
+  on turns.
 - **PROJECT**. `Turn::lands(period)` is the exact floor's question: the turn
-  lands on a boundary of the output circle, or `OffSite { turn, period }`.
-  `Enclosed::spoken_onto` and `SignedSwap::spoken_onto` speak a (moved)
-  frame onto an output enclosure; `Transduction::projected` reads the
-  record back on the output frame (on one enclosure, the planar coboundary
-  link for link).
-- **Refusals** (`TransductionRefusal`): `Empty`, `Ragged`, `Spent { need }`
-  (`None` where the bound passes `usize`), `Seam`, `Oblique`, `OffSite {
-  turn, period }`, `Mixed { body }`, `Unenclosed`. No constant enters: the
+  lands on a boundary of the output phase, or `OffSite { turn, period }`.
+  `Enclosed::spoken_onto` and `SignedPermutation::spoken_onto` speak a
+  (moved) frame onto an output enclosure; `Transduction::projected` reads
+  the record back on the output frame (on one enclosure, the planar
+  coboundary link for link).
+- **Refusals** (`TransductionRefusal`): `Empty`, `Rank { from, to }`,
+  `Spent { need }` (`None` where the bound passes `usize`), `Seam`,
+  `Oblique`, `OffSite { turn, period }`, `Mixed { body }`, `Unfactored`,
+  `Sample`, `Unenclosed`; there is no `Ragged`. No constant enters: the
   compartment centre's ½, the envelope radius `r² = Σ eᵢ²/4` and the
   conformal `½‖x‖²` are not used.
 
@@ -1887,7 +1892,7 @@ sensor and where a grid is spoken.
 
 | Reader | Reads now |
 |---|---|
-| Task identity, `registry::task_address` (law 2) | each train pair as both frames' full content: four periods and every band (O3) |
+| Task identity, `registry::task_address` (law 2) | the posted samples' full content (rank, extents, symbols, places), train and test alike (MU-SENSING §6.1; O3); today's code writes each train pair as both frames' periods and bands and still filters the test inputs by `symbol ≠ 0`, which track 26 S2 removes |
 | Deflation (client mint) and the court's measured reconstruction, one function | `deflation::unspoken_residue`: the identity's speech (the record projected onto the output frame) against the observed output, on output sites, the unit of the form's remainder; the output against nothing where the input's turns do not land |
 | Demands of unreached pairs, `finish::germ_of_pair` | the same unspoken residue |
 | Unspoken links, `declare_unspoken` | the input's hue on the output's sites through `spoken_onto`, never off a shared corner |
@@ -1895,19 +1900,19 @@ sensor and where a grid is spoken.
 | Intake routes, `route::routes_of` | planar pairs as before; a pair of unequal enclosures has no route yet (its chart and pieces read a chain site by site, O8) |
 | Family magnitude, `family_magnitude` | the planar pairs' count, the mind's metabolism and not μ, so it stays a count; `transduce::family_share` reads every pair's exact share beside it |
 | μ, the discharge (O1, Built 2026-11-01) | `DeflationRead::mu` and `Local::mu`: per closed pair, S and G over the output frame's `h·w`, H the shell count, T the flux over the carried mass as the frames' share of it (`transduce::share_of_frame`, `Transduction::lane_shares`); every escrow, release and payment reads it (`Court::discharge_on` and its arms, `pay_solve`, `release_verified`, `pay_lease`, `settle_solve`, the install's cited and taught shares and gluing) |
-| `family_ratio`, `Form.ratio` | each circle's re-period (`Enclosure::reperiod`) |
+| `family_ratio`, `Form.ratio` | each phase's re-period (`Enclosure::reperiod`) |
 
 **Readings.**
 
 - `0b148d64` pair 0: 111 input bands and 32 output bands, 226 incidences
   (157 a change of hue), under the bound `24 · 27 = 648`; the transitional
   claim that `share · L_h·L_w` equals the `K_lcm` cell count held there
-  (14 045) and on four more pairs before the lattice was deleted. The input's
+  (14 045) and on four more pairs before the common refinement was deleted. The input's
   boundary `1/18` lands inside an output compartment of period 7, so its
   projection refuses `OffSite` and its route waits for the turn-native chart.
 - **O9** (the demand payload), read: the readers of a demand's links read
   metric — `memo::ring_answer` and `memo::deformation_answer` take a
-  carriage between the demand's two sides, `bubble::hold` a transport over
+  carriage between the demand's two sides, `field::hold` a transport over
   its bodies, the book's probe `scene_at_of_chain` and `measure_lanes`, and
   `stalk::invariant` the chart's moduli — so the merged-partition payload
   (b) is refused and the payload is (a), both sites. As built, a demand's
@@ -2266,8 +2271,8 @@ checklist (r), 78.43(2) (a cap).
 **Status.** **Built** (2026-10-31, the live-readings ruling).
 `Confluence::reproduces` is `Reproduces { Yes, No, Unread }`, read by
 `carried_onto`: the output's sites keyed once, each input's image read back
-to its lattice site (`cga::base_at`, `element::sensor::site_at`; a point off
-the lattice is `No`) and looked up, two reads a site on the pair's token,
+to its integer site (`cga::base_at`, `element::sensor::site_at`; a point at
+no integer site is `No`) and looked up, two reads a site on the pair's token,
 no cap; a spent token is `Unread`, never `No`. `luminal.rs` does not share
 the shape. The soak's printer counts `Yes` and `Unread` apart. Tests
 (`transducer::family::tests::confluence`):
@@ -2311,7 +2316,7 @@ carriers (rule 1) with a reading inside it (rule 17).
   comparisons: at `m = 400`, 160 000. Written as rules 1 and 17 prescribe
   (the output's sites keyed once, `Keyed` over the site coordinates; each
   image read back to its site by the sensor's reader,
-  `element::sensor::site_of`, which refuses an image off the lattice; then
+  `element::sensor::site_of`, which refuses an image at no integer site; then
   looked up), the cost is
   ```text
   cost_reproduces = m (sandwich + site_of) + m (keyed lookups)  =  2·m reads,     m = |in_sites|
@@ -2327,7 +2332,7 @@ carriers (rule 1) with a reading inside it (rule 17).
 - Laws: no capping constant (78.43(2)); exact or refused (rule 11); rule 1
   (no pair loop across two carriers); rule 17 (the reading hoisted to the
   keyed site); rule 10 (token).
-- Boundary: `site_of` refusing an image (not a lattice point) is `No` for
+- Boundary: `site_of` refusing an image (not an integer site) is `No` for
   that site (the image is no compartment of any frame), and the whole
   check is `No`; never rounded to a nearby site.
 
@@ -2799,7 +2804,7 @@ levels; a Level-2 step at most the enclosure's three more; Level 3 within
 it), so `anchor::SELECTION_HEIGHT = 4 + 3`; `Pred` is minted only by
 `family::acts` (atoms at most `Not(Touches(leaf))`, a description at most
 one meet), so `form::clause::PRED_HEIGHT = 3 + 1`. Both are closed forms,
-EXACT against their tests; `Selection::height` reads a term's levels. The
+EXACT against the tests that name them; `Selection::height` reads a term's levels. The
 decoders refuse a term deeper than its language mints (`depth >=` the
 height), which bounds every walker of a decoded tree at once. `NESTING`
 leaves the register; the `16` is gone. Tests:
@@ -2988,8 +2993,8 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 ### D4.6 `frame_budget().checked_sub(64)` — the reply header reserve
 
 **Status.** **Built** (2026-10-31, the live-readings ruling). The nine
-sites read their reply's own header, built with D1.3: the encoders that
-count their own header (rows, observe, the mind's chatter replies) take the
+sites read each reply's own header, built with D1.3: the encoders that
+count the header themselves (rows, observe, the mind's chatter replies) take the
 frame whole; the rest subtract `RECEIPTS_REPLY_HEADER` (with the
 `READING_HEIGHT_LEN` behind it), `SYLLABUS_REPLY_HEADER` (and
 `CLASS_RECORDS_HEADER` for a fetch), `atlas::LEDGER_PAGE_HEADER`,
@@ -2997,7 +3002,7 @@ frame whole; the rest subtract `RECEIPTS_REPLY_HEADER` (with the
 signature rides a body, the receipt section's `[sig 64]`, the length is
 `ED25519_SIGNATURE_LEN = ed25519_dalek::SIGNATURE_LENGTH`, citing RFC 8032
 §5.1.6; the other codecs' `[u8; 64]` signature fields are field widths of
-their `take_*`/`decode_*` writings (N6 reads codecs as field widths) and are
+the codecs' `take_*`/`decode_*` writings (N6 reads codecs as field widths) and are
 left for the sweep that types each signed act. Tests
 (`anastome::dialogue::tests::receipts_range`):
 `receipts_page_fills_budget_less_header`, `rows_reply_counts_own_header`,
