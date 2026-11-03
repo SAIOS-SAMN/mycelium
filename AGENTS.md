@@ -72,6 +72,10 @@ lawful at one site and a defect at another.
 ## While writing
 
 - Never run `cargo fmt`. The tree is not `rustfmt`-clean by design.
+- Name a file for what its area does, at a high level (`control.rs`,
+  `context.rs`, `sample.rs`). Never use a metaphor, a dataset or one
+  specific instance (`door.rs`, `arc.rs`, `pore.rs`). A term a name
+  introduces stands in the GLOSSARY.
 - Use no possessive or personal pronouns in code, comments, test names,
   identifiers or documents: name the thing.
 - Keep a source file within the reading bound, with one organ per file.
