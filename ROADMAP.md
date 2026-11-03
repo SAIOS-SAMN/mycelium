@@ -32,11 +32,12 @@ is at `0.3.0-rc.2`. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
-| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2, S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
+| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 in progress (maintainers); S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
-| T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready after T2 |
-| D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Ready |
-| rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the three above (maintainers) |
+| T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
+| D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | In progress (maintainers) |
+| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | After S2 and D2.5 merge; N6 lands in v0.3.0's open break |
+| rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the items above (maintainers) |
 
 **2. Ready to start**
 ([milestone `next`](https://github.com/SAIOS-SAMN/mycelium/milestone/2)).
@@ -47,7 +48,7 @@ None of these waits on a ruling:
 | X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | Depends on nothing; the rest of track 25 stands on it |
 | B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | The rest of track 24 stands on it |
 | `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
-| Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Good first issue; T2 has merged |
+| Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Good first issue; with N1, after S2 and D2.5 merge |
 | Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Maintainers; after S2 and D2.5 merge |
 
 **3. Waiting on an operator ruling.** Do not start these until the ruling
@@ -149,7 +150,8 @@ Elements without an English gloss travel under act tag 16. The track
 grows what minds can state:
 - readers that coin carriages, chains and joins directly from a family's
   effect;
-- coverage of more of the ARC-AGI-2 corpus.
+- readers for more families of samples, from any source (ARC-AGI-2 is
+  the first posted corpus; its outcomes are observations, MU-SENSING §0).
 
 Each reader is proved by re-deriving held-out pairs and by the court's
 reconstruction.
@@ -162,12 +164,12 @@ change built with its codec, reconstruction and claims:
 - **Act parameters measured per pair:** scale, tile and reduce by the
   frames' measured ratio, translation by measurement; refused by name when
   unmeasurable, with no silent tie-break.
-- **A template placed over a lattice:** the Hermite form of the placement
-  differences, the offset anchored to a selected body; no candidate
+- **A template placed by its repeats:** the Hermite form of the placement
+  differences (the integer span they generate), the offset anchored to a selected body; no candidate
   enumeration.
 - **First contact as a relation:** `Pred::FirstMet` (proposed) and
   `Act::Slide { toward }`, ties held whole, refused where the ray is not a
-  lattice unit, no toroidal wrap.
+  primitive integer step, no toroidal wrap.
 - **Colour-role equivariance:** the gauge-orbit class with re-inflation,
   and an equivariance check that reports where commutation breaks.
 - **Hue as a table** over a named measured coordinate, refused off the
@@ -178,10 +180,11 @@ change built with its codec, reconstruction and claims:
   refusals.
 
 **Progress — frames of unequal extent** (MU-DERIVATIONS D3.2, MU-RECURSION
-78.170): **Built**: the transduction (`transducer::family::transduce`): a
-frame as two circles of turns, each body held by its bands, the incidences
-of two frames under the re-period, the eight signed swaps as the motions,
-projection refusing `OffSite`, and the relation census of the corpus
+78.170): **Built** at rank `n`: the transduction
+(`transducer::family::transduce`): a frame as `n` phases of turns, each
+body held by its bands, the incidences of two frames under the re-period,
+the `2ⁿ·n!` signed permutations of the phases (`SignedPermutation`) as the
+motions, projection refusing `OffSite`, and the relation census of the corpus
 (O10). The deflation, the court's measured reconstruction and the demands
 of unreached pairs read a pair's unspoken residue on the output's sites.
 **In progress**: μ as the share of the frame (O1, after the rational
@@ -230,8 +233,8 @@ crate's public API, with semantic-versioning guarantees. It includes:
 Today the repository is a workspace of `mycelium`, `forms` and
 `mycelium-sdk` (`sdk/`) under one lock file; the SDK crate re-exports the
 library's client surface in modules (`voice`, `session`, `task`, `rule`,
-`seat`, `wallet`, `readings`, `mind`, `wire`, `laws`, `conformance`,
-`forms`, `prelude`), `sdk/examples/client.rs` is the complete client on it
+`seat`, `wallet`, `readings`, `mind`, `deferral`, `house`, `wire`, `laws`,
+`conformance`, `forms`, `prelude`), `sdk/examples/client.rs` is the complete client on it
 alone, the client conformance read is published
 ([MU-CONFORMANCE](docs/MU-CONFORMANCE.md)), and the MSRV is 1.82.
 The track publishes SDKs open-source developers can depend on by version:
@@ -820,9 +823,10 @@ Tools from precursor implementations
 
 ## 19. The general conformal algebra, pole states and bonding
 
-The shared algebra is Cl(4,1)(ℚ), fixed at five generators. Kernels on
-the network build universes of other dimensions in the same family,
-Cl(n+1,1) over exact rationals, and work physics between the two poles of
+The shared algebra is `Cl(n+1, 1)`(ℚ), with `n` read from the data; the
+code today fixes it at five generators, its value `Cl(4,1)` at `n = 3`.
+Kernels on the network build universes of other dimensions in the same
+family, over exact rationals, and work physics between the two poles of
 the conformal null basis, the origin `e_o` and the point at infinity
 `e_∞`. This track generalizes Mycelium's algebra to the whole family, and
 states pole-state bonding in it. Nothing here introduces approximate
@@ -990,9 +994,11 @@ Each phase is one commit:
 **Progress:** D3.2 is **Built** (NC3, ruled O1 (a)), and then rewritten as
 the transduction (MU-RECURSION 78.170): the lcm cap and the common
 refinement are both deleted, two frames are related by the bodies' bands
-in turns under a need of `R_h·R_w`, and `task_address` names a task by both
-frames' full content, refusing a pair with no enclosure rather than
-skipping it.
+in turns under a need of `R_h·R_w`, and `task_address` names a task by the
+posted samples' full content (rank, extents, symbols, places), train and
+test alike (MU-SENSING §6.1), refusing a pair with no enclosure rather
+than skipping it. Today's code still filters the test inputs by
+`symbol ≠ 0`; track 26 S2 removes that filter.
 D3.1 is **Built** (NC1): a sentence's linear part is constructed under
 the stroke `modes_need` reads off it.
 
@@ -1023,7 +1029,8 @@ of long-running open networks, and forks that converge rather than split:
 5. **Realignment by convergence:** content-addressed objects are one
    vertex on both branches; a collision's later mint is burned as a
    duplicate issuance (47.4); SUPERPOSE merges two branches at a
-   quorum-final point past both, keeping their residue as a reading.
+   quorum-final point past both, keeping the branches' residue as a
+   reading.
 
 Four questions need a decision (MU-RELEASE §10): the superposition's
 quorum, which side keeps the shared origin, releases that change address
@@ -1198,11 +1205,11 @@ Each phase is one commit:
 6. **X5, the transduction in place of the common grid.** Two frames
    relate by the motion between them; each keeps its own resolution;
    each body is held by its boundary; incidences are read between boundary arcs; a site
-   lifts as turns in ℚ/ℤ. `CommonRefinement`
-   (`src/transducer/family/refine.rs`) leaves cognition. It is reachable
-   only from the sensor, or removed. This is the v0.3.0 transduction work
-   ([#25](https://github.com/SAIOS-SAMN/mycelium/issues/25)), and X5
-   lands its guard.
+   lifts as turns in ℚ/ℤ. The transduction is **Built** (the v0.3.0
+   transduction work, [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25),
+   closed): `CommonRefinement` and `src/transducer/family/refine.rs` are
+   deleted. X5's guard remains to land, so that no common refinement
+   re-enters past the sensor.
    - Claims: `common_refinement_unreachable_from_cognition`
      (`compile_fail`), `site_lifts_to_turns_of_its_own_periods`,
      `incidences_read_between_boundary_arcs`.
@@ -1238,6 +1245,7 @@ Each phase is one commit:
    equality, at the source's own width. `Site` already carries any rank.
    - Claims: `sensor_reads_rank_from_sample`,
      `unread_dimension_carries_no_value`.
+   - **Built** (`src/transducer/sample.rs`: `Sample`, `Symbol`, `Place`).
 2. **S1, the decoder leaves the core.**
    - The ARC-AGI-2 decoder (JSON, corpus path, train and test split) moves
      to the corpus's owner, outside `src/`: the house that posts its
@@ -1267,6 +1275,9 @@ Each phase is one commit:
    §3.4, held per family, with candidates in superposition. The default
    `0` and the literal `h != 0` sites (about 64) are removed.
    - Claim: `ground_deduced_not_symbol_zero`.
+   - **In progress** (maintainers). It also removes the two scope defects
+     of MU-SENSING §6.1: the address's `symbol ≠ 0` filter and the frame
+     fixing before addressing.
 4. **S3, the symbol set deduced.**
    - `PALETTE` (10, and the conflicting 256), `RESERVOIR` and the 10-slot
      hue tables are replaced by the family's own symbol set `Σ`
@@ -1294,6 +1305,14 @@ Each phase is one commit:
      `no_axis_is_privileged` (the percept is invariant under a
      relabelling of the axes), and
      `axis_taken_apart_only_where_family_invariant`.
+   - **Built** with T2 ([PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)):
+     the transduction at rank `n` (`src/transducer/family/transduce/`) and
+     the nested map (`nest.rs`). Open: the reading of which factorings the
+     family is invariant under, which keeps or dissolves each candidate.
+     The fixed axis constants above (`GRID_AXES`, `FRAME_AXIS`,
+     `PLANE_ROW`/`PLANE_COL`, `GRID_N`, `BASE_AXES`) are still in the
+     tree outside the transduction.
+
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
    kernels):
@@ -1318,7 +1337,7 @@ Each phase is one commit:
      `rotation_by_rational_turn_exact_over_cyclotomic_field`.
 6. **S5, samples on the wire.**
    - A task carries samples of rank `n`: `n`, the extents, then the
-     symbols at their width.
+     symbols at the source's width.
    - A link carries its site's coordinates of rank `n`.
    - The SDK's `task` module follows. This is a wire change.
    - Limits are derived (MU-SENSING §6): the rank and extents use the

@@ -87,7 +87,7 @@ Mycelium's current types, admission path and treasury.
 |---|---|
 | **A predecessor Mycelium implementation** | The Noise XX transport and its pinning; the fault-injection campaign and its invariant auditor; the SDK depths and the file-feed door. |
 | **An earlier settlement-layer prototype** | Smith normal form over ℤ, integer homology and the free and torsion parts; the declared chain-complex checker; the malformed-input conformance corpus and its refuse/wait distinction; the falsification scripts the mutation audit generalizes; the representation of homology as a coefficient-change functor. |
-| **ipsal-autic, the language project the alphabet came from** | Act parameters measured per pair; templates placed over a lattice; first contact as a relation; colour-role equivariance and the class quotient; the representation functor (chains add as transports compose); the table of refused functionals. |
+| **ipsal-autic, the language project the alphabet came from** | Act parameters measured per pair; templates placed by repeated placement; first contact as a relation; colour-role equivariance and the class quotient; the representation functor (chains add as transports compose); the table of refused functionals. |
 | **convergence-engine, the public prototype harness** ([github.com/SAIOS-SAMN/convergence-engine](https://github.com/SAIOS-SAMN/convergence-engine)) | The rational canonical form over ℚ[x] (invariant factors of a linear map); exact rational arithmetic and coboundary reduction, already kept (§7). |
 | **An earlier design study** | The statement of what determinism gives alignment and what it does not. |
 | **An earlier visualization prototype** | Renderer notes for a future explorer of the network's readings. |
@@ -306,7 +306,7 @@ are those being built; the final names are the code's).
 - No Smith normal form, invariant factor or elementary divisor appears in
   `src/`. `src/core/exponents.rs` holds the Hermite normal form with its
   transform (`hnf_with_transform`, `reduce_against`): exact over ℤ, it
-  decides membership in a lattice and gives the factorization, but it does
+  decides membership in the integer span of the held rows and gives the factorization, but it does
   not give torsion or the diagonal form.
 - `src/transducer/cga/linear.rs` holds `LinearFunction`, which reads the
   characteristic polynomial (Newton's identities over power-sum traces),
@@ -596,18 +596,18 @@ it.
 - *Claims:* a scale by the frames' ratio holds where the ratio differs
   pair to pair; a non-integer frame ratio is refused by name.
 
-**(b) A template placed over a lattice.**
+**(b) A template placed by its repeats.**
 - *Gap:* `Act::Copy { template }` places one template centre onto centre
-  on each selected body. A template repeated over a lattice of positions
-  (a skew lattice included) is not stated.
-- *Design:* the lattice is read from the placement differences of the
+  on each selected body. A template repeated at positions spanned by
+  integer steps (skew steps included) is not stated.
+- *Design:* the repeat span is read from the placement differences of the
   witnessed copies as the differences' Hermite normal form (`core::exponents`,
   exact over ℤ at any size), and its offset is anchored to a body a
   predicate selects. Membership of a position is decided by reduction
   against the form. No candidate positions are enumerated; a single
-  witnessed copy mints no lattice and is refused by name.
-- *Claims:* a skew lattice is read whole from its placement differences;
-  a lone witness mints no lattice.
+  witnessed copy mints no span and is refused by name.
+- *Claims:* a skew repeat span is read whole from its placement
+  differences; a lone witness mints no span.
 
 **(c) First contact as a relation, and a slide toward a partner.**
 - *Gap:* `Pred::Touches` reads contact that already holds; `Act::Slide`
@@ -619,10 +619,11 @@ it.
   `Act::Slide { toward: Pred, stop }` carries each selected body along the
   ray to its partner. Partners met at one distance are held whole (every
   one of them is the partner), never reduced to one. Where the ray to the
-  partner is not a lattice unit, the slide is refused by name. The grid
-  has a border: there is no toroidal wrap.
+  partner is not a primitive integer step, the slide is refused by name.
+  The sample has a border: there is no toroidal wrap.
 - *Claims:* a body slides to its first-met partner; partners at one
-  distance are held whole; a ray that is not a lattice unit is refused.
+  distance are held whole; a ray that is not a primitive integer step is
+  refused.
 
 **(d) Colour-role equivariance.**
 - *Gap:* `Act::Recolour` and the gauges of `Carry` and `Echo` are fixed hue
@@ -670,7 +671,7 @@ or minority), lattice placement with a phase anchored to a minimal origin,
 toroidal first contact and the class quotient. In Mycelium: a hue named by
 a count is a `Rank` over a named coordinate with its tie named; an anchor
 is a body a predicate selects, never a minimal origin; first contact stops
-at the border; the lattice is read in `BigInt` through the existing
+at the border; the repeat span is read in `BigInt` through the existing
 Hermite form, not in fixed-width integers; and every addition is judged by
 closure on families it did not see, never by the task it closed.
 
@@ -835,10 +836,11 @@ mapping from the spaces world models already declare.
 
 ### 4.1 The current state
 
-- `Cargo.toml` is a workspace: the root package `mycelium` 0.2.0,
+- `Cargo.toml` is a workspace: the root package `mycelium` 0.3.0-rc.2,
   Apache-2.0, `rust-version = "1.82"`, with three binaries
   (`mycelium-server`, `mycelium-client`, `mycelium-soak`), and the members
-  `forms` (0.1.0) and `mycelium-sdk` (0.3.0-dev), under one lock file and
+  `forms`, `mycelium-sdk` (`sdk/`) and `mycelium-source-arc-agi`
+  (`sources/arc-agi`), each at 0.3.0-rc.2, under one lock file and
   one lint table (`[workspace.lints]`). `xtask` stays outside it.
 - The SDK is the crate `mycelium-sdk` (`sdk/`), re-exporting the library's
   client surface in modules: `voice`, `session`, `task`, `rule`, `seat`,
