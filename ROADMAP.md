@@ -1228,7 +1228,7 @@ Each phase is one commit:
      `inversion_in_the_membrane_needs_no_infinity`.
 10. **S9, forces, orbits and the vortex in the field's atlas:**
     - Axiomatic gravity is read as the local orbit's shear on the
-      orthogonal orbit class. Two classes are orthogonal when their
+      orthogonal orbit class. Two classes are orthogonal when the two
       elliptic planes satisfy `B₁ · B₂ = 0` and `B₁ ∧ B₂ ≠ 0`, and the
       shear is 78.46's commuting part, the drag, which changes rate and
       not plane (MU-SENSING §3.7).
