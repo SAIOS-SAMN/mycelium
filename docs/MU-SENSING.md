@@ -114,9 +114,18 @@ is a **gauge transformation**, and the percept is the same under it. So:
 - **Colours are not fixed.** "Red" is not symbol 2. A colour word names
   an invariant fibre relation across the family, such as *the symbol each
   body takes from its enclosure*, never a palette integer.
-- **The symbol set is the sample's.** Its size is read, so a source may
-  present 3 symbols, 10 or 10 000. The reservoir ray `e_∅` (78.58) is
-  the place after the family's own symbol set, never a fixed index.
+- **The symbol set is the family's.** A family's symbol set `Σ` is the
+  distinct symbols across all of its samples, compared by equality. Its
+  size `|Σ|` is read, so a source may present 3 symbols, 10 or 10 000.
+  - **An index into `Σ`** is a symbol's rank in canonical address order:
+    the order in which symbols first appear when the samples are walked
+    in address order. It is an addressing order, never a role and never
+    a choice.
+  - **The reservoir ray `e_∅`** (78.58) sits at index `|Σ|`, the place
+    after the family's own set, never at a fixed index.
+  - **A table over symbols** is keyed by `Σ` and sized `|Σ|`, never a
+    fixed array of slots.
+  - **Claim:** permuting `Σ` leaves every percept unchanged.
 - **Order and magnitude** enter only where the source declares them, as a
   typed axis of the fibre. A brightness or a temperature is an example of
   each. Without a declaration, symbols are compared only for equality.
@@ -266,6 +275,16 @@ bubble (a thought bubble), renamed 2026-11-02.
     orbit does to the class orthogonal to it, read from the orbits the
     mind holds. Where no orbit is held, nothing is produced, and the
     manifold there is flat.
+    - **The orthogonal class, exactly.** An orbit's plane is the
+      bivector `B` of its elliptic mode. Two orbit classes are
+      orthogonal when their planes share no direction: `B₁ · B₂ = 0`
+      (no grade-0 part) and `B₁ ∧ B₂ ≠ 0`. Such planes are disjoint and
+      commute.
+    - **The shear on the orthogonal class** is the commuting part of
+      78.46's split, the drag. It changes the orbit's rate and leaves
+      its plane where it is. Orbits that are not in the orthogonal class
+      take the anticommuting part, the lift (a tilt), by 78.46, and are
+      not this shear.
   - **The court's exported gravity** (a reading the mind receives, never
     a force the court applies). A court's pressure, deficit and dwell
     reach the mind as the lanes of a deferral or a quote. They act as
@@ -410,7 +429,16 @@ claims as exact content, and it admits a claim by reconstruction
   a sample, reconstructed and compared as an exact object.
 - **On the wire, a task carries samples of any rank:** `n`, the extents,
   then the symbols at the source's own width. It is never a pair of `u16`
-  extents with one byte per cell.
+  extents with one byte per cell. The limits are derived, never chosen:
+  - **The rank and each extent** are carried in the existing `u16`
+    length field. A value past it means a blob where a coordinate
+    belongs, so it is refused, never widened.
+  - **The symbol width `w`** is the source's own, sent once per sample.
+    A sample's symbol bytes are `w · ∏ eᵢ`, computed with checked
+    arithmetic and refused by name on overflow.
+  - **A phase's denominator** is its axis's extent (the turn is
+    `s / eᵢ`), so it is bounded by that extent's field and needs no
+    limit of its own.
 
 ### 6.1 Scope separation (ruled 2026-11-03)
 
