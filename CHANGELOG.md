@@ -50,7 +50,23 @@ such change is named here.
   named (`SampleRefusal`, `SiteRefusal`), with checked counts and no cap.
   MU-SENSING §8 marks the row built. No caller is moved yet (S1–S5).
 
-### The field: wells, membrane, phases on a chart (terminology, ruled 2026-11-02)
+### A chart keeps its one meaning; the field's geometry is its atlas (correction, ruled 2026-11-02)
+- The entry below gave "chart" a second meaning, a round reference (a
+  circle, a sphere `S^{2n−1}`, a Hopf-type base). That brought back the
+  flat object ruled out, and it is withdrawn. A **chart** keeps its one
+  meaning: a body's exact invariant coordinates. The field's charts form
+  its **atlas** (78.41). A **phase** is a site's coordinate within a chart.
+  The transitions between charts are the field's connection, and the
+  holonomy of a loop of transitions is its curvature (MU-RECURSION 10.3,
+  12.6). The Clifford torus, the Hopf base sphere and angle excess on a
+  sphere are removed.
+- MU-SENSING §1, §3.1, §3.6–§3.8 and §8; GLOSSARY ("Chart (of a field)"
+  replaced by "Atlas (of a field)"; Phase, Chart); ROADMAP (Now, S4, S4a,
+  S7–S9, with claims renamed); LAW-FIELD v1 (carrier, holonomy reading,
+  wire, fixture 1 as a loop of three `1/12`-turn transitions, open
+  question).
+
+### The field: wells, membrane, phases (terminology, ruled 2026-11-02)
 - The object is named the **field**: a curved, nested manifold whose
   geometry is produced by the orbits it holds, its curvature the shear of
   local orbits on the orthogonal orbit class, flat where nothing is held.

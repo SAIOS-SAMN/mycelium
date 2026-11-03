@@ -32,9 +32,8 @@ is at `0.3.0-rc.2`. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
-| T2, the transduction core: frames related by the motion between them, μ as a share of the frame | [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) | In review ([PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)), with track 26's S0 and S4 (the transduction on samples of any rank, `n` phases, no axis privileged); awaits operator approval (wire and ledger change) |
-| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 in review with T2 (S4's family-invariance reading for nesting still open); S1–S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
-| Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex on the chart ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
+| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1–S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
+| Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready after T2 |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Ready |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the three above (maintainers) |
@@ -58,7 +57,7 @@ is recorded:
   act, which amends rulings 78.126 and 78.136.
 - B2: per-clause signatures, a wire change to `ACT_LAWS` mode 8.
 - Proposed names: `NotSignatory`, `AddressOnly`.
-- μ measured as the solid angle a change sweeps on the base sphere, in
+- μ measured by the holonomy a change sweeps in the field, in
   place of a share of the frame's sites (MU-SENSING §3.7). It changes what
   is paid, so it is not in v0.3.0 unless ruled.
 - The open questions of MU-DERIVATIONS §7 and MU-RELEASE §10.
@@ -1134,7 +1133,7 @@ Each phase is one commit:
    - `GRID_AXES`, `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N`, the
      3-tuple `Point`, `BASE_AXES` and the planar `(rows, cols)` carriers
      are replaced by the sample's rank and a perspective's roles.
-   - The transduction's `Enclosure` holds `n` phases on a chart, none of
+   - The transduction's `Enclosure` holds `n` phases, none of
      them a row or a column: the axes are lifted into the field
      (MU-SENSING §3.6).
    - An axis is taken apart into nested phases where the family is
@@ -1148,22 +1147,22 @@ Each phase is one commit:
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
    kernels):
-   - Each site is a point written on the field's chart `S^{2n−1}`, held
-     projectively by its `n` phases, with the scale a gauge. There is no
-     unit norm and no sum of squares. The geometry is non-Euclidean: the
-     interior is `Hⁿ⁺¹`.
-   - A Hopf-type projection reads the chart's base sphere, with the
-     phases as fibres. A nested axis adds a field within the field.
-   - The holonomy of a loop of perception is its angle excess in turns,
-     an exact element of ℚ/ℤ. Motions by rational turns are exact over
+   - Each body stands on its charts, and each site is held by its phases
+     within them, with the scale a gauge. There is no unit norm and no
+     sum of squares. The transitions between charts are versors of
+     `Cl(n+1, 1)`, so the geometry is non-Euclidean.
+   - Nesting is a fibration (25.12: base the class, fibre the gauge). A
+     nested axis adds a field within the field.
+   - The holonomy of a loop of perception is the product of the
+     transitions around its loop of charts, read by its modes: an exact
+     turn in ℚ/ℤ where elliptic. Motions by rational turns are exact over
      `ℚ(ζ_ℓ)`.
    - One field carrier serves perception and the physics' shells
-     (MU-TOPOLOGY §6, Concordance 2.10; the `Sphere{n, R}` carriers of
-     MU-RECURSION D4).
+     (MU-TOPOLOGY §6, Concordance 2.10; MU-RECURSION D4).
    - Claims: `sample_lifts_into_the_field_without_unit_norm`,
-     `loop_holonomy_is_angle_excess_in_turns`,
-     `flat_product_reads_no_holonomy_where_sphere_reads_it`,
-     `orbit_precesses_by_the_angle_excess_its_attractors_curve`,
+     `loop_holonomy_is_the_product_of_its_transitions`,
+     `flat_product_reads_no_holonomy_where_curved_field_reads_it`,
+     `orbit_precesses_by_the_holonomy_its_attractors_curve`,
      `zero_precession_orbit_refused_as_loop`,
      `windings_kept_as_fibre_classes`,
      `rotation_by_rational_turn_exact_over_cyclotomic_field`.
@@ -1182,7 +1181,7 @@ Each phase is one commit:
    - The field's curvature is read from the orbits it holds, flat where
      nothing is held.
    - The existing `Well` (`transducer/field/idea.rs`) gains its body:
-     its membrane where it encloses, its phases on the chart, its centre
+     its membrane where it encloses, its charts in the field's atlas, its centre
      and its inflation as a gauge.
    - Its stage becomes a coordinate. `percept: bool` and `dirty: bool`
      go.
@@ -1190,21 +1189,21 @@ Each phase is one commit:
      readings of the body, never scalars.
    - The Euclidean spheres (`cga/embedding.rs` `sphere_at`, `on_sphere`;
      `cga/at_three.rs` `sphere`), built from `r²` with `e∞`, are retired
-     for the chart and the membrane.
+     for the field's charts and the membrane.
    - Claims: `well_stage_is_a_coordinate`, `well_reads_no_scalar`,
      `sphere_built_without_squared_radius`.
 9. **S8, the field's motions as one exact group:**
    - rotate (a rotor by turns, cyclotomic);
    - flip (a reflection, or an inversion in the membrane);
-   - deflate and re-inflate (a hyperbolic translation, a dilation on the
-     chart);
+   - deflate and re-inflate (a hyperbolic versor: a boost or a
+     dilation);
    - stretch and thin (a re-period of one phase).
 
    A motion that cannot be carried exactly is refused `NotExact`.
    - Claims: `field_stays_smooth_under_every_isometry`,
      `stretch_is_a_re_period_not_a_versor`,
      `inversion_in_the_membrane_needs_no_infinity`.
-10. **S9, forces, orbits and the vortex on the chart:**
+10. **S9, forces, orbits and the vortex in the field's atlas:**
     - Axiomatic gravity is read as the local orbit's shear on the
       orthogonal orbit class (a new reading of plane orthogonality
       between orbit classes).
@@ -1213,18 +1212,18 @@ Each phase is one commit:
     - `Field` orbits are attached to wells. Precession is the base
       loop's holonomy, and an orbit with zero precession is refused
       `Loop`.
-    - The vortex's monodromy (25.12) is read in `Spin(n+1, 1)` on the
-      chart, not in `Spin(4,0)(ℚ)`.
+    - The vortex's monodromy (25.12) is read in `Spin(n+1, 1)` between
+      the charts of the field's atlas, not in `Spin(4,0)(ℚ)`.
     - Claims: `axiomatic_gravity_shears_the_orthogonal_class`,
       `court_pressure_deforms_the_well_it_faces`,
-      `vortex_monodromy_read_on_the_chart`.
+      `vortex_monodromy_read_between_charts`.
 
 Order (ruled 2026-11-02): S0–S5 land in v0.3.0's one break, and T2
 merges after S0 and S4. S4a and S7–S9 follow LAW-FIELD v1's agreement
 with the peer kernels ([proposal](docs/proposals/78.171-law-field.md),
 [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), in v0.3.0 if it
 is agreed before rc.3. S6 follows v0.3.0. Depends on the peer kernels for
-S4a's carrier (Concordance 2.10's nested shells and the same `Sⁿ`). It
-serves track 25 (X5, the transduction's guard), T3 (the turn-native chart
-reads samples on the base sphere), track 19 (the general conformal
+S4a's carrier (Concordance 2.10's nested shells). It serves track 25
+(X5, the transduction's guard), T3 (the turn-native chart reader reads
+samples within the field's charts), track 19 (the general conformal
 algebra) and the reference mind (track 10).
