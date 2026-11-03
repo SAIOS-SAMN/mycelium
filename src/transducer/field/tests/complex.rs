@@ -1,18 +1,18 @@
 // 13 — the Čech complex over held thoughts: what shares an edge, what a
 // fill closes, and what a vortex collapses to.
 
-use crate::transducer::bubble::*;
+use crate::transducer::field::*;
 use crate::transducer::sentence::{RankAxis, RankMove};
 
-/// Two bubbles on one chart held from disjoint remainders share an edge,
-/// never a triangle: they stand as two bubbles with no 2-simplex.
+/// Two wells on one chart held from disjoint remainders share an edge,
+/// never a triangle: they stand as two wells with no 2-simplex.
 #[test]
 fn hold_shares_no_triangle_between_disjoint_remainders() {
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     c.hold(vec![(5, 5, 3, 4), (5, 6, 3, 4)]);
-    assert_eq!(c.len(), 2, "disjoint remainders are two bubbles");
-    let keys: Vec<Vec<u8>> = c.bubbles.scoped().map(|(k, _)| k).collect();
+    assert_eq!(c.len(), 2, "disjoint remainders are two wells");
+    let keys: Vec<Vec<u8>> = c.wells.scoped().map(|(k, _)| k).collect();
     let edges = c.complex.link(&keys[0], 1);
     assert!(!edges.is_empty() || c.complex.degrees.get(1).is_none_or(|l| !l.is_empty()) || {
         // same chart prefix (leading axis of a bar) may or may not coincide;
@@ -26,16 +26,16 @@ fn hold_shares_no_triangle_between_disjoint_remainders() {
 }
 
 /// Overlapping remainders merge by fill: a shared site is Extended, the
-/// bubbles merge into one, and the merge is counted by name.
+/// wells merge into one, and the merge is counted by name.
 #[test]
 fn hold_merges_overlapping_remainders_by_fill() {
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
-    assert_eq!(c.len(), 1, "a shared site is Extended: the bubbles merge");
-    let keys: Vec<Vec<u8>> = c.bubbles.scoped().map(|(k, _)| k).collect();
+    assert_eq!(c.len(), 1, "a shared site is Extended: the wells merge");
+    let keys: Vec<Vec<u8>> = c.wells.scoped().map(|(k, _)| k).collect();
     assert_eq!(keys.len(), 1);
-    assert!(c.bubbles.get(&keys[0]).unwrap().potential.iter().any(|&x| x > 0));
+    assert!(c.wells.get(&keys[0]).unwrap().potential.iter().any(|&x| x > 0));
     // 13.12 — the merge's answer is counted by name, never discarded.
     let m = c.merge_reading();
     assert_eq!((m.merged, m.stayed, m.unnamed), (1, 0, 0), "one merge, merged: {}", m.line());
@@ -233,7 +233,7 @@ fn take_docket_answers_held_class_by_class_key() {
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     let (thought, cover): (Vec<u8>, Vec<Vec<u8>>) = {
-        let (k, b) = c.bubbles.scoped().next().expect("one thought held");
+        let (k, b) = c.wells.scoped().next().expect("one thought held");
         (k, b.cover.scoped().map(|(ck, _)| ck).collect())
     };
     let entry = Cite::Class { class: Box::new(kappa.clone()), rotor: Box::new(p.clone()), cover: Some(cover) };
@@ -241,7 +241,7 @@ fn take_docket_answers_held_class_by_class_key() {
     c.docket_sealed();
     c.dirty.remove(&thought);
     c.take_docket();
-    let b = c.bubbles.get(&thought).expect("still held");
+    let b = c.wells.get(&thought).expect("still held");
     assert!(b.horizon.get(p.class_key().expect("a class key").as_bytes()).is_some(), "the rotor in its horizon");
     assert!(c.dirty.contains(&thought), "marked dirty, so the expand ring reaches it first");
     assert_eq!(c.docket_reading().taken, 1);
@@ -297,11 +297,11 @@ fn release_thought_loses_rank_for_corner_not_leaf() {
     }
     let r = c.core_reading();
     assert_eq!((r.free_vertices, r.isolated, r.core, r.h1), (1, 0, 4, 1), "{r:?}");
-    c.bubbles.insert(&vs[4], Bubble::default());
+    c.wells.insert(&vs[4], Well::default());
     c.release_thought(&vs[4]);
     let s = c.meet_graph().shed;
     assert_eq!((s.removed[0], s.in_core[0], s.rank_lost[0]), (1, 0, 0), "a leaf carried no loop");
-    c.bubbles.insert(&vs[2], Bubble::default());
+    c.wells.insert(&vs[2], Well::default());
     c.release_thought(&vs[2]);
     let s = c.meet_graph().shed;
     assert_eq!((s.removed[0], s.in_core[0], s.rank_lost[0]), (2, 1, 1), "a corner of the ring carried one");
@@ -311,7 +311,7 @@ fn release_thought_loses_rank_for_corner_not_leaf() {
     assert_eq!((r.free_faces[0], r.h1, r.unfaced, r.malformed), (3, 0, 0, 0), "each edge a face of the one triangle: {r:?}");
 }
 
-/// Two pivots on the same bubble with no new word leave fills unchanged.
+/// Two pivots on the same well with no new word leave fills unchanged.
 #[test]
 fn pivot_on_leaves_fills_when_repeated_without_word() {
     use crate::transducer::element::{canonical_chain, from_canonical};
@@ -397,9 +397,9 @@ fn seed_horizon_collapses_vortex_by_matching_certificate() {
             side: Side::Left,
         },
     };
-    let k = c.bubbles.scoped().next().map(|(k, _)| k).expect("bubble");
+    let k = c.wells.scoped().next().map(|(k, _)| k).expect("well");
     let hit_key = hit.key();
-    if let Some(b) = c.bubbles.get_mut(&k) {
+    if let Some(b) = c.wells.get_mut(&k) {
         sentence::vortex_put(&mut b.vortex, hit);
         sentence::vortex_put(&mut b.vortex, other);
     }
@@ -409,7 +409,7 @@ fn seed_horizon_collapses_vortex_by_matching_certificate() {
         representative: r,
     };
     assert_eq!(c.seed_horizon(&[rec]), 1);
-    let b = c.bubbles.get(&k).expect("bubble");
+    let b = c.wells.get(&k).expect("well");
     assert_eq!(b.vortex.len(), 0, "the vortex collapsed");
     assert!(
         b.certificates.get(&hit_key).is_some(),

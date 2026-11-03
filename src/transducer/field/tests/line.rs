@@ -4,7 +4,7 @@
 // on past its return, and escrow conserved through a merge.
 
 use crate::chronometry::Cite;
-use crate::transducer::bubble::Contemplation;
+use crate::transducer::field::Contemplation;
 use crate::transducer::family::{perceive_family, scene_form_on, Grid, NoCrystal};
 
 fn grid(rows: &[&str]) -> Grid {
@@ -65,16 +65,16 @@ fn release_drops_slide_perception_where_motion_lets_go() {
         let mut c = Contemplation::new();
         let first = perceive(&mut c, &SLIDE_IN, &SLIDE_OUT, b"the scene", [1, 0, 0, 0]);
         vent(&mut c);
-        assert!(c.bubbles.get(&first).is_some(), "the first stands through the beat it was perceived at");
+        assert!(c.wells.get(&first).is_some(), "the first stands through the beat it was perceived at");
         let second = perceive(&mut c, &SLIDE_OUT, &SLIDE_ON, b"the scene", [1, 0, 0, 0]);
         let cavity = c.cavity_len();
         vent(&mut c);
-        assert!(c.bubbles.get(&first).is_none(), "the first let go as its ray closed");
+        assert!(c.wells.get(&first).is_none(), "the first let go as its ray closed");
         vent(&mut c);
-        assert!(c.bubbles.get(&second).is_some(), "nothing moved: no time passed, and it stands");
+        assert!(c.wells.get(&second).is_some(), "nothing moved: no time passed, and it stands");
         move_field();
         vent(&mut c);
-        assert!(c.bubbles.get(&second).is_none(), "the second, held by nothing, left at the field's next beat");
+        assert!(c.wells.get(&second).is_none(), "the second, held by nothing, left at the field's next beat");
         assert!(c.cavity_len() > cavity, "the remainders at the cavity");
         assert_eq!(c.take_returned_escrow(), [2, 0, 0, 0], "the escrow returned, exactly");
         let scenes = c.take_released_scenes();
@@ -108,7 +108,7 @@ fn thread_new_winds_grounded_thought_past_return() {
             vent(&mut c);
         }
         assert_eq!(c.closed_thoughts, 1, "the fourth hour closed its return: {}", c.resonance.line());
-        let grounded: Vec<Vec<u8>> = c.bubbles.scoped().filter(|(_, b)| b.ground.is_some()).map(|(k, _)| k).collect();
+        let grounded: Vec<Vec<u8>> = c.wells.scoped().filter(|(_, b)| b.ground.is_some()).map(|(k, _)| k).collect();
         assert_eq!(grounded.len(), 1, "the grounded thought stands past its return");
     });
 }
@@ -123,7 +123,7 @@ fn hold_perceived_conserves_escrow_through_merge() {
         let mut c = Contemplation::new();
         perceive(&mut c, &["10000", "10000", "11000", "00000"], &["01000", "01000", "01100", "00000"], b"the shape", [1, 0, 0, 2]);
         perceive(&mut c, &["11100", "10000", "00000", "00000"], &["01110", "01000", "00000", "00000"], b"the shape", [0, 3, 0, 1]);
-        let held: [u64; 4] = c.bubbles.scoped().fold([0; 4], |mut sum, (_, b)| {
+        let held: [u64; 4] = c.wells.scoped().fold([0; 4], |mut sum, (_, b)| {
             for (s, e) in sum.iter_mut().zip(b.escrow) {
                 *s += e;
             }

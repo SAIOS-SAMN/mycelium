@@ -45,7 +45,7 @@ impl Mind {
     pub fn open(endpoint: &str, voice: Voice) -> Self {
         // The complex listens from the first pivot (MU-CLIENT §4.5): every
         // tether condensed and face sealed winds its strain into the field.
-        let mut contemplation = crate::transducer::bubble::Contemplation::new();
+        let mut contemplation = crate::transducer::field::Contemplation::new();
         contemplation.complex.arm_outflow();
         // The seat's carrier lands on the mind's own waker: a house's percept
         // wakes the resting mind that is to take it up.

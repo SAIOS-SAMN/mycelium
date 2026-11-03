@@ -17,10 +17,10 @@ impl Mind {
         }
         let thought_charts: Vec<crate::transducer::stalk::Invariant> = {
             let mut charts = Vec::new();
-            // THE BUBBLES THIS MIND HOLDS, all of them: the charts it asks
+            // THE WELLS THIS MIND HOLDS, all of them: the charts it asks
             // a quote on are the charts it is thinking about, and one left
             // out is a thought the book is never asked about.
-            for (_, b) in self.contemplation.bubbles.scoped() {
+            for (_, b) in self.contemplation.wells.scoped() {
                 let inv = crate::transducer::stalk::invariant(&b.remainder);
                 let mut cur = inv;
                 loop {
@@ -39,16 +39,16 @@ impl Mind {
         // it: the charts it thinks about, the root (an empty atlas is
         // incident to the root prefix — the first quote reads the book at
         // depth zero, so a mind need not already hold a word to learn one),
-        // and each held bubble's chart with the volume it routes by.
+        // and each held well's chart with the volume it routes by.
         let standing = |inv: &crate::transducer::stalk::Invariant| (inv.clone(), self.working_atlas().standing_on(inv).byte());
         let root = crate::transducer::stalk::Invariant(Vec::new());
         let empty = self.atlas_is_empty();
         let plan = QuotePlan {
             charts: thought_charts.iter().map(standing).collect(),
             root: vec![standing(&root)],
-            bubbles: self
+            wells: self
                 .contemplation
-                .bubbles
+                .wells
                 .scoped()
                 .map(|(_, b)| (standing(&crate::transducer::stalk::invariant(&b.remainder)), b.volume))
                 .collect(),
@@ -68,25 +68,25 @@ impl Mind {
 type Standing8 = (crate::transducer::stalk::Invariant, u8);
 
 /// WHAT A QUOTE ASKS, read on the field: the charts the mind thinks about,
-/// the root, each held bubble's chart with its volume, whether the atlas is
+/// the root, each held well's chart with its volume, whether the atlas is
 /// empty, and the voice asking.
 struct QuotePlan {
     charts: Vec<Standing8>,
     root: Vec<Standing8>,
-    bubbles: Vec<(Standing8, [u64; 4])>,
+    wells: Vec<(Standing8, [u64; 4])>,
     empty: bool,
     voice: [u8; 32],
 }
 
 impl QuotePlan {
-    /// THE QUOTE ASKED ON THE CARRIER: each bubble's chart routed to the
+    /// THE QUOTE ASKED ON THE CARRIER: each well's chart routed to the
     /// hypha that homes it and every hypha asked its charts; where nothing
     /// routes, or the atlas is empty, every known hypha is asked in turn.
     /// The listings merge by address.
     fn ask(self, s: &mut Session, budget: &mut crate::physics::Budget) -> io::Result<YieldQuote> {
         let mut dests: crate::network::nerve::Keyed<Vec<Standing8>> = crate::network::nerve::Keyed::new();
         let mut dest_order: Vec<String> = Vec::new();
-        for ((inv, st), mag) in &self.bubbles {
+        for ((inv, st), mag) in &self.wells {
             // A chart no hypha is known for is not routed to the empty
             // address; it is not routed. The whole ask goes to every hypha
             // below when nothing routes.

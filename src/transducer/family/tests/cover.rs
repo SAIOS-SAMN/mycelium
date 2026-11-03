@@ -78,7 +78,7 @@ fn compartments<T: Copy + Into<Compartment>>(v: &[T]) -> Vec<Compartment> {
 /// is the case an uncarried body is in.
 #[test]
 fn hold_form_reads_demand_candidates_from_bodies() {
-    use crate::transducer::bubble::contemplation::Contemplation;
+    use crate::transducer::field::contemplation::Contemplation;
     let held = |ga: &[&str], gb: &[&str]| -> (usize, usize) {
         let f = measured(&grid(ga), &grid(gb));
         let chart = f
@@ -93,7 +93,7 @@ fn hold_form_reads_demand_candidates_from_bodies() {
             .expect("the deformation stands as a typed demand");
         let mut c = Contemplation::new();
         c.hold_form(f.clone(), &[], &[], [0; 4], &mut super::common::budget());
-        let (_, b) = c.bubbles.scoped().next().expect("the demand is held as an idea");
+        let (_, b) = c.wells.scoped().next().expect("the demand is held as an idea");
         let over_chart =
             b.candidates.get(chart.key().as_bytes()).map_or(0, |m| m.len());
         let total: usize = b.candidates.scoped().map(|(_, m)| m.len()).sum();

@@ -18,7 +18,7 @@ pub(crate) fn horizon_put(h: &mut Keyed<(Rotor, Order, Standing)>, r: Rotor, sta
 }
 
 impl Contemplation {
-    /// Admit syllabus class records as RULED. Copies into every live bubble.
+    /// Admit syllabus class records as RULED. Copies into every live well.
     ///
     /// `Ruled` — "court-ratified" — is the only standing on which waiting is
     /// the right move: these records are the syllabus, another mind ruled
@@ -64,13 +64,13 @@ impl Contemplation {
             );
             n += 1;
         }
-        let keys: Vec<Vec<u8>> = self.bubbles.scoped().map(|(k, _)| k).collect();
+        let keys: Vec<Vec<u8>> = self.wells.scoped().map(|(k, _)| k).collect();
         for k in keys {
-            let Some(before) = self.bubbles.get(&k).map(|b| b.vortex_strata()) else {
+            let Some(before) = self.wells.get(&k).map(|b| b.vortex_strata()) else {
                 continue;
             };
             let mut collapsed = false;
-            if let Some(b) = self.bubbles.get_mut(&k) {
+            if let Some(b) = self.wells.get_mut(&k) {
                 for rec in records {
                     if !b.horizon.contains(&rec.key) {
                         b.horizon.insert(
@@ -87,7 +87,7 @@ impl Contemplation {
                 }
             }
             // A collapse cleared the form's vortices; the candidate index
-            // follows the bubble (`by_vortex`).
+            // follows the well (`by_vortex`).
             if collapsed {
                 self.unfile_vortex(&k, &before);
                 self.refile_vortex(&k);
@@ -109,7 +109,7 @@ impl Contemplation {
     /// cycle whose holonomy stands — has to be on it, or the class the
     /// perception just measured reaches the pivot as nothing at all.
     ///
-    /// `Bubble::expand_with` does exactly this for a simplex it meets on
+    /// `Well::expand_with` does exactly this for a simplex it meets on
     /// the atlas (`Fill::Class` → `horizon_put`); this is the same
     /// admission for the classes that arrive on the form, so a perceived
     /// obstruction and a contemplated one are one kind of object.

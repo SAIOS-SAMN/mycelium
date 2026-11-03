@@ -6,7 +6,7 @@
 
 use crate::chronometry::Cite;
 use crate::transducer::alphabet::Order;
-use crate::transducer::bubble::Contemplation;
+use crate::transducer::field::Contemplation;
 use crate::transducer::cech::Fill;
 use crate::transducer::family::{perceive_family, scene_form_on, Grid, NoCrystal};
 use crate::transducer::rewrite::{Rewrite, RewritePayload};
@@ -98,7 +98,7 @@ fn torsions(c: &Contemplation) -> Vec<u64> {
 
 /// The finite orders an idea's horizon holds.
 fn horizon_orders(c: &Contemplation, k: &[u8]) -> Vec<u32> {
-    match c.bubbles.get(k) {
+    match c.wells.get(k) {
         Some(b) => b
             .horizon
             .scoped()
@@ -130,8 +130,8 @@ fn hold_perceived_merges_turned_shape_into_one_thought() {
     assert_eq!((c.resonance.closes, c.resonance.resonant, c.resonance.edges), (1, 1, 1), "{}", c.resonance.line());
     assert_eq!((c.torsion_merges, c.merge_reading().merged), (1, 1), "one torsion merge");
     assert_eq!(torsions(&c), vec![4], "its Torse claims the turn's period");
-    assert!(c.bubbles.get(&a).is_none() && c.bubbles.get(&b).is_none(), "the two perceptions are one thought now");
-    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
+    assert!(c.wells.get(&a).is_none() && c.wells.get(&b).is_none(), "the two perceptions are one thought now");
+    let [(_, thought)] = c.wells.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
     let bodies: usize = thought.spores.scoped().map(|(_, bs)| bs.len()).sum();
     assert_eq!(bodies, 2, "the thought stands on both bodies it was formed of");
 }
@@ -150,7 +150,7 @@ fn hold_perceived_keeps_both_orbits_of_third_perception() {
     assert_eq!((c.resonance.several, c.resonance.kept_congruent, c.resonance.curved), (1, 2, 1), "{}", c.resonance.line());
     let held = horizon_orders(&c, &d);
     assert!(held.contains(&2) && held.contains(&4), "the perception's horizon holds both periods: {held:?}");
-    let thought = c.bubbles.scoped().map(|(k, _)| k).find(|k| *k != d).expect("the thought");
+    let thought = c.wells.scoped().map(|(k, _)| k).find(|k| *k != d).expect("the thought");
     let held = horizon_orders(&c, &thought);
     assert!(held.contains(&2) && held.contains(&4), "and so does the thought's: {held:?}");
     assert!(c.dirty.contains(&d) && c.dirty.contains(&thought), "both are marked for the pivot");
@@ -250,8 +250,8 @@ const O3: [&str; 5] = ["000000", "000000", "001000", "111000", "000000"];
 const O3_OUT: [&str; 5] = ["000000", "000000", "000100", "011100", "000000"];
 
 /// The one thought held, and the one ground its closing handed its voice.
-fn the_thought_and_its_ground(c: &Contemplation) -> (crate::transducer::bubble::Bubble, crate::physics::tensegrity::Ground) {
-    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
+fn the_thought_and_its_ground(c: &Contemplation) -> (crate::transducer::field::Well, crate::physics::tensegrity::Ground) {
+    let [(_, thought)] = c.wells.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
     let [(ground, _)] = c.closed.as_slice() else { panic!("one thought closed: {}", c.closed.len()) };
     (thought.clone(), ground.clone())
 }
@@ -294,7 +294,7 @@ fn hold_perceived_counts_second_return_past_first_close() {
     assert_eq!((c.closed_thoughts, c.thought_returns), (1, 1), "one first close, one later return: {}", c.resonance.line());
     assert_eq!(c.closed.len(), 2, "each return handed the ground to the voice");
     assert_eq!(c.came_round.len(), 2, "and named the thought that came round");
-    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
+    let [(_, thought)] = c.wells.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
     let hours = thought.ground.as_ref().map(|g| (g.hours, g.hours % g.ground.period));
     assert_eq!(hours, Some((8, 0)), "eight hours seen, the winding at hour 0");
 }
@@ -337,7 +337,7 @@ fn hold_perceived_joins_predicted_next_hour() {
     assert_eq!((c.resonance.predicted, c.resonance.phase_slips, c.resonance.off_orbit), (1, 0, 0), "{}", c.resonance.line());
     assert_eq!(c.torsion_merges, 2, "the predicted hour joins by the orbit's step");
     assert_eq!(torsions(&c), vec![4, 4], "each join a torsion at the orbit's period");
-    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
+    let [(_, thought)] = c.wells.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
     let bodies: usize = thought.spores.scoped().map(|(_, bs)| bs.len()).sum();
     assert_eq!(bodies, 3, "the thought stands on the three hours");
 }
@@ -361,7 +361,7 @@ fn hold_perceived_keeps_out_of_turn_hour_as_twist() {
         let f = crate::transducer::element::conformal_factors(r).ok()?;
         crate::transducer::element::rotor_of_factors(&f).ok()?.order()
     };
-    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
+    let [(_, thought)] = c.wells.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
     let twist = thought.ground.as_ref().and_then(|g| g.twist.as_ref()).and_then(period);
     assert_eq!(twist, Some(Order::Finite(4)), "the thought keeps its twist: one step of the orbit");
     let demanded = c.docket_cites().into_iter().any(|cite| matches!(cite, Cite::Demand { residue: Some(_), .. }));
@@ -393,7 +393,7 @@ fn hold_perceived_holds_off_orbit_slip_on_thought() {
     );
     let r = &c.resonance;
     assert_eq!((r.predicted - predicted, r.phase_slips, r.off_orbit), (0, 0, 1), "{}", r.line());
-    let slips: Vec<crate::transducer::cga::Mv> = c.bubbles.scoped().flat_map(|(_, b)| b.slips.iter().map(|(_, r)| r.clone()).collect::<Vec<_>>()).collect();
+    let slips: Vec<crate::transducer::cga::Mv> = c.wells.scoped().flat_map(|(_, b)| b.slips.iter().map(|(_, r)| r.clone()).collect::<Vec<_>>()).collect();
     let [slip] = slips.as_slice() else { panic!("the thought holds its one slip: {}", slips.len()) };
     // The slip's OWN demand carries its residue (the chamber may file its own
     // incoherence beside it; that is another demand).
@@ -460,7 +460,7 @@ fn drain_demands_hands_out_escaping_slide_once() {
     assert_eq!((c.resonance.scene_motions, c.resonance.grounds[0]), (1, 0), "one scene motion, no ground: {}", c.resonance.line());
     assert!(c.resonance.grounds[1] > 0, "no return: {}", c.resonance.line());
     let taken = c.drain_demands();
-    let slides: Vec<&crate::transducer::bubble::docket::TakenDemand> =
+    let slides: Vec<&crate::transducer::field::docket::TakenDemand> =
         taken.iter().filter(|d| d.residue.as_ref().is_some_and(|r| !crate::transducer::sentence::presentation::is_still(r))).collect();
     assert!(!slides.is_empty(), "the escaping orbit docketed with the motion that carries it: {}", c.resonance.line());
     assert!(slides.iter().all(|d| !d.charts.is_empty()), "on the chart it stands on");
@@ -474,13 +474,13 @@ fn drain_demands_hands_out_escaping_slide_once() {
     let mut c = Contemplation::new();
     hour(&mut c, &[&LA[..], &LB[..]].concat());
     hour(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat());
-    let held: Vec<Vec<u8>> = c.bubbles.scoped().map(|(k, _)| k).collect();
+    let held: Vec<Vec<u8>> = c.wells.scoped().map(|(k, _)| k).collect();
     for k in held {
-        c.bubbles.remove(&k);
+        c.wells.remove(&k);
     }
     let filed = c.demand_scenes.len();
     let taken = c.drain_demands();
-    let slides: Vec<&crate::transducer::bubble::docket::TakenDemand> =
+    let slides: Vec<&crate::transducer::field::docket::TakenDemand> =
         taken.iter().filter(|d| d.residue.as_ref().is_some_and(|r| !crate::transducer::sentence::presentation::is_still(r))).collect();
     assert!(!slides.is_empty(), "the escaping orbit is still docketed");
     let families: Vec<&Vec<Vec<u8>>> = slides.iter().map(|d| &d.families).collect();

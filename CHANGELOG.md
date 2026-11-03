@@ -50,9 +50,28 @@ such change is named here.
   named (`SampleRefusal`, `SiteRefusal`), with checked counts and no cap.
   MU-SENSING §8 marks the row built. No caller is moved yet (S1–S5).
 
+### The field: wells, membrane, phases on a chart (terminology, ruled 2026-11-02)
+- The object is named the **field**: a curved, nested manifold whose
+  geometry is produced by the orbits it holds, its curvature the shear of
+  local orbits on the orthogonal orbit class, flat where nothing is held.
+  A held thought or percept is a **well**, the curvature around one
+  attractor. A **membrane** is a field's boundary where it encloses. A
+  **phase** is a coordinate on a **chart**, the round reference in which
+  phases are written, never the object. "Bubble", "thought bubble",
+  "vesicle" and "absorbed circles" are retired as names of the object
+  (the entry below keeps them as history). The mathematics is unchanged.
+- Code (names only): `src/transducer/bubble/` is `src/transducer/field/`;
+  the type `Bubble` is `Well`; `Contemplation.bubbles` is `wells`.
+- Proposal 78.171 is LAW-FIELD v1, at
+  [`docs/proposals/78.171-law-field.md`](docs/proposals/78.171-law-field.md).
+  MU-SENSING §3.6–§3.8 and §8, GLOSSARY (Field, Well, Chart (of a field),
+  Phase, Membrane), ROADMAP track 26 (S4a, S7–S9) and the docs citing the
+  code follow the new names. MU-SENSING §3.7 is now "The field:
+  non-Euclidean, never scalar".
+
 ### The bubble, the vortex, and how a standard reaches the kernels (specification, ruled 2026-11-02)
 - **The bubble** (MU-SENSING §3.7): a sample is lifted into the bubble
-  the mind already holds (`transducer/bubble/`), so a percept and a
+  the mind already holds (`transducer/field/`), so a percept and a
   thought are one bubble at two stages. Its geometry is non-Euclidean:
   the interior is `Hⁿ⁺¹`, and the membrane is its sphere at infinity, so
   no `e∞` stands outside an enclosure. Its motions (rotate, flip,

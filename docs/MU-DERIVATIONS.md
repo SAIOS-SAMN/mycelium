@@ -1415,7 +1415,7 @@ stroke) has a size of a GiB. The ratio algebra
     `tikv_jemalloc_ctl::stats::allocated` (epoch advanced) after minus
     before the stroke, and `reads_spent` is the `Budget`'s spend. jemalloc
     stats are already built (`Cargo.toml:45–49`) and read at
-    `observe/reading.rs:112`, `transducer/bubble/contemplation.rs:29` and
+    `observe/reading.rs:112`, `transducer/field/contemplation.rs:29` and
     `mycelium-soak/calibrate.rs`. Over one aperture of strokes
     (`aperture_cycle()` = 8), take the maximum: a full reserve must fit
     whichever stroke held most.
@@ -1732,7 +1732,7 @@ language mints through this constructor).
 enough". It contradicts 78.111 (MU-CLIENT rulings index): "no
 construction is refused for a stroke sized for something else". Every
 sibling site already follows 78.111: `client/sdk/entity/think.rs:265`
-(`construct_and_adjoin`), `bubble/pivot.rs:130`,
+(`construct_and_adjoin`), `field/pivot.rs:130`,
 `physics/tensegrity.rs:652`,
 `sentence/{presentation,rung,hearing,word}.rs`.
 

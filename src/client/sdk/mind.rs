@@ -78,11 +78,11 @@ pub struct Mind {
     /// there again. The digest names what differs by address; the geometry
     /// decides what is fetched.
     pub(crate) glued: crate::network::nerve::Keyed<()>,
-    /// OPEN THOUGHTS: the contemplation over bubbles, the one carrier of
+    /// OPEN THOUGHTS: the contemplation over wells, the one carrier of
     /// held forms (24.1 as ruled 2026-09-09); a cite reads the forms' words at
     /// the listing body's chart. Remainders persist; residuals are never
     /// lost on restart.
-    pub(crate) contemplation: crate::transducer::bubble::Contemplation,
+    pub(crate) contemplation: crate::transducer::field::Contemplation,
     pub(crate) physics: crate::physics::Physics,
     pub(crate) height: crate::chronometry::Height,
     /// 78.49, 78.23, MU-CLIENT §4.4(4) — THIS MIND'S OWN K: its completed

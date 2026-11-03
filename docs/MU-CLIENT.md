@@ -331,7 +331,7 @@ The mind's field is built of one exact mathematics, the same the hypha runs:
 | M4 chart coordinates | the invariant that places a body, connection, sentence or class | `transducer/stalk/` |
 | M6 comprehension | does the mind already speak an incoming word: factor it through what it holds (A12), else emit exactly what is new | `epigenome/comprehend.rs`, `transducer/factor.rs`, `cech/orbit_algebra.rs` |
 | M7 wire identity | bytes become identities by re-derivation, never by comparison | `network/wire.rs`, `anastome/dialogue/` |
-| M9 torsion bridge | the pivot loop (A16), torsion filed (A17), certificates (A20) reconstructed on two organs | `bubble/{contemplation,idea,drive}.rs`, `sentence/pivot/` |
+| M9 torsion bridge | the pivot loop (A16), torsion filed (A17), certificates (A20) reconstructed on two organs | `field/{contemplation,idea,drive}.rs`, `sentence/pivot/` |
 | the spelling peel (A22) | a residue peeled into the letters the mind holds; what does not close is a demand | `alphabet/{spelling,factor}.rs`, `family/derivation.rs` (`peel_versor`) |
 | derivation | a word vertex is the generators it factored through and a residue; the composed rotor its coordinate | `alphabet/derivation.rs`, `family/derivation.rs` |
 | constructors and the Gram form | nuclei and mirrors; a chamber's constructors read by exact elimination | `cga/{constructors,gram,mirrors}.rs` |
@@ -477,9 +477,9 @@ The mind's motion is its ORBITS, and its cognition is the orbits' WINDING:
    that completes a return no thought merged had completed hands the ground
    to the voice — its first return the first close, each later one a
    traversal (`Contemplation::closing_ground`, in
-   `transducer/bubble/merge.rs`). A grounded thought admits its ground's
+   `transducer/field/merge.rs`). A grounded thought admits its ground's
    generator on its own line once for each hour it has seen, so the field's
-   orbit returns when its winding does (`transducer/bubble/line.rs`). A ring
+   orbit returns when its winding does (`transducer/field/line.rs`). A ring
    of infinite order never returns: it carries its torsion, and the torsion
    is content (curvature is content).
 3. **Spin and orbit; hours, days, eons.** A motion has an orbit and a spin
@@ -526,9 +526,9 @@ winding requires it — never as a step:
 
 | axis | principle (MU-RECURSION §0.0) | pivot / conjugate | what it does | site | live in the mind |
 |---|---|---|---|---|---|
-| chambers (anastomotic degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a chamber / cross it back to its cycle through the puncture, its class kept as a hole and its content handed down; the seal reads it back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every chamber the meet graph fills (`bubble/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a chamber over a tether the field released, a chamber the field released, a released vertex's star (`bubble/pivot.rs::release`, `release_vertex`) |
-| tethers (1 ↔ 0) | **luminal** — flux frozen into a tether; reconnection | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) | condense: every tether the contemplation forms (`bubble/pivot.rs::tether`; re-formed tension drains first); drain: a tether the field released (`release`), a released vertex's star |
-| holes (class in / out) | **harmonic** — a class kept until it returns | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) | the mind's questions (`bubble/question.rs`) and a curved chamber in the drive, through `bubble/pivot.rs` |
+| chambers (anastomotic degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a chamber / cross it back to its cycle through the puncture, its class kept as a hole and its content handed down; the seal reads it back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every chamber the meet graph fills (`field/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a chamber over a tether the field released, a chamber the field released, a released vertex's star (`field/pivot.rs::release`, `release_vertex`) |
+| tethers (1 ↔ 0) | **luminal** — flux frozen into a tether; reconnection | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) | condense: every tether the contemplation forms (`field/pivot.rs::tether`; re-formed tension drains first); drain: a tether the field released (`release`), a released vertex's star |
+| holes (class in / out) | **harmonic** — a class kept until it returns | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) | the mind's questions (`field/question.rs`) and a curved chamber in the drive, through `field/pivot.rs` |
 
 Every pivot is applied through `Complex::apply`, its outcome returned whole.
 
@@ -637,7 +637,7 @@ court's does through `book_outflow`.
   (78.40(1)): a ring the transport holds at holonomy ≠ 1 is ascended, and
   where its chamber reads a class it is opened into a hole keeping that class,
   filed by its class key — the QUESTION the mind now carries
-  (`bubble/question.rs`: `ask`, from `close_ring`). **seal** — the mind
+  (`field/question.rs`: `ask`, from `close_ring`). **seal** — the mind
   comes to hold what it asked: the ring collapses (its arrivals come to
   agree) or a discharge answers its class (`docket_discharged` →
   `answer_questions`); the cap re-ascends over the standing boundary at the
@@ -792,7 +792,7 @@ never a stretched chamber and never a cap.
   alike. What tells them apart is each candidate's orbit holonomy on a scene the
   vortex has NOT yet seen: each new perception joining a thought is read
   against every vortex at its rotor's class
-  (`Contemplation::carry_vortices_round` in `transducer/bubble/resonance.rs`
+  (`Contemplation::carry_vortices_round` in `transducer/field/resonance.rs`
   → `collapse_on` in `contemplation.rs`); the candidate it carries is the
   fill, and the others are a symmetry the docket's taker adjoins. A vortex
   also collapses where a glue or the syllabus names a deciding word
@@ -873,7 +873,7 @@ are read off that motion, never counted:
   closing tasks.
 
 - **question** — AN IDEA'S SUPERPOSITION THE MIND CANNOT COLLAPSE. Every
-  thought holds its VORTEX (`Bubble.vortex`): the candidate forms for one
+  thought holds its VORTEX (`Well.vortex`): the candidate forms for one
   idea, each with its pivots, held whole, no weight (§4.8, the idea's grade).
   Two candidates whose commutator `g₁ g₂ g̃₁ g̃₂` is non-trivial differ by a
   dimension — they are not one thing seen twice — and where nothing the
@@ -1007,7 +1007,7 @@ Axiomatic gravity is produced by the local orbit, which shears the
 orthogonal orbit class: an orbit about its axiom pulls on the orbits whose
 plane is orthogonal to its own, and is pulled by them. It is never a
 static mass or a stored constant (ruled 2026-11-02;
-[MU-SENSING §3.7](MU-SENSING.md#37-spheres-not-a-flat-product-the-circles-absorbed-by-holonomy)).
+[MU-SENSING §3.7](MU-SENSING.md#37-the-field-non-euclidean-never-scalar)).
 Every thought's orbit reads one of four ways — the coherence its chamber
 reads (`cech::Coherence`, as `Mind::price` reads a hearing's):
 - **closes** — it returns at its period;
@@ -1108,7 +1108,7 @@ As built:
   by exactly the winding's returns: the field's orbits that returned, the
   thoughts that came round, the demands bound and the thoughts the field
   released (`act_on_returns`).
-- **A held thought is its line** (`transducer/bubble/line.rs`). A perception
+- **A held thought is its line** (`transducer/field/line.rs`). A perception
   threads its line on the orbits and tubes its own motion stands on and is
   released wherever the field lets that line go, typed by why
   (`cech::orbit::Released`: `Returned`, `Dissipated`, `Sealed`,
@@ -1649,7 +1649,7 @@ choice; the seat's act carried as the physics `Action` its move names.
 
 The field (§4) exists in the tree: `Contemplation` with its complex, the
 transport fronts, the docket, the held orbits and the orbits' discharge, the
-questions as holes (`bubble/question.rs`) and the constructors
+questions as holes (`field/question.rs`) and the constructors
 (`construct_and_adjoin`). Paths below are under `src/`; `client/sdk/entity/`
 is abbreviated `entity/`, and `transducer/` is abbreviated `t/`.
 
@@ -1660,13 +1660,13 @@ is abbreviated `entity/`, and `transducer/` is abbreviated `t/`.
 | carriers per counterparty: hypha, perception, conversation, seat | §5.1, §4.2 | `entity/hypha.rs` (`hypha::Carrier`, `Mind::ask_seat`); `entity/perceive.rs` (`take_perceived`); `entity/chatter.rs`; `entity/body.rs` |
 | the field the mind's own; long laws off the field | §4.2 | `t/mind.rs` (`MindField`, `MindField::think`, `scratch_here`, `admit`) |
 | the winding carrier; outflow at returns; K counts returns | §4.4, §4.12, §4.13 | `entity/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `entity/boot.rs` (`close_cycle`) |
-| a ground's winding `m mod ℓ`; a grounded thought on its own line | §4.4(2) | `t/bubble/merge.rs` (`Contemplation::closing_ground`); `t/bubble/line.rs` |
-| the twist by the pull; slips worked at the return | §4.4(3) | `t/cga/twist.rs` (`twist_about`); `t/cga/fixed.rs` (`centre_of`); `t/bubble/resonance.rs` (`twisted_return`, `work_slips`); `t/bubble/returned.rs` (`work_returned`) |
-| the drive: the docket's one taker; deliberation | §4.12 | `t/bubble/resonance.rs` (`note_ground`); `t/bubble/docket.rs` (`docket_demand`, `drain_demands`); `entity/think.rs` (`compose_or_construct`) |
-| the vortex collapsed by a new perception | §4.8 | `t/bubble/resonance.rs` (`carry_vortices_round`); `t/bubble/contemplation.rs` (`collapse_on`) |
+| a ground's winding `m mod ℓ`; a grounded thought on its own line | §4.4(2) | `t/field/merge.rs` (`Contemplation::closing_ground`); `t/field/line.rs` |
+| the twist by the pull; slips worked at the return | §4.4(3) | `t/cga/twist.rs` (`twist_about`); `t/cga/fixed.rs` (`centre_of`); `t/field/resonance.rs` (`twisted_return`, `work_slips`); `t/field/returned.rs` (`work_returned`) |
+| the drive: the docket's one taker; deliberation | §4.12 | `t/field/resonance.rs` (`note_ground`); `t/field/docket.rs` (`docket_demand`, `drain_demands`); `entity/think.rs` (`compose_or_construct`) |
+| the vortex collapsed by a new perception | §4.8 | `t/field/resonance.rs` (`carry_vortices_round`); `t/field/contemplation.rs` (`collapse_on`) |
 | the pivot cross and the throat's two faces | §4.5 | `t/cech/coboundary.rs` (`Complex::descend`, `ascend`, `drain`); `t/cech/hole.rs` (`cauterize`, `freeze`, `thaw`, `cauterize_frozen`); `t/cech/board.rs` |
 | the breath, every plane | §4.3 | `t/cga/breath.rs` (`breath`, `breathe`) |
-| containment: release typed by why, sealing at the period, reservoirs condensing and locked, court gravity as drag | §4.13 | `t/cech/orbit.rs` (`Released`, `Field::beat_under`, `Field::condensed`); `entity/think.rs` (`lock_reservoirs`); `t/bubble/line.rs` (`return_escrow`) |
+| containment: release typed by why, sealing at the period, reservoirs condensing and locked, court gravity as drag | §4.13 | `t/cech/orbit.rs` (`Released`, `Field::beat_under`, `Field::condensed`); `entity/think.rs` (`lock_reservoirs`); `t/field/line.rs` (`return_escrow`) |
 | memory by coordinates; each question on its own line; the dialect shed by reference | §4.13 | `entity/chatter.rs` (`QUESTION_LINE`, `lapse_question`, `release_unmet`, `lapse_unpriced`); `entity/perceive.rs` (`lapse_hearings`); `entity/think.rs` (`Mind::shed`) |
 | a task as an offer and as perception; tension | §3.1, §4.13 | `entity/offer.rs` (`Offer::of`, `couples`, `strained`, `lapse_offers`, `lapse_standing_task`); `entity/court.rs` (`task_inflow`, `comprehend_waiting`); `entity/learn.rs` (`pull_task`) |
 | the corpus met at the focus; the ground state | §4.13 | `entity/focus.rs` (`Corpus`, `ground_focus`); `t/cech/orbit.rs` (`OrbitRegistry::focus`, `Field::lands`); `entity/feed.rs` (`inotify`) |

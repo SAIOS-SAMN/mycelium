@@ -1,20 +1,20 @@
 // 24.1 — the aperture over held thoughts: T room is measured in receipts,
-// and the oldest bubble is the one that moves.
+// and the oldest well is the one that moves.
 
-use crate::transducer::bubble::*;
+use crate::transducer::field::*;
 use crate::transducer::sentence::tests::common::{stand_with_star, FRAME};
 
-/// Every bubble the contemplation holds, by address — what a door is
+/// Every well the contemplation holds, by address — what a door is
 /// handed. `retire_on_t` picked ONE by age against a count; the doors are
 /// handed the set that lapsed and retire it whole.
 fn all_keys(c: &Contemplation) -> Vec<Vec<u8>> {
-    c.bubbles.scoped().map(|(k, _)| k).collect()
+    c.wells.scoped().map(|(k, _)| k).collect()
 }
 
 /// 25, Z4b — NO HOLD IS RETIRED BY AGE OR BY A COUNT.
 ///
 /// THIS TEST ASSERTED THE OPPOSITE AND ITS CLAIM IS FALSE UNDER THE RULING.
-/// It was `t_room_moves_the_oldest_bubble_to_cavity`: two bubbles, a room
+/// It was `t_room_moves_the_oldest_well_to_cavity`: two wells, a room
 /// of one, and the OLDER retired. `retire_on_t` is deleted and both halves
 /// of what it did are refused — a count against a bound is rule 2's and
 /// the bound was the box's RAM (rule 5, `reserve_max` probed at 88), and
@@ -22,7 +22,7 @@ fn all_keys(c: &Contemplation) -> Vec<Vec<u8>> {
 ///
 /// What replaces it is the three doors, and none of them reads an age or a
 /// count: a hold lapses with what it cites, is retired at its promotion,
-/// and a lane with no room WITHHOLDS rather than evicting. So two bubbles
+/// and a lane with no room WITHHOLDS rather than evicting. So two wells
 /// nothing has lapsed or promoted both stand, however old either is.
 #[test]
 fn lapse_with_retires_handed_set_never_by_age() {
@@ -48,12 +48,12 @@ fn lapse_with_retires_handed_set_never_by_age() {
 /// the drain reads at that chart instead of copying the carrier.
 ///
 /// `retire_on_t` writes one cavity entry per retirement, every stroke, and
-/// the only drain is `pivot_on`'s. Keyed by the bubble alone that drain
+/// the only drain is `pivot_on`'s. Keyed by the well alone that drain
 /// could not ASK: it would clone every entry, key and whole remainder,
 /// re-derive each one's chart, and keep the few that matched — a carrier
 /// that grows on the hot path and drains on a coincidence.
 ///
-/// The chart leads the key and the bubble follows, so two remainders retired
+/// The chart leads the key and the well follows, so two remainders retired
 /// at one chart stay two (law 7) and the entries a chart can re-hold are the
 /// subtree under it.
 #[test]
@@ -63,7 +63,7 @@ fn cavity_keys_under_reads_entries_at_chart() {
     c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
     c.set_now(20);
     c.hold(vec![(9, 9, 5, 6), (9, 10, 5, 6)]);
-    assert_eq!(c.len(), 2, "two bubbles held");
+    assert_eq!(c.len(), 2, "two wells held");
 
     // Both retire, and both are kept: law 7 loses no remainder, and two
     // remainders are two entries however the remainders' charts compare.
@@ -81,10 +81,10 @@ fn cavity_keys_under_reads_entries_at_chart() {
 
     // THE KEY IS THE CHART, so the entries a chart can re-hold are a keyed
     // read under it — which is what the drain reads, and what a key that
-    // was the bubble's could not answer.
+    // was the well's could not answer.
     //
     // Both remainders are two adjacent links, so they are the SAME SHAPE and
-    // share a chart: the fibre answers both, and the bubble suffix is what
+    // share a chart: the fibre answers both, and the well suffix is what
     // keeps them two entries rather than one overwriting the other.
     let two_link = crate::transducer::stalk::invariant(&[(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)]);
     let under = c
@@ -123,9 +123,9 @@ fn cavity_keys_under_reads_entries_at_chart() {
     );
 }
 
-/// Law 7: A RETIREMENT LOSES NO REMAINDER, whichever door took the bubble.
+/// Law 7: A RETIREMENT LOSES NO REMAINDER, whichever door took the well.
 ///
-/// Was `a_room_of_zero_keeps_no_bubble`, which asserted that a reserve with
+/// Was `a_room_of_zero_keeps_no_well`, which asserted that a reserve with
 /// no T room evicts the last thought. That claim is false under the ruling
 /// — door 3 WITHHOLDS a new thought when a lane is spent and never evicts a
 /// held one, because eviction chooses. What survives from it, and is
@@ -154,16 +154,16 @@ fn expand_with_reads_zero_t_potential_at_hold_stroke() {
     let mut c = Contemplation::new();
     c.set_now(7);
     c.hold(vec![(0, 0, 1, 2)]);
-    let k = c.bubbles.scoped().next().map(|(k, _)| k).expect("held");
+    let k = c.wells.scoped().next().map(|(k, _)| k).expect("held");
     let atlas = crate::transducer::stalk::Stalks::default();
     let mut budget = crate::physics::Physics::default().stroke_n(4);
     let spent = c
-        .bubbles
+        .wells
         .get_mut(&k)
         .expect("held")
         .expand_with(&atlas, &|_| None, 7, &NoCrystal, &mut budget, &mut Default::default())
         .spent;
-    let b = c.bubbles.get(&k).expect("still held");
+    let b = c.wells.get(&k).expect("still held");
     assert_eq!(b.potential[2], 0, "moved at K 7, read at K 7: zero receipts, zero on T");
     assert_eq!(
         b.potential,
@@ -176,8 +176,8 @@ fn expand_with_reads_zero_t_potential_at_hold_stroke() {
 /// A FORM THAT SPEAKS SEVERAL ROTORS HAS SEVERAL SECTIONS, and the cover
 /// sees all of them.
 ///
-/// `Bubble::rotor` answers one rotor or absence, which is correct for
-/// `rotor_between` — two bubbles have one transport or they have none — and
+/// `Well::rotor` answers one rotor or absence, which is correct for
+/// `rotor_between` — two wells have one transport or they have none — and
 /// wrong for the cover: a cover that asked it and returned on the absence
 /// would drop every multi-rotor form from the expansion with no reading at
 /// all, a filter whose non-matching arm says nothing.
@@ -209,7 +209,7 @@ fn sections_reads_two_rotors_with_no_single_rotor() {
         f.stand_member(&v, FRAME).expect("a word vertex stands");
     }
     assert_eq!(f.vertices.len(), 3, "the Frame and two word classes");
-    let b = Bubble { form: Some(f), ..Default::default() };
+    let b = Well { form: Some(f), ..Default::default() };
     assert!(
         b.rotor().is_none(),
         "two rotors are not one rotor, and no representative is chosen (Y5)"
@@ -249,7 +249,7 @@ fn sections_keys_opposite_sign_carriages_as_one() {
         );
         f.stand_member(&v, FRAME).expect("a word vertex stands");
     }
-    let b = Bubble { form: Some(f), ..Default::default() };
+    let b = Well { form: Some(f), ..Default::default() };
     assert_eq!(b.sections().len(), 1, "one carriage ray on one chart is one section, not one per sign");
 }
 
@@ -321,25 +321,25 @@ fn pivot_on_collapses_vortex_and_adjoins_symmetry() {
     for c in [cert(&a), cert(&b)] {
         crate::transducer::sentence::vortex_put(&mut vortex, c);
     }
-    // The vortex is the FORM's carrier; a bubble mirrors it from the form
+    // The vortex is the FORM's carrier; a well mirrors it from the form
     // it takes (`take_form`), so it is written where the pivot reads it.
     f.vortex = vortex.clone();
 
     // The arriving word: the candidate `a`, LEARNED AS A FORM — a generator
     // form, as a ruled letter arrives from the syllabus — whose chart is a
-    // form chart and shares no prefix with the bubble's cover of body
+    // form chart and shares no prefix with the well's cover of body
     // charts. The collapse is read at the candidate's own key, so the
-    // bubble is found whatever it covers and whatever class the orbit was
+    // well is found whatever it covers and whatever class the orbit was
     // left in.
     let word = crate::transducer::sentence::generator_form(&a.rotor(), &Invariant::counts(&[3, 5]), &[])
         .expect("a rotor mints a generator");
     let mut cover = crate::network::nerve::Keyed::new();
     cover.insert(Invariant::counts(&[1, 3, 5]).key(), ());
-    let key = crate::transducer::bubble::idea::idea_key(&f);
-    let bubble = Bubble { form: Some(f), vortex, cover, ..Default::default() };
+    let key = crate::transducer::field::idea::idea_key(&f);
+    let well = Well { form: Some(f), vortex, cover, ..Default::default() };
     let mut c = Contemplation::new();
-    c.admit_incidence(&std::sync::Arc::from(&key[..]), &bubble);
-    c.bubbles.insert(&key, bubble);
+    c.admit_incidence(&std::sync::Arc::from(&key[..]), &well);
+    c.wells.insert(&key, well);
     // THE STRATUM IS THE COORDINATE, and it is the depth-one projection of
     // the class vector the candidate hangs under — not a second key written
     // to agree with it.
@@ -372,7 +372,7 @@ fn pivot_on_collapses_vortex_and_adjoins_symmetry() {
     };
     assert!(rotor.projective_eq(&symmetry), "the symmetry is w_a⁻¹·w_b");
     assert!(
-        c.bubbles.get(&key).is_some_and(|b| b.vortex.is_empty()),
+        c.wells.get(&key).is_some_and(|b| b.vortex.is_empty()),
         "and the vortex collapsed"
     );
     assert!(
@@ -410,7 +410,7 @@ fn expand_with_covers_own_charts_not_siblings() {
         None,
     );
     f.stand_member(&v, FRAME).expect("a word vertex stands");
-    let mut b = Bubble { form: Some(f), ..Default::default() };
+    let mut b = Well { form: Some(f), ..Default::default() };
 
     // Both charts hold a member, and both members read as sections.
     let mut atlas = Stalks::default();
@@ -435,19 +435,19 @@ fn expand_with_covers_own_charts_not_siblings() {
     );
 }
 
-/// RE-HOLDING AN UNMUTATED FORM IS NOT MOVEMENT, so a bubble ages.
+/// RE-HOLDING AN UNMUTATED FORM IS NOT MOVEMENT, so a well ages.
 ///
-/// `moved_k` is the PHASE CHANGE stamp — "TUniversal when this bubble's
+/// `moved_k` is the PHASE CHANGE stamp — "TUniversal when this well's
 /// charts last moved". D8 re-holds a withheld form on every stroke, so a
-/// `hold_form` that rebuilt the whole bubble and stamped `moved_k = now_k`
-/// each time would re-stamp the birth coordinate every stroke and no bubble
+/// `hold_form` that rebuilt the whole well and stamped `moved_k = now_k`
+/// each time would re-stamp the birth coordinate every stroke and no well
 /// could ever age: `held_since(now_k, moved_k)` zero BY CONSTRUCTION,
 /// `t_extent` perpetually zero, lane 𝒯 never accumulating, and `span_of`
 /// answering `Some(0)` every time.
 ///
 /// A form retained across an evaluation stroke has moved zero in
 /// configuration space. The key IS the topology and the carriages (law 2),
-/// so a bubble found under it is that same form unchanged.
+/// so a well found under it is that same form unchanged.
 #[test]
 fn hold_form_keeps_moved_k_and_ages_when_unchanged() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
@@ -468,28 +468,28 @@ fn hold_form_keeps_moved_k_and_ages_when_unchanged() {
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold_form(form.clone(), &[], std::slice::from_ref(&vec![(0i64, 0i64, 1u8, 2u8)]), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    let key = c.bubbles.scoped().next().map(|(k, _)| k).expect("held");
-    assert_eq!(c.bubbles.get(&key).expect("held").moved_k, 10, "born at the stamp it entered on");
+    let key = c.wells.scoped().next().map(|(k, _)| k).expect("held");
+    assert_eq!(c.wells.get(&key).expect("held").moved_k, 10, "born at the stamp it entered on");
     // The same form re-held unchanged at a later TUniversal, as D8 re-holds
     // a withheld form every stroke.
     c.set_now(64);
     c.hold_form(form.clone(), &[], std::slice::from_ref(&vec![(0i64, 0i64, 1u8, 2u8)]), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    let again = c.bubbles.get(&key).expect("still held");
+    let again = c.wells.get(&key).expect("still held");
     assert_eq!(again.moved_k, 10, "retention is not motion: the stamp is preserved");
     assert_eq!(
-        crate::transducer::bubble::idea::held_since(c.now_k(), again.moved_k),
+        crate::transducer::field::idea::held_since(c.now_k(), again.moved_k),
         Some(54),
-        "so the bubble has aged 54 in TUniversal"
+        "so the well has aged 54 in TUniversal"
     );
 
-    // And re-holding does not throw away what the bubble accumulated.
-    assert_eq!(c.bubbles.len(), 1, "one form, one bubble, however often it is held");
+    // And re-holding does not throw away what the well accumulated.
+    assert_eq!(c.wells.len(), 1, "one form, one well, however often it is held");
 
     // A SPAN OF ZERO HAS TWO CAUSES AND THEY ARE DIFFERENT FACTS: a form held
     // and not yet aged, and a form never held at all. Reported as one `0`
     // the two are unreadable on the wire, with no way to tell which path
     // produced it.
-    use crate::transducer::bubble::contemplation::Deliberation;
+    use crate::transducer::field::contemplation::Deliberation;
     assert_eq!(
         c.span_of(&form),
         Some(Deliberation::Held(54)),
@@ -515,20 +515,20 @@ fn hold_form_keeps_moved_k_and_ages_when_unchanged() {
 
 /// LINEAGE SURVIVES MUTATION: the entry follows the form it holds.
 ///
-/// A bubble's key is its form's address, and a pivot REWRITES THE FORM IN
+/// A well's key is its form's address, and a pivot REWRITES THE FORM IN
 /// PLACE — `expand_all` takes the slot by the key it entered with and
-/// `expand_with` calls `take_form` inside it. Left where it was, the bubble
+/// `expand_with` calls `take_form` inside it. Left where it was, the well
 /// would keep its inception stamp and everything it had built while its key
 /// stopped matching the form it now held, and every reader looking it up by
 /// the current form would miss it: `span_of` answering "never held" for a
-/// bubble that has been deliberating for thousands of receipts, and
-/// `hold_form` inserting a SECOND bubble for the same lineage while the
+/// well that has been deliberating for thousands of receipts, and
+/// `hold_form` inserting a SECOND well for the same lineage while the
 /// first is orphaned under a key nothing computes any more. A form with an
 /// open remainder speaks only once it closes, and closing mutates it.
 #[test]
 fn rekey_keeps_inception_stamp_across_mutation() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
-    use crate::transducer::bubble::contemplation::Deliberation;
+    use crate::transducer::field::contemplation::Deliberation;
     use crate::transducer::sentence::{Form, Vertex};
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
     // The forms must differ on a coordinate the KEY carries. A vertex's own
@@ -555,18 +555,18 @@ fn rekey_keeps_inception_stamp_across_mutation() {
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold_form(before.clone(), &[], std::slice::from_ref(&rem), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    let old_key = crate::transducer::bubble::idea::idea_key(&before);
-    let new_key = crate::transducer::bubble::idea::idea_key(&after);
+    let old_key = crate::transducer::field::idea::idea_key(&before);
+    let new_key = crate::transducer::field::idea::idea_key(&after);
     assert_ne!(old_key, new_key, "the mutation is a different form, so a different key");
 
     // The form mutates in place, as a pivot rewrites it, and the entry
     // follows.
     c.set_now(90);
     c.rekey(old_key.as_bytes(), new_key.as_bytes());
-    assert!(c.bubbles.get(old_key.as_bytes()).is_none(), "no orphan is left behind");
-    assert_eq!(c.bubbles.len(), 1, "one lineage, one bubble");
+    assert!(c.wells.get(old_key.as_bytes()).is_none(), "no orphan is left behind");
+    assert_eq!(c.wells.len(), 1, "one lineage, one well");
     assert_eq!(
-        c.bubbles.get(new_key.as_bytes()).expect("moved").moved_k,
+        c.wells.get(new_key.as_bytes()).expect("moved").moved_k,
         10,
         "and it carries the inception it deliberated from, not the mutation's stamp"
     );

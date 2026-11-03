@@ -141,7 +141,7 @@ impl Mind {
                 continue;
             }
             for line in lines {
-                let Some(b) = self.contemplation.bubbles.get(&line) else { continue };
+                let Some(b) = self.contemplation.wells.get(&line) else { continue };
                 for (chart, ()) in b.cover.scoped() {
                     out.insert(tagged(COORD_CHART, &chart), ());
                 }

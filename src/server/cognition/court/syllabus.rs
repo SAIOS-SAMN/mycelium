@@ -63,7 +63,7 @@ impl Court {
 
     /// Ideology boundary on a chart: classes at every degree the mesh holds
     /// there, including coarser prefixes, so a mind can be taught the frame
-    /// its bubble sits on.
+    /// its well sits on.
     pub fn classes_on(
         &self,
         inv: &crate::transducer::stalk::Invariant,

@@ -58,7 +58,7 @@ impl Contemplation {
     /// the thought's mass. `None` for a thought with no perceived body (a
     /// word, a sentence): it has no place to pivot at.
     pub(crate) fn pivot_of(&self, key: &[u8]) -> Option<(crate::transducer::cga::Mv, num_rational::BigRational)> {
-        let b = self.bubbles.get(key)?;
+        let b = self.wells.get(key)?;
         let bodies: Vec<(Vec<num_rational::BigRational>, num_rational::BigRational)> = b
             .spores
             .scoped()

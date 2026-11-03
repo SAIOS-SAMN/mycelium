@@ -1,7 +1,7 @@
 // 13.12, 25 — THE MERGE: when two held thoughts are one, and what the
 // one that remains carries.
 //
-//! Two bubbles merge when the bubbles' forms are one section of the same bundle:
+//! Two wells merge when the wells' forms are one section of the same bundle:
 //! congruent up to a re-gauge, or with a torsion axis. A merge absorbs the
 //! other's incidence, remainder and vortex; zero volume never merges.
 
@@ -61,8 +61,8 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
 }
 
 /// ABSORB IS THE WHOLE OF THE SOURCE, by the meaning of the word: two
-/// bubbles merging carry every entry of each other's carriers across, and
-/// an entry left behind is a fact the merged bubble has lost.
+/// wells merging carry every entry of each other's carriers across, and
+/// an entry left behind is a fact the merged well has lost.
 pub(crate) fn absorb_keyed<V: Clone, C: crate::network::nerve::Coordinate>(
     dst: &mut Keyed<V, C>,
     src: &Keyed<V, C>,
@@ -98,7 +98,7 @@ pub(crate) fn intersect(a: &[Link], b: &[Link]) -> Vec<Link> {
 }
 
 impl Contemplation {
-    /// Two bubbles on one simplex: the fill decides (78.48(5)). Filled
+    /// Two wells on one simplex: the fill decides (78.48(5)). Filled
     /// merges and re-gauges; Congruent merges with a torsion axis; Class
     /// keeps both and writes each into the other's horizon. Remainder volume
     /// is what two thoughts share unexplained — a 2-cell's measure, never
@@ -117,7 +117,7 @@ impl Contemplation {
                 CoboundaryOutcome::Attached(Fill::Filled(gamma, carriage)) => {
                     self.fills += 1;
                     for v in &vertices {
-                        if let Some(b) = self.bubbles.get_mut(v) {
+                        if let Some(b) = self.wells.get_mut(v) {
                             let keys: Vec<Vec<u8>> =
                                 b.nerve.sections.scoped().map(|(k, _)| k).collect();
                             for sk in keys {
@@ -148,7 +148,7 @@ impl Contemplation {
                     // KB1 (C) — THE CLASS BETWEEN TWO THOUGHTS LIVES ON THIS
                     // COMPLEX AND ON THE TORSE REWRITE IT MINTS. It was filed a
                     // second time onto the merged idea's nerve between two
-                    // bubble addresses that are no vertices after the merge,
+                    // well addresses that are no vertices after the merge,
                     // with no section to key by and read by nothing (law 12).
                     if let Some(nk) = self.merge(&vertices) {
                         let before: Vec<crate::transducer::address::Address> = vertices
@@ -227,7 +227,7 @@ impl Contemplation {
                 CoboundaryOutcome::Attached(Fill::Class(_, r)) => {
                     self.classes += 1;
                     for v in &vertices {
-                        if let Some(b) = self.bubbles.get_mut(v) {
+                        if let Some(b) = self.wells.get_mut(v) {
                             if r.class_key().is_none_or(|ck| !b.horizon.contains(ck.as_bytes())) {
                                 horizon_put(&mut b.horizon, r.as_ref().clone(), Standing::Held);
                             }
@@ -267,7 +267,7 @@ impl Contemplation {
         if returns == 0 {
             return None;
         }
-        let returned = |v: &Vec<u8>| self.bubbles.get(v).and_then(|t| t.ground.as_ref()).and_then(|g| g.hours.checked_div(period));
+        let returned = |v: &Vec<u8>| self.wells.get(v).and_then(|t| t.ground.as_ref()).and_then(|g| g.hours.checked_div(period));
         if vertices.iter().any(|v| returned(v).is_some_and(|r| r >= returns)) {
             return None;
         }
@@ -289,7 +289,7 @@ impl Contemplation {
         }
         // E1 — the scene the thought was perceived in rides with its ground,
         // so its word is spoken there.
-        let family = match self.bubbles.get(thought) {
+        let family = match self.wells.get(thought) {
             Some(b) => b.family.clone(),
             None => Vec::new(),
         };
@@ -301,10 +301,10 @@ impl Contemplation {
         }
     }
 
-    /// A merge of fewer than two bubbles is the bubble itself, and a merge
+    /// A merge of fewer than two wells is the well itself, and a merge
     /// the forms refuse leaves the LEAST key of the simplex standing — the
     /// vertices arrive sorted, so it is the simplex's own coordinate and
-    /// not the bubble that was reached first.
+    /// not the well that was reached first.
     pub(crate) fn merge(&mut self, verts: &[Vec<u8>]) -> Option<crate::transducer::address::Address> {
         // One vertex is that vertex; none is nothing to merge.
         if let [only] = verts {
@@ -315,7 +315,7 @@ impl Contemplation {
         }
         let forms: Vec<Form> = verts
             .iter()
-            .filter_map(|v| self.bubbles.get(v.as_slice()).and_then(|b| b.form.clone()))
+            .filter_map(|v| self.wells.get(v.as_slice()).and_then(|b| b.form.clone()))
             .collect();
         if forms.len() >= 2 {
             for w in forms.windows(2) {
@@ -371,7 +371,7 @@ impl Contemplation {
         // in: they met only within it, so they share it.
         let mut family: Vec<u8> = Vec::new();
         for v in verts {
-            let Some(b) = self.bubbles.get(v.as_slice()).cloned() else {
+            let Some(b) = self.wells.get(v.as_slice()).cloned() else {
                 continue;
             };
             family.clone_from(&b.family);
@@ -408,7 +408,7 @@ impl Contemplation {
             // on its return.
             slips.extend(b.slips.iter().cloned());
             nerve = b.nerve.clone();
-            self.bubbles.remove(v);
+            self.wells.remove(v);
         }
         for r in made {
             if r.class_key().is_none_or(|ck| !horizon.contains(ck.as_bytes())) {
@@ -462,14 +462,14 @@ impl Contemplation {
         // hour joined.
         let volume = merged_volume;
         // A union of two remainders can say two things at one site, and
-        // such a remainder has no A5 chain. The merge yields no bubble
+        // such a remainder has no A5 chain. The merge yields no well
         // rather than one that cannot be named (U14).
         let Some(remainder) = element::place_chain(&remainder) else {
             self.merges.unnamed += 1;
             self.return_escrow(&escrow);
             return None;
         };
-        let bubble = Bubble {
+        let well = Well {
             remainder,
             nerve,
             cover,
@@ -497,11 +497,11 @@ impl Contemplation {
             ground,
             slips,
         };
-        // THE ONE DERIVATION of where a bubble is filed (`Bubble::key`): a
+        // THE ONE DERIVATION of where a well is filed (`Well::key`): a
         // grounded thought at its word's coordinates, else by its bodies.
-        let key = bubble.key();
-        self.admit_incidence(&key.shared(), &bubble);
-        self.bubbles.insert(&key, bubble);
+        let key = well.key();
+        self.admit_incidence(&key.shared(), &well);
+        self.wells.insert(&key, well);
         self.dirty.insert(&key, ());
         // A merged thought that had come round is the thought that came
         // round, now under the merge's key (MU-CLIENT §4.4(4)).
@@ -532,7 +532,7 @@ impl Contemplation {
                 &before,
                 key.clone(),
                 payload,
-                // Condensing n bubbles closes n − 1 joins; condensing none
+                // Condensing n wells closes n − 1 joins; condensing none
                 // closes none.
                 [
                     0,
@@ -557,7 +557,7 @@ impl Contemplation {
 /// 13.12, 78.26(6) — WHAT THE CONTEMPLATION'S MERGES CAME TO, counted where
 /// each is decided: MERGED into one thought; STAYED two, the forms refusing
 /// to be one section (the class the coordinate between them); UNNAMED, the
-/// union naming no bubble (no remainder and no form, or a remainder with no
+/// union naming no well (no remainder and no form, or a remainder with no
 /// A5 chain). TP1 extends the same line with decohered and collapsed.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct MergeTally {

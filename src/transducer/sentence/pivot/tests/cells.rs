@@ -4,7 +4,7 @@
 // applies as it does without the reading.
 
 use crate::transducer::alphabet::{LetterId, Word};
-use crate::transducer::bubble::*;
+use crate::transducer::field::*;
 use crate::transducer::element;
 use crate::transducer::sentence::{Form, FormCell, Vertex};
 use crate::transducer::stalk::Standing;
@@ -107,10 +107,10 @@ fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
 fn pivot(form: Form, offered: &Word) -> crate::transducer::sentence::PivotTally {
     let mut c = Contemplation::new();
     c.hold_form(form, &[], &[], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    let k = c.bubbles.scoped().next().map(|(k, _)| k).expect("held");
+    let k = c.wells.scoped().next().map(|(k, _)| k).expect("held");
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
     let mut tally = crate::transducer::sentence::PivotTally::default();
-    if let Some(b) = c.bubbles.get_mut(&k) {
+    if let Some(b) = c.wells.get_mut(&k) {
         let atlas = crate::transducer::stalk::Stalks::default();
         let _ = b.expand_with(&atlas, &|_| None, 0, &OneWord(offered.clone()), &mut budget, &mut tally);
     }

@@ -98,8 +98,8 @@ impl Mind {
 
     fn read_now(&self) -> Vec<String> {
         let c = &self.contemplation;
-        let grounded = c.bubbles.scoped().filter(|(_, b)| b.ground.is_some()).count();
-        let percepts = c.bubbles.scoped().filter(|(_, b)| b.percept).count();
+        let grounded = c.wells.scoped().filter(|(_, b)| b.ground.is_some()).count();
+        let percepts = c.wells.scoped().filter(|(_, b)| b.percept).count();
         let pace = &self.board.court;
         let short = self.physics().reserve_shortfall([true; 4]);
         vec![
@@ -136,7 +136,7 @@ impl Mind {
             ),
             format!(
                 "thoughts held {} (grounded {grounded}, perceptions {percepts}) · pair grounds {} · came round, not yet transcribed {} · first closes {} · later returns {}",
-                c.bubbles.len(),
+                c.wells.len(),
                 c.grounds.len(),
                 c.closed.len(),
                 c.closed_thoughts,
@@ -234,7 +234,7 @@ impl Mind {
 
     /// One thought as one line: its ordinal, scene, layer, and — where it
     /// holds a ground — its winding.
-    fn thought_line(&self, key: &[u8], b: &crate::transducer::bubble::Bubble) -> String {
+    fn thought_line(&self, key: &[u8], b: &crate::transducer::field::Well) -> String {
         let ordinal = match self.contemplation.ordinals.get(key) {
             Some(o) => format!("#{o}"),
             None => "#?".to_string(),
@@ -276,7 +276,7 @@ impl Mind {
     }
 
     fn read_thoughts(&self, from: usize) -> Vec<String> {
-        let all: Vec<(Vec<u8>, &crate::transducer::bubble::Bubble)> = self.contemplation.bubbles.scoped().collect();
+        let all: Vec<(Vec<u8>, &crate::transducer::field::Well)> = self.contemplation.wells.scoped().collect();
         let mut out = vec![format!("{} held; from {from}", all.len())];
         out.extend(all.iter().skip(from).map(|(k, b)| self.thought_line(k, b)));
         out
@@ -286,8 +286,8 @@ impl Mind {
         let Some(Some(addr)) = self.contemplation.addresses.get(usize::from(ordinal)) else {
             return vec![format!("#{ordinal}: no thought stands at this ordinal")];
         };
-        let Some(b) = self.contemplation.bubbles.get(addr) else {
-            return vec![format!("#{ordinal}: its address stands in no bubble")];
+        let Some(b) = self.contemplation.wells.get(addr) else {
+            return vec![format!("#{ordinal}: its address stands in no well")];
         };
         let mut out = vec![self.thought_line(addr, b)];
         if let Some(g) = &b.ground {

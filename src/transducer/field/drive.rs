@@ -1,7 +1,7 @@
 // 25.1, 25.2 — THE DRIVE: what makes a held thought move, and what a
 // closed one becomes.
 //
-//! `expand_all` spends a budget opening axes on the bubbles that have room
+//! `expand_all` spends a budget opening axes on the wells that have room
 //! and runs the pivot orbit of A16 over each; an idea whose form closes
 //! crystallizes (25.2) and is returned to the mind to stand and utter.
 //! `pivot_on` runs the pivot orbit over the ideas a word meets and files
@@ -11,7 +11,7 @@
 use super::*;
 
 /// What one stroke of `expand_all` did: the charts spent, the lane measure
-/// of the A16 snaps, the forms that crystallized (25.2) in bubble key
+/// of the A16 snaps, the forms that crystallized (25.2) in well key
 /// order, and the ring's circuit reading — circuits and period in strokes —
 /// when the stroke completed a circuit (45.7).
 /// 37.7's ADJUNCTION CANDIDATES: a rotor the seventeen cannot spell and the
@@ -36,12 +36,12 @@ pub struct Expanded {
 }
 
 impl Contemplation {
-    /// Expand dirty bubbles from the atlas, one Budget of charts per call
+    /// Expand dirty wells from the atlas, one Budget of charts per call
     /// and at most one circuit of the ring per stroke (45.7).
     pub fn expand_all(
         &mut self,
         atlas: &dyn AtlasRead,
-        section_at: crate::transducer::bubble::idea::SectionAt,
+        section_at: crate::transducer::field::idea::SectionAt,
         crystal: &dyn Crystal,
         budget: &mut Budget,
     ) -> Expanded {
@@ -57,7 +57,7 @@ impl Contemplation {
         let began = self.expand_cursor.clone();
         let mut from = began.clone();
         let mut wraps = 0u64;
-        // index: budgeted keyed cursor over dirty bubbles — a circuit (45.7,
+        // index: budgeted keyed cursor over dirty wells — a circuit (45.7,
         // S13.3): past the last key it continues from the first, so a ring
         // whose last key was reached no longer stalls every later stroke;
         // the stroke stops where it began, one circuit of the ring, and
@@ -87,7 +87,7 @@ impl Contemplation {
             }
             from = Some(k.clone());
             self.expand_cursor = Some(k.clone());
-            if let Some(b) = self.bubbles.get_mut(&k) {
+            if let Some(b) = self.wells.get_mut(&k) {
                 let mut x = b.expand_with(atlas, section_at, self.now_k, crystal, budget, &mut self.pivots);
                 spent += x.spent;
                 self.overflowed += x.overflowed;
@@ -112,12 +112,12 @@ impl Contemplation {
             } else {
                 self.dirty.remove(&k);
             }
-            // THE PIVOT MAY HAVE REWRITTEN THE FORM, and a bubble's key is
+            // THE PIVOT MAY HAVE REWRITTEN THE FORM, and a well's key is
             // its form's address. The entry follows it, carrying the
-            // inception stamp and everything the bubble has built, so the
+            // inception stamp and everything the well has built, so the
             // form that speaks can still be found by the deliberation that
             // produced it (`Contemplation::rekey`).
-            let moved_to = self.bubbles.get(&k).and_then(|b| b.form.is_some().then(|| b.key()));
+            let moved_to = self.wells.get(&k).and_then(|b| b.form.is_some().then(|| b.key()));
             if let Some(nk) = moved_to {
                 self.rekey(&k, nk.as_bytes());
             }
@@ -129,7 +129,7 @@ impl Contemplation {
         Expanded { spent, pivoted, crystallized, circuit, adjoined }
     }
 
-    /// Attempt fill on the link of bubbles at `word`'s chart and prefixes.
+    /// Attempt fill on the link of wells at `word`'s chart and prefixes.
     /// Merges filled simplices; speaks a closed component as one sentence.
     /// Returns (fills, formed, classes, spoken elements).
     pub fn pivot_on(
@@ -169,8 +169,8 @@ impl Contemplation {
         let mut keys = Keyed::new();
         for p in inv.prefixes() {
             for (id, _) in self.by_chart.link(&p.key()) {
-                // The index names bubbles by ordinal (Z4 item 2); the
-                // address is what the readers below ask the bubbles with.
+                // The index names wells by ordinal (Z4 item 2); the
+                // address is what the readers below ask the wells with.
                 let Some(addr) = Contemplation::ordinal_of_key(&id).and_then(|o| self.address_at(o))
                 else {
                     continue;
@@ -192,26 +192,26 @@ impl Contemplation {
         let mut new_classes = 0u64;
         let mut spoken: Vec<Element> = Vec::new();
         spoken.extend(std::mem::take(&mut self.pending_rewrites));
-        let bubble_keys: Vec<Vec<u8>> = keys.scoped().map(|(k, _)| k).collect();
+        let well_keys: Vec<Vec<u8>> = keys.scoped().map(|(k, _)| k).collect();
         if word.sub().is_empty() && crate::transducer::sentence::carries_torsion(word) {
             let addr = word.address();
-            for bk in &bubble_keys {
+            for bk in &well_keys {
                 self.mark_glue(bk, &addr);
-                if let Some(b) = self.bubbles.get_mut(addr.as_bytes()) {
+                if let Some(b) = self.wells.get_mut(addr.as_bytes()) {
                     b.glued_by.insert(bk, ());
                 }
             }
         }
-        for bk in &bubble_keys {
+        for bk in &well_keys {
             if budget.remaining() == 0 {
                 break;
             }
-            let Some(b) = self.bubbles.get(bk) else {
+            let Some(b) = self.wells.get(bk) else {
                 continue;
             };
             let horizon = b.horizon.clone();
             let bundle = b.bundle.clone();
-            // A bubble marked above this clock has no measurable extent, and
+            // A well marked above this clock has no measurable extent, and
             // the pivot orbit is not paced by a count that went backwards.
             let Some(t) = super::idea::held_since(self.now_k, b.moved_k) else {
                 continue;
@@ -221,7 +221,7 @@ impl Contemplation {
                 // memo where the form stands, read afresh where it moved.
                 let mut memo = b.cells_read.clone();
                 let cells = super::idea::cells_for_pivot(&mut memo, &form, budget);
-                if let Some(b) = self.bubbles.get_mut(bk) {
+                if let Some(b) = self.wells.get_mut(bk) {
                     b.cells_read = memo;
                 }
                 // Every snap this pivot makes is read: the adjunction is
@@ -259,14 +259,14 @@ impl Contemplation {
                         _ => {}
                     }
                 }
-                if let Some(b) = self.bubbles.get_mut(bk) {
+                if let Some(b) = self.wells.get_mut(bk) {
                     b.take_form(form);
                 }
                 self.refile_vortex(bk);
             }
         }
         // THE COLLAPSE, READ AT THE VORTEX'S OWN CLASS and not under the
-        // word's chart: every bubble holding a vortex of a carried rotor's
+        // word's chart: every well holding a vortex of a carried rotor's
         // class is asked, whatever chart it covers. The symmetries the
         // collapse kept join this path's adjunction candidates — an orbit that
         // admitted two discharges admits the discharges' difference, a rotor the mind
@@ -276,11 +276,11 @@ impl Contemplation {
             adjoined.extend(self.collapse_on(&carried, &chart, "glue"));
         }
         // index: by_chart fibre at the word's chart and peels
-        for bk in &bubble_keys {
+        for bk in &well_keys {
             if budget.remaining() == 0 {
                 break;
             }
-            // index: link of this bubble
+            // index: link of this well
             let simplices = self.complex.link_of(bk);
             for key in simplices {
                 if !budget.spend() {
@@ -365,7 +365,7 @@ impl Contemplation {
                                             self.fix(v, false);
                                         }
                                         for v in &comp {
-                                            if let Some(b) = self.bubbles.remove(v) {
+                                            if let Some(b) = self.wells.remove(v) {
                                                 self.retract_incidence(v, &b);
                                                 self.unthreaded.remove(v);
                                                 self.unheld.remove(v);
@@ -398,7 +398,7 @@ impl Contemplation {
                             new_classes += 1;
                             self.classes += 1;
                             for v in &vertices {
-                                if let Some(b) = self.bubbles.get_mut(v) {
+                                if let Some(b) = self.wells.get_mut(v) {
                                     if r.class_key().is_none_or(|ck| !b.horizon.contains(ck.as_bytes())) {
                                         horizon_put(&mut b.horizon, r.as_ref().clone(), Standing::Held);
                                     }

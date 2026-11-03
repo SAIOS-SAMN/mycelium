@@ -11,7 +11,7 @@ pub use crate::transducer::stalk::Standing;
 pub struct WorkingAtlas<'a> {
     pub(crate) genome: &'a crate::transducer::stalk::Stalks,
     pub(crate) dialect: &'a crate::transducer::stalk::Stalks,
-    pub(crate) held: Option<&'a crate::transducer::bubble::Contemplation>,
+    pub(crate) held: Option<&'a crate::transducer::field::Contemplation>,
 }
 
 /// The members of one stratum split by lane (42.6 as amended): four

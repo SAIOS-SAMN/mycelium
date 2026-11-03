@@ -174,7 +174,7 @@ impl Contemplation {
             }
             for chart in cover.iter().flatten() {
                 for (id, _) in self.by_chart.link(chart) {
-                    let family = Contemplation::ordinal_of_key(&id).and_then(|o| self.address_at(o)).and_then(|a| self.bubbles.get(a)).map(|b| b.family.clone());
+                    let family = Contemplation::ordinal_of_key(&id).and_then(|o| self.address_at(o)).and_then(|a| self.wells.get(a)).map(|b| b.family.clone());
                     if let Some(f) = family.filter(|f| !f.is_empty()) {
                         families.insert(&f, ());
                     }
@@ -247,7 +247,7 @@ impl Contemplation {
             }
             let keys: Vec<Vec<u8>> = thoughts.scoped().map(|(k, _)| k).collect();
             for k in keys {
-                let Some(b) = self.bubbles.get_mut(&k) else { continue };
+                let Some(b) = self.wells.get_mut(&k) else { continue };
                 horizon_put(&mut b.horizon, rotor.as_ref().clone(), Standing::Held);
                 b.dirty = true;
                 self.dirty.insert(&k, ());
