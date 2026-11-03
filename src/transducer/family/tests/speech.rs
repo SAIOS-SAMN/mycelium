@@ -364,6 +364,7 @@ fn speech_grid_refuses_site_outside_frame() {
 /// recolours all three.
 #[test]
 fn speak_rule_recolours_three_identical_squares() {
+    crate::transducer::raster::stand_on(0);
 let train_in = grid(&[
     "11011",
     "11011",

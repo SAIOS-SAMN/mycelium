@@ -214,7 +214,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
-        let Some(dialogue::SolveAct { voice: svoice, task: cite, rule: rule_bytes, signed, .. }) =
+        let Some(dialogue::SolveAct { voice: svoice, task: cite, rule: rule_bytes, ground: stated, signed, .. }) =
             dialogue::decode_solve(&frame.body)
         else {
             return true;
@@ -226,15 +226,16 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // Wire v1.2: the solve names its task by citation; the court reads
         // the task's content address off this book. A citation this book
         // holds no task for is refused by name below ("no such task").
-        // THE TASK'S GROUND (ruled 2026-10-18): the withheld
-        // pairs are read on the ground the task's demonstrations name, the
-        // one the voice spoke them on — never on one the withheld pairs
-        // would name alone. The ground is deduced (MU-SENSING §3.4); a
-        // citation this book holds no task for has no ground read at all,
-        // and is refused by name below, never judged on a code.
+        // THE CLAIM'S GROUND (MU-SENSING §3.4, §6; track 26 S2): the
+        // withheld pairs are reconstructed under the ground the claim
+        // states it was spoken under, once that ground reads as a candidate
+        // of the task (`cognition::stated_ground`); a claim stating none is
+        // reconstructed under no ground. The court never deduces or picks a
+        // ground of its own. A citation this book holds no task for has no
+        // ground read at all, and is refused by name below.
         let (tid, withheld, open, ground) = {
             let Ok(reg) = door.registry.lock() else { return true };
-            let g = reg.task(&cite).map(|t| mycelium::transducer::raster::ground_of(&t.train));
+            let g = reg.task(&cite).map(|t| mycelium::cognition::stated_ground(&t.train, stated.as_deref()));
             (cite, reg.withheld(&cite), reg.open(&cite), g)
         };
         // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
@@ -317,7 +318,16 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 Some(refused("a solve carries its rule: a raster is no proof of a motion", mycelium::transducer::sentence::ObstructionKind::Integrity)),
                 None,
             ),
-            (None, Some(first), Some(rule), Some(ground)) => {
+            // A stated ground the court does not reconstruct under, refused
+            // by name: no other ground is read in its place.
+            (None, Some(_), Some(_), Some(Err(why))) => {
+                let reason = match why {
+                    mycelium::cognition::StatedGroundRefusal::NotOneSymbol => "the stated ground is not one symbol of the task",
+                    mycelium::cognition::StatedGroundRefusal::NoCandidate => "the stated ground is no candidate of the task's ground",
+                };
+                (dialogue::SOLVE_NOTHING, Mu::zero(), Some(refused(reason, mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
+            }
+            (None, Some(first), Some(rule), Some(Ok(ground))) => {
                 let (verdict, offers) = {
                     let Ok(mut h) = crate::held::held!(door.court) else { return true };
                     // OWED (78.153b): the solve's replay mints its own stroke

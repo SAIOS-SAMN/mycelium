@@ -70,6 +70,7 @@ fn resumed(e: &Element, family: &[(Grid, Grid)], n: usize) -> (Replayed, usize) 
 /// same refusal at the same coordinate, on every stroke size that moves it.
 #[test]
 fn replay_resume_rules_as_whole_replay_across_strokes() {
+    crate::transducer::raster::stand_on(0);
     for (family, e) in [good(), undeclared()] {
         let (full, need) = whole(&e, &family);
         assert!(need > 2, "the fixture needs more reads than a stroke of two: {need}");
@@ -96,6 +97,7 @@ fn replay_resume_rules_as_whole_replay_across_strokes() {
 /// `Refused` — and on the whole need it is `Clean`.
 #[test]
 fn replay_resume_leaves_good_word_unread_on_short_stroke() {
+    crate::transducer::raster::stand_on(0);
     let (family, e) = good();
     let (full, need) = whole(&e, &family);
     assert_eq!(full, Replayed::Clean);
@@ -165,6 +167,7 @@ fn edges_rederive_frames_from_spends_short_stroke_never_refuses() {
 /// stroke as wide as the unit, which is left as it stood.
 #[test]
 fn to_completion_reads_unit_only_on_wider_stroke() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::ObstructionKind;
     let (_, e) = good();
     let unit = usize::try_from(crate::physics::spend_unit()).expect("a stroke's reads fit a usize") + 1;
@@ -189,6 +192,7 @@ fn to_completion_reads_unit_only_on_wider_stroke() {
 /// whole replay's verdict.
 #[test]
 fn blind_replay_at_answers_whole_replay_verdict() {
+    crate::transducer::raster::stand_on(0);
     for (family, e) in [good(), undeclared()] {
         let (full, _) = whole(&e, &family);
         let off = blind_replay_at(&e, &|_| None, Some(&family), &NoCrystal, &mut stroke(1));

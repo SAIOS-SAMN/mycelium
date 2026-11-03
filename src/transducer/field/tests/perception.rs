@@ -162,6 +162,7 @@ fn hold_perceived_keeps_both_orbits_of_third_perception() {
 /// asked of the two (the forms then merge or stand, as 13.12 reads them).
 #[test]
 fn hold_perceived_fills_edge_for_unmoved_body() {
+    crate::transducer::raster::stand_on(0);
     let mut c = Contemplation::new();
     perceive(&mut c, &L, &L_OUT);
     perceive(&mut c, &L, &["20000", "20000", "22000", "00000"]);

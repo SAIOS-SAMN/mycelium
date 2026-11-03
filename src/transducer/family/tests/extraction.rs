@@ -23,6 +23,7 @@ fn sections_short_of(rule: &crate::transducer::sentence::SentenceRule, frames: u
 /// 3, 4, 3 instances stay one class. A class in only some pairs is a section.
 #[test]
 fn extract_rule_with_groups_class_into_sections() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (squares(3, 1, 9), squares(3, 2, 9)),
     (squares(4, 1, 12), squares(4, 2, 12)),
@@ -795,6 +796,7 @@ for r in listings {
 /// nothing and a new generation re-extracts.
 #[test]
 fn extract_rule_cached_spends_once_per_generation() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
 let fam = b"fam";
 let mut cache = ExtractMemo::new();
@@ -833,6 +835,7 @@ assert!(budget.remaining() < left, "a new atlas generation re-extracts");
 /// handing back another family's rule.
 #[test]
 fn extract_memo_replaces_rule_on_second_family() {
+    crate::transducer::raster::stand_on(0);
     let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
     let two = vec![(grid(&["0011", "0000"]), grid(&["0033", "0000"]))];
     let atlas = crate::transducer::address::Address::from(vec![1]);
@@ -863,6 +866,7 @@ fn extract_memo_replaces_rule_on_second_family() {
 /// end on the other pair is not a constancy violation.
 #[test]
 fn extract_rule_keeps_star_face_of_some_pair_class() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
@@ -911,6 +915,7 @@ assert!(
 /// A class present in some pairs is a section.
 #[test]
 fn extract_rule_reads_some_pair_class_as_section() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
@@ -929,6 +934,7 @@ assert!(
 /// 1→2 are one class; frames of different sizes match by kind.
 #[test]
 fn extract_rule_corresponds_by_transport_class_not_shape() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "1100"]), grid(&["2200", "2200"])),
     (grid(&["1110", "0000"]), grid(&["2220", "0000"])),
@@ -957,6 +963,7 @@ assert!(
 /// maps are two sections, not two classes.
 #[test]
 fn extract_rule_shares_one_vertex_across_recolours() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["2200", "0000"])),
     (grid(&["1100", "0000"]), grid(&["3300", "0000"])),

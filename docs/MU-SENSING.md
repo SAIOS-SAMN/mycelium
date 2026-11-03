@@ -128,10 +128,22 @@ symbol the bodies stand on. It is read, never set to a code (the
 operator's direction of 2026-11-03, track 26 S2). A symbol `g` is a
 ground **candidate** of a family exactly when all three hold:
 
-1. **Ambient:** `g` appears in every sample of the family.
-2. **Enclosing:** in every sample, some site of `g` meets the sample's
-   seam, its outer boundary: a site with some coordinate at `0` or at
-   `extent − 1` on some axis. The bodies stand inside it.
+1. **Ambient:** `g` appears in every *input* sample of the family. An
+   output that covers `g` completely has painted over it, and painting
+   keeps `g` the ground (ruled 2026-11-04).
+2. **Enclosing:** in every sample that shows `g`, some site of `g` meets
+   either of two seams. The bodies stand inside it.
+   - **The outer seam:** the sample's outer boundary, the sites with some
+     coordinate at `0` or at `extent − 1` on some axis.
+   - **An inner seam:** where one body covers the sample's whole outer
+     seam, that body is the sample's **membrane**. The inner seam is the
+     set of unpeeled sites in contact with it. Nested frames repeat the
+     reading per level (`transduce::membrane::levels`; ruled 2026-11-04).
+
+   A membrane is never the ground. A body is read as a membrane only
+   where its symbol is no candidate on the outer seam alone. Without that
+   limit, any background covering the whole seam would be peeled, and a
+   still body standing in it would read as the ground.
 3. **Never carried as a body:** no pair carries a body of `g` by its
    motion onto a body of `g` elsewhere in the output. This is read from
    the pair's transduction: a body of the input, moved by a signed
@@ -189,8 +201,17 @@ transduction's lanes (`Transduction::lane_shares`).
     every task in the frame it was posted in, which is the frame the
     court judges in. It becomes a full perspective in S6.
 
-Collapsing a vortex by perspective, so that each candidate is read as its
-own perspective (§4) until a relation collapses it, follows with S6.
+**A vortex is read once per candidate** (built in S2, brought forward in
+part from S6). Under `Ground::Vortex(cs)`, a reader or writer that needs
+one ground runs once per candidate `g`, each run as its own perspective
+(`Ground::One(g)`; `raster::on_each_perspective_of`). Every result is kept
+as one of the vortex's sections, and nothing picks among them.
+- The mind perceives a vortex task once per candidate. It speaks one claim
+  per candidate, and each claim states the ground it was spoken under
+  (§6).
+- Under `Ground::None` the support is the whole sample. A writer that
+  would leave a site needing a ground is refused.
+- Collapsing a vortex by a relation remains S6's.
 
 ### 3.5 Gauges are deduced
 
@@ -472,6 +493,28 @@ claims as exact content, and it admits a claim by reconstruction
   then the symbols at the source's own width. It is never a pair of `u16`
   extents with one byte per cell.
 
+### 6.1 A claim states its ground
+
+A claim (the solve act) states the ground it was spoken under, as an
+optional field: one symbol at the source's width, or absent. The field
+was added in track 26 S2, inside wire 0x0200's ruled break, with the act
+signed as `mycelium solve v2` (`dialogue::encode_solve_spoken`,
+`SolveAct.ground`). The stated ground is part of the claim, never part of
+the task. A tape entry would make it part of the form's identity, which is
+why the act carries it instead.
+
+The court reconstructs under the stated ground and never deduces, chooses
+or searches for a ground of its own (`cognition::stated_ground`):
+- **One symbol stated:** the court reads that symbol's candidacy against
+  the task's train pairs, by the three conditions of §3.4, and judges the
+  withheld pairs under `Ground::One` of it.
+- **Not a candidate:** refused by name, "the stated ground is no
+  candidate of the task's ground".
+- **Not one symbol:** refused by name, "the stated ground is not one
+  symbol of the task".
+- **None stated:** the claim is reconstructed under no ground
+  (`Ground::None`).
+
 ## 7. Who owns a source's code
 
 Source-specific code exists only as a **decoder** from the source's format
@@ -537,7 +580,7 @@ with samples of rank `n` together with the envelope.
 | The rank-2 raster at intake, named by function: its extents, ground, painted sites, frame fixing and the bridge to the sample, moved from `arc.rs` unchanged | **Built** (track 26, S1) | `src/transducer/raster.rs`; `Task` in `src/transducer/family/train.rs` |
 | **Defect:** the raster carrier is rank 2 by its own storage (`raster::AXES = 2`, `extents`, `painted_sites`, `value_at`) | **Built, refused** by §2 and §3.6; moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S4 |
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
-| A vortex ground read per candidate perspective (§4), so a family whose ground is a vortex is spoken; today its writers refuse | **Open**, with S6 | §3.4 |
+| A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.1) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
 | **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
 | **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One` | `src/transducer/raster.rs`; track 26, S6 |
 | **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residual.rs`; track 26, S4 |
@@ -571,33 +614,41 @@ for one source:
 ARC-AGI-2, the deduced reading against the former `ground_of` (`0` where
 any site shows `0`, else the most frequent symbol, else `0` on a tie):
 
-| Reading | Tasks |
-|---|---|
-| `One(g)`, `g` the former value | 466 |
-| `One(g)`, `g` another symbol | 72 |
-| `Vortex` | 195 |
-| `None` | 267 |
+| Reading | First rule (2026-11-03) | Corrected conditions (2026-11-04) |
+|---|---|---|
+| `One(g)`, `g` the former value | 466 | 467 |
+| `One(g)`, `g` another symbol | 72 | 88 |
+| `Vortex` | 195 | 308 |
+| `None` | 267 | 137 |
+
+- **Reading the inputs** (condition 1) keeps a symbol that an output
+  paints over whole. A body present in every input, on the seam, and
+  recoloured away in the outputs is therefore a candidate beside the
+  canvas. That is the main source of the larger vortex count.
+- **Vortex tasks that speak:** read once per candidate, 128 of the 308
+  vortex tasks speak at least one claim, meaning a rule is extracted,
+  minted and spoken on every test input under some candidate. This is an
+  observation, read once on 2026-11-04 by the census's per-perspective
+  loop and kept out of the committed test for its run time (18 minutes).
+- **Where the former ground still fails, on the 137 that read none:**
+  absent from an input 60, meets no seam (outer or inner) 14, carried as
+  a body 58.
 
 - **Task addresses:** all 1 000 change, as expected inside v0.3.0's one
   break. The identity is now the samples' content as posted, where it was
   the train frames' bands after frame fixing plus the test inputs' chains
   off `0`. The former decoder's frame fixing had turned 103 of the 1 000
   tasks before posting; the posted tasks are now as read.
-- **The oracle's golden reading** moved from 1 715 to 1 684 readings. It
-  first differs at line 1 437, in the harvest of the corpus's own
-  versors, because extraction reads each family as posted and on its
-  deduced ground.
-- **Which condition the former ground fails** on the 267 tasks that read
-  no ground (`transduce::Candidacy`): absent from some sample 156,
-  meets no seam of some sample 36, carried as a body 69 (6 had no former
-  ground symbol present). Of the 36, about 16 are one body framing a
-  sample's whole boundary while the former ground fills the interior,
-  a question for the operator on condition 2's definition. The rest are
-  symbols that are a small share of the failing sample.
-- **The rule was not tuned to any task.** Of the 1 000 tasks, 462 read a
-  vortex or no ground. On those families a writer that needs one symbol
-  for the ground refuses by name, until a vortex is read per perspective
-  (S6).
+- **The oracle's golden reading** moved from 1 715 to 1 901 readings. It
+  first differs at line 1 406, in the harvest of the corpus's own
+  versors: extraction reads each family as posted, once per perspective
+  of its deduced ground, and every perspective's rule is harvested.
+- **Under the first rule,** the former ground failed condition 1 on 156 of
+  the 267 None tasks, condition 2 on 36 and condition 3 on 69. About 16 of
+  the 36 were one body framing the whole boundary, which the operator
+  ruled a membrane on 2026-11-04.
+- **The rule was not tuned to any task.** The counts are observations,
+  never a criterion.
 
 ## 9. Passages this document supersedes
 

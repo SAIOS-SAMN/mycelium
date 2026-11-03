@@ -103,6 +103,31 @@ pub fn on_ground_of<T>(family: &Family, f: impl FnOnce() -> T) -> T {
     }
 }
 
+/// READ `f` ONCE PER PERSPECTIVE OF `family`'s GROUND (MU-SENSING §3.8,
+/// §4; track 26 S2): under `Ground::Vortex` once per candidate, each run on
+/// `Ground::One` of it; under `One` or `None` once, on it. Every result is
+/// kept with the perspective it was read in, in the vortex's order: the
+/// vortex's sections, none picked. Where a family's reading is already
+/// open, its perspectives are read instead.
+pub fn on_each_perspective_of<T>(family: &Family, mut f: impl FnMut() -> T) -> Vec<(Ground<u8>, T)> {
+    let open = GROUND.with(|c| c.borrow().clone());
+    let reading = match open {
+        Some(g) => g,
+        None => ground_of(family),
+    };
+    reading.perspectives().into_iter().map(|p| (p.clone(), on_ground(p, &mut f))).collect()
+}
+
+/// THE GROUND A CLAIM STATES, spoken under perspective `ground`: its one
+/// symbol under `Ground::One`, none otherwise (a raster's symbol at width
+/// one). What the solve act carries (`dialogue::encode_solve_spoken`).
+pub fn stated(ground: &Ground<u8>) -> Option<Vec<u8>> {
+    match ground {
+        Ground::One(g) => Some(vec![*g]),
+        Ground::Vortex(_) | Ground::None => None,
+    }
+}
+
 /// READ `f` ON GROUND `g`, whatever was open; the previous scope restored as
 /// `f` returns.
 pub fn on_ground<T>(g: Ground<u8>, f: impl FnOnce() -> T) -> T {
@@ -136,7 +161,14 @@ pub(crate) fn stand_on(g: u8) {
 /// a task's identity reads no frame fixing (MU-SENSING §3.4, scope
 /// separation).
 pub fn frame_fixed_on_ground(task: Task) -> Task {
-    match ground_of(&task.train) {
+    // The perspective open on this thread stands, as `on_ground_of` keeps
+    // it; with none open, the train family's deduced reading.
+    let open = GROUND.with(|c| c.borrow().clone());
+    let reading = match open {
+        Some(g) => g,
+        None => ground_of(&task.train),
+    };
+    match reading {
         Ground::One(g) => on_ground(Ground::One(g), || frame_fixed(task)),
         Ground::Vortex(_) | Ground::None => task,
     }

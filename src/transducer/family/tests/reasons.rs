@@ -14,6 +14,7 @@ use crate::transducer::sentence::{as_element_form, Reasons, Vertex};
 /// themselves travel whole.
 #[test]
 fn reasons_of_round_trips() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
         (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),

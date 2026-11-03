@@ -8,6 +8,56 @@ use crate::cognition::*;
 use crate::transducer::family::{cipher_form, sentence_measure, NoCrystal, TrainPair};
 use crate::transducer::sentence::as_element_form;
 
+/// A canvas of two halves, 0 and 5, both ambient, enclosing and held in
+/// place, so the ground is a vortex of 0 and 5; a body of 1 standing on the
+/// 0 half moves one column along. The withheld pair is a third such move.
+fn halves() -> (Vec<TrainPair>, Vec<TrainPair>) {
+    let train = vec![
+        (digits(&["00000555", "01000555", "00000555"]), digits(&["00000555", "00100555", "00000555"])),
+        (digits(&["00000555", "00000555", "00100555"]), digits(&["00000555", "00000555", "00010555"])),
+    ];
+    let withheld = vec![(digits(&["00000555", "00010555", "00000555"]), digits(&["00000555", "00001555", "00000555"]))];
+    (train, withheld)
+}
+
+/// TRACK 26 S2 — A CLAIM STATES THE GROUND IT WAS SPOKEN UNDER, AND THE
+/// COURT RECONSTRUCTS UNDER IT: the task's ground is a vortex; the rule is
+/// read, minted and spoken under the candidate 0, the claim states 0, the
+/// court reads 0 as a candidate of the task (`stated_ground`) and judges
+/// the withheld pair under it, solved. The court reads only the ground the
+/// claim states.
+#[test]
+fn claim_states_its_ground_and_court_reconstructs_under_it() {
+    use crate::transducer::family::transduce::Ground;
+    let (train, withheld) = halves();
+    assert_eq!(crate::transducer::raster::ground_of(&train), Ground::Vortex(vec![0, 5]), "the task's ground is a vortex");
+    let spoken = crate::transducer::raster::on_ground(Ground::One(0), || {
+        let rule = crate::transducer::family::extract_rule(&train, &mut budget()).expect("the move extracts on 0");
+        crate::transducer::family::mint_sentence(&rule, &train, &NoCrystal, 0).expect("and mints on 0")
+    });
+    let stated = crate::transducer::raster::stated(&Ground::One(0));
+    let ground = stated_ground(&train, stated.as_deref()).expect("0 is a candidate of the task");
+    assert_eq!(ground, Ground::One(0), "reconstructed under the stated ground");
+    let mut k = Court::new();
+    let verdict = crate::transducer::raster::on_ground(ground, || k.judge_solve(&spoken, &withheld));
+    assert!(matches!(verdict, SolveVerdict::Solved { .. }), "the claim spoken under 0 is solved under 0: {verdict:?}");
+}
+
+/// TRACK 26 S2 — A CLAIM UNDER A GROUND THAT IS NO CANDIDATE IS REFUSED BY
+/// NAME: 1 is a body of the task, never its ground; 0 and 5 are its
+/// candidates; a stated ground of two symbols is no symbol of the task; a
+/// claim stating none is reconstructed under no ground.
+#[test]
+fn claim_under_a_non_candidate_ground_is_refused() {
+    use crate::transducer::family::transduce::Ground;
+    let (train, _) = halves();
+    assert_eq!(stated_ground(&train, Some(&[1])), Err(StatedGroundRefusal::NoCandidate), "a body is no candidate");
+    assert_eq!(stated_ground(&train, Some(&[9])), Err(StatedGroundRefusal::NoCandidate), "a symbol the task never shows");
+    assert_eq!(stated_ground(&train, Some(&[0, 5])), Err(StatedGroundRefusal::NotOneSymbol), "two symbols are no one ground");
+    assert_eq!(stated_ground(&train, Some(&[5])), Ok(Ground::One(5)), "each candidate is reconstructed under");
+    assert_eq!(stated_ground(&train, None), Ok(Ground::None), "none stated, none read");
+}
+
 /// Two separated bodies, both carried two columns along (70.4).
 fn carried() -> Vec<TrainPair> {
     vec![(digits(&["1100200"]), digits(&["0011002"]))]
@@ -103,6 +153,7 @@ fn frame_fixed_on_ground_reads_permuted_palette_as_other_scene() {
 /// Repainted, any task is other colours at the detector (78.56 II).
 #[test]
 fn judge_solve_reads_reframed_task_as_one_verdict() {
+    crate::transducer::raster::stand_on(0);
     type Pairs = Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>;
     type Frame<'a> = &'a dyn Fn(&Vec<Vec<u8>>) -> Vec<Vec<u8>>;
     let base: (Pairs, Pairs) = (

@@ -393,6 +393,7 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
 /// court, and a voice that cannot pay is deferred with its own shortfall.
 #[test]
 fn serve_syllabus_charges_learner_not_reserve() {
+crate::transducer::raster::stand_on(0);
     let family = vec![
         (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
         (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
@@ -455,6 +456,7 @@ fn serve_syllabus_charges_learner_not_reserve() {
 /// stands refracted from itself.
 #[test]
 fn relation_solves_refraction_from_two_forms() {
+crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::{as_element_form, from_element_form, relation, Relation, Transport};
     let family = vec![
         (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
@@ -488,6 +490,7 @@ fn relation_solves_refraction_from_two_forms() {
 /// nothing).
 #[test]
 fn lift_compares_coherent_across_atlases() {
+crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::{compare, from_element_form, lift, Transport};
     type Family = [(Vec<Vec<u8>>, Vec<Vec<u8>>)];
     let mint = |family: &Family| {
@@ -534,6 +537,7 @@ fn lift_compares_coherent_across_atlases() {
 /// `2 × 2 → 4 × 4` family.
 #[test]
 fn measured_reconstruction_equals_client_deflation_on_unequal_enclosures() {
+crate::transducer::raster::stand_on(0);
     let family = vec![
         (digits(&["10", "00"]), digits(&["2200", "2200", "0000", "0000"])),
         (digits(&["00", "01"]), digits(&["0000", "0000", "0022", "0022"])),

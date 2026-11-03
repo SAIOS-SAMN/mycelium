@@ -29,6 +29,7 @@ fn task(a: u8, b: u8, c: u8) -> crate::transducer::family::Task {
 /// words the court never installed are refused.
 #[test]
 fn perceive_speech_admits_colour_theorem_by_composition() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::element::{colour_word, derived_colour_word};
     let mut k = Court::new();
     let install = |k: &mut Court, task: u8, from: u8, to: u8| {
@@ -82,6 +83,7 @@ fn perceive_speech_admits_colour_theorem_by_composition() {
 /// searched — and a court that holds no such task holds it as dialect.
 #[test]
 fn glue_fetched_admits_colour_word_by_rederived_witness() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::element::colour_word;
     let family = vec![(vec![vec![1u8, 1]], vec![vec![2u8, 2]])];
     let tid = [30u8; 32];

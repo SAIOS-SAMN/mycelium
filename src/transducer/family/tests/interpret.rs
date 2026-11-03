@@ -52,6 +52,7 @@ fn decide_ranks_by_pair_where_body_alone_cannot() {
 /// remainders summing to what it read after.
 #[test]
 fn interpret_reads_speech_remainder() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
         (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),

@@ -158,6 +158,7 @@ fn extract_rule_cached_keeps_partial_until_language_moves() {
 /// fixture; the invariant it rests on is this one.
 #[test]
 fn extract_rule_cached_never_keeps_none() {
+    crate::transducer::raster::stand_on(0);
     let root = crate::transducer::address::Address::new(vec![3u8]);
     let ph = &mut crate::physics::Physics::default();
     let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];

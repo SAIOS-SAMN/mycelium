@@ -29,6 +29,7 @@ fn table(c: &crate::observe::Carriers) -> crate::network::nerve::Keyed<u64> {
 /// by the census (which names every field) and fails here.
 #[test]
 fn lapse_word_leaves_no_carrier_grown() {
+    crate::transducer::raster::stand_on(0);
     let mut k = Court::new();
     let family = vec![(grid(&["11"]), grid(&["22"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");

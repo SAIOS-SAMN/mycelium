@@ -256,6 +256,7 @@ impl Stop {
 
 /// ONE SCENE TAKEN IN: its citation, its demonstration pairs, its tests, and
 /// what it is taken as.
+#[derive(Clone)]
 pub(crate) struct Scene {
     pub(crate) id: Vec<u8>,
     pub(crate) train: Vec<crate::transducer::family::TrainPair>,
@@ -270,6 +271,9 @@ type Prepared = (SentenceRule, [u64; 4], Vec<Chain>);
 /// WHAT THE CARRIER READ OF A SCENE, for the winding carrier to admit.
 pub(crate) struct Perceived {
     pub(crate) scene: Scene,
+    /// The perspective of the scene's ground this reading was read under
+    /// (track 26 S2): a claim spoken from it states it.
+    ground: crate::transducer::family::transduce::Ground<u8>,
     admission: Option<crate::transducer::mind::Admission>,
     /// The family's colour word, where its fibre moved a hue.
     colour: Option<Element>,
@@ -313,6 +317,8 @@ pub(crate) struct Judge {
     pub(crate) scene: Scene,
     pub(crate) outputs: Vec<crate::transducer::family::Grid>,
     pub(crate) rule: Element,
+    /// The perspective the solve was spoken under, which the claim states.
+    pub(crate) ground: crate::transducer::family::transduce::Ground<u8>,
 }
 
 /// WHAT THE HOME CHECK READ: the crossed rule to send (judged, or unjudged —
@@ -355,18 +361,36 @@ fn hearing_couples(h: &Hearing, epi: &Epigenome, ground: bool, budget: &mut crat
 pub(crate) type Perceiver = super::hypha::Carrier<crate::transducer::family::ExtractMemo>;
 
 /// THE SCENE READ ON THE CARRIER, in its scratch field, on the language
-/// given — every law the old pipeline ran on the field, run here — and on
-/// the ground its demonstrations name (`raster::ground_of`): its pairs, the
-/// siblings its perspectives derive from and its tests are read on one
-/// ground, the one the court reads its withheld pairs on.
-fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Perceived {
-    let ground = crate::transducer::raster::ground_of(&scene.train);
-    crate::transducer::raster::on_ground(ground, || perceive_on_ground(memo, epi, scene))
+/// given — every law the old pipeline ran on the field, run here — once per
+/// perspective of the ground its demonstrations name (`raster::ground_of`;
+/// MU-SENSING §3.8, §4, track 26 S2): under a vortex once per candidate,
+/// each reading kept as the vortex's section and none picked. Each reading
+/// carries the ground it was read under, and a claim spoken from it states
+/// that ground; the court reconstructs under it. Under a vortex each
+/// perspective extracts afresh: the memo holds one rule a task.
+fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Vec<Perceived> {
+    let perspectives = crate::transducer::raster::ground_of(&scene.train).perspectives();
+    match perspectives.as_slice() {
+        [one] => {
+            let ground = one.clone();
+            let read = crate::transducer::raster::on_ground(ground.clone(), || perceive_on_ground(memo, epi, scene));
+            vec![Perceived { ground, ..read }]
+        }
+        _ => perspectives
+            .into_iter()
+            .map(|ground| {
+                let mut fresh = crate::transducer::family::ExtractMemo::default();
+                let read = crate::transducer::raster::on_ground(ground.clone(), || perceive_on_ground(&mut fresh, epi, scene.clone()));
+                Perceived { ground, ..read }
+            })
+            .collect(),
+    }
 }
 
 fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Perceived {
     use super::family::{ascertain_on, chain_percept, extract_on, pair_percept, scene_percept, speech_of, tests_spoken};
     let mut read = Perceived {
+        ground: crate::transducer::raster::ground(),
         admission: None,
         colour: None,
         hours: Vec::new(),
@@ -466,7 +490,7 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
 /// the court refused, the same rules round after round, with none of these
 /// read.
 pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> Verdict {
-    crate::transducer::raster::on_ground(crate::transducer::raster::ground_of(&j.scene.train), || judge_on_ground(epi, j))
+    crate::transducer::raster::on_ground(j.ground.clone(), || judge_on_ground(epi, j))
 }
 
 fn judge_on_ground(epi: &Epigenome, j: &Judge) -> Verdict {
@@ -539,13 +563,20 @@ impl Mind {
             self.perceiver(),
             move |memo| {
                 crate::observe::live::enter_carrier("perception", "a scene perceived off the field");
-                let read = field.think(|| perceive(memo, &language, scene));
+                let mut reads = field.think(|| perceive(memo, &language, scene));
                 crate::observe::live::enter_carrier("perception", "waiting for a scene");
-                Perceived { admission: field.into_admission(&from), ..read }
+                // The field's scratch is admitted once, with the first
+                // perspective's reading.
+                if let [first, ..] = reads.as_mut_slice() {
+                    first.admission = field.into_admission(&from);
+                }
+                reads
             },
-            |entity, read| {
+            |entity, reads| {
                 entity.scene_landed();
-                entity.admit_scene(read);
+                for read in reads {
+                    entity.admit_scene(read);
+                }
             },
         );
     }
@@ -699,7 +730,7 @@ impl Mind {
     /// 2026-10-18): every pair withheld, every speech and the solve's mint
     /// read the family there, never on a ground a single pair would name.
     fn admit_scene(&mut self, p: Perceived) {
-        let ground = crate::transducer::raster::ground_of(&p.scene.train);
+        let ground = p.ground.clone();
         crate::transducer::raster::on_ground(ground, || self.admit_scene_on_ground(p))
     }
 
@@ -745,7 +776,7 @@ impl Mind {
         let scene = Scene { id, train, tests, reading };
         match p.known {
             Some((rule, Some(outputs))) if reading != Reading::Feed || !scene.tests.is_empty() => match self.construct_solve(&rule, &scene.train) {
-                Some(minted) => self.judge_solve(Judge { scene, outputs, rule: minted }),
+                Some(minted) => self.judge_solve(Judge { scene, outputs, rule: minted, ground: crate::transducer::raster::ground() }),
                 None => {
                     self.stopped(&scene.id, reading, Stop::Unminted);
                     self.await_scene(scene);
@@ -801,7 +832,7 @@ impl Mind {
                 // scene (R2) and leaves there.
                 let stop = match refused {
                     true => Stop::RefusedBefore,
-                    false => match self.submit_solve_rule(&id, &j.outputs, &rule) {
+                    false => match self.submit_solve_rule(&id, &j.outputs, &rule, &j.ground) {
                         Ok(()) => Stop::Sent,
                         Err(_) => Stop::Unsubmitted,
                     },

@@ -21,26 +21,55 @@ fn ground_deduced_not_symbol_zero() {
     assert_eq!(Ground::of(&[(x, y)]), one(3));
 }
 
-/// The canvas 0 is absent from one sample of the family (a pair whose
-/// output is painted whole): it is not ambient, and no symbol is.
+/// The symbol 0 is absent from one INPUT of the family: it is not ambient,
+/// and no symbol is.
 #[test]
-fn ground_requires_presence_in_every_sample() {
+fn ground_requires_presence_in_every_input() {
+    let family = [
+        (sample(&["000", "010", "000"]), sample(&["000", "020", "000"])),
+        (sample(&["333", "343", "333"]), sample(&["333", "353", "333"])),
+    ];
+    let read = Ground::of(&family);
+    assert!(!read.holds(&vec![0]), "absent from one input: {read:?}");
+    assert_eq!(read, Ground::None);
+}
+
+/// The canvas 0 is in every input, and one output paints it over whole:
+/// covering the ground is painting, and it stays the ground.
+#[test]
+fn ground_absent_from_an_output_is_still_ground() {
     let family = [
         (sample(&["000", "010", "000"]), sample(&["000", "020", "000"])),
         (sample(&["000", "010", "000"]), sample(&["222", "222", "222"])),
     ];
-    let read = Ground::of(&family);
-    assert!(!read.holds(&vec![0]), "absent from one sample: {read:?}");
+    assert_eq!(Ground::of(&family), one(0));
+}
+
+/// The symbol 0 stands inside the output, and the output's seam is no one
+/// body (1s and 2s alternate on it): 0 meets no seam, outer or inner, and
+/// encloses nothing there.
+#[test]
+fn ground_requires_meeting_every_seam() {
+    let read = Ground::of(&[(sample(&["0000", "0120", "0000"]), sample(&["1212", "2002", "1212"]))]);
+    assert!(!read.holds(&vec![0]), "0 meets no seam of the output: {read:?}");
     assert_eq!(read, Ground::None);
 }
 
-/// The symbol 0 is in every sample, but in the output it stands only
-/// inside a ring of 1s and meets no seam: it encloses nothing there.
+/// The output frames the canvas: a body of 8 covers its whole outer seam,
+/// and 0 fills the interior inside it. The frame is the output's membrane
+/// (peeled to read its inner seam), and 0, on that inner seam, is the
+/// ground; the frame is not.
 #[test]
-fn ground_requires_meeting_every_seam() {
-    let read = Ground::of(&[(sample(&["000", "010", "000"]), sample(&["111", "101", "111"]))]);
-    assert!(!read.holds(&vec![0]), "0 meets no seam of the output: {read:?}");
-    assert_eq!(read, Ground::None);
+fn framed_interior_is_ground_and_frame_is_membrane() {
+    let x = sample(&["0000", "0000", "0000", "0000"]);
+    let y = sample(&["8888", "8008", "8008", "8888"]);
+    let levels = super::super::membrane::levels(&y);
+    let [outer, inner, ..] = levels.as_slice() else { panic!("two levels: {levels:?}") };
+    assert_eq!(outer.membrane, Some(vec![8]), "the frame is the membrane");
+    assert_eq!(inner.seam, vec![vec![0]], "0 is the inner seam");
+    let read = Ground::of(&[(x, y)]);
+    assert_eq!(read, one(0));
+    assert!(!read.holds(&vec![8]), "the membrane is never the ground");
 }
 
 /// On a canvas of 7, a block of 0 moves one site along a phase, and a

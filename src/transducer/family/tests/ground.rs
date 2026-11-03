@@ -26,6 +26,25 @@ fn ground_of_reads_family_canvas() {
     assert_eq!(crate::transducer::raster::ground_of(&traded), Ground::None, "each column is a body");
 }
 
+/// TRACK 26 S2 — A VORTEX IS READ ONCE PER CANDIDATE, each run its own
+/// perspective (`Ground::One` of the candidate), every result kept in the
+/// vortex's order and none picked; `One` and `None` are read once.
+#[test]
+fn vortex_ground_read_once_per_candidate() {
+    let halves = vec![(grid(&["0055", "0055"]), grid(&["0055", "0055"]))];
+    assert_eq!(crate::transducer::raster::ground_of(&halves), Ground::Vortex(vec![0, 5]), "a vortex of 0 and 5");
+    let mut runs = 0usize;
+    let read = crate::transducer::raster::on_each_perspective_of(&halves, || {
+        runs += 1;
+        crate::transducer::raster::ground()
+    });
+    assert_eq!(runs, 2, "one run per candidate");
+    assert_eq!(read, vec![(Ground::One(0), Ground::One(0)), (Ground::One(5), Ground::One(5))], "each run on its own candidate, both kept");
+    let bar = vec![(grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"]))];
+    let once = crate::transducer::raster::on_each_perspective_of(&bar, crate::transducer::raster::ground);
+    assert_eq!(once, vec![(Ground::One(0), Ground::One(0))], "one ground, one run");
+}
+
 /// OUTSIDE EVERY FAMILY NO GROUND IS READ: the reading is `None`, so every
 /// symbol, 0 among them, is a body; a writer that needs a symbol is
 /// refused `Unscoped`; and the painted sites are every site.

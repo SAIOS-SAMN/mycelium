@@ -1168,7 +1168,20 @@ Each phase is one commit:
        `unscoped_reader_never_defaults_to_zero`.
      - Behaviour over the 1 000 training tasks: 466 read the former
        symbol, 72 another, 195 a vortex, 267 none (MU-SENSING §8).
-     - Open: reading a vortex per candidate perspective, with S6.
+     - Corrected conditions (ruled 2026-11-04):
+       - A ground is present in every input sample.
+       - A framed interior is enclosed through its membrane.
+     - A vortex is read once per candidate, and the mind speaks one claim
+       per candidate. The solve act states the ground its claim was
+       spoken under, and the court reconstructs under it (MU-SENSING
+       §6.1). This is a wire change inside v0.3.0's break.
+     - Claims: `vortex_ground_read_once_per_candidate`,
+       `claim_states_its_ground_and_court_reconstructs_under_it`,
+       `claim_under_a_non_candidate_ground_is_refused`,
+       `solve_round_trips_its_stated_ground`,
+       `ground_absent_from_an_output_is_still_ground`,
+       `framed_interior_is_ground_and_frame_is_membrane`.
+     - Open: collapsing a vortex by a relation, with S6.
 4. **S3, the symbol set deduced.**
    - `PALETTE` (10, and the conflicting 256), `RESERVOIR` and the 10-slot
      hue tables are replaced by the family's own symbol set.

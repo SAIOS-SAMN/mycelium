@@ -4,10 +4,14 @@
 //! symbol a family's bodies stand on, read off the family's samples and its
 //! pairs' transductions, never set to a code. A symbol is a CANDIDATE
 //! exactly when it is
-//! 1. **ambient**: present in every sample of the family;
-//! 2. **enclosing**: in every sample, some site of it meets the sample's
-//!    seam (a coordinate at `0` or at `extent − 1` on some axis), so the
-//!    bodies stand inside it;
+//! 1. **ambient**: present in every INPUT sample of the family (covered
+//!    whole in an output, it is painted over and stays the ground);
+//! 2. **enclosing**: in every sample that shows it, some site of it meets
+//!    the sample's outer seam (a coordinate at `0` or at `extent − 1` on
+//!    some axis), or the inner seam of a body covering that whole seam, the
+//!    sample's MEMBRANE, level by level (`membrane::levels`). A membrane is
+//!    never the ground: a body is read as one only where its symbol is no
+//!    candidate on the outer seam;
 //! 3. **never carried as a body**: no pair carries a body of it, by a signed
 //!    permutation of the phases and a non-zero offset, onto a body of it
 //!    elsewhere in the output that the pair's transduction does not hold in
@@ -74,6 +78,22 @@ impl<S: PartialEq> Ground<S> {
         }
     }
 
+    /// THE PERSPECTIVES THE READING IS READ IN (MU-SENSING §3.8, §4): one
+    /// per candidate, each `Ground::One` of it, in the vortex's order;
+    /// `One` and `None` are one perspective, themselves. A reader or writer
+    /// that needs one ground runs once per perspective and keeps every
+    /// result as the vortex's sections; nothing picks among them.
+    pub fn perspectives(&self) -> Vec<Ground<S>>
+    where
+        S: Clone,
+    {
+        match self {
+            Ground::One(g) => vec![Ground::One(g.clone())],
+            Ground::Vortex(gs) => gs.iter().map(|g| Ground::One(g.clone())).collect(),
+            Ground::None => vec![Ground::None],
+        }
+    }
+
     /// The reading over another symbol carrier, each candidate mapped; a
     /// candidate `f` cannot carry is left out of the reading.
     pub fn map<T: PartialEq>(&self, f: impl Fn(&S) -> Option<T>) -> Ground<T> {
@@ -96,20 +116,6 @@ impl<S: PartialEq> Ground<S> {
             _ => Ground::Vortex(candidates),
         }
     }
-}
-
-/// Does some site of `symbol` in `x` meet the sample's seam?
-fn meets_seam(x: &Sample, symbol: &[u8]) -> bool {
-    let extents: Vec<usize> = (0..x.rank())
-        .filter_map(|axis| match x.extent(axis) {
-            crate::transducer::sample::AxisReading::Read(e) => Some(e),
-            crate::transducer::sample::AxisReading::Unread => None,
-        })
-        .collect();
-    x.sites().zip(x.symbols()).any(|(site, s)| {
-        s.bytes() == symbol
-            && site.axes().iter().zip(&extents).any(|(&c, &e)| c == 0 || usize::try_from(c).is_ok_and(|c| c + 1 == e))
-    })
 }
 
 /// A body's least boundary turn on each phase: its place in the frame.
@@ -209,40 +215,86 @@ impl Ground<Vec<u8>> {
                 symbols.push(s.bytes().to_vec());
             }
         }
-        // Conditions 1 and 2 read off the samples; condition 3, which needs
-        // each pair's transduction, is read only for a symbol that passes
-        // both, and each pair's transduction is read once.
-        let first: Vec<(Vec<u8>, Option<Candidacy>)> = symbols
+        // Each sample's seams, peeled through its membranes, read once.
+        let seams: Vec<Vec<super::membrane::Level>> = samples.iter().map(|x| super::membrane::levels(x)).collect();
+        let readings: Vec<Seamed> = symbols
             .into_iter()
             .map(|c| {
-                let absent = samples.iter().position(|x| !x.symbols().any(|s| s.bytes() == c.as_slice()));
-                let unenclosing = samples.iter().position(|x| !meets_seam(x, &c));
-                let failed = match (absent, unenclosing) {
-                    (Some(sample), _) => Some(Candidacy::Absent { sample }),
-                    (None, Some(sample)) => Some(Candidacy::Unenclosing { sample }),
-                    (None, None) => None,
-                };
-                (c, failed)
+                // 1. Present in every input sample: covered whole in an
+                // output, it is painted over and stays the ground.
+                let absent = family.iter().position(|(x, _)| !x.symbols().any(|s| s.bytes() == c.as_slice()));
+                // 2. In every sample that shows it, on the outer seam
+                // (`outer`), or else on the inner seam of the membranes
+                // covering the seam outside it (`inner`, with the membranes
+                // it was read through).
+                let mut outer = None;
+                let mut inner: Result<Vec<Vec<u8>>, usize> = Ok(Vec::new());
+                for (i, (x, levels)) in samples.iter().zip(&seams).enumerate() {
+                    if !x.symbols().any(|s| s.bytes() == c.as_slice()) {
+                        continue;
+                    }
+                    let depth = levels.iter().position(|l| l.seam.contains(&c));
+                    if depth != Some(0) && outer.is_none() {
+                        outer = Some(i);
+                    }
+                    match (depth, &mut inner) {
+                        (None, Ok(_)) => inner = Err(i),
+                        (Some(d), Ok(through)) => {
+                            for l in levels.iter().take(d) {
+                                if let Some(m) = &l.membrane {
+                                    through.push(m.clone());
+                                }
+                            }
+                        }
+                        (_, Err(_)) => {}
+                    }
+                }
+                Seamed { symbol: c, absent, outer, inner }
             })
             .collect();
-        let carried: Vec<Vec<Vec<u8>>> = match first.iter().any(|(_, failed)| failed.is_none()) {
+        // Condition 3, which needs each pair's transduction, is read only
+        // where some symbol passes 1 and 2, each pair's transduction once.
+        let carried: Vec<Vec<Vec<u8>>> = match readings.iter().any(|r| r.absent.is_none() && r.inner.is_ok()) {
             true => family.iter().map(|(x, y)| carried_as_body(x, y)).collect(),
             false => Vec::new(),
         };
-        first
+        let moved = |c: &Vec<u8>| carried.iter().position(|of_pair| of_pair.contains(c));
+        // The candidates on the outer seam alone. A body covering a whole
+        // seam is read as a membrane only where its symbol is no such
+        // candidate: a membrane is never the ground, and a candidate on the
+        // outer seam is never peeled as a membrane.
+        let direct: Vec<Vec<u8>> = readings
+            .iter()
+            .filter(|r| r.absent.is_none() && r.outer.is_none() && moved(&r.symbol).is_none())
+            .map(|r| r.symbol.clone())
+            .collect();
+        readings
             .into_iter()
-            .map(|(c, failed)| {
-                let reading = match failed {
-                    Some(f) => f,
-                    None => match carried.iter().position(|of_pair| of_pair.contains(&c)) {
+            .map(|r| {
+                let reading = match (r.absent, r.outer, &r.inner) {
+                    (Some(pair), _, _) => Candidacy::Absent { pair },
+                    (None, Some(sample), Err(_)) => Candidacy::Unenclosing { sample },
+                    (None, Some(sample), Ok(through)) if through.iter().any(|m| direct.contains(m)) => Candidacy::Unenclosing { sample },
+                    (None, _, _) => match moved(&r.symbol) {
                         Some(pair) => Candidacy::CarriedAsBody { pair },
                         None => Candidacy::Candidate,
                     },
                 };
-                (c, reading)
+                (r.symbol, reading)
             })
             .collect()
     }
+}
+
+/// One symbol's reading against conditions 1 and 2: the pair whose input
+/// lacks it, the first sample whose outer seam it misses, and the
+/// membranes it was read through on inner seams (or the first sample where
+/// no seam shows it).
+struct Seamed {
+    symbol: Vec<u8>,
+    absent: Option<usize>,
+    outer: Option<usize>,
+    inner: Result<Vec<Vec<u8>>, usize>,
 }
 
 /// HOW ONE SYMBOL STANDS AGAINST THE THREE CONDITIONS (MU-SENSING §3.4):
@@ -251,10 +303,12 @@ impl Ground<Vec<u8>> {
 pub enum Candidacy {
     /// Ambient, enclosing and never carried as a body.
     Candidate,
-    /// Condition 1: absent from the family's `sample`-th sample (input and
-    /// output of each pair in turn).
-    Absent { sample: usize },
-    /// Condition 2: no site of it meets the seam of that sample.
+    /// Condition 1: absent from the input of the family's `pair`-th pair.
+    Absent { pair: usize },
+    /// Condition 2: in the `sample`-th sample (input and output of each pair
+    /// in turn) that shows it, no site of it meets the outer seam, and it
+    /// meets no inner seam of a membrane in every sample (or the body it
+    /// would be read through is itself a candidate on the outer seam).
     Unenclosing { sample: usize },
     /// Condition 3: the `pair`-th pair carries a body of it elsewhere.
     CarriedAsBody { pair: usize },

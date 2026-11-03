@@ -349,6 +349,7 @@ fn hold_form_carries_bundle_and_remainder() {
 /// replays it against the bundle, and the idea leaves the contemplation.
 #[test]
 fn expand_all_crystallizes_closed_idea_and_releases_it() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::family::{extract_rule, mint_sentence, Grid, NoCrystal};
     let grid = |rows: &[&str]| -> Grid {
         rows.iter()

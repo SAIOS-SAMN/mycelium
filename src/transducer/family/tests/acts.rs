@@ -273,6 +273,7 @@ fn extract_rule_reads_tiles_by_symmetries() {
 /// address.
 #[test]
 fn from_element_form_round_trips_panes_and_tiles() {
+    crate::transducer::raster::stand_on(0);
     for family in [
         vec![(grid(&["10501", "01500"]), grid(&["22", "02"])), (grid(&["11500", "00501"]), grid(&["22", "02"])), (grid(&["00511", "10510"]), grid(&["22", "00"]))],
         vec![(grid(&["12", "30"]), grid(&["1221", "3003", "3003", "1221"])), (grid(&["40", "05"]), grid(&["4004", "0550", "0550", "4004"]))],

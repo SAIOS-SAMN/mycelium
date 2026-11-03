@@ -576,6 +576,12 @@ pub struct SolveAct {
     /// The rule the voice extracted, when it speaks one. `None` is an
     /// answer with no rule behind it — the registry prices it differently.
     pub rule: Option<Vec<u8>>,
+    /// TRACK 26 S2 — THE GROUND THE CLAIM WAS SPOKEN UNDER: one symbol at
+    /// the source's width, or `None` where the voice spoke under no one
+    /// ground. Part of the claim, never of the task (MU-SENSING §6): the
+    /// court reconstructs under it, once it reads it as a candidate of the
+    /// task's ground.
+    pub ground: Option<Vec<u8>>,
     /// 78.141 — whether the voice signed the act. The court pays the voice
     /// a solve names, so an unsigned solve names no payee and is refused.
     pub signed: bool,

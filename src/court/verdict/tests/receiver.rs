@@ -20,6 +20,9 @@ fn digits(rows: &[&str]) -> Grid {
 /// A bar recoloured and a compartment created beside it: one word vertex, one
 /// `Creation` demand, spoken as one sentence (50.5).
 fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
+    // The fixture stands on 0 (declared: its bar, in the input alone and on
+    // the seam, reads as a second candidate).
+    crate::transducer::raster::stand_on(0);
     let family = vec![(digits(&["110", "000"]), digits(&["220", "003"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the bar's recolour extracts");
     let words = rule.form.vertices.entries().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count();
@@ -67,6 +70,7 @@ fn replay_form_with_refuses_undeclared_remainder() {
 /// remainder is read.
 #[test]
 fn replay_form_with_refuses_vertex_missing_body() {
+    crate::transducer::raster::stand_on(0);
     let (_, e) = a_recolour_with_a_creation();
     let other = vec![(digits(&["110", "000"]), digits(&["330", "003"]))];
     assert_eq!(
@@ -265,6 +269,7 @@ fn vertices_carry_frames_perceives_each_frame_once() {
 /// and refuse the sentence at a claim it never made.
 #[test]
 fn replay_form_with_scopes_members_to_active_sections() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (digits(&["1100", "1100", "3000"]), digits(&["2200", "2200", "3000"])),
         (digits(&["3000", "0000", "0000"]), digits(&["0000", "0000", "0040"])),

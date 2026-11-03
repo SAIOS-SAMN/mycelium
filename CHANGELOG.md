@@ -6,6 +6,41 @@ such change is named here.
 
 ## Unreleased
 
+### A claim states its ground; a vortex is read per candidate (track 26, S2)
+- **Network contract: the solve act gains an optional ground field**, a
+  change inside v0.3.0's ruled break (wire 0x0200). After `RULE` the act
+  may carry `[GRND][len u32][symbol]`, the ground the claim was spoken
+  under, and is signed as `mycelium solve v2`.
+  - New: `dialogue::encode_solve_spoken` and `SolveAct.ground`.
+  - `encode_solve_with_rule` states no ground.
+  - A solve signed under v1 no longer verifies.
+  - The SDK's `task` module re-exports the new encoder, and the
+    conformance codec row reads the stated ground back exactly
+    (MU-CONFORMANCE §2.1).
+- **The court reconstructs under the stated ground**
+  (`cognition::stated_ground`): it reads that one symbol's candidacy on
+  the task's train pairs.
+  - A stated ground that is no candidate is refused by name.
+  - A claim stating none is reconstructed under `Ground::None`.
+  - The door no longer deduces a ground for a solve.
+- **A vortex is read once per candidate:**
+  - `Ground::perspectives` and `raster::on_each_perspective_of` read it,
+    and `raster::stated` gives the ground a claim states.
+  - The mind perceives, judges at home and submits one claim per
+    candidate, each stating its ground.
+  - The SDK's example client and live conformance speak one claim per
+    perspective.
+  - The oracle's harvest reads every perspective's rule.
+- **Condition 1 reads the inputs:** a ground is present in every input
+  sample. An output covering it whole has painted over it.
+- **Condition 2 reads framed interiors:**
+  - The seam is the outer seam, or the inner seam of a body that covers
+    the whole outer seam (the membrane, `transduce::membrane::levels`),
+    level by level.
+  - A membrane is never the ground. A body is peeled as one only where
+    its symbol is no candidate on the outer seam alone.
+  - `transduce::Candidacy` names the condition each symbol fails.
+
 ### The ground is deduced, never a code (ROADMAP track 26, S2)
 - **`transduce::Ground<S>`** (`One`, `Vortex`, `None`) and
   **`transduce::Unground`** (`Vortex`, `None`, `Unscoped`), with

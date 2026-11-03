@@ -821,6 +821,7 @@ fn chart_holding_one_finds_singleton_fibre() {
 /// the bodies not selected erased — and the rule is its clauses alone.
 #[test]
 fn extract_rule_states_selection_without_demand() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (
             grid(&[

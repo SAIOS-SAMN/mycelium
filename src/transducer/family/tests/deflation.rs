@@ -116,6 +116,7 @@ crate::transducer::raster::stand_on(0);
 /// the one consulted, so the two cannot disagree.
 #[test]
 fn mint_sentence_withholds_rule_not_carrying_family() {
+crate::transducer::raster::stand_on(0);
 let learned = vec![(grid(&["11"]), grid(&["22"]))];
 let rule = extract_rule(&learned, &mut crate::physics::Physics::default().stroke_n(1 << 20))
     .expect("a recolour extracts");
@@ -152,6 +153,7 @@ assert!(
 /// the standing extent of its listings (`remeasure_pressure`), read there.
 #[test]
 fn mint_sentence_carries_no_span_on_temporal_lane() {
+crate::transducer::raster::stand_on(0);
     let family = vec![(grid(&["11"]), grid(&["22"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("a recolour extracts");
@@ -344,6 +346,7 @@ fn unspoken_residue_is_read_on_output_sites() {
 /// unit.
 #[test]
 fn deflation_closure_pays_before_on_one_record() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["10", "00"]), grid(&["2200", "2200", "0000", "0000"])),
         (grid(&["00", "01"]), grid(&["0000", "0000", "0022", "0022"])),
