@@ -41,6 +41,16 @@ path:
 Where an older passage fixes three coordinates, ten hues, a ground of 0 or
 one benchmark, this document and the rulings it cites govern (§9).
 
+**What completes this work** (ruled 2026-11-04). The test is whether a
+mind can think about the perception of the senses that are adjudicated.
+It is not whether a benchmark such as ARC-AGI-2 is solved. A mind holds
+its perceptions as objects it reasons about: the ground it read, the
+vortex of candidates, its perspectives, its holonomy and its refusals. It
+can state, compare and revise them, and a court can reconstruct and
+adjudicate them. Claims test exactly that. Benchmark outcomes and corpus
+counts are observations, never criteria, and nothing is tuned to them
+(MU-STANDARDS 3.1).
+
 ## 1. The path: source, sample, sensor, senses, percept, perception
 
 ```
