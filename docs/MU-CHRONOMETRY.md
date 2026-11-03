@@ -86,7 +86,7 @@ its book.
   (`encode_clock_request`); chatter frames carry it. A pointed frame is
   `[lane | 0x80][len u32 LE][body][point][point len u16 LE]`: the point's
   wire bytes (genesis 32, epoch u32 LE, `h` u64 LE, the four lanes in the
-  rational lane codec, `K` u64 LE), then their count, so a reader finds the
+  rational lane codec, `K` u64 LE), then the point's byte count, so a reader finds the
   point from the frame's end. A point is at least 96 bytes (four lanes at
   `0/1`) and at most `u16::MAX`.
 - **The core stamp.** A court serves its head's stamp

@@ -66,9 +66,9 @@ source ──decode──▶ sample ──lift──▶ field ──────
 | **Decode** | The source's format read into a sample, and nothing more: no meaning, no ground, no colour | The source's adapter, which lives with the source (§7) | Yes |
 | **Sample** | A finite array: rank `n`, an extent per axis, a symbol per site, and the sample's place in its family | The adapter's output; the only input the sensor takes | No |
 | **Lift** | The sample lifted into the mind's field: each axis a phase of its own period within the charts of its atlas; each symbol a fibre value; the ground deduced | The sensor | No |
-| **Senses** | Three eyes over one section: luminal (the fibre values), harmonic (the spectra of boundaries), holonomic (loops and their holonomy) | The sensor | No |
+| **Senses** | Three eyes over one section: luminal (the fibre values), harmonic (the spectra of boundaries), holonomic (loops and the holonomy of each) | The sensor | No |
 | **Cover** | The eyes' cochains, checked by the cocycle; a sensory verdict | The sensor (MU-CLIENT 24.4) | No |
-| **Percept** | Bodies held by their boundary, the motions between samples, and the residue | The mind's perception | No |
+| **Percept** | Bodies, each held by its boundary, the motions between samples, and the residue | The mind's perception | No |
 | **Perception** | Words formed from what the mind can spell; unspelled tension held as demand | The mind (MU-CLIENT §3, 60.1) | No |
 
 ## 2. The sample: what a source hands the sensor
@@ -116,7 +116,7 @@ differ (MU-RECURSION 71.2 (2)). A body is what stays connected under the
 contact the sample shows. No 4-neighbourhood, 6-neighbourhood or other
 fixed adjacency is written for a rank.
 
-### 3.3 Symbols are fibre values, and their meaning is deduced
+### 3.3 Symbols are fibre values, and a symbol's meaning is deduced
 
 A symbol's meaning is a relation, not a code (MU-RECURSION 70, 78.53).
 A permutation of the symbols that leaves the family's relations invariant
@@ -396,10 +396,10 @@ runs.
 
 - **A shift of perspective is a motion of the sensor, never a rewrite of
   the data.** Examples: exchanging two axes' roles (one of the signed
-  swaps of the phases), taking a declared value axis as space, or reading
+  permutations of the phases), taking a declared value axis as space, or reading
   a sequence of samples as one section of rank `n + 1`.
-- **Several perspectives of one sample are a cover.** Their agreement is
-  the cocycle of MU-CLIENT 24.4, and their disagreement is a residue,
+- **Several perspectives of one sample are a cover.** The perspectives'
+  agreement is the cocycle of MU-CLIENT 24.4, and a disagreement is a residue,
   held and never discarded.
 - **A mind may ask for a perspective** it does not hold yet. Asking is a
   demand, never a fallback.
@@ -420,7 +420,7 @@ never by a score.
   sample into a cochain of the cover (MU-CLIENT 24.4): a 0-cochain over
   bodies or a 1-cochain over overlaps. It is composed from the algebra's
   existing readings and the generators the mind holds, so every sense is
-  an exact construction a court can rebuild. A perspective (§4) is
+  an exact construction a court can reconstruct. A perspective (§4) is
   likewise a typed object: an assignment of roles that the mind
   constructs.
 - **Variation.** A mind constructs a candidate sense or perspective by
@@ -544,7 +544,9 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 `sources/arc-agi` (package `mycelium-source-arc-agi`). It depends on the
 core; the core never depends on it. It owns:
 - the JSON parse (`decode`, and `parse_task`, which hands the decoded task
-  through the sensor's frame fixing, `raster::frame_fixed_on_ground`);
+  through the sensor's frame fixing, `raster::frame_fixed_on_ground`).
+  Fixing the frame before the task is addressed is the defect of §6.1,
+  being removed in track 26 S2;
 - the corpus location (`corpus`: `MYCELIUM_CORPUS`, else `data/arc-agi-2`)
   and its split into `training` and `evaluation` (`task_names`);
 - the decode to samples (`samples_of`, each placed at `[split, pair,
@@ -569,7 +571,7 @@ with samples of rank `n` together with the envelope.
 | A percept as a series of located records (seat percepts) | **Built** | `src/anastome/dialogue/seat.rs` (78.146) |
 | The three eyes as a cover, with the sensory verdict | **Specified** | MU-CLIENT 24.4 |
 | The transduction at rank `n`: each axis a phase of its own period read from the sample, re-period between samples, bodies as `n`-dimensional bands of one symbol, each held by its boundary, contact by grade `n − 1`, the `2ⁿ·n!` signed permutations of the phases (generated), μ's shares over the product of the extents; no axis privileged | **Built** (v0.3.0 T2 with track 26 S4, [PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)); rasters reach it only through `raster::sample_of` | `src/transducer/family/transduce/` (`Enclosure`, `Band`, `SignedPermutation`, `SiteChange`) |
-| The well (formerly the bubble): a held thought in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built**, without a body: no membrane, centre or curvature | `transducer/field/idea.rs` (`Well`), `field/{contemplation, merge, meet, resonance, line}.rs` |
+| The well: a held thought in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built**, without a body: no membrane, centre or curvature | `transducer/field/idea.rs` (`Well`), `field/{contemplation, merge, meet, resonance, line}.rs` |
 | The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Well.vortex`, `Well.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
 | Orbits with four readings; the court's gravity as drag | **Built**, on flat charts | `cech/orbit.rs` (`Field`, `Field::beat_under`) |
 | Exact motions: rotors by turns, dilators, reflectors, versors of reflections, cyclotomic periods | **Built** | `alphabet/`, `cga/{group, spin, period}.rs` |
@@ -588,7 +590,7 @@ with samples of rank `n` together with the envelope.
 | **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S6 |
 | **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residual.rs`; track 26, S4 |
 | **Defect:** a family's magnitude is read on planar chains (`pair_magnitude`, `family_cover`, `cover_join` over `raster::painted_of`) | **Built, refused** by §2 (samples of rank `n`); moved unchanged in S1 | `src/transducer/family/magnitude.rs`; track 26, S4 |
-| An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on the branch `transduction-core` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
+| An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on `main` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
 | Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
 | Ground, symbol set, axes and gauges deduced | **Specified** | Track 26, S2–S4 |
 | A task on the wire as samples of rank `n` | **Specified** | Track 26, S5 |

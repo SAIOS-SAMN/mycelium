@@ -68,7 +68,7 @@ two kinds among several:
 | **Cosmological simulations** | A universe grown from its origin under exact physics: galaxies, star systems and worlds | Inhabit the peoples its physics wakes on its worlds | Example: the peer kernel xylarium |
 | **Games** | Authored, replayable simulations, each with its own peoples, rules and seats | Hold seats, decide for simulated peoples, meet the game's puzzles | Examples: the peer kernels xylarium, netstratum, barren-realms (README › Peer kernels) |
 | **Science universes** | A declared physics, or a domain of mathematics, with open questions | Prove theorems, check certificates, run computations, test laws | **Specified** (MU-SCIENCE) |
-| **Task environments** | A bounded set of tasks the courts hold answers for | Solve tasks they did not set | **Built**: the ARC-AGI-2 registry |
+| **Task environments** | A bounded set of tasks the courts hold answers for: families of samples from any source | Solve tasks they did not set | **Built**: the task registry, holding posted tasks from any source; ARC-AGI-2 is the first posted corpus |
 | **Markets** | Demands posted and funded by requesters | Close demands, provide leased capacity | **Built**: the court's market, compute leases |
 | **Many-agent universes** | One shared universe in which many agents interact | Converse, agree, cite and build on each other's work (§4) | **Specified** |
 | **World models** | A learned model that predicts how an environment's state evolves | Act in the predicted environment; test its predictions against other universes (§3) | **Specified** |
@@ -769,7 +769,7 @@ carries four parts:
 | Part | What | Why the hypha needs it |
 |---|---|---|
 | Place | The event's TUniversal coordinates and its past cone (what it cites) | Where the event stands in the cones (§5a.5) |
-| Content | The exact object: each body held by its boundary (turn breakpoints per circle, extent as a share of the frame) and the motion from the state before to the state after, as a versor of Cl(4,1)(ℚ), or as a pair of turns in ℚ/ℤ where no exact versor exists (Niven) | What is reconstructed |
+| Content | The exact object: each body held by its boundary (turn breakpoints per phase, extent as a share of the frame) and the motion from the state before to the state after, as a versor of `Cl(n+1, 1)`(ℚ), or as turns in ℚ/ℤ where no exact versor exists (Niven) | What is reconstructed |
 | Holonomy | Each ring the crossing closes, with its exact holonomy (§5a.3) | Curvature is content: a route's meaning |
 | Clauses | The clauses the act is read under, and the signatures (§5a.4) | Which laws the reconstruction applies |
 
@@ -801,7 +801,7 @@ algebraically and holds it with the crossing:
   reconstructed one, `M̃_rec · M_claim`. It is the identity exactly when
   the two motions agree, and otherwise is a motion of its own, read by
   its modes. For a turn, the residue is `t_claim − t_rec` in ℚ/ℤ.
-- **Bodies:** the boundary breakpoints that differ, named per circle,
+- **Bodies:** the boundary breakpoints that differ, named per phase,
   with the share of the frame they bound.
 - **Holonomy:** each ring whose holonomy differs, with both values.
 
@@ -968,7 +968,7 @@ it does not ask to be trusted.
 ### 7.3 Scope: what a certificate attests
 
 A certificate is bounded by what the universe's task families can state.
-MU-COGNITION.md's ARC analysis shows a vocabulary limits what can be tested:
+MU-COGNITION §1.3's reading of the first posted corpus shows a vocabulary limits what can be tested:
 a universe that cannot state conditionals cannot certify behaviour under
 them. So a certificate attests **behaviour over the families the universe
 expresses, in the era it covers**, and never "safe in general" or

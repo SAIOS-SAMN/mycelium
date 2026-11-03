@@ -6,6 +6,22 @@ such change is named here.
 
 ## Unreleased
 
+### Documentation aligned with the sensing rulings (audit 2026-11-04)
+- ROADMAP › Now: S2 and D2.5 in progress, T3 ready, #55 listed; track 26
+  marks S0, S1 and S4 built and S2 in progress; X5's transduction built.
+- The headline algebra is `Cl(n+1, 1)` throughout, with `Cl(4,1)` only as
+  its value at `n = 3`. ARC-AGI-2 is the first posted corpus, and its
+  outcomes are observations, never the goal or a baseline (MU-SENSING §0):
+  README, GLOSSARY, MU-COGNITION, MU-CONCORDANCE, MU-HOSTING, MU-PRODUCT.
+- A task's identity is the posted samples' full content (MU-SENSING §6.1)
+  in ROADMAP and MU-DERIVATIONS; μ's S lane is a share of the frame's
+  measure under the ground the claim states (MU-ECONOMY).
+- Terms: phases within charts in place of circles, signed permutations in
+  place of signed swaps, "lattice" kept only for the refused defect, the
+  former name of the field recorded once (MU-SENSING §3.7), person words
+  removed. README gains *Peer kernels*, the gate's numbers check and the
+  current versions.
+
 ### Naming alignment, planned (issue #55, ruled 2026-11-04)
 - ROADMAP track 11 gains phases N1–N7: verification named reconstruction,
   files by function, one name per meaning, retired terms and person
@@ -224,6 +240,9 @@ such change is named here.
   axes, `Cl(n+1, 1)`.
 
 ### Sensing any source at any rank (specification, ruled 2026-11-02)
+- *Superseded wording:* the circles, spheres, Clifford torus, Hopf base and
+  angle excess in this entry are withdrawn by the correction entry above,
+  "A chart keeps its one meaning; the field's geometry is its atlas".
 - **`docs/MU-SENSING.md`** (new) states the path from source to
   perception. A source decodes to a **sample** (rank `n`, extents, symbols,
   the sample's place in its family). The sensor lifts each axis into a
@@ -350,7 +369,7 @@ such change is named here.
   by each reply's header (`RECEIPTS_REPLY_HEADER`, `ROWS_REPLY_HEADER`,
   `SYLLABUS_REPLY_HEADER`, `CLASS_RECORDS_HEADER`, `CITED_REQUEST_HEADER`,
   `QUOTE_REPLY_HEADER`, `LEDGER_PAGE_HEADER`, `presentation_answer_len`);
-  encoders that count their own header take the frame whole; a page may
+  encoders that count the header themselves take the frame whole; a page may
   carry up to 63 bytes more within the same frame. `BODY_BUDGET` stays an
   open protocol parameter (a receipt's `u32`-counted fields have no `u16`
   wall) and is now served on `ACT_LAWS` mode 5 as "frame budget".
@@ -423,8 +442,8 @@ such change is named here.
   wall are gone, the erf tail read off its own bound. `poisson_quantile`
   takes a `Budget`, doubles its precision from one that resolves
   `e^{−λ}`, and answers `Quantile::{At, Sector}`. `exp` at a positive
-  argument and `P`'s prefactor carry their values' magnitudes, so
-  `exp(100)` and `P(1, 1000)` are within their grids.
+  argument and `P`'s prefactor carry the values' magnitudes, so
+  `exp(100)` and `P(1, 1000)` are within the grids of the two values.
 
 ### μ as exact rationals per lane (MU-ECONOMY §1, MU-RECURSION 78.162, phase T1)
 μ is measured as a share of a frame, so every amount of μ is now an exact
@@ -513,7 +532,7 @@ Holding the modes themselves (78.162) remains the next step.
 - **TUniversal's lanes are exact rationals** (ruled 2026-11-01; MU-RECURSION
   78.152 TU-1, TU-5, TU-7 amended forward; MU-CHRONOMETRY §1). The clock
   reads μ issued, and μ holds shares of a unit, so `Tick` and `TPoint`
-  carry their four lanes as an `economy::Mu`; `Court::keeper_tick` no
+  carry the four lanes as an `economy::Mu`; `Court::keeper_tick` no
   longer refuses an issuance holding a share. `TPoint::print` writes `h`
   and `K` in 16 hex digits and each lane `n/d` in lowest terms, lowercase
   hex, no leading zero (`0/1` for none); text order is numeric order by `h`

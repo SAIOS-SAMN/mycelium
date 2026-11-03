@@ -35,7 +35,7 @@ and convergence or collision brings the branches back into alignment
   the network contract (the Concordance, the wire, the ledger layout, a law
   version).
 - A maintainer may merge its own pull request after the local checks pass
-  (CONTRIBUTING › Checks). There is no hosted CI. The pull request is the
+  (CONTRIBUTING › Getting started). There is no hosted CI. The pull request is the
   public record of the change and the place contributors comment;
   conversations are resolved before merge.
 - History on `main` is never rewritten.

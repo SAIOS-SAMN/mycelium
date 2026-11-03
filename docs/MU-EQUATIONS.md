@@ -406,7 +406,7 @@ frame base point:    v = V v₀ Ṽ / ⟨V Ṽ⟩₀,  checked v² = −1
 ```
 
 A compartment lands on the interior sheet `v² = −1` exactly, with no
-square root; `M`, the lattice quantum, is an integer with
+square root; `M`, the integer quantum, is an integer with
 `M² > r² + c² + k²`. The transvection carries `v_a` to `v_b` forward,
 exactly, and is checked to be a versor. The same construction about `e₊`
 puts a frame's point on the 3-sphere `v² = +1`.
@@ -585,7 +585,7 @@ Sources: MU-RECURSION 16.4. Code:
 `src/transducer/element/sensor.rs::carry_site_centre`, `::carry_site`,
 `::site_at`.
 
-#### 2.25 The lattice step of a carriage
+#### 2.25 The integer step of a carriage
 
 ```text
 o = carried centre of (0, 0),  a = of (1, 0),  b = of (0, 1)
@@ -594,11 +594,12 @@ the step is (dr, dc)  ⇔  dr, dc ∈ ℤ,  a = (dr + 1 + ½, dc + ½),  b = (dr
                           and the frame coordinate stays 0
 ```
 
-The lattice translation a versor is, read on three cell centres; any other
-motion has no lattice step.
+The integer translation a versor is, read on three cell centres; any other
+motion has no integer step.
 
 Sources: MU-CLIENT §5.4. Code:
-`src/transducer/sentence/form/rule_element.rs::lattice_step`.
+`src/transducer/sentence/form/rule_element.rs::lattice_step` (renamed
+`substrate_step` by ROADMAP track 11, N4).
 
 #### 2.26 The twist about an attractor and the orbit about a star
 
@@ -867,6 +868,12 @@ Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::centred`.
 
 #### 4.2 The envelope and the dilation between envelopes
 
+**Refused defect.** The envelope below squares the extents
+(`r² = Σ eᵢ²/4`, an exact square root), which law 11 refuses; MU-SENSING
+§8 lists it as built and refused, and the re-period of each phase
+replaces it (MU-SENSING §3.1; track 26 S4). The formula records the code
+that still holds it.
+
 ```text
 r² = Σᵢ eᵢ² / 4                    (circumscribed sphere of a grid of extents eᵢ)
 s  = r_to / r_from = p/q           exact only where r²_to / r²_from is a rational square
@@ -905,9 +912,11 @@ axis reversed  ⇔  the first non-zero odd moment (k = 1, else k = 3) is negativ
 axes ordered by (moment_2, moment_4)
 ```
 
-Where the momentum vanishes, the lattice's frame is a gauge, fixed at the
+Where the momentum vanishes, the sample's frame is a gauge, fixed at the
 sensor by the scene's own moments. Ties and vanishing odd moments keep the
-frame given.
+frame given. MU-SENSING §4 and §8 refuse this fixing as built: the frame
+is a perspective, taken after intake and never before addressing
+(MU-SENSING §6.1; track 26 S2 and S6).
 
 Sources: MU-RECURSION 78.54, 78.56. Code: `src/transducer/raster.rs::frame_fixed`.
 
