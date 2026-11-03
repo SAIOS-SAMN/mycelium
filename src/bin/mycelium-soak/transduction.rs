@@ -64,17 +64,17 @@ fn count(row: &mut Vec<u64>, s: &SignedPermutation) {
 pub(crate) fn report(dir: &str, names: &[String]) {
     let mut tally = RelationTally::default();
     for file in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
-        let ground = mycelium::arc::ground_bytes();
+        let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
+        let ground = mycelium::transducer::raster::ground_bytes();
         let ground = mycelium::transducer::sample::Symbol::new(&ground);
         for (x, y) in &task.train {
-            let extent = |g: &mycelium::arc::Grid| (g.len(), g.iter().next().map(Vec::len));
+            let extent = |g: &mycelium::transducer::family::Grid| (g.len(), g.iter().next().map(Vec::len));
             if extent(x) == extent(y) {
                 continue;
             }
             tally.pairs += 1;
-            let (Ok(a), Ok(b)) = (mycelium::arc::sample_unplaced(x), mycelium::arc::sample_unplaced(y)) else {
+            let (Ok(a), Ok(b)) = (mycelium::transducer::raster::sample_unplaced(x), mycelium::transducer::raster::sample_unplaced(y)) else {
                 tally.refused += 1;
                 continue;
             };

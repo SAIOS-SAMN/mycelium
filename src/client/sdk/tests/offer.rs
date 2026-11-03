@@ -9,8 +9,8 @@ use crate::client::sdk::*;
 
 /// A family of one cell stepping one column: a body of no chart the slide's
 /// bodies stand on.
-fn one_cell_steps() -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
-    let at = |c: usize| -> crate::arc::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
+fn one_cell_steps() -> Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)> {
+    let at = |c: usize| -> crate::transducer::family::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
     vec![(at(0), at(1))]
 }
 
@@ -105,27 +105,29 @@ fn task_inflow_takes_offer_in_restored_language() {
     assert!(mind.board.court.task.is_none() && mind.perceiving(), "coupled: taken in, on the perception carrier");
 }
 
-/// A family as the ARC corpus writes it, its pairs as given and no test.
-fn family_json(train: &[(crate::arc::Grid, crate::arc::Grid)]) -> String {
-    let pairs: Vec<serde_json::Value> = train.iter().map(|(x, y)| serde_json::json!({ "input": x, "output": y })).collect();
-    serde_json::json!({ "train": pairs, "test": [] }).to_string()
+/// A family as a decoder posts it (`dialogue::encode_posted_task`): its
+/// pairs with the frame fixed on the family's own ground, as every decoder
+/// hands a task through, and no test.
+fn posted_family(train: &[(crate::transducer::family::Grid, crate::transducer::family::Grid)]) -> Vec<u8> {
+    let task = crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task { train: train.to_vec(), test: Vec::new() });
+    crate::anastome::dialogue::encode_posted_task(&task).expect("the family posts")
 }
 
 /// A family of two cells whose hues `a` and `b` swap where they stand: a hue
 /// map that is a cycle, so its 𝒢 orbit stands (an injection seals at once,
 /// its order one).
-fn two_cells_swapped(a: u8, b: u8) -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
-    let at = |left: u8, right: u8| -> crate::arc::Grid { vec![vec![0, 0, 0, 0], vec![0, left, right, 0], vec![0, 0, 0, 0]] };
+fn two_cells_swapped(a: u8, b: u8) -> Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)> {
+    let at = |left: u8, right: u8| -> crate::transducer::family::Grid { vec![vec![0, 0, 0, 0], vec![0, left, right, 0], vec![0, 0, 0, 0]] };
     vec![(at(a, b), at(b, a))]
 }
 
 /// A feed folder holding these families, each at its file.
-fn feed_of(name: &str, families: &[(&str, Vec<(crate::arc::Grid, crate::arc::Grid)>)]) -> std::path::PathBuf {
+fn feed_of(name: &str, families: &[(&str, Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)>)]) -> std::path::PathBuf {
     let home = std::env::temp_dir().join(format!("mycelium-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&home);
     std::fs::create_dir_all(home.join("feed")).expect("the feed folder");
     for (file, train) in families {
-        std::fs::write(home.join("feed").join(file), family_json(train)).expect("written");
+        std::fs::write(home.join("feed").join(file), posted_family(train)).expect("written");
     }
     home
 }
@@ -142,7 +144,7 @@ fn feed_of(name: &str, families: &[(&str, Vec<(crate::arc::Grid, crate::arc::Gri
 #[test]
 fn corpus_inflow_meets_corpus_at_field_orbits() {
     use crate::transducer::cech::Thread;
-    let families = [("a-three.json", two_cells_swapped(3, 4)), ("b-one.json", two_cells_swapped(1, 2))];
+    let families = [("a-three.task", two_cells_swapped(3, 4)), ("b-one.task", two_cells_swapped(1, 2))];
     let still = feed_of("focus-still", &families);
     let mut quiet = Mind::open("127.0.0.1:1", Voice::named("quiet"));
     quiet.open_feed(still.clone());
@@ -150,7 +152,7 @@ fn corpus_inflow_meets_corpus_at_field_orbits() {
     field.think(|| quiet.corpus_inflow(&mut crate::physics::StrokeOutcome::default()));
     quiet.field = field;
     assert_eq!(quiet.board.corpus.size().0, 1, "both placed, one met and taken off the corpus");
-    let stayed = [still.join("feed/a-three.json").exists(), still.join("feed/b-one.json").exists()];
+    let stayed = [still.join("feed/a-three.task").exists(), still.join("feed/b-one.task").exists()];
     assert_eq!(stayed.iter().filter(|s| **s).count(), 1, "no orbit, no language: the least chart met, the other undisturbed");
     assert!(quiet.perceiving(), "never frozen: the one met is on the perception carrier");
     let home = feed_of("focus-ringing", &families);
@@ -163,8 +165,8 @@ fn corpus_inflow_meets_corpus_at_field_orbits() {
         mind.corpus_inflow(&mut crate::physics::StrokeOutcome::default());
     });
     mind.field = field;
-    assert!(!home.join("feed/b-one.json").exists() && home.join("feed/.done/b-one.json").exists(), "the family on the orbit's coordinate is met and taken in");
-    assert!(home.join("feed/a-three.json").exists(), "the other lies elsewhere on the manifold, undisturbed");
+    assert!(!home.join("feed/b-one.task").exists() && home.join("feed/.done/b-one.task").exists(), "the family on the orbit's coordinate is met and taken in");
+    assert!(home.join("feed/a-three.task").exists(), "the other lies elsewhere on the manifold, undisturbed");
     assert!(mind.perceiving(), "taken in: on the perception carrier");
     let _ = std::fs::remove_dir_all(&still);
     let _ = std::fs::remove_dir_all(&home);
@@ -182,7 +184,7 @@ fn corpus_inflow_meets_corpus_at_field_orbits() {
 fn corpus_inflow_meets_language_charts_at_rest() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let [(x, y)] = <[_; 1]>::try_from(two_cells_swapped(1, 2)).expect("one pair");
-    let home = feed_of("ground-state", &[("a-slide.json", two_hours_of_a_slide().to_vec()), ("b-cell.json", two_cells_swapped(1, 2))]);
+    let home = feed_of("ground-state", &[("a-slide.task", two_hours_of_a_slide().to_vec()), ("b-cell.task", two_cells_swapped(1, 2))]);
     // The word is read on a field of its own: what the restored mind holds is
     // the word, never the field its reading moved.
     let mut elsewhere = Mind::open("127.0.0.1:1", Voice::named("elsewhere")).field;
@@ -205,8 +207,8 @@ fn corpus_inflow_meets_language_charts_at_rest() {
     });
     mind.field = field;
     assert!(quiet, "the ground state: no orbit in motion or ringing, no thought");
-    assert!(home.join("feed/.done/b-cell.json").exists(), "the family on its language's chart is met sympathetically and taken in");
-    assert!(home.join("feed/a-slide.json").exists(), "the slide, on charts its language does not speak on, stays undisturbed");
+    assert!(home.join("feed/.done/b-cell.task").exists(), "the family on its language's chart is met sympathetically and taken in");
+    assert!(home.join("feed/a-slide.task").exists(), "the slide, on charts its language does not speak on, stays undisturbed");
     assert!(excited, "the admission excites the field: its orbits are the focus now");
     let _ = std::fs::remove_dir_all(&home);
 }

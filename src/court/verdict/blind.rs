@@ -29,7 +29,7 @@ pub fn blind_replay(spoken: &Element, budget: &mut crate::physics::Budget) -> Op
 pub fn blind_replay_on(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
@@ -44,7 +44,7 @@ pub fn blind_replay_on(
 pub fn blind_replay_at(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
@@ -60,7 +60,7 @@ pub fn blind_replay_at(
 pub fn replay_resume<'r>(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReplayCursor,
@@ -72,7 +72,7 @@ pub fn replay_resume<'r>(
 fn replay_word<'r>(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReplayCursor,

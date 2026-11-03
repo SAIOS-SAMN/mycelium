@@ -154,7 +154,7 @@ impl<'a> Seen<'a> {
     fn hue(&self, r: usize, c: usize) -> u8 {
         match self.x.get(r).and_then(|row| row.get(c)) {
             Some(h) => *h,
-            None => crate::arc::ground(),
+            None => crate::transducer::raster::ground(),
         }
     }
 
@@ -191,7 +191,7 @@ impl<'a> Seen<'a> {
         let mut out = Vec::new();
         for (r, row) in reached.iter().enumerate() {
             for (c, &got) in row.iter().enumerate() {
-                if !got && self.hue(r, c) == crate::arc::ground() {
+                if !got && self.hue(r, c) == crate::transducer::raster::ground() {
                     out.push((r, c));
                 }
             }
@@ -368,7 +368,7 @@ impl<'a> Seen<'a> {
                     for &(r, c, _) in &self.cells[b] {
                         for (dr, dc) in AROUND {
                             if let Some((a, d)) = self.at(r, c, dr, dc) {
-                                if self.hue(a, d) == crate::arc::ground() {
+                                if self.hue(a, d) == crate::transducer::raster::ground() {
                                     out.push((a, d));
                                 }
                             }
@@ -383,7 +383,7 @@ impl<'a> Seen<'a> {
                     let Some((t, l, bt, r)) = extent_of(&self.cells[b]) else { continue };
                     for a in t..=bt {
                         for d in l..=r {
-                            if self.hue(a, d) == crate::arc::ground() {
+                            if self.hue(a, d) == crate::transducer::raster::ground() {
                                 out.push((a, d));
                             }
                         }
@@ -439,7 +439,7 @@ fn lay(canvas: &mut [Vec<u8>], r: i64, c: i64, h: u8) {
 
 /// SPEAK A CARRIAGE on the selection `sel` of `seen`, onto `canvas`.
 fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) -> Result<(), Unstated> {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let colour = |b: usize, h: u8| -> Result<u8, Unstated> { Ok(mapped(&t.gauge, seen.painted(&t.paint, b, h)?)) };
     match t.reach {
         Reach::Once => {
@@ -632,7 +632,7 @@ pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spo
                 }
                 for &b in &seeds {
                     for &(r, c, _) in &seen.cells[b] {
-                        canvas[r][c] = crate::arc::ground();
+                        canvas[r][c] = crate::transducer::raster::ground();
                     }
                 }
                 for (r, c, h) in landed {
@@ -649,7 +649,7 @@ pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spo
             }
             RuleElement::Dilate { up, down } => scale = Some((*up, *down)),
             RuleElement::Panes { along_rows, gap, table, paint: hue } => {
-                let void = crate::arc::ground();
+                let void = crate::transducer::raster::ground();
                 let (n, other) = match along_rows {
                     true => (whole.rows, whole.cols),
                     false => (whole.cols, whole.rows),
@@ -678,7 +678,7 @@ pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spo
                 if turns.len() != rows * cols || rows == 0 || cols == 0 {
                     return Err(Unstated::Unframed);
                 }
-                let mut out = vec![vec![crate::arc::ground(); w * cols]; h * rows];
+                let mut out = vec![vec![crate::transducer::raster::ground(); w * cols]; h * rows];
                 for (i, &t) in turns.iter().enumerate() {
                     let block = turn_of(&canvas, t).ok_or(Unstated::Unframed)?;
                     let (bi, bj) = (i / cols, i % cols);
@@ -698,7 +698,7 @@ pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spo
                 // Joined through what was ground BEFORE this clause, so no
                 // join of the clause blocks another.
                 let before = canvas.clone();
-                let void = crate::arc::ground();
+                let void = crate::transducer::raster::ground();
                 let chosen = |r: usize, c: usize| -> Option<(usize, u8)> {
                     let o = seen.owner_at(r, c)?;
                     sel.contains(&o).then(|| (o, seen.hue(r, c)))
@@ -746,7 +746,7 @@ pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spo
                 // Bent through what was ground BEFORE this clause, so no bend
                 // of the clause blocks another.
                 let before = canvas.clone();
-                let void = crate::arc::ground();
+                let void = crate::transducer::raster::ground();
                 let targets = seen.select(to, &all)?;
                 let one_hue = |b: usize| -> Option<u8> {
                     let [(_, _, h), rest @ ..] = seen.cells[b].as_slice() else { return None };
@@ -812,7 +812,7 @@ pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spo
         None => out,
         Some((up, down)) => scaled(&out, up, down)?,
     };
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut painted = Vec::new();
     for (i, row) in out.iter().enumerate() {
         for (j, &h) in row.iter().enumerate() {

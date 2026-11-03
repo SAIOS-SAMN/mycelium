@@ -160,7 +160,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // tasks with no family; the task's long address passed the u16
         // wall, which the v1.2 citation removes). A plain request steps on
         // to the next open task, once round the book at most.
-        let envelope = |tid: &mycelium::registry::TaskCitation, task: &mycelium::arc::Task| {
+        let envelope = |tid: &mycelium::registry::TaskCitation, task: &mycelium::transducer::family::Task| {
             let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
             let b = dialogue::encode_task_envelope(tid, &task.train, &tests);
             if b.is_none() {
@@ -233,7 +233,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         let (tid, withheld, open, ground) = {
             let Ok(reg) = door.registry.lock() else { return true };
             let g = match reg.task(&cite) {
-                Some(t) => mycelium::arc::ground_of(&t.train),
+                Some(t) => mycelium::transducer::raster::ground_of(&t.train),
                 None => 0,
             };
             (cite, reg.withheld(&cite), reg.open(&cite), g)
@@ -316,7 +316,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     // OWED (78.153b): the solve's replay mints its own stroke
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
-                    let verdict = match mycelium::arc::on_ground(ground, || k.judge_solve_on_stroke(rule, &withheld)) {
+                    let verdict = match mycelium::transducer::raster::on_ground(ground, || k.judge_solve_on_stroke(rule, &withheld)) {
                         mycelium::cognition::SolveVerdict::Solved { pay, modes } => {
                             // The court names a task by its citation (wire v1.2).
                             let paid = k.pay_solve(&cite, svoice, rule, pay, first);

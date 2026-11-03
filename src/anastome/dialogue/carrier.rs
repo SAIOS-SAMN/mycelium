@@ -93,7 +93,7 @@ pub(crate) fn read_invariant(b: &[u8], p: &mut usize) -> Option<crate::transduce
 /// rectangle, and are refused too: their tape would not read back (D4.3).
 #[must_use]
 pub(crate) fn push_grid(out: &mut Vec<u8>, g: &[Vec<u8>]) -> Option<()> {
-    let w = crate::arc::grid_width(g);
+    let w = crate::transducer::raster::raster_width(g);
     if g.iter().any(|row| row.len() != w) || (g.is_empty() != (w == 0)) {
         return None;
     }

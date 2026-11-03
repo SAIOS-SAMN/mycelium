@@ -429,6 +429,27 @@ pairs, with symbols written `0`–`9`. Its decoder reads its JSON into
 samples and stops there: the symbols are labels, and nothing about the
 ARC corpus enters the sensor, the mind, the court or the wire.
 
+**Built (track 26, S1).** The decoder is the workspace crate
+`sources/arc-agi` (package `mycelium-source-arc-agi`). It depends on the
+core; the core never depends on it. It owns:
+- the JSON parse (`decode`, and `parse_task`, which hands the decoded task
+  through the sensor's frame fixing, `raster::frame_fixed_on_ground`);
+- the corpus location (`corpus`: `MYCELIUM_CORPUS`, else `data/arc-agi-2`)
+  and its split into `training` and `evaluation` (`task_names`);
+- the decode to samples (`samples_of`, each placed at `[split, pair,
+  member]`);
+- the binary `mycelium-arc-agi decode FROM TO [LIMIT]`, which writes the
+  **posted task** files;
+- the tests that read the corpus.
+
+The posted task (`<name>.task`, `dialogue::encode_posted_task`) is the
+source-neutral form a hypha's corpus directory, a client's feed and the
+soak read, so none of them parses a dataset's format. It is the work
+envelope's own codec with the withheld test outputs added:
+`[nt u8][(input, output)·nt][nx u8][(input, output)·nx]`, each raster as
+the envelope writes it. It holds decoded values, exactly; S5 replaces it
+with samples of rank `n` together with the envelope.
+
 ## 8. What is built today, and the defect
 
 | Item | Status | Where |
@@ -436,7 +457,7 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 | A rank-generic site (`base::Site { axes }`) | **Built** | `src/transducer/base.rs` |
 | A percept as a series of located records (seat percepts) | **Built** | `src/anastome/dialogue/seat.rs` (78.146) |
 | The three eyes as a cover, with the sensory verdict | **Specified** | MU-CLIENT 24.4 |
-| The transduction at rank `n`: each axis a phase of its own period read from the sample, re-period between samples, bodies as `n`-dimensional bands of one symbol held by their boundary, contact by grade `n − 1`, the `2ⁿ·n!` signed permutations of the phases (generated), μ's shares over the product of the extents; no axis privileged | **Built** (v0.3.0 T2 with track 26 S4, [PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)); ARC rasters reach it only through `arc::sample_of` until S1 | `src/transducer/family/transduce/` (`Enclosure`, `Band`, `SignedPermutation`, `SiteChange`) |
+| The transduction at rank `n`: each axis a phase of its own period read from the sample, re-period between samples, bodies as `n`-dimensional bands of one symbol, each held by its boundary, contact by grade `n − 1`, the `2ⁿ·n!` signed permutations of the phases (generated), μ's shares over the product of the extents; no axis privileged | **Built** (v0.3.0 T2 with track 26 S4, [PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)); rasters reach it only through `raster::sample_of` | `src/transducer/family/transduce/` (`Enclosure`, `Band`, `SignedPermutation`, `SiteChange`) |
 | The well (formerly the bubble): a held thought in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built**, without a body: no membrane, centre or curvature | `transducer/field/idea.rs` (`Well`), `field/{contemplation, merge, meet, resonance, line}.rs` |
 | The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Well.vortex`, `Well.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
 | Orbits with four readings; the court's gravity as drag | **Built**, on flat charts | `cech/orbit.rs` (`Field`, `Field::beat_under`) |
@@ -448,7 +469,14 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 | **Defect:** the well's stage and state as flags, and its volume and potential as scalar counts | **Built, refused** by §3.7 (never scalar) and constraint I | `Well.percept: bool`, `Well.dirty: bool`, `Well.volume`/`potential: [u64; 4]` |
 | μ as the solid angle a change sweeps | **Awaits a ruling** | §3.7 |
 | The sample as the sensor's only input, of rank `n` | **Built** | `src/transducer/sample.rs` (`Sample`, `Symbol`, `Place`; Track 26, S0) |
-| A corpus's decoder outside `src/` | **Specified** | Track 26, S1 |
+| A corpus's decoder outside `src/`; the core has no `arc` module (a `compile_fail` claim); the hypha, the soak and the client's feed read posted tasks; the SDK re-exports no `Grid` | **Built** (track 26, S1) | `sources/arc-agi/` (`mycelium-source-arc-agi`, binary `mycelium-arc-agi`); `src/anastome/dialogue/percept.rs` (`encode_posted_task`, `decode_posted_task`, `POSTED_TASK`) |
+| The rank-2 raster at intake, named by function: its extents, ground, painted sites, frame fixing and the bridge to the sample, moved from `arc.rs` unchanged | **Built** (track 26, S1) | `src/transducer/raster.rs`; `Task` in `src/transducer/family/train.rs` |
+| **Defect:** the raster carrier is rank 2 by its own storage (`raster::AXES = 2`, `extents`, `painted_sites`, `value_at`) | **Built, refused** by §2 and §3.6; moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S4 |
+| **Defect:** the ground defaults to the symbol `0` (`raster::ground_of`, `ground`), with a 256-slot count | **Built, refused** by §3.4; moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S2 |
+| **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
+| **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S6 |
+| **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residual.rs`; track 26, S4 |
+| **Defect:** a family's magnitude is read on planar chains (`pair_magnitude`, `family_cover`, `cover_join` over `raster::painted_of`) | **Built, refused** by §2 (samples of rank `n`); moved unchanged in S1 | `src/transducer/family/magnitude.rs`; track 26, S4 |
 | An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on the branch `transduction-core` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
 | Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
 | Ground, symbol set, axes and gauges deduced | **Specified** | Track 26, S2–S4 |
@@ -458,11 +486,12 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 **The defect** ([ROADMAP track 26](../ROADMAP.md#26-sensing-any-source-at-any-rank);
 the issue linked there). The sensor and everything downstream are written
 for one source:
-- `src/arc.rs` is a module named for a dataset. It holds the sample type
-  (`Grid = Vec<Vec<u8>>`), the corpus path, the JSON reader, a ground that
-  defaults to `0`, and cross-frame readings that belong to the
-  transduction. About 104 files across the court, the hypha, the client,
-  the SDK and the algebra import it, and the SDK re-exports `Grid`.
+- `src/arc.rs` was a module named for a dataset, imported by about 104
+  files. S1 removed it: the decoder is `sources/arc-agi`, the raster's
+  readings are `transducer::raster`, and each cross-frame reading stands
+  beside its caller, listed above as a defect. The raster carrier itself
+  (`transducer::family::Grid = Vec<Vec<u8>>`) remains the transduction's
+  intake until S4.
 - The palette is fixed at 10 (`PALETTE`, `RESERVOIR`, the 10-slot hue
   tables), with a conflicting 256 elsewhere. About 64 sites read a ground
   that defaults to `0`.

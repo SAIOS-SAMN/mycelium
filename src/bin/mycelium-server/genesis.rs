@@ -17,11 +17,15 @@ pub(crate) struct Genesis {
     pub(crate) voice: Vec<([u8; 32], [u64; 4])>,
 }
 
+/// THE CORPUS'S HASH over its posted task files (`dialogue::POSTED_TASK`),
+/// each named by its path and read whole. A corpus is a directory of posted
+/// tasks a source's decoder wrote (ROADMAP track 26, S1); the hypha parses
+/// no dataset's format.
 pub(crate) fn corpus_hash(dir: &Path) -> Option<[u8; 32]> {
     let mut files: Vec<_> = std::fs::read_dir(dir)
         .ok()?
         .filter_map(|e| e.ok().map(|e| e.path()))
-        .filter(|p| p.extension().is_some_and(|x| x == "json"))
+        .filter(|p| p.extension().is_some_and(|x| x == mycelium::anastome::dialogue::POSTED_TASK))
         .collect();
     files.sort();
     let mut chunks: Vec<Vec<u8>> = Vec::new();
@@ -128,18 +132,18 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
         let mut files: Vec<_> = match std::fs::read_dir(&corpus_dir) {
             Ok(rd) => rd
                 .filter_map(|e| e.ok().map(|e| e.path()))
-                .filter(|p| p.extension().is_some_and(|x| x == "json"))
+                .filter(|p| p.extension().is_some_and(|x| x == mycelium::anastome::dialogue::POSTED_TASK))
                 .collect(),
             Err(_) => Vec::new(),
         };
         files.sort();
         let mut tasked = 0usize;
         for f in &files {
-            let Ok(text) = std::fs::read_to_string(f) else { continue };
-            let Some(task) = mycelium::arc::parse_task(&text) else { continue };
-            if let Some(fam) = mycelium::arc::family_cover(&task.train) {
+            let Ok(bytes) = std::fs::read(f) else { continue };
+            let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&bytes) else { continue };
+            if let Some(fam) = mycelium::transducer::family::magnitude::family_cover(&task.train) {
                 cover_measured = true;
-                mycelium::arc::cover_join(&mut cover, &fam);
+                mycelium::transducer::family::magnitude::cover_join(&mut cover, &fam);
             }
             let Ok(mut reg) = registry.lock() else { continue };
             reg.register(task);

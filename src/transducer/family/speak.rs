@@ -12,8 +12,8 @@ pub(crate) fn grows_to_frame(a: &Grid, b: &Grid) -> bool {
     if fa != fb || fa.0 == 0 || fa.1 == 0 {
         return false;
     }
-    let ins: Vec<Painted> = crate::arc::painted_of_grid(a);
-    let outs: Vec<Painted> = crate::arc::painted_of_grid(b);
+    let ins: Vec<Painted> = crate::transducer::raster::painted_of(a);
+    let outs: Vec<Painted> = crate::transducer::raster::painted_of(b);
     if ins.is_empty() || outs.len() <= ins.len() {
         return false;
     }
@@ -670,7 +670,7 @@ impl Speech {
         if !self.unresolved.is_empty() || !self.cycled.is_empty() {
             return None;
         }
-        let mut out: Grid = vec![vec![crate::arc::ground(); self.frame.1]; self.frame.0];
+        let mut out: Grid = vec![vec![crate::transducer::raster::ground(); self.frame.1]; self.frame.0];
         for &(r, c, h) in &self.painted {
             let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {
                 return None;
@@ -693,7 +693,9 @@ pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &Grid, cr
 
 /// The residual between what was spoken and what was observed, as a chain
 /// (row, col, spoken hue, observed hue) over every site that differs.
-pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8, u8)> {
+/// Public so the corpus decoder's sweep (`sources/arc-agi`, ROADMAP track
+/// 26 S1) reads the same planar coboundary the core's tests read.
+pub fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8, u8)> {
     let mut out = Vec::new();
     for (r, row) in observed.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
@@ -701,7 +703,7 @@ pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i
             // the scene's ground IS absence in this encoding.
             let s = match spoken.and_then(|g| g.get(r)).and_then(|row| row.get(c)) {
                 Some(h) => *h,
-                None => crate::arc::ground(),
+                None => crate::transducer::raster::ground(),
             };
             if s != h {
                 out.push((r as i64, c as i64, s, h));
@@ -712,7 +714,7 @@ pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i
         for (r, row) in g.iter().enumerate() {
             for (c, &s) in row.iter().enumerate() {
                 let inside = observed.get(r).and_then(|row| row.get(c)).is_some();
-                let void = crate::arc::ground();
+                let void = crate::transducer::raster::ground();
                 if !inside && s != void {
                     out.push((r as i64, c as i64, s, void));
                 }

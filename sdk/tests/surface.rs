@@ -75,7 +75,6 @@ use mycelium_sdk::rule::Create as _;
 use mycelium_sdk::rule::Crystal as _;
 use mycelium_sdk::rule::Element as _;
 use mycelium_sdk::rule::Extent as _;
-use mycelium_sdk::rule::Grid as _;
 use mycelium_sdk::rule::Mv as _;
 use mycelium_sdk::rule::NoCrystal as _;
 use mycelium_sdk::rule::NoRule as _;
@@ -459,7 +458,6 @@ use mycelium_sdk::forms::Q as _;
 // prelude
 use mycelium_sdk::prelude::Crystal as _;
 use mycelium_sdk::prelude::Element as _;
-use mycelium_sdk::prelude::Grid as _;
 use mycelium_sdk::prelude::NoCrystal as _;
 use mycelium_sdk::prelude::NoRule as _;
 use mycelium_sdk::prelude::SeatName as _;

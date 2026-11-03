@@ -658,10 +658,10 @@ impl Mind {
     /// Where the reading stopped is kept on the task's attribution, and a
     /// task read and not solved rests until the mind's language moves
     /// (`Seat::rested`).
-    fn solve_before(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::arc::Grid>) {
+    fn solve_before(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::transducer::family::Grid>) {
         use super::perceive::{Reading, Stop};
-        let ground = crate::arc::ground_of(&train);
-        let Some(stop) = crate::arc::on_ground(ground, || self.solve_before_on_ground(seat, key, id, train, tests)) else { return };
+        let ground = crate::transducer::raster::ground_of(&train);
+        let Some(stop) = crate::transducer::raster::on_ground(ground, || self.solve_before_on_ground(seat, key, id, train, tests)) else { return };
         self.note_task(id, Reading::Task, |t| {
             t.taken = true;
             t.stop = Some(stop);
@@ -681,7 +681,7 @@ impl Mind {
 
     /// Where the reading stopped; `None` where nothing was read (the seat
     /// is not held).
-    fn solve_before_on_ground(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::arc::Grid>) -> Option<super::perceive::Stop> {
+    fn solve_before_on_ground(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::transducer::family::Grid>) -> Option<super::perceive::Stop> {
         use super::perceive::Stop;
         if !seat.hold.held {
             return None;
@@ -702,7 +702,7 @@ impl Mind {
             });
         };
         let _ = self.speak_form(&rule, &train, &frames, id, &mut budget);
-        let outs: Option<Vec<crate::arc::Grid>> = tests.iter().map(|x| crate::transducer::family::speak_rule(&rule, x, &self.epigenome).filter(|s| s.remainder.is_empty()).and_then(|s| s.grid())).collect();
+        let outs: Option<Vec<crate::transducer::family::Grid>> = tests.iter().map(|x| crate::transducer::family::speak_rule(&rule, x, &self.epigenome).filter(|s| s.remainder.is_empty()).and_then(|s| s.grid())).collect();
         let Some(outs) = outs else { return Some(Stop::TestsUnspoken) };
         let Some(minted) = self.construct_solve(&rule, &train) else { return Some(Stop::Unminted) };
         let Ok(crossed) = crate::client::sdk::rule::crossing(&minted, &train, &self.epigenome) else { return Some(Stop::Uncrossed) };
@@ -717,7 +717,7 @@ impl Mind {
             Err(crate::client::sdk::rule::NoRule::CitesUnheld(_)) => return Some(Stop::CitesUnheld),
             Err(_) => return Some(Stop::Refuted),
         }
-        let shapes = |g: &crate::arc::Grid| match g.as_slice() {
+        let shapes = |g: &crate::transducer::family::Grid| match g.as_slice() {
             [row, ..] => (g.len(), row.len()),
             [] => (0, 0),
         };

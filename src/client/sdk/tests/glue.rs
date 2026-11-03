@@ -1,7 +1,7 @@
 // 21 step 3, 24.1 — THE CRYSTAL AT A BODY'S CHART: the closed forms a
 // perceived body's chart reaches, which is what the glue asks for.
 
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::client::sdk::*;
 use crate::transducer::family::{cipher_form, sentence_measure, Crystal, NoCrystal};
 use crate::transducer::sentence::as_element_form;

@@ -38,7 +38,7 @@ fn one_ring(family: &[(Grid, Grid)]) -> Option<u8> {
     let mut rings: Option<u8> = None;
     for (_x, y) in family {
         let fy = frame_of(y);
-        let outs: Vec<Painted> = crate::arc::painted_of_grid(y);
+        let outs: Vec<Painted> = crate::transducer::raster::painted_of(y);
         let (Some(last_row), Some(last_col)) = (fy.0.checked_sub(1), fy.1.checked_sub(1)) else {
             return None;
         };
@@ -71,7 +71,7 @@ fn orbits_everywhere(v: &Vertex, family: &[(Grid, Grid)]) -> bool {
     if derivation.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
         return false;
     }
-    family.iter().all(|(x, _)| moves(v, &crate::arc::painted_of_grid(x)))
+    family.iter().all(|(x, _)| moves(v, &crate::transducer::raster::painted_of(x)))
 }
 
 /// Step 6 of chapter 21: a class whose placement differs across frames

@@ -213,8 +213,8 @@ fn ring_layer(
 /// recoloured offsets).
 type Places = Vec<(usize, usize)>;
 
-fn sections(x: &mycelium::arc::Grid, y: &mycelium::arc::Grid) -> (Places, Places) {
-    let ([hx, wx], [hy, wy]) = (mycelium::arc::extents(x), mycelium::arc::extents(y));
+fn sections(x: &mycelium::transducer::family::Grid, y: &mycelium::transducer::family::Grid) -> (Places, Places) {
+    let ([hx, wx], [hy, wy]) = (mycelium::transducer::raster::extents(x), mycelium::transducer::raster::extents(y));
     let (mut exact, mut recoloured) = (Vec::new(), Vec::new());
     if hy > hx || wy > wx || hy == 0 || wy == 0 {
         return (exact, recoloured);
@@ -254,7 +254,7 @@ enum Region {
     Neither,
 }
 
-fn region(x: &mycelium::arc::Grid, at: (usize, usize), ext: (usize, usize)) -> Region {
+fn region(x: &mycelium::transducer::family::Grid, at: (usize, usize), ext: (usize, usize)) -> Region {
     let bodies = perceive(x);
     let sites = |b: &mycelium::transducer::family::Body| -> Vec<(i64, i64)> {
         b.compartments.iter().filter_map(|l| Some((l.site.axis(0)?, l.site.axis(1)?))).collect()
@@ -262,7 +262,7 @@ fn region(x: &mycelium::arc::Grid, at: (usize, usize), ext: (usize, usize)) -> R
     let (r0, c0, h, w) = (at.0 as i64, at.1 as i64, ext.0 as i64, ext.1 as i64);
     let inside = |&(r, c): &(i64, i64)| r >= r0 && r < r0 + h && c >= c0 && c < c0 + w;
     // The ring just outside the region, those of its sites in the frame.
-    let [hx, wx] = mycelium::arc::extents(x);
+    let [hx, wx] = mycelium::transducer::raster::extents(x);
     let ring: Vec<(i64, i64)> = (r0 - 1..=r0 + h)
         .flat_map(|r| (c0 - 1..=c0 + w).map(move |c| (r, c)))
         .filter(|s| !inside(s))
@@ -293,8 +293,8 @@ fn region(x: &mycelium::arc::Grid, at: (usize, usize), ext: (usize, usize)) -> R
 pub(crate) fn report(dir: &str, names: &[String]) {
     let mut t = Tally::default();
     for name in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         let mut physics = mycelium::physics::Physics::default();
         // THE RING ACROSS THE FAMILY: the pairs read as one object, every
         // pair's filaments squared against every other pair's.
@@ -302,7 +302,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         let mut family_budget = physics.stroke_n(STROKE);
         let places = family_rings(&perceived, &mut family_budget, &mut t.family_unread);
         for ((x, y), per) in task.train.iter().zip(&places) {
-            let (ex, ey) = (mycelium::arc::extents(x), mycelium::arc::extents(y));
+            let (ex, ey) = (mycelium::transducer::raster::extents(x), mycelium::transducer::raster::extents(y));
             let cut = ex != ey && ey.iter().zip(&ex).all(|(o, i)| o <= i);
             for &place in per {
                 t.family_all[place] += 1;
@@ -314,7 +314,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         for (x, y) in &task.train {
             let mut budget = physics.stroke_n(STROKE);
             t.pairs += 1;
-            let (ex, ey) = (mycelium::arc::extents(x), mycelium::arc::extents(y));
+            let (ex, ey) = (mycelium::transducer::raster::extents(x), mycelium::transducer::raster::extents(y));
             let resized = ex != ey;
             t.resized += u64::from(resized);
             // In proportion: one ratio on every axis.

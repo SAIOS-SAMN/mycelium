@@ -5,7 +5,7 @@
 //! first verified solve takes the bounty; a repeat is verified and paid
 //! nothing.
 
-use crate::arc::{Grid, Task};
+use crate::transducer::family::{Grid, Task};
 use crate::network::nerve::Keyed;
 use crate::transducer::address::Address;
 
@@ -77,7 +77,7 @@ pub fn task_address(task: &Task) -> Option<Address> {
     for (a, b) in &task.train {
         let mut pair = Vec::new();
         for g in [a, b] {
-            let Ok(sample) = crate::arc::sample_unplaced(g) else {
+            let Ok(sample) = crate::transducer::raster::sample_unplaced(g) else {
                 return None;
             };
             crate::transducer::family::transduce::Enclosed::of(&sample).put_content(&mut pair);

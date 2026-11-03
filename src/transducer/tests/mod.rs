@@ -3,6 +3,7 @@ mod beam;
 mod factor;
 mod germinate;
 mod peel;
+mod raster;
 mod rewrite;
 mod sample;
 mod sheaf;

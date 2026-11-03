@@ -241,10 +241,10 @@ pub(crate) fn walk_twice(dir: &str, names: &[String]) -> Slice {
     )> = Vec::new();
     let mut stands: Vec<Stand> = Vec::new();
     for name in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else {
+        let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else {
             continue;
         };
-        let Some(task) = mycelium::arc::parse_task(&json) else {
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else {
             continue;
         };
         eprintln!("  delta cold {name} pairs {}", task.train.len());

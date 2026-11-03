@@ -38,7 +38,7 @@ pub fn replay_form(
 pub fn replay_form_with(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
@@ -369,7 +369,7 @@ pub(crate) fn witnesses_carry_primes(f: &Form, meter: &mut Meter<'_>, from: usiz
 pub fn replay_form_at(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
@@ -382,7 +382,7 @@ pub fn replay_form_at(
 pub fn replay_form_resume<'r>(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReplayCursor,
@@ -410,7 +410,7 @@ pub fn replay_form_on(
     f: &Form,
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
@@ -436,13 +436,13 @@ pub fn replay_form_on_resume<'r>(
     f: &Form,
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReplayCursor,
 ) -> Replayed {
     match family {
-        Some(fam) => crate::arc::on_ground_of(fam, || replay_on_ground(f, spoken, resolve, family, crystal, budget, cursor)),
+        Some(fam) => crate::transducer::raster::on_ground_of(fam, || replay_on_ground(f, spoken, resolve, family, crystal, budget, cursor)),
         None => replay_on_ground(f, spoken, resolve, family, crystal, budget, cursor),
     }
 }
@@ -451,7 +451,7 @@ fn replay_on_ground<'r>(
     f: &Form,
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReplayCursor,
@@ -681,7 +681,7 @@ fn replay_on_ground<'r>(
 fn replay_after_perceiving(
     f: &Form,
     spoken: &Element,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReplayCursor,
@@ -943,7 +943,7 @@ fn replay_after_perceiving(
             // tell which it had and contracted over the union. Partitioned,
             // each carries its own verdict and its own links.
             let (silent, wrong): (Vec<_>, Vec<_>) =
-                undeclared.iter().copied().partition(|&(_, _, spoken, _)| spoken == crate::arc::ground());
+                undeclared.iter().copied().partition(|&(_, _, spoken, _)| spoken == crate::transducer::raster::ground());
             // THE WRONG ONES FIRST. A form carrying both said something
             // false, and that is the refusal it owes; contracting its
             // silence while leaving the falsehood would mint an address
@@ -1023,7 +1023,7 @@ fn face_at(o: &crate::network::nerve::coord::Overlap, branch: sentence::Obstruct
 /// own order.
 pub(crate) fn vertex_tape_and_moves_from(
     f: &Form,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     spoken: &Element,
     meter: &mut Meter<'_>,
     from: usize,
@@ -1037,7 +1037,7 @@ pub(crate) fn vertex_tape_and_moves_from(
 
 fn vertex_moves(
     f: &Form,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     spoken: &Element,
     meter: &mut Meter<'_>,
     from: usize,
@@ -1056,7 +1056,7 @@ fn vertex_moves(
 /// One vertex of [`vertex_tape_and_moves_from`].
 fn vertex_move(
     f: &Form,
-    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     spoken: &Element,
     vertex: &crate::network::nerve::coord::VertexAt,
     v: &Vertex,
@@ -1092,7 +1092,7 @@ fn vertex_move(
                         for (x, _) in fam {
                             // THE MOTION MOVES THE BODY, read by one exact
                             // application (78.62) — never a walk.
-                            if !family::moves(v, &crate::arc::painted_of_grid(x)) {
+                            if !family::moves(v, &crate::transducer::raster::painted_of(x)) {
                                 return Some(still());
                             }
                         }
@@ -1136,7 +1136,7 @@ fn vertex_move(
 /// 78.153 — one read per pair perceived, from the `from`-th pair.
 pub(crate) fn clauses_stated_from(
     f: &Form,
-    family: &[(crate::arc::Grid, crate::arc::Grid)],
+    family: &[(crate::transducer::family::Grid, crate::transducer::family::Grid)],
     frames: &[super::body::Perceived],
     spoken: &Element,
     meter: &mut Meter<'_>,

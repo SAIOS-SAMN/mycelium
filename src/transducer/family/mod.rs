@@ -35,6 +35,7 @@ pub mod invert;
 mod keys;
 pub mod local;
 pub mod luminal;
+pub mod magnitude;
 pub mod memo;
 pub mod orbit;
 pub mod pair;
@@ -62,11 +63,14 @@ pub use finish::extraction_spend;
 pub use carriage::{carriage, carriage_with_core, Carriage};
 pub use crystal::{Crystal, NoCrystal};
 pub use fibre_relation::{fibre_map, fibre_relation};
+pub(crate) use fibre_relation::envelope_dilation;
+#[cfg(test)]
+pub(crate) use fibre_relation::carried_site;
 pub use frame::{family_ratio, frame_vertex};
 pub(crate) use keys::{member_key, member_pair_key, read_member_key, read_member_pair_key, site_key};
 #[cfg(test)]
 pub use tests::common::cipher_form;
-pub use train::{Family, TrainPair};
+pub use train::{Family, Task, TrainPair};
 pub use extract::*;
 pub(crate) use incidence::*;
 pub use memo::*;

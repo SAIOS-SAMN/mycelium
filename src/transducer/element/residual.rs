@@ -214,6 +214,41 @@ pub fn from_canonical(chain: &CanonicalChain) -> Element {
     e
 }
 
+// ── #97: THE MEASURED FRAME (moved from the former `arc` module unchanged,
+// ROADMAP track 26, S1) ──────────────────────────────────────────────────
+//
+// A pair of frames h_in × w_in and h_out × w_out is related by the re-period
+// of each circle, ρ = (h_out/h_in, w_out/w_in) ∈ ℚ², read on its
+// transduction (`family::transduce`): bodies' bands in turns, never a common
+// lattice. Equal frames are the planar coboundary, and ρ rides as the word's
+// frame fibre. Its four counts are two planar axes fixed, a defect named in
+// MU-SENSING §8 for the re-period of each of a sample's `n` phases to
+// replace (track 26, S4).
+
+/// THE MEASURED FRAME of a pair: four exact counts, never a ratio and never
+/// a guess. A word at a frame that is not (1,1) is a DIFFERENT word from its
+/// planar shadow (`from_canonical_framed` reads the ratio off the counts).
+/// The former `arc::frame_ratio` and its gcd had no caller and are deleted
+/// (ROADMAP track 26, S1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Frame {
+    pub h_in: usize,
+    pub w_in: usize,
+    pub h_out: usize,
+    pub w_out: usize,
+}
+
+impl Frame {
+    /// Identity: no scale. Unframed speech uses this so its key matches a
+    /// planar intake.
+    pub const IDENTITY: Frame = Frame { h_in: 1, w_in: 1, h_out: 1, w_out: 1 };
+
+    /// The frame of a pair whose extents are known.
+    pub const fn new(h_in: usize, w_in: usize, h_out: usize, w_out: usize) -> Frame {
+        Frame { h_in, w_in, h_out, w_out }
+    }
+}
+
 /// A residual germ with its FRAME FIBRE: the exact frame map
 /// ρ = (h_out/h_in, w_out/w_in) ∈ ℚ² enters the spatial generator's
 /// diagonal, so a word at ρ ≠ (1,1) is a different word from its planar
@@ -227,24 +262,24 @@ pub fn from_canonical(chain: &CanonicalChain) -> Element {
 /// (U14).
 pub fn listing_key(
     chain: &[(i64, i64, u8, u8)],
-    frame: &crate::arc::Frame,
+    frame: &Frame,
 ) -> Option<crate::transducer::address::Address> {
     Some(from_residual_framed(&chain.to_vec(), frame)?.address())
 }
 
 /// Identity frame: no scale. Unframed speech uses this so its key matches
 /// a planar intake.
-pub const IDENTITY_FRAME: crate::arc::Frame = crate::arc::Frame::IDENTITY;
+pub const IDENTITY_FRAME: Frame = Frame::IDENTITY;
 
-pub fn from_residual_framed(g: &ResidualGerm, frame: &crate::arc::Frame) -> Option<Element> {
+pub fn from_residual_framed(g: &ResidualGerm, frame: &Frame) -> Option<Element> {
     Some(from_canonical_framed(&canonical_chain(g)?, frame))
 }
 
 /// The framed word of a chain A5 has already accepted. Total, as
 /// [`from_canonical`] is.
-pub fn from_canonical_framed(chain: &CanonicalChain, frame: &crate::arc::Frame) -> Element {
+pub fn from_canonical_framed(chain: &CanonicalChain, frame: &Frame) -> Element {
     let mut e = from_canonical(chain);
-    let crate::arc::Frame { h_in: hi, w_in: wi, h_out: ho, w_out: wo } = *frame;
+    let Frame { h_in: hi, w_in: wi, h_out: ho, w_out: wo } = *frame;
     if hi > 0 && wi > 0 && (hi, wi) != (ho, wo) {
         let rh = Q::new(BigInt::from(ho as u64), BigInt::from(hi as u64));
         let rw = Q::new(BigInt::from(wo as u64), BigInt::from(wi as u64));

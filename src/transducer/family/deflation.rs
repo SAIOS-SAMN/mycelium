@@ -217,7 +217,7 @@ pub fn form_deflation_read(
     crystal: &dyn Crystal,
     placement: &crate::transducer::alphabet::Word,
 ) -> DeflationRead {
-    crate::arc::on_ground_of(family, || form_deflation_read_on_ground(form, family, crystal, placement))
+    crate::transducer::raster::on_ground_of(family, || form_deflation_read_on_ground(form, family, crystal, placement))
 }
 
 fn form_deflation_read_on_ground(
@@ -257,7 +257,7 @@ fn form_deflation_read_on_ground(
         }
         // The residues are read on the output's sites: their share is of
         // the output frame.
-        let frame = crate::arc::sample_unplaced(y).ok();
+        let frame = crate::transducer::raster::sample_unplaced(y).ok();
         mu.step(&crate::transducer::family::transduce::share_of_frame(closed, frame.as_ref()));
         if gated {
             // The pair's own work: the links its before side demanded moved
@@ -340,21 +340,21 @@ fn form_motions(form: &Form) -> Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)>
 /// under `budget`, sized by `transduce::need_of`.
 pub(crate) fn unspoken_residue(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> Vec<(i64, i64, u8, u8)> {
     use crate::transducer::family::transduce::{Enclosure, Transduction};
-    let (Ok(a), Ok(b)) = (crate::arc::sample_unplaced(x), crate::arc::sample_unplaced(y)) else {
+    let (Ok(a), Ok(b)) = (crate::transducer::raster::sample_unplaced(x), crate::transducer::raster::sample_unplaced(y)) else {
         return residual_of(None, y);
     };
     if Enclosure::of(&a).is_same_periods(&Enclosure::of(&b)) {
         return residual_of(Some(x), y);
     }
     match Transduction::of(&a, &b, budget).and_then(|t| t.projected()) {
-        Ok(changes) => crate::arc::links_of(&changes),
+        Ok(changes) => crate::transducer::raster::links_of(&changes),
         Err(_) => residual_of(None, y),
     }
 }
 
 /// [`unspoken_residue`] under the stroke the pair's own periods need.
 fn before_chain_of(x: &Grid, y: &Grid) -> Vec<(i64, i64, u8, u8)> {
-    let need = match (crate::arc::sample_unplaced(x), crate::arc::sample_unplaced(y)) {
+    let need = match (crate::transducer::raster::sample_unplaced(x), crate::transducer::raster::sample_unplaced(y)) {
         (Ok(a), Ok(b)) => crate::transducer::family::transduce::need_of(&a, &b),
         _ => None,
     };
@@ -511,7 +511,7 @@ pub fn mint_sentence_why(
 ) -> Result<element::Element, crate::transducer::sentence::ObstructionRefusal> {
     // The mint reads its family on the family's own ground, whatever the
     // caller opened (`form_deflation_read`).
-    crate::arc::on_ground_of(family, || mint_or_refuse(rule, family, crystal)).map_err(crate::transducer::sentence::ObstructionRefusal::noted)
+    crate::transducer::raster::on_ground_of(family, || mint_or_refuse(rule, family, crystal)).map_err(crate::transducer::sentence::ObstructionRefusal::noted)
 }
 
 /// THE MINT'S REFUSAL BY ARM (78.67): a vertex that does not carry its
@@ -641,15 +641,15 @@ pub fn declare_unspoken(
     }
     let mut declared = form.clone();
     let mut any = false;
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     for ((x, y), rem) in family.iter().zip(remainders) {
         // THE INPUT ON THE OUTPUT'S SITES: the identity's speech of it
         // (`Enclosed::spoken_onto`, the re-period alone) — the input itself
         // on one enclosure. Never the input read at the output's indices
         // from a shared corner, which is an arbitrary origin (78.56).
         use crate::transducer::family::transduce::{Enclosed, Enclosure};
-        let image = match (crate::arc::sample_unplaced(x), crate::arc::sample_unplaced(y)) {
-            (Ok(a), Ok(b)) => Enclosed::of(&a).spoken_onto(&Enclosure::of(&b)).ok().and_then(|s| crate::arc::grid_of(&s)),
+        let image = match (crate::transducer::raster::sample_unplaced(x), crate::transducer::raster::sample_unplaced(y)) {
+            (Ok(a), Ok(b)) => Enclosed::of(&a).spoken_onto(&Enclosure::of(&b)).ok().and_then(|s| crate::transducer::raster::raster_of(&s)),
             _ => None,
         };
         let links: Vec<Link> = rem

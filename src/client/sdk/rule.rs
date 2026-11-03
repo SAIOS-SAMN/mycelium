@@ -22,7 +22,7 @@
 //! on every pair it replays; a rule of motions and hue maps alone is the
 //! one word vertex it always was.
 
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::core::Q;
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::{self, Element};
@@ -295,7 +295,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
             }
             Step::Hue(map) => match region {
                 Some(r) => {
-                    let void = crate::arc::ground();
+                    let void = crate::transducer::raster::ground();
                     let hue = hue_under(map, void).ok_or(NoRule::NotAHueMap)?;
                     if hue == void {
                         return Err(NoRule::NotAHueMap);
@@ -489,9 +489,10 @@ pub(crate) fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Cry
 /// not a rule; every word it cites resolves by `resolve` or it CITES
 /// UNHELD; then `verdict::blind_replay_at` on the pairs, its cited forms
 /// resolved by `resolve`, spoken through `crystal`. A replay no stroke
-/// could read is `Unread` — unjudged, never refuted (78.158a U2).
-#[cfg(test)]
-pub(crate) fn would_judge(
+/// could read is `Unread` — unjudged, never refuted (78.158a U2). Public so
+/// the corpus decoder's tests (`sources/arc-agi`, ROADMAP track 26 S1) ask
+/// it as the core's own tests do.
+pub fn would_judge(
     rule: &Element,
     family: &[(Grid, Grid)],
     resolve: &dyn Fn(&[u8]) -> Option<Form>,

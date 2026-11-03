@@ -259,7 +259,7 @@ impl Stop {
 pub(crate) struct Scene {
     pub(crate) id: Vec<u8>,
     pub(crate) train: Vec<crate::transducer::family::TrainPair>,
-    pub(crate) tests: Vec<crate::arc::Grid>,
+    pub(crate) tests: Vec<crate::transducer::family::Grid>,
     pub(crate) reading: Reading,
 }
 
@@ -284,7 +284,7 @@ pub(crate) struct Perceived {
     speech: Option<(Prepared, crate::transducer::family::Frames)>,
     /// A rule its perspectives know, with the tests' outputs where it speaks
     /// them whole.
-    known: Option<(SentenceRule, Option<Vec<crate::arc::Grid>>)>,
+    known: Option<(SentenceRule, Option<Vec<crate::transducer::family::Grid>>)>,
     /// The chains the tests' speech left, as the forms of the tests' scenes.
     chains: Vec<PairPercept>,
     /// Where the reading stopped, on the carrier; the winding reads on
@@ -311,7 +311,7 @@ pub(crate) struct Hearing {
 /// on the carrier: the scene, the outputs, and the rule minted at its span.
 pub(crate) struct Judge {
     pub(crate) scene: Scene,
-    pub(crate) outputs: Vec<crate::arc::Grid>,
+    pub(crate) outputs: Vec<crate::transducer::family::Grid>,
     pub(crate) rule: Element,
 }
 
@@ -360,8 +360,8 @@ pub(crate) type Perceiver = super::hypha::Carrier<crate::transducer::family::Ext
 /// siblings its perspectives derive from and its tests are read on one
 /// ground, the one the court reads its withheld pairs on.
 fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Perceived {
-    let ground = crate::arc::ground_of(&scene.train);
-    crate::arc::on_ground(ground, || perceive_on_ground(memo, epi, scene))
+    let ground = crate::transducer::raster::ground_of(&scene.train);
+    crate::transducer::raster::on_ground(ground, || perceive_on_ground(memo, epi, scene))
 }
 
 fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Perceived {
@@ -466,7 +466,7 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
 /// the court refused, the same rules round after round, with none of these
 /// read.
 pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> Verdict {
-    crate::arc::on_ground(crate::arc::ground_of(&j.scene.train), || judge_on_ground(epi, j))
+    crate::transducer::raster::on_ground(crate::transducer::raster::ground_of(&j.scene.train), || judge_on_ground(epi, j))
 }
 
 fn judge_on_ground(epi: &Epigenome, j: &Judge) -> Verdict {
@@ -699,8 +699,8 @@ impl Mind {
     /// 2026-10-18): every pair withheld, every speech and the solve's mint
     /// read the family there, never on a ground a single pair would name.
     fn admit_scene(&mut self, p: Perceived) {
-        let ground = crate::arc::ground_of(&p.scene.train);
-        crate::arc::on_ground(ground, || self.admit_scene_on_ground(p))
+        let ground = crate::transducer::raster::ground_of(&p.scene.train);
+        crate::transducer::raster::on_ground(ground, || self.admit_scene_on_ground(p))
     }
 
     fn admit_scene_on_ground(&mut self, p: Perceived) {

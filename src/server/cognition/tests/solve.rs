@@ -70,17 +70,18 @@ fn judge_solve_refuses_rule_leaving_pair_open() {
 /// permuted (1→7, 2→4, 3→9) are different colours, read as different grids,
 /// and the rule over each is its own word — so every mind that sees channel
 /// 1 names channel 1 the same. (78.53 relabelled the palette at the sensor;
-/// 78.56 II supersedes it.)
+/// 78.56 II supersedes it.) Read as every decoder hands a task through
+/// (`raster::frame_fixed_on_ground`, ROADMAP track 26 S1).
 #[test]
-fn parse_task_reads_permuted_palette_as_other_scene() {
-    let json = |a: u8, b: u8, c: u8| {
-        format!(
-            r#"{{"train":[{{"input":[[{a},{a},0,{b},0,0,0]],"output":[[0,0,{a},{a},0,{b},0]]}}],
-                "test":[{{"input":[[{b},0,{a},{a},0,{c},0]],"output":[[0,0,{b},0,{a},{a},{c}]]}}]}}"#
-        )
+fn frame_fixed_on_ground_reads_permuted_palette_as_other_scene() {
+    let read = |a: u8, b: u8, c: u8| {
+        crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task {
+            train: vec![(vec![vec![a, a, 0, b, 0, 0, 0]], vec![vec![0, 0, a, a, 0, b, 0]])],
+            test: vec![(vec![vec![b, 0, a, a, 0, c, 0]], vec![vec![0, 0, b, 0, a, a, c]])],
+        })
     };
-    let task = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");
-    let permuted = crate::arc::parse_task(&json(7, 4, 9)).expect("the permuted task reads");
+    let task = read(1, 2, 3);
+    let permuted = read(7, 4, 9);
     assert_ne!(task.train, permuted.train, "two scenes at the detector");
     let (rule, again) = (rule_over(&task.train), rule_over(&permuted.train));
     assert_ne!(rule.address(), again.address(), "two colours, two words");
@@ -88,7 +89,7 @@ fn parse_task_reads_permuted_palette_as_other_scene() {
     assert!(matches!(k.judge_solve(&rule, &task.train), SolveVerdict::Solved { .. }), "each rule closes its own pair");
     assert!(matches!(k.judge_solve(&again, &permuted.train), SolveVerdict::Solved { .. }));
     // AND THE SAME CHANNELS READ THE SAME WORD, whatever mind reads them.
-    let same = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");
+    let same = read(1, 2, 3);
     assert_eq!(rule_over(&same.train).address(), rule.address(), "one channel, one name");
 }
 
@@ -103,13 +104,6 @@ fn parse_task_reads_permuted_palette_as_other_scene() {
 fn judge_solve_reads_reframed_task_as_one_verdict() {
     type Pairs = Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>;
     type Frame<'a> = &'a dyn Fn(&Vec<Vec<u8>>) -> Vec<Vec<u8>>;
-    let json = |train: &Pairs, test: &Pairs| {
-        let pair = |(a, b): &(Vec<Vec<u8>>, Vec<Vec<u8>>)| {
-            format!(r#"{{"input":{},"output":{}}}"#, serde_json::to_string(a).expect("a grid"), serde_json::to_string(b).expect("a grid"))
-        };
-        let list = |ps: &Pairs| ps.iter().map(pair).collect::<Vec<_>>().join(",");
-        format!(r#"{{"train":[{}],"test":[{}]}}"#, list(train), list(test))
-    };
     let base: (Pairs, Pairs) = (
         vec![(digits(&["1100", "0020", "0000"]), digits(&["3300", "0040", "0000"]))],
         vec![(digits(&["0110", "2000", "0000"]), digits(&["0330", "4000", "0000"]))],
@@ -132,7 +126,10 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
         g.iter().map(|row| row.iter().map(|&h| match h { 1 => 6, 2 => 7, 3 => 8, 4 => 9, x => x }).collect()).collect()
     };
     let each = |ps: &Pairs, f: Frame<'_>| -> Pairs { ps.iter().map(|(a, b)| (f(a), f(b))).collect() };
-    let read = |train: &Pairs, test: &Pairs| crate::arc::parse_task(&json(train, test)).expect("the task reads");
+    // Read as every decoder hands a task through (ROADMAP track 26, S1).
+    let read = |train: &Pairs, test: &Pairs| {
+        crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task { train: train.clone(), test: test.clone() })
+    };
     let one = read(&base.0, &base.1);
     let turn180 = |g: &Vec<Vec<u8>>| turn(&turn(g));
     let turn270 = |g: &Vec<Vec<u8>>| turn(&turn(&turn(g)));

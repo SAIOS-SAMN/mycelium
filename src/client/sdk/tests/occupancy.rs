@@ -3,7 +3,7 @@
 // vertex reached, a body displaced, cells never created, cells never cleared —
 // and a speech names the bodies it did not reach.
 
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::client::sdk::entity::family::occupancy_causes;
 
 fn grid(rows: &[&str]) -> Grid {

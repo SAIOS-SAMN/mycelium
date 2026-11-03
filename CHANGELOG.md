@@ -6,6 +6,48 @@ such change is named here.
 
 ## Unreleased
 
+### The ARC-AGI-2 decoder leaves the core (ROADMAP track 26, S1)
+- **`src/arc.rs` is removed**, with `src/tests/arc.rs`; the core library
+  has no module named for a data source (a `compile_fail` claim on
+  `transducer::raster`). Removed public API: `mycelium::arc` and every item
+  in it.
+- **`sources/arc-agi`** (package `mycelium-source-arc-agi`, a workspace
+  member that depends on the core) owns the corpus: `decode`,
+  `parse_task`, `corpus` (`MYCELIUM_CORPUS`, else `data/arc-agi-2`),
+  `task_names`, `samples_of` (each grid a sample placed at `[split, pair,
+  member]`), `post`, and the binary `mycelium-arc-agi decode FROM TO
+  [LIMIT]`. The corpus tests moved there: the bridge sweep, the three
+  retract claims, the fifteen rule-language corpus tasks and the oracle's
+  golden reading.
+- **The posted task** (`anastome::dialogue::{encode_posted_task,
+  decode_posted_task, POSTED_TASK}`): the envelope's codec with the
+  withheld outputs. A hypha's corpus directory (`--sign-corpus`, the
+  registration at boot), a client's feed (`home/feed/*.task`) and the
+  soak read it; none parses JSON. A corpus directory signed before this
+  change (`*.json`) registers no task: decode it with `mycelium-arc-agi`
+  and sign the posted files. `mycelium-soak --write-oracle-golden` takes
+  the directory of posted tasks.
+- **Moved, behaviour unchanged:** the raster's readings to
+  `transducer::raster` (`ground_of`, `ground`, `on_ground`,
+  `on_ground_of`, `extents`, `painted_sites`, `AXES`, `sample_of`,
+  `sample_unplaced`, `links_of`, `ground_bytes`, `frame_fixed`,
+  `momentum_vanishes`, and the new `frame_fixed_on_ground`, the former
+  tail of `parse_task`); renamed there `grid_width` → `raster_width`,
+  `painted_of_grid` → `painted_of`, `grid_of` → `raster_of`, `hue_at` →
+  `value_at`. `Task` to `transducer::family`. `Frame` to
+  `transducer::element` (beside `from_canonical_framed`).
+  `pair_magnitude`, `cover_join`, `family_cover` to
+  `transducer::family::magnitude`. `envelope_dilation` and `carried_site`
+  beside the fibre map (crate-internal). `frame_ratio` and its gcd had no
+  caller and are deleted. Each is listed as a defect in MU-SENSING §8.
+- **`client::sdk::rule::would_judge`, `family::speak::residual_of` and
+  `sentence::vertex_bytes` are public**, so the decoder's tests ask what
+  the core's tests ask. `cga::oracle::{inputs, write_golden}` take the
+  harvested tasks, and `oracle::TASKS` is public.
+- **The SDK no longer re-exports `Grid`** (`rule::Grid`, `prelude::Grid`).
+- Task addresses are unchanged (rank 2, width 1): every training task
+  posted and read back has the same `task_address`.
+
 ### The transduction at rank `n`, with no axis privileged (ROADMAP track 26, S4)
 - **`transducer::family::transduce`** takes `Sample`s of any rank. Changed
   public API: `Enclosure` holds `n` periods (`Enclosure::new`, `of(&Sample)`,
@@ -26,7 +68,7 @@ such change is named here.
   `of_matrix`, `of_word`, `carry`. `TransductionRefusal` loses `Ragged`
   (a ragged raster is refused at intake) and gains `Rank` and `Sample`.
 - **The ARC bridge** (`arc::sample_of`, `sample_unplaced`, `grid_of`,
-  `links_of`, `ground_bytes`): until S1, every caller that holds a grid
+  `links_of`, `ground_bytes`; `transducer::raster` since S1): until S1, every caller that holds a grid
   reaches the transduction through it, and no transduce file reads `arc`.
   A task's content bytes (`task_address`) are unchanged at rank 2 and width
   1.

@@ -305,13 +305,13 @@ fn mint_refusal_line_names_arm_proof_kind_demands() {
 /// pair demands its whole output against nothing, never a corner reading.
 #[test]
 fn unspoken_residue_is_read_on_output_sites() {
-    let residue = |x: &crate::arc::Grid, y: &crate::arc::Grid| {
-        let (a, b) = (crate::arc::sample_unplaced(x).expect("stands"), crate::arc::sample_unplaced(y).expect("stands"));
+    let residue = |x: &crate::transducer::family::Grid, y: &crate::transducer::family::Grid| {
+        let (a, b) = (crate::transducer::raster::sample_unplaced(x).expect("stands"), crate::transducer::raster::sample_unplaced(y).expect("stands"));
         let need = crate::transducer::family::transduce::need_of(&a, &b).expect("both frames stand");
         crate::transducer::family::deflation::unspoken_residue(x, y, &mut crate::physics::Physics::default().stroke_n(need))
     };
-    let x: crate::arc::Grid = vec![vec![1; 29]; 29];
-    let mut y: crate::arc::Grid = vec![vec![1; 30]; 30];
+    let x: crate::transducer::family::Grid = vec![vec![1; 29]; 29];
+    let mut y: crate::transducer::family::Grid = vec![vec![1; 30]; 30];
     y[1][2] = 5;
     assert_eq!(residue(&x, &y), vec![(1, 2, 1, 5)]);
     assert_eq!(
@@ -343,7 +343,7 @@ fn deflation_closure_pays_before_on_one_record() {
     assert!(rems.iter().all(Vec::is_empty), "the form closes both pairs: {rems:?}");
     let mut before = [0u64; 4];
     for (x, y) in &family {
-        let (a, b) = (crate::arc::sample_unplaced(x).expect("stands"), crate::arc::sample_unplaced(y).expect("stands"));
+        let (a, b) = (crate::transducer::raster::sample_unplaced(x).expect("stands"), crate::transducer::raster::sample_unplaced(y).expect("stands"));
         let need = crate::transducer::family::transduce::need_of(&a, &b).expect("both frames stand");
         let r = crate::transducer::family::deflation::unspoken_residue(x, y, &mut crate::physics::Physics::default().stroke_n(need));
         for (b, m) in before.iter_mut().zip(element::measure_lanes(&r)) {

@@ -51,7 +51,7 @@
 //! let mut budget = rule::Physics::default().stroke_n(1 << 20);
 //! let Some(stated) = rule::extract_rule(&envelope.train, &mut budget) else { return };
 //! let Ok(element) = rule::mint_sentence_why(&stated, &envelope.train, &NoCrystal, 0) else { return };
-//! let outputs: Option<Vec<Grid>> =
+//! let outputs: Option<Vec<Vec<Vec<u8>>>> =
 //!     envelope.tests.iter().map(|x| rule::speak_rule(&stated, x, &NoCrystal).and_then(|s| s.grid())).collect();
 //! let (Some(outputs), Some(tape)) = (outputs, element.to_bytes()) else { return };
 //! if let Some(solve) = task::encode_solve_with_rule(&key, &envelope.id, &outputs, Some(&tape)) {

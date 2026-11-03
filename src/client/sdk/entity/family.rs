@@ -26,7 +26,7 @@ pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
     use crate::transducer::family::transduce::Enclosure;
     let mut mag = [0u64; 4];
     for (x, y) in train {
-        let (Ok(a), Ok(b)) = (crate::arc::sample_unplaced(x), crate::arc::sample_unplaced(y)) else { continue };
+        let (Ok(a), Ok(b)) = (crate::transducer::raster::sample_unplaced(x), crate::transducer::raster::sample_unplaced(y)) else { continue };
         if !Enclosure::of(&a).is_same_periods(&Enclosure::of(&b)) {
             continue;
         }
@@ -45,7 +45,7 @@ pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
 /// demands its form spoke nothing for, by kind.
 pub(crate) struct Disagreed {
     pub(crate) kinds: Vec<usize>,
-    pub(crate) said: Option<crate::arc::Grid>,
+    pub(crate) said: Option<crate::transducer::family::Grid>,
     pub(crate) demanded: [u64; 6],
 }
 
@@ -56,7 +56,7 @@ pub(crate) struct Disagreed {
 /// body the speech did reach, UNCREATED (5) where the input was ground; a
 /// cell the speech painted and the truth holds as ground is UNCLEARED (7).
 /// Empty where every cell agrees on occupancy (the hues alone differ).
-pub(crate) fn occupancy_causes(said: &crate::arc::Grid, x: &crate::arc::Grid, y: &crate::arc::Grid, unreached: &[usize]) -> Vec<usize> {
+pub(crate) fn occupancy_causes(said: &crate::transducer::family::Grid, x: &crate::transducer::family::Grid, y: &crate::transducer::family::Grid, unreached: &[usize]) -> Vec<usize> {
     let bodies = crate::transducer::family::perceive(x);
     let mut erased: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     for &i in unreached {
@@ -173,9 +173,9 @@ pub(crate) fn extract_on(memo: &mut crate::transducer::family::ExtractMemo, epi:
 /// ONE PAIR AS ITS SCENE FORM on the language given, on a stroke sized by
 /// the pair (L8w), with what it closes and leaves there; `None` where the
 /// mind's presentation cannot factor it.
-pub(crate) fn pair_percept(epi: &Epigenome, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Option<PairPercept> {
+pub(crate) fn pair_percept(epi: &Epigenome, x: &crate::transducer::family::Grid, y: &crate::transducer::family::Grid) -> Option<PairPercept> {
     let pair = [(x.clone(), y.clone())];
-    crate::arc::on_ground_of(&pair, || {
+    crate::transducer::raster::on_ground_of(&pair, || {
         let mut p = scene_percept(epi, x, y)?;
         let (mag, remainders) = crate::transducer::family::form_deflation(&p.form, &p.pair, epi);
         (p.mag, p.remainders) = (mag, remainders);
@@ -185,9 +185,9 @@ pub(crate) fn pair_percept(epi: &Epigenome, x: &crate::arc::Grid, y: &crate::arc
 
 /// ONE PAIR AS ITS SCENE FORM alone, nothing measured on it: an hour of a
 /// family, held with no bundle (78.56 III).
-pub(crate) fn scene_percept(epi: &Epigenome, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Option<PairPercept> {
+pub(crate) fn scene_percept(epi: &Epigenome, x: &crate::transducer::family::Grid, y: &crate::transducer::family::Grid) -> Option<PairPercept> {
     let pair = vec![(x.clone(), y.clone())];
-    crate::arc::on_ground_of(&pair, || {
+    crate::transducer::raster::on_ground_of(&pair, || {
         let frames = crate::transducer::family::perceive_family(&pair);
         let mut budget = crate::physics::Physics::default().stroke_n(crate::transducer::family::extraction_spend(&pair, &frames));
         let form = crate::transducer::family::scene_form_on(epi, &mut budget, x, y, &frames)?;
@@ -227,7 +227,7 @@ pub(crate) fn speech_of(epi: &Epigenome, rule: &SentenceRule, train: &Family, bu
 /// re-derives it. Answers the reading and the pairs a held-out perspective
 /// left uncovered — what the siblings' rule said against the truth — which
 /// the mind LIFTS into its sensorium where the reading lands, never drops.
-pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family, rule: &SentenceRule) -> (Ascertained, Vec<(crate::arc::Grid, crate::arc::Grid)>) {
+pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family, rule: &SentenceRule) -> (Ascertained, Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)>) {
     use crate::transducer::family::{extract_rule_on, extraction_spend, perceive_family};
     crate::observe::note_mind(|m| m.perspective[0] += 1);
     let mut lifts = Vec::new();
@@ -237,7 +237,7 @@ pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family, rule: &SentenceRule)
     }
     let (mut failed, mut unread) = (Vec::new(), false);
     for k in 0..train.len() {
-        let siblings: Vec<(crate::arc::Grid, crate::arc::Grid)> = train.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, p)| p.clone()).collect();
+        let siblings: Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)> = train.iter().enumerate().filter(|(i, _)| *i != k).map(|(_, p)| p.clone()).collect();
         let frames = perceive_family(&siblings);
         let mut budget = crate::physics::Physics::default().stroke_n(extraction_spend(&siblings, &frames));
         let (x, y) = &train[k];
@@ -316,8 +316,8 @@ pub(crate) fn ascertain_on(epi: &Epigenome, train: &Family, rule: &SentenceRule)
 /// spoke with a remainder, laid down another frame, put cells in the wrong
 /// places (by cause, 78.167 A1), or coloured the right cells otherwise — with
 /// the grid it said, where it said one, and the demands it spoke nothing for.
-pub(crate) fn disagreement_on(epi: &Epigenome, rule: &SentenceRule, x: &crate::arc::Grid, y: &crate::arc::Grid) -> Result<(), Disagreed> {
-    let refused = |kind: usize, said: Option<crate::arc::Grid>, demanded: [u64; 6]| Disagreed { kinds: vec![kind], said, demanded };
+pub(crate) fn disagreement_on(epi: &Epigenome, rule: &SentenceRule, x: &crate::transducer::family::Grid, y: &crate::transducer::family::Grid) -> Result<(), Disagreed> {
+    let refused = |kind: usize, said: Option<crate::transducer::family::Grid>, demanded: [u64; 6]| Disagreed { kinds: vec![kind], said, demanded };
     let Some(speech) = crate::transducer::family::speak::speak_rule(rule, x, epi) else { return Err(refused(1, None, [0; 6])) };
     let said = speech.grid();
     if !speech.remainder.is_empty() {
@@ -346,7 +346,7 @@ pub(crate) fn disagreement_on(epi: &Epigenome, rule: &SentenceRule, x: &crate::a
 /// form's demands of those kinds), is no answer, and the solve waits for a
 /// rule that speaks for them (a clause statement, 78.167 C, says what
 /// happens to every body).
-pub(crate) fn tests_spoken(epi: &Epigenome, rule: &SentenceRule, tests: &[crate::arc::Grid]) -> (Option<Vec<crate::arc::Grid>>, Vec<Chain>) {
+pub(crate) fn tests_spoken(epi: &Epigenome, rule: &SentenceRule, tests: &[crate::transducer::family::Grid]) -> (Option<Vec<crate::transducer::family::Grid>>, Vec<Chain>) {
     let mut chains = Vec::new();
     let outputs = tests
         .iter()

@@ -14,8 +14,8 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     let (mut tasks, mut banded, mut identity, mut none) = (0u64, 0u64, 0u64, 0u64);
     let mut charts_total = 0u64;
     for file in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         tasks += 1;
         let scene: Vec<Grid> = task.train.iter().map(|(a, _)| a.clone()).collect();
         let Some(cov) = cover(&scene, Reading::Bands) else {

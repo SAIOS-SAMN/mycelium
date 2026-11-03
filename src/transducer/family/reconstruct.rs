@@ -80,7 +80,7 @@ pub fn field(x: &Grid) -> Vec<Site> {
         sums.push(s);
         masses.push(mass);
     }
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut out = Vec::new();
     for r in 0..rows {
         for (c, &hue) in x[r].iter().enumerate() {
@@ -130,7 +130,7 @@ pub fn transports(x: &Grid, y: &Grid) -> Option<Vec<Transport>> {
     if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
         return None;
     }
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut out = Vec::new();
     for (r, row) in x.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
@@ -301,7 +301,7 @@ pub struct Reconstruction {
 /// Carry an input field by a table: every site to its key's target hue,
 /// then the light each emits laid along its free reach.
 fn carried(x: &Grid, sites: &[Site], t: &Keyed<Transport>, axis: usize) -> Option<Grid> {
-    let mut out: Grid = x.iter().map(|row| vec![crate::arc::ground(); row.len()]).collect();
+    let mut out: Grid = x.iter().map(|row| vec![crate::transducer::raster::ground(); row.len()]).collect();
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let m = t.get(&key(s, axis))?;

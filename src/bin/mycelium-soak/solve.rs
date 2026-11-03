@@ -17,8 +17,8 @@ pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
     let mut physics = mycelium::physics::Physics::default();
     // The mind stands on the first `stand` tasks, as a voice does.
     for (k, file) in names.iter().take(stand).enumerate() {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         let frames = perceive_family(&task.train);
         let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
         let Some(r) = extract_rule_on(&task.train, &frames, &epi, &mut b) else { continue };
@@ -32,8 +32,8 @@ pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
 
     let (mut tasks, mut extracted, mut spoke, mut solved, mut partly) = (0u64, 0u64, 0u64, 0u64, 0u64);
     for file in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         tasks += 1;
         let frames = perceive_family(&task.train);
         let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));

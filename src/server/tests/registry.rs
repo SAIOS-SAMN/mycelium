@@ -1,4 +1,4 @@
-use crate::arc::{Grid, Task};
+use crate::transducer::family::{Grid, Task};
 use crate::server::registry::*;
 
 fn toy_task() -> Task {
