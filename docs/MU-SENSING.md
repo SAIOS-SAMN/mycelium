@@ -45,7 +45,7 @@ one benchmark, this document and the rulings it cites govern (§9).
 
 ```
 source ──decode──▶ sample ──lift──▶ field ───────────three eyes──▶ cover ──▶ percept ──▶ perception
-(format)           (rank n,         (n phases on a chart,       (cochains,      (bodies by      (the mind's
+(format)           (rank n,         (n phases in its atlas,     (cochains,      (bodies by      (the mind's
                     extents,         values as fibre symbols,    cocycle,        boundary,       wells, held
                     symbols)         ground deduced)             verdict)        motions)        with unread dims)
 ```
@@ -55,7 +55,7 @@ source ──decode──▶ sample ──lift──▶ field ──────
 | **Source** | Any external data: a file, a stream, a game state, a table, an image, a simulation's export, a task posted by a house | The data's owner | Yes, and only here |
 | **Decode** | The source's format read into a sample, and nothing more: no meaning, no ground, no colour | The source's adapter, which lives with the source (§7) | Yes |
 | **Sample** | A finite array: rank `n`, an extent per axis, a symbol per site, and the sample's place in its family | The adapter's output; the only input the sensor takes | No |
-| **Lift** | The sample lifted into the mind's field: each axis a phase of its own period on a chart; each symbol a fibre value; the ground deduced | The sensor | No |
+| **Lift** | The sample lifted into the mind's field: each axis a phase of its own period within the charts of its atlas; each symbol a fibre value; the ground deduced | The sensor | No |
 | **Senses** | Three eyes over one section: luminal (the fibre values), harmonic (the spectra of boundaries), holonomic (loops and their holonomy) | The sensor | No |
 | **Cover** | The eyes' cochains, checked by the cocycle; a sensory verdict | The sensor (MU-CLIENT 24.4) | No |
 | **Percept** | Bodies held by their boundary, the motions between samples, and the residue | The mind's perception | No |
@@ -87,7 +87,7 @@ MU-ANTI-FLATTENING clause 12). Between those two ends there is no raster.
 
 ## 3. The lift: everything deduced
 
-### 3.1 Each axis is a phase of its own period (a phase on the field's chart, §3.7)
+### 3.1 Each axis is a phase of its own period (read within the field's charts, §3.7)
 
 Axis `i` with extent `e_i` lifts by enclosure: site `s` on that axis is
 the turn `s / e_i`, a fraction in ℚ/ℤ, composed by addition mod 1. The
@@ -151,8 +151,8 @@ the higher-dimensional manifold of perception, the mind's field, or taken
 apart into nested fields. No axis of the sensor is a row or a column, and
 no pair of axes is *the* plane.
 
-- **Lifted.** A sample's `n` axes become `n` phases on the chart of one
-  field (§3.7), with no axis privileged. The axes are ordered only canonically, to
+- **Lifted.** A sample's `n` axes become `n` phases of one field (§3.7),
+  read in the charts of its atlas, with no axis privileged. The axes are ordered only canonically, to
   write an address, and that order is never a role. A role (space,
   sequence, value) is a perspective's (§4). Words such as *row* and
   *column* belong to a source's file format: for example, a decoder reads
@@ -162,7 +162,7 @@ no pair of axes is *the* plane.
   `a` and a fine phase of period `b`. Site `s` maps to
   `(⌊s / b⌋ / a, (s mod b) / b)`, exact. A sample made of blocks, a board
   of boards, or a period inside a period is a field within the field,
-  each level a field of its own with its own chart (78.170 O5, a cover
+  each level a field of its own with its own atlas (78.170 O5, a cover
   read as `k` sub-enclosures).
 - **Nesting is deduced, never assumed.** A factoring is kept only where
   the family's relations are invariant under it: symbols that separate
@@ -184,14 +184,24 @@ mind is a field with boundaries (MU-RECURSION 78.164), and
 `cech::orbit::Field` holds its orbits. The object was formerly called the
 bubble (a thought bubble), renamed 2026-11-02.
 
-- **The chart is the reference, never the object.** A **phase** is a
-  coordinate, a turn in ℚ/ℤ, written on a **chart**: the round reference
-  (a circle, a sphere `S^{2n−1}`, a Hopf-type base) in which phases are
-  written. The chart is the empty field's reference. A circle or a sphere
-  is never the object.
-- **Curvature is gravity.** The field's geometry is its curvature, and
-  the curvature is produced by its orbits: local orbits shearing the
-  orthogonal orbit class. Where nothing is held, the field is flat.
+- **Charts, an atlas, phases.** A **chart** keeps its one meaning: a
+  body's exact invariant coordinates, its shape class, coarsest first
+  ("form vertices are charts"). The field's charts form its **atlas**,
+  which compacts the field's addresses on the pivots (78.41). A **phase**
+  is a site's coordinate within a chart: a turn in ℚ/ℤ of that chart's
+  own period (§3.1). No round reference exists. A circle, a sphere or a
+  torus is never the object and never the frame the object is written
+  in.
+- **The geometry is the field's connection.** Moving from one chart to
+  another is a **transition**, a versor (the refraction of A.16; the
+  transitions of 25.12). The transitions are the field's connection.
+- **Curvature is the holonomy of a loop of transitions:** the product of
+  the transitions around the loop, read by its modes. Where the product
+  is elliptic, it is an exact turn. This is the holonomy of MU-RECURSION
+  10.3 and 12.6, already built. Curvature is gravity: it is produced by
+  the field's orbits, local orbits shearing the orthogonal orbit class.
+  Where nothing is held, the transitions around every loop compose to the
+  identity, and the field is flat.
 - **A well is the curvature around one attractor**, produced by its local
   orbit. A held percept and a held thought are one well at two stages
   (`transducer/field/`, MU-CLIENT §4).
@@ -200,16 +210,16 @@ bubble (a thought bubble), renamed 2026-11-02.
 - **The field deforms by its contents:** it is stretched, thinned,
   flipped, rotated, deflated and re-inflated, exactly, and stays smooth
   under every motion. This is the perceiving side of Concordance 2.10:
-  the physics is nested shells, each a sphere `Sⁿ` about one centre,
-  never planes side by side. Perception is held the same way.
+  the physics is nested shells about one centre, never planes side by
+  side. Perception is held the same way.
 
-- **The geometry is non-Euclidean.** On a chart, the field's interior is
-  hyperbolic space `Hⁿ⁺¹` (the ball model), and the chart is that space's
-  sphere at infinity, `Sⁿ`. Where the field encloses, its membrane
-  encloses the infinity, so there is no `e∞` outside any enclosure.
-  `Cl(n+1, 1)` is the algebra of the isometries of `Hⁿ⁺¹`
-  (MU-ANTI-FLATTENING clause 7), which act on the chart as its conformal
-  motions. No Euclidean metric, distance or squared norm enters.
+- **The geometry is non-Euclidean.** The transitions are versors of
+  `Cl(n+1, 1)`, the algebra of the isometries of hyperbolic space
+  (MU-ANTI-FLATTENING clause 7), whose transvections do not commute: the
+  commutator of two is a rotation, the curvature read off a remainder,
+  never a constant. Where the field encloses, its membrane encloses the
+  infinity, so there is no `e∞` outside any enclosure. No Euclidean
+  metric, distance or squared norm enters.
 - **The algebra is never scalar.** Every quantity is a multivector: a
   blade, a versor, an orbit, a well, a field. A number enters only as the
   gauge of a one-dimensional reading on the base algebra:
@@ -222,15 +232,14 @@ bubble (a thought bubble), renamed 2026-11-02.
   | ℚ(ζ_ℓ) | An exact rotation within one plane |
   | ℝ | A span between two exact bounds on one line, read until it decides and never stored |
 
-- **The field's motions** (each acts on the field; the chart only
-  records it):
+- **The field's motions**, each a versor or a re-period:
 
-  | Operation | In `Hⁿ⁺¹` | On the chart |
-  |---|---|---|
-  | Rotate | An elliptic isometry | A rotation by turns, exact over `ℚ(ζ_ℓ)` |
-  | Flip | A reflection, or an inversion in the membrane | A reflection or inversion in a great sphere |
-  | Deflate / re-inflate | A hyperbolic translation (a boost) | A dilation toward or away from a pole |
-  | Stretch / thin | Not an isometry | A re-period of one phase, held in the fibres (no versor carries it) |
+  | Operation | The motion |
+  |---|---|
+  | Rotate | An elliptic versor: a rotation by turns, exact over `ℚ(ζ_ℓ)` |
+  | Flip | A reflection, or an inversion in the membrane |
+  | Deflate / re-inflate | A hyperbolic versor (a boost or a dilation) |
+  | Stretch / thin | A re-period of one phase, held in the fibres (no versor carries it) |
 
   A motion that cannot be carried exactly is a named residue (78.170).
   Re-inflation toward the source's extents is speech (§5).
@@ -241,10 +250,10 @@ bubble (a thought bubble), renamed 2026-11-02.
   torus is a straight line wound around it. Untouched by gravity, it
   squares the depth and volume of the manifold into one dimension, and
   with phases in ℚ/ℤ it closes and returns exactly: the loop a thought
-  must not be (MU-CLIENT 78.168). A sphere is curved. A loop on it turns
-  what it carries by the angle the loop encloses, so a route's meaning is
-  held as its holonomy (MU-RECURSION 10.3, 12.6; MU-ANTI-FLATTENING
-  clause 6).
+  must not be (MU-CLIENT 78.168). A field curved by its orbits is not
+  flat: the transitions around a loop compose to a motion in its own right,
+  so a route's meaning is held as its holonomy (MU-RECURSION 10.3, 12.6;
+  MU-ANTI-FLATTENING clause 6).
 - **Gravity curves the perception manifold.** It has two sources, and
   both act in the client mind:
   - **Axiomatic gravity** (the mind's own; the operator's ruling of
@@ -266,32 +275,29 @@ bubble (a thought bubble), renamed 2026-11-02.
   An orbit in perception is bent by gravity and sheared by velocity,
   never a straight line. Where nothing is held, the manifold is flat
   there, and an orbit through it reads only its windings.
-- **The lift.** A sample is lifted into the mind's field: each site is a
-  point written on the chart `S^{2n−1}`, held projectively by its `n`
-  phases (§3.1). The phases' common scale is a gauge, so there is no unit
-  norm, no `1/√2` and no sum of squares (law 11). The phases are the
-  fibres. What the sample holds curves the field into wells around its
-  attractors; the chart stays the reference.
-- **Projection.** The chart projects onto a lower sphere by a Hopf-type
-  map, with the phases as fibres (for `n = 2`, `S³ → S²`; MU-RECURSION
-  25.12 already reads the Hopf fibration as "base the class, fibre the
-  gauge"). The chart's base sphere is what perception reads. An axis
-  taken apart (§3.6) adds a level, a field within the field, which gives
-  a tower of fibrations, never a flat product.
-- **Holonomy in turns, exactly.** A loop of perception on the chart's
-  base sphere is held as a geodesic polygon. Its corner angles are turns read from
-  the sample's motions. Its holonomy is the angle excess: the sum of the
-  corner angles minus `(k − 2) · ½` turn for `k` corners. That is an
-  element of ℚ/ℤ, exact, with no coordinates and no trigonometry. The
-  holonomy of the fibre over a loop is read the same way.
+- **The lift.** A sample is lifted into the mind's field: each body
+  stands on its charts, and each site is held by its phases within them
+  (§3.1). The phases' common scale is a gauge, so there is no unit norm
+  and no sum of squares (law 11). What the sample holds curves the field
+  into wells around its attractors.
+- **Nesting is a fibration.** The field is read as base and fibre:
+  "base the class, fibre the gauge" (MU-RECURSION 25.12). An axis taken
+  apart (§3.6) adds a level, a field within the field, which gives a
+  tower of fibrations, never a flat product.
+- **Holonomy in turns, exactly.** A loop of perception is a loop of
+  charts. Its holonomy is the product of the transitions around it, read
+  by its modes. An elliptic mode gives an exact turn in ℚ/ℤ, and its
+  order gives a winding in ℤ. There are no coordinates on a reference
+  surface and no trigonometry.
 - **Motions stay exact.** A rotation by a rational turn `t/ℓ` is exact
   over the cyclotomic field `ℚ(ζ_ℓ)` (law 4 admits cyclotomic scalars).
   Exact rational rotors exist only at multiples of 90° (Niven), and
-  rational points on a sphere would mean squaring, so neither is used. A
-  turn the mind cannot carry exactly is a named residue (78.170).
-- **Orbits.** A thought's orbit lives in the fibration. It is a loop on
-  the base sphere together with a winding in the fibre. On each lap, the
-  base loop's angle excess, which is the curvature the attractors'
+  rational points on a circle or a sphere would mean squaring, so neither
+  is used. A turn the mind cannot carry exactly is a named residue
+  (78.170).
+- **Orbits.** A thought's orbit lives in the fibration. It is a loop of
+  charts in the base together with a winding in the fibre. On each lap,
+  the base loop's holonomy, which is the curvature the attractors'
   gravity puts inside it, advances the fibre phase. That advance is the
   orbit's **precession**: the orbit closes on the base but not in the
   fibre, so it comes round held and never returns exactly. It reads as
@@ -301,7 +307,7 @@ bubble (a thought bubble), renamed 2026-11-02.
   - **open**: a mode escaping its attractor;
   - **unread**: not reached.
 
-  The windings are kept as the fibres' classes, never lost in the sphere.
+  The windings are kept as the fibres' classes, never lost.
   An orbit with zero precession through flat space returns exactly and is
   refused as a loop, never taken as settled. A precession of `t/ℓ` turns
   closes after `ℓ` laps. That full return is the orbit's own period, its
@@ -310,19 +316,18 @@ bubble (a thought bubble), renamed 2026-11-02.
 - **Whose mind.** Perception and its orbits belong to the mind inside a
   client (MU-CLIENT 78.168). The hypha has no perceiving mind: it never
   senses and never orbits a thought. It reconstructs what a mind claims (a
-  holonomy, a winding, a precession) on the same sphere carrier its
+  holonomy, a winding, a precession) on the same field carrier its
   physics' shells use (§6; Concordance 2.10), which is why one carrier
   serves both.
 - **μ stays a share of the frame** in this release: the share of the
-  sample's sites a change covers (78.170 O1). Measuring μ as the solid
-  angle a change sweeps on the base sphere awaits a ruling of its own,
-  because it changes what is paid.
+  sample's sites a change covers (78.170 O1). Measuring μ by the
+  holonomy a change sweeps awaits a ruling of its own, because it changes
+  what is paid.
 - **One representation across projects.** The field and the physics'
-  shells (MU-TOPOLOGY §6; MU-RECURSION D4, the `Sphere{n, R}` carriers)
-  are one carrier, standardised as the law form LAW-FIELD v1
-  ([proposal](proposals/78.171-law-field.md); MU-RELEASE §3a) and agreed
-  with the peer kernels before it is built. The radius is a gauge, held
-  projectively, never a stored float.
+  shells (MU-TOPOLOGY §6; MU-RECURSION D4) are one carrier, standardised
+  as the law form LAW-FIELD v1 ([proposal](proposals/78.171-law-field.md);
+  MU-RELEASE §3a) and agreed with the peer kernels before it is built.
+  Any scale is a gauge, held projectively, never a stored float.
 
 ### 3.8 The vortex: every superposition in perception
 
@@ -347,7 +352,7 @@ perspectives (§4), and a thought's candidate forms (`Well.vortex`).
   goes to the court (25.12).
 - **Forward from 25.12.** 25.12 computes the transitions in
   `Spin(4,0)(ℚ)`: Euclidean, with four fixed axes. Under §3.7 they are
-  read in `Spin(n+1, 1)` on the field's chart, non-Euclidean, with
+  read in `Spin(n+1, 1)` between the charts of the field's atlas, non-Euclidean, with
   orders read as windings (ℤ) and phases (ℚ/ℤ), never as scalars.
 
 ## 4. Perspective: one sample, many readings
@@ -436,7 +441,7 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 | The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Well.vortex`, `Well.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
 | Orbits with four readings; the court's gravity as drag | **Built**, on flat charts | `cech/orbit.rs` (`Field`, `Field::beat_under`) |
 | Exact motions: rotors by turns, dilators, reflectors, versors of reflections, cyclotomic periods | **Built** | `alphabet/`, `cga/{group, spin, period}.rs` |
-| A sample lifted into the field: phases on the chart `S^{2n−1}`, Hopf-type projection, holonomy as angle excess in turns | **Specified** | Track 26, S4 and S4a (§3.7) |
+| A sample lifted into the field: phases within the charts of its atlas; nesting as a fibration; holonomy as the product of the transitions around a loop, read by its modes in turns | **Specified** | Track 26, S4 and S4a (§3.7) |
 | The field's curvature and the well's body (membrane, centre, inflation as a gauge), the field's motions as one exact group, its forces (axiomatic gravity's shear of the orthogonal class; the court's pressure), and its orbits' precession | **Specified** | Track 26, S7–S9 |
 | One field carrier shared by perception and the physics' shells: LAW-FIELD v1 | **Proposed**; to be agreed with the peer kernels | [proposal](proposals/78.171-law-field.md); [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) |
 | **Defect:** spheres built Euclidean, from a squared radius with `e∞` | **Built, refused** by §3.7 and law 11 | `cga/embedding.rs` (`sphere_at`, `on_sphere`), `cga/at_three.rs` (`sphere`) |
