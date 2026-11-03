@@ -587,6 +587,13 @@ any site shows `0`, else the most frequent symbol, else `0` on a tie):
   first differs at line 1 437, in the harvest of the corpus's own
   versors, because extraction reads each family as posted and on its
   deduced ground.
+- **Which condition the former ground fails** on the 267 tasks that read
+  no ground (`transduce::Candidacy`): absent from some sample 156,
+  meets no seam of some sample 36, carried as a body 69 (6 had no former
+  ground symbol present). Of the 36, about 16 are one body framing a
+  sample's whole boundary while the former ground fills the interior,
+  a question for the operator on condition 2's definition. The rest are
+  symbols that are a small share of the failing sample.
 - **The rule was not tuned to any task.** Of the 1 000 tasks, 462 read a
   vortex or no ground. On those families a writer that needs one symbol
   for the ground refuses by name, until a vortex is read per perspective

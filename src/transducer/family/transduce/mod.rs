@@ -33,7 +33,7 @@ mod turn;
 mod tests;
 
 pub use enclosed::{Band, Enclosed};
-pub use ground::{Ground, Unground};
+pub use ground::{Candidacy, Ground, Unground};
 pub use motion::{Generated, Sense, SignedPermutation};
 pub use nest::{Factoring, Factorings};
 pub use record::{arcs, family_share, need, need_of, share_of_frame, Incidence, SiteChange, Transduction};

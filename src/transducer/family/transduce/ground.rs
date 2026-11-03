@@ -187,28 +187,75 @@ impl Ground<Vec<u8>> {
     /// that are ambient, enclosing and never carried as a body. A family
     /// with no sample has no ambient symbol and reads `None`.
     pub fn of(family: &[(Sample, Sample)]) -> Ground<Vec<u8>> {
-        let samples: Vec<&Sample> = family.iter().flat_map(|(x, y)| [x, y]).collect();
-        // Ambient: the family's symbols in the order its samples meet them
-        // (the family's own order, each sample in canonical address order),
-        // kept where every sample shows them. A family with no sample has
-        // no symbol, and reads `None`.
-        let mut candidates: Vec<Vec<u8>> = Vec::new();
-        for s in samples.iter().flat_map(|x| x.symbols()) {
-            if !candidates.iter().any(|c| c.as_slice() == s.bytes()) {
-                candidates.push(s.bytes().to_vec());
-            }
-        }
-        candidates.retain(|c| samples.iter().all(|x| x.symbols().any(|s| s.bytes() == c.as_slice())));
-        // Enclosing: meeting every sample's seam.
-        candidates.retain(|c| samples.iter().all(|x| meets_seam(x, c)));
-        // Never carried as a body by any pair.
-        for (x, y) in family {
-            if candidates.is_empty() {
-                break;
-            }
-            let carried = carried_as_body(x, y);
-            candidates.retain(|c| !carried.contains(c));
-        }
+        let candidates = Ground::candidacies(family)
+            .into_iter()
+            .filter_map(|(symbol, reading)| match reading {
+                Candidacy::Candidate => Some(symbol),
+                _ => None,
+            })
+            .collect();
         Ground::from_candidates(candidates)
     }
+
+    /// EVERY SYMBOL OF THE FAMILY WITH ITS CANDIDACY, in the order the
+    /// family's samples meet them (the family's own order, each sample in
+    /// canonical address order): the first of the three conditions it
+    /// fails, named with the sample or pair that fails it, or `Candidate`.
+    pub fn candidacies(family: &[(Sample, Sample)]) -> Vec<(Vec<u8>, Candidacy)> {
+        let samples: Vec<&Sample> = family.iter().flat_map(|(x, y)| [x, y]).collect();
+        let mut symbols: Vec<Vec<u8>> = Vec::new();
+        for s in samples.iter().flat_map(|x| x.symbols()) {
+            if !symbols.iter().any(|c| c.as_slice() == s.bytes()) {
+                symbols.push(s.bytes().to_vec());
+            }
+        }
+        // Conditions 1 and 2 read off the samples; condition 3, which needs
+        // each pair's transduction, is read only for a symbol that passes
+        // both, and each pair's transduction is read once.
+        let first: Vec<(Vec<u8>, Option<Candidacy>)> = symbols
+            .into_iter()
+            .map(|c| {
+                let absent = samples.iter().position(|x| !x.symbols().any(|s| s.bytes() == c.as_slice()));
+                let unenclosing = samples.iter().position(|x| !meets_seam(x, &c));
+                let failed = match (absent, unenclosing) {
+                    (Some(sample), _) => Some(Candidacy::Absent { sample }),
+                    (None, Some(sample)) => Some(Candidacy::Unenclosing { sample }),
+                    (None, None) => None,
+                };
+                (c, failed)
+            })
+            .collect();
+        let carried: Vec<Vec<Vec<u8>>> = match first.iter().any(|(_, failed)| failed.is_none()) {
+            true => family.iter().map(|(x, y)| carried_as_body(x, y)).collect(),
+            false => Vec::new(),
+        };
+        first
+            .into_iter()
+            .map(|(c, failed)| {
+                let reading = match failed {
+                    Some(f) => f,
+                    None => match carried.iter().position(|of_pair| of_pair.contains(&c)) {
+                        Some(pair) => Candidacy::CarriedAsBody { pair },
+                        None => Candidacy::Candidate,
+                    },
+                };
+                (c, reading)
+            })
+            .collect()
+    }
+}
+
+/// HOW ONE SYMBOL STANDS AGAINST THE THREE CONDITIONS (MU-SENSING §3.4):
+/// a candidate, or the first condition it fails with where it fails it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Candidacy {
+    /// Ambient, enclosing and never carried as a body.
+    Candidate,
+    /// Condition 1: absent from the family's `sample`-th sample (input and
+    /// output of each pair in turn).
+    Absent { sample: usize },
+    /// Condition 2: no site of it meets the seam of that sample.
+    Unenclosing { sample: usize },
+    /// Condition 3: the `pair`-th pair carries a body of it elsewhere.
+    CarriedAsBody { pair: usize },
 }

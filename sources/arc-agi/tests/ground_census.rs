@@ -12,7 +12,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use mycelium::transducer::address::{put_key_bytes, Address, TAG_TASK};
-use mycelium::transducer::family::transduce::{Enclosed, Ground};
+use mycelium::transducer::family::transduce::{Candidacy, Enclosed, Ground};
 use mycelium::transducer::family::{Family, Task};
 use mycelium::transducer::raster::{frame_fixed, ground_of, on_ground, sample_unplaced};
 use mycelium_source_arc_agi::{corpus, decode, task_names};
@@ -99,6 +99,33 @@ fn ground_census_over_training() {
         }
     }
     let total = same.len() + other.len() + vortex.len() + none.len();
+    // THE CONDITION EACH NONE TASK'S FORMER GROUND FAILS (MU-SENSING §3.4),
+    // and every symbol's candidacy on five of them.
+    let (mut absent, mut unenclosing, mut carried) = (Vec::new(), Vec::new(), Vec::new());
+    for line in &none {
+        let Some(name) = line.split(' ').next().map(str::to_string) else { continue };
+        let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
+        let Some(task) = decode(&json) else { continue };
+        let pairs: Vec<_> = task.train.iter().filter_map(|(x, y)| Some((sample_unplaced(x).ok()?, sample_unplaced(y).ok()?))).collect();
+        let former = former_ground(&task.train);
+        let readings = Ground::candidacies(&pairs);
+        if ["017c7c7b.json", "045e512c.json", "05269061.json", "0a1d4ef5.json", "0c786b71.json"].contains(&name.as_str()) {
+            println!("candidacies {name}: {readings:?}");
+        }
+        match readings.iter().find(|(s, _)| s.as_slice() == [former]).map(|(_, c)| *c) {
+            Some(Candidacy::Absent { .. }) => absent.push(name),
+            Some(Candidacy::Unenclosing { .. }) => unenclosing.push(name),
+            Some(Candidacy::CarriedAsBody { .. }) => carried.push(name),
+            _ => {}
+        }
+    }
+    println!(
+        "None tasks, former ground's failed condition: absent {}, unenclosing {} {:?}, carried as a body {}",
+        absent.len(),
+        unenclosing.len(),
+        unenclosing,
+        carried.len()
+    );
     println!(
         "tasks {total}: One same {}, One other {}, Vortex {}, None {}; former frame fixing turned {turned}; addresses moved {moved}, unaddressed on either side {unaddressed}",
         same.len(),
