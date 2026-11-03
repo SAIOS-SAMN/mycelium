@@ -5002,17 +5002,17 @@ cauterizes, and wraps (M9). `src/transducer/field/`:
 
 **An index names a held thought by its place in the one carrier that
 holds it** (ruled 2026-09-19, Z4). A held form is written once, on its
-bubble, with its address once beside it; every index of the contemplation
+well, with its address once beside it; every index of the contemplation
 — by chart, by vortex, by stratum — is keyed by the coordinate its reader
-asks with and holds the bubble's ordinal in the contemplation's own
+asks with and holds the well's ordinal in the contemplation's own
 carrier, the shape `Form.by_address` already has. The ordinal is a
 coordinate of that carrier and never leaves it: nothing on the wire, on the
-tape or in an address carries it, and two minds compare bubbles by address
+tape or in an address carries it, and two minds compare wells by address
 as before. No prefix of the address is an index key: a fixed byte count is
 a constant (rule 5) and the shortest distinguishing prefix moves as
-bubbles arrive, so neither is a coordinate; the strata of an address are
+wells arrive, so neither is a coordinate; the strata of an address are
 the schema's, read by `Keyed::fibre`, and are for readers of the forms'
-own trie. A form the voice extracted is moved into its bubble, never
+own trie. A form the voice extracted is moved into its well, never
 cloned into it.
 
 **What bounds a hold** (ruled 2026-09-19, replacing a bound on the count
@@ -5024,24 +5024,24 @@ no other:
 1. **Lapse.** A held thought stands while a demand it carries is docketed,
    and lapses with that docket's lapse — 47.5's lapse in receipts, the
    same one the courts apply, read from the ledger height the voice
-   already sees. Every bubble whose dockets have lapsed is retired on the
+   already sees. Every well whose dockets have lapsed is retired on the
    stroke that reads the height; the set is retired, never one by age or
    size (rule 4). **A citation is a pin and a pin needs an exhale**: a
-   citing bubble is never shed by the filter, so `glues`, written at the
-   hold, needs a door that empties it. A citing bubble stands while what it cites stands — on the atlas or on
+   citing well is never shed by the filter, so `glues`, written at the
+   hold, needs a door that empties it. A citing well stands while what it cites stands — on the atlas or on
    a docket — and lapses when the cited address lapses from its docket or
    is retired from the atlas, read by `glues_word` and the ledger height;
-   a bubble pinned by a citation nothing holds any more is retired on the
+   a well pinned by a citation nothing holds any more is retired on the
    stroke that reads it. The pin itself becomes a coordinate under 53.4:
    a citation over a fibre of charts is grouped by chart, and the group is
    asked whether it still stands, which an address alone cannot answer.
-2. **Promotion.** A bubble whose form was ratified into the genome, or
+2. **Promotion.** A well whose form was ratified into the genome, or
    stood into the dialect, is retired at the promotion: its content is now
    long-term memory on the atlas and the trie reaches it there; a second
    copy in the contemplation is a second carrier for one fact (law 12).
 3. **Room, per lane.** The room a voice holds thoughts in is measured in
    μ⃗ — the contemplation's `boundary_measure` against the voice's reserve,
-   lane by lane (law 5, 23.8) — never in a count of bubbles and never by
+   lane by lane (law 5, 23.8) — never in a count of wells and never by
    a number read off the box. When the room is spent on a lane, a new
    thought is not held: it is withheld (47.5), its demand stands on the
    court's docket, and the voice's memory of it is that docket. Nothing
@@ -5052,7 +5052,7 @@ no other:
 mesh's receipt ledger (law 9), and what a receipt stamps on it is a
 four-dimensional coordinate; μ⃗ is the currency that pays for the space a
 thing occupies along that axis on each lane. A hold is therefore an
-escrow: the μ⃗ that pays for the bubble's span on the ledger, per lane it
+escrow: the μ⃗ that pays for the well's span on the ledger, per lane it
 occupies; it stands while the span it paid for is ahead of the clock,
 lapses when the clock passes it, and is renewed only by a receipt that
 pays again — a docket listed, a citation stood, a promotion. The three
@@ -5092,15 +5092,15 @@ whole where the form carries it; a tape-local table with ordinals is the
 same costume on the wire and is refused, and the version byte it spent is
 spent again to remove it.
 
-`dirty` is a reading and stays one: it says the bubble's expansion did
+`dirty` is a reading and stays one: it says the well's expansion did
 not finish within its stroke, written once, where the expansion ends
 (`expand_with`, law 12), and it is not written a second time anywhere
-else. A bubble that cites a form (`glues` non-empty) is not shed by the
+else. A well that cites a form (`glues` non-empty) is not shed by the
 filter and is not meant to be: its door is promotion or lapse, since what
 it cites stands on the atlas or on a docket.
 
 **The files.** The contemplation is seven files, one organ each (Stage 8b
-S5): `idea.rs` one bubble and what it measures; `contemplation.rs` the
+S5): `idea.rs` one well and what it measures; `contemplation.rs` the
 complex of held thoughts and the thoughts' incidence; `merge.rs` when two held
 thoughts are one (13.12); `drive.rs` what makes a thought move (25.1);
 `horizon.rs` the classes seeded from the syllabus (A19); `shed.rs` what a
@@ -5134,7 +5134,7 @@ a candidate is applied only because it was the only one that discharged.
 loop identity or filed torsion, remainder empty) crystallizes: `as_element`
 writes the tape with its torsion section; M2 fixes the address; the form
 enters the dialect as `Stood` (`stand_dialect`) and is spoken once. The
-idea's bubble is retired from the contemplation (`retire_on_t` skips it
+idea's well is retired from the contemplation (`retire_on_t` skips it
 only while `glued_by` is non-empty).
 
 **25.3 Wrap.** `Contemplation::bundle` and `pivot_on` glue crystallized
@@ -5149,11 +5149,11 @@ fills it from syllabus pages; A16 consults it before filing or demanding.
   crystallized form and an idea's cover meets its chart, compute the
   placement word from the idea's anchor vertex to the form's `Frame` across
   the idea's pairs; constant → `idea.form.glue(...)`; remainder re-measured
-  as what the glued form does not speak. Two bubbles merge iff
+  as what the glued form does not speak. Two wells merge iff
   `mayer_vietoris` (since removed) returns `OneSection` or `Attached` (13.12);
   `drop_vertex` only then.
 - `Well` gains `glues: Keyed<()>` and `glued_by: Keyed<()>`;
-  `retire_on_t` skips a bubble with non-empty `glued_by`.
+  `retire_on_t` skips a well with non-empty `glued_by`.
 - `Contemplation::bundle(class, budget)` **new**: ideas on one class whose
   relative words are constant form one depth-1 `Form` of `Glued` vertices,
   held as an idea, spoken by `Mind::speak`.
@@ -5300,11 +5300,11 @@ The monodromy is evaluated over the bundle's connection-bearing charts using exa
 - $\text{Order::Finite}(\ell \ge 2)$: Torsion. Fibre twisted by $\ell$, closing after $\ell$ circuits. Filed into `Well.torsion` (and `Form.torsion`) under $M^c$'s class key with period $\ell$ and `chord = 0` (bundle connection orbit). $V$ stands on chart $c$.
 - $\text{Order::Infinite}$: Rupture. Fails to close on chart $c$. Chart $c$ leaves $V$'s sub-cover.
 
-A candidate stands on the sub-cover of connection charts where its order is finite. It dissolves from `Well.candidates` if and only if its sub-cover is empty (ruptured to `Infinite` on every measured connection chart in the bundle). A bubble with no measured connection charts in its bundle leaves every candidate standing (rule 11: nothing dies on an unmeasured monodromy).
+A candidate stands on the sub-cover of connection charts where its order is finite. It dissolves from `Well.candidates` if and only if its sub-cover is empty (ruptured to `Infinite` on every measured connection chart in the bundle). A well with no measured connection charts in its bundle leaves every candidate standing (rule 11: nothing dies on an unmeasured monodromy).
 When every candidate over a demand dissolves, the residue is prime relative to the alphabet (§37.7) and enters court docketing as witness N4.
 `link_new` keeps the transition it computes; cohesion is flatness of those transitions, and the volume sums leave.
 In the Hopf fibration reading, A22's two quaternion factors are the two fibrations: base the class, fibre the gauge.
-*Amended forward (ruled 2026-11-02):* the transitions and monodromy are read in `Spin(n+1, 1)` on the bubble's membrane, non-Euclidean, with orders read as windings (ℤ) and phases (ℚ/ℤ), never as scalars, not in `Spin(4,0)(ℚ)`. Every superposition in perception is a vortex in this sense ([MU-SENSING §3.8](MU-SENSING.md#38-the-vortex-every-superposition-in-perception); ROADMAP track 26 S9).
+*Amended forward (ruled 2026-11-02):* the transitions and monodromy are read in `Spin(n+1, 1)` on the field's chart, non-Euclidean, with orders read as windings (ℤ) and phases (ℚ/ℤ), never as scalars, not in `Spin(4,0)(ℚ)`. Every superposition in perception is a vortex in this sense ([MU-SENSING §3.8](MU-SENSING.md#38-the-vortex-every-superposition-in-perception); ROADMAP track 26 S9).
 
 ## 26. Wire and economics
 
@@ -7220,7 +7220,7 @@ Every other temporal reading a kernel takes is its own. K is the kernel's
 own index of admitted acts (45.1), and the **stroke** is the kernel's own
 orbit: one circuit of what it holds, in the fixed order the carrier gives —
 the pivot's candidate list over the occupied axes (12.6), the court's
-docket in key order, the mind's dirty bubbles, the basis. A kernel's local
+docket in key order, the mind's dirty wells, the basis. A kernel's local
 time is therefore two counts and never a clock: K, the acts it admitted,
 and the orbit count, the circuits it completed; both are per kernel, both
 are per lane where the lane paces (24.3), and neither is ever compared
@@ -10786,7 +10786,7 @@ rather than assumed at every call site.
 ### 65.3 Where `condense` belongs: the two poles, not the pullback
 
 ```
-    FAMILY POLE (matter)            BUBBLE POLE (morphism)
+    FAMILY POLE (matter)            WELL POLE (morphism)
     entities  bodies                entities  carriages
     generator nuclei s in Q^{4,1}   generator motors M in P Spin+(4,1)
     condenses spatial bonds         condenses kinematic entanglement
@@ -13421,7 +13421,7 @@ ALLOCATION, a WORLD is a DOMAIN, and `M_world` is `M_domain`.
 - **The pillars.** P1, a guest math library (native and WebAssembly) that
   builds game actions into exact Spin(4,1) generators and sentences and
   asserts momentum conservation before sending; it lives in the client SDK
-  (`src/client/sdk`). P2, bubble handoff and streaming: an inhabitant crossing
+  (`src/client/sdk`). P2, well handoff and streaming: an inhabitant crossing
   the boundary of two charts adjudicated on different hyphae is serialised
   by one court, with no double-spend on 𝒮 (matter does not net like money),
   and push acts on the wire subscribe to a chart and stream its deltas. P3,
