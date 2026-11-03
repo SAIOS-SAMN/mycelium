@@ -7,7 +7,7 @@ such change is named here.
 ## Unreleased
 
 ### Scope separation (specification, ruled 2026-11-03)
-- **MU-SENSING §6.1:** three scopes each own their readings.
+- **MU-SENSING §6.1:** each of three scopes owns a set of readings.
   - **Identity** (the hypha's): a task's address is the posted samples'
     full content.
   - **The sensorium** (the client's): the ground, symbol meanings,

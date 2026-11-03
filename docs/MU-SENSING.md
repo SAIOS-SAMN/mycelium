@@ -414,8 +414,8 @@ claims as exact content, and it admits a claim by reconstruction
 
 ### 6.1 Scope separation (ruled 2026-11-03)
 
-Three scopes each own their readings, and no reading crosses into another
-scope:
+Each of three scopes owns a set of readings, and no reading crosses into
+another scope:
 
 | Scope | Owns | Never reads |
 |---|---|---|
