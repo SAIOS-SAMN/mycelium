@@ -593,15 +593,18 @@ clause** (the operator's ruling of 2026-11-02):
 | Part | Status | Where |
 |---|---|---|
 | The agreement's hash served (`ACT_LAWS` mode 7) | **Built** | `physics::laws::concordance::CONCORDANCE_HASH` |
-| A signature verified and answered by name (`Mismatched`, `Unsigned`, `Malformed`) on mode 8 | **Built**, over the whole text's hash | `verify_concordance_signature` |
-| A signature over a clause set: each clause's hash, enabled or vetoed | **Specified** | §5a.9, B2 |
+| A signature verified and answered by name (`Mismatched`, `Unsigned`, `Malformed`) on mode 8 | **Built**, over the whole text's byte hash, which is the defect B2 replaces (Concordance §0, ruled 2026-11-04) | `verify_concordance_signature` |
+| Signing by adjudicated reading: each clause identified by its content (law form and fixtures), signed by the kernel's reconstruction of its fixtures, admitted only on reaching the same objects; a kernel that cannot read a clause is refused `NotSignatory`, naming the clause and fixture | **Specified** | §5a.9, B2 |
+| A signature over a clause set, each clause enabled or vetoed | **Specified** | §5a.9, B2 |
 | The signed clause set recorded per domain (founding key and sitting reserve) | **Specified** | §5a.9, B2 |
 | A domain's crossings refused until its reserve has signed every network clause of the version served (proposed `NotSignatory`) | **Specified**: the release after v0.3.0 (Concordance §0) | §5a.9, B2 |
 | A tube between two universes bounded by the clauses both enabled, each stopped act naming the vetoed clause | **Specified** | §5a.9, B2 |
 | An act read under its clauses as signed; a changed clause's divergence held and named until the new version is signed | **Specified** | §5a.9, B2 |
 
-Today a signature is over the whole text's hash, verified, recorded
-nowhere and required of no kernel.
+Today a signature is over the whole text's byte hash, verified,
+recorded nowhere and required of no kernel. A byte hash changes with
+every edit of wording and proves no reading, so B2 replaces it with
+signing by adjudicated reading.
 
 ### 5a.5 The vertex: where a universe's cones join the hypha's
 

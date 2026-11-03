@@ -81,8 +81,8 @@ it). Each standard takes the same ten steps:
 | 1. Rule | The operator rules, and Mycelium writes the specification | The governing document (for example MU-SENSING) |
 | 2. State | One versioned law form, `LAW-<NAME> v<k>`: the carrier, the operations, the readings and the refusals. It is exact and never scalar; a number appears only as the gauge of a one-dimensional reading. | `forms`; a proposal in `docs/proposals/` (§3) |
 | 3. Fix the fixtures | Joint-read fixtures: inputs, each with the exact decoded output every kernel must reach | `forms` tests; the proposal |
-| 4. Propose a clause | A Concordance clause naming the law and its version, with its own hash | MU-CONCORDANCE (§0 AMENDING) |
-| 5. Sign | Each kernel signs the clause, enabled or vetoed. A network clause cannot be vetoed. | `ACT_LAWS` mode 8 (per clause with ROADMAP track 24 B2) |
+| 4. Propose a clause | A Concordance clause naming the law and its version, identified by its content (the law form and its fixtures), never by a hash of its text | MU-CONCORDANCE (§0 AMENDING) |
+| 5. Sign | Each kernel signs the clause by reconstructing its fixtures, enabled or vetoed. The hypha admits the signature only on the same objects, and a kernel that cannot read the clause is refused `NotSignatory`. A network clause cannot be vetoed. | `ACT_LAWS` mode 8 (ROADMAP track 24 B2; Concordance §0) |
 | 6. Implement in the kernel's shell | The kernel implements the form in its own physics and may refine it. At the core tube its objects project onto the hypha's form. | The kernel's own repository |
 | 7. Prove conformance | The KERNEL conformance profile gains rows for the law. The hypha serves the fixtures, and a kernel passes by decoded exact values, never byte parity (Concordance 1.4). | `mycelium_sdk::conformance`, MU-CONFORMANCE |
 | 8. Enforce at the vertex | A crossing that depends on the law is reconstructed under it, or refused by name | MU-HOSTING §5a.10 |
