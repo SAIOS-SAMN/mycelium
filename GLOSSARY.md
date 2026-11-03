@@ -163,7 +163,8 @@ senses that kernel builds for it.
 | **POWV** | Proof of work verification: the courts that verified a closure are paid a share of its release, per lane, read off each court's strain against its reserve. It is taken out of the release, never added to it. |
 | **Strain** | A court's yield surface on a lane: its reserve deficit plus entropic excess. It paces admission and sets the POWV share. |
 | **Deflation / discharge** | What a word or sentence closes on a family, measured per lane. It is the amount POUW mints. |
-| **Section** | The sites a word changes, and changes truly, on a scene. |
+| **Section** | A section of a bundle or a sheaf: a choice over a base, one element of the fibre at each point (MU-RECURSION 25.12, 72.1c). A vortex's candidates are sections of the gauge fibre. |
+| **Support (of a word)** | The sites a word changes, and changes truly, on a scene (formerly called its section). |
 | **Bond** | μ a court holds staked for a hypha or voice. A bonded hypha counts as an independent witness. |
 | **Escrow** | μ held against a claim until the court rules on it. |
 | **Compute lease** | Escrow against a provider's capacity. A payer holds μ for a provider over named jobs; each job the provider's verified solve closes pays its measured discharge out of the hold, and the remainder returns at the lease's end. |

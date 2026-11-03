@@ -341,6 +341,116 @@ updating every citation in the same commit (MU-STANDARDS 3.1):
 `Replay` → `Resend`, and the test names that say "replays" for a
 reconstruction. **Specified.**
 
+### Naming alignment (issue [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55); ruled 2026-11-04)
+
+An audit of `main` against the naming rules (AGENTS.md *While writing*)
+found 63 findings. Every phase below renames only names. Behaviour, wire
+bytes and task addresses are unchanged, except N6, which lands in
+v0.3.0's open break. Each phase updates every citation in the same
+commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
+
+1. **N1, verification is reconstruction.** The #29 names above, plus
+   the audit's further names:
+   - `court/replay.rs` → `court/reconstruct.rs`;
+   - `court_replay*`, `replay_on_cursor`, `docket_replay`,
+     `replays_on_family`, `replay_key`, `replay_certificates*`,
+     `certificate_replays`, `replay_on_ground`,
+     `replay_after_perceiving`, `form_orbits_replay`,
+     `replay_retirement`, `rewrite::replay`, `factor::replays`,
+     `chain::replay_at` / `replay_operators`, `rule_replays_family`
+     → `reconstruct…`;
+   - `Stop::Replay` → `Stop::Reconstruction`;
+   - `Ask::Replay` / `REPLAY` → `Ask::Era` / `ERA`;
+   - `replayable` → `map_holds_whole`;
+   - test names that say "rebuilds" for a construction → `derives`;
+   - `rebuild_own_cover` → `read_published_cover`.
+2. **N2, files by function.**
+   - `door.rs` → `control.rs` and `context.rs` (#53).
+   - Field files:
+     - `field/core.rs`'s `Door` → `Shedding`, landed first;
+     - `field/idea.rs` → `field/well.rs`;
+     - `field/core.rs` → `field/nerve_shape.rs`;
+     - `field/docket.rs` → `field/plan.rs`.
+   - `cayley/chart.rs` → `cayley/map.rs`.
+   - `observe/fleet.rs` → `observe/phase.rs`.
+   - Vague names:
+     - `tuniversal/ops.rs` → `navigate.rs`;
+     - the 13 `tests/common.rs` → `tests/fixtures.rs`;
+     - `cga/tests/generic.rs` → `rank_n.rs`;
+     - `tests/g_cga.rs` → `conformal_algebra.rs`;
+     - `tests/alpha_plan.rs` → `word_lifecycle.rs`.
+   - **Metaphor module names become function names.** A doctrine term
+     may stay as a type's name with its GLOSSARY row, never as a file's
+     name. For example:
+     - `tshelf.rs` → `tuniversal.rs`;
+     - `capacitor.rs` → `pivot_fibre.rs`;
+     - `client/sdk/entity/` → `client/sdk/mind/`, since `Entity` is
+       retired for `Mind`;
+     - `breath`, `tensegrity`, `sporophore`, `mouth`, `peel`, `beam`,
+       `callus`, `fascicle` and `epigenome` are each renamed by what the
+       module does, read from its header.
+3. **N3, one name, one meaning.** The canonical meanings (GLOSSARY) are:
+   - **Field** is the object, and `cech::orbit::Field` is that type.
+     `FieldEntry` → `ProbedChart`.
+   - **Section** is a section of a bundle or sheaf (25.12, 72.1c). The
+     sites a word changes become the word's **support**. Keyed
+     `Section { chart, carriage }` → `ChartCarriage`.
+   - **Chart** is a body's invariant coordinates. A region of the sensor
+     → `Region`; a cover's coordinates → `CoverCoordinates`.
+   - **Frame** is one sample of a family (78.75). The wire's frame →
+     `WireFrame`; other frames are renamed by function.
+   - **Phase** is a coordinate within a chart. The court's 45.9 window →
+     `Window`; a reconstruction's stages → `Stage`; the observer's phase
+     → `CourtStage`.
+   - **Compartment**, `Held`, `Reading`, `Cover`, `Closure`, `Carriage`,
+     `Origin`, `Site`, `Body`, `Fibre`, `Stratum`, `Tube`, `Shell`,
+     `Verdict`, `Reconstruction`, `Source`: one meaning each. The others
+     are renamed by function.
+   - The client's `entity::Body` → `Seating`. `Own` ×2 → `SeatFunction`
+     and `SelfReading`. `observe::Mind` / `Court` → `MindReading` /
+     `CourtReading`. `alphabet::Q` re-exports `core::q::Q`.
+   - Near-identical files: `held.rs`, `hold.rs` and `server/held/`;
+     `snapshot.rs` and `snapshot/`; `germinate` ×2; `winding` ×2. Each is
+     renamed by function.
+4. **N4, retired terms and person words.**
+   - `Unstated::OffLattice` → `OffSubstrate`; `lattice_step` →
+     `substrate_step`.
+   - `THROAT_GRID` → `THROAT_LEVEL_BITS` (the register entry follows).
+   - `absorb_vortex` / `absorb_keyed` → `merge_…`.
+   - The test names with a person word, "its" or "own" are renamed.
+   - `lamina` and `FormCell` (retired by 0.7) are renamed.
+5. **N5, the GLOSSARY.** A row for each term a name keeps:
+   - contemplation
+   - tensegrity
+   - breath
+   - hyperfluid
+   - aperture
+   - horizon
+   - resonance
+   - terrain
+   - peel
+   - beam
+   - tower
+   - judge
+   - working atlas
+   - seat mind
+   - chatter / utter
+   - durable drill
+   - the soak instrument
+   - xSEPTUM
+   - fascicle, sporophore, callus, compartment, germinate
+6. **N6, "residual" → "residue" or "remainder"** (retired by 0.7), about
+   450 uses. `TAG_RESIDUAL` is wire-visible, so N6 lands in v0.3.0's open
+   break and is stated under *Network contract*.
+7. **N7, the two wire names, with track 26 S5:**
+   - `ACT_ROWS` and its codecs → `ACT_ENTRIES` (ledger entries);
+   - `REFUSE_RULE_OFF_LATTICE` → `REFUSE_RULE_OFF_SUBSTRATE`.
+
+**Exemptions:** "row" in its strict matrix sense (`rank_of_rows`,
+`OrbitRow`) and "arc" in its strict geometric sense (an arc of a
+boundary) keep the names they have. A source word in any other sense is a
+finding.
+
 ## 12. Verified knowledge: science kernels
 
 **Specified** in [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md).

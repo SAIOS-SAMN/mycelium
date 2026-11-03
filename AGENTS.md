@@ -75,7 +75,12 @@ lawful at one site and a defect at another.
 - Name a file for what its area does, at a high level (`control.rs`,
   `context.rs`, `sample.rs`). Never use a metaphor, a dataset or one
   specific instance (`door.rs`, `arc.rs`, `pore.rs`). A term a name
-  introduces stands in the GLOSSARY.
+  introduces stands in the GLOSSARY. A doctrine term may name a type,
+  never a file.
+- One name, one meaning: a term the GLOSSARY defines names only that
+  meaning. Anything else is renamed by function (ROADMAP track 11, N3).
+  "Row" in its strict matrix sense and "arc" in its strict geometric
+  sense are exempt.
 - Use no possessive or personal pronouns in code, comments, test names,
   identifiers or documents: name the thing.
 - Keep a source file within the reading bound, with one organ per file.
