@@ -6,6 +6,19 @@ such change is named here.
 
 ## Unreleased
 
+### The symbol set, the wire's limits and the orthogonal class, derived (specification)
+- **S3** (MU-SENSING §3.3): a family's symbol set `Σ` is its distinct
+  symbols. An index is the order of first appearance in address order,
+  `e_∅` sits at `|Σ|`, and tables are `Keyed` and sized `|Σ|`.
+- **S5** (MU-SENSING §6): the rank and extents use the `u16` field and
+  are refused past it, never widened. The symbol width is the source's,
+  the symbol bytes are checked, and a phase's denominator is its extent.
+  This settles LAW-FIELD v1's open question on the denominator.
+- **S9** (MU-SENSING §3.7): two orbit classes are orthogonal when their
+  elliptic planes satisfy `B₁ · B₂ = 0` and `B₁ ∧ B₂ ≠ 0`. Axiomatic
+  gravity's shear on that class is 78.46's drag: rate, not plane.
+- ROADMAP track 26 S3, S5 and S9 carry these, with claims.
+
 ### Scope separation (specification, ruled 2026-11-03)
 - **MU-SENSING §6.1:** each of three scopes owns a set of readings.
   - **Identity** (the hypha's): a task's address is the posted samples'

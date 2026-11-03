@@ -1137,10 +1137,15 @@ Each phase is one commit:
    - Claim: `ground_deduced_not_symbol_zero`.
 4. **S3, the symbol set deduced.**
    - `PALETTE` (10, and the conflicting 256), `RESERVOIR` and the 10-slot
-     hue tables are replaced by the family's own symbol set.
-   - `e_∅` is the place after that set.
+     hue tables are replaced by the family's own symbol set `Σ`
+     (MU-SENSING §3.3). An index into `Σ` is the order of first
+     appearance in address order, and a table over symbols is `Keyed`
+     and sized `|Σ|`.
+   - `e_∅` is at index `|Σ|`.
    - Colour words are fibre relations.
-   - Claim: `percept_invariant_under_symbol_permutation`.
+   - Claims: `percept_invariant_under_symbol_permutation`,
+     `symbol_index_is_first_appearance_in_address_order`,
+     `reservoir_follows_the_family_symbol_set`.
 5. **S4, rank and roles deduced.**
    - `GRID_AXES`, `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N`, the
      3-tuple `Point`, `BASE_AXES` and the planar `(rows, cols)` carriers
@@ -1183,7 +1188,13 @@ Each phase is one commit:
      symbols at their width.
    - A link carries its site's coordinates of rank `n`.
    - The SDK's `task` module follows. This is a wire change.
-   - Claim: `task_round_trips_samples_of_rank_n`.
+   - Limits are derived (MU-SENSING §6): the rank and extents use the
+     `u16` field and are refused past it, never widened; the symbol width
+     is the source's; the symbol bytes `w · ∏ eᵢ` are checked; a phase's
+     denominator is its extent.
+   - Claims: `task_round_trips_samples_of_rank_n`,
+     `extent_past_its_field_is_refused_never_widened`,
+     `symbol_bytes_overflow_is_refused_by_name`.
 7. **S6, perspective.** A shift of perspective is a sensor motion. The
    perspectives of one sample are a cover, checked by the cocycle of
    MU-CLIENT 24.4. A mind may ask for a perspective as a demand.
@@ -1217,8 +1228,11 @@ Each phase is one commit:
      `inversion_in_the_membrane_needs_no_infinity`.
 10. **S9, forces, orbits and the vortex in the field's atlas:**
     - Axiomatic gravity is read as the local orbit's shear on the
-      orthogonal orbit class (a new reading of plane orthogonality
-      between orbit classes).
+      orthogonal orbit class. Two classes are orthogonal when their
+      elliptic planes satisfy `B₁ · B₂ = 0` and `B₁ ∧ B₂ ≠ 0`, and the
+      shear is 78.46's commuting part, the drag, which changes rate and
+      not plane (MU-SENSING §3.7).
+    - Claim: `only_disjoint_plane_orbits_change_rate_under_axiomatic_gravity`.
     - The court's pressure (`Field::beat_under`) is wired to the field's
       shape.
     - `Field` orbits are attached to wells. Precession is the base
