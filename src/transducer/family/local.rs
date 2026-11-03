@@ -26,10 +26,12 @@ use crate::network::nerve::Keyed;
 
 /// A WORD'S SECTION OVER A FAMILY: per pair, the sites it closed; and what
 /// those sites' demand measures, per lane, summed over the pairs (the pairs
-/// are disjoint scenes).
+/// are disjoint scenes) — in counts (`pay`, the measure) and as μ, each
+/// pair's share of its frame (`mu`, O1 ruled 2026-11-01).
 #[derive(Clone, Debug, Default)]
 pub struct Local {
     pub pay: [u64; 4],
+    pub mu: crate::economy::Mu,
     pub sites: Vec<Keyed<()>>,
 }
 
@@ -53,7 +55,8 @@ impl Local {
                 left
             })
             .collect();
-        Local { pay: measure_sites(family, &sites), sites }
+        let (pay, mu) = measure_sites(family, &sites);
+        Local { pay, mu, sites }
     }
 
     /// The union of several sections, pair by pair: every site any of them
@@ -69,7 +72,7 @@ impl Local {
                 }
             }
         }
-        Local { pay: [0; 4], sites }
+        Local { pay: [0; 4], mu: crate::economy::Mu::zero(), sites }
     }
 }
 
@@ -83,9 +86,12 @@ fn hue_at(g: &Grid, r: i64, c: i64) -> Option<u8> {
 /// (`residual_of`, the sites where before and after differ) standing at the
 /// section's sites, closed to nothing — `deflation_of` of the move from
 /// the sites' measure to zero, the one deflation reader. Summed over the pairs,
-/// a sum past its carrier refused lane by lane and left where it stood.
-pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> [u64; 4] {
+/// a sum past its carrier refused lane by lane and left where it stood. Beside
+/// the counts, the same closure as μ: each pair's share of its own frame
+/// (`transduce::share_of_frame`, O1 ruled 2026-11-01).
+pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> ([u64; 4], crate::economy::Mu) {
     let mut pay = [0u64; 4];
+    let mut mu = crate::economy::Mu::zero();
     for ((x, y), at) in family.iter().zip(sites) {
         if at.is_empty() {
             continue;
@@ -93,11 +99,12 @@ pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> [u64; 4] {
         let links: Vec<(i64, i64, u8, u8)> =
             residual_of(Some(x), y).into_iter().filter(|&(r, c, _, _)| at.contains(&site_key(r, c))).collect();
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&[0; 4], &element::measure_lanes(&links)));
+        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, crate::arc::sample_unplaced(y).ok().as_ref()));
         if let Some(next) = crate::core::lanes::lanes_add(pay, closed) {
             pay = next;
         }
     }
-    pay
+    (pay, mu)
 }
 
 /// W — A CONNECTION'S LOCAL DISCHARGE (MU-CLIENT §5.6 W, as the spec reads).
@@ -114,7 +121,7 @@ pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> [u64; 4] {
 /// for anything that is not a connection: a letter standing at no frame names
 /// no body (78.149(c)).
 pub fn word_local(word: &Element, family: &[(Grid, Grid)]) -> Local {
-    let mut out = Local { pay: [0; 4], sites: Vec::with_capacity(family.len()) };
+    let mut out = Local { pay: [0; 4], mu: crate::economy::Mu::zero(), sites: Vec::with_capacity(family.len()) };
     let versor = match (word.is_connection(), word.letters()) {
         (true, Some(l)) => element::conformal_of(&l.spelling.word, &l.carriage).map(|v| (v, l.sigma.clone())),
         _ => None,
@@ -134,7 +141,7 @@ pub fn word_local(word: &Element, family: &[(Grid, Grid)]) -> Local {
             None => Keyed::new(),
         });
     }
-    out.pay = measure_sites(family, &out.sites);
+    (out.pay, out.mu) = measure_sites(family, &out.sites);
     out
 }
 
@@ -212,7 +219,7 @@ pub fn form_local(
     crystal: &dyn Crystal,
     placement: &crate::transducer::alphabet::Word,
 ) -> Local {
-    let mut out = Local { pay: [0; 4], sites: Vec::with_capacity(family.len()) };
+    let mut out = Local { pay: [0; 4], mu: crate::economy::Mu::zero(), sites: Vec::with_capacity(family.len()) };
     for (pi, (x, y)) in family.iter().enumerate() {
         let mut closed = Keyed::new();
         let spoken = apply_form_on(form, x, placement, crystal, Some(pi)).and_then(|s| s.grid());
@@ -239,6 +246,6 @@ pub fn form_local(
         }
         out.sites.push(closed);
     }
-    out.pay = measure_sites(family, &out.sites);
+    (out.pay, out.mu) = measure_sites(family, &out.sites);
     out
 }

@@ -32,8 +32,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
-| T2, the transduction core: frames related by the motion between them, μ as a share of the frame | [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) | In progress (maintainers); merges after track 26's S0 and S4, its `Enclosure` holding `n` phases on a chart, lifted into the field |
-| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress (maintainers); in v0.3.0's one break. S6 follows v0.3.0. |
+| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1–S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready after T2 |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Ready |
@@ -176,6 +175,18 @@ change built with its codec, reconstruction and claims:
   admission.
 - **Body fate as a typed precondition** of family extraction, with named
   refusals.
+
+**Progress — frames of unequal extent** (MU-DERIVATIONS D3.2, MU-RECURSION
+78.170): **Built**: the transduction (`transducer::family::transduce`): a
+frame as two circles of turns, each body held by its bands, the incidences
+of two frames under the re-period, the eight signed swaps as the motions,
+projection refusing `OffSite`, and the relation census of the corpus
+(O10). The deflation, the court's measured reconstruction and the demands
+of unreached pairs read a pair's unspoken residue on the output's sites.
+**In progress**: μ as the share of the frame (O1, after the rational
+lanes); the turn-native chart that lists a pair of unequal enclosures (O8);
+percept meets through incidences (O6); the incidence payload of a demand
+whose input does not land (O9 (a)).
 
 ## 8. Convergence as admission evidence
 
@@ -844,9 +855,12 @@ Each phase is one commit:
    slash and the challenger's bounty read off the defect, ruling 78.129
    amended forward (D2.1, D2.2).
 
-**Progress:** D3.2 is **Built** (NC3, ruled O1 (a)): the lcm cap is
-deleted, the common refinement is metered by the need its extents name,
-and `task_address` refuses an unrefined pair rather than skipping it.
+**Progress:** D3.2 is **Built** (NC3, ruled O1 (a)), and then rewritten as
+the transduction (MU-RECURSION 78.170): the lcm cap and the common
+refinement are both deleted, two frames are related by the bodies' bands
+in turns under a need of `R_h·R_w`, and `task_address` names a task by both
+frames' full content, refusing a pair with no enclosure rather than
+skipping it.
 D3.1 is **Built** (NC1): a sentence's linear part is constructed under
 the stroke `modes_need` reads off it.
 

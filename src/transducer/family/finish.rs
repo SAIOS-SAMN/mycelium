@@ -22,25 +22,28 @@ pub fn assignment_key(a: &crate::transducer::sentence::Acting) -> Vec<u8> {
     buf
 }
 
-/// The germ of one pair: what the input carries onto the output, as the
-/// links of the change, on the pair's common refinement under the
-/// extraction's stroke. A pair the stroke does not refine (or that has no
-/// extent) is still a remainder (rule 7): its germ is the residue of the two
-/// grids read site for site (`speak::residual_of`), as the deflation
-/// measures an unrefined pair. `None` for a pair with no scene.
+/// The germ of one pair: what the form did not say about it, which for a
+/// pair it never reached is the residue the identity's speech leaves on
+/// the output frame (`deflation::unspoken_residue`, the pair's transduction
+/// projected under the extraction's stroke) — the same reading the
+/// deflation prices the pair by, so the demand and the measure cannot
+/// disagree. Where the identity lays down no grid the residue is the whole
+/// output against nothing: still a remainder (rule 7), never dropped and
+/// never read off a shared corner of two frames. `None` for a pair with no
+/// scene. The demand it stands as is the sentence's ASK (78.149 (b)), its
+/// links and their count the word's measure, never μ: it may cap what a
+/// closer is paid and is never escrowed or minted, so it stays a count
+/// (ruled 2026-11-01; μ, a share of the frame, is the discharge).
 pub(crate) fn germ_of_pair(
     a: &Grid,
     b: &Grid,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::element::PlacedChain> {
-    let cochain = match crate::transducer::family::refine::refine_delta(a, b, budget) {
-        Ok(chain) => chain,
-        Err(_) => super::speak::residual_of(Some(a), b),
-    };
-    if cochain.is_empty() {
+    let residue = super::deflation::unspoken_residue(a, b, budget);
+    if residue.is_empty() {
         return None;
     }
-    crate::transducer::element::place_chain(&cochain)
+    crate::transducer::element::place_chain(&residue)
 }
 
 /// The spend one extraction of this family is sized by (rule 10, L8w, ruled
@@ -56,6 +59,9 @@ pub(crate) fn germ_of_pair(
 /// graph on `V` vertices has at most `3V − 6` edges. So `3V` bounds the
 /// pairs a frame pair's `V` bodies can be read in, and the draw is linear in
 /// the bodies — a Cartesian `V²` would license the search rule 1 refuses.
+///
+/// A STROKE SIZE, never μ: the reads an extraction may take, so it counts
+/// reads and feeds no payment (ruled 2026-11-01).
 pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frames) -> usize {
     let mut n = 0usize;
     for (a, b) in family {
@@ -75,17 +81,20 @@ pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frame
         let next = n.saturating_add(reads);
         n = next;
     }
-    // THE REFINEMENTS (MU-DERIVATIONS D3.2): a pair of unequal extents is
-    // read on its common refinement, whose need is read off its four extents
-    // (`refine::need`), never capped. A site-for-site pair reads its own
-    // cells, already counted above.
+    // THE TRANSDUCTIONS (MU-DERIVATIONS D3.2): a pair of unequal enclosures
+    // is related by its incidence record, whose need is read off its four
+    // periods (`transduce::need`, `R_h·R_w`, R = h + h′ − gcd per circle).
+    // A pair of one enclosure visits at most its own sites, already counted
+    // above.
     for (a, b) in family {
-        let Ok(refn) = super::refine::of_grids(a, b) else { continue };
-        if refn.is_trivial() {
+        let (Ok(x), Ok(y)) = (crate::arc::sample_unplaced(a), crate::arc::sample_unplaced(b)) else { continue };
+        let (p, q) = (super::transduce::Enclosure::of(&x), super::transduce::Enclosure::of(&y));
+        if p.is_same_periods(&q) {
             continue;
         }
-        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the refinement needs of resident pairs are each a usize (`refine::need`, checked) and their sum cannot pass a 64-bit usize")]
-        let next = n.saturating_add(refn.need);
+        let Some(need) = super::transduce::need(&p, &q) else { continue };
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the transduction needs of resident pairs are each a usize (`transduce::need`, checked) and the sum of them cannot pass a 64-bit usize")]
+        let next = n.saturating_add(need);
         n = next;
     }
     n
@@ -94,9 +103,9 @@ pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frame
 /// The tail of an extraction: the unreached frames ride the rule as the
 /// demands of 50.5, and the form is closed out with its depth, orbits and
 /// ratio. Its sections are its members' frames, already on it (AT1).
-/// Each unreached pair is refined under the extraction's stroke, which
-/// [`extraction_spend`] sized for it; one the stroke does not refine stands
-/// as the demand its site-for-site residue is ([`germ_of_pair`], rule 7).
+/// Each unreached pair is transduced under the extraction's stroke, which
+/// [`extraction_spend`] sized for it, and stands as the demand its
+/// unspoken residue is ([`germ_of_pair`], rule 7).
 pub(crate) fn finish(
     mut form: Form,
     scale: ((usize, usize), (usize, usize)),

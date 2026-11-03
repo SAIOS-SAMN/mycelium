@@ -488,7 +488,7 @@ impl Court {
     /// the word stood, never what it asks, nothing for a word that names no
     /// body. Its magnitude is still what the field and the deflation record
     /// carry: the word's measure, not its price.
-    pub(crate) fn docket_discharged(&mut self, word: &Element, ratifier: [u8; 32], discharge: [u64; 4]) {
+    pub(crate) fn docket_discharged(&mut self, word: &Element, ratifier: [u8; 32], discharge: crate::economy::Mu) {
         if word.is_identity() && !word.is_rewrite() {
             return;
         }

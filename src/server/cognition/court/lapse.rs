@@ -29,8 +29,8 @@ impl Court {
     /// carries nothing on any lane is no circulation and moves nothing: only
     /// a flux `Φ` non-zero on some lane re-files the word. A word not yet
     /// admitted is filed by its admission (`file_admitted`).
-    pub(crate) fn note_flux(&mut self, address: &[u8], flux: [u64; 4]) {
-        if flux.iter().all(|&l| l == 0) {
+    pub(crate) fn note_flux(&mut self, address: &[u8], flux: &crate::economy::Mu) {
+        if flux.is_zero() {
             return;
         }
         if let Some(at) = self.stamp_key(address) {

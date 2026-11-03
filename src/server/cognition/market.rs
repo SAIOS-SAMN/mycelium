@@ -67,7 +67,7 @@ impl Court {
     pub fn settle_solve(
         &mut self,
         voice: [u8; 32],
-        mu: [u64; 4],
+        mu: crate::economy::Mu,
         anchor: crate::economy::Anchor,
     ) -> crate::economy::Mu {
         self.treasury.settle_solve(voice, mu, anchor)

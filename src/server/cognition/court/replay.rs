@@ -111,7 +111,7 @@ impl Court {
             // nothing is measured and nothing is minted.
             let discharge = match spoken.as_ref() {
                 Some(w) => self.discharge_of(address, w),
-                None => [0; 4],
+                None => crate::economy::Mu::zero(),
             };
             if let Some(w) = spoken {
                 if w.is_rewrite() {

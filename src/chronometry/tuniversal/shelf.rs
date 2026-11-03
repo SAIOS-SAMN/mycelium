@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Condvar, Mutex};
 
 /// What the shelf holds under its lock.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone)]
 struct Held {
     /// The greatest point final in this door's view (TU-3).
     final_point: Option<TPoint>,
@@ -43,8 +43,8 @@ impl TShelf {
 
     fn held(&self) -> Held {
         match self.held.lock() {
-            Ok(h) => *h,
-            Err(p) => *p.into_inner(),
+            Ok(h) => h.clone(),
+            Err(p) => p.into_inner().clone(),
         }
     }
 

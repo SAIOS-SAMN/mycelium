@@ -137,7 +137,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name (**Built** 2026-10-31 but the reserve's memory and cores terms, D2.5's organ) | yes | M | 14 |
 | D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state (**Built** 2026-10-31: a CLI's first ask to the stream's end, a court's the mesh floor) | yes | S–M | 5 |
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111; **Built**) | yes | S | 7 |
-| D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w` (**Built**, O1 (a)) | no | M | 7 |
+| D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600`, then the common refinement `K_lcm` | `transducer/family/refine.rs` (deleted) | task identity, μ | High | the transduction in turns, `need = R_h·R_w`; μ a share of the frame (**Built**, 78.170; O1 wired 2026-11-01) | no | L | 7 |
 | D3.3 | `truncate(32)` | `transducer/anchor/derive.rs:182` | court admission (π*) | High | keep every carrying term, keyed; metered (**Built** 2026-10-31; O1 ruled (a): π* binds the whole common set) | yes | M | 7 |
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state (**Built** 2026-10-31) | no | S | 10 |
 | D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` (**Built** 2026-10-31; O1 read (a), `seq`) | yes | S | 10 |
@@ -659,7 +659,11 @@ read (`wire.rs:171`, `noise.rs:399`, `transport.rs:88, 208`,
 the awaited-citations ask (`exchange.rs:881`), and the seat mind's series
 bound (`seat_mind/mind.rs:170`). A frame is
 `[lane 1][len u32 LE 4][body][TPoint 84]?`
-(`TPoint::LEN = 32 + 4 + 8 + 4·8 + 8 = 84`). Under Noise a frame rides in
+(`TPoint::LEN = 32 + 4 + 8 + 4·8 + 8 = 84`; ruled 2026-11-01, the point's
+lanes are exact rationals and the trailer is `[point][point len u16]`, of
+no fixed length: at least `96 + 2` bytes and at most `TPoint::TRAILER_MAX =
+u16::MAX + 2`, so the `84` below reads as the trailer a given point takes).
+Under Noise a frame rides in
 plaintext chunks of `CHUNK = MESSAGE_MAX − TAG_LEN = 65535 − 16 = 65519`
 bytes (`noise.rs:36–40`).
 
@@ -1813,28 +1817,180 @@ stroke minted that is not the residue's).
 
 ---
 
-### D3.2 `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` — the common refinement refused by a cap
+### D3.2 The common refinement `K_lcm` — two frames related by transduction in turns, never by a common lattice
 
-**Status.** **Built**, by O1 (a). Both constants are deleted.
-`refine::need(h_in, w_in, h_out, w_out)` is the closed form below, checked
-over `usize`; `refine::need_of` reads it off two grids. `CommonRefinement::of`
-refuses only `Unrefined::Empty` (and `Unbounded`, where the lcm or the need
-passes `usize`); `bipartite_cochain`, `pulled_back` and `refined` take
-`&mut Budget` and refuse `Ragged` or `Spent { need }` with nothing
-returned. Every caller sizes its stroke from `need_of` (the D3.1 / 78.111
-pattern); the extraction's stroke adds `need` per non-trivial pair
-(`extraction_spend`) and `finish` refines its unreached pairs from it,
-standing a pair it does not refine as the demand its site-for-site residue
-is. `task_address` returns `None` on any `Unrefined`. Tests:
-`transducer::family::tests::refine`
-(`common_refinement_reads_coprime_thirty`,
-`common_refinement_refuses_spent_stroke`, `runs_count_equals_sum_less_gcd`),
-`server::tests::registry` (`task_address_refuses_unrefinable_pair`,
-`task_address_separates_tasks_differing_in_incommensurate_pair`),
-`transducer::family::tests::budget`
-(`extraction_spend_includes_refinement_need`); a mutant on the refusal arm
-of `task_address` in `xtask/mutate/catalogue.rs`. The text below is the
-derivation as specified.
+**Status.** **Built** (MU-RECURSION 78.170, the operator's rulings of
+2026-10-31). The lcm cap (`MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600`) and
+the metered common refinement that first replaced it (`CommonRefinement`,
+`bipartite_cochain`, both `refine_delta`s, `arc::Refined`, `need =
+R_h·R_w + 2·L_h·L_w`, `Unrefined`) are deleted; no reader forms an lcm. The
+organ is `src/transducer/family/transduce/`.
+
+**What was wrong.** `K_lcm = lcm(h_in, h_out) × lcm(w_in, w_out)` is the
+uniform subdivision both grids embed in. It turned an incidence question
+into an equality question by writing unit cells, so its size was the lcm,
+not the frames: on `18 × 19 → 7 × 9` (task `0b148d64`, pair 0) `K_lcm` is
+`126 × 171 = 21 546` cells, the change set 14 045 links, and charting it
+(`invariant_of`) took ≥ 19 s a pair. Reading the code whole found four more
+defects: the input pulled back onto `K_lcm` was written (`L_h·L_w` per
+call) and never read; an anisotropic frame was absent from the listing key,
+so `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]` (one `K_lcm` coboundary,
+neither writing its frame) gave two tasks one address (law 2); μ counted
+`K_lcm` cells (one changed output site of `29 × 29 → 30 × 30` measured
+841); and the deflation subtracted an output-native `after` from a `K_lcm`
+`before`.
+
+**The transduction, as built.** LIFT → ACT → PROJECT; past the sensor the
+state is bodies and motions, and per-site values are written only at the
+sensor and where a grid is spoken.
+
+- **LIFT** (`turn.rs`, `enclosed.rs`). A frame of extent `h × w` is two
+  circles of turns, `ℚ/ℤ`, with periods `h` and `w` (`Enclosure`). A
+  boundary is the `Turn` `index / period`, compared with another by integer
+  cross-multiplication, never reduced, never a `(cos, sin)` point, never a
+  conformal point; the seam `0 ≡ 1` is held, never wrapped. The sensor reads
+  the raster once into BANDS (`Enclosed::of`): maximal runs of one hue whose
+  column boundary turns stand over consecutive row arcs. Every band edge is a
+  boundary of its body somewhere along it, so a body (bands of one hue
+  meeting along a row boundary) is held by its boundary record, O(perimeter),
+  never by its interior. `put_content` writes the frame's full content as
+  its periods and bands, losslessly.
+- **ACT** (`record.rs`, `motion.rs`). `Transduction::of(x, y, budget)`
+  records the INCIDENCES between the input's bands and the output's under
+  the re-period of each circle: the pairs of bands whose arcs overlap with
+  positive length on both circles. Each visit holds an arc of each merged
+  circle no other visit holds, so the spend is bounded by `need =
+  R_h·R_w`, `R(a, b) = a + b − gcd(a, b)` (`transduce::need`, `need_of`).
+  An anisotropic scale is a re-period per circle, carried by no versor
+  (Liouville: a versor's differential is a scalar times an orthogonal map).
+  `share` is the changed share of the frame, exact (O1). `carried` reads a
+  body carried whole onto one output body, else `Mixed`. The motions keeping
+  the seams are the eight signed swaps of the two circles (`SignedSwap`:
+  identity, two flips, 180°, two transposes, 90°, 270°), read from an
+  integer matrix (`of_matrix`) or off an alphabet word's images of `e₀, e₁`
+  on the sensor's plane (`of_word`); anything else (a shear, a `(3, 4, 5)`
+  letter) is `Oblique`. A turn carries no period, so a 90° turn followed by
+  any re-period is exact on turns.
+- **PROJECT**. `Turn::lands(period)` is the exact floor's question: the turn
+  lands on a boundary of the output circle, or `OffSite { turn, period }`.
+  `Enclosed::spoken_onto` and `SignedSwap::spoken_onto` speak a (moved)
+  frame onto an output enclosure; `Transduction::projected` reads the
+  record back on the output frame (on one enclosure, the planar coboundary
+  link for link).
+- **Refusals** (`TransductionRefusal`): `Empty`, `Ragged`, `Spent { need }`
+  (`None` where the bound passes `usize`), `Seam`, `Oblique`, `OffSite {
+  turn, period }`, `Mixed { body }`, `Unenclosed`. No constant enters: the
+  compartment centre's ½, the envelope radius `r² = Σ eᵢ²/4` and the
+  conformal `½‖x‖²` are not used.
+
+**The readers, as built.**
+
+| Reader | Reads now |
+|---|---|
+| Task identity, `registry::task_address` (law 2) | each train pair as both frames' full content: four periods and every band (O3) |
+| Deflation (client mint) and the court's measured reconstruction, one function | `deflation::unspoken_residue`: the identity's speech (the record projected onto the output frame) against the observed output, on output sites, the unit of the form's remainder; the output against nothing where the input's turns do not land |
+| Demands of unreached pairs, `finish::germ_of_pair` | the same unspoken residue |
+| Unspoken links, `declare_unspoken` | the input's hue on the output's sites through `spoken_onto`, never off a shared corner |
+| Extraction strokes, `extraction_spend` | `transduce::need` per non-planar pair |
+| Intake routes, `route::routes_of` | planar pairs as before; a pair of unequal enclosures has no route yet (its chart and pieces read a chain site by site, O8) |
+| Family magnitude, `family_magnitude` | the planar pairs' count, the mind's metabolism and not μ, so it stays a count; `transduce::family_share` reads every pair's exact share beside it |
+| μ, the discharge (O1, Built 2026-11-01) | `DeflationRead::mu` and `Local::mu`: per closed pair, S and G over the output frame's `h·w`, H the shell count, T the flux over the carried mass as the frames' share of it (`transduce::share_of_frame`, `Transduction::lane_shares`); every escrow, release and payment reads it (`Court::discharge_on` and its arms, `pay_solve`, `release_verified`, `pay_lease`, `settle_solve`, the install's cited and taught shares and gluing) |
+| `family_ratio`, `Form.ratio` | each circle's re-period (`Enclosure::reperiod`) |
+
+**Readings.**
+
+- `0b148d64` pair 0: 111 input bands and 32 output bands, 226 incidences
+  (157 a change of hue), under the bound `24 · 27 = 648`; the transitional
+  claim that `share · L_h·L_w` equals the `K_lcm` cell count held there
+  (14 045) and on four more pairs before the lattice was deleted. The input's
+  boundary `1/18` lands inside an output compartment of period 7, so its
+  projection refuses `OffSite` and its route waits for the turn-native chart.
+- **O9** (the demand payload), read: the readers of a demand's links read
+  metric — `memo::ring_answer` and `memo::deformation_answer` take a
+  carriage between the demand's two sides, `bubble::hold` a transport over
+  its bodies, the book's probe `scene_at_of_chain` and `measure_lanes`, and
+  `stalk::invariant` the chart's moduli — so the merged-partition payload
+  (b) is refused and the payload is (a), both sites. As built, a demand's
+  links are the unspoken residue in the output frame, one frame and metric
+  where the input's turns land; the incidence payload for a pair whose turns
+  do not land is a later change (its demand is the output against nothing
+  meanwhile, never dropped).
+- **O10** (is every pair relation a product of signed swap, re-period,
+  offset and re-enclosure?), the census `mycelium-soak
+  --transduction-census DIR` (`transduce::relation_of`): over the training
+  split's 1 118 unequal-extent train pairs, carried 23 (all by the identity
+  swap), offset 6, re-enclosed 650 (635 identity, 6 column flips, 3 row
+  flips, 1 transpose, 3 at 90°, 2 anti-transposes), cover 15, unenclosed
+  424; over the evaluation split's 111, re-enclosed 35 and unenclosed 76.
+  The re-enclosed class reads each body's shape in its own enclosure and does
+  not check position or hue, so it bounds re-enclosure from above.
+
+**O1 wired (ruled 2026-11-01).** μ is a share of the frame. The deflation
+keeps its count beside μ — the word's magnitude, its identity in the tape,
+is the count — and reads μ per closed pair on the output frame its residues
+are read on: S (ground ↔ painted) and G (painted → painted) over `h·w`, H
+the shell count as it stands (topological, already resolution-free), T
+the flux over the carried mass taken as the frames' share of it,
+`T = flux · (Σᵢ mᵢ/(hᵢ·wᵢ)) / Σᵢ mᵢ`. Against today's counts, on pairs of
+one extent a changed site of an `h × w` frame is `1/(h·w)` of it, so every
+test value is the old count over `h·w` on S, G and T and the count on H
+(the `2 × 4` recolour family: `counts / [8, 8, 8, 1]`; the `1 × 7` slide:
+`/ [7, 7, 7, 1]`; the `18 × 12` closed sub-complex: `/ [216, 216, 216,
+1]`; the doubled `2 × 2 → 4 × 4` recolour, read on its 4 × 4 outputs:
+`/ [16, 16, 16, 1]`; a slide closing a `1 × 4` and a `1 × 6` pair: S `4/4 +
+4/6 = 5/3`, T `flux · 5/24`). A discharge with no frame (a rewrite's
+magnitude, a listing bound to no family) keeps its measure as `n/1`. The
+family magnitude feeding the mind's metabolism, a demand's ask and the
+extraction need (a stroke size) are not μ and stay counts. A sentence
+waiting on a word presses the word's escrow by the word's own discharge,
+the carriage it causes, where it pressed the waiting sentence's magnitude
+(a count credited to an escrow held in shares). The keeper tick carries
+the rational issuance (78.152, amended forward). Tests:
+`lane_shares_equal_chain_counts_over_frame`,
+`deflation_reads_mu_as_share_of_each_frame`,
+`keeper_tick_advances_past_fractional_issuance`, and the mint, solve,
+discharge, measure, local and awaiting claims re-derived as above. Mutation
+audit: the frame's `h·w` dropped from `share_of_frame`, the frames' share
+dropped from T, and the S/G split read off one side only.
+
+**Sites still read site by site** (listed, not fed a rebuilt cell record):
+the route's chart and pieces for unequal enclosures (`stalk::invariant_of`,
+`sentence::pieces`; O8, the turn-native chart); the family magnitude's
+count for them (a count, the mind's metabolism); the demand payload where the
+identity's speech does not land (O9 (a)); the percept's cross-frame meets
+by equal site keys (`percept.rs` `out_at_site`, `cover.rs` `occ_in`,
+`pair.rs` `delta_links`), ruled to read through incidences under the
+re-period (O6) and not yet rebuilt.
+
+**Tests.** `transducer::family::transduce::tests`:
+`incidences_project_to_delta_on_equal_extents` (every equal-extent fixture
+and every equal-extent pair of the training corpus),
+`incidences_of_0b148d64_pair_count`, `arcs_equal_sum_less_gcd`,
+`share_of_one_changed_site_is_lcm_free`, `transduction_refuses_spent_stroke`,
+`transduction_carries_bodies_or_names_mixed`, `projection_refuses_off_site`,
+`projection_agrees_with_spoken_frame`,
+`signed_swaps_are_the_seam_keeping_actions`,
+`signed_swap_reads_the_alphabet_letters`,
+`turn_90_between_unequal_frames_is_exact`,
+`turn_90_onto_unequal_periods_refuses_off_site`,
+`relation_of_reads_each_class`, the `enclosed` claims;
+`server::tests::registry::task_address_separates_isotropic_and_anisotropic_pairs`,
+`task_address_refuses_ragged_pair`;
+`transducer::family::tests::deflation::{unspoken_residue_is_read_on_output_sites,
+deflation_closure_pays_before_on_one_record}`;
+`server::cognition::tests::mint::measured_reconstruction_equals_client_deflation_on_unequal_enclosures`
+(T1); `transducer::family::tests::budget::extraction_spend_includes_transduction_need`.
+Mutation audit (`xtask/mutate/catalogue.rs`): `task_address`'s refusal arm
+(a ragged frame skipped instead of refused) and its content writer (the
+input frame dropped), each killed by `server::tests::registry`.
+
+**Ledger, wire, Concordance.** Every task address changes (full content):
+a ledger break, recut from genesis. Wire: none (the 32-byte citation is
+unchanged in form). Concordance: a note in 2.3 (O11), which changes the
+Concordance hash.
+
+The text below is the derivation of the metered refinement, superseded by
+the transduction above; the code it names is deleted.
 
 **Cost exposed by the uncapping (mycelium#14).** A pair the cap refused
 now refines, and its residue's chart (`invariant_of`, the exact moduli of
@@ -2874,7 +3030,8 @@ own signature inside its tape), `encode_syllabus_reply` (`[n u8]…`,
 header 1), `encode_cited_request`
 (`[act][voice 32][CITED u?][count u16]…`). The `TPoint` a pointed frame
 carries is outside `B` (the frame admits `B + TPoint::LEN`,
-`wire.rs:171`). So `64` is not a signature here, and naming it
+`wire.rs:171`; from 2026-11-01 the point's lanes are exact rationals and
+the frame admits `B + TPoint::TRAILER_MAX`, the point and its u16 count). So `64` is not a signature here, and naming it
 `ED25519_SIGNATURE_LEN` citing RFC 8032 would put a false citation on the
 wire's size (§2 item 10).
 
@@ -3318,8 +3475,10 @@ Each line names its entry and the reading or ruling that decides it.
 21. **D3.2 O1** — whose token pays a refinement, or the run complex in
     place of the lcm lattice: decided by the corpus count of capped pairs
     and whether any reader needs unit links. **Ruled (a)** by the
-    operator, before v0.3.0, one ledger break; **Built**. The run complex
-    (c) stays open as a cheaper object, not as a defect.
+    operator, before v0.3.0, one ledger break; **Built**. Superseded on
+    2026-10-31 by the transduction (78.170): no lattice past the sensor,
+    the two frames related by the bodies' bands in turns, and the open
+    questions of that entry (O1–O12) ruled there.
 22. **D3.3 O1** — whether the court may bind a superposition of anchor
     terms (closes L9a): decided by whether two common terms ever differ on
     a withheld pair in the A9 reconstruction. **Ruled (a)** (2026-10-31):

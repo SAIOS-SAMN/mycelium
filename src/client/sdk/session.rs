@@ -41,7 +41,7 @@ pub struct Session {
     /// 78.152 TU-7 — THE LAST FINAL POINT this session read: carried behind
     /// every act it speaks, raised by every door reply that carries a later
     /// one. `None` before the first.
-    pub(crate) final_point: std::cell::Cell<Option<crate::chronometry::tuniversal::TPoint>>,
+    pub(crate) final_point: RefCell<Option<crate::chronometry::tuniversal::TPoint>>,
 }
 
 impl Session {
@@ -67,7 +67,7 @@ impl Session {
             addrs: RefCell::new(crate::network::nerve::Keyed::new()),
             rtt: RefCell::new(crate::network::nerve::Keyed::new()),
             rtt_window: RefCell::new(crate::network::nerve::Keyed::new()),
-            final_point: std::cell::Cell::new(None),
+            final_point: RefCell::new(None),
         }
     }
 
@@ -76,16 +76,19 @@ impl Session {
     /// verified readings (TU-3) — or `None` before the first. No ask is
     /// spoken: every door reply carries the door's final point, and this is
     /// the greatest read. A mind drives its clock by it and stamps what it
-    /// publishes with it (`TPoint::print`); its own step clock stays its own.
+    /// publishes with it (`TPoint::print`, its lanes exact rationals; two
+    /// writings compare by `TPoint::compare_writings`); its own step clock
+    /// stays its own. The point is a clone of the one held.
     pub fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
-        self.final_point.get()
+        self.final_point.borrow().clone()
     }
 
     /// A point read off a door reply: held where it advances on the one held.
     pub(crate) fn hear_point(&self, point: Option<crate::chronometry::tuniversal::TPoint>) {
         if let Some(p) = point {
-            if p.advances(self.final_point.get().as_ref()) {
-                self.final_point.set(Some(p));
+            let mut held = self.final_point.borrow_mut();
+            if p.advances(held.as_ref()) {
+                *held = Some(p);
             }
         }
     }
@@ -602,7 +605,7 @@ impl Session {
         // "this speaker reads points": the door answers a pointed speaker with
         // its own point and an unpointed one (a mind before 78.152) as it
         // always did, so a session that never pointed would never learn one.
-        let carried = match self.final_point.get() {
+        let carried = match self.tuniversal() {
             Some(p) => p,
             None => crate::chronometry::tuniversal::TPoint::default(),
         };
@@ -666,7 +669,7 @@ impl Session {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "a reply frame names no lane"));
         };
         let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-        if len > crate::network::wire::BODY_BUDGET + crate::chronometry::tuniversal::TPoint::LEN {
+        if len > crate::network::wire::BODY_BUDGET + crate::chronometry::tuniversal::TPoint::TRAILER_MAX {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "frame too large"));
         }
         let mut body = vec![0u8; len];

@@ -445,8 +445,8 @@ impl Exchange {
                 // since: a reading verifies only at an origin.
                 let at = (tick, mesh.origin.lock().ok().and_then(|o| *o));
                 if at.0.is_some() && at != last_tick {
-                    last_tick = at;
-                    if let Some(ring) = crate::tshelf::sign_tick(&mesh, tick) {
+                    last_tick = at.clone();
+                    if let Some(ring) = crate::tshelf::sign_tick(&mesh, at.0) {
                         push_tick(&mesh, &join, &nerve, &ring);
                         // A reading signed is the court's clock advancing:
                         // the held seat reads are answered (`hold`).

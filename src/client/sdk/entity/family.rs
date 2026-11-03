@@ -11,25 +11,30 @@ use crate::client::sdk::*;
 use crate::transducer::family::{Family, Frames};
 use crate::transducer::sentence::SentenceRule;
 
-/// The magnitude of a family, per lane: the sum over its pairs of the
-/// coboundary's lane magnitudes — what thinking it through draws. Each pair
-/// is refined under the stroke its own extents need (78.111); a pair with no
-/// extent (empty or ragged) has no coboundary and draws nothing.
+/// The magnitude of a family, per lane: the sum over its pairs of one
+/// enclosure of the planar coboundary's lane magnitudes — what thinking it
+/// through draws on the mind's own metabolism (`Physics::bump`, the
+/// reserve's shortfall), which is counted in the mind's own units. It is
+/// NOT μ, so it stays a count (ruled 2026-11-01): μ is a share of the frame
+/// (MU-RECURSION 78.170 O1), read where μ is paid (`DeflationRead::mu`,
+/// `Court::discharge_on`). A pair with no enclosure (empty or ragged) draws
+/// nothing, and so does a pair of unequal enclosures: its coboundary is its
+/// transduction, not a chain of cells, and its count is not rebuilt as one
+/// (MU-DERIVATIONS D3.2); the share of the frame it changes is
+/// `transduce::family_share`.
 pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
-    use crate::transducer::family::refine::{need_of, refine_delta};
+    use crate::transducer::family::transduce::Enclosure;
     let mut mag = [0u64; 4];
     for (x, y) in train {
-        let mut stroke = crate::physics::Physics::default().stroke_n(match need_of(x, y) {
-            Some(n) => n,
-            None => 0,
-        });
-        if let Ok(chain) = refine_delta(x, y, &mut stroke) {
-            let m = crate::transducer::element::measure_lanes(&chain);
-            for l in 0..4 {
-                #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
-                let next = mag[l].saturating_add(m[l]);
-                mag[l] = next;
-            }
+        let (Ok(a), Ok(b)) = (crate::arc::sample_unplaced(x), crate::arc::sample_unplaced(y)) else { continue };
+        if !Enclosure::of(&a).is_same_periods(&Enclosure::of(&b)) {
+            continue;
+        }
+        let m = crate::transducer::element::measure_lanes(&crate::transducer::family::speak::residual_of(Some(x), y));
+        for l in 0..4 {
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
+            let next = mag[l].saturating_add(m[l]);
+            mag[l] = next;
         }
     }
     mag

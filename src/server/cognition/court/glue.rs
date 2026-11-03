@@ -549,7 +549,7 @@ impl Court {
     /// Deflation a form may mint: its DISCHARGE on the bound family
     /// (`discharge_of`, 78.149, the one reader every escrow and release
     /// takes). Association with a listing is not a mint.
-    pub(crate) fn verified_install_deflation(&self, address: &[u8], form: &Element) -> [u64; 4] {
+    pub(crate) fn verified_install_deflation(&self, address: &[u8], form: &Element) -> crate::economy::Mu {
         self.discharge_of(address, form)
     }
 

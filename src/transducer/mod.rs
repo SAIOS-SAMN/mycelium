@@ -6,6 +6,8 @@
 
 /// 71 — the base is ℚⁿ: a site and the count of its coordinates.
 pub mod base;
+/// MU-SENSING §2 — the sample: the sensor's only input, of any rank.
+pub mod sample;
 /// 16.4 — the conformal model every transport is written in.
 pub mod cga;
 /// 52 — the Cayley chart: a versor's derivation is its bivector.

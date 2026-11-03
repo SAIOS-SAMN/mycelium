@@ -210,7 +210,7 @@ impl Court {
     /// `discharge` is what the sentence discharges on the family it was
     /// heard for (`Court::discharge_on`): every escrow written here is
     /// priced from it and never from the word's magnitude (78.149).
-    pub(crate) fn list_sentence(&mut self, word: &Element, voice: [u8; 32], discharge: [u64; 4]) -> Outcome {
+    pub(crate) fn list_sentence(&mut self, word: &Element, voice: [u8; 32], discharge: crate::economy::Mu) -> Outcome {
         let addr = word.address();
         let mag = word.magnitude();
         if self.is_live(&addr) {
@@ -223,10 +223,10 @@ impl Court {
             self.record_spoken(addr.clone(), voice);
             let mu = crate::economy::price(&discharge, &self.physics.pressure);
             let anchor = self.anchor();
-            self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu, anchor);
+            self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu.clone(), anchor);
             // A voice arriving on the word escrows its price: that frame is
             // the flux reaching it (78.37 (3)).
-            self.note_flux(addr.as_bytes(), mu);
+            self.note_flux(addr.as_bytes(), &mu);
             return Outcome::GermPending;
         }
         if !word.is_sentence() {
@@ -293,7 +293,7 @@ impl Court {
     /// while it awaits its witness, its demands listed under it, its escrow
     /// held for its parties, its deflation what the listing measures, and
     /// the install sealed as a step of this court's clock.
-    fn list_and_docket(&mut self, word: &Element, voice: [u8; 32], discharge: [u64; 4]) -> Outcome {
+    fn list_and_docket(&mut self, word: &Element, voice: [u8; 32], discharge: crate::economy::Mu) -> Outcome {
         let addr = word.address();
         let mag = word.magnitude();
         self.converge_here(word, voice);
@@ -332,7 +332,7 @@ impl Court {
     /// THE OPEN-DEMAND ARM (24.1, 26): a sentence the lane cannot expand on
     /// is still listed, charged for itself, and docketed; the metabolism
     /// defers the install and nothing strands it.
-    fn list_charged(&mut self, word: &Element, voice: [u8; 32], discharge: [u64; 4]) -> Outcome {
+    fn list_charged(&mut self, word: &Element, voice: [u8; 32], discharge: crate::economy::Mu) -> Outcome {
         let addr = word.address();
         let mag = word.magnitude();
         self.charge_orbits(word, &mag);

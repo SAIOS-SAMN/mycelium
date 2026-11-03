@@ -10,7 +10,7 @@
 #   repository root. The test log is kept at $CHECK_LOG (default: a
 #   temporary file, named in the summary).
 #
-# KNOWN EXCEPTIONS. Seventeen tests replay tasks of the ARC-AGI-2 corpus,
+# KNOWN EXCEPTIONS. Eighteen tests read tasks of the ARC-AGI-2 corpus,
 # read at data/arc-agi-2 or under $MYCELIUM_CORPUS. Without the corpus they
 # fail; the summary says whether the corpus was found, so those failures
 # can be told apart from a defect.
@@ -57,7 +57,7 @@ if [ -n "${MYCELIUM_CORPUS:-}" ] && [ -d "$MYCELIUM_CORPUS" ]; then
 elif [ -d "$REPO/data/arc-agi-2" ]; then
   corpus="found at data/arc-agi-2"
 else
-  corpus="absent (data/arc-agi-2 missing, MYCELIUM_CORPUS unset): the 17 corpus-dependent tests are expected to fail"
+  corpus="absent (data/arc-agi-2 missing, MYCELIUM_CORPUS unset): the 18 corpus-dependent tests are expected to fail"
 fi
 
 echo

@@ -6,6 +6,7 @@
 //! association with a listing is not a mint.
 
 use super::*;
+use crate::economy::Mu;
 
 impl crate::transducer::family::Crystal for Court {
     fn on_class(
@@ -105,40 +106,24 @@ impl crate::transducer::family::Crystal for Court {
 }
 
 impl Court {
-    /// What a rule measures by speaking every train pair, its cited
-    /// forms resolved through this court's ruled cover. Any miss is zero:
-    /// association with a listing is not a mint.
-    pub(crate) fn measured_replay(&self, form: &Element, family: &crate::transducer::family::Family) -> [u64; 4] {
-        self.measured_replay_at(
-            form,
-            family,
-            &crate::transducer::alphabet::Word::identity(),
-        )
+    /// What a rule discharges by speaking every train pair, its cited forms
+    /// resolved through this court's ruled cover, as μ: each closed pair's
+    /// share of its frame (`DeflationRead::mu`, O1 ruled 2026-11-01). Any
+    /// miss is zero: association with a listing is not a mint.
+    pub(crate) fn measured_replay(&self, form: &Element, family: &crate::transducer::family::Family) -> Mu {
+        self.measured_replay_read(form, family).0
     }
 
     /// [`Court::measured_replay`] with the modes it discharged (78.162): what
     /// the closing form moved on the pairs it closed, mode by mode, exact.
-    pub(crate) fn measured_replay_read(&self, form: &Element, family: &crate::transducer::family::Family) -> ([u64; 4], crate::economy::modes::Modes) {
+    pub(crate) fn measured_replay_read(&self, form: &Element, family: &crate::transducer::family::Family) -> (Mu, crate::economy::modes::Modes) {
         match crate::transducer::sentence::from_element_form(form) {
             Some(f) => {
                 let r = crate::transducer::family::form_deflation_read(&f, family, self, &crate::transducer::alphabet::Word::identity());
-                (r.pay, r.modes)
+                (r.mu, r.modes)
             }
-            None => ([0; 4], crate::economy::modes::Modes::new()),
+            None => (Mu::zero(), crate::economy::modes::Modes::new()),
         }
-    }
-
-    /// The same measure at the placement a citer put the form at (26).
-    pub(crate) fn measured_replay_at(
-        &self,
-        form: &Element,
-        family: &crate::transducer::family::Family,
-        placement: &crate::transducer::alphabet::Word,
-    ) -> [u64; 4] {
-        if let Some(f) = crate::transducer::sentence::from_element_form(form) {
-            return crate::transducer::family::form_deflation_at(&f, family, self, placement).0;
-        }
-        [0; 4]
     }
 
     /// 78.149 — μ IS DISCHARGE (the escrow rulings, 2026-10-08).
@@ -166,31 +151,37 @@ impl Court {
     /// nothing priced. `family` is the family the word is heard or bound on;
     /// a sentence with none discharges nothing measurable here, which is a
     /// reading and not a floor.
+    ///
+    /// μ IS A SHARE OF THE FRAME (MU-RECURSION 78.170 O1, ruled 2026-11-01):
+    /// a discharge read on a family is each pair's share of its own frame
+    /// (`transduce::share_of_frame`); a discharge with no frame — a
+    /// rewrite's magnitude, a listing bound to no family — keeps its own
+    /// measure as `n/1`.
     pub(crate) fn discharge_on(
         &self,
         address: &[u8],
         word: &Element,
         family: Option<&crate::transducer::family::Family>,
-    ) -> [u64; 4] {
+    ) -> Mu {
         match (word.is_rewrite(), word.is_sentence(), family) {
-            (true, _, _) => word.magnitude(),
+            (true, _, _) => Mu::counts(word.magnitude()),
             // MU-CLIENT §5.6 (C) — a conjugate is paid what its conjugator
             // added on the family: its own section beyond the cited word's.
             (false, true, Some(f)) if self.conjugate_of(word).is_some() => self.transport_on(word, f),
             (false, true, Some(f)) => self.measured_replay(word, f),
-            (false, true, None) => [0; 4],
+            (false, true, None) => Mu::zero(),
             // MU-CLIENT §5.6 (W) — a connection bound to a family is
             // decompressed onto it and measured on its own section; a colour
             // word's evidence is its fibre relation, never a section.
             (false, false, Some(f)) if word.is_connection() && !word.is_colour_word() => {
-                crate::transducer::family::local::word_local(word, f).pay
+                crate::transducer::family::local::word_local(word, f).mu
             }
             // A connection bound to no family is measured by the listing it
             // stands for on the book, and by nothing where it stands for none
             // (26: association with a listing is not a mint).
             (false, false, _) => match self.book_element(address) {
-                Some(e) => e.chain_magnitude(),
-                None => [0; 4],
+                Some(e) => Mu::counts(e.chain_magnitude()),
+                None => Mu::zero(),
             },
         }
     }
@@ -212,16 +203,16 @@ impl Court {
     /// SHORTFALL — a lane the transport did not raise pays nothing, never a
     /// negative. A conjugate that discharges no more than its word is paid
     /// nothing; W's discoverer keeps W's use (the D2′ share, read locally).
-    pub(crate) fn transport_on(&self, word: &Element, family: &crate::transducer::family::Family) -> [u64; 4] {
+    pub(crate) fn transport_on(&self, word: &Element, family: &crate::transducer::family::Family) -> Mu {
         use crate::transducer::family::local::form_local;
         let here = crate::transducer::alphabet::Word::identity();
         let (Some(conj), Some(cited)) = (crate::transducer::sentence::from_element_form(word), self.conjugate_of(word)) else {
-            return [0; 4];
+            return Mu::zero();
         };
-        let Some((_, base)) = crate::transducer::family::Crystal::by_address(self, cited.as_bytes()) else { return [0; 4] };
-        let own = form_local(&base, family, self, &here).pay;
-        let transported = form_local(&conj, family, self, &here).pay;
-        crate::economy::shortfall(&transported, &own)
+        let Some((_, base)) = crate::transducer::family::Crystal::by_address(self, cited.as_bytes()) else { return Mu::zero() };
+        let own = form_local(&base, family, self, &here).mu;
+        let transported = form_local(&conj, family, self, &here).mu;
+        transported.shortfall(&own)
     }
 
     /// S — A SENTENCE'S GLUING on the family it is bound to (MU-CLIENT §5.6 S,
@@ -237,27 +228,27 @@ impl Court {
     /// composition's motions covered, is the composition's whole: a word
     /// measured by its sites carries none, so none of it is the words'.
     /// Nothing where it is bound to no family, or closes nothing.
-    pub(crate) fn gluing_of(&self, address: &[u8], sentence: &Element, words: &[Element]) -> [u64; 4] {
+    pub(crate) fn gluing_of(&self, address: &[u8], sentence: &Element, words: &[Element]) -> Mu {
         use crate::transducer::family::local::{form_local, word_local, Local};
         let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address));
-        let Some(family) = task.and_then(|t| self.task_family.get(t.as_bytes())) else { return [0; 4] };
-        let Some(form) = crate::transducer::sentence::from_element_form(sentence) else { return [0; 4] };
+        let Some(family) = task.and_then(|t| self.task_family.get(t.as_bytes())) else { return Mu::zero() };
+        let Some(form) = crate::transducer::sentence::from_element_form(sentence) else { return Mu::zero() };
         let here = crate::transducer::alphabet::Word::identity();
         let section = form_local(&form, family, self, &here);
-        if section.pay.iter().all(|&m| m == 0) {
-            return [0; 4];
+        if section.mu.is_zero() {
+            return Mu::zero();
         }
         let sections: Vec<Local> = words.iter().map(|w| word_local(w, family)).collect();
-        let mut pay = section.beyond(&Local::union(&sections, family.len()), family).pay;
+        let glued = section.beyond(&Local::union(&sections, family.len()), family).mu;
         let t = crate::transducer::sentence::presentation::LANE_T;
-        pay[t] = crate::transducer::family::form_deflation_read(&form, family, self, &here).pay[t];
-        pay
+        let whole = crate::transducer::family::form_deflation_read(&form, family, self, &here).mu;
+        glued.on_lanes(|l| l != t).add(&whole.on_lanes(|l| l == t))
     }
 
     /// [`Court::discharge_on`] over the family the word is BOUND to — the
     /// task it was spoken for, or the listing it answers — which is the
     /// family its install measures.
-    pub(crate) fn discharge_of(&self, address: &[u8], word: &Element) -> [u64; 4] {
+    pub(crate) fn discharge_of(&self, address: &[u8], word: &Element) -> Mu {
         let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address));
         let family = task.and_then(|t| self.task_family.get(t.as_bytes()));
         self.discharge_on(address, word, family.map(Vec::as_slice))

@@ -161,9 +161,9 @@ pub fn keeper_line(sk: &ed25519_dalek::SigningKey, court: [u8; 32], carried: u64
     use crate::chronometry::tuniversal::{Cited, Tick, TickReading};
     let origin = keeper_origin();
     let cites = vec![Cited { keeper: court, reading: [9; 32], h: carried }];
-    let first = TickReading::sign(sk, &origin, Tick { h: tick, lanes: [0; 4], k: 0 }, [0; 32], cites.clone()).expect("signed");
+    let first = TickReading::sign(sk, &origin, Tick { h: tick, lanes: crate::economy::Mu::zero(), k: 0 }, [0; 32], cites.clone()).expect("signed");
     let at = first.hash(&origin).expect("hashed");
-    let back = TickReading::sign(sk, &origin, Tick { h: tick + 1, lanes: [0; 4], k: 1 }, at, cites).expect("signed");
+    let back = TickReading::sign(sk, &origin, Tick { h: tick + 1, lanes: crate::economy::Mu::zero(), k: 1 }, at, cites).expect("signed");
     vec![first, back]
 }
 

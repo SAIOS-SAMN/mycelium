@@ -323,9 +323,13 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
 /// keeper with its newest verified tick and its own final point, and the
 /// residual — each edge's exact lane difference and the triangle's holonomy.
 fn standing(s: &observe::TStanding) -> Vec<String> {
-    let lanes = |d: &[i128; 4]| {
-        let [a, b, c, e] = d;
-        format!("{a:+}:{b:+}:{c:+}:{e:+}")
+    // Each signed lane exact, as `n/d` in lowest terms with its sign.
+    let lanes = |d: &[mycelium::core::Q; 4]| {
+        let signed = |q: &mycelium::core::Q| match num_traits::Signed::is_negative(q) {
+            true => format!("{q}"),
+            false => format!("+{q}"),
+        };
+        d.iter().map(signed).collect::<Vec<_>>().join(":")
     };
     let mut out = vec![
         match &s.final_point {
@@ -341,7 +345,7 @@ fn standing(s: &observe::TStanding) -> Vec<String> {
         };
         let newest = match &k.newest {
             Some(t) => {
-                let [ls, lg, lt, lh] = t.lanes;
+                let [ls, lg, lt, lh] = t.lanes.lanes();
                 format!("newest h {} {ls}:{lg}:{lt}:{lh} K {}", t.h, t.k)
             }
             None => format!("{DIM}no reading held{RESET}"),

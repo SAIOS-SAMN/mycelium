@@ -436,7 +436,7 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 | A rank-generic site (`base::Site { axes }`) | **Built** | `src/transducer/base.rs` |
 | A percept as a series of located records (seat percepts) | **Built** | `src/anastome/dialogue/seat.rs` (78.146) |
 | The three eyes as a cover, with the sensory verdict | **Specified** | MU-CLIENT 24.4 |
-| Each axis as a circle of turns; re-period between samples | **In progress** for rank 2 only, two circles fixed | v0.3.0 T2, [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25) |
+| The transduction at rank `n`: each axis a phase of its own period read from the sample, re-period between samples, bodies as `n`-dimensional bands of one symbol held by their boundary, contact by grade `n − 1`, the `2ⁿ·n!` signed permutations of the phases (generated), μ's shares over the product of the extents; no axis privileged | **Built** (v0.3.0 T2 with track 26 S4, [PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)); ARC rasters reach it only through `arc::sample_of` until S1 | `src/transducer/family/transduce/` (`Enclosure`, `Band`, `SignedPermutation`, `SiteChange`) |
 | The well (formerly the bubble): a held thought in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built**, without a body: no membrane, centre or curvature | `transducer/field/idea.rs` (`Well`), `field/{contemplation, merge, meet, resonance, line}.rs` |
 | The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Well.vortex`, `Well.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
 | Orbits with four readings; the court's gravity as drag | **Built**, on flat charts | `cech/orbit.rs` (`Field`, `Field::beat_under`) |
@@ -447,8 +447,10 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 | **Defect:** spheres built Euclidean, from a squared radius with `e∞` | **Built, refused** by §3.7 and law 11 | `cga/embedding.rs` (`sphere_at`, `on_sphere`), `cga/at_three.rs` (`sphere`) |
 | **Defect:** the well's stage and state as flags, and its volume and potential as scalar counts | **Built, refused** by §3.7 (never scalar) and constraint I | `Well.percept: bool`, `Well.dirty: bool`, `Well.volume`/`potential: [u64; 4]` |
 | μ as the solid angle a change sweeps | **Awaits a ruling** | §3.7 |
-| The sample as the sensor's only input, of rank `n` | **Specified** | Track 26, S0 |
+| The sample as the sensor's only input, of rank `n` | **Built** | `src/transducer/sample.rs` (`Sample`, `Symbol`, `Place`; Track 26, S0) |
 | A corpus's decoder outside `src/` | **Specified** | Track 26, S1 |
+| An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on the branch `transduction-core` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
+| Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
 | Ground, symbol set, axes and gauges deduced | **Specified** | Track 26, S2–S4 |
 | A task on the wire as samples of rank `n` | **Specified** | Track 26, S5 |
 | Perspective as a sensor motion; perspectives as a cover | **Specified** | Track 26, S6 |

@@ -314,14 +314,16 @@ fn witness_rederived_fresh_rules_pressured_word_and_citer() {
         vec![crate::anastome::dialogue::SPEECH_DIALECT],
         "the citer waits on the word (D)"
     );
-    // THE PRESSURE, in the algebra of the lanes: the citer's frame arrived
-    // and one carriage drew the word's own, exactly — its frame read in the
-    // escrow's currency, the word's discharge (78.149), which a word heard
-    // for no task measures as nothing.
+    // THE PRESSURE, in the algebra of the lanes: a frame arrived and one
+    // carriage drew the word's own, exactly — both read in the escrow's
+    // currency, the word's discharge (78.149), μ a share of the frame
+    // (78.170 O1): the citer's magnitude is a count, not μ, so the frame it
+    // transports is the carriage it causes, and a word heard for no task
+    // measures as nothing.
     let escrow_after = k.treasury().escrow_of(w.as_bytes()).map(|e| e.mu.clone()).expect("still under escrow");
     let drawn = k.discharge_of(w.as_bytes(), &word);
-    let expected = escrow_before.add(&citer.magnitude().into()).draw(&drawn.into()).expect("the draw fits the escrow");
-    assert_eq!(escrow_after, expected, "escrow + citer's frame − the carriage's draw, per lane");
+    let expected = escrow_before.add(&drawn).draw(&drawn).expect("the draw fits the escrow");
+    assert_eq!(escrow_after, expected, "escrow + the transported frame − the carriage's draw, per lane");
     assert!(k.take_offers().iter().any(|(a, _)| *a == w), "and the carriage emitted the word's offer again");
     // A bonded second vantage re-derives the word; the ruling closes its orbit.
     let witness = [2u8; 32];

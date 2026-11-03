@@ -190,17 +190,27 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             rule.ratio,
         );
         for (i, (x, y)) in task.train.iter().enumerate() {
-            // The pair as the trajectory sees it: the delta where the pair
-            // refines under the stroke its extents need, and the refusal
-            // `refine_delta` names where it does not — reported as the
+            // The pair as the trajectory sees it: its transduction under the
+            // stroke its periods need — incidences, the share of the frame
+            // it changes per lane (S, G), and the μ of its projection onto
+            // the output frame where the input's turns land, a share of that
+            // frame (78.170 O1) — or the refusal it names, reported as the
             // engine's own reading and not re-derived here.
-            let mut stroke = mycelium::physics::Physics::default().stroke_n(
-                match mycelium::transducer::family::refine::need_of(x, y) {
+            use mycelium::transducer::family::transduce::{Transduction, TransductionRefusal};
+            let samples = (mycelium::arc::sample_unplaced(x), mycelium::arc::sample_unplaced(y));
+            let mut stroke = mycelium::physics::Physics::default().stroke_n(match &samples {
+                (Ok(a), Ok(b)) => match mycelium::transducer::family::transduce::need_of(a, b) {
                     Some(n) => n,
                     None => 0,
                 },
-            );
-            let refined = mycelium::arc::refine_delta(x, y, &mut stroke);
+                _ => 0,
+            });
+            let record = match &samples {
+                (Ok(a), Ok(b)) => Transduction::of(a, b, &mut stroke),
+                _ => Err(TransductionRefusal::Empty),
+            };
+            let ground = mycelium::arc::ground_bytes();
+            let ground = mycelium::transducer::sample::Symbol::new(&ground);
             // A grid's width is its rows' common length, and the slice
             // pattern reads the row the shape is stated by without taking
             // a member by position (rule 15).
@@ -209,16 +219,30 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 None => 0,
             };
             println!(
-                "  mint {name} pair {i}: in {}x{} out {}x{} | refine_delta {} | delta mu {:?}",
+                "  mint {name} pair {i}: in {}x{} out {}x{} | transduction {} | share {} | projected mu {}",
                 x.len(),
                 wide(x),
                 y.len(),
                 wide(y),
-                match &refined {
-                    Ok(_) => "some".to_string(),
+                match &record {
+                    Ok(t) => format!("{} incidences ({} changed)", t.incidences.len(), t.changed().count()),
                     Err(u) => format!("{u:?}"),
                 },
-                refined.as_ref().ok().map(|r| measure_lanes(&r.delta)),
+                match &record {
+                    Ok(t) => {
+                        let [s, g] = t.lane_shares(ground);
+                        format!("{} (S {s} G {g})", t.share())
+                    }
+                    Err(_) => "-".to_string(),
+                },
+                match record.as_ref().map_err(|u| *u).and_then(Transduction::projected) {
+                    Ok(changes) => mycelium::transducer::family::transduce::share_of_frame(
+                        measure_lanes(&mycelium::arc::links_of(&changes)),
+                        samples.1.as_ref().ok(),
+                    )
+                    .to_string(),
+                    Err(u) => format!("{u:?}"),
+                },
             );
         }
 

@@ -399,7 +399,7 @@ impl<S: Read + Write> NoiseStream<S> {
         let (lane, pointed) = read_lane(head[0]).ok_or(NoiseRefusal::FrameMalformed)?;
         let len = usize::try_from(u32::from_le_bytes([head[1], head[2], head[3], head[4]]))
             .map_err(|_| NoiseRefusal::FrameMalformed)?;
-        if len > BODY_BUDGET + TPoint::LEN {
+        if len > BODY_BUDGET + TPoint::TRAILER_MAX {
             return Err(NoiseRefusal::FrameOverBudget { len });
         }
         let mut body = vec![0u8; len];

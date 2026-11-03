@@ -1189,7 +1189,7 @@ impl Carrier {
 
     /// A frame of this mind's, signed by its key.
     fn frame(&self, said: Said) -> Option<Vec<u8>> {
-        Chatter { speaker: self.voice, point: self.point, said }.sign(&self.key)
+        Chatter { speaker: self.voice, point: self.point.clone(), said }.sign(&self.key)
     }
 
     /// SEND a frame to every peer at the rendezvous, or to the one named; a
@@ -1438,7 +1438,7 @@ impl Carrier {
             contraction: None,
             agreement: agreement.map(<[u8]>::to_vec),
         }];
-        let tu = self.point.map_or(0, |p| p.h);
+        let tu = self.point.as_ref().map_or(0, |p| p.h);
         // MU-CLIENT §5.4 (E1) — under the scene it was spoken under, so the
         // court measures it where its evidence is.
         let Some(body) = dialogue::encode_speech_spoken(&self.voice, family, tu, &spoken) else {

@@ -15,7 +15,7 @@ fn key(b: u8) -> ed25519_dalek::SigningKey {
 fn verify_round_trips_and_refuses_forged_frame() {
     let k = key(7);
     let speaker = k.verifying_key().to_bytes();
-    let point = TPoint { h: 9, lanes: [1, 2, 3, 4], k: 5, ..TPoint::default() };
+    let point = TPoint { h: 9, lanes: [1, 2, 3, 4].into(), k: 5, ..TPoint::default() };
     let one = Mv::scalar(num_rational::BigRational::from_integer(1.into()));
     for said in [
         Said::Say {
@@ -58,7 +58,7 @@ fn verify_round_trips_and_refuses_forged_frame() {
             deviation: [0, 1, 0, 3].map(|n: i64| num_rational::BigRational::new(n.into(), 7.into())),
         },
     ] {
-        let c = Chatter { speaker, point: Some(point), said };
+        let c = Chatter { speaker, point: Some(point.clone()), said };
         let f = c.sign(&k).expect("signed");
         assert_eq!(Chatter::verify(&f), Some(c.clone()));
         let mut forged = f.clone();

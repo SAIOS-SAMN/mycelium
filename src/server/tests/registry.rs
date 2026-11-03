@@ -80,21 +80,36 @@ fn overlay_restores_task_wider_than_u16_wall() {
 }
 
 /// LAW 2 — AN IDENTITY IS NEVER FORMED WITH A MEMBER SKIPPED: a train pair
-/// with no common refinement (a ragged grid) refuses the task's address,
-/// where it was passed over and the task named by its other pairs alone.
+/// with no enclosure (a ragged grid) refuses the task's address, where it
+/// would be passed over and the task named by its other pairs alone.
 #[test]
-fn task_address_refuses_unrefinable_pair() {
+fn task_address_refuses_ragged_pair() {
     let mut task = toy_task();
-    assert!(task_address(&task).is_some(), "every member refines");
+    assert!(task_address(&task).is_some(), "every member has an enclosure");
     task.train.push((vec![vec![1, 1], vec![1]], vec![vec![2, 2], vec![2, 2]]));
-    assert!(task_address(&task).is_none(), "a member with no refinement leaves no identity");
+    assert!(task_address(&task).is_none(), "a member with no enclosure leaves no identity");
+}
+
+/// MU-DERIVATIONS D3.2, O3 — A PAIR'S MEMBER IS BOTH FRAMES' FULL CONTENT
+/// WITH THE FOUR PERIODS. `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]`
+/// read one coboundary on `K_lcm`, `{(0,0,1,2), (0,1,1,2)}`, and neither
+/// wrote its frame (one ratio anisotropic, one the identity), so two tasks
+/// differing only there shared an address. The two input periods differ,
+/// so the two contents do.
+#[test]
+fn task_address_separates_isotropic_and_anisotropic_pairs() {
+    let with = |input: Grid| Task { train: vec![(input, vec![vec![2, 2]])], test: Vec::new() };
+    let anisotropic = task_address(&with(vec![vec![1]])).expect("addressed");
+    let planar = task_address(&with(vec![vec![1, 1]])).expect("addressed");
+    assert!(anisotropic != planar, "the two pairs differ in one period, so the two tasks do");
+    // And one change on different ground is different content.
+    let on = |ground: u8| Task { train: vec![(vec![vec![1, ground]], vec![vec![2, ground]])], test: Vec::new() };
+    assert!(task_address(&on(0)).expect("addressed") != task_address(&on(3)).expect("addressed"));
 }
 
 /// MU-DERIVATIONS D3.2 — TWO TASKS DIFFERING ONLY IN A 29×29 → 30×30 PAIR
-/// ARE TWO TASKS. The pair's lcm is 870 per axis, past the former cap of
-/// 60, so it was skipped and both tasks were named by their other pairs:
-/// one address for two contents. It now refines, under the stroke its
-/// extents need, and the pair is a member of each address.
+/// ARE TWO TASKS: the pair is a member of each address, never passed over
+/// for its periods' lcm (870 per axis).
 #[test]
 fn task_address_separates_tasks_differing_in_incommensurate_pair() {
     let coprime = |hue: u8| -> (Grid, Grid) {
@@ -107,29 +122,32 @@ fn task_address_separates_tasks_differing_in_incommensurate_pair() {
         task.train.push(coprime(hue));
         task
     };
-    let two = task_address(&with(2)).expect("a 29×29 → 30×30 pair refines");
-    let three = task_address(&with(3)).expect("a 29×29 → 30×30 pair refines");
+    let two = task_address(&with(2)).expect("a 29×29 → 30×30 pair is addressed");
+    let three = task_address(&with(3)).expect("a 29×29 → 30×30 pair is addressed");
     assert!(two != three, "the tasks differ in one member, so their addresses do");
-    let without = task_address(&toy_task()).expect("the toy task refines");
+    let without = task_address(&toy_task()).expect("the toy task is addressed");
     assert!(two != without, "the pair is a member of the address, never passed over");
 }
 
-/// A 29×29 → 30×30 train pair makes a task's content address megabytes,
-/// and an index copies the address it is keyed by. The book keys and holds
-/// the task by its 32-byte citation; the address is recomputed from the task
-/// where its coordinates are needed, never held.
-fn coprime_task() -> Task {
-    // Every site changes hue, so the chain holds every cell of K_lcm (870²).
+/// A task of many busy frames has a content address of tens of kilobytes
+/// (every band of every frame is written), and an index copies the address
+/// it is keyed by. The book keys and holds the task by its 32-byte citation;
+/// the address is recomputed from the task where its coordinates are
+/// needed, never held.
+fn busy_task() -> Task {
+    // Each row changes hue at every column and no row repeats the one
+    // above, so every site of each 30 × 30 frame is its own band.
+    let busy = |s: u8| -> Grid { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
     let mut task = toy_task();
-    task.train.push((vec![vec![1; 29]; 29], vec![vec![2; 30]; 30]));
+    task.train.extend((0..12u8).map(|s| (busy(s), busy(s + 1))));
     task
 }
 
 #[test]
 fn registry_indexes_by_citation_not_address() {
-    let task = coprime_task();
-    let address = task_address(&task).expect("the coprime pair refines");
-    assert!(address.as_bytes().len() > 1 << 20, "the fixture's address passes 1 MB: {} bytes", address.as_bytes().len());
+    let task = busy_task();
+    let address = task_address(&task).expect("the busy pairs are addressed");
+    assert!(address.as_bytes().len() > usize::from(u16::MAX), "the fixture's address passes 64 KiB: {} bytes", address.as_bytes().len());
     let mut reg = TaskRegistry::new();
     let id = reg.register(task).expect("registers");
     assert_eq!(id, citation(&address));

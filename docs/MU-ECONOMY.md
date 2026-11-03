@@ -66,6 +66,30 @@ count — and a lane not in lowest terms is refused (MU-EQUATIONS §6.15).
 The sections below speak of these holdings. Holding the modes themselves,
 rather than four amounts, is the open part of 78.162.
 
+**What μ measures: a share of the frame (ruled 2026-11-01; MU-RECURSION
+78.170 O1).** A discharge read on a family is, per closed pair, a share of
+that pair's own frame, never a count of its sites, so it reads the same at
+any resolution of the frame:
+
+| Lane | μ |
+|---|---|
+| S | the sites changed between ground and painted, over the frame's `h·w`: one changed site of a `30 × 30` frame is `1/900` |
+| G | the sites changed from one painted hue to another, over `h·w` |
+| T | the flux over the carried mass, taken as the frames' share of it: `T = flux · (Σᵢ mᵢ/(hᵢ·wᵢ)) / Σᵢ mᵢ`, `mᵢ` the mass pair `i` carried |
+| H | the shell count, as it stands: topological, already resolution-free |
+
+On frames of one extent this is the count over `h·w` on S, G and T, and the
+count on H. A discharge with no frame — a rewrite's yield read off its
+magnitude, a listing bound to no family — keeps its own measure as `n/1`.
+The readers: `DeflationRead::mu` (the client's deflation and the court's
+measured reconstruction, one function), `Local::mu` (a word's or a form's
+section, a conjugate's transport, a sentence's gluing),
+`transduce::share_of_frame` and `Transduction::lane_shares`. A word's
+MAGNITUDE stays a count — its measure and its identity in the tape — and so
+do the mind's metabolism (a family's magnitude), a demand's ask and a
+stroke's size, none of which is μ. Since μ issued holds shares of a unit,
+TUniversal carries its lanes as exact rationals too (MU-CHRONOMETRY §1).
+
 μ is a vector on four lanes: spatial (S), gauge (G), temporal (T),
 holonomic (H). It is never summed and never converted across lanes. A
 payment moves value on exactly the lanes the work moved. A comparison of two vectors returns the
@@ -110,7 +134,9 @@ or ruling.
 New μ enters only by mint, and mint happens only when two organs have
 reconstructed the same reduction: the home that measured its deflation and a
 witness that re-derived it. The amount minted is the measured deflation on
-each lane. There is no block reward, no schedule, no difficulty, and no
+each lane, as a share of each closed pair's frame (§1, ruled 2026-11-01):
+a solve that repaints one site of a `30 × 30` output is paid `1/900` on G,
+not one unit. There is no block reward, no schedule, no difficulty, and no
 issuance to operators as such.
 
 There is also no block. The receipt chain is the ledger and order across

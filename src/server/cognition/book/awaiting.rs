@@ -80,10 +80,10 @@ impl Court {
                 self.awaiting.insert(form.clone(), vec![entry]);
             }
         }
-        // 76 — A SENTENCE WAITING ON A WORD IS THAT WORD'S PRESSURE: its frame
+        // 76 — A SENTENCE WAITING ON A WORD IS THAT WORD'S PRESSURE: a frame
         // is transported to the word's escrow and the word is carried again,
         // where this court holds it in flight.
-        self.press(form.as_bytes(), s.magnitude());
+        self.press(form.as_bytes());
     }
 
     /// THE WORD THEY WAITED ON LAPSED: every sentence waiting on it is

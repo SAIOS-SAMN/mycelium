@@ -4,31 +4,30 @@
 // recut flow that would act on them is not built (78.152, owed).
 
 use super::point::{Origin, TPoint};
+use crate::core::Q;
 
 /// A POINT'S CITATION: the citation hash of exactly its wire coordinates
 /// (`TPoint::put`) — what a new origin names it by, never its identity.
 pub fn citation(p: &TPoint) -> [u8; 32] {
-    let mut b = Vec::with_capacity(TPoint::LEN);
-    p.put(&mut b);
-    crate::chronometry::payload_hash(&b)
+    crate::chronometry::payload_hash(&p.to_bytes())
 }
 
-/// UNPACK (TU-6): a point's coordinates by name.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// UNPACK (TU-6): a point's coordinates by name, each lane exact.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Unpacked {
     pub origin: Origin,
     pub h: u64,
-    pub s: u64,
-    pub g: u64,
-    pub t: u64,
-    pub hh: u64,
+    pub s: Q,
+    pub g: Q,
+    pub t: Q,
+    pub hh: Q,
     pub k: u64,
 }
 
 impl TPoint {
     /// The point's coordinates by name.
     pub fn unpack(&self) -> Unpacked {
-        let [s, g, t, hh] = self.lanes;
+        let [s, g, t, hh] = self.lanes.lanes().clone();
         Unpacked { origin: self.origin, h: self.h, s, g, t, hh, k: self.k }
     }
 }
@@ -37,7 +36,7 @@ impl TPoint {
 /// universe's genesis is its first receipt, written at the recut; what this
 /// carries is the citation that genesis's mesh record names (`cites`) and
 /// the epoch it takes — one past the point's.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Reset {
     pub at: TPoint,
     pub cites: [u8; 32],
@@ -47,14 +46,15 @@ pub struct Reset {
 impl Reset {
     /// The reset at `at`; `None` where the epoch passes its carrier.
     pub fn at(at: TPoint) -> Option<Reset> {
-        Some(Reset { at, cites: citation(&at), epoch: at.origin.epoch.checked_add(1)? })
+        let (cites, epoch) = (citation(&at), at.origin.epoch.checked_add(1)?);
+        Some(Reset { at, cites, epoch })
     }
 }
 
 /// BRANCH (TU-6): a sub-universe whose origin's parent is the point. Its
 /// genesis is the citation of the point and the branch's own name, its epoch
 /// zero: two branches of one point are two universes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Branch {
     pub parent: TPoint,
     pub name: [u8; 32],
@@ -71,19 +71,21 @@ impl Branch {
 }
 
 /// SUPERPOSE (TU-6): two branches' points held side by side with the
-/// residual between them — `b − a` per lane and on `K`, exact — never merged by a reader.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// residual between them — `b − a` per lane, an exact signed rational, and
+/// on `K` — never merged by a reader.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Superposed {
     pub a: TPoint,
     pub b: TPoint,
-    pub residual: [i128; 5],
+    pub lanes: [Q; 4],
+    pub k: i128,
 }
 
 impl Superposed {
     pub fn of(a: TPoint, b: TPoint) -> Superposed {
-        let l = |x: u64, y: u64| i128::from(y) - i128::from(x);
-        let residual = [l(a.lanes[0], b.lanes[0]), l(a.lanes[1], b.lanes[1]), l(a.lanes[2], b.lanes[2]), l(a.lanes[3], b.lanes[3]), l(a.k, b.k)];
-        Superposed { a, b, residual }
+        let lanes = std::array::from_fn(|l| b.lanes.lane(l) - a.lanes.lane(l));
+        let k = i128::from(b.k) - i128::from(a.k);
+        Superposed { a, b, lanes, k }
     }
 
     /// MERGED ONLY BY A QUORUM-FINAL POINT CITING BOTH: `by` is final (the

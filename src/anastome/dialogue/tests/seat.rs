@@ -46,7 +46,7 @@ fn golden_percept() -> SignedPost {
 /// 78.152 — the final point the golden percept is stamped at.
 fn golden_point() -> crate::chronometry::tuniversal::TPoint {
     use crate::chronometry::tuniversal::{Origin, TPoint};
-    TPoint { origin: Origin { genesis: [6; 32], epoch: 146 }, h: 40_961, lanes: [5, 0, 2, 1], k: 812 }
+    TPoint { origin: Origin { genesis: [6; 32], epoch: 146 }, h: 40_961, lanes: [5, 0, 2, 1].into(), k: 812 }
 }
 
 /// The frame read back as the post it carries, or a failure naming why.

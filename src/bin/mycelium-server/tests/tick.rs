@@ -47,18 +47,18 @@ fn sign_tick_needs_no_digest() {
 
     // THE COURT LOOP SIGNS: a tick read, a reading due, no digest built.
     assert_eq!(sign_tick(&m, None), None, "no tick read, nothing signed");
-    let t10 = Tick { h: 10, lanes: [4, 0, 0, 0], k: 1 };
-    let ring = sign_tick(&m, Some(t10)).expect("a reading is due");
+    let t10 = Tick { h: 10, lanes: [4, 0, 0, 0].into(), k: 1 };
+    let ring = sign_tick(&m, Some(t10.clone())).expect("a reading is due");
     let [first] = ring.as_slice() else { panic!("one reading: {}", ring.len()) };
-    assert_eq!((first.keeper, first.tick), (va, t10));
+    assert_eq!((first.keeper, &first.tick), (va, &t10));
     assert!(first.verifies(&origin), "signed by this court at its origin");
-    assert_eq!(sign_tick(&m, Some(t10)), None, "the same tick is not due again");
+    assert_eq!(sign_tick(&m, Some(t10.clone())), None, "the same tick is not due again");
     assert_eq!(sign_tick(&m, Some(Tick { h: 11, ..t10 })), None, "nor a tick whose measure stood");
 
     // A PEER'S RING, PUSHED: b heard a's reading and cites it.
     let mut kb = Keepers::new(origin, vb);
     assert_eq!(kb.admit(va, ring), Ok(Admitted::Anchored));
-    assert_eq!(kb.read_own(&b, Tick { h: 12, lanes: [0, 5, 0, 0], k: 3 }), Some(true));
+    assert_eq!(kb.read_own(&b, Tick { h: 12, lanes: [0, 5, 0, 0].into(), k: 3 }), Some(true));
     let body = encode_tick(&vb, &kb.own_ring()).expect("a tick writes");
 
     assert_eq!(hear_tick(&m, &body), Err(TickRefusal::Stranger), "a keeper no signed digest named");
@@ -67,7 +67,7 @@ fn sign_tick_needs_no_digest() {
     assert_eq!(hear_tick(&m, &body), Ok(Admitted::Stale), "and heard once");
     assert_eq!(
         crate::tshelf::final_point(),
-        Some(TPoint { origin, h: 10, lanes: [4, 0, 0, 0], k: 1 }),
+        Some(TPoint { origin, h: 10, lanes: [4, 0, 0, 0].into(), k: 1 }),
         "a's 10 is final: a signed it, b cites it"
     );
 

@@ -3,24 +3,27 @@
 // the last reading it verified from each other keeper.
 
 use super::point::{Origin, TPoint};
+use crate::economy::Mu;
 
-/// The signing domain of every keeper reading.
-pub const SIGNED: &[u8] = b"mycelium tuniversal v1";
+/// The signing domain of every keeper reading: v2 signs the lanes in the
+/// rational lane codec (ruled 2026-11-01).
+pub const SIGNED: &[u8] = b"mycelium tuniversal v2";
 
 /// A KEEPER'S POINT AT ITS HEAD (TU-1): `h` its head's height, `lanes` its
-/// court's cumulative issuance per lane (`Treasury::issued`: the discharge it
-/// booked as mint, on the genesis it stood on), `k` the orbits it closed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+/// court's cumulative issuance per lane, exact (`Treasury::issued`: the
+/// discharge it booked as mint, on the genesis it stood on), `k` the orbits
+/// it closed.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Tick {
     pub h: u64,
-    pub lanes: [u64; 4],
+    pub lanes: Mu,
     pub k: u64,
 }
 
 impl Tick {
     /// The tick as a point at an origin.
     pub fn at(&self, origin: Origin) -> TPoint {
-        TPoint { origin, h: self.h, lanes: self.lanes, k: self.k }
+        TPoint { origin, h: self.h, lanes: self.lanes.clone(), k: self.k }
     }
 
     /// Did the measure move between two ticks: a lane or `K`. The tick
@@ -52,10 +55,11 @@ pub struct TickReading {
 }
 
 impl TickReading {
-    /// The least bytes one reading takes on the wire: its tick, parent, cite
-    /// count and signature.
+    /// The least bytes one reading takes on the wire: its tick (`h`, four
+    /// lanes at `0/1`, eleven bytes each, `K`), parent, cite count and
+    /// signature.
     /// FORMAT: least wire length of one tick reading.
-    pub const MIN_WIRE: usize = 8 + 32 + 8 + 32 + 1 + 64;
+    pub const MIN_WIRE: usize = 8 + 4 * 11 + 8 + 32 + 1 + 64;
 
     /// The bytes the keeper signs: the domain, the ORIGIN (a reading of one
     /// universe never verifies in another), the keeper, the tick, the parent
@@ -73,9 +77,7 @@ impl TickReading {
     /// them.
     fn put_body(&self, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&self.tick.h.to_le_bytes());
-        for l in self.tick.lanes {
-            out.extend_from_slice(&l.to_le_bytes());
-        }
+        self.tick.lanes.put(out);
         out.extend_from_slice(&self.tick.k.to_le_bytes());
         out.extend_from_slice(&self.parent);
         out.push(u8::try_from(self.cites.len()).ok()?);
@@ -95,8 +97,7 @@ impl TickReading {
     }
 
     /// A reading signed by `sk` at `origin`.
-    pub fn sign(sk: &ed25519_dalek::SigningKey, origin: &Origin, tick: Tick, parent: [u8; 32], cites: Vec<Cited>) -> Option<TickReading> {
-        use ed25519_dalek::Signer as _;
+    pub fn sign(sk: &ed25519_dalek::SigningKey, origin: &Origin, tick: Tick, parent: [u8; 32], cites: Vec<Cited>) -> Option<TickReading> {        use ed25519_dalek::Signer as _;
         let mut r = TickReading { keeper: sk.verifying_key().to_bytes(), tick, parent, cites, sig: [0; 64] };
         r.sig = sk.sign(&r.signed_bytes(origin)?).to_bytes();
         Some(r)
@@ -122,10 +123,7 @@ impl TickReading {
             Some(v)
         };
         let h = u64_at(p)?;
-        let mut lanes = [0u64; 4];
-        for l in &mut lanes {
-            *l = u64_at(p)?;
-        }
+        let lanes = Mu::take(b, p).ok()?;
         let k = u64_at(p)?;
         let parent: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
         *p += 32;

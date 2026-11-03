@@ -459,18 +459,77 @@ pub fn family_cover(train: &[(Grid, Grid)]) -> Option<[u64; 4]> {
     any.then_some(cover)
 }
 
-// ── #97: THE CODOMAIN APERTURE — cross-complex chains ────────────────────────
+// ── THE SAMPLE BRIDGE (ROADMAP track 26, S4; MU-SENSING §2) ────────────────
 //
-// A pair of complexes K_in (h_in × w_in) and K_out (h_out × w_out) is related
-// by the exact frame map ρ = (h_out/h_in, w_out/w_in) ∈ ℚ². The cross-frame
-// coboundary is supported on the codomain complex: every site of K_out reads
-// the input through ρ⁻¹ (the input site containing the output site's min
-// corner — the substrate's framing convention, the same min-corner quotient
-// every chain is centred by) and differs, or not, from the output. No common refinement
-// is materialized: the support is bounded by |K_out|, and ρ rides as the
-// word's frame fibre. Uniform for every ratio including (1,1), which is the
-// planar delta bit-for-bit. Banned surface: no branch anywhere on ratio
-// VALUES — the map is total.
+// Until S1 moves this decoder out of the core, an ARC raster reaches the
+// transduction only as a `Sample` read here, and the transduction's speech
+// returns to a raster only here. No transduce file reads a grid.
+
+/// AN ARC GRID AS A SAMPLE: rank 2, extents (rows, columns), one byte per
+/// site in row-major order, which is the sample's canonical address order.
+/// A ragged grid is not the extent it claims and is refused `Length`; a
+/// grid with no row or no column is refused `EmptyAxis` by the sample.
+pub fn sample_of(g: &Grid, place: crate::transducer::sample::Place) -> Result<crate::transducer::sample::Sample, crate::transducer::sample::SampleRefusal> {
+    use crate::transducer::sample::SampleRefusal;
+    let width = grid_width(g);
+    if g.iter().any(|row| row.len() != width) {
+        let expected = g.len().checked_mul(width).ok_or(SampleRefusal::SitesOverflow { axis: 1 })?;
+        return Err(SampleRefusal::Length { expected, found: g.iter().map(Vec::len).sum() });
+    }
+    crate::transducer::sample::Sample::new(vec![g.len(), width], 1, g.concat(), place)
+}
+
+/// A SPOKEN SAMPLE AS AN ARC GRID: the speech end of the bridge. `None`
+/// where the sample is not of rank 2 and width 1, which no ARC grid holds.
+pub fn grid_of(s: &crate::transducer::sample::Sample) -> Option<Grid> {
+    use crate::transducer::sample::AxisReading;
+    let (AxisReading::Read(rows), AxisReading::Read(width), 2, 1) = (s.extent(0), s.extent(1), s.rank(), s.width()) else {
+        return None;
+    };
+    let bytes: Vec<u8> = s
+        .symbols()
+        .filter_map(|symbol| match symbol.bytes() {
+            &[b] => Some(b),
+            _ => None,
+        })
+        .collect();
+    (bytes.len() == rows * width).then(|| bytes.chunks(width).map(<[u8]>::to_vec).collect())
+}
+
+/// A PROJECTED RECORD AS THE PLANAR CHAIN `(row, col, before, after)`: the
+/// speech end of the bridge for a residue. A change off rank 2 or width 1
+/// has no planar link and is left out, which no ARC pair produces.
+pub fn links_of(changes: &[crate::transducer::family::transduce::SiteChange]) -> Vec<(i64, i64, u8, u8)> {
+    changes
+        .iter()
+        .filter_map(|c| match (c.site().axes(), c.before().bytes(), c.after().bytes()) {
+            (&[r, col], &[before], &[after]) => Some((r, col, before, after)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// THE GROUND AS THE SYMBOL A SAMPLE OF THIS DECODER WRITES: one byte, the
+/// open family's ground (`ground`). The transduction takes the ground as a
+/// symbol handed in, never as a code of its own.
+pub fn ground_bytes() -> [u8; 1] {
+    [ground()]
+}
+
+/// [`sample_of`] for a reader that holds no family coordinates for the
+/// grid: the sample's place is empty, a place the family has not written,
+/// never a coordinate invented for it.
+pub fn sample_unplaced(g: &Grid) -> Result<crate::transducer::sample::Sample, crate::transducer::sample::SampleRefusal> {
+    sample_of(g, crate::transducer::sample::Place::new(Vec::new()))
+}
+
+// ── #97: THE MEASURED FRAME ──────────────────────────────────────────────────
+//
+// A pair of frames h_in × w_in and h_out × w_out is related by the re-period
+// of each circle, ρ = (h_out/h_in, w_out/w_in) ∈ ℚ², read on its
+// transduction (`family::transduce`): bodies' bands in turns, never a common
+// lattice. Equal frames are the planar coboundary, and ρ rides as the word's
+// frame fibre.
 
 pub(super) fn gcd(a: usize, b: usize) -> usize {
     if b == 0 { a } else { gcd(b, a % b) }
@@ -510,40 +569,5 @@ pub fn frame_ratio(f: &Frame) -> ((usize, usize), (usize, usize)) {
         _ => (0, 0),
     };
     (hr, wr)
-}
-
-
-/// WHAT REFINING A PAIR YIELDS.
-pub struct Refined {
-    /// The coboundary: the sites that changed, each with the hue it came
-    /// from and the hue it went to.
-    pub delta: Vec<(i64, i64, u8, u8)>,
-    /// The input pulled back onto the output complex — the scene π is
-    /// evaluated over, not the input as given.
-    pub pulled_back: Grid,
-    /// The frame it was read in.
-    pub frame: Frame,
-}
-
-/// THE CROSS-COMPLEX COBOUNDARY on the codomain: the input pulled back along
-/// ρ⁻¹ onto K_out, then the ordinary per-site difference. Returns (chain on
-/// K_out, the pulled-back input — the scene π evaluates over, the measured
-/// frame). Total for all dims ≥ 1; equal frames yield exactly the planar
-/// delta. Support ≤ |K_lcm|.
-///
-/// Under the caller's stroke, sized by
-/// [`crate::transducer::family::refine::need_of`]: the cochain and the
-/// pulled-back input together spend at most that need, and a stroke that
-/// ends first refuses `Spent { need }` with nothing returned.
-pub fn refine_delta(
-    a: &Grid,
-    b: &Grid,
-    budget: &mut crate::physics::Budget,
-) -> Result<Refined, crate::transducer::family::refine::Unrefined> {
-    let refn = crate::transducer::family::refine::of_grids(a, b)?;
-    let pulled_back = refn.pulled_back(a, budget)?;
-    let chain = refn.bipartite_cochain(a, b, budget)?;
-    let (hi, wi, ho, wo) = (a.len(), grid_width(a), b.len(), grid_width(b));
-    Ok(Refined { delta: chain, pulled_back, frame: Frame::new(hi, wi, ho, wo) })
 }
 

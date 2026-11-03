@@ -90,10 +90,8 @@ let family = vec![(
     digits(&["1100", "0000"]),
     digits(&["0011", "0000"]),
 )];
-let need = crate::transducer::family::refine::need_of(&family[0].0, &family[0].1).expect("both extents stand");
-let crate::arc::Refined { delta: chain, frame, .. } =
-    crate::arc::refine_delta(&family[0].0, &family[0].1, &mut crate::physics::Physics::default().stroke_n(need))
-        .expect("coboundary");
+let chain = crate::transducer::family::speak::residual_of(Some(&family[0].0), &family[0].1);
+let frame = crate::arc::Frame::new(2, 4, 2, 4);
 assert!(k.intake(&chain, &frame), "the listing stands");
 let listing = k.pending.scoped().next().expect("listed").1.address();
 let task = [7u8; 32];
@@ -138,10 +136,7 @@ let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::tr
 assert!(spoken.is_sentence());
 let mut expect = [0u64; 4];
 for (x, y) in &family {
-    let need = crate::transducer::family::refine::need_of(x, y).expect("both extents stand");
-    let chain = crate::arc::refine_delta(x, y, &mut crate::physics::Physics::default().stroke_n(need))
-        .expect("coboundary")
-        .delta;
+    let chain = crate::transducer::family::speak::residual_of(Some(x), y);
     let lanes = crate::transducer::element::measure_lanes(&chain);
     for i in 0..4 {
         #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the fixture family's chain measures cannot pass u64")]
@@ -176,9 +171,12 @@ k.rule_all_provisionals();
 let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
 k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+// μ IS A SHARE OF THE FRAME (78.170 O1): every frame is 2×4, so S, G and
+// 𝒯 (the flux over the carried mass) are each over 8 sites, and H, the
+// shell count, stands as it is.
 assert_eq!(
     k.treasury().minted(),
-    read,
+    crate::economy::Mu::counts(read).over([8, 8, 8, 1]).expect("non-zero wholes"),
     "mint is what the form measured over its family — the coboundary and the ground it covered — not a bound listing's magnitude"
 );
 }
@@ -377,9 +375,11 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     let cover = k.genesis_cover().expect("measured");
     k.enroll([2; 32], cover);
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+    // μ IS A SHARE OF THE FRAME (78.170 O1): the frame is 18×12, so the
+    // three recolours' S, G and 𝒯 are over 216 sites and H stands.
     assert_eq!(
         k.treasury().minted(),
-        three_closed_deflation,
+        crate::economy::Mu::counts(three_closed_deflation).over([216, 216, 216, 1]).expect("non-zero wholes"),
         "the amount is the deflation those three closed and nothing else"
     );
 }
@@ -522,4 +522,26 @@ fn lift_compares_coherent_across_atlases() {
     let c = compare(&held_lift, &lift(&other, &mut budget()));
     assert!(!c.diverging().is_empty() && c.unread == (0, 0), "another family's sentence diverges on a lane, read whole: {c:?}");
     eprintln!("LIFT diverging lanes {:?}", c.diverging().iter().map(|&i| crate::transducer::sentence::LANES[i]).collect::<Vec<_>>());
+}
+
+/// T1, MU-DERIVATIONS D3.2 — ON UNEQUAL ENCLOSURES THE COURT'S MEASURED
+/// RECONSTRUCTION AND THE CLIENT'S DEFLATION READ ONE PAY: both read each
+/// pair's unspoken residue and the form's remainder on the output's sites
+/// through the one deflation, so the court, rebuilding the form from its
+/// tape, reaches exactly the pay the client measured on a doubled
+/// `2 × 2 → 4 × 4` family.
+#[test]
+fn measured_reconstruction_equals_client_deflation_on_unequal_enclosures() {
+    let family = vec![
+        (digits(&["10", "00"]), digits(&["2200", "2200", "0000", "0000"])),
+        (digits(&["00", "01"]), digits(&["0000", "0000", "0022", "0022"])),
+    ];
+    let rule = crate::transducer::family::extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
+    let read = crate::transducer::family::form_deflation_read(&rule.form, &family, &crate::transducer::family::NoCrystal, &crate::transducer::alphabet::Word::identity());
+    assert_ne!(read.pay, [0; 4], "the doubled recolour closes and pays");
+    // μ IS A SHARE OF THE FRAME (78.170 O1): both outputs are 4×4, the frame
+    // every residue is read on, so S, G and 𝒯 are over 16 sites and H stands.
+    assert_eq!(read.mu, crate::economy::Mu::counts(read.pay).over([16, 16, 16, 1]).expect("non-zero wholes"), "the client's μ: the deflation over 4·4 sites");
+    let tape = crate::transducer::sentence::as_element_form(&rule.form, read.pay).expect("the form has a tape");
+    assert_eq!(Court::new().measured_replay(&tape, &family), read.mu, "the court rebuilds the client's μ");
 }

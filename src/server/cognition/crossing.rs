@@ -120,7 +120,7 @@ impl Court {
         if self.domains.get(&to).is_none() {
             return refuse(R::UnknownDomain);
         }
-        if !self.final_in_view(&t.at, fin) {
+        if !self.final_in_view(&t.at, fin.as_ref()) {
             return refuse(R::NotFinal);
         }
         if [&t.point_a, &t.point_b].iter().any(|p| p.origin != t.at.origin) {
@@ -188,7 +188,7 @@ impl Court {
         if self.draw_claim(t.payer, &crossing, fee.clone(), &r).is_none() {
             return refuse(R::Short);
         }
-        let edge = Edge { from: t.from, to, mouth: t.mouth, at: t.at, u_a: t.u_a, u_entry: t.u_b, u_applied: None };
+        let edge = Edge { from: t.from, to, mouth: t.mouth, at: t.at.clone(), u_a: t.u_a, u_entry: t.u_b, u_applied: None };
         self.atlas.edges.insert(crossing, edge);
         self.mark_persist();
         Crossed::Sealed { crossing, h: r.stamp.h, point: court, gas, price, fee }
@@ -278,7 +278,7 @@ impl Court {
     /// `staker`'s stake as a claim held to the window. `nonce` names the
     /// claim.
     pub fn retrieve(&mut self, staker: [u8; 32], p: &TPoint, fin: Option<TPoint>, nonce: [u8; 32]) -> Result<Vec<KStepReceipt>, Unretrieved> {
-        if !self.final_in_view(p, fin) {
+        if !self.final_in_view(p, fin.as_ref()) {
             return Err(Unretrieved::NotFinal);
         }
         let read = self.pinpoint(p);

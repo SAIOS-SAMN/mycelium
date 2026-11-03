@@ -30,16 +30,19 @@ fn multiplex_demultiplexes_lanes_in_order() {
 }
 
 /// 78.152 TU-7 — a frame carries its speaker's last final point behind
-/// its body, read back exactly; an older decoder's lane read refuses it.
+/// its body, its lanes holding shares of a unit, read back exactly by the
+/// trailer's count; an older decoder's lane read refuses it.
 #[test]
 fn encode_at_carries_last_final_point() {
     use crate::chronometry::tuniversal::{Origin, TPoint};
-    let point = TPoint { origin: Origin { genesis: [7; 32], epoch: 146 }, h: 40_961, lanes: [3, 0, 9, 1], k: 812 };
+    let q = |n: i64, d: i64| crate::core::Q::new(n.into(), d.into());
+    let lanes = crate::economy::Mu::of([q(3, 1), q(0, 1), q(9, 900), q(1, 2)]).expect("non-negative");
+    let point = TPoint { origin: Origin { genesis: [7; 32], epoch: 146 }, h: 40_961, lanes, k: 812 };
     let f = Frame { lane: Stratum::Temporal, body: vec![0x53, 1, 2] };
     let bytes = f.encode_at(Some(&point)).unwrap();
     assert_eq!(Stratum::of(bytes[0]), None, "a pre-78.152 lane read refuses the pointed frame");
     let (g, at, n) = Frame::decode_at(&bytes).unwrap();
-    assert_eq!((g, at, n), (f.clone(), Some(point), 5 + 3 + TPoint::LEN));
+    assert_eq!((g, at, n), (f.clone(), Some(point.clone()), 5 + 3 + point.to_bytes().len() + 2));
     let (h, none, _) = Frame::decode_at(&f.encode().unwrap()).unwrap();
     assert_eq!((h, none), (f, None), "a frame with no point reads with none");
 }

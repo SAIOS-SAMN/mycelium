@@ -357,7 +357,7 @@ fn lapses_at_the_next_final(mind: &mut Mind) {
     // A final heard on the hypha's carrier, read back off its view once the
     // carrier has published it.
     let hear = |mind: &mut Mind, h: u64| {
-        let p = TPoint { origin: Origin::default(), h, lanes: [1, 0, 0, 0], k: 1 };
+        let p = TPoint { origin: Origin::default(), h, lanes: [1, 0, 0, 0].into(), k: 1 };
         mind.ask(move |s| s.hear_point(Some(p)), |_, ()| {});
         let mut polls = 0u32;
         while mind.hypha.tuniversal().map(|p| p.h) != Some(h) && polls < (1 << 24) {

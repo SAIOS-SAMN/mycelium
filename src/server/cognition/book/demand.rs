@@ -196,7 +196,7 @@ impl Court {
         }
         let Some(word) = self.basis.get(cited).map(|h| h.element().clone()) else { return };
         let mu = self.cited_deflation(at, &word, &crate::transducer::alphabet::Word::identity());
-        if mu.iter().all(|&m| m == 0) {
+        if mu.is_zero() {
             return;
         }
         let paid = self.treasury.settle_convergence(closer, mu, anchor);

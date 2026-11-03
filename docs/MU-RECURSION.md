@@ -12586,7 +12586,7 @@ report's per-form sentences) beside substantive ones is trimmed.
 
 ## 78. Rulings in force
 
-This chapter lists the rulings numbered 78.1–78.169, one entry per number, each stating the rule as it stands and the code that carries it, or naming the ruling that superseded it. Rulings amend the chapters that govern the objects ruled on; where a ruling and an earlier chapter differ, the ruling governs. Rulings concerning the mind moved to [MU-CLIENT.md](MU-CLIENT.md) and are listed in its Rulings index. Numbers 79.1–79.3 label subsections of 78.59.
+This chapter lists the rulings numbered 78.1–78.170, one entry per number, each stating the rule as it stands and the code that carries it, or naming the ruling that superseded it. Rulings amend the chapters that govern the objects ruled on; where a ruling and an earlier chapter differ, the ruling governs. Rulings concerning the mind moved to [MU-CLIENT.md](MU-CLIENT.md) and are listed in its Rulings index. Numbers 79.1–79.3 label subsections of 78.59.
 
 ### 78.1 What learning is, in the engine's own terms
 
@@ -13305,7 +13305,9 @@ Code: `src/transducer/element/residual.rs` (`compose_fibre`,
   at the envelope's own centre (a grid's circumscribed sphere, centre the
   extent's midpoint, `r² = (h² + w²)/4`); where `r²_out / r²_in` is not a
   rational square no site corresponds (78.45) and the pair witnesses
-  nothing.
+  nothing. *Superseded by 78.170 (O4): a change of extent is a re-period of
+  each circle of turns, carried by no versor; the envelope dilation squares
+  and halves, and is not read.*
 - **Orientation.** The dihedral poses are a gauge iff the scene carries no
   polar vector. The polar vector is the transition displacement of the
   centre of mass, `Δr_CM = r_CM(out) − r_CM(in)`, with
@@ -15500,6 +15502,8 @@ The mesh keeps one clock, TUniversal: a point read off the keepers' signed readi
 - **TU-6 OPERATIONS BY A FINAL POINT.** PINPOINT (`Court::pinpoint`), UNPACK (`TPoint::unpack`, `Court::unpack`) and UNROLL (`Court::unroll`) are kernel reads; RESET (`ops::Reset`, the next epoch citing the point), BRANCH (`ops::Branch`, a sub-universe whose genesis is the citation of the point and the branch's name) and SUPERPOSE (`ops::Superposed`, two branches' points with the points' exact residue, merged only by a quorum-final point past both that cites both, `merged_by`) are typed values carrying the citation each needs.
 - **TU-7 SYNC AND WATCHDOG.** Every act carries its speaker's last final point behind its body on the frame (a wire change in `network::wire`: the lane byte's bit `0x80`, the last 84 bytes the `TPoint`); door replies carry the door's final point and a session keeps the greatest it read; a percept is stamped with the house's point, signed with its fields (seat v1.3: `[0]` or `[1][TPoint]` after the records). The door keeps the greatest final point on its shelf (`TShelf`), raised only by the keepers' quorum, a speaker's carried point held apart as heard; the lock watchdog wakes on each advance of the final point and names a hold standing across `aperture_cycle` advances.
 
+**Amended forward (ruled 2026-11-01): the frame carries exact rationals per lane.** μ is a share of the frame (78.170 O1), so the issuance holds shares of a unit. TU-1 is kept: the clock reads μ issued, `Treasury::issued` carried whole (`Court::keeper_tick` no longer refuses an issuance holding a share). TU-5: the lanes of `Tick` and `TPoint` are an `economy::Mu`, exact non-negative rationals; `h` and `K` stay integers. The writing is one way only: `h` and `K` in 16 lowercase hex digits, each lane `n/d` in lowest terms with numerator and denominator in lowercase hex and no leading zero (`0/1` for none); `TPoint::parse` reads back exactly that writing. Text order is numeric order by `h` within one origin, and not past it (a lane has no fixed width: `1/2` sorts before `1/3`); two writings compare by `TPoint::compare_writings`, the point's own order (origin, `h`, each lane's exact value in lane order, `K`). `TPoint` is no longer `Copy`. TU-7: the trailer is no longer 84 bytes: a pointed frame is `[lane | 0x80][len u32 LE][body][point][point len u16 LE]`, the point's wire bytes (genesis, epoch u32 LE, `h` u64 LE, the lanes in the rational lane codec of MU-ECONOMY §1, `K` u64 LE, at least 96 bytes) then their count. The signed tick bytes and the ring carry the lanes in the same codec under the domain `"mycelium tuniversal v2"`; the keeper record is `MYKR` version 2 (78.152c), a version-1 record refused. Every carrier of a point (seat percepts, atlas acts and ledger entries, chatter, the observer's standing, version 2) takes the new layout under wire `0x0200`. The residue (TU-4) and a superposition's difference (TU-6) are exact signed rationals per lane. Code: `src/chronometry/tuniversal/point.rs`, `reading.rs`, `record.rs`, `src/network/wire.rs`.
+
 The SDK read: `Session::tuniversal` and `Mind::tuniversal` return the last final point read (`None` before the first); a game kernel holds its clock to it, stamps what it publishes with `TPoint::print`, and keeps its own step clock (78.124). The only remaining earth clock is the scheduler floor `physics::stroke_floor`, told to the OS scheduler and read by no one (78.21(4) as corrected); the court's idle park ends at the first motion. With a majority of keepers down time does not advance: nothing new is final, the door's point stands and the watchdog is not woken. Open: whether a later quorum point citing two differing finals at one tick resolves that tick on the main line, and issuance net of genesis is not separable in `issued` after a treasury fold. Code: `src/chronometry/tuniversal/` (`keepers.rs`, `reading.rs`, `point.rs`, `ops.rs`, `shelf.rs`, `record.rs`), `src/server/cognition/reads.rs` (`keeper_tick`, `pinpoint`, `unpack`, `unroll`), `src/network/wire.rs`, `src/bin/mycelium-server/tshelf.rs`, `src/bin/mycelium-server/held.rs` (`spawn_watchdog`), `src/client/sdk/session.rs` (`Session::tuniversal`), `src/physics/calibration.rs` (`stroke_floor`); tests `src/chronometry/tuniversal/tests/`.
 
 #### 78.152b TUniversal never waits on a court's load
@@ -15508,7 +15512,7 @@ A reading is signed in the court loop whenever it is due (`Court::keeper_tick` r
 
 #### 78.152c The keeper persisted
 
-Each court's last signed reading is kept durably in its home as the file `keeper` (`chronometry::tuniversal::record`; `MYKR`, version `u16` LE 1, the origin's genesis and epoch, the keeper's key, the reading's hash, then the reading as the ring carries it), written before the reading is held or can leave on a ring (`Keepers::read_own_kept`, `replace_durably`); a reading whose record did not land is not signed. The boot reads it before the court can sign (`tshelf::bind_home`), an unreadable record refuses the boot, and a record of this origin and key is resumed (`Keepers::resume`) so the next reading rises above its tick and names it as parent; a record of another origin is not resumed.
+Each court's last signed reading is kept durably in its home as the file `keeper` (`chronometry::tuniversal::record`; `MYKR`, version `u16` LE 1 — 2 from 2026-11-01, the reading's lanes exact rationals, 78.152 as amended — the origin's genesis and epoch, the keeper's key, the reading's hash, then the reading as the ring carries it), written before the reading is held or can leave on a ring (`Keepers::read_own_kept`, `replace_durably`); a reading whose record did not land is not signed. The boot reads it before the court can sign (`tshelf::bind_home`), an unreadable record refuses the boot, and a record of this origin and key is resumed (`Keepers::resume`) so the next reading rises above its tick and names it as parent; a record of another origin is not resumed.
 
 #### 78.152d A universe's cosmic time meets TUniversal at its crossings
 
@@ -16258,6 +16262,106 @@ unsigned; ROADMAP track 24. Code today: `src/server/cognition/cite.rs`
 (`Court::reserve_of`, `Court::inner_seat`), `src/server/cognition/ledger.rs`
 (`Court::admit_chained`), `src/physics/laws/concordance.rs`
 (`verify_concordance_signature`).
+
+### 78.170 The transduction: no lattice past the sensor
+
+Ruled by the operator on 2026-10-31 (MU-DERIVATIONS D3.2, which it
+rewrites). "The rigidity and loss comes from the transformation to the
+lattice rather than the transduction of state space." Two frames of unequal
+extent are related by transduction in turns, never by a common lattice;
+the common refinement `K_lcm` is deleted, and no reader forms an lcm.
+
+1. **LIFT → ACT → PROJECT.** The grid is an embedded section of the state
+   space, not the space. Each axis of a frame is a circle of turns held as
+   fractions in `ℚ/ℤ`, `r/h`: never `(cos, sin)`, never `e_∞`, never a
+   squared norm, no normalisation constant. The frame's own extents are the
+   only numbers; the seams are held, never wrapped. Per-site values are
+   legitimate only at the two ends: the sensor's read and the speech of an
+   output grid; in between the state is bodies and motions.
+2. **A body is held by its boundary, never its interior**: its bands, the
+   maximal runs of one hue whose boundary turns stand on both circles, at a
+   cost of its perimeter. Two frames relate body to body: the incidences of
+   the bodies' band arcs under the motion, compared by exact integer
+   cross-multiplication, at most `(h + h′ − gcd)(w + w′ − gcd)`. A body not
+   carried whole (split or merged) is named `Mixed`, never a fallback to
+   cells.
+3. **An anisotropic scale is a re-period of each circle**: no versor carries
+   it (a versor's differential is a scalar times an orthogonal map). The
+   motions keeping the seams are the eight signed swaps of the two circles;
+   a 90° turn and a transpose between frames of different extent are exact
+   on turns, with the one obstruction named at projection
+   (`OffSite`). A shear, or a letter whose images on the sensor's plane are
+   not signed generators, is `Oblique`.
+4. **Verification is reconstruction**: the court's measured reconstruction
+   and the client's deflation read one residue through one function, on
+   the output's sites, so before and after are one unit.
+
+The operator's rulings on the entry's open questions, all of 2026-10-31:
+
+- **O1 — μ is a share of the frame.** Wired after the μ lanes carry
+  rationals; until then the share is exposed as an exact `Q` beside today's
+  count (`transduce::family_share`, `Transduction::share`), so the switch
+  is one call site per reader. *Amended forward (ruled 2026-11-01), wired:*
+  S and G are exact shares of the frame's `h·w` (S the sites changed
+  between ground and painted, G from one painted hue to another;
+  `Transduction::lane_shares`, `transduce::share_of_frame`); H stays its
+  shell count, topological and already resolution-free; T is the flux over
+  the carried mass, taken as a share of the frames' mass. A discharge with
+  no frame (a rewrite's magnitude, a listing bound to no family) keeps its
+  own measure as `n/1`. Every reader of μ reads the share
+  (`DeflationRead::mu`, `Local::mu`, `Court::discharge_on` and the payment
+  path); the word's magnitude, the mind's metabolism, a demand's ask and a
+  stroke size stay counts, none being μ; TUniversal's lanes are exact
+  rationals (78.152 as amended).
+- **O2 — (b)**: each circle is centred by its least boundary turn.
+- **O3 — identity is both frames' full content**, `h·w + h′·w′` with the
+  four periods: `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]` are two tasks.
+  Every task address changes (a ledger break).
+- **O4 — 78.56's Extent clause is superseded** by the re-period (its
+  envelope dilation squares and halves).
+- **O5 — refuse `Seam`**: a relation that would wrap a circle is refused;
+  a cover is read as `k` sub-enclosures, not one map of the circle.
+- **O6** — percept meets across unequal enclosures read through incidences
+  under the re-period.
+- **O7 — refuse `Mixed`.**
+- **O8** — the turn-native chart: its own entry, not in this ruling's work.
+- **O9** — decided by reading: the readers of demand links read metric
+  (carriages and transports between a demand's two sides, the chart's
+  moduli), so the payload carries both sites (a), never merged-partition
+  links.
+- **O10** — decided by reading: a typed census of the corpus's
+  unequal-extent train pairs classed by relation (`mycelium-soak
+  --transduction-census`), reported in D3.2.
+- **O11** — Concordance 2.3 binds a universe's stated space, not the
+  sensor's worksheet; a clarifying note is added there.
+- **O12** — shares on `S^n`, `n ≥ 2`: not in this ruling's work.
+
+Code: `src/transducer/family/transduce/` (`Turn`, `Enclosure`, `Enclosed`,
+`Transduction`, `SignedPermutation`, `relation_of`, `TransductionRefusal`);
+`src/server/registry.rs` (`task_address`); `src/transducer/family/deflation.rs`
+(`unspoken_residue`).
+
+**Amended forward (ROADMAP track 26, S4; MU-SENSING §3.1, §3.6): rank `n`,
+signed permutations.** The transduction takes samples (`transducer::sample`)
+of any rank `n`, never a raster of rows and columns. The enclosure holds `n`
+phases, one period per axis read from the sample's extents; no phase is
+privileged, and the canonical axis order writes addresses and orders the
+reading only. A band (item 2) is an `n`-dimensional box of one symbol,
+compared by equality, and two bands of one symbol are one body where they
+meet through a face of grade `n − 1`. The eight signed swaps of item 3 are
+the rank-2 case of the signed permutations of the `n` phases, the
+hyperoctahedral group of `2ⁿ·n!` elements, generated and never listed;
+`Oblique`, `OffSite`, `Seam`, `Mixed` keep their meaning, and frames of two
+ranks are refused `Rank`. The need is the product over the phases of each
+merge's arcs. O1: S and G are shares of the frame's measure, the product of
+its extents, and the ground is handed to `lane_shares` as a symbol. A cover
+reads its copies per phase. Until S1, an ARC grid reaches the transduction
+through `arc::sample_of` alone, and the projected record returns to planar
+links through `arc::links_of`. A task's content bytes are unchanged for
+rank 2 and width 1, so no task address moves. O5's sub-enclosures have
+their carrier in `transduce::nest` (an axis of period `a · b` read as two
+nested phases, every factoring held together); the reading of the
+factorings a family is invariant under is open.
 
 ## 80. The planetary dialect: a modified Gödel engine
 

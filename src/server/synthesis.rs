@@ -10,9 +10,9 @@ use crate::arc::Grid;
 use crate::server::held::held;
 
 /// The family's measured frame ratio — perception, identical across pairs
-/// or refused (never rounded), measured on the common refinement.
+/// or refused (never rounded), each circle's re-period.
 pub fn family_ratio(train: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, usize))> {
-    crate::transducer::family::refine::family_ratio(train)
+    crate::transducer::family::family_ratio(train)
 }
 
 /// Work items for the server's deliberation worker — everything that would
