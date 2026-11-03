@@ -277,7 +277,7 @@ bubble (a thought bubble), renamed 2026-11-02.
     manifold there is flat.
     - **The orthogonal class, exactly.** An orbit's plane is the
       bivector `B` of its elliptic mode. Two orbit classes are
-      orthogonal when their planes share no direction: `B₁ · B₂ = 0`
+      orthogonal when the two planes share no direction: `B₁ · B₂ = 0`
       (no grade-0 part) and `B₁ ∧ B₂ ≠ 0`. Such planes are disjoint and
       commute.
     - **The shear on the orthogonal class** is the commuting part of

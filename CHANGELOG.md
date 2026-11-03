@@ -14,7 +14,7 @@ such change is named here.
   are refused past it, never widened. The symbol width is the source's,
   the symbol bytes are checked, and a phase's denominator is its extent.
   This settles LAW-FIELD v1's open question on the denominator.
-- **S9** (MU-SENSING §3.7): two orbit classes are orthogonal when their
+- **S9** (MU-SENSING §3.7): two orbit classes are orthogonal when the two
   elliptic planes satisfy `B₁ · B₂ = 0` and `B₁ ∧ B₂ ≠ 0`. Axiomatic
   gravity's shear on that class is 78.46's drag: rate, not plane.
 - ROADMAP track 26 S3, S5 and S9 carry these, with claims.
