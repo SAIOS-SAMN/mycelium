@@ -53,6 +53,7 @@ assert_eq!(k.basis_len(), 1, "transposition mints nothing");
 /// leaves) is retired by the redundancy probe; an essential one survives it.
 #[test]
 fn optimize_retires_redundant_generator() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::germinate::germinate;
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -72,6 +73,7 @@ assert_eq!(k.basis_len(), 1, "an essential generator survives the probe");
 /// earlier derivable sibling used to leave that index equal to len.
 #[test]
 fn refine_stratum_keeps_survivor_at_last_index() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::element::{from_canonical, from_canonical_framed};
 use crate::transducer::germinate::germinate;
 let mut k = Court::new();
@@ -149,6 +151,7 @@ assert_eq!(again.basis_len(), kept);
 /// An append shares the prior word's Arc; it does not clone the basis.
 #[test]
 fn language_append_shares_prior_word_arcs() {
+    crate::transducer::raster::stand_on(0);
 let mut k = Court::new();
 let w0 = crate::transducer::element::from_canonical(
     &germinate(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]).unwrap(),

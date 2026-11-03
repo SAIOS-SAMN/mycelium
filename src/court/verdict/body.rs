@@ -715,7 +715,7 @@ pub(crate) fn undeclared_remainder(remainders: &[Vec<(i64, i64, u8, u8)>], f: &F
         .flatten()
         .copied()
         .filter(|&(r, c, spoken, observed)| {
-            spoken != crate::transducer::raster::ground() || !declared.get(&site_key(r, c)).is_some_and(|hues| hues.contains(&observed))
+            !crate::transducer::raster::is_ground(spoken) || !declared.get(&site_key(r, c)).is_some_and(|hues| hues.contains(&observed))
         })
         .collect();
     out.sort_unstable();

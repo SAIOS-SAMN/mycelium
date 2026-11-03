@@ -94,7 +94,7 @@ fn speak_pair_lists_extracted_form() {
 use crate::transducer::family::{extract_rule_with, grid_of_painted, mint_sentence, NoCrystal};
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
-let family = vec![(grid_of_painted(&a), grid_of_painted(&b))];
+let family = vec![(grid_of_painted(&a, 0), grid_of_painted(&b, 0))];
 let mut k = Court::new();
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listed = &k.quote().1;

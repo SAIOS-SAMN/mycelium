@@ -182,10 +182,6 @@ pub fn magnified(painted: &[(i64, i64, u8)], k: i64) -> Vec<(i64, i64, u8)> {
 }
 
 /// REDUCED ×k — each k×k block condenses to one hue, or None if a block is mixed.
-#[expect(
-    clippy::disallowed_methods,
-    reason = "rule 11, content extremum — hue 0 IS absence in this encoding, so a site the occupancy does not hold reads as unpainted rather than as a hue put there for it"
-)]
 pub fn reduced(painted: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>> {
     if k <= 1 {
         return Some(painted.to_vec());
@@ -200,10 +196,12 @@ pub fn reduced(painted: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>
     while br <= r1 {
         let mut bc = c0;
         while bc <= c1 {
-            let mut hue = None;
+            // Each block's one reading: a symbol, or absence (a site the
+            // painted sites do not name), never a ground written in for it.
+            let mut hue: Option<Option<u8>> = None;
             for dr in 0..k {
                 for dc in 0..k {
-                    let h = have.get(&pos_key(br + dr, bc + dc)).copied().unwrap_or_else(crate::transducer::raster::ground);
+                    let h = have.get(&pos_key(br + dr, bc + dc)).copied();
                     match hue {
                         None => hue = Some(h),
                         Some(held) if held != h => return None,
@@ -211,8 +209,8 @@ pub fn reduced(painted: &[(i64, i64, u8)], k: i64) -> Option<Vec<(i64, i64, u8)>
                     }
                 }
             }
-            if let Some(h) = hue {
-                if h != crate::transducer::raster::ground() {
+            if let Some(Some(h)) = hue {
+                if !crate::transducer::raster::is_ground(h) {
                     out.push(((br - r0) / k, (bc - c0) / k, h));
                 }
             }

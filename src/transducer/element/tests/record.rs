@@ -132,6 +132,7 @@ fn from_bytes_reads_transition_gauge_as_ray() {
 /// and action all survive, so a persisted basis reloads identically.
 #[test]
 fn from_bytes_round_trips_germ() {
+    crate::transducer::raster::stand_on(0);
     let residual = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
     let swap = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
     for g in [&residual, &swap] {

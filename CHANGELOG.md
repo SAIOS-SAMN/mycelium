@@ -6,6 +6,54 @@ such change is named here.
 
 ## Unreleased
 
+### The ground is deduced, never a code (ROADMAP track 26, S2)
+- **`transduce::Ground<S>`** (`One`, `Vortex`, `None`) and
+  **`transduce::Unground`** (`Vortex`, `None`, `Unscoped`), with
+  `Ground::of(&[(Sample, Sample)])`. A candidate is ambient, enclosing
+  and never carried as a body (MU-SENSING §3.4).
+- **`raster::ground_of` returns `Ground<u8>`.** The former count (`0`
+  where any site shows it, else the most frequent symbol, else `0`) is
+  removed. `raster::ground()` returns the scope's `Ground<u8>`, and is
+  `Ground::None` with no family open, never `0`. New: `raster::is_ground`,
+  `raster::void` (the one symbol a writer writes, or `Unground`).
+  `raster::on_ground` takes a `Ground<u8>`. `raster::ground_bytes` maps a
+  reading to sample symbols. `raster::value_at` returns `Option<u8>`.
+- **Writers refuse by name** where they need one ground symbol and the
+  scope has none:
+  - `speak::residual_of`, `deflation::unspoken_residue` and
+    `invert::remainder_scene` return `Result<_, Unground>`;
+  - `DeflationRead` gains `ungrounded`, and `PairRead` gains
+    `Ungrounded` (the court refuses it as not closed);
+  - `grid_of_painted` takes the unpainted symbol explicitly;
+  - `Speech::grid` lays an unpainted site on the ground, and refuses only
+    where one is left.
+- **The literal ground-as-`0` comparisons are removed** from the readers
+  of the transduction, the family, the court and the client. They read
+  the scope's `Ground`. `Transduction::lane_shares` and `relation_of` take
+  a `&Ground<Vec<u8>>`.
+- **Frame fixing leaves intake** (scope separation, ruled 2026-11-03).
+  `mycelium_source_arc_agi::parse_task` is removed: the decoder posts
+  tasks as the file gives them (`decode`). `raster::frame_fixed_on_ground`
+  stays as a perspective for S6. It fixes only under `Ground::One(g)` and
+  leaves the frame as read under a vortex or no ground. No reader applies
+  it today: the mind reads tasks in the frame they were posted in, which
+  is the frame the court judges in.
+- **The door** refuses a solve whose task holds no content with "its
+  ground is not read". It no longer judges it on `0`.
+- **Network contract: task addresses change**, inside v0.3.0's one break
+  (78.170 O3). A task's identity is its posted samples' content
+  (`Sample::put_content`): rank, extents, symbol width, place `[split,
+  pair, member]` and symbols, train and test inputs alike. Neither the
+  ground nor frame fixing enters it. Re-decode and re-sign a corpus
+  directory.
+- **Behaviour check** over the 1 000 training tasks:
+  - 466 read `One` with the former symbol, 72 read `One` with another,
+    195 read a vortex and 267 read none;
+  - all 1 000 addresses change, and the former decoder had turned 103 of
+    them;
+  - the oracle's golden reading is rewritten, from 1 715 to 1 684
+    readings.
+
 ### The ARC-AGI-2 decoder leaves the core (ROADMAP track 26, S1)
 - **`src/arc.rs` is removed**, with `src/tests/arc.rs`; the core library
   has no module named for a data source (a `compile_fail` claim on

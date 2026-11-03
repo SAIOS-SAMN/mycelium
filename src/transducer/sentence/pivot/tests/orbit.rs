@@ -733,6 +733,7 @@ fn file_orbit_files_under_edge_composite() {
 /// and certifies on a constructed family.
 #[test]
 fn pivot_orbit_certifies_held_word_on_family() {
+    crate::transducer::raster::stand_on(0);
     let q = word_turn_90();
     let mut f = chord_form(std::slice::from_ref(&q));
     let family = vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])];
@@ -776,6 +777,7 @@ fn pivot_orbit_certifies_held_word_on_family() {
 /// on a constructed family.
 #[test]
 fn pivot_orbit_holds_two_discharges_as_vortex() {
+    crate::transducer::raster::stand_on(0);
     let q = word_turn_90();
     let qinv = q.inverse();
     let mut f = chord_form(std::slice::from_ref(&q));

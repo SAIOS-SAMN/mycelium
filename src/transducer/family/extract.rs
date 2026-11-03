@@ -77,7 +77,8 @@ fn extract_rule_on_ground(
             }
         };
     };
-    let Percept { form, varying, unreached } = family_percept(family, frames, scale, budget);
+    // A percept with no one ground to write its absences on is refused.
+    let Ok(Percept { form, varying, unreached }) = family_percept(family, frames, scale, budget) else { return None };
     let unreached_pairs: Vec<(Grid, Grid)> = unreached.iter().filter_map(|&k| family.get(k).cloned()).collect();
     trace::trace("extract/1 derive_against", trace::Wrote::Nothing, Some(budget));
     let mut form = derive_against(form, crystal, budget)?;

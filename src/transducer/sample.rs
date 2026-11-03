@@ -206,6 +206,26 @@ impl Sample {
         self.symbols.chunks(self.width).map(Symbol)
     }
 
+    /// THE SAMPLE'S FULL CONTENT WRITTEN OUT (A21), as the source gave it:
+    /// the rank, each extent, the symbol width, the place's coordinates and
+    /// the symbols in canonical address order, each written by its own
+    /// coordinate (`address::put_key_count`, `put_key_bytes`), so the
+    /// writing is injective. Nothing is read into it: no ground, no frame,
+    /// no meaning (MU-SENSING §6).
+    pub fn put_content(&self, out: &mut Vec<u8>) {
+        use crate::transducer::address::{put_key_bytes, put_key_count};
+        put_key_count(out, self.rank());
+        for &e in &self.extents {
+            put_key_count(out, e);
+        }
+        put_key_count(out, self.width);
+        put_key_count(out, self.place.coordinates().len());
+        for c in self.place.coordinates() {
+            put_key_bytes(out, &c.to_le_bytes());
+        }
+        put_key_bytes(out, &self.symbols);
+    }
+
     /// THE SAMPLE'S SITES in canonical address order, axis 0 slowest. Every
     /// coordinate is below its extent, which is below the buffer's length,
     /// so it stands in `i64`; and the constructor admitted only a rank the

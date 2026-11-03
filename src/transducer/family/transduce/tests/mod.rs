@@ -3,6 +3,7 @@
 // sample: the transduction reads nothing else.
 
 mod enclosed;
+mod ground;
 mod motion;
 mod nest;
 mod rank;
@@ -11,14 +12,12 @@ mod relation;
 
 use crate::transducer::base::Site;
 use crate::transducer::family::transduce::{Sense, SignedPermutation, SiteChange, Transduction};
-use crate::transducer::sample::{AxisReading, Place, Sample, Symbol};
+use crate::transducer::sample::{AxisReading, Place, Sample};
 
-/// The ground the fixtures stand on: the symbol written `0`.
-pub(super) const GROUND: [u8; 1] = [0];
-
-/// The fixtures' ground as a symbol.
-pub(super) fn ground() -> Symbol<'static> {
-    Symbol::new(&GROUND)
+/// The ground the fixtures stand on: the symbol written `0`, as the reading
+/// `Ground::of` makes of them (the claims of `tests::ground` read it).
+pub(super) fn ground() -> crate::transducer::family::transduce::Ground<Vec<u8>> {
+    crate::transducer::family::transduce::Ground::One(vec![0])
 }
 
 /// A sample of any rank from its extents and one digit per site, in

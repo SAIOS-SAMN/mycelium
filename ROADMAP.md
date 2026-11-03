@@ -32,7 +32,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
-| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2, S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
+| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 built (the ground deduced; task addresses changed inside the one break); S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready after T2 |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Ready |
@@ -1135,6 +1135,40 @@ Each phase is one commit:
    §3.4, held per family, with candidates in superposition. The default
    `0` and the literal `h != 0` sites (about 64) are removed.
    - Claim: `ground_deduced_not_symbol_zero`.
+   - **Built.** `transduce::Ground` (`One`, `Vortex`, `None`) is read by
+     `Ground::of` over a family's samples. A candidate is:
+     - ambient: in every sample;
+     - enclosing: it meets every sample's seam;
+     - never carried as a body by a pair's motion (read from the
+       transduction's bodies under the signed permutations).
+
+     The details:
+     - The scoped carrier stays (`raster::on_ground_of`). With no family
+       open it reads `Ground::None`, and a writer is refused
+       `Unground::Unscoped`.
+     - Readers ask `is_ground`. Writers that need one symbol (`void`) are
+       refused by name under a vortex or `None`.
+     - Scope separation (ruled 2026-11-03):
+       - A task's identity is its posted samples' content (rank, extents,
+         symbols, places). Neither the ground nor frame fixing enters it.
+       - The decoder posts tasks as read, and `parse_task` is removed.
+       - Frame fixing (`raster::frame_fixed_on_ground`, only under `One`)
+         is a perspective no reader applies at intake. It becomes one in
+         S6.
+       - All 1 000 training addresses change, inside v0.3.0's one break.
+     - Claims: `task_identity_reads_no_ground`,
+       `task_identity_reads_no_frame_fixing`,
+       `ground_deduced_not_symbol_zero`,
+       `ground_requires_presence_in_every_sample`,
+       `ground_requires_meeting_every_seam`,
+       `ground_carried_as_a_body_is_not_ground`,
+       `painting_onto_the_ground_keeps_it_ground`,
+       `several_candidates_are_held_as_a_vortex`,
+       `no_candidate_reads_no_ground`,
+       `unscoped_reader_never_defaults_to_zero`.
+     - Behaviour over the 1 000 training tasks: 466 read the former
+       symbol, 72 another, 195 a vortex, 267 none (MU-SENSING §8).
+     - Open: reading a vortex per candidate perspective, with S6.
 4. **S3, the symbol set deduced.**
    - `PALETTE` (10, and the conflicting 256), `RESERVOIR` and the 10-slot
      hue tables are replaced by the family's own symbol set.

@@ -12,6 +12,7 @@ use crate::transducer::stalk::Standing;
 /// spoken onto them at its composed placement.
 #[test]
 fn apply_form_speaks_glued_citation_on_one_perception() {
+    crate::transducer::raster::stand_on(0);
     let (x, y) = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
     let held_form = cipher_form(&x, &y);
     assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
@@ -164,6 +165,7 @@ assert!(
 /// Grow-to-frame is Unfolded{{Occupied}}; the tape carries no step count.
 #[test]
 fn extract_rule_with_unfolds_grow_to_frame() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["10", "00"]), grid(&["11", "11"])),
     (grid(&["100", "000", "000"]), grid(&["111", "111", "111"])),
@@ -192,6 +194,7 @@ assert!(
 /// twofold each extract a form and speak a new input exactly.
 #[test]
 fn extract_rule_comprehends_shift_mirror_dilation() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
     (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
@@ -263,6 +266,7 @@ assert!(extract_rule(&disagree, &mut crate::physics::Physics::default().stroke_n
 /// A shift family extracts a rule and speaks the test.
 #[test]
 fn speak_rule_speaks_shift_family() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
     (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
@@ -325,6 +329,7 @@ assert_eq!(spoken.grid(), Some(grid(&["0022", "0000"])));
 /// grid that silently is not what the form said.
 #[test]
 fn speech_grid_refuses_site_outside_frame() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::family::Speech;
     let fits = Speech {
         unresolved: Vec::new(),

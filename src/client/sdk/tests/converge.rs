@@ -33,6 +33,7 @@ fn turn_180(r: i64, c: i64) -> Element {
 /// convergence.
 #[test]
 fn scenes_read_converges_two_words_on_one_section() {
+    crate::transducer::raster::stand_on(0);
     let scene = [7u8; 32];
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let (held, heard) = (slide(0, 2), turn_180(1, 4));
@@ -51,6 +52,7 @@ fn scenes_read_converges_two_words_on_one_section() {
 /// it changed are right — and converges with nothing either: another section.
 #[test]
 fn scenes_read_refutes_word_false_on_scene() {
+    crate::transducer::raster::stand_on(0);
     let scene = [7u8; 32];
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let mut s = Scenes::default();

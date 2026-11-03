@@ -229,13 +229,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // THE TASK'S GROUND (ruled 2026-10-18): the withheld
         // pairs are read on the ground the task's demonstrations name, the
         // one the voice spoke them on — never on one the withheld pairs
-        // would name alone.
+        // would name alone. The ground is deduced (MU-SENSING §3.4); a
+        // citation this book holds no task for has no ground read at all,
+        // and is refused by name below, never judged on a code.
         let (tid, withheld, open, ground) = {
             let Ok(reg) = door.registry.lock() else { return true };
-            let g = match reg.task(&cite) {
-                Some(t) => mycelium::transducer::raster::ground_of(&t.train),
-                None => 0,
-            };
+            let g = reg.task(&cite).map(|t| mycelium::transducer::raster::ground_of(&t.train));
             (cite, reg.withheld(&cite), reg.open(&cite), g)
         };
         // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
@@ -290,8 +289,16 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             // judging below answers where its hold fails.
             Err(_) => return true,
         };
-        let (code, mu, refusal, stamp) = match (pre, open, rule.as_ref()) {
-            (Some(pre), _, _) => {
+        let (code, mu, refusal, stamp) = match (pre, open, rule.as_ref(), ground.as_ref()) {
+            // A task the book opens but holds no content for has no ground
+            // read: refused by name, never judged on a code.
+            (None, Some(_), Some(_), None) => (
+                dialogue::SOLVE_NOTHING,
+                Mu::zero(),
+                Some(refused("no such task on this book: its ground is not read", mycelium::transducer::sentence::ObstructionKind::Integrity)),
+                None,
+            ),
+            (Some(pre), _, _, _) => {
                 let reason = match pre {
                     Judged::Unsigned => "unsigned: a solve names its payee by its voice's signature",
                     Judged::NoSuchTask => "no such task on this book",
@@ -301,22 +308,22 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             }
             // `pre` read these two already (it names them above); the
             // pattern says so to the compiler, by the same reasons.
-            (None, None, _) => {
+            (None, None, _, _) => {
                 (dialogue::SOLVE_NOTHING, Mu::zero(), Some(refused("no such task on this book", mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
             }
-            (None, Some(_), None) => (
+            (None, Some(_), None, _) => (
                 dialogue::SOLVE_NOTHING,
                 Mu::zero(),
                 Some(refused("a solve carries its rule: a raster is no proof of a motion", mycelium::transducer::sentence::ObstructionKind::Integrity)),
                 None,
             ),
-            (None, Some(first), Some(rule)) => {
+            (None, Some(first), Some(rule), Some(ground)) => {
                 let (verdict, offers) = {
                     let Ok(mut h) = crate::held::held!(door.court) else { return true };
                     // OWED (78.153b): the solve's replay mints its own stroke
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
-                    let verdict = match mycelium::transducer::raster::on_ground(ground, || k.judge_solve_on_stroke(rule, &withheld)) {
+                    let verdict = match mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_solve_on_stroke(rule, &withheld)) {
                         mycelium::cognition::SolveVerdict::Solved { pay, modes } => {
                             // The court names a task by its citation (wire v1.2).
                             let paid = k.pay_solve(&cite, svoice, rule, pay, first);

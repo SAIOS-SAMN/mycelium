@@ -11,7 +11,7 @@ use crate::transducer::family::transduce::*;
 /// ranks are refused.
 #[test]
 fn relation_of_reads_each_class() {
-    let g = ground();
+    let g = &ground();
     assert_eq!(
         relation_of(&sample(&["10", "02"]), &sample(&["1100", "1100", "0022", "0022"]), g),
         Ok(PairRelation::Carried(SignedPermutation::identity(2)))

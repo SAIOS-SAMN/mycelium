@@ -670,14 +670,19 @@ impl Speech {
         if !self.unresolved.is_empty() || !self.cycled.is_empty() {
             return None;
         }
-        let mut out: Grid = vec![vec![crate::transducer::raster::ground(); self.frame.1]; self.frame.0];
+        // A site the speech does not paint holds the family's one ground;
+        // where one is left and the scope has none (a vortex, no ground, no
+        // family open), no grid stands for the speech. A speech that paints
+        // every site needs no ground.
+        let mut out: Vec<Vec<Option<u8>>> = vec![vec![None; self.frame.1]; self.frame.0];
         for &(r, c, h) in &self.painted {
             let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {
                 return None;
             };
-            *out.get_mut(ur).and_then(|row| row.get_mut(uc))? = h;
+            *out.get_mut(ur).and_then(|row| row.get_mut(uc))? = Some(h);
         }
-        Some(out)
+        let void = crate::transducer::raster::void().ok();
+        out.into_iter().map(|row| row.into_iter().map(|h| h.or(void)).collect::<Option<Vec<u8>>>()).collect()
     }
 }
 
@@ -695,7 +700,19 @@ pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &Grid, cr
 /// (row, col, spoken hue, observed hue) over every site that differs.
 /// Public so the corpus decoder's sweep (`sources/arc-agi`, ROADMAP track
 /// 26 S1) reads the same planar coboundary the core's tests read.
-pub fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8, u8)> {
+///
+/// A site one side does not reach holds the scene's ground there, the one
+/// symbol the open scope writes for it (`raster::void`). Where a link needs
+/// it and the scope has none (a vortex, no ground, no family open), the
+/// residue cannot be written on this carrier and is refused by name; a
+/// speech that reaches every observed site, on the observed frame, needs no
+/// ground and is never refused.
+pub fn residual_of(
+    spoken: Option<&Grid>,
+    observed: &Grid,
+) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
+    let void = crate::transducer::raster::void();
+    let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
     for (r, row) in observed.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
@@ -703,7 +720,7 @@ pub fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8,
             // the scene's ground IS absence in this encoding.
             let s = match spoken.and_then(|g| g.get(r)).and_then(|row| row.get(c)) {
                 Some(h) => *h,
-                None => crate::transducer::raster::ground(),
+                None => void?,
             };
             if s != h {
                 out.push((r as i64, c as i64, s, h));
@@ -714,14 +731,13 @@ pub fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8,
         for (r, row) in g.iter().enumerate() {
             for (c, &s) in row.iter().enumerate() {
                 let inside = observed.get(r).and_then(|row| row.get(c)).is_some();
-                let void = crate::transducer::raster::ground();
-                if !inside && s != void {
-                    out.push((r as i64, c as i64, s, void));
+                if !inside && !ground.holds(&s) {
+                    out.push((r as i64, c as i64, s, void?));
                 }
             }
         }
     }
     out.sort_unstable();
     out.dedup();
-    out
+    Ok(out)
 }

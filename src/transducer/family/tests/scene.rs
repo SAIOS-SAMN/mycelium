@@ -53,6 +53,7 @@ fn is_identity_ends_cut_at_scene_key() {
 /// FAMILY, not of one grid.
 #[test]
 fn cover_bands_scene_into_restricted_charts() {
+    crate::transducer::raster::stand_on(0);
     let banded = vec![grid(&["12", "00", "21"])];
     let banded_cover = cover(&banded, Reading::Bands).expect("Bands deduces a cover");
     let keys: Vec<Vec<u8>> = banded_cover.scoped().map(|(k, _)| k).collect();

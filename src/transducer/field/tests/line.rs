@@ -60,6 +60,7 @@ const SLIDE_ON: [&str; 3] = ["00100010", "00100010", "00110011"];
 /// between the hours stands on the docket under that scene.
 #[test]
 fn release_drops_slide_perception_where_motion_lets_go() {
+    crate::transducer::raster::stand_on(0);
     let mut field = crate::transducer::mind::MindField::default();
     field.think(|| {
         let mut c = Contemplation::new();

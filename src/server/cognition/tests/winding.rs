@@ -148,6 +148,7 @@ fn book_outflow_steps_chart_holonomy_algebra() {
 /// why — acyclic — never as nothing.
 #[test]
 fn step_rank_reads_rederived_sentence_rings() {
+    crate::transducer::raster::stand_on(0);
     let g = |rows: &[&str]| super::common::digits(rows);
     let slides = vec![
         (g(&["1100000", "0000000", "0002000", "0002200"]), g(&["1100000", "0000000", "0000020", "0000022"])),

@@ -26,6 +26,9 @@ fn task(id: &str) -> (Pairs, Pairs) {
     (t.train, t.test)
 }
 
+/// The court judges the withheld pairs on the ground the task's train pairs
+/// name, as the door opens it (MU-SENSING §3.4), never on one the withheld
+/// pairs would name alone.
 fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<(), NoRule>) {
     let mut k = Court::new();
     let verdict = k.judge_solve(rule, withheld);
@@ -35,18 +38,36 @@ fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<()
 }
 
 /// THE TASK SOLVED: the steps mint over the train pairs, and the court
-/// solves the minted word on each test pair it never saw.
+/// solves the minted word on each test pair it never saw, both on the
+/// ground the train pairs name (`raster::ground_of`).
 fn solves(id: &str, steps: &[Step]) {
+    let (train, _) = task(id);
+    solves_on(id, mycelium::transducer::raster::ground_of(&train), steps);
+}
+
+/// [`solves`] on a ground the claim states. Used where the task's deduced
+/// reading is a vortex or no ground (MU-SENSING §3.4, §8): the claim is the
+/// rule language's on the canvas the task is drawn on, and the task read
+/// end to end on its deduced ground refuses until a vortex or an absent
+/// ground is read per perspective (track 26, S6).
+fn solves_on(id: &str, ground: mycelium::transducer::family::transduce::Ground<u8>, steps: &[Step]) {
     let (train, test) = task(id);
-    let rule = match sentence(steps, &train, &NoCrystal) {
-        Ok(rule) => rule,
-        Err(e) => panic!("{id}: the rule mints over its train pairs: {e:?}"),
-    };
-    for (i, pair) in test.iter().enumerate() {
-        let (verdict, seam) = judged(&rule, std::slice::from_ref(pair));
-        assert!(matches!(verdict, SolveVerdict::Solved { .. }), "{id} test {i}: the court solves it: {verdict:?}");
-        assert!(seam.is_ok(), "{id} test {i}: the seam agrees: {seam:?}");
-    }
+    mycelium::transducer::raster::on_ground(ground, || {
+        let rule = match sentence(steps, &train, &NoCrystal) {
+            Ok(rule) => rule,
+            Err(e) => panic!("{id}: the rule mints over its train pairs: {e:?}"),
+        };
+        for (i, pair) in test.iter().enumerate() {
+            let (verdict, seam) = judged(&rule, std::slice::from_ref(pair));
+            assert!(matches!(verdict, SolveVerdict::Solved { .. }), "{id} test {i}: the court solves it: {verdict:?}");
+            assert!(seam.is_ok(), "{id} test {i}: the seam agrees: {seam:?}");
+        }
+    });
+}
+
+/// The canvas a task is drawn on, stated by the claim.
+fn canvas(symbol: u8) -> mycelium::transducer::family::transduce::Ground<u8> {
+    mycelium::transducer::family::transduce::Ground::One(symbol)
 }
 
 // ---- SLICE 1: CREATE, REGION and SIZED OUTPUTS, with SELECT as they need it.
@@ -123,11 +144,14 @@ fn sentence_of_mints_no_word_for_scale_alone() {
     );
 }
 
-/// A crop with no single body to keep is refused by name.
+/// A crop with no single body to keep is refused by name. be94b721 reads
+/// no ground (an output shows no 0), so the claim states its canvas.
 #[test]
 fn sentence_refuses_crop_of_two_bodies() {
     let (train, _) = task("be94b721");
-    let got = sentence(&[Step::Select(Pred::All), Step::Crop(Extent::Body)], &train, &NoCrystal);
+    let got = mycelium::transducer::raster::on_ground(canvas(0), || {
+        sentence(&[Step::Select(Pred::All), Step::Crop(Extent::Body)], &train, &NoCrystal)
+    });
     assert!(matches!(got, Err(NoRule::Unstated(Unstated::NotOne))), "refused by name: {got:?}");
 }
 
@@ -151,9 +175,10 @@ fn erase() -> Vec<(u8, u8)> {
 }
 
 /// be94b721 — the output is the extent of the LARGEST body; a tie refused.
+/// The task reads no ground (an output shows no 0): stated on its canvas.
 #[test]
 fn sentence_crops_to_largest_body() {
-    solves("be94b721", &[Step::Select(Pred::extremum(Coord::Shell, Order::Greatest, Tie::Refuse)), Step::Crop(Extent::Body)]);
+    solves_on("be94b721", canvas(0), &[Step::Select(Pred::extremum(Coord::Shell, Order::Greatest, Tie::Refuse)), Step::Crop(Extent::Body)]);
 }
 
 /// 6e82a1ae — a body of 4 cells turns blue, of 3 red, of 2 green: exact counts.
@@ -212,7 +237,9 @@ fn sentence_keeps_extremes() {
 }
 
 /// 00dbd492 — each square frame's interior filled by its width: 5 cyan,
-/// 7 yellow, 9 green; the dot inside each stays inside it.
+/// 7 yellow, 9 green; the dot inside each stays inside it. The task reads
+/// a vortex of 0 and 2 (the frames meet the seam in every sample): stated
+/// on its canvas.
 #[test]
 fn sentence_fills_interior_by_frame_width() {
     let mut steps = Vec::new();
@@ -221,7 +248,7 @@ fn sentence_fills_interior_by_frame_width() {
         steps.push(Step::Region(Region::Interior));
         steps.push(Step::Hue(vec![(0, hue)]));
     }
-    solves("00dbd492", &steps);
+    solves_on("00dbd492", canvas(0), &steps);
 }
 
 /// 42a50994 — a lone cell that touches no other body is erased.

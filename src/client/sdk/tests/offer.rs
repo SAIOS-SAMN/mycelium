@@ -22,6 +22,7 @@ fn one_cell_steps() -> Vec<(crate::transducer::family::Grid, crate::transducer::
 /// its plan: the mind now holds tension.
 #[test]
 fn pull_task_asks_nothing_settled_and_strained_holds_tension() {
+    crate::transducer::raster::stand_on(0);
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("settled"));
     mind.place_question(b"a question placed", &[(0, 0, 1, 2)]);
     let [first, second] = two_hours_of_a_slide();
@@ -76,6 +77,7 @@ fn couples_reaches_only_what_mind_holds() {
 /// slide, on charts its language does not speak on, it couples to nothing.
 #[test]
 fn task_inflow_takes_offer_in_restored_language() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("restored"));
     mind.place_question(b"a question placed", &[(0, 0, 1, 2)]);
@@ -250,6 +252,7 @@ fn curiosity_couples_to_nearest_stratum() {
 /// into thought, and leaves the carrier.
 #[test]
 fn absorb_taught_holds_residual_as_open_question() {
+    crate::transducer::raster::stand_on(0);
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("questioning"));
     let chain = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (1, 0, 1, 2), (2, 2, 3, 4)];
     let residual = crate::transducer::element::from_residual(&chain).expect("a residual chain");
@@ -389,6 +392,7 @@ fn lapses_at_the_next_final(mind: &mut Mind) {
 /// nothing. A task standing on the board is never asked past.
 #[test]
 fn pull_task_asks_only_on_empty_corpus() {
+    crate::transducer::raster::stand_on(0);
     let mut vacuum = Mind::open("127.0.0.1:1", Voice::named("vacuum"));
     let mut field = std::mem::take(&mut vacuum.field);
     let (settled, asked) = field.think(|| {

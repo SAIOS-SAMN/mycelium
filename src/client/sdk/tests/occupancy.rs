@@ -17,6 +17,7 @@ fn grid(rows: &[&str]) -> Grid {
 /// created cell ground.
 #[test]
 fn occupancy_causes_reads_wrong_speech_by_cause() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["100", "000", "002"]);
     let y = grid(&["000", "030", "002"]);
     // The body at index 1 is the bottom-right one (perception reads bodies
@@ -41,6 +42,7 @@ fn occupancy_causes_reads_wrong_speech_by_cause() {
 /// never silently absent from the speech.
 #[test]
 fn speak_rule_names_unreached_bodies() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["1000", "0000", "0000"]), grid(&["0000", "1000", "0000"])),
         (grid(&["0000", "0100", "0000"]), grid(&["0000", "0000", "0100"])),
@@ -61,6 +63,7 @@ fn speak_rule_names_unreached_bodies() {
 /// sent with the bar silently erased.
 #[test]
 fn tests_spoken_withholds_speech_with_unreached_body() {
+    crate::transducer::raster::stand_on(0);
     use crate::client::sdk::*;
     let family = vec![
         (grid(&["1000", "0000", "0000"]), grid(&["0000", "1000", "0000"])),

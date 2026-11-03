@@ -42,7 +42,7 @@ pub enum PairRelation {
 /// The periods a body's shape is read in: its frame's, or its own
 /// enclosure's.
 #[derive(Clone, Copy)]
-enum Held {
+pub(super) enum Held {
     InFrame,
     OwnEnclosure,
 }
@@ -51,7 +51,7 @@ enum Held {
 /// turn on each phase (O2 (b)): each band's boundary turns less the least,
 /// as fractions in lowest terms, in band order, of the frame's periods or
 /// of the body's own span. The symbol is not shape.
-fn centred_shape(e: &Enclosed, body: usize, held: Held) -> Vec<u8> {
+pub(super) fn centred_shape(e: &Enclosed, body: usize, held: Held) -> Vec<u8> {
     use crate::transducer::address::put_key_count;
     // The least and the greatest boundary turn on each phase, as indices of
     // the phase's own period: O2 (b) names the least as the origin, and the
@@ -103,12 +103,15 @@ fn is_cover(x: &Sample, y: &Sample, periods: &[usize]) -> bool {
     })
 }
 
-/// THE RELATION OF ONE PAIR ([`PairRelation`]) on the family's `ground`:
+/// THE RELATION OF ONE PAIR ([`PairRelation`]) on the family's deduced
+/// `ground` (a painted body is one whose symbol the reading does not hold;
+/// under `Ground::None` every body is painted):
 /// `Rank` where the frames differ in rank, `Spent` where a record does not
 /// read under the stroke its periods need. The signed permutations are read
 /// in [`SignedPermutation::all`]'s order: the group generated, never a
 /// search tree.
-pub fn relation_of(x: &Sample, y: &Sample, ground: Symbol<'_>) -> Result<PairRelation, TransductionRefusal> {
+pub fn relation_of(x: &Sample, y: &Sample, ground: &super::Ground<Vec<u8>>) -> Result<PairRelation, TransductionRefusal> {
+    let painted = |s: Option<Symbol<'_>>| s.is_some_and(|s| !ground.holds_symbol(s));
     let from = Enclosed::of(x);
     let to = Enclosed::of(y);
     let (p, q) = (from.enclosure.periods().to_vec(), to.enclosure.periods().to_vec());
@@ -133,8 +136,8 @@ pub fn relation_of(x: &Sample, y: &Sample, ground: Symbol<'_>) -> Result<PairRel
             return Ok(PairRelation::Cover { copies });
         }
     }
-    let painted: Vec<usize> = (0..to.bodies).filter(|&b| to.body_symbol(b) != Some(ground)).collect();
-    if painted.is_empty() {
+    let bodies: Vec<usize> = (0..to.bodies).filter(|&b| painted(to.body_symbol(b))).collect();
+    if bodies.is_empty() {
         return Ok(PairRelation::Unenclosed);
     }
     for (held, class) in [
@@ -145,11 +148,11 @@ pub fn relation_of(x: &Sample, y: &Sample, ground: Symbol<'_>) -> Result<PairRel
             let moved = s.moved(&from)?;
             let mut shapes: Keyed<()> = Keyed::new();
             for body in 0..moved.bodies {
-                if moved.body_symbol(body) != Some(ground) {
+                if painted(moved.body_symbol(body)) {
                     shapes.insert(centred_shape(&moved, body, held), ());
                 }
             }
-            if painted.iter().all(|&b| shapes.contains(&centred_shape(&to, b, held))) {
+            if bodies.iter().all(|&b| shapes.contains(&centred_shape(&to, b, held))) {
                 return Ok(class(s));
             }
         }

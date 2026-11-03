@@ -427,19 +427,21 @@ pub(crate) fn cover_deformation(
     // (c) WHAT IS LEFT, AS A VOLUME. Both bodies (50.8 case 4): the
     // input's compartments no piece carried, and the image's compartments no piece
     // reached.
-    let void = crate::transducer::raster::ground();
-    let mut left: Vec<Link> = Vec::new();
+    // Each is a body against nothing, read without a symbol written for the
+    // nothing (`measure_supports`), so no ground is needed.
+    let mut vanished: Vec<(i64, i64)> = Vec::new();
+    let mut appeared: Vec<(i64, i64)> = Vec::new();
     for l in &input.compartments {
-        if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
-            left.push((r, c, l.hue, void));
+        if let (false, Some(at)) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
+            vanished.push(at);
         }
     }
     for l in &image.compartments {
-        if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
-            left.push((r, c, void, l.hue));
+        if let (false, Some(at)) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
+            appeared.push(at);
         }
     }
-    cover.uncarried = element::measure_lanes(&left);
+    cover.uncarried = element::measure_supports(&vanished, &appeared);
     cover.reached = reached.clone();
 
     // (d) THE MEETS, from a keyed occupancy of the placed supports (rule 1:

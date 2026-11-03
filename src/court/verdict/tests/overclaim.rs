@@ -20,6 +20,7 @@ fn digits(rows: &[&str]) -> Grid {
 /// its gauge reproduces, and the court's body check finds nothing to refuse.
 #[test]
 fn extract_rule_claims_only_frames_gauge_reproduces() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (digits(&["000", "010", "000"]), digits(&["000", "002", "000"])),
         (digits(&["000", "030", "000"]), digits(&["000", "004", "000"])),

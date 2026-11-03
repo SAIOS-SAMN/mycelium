@@ -18,6 +18,7 @@ fn chain_word(links: &[(i64, i64, u8, u8)]) -> crate::transducer::element::Eleme
 /// forms' words, read at the chart (24.1).
 #[test]
 fn incident_chart_reads_working_atlas() {
+    crate::transducer::raster::stand_on(0);
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("atlas"));
 assert!(
@@ -55,6 +56,7 @@ assert!(held >= 1, "an idea is held");
 /// held remainder is cited with standing Held — never as covering itself.
 #[test]
 fn cite_reads_stood_and_held_words() {
+    crate::transducer::raster::stand_on(0);
 let residual = vec![(0i64, 0i64, 1u8, 2u8)];
 let next = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("cite-stood"));
@@ -99,6 +101,7 @@ assert!(
 /// anywhere on the working language, because none was minted to ask.
 #[test]
 fn cite_names_held_word_vertex_not_listing_chain() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::sentence::Vertex;
 let scene = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];
 let listing = vec![(4i64, 4i64, 1u8, 2u8), (4, 5, 1, 2), (9, 9, 3u8, 4u8)];
@@ -129,6 +132,7 @@ assert!(
 /// A listing is expressed only when a held word deflates it.
 #[test]
 fn conclude_listing_expresses_only_when_held_word_deflates() {
+    crate::transducer::raster::stand_on(0);
 let prefix = vec![(0i64, 0i64, 1u8, 2u8)];
 let listing = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
 

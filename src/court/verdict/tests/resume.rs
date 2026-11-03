@@ -117,6 +117,7 @@ fn replay_resume_leaves_good_word_unread_on_short_stroke() {
 /// it is refused, by application.
 #[test]
 fn edges_rederive_frames_from_spends_short_stroke_never_refuses() {
+    crate::transducer::raster::stand_on(0);
     use crate::verdict::body::{edges_rederive_frames_from, perceive_family};
     let a_in = ["110000", "000000", "110000", "000000"];
     let a_out = ["220000", "000000", "220000", "000000"];

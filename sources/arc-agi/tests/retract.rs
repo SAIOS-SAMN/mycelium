@@ -154,7 +154,7 @@ fn from_address_retracts_every_corpus_form() {
     let (mut seen, mut with_orbits) = (0usize, 0usize);
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
-        let Some(task) = mycelium_source_arc_agi::parse_task(&json) else { continue };
+        let Some(task) = mycelium_source_arc_agi::decode(&json) else { continue };
         let frames = mycelium::transducer::family::perceive_family(&task.train);
         let mut budget =
             physics.stroke_n(mycelium::transducer::family::extraction_spend(&task.train, &frames));
@@ -256,7 +256,7 @@ fn from_address_agrees_on_every_court_reading() {
     };
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
-        let Some(task) = mycelium_source_arc_agi::parse_task(&json) else { continue };
+        let Some(task) = mycelium_source_arc_agi::decode(&json) else { continue };
         let frames = mycelium::transducer::family::perceive_family(&task.train);
         let mut budget =
             physics.stroke_n(mycelium::transducer::family::extraction_spend(&task.train, &frames));
@@ -365,7 +365,7 @@ fn form_vertex_key_keeps_carrier_invariants() {
         let mut physics = mycelium::physics::Physics::default();
         for name in &names {
             let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
-            let Some(task) = mycelium_source_arc_agi::parse_task(&json) else { continue };
+            let Some(task) = mycelium_source_arc_agi::decode(&json) else { continue };
             let frames = mycelium::transducer::family::perceive_family(&task.train);
             let mut budget =
                 physics.stroke_n(mycelium::transducer::family::extraction_spend(&task.train, &frames));

@@ -295,7 +295,9 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
             }
             Step::Hue(map) => match region {
                 Some(r) => {
-                    let void = crate::transducer::raster::ground();
+                    // The fill's hue is the image of the scene's one ground;
+                    // with none (a vortex, no ground), no hue map names it.
+                    let void = crate::transducer::raster::void().map_err(|_| NoRule::NotAHueMap)?;
                     let hue = hue_under(map, void).ok_or(NoRule::NotAHueMap)?;
                     if hue == void {
                         return Err(NoRule::NotAHueMap);
@@ -394,7 +396,14 @@ pub(crate) fn construction_stroke(linear: &cga::Mv) -> usize {
 /// (2026-10-22, reversing Strip 7 for this path): such a client constructs
 /// its solver programs as rule elements only through this constructor,
 /// never as forged bytes.
+///
+/// Read on the family's own ground (`raster::on_ground_of`, MU-SENSING
+/// §3.4), unless the caller already opened one.
 pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+    crate::transducer::raster::on_ground_of(family, || sentence_on_ground(steps, family, crystal))
+}
+
+fn sentence_on_ground(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if let Some(clauses) = clauses_of(steps)? {
         return clause_sentence(clauses, family, crystal);
     }

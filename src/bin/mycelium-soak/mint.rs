@@ -209,8 +209,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 (Ok(a), Ok(b)) => Transduction::of(a, b, &mut stroke),
                 _ => Err(TransductionRefusal::Empty),
             };
-            let ground = mycelium::transducer::raster::ground_bytes();
-            let ground = mycelium::transducer::sample::Symbol::new(&ground);
+            let ground = mycelium::transducer::raster::ground_bytes(&mycelium::transducer::raster::ground_of(&task.train));
             // A grid's width is its rows' common length, and the slice
             // pattern reads the row the shape is stated by without taking
             // a member by position (rule 15).
@@ -230,7 +229,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 },
                 match &record {
                     Ok(t) => {
-                        let [s, g] = t.lane_shares(ground);
+                        let [s, g] = t.lane_shares(&ground);
                         format!("{} (S {s} G {g})", t.share())
                     }
                     Err(_) => "-".to_string(),

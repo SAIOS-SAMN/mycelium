@@ -33,6 +33,7 @@ fn slide(r: i64, c: i64) -> crate::transducer::element::Element {
 /// vacated, and it is paid the pair's demand over them.
 #[test]
 fn word_local_covers_every_changed_site() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![(
         grid(&["000000", "110000", "000000", "020000"]),
         grid(&["000000", "001100", "000000", "000200"]),
@@ -98,6 +99,7 @@ fn word_local_pays_letter_nothing() {
 /// `server::cognition::tests::measure`.)
 #[test]
 fn form_local_agrees_with_word_local_section() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
         (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),

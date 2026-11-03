@@ -383,6 +383,7 @@ assert_eq!(got.nonflat, 1);
 /// snapshot refuses it: it does not come back.
 #[test]
 fn snapshot_refuses_word_no_act_admitted() {
+crate::transducer::raster::stand_on(0);
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Court::new();

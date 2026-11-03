@@ -75,6 +75,7 @@ fn gloss_inverts_lower_on_every_act() {
 /// its element glosses as the recolour.
 #[test]
 fn speak_clauses_reads_identity_carriage_as_hue_map() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["110", "000", "033"]);
     let bodies = crate::transducer::family::perceive(&x);
     let map = vec![(1, 2), (3, 0)];
@@ -94,6 +95,7 @@ fn speak_clauses_reads_identity_carriage_as_hue_map() {
 /// stays where it stood; it has no gloss.
 #[test]
 fn speak_elements_speaks_unnamed_carriage_without_gloss() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["0100", "0000", "0000", "2222"]);
     let bodies = crate::transducer::family::perceive(&x);
     let echo_to_meet = Lowered {

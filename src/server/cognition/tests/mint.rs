@@ -90,7 +90,7 @@ let family = vec![(
     digits(&["1100", "0000"]),
     digits(&["0011", "0000"]),
 )];
-let chain = crate::transducer::family::speak::residual_of(Some(&family[0].0), &family[0].1);
+let chain = crate::transducer::family::speak::residual_of(Some(&family[0].0), &family[0].1).expect("one enclosure needs no ground");
 let frame = crate::transducer::element::Frame::new(2, 4, 2, 4);
 assert!(k.intake(&chain, &frame), "the listing stands");
 let listing = k.pending.scoped().next().expect("listed").1.address();
@@ -127,6 +127,7 @@ assert_eq!(
 /// A rule that speaks every train pair mints the coboundary it closed.
 #[test]
 fn mint_sentence_mints_measured_deflation() {
+crate::transducer::raster::stand_on(0);
 let family = vec![
     (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
     (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
@@ -136,7 +137,8 @@ let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::tr
 assert!(spoken.is_sentence());
 let mut expect = [0u64; 4];
 for (x, y) in &family {
-    let chain = crate::transducer::family::speak::residual_of(Some(x), y);
+    let chain = crate::transducer::raster::on_ground_of(&family, || crate::transducer::family::speak::residual_of(Some(x), y))
+        .expect("one enclosure needs no ground");
     let lanes = crate::transducer::element::measure_lanes(&chain);
     for i in 0..4 {
         #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the fixture family's chain measures cannot pass u64")]

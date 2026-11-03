@@ -863,6 +863,13 @@ fn replay_after_perceiving(
                         out = Err(Halt::Spent(pi));
                         break;
                     }
+                    // TRACK 26 S2 — a remainder with no one ground to be
+                    // written on is unread: the form is not shown to close
+                    // the family, and that is the refusal.
+                    crate::transducer::family::PairRead::Ungrounded => {
+                        out = Err(Halt::Refused(tape(REFUSE_NOT_CLOSED)));
+                        break;
+                    }
                     // A CYCLE OF CITATIONS is no speech at all (defect 4):
                     // refused by name before anything it would have spoken.
                     crate::transducer::family::PairRead::Read { cycled, .. } if !cycled.is_empty() => {
@@ -943,7 +950,7 @@ fn replay_after_perceiving(
             // tell which it had and contracted over the union. Partitioned,
             // each carries its own verdict and its own links.
             let (silent, wrong): (Vec<_>, Vec<_>) =
-                undeclared.iter().copied().partition(|&(_, _, spoken, _)| spoken == crate::transducer::raster::ground());
+                undeclared.iter().copied().partition(|&(_, _, spoken, _)| crate::transducer::raster::is_ground(spoken));
             // THE WRONG ONES FIRST. A form carrying both said something
             // false, and that is the refusal it owes; contracting its
             // silence while leaving the falsehood would mint an address

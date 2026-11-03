@@ -10,6 +10,7 @@ use crate::transducer::family::*;
 /// the demand it is (50.5), and it is spoken with that demand.
 #[test]
 fn form_deflation_measures_deflation_per_pair() {
+crate::transducer::raster::stand_on(0);
 let x = grid(&["1"]);
 let y = grid(&["2"]);
 let family_exact = vec![(x.clone(), y.clone())];
@@ -20,7 +21,7 @@ assert!(
     "an exact speak leaves empty remainders, got {rems:?}"
 );
 assert_ne!(pay, [0; 4], "exact speak measures the closed delta");
-let before = element::measure_lanes(&crate::transducer::family::speak::residual_of(Some(&x), &y));
+let before = element::measure_lanes(&crate::transducer::family::speak::residual_of(Some(&x), &y).expect("one enclosure needs no ground"));
 assert_eq!(pay, before, "deflation of an empty remainder is the closed delta");
 // H1, 70.4 — `"23"` is ONE body of two hues once hue moves to the fibre,
 // so the second pair's intent (an output the rule cannot explain) is
@@ -81,6 +82,7 @@ assert_ne!(spoken.magnitude(), [0; 4], "the sentence measures what it closed and
 /// admits what the mint admitted.
 #[test]
 fn mint_sentence_admits_what_court_replays() {
+crate::transducer::raster::stand_on(0);
     let first = vec![(grid(&["1"]), grid(&["2"]))];
     let rule = extract_rule(&first, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
     let family = vec![(grid(&["1"]), grid(&["2"])), (grid(&["100"]), grid(&["203"]))];
@@ -170,7 +172,7 @@ fn mint_sentence_carries_no_span_on_temporal_lane() {
 #[test]
 fn sentence_measure_from_refuses_undeclared_remainder() {
     let (x, y) = (grid(&["1"]), grid(&["2"]));
-    let rems = vec![residual_of(Some(&x), &y)];
+    let rems = vec![residual_of(Some(&x), &y).expect("one enclosure needs no ground")];
     assert!(!rems[0].is_empty(), "the pair leaves a remainder");
     assert!(
         sentence_measure_from(&Form::default(), &[(x, y)], 0, [0; 4], &rems).is_none(),
@@ -184,7 +186,7 @@ fn sentence_measure_from_refuses_undeclared_remainder() {
 #[test]
 fn sentence_measure_from_refuses_uncovered_remainder() {
     let (x, y) = (grid(&["12"]), grid(&["34"]));
-    let rems = vec![residual_of(Some(&x), &y)];
+    let rems = vec![residual_of(Some(&x), &y).expect("one enclosure needs no ground")];
     let elsewhere: Vec<crate::transducer::sentence::Link> = vec![(5, 5, 0, 9)];
     let chart = crate::transducer::stalk::invariant(&elsewhere);
     let mut f = Form::default();
@@ -201,6 +203,7 @@ fn sentence_measure_from_refuses_uncovered_remainder() {
 /// Bundle pressure is additive and refuses a raise on one pair.
 #[test]
 fn bundle_pressure_adds_and_names_raised_pair() {
+crate::transducer::raster::stand_on(0);
 let x = grid(&["1"]);
 let y = grid(&["2"]);
 let f = Form::default();
@@ -214,7 +217,8 @@ assert_eq!(
 );
 let spoken = apply_form(&f, &x, &crate::transducer::alphabet::Word::identity(), &NoCrystal);
 let g = spoken.as_ref().and_then(|s| s.grid());
-let r1 = residual_of(g.as_ref(), &y);
+let r1 = crate::transducer::raster::on_ground(crate::transducer::family::transduce::Ground::One(0), || residual_of(g.as_ref(), &y))
+    .expect("on a ground of 0 the unsaid sites are written");
 let mut cat = r1.clone();
 cat.extend(r1);
 let merged = element::measure_lanes(&cat);
@@ -308,7 +312,10 @@ fn unspoken_residue_is_read_on_output_sites() {
     let residue = |x: &crate::transducer::family::Grid, y: &crate::transducer::family::Grid| {
         let (a, b) = (crate::transducer::raster::sample_unplaced(x).expect("stands"), crate::transducer::raster::sample_unplaced(y).expect("stands"));
         let need = crate::transducer::family::transduce::need_of(&a, &b).expect("both frames stand");
-        crate::transducer::family::deflation::unspoken_residue(x, y, &mut crate::physics::Physics::default().stroke_n(need))
+        crate::transducer::raster::on_ground(crate::transducer::family::transduce::Ground::One(0), || {
+            crate::transducer::family::deflation::unspoken_residue(x, y, &mut crate::physics::Physics::default().stroke_n(need))
+        })
+        .expect("on a ground of 0 the residue is written")
     };
     let x: crate::transducer::family::Grid = vec![vec![1; 29]; 29];
     let mut y: crate::transducer::family::Grid = vec![vec![1; 30]; 30];
@@ -322,7 +329,10 @@ fn unspoken_residue_is_read_on_output_sites() {
     let out = grid(&["3"]);
     assert_eq!(
         residue(&grid(&["1", "2"]), &grid(&["1", "1", "3"])),
-        crate::transducer::family::speak::residual_of(None, &grid(&["1", "1", "3"]))
+        crate::transducer::raster::on_ground(crate::transducer::family::transduce::Ground::One(0), || {
+            crate::transducer::family::speak::residual_of(None, &grid(&["1", "1", "3"]))
+        })
+        .expect("on a ground of 0 the residue is written")
     );
     assert_eq!(residue(&shrink, &out), vec![(0, 0, 0, 3)]);
 }
@@ -345,7 +355,10 @@ fn deflation_closure_pays_before_on_one_record() {
     for (x, y) in &family {
         let (a, b) = (crate::transducer::raster::sample_unplaced(x).expect("stands"), crate::transducer::raster::sample_unplaced(y).expect("stands"));
         let need = crate::transducer::family::transduce::need_of(&a, &b).expect("both frames stand");
-        let r = crate::transducer::family::deflation::unspoken_residue(x, y, &mut crate::physics::Physics::default().stroke_n(need));
+        let r = crate::transducer::raster::on_ground_of(&family, || {
+            crate::transducer::family::deflation::unspoken_residue(x, y, &mut crate::physics::Physics::default().stroke_n(need))
+        })
+        .expect("on the family's ground the residue is written");
         for (b, m) in before.iter_mut().zip(element::measure_lanes(&r)) {
             *b += m;
         }
@@ -361,6 +374,7 @@ fn deflation_closure_pays_before_on_one_record() {
 /// 5/24`; and H, the shell count, stands as the count does.
 #[test]
 fn deflation_reads_mu_as_share_of_each_frame() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![(grid(&["1100"]), grid(&["0011"])), (grid(&["110000"]), grid(&["001100"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the slide extracts");
     let read = form_deflation_read(&rule.form, &family, &NoCrystal, &crate::transducer::alphabet::Word::identity());

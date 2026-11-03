@@ -10,7 +10,7 @@
 use mycelium::anastome::dialogue::{decode_posted_task, encode_posted_task};
 use mycelium::transducer::raster::{extents, links_of, sample_unplaced};
 use mycelium::transducer::sample::AxisReading;
-use mycelium_source_arc_agi::{corpus, decode, parse_task, samples_of, task_names};
+use mycelium_source_arc_agi::{corpus, decode, samples_of, task_names};
 
 /// The training split's tasks, in name order, through the decoder.
 fn training() -> Vec<(String, mycelium::transducer::family::Task)> {
@@ -20,17 +20,17 @@ fn training() -> Vec<(String, mycelium::transducer::family::Task)> {
         .into_iter()
         .filter_map(|name| {
             let json = std::fs::read_to_string(format!("{dir}/{name}")).ok()?;
-            parse_task(&json).map(|t| (name, t))
+            decode(&json).map(|t| (name, t))
         })
         .collect()
 }
 
-/// A task's JSON parses into its train pairs and test inputs, and a
-/// withheld test output is empty.
+/// A task's JSON decodes into its train pairs and test inputs as the file
+/// gives them, and a withheld test output is empty.
 #[test]
-fn parse_task_reads_train_and_withheld_pairs() {
+fn decode_reads_train_and_withheld_pairs() {
     let json = r#"{"train":[{"input":[[0,1],[2,0]],"output":[[1,0],[0,2]]}],"test":[{"input":[[3]]}]}"#;
-    let t = parse_task(json).expect("parses");
+    let t = decode(json).expect("decodes");
     assert_eq!(t.train.len(), 1);
     assert_eq!(t.test.len(), 1);
     assert_eq!(t.train[0].0, vec![vec![0, 1], vec![2, 0]]);
@@ -97,7 +97,7 @@ fn corpus_pairs_through_bridge_project_to_delta() {
             let need = need_of(&a, &b).expect("one rank");
             let t = Transduction::of(&a, &b, &mut mycelium::physics::Physics::default().stroke_n(need)).expect("the need is the stroke");
             let projected = links_of(&t.projected().expect("one enclosure projects"));
-            assert_eq!(projected, mycelium::transducer::family::speak::residual_of(Some(x), y), "{name}");
+            assert_eq!(projected, mycelium::transducer::family::speak::residual_of(Some(x), y).expect("one enclosure needs no ground"), "{name}");
             read += 1;
         }
     }

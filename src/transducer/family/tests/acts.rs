@@ -19,6 +19,10 @@ type Case<'a> = (&'a str, Vec<(&'a [&'a str], &'a [&'a str])>, (&'a [&'a str], &
 /// clauses it was read as.
 fn knows(family: &[(&[&str], &[&str])], held: (&[&str], &[&str])) -> Vec<crate::transducer::sentence::form::clause::Clause> {
     let family: Vec<(Grid, Grid)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+    // The fixtures are written on 0: the act reader is claimed on that
+    // declared ground (track 26 S2 deduces the ground of a family; these
+    // claims are about the act, not the deduction).
+    crate::transducer::raster::stand_on(0);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
     assert!(!rule.form.elements.is_empty(), "the act is stated as clauses");
@@ -192,6 +196,7 @@ fn extract_rule_reads_bend_round_corner() {
 /// decoded back, re-mint at one address.
 #[test]
 fn from_element_form_round_trips_echoes_and_bends() {
+    crate::transducer::raster::stand_on(0);
     for family in [
         vec![(grid(&["1100000", "1000000", "0000000"]), grid(&["1101100", "1000100", "0000000"])), (grid(&["0000000", "0022000", "0020000"]), grid(&["0000000", "0022022", "0020002"]))],
         vec![(grid(&["1000", "0000", "0000", "0000"]), grid(&["1010", "0000", "1000", "0000"])), (grid(&["0000", "0200", "0000", "0000"]), grid(&["0000", "0202", "0000", "0200"]))],
@@ -216,6 +221,7 @@ fn from_element_form_round_trips_echoes_and_bends() {
 /// clauses they were read with — the court replays what the voice read.
 #[test]
 fn from_element_form_round_trips_join_and_echo() {
+    crate::transducer::raster::stand_on(0);
     for family in [
         vec![(grid(&["10010", "00000", "00100"]), grid(&["13310", "00000", "00100"])), (grid(&["00000", "10001", "00000", "01000"]), grid(&["00000", "13331", "00000", "01000"]))],
         vec![(grid(&["120", "000", "000", "000"]), grid(&["120", "000", "120", "000"])), (grid(&["000", "033", "000", "000", "000"]), grid(&["000", "033", "000", "033", "000"]))],
@@ -388,6 +394,7 @@ fn extract_rule_reads_recolour_of_body_part() {
 /// first closure takes.
 #[test]
 fn judge_solve_solves_act_reader_clauses() {
+    crate::transducer::raster::stand_on(0);
     let cases: Vec<Case> = vec![
         (
             "tiles",
@@ -483,6 +490,7 @@ fn judge_solve_solves_act_reader_clauses() {
 /// re-derived, and the court, decoding the clauses, solves it.
 #[test]
 fn judge_solve_solves_reaction_on_unseen_pair() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::form::clause::{Act, Paint};
     let cases: Vec<Case> = vec![
         (
@@ -554,6 +562,7 @@ fn extract_rule_fills_hole_closed_jointly() {
 /// refused by name.
 #[test]
 fn speak_clauses_settles_stack_and_stops_at_border() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::family::statement::{speak_clauses, Unstated};
     use crate::transducer::sentence::form::clause::{Act, Clause, Pred, Stop};
     let say = |clause: &Clause, x: &[&str]| -> Result<Grid, Unstated> {

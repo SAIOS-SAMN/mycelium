@@ -399,6 +399,7 @@ fn perceive_sentence_binds_none_without_task() {
 /// less than the whole.
 #[test]
 fn perceive_sentence_lists_declared_remainder_demand() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
     let grid = |rows: &[&str]| -> crate::transducer::family::Grid {
         rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()

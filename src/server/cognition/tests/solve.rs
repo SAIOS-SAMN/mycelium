@@ -70,8 +70,9 @@ fn judge_solve_refuses_rule_leaving_pair_open() {
 /// permuted (1→7, 2→4, 3→9) are different colours, read as different grids,
 /// and the rule over each is its own word — so every mind that sees channel
 /// 1 names channel 1 the same. (78.53 relabelled the palette at the sensor;
-/// 78.56 II supersedes it.) Read as every decoder hands a task through
-/// (`raster::frame_fixed_on_ground`, ROADMAP track 26 S1).
+/// 78.56 II supersedes it.) Read through the frame-fixing perspective
+/// (`raster::frame_fixed_on_ground`, ROADMAP track 26 S2: a perspective a
+/// sensor may take after intake).
 #[test]
 fn frame_fixed_on_ground_reads_permuted_palette_as_other_scene() {
     let read = |a: u8, b: u8, c: u8| {
@@ -126,7 +127,7 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
         g.iter().map(|row| row.iter().map(|&h| match h { 1 => 6, 2 => 7, 3 => 8, 4 => 9, x => x }).collect()).collect()
     };
     let each = |ps: &Pairs, f: Frame<'_>| -> Pairs { ps.iter().map(|(a, b)| (f(a), f(b))).collect() };
-    // Read as every decoder hands a task through (ROADMAP track 26, S1).
+    // Read through the frame-fixing perspective (ROADMAP track 26, S2).
     let read = |train: &Pairs, test: &Pairs| {
         crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task { train: train.clone(), test: test.clone() })
     };

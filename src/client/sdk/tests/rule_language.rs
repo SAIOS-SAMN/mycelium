@@ -22,6 +22,7 @@ fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<()
 /// stood, judged on a pair where one does.
 #[test]
 fn sentence_refuses_unnamed_tie() {
+    crate::transducer::raster::stand_on(0);
     let largest = || Step::Select(Pred::extremum(Coord::Shell, Order::Greatest, Tie::Refuse));
     let g = |rows: &[&str]| -> Grid { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let tied = vec![(g(&["11000", "00000", "00022"]), g(&["11"]))];
@@ -49,6 +50,7 @@ fn sentence_refuses_unnamed_tie() {
 /// a rational. At the seam, and at the court.
 #[test]
 fn sentence_refuses_inexact_coordinate() {
+    crate::transducer::raster::stand_on(0);
     let g = |rows: &[&str]| -> Grid { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let family = vec![(g(&["110", "000", "000"]), g(&["220", "000", "000"]))];
     let lane = sentence(&[Step::Select(Pred::count(Coord::Lane(0), 1)), Step::Hue(vec![(1, 2)])], &family, &NoCrystal);

@@ -9,6 +9,7 @@ use crate::transducer::germinate::germinate;
 /// speech is Refused with the failed axis named.
 #[test]
 fn adopt_maps_every_state_deterministically() {
+    crate::transducer::raster::stand_on(0);
     use crate::cognition::{Adoption, Court};
     let k = std::sync::Mutex::new(Court::new());
     let court = [0xAB; 32];

@@ -9,9 +9,10 @@
 //! the corpus enters the sensor, the mind, the court or the wire.
 //!
 //! What it writes:
-//! - a [`Task`] as the file gives it ([`decode`]), or with its frame fixed
-//!   where the frame is a gauge, as the sensor reads every task
-//!   ([`parse_task`]);
+//! - a [`Task`] as the file gives it ([`decode`]), its frame as read: no
+//!   ground is read and no frame is fixed here (track 26 S2: frame fixing
+//!   is a perspective a sensor may take after intake, never before the
+//!   hypha addresses the task);
 //! - the task's samples, each placed in its family ([`samples_of`]);
 //! - the posted task file (`dialogue::encode_posted_task`) the hypha, the
 //!   soak and a client's feed read ([`post`]), so none of them parses this
@@ -77,14 +78,6 @@ pub fn decode(json: &str) -> Option<Task> {
     })
 }
 
-/// A TASK AS THE SENSOR READS IT: [`decode`]d, its frame fixed where the
-/// frame is a gauge, on the family's own ground (78.54, 78.56;
-/// `raster::frame_fixed_on_ground`). The core's former `arc::parse_task`,
-/// unchanged.
-pub fn parse_task(json: &str) -> Option<Task> {
-    decode(json).map(mycelium::transducer::raster::frame_fixed_on_ground)
-}
-
 /// A pair's place in its split: train or test.
 const TRAIN: i64 = 0;
 const TEST: i64 = 1;
@@ -118,10 +111,11 @@ pub struct Posted {
 }
 
 /// POSTS A SPLIT: each task file of `from` in name order, up to `limit`,
-/// read by [`parse_task`] and written to `to` as `<stem>.task`, the posted
-/// form the hypha, the soak and a client's feed read. A file that does not
-/// read, is not a task, or does not fit the posted form is refused by name
-/// and skipped; nothing is guessed.
+/// read by [`decode`] as the file gives it (no ground read, no frame fixed)
+/// and written to `to` as `<stem>.task`, the posted form the hypha, the
+/// soak and a client's feed read. A file that does not read, is not a task,
+/// or does not fit the posted form is refused by name and skipped; nothing
+/// is guessed.
 pub fn post(from: &str, to: &std::path::Path, limit: usize) -> std::io::Result<Posted> {
     std::fs::create_dir_all(to)?;
     let mut posted = Posted::default();
@@ -130,7 +124,7 @@ pub fn post(from: &str, to: &std::path::Path, limit: usize) -> std::io::Result<P
             posted.refused.push((name, "does not read"));
             continue;
         };
-        let Some(task) = parse_task(&json) else {
+        let Some(task) = decode(&json) else {
             posted.refused.push((name, "is not a task"));
             continue;
         };

@@ -80,10 +80,11 @@ fn null_plane(dir: (i64, i64)) -> crate::transducer::cga::Mv {
 /// The free reach along `dir` from `(r, c)` and how it ends: the input's
 /// empty sites up to the frame's edge (`true`) or the first body (`false`).
 fn reach(x: &Grid, (r, c): (i64, i64), (dr, dc): (i64, i64)) -> (i64, bool) {
+    let ground = crate::transducer::raster::ground();
     let mut t = 1i64;
     loop {
         match at(x, r + t * dr, c + t * dc) {
-            Some(0) => t += 1,
+            Some(h) if ground.holds(&h) => t += 1,
             Some(_) => return (t - 1, false),
             None => return (t - 1, true),
         }
@@ -98,17 +99,17 @@ pub fn flows(x: &Grid, y: &Grid) -> Option<Vec<Flow>> {
     }
     let mut out = Vec::new();
     // The void sites the light reaches, gathered where each ray is read.
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let mut lit: Vec<(i64, i64)> = Vec::new();
     for (r, row) in x.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let to = at(y, ri, ci)?;
             let mut light = Vec::new();
-            if h != void {
+            if !ground.holds(&h) {
                 for (k, &(dr, dc)) in (0u8..).zip(DIRECTIONS.iter()) {
                     let (free, edge) = reach(x, (ri, ci), (dr, dc));
-                    let Some(hue) = at(y, ri + dr, ci + dc).filter(|&o| o != void && free > 0) else { continue };
+                    let Some(hue) = at(y, ri + dr, ci + dc).filter(|&o| !ground.holds(&o) && free > 0) else { continue };
                     let mut len = 1i64;
                     while len < free && at(y, ri + (len + 1) * dr, ci + (len + 1) * dc) == Some(hue) {
                         len += 1;
@@ -127,12 +128,15 @@ pub fn flows(x: &Grid, y: &Grid) -> Option<Vec<Flow>> {
     }
     // A VOID SITE THE LIGHT REACHES MOVES NOTHING OF ITS OWN: its colour is
     // the arrival of a flow emitted elsewhere, carried by that ray, so its own
-    // gauge is the void's (0 → 0). Counted as its own move it would read the
-    // light twice, once at its source and once as a gauge lift where it lands.
+    // gauge is the void's (the ground symbol it holds, onto itself). Counted
+    // as its own move it would read the light twice, once at its source and
+    // once as a gauge lift where it lands.
     let sites = x.iter().enumerate().flat_map(|(r, row)| (0..row.len()).map(move |c| (r as i64, c as i64)));
     for (f, (r, c)) in out.iter_mut().zip(sites) {
-        if at(x, r, c) == Some(0) && lit.contains(&(r, c)) {
-            f.to = 0;
+        if let Some(h) = at(x, r, c).filter(|h| ground.holds(h)) {
+            if lit.contains(&(r, c)) {
+                f.to = h;
+            }
         }
     }
     Some(out)
@@ -217,7 +221,7 @@ fn table(pairs: &[(&[Site], &[Flow])], axis: usize) -> (Keyed<Held>, TimeClosure
                         Congruence::InTime => cl.in_time += 1,
                         Congruence::Gauge => {
                             cl.gauge += 1;
-                            cl.gauge_void += u64::from(s.hue == crate::transducer::raster::ground());
+                            cl.gauge_void += u64::from(crate::transducer::raster::is_ground(s.hue));
                         }
                         Congruence::Light => cl.light += 1,
                     }
@@ -256,9 +260,11 @@ pub struct InTime {
 }
 
 /// Carry an input field by a table in time. `Err(())` where a free ray's
-/// time is unread; `Ok(None)` where a key is unseen.
+/// time is unread; `Ok(None)` where a key is unseen, or where the scene has
+/// no one ground to lay the field on (`raster::void`).
 fn carried(x: &Grid, sites: &[Site], t: &Keyed<Held>, axis: usize) -> Result<Option<Grid>, ()> {
-    let mut out: Grid = x.iter().map(|row| vec![crate::transducer::raster::ground(); row.len()]).collect();
+    let Ok(void) = crate::transducer::raster::void() else { return Ok(None) };
+    let mut out: Grid = x.iter().map(|row| vec![void; row.len()]).collect();
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let Some(held) = t.get(&key(s, axis)) else { return Ok(None) };

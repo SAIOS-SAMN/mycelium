@@ -8,9 +8,10 @@
 //! (MU-SENSING §7), writes the raster; nothing here reads a file format or
 //! names a source.
 //!
-//! Two defects stand here unchanged and named (MU-SENSING §8): the carrier
-//! is rank 2 by its own storage ([`AXES`], track 26 S4), and the ground is
-//! the symbol `0` where no family is open ([`ground`], track 26 S2).
+//! The ground is deduced per family ([`ground_of`], track 26 S2) and never
+//! defaults to a symbol. One defect stands here unchanged and named
+//! (MU-SENSING §8): the carrier is rank 2 by its own storage ([`AXES`],
+//! track 26 S4).
 //!
 //! No module of the core is named for a data source:
 //!
@@ -18,6 +19,7 @@
 //! use mycelium::arc;
 //! ```
 
+use super::family::transduce::{Ground, Unground};
 use super::family::{Family, Task};
 use super::sample::{AxisReading, Place, Sample, SampleRefusal};
 
@@ -34,63 +36,58 @@ pub fn raster_width(g: &[Vec<u8>]) -> usize {
     g.first().map_or(0, Vec::len)
 }
 
-/// THE SCENE'S AMBIENT GROUND Ω (ruled 2026-10-18): the symbol the bodies
-/// of a family stand on, the void the eye does not see. A family that
-/// shows the symbol 0 on any raster of its demonstration pairs stands on 0.
-/// A family that never shows it is drawn on a canvas: its ground is the
-/// symbol of the greatest site count over those rasters, an exact count in
-/// ℤ; where two symbols tie for it the scene names no ground of its own and
-/// the void is 0 (`Tie::Hold`, law 10). The symbols are never relabelled
-/// (78.56 II): a ground of 7 stays 7 on every raster, word and wire; Ω only
-/// says which symbol the eye reads as the void. The default 0 is the defect
-/// MU-SENSING §3.4 removes (track 26, S2).
-pub fn ground_of(family: &Family) -> u8 {
-    let mut count = [0u64; 256];
+/// THE SCENE'S AMBIENT GROUND Ω, DEDUCED (MU-SENSING §3.4; track 26 S2):
+/// the symbol the bodies of a family stand on, read over its rasters as
+/// samples by [`Ground::of`] (ambient, enclosing, never carried as a body),
+/// each candidate held as the raster's one byte. Never a code: no symbol is
+/// the ground by default, by count or by order. A raster that is no sample
+/// (ragged, or with no site) presents no site, so no symbol is ambient
+/// across it and the family reads `None`. The symbols are never relabelled
+/// (78.56 II): a ground of 7 stays 7 on every raster, word and wire.
+pub fn ground_of(family: &Family) -> Ground<u8> {
+    let mut pairs = Vec::with_capacity(family.len());
     for (x, y) in family {
-        for &h in x.iter().chain(y).flatten() {
-            if let Some(n) = count.get_mut(usize::from(h)) {
-                if let Some(more) = n.checked_add(1) {
-                    *n = more;
-                }
-            }
-        }
+        let (Ok(a), Ok(b)) = (sample_unplaced(x), sample_unplaced(y)) else { return Ground::None };
+        pairs.push((a, b));
     }
-    if count[0] > 0 {
-        return 0;
-    }
-    let mut most: Option<(u64, u8)> = None;
-    let mut tied = false;
-    for (h, &n) in count.iter().enumerate() {
-        let Ok(h) = u8::try_from(h) else { continue };
-        match most {
-            Some((m, _)) if n < m => {}
-            Some((m, _)) if n == m => tied = true,
-            _ if n == 0 => {}
-            _ => {
-                most = Some((n, h));
-                tied = false;
-            }
-        }
-    }
-    match (most, tied) {
-        (Some((_, h)), false) => h,
-        _ => 0,
-    }
+    Ground::of(&pairs).map(|s| match s.as_slice() {
+        &[b] => Some(b),
+        _ => None,
+    })
 }
 
 thread_local! {
     /// The ground of the family being read on this thread; `None` where no
-    /// family's reading is open, and the void is 0.
-    static GROUND: std::cell::Cell<Option<u8>> = const { std::cell::Cell::new(None) };
+    /// family's reading is open, and then no ground is read at all.
+    static GROUND: std::cell::RefCell<Option<Ground<u8>>> = const { std::cell::RefCell::new(None) };
 }
 
-/// THE VOID OF THE SCENE BEING READ: the open family's ground, or 0 where
-/// none is open, so a reader outside every family reads as it always did.
-pub fn ground() -> u8 {
-    match GROUND.with(std::cell::Cell::get) {
-        Some(g) => g,
-        None => 0,
-    }
+/// THE GROUND OF THE SCENE BEING READ: the open family's reading. Where no
+/// family is open no ground is read, so the reading is `Ground::None` and
+/// every symbol is a body: an unscoped reader never stands on a code
+/// (MU-SENSING §3.4), and a writer that needs a symbol is refused
+/// [`Unground::Unscoped`] by [`void`].
+pub fn ground() -> Ground<u8> {
+    GROUND.with(|c| match &*c.borrow() {
+        Some(g) => g.clone(),
+        None => Ground::None,
+    })
+}
+
+/// IS `h` READ AS GROUND in the open scope ([`Ground::holds`]); never where
+/// no family is open.
+pub fn is_ground(h: u8) -> bool {
+    GROUND.with(|c| c.borrow().as_ref().is_some_and(|g| g.holds(&h)))
+}
+
+/// THE ONE SYMBOL A RASTER WRITER WRITES FOR THE GROUND, or the refusal that
+/// names why there is none: `Vortex` (no candidate is picked), `None` (the
+/// family reads no ground), `Unscoped` (no family is open).
+pub fn void() -> Result<u8, Unground> {
+    GROUND.with(|c| match &*c.borrow() {
+        Some(g) => g.symbol().copied(),
+        None => Err(Unground::Unscoped),
+    })
 }
 
 /// READ `f` ON THE GROUND OF `family`: the family's ground opened for every
@@ -100,28 +97,49 @@ pub fn ground() -> u8 {
 /// own ground, never on one a subset of the siblings would name). The scope
 /// closes as `f` returns.
 pub fn on_ground_of<T>(family: &Family, f: impl FnOnce() -> T) -> T {
-    match GROUND.with(std::cell::Cell::get) {
-        Some(_) => f(),
-        None => on_ground(ground_of(family), f),
+    match GROUND.with(|c| c.borrow().is_some()) {
+        true => f(),
+        false => on_ground(ground_of(family), f),
     }
 }
 
 /// READ `f` ON GROUND `g`, whatever was open; the previous scope restored as
 /// `f` returns.
-pub fn on_ground<T>(g: u8, f: impl FnOnce() -> T) -> T {
+pub fn on_ground<T>(g: Ground<u8>, f: impl FnOnce() -> T) -> T {
     let before = GROUND.with(|c| c.replace(Some(g)));
     let out = f();
-    GROUND.with(|c| c.set(before));
+    GROUND.with(|c| *c.borrow_mut() = before);
     out
 }
 
-/// A TASK'S FRAME FIXED ON THE FAMILY'S OWN GROUND: the moments of
-/// [`frame_fixed`] weigh the painted sites, those off the ground the train
-/// family shows. Every decoder hands its tasks through this, so a task reads
-/// one way whatever source it came from.
+/// A TEST FIXTURE'S DECLARED GROUND: the fixture's family is written on the
+/// one symbol `g`, and every reader on this thread stands on it until the
+/// thread ends (each test runs on a thread of its own). A declaration of
+/// the fixture, never a default: a reader outside it reads no ground. A
+/// ground the test already opened stands.
+#[cfg(test)]
+pub(crate) fn stand_on(g: u8) {
+    GROUND.with(|c| {
+        let mut open = c.borrow_mut();
+        if open.is_none() {
+            *open = Some(Ground::One(g));
+        }
+    });
+}
+
+/// A TASK'S FRAME FIXED ON THE FAMILY'S OWN GROUND: under `Ground::One(g)`
+/// the moments of [`frame_fixed`] weigh the sites off `g` the train family
+/// shows. Under a vortex or no ground the frame stays as read: no candidate
+/// is picked to weigh by, and the frame becomes a perspective in S6
+/// (MU-SENSING §4). A perspective a sensor may take after intake, never
+/// before a task is addressed: no decoder hands its tasks through it, and
+/// a task's identity reads no frame fixing (MU-SENSING §3.4, scope
+/// separation).
 pub fn frame_fixed_on_ground(task: Task) -> Task {
-    let ground = ground_of(&task.train);
-    on_ground(ground, || frame_fixed(task))
+    match ground_of(&task.train) {
+        Ground::One(g) => on_ground(Ground::One(g), || frame_fixed(task)),
+        Ground::Vortex(_) | Ground::None => task,
+    }
 }
 
 /// 78.54, 78.56 — THE LATTICE'S FRAME IS A GAUGE WHERE THE TASK CARRIES NO
@@ -239,11 +257,11 @@ pub fn extents(g: &[Vec<u8>]) -> [usize; AXES] {
 /// over a scene's sites (law 11's sensor clause); every reader here takes
 /// it.
 pub fn painted_sites(g: &[Vec<u8>]) -> Vec<([usize; AXES], u8)> {
-    let void = ground();
+    let ground = ground();
     let mut out = Vec::new();
     for (i, line) in g.iter().enumerate() {
         for (j, &h) in line.iter().enumerate() {
-            if h != void {
+            if !ground.holds(&h) {
                 out.push(([i, j], h));
             }
         }
@@ -251,13 +269,10 @@ pub fn painted_sites(g: &[Vec<u8>]) -> Vec<([usize; AXES], u8)> {
     out
 }
 
-/// The symbol at a site, the scene's ground (the void) where the site is
-/// not in the raster.
-pub fn value_at(g: &[Vec<u8>], site: [usize; AXES]) -> u8 {
-    match g.get(site[0]).and_then(|line| line.get(site[1])) {
-        Some(&h) => h,
-        None => ground(),
-    }
+/// The symbol at a site; `None` where the site is not in the raster, which
+/// carries no symbol (never the ground written in for it).
+pub fn value_at(g: &[Vec<u8>], site: [usize; AXES]) -> Option<u8> {
+    g.get(site[0]).and_then(|line| line.get(site[1])).copied()
 }
 
 /// A coordinate centred on its extent and doubled, so every centre is an
@@ -267,21 +282,27 @@ pub(crate) fn centred(x: usize, n: usize) -> i128 {
 }
 
 /// A raster with its axes permuted (`order[j]` is the axis read as the
-/// j-th) and reversed where `reversed[axis]`: one pass over its painted
-/// sites, the void everywhere else.
+/// j-th) and reversed where `reversed[axis]`: one pass over every site, so
+/// no symbol is written that the raster did not hold.
 fn reoriented(g: &[Vec<u8>], order: [usize; AXES], reversed: [bool; AXES]) -> Vec<Vec<u8>> {
     let e = extents(g);
     let ne: [usize; AXES] = std::array::from_fn(|j| e[order[j]]);
-    let mut out: Vec<Vec<u8>> = vec![vec![ground(); ne[1]]; ne[0]];
-    for (site, h) in painted_sites(g) {
-        let at: [usize; AXES] = std::array::from_fn(|j| {
-            let axis = order[j];
-            match reversed[axis] {
-                true => e[axis] - 1 - site[axis],
-                false => site[axis],
+    let mut out: Vec<Vec<u8>> = vec![Vec::with_capacity(ne[1]); ne[0]];
+    for (j, line) in out.iter_mut().enumerate() {
+        for k in 0..ne[1] {
+            let at = [j, k];
+            // The source site: output axis `i` reads source axis `order[i]`.
+            let mut site = [0usize; AXES];
+            for (i, &axis) in order.iter().enumerate() {
+                site[axis] = match reversed[axis] {
+                    true => e[axis] - 1 - at[i],
+                    false => at[i],
+                };
             }
-        });
-        out[at[0]][at[1]] = h;
+            if let Some(h) = value_at(g, site) {
+                line.push(h);
+            }
+        }
     }
     out
 }
@@ -290,11 +311,11 @@ fn reoriented(g: &[Vec<u8>], order: [usize; AXES], reversed: [bool; AXES]) -> Ve
 /// ground is omitted (the eye sees only novelty). The walk is the raster's
 /// own sites (a scene boundary), not a product of carriers.
 pub fn painted_of(g: &[Vec<u8>]) -> Vec<(i64, i64, u8)> {
-    let void = ground();
+    let ground = ground();
     let mut out = Vec::new();
     for (i, line) in g.iter().enumerate() {
         for (j, &h) in line.iter().enumerate() {
-            if h != void {
+            if !ground.holds(&h) {
                 out.push((i as i64, j as i64, h));
             }
         }
@@ -351,11 +372,11 @@ pub fn links_of(changes: &[super::family::transduce::SiteChange]) -> Vec<(i64, i
         .collect()
 }
 
-/// THE GROUND AS THE SYMBOL A RASTER'S SAMPLE WRITES: one byte, the open
-/// family's ground ([`ground`]). The transduction takes the ground as a
-/// symbol handed in, never as a code of its own.
-pub fn ground_bytes() -> [u8; 1] {
-    [ground()]
+/// THE GROUND AS THE SYMBOLS A RASTER'S SAMPLE WRITES: each candidate of a
+/// raster reading as its one byte. The transduction takes the ground as a
+/// reading handed in, never as a code of its own.
+pub fn ground_bytes(ground: &Ground<u8>) -> Ground<Vec<u8>> {
+    ground.map(|&b| Some(vec![b]))
 }
 
 /// [`sample_of`] for a reader that holds no family coordinates for the

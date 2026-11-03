@@ -58,46 +58,37 @@ pub struct TaskRegistry {
     routes: Keyed<crate::server::route::TaskRoutes>,
 }
 
-/// A TASK'S IDENTITY IS ITS CONTENT (law 2): each train pair as BOTH
-/// frames' full content — the four periods and every band of each frame,
-/// its bodies' boundary records (`transduce::Enclosed::put_content`) — and
-/// each test input's painted chain. Two tasks that differ in any pair, by
-/// one site or by one period, are two tasks (MU-DERIVATIONS D3.2, O3): the
-/// pair's coboundary is no longer the member, because two pairs with one
-/// change on different ground, or one change read at different periods,
-/// are different content. Lossless: the bands partition each frame.
+/// A TASK'S IDENTITY IS ITS CONTENT (law 2; MU-SENSING §6; track 26 S2):
+/// its posted samples' full content as the source gave them, each its
+/// rank, extents, symbol width, place and symbols (`Sample::put_content`).
+/// The train pairs' inputs and outputs and the test inputs are written
+/// alike, each at its place `[split, pair, member]` (the train pairs the
+/// family's first split, the test inputs its second); the withheld test
+/// outputs are the court's and are no part of the identity. Two tasks that
+/// differ by one site, one extent or one place are two tasks.
 ///
-/// `None` where a member has no address: a train frame that is empty or
-/// ragged has no enclosure, and a test input chain with no A5 form has no
-/// address. Skipping one would give two different tasks one id (law 2).
-/// Nothing is refined and no stroke is drawn: the content is read at the
-/// sensor once.
+/// THE IDENTITY READS NO GROUND AND FIXES NO FRAME (the operator's ruling of
+/// 2026-11-03, scope separation): the hypha addresses what the source
+/// posted. The ground is the mind's deduction, and frame fixing is a
+/// perspective a sensor may take after intake, never before addressing.
+///
+/// `None` where a member is no sample (an empty or ragged raster): skipping
+/// one would give two different tasks one id (law 2). Nothing is refined
+/// and no stroke is drawn.
 pub fn task_address(task: &Task) -> Option<Address> {
     let mut buf = vec![crate::transducer::address::TAG_TASK];
-    for (a, b) in &task.train {
-        let mut pair = Vec::new();
-        for g in [a, b] {
-            let Ok(sample) = crate::transducer::raster::sample_unplaced(g) else {
-                return None;
-            };
-            crate::transducer::family::transduce::Enclosed::of(&sample).put_content(&mut pair);
+    let train: Vec<Vec<_>> = task.train.iter().map(|(x, y)| vec![x, y]).collect();
+    let test: Vec<Vec<_>> = task.test.iter().map(|(x, _)| vec![x]).collect();
+    for (split, pairs) in (0i64..).zip([train, test]) {
+        for (pair, members) in (0i64..).zip(pairs) {
+            for (member, g) in (0i64..).zip(members) {
+                let place = crate::transducer::sample::Place::new(vec![split, pair, member]);
+                let sample = crate::transducer::raster::sample_of(g, place).ok()?;
+                let mut content = Vec::new();
+                sample.put_content(&mut content);
+                crate::transducer::address::put_key_bytes(&mut buf, &content);
+            }
         }
-        crate::transducer::address::put_key_bytes(&mut buf, &pair);
-    }
-    for (x, _) in &task.test {
-        let chain: Vec<(i64, i64, u8, u8)> = x
-            .iter()
-            .enumerate()
-            .flat_map(|(r, row)| {
-                row.iter().enumerate().filter_map(move |(c, &h)| {
-                    (h != 0).then_some((r as i64, c as i64, h, h))
-                })
-            })
-            .collect();
-        crate::transducer::address::put_key_bytes(
-            &mut buf,
-            &crate::transducer::element::from_residual(&chain)?.address(),
-        );
     }
     Some(Address::new(buf))
 }

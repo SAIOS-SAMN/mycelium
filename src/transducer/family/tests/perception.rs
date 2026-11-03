@@ -39,6 +39,7 @@ assert_eq!(f1.faces.len(), f2.faces.len());
 /// 50.3: a rigidity is a symptom).
 #[test]
 fn edge_transport_reads_rigid_identity_or_relative_motion() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::family::perceive::Carried;
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
@@ -74,6 +75,7 @@ assert!(
 /// `NotRigid`, by name.
 #[test]
 fn edge_transport_refuses_tear_as_not_rigid() {
+    crate::transducer::raster::stand_on(0);
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
 let (b1, b2) = (body(&["0110", "0000"]), body(&["0000", "2200"]));
@@ -113,6 +115,7 @@ assert!(matches!(relative_edge(&v1, &torn).err().as_deref(), Some([EdgeRefusal::
 /// `V_i⁻¹`, a placement with the identity word, finite on the word.
 #[test]
 fn edge_transport_reads_exchange_with_identity_word() {
+    crate::transducer::raster::stand_on(0);
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["100"]), body(&["002"]));
 let (b1, b2) = (body(&["001"]), body(&["200"]));
@@ -135,6 +138,7 @@ assert!(matches!(edge.word.order(), crate::transducer::alphabet::Order::Finite(_
 /// the links they stand for, and the form is not closed.
 #[test]
 fn cipher_form_demands_source_or_creation_for_created_body() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::sentence::Demand;
 let f = cipher_form(&grid(&["1100", "0000", "0000"]), &grid(&["1100", "0000", "0220"]));
 let demands: Vec<_> = f.demand_vertices().collect();
@@ -163,6 +167,7 @@ assert_eq!(*demands[0].1, Demand::Creation, "no input chart carries onto a bar o
 /// empty chart on every axis.
 #[test]
 fn cipher_form_demands_deformation_for_deformed_body() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::sentence::Demand;
 let f = cipher_form(&grid(&["1100"]), &grid(&["1000"]));
 let kinds: Vec<&Demand> = f.demand_vertices().map(|(_, k, _, _)| k).collect();
@@ -184,6 +189,7 @@ for (_, kind, _, _) in f.demand_vertices() {
 /// of one chart are one demand vertex carrying both bodies' links.
 #[test]
 fn cipher_form_keys_one_demand_per_kind_and_chart() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::sentence::Demand;
 let f = cipher_form(&grid(&["1100000", "0000000", "0000000"]), &grid(&["1100000", "0000000", "0220022"]));
 let demands: Vec<_> = f.demand_vertices().collect();
@@ -211,6 +217,7 @@ assert!(
 /// asks for — where a form with a remainder and no demand mints nothing.
 #[test]
 fn mint_sentence_mints_rule_with_declared_demands() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::sentence::Demand;
 // The bars land at two different offsets from the 1-bars, so no one echo
 // says them (78.167 Phase B, Step 3): they stay the demand's to declare.
@@ -769,6 +776,7 @@ assert!(
 /// Pairing is ∃V on the shapes, not a digest of the moduli axes.
 #[test]
 fn extract_rule_pairs_by_carriage_not_moduli() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a translated bar extracts");
 let bodies = rule
@@ -789,6 +797,7 @@ assert!(carriage(&a[0], &b[0], &mut super::common::budget()).is_some(), "a verso
 /// without a count compared to a literal.
 #[test]
 fn chart_holding_one_finds_singleton_fibre() {
+    crate::transducer::raster::stand_on(0);
     let g = grid(&[
         "110333",
         "000000",
@@ -877,6 +886,7 @@ fn body_of_keeps_frame_on_support() {
 /// Six-adjacency connects bodies across frames into one streamline.
 #[test]
 fn perceive_frames_joins_bodies_across_frames() {
+    crate::transducer::raster::stand_on(0);
     let frame0 = grid(&["10", "00"]);
     let frame1 = grid(&["10", "00"]);
     let bodies = perceive_frames(&[frame0, frame1]);

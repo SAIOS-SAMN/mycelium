@@ -356,7 +356,7 @@ pub(crate) type Perceiver = super::hypha::Carrier<crate::transducer::family::Ext
 
 /// THE SCENE READ ON THE CARRIER, in its scratch field, on the language
 /// given — every law the old pipeline ran on the field, run here — and on
-/// the ground its demonstrations name (`arc::ground_of`): its pairs, the
+/// the ground its demonstrations name (`raster::ground_of`): its pairs, the
 /// siblings its perspectives derive from and its tests are read on one
 /// ground, the one the court reads its withheld pairs on.
 fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Perceived {

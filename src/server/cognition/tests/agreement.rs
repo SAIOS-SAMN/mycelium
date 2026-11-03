@@ -82,6 +82,7 @@ fn attests(k: &Court) -> usize {
 /// not hold seal nothing.
 #[test]
 fn attest_agreements_seals_second_mind_hold_once() {
+    crate::transducer::raster::stand_on(0);
     let (speaker, hearer) = (key(1), key(2));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let hearer_vk = hearer.verifying_key().to_bytes();
@@ -137,6 +138,7 @@ fn attest_agreements_refuses_word_scene_refutes() {
 /// section, converge with nothing.
 #[test]
 fn attest_agreements_converges_words_with_one_section() {
+    crate::transducer::raster::stand_on(0);
     let (speaker, hearer, third) = (key(1), key(2), key(3));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let hearer_vk = hearer.verifying_key().to_bytes();
@@ -166,6 +168,7 @@ fn attest_agreements_converges_words_with_one_section() {
 /// standing (installed, or its claim dropped) gains no party.
 #[test]
 fn attest_agreements_joins_hearer_to_claim() {
+    crate::transducer::raster::stand_on(0);
     let (speaker, hearer) = (key(1), key(2));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let hearer_vk = hearer.verifying_key().to_bytes();

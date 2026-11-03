@@ -119,7 +119,9 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
         }),
         "a named face joins Frame to the class"
     );
-    let bodies = perceive(&train_in);
+    // The test grid read on its family's ground (MU-SENSING §3.4): with no
+    // family open no ground is read and the grid is one body.
+    let bodies = mycelium::transducer::raster::on_ground_of(&family, || perceive(&train_in));
     let mut atlas = Stalks::default();
     for (i, body) in bodies.iter().enumerate() {
         let mut addr = [0u8; 32];
@@ -131,9 +133,13 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
         3,
         "on the test grid the charts this vertex acts on hold three bodies between them"
     );
-    let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
+    let (spoken, grid) = mycelium::transducer::raster::on_ground_of(&family, || {
+        let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
+        let grid = spoken.grid();
+        (spoken, grid)
+    });
     assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
-    assert_eq!(spoken.grid(), Some(train_out));
+    assert_eq!(grid, Some(train_out));
     let _ = mint_sentence(&rule, &family, &NoCrystal, 0);
 }
 

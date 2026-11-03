@@ -9,8 +9,8 @@
 use crate::cognition::*;
 
 /// A family recoloured in place: 1 → 2 and 3 → 1, the base standing still;
-/// read as every decoder hands a task through (`raster::frame_fixed_on_ground`,
-/// ROADMAP track 26 S1).
+/// read through the frame-fixing perspective (`raster::frame_fixed_on_ground`,
+/// ROADMAP track 26 S2).
 fn task(a: u8, b: u8, c: u8) -> crate::transducer::family::Task {
     crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task {
         train: vec![
@@ -174,6 +174,7 @@ fn colour_word_mints_rules_teaches_and_holds() {
 /// the family.
 #[test]
 fn fibre_relation_rotates_merge_into_reservoir() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::element::{colour_word, compose_fibre, fibre_function, invert_fibre, is_fibre_relation, RESERVOIR};
     let family = vec![(vec![vec![1u8, 2, 0]], vec![vec![1u8, 1, 0]])];
     let sigma = crate::transducer::family::fibre_relation(&family).expect("the fibre moved");

@@ -57,7 +57,8 @@ pub fn routes_of(task: &Task) -> Vec<PairRoute> {
         if !Enclosure::of(&x).is_same_periods(&Enclosure::of(&y)) {
             continue;
         }
-        let chain = crate::transducer::family::speak::residual_of(Some(a), b);
+        // One enclosure: the speech reaches every site and needs no ground.
+        let Ok(chain) = crate::transducer::family::speak::residual_of(Some(a), b) else { continue };
         let ([h, w], [h2, w2]) = (crate::transducer::raster::extents(a), crate::transducer::raster::extents(b));
         let frame = crate::transducer::element::Frame::new(h, w, h2, w2);
         let Some(residue) = crate::transducer::element::from_residual_framed(&chain, &frame) else {

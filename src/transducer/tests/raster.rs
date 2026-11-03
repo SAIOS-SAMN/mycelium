@@ -25,19 +25,21 @@ fn envelope_dilation_carries_sites_between_extents() {
 }
 
 /// 78.56 — THE MOMENTUM: a change of symbol in place carries none; a drift
-/// one way does.
+/// one way does. The fixtures stand on 0.
 #[test]
 fn momentum_vanishes_only_without_drift() {
+    stand_on(0);
     let still = vec![(vec![vec![1, 1, 0]], vec![vec![2, 2, 0]])];
     let drift = vec![(vec![vec![1, 1, 0]], vec![vec![0, 1, 1]])];
     assert!(momentum_vanishes(&still));
     assert!(!momentum_vanishes(&drift));
 }
 
-/// A raster's painted sites omit the ground, each kept as its two
-/// coordinates and its symbol.
+/// A raster's painted sites omit the ground the scope reads (here the
+/// fixture's declared 0), each kept as its two coordinates and its symbol.
 #[test]
 fn painted_of_omits_ground() {
+    stand_on(0);
     let painted = painted_of(&[vec![0, 1], vec![2, 0]]);
     assert_eq!(painted, vec![(0, 1, 1), (1, 0, 2)], "only novelty (off the ground)");
     assert!(painted_of(&[vec![0, 0], vec![0, 0]]).is_empty(), "all ground → no painted site");

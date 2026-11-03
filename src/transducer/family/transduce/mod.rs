@@ -21,6 +21,7 @@
 //! the projection that speaks onto an output frame.
 
 mod enclosed;
+mod ground;
 mod motion;
 mod nest;
 mod record;
@@ -32,6 +33,7 @@ mod turn;
 mod tests;
 
 pub use enclosed::{Band, Enclosed};
+pub use ground::{Ground, Unground};
 pub use motion::{Generated, Sense, SignedPermutation};
 pub use nest::{Factoring, Factorings};
 pub use record::{arcs, family_share, need, need_of, share_of_frame, Incidence, SiteChange, Transduction};

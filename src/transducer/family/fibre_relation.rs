@@ -36,7 +36,6 @@ pub fn fibre_map(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
 }
 
 fn fibre_map_on_ground(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
-    let void = crate::transducer::raster::ground();
     let mut map: Vec<(u8, u8)> = Vec::new();
     for (x, y) in family {
         // 78.56 — WHERE THE BASE STANDS STILL across a change of extent:
@@ -46,8 +45,8 @@ fn fibre_map_on_ground(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
         let Some(s) = envelope_dilation(x, y) else { continue };
         for (site, h) in crate::transducer::raster::painted_sites(x) {
             let Some(there) = carried_site(x, y, s, site) else { continue };
-            let t = crate::transducer::raster::value_at(y, there);
-            if t == void {
+            let Some(t) = crate::transducer::raster::value_at(y, there) else { continue };
+            if crate::transducer::raster::is_ground(t) {
                 continue;
             }
             match map.iter().find(|(f, _)| *f == h) {

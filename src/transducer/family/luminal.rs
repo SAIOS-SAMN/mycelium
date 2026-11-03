@@ -125,13 +125,13 @@ fn waveform(h: &[u8]) -> Option<(u64, Vec<u8>)> {
 /// The output's lit run along `dir` from `(r, c)` (exclusive), over sites the
 /// input leaves free: its hues and its sites.
 fn lit_run(x: &Grid, y: &Grid, (r, c): (i64, i64), dir: (i64, i64)) -> (Vec<u8>, Vec<(i64, i64)>) {
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let (mut hues, mut sites) = (Vec::new(), Vec::new());
     let mut t = 1i64;
     loop {
         let (rr, cc) = (r + t * dir.0, c + t * dir.1);
         match (at(x, rr, cc), at(y, rr, cc)) {
-            (Some(free), Some(h)) if free == void && h != void => {
+            (Some(free), Some(h)) if ground.holds(&free) && !ground.holds(&h) => {
                 hues.push(h);
                 sites.push((rr, cc));
             }
@@ -144,10 +144,11 @@ fn lit_run(x: &Grid, y: &Grid, (r, c): (i64, i64), dir: (i64, i64)) -> (Vec<u8>,
 
 /// L1–L3 ON ONE PAIR: every waveform ray out of every input body's sites.
 fn rays_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], lit_by_ray: &mut Vec<(i64, i64)>) -> Vec<Ray> {
+    let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
     for (r, row) in x.iter().enumerate() {
         for (c, &src) in row.iter().enumerate() {
-            if src == 0 {
+            if ground.holds(&src) {
                 continue;
             }
             let (r, c) = (r as i64, c as i64);
@@ -159,7 +160,7 @@ fn rays_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], lit_by_ray: &mut Vec<(i64,
                     let (rr, cc) = (r + (reach + 1) * dir.0, c + (reach + 1) * dir.1);
                     match at(x, rr, cc) {
                         None => break None,
-                        Some(0) => reach += 1,
+                        Some(h) if ground.holds(&h) => reach += 1,
                         Some(h) => break Some((h, (rr, cc))),
                     }
                 };
@@ -178,7 +179,7 @@ fn rays_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], lit_by_ray: &mut Vec<(i64,
                     Some((hue, (br, bc))) => {
                         // Through the body, then what the output shows past it.
                         let mut t = 0i64;
-                        while at(x, br + t * dir.0, bc + t * dir.1).is_some_and(|h| h != crate::transducer::raster::ground()) {
+                        while at(x, br + t * dir.0, bc + t * dir.1).is_some_and(|h| !ground.holds(&h)) {
                             t += 1;
                         }
                         let exit = (br + (t - 1) * dir.0, bc + (t - 1) * dir.1);
@@ -217,12 +218,13 @@ fn wall(axis: usize, delta: BigRational) -> Mv {
 /// and, where rectangular, a billiard.
 fn cavities_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], captured: &mut Vec<(i64, i64)>, budget: &mut crate::physics::Budget) -> Vec<Cavity> {
     let rows = x.len() as i64;
+    let ground = crate::transducer::raster::ground();
     let mut seen: Vec<(i64, i64)> = Vec::new();
     let mut out = Vec::new();
     for (r0, row) in x.iter().enumerate() {
         for (c0, &h) in row.iter().enumerate() {
             let start = (r0 as i64, c0 as i64);
-            if h != crate::transducer::raster::ground() || seen.contains(&start) {
+            if !ground.holds(&h) || seen.contains(&start) {
                 continue;
             }
             // The empty component, 4-connected.
@@ -238,7 +240,7 @@ fn cavities_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], captured: &mut Vec<(i6
                     let n = (r + dr, c + dc);
                     match at(x, n.0, n.1) {
                         None => open = true,
-                        Some(0) => {
+                        Some(h) if ground.holds(&h) => {
                             if !seen.contains(&n) {
                                 seen.push(n);
                                 comp.push(n);
@@ -263,7 +265,7 @@ fn cavities_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], captured: &mut Vec<(i6
             let rect = (comp.len() as u64 == hgt * wid).then_some((hgt, wid));
             // The standing wave: the output fills the cavity whole, read by
             // its periods along rows and columns.
-            let filled = comp.iter().all(|s| at(y, s.0, s.1).is_some_and(|v| v != 0));
+            let filled = comp.iter().all(|s| at(y, s.0, s.1).is_some_and(|v| !ground.holds(&v)));
             let periods = match (rect, filled) {
                 (Some(_), true) => {
                     let row_seq = |r: i64| (cmin..=cmax).filter_map(|c| at(y, r, c)).collect::<Vec<u8>>();
@@ -311,7 +313,7 @@ fn cavities_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], captured: &mut Vec<(i6
 
 /// READ THE LIGHT ON ONE PAIR against what the form left unsaid there.
 pub fn read_pair(x: &Grid, y: &Grid, remainder: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> PairLight {
-    let unsaid: Vec<(i64, i64)> = remainder.iter().filter(|l| l.3 != 0).map(|l| (l.0, l.1)).collect();
+    let unsaid: Vec<(i64, i64)> = remainder.iter().filter(|l| !crate::transducer::raster::is_ground(l.3)).map(|l| (l.0, l.1)).collect();
     let mut read = PairLight { unsaid: unsaid.len() as u64, ..PairLight::default() };
     let same_frame = x.len() == y.len() && x.iter().zip(y).all(|(a, b)| a.len() == b.len());
     if !same_frame {
