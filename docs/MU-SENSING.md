@@ -374,6 +374,9 @@ runs.
   held and never discarded.
 - **A mind may ask for a perspective** it does not hold yet. Asking is a
   demand, never a fallback.
+- **A perspective is taken after intake, never before addressing.**
+  Frame fixing, the canonical turn or mirror of a sample, is a
+  perspective and belongs to the sensor's scope (§6.1).
 
 ## 5. What the mind knows: a section of a larger world
 
@@ -408,6 +411,30 @@ claims as exact content, and it admits a claim by reconstruction
 - **On the wire, a task carries samples of any rank:** `n`, the extents,
   then the symbols at the source's own width. It is never a pair of `u16`
   extents with one byte per cell.
+
+### 6.1 Scope separation (ruled 2026-11-03)
+
+Three scopes each own their readings, and no reading crosses into another
+scope:
+
+| Scope | Owns | Never reads |
+|---|---|---|
+| **Hypha: identity** | A task's address and citation: the posted samples' full content as the source gave them (rank, extents, symbols, places), train and test alike (law 2; 78.170 O3) | A ground, a frame fixing, a perspective, any symbol's meaning |
+| **Client: the sensorium** | The ground (§3.4), the symbols' meanings (§3.3), bodies, wells and every perception | The identity computation; a perception never changes an address |
+| **Sensor: perspective** | Frame fixing and every assignment of axes to roles (§4), taken after intake on the mind's own reading | Addressing; a perspective is never applied before a task is addressed |
+
+- **A defect of this kind** is a reading from one scope used inside
+  another. The instance that defined it: the hypha's `task_address`
+  filtered the test inputs by `symbol ≠ 0`, which is a ground and so a
+  sensorium reading, and the decoder fixed each task's frame before it
+  was addressed, which is a perspective. Both made identity depend on
+  perception. Both are removed in track 26 S2.
+- **Two minds may perceive one task differently** (another ground,
+  another perspective, a vortex held), and the task is still one task:
+  its identity belongs to the hypha's scope alone.
+- **The court reconstructs a claim on the posted samples.** Where a
+  claim states a ground or a perspective, the court reads it as part of
+  the claim, never as part of the task.
 
 ## 7. Who owns a source's code
 
