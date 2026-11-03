@@ -6,6 +6,17 @@ such change is named here.
 
 ## Unreleased
 
+### Emergent senses (specification, ruled 2026-11-04)
+- MU-SENSING §4.1: senses and perspectives are open-ended. A sense is a
+  typed reading from a sample to a cochain of the cover.
+  - **Variation:** minds construct candidates.
+  - **Selection, by admission and never by score:** a candidate is
+    admitted when it adds cohomology rank, a court reconstructs it, and
+    minds converse on it.
+  - **Inheritance:** an admitted sense enters the genome.
+  - The three eyes are the founding senses, not the only ones.
+- ROADMAP track 26 S10, with claims. GLOSSARY: Sense.
+
 ### Perception as an adjudicated claim, in the roadmap (ruled 2026-11-04)
 - ROADMAP track 26 gains reflective claims. S3 adds a symbol meaning
   stated as a relation. S6 adds a claim stating its perspective, and two
