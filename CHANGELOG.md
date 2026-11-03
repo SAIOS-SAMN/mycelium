@@ -6,6 +6,22 @@ such change is named here.
 
 ## Unreleased
 
+### The Concordance is signed by adjudicated reading (ruled 2026-11-04)
+- **Concordance §0 SIGNING:**
+  - A kernel signs by showing that it reads the agreement: each clause
+    is identified by its content (law form and fixtures), and the kernel
+    signs it by reconstructing the clause's fixtures, admitted only on
+    the same objects.
+  - A kernel that cannot read a clause is refused `NotSignatory`.
+  - A change of wording changes no clause.
+  - `CONCORDANCE_HASH`, BLAKE3 over the file's bytes, is the defect this
+    replaces. It stays served only until ROADMAP track 24 B2.
+- **Concordance 1.9:** the baseline-to-beat is struck. Cognition is
+  measured as adjudicated perception (MU-SENSING §0), and benchmark
+  outcomes are observations.
+- **§11's clause-by-clause text, MU-HOSTING §5a.4, MU-EQUATIONS,
+  MU-STANDARDS, MU-RELEASE §3a and ROADMAP track 24 B2 follow.**
+
 ### Documentation aligned with the sensing rulings (audit 2026-11-04)
 - ROADMAP › Now: S2 and D2.5 in progress, T3 ready, #55 listed; track 26
   marks S0, S1 and S4 built and S2 in progress; X5's transduction built.

@@ -1072,9 +1072,22 @@ Concordance hash served and signatures verified. Each phase is one commit:
    `NotThroughCore` derived from the cones (an act arriving other than at
    its universe's vertex is not an event of that universe's cone at the
    hypha), never from a ruling on routes.
-3. **B2, signatories, clause by clause:** a kernel's signed clause set
-   (each clause's hash, enabled or vetoed; the network clauses never
-   vetoed) recorded per domain; a domain's crossings refused `NotSignatory`
+3. **B2, signatories, clause by clause, by adjudicated reading**
+   (Concordance §0, ruled 2026-11-04):
+   - Each clause is identified by its content (its law form and
+     joint-read fixtures), never by a hash of the text's bytes.
+   - A kernel signs a clause by presenting its reconstruction of the
+     clause's fixtures. The hypha admits the signature only on the same
+     exact objects, and a kernel that cannot read the clause is refused
+     `NotSignatory`, naming the clause and the fixture.
+   - `CONCORDANCE_HASH` (BLAKE3 over the file's bytes, computed in
+     `build.rs`) and the whole-text signature on mode 8 are retired.
+   - Claims: `signature_admitted_only_on_reconstructed_fixtures`,
+     `kernel_that_cannot_read_a_clause_is_not_signatory`,
+     `wording_change_changes_no_clause`.
+
+   Then a kernel's signed clause set (each clause enabled or vetoed; the
+   network clauses never vetoed) is recorded per domain; a domain's crossings refused `NotSignatory`
    until its reserve has signed every network clause of the version served
    (Concordance §0's next release); a tube between two universes carrying
    what both enabled, a vetoed clause's bound named, never a refusal of
