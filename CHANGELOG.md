@@ -6,6 +6,22 @@ such change is named here.
 
 ## Unreleased
 
+### Scope separation (specification, ruled 2026-11-03)
+- **MU-SENSING §6.1:** three scopes each own their readings.
+  - **Identity** (the hypha's): a task's address is the posted samples'
+    full content.
+  - **The sensorium** (the client's): the ground, symbol meanings,
+    perception.
+  - **Perspective** (the sensor's): frame fixing and axis roles, taken
+    after intake.
+
+  A reading used outside its scope is a defect. Its first instance is
+  the registry's `symbol ≠ 0` filter and the decoder's frame fixing
+  before addressing, both removed in track 26 S2. MU-SENSING §4 gains the
+  matching rule.
+- GLOSSARY: Scope separation. AGENTS.md: the drift row for a reading used
+  outside its scope.
+
 ### The ARC-AGI-2 decoder leaves the core (ROADMAP track 26, S1)
 - **`src/arc.rs` is removed**, with `src/tests/arc.rs`; the core library
   has no module named for a data source (a `compile_fail` claim on
