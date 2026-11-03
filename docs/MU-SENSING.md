@@ -438,7 +438,7 @@ never by a score.
      the posted samples, from its construction alone (MU-SCIENCE §5.0).
      This is the test of MU-SENSING §0 applied to the sense itself.
   3. **It converses.** Independent minds that hold it reconstruct the
-     same perceptions from their own evidence (converse), rather than
+     same perceptions, each from the evidence it holds (converse), rather than
      collide.
 - **Inheritance.** An admitted sense enters the genome like a word, at
   an address that is its construction written out. Other minds may adopt
