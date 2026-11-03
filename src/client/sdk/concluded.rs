@@ -15,10 +15,6 @@ pub(crate) fn residual_move(
     )
 }
 
-/// ONE CONTEMPLATED WELL, as the quote reads it: the remainder it holds
-/// and the volume that remainder stands at.
-pub type Welled = (Vec<(i64, i64, u8, u8)>, [u64; 4]);
-
 /// WHAT CITING A CHAIN YIELDS: the words it cited, and the part of the chain
 /// no held word covers.
 pub type Cited = (Vec<crate::anastome::dialogue::CiteWire>, Vec<(i64, i64, u8, u8)>);
