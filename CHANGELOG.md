@@ -6,6 +6,13 @@ such change is named here.
 
 ## Unreleased
 
+### File names by function (plan)
+- AGENTS.md: a file is named for what its area does, at a high level,
+  never a metaphor, a dataset or one instance.
+- ROADMAP › Now and issue #53: `door.rs` is split into `control.rs` (the
+  mesh-control handler) and `context.rs` (`Context`, the server's state
+  as one act sees it). Names only, after S2 and D2.5 merge.
+
 ### Emergent senses (specification, ruled 2026-11-04)
 - MU-SENSING §4.1: senses and perspectives are open-ended. A sense is a
   typed reading from a sample to a cochain of the cover.
