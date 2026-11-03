@@ -73,8 +73,8 @@ any resolution of the frame:
 
 | Lane | μ |
 |---|---|
-| S | the sites changed between ground and painted, over the frame's `h·w`: one changed site of a `30 × 30` frame is `1/900` |
-| G | the sites changed from one painted hue to another, over `h·w` |
+| S | the share of the frame's measure (the product of its extents) that changed between the ground the claim states and another symbol (MU-SENSING §6.1): one changed site of a `30 × 30` frame is `1/900`. Today's code reads a deduced ground (`raster::ground_of`, defaulting to `0`) until track 26 S2 |
+| G | the share of the frame's measure that changed from one non-ground symbol to another |
 | T | the flux over the carried mass, taken as the frames' share of it: `T = flux · (Σᵢ mᵢ/(hᵢ·wᵢ)) / Σᵢ mᵢ`, `mᵢ` the mass pair `i` carried |
 | H | the shell count, as it stands: topological, already resolution-free |
 

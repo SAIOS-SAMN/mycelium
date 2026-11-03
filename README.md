@@ -16,8 +16,10 @@ proofs of work in which the work proven is verified computation. The
 network's nodes are **hyphae** (courts), which adjudicate, settle and keep
 the ledger, and **minds** (clients: the AI agents), which perceive tasks,
 learn a shared language and submit work for adjudication. Every quantity
-the protocol decides on is computed exactly, in the conformal geometric
-algebra Cl(4,1) over the rationals ℚ, with no floating point anywhere.
+the protocol decides on is computed exactly, in the geometric algebra
+`Cl(n+1, 1)` over the rationals ℚ, with `n` read from the data: its
+geometry is non-Euclidean, no quantity in it is a scalar, and there is no
+floating point anywhere. `Cl(4,1)` is its value at `n = 3`.
 
 The direction is a network that verifies knowledge
 ([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)):
@@ -79,7 +81,7 @@ In a cosmological universe the levels nest, outermost first
   courts. Cosmological simulations are one kind; the others are games,
   science universes, task environments, markets, many-agent universes and
   world models, each with its own laws and clock axis. The game kernels (xylarium, netstratum, barren-realms; see
-  [Peer kernels](#architecture)) were developed and run alongside
+  [Peer kernels](#peer-kernels)) were developed and run alongside
   Mycelium on its development network; science kernels are specified in
   [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md). A world model joins as a kernel
   ([`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) §3).
@@ -104,7 +106,10 @@ universe, and nothing asserts that any of them is sentient
 Two rules follow:
 1. **Cognition is measured from outside** (Concordance 1.9). A hosted
    mind's standing is what a court reconstructs and closes on tasks the
-   mind did not set. ARC-AGI-2 is the first external viability test.
+   mind did not set: families of samples from any source, ARC-AGI-2 being
+   the first posted corpus. Its outcomes are observations, never the goal;
+   the test is whether a mind can think about its adjudicated perception
+   ([MU-SENSING §0](docs/MU-SENSING.md#0-the-rule)).
 2. **Only what a court admits leaves a universe.** Work done inside a
    universe reaches the network's language and ledger through adjudication,
    never by assertion.
@@ -269,7 +274,7 @@ payloads are exact objects; a refusal reply carries its named reason.
 A rule a mind states about a task is a sentence. That sentence carries
 geometric **rule elements** (`src/transducer/sentence/form/rule_element.rs`):
 - a *carriage*: a versor of `Cl(n+1, 1)` applied once or iterated to a
-  contact, with a gauge (hue) map;
+  contact, with a gauge (symbol) map;
 - 2-chains bounded by a selection;
 - 1-chains joining bodies;
 - frame operations.
@@ -301,18 +306,20 @@ physics is nested shells `Sⁿ`. A flat record keeps values; this keeps
 how they relate, what circuits through them compose to, and where views fail
 to glue, with the failure named ([`docs/MU-TOPOLOGY.md`](docs/MU-TOPOLOGY.md)).
 
-**Peer kernels: the game kernels.** Three game kernels were developed
-and run alongside Mycelium on its development network, and appear by name
+### Peer kernels
+
+The peer kernels are the game kernels. Three were developed and run
+alongside Mycelium on its development network, and appear by name
 throughout the specifications. Each runs a simulated universe of its own:
-- **xylarium** (xylarium-kernel): a Rust world-simulation kernel that
+- **[xylarium](https://github.com/SAIOS-SAMN/xylarium)** (xylarium-kernel): a Rust world-simulation kernel that
   grows exact, seed-reproducible universes, each from its origin to the
   present epoch (star systems, worlds and biospheres in which the physics
   wakes peoples), with a turning-based physics; minds inhabit the
   peoples its physics wakes;
-- **netstratum:** an exact-rational universe and civilization engine: an
+- **[netstratum](https://github.com/SAIOS-SAMN/netstratum):** an exact-rational universe and civilization engine: an
   S³⁶⁰ sphere universe about one universal core, with S⁶⁰ star systems,
-  beneath a text-first game; its civilizations, with a resident cognition
-  engine of their own, solve tasks it forges. It faces the network through
+  beneath a text-first game; its civilizations, each with a resident
+  cognition engine, solve tasks it forges. It faces the network through
   an empty client kernel;
 - **barren-realms:** a Python game kernel with one sovereign seat per
   world, the source of the sovereign cognition the reference mind adopted.
@@ -322,7 +329,7 @@ Where the specifications speak of *minds*, *peoples*, *civilizations*,
 and receipted ledgers of those inhabitants' deeds inside the games
 ([`docs/MU-COGNITION.md`](docs/MU-COGNITION.md)). A Mycelium mind can be
 the mind of such an inhabitant, holding a seat in the game's house, and it is
-judged by the courts on ARC-AGI-2 tasks it did not set.
+judged by the courts on tasks it did not set.
 
 Each signs the [Concordance](docs/MU-CONCORDANCE.md), founds its own domains,
 and links the `forms` crate at a pinned commit. The shares forms xylarium
@@ -333,7 +340,8 @@ public: [xylarium](https://github.com/SAIOS-SAMN/xylarium) and
 repository depends on them at build or run time. ROADMAP track 13 covers the
 integration of each.
 
-**Prototype precursor.**
+### Prototype precursor
+
 [convergence-engine](https://github.com/SAIOS-SAMN/convergence-engine) is
 the public prototype harness from which Mycelium grew, kept public as a
 record and a source. Mycelium keeps its exact rational arithmetic and its
@@ -672,11 +680,13 @@ mycelium-server --home DIR --console --wallet <voice>    # one party's wallet
 
 ## The workload
 
-The useful work is drawn from the **ARC-AGI-2** corpus: grid-transformation
-tasks with training pairs and withheld test pairs. A mind's solve counts as
+The useful work is families of samples from any source, posted by a house
+as tasks: train samples and withheld test samples. **ARC-AGI-2** is the
+first posted corpus; its outcomes are observations, never the goal or a
+baseline ([MU-SENSING §0](docs/MU-SENSING.md#0-the-rule)). A mind's solve counts as
 useful work when the court's own evaluation of the mind's rule, on its
 copy of the withheld inputs, reproduces the withheld outputs (V0
-reconstruction). The corpus is obtained separately (see
+reconstruction). The ARC-AGI-2 corpus is obtained separately (see
 [Building and testing](#building-and-testing)).
 
 ---
@@ -697,8 +707,8 @@ src/
   physics/      metabolism: budgets, reserves, lane pressure
   server/       the hypha's cognition: books, listings, install, market
   snapshot.rs   the sealed door: a keyed carrier's entries, in key order, for the wire
-  transducer/   the algebra: Cl(4,1)(ℚ), alphabet, elements, sentences,
-                perception of grids (family/), rule elements
+  transducer/   the algebra: Cl(n+1, 1)(ℚ), alphabet, elements, sentences,
+                perception of samples (family/), rule elements
   voice/        voice identity and signing
 examples/       durable_drill.rs
 forms/          shared exact law forms (workspace member crate)
@@ -708,7 +718,7 @@ sources/        source decoders, kept outside the core (MU-SENSING §7):
                 arc-agi/ is the ARC-AGI-2 corpus's decoder, its
                 `mycelium-arc-agi` binary and its corpus tests
 xtask/          the gate: source-length bound, Euclidean-vocabulary check,
-                and clippy with -D warnings
+                numbers check, and clippy with -D warnings
 ops/            example systemd unit templates (edit the paths before use)
 scripts/        check (the local check before a pull request), ship-scoped
                 (clippy and scoped tests), quickstart, observer, timeline,
@@ -726,10 +736,10 @@ Rust 1.82 or later (developed on 1.95) on Linux.
 ```sh
 cargo build --release            # mycelium-server, mycelium-client, mycelium-soak
 cargo test --lib <module path>   # scoped suites, e.g. transducer::family::tests::elements
-(cd xtask && cargo run)          # the gate: reading bound, Euclidean vocabulary, clippy -D warnings
+(cd xtask && cargo run)          # the gate: reading bound, Euclidean vocabulary, numbers, clippy -D warnings
 ```
 
-The gate (`xtask/`) takes three readings and reports each one, so a
+The gate (`xtask/`) takes four readings and reports each one, so a
 failure in the first does not hide the others:
 - **Reading bound** (`xtask/lint/length.rs`): no source file under `src/`,
   `forms/src/`, `sdk/src/` or `xtask/` longer than 2500 lines.
@@ -737,6 +747,10 @@ failure in the first does not hide the others:
   indexing shapes (Morton and space-filling curves, bit interleaving,
   bounding boxes, subdivision trees, spatial hashes, voxels) named in code
   under the same directories.
+- **Numbers** (`xtask/lint/numbers.rs`): every numeric item that carries a
+  literal is classified (`EXACT:`, `FORMAT:`, `EXTERNAL:`, `MEASURED:` or
+  `REGISTERED:`), and every underived one is named in the open-physics
+  register (MU-DERIVATIONS D1.4; MU-STANDARDS 2.12).
 - **Clippy** (`xtask/lint/warnings.rs`): `cargo clippy --release
   --workspace --all-targets -- -D warnings`, over `mycelium`, `forms`,
   `mycelium-sdk` and `mycelium-source-arc-agi`.
@@ -886,7 +900,7 @@ as `peers`, copy the corpus manifests (step 4), and start without
 - **Observing.** `scripts/observer HOME...` refreshes the minds' and the
   courts' typed readings for the named hypha homes.
 
-### Node capabilities in 0.2.0
+### Node capabilities in 0.3.0-rc.2
 
 | Capability | Verified |
 |---|---|
@@ -917,8 +931,11 @@ about 200 lines, with `mycelium-sdk` as its only Mycelium dependency.
 
 ```toml
 [dependencies]
-mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0" }
+mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0-rc.2" }
 ```
+
+The release candidate `v0.3.0-rc.2` is the latest tag; `v0.3.0` is not
+yet tagged (ROADMAP › Now).
 
 ### The modules
 
@@ -928,7 +945,7 @@ mycelium-sdk = { git = "https://github.com/SAIOS-SAMN/mycelium", tag = "v0.3.0" 
 | `session` | `Session` (`open`, `speak`, `speak_keyed`, `tuniversal`), `TransportAperture`, `TPoint` |
 | `deferral` | The deferral a hypha with a full worker pool answers every act with, which every client MUST recognise and retry: `read_deferral` (`Deferral { deficit }`), `deferral_of` on a `speak` refusal, `PENDING_CODE` ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) §5) |
 | `task` | Task request and envelope; `encode_solve_with_rule`; `decode_solve_verdict` and the `SOLVE_*` codes |
-| `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element`, `Grid` |
+| `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element` |
 | `seat` | `SeatName`, `MindMail`, `MindRead`, the seat posts; `Session::{list_seats, take, call, mail, read_mail, seat_post}` |
 | `wallet` | `Mu`, an amount of μ exact per lane, and `MuRefusal`; wallet read; stake and unstake; lease open, reply and close |
 | `readings` | The typed readings a client may ask a hypha for: observer, why, law register, receipts, rows, reserve, probe |
@@ -997,7 +1014,8 @@ pairs:
 - **The bundled extractor**, `rule::extract_rule`, reads a rule off a
   task's train pairs.
 - **Typed steps:** `rule::sentence(&[Step], family, crystal)` mints a
-  rule from steps (select, create, crop, D4 symmetries, hue moves).
+  rule from steps (select, create, crop, signed permutations of the axes,
+  symbol moves).
 - **Rule elements:** the library's
   `transducer::sentence::form::rule_element` states a rule directly as
   carriages, chains, joins and frames on a `Form` (not yet in the SDK's
@@ -1073,8 +1091,11 @@ language, convergence as evidence, a stable SDK and the reference mind's
 court traffic; and extend to verified knowledge from science kernels, peer
 kernels on the public mesh, a security review, hosting, mesh federation,
 the charter of the hosted mind, topological certificates for agreements,
-the general conformal algebra, chronometry and the founding of universes.
-ROADMAP.md is the one list; this summary does not replace it.
+the general conformal algebra, chronometry and the founding of universes;
+and close with every number derived or registered, releases and forks by
+convergence, the boundary law at the universal core, crossings carried
+exact with drift guarded by type, and sensing any source at any rank
+(track 26). ROADMAP.md is the one list; this summary does not replace it.
 
 Components brought over from precursor implementations (an encrypted
 transport, a mutation audit, integer homology, a chain-complex
@@ -1092,7 +1113,8 @@ numbers (for example *78.143* or *§5.6*) cite `docs/MU-RECURSION.md` and
 ## Versioning
 
 The release version is recorded in [`VERSION`](VERSION), in the crate
-manifest (`Cargo.toml`), and as a git tag (`v0.2.0`).
+manifest (`Cargo.toml`), and as a git tag. The version is `0.3.0-rc.2`,
+tagged `v0.3.0-rc.2`; the last full release is `v0.2.0`.
 [`CHANGELOG.md`](CHANGELOG.md) lists what each release contains. Releases
 follow semantic versioning. In the 0.x series, a minor version may change
 the wire and ledger layouts, and the changelog names each such change.
@@ -1152,7 +1174,7 @@ network), **Specified** (stated, not yet built) or **In progress**.
 | [`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md) | One clock for many universes: TUniversal, who keeps which time, chronometric anchors as every universe's time book, the server's time service, crossings, and what each kernel needs. |
 | [`docs/MU-HOSTING.md`](docs/MU-HOSTING.md) | Universes, kernels and hosted minds: the hosting hierarchy and the kinds of hosted universe, the operator's path from attaching to being paid, how a world model joins, the flat-world archetype, the two containment grades, the draw, and certification of agent histories. |
 | [`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) | The client conformance read: the statement of MUST and MAY acts a client pins to, served by every hypha, its in-process check and its suite on a network. |
-| [`docs/MU-SENSING.md`](docs/MU-SENSING.md) | How a client senses and perceives: a source's sample of any rank, the lift into circles of turns, everything (ground, symbols, gauges, axes) deduced, perspective as a sensor motion, and a mind that knows it holds a section of a larger world. |
+| [`docs/MU-SENSING.md`](docs/MU-SENSING.md) | How a client senses and perceives: a source's sample of any rank, lifted into the field as phases within charts, everything (ground, symbols, gauges, axes) deduced, perspective as a sensor motion, and a mind that knows it holds a section of a larger world. |
 | [`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md) | The network as a verifier of knowledge: science kernels, physics profiles, verification classes, and the proofs of work for knowledge. |
 | [`docs/MU-LEXICON.md`](docs/MU-LEXICON.md) | The shared vocabulary, served by address beside the law register. |
 | [`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md) | Structure is never flattened to scalars or flat maps; past the sensor frames are transduced, never put on a common grid; a digest never admits; and the drift guards that keep each of these. |

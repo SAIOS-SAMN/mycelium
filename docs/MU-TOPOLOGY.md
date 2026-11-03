@@ -43,14 +43,17 @@ What that buys:
 
 ---
 
-## 1. The ambient algebra: Cl(4,1) over ℚ
+## 1. The ambient algebra: Cl(n+1, 1) over ℚ
 
-**Built** (`src/core/`, `src/transducer/cga/`; MU-EQUATIONS §2).
+The algebra is `Cl(n+1, 1)` with `n` read from the data (MU-RECURSION
+71): non-Euclidean, and never scalar (MU-SENSING §3.7). Its value at
+`n = 3`, `Cl(4,1)`, is what the code builds today.
 
-Every geometric quantity is a multivector of Cl(4,1), the conformal
-geometric algebra of three-dimensional space, with exact rational
-coefficients. It has five generators and 32 basis blades across grades 0
-to 5:
+**Built** at `n = 3` (`src/core/`, `src/transducer/cga/`; MU-EQUATIONS §2).
+
+At `n = 3`, every geometric quantity is a multivector of `Cl(4,1)`, with
+exact rational coefficients. It has five generators and 32 basis blades
+across grades 0 to 5:
 - **Points, spheres, planes, lines and circles** are blades of the
   algebra, so a shape is an object, not a list of coordinates (MU-EQUATIONS
   2.6, 2.7, 2.19).

@@ -81,7 +81,8 @@ those physics agree, where they diverge, and what each has proven.
   never by issuance.
 
 **P4 — Exactness.**
-- Every admitted object is exact: ℚ, the multivectors of Cl(4,1)(ℚ), or a
+- Every admitted object is exact: ℚ, the multivectors of `Cl(n+1, 1)`(ℚ)
+  with `n` read from the data (`Cl(4,1)` at `n = 3`), or a
   finite discrete structure with a canonical encoding.
 - Floating-point results are data a kernel may hold and commit. They are
   never admitted as verified knowledge unless restated exactly.
@@ -136,7 +137,7 @@ is the shared floor that makes the universes comparable.
 This section restates, for science kernels, the physics the Concordance
 already rules (Concordance 1.14, 2.2 and 2.10):
 - **The innermost shell** is Mycelium's: the universal law forms, in the
-  `forms` crate, over a universe's constants and exact in Cl(4,1)(ℚ), with
+  `forms` crate, over a universe's constants and exact in `Cl(n+1, 1)`(ℚ), with
   L0's register and verifier at its core. A form fixes no constant.
 - **Each universe's shell** is its own: its constants, its matter, its
   composition of the forms, and any law it keeps for itself. It reaches the
@@ -157,7 +158,7 @@ shell.
 | **The Concordance** | The agreement every kernel signs: units, topology, the economy between universes, breaches and convergence, conduct | `docs/MU-CONCORDANCE.md` |
 | **The alphabet** | Seventeen seed letters, exact rotations, which never change; letters for further primes are added only by court rulings (MU-ALPHABET §6) | `docs/MU-ALPHABET.md`, `src/transducer/alphabet/` |
 | **Anastome** | The wire: signed speech acts whose payloads are exact geometric objects, each with one canonical encoding | `src/anastome/` |
-| **Exact arithmetic** | ℚ and Cl(4,1)(ℚ); no floating point in anything admitted | Throughout |
+| **Exact arithmetic** | ℚ and `Cl(n+1, 1)`(ℚ), `n` read from the data (`Cl(4,1)` at `n = 3`); no floating point in anything admitted | Throughout |
 | **The proofs of work** | POUW, POWC, POWR, the POWV share, and the settlement of each | `docs/MU-ECONOMY.md` |
 
 A kernel cannot amend the universal library unilaterally. It changes only
