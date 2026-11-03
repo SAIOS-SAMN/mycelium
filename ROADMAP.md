@@ -288,6 +288,27 @@ locates the growth by path. The cause is not yet identified. The track's
 first phase reproduces the growth on a local network, names the path
 whose answers are not taken, and bounds it.
 
+**The sovereign mind: thinking about adjudicated perception**
+(Specified: MU-CLIENT §1 item 7, 78.168; MU-SENSING §0). The test is
+whether the mind can think about the perception of the senses that are
+adjudicated, never a benchmark's solve rate. It follows track 26 S7–S9,
+because the field (wells, orbits, the vortex) is the mind's substrate.
+- The mind is moved by its own escaping orbits and acts at its returns. A
+  task is a scene it perceives, never a command. It may decline or idle.
+- Its perceptions are claims: it states, compares and revises the ground,
+  perspective, holonomy and vortex it holds, and a court adjudicates
+  them.
+- On a court's ruling it revises a perception by amending history
+  forward, never by overwriting it.
+- Claims:
+  - `mind_idles_with_no_escaping_orbit`
+  - `task_arrival_moves_no_orbit`
+  - `mind_declines_a_scene_its_field_does_not_bind`
+  - `mind_acts_at_its_returns`
+  - `mind_revises_a_perception_on_a_court_ruling_by_amendment`
+- A live run of `mycelium-client` on a local network shows these. Solve
+  counts are observations only.
+
 ## 11. Specification reconciliation
 
 [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) records three places where the
@@ -1146,6 +1167,7 @@ Each phase is one commit:
    - Claims: `percept_invariant_under_symbol_permutation`,
      `symbol_index_is_first_appearance_in_address_order`,
      `reservoir_follows_the_family_symbol_set`.
+   - Reflective claim (MU-SENSING §0): `mind_states_a_symbol_meaning_as_a_relation_and_court_reconstructs_it`.
 5. **S4, rank and roles deduced.**
    - `GRID_AXES`, `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N`, the
      3-tuple `Point`, `BASE_AXES` and the planar `(rows, cols)` carriers
@@ -1199,6 +1221,10 @@ Each phase is one commit:
    perspectives of one sample are a cover, checked by the cocycle of
    MU-CLIENT 24.4. A mind may ask for a perspective as a demand.
    - Claim: `perspective_shift_is_a_sensor_motion`.
+   - A claim states the perspective it was perceived under, and the court
+     reconstructs under it, as S2 does for the ground (MU-SENSING §6.1).
+   - Reflective claims: `claim_states_its_perspective_and_court_reconstructs_under_it`,
+     `two_perspectives_of_one_sample_compared_as_a_cover`.
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where
@@ -1243,6 +1269,13 @@ Each phase is one commit:
     - Claims: `axiomatic_gravity_shears_the_orthogonal_class`,
       `court_pressure_deforms_the_well_it_faces`,
       `vortex_monodromy_read_between_charts`.
+    - Perceptions as adjudicated claims (MU-SENSING §0): a mind states a
+      well's holonomy, an orbit's precession and a vortex's monodromy,
+      and a court reconstructs each, with kernels reconstructing the same
+      ones on LAW-FIELD's joint fixtures.
+    - Reflective claims: `holonomy_stated_by_a_mind_reconstructed_by_a_court`,
+      `precession_stated_by_a_mind_reconstructed_by_a_court`,
+      `vortex_stated_with_its_monodromy_reconstructed_by_a_court`.
 
 Order (ruled 2026-11-02): S0–S5 land in v0.3.0's one break, and T2
 merges after S0 and S4. S4a and S7–S9 follow LAW-FIELD v1's agreement
