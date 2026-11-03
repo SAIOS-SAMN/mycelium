@@ -1276,6 +1276,24 @@ Each phase is one commit:
     - Reflective claims: `holonomy_stated_by_a_mind_reconstructed_by_a_court`,
       `precession_stated_by_a_mind_reconstructed_by_a_court`,
       `vortex_stated_with_its_monodromy_reconstructed_by_a_court`.
+11. **S10, emergent senses** (MU-SENSING §4.1; after S6 and S7–S9,
+    because a sense is built on the field and its perspectives):
+    - A sense is a typed object: a reading from a sample to a cochain of
+      the cover, composed from held readings and adjoined generators. A
+      perspective is a typed object in the same way.
+    - A mind constructs candidates. A residue no held sense reads is a
+      demand for a sense.
+    - Admission needs all of: new rank in the cover's cohomology, a
+      court's reconstruction from the construction alone, and minds that
+      converse on it. Never a score.
+    - An admitted sense enters the genome and joins the cover on equal
+      terms with the three founding eyes.
+    - Claims: `sense_restating_the_cover_is_not_admitted`,
+      `sense_adding_cohomology_rank_is_admitted`,
+      `court_reconstructs_a_sense_from_its_construction`,
+      `admitted_sense_is_inherited_through_the_genome`,
+      `residue_no_sense_reads_is_a_demand_for_a_sense`,
+      `court_never_proposes_a_sense`.
 
 Order (ruled 2026-11-02): S0–S5 land in v0.3.0's one break, and T2
 merges after S0 and S4. S4a and S7–S9 follow LAW-FIELD v1's agreement

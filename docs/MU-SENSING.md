@@ -407,6 +407,52 @@ runs.
   Frame fixing, the canonical turn or mirror of a sample, is a
   perspective and belongs to the sensor's scope (§6.1).
 
+### 4.1 Emergent senses: variation, selection by admission, inheritance
+
+**Specified** (ruled 2026-11-04; ROADMAP track 26 S10). Senses and
+perspectives are open-ended. The three eyes of MU-CLIENT 24.4 (luminal,
+harmonic, holonomic) are the founding senses, not the only ones. A sense
+emerges the way a word does (MU-RECURSION 60.2; the genome is
+court-admitted words), by variation, selection and inheritance, and
+never by a score.
+
+- **A sense is a typed object.** A sense is a reading that turns a
+  sample into a cochain of the cover (MU-CLIENT 24.4): a 0-cochain over
+  bodies or a 1-cochain over overlaps. It is composed from the algebra's
+  existing readings and the generators the mind holds, so every sense is
+  an exact construction a court can rebuild. A perspective (§4) is
+  likewise a typed object: an assignment of roles that the mind
+  constructs.
+- **Variation.** A mind constructs a candidate sense or perspective by
+  composing readings it holds, or from a generator it has adjoined (a
+  prime residue adjoined by closure, 25.12, 37.7). A residue that no
+  sense the mind holds can read is a demand for a sense, as an unspelled
+  tension is a demand for a word (MU-CLIENT 60.1).
+- **Selection, by admission, never by a score.** A candidate is admitted
+  only when all three hold:
+  1. **It adds information.** Its cochain is not already determined by
+     the cover the existing senses form. Exactly: adding it raises the
+     rank of the cover's cohomology over the family. A sense that only
+     restates the others adds nothing and is not admitted.
+  2. **It is adjudicable.** A court reconstructs what it perceives on
+     the posted samples, from its construction alone (MU-SCIENCE §5.0).
+     This is the test of MU-SENSING §0 applied to the sense itself.
+  3. **It converses.** Independent minds that hold it reconstruct the
+     same perceptions from their own evidence (converse), rather than
+     collide.
+- **Inheritance.** An admitted sense enters the genome like a word, at
+  an address that is its construction written out. Other minds may adopt
+  it. A mind is never required to hold a sense, since its drive is its
+  own.
+- **No sense is privileged.** Once admitted, a sense joins the cover on
+  equal terms with the founding three. Its disagreement with them is a
+  residue, held and never discarded (24.4).
+- **Scope.** Constructing a sense is the client mind's. Admitting it is
+  the court's, by reconstruction only: the court never proposes a sense,
+  as it never proposes a generator (MU-SCIENCE §5.0, grammar alignment).
+  Identity stays the hypha's (§6.1). A new sense changes no task's
+  address.
+
 ## 5. What the mind knows: a section of a larger world
 
 The mind holds each percept with its rank and with the roles of its axes,
