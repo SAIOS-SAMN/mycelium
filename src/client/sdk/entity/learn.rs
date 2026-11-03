@@ -388,7 +388,7 @@ impl Mind {
         let pages = dialogue::decode_class_records(body);
         let mut recs = Vec::new();
         for p in pages {
-            recs.push(crate::transducer::bubble::ClassRecord {
+            recs.push(crate::transducer::field::ClassRecord {
                 key: p.key,
                 order: crate::transducer::alphabet::Order::from_u32(p.order),
                 representative: p.rotor,
@@ -403,7 +403,7 @@ impl Mind {
         let (_, symmetries) = self.contemplation.seed_horizon_with(&recs);
         if !symmetries.is_empty() {
             let chart = crate::transducer::stalk::Invariant::default();
-            let adjoined: crate::transducer::bubble::drive::Adjoined =
+            let adjoined: crate::transducer::field::drive::Adjoined =
                 symmetries.into_iter().map(|r| (r, chart.clone())).collect();
             self.adjoin_letters(&adjoined, budget);
         }

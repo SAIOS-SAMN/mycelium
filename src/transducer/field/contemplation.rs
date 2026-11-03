@@ -1,7 +1,7 @@
-// 25 — THE CONTEMPLATION: every bubble a mind is holding at once, and the
+// 25 — THE CONTEMPLATION: every well a mind is holding at once, and the
 // incidence between them.
 //
-//! `Contemplation` is the complex of held thoughts: the bubbles, the bubbles'
+//! `Contemplation` is the complex of held thoughts: the wells, the wells'
 //! remainders, the horizon of classes seeded from the syllabus, and the
 //! cavity. Holding a form admits a vertex and links it to what it meets.
 
@@ -30,17 +30,17 @@ pub(crate) fn live_bytes() -> Option<i128> {
     Some(tikv_jemalloc_ctl::stats::allocated::read().ok()? as i128)
 }
 
-/// The complex over bubbles. by_chart is the incidence trie that makes
+/// The complex over wells. by_chart is the incidence trie that makes
 /// every connection a read.
 ///
-/// X3: THE BUBBLES ARE THE OBJECT, and every iteration of them below reads
+/// X3: THE WELLS IN THE FIELD ARE THE OBJECT, and every iteration of them below reads
 /// them with `scoped`. A contemplation IS the set of thoughts one mind holds
 /// at once — there is no coarser coordinate above it whose prefix reaches
 /// it, and a
-/// bubble left out of a cohesion, a component count or a shed is a thought
-/// the mind holds and does not account for. The carriers INSIDE a bubble —
+/// well left out of a cohesion, a component count or a shed is a thought
+/// the mind holds and does not account for. The carriers INSIDE a well —
 /// its cover, its remainders, its nerve's sections — are scoped by the
-/// bubble the same way, and `by_chart` is the one carrier here that is
+/// well the same way, and `by_chart` is the one carrier here that is
 /// read by a real coordinate: `link(chart)`, the incidence read this type
 /// exists for.
 /// HOW LONG A SPEAKING FORM DELIBERATED, and which path it came by.
@@ -79,50 +79,50 @@ impl Deliberation {
 
 #[derive(Clone, Debug, Default)]
 pub struct Contemplation {
-    pub bubbles: Keyed<Bubble>,
-    /// THE CHARTS' INCIDENCE: chart key → the ORDINALS of the bubbles
+    pub wells: Keyed<Well>,
+    /// THE CHARTS' INCIDENCE: chart key → the ORDINALS of the wells
     /// standing there (Z4 item 2). The inner key is the ordinal's two
     /// bytes, which is where the ordinal is held: a keyed inner trie
     /// removes one entry by its own coordinate at retraction, where a list
     /// would be scanned.
     ///
-    /// IT HELD THE BUBBLE'S ADDRESS, ONCE PER CHART OF ITS COVER, and a
+    /// IT HELD THE WELL'S ADDRESS, ONCE PER CHART OF ITS COVER, and a
     /// form's address is its every vertex, member and gauge written out
     /// (law 2): 7.3 MB on the 590-vertex rule, measured at e0f4e0d, copied
-    /// into every entry. The address is written ONCE now, on the bubble —
-    /// `bubbles` is keyed by it — and every index names the bubble by the
+    /// into every entry. The address is written ONCE now, on the well —
+    /// `wells` is keyed by it — and every index names the well by the
     /// ordinal instead.
     pub by_chart: Keyed<Keyed<()>>,
     /// THE CITATION FIBRATION (25 door 1): cited address → the ORDINALS of
-    /// the bubbles citing it. A bubble is pinned by `glues`, and `glues` is
+    /// the wells citing it. A well is pinned by `glues`, and `glues` is
     /// written at the hold and emptied nowhere, so a pin outlives every
     /// reason for it; this is the carrier that lets a pin be asked about.
     ///
-    /// MEASURED, on the 60-task slice: 21 of 51 held bubbles cite, 21 of 21
+    /// MEASURED, on the 60-task slice: 21 of 51 held wells cite, 21 of 21
     /// pins are live, 0 are dead. A dead-pin sweep would retire none of
     /// them. What retires them is the CITED address lapsing, and that is a
-    /// keyed read here rather than a read of every bubble asking each what
+    /// keyed read here rather than a read of every well asking each what
     /// it cites (rule 1, rule 17).
     ///
     /// MU-CLIENT §4.13 — KEYED BY THE CITED ADDRESS'S 32-BYTE HASH
     /// (`cited_at`), ruled 2026-10-16: a hash compacts
     /// coordinates where nothing is lost. Every reader comes with the
     /// address in hand and hashes it; the address itself stands on the
-    /// citing bubble's `glues`, never copied a second time here. A cited
+    /// citing well's `glues`, never copied a second time here. A cited
     /// address whose last citer leaves leaves with it.
     pub(crate) cited: Keyed<Keyed<()>>,
-    /// Bubble address → its ordinal in this contemplation. The shape
+    /// Well address → its ordinal in this contemplation. The shape
     /// `Form.by_address` already has.
     pub(crate) ordinals: Keyed<u16>,
-    /// Ordinal → the bubble's address, or `None` where the bubble was
+    /// Ordinal → the well's address, or `None` where the well was
     /// retracted. A RETRACTED ORDINAL IS NEVER REUSED within one
     /// contemplation, so a stale index entry names nothing rather than
-    /// naming another bubble — which is the one way an ordinal could lie.
+    /// naming another well — which is the one way an ordinal could lie.
     pub(crate) addresses: Vec<Option<std::sync::Arc<[u8]>>>,
     pub complex: Complex,
     /// N4 — the perception reading, cumulative at its producer.
     pub resonance: super::resonance::ResonanceTally,
-    /// Bubbles whose cover still has work; written when dirty is set.
+    /// Wells whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
     /// The ring's resume cursor: `None` is a circuit that has not started,
     /// which is an absence and not an empty key (rule 11, X3).
@@ -135,7 +135,7 @@ pub struct Contemplation {
     pub torsion_merges: u64,
     pub classes: u64,
     pub formed: u64,
-    /// Bubbles retired to a cavity chart, address kept, remainder in the tape.
+    /// Wells retired to a cavity chart, address kept, remainder in the tape.
     pub(crate) cavity: Keyed<Vec<Link>>,
     pub(crate) pending_rewrites: Vec<Element>,
     /// 78.52, THE BRIDGE TO LANGUAGE — each admitted single-body relation's
@@ -171,13 +171,13 @@ pub struct Contemplation {
     pub(crate) seeded: Keyed<(Rotor, Order, Standing)>,
     /// EXPANSION 4 — THE VORTICES BY CONJUGACY STRATUM: the
     /// depth-one coordinate of the class vector a vortex is filed under →
-    /// the bubbles standing there. A vortex is decided by a ruled word
+    /// the wells standing there. A vortex is decided by a ruled word
     /// whose rotor is conjugate to the orbit's holonomy, and a word knows
     /// its own conjugacy class and nothing finer, so that class IS the
     /// coordinate this index is keyed by: a keyed read, never a read of
-    /// every bubble asking each (rule 1).
+    /// every well asking each (rule 1).
     ///
-    /// Written where a bubble's incidence is admitted and wherever a pivot
+    /// Written where a well's incidence is admitted and wherever a pivot
     /// rewrote a form (`refile_vortex`); not persisted, rebuilt as the
     /// other indices are.
     pub(crate) by_vortex: Keyed<Keyed<()>>,
@@ -265,7 +265,7 @@ pub struct Contemplation {
     /// STD1 (rule 11) — lane sums the contemplation REFUSED because they
     /// would pass the sums' carrier (an escrow returned, a flux credited, an
     /// extent read): the sum stands where it was, never pinned at a ceiling.
-    /// An admission refused because the bubble's ordinal would pass its u16
+    /// An admission refused because the well's ordinal would pass its u16
     /// is counted here too (STD1 3c-5; the slot itself is AT1's debt).
     pub(crate) overflowed: u64,
     /// MU-CLIENT §4.8, §7.1 R3 — the symmetries a vortex carried round on a
@@ -361,7 +361,7 @@ impl Contemplation {
     pub fn span_of(&self, form: &crate::transducer::sentence::Form) -> Option<Deliberation> {
         let key = super::idea::idea_key(form);
         let mut since: Option<u64> = None;
-        if let Some(fibre) = self.bubbles.fibre_at(key.as_bytes()) {
+        if let Some(fibre) = self.wells.fibre_at(key.as_bytes()) {
             for (_, b) in fibre {
                 since = Some(match since {
                     Some(s) if s <= b.moved_k => s,
@@ -380,7 +380,7 @@ impl Contemplation {
     /// The TUniversal this contemplation was last stamped with — the mind's
     /// OWN K (45.4), never the mesh's height, which advances only on
     /// admitted receipts (45.2) and so stands at 0 on a mesh that admits
-    /// nothing, where every bubble's extent would read the same and
+    /// nothing, where every well's extent would read the same and
     /// `retire_on_t` could tell none apart. See [`Deliberation`] for what a
     /// span read against it means.
     pub fn now_k(&self) -> u64 {
@@ -392,12 +392,12 @@ impl Contemplation {
     }
 
     pub fn len(&self) -> usize {
-        self.bubbles.len()
+        self.wells.len()
     }
 
-    /// No bubble is held: nothing is under contemplation.
+    /// No well is held: nothing is under contemplation.
     pub fn is_empty(&self) -> bool {
-        self.bubbles.is_empty()
+        self.wells.is_empty()
     }
 
     /// True when a live idea glued this address (a dialect entry so marked
@@ -415,14 +415,14 @@ impl Contemplation {
     }
 
     pub fn glues_word(&self, address: &[u8]) -> bool {
-        self.bubbles
+        self.wells
             .scoped()
             .any(|(_, b)| b.glues.contains(address))
     }
 
-    /// Record that idea `bubble` glued crystallized form `word`.
-    pub fn mark_glue(&mut self, bubble: &[u8], word: impl AsRef<[u8]>) {
-        if let Some(b) = self.bubbles.get_mut(bubble) {
+    /// Record that idea `well` glued crystallized form `word`.
+    pub fn mark_glue(&mut self, well: &[u8], word: impl AsRef<[u8]>) {
+        if let Some(b) = self.wells.get_mut(well) {
             b.glues.insert(word, ());
         }
     }
@@ -430,7 +430,7 @@ impl Contemplation {
     // P10 — `cohesion` WAS HERE AND IS DELETED, with the scalar it summed.
     //
     // It accumulated each idea's `volume` per chart — `v[l] =
-    // v[l].saturating_add(add[l])` over every bubble standing there — and
+    // v[l].saturating_add(add[l])` over every well standing there — and
     // called the total a chart's congruent mass. Mass is repetition: an
     // idea re-held ten times added ten times, and the reading said a chart
     // was cohesive because the mind had said one thing on it often. That
@@ -463,8 +463,8 @@ impl Contemplation {
 
     /// WHAT THE CONTEMPLATION ACTUALLY HOLDS (§8.1, measurement only).
     ///
-    /// `ideas` counts BUBBLES, and a bubble is not a unit of memory. These
-    /// are the carriers a bubble holds that no other line reports, and they
+    /// `ideas` counts WELLS, and a well is not a unit of memory. These
+    /// are the carriers a well holds that no other line reports, and they
     /// are the ones with weight in them:
     /// - `nerve.sections` — a `Section` carries a γ and a carriage, and a
     ///   versor is 1024 bytes (`Acting::carriage`).
@@ -472,7 +472,7 @@ impl Contemplation {
     /// - `horizon` — one `(Rotor, Order, Standing)` per class the idea met,
     ///   and `paint_standing` writes one per standing orbit of every form
     ///   held. A rotor is sixteen `BigRational`, each of them heap.
-    /// - `bundle` — the training pairs, COPIED per bubble.
+    /// - `bundle` — the training pairs, COPIED per well.
     /// - `certificates` and `vortex`, which hold certificates carrying class
     ///   keys and moves.
     ///
@@ -481,7 +481,7 @@ impl Contemplation {
     /// counts do is say WHICH carrier grows, which is the question.
     pub fn weight(&self) -> [usize; 5] {
         let mut out = [0usize; 5];
-        for (_, b) in self.bubbles.scoped() {
+        for (_, b) in self.wells.scoped() {
             out[0] += b.nerve.sections.len();
             out[1] += b.nerve.degrees.iter().map(|d| d.len()).sum::<usize>();
             out[2] += b.horizon.len();
@@ -494,7 +494,7 @@ impl Contemplation {
 
     /// THE CAVITY ENTRIES A CHART CAN RE-HOLD, read at that chart. The same
     /// prefix read `pivot_on` makes, exposed so the keying can be asserted
-    /// without the drive: a cavity keyed by the bubble alone answers nothing
+    /// without the drive: a cavity keyed by the well alone answers nothing
     /// here, which is why the drain had to copy the whole carrier instead.
     ///
     /// `None` for a chart with no key — an empty prefix names no coordinate,
@@ -509,7 +509,7 @@ impl Contemplation {
     }
 
     pub fn remainders(&self) -> Vec<&[Link]> {
-        self.bubbles.scoped().map(|(_, b)| b.remainder.as_slice()).collect()
+        self.wells.scoped().map(|(_, b)| b.remainder.as_slice()).collect()
     }
 
     /// THE BOUNDARY MEASURE of the open thoughts (law 5, L7a): the
@@ -528,7 +528,7 @@ impl Contemplation {
         element::measure_lanes(&acc)
     }
 
-    pub(crate) fn retract_incidence(&mut self, key: &[u8], b: &Bubble) {
+    pub(crate) fn retract_incidence(&mut self, key: &[u8], b: &Well) {
         // 78.74 — a retracted vertex is vented through the pivots (drain,
         // descend, each booked), never dropped silently.
         let Some(&ord) = self.ordinals.get(key) else {
@@ -580,9 +580,9 @@ impl Contemplation {
         let _ = self.complex.vent_vertex(key);
     }
 
-    /// The bubble leaves the vortex index under each of `strata`.
+    /// The well leaves the vortex index under each of `strata`.
     /// THE TRANSLATION HAPPENS HERE AND NOWHERE ELSE. Every caller names
-    /// a bubble by its ADDRESS, which is the identity; the index holds the
+    /// a well by its ADDRESS, which is the identity; the index holds the
     /// ordinal, which is a coordinate of this carrier alone. One place
     /// converts, so no caller can hold an ordinal it did not get from here.
     pub(crate) fn unfile_vortex(&mut self, key: &[u8], strata: &[Vec<u8>]) {
@@ -597,14 +597,14 @@ impl Contemplation {
         }
     }
 
-    /// THE VORTICES A BUBBLE HOLDS, FILED AT THE VORTICES' CONJUGACY STRATA. A
+    /// THE VORTICES A WELL HOLDS, FILED AT THE VORTICES' CONJUGACY STRATA. A
     /// pivot rewrites the form in place (`take_form`) and may leave a
-    /// vortex on it that was not there when the bubble's incidence was
-    /// admitted; the index is re-read off the bubble at every such site. An
+    /// vortex on it that was not there when the well's incidence was
+    /// admitted; the index is re-read off the well at every such site. An
     /// entry a collapse consumed leaves with it (`collapse_on`, and the
     /// ruling path in `seed_horizon_inner`).
     pub(crate) fn refile_vortex(&mut self, key: &[u8]) {
-        let strata: Vec<Vec<u8>> = match self.bubbles.get(key) {
+        let strata: Vec<Vec<u8>> = match self.wells.get(key) {
             Some(b) => b.vortex_strata(),
             None => return,
         };
@@ -648,9 +648,9 @@ impl Contemplation {
                 continue;
             };
             let rk = r.key();
-            // index: the bubbles filed at this conjugacy stratum, each by
+            // index: the wells filed at this conjugacy stratum, each by
             // its ORDINAL, resolved to its address here — an ordinal that
-            // names nothing is a retracted bubble and yields no holder
+            // names nothing is a retracted well and yields no holder
             // (Z4 item 2).
             let holders: Vec<Vec<u8>> = self
                 .by_vortex
@@ -659,20 +659,20 @@ impl Contemplation {
                 .filter_map(|o| self.address_at(o).map(<[u8]>::to_vec))
                 .collect();
             for bk in holders {
-                let held: Vec<Vec<u8>> = match self.bubbles.get(&bk) {
+                let held: Vec<Vec<u8>> = match self.wells.get(&bk) {
                     Some(b) => b.vortex_strata(),
-                    // The bubble is gone; its entry leaves.
+                    // The well is gone; its entry leaves.
                     None => {
                         self.unfile_vortex(&bk, std::slice::from_ref(&stratum.clone().into_vec()));
                         continue;
                     }
                 };
                 let collapsed = self
-                    .bubbles
+                    .wells
                     .get_mut(&bk)
                     .and_then(|b| b.collapse_vortex(stratum.as_bytes(), rk.as_bytes(), by));
                 match collapsed {
-                    // A collapse cleared the form's vortices: the bubble
+                    // A collapse cleared the form's vortices: the well
                     // leaves the index under every stratum it stood at and
                     // is refiled under what remains.
                     Some(syms) => {
@@ -700,20 +700,20 @@ impl Contemplation {
 
     /// LINEAGE THROUGH MUTATION: the entry follows the form it holds.
     ///
-    /// A bubble's key is its form's address, and a pivot REWRITES THE FORM IN
+    /// A well's key is its form's address, and a pivot REWRITES THE FORM IN
     /// PLACE — `expand_all` takes the slot by the key it entered with and
     /// `expand_with` calls `take_form` inside it. Left where it was, the
-    /// bubble keeps its `moved_k` and everything it has built while its key
+    /// well keeps its `moved_k` and everything it has built while its key
     /// stops matching the form it now holds, and every reader that looks it
     /// up by the current form misses it: `span_of` answers "not held" for a
-    /// bubble that has been deliberating for thousands of receipts, and
-    /// `hold_form` inserts a SECOND bubble for the same lineage while the
+    /// well that has been deliberating for thousands of receipts, and
+    /// `hold_form` inserts a SECOND well for the same lineage while the
     /// first is orphaned under a key nothing computes any more. A form with
     /// an open remainder speaks only once it closes, and closing mutates it.
     ///
     /// The entry moves with its inception stamp and its accumulated state, so
     /// a resolved sentence carries the true extent of its deliberation —
-    /// the bubble that deliberated is the bubble that speaks.
+    /// the well that deliberated is the well that speaks.
     ///
     /// Where the destination is already held, two lineages have converged on
     /// one form. The survivor is the one already under that key, and it takes
@@ -724,7 +724,7 @@ impl Contemplation {
         if from == to {
             return;
         }
-        let Some(moving) = self.bubbles.remove(from) else {
+        let Some(moving) = self.wells.remove(from) else {
             return;
         };
         // A thought that came round is still the thought that came round
@@ -734,7 +734,7 @@ impl Contemplation {
         let was_dirty = self.dirty.remove(from).is_some();
         self.unthreaded.remove(from);
         self.unheld.remove(from);
-        match self.bubbles.get_mut(to) {
+        match self.wells.get_mut(to) {
             Some(standing) => {
                 standing.moved_k = standing.moved_k.min(moving.moved_k);
                 // ESCROW CONSERVED: the two lineages are one thought, holding
@@ -746,7 +746,7 @@ impl Contemplation {
             None => {
                 let shared: std::sync::Arc<[u8]> = std::sync::Arc::from(to);
                 self.admit_incidence(&shared, &moving);
-                self.bubbles.insert_shared(shared, moving);
+                self.wells.insert_shared(shared, moving);
                 // Under its new key the thought threads its line again: its
                 // line in the field is its key.
                 self.awaits_thread(to);
@@ -757,13 +757,13 @@ impl Contemplation {
         }
     }
 
-    /// THE INCIDENCE A BUBBLE IS ADMITTED UNDER: its cover's charts and its
-    /// vortices' strata, each naming the bubble by its address. Every entry
+    /// THE INCIDENCE A WELL IS ADMITTED UNDER: its cover's charts and its
+    /// vortices' strata, each naming the well by its address. Every entry
     /// copies that address, which is the form's vertex key and grows with
     /// the form, so an index is written here only where a reader takes it
     /// (`held_at`, `link_new`, the vortex collapse); an index nothing reads
     /// is that address copied once per entry for no reading (law 12).
-    /// THE ORDINAL OF A BUBBLE, assigned on its first admission and held
+    /// THE ORDINAL OF A WELL, assigned on its first admission and held
     /// while the contemplation lives. Never reused after retraction.
     /// Z4c: the caller hands the ONE copy of the address. `Arc::from(&[u8])`
     /// would copy it here — 7 MB per hold on the 590-vertex rule — and the
@@ -771,9 +771,9 @@ impl Contemplation {
     ///
     /// `None` past the u16 (STD1 3c-5): the ordinal counts ADMISSIONS over
     /// the contemplation's life and is never reused, so `as u16` wrapped at
-    /// 65 536 admissions whatever the form's size, and a new bubble took a
+    /// 65 536 admissions whatever the form's size, and a new well took a
     /// live one's ordinal. Refused by name until AT1 keys the index by the
-    /// bubble's own coordinates (the slot is AT1's debt).
+    /// well's own coordinates (the slot is AT1's debt).
     pub(crate) fn ordinal_for(&mut self, key: &std::sync::Arc<[u8]>) -> Option<u16> {
         if let Some(&o) = self.ordinals.get(key) {
             return Some(o);
@@ -785,7 +785,7 @@ impl Contemplation {
     }
 
     /// The address an ordinal names, or `None` where it names nothing —
-    /// a retracted bubble, or an ordinal this contemplation never issued.
+    /// a retracted well, or an ordinal this contemplation never issued.
     pub(crate) fn address_at(&self, ord: u16) -> Option<&[u8]> {
         self.addresses.get(ord as usize)?.as_deref()
     }
@@ -795,7 +795,7 @@ impl Contemplation {
         Some(u16::from_le_bytes(k.try_into().ok()?))
     }
 
-    pub(crate) fn admit_incidence(&mut self, key: &std::sync::Arc<[u8]>, b: &Bubble) {
+    pub(crate) fn admit_incidence(&mut self, key: &std::sync::Arc<[u8]>, b: &Well) {
         let Some(ord) = self.ordinal_for(key) else {
             self.overflowed += 1;
             eprintln!("  contemplation ordinal refused: admissions past its u16, incidence not indexed");
@@ -818,7 +818,7 @@ impl Contemplation {
         for ck in b.vortex_strata() {
             self.by_vortex.nested_insert(&ck, key, ());
         }
-        // The citation fibration: this bubble is filed under every address
+        // The citation fibration: this well is filed under every address
         // it cites, by ordinal.
         for (addr, ()) in b.glues.scoped() {
             self.cited.nested_insert(Self::cited_at(&addr), key, ());
@@ -842,7 +842,7 @@ impl Contemplation {
         }
     }
 
-    /// WHETHER ANY THOUGHT STILL STANDS ON A SCENE: a bubble perceived in
+    /// WHETHER ANY THOUGHT STILL STANDS ON A SCENE: a well perceived in
     /// the family `family` is held. One keyed read.
     pub(crate) fn holds_family(&self, family: &[u8]) -> bool {
         self.by_family.get(family).is_some_and(|m| !m.is_empty())
@@ -850,8 +850,8 @@ impl Contemplation {
 
     /// THE HELD STRATUM AT A CHART (24.1 as ruled 2026-09-09): the Word
     /// vertices of the held forms on `inv`, read at the coordinate the
-    /// caller supplies — the chart names its bubbles (`by_chart`), and each
-    /// bubble's form names the vertices it holds on that chart
+    /// caller supplies — the chart names its wells (`by_chart`), and each
+    /// well's form names the vertices it holds on that chart
     /// (`Form.by_class`, 18.2). Nothing is materialised ahead of the
     /// question, no vertex list is read whole, and no second carrier of held
     /// words exists beside this contemplation.
@@ -861,13 +861,13 @@ impl Contemplation {
             return Vec::new();
         };
         let mut out = Vec::new();
-        // index: the bubbles this chart names; then the vertices each
+        // index: the wells this chart names; then the vertices each
         // form's by_class names on it
         for (ok, _) in ideas.scoped() {
             let Some(bk) = Self::ordinal_of_key(&ok).and_then(|o| self.address_at(o)) else {
                 continue;
             };
-            let Some(form) = self.bubbles.get(bk).and_then(|b| b.form.as_ref()) else {
+            let Some(form) = self.wells.get(bk).and_then(|b| b.form.as_ref()) else {
                 continue;
             };
             // 54.7 R5 — ASKED AT THE COORDINATE IT ANSWERS. `by_class` is a
@@ -895,8 +895,8 @@ impl Contemplation {
     /// A chart where either form holds several vertices names no one
     /// transition, and none is chosen: no edge.
     pub(crate) fn rotor_between(&self, a: &[u8], b: &[u8]) -> Option<Rotor> {
-        let ba = self.bubbles.get(a)?;
-        let bb = self.bubbles.get(b)?;
+        let ba = self.wells.get(a)?;
+        let bb = self.wells.get(b)?;
         let transition = |ra: &Rotor, rb: &Rotor| Some(rb.geo(&ra.is_versor().then(|| ra.reverse())?));
         if let (Some(ra), Some(rb)) = (ba.rotor(), bb.rotor()) {
             return transition(ra, rb);
@@ -908,8 +908,8 @@ impl Contemplation {
         // a length compared).
         let leaves: Vec<&Vec<u8>> =
             meet.iter().filter(|k| !meet.iter().any(|o| o.len() > k.len() && o.starts_with(k))).collect();
-        let one_on = |bub: &Bubble, chart: &stalk::Invariant| -> Option<Rotor> {
-            let f = bub.form.as_ref()?;
+        let one_on = |well: &Well, chart: &stalk::Invariant| -> Option<Rotor> {
+            let f = well.form.as_ref()?;
             let [at] = f.by_class.at(&coord::Chart(chart.clone()))?.as_slice() else { return None };
             match f.vertices.at(at)? {
                 Vertex::Word { derivation, .. } => Some(derivation.rotor()),
@@ -931,7 +931,7 @@ impl Contemplation {
         read
     }
 
-    /// Link of one new bubble: edges to bubbles sharing a chart (by_chart
+    /// Link of one new well: edges to wells sharing a chart (by_chart
     /// peel), higher simplices where shared remainder volume is nonzero. The
     /// caller names the ADJUNCT the link is (78.26(6)): a new candidate held,
     /// or a merged thought's re-gauged sections; a filled ring it reopens is
@@ -939,7 +939,7 @@ impl Contemplation {
     pub(crate) fn link_new(&mut self, key: impl AsRef<[u8]>, adjunct: super::meet::Adjunct) {
         let key = key.as_ref().to_vec();
         let (charts, vol0) = {
-            let Some(b) = self.bubbles.get(&key) else {
+            let Some(b) = self.wells.get(&key) else {
                 return;
             };
             (
@@ -949,7 +949,7 @@ impl Contemplation {
         };
         self.complex.set_section(
             &key,
-            // A bubble's section carries a rotation and no placement, so
+            // A well's section carries a rotation and no placement, so
             // the carriage is the identity — which is TRUE of it, not a
             // value stood in for one it has (L11e).
             Section::at(crate::transducer::address::Address::from(key.clone()), Rotor::identity()),
@@ -969,23 +969,23 @@ impl Contemplation {
         let nbs: Vec<Vec<u8>> = neighbours.scoped().map(|(k, _)| k).collect();
         let mut rems: Keyed<Vec<Link>> = Keyed::new();
         // Overlap is read in the SCENE: the chain carried through its own
-        // translator (§2.1). Two bubbles holding one chain at two
+        // translator (§2.1). Two wells holding one chain at two
         // translators are one substance said at two places, and the two
         // canonical links coincide at the origin while the two placed links
         // do not.
-        if let Some(b) = self.bubbles.get(&key) {
+        if let Some(b) = self.wells.get(&key) {
             rems.insert(&key, b.remainder.placed());
         }
         // Two perceptions that both hold bodies are related by the
         // bodies' cells (`perceive_cells`, on the act's stroke), never by
         // the perceptions' words' rotors here.
-        let seen = |k: &[u8]| self.bubbles.get(k).is_some_and(|b| !b.spores.is_empty());
+        let seen = |k: &[u8]| self.wells.get(k).is_some_and(|b| !b.spores.is_empty());
         let nbs: Vec<Vec<u8>> = match seen(&key) {
             true => nbs.into_iter().filter(|n| !seen(n)).collect(),
             false => nbs,
         };
         for n in &nbs {
-            if let Some(b) = self.bubbles.get(n) {
+            if let Some(b) = self.wells.get(n) {
                 rems.insert(n, b.remainder.placed());
             }
             let vol = volume_of(&rems, &[key.as_slice(), n.as_slice()]);
@@ -994,8 +994,8 @@ impl Contemplation {
                     let _ = self.tether(&key, n, rotor, crate::transducer::element::identity_versor(), vol);
                 }
                 None => {
-                    let both_remainder = self.bubbles.get(&key).is_some_and(|b| b.form.is_none())
-                        && self.bubbles.get(n).is_some_and(|b| b.form.is_none());
+                    let both_remainder = self.wells.get(&key).is_some_and(|b| b.form.is_none())
+                        && self.wells.get(n).is_some_and(|b| b.form.is_none());
                     if both_remainder && vol.iter().any(|&x| x > 0) {
                         let _ = self.merge(&[key.clone(), n.clone()]);
                         break;
@@ -1036,7 +1036,7 @@ impl Contemplation {
         HELD_BYTES.with(|c| c.set(0));
     }
 
-    /// Admit a remainder as a bubble with its cover a peel of its invariant.
+    /// Admit a remainder as a well with its cover a peel of its invariant.
     pub fn hold(&mut self, remainder: Vec<Link>) {
         if remainder.is_empty() {
             return;
@@ -1056,7 +1056,7 @@ impl Contemplation {
         let volume = element::measure_lanes(&remainder);
         let mut horizon = Keyed::new();
         self.paint_seeded(&mut horizon);
-        let bubble = Bubble {
+        let well = Well {
             remainder,
             nerve: Complex::new(),
             cover,
@@ -1078,7 +1078,7 @@ impl Contemplation {
             certificates: Keyed::new(),
             vortex: Keyed::new(),
             candidates: Keyed::new(),
-            // A bubble with no form has no rotor to derive (rule 11).
+            // A well with no form has no rotor to derive (rule 11).
             rotor: None,
             form: None,
             bundle: None,
@@ -1087,11 +1087,11 @@ impl Contemplation {
             ground: None,
             slips: Vec::new(),
         };
-        if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
+        if let Some(old) = self.wells.get(key.as_bytes()).cloned() {
             self.retract_incidence(key.as_bytes(), &old);
         }
-        self.admit_incidence(&key.shared(), &bubble);
-        self.bubbles.insert_shared(key.shared(), bubble);
+        self.admit_incidence(&key.shared(), &well);
+        self.wells.insert_shared(key.shared(), well);
         self.dirty.insert_shared(key.shared(), ());
         self.link_new(&key, super::meet::Adjunct::Candidate);
     }
@@ -1151,7 +1151,7 @@ impl Contemplation {
     pub(crate) fn form_thought(&self, verts: &[Vec<u8>]) -> Option<Element> {
         let mut forms = Vec::new();
         for v in verts {
-            let b = self.bubbles.get(v)?;
+            let b = self.wells.get(v)?;
             if !b.remainder.is_empty() {
                 return None;
             }
@@ -1181,7 +1181,7 @@ impl Contemplation {
     /// M2 fixes the address, and its magnitude is the trajectory it measures
     /// over the bundle it germinated from (26), through the crystal that
     /// resolves what it cites; a form with no bundle carries what it glued.
-    /// The bubble leaves the contemplation unless a live idea glued it
+    /// The well leaves the contemplation unless a live idea glued it
     /// (`retire_on_t` skips those). `None` when the form is not closed, a
     /// pair of the bundle is still open, or nothing is measured: a form that
     /// closes nothing is the citation, not a form (4), and stays a thought.
@@ -1191,7 +1191,7 @@ impl Contemplation {
     /// court replays and pays it there; empty where it closed no bundle (an
     /// hour, a remainder), whose evidence is no family a court binds.
     pub fn crystallize(&mut self, key: &[u8], crystal: &dyn Crystal) -> Option<(Element, Vec<u8>)> {
-        let b = self.bubbles.get(key)?;
+        let b = self.wells.get(key)?;
         let f = b.form.as_ref()?;
         if !f.is_cauterized() || !f.remainder.is_empty() {
             return None;
@@ -1217,7 +1217,7 @@ impl Contemplation {
         self.fix(key, false);
         if let Some(old) = old {
             self.retract_incidence(key, &old);
-            self.bubbles.remove(key);
+            self.wells.remove(key);
             self.dirty.remove(key);
             self.unthreaded.remove(key);
             self.unheld.remove(key);
@@ -1239,7 +1239,7 @@ impl Contemplation {
     pub fn component_count(&self) -> usize {
         let mut seen = Keyed::new();
         let mut n = 0usize;
-        let keys: Vec<Vec<u8>> = self.bubbles.scoped().map(|(k, _)| k).collect();
+        let keys: Vec<Vec<u8>> = self.wells.scoped().map(|(k, _)| k).collect();
         for k in keys {
             if seen.contains(&k) {
                 continue;
@@ -1254,7 +1254,7 @@ impl Contemplation {
 
     pub fn horizon_len(&self) -> usize {
         let mut n = 0usize;
-        for (_, b) in self.bubbles.scoped() {
+        for (_, b) in self.wells.scoped() {
             n += b.horizon.len();
         }
         n
@@ -1263,7 +1263,7 @@ impl Contemplation {
     /// The held thoughts' potential, per lane; `None` where the sum would
     /// pass its carrier (STD1).
     pub fn potential(&self) -> Option<[u64; 4]> {
-        crate::core::lanes::lanes_sum(self.bubbles.scoped().map(|(_, b)| b.potential))
+        crate::core::lanes::lanes_sum(self.wells.scoped().map(|(_, b)| b.potential))
     }
 
 }

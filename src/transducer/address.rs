@@ -99,7 +99,7 @@ pub const TAG_LAW: u8 = 23;
 /// The address IS the object's coordinates written out (law 2, A21), and
 /// for a form that is megabytes: `form_vertex_key` writes every vertex,
 /// member and gauge, 7.3 MB on the 590-vertex rule. Every carrier that
-/// names the form by it held a separate copy — the bubbles trie, `dirty`,
+/// names the form by it held a separate copy — the wells trie, `dirty`,
 /// `ordinals`, the Čech complex's sections — and a hold paid for all of
 /// them.
 ///

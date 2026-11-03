@@ -30,7 +30,7 @@ pub mod bytes;
 /// 18.2, 12.6, A16, A20 — the form: orbits, the pivot, the certificate.
 pub mod sentence;
 /// Chapter 25 — the contemplation: what a mind holds at once.
-pub mod bubble;
+pub mod field;
 /// Chapters 20–22 — extraction and speech over a family of train pairs.
 pub mod family;
 /// Chapter 13 — reconciliation of two holders of the language, by stratum.

@@ -114,7 +114,7 @@ pub fn spent_here() -> u64 {
 /// touching the physics.
 ///
 /// AND IT IS A SCALAR COLLAPSE. Law 5 reads per lane, and attention is
-/// ALREADY a four-lane quantity in this engine — `Bubble.escrow` is "the
+/// ALREADY a four-lane quantity in this engine — `Well.escrow` is "the
 /// μ⃗ drawn from the voice's reserve to keep it, per lane", and "a mind
 /// rich on `𝒽` and spent on `𝒮` holds turns and withholds placements". A
 /// single integer can express neither half of that: a mind bankrupt on

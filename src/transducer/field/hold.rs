@@ -2,7 +2,7 @@
 //
 //! Split from `contemplation.rs` at the §1.1 1200-line reading bound; the
 //! item is moved, not rewritten (§1.6). One organ: a form arrives, the
-//! bubble that will carry it is built, its escrow is drawn and its
+//! well that will carry it is built, its escrow is drawn and its
 //! incidence admitted, and the bytes the hold retains are read across it
 //! (Z4a's `HELD_BYTES`).
 
@@ -60,11 +60,11 @@ pub(crate) fn breaths_of(f: &Form, budget: &mut crate::physics::Budget) -> Vec<c
 
 impl Contemplation {
     /// Z4 item 1 — THE FORM IS MOVED IN, NOT COPIED. It took `&Form` and
-    /// the bubble kept `f.clone()`: 12.8 MB on a 590-vertex rule, measured
+    /// the well kept `f.clone()`: 12.8 MB on a 590-vertex rule, measured
     /// at e0f4e0d, paid once per distinct form the mind holds. The caller
     /// has an extracted form it does not need afterwards, so it hands it
     /// over; where a caller does need it after, it reads it back from the
-    /// bubble by reference (`form_at`).
+    /// well by reference (`form_at`).
     pub fn hold_form(
         &mut self,
         f: Form,
@@ -102,7 +102,7 @@ impl Contemplation {
             // have retained zero because the instrument could not look.
             _ => None,
         };
-        // THE HOLD'S COORDINATE IS THE IDEA KEY it filed the bubble under,
+        // THE HOLD'S COORDINATE IS THE IDEA KEY it filed the well under,
         // and the bytes are what the process kept because of it. This is
         // the one reader of the three that can answer both columns.
         if let Some(key) = &key {
@@ -190,14 +190,14 @@ impl Contemplation {
         let key = match seen {
             true => super::resonance::perceived_key(form_key, &spores),
             false => {
-                let perceptions: Vec<Vec<u8>> = match self.bubbles.fibre_at(form_key.as_bytes()) {
+                let perceptions: Vec<Vec<u8>> = match self.wells.fibre_at(form_key.as_bytes()) {
                     Some(fibre) => fibre.map(|(k, _)| k).filter(|k| k.len() > form_key.len()).collect(),
                     None => Vec::new(),
                 };
                 if !perceptions.is_empty() {
                     for k in perceptions {
                         self.dirty.insert(&k, ());
-                        if let Some(b) = self.bubbles.get_mut(&k) {
+                        if let Some(b) = self.wells.get_mut(&k) {
                             b.dirty = true;
                         }
                     }
@@ -241,7 +241,7 @@ impl Contemplation {
         let mut candidates: Keyed<Keyed<Rotor>> = Keyed::new();
         for (_, v) in f.vertices.scoped() {
             match v {
-                // EVERY CHART THE VERTEX ACTS ON is a chart the bubble's
+                // EVERY CHART THE VERTEX ACTS ON is a chart the well's
                 // cover holds: a vertex acting on several is on several.
                 Vertex::Word { acts, .. } => {
                     // THE CHART, NOT THE MEMBER'S KEY (54.7 R1). `cover` is
@@ -264,12 +264,12 @@ impl Contemplation {
                 }
                 // P9 — AN OPEN DEMAND STANDS ON ITS OWN CHART. A demand
                 // carries the chart its reading was typed at (50.5), and the
-                // chart is the coordinate the contemplation files a bubble
+                // chart is the coordinate the contemplation files a well
                 // under (`by_chart`). Dropped here, an idea whose form is a
                 // demand was held on NO chart: `admit_incidence` wrote no
                 // incidence, `link_new` found no neighbour, and nothing the
                 // mind held could ever meet it. Measured before this on the
-                // one-body deformation P8 leaves standing: one bubble, cover
+                // one-body deformation P8 leaves standing: one well, cover
                 // 0, horizon 0 — held and unreachable.
                 //
                 // It carries no word, so it contributes no section and no
@@ -320,7 +320,7 @@ impl Contemplation {
         // or the class the perception just measured reaches `pivot_orbit`
         // as nothing at all.
         //
-        // `Bubble::expand_with` does exactly this for a simplex it meets on
+        // `Well::expand_with` does exactly this for a simplex it meets on
         // the atlas (`Fill::Class` → `horizon_put`). This is the same
         // admission for the classes the form ARRIVED with, so a perceived
         // obstruction and a contemplated one are one kind of object.
@@ -347,7 +347,7 @@ impl Contemplation {
         let certs = held.certificates.clone();
         let torsion = held.torsion.clone();
         let vortex = held.vortex.clone();
-        let bubble = Bubble {
+        let well = Well {
             remainder: held.remainder.clone(),
             nerve: Complex::new(),
             cover,
@@ -362,7 +362,7 @@ impl Contemplation {
             moved_k: self.now_k,
             // Z4d: THE ESCROW IS WHAT THE CALLER DREW, not what the
             // thought measures. They were the same number written in two
-            // places and they disagreed: a bubble built here without a
+            // places and they disagreed: a well built here without a
             // draw — `hold`, a merge, the tape — still returned `volume`
             // on its lapse, and the reserve INFLATED. Measured on the development
             // deployment at 3245041: `reserve [2194, 203, 88, 3382]` against a
@@ -377,7 +377,7 @@ impl Contemplation {
             vortex,
             candidates,
             // Derived once, here, where the form is taken (Z4 item 3).
-            rotor: Bubble::rotor_of_form(&held),
+            rotor: Well::rotor_of_form(&held),
             form: Some(held),
             bundle,
             remainders: rem_keyed,
@@ -389,16 +389,16 @@ impl Contemplation {
         // RE-HOLDING AN UNMUTATED FORM IS NOT MOVEMENT (ruled 2026-09-14).
         //
         // `moved_k` is the PHASE CHANGE stamp — "TUniversal when this
-        // bubble's charts last moved" — and D8 re-holds a withheld form on
-        // every stroke, so a hold that rebuilt the bubble and stamped
-        // `moved_k = now_k` each time would let no bubble ever age:
+        // well's charts last moved" — and D8 re-holds a withheld form on
+        // every stroke, so a hold that rebuilt the well and stamped
+        // `moved_k = now_k` each time would let no well ever age:
         // `held_since(now_k, moved_k)` zero by construction, `t_extent`
         // perpetually zero, lane 𝒯 unable to accumulate.
         //
         // A form retained across an evaluation stroke has moved ZERO in
         // configuration space. The key IS the topology and the carriages:
         // `form_vertex_key` writes every vertex, every member and every gauge
-        // (law 2), so a bubble found under this key is that same form and
+        // (law 2), so a well found under this key is that same form and
         // nothing about it has changed.
         //
         // What it has ACCUMULATED is kept with it — the complex it built, the
@@ -410,44 +410,44 @@ impl Contemplation {
         // `moved_k` still advances where a transformation actually mutates
         // the charts: `expand_with` stamps it when a chart enters the cover,
         // and a pivot rewrites the form, which changes the key and starts a
-        // new bubble at its own phase change.
-        let mut bubble = bubble;
+        // new well at its own phase change.
+        let mut well = well;
         let mut drawn_again: Option<[u64; 4]> = None;
-        if let Some(prior) = self.bubbles.get(key.as_bytes()) {
+        if let Some(prior) = self.wells.get(key.as_bytes()) {
             // ESCROW CONSERVED (MU-CLIENT §7.1 Phase 3): the thought standing
             // here holds what was drawn for it once; what this re-hold drew
             // is returned, never held twice.
-            drawn_again = Some(bubble.escrow);
-            bubble.escrow = prior.escrow;
-            bubble.moved_k = prior.moved_k;
-            bubble.nerve = prior.nerve.clone();
-            bubble.cover = prior.cover.clone();
-            bubble.glued_by = prior.glued_by.clone();
+            drawn_again = Some(well.escrow);
+            well.escrow = prior.escrow;
+            well.moved_k = prior.moved_k;
+            well.nerve = prior.nerve.clone();
+            well.cover = prior.cover.clone();
+            well.glued_by = prior.glued_by.clone();
             // The bodies it was perceived as stand with it where this hold
             // carries none (a re-hold of the same form).
-            if bubble.spores.is_empty() {
-                bubble.spores = prior.spores.clone();
+            if well.spores.is_empty() {
+                well.spores = prior.spores.clone();
             }
             // The horizon is a union: this stroke's painting of the form's
             // standing classes, over the classes expansion has already met.
             for (hk, hv) in prior.horizon.scoped() {
-                if !bubble.horizon.contains(&hk) {
-                    bubble.horizon.insert(&hk, hv.clone());
+                if !well.horizon.contains(&hk) {
+                    well.horizon.insert(&hk, hv.clone());
                 }
             }
         }
         mark("prior merge");
-        if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
+        if let Some(old) = self.wells.get(key.as_bytes()).cloned() {
             self.retract_incidence(key.as_bytes(), &old);
         }
         mark("retract_incidence");
         if let Some(again) = drawn_again {
             self.return_escrow(&again);
         }
-        self.admit_incidence(&key.shared(), &bubble);
+        self.admit_incidence(&key.shared(), &well);
         mark("admit_incidence");
-        self.bubbles.insert(&key, bubble);
-        mark("bubbles.insert");
+        self.wells.insert(&key, well);
+        mark("wells.insert");
         self.dirty.insert(&key, ());
         // MU-CLIENT §4.13 — its line is threaded at the next vent.
         self.awaits_thread(key.as_bytes());

@@ -45,7 +45,7 @@ site's integer coordinates. The permitted readers are the functions of
 `carry_compartment_site`, `pullback`), `transducer::element::letters::carriage`,
 `transducer::blade::carry::carry`, `Blade::centroid` in
 `transducer/blade/body.rs`, `transducer::alphabet::letters::rotor_pair`,
-the rotor transition `rotor_between` in `transducer/bubble/contemplation.rs`,
+the rotor transition `rotor_between` in `transducer/field/contemplation.rs`,
 and the base sites of `transducer::base`. Nothing else touches a site's
 integers, a centre's rationals or a grid. This is a review rule (§4.4),
 not a gate.

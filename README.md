@@ -291,7 +291,7 @@ into eras, and witness hyphae co-sign each era's fold
 topology, not flat records. Objects are multivectors of `Cl(n+1, 1)`, with
 `n` read from the data. The geometry is non-Euclidean, and the algebra is
 exact and never scalar: a number appears only as the gauge of a
-one-dimensional reading ([MU-SENSING §3.7](docs/MU-SENSING.md#37-the-bubble-non-euclidean-never-scalar)).
+one-dimensional reading ([MU-SENSING §3.7](docs/MU-SENSING.md#37-the-field-non-euclidean-never-scalar)).
 Motions are versors. Relations are transports, and collections of
 relations are complexes of any dimension whose cohomology is read. A
 ring's holonomy is its content. Value and time keep four lanes apart, and

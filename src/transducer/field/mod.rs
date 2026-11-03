@@ -1,8 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 13, 25 — THE CONTEMPLATION: the Čech complex over the thought bubbles a
-//! mind holds. Vertices are bubbles; a k-simplex is a (k+1)-fold overlap
-//! of the bubbles' covers with shared remainder volume.
+//! 13, 25 — THE CONTEMPLATION: the Čech complex over the wells (held
+//! thoughts) in a mind's field. Vertices are wells; a k-simplex is a
+//! (k+1)-fold overlap of the wells' covers with shared remainder volume.
 
 
 pub mod contemplation;
@@ -23,7 +23,7 @@ pub mod returned;
 pub mod transport;
 
 pub use contemplation::Contemplation;
-pub use idea::{Bubble, ClassRecord};
+pub use idea::{Well, ClassRecord};
 pub(crate) use horizon::horizon_put;
 pub(crate) use idea::*;
 pub(crate) use merge::*;

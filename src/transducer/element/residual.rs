@@ -81,7 +81,7 @@ impl std::ops::Deref for CanonicalChain {
 
 /// §2.1 ONE LEVEL DOWN: the canonical object and its carriage. A5's chain
 /// is the identity — the same deformation anywhere is one substance — and
-/// the translator is where that substance sits in the scene. Two bubbles
+/// the translator is where that substance sits in the scene. Two wells
 /// holding one chain at two translators are one substance said at two
 /// places.
 ///

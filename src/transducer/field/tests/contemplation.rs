@@ -1,7 +1,7 @@
 // 25 — the contemplation: what holding a form does to the complex, and
 // what one thought costs whatever the mind already holds.
 
-use crate::transducer::bubble::*;
+use crate::transducer::field::*;
 
 /// Law 5, L7a: the boundary of the open thoughts is read on four lanes
 /// and is the measure of the held remainders themselves — never the remainders' sum,
@@ -24,11 +24,11 @@ fn boundary_measure_reads_four_lanes_never_sum() {
 
 /// P9 — AN OPEN DEMAND IS AN IDEA THAT STANDS ON ITS OWN CHART. A demand
 /// carries the chart its reading was typed at (50.5), and a chart is the
-/// coordinate a bubble is filed under (`by_chart`). Held without it, an
+/// coordinate a well is filed under (`by_chart`). Held without it, an
 /// idea whose form is a demand stood on nothing: `admit_incidence` wrote no
 /// incidence and `link_new` found no neighbour, so nothing the mind held
 /// could meet it. Measured before this on the one-body deformation P8
-/// leaves standing: one bubble, cover 0.
+/// leaves standing: one well, cover 0.
 #[test]
 fn hold_form_stands_demand_on_chart() {
     use crate::transducer::sentence::{Demand, Form, Vertex};
@@ -49,8 +49,8 @@ fn hold_form_stands_demand_on_chart() {
     let mut c = Contemplation::new();
     c.hold_form(f.clone(), &[], &[], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     assert_eq!(c.len(), 1, "the demand is one idea the mind holds");
-    let held: Vec<&Bubble> = c.bubbles.scoped().map(|(_, b)| b).collect();
-    let [b] = held.as_slice() else { panic!("one bubble, got {}", held.len()) };
+    let held: Vec<&Well> = c.wells.scoped().map(|(_, b)| b).collect();
+    let [b] = held.as_slice() else { panic!("one well, got {}", held.len()) };
     assert!(
         b.cover.contains(chart.key().as_bytes()),
         "and it stands on the chart its demand was typed at"
@@ -176,15 +176,15 @@ fn hold_form_keeps_glued_open_orbit() {
     assert!(outer.remainder.is_empty(), "no remainder to hold()");
     let mut c = Contemplation::new();
     c.hold_form(outer.clone(), &[], &[], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    assert_eq!(c.bubbles.len(), 1, "the glued form is an idea");
-    let b = c.bubbles.scoped().next().map(|(_, b)| b).expect("held");
+    assert_eq!(c.wells.len(), 1, "the glued form is an idea");
+    let b = c.wells.scoped().next().map(|(_, b)| b).expect("held");
     assert!(
         b.form.as_ref().is_some_and(|f| {
             f.vertices
                 .scoped()
                 .any(|(_, v)| matches!(v, Vertex::Glued { .. }))
         }),
-        "the bubble carries the Form"
+        "the well carries the Form"
     );
 
     let mut open = Form::default();
@@ -213,8 +213,8 @@ fn hold_form_keeps_glued_open_orbit() {
     );
     let mut c2 = Contemplation::new();
     c2.hold_form(open.clone(), &[], &[], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    let k = c2.bubbles.scoped().next().map(|(k, _)| k).expect("held");
-    assert_eq!(k.as_slice(), crate::transducer::bubble::idea::idea_key(&open).as_bytes(), "hold, merge and Bubble::key share idea_key");
+    let k = c2.wells.scoped().next().map(|(k, _)| k).expect("held");
+    assert_eq!(k.as_slice(), crate::transducer::field::idea::idea_key(&open).as_bytes(), "hold, merge and Well::key share idea_key");
     struct HoldQ(Word);
     impl crate::transducer::family::Crystal for HoldQ {
         fn on_class(
@@ -275,11 +275,11 @@ fn hold_form_keeps_glued_open_orbit() {
         }
     }
     let mut budget = crate::physics::Physics::default().stroke_n(16);
-    if let Some(b) = c2.bubbles.get_mut(&k) {
+    if let Some(b) = c2.wells.get_mut(&k) {
         let atlas = crate::transducer::stalk::Stalks::default();
         let _ = b.expand_with(&atlas, &|_| None, 0, &HoldQ(w.clone()), &mut budget, &mut Default::default());
     }
-    let b = c2.bubbles.get(&k).expect("still held");
+    let b = c2.wells.get(&k).expect("still held");
     let form = b.form.as_ref().expect("form carrier");
     let discharged = !form.certificates.is_empty();
     let filed = !form.torsion.is_empty();
@@ -289,7 +289,7 @@ fn hold_form_keeps_glued_open_orbit() {
         form.certificates.len(),
         form.torsion.len()
     );
-    let mag = crate::transducer::bubble::idea::form_magnitude(form).expect("the form's measure reads");
+    let mag = crate::transducer::field::idea::form_magnitude(form).expect("the form's measure reads");
     if mag.iter().any(|&x| x > 0) && form.is_cauterized() {
         let e = sentence::as_element_form(form, mag).expect("spoken tape");
         assert!(
@@ -322,9 +322,9 @@ fn hold_form_carries_bundle_and_remainder() {
     let rem = vec![vec![(0i64, 0i64, 1u8, 2u8)]];
     let mut c = Contemplation::new();
     c.hold_form(f.clone(), &train, &rem, [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    assert_eq!(c.bubbles.len(), 1);
-    let (k, b) = c.bubbles.scoped().next().expect("held");
-    assert_eq!(k.as_slice(), crate::transducer::bubble::idea::idea_key(&f).as_bytes(), "idea_key stays the form's vertex key");
+    assert_eq!(c.wells.len(), 1);
+    let (k, b) = c.wells.scoped().next().expect("held");
+    assert_eq!(k.as_slice(), crate::transducer::field::idea::idea_key(&f).as_bytes(), "idea_key stays the form's vertex key");
     assert!(
         b.bundle.as_ref().is_some_and(|t| t.len() == 1),
         "the idea carries the train"
@@ -333,7 +333,7 @@ fn hold_form_carries_bundle_and_remainder() {
     assert_eq!(links.len(), 1, "remainder is keyed by pair");
     assert!(
         b.remainder.is_empty(),
-        "Bubble.remainder is the form's own remainder, not concatenated pairs"
+        "Well.remainder is the form's own remainder, not concatenated pairs"
     );
     assert_eq!(
         b.volume,
@@ -365,10 +365,10 @@ fn expand_all_crystallizes_closed_idea_and_releases_it() {
     let minted = mint_sentence(&rule, &family, &NoCrystal, 0).expect("the family mints");
     let mut c = Contemplation::new();
     c.hold_form(rule.form.clone(), &family, &[Vec::new()], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    assert_eq!(c.bubbles.len(), 1, "the closed form is held as an idea");
+    assert_eq!(c.wells.len(), 1, "the closed form is held as an idea");
     let atlas = crate::transducer::stalk::Stalks::default();
     let mut budget = crate::physics::Physics::default().stroke_n(8);
-    let crate::transducer::bubble::drive::Expanded { crystallized, .. } =
+    let crate::transducer::field::drive::Expanded { crystallized, .. } =
         c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
     let [(e, _)] = crystallized.as_slice() else {
         panic!("one idea crystallizes, got {}", crystallized.len());
@@ -385,7 +385,7 @@ fn expand_all_crystallizes_closed_idea_and_releases_it() {
         None,
         "the court replays it closed on its bundle"
     );
-    assert!(c.bubbles.is_empty(), "the idea left the contemplation");
+    assert!(c.wells.is_empty(), "the idea left the contemplation");
     assert_eq!(c.formed, 1, "one thought formed");
 }
 
@@ -414,7 +414,7 @@ fn expand_all_ignores_atlas_size() {
         let expand = work::total();
         work::reset();
         let mut charts = 0usize;
-        for (_, b) in c.bubbles.scoped() {
+        for (_, b) in c.wells.scoped() {
             let mut cur = stalk::invariant(&b.remainder);
             loop {
                 if b.cover.contains(&cur.key()) {
@@ -437,20 +437,20 @@ fn expand_all_ignores_atlas_size() {
 }
 
 /// 45.7, S13.3 — THE DIRTY RING IS A CIRCUIT: three held thoughts, one
-/// bubble per stroke under a budget of one read, and the fourth stroke
-/// continues past the last bubble from the first and reports one circuit
+/// well per stroke under a budget of one read, and the fourth stroke
+/// continues past the last well from the first and reports one circuit
 /// with a period of four strokes — where the cursor that stopped at the
 /// end of the ring left every later stroke expanding nothing.
 #[test]
 fn expand_all_circuits_dirty_ring_and_reports_period() {
-    use crate::transducer::bubble::drive::Expanded;
+    use crate::transducer::field::drive::Expanded;
     use crate::transducer::family::NoCrystal;
     let mut c = Contemplation::new();
     // Three shapes on three rows: disjoint, so no two merge into one thought.
     c.hold(vec![(0, 0, 1, 2)]);
     c.hold(vec![(3, 0, 1, 2), (3, 1, 1, 2)]);
     c.hold(vec![(6, 0, 1, 2), (6, 1, 1, 2), (6, 2, 1, 2)]);
-    assert_eq!(c.bubbles.len(), 3, "three thoughts held apart");
+    assert_eq!(c.wells.len(), 3, "three thoughts held apart");
     assert_eq!(c.dirty.len(), 3, "three thoughts on the ring");
     let atlas = crate::transducer::stalk::Stalks::default();
     // The ring's cursor after each stroke. `None` is a ring that has not
@@ -459,18 +459,18 @@ fn expand_all_circuits_dirty_ring_and_reports_period() {
     for stroke in 1..=3 {
         let mut budget = crate::physics::Physics::default().stroke_n(1);
         let Expanded { circuit, .. } = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
-        assert_eq!(circuit, None, "stroke {stroke}: three bubbles at one per stroke is no circuit yet");
+        assert_eq!(circuit, None, "stroke {stroke}: three wells at one per stroke is no circuit yet");
         visited.push(c.expand_cursor.clone());
     }
     assert!(
         visited[0] != visited[1] && visited[1] != visited[2] && visited[0] != visited[2],
-        "each stroke read a different bubble: {visited:?}"
+        "each stroke read a different well: {visited:?}"
     );
-    assert_eq!(c.dirty.len(), 3, "a bubble the budget did not reach stays on the ring");
+    assert_eq!(c.dirty.len(), 3, "a well the budget did not reach stays on the ring");
     let mut budget = crate::physics::Physics::default().stroke_n(1);
     let Expanded { circuit, .. } = c.expand_all(&atlas, &|_| None, &NoCrystal, &mut budget);
     assert_eq!(circuit, Some((1, 4)), "the fourth stroke passes the end of the ring: one circuit in four strokes");
-    assert_eq!(c.expand_cursor, visited[0], "and continues from the first bubble");
+    assert_eq!(c.expand_cursor, visited[0], "and continues from the first well");
     assert_eq!(c.ring.circuits(), 1);
 }
 
@@ -486,7 +486,7 @@ fn expand_all_circuits_dirty_ring_and_reports_period() {
 #[test]
 fn monodromy_order_reads_flat_period_or_rupture() {
     use crate::transducer::alphabet::{Order, Rotor, Q};
-    use crate::transducer::bubble::idea::monodromy;
+    use crate::transducer::field::idea::monodromy;
     let q = |n: i64| Q::from_integer(num_bigint::BigInt::from(n));
     let v = Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(4)));
 
@@ -543,13 +543,13 @@ fn frame_key_orders_by_coordinate_not_byte() {
 
 /// 25 DOOR 1 — A HOLD LAPSES WITH ITS DOCKET, AND ITS CITERS LAPSE WITH IT.
 ///
-/// A bubble is pinned by `glues`, which is written at the hold and emptied
+/// A well is pinned by `glues`, which is written at the hold and emptied
 /// nowhere, so a pin outlives every reason for it. Measured on the 60-task
-/// slice before this door was written: 21 of 51 held bubbles cite, all 21
+/// slice before this door was written: 21 of 51 held wells cite, all 21
 /// pins are LIVE and none is dead — so a dead-pin collector retires none of
 /// them and the cited address lapsing is the only signal that reaches them.
 ///
-/// The three readings are the door. The cited bubble goes when its address
+/// The three readings are the door. The cited well goes when its address
 /// lapses. The citer goes WITH it, on the same call and not by a later
 /// sweep that would hold a dead reference until it came round. And the
 /// lapse is TRANSITIVE along the fibration: a citer of a citer goes too, in
@@ -578,7 +578,7 @@ fn standing_form(hue: u8) -> crate::transducer::sentence::Form {
 }
 
 /// The same, plus a `Glued` vertex citing `cited` — which is what writes
-/// `glues` at the hold and pins the bubble.
+/// `glues` at the hold and pins the well.
 fn citing_form(hue: u8, cited: &crate::transducer::address::Address) -> crate::transducer::sentence::Form {
     use crate::transducer::sentence::Vertex;
     let mut f = standing_form(hue);
@@ -606,13 +606,13 @@ fn citing_form(hue: u8, cited: &crate::transducer::address::Address) -> crate::t
 }
 
 /// A hold lapses with its docket: when a cited address lapses, the cited
-/// bubble and every citer of it lapse on the same call, transitively, and
+/// well and every citer of it lapse on the same call, transitively, and
 /// an unheld address retires nothing.
 #[test]
 fn lapse_with_retires_citers_transitively() {
-    use crate::transducer::bubble::contemplation::Contemplation;
+    use crate::transducer::field::contemplation::Contemplation;
     let mut c = Contemplation::new();
-    // Three bubbles: `inner` stands alone, `mid` cites it, `outer` cites
+    // Three wells: `inner` stands alone, `mid` cites it, `outer` cites
     // `mid`. Built by hand so the citation is the only relation between
     // them and nothing else can retire them.
     let inner = standing_form(7);
@@ -624,19 +624,19 @@ fn lapse_with_retires_citers_transitively() {
     let outer = citing_form(9, &mid_key);
     let outer_key = crate::transducer::sentence::form_vertex_key(&outer);
     c.hold_form(outer, &[], &[], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    assert_eq!(c.bubbles.len(), 3, "three bubbles stand");
+    assert_eq!(c.wells.len(), 3, "three wells stand");
     assert!(
-        c.bubbles.get(&mid_key).is_some_and(|b| !b.glues.is_empty()),
-        "the middle bubble is pinned by its citation"
+        c.wells.get(&mid_key).is_some_and(|b| !b.glues.is_empty()),
+        "the middle well is pinned by its citation"
     );
 
     // The inner address lapses from the atlas. Everything pinned to it
     // goes on THIS call.
     let n = c.lapse_with(std::slice::from_ref(&inner_key.clone().into_vec()));
-    assert_eq!(n, 3, "the cited bubble and both citers lapse together, transitively");
-    assert_eq!(c.bubbles.len(), 0, "and none is left standing");
+    assert_eq!(n, 3, "the cited well and both citers lapse together, transitively");
+    assert_eq!(c.wells.len(), 0, "and none is left standing");
     for k in [&inner_key, &mid_key, &outer_key] {
-        assert!(c.bubbles.get(k).is_none(), "retired: {:02x}{:02x}…", k[0], k[1]);
+        assert!(c.wells.get(k).is_none(), "retired: {:02x}{:02x}…", k[0], k[1]);
     }
     // An address nothing holds lapses nothing: the door is not a sweep.
     assert_eq!(c.lapse_with(&[vec![0xde, 0xad]]), 0, "an unheld address retires nothing");
@@ -644,7 +644,7 @@ fn lapse_with_retires_citers_transitively() {
 
 /// 25 DOOR 2 — A PROMOTED THOUGHT IS NOT HELD TWICE.
 ///
-/// A form ratified into the genome is held by the atlas. The bubble still
+/// A form ratified into the genome is held by the atlas. The well still
 /// standing for it in the contemplation is a second carrier for one fact
 /// (law 12), and it is retired AT the promotion rather than left for a
 /// later sweep to notice.
@@ -652,21 +652,21 @@ fn lapse_with_retires_citers_transitively() {
 /// The door goes through door 1's `lapse_with`, and the second reading is
 /// why that is right rather than merely convenient: a promoted address has
 /// left the contemplation's keeping, so whatever CITED it is pinned to a
-/// bubble that no longer stands here and lapses on the same stroke.
+/// well that no longer stands here and lapses on the same stroke.
 #[test]
 fn lapse_with_retires_promoted_thought_and_citer() {
-    use crate::transducer::bubble::contemplation::Contemplation;
+    use crate::transducer::field::contemplation::Contemplation;
     let mut c = Contemplation::new();
     let stood = standing_form(4);
     let stood_key = crate::transducer::sentence::form_vertex_key(&stood);
     c.hold_form(stood, &[], &[], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let citer = citing_form(5, &stood_key);
     c.hold_form(citer, &[], &[], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    assert_eq!(c.bubbles.len(), 2, "the thought and a thought citing it");
+    assert_eq!(c.wells.len(), 2, "the thought and a thought citing it");
 
     // It is ratified: the address is promoted into the genome.
     let n = c.lapse_with(std::slice::from_ref(&stood_key.clone().into_vec()));
     assert_eq!(n, 2, "the promoted thought and its citer both leave the contemplation");
-    assert_eq!(c.bubbles.len(), 0, "nothing is held twice");
+    assert_eq!(c.wells.len(), 0, "nothing is held twice");
     assert_eq!(c.cavity_len(), 2, "and law 7 keeps both remainders");
 }

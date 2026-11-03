@@ -272,7 +272,7 @@ impl Contemplation {
     pub(crate) fn shared_chain(&self, verts: &[Vec<u8>]) -> Option<Vec<Vec<u8>>> {
         let mut shared: Option<Vec<Vec<u8>>> = None;
         for v in verts {
-            let cover: Vec<Vec<u8>> = match self.bubbles.get(v) {
+            let cover: Vec<Vec<u8>> = match self.wells.get(v) {
                 Some(b) => b.cover.scoped().map(|(k, _)| k).collect(),
                 None => Vec::new(),
             };
@@ -302,11 +302,11 @@ impl Contemplation {
             resonance: self.resonance,
             ..MeetGraph::default()
         };
-        m.vertices = self.bubbles.len() as u64;
+        m.vertices = self.wells.len() as u64;
         m.thoughts = self.component_count() as u64;
         // The meet graph's own components: every edge, whatever its fill.
         let mut seen: Keyed<()> = Keyed::new();
-        for (k, _) in self.bubbles.scoped() {
+        for (k, _) in self.wells.scoped() {
             if seen.contains(&k) {
                 continue;
             }

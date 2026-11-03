@@ -496,7 +496,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
         Prefix::new(prefix).map(|p| self.fibre(p))
     }
 
-    /// THE WHOLE OF A CARRIER THAT IS ITSELF A FIBRE — one bubble's charts,
+    /// THE WHOLE OF A CARRIER THAT IS ITSELF A FIBRE — one well's charts,
     /// one vertex's star, one chart's incidence, one form's cited
     /// addresses. Calling this ASSERTS that scoping: the carrier was
     /// reached by a key already, so its whole content is one stratum's

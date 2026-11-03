@@ -245,7 +245,7 @@ impl Epigenome {
 
     pub(crate) fn working_atlas_with<'a>(
         &'a self,
-        held: &'a crate::transducer::bubble::Contemplation,
+        held: &'a crate::transducer::field::Contemplation,
     ) -> WorkingAtlas<'a> {
         WorkingAtlas {
             genome: &self.atlas,

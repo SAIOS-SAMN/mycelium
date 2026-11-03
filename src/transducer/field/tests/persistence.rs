@@ -2,7 +2,7 @@
 // persisted, so a mind that comes up empty refills its horizon from the
 // syllabus page.
 
-use crate::transducer::bubble::*;
+use crate::transducer::field::*;
 
 /// A restarted mind comes up with an empty horizon and refills it from the
 /// syllabus page, and a later idea inherits the seeded class.
@@ -22,7 +22,7 @@ fn seed_horizon_refills_empty_mind_from_syllabus() {
     assert_eq!(n, 1, "empty mind refills from the page");
     c.hold(vec![(5, 5, 3, 4)]);
     assert!(
-        c.bubbles
+        c.wells
             .scoped()
             .any(|(_, b)| b.horizon.contains(&rec.key)),
         "a later idea inherits the seeded class"

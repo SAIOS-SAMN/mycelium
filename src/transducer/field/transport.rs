@@ -120,7 +120,7 @@ impl Contemplation {
             }
         }
         self.transport.fixed[usize::from(by_class)] += 1;
-        let cover = self.bubbles.get(thought).map(|b| b.cover.scoped().map(|(k, _)| k).collect());
+        let cover = self.wells.get(thought).map(|b| b.cover.scoped().map(|(k, _)| k).collect());
         let key = arrival_key(thought, thought);
         self.fronts.insert(
             &key,
@@ -151,7 +151,7 @@ impl Contemplation {
             let mut at = end.to_vec();
             loop {
                 let a = self.fronts.get(&arrival_key(source, &at))?;
-                let read: Vec<Vec<u8>> = match (&a.cover, self.bubbles.get(&at)) {
+                let read: Vec<Vec<u8>> = match (&a.cover, self.wells.get(&at)) {
                     (Some(c), _) => c.clone(),
                     (None, Some(b)) => b.cover.scoped().map(|(k, _)| k).collect(),
                     (None, None) => return None,
@@ -275,7 +275,7 @@ impl Contemplation {
         match disagreement((&own.gamma, &own.carriage), arrived) {
             Some((_, r)) => {
                 self.transport.classified += 1;
-                if let Some(b) = self.bubbles.get_mut(at) {
+                if let Some(b) = self.wells.get_mut(at) {
                     horizon_put(&mut b.horizon, r, Standing::Held);
                 }
             }
@@ -331,7 +331,7 @@ impl Contemplation {
         match disagreement(arrived, (&there.rotor, &there.carriage)) {
             Some((kappa, r)) => {
                 for v in [near, there.at.as_slice()] {
-                    if let Some(b) = self.bubbles.get_mut(v) {
+                    if let Some(b) = self.wells.get_mut(v) {
                         horizon_put(&mut b.horizon, r.clone(), Standing::Held);
                     }
                 }

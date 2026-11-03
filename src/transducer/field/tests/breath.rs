@@ -52,7 +52,7 @@ fn form_of(carriages: &[crate::transducer::element::Versor]) -> Form {
 #[test]
 fn breaths_of_pinches_motion_with_translation_and_transversion() {
     let (a, b) = ([1, 2, 0], [0, 1, 1]);
-    let held = crate::transducer::bubble::hold::breaths_of(&form_of(&[carriage(&a, &b)]), &mut budget());
+    let held = crate::transducer::field::hold::breaths_of(&form_of(&[carriage(&a, &b)]), &mut budget());
     let [one] = held.as_slice() else { panic!("one breath held: {}", held.len()) };
     let expected = crate::transducer::cga::breath(&a.map(q), &b.map(q), &mut budget()).expect("the pair breathes");
     assert_eq!((one.radial.clone(), one.rest.clone()), (expected.radial, expected.rest), "the breath of the motion's own pair");
@@ -66,7 +66,7 @@ fn breaths_of_pinches_motion_with_translation_and_transversion() {
 #[test]
 fn breaths_of_pinches_across_two_motions() {
     let form = form_of(&[carriage(&[1, 2, 0], &[0, 0, 0]), carriage(&[0, 0, 0], &[0, 1, 1])]);
-    let held = crate::transducer::bubble::hold::breaths_of(&form, &mut budget());
+    let held = crate::transducer::field::hold::breaths_of(&form, &mut budget());
     let [one] = held.as_slice() else { panic!("one breath, across the two: {}", held.len()) };
     assert_eq!(one.by_kind(), [1, 0, 0], "a pinch in the plane the two span");
     assert_eq!(one.twists().len(), 1, "and it twists");
@@ -77,6 +77,6 @@ fn breaths_of_pinches_across_two_motions() {
 #[test]
 fn breaths_of_holds_nothing_for_commuting_motions() {
     let form = form_of(&[carriage(&[1, 2, 0], &[0, 0, 0]), carriage(&[3, 0, 1], &[0, 0, 0])]);
-    let held = crate::transducer::bubble::hold::breaths_of(&form, &mut budget());
+    let held = crate::transducer::field::hold::breaths_of(&form, &mut budget());
     assert!(held.iter().all(|b| num_traits::Zero::is_zero(&b.radial) && b.planes.is_empty()), "nothing breathed: {}", held.len());
 }

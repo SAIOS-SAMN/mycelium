@@ -122,7 +122,7 @@ fn draw_preempts_no_other_lane_on_depleted_lane() {
     use crate::physics::Reserve;
 
     // A mind spent on scale and rich on gauge and translation — the
-    // exact state `Bubble.escrow`'s own doc describes.
+    // exact state `Well.escrow`'s own doc describes.
     let mut r = Reserve::of([0, 10, 10, 5]);
     assert!(!r.is_spent(), "a mind with any lane left has not yielded");
 

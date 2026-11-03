@@ -214,7 +214,7 @@ fn pivot_orbit_files_free_part_open_beside_demand() {
     // THE DEMAND IS ON THE SNAPS, NOT YET ON THE FORM, and this asserted
     // otherwise on the test author's reading rather than on the engine's. `pivot_orbit`
     // REPORTS the obstruction it met; `Form::stand_demand` is what writes
-    // the vertex, and the bubble calls it — `bubble/tests/demand.rs` is
+    // the vertex, and the well calls it — `field/tests/demand.rs` is
     // where the vertex on the form is asserted, on both pivot paths.
     // Claiming it here named a carrier this call does not write (rule 11).
     assert!(

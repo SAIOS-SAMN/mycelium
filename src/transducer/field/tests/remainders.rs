@@ -20,7 +20,7 @@ fn meet_graph_reads_remainders_at_shared_chart() {
         for ch in charts {
             cover.insert(ch, ());
         }
-        c.bubbles.insert(vec![i; 4], Bubble { cover, ..Bubble::default() });
+        c.wells.insert(vec![i; 4], Well { cover, ..Well::default() });
         vec![i; 4]
     };
     let (a, b) = (on(&mut c, 1, &[b"", b"c"]), on(&mut c, 2, &[b"", b"c"]));

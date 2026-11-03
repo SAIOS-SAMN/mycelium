@@ -1,6 +1,6 @@
-// 25 — THE IDEA: one bubble, its remainder, and the volume it holds.
+// 25 — THE IDEA: one well, its remainder, and the volume it holds.
 //
-//! A `Bubble` is a thought under contemplation: the form it carries, the
+//! A `Well` is a thought under contemplation: the form it carries, the
 //! remainder links it has not accounted for, the words it glues and is
 //! glued by, and the class it was seeded from.
 
@@ -74,13 +74,13 @@ pub(crate) fn remainder_site_key(r: i64, c: i64) -> crate::transducer::address::
     crate::transducer::address::Address::new(buf)
 }
 
-/// Receipts since a bubble's charts last moved, on the kernel's own K
+/// Receipts since a well's charts last moved, on the kernel's own K
 /// (law 9). The mark is a K this clock has already passed, so the extent
 /// is exact.
 ///
 /// `None` where the mark is ABOVE the clock: a K that went backwards is a
 /// broken count, and an extent of zero read off one is a measurement this
-/// clock cannot make, not a bubble that moved just now (rule 11).
+/// clock cannot make, not a well that moved just now (rule 11).
 pub(crate) fn held_since(now: u64, moved_k: u64) -> Option<u64> {
     now.checked_sub(moved_k)
 }
@@ -108,8 +108,8 @@ pub(crate) fn form_magnitude(f: &Form) -> Option<[u64; 4]> {
     crate::core::lanes::lanes_sum(std::iter::once(element::measure_lanes(&f.remainder)).chain(glued))
 }
 
-/// Every remainder link this bubble holds: the form's own and each pair's.
-pub(crate) fn remainder_links_of(b: &Bubble) -> Vec<Link> {
+/// Every remainder link this well holds: the form's own and each pair's.
+pub(crate) fn remainder_links_of(b: &Well) -> Vec<Link> {
     let mut out = b.remainder.to_vec();
     for (_, r) in b.remainders.scoped() {
         out.extend_from_slice(r);
@@ -163,10 +163,10 @@ pub(crate) fn union_rem(a: &[Link], b: &[Link]) -> Vec<Link> {
 /// it sits on. Keyed by the remainder's address. Persisted; residuals are
 /// never lost on restart.
 #[derive(Clone, Debug, Default)]
-pub struct Bubble {
+pub struct Well {
     /// A5's chain and the translator that places it in the scene (§2.1):
-    /// the chain is the identity this bubble is addressed by, the
-    /// translator is where it sits. A bubble holding a chain A5 refuses is
+    /// the chain is the identity this well is addressed by, the
+    /// translator is where it sits. A well holding a chain A5 refuses is
     /// never built, so the address never refuses.
     pub remainder: element::PlacedChain,
     pub nerve: Complex,
@@ -194,7 +194,7 @@ pub struct Bubble {
     /// across the demonstration frames of one family, so a perception meets
     /// only perceptions of its own family (`perceive_cells`).
     pub family: Vec<u8>,
-    /// TUniversal when this bubble's charts last moved.
+    /// TUniversal when this well's charts last moved.
     pub moved_k: u64,
     /// Z4d, MU-CLIENT §7.1 Phase 3 — THE ESCROW THIS THOUGHT IS HELD ON: the
     /// μ⃗ drawn from the voice's reserve to keep it, per lane — drawn once,
@@ -205,7 +205,7 @@ pub struct Bubble {
     pub escrow: [u64; 4],
     /// Addresses this idea glued (crystallized forms it rests on).
     pub glues: Keyed<()>,
-    /// Ideas that glued this bubble; a non-empty set is not shed.
+    /// Ideas that glued this well; a non-empty set is not shed.
     pub glued_by: Keyed<()>,
     /// Filed torsion `(σ, ℓ, chord)` keyed by class, written from `pivot_orbit`.
     pub torsion: Keyed<crate::transducer::sentence::FiledOrbit, coord::Holonomy>,
@@ -238,7 +238,7 @@ pub struct Bubble {
     pub form: Option<Form>,
     /// THE ROTOR ITS WORD VERTICES AGREE ON, derived ONCE when the form is
     /// taken and read thereafter (Z4 item 3). It read every vertex of the
-    /// form on every call, and `rotor_between` asks two bubbles for it per
+    /// form on every call, and `rotor_between` asks two wells for it per
     /// neighbour pair.
     ///
     /// Not on the tape: the decoder re-derives it from the form it decoded
@@ -438,8 +438,8 @@ pub(crate) fn monodromy(v: &Rotor, gammas: &[Rotor]) -> Option<Rotor> {
     Some(m)
 }
 
-impl Bubble {
-    /// Read off what the bubble holds on every call, never stored beside
+impl Well {
+    /// Read off what the well holds on every call, never stored beside
     /// it (rule 6, law 12): the remainder carries A5's proof in its type,
     /// so the address never refuses. A perception's is its form's and its
     /// spores' (`resonance::perceived_key`): the address it is filed at.
@@ -461,14 +461,14 @@ impl Bubble {
         }
     }
 
-    /// THE ROTOR THIS BUBBLE'S FORM SPEAKS, when it speaks ONE.
+    /// THE ROTOR THIS WELL'S FORM SPEAKS, when it speaks ONE.
     ///
     /// A form with several word vertices has several rotors, and which one
     /// arrives first is an insertion order, so a representative read would
     /// answer a different motion on a node that took the same bodies in
     /// differently (rule 15). It would cost more than a wrong answer
     /// downstream: `rotor_between` composes two of these into `rb ∘ ra⁻¹`
-    /// and calls that the transport between two bubbles, so two nodes
+    /// and calls that the transport between two wells, so two nodes
     /// would breed different transports from identical mathematics.
     ///
     /// A form whose word vertices all speak one rotor up to projective
@@ -479,7 +479,7 @@ impl Bubble {
     }
 
     /// The derivation itself, run once at `take_form` and at every other
-    /// site that builds a bubble around a form.
+    /// site that builds a well around a form.
     pub(crate) fn rotor_of_form(f: &Form) -> Option<Rotor> {
         let mut held: Option<Rotor> = None;
         for (_, v) in f.vertices.scoped() {
@@ -496,13 +496,13 @@ impl Bubble {
         held
     }
 
-    /// THE SECTIONS THIS BUBBLE'S FORM CARRIES: one per word vertex per
+    /// THE SECTIONS THIS WELL'S FORM CARRIES: one per word vertex per
     /// chart it acts on — the rotation it speaks there and the carriage it
     /// speaks it by. Keyed by both, so two vertices holding one section are
     /// one section and one vertex acting on two charts is two.
     ///
-    /// [`Bubble::rotor`] answers ONE rotor or absence, which is right for
-    /// `rotor_between` — two bubbles have one transport between them or they
+    /// [`Well::rotor`] answers ONE rotor or absence, which is right for
+    /// `rotor_between` — two wells have one transport between them or they
     /// have none. It is wrong for the cover: a form that speaks several
     /// rotors has several sections, and a reader that asks for one and
     /// takes the absence drops exactly the multi-section forms.
@@ -565,7 +565,7 @@ impl Bubble {
         let mut discharged: Vec<crate::transducer::address::Address> = Vec::new();
         // 37.7's candidates, carried out rather than dropped: the rotors this
         // stroke met that the seventeen cannot spell, each with the chart it
-        // was met on. The bubble cannot mint — minting writes a word into the
+        // was met on. The well cannot mint — minting writes a word into the
         // language and the language is the entity's — so it carries them.
         let mut adjoined: Vec<(Rotor, crate::transducer::stalk::Invariant)> = Vec::new();
         // THE POTENTIAL IS A READING, NEVER A GATE (L7b, law 9): the lane
@@ -808,7 +808,7 @@ impl Bubble {
     /// one candidate before this runs.
     ///
     /// OWED: a `Finite(ℓ ≥ 2)` period is content and wants filing on
-    /// `Bubble.torsion`, which is keyed by class and holds a `FiledOrbit`
+    /// `Well.torsion`, which is keyed by class and holds a `FiledOrbit`
     /// whose `chord` is a face index — and a demand's form has no faces for
     /// it to point at. The period is read and the candidate stands on it;
     /// where it is filed is an open ruling.
@@ -896,12 +896,12 @@ impl Bubble {
     /// out of each key through the class schema and compared at depth one
     /// — never a byte count, and never the whole key.
     ///
-    /// The read is this bubble's own carrier, which is one idea's boundary
+    /// The read is this well's own carrier, which is one idea's boundary
     /// (rule 1). A key that does not parse as a class vector is not a
     /// vortex of this system and is passed over rather than matched.
     fn vortex_at_stratum(&self, stratum: &[u8], word: &[u8]) -> Option<Vec<u8>> {
         let schema = crate::transducer::sentence::ClassVector::class_schema();
-        // index: this bubble's own vortices, its boundary
+        // index: this well's own vortices, its boundary
         for (class, candidates) in self.vortex.scoped() {
             if !candidates.contains(word) {
                 continue;
@@ -943,7 +943,7 @@ impl Bubble {
         //
         // The symmetries are carried out, not minted here, for the reason
         // every other adjunction is: minting writes a word into the language
-        // and a bubble does not hold the language.
+        // and a well does not hold the language.
         let losers: Vec<PivotCertificate> = inner.scoped().map(|(_, c)| c.clone()).collect();
         let symmetries = crate::transducer::sentence::symmetries(&win, &losers);
         if let Some(mut f) = self.form.clone() {
@@ -958,9 +958,9 @@ impl Bubble {
         Some(symmetries)
     }
 
-    /// THE CONJUGACY STRATA THIS BUBBLE'S VORTICES STAND AT: the depth-one
+    /// THE CONJUGACY STRATA THIS WELL'S VORTICES STAND AT: the depth-one
     /// coordinate of each outer key of `vortex`. The contemplation files
-    /// the bubble under each (`by_vortex`), so a deciding word's own class
+    /// the well under each (`by_vortex`), so a deciding word's own class
     /// key reaches it by a keyed read, and there is one construction of
     /// that coordinate for the writer and the reader (law 12).
     ///
@@ -969,7 +969,7 @@ impl Bubble {
     pub(crate) fn vortex_strata(&self) -> Vec<Vec<u8>> {
         let schema = crate::transducer::sentence::ClassVector::class_schema();
         let mut out = Vec::new();
-        // index: this bubble's own vortices, its boundary
+        // index: this well's own vortices, its boundary
         for (class, _) in self.vortex.scoped() {
             let Ok(end) = schema.boundary(&class, 1) else {
                 continue;
