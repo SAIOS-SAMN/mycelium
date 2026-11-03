@@ -20,8 +20,8 @@ pub(crate) fn report(dir: &str, names: &[String], painted: Painted) {
     let (mut conflicts, mut erasures, mut generators, mut demands) = (0u64, 0u64, 0u64, 0u64);
     let mut kinds = [0u64; 6];
     for name in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         tasks += 1;
         let mut physics = mycelium::physics::Physics::default();
         let mut budget = physics.stroke_n(STROKE);

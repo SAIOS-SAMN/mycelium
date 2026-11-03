@@ -159,7 +159,9 @@ scripts/quickstart
 1. Builds the release binaries if they are absent.
 2. Creates a key for every node.
 3. Writes the genesis allocation and each hypha's address and peers.
-4. Signs a 30-task corpus.
+4. Decodes the first 30 training tasks with the corpus's decoder
+   (`mycelium-arc-agi`, the crate `sources/arc-agi`) into posted task
+   files, and signs them as the network's corpus.
 5. Starts three hyphae (ports 7700–7702): the first mints the genesis and
    the other two adopt it.
 6. Runs the SDK client against them. The client reads the law register,
@@ -684,7 +686,6 @@ reconstruction). The corpus is obtained separately (see
 ```
 src/
   anastome/     wire protocol: signed speech acts and the codec of each
-  arc.rs        task grid types and the corpus location
   bin/          mycelium-server, mycelium-client, mycelium-soak
   chronometry/  receipt chain, TUniversal clock, keepers
   client/       the mind: perception, winding, conversation, seats (sdk/)
@@ -703,6 +704,9 @@ examples/       durable_drill.rs
 forms/          shared exact law forms (workspace member crate)
 sdk/            mycelium-sdk: the client SDK crate, and examples/client.rs
                 (a complete client)
+sources/        source decoders, kept outside the core (MU-SENSING §7):
+                arc-agi/ is the ARC-AGI-2 corpus's decoder, its
+                `mycelium-arc-agi` binary and its corpus tests
 xtask/          the gate: source-length bound, Euclidean-vocabulary check,
                 and clippy with -D warnings
 ops/            example systemd unit templates (edit the paths before use)
@@ -734,14 +738,26 @@ failure in the first does not hide the others:
   bounding boxes, subdivision trees, spatial hashes, voxels) named in code
   under the same directories.
 - **Clippy** (`xtask/lint/warnings.rs`): `cargo clippy --release
-  --workspace --all-targets -- -D warnings`, over `mycelium`, `forms` and
-  `mycelium-sdk`.
+  --workspace --all-targets -- -D warnings`, over `mycelium`, `forms`,
+  `mycelium-sdk` and `mycelium-source-arc-agi`.
 
-Test suites are run by module path. Some suites run corpus tasks.
+Test suites are run by module path. The core library reads no corpus; the
+suites that run corpus tasks are the decoder's
+(`cargo test -p mycelium-source-arc-agi`).
 
-**Corpus.** The ARC-AGI-2 dataset from the ARC Prize Foundation is read at
+**Corpus.** The ARC-AGI-2 dataset from the ARC Prize Foundation is read
+only by its decoder, the workspace crate `sources/arc-agi`, at
 `data/arc-agi-2/{training,evaluation}/*.json` relative to the repository
-root, or under the directory named by `MYCELIUM_CORPUS`.
+root, or under the directory named by `MYCELIUM_CORPUS`. A hypha, a
+client's feed and the soak read **posted tasks** (`<name>.task`,
+`dialogue::encode_posted_task`), which the decoder writes:
+
+```sh
+cargo build --release -p mycelium-source-arc-agi
+target/release/mycelium-arc-agi decode data/arc-agi-2/training /srv/corpus/arc-agi-2/training [LIMIT]
+```
+
+`scripts/quickstart` and `scripts/check` find the corpus the same way.
 
 **Lints.** The crate denies `unsafe_code`, float arithmetic, lossy casts,
 and `unwrap`/`expect`/`panic` outside tests. It also enforces a set of
@@ -814,7 +830,10 @@ printf '127.0.0.1:7611\n127.0.0.1:7612\n' > /srv/myc/a/peers
 corpus. Its manifest is then copied to every hypha, and each court
 registers any corpus whose manifest a genesis hypha signed. The manifest
 names the corpus directory by its absolute path, so that directory must
-exist at the same path on every host.
+exist at the same path on every host. The directory holds posted task
+files, written by a source's decoder (see
+[Building and testing](#building-and-testing)); the hypha reads no
+dataset's format.
 
 ```sh
 mycelium-server --home /srv/myc/a --sign-corpus /srv/corpus/arc-agi-2/training

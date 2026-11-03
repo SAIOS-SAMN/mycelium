@@ -2,7 +2,7 @@
 // REAL court (`Court::judge_solve`) on pairs it never saw, and the seam's
 // own `would_judge` agrees with that verdict, solved or refused.
 
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::client::sdk::rule::{sentence, would_judge, NoRule, Step, Symmetry};
 use crate::cognition::{Court, SolveVerdict};
 use crate::transducer::cga::{self, Mv};

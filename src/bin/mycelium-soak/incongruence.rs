@@ -32,8 +32,8 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     let (mut c_shared, mut c_first, mut c_second) = (0u64, 0u64, 0u64);
     let (mut tasks_whole, mut tasks_judged) = (0u64, 0u64);
     for name in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         let mut physics = mycelium::physics::Physics::default();
         let mut budget = physics.stroke_n(STROKE);
         let Some(rule) = extract_rule_with(&task.train, &empty, &mut budget) else { continue };

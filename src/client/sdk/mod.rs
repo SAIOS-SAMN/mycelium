@@ -40,7 +40,7 @@ pub use voice::*;
 pub use working_atlas::*;
 
 use crate::anastome::dialogue;
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::network::wire::{Frame, Stratum};
 use crate::transducer::element::Element;
 use std::cell::RefCell;

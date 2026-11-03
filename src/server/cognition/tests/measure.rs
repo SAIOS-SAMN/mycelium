@@ -4,7 +4,7 @@
 // conjugator added, lane by lane; a sentence's gluing only where its rings
 // compose.
 
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::cognition::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
@@ -118,7 +118,7 @@ fn gluing_of_reads_closure_beyond_words() {
     );
     let addr = spoken.address();
     assert_eq!(court.gluing_of(addr.as_bytes(), &spoken, &[]), [0; 4], "bound to no family: nothing");
-    let task = crate::registry::citation(&crate::registry::task_address(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task identity"));
+    let task = crate::registry::citation(&crate::registry::task_address(&crate::transducer::family::Task { train: family.clone(), test: Vec::new() }).expect("a task identity"));
     court.bind_task_family(task, family.clone());
     let codes = court.perceive_speech([1; 32], &task, std::slice::from_ref(&spoken));
     assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD], "spoken under its scene, it stands");

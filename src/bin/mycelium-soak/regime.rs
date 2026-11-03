@@ -66,8 +66,8 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     let mut stood = 0u64;
     let stand_start = Instant::now();
     for (k, file) in slice.iter().enumerate() {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         // THE MARKER A TRACE LINE IS GROUPED UNDER, written in the shape a
         // voice writes it so `scripts/timeline` reads one renderer for
         // both streams. It goes to stderr, where the traces are: a marker
@@ -113,8 +113,8 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
         let mut hold = Contemplation::new();
         let mut held = 0u64;
         for file in slice {
-            let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
-            let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+            let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
+            let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
             let frames = perceive_family(&task.train);
             let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
             let Some(r) = extract_rule_on(&task.train, &frames, &epi, &mut b) else { continue };
@@ -201,11 +201,11 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     }
 
     let path = format!("{dir}/{name}");
-    let Ok(json) = std::fs::read_to_string(&path) else {
+    let Ok(posted) = std::fs::read(&path) else {
         eprintln!("  regime refused: {path} does not read");
         std::process::exit(1);
     };
-    let Some(task) = mycelium::arc::parse_task(&json) else {
+    let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else {
         eprintln!("  regime refused: {path} is not a task");
         std::process::exit(1);
     };

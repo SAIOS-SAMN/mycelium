@@ -137,7 +137,7 @@ assert_eq!(k.pending.len(), 1, "the new listing is on the page");
 #[test]
 fn intake_draws_no_room_from_hypha() {
 let mut k = Court::new();
-let cover = crate::arc::family_cover(&[(vec![vec![1]], vec![vec![2]])])
+let cover = crate::transducer::family::magnitude::family_cover(&[(vec![vec![1]], vec![vec![2]])])
     .expect("a one-site pair measures");
 k.bind_identity([9; 32]);
 k.set_genesis_cover(cover);

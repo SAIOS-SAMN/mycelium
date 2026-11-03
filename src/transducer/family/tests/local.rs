@@ -3,7 +3,7 @@
 // right, a body it carries wrong is no part of it, a letter names no body,
 // and a sentence's gluing is the set of sites it closes beyond its words'.
 
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{from_connection, translator_versor};

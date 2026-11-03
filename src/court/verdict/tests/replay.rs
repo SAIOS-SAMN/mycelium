@@ -724,7 +724,7 @@ fn replay_form_refuses_free_orbit_and_wrong_period() {
 #[test]
 fn blind_replay_on_refuses_remainder_as_not_closed() {
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
-    let grid = |rows: &[&str]| -> crate::arc::Grid {
+    let grid = |rows: &[&str]| -> crate::transducer::family::Grid {
         rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
     };
     let (x, y) = (grid(&["1"]), grid(&["2"]));

@@ -294,7 +294,7 @@ fn map_of_class(key: &[u8]) -> Vec<(u8, u8)> {
 /// `None` where a part is itself changed in part (no part reading says it),
 /// or a class separates on no coordinate.
 fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::Invariant]) -> Option<Vec<Clause>> {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let parted: Vec<Pair<'_>> = pairs.iter().map(|p| Pair { x: p.x, y: p.y, bodies: perceive_parts(p.x) }).collect();
     let preds = predicates(&parted);
     let sels: Vec<Vec<Option<Vec<usize>>>> = parted.iter().map(|p| statement::select_each(&preds, p.x, &p.bodies)).collect();
@@ -345,7 +345,7 @@ fn agrees(clause: &Clause, p: &Pair<'_>) -> bool {
 
 /// The spoken clauses laid on the clauses' frame.
 fn grid_of(s: &statement::Spoken) -> Option<Grid> {
-    let mut g: Grid = vec![vec![crate::arc::ground(); s.frame.1]; s.frame.0];
+    let mut g: Grid = vec![vec![crate::transducer::raster::ground(); s.frame.1]; s.frame.0];
     for &(r, c, h) in &s.painted {
         *g.get_mut(usize::try_from(r).ok()?)?.get_mut(usize::try_from(c).ok()?)? = h;
     }
@@ -523,7 +523,7 @@ enum Fate {
 }
 
 fn fate(b: &Body, y: &Grid) -> Fate {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let cells = cells_of(b);
     let said: Vec<Option<u8>> = cells.iter().map(|&(r, c, _)| at(y, r, c)).collect();
     if cells.iter().zip(&said).all(|(c, s)| *s == Some(c.2)) {
@@ -642,7 +642,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
                     Some(true)
                 }
                 (Some(select), None) => {
-                    let void = crate::arc::ground();
+                    let void = crate::transducer::raster::ground();
                     let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
                     reacted.push(Clause { select, act: Act::Recolour(ground) });
                     related
@@ -684,7 +684,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
             // ground, on the bodies the separating coordinate selects.
             if erased.iter().any(|e| !e.is_empty()) {
                 let select = r.separate(&erased, &still).ok_or(Unread::Inseparable)?;
-                let void = crate::arc::ground();
+                let void = crate::transducer::raster::ground();
                 let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
                 base.push(Clause { select, act: Act::Recolour(ground) });
             }
@@ -806,7 +806,7 @@ type FillClass = (Vec<Vec<usize>>, PairCells);
 
 fn residue_of(r: &mut Reading<'_, '_>, clauses: &[Clause]) -> Result<Option<Residue>, Unread> {
     let Some(canvas) = r.speak(clauses)? else { return Ok(None) };
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let residue: Vec<Vec<(usize, usize, u8)>> = canvas
         .iter()
         .zip(&r.pairs)
@@ -985,7 +985,7 @@ struct Rays {
 /// `None` where the runs do not cover the residue, or a ray's bodies do not
 /// separate, or its runs carry no one paint.
 fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let n = r.pairs.len();
     let mut rays: crate::network::nerve::Keyed<Rays> = crate::network::nerve::Keyed::new();
     for (k, ((p, res), before)) in r.pairs.iter().zip(residue).zip(canvas).enumerate() {
@@ -1652,7 +1652,7 @@ fn read_copy(r: &Reading<'_, '_>, touched: &[Vec<usize>], every: &[Vec<usize>]) 
 /// table is read past what the pairs show), two pairs disagree on one, or
 /// the output is painted in more than one hue.
 fn read_panes(r: &Reading<'_, '_>) -> Option<Clause> {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let split = |along_rows: bool| -> Option<bool> {
         let gaps: Vec<Option<bool>> = r
             .pairs

@@ -19,18 +19,24 @@
 //! cycles, and each orbit's holonomy word up to projective equality (§1.5 —
 //! byte-exactness is not identity). A decode that "succeeds" and returns a
 //! poorer complex is the failure this exists to catch.
+//!
+//! Read through the corpus's decoder (ROADMAP track 26, S1; moved from the
+//! core's `transducer::family::tests::retract`).
 
-use crate::transducer::sentence::{form_vertex_key, from_address, Form};
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-/// The corpus this build reads (`arc::corpus`). A tree without it skips
-/// rather than passing: an assertion over no data is not a reading (rule 11).
+use mycelium::transducer::sentence::{form_vertex_key, from_address, Form};
+
+/// The corpus this build reads (`mycelium_source_arc_agi::corpus`). A tree
+/// without it skips rather than passing: an assertion over no data is not a
+/// reading (rule 11).
 fn corpus() -> String {
-    crate::arc::corpus("training")
+    mycelium_source_arc_agi::corpus("training")
 }
 
 /// How many tasks to extract. The property is per-form and the count is
 /// only how much of the corpus one gate run affords.
-pub(super) const TASKS: usize = 40;
+const TASKS: usize = 40;
 
 /// The two forms agree as COMPLEXES, compared ORDER-INDEPENDENTLY.
 ///
@@ -46,7 +52,7 @@ pub(super) const TASKS: usize = 40;
 /// poorer complex. Counts, the multiset of vertex kinds, the chains the key
 /// carries as another object's address, and the bundle's own coordinates.
 fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
-    use crate::transducer::sentence::Vertex;
+    use mycelium::transducer::sentence::Vertex;
     if a.vertices.len() != b.vertices.len() {
         return Err(format!("vertices {} vs {}", a.vertices.len(), b.vertices.len()));
     }
@@ -78,7 +84,7 @@ fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
     // AT1 — ONE OVERLAP PER MEMBER PAIR PER FRAME: the member pairs are the
     // overlaps themselves, so they are compared by charts rather than
     // summed per face (a face no longer holds several).
-    let pairs = |f: &Form| -> Vec<crate::network::nerve::coord::Overlap> { f.faces.entries().map(|(o, _)| o).collect() };
+    let pairs = |f: &Form| -> Vec<mycelium::network::nerve::coord::Overlap> { f.faces.entries().map(|(o, _)| o).collect() };
     if pairs(a) != pairs(b) {
         return Err(format!("member pairs {} vs {}", pairs(a).len(), pairs(b).len()));
     }
@@ -99,7 +105,7 @@ fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
     // bodies (the receipts envelope refills them). What the key carries is
     // the chain's COORDINATES — kind, chart, measure per lane, piece count —
     // and those are the demand's own key, so the demands are compared by it.
-    let bodies = |f: &Form| -> Vec<crate::network::nerve::coord::VertexAt> { f.demands().map(|(at, _)| at).collect() };
+    let bodies = |f: &Form| -> Vec<mycelium::network::nerve::coord::VertexAt> { f.demands().map(|(at, _)| at).collect() };
     if bodies(a) != bodies(b) {
         return Err(format!("demand coordinates {:?} vs {:?}", bodies(a), bodies(b)));
     }
@@ -107,7 +113,7 @@ fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
     // address holds `remainder_at` (measure, pieces, corner) and no chain,
     // which rides the record; the two are compared where both stand.
     let remainder_at = |f: &Form| {
-        f.remainder_at.or_else(|| crate::transducer::sentence::ChainAt::of(&f.remainder.placed()))
+        f.remainder_at.or_else(|| mycelium::transducer::sentence::ChainAt::of(&f.remainder.placed()))
     };
     if remainder_at(a) != remainder_at(b) {
         return Err(format!("the A5 remainder differs: {:?} vs {:?}", remainder_at(a), remainder_at(b)));
@@ -143,16 +149,16 @@ fn from_address_retracts_every_corpus_form() {
     names.truncate(TASKS);
     assert!(!names.is_empty(), "the corpus directory holds no tasks");
 
-    let epi = crate::client::sdk::Epigenome::new();
-    let mut physics = crate::physics::Physics::default();
+    let epi = mycelium::client::sdk::Epigenome::new();
+    let mut physics = mycelium::physics::Physics::default();
     let (mut seen, mut with_orbits) = (0usize, 0usize);
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
-        let Some(task) = crate::arc::parse_task(&json) else { continue };
-        let frames = crate::transducer::family::perceive_family(&task.train);
+        let Some(task) = mycelium_source_arc_agi::parse_task(&json) else { continue };
+        let frames = mycelium::transducer::family::perceive_family(&task.train);
         let mut budget =
-            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
+            physics.stroke_n(mycelium::transducer::family::extraction_spend(&task.train, &frames));
+        let Some(rule) = mycelium::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
         else {
             continue;
         };
@@ -236,11 +242,11 @@ fn from_address_agrees_on_every_court_reading() {
     names.sort_unstable();
     names.truncate(TASKS);
 
-    let epi = crate::client::sdk::Epigenome::new();
-    let mut physics = crate::physics::Physics::default();
+    let epi = mycelium::client::sdk::Epigenome::new();
+    let mut physics = mycelium::physics::Physics::default();
     let (mut seen, mut diverged) = (0usize, 0usize);
-    let mut why: crate::network::nerve::Keyed<u64> = crate::network::nerve::Keyed::new();
-    let note = |k: &str, why: &mut crate::network::nerve::Keyed<u64>| {
+    let mut why: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
+    let note = |k: &str, why: &mut mycelium::network::nerve::Keyed<u64>| {
         match why.get_mut(k.as_bytes()) {
             Some(n) => *n += 1,
             None => {
@@ -250,11 +256,11 @@ fn from_address_agrees_on_every_court_reading() {
     };
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
-        let Some(task) = crate::arc::parse_task(&json) else { continue };
-        let frames = crate::transducer::family::perceive_family(&task.train);
+        let Some(task) = mycelium_source_arc_agi::parse_task(&json) else { continue };
+        let frames = mycelium::transducer::family::perceive_family(&task.train);
         let mut budget =
-            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
+            physics.stroke_n(mycelium::transducer::family::extraction_spend(&task.train, &frames));
+        let Some(rule) = mycelium::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
         else {
             continue;
         };
@@ -344,7 +350,7 @@ fn from_address_agrees_on_every_court_reading() {
 /// today, and a corpus form is whatever the scene turned out to be.
 #[test]
 fn form_vertex_key_keeps_carrier_invariants() {
-    use crate::transducer::sentence::as_element_form;
+    use mycelium::transducer::sentence::as_element_form;
 
     let mut forms: Vec<Form> = Vec::new();
     let corpus = corpus();
@@ -355,16 +361,16 @@ fn form_vertex_key_keeps_carrier_invariants() {
             .collect();
         names.sort_unstable();
         names.truncate(TASKS);
-        let epi = crate::client::sdk::Epigenome::new();
-        let mut physics = crate::physics::Physics::default();
+        let epi = mycelium::client::sdk::Epigenome::new();
+        let mut physics = mycelium::physics::Physics::default();
         for name in &names {
             let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
-            let Some(task) = crate::arc::parse_task(&json) else { continue };
-            let frames = crate::transducer::family::perceive_family(&task.train);
+            let Some(task) = mycelium_source_arc_agi::parse_task(&json) else { continue };
+            let frames = mycelium::transducer::family::perceive_family(&task.train);
             let mut budget =
-                physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
+                physics.stroke_n(mycelium::transducer::family::extraction_spend(&task.train, &frames));
             if let Some(rule) =
-                crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
+                mycelium::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
             {
                 forms.push(rule.form);
             }
@@ -377,14 +383,14 @@ fn form_vertex_key_keeps_carrier_invariants() {
     // forms at one site (the multi-sheeted seam), and a nested host citing
     // a citing form. Built rather than hand-written so they carry real
     // geometry and not a shape chosen to pass.
-    let cited: Vec<(Form, crate::transducer::address::Address)> = forms
+    let cited: Vec<(Form, mycelium::transducer::address::Address)> = forms
         .iter()
         .filter(|f| f.is_closed())
         .take(2)
         .filter_map(|f| as_element_form(f, [1, 0, 0, 0]).map(|e| (f.clone(), e.address())))
         .collect();
     if let [(a, a_at), (b, b_at)] = cited.as_slice() {
-        let identity = crate::transducer::alphabet::Word::identity();
+        let identity = mycelium::transducer::alphabet::Word::identity();
         let mut one = Form::default();
         if one.glue(a, a_at.clone(), identity.clone(), [0, 0, 0, 1]).is_some() {
             let mut two = one.clone();
@@ -411,12 +417,12 @@ fn form_vertex_key_keeps_carrier_invariants() {
         // 1 — RETRACTION. The key is what the form IS (law 2), so decoding
         // it returns the form and re-keying that returns the key. A decode
         // that "succeeds" and yields a poorer complex is what this catches.
-        let key = crate::transducer::sentence::form_vertex_key(f);
+        let key = mycelium::transducer::sentence::form_vertex_key(f);
         let back = from_address(&key).expect("every minted form decodes from its own key");
         assert_eq!(form_vertex_key(&back), key, "from_address(address(F)) ≡ F on the key");
         assert_eq!(
             e.address().tag(),
-            Some(crate::transducer::address::TAG_FORM),
+            Some(mycelium::transducer::address::TAG_FORM),
             "and the word is a sentence by its grade-0 coordinate, not by a tape"
         );
         assert!(e.description().is_empty(), "which it no longer carries");
@@ -429,18 +435,18 @@ fn form_vertex_key_keeps_carrier_invariants() {
             let host = x.host();
             assert!(
                 back.vertices.scoped().any(|(_, v)| {
-                    matches!(v, crate::transducer::sentence::Vertex::Glued { .. })
-                        && crate::transducer::sentence::vertex_bytes(v) == host.as_bytes()
+                    matches!(v, mycelium::transducer::sentence::Vertex::Glued { .. })
+                        && mycelium::transducer::sentence::vertex_bytes(v) == host.as_bytes()
                 }),
                 "no phantom edge: every citation anchors to a boundary the complex holds"
             );
         }
         for (_, v) in back.vertices.scoped() {
-            if !matches!(v, crate::transducer::sentence::Vertex::Glued { .. }) {
+            if !matches!(v, mycelium::transducer::sentence::Vertex::Glued { .. }) {
                 continue;
             }
-            let site = crate::transducer::sentence::vertex_bytes(v);
-            let mut sheets: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+            let site = mycelium::transducer::sentence::vertex_bytes(v);
+            let mut sheets: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
             let mut n = 0usize;
             for x in env.nerve.iter().filter(|x| x.host().as_bytes() == site) {
                 n += 1;
@@ -464,7 +470,7 @@ fn form_vertex_key_keeps_carrier_invariants() {
             let q = |n: i64| {
                 num_rational::BigRational::from(num_bigint::BigInt::from(n))
             };
-            let round = crate::transducer::element::NerveRound {
+            let round = mycelium::transducer::element::NerveRound {
                 charts: env.nerve.iter().map(|x| x.target.clone()).collect(),
                 points: vec![
                     [q(0), q(0), q(0), q(1)],
@@ -475,12 +481,12 @@ fn form_vertex_key_keeps_carrier_invariants() {
             };
             assert_eq!(round.grade(), 2, "two charts wedge to a geodesic point pair");
             assert_eq!(
-                round.stabilises(&crate::transducer::cga::Mv::scalar(q(1))),
+                round.stabilises(&mycelium::transducer::cga::Mv::scalar(q(1))),
                 Some(true),
                 "and the identity transition carries the round onto itself"
             );
             assert_eq!(
-                round.shear(&crate::transducer::cga::Mv::scalar(q(1))),
+                round.shear(&mycelium::transducer::cga::Mv::scalar(q(1))),
                 None,
                 "with no shear to declare"
             );

@@ -115,6 +115,50 @@ pub fn decode_grids(b: &[u8]) -> Option<Vec<Vec<Vec<u8>>>> {
     (p == b.len()).then_some(out)
 }
 
+/// THE POSTED TASK FILE'S EXTENSION: what a hypha's corpus directory, a
+/// client's feed and the soak list (ROADMAP track 26, S1).
+pub const POSTED_TASK: &str = "task";
+
+/// A TASK AS A SOURCE POSTS IT (MU-SENSING §6; ROADMAP track 26, S1): the
+/// source-neutral form a decoder writes and the hypha, the soak and a
+/// client's feed read, so none of them parses a dataset's format. The
+/// work envelope's own rasters, with the withheld test outputs the envelope
+/// never sends: `[nt u8][(input, output)·nt][nx u8][(input, output)·nx]`,
+/// each raster as the envelope writes it (an absent output the empty
+/// `0 × 0`). Decoded values, exact; the wire's samples of rank `n` replace
+/// it with the envelope (track 26, S5). `None` where a count or a raster
+/// passes its field.
+pub fn encode_posted_task(task: &crate::transducer::family::Task) -> Option<Vec<u8>> {
+    let mut out = Vec::new();
+    for pairs in [&task.train, &task.test] {
+        crate::transducer::address::put_u8_count(&mut out, pairs.len())?;
+        for (a, b) in pairs {
+            push_grid(&mut out, a)?;
+            push_grid(&mut out, b)?;
+        }
+    }
+    Some(out)
+}
+
+/// A posted task read back whole, or none: nothing after the last pair.
+pub fn decode_posted_task(b: &[u8]) -> Option<crate::transducer::family::Task> {
+    let mut p = 0usize;
+    let read_pairs = |p: &mut usize| -> Option<Vec<crate::transducer::family::TrainPair>> {
+        let n = usize::from(*b.get(*p)?);
+        *p += 1;
+        let mut pairs = Vec::new();
+        for _ in 0..n {
+            let a = read_grid(b, p)?;
+            let y = read_grid(b, p)?;
+            pairs.push((a, y));
+        }
+        Some(pairs)
+    };
+    let train = read_pairs(&mut p)?;
+    let test = read_pairs(&mut p)?;
+    (p == b.len()).then_some(crate::transducer::family::Task { train, test })
+}
+
 /// 78.141 — the signed bytes' domain of a solve.
 const SIGNED_SOLVE: &[u8] = b"mycelium solve v1";
 

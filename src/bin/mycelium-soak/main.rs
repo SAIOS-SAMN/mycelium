@@ -10,6 +10,11 @@
 //! The reading that matters is `glued` — rules citing a form this mind
 //! holds — which was structurally zero while the glue's read was
 //! performed against the form index (26, 27, 50.6).
+//!
+//! THE CORPUS IS A DIRECTORY OF POSTED TASKS (`dialogue::encode_posted_task`,
+//! ROADMAP track 26 S1), written by a source's decoder, for example
+//! `mycelium-arc-agi decode CORPUS/training DIR`; the soak parses no
+//! dataset's format.
 
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
@@ -97,7 +102,7 @@ fn main() {
     // a flag IS on a command line — a wire tag's own offset, rule 15's
     // second case — and the slice pattern reads it there without taking a
     // member by position.
-    // Y3's instrumentation (§8.1), `--mint <dir> <limit|name.json>`: trace
+    // Y3's instrumentation (§8.1), `--mint <dir> <limit|name.task>`: trace
     // lines for every task of the slice whose rule form closes, reading what
     // the mint is handed and which of its two calls refuses. It changes
     // nothing; it only prints.
@@ -398,9 +403,28 @@ fn main() {
         return;
     }
     // BQ3, STD1 — THE ORACLE'S GOLDEN FILE, written on the carrier it
-    // stands for: a flag here, never an ignored test (§6.4).
+    // stands for: a flag here, never an ignored test (§6.4). `DIR` holds
+    // the posted tasks a decoder wrote from the corpus's training split
+    // (ROADMAP track 26, S1); the harvest reads its first files in name
+    // order, as the decoder's test of the golden file does.
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--write-oracle-golden") {
-        match mycelium::transducer::cga::oracle::write_golden() {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  oracle refused: name the directory of posted tasks");
+            std::process::exit(1);
+        };
+        let names = match slice_names(dir, mycelium::transducer::cga::oracle::TASKS) {
+            Ok(n) => n,
+            Err(e) => {
+                eprintln!("  oracle refused: {e}");
+                std::process::exit(1);
+            }
+        };
+        let tasks: Vec<_> = names
+            .iter()
+            .filter_map(|name| std::fs::read(format!("{dir}/{name}")).ok())
+            .filter_map(|posted| mycelium::anastome::dialogue::decode_posted_task(&posted))
+            .collect();
+        match mycelium::transducer::cga::oracle::write_golden(&tasks) {
             Ok(n) => eprintln!("  oracle: {n} readings written to {}", mycelium::transducer::cga::oracle::GOLDEN),
             Err(e) => {
                 eprintln!("  oracle refused: the golden file did not write: {e}");
@@ -575,10 +599,10 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, Strin
     let mut k = 0u64;
     for name in &names {
         let path = format!("{dir}/{name}");
-        let Ok(json) = std::fs::read_to_string(&path) else {
+        let Ok(posted) = std::fs::read(&path) else {
             continue;
         };
-        let Some(task) = mycelium::arc::parse_task(&json) else {
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else {
             continue;
         };
         r.tasks += 1;

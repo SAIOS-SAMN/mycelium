@@ -151,7 +151,7 @@ pub(crate) fn delta_links(a: &Body, b: &Body) -> Vec<Link> {
     for l in &b.compartments {
         after.insert(l.site.key(), l.hue);
     }
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut links: Vec<Link> = Vec::new();
     for l in &a.compartments {
         // A site the image does not hold is absent there, and the scene's

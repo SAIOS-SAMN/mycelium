@@ -12,6 +12,10 @@
 //! folder) and at the first reading; each new family is handed out once to
 //! be placed at its coordinates, and taken back by its citation where the
 //! mind's focus meets it.
+//!
+//! A FEED FILE IS A POSTED TASK (`dialogue::encode_posted_task`, ROADMAP
+//! track 26, S1): a source's decoder writes it, and the feed parses no
+//! dataset's format.
 
 use crate::network::nerve::Keyed;
 use std::path::{Path, PathBuf};
@@ -24,7 +28,8 @@ pub fn pending_feed(home: &Path) -> Vec<PathBuf> {
     let Ok(rd) = std::fs::read_dir(home.join("feed")) else {
         return Vec::new();
     };
-    let mut files: Vec<_> = rd.filter_map(|e| e.ok().map(|e| e.path())).filter(|p| p.extension().is_some_and(|x| x == "json")).collect();
+    let posted = crate::anastome::dialogue::POSTED_TASK;
+    let mut files: Vec<_> = rd.filter_map(|e| e.ok().map(|e| e.path())).filter(|p| p.extension().is_some_and(|x| x == posted)).collect();
     files.sort();
     files
 }
@@ -95,7 +100,7 @@ impl Feed {
     /// where a family arrived since the last listing, and every file not yet
     /// handed out read whole — one that holds no task is retired. None where
     /// nothing arrived.
-    pub(crate) fn arrivals(&mut self) -> Vec<(PathBuf, crate::arc::Task)> {
+    pub(crate) fn arrivals(&mut self) -> Vec<(PathBuf, crate::transducer::family::Task)> {
         if !self.arrived.swap(false, Ordering::SeqCst) {
             return Vec::new();
         }
@@ -106,7 +111,7 @@ impl Feed {
                 continue;
             }
             self.listed.insert(key, ());
-            match std::fs::read_to_string(&path).ok().and_then(|t| crate::arc::parse_task(&t)) {
+            match std::fs::read(&path).ok().and_then(|t| crate::anastome::dialogue::decode_posted_task(&t)) {
                 Some(task) => out.push((path, task)),
                 None => retire(&path),
             }
@@ -121,9 +126,9 @@ impl Feed {
 
     /// THE FAMILY AT ITS CITATION, read again from its file; none where the
     /// file left or no longer reads.
-    pub(crate) fn take(&self, id: &[u8]) -> Option<(PathBuf, crate::arc::Task)> {
+    pub(crate) fn take(&self, id: &[u8]) -> Option<(PathBuf, crate::transducer::family::Task)> {
         let path = self.files.get(id)?.clone();
-        let task = std::fs::read_to_string(&path).ok().and_then(|t| crate::arc::parse_task(&t))?;
+        let task = std::fs::read(&path).ok().and_then(|t| crate::anastome::dialogue::decode_posted_task(&t))?;
         Some((path, task))
     }
 

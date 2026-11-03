@@ -556,6 +556,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "mycelium-source-arc-agi"
+version = "0.3.0-rc.2"
+dependencies = [
+ "mycelium",
+ "num-bigint",
+ "num-rational",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "nix"
 version = "0.31.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

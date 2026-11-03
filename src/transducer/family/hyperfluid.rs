@@ -98,7 +98,7 @@ pub fn flows(x: &Grid, y: &Grid) -> Option<Vec<Flow>> {
     }
     let mut out = Vec::new();
     // The void sites the light reaches, gathered where each ray is read.
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut lit: Vec<(i64, i64)> = Vec::new();
     for (r, row) in x.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
@@ -217,7 +217,7 @@ fn table(pairs: &[(&[Site], &[Flow])], axis: usize) -> (Keyed<Held>, TimeClosure
                         Congruence::InTime => cl.in_time += 1,
                         Congruence::Gauge => {
                             cl.gauge += 1;
-                            cl.gauge_void += u64::from(s.hue == crate::arc::ground());
+                            cl.gauge_void += u64::from(s.hue == crate::transducer::raster::ground());
                         }
                         Congruence::Light => cl.light += 1,
                     }
@@ -258,7 +258,7 @@ pub struct InTime {
 /// Carry an input field by a table in time. `Err(())` where a free ray's
 /// time is unread; `Ok(None)` where a key is unseen.
 fn carried(x: &Grid, sites: &[Site], t: &Keyed<Held>, axis: usize) -> Result<Option<Grid>, ()> {
-    let mut out: Grid = x.iter().map(|row| vec![crate::arc::ground(); row.len()]).collect();
+    let mut out: Grid = x.iter().map(|row| vec![crate::transducer::raster::ground(); row.len()]).collect();
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let Some(held) = t.get(&key(s, axis)) else { return Ok(None) };

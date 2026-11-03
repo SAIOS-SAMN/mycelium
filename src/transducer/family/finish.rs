@@ -87,7 +87,7 @@ pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frame
     // A pair of one enclosure visits at most its own sites, already counted
     // above.
     for (a, b) in family {
-        let (Ok(x), Ok(y)) = (crate::arc::sample_unplaced(a), crate::arc::sample_unplaced(b)) else { continue };
+        let (Ok(x), Ok(y)) = (crate::transducer::raster::sample_unplaced(a), crate::transducer::raster::sample_unplaced(b)) else { continue };
         let (p, q) = (super::transduce::Enclosure::of(&x), super::transduce::Enclosure::of(&y));
         if p.is_same_periods(&q) {
             continue;

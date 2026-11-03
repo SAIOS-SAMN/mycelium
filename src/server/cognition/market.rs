@@ -347,7 +347,7 @@ impl Court {
     /// shared — a thousand unrelated descriptions (I34). A body already
     /// speakable or already listed is not listed again; the intake answers
     /// whether anything new was.
-    pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> bool {
+    pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)], frame: &crate::transducer::element::Frame) -> bool {
         self.intake_prepared(&prepare_intake(chain, frame))
     }
 
@@ -379,7 +379,7 @@ impl Court {
 /// refusal that travels: never listed and never counted (U14).
 pub fn prepare_intake(
     chain: &[(i64, i64, u8, u8)],
-    frame: &crate::arc::Frame,
+    frame: &crate::transducer::element::Frame,
 ) -> Vec<(Element, crate::transducer::stalk::Invariant)> {
     if chain.is_empty() {
         return Vec::new();

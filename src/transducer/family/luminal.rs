@@ -125,7 +125,7 @@ fn waveform(h: &[u8]) -> Option<(u64, Vec<u8>)> {
 /// The output's lit run along `dir` from `(r, c)` (exclusive), over sites the
 /// input leaves free: its hues and its sites.
 fn lit_run(x: &Grid, y: &Grid, (r, c): (i64, i64), dir: (i64, i64)) -> (Vec<u8>, Vec<(i64, i64)>) {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let (mut hues, mut sites) = (Vec::new(), Vec::new());
     let mut t = 1i64;
     loop {
@@ -178,7 +178,7 @@ fn rays_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], lit_by_ray: &mut Vec<(i64,
                     Some((hue, (br, bc))) => {
                         // Through the body, then what the output shows past it.
                         let mut t = 0i64;
-                        while at(x, br + t * dir.0, bc + t * dir.1).is_some_and(|h| h != crate::arc::ground()) {
+                        while at(x, br + t * dir.0, bc + t * dir.1).is_some_and(|h| h != crate::transducer::raster::ground()) {
                             t += 1;
                         }
                         let exit = (br + (t - 1) * dir.0, bc + (t - 1) * dir.1);
@@ -222,7 +222,7 @@ fn cavities_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], captured: &mut Vec<(i6
     for (r0, row) in x.iter().enumerate() {
         for (c0, &h) in row.iter().enumerate() {
             let start = (r0 as i64, c0 as i64);
-            if h != crate::arc::ground() || seen.contains(&start) {
+            if h != crate::transducer::raster::ground() || seen.contains(&start) {
                 continue;
             }
             // The empty component, 4-connected.

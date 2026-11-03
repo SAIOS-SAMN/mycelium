@@ -208,7 +208,7 @@ The pipeline:
 
 1. **Perception.** `perceive_family` calls `perceive_at` on each grid of
    each pair (`src/transducer/family/perceive.rs`). The family's ground
-   (`ground_of` in `src/arc.rs`: hue 0 where any grid shows it, otherwise
+   (`ground_of` in `src/transducer/raster.rs`: hue 0 where any grid shows it, otherwise
    the hue of the greatest exact cell count, untied) is the background the
    eye does not see. The other cells are grouped into hue-blind,
    edge-connected bodies (MU-RECURSION 70.4).

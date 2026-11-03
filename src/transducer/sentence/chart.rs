@@ -363,8 +363,9 @@ pub(crate) fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
 }
 
 /// A VERTEX'S OWN RECORD, as the key writes it: a Glued vertex's SITE is
-/// this (54.7 B5a).
-pub(crate) fn vertex_bytes(v: &Vertex) -> Vec<u8> {
+/// this (54.7 B5a). Public so the corpus decoder's retract claims
+/// (`sources/arc-agi`, ROADMAP track 26 S1) read the site the key writes.
+pub fn vertex_bytes(v: &Vertex) -> Vec<u8> {
     let mut b = Vec::new();
     put_vertex(&mut b, v);
     b

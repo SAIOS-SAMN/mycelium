@@ -20,7 +20,7 @@ pub fn germinate(
     b: &[(i64, i64, u8)],
 ) -> Option<crate::transducer::element::PlacedChain> {
     // Collect the union of sites with the sites' before/after hues.
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut links: ResidualGerm = Vec::new();
     let upsert = |links: &mut ResidualGerm, r: i64, c: i64, before: u8, after: u8| {
         match links.iter_mut().find(|(rr, cc, _, _)| *rr == r && *cc == c) {
@@ -58,7 +58,7 @@ pub fn germinate(
 /// with `after`. Reproduces the demand it was minted from — the germination
 /// closes.
 pub fn apply(germ: &[(i64, i64, u8, u8)], a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut out: Vec<(i64, i64, u8)> = a.to_vec();
     for (r, c, _before, after) in germ {
         out.retain(|(rr, cc, _)| !(rr == r && cc == c)); // clear the site

@@ -4,7 +4,7 @@
 // lowering on every act, the identity carriage IS the hue map, and an
 // element no act names is said all the same.
 
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::core::Q;
 use crate::transducer::cga::{rotator, translator_at, Mv};
 use crate::transducer::family::statement::{speak_clauses, speak_elements, Unstated};

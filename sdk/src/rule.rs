@@ -56,9 +56,6 @@ pub use mycelium::transducer::sentence::{ObstructionRefusal, SentenceRule};
 /// The element a solve carries as its rule's tape (`Element::to_bytes`).
 pub use mycelium::transducer::element::Element;
 
-/// A grid of hues, row by row.
-pub use mycelium::arc::Grid;
-
 /// A multivector of `Cl(4,1)(ℚ)`: a motion step's versor.
 pub use mycelium::transducer::cga::Mv;
 

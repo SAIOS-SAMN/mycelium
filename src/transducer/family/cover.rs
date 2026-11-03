@@ -427,7 +427,7 @@ pub(crate) fn cover_deformation(
     // (c) WHAT IS LEFT, AS A VOLUME. Both bodies (50.8 case 4): the
     // input's compartments no piece carried, and the image's compartments no piece
     // reached.
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut left: Vec<Link> = Vec::new();
     for l in &input.compartments {
         if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {

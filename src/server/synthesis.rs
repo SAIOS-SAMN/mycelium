@@ -6,7 +6,7 @@
 //! that were judged here carried a voice's painted sites to the court (law 8,
 //! ruled 2026-09-10); a voice speaks sentences, heard by `perceive_speech`.
 
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::server::held::held;
 
 /// The family's measured frame ratio — perception, identical across pairs

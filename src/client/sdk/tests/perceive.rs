@@ -71,17 +71,17 @@ fn perceive_scene_stops_once_on_reading() {
 #[test]
 fn scene_language_moves_only_for_word_on_own_chart() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
-    let word_of = |x: &crate::arc::Grid, y: &crate::arc::Grid| {
+    let word_of = |x: &crate::transducer::family::Grid, y: &crate::transducer::family::Grid| {
         let mut b = budget();
         let frames = perceive_family(&[(x.clone(), y.clone())]);
         let f = scene_form_on(&NoCrystal, &mut b, x, y, &frames).expect("the pair reads");
         crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word")
     };
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("resting"));
-    let slide: Vec<(crate::arc::Grid, crate::arc::Grid)> = two_hours_of_a_slide().to_vec();
+    let slide: Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)> = two_hours_of_a_slide().to_vec();
     let before = mind.scene_language(&slide);
     // A word on a chart elsewhere: one cell stepping a column.
-    let at = |c: usize| -> crate::arc::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
+    let at = |c: usize| -> crate::transducer::family::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
     mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word_of(&at(0), &at(1))));
     assert_eq!(mind.scene_language(&slide), before, "a word elsewhere leaves the slide's language where it was: it rests");
     // A word on the slide's own chart: its first hour, said as a word.
@@ -145,7 +145,7 @@ fn perceive_hearing_on_hears_at_rest_on_language_charts() {
     use crate::client::sdk::entity::converge::Evident;
     use crate::client::sdk::entity::offer::Offer;
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
-    let at = |c: usize| -> crate::arc::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
+    let at = |c: usize| -> crate::transducer::family::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
     let cell = vec![(at(0), at(1))];
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("at rest"));
     let mut field = std::mem::take(&mut mind.field);

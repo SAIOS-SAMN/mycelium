@@ -708,7 +708,7 @@ impl Court {
     /// so it is the lane-wise SUM over these pairs (12.6) and covers each of
     /// them; an envelope over them would not.
     pub(crate) fn measured_test_cover() -> Option<[u64; 4]> {
-        crate::arc::family_cover(&[
+        crate::transducer::family::magnitude::family_cover(&[
             (vec![vec![1, 1], vec![1, 0]], vec![vec![0, 1], vec![1, 1]]),
             (vec![vec![1, 1]], vec![vec![2, 2]]),
             (vec![vec![1, 1, 0, 0], vec![0, 0, 0, 0]], vec![vec![0, 0, 1, 1], vec![0, 0, 0, 0]]),

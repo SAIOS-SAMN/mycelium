@@ -58,7 +58,7 @@ exact rational, and the computation refuses otherwise.
 
 Sources: MU-RECURSION, "The laws this document is written under", laws 1
 and 4; MU-RECURSION 78.45. Code: `src/transducer/alphabet/rotor.rs::rational_sqrt`,
-`src/arc.rs::exact_root`.
+`src/transducer/family/fibre_relation.rs::exact_root`.
 
 #### 1.2 The algebra Cl(n+1, 1) over ℚ
 
@@ -863,7 +863,7 @@ X = 2x − (n − 1)
 A grid coordinate centred on its extent `n` and doubled, so every centre is
 an integer.
 
-Sources: MU-RECURSION 78.56. Code: `src/arc.rs::centred`.
+Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::centred`.
 
 #### 4.2 The envelope and the dilation between envelopes
 
@@ -879,8 +879,11 @@ onto the other. The code reduces `Σ e_to² / Σ e_from²` by its gcd and takes
 exact integer roots of numerator and denominator; it answers nothing where
 either is not a square.
 
-Sources: MU-RECURSION 78.56, 78.45. Code: `src/arc.rs::envelope_dilation`,
-`::carried_site`.
+Sources: MU-RECURSION 78.56, 78.45. Code:
+`src/transducer/family/fibre_relation.rs::envelope_dilation`,
+`::carried_site`. The squared extents are a defect against law 11
+(MU-SENSING §8), kept unchanged until the re-period of each phase
+replaces them (ROADMAP track 26, S4).
 
 #### 4.3 Momentum vanishing
 
@@ -892,7 +895,7 @@ A task carries no polar vector when this mass-weighted displacement is
 exactly zero. Where any pair's dilation is irrational the momentum is not
 read and the orientation is held physical.
 
-Sources: MU-RECURSION 78.56. Code: `src/arc.rs::momentum_vanishes`.
+Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::momentum_vanishes`.
 
 #### 4.4 Frame fixing by moments
 
@@ -906,7 +909,7 @@ Where the momentum vanishes, the lattice's frame is a gauge, fixed at the
 sensor by the scene's own moments. Ties and vanishing odd moments keep the
 frame given.
 
-Sources: MU-RECURSION 78.54, 78.56. Code: `src/arc.rs::frame_fixed`.
+Sources: MU-RECURSION 78.54, 78.56. Code: `src/transducer/raster.rs::frame_fixed`.
 
 #### 4.5 The four-lane measure of a chain
 

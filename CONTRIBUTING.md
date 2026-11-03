@@ -18,9 +18,14 @@ take part and the standards the tree is held to.
    (cd xtask && cargo run)        # the reading bound, the Euclidean check, clippy -D warnings
    ```
    Before a pull request, run `scripts/check`: the gate and the workspace
-   tests (`--no-fail-fast`), with a summary of both. Without the ARC-AGI-2
-   corpus at `data/arc-agi-2`, 18 corpus-dependent tests fail, and the
-   summary says the corpus is absent.
+   tests (`--no-fail-fast`), with a summary of both. The core library
+   reads no corpus: the ARC-AGI-2 corpus is read only by its decoder, the
+   workspace crate `sources/arc-agi`, at `data/arc-agi-2` or under
+   `MYCELIUM_CORPUS`. Without it, that crate's 20 corpus-dependent tests
+   fail, and the summary says the corpus is absent. `scripts/quickstart`
+   reads the corpus through the same decoder (`mycelium-arc-agi decode`),
+   and the hyphae it starts read the posted task files the decoder
+   writes.
 2. Bring up a local network and run the SDK client against it, following
    [README › Running a node](README.md#running-a-node) and
    [README › Building a client with the SDK](README.md#building-a-client-with-the-sdk).

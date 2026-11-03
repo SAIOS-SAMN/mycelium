@@ -17,8 +17,12 @@ rust-version = "1.82"
 # reads this tree from outside it. The root package is a member by being
 # the root; naming it "." would also claim every directory under it, and
 # `exclude` could not keep `xtask` out.
+#
+# MU-SENSING §7 — A SOURCE'S DECODER LIVES WITH ITS OWNER, OUTSIDE `src/`:
+# `sources/arc-agi` reads the ARC-AGI-2 corpus into the core's carriers. It
+# depends on the core, never the reverse (ROADMAP track 26, S1).
 [workspace]
-members = ["forms", "sdk"]
+members = ["forms", "sdk", "sources/arc-agi"]
 exclude = ["xtask"]
 
 [dependencies]

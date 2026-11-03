@@ -2,7 +2,7 @@
 // and seals the address; a sealed tape is refused by the mind before the
 // wire.
 
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::client::sdk::*;
 use crate::transducer::family::{cipher_form, sentence_measure, NoCrystal, TrainPair};
 use crate::transducer::sentence::{as_element_form, At, Contracted, RefusalKind, Vertex};

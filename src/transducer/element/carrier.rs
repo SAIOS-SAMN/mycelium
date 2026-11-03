@@ -1016,7 +1016,7 @@ pub const MEASURE_BOUND: &str =
 pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     let mut spatial = 0u64;
     let mut gauge = 0u64;
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut before_pos: Vec<(i64, i64)> = Vec::new();
     let mut after_pos: Vec<(i64, i64)> = Vec::new();
     for &(r, c, b, a) in chain {

@@ -4,7 +4,7 @@
 // one; the claim is the perspective's own: a HELD-OUT pair the family never
 // showed is re-derived exactly, every body spoken for.
 
-use crate::arc::Grid;
+use crate::transducer::family::Grid;
 use crate::transducer::family::{extract_rule, speak::speak_rule, NoCrystal};
 
 fn grid(rows: &[&str]) -> Grid {

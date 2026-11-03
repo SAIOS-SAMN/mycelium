@@ -8,13 +8,17 @@
 
 use crate::cognition::*;
 
-/// A family recoloured in place: 1 → 2 and 3 → 1, the base standing still.
-fn json(a: u8, b: u8, c: u8) -> String {
-    format!(
-        r#"{{"train":[{{"input":[[{a},{a},0,{c}]],"output":[[{b},{b},0,{a}]]}},
-                      {{"input":[[0,{c},{a},0]],"output":[[0,{a},{b},0]]}}],
-            "test":[{{"input":[[{a},0,{c},0]],"output":[[{b},0,{a},0]]}}]}}"#
-    )
+/// A family recoloured in place: 1 → 2 and 3 → 1, the base standing still;
+/// read as every decoder hands a task through (`raster::frame_fixed_on_ground`,
+/// ROADMAP track 26 S1).
+fn task(a: u8, b: u8, c: u8) -> crate::transducer::family::Task {
+    crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task {
+        train: vec![
+            (vec![vec![a, a, 0, c]], vec![vec![b, b, 0, a]]),
+            (vec![vec![0, c, a, 0]], vec![vec![0, a, b, 0]]),
+        ],
+        test: vec![(vec![vec![a, 0, c, 0]], vec![vec![b, 0, a, 0]])],
+    })
 }
 
 /// 78.55 — A THEOREM STANDS BY ITS PROOF. With {1→2} and {2→3} installed,
@@ -107,8 +111,7 @@ fn glue_fetched_admits_colour_word_by_rederived_witness() {
 /// evidence, taught by the syllabus and held by the mind that learns it.
 #[test]
 fn colour_word_mints_rules_teaches_and_holds() {
-    let task = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");
-    let permuted = crate::arc::parse_task(&json(7, 4, 9)).expect("the permuted task reads");
+    let (task, permuted) = (task(1, 2, 3), task(7, 4, 9));
     // THE MIND'S WORD: the fibre relation, as a colour word.
     let sigma = crate::transducer::family::fibre_relation(&task.train).expect("the fibre moved");
     let word = crate::transducer::element::colour_word(&sigma).expect("a relation that moves a hue");
@@ -119,7 +122,7 @@ fn colour_word_mints_rules_teaches_and_holds() {
     )
     .expect("a word");
     assert_ne!(word.address(), other.address(), "other channels are other colours: another word (78.56 II)");
-    let same = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");
+    let same = self::task(1, 2, 3);
     let again = crate::transducer::element::colour_word(
         &crate::transducer::family::fibre_relation(&same.train).expect("the same fibre"),
     )

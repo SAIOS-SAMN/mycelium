@@ -23,7 +23,7 @@ pub type Compartment = crate::transducer::blade::Compartment;
 pub fn grid_of_painted(painted: &[(i64, i64, u8)]) -> Grid {
     // The head only SEEDS the bounding box; the box is folded over every
     // site below, so no member is chosen here.
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let [(r0, c0, _), ..] = painted else {
         return vec![vec![void]];
     };
@@ -92,7 +92,7 @@ pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), Gr
     let h = (max_r - min_r + 1) as usize;
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the chain's bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let w = (max_c - min_c + 1) as usize;
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut before = vec![vec![void; w]; h];
     let mut after = vec![vec![void; w]; h];
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a chain site's offset inside the bounding box just sized from these same sites, 0 ≤ r − min_r < h and 0 ≤ c − min_c < w")]
@@ -167,7 +167,7 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
 /// that depends on its extent there, and a vertex keyed by it would find
 /// nothing on a frame perceived by itself.
 pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut compartments: Vec<Compartment> = Vec::new();
     for (r, row) in grid.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
@@ -185,7 +185,7 @@ pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
 /// clause on parts selects among (`Act::Parts`): a body recoloured in part is
 /// parts recoloured whole. Read in the lattice's order, hue by hue.
 pub fn perceive_parts(grid: &Grid) -> Vec<Body> {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut by_hue: crate::network::nerve::Keyed<Vec<Compartment>> = crate::network::nerve::Keyed::new();
     for (r, row) in grid.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
@@ -213,7 +213,7 @@ pub type Frames = Vec<(Vec<Body>, Vec<Body>)>;
 /// stroke is sized by ([`super::extraction_spend`]) and the percept then
 /// reads, so no frame's components are read a second time to size the draw.
 pub fn perceive_family(family: &[(Grid, Grid)]) -> Frames {
-    crate::arc::on_ground_of(family, || {
+    crate::transducer::raster::on_ground_of(family, || {
         family
             .iter()
             .enumerate()
@@ -226,7 +226,7 @@ pub fn perceive_family(family: &[(Grid, Grid)]) -> Frames {
 /// 6-connected components across the frames (51.3, 51.4, 70.4), the frame of each
 /// grid its place in the family.
 pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut compartments: Vec<Compartment> = Vec::new();
     for (k, grid) in grids.iter().enumerate() {
         for (r, row) in grid.iter().enumerate() {
@@ -247,7 +247,7 @@ pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
 /// of the section, which A5 refuses downstream — its chain is its sections,
 /// one per frame (51.4).
 pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8, u8)> {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut chain = Vec::new();
     match (a, b) {
         (Some(src), Some(dst)) => {
@@ -814,7 +814,7 @@ pub(crate) fn support_of(body: &Body) -> Vec<Site> {
 // through the tether or it does not enter at all.
 
 pub(crate) fn frame_of(g: &Grid) -> (usize, usize) {
-    (g.len(), crate::arc::grid_width(g))
+    (g.len(), crate::transducer::raster::raster_width(g))
 }
 
 /// Does everything a form spoke lie inside the grid it was spoken against?

@@ -42,7 +42,7 @@ pub fn speak_pair(k: &mut Court, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voi
         return Outcome::Pivot;
     };
     let family = family_of_pair(a, b);
-    let task = crate::registry::task_address(&crate::arc::Task { train: family.clone(), test: Vec::new() })
+    let task = crate::registry::task_address(&crate::transducer::family::Task { train: family.clone(), test: Vec::new() })
         .expect("a grid pair's chain is A5's, so the task has an identity");
     k.bind_task_family(&task, family);
     k.perceive_sentence(voice, task.as_bytes(), &e)

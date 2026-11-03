@@ -27,7 +27,7 @@ pub fn extract_rule_with(
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
-    crate::arc::on_ground_of(family, || {
+    crate::transducer::raster::on_ground_of(family, || {
         let frames = super::perceive::perceive_family(family);
         extract_rule_on(family, &frames, crystal, budget)
     })
@@ -44,7 +44,7 @@ pub fn extract_rule_on(
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
-    crate::arc::on_ground_of(family, || extract_rule_on_ground(family, frames, crystal, budget))
+    crate::transducer::raster::on_ground_of(family, || extract_rule_on_ground(family, frames, crystal, budget))
 }
 
 fn extract_rule_on_ground(

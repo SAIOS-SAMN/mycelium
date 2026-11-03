@@ -13,7 +13,7 @@
 //! there it went silent for minutes on a task whose chart takes seconds a
 //! pair once refinement was no longer capped (MU-DERIVATIONS D3.2).
 
-use crate::arc::Task;
+use crate::transducer::family::Task;
 use crate::server::registry::{TaskCitation, TaskRegistry};
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
@@ -53,13 +53,13 @@ pub fn routes_of(task: &Task) -> Vec<PairRoute> {
     use crate::transducer::family::transduce::Enclosure;
     let mut out = Vec::with_capacity(task.train.len());
     for (a, b) in &task.train {
-        let (Ok(x), Ok(y)) = (crate::arc::sample_unplaced(a), crate::arc::sample_unplaced(b)) else { continue };
+        let (Ok(x), Ok(y)) = (crate::transducer::raster::sample_unplaced(a), crate::transducer::raster::sample_unplaced(b)) else { continue };
         if !Enclosure::of(&x).is_same_periods(&Enclosure::of(&y)) {
             continue;
         }
         let chain = crate::transducer::family::speak::residual_of(Some(a), b);
-        let ([h, w], [h2, w2]) = (crate::arc::extents(a), crate::arc::extents(b));
-        let frame = crate::arc::Frame::new(h, w, h2, w2);
+        let ([h, w], [h2, w2]) = (crate::transducer::raster::extents(a), crate::transducer::raster::extents(b));
+        let frame = crate::transducer::element::Frame::new(h, w, h2, w2);
         let Some(residue) = crate::transducer::element::from_residual_framed(&chain, &frame) else {
             continue;
         };

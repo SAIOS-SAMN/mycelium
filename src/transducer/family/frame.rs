@@ -14,7 +14,7 @@ pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, 
     use super::transduce::Enclosure;
     let mut ratio = None;
     for (a, b) in family {
-        let (x, y) = (crate::arc::sample_unplaced(a).ok()?, crate::arc::sample_unplaced(b).ok()?);
+        let (x, y) = (crate::transducer::raster::sample_unplaced(a).ok()?, crate::transducer::raster::sample_unplaced(b).ok()?);
         let r = match Enclosure::of(&x).reperiod(&Enclosure::of(&y))?.as_slice() {
             &[first, second] => (first, second),
             _ => return None,

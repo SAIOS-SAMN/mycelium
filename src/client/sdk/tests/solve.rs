@@ -10,7 +10,7 @@ fn grid(rows: &[&str]) -> Vec<Vec<u8>> {
 }
 
 /// The domino painted 2 and carried two columns right, on two rows.
-fn family() -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
+fn family() -> Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)> {
     vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0022"])),

@@ -21,7 +21,7 @@ pub fn germ_address(g: &Element) -> crate::transducer::address::Address {
     clippy::disallowed_methods,
     reason = "rule 4 — a scene's extent is the largest coordinate its painted sites occupy, content"
 )]
-pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<crate::arc::Frame> {
+pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<crate::transducer::element::Frame> {
     // A scene's extent is its largest occupied coordinate plus one, which
     // the painted set determines (rule 4). An empty scene occupies no sites
     // and its extent is zero by measurement, not by default. An extent no
@@ -38,7 +38,7 @@ pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<crate::arc
     };
     let (hi, wi) = extent(a)?;
     let (ho, wo) = extent(b)?;
-    Some(crate::arc::Frame::new(hi, wi, ho, wo))
+    Some(crate::transducer::element::Frame::new(hi, wi, ho, wo))
 }
 
 /// One byte on the wire summarising an outcome (server → client reply). A

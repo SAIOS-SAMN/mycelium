@@ -73,7 +73,7 @@ pub(super) fn unreached_demands(
     chart: &Invariant,
     n_in: usize,
 ) -> Vec<Demanded> {
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     let mut out_links: Vec<Link> = Vec::new();
     for l in &b0.compartments {
         if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
@@ -118,7 +118,7 @@ pub(super) fn vanished(body: &Body) -> Demanded {
     let links: Vec<Link> = body
         .compartments
         .iter()
-        .filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, l.hue, crate::arc::ground())))
+        .filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, l.hue, crate::transducer::raster::ground())))
         .collect();
     (Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, body.moduli.clone(), links)
 }

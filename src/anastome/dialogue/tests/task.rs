@@ -8,7 +8,7 @@
 // Conformance by decoded values, never bytes (Concordance 1.4).
 
 use crate::anastome::dialogue::*;
-use crate::arc::Task;
+use crate::transducer::family::Task;
 use crate::registry::{citation, task_address, TaskRegistry};
 
 fn toy() -> Task {

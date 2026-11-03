@@ -32,7 +32,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
-| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1–S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
+| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2, S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready after T2 |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Ready |
@@ -1119,6 +1119,18 @@ Each phase is one commit:
      re-period.
    - Claims: a `compile_fail` doc test that the core has no `arc` module;
      the corpus tests pass through the decoder.
+   - **Built.** The decoder is the workspace crate `sources/arc-agi`
+     (`mycelium-source-arc-agi`, binary `mycelium-arc-agi`), with the
+     corpus tests (the bridge sweep, the retract claims, the rule
+     language's corpus tasks, the oracle's golden file). The hypha, the
+     soak and a client's feed read the posted task
+     (`dialogue::encode_posted_task`), the envelope's codec with the
+     withheld outputs, which the decoder writes; task addresses are
+     unchanged. The raster's readings moved to `transducer::raster`, the
+     envelopes' dilation beside the fibre map, `Frame` beside
+     `from_canonical_framed`, the magnitudes to `family::magnitude`;
+     `frame_ratio` had no caller and is deleted. Each moved reading is
+     listed as a defect in MU-SENSING §8.
 3. **S2, the ground deduced.** The ground is the reading of MU-SENSING
    §3.4, held per family, with candidates in superposition. The default
    `0` and the literal `h != 0` sites (about 64) are removed.

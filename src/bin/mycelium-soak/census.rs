@@ -27,7 +27,7 @@
 //! content (law 2); the paint is the SUM over the train inputs, which is a
 //! measure of the family and not a member elected to stand for it.
 
-use mycelium::arc::{Grid, Task};
+use mycelium::transducer::family::{Grid, Task};
 use mycelium::network::nerve::Keyed;
 
 /// What one family reads as. Each field is a reading taken over EVERY
@@ -205,8 +205,8 @@ pub(crate) fn report(dir: &str, names: &[String], want: &[String]) {
     // canonical, content, and no position chosen by a measurement (rule 4).
     let mut rows: Keyed<(String, Reading)> = Keyed::new();
     for file in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         // The registry's id, the task's 32-byte citation: an index keyed by
         // the content address copies megabytes per task (a 29×29 → 30×30
         // pair), and the citation is what a voice names the task by.

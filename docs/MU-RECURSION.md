@@ -11425,7 +11425,7 @@ sentence/chain.rs            neighbourhood generated from {−1,0,1}ⁿ;
                              contact by grade and differing axes
 sentence/chart.rs            the address writes n, then coordinates
 transducer/cga (D1)          the plane census generated from n
-server/registry, arc.rs      n read at intake and written into the family
+server/registry, raster.rs   n read at intake and written into the family
 ```
 
 ## 72. The physics is the only producer (ruled 2026-09-23)
@@ -13272,8 +13272,9 @@ test inputs; a withheld output never moves the frame), so a task in every
 frame reads the identical grids, mints the identical word and receives the
 identical verdict and price. As amended by 78.56, the frame is fixed only
 for a task whose centre-of-mass displacement vanishes; where it does not,
-the orientation is physical and kept. Code: `src/arc.rs` (`frame_fixed`,
-composed in `parse_task`).
+the orientation is physical and kept. Code: `src/transducer/raster.rs`
+(`frame_fixed`, composed in `frame_fixed_on_ground`, which a source's
+decoder hands every task through; ROADMAP track 26, S1).
 
 ### 78.55 The colour words compose: a mind derives a colour relation its ruled words imply
 
@@ -13337,7 +13338,7 @@ Code: `src/transducer/element/residual.rs` (`compose_fibre`,
   active bonds plus the work verified over the current window, each lane
   within the whole bond plus its own verified work.
 
-Code: `src/arc.rs` (`frame_fixed`).
+Code: `src/transducer/raster.rs` (`frame_fixed`).
 
 ### 78.57 Learning is a phase transition: the coherence form closes or files the missing blade
 
@@ -16355,9 +16356,9 @@ hyperoctahedral group of `2ⁿ·n!` elements, generated and never listed;
 ranks are refused `Rank`. The need is the product over the phases of each
 merge's arcs. O1: S and G are shares of the frame's measure, the product of
 its extents, and the ground is handed to `lane_shares` as a symbol. A cover
-reads its copies per phase. Until S1, an ARC grid reaches the transduction
-through `arc::sample_of` alone, and the projected record returns to planar
-links through `arc::links_of`. A task's content bytes are unchanged for
+reads its copies per phase. A raster reaches the transduction through
+`raster::sample_of` alone (`arc::sample_of` until S1), and the projected
+record returns to planar links through `raster::links_of`. A task's content bytes are unchanged for
 rank 2 and width 1, so no task address moves. O5's sub-enclosures have
 their carrier in `transduce::nest` (an axis of period `a · b` read as two
 nested phases, every factoring held together); the reading of the

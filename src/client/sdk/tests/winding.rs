@@ -38,7 +38,7 @@ fn speak_with_posts_only_at_own_thought_return() {
 }
 
 /// The scene a task's pairs make: one bar carried a column along.
-fn scene() -> (crate::arc::Grid, crate::arc::Grid) {
+fn scene() -> (crate::transducer::family::Grid, crate::transducer::family::Grid) {
     (vec![vec![0, 0, 0], vec![1, 1, 0], vec![0, 0, 0]], vec![vec![0, 0, 0], vec![0, 1, 1], vec![0, 0, 0]])
 }
 

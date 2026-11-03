@@ -91,7 +91,7 @@ fn vertex_cites_by(
     let mut before: Vec<(i64, i64, u8)> = Vec::new();
     let mut after: Keyed<u8> = Keyed::new();
     let mut out_support: Vec<(i64, i64)> = Vec::new();
-    let void = crate::arc::ground();
+    let void = crate::transducer::raster::ground();
     for &(r, c, b, a) in piece {
         if b != void {
             before.push((r, c, b));

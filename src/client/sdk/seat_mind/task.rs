@@ -144,7 +144,7 @@ pub fn grid_steps(rule: &Element, in_shape: (usize, usize), out_shape: (usize, u
 /// THE CALL'S ARGUMENTS: the rule's tape, the test outputs as the solve act
 /// writes grids, and the steps where there are any. `None` where a tape
 /// passes its carrier.
-pub fn solve_args(rule: &Element, outputs: &[crate::arc::Grid], steps: &[u64]) -> Option<Vec<Arg>> {
+pub fn solve_args(rule: &Element, outputs: &[crate::transducer::family::Grid], steps: &[u64]) -> Option<Vec<Arg>> {
     let mut args = vec![Arg::Bytes(rule.to_bytes()?), Arg::Bytes(crate::anastome::dialogue::encode_grids(outputs)?)];
     args.extend(steps.iter().map(|s| Arg::Count(*s)));
     Some(args)
