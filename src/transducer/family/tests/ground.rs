@@ -45,6 +45,34 @@ fn vortex_ground_read_once_per_candidate() {
     assert_eq!(once, vec![(Ground::One(0), Ground::One(0))], "one ground, one run");
 }
 
+/// TRACK 26 S2 — A MEMBRANE IS HELD, NEVER FLATTENED: a frame of 8 around a
+/// canvas of 0 holding a dot, the frame recoloured 7 in the output. Read on
+/// the interior's perspective (0), the frame is a body of the percept with
+/// its symbol and its sites, and the pair's transduction carries its change
+/// 8 → 7 among its incidences, on the gauge lane (one painted symbol to
+/// another). "Never the ground" is never "not perceived".
+#[test]
+fn membrane_is_held_and_its_change_is_read() {
+    use crate::transducer::family::transduce::Transduction;
+    let x = grid(&["888888", "800008", "801008", "800008", "800008", "888888"]);
+    let y = grid(&["777777", "700007", "701007", "700007", "700007", "777777"]);
+    let family = vec![(x.clone(), y.clone())];
+    assert!(crate::transducer::raster::ground_of(&family).holds(&0), "the framed interior is a candidate");
+    let bodies = crate::transducer::raster::on_ground(Ground::One(0), || perceive(&x));
+    let frame = bodies.iter().find(|b| b.compartments.iter().all(|l| l.hue == 8)).expect("the frame is a body of the percept");
+    assert_eq!(frame.compartments.len(), 20, "every site of the frame, edge sites included");
+    let (a, b) = (crate::transducer::raster::sample_unplaced(&x).expect("stands"), crate::transducer::raster::sample_unplaced(&y).expect("stands"));
+    let need = crate::transducer::family::transduce::need_of(&a, &b).expect("one rank");
+    let t = Transduction::of(&a, &b, &mut crate::physics::Physics::default().stroke_n(need)).expect("the need is the stroke");
+    assert!(
+        t.changed().any(|i| t.from.bands.get(i.band_in).is_some_and(|band| band.symbol().bytes() == [8])
+            && t.to.bands.get(i.band_out).is_some_and(|band| band.symbol().bytes() == [7])),
+        "the frame's change 8 → 7 is an incidence of the transduction"
+    );
+    let [_, gauge] = t.lane_shares(&Ground::One(vec![0]));
+    assert_eq!(gauge, crate::core::Q::new(20.into(), 36.into()), "the frame's 20 of 36 sites changed, painted to painted");
+}
+
 /// OUTSIDE EVERY FAMILY NO GROUND IS READ: the reading is `None`, so every
 /// symbol, 0 among them, is a body; a writer that needs a symbol is
 /// refused `Unscoped`; and the painted sites are every site.

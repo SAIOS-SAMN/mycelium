@@ -40,6 +40,10 @@ such change is named here.
   - A membrane is never the ground. A body is peeled as one only where
     its symbol is no candidate on the outer seam alone.
   - `transduce::Candidacy` names the condition each symbol fails.
+  - The always-framed case: where a frame is itself a candidate, the
+    symbol meeting its entire inner seam, on which a body stands in some
+    input, joins the vortex beside it. A membrane stays a body of the
+    percept.
 
 ### The ground is deduced, never a code (ROADMAP track 26, S2)
 - **`transduce::Ground<S>`** (`One`, `Vortex`, `None`) and

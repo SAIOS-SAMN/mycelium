@@ -334,8 +334,10 @@ pub enum StatedGroundRefusal {
 /// name. A claim that states none is reconstructed under no ground
 /// (`Ground::None`). The court verifies what the claim states; it never
 /// deduces, chooses or searches for a ground of its own: the reading of
-/// one stated symbol against the task's conditions is the reconstruction
-/// of the claim, and no other symbol is read.
+/// the stated symbol against the task's conditions is the reconstruction
+/// of the claim. Condition 2 reads the bodies around it (whether a body
+/// covering a seam is a membrane), and no other symbol is ever adopted as
+/// the ground.
 pub fn stated_ground(
     train: &crate::transducer::family::Family,
     stated: Option<&[u8]>,

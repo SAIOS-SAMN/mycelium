@@ -144,6 +144,27 @@ ground **candidate** of a family exactly when all three hold:
    where its symbol is no candidate on the outer seam alone. Without that
    limit, any background covering the whole seam would be peeled, and a
    still body standing in it would read as the ground.
+
+   **The always-framed case** (derived 2026-11-04 from "the ground is what
+   bodies stand on"; structural, no measure). Where a body `B` covers the
+   whole outer seam and `B`'s symbol is itself a candidate, a symbol `g`
+   inside it is still a candidate when both hold:
+   - `g` meets `B`'s entire inner seam in every sample that reads it there;
+   - in some input, a body stands on `g`: `g`'s one body covers a whole
+     seam and a body lies inside it.
+
+   Both are then held as a vortex, and the mind speaks per candidate. A
+   lone dot, on which nothing stands, never qualifies.
+
+   **The membrane is held, never flattened.** A body read as a membrane is
+   still a body of the percept, with its symbol, its sites and its
+   transitions across the pair, and the transduction relates it like any
+   other body. "Never the ground" never means "not perceived".
+
+   **The seam is the sample's edge, not a wall in the world.** Condition 2
+   reads it only as "the ground continues past what was sampled". No
+   reader takes a site to be a body, or content, because it lies on the
+   edge.
 3. **Never carried as a body:** no pair carries a body of `g` by its
    motion onto a body of `g` elsewhere in the output. This is read from
    the pair's transduction: a body of the input, moved by a signed
@@ -581,6 +602,7 @@ with samples of rank `n` together with the envelope.
 | **Defect:** the raster carrier is rank 2 by its own storage (`raster::AXES = 2`, `extents`, `painted_sites`, `value_at`) | **Built, refused** by §2 and §3.6; moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S4 |
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
 | A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.1) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
+| Speech and seat solves state no ground yet: the speech act and the seat's solve call carry no ground field, and the court's speech path still reads the family's deduced ground | **Open**; lands with track 26 S5's wire change | `court::verdict::replay` (`on_ground_of`); the seat call's arguments |
 | **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
 | **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One` | `src/transducer/raster.rs`; track 26, S6 |
 | **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residual.rs`; track 26, S4 |
@@ -614,12 +636,12 @@ for one source:
 ARC-AGI-2, the deduced reading against the former `ground_of` (`0` where
 any site shows `0`, else the most frequent symbol, else `0` on a tie):
 
-| Reading | First rule (2026-11-03) | Corrected conditions (2026-11-04) |
-|---|---|---|
-| `One(g)`, `g` the former value | 466 | 467 |
-| `One(g)`, `g` another symbol | 72 | 88 |
-| `Vortex` | 195 | 308 |
-| `None` | 267 | 137 |
+| Reading | First rule (2026-11-03) | Corrected conditions (2026-11-04) | With the always-framed case |
+|---|---|---|---|
+| `One(g)`, `g` the former value | 466 | 467 | 459 |
+| `One(g)`, `g` another symbol | 72 | 88 | 87 |
+| `Vortex` | 195 | 308 | 317 |
+| `None` | 267 | 137 | 137 |
 
 - **Reading the inputs** (condition 1) keeps a symbol that an output
   paints over whole. A body present in every input, on the seam, and

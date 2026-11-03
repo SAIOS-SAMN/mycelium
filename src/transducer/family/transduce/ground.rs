@@ -229,6 +229,10 @@ impl Ground<Vec<u8>> {
                 // it was read through).
                 let mut outer = None;
                 let mut inner: Result<Vec<Vec<u8>>, usize> = Ok(Vec::new());
+                // The first sample whose inner seam it meets but does not
+                // fill: a framed interior is the symbol meeting the
+                // membrane's ENTIRE inner seam.
+                let mut partial = None;
                 for (i, (x, levels)) in samples.iter().zip(&seams).enumerate() {
                     if !x.symbols().any(|s| s.bytes() == c.as_slice()) {
                         continue;
@@ -236,6 +240,11 @@ impl Ground<Vec<u8>> {
                     let depth = levels.iter().position(|l| l.seam.contains(&c));
                     if depth != Some(0) && outer.is_none() {
                         outer = Some(i);
+                    }
+                    if let Some(d) = depth.filter(|&d| d > 0) {
+                        if partial.is_none() && levels.get(d).is_some_and(|l| l.seam.as_slice() != std::slice::from_ref(&c)) {
+                            partial = Some(i);
+                        }
                     }
                     match (depth, &mut inner) {
                         (None, Ok(_)) => inner = Err(i),
@@ -249,7 +258,15 @@ impl Ground<Vec<u8>> {
                         (_, Err(_)) => {}
                     }
                 }
-                Seamed { symbol: c, absent, outer, inner }
+                // Something stands on it: in some input, its one body
+                // covers a whole seam and a body lies inside it (a level
+                // read past its membrane).
+                let holds = family.iter().zip(seams.chunks(2)).position(|(_, of_pair)| {
+                    of_pair.iter().take(1).any(|levels| {
+                        levels.iter().enumerate().any(|(d, l)| l.membrane.as_ref() == Some(&c) && levels.len() > d + 1)
+                    })
+                });
+                Seamed { symbol: c, absent, outer, inner, partial, holds }
             })
             .collect();
         // Condition 3, which needs each pair's transduction, is read only
@@ -262,7 +279,12 @@ impl Ground<Vec<u8>> {
         // The candidates on the outer seam alone. A body covering a whole
         // seam is read as a membrane only where its symbol is no such
         // candidate: a membrane is never the ground, and a candidate on the
-        // outer seam is never peeled as a membrane.
+        // outer seam is never peeled as a membrane, UNLESS the interior it
+        // frames is a ground of its own: a symbol meeting its entire inner
+        // seam in every sample that reads it there, on which a body stands
+        // in some input (ruled 2026-11-04, "the ground is what bodies stand
+        // on"). Then both are candidates, held as a vortex; a lone dot,
+        // on which nothing stands, never is.
         let direct: Vec<Vec<u8>> = readings
             .iter()
             .filter(|r| r.absent.is_none() && r.outer.is_none() && moved(&r.symbol).is_none())
@@ -271,10 +293,11 @@ impl Ground<Vec<u8>> {
         readings
             .into_iter()
             .map(|r| {
+                let framed = r.partial.is_none() && r.holds.is_some();
                 let reading = match (r.absent, r.outer, &r.inner) {
                     (Some(pair), _, _) => Candidacy::Absent { pair },
                     (None, Some(sample), Err(_)) => Candidacy::Unenclosing { sample },
-                    (None, Some(sample), Ok(through)) if through.iter().any(|m| direct.contains(m)) => Candidacy::Unenclosing { sample },
+                    (None, Some(sample), Ok(through)) if !framed && through.iter().any(|m| direct.contains(m)) => Candidacy::Unenclosing { sample },
                     (None, _, _) => match moved(&r.symbol) {
                         Some(pair) => Candidacy::CarriedAsBody { pair },
                         None => Candidacy::Candidate,
@@ -295,6 +318,10 @@ struct Seamed {
     absent: Option<usize>,
     outer: Option<usize>,
     inner: Result<Vec<Vec<u8>>, usize>,
+    /// The first sample whose inner seam it meets without filling it.
+    partial: Option<usize>,
+    /// The first pair whose input it holds a body in.
+    holds: Option<usize>,
 }
 
 /// HOW ONE SYMBOL STANDS AGAINST THE THREE CONDITIONS (MU-SENSING §3.4):

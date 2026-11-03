@@ -13,12 +13,16 @@ fn one(symbol: u8) -> Ground<Vec<u8>> {
 
 /// The canvas is 3: ambient, meeting every seam, held in place. The symbol
 /// 0 stands inside the body of 1s and meets no seam, so it is not the
-/// ground, whatever its code.
+/// ground, whatever its code. (A dot of 4 stands beside the ring, so no one
+/// body fills the canvas's inner seam and the ring frames no interior of
+/// its own.)
 #[test]
 fn ground_deduced_not_symbol_zero() {
-    let x = sample(&["33333", "31113", "31013", "31113", "33333"]);
-    let y = sample(&["33333", "32223", "32023", "32223", "33333"]);
-    assert_eq!(Ground::of(&[(x, y)]), one(3));
+    let x = sample(&["3333333", "3111333", "3101333", "3111343", "3333333"]);
+    let y = sample(&["3333333", "3222333", "3202333", "3222343", "3333333"]);
+    let read = Ground::of(&[(x, y)]);
+    assert!(!read.holds(&vec![0]), "0 is no ground: {read:?}");
+    assert_eq!(read, one(3));
 }
 
 /// The symbol 0 is absent from one INPUT of the family: it is not ambient,
@@ -89,6 +93,29 @@ fn painting_onto_the_ground_keeps_it_ground() {
     let x = sample(&["0000", "0100", "0000"]);
     let y = sample(&["0000", "0110", "0000"]);
     assert_eq!(Ground::of(&[(x, y)]), one(0));
+}
+
+/// The frame stands in every sample, input and output alike, so 8 is a
+/// candidate on the outer seam; inside it, 0 meets the frame's entire
+/// inner seam and a body (a dot of 1) stands on it in the input. The ground
+/// is what bodies stand on: the framed interior joins the vortex beside
+/// the frame, neither picked.
+#[test]
+fn always_framed_interior_holding_bodies_joins_the_vortex() {
+    let x = sample(&["888888", "800008", "801008", "800008", "800008", "888888"]);
+    let y = sample(&["888888", "800008", "800108", "800008", "800008", "888888"]);
+    assert_eq!(Ground::of(&[(x, y)]), Ground::Vortex(vec![vec![8], vec![0]]));
+}
+
+/// The frame stands in every sample and nothing stands inside it: 0 fills
+/// the interior, but no body stands on it, so it is no ground; the frame
+/// is the one candidate.
+#[test]
+fn interior_holding_no_body_is_not_ground() {
+    let x = sample(&["8888", "8008", "8008", "8888"]);
+    let read = Ground::of(&[(x.clone(), x)]);
+    assert!(!read.holds(&vec![0]), "nothing stands on 0: {read:?}");
+    assert_eq!(read, one(8));
 }
 
 /// Two symbols each ambient, enclosing and held in place: both are held,

@@ -1180,7 +1180,10 @@ Each phase is one commit:
        `claim_under_a_non_candidate_ground_is_refused`,
        `solve_round_trips_its_stated_ground`,
        `ground_absent_from_an_output_is_still_ground`,
-       `framed_interior_is_ground_and_frame_is_membrane`.
+       `framed_interior_is_ground_and_frame_is_membrane`,
+       `always_framed_interior_holding_bodies_joins_the_vortex`,
+       `interior_holding_no_body_is_not_ground`,
+       `membrane_is_held_and_its_change_is_read`.
      - Open: collapsing a vortex by a relation, with S6.
 4. **S3, the symbol set deduced.**
    - `PALETTE` (10, and the conflicting 256), `RESERVOIR` and the 10-slot
@@ -1230,6 +1233,10 @@ Each phase is one commit:
      symbols at their width.
    - A link carries its site's coordinates of rank `n`.
    - The SDK's `task` module follows. This is a wire change.
+   - Speech acts and the seat's solve call state the ground their claim
+     was spoken under, as the solve act does since S2 (MU-SENSING §6.1).
+     Until then the court's speech path reads the family's deduced
+     ground.
    - Claim: `task_round_trips_samples_of_rank_n`.
 7. **S6, perspective.** A shift of perspective is a sensor motion. The
    perspectives of one sample are a cover, checked by the cocycle of
