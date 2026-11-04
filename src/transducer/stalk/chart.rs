@@ -7,8 +7,9 @@
 
 use super::*;
 
-/// A chain link: (row, col, hue before, hue after).
-pub(crate) type Link = (i64, i64, u8, u8);
+/// A chain link: the one carrier `sentence::Link` (track 26 S5 holds the
+/// three former aliases as one type).
+pub(crate) use crate::transducer::sentence::Link;
 
 /// Standing of a word on the working atlas: a coordinate, never a gate.
 /// Ruled weights above Stood, Stood above Held.
@@ -418,10 +419,11 @@ pub(crate) fn connection_chart(word: &element::Element) -> Option<Invariant> {
     axes.extend(rotor_axes(&letters.spelling.word.rotor())?);
     // The gauge is read off the word's tape, over the symbols it names and
     // no fixed set (MU-SENSING §3.3): a symbol it never names stands still
-    // and closes no cycle. The tape's record byte is no symbol of a
-    // permutation, and such a word has no conjugacy stratum (refused).
+    // and closes no cycle. A word that records a distinction in e_∅ (a
+    // typed record, track 26 S5) is no permutation, and has no conjugacy
+    // stratum (refused).
     use crate::transducer::sentence::transport::{gauge_image, gauge_keyed, hue_key};
-    if letters.sigma.iter().any(|&(f, t)| f == element::RESERVOIR || t == element::RESERVOIR) {
+    if !letters.records.is_empty() {
         return None;
     }
     let image = gauge_keyed(&letters.sigma);

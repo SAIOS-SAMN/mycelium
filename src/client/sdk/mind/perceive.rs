@@ -873,7 +873,7 @@ impl Mind {
         }
         let Ok(id) = <[u8; 32]>::try_from(scene.id.as_slice()) else { return };
         let root = self.scene_language(&scene.train);
-        let envelope = crate::anastome::dialogue::TaskEnvelope { id, train: scene.train, tests: scene.tests };
+        let envelope = crate::anastome::dialogue::TaskRasters { id, train: scene.train, tests: scene.tests };
         self.comprehending.insert(id, (envelope, root));
     }
 

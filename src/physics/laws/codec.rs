@@ -95,11 +95,15 @@ pub fn put_transition(out: &mut Vec<u8>, t: &Transition) {
         put_state(out, before);
         put_state(out, after);
     }
-    put_key_count(out, t.hues.len());
-    for (f, h) in &t.hues {
+    // The hue relation's rows, then — track 26 S5 — its records in e_∅ as a
+    // typed list of their own, never a symbol byte among the rows.
+    put_key_count(out, t.hues.rows.len());
+    for (f, h) in &t.hues.rows {
         out.push(*f);
         out.push(*h);
     }
+    put_key_count(out, t.hues.records.len());
+    out.extend_from_slice(&t.hues.records);
     put_key_count(out, t.fluxes.len());
     for f in &t.fluxes {
         out.push(match f.flow {
@@ -117,7 +121,10 @@ pub fn take_transition(b: &[u8], p: &mut usize) -> Option<Transition> {
     let n = take_key_count(b, p)?;
     let bodies = (0..n).map(|_| Some((take_state(b, p)?, take_state(b, p)?))).collect::<Option<Vec<_>>>()?;
     let m = take_key_count(b, p)?;
-    let hues = (0..m).map(|_| Some((take_u8(b, p)?, take_u8(b, p)?))).collect::<Option<Vec<_>>>()?;
+    let rows = (0..m).map(|_| Some((take_u8(b, p)?, take_u8(b, p)?))).collect::<Option<Vec<_>>>()?;
+    let r = take_key_count(b, p)?;
+    let records = (0..r).map(|_| take_u8(b, p)).collect::<Option<Vec<_>>>()?;
+    let hues = crate::transducer::element::FibreRelation { rows, records };
     let f = take_key_count(b, p)?;
     let fluxes = (0..f)
         .map(|_| {

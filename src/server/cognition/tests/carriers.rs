@@ -39,7 +39,8 @@ fn lapse_word_leaves_no_carrier_grown() {
     k.bind_task_family(&task, family);
     let before = table(&k.carriers());
 
-    let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
+    // The family shows no 0: the speaker states no ground (MU-SENSING §6.2).
+    let codes = k.perceive_speech_under([1; 32], task.as_bytes(), std::slice::from_ref(&spoken), &[None]);
     assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD], "the sentence is listed");
     // The word stands on the book and on the docket; nothing flows to it,
     // and it lapses (78.37 (3)) — off both, the lapse sealed.

@@ -65,9 +65,10 @@ fn enclosed_refuses_empty_and_ragged() {
     );
 }
 
-/// THE CONTENT IS LOSSLESS (O3): two frames that differ at one site, or in
-/// one period with the same sites, write different content; the rank-2 bytes
-/// are the periods, the band count, each band's spans and its symbol.
+/// THE CONTENT IS LOSSLESS (O3; track 26 S5): two frames that differ at one
+/// site, or in one period with the same sites, write different content; the
+/// rank-2 bytes are the rank, the periods, the width, the band count, each
+/// band's spans and its symbol.
 #[test]
 fn enclosed_content_separates_frames() {
     let key = |slices: &[&str]| {
@@ -79,5 +80,5 @@ fn enclosed_content_separates_frames() {
     assert_ne!(key(&["1"]), key(&["11"]));
     assert_ne!(key(&["1", "1"]), key(&["11"]));
     assert_eq!(key(&["12", "30"]), key(&["12", "30"]));
-    assert_eq!(key(&["1"]), vec![1, 1, 1, 0, 1, 0, 1, 1]);
+    assert_eq!(key(&["1"]), vec![2, 1, 1, 1, 1, 0, 1, 0, 1, 1]);
 }

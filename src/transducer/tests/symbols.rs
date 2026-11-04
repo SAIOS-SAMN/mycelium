@@ -6,7 +6,7 @@
 // address order; e_∅ stands at `|Σ|`; a table over symbols is keyed by them;
 // and a symbol's code is a label, so relabelling Σ changes no percept.
 
-use crate::transducer::element::{fibre_on_symbols, lift_fibre, RESERVOIR};
+use crate::transducer::element::{fibre_on_symbols, lift_fibre, FibreRelation};
 use crate::transducer::family::transduce::Ground;
 use crate::transducer::family::{fibre_relation, perceive, Family};
 
@@ -35,14 +35,14 @@ fn family() -> Pairs {
     ]
 }
 
-/// A relabelling of the family's symbols: not monotone, and past ten. It
-/// avoids the tape's record byte (`RESERVOIR`), which is no symbol until
-/// track 26 S5 (MU-SENSING §8).
+/// A relabelling of the family's symbols: not monotone, past ten, and
+/// through the byte 10, a symbol like any other since e_∅ travels as a
+/// typed record (track 26 S5).
 fn relabel(h: u8) -> u8 {
     match h {
         0 => 7,
         1 => 11,
-        2 => 4,
+        2 => 10,
         3 => 200,
         other => other,
     }
@@ -164,7 +164,7 @@ fn reservoir_follows_the_family_symbol_set() {
     assert_eq!((s.len(), s.reservoir()), (3, 3), "e_∅ after 0, 1, 2");
     assert_eq!(s.symbol(s.reservoir()), None, "the reservoir is no symbol");
     let sigma = fibre_relation(&small).expect("a merge, recorded");
-    assert_eq!(sigma, vec![(1, 1), (2, 1), (RESERVOIR, 2)]);
+    assert_eq!(sigma, FibreRelation { rows: vec![(1, 1), (2, 1)], records: vec![2] });
     assert_eq!(fibre_on_symbols(&sigma, &s), Some(vec![(1, 1), (2, 1), (3, 2)]), "the record at |Σ| = 3");
     // Five symbols, the same merge: the reservoir moves with Σ.
     let large: Pairs = vec![(framed(&[1, 2, 5, 6]), framed(&[1, 1, 5, 6]))];
@@ -173,14 +173,13 @@ fn reservoir_follows_the_family_symbol_set() {
     let sigma = fibre_relation(&large).expect("the same merge");
     assert_eq!(fibre_on_symbols(&sigma, &l), Some(vec![(1, 1), (2, 1), (5, 2)]), "the record at |Σ| = 5");
     // A relation naming a symbol the family never showed is not read on it.
-    assert_eq!(fibre_on_symbols(&[(1, 9)], &s), None);
+    assert_eq!(fibre_on_symbols(&FibreRelation::of_rows(&[(1, 9)]), &s), None);
 }
 
 /// MU-SENSING §3.3 — A FAMILY OF ELEVEN SYMBOLS IS READ WHOLE: Σ holds all
 /// of them, every symbol a body, the ground deduced, the fibre relation read
 /// over a symbol past ten, and every table and permutation over them reads
-/// the symbol past ten as any other. Only the tape's record byte stays
-/// outside the symbols' bytes until track 26 S5 (MU-SENSING §8).
+/// the symbol past ten as any other.
 #[test]
 fn family_with_eleven_symbols_is_read_whole() {
     // Ground 0; bodies of 1..=9 and 11 standing still; 11 recoloured to 12.
@@ -195,15 +194,50 @@ fn family_with_eleven_symbols_is_read_whole() {
     assert_eq!(painted.len(), 10, "ten bodies: {painted:?}");
     assert!(painted.contains(&11), "the eleventh symbol among them");
     let sigma = fibre_relation(&family).expect("11 → 12 moves a symbol past ten");
-    assert_eq!(sigma, vec![(11, 12)]);
+    assert_eq!(sigma, FibreRelation::of_rows(&[(11, 12)]));
     let word = crate::transducer::element::colour_word(&sigma).expect("a colour word over symbols past ten");
-    assert_eq!(word.letters().map(|l| l.sigma), Some(sigma), "the word states it");
+    assert_eq!(word.letters().map(|l| l.fibre()), Some(sigma), "the word states it");
     // Tables and permutations read the symbols past ten as any other.
     let table = crate::transducer::sentence::hue_table(&[(11, 12), (12, 11)]).expect("a map");
     assert_eq!(crate::transducer::sentence::hue_listing(&table), vec![(11, 12), (12, 11)]);
     assert_eq!(crate::transducer::element::orbit_period(&[(11, 12), (12, 11)], &[(11, 12)]), Ok(2));
-    // The record byte is the one byte no tape row can carry as a symbol.
-    assert_eq!(lift_fibre(&[(RESERVOIR, 1)]), None, "refused, never read as a record");
+}
+
+/// TRACK 26 S5 — A FAMILY USING THE SYMBOL 10 READS ITS COLOUR WORD: e_∅
+/// travels as a typed record, never as a symbol byte, so the byte 10 is a
+/// symbol like any other. Here 10 and 2 both merge into 1, which stands
+/// still: the relation's rows name 10 as a symbol and its records keep the
+/// distinctions of 2 and 10 in e_∅. The word carries it whole through its
+/// tape, inverts on the extended fibre, reads on Σ's indices with each
+/// record at `|Σ|`, and a court holding the family stands it under the
+/// ground its speech states (MU-SENSING §6.2).
+#[test]
+fn family_using_symbol_ten_reads_its_colour_word() {
+    let family: Pairs = vec![(framed(&[1, 0, 10, 0, 2]), framed(&[1, 0, 1, 0, 1]))];
+    assert_eq!(ground_of(&family), Ground::One(0));
+    let sigma = on_ground_of(&family, || fibre_relation(&family)).expect("10 and 2 merge into 1");
+    assert_eq!(sigma, FibreRelation { rows: vec![(1, 1), (2, 1), (10, 1)], records: vec![2, 10] }, "10 is a symbol; its record a typed entry");
+    assert_eq!(lift_fibre(&[(10, 3)]), Some(FibreRelation::of_rows(&[(10, 3)])), "the byte 10 moves as any symbol");
+    let word = crate::transducer::element::colour_word(&sigma).expect("its colour word");
+    let tape = word.to_bytes().expect("the record writes");
+    let sent = crate::transducer::element::Element::from_bytes(&tape, &mut 0).expect("and reads back");
+    assert_eq!(sent.letters().map(|l| l.fibre()), Some(sigma.clone()), "the rows and the records travel whole");
+    assert!(sent.is_colour_word());
+    let set = SymbolSet::of_pairs(&family);
+    let mut on = fibre_on_symbols(&sigma, &set).expect("read on Σ");
+    on.sort_unstable();
+    let at = |h: u8| set.index(&[h]).expect("a symbol of the family");
+    let mut want = vec![(at(1), at(1)), (at(2), at(1)), (at(10), at(1)), (set.reservoir(), at(2)), (set.reservoir(), at(10))];
+    want.sort_unstable();
+    assert_eq!(on, want, "each record at |Σ|");
+    let mut k = crate::cognition::Court::new();
+    let tid = [42u8; 32];
+    k.bind_task_family(tid, family);
+    assert_eq!(
+        k.perceive_speech_under([1; 32], &tid, std::slice::from_ref(&word), &[Some(vec![0])]),
+        vec![crate::anastome::dialogue::SPEECH_STOOD],
+        "the court reconstructs it from its own copy of the family"
+    );
 }
 
 /// MU-SENSING §3.3 ("across all of its samples") — A SYMBOL SEEN ONLY IN A

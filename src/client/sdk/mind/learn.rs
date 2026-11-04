@@ -37,7 +37,9 @@ impl Mind {
                 // The court's final point it landed under: the aperture lapse
                 // reads the next one past it (`lapse_standing_task`).
                 let landed = entity.hypha.tuniversal().map(|p| p.h);
-                entity.board.court.task = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).map(|env| {
+                // Track 26 S5: the envelope's samples are read at the raster
+                // intake; a task of another rank or width is not taken.
+                entity.board.court.task = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).and_then(|e| e.rasters().ok()).map(|env| {
                     let offer = super::offer::Offer { landed, ..super::offer::Offer::of(&env.train) };
                     (env, offer)
                 });
@@ -123,8 +125,10 @@ impl Mind {
             io::Error::new(io::ErrorKind::InvalidInput, "the rule's record passes a length its field writes")
         })?;
         // A solve that does not fit the lengths the frame writes is not
-        // sent short: it is not sent (47.1).
-        let Some(act) = dialogue::encode_solve_spoken(&key, id, outputs, Some(&bytes), stated.as_deref()) else {
+        // sent short: it is not sent (47.1). The spoken rasters go out as
+        // samples, each at its place (track 26 S5).
+        let spoken = dialogue::spoken_outputs(outputs).ok();
+        let Some(act) = spoken.and_then(|s| dialogue::encode_solve_spoken(&key, id, &s, Some(&bytes), stated.as_deref())) else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "solve does not fit the lengths its frame writes",

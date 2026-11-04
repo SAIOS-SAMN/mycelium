@@ -324,45 +324,76 @@ pub fn from_connection(
 /// carriage), carries no chain, and whose gauge map is the fibre relation σ
 /// (`family::fibre_relation`), in the sensor's labels. Its measure is on
 /// 𝒢 alone: the hues it moves. `None` for a relation that moves no hue.
-pub fn colour_word(sigma: &[(u8, u8)]) -> Option<Element> {
-    if !is_fibre_relation(sigma) {
+///
+/// TRACK 26 S5 — THE RECORDS TRAVEL AS A TYPED SECTION, never as symbol
+/// bytes: the description is the connection's (the rows its gauge map), and
+/// where the relation records any distinction in e_∅ the record section
+/// follows the remainder, `[n][c·n]` (n ≥ 1; `Element::letters` reads it).
+/// A relation with no record is written exactly as before.
+pub fn colour_word(fibre: &FibreRelation) -> Option<Element> {
+    if !is_fibre_relation(fibre) {
         return None;
     }
-    from_connection(
+    let mut e = from_connection(
         &crate::transducer::alphabet::Word::identity(),
         &identity_versor(),
-        sigma,
+        &fibre.rows,
         &Vec::new(),
-        // The hues it moves: a still row and a record move none.
-        [0, sigma.iter().filter(|&&(f, t)| f != t && f != RESERVOIR).count() as u64, 0, 0],
-    )
+        // The hues it moves: a still row moves none, and a record is no row.
+        [0, fibre.rows.iter().filter(|&&(f, t)| f != t).count() as u64, 0, 0],
+    )?;
+    if !fibre.records.is_empty() {
+        let mut d = e.description().to_vec();
+        crate::transducer::address::put_key_count(&mut d, fibre.records.len());
+        d.extend_from_slice(&fibre.records);
+        e.set_description(d);
+    }
+    Some(e)
 }
 
-/// 78.58 (Closure I) — THE RESERVOIR ON THE TAPE: the byte a word's tape
-/// and the law register's wire (`physics::laws::codec`) write for the
-/// ancilla ray e_∅ in a RECORD row `(RESERVOIR, c)`. The fibre is the
+/// 78.53, 78.58 (Closure I) — A FIBRE RELATION: its ROWS on the family's
+/// symbols, and its RECORDS in the reservoir ray e_∅. The fibre is the
 /// family's symbols extended by e_∅, `E = span{e_σ : σ ∈ Σ} ⊕ ℚe_∅`, and
 /// e_∅'s index is `|Σ|` (`symbols::SymbolSet::reservoir`, MU-SENSING
 /// §3.3); the sensor's projection Π never sees it, so no scene can paint
 /// it, and a word writes to it and nothing else does.
 ///
-/// FORMAT: the record byte of the two existing layouts, which write a row's
-/// symbols as single bytes beside it. It is a byte of the layouts and never
-/// an index into a family's symbols. A family whose own symbols hold this
-/// byte has no fibre relation on the tape (`lift_fibre`) until track 26 S5
-/// carries e_∅ outside the symbols' bytes (MU-SENSING §8).
-pub const RESERVOIR: u8 = 10;
+/// TRACK 26 S5 — e_∅ IS A TYPED TAG, NEVER A SYMBOL CODE: a record is an
+/// entry of `records`, apart from the rows, so every byte is a symbol a row
+/// may name (a family whose symbols hold the byte 10 has its colour word).
+/// The former record row `(RESERVOIR, c)`, with `RESERVOIR = 10` beside
+/// one-byte symbols, is retired; a word's description and the law
+/// register's wire (`physics::laws::codec`) carry the records as their own
+/// section.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct FibreRelation {
+    /// The rows: each a MOVE `(f, t)` or a merged target's STILL `(t, t)`,
+    /// sorted by the hue they leave.
+    pub rows: Vec<(u8, u8)>,
+    /// The merged hues whose distinction rotates into e_∅, sorted, each
+    /// once.
+    pub records: Vec<u8>,
+}
+
+impl FibreRelation {
+    /// A relation of rows alone, recording nothing in e_∅ (an injection, or
+    /// rows a law reads).
+    pub fn of_rows(rows: &[(u8, u8)]) -> FibreRelation {
+        FibreRelation { rows: rows.to_vec(), records: Vec::new() }
+    }
+}
 
 /// WHAT A COLOUR WORD MAY CARRY (78.53, 78.58): a UNITARY relation of the
-/// fibre extended by the reservoir. Three kinds of row:
+/// fibre extended by the reservoir. Three kinds of entry:
 ///
 ///   * a MOVE `(f, t)`: a hue the scenes showed going to another, both in
 ///     the sensor's channels, each hue once;
 ///   * a STILL `(t, t)`: a merge's target the scenes showed standing still —
 ///     written only where it merges, since a still hue is otherwise no
 ///     transition;
-///   * a RECORD `(RESERVOIR, c)`: the distinction of a merged hue `c`,
-///     rotated into e_∅ (Closure I: `(c₁ ∧ c₂) ⊗ e_∅ ↦ c₃ ⊗ (Δc ∧ e_∅)`).
+///   * a RECORD `c`: the distinction of a merged hue `c`, rotated into e_∅
+///     (Closure I: `(c₁ ∧ c₂) ⊗ e_∅ ↦ c₃ ⊗ (Δc ∧ e_∅)`), a typed entry
+///     apart from the rows.
 ///
 /// A target is MERGED where two or more hues go to it, itself standing
 /// still counted among them. It is unitary when every moved preimage of a
@@ -373,54 +404,51 @@ pub const RESERVOIR: u8 = 10;
 /// to itself. An injection has no records and no stills and is the 78.53
 /// partial injection unchanged. It is NOT completed to a permutation of the
 /// family's symbols: a transition no scene showed would be a forward guess
-/// (78.45). A row's symbols are labels compared by equality, of any count;
-/// only the tape's record byte stands outside them.
-pub fn is_fibre_relation(sigma: &[(u8, u8)]) -> bool {
-    let within = |h: u8| h != RESERVOIR;
-    let rows: Vec<(u8, u8)> = sigma.iter().copied().filter(|&(f, _)| f != RESERVOIR).collect();
-    let recorded = |c: u8| sigma.contains(&(RESERVOIR, c));
+/// (78.45). A row's symbols are labels compared by equality, of any count.
+pub fn is_fibre_relation(fibre: &FibreRelation) -> bool {
+    let rows = &fibre.rows;
+    let recorded = |c: u8| fibre.records.contains(&c);
     let merged = |t: u8| rows.iter().filter(|&&(_, u)| u == t).count() > 1;
     rows.iter().any(|&(f, t)| f != t)
-        && rows.iter().all(|&(f, t)| within(f) && within(t) && (f != t || merged(t)))
+        && rows.iter().all(|&(f, t)| f != t || merged(t))
         && rows.iter().all(|&(f, t)| f == t || recorded(f) == merged(t))
-        && sigma.iter().filter(|&&(f, _)| f == RESERVOIR).all(|&(_, c)| rows.iter().any(|&(f, t)| f == c && f != t))
-        && sigma.windows(2).all(|w| w[0].0 < w[1].0 || (w[0].0 == RESERVOIR && w[0] < w[1]))
+        && fibre.records.iter().all(|&c| rows.iter().any(|&(f, t)| f == c && f != t))
+        && rows.windows(2).all(|w| w[0].0 < w[1].0)
+        && fibre.records.windows(2).all(|w| w[0] < w[1])
 }
 
 /// THE OBSERVED FUNCTION of a colour word, Π∘U on the empty reservoir: each
 /// moved hue to its target and each still target to itself — the hues the
 /// scenes showed, and no others. Sorted by hue.
-pub fn fibre_function(sigma: &[(u8, u8)]) -> Vec<(u8, u8)> {
-    sigma.iter().copied().filter(|&(f, _)| f != RESERVOIR).collect()
+pub fn fibre_function(fibre: &FibreRelation) -> Vec<(u8, u8)> {
+    fibre.rows.clone()
 }
 
 /// 78.58 — THE UNITARY LIFT of a function on the hues the scenes showed
 /// (`(hue, hue it became)`, a hue standing still included): the moves; a
 /// merged target's still row where it stands still; and every moved
-/// preimage of a merged target rotated into the reservoir. A still hue no
-/// other hue merges into is no transition and is not written. `None` when
-/// the function moves no hue, is not a function, or names the tape's
-/// record byte as a symbol (`RESERVOIR`: the row could not be told from a
-/// record until track 26 S5).
-pub fn lift_fibre(function: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
-    if function.iter().any(|&(f, t)| f == RESERVOIR || t == RESERVOIR) {
-        return None;
-    }
-    let mut out: Vec<(u8, u8)> = Vec::new();
+/// preimage of a merged target rotated into the reservoir, as a record.
+/// A still hue no other hue merges into is no transition and is not
+/// written. `None` when the function moves no hue or is not a function.
+/// Every byte is a symbol: the record is a typed entry (track 26 S5).
+pub fn lift_fibre(function: &[(u8, u8)]) -> Option<FibreRelation> {
+    let mut out = FibreRelation::default();
     for &(f, t) in function {
         if function.iter().any(|&(g, u)| g == f && u != t) {
             return None;
         }
         let merged = function.iter().any(|&(g, u)| u == t && g != f);
         if f != t || merged {
-            out.push((f, t));
+            out.rows.push((f, t));
         }
         if f != t && merged {
-            out.push((RESERVOIR, f));
+            out.records.push(f);
         }
     }
-    out.sort_unstable();
-    out.dedup();
+    out.rows.sort_unstable();
+    out.rows.dedup();
+    out.records.sort_unstable();
+    out.records.dedup();
     is_fibre_relation(&out).then_some(out)
 }
 
@@ -432,7 +460,7 @@ pub fn lift_fibre(function: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
 /// is carried into the reservoir and not lost. For injections this is the
 /// symmetric inverse monoid's product. `None` where the composite moves no
 /// hue. Exact, on the sensor's labels.
-pub fn compose_fibre(after: &[(u8, u8)], first: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
+pub fn compose_fibre(after: &FibreRelation, first: &FibreRelation) -> Option<FibreRelation> {
     let (f, a) = (fibre_function(first), fibre_function(after));
     let out: Vec<(u8, u8)> = f
         .iter()
@@ -454,8 +482,8 @@ pub fn derived_colour_word(first: &Element, after: &Element) -> Option<Element> 
     if !(first.is_colour_word() && after.is_colour_word()) {
         return None;
     }
-    let sigma = compose_fibre(&a.sigma, &f.sigma)?;
-    let mut word = colour_word(&sigma)?;
+    let fibre = compose_fibre(&a.fibre(), &f.fibre())?;
+    let mut word = colour_word(&fibre)?;
     let derivation = super::DerivationCite {
         vertex: word.address(),
         // Each generator is cited as (form, vertex, exponent): a colour word
@@ -485,11 +513,12 @@ impl Element {
 /// reservoir: each unmerged move sent back. A recorded hue returns only
 /// with its record, which no scene carries, so its row is not among them;
 /// a still target returns to itself and moves nothing.
-pub fn invert_fibre(sigma: &[(u8, u8)]) -> Vec<(u8, u8)> {
-    let recorded = |c: u8| sigma.contains(&(RESERVOIR, c));
-    let mut out: Vec<(u8, u8)> = sigma
+pub fn invert_fibre(fibre: &FibreRelation) -> Vec<(u8, u8)> {
+    let recorded = |c: u8| fibre.records.contains(&c);
+    let mut out: Vec<(u8, u8)> = fibre
+        .rows
         .iter()
-        .filter(|&&(f, t)| f != RESERVOIR && f != t && !recorded(f))
+        .filter(|&&(f, t)| f != t && !recorded(f))
         .map(|&(f, t)| (t, f))
         .collect();
     out.sort_unstable();
@@ -498,19 +527,16 @@ pub fn invert_fibre(sigma: &[(u8, u8)]) -> Vec<(u8, u8)> {
 
 /// 78.58, MU-SENSING §3.3 — A FIBRE RELATION READ ON THE FAMILY'S OWN
 /// FIBRE `E = span{e_σ : σ ∈ Σ} ⊕ ℚe_∅`: each row's symbols at their
-/// indices into Σ, and each record's source at the reservoir's index `|Σ|`.
-/// The tape's labels become the family's addressing order, so two families
-/// that differ by a relabelling of their symbols read one relation here.
-/// `None` where a row names a symbol the family never showed.
-pub fn fibre_on_symbols(sigma: &[(u8, u8)], symbols: &crate::transducer::symbols::SymbolSet) -> Option<Vec<(usize, usize)>> {
+/// indices into Σ, and each record as the row from the reservoir's index
+/// `|Σ|` to the recorded symbol's index. The tape's labels become the
+/// family's addressing order, so two families that differ by a relabelling
+/// of their symbols read one relation here. `None` where an entry names a
+/// symbol the family never showed.
+pub fn fibre_on_symbols(fibre: &FibreRelation, symbols: &crate::transducer::symbols::SymbolSet) -> Option<Vec<(usize, usize)>> {
     let at = |h: u8| symbols.index(std::slice::from_ref(&h));
-    sigma
-        .iter()
-        .map(|&(f, t)| match f == RESERVOIR {
-            true => Some((symbols.reservoir(), at(t)?)),
-            false => Some((at(f)?, at(t)?)),
-        })
-        .collect()
+    let rows = fibre.rows.iter().map(|&(f, t)| Some((at(f)?, at(t)?)));
+    let records = fibre.records.iter().map(|&c| Some((symbols.reservoir(), at(c)?)));
+    rows.chain(records).collect()
 }
 
 impl Element {
@@ -522,7 +548,7 @@ impl Element {
         self.sub().is_empty()
             && l.spelling.word.is_identity()
             && l.carriage.projective_eq(&identity_versor())
-            && l.sigma.iter().any(|&(f, t)| f != t && f != RESERVOIR)
+            && l.sigma.iter().any(|&(f, t)| f != t)
     }
 }
 

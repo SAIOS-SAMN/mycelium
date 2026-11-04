@@ -632,7 +632,8 @@ impl Mind {
                 });
                 return;
             }
-            let Some(env) = dialogue::decode_task_envelope(&body) else { return unread(entity) };
+            // Track 26 S5: read at the raster intake.
+            let Some(env) = dialogue::decode_task_envelope(&body).and_then(|e| e.rasters().ok()) else { return unread(entity) };
             // EVERY TASK THE HOUSE SETS IS EVALUATED (ruled
             // 2026-10-23): a seat's attention is its house's, and a resting
             // seat's field couples to nothing — the coupling gate passed every
@@ -733,7 +734,13 @@ impl Mind {
             },
             [] => Vec::new(),
         };
-        let Some(args) = solve_args(&crossed, &outs, &steps) else { return Some(Stop::Unsubmitted) };
+        // MU-SENSING §6.2 — THE CALL STATES THE GROUND ITS CLAIM WAS SPOKEN
+        // UNDER: the one ground this mind read for the family (the scope
+        // open, else the mind's own reading of the train pairs), none under
+        // a vortex or no ground. The reading is the mind's (§6.1).
+        let ground = crate::transducer::raster::on_ground_of(&train, crate::transducer::raster::ground);
+        let stated = crate::transducer::raster::stated(&ground);
+        let Some(args) = solve_args(&crossed, &outs, stated.as_deref(), &steps) else { return Some(Stop::Unsubmitted) };
         let (at, key, id, addr) = (seat.at, key.clone(), *id, crossed.address().as_bytes().to_vec());
         met(&mut seat.met.calls);
         let posted = args.clone();

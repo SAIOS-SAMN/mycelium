@@ -94,12 +94,14 @@ fn perceive_speech_pays_no_generator_for_waiting_citer() {
 /// glue fires instead and the placement word absorbs the difference —
 /// which is the same mechanism at the form level, not a failure of this
 /// one.
+/// Each scene framed in 0 and turned about its centre, so 0 is the family's
+/// ground (MU-SENSING §3.4) and the speech states it (§6.2, track 26 S5).
 fn bar_turn_90() -> Vec<crate::transducer::family::TrainPair> {
-    vec![(digits(&["111", "000", "000"]), digits(&["001", "001", "001"]))]
+    vec![(digits(&["00000", "01110", "00000", "00000", "00000"]), digits(&["00000", "00010", "00010", "00010", "00000"]))]
 }
 
 fn l_turn_180() -> Vec<crate::transducer::family::TrainPair> {
-    vec![(digits(&["110", "100", "000"]), digits(&["000", "001", "011"]))]
+    vec![(digits(&["00000", "01100", "01000", "00000", "00000"]), digits(&["00000", "00000", "00010", "00110", "00000"]))]
 }
 
 fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
@@ -109,8 +111,11 @@ fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
 /// Hear a sentence from `voice` on `task` and install it through the two
 /// vantages a home install needs (47.3).
 fn install_on(k: &mut Court, voice: [u8; 32], e: &Element, task: &[u8]) {
+    // The speaker states the ground it read the task's family on
+    // (MU-SENSING §6.2): the family the test bound is the speaker's too.
+    let stated = [k.task_family.get(task).and_then(|f| super::fixtures::speaker_ground(f))];
     assert_eq!(
-        k.perceive_speech(voice, task, std::slice::from_ref(e)),
+        k.perceive_speech_under(voice, task, std::slice::from_ref(e), &stated),
         vec![crate::anastome::dialogue::SPEECH_STOOD],
         "the court hears it"
     );
@@ -212,7 +217,7 @@ fn use_credit_raises_teacher_room_without_mint() {
 /// mind A holds the 90° turn. `q³` and `q`, and the L's 180° turn is `q²`
 /// through either — `q·q` for A and `q³·q³ = q⁶ ≡ q²` for B.
 fn bar_turn_270() -> Vec<crate::transducer::family::TrainPair> {
-    vec![(digits(&["111", "000", "000"]), digits(&["100", "100", "100"]))]
+    vec![(digits(&["00000", "01110", "00000", "00000", "00000"]), digits(&["00000", "01000", "01000", "01000", "00000"]))]
 }
 
 /// L9's CLOSE — THE PROOF THROUGH THE CODEC, ON TWO COURTS OF DISTINCT
@@ -312,7 +317,10 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
         k.bind_task_family(g_task, gen_fam);
         install_on(&mut k, teacher, g, &g_task);
 
-        let frame = dialogue::encode_speech(&voice, c_task, 1, &[said.to_bytes().expect("the record writes")]).expect("the task frames");
+        let tape = said.to_bytes().expect("the record writes");
+        let ground = super::fixtures::speaker_ground(&cite_fam);
+        let spoken = [dialogue::Spoken { tape, standing: crate::transducer::stalk::Standing::Stood.byte(), contraction: None, agreement: None, ground }];
+        let frame = dialogue::encode_speech_spoken(&voice, c_task, 1, &spoken).expect("the task frames");
         let act = dialogue::decode_speech(&frame).expect("the frame decodes");
         // 78.153: a stroke that holds the frame's replays.
         let heard = k

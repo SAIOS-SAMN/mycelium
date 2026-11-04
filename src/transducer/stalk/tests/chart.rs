@@ -160,20 +160,21 @@ fn invariant_of_charts_connection_on_fibres() {
 
 /// MU-SENSING §3.3 — A gauge read off a tape is read over the symbols it
 /// names, of any code: a 2-cycle through a symbol past ten is a stratum
-/// like any other. The tape's record byte (`RESERVOIR`) is no symbol of a
-/// permutation, so a word whose gauge names it has no conjugacy stratum.
+/// like any other, and so is the byte 10 (track 26 S5: e_∅ travels as a
+/// typed record). A word that records a distinction in e_∅ is no
+/// permutation, so it has no conjugacy stratum.
 #[test]
-fn connection_chart_reads_symbols_past_ten_and_refuses_record_byte() {
+fn connection_chart_reads_symbols_past_ten_and_refuses_records() {
     let identity = crate::transducer::alphabet::Word::identity();
-    let past = 12u8;
-    let word = from_connection(&identity, &element::translator_versor(0, 2), &[(past, 3), (3, past)], &Vec::new(), [4, 2, 0, 0])
-        .expect("the tape carries any symbol byte");
-    let chart = connection_chart(&word).expect("a symbol past ten is a symbol");
-    assert!(chart.0.ends_with(&[ChartAxis::Count(1), ChartAxis::Count(2)]), "one 2-cycle: {chart:?}");
-    let record = element::RESERVOIR;
-    let word = from_connection(&identity, &element::translator_versor(0, 2), &[(record, 3), (3, record)], &Vec::new(), [4, 2, 0, 0])
-        .expect("the tape carries any byte");
-    assert_eq!(connection_chart(&word), None, "the record byte names no symbol");
+    for symbol in [12u8, 10] {
+        let word = from_connection(&identity, &element::translator_versor(0, 2), &[(symbol, 3), (3, symbol)], &Vec::new(), [4, 2, 0, 0])
+            .expect("the tape carries any symbol byte");
+        let chart = connection_chart(&word).expect("every byte is a symbol");
+        assert!(chart.0.ends_with(&[ChartAxis::Count(1), ChartAxis::Count(2)]), "one 2-cycle: {chart:?}");
+    }
+    let merge = element::FibreRelation { rows: vec![(1, 1), (2, 1)], records: vec![2] };
+    let word = element::colour_word(&merge).expect("a unitary merge is a colour word");
+    assert_eq!(connection_chart(&word), None, "a word recording in e_∅ has no stratum");
     assert!(!word.is_connection(), "and the word is no connection, so it charts at the root");
     assert_eq!(invariant_of(&word).0, Vec::new(), "unstratified");
 }

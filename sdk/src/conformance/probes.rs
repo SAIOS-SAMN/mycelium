@@ -44,7 +44,7 @@ fn carried() -> Option<Vec<(BodyState, BodyState)>> {
 /// STILL one (the same at 8 → 8, refused on time alone). `None` where the
 /// turn carries no body rigidly, which it does.
 pub(crate) fn transitions() -> Option<[Transition; 2]> {
-    let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried()?, hues: Vec::new(), fluxes: Vec::new() };
+    let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried()?, hues: Default::default(), fluxes: Vec::new() };
     let still = Transition { heights: (8, 8), ..lawful.clone() };
     Some([lawful, still])
 }

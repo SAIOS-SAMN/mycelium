@@ -64,7 +64,7 @@ fn speech(voice: [u8; 32], e: &Element, agreement: Vec<u8>) -> dialogue::SpeechA
         &voice,
         SCENE,
         0,
-        &[Spoken { tape: e.to_bytes().expect("the record writes"), standing: 0, contraction: None, agreement: Some(agreement) }],
+        &[Spoken { tape: e.to_bytes().expect("the record writes"), standing: 0, contraction: None, agreement: Some(agreement), ground: None }],
     )
     .expect("the speech frames");
     dialogue::decode_speech(&frame).expect("the frame decodes")

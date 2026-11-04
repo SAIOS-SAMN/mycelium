@@ -160,6 +160,11 @@ impl Sample {
         self.extents.len()
     }
 
+    /// The sample's extents, one per axis read, in canonical axis order.
+    pub fn extents(&self) -> &[usize] {
+        &self.extents
+    }
+
     /// The extent along `axis`, or [`AxisReading::Unread`] past the rank.
     pub fn extent(&self, axis: usize) -> AxisReading {
         match self.extents.get(axis) {

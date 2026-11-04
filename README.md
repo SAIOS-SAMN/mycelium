@@ -944,7 +944,7 @@ yet tagged (ROADMAP › Now).
 | `voice` | `Voice`, the voice key (`VoiceKey`, `load_or_mint`), `SigningKey`, the mesh record of a voice home (`load_or_migrate_voice`) |
 | `session` | `Session` (`open`, `speak`, `speak_keyed`, `tuniversal`), `TransportAperture`, `TPoint` |
 | `deferral` | The deferral a hypha with a full worker pool answers every act with, which every client MUST recognise and retry: `read_deferral` (`Deferral { deficit }`), `deferral_of` on a `speak` refusal, `PENDING_CODE` ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) §5) |
-| `task` | Task request and envelope; `encode_solve_with_rule`; `decode_solve_verdict` and the `SOLVE_*` codes |
+| `task` | Task request and envelope, whose train pairs and test inputs are samples of any rank (`Sample`, `TaskEnvelope`; `TaskEnvelope::rasters` for rank 2 at width 1); the sample codec (`push_sample`, `read_sample`, `SampleWire`) and the posted task (`PostedTask`); `encode_solve_with_rule` over sample outputs (`spoken_outputs` places rasters); `decode_solve_verdict` and the `SOLVE_*` codes |
 | `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element` |
 | `seat` | `SeatName`, `MindMail`, `MindRead`, the seat posts; `Session::{list_seats, take, call, mail, read_mail, seat_post}` |
 | `wallet` | `Mu`, an amount of μ exact per lane, and `MuRefusal`; wallet read; stake and unstake; lease open, reply and close |
@@ -971,7 +971,9 @@ let session = Session::open("127.0.0.1:7610", voice);
 // 3. Work: the task envelope carries train pairs and test inputs; the test
 //    outputs stay with the court. An empty reply means no work is available.
 let reply = session.speak(task::encode_task_request(&key.verifying_key().to_bytes()))?;
-let envelope = task::decode_task_envelope(&reply).ok_or("no task")?;
+let samples = task::decode_task_envelope(&reply).ok_or("no task")?;
+//    The envelope's samples may be of any rank; the rule seam reads rasters.
+let envelope = samples.rasters().map_err(|_| "not a raster task")?;
 // 4. Rule: extracted from the train pairs, minted as an element the court
 //    can reconstruct, and spoken on each test input.
 let mut budget = Physics::default().stroke_n(1 << 20);
@@ -980,7 +982,9 @@ let element = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0)?;
 let outputs: Vec<_> = envelope.tests.iter()
     .map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid()))
     .collect::<Option<_>>().ok_or("rule does not speak a test")?;
-// 5. Solve: the outputs and the rule's tape, signed by the voice the court pays.
+// 5. Solve: the outputs, as samples at their places, and the rule's tape,
+//    signed by the voice the court pays.
+let outputs = task::spoken_outputs(&outputs).map_err(|_| "an output is no sample")?;
 let solve = task::encode_solve_with_rule(&key, &envelope.id, &outputs,
                                          Some(&element.to_bytes().ok_or("tape")?)).ok_or("solve")?;
 let verdict = session.speak(solve)?;

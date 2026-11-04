@@ -58,6 +58,45 @@ fn claim_under_a_non_candidate_ground_is_refused() {
     assert_eq!(stated_ground(&train, None), Ok(Ground::None), "none stated, none read");
 }
 
+/// TRACK 26 S5 — SPEECH STATES ITS GROUND, AND THE COURT RECONSTRUCTS UNDER
+/// IT (MU-SENSING §6.2): the task's ground is a vortex of 0 and 5; the
+/// sentence is read and minted under the candidate 0. The speech act
+/// carries each sentence's stated ground exactly. Bound to the task's
+/// family, the court hears the sentence stating 0 under 0, and it stands; a
+/// sentence stating a body (1) or two symbols is refused by name, and no
+/// ground of the court's own is read in its place.
+#[test]
+fn speech_states_its_ground_and_court_reconstructs_under_it() {
+    use crate::anastome::dialogue::{decode_speech, encode_speech_spoken, Spoken, SPEECH_REFUSED, SPEECH_STOOD};
+    use crate::transducer::family::transduce::Ground;
+    let (train, _) = halves();
+    let sentence = crate::transducer::raster::on_ground(Ground::One(0), || {
+        let rule = crate::transducer::family::extract_rule(&train, &mut budget()).expect("the move extracts on 0");
+        crate::transducer::family::mint_sentence(&rule, &train, &NoCrystal, 0).expect("and mints on 0")
+    });
+    let task = crate::registry::citation(
+        &crate::registry::task_address(&crate::transducer::family::Task { train: train.clone(), test: Vec::new() }).expect("a task identity"),
+    );
+    let act = |ground: Option<Vec<u8>>| {
+        let tape = sentence.to_bytes().expect("the record writes");
+        let said = Spoken { tape, standing: crate::transducer::stalk::Standing::Stood.byte(), contraction: None, agreement: None, ground };
+        decode_speech(&encode_speech_spoken(&[1; 32], task, 0, &[said]).expect("the speech frames")).expect("the speech reads")
+    };
+    assert_eq!(act(Some(vec![0])).grounds, vec![Some(vec![0])], "the stated ground rides the act");
+    assert_eq!(act(Some(vec![0, 5])).grounds, vec![Some(vec![0, 5])], "at its own width");
+    assert_eq!(act(None).grounds, vec![None], "none stated, none carried");
+    let hear = |ground: Option<Vec<u8>>| {
+        let mut k = Court::new();
+        k.bind_task_family(task, train.clone());
+        k.perceive_speech_under([1; 32], &task, std::slice::from_ref(&sentence), &[ground])
+    };
+    assert_eq!(hear(Some(vec![0])), vec![SPEECH_STOOD], "stated 0, reconstructed under 0: it stands");
+    assert_eq!(hear(Some(vec![1])), vec![SPEECH_REFUSED], "a body of the task is no ground");
+    assert_eq!(hear(Some(vec![0, 5])), vec![SPEECH_REFUSED], "two symbols are no one ground");
+    assert_eq!(StatedGroundRefusal::NoCandidate.reason(), crate::court::verdict::REFUSE_GROUND_NO_CANDIDATE);
+    assert_eq!(StatedGroundRefusal::NotOneSymbol.reason(), crate::court::verdict::REFUSE_GROUND_NOT_ONE_SYMBOL);
+}
+
 /// Two separated bodies, both carried two columns along (70.4).
 fn carried() -> Vec<TrainPair> {
     vec![(digits(&["1100200"]), digits(&["0011002"]))]

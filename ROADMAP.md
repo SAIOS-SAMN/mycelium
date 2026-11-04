@@ -32,11 +32,11 @@ is at `0.3.0-rc.2`. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
-| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 built (the ground deduced, a vortex read per candidate, the solve act stating its ground; task addresses changed inside the one break); S3 built (the symbol set `Σ` deduced, `e_∅` at `|Σ|`, no fixed palette; the tape's record byte waits on S5); S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
+| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 built (the ground deduced, a vortex read per candidate, the solve act stating its ground; task addresses changed inside the one break); S3 built (the symbol set `Σ` deduced, `e_∅` at `|Σ|`, no fixed palette); S5 built (samples of rank `n` on the wire, task identity lossless across ranks and widths, speech and the seat's solve call stating their ground, `e_∅` a typed record), except the rank-`n` link, stopped for the transducer's planar chain carriers (S4). S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
-| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N5 built (N1 with #29, N2 with #53); N6 and N7 next, in order; N6 lands in v0.3.0's open break |
+| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N5 built (N1 with #29, N2 with #53); N7 built with track 26 S5; N6 next, in v0.3.0's open break |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the items above (maintainers) |
 
 **2. Ready to start**
@@ -1450,11 +1450,9 @@ Each phase is one commit:
        field was added.
      - Behaviour on symbols `0`–`9`: task addresses and the oracle's
        1 901 golden readings are unchanged (MU-SENSING §8).
-     - Open: the tape's record byte. A word's tape and the law
-       register's wire write `e_∅` as the byte `RESERVOIR = 10` beside
-       one-byte symbols, so a family whose symbols hold the byte 10 has
-       no colour word. `RESERVOIR = 10` stays the tagged format byte
-       until S5.
+     - The tape's record byte (`RESERVOIR = 10` beside one-byte
+       symbols, so a family whose symbols held the byte 10 had no colour
+       word) was closed in S5: `e_∅` is a typed record.
 5. **S4, rank and roles deduced.**
    - `GRID_AXES`, `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N`, the
      3-tuple `Point`, `BASE_AXES` and the planar `(rows, cols)` carriers
@@ -1521,6 +1519,41 @@ Each phase is one commit:
    - Claims: `task_round_trips_samples_of_rank_n`,
      `extent_past_its_field_is_refused_never_widened`,
      `symbol_bytes_overflow_is_refused_by_name`.
+   - **Built**, inside v0.3.0's break; `WIRE_VERSION` stays `0x0200`
+     (no tag carries it yet: v0.3.0-rc.2 is `0x0104`), and the solve act
+     is signed as `mycelium solve v3`.
+     - Samples on the wire (`dialogue::samples`): `[rank u16][extent
+       u16 · rank][width u16][place count u16][coordinate i64 ·
+       count][symbols]`, each at its position `[split, pair, member]`.
+       The envelope, the posted task and a solve's outputs carry them;
+       `push_grid`, `read_grid`, `encode_grids` and `decode_grids` are
+       gone. Limits are refused by name (`SampleWire`); the symbol bytes
+       are counted with checked arithmetic. The mind and the court read
+       rank 2 at width 1 (`TaskEnvelope::rasters`, `NotRaster`) until S4.
+     - Task identity (`registry::task_address_of`) writes each posted
+       sample's rank, extents, width, place and symbols; `task_address`
+       already wrote rank and width since S2, so no address changes.
+       `Enclosed::put_content` now writes its rank and width.
+     - Speech and the seat's solve call state their ground
+       (`Spoken.ground`, `SpeechAct.grounds`, `solve_args`); the court
+       hears each sentence under it, refused by name where it is no
+       candidate, and deduces none on the speech path (MU-SENSING §6.2).
+     - `e_∅` is a typed record (`element::FibreRelation`) on a word's
+       description and the law register's wire (`Transition.hues`);
+       `RESERVOIR = 10` is retired.
+     - N7 (track 11) landed with it: `ACT_ENTRIES`,
+       `REFUSE_RULE_OFF_SUBSTRATE`, the `FAIL_*` strings.
+     - Claims: the three above, `task_identity_writes_rank_and_width`,
+       `speech_states_its_ground_and_court_reconstructs_under_it`,
+       `family_using_symbol_ten_reads_its_colour_word`,
+       `entries_act_round_trips`.
+     - **Stopped:** a link carrying rank-`n` coordinates
+       (`link_carries_rank_n_coordinates`). The three `Link` aliases are
+       one type (`sentence::Link`), but the link is still `(i64, i64, u8,
+       u8)`: the transducer's chain, chart (`stalk::invariant`) and field
+       carriers read its two coordinates in about 40 files, so the
+       rank-`n` link is S4's work on those carriers, not a contained wire
+       change.
 7. **S6, perspective.** A shift of perspective is a sensor motion. The
    perspectives of one sample are a cover, checked by the cocycle of
    MU-CLIENT 24.4. A mind may ask for a perspective as a demand.

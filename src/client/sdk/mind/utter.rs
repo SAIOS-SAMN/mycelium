@@ -350,7 +350,14 @@ impl Mind {
         for e in sentences.iter().filter(|e| self.sealed.get(&e.address()).is_none()) {
             self.scenes.hold(task, train, e);
         }
-        match self.post_speech(sentences, task) {
+        // MU-SENSING §6.2 (track 26 S5) — THE SPEECH STATES THE GROUND ITS
+        // CLAIMS WERE SPOKEN UNDER: the scope open on this thread, else this
+        // mind's own reading of the family it speaks under (§6.1: the ground
+        // is the mind's). It is opened while the speech is framed, so every
+        // sentence and every word said to the minds this one chatters with
+        // states it; the court reconstructs under it and deduces none.
+        let ground = crate::transducer::raster::on_ground_of(train, crate::transducer::raster::ground);
+        match crate::transducer::raster::on_ground(ground, || self.post_speech(sentences, task)) {
             Ok(Posted::Heard(codes)) => heard(self, Ok(codes)),
             // MU-CLIENT §4.4(4) — STOOD NOW, SAID AT THE RETURN: the words
             // stand in the dialect at once (the mind's own act), and the
@@ -487,6 +494,9 @@ impl Mind {
             return Ok(Posted::Heard(codes));
         }
         let voice = self.hypha.voice().id();
+        // The ground open while the speech is framed (`speak_with`): one
+        // symbol under one ground, none otherwise (MU-SENSING §6.2).
+        let ground = crate::transducer::raster::stated(&crate::transducer::raster::ground());
         // STD1 3c: a sentence whose record does not write refuses the speech
         // whole, never a speech with that sentence left out.
         let spoken: Option<Vec<dialogue::Spoken>> = fresh
@@ -497,6 +507,7 @@ impl Mind {
                     standing: Standing::Stood.byte(),
                     contraction: self.certificate_for(&sentences[i]),
                     agreement: None,
+                    ground: ground.clone(),
                 })
             })
             .collect();

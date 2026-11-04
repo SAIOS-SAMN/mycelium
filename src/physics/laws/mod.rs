@@ -181,13 +181,15 @@ impl Flux {
 
 /// ONE TRANSITION OF A CELESTIAL COMPOSITION (L1): the motor between two
 /// heights, every body before and after it, the hue relation it carries
-/// (empty where it recolours nothing), and the sources and sinks it records.
+/// (empty where it recolours nothing: its rows on the symbols and, track 26
+/// S5, its records in e_∅ as a typed list apart from them), and the sources
+/// and sinks it records.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Transition {
     pub motion: Mv,
     pub heights: (u64, u64),
     pub bodies: Vec<(BodyState, BodyState)>,
-    pub hues: Vec<(u8, u8)>,
+    pub hues: crate::transducer::element::FibreRelation,
     pub fluxes: Vec<Flux>,
 }
 
@@ -390,7 +392,7 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Transition
     }
     // CONSERVATIVE FLOW INTO e_∅: a hue relation, where there is one, is
     // unitary.
-    if !t.hues.is_empty() && !crate::transducer::element::is_fibre_relation(&t.hues) {
+    if t.hues != crate::transducer::element::FibreRelation::default() && !crate::transducer::element::is_fibre_relation(&t.hues) {
         v.breaches.push((Law::Reservoir, Breach::NotUnitary));
     }
     // CONTINUITY (law version 3): every flux stands at a finite place with a
@@ -465,7 +467,7 @@ pub fn verify_flux(f: &Flux, budget: &mut crate::physics::Budget) -> TransitionV
         motion: Mv::scalar(Q::from_integer(1.into())),
         heights: (0, 1),
         bodies: vec![(before, after)],
-        hues: Vec::new(),
+        hues: crate::transducer::element::FibreRelation::default(),
         fluxes: vec![f.clone()],
     };
     verify(&t, budget)

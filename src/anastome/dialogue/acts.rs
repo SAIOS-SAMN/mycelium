@@ -423,6 +423,11 @@ pub struct SpeechAct {
     /// that agreed it, or none: the court verifies it and seals that mind's
     /// attestation.
     pub agreements: Vec<Option<Vec<u8>>>,
+    /// MU-SENSING §6.2 (track 26 S5) — per sentence, in the same order, the
+    /// ground its claim was spoken under: one symbol at the source's width,
+    /// or none. Part of the claim, never of the task: the court
+    /// reconstructs under it and never deduces a ground of its own.
+    pub grounds: Vec<Option<Vec<u8>>>,
     // 50.2 step 2 as ruled 2026-09-10: `paths` was here. The derivation
     // of every word vertex travels inside the tape at v7, so two voices
     // sending one address are told apart by the tapes themselves and the
@@ -572,8 +577,9 @@ pub struct SolveAct {
     /// The task answered, by its citation (wire v1.2): the door resolves it
     /// to the task's content address (`TaskRegistry::by_citation`).
     pub task: [u8; 32],
-    /// One output grid per test input, in the order they were served.
-    pub outputs: Vec<Vec<Vec<u8>>>,
+    /// One output per test input, in the order they were served: a sample
+    /// of any rank at `[test, i, output]` (track 26 S5).
+    pub outputs: Vec<crate::transducer::sample::Sample>,
     /// The rule the voice extracted, when it speaks one. `None` is an
     /// answer with no rule behind it — the registry prices it differently.
     pub rule: Option<Vec<u8>>,
@@ -646,8 +652,10 @@ pub const SOLVE_NOTHING: u8 = 0;
 /// FORMAT: reply code for a solve not yet judged.
 pub const SOLVE_UNREAD: u8 = 3;
 
-/// One link of a centred coboundary chain: `(row, col, before, after)`.
-pub type Link = (i64, i64, u8, u8);
+/// One link of a centred coboundary chain: the one carrier
+/// `sentence::Link` (track 26 S5 holds the three former aliases as one
+/// type; its rank-n form waits on the transducer's planar chain carriers).
+pub use crate::transducer::sentence::Link;
 
 /// One quoted work item: the listing's address, its priced μ⃗, the listing
 /// WHOLE, and the open (non-flat) charts of its coherence field.

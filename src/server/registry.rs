@@ -74,23 +74,27 @@ pub struct TaskRegistry {
 ///
 /// `None` where a member is no sample (an empty or ragged raster): skipping
 /// one would give two different tasks one id (law 2). Nothing is refined
-/// and no stroke is drawn.
+/// and no stroke is drawn. The raster task's samples are its posted ones
+/// (`PostedTask::of_rasters`), and its address is theirs
+/// ([`task_address_of`]).
 pub fn task_address(task: &Task) -> Option<Address> {
+    Some(task_address_of(&crate::anastome::dialogue::PostedTask::of_rasters(task).ok()?))
+}
+
+/// A POSTED TASK'S IDENTITY, at any rank (track 26 S5): each posted sample's
+/// full content (`Sample::put_content`: its rank, each extent, its symbol
+/// width, its place and its symbols), the train pairs' inputs and outputs
+/// and the test inputs, in address order. Lossless across ranks and widths:
+/// two tasks whose symbol bytes agree under another rank, extents or width
+/// are two tasks.
+pub fn task_address_of(posted: &crate::anastome::dialogue::PostedTask) -> Address {
     let mut buf = vec![crate::transducer::address::TAG_TASK];
-    let train: Vec<Vec<_>> = task.train.iter().map(|(x, y)| vec![x, y]).collect();
-    let test: Vec<Vec<_>> = task.test.iter().map(|(x, _)| vec![x]).collect();
-    for (split, pairs) in (0i64..).zip([train, test]) {
-        for (pair, members) in (0i64..).zip(pairs) {
-            for (member, g) in (0i64..).zip(members) {
-                let place = crate::transducer::sample::Place::new(vec![split, pair, member]);
-                let sample = crate::transducer::raster::sample_of(g, place).ok()?;
-                let mut content = Vec::new();
-                sample.put_content(&mut content);
-                crate::transducer::address::put_key_bytes(&mut buf, &content);
-            }
-        }
+    for sample in posted.posted() {
+        let mut content = Vec::new();
+        sample.put_content(&mut content);
+        crate::transducer::address::put_key_bytes(&mut buf, &content);
     }
-    Some(Address::new(buf))
+    Address::new(buf)
 }
 
 /// 78.146, WIRE v1.2 — A TASK'S CITATION: the citation hash

@@ -36,7 +36,7 @@ fn lapse_offers_keeps_uncoupled_task_as_lapsed() {
     let id = [5u8; 32];
     let train = two_hours_of_a_slide().to_vec();
     let offer = Offer::of(&train);
-    mind.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id, train, tests: Vec::new() }, offer));
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskRasters { id, train, tests: Vec::new() }, offer));
     mind.note_task(&id, SceneKind::Task, |_| {});
     mind.lapse_offers();
     assert_eq!(mind.board.tasks.get(&id).map(|t| t.stop), Some(None), "one return crossed: still waiting");

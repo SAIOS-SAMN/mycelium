@@ -2879,6 +2879,12 @@ rows but no columns. The empty `0 × 0` stays admitted (O1 read: it is the
 grid `push_grid` writes for an empty input, and it reads back). Tests
 (`anastome::dialogue::tests::grid`): `read_grid_admits_wide_grid_within_bytes`,
 `read_grid_refuses_rows_without_columns`, `push_grid_refuses_ragged_rows`.
+**Superseded** by ROADMAP track 26 S5: the grid codec is removed and the
+wire carries samples of rank `n` (`dialogue::samples`), bounded the same
+way, by the bytes the tape carries and by nothing chosen: `read_sample`
+checks each count against what remains before it allocates, counts
+`w · ∏ eᵢ` with checked arithmetic, and refuses an empty axis by the
+sample's name (MU-SENSING §6; tests `anastome::dialogue::tests::samples`).
 The text below is the derivation as specified.
 
 **Site.** `src/anastome/dialogue/carrier.rs:102–115`:

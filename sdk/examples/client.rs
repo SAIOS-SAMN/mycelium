@@ -87,8 +87,15 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
     if let Some(d) = read_deferral(&reply) {
         return Ok(vec![(String::new(), Outcome::Deferred(d))]);
     }
-    let Some(envelope) = task::decode_task_envelope(&reply) else {
+    let Some(samples) = task::decode_task_envelope(&reply) else {
         return Err(format!("the court answered the task request with {} bytes that are no task envelope", reply.len()));
+    };
+    // The envelope carries samples of any rank (track 26 S5); this client's
+    // rule seam reads rasters, so a task of another rank or width is named
+    // and left.
+    let envelope = match samples.rasters() {
+        Ok(r) => r,
+        Err(e) => return Ok(vec![(hex32(&samples.id), Outcome::NoRule(if e.rank == 2 { "the task's symbols are wider than a raster's" } else { "the task's rank is not a raster's" }))]),
     };
     let cite = hex32(&envelope.id);
     // THE RULE, ONCE PER PERSPECTIVE OF THE FAMILY'S GROUND (MU-SENSING
@@ -139,7 +146,10 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
 /// ONE CLAIM SENT: the solve stating the ground it was spoken under, signed
 /// by the voice the court pays, and the court's verdict.
 fn claim(session: &Session, key: &SigningKey, id: &[u8; 32], outputs: &[Vec<Vec<u8>>], tape: &[u8], ground: Option<&[u8]>) -> Result<Result<Outcome, Deferral>, String> {
-    let Some(solve) = task::encode_solve_spoken(key, id, outputs, Some(tape), ground) else {
+    let Ok(outputs) = task::spoken_outputs(outputs) else {
+        return Ok(Ok(Outcome::NoRule("an output is no sample")));
+    };
+    let Some(solve) = task::encode_solve_spoken(key, id, &outputs, Some(tape), ground) else {
         return Ok(Ok(Outcome::NoRule("the outputs pass the solve act's fields")));
     };
     // A replay the court's stroke did not finish answers UNREAD and resumes

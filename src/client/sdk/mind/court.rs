@@ -37,8 +37,9 @@ pub(crate) struct CourtPace {
     pub(crate) quoting: bool,
     pub(crate) quoted: Option<YieldQuote>,
     pub(crate) pulling: bool,
-    /// MU-CLIENT §7.1 — the task the court sent, with its offer (`offer`).
-    pub(crate) task: Option<(crate::anastome::dialogue::TaskEnvelope, super::offer::Offer)>,
+    /// MU-CLIENT §7.1 — the task the court sent, with its offer (`offer`),
+    /// at the raster intake (`TaskEnvelope::rasters`, track 26 S5).
+    pub(crate) task: Option<(crate::anastome::dialogue::TaskRasters, super::offer::Offer)>,
     pub(crate) syncing: bool,
     pub(crate) schooling: bool,
     pub(crate) solving: crate::network::nerve::Keyed<()>,
@@ -202,7 +203,7 @@ impl Mind {
         if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
             return;
         }
-        let Some((crate::anastome::dialogue::TaskEnvelope { id, train, tests }, _)) = self.board.court.task.take() else { return };
+        let Some((crate::anastome::dialogue::TaskRasters { id, train, tests }, _)) = self.board.court.task.take() else { return };
         self.physics_mut().bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
         self.perceive_scene(super::perceive::Scene { id: id.to_vec(), train, tests, reading: super::perceive::SceneKind::Task });

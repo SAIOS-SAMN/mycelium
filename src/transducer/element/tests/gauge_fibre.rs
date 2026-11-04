@@ -146,15 +146,16 @@ fn on_orbit_agrees_with_walk_on_every_cycle_type() {
     }
 }
 
-/// (3) THE TAPE'S RECORD BYTE IS REFUSED BY NAME, never walked: it is no
-/// symbol (`RESERVOIR`, 78.58), and a map naming it has no period on any
-/// base. A symbol past ten is a symbol like any other (MU-SENSING §3.3).
+/// (3) EVERY BYTE IS A SYMBOL: the reservoir e_∅ travels as a typed record
+/// (track 26 S5), never as the byte 10, so a 2-cycle through 10 has its
+/// period like any other. A symbol past ten is a symbol like any other
+/// (MU-SENSING §3.3); a map that is no permutation has no period.
 #[test]
-fn orbit_period_refuses_record_byte_and_reads_symbols_past_ten() {
-    let record = crate::transducer::element::RESERVOIR;
-    let sigma = vec![(1, record), (record, 1)];
-    assert_eq!(orbit_period(&sigma, &[(1, record)]), Err(PeriodRefusal::NotAPermutation));
-    assert!(!on_orbit(&sigma, &[(1, record)], &[(record, 1)]), "and nothing is on its orbit");
+fn orbit_period_reads_every_byte_and_symbols_past_ten() {
+    let sigma = vec![(1, 10), (10, 1)];
+    assert_eq!(orbit_period(&sigma, &[(1, 10)]), Ok(2), "a 2-cycle through the byte 10");
+    assert!(on_orbit(&sigma, &[(1, 10)], &[(10, 1)]), "and its one step is on the orbit");
+    assert_eq!(orbit_period(&[(1, 2), (2, 2)], &[(1, 2)]), Err(PeriodRefusal::NotAPermutation), "a merge has no period");
     let past = vec![(1, 11), (11, 1)];
     assert_eq!(orbit_period(&past, &[(1, 11)]), Ok(2), "a 2-cycle through a symbol past ten");
     assert!(on_orbit(&past, &[(1, 11)], &[(11, 1)]), "and its one step is on the orbit");

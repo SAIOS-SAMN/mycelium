@@ -84,14 +84,11 @@ pub(crate) fn compose_perm(a: &[(u8, u8)], b: &[(u8, u8)]) -> Vec<(u8, u8)> {
 /// of each named symbol (the last row naming it, the identity where no
 /// row does) read over the symbols the listing names and no fixed set, so
 /// a family of any `|Σ|` reads alike. A symbol the listing never names is
-/// fixed and cannot break the permutation. The tape's record byte is no
-/// symbol of a permutation (`RESERVOIR`).
+/// fixed and cannot break the permutation. Every byte is a symbol: a
+/// record in e_∅ is no row of a gauge map (track 26 S5, `FibreRelation`).
 pub(crate) fn gauge_is_perm(sigma: &[(u8, u8)]) -> bool {
     use crate::network::nerve::Keyed;
     use crate::transducer::sentence::transport::{gauge_image, gauge_keyed, hue_key};
-    if sigma.iter().any(|&(f, t)| f == RESERVOIR || t == RESERVOIR) {
-        return false;
-    }
     let image = gauge_keyed(sigma);
     let mut named: Keyed<()> = Keyed::new();
     for &(f, t) in sigma {

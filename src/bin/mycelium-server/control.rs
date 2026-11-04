@@ -140,8 +140,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
         // wall, which the v1.2 citation removes). A plain request steps on
         // to the next open task, once round the book at most.
         let envelope = |tid: &mycelium::registry::TaskCitation, task: &mycelium::transducer::family::Task| {
+            // Track 26 S5: the registry's rasters go out as samples, each at
+            // its position in the family.
             let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
-            let b = dialogue::encode_task_envelope(tid, &task.train, &tests);
+            let b = dialogue::TaskEnvelope::of_rasters(*tid, &task.train, &tests)
+                .and_then(|e| dialogue::encode_task_envelope(&e.id, &e.train, &e.tests))
+                .ok();
             if b.is_none() {
                 eprintln!("  task passed over: its envelope does not fit its lengths");
             }
@@ -300,11 +304,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
             // A stated ground the court does not reconstruct under, refused
             // by name: no other ground is read in its place.
             (None, Some(_), Some(_), Some(Err(why))) => {
-                let reason = match why {
-                    mycelium::cognition::StatedGroundRefusal::NotOneSymbol => "the stated ground is not one symbol of the task",
-                    mycelium::cognition::StatedGroundRefusal::NoCandidate => "the stated ground is no candidate of the task's ground",
-                };
-                (dialogue::SOLVE_NOTHING, Mu::zero(), Some(refused(reason, mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
+                (dialogue::SOLVE_NOTHING, Mu::zero(), Some(refused(why.reason(), mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
             }
             (None, Some(first), Some(rule), Some(Ok(ground))) => {
                 let (verdict, offers) = {

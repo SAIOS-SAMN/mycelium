@@ -4,8 +4,10 @@
 // by its citation on the court's carrier (`Mind::pull_before`, at the
 // mind's return), and where it lands extracts and mints its
 // rule as the task arm does, and calls fn 1 with the rule's tape, the test
-// outputs as the solve act writes grids, and — where the rule is a pure
-// motion and hue map — the steps the house's D4 kinds and hue moves name.
+// outputs as the solve act writes them (samples, track 26 S5), the ground
+// its claim was spoken under where it states one (MU-SENSING §6.2), and —
+// where the rule is a pure motion and hue map — the steps the house's D4
+// kinds and hue moves name.
 //
 //! THE STEPS, read exactly off the minted word. A rule is pure where its form
 //! states no clause and holds one word vertex whose members all carry one
@@ -142,10 +144,18 @@ pub fn grid_steps(rule: &Element, in_shape: (usize, usize), out_shape: (usize, u
 }
 
 /// THE CALL'S ARGUMENTS: the rule's tape, the test outputs as the solve act
-/// writes grids, and the steps where there are any. `None` where a tape
-/// passes its carrier.
-pub fn solve_args(rule: &Element, outputs: &[crate::transducer::family::Grid], steps: &[u64]) -> Option<Vec<Arg>> {
-    let mut args = vec![Arg::Bytes(rule.to_bytes()?), Arg::Bytes(crate::anastome::dialogue::encode_grids(outputs)?)];
+/// writes them (samples, each at its place: `dialogue::encode_samples`,
+/// track 26 S5), then — MU-SENSING §6.2 — the ground the claim was spoken
+/// under where it states one (`Bytes`, one symbol at the source's width),
+/// and the steps where there are any (`Count`s, so a reader tells the
+/// stated ground from a step by the argument's kind). `None` where a tape
+/// or an output passes its carrier.
+pub fn solve_args(rule: &Element, outputs: &[crate::transducer::family::Grid], ground: Option<&[u8]>, steps: &[u64]) -> Option<Vec<Arg>> {
+    let spoken = crate::anastome::dialogue::spoken_outputs(outputs).ok()?;
+    let mut args = vec![Arg::Bytes(rule.to_bytes()?), Arg::Bytes(crate::anastome::dialogue::encode_samples(&spoken).ok()?)];
+    if let Some(g) = ground {
+        args.push(Arg::Bytes(g.to_vec()));
+    }
     args.extend(steps.iter().map(|s| Arg::Count(*s)));
     Some(args)
 }

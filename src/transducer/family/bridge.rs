@@ -161,9 +161,9 @@ pub fn bridge_pair(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> B
         function.dedup();
         let moves = function.iter().any(|(f, t)| f != t);
         let hues = match (moves, crate::transducer::element::lift_fibre(&function)) {
-            (false, _) => Vec::new(),
+            (false, _) => crate::transducer::element::FibreRelation::default(),
             (true, Some(lifted)) => lifted,
-            (true, None) => function,
+            (true, None) => crate::transducer::element::FibreRelation { rows: function, records: Vec::new() },
         };
         read.transitions += 1;
         let single = bodies.len() == 1;
