@@ -59,9 +59,6 @@ is recorded:
   act, which amends rulings 78.126 and 78.136.
 - B2: per-clause signatures, a wire change to `ACT_LAWS` mode 8.
 - Proposed names: `NotSignatory`, `AddressOnly`.
-- μ measured by the holonomy a change sweeps in the field, in
-  place of a share of the frame's sites (MU-SENSING §3.7). It changes what
-  is paid, so it is not in v0.3.0 unless ruled.
 - The open questions of MU-DERIVATIONS §7 and MU-RELEASE §10.
 
 **4. Under investigation:**
