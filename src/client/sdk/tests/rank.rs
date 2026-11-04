@@ -206,7 +206,7 @@ fn word_machinery_reads_a_rank_three_sample_end_to_end() {
     assert_eq!(SectionSample::of(train[0].0.clone()), Err(off), "the word machinery's carrier reads the rank off the sample");
     assert!(matches!(deep.section(), Err(r) if r == off), "the envelope is refused by the alphabet's name");
     // The symbol set the word path reads is read over the rank-3 samples.
-    let sigma = on_test_inputs(&deep.tests, || SymbolSet::of_family(&[]));
+    let sigma = on_test_inputs(&deep.tests, || SymbolSet::of_family(&[])).expect("one width");
     assert_eq!((sigma.len(), sigma.index(&[3])), (3, Some(2)), "0, 1 and 3, read off the rank-3 test input");
     // THE MIND HOLDS THE PERCEPTION AND STATES IT.
     let (section, mind) = perceived(&deep);

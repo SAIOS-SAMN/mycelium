@@ -251,17 +251,32 @@ fn symbol_seen_only_in_a_test_input_is_in_the_family_set() {
     use crate::transducer::symbols::on_test_inputs;
     let train: Pairs = vec![(framed(&[1, 2]), framed(&[1, 0])), (framed(&[2, 1]), framed(&[0, 1]))];
     let tests = [framed(&[7, 2])];
-    let pairs = SymbolSet::of_family(&train);
+    let pairs = SymbolSet::of_family(&train).expect("one width");
     assert_eq!(listed(&pairs), vec![vec![0], vec![1], vec![2]], "the pairs alone show 0, 1, 2");
     let tests: Vec<Sample> = tests.iter().map(|t| t.sample().clone()).collect();
-    let whole = on_test_inputs(&tests, || SymbolSet::of_family(&train));
+    let whole = on_test_inputs(&tests, || SymbolSet::of_family(&train)).expect("one width");
     assert_eq!(listed(&whole), vec![vec![0], vec![1], vec![2], vec![7]], "7, seen only in the test input, is in Σ");
     assert_eq!((whole.index(&[7]), whole.reservoir()), (Some(3), 4), "after the pairs' symbols; e_∅ at |Σ| = 4");
-    assert_eq!(SymbolSet::of_family(&train), pairs, "the scope closed as it returned");
+    assert_eq!(SymbolSet::of_family(&train), Ok(pairs.clone()), "the scope closed as it returned");
     // Nested, the inner posting stands, and the outer is restored after it.
     let inner = on_test_inputs(&tests, || {
         let none = on_test_inputs(&[] as &[Sample], || SymbolSet::of_family(&train));
         (none, SymbolSet::of_family(&train))
     });
-    assert_eq!(inner, (pairs, whole));
+    assert_eq!(inner, (Ok(pairs), Ok(whole)));
+}
+
+/// TRACK 26 S4d, stage 2 (the leftover of PR #84) — A POSTED TEST INPUT OF
+/// ANOTHER SYMBOL WIDTH IS REFUSED BY NAME: the family's Σ walks the train
+/// pairs, then the test inputs; an input of two bytes per symbol beside
+/// pairs of one is another source, and Σ is refused `Width` at the input's
+/// place in the walk, never read as an empty set.
+#[test]
+fn test_input_of_another_width_refuses_the_family_set_by_name() {
+    use crate::transducer::symbols::on_test_inputs;
+    let train: Pairs = vec![(framed(&[1, 2]), framed(&[1, 0]))];
+    let wide = Sample::new(vec![1, 2], 2, vec![1, 0, 7, 0], Place::new(Vec::new())).expect("a sample of width 2");
+    let read = on_test_inputs(std::slice::from_ref(&wide), || SymbolSet::of_family(&train));
+    assert_eq!(read, Err(SymbolRefusal::Width { sample: 2, width: 1, found: 2 }), "refused at the test input, the third sample walked");
+    assert_eq!(SymbolSet::of_family(&[]), Err(SymbolRefusal::NoSample), "a family of no sample holds no width");
 }

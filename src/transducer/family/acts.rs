@@ -302,9 +302,11 @@ fn map_of_class(key: &[u8]) -> Vec<(u8, u8)> {
 /// the ground `void` (MU-SENSING §3.3), never every slot of a fixed palette.
 /// Σ is the whole family's, its posted test inputs included
 /// (`SymbolSet::of_family`).
-/// Written as a gauge listing is, in the symbols' key order.
-fn onto_ground(family: &[(SectionSample, SectionSample)], void: u8) -> Vec<(u8, u8)> {
-    let symbols = crate::transducer::symbols::SymbolSet::of_family(family);
+/// Written as a gauge listing is, in the symbols' key order. Refused by the
+/// symbol set's name where Σ is not read (a posted test input of another
+/// symbol width), never an empty map.
+fn onto_ground(family: &[(SectionSample, SectionSample)], void: u8) -> Result<Vec<(u8, u8)>, crate::transducer::symbols::SymbolRefusal> {
+    let symbols = crate::transducer::symbols::SymbolSet::of_family(family)?;
     let mut map: Vec<(u8, u8)> = symbols
         .symbols()
         .filter_map(|s| match s {
@@ -313,7 +315,7 @@ fn onto_ground(family: &[(SectionSample, SectionSample)], void: u8) -> Vec<(u8, 
         })
         .collect();
     map.sort_unstable();
-    map
+    Ok(map)
 }
 
 /// 78.167 Phase A — THE RECOLOURS READ ON THE SCENE'S PARTS, where a body
@@ -696,8 +698,9 @@ pub(crate) fn read_acts(form: &Form, family: &[(SectionSample, SectionSample)], 
                 (Some(select), None) => {
                     // Erased onto the scene's one ground; with none, the
                     // clearing is stated by no act (`Overwritten`).
+                    // A family whose Σ is refused states no erasure either.
                     let void = crate::transducer::raster::void().map_err(|_| Unread::Overwritten)?;
-                    reacted.push(Clause { select, act: Act::Recolour(onto_ground(family, void)) });
+                    reacted.push(Clause { select, act: Act::Recolour(onto_ground(family, void).map_err(|_| Unread::Overwritten)?) });
                     related
                 }
                 (None, _) => None,
@@ -739,8 +742,9 @@ pub(crate) fn read_acts(form: &Form, family: &[(SectionSample, SectionSample)], 
                 let select = r.separate(&erased, &still).ok_or(Unread::Inseparable)?;
                 // Erased onto the scene's one ground; with none, the
                 // clearing is stated by no act (`Overwritten`).
+                // A family whose Σ is refused states no erasure either.
                 let void = crate::transducer::raster::void().map_err(|_| Unread::Overwritten)?;
-                base.push(Clause { select, act: Act::Recolour(onto_ground(family, void)) });
+                base.push(Clause { select, act: Act::Recolour(onto_ground(family, void).map_err(|_| Unread::Overwritten)?) });
             }
             for (key, at) in classes.scoped() {
                 let select = r.separate(at, &still).ok_or(Unread::Inseparable)?;
