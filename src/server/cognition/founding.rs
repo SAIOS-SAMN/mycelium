@@ -8,10 +8,10 @@
 //! admitted by its chain, and its signer's signature reaches it only through
 //! a signed frame at or above its place on the signer's line, whose
 //! predecessor hashes link down to it (MU-HOSTING §5a.10: the hash links, it
-//! never admits). So a founding receipt admitted by back-fill waits in
-//! `unsigned_foundings` until such a frame is admitted (`sign_through`), and
-//! a founding receipt admitted under its own signature is reconstructed at
-//! once. Each citation is then applied by the founding hypha's own rules and
+//! never admits). So a founding receipt admitted by back-fill waits behind
+//! the one signed-reach gate (`reach.rs`) until such a frame is admitted,
+//! and a founding receipt admitted under its own signature is reconstructed
+//! at once. Each citation is then applied by the founding hypha's own rules and
 //! refusals (`Court::admit_domain`, `designate_reserve`, `record_origin`),
 //! once by content: the same content held already changes nothing, and
 //! other content is refused by name and held by its stamp
@@ -19,7 +19,7 @@
 
 use super::Court;
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, OriginReading};
-use crate::chronometry::{Cite, KStepReceipt, Place, Stamp};
+use crate::chronometry::{Cite, KStepReceipt, Stamp};
 
 /// WHAT ONE FOUNDING CITATION CAME TO at this court: the reconstruction
 /// events of MU-SCIENCE §5.0, read on the domain registries.
@@ -36,40 +36,6 @@ pub(crate) enum Reconstructed {
 }
 
 impl Court {
-    /// A RECEIPT ADMITTED BY BACK-FILL THAT NAMES A FOUNDING, a reserve, an
-    /// origin or a fold that may pass a reserve's era anchor: held by its
-    /// place on its signer's line until a frame the signer signed at or above
-    /// that place is admitted. Any other receipt files nothing.
-    pub(crate) fn file_unsigned_founding(&mut self, r: &KStepReceipt) {
-        let names = r.cites.iter().any(|c| {
-            matches!(c, Cite::Domain { .. } | Cite::Reserve { .. } | Cite::Origin { .. } | Cite::Uplink { .. } | Cite::Chained { .. })
-        });
-        if names {
-            self.unsigned_foundings.insert(Stamp::line_key(&r.stamp.vk, r.stamp.place()), r.clone());
-        }
-    }
-
-    /// A FRAME `signer` SIGNED AT `upto`, admitted here: every founding
-    /// receipt of the signer's line at or below it that waited for a
-    /// signature is reconstructed, in line order.
-    pub(crate) fn sign_through(&mut self, signer: &[u8; 32], upto: Place) {
-        let due: Vec<Vec<u8>> = match self.unsigned_foundings.fibre_at(signer) {
-            Some(line) => line
-                .map(|(key, _)| key)
-                .filter(|key| {
-                    let mut p = signer.len();
-                    Place::take_canonical(key, &mut p).is_some_and(|at| at <= upto)
-                })
-                .collect(),
-            None => Vec::new(),
-        };
-        for key in due {
-            if let Some(r) = self.unsigned_foundings.remove(&key) {
-                self.reconstruct_founding(&r);
-            }
-        }
-    }
-
     /// ONE RECEIPT UNDER ITS SIGNER'S SIGNATURE, reconstructed: each
     /// founding citation applied by the founding hypha's rules. A reserve or
     /// an origin naming a domain no founding here holds, and that the

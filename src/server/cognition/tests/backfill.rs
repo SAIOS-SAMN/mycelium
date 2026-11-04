@@ -199,7 +199,8 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
 /// H2 (78.65, 78.87 R2) — A CITATION INTO A PEER'S CLOSED ERA IS PROVED BY THE
 /// ERA'S OWN CHAIN, and the citing head is cited. Peer e closes an orbit and
 /// folds it; court c admits e's line and, on e's fold, sheds what lies at or
-/// below e's root. A third signer d's head cites e's first receipt — inside
+/// below e's root once e's signed fold reaches the back-filled line
+/// (MU-HOSTING §5a.10). A third signer d's head cites e's first receipt — inside
 /// the closed era. That was the mesh's split: `MissingParent` forever, the
 /// head past the place, back-fill reading the receipt stale. Now c asks e's
 /// line from the citation up to the root, walks it — each receipt
@@ -208,7 +209,8 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
 #[test]
 fn hear_proves_citation_into_closed_era() {
     use crate::chronometry::{ActKind, Cite, Parent, ReceiptChain, Stamp};
-    let evk = super::fixtures::court_key("closed-era-e").verifying_bytes();
+    let ekey = super::fixtures::court_key("closed-era-e");
+    let evk = ekey.verifying_bytes();
     let mut e = ReceiptChain::with_signer(evk);
     act(&mut e, 1);
     let shut = e.head().expect("e closed its orbit");
@@ -218,14 +220,15 @@ fn hear_proves_citation_into_closed_era() {
     let (_, root) = e.fold_before(shut.stamp.place()).expect("the orbit folds");
     let cites = vec![Cite::Root { at: Stamp::new(root.height, evk, root.at), hash: root.hash }];
     let folded = e.append(ActKind::Fold, [0; 4], cites, [0; 32], Vec::new()).expect("the fold node");
-    // c admits e's line, and its fold sheds what lies below the root.
+    // c back-fills e's line, and e's signed fold sheds what lies below the
+    // root.
     let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
-    let mut line = era.clone();
-    line.push(folded);
     let mut budget = c0.stroke();
-    let (n, missing) = c0.admit_backfill(&line, &mut budget);
-    assert_eq!((n, missing), (line.len(), None), "e's line admitted whole");
+    let (n, missing) = c0.admit_backfill(&era, &mut budget);
+    assert_eq!((n, missing), (era.len(), None), "e's line admitted whole");
+    let signed = super::fixtures::admit_line(&mut c0, &ekey, &[folded]);
+    assert!(matches!(signed.as_slice(), [crate::court::admission::Admitted::Parent(_)]), "e's fold under its signature: {signed:?}");
     assert!(c0.chain().node(&e0.stamp).is_none(), "e's first receipt was shed with its era");
     let c = std::sync::Mutex::new(c0);
     // d's head cites e's first receipt, inside the closed era.
