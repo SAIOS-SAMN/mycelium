@@ -1892,7 +1892,7 @@ sensor and where a grid is spoken.
 
 | Reader | Reads now |
 |---|---|
-| Task identity, `registry::task_address` (law 2) | the posted samples' full content (rank, extents, symbols, places), train and test alike (MU-SENSING §6.1; O3); today's code writes each train pair as both frames' periods and bands and still filters the test inputs by `symbol ≠ 0`, which track 26 S2 removes |
+| Task identity, `registry::task_address` (law 2) | the posted samples' full content (rank, extents, symbols, places), train and test alike (MU-SENSING §6.1; O3); built in track 26 S2 (`Sample::put_content`), with no ground and no frame fixing |
 | Deflation (client mint) and the court's measured reconstruction, one function | `deflation::unspoken_residue`: the identity's speech (the record projected onto the output frame) against the observed output, on output sites, the unit of the form's remainder; the output against nothing where the input's turns do not land |
 | Demands of unreached pairs, `finish::germ_of_pair` | the same unspoken residue |
 | Unspoken links, `declare_unspoken` | the input's hue on the output's sites through `spoken_onto`, never off a shared corner |

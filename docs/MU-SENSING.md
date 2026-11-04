@@ -143,14 +143,115 @@ is a **gauge transformation**, and the percept is the same under it. So:
 ### 3.4 The ground is deduced
 
 The **ground** Ω is the value the family's relations show as ambient: the
-symbol the bodies stand on. It is read, never set to a code. The
-reading is the one MU-RECURSION 70 rules for void and merging (the
-Mayer–Vietoris measure across the family): the ground is the symbol
-whose sites carry no structure the family's motions preserve. Where the
-reading leaves more than one candidate, the candidates are held as a
-vortex (§3.8), each a perspective of its own (§4), until a relation
-collapses it. None is chosen by default, and no candidate is the
-first symbol, the most frequent symbol or `0`.
+symbol the bodies stand on. It is read, never set to a code (the
+operator's direction of 2026-11-03, track 26 S2). A symbol `g` is a
+ground **candidate** of a family exactly when all three hold:
+
+1. **Ambient:** `g` appears in every *input* sample of the family. An
+   output that covers `g` completely has painted over it, and painting
+   keeps `g` the ground (ruled 2026-11-04).
+2. **Enclosing:** in every sample that shows `g`, some site of `g` meets
+   either of two seams. The bodies stand inside it.
+   - **The outer seam:** the sample's outer boundary, the sites with some
+     coordinate at `0` or at `extent − 1` on some axis.
+   - **An inner seam:** where one body covers the sample's whole outer
+     seam, that body is the sample's **membrane**. The inner seam is the
+     set of unpeeled sites in contact with it. Nested frames repeat the
+     reading per level (`transduce::membrane::levels`; ruled 2026-11-04).
+
+   A membrane is never the ground. A body is read as a membrane only
+   where its symbol is no candidate on the outer seam alone. Without that
+   limit, any background covering the whole seam would be peeled, and a
+   still body standing in it would read as the ground.
+
+   **The always-framed case** (derived 2026-11-04 from "the ground is what
+   bodies stand on"; structural, no measure). Where a body `B` covers the
+   whole outer seam and `B`'s symbol is itself a candidate, a symbol `g`
+   inside it is still a candidate when both hold:
+   - `g` meets `B`'s entire inner seam in every sample that reads it there;
+   - in some input, a body stands on `g`: `g`'s one body covers a whole
+     seam and a body lies inside it.
+
+   Both are then held as a vortex, and the mind speaks per candidate. A
+   lone dot, on which nothing stands, never qualifies.
+
+   **The membrane is held, never flattened.** A body read as a membrane is
+   still a body of the percept, with its symbol, its sites and its
+   transitions across the pair, and the transduction relates it like any
+   other body. "Never the ground" never means "not perceived".
+
+   **The seam is the sample's edge, not a wall in the world.** Condition 2
+   reads it only as "the ground continues past what was sampled". No
+   reader takes a site to be a body, or content, because it lies on the
+   edge.
+3. **Never carried as a body:** no pair carries a body of `g` by its
+   motion onto a body of `g` elsewhere in the output. This is read from
+   the pair's transduction: a body of the input, moved by a signed
+   permutation of the phases, whose shape (its boundary turns in the
+   frame's periods, centred by its least turn on each phase) is the shape
+   of a body of `g` in the output at another place, where that output
+   body is not the carriage of an input body of `g` held in place under
+   the re-period. A ground carries no structure the family's motions
+   preserve. Sites of `g` that a body covers or uncovers do not
+   disqualify it (painting onto the ground is a body appearing on it), and
+   neither does a re-period (a crop, a scaling).
+
+The reading is a typed `Ground`, never a boolean, a count or a choice by
+a scalar:
+- **`Ground::One(g)`:** exactly one candidate.
+- **`Ground::Vortex(candidates)`:** several candidates, held as a vortex
+  (§3.8) in the order the family's samples meet them, an order of content
+  and never a rank. None is picked.
+- **`Ground::None`:** no candidate. Every symbol is a body, and the support
+  is the whole sample.
+
+No candidate is ever the first symbol, the most frequent symbol or `0`
+by default.
+
+**Order of reading.** The transductions read no ground: their bands,
+bodies and incidences compare symbols by equality alone. So the order is
+the samples, then each pair's transduction and moved frames, then the
+ground, and only then the readings that take the ground, such as the
+transduction's lanes (`Transduction::lane_shares`).
+
+**How downstream readers take it** (built in S2):
+- A reader asks whether a symbol is ground. Under `One(g)` only `g` is;
+  under a vortex every candidate is, so the support is what no candidate
+  claims; under `None` nothing is.
+- A writer that needs one symbol for the ground (a canvas laid before
+  bodies are painted on it, an absent side of a residue link) is refused
+  by name under a vortex or `None` (`Unground`). A writer that leaves no
+  site unpainted needs no ground and is not refused.
+- A reader with no family in scope reads `Ground::None`, and a writer
+  there is refused `Unground::Unscoped`. Nothing stands on `0` by
+  default.
+- **Scope separation** (the operator's ruling of 2026-11-03):
+  - **Identity, the hypha's scope.** A task's identity is its posted
+    samples' full content as the source gave them: rank, extents, symbols
+    and places (`Sample::put_content`, `registry::task_address`), train
+    and test inputs alike. Neither the ground nor frame fixing enters it.
+    A source's decoder posts samples as read.
+  - **The ground, the mind's scope.** The ground is deduced in the mind's
+    perception, by the rule above.
+  - **Frame fixing, the sensor's scope.** Frame fixing is a perspective a
+    sensor may take after intake, never before addressing.
+    `raster::frame_fixed_on_ground` fixes a frame only under
+    `Ground::One(g)`, on the sites off `g`, and leaves it as read under a
+    vortex or `None`. No reader applies it at intake today: the mind reads
+    every task in the frame it was posted in, which is the frame the
+    court judges in. It becomes a full perspective in S6.
+
+**A vortex is read once per candidate** (built in S2, brought forward in
+part from S6). Under `Ground::Vortex(cs)`, a reader or writer that needs
+one ground runs once per candidate `g`, each run as its own perspective
+(`Ground::One(g)`; `raster::on_each_perspective_of`). Every result is kept
+as one of the vortex's sections, and nothing picks among them.
+- The mind perceives a vortex task once per candidate. It speaks one claim
+  per candidate, and each claim states the ground it was spoken under
+  (§6.2).
+- Under `Ground::None` the support is the whole sample. A writer that
+  would leave a site needing a ground is refused.
+- Collapsing a vortex by a relation remains S6's.
 
 ### 3.5 Gauges are deduced
 
@@ -483,6 +584,10 @@ claims as exact content, and it admits a claim by reconstruction
 - **The hypha knows no source.** It holds no dataset's format, no symbol
   meanings, no ground and no rank fixed in its types. A claim's output is
   a sample, reconstructed and compared as an exact object.
+- **A task's identity is its samples' content as posted** (track 26 S2):
+  each sample's rank, extents, symbols and place, train and test inputs
+  alike (`registry::task_address`). No ground is read for it, and no
+  frame is fixed before it is addressed (§3.4, scope separation).
 - **On the wire, a task carries samples of any rank:** `n`, the extents,
   then the symbols at the source's own width. It is never a pair of `u16`
   extents with one byte per cell. The limits are derived, never chosen:
@@ -518,7 +623,29 @@ another scope:
   its identity belongs to the hypha's scope alone.
 - **The court reconstructs a claim on the posted samples.** Where a
   claim states a ground or a perspective, the court reads it as part of
-  the claim, never as part of the task.
+  the claim, never as part of the task (§6.2).
+
+### 6.2 A claim states its ground
+
+A claim (the solve act) states the ground it was spoken under, as an
+optional field: one symbol at the source's width, or absent. The field
+was added in track 26 S2, inside wire 0x0200's ruled break, with the act
+signed as `mycelium solve v2` (`dialogue::encode_solve_spoken`,
+`SolveAct.ground`). The stated ground is part of the claim, never part of
+the task. A tape entry would make it part of the form's identity, which is
+why the act carries it instead.
+
+The court reconstructs under the stated ground and never deduces, chooses
+or searches for a ground of its own (`cognition::stated_ground`):
+- **One symbol stated:** the court reads that symbol's candidacy against
+  the task's train pairs, by the three conditions of §3.4, and judges the
+  withheld pairs under `Ground::One` of it.
+- **Not a candidate:** refused by name, "the stated ground is no
+  candidate of the task's ground".
+- **Not one symbol:** refused by name, "the stated ground is not one
+  symbol of the task".
+- **None stated:** the claim is reconstructed under no ground
+  (`Ground::None`).
 
 ## 7. Who owns a source's code
 
@@ -543,10 +670,9 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 **Built (track 26, S1).** The decoder is the workspace crate
 `sources/arc-agi` (package `mycelium-source-arc-agi`). It depends on the
 core; the core never depends on it. It owns:
-- the JSON parse (`decode`, and `parse_task`, which hands the decoded task
-  through the sensor's frame fixing, `raster::frame_fixed_on_ground`).
-  Fixing the frame before the task is addressed is the defect of §6.1,
-  being removed in track 26 S2;
+- the JSON parse (`decode`), with the task as the file gives it. Fixing
+  the frame before the task is addressed was the defect of §6.1; S2
+  removed it with the former `parse_task`, and no ground is read here;
 - the corpus location (`corpus`: `MYCELIUM_CORPUS`, else `data/arc-agi-2`)
   and its split into `training` and `evaluation` (`task_names`);
 - the decode to samples (`samples_of`, each placed at `[split, pair,
@@ -585,14 +711,16 @@ with samples of rank `n` together with the envelope.
 | A corpus's decoder outside `src/`; the core has no `arc` module (a `compile_fail` claim); the hypha, the soak and the client's feed read posted tasks; the SDK re-exports no `Grid` | **Built** (track 26, S1) | `sources/arc-agi/` (`mycelium-source-arc-agi`, binary `mycelium-arc-agi`); `src/anastome/dialogue/percept.rs` (`encode_posted_task`, `decode_posted_task`, `POSTED_TASK`) |
 | The rank-2 raster at intake, named by function: its extents, ground, painted sites, frame fixing and the bridge to the sample, moved from `arc.rs` unchanged | **Built** (track 26, S1) | `src/transducer/raster.rs`; `Task` in `src/transducer/family/train.rs` |
 | **Defect:** the raster carrier is rank 2 by its own storage (`raster::AXES = 2`, `extents`, `painted_sites`, `value_at`) | **Built, refused** by §2 and §3.6; moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S4 |
-| **Defect:** the ground defaults to the symbol `0` (`raster::ground_of`, `ground`), with a 256-slot count | **Built, refused** by §3.4; moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S2 |
+| The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
+| A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
+| Speech and seat solves state no ground yet: the speech act and the seat's solve call carry no ground field, and the court's speech path still reads the family's deduced ground | **Open**; lands with track 26 S5's wire change | `court::verdict::replay` (`on_ground_of`); the seat call's arguments |
 | **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
-| **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S6 |
+| **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One` | `src/transducer/raster.rs`; track 26, S6 |
 | **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residual.rs`; track 26, S4 |
 | **Defect:** a family's magnitude is read on planar chains (`pair_magnitude`, `family_cover`, `cover_join` over `raster::painted_of`) | **Built, refused** by §2 (samples of rank `n`); moved unchanged in S1 | `src/transducer/family/magnitude.rs`; track 26, S4 |
 | An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on `main` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
 | Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
-| Ground, symbol set, axes and gauges deduced | **Specified** | Track 26, S2–S4 |
+| Symbol set, axes and gauges deduced | **Specified** | Track 26, S3–S4 |
 | A task on the wire as samples of rank `n` | **Specified** | Track 26, S5 |
 | Perspective as a sensor motion; perspectives as a cover | **Specified** | Track 26, S6 |
 
@@ -606,13 +734,54 @@ for one source:
   (`transducer::family::Grid = Vec<Vec<u8>>`) remains the transduction's
   intake until S4.
 - The palette is fixed at 10 (`PALETTE`, `RESERVOIR`, the 10-slot hue
-  tables), with a conflicting 256 elsewhere. About 64 sites read a ground
-  that defaults to `0`.
+  tables), with a conflicting 256 elsewhere. (The ground that defaulted to
+  `0` at about 64 sites is deduced since S2.)
 - Two space axes and one frame axis are fixed (`GRID_AXES`, `FRAME_AXIS`,
   `PLANE_ROW`/`PLANE_COL`, `GRID_N = 3`, a 3-tuple `Point`, and planar
   `(rows, cols)` carriers).
 - The wire carries a task as `u16 × u16` one-byte cells, and a link as
   `(r, c, before, after)`.
+
+**The S2 behaviour check** (2026-11-03; the census
+`sources/arc-agi/tests/ground_census.rs`). Over the 1 000 training tasks of
+ARC-AGI-2, the deduced reading against the former `ground_of` (`0` where
+any site shows `0`, else the most frequent symbol, else `0` on a tie):
+
+| Reading | First rule (2026-11-03) | Corrected conditions (2026-11-04) | With the always-framed case |
+|---|---|---|---|
+| `One(g)`, `g` the former value | 466 | 467 | 459 |
+| `One(g)`, `g` another symbol | 72 | 88 | 87 |
+| `Vortex` | 195 | 308 | 317 |
+| `None` | 267 | 137 | 137 |
+
+- **Reading the inputs** (condition 1) keeps a symbol that an output
+  paints over whole. A body present in every input, on the seam, and
+  recoloured away in the outputs is therefore a candidate beside the
+  canvas. That is the main source of the larger vortex count.
+- **Vortex tasks that speak:** read once per candidate, 128 of the 308
+  vortex tasks speak at least one claim, meaning a rule is extracted,
+  minted and spoken on every test input under some candidate. This is an
+  observation, read once on 2026-11-04 by the census's per-perspective
+  loop and kept out of the committed test for its run time (18 minutes).
+- **Where the former ground still fails, on the 137 that read none:**
+  absent from an input 60, meets no seam (outer or inner) 14, carried as
+  a body 58.
+
+- **Task addresses:** all 1 000 change, as expected inside v0.3.0's one
+  break. The identity is now the samples' content as posted, where it was
+  the train frames' bands after frame fixing plus the test inputs' chains
+  off `0`. The former decoder's frame fixing had turned 103 of the 1 000
+  tasks before posting; the posted tasks are now as read.
+- **The oracle's golden reading** moved from 1 715 to 1 901 readings. It
+  first differs at line 1 406, in the harvest of the corpus's own
+  versors: extraction reads each family as posted, once per perspective
+  of its deduced ground, and every perspective's rule is harvested.
+- **Under the first rule,** the former ground failed condition 1 on 156 of
+  the 267 None tasks, condition 2 on 36 and condition 3 on 69. About 16 of
+  the 36 were one body framing the whole boundary, which the operator
+  ruled a membrane on 2026-11-04.
+- **The rule was not tuned to any task.** The counts are observations,
+  never a criterion.
 
 ## 9. Passages this document supersedes
 

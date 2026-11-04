@@ -96,8 +96,10 @@ pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> ([u64; 4],
         if at.is_empty() {
             continue;
         }
-        let links: Vec<(i64, i64, u8, u8)> =
-            residual_of(Some(x), y).into_iter().filter(|&(r, c, _, _)| at.contains(&site_key(r, c))).collect();
+        // A pair whose residue cannot be written on the family's one ground
+        // measures nothing it could pay (track 26 S2).
+        let Ok(residual) = residual_of(Some(x), y) else { continue };
+        let links: Vec<(i64, i64, u8, u8)> = residual.into_iter().filter(|&(r, c, _, _)| at.contains(&site_key(r, c))).collect();
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&[0; 4], &element::measure_lanes(&links)));
         mu.step(&crate::transducer::family::transduce::share_of_frame(closed, crate::transducer::raster::sample_unplaced(y).ok().as_ref()));
         if let Some(next) = crate::core::lanes::lanes_add(pay, closed) {
@@ -152,7 +154,9 @@ pub fn word_local(word: &Element, family: &[(Grid, Grid)]) -> Local {
 /// carried off the frame along `e₃`, two sites land on one with two hues, or
 /// a changed site's answer differs.
 fn spoken_section(x: &Grid, y: &Grid, v: &element::Versor, recolour: &dyn Fn(u8) -> u8) -> Option<Keyed<()>> {
-    let void = crate::transducer::raster::ground();
+    // A vacated site is written as the scene's one ground; with none (a
+    // vortex, no ground, no family open) nothing is spoken.
+    let void = crate::transducer::raster::void().ok()?;
     let mut painted: Vec<Painted> = Vec::new();
     for (r, row) in x.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
@@ -165,7 +169,7 @@ fn spoken_section(x: &Grid, y: &Grid, v: &element::Versor, recolour: &dyn Fn(u8)
     // THE SPEECH: every painted site vacated, every image site painted.
     let mut said: Keyed<u8> = Keyed::new();
     for &(r, c, _) in &painted {
-        said.insert(site_key(r, c), 0);
+        said.insert(site_key(r, c), void);
     }
     let mut landed: Keyed<u8> = Keyed::new();
     for &(r, c, h) in &image {
@@ -193,7 +197,7 @@ fn spoken_section(x: &Grid, y: &Grid, v: &element::Versor, recolour: &dyn Fn(u8)
         // A site the before side does not reach holds absence there.
         let before = match hue_at(x, r, c) {
             Some(h) => h,
-            None => 0,
+            None => void,
         };
         if spoken == before {
             continue;

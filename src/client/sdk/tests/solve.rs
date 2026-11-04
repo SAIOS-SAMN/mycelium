@@ -21,6 +21,7 @@ fn family() -> Vec<(crate::transducer::family::Grid, crate::transducer::family::
 /// train it does not speak is refused at home, as the court would refuse it.
 #[test]
 fn judge_on_keeps_home_solve_train_refutes() {
+    crate::transducer::raster::stand_on(0);
     let train = family();
     let rule = crate::transducer::family::extract_rule(&train, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
@@ -39,7 +40,13 @@ fn judge_on_keeps_home_solve_train_refutes() {
         (grid(&["1100", "0000"]), grid(&["1100", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "1100"])),
     ];
-    let judge = Judge { scene: Scene { id: task.to_vec(), train: other, tests: Vec::new(), reading: Reading::Task }, outputs: outs, rule: spoken };
+    // Spoken under the fixture's ground, 0, which the claim states.
+    let judge = Judge {
+        scene: Scene { id: task.to_vec(), train: other, tests: Vec::new(), reading: Reading::Task },
+        outputs: outs,
+        rule: spoken,
+        ground: crate::transducer::family::transduce::Ground::One(0),
+    };
     assert!(matches!(judge_on(&entity.epigenome, &judge), Verdict::Kept(crate::client::sdk::entity::perceive::Stop::Uncrossed)), "refuted at home: it cannot be re-minted without its own pairs");
 }
 

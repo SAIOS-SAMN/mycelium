@@ -9,6 +9,7 @@ use crate::client::sdk::*;
 /// never sheds.
 #[test]
 fn shed_keeps_glued_dialect_word_and_genome() {
+    crate::transducer::raster::stand_on(0);
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let e2 = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("shed"));
@@ -139,6 +140,7 @@ fn expand_ideas_stamps_contemplation_with_tuniversal() {
 /// whether or not there was room.
 #[test]
 fn hold_form_withholds_without_room_never_evicts() {
+    crate::transducer::raster::stand_on(0);
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("room"));
     entity.hold_chain(vec![(9, 0, 1, 2)]);
     let held_now = entity.contemplation.len();
@@ -236,6 +238,7 @@ fn hold_form_draws_lanes_that_release_returns() {
 /// draws nothing and holds nothing in escrow; released, it returns nothing.
 #[test]
 fn release_thought_returns_only_what_hold_drew() {
+    crate::transducer::raster::stand_on(0);
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("drew"));
     let before = entity.physics.reserve.clone();
     entity.hold_chain(vec![(9, 0, 1, 2)]);

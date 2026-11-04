@@ -34,6 +34,7 @@ fn rule_of(train: &[(crate::transducer::family::Grid, crate::transducer::family:
 /// reads undetermined, never a refutation.
 #[test]
 fn ascertain_on_leaves_two_pair_rule_undetermined() {
+    crate::transducer::raster::stand_on(0);
     let train = mirrored(2);
     let rule = rule_of(&train);
     assert!(!rule.form.elements.is_empty(), "the act reader stated it as clauses");
@@ -72,6 +73,7 @@ fn ascertain_on_leaves_unclosing_rule_unproven() {
 /// by its perspectives — the exemption is never reached past two pairs.
 #[test]
 fn ascertain_on_knows_rule_on_three_pairs() {
+    crate::transducer::raster::stand_on(0);
     let train = mirrored(3);
     let rule = rule_of(&train);
     let (outcome, _) = ascertain_on(&Epigenome::new(), &train, &rule);

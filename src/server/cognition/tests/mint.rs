@@ -90,7 +90,7 @@ let family = vec![(
     digits(&["1100", "0000"]),
     digits(&["0011", "0000"]),
 )];
-let chain = crate::transducer::family::speak::residual_of(Some(&family[0].0), &family[0].1);
+let chain = crate::transducer::family::speak::residual_of(Some(&family[0].0), &family[0].1).expect("one enclosure needs no ground");
 let frame = crate::transducer::element::Frame::new(2, 4, 2, 4);
 assert!(k.intake(&chain, &frame), "the listing stands");
 let listing = k.pending.scoped().next().expect("listed").1.address();
@@ -127,6 +127,7 @@ assert_eq!(
 /// A rule that speaks every train pair mints the coboundary it closed.
 #[test]
 fn mint_sentence_mints_measured_deflation() {
+crate::transducer::raster::stand_on(0);
 let family = vec![
     (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
     (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
@@ -136,7 +137,8 @@ let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::tr
 assert!(spoken.is_sentence());
 let mut expect = [0u64; 4];
 for (x, y) in &family {
-    let chain = crate::transducer::family::speak::residual_of(Some(x), y);
+    let chain = crate::transducer::raster::on_ground_of(&family, || crate::transducer::family::speak::residual_of(Some(x), y))
+        .expect("one enclosure needs no ground");
     let lanes = crate::transducer::element::measure_lanes(&chain);
     for i in 0..4 {
         #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the fixture family's chain measures cannot pass u64")]
@@ -391,6 +393,7 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
 /// court, and a voice that cannot pay is deferred with its own shortfall.
 #[test]
 fn serve_syllabus_charges_learner_not_reserve() {
+crate::transducer::raster::stand_on(0);
     let family = vec![
         (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
         (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
@@ -453,6 +456,7 @@ fn serve_syllabus_charges_learner_not_reserve() {
 /// stands refracted from itself.
 #[test]
 fn relation_solves_refraction_from_two_forms() {
+crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::{as_element_form, from_element_form, relation, Relation, Transport};
     let family = vec![
         (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
@@ -486,6 +490,7 @@ fn relation_solves_refraction_from_two_forms() {
 /// nothing).
 #[test]
 fn lift_compares_coherent_across_atlases() {
+crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::{compare, from_element_form, lift, Transport};
     type Family = [(Vec<Vec<u8>>, Vec<Vec<u8>>)];
     let mint = |family: &Family| {
@@ -532,6 +537,7 @@ fn lift_compares_coherent_across_atlases() {
 /// `2 × 2 → 4 × 4` family.
 #[test]
 fn measured_reconstruction_equals_client_deflation_on_unequal_enclosures() {
+crate::transducer::raster::stand_on(0);
     let family = vec![
         (digits(&["10", "00"]), digits(&["2200", "2200", "0000", "0000"])),
         (digits(&["00", "01"]), digits(&["0000", "0000", "0022", "0022"])),

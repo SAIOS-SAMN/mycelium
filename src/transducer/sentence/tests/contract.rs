@@ -100,6 +100,7 @@ fn contract_drops_face_that_does_not_rederive() {
 /// never over the ones the form got wrong.
 #[test]
 fn contract_mounts_demand_on_silent_links_only() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::Demand;
     let chart = crate::transducer::stalk::Invariant::counts(&[3, 5]);
     let silent = |r: i64| (r, 0i64, 0u8, 4u8);

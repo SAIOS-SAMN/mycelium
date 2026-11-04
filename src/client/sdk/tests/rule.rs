@@ -96,6 +96,7 @@ fn grid_motion_carries_every_site_to_index_image() {
 /// on a pair the rule never saw.
 #[test]
 fn sentence_of_solves_unseen_pair_by_square_symmetry() {
+    crate::transducer::raster::stand_on(0);
     for kind in [
         Symmetry::Rotate90,
         Symmetry::Rotate180,
@@ -120,6 +121,7 @@ fn sentence_of_solves_unseen_pair_by_square_symmetry() {
 /// shape the symmetry does not fit is no motion.
 #[test]
 fn grid_motion_exchanges_non_square_shape() {
+    crate::transducer::raster::stand_on(0);
     for kind in [Symmetry::Rotate90, Symmetry::Transpose] {
         let x = grid(&["120", "100"]);
         let y = apply(kind, &x);
@@ -143,6 +145,7 @@ fn grid_motion_exchanges_non_square_shape() {
 /// rule never saw.
 #[test]
 fn sentence_of_solves_unseen_pair_by_hue_permutation() {
+    crate::transducer::raster::stand_on(0);
     let map = [(1u8, 2u8), (2, 1)];
     let x = square_train();
     let rule = sentence(&[Step::Hue(map.to_vec())], &[(x.clone(), recolour(&map, &x))], &NoCrystal).expect("mints");
@@ -153,6 +156,7 @@ fn sentence_of_solves_unseen_pair_by_hue_permutation() {
 /// A motion followed by a recolour is minted and solved as one action.
 #[test]
 fn sentence_of_solves_motion_then_recolour_as_one() {
+    crate::transducer::raster::stand_on(0);
     let map = [(1u8, 5u8)];
     let steps = [Step::grid_motion(Symmetry::Rotate180, (3, 3), (3, 3)).expect("fits"), Step::Hue(map.to_vec())];
     let then = |g: &Grid| recolour(&map, &apply(Symmetry::Rotate180, g));
@@ -181,6 +185,7 @@ fn sentence_refuses_step_with_no_inverse() {
 /// refuse it where the plain motion is solved.
 #[test]
 fn judge_solve_refuses_dilated_motion_and_solves_plain() {
+    crate::transducer::raster::stand_on(0);
     let x = square_train();
     let y = apply(Symmetry::Rotate180, &x);
     let Some(Step::Motion(m)) = Step::grid_motion(Symmetry::Rotate180, (3, 3), (3, 3)) else { panic!("fits") };
@@ -213,6 +218,7 @@ fn judge_solve_refuses_dilated_motion_and_solves_plain() {
 /// replays on its training pairs, and is solved on the withheld pair.
 #[test]
 fn crossing_drops_training_frames_so_withheld_pair_solves() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::ObstructionKind;
     let train = vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
@@ -252,6 +258,7 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
 /// on its own strokes by its cursor — rules the same word.
 #[test]
 fn of_refusal_reads_unread_as_unjudged() {
+    crate::transducer::raster::stand_on(0);
     let train = vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0022"])),

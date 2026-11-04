@@ -157,7 +157,8 @@ pub struct Mind {
     /// again: 38 of 41 verdicts on the development deployment were "unread" (2026-10-10).
     /// MU-CLIENT §4.13 — one per task, released by the court's verdict:
     /// bounded by what the court holds unjudged.
-    pub(crate) unread_solves: crate::network::nerve::Keyed<(Element, Vec<Grid>)>,
+    /// Each with the ground its claim was spoken under (track 26 S2).
+    pub(crate) unread_solves: crate::network::nerve::Keyed<(Element, Vec<Grid>, crate::transducer::family::transduce::Ground<u8>)>,
     /// The task coordinate the last unread solve was asked again at: the
     /// next asking takes the least after it, so every one is asked in turn.
     pub(crate) unread_after: Vec<u8>,

@@ -43,6 +43,9 @@ pub fn budget() -> crate::physics::Budget {
 /// `scene_form` is the crystal that holds nothing and the stroke, which is
 /// a fixture's job.
 pub fn cipher_form(a: &Grid, b: &Grid) -> Form {
+    // The fixtures are written on 0 (track 26 S2: declared, never deduced
+    // from one pair).
+    crate::transducer::raster::stand_on(0);
     let pair = [(a.clone(), b.clone())];
     let frames = perceive_family(&pair);
     let mut budget = crate::physics::Physics::default().stroke_n(extraction_spend(&pair, &frames) << 4);

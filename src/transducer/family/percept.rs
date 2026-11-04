@@ -173,13 +173,15 @@ struct ClassRead {
 /// THE PERCEPT (52.5 items 1 to 4), under the stroke (rule 10): every
 /// frame the budget reaches is perceived once; every chart's fibre is read
 /// frame by frame; a budget that ends leaves the frames it did not measure
-/// as the demands of `finish` and says so.
+/// as the demands of `finish` and says so. A demand whose link writes an
+/// absence needs the scene's one ground; where the scope has none (a
+/// vortex, no ground) the percept is refused by name (`Unground`).
 pub(super) fn family_percept(
     family: &[(Grid, Grid)],
     frames: &super::perceive::Frames,
     scale: Ratio,
     budget: &mut crate::physics::Budget,
-) -> Percept {
+) -> Result<Percept, transduce::Unground> {
     trace::trace("extract/0 frames", trace::Wrote::Nothing, Some(budget));
     let n = family.len();
     let mut unreached: Vec<usize> = Vec::new();
@@ -315,14 +317,14 @@ pub(super) fn family_percept(
                         for (_, d) in cover.refused.scoped() {
                             demanded.push(d.clone());
                         }
-                        let mut demands = unreached_demands(ai, &a0, &b0, &cover.reached, c, ai.len());
+                        let mut demands = unreached_demands(ai, &a0, &b0, &cover.reached, c, ai.len())?;
                         let first = demands.split_off(1);
                         demanded.extend(first);
                         let [demand] = demands.as_slice() else { continue };
                         covers.push(Covered { demand: demand.clone(), cover, frame: k });
                     }
                     Err(_) => {
-                        demanded.extend(unreached_demands(ai, &a0, &b0, &Keyed::new(), c, ai.len()));
+                        demanded.extend(unreached_demands(ai, &a0, &b0, &Keyed::new(), c, ai.len())?);
                     }
                 },
             }
@@ -603,7 +605,7 @@ pub(super) fn family_percept(
                     let demand = (
                         Demand::TopologicalDeformation { image: image.moduli.clone(), axes },
                         body.moduli.clone(),
-                        delta_links(&a0, &b0),
+                        delta_links(&a0, &b0)?,
                     );
                     match cover_deformation(&a0, &b0, Some(scale), budget) {
                         Ok(cover) => {
@@ -616,7 +618,7 @@ pub(super) fn family_percept(
                     }
                 }
                 if !any {
-                    demanded.push(vanished(body));
+                    demanded.push(vanished(body)?);
                 }
             }
             for body in outs_k {
@@ -628,11 +630,9 @@ pub(super) fn family_percept(
                 if fib_in.get(&ck).is_some_and(|(_, f)| f.contains(&fk)) {
                     continue;
                 }
-                let links: Vec<Link> = body
-                    .compartments
-                    .iter()
-                    .filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, crate::transducer::raster::ground(), l.hue)))
-                    .collect();
+                let void = crate::transducer::raster::void()?;
+                let links: Vec<Link> =
+                    body.compartments.iter().filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, void, l.hue))).collect();
                 demanded.push((Demand::Creation, body.moduli.clone(), links));
             }
         }
@@ -1408,5 +1408,5 @@ pub(super) fn family_percept(
     }
     form.reindex();
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
-    Percept { form, varying, unreached }
+    Ok(Percept { form, varying, unreached })
 }

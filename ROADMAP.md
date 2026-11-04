@@ -32,7 +32,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
-| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 in progress (maintainers); S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
+| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 built (the ground deduced, a vortex read per candidate, the solve act stating its ground; task addresses changed inside the one break); S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | In progress (maintainers) |
@@ -1288,9 +1288,58 @@ Each phase is one commit:
    §3.4, held per family, with candidates in superposition. The default
    `0` and the literal `h != 0` sites (about 64) are removed.
    - Claim: `ground_deduced_not_symbol_zero`.
-   - **In progress** (maintainers). It also removes the two scope defects
-     of MU-SENSING §6.1: the address's `symbol ≠ 0` filter and the frame
-     fixing before addressing.
+   - **Built.** It removed the two scope defects of MU-SENSING §6.1: the
+     address's `symbol ≠ 0` filter and the frame fixing before
+     addressing. `transduce::Ground` (`One`, `Vortex`, `None`) is read by
+     `Ground::of` over a family's samples. A candidate is:
+     - ambient: in every sample;
+     - enclosing: it meets every sample's seam;
+     - never carried as a body by a pair's motion (read from the
+       transduction's bodies under the signed permutations).
+
+     The details:
+     - The scoped carrier stays (`raster::on_ground_of`). With no family
+       open it reads `Ground::None`, and a writer is refused
+       `Unground::Unscoped`.
+     - Readers ask `is_ground`. Writers that need one symbol (`void`) are
+       refused by name under a vortex or `None`.
+     - Scope separation (ruled 2026-11-03):
+       - A task's identity is its posted samples' content (rank, extents,
+         symbols, places). Neither the ground nor frame fixing enters it.
+       - The decoder posts tasks as read, and `parse_task` is removed.
+       - Frame fixing (`raster::frame_fixed_on_ground`, only under `One`)
+         is a perspective no reader applies at intake. It becomes one in
+         S6.
+       - All 1 000 training addresses change, inside v0.3.0's one break.
+     - Claims: `task_identity_reads_no_ground`,
+       `task_identity_reads_no_frame_fixing`,
+       `ground_deduced_not_symbol_zero`,
+       `ground_requires_presence_in_every_input`,
+       `ground_requires_meeting_every_seam`,
+       `ground_carried_as_a_body_is_not_ground`,
+       `painting_onto_the_ground_keeps_it_ground`,
+       `several_candidates_are_held_as_a_vortex`,
+       `no_candidate_reads_no_ground`,
+       `unscoped_reader_never_defaults_to_zero`.
+     - Behaviour over the 1 000 training tasks: 466 read the former
+       symbol, 72 another, 195 a vortex, 267 none (MU-SENSING §8).
+     - Corrected conditions (ruled 2026-11-04):
+       - A ground is present in every input sample.
+       - A framed interior is enclosed through its membrane.
+     - A vortex is read once per candidate, and the mind speaks one claim
+       per candidate. The solve act states the ground its claim was
+       spoken under, and the court reconstructs under it (MU-SENSING
+       §6.2). This is a wire change inside v0.3.0's break.
+     - Claims: `vortex_ground_read_once_per_candidate`,
+       `claim_states_its_ground_and_court_reconstructs_under_it`,
+       `claim_under_a_non_candidate_ground_is_refused`,
+       `solve_round_trips_its_stated_ground`,
+       `ground_absent_from_an_output_is_still_ground`,
+       `framed_interior_is_ground_and_frame_is_membrane`,
+       `always_framed_interior_holding_bodies_joins_the_vortex`,
+       `interior_holding_no_body_is_not_ground`,
+       `membrane_is_held_and_its_change_is_read`.
+     - Open: collapsing a vortex by a relation, with S6.
 4. **S3, the symbol set deduced.**
    - `PALETTE` (10, and the conflicting 256), `RESERVOIR` and the 10-slot
      hue tables are replaced by the family's own symbol set `Σ`
@@ -1353,6 +1402,10 @@ Each phase is one commit:
      symbols at the source's width.
    - A link carries its site's coordinates of rank `n`.
    - The SDK's `task` module follows. This is a wire change.
+   - Speech acts and the seat's solve call state the ground their claim
+     was spoken under, as the solve act does since S2 (MU-SENSING §6.2).
+     Until then the court's speech path reads the family's deduced
+     ground.
    - Limits are derived (MU-SENSING §6): the rank and extents use the
      `u16` field and are refused past it, never widened; the symbol width
      is the source's; the symbol bytes `w · ∏ eᵢ` are checked; a phase's
@@ -1365,7 +1418,8 @@ Each phase is one commit:
    MU-CLIENT 24.4. A mind may ask for a perspective as a demand.
    - Claim: `perspective_shift_is_a_sensor_motion`.
    - A claim states the perspective it was perceived under, and the court
-     reconstructs under it, as S2 does for the ground (MU-SENSING §6.1).
+     reconstructs under it, as S2 does for the ground (MU-SENSING §6.1,
+     §6.2).
    - Reflective claims: `claim_states_its_perspective_and_court_reconstructs_under_it`,
      `two_perspectives_of_one_sample_compared_as_a_cover`.
 8. **S7, the field's curvature and the well's body** (MU-SENSING §3.7;

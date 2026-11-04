@@ -23,6 +23,7 @@ fn sections_short_of(rule: &crate::transducer::sentence::SentenceRule, frames: u
 /// 3, 4, 3 instances stay one class. A class in only some pairs is a section.
 #[test]
 fn extract_rule_with_groups_class_into_sections() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (squares(3, 1, 9), squares(3, 2, 9)),
     (squares(4, 1, 12), squares(4, 2, 12)),
@@ -65,6 +66,7 @@ assert!(
 /// refuses a motor that does not — never solving for one.
 #[test]
 fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
+    crate::transducer::raster::stand_on(0);
     let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
     let a = ["111000", "100000", "000000", "000000", "000550", "000000"];
     let b = ["001000", "111000", "000000", "000000", "000550", "000000"];
@@ -111,6 +113,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
 /// passed unread, and a forged motor on it is refused.
 #[test]
 fn edges_rederive_frames_applies_motor_to_whole_fibre() {
+    crate::transducer::raster::stand_on(0);
     let a_in = ["110000", "000000", "110000", "000000"];
     let a_out = ["220000", "000000", "220000", "000000"];
     let b_in = ["011000", "000000", "011000", "000000"];
@@ -239,6 +242,7 @@ assert!(!snaps.is_empty(), "the pivot orbit reads the held orbit and answers");
 /// closes the family and speaks a fourth frame.
 #[test]
 fn extract_rule_reads_translation_as_one_vertex() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
         (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
@@ -315,6 +319,7 @@ assert!(
 /// through A's class or A's gauge would be visible.
 #[test]
 fn rebase_keeps_rebased_body_hues_and_placement() {
+    crate::transducer::raster::stand_on(0);
 let letter = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
 let rot = crate::transducer::alphabet::Word::from_letters(&[(letter, false)]);
 // A is the single hue-1 compartment; B is the hue-3 bar, another shape.
@@ -473,6 +478,7 @@ fn acts_at(f: &Form, act: &[u8]) -> bool {
 /// A held closed form glued as a vertex: depth 1, fewer Word vertices.
 #[test]
 fn extract_rule_with_glues_held_form() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
     (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
@@ -763,6 +769,7 @@ fn by_address_returns_citation_without_cloning() {
 /// so the residual path can mint against the book.
 #[test]
 fn form_deflation_leaves_listing_shaped_remainders() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1"]), grid(&["2"])),
     (grid(&["10"]), grid(&["23"])),
@@ -789,6 +796,7 @@ for r in listings {
 /// nothing and a new generation re-extracts.
 #[test]
 fn extract_rule_cached_spends_once_per_generation() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
 let fam = b"fam";
 let mut cache = ExtractMemo::new();
@@ -827,6 +835,7 @@ assert!(budget.remaining() < left, "a new atlas generation re-extracts");
 /// handing back another family's rule.
 #[test]
 fn extract_memo_replaces_rule_on_second_family() {
+    crate::transducer::raster::stand_on(0);
     let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
     let two = vec![(grid(&["0011", "0000"]), grid(&["0033", "0000"]))];
     let atlas = crate::transducer::address::Address::from(vec![1]);
@@ -857,6 +866,7 @@ fn extract_memo_replaces_rule_on_second_family() {
 /// end on the other pair is not a constancy violation.
 #[test]
 fn extract_rule_keeps_star_face_of_some_pair_class() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
@@ -905,6 +915,7 @@ assert!(
 /// A class present in some pairs is a section.
 #[test]
 fn extract_rule_reads_some_pair_class_as_section() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
@@ -923,6 +934,7 @@ assert!(
 /// 1→2 are one class; frames of different sizes match by kind.
 #[test]
 fn extract_rule_corresponds_by_transport_class_not_shape() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "1100"]), grid(&["2200", "2200"])),
     (grid(&["1110", "0000"]), grid(&["2220", "0000"])),
@@ -951,6 +963,7 @@ assert!(
 /// maps are two sections, not two classes.
 #[test]
 fn extract_rule_shares_one_vertex_across_recolours() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["2200", "0000"])),
     (grid(&["1100", "0000"]), grid(&["3300", "0000"])),
@@ -1028,6 +1041,7 @@ assert_eq!(
 /// recovery it owed before.
 #[test]
 fn cipher_form_reads_meeting_hues_as_one_body() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
     (grid(&["000000", "110022"]), grid(&["000000", "001122"])),

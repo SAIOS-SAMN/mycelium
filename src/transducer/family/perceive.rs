@@ -18,12 +18,13 @@ pub(crate) type Painted = (i64, i64, u8);
 /// A compartment of a body's support: a site of the base and its hue (51.3, 71).
 pub type Compartment = crate::transducer::blade::Compartment;
 
-/// A scene of painted sites as a grid, origin at the scene's min-corner.
-/// The sensor embedding of one scene; not a ranking over candidates.
-pub fn grid_of_painted(painted: &[(i64, i64, u8)]) -> Grid {
+/// A scene of painted sites as a grid on `void`, origin at the scene's
+/// min-corner. The sensor embedding of one scene; not a ranking over
+/// candidates. The symbol the unpainted sites hold is the caller's, named:
+/// never a ground this reader defaults to.
+pub fn grid_of_painted(painted: &[(i64, i64, u8)], void: u8) -> Grid {
     // The head only SEEDS the bounding box; the box is folded over every
     // site below, so no member is chosen here.
-    let void = crate::transducer::raster::ground();
     let [(r0, c0, _), ..] = painted else {
         return vec![vec![void]];
     };
@@ -59,7 +60,8 @@ pub fn grid_of_painted(painted: &[(i64, i64, u8)]) -> Grid {
 /// 1): the sites before and the sites after, both at the chain's own
 /// min-corner, so the motion between them is the chain's and never an
 /// artefact of two origins. `None` for an empty chain, which describes
-/// no scene.
+/// no scene, and where the open scope reads no one ground to lay the
+/// unnamed sites on.
 pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(Grid, Grid)> {
     scene_at_of_chain(chain).map(|(_, before, after)| (before, after))
 }
@@ -92,7 +94,9 @@ pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), Gr
     let h = (max_r - min_r + 1) as usize;
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the chain's bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let w = (max_c - min_c + 1) as usize;
-    let void = crate::transducer::raster::ground();
+    // Sites the chain does not name hold the scene's one ground; with none
+    // (a vortex, no ground, no family open) no scene is framed.
+    let void = crate::transducer::raster::void().ok()?;
     let mut before = vec![vec![void; w]; h];
     let mut after = vec![vec![void; w]; h];
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a chain site's offset inside the bounding box just sized from these same sites, 0 ≤ r − min_r < h and 0 ≤ c − min_c < w")]
@@ -167,11 +171,11 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
 /// that depends on its extent there, and a vertex keyed by it would find
 /// nothing on a frame perceived by itself.
 pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let mut compartments: Vec<Compartment> = Vec::new();
     for (r, row) in grid.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            if h != void {
+            if !ground.holds(&h) {
                 compartments.push(Compartment::from((r as i64, c as i64, k, h)));
             }
         }
@@ -185,11 +189,11 @@ pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
 /// clause on parts selects among (`Act::Parts`): a body recoloured in part is
 /// parts recoloured whole. Read in the lattice's order, hue by hue.
 pub fn perceive_parts(grid: &Grid) -> Vec<Body> {
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let mut by_hue: crate::network::nerve::Keyed<Vec<Compartment>> = crate::network::nerve::Keyed::new();
     for (r, row) in grid.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            if h == void {
+            if ground.holds(&h) {
                 continue;
             }
             let l = Compartment::from((r as i64, c as i64, 0, h));
@@ -226,12 +230,12 @@ pub fn perceive_family(family: &[(Grid, Grid)]) -> Frames {
 /// 6-connected components across the frames (51.3, 51.4, 70.4), the frame of each
 /// grid its place in the family.
 pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let mut compartments: Vec<Compartment> = Vec::new();
     for (k, grid) in grids.iter().enumerate() {
         for (r, row) in grid.iter().enumerate() {
             for (c, &h) in row.iter().enumerate() {
-                if h != void {
+                if !ground.holds(&h) {
                     compartments.push(Compartment::from((r as i64, c as i64, k as i64, h)));
                 }
             }
@@ -245,9 +249,9 @@ pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
 /// it landed on. The chain is the sensor's planar token (16.5); the frame
 /// rides on the carriage. A body across frames puts two links on one site
 /// of the section, which A5 refuses downstream — its chain is its sections,
-/// one per frame (51.4).
-pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8, u8)> {
-    let void = crate::transducer::raster::ground();
+/// one per frame (51.4). A side with no body writes its sites as the
+/// scene's one ground (`raster::void`); where the scope has none, `None`.
+pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Option<Vec<(i64, i64, u8, u8)>> {
     let mut chain = Vec::new();
     match (a, b) {
         (Some(src), Some(dst)) => {
@@ -261,6 +265,7 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i
             }
         }
         (None, Some(dst)) => {
+            let void = crate::transducer::raster::void().ok()?;
             for l in &dst.compartments {
                 if let Some((r, c)) = on_grid(&l.site) {
                     chain.push((r, c, void, l.hue));
@@ -268,6 +273,7 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i
             }
         }
         (Some(src), None) => {
+            let void = crate::transducer::raster::void().ok()?;
             for l in &src.compartments {
                 if let Some((r, c)) = on_grid(&l.site) {
                     chain.push((r, c, l.hue, void));
@@ -277,7 +283,7 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i
         (None, None) => {}
     }
     chain.sort_unstable();
-    chain
+    Some(chain)
 }
 
 /// The hue of the compartment of `dst` that `v` carries the compartment at `site`
@@ -408,8 +414,8 @@ pub(crate) fn oblique_demanded(
     // no versor here, so the source's compartments each keeps its own hue and the
     // target's are read as they stand. Passing an identity versor instead
     // would write a carry the geometry just refused (checklist (m)).
-    let mut bodies = chain_of(Some(a), None, &crate::transducer::element::identity_versor());
-    bodies.extend(chain_of(None, Some(b), &crate::transducer::element::identity_versor()));
+    let mut bodies = chain_of(Some(a), None, &crate::transducer::element::identity_versor())?;
+    bodies.extend(chain_of(None, Some(b), &crate::transducer::element::identity_versor())?);
     bodies.sort_unstable();
     Some((demand, chart.clone(), bodies))
 }
@@ -475,7 +481,7 @@ pub(crate) fn word_or_demand_on_chart(
         // and minted only when the geometry proves it is one.
         return oblique_demand(a, b, chart, budget).map(Err);
     };
-    let chain = chain_of(Some(a), Some(b), &car.v);
+    let chain = chain_of(Some(a), Some(b), &car.v)?;
     // A22 alone: this is the PERCEPT, which is what the memo holds. The
     // presentation enters afterwards, per mind (50.2 step 2).
     let derivation = match peel_versor(&car.v)? {
@@ -510,7 +516,7 @@ pub(crate) fn word_vertex_on_chart(
     derivation: crate::transducer::alphabet::Derivation,
     chart: &Invariant,
 ) -> Option<Vertex> {
-    let chain = chain_of(Some(a), Some(b), &car.v);
+    let chain = chain_of(Some(a), Some(b), &car.v)?;
     let t = element::translator_of(&car.v)?;
     let d = element::dilator_of(&car.v)?;
     let carriage = d.geo(&t);

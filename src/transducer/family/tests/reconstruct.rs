@@ -29,6 +29,7 @@ fn field_reads_centrality_against_body_sphere() {
 /// pair left out is rebuilt from the other two by it.
 #[test]
 fn reconstruct_rebuilds_each_pair_on_closing_axis() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (
             grid(&["500000050", "050000500", "005005000", "000000000", "000000000"]),

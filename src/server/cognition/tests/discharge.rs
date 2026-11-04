@@ -37,6 +37,7 @@ fn rule_over(family: &[TrainPair]) -> crate::transducer::element::Element {
 /// on that family escrows `price(d)` and nothing for the span.
 #[test]
 fn mint_sentence_escrows_discharge_not_span() {
+    crate::transducer::raster::stand_on(0);
     let family = recoloured();
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
     let at_once = mint_sentence(&rule, &family, &NoCrystal, 0).expect("it mints");

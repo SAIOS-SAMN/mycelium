@@ -11,6 +11,7 @@ use crate::transducer::family::bridge::bridge_pair;
 /// pair's product kept, its height advanced, no hue relation — and admitted.
 #[test]
 fn bridge_pair_admits_shared_slide_as_one_transition() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["220000", "000000", "000220"]);
     let y = grid(&["022000", "000000", "000022"]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);

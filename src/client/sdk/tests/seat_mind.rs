@@ -311,6 +311,7 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
 /// outputs cross as the solve act writes grids.
 #[test]
 fn grid_steps_reads_task_before_seat() {
+    crate::transducer::raster::stand_on(0);
     use crate::client::sdk::rule::{sentence, Step};
     use crate::client::sdk::seat_mind::task::*;
     use crate::transducer::family::NoCrystal;

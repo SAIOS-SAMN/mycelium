@@ -251,16 +251,18 @@ impl Transduction {
 
     /// O1 (ruled 2026-11-01) — THE SHARE BY LANE, `[S, G]`: each changed
     /// incidence's flat measure lands on S where exactly one of its two
-    /// symbols is `ground` (a site changed between ground and painted) and
-    /// on G where both are painted (one painted symbol to another). The
-    /// ground is the family's reading, handed in (MU-SENSING §3.4). The two
-    /// sum to [`Transduction::share`]; on one enclosure they are the
-    /// coboundary's spatial and gauge counts over the frame's measure.
-    pub fn lane_shares(&self, ground: Symbol<'_>) -> [crate::core::Q; 2] {
+    /// symbols is read as ground (a site changed between ground and
+    /// painted) and on G where neither or both are (one painted symbol to
+    /// another, or one candidate of a vortex to another). The ground is the
+    /// family's deduced reading, handed in (MU-SENSING §3.4): under
+    /// `Ground::None` every change lands on G. The two sum to
+    /// [`Transduction::share`]; on one enclosure they are the coboundary's
+    /// spatial and gauge counts over the frame's measure.
+    pub fn lane_shares(&self, ground: &super::Ground<Vec<u8>>) -> [crate::core::Q; 2] {
         let mut lanes = [crate::core::Q::from_integer(0.into()), crate::core::Q::from_integer(0.into())];
         for i in self.changed() {
             let (Some((a, b)), Some(m)) = (self.bands_of(i), self.measure_of(i)) else { continue };
-            let lane = match (a.symbol() == ground) != (b.symbol() == ground) {
+            let lane = match ground.holds_symbol(a.symbol()) != ground.holds_symbol(b.symbol()) {
                 true => 0,
                 false => 1,
             };

@@ -79,26 +79,42 @@ fn laws_concordance(session: &Speaker, key: &SigningKey, report: &mut Report) {
     report.record("laws signature", outcome);
 }
 
+/// One claim: the ground it states, its outputs and its rule's tape.
+type Claim = (Option<Vec<u8>>, Vec<Vec<Vec<u8>>>, Option<Vec<u8>>);
+
 /// The outputs a solve claims: the rule the SDK's extractor states, spoken
 /// on each test input, with its tape; or, where no rule stands, the test
 /// inputs themselves and no tape — a solve the court refuses by name, which
-/// still exercises the act and its verdict.
-fn outputs(envelope: &d::TaskEnvelope) -> (Vec<Vec<Vec<u8>>>, Option<Vec<u8>>) {
-    let mut budget = Physics::default().stroke_n(1 << 20);
-    let stated = extract_rule(&envelope.train, &mut budget).and_then(|rule| {
-        let element = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0).ok()?;
-        let outputs = envelope.tests.iter().map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid())).collect::<Option<Vec<_>>>()?;
-        Some((outputs, Some(element.to_bytes()?)))
+/// still exercises the act and its verdict. Read once per perspective of
+/// the family's ground (MU-SENSING §3.4, §3.8): each claim states the
+/// ground it was spoken under, and every perspective's claim is kept.
+fn claims(envelope: &d::TaskEnvelope) -> Vec<Claim> {
+    let read = crate::rule::on_each_perspective_of(&envelope.train, || {
+        let mut budget = Physics::default().stroke_n(1 << 20);
+        extract_rule(&envelope.train, &mut budget).and_then(|rule| {
+            let element = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0).ok()?;
+            let outputs = envelope.tests.iter().map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid())).collect::<Option<Vec<_>>>()?;
+            Some((outputs, Some(element.to_bytes()?)))
+        })
     });
-    match stated {
-        Some(s) => s,
-        None => (envelope.tests.clone(), None),
-    }
+    read.into_iter()
+        .map(|(ground, said)| match said {
+            Some((outputs, tape)) => (crate::rule::stated(&ground), outputs, tape),
+            None => (crate::rule::stated(&ground), envelope.tests.clone(), None),
+        })
+        .collect()
 }
 
 fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskEnvelope) -> Result<String, String> {
-    let (outputs, tape) = outputs(envelope);
-    let act = d::encode_solve_with_rule(key, &envelope.id, &outputs, tape.as_deref()).ok_or("the outputs pass the solve act's fields")?;
+    let mut said = Vec::new();
+    for (ground, outputs, tape) in claims(envelope) {
+        said.push(solve_one(session, key, envelope, ground.as_deref(), &outputs, tape.as_deref())?);
+    }
+    Ok(said.join("; "))
+}
+
+fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskEnvelope, ground: Option<&[u8]>, outputs: &[Vec<Vec<u8>>], tape: Option<&[u8]>) -> Result<String, String> {
+    let act = d::encode_solve_spoken(key, &envelope.id, outputs, tape, ground).ok_or("the outputs pass the solve act's fields")?;
     let mut asked = 0u32;
     loop {
         asked += 1;

@@ -20,8 +20,10 @@ pub use mycelium::anastome::dialogue::{encode_task_by_citation, encode_task_requ
 /// A registered task as the registry hands it over, and its reader.
 pub use mycelium::anastome::dialogue::{decode_task_envelope, TaskEnvelope};
 
-/// A solve: the outputs alone, or with the rule's tape; signed by the voice.
-pub use mycelium::anastome::dialogue::{encode_solve, encode_solve_with_rule};
+/// A solve: the outputs alone, or with the rule's tape, and optionally the
+/// ground its claim was spoken under (`encode_solve_spoken`); signed by the
+/// voice.
+pub use mycelium::anastome::dialogue::{encode_solve, encode_solve_spoken, encode_solve_with_rule};
 
 /// Grids as the solve act writes them, and read back.
 pub use mycelium::anastome::dialogue::{decode_grids, encode_grids};

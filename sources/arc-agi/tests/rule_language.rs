@@ -26,27 +26,46 @@ fn task(id: &str) -> (Pairs, Pairs) {
     (t.train, t.test)
 }
 
-fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<(), NoRule>) {
-    let mut k = Court::new();
-    let verdict = k.judge_solve(rule, withheld);
-    let court: &Court = &k;
-    let seam = would_judge(rule, withheld, &|a| court.resolve_form(a), court);
-    (verdict, seam)
+/// The court judges the withheld pairs under the ground the claim states,
+/// read against the task's train pairs (`cognition::stated_ground`), as
+/// the door reads it (MU-SENSING §3.4, §6); a stated ground that is no
+/// candidate is refused before any replay.
+fn judged(rule: &Element, stated: Option<&[u8]>, train: &[(Grid, Grid)], withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<(), NoRule>) {
+    let Ok(ground) = mycelium::cognition::stated_ground(train, stated) else {
+        return (SolveVerdict::NotARule, Err(NoRule::NotAVersor));
+    };
+    mycelium::transducer::raster::on_ground(ground, || {
+        let mut k = Court::new();
+        let verdict = k.judge_solve(rule, withheld);
+        let court: &Court = &k;
+        let seam = would_judge(rule, withheld, &|a| court.resolve_form(a), court);
+        (verdict, seam)
+    })
 }
 
-/// THE TASK SOLVED: the steps mint over the train pairs, and the court
-/// solves the minted word on each test pair it never saw.
+/// THE TASK SOLVED: the steps are minted over the train pairs once per
+/// perspective of the task's ground (`rule::on_each_perspective_of`; under
+/// a vortex once per candidate), each claim stating the ground it was
+/// spoken under, and the court, reconstructing under each claim's stated
+/// ground, solves some claim on every test pair it never saw. No claim is
+/// picked before the court reads it.
 fn solves(id: &str, steps: &[Step]) {
     let (train, test) = task(id);
-    let rule = match sentence(steps, &train, &NoCrystal) {
-        Ok(rule) => rule,
-        Err(e) => panic!("{id}: the rule mints over its train pairs: {e:?}"),
-    };
-    for (i, pair) in test.iter().enumerate() {
-        let (verdict, seam) = judged(&rule, std::slice::from_ref(pair));
-        assert!(matches!(verdict, SolveVerdict::Solved { .. }), "{id} test {i}: the court solves it: {verdict:?}");
-        assert!(seam.is_ok(), "{id} test {i}: the seam agrees: {seam:?}");
+    let claims = mycelium::transducer::raster::on_each_perspective_of(&train, || sentence(steps, &train, &NoCrystal));
+    let mut solved = Vec::new();
+    for (ground, rule) in &claims {
+        let Ok(rule) = rule else { continue };
+        let stated = mycelium::transducer::raster::stated(ground);
+        let all = test.iter().all(|pair| {
+            let (verdict, seam) = judged(rule, stated.as_deref(), &train, std::slice::from_ref(pair));
+            matches!(verdict, SolveVerdict::Solved { .. }) && seam.is_ok()
+        });
+        if all {
+            solved.push(ground.clone());
+        }
     }
+    let read: Vec<_> = claims.iter().map(|(g, r)| (g.clone(), r.as_ref().err().cloned())).collect();
+    assert!(!solved.is_empty(), "{id}: some claim, under the ground it states, is solved on every test pair: {read:?}");
 }
 
 // ---- SLICE 1: CREATE, REGION and SIZED OUTPUTS, with SELECT as they need it.
@@ -123,24 +142,34 @@ fn sentence_of_mints_no_word_for_scale_alone() {
     );
 }
 
-/// A crop with no single body to keep is refused by name.
+/// A crop with no single body to keep is refused by name, under every
+/// perspective of the task's ground.
 #[test]
 fn sentence_refuses_crop_of_two_bodies() {
     let (train, _) = task("be94b721");
-    let got = sentence(&[Step::Select(Pred::All), Step::Crop(Extent::Body)], &train, &NoCrystal);
-    assert!(matches!(got, Err(NoRule::Unstated(Unstated::NotOne))), "refused by name: {got:?}");
+    let got = mycelium::transducer::raster::on_each_perspective_of(&train, || {
+        sentence(&[Step::Select(Pred::All), Step::Crop(Extent::Body)], &train, &NoCrystal)
+    });
+    assert!(got.iter().all(|(_, r)| matches!(r, Err(NoRule::Unstated(Unstated::NotOne)))), "refused by name: {got:?}");
 }
 
 /// The clauses round-trip through the address the court decodes: the word
-/// the seam mints is read back by the decoder with every clause.
+/// the seam mints, under each perspective of the task's ground it mints
+/// under, is read back by the decoder with every clause.
 #[test]
 fn from_address_round_trips_minted_clauses() {
     let (train, _) = task("88a10436");
     let steps = [Step::Select(Pred::Hue(5)), Step::Create(Create::Copy { template: Pred::Not(Box::new(Pred::Hue(5))) })];
-    let rule = sentence(&steps, &train, &NoCrystal).expect("mints");
-    let form = mycelium::transducer::sentence::from_address(&rule.address()).expect("the address decodes");
-    assert_eq!(form.elements.len(), 1, "one clause, read back");
-    assert_eq!(mycelium::transducer::sentence::form_vertex_key(&form), rule.address(), "and written again it is the same address");
+    let minted: Vec<_> = mycelium::transducer::raster::on_each_perspective_of(&train, || sentence(&steps, &train, &NoCrystal))
+        .into_iter()
+        .filter_map(|(_, r)| r.ok())
+        .collect();
+    assert!(!minted.is_empty(), "the clauses mint under some perspective");
+    for rule in minted {
+        let form = mycelium::transducer::sentence::from_address(&rule.address()).expect("the address decodes");
+        assert_eq!(form.elements.len(), 1, "one clause, read back");
+        assert_eq!(mycelium::transducer::sentence::form_vertex_key(&form), rule.address(), "and written again it is the same address");
+    }
 }
 
 // ---- SLICE 2: COUNT and COMPARE (Concordance 1.10), in an order the rule
@@ -212,7 +241,9 @@ fn sentence_keeps_extremes() {
 }
 
 /// 00dbd492 — each square frame's interior filled by its width: 5 cyan,
-/// 7 yellow, 9 green; the dot inside each stays inside it.
+/// 7 yellow, 9 green; the dot inside each stays inside it. The task reads
+/// a vortex of 0 and 2 (the frames meet the seam in every sample): a claim
+/// is spoken under each, and the court solves the one under 0.
 #[test]
 fn sentence_fills_interior_by_frame_width() {
     let mut steps = Vec::new();

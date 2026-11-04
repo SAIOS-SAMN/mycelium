@@ -45,7 +45,7 @@ pub use court::catchup::RootAdoption;
 pub use lease::LeaseReading;
 pub use court::fold::Proposal;
 pub use court::syllabus::{Asker, PageEnd, ServedPage};
-pub use court::task::SolveVerdict;
+pub use court::task::{stated_ground, SolveVerdict, StatedGroundRefusal};
 pub use state::Court;
 pub use published::{PublishCost, Published};
 pub use market::prepare_intake;

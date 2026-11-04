@@ -2,6 +2,7 @@
 // read once per cursor, and the class pages absorbed as coordinates.
 
 use crate::client::sdk::*;
+use crate::transducer::family::transduce::Ground;
 
 impl Mind {
     /// PULL a signed work envelope from the hypha's authoritative registry —
@@ -52,7 +53,7 @@ impl Mind {
     /// The verdict filed: a closure clears the task, a refusal is remembered
     /// against its rule, and an UNREAD solve is kept to be asked again (78.153:
     /// the court's replay resumes where its stroke ran out).
-    fn file_verdict(&mut self, id: &[u8; 32], rule: &Element, outputs: &[Grid], code: u8) {
+    fn file_verdict(&mut self, id: &[u8; 32], rule: &Element, outputs: &[Grid], ground: &Ground<u8>, code: u8) {
         match code {
             dialogue::SOLVE_BOUNTY | dialogue::SOLVE_AGAIN => {
                 self.solve_refused.remove(id);
@@ -65,7 +66,7 @@ impl Mind {
             // MU-CLIENT §4.13 — one per task, released by the court's verdict:
             // bounded by the tasks the court holds unjudged, never by a count.
             dialogue::SOLVE_UNREAD => {
-                self.unread_solves.insert(id, (rule.clone(), outputs.to_vec()));
+                self.unread_solves.insert(id, (rule.clone(), outputs.to_vec(), ground.clone()));
             }
             _ => {
                 self.solve_refused.insert(id, rule.address().as_bytes().to_vec());
@@ -84,7 +85,7 @@ impl Mind {
             Some((k, v)) => Some((k, v.clone())),
             None => self.unread_solves.scoped().next().map(|(k, v)| (k, v.clone())),
         };
-        if let Some((k, (rule, outputs))) = next {
+        if let Some((k, (rule, outputs, ground))) = next {
             self.unread_after = k.clone();
             let Ok(id) = <[u8; 32]>::try_from(k.as_slice()) else {
                 self.unread_solves.remove(&k);
@@ -94,7 +95,7 @@ impl Mind {
             if self.board.court.solving.contains(&id) {
                 return;
             }
-            let _ = self.submit_solve_rule(&id, &outputs, &rule);
+            let _ = self.submit_solve_rule(&id, &outputs, &rule, &ground);
         }
     }
 
@@ -104,7 +105,14 @@ impl Mind {
     /// first closure, (SOLVE_AGAIN, 0⃗) on a closure again, (SOLVE_NOTHING,
     /// 0⃗) with the refusal otherwise. The verdict is filed where it lands
     /// (`file_verdict`); a court not reached leaves the solve as it stood.
-    pub(crate) fn submit_solve_rule(&mut self, id: &[u8; 32], outputs: &[Grid], rule: &Element) -> io::Result<()> {
+    ///
+    /// TRACK 26 S2 — THE CLAIM STATES THE GROUND IT WAS SPOKEN UNDER
+    /// (`ground`, the perspective the scene was read in): one symbol under
+    /// `Ground::One`, none otherwise. The court reconstructs under it
+    /// (MU-SENSING §6). Under a vortex each candidate's claim is its own
+    /// solve, held for the return apart from the others.
+    pub(crate) fn submit_solve_rule(&mut self, id: &[u8; 32], outputs: &[Grid], rule: &Element, ground: &Ground<u8>) -> io::Result<()> {
+        let stated = crate::transducer::raster::stated(ground);
         // 78.141 — a solve names its payee by the voice's signature: a
         // voice seated without its key sends none.
         let Some(key) = self.hypha.voice().signer().cloned() else {
@@ -116,28 +124,31 @@ impl Mind {
         })?;
         // A solve that does not fit the lengths the frame writes is not
         // sent short: it is not sent (47.1).
-        let Some(act) = dialogue::encode_solve_with_rule(&key, id, outputs, Some(&bytes)) else {
+        let Some(act) = dialogue::encode_solve_spoken(&key, id, outputs, Some(&bytes), stated.as_deref()) else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "solve does not fit the lengths its frame writes",
             ));
         };
-        let (id, rule, outputs) = (*id, rule.clone(), outputs.to_vec());
+        let (id, rule, outputs, ground) = (*id, rule.clone(), outputs.to_vec(), ground.clone());
         self.board.court.solving.insert(id, ());
         // MU-CLIENT §4.4(4) — the solve is one act comprehension emits, and
         // it leaves at the mind's next return.
-        // One solve a task: a later rule for it before the return stands in
-        // the place of the earlier.
+        // One solve a task and a stated ground: a later rule for it before
+        // the return stands in the place of the earlier.
         let mut at = vec![2u8];
         at.extend_from_slice(&id);
+        if let Some(g) = &stated {
+            crate::transducer::address::put_key_bytes(&mut at, g);
+        }
         // R2 — held for the return of a thought of the task's scene.
-        self.hold_for_return(&at, &id, move |entity| entity.post_solve(id, act, rule, outputs));
+        self.hold_for_return(&at, &id, move |entity| entity.post_solve(id, act, rule, outputs, ground));
         Ok(())
     }
 
     /// THE SOLVE POSTED at a return (`submit_solve_rule`): counted sent, its
     /// verdict filed where it lands.
-    fn post_solve(&mut self, id: [u8; 32], act: Vec<u8>, rule: Element, outputs: Vec<Grid>) {
+    fn post_solve(&mut self, id: [u8; 32], act: Vec<u8>, rule: Element, outputs: Vec<Grid>, ground: Ground<u8>) {
         crate::observe::note_mind(|m| m.perspective[6] += 1);
         self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
             entity.board.court.solving.remove(&id);
@@ -162,7 +173,7 @@ impl Mind {
             // A refusal is remembered against the rule it refused, one per
             // task: the carrier is bounded by the tasks, and a new rule for
             // the task replaces it.
-            entity.file_verdict(&id, &rule, &outputs, code);
+            entity.file_verdict(&id, &rule, &outputs, &ground, code);
         });
     }
 

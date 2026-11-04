@@ -159,8 +159,10 @@ pub fn decode_posted_task(b: &[u8]) -> Option<crate::transducer::family::Task> {
     (p == b.len()).then_some(crate::transducer::family::Task { train, test })
 }
 
-/// 78.141 — the signed bytes' domain of a solve.
-const SIGNED_SOLVE: &[u8] = b"mycelium solve v1";
+/// 78.141 — the signed bytes' domain of a solve. Version 2 (track 26 S2,
+/// inside wire 0x0200's ruled break): the act may carry the ground its
+/// claim was spoken under.
+const SIGNED_SOLVE: &[u8] = b"mycelium solve v2";
 
 /// The bytes a solve's voice signs: the domain, then the act up to its
 /// signature.
@@ -172,9 +174,11 @@ fn solve_signed_bytes(unsigned: &[u8]) -> Vec<u8> {
 
 /// solve submission (wire v1.2): `[ACT_SOLVE][voice 32][task citation
 /// 32][n u8][grid·n]`,
-/// optionally `[RULE][len u32][element]` so the home speaks the rule, then —
-/// 78.141 — `[SIGN][sig 64]`: the voice, which the court pays, signs the act,
-/// and the voice is its key's verifying half.
+/// optionally `[RULE][len u32][element]` so the home speaks the rule, then
+/// optionally — track 26 S2 — `[GRND][len u32][symbol]`, the ground the
+/// claim was spoken under, then — 78.141 — `[SIGN][sig 64]`: the voice,
+/// which the court pays, signs the act, and the voice is its key's
+/// verifying half.
 pub fn encode_solve(
     key: &ed25519_dalek::SigningKey,
     citation: &[u8; 32],
@@ -183,11 +187,24 @@ pub fn encode_solve(
     encode_solve_with_rule(key, citation, outputs, None)
 }
 
+/// [`encode_solve_spoken`] stating no ground.
 pub fn encode_solve_with_rule(
     key: &ed25519_dalek::SigningKey,
     citation: &[u8; 32],
     outputs: &[Vec<Vec<u8>>],
     rule: Option<&[u8]>,
+) -> Option<Vec<u8>> {
+    encode_solve_spoken(key, citation, outputs, rule, None)
+}
+
+/// A SOLVE THAT STATES THE GROUND ITS CLAIM WAS SPOKEN UNDER (MU-SENSING
+/// §6): `ground` is one symbol at the source's width, or `None`.
+pub fn encode_solve_spoken(
+    key: &ed25519_dalek::SigningKey,
+    citation: &[u8; 32],
+    outputs: &[Vec<Vec<u8>>],
+    rule: Option<&[u8]>,
+    ground: Option<&[u8]>,
 ) -> Option<Vec<u8>> {
     use ed25519_dalek::Signer;
     let mut out = vec![ACT_SOLVE];
@@ -200,6 +217,10 @@ pub fn encode_solve_with_rule(
     if let Some(r) = rule {
         out.extend_from_slice(b"RULE");
         crate::transducer::address::put_bytes(&mut out, r)?;
+    }
+    if let Some(g) = ground {
+        out.extend_from_slice(b"GRND");
+        crate::transducer::address::put_bytes(&mut out, g)?;
     }
     let sig = key.sign(&solve_signed_bytes(&out)).to_bytes();
     out.extend_from_slice(b"SIGN");
@@ -231,6 +252,18 @@ pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
         None
     };
     p += rule.as_ref().map_or(0, Vec::len);
+    let ground = match body.get(p..p + 4) == Some(&b"GRND"[..]) {
+        true => {
+            p += 4;
+            let g = crate::transducer::address::take_bytes(body, &mut p)?;
+            // A stated ground is one symbol: never empty.
+            if g.is_empty() {
+                return None;
+            }
+            Some(g)
+        }
+        false => None,
+    };
     let signed = match body.get(p..) {
         Some([]) => false,
         Some([b'S', b'I', b'G', b'N', sig @ ..]) => {
@@ -239,7 +272,7 @@ pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
         }
         _ => return None,
     };
-    Some(SolveAct { voice, task: id, outputs, rule, signed })
+    Some(SolveAct { voice, task: id, outputs, rule, ground, signed })
 }
 
 

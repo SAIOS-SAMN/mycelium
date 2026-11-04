@@ -30,7 +30,8 @@ pub fn assignment_key(a: &crate::transducer::sentence::Acting) -> Vec<u8> {
 /// disagree. Where the identity lays down no grid the residue is the whole
 /// output against nothing: still a remainder (rule 7), never dropped and
 /// never read off a shared corner of two frames. `None` for a pair with no
-/// scene. The demand it stands as is the sentence's ASK (78.149 (b)), its
+/// scene, or whose residue cannot be written on the family's one ground
+/// (track 26 S2). The demand it stands as is the sentence's ASK (78.149 (b)), its
 /// links and their count the word's measure, never μ: it may cap what a
 /// closer is paid and is never escrowed or minted, so it stays a count
 /// (ruled 2026-11-01; μ, a share of the frame, is the discharge).
@@ -39,7 +40,7 @@ pub(crate) fn germ_of_pair(
     b: &Grid,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::element::PlacedChain> {
-    let residue = super::deflation::unspoken_residue(a, b, budget);
+    let residue = super::deflation::unspoken_residue(a, b, budget).ok()?;
     if residue.is_empty() {
         return None;
     }

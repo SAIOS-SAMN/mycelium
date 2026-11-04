@@ -60,10 +60,11 @@ fn overlay_restores_settled_states_after_restart() {
 /// citation, it snapshots, restores, and stays closed.
 #[test]
 fn overlay_restores_task_wider_than_u16_wall() {
-    // Many pairs of busy frames: each pair's listing key is written
-    // into the task's address, so the address grows with them.
+    // Many pairs of busy frames: each sample's content is written into the
+    // task's address, so the address grows with them (40 pairs of 30×30
+    // frames pass the wall).
     let busy = |s: u8| -> Grid { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
-    let wide = Task { train: (0..12u8).map(|s| (busy(s), busy(s + 1))).collect(), test: vec![(busy(40), Vec::new())] };
+    let wide = Task { train: (0..40u8).map(|s| (busy(s), busy(s + 1))).collect(), test: vec![(busy(41), Vec::new())] };
     let mut reg = TaskRegistry::new();
     reg.register(toy_task());
     let id = reg.register(wide.clone()).expect("the wide task has an identity");
@@ -130,17 +131,58 @@ fn task_address_separates_tasks_differing_in_incommensurate_pair() {
 }
 
 /// A task of many busy frames has a content address of tens of kilobytes
-/// (every band of every frame is written), and an index copies the address
-/// it is keyed by. The book keys and holds the task by its 32-byte citation;
-/// the address is recomputed from the task where its coordinates are
-/// needed, never held.
+/// (every site of every sample is written), and an index copies the
+/// address it is keyed by. The book keys and holds the task by its 32-byte
+/// citation; the address is recomputed from the task where its coordinates
+/// are needed, never held.
 fn busy_task() -> Task {
-    // Each row changes hue at every column and no row repeats the one
-    // above, so every site of each 30 × 30 frame is its own band.
+    // 40 pairs of 30 × 30 frames: their content passes 64 KiB.
     let busy = |s: u8| -> Grid { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
     let mut task = toy_task();
-    task.train.extend((0..12u8).map(|s| (busy(s), busy(s + 1))));
+    task.train.extend((0..40u8).map(|s| (busy(s), busy(s + 1))));
     task
+}
+
+/// TRACK 26 S2 (scope separation, ruled 2026-11-03) — A TASK'S IDENTITY
+/// READS NO GROUND: the address of one task is the same whatever ground a
+/// reader opened (0, 7, a vortex) and with none open; and the same samples
+/// always give the same address.
+#[test]
+fn task_identity_reads_no_ground() {
+    use crate::transducer::family::transduce::Ground;
+    use crate::transducer::raster::on_ground;
+    let task = toy_task();
+    let bare = task_address(&task).expect("addressed");
+    assert_eq!(on_ground(Ground::One(0), || task_address(&task)), Some(bare.clone()), "on a ground of 0");
+    assert_eq!(on_ground(Ground::One(7), || task_address(&task)), Some(bare.clone()), "on a ground of 7");
+    assert_eq!(on_ground(Ground::Vortex(vec![0, 1]), || task_address(&task)), Some(bare.clone()), "on a vortex");
+    assert_eq!(task_address(&toy_task()), Some(bare), "the same samples, the same address");
+}
+
+/// TRACK 26 S2 (scope separation, ruled 2026-11-03) — A TASK'S IDENTITY
+/// FIXES NO FRAME: a task and the same task turned by a quarter turn as a
+/// whole (every raster of it) are two posted tasks with two addresses,
+/// where a frame fixed before addressing would read them as one.
+#[test]
+fn task_identity_reads_no_frame_fixing() {
+    let task = Task {
+        train: vec![(vec![vec![1, 0, 0], vec![1, 0, 0]], vec![vec![2, 0, 0], vec![2, 0, 0]])],
+        test: vec![(vec![vec![0, 0, 1], vec![0, 0, 1]], Vec::new())],
+    };
+    // A quarter turn of a raster: line `j` of the turn is column `j` read
+    // from the last line up.
+    let turn = |g: &Grid| -> Grid {
+        let width = crate::transducer::raster::raster_width(g);
+        (0..width).map(|j| g.iter().rev().filter_map(|line| line.get(j).copied()).collect()).collect()
+    };
+    let turned = Task {
+        train: task.train.iter().map(|(x, y)| (turn(x), turn(y))).collect(),
+        test: task.test.iter().map(|(x, y)| (turn(x), y.clone())).collect(),
+    };
+    assert_ne!(task, turned, "the turn moves the samples");
+    let (a, b) = (task_address(&task).expect("addressed"), task_address(&turned).expect("addressed"));
+    assert!(a != b, "two posted tasks that differ by a turn have two addresses");
+    assert_eq!(task_address(&task), Some(a), "and the same samples always give the same address");
 }
 
 #[test]

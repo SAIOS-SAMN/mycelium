@@ -271,6 +271,7 @@ assert!(k.quote().1.is_empty(), "the listing cleared");
 /// from its chain.
 #[test]
 fn settle_probe_opens_face_and_drain_sheds_unmoved() {
+    crate::transducer::raster::stand_on(0);
 use crate::anastome::dialogue::ProbeClosure;
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
@@ -462,6 +463,7 @@ assert_eq!(
 /// the admission.
 #[test]
 fn intake_prepared_computes_no_chart_under_hold() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::stalk::chart::charts_read;
     let mut k = Court::new();
     let a = vec![(0, 0, 1u8), (0, 1, 1), (1, 0, 3)];

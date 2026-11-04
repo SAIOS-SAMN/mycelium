@@ -123,12 +123,20 @@ fn harvest(tasks: &[crate::transducer::family::Task]) -> Vec<(String, Mv)> {
             held.insert(k, c);
         }
     };
-    for task in tasks {
-        let frames = crate::transducer::family::perceive_family(&task.train);
-        let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget) else {
-            continue;
-        };
+    // Each task read once per perspective of its ground (MU-SENSING §3.8):
+    // every perspective's rule is harvested, none picked.
+    let rules: Vec<_> = tasks
+        .iter()
+        .flat_map(|task| {
+            crate::transducer::raster::on_each_perspective_of(&task.train, || {
+                let frames = crate::transducer::family::perceive_family(&task.train);
+                let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
+                crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
+            })
+        })
+        .filter_map(|(_, rule)| rule)
+        .collect();
+    for rule in rules {
         for (_, face) in rule.form.faces.entries() {
             hold(&face.place.carriage);
             if let Some(e) = &face.place.edge {

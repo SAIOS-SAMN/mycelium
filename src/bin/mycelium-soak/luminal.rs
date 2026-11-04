@@ -129,9 +129,9 @@ pub(crate) fn report(dir: &str, names: &[String]) {
             }
         }
         // L6 — the remainder scene, extracted, and its demands by kind.
-        let (scene, _) = remainder_scene(&task.train, &rems, Painted::Sites);
+        let scene = mycelium::transducer::raster::on_ground_of(&task.train, || remainder_scene(&task.train, &rems, Painted::Sites));
         let mut b = physics.stroke_n(STROKE);
-        let kinds = match extract_rule_with(&scene, &empty, &mut b) {
+        let kinds = match scene.ok().and_then(|(scene, _)| extract_rule_with(&scene, &empty, &mut b)) {
             Some(r) => r.form.vertices.entries().fold([0u64; 3], |mut k, (_, v)| {
                 if let Vertex::Demand { kind, .. } = v {
                     match kind {

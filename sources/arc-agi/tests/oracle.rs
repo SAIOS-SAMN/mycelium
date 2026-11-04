@@ -26,7 +26,7 @@ fn readings_agrees_with_golden_oracle() {
         .iter()
         .take(TASKS)
         .filter_map(|name| std::fs::read_to_string(format!("{dir}/{name}")).ok())
-        .filter_map(|json| mycelium_source_arc_agi::parse_task(&json))
+        .filter_map(|json| mycelium_source_arc_agi::decode(&json))
         .collect();
     let got = readings(&inputs(&tasks));
     assert!(got.iter().any(|l| l.starts_with("canonical corpus")), "the harvest read no corpus versor");

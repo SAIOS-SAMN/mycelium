@@ -162,6 +162,7 @@ fn hold_perceived_keeps_both_orbits_of_third_perception() {
 /// asked of the two (the forms then merge or stand, as 13.12 reads them).
 #[test]
 fn hold_perceived_fills_edge_for_unmoved_body() {
+    crate::transducer::raster::stand_on(0);
     let mut c = Contemplation::new();
     perceive(&mut c, &L, &L_OUT);
     perceive(&mut c, &L, &["20000", "20000", "22000", "00000"]);
@@ -177,6 +178,7 @@ fn hold_perceived_fills_edge_for_unmoved_body() {
 /// chart by its class; a held word spelling that class answers it.
 #[test]
 fn hold_perceived_demands_class_of_blow_up() {
+    crate::transducer::raster::stand_on(0);
     let mut c = Contemplation::new();
     let blown = perceive(
         &mut c,
@@ -588,6 +590,7 @@ fn hold_perceived_reads_slide_hour_and_slips() {
 /// stands as a demand on both charts, its residue the core's ray.
 #[test]
 fn hold_perceived_demands_hole_cut_on_both_charts() {
+    crate::transducer::raster::stand_on(0);
     let mut c = Contemplation::new();
     perceive(&mut c, &["11100", "11100", "11100", "00000"], &["01110", "01110", "01110", "00000"]);
     perceive(&mut c, &["11100", "10100", "11100", "00000"], &["01110", "01010", "01110", "00000"]);

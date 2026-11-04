@@ -66,8 +66,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     for file in names {
         let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
         let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
-        let ground = mycelium::transducer::raster::ground_bytes();
-        let ground = mycelium::transducer::sample::Symbol::new(&ground);
+        let ground = mycelium::transducer::raster::ground_bytes(&mycelium::transducer::raster::ground_of(&task.train));
         for (x, y) in &task.train {
             let extent = |g: &mycelium::transducer::family::Grid| (g.len(), g.iter().next().map(Vec::len));
             if extent(x) == extent(y) {
@@ -79,7 +78,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                 continue;
             };
             tally.rank = a.rank();
-            match relation_of(&a, &b, ground) {
+            match relation_of(&a, &b, &ground) {
                 Ok(PairRelation::Carried(s)) => count(&mut tally.carried, &s),
                 Ok(PairRelation::Cover { .. }) => tally.covers += 1,
                 Ok(PairRelation::Offset(s)) => count(&mut tally.offset, &s),

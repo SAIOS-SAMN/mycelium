@@ -17,6 +17,14 @@ use mycelium::transducer::stalk::Stalks;
 
 use mycelium::transducer::family::Grid;
 
+/// Read `f` on the fixtures' declared ground, 0 (MU-SENSING §3.4): a body
+/// recoloured away whole from an input it touches the seam of is, by the
+/// rule, a second candidate, so these fixtures state the canvas they are
+/// drawn on.
+fn on_zero<T>(f: impl FnOnce() -> T) -> T {
+    mycelium::transducer::raster::on_ground(mycelium::transducer::family::transduce::Ground::One(0), f)
+}
+
 fn grid(rows: &[&str]) -> Grid {
     // A byte below '0' is not a hue; the row is the fixture and says so.
     rows.iter()
@@ -88,7 +96,7 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
         .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
         .collect();
     let family = vec![(train_in.clone(), train_out.clone())];
-    let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("three squares extract");
+    let rule = on_zero(|| extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20))).expect("three squares extract");
     let non_frame: Vec<(mycelium::network::nerve::coord::VertexAt, &Vertex)> = rule
         .form
         .vertices
@@ -119,7 +127,9 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
         }),
         "a named face joins Frame to the class"
     );
-    let bodies = perceive(&train_in);
+    // The test grid read on its family's ground (MU-SENSING §3.4): with no
+    // family open no ground is read and the grid is one body.
+    let bodies = on_zero(|| perceive(&train_in));
     let mut atlas = Stalks::default();
     for (i, body) in bodies.iter().enumerate() {
         let mut addr = [0u8; 32];
@@ -131,9 +141,13 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
         3,
         "on the test grid the charts this vertex acts on hold three bodies between them"
     );
-    let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
+    let (spoken, grid) = on_zero(|| {
+        let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
+        let grid = spoken.grid();
+        (spoken, grid)
+    });
     assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
-    assert_eq!(spoken.grid(), Some(train_out));
+    assert_eq!(grid, Some(train_out));
     let _ = mint_sentence(&rule, &family, &NoCrystal, 0);
 }
 
@@ -143,10 +157,12 @@ fn speak_rule_recolours_single_square() {
     let train_in = grid(&["1100", "0000"]);
     let train_out = grid(&["2200", "0000"]);
     let family = vec![(train_in.clone(), train_out.clone())];
-    let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("one square extracts");
-    let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
-    assert!(spoken.remainder.is_empty(), "the square is reached: {:?}", spoken.remainder);
-    assert_eq!(spoken.grid(), Some(train_out));
+    on_zero(|| {
+        let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("one square extracts");
+        let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
+        assert!(spoken.remainder.is_empty(), "the square is reached: {:?}", spoken.remainder);
+        assert_eq!(spoken.grid(), Some(train_out));
+    });
 }
 
 /// A speech act is one frame that decodes back, and its reply carries each adjudication with where its word stands.
@@ -194,7 +210,7 @@ fn extract_rule_closes_single_recolour_as_one_word() {
     let train_in = grid(&["1100", "0000"]);
     let train_out = grid(&["2200", "0000"]);
     let family = vec![(train_in, train_out)];
-    let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("one body extracts");
+    let rule = on_zero(|| extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20))).expect("one body extracts");
     let words: Vec<_> = rule
         .form
         .vertices
@@ -226,13 +242,18 @@ fn snapshot_writes_myt3_and_refuses_older_layouts() {
     let mut k = Court::new();
     // A voice's sentence for a recolour, spoken through the one door an
     // utterance has (law 8): a listing on the book to snapshot.
+    // The whole frame recoloured: read with no ground, the frame is the one
+    // body (its old symbol reads as the ground by the rule, which leaves no
+    // body to recolour).
     let family = vec![(grid(&["11"]), grid(&["22"]))];
-    let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
-    let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");
-    let task = mycelium::registry::task_address(&mycelium::transducer::family::Task { train: family.clone(), test: Vec::new() })
-        .expect("a grid pair's chain is A5's, so the task has an identity");
-    k.bind_task_family(&task, family);
-    let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
+    let codes = mycelium::transducer::raster::on_ground(mycelium::transducer::family::transduce::Ground::None, || {
+        let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
+        let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");
+        let task = mycelium::registry::task_address(&mycelium::transducer::family::Task { train: family.clone(), test: Vec::new() })
+            .expect("a grid pair's chain is A5's, so the task has an identity");
+        k.bind_task_family(&task, family.clone());
+        k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken))
+    });
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "the sentence is listed");
     let snap = k.snapshot();
     assert_eq!(&snap[..4], b"MYT3");

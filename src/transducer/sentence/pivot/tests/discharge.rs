@@ -62,6 +62,7 @@ fn select_discharge_holds_several_as_vortex() {
 /// a lane, and never enters the comparison between certified discharges.
 #[test]
 fn select_discharge_never_selects_by_mu() {
+    crate::transducer::raster::stand_on(0);
     let loose = cert(Axis::Unit(0), [4, 4, 4, 4]);
     let tight = cert(Axis::Unit(0), [1, 1, 1, 1]);
     let Discharge::Vortex(candidates) = select_discharge(&[loose.clone(), tight.clone()]) else {

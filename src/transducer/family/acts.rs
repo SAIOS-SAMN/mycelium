@@ -294,7 +294,9 @@ fn map_of_class(key: &[u8]) -> Vec<(u8, u8)> {
 /// `None` where a part is itself changed in part (no part reading says it),
 /// or a class separates on no coordinate.
 fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::Invariant]) -> Option<Vec<Clause>> {
-    let void = crate::transducer::raster::ground();
+    // A part sent to the ground is recoloured onto the scene's one ground;
+    // with none (a vortex, no ground) that clause is unstated.
+    let void = crate::transducer::raster::void();
     let parted: Vec<Pair<'_>> = pairs.iter().map(|p| Pair { x: p.x, y: p.y, bodies: perceive_parts(p.x) }).collect();
     let preds = predicates(&parted);
     let sels: Vec<Vec<Option<Vec<usize>>>> = parted.iter().map(|p| statement::select_each(&preds, p.x, &p.bodies)).collect();
@@ -317,7 +319,10 @@ fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::I
             s.push(i);
             let map = match fate(part, p.y) {
                 Fate::Kept => continue,
-                Fate::Erased => cells.iter().map(|&(_, _, h)| h).filter(|&h| h != void).map(|h| (h, void)).take(1).collect(),
+                Fate::Erased => {
+                    let void = void.ok()?;
+                    cells.iter().map(|&(_, _, h)| h).filter(|&h| h != void).map(|h| (h, void)).take(1).collect()
+                }
                 Fate::Recoloured(map) => map,
                 Fate::Changed => return None,
             };
@@ -343,13 +348,16 @@ fn agrees(clause: &Clause, p: &Pair<'_>) -> bool {
     said.iter().zip(p.x).zip(p.y).all(|((s, x), y)| s.iter().zip(x).zip(y).all(|((s, x), y)| s == x || s == y))
 }
 
-/// The spoken clauses laid on the clauses' frame.
+/// The spoken clauses laid on the clauses' frame, an unpainted site on the
+/// scene's one ground; `None` where such a site is left and the scope reads
+/// none.
 fn grid_of(s: &statement::Spoken) -> Option<Grid> {
-    let mut g: Grid = vec![vec![crate::transducer::raster::ground(); s.frame.1]; s.frame.0];
+    let mut g: Vec<Vec<Option<u8>>> = vec![vec![None; s.frame.1]; s.frame.0];
     for &(r, c, h) in &s.painted {
-        *g.get_mut(usize::try_from(r).ok()?)?.get_mut(usize::try_from(c).ok()?)? = h;
+        *g.get_mut(usize::try_from(r).ok()?)?.get_mut(usize::try_from(c).ok()?)? = Some(h);
     }
-    Some(g)
+    let void = crate::transducer::raster::void().ok();
+    g.into_iter().map(|row| row.into_iter().map(|h| h.or(void)).collect::<Option<Vec<u8>>>()).collect()
 }
 
 impl Reading<'_, '_> {
@@ -523,19 +531,19 @@ enum Fate {
 }
 
 fn fate(b: &Body, y: &Grid) -> Fate {
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let cells = cells_of(b);
     let said: Vec<Option<u8>> = cells.iter().map(|&(r, c, _)| at(y, r, c)).collect();
     if cells.iter().zip(&said).all(|(c, s)| *s == Some(c.2)) {
         return Fate::Kept;
     }
-    if said.iter().all(|s| *s == Some(void)) {
+    if said.iter().all(|s| s.is_some_and(|t| ground.holds(&t))) {
         return Fate::Erased;
     }
     let mut map: Vec<(u8, u8)> = Vec::new();
     for (&(_, _, h), s) in cells.iter().zip(&said) {
         let Some(t) = *s else { return Fate::Changed };
-        if t == void {
+        if ground.holds(&t) {
             return Fate::Changed;
         }
         match map.iter().find(|(f, _)| *f == h) {
@@ -642,7 +650,9 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
                     Some(true)
                 }
                 (Some(select), None) => {
-                    let void = crate::transducer::raster::ground();
+                    // Erased onto the scene's one ground; with none, the
+                    // clearing is stated by no act (`Overwritten`).
+                    let void = crate::transducer::raster::void().map_err(|_| Unread::Overwritten)?;
                     let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
                     reacted.push(Clause { select, act: Act::Recolour(ground) });
                     related
@@ -684,7 +694,9 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
             // ground, on the bodies the separating coordinate selects.
             if erased.iter().any(|e| !e.is_empty()) {
                 let select = r.separate(&erased, &still).ok_or(Unread::Inseparable)?;
-                let void = crate::transducer::raster::ground();
+                // Erased onto the scene's one ground; with none, the
+                // clearing is stated by no act (`Overwritten`).
+                let void = crate::transducer::raster::void().map_err(|_| Unread::Overwritten)?;
                 let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
                 base.push(Clause { select, act: Act::Recolour(ground) });
             }
@@ -806,7 +818,7 @@ type FillClass = (Vec<Vec<usize>>, PairCells);
 
 fn residue_of(r: &mut Reading<'_, '_>, clauses: &[Clause]) -> Result<Option<Residue>, Unread> {
     let Some(canvas) = r.speak(clauses)? else { return Ok(None) };
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let residue: Vec<Vec<(usize, usize, u8)>> = canvas
         .iter()
         .zip(&r.pairs)
@@ -822,7 +834,7 @@ fn residue_of(r: &mut Reading<'_, '_>, clauses: &[Clause]) -> Result<Option<Resi
             out
         })
         .collect();
-    if residue.iter().flatten().any(|&(_, _, h)| h == void) {
+    if residue.iter().flatten().any(|&(_, _, h)| ground.holds(&h)) {
         return Ok(None);
     }
     Ok(Some((canvas, residue)))
@@ -985,7 +997,7 @@ struct Rays {
 /// `None` where the runs do not cover the residue, or a ray's bodies do not
 /// separate, or its runs carry no one paint.
 fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let n = r.pairs.len();
     let mut rays: crate::network::nerve::Keyed<Rays> = crate::network::nerve::Keyed::new();
     for (k, ((p, res), before)) in r.pairs.iter().zip(residue).zip(canvas).enumerate() {
@@ -1008,7 +1020,7 @@ fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize
                             at_cell = (ni, nj);
                         }
                         None => {
-                            stop = Some(before[ni][nj] != void);
+                            stop = Some(!ground.holds(&before[ni][nj]));
                             break;
                         }
                     }
@@ -1028,7 +1040,7 @@ fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize
                 let whole = cells_of(&p.bodies[b]).into_iter().all(|(ci, cj, _)| {
                     let mut at_cell = (ci, cj);
                     while let Some((ni, nj)) = step(at_cell.0, at_cell.1, (dr, dc), rows, cols) {
-                        if before[ni][nj] != void {
+                        if !ground.holds(&before[ni][nj]) {
                             break;
                         }
                         if created(ni, nj).is_none() {
@@ -1652,7 +1664,7 @@ fn read_copy(r: &Reading<'_, '_>, touched: &[Vec<usize>], every: &[Vec<usize>]) 
 /// table is read past what the pairs show), two pairs disagree on one, or
 /// the output is painted in more than one hue.
 fn read_panes(r: &Reading<'_, '_>) -> Option<Clause> {
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let split = |along_rows: bool| -> Option<bool> {
         let gaps: Vec<Option<bool>> = r
             .pairs
@@ -1690,8 +1702,8 @@ fn read_panes(r: &Reading<'_, '_>) -> Option<Clause> {
                     true => (p.x[i][j], p.x[i + hy + usize::from(gap)][j]),
                     false => (p.x[i][j], p.x[i][j + wy + usize::from(gap)]),
                 };
-                let bit = 2 * usize::from(a != void) + usize::from(b != void);
-                let painted = p.y[i][j] != void;
+                let bit = 2 * usize::from(!ground.holds(&a)) + usize::from(!ground.holds(&b));
+                let painted = !ground.holds(&p.y[i][j]);
                 match table[bit] {
                     Some(was) if was != painted => return None,
                     _ => table[bit] = Some(painted),

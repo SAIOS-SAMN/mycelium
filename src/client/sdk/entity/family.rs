@@ -30,7 +30,9 @@ pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
         if !Enclosure::of(&a).is_same_periods(&Enclosure::of(&b)) {
             continue;
         }
-        let m = crate::transducer::element::measure_lanes(&crate::transducer::family::speak::residual_of(Some(x), y));
+        // One enclosure: the speech reaches every site and needs no ground.
+        let Ok(residual) = crate::transducer::family::speak::residual_of(Some(x), y) else { continue };
+        let m = crate::transducer::element::measure_lanes(&residual);
         for l in 0..4 {
             #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
             let next = mag[l].saturating_add(m[l]);
@@ -324,7 +326,7 @@ pub(crate) fn disagreement_on(epi: &Epigenome, rule: &SentenceRule, x: &crate::t
         return Err(refused(2, said, speech.demanded));
     }
     let Some(g) = said else { return Err(refused(1, None, speech.demanded)) };
-    if crate::transducer::family::speak::residual_of(Some(&g), y).is_empty() {
+    if crate::transducer::family::speak::residual_of(Some(&g), y).is_ok_and(|r| r.is_empty()) {
         return Ok(());
     }
     if g.len() != y.len() || g.iter().zip(y).any(|(a, b)| a.len() != b.len()) {

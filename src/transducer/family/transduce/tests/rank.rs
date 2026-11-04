@@ -50,7 +50,7 @@ fn rank_one_and_rank_three_samples_perceived_by_one_path() {
         let doubled = dilated(x, &vec![2; n]);
         assert!(record(x, &doubled).relations().iter().all(Result::is_ok), "rank {n}");
         assert_eq!(
-            relation_of(x, &doubled, ground()),
+            relation_of(x, &doubled, &ground()),
             Ok(PairRelation::Carried(SignedPermutation::identity(n))),
             "rank {n}"
         );
@@ -77,7 +77,7 @@ fn no_axis_is_privileged() {
         let (xr, yr, zr) = (moved_sitewise(&x, &pi), moved_sitewise(&y, &pi), moved_sitewise(&z, &pi));
         assert_eq!(need_of(&xr, &yr), need_of(&x, &y), "{pi:?}");
         let (t, tr) = (record(&x, &y), record(&xr, &yr));
-        assert_eq!(tr.lane_shares(ground()), t.lane_shares(ground()), "{pi:?}");
+        assert_eq!(tr.lane_shares(&ground()), t.lane_shares(&ground()), "{pi:?}");
         assert_eq!((tr.from.bodies, tr.to.bodies), (t.from.bodies, t.to.bodies), "{pi:?}");
         let ok = |t: &Transduction| t.relations().iter().filter(|r| r.is_ok()).count();
         assert_eq!(ok(&tr), ok(&t), "{pi:?}");

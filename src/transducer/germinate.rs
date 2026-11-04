@@ -19,27 +19,32 @@ pub fn germinate(
     a: &[(i64, i64, u8)],
     b: &[(i64, i64, u8)],
 ) -> Option<crate::transducer::element::PlacedChain> {
-    // Collect the union of sites with the sites' before/after hues.
-    let void = crate::transducer::raster::ground();
-    let mut links: ResidualGerm = Vec::new();
-    let upsert = |links: &mut ResidualGerm, r: i64, c: i64, before: u8, after: u8| {
-        match links.iter_mut().find(|(rr, cc, _, _)| *rr == r && *cc == c) {
-            Some(e) => {
-                if before != void {
-                    e.2 = before;
-                }
-                if after != void {
-                    e.3 = after;
-                }
-            }
-            None => links.push((r, c, before, after)),
-        }
-    };
+    // Collect the union of sites with the sites' before/after symbols; a
+    // side that does not paint a site holds the scene's ground there, the
+    // one symbol the open scope writes for it (`raster::void`). Where the
+    // scope has none (a vortex, no ground, no family open) a one-sided site
+    // has no symbol to write and the chain is not minted: `None`, never 0.
+    let void = crate::transducer::raster::void();
+    let mut sides: Vec<(i64, i64, Option<u8>, Option<u8>)> = Vec::new();
     for (r, c, h) in a {
-        upsert(&mut links, *r, *c, *h, void);
+        match sides.iter_mut().find(|(rr, cc, _, _)| rr == r && cc == c) {
+            Some(e) => e.2 = Some(*h),
+            None => sides.push((*r, *c, Some(*h), None)),
+        }
     }
     for (r, c, h) in b {
-        upsert(&mut links, *r, *c, void, *h);
+        match sides.iter_mut().find(|(rr, cc, _, _)| rr == r && cc == c) {
+            Some(e) => e.3 = Some(*h),
+            None => sides.push((*r, *c, None, Some(*h))),
+        }
+    }
+    let mut links: ResidualGerm = Vec::with_capacity(sides.len());
+    for (r, c, before, after) in sides {
+        let side = |h: Option<u8>| match h {
+            Some(h) => Some(h),
+            None => void.ok(),
+        };
+        links.push((r, c, side(before)?, side(after)?));
     }
     // Keep only links that actually change (before != after); a net-zero
     // demand needs no germ.
@@ -58,11 +63,10 @@ pub fn germinate(
 /// with `after`. Reproduces the demand it was minted from — the germination
 /// closes.
 pub fn apply(germ: &[(i64, i64, u8, u8)], a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
-    let void = crate::transducer::raster::ground();
     let mut out: Vec<(i64, i64, u8)> = a.to_vec();
     for (r, c, _before, after) in germ {
         out.retain(|(rr, cc, _)| !(rr == r && cc == c)); // clear the site
-        if *after != void {
+        if !crate::transducer::raster::is_ground(*after) {
             out.push((*r, *c, *after));
         }
     }

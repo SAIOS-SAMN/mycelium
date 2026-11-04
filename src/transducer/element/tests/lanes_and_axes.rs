@@ -71,6 +71,7 @@ fn germinate_keeps_residual_as_coboundary_germ() {
 /// exact magnitude, and its reverse is a distinct word.
 #[test]
 fn germinate_keeps_canceling_swap_nonidentity() {
+    crate::transducer::raster::stand_on(0);
     let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)]; // L
     let b = [(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]; // bar
     let l_to_bar = from_canonical(&germinate(&a, &b).unwrap());
@@ -129,6 +130,7 @@ fn open_axis_refuses_past_last_seat() {
 /// span, and whatever the chain holds, 𝒯 stays the mint's to supply.
 #[test]
 fn measure_lanes_never_claims_span() {
+    crate::transducer::raster::stand_on(0);
     // Compartments appearing and vanishing are spatial; a hue change is gauge.
     let appears = measure_lanes(&[(0, 0, 0, 1), (1, 1, 0, 1)]);
     assert!(appears[0] > 0, "compartments that appear are spatial");

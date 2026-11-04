@@ -78,6 +78,7 @@ fn compartments<T: Copy + Into<Compartment>>(v: &[T]) -> Vec<Compartment> {
 /// is the case an uncarried body is in.
 #[test]
 fn hold_form_reads_demand_candidates_from_bodies() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::field::contemplation::Contemplation;
     let held = |ga: &[&str], gb: &[&str]| -> (usize, usize) {
         let f = measured(&grid(ga), &grid(gb));
@@ -170,6 +171,7 @@ fn scene_form_groups_pieces_by_transport_class() {
 /// a scene with one body in it.
 #[test]
 fn scene_form_demands_uncarried_body_without_listing() {
+    crate::transducer::raster::stand_on(0);
     let (a, b) = notched();
     let f = measured(&a, &b);
     let (ia, ib) = (perceive(&a), perceive(&b));
@@ -460,6 +462,7 @@ fn scene_form_evaluates_every_orbit() {
 /// lane AND no orbit over its pieces stands.
 #[test]
 fn scene_form_keeps_deformation_for_uncarried_remainder() {
+    crate::transducer::raster::stand_on(0);
     let (a, b) = notched();
     let f = measured(&a, &b);
     let stands = f
@@ -490,6 +493,7 @@ fn scene_form_keeps_deformation_for_uncarried_remainder() {
 /// it is that the stroke is too small for this scene.
 #[test]
 fn cover_deformation_parks_and_resumes_across_strokes() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::family::cover::cover_deformation;
     use crate::transducer::family::cursor;
     let (ga, gb) = four_bodies();
@@ -586,6 +590,7 @@ fn measured_cover(a: &Grid, b: &Grid) -> crate::transducer::family::cover::Cover
 /// the pullback reaches carries the pieces that stand in place.
 #[test]
 fn cover_deformation_propagates_only_from_placed_pieces() {
+    crate::transducer::raster::stand_on(0);
     // TWO BODIES THAT DO NOT MEET. No compartment of the input stands under any
     // compartment of the image, so the pullback names no preimage and places
     // nothing; with nothing placed there is nothing to propagate.

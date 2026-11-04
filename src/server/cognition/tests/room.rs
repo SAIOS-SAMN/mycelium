@@ -87,6 +87,7 @@ assert_eq!(
 /// speaks a chain (law 8); the next draw is a sentence the voice speaks.
 #[test]
 fn speak_pair_relocates_unreachable_before_refusing_room() {
+    crate::transducer::raster::stand_on(0);
 use crate::anastome::dialogue::ProbeClosure;
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];

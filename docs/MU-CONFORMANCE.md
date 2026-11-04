@@ -82,7 +82,7 @@ closure answers `SOLVE_AGAIN` (code 1) and pays nothing.
 | Need | Act | Reply decoder | Fields read back |
 |---|---|---|---|
 | MUST | `task` (`[ACT_TASK][voice 32]`) | `decode_task_envelope` | citation, train, tests (an empty reply: no work) |
-| MUST | `solve` (signed, with the rule's tape) | `decode_solve_verdict` | code, paid S:G:T:H, refusal, modes |
+| MUST | `solve` (signed as `mycelium solve v2`, with the rule's tape and, optionally, the ground the claim was spoken under; MU-SENSING §6.2) | `decode_solve`, `decode_solve_verdict` | the act: voice, task, outputs, rule, stated ground (or none), signature; the verdict: code, paid S:G:T:H, refusal, modes |
 | MUST | `laws register` (`ACT_LAWS` mode 0) | `decode_register_reply` | law version, laws |
 | MAY | `task by citation` | `decode_task_envelope` | citation, train, tests |
 | MAY | `laws lexicon` (mode 3), `laws clock` (4), `laws parameters` (5), `laws statement` (6) | `decode_lexicon_reply`, `decode_clock_reply`, `decode_parameters_reply`, `decode_statement_reply` | as each decoder reads |
@@ -162,8 +162,9 @@ running hypha, as the voice `key` seats. For every profile, the law
 register is read and each law checked at its coordinate with its
 statement, and the served statement, the Concordance's hash and a
 signature over it are read. For a mind, a task is taken and its envelope
-decoded, asked again by its citation, and solved: the solve signed by the
-voice and its verdict checked (a code of the four the statement names, a
+decoded, asked again by its citation, and solved once per perspective of
+its ground (MU-SENSING §3.4, §6.2): each solve signed by the voice and
+stating the ground it was spoken under, and each verdict checked (a code of the four the statement names, a
 final refusal paying nothing, a payment naming no refusal). For a kernel,
 the house's domain is the voice's own key, its one tier the same key:
 

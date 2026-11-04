@@ -80,20 +80,20 @@ pub fn field(x: &Grid) -> Vec<Site> {
         sums.push(s);
         masses.push(mass);
     }
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
     for r in 0..rows {
         for (c, &hue) in x[r].iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let mut near: Vec<Cell> = Vec::new();
-            if hue != void {
+            if !ground.holds(&hue) {
                 near.push((ri, ci, hue));
             }
             let mut ring = [255u8; 8];
             for (k, (dr, dc)) in DIRECTIONS.iter().enumerate() {
                 if let Some(h) = at(x, ri + dr, ci + dc) {
                     ring[k] = h;
-                    if h != void {
+                    if !ground.holds(&h) {
                         near.push((ri + dr, ci + dc, h));
                     }
                 }
@@ -130,22 +130,22 @@ pub fn transports(x: &Grid, y: &Grid) -> Option<Vec<Transport>> {
     if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
         return None;
     }
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
     for (r, row) in x.iter().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let to = at(y, ri, ci)?;
             let mut rays = Vec::new();
-            if h != void {
+            if !ground.holds(&h) {
                 for (k, (dr, dc)) in (0u8..).zip(DIRECTIONS.iter()) {
                     let mut t = 1i64;
                     let mut lit: Option<u8> = None;
                     let mut whole = true;
-                    while at(x, ri + t * dr, ci + t * dc) == Some(0) {
+                    while at(x, ri + t * dr, ci + t * dc).is_some_and(|h| ground.holds(&h)) {
                         let o = at(y, ri + t * dr, ci + t * dc)?;
                         match lit {
-                            None if o != 0 => lit = Some(o),
+                            None if !ground.holds(&o) => lit = Some(o),
                             Some(l) if l == o => {}
                             _ => whole = false,
                         }
@@ -301,7 +301,8 @@ pub struct Reconstruction {
 /// Carry an input field by a table: every site to its key's target hue,
 /// then the light each emits laid along its free reach.
 fn carried(x: &Grid, sites: &[Site], t: &Keyed<Transport>, axis: usize) -> Option<Grid> {
-    let mut out: Grid = x.iter().map(|row| vec![crate::transducer::raster::ground(); row.len()]).collect();
+    let void = crate::transducer::raster::void().ok()?;
+    let mut out: Grid = x.iter().map(|row| vec![void; row.len()]).collect();
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let m = t.get(&key(s, axis))?;
@@ -310,7 +311,7 @@ fn carried(x: &Grid, sites: &[Site], t: &Keyed<Transport>, axis: usize) -> Optio
         for &(k, h) in &m.rays {
             let (dr, dc) = *DIRECTIONS.get(usize::from(k))?;
             let mut step = 1i64;
-            while at(x, s.r + step * dr, s.c + step * dc) == Some(0) {
+            while at(x, s.r + step * dr, s.c + step * dc) == Some(void) {
                 emitted.push((s.r + step * dr, s.c + step * dc, h));
                 step += 1;
             }

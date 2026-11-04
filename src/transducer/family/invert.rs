@@ -68,18 +68,22 @@ pub enum Painted {
 /// THE REMAINDER AS A SCENE: per pair, an output of the observed frame's size
 /// holding what the form left unsaid — its sites, or the whole observed bodies
 /// they stand in; the erasures (painted, observed absent) counted, not
-/// expressible as a body.
+/// expressible as a body. The scene is written on the family's one ground
+/// (`raster::void`); a vortex, no ground, or no family open is refused by
+/// name, never written as 0.
 pub fn remainder_scene(
     family: &[(Grid, Grid)],
     remainders: &[Vec<(i64, i64, u8, u8)>],
     painted: Painted,
-) -> (Vec<(Grid, Grid)>, u64) {
+) -> Result<(Vec<(Grid, Grid)>, u64), crate::transducer::family::transduce::Unground> {
+    let void = crate::transducer::raster::void()?;
+    let ground = crate::transducer::raster::ground();
     let mut erasures = 0u64;
     let scene = family
         .iter()
         .zip(remainders)
         .map(|((x, y), rem)| {
-            let mut m: Grid = y.iter().map(|row| vec![crate::transducer::raster::ground(); row.len()]).collect();
+            let mut m: Grid = y.iter().map(|row| vec![void; row.len()]).collect();
             let mut paint = |r: i64, c: i64, h: u8| {
                 if let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) {
                     if let Some(cell) = m.get_mut(ur).and_then(|row| row.get_mut(uc)) {
@@ -89,20 +93,20 @@ pub fn remainder_scene(
             };
             let unsaid: Vec<(i64, i64)> = rem
                 .iter()
-                .filter_map(|&(r, c, spoken, observed)| match observed {
-                    0 => {
-                        if spoken != 0 {
+                .filter_map(|&(r, c, spoken, observed)| match ground.holds(&observed) {
+                    true => {
+                        if !ground.holds(&spoken) {
                             erasures += 1;
                         }
                         None
                     }
-                    _ => Some((r, c)),
+                    false => Some((r, c)),
                 })
                 .collect();
             match painted {
                 Painted::Sites => {
                     for &(r, c, _, observed) in rem {
-                        if observed != 0 {
+                        if !ground.holds(&observed) {
                             paint(r, c, observed);
                         }
                     }
@@ -126,7 +130,7 @@ pub fn remainder_scene(
             (x.clone(), m)
         })
         .collect();
-    (scene, erasures)
+    Ok((scene, erasures))
 }
 
 fn links(remainders: &[Vec<(i64, i64, u8, u8)>]) -> u64 {
@@ -163,7 +167,8 @@ pub fn invert_remainder_as(
 /// THE INVERSION ON A REMAINDER ITS CALLER HAS ALREADY MEASURED (law 12: the
 /// voice speaks the form once, and inverts what that speech left). What was
 /// read, and — only where the speech accepted it — the joined form with the
-/// remainders it leaves. `None` where nothing is unsaid.
+/// remainders it leaves. `None` where nothing is unsaid, or where the
+/// remainder scene has no one ground to be written on (`remainder_scene`).
 pub fn invert_measured(
     form: &Form,
     family: &[(Grid, Grid)],
@@ -176,7 +181,8 @@ pub fn invert_measured(
     if before == 0 {
         return None;
     }
-    let (scene, erasures) = remainder_scene(family, remainders, painted);
+    // A scene with no one ground to write it on is not inverted.
+    let (scene, erasures) = remainder_scene(family, remainders, painted).ok()?;
     let mut read = Inversion { before, after: before, erasures, ..Inversion::default() };
     let Some(rule) = extract_rule_with(&scene, crystal, budget) else {
         read.unextracted = true;

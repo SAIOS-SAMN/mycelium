@@ -16,6 +16,14 @@ use mycelium::client::sdk::Epigenome;
 /// and not of anything else in the walk.
 #[test]
 fn task_walk_of_is_function_of_given_mind() {
+    // The whole frame recoloured is read with no ground stated, the frame
+    // its one body: by MU-SENSING §3.4 its old symbol, present in the
+    // input and covered whole in the output, reads as the ground and
+    // leaves no body to recolour.
+    mycelium::transducer::raster::on_ground(mycelium::transducer::family::transduce::Ground::None, walk_of_is_function_of_given_mind);
+}
+
+fn walk_of_is_function_of_given_mind() {
     // A recolour: one body, one hue changed. The simplest family there
     // is, built through the instrument's OWN public path so the test
     // exercises what the walk exercises and nothing else.

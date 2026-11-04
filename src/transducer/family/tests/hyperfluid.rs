@@ -14,6 +14,7 @@ use crate::transducer::family::reconstruct::reconstruct;
 /// lifts the gauge.
 #[test]
 fn congruence_reads_two_lengths_as_one_flow() {
+    crate::transducer::raster::stand_on(0);
     let short = flows(&grid(&["300000"]), &grid(&["344000"])).expect("one frame");
     let long = flows(&grid(&["300000"]), &grid(&["344400"])).expect("one frame");
     assert_eq!(congruence(&short[0], &long[0]), Congruence::InTime);
@@ -31,6 +32,7 @@ fn congruence_reads_two_lengths_as_one_flow() {
 /// agreed on, and every pair left out is rebuilt.
 #[test]
 fn reconstruct_in_time_runs_free_ray_agreed_time() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["0300000", "0000000"]), grid(&["0344000", "0000000"])),
         (grid(&["0000000", "3000000"]), grid(&["0000000", "3440000"])),

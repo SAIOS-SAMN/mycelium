@@ -316,3 +316,44 @@ fn solve_key(rule: &Element, withheld: &crate::transducer::family::Family) -> Ve
     }
     key
 }
+
+/// WHY THE COURT DOES NOT RECONSTRUCT UNDER A CLAIM'S STATED GROUND
+/// (MU-SENSING §3.4, §6; track 26 S2).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StatedGroundRefusal {
+    /// The stated ground is not one symbol at the task's width.
+    NotOneSymbol,
+    /// The stated ground is no candidate of the task's ground: it fails
+    /// one of the three conditions on the task's train pairs.
+    NoCandidate,
+}
+
+/// THE GROUND A CLAIM IS RECONSTRUCTED UNDER: the ground the claim states,
+/// read against the task as a candidate (`Ground::candidacies`, the three
+/// conditions of MU-SENSING §3.4 on the task's train pairs), or refused by
+/// name. A claim that states none is reconstructed under no ground
+/// (`Ground::None`). The court verifies what the claim states; it never
+/// deduces, chooses or searches for a ground of its own: the reading of
+/// the stated symbol against the task's conditions is the reconstruction
+/// of the claim. Condition 2 reads the bodies around it (whether a body
+/// covering a seam is a membrane), and no other symbol is ever adopted as
+/// the ground.
+pub fn stated_ground(
+    train: &crate::transducer::family::Family,
+    stated: Option<&[u8]>,
+) -> Result<crate::transducer::family::transduce::Ground<u8>, StatedGroundRefusal> {
+    use crate::transducer::family::transduce::{Candidacy, Ground};
+    let Some(bytes) = stated else { return Ok(Ground::None) };
+    let &[g] = bytes else { return Err(StatedGroundRefusal::NotOneSymbol) };
+    let mut pairs = Vec::with_capacity(train.len());
+    for (x, y) in train {
+        let (Ok(a), Ok(b)) = (crate::transducer::raster::sample_unplaced(x), crate::transducer::raster::sample_unplaced(y)) else {
+            return Err(StatedGroundRefusal::NoCandidate);
+        };
+        pairs.push((a, b));
+    }
+    match Ground::candidacies(&pairs).into_iter().find(|(s, _)| s.as_slice() == [g]) {
+        Some((_, Candidacy::Candidate)) => Ok(Ground::One(g)),
+        _ => Err(StatedGroundRefusal::NoCandidate),
+    }
+}

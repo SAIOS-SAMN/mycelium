@@ -1016,17 +1016,18 @@ pub const MEASURE_BOUND: &str =
 pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     let mut spatial = 0u64;
     let mut gauge = 0u64;
-    let void = crate::transducer::raster::ground();
+    let ground = crate::transducer::raster::ground();
     let mut before_pos: Vec<(i64, i64)> = Vec::new();
     let mut after_pos: Vec<(i64, i64)> = Vec::new();
     for &(r, c, b, a) in chain {
-        if b != void {
+        let (painted_b, painted_a) = (!ground.holds(&b), !ground.holds(&a));
+        if painted_b {
             before_pos.push((r, c));
         }
-        if a != void {
+        if painted_a {
             after_pos.push((r, c));
         }
-        match (b != void, a != void) {
+        match (painted_b, painted_a) {
             (true, true) if b != a => gauge += 1,
             (true, false) | (false, true) => spatial += 1,
             _ => {}
@@ -1045,6 +1046,23 @@ pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     // (`bundle_pressure`); one that reads a chain gets what a chain knows,
     // which on this lane is nothing.
     [spatial, gauge, 0, shell]
+}
+
+/// [`measure_lanes`] OF SUPPORT THAT VANISHED AND APPEARED, read without a
+/// symbol written for the absence: each site of `vanished` a link from a
+/// body to nothing and each of `appeared` from nothing to a body, so each is
+/// one spatial count, none is gauge, and the shell lane is the difference
+/// of the two supports' topology. Equal to `measure_lanes` over those links
+/// on any scope with one ground, and readable where the scope has none.
+pub fn measure_supports(vanished: &[(i64, i64)], appeared: &[(i64, i64)]) -> [u64; 4] {
+    let mut spatial = 0u64;
+    for _ in vanished.iter().chain(appeared) {
+        spatial += 1;
+    }
+    let sb = crate::transducer::beam::signature(vanished, &[]);
+    let sa = crate::transducer::beam::signature(appeared, &[]);
+    let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
+    [spatial, 0, 0, shell]
 }
 
 impl Element {

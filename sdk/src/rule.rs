@@ -50,6 +50,14 @@ pub use mycelium::transducer::family::{Crystal, NoCrystal};
 /// One train pair: an input grid and its output grid.
 pub use mycelium::transducer::family::TrainPair;
 
+/// THE GROUND (MU-SENSING §3.4): a family's deduced reading (`One`,
+/// `Vortex`, `None`). A rule is read, minted and spoken once per
+/// perspective of it (`on_each_perspective_of`), and each claim states the
+/// ground it was spoken under (`stated`, `task::encode_solve_spoken`); the
+/// court reconstructs under it.
+pub use mycelium::transducer::family::transduce::Ground;
+pub use mycelium::transducer::raster::{ground_of, on_each_perspective_of, stated};
+
 /// The rule an extraction states, and the mint's named refusal.
 pub use mycelium::transducer::sentence::{ObstructionRefusal, SentenceRule};
 
