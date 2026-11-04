@@ -53,10 +53,10 @@ impl Court {
         // the frame's replays move on.
         let keys: Vec<Vec<u8>> = sentences
             .iter()
-            .map(|s| crate::cognition::court::replay::replay_key(s, (!s.is_colour_word() && crate::cognition::court::replay::replays_on_family(s)).then_some(task)))
+            .map(|s| crate::cognition::court::reconstruct::reconstruction_key(s, (!s.is_colour_word() && crate::cognition::court::reconstruct::reconstructs_on_family(s)).then_some(task)))
             .collect();
         let progress = |k: &Court| -> Vec<Option<(crate::verdict::Phase, usize, usize)>> {
-            keys.iter().map(|key| k.replay_cursors.get(key).map(|c| c.progress())).collect()
+            keys.iter().map(|key| k.reconstruction_cursors.get(key).map(|c| c.progress())).collect()
         };
         loop {
             let before = progress(self);
@@ -372,13 +372,13 @@ impl Court {
         // The test's own act: its root, one stroke — spoken again, as the
         // voice speaks again, while the court defers it on no lane with its
         // replay moved on (78.153: a replay longer than one stroke resumes).
-        let key = crate::cognition::court::replay::replay_key(s, (!s.is_colour_word() && crate::cognition::court::replay::replays_on_family(s)).then_some(task));
+        let key = crate::cognition::court::reconstruct::reconstruction_key(s, (!s.is_colour_word() && crate::cognition::court::reconstruct::reconstructs_on_family(s)).then_some(task));
         loop {
-            let before = self.replay_cursors.get(&key).map(|c| c.progress());
+            let before = self.reconstruction_cursors.get(&key).map(|c| c.progress());
             let mut budget = self.physics.stroke();
             match self.hear_sentence(voice, task, s, &mut budget) {
                 Ok(Outcome::Deferred(lanes))
-                    if lanes == [0; 4] && self.replay_cursors.get(&key).map(|c| c.progress()) != before => {}
+                    if lanes == [0; 4] && self.reconstruction_cursors.get(&key).map(|c| c.progress()) != before => {}
                 Ok(out) => return out,
                 Err(refusal) => return Outcome::Refused(refusal.reason),
             }
@@ -423,8 +423,8 @@ impl Court {
         // evidence, and here it is replayed for integrity alone.
         // MU-CLIENT §5.6 (C) — and a conjugate's evidence is its section,
         // measured below: replayed for integrity, never for closing every
-        // pair (`replays_on_family`).
-        let family_task = match s.is_colour_word() || !crate::cognition::court::replay::replays_on_family(s) {
+        // pair (`reconstructs_on_family`).
+        let family_task = match s.is_colour_word() || !crate::cognition::court::reconstruct::reconstructs_on_family(s) {
             true => None,
             false => Some(task),
         };
@@ -434,15 +434,15 @@ impl Court {
         // 78.153 — ON THAT ONE STROKE, RESUMED: a replay the stroke could not
         // finish is NOT HEARD — deferred on no lane, the voice speaks again,
         // and the replay resumes where it stopped. Never a refusal.
-        match self.replay_on_cursor(s, family_task, true, budget).0 {
-            crate::verdict::Replayed::Refused(refusal) => {
+        match self.reconstruct_on_cursor(s, family_task, true, budget).0 {
+            crate::verdict::ReconstructionOutcome::Refused(refusal) => {
                 // CV1 — every refusal carries its kind (78.9), and the observer
                 // counts it by kind.
                 crate::observe::note_obstruction(refusal.obstruction.kind());
                 return Err(refusal);
             }
-            crate::verdict::Replayed::Unread => return Ok(Outcome::Deferred([0; 4])),
-            crate::verdict::Replayed::Clean => {}
+            crate::verdict::ReconstructionOutcome::Unread => return Ok(Outcome::Deferred([0; 4])),
+            crate::verdict::ReconstructionOutcome::Clean => {}
         }
         // 78.149 — WHAT THE SENTENCE DISCHARGES, measured on the family of
         // the task it was heard for (the family its binding below will name,
@@ -688,7 +688,7 @@ impl Court {
         // carries what the probe left — the residual chain and the closure
         // it stands at — which is the whole of what a probe measures.
         //
-        // NOTHING IS WRITTEN TO THE LISTING'S MAGNITUDE. `blind_replay`
+        // NOTHING IS WRITTEN TO THE LISTING'S MAGNITUDE. `reconstruct_blind`
         // re-derives a residual germ's lanes from its own chain and refuses
         // a word claiming more than the chain supports, which is what stops
         // a voice inflating its own measure; a court that wrote a count of

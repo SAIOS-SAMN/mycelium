@@ -16,7 +16,7 @@ use std::sync::Mutex;
 /// published them, never the court — `lane_room`'s credit walk and the
 /// cover trie's walk ran under the court on every exchange cycle and every
 /// digest asked. The room it admitted, `[0; 4]` where none reads.
-pub(crate) fn rebuild_own_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
+pub(crate) fn read_published_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
     // A room that cannot be read is a broken count, and this hypha admits
     // no cover against one.
     let Some(room) = read.lane_room() else { return [0; 4] };
@@ -95,7 +95,7 @@ pub(crate) fn sign_cover_digest(court: &Mutex<Court>, shelf: &crate::published::
     // 78.153b — the cover, the room and the ruled root off the published
     // reading; the keeper tick (78.152 TU-1) alone is read on the court.
     let read = shelf.take();
-    let room = rebuild_own_cover(&read, mesh);
+    let room = read_published_cover(&read, mesh);
     let ruled_root = read.ruled_root();
     let tick = match crate::held::held!(court) {
         Ok(mut h) => h.run(|k, _| k.keeper_tick()),

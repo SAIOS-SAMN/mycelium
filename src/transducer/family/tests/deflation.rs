@@ -81,7 +81,7 @@ assert_ne!(spoken.magnitude(), [0; 4], "the sentence measures what it closed and
 /// court decodes leaves nothing undeclared, and the court's own replay
 /// admits what the mint admitted.
 #[test]
-fn mint_sentence_admits_what_court_replays() {
+fn mint_sentence_admits_what_court_reconstructs() {
 crate::transducer::raster::stand_on(0);
     let first = vec![(grid(&["1"]), grid(&["2"]))];
     let rule = extract_rule(&first, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
@@ -94,7 +94,7 @@ crate::transducer::raster::stand_on(0);
         "on the form the court holds, the mint left nothing undeclared: {rems:?}"
     );
     assert_eq!(
-        crate::court::verdict::blind_replay_at(&spoken, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind_at(&spoken, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
         None,
         "the court admits on the same family what the mint admitted"
     );

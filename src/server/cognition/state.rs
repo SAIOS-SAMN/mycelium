@@ -50,7 +50,7 @@ pub struct Court {
     pub(crate) axis_index: crate::transducer::sentence::AxisIndex,
     /// Court replay of A20 certificates: citer → (certificate key → (ok,
     /// the head's place when it was replayed, none before genesis)).
-    pub(crate) replay_memo:
+    pub(crate) reconstruction_memo:
         crate::network::nerve::Keyed<crate::network::nerve::Keyed<(bool, Option<crate::chronometry::Place>)>>,
     /// Cited form → citers. Slash of a cited form redockets each citer.
     pub(crate) cited_by: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
@@ -198,7 +198,7 @@ pub struct Court {
     pub(crate) court_fed_index: crate::network::nerve::Keyed<usize>,
     pub(crate) court_upheld: u64,
     pub(crate) court_slashed: u64,
-    /// 78.153 — replays the court's stroke ran out on (`Replayed::Unread`):
+    /// 78.153 — replays the court's stroke ran out on (`ReconstructionOutcome::Unread`):
     /// not ruled that stroke, resumed the next. Since boot.
     pub(crate) court_unread: u64,
     /// 78.153 — replays a whole stroke moved no further: one unit of them
@@ -210,7 +210,7 @@ pub struct Court {
     /// the phase cursor the next stroke resumes from. VOLATILE: never
     /// persisted, so a restart starts every replay over; a binding that
     /// changes a family drops the cursors it could invalidate.
-    pub(crate) replay_cursors: crate::network::nerve::Keyed<crate::verdict::ReplayCursor>,
+    pub(crate) reconstruction_cursors: crate::network::nerve::Keyed<crate::verdict::ReconstructionCursor>,
     /// 78.153 — forms ruled whose waiting citers' re-hearing was unread on
     /// the ruling's stroke: the court stroke hears them again. VOLATILE.
     pub(crate) rehear_due: crate::network::nerve::Keyed<()>,

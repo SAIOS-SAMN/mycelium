@@ -89,7 +89,7 @@ impl crate::transducer::family::Crystal for Court {
     /// 50.2 step 2, at the court: a court does not speak, so it factors
     /// nothing through a presentation. F runs on the voice and nowhere
     /// else (law 8 as ruled 2026-09-10), and the court's reading of a
-    /// derivation is `replay_form_at` resolving the citations it was
+    /// derivation is `reconstruct_form_at` resolving the citations it was
     /// SENT. Empty, and named rather than silent — the same standing as
     /// `on_body` here (row L8s).
     fn generators_under(
@@ -110,13 +110,13 @@ impl Court {
     /// resolved through this court's ruled cover, as μ: each closed pair's
     /// share of its frame (`DeflationRead::mu`, O1 ruled 2026-11-01). Any
     /// miss is zero: association with a listing is not a mint.
-    pub(crate) fn measured_replay(&self, form: &Element, family: &crate::transducer::family::Family) -> Mu {
-        self.measured_replay_read(form, family).0
+    pub(crate) fn measured_discharge(&self, form: &Element, family: &crate::transducer::family::Family) -> Mu {
+        self.measured_discharge_read(form, family).0
     }
 
-    /// [`Court::measured_replay`] with the modes it discharged (78.162): what
+    /// [`Court::measured_discharge`] with the modes it discharged (78.162): what
     /// the closing form moved on the pairs it closed, mode by mode, exact.
-    pub(crate) fn measured_replay_read(&self, form: &Element, family: &crate::transducer::family::Family) -> (Mu, crate::economy::modes::Modes) {
+    pub(crate) fn measured_discharge_read(&self, form: &Element, family: &crate::transducer::family::Family) -> (Mu, crate::economy::modes::Modes) {
         match crate::transducer::sentence::from_element_form(form) {
             Some(f) => {
                 let r = crate::transducer::family::form_deflation_read(&f, family, self, &crate::transducer::alphabet::Word::identity());
@@ -132,7 +132,7 @@ impl Court {
     ///
     /// - the μ a word can be escrowed or paid is its DISCHARGE — the lanes
     ///   it closed, the deflation this court measures by replaying it on
-    ///   the family it is bound to (`measured_replay`), or a rewrite's yield
+    ///   the family it is bound to (`measured_discharge`), or a rewrite's yield
     ///   read on its carriers before less after (`settle_rewrite`);
     /// - (a) never the span it stood: `t_extent` is not μ, waiting is not
     ///   work, and no minted magnitude carries it;
@@ -168,7 +168,7 @@ impl Court {
             // MU-CLIENT §5.6 (C) — a conjugate is paid what its conjugator
             // added on the family: its own section beyond the cited word's.
             (false, true, Some(f)) if self.conjugate_of(word).is_some() => self.transport_on(word, f),
-            (false, true, Some(f)) => self.measured_replay(word, f),
+            (false, true, Some(f)) => self.measured_discharge(word, f),
             (false, true, None) => Mu::zero(),
             // MU-CLIENT §5.6 (W) — a connection bound to a family is
             // decompressed onto it and measured on its own section; a colour

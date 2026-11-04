@@ -36,10 +36,10 @@ fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
 /// vertex names, and the court replays the sentence on its pair without
 /// refusing it for that remainder.
 #[test]
-fn replay_form_with_accepts_remainder_demand_names() {
+fn reconstruct_form_with_accepts_remainder_demand_names() {
     let (family, e) = a_recolour_with_a_creation();
     assert_eq!(
-        replay_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
         None,
         "the closed sub-complex closes; the demand carries the rest"
     );
@@ -48,7 +48,7 @@ fn replay_form_with_accepts_remainder_demand_names() {
 /// The same sentence with its demand vertex struck out claims to close a
 /// pair it leaves a compartment on: `REFUSE_NOT_CLOSED`.
 #[test]
-fn replay_form_with_refuses_undeclared_remainder() {
+fn reconstruct_form_with_refuses_undeclared_remainder() {
     let (family, e) = a_recolour_with_a_creation();
     let mut f =
         crate::transducer::sentence::from_element_form(&e).expect("the tape reads back");
@@ -59,7 +59,7 @@ fn replay_form_with_refuses_undeclared_remainder() {
     f.reindex();
     let tampered = as_element_form(&f, e.magnitude()).expect("a tape");
     assert_eq!(
-        replay_form_with(&tampered, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&tampered, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
         Some(REFUSE_NOT_CLOSED)
     );
 }
@@ -69,12 +69,12 @@ fn replay_form_with_refuses_undeclared_remainder() {
 /// not reconstruct its body there, and the sentence is refused before any
 /// remainder is read.
 #[test]
-fn replay_form_with_refuses_vertex_missing_body() {
+fn reconstruct_form_with_refuses_vertex_missing_body() {
     crate::transducer::raster::stand_on(0);
     let (_, e) = a_recolour_with_a_creation();
     let other = vec![(digits(&["110", "000"]), digits(&["330", "003"]))];
     assert_eq!(
-        replay_form_with(&e, &|_| None, Some(&other), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&e, &|_| None, Some(&other), &NoCrystal, &mut super::common::budget()),
         Some(REFUSE_VERTEX_BODY)
     );
 }
@@ -83,7 +83,7 @@ fn replay_form_with_refuses_vertex_missing_body() {
 /// of the Frame and one deformation demand — nothing in it acts — and the
 /// court refuses the tape as a chain whatever it measures.
 #[test]
-fn replay_form_with_refuses_tape_without_acting_vertex() {
+fn reconstruct_form_with_refuses_tape_without_acting_vertex() {
     let family = vec![(digits(&["110", "100"]), digits(&["111", "000"]))];
     let f = cipher_form(&family[0].0, &family[0].1);
     assert!(
@@ -94,7 +94,7 @@ fn replay_form_with_refuses_tape_without_acting_vertex() {
     let mag = sentence_measure(&f, &family, &NoCrystal, 0).expect("the demands measure what they ask");
     let e = as_element_form(&f, mag).expect("a tape");
     assert_eq!(
-        replay_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
         Some(REFUSE_NOT_A_SENTENCE)
     );
 }
@@ -149,7 +149,7 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
     // not a broken form — the relation is absent and the absence is the
     // reading (rule 11) — so the court replays it clean.
     assert_eq!(
-        replay_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
         None,
         "a form with no edge to re-derive replays clean"
     );
@@ -268,7 +268,7 @@ fn vertices_carry_frames_perceives_each_frame_once() {
 /// chart to every pair would replay Member B on pair 0 against that body
 /// and refuse the sentence at a claim it never made.
 #[test]
-fn replay_form_with_scopes_members_to_active_sections() {
+fn reconstruct_form_with_scopes_members_to_active_sections() {
     crate::transducer::raster::stand_on(0);
     let family = vec![
         (digits(&["1100", "1100", "3000"]), digits(&["2200", "2200", "3000"])),
@@ -278,7 +278,7 @@ fn replay_form_with_scopes_members_to_active_sections() {
         .expect("multi-member rule extracts");
     let e = mint_sentence(&rule, &family, &NoCrystal, 0).expect("sentence mints");
     assert_eq!(
-        replay_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
         None,
         "court replays multi-member rule when input scene has bodies of the other chart"
     );

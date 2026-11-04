@@ -46,7 +46,7 @@ pub(crate) fn fetch<'a>(
         // root; an era replay, the one ask the cold archive answers.
         let req = match ask {
             Ask::CatchUp => dialogue::encode_receipts_request(&mesh.vk, signer, after, upto),
-            Ask::Replay => dialogue::encode_replay_request(&mesh.vk, signer, after, upto),
+            Ask::Era => dialogue::encode_era_request(&mesh.vk, signer, after, upto),
         };
         answer_of(crate::transport::tell_peer_measured(mesh, to_ask, req).map(|(reply, _)| reply))
     }

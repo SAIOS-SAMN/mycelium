@@ -40,7 +40,7 @@ mod why;
 mod window;
 mod wire;
 
-pub use crate::transducer::sentence::{cited_pattern, replay_at, verify_at, Cite};
+pub use crate::transducer::sentence::{cited_pattern, reconstruct_at, verify_at, Cite};
 pub use court::catchup::RootAdoption;
 pub use lease::LeaseReading;
 pub use court::fold::Proposal;

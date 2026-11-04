@@ -526,7 +526,7 @@ assert!(
 /// (MU-CLIENT §7.1, ruled 2026-10-18) a residual chain, fat or honest,
 /// is never learned at all: it is an open question.
 #[test]
-fn learn_refuses_taught_word_failing_replay() {
+fn learn_refuses_taught_word_failing_reconstruction() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let honest = from_canonical(

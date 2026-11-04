@@ -13,7 +13,7 @@ pub mod glue;
 pub mod lapse;
 pub mod phase;
 pub mod present;
-pub mod replay;
+pub mod reconstruct;
 pub mod ruling;
 pub mod syllabus;
 pub mod task;

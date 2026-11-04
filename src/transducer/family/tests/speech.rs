@@ -406,7 +406,7 @@ assert_eq!(
     "the minted address is the form's address"
 );
 assert_eq!(
-    crate::verdict::blind_replay(&minted, &mut super::common::budget()),
+    crate::verdict::reconstruct_blind(&minted, &mut super::common::budget()),
     None,
     "the court replays the minted form from its tape"
 );

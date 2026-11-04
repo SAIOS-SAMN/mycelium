@@ -191,22 +191,22 @@ pub fn adopt(
     // 78.153 — the replay on the one stroke: unread is not adopted now and
     // not refused; the next adoption resumes it (the court's cursor) where
     // the word replays under the lock, or starts it over where it is pure.
-    let (replayed, mut budget) = match word.is_sentence() {
+    let (reconstructed, mut budget) = match word.is_sentence() {
         true => {
-            let replayed = g.run(|k, reads| k.court_replay(word, reads));
-            (replayed, g.into_stroke())
+            let reconstructed = g.run(|k, reads| k.court_reconstruct(word, reads));
+            (reconstructed, g.into_stroke())
         }
         false => {
             let mut budget = g.into_stroke();
-            let mut cursor = crate::verdict::ReplayCursor::default();
-            let replayed = crate::verdict::replay_resume(word, &|_| None, None, &crate::transducer::family::NoCrystal, &mut budget, &mut cursor, false);
-            (replayed, budget)
+            let mut cursor = crate::verdict::ReconstructionCursor::default();
+            let reconstructed = crate::verdict::reconstruct_resume(word, &|_| None, None, &crate::transducer::family::NoCrystal, &mut budget, &mut cursor, false);
+            (reconstructed, budget)
         }
     };
-    match replayed {
-        crate::verdict::Replayed::Refused(r) => return Adoption::Refused(r.reason),
-        crate::verdict::Replayed::Unread => return Adoption::Unread,
-        crate::verdict::Replayed::Clean => {}
+    match reconstructed {
+        crate::verdict::ReconstructionOutcome::Refused(r) => return Adoption::Refused(r.reason),
+        crate::verdict::ReconstructionOutcome::Unread => return Adoption::Unread,
+        crate::verdict::ReconstructionOutcome::Clean => {}
     }
     let Ok(mut g) = held!(k) else { return Adoption::Refused(crate::verdict::REFUSE_COURT_UNAVAILABLE) };
     // The install spends the adoption's stroke, carried in; this hold's own

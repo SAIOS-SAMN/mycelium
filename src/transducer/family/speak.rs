@@ -185,7 +185,7 @@ pub(crate) enum Spoken {
 /// the speaking stack, and the stroke it spends where it is metered.
 ///
 /// THE STACK IS THE CYCLE GUARD (defect 4 of the lock audit). Mutual
-/// citation is admitted by the nerve (`replay_form_on`'s citation reading:
+/// citation is admitted by the nerve (`reconstruct_form_on`'s citation reading:
 /// a posetal height forbade every 2-simplex), and speaking it recursed
 /// without end: `A` cites `B`, `B` cites `A`, and each speech spoke the
 /// other before its own memo entry was written. A citation already on the

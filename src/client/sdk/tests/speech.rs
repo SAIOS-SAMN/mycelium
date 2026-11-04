@@ -224,5 +224,5 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
         .collect();
     let [word] = words.as_slice() else { panic!("one word carrying the thought's return: {}", words.len()) };
     let mut budget = entity.stroke_n(1 << 16);
-    assert_eq!(crate::court::verdict::blind_replay(word, &mut budget), None, "the court's replay of the word is clean");
+    assert_eq!(crate::court::verdict::reconstruct_blind(word, &mut budget), None, "the court's replay of the word is clean");
 }

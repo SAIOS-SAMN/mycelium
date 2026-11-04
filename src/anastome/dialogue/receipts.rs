@@ -190,8 +190,8 @@ pub struct ReceiptsRequest {
     pub replay: bool,
 }
 
-/// The replay ask's trailing tag; a catch-up carries none.
-const REPLAY: u8 = 1;
+/// The era ask's trailing tag; a catch-up carries none.
+const ERA: u8 = 1;
 
 pub fn encode_receipts_request(voice: &[u8; 32], signer: &[u8; 32], after: Option<Place>, upto: Place) -> Vec<u8> {
     let mut out = vec![ACT_RECEIPTS];
@@ -202,10 +202,10 @@ pub fn encode_receipts_request(voice: &[u8; 32], signer: &[u8; 32], after: Optio
 }
 
 /// The same span asked as an ERA REPLAY (78.147): the catch-up ask and the
-/// replay tag after it.
-pub fn encode_replay_request(voice: &[u8; 32], signer: &[u8; 32], after: Option<Place>, upto: Place) -> Vec<u8> {
+/// era tag after it.
+pub fn encode_era_request(voice: &[u8; 32], signer: &[u8; 32], after: Option<Place>, upto: Place) -> Vec<u8> {
     let mut out = encode_receipts_request(voice, signer, after, upto);
-    out.push(REPLAY);
+    out.push(ERA);
     out
 }
 
@@ -219,7 +219,7 @@ pub fn decode_receipts_request(body: &[u8]) -> Option<ReceiptsRequest> {
     let (after, upto) = take_span(body, &mut p)?;
     let replay = match body.get(p..) {
         Some([]) => false,
-        Some([REPLAY]) => true,
+        Some([ERA]) => true,
         _ => return None,
     };
     Some(ReceiptsRequest { voice, signer, after, upto, replay })

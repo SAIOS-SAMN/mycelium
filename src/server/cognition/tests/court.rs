@@ -13,13 +13,13 @@ use crate::transducer::element::{self, Element};
 /// THE BLIND REPLAY refutes every tamper axis and upholds honest speech —
 /// the contradiction docket's whole force is this determinism.
 #[test]
-fn blind_replay_refutes_tampered_words() {
+fn reconstruct_blind_refutes_tampered_words() {
 use crate::transducer::germinate::germinate;
-use crate::verdict::blind_replay;
+use crate::verdict::reconstruct_blind;
 let w = element::from_canonical(
     &germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap(),
 );
-assert!(blind_replay(&w, &mut super::common::budget()).is_none(), "an honest derivation replays clean");
+assert!(reconstruct_blind(&w, &mut super::common::budget()).is_none(), "an honest derivation replays clean");
 // Tamper 1 CANNOT BE BUILT any more: A5's chain is the field's type, so
 // an element cannot hold one that is off its min corner. What a shifted
 // chain is, is the same substance said at another place — A5's quotient,
@@ -28,15 +28,15 @@ let shifted: Vec<(i64, i64, u8, u8)> =
     w.sub().iter().map(|(r, c, b, a)| (r + 3, *c, *b, *a)).collect();
 let off = element::from_residual(&shifted).expect("a shift is still one transition per site");
 assert_eq!(off.address(), w.address(), "A5 quotients the translation: one substance");
-assert!(blind_replay(&off, &mut super::common::budget()).is_none(), "so it replays clean — it is the same word");
+assert!(reconstruct_blind(&off, &mut super::common::budget()).is_none(), "so it replays clean — it is the same word");
 // Tamper 2: inflate the claimed magnitude (yield fraud).
 let mut fat = w.clone();
 fat.mag = [999, 0, 0, 0];
-assert!(blind_replay(&fat, &mut super::common::budget()).is_some(), "inflated magnitude does not re-derive");
+assert!(reconstruct_blind(&fat, &mut super::common::budget()).is_some(), "inflated magnitude does not re-derive");
 // Tamper 3: an empty chain claiming work.
 let mut empty = w.clone();
 empty.sub = element::CanonicalChain::default();
-assert!(blind_replay(&empty, &mut super::common::budget()).is_some(), "no evidence, no word");
+assert!(reconstruct_blind(&empty, &mut super::common::budget()).is_some(), "no evidence, no word");
 }
 
 /// 47.3, 47.5, Stage 12 S12.4d — AN OFFER STANDS PENDING UNTIL THE WITNESS
@@ -130,7 +130,7 @@ assert!(k.dockets().is_empty());
 /// The forged word is the spoken sentence with its word vertices struck
 /// out: a tape of the Frame and a demand, refused as a chain (50.6).
 #[test]
-fn glue_fetched_admits_by_replay_not_signature() {
+fn glue_fetched_admits_by_reconstruction_not_signature() {
 let mut home = Court::new();
 let mut peer = Court::new();
 let mut third = Court::new();

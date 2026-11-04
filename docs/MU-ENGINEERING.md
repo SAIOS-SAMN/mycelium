@@ -63,8 +63,7 @@ corpus manifests (configuration) and the ledger or genome it writes
 
 Inside every hypha (`server/cognition/`, `court/verdict/`):
 
-- `blind_replay` (`court/verdict/blind.rs`; the name awaits the code
-  rename, it reconstructs) re-derives every kind of word from its own
+- `reconstruct_blind` (`court/verdict/blind.rs`) re-derives every kind of word from its own
   tape; false speech is slashed with a reason.
 - The docket is the field's projection: listings whose closure is not Flat
   with nonzero deflation, read by key under a stroke budget.

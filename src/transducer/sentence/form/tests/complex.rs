@@ -283,9 +283,9 @@ fn glue_retract_remaps_faces_and_refuses_placement() {
     let mut taped = host.clone();
     let mag = [1u64, 0, 0, 0];
     let clean = as_element_form(&taped, mag).expect("tape");
-    assert_eq!(crate::court::verdict::blind_replay(&clean, &mut super::common::budget()), Some(crate::court::verdict::REFUSE_GLUED_UNRULED));
+    assert_eq!(crate::court::verdict::reconstruct_blind(&clean, &mut super::common::budget()), Some(crate::court::verdict::REFUSE_GLUED_UNRULED));
     let resolve = |a: &[u8]| (a == inner_e.address().as_bytes()).then(|| inner.clone());
-    assert_eq!(crate::court::verdict::blind_replay_with(&clean, &resolve, &mut super::common::budget()), None);
+    assert_eq!(crate::court::verdict::reconstruct_blind_with(&clean, &resolve, &mut super::common::budget()), None);
     // THE WORD TAMPER: the placement overlap's derived word made the
     // identity. The word is derived (AT1 Q2), so the only way to write it
     // is a left factor — and a factor no certificate produced is refused at
@@ -298,7 +298,7 @@ fn glue_retract_remaps_faces_and_refuses_placement() {
     assert!(worded.face_word(placement).is_some_and(|x| x.is_identity()), "tampered to the identity");
     let bad = as_element_form(&worded, mag).expect("tampered placement word");
     assert_eq!(
-        crate::court::verdict::blind_replay_with(&bad, &resolve, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind_with(&bad, &resolve, &mut super::common::budget()),
         Some(crate::court::verdict::REFUSE_PIVOT_INEXACT),
         "a factor no pivot produced refuses"
     );
@@ -307,7 +307,7 @@ fn glue_retract_remaps_faces_and_refuses_placement() {
     taped.faces.at_mut(placement).expect("placement overlap").place.carriage = element::translator_versor(1, 0);
     let bad = as_element_form(&taped, mag).expect("tampered placement");
     assert_eq!(
-        crate::court::verdict::blind_replay_with(&bad, &resolve, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind_with(&bad, &resolve, &mut super::common::budget()),
         Some(crate::court::verdict::REFUSE_FACE),
         "a tampered placement face refuses"
     );
@@ -467,7 +467,7 @@ fn deconstruct_at_cites_words_and_leaves_residual() {
     assert_eq!(s.cites.len(), 1);
     assert_eq!(s.cites[0].word, words[0].address(), "the bar, not the other-hued bar");
     assert!(s.is_closed());
-    assert!(replay_at(&word_at, &s.cites, &target).is_empty(), "the citation replays to closure");
+    assert!(reconstruct_at(&word_at, &s.cites, &target).is_empty(), "the citation replays to closure");
     assert!(
         !s.multiplicity.is_empty(),
         "stratum width is recorded per body"
@@ -551,7 +551,7 @@ fn seam_defect_at_agrees_with_is_flat() {
         Cite { word: words[0].address(), transport: id.clone(), assignment: element::assignment(words[0].sub()) },
         Cite { word: words[1].address(), transport: id.clone(), assignment: element::assignment(words[1].sub()) },
     ];
-    assert!(replay_at(&word_at, &cites[..1], &target).is_empty());
+    assert!(reconstruct_at(&word_at, &cites[..1], &target).is_empty());
     assert_eq!(seam_defect_at(&word_at, &cites, &target), target, "both links spoken twice, differently");
     assert_eq!(verify_at(&word_at, &cites, &target), target);
     assert!(verify_at(&word_at, &cites[..1], &target).is_empty(), "one word, no seam");

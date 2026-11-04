@@ -9,7 +9,7 @@
 // decide`, the voice's own reading). Data; nothing is decided.
 
 use mycelium::client::sdk::Epigenome;
-use mycelium::transducer::family::incongruence::{decide, replayable, single_changes, Decision, KEYS};
+use mycelium::transducer::family::incongruence::{decide, map_holds_whole, single_changes, Decision, KEYS};
 use mycelium::transducer::family::{extract_rule_with, form_deflation};
 
 /// REGISTERED: STROKE
@@ -50,7 +50,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                 (true, true) => {}
             }
         }
-        own += found.iter().filter(|c| c.difference.kinematic() && !c.difference.recoloured.is_empty() && replayable(c)).count() as u64;
+        own += found.iter().filter(|c| c.difference.kinematic() && !c.difference.recoloured.is_empty() && map_holds_whole(c)).count() as u64;
         let decided = decide(&found);
         let n = decided[0].predicted + decided[0].refused + decided[0].alone;
         if n == 0 {

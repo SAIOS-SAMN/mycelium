@@ -1,7 +1,7 @@
 // MU-CLIENT §5.6 (W, C, S) — THE LOCAL DISCHARGE: what a word closes on its
 // own section of a family, read by decompressing it onto each pair.
 //
-//! `measured_replay` decompresses a FORM onto a family and pays only a pair
+//! `measured_discharge` decompresses a FORM onto a family and pays only a pair
 //! it closes whole. A word rarely closes a whole pair, and a connection was
 //! never decompressed at all (its decoder path was missing). This organ reads
 //! the SECTION a word is: the sites of each pair its speech changed and said

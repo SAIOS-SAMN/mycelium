@@ -413,7 +413,7 @@ impl Element {
             letters.spelling.word.put_canonical(&mut out);
             // A4 output (17.2): one projective carriage, one writing. Raw
             // coefficients here made a carriage and its negation two
-            // addresses, and `blind_replay` slashed on the difference.
+            // addresses, and `reconstruct_blind` slashed on the difference.
             letters.carriage.put_canonical(&mut out);
             let mut sigma = letters.sigma.clone();
             sigma.sort_unstable();

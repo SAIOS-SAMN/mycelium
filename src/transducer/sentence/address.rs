@@ -266,7 +266,7 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // here, so the two were one cycle with a byte run at the centre.
     // Switching it failed 20 tests with a single cause — a form decoded
     // from its address arrived with its FILED CYCLES gone, and
-    // `form_orbits_replay` refused it.
+    // `form_orbits_reconstruct` refused it.
     //
     // The filing was never the form's to carry. `pivot_orbit` takes the mesh
     // horizon, the mind's crystal and a budget and files only in its

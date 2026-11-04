@@ -382,7 +382,7 @@ fn expand_all_crystallizes_closed_idea_and_releases_it() {
         "the tape reads back closed"
     );
     assert_eq!(
-        crate::court::verdict::replay_form_with(e, &|_| None, Some(&family), &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)),
+        crate::court::verdict::reconstruct_form_with(e, &|_| None, Some(&family), &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)),
         None,
         "the court replays it closed on its bundle"
     );

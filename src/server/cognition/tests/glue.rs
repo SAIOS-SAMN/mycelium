@@ -7,7 +7,7 @@ use crate::transducer::element::Element;
 
 /// A glued form's trajectory is measured through the court genome as Crystal.
 #[test]
-fn perceive_speech_replays_glued_form_through_court_genome() {
+fn perceive_speech_reconstructs_glued_form_through_court_genome() {
 use crate::transducer::family::{
     apply_form, extract_rule_with, mint_sentence, cipher_form, Crystal, Grid, Speech,
 };

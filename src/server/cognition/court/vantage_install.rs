@@ -384,14 +384,14 @@ impl Court {
         }
         for cert in &env.certificates {
             let k = cert.key();
-            match self.replay_memo.get_mut(address) {
+            match self.reconstruction_memo.get_mut(address) {
                 Some(bucket) => {
                     bucket.insert(k, (true, self.chain.head_place()));
                 }
                 None => {
                     let mut bucket = crate::network::nerve::Keyed::new();
                     bucket.insert(k, (true, self.chain.head_place()));
-                    self.replay_memo.insert(address, bucket);
+                    self.reconstruction_memo.insert(address, bucket);
                 }
             }
         }

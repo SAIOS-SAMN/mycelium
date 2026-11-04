@@ -35,7 +35,7 @@ fn mint_refuses_address_too_long_to_cite() {
 /// refused on replay by name; at the order, for either kind, it mints and
 /// replays green (the court's Congruent fill mints the holonomy kind).
 #[test]
-fn replay_refuses_torse_at_twice_generator_order() {
+fn reconstruct_refuses_torse_at_twice_generator_order() {
     use crate::transducer::address::Address;
     use crate::transducer::element::Generator;
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
@@ -49,9 +49,9 @@ fn replay_refuses_torse_at_twice_generator_order() {
             mint(RewriteKind::Torse, &[Address::from_bytes([1u8])], Address::from_bytes([2u8]), payload, mu)
                 .expect("a Torse that yields is minted")
         };
-        assert!(replay(&torse(order)).is_none(), "{generator:?} at its order replays green");
+        assert!(reconstruct(&torse(order)).is_none(), "{generator:?} at its order replays green");
         assert_eq!(
-            replay(&torse(2 * order)),
+            reconstruct(&torse(2 * order)),
             Some("torse period is not its generator's order"),
             "{generator:?} at twice its order is refused by name"
         );
@@ -60,7 +60,7 @@ fn replay_refuses_torse_at_twice_generator_order() {
 
 /// A condense rewrite round-trips through its tape and replays both ways.
 #[test]
-fn mint_condense_round_trips_and_replays() {
+fn mint_condense_round_trips_and_reconstructs() {
     let after = crate::transducer::address::Address::from_bytes([7u8]);
     let payload = RewritePayload::Condense {
         sections: vec![vec![(1, 4)]],
@@ -78,7 +78,7 @@ fn mint_condense_round_trips_and_replays() {
     )
     .expect("work");
     assert!(e.is_rewrite());
-    assert!(replay(&e).is_none(), "both ways re-derive");
+    assert!(reconstruct(&e).is_none(), "both ways re-derive");
     let back = Rewrite::from_element(&e).unwrap();
     assert_eq!(back.claimed[LANE_GAUGE], 1);
     assert_eq!(back.before.len(), 2);
@@ -104,7 +104,7 @@ fn mint_retire_pays_freed_lanes() {
         freed,
     )
     .expect("a retirement that frees something is work");
-    assert!(replay(&e).is_none(), "it re-derives from its own tape");
+    assert!(reconstruct(&e).is_none(), "it re-derives from its own tape");
     let back = Rewrite::from_element(&e).expect("round trip");
     assert_eq!(back.claimed, freed, "the yield is the measure, not a constant");
     assert_eq!(back.after.address(), &word, "the vertex it names is the one it retires");
@@ -122,7 +122,7 @@ fn mint_retire_pays_freed_lanes() {
 /// re-derivation over the language and is the kernel's, made before the
 /// mint; the court checks here what the tape can prove.
 #[test]
-fn replay_refuses_retirement_proving_nothing() {
+fn reconstruct_refuses_retirement_proving_nothing() {
     use crate::transducer::address::Address;
     let word = Address::from_bytes([1u8]);
     let other = Address::from_bytes([2u8]);
@@ -135,7 +135,7 @@ fn replay_refuses_retirement_proving_nothing() {
             RewritePayload::Retire { cites, freed },
             freed,
         )
-        .map(|e| replay(&e))
+        .map(|e| reconstruct(&e))
     };
     assert_eq!(
         mk(Vec::new(), word.clone()),

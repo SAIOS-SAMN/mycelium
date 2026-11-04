@@ -222,7 +222,7 @@ impl Cover {
     ///
     /// `admit` and `retract` called this per chart, and each call reads the
     /// WHOLE lane trie — every hypha's charts on that lane. So
-    /// `rebuild_own_cover`, which admits one chart at a time and runs every
+    /// `read_published_cover`, which admits one chart at a time and runs every
     /// exchange cycle, rehashed the entire mesh cover once per chart it
     /// holds: own charts × the whole trie, per cycle, and both grow — own
     /// charts with every corpus body listed, the trie with peer count.

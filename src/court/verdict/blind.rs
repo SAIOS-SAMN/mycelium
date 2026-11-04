@@ -1,32 +1,32 @@
-// 42 — BLIND REPLAY: the same re-derivation with nothing supplied but the
+// 42 — BLIND RECONSTRUCTION: the same re-derivation with nothing supplied but the
 // word itself.
 //
-//! A court that must resolve a citation to replay a word cannot replay a
-//! word it has never seen. Blind replay is what an organ runs on arrival,
-//! and what it refuses on is the same list `replay.rs` refuses on.
+//! A court that must resolve a citation to reconstruct a word cannot reconstruct a
+//! word it has never seen. Blind reconstruction is what an organ runs on arrival,
+//! and what it refuses on is the same list `reconstruct.rs` refuses on.
 
 use super::*;
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::Form;
 
-/// `blind_replay` with no cover behind it: a crystallized form that cites
+/// `reconstruct_blind` with no cover behind it: a crystallized form that cites
 /// another refuses as unruled, because nothing here can resolve the
-/// citation. Hyphae replay through `blind_replay_with` and each hypha's ruled
+/// citation. Hyphae replay through `reconstruct_blind_with` and each hypha's ruled
 /// cover.
 ///
-/// 78.153 — THE OFF-LOCK READERS. `blind_replay`, `blind_replay_with`,
-/// `blind_replay_on` and `blind_replay_at` keep the same answer (`None` clean,
+/// 78.153 — THE OFF-LOCK READERS. `reconstruct_blind`, `reconstruct_blind_with`,
+/// `reconstruct_blind_on` and `reconstruct_blind_at` keep the same answer (`None` clean,
 /// a refusal otherwise) for the voice and every reader outside a court's
 /// lock: the replay is metered and resumable, and these run it to the end
 /// over as many strokes as it takes ([`to_completion`]). A court under its
-/// lock replays through [`replay_resume`], which answers `Unread` where its
+/// lock replays through [`reconstruct_resume`], which answers `Unread` where its
 /// one stroke ran out and never refuses for it.
-pub fn blind_replay(spoken: &Element, budget: &mut crate::physics::Budget) -> Option<&'static str> {
-    blind_replay_with(spoken, &|_| None, budget)
+pub fn reconstruct_blind(spoken: &Element, budget: &mut crate::physics::Budget) -> Option<&'static str> {
+    reconstruct_blind_with(spoken, &|_| None, budget)
 }
 
-/// `blind_replay_with` plus the bound family for chapter 23.1 step 6.
-pub fn blind_replay_on(
+/// `reconstruct_blind_with` plus the bound family for chapter 23.1 step 6.
+pub fn reconstruct_blind_on(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
@@ -34,14 +34,14 @@ pub fn blind_replay_on(
     budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
     let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
-    to_completion(spoken, budget, &mut |b, cursor| replay_word(spoken, &owned, family, crystal, b, cursor, false))
+    to_completion(spoken, budget, &mut |b, cursor| reconstruct_word(spoken, &owned, family, crystal, b, cursor, false))
         .map(|r| r.reason)
 }
 
 /// The same replay, refusing WITH THE COORDINATE (50.9): a sentence is
-/// replayed by `replay_form_at`, which names the vertex, the face or the
+/// replayed by `reconstruct_form_at`, which names the vertex, the face or the
 /// chart it refused at; every other word is refused at its tape.
-pub fn blind_replay_at(
+pub fn reconstruct_blind_at(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
@@ -49,41 +49,41 @@ pub fn blind_replay_at(
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
     let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
-    to_completion(spoken, budget, &mut |b, cursor| replay_word(spoken, &owned, family, crystal, b, cursor, true))
+    to_completion(spoken, budget, &mut |b, cursor| reconstruct_word(spoken, &owned, family, crystal, b, cursor, true))
 }
 
 /// 78.153 — THE COURT'S REPLAY ON ITS ONE STROKE, resumed from `cursor`:
 /// `Clean`, `Refused` with its coordinate, or `Unread` — the stroke ran out
 /// first, the cursor holds where, and nothing was ruled. `at` selects
-/// [`blind_replay_at`]'s reading (a sentence straight to its form replay)
-/// over [`blind_replay_on`]'s (the word's own checks first).
-pub fn replay_resume<'r>(
+/// [`reconstruct_blind_at`]'s reading (a sentence straight to its form replay)
+/// over [`reconstruct_blind_on`]'s (the word's own checks first).
+pub fn reconstruct_resume<'r>(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
     family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
-    cursor: &mut ReplayCursor,
+    cursor: &mut ReconstructionCursor,
     at: bool,
-) -> Replayed {
-    replay_word(spoken, resolve, family, crystal, budget, cursor, at)
+) -> ReconstructionOutcome {
+    reconstruct_word(spoken, resolve, family, crystal, budget, cursor, at)
 }
 
-fn replay_word<'r>(
+fn reconstruct_word<'r>(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
     family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
-    cursor: &mut ReplayCursor,
+    cursor: &mut ReconstructionCursor,
     at: bool,
-) -> Replayed {
+) -> ReconstructionOutcome {
     let tape = |reason: Option<&'static str>| match reason {
-        None => Replayed::Clean,
-        Some(r) => Replayed::Refused(Refusal::of_tape(r, spoken)),
+        None => ReconstructionOutcome::Clean,
+        Some(r) => ReconstructionOutcome::Refused(Refusal::of_tape(r, spoken)),
     };
     if at && spoken.is_sentence() && !spoken.is_rewrite() && !spoken.is_connection() {
-        return replay_form_resume(spoken, resolve, family, crystal, budget, cursor);
+        return reconstruct_form_resume(spoken, resolve, family, crystal, budget, cursor);
     }
     if let Some(decided) = word_prelude(spoken) {
         return tape(decided);
@@ -92,14 +92,14 @@ fn replay_word<'r>(
         // The version byte selects the replayer: a v3 tape is a form and
         // is replayed through the cover; a v2 tape is refused.
         //
-        // S9.4 — WHAT CERTIFIES IS CLOSURE. `replay_form_resume` is the
+        // S9.4 — WHAT CERTIFIES IS CLOSURE. `reconstruct_form_resume` is the
         // certificate: the orbits return, every face re-derives, the
         // certificates are re-read, and with a family the form closes it. A
         // sentence is not refused here for carrying a zero magnitude,
         // which is not a defect in the word — μ⃗ is a COST, not a score, and
         // a word that costs nothing to say still says it. The economy
         // prices a zero deflation at zero without the court refusing it.
-        return replay_form_resume(spoken, resolve, family, crystal, budget, cursor);
+        return reconstruct_form_resume(spoken, resolve, family, crystal, budget, cursor);
     }
     tape(word_rest(spoken))
 }
@@ -122,24 +122,24 @@ fn replay_word<'r>(
 pub(crate) fn to_completion(
     spoken: &Element,
     budget: &mut crate::physics::Budget,
-    run: &mut dyn FnMut(&mut crate::physics::Budget, &mut ReplayCursor) -> Replayed,
+    run: &mut dyn FnMut(&mut crate::physics::Budget, &mut ReconstructionCursor) -> ReconstructionOutcome,
 ) -> Option<Refusal> {
     let default = crate::physics::Physics::default().stroke().remaining();
     let width = match budget.remaining() > default {
         true => budget.remaining(),
         false => default,
     };
-    let mut cursor = ReplayCursor::default();
+    let mut cursor = ReconstructionCursor::default();
     loop {
         let before = cursor.progress();
         let mut own = crate::physics::Physics::default().stroke_n(width);
         match run(&mut own, &mut cursor) {
-            Replayed::Clean => return None,
-            Replayed::Refused(r) => return Some(r),
-            Replayed::Unread if cursor.progress() == before => {
+            ReconstructionOutcome::Clean => return None,
+            ReconstructionOutcome::Refused(r) => return Some(r),
+            ReconstructionOutcome::Unread if cursor.progress() == before => {
                 return Some(Refusal::of_tape(REFUSE_UNREAD, spoken));
             }
-            Replayed::Unread => {}
+            ReconstructionOutcome::Unread => {}
         }
     }
 }
@@ -179,7 +179,7 @@ fn word_prelude(spoken: &Element) -> Option<Option<&'static str>> {
         }
     }
     if spoken.is_rewrite() {
-        return Some(crate::transducer::rewrite::replay(spoken));
+        return Some(crate::transducer::rewrite::reconstruct(spoken));
     }
     None
 }
@@ -197,12 +197,12 @@ fn word_rest(spoken: &Element) -> Option<&'static str> {
 /// is traversed; and an install measures something on some lane
 /// (`settle_install`). Closure is the certificate, never a measured
 /// trajectory (12.6).
-pub fn blind_replay_with(
+pub fn reconstruct_blind_with(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
-    blind_replay_on(spoken, resolve, None, &crate::transducer::family::NoCrystal, budget)
+    reconstruct_blind_on(spoken, resolve, None, &crate::transducer::family::NoCrystal, budget)
 }
 
 /// The rest of a word that is not a sentence: a translation, a chain, an

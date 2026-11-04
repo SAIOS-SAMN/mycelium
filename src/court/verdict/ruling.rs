@@ -129,7 +129,7 @@ pub fn rule(
     if deflation.is_some_and(|d| d.iter().all(|&x| x == 0)) {
         return Ruling::Slashed(REFUSE_DEMAND_UNDEFLATED);
     }
-    if let Some(reason) = blind_replay(spoken, budget) {
+    if let Some(reason) = reconstruct_blind(spoken, budget) {
         return Ruling::Slashed(reason);
     }
     match index.get(address).and_then(|&i| federation.get(i)) {

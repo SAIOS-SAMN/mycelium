@@ -8,8 +8,8 @@
 //! slashed on it: `NoPose::Unbounded` became `REFUSE_EDGE`. A spent stroke
 //! is not a refusal. Every input-sized loop of the replay now spends one
 //! read per item, and where the stroke runs out the answer is
-//! [`Replayed::Unread`]: not ruled this stroke, never a pass, never a slash.
-//! The [`ReplayCursor`] keeps the phase and the item it stopped at, with the
+//! [`ReconstructionOutcome::Unread`]: not ruled this stroke, never a pass, never a slash.
+//! The [`ReconstructionCursor`] keeps the phase and the item it stopped at, with the
 //! exact partials a later phase is built from, so the next stroke resumes.
 
 use super::*;
@@ -19,7 +19,7 @@ use crate::transducer::sentence;
 /// it has neither ruled nor deferred the word.
 #[must_use]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Replayed {
+pub enum ReconstructionOutcome {
     /// Every phase re-derived.
     Clean,
     /// Refused, with its reason, coordinate and kind (34.1, 50.9, 78.9).
@@ -29,17 +29,17 @@ pub enum Replayed {
     Unread,
 }
 
-impl Replayed {
+impl ReconstructionOutcome {
     /// The refusal, where the replay refused.
     pub fn refusal(&self) -> Option<&Refusal> {
         match self {
-            Replayed::Refused(r) => Some(r),
-            Replayed::Clean | Replayed::Unread => None,
+            ReconstructionOutcome::Refused(r) => Some(r),
+            ReconstructionOutcome::Clean | ReconstructionOutcome::Unread => None,
         }
     }
 }
 
-/// THE PHASES OF A FORM'S REPLAY, in the order `replay_form_on_resume`
+/// THE PHASES OF A FORM'S REPLAY, in the order `reconstruct_form_on_resume`
 /// reads them. The order is the verdict's: a phase is entered only when
 /// every one before it passed.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
@@ -118,7 +118,7 @@ impl Phase {
 /// It holds no copy of the word and no cited form: those are content and
 /// are read again, by address, at the next stroke.
 #[derive(Clone, Debug, Default)]
-pub struct ReplayCursor {
+pub struct ReconstructionCursor {
     pub(crate) phase: Phase,
     pub(crate) at: usize,
     pub(crate) frames: Vec<super::body::Perceived>,
@@ -126,7 +126,7 @@ pub struct ReplayCursor {
     pub(crate) derived: Vec<(crate::network::nerve::coord::Holonomy, sentence::ToralPeriod)>,
 }
 
-impl ReplayCursor {
+impl ReconstructionCursor {
     /// HOW FAR THE REPLAY HAS COME: the phase and the item, and the pairs
     /// perceived. Two cursors at one progress hold the same partials, since
     /// every partial is a function of the items read; a stroke that leaves
@@ -157,25 +157,25 @@ impl ReplayCursor {
 
     /// A phase settled: passed (the cursor moves past it), refused, or spent
     /// (the cursor keeps the item and the replay is unread).
-    pub(crate) fn settle(&mut self, phase: Phase, step: Step) -> Option<Replayed> {
+    pub(crate) fn settle(&mut self, phase: Phase, step: Step) -> Option<ReconstructionOutcome> {
         match step {
             Ok(()) => {
                 self.phase = phase.next();
                 self.at = 0;
                 None
             }
-            Err(Halt::Refused(r)) => Some(Replayed::Refused(r)),
+            Err(Halt::Refused(r)) => Some(ReconstructionOutcome::Refused(r)),
             Err(Halt::Spent(at)) => {
                 self.phase = phase;
                 self.at = at;
-                Some(Replayed::Unread)
+                Some(ReconstructionOutcome::Unread)
             }
         }
     }
 
     /// Unread between two phases: the cursor stays where it stands.
-    pub(crate) fn unread_here(&self) -> Replayed {
-        Replayed::Unread
+    pub(crate) fn unread_here(&self) -> ReconstructionOutcome {
+        ReconstructionOutcome::Unread
     }
 }
 

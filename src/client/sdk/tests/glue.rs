@@ -60,7 +60,7 @@ fn on_body_finds_stood_form_at_body_chart() {
 
 /// 21 step 3 END TO END on the live crystal: a mind that stood a closed
 /// form cites it when it extracts a rule over a family that form closes
-/// part of. The same claim `perceive_speech_replays_glued_form_through_court_genome`
+/// part of. The same claim `perceive_speech_reconstructs_glued_form_through_court_genome`
 /// makes of a stub crystal whose `on_class` ignores the chart it is asked
 /// at — made here of the epigenome a deployed mind runs.
 #[test]

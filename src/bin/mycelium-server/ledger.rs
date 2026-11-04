@@ -8,7 +8,7 @@
 //
 //! It asks and exits, as the console does, before anything is created here.
 
-use mycelium::anastome::dialogue::{decode_receipts_reply, encode_replay_request};
+use mycelium::anastome::dialogue::{decode_receipts_reply, encode_era_request};
 use mycelium::chronometry::Place;
 use mycelium::network::nerve::Keyed;
 use std::path::Path;
@@ -53,7 +53,7 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
     loop {
         // 78.147: the reader is an era replay — the one ask the cold archive
         // answers; a catch-up below the fold root is answered with the root.
-        let ask = encode_replay_request(&[0; 32], &vk, after, upto);
+        let ask = encode_era_request(&[0; 32], &vk, after, upto);
         let Some(reply) = window.ask(&endpoint, ask) else {
             println!("{RED}{endpoint} stopped answering after {acts} acts{RESET}");
             break;

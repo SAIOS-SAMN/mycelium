@@ -7,7 +7,7 @@
 //! the motion peels to, and minted through the one mint
 //! (`family::mint_sentence_why`): no Element byte is forged here. Before the
 //! word leaves, `would_judge` runs exactly the judge's own steps — the
-//! decoder, then `verdict::blind_replay_at` on the pairs given — so a client
+//! decoder, then `verdict::reconstruct_blind_at` on the pairs given — so a client
 //! knows the verdict its rule earns without asking for it.
 
 //!
@@ -496,7 +496,7 @@ pub(crate) fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Cry
 /// pair to replay against is no verdict; the decoder reads the word's form
 /// from its address (`Held::of`, which runs `from_element_form`) or it is
 /// not a rule; every word it cites resolves by `resolve` or it CITES
-/// UNHELD; then `verdict::blind_replay_at` on the pairs, its cited forms
+/// UNHELD; then `verdict::reconstruct_blind_at` on the pairs, its cited forms
 /// resolved by `resolve`, spoken through `crystal`. A replay no stroke
 /// could read is `Unread` — unjudged, never refuted (78.158a U2). Public so
 /// the corpus decoder's tests (`sources/arc-agi`, ROADMAP track 26 S1) ask
@@ -539,7 +539,7 @@ pub(crate) fn would_judge_with(
     if let Some(unheld) = rule.receipts().cited_addresses().into_iter().find(|a| resolve(a.as_bytes()).is_none()) {
         return Err(NoRule::CitesUnheld(unheld.as_bytes().to_vec()));
     }
-    match crate::verdict::blind_replay_at(rule, resolve, Some(family), crystal, budget) {
+    match crate::verdict::reconstruct_blind_at(rule, resolve, Some(family), crystal, budget) {
         Some(refusal) => Err(NoRule::of_refusal(refusal)),
         None => Ok(()),
     }

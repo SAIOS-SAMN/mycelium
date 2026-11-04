@@ -1888,11 +1888,11 @@ equivocation:     two signed receipts, one key, one K, two chain hashes  ⇒  bu
 
 The court reconstructs and never composes (MU-SCIENCE §5.0); its work on a
 theorem is the finite check of its certificate. The code names the
-discharge reader `measured_replay`, pending the rename.
+discharge reader `measured_discharge`.
 
 Sources: MU-RECURSION law 8, 78.69, 78.70, 47.4; MU-CLIENT §5.6; MU-XSEPTUM
-(EQUIVOCATION). Code: `src/server/cognition/identity.rs::measured_replay`,
-`::measured_replay_read`; `src/transducer/sentence/theorem.rs::Theorem::check`.
+(EQUIVOCATION). Code: `src/server/cognition/identity.rs::measured_discharge`,
+`::measured_discharge_read`; `src/transducer/sentence/theorem.rs::Theorem::check`.
 
 #### 9.5 The law register
 
@@ -1927,7 +1927,7 @@ reconstruction methods that reach the same object admit the same claim at
 one address.
 
 Sources: MU-SCIENCE P1, P2, P5, §3.2, §5.0; MU-RECURSION 47.3. Code: rules
-(V0) through `src/court/verdict/` and §9.4's `measured_replay`.
+(V0) through `src/court/verdict/` and §9.4's `measured_discharge`.
 
 **Specified.** The verifier interface `reconstruct(claim, physics, budget)
 → Verdict` (MU-SCIENCE §9.1), ROADMAP track 12, S1.

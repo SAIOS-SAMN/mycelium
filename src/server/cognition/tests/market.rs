@@ -193,7 +193,7 @@ assert!(
 #[test]
 fn settle_probe_settles_residual_then_closure() {
 use crate::anastome::dialogue::ProbeClosure;
-use crate::transducer::sentence::replay_at;
+use crate::transducer::sentence::reconstruct_at;
 let mut k = Court::new();
 // A coboundary listed on an empty language: a chain listing under a
 // voice's draw — the shape the corpus intake lists (23.8) and a probe
@@ -226,7 +226,7 @@ assert_eq!(void, vec![(0, 3, 3, 4)]);
 assert_eq!(cites.len(), 1);
 let basis = k.basis();
 assert_eq!(
-    replay_at(&|a| basis.iter().find(|w| w.address().as_bytes() == a).map(|w| w.element()), &cites, &chain),
+    reconstruct_at(&|a| basis.iter().find(|w| w.address().as_bytes() == a).map(|w| w.element()), &cites, &chain),
     void,
     "the replay reproduces the residual"
 );
@@ -262,7 +262,7 @@ assert!(k.quote().1.is_empty(), "the listing cleared");
 /// demand written as the remainder's link count would be a tally of links
 /// in the lane that carries boundary topology and the rotor's own
 /// coordinates (16.16, 42.6), a second carrier for a fact the field
-/// already holds (law 12), and a magnitude `blind_replay` refuses: it
+/// already holds (law 12), and a magnitude `reconstruct_blind` refuses: it
 /// re-derives a residual germ's lanes from its own chain and refuses a
 /// word claiming more than the chain supports, so the court would slash
 /// its own listing on the next circuit and every listing a voice made
@@ -302,7 +302,7 @@ assert_eq!(
     "a residual leaves the listing's measure a function of its chain"
 );
 assert_eq!(
-    crate::court::verdict::blind_replay(&listing, &mut super::common::budget()),
+    crate::court::verdict::reconstruct_blind(&listing, &mut super::common::budget()),
     None,
     "so the court's own next circuit does not slash it"
 );

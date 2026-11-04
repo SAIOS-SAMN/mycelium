@@ -241,12 +241,12 @@ fn compose_or_construct_speaks_conjugate_as_transported_word() {
     assert!(cite.conjugator.is_some(), "with the conjugator that carries it");
     let held = crate::transducer::sentence::from_element_form(&letter).expect("the letter's form");
     let resolve = |a: &[u8]| (a == letter.address().as_bytes()).then(|| held.clone());
-    assert!(crate::court::verdict::replay::derivations_compose_at(&f, env, &resolve).is_none(), "the court composes g · W · g̃");
+    assert!(crate::court::verdict::reconstruct::derivations_compose_at(&f, env, &resolve).is_none(), "the court composes g · W · g̃");
     let mut wrong = env.clone();
     for d in &mut wrong.derivations {
         d.conjugator = Some(crate::transducer::alphabet::Rotor::identity());
     }
-    assert!(crate::court::verdict::replay::derivations_compose_at(&f, &wrong, &resolve).is_some(), "a conjugator that does not carry it is refused");
+    assert!(crate::court::verdict::reconstruct::derivations_compose_at(&f, &wrong, &resolve).is_some(), "a conjugator that does not carry it is refused");
 }
 
 /// MU-CLIENT §5.4, D4 — A COMPOSITION OF RULED WORDS IS SPOKEN TO THE COURT.
@@ -296,12 +296,12 @@ fn compose_or_construct_speaks_ruled_composition_to_court() {
     );
     let held = crate::transducer::sentence::from_element_form(&slide).expect("the slide's form");
     let resolve = |a: &[u8]| (a == slide.address().as_bytes()).then(|| held.clone());
-    assert!(crate::court::verdict::replay::derivations_compose_at(&f, env, &resolve).is_none(), "the court composes it from the slide it holds");
+    assert!(crate::court::verdict::reconstruct::derivations_compose_at(&f, env, &resolve).is_none(), "the court composes it from the slide it holds");
     let mut forged = env.clone();
     for d in &mut forged.derivations {
         d.generators = d.generators.iter().map(|(f, v, _)| (f.clone(), v.clone(), 1)).collect();
     }
-    assert!(crate::court::verdict::replay::derivations_compose_at(&f, &forged, &resolve).is_some(), "citing the slide once composes something else: refused");
+    assert!(crate::court::verdict::reconstruct::derivations_compose_at(&f, &forged, &resolve).is_some(), "citing the slide once composes something else: refused");
 }
 
 /// MU-CLIENT §5.3 — A VANTAGE IS WHERE A WORD LANDS IN THE MIND'S OWN HOLES.

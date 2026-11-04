@@ -133,7 +133,7 @@ between them is a coordinate, a refusal of a kind, never a vote.
 | its K: its own closed orbits | TUniversal: the final point, kept by its keepers |
 | its algebra per class, its tubes, its windings | `lie_basis` per chart, `flux_field`, `windings` |
 | coins letters in its dialect (U14) | opens a letter on checked constructor steps (law 6, S2) |
-| reconstructs a peer's discharge | reconstructs certificates (`replay_certificates_at`) |
+| reconstructs a peer's discharge | reconstructs certificates (`reconstruct_certificates_at`) |
 | speaks at its returns | writes acts and pays at its returns |
 
 ### 2.2 How the hypha moves, and so how the mind moves
@@ -1544,8 +1544,7 @@ goal (§2.4(8), §4.12): a mind does not choose its motion to earn.
 **The measure: words, conjugates, sentences.** The cognition has agency;
 the courts adjudicate words, pay more for conjugates, and pay more again for
 sentences as they are algorithmically aligned in non-Euclidean geometry.
-`measured_replay` (the court's own evaluation, a reconstruction; the
-identifier awaits the code rename) is the court's one DECOMPRESSOR: a word's address expanded
+`measured_discharge` (the court's own evaluation, a reconstruction) is the court's one DECOMPRESSOR: a word's address expanded
 into its form (`from_element_form`), spoken onto each pair of the family it
 is bound to (`apply_form_on`), its citations decompressed through what the
 court holds at that moment, the spoken grid set against the pair's answer
@@ -1680,7 +1679,7 @@ is abbreviated `entity/`, and `transducer/` is abbreviated `t/`.
 | convergence V1–V4, K1–K2 | §5.5 | `anastome/dialogue/chatter.rs` (`Evidence`, `mycelium chatter v6`); `entity/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
 | the measures W, C, S; D2′ shares read locally; E2–E4 | §5.6 | `t/family/local.rs` (`word_local`, `spoken_section`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/court/vantage_install.rs` (`cited_deflation`); `server/cognition/book/demand.rs` (`pay_convergence`); `server/cognition/court/task.rs` (`grow_grants_by_paid`) |
 | the Rewrite (court side) | §5.4 | `server/cognition/book/rewrite.rs` (`offer_rewrite`) |
-| the modes carrier: μ as exact modes keyed by canonical coordinates, drawn whole or refused naming the mode short; read off a motion or a hue map; carried on a solve's verdict | §5.6 M | `economy/modes.rs` (`Mode`, `Modes::of_motion`, `of_gauge`, `take`); `anastome/dialogue/percept.rs` (`encode_solve_verdict`); `server/cognition/identity.rs` (`measured_replay_read`) |
+| the modes carrier: μ as exact modes keyed by canonical coordinates, drawn whole or refused naming the mode short; read off a motion or a hue map; carried on a solve's verdict | §5.6 M | `economy/modes.rs` (`Mode`, `Modes::of_motion`, `of_gauge`, `take`); `anastome/dialogue/percept.rs` (`encode_solve_verdict`); `server/cognition/identity.rs` (`measured_discharge_read`) |
 | the seat's call chosen from what calls did; no enumeration | §6 | `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat_mind/own.rs` (`SeatMind::reach`); `client/sdk/seat.rs` (`SeatHold`) |
 | the observer: where the winding carrier stands, and calls answered at its next law boundary | §7.2 | `entity/observer.rs` (`Mind::at_law`; calls `now`, `thoughts`, `thought`, `field`, `held`, `scenes`, `questions`, `perception`, `convergence`, `calls`); `observe/live.rs`; `mycelium-client --call "<call>" [--mind HEX]` |
 

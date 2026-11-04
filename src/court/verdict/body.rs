@@ -76,7 +76,7 @@ pub(crate) struct Frame<'a> {
 
 /// 78.153 — ONE PAIR AS THE SENSOR READ IT: the bodies of `x` and the
 /// images of `y`. Perceived ONCE PER REPLAY, one read each, and held on the
-/// replay's cursor across strokes (`ReplayCursor::frames`): the clauses, the
+/// replay's cursor across strokes (`ReconstructionCursor::frames`): the clauses, the
 /// bodies and the edges of every resumed stroke read these, and the sensor
 /// reads each grid once whatever the strokes the replay takes.
 #[derive(Clone, Debug)]

@@ -101,7 +101,7 @@ assert_eq!(
 /// Standing T is a height difference on the home chain; a witness
 /// re-derives it from the receipts (T16).
 #[test]
-fn t_extent_replays_from_home_chain() {
+fn t_extent_reconstructs_from_home_chain() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];

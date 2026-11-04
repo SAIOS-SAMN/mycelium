@@ -30,7 +30,7 @@ fn factor_on_plane_understands_span_by_hnf() {
         Factored::Understood(tape) => {
             assert!(!tape.is_empty(), "the identity is not the answer here");
             assert!(
-                replays(&tape, &rotors, &g.rotor()),
+                reconstructs(&tape, &rotors, &g.rotor()),
                 "the factorisation re-derives the word it claims"
             );
         }
@@ -80,7 +80,7 @@ fn factor_on_plane_understands_held_word_respelled() {
     let spelled_long = w(&[(q01, false), (q01, false), (q01, false)]);
     match factor_on_plane(&pf(&spelled_long), &basis) {
         Factored::Understood(tape) => assert!(
-            replays(&tape, &rotors, &spelled_long.rotor()),
+            reconstructs(&tape, &rotors, &spelled_long.rotor()),
             "three 90° turns are three of the one held"
         ),
         other => panic!("understood however spelled, got {other:?}"),
@@ -102,7 +102,7 @@ fn factor_off_plane_reaches_or_refuses_unmeasured() {
     let mut b = budget(64);
     match factor_off_plane(&g.rotor(), &rotors, &mut b) {
         Factored::Understood(tape) => assert!(
-            replays(&tape, &rotors, &g.rotor()),
+            reconstructs(&tape, &rotors, &g.rotor()),
             "the traversal's tape re-derives the word"
         ),
         other => panic!("a reachable word is understood, got {other:?}"),
@@ -121,13 +121,13 @@ fn factor_off_plane_reaches_or_refuses_unmeasured() {
 /// The verification is real: a tape that does not re-derive is refused,
 /// so `Understood` cannot be claimed by an algebra that got it wrong.
 #[test]
-fn replays_refuses_tape_that_does_not_rederive() {
+fn reconstructs_refuses_tape_that_does_not_rederive() {
     let q01 = LetterId::turn_90((0, 1)).expect("plane");
     let p5 = LetterId::pythagorean_5((0, 1)).expect("plane");
     let held = [w(&[(q01, false)]), w(&[(p5, false)])];
     let rotors: Vec<Rotor> = held.iter().map(|x| x.rotor()).collect();
     let g = w(&[(q01, false)]);
-    assert!(replays(&[(0, 1)], &rotors, &g.rotor()), "the true tape replays");
-    assert!(!replays(&[(1, 1)], &rotors, &g.rotor()), "a wrong tape does not");
-    assert!(!replays(&[(9, 1)], &rotors, &g.rotor()), "an index off the basis does not");
+    assert!(reconstructs(&[(0, 1)], &rotors, &g.rotor()), "the true tape replays");
+    assert!(!reconstructs(&[(1, 1)], &rotors, &g.rotor()), "a wrong tape does not");
+    assert!(!reconstructs(&[(9, 1)], &rotors, &g.rotor()), "an index off the basis does not");
 }

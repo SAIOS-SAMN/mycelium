@@ -137,7 +137,7 @@ pub const REFUSE_CITATION_CYCLE: &str = "a cited form cites back into its own sp
 /// 78.153 — A REPLAY NO STROKE HOLDS: an off-lock reader ran the replay
 /// over fresh strokes and one moved its cursor nowhere — a single unit of it
 /// costs more reads than a stroke grants. Not a reading of the word: N.
-/// A court under its lock never answers this; it answers `Replayed::Unread`.
+/// A court under its lock never answers this; it answers `ReconstructionOutcome::Unread`.
 pub const REFUSE_UNREAD: &str = "the replay holds a unit no stroke can read";
 /// A ruling's slashed axis: the word does not parse.
 pub const REFUSE_UNPARSEABLE_WORD: &str = "unparseable word";
@@ -237,7 +237,7 @@ impl Refusal {
             // A remainder the form was SILENT on (`spoken == 0`) is a
             // demand the speaker can mount; one it SPOKE WRONGLY is not,
             // and `undeclared_remainder` keeps the latter whatever a demand
-            // says of it. `replay_form_at` partitions them and packs one or
+            // says of it. `reconstruct_form_at` partitions them and packs one or
             // the other, never both, so the links themselves say which
             // refusal this is — and the kind is read from them rather than
             // from the reason, which cannot tell them apart.

@@ -171,7 +171,7 @@ Mode 1, work:
 ```
 
 No countersignature. The word enters the docket like any attested word:
-reconstruction at the home (`blind_replay`), Offer to the overlap,
+reconstruction at the home (`reconstruct_blind`), Offer to the overlap,
 reconstruction at a witness,
 Installed. Release happens on the Installed, through the same path that
 grows the language (`Court::home_install` → `release_award`). A word that
@@ -316,7 +316,7 @@ learning it: the reply is signed by the home and the payee returns it in
 | 4 | INSUFFICIENT_LANE(l) | balance or note short on lane `l` |
 | 5 | NOT_HOME | this hypha does not home the listing; body carries the home's address |
 | 6 | NO_LISTING | the listing key is unknown or dropped |
-| 7 | REPLAY_FAILED | mode 1 word failed `blind_replay`; slashed |
+| 7 | RECONSTRUCTION_FAILED | mode 1 word failed `reconstruct_blind`; slashed |
 | 8 | NO_WITNESS | no overlap organ reconstructed and signed within `Λ`; escrow returned |
 | 9 | EQUIVOCATION | two signed receipts, one key, one K, two hashes; bond burned (MU-RECURSION 47.4) |
 | 10 | ORIGIN | the prefix names another genesis or epoch (MU-RECURSION 45.5) |
@@ -360,7 +360,7 @@ Built: act 0x35 (`src/anastome/dialogue/equivocation.rs`,
 
 Existing, reused unchanged: `escrow_award`, `release_award`, `revoke_award`,
 `draw_escrow`, `balance_mu`, `price`, `lane_moves`, `bind_listing_task`,
-`record_deflation`, `blind_replay`, `home_install`, `nerve::home`,
+`record_deflation`, `reconstruct_blind`, `home_install`, `nerve::home`,
 `HyphaKey`, `Frame`.
 
 ## 11. Tests the implementation must pass

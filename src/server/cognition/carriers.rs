@@ -31,7 +31,7 @@ impl Court {
             ruled,
             court_voice: _,
             axis_index,
-            replay_memo,
+            reconstruction_memo,
             cited_by,
             book,
             basis_gen: _,
@@ -73,7 +73,7 @@ impl Court {
             court_slashed: _,
             court_unread: _,
             court_stalled: _,
-            replay_cursors: _,
+            reconstruction_cursors: _,
             rehear_due: _,
             phase_unread: _,
             confirm_cursor: _,
@@ -252,7 +252,7 @@ impl Court {
         c.count("axis_index", axis_index.scoped().map(|(_, a)| nested(a)).sum());
         c.count("generators", nested(generators));
         c.count("presentation", presentation.len());
-        c.count("replay_memo", nested(replay_memo));
+        c.count("replay_memo", nested(reconstruction_memo));
         c.count("cited_by", nested(cited_by));
         c.count("book", book.1.len());
         c.count("language", language.len());

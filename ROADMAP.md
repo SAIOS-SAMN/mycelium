@@ -36,7 +36,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
-| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | After S2 and D2.5 merge; N6 lands in v0.3.0's open break |
+| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 built (with #29); N2–N7 next, in order; N6 lands in v0.3.0's open break |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the items above (maintainers) |
 
 **2. Ready to start**
@@ -48,7 +48,7 @@ None of these waits on a ruling:
 | X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | Depends on nothing; the rest of track 25 stands on it |
 | B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | The rest of track 24 stands on it |
 | `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
-| Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Good first issue; with N1, after S2 and D2.5 merge |
+| Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Built with N1 |
 | Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Maintainers; after S2 and D2.5 merge |
 
 **3. Waiting on an operator ruling.** Do not start these until the ruling
@@ -327,22 +327,25 @@ table of refused functionals (squared-norm coherence, scored-argmin
 search, ratios of scalar residuals, ε-bands), so that no port brings them
 over ([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
 
-The documentation now uses the typed vocabulary of
+The documentation uses the typed vocabulary of
 [MU-SCIENCE §5.0](docs/MU-SCIENCE.md#the-typed-vocabulary) (reconstruction,
-rebuild, replay, resend); the code still names the court's reconstruction
-`replay`. One code commit renames those identifiers to what they do,
+rebuild, replay, resend), and the code now names the court's reconstruction
+`reconstruct`. One code commit renamed those identifiers to what they do,
 updating every citation in the same commit (MU-STANDARDS 3.1):
 `blind_replay*` → `reconstruct_blind*`, `replay_word` / `replay_resume` /
 `replay_form*` / `replay_certificates_at` → `reconstruct_*`, the module
 `court/verdict/replay.rs` → `reconstruct.rs`, `Replayed` / `ReplayCursor` /
-`replay_cursors` / `replay_memo` → `Reconstructed` /
+`replay_cursors` / `replay_memo` → `ReconstructionOutcome` /
 `ReconstructionCursor` / `reconstruction_cursors` / `reconstruction_memo`,
 `measured_replay*` → `measured_discharge*`, `encode_replay_request` →
-`encode_era_request`, the outcome names `REPLAY_FAILED` and
+`encode_era_request`, the outcome names `REPLAY_FAILED` (MU-XSEPTUM) and
 `GLUE_REPLAY_REFUSED` → `RECONSTRUCTION_FAILED` and
-`GLUE_RECONSTRUCTION_REFUSED` (wire bytes unchanged), the fault class
-`Replay` → `Resend`, and the test names that say "replays" for a
-reconstruction. **Specified.**
+`GLUE_RECONSTRUCTION_REFUSED` (wire bytes and reading labels unchanged),
+the fault class `Replay` → `Resend` (specified, MU-PRECURSORS §3.6), and
+the test names that said "replays" for a reconstruction. The verdict
+outcome is `ReconstructionOutcome`, not `Reconstructed`, because track 25
+X0 defines `Reconstructed<T>` as the reconstructed object itself.
+**Built** (N1).
 
 ### Naming alignment (issue [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55); ruled 2026-11-04)
 
@@ -352,8 +355,8 @@ bytes and task addresses are unchanged, except N6, which lands in
 v0.3.0's open break. Each phase updates every citation in the same
 commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
 
-1. **N1, verification is reconstruction.** The #29 names above, plus
-   the audit's further names:
+1. **N1, verification is reconstruction** (**Built**). The #29 names
+   above, plus the audit's further names:
    - `court/replay.rs` → `court/reconstruct.rs`;
    - `court_replay*`, `replay_on_cursor`, `docket_replay`,
      `replays_on_family`, `replay_key`, `replay_certificates*`,
@@ -361,7 +364,16 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
      `replay_after_perceiving`, `form_orbits_replay`,
      `replay_retirement`, `rewrite::replay`, `factor::replays`,
      `chain::replay_at` / `replay_operators`, `rule_replays_family`
-     → `reconstruct…`;
+     → `reconstruct…` (as built: `court_reconstruct`,
+     `court_reconstruct_moved`, `court_reconstruction_progress`,
+     `reconstruct_on_cursor`, `docket_reconstruction`,
+     `reconstructs_on_family`, `reconstruction_key` (the court's and the
+     challenge's), `reconstruct_certificates*`, `certificate_reconstructs`,
+     `reconstruct_on_ground`, `reconstruct_after_perceiving`,
+     `form_orbits_reconstruct`, `reconstruct_retirement`,
+     `rewrite::reconstruct`, `factor::reconstructs`,
+     `chain::reconstruct_at` / `reconstruct_operators`,
+     `rule_reconstructs_family`);
    - `Stop::Replay` → `Stop::Reconstruction`;
    - `Ask::Replay` / `REPLAY` → `Ask::Era` / `ERA`;
    - `replayable` → `map_holds_whole`;
@@ -634,8 +646,8 @@ is open.
    notices; a stale one is re-anchored.
 10. **Fault-injection campaign and invariant auditor** (**Specified**;
     [MU-PRECURSORS §3.6](docs/MU-PRECURSORS.md#36-fault-injection-campaign-and-invariant-auditor)).
-    Ten named fault classes (`InvalidSignature`, `Replay` (a resend;
-    renamed `Resend` with the code),
+    Ten named fault classes (`InvalidSignature`, `Resend` (a valid act
+    sent twice),
     `DoubleClaimRace`, `EquivocatingLedger`, `SybilSwarm`,
     `RespellRaceSaturation`, `DrainedPurseDraw`,
     `RestoreFromSnapshotSigner`, `MalformedName`, `GerminalFlood`) on four
