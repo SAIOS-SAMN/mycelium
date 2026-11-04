@@ -192,9 +192,8 @@ impl Court {
         deepened
     }
 
-    /// RECORD a settlement for the court, bounded by the reserve ceiling
-    /// (the oldest leaves when the docket is full and the court has not
-    /// pulled).
+    /// RECORD a settlement for the court; the oldest go cold once each one's
+    /// challenge window has closed (D2.5, D1.1), heard or not.
     pub fn record_settlement(
         &mut self,
         listing: crate::transducer::address::Address,
@@ -226,20 +225,17 @@ impl Court {
             after,
             at,
         });
-        // A court whose clock has not yet reached a full reserve of steps
-        // has nothing behind the floor to cool.
-        let Some(floor) = self.k_step().checked_sub(crate::physics::reserve_max()) else {
-            return;
-        };
+        // MU-DERIVATIONS D2.5 — A SETTLEMENT GOES COLD WHEN IT CAN NO LONGER
+        // BE CHALLENGED: once the challenge window opened at its height has
+        // closed at a sealed reach and return of every other keeper (D1.1,
+        // law version 5). A court with no other keeper closes no window, so
+        // its settlements stay until heard.
+        let head = self.chain.head_height();
         #[expect(
             clippy::disallowed_methods,
-            reason = "rule 15 — FIFO drain head: the settlements are pushed in K order and drained from the oldest"
+            reason = "rule 15 — FIFO drain head: the settlements are pushed in height order and drained from the oldest"
         )]
-        while self
-            .settlements
-            .first()
-            .is_some_and(|s| s.at.k < floor && s.at.k + 1 < self.k_step())
-        {
+        while self.settlements.first().is_some_and(|s| self.window_closed(s.at.h, head)) {
             let old = self.settlements.remove(0);
             self.settlements_cold.push(old);
         }

@@ -449,9 +449,10 @@ fn peel_core(
     // never returns, and the rotor's order counted it closed. Read before
     // the gates so an orbit that never closes is counted as the reading it
     // is rather than lost as a refusal; the census reads on a stroke of its
-    // own.
-    let mut census = crate::physics::Physics::default().stroke();
-    let period = match crate::transducer::cga::motion_modes(v, &mut census) {
+    // own, sized by the motion's modes' need (`cga::modes_need`, D3.1, D2.5).
+    let period = match crate::transducer::cga::modes_need(v)
+        .and_then(|n| crate::transducer::cga::motion_modes(v, &mut crate::physics::Physics::default().stroke_n(n)))
+    {
         Some(Ok(modes)) => crate::transducer::cga::period_of(&modes),
         Some(Err(_)) | None => None,
     };

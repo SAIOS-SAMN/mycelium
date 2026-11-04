@@ -1,4 +1,4 @@
-use super::calibration::{expand_floor, regen_unit, reserve_max, spend_unit};
+use super::calibration::{capacity, STROKES_PER_RESERVE};
 use super::{metabolism, Budget, Depleted, Reserve};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -36,10 +36,23 @@ pub struct Physics {
     /// construction. Read by `lanes()`; moved only by `draw`, `drain` and
     /// `restore`.
     pub reserve: Reserve,
+    /// THE CAPACITY THIS METABOLISM READS (MU-DERIVATIONS D2.5): the
+    /// process's sealed `C` (or the unsealed one) when built by `default`,
+    /// or an explicit calibration's (`calibrated`). Held, never re-read per
+    /// stroke: the pool's ceiling, the spend, the regeneration and the
+    /// deficit all read it.
+    pub(crate) capacity: u64,
 }
 
 impl Default for Physics {
     fn default() -> Self {
+        Physics::of_capacity(capacity())
+    }
+}
+
+impl Physics {
+    /// A metabolism on `capacity` reads, its pool full.
+    fn of_capacity(capacity: u64) -> Physics {
         Physics {
             pressure: [0; 4],
             syntropic: [0; 4],
@@ -49,17 +62,40 @@ impl Default for Physics {
             contacts_mark: [[0; 4]; 2],
             flux_mark: [0; 4],
             plastic: [0; 4],
-            reserve: Reserve::of([reserve_max(); 4]),
+            reserve: Reserve::of([capacity; 4]),
+            capacity,
         }
     }
-}
 
-impl Physics {
+    /// THE METABOLISM OF AN EXPLICIT CALIBRATION (D2.5, O4): a process, or
+    /// a test, that holds its calibration builds its metabolism on that
+    /// capacity rather than the process's seal.
+    pub fn calibrated(c: &super::Calibration) -> Physics {
+        Physics::of_capacity(c.capacity().get())
+    }
+
+    /// `C`, the capacity this metabolism reads.
+    pub fn capacity(&self) -> u64 {
+        self.capacity
+    }
+
+    /// One entropic expansion's spend: the capacity over the ratio, the
+    /// reads one `stroke` holds.
+    pub fn unit_spend(&self) -> u64 {
+        self.capacity / STROKES_PER_RESERVE
+    }
+
+    /// One syntropic regeneration: half a spend, rounded up so exactly two
+    /// strokes re-earn one expansion (the two-stroke governor).
+    fn unit_regen(&self) -> u64 {
+        self.unit_spend().div_ceil(2)
+    }
+
     /// Draw one stroke's read token. The only constructor of [`Budget`].
     /// Remaining reads equal one spend; cognition never names that number.
     #[expect(clippy::cast_possible_truncation, reason = "site 4 — spend_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
     pub fn stroke(&mut self) -> Budget {
-        Budget { remaining: spend_unit() as usize }
+        Budget { remaining: self.unit_spend() as usize }
     }
 
     /// A stroke whose remaining reads are `n`. Test callers use it so the
@@ -226,7 +262,7 @@ impl Physics {
     /// moved no lane draws nothing: there is no tick, since a stroke is the
     /// draw of what it did and not a toll for having run.
     pub fn spend(&mut self, lanes: [bool; 4]) -> Option<Depleted> {
-        let unit = spend_unit();
+        let unit = self.unit_spend();
         let cost: [u64; 4] = std::array::from_fn(|l| if lanes[l] { unit } else { 0 });
         // 78.73 (1): a lane that cannot cover it is pressed by what it blocked.
         match self.draw(cost) {
@@ -254,13 +290,13 @@ impl Physics {
             // Two strokes re-earn one expansion; a lane that verified work
             // since its last regeneration earns the second at once.
             let add = match verified {
-                0 => regen_unit(),
-                _ => regen_unit() * 2,
+                0 => self.unit_regen(),
+                _ => self.unit_regen() * 2,
             };
             // Toward the work the lane verified, and never below the
             // depletion floor, one expansion (the ruled unit of the
             // two-stroke governor, not a number of its own).
-            let target = verified.max(expand_floor());
+            let target = verified.max(self.unit_spend());
             // A regeneration past the carrier is refused and counted; the
             // lane stands where it was.
             let mut next = held[l];
@@ -312,7 +348,7 @@ impl Physics {
             // no faster, and the ceiling still bounds it. A fixed step
             // deferred 6 080 syllabus words in ten minutes against 56 served
             // at hypha a (epoch 115).
-            let Some(add) = regen_unit().checked_add(verified) else {
+            let Some(add) = self.unit_regen().checked_add(verified) else {
                 continue;
             };
             match held[l].checked_sub(ceiling) {
@@ -347,7 +383,7 @@ impl Physics {
         // not a subtraction stopped at zero (rule 11).
         std::array::from_fn(|l| {
             match lanes[l] {
-                true => match expand_floor().checked_sub(self.reserve.lanes()[l]) {
+                true => match self.unit_spend().checked_sub(self.reserve.lanes()[l]) {
                     Some(short) => short,
                     None => 0,
                 },
@@ -365,7 +401,7 @@ impl Physics {
     pub fn reserve_deficit(&self) -> [u64; 4] {
         // A lane at the ceiling is in deficit by NOTHING: the reading of
         // absence, as the shortfall above.
-        std::array::from_fn(|l| match reserve_max().checked_sub(self.reserve.lanes()[l]) {
+        std::array::from_fn(|l| match self.capacity.checked_sub(self.reserve.lanes()[l]) {
             Some(down) => down,
             None => 0,
         })

@@ -25,6 +25,7 @@ mod held;
 mod hold;
 mod judge;
 mod ledger;
+mod nerve;
 mod offer;
 mod persist;
 mod published;
@@ -350,11 +351,17 @@ struct ReflexJob {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     // D2.6 — a host that does not say is fixed by its operator, never run on
-    // a guess: the boot refuses, naming the arm it cannot read.
-    if let Err(why) = mycelium::physics::calibrate() {
-        eprintln!("mycelium-server: the host is uncalibrated ({why:?}); it does not say what the calibration reads");
-        std::process::exit(2)
-    }
+    // a guess: the boot refuses, naming the arm it cannot read. D2.5 — the
+    // one boot calibration stroke measures the bytes per read and seals the
+    // reserve here, first, before anything is served: the nerve every door
+    // speaks on is built from the seal.
+    let sealed = match mycelium::physics::calibrate() {
+        Ok(sealed) => sealed,
+        Err(why) => {
+            eprintln!("mycelium-server: the host is uncalibrated ({why:?}); it does not say what the calibration reads");
+            std::process::exit(2)
+        }
+    };
     // 45.5: H_genesis is written ONCE, by the first hypha started on a fresh
     // state, and PROVISIONED to every other node the way the bootstrap peer
     // list is. Self-adoption from a node's own first receipt is not that:
@@ -678,11 +685,19 @@ fn main() {
     // proves it shares the root.
     let roots: Arc<Mutex<Keyed<Keyed<u64>>>> = Arc::new(Mutex::new(Keyed::new()));
     // THE NERVE THREAD: every act this node speaks to a peer leaves through
-    // a bounded channel drained here, so the door never dials. The bound is
-    // the reserve ceiling; a full nerve drops the act, as a full reflex
-    // pool defers a demand.
-    #[expect(clippy::cast_possible_truncation, reason = "site 4 — reserve_max, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
-    let (nerve_tx, nerve_rx) = std::sync::mpsc::sync_channel::<(String, Vec<u8>)>(mycelium::physics::reserve_max() as usize);
+    // the nerve drained here, so the door never dials. The bound is the
+    // sealed process memory (D2.5 (a)); an act past it is dropped, as a full
+    // reflex pool defers a demand.
+    let c = sealed.calibration();
+    eprintln!(
+        "  calibrated: M {} bytes ({}), b {} bytes per read, minimal stroke {} reads, capacity C {} reads sealed",
+        c.memory().bytes(),
+        c.memory().source().file(),
+        c.footprint(),
+        c.minimal(),
+        c.capacity()
+    );
+    let (nerve_tx, nerve_rx) = crate::nerve::Nerve::of(&sealed);
     exchange::spawn_nerve(mesh.clone(), nerve_rx);
     // 78.152 TU-7: the lock watchdog, paced by the final point's advances.
     held::spawn_watchdog();

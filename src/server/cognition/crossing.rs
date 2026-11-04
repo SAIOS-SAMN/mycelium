@@ -60,13 +60,13 @@ pub enum Unretrieved {
 }
 
 impl Court {
-    /// THE COURT'S READ PRICE per lane, μ per unit of gas: `1 + y_l / R`,
-    /// exact, the court's strain against its calibrated reserve
-    /// (`economy::read_price`, MU-DERIVATIONS D2.3). `None` where the surface
-    /// passes its carrier.
+    /// THE COURT'S READ PRICE per lane, μ per unit of gas: `1 + y_l / C`,
+    /// exact, the court's strain against the process's sealed capacity
+    /// (`economy::read_price`, MU-DERIVATIONS D2.3, D2.5). `None` where the
+    /// surface passes its carrier.
     pub fn read_price(&self) -> Option<Mu> {
         let surface = crate::economy::yield_surface(&self.physics)?;
-        crate::economy::read_price(&surface, crate::physics::reserve_max())
+        crate::economy::read_price(&surface, self.physics.capacity())
     }
 
     /// A claim drawn on `staker`'s stake for `fee`, its parts to this court,

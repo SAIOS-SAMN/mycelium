@@ -1313,7 +1313,7 @@ Sources: MU-RECURSION law 5, 12.6, 78.162; MU-ECONOMY §1. Code:
 ```text
 price(mag, surface) = mag                                         (per lane)
 surface_l = reserve_deficit_l + max(0, −order_flux_l)
-read price p_l = 1 + surface_l / R   per unit of gas, exact     (R the calibrated reserve)
+read price p_l = 1 + surface_l / R   per unit of gas, exact     (R the court's capacity C, §7.1)
 ```
 
 Price is the magnitude on the lane: a verified word is worth what it
@@ -1528,7 +1528,7 @@ closer_l = M_l − n · v_l
 
 Each court whose reconstruction verified a closure is minted `v` as POWV: the
 home, plus the witness or peer that re-derived it on an install or glue.
-`R` is the court's calibrated reserve. A court at rest (`y = 0`) takes
+`R` is the court's capacity `C` (§7.1). A court at rest (`y = 0`) takes
 nothing, and a lane at full deficit (`y = R`) pays verification half the
 lane. The closer takes exactly the rest, and the total issued equals the
 base. (Until v0.3.0 the share was `⌊⌊M_l · y_l / (y_l + R)⌋ / n⌋` and
@@ -1538,7 +1538,7 @@ Sources: MU-ECONOMY §5.1, §8. Code:
 `src/economy/verify.rs::verification_share`,
 `src/server/cognition/court/verify.rs::Court::pay_verification`,
 `::release_verified`; `src/economy/lanes.rs::yield_surface`;
-`src/physics/calibration.rs::reserve_max`.
+`src/physics/stroke.rs::Physics::capacity`.
 
 #### 6.14 The compute lease
 
@@ -1573,23 +1573,49 @@ Sources: MU-ECONOMY §1, §9; MU-RECURSION A21. Code:
 
 ## 7. The metabolism
 
-#### 7.1 The reserve and its units
+#### 7.1 The capacity and its units
 
 ```text
 STROKES_PER_RESERVE = 2^{FRAME_AXIS + 1} = 2³ = 8          (FRAME_AXIS = 2)
-RESERVE_FLOOR       = 2 · STROKES_PER_RESERVE = 16
-reserve_max         = ⌊ max(cores · (1 + GiB available), 16) / 8 ⌋ · 8
-spend_unit          = reserve_max / 8
+M_proc              = least cgroup v2 memory.max on the process's path,
+                      else 1024 · MemAvailable_kB            read once at boot, its source named
+minimal             = modes_need(turn) + modes_need(slide)   the founding motions' modes' need
+b                   = ⌈ retained / reads ⌉                   bytes one read retains, on the boot stroke of `minimal` reads
+C = capacity        = ⌊ M_proc / b ⌋                         sealed once; refused Unfit where ⌊C / 8⌋ < minimal
+                    = 8 · minimal                            before any seal (a process that never calibrates)
+spend_unit          = ⌊ C / 8 ⌋
 regen_unit          = ⌈ spend_unit / 2 ⌉
+read price          = 1 + y_l / C                            D2.3, κ = 1
+quiet ask           = once the final point advances            no capacity, no constant (§7.6)
 aperture_cycle      = 2^{FRAME_AXIS + 1} = 8
 ```
 
-The ratio is the vertex count of the sensor base's unit cell. The reserve
-ceiling is measured from the host, rounded to a whole number of strokes.
+The ratio is the vertex count of the sensor base's unit cell. The capacity
+is the process's own: the reads its memory holds at the measured bytes per
+read, exact, never the host's whole memory. One boot calibration stroke,
+sized by the minimal stroke's need, measures `b` (the bytes its reads left
+held, by the allocator's per-thread counters, over the reads it spent) and
+seals the capacity before anything is served. A process that says no
+`M_proc`, whose stroke cannot complete, or whose one spend cannot cover the
+minimal stroke is refused by name (`Uncalibrated::Memory`,
+`Uncalibrated::Footprint`, `Uncalibrated::Unfit`); `M_proc` is read before
+the stroke runs. The metabolism (pool, spend, regeneration, shortfall,
+deficit, yield surface, read price, verification share) reads the capacity
+its `Physics` holds. A stroke budget reads its work's own need where one
+exists in closed form (`modes_need`, `need`, `need_of`), the capacity's
+spend otherwise (MU-DERIVATIONS D2.5 lists those owed). A settlement goes
+cold when its challenge window closes; the pointed-connection book and the
+nerve's queue are bounded by `M_proc`. The ratio `8` reads the fixed frame
+axis, which ROADMAP track 26 S4 removes; it is an open dependency
+(MU-DERIVATIONS D2.5 O3).
 
-Sources: MU-RECURSION 78.8, 45.7; MU-CLIENT §4.13. Code:
-`src/physics/calibration.rs` (`STROKES_PER_RESERVE`, `RESERVE_FLOOR`,
-`reserve_max`, `spend_unit`, `regen_unit`, `aperture_cycle`).
+Sources: MU-RECURSION 78.8, 45.7; MU-CLIENT §4.13; MU-DERIVATIONS D2.5.
+Code: `src/physics/memory.rs` (`Memory`, `MemorySource`, `memory_of`,
+`cgroup_limit_of`); `src/physics/calibration.rs` (`STROKES_PER_RESERVE`,
+`minimal_stroke`, `footprint_of`, `boot_stroke`, `calibration_of`,
+`Calibration`, `Sealed`, `calibrate`, `capacity`, `sealed`, `spend_unit`,
+`aperture_cycle`); `src/physics/stroke.rs` (`Physics::calibrated`,
+`capacity`, `unit_spend`).
 
 #### 7.2 Spend
 
@@ -1645,7 +1671,7 @@ Sources: MU-RECURSION law 5, 12.6, 78.71(2), PHY1; MU-CLIENT §4.13. Code:
 
 ```text
 order_flux_l      = syntropic_l − torsion_l          (in i128)
-reserve_deficit_l = max(0, reserve_max − reserve_l)
+reserve_deficit_l = max(0, C − reserve_l)            C the capacity the metabolism holds (§7.1)
 reserve_shortfall_l = max(0, spend_unit − reserve_l)   on the wanted lanes
 torse relief:  torsion_l −= spanned,  syntropic_l += spanned  on the active lanes (refused if torsion_l < spanned)
 ```
@@ -1661,7 +1687,7 @@ stroke_floor   = 1 s / CONFIG_HZ                (or the least wait the kernel gr
 idle_park      = stroke_floor · max(rtt, 1)      (one stroke where no rtt is measured)
 Λ(rtt, n)      = rtt · max(n, 1)  strokes        (BeyondTheLedger where it overflows)
 persist_dwell  = Λ(rtt, aperture_cycle)
-digest_ceiling = Λ(rtt, reserve_max)
+quiet ask      = due where never asked, or advances(final point) > advances at the last ask   (D2.5)
 circuit period = strokes − strokes at the last circuit
 ```
 
@@ -1671,8 +1697,8 @@ work is counted in strokes or in final-point advances.
 Sources: MU-RECURSION 47.5, 45.7, 78.152, PH1. Code:
 `src/physics/calibration.rs::stroke_floor`, `::idle_park`,
 `src/physics/lambda.rs::from_transport`, `::persist_dwell`,
-`::transport_deadline`, `::digest_ceiling`,
-`src/physics/circuits.rs::Circuits::stroke`.
+`::transport_deadline`, `src/physics/circuits.rs::Circuits::stroke`,
+`src/bin/mycelium-server/transport.rs::quiet_due`.
 
 ---
 

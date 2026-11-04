@@ -15,10 +15,6 @@ fn from_transport_counts_rtt_in_strokes() {
     assert_eq!(from_transport(nz(3), nz(4)), Lambda::Strokes(12), "measured rtt × strokes");
     assert_eq!(from_transport(nz(3), nz(1)), Lambda::Strokes(3), "one stroke's factor is one transport");
     assert_eq!(transport_deadline(0), Lambda::Unmeasured, "a zero is no measurement");
-    let (Lambda::Strokes(quiet), Lambda::Strokes(one)) = (digest_ceiling(3), from_transport(nz(3), nz(1))) else {
-        panic!("a measured round trip has a horizon the ledger counts");
-    };
-    assert!(quiet >= one);
     let d = transport_deadline(5);
     assert_eq!(d, persist_dwell(5), "the deadline is an aperture of the measured transport");
 }

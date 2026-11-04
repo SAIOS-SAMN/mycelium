@@ -130,12 +130,12 @@ fn spend_draws_moved_lanes_and_names_refusing_lane() {
     let _ = metabolism::take_metabolism();
     let mut idle = Physics::default();
     assert_eq!(idle.spend([false; 4]), None, "a stroke that moved nothing draws nothing");
-    assert_eq!(idle.reserve.lanes(), [reserve_max(); 4], "and costs nothing");
+    assert_eq!(idle.reserve.lanes(), [capacity(); 4], "and costs nothing");
     let mut p = Physics::default();
     assert_eq!(p.spend([true, false, true, false]), None, "two lanes moved, two expansions drawn");
     assert_eq!(
         p.reserve.lanes(),
-        [reserve_max() - spend_unit(), reserve_max(), reserve_max() - spend_unit(), reserve_max()]
+        [capacity() - spend_unit(), capacity(), capacity() - spend_unit(), capacity()]
     );
     // Spent down on 𝒮 alone, the next draw that needs 𝒮 refuses on 𝒮.
     let mut short = Physics::default();
@@ -146,7 +146,7 @@ fn spend_draws_moved_lanes_and_names_refusing_lane() {
     let refused = short.spend([true, true, false, false]).expect("𝒮 cannot cover an expansion");
     assert_eq!(refused.lane, 0, "the refusal names 𝒮");
     assert_eq!(metabolism::take_metabolism().depleted, [1, 0, 0, 0], "counted on the lane that refused");
-    assert_eq!(short.reserve.lanes()[1], reserve_max() - spend_unit(), "𝒢 is still charged what it did");
+    assert_eq!(short.reserve.lanes()[1], capacity() - spend_unit(), "𝒢 is still charged what it did");
     assert_eq!(short.reserve.lanes()[0], 0, "and 𝒮 never past empty");
 }
 
