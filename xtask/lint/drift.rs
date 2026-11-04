@@ -15,8 +15,7 @@
 //! - [`Proof::CompileFail`]: a doc comment naming the claim in backticks,
 //!   followed in the same comment by a fence opened ```` ```compile_fail ````.
 //!
-//! The register records no mutation-audit entry (ruled 2026-11-04). The
-//! report of changed document sentences that put a typed term beside an
+//! The report of changed document sentences that put a typed term beside an
 //! admission verb is not built: reading which documents changed needs a
 //! base commit the gate does not have, so it is listed open (ROADMAP track
 //! 25, X0).

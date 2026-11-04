@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # CHECK — the one local check to run before a pull request: the gate
-# (`xtask`: the reading bound, the Euclidean-vocabulary check, clippy with
-# -D warnings) and the workspace tests, run to the end with
-# `--no-fail-fast`, then a summary of both.
+# (`xtask`: the reading bound, the Euclidean-vocabulary check, the numbers
+# gate, the drift register, clippy with -D warnings), the gate's own unit
+# tests (`cargo test --release` in `xtask`), and the workspace tests, run
+# to the end with `--no-fail-fast`, then a summary of all three.
 #
 # Usage: scripts/check [CARGO_TEST_ARGS...]
-#   Arguments are passed to `cargo test` after `--` (for example a test
-#   filter). CARGO_TARGET_DIR is honoured; a relative one is taken from the
-#   repository root. The test log is kept at $CHECK_LOG (default: a
-#   temporary file, named in the summary).
+#   Arguments are passed to the workspace `cargo test` after `--` (for
+#   example a test filter); the gate's tests always run whole.
+#   CARGO_TARGET_DIR is honoured; a relative one is taken from the
+#   repository root. The test log (the gate's tests, then the workspace
+#   tests) is kept at $CHECK_LOG (default: a temporary file, named in the
+#   summary).
 #
 # KNOWN EXCEPTIONS. Twenty tests read tasks of the ARC-AGI-2 corpus,
 # read at data/arc-agi-2 or under $MYCELIUM_CORPUS. They are the tests of
@@ -17,7 +20,8 @@
 # whether the corpus was found, so those failures can be told apart from a
 # defect.
 #
-# Exit 0 when the gate and every test pass; 1 otherwise.
+# Exit 0 when the gate, the gate's tests and every workspace test pass;
+# 1 otherwise.
 set -eu
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -39,19 +43,36 @@ say "gate (cd xtask && cargo run --release)"
 gate=0
 (cd xtask && cargo run --release) || gate=$?
 
+say "gate tests (cd xtask && cargo test --release)"
+xtask=0
+(cd xtask && cargo test --release) >"$LOG" 2>&1 || xtask=$?
+xlines=$(wc -l <"$LOG")
+
 say "workspace tests (cargo test --release --workspace --no-fail-fast)"
 tests=0
-cargo test --release --workspace --no-fail-fast -- "$@" >"$LOG" 2>&1 || tests=$?
+cargo test --release --workspace --no-fail-fast -- "$@" >>"$LOG" 2>&1 || tests=$?
 
-passed=0
-failed=0
-ignored=0
-while read -r p f i; do
-  passed=$((passed + p))
-  failed=$((failed + f))
-  ignored=$((ignored + i))
-done <<EOF
-$(sed -n 's/^test result: [A-Za-z]*\. \([0-9]*\) passed; \([0-9]*\) failed; \([0-9]*\) ignored.*/\1 \2 \3/p' "$LOG")
+# The passed, failed and ignored counts summed over the `test result:`
+# lines read on stdin.
+tally() {
+  p=0
+  f=0
+  i=0
+  while read -r a b c; do
+    p=$((p + a))
+    f=$((f + b))
+    i=$((i + c))
+  done <<EOF
+$(sed -n 's/^test result: [A-Za-z]*\. \([0-9]*\) passed; \([0-9]*\) failed; \([0-9]*\) ignored.*/\1 \2 \3/p')
+EOF
+  echo "$p $f $i"
+}
+
+read -r xpassed xfailed xignored <<EOF
+$(head -n "$xlines" "$LOG" | tally)
+EOF
+read -r passed failed ignored <<EOF
+$(tail -n +"$((xlines + 1))" "$LOG" | tally)
 EOF
 
 if [ -n "${MYCELIUM_CORPUS:-}" ] && [ -d "$MYCELIUM_CORPUS" ]; then
@@ -69,10 +90,11 @@ if [ "$gate" -eq 0 ]; then
 else
   echo "  gate     red (exit $gate)"
 fi
+echo "  xtask    $xpassed passed, $xfailed failed, $xignored ignored (cargo exit $xtask)"
 echo "  tests    $passed passed, $failed failed, $ignored ignored (cargo exit $tests)"
 echo "  corpus   $corpus"
 echo "  log      $LOG"
-if [ "$failed" -gt 0 ]; then
+if [ "$((xfailed + failed))" -gt 0 ]; then
   echo "  failed:"
   sed -n 's/^test \(.*\) \.\.\. FAILED$/    \1/p' "$LOG"
 fi
@@ -81,7 +103,7 @@ if grep -q '^error' "$LOG"; then
   grep '^error' "$LOG" | head -10 | sed 's/^/    /'
 fi
 
-if [ "$gate" -eq 0 ] && [ "$tests" -eq 0 ]; then
+if [ "$gate" -eq 0 ] && [ "$xtask" -eq 0 ] && [ "$tests" -eq 0 ]; then
   exit 0
 fi
 exit 1

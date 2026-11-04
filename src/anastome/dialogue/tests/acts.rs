@@ -158,6 +158,25 @@ fn encode_peers_reply_refuses_address_past_wall() {
     assert_eq!(encode_peers_reply(&long), None, "an address past two bytes refuses the reply");
 }
 
+/// #16 — A DOOR DEFERRAL IS NOT A PEERS REPLY. Every deficit tried used to
+/// decode as a peer list when the client skipped `read_deferral` first.
+#[test]
+fn decode_peers_reply_refuses_deferral() {
+    for deficit in [[0; 4], [1, 0, 2, 3], [u64::MAX, 0, 0, 1]] {
+        let bytes = encode_deferral(PENDING_CODE, &deficit);
+        assert!(
+            decode_peers_reply(&bytes).is_none(),
+            "deferral deficit {deficit:?} must not decode as peers"
+        );
+    }
+    let mut trailing = encode_peers_reply(&["127.0.0.1:1".into()]).expect("fits");
+    trailing.push(0);
+    assert!(
+        decode_peers_reply(&trailing).is_none(),
+        "bytes after the last address refuse the reply"
+    );
+}
+
 /// 78.141 — A SOLVE NAMES ITS PAYEE BY ITS VOICE'S SIGNATURE: signed by the
 /// key whose verifying half is its voice, with and without its rule, it
 /// reads back signed; a byte of it changed, or its voice swapped for

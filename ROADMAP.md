@@ -476,8 +476,7 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - `lamina` and `FormCell` (retired by 0.7) are renamed.
 
    **Built** (N4): `OffSubstrate`, `substrate_step`, `THROAT_LEVEL_BITS`
-   (its `OPEN_PHYSICS` entry, `REGISTERED:` tag and mutation catalogue
-   span follow), `merge_vortex` / `merge_keyed`, `FormCell` →
+   (its `OPEN_PHYSICS` entry and `REGISTERED:` tag follow), `merge_vortex` / `merge_keyed`, `FormCell` →
    `BodyContact`, and 18 test names. No identifier says "lamina"; the word
    stands only in refusal strings (`verdict/body.rs` `FAIL_*`), the keyed
    `CoverSite`'s name `"lamina-cell"` and the oracle's `"lamina_a"` key;
@@ -741,13 +740,8 @@ is open.
 
 **Test assurance**
 
-9. **Mutation audit** (**In progress**; MU-STANDARDS §4;
-   [MU-PRECURSORS §3.2](docs/MU-PRECURSORS.md#32-mutation-audit)).
-   `cargo run -- mutate` in `xtask` reads a catalogue of mutants (the law,
-   the file, the exact span, the replacement, the narrowest test that must
-   fail), applies each in a scratch worktree, and reports each as
-   `killed`, `survived` or `stale`. A surviving mutant is a law no test
-   notices; a stale one is re-anchored.
+9. ~~Mutation audit~~ (**Retired** 2026-11-04, ruled theatre; the
+   catalogue and `gate mutate` are removed from `xtask`).
 10. **Fault-injection campaign and invariant auditor** (**Specified**;
     [MU-PRECURSORS §3.6](docs/MU-PRECURSORS.md#36-fault-injection-campaign-and-invariant-auditor)).
     Ten named fault classes (`InvalidSignature`, `Resend` (a valid act
@@ -1316,8 +1310,7 @@ for each phase:
    <module>`), and `scripts/check` before the pull request.
 5. Register each guard the phase builds in `xtask/lint/drift.rs`
    (regression, ruling, guarding type, claim); the gate refuses an entry
-   whose type or claim is missing. No mutation-audit entry is added
-   (ruled 2026-11-04).
+   whose type or claim is missing.
 6. Open the pull request with the template's drift checklist ticked. A
    phase that changes the wire or the ledger layout says so under
    *Network contract*.

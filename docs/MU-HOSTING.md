@@ -750,11 +750,6 @@ Claims each phase proves, by the algebra (MU-STANDARDS 3.1):
 `carried_line_cycle_seals_provisional` (the existing
 `admit_uplink_seals_unclosed_rate_cycle_provisional` is its instance).
 
-Mutation-audit entries: the reserve check in `Court::admit_uplink`
-inverted (`!=` to `==`), the signatory check dropped, a verdict's
-breaches discarded before admission, and the holonomy's identity test
-inverted; each is killed by the claim named beside it.
-
 Size: B0 about 200 lines, B1 about 300 (most of it the rename and the
 carried offers), B2 about 400, B3 about 400, B4 about 200; B5 rides
 78.155 R-3. ROADMAP track 24. B3's shared laws wait on draft 4, and B2's
