@@ -886,7 +886,7 @@ distribute across voices per lane.
   `solve_reveal_refuses_mismatched_commitment`,
   `solve_without_commitment_ranks_after_committed`,
   `solve_commit_lapses_after_window`,
-  `solve_commit_draws_room`. Mutation audit: the priority comparison.
+  `solve_commit_draws_room`.
 
 **F2b. One closure across courts** (High; ledger; tracks 4 and 14).
 

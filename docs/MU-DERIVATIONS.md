@@ -71,8 +71,8 @@ Each entry `D<group>.<n>` has the same fields:
   ruling that decides. A conjecture is never presented as settled physics.
 - **Implementation scope.** Files and types touched; wire, ledger,
   snapshot and Concordance effect; the tests that prove it, as claims by
-  the algebra (MU-STANDARDS 3.1 `<unit>_<behaviour>`); the mutation-audit
-  entry where it guards a law; dependencies; size (S / M / L).
+  the algebra (MU-STANDARDS 3.1 `<unit>_<behaviour>`); dependencies;
+  size (S / M / L).
 
 Line numbers are as read at the time of writing; the path and the quoted
 code locate a site when lines move.
@@ -207,8 +207,7 @@ version 4's window (EXTERNAL), out of the register. Tests
 `window_close_reconstructs_from_sealed_citation`,
 `window_opened_under_v4_closes_at_fixed_end`,
 `window_refuses_witness_with_forged_signature`,
-`window_refuses_return_not_above_reach`; the three mutation entries as
-specified. O2–O4 stay open. The text below is the derivation as specified.
+`window_refuses_return_not_above_reach`. O2–O4 stay open. The text below is the derivation as specified.
 
 **Site.** `src/physics/laws/mod.rs:64` — `pub const CHALLENGE_WINDOW: u64 = 1024;`,
 served as the register's one parameter (`laws.rs:68`,
@@ -393,8 +392,6 @@ holds).
     finality; T1.
   - `window_opened_under_v4_closes_at_fixed_end`.
   - `window_refuses_witness_with_forged_signature`.
-- Mutation audit: `>=` → `>` in reach; one keeper dropped from the `∀`;
-  `>` → `>=` in return. Each must fail a test above.
 - Dependencies: D1.4 (the register entry retires); MU-CHRONOMETRY §1
   (keepers); O2 may need the cover digest sealed. Size: L.
 
@@ -413,8 +410,7 @@ served `Level` stays a reading on `THROAT_LEVEL_BITS`, which stays REGISTERED
 until Phase B. Tests: `server::cognition::tests::sphere`
 (`sphere_fit_is_decided_past_any_grid`, `flat_fit_meet_equals_half_ratio`,
 `sphere_throat_fits_cap_short_of_antipode` rewritten onto `fits_in`),
-`core::tests::certified::separates_terminates_on_rational_radius`; two
-mutation entries (the refinement's direction, `Apart` in the flat fit).
+`core::tests::certified::separates_terminates_on_rational_radius`.
 Phase B is not built. The text below is the derivation as specified.
 
 **Site.** `src/server/cognition/domain_passage.rs:234` —
@@ -616,8 +612,6 @@ Concordance amendment.
     refused `TooWide`.
   - `throat_torus_fit_is_meet_with_period_image`.
   - `throat_sphere_refuses_wrap_at_pole`.
-- Mutation audit: the refinement's comparison direction; `Apart` ↔ `On`
-  in the flat fit; `1 − t₁t₂ ≤ 0` → `< 0` at the pole.
 - Dependencies: MU-ECONOMY §1 held modes (blocks Phase B); D1.4.
 
 ---
@@ -768,8 +762,7 @@ carrying 293 bytes. PH1 (MU-RECURSION) names it "the protocol carrier
     `max MAX_WIRE + R_max ≤ BODY_BUDGET`.
   - `encode_receipts_reply_refuses_head_over_budget`.
   - `page_envelope_equals_codec_header`.
-- Mutation audit: none (format). Size: S (alignment + defect), M (with
-  `MAX_WIRE`).
+- Size: S (alignment + defect), M (with `MAX_WIRE`).
 
 ---
 
@@ -786,7 +779,7 @@ literal-bearing numeric item carries its class. Registered at the build
 beyond the two named before: `BODY_BUDGET` (D1.3 O1), `ACCOUNT_SHARDS`
 (O2), `P_SERIES_CAP` (D4.8), `NESTING` (D4.4), `CANDIDATES_PER_PAIR` (its
 `EXACT` test not yet written), and the soak instruments' strokes and
-calibration count. The mutation-audit entry stays as specified.
+calibration count.
 
 **Site.** `src/physics/axioms/founding.rs:58–74`:
 
@@ -955,8 +948,6 @@ specifies its carrier and its gate.
     `numbers_ignores_cfg_test_items`.
   - Tree: `open_physics_entries_resolve_to_sites` (replacing the
     `=`-only check).
-- Mutation audit: an `xtask mutate` catalogue entry that strips one tag
-  from a known site and expects the gate red.
 - Dependencies: D1.1–D1.3 leave the register as each is derived. N6
   follows N1–N5. Size: M (lint + carrier), with a mechanical tagging pass
   of about 300 items.
@@ -1110,8 +1101,6 @@ nowhere in the equations.
   - `defect_is_zero_iff_reconstructs`.
   - `slash_conserves_bond`: `kept + bounty + retired = B` on each lane,
     and the audit holds.
-- Mutation audit: `slash_never_exceeds_bond_or_defect` and
-  `defect_is_zero_iff_reconstructs` guard the slash.
 - Depends on D2.2 (the same reading). Size: M.
 
 ---
@@ -1191,7 +1180,6 @@ honesty).
   - `bounty_plus_retired_equals_cut`.
   - `bounty_is_taken_from_cut_never_minted` (supply falls by exactly
     `retired`).
-- Mutation audit: `bounty_plus_retired_equals_cut`.
 - Depends on D2.1. Size: S, on top of D2.1.
 
 ---
@@ -1524,9 +1512,7 @@ Tests: `physics::tests::calibration` (`capacity_equals_memory_over_footprint`,
 `mycelium-server tests::pointed` (`admit_pointed_refuses_past_memory`,
 `admit_pointed_refuses_unsealed`); `tests/calibration.rs`
 (`reserve_sealed_from_measured_bytes_per_read_before_serving`, a process
-allocating through jemalloc as the binaries do). Mutation audit: the
-measured `b` replaced by the fixed unit `2³⁰`, killed by
-`capacity_equals_memory_over_footprint`. The open-physics register reads
+allocating through jemalloc as the binaries do). The open-physics register reads
 the capacity MEASURED: no entry stands at a calibration or memory site or
 cites this entry. The text below is the derivation as specified.
 
@@ -1757,8 +1743,6 @@ memory). Low for the 1-stroke arms.
   - `rtt_is_nonzero_by_measurement`.
   - `stall_beyond_reads_to_stream_end`.
   - `read_budgeted_refuses_unmeasured_stall`.
-- Mutation audit: `read_budgeted_refuses_unmeasured_stall` (a liveness
-  guard).
 - Depends on D2.5 for `Footprint`, and on D2.7. Size: M.
 
 ---
@@ -1869,8 +1853,7 @@ n, None => 0 }`, the `think.rs` form. Tests (`client::sdk::tests::rule`):
 `sentence_refuses_non_versor_without_spending`, and
 `construction_stroke_constructs_wide_coefficient_versor` (a versor whose
 need passes `1 << 16` constructs under its need; its reads stay under
-`1 << 16`, so a fixture the former stroke refused is still to find, and the
-mutation entry below waits on it). O1 (b)/(c), drawing the reads from a
+`1 << 16`, so a fixture the former stroke refused is still to find). O1 (b)/(c), drawing the reads from a
 caller's token, stays open. The text below is the derivation as specified.
 
 **Site.** `src/client/sdk/rule.rs:402` (in `sentence`), value 65 536:
@@ -1970,9 +1953,6 @@ stroke minted that is not the residue's).
   - `sentence_constructs_wide_coefficient_versor` (a composed versor with
     `ρ > 815` constructs, where `1 << 16` refused `Unbounded`).
   - `sentence_refuses_non_versor` (`NotVersor`, not `Unbounded`).
-- Mutation audit: an `xtask mutate` entry on the `need` expression
-  (replacing it by a constant must fail
-  `sentence_constructs_wide_coefficient_versor`).
 - Dependencies: none. Size: S.
 
 ---
@@ -2114,9 +2094,7 @@ the rational issuance (78.152, amended forward). Tests:
 `lane_shares_equal_chain_counts_over_frame`,
 `deflation_reads_mu_as_share_of_each_frame`,
 `keeper_tick_advances_past_fractional_issuance`, and the mint, solve,
-discharge, measure, local and awaiting claims re-derived as above. Mutation
-audit: the frame's `h·w` dropped from `share_of_frame`, the frames' share
-dropped from T, and the S/G split read off one side only.
+discharge, measure, local and awaiting claims re-derived as above.
 
 **Sites still read site by site** (listed, not fed a rebuilt cell record):
 the route's chart and pieces for unequal enclosures (`stalk::invariant_of`,
@@ -2145,9 +2123,6 @@ and every equal-extent pair of the training corpus),
 deflation_closure_pays_before_on_one_record}`;
 `server::cognition::tests::mint::measured_reconstruction_equals_client_deflation_on_unequal_enclosures`
 (T1); `transducer::family::tests::budget::extraction_spend_includes_transduction_need`.
-Mutation audit (`xtask/mutate/catalogue.rs`): `task_address`'s refusal arm
-(a ragged frame skipped instead of refused) and its content writer (the
-input frame dropped), each killed by `server::tests::registry`.
 
 **Ledger, wire, Concordance.** Every task address changes (full content):
 a ledger break, recut from genesis. Wire: none (the 32-byte citation is
@@ -2299,8 +2274,6 @@ discarded).
     member skipped).
   - `extraction_spend_includes_refinement_need`.
   - Replace `of_refuses_incommensurate_frames` (it asserts the cap).
-- Mutation audit: an entry on the refusal arm of `task_address` (guards
-  law 2).
 - Dependencies: D3.1's pattern (`need` read off the object); ROADMAP
   track 7. Size: M ((a)/(b)); L ((c)).
 
@@ -2323,8 +2296,7 @@ withheld footprint stands, none is chosen by key. `truncate(32)` and both
 `carrying_set_keeps_thirty_third_term`, `carrying_set_refuses_spent_token_whole`),
 `court::verdict::tests::selection`
 (`derive_pi_keeps_every_term_reconstructing_withheld`,
-`derive_pi_refuses_spent_token_whole`); a mutation entry on the
-intersection. The text below is the derivation as specified.
+`derive_pi_refuses_spent_token_whole`). The text below is the derivation as specified.
 
 **Site.** `src/transducer/anchor/derive.rs:182` (in
 `derive_carrying_all`):
@@ -2421,7 +2393,6 @@ checklist (r), 78.43(2) (a cap).
     ranks past 32 on one scene binds in `derive_pi`).
   - `carrying_set_refuses_spent_token_whole` (`Unread`, no partial set).
   - A reconstruction test per the L9a ruling.
-- Mutation audit: an entry on the intersection (guards admission).
 - Dependencies: the L9a ruling (ROADMAP track 7). Size: M.
 
 ---
@@ -2509,7 +2480,6 @@ carriers (rule 1) with a reading inside it (rule 17).
   - `confluence_reads_unread_on_spent_token` (a token of `2m − 1` reads
     gives `Unread`, not `No`).
   - `confluence_off_lattice_image_reads_no`.
-- Mutation audit: none (an instrument).
 - Dependencies: none. Size: S.
 
 ---
@@ -2619,7 +2589,6 @@ counts as generations").
     lets it go at the first percept, distance 5, where the count would
     have waited for a second percept).
   - `pending_ignores_redelivered_percept`.
-- Mutation audit: none.
 - Dependencies: O1; MU-CLIENT §7.1 seat play. Size: S.
 
 ---
@@ -2780,7 +2749,6 @@ path was written for).
     with floors {3, 7} on two keys: a third peer's stall is `3·A`).
   - `tell_peer_empty_mesh_waits_one_aperture` (`Unmeasured` → `A`).
   - `rtt_window_keeps_one_key_per_peer` (noted by voice, read by voice).
-- Mutation audit: none (liveness, not a law guard).
 - Size: M (the key unification touches every `note_rtt_*` caller).
 
 ---
@@ -2977,8 +2945,8 @@ leaves the register; the `16` is gone. Tests:
 `transducer::anchor::tests::depth` (`derive_closure_height_equals_selection_height`,
 `sel_parse_survives_frame_length_nesting`: a frame of `Delta` opcodes on a
 2 MiB thread, refused), `transducer::sentence::form::tests::depth`
-(`take_pred_refuses_past_language_depth`, `take_pred_survives_frame_length_nesting`);
-a mutation entry on the selection refusal. A kernel whose own rule language
+(`take_pred_refuses_past_language_depth`, `take_pred_survives_frame_length_nesting`).
+A kernel whose own rule language
 mints deeper terms is refused at decode until the language's height is
 amended. The text below is the derivation as specified.
 
@@ -3073,7 +3041,6 @@ the process, a court stopped); Medium as a reading bound.
   - `sel_parse_survives_frame_length_nesting` (a tape of `B` bytes of
     `Delta` opcodes on a 2 MiB thread: refused by (iii), or parsed and
     dropped without abort under (i)).
-- Mutation audit: yes (the refusal guards §2.4).
 - Size: M (iii) / L (i).
 
 ---
@@ -3312,7 +3279,6 @@ the naming.
     `None`, no panic).
   - `connection_chart_reads_cycle_type_of_permutation` (a fixture σ with
     cycles (2, 3) → `Count(2), 2, 3`).
-- Mutation audit: yes (the guard).
 - Size: S.
 
 ---
@@ -3343,9 +3309,8 @@ open). Tests (`core::tests::certified`): `gamma_p_terms_equal_closed_form`,
 `erf_tail_branch_is_derived_without_cap` (`erf 101` at `w = 14 600`),
 `poisson_quantile_answers_sector_on_spent_budget`,
 `poisson_quantile_decides_at_large_lambda`,
-`exp_width_is_within_grid_at_positive_argument`; two mutation entries (the
-up-front refusal, the stop rule). The text below is the derivation as
-specified.
+`exp_width_is_within_grid_at_positive_argument`. The text below is the
+derivation as specified.
 
 **Site.** `src/core/certified.rs`:
 
@@ -3576,7 +3541,6 @@ the term count, each bounded by the series' ratio):
   - `exp_width_is_within_grid_at_positive_argument` (`exp(100)`, under
     the absolute contract).
   - `tan_guard_reads_cos_margin` (`tan` near `π/2 − 2^{-20}`).
-- Mutation audit: the stop rule and the up-front budget refusal.
 - Dependencies: none on other G4 entries. Size: M (the termination parts
   (a)–(d)), L (all guards (e) under the absolute contract).
 

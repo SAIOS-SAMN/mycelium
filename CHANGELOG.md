@@ -6,6 +6,10 @@ such change is named here.
 
 ## Unreleased
 
+### Mutation audit retired (2026-11-04)
+- The mutation audit, ruled theatre, is retired: the catalogue and the
+  `gate mutate` subcommand are removed from `xtask`.
+
 ### LAW-PASSAGE v1 proposed (2026-11-04)
 - Proposal 78.172: the linear passage `R ↦ 2H − R` at a crossing,
   requested by netstratum (PR #40). It is first degree, exact over ℚ and
