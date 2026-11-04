@@ -125,27 +125,33 @@ fn signature_reaching_a_held_receipt_releases_it_once() {
     assert_eq!(again, read, "nothing is read twice");
 }
 
-/// §5a.10 — A FORGED LINE NEVER REACHES A READER: a line anyone wrote under
-/// a's key, from its genesis, admitting the word at its own stamp, links
-/// from nothing and is stored unreached. It files no alias and hears no
-/// ruling, at restore too, and a's own signed frames never reach it: a's
-/// genesis, signed, meets it at one place, and the forged receipt is no
-/// signature, so a's bond is not burned; a's signed head does not link to
-/// it.
-#[test]
-fn forged_line_never_reaches_a_reader() {
-    let (mut c, key, line, _, _, word) = waiting_ruling("reach forged", 0xc8);
-    let a = key.verifying_bytes();
+/// A FORGED GENESIS ON a's LINE, admitting the word at its own stamp,
+/// back-filled into c: a line anyone can write under a's key. Answers the
+/// forged page and the stamp it admits the word at.
+fn forged_genesis(c: &mut Court, a: [u8; 32], word: &Cite) -> (Vec<KStepReceipt>, Stamp) {
     let Cite::Word { chart, class, .. } = word else { panic!("a word citation") };
     let mut forged = ReceiptChain::with_signer(a);
     let fat = forged.next_stamp(&[]).expect("the forged line's first stamp");
     forged
-        .append(ActKind::List, [0; 4], vec![Cite::Word { chart, class, at: fat }], [0; 32], Vec::new())
+        .append(ActKind::List, [0; 4], vec![Cite::Word { chart: chart.clone(), class: class.clone(), at: fat }], [0; 32], Vec::new())
         .expect("a line anyone can write");
     let page: Vec<KStepReceipt> = forged.own().collect();
     let mut budget = c.stroke();
     assert_eq!(c.admit_backfill(&page, &mut budget), (1, None), "the forged genesis links from nothing");
     assert!(c.unreached.contains(&line_key(&page[0])), "and is held unreached");
+    (page, fat)
+}
+
+/// §5a.10 — A FORGED LINE NEVER REACHES A READER: a line anyone wrote under
+/// a's key, from its genesis, admitting the word at its own stamp, links
+/// from nothing and is stored unreached. It files no alias and hears no
+/// ruling, at restore too, and a's signed head does not link to it: the
+/// head names another receipt at the forged place as its predecessor, and
+/// the forged receipt gives way (§5a.9's eviction by signature).
+#[test]
+fn forged_line_never_reaches_a_reader() {
+    let (mut c, key, line, _, _, word) = waiting_ruling("reach forged", 0xc8);
+    let (page, fat) = forged_genesis(&mut c, key.verifying_bytes(), &word);
     assert_eq!(c.word_admitted_at(&fat), None, "it files no alias");
     assert_eq!(c.clock(None).rulings[Ruled::Upheld.index()], [1, 0, 1, 0], "and the ruling still waits");
     let mut restored = Court::new();
@@ -153,18 +159,152 @@ fn forged_line_never_reaches_a_reader() {
     assert!(restored.unreached.contains(&line_key(&page[0])), "restored, it is held unreached");
     assert_eq!(restored.word_admitted_at(&fat), None, "and files no alias");
 
+    let [.., head] = line.as_slice() else { panic!("a acted") };
+    let head = head.clone();
+    let signed = super::fixtures::admit_line(&mut c, &key, std::slice::from_ref(&head));
+    assert!(!matches!(signed.as_slice(), [Admitted::Parent(_)]), "a's head does not link to it: {signed:?}");
+    let forged = crate::chronometry::Parent { at: page[0].stamp, hash: page[0].chain_hash };
+    assert_eq!(head.prev.map(|p| p.at.place()), Some(page[0].stamp.place()), "a's head names a predecessor at the forged place");
+    assert!(!c.chain().holds(&forged), "no signature reaches it: it gave way to the head's predecessor");
+    assert!(!c.unreached.contains(&line_key(&page[0])), "and nothing waits there");
+    assert_eq!(c.word_admitted_at(&fat), None, "and no reader read it");
+}
+
+/// §5a.9 — EVICTION BY SIGNATURE: a forged genesis stored first at a's
+/// place holds it unreached. a's own genesis, signed, contradicts it there:
+/// the forged receipt gives way and a's genesis is admitted in its place.
+/// a's signed line then advances at c and its admitting act is read, and a
+/// restored c holds a's genesis at the place.
+#[test]
+fn signed_line_evicts_forged_unreached_genesis() {
+    let (mut c, key, line, at, addr, word) = waiting_ruling("reach evict", 0xc9);
+    let a = key.verifying_bytes();
+    let (page, _) = forged_genesis(&mut c, a, &word);
+    let genesis = super::fixtures::admit_line(&mut c, &key, &line[..1]);
+    assert!(matches!(genesis.as_slice(), [Admitted::Parent(_)]), "a's genesis takes the forged one's place: {genesis:?}");
+    assert_ne!(page[0].chain_hash, line[0].chain_hash, "two receipts at one place");
+    assert_eq!(
+        c.chain().at(&a, line[0].stamp.place()).map(|r| r.chain_hash),
+        Some(line[0].chain_hash),
+        "the place holds a's signed genesis"
+    );
+    assert!(!c.unreached.contains(&line_key(&page[0])), "and nothing waits there");
+
+    let rest = super::fixtures::admit_line(&mut c, &key, &line[1..]);
+    assert!(rest.iter().all(|v| matches!(v, Admitted::Parent(_))), "a's signed line advances: {rest:?}");
+    assert_eq!(c.word_admitted_at(&at), Some(&addr), "a's admitting act is read");
+    let mut restored = Court::new();
+    assert!(restored.restore(&c.snapshot()), "clean restore");
+    assert_eq!(
+        restored.chain().at(&a, line[0].stamp.place()).map(|r| r.chain_hash),
+        Some(line[0].chain_hash),
+        "restored, the place holds a's signed genesis"
+    );
+}
+
+/// A LINE OF `n` ACTS under `key`, citing nothing, its operator `op`.
+fn plain_line(key: &HyphaKey, n: usize, op: u8) -> (ReceiptChain, Vec<KStepReceipt>) {
+    let mut chain = ReceiptChain::with_signer(key.verifying_bytes());
+    let line = (0..n)
+        .map(|_| chain.append(ActKind::List, [0; 4], Vec::new(), [op; 32], Vec::new()).expect("an act").clone())
+        .collect();
+    (chain, line)
+}
+
+/// §5a.9 — EVICTION NEVER REACHES WHAT A SIGNATURE REACHED: a's line held
+/// at c through r1, reached by a's signed r1, then a fork f2, f3 linking
+/// on r1 back-filled and held unreached. a's signed r2 contradicts f2:
+/// f3 and f2 leave and r2 is admitted, while r0 and r1 stay, and a's bond
+/// is not burned, since the fork was no signature. A frame a signed
+/// against the reached r1 evicts nothing: it is an equivocation proved by
+/// two signatures, and the bond burns.
+#[test]
+fn evict_contradicted_keeps_reached_receipts() {
+    let key = super::fixtures::court_key("reach keeps reached");
+    let a = key.verifying_bytes();
+    let (mut honest, real) = plain_line(&key, 2, 9);
+    let mut fork = honest.clone();
+    let r2 = honest.append(ActKind::List, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("r2").clone();
+    let forged: Vec<KStepReceipt> =
+        (0..2).map(|_| fork.append(ActKind::List, [0; 4], Vec::new(), [8; 32], Vec::new()).expect("a forged act").clone()).collect();
+    let mut c = Court::new();
+    let mut budget = super::fixtures::budget();
+    assert_eq!(c.admit_backfill(&real, &mut budget), (2, None), "r0, r1 link and are stored");
+    super::fixtures::admit_line(&mut c, &key, &real[1..]);
+    assert!(real.iter().all(|r| !c.unreached.contains(&line_key(r))), "a's signed r1 reaches r0 and r1");
+    assert_eq!(c.admit_backfill(&forged, &mut budget), (2, None), "the fork links on r1 and is stored");
+    assert!(forged.iter().all(|r| c.unreached.contains(&line_key(r))), "held unreached");
     let bond = [3u64, 3, 3, 3];
     let anchor = (Stamp::default(), [0; 32]);
     c.treasury_mut().genesis(a, bond, anchor);
     c.treasury_mut().enroll(a, bond, anchor);
     assert_eq!(c.treasury().bond_of(&a), Some(bond.into()), "a is bonded");
-    let genesis = super::fixtures::admit_line(&mut c, &key, &line[..1]);
-    assert!(matches!(genesis.as_slice(), [Admitted::Equivocation { .. }]), "a's genesis meets it at one place: {genesis:?}");
-    assert_eq!(c.treasury().bond_of(&a), Some(bond.into()), "an unsigned receipt is no proof: nothing is burned");
-    let [.., head] = line.as_slice() else { panic!("a acted") };
-    let head = head.clone();
-    let signed = super::fixtures::admit_line(&mut c, &key, &[head]);
-    assert!(!matches!(signed.as_slice(), [Admitted::Parent(_)]), "a's head does not link to it: {signed:?}");
-    assert!(c.unreached.contains(&line_key(&page[0])), "no signature reaches it");
-    assert_eq!(c.word_admitted_at(&fat), None, "and no reader read it");
+
+    let signed = super::fixtures::admit_line(&mut c, &key, std::slice::from_ref(&r2));
+    assert!(matches!(signed.as_slice(), [Admitted::Parent(_)]), "r2 takes the fork's place: {signed:?}");
+    assert_eq!(c.treasury().bond_of(&a), Some(bond.into()), "an unsigned fork is no proof: nothing is burned");
+    for r in real.iter().chain([&r2]) {
+        assert_eq!(c.chain().at(&a, r.stamp.place()).map(|h| h.chain_hash), Some(r.chain_hash), "{:?} stands", r.stamp.place());
+    }
+    assert!(c.chain().at(&a, forged[1].stamp.place()).is_none(), "the fork's top left");
+    assert!(forged.iter().all(|r| !c.unreached.contains(&line_key(r))), "and nothing of the fork waits");
+
+    let mut other = ReceiptChain::with_signer(a);
+    other.append(ActKind::List, [0; 4], Vec::new(), [7; 32], Vec::new()).expect("a's other genesis");
+    let against = other.append(ActKind::List, [0; 4], Vec::new(), [7; 32], Vec::new()).expect("a's other r1").clone();
+    let verdict = super::fixtures::admit_line(&mut c, &key, &[against]);
+    assert!(matches!(verdict.as_slice(), [Admitted::Equivocation { .. }]), "a signed fork of the reached r1: {verdict:?}");
+    assert_eq!(c.chain().at(&a, real[1].stamp.place()).map(|h| h.chain_hash), Some(real[1].chain_hash), "r1 stays");
+    assert_ne!(c.treasury().bond_of(&a), Some(bond.into()), "and two signatures at one place burn the bond");
+}
+
+/// D2.5 — THE UNREACHED QUEUE IS BOUNDED BY THE PROCESS'S MEMORY: a court
+/// whose capacity is eight reads (`C = ⌊M_proc / b⌋` at eight bytes and one
+/// byte a read) holds eight back-filled receipts unreached, and refuses the
+/// ninth by name: it is not stored and the page stops. A signature that
+/// reaches the eight releases them, and the ninth is then held.
+#[test]
+fn unreached_queue_refuses_past_process_memory() {
+    use crate::physics::{Calibration, Memory, MemorySource, Physics};
+    let one = std::num::NonZeroU64::MIN;
+    let eight = std::num::NonZeroU64::new(8).expect("eight bytes");
+    let calibration = Calibration::of(Memory::of(eight, MemorySource::CgroupMax), one, one).expect("eight reads of one byte");
+    let key = super::fixtures::court_key("reach bounded");
+    let (_, line) = plain_line(&key, 9, 9);
+    let mut c = Court::new();
+    c.physics = Physics::calibrated(&calibration);
+    let mut budget = super::fixtures::budget();
+    assert_eq!(c.admit_backfill(&line, &mut budget), (8, None), "eight are held, the page stops at the ninth");
+    assert_eq!(c.unreached.len(), 8, "eight held unreached");
+    assert_eq!(c.unreached_refusal(), Some(crate::court::verdict::REFUSE_UNREACHED_PAST_MEMORY), "a ninth is refused by name");
+    assert!(c.chain().at(&key.verifying_bytes(), line[8].stamp.place()).is_none(), "and not stored");
+    super::fixtures::admit_line(&mut c, &key, &line[7..8]);
+    assert_eq!(c.unreached.len(), 0, "a's signed eighth reaches all eight");
+    assert_eq!(c.admit_backfill(&line[8..], &mut budget), (1, None), "and the ninth is held");
+}
+
+/// §5a.9 — A BACK-FILLED FOLD FILES ITS ROOT ONCE A SIGNATURE REACHES IT:
+/// e's line, folded at its close, back-filled into c with its `Fold`, files
+/// no root for e — at restore too — and e's signed fold, admitted, files
+/// it.
+#[test]
+fn fold_root_waits_for_a_signature() {
+    let key = super::fixtures::court_key("reach fold root");
+    let e = key.verifying_bytes();
+    let (mut chain, mut line) = plain_line(&key, 2, 9);
+    let (_, frame) = chain.open_orbit().expect("an orbit is open");
+    let shut = chain.append(ActKind::Orbit, frame, Vec::new(), [9; 32], Vec::new()).expect("the close").clone();
+    let (_, root) = chain.fold_before(shut.stamp.place()).expect("the orbit folds");
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, e, root.at), hash: root.hash }];
+    let folded = chain.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node").clone();
+    line.extend([shut.clone(), folded.clone()]);
+    let mut c = Court::new();
+    let mut budget = super::fixtures::budget();
+    assert_eq!(c.admit_backfill(&line, &mut budget), (line.len(), None), "e's line and its fold are stored");
+    assert_eq!(c.chain().peer_root(&e), None, "the fold's root waits");
+    let mut restored = Court::new();
+    assert!(restored.restore(&c.snapshot()), "clean restore");
+    assert_eq!(restored.chain().peer_root(&e), None, "restored, it still waits");
+    super::fixtures::admit_line(&mut c, &key, &[folded]);
+    assert_eq!(c.chain().peer_root(&e), Some(shut.stamp.place()), "e's signed fold files its root");
 }

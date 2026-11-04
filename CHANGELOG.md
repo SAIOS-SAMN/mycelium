@@ -146,6 +146,33 @@ may change inside it.
     rank (built in S4c, above);
   - a wire act for a claim of factorisation (built in S4c, above).
 
+### The observer's call test owns its observer (#78)
+- `observe::live` holds its state in a `Live` value: the process's mind
+  is observed through `live::process()`, which every free function reads,
+  and a reader may hold its own. `Live::wait` waits on a call already
+  left. `live_call_waits_while_carrier_works_inside_law` raced the minds
+  of other tests, which park, enter laws and take calls on the
+  process-wide observer; both observer tests now read only an observer
+  they own. No wire change.
+
+### Eviction by signature, a bounded held queue, a waiting fold root (track 24, #79)
+- **Network contract:** no wire byte, act or ledger layout changes. A
+  new name joins 47.2's admission refusals,
+  `REFUSE_UNREACHED_PAST_MEMORY`, used only inside back-fill admission.
+  A line frame names the nodes that left before the nodes filed, so a
+  node evicted and another filed at its stamp read back in order; the
+  records are unchanged.
+- A signed frame that contradicts its signer's line where it is held
+  unreached (at its own place, or at its predecessor's) evicts the
+  line's unreached top, and is then admitted. A forged genesis stored
+  first gives way to the signer's own genesis. A reached receipt is
+  never evicted.
+- The unreached queue holds at most the process's capacity
+  `C = ⌊M_proc / b⌋` receipts (MU-DERIVATIONS D2.5); a back-filled
+  receipt past it is refused by name and not stored.
+- A back-filled `Fold` files its root once a signature reaches it, and a
+  restore files only the reached folds' roots.
+
 ### Back-filled receipts wait for a signature (track 24, #73)
 - **Network contract:** no wire byte, act or ledger layout changes. A
   carrier reading is renamed: `founding.unsigned` is now

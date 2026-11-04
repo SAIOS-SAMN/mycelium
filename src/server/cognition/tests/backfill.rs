@@ -60,9 +60,19 @@ fn hear_cites_head_once_gap_closes() {
     // then `1 + max(prev, parents)` (45.2).
     let mut c0 = Court::new();
     c0.append_step(crate::chronometry::ActKind::Attest, [0xAA; 40], [1; 32]);
-    let c = std::sync::Mutex::new(c0);
     const PAGE: u64 = 8;
-    let pages_per_pass = c.lock().expect("c").stroke().remaining() as u64;
+    // One pass's reads: the process's stroke. The gap one exchange opens is
+    // held unreached until b's head reaches it, and the held receipts are
+    // bounded by the court's capacity (MU-HOSTING §5a.9, MU-DERIVATIONS
+    // D2.5): c is calibrated to hold a reserve's strokes of the process's
+    // capacity, a byte a read, so the gap fits.
+    let pass = c0.stroke().remaining();
+    let held = crate::physics::capacity().checked_mul(crate::physics::STROKES_PER_RESERVE).and_then(std::num::NonZeroU64::new).expect("a capacity");
+    let one = std::num::NonZeroU64::MIN;
+    let memory = crate::physics::Memory::of(held, crate::physics::MemorySource::CgroupMax);
+    c0.physics = crate::physics::Physics::calibrated(&crate::physics::Calibration::of(memory, one, one).expect("c's calibration"));
+    let c = std::sync::Mutex::new(c0);
+    let pages_per_pass = pass as u64;
     // Faster than one pass can page: twice what a pass can fetch.
     let rate = 2 * pages_per_pass * PAGE;
     let mut lags = Vec::new();
@@ -80,7 +90,7 @@ fn hear_cites_head_once_gap_closes() {
             &c,
             ORIGIN,
             || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &head)),
-            || c.lock().ok().map(|mut k| k.stroke()),
+            || c.lock().ok().map(|mut k| k.physics.stroke_n(pass)),
             fetch,
         );
         let _ = heard;

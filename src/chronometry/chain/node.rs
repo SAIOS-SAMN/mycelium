@@ -122,6 +122,23 @@ impl ReceiptChain {
             }
         }
         let left = self.lines.remove(&Stamp::line_key(&at.vk, at.place())).is_some();
+        // The line's top, where this node was it, is the greatest place the
+        // line still holds; a line holding none has no top.
+        if self.tops.get(&at.vk).is_some_and(|top| *top == at.place()) {
+            let below = self.lines.fibre_at(&at.vk).and_then(|line| {
+                let (key, _) = line.last()?;
+                let mut p = at.vk.len();
+                Place::take_canonical(&key, &mut p)
+            });
+            match below {
+                Some(top) => {
+                    self.tops.insert(at.vk, top);
+                }
+                None => {
+                    self.tops.remove(&at.vk);
+                }
+            }
+        }
         self.tally(&at.vk, false, left);
         self.placed.remove(&key);
         self.nodes.remove(&key);
