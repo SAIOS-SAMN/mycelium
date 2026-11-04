@@ -36,7 +36,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
-| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1, N2 and N5 built (N1 with #29, N2 with #53); N3, N4, N6 and N7 next, in order; N6 lands in v0.3.0's open break |
+| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N5 built (N1 with #29, N2 with #53); N6 and N7 next, in order; N6 lands in v0.3.0's open break |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the items above (maintainers) |
 
 **2. Ready to start**
@@ -441,6 +441,24 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - Near-identical files: `held.rs`, `hold.rs` and `server/held/`;
      `snapshot.rs` and `snapshot/`; `germinate` ×2; `winding` ×2. Each is
      renamed by function.
+
+   **Built** (N3). Every rename is listed in the CHANGELOG. As built:
+   `court/phase.rs` → `court/height_window.rs` (`cognition/window.rs`
+   already holds the challenge windows), `observe/phase.rs` →
+   `court_stage.rs`, `server/held/` → `server/court_lock/`, the binary's
+   `held.rs` → `court_lock.rs` and `hold.rs` → `deferred_reads.rs`,
+   `snapshot.rs` → `trie_tape.rs`, `cognition/snapshot/` →
+   `persistence/`, the court's `germinate/` → `listings/`,
+   `court/winding.rs` → `ring_carrier.rs`. The rule language's `Region`
+   becomes `RegionKind` so the sensor's `Region` names one thing. Waiting
+   on a ruling: which `Cover` is canonical (the mesh's cover trie
+   `nerve::Cover`, the Čech edge cochain `cech::Cover`, the scene's
+   `Cover` of regions and the extraction pass's `family::cover::Cover`);
+   whether the keyed trie's prefix `Fibre` is the bundle's fibre;
+   `forms::frame::Frame`, an observer's frame of reference in the `forms`
+   crate's public surface; `layers::Shell` against the GLOSSARY's
+   **Shell** (a universe's physics layer); the code's `Epigenome` and
+   `resonance.rs` against their GLOSSARY rows; `ListingField`.
 4. **N4, retired terms and person words.**
    - `Unstated::OffLattice` → `OffSubstrate`; `lattice_step` →
      `substrate_step`.
@@ -448,6 +466,15 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - `absorb_vortex` / `absorb_keyed` → `merge_…`.
    - The test names with a person word, "its" or "own" are renamed.
    - `lamina` and `FormCell` (retired by 0.7) are renamed.
+
+   **Built** (N4): `OffSubstrate`, `substrate_step`, `THROAT_LEVEL_BITS`
+   (its `OPEN_PHYSICS` entry, `REGISTERED:` tag and mutation catalogue
+   span follow), `merge_vortex` / `merge_keyed`, `FormCell` →
+   `BodyContact`, and 18 test names. No identifier says "lamina"; the word
+   stands only in refusal strings (`verdict/body.rs` `FAIL_*`), the keyed
+   `CoverSite`'s name `"lamina-cell"` and the oracle's `"lamina_a"` key,
+   which wait on a ruling with N7. The tests named for the court's
+   `own_section` keep the function's name.
 5. **N5, the GLOSSARY** (**Built**). A row for each term a name keeps:
    - contemplation
    - tensegrity
@@ -1369,14 +1396,14 @@ Each phase is one commit:
        spoken under, and the court reconstructs under it (MU-SENSING
        §6.2). This is a wire change inside v0.3.0's break.
      - Claims: `vortex_ground_read_once_per_candidate`,
-       `claim_states_its_ground_and_court_reconstructs_under_it`,
+       `claim_states_ground_and_court_reconstructs_under_ground`,
        `claim_under_a_non_candidate_ground_is_refused`,
-       `solve_round_trips_its_stated_ground`,
+       `solve_round_trips_stated_ground`,
        `ground_absent_from_an_output_is_still_ground`,
        `framed_interior_is_ground_and_frame_is_membrane`,
        `always_framed_interior_holding_bodies_joins_the_vortex`,
        `interior_holding_no_body_is_not_ground`,
-       `membrane_is_held_and_its_change_is_read`.
+       `membrane_is_held_and_membrane_change_is_read`.
      - Open: collapsing a vortex by a relation, with S6.
 4. **S3, the symbol set deduced.**
    - `PALETTE` (10, and the conflicting 256), `RESERVOIR` and the 10-slot

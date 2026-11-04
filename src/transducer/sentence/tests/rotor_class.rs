@@ -113,7 +113,7 @@ fn record_cycle_refuses_unwitnessed_period() {
 /// The rank's off-plane count is its own lane, counted once per class and
 /// never folded into the free rank.
 #[test]
-fn rank_counts_offplane_as_own_lane() {
+fn rank_counts_offplane_as_separate_lane() {
     // A ROTOR WITH NO INVARIANT PAIR PLANE. It was a `(0, 2)` 90° turn,
     // which was off-plane only because the speller could not see its
     // plane; it turns plane one and reads as torsion now. Two 90° turns on
@@ -410,7 +410,7 @@ fn class_key_reads_rotor_conjugacy_first() {
 /// invariant plane at all rather than one whose plane is simply not the
 /// sensor's.
 #[test]
-fn of_word_occupies_own_plane_off_sensor() {
+fn of_word_occupies_separate_plane_off_sensor() {
     let w = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 2)).unwrap(), false)]);
     assert!(w.plane_block().is_none(), "it moves the sensor plane, as it always did");
     let f = w.form().expect("and it turns (0, 2), which the carrier has a seat for");

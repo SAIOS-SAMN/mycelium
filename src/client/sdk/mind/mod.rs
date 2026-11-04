@@ -5,7 +5,7 @@
 //! 24.3 — THE MIND: perceive, think, stand, utter, contract — the stroke,
 //! the quote, the speech, the adjudication, and what each writes.
 
-pub(super) mod body;
+pub(super) mod seating;
 pub(super) mod boot;
 pub(super) mod chatter;
 pub(super) mod contract;

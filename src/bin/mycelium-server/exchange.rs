@@ -27,7 +27,7 @@ pub(crate) use mycelium::anastome::dialogue::Roots;
 
 /// A NODE'S ORIGIN: the genesis hash it adopted and the epoch it adopted it
 /// at — the pair 47.2 step 1 tests every signed frame against.
-pub(crate) type Origin = ([u8; 32], u32);
+pub(crate) type GenesisEpoch = ([u8; 32], u32);
 
 /// THE LOCK ORDER of this binary (Stage 11 I26), read from every site that
 /// holds one lock while taking another. The court is taken first, and
@@ -79,7 +79,7 @@ pub(crate) struct Mesh {
     /// every signed frame against. `None` is UNMEASURED, not zero: a node
     /// that has not adopted a genesis admits no receipt at all rather than
     /// admitting everything under a zero sentinel.
-    pub(crate) origin: Arc<Mutex<Option<Origin>>>,
+    pub(crate) origin: Arc<Mutex<Option<GenesisEpoch>>>,
 }
 
 impl Clone for Mesh {
@@ -358,7 +358,7 @@ impl Exchange {
         } = self;
         // 78.152b: the tick the court loop last handed the keepers, at the
         // origin then held — a stroke where neither moved asks them nothing.
-        let mut last_tick: (Option<mycelium::chronometry::tuniversal::Tick>, Option<Origin>) = (None, None);
+        let mut last_tick: (Option<mycelium::chronometry::tuniversal::Tick>, Option<GenesisEpoch>) = (None, None);
         let genesis_written =
             std::sync::Arc::new(std::sync::atomic::AtomicBool::new(genesis_held));
         let mut last_organs = (usize::MAX, usize::MAX);
@@ -390,26 +390,26 @@ impl Exchange {
         let mut reach_seen = 0u64;
         loop {
             std::thread::yield_now();
-            crate::held::yield_to_waiters();
+            crate::court_lock::yield_to_waiters();
             // The keepers' reach of this court, read off the keepers' own
             // lock before the court's, where it moved.
             let reach = crate::tuniversal::reach_moved(&mut reach_seen);
-            if let Ok(mut h) = crate::held::held!(court) {
+            if let Ok(mut h) = crate::court_lock::held!(court) {
                 let (offers, deficit, tick) = h.run(|k, reads| {
-                    crate::held::step("court stroke");
+                    crate::court_lock::step("court stroke");
                     // 78.153b — the stroke the hold was taken with.
                     k.court_stroke_on(reads);
                     // 78.125 (law version 5) — the windows the reach closes,
                     // sealed once.
                     if let Some(r) = &reach {
-                        crate::held::step("close windows");
+                        crate::court_lock::step("close windows");
                         if let (Some(sealed), Ok(x)) = (k.close_windows(r), r) {
                             eprintln!("  court windows closed through h {} at h {}", x.through, sealed.stamp.h);
                         }
                     }
                     // A question the observer left while this stroke held the
                     // court is answered under the lock already held.
-                    crate::held::step("answer standing");
+                    crate::court_lock::step("answer standing");
                     // 78.153c — the first stroke after boot publishes it
                     // unasked, so the first question finds it.
                     if crate::judge::observe::answer_standing(k, &mesh, mesh.vk, !standing_published) {
@@ -419,9 +419,9 @@ impl Exchange {
                     crate::judge::why::answer_left(k);
                     // 78.151 — the door's reading, published whole under the
                     // lock the stroke already holds.
-                    crate::held::step("publish");
+                    crate::court_lock::step("publish");
                     published.publish(k);
-                    crate::held::step("offers");
+                    crate::court_lock::step("offers");
                     // The words the stroke moved onto the docket — a rewrite,
                     // the citers a slash re-docketed — are offered by it.
                     // 23.8, S13.4: the door's deficit, read under the court
@@ -451,7 +451,7 @@ impl Exchange {
                         push_tick(&mesh, &join, &nerve, &ring);
                         // A reading signed is the court's clock advancing:
                         // the held seat reads are answered (`hold`).
-                        crate::hold::stir();
+                        crate::deferred_reads::stir();
                     }
                 }
                 if let Ok(mut sy) = syllabus.lock() {
@@ -475,7 +475,7 @@ impl Exchange {
                 // and the fold's round by outcome. None of this reached the
                 // journal, so epoch 117's fold storm and its reserve were
                 // read only by hand.
-                if let Ok(mut h) = crate::held::held!(court) {
+                if let Ok(mut h) = crate::court_lock::held!(court) {
                     h.run(|k, reads| {
                     let folds = mycelium::observe::folds();
                     // 78.68: the winding carrier — first closes, carried
@@ -600,7 +600,7 @@ impl Exchange {
                 relocate_corpus(&court, &published, &mesh, &registry, budget);
                 last_cover = roots;
             }
-            let k_now = match crate::held::held!(court) {
+            let k_now = match crate::court_lock::held!(court) {
                 Ok(mut h) => h.run(|k, _| k.k_step()),
                 Err(_) => continue,
             };
@@ -728,7 +728,7 @@ impl Exchange {
                             origin,
                             || admit_peer_receipt(&court, &mesh, &reply),
                             // 78.153b — a page's stroke is a hold's, handed on.
-                            || crate::held::held!(court).ok().map(|h| h.into_stroke()),
+                            || crate::court_lock::held!(court).ok().map(|h| h.into_stroke()),
                             crate::backfill::fetch(&mesh, &d),
                         );
                         // The signer is the key the digest names; a digest
@@ -762,7 +762,7 @@ impl Exchange {
                             // the installed language's stalks taken by the stalks'
                             // pointer in the same hold, its digests read off it
                             // with no court held.
-                            let stalks = match crate::held::held!(court) {
+                            let stalks = match crate::court_lock::held!(court) {
                                 Ok(mut h) => h.run(|k, reads| {
                                     k.confirm_peer_holds_on(&remote, vk_peer, reads);
                                     std::sync::Arc::clone(&k.language().stalks)
@@ -867,7 +867,7 @@ impl Exchange {
                                 // OWED (78.153b): `carry_chart` per chart × word
                                 // in flight is not yet metered (the lock audit,
                                 // row 5).
-                                let offers = match crate::held::held!(court) {
+                                let offers = match crate::court_lock::held!(court) {
                                     Ok(mut h) => h.run(|k, _| {
                                         for (_, inv) in &cover.charts {
                                             k.carry_chart(inv);
@@ -889,7 +889,7 @@ impl Exchange {
                         // and one reply's count carry (the reply's `u8` count
                         // wall); the addresses share the ask's frame with its
                         // own header (D4.6). Nothing waits, nothing is asked.
-                        let awaited = match crate::held::held!(court) {
+                        let awaited = match crate::court_lock::held!(court) {
                             Ok(mut h) => h.run(|k, _| match mycelium::network::wire::frame_budget().checked_sub(mycelium::anastome::dialogue::CITED_REQUEST_HEADER) {
                                 Some(bytes) => k.awaited_citations(usize::from(u8::MAX), bytes),
                                 None => Vec::new(),
@@ -917,7 +917,7 @@ impl Exchange {
                                     {
                                         let addr = spoken.address();
                                         named.push(addr.clone());
-                                        if let Ok(mut h) = crate::held::held!(court) {
+                                        if let Ok(mut h) = crate::court_lock::held!(court) {
                                             // 78.24 (2b): a word learned from a peer is
                                             // located by the stamp that admitted it there,
                                             // the peer's key its coordinate; every act
@@ -970,7 +970,7 @@ impl Exchange {
                                 // decoded here, each handed to the glue.
                                 mycelium::observe::note_replication(Some(vk_peer), mycelium::observe::replication::FETCH_RECEIVED, named.len() as u64);
                                 if !named.is_empty() {
-                                    if let Ok(mut h) = crate::held::held!(court) {
+                                    if let Ok(mut h) = crate::court_lock::held!(court) {
                                         h.run(|k, reads| k.confirm_peer_holds_addrs_on(&named, vk_peer, reads));
                                     }
                                 }
@@ -1011,7 +1011,7 @@ impl Exchange {
                     held
                 } else if mint_genesis {
                     // 78.153b — counted, as every take of the court is.
-                    crate::held::held!(court)
+                    crate::court_lock::held!(court)
                         .ok()
                         .and_then(|mut h| h.run(|k, _| k.chain().opening().map(|r| r.chain_hash)))
                         .map(|h| (h, epoch))
@@ -1059,7 +1059,7 @@ impl Exchange {
             // persist — closes its orbit by name. `K` moves here and nowhere
             // else; a cycle that sealed no act closes nothing. A withheld
             // close is counted on the clock, never printed beside it.
-            if let Ok(mut h) = crate::held::held!(court) {
+            if let Ok(mut h) = crate::court_lock::held!(court) {
                 if matches!(h.run(|k, _| k.orbit()), mycelium::chronometry::Close::Sealed(_)) {
                     sealed_since_persist += 1;
                 }

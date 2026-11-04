@@ -284,7 +284,7 @@ fn list_sentence_charges_orbit_orders_on_depleted_lane() {
 
 /// THE HOLONOMY THE METABOLISM CHARGES ON IS THE ONE THE ORBIT CARRIES.
 ///
-/// `germinate/listing.rs` charges the physics off `Form::orbit_words`: an orbit
+/// `listings/listing.rs` charges the physics off `Form::orbit_words`: an orbit
 /// of FINITE order raises pressure by its period, an orbit of INFINITE order
 /// charges TORSION — "what will not close". That reader returned
 /// `lp.holonomy`, the orbit's WORD, and a face's word is the coboundary

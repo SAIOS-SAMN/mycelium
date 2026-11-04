@@ -27,7 +27,7 @@
 //! agreed on, or its time is unread and the pair is refused by name.
 
 use super::luminal::DIRECTIONS;
-use super::reconstruct::{at, field, key, Site, AXES};
+use super::reconstruct::{at, field, key, SiteAxes, AXES};
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::{base_vector, e_inf, wedge, FlowPoint};
@@ -196,13 +196,13 @@ impl TimeClosure {
 
 /// What a key carries on one axis: its flow, and per free ray (by direction
 /// and hue) every time it was observed at.
-struct Held {
+struct AxisRecord {
     flow: Flow,
     free_times: Vec<(u8, u8, Q)>,
 }
 
-fn table(pairs: &[(&[Site], &[Flow])], axis: usize) -> (Keyed<Held>, TimeClosure) {
-    let mut t: Keyed<Held> = Keyed::new();
+fn table(pairs: &[(&[SiteAxes], &[Flow])], axis: usize) -> (Keyed<AxisRecord>, TimeClosure) {
+    let mut t: Keyed<AxisRecord> = Keyed::new();
     let mut cl = TimeClosure::default();
     for (sites, moves) in pairs {
         for (s, m) in sites.iter().zip(moves.iter()) {
@@ -228,7 +228,7 @@ fn table(pairs: &[(&[Site], &[Flow])], axis: usize) -> (Keyed<Held>, TimeClosure
                     held.free_times.extend(free);
                 }
                 None => {
-                    t.insert(&k, Held { flow: m.clone(), free_times: free });
+                    t.insert(&k, AxisRecord { flow: m.clone(), free_times: free });
                     cl.keys += 1;
                 }
             }
@@ -238,7 +238,7 @@ fn table(pairs: &[(&[Site], &[Flow])], axis: usize) -> (Keyed<Held>, TimeClosure
 }
 
 /// HR5 — THE HOLONOMY OF EVERY AXIS IN TIME over a set of pairs.
-pub fn holonomy_in_time(pairs: &[(&[Site], &[Flow])]) -> [TimeClosure; 9] {
+pub fn holonomy_in_time(pairs: &[(&[SiteAxes], &[Flow])]) -> [TimeClosure; 9] {
     std::array::from_fn(|axis| table(pairs, axis).1)
 }
 
@@ -262,7 +262,7 @@ pub struct InTime {
 /// Carry an input field by a table in time. `Err(())` where a free ray's
 /// time is unread; `Ok(None)` where a key is unseen, or where the scene has
 /// no one ground to lay the field on (`raster::void`).
-fn carried(x: &Grid, sites: &[Site], t: &Keyed<Held>, axis: usize) -> Result<Option<Grid>, ()> {
+fn carried(x: &Grid, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: usize) -> Result<Option<Grid>, ()> {
     let Ok(void) = crate::transducer::raster::void() else { return Ok(None) };
     let mut out: Grid = x.iter().map(|row| vec![void; row.len()]).collect();
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
@@ -306,15 +306,15 @@ fn carried(x: &Grid, sites: &[Site], t: &Keyed<Held>, axis: usize) -> Result<Opt
 /// whose loops close in time on the others, the most compact carrying it.
 pub fn reconstruct_in_time(family: &[(Grid, Grid)]) -> InTime {
     let mut read = InTime { pairs: family.len() as u64, ..InTime::default() };
-    let fields: Vec<Option<(Vec<Site>, Vec<Flow>)>> = family.iter().map(|(x, y)| flows(x, y).map(|f| (field(x), f))).collect();
-    let all: Vec<(&[Site], &[Flow])> = fields.iter().flatten().map(|(s, f)| (s.as_slice(), f.as_slice())).collect();
+    let fields: Vec<Option<(Vec<SiteAxes>, Vec<Flow>)>> = family.iter().map(|(x, y)| flows(x, y).map(|f| (field(x), f))).collect();
+    let all: Vec<(&[SiteAxes], &[Flow])> = fields.iter().flatten().map(|(s, f)| (s.as_slice(), f.as_slice())).collect();
     read.holonomy = holonomy_in_time(&all);
     for (i, f) in fields.iter().enumerate() {
         let Some((sites, _)) = f else { continue };
         read.framed += 1;
-        let others: Vec<(&[Site], &[Flow])> =
+        let others: Vec<(&[SiteAxes], &[Flow])> =
             fields.iter().enumerate().filter(|(j, _)| *j != i).filter_map(|(_, g)| g.as_ref()).map(|(s, f)| (s.as_slice(), f.as_slice())).collect();
-        let mut best: Option<(u64, usize, Keyed<Held>)> = None;
+        let mut best: Option<(u64, usize, Keyed<AxisRecord>)> = None;
         let mut any_closed = false;
         for axis in 0..AXES.len() {
             let (t, cl) = table(&others, axis);

@@ -9,8 +9,8 @@
 //! is not a refusal. Every input-sized loop of the replay now spends one
 //! read per item, and where the stroke runs out the answer is
 //! [`ReconstructionOutcome::Unread`]: not ruled this stroke, never a pass, never a slash.
-//! The [`ReconstructionCursor`] keeps the phase and the item it stopped at, with the
-//! exact partials a later phase is built from, so the next stroke resumes.
+//! The [`ReconstructionCursor`] keeps the stage and the item it stopped at, with the
+//! exact partials a later stage is built from, so the next stroke resumes.
 
 use super::*;
 use crate::transducer::sentence;
@@ -20,7 +20,7 @@ use crate::transducer::sentence;
 #[must_use]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ReconstructionOutcome {
-    /// Every phase re-derived.
+    /// Every stage re-derived.
     Clean,
     /// Refused, with its reason, coordinate and kind (34.1, 50.9, 78.9).
     Refused(Refusal),
@@ -39,11 +39,11 @@ impl ReconstructionOutcome {
     }
 }
 
-/// THE PHASES OF A FORM'S REPLAY, in the order `reconstruct_form_on_resume`
-/// reads them. The order is the verdict's: a phase is entered only when
+/// THE STAGES OF A FORM'S REPLAY, in the order `reconstruct_form_on_resume`
+/// reads them. The order is the verdict's: a stage is entered only when
 /// every one before it passed.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Phase {
+pub enum Stage {
     /// Every Glued vertex bonded, its sheets distinct (54.7 B5a).
     #[default]
     Ports,
@@ -79,38 +79,38 @@ pub enum Phase {
     Pivots,
     /// Every certificate re-read (A20).
     Certificates,
-    /// Past the last phase: every phase passed.
+    /// Past the last stage: every stage passed.
     Ruled,
 }
 
-impl Phase {
-    fn next(self) -> Phase {
+impl Stage {
+    fn next(self) -> Stage {
         match self {
-            Phase::Ports => Phase::Phantoms,
-            Phase::Phantoms => Phase::Citations,
-            Phase::Citations => Phase::Derivations,
-            Phase::Derivations => Phase::Witnesses,
-            Phase::Witnesses => Phase::Moves,
-            Phase::Moves => Phase::Perceive,
-            Phase::Perceive => Phase::Clauses,
-            Phase::Clauses => Phase::Bodies,
-            Phase::Bodies => Phase::Faces,
-            Phase::Faces => Phase::Edges,
-            Phase::Edges => Phase::Coherence,
-            Phase::Coherence => Phase::Terrain,
-            Phase::Terrain => Phase::Rank,
-            Phase::Rank => Phase::Deflation,
-            Phase::Deflation => Phase::Pivots,
-            Phase::Pivots => Phase::Certificates,
-            Phase::Certificates | Phase::Ruled => Phase::Ruled,
+            Stage::Ports => Stage::Phantoms,
+            Stage::Phantoms => Stage::Citations,
+            Stage::Citations => Stage::Derivations,
+            Stage::Derivations => Stage::Witnesses,
+            Stage::Witnesses => Stage::Moves,
+            Stage::Moves => Stage::Perceive,
+            Stage::Perceive => Stage::Clauses,
+            Stage::Clauses => Stage::Bodies,
+            Stage::Bodies => Stage::Faces,
+            Stage::Faces => Stage::Edges,
+            Stage::Edges => Stage::Coherence,
+            Stage::Coherence => Stage::Terrain,
+            Stage::Terrain => Stage::Rank,
+            Stage::Rank => Stage::Deflation,
+            Stage::Deflation => Stage::Pivots,
+            Stage::Pivots => Stage::Certificates,
+            Stage::Certificates | Stage::Ruled => Stage::Ruled,
         }
     }
 }
 
-/// WHERE A REPLAY STOPPED (78.153, option (A) as ruled): the phase,
+/// WHERE A REPLAY STOPPED (78.153, option (A) as ruled): the stage,
 /// the item inside it (which glued vertex, which edge, which pair, which
 /// certificate — the item's position in the form's own order), and the
-/// exact partials a later phase is built from — the pairs as the sensor read
+/// exact partials a later stage is built from — the pairs as the sensor read
 /// them, the undeclared links of the pairs already spoken, and the terrain's
 /// class rows already derived.
 ///
@@ -119,7 +119,7 @@ impl Phase {
 /// are read again, by address, at the next stroke.
 #[derive(Clone, Debug, Default)]
 pub struct ReconstructionCursor {
-    pub(crate) phase: Phase,
+    pub(crate) stage: Stage,
     pub(crate) at: usize,
     pub(crate) frames: Vec<super::body::Perceived>,
     pub(crate) undeclared: Vec<sentence::Link>,
@@ -127,59 +127,59 @@ pub struct ReconstructionCursor {
 }
 
 impl ReconstructionCursor {
-    /// HOW FAR THE REPLAY HAS COME: the phase and the item, and the pairs
+    /// HOW FAR THE REPLAY HAS COME: the stage and the item, and the pairs
     /// perceived. Two cursors at one progress hold the same partials, since
     /// every partial is a function of the items read; a stroke that leaves
     /// the progress where it found it moved the replay nowhere.
-    pub fn progress(&self) -> (Phase, usize, usize) {
-        (self.phase, self.at, self.frames.len())
+    pub fn progress(&self) -> (Stage, usize, usize) {
+        (self.stage, self.at, self.frames.len())
     }
 
-    /// The phase the replay stands in.
-    pub fn phase(&self) -> Phase {
-        self.phase
+    /// The stage the replay stands in.
+    pub fn stage(&self) -> Stage {
+        self.stage
     }
 
-    /// The item of that phase it resumes at.
+    /// The item of that stage it resumes at.
     pub fn at(&self) -> usize {
         self.at
     }
 
-    /// Where a phase is entered: `None` where the cursor is past it, the
+    /// Where a stage is entered: `None` where the cursor is past it, the
     /// item it stopped at where it stopped inside it, the first otherwise.
-    pub(crate) fn enter(&self, phase: Phase) -> Option<usize> {
-        match self.phase.cmp(&phase) {
+    pub(crate) fn enter(&self, stage: Stage) -> Option<usize> {
+        match self.stage.cmp(&stage) {
             std::cmp::Ordering::Greater => None,
             std::cmp::Ordering::Equal => Some(self.at),
             std::cmp::Ordering::Less => Some(0),
         }
     }
 
-    /// A phase settled: passed (the cursor moves past it), refused, or spent
+    /// A stage settled: passed (the cursor moves past it), refused, or spent
     /// (the cursor keeps the item and the replay is unread).
-    pub(crate) fn settle(&mut self, phase: Phase, step: Step) -> Option<ReconstructionOutcome> {
+    pub(crate) fn settle(&mut self, stage: Stage, step: Step) -> Option<ReconstructionOutcome> {
         match step {
             Ok(()) => {
-                self.phase = phase.next();
+                self.stage = stage.next();
                 self.at = 0;
                 None
             }
             Err(Halt::Refused(r)) => Some(ReconstructionOutcome::Refused(r)),
             Err(Halt::Spent(at)) => {
-                self.phase = phase;
+                self.stage = stage;
                 self.at = at;
                 Some(ReconstructionOutcome::Unread)
             }
         }
     }
 
-    /// Unread between two phases: the cursor stays where it stands.
+    /// Unread between two stages: the cursor stays where it stands.
     pub(crate) fn unread_here(&self) -> ReconstructionOutcome {
         ReconstructionOutcome::Unread
     }
 }
 
-/// How a metered phase stops.
+/// How a metered stage stops.
 #[derive(Debug)]
 pub(crate) enum Halt {
     Refused(Refusal),
@@ -187,7 +187,7 @@ pub(crate) enum Halt {
     Spent(usize),
 }
 
-/// One phase's reading.
+/// One stage's reading.
 pub(crate) type Step = Result<(), Halt>;
 
 /// How a reader that answers with a reason alone stops.

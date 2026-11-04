@@ -12,7 +12,7 @@ use super::*;
 use crate::chronometry::{Cite, Stamp};
 use crate::cognition::*;
 use crate::network::nerve::Keyed;
-use crate::snapshot::{put_leaf, put_trie, Leaves};
+use crate::trie_tape::{put_leaf, put_trie, Leaves};
 
 /// A LISTING'S COHERENCE FIELD as a leaf value: its entries — each chart as
 /// its own coordinates, each closure as its canonical ray, the remainder
@@ -274,7 +274,7 @@ impl Court {
         let mut settled: Keyed<(u64, Vec<u8>)> = Keyed::new();
         for s in self.settlements_cold.iter().chain(self.settlements.iter()) {
             let mut v = Vec::new();
-            crate::snapshot::put_key(&mut v, &s.listing);
+            crate::trie_tape::put_key(&mut v, &s.listing);
             // LD0 — a settlement whose chain or citations cannot be framed is
             // not written, never a partial record.
             if crate::anastome::dialogue::push_chain(&mut v, &s.chain).is_none() {
@@ -299,13 +299,13 @@ impl Court {
                 continue;
             };
             let mut rec = Vec::new();
-            crate::snapshot::put_key(&mut rec, key);
+            crate::trie_tape::put_key(&mut rec, key);
             v.put_canonical(&mut rec);
             gather(&mut dialect, at, rec);
         }
         // Each kind is gathered once per stamp, so each files once.
         for (kind, per) in [(LEAF_ENTRIES, &entries), (LEAF_SETTLEMENTS, &settled), (LEAF_DIALECT, &dialect)] {
-            crate::snapshot::persist(per, |key, (n, body)| {
+            crate::trie_tape::persist(per, |key, (n, body)| {
                 let mut v = n.to_le_bytes().to_vec();
                 v.extend_from_slice(body);
                 if put_leaf(&mut nodes, key, kind, v).is_none() {
@@ -337,7 +337,7 @@ impl Court {
                 }
             }
         };
-        crate::snapshot::persist(&self.basis, |address, held| {
+        crate::trie_tape::persist(&self.basis, |address, held| {
             if self.admitted_at.contains(address) && self.discoverer_of(address).is_none() {
                 // A FEDERATION WORD THE BASIS ADOPTED stands written as the
                 // federation's, and the restore adopts it again from there
@@ -353,8 +353,8 @@ impl Court {
             }
             hold(&mut drafts, refused, 0, address, held.element(), MEMBER_BASIS);
         });
-        crate::snapshot::persist(&self.pending, |address, elem| hold(&mut drafts, refused, 2, address, elem, MEMBER_LISTING));
-        crate::snapshot::persist(&self.cavity_book, |address, elem| hold(&mut drafts, refused, 3, address, elem, MEMBER_CAVITY));
+        crate::trie_tape::persist(&self.pending, |address, elem| hold(&mut drafts, refused, 2, address, elem, MEMBER_LISTING));
+        crate::trie_tape::persist(&self.cavity_book, |address, elem| hold(&mut drafts, refused, 3, address, elem, MEMBER_CAVITY));
         for (address, elem) in &self.court_federation {
             if self.admitted_at.contains(address.as_bytes()) && !self.fed_at.contains(address.as_bytes()) {
                 refused.unruled += 1;
@@ -366,7 +366,7 @@ impl Court {
         // word at its address, the word's node carries it; where it stands
         // under another address, it is its own node, SPOKEN, and the node at
         // the address cites it.
-        crate::snapshot::persist(&self.provisional, |address, spoken| {
+        crate::trie_tape::persist(&self.provisional, |address, spoken| {
             if !self.admitted_at.contains(address) {
                 refused.unstamped[1] += 1;
                 return;
@@ -400,7 +400,7 @@ impl Court {
         };
         let mut nodes: Keyed<Leaves> = Keyed::new();
         let mut held: Keyed<()> = Keyed::new();
-        crate::snapshot::persist(&drafts, |address, d| {
+        crate::trie_tape::persist(&drafts, |address, d| {
             let Some(key) = key_of(address, &d.elem) else {
                 refused.unciteable += 1;
                 return;
@@ -465,7 +465,7 @@ impl Court {
                 match (closure.and_then(|c| c.as_ref()), base) {
                     (Some(_), Some(k)) => {
                         v.push(1);
-                        crate::snapshot::put_key(&mut v, &k);
+                        crate::trie_tape::put_key(&mut v, &k);
                     }
                     (Some(_), None) => {
                         refused.closures += 1;
@@ -566,7 +566,7 @@ impl Court {
     /// T3 — THE COMPLEXES by the complexes' keys, each node the complex's own tries.
     fn put_complexes(&self, out: &mut Vec<u8>) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
-        crate::snapshot::persist(&self.complexes, |key, c| {
+        crate::trie_tape::persist(&self.complexes, |key, c| {
             let mut v = Vec::new();
             c.put_tries(&mut v);
             nodes.insert(key, vec![(LEAF_TRIES, v)]);
@@ -580,7 +580,7 @@ impl Court {
     /// A class key that is not a class's coordinates is refused by name.
     fn put_cocycles(&self, out: &mut Vec<u8>, refused: &mut SnapshotTally) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
-        crate::snapshot::persist(&self.cocycle_at, |key, row| {
+        crate::trie_tape::persist(&self.cocycle_at, |key, row| {
             let Some(class) = class_coordinates(&row.class_key) else {
                 refused.cocycles += 1;
                 return;
@@ -607,14 +607,14 @@ impl Court {
     /// carrier's own coordinates.
     fn put_windings(&self, out: &mut Vec<u8>) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
-        crate::snapshot::persist(&self.windings, |key, w| {
+        crate::trie_tape::persist(&self.windings, |key, w| {
             let mut v = Vec::new();
             w.put(&mut v);
             nodes.insert(key, vec![(LEAF_WINDING, v)]);
         });
         put_trie(out, WINDINGS_TRIE, &nodes);
         let mut nodes: Keyed<Leaves> = Keyed::new();
-        crate::snapshot::persist(&self.lie_basis, |key, basis| {
+        crate::trie_tape::persist(&self.lie_basis, |key, basis| {
             let mut v = (basis.len() as u64).to_le_bytes().to_vec();
             for b in basis {
                 b.to_bytes(&mut v);

@@ -118,7 +118,7 @@ pub fn bridge_pair(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> B
     let mut read = Bridge::default();
     let (ins, outs) = (perceive(x), perceive(y));
     // Every carriage, grouped by its canonical ray: one motion, one transition.
-    let mut motions: crate::network::nerve::Keyed<Vec<(usize, usize, Carriage)>> = crate::network::nerve::Keyed::new();
+    let mut motions: crate::network::nerve::Keyed<Vec<(usize, usize, BodyTransport)>> = crate::network::nerve::Keyed::new();
     for (i, a) in ins.iter().enumerate() {
         read.bodies += 1;
         let mut any = false;

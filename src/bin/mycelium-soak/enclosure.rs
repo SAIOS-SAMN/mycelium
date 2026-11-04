@@ -248,13 +248,13 @@ fn sections(x: &mycelium::transducer::family::Grid, y: &mycelium::transducer::fa
 }
 
 /// What a section at `(r, c)` of extents `(h, w)` is to the input's bodies.
-enum Region {
+enum SectionPlacement {
     Chamber,
     SpansBody,
     Neither,
 }
 
-fn region(x: &mycelium::transducer::family::Grid, at: (usize, usize), ext: (usize, usize)) -> Region {
+fn region(x: &mycelium::transducer::family::Grid, at: (usize, usize), ext: (usize, usize)) -> SectionPlacement {
     let bodies = perceive(x);
     let sites = |b: &mycelium::transducer::family::Body| -> Vec<(i64, i64)> {
         b.compartments.iter().filter_map(|l| Some((l.site.axis(0)?, l.site.axis(1)?))).collect()
@@ -273,7 +273,7 @@ fn region(x: &mycelium::transducer::family::Grid, at: (usize, usize), ext: (usiz
         ring.iter().all(|p| s.contains(p))
     });
     if surrounds {
-        return Region::Chamber;
+        return SectionPlacement::Chamber;
     }
     let spans = bodies.iter().any(|b| {
         let s = sites(b);
@@ -285,8 +285,8 @@ fn region(x: &mycelium::transducer::family::Grid, at: (usize, usize), ext: (usiz
             && s.iter().any(|p| p.1 == c0 + w - 1)
     });
     match spans {
-        true => Region::SpansBody,
-        false => Region::Neither,
+        true => SectionPlacement::SpansBody,
+        false => SectionPlacement::Neither,
     }
 }
 
@@ -344,10 +344,10 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                                 // Every place the section stands is read; the
                                 // pair counts by the strongest reading any
                                 // place gives, none chosen over another.
-                                let reads: Vec<Region> = places.iter().map(|&p| region(x, p, (ey[0], ey[1]))).collect();
+                                let reads: Vec<SectionPlacement> = places.iter().map(|&p| region(x, p, (ey[0], ey[1]))).collect();
                                 match () {
-                                    _ if reads.iter().any(|r| matches!(r, Region::Chamber)) => t.chamber += 1,
-                                    _ if reads.iter().any(|r| matches!(r, Region::SpansBody)) => t.spans_body += 1,
+                                    _ if reads.iter().any(|r| matches!(r, SectionPlacement::Chamber)) => t.chamber += 1,
+                                    _ if reads.iter().any(|r| matches!(r, SectionPlacement::SpansBody)) => t.spans_body += 1,
                                     _ => t.neither += 1,
                                 }
                             }

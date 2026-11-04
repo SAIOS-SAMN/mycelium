@@ -65,7 +65,7 @@ impl Form {
                 // (50.5): the overlaps that reached it leave with it. A vertex
                 // that keeps other members keeps the overlaps at those
                 // members and loses the ones at the refused chart.
-                let gone: Vec<coord::Section> = acts.entries().filter(|(k, _)| k.chart == *chart).map(|(k, _)| k).collect();
+                let gone: Vec<coord::ChartCarriage> = acts.entries().filter(|(k, _)| k.chart == *chart).map(|(k, _)| k).collect();
                 if gone.is_empty() {
                     return None;
                 }

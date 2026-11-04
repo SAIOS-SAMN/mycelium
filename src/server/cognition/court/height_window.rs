@@ -2,7 +2,7 @@
 // kinds over a height window and the ruled cover at the window's ends,
 // never stored, announced or thresholded.
 //
-//! `phase_over` is a pure function of a slice of receipts and two cover
+//! `window_over` is a pure function of a slice of receipts and two cover
 //! readings; the court writes `court phase …` once per window — an
 //! aperture of docket circuits (34.2, R7) — and keeps only the cover
 //! reading the next window starts from.
@@ -17,7 +17,7 @@ use crate::network::nerve::Keyed;
 /// The four coordinates of 45.9 over one height window, as counts read off
 /// the ledger and the cover. Nothing here is a state of the mesh.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Phase {
+pub struct Window {
     pub h0: u64,
     pub h1: u64,
     /// Comprehension: listings a held word deflated, against listings held.
@@ -45,7 +45,7 @@ pub struct Phase {
 }
 
 #[cfg(test)]
-impl Phase {
+impl Window {
     /// The line 34.2 wrote per window; the window now reaches the observer
     /// only (78.16 C3), and the test reads it here.
     pub fn line(&self) -> String {
@@ -82,8 +82,8 @@ pub struct CoverReading {
 /// retires by its count; one gone at `h1` whose refinements stand there
 /// was split, and its words are re-homed, not adjoined; one at `h1` that
 /// refines nothing gone is an axis opened with its words.
-pub fn phase_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverReading, h0: u64, h1: u64) -> Phase {
-    let mut p = Phase { h0, h1, ..Phase::default() };
+pub fn window_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverReading, h0: u64, h1: u64) -> Window {
+    let mut p = Window { h0, h1, ..Window::default() };
     for r in window {
         match r.kind {
             ActKind::Settled => p.deflated += 1,
@@ -210,7 +210,7 @@ impl Court {
     /// whether one was taken is what lets its caller pace on the same fact.
     ///
     /// The window is the receipts admitted since the last reading. When none
-    /// were, `k0 == k1`, the slice is empty, and `phase_over` reports
+    /// were, `k0 == k1`, the slice is empty, and `window_over` reports
     /// `comprehension 0/0 ... expansion 0/0` over `h N..N` — zero out of
     /// zero, which is the vacuous assertion at the instrument and not a
     /// measurement of anything. Hypha a wrote 25 598 of those in nine
@@ -272,11 +272,11 @@ impl Court {
                 };
                 let h0 = m0.and_then(|m| self.chain.at_place(m)).map_or(0, |r| r.stamp.h);
                 let h1 = self.chain.head_height();
-                let mut phase = phase_over(&window, &at_h0, &now, h0, h1);
+                let mut phase = window_over(&window, &at_h0, &now, h0, h1);
                 phase.adjoined_by_closure = adjoined;
                 // PH5 — the window handed to the observer, its one carrier;
                 // the court keeps no phase (78.17) and prints none (C3).
-                crate::observe::note_phase(crate::observe::Phase {
+                crate::observe::note_phase(crate::observe::CourtStage {
                     windows: 0,
                     h0: phase.h0,
                     h1: phase.h1,

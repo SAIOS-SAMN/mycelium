@@ -153,18 +153,18 @@ impl<'a, V, C: Coordinate> Iterator for Cursor<'a, V, C> {
 }
 
 /// One shell: the parent prefix of a peel, and the entries at that branch.
-pub struct Shell<'a, V> {
+pub struct PeelBranch<'a, V> {
     pub(crate) fibre: Fibre<'a, V>,
     pub(crate) prefix: Vec<u8>,
 }
 
-impl<'a, V> Shell<'a, V> {
+impl<'a, V> PeelBranch<'a, V> {
     pub fn key(&self) -> &[u8] {
         &self.prefix
     }
 }
 
-impl<'a, V> Iterator for Shell<'a, V> {
+impl<'a, V> Iterator for PeelBranch<'a, V> {
     type Item = (Vec<u8>, &'a V);
     fn next(&mut self) -> Option<Self::Item> {
         self.fibre.next()

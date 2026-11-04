@@ -3,7 +3,7 @@
 // and a tape that does not read whole refused rather than partly restored.
 
 use crate::client::sdk::*;
-use crate::snapshot::{leaf, put_trie, take_trie, Leaves};
+use crate::trie_tape::{leaf, put_trie, take_trie, Leaves};
 use crate::transducer::element::Element;
 
 /// THE GENOME FILE'S MAGIC (78.27, LD3-c, 78.49): the words a court admitted
@@ -164,7 +164,7 @@ impl Epigenome {
         let mut out = GENOME_MAGIC.to_vec();
         let mut refused = GenomeWriteTally::default();
         let mut nodes: crate::network::nerve::Keyed<Leaves> = crate::network::nerve::Keyed::new();
-        crate::snapshot::persist(&self.resident, |_, g| {
+        crate::trie_tape::persist(&self.resident, |_, g| {
             let elem = g.held.element();
             // A residual chain is an open question, never crystallized.
             if is_residual(elem) {

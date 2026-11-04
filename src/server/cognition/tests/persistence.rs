@@ -99,7 +99,7 @@ assert_eq!(after[0].deflation, before[0].deflation, "deflation survived; the cou
 /// is neither refuses as what it is.
 #[test]
 fn restore_refuses_tape_cut_at_any_trie() {
-use crate::cognition::snapshot::{
+use crate::cognition::persistence::{
     COCYCLES_TRIE, COMPLEXES_TRIE, COURT_TRIE, ERAS_TRIE, LEDGER_TRIE, MAGIC, PRE_TRIE_MAGIC, WORDS_TRIE,
 };
 let mut k = Court::new();
@@ -140,7 +140,7 @@ assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
 
 // THE TRIES WHOSE μ WAS FOUR u64 COUNTS ARE REFUSED BY NAME (v0.3.0).
 let mut counted = snap.clone();
-counted[..4].copy_from_slice(crate::cognition::snapshot::PRE_RATIONAL_MAGIC);
+counted[..4].copy_from_slice(crate::cognition::persistence::PRE_RATIONAL_MAGIC);
 let mut booted = Court::new();
 assert!(!booted.restore(&counted), "MYT2 is refused");
 assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
@@ -163,7 +163,7 @@ assert!(refused.contains("MYL2"), "by name: {refused}");
 #[test]
 fn take_trie_reads_by_key_and_refuses_unplaced() {
 use crate::network::nerve::Keyed;
-use crate::snapshot::{leaf, put_trie, take_trie, Leaves};
+use crate::trie_tape::{leaf, put_trie, take_trie, Leaves};
 let mut nodes: Keyed<Leaves> = Keyed::new();
 nodes.insert(b"b", vec![(1, b"two".to_vec()), (3, b"four".to_vec())]);
 nodes.insert(b"a", vec![(1, b"one".to_vec())]);
@@ -178,12 +178,12 @@ assert!(take_trie(&tape, &mut 0, "t", &[1]).is_none(), "a kind the trie does not
 let mut dup = Vec::new();
 let mut body = Vec::new();
 for _ in 0..2 {
-    crate::snapshot::put_key(&mut body, b"k");
+    crate::trie_tape::put_key(&mut body, b"k");
     body.extend_from_slice(&1u64.to_le_bytes());
     body.push(1);
-    crate::snapshot::put_key(&mut body, b"v");
+    crate::trie_tape::put_key(&mut body, b"v");
 }
-crate::snapshot::put_key(&mut dup, b"t");
+crate::trie_tape::put_key(&mut dup, b"t");
 dup.extend_from_slice(&(body.len() as u64).to_le_bytes());
 dup.extend_from_slice(&2u64.to_le_bytes());
 dup.extend_from_slice(&body);
@@ -250,7 +250,7 @@ for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
 /// tape with its address field absent, which is the DEF1 desync that cost
 /// hypha a 8.6 MB and hypha b 13.7 MB of a court's history.
 ///
-/// `snapshot::put_key` writes a `u64` length, as every other length on this
+/// `trie_tape::put_key` writes a `u64` length, as every other length on this
 /// tape has since MYC6, and is total.
 #[test]
 fn take_key_round_trips_past_wire_prefix() {
@@ -260,9 +260,9 @@ assert!(
     "the wire's citation prefix cannot hold it"
 );
 let mut out = Vec::new();
-crate::snapshot::put_key(&mut out, &long);
+crate::trie_tape::put_key(&mut out, &long);
 let mut p = 0usize;
-let back = crate::snapshot::take_key(&out, &mut p).expect("the tape holds it");
+let back = crate::trie_tape::take_key(&out, &mut p).expect("the tape holds it");
 assert_eq!(back, long, "and it reads back whole");
 assert_eq!(p, out.len(), "consuming exactly what was written");
 // A declared length the tape cannot satisfy is refused, never read short.
@@ -270,7 +270,7 @@ let mut clipped = out.clone();
 clipped.truncate(out.len() - 1);
 let mut p = 0usize;
 assert!(
-    crate::snapshot::take_key(&clipped, &mut p).is_none(),
+    crate::trie_tape::take_key(&clipped, &mut p).is_none(),
     "a key whose bytes are not there is a refusal, not a short key"
 );
 }
@@ -353,7 +353,7 @@ let listed = k.pending.scoped().next().expect("listed").1.address();
 let chart = crate::transducer::stalk::Invariant::counts(&[3, 5]);
 let t = crate::transducer::element::translator_versor(2, 3);
 let scaled = t.scale(&num_rational::BigRational::new(num_bigint::BigInt::from(-7), num_bigint::BigInt::from(2)));
-let entry = FieldEntry {
+let entry = ProbedChart {
     chart: chart.clone(),
     state: crate::transducer::stalk::Closure::Twisted(Box::new(scaled)),
     remainder: vec![(1, 2, 3, 4)],

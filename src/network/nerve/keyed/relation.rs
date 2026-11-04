@@ -616,7 +616,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
 
     /// Parent shell of `key`: the branch that split this leaf. None when
     /// the key is unbound or is the sole leaf.
-    pub fn peel(&self, key: &[u8]) -> Option<Shell<'_, V>> {
+    pub fn peel(&self, key: &[u8]) -> Option<PeelBranch<'_, V>> {
         let mut node = self.root.as_deref()?;
         let mut parent: Option<&Node<V>> = None;
         let mut parent_bit = 0usize;
@@ -627,7 +627,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
                         return None;
                     }
                     let p = parent?;
-                    return Some(Shell {
+                    return Some(PeelBranch {
                         fibre: Fibre { stack: vec![p], prefix: Vec::new() },
                         prefix: clear_after_bit(key, parent_bit),
                     });
@@ -638,7 +638,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
                         if &k[..] != key {
                             return None;
                         }
-                        return Some(Shell {
+                        return Some(PeelBranch {
                             fibre: Fibre { stack: vec![node], prefix: Vec::new() },
                             prefix: clear_after_bit(key, *bit),
                         });
@@ -762,7 +762,7 @@ impl<'a> Prefix<'a> {
     }
 }
 
-/// Sealed persist walk: only [`crate::snapshot`] names this.
+/// Sealed persist walk: only [`crate::trie_tape`] names this.
 pub(crate) fn keyed_persist_walk<V, C: Coordinate>(k: &Keyed<V, C>, f: &mut impl FnMut(&[u8], &V)) {
     // A SNAPSHOT IS THE CARRIER. Persisting less than all of it is a
     // ledger that loses what it does not name, which is X8's row from the

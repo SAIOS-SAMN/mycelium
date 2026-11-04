@@ -67,7 +67,7 @@ pub enum Refusal {
 
 /// THE GROUP'S CLOSURE.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Closure {
+pub enum GroupClosure {
     /// Finite: by the theorem where every component is recognised; the
     /// group's order where the worklist read it within the stroke.
     Finite { by_theorem: bool, order: Option<u64> },
@@ -86,7 +86,7 @@ pub struct CoxeterReading {
     /// MG1b — each PARALLEL FAMILY read affine `Ã₁`, with its translation
     /// `2·gcd(spacings)` in units of the family's first normal.
     pub parallel: Vec<(Vec<usize>, Q)>,
-    pub closure: Closure,
+    pub closure: GroupClosure,
 }
 
 /// MG1b — A PARALLEL FAMILY: every constructor through `e_∞` (a plane), every
@@ -266,7 +266,7 @@ pub fn read_coxeter(
 ) -> CoxeterReading {
     let g = cga::gram_form(constructors);
     if (0..g.len()).any(|a| g[a][a].is_zero()) {
-        return CoxeterReading { components: Vec::new(), parallel: Vec::new(), closure: Closure::Unread };
+        return CoxeterReading { components: Vec::new(), parallel: Vec::new(), closure: GroupClosure::Unread };
     }
     // MG1b — a parallel family reads affine before the system test, which
     // it cannot pass (its positive products form odd cycles): the finer name
@@ -301,13 +301,13 @@ pub fn read_coxeter(
             products.iter().enumerate().find_map(|(i, p)| p.infinite.map(|kind| Refusal::Product { circuit: i, kind }))
         });
     let closure = match refusal {
-        Some(r) => Closure::Infinite(r),
+        Some(r) => GroupClosure::Infinite(r),
         None => {
             let by_theorem = comps.iter().all(|(_, k)| *k == ComponentClass::Finite);
             match (group_order(constructors, budget), by_theorem) {
-                (Ok(order), _) => Closure::Finite { by_theorem, order: Some(order) },
-                (Err(_), true) => Closure::Finite { by_theorem, order: None },
-                (Err(elements), false) => Closure::Unbounded { elements },
+                (Ok(order), _) => GroupClosure::Finite { by_theorem, order: Some(order) },
+                (Err(_), true) => GroupClosure::Finite { by_theorem, order: None },
+                (Err(elements), false) => GroupClosure::Unbounded { elements },
             }
         }
     };

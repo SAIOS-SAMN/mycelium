@@ -419,13 +419,13 @@ pub struct Court {
     /// 78.26(6), TP1 — closed rings of the cover's nerve the glue reopened
     /// because a gauge moved: `[filled, congruent]`, since boot.
     pub(crate) reopened: [u64; 2],
-    /// 78.68 — THE WINDING CARRIERS, by `chart ‖ simplex`: each closed
+    /// 78.68 — THE RING CARRIERS, by `chart ‖ simplex`: each closed
     /// ring's period, its traversals since its last return and the pay they
     /// accrued — held off the ledger and closed by the `Return` act
-    /// (`court/winding.rs`). Persisted: the accrued pay is a claim.
-    pub(crate) windings: crate::network::nerve::Keyed<crate::cognition::court::winding::Winding>,
+    /// (`court/ring_carrier.rs`). Persisted: the accrued pay is a claim.
+    pub(crate) windings: crate::network::nerve::Keyed<crate::cognition::court::ring_carrier::RingCarrier>,
     /// What closing rings did, since boot.
-    pub(crate) winding_tally: crate::cognition::court::winding::WindingTally,
+    pub(crate) winding_tally: crate::cognition::court::ring_carrier::RingTally,
     /// 78.68 — EACH CHART'S HOLONOMY ALGEBRA: a basis over ℚ of the Lie
     /// closure of the Cayley bivectors of every ruled form's circuits on it,
     /// by the chart's key. Its rank rising is a `RankStep` act. Persisted, so
@@ -628,7 +628,7 @@ pub struct Court {
     /// after it — and the cover reading at the last docket circuit. A
     /// reading of the carriers, never a phase — the phase is computed and
     /// written.
-    pub(crate) phase_mark: Option<(Option<crate::chronometry::Place>, crate::cognition::court::phase::CoverReading)>,
+    pub(crate) phase_mark: Option<(Option<crate::chronometry::Place>, crate::cognition::court::height_window::CoverReading)>,
     /// Keyed cursors into `unfilled` and `pending_refine` for `stroke_fills`
     /// (rule 10): each stroke resumes where the last left off, so a tail
     /// beyond one budget is reached rather than starved by the head.

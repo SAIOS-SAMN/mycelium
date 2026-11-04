@@ -3,16 +3,16 @@
 // the inversion of a refusal is a flow out of a point of its own manifold,
 // kept inside it, every scale the manifold's own.
 
-use crate::physics::pivot_fibre::{shape_of, Carried, Fibre, Shape};
+use crate::physics::pivot_fibre::{shape_of, Carried, PivotFibre, Shape};
 use crate::physics::sphere_pair::{Fascicle, Streamline};
 use crate::transducer::cga::{self, Mv, E1, E2, E3};
 use num_rational::BigRational;
 use num_traits::{Signed, Zero};
 
 /// The fibre from the origin to (3, 4, 0) with masses `mi`, `mj`.
-fn fibre(mi: i64, mj: i64) -> Fibre {
+fn fibre(mi: i64, mj: i64) -> PivotFibre {
     let (pi, pj) = (cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]), cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]));
-    Fibre::new(pi, pj, q(mi, 1), q(mj, 1)).expect("two pivots, two masses")
+    PivotFibre::new(pi, pj, q(mi, 1), q(mj, 1)).expect("two pivots, two masses")
 }
 
 /// A twist about the fibre's axis: a turn in the plane of `e₃` and the
@@ -74,7 +74,7 @@ fn switch_swaps_fibre_ends_and_composes_across_pivots() {
     let masses = [q(2, 1), q(1, 1), q(5, 1)];
     let pts: Vec<Mv> = pivots.iter().map(|p| cga::point_at(p)).collect();
     let switch = |i: usize, j: usize| {
-        Fibre::new(pts[i].clone(), pts[j].clone(), masses[i].clone(), masses[j].clone()).expect("a fibre").switch()
+        PivotFibre::new(pts[i].clone(), pts[j].clone(), masses[i].clone(), masses[j].clone()).expect("a fibre").switch()
     };
     let s12 = switch(0, 1);
     assert!(s12.geo(&s12).scalar_part().is_positive(), "a real sphere");
@@ -84,7 +84,7 @@ fn switch_swaps_fibre_ends_and_composes_across_pivots() {
     let s23 = switch(1, 2);
     assert!(s23.geo(&s12).sandwich(&pts[0]).projective_eq(&pts[2]), "P₁ through P₂ to P₃");
     let one = cga::point_at(&[q(1, 1), q(1, 1), q(0, 1)]);
-    assert_eq!(Fibre::new(one.clone(), one, q(1, 1), q(1, 1)), None, "one pivot is no fibre");
+    assert_eq!(PivotFibre::new(one.clone(), one, q(1, 1), q(1, 1)), None, "one pivot is no fibre");
 }
 
 /// THE FIBRE AS A CAPACITOR, ITS CHARGE A POINT ON A FLOW (78.75). Its
@@ -232,8 +232,8 @@ fn fibre_reads_strength_capacity_and_torque_exactly() {
     let c = cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]);
     let a = cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]);
     let b = cga::point_at(&[q(6, 1), q(8, 1), q(0, 1)]);
-    let ac = Fibre::new(a, c.clone(), q(2, 1), q(3, 1)).expect("A–C");
-    let bc = Fibre::new(b, c, q(4, 1), q(3, 1)).expect("B–C");
+    let ac = PivotFibre::new(a, c.clone(), q(2, 1), q(3, 1)).expect("A–C");
+    let bc = PivotFibre::new(b, c, q(4, 1), q(3, 1)).expect("B–C");
     assert_eq!((ac.length2(), bc.length2()), (q(25, 1), q(100, 1)), "d², exact");
     assert_eq!((ac.strength(), bc.strength()), (q(6, 25), q(12, 100)), "m m / d²");
     assert!(ac.strength() > bc.strength(), "A–C binds harder");

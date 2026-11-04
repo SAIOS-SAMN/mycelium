@@ -20,7 +20,7 @@ pub const RECYCLED: &[u8] = b"recycled pool";
 /// VALUE A PAYER SET ASIDE AGAINST A KEY: whose it is, how much per lane,
 /// and the act it was set aside at.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Held {
+pub struct SetAside {
     pub payer: [u8; 32],
     pub mu: Mu,
     pub anchor: Anchor,
@@ -108,7 +108,7 @@ impl Treasury {
             Some(h) => h.anchor,
             None => anchor,
         };
-        self.held.insert(RECYCLED, Held { payer: court, mu: now, anchor: anchored });
+        self.held.insert(RECYCLED, SetAside { payer: court, mu: now, anchor: anchored });
         self.write(Entry { kind: Kind::Escrow, who: court, mu, at: anchor.0, receipt: anchor.1, arm: None });
         Ok(())
     }
@@ -136,7 +136,7 @@ impl Treasury {
                 self.held.remove(RECYCLED);
             }
             false => {
-                self.held.insert(RECYCLED, Held { mu: left, ..h.clone() });
+                self.held.insert(RECYCLED, SetAside { mu: left, ..h.clone() });
             }
         }
         self.credit(h.payer, &take);
@@ -191,7 +191,7 @@ impl Treasury {
         }
         let drawn = self.debit(payer, &mu);
         debug_assert!(drawn.is_ok(), "the shortfall was read as none");
-        self.held.insert(key, Held { payer, mu: mu.clone(), anchor });
+        self.held.insert(key, SetAside { payer, mu: mu.clone(), anchor });
         self.write(Entry { kind: Kind::Escrow, who: payer, mu, at: anchor.0, receipt: anchor.1, arm: None });
         Ok(())
     }
@@ -231,7 +231,7 @@ impl Treasury {
                 self.held.remove(key);
             }
             false => {
-                self.held.insert(key, Held { mu: left, ..h.clone() });
+                self.held.insert(key, SetAside { mu: left, ..h.clone() });
             }
         }
         // Back to the payer, then on as one transfer, as a release moves it.
@@ -271,7 +271,7 @@ impl Treasury {
     }
 
     /// What stands held under `key`, if anything.
-    pub fn held_of(&self, key: &[u8]) -> Option<&Held> {
+    pub fn held_of(&self, key: &[u8]) -> Option<&SetAside> {
         self.held.get(key)
     }
 }

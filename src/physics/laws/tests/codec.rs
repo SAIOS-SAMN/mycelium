@@ -30,7 +30,7 @@ fn codec_round_trips_transition_and_verdict() {
     assert_eq!(take_transition(&bytes, &mut p), Some(t.clone()));
     assert_eq!(p, bytes.len(), "every byte read, none left over");
     let v = verify(&t, &mut budget());
-    let ruled = Verdict {
+    let ruled = TransitionVerdict {
         breaches: vec![
             (Law::Conformal, Breach::NotAVersor),
             (Law::Conformal, Breach::Undecomposed(crate::transducer::cga::Undecomposed::Irrational(3))),
@@ -111,7 +111,7 @@ fn encode_batch_reply_round_trips_verdicts_in_order() {
     assert_eq!(decode_laws_request(&asked), Some(LawsRequest::Batch(batch.clone())));
     asked.push(0);
     assert_eq!(decode_laws_request(&asked), None, "a byte left over is no request");
-    let verdicts: Vec<Verdict> = batch.iter().map(verify_sized).collect();
+    let verdicts: Vec<TransitionVerdict> = batch.iter().map(verify_sized).collect();
     let back = decode_batch_reply(&encode_batch_reply(&verdicts)).expect("the verdicts read back");
     assert_eq!(back, verdicts);
     let laws: Vec<Vec<Law>> = back.iter().map(|v| v.breaches.iter().map(|(l, _)| *l).collect()).collect();

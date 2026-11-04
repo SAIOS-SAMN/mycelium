@@ -1,7 +1,7 @@
 // 78.155b — THE HYPHA SPONSORS A UNIVERSE'S PACKAGE: a manifest of nuclei per
 // Z answered by a grant from what the court has earned, never a mint.
 
-use crate::anastome::dialogue::domain::{decode_domain_request, DomainGenesis, DomainRequest, Founded, Origin, Reservation};
+use crate::anastome::dialogue::domain::{decode_domain_request, DomainGenesis, BigBangRecord, DomainRequest, Founded, Reservation};
 use crate::anastome::dialogue::endowment::{
     decode_endowment_reading, decode_grant_reply, encode_endowment_read, encode_endowment_reading, encode_grant_reply, encode_manifest, GrantRefusal, Granted, Manifest, SignedManifest,
 };
@@ -31,7 +31,7 @@ fn universe(origin: bool) -> Court {
     let r = Reservation { domain: verifying(&key(DOMAIN)), tier: verifying(&key(RESERVE)), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&key(DOMAIN))), Founded::Reserved { .. }));
     if origin {
-        let o = Origin { domain: verifying(&key(DOMAIN)), kind: 1, version: 1, commitment: [DOMAIN; 32], universe: None };
+        let o = BigBangRecord { domain: verifying(&key(DOMAIN)), kind: 1, version: 1, commitment: [DOMAIN; 32], universe: None };
         assert!(matches!(k.record_origin(&o.sign(&key(DOMAIN))), Founded::Originated { .. }));
     }
     k

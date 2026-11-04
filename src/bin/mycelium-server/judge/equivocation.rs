@@ -9,16 +9,16 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
+pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some((a, b)) = dialogue::decode_equivocation(&frame.body) else {
         return;
     };
     let say = |s: &mut TcpStream, r: dialogue::Ruled| {
         match dialogue::encode_ruled(&r) {
-            Some(body) => answer(s, Frame { lane: frame.lane, body }),
+            Some(body) => answer(s, WireFrame { lane: frame.lane, body }),
             None => eprintln!("  court equivocation answer refused: the reason passes its u16"),
         }
     };
@@ -61,7 +61,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
         }
     };
     // A court that cannot be read has judged nothing and answers nothing.
-    let Ok(mut h) = crate::held::held!(context.court) else {
+    let Ok(mut h) = crate::court_lock::held!(context.court) else {
         eprintln!(
             "  court equivocation unread {:02x}{:02x}… K {}: the court is not readable",
             proof.vk[0], proof.vk[1], proof.at.print()

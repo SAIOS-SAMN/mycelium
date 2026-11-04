@@ -34,18 +34,18 @@ use super::family::{Ascertained, Chain, PairPercept};
 /// or a waiting scene read again in a language that
 /// moved (its comprehension alone).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Reading {
+pub(crate) enum SceneKind {
     Task,
     Feed,
     Again,
 }
 
-impl Reading {
+impl SceneKind {
     fn index(self) -> usize {
         match self {
-            Reading::Task => 0,
-            Reading::Feed => 1,
-            Reading::Again => 2,
+            SceneKind::Task => 0,
+            SceneKind::Feed => 1,
+            SceneKind::Again => 2,
         }
     }
 }
@@ -113,7 +113,7 @@ pub(crate) const STOPS: [&str; 16] = [
     "lapsed uncoupled",
 ];
 
-/// The readings, as the observer names them, in `Reading::index` order.
+/// The readings, as the observer names them, in `SceneKind::index` order.
 pub(crate) const READINGS: [&str; 3] = ["task", "feed", "again"];
 
 /// WHAT A SCENE'S PERSPECTIVES SAID OF ITS RULE (`Ascertained`), kept for the
@@ -205,12 +205,12 @@ impl TaskRead {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct TaskRead {
     pub(crate) taken: bool,
-    pub(crate) reading: Reading,
+    pub(crate) reading: SceneKind,
     pub(crate) perspectives: Option<Perspectives>,
     pub(crate) stop: Option<Stop>,
 }
 
-impl Reading {
+impl SceneKind {
     /// As the observer names it.
     pub(crate) fn name(self) -> &'static str {
         READINGS[self.index()]
@@ -261,7 +261,7 @@ pub(crate) struct Scene {
     pub(crate) id: Vec<u8>,
     pub(crate) train: Vec<crate::transducer::family::TrainPair>,
     pub(crate) tests: Vec<crate::transducer::family::Grid>,
-    pub(crate) reading: Reading,
+    pub(crate) reading: SceneKind,
 }
 
 /// A RULE'S SPEECH AS `speech_of` PREPARES IT: the rule to speak, what it
@@ -324,7 +324,7 @@ pub(crate) struct Judge {
 /// WHAT THE HOME CHECK READ: the crossed rule to send (judged, or unjudged —
 /// the court's replay resumes it, 78.158a U2); a residue no held letter
 /// spells, with the chart it acts on, to construct; or nothing to send.
-pub(crate) enum Verdict {
+pub(crate) enum HomeCheck {
     Send(Box<Element>),
     Construct(crate::transducer::cga::Mv, Option<crate::transducer::stalk::Invariant>),
     /// Kept home, and where (`Stop::Uncrossed`, `CitesUnheld`, `Refuted`).
@@ -410,25 +410,25 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
         scene,
     };
     let (id, train, tests) = (&read.scene.id, &read.scene.train, &read.scene.tests);
-    if read.scene.reading == Reading::Task {
+    if read.scene.reading == SceneKind::Task {
         // 78.53 — what the colour fibre did.
         read.colour = crate::transducer::family::fibre_relation(train).and_then(|s| crate::transducer::element::colour_word(&s));
     }
     let mut t = extract_on(memo, epi, id, train);
     // 78.56 III — each pair its own hour, held with no bundle.
-    if read.scene.reading == Reading::Task && !t.frames.is_empty() {
+    if read.scene.reading == SceneKind::Task && !t.frames.is_empty() {
         read.hours = train.iter().filter_map(|(a, b)| scene_percept(epi, a, b)).collect();
     }
     let Some(rule) = t.rule.take() else {
         if t.budget.remaining() == 0 {
             read.stop = Stop::NoRuleUnread;
         }
-        if read.scene.reading != Reading::Again {
+        if read.scene.reading != SceneKind::Again {
             read.withheld = train.iter().filter_map(|(a, b)| pair_percept(epi, a, b)).collect();
         }
         return read;
     };
-    if read.scene.reading != Reading::Again {
+    if read.scene.reading != SceneKind::Again {
         read.speech = Some((speech_of(epi, &rule, train, &mut t.budget), t.frames.clone()));
     }
     // MU-CLIENT §4.9 — COMPREHENSION OF THE SCENE: a rule known by its
@@ -457,7 +457,7 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
             None
         }
     };
-    if read.scene.reading != Reading::Feed {
+    if read.scene.reading != SceneKind::Feed {
         read.lifted = lifts.iter().filter_map(|(x, y)| pair_percept(epi, x, y)).collect();
     }
     if let Some(rule) = known {
@@ -495,22 +495,22 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
 /// (`admit_verdict`). On the development deployment (epoch 106) each voice sent ~600 solves
 /// the court refused, the same rules round after round, with none of these
 /// read.
-pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> Verdict {
+pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> HomeCheck {
     crate::transducer::raster::on_ground(j.ground.clone(), || judge_on_ground(epi, j))
 }
 
-fn judge_on_ground(epi: &Epigenome, j: &Judge) -> Verdict {
+fn judge_on_ground(epi: &Epigenome, j: &Judge) -> HomeCheck {
     use crate::client::sdk::rule::{crossing, would_judge_with, NoRule};
-    let Ok(crossed) = crossing(&j.rule, &j.scene.train, epi) else { return Verdict::Kept(Stop::Uncrossed) };
+    let Ok(crossed) = crossing(&j.rule, &j.scene.train, epi) else { return HomeCheck::Kept(Stop::Uncrossed) };
     let frames = crate::transducer::family::perceive_family(&j.scene.train);
     let mut budget = crate::physics::Physics::default().stroke_n(crate::transducer::family::extraction_spend(&j.scene.train, &frames));
     let resolve = |a: &[u8]| epi.court_word(a).and_then(|e| e.form().cloned());
     match would_judge_with(&crossed, &j.scene.train, &resolve, epi, &mut budget) {
         // Judged, or unjudged — the court's replay resumes it (U2).
-        Ok(()) | Err(NoRule::Unread) => Verdict::Send(Box::new(crossed)),
+        Ok(()) | Err(NoRule::Unread) => HomeCheck::Send(Box::new(crossed)),
         Err(NoRule::CitesUnheld(a)) => {
             eprintln!("  solve kept home: the rule cites {} no court admitted (cites unheld)", super::learn::hex_prefix(&a));
-            Verdict::Kept(Stop::CitesUnheld)
+            HomeCheck::Kept(Stop::CitesUnheld)
         }
         // MU-CLIENT §4.4 — A REFUSAL IS RESIDUE, NEVER AN EXIT: a D at home
         // names the versor no held letter spells and the chart it acts on.
@@ -524,13 +524,13 @@ fn judge_on_ground(epi: &Epigenome, j: &Judge) -> Verdict {
                     }))
                 });
                 match residue {
-                    Some(Some(residue)) => Verdict::Construct(residue, chart.as_deref().and_then(crate::transducer::stalk::Invariant::from_key)),
-                    _ => Verdict::Kept(Stop::Refuted),
+                    Some(Some(residue)) => HomeCheck::Construct(residue, chart.as_deref().and_then(crate::transducer::stalk::Invariant::from_key)),
+                    _ => HomeCheck::Kept(Stop::Refuted),
                 }
             }
-            _ => Verdict::Kept(Stop::Refuted),
+            _ => HomeCheck::Kept(Stop::Refuted),
         },
-        Err(_) => Verdict::Kept(Stop::Refuted),
+        Err(_) => HomeCheck::Kept(Stop::Refuted),
     }
 }
 
@@ -759,7 +759,7 @@ impl Mind {
                 self.speak_with(std::slice::from_ref(&word), &train, &id, |_, _| {});
             }
         }
-        if reading == Reading::Task {
+        if reading == SceneKind::Task {
             self.speak_colour_theorem(&mut budget);
         }
         for h in p.hours {
@@ -781,7 +781,7 @@ impl Mind {
         self.note_task(&id, reading, |t| t.perspectives = p.perspectives);
         let scene = Scene { id, train, tests, reading };
         match p.known {
-            Some((rule, Some(outputs))) if reading != Reading::Feed || !scene.tests.is_empty() => match self.construct_solve(&rule, &scene.train) {
+            Some((rule, Some(outputs))) if reading != SceneKind::Feed || !scene.tests.is_empty() => match self.construct_solve(&rule, &scene.train) {
                 Some(minted) => self.judge_solve(Judge { scene, outputs, rule: minted, ground: crate::transducer::raster::ground() }),
                 None => {
                     self.stopped(&scene.id, reading, Stop::Unminted);
@@ -797,7 +797,7 @@ impl Mind {
 
     /// WHERE A SCENE'S COMPREHENSION STOPPED, read for the observer: counted
     /// by reading, and kept on the task it stopped on.
-    fn stopped(&mut self, id: &[u8], reading: Reading, stop: Stop) {
+    fn stopped(&mut self, id: &[u8], reading: SceneKind, stop: Stop) {
         if let Some(slot) = self.board.stopped.get_mut(reading.index()).and_then(|r| r.get_mut(stop.index())) {
             let _ = crate::physics::metabolism::step_or_refuse(slot, 1);
         }
@@ -806,8 +806,8 @@ impl Mind {
 
     /// ONE COURT TASK'S READING KEPT BY ITS CITATION (`TaskRead`), taken as
     /// `reading`; a feed's family is no court task and is not kept.
-    pub(crate) fn note_task(&mut self, id: &[u8], reading: Reading, note: impl FnOnce(&mut TaskRead)) {
-        if reading == Reading::Feed {
+    pub(crate) fn note_task(&mut self, id: &[u8], reading: SceneKind, note: impl FnOnce(&mut TaskRead)) {
+        if reading == SceneKind::Feed {
             return;
         }
         let mut read = match self.board.tasks.get(id) {
@@ -828,11 +828,11 @@ impl Mind {
     /// already had refused is submitted (held for the scene's return); a
     /// residue no letter spells is constructed where it acts; a scene whose
     /// solve was not sent waits beside its thoughts.
-    fn admit_verdict(&mut self, j: Judge, v: Verdict) {
+    fn admit_verdict(&mut self, j: Judge, v: HomeCheck) {
         let reading = j.scene.reading;
         let Ok(id) = <[u8; 32]>::try_from(j.scene.id.as_slice()) else { return };
         match v {
-            Verdict::Send(rule) => {
+            HomeCheck::Send(rule) => {
                 let refused = self.solve_refused.get(&id).is_some_and(|a| a == rule.address().as_bytes());
                 // Submitted, it is held for the return of a thought of its
                 // scene (R2) and leaves there.
@@ -848,13 +848,13 @@ impl Mind {
                     self.await_scene(j.scene);
                 }
             }
-            Verdict::Construct(residue, chart) => {
+            HomeCheck::Construct(residue, chart) => {
                 self.stopped(&j.scene.id, reading, Stop::Constructed);
                 let mut budget = self.physics.stroke();
                 self.construct_and_adjoin(&residue, chart.as_ref(), &j.scene.id, &mut budget);
                 self.await_scene(j.scene);
             }
-            Verdict::Kept(stop) => {
+            HomeCheck::Kept(stop) => {
                 self.stopped(&j.scene.id, reading, stop);
                 self.await_scene(j.scene);
             }
@@ -868,7 +868,7 @@ impl Mind {
     /// A feed's family does not wait: it has left the corpus, and no court
     /// asked for it.
     fn await_scene(&mut self, scene: Scene) {
-        if scene.reading == Reading::Feed {
+        if scene.reading == SceneKind::Feed {
             return;
         }
         let Ok(id) = <[u8; 32]>::try_from(scene.id.as_slice()) else { return };

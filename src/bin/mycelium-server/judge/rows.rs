@@ -4,10 +4,10 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(req) = dialogue::decode_rows_request(&frame.body) else { return };
     // The frame's whole body: `encode_rows_reply` counts its own header
     // against it, and the rows the page can hold are the body less that
@@ -28,5 +28,5 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
         eprintln!("  rows reply refused: the page's count passes its u32");
         return;
     };
-    answer(stream, Frame { lane: frame.lane, body });
+    answer(stream, WireFrame { lane: frame.lane, body });
 }

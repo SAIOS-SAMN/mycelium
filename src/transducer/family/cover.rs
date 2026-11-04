@@ -91,10 +91,10 @@ pub(crate) type CarriedPiece = (Vertex, Versor, Supports);
 /// that filled them.
 pub(crate) struct Cover {
     /// The word vertex of each carried piece, the versor that carried it,
-    /// and the support it landed on — by the [`coord::Carriage`] it is.
+    /// and the support it landed on — by the [`coord::CarriedPieces`] it is.
     /// The support rides along because the form needs it for the vertex's
     /// place and the cover has already computed it.
-    pub(crate) carried: crate::network::nerve::Keyed<CarriedPiece, coord::Carriage>,
+    pub(crate) carried: crate::network::nerve::Keyed<CarriedPiece, coord::CarriedPieces>,
     /// THE 1-SIMPLICES OF THE NERVE, by the meet's own coordinate. The
     /// coordinate IS the unordered pair of carriages, so the ends are read
     /// back with [`coord::Meet::ends`] and not stored a second time beside
@@ -114,7 +114,7 @@ pub(crate) struct Cover {
     /// the ring itself: it is inside the memoised percept and 50.2 step 2
     /// forbids the crystal there, so the candidate is carried out to
     /// `derive_against`, which runs per mind.
-    pub(crate) refused: crate::network::nerve::Keyed<Demanded, coord::Carriage>,
+    pub(crate) refused: crate::network::nerve::Keyed<Demanded, coord::CarriedPieces>,
     /// What no piece carried, as a VOLUME on four lanes (law 5): the
     /// input's compartments no piece carried and the image's compartments no piece
     /// reached (50.8 case 4). A count of compartments is not this quantity —
@@ -269,7 +269,7 @@ pub(crate) fn cover_deformation(
         // SETTLED? The preimage is a function of this piece's own sites, so
         // the carriage's coordinate is too: placed or refused, this piece is
         // read once however many strokes the cover takes.
-        let key = coord::Carriage { domain: parts.clone(), codomain: vec![ko.clone()] };
+        let key = coord::CarriedPieces { domain: parts.clone(), codomain: vec![ko.clone()] };
         if cover.carried.holds(&key) || cover.refused.holds(&key) {
             break 'piece;
         }
@@ -393,7 +393,7 @@ pub(crate) fn cover_deformation(
             // get the same agreement, at the cost of an address that did
             // not say what it was.
             let key =
-                coord::Carriage { domain: vec![ki.clone()], codomain: parts.clone() };
+                coord::CarriedPieces { domain: vec![ki.clone()], codomain: parts.clone() };
             if cover.carried.holds(&key) || cover.refused.holds(&key) {
                 continue;
             }
@@ -483,7 +483,7 @@ pub(crate) fn cover_deformation(
     // tether governed by the phase gradient `R = 1 − v_b v_a`. Contact
     // between disjoint regions cannot be manufactured by pretending the regions'
     // coordinates overlap, and this reading now says so.
-    let mut occ: crate::network::nerve::Keyed<Vec<coord::Carriage>> =
+    let mut occ: crate::network::nerve::Keyed<Vec<coord::CarriedPieces>> =
         crate::network::nerve::Keyed::new();
     let (placed_carriages, _) = placed.decoded();
     for (k, p) in &placed_carriages {

@@ -52,7 +52,7 @@ fn vortex_ground_read_once_per_candidate() {
 /// 8 → 7 among its incidences, on the gauge lane (one painted symbol to
 /// another). "Never the ground" is never "not perceived".
 #[test]
-fn membrane_is_held_and_its_change_is_read() {
+fn membrane_is_held_and_membrane_change_is_read() {
     use crate::transducer::family::transduce::Transduction;
     let x = grid(&["888888", "800008", "801008", "800008", "800008", "888888"]);
     let y = grid(&["777777", "700007", "701007", "700007", "700007", "777777"]);

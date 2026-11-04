@@ -2,7 +2,7 @@
 // until it returns, and each age is one `Return` act.
 
 use crate::chronometry::ActKind;
-use crate::cognition::court::winding::{Draw, Winding};
+use crate::cognition::court::ring_carrier::{Draw, RingCarrier};
 use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::stalk::Invariant;
@@ -98,7 +98,7 @@ fn book_outflow_steps_chart_holonomy_algebra() {
     use crate::transducer::cga::{self, Mv, E1, E3};
     let charge = {
         let (pi, pj) = (cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]), cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]));
-        crate::physics::pivot_fibre::Fibre::new(pi, pj, q(2, 1), q(1, 1)).expect("a fibre").charge(&q(3, 2))
+        crate::physics::pivot_fibre::PivotFibre::new(pi, pj, q(2, 1), q(1, 1)).expect("a fibre").charge(&q(3, 2))
     };
     let sliver = {
         let (c, p) = ([q(1, 1), q(1, 1), q(0, 1)], [q(4, 1), q(5, 1), q(0, 1)]);
@@ -106,7 +106,7 @@ fn book_outflow_steps_chart_holonomy_algebra() {
         let sigma = cc.sub(&cga::e_inf().scale(&-cc.geo(&pp).scalar_part()));
         let t = cga::translator_at(&c);
         let k = t.geo(&Mv::blade(E1, q(1, 1)).geo(&Mv::blade(E3, q(1, 1)))).geo(&t.reverse()).grade(2);
-        crate::physics::source::Source::of(&sigma, &pp, &k).expect("a source").sliver(&q(1, 2))
+        crate::physics::source::WhiteHoleSource::of(&sigma, &pp, &k).expect("a source").sliver(&q(1, 2))
     };
     let mut k = Court::new();
     k.bind_identity([0x7a; 32]);
@@ -186,7 +186,7 @@ fn step_rank_reads_rederived_sentence_rings() {
 /// accrued draws and torsion — the accrued pay is a claim, kept whole.
 #[test]
 fn winding_round_trips() {
-    let w = Winding {
+    let w = RingCarrier {
         ell: 4,
         m: 3,
         rewrite: Some(Address::from(vec![7, 8, 9])),
@@ -196,7 +196,7 @@ fn winding_round_trips() {
     let mut v = Vec::new();
     w.put(&mut v);
     let mut p = 0usize;
-    assert_eq!(Winding::take(&v, &mut p), Some(w), "the carrier reads back");
+    assert_eq!(RingCarrier::take(&v, &mut p), Some(w), "the carrier reads back");
     assert_eq!(p, v.len(), "whole");
 }
 

@@ -188,7 +188,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
 }
 {
     // Boot, before the door opens.
-    let Ok(mut h) = crate::held::held!(court) else {
+    let Ok(mut h) = crate::court_lock::held!(court) else {
         eprintln!("[{tag}] court lock poisoned; no bond staked");
         return;
     };

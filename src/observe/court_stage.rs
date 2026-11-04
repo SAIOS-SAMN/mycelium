@@ -26,7 +26,7 @@ fn take_u64s<const N: usize>(b: &[u8], p: &mut usize) -> Option<[u64; N]> {
 /// adjoined-by-closure, expansion — and the windows written. Read whole at
 /// the question; the later stands.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Phase {
+pub struct CourtStage {
     pub windows: u64,
     pub h0: u64,
     pub h1: u64,
@@ -42,7 +42,7 @@ pub struct Phase {
     pub splits: u64,
 }
 
-impl Phase {
+impl CourtStage {
     fn fields(&self) -> [u64; 13] {
         [
             self.windows,
@@ -65,10 +65,10 @@ impl Phase {
         put_u64s(out, &self.fields());
     }
 
-    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Phase> {
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<CourtStage> {
         let [windows, h0, h1, deflated, held, sections, strata, lineages, installed, retired, adjoined_by_closure, axes, splits] =
             take_u64s::<13>(b, p)?;
-        Some(Phase {
+        Some(CourtStage {
             windows,
             h0,
             h1,

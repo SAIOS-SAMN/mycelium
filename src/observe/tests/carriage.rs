@@ -5,7 +5,7 @@ use super::fixtures::*;
 /// kind in order, its largest kept.
 #[test]
 fn carriage_files_by_carrier_and_kind_and_round_trips() {
-    let mut c = Carriage::default();
+    let mut c = CarrierTally::default();
     c.add(CARRIER_FRAME, 0x0d, 40);
     c.add(CARRIER_DELTA, 12, 900);
     c.add(CARRIER_DELTA, 12, 100);
@@ -28,7 +28,7 @@ fn treasury_carriage_measures_award_flat_in_word() {
     let a = (crate::chronometry::Stamp { h: 1, vk: [0; 32], k: 1, i: 0 }, [1u8; 32]);
     t.escrow_award(&Address::from_bytes([7u8; 3]), vec![[2; 32]], [4, 0, 0, 0], a);
     t.escrow_award(&Address::from_bytes(vec![9u8; 70_000]), vec![[2; 32]], [4, 0, 0, 0], a);
-    let mut c = Carriage::default();
+    let mut c = CarrierTally::default();
     t.carriage(&mut c);
     // The field: its tag, the voice count, one voice, μ⃗ (four exact lanes),
     // the stamp, the receipt.
@@ -70,7 +70,7 @@ fn of_chain_measures_nodes_by_kind_flat_in_word() {
     chain.append(ActKind::Attest, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
     chain.append(ActKind::List, [0; 4], vec![cite(&small)], [0; 32], Vec::new()).expect("appends");
     chain.append(ActKind::List, [0; 4], vec![cite(&large)], [0; 32], Vec::new()).expect("appends");
-    let mut c = Carriage::default();
+    let mut c = CarrierTally::default();
     c.of_chain(&chain);
     let listed = c.rows.iter().find(|r| r.kind == ActKind::List.byte()).expect("the listing nodes");
     assert_eq!(listed.records, 2);

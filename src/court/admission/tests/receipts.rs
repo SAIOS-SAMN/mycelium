@@ -230,7 +230,7 @@ fn court_key() -> crate::court::identity::HyphaKey {
 /// claims. The admitting case is a real ed25519 signature over the real
 /// prefix bytes.
 #[test]
-fn admit_signature_verifies_only_own_prefix() {
+fn admit_signature_verifies_only_signed_prefix() {
     let court = court_key();
     let vk = court.verifying_bytes();
     let stranger = crate::court::identity::HyphaKey::voice_from_name("stranger");

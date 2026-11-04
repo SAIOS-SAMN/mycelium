@@ -43,7 +43,7 @@ fn sign_tick_needs_no_digest() {
     let origin = Origin { genesis: GENESIS, epoch: EPOCH };
     // Read on this thread: the signing and the door run here, and the tests
     // beside this one each take a court of its own on a thread of its own.
-    let holds = crate::held::holds_here();
+    let holds = crate::court_lock::holds_here();
 
     // THE COURT LOOP SIGNS: a tick read, a reading due, no digest built.
     assert_eq!(sign_tick(&m, None), None, "no tick read, nothing signed");
@@ -78,5 +78,5 @@ fn sign_tick_needs_no_digest() {
     long.push(0);
     assert_eq!(hear_tick(&m, &long), Err(TickRefusal::Unreadable));
 
-    assert_eq!(crate::held::holds_here(), holds, "no court was taken: not by the signing, not by the door");
+    assert_eq!(crate::court_lock::holds_here(), holds, "no court was taken: not by the signing, not by the door");
 }

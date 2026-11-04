@@ -3,7 +3,7 @@
 // and the balance read.
 
 use crate::transducer::cga::{self, Mv, E1, E2, E3};
-use crate::transducer::sentence::compose::{compose, Closure, Composition, Term};
+use crate::transducer::sentence::compose::{compose, RingClosure, Composition, Term};
 use crate::transducer::sentence::hearing::{echo, nest, orbit, Echo, Seat};
 use num_rational::BigRational;
 
@@ -38,7 +38,7 @@ fn turn_90(mask: usize) -> Mv {
 fn nest_seats_same_plane_overtone_whole() {
     let inner = ring(Mv::blade(E1 | E2, q(1)));
     let outer = ring(turn_90(E1 | E2));
-    assert_eq!((inner.closure, outer.closure), (Closure::Closes(2), Closure::Closes(4)));
+    assert_eq!((inner.closure, outer.closure), (RingClosure::Closes(2), RingClosure::Closes(4)));
     let n = nest(&[&inner, &outer], &mut stroke());
     assert_eq!(n.seats, vec![Seat::Whole, Seat::Outer]);
     assert!(n.balanced, "every period divides the outer return, every seat whole");
@@ -66,7 +66,7 @@ fn nest_seats_returning_ring_whole_in_carrier() {
     let inner = ring(turn_90(E2 | E3));
     let carrier = compose(&[Term { word: one(), transport: cga::translator_at(&[q(1), q(0), q(0)]) }], &mut stroke())
         .expect("a carrier");
-    assert_eq!(carrier.closure, Closure::Unbound);
+    assert_eq!(carrier.closure, RingClosure::Unbound);
     let n = nest(&[&carrier, &inner], &mut stroke());
     assert_eq!(n.seats, vec![Seat::Outer, Seat::Whole]);
     assert!(n.balanced);
@@ -79,7 +79,7 @@ fn nest_seats_returning_ring_whole_in_carrier() {
 fn nest_leaves_non_dividing_ring_over() {
     let third = ring(turn_90(E1 | E2).geo(&turn_90(E2 | E3)));
     let outer = ring(turn_90(E1 | E2));
-    assert_eq!((third.closure, outer.closure), (Closure::Closes(3), Closure::Closes(4)));
+    assert_eq!((third.closure, outer.closure), (RingClosure::Closes(3), RingClosure::Closes(4)));
     let n = nest(&[&third, &outer], &mut stroke());
     assert_eq!(n.seats, vec![Seat::Leftover, Seat::Outer]);
     assert!(!n.balanced, "a leftover ring is outside the harmonic order");

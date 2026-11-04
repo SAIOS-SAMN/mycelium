@@ -1,16 +1,16 @@
 // THE COURT LOCK, COUNTED (2026-10-08) AND METERED (78.153b). The book and
-// the guard are the library's (`mycelium::server::held`), so the library's
+// the guard are the library's (`mycelium::server::court_lock`), so the library's
 // own holds — the synthesis thread, the back-fill — are counted with the
 // binary's; this file is the binary's face on it: the watchdog on the door's
 // shelf and the `held!` the sites write.
 //
 //! `held!(m)` stands for `m.lock()` with the same `Result` shape, so every
 //! `if let Ok(..)`, `match`, `.ok()` and `.map(..)` at a site reads as before
-//! — and what it holds is a `Held`, whose only way in is `Held::run(|k,
+//! — and what it holds is a `CourtGuard`, whose only way in is `CourtGuard::run(|k,
 //! reads| …)`: the court and the hold's one stroke together.
 
-pub(crate) use mycelium::server::held::{holding, stepping, yield_to_waiters};
-use mycelium::server::held::Held;
+pub(crate) use mycelium::server::court_lock::{holding, stepping, yield_to_waiters};
+use mycelium::server::court_lock::CourtGuard;
 use mycelium::cognition::Court;
 use std::sync::Mutex;
 
@@ -23,7 +23,7 @@ use std::sync::Mutex;
 /// not advance, and no hold is measured against it.
 pub(crate) fn spawn_watchdog() {
     // The book stamps each hold with the shelf's advances at its take.
-    mycelium::server::held::read_advances_with(|| crate::tuniversal::shelf().advances());
+    mycelium::server::court_lock::read_advances_with(|| crate::tuniversal::shelf().advances());
     std::thread::spawn(|| {
         let shelf = crate::tuniversal::shelf();
         let span = u64::from(mycelium::physics::aperture_cycle());
@@ -31,7 +31,7 @@ pub(crate) fn spawn_watchdog() {
         let mut seen = shelf.advances();
         loop {
             seen = shelf.wait_advance(seen);
-            let Some((site, hold, at)) = mycelium::server::held::holding_since() else {
+            let Some((site, hold, at)) = mycelium::server::court_lock::holding_since() else {
                 continue;
             };
             let Some(spans) = seen.checked_sub(at) else { continue };
@@ -48,24 +48,24 @@ pub(crate) fn spawn_watchdog() {
 /// holds other threads of the process make beside it.
 #[cfg(test)]
 pub(crate) fn holds_here() -> u64 {
-    mycelium::server::held::holds_here()
+    mycelium::server::court_lock::holds_here()
 }
 
-/// THE STEP A LONG HOLD STANDS IN (`mycelium::server::held::step`).
+/// THE STEP A LONG HOLD STANDS IN (`mycelium::server::court_lock::step`).
 pub(crate) fn step(name: &'static str) {
-    mycelium::server::held::step(name);
+    mycelium::server::court_lock::step(name);
 }
 
 /// Take the court at site `at`, with the hold's one stroke; `Err(())` where
 /// the lock is poisoned, as `lock()` refuses.
-pub(crate) fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<Held<'a>, ()> {
-    mycelium::server::held::lock(m, at)
+pub(crate) fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<CourtGuard<'a>, ()> {
+    mycelium::server::court_lock::lock(m, at)
 }
 
 /// `held!(court)` — `court.lock()` counted at this file and line.
 macro_rules! held {
     ($m:expr) => {
-        $crate::held::lock(&$m, concat!(file!(), ":", line!()))
+        $crate::court_lock::lock(&$m, concat!(file!(), ":", line!()))
     };
 }
 pub(crate) use held;

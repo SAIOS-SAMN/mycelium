@@ -4,12 +4,12 @@
 // and a still height), a universe's genesis and origin, a manifest, and the
 // seats a house lists — each exact, the same at both ends of every codec.
 
-use mycelium::anastome::dialogue::domain::Origin;
+use mycelium::anastome::dialogue::domain::BigBangRecord;
 use mycelium::anastome::dialogue::endowment::{Manifest, Nuclei};
 use mycelium::anastome::dialogue::seat::{Arg, Post, Role, Seat, SeatFn, Seats, TAG_COUNT};
 use mycelium::anastome::dialogue::universe::{Genesis, Geometry, Parent};
 use mycelium::physics::laws::{BodyState, Transition};
-use mycelium::physics::equilibrium::{carried_body, Body};
+use mycelium::physics::equilibrium::{carried_body, BodyMoments};
 use mycelium::transducer::cga::{rotator, sphere_at, Mv};
 use num_rational::BigRational as Q;
 
@@ -28,7 +28,7 @@ fn carried() -> Option<Vec<(BodyState, BodyState)>> {
     [[1, 0, 0], [0, 2, 0]]
         .iter()
         .map(|c| {
-            let body = Body {
+            let body = BodyMoments {
                 centre: c.iter().map(|x| q(*x)).collect(),
                 mass: q(1),
                 moments: vec![vec![q(1), q(0), q(0)], vec![q(0), q(0), q(0)], vec![q(0), q(0), q(0)]],
@@ -56,9 +56,9 @@ pub(crate) fn genesis() -> Genesis {
 
 /// A UNIVERSE'S ORIGIN at version 2, committing to the citation hash of the
 /// record it names.
-pub(crate) fn origin(domain: [u8; 32]) -> Origin {
+pub(crate) fn origin(domain: [u8; 32]) -> BigBangRecord {
     let commitment = mycelium::chronometry::payload_hash(b"mycelium conformance universe");
-    Origin { domain, kind: 0, version: 2, commitment, universe: Some(genesis()) }
+    BigBangRecord { domain, kind: 0, version: 2, commitment, universe: Some(genesis()) }
 }
 
 /// A MANIFEST of one kind of nuclei, one hydrogen nucleus, under a nonce.

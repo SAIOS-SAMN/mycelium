@@ -80,9 +80,9 @@ impl Contemplation {
     /// 78.74 — THE TETHER AS A FIBRE between its two thoughts' pivots, read
     /// off the pivots' coordinates whenever it is asked, never held. `None` where
     /// either thought has no pivot or the two stand at one point.
-    pub(crate) fn fibre_of(&self, a: &[u8], b: &[u8]) -> Option<crate::physics::pivot_fibre::Fibre> {
+    pub(crate) fn fibre_of(&self, a: &[u8], b: &[u8]) -> Option<crate::physics::pivot_fibre::PivotFibre> {
         let ((pa, ma), (pb, mb)) = (self.pivot_of(a)?, self.pivot_of(b)?);
-        crate::physics::pivot_fibre::Fibre::new(pa, pb, ma, mb)
+        crate::physics::pivot_fibre::PivotFibre::new(pa, pb, ma, mb)
     }
 
     /// CONDENSE the tension between `a` and `b` into a tether carrying
@@ -123,7 +123,7 @@ impl Contemplation {
     }
 
     /// What a motion does to the fibre between `a` and `b`, read off its
-    /// modes (`Fibre::reads`): rigid, torsion, field or lift. `None` where
+    /// modes (`PivotFibre::reads`): rigid, torsion, field or lift. `None` where
     /// there is no fibre or the motion's modes do not read.
     fn carried_by(&self, a: &[u8], b: &[u8], motion: &crate::transducer::cga::Mv) -> Option<crate::physics::pivot_fibre::Carried> {
         let fibre = self.fibre_of(a, b)?;
@@ -152,7 +152,7 @@ impl Contemplation {
     /// sharing a pivot compose, `S₂₃S₁₂` carrying `P₁` through `P₂` to `P₃`.
     /// The new tether `a–b` shares a pivot with every other tether at `a` or
     /// `b`, `y–z`. Where `x` and `z` are not yet tethered, `z` is placed on
-    /// the fibre `x–y` by its projection (`Fibre::project`, the ratio of the
+    /// the fibre `x–y` by its projection (`PivotFibre::project`, the ratio of the
     /// two pivots' pulls on it): at or above the switch — `x` pulls `z` at
     /// least as hard as `y` does — the shortcut forms, carrying the path's
     /// composite transport `g_xz = g_xy ∘ g_yz`, so the triangle it closes

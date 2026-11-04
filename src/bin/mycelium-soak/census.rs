@@ -33,7 +33,7 @@ use mycelium::network::nerve::Keyed;
 /// What one family reads as. Each field is a reading taken over EVERY
 /// train pair, because a property that holds on some pairs and not others
 /// is not a property of the family (rule 13: the claim, not the outcome).
-struct Reading {
+struct FamilyCensus {
     /// Every train input carries a full row or column of one non-background
     /// hue — the scene is cut into panels before anything else is read.
     separator: bool,
@@ -164,7 +164,7 @@ fn one_body(g: &Grid) -> bool {
     reached == n
 }
 
-fn read(task: &Task) -> Reading {
+fn read(task: &Task) -> FamilyCensus {
     let separator = !task.train.is_empty() && task.train.iter().all(|(i, _)| has_separator(i));
     // One ratio for the family or none: the pairs must agree, or the frames
     // do not stand in a ratio at all.
@@ -176,7 +176,7 @@ fn read(task: &Task) -> Reading {
             Some(_) => None,
         }
     });
-    Reading {
+    FamilyCensus {
         separator,
         ratio: ratio.flatten(),
         one_body: !task.train.is_empty() && task.train.iter().all(|(i, _)| one_body(i)),
@@ -203,7 +203,7 @@ fn read(task: &Task) -> Reading {
 pub(crate) fn report(dir: &str, names: &[String], want: &[String]) {
     // Keyed by the task id, so the page comes back in the trie's order —
     // canonical, content, and no position chosen by a measurement (rule 4).
-    let mut rows: Keyed<(String, Reading)> = Keyed::new();
+    let mut rows: Keyed<(String, FamilyCensus)> = Keyed::new();
     for file in names {
         let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
         let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };

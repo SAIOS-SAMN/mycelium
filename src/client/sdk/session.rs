@@ -596,7 +596,7 @@ impl Session {
     }
 
     pub(crate) fn exchange_inner(&self, endpoint: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        let frame = Frame { lane: Stratum::Spatial, body: act_body };
+        let frame = WireFrame { lane: Lane::Spatial, body: act_body };
         // A body past the wire's one budget is refused here, by name, before
         // a byte is sent (78.125): a large publication is streamed in parts.
         let len = frame.body.len();

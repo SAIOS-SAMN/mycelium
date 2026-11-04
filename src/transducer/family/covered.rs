@@ -137,7 +137,7 @@ pub(crate) fn classify_cover(
     // vertex, its chart, its cover's frame, and the piece by nucleus and
     // shape. The chart is what a meet's end is, and the cover that placed it
     // is filed under the same coordinate.
-    let mut cover_chart: Keyed<ChartAt, crate::network::nerve::coord::Carriage> = Keyed::new();
+    let mut cover_chart: Keyed<ChartAt, crate::network::nerve::coord::CarriedPieces> = Keyed::new();
     let mut owner: Keyed<Keyed<()>, ChartAt> = Keyed::new();
     for (ci, c) in covers.iter().enumerate() {
         let (carried, _) = c.cover.carried.decoded();

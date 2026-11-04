@@ -4,7 +4,7 @@
 
 use super::fixtures::grid;
 use crate::transducer::cga::{self, Mv, E1, E2, E3};
-use crate::transducer::sentence::compose::{compose, terms_of, Closure, Term};
+use crate::transducer::sentence::compose::{compose, terms_of, RingClosure, Term};
 use crate::transducer::sentence::rung::{hear, lexicon};
 use num_rational::BigRational;
 
@@ -45,7 +45,7 @@ fn compose_names_each_percept_ring_unbound() {
         for (_, p) in paths.scoped() {
             let terms = terms_of(p).expect("every crossing of the slide's rings reads");
             let s = compose(&terms, &mut stroke()).expect("a sentence");
-            assert_eq!(s.closure, Closure::Unbound, "the dislocation never returns: open, by name");
+            assert_eq!(s.closure, RingClosure::Unbound, "the dislocation never returns: open, by name");
             let kinds = |m: &Mv| match cga::motion_modes(m, &mut stroke()) {
                 Some(Ok(ms)) => ms.iter().map(|x| x.kind).collect::<Vec<_>>(),
                 other => panic!("modes read: {other:?}"),
@@ -189,7 +189,7 @@ fn hear_recurses_rung_and_recognizes_reheard_sentence() {
     let v = turn(E2, E3);
     let one = Mv::scalar(q(1, 1));
     let first = compose(&[Term { word: w.clone(), transport: w.reverse() }], &mut stroke()).expect("a sentence");
-    assert_eq!(first.closure, Closure::Closes(1), "there and back: closed");
+    assert_eq!(first.closure, RingClosure::Closes(1), "there and back: closed");
     assert!(first.path.projective_eq(&w), "its shortcut is the turn");
     hear(&first, &mut stroke());
     let rung_of_w = crate::transducer::sentence::rung::held_rung(&w);
@@ -199,7 +199,7 @@ fn hear_recurses_rung_and_recognizes_reheard_sentence() {
         &mut stroke(),
     )
     .expect("a sentence");
-    assert_eq!(second.closure, Closure::Closes(1), "a sentence of the held word, closed");
+    assert_eq!(second.closure, RingClosure::Closes(1), "a sentence of the held word, closed");
     assert!(second.words[0].projective_eq(&w), "its first term's word is the held word");
     hear(&second, &mut stroke());
     assert!(

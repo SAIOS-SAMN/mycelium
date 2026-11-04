@@ -23,7 +23,7 @@
 
 use super::clause::{
     put_act, put_gauge, put_paint, put_pred, put_stop, take_act, take_byte, take_gauge, take_paint, take_pred, take_stop, About, Act, Clause, Extent, Paint,
-    Pred, Region, Stop,
+    Pred, RegionKind, Stop,
 };
 use crate::core::Q;
 use crate::transducer::address::{put_key_count, take_key_count};
@@ -70,7 +70,7 @@ pub struct Carriage {
 pub enum RuleElement {
     Carriage(Carriage),
     /// The 2-chain the selection bounds, painted one hue.
-    Chain { region: Region, hue: u8 },
+    Chain { region: RegionKind, hue: u8 },
     /// 1-chains between selected bodies through ground: straight along rows
     /// and columns, or round one corner to each body `corner` selects.
     Join { corner: Option<Pred>, paint: Paint },
@@ -103,10 +103,10 @@ pub(crate) fn still() -> Mv {
     Mv::scalar(q(1))
 }
 
-/// THE LATTICE TRANSLATION A VERSOR IS, `(rows, columns)`: read where the
+/// THE SUBSTRATE TRANSLATION A VERSOR IS, `(rows, columns)`: read where the
 /// sensor reads a cell — its centre — on three cells, and only where it
 /// carries each by one integer vector. `None` for any other motion.
-pub(crate) fn lattice_step(motion: &Mv) -> Option<(i64, i64)> {
+pub(crate) fn substrate_step(motion: &Mv) -> Option<(i64, i64)> {
     let land = |r: i64, c: i64| -> Option<(Q, Q)> {
         let p = element::carry_site_centre(motion, &Site::of([r, c, 0]))?;
         let [pr, pc, pk] = p.as_slice() else { return None };
@@ -170,7 +170,7 @@ fn gloss_carriage(t: &Carriage) -> Option<Act> {
     let own = t.paint == Paint::Own;
     let fixed = t.motion.projective_eq(&still());
     let ray = || -> Option<(i8, i8)> {
-        let (dr, dc) = lattice_step(&t.motion)?;
+        let (dr, dc) = substrate_step(&t.motion)?;
         Some((i8::try_from(dr).ok()?, i8::try_from(dc).ok()?))
     };
     match (t.reach, t.trace) {

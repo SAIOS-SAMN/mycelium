@@ -890,7 +890,7 @@ fn trial_refuses_move_splitting_agreeing_circuits() {
     let (p, r) = (vec![1u8], vec![2u8]);
     f.face_bodies.put(&c0, (p.clone(), r.clone()));
     f.face_bodies.put(&c1, (p.clone(), r.clone()));
-    f.cells.insert([0u8], FormCell { bodies: vec![p, r], witnesses: Vec::new(), nuclei: None });
+    f.cells.insert([0u8], BodyContact { bodies: vec![p, r], witnesses: Vec::new(), nuclei: None });
 
     let cycles = Form::cycles_of(&f.faces, &f.vertices);
     let mut read = PerturbTally::default();
@@ -933,7 +933,7 @@ fn trial_refuses_move_splitting_agreeing_circuits() {
     let (p, r) = (vec![1u8], vec![2u8]);
     g.face_bodies.put(&d0, (p.clone(), r.clone()));
     g.face_bodies.put(&d1, (p.clone(), r.clone()));
-    g.cells.insert([0u8], FormCell { bodies: vec![p, r], witnesses: Vec::new(), nuclei: None });
+    g.cells.insert([0u8], BodyContact { bodies: vec![p, r], witnesses: Vec::new(), nuclei: None });
     let cycles = Form::cycles_of(&g.faces, &g.vertices);
     let mut read = PerturbTally::default();
     let agreements = Agreements::read(&g, &g.faces, &cycles, &mut read);

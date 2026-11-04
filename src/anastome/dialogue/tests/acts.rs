@@ -194,7 +194,7 @@ fn decode_solve_signs_payee_by_voice_key() {
 /// ground reads unsigned; an empty stated ground is no ground and refuses
 /// the act.
 #[test]
-fn solve_round_trips_its_stated_ground() {
+fn solve_round_trips_stated_ground() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let outputs = vec![vec![vec![1u8, 2], vec![0, 3]]];
     let tape = &b"a rule's tape"[..];

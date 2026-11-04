@@ -349,7 +349,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
 /// The contact is the VERTEX's and the writer repeats it at every member,
 /// so it rides beside the run rather than inside it.
 struct Acts(
-    Keyed<Acting, crate::network::nerve::coord::Section>,
+    Keyed<Acting, crate::network::nerve::coord::ChartCarriage>,
     Option<crate::transducer::alphabet::Contact>,
 );
 

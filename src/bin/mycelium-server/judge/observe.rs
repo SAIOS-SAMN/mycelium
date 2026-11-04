@@ -3,8 +3,8 @@
 
 use crate::context::Context;
 use crate::transport::answer;
-use mycelium::network::wire::Frame;
-use mycelium::observe::{self, Court, Memory, ObserveAct, Reading, Source};
+use mycelium::network::wire::WireFrame;
+use mycelium::observe::{self, CourtReading, Memory, ObserveAct, Reading, Source};
 use std::net::TcpStream;
 
 /// A question the observer left for the court: the court stroke takes it
@@ -39,14 +39,14 @@ fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh
     // ACT1: the origin this court adopted.
     let genesis = mesh.origin.lock().ok().and_then(|o| *o);
     // LD1 — the bytes its awards, its receipt deltas and its frames carry.
-    let mut carriage = observe::Carriage::default();
+    let mut carriage = observe::CarrierTally::default();
     k.treasury().carriage(&mut carriage);
     carriage.of_chain(k.chain());
     carriage.of_frames();
     // RM1 — its remainders over its complexes, beside what the torsion
     // filing kept of them.
     let (remainders, torsion_words) = k.remainders();
-    let court = Court {
+    let court = CourtReading {
         k: k.chain().head_k(),
         basis: k.basis_len() as u64,
         treasury: k.treasury_entry_count() as u64,
@@ -81,16 +81,16 @@ fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh
     observe::replace(own, Reading::Court(Box::new(court)));
 }
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(act) = observe::decode_act(&frame.body) else { return };
     match act {
         ObserveAct::Query(prefix) => {
             // ONE HOLD ACROSS TWO QUESTIONS: the court held by the same take
             // at this question as at the last is named, with its site.
             static LAST: std::sync::Mutex<u64> = std::sync::Mutex::new(0);
-            if let (Some((at, hold)), Ok(mut last)) = (crate::held::holding(), LAST.lock()) {
+            if let (Some((at, hold)), Ok(mut last)) = (crate::court_lock::holding(), LAST.lock()) {
                 if *last == hold {
-                    eprintln!("  court lock {at} still held across two observer questions (hold {hold}, step {})", crate::held::stepping());
+                    eprintln!("  court lock {at} still held across two observer questions (hold {hold}, step {})", crate::court_lock::stepping());
                 }
                 *last = hold;
             }
@@ -139,7 +139,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
                 eprintln!("  observe reply refused: more readings held than four bytes count");
                 return;
             };
-            answer(stream, Frame { lane: frame.lane, body });
+            answer(stream, WireFrame { lane: frame.lane, body });
         }
     }
 }

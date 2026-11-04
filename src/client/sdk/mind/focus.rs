@@ -299,7 +299,7 @@ impl Mind {
                 // the mind's boundary; a rule known on the family speaks them,
                 // and the court judges the solve on its own withheld pairs.
                 let tests = task.test.into_iter().map(|(x, _)| x).collect();
-                self.perceive_scene(super::perceive::Scene { id: key, train: task.train, tests, reading: super::perceive::Reading::Feed });
+                self.perceive_scene(super::perceive::Scene { id: key, train: task.train, tests, reading: super::perceive::SceneKind::Feed });
             }
             ITEM_QUESTION => {
                 let Some(chain) = self.board.open_residuals.get(&key).cloned() else {

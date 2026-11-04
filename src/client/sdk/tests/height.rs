@@ -97,10 +97,10 @@ fn keep_genome_rewrites_file_restore_left_short() {
     let at = crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS);
     let mut key = Vec::new();
     crate::chronometry::Cite::word(&rewrite, at).put_canonical(&mut key).expect("its citation writes");
-    let mut nodes: crate::network::nerve::Keyed<crate::snapshot::Leaves> = crate::network::nerve::Keyed::new();
+    let mut nodes: crate::network::nerve::Keyed<crate::trie_tape::Leaves> = crate::network::nerve::Keyed::new();
     nodes.insert(key, vec![(1, rewrite.to_bytes().expect("the record writes"))]);
     let mut older = b"GEN7".to_vec();
-    crate::snapshot::put_trie(&mut older, "words", &nodes);
+    crate::trie_tape::put_trie(&mut older, "words", &nodes);
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("rewritten-file"));
     assert_eq!(mind.restore_genome(&older), Ok(()), "the older file restores");
     assert_eq!(mind.epigenome.genome_len(), 0, "without its rewrite");

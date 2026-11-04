@@ -131,17 +131,17 @@ pub struct Published {
     pub(crate) journal: Arc<Vec<crate::economy::Entry>>,
     pub(crate) journal_mark: u64,
     pub(crate) cost: PublishCost,
-    /// 78.153b — THE COURT'S OWN READS (`Own`): its cover, room, bond, ruled
+    /// 78.153b — THE COURT'S OWN READS (`SelfReading`): its cover, room, bond, ruled
     /// cover and head receipt, read off the shelf by the door and the
     /// exchange without the court.
-    pub(crate) own: Own,
+    pub(crate) own: SelfReading,
 }
 
 /// 78.153b — WHAT THE COURT READS OF ITSELF, published: each piece read at
 /// the stroke as the court answers it, and shared with the last reading
 /// where it did not move.
 #[derive(Clone)]
-pub(crate) struct Own {
+pub(crate) struct SelfReading {
     /// `Court::own_cover_charts`, copied where `own_cover_gen` moved.
     pub(crate) cover: Arc<Vec<(u8, crate::transducer::stalk::Invariant)>>,
     pub(crate) cover_mark: u64,
@@ -276,7 +276,7 @@ impl Court {
     /// `own_cover_gen` moved, the ruled cover where `ruled_gen` moved, the
     /// head receipt where the head moved; its room, bond and voice at every
     /// publication, each compared with the last so a moved one publishes.
-    fn publish_own(&mut self, prev: Option<&Published>, head: Option<Stamp>, cost: &mut PublishCost, moved: &mut bool) -> Own {
+    fn publish_own(&mut self, prev: Option<&Published>, head: Option<Stamp>, cost: &mut PublishCost, moved: &mut bool) -> SelfReading {
         let held = prev.map(|p| &p.own);
         let cover = match held {
             Some(o) if o.cover_mark == self.own_cover_gen => Arc::clone(&o.cover),
@@ -302,7 +302,7 @@ impl Court {
         };
         let (room, bonded, voice) = (self.lane_room(), self.treasury.bond_of(&self.identity).is_some(), self.court_voice);
         *moved |= held.is_none_or(|o| o.room != room || o.bonded != bonded || o.voice != voice);
-        Own { cover, cover_mark: self.own_cover_gen, room, bonded, voice, ruled, ruled_mark: self.ruled_gen, head_receipt }
+        SelfReading { cover, cover_mark: self.own_cover_gen, room, bonded, voice, ruled, ruled_mark: self.ruled_gen, head_receipt }
     }
 
     /// Every signer's line: its own and every peer's held here, and every

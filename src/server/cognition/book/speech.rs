@@ -55,7 +55,7 @@ impl Court {
             .iter()
             .map(|s| crate::cognition::court::reconstruct::reconstruction_key(s, (!s.is_colour_word() && crate::cognition::court::reconstruct::reconstructs_on_family(s)).then_some(task)))
             .collect();
-        let progress = |k: &Court| -> Vec<Option<(crate::verdict::Phase, usize, usize)>> {
+        let progress = |k: &Court| -> Vec<Option<(crate::verdict::Stage, usize, usize)>> {
             keys.iter().map(|key| k.reconstruction_cursors.get(key).map(|c| c.progress())).collect()
         };
         loop {
@@ -734,7 +734,7 @@ impl Court {
 /// alphabet does not spell is offered as a letter by `hear_open`, which every
 /// heard sentence passes.
 pub(crate) fn words_of_sentence(s: &Element, budget: &mut crate::physics::Budget) -> Vec<Element> {
-    use crate::transducer::sentence::compose::{sentences_of, Closure};
+    use crate::transducer::sentence::compose::{sentences_of, RingClosure};
     let Some(form) = crate::transducer::sentence::from_element_form(s) else { return Vec::new() };
     if form.faces.is_empty() {
         return Vec::new();
@@ -762,8 +762,8 @@ pub(crate) fn words_of_sentence(s: &Element, budget: &mut crate::physics::Budget
         let Ok(comp) = read else { continue };
         let Some(word) = crate::transducer::sentence::word::taught(&comp) else { continue };
         let period = match comp.closure {
-            Closure::Closes(l) => l,
-            Closure::Rosette | Closure::Unbound | Closure::Unread => 1,
+            RingClosure::Closes(l) => l,
+            RingClosure::Rosette | RingClosure::Unbound | RingClosure::Unread => 1,
         };
         let Some(e) = spelled_word(&word.word, period) else { continue };
         if seen.insert(e.address(), ()).is_none() {

@@ -4,7 +4,7 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::io::Write;
 use std::net::TcpStream;
 
@@ -16,7 +16,7 @@ use std::net::TcpStream;
 /// saw a provisional, no root ever moved, and every percept sat at `germ
 /// pending (one voice)` forever with basis 0. The gate was never the germ
 /// quorum; it was that the offer never left the process.
-pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
+pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(dialogue::Offer { addr, home, elem: elem_bytes, section, .. }) =
         dialogue::decode_offer(&frame.body)
     else {
@@ -43,7 +43,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
             home[1]
         );
         match dialogue::encode_offer_reply(&dialogue::Witnessed::Refused { vk: witness, why: why.as_bytes().to_vec() }) {
-            Some(body) => answer(s, Frame { lane: frame.lane, body }),
+            Some(body) => answer(s, WireFrame { lane: frame.lane, body }),
             None => eprintln!("  court offer answer refused: the reason passes its u16"),
         }
     };
@@ -102,7 +102,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
                 }
             }
             Some(word) => {
-                match (crate::held::held!(context.court), context.mesh.cover.lock()) {
+                match (crate::court_lock::held!(context.court), context.mesh.cover.lock()) {
                     (Ok(mut h), Ok(mut cover)) => h.run(|k, budget| {
                         // One typed reading, every arm of `Glue` named. The
                         // REFUSAL travels, not a bit saying there was one:
@@ -176,13 +176,13 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
     // a hand-built frame for the case where a five-byte frame fails to
     // encode, which is the shape rule 11 refuses.
     let full = dialogue::encode_offer_reply(&answered)
-        .and_then(|body| Frame { lane: frame.lane, body }.encode_at(crate::tuniversal::final_point().as_ref()));
+        .and_then(|body| WireFrame { lane: frame.lane, body }.encode_at(crate::tuniversal::final_point().as_ref()));
     match full {
         Some(bytes) => {
             let _ = s.write_all(&bytes);
         }
         None => match dialogue::encode_offer_reply(&dialogue::Witnessed::Unmeasured { vk: witness }) {
-            Some(body) => answer(s, Frame { lane: frame.lane, body }),
+            Some(body) => answer(s, WireFrame { lane: frame.lane, body }),
             None => eprintln!("  court offer answer refused: the unmeasured reply does not frame"),
         },
     }

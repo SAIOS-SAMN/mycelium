@@ -8,7 +8,7 @@ use super::*;
 /// also carries its chart in a keyed relation, so a removal follows one path.
 #[derive(Debug, Clone, Default)]
 pub struct Stalks {
-    root: Stratum,
+    root: ChartNode,
     charts: Keyed<Invariant>,
 }
 
@@ -119,7 +119,7 @@ impl Stalks {
     }
 
     pub fn clear(&mut self) {
-        self.root = Stratum::default();
+        self.root = ChartNode::default();
         self.charts = Keyed::new();
     }
 

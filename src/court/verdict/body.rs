@@ -58,13 +58,13 @@ pub(crate) const FAIL_PART: &str = "an image body is reached in part";
 /// indistinguishable from `FAIL_HUE`.
 pub(crate) const FAIL_GAUGE_AMBIGUOUS: &str = "the gauge names two images for one hue";
 
-/// ONE FRAME OF THE FAMILY, PERCEIVED ONCE (law 12): the bodies of `x`
+/// ONE PAIR OF THE FAMILY, PERCEIVED ONCE (law 12): the bodies of `x`
 /// filed by chart, the images of `y`, and the image each base site
 /// belongs to. Every reader of a frame — a vertex's replay, an edge's
 /// re-measurement, the coverage of a part-reached image — reads this and
 /// perceives nothing itself: the frame's bodies are one fact of the frame,
 /// not of the vertex or the face asking about them.
-pub(crate) struct Frame<'a> {
+pub(crate) struct PerceivedPair<'a> {
     pub(crate) y: &'a Grid,
     pub(crate) bodies: &'a [Body],
     pub(crate) images: &'a [Body],
@@ -99,12 +99,12 @@ pub(crate) fn perceive_family(family: &[(Grid, Grid)]) -> Vec<Perceived> {
 
 /// The frames over pairs already perceived: the frames' indexes, built from the
 /// bodies (no sensor read).
-pub(crate) fn frames_over<'a>(family: &'a [(Grid, Grid)], perceived: &'a [Perceived]) -> Vec<Frame<'a>> {
-    family.iter().zip(perceived).map(|((_, y), p)| Frame::over(p, y)).collect()
+pub(crate) fn frames_over<'a>(family: &'a [(Grid, Grid)], perceived: &'a [Perceived]) -> Vec<PerceivedPair<'a>> {
+    family.iter().zip(perceived).map(|((_, y), p)| PerceivedPair::over(p, y)).collect()
 }
 
-impl<'a> Frame<'a> {
-    pub(crate) fn over(p: &'a Perceived, y: &'a Grid) -> Frame<'a> {
+impl<'a> PerceivedPair<'a> {
+    pub(crate) fn over(p: &'a Perceived, y: &'a Grid) -> PerceivedPair<'a> {
         let (bodies, images) = (p.bodies.as_slice(), p.images.as_slice());
         let mut by_chart: Keyed<Vec<usize>> = Keyed::new();
         for (i, b) in bodies.iter().enumerate() {
@@ -122,7 +122,7 @@ impl<'a> Frame<'a> {
                 image_at.insert(l.site.key(), i);
             }
         }
-        Frame { y, bodies, images, by_chart, image_at }
+        PerceivedPair { y, bodies, images, by_chart, image_at }
     }
 
     /// The bodies of `x` on one chart: a keyed read of the fibre.
@@ -150,7 +150,7 @@ fn site_key(r: i64, c: i64) -> Vec<u8> {
 /// 50.1 step 1 at one FRAME of the family's one body (51.8): `(V · W · γ) ·
 /// B_in = B_out` under exact equality compartment by compartment, for every body of
 /// the vertex's chart on the frame.
-pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64) -> Carried {
+pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, frame: u64) -> Carried {
     let Vertex::Word { derivation, contact, acts, .. } = vertex else {
         return Carried::Silent;
     };
@@ -254,7 +254,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
 fn form_covers_compartments(
     f: &Form,
     frame: u64,
-    at: &Frame<'_>,
+    at: &PerceivedPair<'_>,
     compartments: &[Compartment],
 ) -> bool {
     let mut covered: Keyed<u8> = Keyed::new();
@@ -442,7 +442,7 @@ fn fault_slot(why: &str) -> usize {
 /// `versor`: a keyed read of the frame's occupancy at the carried site. The
 /// anchor is the least compartment in the body's own order — a coordinate of
 /// the body, never a choice among its compartments.
-fn image_body<'a>(body: &Body, versor: &Versor, at: &'a Frame<'_>) -> Option<&'a Body> {
+fn image_body<'a>(body: &Body, versor: &Versor, at: &'a PerceivedPair<'_>) -> Option<&'a Body> {
     let [anchor, ..] = body.compartments.as_slice() else {
         return None;
     };
@@ -492,7 +492,7 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
 /// that does not place is a transition claimed over nothing the court
 /// holds: a claim that does not re-derive, I.
 fn motor_carries(
-    frames: &[Frame<'_>],
+    frames: &[PerceivedPair<'_>],
     x: &crate::network::nerve::coord::MemberAt,
     y: &crate::network::nerve::coord::MemberAt,
     motor: &Versor,

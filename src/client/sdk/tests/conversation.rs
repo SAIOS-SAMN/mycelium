@@ -42,7 +42,7 @@ fn court_keeping(keep: fn(&dialogue::SpeechAct) -> bool) -> (String, std::sync::
                     break;
                 }
                 let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
-                let reply = crate::network::wire::Frame { lane, body: dialogue::encode_speech_reply(&[]).expect("a reply") };
+                let reply = crate::network::wire::WireFrame { lane, body: dialogue::encode_speech_reply(&[]).expect("a reply") };
                 let _ = s.write_all(&reply.encode().expect("framed"));
                 if let Some(act) = dialogue::decode_speech(&body) {
                     if keep(&act) {

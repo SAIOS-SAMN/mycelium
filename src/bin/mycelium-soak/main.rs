@@ -47,7 +47,7 @@ use mycelium::transducer::sentence::Vertex;
 /// What one walk of the corpus read. Every field is a count of acts, read
 /// and never branched on (rule 2).
 #[derive(Default)]
-struct Reading {
+struct WalkCounts {
     tasks: u64,
     extracted: u64,
     stood: u64,
@@ -591,11 +591,11 @@ fn slice_names(dir: &str, limit: usize) -> Result<Vec<String>, String> {
 /// The corpus is the boundary this loop walks (rule 10): one file, one
 /// task, in name order so two runs read the same corpus in the same
 /// order.
-fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, String> {
+fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<WalkCounts, String> {
     let names = slice_names(dir, limit)?;
     let mut epi = Epigenome::new();
     let mut physics = mycelium::physics::Physics::default();
-    let mut r = Reading::default();
+    let mut r = WalkCounts::default();
     let mut k = 0u64;
     for name in &names {
         let path = format!("{dir}/{name}");
@@ -674,7 +674,7 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, Strin
 /// 45.9: the engine's coordinates, read off the mind at the end of the
 /// walk. Every one is read from CONTENT — the forms the mind holds and
 /// the vertices in them — and nothing is counted that was not derived.
-fn read_engine(epi: &mut Epigenome, r: &mut Reading) {
+fn read_engine(epi: &mut Epigenome, r: &mut WalkCounts) {
     let mut seen: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     let mut charts: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     for e in epi.genome_words() {

@@ -10,12 +10,12 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
 
 /// A voice speaks sentences to the court that homes them (26).
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let court = &context.court;
 
     let Some(act) = dialogue::decode_speech(&frame.body) else {
@@ -23,7 +23,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
     };
     // THE HEARING IS THE TRANSITION THAT ADMITS: what it docketed, and what
     // the sentences waiting on a word carried, it offers when it returns.
-    let (heard, offers, attested) = match crate::held::held!(court) {
+    let (heard, offers, attested) = match crate::court_lock::held!(court) {
         // OWED (78.153b): the hearing mints its strokes per sentence (the
         // lock audit, row 9); this hold's stroke is not yet threaded in.
         Ok(mut h) => h.run(|k, _| {
@@ -55,7 +55,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
         },
         Err(lanes) => dialogue::encode_deferral(dialogue::PENDING_CODE, &lanes),
     };
-    let reply = Frame { lane: frame.lane, body };
+    let reply = WireFrame { lane: frame.lane, body };
     answer(stream, reply);
     // The voice is answered first; the offers leave after, from this act.
     crate::offer::offer(court, &context.mesh, offers);

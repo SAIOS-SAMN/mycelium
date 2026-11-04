@@ -27,7 +27,7 @@ fn halves() -> (Vec<TrainPair>, Vec<TrainPair>) {
 /// the withheld pair under it, solved. The court reads only the ground the
 /// claim states.
 #[test]
-fn claim_states_its_ground_and_court_reconstructs_under_it() {
+fn claim_states_ground_and_court_reconstructs_under_ground() {
     use crate::transducer::family::transduce::Ground;
     let (train, withheld) = halves();
     assert_eq!(crate::transducer::raster::ground_of(&train), Ground::Vortex(vec![0, 5]), "the task's ground is a vortex");
@@ -155,7 +155,7 @@ fn frame_fixed_on_ground_reads_permuted_palette_as_other_scene() {
 fn judge_solve_reads_reframed_task_as_one_verdict() {
     crate::transducer::raster::stand_on(0);
     type Pairs = Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>;
-    type Frame<'a> = &'a dyn Fn(&Vec<Vec<u8>>) -> Vec<Vec<u8>>;
+    type Reframing<'a> = &'a dyn Fn(&Vec<Vec<u8>>) -> Vec<Vec<u8>>;
     let base: (Pairs, Pairs) = (
         vec![(digits(&["1100", "0020", "0000"]), digits(&["3300", "0040", "0000"]))],
         vec![(digits(&["0110", "2000", "0000"]), digits(&["0330", "4000", "0000"]))],
@@ -177,7 +177,7 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
     let paint = |g: &Vec<Vec<u8>>| -> Vec<Vec<u8>> {
         g.iter().map(|row| row.iter().map(|&h| match h { 1 => 6, 2 => 7, 3 => 8, 4 => 9, x => x }).collect()).collect()
     };
-    let each = |ps: &Pairs, f: Frame<'_>| -> Pairs { ps.iter().map(|(a, b)| (f(a), f(b))).collect() };
+    let each = |ps: &Pairs, f: Reframing<'_>| -> Pairs { ps.iter().map(|(a, b)| (f(a), f(b))).collect() };
     // Read through the frame-fixing perspective (ROADMAP track 26, S2).
     let read = |train: &Pairs, test: &Pairs| {
         crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task { train: train.clone(), test: test.clone() })
@@ -186,7 +186,7 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
     let turn180 = |g: &Vec<Vec<u8>>| turn(&turn(g));
     let turn270 = |g: &Vec<Vec<u8>>| turn(&turn(&turn(g)));
     let turned_mirror = |g: &Vec<Vec<u8>>| turn(&mirror(g));
-    let frames: Vec<Frame<'_>> = vec![&turn, &turn180, &turn270, &mirror, &turned_mirror];
+    let frames: Vec<Reframing<'_>> = vec![&turn, &turn180, &turn270, &mirror, &turned_mirror];
     let mut k = Court::new();
     let rule = rule_over(&one.train);
     let SolveVerdict::Solved { pay, .. } = k.judge_solve(&rule, &one.train) else { panic!("the rule closes its own pair") };

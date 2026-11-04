@@ -68,7 +68,7 @@ pub const CATALOGUE: &[Mutant] = &[
     },
     Mutant {
         law: "47.3: a second vantage is a bonded organ with room, independent of the home",
-        file: "src/server/cognition/germinate/attest.rs",
+        file: "src/server/cognition/listings/attest.rs",
         before: "                bond(other).is_some()\n                    && room(other).is_some_and(|r| r.iter().any(|&l| l > 0))",
         after: "                let _ = (&bond, &room, other);\n                true",
         target: &["--lib"],
@@ -269,8 +269,8 @@ pub const CATALOGUE: &[Mutant] = &[
     Mutant {
         law: "NO CONSTANT (MU-DERIVATIONS D1.4): a registered number keeps its class tag, or the numbers gate refuses the tree",
         file: "src/server/cognition/domain_passage.rs",
-        before: "/// REGISTERED: THROAT_GRID\npub const THROAT_GRID",
-        after: "pub const THROAT_GRID",
+        before: "/// REGISTERED: THROAT_LEVEL_BITS\npub const THROAT_LEVEL_BITS",
+        after: "pub const THROAT_LEVEL_BITS",
         target: &["--manifest-path", "xtask/Cargo.toml"],
         filter: "numbers_refuses_nothing_in_tree",
     },

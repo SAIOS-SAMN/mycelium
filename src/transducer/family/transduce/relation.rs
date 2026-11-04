@@ -42,7 +42,7 @@ pub enum PairRelation {
 /// The periods a body's shape is read in: its frame's, or its own
 /// enclosure's.
 #[derive(Clone, Copy)]
-pub(super) enum Held {
+pub(super) enum ShapePeriods {
     InFrame,
     OwnEnclosure,
 }
@@ -51,7 +51,7 @@ pub(super) enum Held {
 /// turn on each phase (O2 (b)): each band's boundary turns less the least,
 /// as fractions in lowest terms, in band order, of the frame's periods or
 /// of the body's own span. The symbol is not shape.
-pub(super) fn centred_shape(e: &Enclosed, body: usize, held: Held) -> Vec<u8> {
+pub(super) fn centred_shape(e: &Enclosed, body: usize, held: ShapePeriods) -> Vec<u8> {
     use crate::transducer::address::put_key_count;
     // The least and the greatest boundary turn on each phase, as indices of
     // the phase's own period: O2 (b) names the least as the origin, and the
@@ -76,8 +76,8 @@ pub(super) fn centred_shape(e: &Enclosed, body: usize, held: Held) -> Vec<u8> {
         }
     };
     let periods: Vec<usize> = match held {
-        Held::InFrame => e.enclosure.periods().to_vec(),
-        Held::OwnEnclosure => span.iter().map(|&(l, m)| m - l).collect(),
+        ShapePeriods::InFrame => e.enclosure.periods().to_vec(),
+        ShapePeriods::OwnEnclosure => span.iter().map(|&(l, m)| m - l).collect(),
     };
     for (_, b) in e.body_bands(body) {
         for ((&(lo, hi), &(least, _)), &p) in b.spans.iter().zip(&span).zip(&periods) {
@@ -141,8 +141,8 @@ pub fn relation_of(x: &Sample, y: &Sample, ground: &super::Ground<Vec<u8>>) -> R
         return Ok(PairRelation::Unenclosed);
     }
     for (held, class) in [
-        (Held::InFrame, PairRelation::Offset as fn(SignedPermutation) -> PairRelation),
-        (Held::OwnEnclosure, PairRelation::Reenclosed),
+        (ShapePeriods::InFrame, PairRelation::Offset as fn(SignedPermutation) -> PairRelation),
+        (ShapePeriods::OwnEnclosure, PairRelation::Reenclosed),
     ] {
         for s in SignedPermutation::all(p.len()) {
             let moved = s.moved(&from)?;

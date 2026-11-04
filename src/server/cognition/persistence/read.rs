@@ -11,7 +11,7 @@ use super::*;
 use crate::chronometry::{Cite, KStepReceipt, Stamp};
 use crate::cognition::*;
 use crate::network::nerve::Keyed;
-use crate::snapshot::{leaf, take_trie};
+use crate::trie_tape::{leaf, take_trie};
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
@@ -114,7 +114,7 @@ impl Court {
                 COURT_TRIE,
                 &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES, LEAF_HANDOFFS, LEAF_ROOTS, LEAF_ATLAS, LEAF_ENDOWMENT, LEAF_CLOSED, LEAF_WINDOWS],
             )?;
-            let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
+            let nodes: Vec<(Vec<u8>, crate::trie_tape::Leaves)> =
                 court_trie.scoped().map(|(k, l)| (k, l.clone())).collect();
             let [(vk, leaves)] = nodes.as_slice() else { return None };
             let vk: [u8; 32] = vk.as_slice().try_into().ok()?;
@@ -291,7 +291,7 @@ impl Court {
                 }
                 if let Some(v) = leaf(leaves, LEAF_SETTLEMENTS) {
                     settled.extend(records(v, |b, p| {
-                        let listing = Address::from(crate::snapshot::take_key(b, p)?);
+                        let listing = Address::from(crate::trie_tape::take_key(b, p)?);
                         let chain = crate::anastome::dialogue::read_chain(b, p)?;
                         let voice: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                         *p += 32;
@@ -304,7 +304,7 @@ impl Court {
                 }
                 if let Some(v) = leaf(leaves, LEAF_DIALECT) {
                     dialect.extend(records(v, |b, p| {
-                        let key = crate::snapshot::take_key(b, p)?;
+                        let key = crate::trie_tape::take_key(b, p)?;
                         let g = element::Versor::from_bytes(b, p)?;
                         Some((key, g, Some(stamp)))
                     })?);
@@ -458,7 +458,7 @@ impl Court {
                         *p += 1;
                         let closure = match tag {
                             0 => None,
-                            1 => Some(crate::snapshot::take_key(b, p)?),
+                            1 => Some(crate::trie_tape::take_key(b, p)?),
                             _ => return None,
                         };
                         Some((inv, closure))
@@ -470,7 +470,7 @@ impl Court {
                 let (_, spoken) = by_key.get(&key)?.clone();
                 court.provisional.insert(&addr, spoken);
             }
-            crate::snapshot::persist(&federation, |_, (addr, elem)| {
+            crate::trie_tape::persist(&federation, |_, (addr, elem)| {
                 court.court_fed_index.insert(addr, court.court_federation.len());
                 court.court_federation.push((addr.clone(), elem.clone()));
             });
@@ -562,7 +562,7 @@ impl Court {
             // refuses: the pay they hold is a claim.
             at.set(WINDINGS_TRIE);
             for (key, leaves) in windings.scoped() {
-                let w = whole(leaf(leaves, LEAF_WINDING)?, crate::cognition::court::winding::Winding::take)?;
+                let w = whole(leaf(leaves, LEAF_WINDING)?, crate::cognition::court::ring_carrier::RingCarrier::take)?;
                 court.windings.insert(&key, w);
             }
             at.set(LIE_TRIE);
@@ -783,7 +783,7 @@ fn take_field(b: &[u8], p: &mut usize) -> Option<ListingField> {
             *s = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
             *p += 8;
         }
-        entries.push(FieldEntry { chart, state, remainder, stagnant });
+        entries.push(ProbedChart { chart, state, remainder, stagnant });
     }
     // A count that does not fit its carrier refuses the leaf (STD1): the
     // `as u32` this was truncated it — the same defect at a second site.

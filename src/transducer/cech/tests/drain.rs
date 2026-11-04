@@ -110,7 +110,7 @@ fn wide() -> crate::physics::Budget {
 fn charge() -> crate::transducer::cga::Mv {
     let pi = crate::transducer::cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]);
     let pj = crate::transducer::cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]);
-    crate::physics::pivot_fibre::Fibre::new(pi, pj, q(2, 1), q(1, 1)).expect("a fibre").charge(&q(3, 2))
+    crate::physics::pivot_fibre::PivotFibre::new(pi, pj, q(2, 1), q(1, 1)).expect("a fibre").charge(&q(3, 2))
 }
 
 fn sliver() -> crate::transducer::cga::Mv {
@@ -122,7 +122,7 @@ fn sliver() -> crate::transducer::cga::Mv {
     let sigma = cc.sub(&cga::e_inf().scale(&-cc.geo(&pp).scalar_part()));
     let t = cga::translator_at(&c);
     let k = t.geo(&Mv::blade(E1, q(1, 1)).geo(&Mv::blade(E3, q(1, 1)))).geo(&t.reverse()).grade(2);
-    let src = crate::physics::source::Source::of(&sigma, &pp, &k).expect("a source on Σ at P");
+    let src = crate::physics::source::WhiteHoleSource::of(&sigma, &pp, &k).expect("a source on Σ at P");
     src.sliver(&q(1, 2))
 }
 

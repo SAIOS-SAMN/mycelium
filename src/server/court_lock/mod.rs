@@ -11,8 +11,8 @@
 //! 78.153b — THE HOLD'S ONE STROKE. The lock audit (MU-RECURSION 78.153)
 //! found no path under the court metered end to end: the guard dereferenced
 //! to `Court`, so any call under it was one keystroke from an unmetered
-//! walk. A [`Held`] no longer dereferences: `held!` mints the hold's ONE
-//! stroke at the take, and the only way in is [`Held::run`], which hands the
+//! walk. A [`CourtGuard`] no longer dereferences: `held!` mints the hold's ONE
+//! stroke at the take, and the only way in is [`CourtGuard::run`], which hands the
 //! closure the court AND that stroke. An input-sized court entry point
 //! takes `&mut Budget`, so a call under the guard spends the hold's reads or
 //! does not compile; `Court::stroke` is the crate's, never the binary's.
@@ -26,7 +26,7 @@ use std::sync::{Mutex, MutexGuard, OnceLock, TryLockError};
 
 /// One site's counts: how often it took the lock, how often it had to wait,
 /// and how often another site waited on it.
-struct Site {
+struct LockCounts {
     at: &'static str,
     took: u64,
     waited: u64,
@@ -44,7 +44,7 @@ struct Book {
     advances_at: u64,
     /// 78.153b — the waiters this hold has blocked so far.
     blocked_now: u64,
-    sites: Vec<Site>,
+    sites: Vec<LockCounts>,
 }
 
 static BOOK: Mutex<Book> = Mutex::new(Book { holder: None, hold: 0, advances_at: 0, blocked_now: 0, sites: Vec::new() });
@@ -143,21 +143,21 @@ pub fn yield_to_waiters() {
     }
 }
 
-fn with_site(book: &mut Book, at: &'static str, f: impl FnOnce(&mut Site)) {
+fn with_site(book: &mut Book, at: &'static str, f: impl FnOnce(&mut LockCounts)) {
     if let Some(s) = book.sites.iter_mut().find(|s| s.at == at) {
         f(s);
         return;
     }
-    let mut s = Site { at, took: 0, waited: 0, blocked: 0 };
+    let mut s = LockCounts { at, took: 0, waited: 0, blocked: 0 };
     f(&mut s);
     book.sites.push(s);
 }
 
 /// THE COURT, HELD BY ONE NAMED SITE, WITH THE HOLD'S ONE STROKE. Never a
-/// `Deref` to the court: [`Held::run`] is the way in, and it hands the
+/// `Deref` to the court: [`CourtGuard::run`] is the way in, and it hands the
 /// stroke beside the court, so an input-sized read under the lock spends
 /// it (78.153b).
-pub struct Held<'a> {
+pub struct CourtGuard<'a> {
     guard: MutexGuard<'a, Court>,
     stroke: Budget,
     at: &'static str,
@@ -165,7 +165,7 @@ pub struct Held<'a> {
     spent_at: u64,
 }
 
-impl Held<'_> {
+impl CourtGuard<'_> {
     /// THE ONLY WAY IN: the court and the hold's stroke, together. A read
     /// that walks what grows spends `reads`; a stroke spent ends it with its
     /// unread named (`ReconstructionOutcome::Unread`, a deferral, a page cut short) —
@@ -195,7 +195,7 @@ fn unmetered_bound() -> u64 {
     u64::from(crate::physics::aperture_cycle())
 }
 
-impl Drop for Held<'_> {
+impl Drop for CourtGuard<'_> {
     fn drop(&mut self) {
         let read = crate::physics::spent_here().checked_sub(self.spent_at);
         if let Ok(mut b) = BOOK.lock() {
@@ -212,7 +212,7 @@ impl Drop for Held<'_> {
 /// the court's own metabolism); `Err(())` where the lock is poisoned, as
 /// `lock()` refuses.
 #[expect(clippy::result_unit_err, reason = "`held!` keeps `lock()`'s shape at every site: a poisoned lock is the one refusal, and it carries nothing to name")]
-pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<Held<'a>, ()> {
+pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<CourtGuard<'a>, ()> {
     let (mut guard, waited) = match m.try_lock() {
         Ok(g) => (g, false),
         Err(TryLockError::Poisoned(_)) => return Err(()),
@@ -256,14 +256,14 @@ pub fn lock<'a>(m: &'a Mutex<Court>, at: &'static str) -> Result<Held<'a>, ()> {
     }
     HOLDS_HERE.with(|h| h.set(h.get().wrapping_add(1)));
     let stroke = guard.stroke();
-    Ok(Held { guard, stroke, at, spent_at: crate::physics::spent_here() })
+    Ok(CourtGuard { guard, stroke, at, spent_at: crate::physics::spent_here() })
 }
 
 /// `held!(court)` — `court.lock()` counted at this file and line, with the
 /// hold's one stroke.
 macro_rules! held {
     ($m:expr) => {
-        $crate::server::held::lock(&$m, concat!(file!(), ":", line!()))
+        $crate::server::court_lock::lock(&$m, concat!(file!(), ":", line!()))
     };
 }
 pub(crate) use held;

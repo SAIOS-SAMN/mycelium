@@ -70,7 +70,7 @@ pub(crate) fn sign_position(
     // Read on the court, constant in what it holds (one node unpacked):
     // a signed position is the court's head AT SIGNING, so it stays off the
     // shelf, whose head may stand one stroke behind (78.153b).
-    let head = crate::held::held!(court).ok()?.run(|k, _| k.chain().head())?;
+    let head = crate::court_lock::held!(court).ok()?.run(|k, _| k.chain().head())?;
     let prefix = mycelium::court::admission::SignedPrefix {
         genesis,
         epoch,
@@ -97,7 +97,7 @@ pub(crate) fn sign_cover_digest(court: &Mutex<Court>, shelf: &crate::published::
     let read = shelf.take();
     let room = read_published_cover(&read, mesh);
     let ruled_root = read.ruled_root();
-    let tick = match crate::held::held!(court) {
+    let tick = match crate::court_lock::held!(court) {
         Ok(mut h) => h.run(|k, _| k.keeper_tick()),
         Err(_) => return Vec::new(),
     };
@@ -223,7 +223,7 @@ pub(crate) fn admit_peer_receipt(
         .ok()
         .and_then(|o| *o)
         .ok_or(NoAdmission::NoOrigin)?;
-    let mut h = crate::held::held!(court).map_err(|_| NoAdmission::Malformed)?;
+    let mut h = crate::court_lock::held!(court).map_err(|_| NoAdmission::Malformed)?;
     // OWED (78.153b): `recall_cited` reads a whole era per missing parent
     // (the lock audit, row 15), unmetered.
     Ok(h.run(|k, _| k.admit_receipt(origin, verified, &receipt)))

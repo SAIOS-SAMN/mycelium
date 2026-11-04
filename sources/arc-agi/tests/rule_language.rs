@@ -9,7 +9,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use mycelium::client::sdk::rule::{
-    sentence, would_judge, Coord, Create, Extent, NoRule, Order, Paint, Pred, Region, Step, Stop, Tie, Unstated,
+    sentence, would_judge, Coord, Create, Extent, NoRule, Order, Paint, Pred, RegionKind, Step, Stop, Tie, Unstated,
 };
 use mycelium::cognition::{Court, SolveVerdict};
 use mycelium::transducer::element::Element;
@@ -73,13 +73,13 @@ fn solves(id: &str, steps: &[Step]) {
 /// 00d62c1b — every background region the shapes enclose is filled yellow.
 #[test]
 fn sentence_fills_enclosed_regions() {
-    solves("00d62c1b", &[Step::Select(Pred::All), Step::Region(Region::Interior), Step::Hue(vec![(0, 4)])]);
+    solves("00d62c1b", &[Step::Select(Pred::All), Step::Region(RegionKind::Interior), Step::Hue(vec![(0, 4)])]);
 }
 
 /// a5313dff — the same fill in blue, a body inside the enclosure on its rim.
 #[test]
 fn sentence_fills_enclosure_around_inner_body() {
-    solves("a5313dff", &[Step::Select(Pred::All), Step::Region(Region::Interior), Step::Hue(vec![(0, 1)])]);
+    solves("a5313dff", &[Step::Select(Pred::All), Step::Region(RegionKind::Interior), Step::Hue(vec![(0, 1)])]);
 }
 
 /// 178fcbfb — red seeds extend to the border, each along its column; blue and
@@ -249,7 +249,7 @@ fn sentence_fills_interior_by_frame_width() {
     let mut steps = Vec::new();
     for (w, hue) in [(5i64, 8u8), (7, 4), (9, 3)] {
         steps.push(Step::Select(Pred::count(Coord::Width, w)));
-        steps.push(Step::Region(Region::Interior));
+        steps.push(Step::Region(RegionKind::Interior));
         steps.push(Step::Hue(vec![(0, hue)]));
     }
     solves("00dbd492", &steps);

@@ -6,7 +6,7 @@
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::field::*;
 use crate::transducer::element;
-use crate::transducer::sentence::{Form, FormCell, Vertex};
+use crate::transducer::sentence::{Form, BodyContact, Vertex};
 use crate::transducer::stalk::Standing;
 
 /// A crystal offering one word on the axes it occupies, as the contemplation's
@@ -99,7 +99,7 @@ fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
         crate::transducer::cga::Mv::blade(crate::transducer::cga::E1, q(1)),
         crate::transducer::cga::Mv::blade(crate::transducer::cga::E2, q(1)),
     ];
-    f.cells.insert(vec![0xc], FormCell { bodies: vec![a, b], witnesses: Vec::new(), nuclei: Some(nuclei) });
+    f.cells.insert(vec![0xc], BodyContact { bodies: vec![a, b], witnesses: Vec::new(), nuclei: Some(nuclei) });
     f
 }
 

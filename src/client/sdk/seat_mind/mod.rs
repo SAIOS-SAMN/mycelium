@@ -54,14 +54,14 @@
 mod change;
 mod choice;
 mod mind;
-mod own;
 mod perceived;
+mod repertoire;
 mod series;
 pub mod task;
 
 pub use change::*;
 pub use choice::*;
 pub use mind::*;
-pub use own::*;
 pub use perceived::*;
+pub use repertoire::*;
 pub use series::*;

@@ -240,7 +240,7 @@ impl Form {
         // `versor_of_word`, one plane by construction (51.2) — so every
         // off-plane orbit lives here, and `Rank.offplane` is a lane that
         // could never be non-zero if these faces were dropped
-        // (`rank_counts_offplane_as_own_lane`).
+        // (`rank_counts_offplane_as_separate_lane`).
         //
         // The unnamed node is DISTINCT from every named one, so the two
         // sectors do not chain: a path carrying a body cannot step across

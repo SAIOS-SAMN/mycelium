@@ -29,7 +29,7 @@ impl Vertex {
         contact: Option<alphabet::Contact>,
     ) -> Vertex {
         let member = super::Acting { chart, carriage, gauge, frames: section_of_frames(frames) };
-        let mut acts: Keyed<super::Acting, coord::Section> = Keyed::new();
+        let mut acts: Keyed<super::Acting, coord::ChartCarriage> = Keyed::new();
         acts.put(&member.key(), member);
         // 54.2 — the vertex's address is its own coordinates, derived.
         let address = crate::transducer::sentence::word_vertex_address(&derivation, &acts, contact);
@@ -50,7 +50,7 @@ impl Vertex {
         frames: impl IntoIterator<Item = u64>,
     ) -> Vertex {
         let member = super::Acting { chart, carriage, gauge, frames: section_of_frames(frames) };
-        let mut acts: Keyed<super::Acting, coord::Section> = Keyed::new();
+        let mut acts: Keyed<super::Acting, coord::ChartCarriage> = Keyed::new();
         acts.put(&member.key(), member);
         Vertex::Rebased { by, class, acts }
     }
@@ -97,7 +97,7 @@ impl Vertex {
                 measure: *measure,
                 pieces: *pieces,
             },
-            v @ Vertex::Glued { .. } => coord::VertexAt::Glued(coord::Site(crate::transducer::sentence::vertex_bytes(v))),
+            v @ Vertex::Glued { .. } => coord::VertexAt::Glued(coord::GluedBoundary(crate::transducer::sentence::vertex_bytes(v))),
         })
     }
 
@@ -217,7 +217,7 @@ impl Vertex {
     /// reliably. Deleted, the compiler names all of them, exactly as
     /// `Keyed::fibre` taking a non-empty `Prefix` named the walk sites in X3.
     /// The type does the enumeration.
-    pub fn acts(&self) -> Option<&Keyed<super::Acting, coord::Section>> {
+    pub fn acts(&self) -> Option<&Keyed<super::Acting, coord::ChartCarriage>> {
         match self {
             // A REBASED VERTEX HAS THE SAME FIBRE SHAPE, with the relative in
             // place of the placement at each chart (D10). A reader that wants

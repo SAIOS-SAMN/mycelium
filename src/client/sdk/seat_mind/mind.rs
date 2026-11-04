@@ -1,7 +1,7 @@
 use super::change::{quantity, Change};
 use super::perceived::{Counsel, Dilation, Located, Perceived};
 use super::series::{Locator, Return, Series};
-use super::{Experience, Own};
+use super::{Experience, SeatFunction};
 use crate::anastome::dialogue::seat::{Arg, Outcome, Percept, Record};
 use crate::network::nerve::Keyed;
 use num_rational::BigRational as Q;
@@ -38,7 +38,7 @@ pub struct SeatMind {
     pub(crate) experience: Keyed<Experience>,
     pub(crate) pending: Option<PendingCall>,
     /// 78.148 — its own seat's functions as the listing names them (`own`).
-    pub(crate) repertoire: Vec<Own>,
+    pub(crate) repertoire: Vec<SeatFunction>,
     /// 78.148 — what each call, a function AT ITS ARGUMENTS, was seen to do
     /// (`own::call_key`). The mind calls only what it read here or was
     /// counselled — never a blind probe (a house's `handle`

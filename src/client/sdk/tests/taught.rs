@@ -30,7 +30,7 @@ fn transcribe_these_spells_taught_turn_as_word() {
     let theorem = Theorem::of(&s);
     let word = teaches(&s, &theorem).expect("the theorem teaches").clone();
     let period = match s.closure {
-        crate::transducer::sentence::compose::Closure::Closes(l) => l,
+        crate::transducer::sentence::compose::RingClosure::Closes(l) => l,
         _ => 1,
     };
     let (words, _) = e.transcribe_these(vec![Taught { motion: word, period }], &mut budget);

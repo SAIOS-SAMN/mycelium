@@ -723,7 +723,7 @@ pub(crate) fn interface_of(
 
 /// WHAT ONE READ OF THE OCCUPANCY NAMES: the faces, each contact on its
 /// pair, and the contact complex's certified cells.
-pub(crate) type SceneIncidence = (Vec<NamedFace>, crate::network::nerve::Keyed<crate::transducer::sentence::FormCell>);
+pub(crate) type SceneIncidence = (Vec<NamedFace>, crate::network::nerve::Keyed<crate::transducer::sentence::BodyContact>);
 
 /// THE FACES THE BUNDLE NAMES, each carrying its contacts, and the CONTACT
 /// COMPLEX'S CERTIFIED CELLS, read on the same pass (NB1): one reading of the
@@ -870,7 +870,7 @@ pub(crate) fn named_incidence(
     // keyed by the cells' bodies' pieces, framed, in the pieces' own order.
     let over = crate::transducer::cech::cells_over(
         standing.iter().map(|(element, bodies)| {
-            (crate::network::nerve::coord::Compartment { site: element.clone() }, bodies.as_slice())
+            (crate::network::nerve::coord::CoverSite { site: element.clone() }, bodies.as_slice())
         }),
         |m| address_of.get(m).cloned(),
         |members| {
@@ -889,7 +889,7 @@ pub(crate) fn named_incidence(
     // a projection that two bodies can share. A piece is small (C3); the
     // cell holds its bodies' pieces, and `cells_over` has already keyed and
     // ordered it by them (KB1), the constructors riding in the same order.
-    let mut cells: crate::network::nerve::Keyed<crate::transducer::sentence::FormCell> =
+    let mut cells: crate::network::nerve::Keyed<crate::transducer::sentence::BodyContact> =
         crate::network::nerve::Keyed::new();
     for c in over.cells {
         let mut key: Vec<u8> = Vec::new();
@@ -899,7 +899,7 @@ pub(crate) fn named_incidence(
         let nuclei: Option<Vec<crate::transducer::cga::Mv>> =
             c.members.iter().map(|&m| nucleus_of.get(m).cloned().flatten()).collect();
         let witnesses = c.witnesses.into_iter().map(|l| l.site).collect();
-        cells.insert(&key, crate::transducer::sentence::FormCell { bodies: c.coords, witnesses, nuclei });
+        cells.insert(&key, crate::transducer::sentence::BodyContact { bodies: c.coords, witnesses, nuclei });
     }
     let mut contacts: crate::network::nerve::Keyed<Gathered> = crate::network::nerve::Keyed::new();
     for crate::transducer::sentence::SharedCell { i, j, grade, .. } in

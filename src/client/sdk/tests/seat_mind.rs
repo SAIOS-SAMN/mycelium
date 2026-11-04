@@ -676,7 +676,7 @@ fn called_at_ten() -> SeatMind {
 /// perceived again, and the next beat, leave it standing; no beat stood
 /// whole between.
 #[test]
-fn pending_stands_through_its_own_beat() {
+fn pending_stands_through_beat() {
     let mut m = called_at_ten();
     assert_eq!(m.perceive(&percept(10, Arg::Count(10), vec![])).abandoned, None);
     assert_eq!(m.perceive(&percept(11, Arg::Count(11), vec![])).abandoned, None);

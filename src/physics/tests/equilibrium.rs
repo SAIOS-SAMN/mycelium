@@ -6,7 +6,7 @@
 
 use crate::physics::equilibrium::{
     barycentre, carried, coherence, consolidate, coupling, equilibrium, external_torque, force, hour, inversive,
-    metric_defect, momentum, net_torque, rigid, spin_of, stability, succession, torque, Body, Constellation, Frame, Stability,
+    metric_defect, momentum, net_torque, rigid, spin_of, stability, succession, torque, BodyMoments, Constellation, PosedNucleus, Stability,
     Refusal, Star,
 };
 use crate::transducer::cga::{rotator, rotator_on_blade, sphere_at, translator_at, Mv, E1, E3};
@@ -26,8 +26,8 @@ fn turn() -> Mv {
 }
 
 /// A unit sphere at `c`, posed by `pose`.
-fn frame(c: [i64; 3], pose: Mv) -> Frame {
-    Frame { nucleus: sphere_at(&c.map(|x| q(x, 1)), &q(1, 1)), pose }
+fn frame(c: [i64; 3], pose: Mv) -> PosedNucleus {
+    PosedNucleus { nucleus: sphere_at(&c.map(|x| q(x, 1)), &q(1, 1)), pose }
 }
 
 fn one() -> Mv {
@@ -117,7 +117,7 @@ fn succession_closes_hours_after_turn_period() {
     }
     assert!(power.projective_eq(&one()), "the hours close after four");
     let s = frame([1, 0, 0], one()).nucleus;
-    let hours: Vec<Frame> = (0..4).map(|m| hour(&s, &r, m)).collect();
+    let hours: Vec<PosedNucleus> = (0..4).map(|m| hour(&s, &r, m)).collect();
     for (i, a) in hours.iter().enumerate() {
         for b in hours.iter().skip(i + 1) {
             assert!(!a.nucleus.geo(&b.nucleus).grade(2).is_zero(), "each hour its own nucleus");
@@ -150,7 +150,7 @@ fn equilibrium_balances_about_centroid_not_origin() {
     let r = succession(&turn(), &at([1, 0, 0])).expect("the turn winds");
     let unit = frame([1, 0, 0], one()).nucleus;
     assert!(hour(&unit, &r, 2).nucleus.projective_eq(&unit), "the unit sphere is the torus's pole");
-    let frames: Vec<Frame> = (0..3).map(|m| hour(&s, &r, m)).collect();
+    let frames: Vec<PosedNucleus> = (0..3).map(|m| hour(&s, &r, m)).collect();
     let own = Constellation { frames: frames.clone(), generator: r };
     assert_eq!(equilibrium(&own), Ok(()), "about its own centroid it balances");
     assert!(net_torque(&own).is_zero(), "no torque");
@@ -167,7 +167,7 @@ fn equilibrium_balances_synchronous_binary() {
     assert_eq!(star.centre, at([0, 0, 0]));
     let r = succession(&turn(), &star.centre).expect("the turn winds");
     let bodies = [frame([1, 0, 0], one()).nucleus, frame([-1, 0, 0], one()).nucleus];
-    let frames: Vec<Frame> = (0..2).flat_map(|m| bodies.iter().map(move |s| (s.clone(), m))).map(|(s, m)| hour(&s, &r, m)).collect();
+    let frames: Vec<PosedNucleus> = (0..2).flat_map(|m| bodies.iter().map(move |s| (s.clone(), m))).map(|(s, m)| hour(&s, &r, m)).collect();
     let binary = Constellation { frames, generator: r };
     assert_eq!(equilibrium(&binary), Ok(()), "the attitudes balance");
     let moved: Vec<(Mv, Mv)> = bodies.iter().map(|s| (s.clone(), turn().sandwich(s))).collect();
@@ -204,8 +204,8 @@ fn coherence_closes_only_at_zero_defect() {
     let s = |x: i64| frame([x, 0, 0], one()).nucleus;
     defect.metric.extend(metric_defect(&[(s(1), s(2)), (s(-1), s(-2))]));
     let d = |a: i64, b: i64| vec![vec![q(a, 1), zero()], vec![zero(), q(b, 1)]];
-    let before = Body { centre: vec![q(1, 1), zero()], mass: q(4, 1), moments: d(2, 1) };
-    let grown = Body { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(3, 1) };
+    let before = BodyMoments { centre: vec![q(1, 1), zero()], mass: q(4, 1), moments: d(2, 1) };
+    let grown = BodyMoments { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(3, 1) };
     let g = rotator(&q(1, 1), &q(1, 1));
     defect.momentum.extend(external_torque(&before, &grown, &g).filter(|t| !t.is_zero()));
     assert_eq!(
@@ -218,11 +218,11 @@ fn coherence_closes_only_at_zero_defect() {
     let star = barycentre(&[(at([1, 0, 0]), q(1, 1)), (at([-1, 0, 0]), q(1, 1))]).expect("the barycentre");
     let r = succession(&turn(), &star.centre).expect("the turn winds");
     let bodies = [frame([1, 0, 0], one()).nucleus, frame([-1, 0, 0], one()).nucleus];
-    let frames: Vec<Frame> = (0..2).flat_map(|m| bodies.iter().map(move |s| (s.clone(), m))).map(|(s, m)| hour(&s, &r, m)).collect();
+    let frames: Vec<PosedNucleus> = (0..2).flat_map(|m| bodies.iter().map(move |s| (s.clone(), m))).map(|(s, m)| hour(&s, &r, m)).collect();
     let binary = Constellation { frames, generator: r };
     let mut closed = coherence(&binary, &binary, &mut budget()).expect("the binary stands");
     closed.metric.extend(metric_defect(&bodies.iter().map(|s| (s.clone(), turn().sandwich(s))).collect::<Vec<_>>()));
-    let after = Body { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(1, 2) };
+    let after = BodyMoments { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(1, 2) };
     closed.momentum.extend(external_torque(&before, &after, &g).filter(|t| !t.is_zero()));
     assert!(closed.closes(), "every component zero, exactly: the constellation locks: {closed:?}");
 }
@@ -235,12 +235,12 @@ fn coherence_closes_only_at_zero_defect() {
 #[test]
 fn external_torque_is_zero_only_on_unforced_orbit() {
     let d = |a: i64, b: i64| vec![vec![q(a, 1), zero()], vec![zero(), q(b, 1)]];
-    let before = Body { centre: vec![q(1, 1), zero()], mass: q(4, 1), moments: d(2, 1) };
-    let after = Body { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(1, 2) };
+    let before = BodyMoments { centre: vec![q(1, 1), zero()], mass: q(4, 1), moments: d(2, 1) };
+    let after = BodyMoments { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(1, 2) };
     let g = rotator(&q(1, 1), &q(1, 1));
     assert!(!momentum(&before, &g.grade(2)).expect("the body's axes are the algebra's").is_zero(), "the body has momentum");
     assert!(external_torque(&before, &after, &g).is_some_and(|t| t.is_zero()), "the orbit carries it");
-    let grown = Body { moments: d(3, 1), ..after };
+    let grown = BodyMoments { moments: d(3, 1), ..after };
     assert!(external_torque(&before, &grown, &g).is_some_and(|t| !t.is_zero()), "a grown body leaves an external torque");
 }
 

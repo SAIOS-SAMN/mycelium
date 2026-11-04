@@ -149,7 +149,7 @@ pub fn callus_form(
     if charts.is_empty() {
         return None;
     }
-    let mut acts: Keyed<Acting, crate::network::nerve::coord::Section> = Keyed::new();
+    let mut acts: Keyed<Acting, crate::network::nerve::coord::ChartCarriage> = Keyed::new();
     for chart in charts {
         // A callus names no body either: its members stand at no frame.
         let member = Acting {
@@ -381,7 +381,7 @@ pub(crate) fn held_form(
 /// The tape hid this completely. A taped form carried its own filing, so
 /// `decode → regauge → as_element_form` round-tripped the attestation by
 /// accident; the moment the decoder read the address the accident stopped.
-/// `germinate::stroke`'s re-anchor is the live site.
+/// `listings::stroke`'s re-anchor is the live site.
 ///
 /// WHY THE FILING SURVIVES THE MOVE, which is a theorem and not a
 /// convenience. A re-gauge conjugates: §3.6 rewrites every face word as

@@ -11,8 +11,8 @@ pub(super) fn budget() -> crate::physics::Budget {
 }
 
 /// A body at `centre` with a second moment on its first axis.
-pub(super) fn body(centre: [i64; 3]) -> Body {
-    Body {
+pub(super) fn body(centre: [i64; 3]) -> BodyMoments {
+    BodyMoments {
         centre: centre.iter().map(|&c| q(c)).collect(),
         mass: q(1),
         moments: vec![vec![q(1), q(0), q(0)], vec![q(0), q(0), q(0)], vec![q(0), q(0), q(0)]],

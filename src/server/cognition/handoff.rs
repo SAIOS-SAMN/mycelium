@@ -19,7 +19,7 @@ use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, t
 /// ONE HANDOFF HELD: its offer, the height it sealed at, where it stands,
 /// and the stamp key of the fold that consumed each side, where one has.
 #[derive(Clone, Debug)]
-pub(crate) struct Held {
+pub(crate) struct HandoffRecord {
     pub(crate) offer: Offer,
     pub(crate) sealed: u64,
     pub(crate) state: State,
@@ -31,7 +31,7 @@ pub(crate) struct Held {
 #[derive(Default)]
 pub(crate) struct Handoffs {
     /// Each handoff by its id.
-    pub(crate) held: Keyed<Held>,
+    pub(crate) held: Keyed<HandoffRecord>,
     /// Each fold that consumed sides, by its stamp key: the sides — what a
     /// replay reads and a reversal un-consumes.
     pub(crate) consumed_by: Keyed<Vec<([u8; 32], Side)>>,
@@ -60,7 +60,7 @@ pub(crate) fn toll_key(id: &[u8; 32]) -> Vec<u8> {
 
 /// The nets a side carries into its consuming fold: OUT, what leaves; IN
 /// accepted, what arrives; IN returned, what left, come back.
-fn side_nets(h: &Held, side: Side) -> Vec<Net> {
+fn side_nets(h: &HandoffRecord, side: Side) -> Vec<Net> {
     match (side, h.state) {
         (Side::Out, _) => h.offer.out_nets.clone(),
         (Side::In, State::Accepted) => h.offer.in_nets.clone(),
@@ -246,7 +246,7 @@ impl Handoffs {
                 }
             };
             let (o, i) = (side()?, side()?);
-            out.held.insert(key, Held { offer, sealed, state, out: o, inn: i });
+            out.held.insert(key, HandoffRecord { offer, sealed, state, out: o, inn: i });
         }
         for _ in 0..take_key_count(b, p)? {
             let k = take_key_bytes(b, p)?;
@@ -467,7 +467,7 @@ impl Court {
         let now = match (state, &h.handoff) {
             (None, Handoff::Offer(o) | Handoff::Traverse { offer: o, .. }) => {
                 let opened = r.stamp.h;
-                let held = Held { offer: o.as_ref().clone(), sealed: r.stamp.h, state: State::Offered { opened }, out: None, inn: None };
+                let held = HandoffRecord { offer: o.as_ref().clone(), sealed: r.stamp.h, state: State::Offered { opened }, out: None, inn: None };
                 self.handoffs.held.insert(id, held);
                 self.handoffs.offered_at.insert(id, r.stamp.key());
                 if let Handoff::Traverse { mouth, .. } = &h.handoff {

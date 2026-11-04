@@ -25,7 +25,7 @@ impl Form {
     /// does not — `holonomy_words_on`, the same carrier the filer reads.
     ///
     /// THIS RETURNED `lp.holonomy` AND IT IS THE COURT'S METABOLISM THAT READ
-    /// IT. `germinate/listing.rs` charges the physics off this: an orbit of
+    /// IT. `listings/listing.rs` charges the physics off this: an orbit of
     /// FINITE order raises pressure by its period, and an orbit of INFINITE
     /// order charges TORSION — "what will not close". A face's word is the
     /// coboundary `w_j ∘ w_i⁻¹` and a product of coboundaries around a cycle
@@ -302,14 +302,14 @@ impl Acting {
     /// ask THIS function for the carrier's key, which is the same
     /// one-writer rule that took `NerveEdge::host` off its second writer.
     ///
-    /// 54.7 R5 — THE SECTION IS IN THE TYPE. A section key opens with
-    /// `TAG_CHART`, exactly as a chart key does, so no byte check separates
-    /// them and eight readers asked `by_class` — a CHART index — with one
-    /// of these and got nothing back. `coord::Section` and `coord::Chart`
-    /// are different types over the same tag, which is the only place that
-    /// distinction can live.
-    pub fn key(&self) -> coord::Section {
-        coord::Section { chart: self.chart.clone(), carriage: (*self.carriage).clone() }
+    /// 54.7 R5 — THE CHART CARRIAGE IS IN THE TYPE. A chart-carriage key
+    /// opens with `TAG_CHART`, exactly as a chart key does, so no byte check
+    /// separates them and eight readers asked `by_class` — a CHART index —
+    /// with one of these and got nothing back. `coord::ChartCarriage` and
+    /// `coord::Chart` are different types over the same tag, which is the
+    /// only place that distinction can live.
+    pub fn key(&self) -> coord::ChartCarriage {
+        coord::ChartCarriage { chart: self.chart.clone(), carriage: (*self.carriage).clone() }
     }
 
     /// The prefix every section over `chart` shares — the coarser stratum
@@ -358,7 +358,7 @@ pub enum Vertex {
         /// at the body's own chart: a keyed read, never a search, and a
         /// body on a chart this rule has never seen finds no member and is
         /// honestly unspoken.
-        acts: Keyed<Acting, coord::Section>,
+        acts: Keyed<Acting, coord::ChartCarriage>,
         /// Stop ring. A form coordinate with the carriage and gauge; not M1.
         contact: Option<alphabet::Contact>,
     },
@@ -443,7 +443,7 @@ pub enum Vertex {
         /// `by` stands at ONE chart — `Form::rebase` refuses otherwise — because
         /// `t` is measured against one member of the base and a fibre keyed by
         /// `of`'s chart has no room to say which.
-        acts: Keyed<Acting, coord::Section>,
+        acts: Keyed<Acting, coord::ChartCarriage>,
     },
     Unfolded { measure: Measure },
     /// 50.5: what the speaker could not spell or the eyes could not pair,
@@ -765,7 +765,7 @@ impl Orbit {
 /// It carries no transport: that is deposited by the circuit that closes on
 /// it (`Complex::ascend`), in the circuit's own order (NB1 choice (b)).
 #[derive(Debug, Clone)]
-pub struct FormCell {
+pub struct BodyContact {
     pub bodies: Vec<Vec<u8>>,
     pub witnesses: Vec<crate::transducer::base::Site>,
     /// CS1 — THE CELL'S CONSTRUCTORS: its bodies' nuclei, in the bodies'
@@ -774,7 +774,7 @@ pub struct FormCell {
     pub nuclei: Option<Vec<crate::transducer::cga::Mv>>,
 }
 
-impl FormCell {
+impl BodyContact {
     /// `k + 1` bodies make a `k`-cell; a cell is minted over two or more.
     pub fn grade(&self) -> usize {
         self.bodies.len() - 1
@@ -948,8 +948,8 @@ pub struct Form {
     pub carriages: Keyed<Versor>,
     /// NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS, keyed by the cells' bodies'
     /// pieces written inline, each framed: one per standing set, read by
-    /// perception and held in memory only (see [`FormCell`]).
-    pub cells: Keyed<FormCell>,
+    /// perception and held in memory only (see [`BodyContact`]).
+    pub cells: Keyed<BodyContact>,
     /// BD2 — THE BODY PAIR EACH CONTACT FACE RUNS BETWEEN, by its overlap:
     /// the two bodies' pieces in the overlap's orientation, the body at its
     /// leaving end first. `FormFace` carries no body, so a circuit's step

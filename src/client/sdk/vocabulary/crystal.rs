@@ -141,7 +141,7 @@ impl crate::transducer::family::Crystal for Epigenome {
         &self,
         motion: &crate::transducer::cga::Mv,
         gauge: &[(u8, u8)],
-    ) -> Option<crate::transducer::sentence::presentation::Reading> {
+    ) -> Option<crate::transducer::sentence::presentation::WordCitations> {
         self.vocabulary.read().read_word(motion, gauge, true)
     }
 

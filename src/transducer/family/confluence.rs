@@ -219,11 +219,11 @@ pub fn read_pair(x: &Grid, y: &Grid, remainder: &[(i64, i64, u8, u8)], budget: &
         let closes = match nuclei {
             None => Closes::Unread,
             Some(ns) => match crate::transducer::cech::read_coxeter(&ns, &[], budget).closure {
-                crate::transducer::cech::Closure::Finite { .. } => Closes::Finite,
-                crate::transducer::cech::Closure::Infinite(crate::transducer::cech::Refusal::Affine(_)) => Closes::Affine,
-                crate::transducer::cech::Closure::Infinite(_) => Closes::Fluid,
-                crate::transducer::cech::Closure::Unbounded { .. } => Closes::Unbounded,
-                crate::transducer::cech::Closure::Unread => Closes::Unread,
+                crate::transducer::cech::GroupClosure::Finite { .. } => Closes::Finite,
+                crate::transducer::cech::GroupClosure::Infinite(crate::transducer::cech::Refusal::Affine(_)) => Closes::Affine,
+                crate::transducer::cech::GroupClosure::Infinite(_) => Closes::Fluid,
+                crate::transducer::cech::GroupClosure::Unbounded { .. } => Closes::Unbounded,
+                crate::transducer::cech::GroupClosure::Unread => Closes::Unread,
             },
         };
         read.confluences.push(Confluence {

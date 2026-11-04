@@ -18,7 +18,7 @@ use crate::chronometry::Place;
 use crate::cognition::{Court, RootAdoption};
 use crate::court::admission::Admitted;
 use crate::observe::{note_replication, replication, set_replication};
-use crate::server::held::held;
+use crate::server::court_lock::held;
 use std::sync::Mutex;
 
 /// 78.147 — WHAT A PAGE IS ASKED AS: a catch-up, which a court answers below
@@ -32,7 +32,7 @@ pub enum Ask {
 
 /// This node's own `(H_genesis, E_origin)`, which a fold root's home
 /// signature is verified at; `None` before it adopted one.
-pub type Origin = Option<([u8; 32], u32)>;
+pub type AdoptedOrigin = Option<([u8; 32], u32)>;
 
 /// WHAT ONE PASS OF THE CHASE DID: whether it admitted anything (the
 /// caller re-admits the reporting frame on that) and whether the chain
@@ -107,7 +107,7 @@ fn prove_folded(
 /// 78.147 — A ROOT ANSWERED FOR A CATCH-UP, adopted on its two signatures
 /// at this node's origin: whether the line now stands on it. A root no
 /// origin can verify is refused and counted, never silent.
-fn adopt(court: &Mutex<Court>, origin: Origin, proof: &crate::anastome::dialogue::RootProof) -> bool {
+fn adopt(court: &Mutex<Court>, origin: AdoptedOrigin, proof: &crate::anastome::dialogue::RootProof) -> bool {
     let Some(origin) = origin else {
         note_replication(Some(proof.signer), replication::ROOT_REFUSED, 1);
         return false;
@@ -139,7 +139,7 @@ fn adopt(court: &Mutex<Court>, origin: Origin, proof: &crate::anastome::dialogue
 /// below a root this court holds is asked again (`known_head` reads it).
 pub fn chase(
     court: &Mutex<Court>,
-    origin: Origin,
+    origin: AdoptedOrigin,
     signer: [u8; 32],
     to: Place,
     budget: &mut crate::physics::Budget,
@@ -290,7 +290,7 @@ pub fn chase(
 /// advances this court's height (45.2).
 pub fn hear<E>(
     court: &Mutex<Court>,
-    origin: Origin,
+    origin: AdoptedOrigin,
     mut admit: impl FnMut() -> Result<Admitted, E>,
     mut stroke: impl FnMut() -> Option<crate::physics::Budget>,
     mut fetch: impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer>,

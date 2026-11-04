@@ -63,7 +63,7 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
 /// ABSORB IS THE WHOLE OF THE SOURCE, by the meaning of the word: two
 /// wells merging carry every entry of each other's carriers across, and
 /// an entry left behind is a fact the merged well has lost.
-pub(crate) fn absorb_keyed<V: Clone, C: crate::network::nerve::Coordinate>(
+pub(crate) fn merge_keyed<V: Clone, C: crate::network::nerve::Coordinate>(
     dst: &mut Keyed<V, C>,
     src: &Keyed<V, C>,
 ) {
@@ -75,13 +75,13 @@ pub(crate) fn absorb_keyed<V: Clone, C: crate::network::nerve::Coordinate>(
     }
 }
 
-pub(crate) fn absorb_vortex(
+pub(crate) fn merge_vortex(
     dst: &mut Keyed<Keyed<sentence::PivotCertificate>>,
     src: &Keyed<Keyed<sentence::PivotCertificate>>,
 ) {
     for (after, inner) in src.scoped() {
         match dst.get_mut(&after) {
-            Some(d) => absorb_keyed(d, inner),
+            Some(d) => merge_keyed(d, inner),
             None => {
                 dst.insert(after, inner.clone());
             }
@@ -389,12 +389,12 @@ impl Contemplation {
             self.unheld.remove(v);
             self.retract_incidence(v, &b);
             remainder = union_rem(&remainder, &b.remainder);
-            absorb_keyed(&mut cover, &b.cover);
-            absorb_keyed(&mut horizon, &b.horizon);
-            absorb_keyed(&mut torsion, &b.torsion);
-            absorb_keyed(&mut certificates, &b.certificates);
-            absorb_vortex(&mut vortex, &b.vortex);
-            absorb_keyed(&mut remainders, &b.remainders);
+            merge_keyed(&mut cover, &b.cover);
+            merge_keyed(&mut horizon, &b.horizon);
+            merge_keyed(&mut torsion, &b.torsion);
+            merge_keyed(&mut certificates, &b.certificates);
+            merge_vortex(&mut vortex, &b.vortex);
+            merge_keyed(&mut remainders, &b.remainders);
             // 78.52(6) Stage C — THE FIRST-ARRIVAL FORM IS PURGED: a thought
             // is not the form of whichever perception came first. It holds
             // its ground, adopted below, and is filed by it.

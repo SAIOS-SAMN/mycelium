@@ -797,9 +797,9 @@ impl Segment for HueCycle {
 /// the one reader of that layout: its `n`, then one coefficient per slot of
 /// that algebra. The segment restated it and read the old widths once the
 /// value's spelling moved (ruled (a)).
-struct Carriage;
+struct CarriageSegment;
 
-impl Segment for Carriage {
+impl Segment for CarriageSegment {
     fn name(&self) -> &'static str {
         "carriage"
     }
@@ -834,7 +834,7 @@ impl Segment for Placement {
 static CONJUGACY: Conjugacy = Conjugacy;
 static PLANE_SECTION: PlaneSection = PlaneSection;
 static HUE_CYCLE: HueCycle = HueCycle;
-static CARRIAGE: Carriage = Carriage;
+static CARRIAGE: CarriageSegment = CarriageSegment;
 static PLACEMENT: Placement = Placement;
 
 static CLASS_SEGMENTS: [&dyn Segment; 5] =

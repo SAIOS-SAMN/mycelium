@@ -423,7 +423,7 @@ impl Epigenome {
             v
         };
         crate::transducer::sentence::deconstruct_on(
-            &crate::transducer::sentence::Reading {
+            &crate::transducer::sentence::Lookups {
                 word_at: &word_at,
                 fibre_of: &fibre_of,
                 shape_at: &shape_at,

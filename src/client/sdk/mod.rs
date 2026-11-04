@@ -24,7 +24,7 @@ pub mod working_atlas;
 pub use aperture::*;
 pub use comprehension::*;
 pub use concluded::*;
-pub use mind::body::Sitting;
+pub use mind::seating::Sitting;
 pub use mind::boot::GenomeReading;
 /// The names a court task's reading is coded by, for the observer's typed
 /// reading (`observe::TaskSeen`).
@@ -43,7 +43,7 @@ pub use working_atlas::*;
 
 use crate::anastome::dialogue;
 use crate::transducer::family::Grid;
-use crate::network::wire::{Frame, Stratum};
+use crate::network::wire::{Lane, WireFrame};
 use crate::transducer::element::Element;
 use std::cell::RefCell;
 use std::io::{self, Read, Write};

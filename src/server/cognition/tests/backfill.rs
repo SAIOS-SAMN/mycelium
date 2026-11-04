@@ -7,7 +7,7 @@ use crate::cognition::*;
 use crate::observe::replication;
 
 /// The origin every fixture frame is signed at.
-const ORIGIN: crate::server::backfill::Origin = Some(([7; 32], 2));
+const ORIGIN: crate::server::backfill::AdoptedOrigin = Some(([7; 32], 2));
 
 /// b's head receipt and the prefix a digest signs for it — the frame a
 /// digest carries, verified at the call under b's key.

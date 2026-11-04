@@ -12,14 +12,14 @@ use mycelium::anastome::dialogue;
 use mycelium::cognition::Court;
 use mycelium::economy::Mu;
 use mycelium::network::nerve::{home, Keyed};
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 use std::sync::Mutex;
 
 
 /// Control acts that used to run on the accept thread. The listener never
 /// holds the court lock; these run on a reflex worker.
-pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context) -> bool {
+pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Context) -> bool {
     let Some((&kind, _rest)) = frame.body.split_first() else { return false };
     if kind == dialogue::ACT_ROOT {
         let Some((from, task, solver, spoken_at)) = dialogue::decode_root(&frame.body) else { return true };
@@ -27,12 +27,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
         // names it by): a task's content address is never framed, routed or
         // indexed here. A root naming it any other way is not heard.
         let Ok(task) = <[u8; 32]>::try_from(task.as_bytes()) else {
-            answer(s, Frame { lane: frame.lane, body: Vec::new() });
+            answer(s, WireFrame { lane: frame.lane, body: Vec::new() });
             return true;
         };
         // A poisoned router lock knows no peer; the root is not heard.
         if !context.router.lock().is_ok_and(|r| r.knows(&from)) {
-            answer(s, Frame { lane: frame.lane, body: Vec::new() });
+            answer(s, WireFrame { lane: frame.lane, body: Vec::new() });
             return true;
         }
         let hear = {
@@ -80,13 +80,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
                 spoken_at,
             )
         };
-        answer(s, Frame { lane: frame.lane, body: reply });
+        answer(s, WireFrame { lane: frame.lane, body: reply });
         return true;
     }
     if kind == dialogue::ACT_EVIDENCE {
         if let Some((_dvoice, items)) = dialogue::decode_evidence_deposit(&frame.body) {
             let accepted = {
-                let Ok(mut h) = crate::held::held!(context.court) else { return true };
+                let Ok(mut h) = crate::court_lock::held!(context.court) else { return true };
                 // Bounded by the deposit's own items, which the frame bounds.
                 h.run(|k, _| {
                     items
@@ -102,7 +102,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
                 eprintln!("  evidence refused: {accepted} accepted does not fit the reply");
                 return true;
             };
-            let reply = Frame { lane: frame.lane, body: vec![accepted] };
+            let reply = WireFrame { lane: frame.lane, body: vec![accepted] };
             answer(s, reply);
             return true;
         }
@@ -111,7 +111,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
         // stroke an item; an item no frame carries is refused by name and
         // the page ends before it, never past it.
         let (items, end): (Vec<_>, _) = {
-            let Ok(mut h) = crate::held::held!(context.court) else { return true };
+            let Ok(mut h) = crate::court_lock::held!(context.court) else { return true };
             h.run(|k, reads| {
                 let store = k.anchor_evidence();
                 let (m, end) = dialogue::evidence_page(store, mycelium::network::wire::frame_budget(), reads);
@@ -127,7 +127,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
             eprintln!("  evidence reply refused: an address cannot be framed");
             return true;
         };
-        answer(s, Frame { lane: frame.lane, body });
+        answer(s, WireFrame { lane: frame.lane, body });
         return true;
     }
     if kind == dialogue::ACT_TASK {
@@ -188,7 +188,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
             }
             (None, None) => return true,
         };
-        let reply = Frame { lane: frame.lane, body };
+        let reply = WireFrame { lane: frame.lane, body };
         answer(s, reply);
         return true;
     }
@@ -247,7 +247,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
         // at all where every one of them stopped here.
         use mycelium::observe::Judged;
         let rule_carried = rule.is_some();
-        let pre: Option<Judged> = match crate::held::held!(context.court) {
+        let pre: Option<Judged> = match crate::court_lock::held!(context.court) {
             Ok(mut h) => h.run(|k, _| {
                 if signed && k.inner_seat(&svoice) {
                     k.note_judged(Judged::InnerSeat);
@@ -308,7 +308,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
             }
             (None, Some(first), Some(rule), Some(Ok(ground))) => {
                 let (verdict, offers) = {
-                    let Ok(mut h) = crate::held::held!(context.court) else { return true };
+                    let Ok(mut h) = crate::court_lock::held!(context.court) else { return true };
                     // OWED (78.153b): the solve's replay mints its own stroke
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
@@ -364,7 +364,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
             // PAID, THEN RECORDED: the closure enters the registry after its
             // payment, so none is lost between the two.
             if let Ok(mut reg) = context.registry.lock() {
-                if reg.close(&tid) == Some(mycelium::registry::Closure::First) {
+                if reg.close(&tid) == Some(mycelium::registry::ClosureOrder::First) {
                     if let Some(snap) = reg.snapshot() {
                         write_beside(&context.state_path, "registry", &snap);
                     }
@@ -408,7 +408,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
             Some(b) => b,
             None => dialogue::encode_solve_receipt(code, &mu),
         };
-        let reply = Frame { lane: frame.lane, body };
+        let reply = WireFrame { lane: frame.lane, body };
         answer(s, reply);
         return true;
     }
@@ -428,7 +428,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
                 }
             }
             match dialogue::encode_peers_reply(&nerve_addrs) {
-                Some(body) => answer(s, Frame { lane: frame.lane, body }),
+                Some(body) => answer(s, WireFrame { lane: frame.lane, body }),
                 None => eprintln!("  peers reply refused: an address or the count passes its u16"),
             }
         }
@@ -464,7 +464,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
                 eprintln!("  cover page refused: the bind does not fit its length");
                 return true;
             };
-            answer(s, Frame { lane: frame.lane, body });
+            answer(s, WireFrame { lane: frame.lane, body });
         }
         return true;
     }
@@ -485,7 +485,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
             })
             // A word whose tape does not parse queues nothing.
             .is_some_and(|q| q);
-        answer(s, Frame { lane: frame.lane, body: vec![queued as u8] });
+        answer(s, WireFrame { lane: frame.lane, body: vec![queued as u8] });
         return true;
     }
     if kind == dialogue::ACT_SYLLABUS {
@@ -507,7 +507,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
         // sealed as a Syllabus act and carries that stamp. Nothing is sealed
         // for a word that is not sent.
         let (page, classes) = {
-            let Ok(mut h) = crate::held::held!(context.court) else { return true };
+            let Ok(mut h) = crate::court_lock::held!(context.court) else { return true };
             // The page is bounded by the window (one wire count); the whole
             // nerve's class records on the hold's stroke, resumed page to
             // page past the chart the last reading stopped at (78.153b).
@@ -559,7 +559,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context)
             eprintln!("  syllabus refused: the class records cannot be framed");
             return true;
         }
-        let reply = Frame { lane: frame.lane, body };
+        let reply = WireFrame { lane: frame.lane, body };
         answer(s, reply);
         return true;
     }
@@ -632,7 +632,7 @@ pub(crate) fn list_task(
     // bound under those 32 bytes, once. The registry hands the citation; the
     // task's content address is never formed here.
     let tid = &walked.citation[..];
-    if let Ok(mut h) = crate::held::held!(court) {
+    if let Ok(mut h) = crate::court_lock::held!(court) {
         h.run(|k, _| k.bind_task_family(tid, walked.task.train.clone()));
     }
     for route in walked.routes.iter() {
@@ -642,8 +642,8 @@ pub(crate) fn list_task(
         // court once per listing for minutes after every restart and headed
         // the lock on all three hyphae (2026-10-09), deferring seats and
         // wallets behind it.
-        crate::held::yield_to_waiters();
-        let mut h = match crate::held::held!(court) {
+        crate::court_lock::yield_to_waiters();
+        let mut h = match crate::court_lock::held!(court) {
             Ok(g) => g,
             Err(_) => continue,
         };

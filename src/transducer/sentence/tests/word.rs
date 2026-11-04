@@ -19,7 +19,7 @@ fn quarter() -> Mv {
 /// each read off the word's own hole, and each word of one mode reads as that
 /// one mode-word, itself.
 #[test]
-fn read_files_each_mode_under_own_law() {
+fn read_files_each_mode_under_mode_law() {
     let laws = |m: &Mv| read(m).expect("its coordinates read").modes.iter().map(|w| w.law).collect::<Vec<_>>();
     assert_eq!(laws(&quarter()), vec![Law::Periodic], "a 90° turn returns at 4");
     assert_eq!(laws(&cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)])), vec![Law::Nilpotent], "a slide: one null motion per traversal");

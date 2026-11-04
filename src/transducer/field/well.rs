@@ -17,7 +17,7 @@ pub type SectionAt<'a> = &'a dyn Fn(&[u8]) -> Option<(Rotor, crate::transducer::
 /// speaks there, and the carriage it speaks it by. The chart is a
 /// coordinate, which is what lets the cover be READ rather than searched
 /// for.
-pub type Held = (Invariant, Rotor, crate::transducer::element::Versor);
+pub type SpokenSection = (Invariant, Rotor, crate::transducer::element::Versor);
 
 /// 78.37 — ONE DEMAND OF CS2's ARM: the undischarged orbit's class, the
 /// charts it stands on, and (78.47) its residue, where it read.
@@ -326,7 +326,7 @@ pub(crate) type Connection = (Invariant, Vec<Rotor>, Vec<(u8, u8)>);
 /// so the succession is the carrier's own walk and nothing is sorted into
 /// it (rule 4).
 ///
-/// The whole `Carriage` is kept: the rotor the monodromy conjugates by AND
+/// The whole `BodyTransport` is kept: the rotor the monodromy conjugates by AND
 /// the hue map it carries, composed around the cycle. A transport the
 /// seventeen do not spell names no rotor and contributes none; nothing is
 /// stood in for a connection that was not read (rule 11).
@@ -496,7 +496,7 @@ impl Well {
     /// have none. It is wrong for the cover: a form that speaks several
     /// rotors has several sections, and a reader that asks for one and
     /// takes the absence drops exactly the multi-section forms.
-    pub(crate) fn sections(&self) -> Keyed<Held> {
+    pub(crate) fn sections(&self) -> Keyed<SpokenSection> {
         let mut out = Keyed::new();
         let Some(f) = self.form.as_ref() else {
             return out;

@@ -45,7 +45,7 @@ rest fall into six classes.
 | 3. External standard | fixed by a published standard or a governing rule outside the physics | ~12 | §9 |
 | 4. Measured | read at run time off the host or the running system | 3 statics + 6 functions | D2.5–D2.7, D4.1 |
 | 5. Underived parameter | a chosen number standing where a reading belongs | ~11 consts + ~12 literal sites | §3–§6 |
-| 6. Derivation specified, not built | a governing document states the derivation; the code still holds the number | 2: `CHALLENGE_WINDOW` (D1.1), `THROAT_GRID` (D1.2); the slash and bounty halves (D2.1, D2.2) are **Built** | §3–§6 |
+| 6. Derivation specified, not built | a governing document states the derivation; the code still holds the number | 2: `CHALLENGE_WINDOW` (D1.1), `THROAT_LEVEL_BITS` (D1.2); the slash and bounty halves (D2.1, D2.2) are **Built** | §3–§6 |
 
 Classes 1–3 need no derivation (§9), but each carries a class tag the
 gate reads (D1.4). Class 4 numbers are readings, and the entries for them
@@ -128,7 +128,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | Id | Constant | Site | Governs | Sev. | Derivation in one line | Open | Size | Track |
 |---|---|---|---|---|---|---|---|---|
 | D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws/mod.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations (**Built** 2026-10-31, law version 5; O1 ruled every keeper) | yes | L | 22, 20 |
-| D1.2 | `THROAT_GRID = 64` | `server/cognition/domain_passage.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet (**Built** 2026-10-31); Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
+| D1.2 | `THROAT_LEVEL_BITS = 64` | `server/cognition/domain_passage.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet (**Built** 2026-10-31); Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
 | D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page (**Built** 2026-10-31: the defect fixed, every envelope its codec's header; O1 read (b): REGISTERED, served on `ACT_LAWS` mode 5) | yes | S/M | 5, 14 |
 | D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) (**Built** 2026-10-31: N1–N5 enforced, N6 an inventory) | yes | M | 22 |
 | D2.1 | `held.mu[l] / 2` (slash) | `server/cognition/convert.rs:582` | μ, discipline | High | `cut = B·X/(B + X)`, exposure against bond (**Built**, ruled 2026-10-31) | no | M | 3, 14 |
@@ -400,7 +400,7 @@ holds).
 
 ---
 
-### D1.2 `THROAT_GRID` — a throat's horizon level and fit, against its μ-S bank
+### D1.2 `THROAT_LEVEL_BITS` — a throat's horizon level and fit, against its μ-S bank
 
 **Status.** Phase A **Built** (2026-10-31, the live-readings ruling; no law
 change). `server::cognition::domain_passage::fits_in(space, mass)` decides every
@@ -409,7 +409,7 @@ sphere face by `core::certified::separates(r, pi)` (π refined from the bits
 that resolve `r`, doubled until its enclosure leaves `r`); a torus face by
 `cga::containment(horizon, image) = Apart` against the image under every
 period (`translator_at` sandwich). `Level::fits` (a ratio) is deleted; the
-served `Level` stays a reading on `THROAT_GRID`, which stays REGISTERED
+served `Level` stays a reading on `THROAT_LEVEL_BITS`, which stays REGISTERED
 until Phase B. Tests: `server::cognition::tests::sphere`
 (`sphere_fit_is_decided_past_any_grid`, `flat_fit_meet_equals_half_ratio`,
 `sphere_throat_fits_cap_short_of_antipode` rewritten onto `fits_in`),
@@ -418,12 +418,12 @@ mutation entries (the refinement's direction, `Apart` in the flat fit).
 Phase B is not built. The text below is the derivation as specified.
 
 **Site.** `src/server/cognition/domain_passage.rs:234` —
-`pub const THROAT_GRID: u32 = 64;`, used at three sites:
+`pub const THROAT_LEVEL_BITS: u32 = 64;`, used at three sites:
 
 ```rust
-let level = cos(&Encl::exact(r.clone()), THROAT_GRID).lo;          // sphere_throat, :225
-let ratio = Encl::exact(r).div(&pi(THROAT_GRID))?.hi;               // sphere_throat, :226
-Some(cosh(&Encl::exact(r), THROAT_GRID).hi)                         // throat_level,  :249
+let level = cos(&Encl::exact(r.clone()), THROAT_LEVEL_BITS).lo;          // sphere_throat, :225
+let ratio = Encl::exact(r).div(&pi(THROAT_LEVEL_BITS))?.hi;               // sphere_throat, :226
+Some(cosh(&Encl::exact(r), THROAT_LEVEL_BITS).hi)                         // throat_level,  :249
 ```
 
 with `r = 2m/R` (`m` = `Court::mass_now`, committed `(n, d)` plus
@@ -605,7 +605,7 @@ Concordance amendment.
   part). Wire: `Tube` and `TubeReading` new writings under new handoff
   kinds (as 78.140 did); ledger: a `Throat` layout bump. Concordance 2.6
   amended ("taken as the upper bound … on a fixed grid" struck; size =
-  the round its bank carries). `THROAT_GRID` leaves `OPEN_PHYSICS` when no
+  the round its bank carries). `THROAT_LEVEL_BITS` leaves `OPEN_PHYSICS` when no
   scalar-mass tube is open (O3). Tests:
   - `throat_round_level_equals_flow_c`: `c = (1 + t²)/(1 − t²)` on a
     fixture bank.
@@ -792,7 +792,7 @@ calibration count. The mutation-audit entry stays as specified.
 
 ```rust
 pub const NO_CONSTANT: &str = "a number in the physics is read off the field or the geometry, or it is undefined physics named until it is derived";
-pub const OPEN_PHYSICS: [(&str, &str); 2] = [("CHALLENGE_WINDOW = 1024", "…"), ("THROAT_GRID = 64", "…")];
+pub const OPEN_PHYSICS: [(&str, &str); 2] = [("CHALLENGE_WINDOW = 1024", "…"), ("THROAT_LEVEL_BITS = 64", "…")];
 ```
 
 It is checked by `open_physics_names_value_and_derivation`
@@ -931,7 +931,7 @@ specifies its carrier and its gate.
 **Implementation scope.**
 
 - Files: `src/physics/axioms/founding.rs` (`OpenNumber`, `Governs`,
-  `OpenKind`; entries for `CHALLENGE_WINDOW`, `THROAT_GRID`,
+  `OpenKind`; entries for `CHALLENGE_WINDOW`, `THROAT_LEVEL_BITS`,
   `BODY_BUDGET`, and the others the first run finds);
   `src/physics/axioms/mod.rs` (re-exports); `xtask/lint/numbers.rs` (new,
   N1–N5); `xtask/lint/mod.rs` (calls `lint_numbers`); `xtask/Cargo.toml`
@@ -1018,7 +1018,7 @@ nowhere in the equations.
 - Readings the court already holds at the falsification, each read BEFORE
   `reverse` moves it:
   - `B_l ∈ ℤ≥0` — the bond held:
-    `treasury.held_of(bond_key(tier)).mu[l]` (`economy::pay::Held`).
+    `treasury.held_of(bond_key(tier)).mu[l]` (`economy::pay::SetAside`).
   - `X_l ∈ ℤ≥0` — the EXPOSURE: the value the falsified fold's commitment
     moved on lane `l`, the quantity reversal returns. From `FoldRecord`
     (`src/server/cognition/ledger.rs:116`) and `Ledgers.remaining`, with
@@ -1427,15 +1427,15 @@ one name, one meaning):
   - `server/cognition/court/reconstruct.rs:50, 271, 397` (the docket's reconstruction
     and its fresh-stroke reading);
   - `server/cognition/court/glue.rs:495, 593, 631`; `court/lapse.rs:74`;
-    `court/phase.rs:237`; `court/syllabus.rs:369, 611`; `court/task.rs:155`;
+    `court/height_window.rs:237`; `court/syllabus.rs:369, 611`; `court/task.rs:155`;
     `court/vantage_install.rs:240`;
   - `server/cognition/basis.rs:661, 687, 705`; `book/demand.rs:102`;
     `book/language.rs:235`; `book/listings.rs:35`;
     `book/speech.rs:63, 81, 378, 675`; `book/tension.rs:221`;
     `cite.rs:393`; `cocycle.rs:89`; `atlas.rs:353`; `state.rs:1028`;
-    `germinate/attest.rs:26`; `germinate/stroke.rs:33, 128, 165, 192`;
-    `snapshot/read.rs:109`;
-  - `server/held/mod.rs:258`; `court/verdict/blind.rs:127`;
+    `listings/attest.rs:26`; `listings/stroke.rs:33, 128, 165, 192`;
+    `persistence/read.rs:109`;
+  - `server/court_lock/mod.rs:258`; `court/verdict/blind.rs:127`;
   - `client/sdk/rule.rs:510`; `client/sdk/mind/boot.rs:13, 39`;
     `second_vantage.rs:35`; `chatter.rs:259, 519, 623, 842, 962`; `contract.rs:147`;
     `court.rs:137`; `family.rs:472`; `learn.rs:289, 440, 480, 515, 527`;
@@ -2515,7 +2515,7 @@ percept with a whole beat between (`made_at < β < beat`, i.e.
 `beat − made_at ≥ 2`, the dissipation rule's own reading, MU-CLIENT §4.13),
 and `Perceived.abandoned` carries `(fn, distance)`. A percept at or before
 the call's beat advances nothing. Tests (`client::sdk::tests::seat_mind`):
-`pending_stands_through_its_own_beat`,
+`pending_stands_through_beat`,
 `pending_dissipates_after_one_whole_beat`,
 `pending_gap_in_seq_dissipates_at_once`, `pending_ignores_redelivered_percept`.
 O1's `answered_at` reading and O2 stay open. The text below is the
@@ -2603,7 +2603,7 @@ counts as generations").
   seat-mind snapshot, the field changes (check the epigenome persistence
   at implementation). Concordance: none.
 - Tests:
-  - `pending_stands_through_its_own_beat` (percepts at `b₀` again and at
+  - `pending_stands_through_beat` (percepts at `b₀` again and at
     `b₀ + 1` leave it standing).
   - `pending_dissipates_after_one_whole_beat` (the first percept at
     `b₀ + 2` lets it go, distance 2).
@@ -3102,7 +3102,7 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 **Derivation.**
 
 - The quantity: contention on the court lock, already counted exactly by
-  the lock book (`src/server/held/mod.rs`): per site `took`, `waited`,
+  the lock book (`src/server/court_lock/mod.rs`): per site `took`, `waited`,
   `blocked`; `WAITING` (threads blocked now), `SERVED`; and the door's
   deferrals (each `work_tx` `Full`). No clock is needed; all are counts.
 - Candidate rule (workers): with `W` workers whose acts all take the
@@ -3122,7 +3122,7 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 - **Open:**
   - **O1, the off-lock metering.** This entry is not settled by the
     readings the tree holds. Needed reading: per worker act, strokes spent
-    under the lock against strokes spent off it (`Held::run` already
+    under the lock against strokes spent off it (`CourtGuard::run` already
     meters reads under the lock via `physics::spent_here`; the off-lock
     part is unmetered). With both counts, `W = 1 + ⌈off/under⌉` (strokes,
     exact over ℚ, ceiled to threads), `R_readers` as above, queue depth
@@ -3157,7 +3157,7 @@ signature rides a body, the receipt section's `[sig 64]`, the length is
 the codecs' `take_*`/`decode_*` writings (N6 reads codecs as field widths) and are
 left for the sweep that types each signed act. Tests
 (`anastome::dialogue::tests::receipts_range`):
-`receipts_page_fills_budget_less_header`, `rows_reply_counts_own_header`,
+`receipts_page_fills_budget_less_header`, `rows_reply_counts_reply_header`,
 `page_envelope_equals_codec_header`. The text below is the derivation as
 specified.
 
@@ -3233,7 +3233,7 @@ constant whose name would mislead).
 - Tests:
   - `receipts_page_fills_budget_less_header` (a fixture of minimal tapes:
     `at_most = (B − 4)/MIN_TAPE`).
-  - `rows_reply_counts_own_header` (a page of `⌊(B − 12)/ℓ⌋` rows, `ℓ`
+  - `rows_reply_counts_reply_header` (a page of `⌊(B − 12)/ℓ⌋` rows, `ℓ`
     the row's own `Entry::tape_len`; the court's count at most
     `⌊(B − 12)/Entry::MIN_TAPE⌋`).
 - Size: S.
@@ -3355,7 +3355,7 @@ specified.
 (78.130, the network's standard mathematics, server side; an exception
 ruled beside law 1's "no series"). Production callers today: `cos` and
 `pi` (`domain_passage.rs:219–226`) and `cosh` (`domain_passage.rs:249`) at
-`THROAT_GRID = 64` (D1.2). NO production caller of `gamma_p`, `erf` or
+`THROAT_LEVEL_BITS = 64` (D1.2). NO production caller of `gamma_p`, `erf` or
 `poisson_quantile` exists (only `src/core/tests/certified.rs`).
 
 **Why it is underived.** `P_SERIES_CAP` and the `+256` precision ceiling

@@ -43,7 +43,7 @@ pub(crate) struct Percept {
 struct Quotient {
     /// The frame, by its own coordinate (AT1 Q4): no width walls it.
     frame: u64,
-    car: Carriage,
+    car: BodyTransport,
     a0: Body,
     b0: Body,
     a_k: Body,
@@ -787,7 +787,7 @@ pub(super) fn family_percept(
         // its chart at each of them. Two members of one section key — one
         // action placed twice, at two frames — are one member standing on
         // the union of both frames.
-        let mut acts: Keyed<Acting, coord::Section> = Keyed::new();
+        let mut acts: Keyed<Acting, coord::ChartCarriage> = Keyed::new();
         for m in &read.members {
             let key = m.acting.key();
             let mut acting = match acts.drop_at(&key) {

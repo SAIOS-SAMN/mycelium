@@ -7,7 +7,7 @@
 //! - [`Memory`] — WHAT IS HELD: the allocator's bytes at the first and the
 //!   latest sample, keyed by the source's own `K`, and the peak — so growth
 //!   is read per unit of the source's own clock, never wall time (law 9).
-//! - [`Court`] — WHAT A COURT HOLDS: its `K`, basis and treasury, and the
+//! - [`CourtReading`] — WHAT A COURT HOLDS: its `K`, basis and treasury, and the
 //!   acts it has served by kind.
 
 /// A reading's tag, the first byte of its writing and the last byte of its
@@ -199,7 +199,7 @@ impl Memory {
 /// basis, its treasury entries, and each act kind it has served with the
 /// count, ascending by kind.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Court {
+pub struct CourtReading {
     pub k: u64,
     pub basis: u64,
     pub treasury: u64,
@@ -251,7 +251,7 @@ pub struct Court {
     pub tuniversal: super::TStanding,
 }
 
-/// The axes of [`Court::serve`]: counts, and one level (the most eras one
+/// The axes of [`CourtReading::serve`]: counts, and one level (the most eras one
 /// page paged).
 /// 78.147: a catch-up opening below the signer's fold root is answered with
 /// the root ("served root"); the cold archive answers only an era replay
@@ -312,7 +312,7 @@ pub enum ServeAxis {
     EmptyPublished = 19,
 }
 
-/// The catch-up paths of [`Court::catchup`].
+/// The catch-up paths of [`CourtReading::catchup`].
 pub const CATCHUP_PATHS: [&str; 2] = ["back-fill", "fold witness"];
 /// The outcomes of one catch-up page asked of the owning court.
 /// `held`: on the fold-witness path, a root this court had already co-signed,
@@ -337,7 +337,7 @@ pub enum CatchupOutcome {
     Held = 5,
 }
 
-/// THE AXES OF [`Court::folds`], in its writing's order. `stale`: a pending
+/// THE AXES OF [`CourtReading::folds`], in its writing's order. `stale`: a pending
 /// proposal dropped because the rows beneath its root moved, or its prefix
 /// is no longer final; `no witness`: a round with no peer holding room to
 /// co-sign it — the two ways a proposal ends without being carried.
@@ -372,7 +372,7 @@ pub const BODY_FAULTS: [&str; 8] = [
     "gauge ambiguous",
 ];
 
-impl Court {
+impl CourtReading {
     #[must_use]
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         put_u64(out, self.k);
@@ -408,7 +408,7 @@ impl Court {
         self.tuniversal.put(out)
     }
 
-    fn take(b: &[u8], p: &mut usize) -> Option<Court> {
+    fn take(b: &[u8], p: &mut usize) -> Option<CourtReading> {
         let (k, basis, treasury) = (take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?);
         let m = take_u32(b, p)? as usize;
         if !holds(b, *p, m, 9) {
@@ -445,7 +445,7 @@ impl Court {
             *n = take_u64(b, p)?;
         }
         let tuniversal = super::TStanding::take(b, p)?;
-        Some(Court {
+        Some(CourtReading {
             k,
             basis,
             treasury,
@@ -802,13 +802,13 @@ impl Adjudication {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Reading {
     Memory(Memory),
-    Court(Box<Court>),
+    Court(Box<CourtReading>),
     Replication(Box<Replication>),
     Adjudication(Adjudication),
     /// PH5 — a court's last phase window (78.17).
-    Phase(super::Phase),
+    Phase(super::CourtStage),
     /// LD1 — the bytes per award, per receipt delta and per frame (78.22).
-    Carriage(super::Carriage),
+    Carriage(super::CarrierTally),
     /// ACT1 — a node on the TUniversal clock, with its three counts
     /// (78.21, 78.27(1), EC1).
     Clock(super::Clock),
@@ -822,7 +822,7 @@ pub enum Reading {
     /// filed by kind and refused by reason since boot.
     Relay(Box<super::Relay>),
     /// MU-CLIENT §5.3 — a mind's conversation and what it built.
-    Mind(Box<super::Mind>),
+    Mind(Box<super::MindReading>),
     /// MU-CLIENT §5.5 — the agreed language a court attested, per pair.
     Agreements(Box<super::Agreements>),
     /// THE AGE OF THE STANDING, IN QUESTIONS: how many questions this court
@@ -943,17 +943,17 @@ impl Reading {
     pub fn take(b: &[u8], p: &mut usize) -> Option<Reading> {
         match take_u8(b, p)? {
             TAG_MEMORY => Some(Reading::Memory(Memory::take(b, p)?)),
-            TAG_COURT => Some(Reading::Court(Box::new(Court::take(b, p)?))),
+            TAG_COURT => Some(Reading::Court(Box::new(CourtReading::take(b, p)?))),
             TAG_REPLICATION => Some(Reading::Replication(Box::new(Replication::take(b, p)?))),
             TAG_ADJUDICATION => Some(Reading::Adjudication(Adjudication::take(b, p)?)),
-            TAG_PHASE => Some(Reading::Phase(super::Phase::take(b, p)?)),
-            TAG_CARRIAGE => Some(Reading::Carriage(super::Carriage::take(b, p)?)),
+            TAG_PHASE => Some(Reading::Phase(super::CourtStage::take(b, p)?)),
+            TAG_CARRIAGE => Some(Reading::Carriage(super::CarrierTally::take(b, p)?)),
             TAG_CLOCK => Some(Reading::Clock(super::Clock::take(b, p)?)),
             TAG_ECONOMY => Some(Reading::Economy(Box::new(super::Economy::take(b, p)?))),
             TAG_ACTS => Some(Reading::Acts(Box::new(super::Acts::take(b, p)?))),
             TAG_CARRIERS => Some(Reading::Carriers(Box::new(super::Carriers::take(b, p)?))),
             TAG_RELAY => Some(Reading::Relay(Box::new(super::Relay::take(b, p)?))),
-            TAG_MIND => Some(Reading::Mind(Box::new(super::Mind::take(b, p)?))),
+            TAG_MIND => Some(Reading::Mind(Box::new(super::MindReading::take(b, p)?))),
             TAG_AGREEMENTS => Some(Reading::Agreements(Box::new(super::Agreements::take(b, p)?))),
             TAG_ASKED => Some(Reading::Asked(take_u64(b, p)?)),
             TAG_DISPATCHED => Some(Reading::Dispatched(Box::new(super::Dispatched::take(b, p)?))),

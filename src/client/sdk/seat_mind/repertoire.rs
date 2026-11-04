@@ -32,15 +32,15 @@ use num_traits::Signed;
 
 /// ONE FUNCTION OF THE MIND'S OWN SEAT, as the listing names it.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Own {
+pub struct SeatFunction {
     pub id: u16,
     pub tags: Vec<u8>,
 }
 
-impl Own {
+impl SeatFunction {
     /// A listed function.
-    pub fn of(f: &SeatFn) -> Own {
-        Own { id: f.id, tags: f.tags.clone() }
+    pub fn of(f: &SeatFn) -> SeatFunction {
+        SeatFunction { id: f.id, tags: f.tags.clone() }
     }
 }
 
@@ -84,11 +84,11 @@ impl SeatMind {
     /// 78.148 — THE LISTING PERCEIVED: its own seat's functions are the
     /// mind's repertoire; one no longer listed is gone from it.
     pub fn perceive_listing(&mut self, fns: &[SeatFn]) {
-        self.repertoire = fns.iter().map(Own::of).collect();
+        self.repertoire = fns.iter().map(SeatFunction::of).collect();
     }
 
     /// The repertoire, in the listing's order.
-    pub fn repertoire(&self) -> &[Own] {
+    pub fn repertoire(&self) -> &[SeatFunction] {
         &self.repertoire
     }
 

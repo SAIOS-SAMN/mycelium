@@ -546,8 +546,8 @@ fn extract_rule_fills_hole_closed_jointly() {
     ];
     let held: (&[&str], &[&str]) = (&["01110", "10001", "10001", "10001", "01110"], &["01110", "14441", "14441", "14441", "01110"]);
     let clauses = knows(&family, held);
-    use crate::transducer::sentence::form::clause::{Act, Region};
-    assert!(clauses.iter().any(|c| matches!(c.act, Act::Fill { region: Region::Interior, .. })), "read as the joint interior: {clauses:?}");
+    use crate::transducer::sentence::form::clause::{Act, RegionKind};
+    assert!(clauses.iter().any(|c| matches!(c.act, Act::Fill { region: RegionKind::Interior, .. })), "read as the joint interior: {clauses:?}");
     let family: Vec<(Grid, Grid)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = extract_rule(&family, &mut budget).expect("the family has a rule");

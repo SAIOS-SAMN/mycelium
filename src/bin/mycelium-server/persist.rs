@@ -22,7 +22,7 @@ pub(crate) fn persist(court: &Mutex<Court>, state_path: &str) -> bool {
     // OWED (78.153b): `Court::snapshot` serialises the whole mind under the
     // court, unmetered (the lock audit, row 12); a hold that blocks an
     // aperture of waiters reading nothing is named `unmetered hold`.
-    let (line, snap, at) = match crate::held::held!(court) {
+    let (line, snap, at) = match crate::court_lock::held!(court) {
         Ok(mut h) => h.run(|k, _| (k.drain_line(), k.snapshot(), k.snapshot_at())),
         Err(_) => return false,
     };
@@ -35,7 +35,7 @@ pub(crate) fn persist(court: &Mutex<Court>, state_path: &str) -> bool {
         }
     };
     if !line_landed {
-        if let Ok(mut h) = crate::held::held!(court) {
+        if let Ok(mut h) = crate::court_lock::held!(court) {
             h.run(|k, _| k.line_lost());
         }
         return false;
@@ -43,7 +43,7 @@ pub(crate) fn persist(court: &Mutex<Court>, state_path: &str) -> bool {
     let landed = mycelium::chronometry::replace_durably(std::path::Path::new(state_path), &snap);
     // Only a write that landed is a persist on the clock (78.21(2)).
     if landed {
-        if let Ok(mut h) = crate::held::held!(court) {
+        if let Ok(mut h) = crate::court_lock::held!(court) {
             h.run(|k, _| k.note_persisted(at));
         }
     }
@@ -59,11 +59,11 @@ pub(crate) fn durable(court: &Mutex<Court>, state_path: &str) -> bool {
     if cfg!(feature = "drill-undurable") {
         return true;
     }
-    let due = crate::held::held!(court).ok().is_some_and(|mut h| h.run(|k, _| k.take_persist()));
+    let due = crate::court_lock::held!(court).ok().is_some_and(|mut h| h.run(|k, _| k.take_persist()));
     if !due || persist(court, state_path) {
         return true;
     }
-    if let Ok(mut h) = crate::held::held!(court) {
+    if let Ok(mut h) = crate::court_lock::held!(court) {
         h.run(|k, _| k.persist_failed());
     }
     false
@@ -71,7 +71,7 @@ pub(crate) fn durable(court: &Mutex<Court>, state_path: &str) -> bool {
 
 /// Persist where a change was marked; whether it was.
 pub(crate) fn persist_if_due(court: &Mutex<Court>, state_path: &str) -> bool {
-    let due = crate::held::held!(court).ok().is_some_and(|mut h| h.run(|k, _| k.take_persist()));
+    let due = crate::court_lock::held!(court).ok().is_some_and(|mut h| h.run(|k, _| k.take_persist()));
     if due {
         persist(court, state_path);
     }

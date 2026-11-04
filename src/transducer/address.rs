@@ -248,7 +248,7 @@ impl From<Address> for Vec<u8> {
 }
 
 /// A mathematical coordinate with a canonical, self-delimiting boundary (Rule 6).
-pub trait Stratum: Eq {
+pub trait CanonicalCoordinate: Eq {
     fn write_canonical(&self, out: &mut Vec<u8>);
     fn read_canonical(bytes: &[u8]) -> Option<(Self, &[u8])>
     where
@@ -259,7 +259,7 @@ pub trait Stratum: Eq {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Nil;
 
-impl Stratum for Nil {
+impl CanonicalCoordinate for Nil {
     fn write_canonical(&self, _out: &mut Vec<u8>) {}
     fn read_canonical(bytes: &[u8]) -> Option<(Self, &[u8])> {
         Some((Nil, bytes))
@@ -273,7 +273,7 @@ pub struct CoordinatePath<Head, Tail> {
     pub tail: Tail,
 }
 
-impl<Head: Stratum, Tail: Stratum> CoordinatePath<Head, Tail> {
+impl<Head: CanonicalCoordinate, Tail: CanonicalCoordinate> CoordinatePath<Head, Tail> {
     pub fn new(head: Head, tail: Tail) -> Self {
         CoordinatePath { head, tail }
     }
@@ -285,7 +285,7 @@ impl<Head: Stratum, Tail: Stratum> CoordinatePath<Head, Tail> {
     }
 }
 
-impl<Head: Stratum, Tail: Stratum> Stratum for CoordinatePath<Head, Tail> {
+impl<Head: CanonicalCoordinate, Tail: CanonicalCoordinate> CanonicalCoordinate for CoordinatePath<Head, Tail> {
     fn write_canonical(&self, out: &mut Vec<u8>) {
         self.head.write_canonical(out);
         self.tail.write_canonical(out);
@@ -307,7 +307,7 @@ impl<Target> PrefixOf<Target> for Nil {
     fn write_prefix(&self, _out: &mut Vec<u8>) {}
 }
 
-impl<Head: Stratum, Tail: PrefixOf<TailTarget>, TailTarget>
+impl<Head: CanonicalCoordinate, Tail: PrefixOf<TailTarget>, TailTarget>
     PrefixOf<CoordinatePath<Head, TailTarget>> for CoordinatePath<Head, Tail>
 {
     fn write_prefix(&self, out: &mut Vec<u8>) {
@@ -316,7 +316,7 @@ impl<Head: Stratum, Tail: PrefixOf<TailTarget>, TailTarget>
     }
 }
 
-impl Stratum for Address {
+impl CanonicalCoordinate for Address {
     /// A key component (ruled (d)): its length by its own coordinate.
     fn write_canonical(&self, out: &mut Vec<u8>) {
         put_key_bytes(out, self.as_bytes());

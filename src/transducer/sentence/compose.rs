@@ -49,16 +49,16 @@ pub struct Term {
 /// rosette), one that never returns (hyperbolic or parabolic), or a motion
 /// whose modes did not read.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Closure {
+pub enum RingClosure {
     Closes(u64),
     Rosette,
     Unbound,
     Unread,
 }
 
-impl Closure {
+impl RingClosure {
     pub fn closes(self) -> bool {
-        matches!(self, Closure::Closes(_))
+        matches!(self, RingClosure::Closes(_))
     }
 }
 
@@ -68,7 +68,7 @@ impl Closure {
 #[derive(Clone, Debug)]
 pub struct Composition {
     pub omega: Mv,
-    pub closure: Closure,
+    pub closure: RingClosure,
     pub carried: Vec<Mv>,
     pub path: Mv,
     pub rank: Result<usize, crate::transducer::cech::LieRankRefusal>,
@@ -115,18 +115,18 @@ pub fn compose(terms: &[Term], budget: &mut crate::physics::Budget) -> Option<Co
     // returned at once (ℓ = 1). Otherwise the period is read off its modes.
     let identity = omega.terms().map(|(k, _)| k).eq([0]);
     let (closure, modes) = match identity {
-        true => (Closure::Closes(1), Vec::new()),
+        true => (RingClosure::Closes(1), Vec::new()),
         false => match cga::motion_modes(&omega, budget) {
             Some(Ok(modes)) => (
                 match cga::period_of(&modes) {
-                    Some(Period::Closes(l)) => Closure::Closes(l),
-                    Some(Period::Rosette) => Closure::Rosette,
-                    Some(Period::Unbound) => Closure::Unbound,
-                    None => Closure::Unread,
+                    Some(Period::Closes(l)) => RingClosure::Closes(l),
+                    Some(Period::Rosette) => RingClosure::Rosette,
+                    Some(Period::Unbound) => RingClosure::Unbound,
+                    None => RingClosure::Unread,
                 },
                 modes,
             ),
-            _ => (Closure::Unread, Vec::new()),
+            _ => (RingClosure::Unread, Vec::new()),
         },
     };
     // 78.104 — THE ALGEBRA OF THE SENTENCE IS ITS WORDS' AND ITS HOLONOMY'S.

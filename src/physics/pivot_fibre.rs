@@ -34,7 +34,7 @@ type Q = BigRational;
 
 /// A FIBRE between two pivots with the pivots' masses.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Fibre {
+pub struct PivotFibre {
     pub pi: Mv,
     pub pj: Mv,
     pub mi: Q,
@@ -78,17 +78,17 @@ pub enum Carried {
     Lift,
 }
 
-impl Fibre {
+impl PivotFibre {
     /// The fibre between `pi` and `pj` with the two masses. `None` where a mass
     /// is not positive or the pivots do not span a fibre (`β² ≤ 0`: one point,
     /// or not points).
-    pub fn new(pi: Mv, pj: Mv, mi: Q, mj: Q) -> Option<Fibre> {
+    pub fn new(pi: Mv, pj: Mv, mi: Q, mj: Q) -> Option<PivotFibre> {
         if !mi.is_positive() || !mj.is_positive() {
             return None;
         }
         let blade = pi.wedge_vector(1, &pj);
         let beta2 = blade.geo(&blade).scalar_part();
-        beta2.is_positive().then_some(Fibre { pi, pj, mi, mj, blade, beta2 })
+        beta2.is_positive().then_some(PivotFibre { pi, pj, mi, mj, blade, beta2 })
     }
 
     /// `B = Pᵢ ∧ Pⱼ`.
