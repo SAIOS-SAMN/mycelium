@@ -105,6 +105,47 @@ fn line_write_is_whole_once_nodes_reach_standing() {
     assert_eq!(ReceiptChain::from_line(&file).map(|(c, _)| c.nodes().count()), Some(1), "and carries only what stands");
 }
 
+/// MU-HOSTING §5a.9 — AN EVICTED PEER NODE IS NAMED GONE BEFORE WHAT IS
+/// FILED AT ITS STAMP: a peer's line held unreached (two acts under its
+/// key) is evicted from its top down, the line's top following each node
+/// that leaves; the signer's own genesis, filed at the evicted genesis's
+/// very stamp, is appended in a frame, and the file read back is the chain.
+#[test]
+fn line_write_round_trips_evicted_stamp_refiled() {
+    let mut c = ReceiptChain::with_signer([1; 32]);
+    let mut file = Vec::new();
+    step(&mut c, Vec::new());
+    for _ in 0..2 {
+        step(&mut c, Vec::new());
+    }
+    let mut forger = ReceiptChain::with_signer([4; 32]);
+    let f0 = forger.append(ActKind::List, [0; 4], Vec::new(), [8; 32], Vec::new()).expect("a forged genesis").clone();
+    let f1 = forger.append(ActKind::List, [0; 4], Vec::new(), [8; 32], Vec::new()).expect("a forged act").clone();
+    for f in [&f0, &f1] {
+        c.admit_unreached(crate::court::admission::Reconstructed::receipt(f).expect("a sealed receipt re-derives"));
+    }
+    land(&mut file, c.line_write().expect("writes").expect("the first write"));
+    same(&file, &c);
+
+    assert_eq!(c.evict(&f1.stamp).map(|r| r.chain_hash), Some(f1.chain_hash), "the top leaves");
+    assert_eq!(c.line_head(&[4; 32]).map(|r| r.stamp), Some(f0.stamp), "the line's top follows it down");
+    assert_eq!(c.evict(&f0.stamp).map(|r| r.chain_hash), Some(f0.chain_hash), "then the genesis");
+    assert_eq!(c.line_head(&[4; 32]), None, "the line holds nothing");
+    assert_eq!(c.evict(&c.head_stamp().expect("own head")), None, "an own node is never evicted");
+
+    let mut e = ReceiptChain::with_signer([4; 32]);
+    let e0 = step(&mut e, Vec::new());
+    assert_eq!(e0.stamp, f0.stamp, "the signer's genesis stands at the forged genesis's stamp");
+    assert_ne!(e0.chain_hash, f0.chain_hash, "with another hash");
+    c.admit(e0.clone());
+    let w = c.line_write().expect("writes").expect("what left and what was filed");
+    assert!(!w.whole, "two that left against four that stand: appended");
+    land(&mut file, w);
+    same(&file, &c);
+    let (back, _) = ReceiptChain::from_line(&file).expect("the line reads");
+    assert_eq!(back.line_head(&[4; 32]).map(|r| r.chain_hash), Some(e0.chain_hash), "read back, the signer's genesis stands");
+}
+
 /// A FRAME THAT RUNS PAST THE END DID NOT LAND: the line stands on the
 /// frames before it, says so, and its next write is the whole.
 #[test]

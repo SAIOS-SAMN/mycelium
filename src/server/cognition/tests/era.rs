@@ -332,7 +332,7 @@ fn admit_backfill_admits_citation_of_folded_receipt() {
         .expect("d cites the court's receipt");
     let line: Vec<_> = d.line_between(&dvk, None, d.head().expect("d acted").stamp.place(), 16);
     let mut budget = k.stroke();
-    assert_eq!(k.admit_backfill(&line, &mut budget), (line.len(), None), "the folded citation is read back and d's line admitted");
+    assert_eq!(k.admit_backfill(&super::fixtures::page(&line), &mut budget), (line.len(), None), "the folded citation is read back and d's line admitted");
     let _ = std::fs::remove_file(&path);
 }
 

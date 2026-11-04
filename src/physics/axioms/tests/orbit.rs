@@ -2,7 +2,12 @@
 // closes by name and nowhere else, and a close carries its orbit's frame.
 
 use crate::chronometry::{ActKind, KStepReceipt, Parent, Place, ReceiptChain};
-use crate::court::admission::{admit_backfilled, Admitted, REFUSE_RECEIPT};
+use crate::court::admission::{Admitted, Reconstructed, REFUSE_RECEIPT};
+
+/// 47.2 step 3 on a receipt reconstructed from its own coordinates.
+fn admit_backfilled(r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
+    crate::court::admission::admit_backfilled(&Reconstructed::receipt(r).expect("its hash re-derives"), ledger)
+}
 
 /// One act measuring `mu`.
 fn act(c: &mut ReceiptChain, mu: [u64; 4]) -> KStepReceipt {

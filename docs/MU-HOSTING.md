@@ -839,15 +839,42 @@ Open after B0:
   A frame admitted under its signature but not yet cited by the court's
   own line reads as unreached after a restart until that next frame. The
   `unfounded` queue and the refusals are still not derived again.
-- A stored unreached line still holds its places on the chain. A forged
-  line stored first at a signer's genesis is never reached, and the
-  signer's own frames meet it as an unproved equivocation. That line does
-  not advance at the hypha until the forged receipts are evicted, and
-  eviction is owed. The held queue has no bound for a line no signature
-  ever reaches.
-- The fold root a back-filled `Fold` names is filed on the chain
-  (`ReceiptChain::admit`) when the receipt is stored, before a signature
-  reaches it.
+- A held queue bounded by the process's capacity cannot hold a gap
+  longer than `C` receipts: such a gap closes only through a fold root
+  (78.147) or as the signer's line is folded below it.
+
+**Eviction, the bound and the fold root** (**Built**,
+[issue #79](https://github.com/SAIOS-SAMN/mycelium/issues/79)):
+- **Eviction by signature** (`Court::evict_contradicted`, called from
+  `Court::admit_receipt`). A signed frame contradicts its signer's line
+  where it is held unreached: at the frame's own place, held with
+  another hash, or at its predecessor's place, held with a hash other
+  than the one the frame names. The line's unreached top then leaves the
+  chain and the gate, read from the top down while each receipt is
+  unreached (`ReceiptChain::evict`, named gone on the line on disk). The
+  walk ends at the first reached receipt, so nothing a signature reached
+  is evicted and the reached part only moves forward. The frame is then
+  admitted against what the signatures reached. A forged genesis stored
+  first gives way to the signer's own genesis, and burns no bond.
+- **The held queue's bound** (`Court::unreached_refusal`). Each held
+  receipt was one read of its page (78.153b), and the reads the process
+  holds are its capacity `C = ⌊M_proc / b⌋` (MU-DERIVATIONS D2.5). A
+  back-filled receipt past `C` held receipts is refused by name
+  (`REFUSE_UNREACHED_PAST_MEMORY`, of 47.2's admission refusals), counted
+  `backfill_refused`, not stored, and its page stops. No wire change.
+- **The fold root waits** (`ReceiptChain::admit_unreached`,
+  `ReceiptChain::file_peer_root`). A back-filled `Fold` files its root
+  only once a signature reaches it. At restore, the roots are filed again
+  from the reached folds only (`ReceiptChain::refile_peer_roots`). The
+  peer roots are derived and never persisted, so the ledger layout is
+  unchanged.
+
+Claims in `server/cognition/tests/reach.rs`:
+`signed_line_evicts_forged_unreached_genesis`,
+`evict_contradicted_keeps_reached_receipts`,
+`unreached_queue_refuses_past_process_memory`,
+`fold_root_waits_for_a_signature`; and in `chronometry/tests/line.rs`,
+`line_write_round_trips_evicted_stamp_refiled`.
 
 ### 5a.10 What crosses: the exact object, never its digest
 
@@ -880,11 +907,16 @@ reconstruct it.
 **The three senses of a digest.** A digest at the vertex has exactly
 three senses, and each permits one comparison:
 
-| Sense | Use | What equality may decide |
-|---|---|---|
-| **Address** | Locates coordinates held losslessly elsewhere: a fetch key or an index entry | Where the object is; never that it is admitted |
-| **Link** | A receipt chain's order: a record names its predecessor's digest | That the chain is unbroken. Each record's content is reconstructed separately (as `rederives` does). |
-| **Commitment** | Bytes a party signs: a signature's message, the Concordance text, a clause | That a reconstructed object is the one committed to, after it has been reconstructed and never instead |
+| Sense | Use | What equality may decide | Type and comparison |
+|---|---|---|---|
+| **Address** | Locates coordinates held losslessly elsewhere: a fetch key or an index entry | Where the object is; never that it is admitted | `Locator::locates` |
+| **Link** | A receipt chain's order: a record names its predecessor's digest | That the chain is unbroken. Each record's content is reconstructed separately (as `rederives` does). | `Predecessor::continues`; `Predecessor::forks` for two records at one place |
+| **Commitment** | Bytes a party signs: a signature's message, the Concordance text, a clause | That a reconstructed object is the one committed to, after it has been reconstructed and never instead | `Commitment::binds`, which takes only a `Reconstructed<T>` |
+
+The three types (`court::admission::digest`) carry the same 32 bytes and
+implement no `PartialEq`, so the only comparison a site can write is the
+one its sense permits. The link type is named `Predecessor`, since
+`Link` names the sentence link (GLOSSARY, *Section link*).
 
 Admitting an object because a digest it carries (a state hash, a root or
 a head) equals one already held, without reconstructing the object, is
@@ -924,8 +956,10 @@ proposed with the boundary reading (B4).
 | A domain's stratum root recomputed from its members before comparison | **Built** | `src/server/cognition/court/glue.rs` |
 | A back-filled receipt, admitted by its chain's links, read by no reader (depth, alias, ruling replay, fold shed, founding, equivocation burn, restore) until a frame its signer signed at or above it is admitted (§5a.9, #73) | **Built** | `src/server/cognition/reach.rs` |
 | The Concordance text's digest served and signatures verified over it | **Built** | `build.rs`, `ACT_LAWS` modes 6–8 |
-| Digests typed by sense (`Address`, `Link`, `Commitment`), with no bare equality | **Specified** | Track 25, X0 |
-| Admission taking only a reconstructed object (`Reconstructed<T>`) | **Specified** | Track 25, X0 |
+| Digests typed by sense (`Locator`, `Predecessor`, `Commitment`), with no bare equality, at the admission sites converted first: the receipt line's checks, the signed prefix's claim, the equivocation proof, the signed-reach gate, the ledger's `holds`, `height_of` and era walk, the back-fill chase, a folded citation's recall, and the endowment's manifests | **Built** | `src/court/admission/digest.rs`; track 25, X0 |
+| The record fields typed by sense (`Parent::hash`, `KStepReceipt::chain_hash`, `SignedPrefix::prev_receipt_hash`, `Admitted::Equivocation`), so no bare comparison of them can be written | **Specified** | Track 25, X0 (later stage) |
+| Admission taking only a reconstructed object (`Reconstructed<T>`): `admission::admit`, `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`, `Court::admit_backfill`, `ReceiptChain::admit_unreached` | **Built** | `src/court/admission/reconstructed.rs`; track 25, X0 |
+| The vertex's admissions (`admit_uplink`, `admit_chained`, `admit_domain`) and `ReceiptChain::admit` taking `Reconstructed<T>` | **Specified** | Track 25, X2 |
 | The crossing record (place, content, holonomy, clauses) in the SDK and on the wire | **Specified** | Track 25, X1 (with B3) |
 | `AddressOnly`; the residue held with a refused or collided crossing | **Specified** | Track 25, X2–X3 |
 | Every site that admits on a digest alone, found and moved to reconstruction | **Specified** | Track 25, X4 |

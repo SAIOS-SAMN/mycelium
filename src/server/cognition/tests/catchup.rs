@@ -125,7 +125,7 @@ fn hear_adopts_root_and_cites_head_behind_fold() {
     let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut budget = c0.stroke();
-    assert_eq!(c0.admit_backfill(&early, &mut budget), (early.len(), None), "c holds b's first stroke");
+    assert_eq!(c0.admit_backfill(&super::fixtures::page(&early), &mut budget), (early.len(), None), "c holds b's first stroke");
     let held = c0.known_head(&bvk).map(|(at, _)| at).expect("held");
     assert!(held < proof.root.at, "c's head of b stands below b's root");
     let c = Mutex::new(c0);
@@ -136,7 +136,7 @@ fn hear_adopts_root_and_cites_head_behind_fold() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, &bkey), &head)),
+        || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, &bkey), &super::fixtures::reconstructed(&head))),
         || c.lock().ok().map(|mut k| k.stroke()),
         source(&courts, &asked),
     );
@@ -263,7 +263,7 @@ fn hear_proves_citation_into_held_era() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, &dkey), &head)),
+        || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, &dkey), &super::fixtures::reconstructed(&head))),
         || c.lock().ok().map(|mut k| k.stroke()),
         source(&courts, &asked),
     );
@@ -336,7 +336,7 @@ fn hear_proves_long_era_page_by_page() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, &dkey), &r)),
+        || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, &dkey), &super::fixtures::reconstructed(&r))),
         || c.lock().ok().map(|mut k| k.stroke()),
         source(&courts, &asked),
     );
@@ -404,7 +404,7 @@ fn hear_advances_cross_citing_lines_from_roots() {
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,
             ORIGIN,
-            || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, key), &head)),
+            || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, key), &super::fixtures::reconstructed(&head))),
             || c.lock().ok().map(|mut k| k.stroke()),
             source(&courts, &asked),
         );

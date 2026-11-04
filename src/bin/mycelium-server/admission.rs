@@ -223,6 +223,13 @@ pub(crate) fn admit_peer_receipt(
         .ok()
         .and_then(|o| *o)
         .ok_or(NoAdmission::NoOrigin)?;
+    // MU-HOSTING §5a.10: the receipt is reconstructed from its own
+    // coordinates before admission reads it; one whose chain hash does not
+    // re-derive is refused as `admit` refuses a receipt that disagrees with
+    // itself.
+    let Some(receipt) = mycelium::court::admission::Reconstructed::receipt(&receipt) else {
+        return Ok(Admitted::Refused(mycelium::court::admission::REFUSE_RECEIPT));
+    };
     let mut h = crate::court_lock::held!(court).map_err(|_| NoAdmission::Malformed)?;
     // OWED (78.153b): `recall_cited` reads a whole era per missing parent
     // (the lock audit, row 15), unmetered.

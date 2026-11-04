@@ -1016,7 +1016,13 @@ impl Court {
             }
             let proved = self
                 .era_receipts(era)
-                .is_some_and(|page| page.iter().any(|x| x.stamp == p.at && x.chain_hash == p.hash));
+                .is_some_and(|page| {
+                    page.iter().any(|x| {
+                        x.stamp == p.at
+                            && crate::court::admission::Predecessor::named(&p)
+                                .continues(&crate::court::admission::Predecessor::of(x))
+                    })
+                });
             if proved {
                 self.chain.recall_folded(p);
                 recalled.push(p);
@@ -1032,11 +1038,15 @@ impl Court {
         }
     }
 
+    /// 47.2 ON A SIGNED FRAME: the signature verified (`verified`, step 2)
+    /// and the receipt reconstructed from its own coordinates (`r`,
+    /// MU-HOSTING §5a.10), then steps 1, 3 and 4 against this court's
+    /// ledger.
     pub fn admit_receipt(
         &mut self,
         origin: ([u8; 32], u32),
         verified: crate::court::admission::Verified<'_>,
-        r: &crate::chronometry::KStepReceipt,
+        r: &crate::court::admission::Reconstructed<crate::chronometry::KStepReceipt>,
     ) -> crate::court::admission::Admitted {
         if verified.signer() != r.stamp.vk {
             return crate::court::admission::Admitted::Refused(
@@ -1044,11 +1054,19 @@ impl Court {
             );
         }
         let recalled = self.recall_cited(r);
-        let verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
+        let mut verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
+        // MU-HOSTING §5a.9 — EVICTION BY SIGNATURE: a signed frame that
+        // contradicts its line where the line is held unreached (a forged
+        // genesis stored first, a forged predecessor) evicts the unreached
+        // top of the line, and is admitted against what the signatures
+        // reached.
+        if !matches!(verdict, crate::court::admission::Admitted::Refused(_)) && self.evict_contradicted(r) > 0 {
+            verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
+        }
         self.forget_recalled(&recalled);
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
-                self.chain.admit(r.clone());
+                self.chain.admit(r.object().clone());
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
                 // THE ACT'S ROOT (65.5): the wire hands this receipt here, and
@@ -1127,9 +1145,13 @@ impl Court {
     /// fold's shed, a founding's reconstruction — until a frame its signer
     /// signed at or above it is admitted (`admit_receipt`,
     /// `Court::sign_through`).
+    ///
+    /// The page is taken reconstructed (MU-HOSTING §5a.10): the fetch
+    /// reconstructs it up to the first receipt that does not re-derive
+    /// (`Reconstructed::receipts`), and only that run reaches here.
     pub fn admit_backfill(
         &mut self,
-        receipts: &[crate::chronometry::KStepReceipt],
+        receipts: &[crate::court::admission::Reconstructed<crate::chronometry::KStepReceipt>],
         budget: &mut crate::physics::Budget,
     ) -> (usize, Option<crate::chronometry::Parent>) {
         let mut n = 0usize;
@@ -1141,13 +1163,23 @@ impl Court {
                 break;
             }
             let recalled = self.recall_cited(r);
-            let verdict = crate::court::admission::admit_backfilled(r, &self.chain);
+            let verdict = match crate::court::admission::admit_backfilled(r, &self.chain) {
+                // MU-DERIVATIONS D2.5: held unreached only while the held
+                // receipts fit the process's capacity; past it, refused by
+                // name and the page stops.
+                crate::court::admission::Admitted::Parent(p) => match self.unreached_refusal() {
+                    None => crate::court::admission::Admitted::Parent(p),
+                    Some(why) => crate::court::admission::Admitted::Refused(why),
+                },
+                other => other,
+            };
             self.forget_recalled(&recalled);
             match verdict {
                 crate::court::admission::Admitted::Parent(_) => {
-                    self.chain.admit(r.clone());
-                    // MU-HOSTING §5a.10: stored, and read by nothing until
-                    // its signer's signature reaches it.
+                    // MU-HOSTING §5a.9, §5a.10: stored, and read by nothing
+                    // until its signer's signature reaches it — a fold's
+                    // root included (`ReceiptChain::admit_unreached`).
+                    self.chain.admit_unreached(r.clone());
                     self.hold_unreached(r);
                     n += 1;
                 }

@@ -52,7 +52,10 @@ fn append_stands_act_above_cited_parent() {
     let mut d = ReceiptChain::with_signer([4; 32]);
     d.admit(parent);
     assert!(
-        matches!(crate::court::admission::admit_backfilled(&first, &d), crate::court::admission::Admitted::Parent(_)),
+        matches!(
+            crate::court::admission::admit_backfilled(&crate::court::admission::Reconstructed::receipt(&first).expect("re-derives"), &d),
+            crate::court::admission::Admitted::Parent(_)
+        ),
         "and a peer admits it at that height"
     );
     let mut g = ReceiptChain::with_signer([5; 32]);

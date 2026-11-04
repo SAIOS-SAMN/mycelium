@@ -11,23 +11,20 @@ fn live_call_is_answered_at_next_boundary() {
     let q = live::encode_call(line).expect("the call writes");
     assert_eq!(live::decode_call(&q).as_deref(), Some(line), "the call reads back");
     assert_eq!(decode_act(&q), None, "a call is no query: a court's door reads no act in it");
+    // An observer this test holds alone: no other carrier of the process
+    // enters it, takes its calls or answers them.
+    let observer = live::Live::new();
     // Before any boundary answers it, the call is said to be waiting.
-    let asked = live::ask(line).expect("the call is left");
-    let waiting = live::read(line, asked);
+    let asked = observer.ask(line).expect("the call is left");
+    let waiting = observer.read(line, asked);
     assert!(matches!(waiting.as_slice(), [l, ..] if l.starts_with("winding carrier: in")), "the carrier's standing first: {waiting:?}");
     assert!(waiting.iter().any(|l| l.contains("NOT ANSWERED")), "a call no boundary reached is said so: {waiting:?}");
-    // The carrier passes a boundary and answers what waits there. (Another
-    // carrier in this process may take the call first; it is answered at a
-    // boundary all the same.)
-    live::enter("observe-test: a law");
-    for w in live::wanted() {
-        let lines = match w == line {
-            true => vec!["#0 thought · ℓ 4 · hours 5 · m 1".to_string()],
-            false => Vec::new(),
-        };
-        live::answer(&w, lines);
-    }
-    let out = live::read(line, asked);
+    // The carrier passes a boundary and answers what waits there.
+    observer.enter("observe-test: a law");
+    let wanted = observer.wanted();
+    assert_eq!(wanted, vec![line.to_string()], "the call waits at the boundary");
+    observer.answer(line, vec!["#0 thought · ℓ 4 · hours 5 · m 1".to_string()]);
+    let out = observer.read(line, asked);
     assert!(out.iter().any(|l| l.starts_with(line) && l.contains("answered at boundary")), "answered fresh: {out:?}");
     let lines: Vec<String> = (0..50).map(|i| format!("line {i}")).collect();
     let all = live::encode_lines(&lines, usize::MAX).expect("the lines write");
@@ -40,22 +37,24 @@ fn live_call_is_answered_at_next_boundary() {
 /// THE ASKER WAITS WHILE THE CARRIER WORKS (ruled 2026-10-24). A call asked
 /// of a carrier working inside one law — not parked, no boundary passing —
 /// is still waiting several parks later, and is answered fresh at the
-/// carrier's next boundary.
+/// carrier's next boundary. The call is left before the asker waits on
+/// it, and the observer is the test's own: the process's
+/// minds, winding in other tests, park, enter and take calls on the
+/// process's observer, never on this one (#78).
 #[test]
 fn live_call_waits_while_carrier_works_inside_law() {
     let line = "observe-test: a long law";
-    live::park(false);
-    let asker = std::thread::spawn(move || live::call(line));
-    std::thread::sleep(crate::physics::idle_park(None) * 8);
-    assert!(!asker.is_finished(), "eight parks inside one law, the carrier working: the asker waits");
-    live::enter("observe-test: the law after");
-    for w in live::wanted() {
-        let lines = match w == line {
-            true => vec!["answered after the long law".to_string()],
-            false => Vec::new(),
-        };
-        live::answer(&w, lines);
-    }
-    let out = asker.join().expect("the asker returns");
+    let observer = live::Live::new();
+    observer.park(false);
+    let asked = observer.ask(line).expect("the call is left");
+    let out = std::thread::scope(|s| {
+        let asker = s.spawn(|| observer.wait(line, asked));
+        std::thread::sleep(crate::physics::idle_park(None) * 8);
+        assert!(!asker.is_finished(), "eight parks inside one law, the carrier working: the asker waits");
+        observer.enter("observe-test: the law after");
+        assert_eq!(observer.wanted(), vec![line.to_string()], "the call waits at the boundary");
+        observer.answer(line, vec!["answered after the long law".to_string()]);
+        asker.join().expect("the asker returns")
+    });
     assert!(out.iter().any(|l| l.starts_with(line) && l.contains("answered at boundary")), "answered fresh at the next boundary: {out:?}");
 }

@@ -60,9 +60,19 @@ fn hear_cites_head_once_gap_closes() {
     // then `1 + max(prev, parents)` (45.2).
     let mut c0 = Court::new();
     c0.append_step(crate::chronometry::ActKind::Attest, [0xAA; 40], [1; 32]);
-    let c = std::sync::Mutex::new(c0);
     const PAGE: u64 = 8;
-    let pages_per_pass = c.lock().expect("c").stroke().remaining() as u64;
+    // One pass's reads: the process's stroke. The gap one exchange opens is
+    // held unreached until b's head reaches it, and the held receipts are
+    // bounded by the court's capacity (MU-HOSTING §5a.9, MU-DERIVATIONS
+    // D2.5): c is calibrated to hold a reserve's strokes of the process's
+    // capacity, a byte a read, so the gap fits.
+    let pass = c0.stroke().remaining();
+    let held = crate::physics::capacity().checked_mul(crate::physics::STROKES_PER_RESERVE).and_then(std::num::NonZeroU64::new).expect("a capacity");
+    let one = std::num::NonZeroU64::MIN;
+    let memory = crate::physics::Memory::of(held, crate::physics::MemorySource::CgroupMax);
+    c0.physics = crate::physics::Physics::calibrated(&crate::physics::Calibration::of(memory, one, one).expect("c's calibration"));
+    let c = std::sync::Mutex::new(c0);
+    let pages_per_pass = pass as u64;
     // Faster than one pass can page: twice what a pass can fetch.
     let rate = 2 * pages_per_pass * PAGE;
     let mut lags = Vec::new();
@@ -79,8 +89,8 @@ fn hear_cites_head_once_gap_closes() {
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,
             ORIGIN,
-            || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &head)),
-            || c.lock().ok().map(|mut k| k.stroke()),
+            || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &super::fixtures::reconstructed(&head))),
+            || c.lock().ok().map(|mut k| k.physics.stroke_n(pass)),
             fetch,
         );
         let _ = heard;
@@ -152,7 +162,7 @@ fn hear_fetches_cited_signer_then_cites_head() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &head)),
+        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &super::fixtures::reconstructed(&head))),
         || c.lock().ok().map(|mut k| k.stroke()),
         fetch,
     );
@@ -186,7 +196,7 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
     let mut c = Court::new();
     c.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut budget = c.stroke();
-    let (n, missing) = c.admit_backfill(&page, &mut budget);
+    let (n, missing) = c.admit_backfill(&super::fixtures::page(&page), &mut budget);
     assert_eq!(missing.map(|p| p.at.vk), Some(dvk), "the page stops on d's cited head");
     assert_eq!(n, page.len() - 1, "b's own acts before the citing receipt are admitted");
     let r = crate::observe::replication();
@@ -225,7 +235,7 @@ fn hear_proves_citation_into_closed_era() {
     let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut budget = c0.stroke();
-    let (n, missing) = c0.admit_backfill(&era, &mut budget);
+    let (n, missing) = c0.admit_backfill(&super::fixtures::page(&era), &mut budget);
     assert_eq!((n, missing), (era.len(), None), "e's line admitted whole");
     let signed = super::fixtures::admit_line(&mut c0, &ekey, &[folded]);
     assert!(matches!(signed.as_slice(), [crate::court::admission::Admitted::Parent(_)]), "e's fold under its signature: {signed:?}");
@@ -250,7 +260,7 @@ fn hear_proves_citation_into_closed_era() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &dkey), &head)),
+        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &dkey), &super::fixtures::reconstructed(&head))),
         || c.lock().ok().map(|mut k| k.stroke()),
         fetch,
     );

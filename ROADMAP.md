@@ -56,8 +56,8 @@ None of these waits on a ruling:
 
 | Item | Issue | Track | Notes |
 |---|---|---|---|
-| X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | Depends on nothing; the rest of track 25 stands on it |
-| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Open: foundings inside a folded era, a version-2 origin's geometry, eviction of a stored line no signature reaches (MU-HOSTING §5a.9) |
+| X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | First stage built on branch `x0-drift-guards` (no wire or layout change): the admission sites typed, the receipt path's admissions taking `Reconstructed<T>`, the register in the gate. Open: the record fields typed by sense. The rest of track 25 stands on it |
+| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Eviction by signature, the held queue's bound and the waiting fold root are built ([#79](https://github.com/SAIOS-SAMN/mycelium/issues/79)). Open: foundings inside a folded era, a version-2 origin's geometry, a gap longer than the capacity (MU-HOSTING §5a.9) |
 | `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
 | Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Built with N1 |
 | Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Built with N2 |
@@ -1204,10 +1204,14 @@ Concordance hash served and signatures verified. Each phase is one commit:
    admitted: not the depth index, the stamp alias, the ruling replay it
    would wake, a fold's shed, a founding's reconstruction, the
    equivocation burn, or restore. Claims in
-   `server/cognition/tests/reach.rs`. Open: eviction of a stored line no
-   signature reaches (a forged genesis holds its signer's places at the
-   hypha), a bound on the held queue, and the fold root a stored `Fold`
-   files on the chain (MU-HOSTING §5a.9).
+   `server/cognition/tests/reach.rs`. Its three open items are built
+   ([issue #79](https://github.com/SAIOS-SAMN/mycelium/issues/79)): a
+   signed frame that contradicts a stored unreached line evicts its
+   unreached top and never a reached receipt; the held queue is bounded
+   by the process's capacity `C = ⌊M_proc / b⌋` and refuses past it by
+   name; and a back-filled `Fold` files its root once a signature reaches
+   it. Open: a gap longer than `C` closes only through a fold root
+   (MU-HOSTING §5a.9).
 2. **B1, the act audit and the boundary's name:** every act kind that
    names a domain classed as a key's own or a universe's; the `NotReserve`
    variants renamed `NotThroughCore` (names only); a line's mouth offer
@@ -1310,32 +1314,51 @@ for each phase:
 4. Build the phase. Run the gate (`cd xtask && cargo run`), the scoped
    tests of the touched modules (`cargo test --release -p <crate>
    <module>`), and `scripts/check` before the pull request.
-5. Add each phase's mutation-audit entries to
-   `xtask/mutate/catalogue.rs`, and run `(cd xtask && cargo run --
-   mutate)`. Every entry must be killed by the claim named beside it.
+5. Register each guard the phase builds in `xtask/lint/drift.rs`
+   (regression, ruling, guarding type, claim); the gate refuses an entry
+   whose type or claim is missing. No mutation-audit entry is added
+   (ruled 2026-11-04).
 6. Open the pull request with the template's drift checklist ticked. A
    phase that changes the wire or the ledger layout says so under
    *Network contract*.
 
-Each phase is one commit:
+Each phase lands on its own branch, one item per commit:
 
-1. **X0, the drift guards.**
-   - `Address`, `Link` and `Commitment` replace the bare `[u8; 32]` at
-     every crossing site. None implements `PartialEq`. The comparisons
-     are `Address::locates`, `Link::follows`, and
-     `Commitment::binds(&Reconstructed<T>)`.
-   - `Reconstructed<T>` has a private constructor, called only by a
-     law's reconstruction, and every `admit_*` takes it.
+1. **X0, the drift guards.** **Built**, first stage (no wire or ledger
+   change).
+   - The digest compared at admission is typed by its sense
+     (`court::admission::digest`): `Locator` (address), `Predecessor`
+     (link; `Link` already names the sentence link) and `Commitment`.
+     None implements `PartialEq`. The comparisons are
+     `Locator::locates`, `Predecessor::continues` (with `forks` and
+     `cites`), and `Commitment::binds(&Reconstructed<T>)`. Converted:
+     the receipt line's checks (`admit_chain`), the signed prefix's
+     claim, the equivocation proof, the signed-reach gate, the ledger's
+     `holds`, `height_of` and era walk, the back-fill chase, a folded
+     citation's recall, and the endowment's manifests.
+   - `Reconstructed<T>` has a private field, built only by a law's
+     reconstruction (`Reconstructed::receipt`, `Reconstructed::receipts`).
+     The receipt path's admissions take it: `admission::admit`,
+     `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`,
+     `Court::admit_backfill`, `ReceiptChain::admit_unreached`. The
+     founding outcome once named `Reconstructed` is `FoundingEvent`.
    - The register `xtask/lint/drift.rs` lists each guard (regression,
-     ruling, guarding type, claim, mutation-audit entry). The gate
-     refuses an entry whose type or claim is missing. It reports, without
-     refusing, each changed document's sentence that puts a typed term
-     beside an admission verb.
-   - Claims: `address_has_no_equality` (`compile_fail`),
-     `reconstructed_is_built_only_by_the_laws` (`compile_fail`),
-     `commitment_binds_only_a_reconstructed_object`.
-   - Mutation-audit entry: an admission given the claim in place of its
-     reconstruction.
+     ruling, guarding type, claim). The gate refuses an entry whose type
+     or claim is missing.
+   - Claims: `address_has_no_equality`, `predecessor_has_no_equality`,
+     `commitment_has_no_equality`, `reconstructed_is_built_only_by_the_laws`
+     (`compile_fail`); `commitment_binds_only_a_reconstructed_object`;
+     the gate's `drift_refuses_entry_missing_its_claim`.
+   - Open (the next stage): the record fields typed by sense
+     (`Parent::hash`, `KStepReceipt::chain_hash`,
+     `SignedPrefix::prev_receipt_hash`, `Admitted::Equivocation`), which
+     drops `PartialEq` from `Parent`, `KStepReceipt` and `Admitted`;
+     `ReceiptChain::admit` taking `Reconstructed<T>`; the X4 sites not
+     yet typed (`chronometry/pack.rs`, `cognition/state.rs` eras,
+     `court/glue.rs` stratum root, `client/sdk/mind/learn.rs` starved
+     root). The report of changed document sentences that put a typed
+     term beside an admission verb is not built: it needs a base commit
+     the gate does not hold.
 2. **X1, the crossing record.** `Crossing { place, content, holonomy,
    clauses }` in `mycelium_sdk::forms` and on the wire, decoded to exact
    values (Concordance 1.4). It rides B3's change to the fold, which
