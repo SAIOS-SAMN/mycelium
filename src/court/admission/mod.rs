@@ -2,7 +2,7 @@
 //
 //! 47.1, 47.2 — ADMISSION: the signed prefix, the order of checks, the
 //! reconstructed object every admission takes, and the digests typed by
-//! their sense (MU-HOSTING §5a.10).
+//! sense (MU-HOSTING §5a.10).
 
 pub mod admit;
 pub mod digest;

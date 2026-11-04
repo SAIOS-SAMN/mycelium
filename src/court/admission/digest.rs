@@ -6,7 +6,7 @@
 //!
 //! A digest has no algebra: it cannot be composed, inverted or transported,
 //! and comparing two answers only same or not same. So the 32 bytes that
-//! cross at admission are typed by their sense, and none of the three types
+//! cross at admission are typed by sense, and none of the three types
 //! implements `PartialEq`. Each sense permits one comparison, and it is a
 //! named method:
 //!
