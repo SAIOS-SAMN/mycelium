@@ -64,97 +64,172 @@ struct Slot {
     answers: Keyed<(u64, Vec<String>)>,
 }
 
-static SLOT: LazyLock<(Mutex<Slot>, Condvar)> = LazyLock::new(|| {
-    (
-        Mutex::new(Slot { now: Now::default(), wanted: Keyed::new(), answers: Keyed::new() }),
-        Condvar::new(),
-    )
-});
+/// THE OBSERVER OF ONE MIND: where its winding carrier stands, the calls
+/// left for it and their answers, and where each carrier beside the
+/// winding stands. The process's mind is observed through [`process`],
+/// which every free function of this module reads; a reader that holds
+/// its own `Live` reads only what it wrote there, never another carrier's
+/// standing in the same process.
+pub struct Live {
+    slot: Mutex<Slot>,
+    /// Woken as a call is answered.
+    woken: Condvar,
+    /// Whether any call waits, read without the lock at every boundary.
+    waiting: AtomicBool,
+    /// MU-CLIENT §7.1 — THE WINDING'S WAKER: a mind at rest is blocked on
+    /// its landings, so a call left for it wakes it (`wake_with`); none
+    /// where no mind gave one.
+    wake: Mutex<Option<std::sync::mpsc::Sender<()>>>,
+    /// WHERE EACH OTHER CARRIER STANDS, by its name: the law it entered
+    /// last and how many it has entered.
+    others: Mutex<Keyed<(&'static str, u64)>>,
+}
 
-/// Whether any call waits, read without the lock at every boundary.
-static WANTED: AtomicBool = AtomicBool::new(false);
+impl Default for Live {
+    fn default() -> Self {
+        Live::new()
+    }
+}
 
-/// MU-CLIENT §7.1 — THE WINDING'S WAKER: a mind at rest is blocked on its
-/// landings, so a call left for it wakes it (`wake_with`); none where no
-/// mind gave one.
-static WAKE: Mutex<Option<std::sync::mpsc::Sender<()>>> = Mutex::new(None);
+/// The process's mind's observer.
+static PROCESS: LazyLock<Live> = LazyLock::new(Live::new);
 
-/// The waker a call left for the winding sends on.
+/// THE OBSERVER OF THE PROCESS'S MIND, the one every free function of this
+/// module reads and writes.
+pub fn process() -> &'static Live {
+    &PROCESS
+}
+
+impl Live {
+    /// An observer no carrier has entered and no call has reached.
+    pub fn new() -> Live {
+        Live {
+            slot: Mutex::new(Slot { now: Now::default(), wanted: Keyed::new(), answers: Keyed::new() }),
+            woken: Condvar::new(),
+            waiting: AtomicBool::new(false),
+            wake: Mutex::new(None),
+            others: Mutex::new(Keyed::new()),
+        }
+    }
+
+    /// The waker a call left for the winding sends on.
+    pub fn wake_with(&self, wake: std::sync::mpsc::Sender<()>) {
+        if let Ok(mut w) = self.wake.lock() {
+            *w = Some(wake);
+        }
+    }
+
+    /// THE WINDING CARRIER BEGINS A STROKE at the mind's K and height `h`.
+    pub fn stroke_began(&self, k: u64, h: Option<u64>) {
+        let Ok(mut s) = self.slot.lock() else { return };
+        s.now.stroke += 1;
+        s.now.k = k;
+        s.now.h = h;
+        s.now.stroke_boundary = s.now.boundary;
+    }
+
+    /// THE WINDING CARRIER PARKS (`true`, as it rests or blocks) OR WAKES.
+    pub fn park(&self, parked: bool) {
+        let Ok(mut s) = self.slot.lock() else { return };
+        s.now.parked = parked;
+    }
+
+    /// THE WINDING CARRIER ENTERS `law`.
+    pub fn enter(&self, law: &'static str) {
+        let Ok(mut s) = self.slot.lock() else { return };
+        s.now.law = law;
+        s.now.boundary += 1;
+    }
+
+    /// A CARRIER BESIDE THE WINDING (`name`) ENTERS `law`.
+    pub fn enter_carrier(&self, name: &'static str, law: &'static str) {
+        let Ok(mut c) = self.others.lock() else { return };
+        let n = match c.get(name.as_bytes()) {
+            Some((_, n)) => n + 1,
+            None => 1,
+        };
+        c.insert(name.as_bytes(), (law, n));
+    }
+
+    /// Every other carrier's standing, one line each.
+    pub fn carriers(&self) -> Vec<String> {
+        let Ok(c) = self.others.lock() else { return Vec::new() };
+        c.scoped().map(|(name, (law, n))| format!("{} carrier: in {law} · boundary {n}", String::from_utf8_lossy(&name))).collect()
+    }
+
+    /// Where the winding carrier stands.
+    pub fn now(&self) -> Now {
+        match self.slot.lock() {
+            Ok(s) => s.now,
+            Err(_) => Now::default(),
+        }
+    }
+
+    /// The calls waiting for this boundary, taken; none without the lock
+    /// where none waits.
+    pub fn wanted(&self) -> Vec<String> {
+        if !self.waiting.swap(false, Ordering::Relaxed) {
+            return Vec::new();
+        }
+        let Ok(mut s) = self.slot.lock() else { return Vec::new() };
+        let lines: Vec<String> = s.wanted.scoped().filter_map(|(k, _)| String::from_utf8(k).ok()).collect();
+        s.wanted = Keyed::new();
+        lines
+    }
+
+    /// One call answered at the carrier's present boundary.
+    pub fn answer(&self, line: &str, lines: Vec<String>) {
+        let Ok(mut s) = self.slot.lock() else { return };
+        let at = s.now.boundary;
+        s.answers.insert(line.as_bytes(), (at, lines));
+        self.woken.notify_all();
+    }
+}
+
+/// The waker a call left for the process's winding sends on.
 pub fn wake_with(wake: std::sync::mpsc::Sender<()>) {
-    if let Ok(mut w) = WAKE.lock() {
-        *w = Some(wake);
-    }
+    PROCESS.wake_with(wake);
 }
 
-/// THE WINDING CARRIER BEGINS A STROKE at the mind's K and height `h`.
+/// THE PROCESS'S WINDING CARRIER BEGINS A STROKE at the mind's K and
+/// height `h`.
 pub fn stroke_began(k: u64, h: Option<u64>) {
-    let Ok(mut s) = SLOT.0.lock() else { return };
-    s.now.stroke += 1;
-    s.now.k = k;
-    s.now.h = h;
-    s.now.stroke_boundary = s.now.boundary;
+    PROCESS.stroke_began(k, h);
 }
 
-/// THE WINDING CARRIER PARKS (`true`, as it rests or blocks) OR WAKES.
+/// THE PROCESS'S WINDING CARRIER PARKS (`true`) OR WAKES.
 pub fn park(parked: bool) {
-    let Ok(mut s) = SLOT.0.lock() else { return };
-    s.now.parked = parked;
+    PROCESS.park(parked);
 }
 
-/// THE WINDING CARRIER ENTERS `law`.
+/// THE PROCESS'S WINDING CARRIER ENTERS `law`.
 pub fn enter(law: &'static str) {
-    let Ok(mut s) = SLOT.0.lock() else { return };
-    s.now.law = law;
-    s.now.boundary += 1;
+    PROCESS.enter(law);
 }
 
-/// WHERE EACH OTHER CARRIER STANDS, by its name: the law it entered last
-/// and how many it has entered.
-static CARRIERS: LazyLock<Mutex<Keyed<(&'static str, u64)>>> = LazyLock::new(|| Mutex::new(Keyed::new()));
-
-/// A CARRIER BESIDE THE WINDING (`name`) ENTERS `law`.
+/// A CARRIER BESIDE THE PROCESS'S WINDING (`name`) ENTERS `law`.
 pub fn enter_carrier(name: &'static str, law: &'static str) {
-    let Ok(mut c) = CARRIERS.lock() else { return };
-    let n = match c.get(name.as_bytes()) {
-        Some((_, n)) => n + 1,
-        None => 1,
-    };
-    c.insert(name.as_bytes(), (law, n));
+    PROCESS.enter_carrier(name, law);
 }
 
-/// Every other carrier's standing, one line each.
+/// Every other carrier of the process's mind, one line each.
 pub fn carriers() -> Vec<String> {
-    let Ok(c) = CARRIERS.lock() else { return Vec::new() };
-    c.scoped().map(|(name, (law, n))| format!("{} carrier: in {law} · boundary {n}", String::from_utf8_lossy(&name))).collect()
+    PROCESS.carriers()
 }
 
-/// Where the winding carrier stands.
+/// Where the process's winding carrier stands.
 pub fn now() -> Now {
-    match SLOT.0.lock() {
-        Ok(s) => s.now,
-        Err(_) => Now::default(),
-    }
+    PROCESS.now()
 }
 
-/// The calls waiting for this boundary, taken; none without the lock where
-/// none waits.
+/// The calls waiting for the process's boundary, taken.
 pub fn wanted() -> Vec<String> {
-    if !WANTED.swap(false, Ordering::Relaxed) {
-        return Vec::new();
-    }
-    let Ok(mut s) = SLOT.0.lock() else { return Vec::new() };
-    let lines: Vec<String> = s.wanted.scoped().filter_map(|(k, _)| String::from_utf8(k).ok()).collect();
-    s.wanted = Keyed::new();
-    lines
+    PROCESS.wanted()
 }
 
-/// One call answered at the carrier's present boundary.
+/// One call answered at the process's carrier's present boundary.
 pub fn answer(line: &str, lines: Vec<String>) {
-    let (lock, woken) = &*SLOT;
-    let Ok(mut s) = lock.lock() else { return };
-    let at = s.now.boundary;
-    s.answers.insert(line.as_bytes(), (at, lines));
-    woken.notify_all();
+    PROCESS.answer(line, lines);
 }
 
 /// The carrier's standing as one line.
@@ -186,46 +261,79 @@ fn standing(n: &Now) -> String {
 /// mind. A wedged carrier is bounded by the asker's own process, never by
 /// a clock here.
 pub fn call(line: &str) -> Vec<String> {
-    let Some(asked) = ask(line) else { return vec!["the observer's slot is poisoned".to_string()] };
-    let (lock, woken) = &*SLOT;
-    let Ok(mut s) = lock.lock() else { return vec!["the observer's slot is poisoned".to_string()] };
-    let fresh = |s: &Slot| s.answers.get(line.as_bytes()).is_some_and(|(at, _)| *at > asked);
-    let mut seen = s.now.boundary;
-    while !fresh(&s) {
-        s = match woken.wait_timeout(s, crate::physics::idle_park(None)) {
-            Ok((g, _)) => g,
-            Err(_) => return vec!["the observer's slot is poisoned".to_string()],
-        };
-        if fresh(&s) || (s.now.parked && s.now.boundary == seen) {
-            break;
-        }
-        seen = s.now.boundary;
-    }
-    drop(s);
-    read(line, asked)
+    PROCESS.call(line)
 }
 
-/// A CALL LEFT for the winding carrier's next boundary: answers the
-/// boundary it was asked at, `None` where the slot does not read.
+/// A CALL LEFT for the process's winding carrier's next boundary.
 pub fn ask(line: &str) -> Option<u64> {
-    let Ok(mut s) = SLOT.0.lock() else { return None };
-    s.wanted.insert(line.as_bytes(), ());
-    WANTED.store(true, Ordering::Relaxed);
-    if let Ok(w) = WAKE.lock() {
-        if let Some(w) = w.as_ref() {
-            let _ = w.send(());
-        }
-    }
-    Some(s.now.boundary)
+    PROCESS.ask(line)
 }
 
-/// THE CALL'S ANSWER as it stands, against the boundary it was `asked` at:
-/// the carrier's standing, then the answer — fresh, or the last one, said
-/// so.
+/// The call's answer as the process's observer holds it.
 pub fn read(line: &str, asked: u64) -> Vec<String> {
-    let Ok(s) = SLOT.0.lock() else { return vec!["the observer's slot is poisoned".to_string()] };
-    let mut out = vec![standing(&s.now)];
-    out.extend(carriers());
+    PROCESS.read(line, asked)
+}
+
+impl Live {
+    /// A CALL, ASKED of this observer's carrier and waited on, as [`call`]
+    /// waits on the process's.
+    pub fn call(&self, line: &str) -> Vec<String> {
+        match self.ask(line) {
+            Some(asked) => self.wait(line, asked),
+            None => vec!["the observer's slot is poisoned".to_string()],
+        }
+    }
+
+    /// A CALL LEFT at boundary `asked`, waited on a park at a time while
+    /// the carrier works, as [`call`] waits.
+    pub fn wait(&self, line: &str, asked: u64) -> Vec<String> {
+        let Ok(mut s) = self.slot.lock() else { return vec!["the observer's slot is poisoned".to_string()] };
+        let fresh = |s: &Slot| s.answers.get(line.as_bytes()).is_some_and(|(at, _)| *at > asked);
+        let mut seen = s.now.boundary;
+        while !fresh(&s) {
+            s = match self.woken.wait_timeout(s, crate::physics::idle_park(None)) {
+                Ok((g, _)) => g,
+                Err(_) => return vec!["the observer's slot is poisoned".to_string()],
+            };
+            if fresh(&s) || (s.now.parked && s.now.boundary == seen) {
+                break;
+            }
+            seen = s.now.boundary;
+        }
+        drop(s);
+        self.read(line, asked)
+    }
+
+    /// A CALL LEFT for the winding carrier's next boundary: answers the
+    /// boundary it was asked at, `None` where the slot does not read.
+    pub fn ask(&self, line: &str) -> Option<u64> {
+        let Ok(mut s) = self.slot.lock() else { return None };
+        s.wanted.insert(line.as_bytes(), ());
+        self.waiting.store(true, Ordering::Relaxed);
+        if let Ok(w) = self.wake.lock() {
+            if let Some(w) = w.as_ref() {
+                let _ = w.send(());
+            }
+        }
+        Some(s.now.boundary)
+    }
+
+    /// THE CALL'S ANSWER as it stands, against the boundary it was `asked`
+    /// at: the carrier's standing, then the answer — fresh, or the last one,
+    /// said so.
+    pub fn read(&self, line: &str, asked: u64) -> Vec<String> {
+        let Ok(s) = self.slot.lock() else { return vec!["the observer's slot is poisoned".to_string()] };
+        let mut out = vec![standing(&s.now)];
+        out.extend(self.carriers());
+        out.extend(answered(&s, line, asked));
+        out
+    }
+}
+
+/// The lines a call's answer reads as, against the boundary it was `asked`
+/// at.
+fn answered(s: &Slot, line: &str, asked: u64) -> Vec<String> {
+    let mut out = Vec::new();
     match s.answers.get(line.as_bytes()) {
         Some((at, lines)) if *at > asked => {
             out.push(format!("{line} — answered at boundary {at}"));
