@@ -18,7 +18,7 @@
 //! THIS IS AN INSTRUMENT AND CHANGES NOTHING. It stands nothing into a
 //! court, opens no wire, reads no ledger and needs no mesh.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::element::{Element, Held};
 use mycelium::transducer::family::{extract_rule_with, mint_sentence};
 use mycelium::transducer::sentence::Vertex;
@@ -74,7 +74,7 @@ pub(crate) struct TaskWalk {
 
 impl TaskWalk {
     /// Read one task with the mind it is given, and stand nothing.
-    pub(super) fn of(train: &mycelium::transducer::family::Family, epi: &Epigenome) -> TaskWalk {
+    pub(super) fn of(train: &mycelium::transducer::family::Family, epi: &MindLanguage) -> TaskWalk {
         let mut w = TaskWalk::default();
         let mut physics = mycelium::physics::Physics::default();
         let mut budget = physics.stroke_n(DELTA_STROKE);
@@ -165,7 +165,7 @@ impl Stand {
 /// mind stands for the other tasks of the slice, and WHERE it stopped if
 /// it yields none. A form that is not closed is not citable (13.6) and
 /// standing it would be standing something no mind could factor through.
-pub(super) fn standable(train: &mycelium::transducer::family::Family, epi: &Epigenome) -> (Option<Element>, Stand) {
+pub(super) fn standable(train: &mycelium::transducer::family::Family, epi: &MindLanguage) -> (Option<Element>, Stand) {
     let mut physics = mycelium::physics::Physics::default();
     let mut budget = physics.stroke_n(DELTA_STROKE);
     let Some(rule) = extract_rule_with(train, epi, &mut budget) else {
@@ -231,7 +231,7 @@ pub(crate) struct Slice {
 ///     of the ones before it) and would read a larger delta; it would also
 ///     read a different one for every permutation, which is not a number.
 pub(crate) fn walk_twice(dir: &str, names: &[String]) -> Slice {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     // Pass one: every task read cold, and the closed form it yields.
     let mut tasks: Vec<(
         String,
@@ -257,7 +257,7 @@ pub(crate) fn walk_twice(dir: &str, names: &[String]) -> Slice {
     // Pass two: each task read by a mind holding every OTHER task's form.
     let mut out = Vec::with_capacity(tasks.len());
     for i in 0..tasks.len() {
-        let mut epi = Epigenome::new();
+        let mut epi = MindLanguage::new();
         let mut k = 0u64;
         for (j, (_, _, _, stand)) in tasks.iter().enumerate() {
             if j == i {

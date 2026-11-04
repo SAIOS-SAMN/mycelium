@@ -39,7 +39,7 @@ pub struct CallusTally {
     pub refill_refused: u64,
 }
 
-impl Epigenome {
+impl MindLanguage {
     /// A WORD STANDS — resident or dialect: each remainder its torsion record
     /// carries is filed at its class ‖ residue's chart chain. ONE REMAINDER
     /// PER CLASS at a chart (78.37(4)): a second word whose remainder

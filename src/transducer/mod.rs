@@ -20,7 +20,7 @@ pub mod cga;
 pub mod cayley;
 /// 20, A6 — a body, its exact moduli, and its shells.
 pub mod blade;
-/// Chapter 7 — the residual as the exact spec of a missing operator.
+/// Chapter 7 — the residue as the exact spec of a missing operator.
 pub mod germinate;
 /// 18.3, 17.1, 17.2 — the word: four strata, a tape, an address.
 pub mod element;
@@ -43,7 +43,7 @@ pub mod field;
 pub mod family;
 /// Chapter 13 — reconciliation of two holders of the language, by stratum.
 pub mod sheaf;
-/// The shell-by-shell reading law: outer to inner, the residual riding in.
+/// The shell-by-shell reading law: outer to inner, the residue riding in.
 pub mod layers;
 /// 1.1, 1.2, 16.1 — the seventeen letters and the rotor's canonical form.
 pub mod alphabet;

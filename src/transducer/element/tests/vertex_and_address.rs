@@ -29,12 +29,12 @@ fn compose_carries_rotor_and_transition_answers_one() {
     // A word turning the base off itself has no base action and cannot be a
     // connection on the base manifold (51.2, A4).
     assert!(
-        residual::from_connection(&q23, &identity_versor(), &[], &Vec::new(), [0; 4]).is_none(),
+        residue::from_connection(&q23, &identity_versor(), &[], &Vec::new(), [0; 4]).is_none(),
         "a (2,3) rotation turns e₂ into the base and has no base connection"
     );
 
     let conn = |w: &Word| {
-        residual::from_connection(w, &identity_versor(), &[], &Vec::new(), [0; 4])
+        residue::from_connection(w, &identity_versor(), &[], &Vec::new(), [0; 4])
             .expect("a connection")
     };
     let (a, b) = (conn(&q01), conn(&q13));

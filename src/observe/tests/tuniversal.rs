@@ -3,11 +3,11 @@ use super::fixtures::*;
 
 /// 78.152 — A COURT'S TUNIVERSAL STANDING TRAVELS EXACTLY: three keepers
 /// exchange readings, the observer reads one court's keepers off them, and
-/// the Court reading carrying that standing — and a hand-built residual
+/// the Court reading carrying that standing — and a hand-built residue
 /// with signed lanes at the lane carrier's ends — reads back as itself.
 #[test]
 fn tstanding_round_trips_and_refuses_other_version() {
-    use crate::chronometry::tuniversal::{Edge, Keepers, Origin, Residual, TPoint, Tick};
+    use crate::chronometry::tuniversal::{Edge, Keepers, Origin, Residue, TPoint, Tick};
     use ed25519_dalek::SigningKey;
     let origin = Origin { genesis: [0x6a; 32], epoch: 146 };
     let keys = [1u8, 2, 3].map(|n| SigningKey::from_bytes(&[n; 32]));
@@ -37,15 +37,15 @@ fn tstanding_round_trips_and_refuses_other_version() {
     assert_eq!(of(vks[1]), KeeperSeen { key: vks[1], own: false, newest: Some(tick(12, [0, 5, 0, 0], 3)), final_of: Some(b12.clone()) });
     assert_eq!(of(vks[2]), KeeperSeen { key: vks[2], own: true, newest: Some(tick(14, [0, 0, 6, 0], 2)), final_of: None });
     assert_eq!(courts[2].final_point(), Some(b12));
-    let read = TStanding { final_point: courts[2].final_point(), advances: 2, keepers: seen, residual: courts[2].residual() };
-    // A residual measured on all three edges, signed and holding shares of
+    let read = TStanding { final_point: courts[2].final_point(), advances: 2, keepers: seen, residue: courts[2].residue() };
+    // A residue measured on all three edges, signed and holding shares of
     // a unit, beside a point at the tick carrier's end.
     let lanes = crate::economy::Mu::of([q(i64::MAX, 1), q(0, 1), q(1, 900), q(7, 30)]).expect("non-negative");
     let built = TStanding {
         final_point: Some(TPoint { origin, h: u64::MAX, lanes, k: 7 }),
         advances: u64::MAX,
         keepers: vec![KeeperSeen { key: party(4), own: true, newest: None, final_of: None }],
-        residual: Residual {
+        residue: Residue {
             edges: vec![
                 Edge { from: party(4), to: party(5), h: 20, delta: [q(-3, 1), q(5, 2), q(0, 1), q(i64::MIN, 1)] },
                 Edge { from: party(5), to: party(6), h: 21, delta: [q(i64::MAX, 1), q(-1, 900), q(2, 1), q(0, 1)] },

@@ -65,8 +65,8 @@ pub struct GenomeWriteTally {
     pub coincident: u64,
     /// STD1 3c — words whose record passes a length its field writes.
     pub unwritable: u64,
-    /// MU-CLIENT §7.1 — residual chains: open questions, never words.
-    pub residual: u64,
+    /// MU-CLIENT §7.1 — residue chains: open questions, never words.
+    pub residue: u64,
     /// Rewrites: acts on the language, never words of it.
     pub rewrite: u64,
 }
@@ -83,16 +83,16 @@ pub(crate) fn is_rewrite_act(e: &Element) -> bool {
     e.is_rewrite()
 }
 
-/// WHETHER AN ELEMENT IS A RESIDUAL CHAIN: its address leads with the
-/// residual's tag AND it carries a chain — what perception could not say, an
+/// WHETHER AN ELEMENT IS A RESIDUE CHAIN: its address leads with the
+/// residue's tag AND it carries a chain — what perception could not say, an
 /// open question and never a word (ruled 2026-10-18). The tag alone
 /// also opens a rewrite, a letters word and a spatial action with no chain
 /// (`vertex::KIND_*`): those are words of the language, and read as questions
 /// they had no scene to be met at, stood open forever and held the mind in
 /// tension it could never resolve (observed on the development deployment, 2026-10-18 15:34: 146–266
 /// open questions, none on the corpus).
-pub(crate) fn is_residual(e: &Element) -> bool {
-    !e.sub().is_empty() && matches!(e.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL)
+pub(crate) fn is_residue(e: &Element) -> bool {
+    !e.sub().is_empty() && matches!(e.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUE)
 }
 
 impl GenomeWriteTally {
@@ -108,7 +108,7 @@ impl GenomeWriteTally {
             ("words whose citation cannot be written", self.unciteable),
             ("words coinciding at one citation", self.coincident),
             ("words whose record passes a length its field writes", self.unwritable),
-            ("residual chains, open questions and never words", self.residual),
+            ("residue chains, open questions and never words", self.residue),
             ("rewrites, acts on the language and never words", self.rewrite),
         ] {
             if n > 0 {
@@ -118,7 +118,7 @@ impl GenomeWriteTally {
     }
 }
 
-impl Epigenome {
+impl MindLanguage {
     /// FILE A WORD'S ADMITTING STAMP (78.24 (2b), 78.49): the court's stamp
     /// for a word it admitted — a syllabus page's. A word admitted once keeps
     /// its stamp.
@@ -166,9 +166,9 @@ impl Epigenome {
         let mut nodes: crate::network::nerve::Keyed<Leaves> = crate::network::nerve::Keyed::new();
         crate::trie_tape::persist(&self.resident, |_, g| {
             let elem = g.held.element();
-            // A residual chain is an open question, never crystallized.
-            if is_residual(elem) {
-                refused.residual += 1;
+            // A residue chain is an open question, never crystallized.
+            if is_residue(elem) {
+                refused.residue += 1;
                 return;
             }
             if is_rewrite_act(elem) {
@@ -232,13 +232,13 @@ impl Epigenome {
             if again != key {
                 return None;
             }
-            // MU-CLIENT §7.1 — A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A
+            // MU-CLIENT §7.1 — A RESIDUE CHAIN IS AN OPEN QUESTION, NEVER A
             // WORD (ruled 2026-10-18): one an older genome file
             // holds is read whole and handed to the mind's carrier of open
             // questions, never admitted.
-            if is_residual(&e) {
+            if is_residue(&e) {
                 let stratum = crate::transducer::stalk::invariant_of(&e).key().as_bytes().to_vec();
-                self.restored_residuals.push((e.address().as_bytes().to_vec(), e.sub().to_vec(), stratum));
+                self.restored_residues.push((e.address().as_bytes().to_vec(), e.sub().to_vec(), stratum));
                 continue;
             }
             // A rewrite an older file held is an act the court applied, never

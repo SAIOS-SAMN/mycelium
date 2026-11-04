@@ -3,7 +3,7 @@
 // unsheared into ellipses; the construction ruled in full).
 //
 //! THE CORPUS IS A FIELD, NEVER A LIST. Every family of the feed and every
-//! open question (a residual chain) is PLACED once at its own coordinates,
+//! open question (a residue chain) is PLACED once at its own coordinates,
 //! read off its frames with no extraction: the charts its bodies stand on
 //! (`Offer::of`) and the key of 𝒢's orbit its hue fibre moves, read on the
 //! map the scenes show before any lift (`fibre_map`, `hue_orbit_key`) — the
@@ -37,7 +37,7 @@ use crate::network::nerve::Keyed;
 
 /// An item of the corpus: a feed family, by its citation.
 const ITEM_FAMILY: u8 = 1;
-/// An item of the corpus: an open question, by its residual's address.
+/// An item of the corpus: an open question, by the residue's address.
 /// FORMAT: corpus item tag.
 const ITEM_QUESTION: u8 = 2;
 /// A coordinate of the corpus: a body chart, by its key.
@@ -117,7 +117,7 @@ fn coords_of(train: &crate::transducer::family::Family, fibre: Option<Vec<(u8, u
 }
 
 impl Mind {
-    /// AN OPEN QUESTION PLACED on the corpus: its residual chain's scene read
+    /// AN OPEN QUESTION PLACED on the corpus: its residue chain's scene read
     /// to its bodies' charts, and its hue map's 𝒢 orbit.
     pub(crate) fn place_question(&mut self, address: &[u8], chain: &[(i64, i64, u8, u8)]) {
         let Some((x, y)) = crate::transducer::family::scene_of_chain(chain) else { return };
@@ -161,7 +161,7 @@ impl Mind {
         let mut out: Keyed<()> = Keyed::new();
         for (coord, _) in self.board.corpus.at.scoped() {
             if let [COORD_CHART, chart @ ..] = coord.as_slice() {
-                if self.epigenome.speaks_on(chart) {
+                if self.language.speaks_on(chart) {
                     out.insert(&coord, ());
                 }
             }
@@ -185,7 +185,7 @@ impl Mind {
     /// the focus over.
     fn curiosity_focus(&self) -> Keyed<()> {
         let language: Vec<crate::transducer::stalk::Invariant> =
-            self.epigenome.spoken_charts().iter().filter_map(|k| crate::transducer::stalk::Invariant::from_key(k)).collect();
+            self.language.spoken_charts().iter().filter_map(|k| crate::transducer::stalk::Invariant::from_key(k)).collect();
         curiosity(&language, self.board.corpus.at.scoped().map(|(coord, _)| coord))
     }
 }
@@ -302,7 +302,7 @@ impl Mind {
                 self.perceive_scene(super::perceive::Scene { id: key, train: task.train, tests, reading: super::perceive::SceneKind::Feed });
             }
             ITEM_QUESTION => {
-                let Some(chain) = self.board.open_residuals.get(&key).cloned() else {
+                let Some(chain) = self.board.open_residues.get(&key).cloned() else {
                     self.board.corpus.remove(&item);
                     return;
                 };
@@ -311,7 +311,7 @@ impl Mind {
                     self.board.question_waits = true;
                     return;
                 }
-                self.board.open_residuals.remove(&key);
+                self.board.open_residues.remove(&key);
                 self.board.corpus.remove(&item);
                 self.hold_chain(chain);
             }

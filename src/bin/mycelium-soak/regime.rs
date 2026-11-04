@@ -35,7 +35,7 @@
     reason = "D1 2026-09-19: the standing reading's pull and mint times; law 9 binds kernels and this is an instrument"
 )]
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::{extract_rule_on, extraction_spend, mint_sentence, perceive_family};
 use std::time::Instant;
 
@@ -61,7 +61,7 @@ fn stem_of(file: &str) -> &str {
 
 /// Stand the mind on `slice`, then pull `name` under the voice's budget.
 pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     let mut physics = mycelium::physics::Physics::default();
     let mut stood = 0u64;
     let stand_start = Instant::now();

@@ -88,7 +88,7 @@ fn task_inflow_takes_offer_in_restored_language() {
         let frames = perceive_family(&[(x.clone(), y.clone())]);
         let f = scene_form_on(&NoCrystal, &mut b, &x, &y, &frames).expect("the pair reads");
         let word = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word");
-        mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
+        mind.language.moduli_admit(&crate::transducer::element::Held::of(word));
         let settled = mind.strained();
         mind.pull_task();
         (settled, mind.board.court.pulling)
@@ -198,7 +198,7 @@ fn corpus_inflow_meets_language_charts_at_rest() {
     });
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("ground"));
     mind.open_feed(home.clone());
-    mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
+    mind.language.moduli_admit(&crate::transducer::element::Held::of(word));
     let mut field = std::mem::take(&mut mind.field);
     let (quiet, excited) = field.think(|| {
         let quiet = mind.contemplation.is_empty() && matches!(crate::transducer::mind::with_field(|f| f.orbits.focus().is_empty()), Ok(true));
@@ -244,19 +244,19 @@ fn curiosity_couples_to_nearest_stratum() {
     assert_eq!(held(&curiosity(&[], all.iter().cloned())), least, "a language on no chart: the least chart alone");
 }
 
-/// A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A WORD (ruled
+/// A RESIDUE CHAIN IS AN OPEN QUESTION, NEVER A WORD (ruled
 /// 2026-10-18). A court teaches one: it is not learned into the genome, and
 /// stands on the mind's carrier of open questions, once however often taught;
 /// the mind, holding nothing else, now holds tension; placed on the corpus,
 /// it is met where the mind's field rings on its hue fibre's support, taken
 /// into thought, and leaves the carrier.
 #[test]
-fn absorb_taught_holds_residual_as_open_question() {
+fn absorb_taught_holds_residue_as_open_question() {
     crate::transducer::raster::stand_on(0);
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("questioning"));
     let chain = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (1, 0, 1, 2), (2, 2, 3, 4)];
-    let residual = crate::transducer::element::from_residual(&chain).expect("a residual chain");
-    let tape = residual.to_bytes().expect("the record writes");
+    let residue = crate::transducer::element::from_residue(&chain).expect("a residue chain");
+    let tape = residue.to_bytes().expect("the record writes");
     let mut field = std::mem::take(&mut mind.field);
     let (settled, strained) = field.think(|| {
         let settled = mind.strained();
@@ -266,38 +266,38 @@ fn absorb_taught_holds_residual_as_open_question() {
     });
     mind.field = field;
     assert!(!settled, "a mind just opened holds no strain");
-    assert!(!mind.epigenome.holds(residual.address().as_bytes()), "never learned into the genome");
-    assert_eq!(mind.board.open_residuals.len(), 1, "one open question, however often taught");
-    let stratum = crate::transducer::stalk::invariant_of(&residual).key();
-    assert!(mind.board.residual_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");
+    assert!(!mind.language.holds(residue.address().as_bytes()), "never learned into the genome");
+    assert_eq!(mind.board.open_residues.len(), 1, "one open question, however often taught");
+    let stratum = crate::transducer::stalk::invariant_of(&residue).key();
+    assert!(mind.board.residue_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");
     assert!(strained, "an open question is tension");
     assert_eq!(mind.board.corpus.size().0, 1, "placed on the corpus at its coordinates");
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
-        // A cycle on the support {1, 3} — the hues the residual's map moves.
+        // A cycle on the support {1, 3} — the hues the residue's map moves.
         let _ = crate::transducer::mind::with_field(|f| f.orbits.admit_hues(&[(1, 3), (3, 1)], 1, &crate::transducer::cech::Thread::Free));
         mind.corpus_inflow(&mut crate::physics::StrokeOutcome::default());
     });
     mind.field = field;
-    assert!(mind.board.open_residuals.is_empty(), "met where the field rings, taken into thought, it leaves the carrier");
+    assert!(mind.board.open_residues.is_empty(), "met where the field rings, taken into thought, it leaves the carrier");
 }
 
-/// AN OPEN QUESTION IS A CHAIN. The residual's tag also opens a word with no
+/// AN OPEN QUESTION IS A CHAIN. The residue's tag also opens a word with no
 /// chain (a rewrite, a letters word, a bare action): it has no scene to be
 /// met at, and read as a question it stood open forever. Only an element
 /// that carries a chain is one.
 #[test]
-fn is_residual_is_true_only_for_chain_under_tag() {
-    use crate::client::sdk::vocabulary::is_residual;
+fn is_residue_is_true_only_for_chain_under_tag() {
+    use crate::client::sdk::vocabulary::is_residue;
     let bare = crate::transducer::element::Element::identity();
     assert!(
-        matches!(bare.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL),
-        "the chain-free word stands under the residual's tag"
+        matches!(bare.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUE),
+        "the chain-free word stands under the residue's tag"
     );
-    assert!(!is_residual(&bare), "a word with no chain is no open question");
+    assert!(!is_residue(&bare), "a word with no chain is no open question");
     let chain = vec![(0i64, 0i64, 1u8, 2u8), (2, 2, 3, 4)];
-    let residual = crate::transducer::element::from_residual(&chain).expect("a residual chain");
-    assert!(is_residual(&residual), "a chain under the tag is one");
+    let residue = crate::transducer::element::from_residue(&chain).expect("a residue chain");
+    assert!(is_residue(&residue), "a chain under the tag is one");
 }
 
 /// AN UNCOUPLED TASK IS NOT TAKEN, AND LAPSES AT ITS SECOND RETURN. The

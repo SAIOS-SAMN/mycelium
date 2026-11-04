@@ -5,7 +5,7 @@
 // Per task: the extraction's spend, then the interpreter's on the remainder
 // the speech left. Data; nothing is decided.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::interpret::interpret;
 use mycelium::transducer::family::{extract_rule_with, form_deflation};
 
@@ -13,7 +13,7 @@ use mycelium::transducer::family::{extract_rule_with, form_deflation};
 const STROKE: usize = 1 << 20;
 
 pub(crate) fn report(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let (mut families, mut with_remainder, mut extract_spend, mut interpret_spend, mut over) = (0u64, 0u64, 0u64, 0u64, 0u64);
     let mut widest = 0u64;
     for name in names {

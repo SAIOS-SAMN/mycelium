@@ -9,8 +9,8 @@ pub mod gauge;
 pub mod held;
 pub mod letters;
 pub mod receipts;
-pub mod residual;
 pub mod record;
+pub mod residue;
 pub mod sensor;
 pub mod vertex;
 
@@ -19,8 +19,8 @@ pub use gauge::*;
 pub use held::*;
 pub use letters::*;
 pub use receipts::*;
-pub use residual::*;
 pub use record::*;
+pub use residue::*;
 pub use sensor::*;
 
 #[cfg(test)]

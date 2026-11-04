@@ -26,7 +26,7 @@ fn family() -> Vec<crate::transducer::family::TrainPair> {
 /// The slide by `(r, c)`, spelled as a connection.
 fn slide(r: i64, c: i64) -> Element {
     let w = crate::transducer::alphabet::Word::identity();
-    crate::transducer::element::residual::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a slide spells")
+    crate::transducer::element::residue::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a slide spells")
 }
 
 /// The 180° turn of the sensor plane carried by `(r, c)`: the unit square at
@@ -34,7 +34,7 @@ fn slide(r: i64, c: i64) -> Element {
 fn turn_180(r: i64, c: i64) -> Element {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
     let w = crate::transducer::alphabet::Word::from_letters(&[(q, false), (q, false)]);
-    crate::transducer::element::residual::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a 180° turn spells")
+    crate::transducer::element::residue::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a 180° turn spells")
 }
 
 /// A court holding the scene's family, with `words` on its docket bound to

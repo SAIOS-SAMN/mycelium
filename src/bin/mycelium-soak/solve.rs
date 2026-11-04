@@ -9,11 +9,11 @@
 //! The mind is stood on the slice first, as a voice's is, because what it
 //! holds changes what the glue can cite and therefore what it can say.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::{extract_rule_on, extraction_spend, mint_sentence, perceive_family, speak_rule};
 
 pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     let mut physics = mycelium::physics::Physics::default();
     // The mind stands on the first `stand` tasks, as a voice does.
     for (k, file) in names.iter().take(stand).enumerate() {

@@ -169,7 +169,7 @@ pub fn callus_form(
 }
 
 /// SENTENCE_TAG v6: the Form tape. Hue maps are derived from vertices.
-/// Addresses are len16 + bytes. `mag` is the residual the form measures over
+/// Addresses are len16 + bytes. `mag` is the residue the form measures over
 /// its bundle. Zero is not a word. The magnitude is the word's measure — its
 /// existence, the ask a demand carries — and never its price: what a word is
 /// escrowed or paid is its discharge (78.149).
@@ -192,9 +192,9 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     // (law 2) and is set below, the kind is the address's own `TAG_FORM`,
     // and the evidence the key excludes rides `ReceiptsEnvelope`.
     //
-    // WORDS, CONNECTIONS AND RESIDUAL CHAINS STILL MINT A TAPE. For those the
+    // WORDS, CONNECTIONS AND RESIDUE CHAINS STILL MINT A TAPE. For those the
     // description is the content carrier and not a second copy of a
-    // coordinate — `letters`, `rewrite` and `residual` read it as the
+    // coordinate — `letters`, `rewrite` and `residue` read it as the
     // object itself. It is the SENTENCE tape that was redundant, because a
     // sentence's content is a cell complex its key writes out in full.
     let n = 0usize;
@@ -429,7 +429,7 @@ pub fn form_torsion(
 }
 
 /// Whether a spoken word carries a torsion cycle: the speaker's filing
-/// first, then the residual element's own section, so a word whose cycles
+/// first, then the residue element's own section, so a word whose cycles
 /// live on the axis rather than on a form's orbits still reads as a bundle.
 pub fn carries_torsion(e: &Element) -> bool {
     !e.filing().is_empty() || !e.torsion().is_empty()

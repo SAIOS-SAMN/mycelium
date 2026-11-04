@@ -4,7 +4,7 @@
 use crate::client::sdk::*;
 use crate::transducer::element::Element;
 
-impl Epigenome {
+impl MindLanguage {
     pub fn dialect_len(&self) -> usize {
         self.dialect.len()
     }
@@ -153,19 +153,19 @@ impl Epigenome {
         Some(addr)
     }
 
-    /// EXPRESS a residual: germinate it as this mind's own word. Returns
+    /// EXPRESS a residue: germinate it as this mind's own word. Returns
     /// false when the expressed vocabulary already speaks it (the same body
     /// under a transport) — a claim already made, not to be made again.
     /// `k` is the voice's K (law 9); `now_tu` is TUniversal.
     #[cfg(test)]
     pub(crate) fn express(
         &mut self,
-        residual: &[(i64, i64, u8, u8)],
+        residue: &[(i64, i64, u8, u8)],
         k: u64,
         now_tu: u64,
         budget: &mut crate::physics::Budget,
     ) -> bool {
-        if residual.is_empty() {
+        if residue.is_empty() {
             return false;
         }
         let located = {
@@ -181,16 +181,16 @@ impl Epigenome {
                 &word_at,
                 &self.expressed_atlas,
                 &shape_at,
-                residual,
+                residue,
                 None,
                 budget,
             )
         };
-        if let ([], []) = (located.residual.as_slice(), located.punctures.as_slice()) {
+        if let ([], []) = (located.residue.as_slice(), located.punctures.as_slice()) {
             return false; // already spoken: the same body under a transport
         }
-        // A residual with no A5 form is no word, so nothing is expressed.
-        let Some(word) = crate::transducer::element::from_residual(&residual.to_vec()) else {
+        // A residue with no A5 form is no word, so nothing is expressed.
+        let Some(word) = crate::transducer::element::from_residue(&residue.to_vec()) else {
             return false;
         };
         let at = word.address();

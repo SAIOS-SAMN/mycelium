@@ -77,7 +77,7 @@ impl Court {
         spoken: Element,
         peer: [u8; 32],
         self_id: [u8; 32],
-        cover: &mut crate::network::nerve::Cover,
+        cover: &mut crate::network::nerve::HomeTrie,
         budget: &mut crate::physics::Budget,
     ) -> Glue {
         match self.glue_fetched_ruled(spoken, peer, self_id, cover, budget) {
@@ -93,7 +93,7 @@ impl Court {
         spoken: Element,
         peer: [u8; 32],
         self_id: [u8; 32],
-        cover: &mut crate::network::nerve::Cover,
+        cover: &mut crate::network::nerve::HomeTrie,
         budget: &mut crate::physics::Budget,
     ) -> Option<Glue> {
         let address = spoken.address();
@@ -762,7 +762,7 @@ fn write_peer_section(cx: &mut crate::transducer::cech::Complex, spoken: &Elemen
 /// THE COVER'S VERTICES on the chart: this court, the peer, and every hypha
 /// the cover names on a lane the word occupies.
 fn cover_vertices(
-    cover: &crate::network::nerve::Cover,
+    cover: &crate::network::nerve::HomeTrie,
     spoken: &Element,
     inv: &crate::transducer::stalk::Invariant,
     self_id: [u8; 32],

@@ -52,16 +52,16 @@ fn stand_with(entity: &mut Mind, gauges: [&[(u8, u8)]; 2], at: &[Vec<u8>], ray: 
     let mut w = super::fixtures::two_body_sentence(gauges);
     w.record_cycle(cycle_by(ray, Some(r)));
     let k = entity.act();
-    let _ = entity.epigenome.stand_dialect_at(w.clone(), k, 0);
+    let _ = entity.language.stand_dialect_at(w.clone(), k, 0);
     w
 }
 
 /// The one remainder a held word's record carries, and whether this mind
 /// counts it answered.
 fn remainder_of(e: &Mind, w: &Element) -> (Remainder, bool) {
-    let held = e.epigenome.element_of(w.address().as_bytes()).expect("still held");
+    let held = e.language.element_of(w.address().as_bytes()).expect("still held");
     let r = held.remainders().next().expect("its remainder").clone();
-    let answered = e.epigenome.answered(w.address().as_bytes(), &r);
+    let answered = e.language.answered(w.address().as_bytes(), &r);
     (r, answered)
 }
 
@@ -90,10 +90,10 @@ fn stand_calluses_raises_callus_only_across_two_vantages() {
     // word re-filled — marked in the mind by the word that spells it.
     let r = e.meet_graph().remainders;
     assert_eq!((r.refill_acts, r.refill_refused), (2, 0), "{}", r.line());
-    let spellings: Vec<crate::transducer::address::Address> = e.epigenome.refilled.scoped().map(|(_, a)| a.clone()).collect();
+    let spellings: Vec<crate::transducer::address::Address> = e.language.refilled.scoped().map(|(_, a)| a.clone()).collect();
     let [one, two] = spellings.as_slice() else { panic!("two marks: {}", spellings.len()) };
     assert_eq!(one, two, "both re-spelled by the one callus");
-    assert!(e.epigenome.dialect.get(one.as_bytes()).is_some(), "which stands in the dialect as the mind's own word");
+    assert!(e.language.dialect.get(one.as_bytes()).is_some(), "which stands in the dialect as the mind's own word");
     for w in [&w1, &w2] {
         let (r, answered) = remainder_of(&e, w);
         assert!(answered, "the mind counts it answered");
@@ -175,7 +175,7 @@ fn cycle(r: Option<Remainder>) -> TorsionCycle {
 /// the record round-trips it and the address does not move; a cycle filed
 /// without one gains it, a differing one is refused. Admitted to the genome
 /// it is indexed at chart ‖ κ; crystallized and restored into a fresh
-/// epigenome, the record comes back whole and the index is rebuilt from it.
+/// `MindLanguage`, the record comes back whole and the index is rebuilt from it.
 /// A second word whose remainder coincides is not filed over the first.
 #[test]
 fn record_cycle_keeps_remainder_through_restart() {
@@ -192,13 +192,13 @@ fn record_cycle_keeps_remainder_through_restart() {
     assert_eq!(back.remainders().collect::<Vec<_>>(), vec![&r], "the remainder rides the record whole");
     assert_eq!(back.address(), addr, "and the address does not carry it");
 
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     epi.admit_word(crate::transducer::element::Held::of(e.clone()), 0);
     assert_eq!(epi.remainders_at(&r.at, &r.class), vec![addr.clone()], "indexed at the residue's chart ‖ κ");
     epi.admit_all_at(crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS));
     let (frozen, refused) = epi.crystallize();
     assert_eq!(refused.total(), 0);
-    let mut booted = Epigenome::new();
+    let mut booted = MindLanguage::new();
     assert!(booted.uncrystallize(&frozen).is_some(), "the genome restores");
     assert_eq!(booted.remainders_at(&r.at, &r.class), vec![addr.clone()], "the index is rebuilt from the record");
     assert_eq!(booted.remainders_len(), 1);

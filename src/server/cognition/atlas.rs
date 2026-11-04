@@ -403,7 +403,7 @@ impl Court {
             }
         }
         // 78.154 (3) — where the receiver applied each crossing: the edge
-        // reads its residual from here, never before.
+        // reads its residue from here, never before.
         for (c, ua) in &e.applied {
             if let Some(edge) = self.atlas.edges.get_mut(c) {
                 edge.u_applied = Some(*ua);

@@ -228,16 +228,16 @@ impl Mind {
             return;
         };
         // The genome's own atlas (current, admitted in place), never rebuilt here.
-        let atlas = self.epigenome.atlas.clone();
+        let atlas = self.language.atlas.clone();
         let local = sheaf::digests(&atlas);
         // The outer index names what differs by address; a stratum the
         // fibre Čech already glued is not walked again, and a stratum of
-        // residual chains — open questions the mind holds on its carrier and
+        // residue chains — open questions the mind holds on its carrier and
         // never as words (MU-CLIENT §7.1, ruled 2026-10-18) — differs
         // from the court's by doctrine and is never fetched for it.
         let all: Vec<_> = sheaf::discordant(&remote, &local)
             .into_iter()
-            .filter(|d| !self.glued.contains(&d.inv.key()) && !self.board.residual_strata.contains(d.inv.key().as_bytes()))
+            .filter(|d| !self.glued.contains(&d.inv.key()) && !self.board.residue_strata.contains(d.inv.key().as_bytes()))
             .cloned()
             .collect();
         self.discordance = all.len();
@@ -300,7 +300,7 @@ impl Mind {
             // refused is sent again on the next fetch, so counting its arrival
             // kept its stratum from ever resting (observed 2026-10-22: court
             // a still deferring ~12 000 words an hour after 98698aef).
-            if let Some(w) = fetched.as_ref().filter(|w| self.epigenome.holds(w.address().as_bytes())) {
+            if let Some(w) = fetched.as_ref().filter(|w| self.language.holds(w.address().as_bytes())) {
                 brought.insert(crate::transducer::stalk::invariant_of(w).key().as_bytes(), ());
             }
             // ČECH AFTER FETCH: the word is glued on the elements, not on
@@ -325,8 +325,8 @@ impl Mind {
             // never one per sibling (law 3). Each transition is one spend of
             // the landing's stroke: a page past it is absorbed, and its glue
             // read on a later fetch.
-            let epigenome = &self.epigenome;
-            let representative = epigenome.atlas.fibre(&inv).iter().filter_map(|a| epigenome.word_at(a)).fold(None, |least: Option<&Element>, held| {
+            let language = &self.language;
+            let representative = language.atlas.fibre(&inv).iter().filter_map(|a| language.word_at(a)).fold(None, |least: Option<&Element>, held| {
                 if held.address() == fetched.address() || held.axes().is_empty() {
                     return least;
                 }
@@ -375,7 +375,7 @@ impl Mind {
                 if self.already_taught_address(address) {
                     continue; // spoken for adoption once; the judge decided
                 }
-                let Some(word) = self.epigenome.word_at(address).cloned() else { continue };
+                let Some(word) = self.language.word_at(address).cloned() else { continue };
                 if self.already_taught(&word) {
                     continue;
                 }
@@ -426,7 +426,7 @@ impl Mind {
 
     /// PULL THE SYLLABUS — the court-ratified teaching stream, served from
     /// this voice's cursor on the hypha (push-on-contact). Every received
-    /// word folds into the genome by address (Epigenome::learn), so both
+    /// word folds into the genome by address (MindLanguage::learn), so both
     /// new vocabulary and rebound anchors propagate; the dialect then
     /// re-resolves against the higher-order language on the next study.
     /// One pull in flight at a time; the pages are
@@ -440,7 +440,7 @@ impl Mind {
         self.board.court.schooling = true;
         let voice = self.hypha.voice().id();
         let req = dialogue::encode_syllabus_request(&voice);
-        let empty = self.epigenome.genome_len() == 0 || self.epigenome.atlas_is_empty();
+        let empty = self.language.genome_len() == 0 || self.language.atlas_is_empty();
         let mut budget = self.physics.stroke();
         self.ask(
             move |s| {
@@ -562,24 +562,24 @@ impl Mind {
             if pos == before {
                 break;
             }
-            // MU-CLIENT §7.1 — A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A
+            // MU-CLIENT §7.1 — A RESIDUE CHAIN IS AN OPEN QUESTION, NEVER A
             // WORD (ruled 2026-10-18): what the court teaches of one
             // is filed on the mind's carrier of open questions, by address,
             // and never learned into the genome.
-            if crate::client::sdk::vocabulary::is_residual(&e) {
+            if crate::client::sdk::vocabulary::is_residue(&e) {
                 let address = e.address();
-                if !self.board.open_residuals.contains(address.as_bytes()) {
-                    self.board.open_residuals.insert(address.as_bytes(), e.sub().to_vec());
+                if !self.board.open_residues.contains(address.as_bytes()) {
+                    self.board.open_residues.insert(address.as_bytes(), e.sub().to_vec());
                     self.place_question(address.as_bytes(), e.sub());
                 }
-                self.board.residual_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
+                self.board.residue_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
                 continue;
             }
             // A REWRITE IS AN ACT ON THE LANGUAGE, NEVER A WORD OF IT: the
             // court applied it; the mind does not learn it, and its stratum
             // is one the sheaf sync never fetches.
             if crate::client::sdk::vocabulary::is_rewrite_act(&e) {
-                self.board.residual_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
+                self.board.residue_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
                 continue;
             }
             // A WORD THE GENOME HOLDS AT ITS ADDRESS IS ALREADY LEARNED (law
@@ -591,9 +591,9 @@ impl Mind {
             // (observed on the development deployment, 2026-10-16 07:38:
             // every mind in
             // `pull_syllabus`'s landing).
-            if self.epigenome.holds(e.address().as_bytes()) {
+            if self.language.holds(e.address().as_bytes()) {
                 if let Some(at) = at {
-                    self.epigenome.file_admitted(&e.address(), at);
+                    self.language.file_admitted(&e.address(), at);
                 }
                 continue;
             }
@@ -605,7 +605,7 @@ impl Mind {
             // fetch's landing for minutes (observed on the development deployment,
             // 2026-10-16 08:21:
             // genome still, refused 0, the dialect up 294 in a minute).
-            if let Some(d) = self.epigenome.dialect.get(e.address().as_bytes()).filter(|d| d.withheld) {
+            if let Some(d) = self.language.dialect.get(e.address().as_bytes()).filter(|d| d.withheld) {
                 waiting.extend(d.missing.iter().cloned());
                 continue;
             }
@@ -635,7 +635,7 @@ impl Mind {
         // crystallized only once a court rules them.
         for e in &heard_words {
             if let Some(at) = at {
-                self.epigenome.file_admitted(&e.address(), at);
+                self.language.file_admitted(&e.address(), at);
             }
             let _ = self.pivot_on(e, budget);
             // 78.37(1) — FIXED BY CLASS: a word arriving with its admitting
@@ -647,7 +647,7 @@ impl Mind {
         // 78.49: a page LEARNED is an act of this mind, learned at its own K.
         let k = self.act();
         // The caller's stroke (65.5): the page is learned inside its act.
-        let heard = self.epigenome.learn_at(&fresh, k, self.now_tu(), budget);
+        let heard = self.language.learn_at(&fresh, k, self.now_tu(), budget);
         // 24.3: a page learned is a mode of the stroke's outcome, measured
         // by what the page brought; a page refused on replay measures
         // nothing. The stroke takes the measure once.

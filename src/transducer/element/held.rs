@@ -29,7 +29,7 @@ use crate::transducer::sentence::Form;
 #[derive(Debug, Clone)]
 pub enum Held {
     /// A word with no sentence form: a connection, a rewrite, a
-    /// translation, a pure residual chain — or a sentence whose tape does
+    /// translation, a pure residue chain — or a sentence whose tape does
     /// not decode, which carries no form either.
     Word(Element),
     /// A SENTENCE and the form its tape decodes to, decoded once when the

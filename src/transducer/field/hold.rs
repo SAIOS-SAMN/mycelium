@@ -91,7 +91,7 @@ impl Contemplation {
         // wanted; `hold_form_inner` derives its own from the form it owns,
         // and neither is stored beside the other (law 12).
         let key = trace::tracing().then(|| idea_key(&f));
-        let _ = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::Spores::default(), &[]);
+        let _ = self.hold_form_inner(f, train, remainders, escrow, budget, super::cross_scene::Spores::default(), &[]);
         let retained = match (before, live_bytes()) {
             (Some(a), Some(b)) => {
                 HELD_BYTES.with(|c| c.set(c.get().saturating_add(b - a)));
@@ -114,7 +114,7 @@ impl Contemplation {
     }
 
     /// N4 — A PERCEPTION HELD WITH ITS BODIES: the form, and the frames it was
-    /// perceived from, by chart (`resonance::spores_of`) — and then the
+    /// perceived from, by chart (`cross_scene::spores_of`) — and then the
     /// filaments its bodies grow with every held perception OF ITS FAMILY
     /// it meets (`perceive_cells`, 78.56 III), on the act's own stroke.
     /// `family` is the task's coordinate the perception was seen in (empty
@@ -138,7 +138,7 @@ impl Contemplation {
         for (k, _) in self.docket.scoped() {
             before.insert(&k, ());
         }
-        let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::spores_of(frames), family);
+        let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::cross_scene::spores_of(frames), family);
         if let Some(key) = &key {
             // 78.112 H7b — the torsion hearing its rings wound, on its vertex,
             // until the mind lets the perception go and it unwinds.
@@ -177,7 +177,7 @@ impl Contemplation {
         remainders: &[Vec<Link>],
         escrow: [u64; 4],
         budget: &mut crate::physics::Budget,
-        spores: super::resonance::Spores,
+        spores: super::cross_scene::Spores,
         family: &[u8],
     ) -> Option<crate::transducer::address::Address> {
         mark("idea_key");
@@ -188,7 +188,7 @@ impl Contemplation {
         // read as the stratum the form's key prefixes — never a second idea.
         let seen = !spores.is_empty();
         let key = match seen {
-            true => super::resonance::perceived_key(form_key, &spores),
+            true => super::cross_scene::perceived_key(form_key, &spores),
             false => {
                 let perceptions: Vec<Vec<u8>> = match self.wells.fibre_at(form_key.as_bytes()) {
                     Some(fibre) => fibre.map(|(k, _)| k).filter(|k| k.len() > form_key.len()).collect(),

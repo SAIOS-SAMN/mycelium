@@ -1,11 +1,11 @@
-// A5, 16.11 — THE RESIDUAL: the centred coboundary chain and the words
+// A5, 16.11 — THE RESIDUE: the centred coboundary chain and the words
 // built from one.
 //
 //! A5 centres a chain to its minimum corner and sorts it, so the same
 //! deformation at any position is one substance: that canonicalisation, the
 //! constructors that read a chain, and the listing key naming it in a frame.
 
-use crate::transducer::germinate::{germ_bytes, ResidualGerm};
+use crate::transducer::germinate::{germ_bytes, ResidueGerm};
 use crate::core::Q;
 use num_bigint::BigInt;
 use num_traits::One;
@@ -16,7 +16,7 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
     chain.iter().map(|(r, c, _, _)| (*r, *c)).collect()
 }
 
-/// The DESCRIPTION of a perceived residual as a germ — post-excision, the ONLY way
+/// The DESCRIPTION of a perceived residue as a germ — post-excision, the ONLY way
 /// cognition mints anything: every non-transposition demand IS a coboundary the
 /// eye measured, and every "rotation"/"recolour" the mesh will ever speak is a
 /// germinated pattern, never a named solver.
@@ -25,7 +25,7 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
 /// origin (the substrate's transposition projection, hypha-side per the ruling) —
 /// so the same deformation at any position is ONE word, while geometry (the
 /// relative offsets between changed sites) is preserved exactly: equal-tally,
-/// different-geometry residuals stay distinct. The word/identity IS the centred
+/// different-geometry residues stay distinct. The word/identity IS the centred
 /// chain; the antisymmetric hue tally is kept only as the δ-algebra lens.
 /// A5: translate min-corner to origin, sort, dedup. None when two
 /// distinct transitions occupy one site.
@@ -193,13 +193,13 @@ pub fn canonical_chain(links: &[(i64, i64, u8, u8)]) -> Option<CanonicalChain> {
     Some(CanonicalChain(out))
 }
 
-/// The word of a residual germ, or `None` where the germ has no canonical
+/// The word of a residue germ, or `None` where the germ has no canonical
 /// chain: two distinct transitions on one site (A5 step 3).
 ///
 /// A germ `canonical_chain` refuses has no address, because the address IS
 /// the centred chain (law 2) and there is no centring of a chain that
 /// says two things at one site. The refusal travels.
-pub fn from_residual(g: &ResidualGerm) -> Option<Element> {
+pub fn from_residue(g: &ResidueGerm) -> Option<Element> {
     Some(from_canonical(&canonical_chain(g)?))
 }
 
@@ -249,12 +249,12 @@ impl Frame {
     }
 }
 
-/// A residual germ with its FRAME FIBRE: the exact frame map
+/// A residue germ with its FRAME FIBRE: the exact frame map
 /// ρ = (h_out/h_in, w_out/w_in) ∈ ℚ² enters the spatial generator's
 /// diagonal, so a word at ρ ≠ (1,1) is a different word from its planar
 /// shadow (identity and substance both carry the fibre; only translation is
 /// quotiented). `frame` is (h_in, w_in, h_out, w_out).
-/// The unique listing key of a demand: the address of the framed residual.
+/// The unique listing key of a demand: the address of the framed residue.
 /// Intake, the book, quote, attest, probe, settle, task, and the nerve
 /// route all use this, never an unframed shadow.
 /// `None` where the chain has no canonical form: a listing that cannot be
@@ -264,14 +264,14 @@ pub fn listing_key(
     chain: &[(i64, i64, u8, u8)],
     frame: &Frame,
 ) -> Option<crate::transducer::address::Address> {
-    Some(from_residual_framed(&chain.to_vec(), frame)?.address())
+    Some(from_residue_framed(&chain.to_vec(), frame)?.address())
 }
 
 /// Identity frame: no scale. Unframed speech uses this so its key matches
 /// a planar intake.
 pub const IDENTITY_FRAME: Frame = Frame::IDENTITY;
 
-pub fn from_residual_framed(g: &ResidualGerm, frame: &Frame) -> Option<Element> {
+pub fn from_residue_framed(g: &ResidueGerm, frame: &Frame) -> Option<Element> {
     Some(from_canonical_framed(&canonical_chain(g)?, frame))
 }
 
@@ -305,12 +305,12 @@ pub fn from_connection(
     rotor_word: &crate::transducer::alphabet::Word,
     carriage: &Versor,
     sigma: &[(u8, u8)],
-    remainder: &ResidualGerm,
+    remainder: &ResidueGerm,
     carried: [u64; 4],
 ) -> Option<Element> {
     let v = conformal_of(rotor_word, carriage)?;
     let spelling = crate::transducer::alphabet::Spelling { word: rotor_word.clone() };
-    let mut e = from_residual(remainder)?;
+    let mut e = from_residue(remainder)?;
     e.description = connection_description(&spelling, carriage, sigma, &e.sub.to_vec());
     e.action.spatial = Some(v);
     e.action.gauge = sigma.to_vec();
@@ -559,7 +559,7 @@ pub(crate) fn connection_description(
     spelling: &crate::transducer::alphabet::Spelling,
     carriage: &Versor,
     sigma: &[(u8, u8)],
-    remainder: &ResidualGerm,
+    remainder: &ResidueGerm,
 ) -> Vec<u8> {
     let mut out = vec![CONNECTION_TAG];
     spelling.to_bytes(&mut out);

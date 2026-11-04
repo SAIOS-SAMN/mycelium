@@ -327,7 +327,7 @@ pub mod coord {
     }
 
     impl Coordinate for CoverSite {
-        const NAME: &'static str = "lamina-cell";
+        const NAME: &'static str = "cover-site";
         const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
 
         fn encode(&self) -> CompactBytes {
@@ -341,7 +341,7 @@ pub mod coord {
             reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
         )]
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
-            let refuse = || Self::refuse("a lamina cell is a tag byte and a site, n first");
+            let refuse = || Self::refuse("a cover site is a tag byte and a site, n first");
             match bytes.first() {
                 Some(7u8) => {
                     let mut pos = 1usize;
@@ -459,7 +459,7 @@ pub mod coord {
     }
 
     impl Coordinate for ChartCarriage {
-        const NAME: &'static str = "section";
+        const NAME: &'static str = "chart-carriage";
         const SYSTEM: CoordinateSystem = CoordinateSystem::Chart;
 
         fn encode(&self) -> CompactBytes {
@@ -484,16 +484,16 @@ pub mod coord {
         }
     }
 
-    /// A TRANSPORT CLASS — shell kind and the conjugacy of the word
+    /// A TRANSPORT CLASS — layer kind and the conjugacy of the word
     /// (21 step 1, 15.4). Never the hue map and never the body's moduli,
     /// which are section coordinates.
     ///
-    /// It opens with the shell kind, not an A21 tag, so `SYSTEM` is `Any`
+    /// It opens with the layer kind, not an A21 tag, so `SYSTEM` is `Any`
     /// and the decode is the whole check — which is the honest spelling of
     /// a system whose keys are not tag-led.
     #[derive(Clone, Debug, PartialEq, Eq)]
     pub struct Transport {
-        pub kind: crate::transducer::layers::ShellKind,
+        pub kind: crate::transducer::layers::LayerKind,
         pub class: Holonomy,
     }
 
@@ -515,8 +515,8 @@ pub mod coord {
             let kind = bytes
                 .first()
                 .copied()
-                .and_then(crate::transducer::layers::ShellKind::of)
-                .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
+                .and_then(crate::transducer::layers::LayerKind::of)
+                .ok_or_else(|| Self::refuse("the leading byte names no layer kind"))?;
             let mut pos = 1usize;
             let cb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the word class is not length-delimited"))?;
@@ -567,8 +567,8 @@ pub mod coord {
             let kind = bytes
                 .first()
                 .copied()
-                .and_then(crate::transducer::layers::ShellKind::of)
-                .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
+                .and_then(crate::transducer::layers::LayerKind::of)
+                .ok_or_else(|| Self::refuse("the leading byte names no layer kind"))?;
             let mut pos = 1usize;
             let cb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the word class is not length-delimited"))?;
@@ -695,7 +695,7 @@ pub mod coord {
     pub struct GluedBoundary(pub Vec<u8>);
 
     impl Coordinate for GluedBoundary {
-        const NAME: &'static str = "cover-site";
+        const NAME: &'static str = "glued-boundary";
         const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
 
         fn encode(&self) -> CompactBytes {
@@ -782,7 +782,7 @@ pub mod coord {
     /// §4.4 E8 — THE THREE COORDINATES OF A COVER (ruled 2026-09-22).
     ///
     /// `family::pieces` has always written these three addresses out of
-    /// the pieces' own content — a piece by its shell kind and its support written
+    /// the pieces' own content — a piece by its layer kind and its support written
     /// out; a carriage by its domain and codomain in that order; a meet by
     /// its two ends unordered — and every carrier
     /// holding one was `Keyed<V, Any>`. The bytes were a coordinate and the
@@ -804,7 +804,7 @@ pub mod coord {
     /// a colour back off a piece's key, so none is written there (law 12).
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Piece {
-        pub kind: crate::transducer::layers::ShellKind,
+        pub kind: crate::transducer::layers::LayerKind,
         pub support: Vec<crate::transducer::base::Site>,
     }
 
@@ -841,7 +841,7 @@ pub mod coord {
                 Some(&t) if t == a::TAG_PIECE => *pos += 1,
                 _ => return None,
             }
-            let kind = crate::transducer::layers::ShellKind::of(*bytes.get(*pos)?)?;
+            let kind = crate::transducer::layers::LayerKind::of(*bytes.get(*pos)?)?;
             *pos += 1;
             Some(Piece { kind, support: take_support(bytes, pos)? })
         }
@@ -924,7 +924,7 @@ pub mod coord {
     }
 
     impl Coordinate for CarriedPieces {
-        const NAME: &'static str = "cover-carriage";
+        const NAME: &'static str = "carried-pieces";
         const SYSTEM: CoordinateSystem = CoordinateSystem::Carriage;
 
         fn encode(&self) -> CompactBytes {

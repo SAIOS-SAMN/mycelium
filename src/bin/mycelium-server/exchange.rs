@@ -14,7 +14,7 @@ use crate::transport::{note_rtt_ok, note_rtt_timeout, patience, tell_peer_measur
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
-use mycelium::network::nerve::{Cover, Keyed, Router};
+use mycelium::network::nerve::{HomeTrie, Keyed, Router};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -43,7 +43,7 @@ pub(crate) type GenesisEpoch = ([u8; 32], u32);
 /// a time. A new site that nests two of these locks keeps this order or is
 /// returned.
 pub(crate) struct Mesh {
-    pub(crate) cover: Arc<Mutex<Cover>>,
+    pub(crate) cover: Arc<Mutex<HomeTrie>>,
     pub(crate) rooms: Arc<Mutex<Keyed<[u64; 4]>>>,
     pub(crate) addrs: Arc<Mutex<Keyed<String>>>,
     pub(crate) vk: [u8; 32],
@@ -237,7 +237,7 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: NerveRx) {
                     }
                 }
                 None => {
-                    // A silent keeper is read on the residual and the final
+                    // A silent keeper is read on the residue and the final
                     // point, not one line per pushed ring.
                     if !tick {
                         eprintln!("  nerve → {addr}: no answer");

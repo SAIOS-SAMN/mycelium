@@ -58,7 +58,7 @@ impl Contemplation {
     /// dead reference, and a sweep that discovers dead references after
     /// the fact holds them for however long the sweep takes to come round.
     /// The lapse of the cited address is the signal, and it is already in
-    /// the caller's hand: `Epigenome::shed_except` returns exactly the
+    /// the caller's hand: `MindLanguage::shed_except` returns exactly the
     /// addresses it dropped.
     ///
     /// AND IT IS TRANSITIVE. A cites B and B cites C: when C lapses, B goes

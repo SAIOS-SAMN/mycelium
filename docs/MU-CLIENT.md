@@ -793,7 +793,7 @@ never a stretched chamber and never a cap.
   alike. What tells them apart is each candidate's orbit holonomy on a scene the
   vortex has NOT yet seen: each new perception joining a thought is read
   against every vortex at its rotor's class
-  (`Contemplation::carry_vortices_round` in `transducer/field/resonance.rs`
+  (`Contemplation::carry_vortices_round` in `transducer/field/cross_scene.rs`
   → `collapse_on` in `contemplation.rs`); the candidate it carries is the
   fill, and the others are a symmetry the docket's taker adjoins. A vortex
   also collapses where a glue or the syllabus names a deciding word
@@ -1148,7 +1148,7 @@ As built:
   holds a thought of its scene, the scene waits on its comprehension, or one
   of its charts is one a held thought stands on, a docket cover names, or
   the mind's language speaks on (`Mind::couples`,
-  `Epigenome::speaks_on`). Only a coupled offer is extracted; an uncoupled
+  `MindLanguage::speaks_on`). Only a coupled offer is extracted; an uncoupled
   court task waits, and lapses at the second return it waits across
   (`lapse_offers`), at one aperture of the measured transport, or at a court
   final past the one it landed under (`lapse_standing_task`,
@@ -1459,7 +1459,7 @@ The one motion of the objective (§1, item 6):
 3. **adjudication** — the coiner speaks it to a court, which re-derives it
    on a second organ and rules it (§5.4);
 4. **hardening** — what is ruled returns through the syllabus as a MINERAL
-   in each mind's genome (`absorb_taught_at`, `Epigenome::file_admitted`)
+   in each mind's genome (`absorb_taught_at`, `MindLanguage::file_admitted`)
    and hardens into a CRYSTAL where the mind re-derives it by its own
    circuits (80.2).
 
@@ -1661,9 +1661,9 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | the field the mind's own; long laws off the field | §4.2 | `t/mind.rs` (`MindField`, `MindField::think`, `scratch_here`, `admit`) |
 | the winding carrier; outflow at returns; K counts returns | §4.4, §4.12, §4.13 | `mind/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `mind/boot.rs` (`close_cycle`) |
 | a ground's winding `m mod ℓ`; a grounded thought on its own line | §4.4(2) | `t/field/merge.rs` (`Contemplation::closing_ground`); `t/field/line.rs` |
-| the twist by the pull; slips worked at the return | §4.4(3) | `t/cga/twist.rs` (`twist_about`); `t/cga/fixed.rs` (`centre_of`); `t/field/resonance.rs` (`twisted_return`, `work_slips`); `t/field/returned.rs` (`work_returned`) |
-| the drive: the docket's one taker; deliberation | §4.12 | `t/field/resonance.rs` (`note_ground`); `t/field/plan.rs` (`docket_demand`, `drain_demands`); `mind/think.rs` (`compose_or_construct`) |
-| the vortex collapsed by a new perception | §4.8 | `t/field/resonance.rs` (`carry_vortices_round`); `t/field/contemplation.rs` (`collapse_on`) |
+| the twist by the pull; slips worked at the return | §4.4(3) | `t/cga/twist.rs` (`twist_about`); `t/cga/fixed.rs` (`centre_of`); `t/field/cross_scene.rs` (`twisted_return`, `work_slips`); `t/field/returned.rs` (`work_returned`) |
+| the drive: the docket's one taker; deliberation | §4.12 | `t/field/cross_scene.rs` (`note_ground`); `t/field/plan.rs` (`docket_demand`, `drain_demands`); `mind/think.rs` (`compose_or_construct`) |
+| the vortex collapsed by a new perception | §4.8 | `t/field/cross_scene.rs` (`carry_vortices_round`); `t/field/contemplation.rs` (`collapse_on`) |
 | the pivot cross and the throat's two faces | §4.5 | `t/cech/coboundary.rs` (`Complex::descend`, `ascend`, `drain`); `t/cech/hole.rs` (`cauterize`, `freeze`, `thaw`, `cauterize_frozen`); `t/cech/board.rs` |
 | the breath, every plane | §4.3 | `t/cga/commutator.rs` (`breath`, `breathe`) |
 | containment: release typed by why, sealing at the period, reservoirs condensing and locked, court gravity as drag | §4.13 | `t/cech/orbit.rs` (`Released`, `Field::beat_under`, `Field::condensed`); `mind/think.rs` (`lock_reservoirs`); `t/field/line.rs` (`return_escrow`) |

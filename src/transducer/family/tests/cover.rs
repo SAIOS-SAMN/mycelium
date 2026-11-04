@@ -247,15 +247,15 @@ fn pieces_of_keeps_polychrome_body_whole() {
 #[test]
 fn meet_decode_round_trips_and_refuses_truncation() {
     use crate::network::nerve::{coord, Coordinate};
-    use crate::transducer::layers::ShellKind;
+    use crate::transducer::layers::LayerKind;
     use crate::transducer::base::Site;
     let piece = |kind, support: Vec<Site>| coord::Piece { kind, support };
     // A PIECE WITH NO SUPPORT, one with a support, and one whose support
     // length bytes are the shape a length prefix has: the cases the byte
     // pair had to be checked against by hand.
-    let a = piece(ShellKind::Whole, Vec::new());
-    let b = piece(ShellKind::Outline, [(1i64, 2i64, 0i64), (4, 0, 0)].map(Site::from).to_vec());
-    let c = piece(ShellKind::Magnified, vec![Site::from((0i64, 0i64, 0i64))]);
+    let a = piece(LayerKind::Whole, Vec::new());
+    let b = piece(LayerKind::Outline, [(1i64, 2i64, 0i64), (4, 0, 0)].map(Site::from).to_vec());
+    let c = piece(LayerKind::Magnified, vec![Site::from((0i64, 0i64, 0i64))]);
     for p in [&a, &b, &c] {
         assert_eq!(
             coord::Piece::decode(p.encode().as_bytes()).as_ref(),
@@ -575,7 +575,7 @@ fn scene_form_is_invariant_under_rebuild() {
 }
 
 /// One cover run to the end of its pieces.
-fn measured_cover(a: &Grid, b: &Grid) -> crate::transducer::family::cover::Cover {
+fn measured_cover(a: &Grid, b: &Grid) -> crate::transducer::family::cover::PiecewiseCarriage {
     use crate::transducer::family::cover::cover_deformation;
     use crate::transducer::family::cursor;
     let (input, image) = (composite(a), composite(b));

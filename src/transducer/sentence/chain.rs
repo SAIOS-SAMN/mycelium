@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 18.2, 6 — THE CHAIN: its links and the links' incidence, the citations and
-//! punctures a deconstruction produces, the residual no word speaks, and the
+//! punctures a deconstruction produces, the residue no word speaks, and the
 //! replay that measures what a proof leaves.
 
 use crate::network::nerve::Keyed;
@@ -48,7 +48,7 @@ pub struct Cite {
 /// A PUNCTURE: a body a held word carries by SHAPE under a gauge the word
 /// does not yet hold. It is spoken as a section of that word — the fibre
 /// deepens instead of the vocabulary widening — so it is not a citation and
-/// not a residual.
+/// not a residue.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Puncture {
     /// The word that carries the body, by its coordinate — the same reading
@@ -79,7 +79,7 @@ pub struct HeldCite {
 /// What deconstruction produced: the citations in body order, the held
 /// cites derived at the bodies' charts, the connection between
 /// consecutive cited bodies (the relative transport `Vᵢ⁻¹ Vⱼ`), the
-/// residual no word speaks, and the widest stratum read.
+/// residue no word speaks, and the widest stratum read.
 #[derive(Debug, Clone, Default)]
 pub struct Sentence {
     pub cites: Vec<Cite>,
@@ -92,7 +92,7 @@ pub struct Sentence {
     /// body, each derived at the body's chart when the reading asked.
     pub held: Vec<HeldCite>,
     pub connection: Vec<Versor>,
-    pub residual: Vec<Link>,
+    pub residue: Vec<Link>,
     /// Stratum width per body key, never a maximum over bodies.
     pub multiplicity: Keyed<usize>,
 }
@@ -101,7 +101,7 @@ impl Sentence {
     /// Closure: every body spoken by held words as held, nothing left over
     /// and no fibre to deepen.
     pub fn is_closed(&self) -> bool {
-        self.residual.is_empty() && self.punctures.is_empty()
+        self.residue.is_empty() && self.punctures.is_empty()
     }
 
     /// The operators this sentence's citations carry: each cited word's
@@ -117,12 +117,12 @@ impl Sentence {
         ops
     }
 
-    /// What the language does not yet hold: the residual, together with the
+    /// What the language does not yet hold: the residue, together with the
     /// bodies spoken only as punctures — novelty in the fibre is novelty.
     /// Measured as the replay of the citations alone over the chain.
     pub fn open_at<'a>(&self, word_at: &impl Fn(&[u8]) -> Option<&'a Element>, chain: &[Link]) -> Vec<Link> {
         match self.punctures.is_empty() {
-            true => self.residual.clone(),
+            true => self.residue.clone(),
             false => reconstruct_operators(&self.operators_at(word_at), chain),
         }
     }
@@ -296,8 +296,8 @@ pub fn cited_pattern(word: &Element, asg: &[(u8, u8)]) -> Option<Vec<Link>> {
 /// compartment is one keyed read of the target: a hit with the same transition
 /// is spoken, an image compartment the target lacks is over-explanation. The
 /// scene is never read whole. The
-/// residual is R = Q △ S: the target links no citation speaks, plus the
-/// over-explained links. An empty residual is closure; a citation naming
+/// residue is R = Q △ S: the target links no citation speaks, plus the
+/// over-explained links. An empty residue is closure; a citation naming
 /// nothing held speaks nothing.
 pub fn reconstruct_at<'a>(word_at: &impl Fn(&[u8]) -> Option<&'a Element>, cites: &[Cite], target: &[Link]) -> Vec<Link> {
     let ops: Vec<(Versor, Vec<Link>)> = cites
@@ -344,17 +344,17 @@ pub fn reconstruct_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Ve
             }
         }
     }
-    // ONE CHAIN'S LINKS, keyed by site: the residual is what the word did
+    // ONE CHAIN'S LINKS, keyed by site: the residue is what the word did
     // not speak, so every link is asked and none may be skipped.
-    let mut residual: Vec<Link> = at
+    let mut residue: Vec<Link> = at
         .scoped()
         .filter(|(k, _)| !spoken.contains(k))
         .map(|(_, t)| *t)
         .collect();
-    residual.extend(over);
-    residual.sort_unstable();
-    residual.dedup();
-    residual
+    residue.extend(over);
+    residue.sort_unstable();
+    residue.dedup();
+    residue
 }
 
 /// THE GAUGE COORDINATE OF A CITATION, read from the target: the word's
@@ -459,7 +459,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Ve
 }
 
 /// VERIFY a received sentence — the receiving direction of the algebra:
-/// the replay's residual together with the seam defect. Empty is closure
+/// the replay's residue together with the seam defect. Empty is closure
 /// with a coherent cover.
 pub fn verify_at<'a>(
     word_at: &impl Fn(&[u8]) -> Option<&'a Element>,

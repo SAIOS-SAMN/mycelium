@@ -677,7 +677,7 @@ impl Court {
     #[cfg(test)]
     pub fn glue_local(&mut self) {
         let words: Vec<Element> = self.provisional.scoped().map(|(_, e)| e.clone()).collect();
-        let mut cover = crate::network::nerve::Cover::new();
+        let mut cover = crate::network::nerve::HomeTrie::new();
         // The fixture's act: its root, one stroke a word — fetched again, as
         // the exchange fetches it again, while its replay is unread and moved
         // on (78.153).

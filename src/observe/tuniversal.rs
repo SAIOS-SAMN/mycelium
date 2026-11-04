@@ -1,14 +1,14 @@
 // 78.152 TU-3, TU-4, TU-7 — THE COURT'S TUNIVERSAL STANDING ON THE OBSERVER:
 // the door's quorum-final point and its advances, each keeper as this court
-// holds it, and the clock's residual on the keeper triangle — read off the
+// holds it, and the clock's residue on the keeper triangle — read off the
 // door's shelf and the keepers, which live outside the court.
 //
 //! A reading on the observer, never folded into the point (TU-4): the final
 //! point is the shelf's, each keeper's `final_of` is the keepers' own, the
-//! residual's edges and holonomy are carried exact (a signed rational per
+//! residue's edges and holonomy are carried exact (a signed rational per
 //! lane), never averaged and never a root.
 
-use crate::chronometry::tuniversal::{Edge, Keepers, Residual, TPoint, Tick};
+use crate::chronometry::tuniversal::{Edge, Keepers, Residue, TPoint, Tick};
 use crate::core::Q;
 
 /// The writing's version, its first byte: a reader of another layout refuses
@@ -30,13 +30,13 @@ pub struct KeeperSeen {
 
 /// THE COURT'S TUNIVERSAL STANDING: the door's final point (`None` before
 /// the first), how many times it advanced, the keeper set in key order, and
-/// the residual (TU-4).
+/// the residue (TU-4).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct TStanding {
     pub final_point: Option<TPoint>,
     pub advances: u64,
     pub keepers: Vec<KeeperSeen>,
-    pub residual: Residual,
+    pub residue: Residue,
 }
 
 /// Each keeper `k` holds, in key order, as the observer carries it.
@@ -134,14 +134,14 @@ impl TStanding {
             }
             put_point(out, s.final_of.as_ref());
         }
-        crate::transducer::address::put_u32_count(out, self.residual.edges.len())?;
-        for e in &self.residual.edges {
+        crate::transducer::address::put_u32_count(out, self.residue.edges.len())?;
+        for e in &self.residue.edges {
             out.extend_from_slice(&e.from);
             out.extend_from_slice(&e.to);
             out.extend_from_slice(&e.h.to_le_bytes());
             put_lanes(out, &e.delta);
         }
-        match &self.residual.holonomy {
+        match &self.residue.holonomy {
             None => out.push(0),
             Some(d) => {
                 out.push(1);
@@ -201,6 +201,6 @@ impl TStanding {
             1 => Some(take_lanes(b, p)?),
             _ => return None,
         };
-        Some(TStanding { final_point, advances, keepers, residual: Residual { edges, holonomy } })
+        Some(TStanding { final_point, advances, keepers, residue: Residue { edges, holonomy } })
     }
 }

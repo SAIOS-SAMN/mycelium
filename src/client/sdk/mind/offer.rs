@@ -13,7 +13,7 @@
 //! waiting on its comprehension), or where one of its charts is a chart a
 //! held thought stands on, a question on the plan covers, or the mind's
 //! LANGUAGE speaks on — a closed word of it filed under a body standing
-//! there (`Epigenome::speaks_on`; ruled 2026-10-17: a string resonates
+//! there (`MindLanguage::speaks_on`; ruled 2026-10-17: a string resonates
 //! because it is tuned to the frequency, not because it already rings; so a
 //! restored mind, whose thoughts and plan are volatile, still hears an offer
 //! in its own language). An offer that
@@ -26,7 +26,7 @@
 //! task is kept by its charts and pulled again only where they couple.
 //!
 //! THE TENSION. The mind ASKS for an offer (`pull_task`) where it holds
-//! strain it has not resolved: an open question (a residual chain, never a
+//! strain it has not resolved: an open question (a residue chain, never a
 //! word), a demand on its plan, an orbit that rings, a reservoir that neither
 //! re-formed nor condensed (`strained`) — or where its corpus holds no item
 //! (2026-10-24). A full reserve over a settled field whose corpus holds items
@@ -72,7 +72,7 @@ impl Mind {
     /// field that is strained (`Field::strained`). Read where the field
     /// stands in the winding carrier's slots; outside them, the plan alone.
     pub(crate) fn strained(&self) -> bool {
-        !self.board.open_residuals.is_empty() || self.contemplation.holds_demand() || matches!(crate::transducer::mind::with_field(|f| f.strained()), Ok(true))
+        !self.board.open_residues.is_empty() || self.contemplation.holds_demand() || matches!(crate::transducer::mind::with_field(|f| f.strained()), Ok(true))
     }
 
 
@@ -80,7 +80,7 @@ impl Mind {
     /// module's rule).
     pub(crate) fn couples(&self, id: &[u8], charts: &[Vec<u8>]) -> bool {
         let c = &self.contemplation;
-        c.holds_family(id) || self.comprehending.contains(id) || charts.iter().any(|k| c.held_on(k) || c.docket_covers(k) || self.epigenome.speaks_on(k))
+        c.holds_family(id) || self.comprehending.contains(id) || charts.iter().any(|k| c.held_on(k) || c.docket_covers(k) || self.language.speaks_on(k))
     }
 
     /// An offer of kind `kind` passed: said to the observer.

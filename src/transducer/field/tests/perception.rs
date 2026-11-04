@@ -42,11 +42,11 @@ fn hold_perceived_never_meets_across_families() {
     let mut apart = Contemplation::new();
     perceive_in(&mut apart, &input, &output, b"family a");
     perceive_in(&mut apart, &other_in, &other_out, b"family b");
-    assert_eq!((apart.resonance.circuits, apart.resonance.edges), (0, 0), "{}", apart.resonance.line());
+    assert_eq!((apart.cross_scene.circuits, apart.cross_scene.edges), (0, 0), "{}", apart.cross_scene.line());
     let mut together = Contemplation::new();
     perceive_in(&mut together, &input, &output, b"family a");
     perceive_in(&mut together, &other_in, &other_out, b"family a");
-    assert!(together.resonance.circuits > 0, "within one family they meet: {}", together.resonance.line());
+    assert!(together.cross_scene.circuits > 0, "within one family they meet: {}", together.cross_scene.line());
 }
 
 /// A scene built from its cells: the input a `rows × cols` grid holding the
@@ -127,7 +127,7 @@ fn hold_perceived_merges_turned_shape_into_one_thought() {
     let mut c = Contemplation::new();
     let a = perceive(&mut c, &L, &L_OUT);
     let b = perceive(&mut c, &L90, &L90_OUT);
-    assert_eq!((c.resonance.closes, c.resonance.resonant, c.resonance.edges), (1, 1, 1), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.closes, c.cross_scene.resonant, c.cross_scene.edges), (1, 1, 1), "{}", c.cross_scene.line());
     assert_eq!((c.torsion_merges, c.merge_reading().merged), (1, 1), "one torsion merge");
     assert_eq!(torsions(&c), vec![4], "its Torse claims the turn's period");
     assert!(c.wells.get(&a).is_none() && c.wells.get(&b).is_none(), "the two perceptions are one thought now");
@@ -147,7 +147,7 @@ fn hold_perceived_keeps_both_orbits_of_third_perception() {
     perceive(&mut c, &L, &L_OUT);
     perceive(&mut c, &L90, &L90_OUT);
     let d = perceive(&mut c, &["11000", "01000", "01000", "00000"], &["01100", "00100", "00100", "00000"]);
-    assert_eq!((c.resonance.several, c.resonance.kept_congruent, c.resonance.curved), (1, 2, 1), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.several, c.cross_scene.kept_congruent, c.cross_scene.curved), (1, 2, 1), "{}", c.cross_scene.line());
     let held = horizon_orders(&c, &d);
     assert!(held.contains(&2) && held.contains(&4), "the perception's horizon holds both periods: {held:?}");
     let thought = c.wells.scoped().map(|(k, _)| k).find(|k| *k != d).expect("the thought");
@@ -166,7 +166,7 @@ fn hold_perceived_fills_edge_for_unmoved_body() {
     let mut c = Contemplation::new();
     perceive(&mut c, &L, &L_OUT);
     perceive(&mut c, &L, &["20000", "20000", "22000", "00000"]);
-    assert_eq!((c.resonance.edges, c.fills), (1, 1), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.edges, c.fills), (1, 1), "{}", c.cross_scene.line());
     let m = c.merge_reading();
     assert_eq!(m.merged + m.stayed, 1, "the filled edge asked for a merge: {}", m.line());
 }
@@ -186,7 +186,7 @@ fn hold_perceived_demands_class_of_blow_up() {
         &["011000", "011000", "011000", "011000", "011110", "011110"],
     );
     let l = perceive(&mut c, &L, &L_OUT);
-    assert_eq!((c.resonance.boost, c.resonance.open, c.resonance.demanded), (1, 1, 1), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.boost, c.cross_scene.open, c.cross_scene.demanded), (1, 1, 1), "{}", c.cross_scene.line());
     assert!(matches!(thought(&c, &l, &blown), Some(Fill::Class(..))), "a standing class between them");
     // THE EDGE CARRIES WHAT THE TRANSITION CARRIED, lane by lane (78.49(5)):
     // the L's four sites all stand inside the blow-up's sixteen, so twelve
@@ -272,7 +272,7 @@ fn hold_perceived_closes_return_at_fourth_hour() {
     perceive(&mut c, &O2, &O2_OUT);
     assert_eq!(c.closed_thoughts, 0, "three hours of four close nothing");
     perceive(&mut c, &O3, &O3_OUT);
-    assert_eq!(c.closed_thoughts, 1, "{}", c.resonance.line());
+    assert_eq!(c.closed_thoughts, 1, "{}", c.cross_scene.line());
     let (thought, ground) = the_thought_and_its_ground(&c);
     assert_eq!(thought.ground.as_ref().map(|g| &g.ground), Some(&ground), "the thought holds the ground it closed on");
     assert_eq!(ground.period, 4, "the return's period");
@@ -293,7 +293,7 @@ fn hold_perceived_counts_second_return_past_first_close() {
         perceive(&mut c, &O2, &O2_OUT);
         perceive(&mut c, &O3, &O3_OUT);
     }
-    assert_eq!((c.closed_thoughts, c.thought_returns), (1, 1), "one first close, one later return: {}", c.resonance.line());
+    assert_eq!((c.closed_thoughts, c.thought_returns), (1, 1), "one first close, one later return: {}", c.cross_scene.line());
     assert_eq!(c.closed.len(), 2, "each return handed the ground to the voice");
     assert_eq!(c.came_round.len(), 2, "and named the thought that came round");
     let [(_, thought)] = c.wells.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
@@ -318,7 +318,7 @@ fn hold_perceived_closes_turned_pair_on_two_bodies() {
         scene(&mut c, &at, 7, 9);
         at = turned(&at);
     }
-    assert_eq!(c.closed_thoughts, 1, "{}", c.resonance.line());
+    assert_eq!(c.closed_thoughts, 1, "{}", c.cross_scene.line());
     let (thought, ground) = the_thought_and_its_ground(&c);
     assert!(thought.form.is_none(), "the thought holds no form");
     assert_eq!((ground.period, ground.bodies.len()), (4, 2), "a return of four, two bodies");
@@ -336,7 +336,7 @@ fn hold_perceived_joins_predicted_next_hour() {
     perceive(&mut c, &O1, &O1_OUT);
     assert_eq!(c.torsion_merges, 1, "hours 0 and 1 are one thought");
     perceive(&mut c, &O2, &O2_OUT);
-    assert_eq!((c.resonance.predicted, c.resonance.phase_slips, c.resonance.off_orbit), (1, 0, 0), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.predicted, c.cross_scene.phase_slips, c.cross_scene.off_orbit), (1, 0, 0), "{}", c.cross_scene.line());
     assert_eq!(c.torsion_merges, 2, "the predicted hour joins by the orbit's step");
     assert_eq!(torsions(&c), vec![4, 4], "each join a torsion at the orbit's period");
     let [(_, thought)] = c.wells.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
@@ -357,7 +357,7 @@ fn hold_perceived_keeps_out_of_turn_hour_as_twist() {
     perceive(&mut c, &O0, &O0_OUT);
     perceive(&mut c, &O1, &O1_OUT);
     perceive(&mut c, &O3, &O3_OUT);
-    let r = &c.resonance;
+    let r = &c.cross_scene;
     assert_eq!((r.predicted, r.phase_slips, r.off_orbit, r.twisted, r.lifted), (1, 0, 0, 1, 0), "{}", r.line());
     let period = |r: &crate::transducer::cga::Mv| {
         let f = crate::transducer::element::conformal_factors(r).ok()?;
@@ -387,13 +387,13 @@ fn hold_perceived_holds_off_orbit_slip_on_thought() {
     }
     assert_eq!(c.closed_thoughts, 1, "the thought came round once");
     c.work_returned();
-    let predicted = c.resonance.predicted;
+    let predicted = c.cross_scene.predicted;
     perceive(
         &mut c,
         &["000000", "010000", "010000", "011000", "000000"],
         &["000000", "001000", "001000", "001100", "000000"],
     );
-    let r = &c.resonance;
+    let r = &c.cross_scene;
     assert_eq!((r.predicted - predicted, r.phase_slips, r.off_orbit), (0, 0, 1), "{}", r.line());
     let slips: Vec<crate::transducer::cga::Mv> = c.wells.scoped().flat_map(|(_, b)| b.slips.iter().map(|(_, r)| r.clone()).collect::<Vec<_>>()).collect();
     let [slip] = slips.as_slice() else { panic!("the thought holds its one slip: {}", slips.len()) };
@@ -415,7 +415,7 @@ fn hold_perceived_keeps_both_congruences_without_edge() {
     let mut c = Contemplation::new();
     let one = perceive(&mut c, &["10000000", "10000000", "11000000", "00000000"], &["01000000", "01000000", "01100000", "00000000"]);
     let two = perceive(&mut c, &["11100000", "10000111", "00000100", "00000000"], &["01110000", "01000011", "00000010", "00000000"]);
-    assert_eq!((c.resonance.circuits, c.resonance.closes, c.resonance.several, c.resonance.kept_congruent), (2, 1, 1, 2), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.circuits, c.cross_scene.closes, c.cross_scene.several, c.cross_scene.kept_congruent), (2, 1, 1, 2), "{}", c.cross_scene.line());
     assert!(thought(&c, &one, &two).is_none(), "no one transition is chosen as the edge");
     let periods: Vec<u32> = c.complex.congruent.scoped().map(|(_, (_, ell))| *ell).collect();
     // One class, two orbits (78.49(4)): the two turns stand about different
@@ -434,7 +434,7 @@ fn hold_perceived_fills_scene_motion_as_class() {
     let mut c = Contemplation::new();
     let a = scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
     let b = scene(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat(), 7, 9);
-    assert_eq!((c.resonance.scene_motions, c.resonance.several, c.resonance.appeared), (1, 0, 0), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.scene_motions, c.cross_scene.several, c.cross_scene.appeared), (1, 0, 0), "{}", c.cross_scene.line());
     assert!(matches!(thought(&c, &a, &b), Some(Fill::Class(..))), "the scene's motion is the thought");
 }
 
@@ -459,12 +459,12 @@ fn drain_demands_hands_out_escaping_slide_once() {
     let mut c = Contemplation::new();
     hour(&mut c, &[&LA[..], &LB[..]].concat());
     hour(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat());
-    assert_eq!((c.resonance.scene_motions, c.resonance.grounds[0]), (1, 0), "one scene motion, no ground: {}", c.resonance.line());
-    assert!(c.resonance.grounds[1] > 0, "no return: {}", c.resonance.line());
+    assert_eq!((c.cross_scene.scene_motions, c.cross_scene.grounds[0]), (1, 0), "one scene motion, no ground: {}", c.cross_scene.line());
+    assert!(c.cross_scene.grounds[1] > 0, "no return: {}", c.cross_scene.line());
     let taken = c.drain_demands();
     let slides: Vec<&crate::transducer::field::plan::TakenDemand> =
         taken.iter().filter(|d| d.residue.as_ref().is_some_and(|r| !crate::transducer::sentence::presentation::is_still(r))).collect();
-    assert!(!slides.is_empty(), "the escaping orbit docketed with the motion that carries it: {}", c.resonance.line());
+    assert!(!slides.is_empty(), "the escaping orbit docketed with the motion that carries it: {}", c.cross_scene.line());
     assert!(slides.iter().all(|d| !d.charts.is_empty()), "on the chart it stands on");
     assert!(slides.iter().all(|d| d.families == vec![b"the scene".to_vec()]), "under the scene its thoughts were perceived in");
     assert!(c.drain_demands().is_empty(), "handed out once");
@@ -504,10 +504,10 @@ fn hold_perceived_consolidates_whole_turned_scene() {
     scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
     scene(&mut c, &turned(&[&LA[..], &LB[..]].concat()), 7, 9);
     assert_eq!(
-        (c.resonance.scene_motions, c.resonance.consolidated, c.resonance.unbalanced, c.resonance.nonrigid),
+        (c.cross_scene.scene_motions, c.cross_scene.consolidated, c.cross_scene.unbalanced, c.cross_scene.nonrigid),
         (1, 1, 0, 0),
         "{}",
-        c.resonance.line()
+        c.cross_scene.line()
     );
     assert_eq!(torsions(&c), vec![4], "one torsion at the turn's period");
 }
@@ -526,10 +526,10 @@ fn hold_perceived_files_symmetric_scene_coset_symmetry() {
     scene(&mut c, &before, 7, 9);
     scene(&mut c, &turned(&before), 7, 9);
     assert_eq!(
-        (c.resonance.cosets, c.resonance.symmetries, c.resonance.scene_motions, c.resonance.consolidated, c.resonance.unbalanced),
+        (c.cross_scene.cosets, c.cross_scene.symmetries, c.cross_scene.scene_motions, c.cross_scene.consolidated, c.cross_scene.unbalanced),
         (1, 1, 1, 1, 0),
         "{}",
-        c.resonance.line()
+        c.cross_scene.line()
     );
     let periods: Vec<u32> = c.complex.congruent.scoped().map(|(_, (_, ell))| *ell).collect();
     assert!(periods.contains(&2), "the symmetry at its period: {periods:?}");
@@ -544,8 +544,8 @@ fn hold_perceived_keeps_spectrum_without_scene_motion() {
     let mut c = Contemplation::new();
     scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
     scene(&mut c, &[slid(&LA, 1), turned_b].concat(), 7, 9);
-    assert_eq!((c.resonance.scene_motions, c.resonance.several), (0, 1), "{}", c.resonance.line());
-    assert!(c.resonance.kept_class + c.resonance.kept_congruent > 0, "each ray kept by its class");
+    assert_eq!((c.cross_scene.scene_motions, c.cross_scene.several), (0, 1), "{}", c.cross_scene.line());
+    assert!(c.cross_scene.kept_class + c.cross_scene.kept_congruent > 0, "each ray kept by its class");
 }
 
 /// WHAT APPEARED AND WHAT VANISHED (78.50): both Ls carried along and a third
@@ -559,11 +559,11 @@ fn hold_perceived_counts_appeared_and_vanished_bodies() {
     let mut c = Contemplation::new();
     scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
     scene(&mut c, &[slid(&LA, 1), slid(&LB, 1), third.clone()].concat(), 7, 9);
-    assert_eq!((c.resonance.scene_motions, c.resonance.appeared, c.resonance.vanished), (1, 1, 0), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.scene_motions, c.cross_scene.appeared, c.cross_scene.vanished), (1, 1, 0), "{}", c.cross_scene.line());
     let mut c = Contemplation::new();
     scene(&mut c, &[&LA[..], &LB[..], &third[..]].concat(), 7, 9);
     scene(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat(), 7, 9);
-    assert_eq!((c.resonance.scene_motions, c.resonance.appeared, c.resonance.vanished), (1, 0, 1), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.scene_motions, c.cross_scene.appeared, c.cross_scene.vanished), (1, 0, 1), "{}", c.cross_scene.line());
 }
 
 /// THE HOURS OF A SLIDE (78.50): three Ls three columns apart are an orbit's
@@ -578,7 +578,7 @@ fn hold_perceived_reads_slide_hour_and_slips() {
         let mut c = Contemplation::new();
         scene(&mut c, &samples, 4, 16);
         scene(&mut c, &slid(&l, at), 4, 16);
-        let r = &c.resonance;
+        let r = &c.cross_scene;
         assert_eq!((r.predicted, r.phase_slips, r.off_orbit), expect, "the L at column {at}: {}", r.line());
     }
 }
@@ -594,7 +594,7 @@ fn hold_perceived_demands_hole_cut_on_both_charts() {
     let mut c = Contemplation::new();
     perceive(&mut c, &["11100", "11100", "11100", "00000"], &["01110", "01110", "01110", "00000"]);
     perceive(&mut c, &["11100", "10100", "11100", "00000"], &["01110", "01010", "01110", "00000"]);
-    assert_eq!((c.resonance.deformed, c.resonance.unfactored), (1, 0), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.deformed, c.cross_scene.unfactored), (1, 0), "{}", c.cross_scene.line());
     let on_both = c.docket_cites().into_iter().any(|cite| match cite {
         Cite::Demand { cover: Some(cv), residue: Some(_), .. } => cv.len() == 2,
         _ => false,
@@ -611,5 +611,5 @@ fn hold_perceived_counts_topology_parting_apart() {
     let mut c = Contemplation::new();
     perceive(&mut c, &L, &L_OUT);
     perceive(&mut c, &["11100", "00000", "00000", "00000"], &["01110", "00000", "00000", "00000"]);
-    assert_eq!((c.resonance.apart, c.resonance.deformed), (1, 0), "{}", c.resonance.line());
+    assert_eq!((c.cross_scene.apart, c.cross_scene.deformed), (1, 0), "{}", c.cross_scene.line());
 }

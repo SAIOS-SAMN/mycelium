@@ -5,7 +5,7 @@
 // inverse generator, reproduction, containment and closure. Data; nothing is
 // decided.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::confluence::{read_pair, Closes, Reproduces};
 use mycelium::transducer::family::{extract_rule_with, form_deflation};
 
@@ -13,7 +13,7 @@ use mycelium::transducer::family::{extract_rule_with, form_deflation};
 const STROKE: usize = 1 << 20;
 
 pub(crate) fn report(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let (mut unframed, mut creation_sites, mut single_sites, mut confluence_sites) = (0u64, 0u64, 0u64, 0u64);
     let (mut creations, mut singles, mut confluences) = (0u64, 0u64, 0u64);
     let (mut mass_kept, mut centre_kept, mut ratio, mut reproduces, mut contains) = (0u64, 0u64, 0u64, 0u64, 0u64);

@@ -91,7 +91,7 @@ fn fixtures() -> Vec<(String, Mv)> {
     }
     let compartment = |r: i64, c: i64, k: i64| cga::hyperbolic_compartment(&[q(r, 1), q(c, 1), q(k, 1)], &q(9, 1));
     if let (Some(a), Some(b)) = (compartment(1, 2, 0), compartment(-3, 1, 2)) {
-        out.push(("lamina_a".into(), a.clone()));
+        out.push(("compartment_a".into(), a.clone()));
         if let Some(g) = cga::geodesic_transvection(&a, &b) {
             out.push(("geodesic".into(), g));
         }
@@ -113,7 +113,7 @@ fn fixtures() -> Vec<(String, Mv)> {
 /// [`TASKS`] files in name order, through the corpus's decoder (outside
 /// `src/`, ROADMAP track 26 S1). The oracle reads no file format.
 fn harvest(tasks: &[crate::transducer::family::Task]) -> Vec<(String, Mv)> {
-    let epi = crate::client::sdk::Epigenome::new();
+    let epi = crate::client::sdk::MindLanguage::new();
     let mut physics = crate::physics::Physics::default();
     let mut held: crate::network::nerve::Keyed<Mv> = crate::network::nerve::Keyed::new();
     let mut hold = |m: &Mv| {

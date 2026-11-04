@@ -135,7 +135,7 @@ pub(crate) fn meet_edge(
 /// orbits, and the form is built by the extraction.
 pub(crate) struct Covered {
     pub(crate) demand: Demanded,
-    pub(crate) cover: crate::transducer::family::cover::Cover,
+    pub(crate) cover: crate::transducer::family::cover::PiecewiseCarriage,
     /// The frame the cover was read on; its pieces' supports stand there.
     pub(crate) frame: i64,
 }

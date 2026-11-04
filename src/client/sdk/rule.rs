@@ -115,7 +115,7 @@ pub enum NoRule {
     Unread,
     /// 78.158a, 78.157 §3a — CITES UNHELD: the rule cites a word the
     /// resolver given does not hold — at home, a word no court admitted
-    /// (`Epigenome::court_word`). The court resolves only the words it
+    /// (`MindLanguage::court_word`). The court resolves only the words it
     /// holds, so a home pass on such a citation would be a pass the court
     /// cannot give. Its own outcome, by the cited address; never a pass.
     CitesUnheld(Vec<u8>),
@@ -547,7 +547,7 @@ pub fn would_judge(
 /// serves it), so a rule citing a word only this mind holds read clean at
 /// home and was refused or deferred at the court; asked here, it is
 /// `CitesUnheld` by its address. A client resolves through the court's
-/// words alone (`Epigenome::court_word`).
+/// words alone (`MindLanguage::court_word`).
 pub(crate) fn would_judge_with(
     rule: &Element,
     family: &[(Grid, Grid)],

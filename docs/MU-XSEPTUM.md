@@ -40,7 +40,7 @@ except what the pore admits. Here the pore is reconstruction.
 - **Voice**: a 32-byte identity of a mind (`Session::voice().id()`), a FROST group key over Ed25519 (new, §8; MU-RECURSION 46.1).
 - **Hypha**: a server; identity is its ed25519 verifying key (`court::identity::HyphaKey`).
 - **Listing key**: `listing_key(chain, frame)`, the framed residue address of a demand; every priced request is a listing at exactly one home hypha.
-- **Home**: the hypha the cover trie homes the listing to (`nerve::home`).
+- **Home**: the hypha the home trie homes the listing to (`nerve::home`).
 - **Witness**: any other hypha whose cover meets the listing's chart; the second organ.
 - **μ⃗**: an exact non-negative rational on each of the four lanes (`economy::Mu`).
 - **Escrow**: `Treasury::escrow_award(addr, voices, mu, anchor)`; released by `release_award`, revoked or slashed by `revoke_award`, drawn by `draw_escrow`.

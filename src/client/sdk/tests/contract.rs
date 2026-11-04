@@ -142,7 +142,7 @@ fn speak_refuses_sealed_tape_before_wire() {
 fn receive_adjudication_drops_refused_sentence_from_dialect() {
     let (family, e) = two_bars();
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("refused-leaves"));
-    entity.epigenome.stand_dialect_at(e.clone(), 1, 1);
+    entity.language.stand_dialect_at(e.clone(), 1, 1);
     assert_eq!(entity.dialect_len(), 1, "the sentence stood in the dialect before the utterance");
     let mut b = entity.stroke();
     let _ = entity.receive_adjudication(
@@ -167,7 +167,7 @@ fn receive_adjudication_drops_refused_sentence_from_dialect() {
 fn owe_citation_owes_once_per_court_never_sealed() {
     let (family, cited) = two_bars();
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("owing"));
-    entity.epigenome.stand_dialect_at(cited.clone(), 1, 1);
+    entity.language.stand_dialect_at(cited.clone(), 1, 1);
     let citer = super::fixtures::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
     let courts = entity.hypha.courts();
     assert!(courts >= 1, "the mind knows a court: {courts}");

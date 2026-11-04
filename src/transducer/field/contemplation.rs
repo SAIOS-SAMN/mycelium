@@ -121,7 +121,7 @@ pub struct Contemplation {
     pub(crate) addresses: Vec<Option<std::sync::Arc<[u8]>>>,
     pub complex: Complex,
     /// N4 — the perception reading, cumulative at its producer.
-    pub resonance: super::resonance::ResonanceTally,
+    pub cross_scene: super::cross_scene::CrossSceneTally,
     /// Wells whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
     /// The ring's resume cursor: `None` is a circuit that has not started,
@@ -355,7 +355,7 @@ impl Contemplation {
     /// cannot make, never a zero (rule 11).
     ///
     /// The form is held at its key and as every perception of it, the
-    /// stratum its key prefixes (`resonance::perceived_key`): its
+    /// stratum its key prefixes (`cross_scene::perceived_key`): its
     /// deliberation began when the first of them began, as where two
     /// lineages converge (`rekey`).
     pub fn span_of(&self, form: &crate::transducer::sentence::Form) -> Option<Deliberation> {
@@ -1013,7 +1013,7 @@ impl Contemplation {
     /// ruled 2026-09-09): its words are read at a chart when a cite asks,
     /// through the form's own `by_class`, which is derived here as the
     /// form is taken into custody. The train is the germinating bundle;
-    /// remainders are per-pair residual chains. idea_key is the form's
+    /// remainders are per-pair residue chains. idea_key is the form's
     /// vertex key.
     /// Z4's instrument (§8.1): the allocator bytes a hold ADDS, read
     /// between `hold_form`'s entry and its exit and totalled per stroke.
@@ -1066,7 +1066,7 @@ impl Contemplation {
             dirty: true,
             // A remainder held alone is no perception (N4).
             percept: false,
-            spores: super::resonance::Spores::default(),
+            spores: super::cross_scene::Spores::default(),
             family: Vec::new(),
             moved_k: self.now_k,
             // Nothing was drawn for a remainder held alone, so nothing is

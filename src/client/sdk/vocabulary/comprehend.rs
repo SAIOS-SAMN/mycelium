@@ -4,7 +4,7 @@
 use crate::client::sdk::*;
 use crate::transducer::element::Element;
 
-impl Epigenome {
+impl MindLanguage {
     /// RETIRE a word whose meaning the rest of the genome already carries.
     ///
     /// It used to be a shift: remove at a slot, remove the same slot from
@@ -53,7 +53,7 @@ impl Epigenome {
 
     /// COMPREHEND a received utterance: decompose it over the genome (the shared
     /// projective mathematics, `cognition::decompose_over`) and fold the
-    /// understanding into the epigenome — expression weights rise on the cited
+    /// understanding into the mind's language —expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
     pub(crate) fn comprehend(&mut self, utterance: &Element, budget: &mut crate::physics::Budget) -> Comprehension {
         // A taught sentence is re-derived as a form: vertices, faces, orbits.
@@ -208,9 +208,9 @@ impl Epigenome {
         // Located through the atlas and the versor, never searched. A taught
         // word is one piece: one stroke locates it.
         let located = self.locate(utterance.sub(), None, budget);
-        // The remainder decides: no residual and no fibre to deepen is the
+        // The remainder decides: no residue and no fibre to deepen is the
         // understood arm; anything left over is the novelty, measured.
-        match (located.residual.len(), located.punctures.len()) {
+        match (located.residue.len(), located.punctures.len()) {
             (0, 0) => {
                 // THE CITE ALREADY CARRIES THE ADDRESS. This went
                 // position → word → address to recover what the cite had
@@ -238,7 +238,7 @@ impl Epigenome {
                 }
                 Comprehension::Understood(sentence)
             }
-            // THE RESIDUAL IS THE DEMAND. A count of the open links speaks
+            // THE RESIDUE IS THE DEMAND. A count of the open links speaks
             // a number; the chain those links form is the element the mind
             // lacks, and a hypha can docket that.
             _ => {
@@ -254,7 +254,7 @@ impl Epigenome {
                 // An open chain with no A5 form is no element to lack, so
                 // there is no demand to speak and what did factor is the
                 // whole of the reading (M6 step 5).
-                match crate::transducer::element::from_residual(&open) {
+                match crate::transducer::element::from_residue(&open) {
                     Some(demand) => Comprehension::Novel {
                         demand: Box::new(demand),
                         understood,

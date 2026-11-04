@@ -1,6 +1,6 @@
 // 23.8, 26 — ACT_PROBE: a tentative sentence against an open listing.
 //
-//! Reconstructed and settled on a graded residual or on closure, never germinated:
+//! Reconstructed and settled on a graded residue or on closure, never germinated:
 //! a probe is a claim about a listing that already exists, so it either
 //! measures a trajectory against it or it says nothing.
 

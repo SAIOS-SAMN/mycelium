@@ -50,12 +50,12 @@ pub const TAG_DEMAND: u8 = 17;
 /// FORMAT: demand-vertex address tag byte.
 pub const TAG_DEMAND_AT: u8 = 18;
 
-/// AN ELEMENT THAT IS NOT A CLOSED FORM: a residual 1-chain, a letter, a
+/// AN ELEMENT THAT IS NOT A CLOSED FORM: a residue 1-chain, a letter, a
 /// rewrite — everything `form_key_bytes` addresses.
 ///
 /// It shared `TAG_FORM` with the closed forms, and the two are different
 /// algebraic objects: a form is a graded cell complex whose faces and
-/// orbits satisfy `δ¹g = 1`, written in the vertex-key layout; a residual
+/// orbits satisfy `δ¹g = 1`, written in the vertex-key layout; a residue
 /// is an unclosed chain, `∂c ≠ 0`, written as its own bytes. One tag over
 /// both meant `from_address` could not tell which layout it held, so a
 /// master equation needed a second decoder beside it — and
@@ -65,15 +65,15 @@ pub const TAG_DEMAND_AT: u8 = 18;
 ///
 /// Two kinds, two tags. `from_address` reads `TAG_FORM` and refuses this
 /// one rather than misreading it.
-/// FORMAT: residual-chain address tag byte.
-pub const TAG_RESIDUAL: u8 = 19;
+/// FORMAT: residue-chain address tag byte.
+pub const TAG_RESIDUE: u8 = 19;
 
 /// §4.4 E8 — THE THREE ADDRESSES OF A COVER, DECLARED (ruled 2026-09-22).
 ///
 /// `pieces.rs` wrote these three by hand and the carriers holding them were
 /// `Keyed<V, coord::Any>`: loose bytes that could not tell a piece's address
 /// from a carriage's, and a carriage's from a meet's. They are genuine
-/// coordinates — a piece IS its shell kind, its hue and its support; a
+/// coordinates — a piece IS its layer kind, its hue and its support; a
 /// carriage IS its domain and codomain in that order, because a carriage has
 /// a direction; a meet IS its two carriages unordered, because a seam does
 /// not — so each gets a tag and an invertible reading, and the carriers

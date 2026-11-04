@@ -21,7 +21,7 @@ assert!(
     "an exact speak leaves empty remainders, got {rems:?}"
 );
 assert_ne!(pay, [0; 4], "exact speak measures the closed delta");
-let before = element::measure_lanes(&crate::transducer::family::speak::residual_of(Some(&x), &y).expect("one enclosure needs no ground"));
+let before = element::measure_lanes(&crate::transducer::family::speak::residue_of(Some(&x), &y).expect("one enclosure needs no ground"));
 assert_eq!(pay, before, "deflation of an empty remainder is the closed delta");
 // H1, 70.4 — `"23"` is ONE body of two hues once hue moves to the fibre,
 // so the second pair's intent (an output the rule cannot explain) is
@@ -169,12 +169,12 @@ crate::transducer::raster::stand_on(0);
 }
 
 /// A form that declares no demand and leaves a remainder measures nothing
-/// (50.5): the pair's own residual is the remainder, and the measure's
+/// (50.5): the pair's own residue is the remainder, and the measure's
 /// refusal names its links.
 #[test]
 fn sentence_measure_from_refuses_undeclared_remainder() {
     let (x, y) = (grid(&["1"]), grid(&["2"]));
-    let rems = vec![residual_of(Some(&x), &y).expect("one enclosure needs no ground")];
+    let rems = vec![residue_of(Some(&x), &y).expect("one enclosure needs no ground")];
     assert!(!rems[0].is_empty(), "the pair leaves a remainder");
     assert!(
         sentence_measure_from(&Form::default(), &[(x, y)], 0, [0; 4], &rems).is_none(),
@@ -188,7 +188,7 @@ fn sentence_measure_from_refuses_undeclared_remainder() {
 #[test]
 fn sentence_measure_from_refuses_uncovered_remainder() {
     let (x, y) = (grid(&["12"]), grid(&["34"]));
-    let rems = vec![residual_of(Some(&x), &y).expect("one enclosure needs no ground")];
+    let rems = vec![residue_of(Some(&x), &y).expect("one enclosure needs no ground")];
     let elsewhere: Vec<crate::transducer::sentence::Link> = vec![(5, 5, 0, 9)];
     let chart = crate::transducer::stalk::invariant(&elsewhere);
     let mut f = Form::default();
@@ -215,11 +215,11 @@ assert_eq!(pairs.len(), 2);
 assert_eq!(
     sum[0],
     pairs[0][0] + pairs[1][0],
-    "S is the sum of the pair residuals, got {sum:?} from {pairs:?}"
+    "S is the sum of the pair residues, got {sum:?} from {pairs:?}"
 );
 let spoken = apply_form(&f, &x, &crate::transducer::alphabet::Word::identity(), &NoCrystal);
 let g = spoken.as_ref().and_then(|s| s.grid());
-let r1 = crate::transducer::raster::on_ground(crate::transducer::family::transduce::Ground::One(0), || residual_of(g.as_ref(), &y))
+let r1 = crate::transducer::raster::on_ground(crate::transducer::family::transduce::Ground::One(0), || residue_of(g.as_ref(), &y))
     .expect("on a ground of 0 the unsaid sites are written");
 let mut cat = r1.clone();
 cat.extend(r1);
@@ -332,7 +332,7 @@ fn unspoken_residue_is_read_on_output_sites() {
     assert_eq!(
         residue(&grid(&["1", "2"]), &grid(&["1", "1", "3"])),
         crate::transducer::raster::on_ground(crate::transducer::family::transduce::Ground::One(0), || {
-            crate::transducer::family::speak::residual_of(None, &grid(&["1", "1", "3"]))
+            crate::transducer::family::speak::residue_of(None, &grid(&["1", "1", "3"]))
         })
         .expect("on a ground of 0 the residue is written")
     );

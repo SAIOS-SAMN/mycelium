@@ -1,13 +1,13 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! A5 — THE RESIDUAL GERM: the chain of the exact coboundary A→B, one link
+//! A5 — THE RESIDUE GERM: the chain of the exact coboundary A→B, one link
 //! per changed site over the union of the two supports, minted when no
 //! conformal-and-gauge element closes a body. Anonymous, addressed by form.
 
-/// A residual germ: sorted `(row, col, hue_before, hue_after)` over the union of
+/// A residue germ: sorted `(row, col, hue_before, hue_after)` over the union of
 /// A's and B's painted sites. The scene's ground (`arc::ground`: hue 0, or the
 /// hue its family is drawn on) means the site is unpainted on that side.
-pub type ResidualGerm = Vec<(i64, i64, u8, u8)>;
+pub type ResidueGerm = Vec<(i64, i64, u8, u8)>;
 
 /// Mint A5's chain from two grids' painted sites — the exact coboundary.
 ///
@@ -38,7 +38,7 @@ pub fn germinate(
             None => sides.push((*r, *c, None, Some(*h))),
         }
     }
-    let mut links: ResidualGerm = Vec::with_capacity(sides.len());
+    let mut links: ResidueGerm = Vec::with_capacity(sides.len());
     for (r, c, before, after) in sides {
         let side = |h: Option<u8>| match h {
             Some(h) => Some(h),
@@ -59,7 +59,7 @@ pub fn germinate(
     crate::transducer::element::place_chain(&links)
 }
 
-/// Apply a residual germ to a scene: at each link's site, replace `before`
+/// Apply a residue germ to a scene: at each link's site, replace `before`
 /// with `after`. Reproduces the demand it was minted from — the germination
 /// closes.
 pub fn apply(germ: &[(i64, i64, u8, u8)], a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
@@ -74,7 +74,7 @@ pub fn apply(germ: &[(i64, i64, u8, u8)], a: &[(i64, i64, u8)]) -> Vec<(i64, i64
     out
 }
 
-/// Canonical bytes of a residual germ — its ANASTOME address payload.
+/// Canonical bytes of a residue germ — its ANASTOME address payload.
 pub fn germ_bytes(germ: &[(i64, i64, u8, u8)]) -> Vec<u8> {
     let mut out = Vec::with_capacity(germ.len() * 18);
     for (r, c, before, after) in germ {

@@ -63,7 +63,7 @@ fn comprehend_waiting_lapses_scene_with_last_thought() {
     let (a, b) = scene();
     let frames = crate::transducer::family::perceive_family(&[(a.clone(), b.clone())]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
-    let f = crate::transducer::family::scene_form_on(&held.epigenome, &mut budget, &a, &b, &frames).expect("the scene reads");
+    let f = crate::transducer::family::scene_form_on(&held.language, &mut budget, &a, &b, &frames).expect("the scene reads");
     held.contemplation.hold_perceived(f, &frames, &Vec::new(), &[], [0; 4], &id, &mut budget).expect("held");
     assert!(held.contemplation.holds_family(&id), "a thought stands on the scene");
     // Its own language — the words on the charts it stands on — as it was

@@ -4,7 +4,7 @@
 use crate::client::sdk::*;
 use crate::transducer::element::{Element, Held};
 
-impl Epigenome {
+impl MindLanguage {
     /// The held word at an address, read from the key. A `Held`, so its
     /// form is a field and not a decode this read performs (L16); it
     /// derefs to the element, so every element reader takes it unchanged.
@@ -41,7 +41,7 @@ impl Epigenome {
 
 
     pub fn new() -> Self {
-        Epigenome::default()
+        MindLanguage::default()
     }
 
     /// A WORD IS FILED WHERE IT ACTS, and the form is read off the `Held`
@@ -125,7 +125,7 @@ impl Epigenome {
     }
 
     /// The standing of a held address, read in the strata's own order
-    /// (24.1): Ruled, then Stood. A word this epigenome does not hold has
+    /// (24.1): Ruled, then Stood. A word this language does not hold has
     /// no standing here.
     pub(crate) fn standing_of(&self, address: &[u8]) -> Option<Standing> {
         if self.genome.contains(address) {
@@ -191,7 +191,7 @@ pub(crate) fn act_keys_of(e: &Held) -> Vec<(Vec<u8>, crate::transducer::address:
     keys
 }
 
-impl Epigenome {
+impl MindLanguage {
 
     pub(crate) fn genome_len(&self) -> usize {
         self.genome.len()

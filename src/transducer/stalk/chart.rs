@@ -372,14 +372,14 @@ pub fn invariant(chain: &[Link]) -> Invariant {
     Invariant(crate::transducer::blade::section_moduli(&sites))
 }
 
-/// THE INVARIANT OF A WORD, read on its kind. A residual word (a chain) is
+/// THE INVARIANT OF A WORD, read on its kind. A residue word (a chain) is
 /// charted by its support's moduli. A connection is charted on its fibres:
 /// the conjugacy class of the affine block's linear part (trace and
 /// determinant, exact rationals packed as the moduli are) and the cycle
 /// type of the gauge permutation. The translation part is the versor's
-/// business on the fibre, exactly as position is quotiented for a residual
+/// business on the fibre, exactly as position is quotiented for a residue
 /// word: two identical motions at different origins share the chart. A
-/// leading axis of 0 keeps connection charts disjoint from residual charts,
+/// leading axis of 0 keeps connection charts disjoint from residue charts,
 /// whose first axis is a component count of at least one. A word that is
 /// neither — no support, no group component — has the empty chart:
 /// novelty, not a stratum.
@@ -479,7 +479,7 @@ pub fn placement_of(g: &element::Element) -> Option<Versor> {
 }
 
 /// CONGRUENCE on elements: the held word that is `spoken`'s base point,
-/// with the versor carrying `spoken` onto it. For a residual word the chart
+/// with the versor carrying `spoken` onto it. For a residue word the chart
 /// narrows the candidates and the versor between shapes decides; exactly
 /// one relating word is a base point, several is the measurement that the
 /// chart is too coarse (multiplicity — an axis to extend, returned as no
@@ -514,7 +514,7 @@ pub fn congruent<'a>(
     }
 }
 
-/// 78.74 — EVERY HELD WORD CONGRUENT TO A RESIDUAL `spoken`: each a rigid
+/// 78.74 — EVERY HELD WORD CONGRUENT TO A RESIDUE `spoken`: each a rigid
 /// image of its shape, with the versor carrying it there. Where there are
 /// several, they are rigid copies of `spoken` and so of one another — one
 /// algorithm, congruent — and the condenser makes them one bundle rather

@@ -6,7 +6,7 @@
 //! THE LONG LAWS. Extraction, each hour of a family as its form, the rule's
 //! perspectives (`ascertain_on`), the tests spoken through it, a solve's
 //! home replay: each reads the mind's LANGUAGE as it stood when the scene
-//! was taken (a snapshot of the epigenome) and moves a SCRATCH of the mind's
+//! was taken (a snapshot of the mind's language) and moves a SCRATCH of the mind's
 //! field (`mind::scratch_here`), so the winding carrier and every other
 //! carrier go on while it runs. The carrier is the mind's one carrier type
 //! (`hypha::Carrier`, as the court's and the seat's are): what it reads lands
@@ -346,7 +346,7 @@ pub(crate) enum HomeCheck {
 /// (`speaks_on`, as `ground_focus` meets the corpus) couples. A restarted
 /// voice had heard 34 rings and read none, its corpus met nothing, and it
 /// rested at K 0 with no sense left that could wake it.
-fn hearing_couples(h: &Hearing, epi: &Epigenome, ground: bool, budget: &mut crate::physics::Budget) -> bool {
+fn hearing_couples(h: &Hearing, epi: &MindLanguage, ground: bool, budget: &mut crate::physics::Budget) -> bool {
     use crate::transducer::sentence::rung::{known, posit};
     (ground && h.charts.iter().any(|c| epi.speaks_on(c)))
         || h.words.iter().any(|w| {
@@ -368,13 +368,13 @@ pub(crate) type Perceiver = super::hypha::Carrier<crate::transducer::family::Ext
 /// carries the ground it was read under, and a claim spoken from it states
 /// that ground; the court reconstructs under it. Under a vortex each
 /// perspective extracts afresh: the memo holds one rule a task.
-fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Vec<Perceived> {
+fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &MindLanguage, scene: Scene) -> Vec<Perceived> {
     // Σ is the whole family's, its test inputs included (MU-SENSING §3.3).
     let tests = scene.tests.clone();
     crate::transducer::symbols::on_test_inputs(&tests, || perceive_family(memo, epi, scene))
 }
 
-fn perceive_family(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Vec<Perceived> {
+fn perceive_family(memo: &mut crate::transducer::family::ExtractMemo, epi: &MindLanguage, scene: Scene) -> Vec<Perceived> {
     let perspectives = crate::transducer::raster::ground_of(&scene.train).perspectives();
     match perspectives.as_slice() {
         [one] => {
@@ -393,7 +393,7 @@ fn perceive_family(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epig
     }
 }
 
-fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Perceived {
+fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &MindLanguage, scene: Scene) -> Perceived {
     use super::family::{ascertain_on, chain_percept, extract_on, pair_percept, scene_percept, speech_of, tests_spoken};
     let mut read = Perceived {
         ground: crate::transducer::raster::ground(),
@@ -495,11 +495,11 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &E
 /// (`admit_verdict`). On the development deployment (epoch 106) each voice sent ~600 solves
 /// the court refused, the same rules round after round, with none of these
 /// read.
-pub(crate) fn judge_on(epi: &Epigenome, j: &Judge) -> HomeCheck {
+pub(crate) fn judge_on(epi: &MindLanguage, j: &Judge) -> HomeCheck {
     crate::transducer::raster::on_ground(j.ground.clone(), || judge_on_ground(epi, j))
 }
 
-fn judge_on_ground(epi: &Epigenome, j: &Judge) -> HomeCheck {
+fn judge_on_ground(epi: &MindLanguage, j: &Judge) -> HomeCheck {
     use crate::client::sdk::rule::{crossing, would_judge_with, NoRule};
     let Ok(crossed) = crossing(&j.rule, &j.scene.train, epi) else { return HomeCheck::Kept(Stop::Uncrossed) };
     let frames = crate::transducer::family::perceive_family(&j.scene.train);
@@ -546,8 +546,8 @@ impl Mind {
 
     /// The mind's language as it stands, for a carrier to read off the
     /// field.
-    fn language(&self) -> Arc<Epigenome> {
-        Arc::new(self.epigenome.clone())
+    fn language(&self) -> Arc<MindLanguage> {
+        Arc::new(self.language.clone())
     }
 
     /// Whether a scene or a solve is on the perception carrier, not yet
@@ -641,7 +641,7 @@ impl Mind {
         // The ground state: no orbit in motion and none ringing, as the
         // corpus's focus reads it (`focus_coords`).
         let ground = matches!(crate::transducer::mind::with_field(|f| f.orbits.focus().is_empty()), Ok(true));
-        let epi = &self.epigenome;
+        let epi = &self.language;
         let mut first = |set: &crate::network::nerve::Keyed<Hearing>| set.scoped().find(|(_, h)| hearing_couples(h, epi, ground, &mut budget)).map(|(k, _)| k);
         let (now, crossed) = (first(&self.board.hearings), first(&self.board.hearings_crossed));
         let taken = match (now, crossed) {
@@ -755,7 +755,7 @@ impl Mind {
         // 78.55, the language's closure under its colour words.
         if let Some(word) = p.colour {
             let addr = word.address();
-            if !self.already_taught_address(addr.as_bytes()) && !self.epigenome.holds(addr.as_bytes()) {
+            if !self.already_taught_address(addr.as_bytes()) && !self.language.holds(addr.as_bytes()) {
                 self.speak_with(std::slice::from_ref(&word), &train, &id, |_, _| {});
             }
         }
@@ -886,7 +886,7 @@ impl Mind {
         let mut buf = Vec::new();
         for chart in super::offer::Offer::of(train).charts {
             crate::transducer::address::put_key_bytes(&mut buf, &chart);
-            crate::transducer::address::put_key_bytes(&mut buf, &crate::transducer::sheaf::stratum_root(&self.epigenome.words_on(&chart)));
+            crate::transducer::address::put_key_bytes(&mut buf, &crate::transducer::sheaf::stratum_root(&self.language.words_on(&chart)));
         }
         crate::transducer::address::Address::new(buf)
     }

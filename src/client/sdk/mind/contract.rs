@@ -41,7 +41,7 @@ impl Mind {
         // sentence stood there before it was uttered and did not stand at
         // the court; it leaves, so no form glues it and no sentence cites
         // it again — a citer of a sealed address waits at every court.
-        self.epigenome.drop_dialect(address.as_bytes());
+        self.language.drop_dialect(address.as_bytes());
         self.owed_tries.remove(address.as_bytes());
         // MU-CLIENT §5.5 — refused, it is no word of this mind's on any scene.
         self.scenes.forget(address.as_bytes());
@@ -59,7 +59,7 @@ impl Mind {
             return self.quiescent(spoken, train, budget);
         }
         let mut remainder: Vec<(i64, i64, u8, u8)> =
-            form_deflation(&probe, train, &self.epigenome).1.into_iter().flatten().collect();
+            form_deflation(&probe, train, &self.language).1.into_iter().flatten().collect();
         remainder.sort_unstable();
         remainder.dedup();
         if form.contract(kind, &at, &remainder) != Some(Contracted::Moved) {
@@ -67,7 +67,7 @@ impl Mind {
         }
         let after = form_vertex_key(&form);
         let certificate = Contraction { kind, at: at.clone(), before: address.clone(), after: after.clone(), receipt };
-        let rems = form_deflation(&form, train, &self.epigenome).1;
+        let rems = form_deflation(&form, train, &self.language).1;
         // The form is handed over (Z4 item 1) and what this arm needs of it
         // afterwards is read from the value it still has here, before the
         // move: `acts` and the remainder are read below off `form`, so the
@@ -83,7 +83,7 @@ impl Mind {
         let minted = self
             .contemplation
             .span_of(&form)
-            .and_then(|d| mint_sentence(&rule_of_form(form), train, &self.epigenome, d.span()));
+            .and_then(|d| mint_sentence(&rule_of_form(form), train, &self.language, d.span()));
         // No measured trajectory and no demand: the contraction is held with
         // its certificate and nothing is uttered.
         if let Some(sentence) = minted {
@@ -197,7 +197,7 @@ impl Mind {
         if self.sealed.get(form.as_bytes()).is_some() {
             return Err(ObstructionRefusal::CitedSealed.noted());
         }
-        let Some(cited) = self.epigenome.working_word(form.as_bytes()).map(|h| h.element().clone()) else {
+        let Some(cited) = self.language.working_word(form.as_bytes()).map(|h| h.element().clone()) else {
             return Err(ObstructionRefusal::CitedNotHeld.noted());
         };
         let courts = self.hypha.courts();

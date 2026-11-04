@@ -25,7 +25,7 @@ pub enum Deliberation {
 }
 
 /// THE PROBE, off the lock: the sentence replays over the language snapshot
-/// against the listing's chain; the settlement (closure or graded residual)
+/// against the listing's chain; the settlement (closure or graded residue)
 /// runs under a brief lock. Returns the probe's reading (PR1).
 pub fn probe(
     k: &std::sync::Mutex<crate::cognition::Court>,
@@ -50,7 +50,7 @@ pub fn probe(
     };
     // The utterance is verified as spoken — its operators against the
     // listing — never against this hypha's copies of the words.
-    let residual = crate::transducer::sentence::verify_utterance(cites, listing.sub());
+    let residue = crate::transducer::sentence::verify_utterance(cites, listing.sub());
     let Ok(mut g) = held!(k) else { return ProbeReading::nothing() };
     g.run(|g, _| {
         // A SECTION is the hypha's reading, never the speaker's flag: a cite
@@ -65,7 +65,7 @@ pub fn probe(
         // The court replays the settlement on the chains it is handed, so the
         // measure spoken here is the chain's own, not the listing's fibre.
         let before = crate::transducer::element::measure_lanes(listing.sub());
-        let settled = g.settle_probe(voice, target, residual, cites, section);
+        let settled = g.settle_probe(voice, target, residue, cites, section);
         if settled.moved() {
             g.puncture_from(cites); // the fibre deepens on what was verified
             // The settlement goes to the court with the utterance that made it,
@@ -233,7 +233,7 @@ pub fn adopt(
         None,
         &mut budget,
     );
-    if let ([], [], [_, ..]) = (sentence.residual.as_slice(), sentence.punctures.as_slice(), sentence.cites.as_slice()) {
+    if let ([], [], [_, ..]) = (sentence.residue.as_slice(), sentence.punctures.as_slice(), sentence.cites.as_slice()) {
         return Adoption::Derivable;
     }
     let Ok(mut g) = held!(k) else { return Adoption::Refused(crate::verdict::REFUSE_COURT_UNAVAILABLE) };

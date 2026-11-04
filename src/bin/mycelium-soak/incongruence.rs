@@ -6,7 +6,7 @@
 // moved — and the core judged by the plane: replayed on every reading's input
 // body, it reproduces the output or it does not. Data; nothing is decided.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::incongruence::{contrast, difference, manifold, relative, reproduces, Cell};
 use mycelium::transducer::family::{extract_rule_with, form_deflation, perceive};
 
@@ -22,7 +22,7 @@ fn cells(b: &mycelium::transducer::family::Body) -> Vec<Cell> {
 }
 
 pub(crate) fn report(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let (mut changes, mut kinematic, mut accreted, mut extinguished, mut recoloured, mut on_light, mut carved) = (0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64);
     let (mut subjects, mut solo, mut multi) = (0u64, 0u64, 0u64);
     let (mut judged, mut reproduced, mut subjects_whole) = (0u64, 0u64, 0u64);

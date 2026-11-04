@@ -337,7 +337,7 @@ and neither is a price.
 
 Transfer is the xSEPTUM Note: signed by payer and payee, escrowed at the
 listing's home, released on two-organ reconstruction. A voice's balance is homed at
-the hypha the cover trie homes its key to; a transfer is final when the
+the hypha the home trie homes its key to; a transfer is final when the
 home and a witness hold the same section and both have signed the release
 (`MU-RECURSION.md` 47.3). Double spend is impossible for
 the same reason a double install is: the second vantage sees the first.

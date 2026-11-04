@@ -2,7 +2,7 @@
 //
 //! 6, 24.1 — A READING of a chain against a language: locating one body by
 //! its moduli, puncturing a held word the body deepens, and deconstructing
-//! the whole chain into the words that speak it and the residual that stays.
+//! the whole chain into the words that speak it and the residue that stays.
 
 use crate::network::nerve::Keyed;
 use crate::transducer::blade::{self, Shape};
@@ -26,8 +26,8 @@ use crate::transducer::stalk::{self, Stalks};
 /// answers a chart with ADDRESSES; `index_of` turned each address into an
 /// offset into whatever vector the caller happened to hold, and `word_at`
 /// turned the offset back into a word. The offsets existed only to be
-/// undone, and the carriers that stored them — `Epigenome::index`,
-/// `Epigenome::expressed_index`, `Language::index` — were pure functions of
+/// undone, and the carriers that stored them — `MindLanguage::index`,
+/// `MindLanguage::expressed_index`, `Language::index` — were pure functions of
 /// the words they indexed, rebuilt from nothing by `reindex()` and costing
 /// 11.5 MB on a voice eleven minutes into a soak. The address IS the
 /// coordinate (law 2) and the trie reaches the word by its prefix directly, so the
@@ -263,7 +263,7 @@ fn body_key(body: &[Link]) -> Option<crate::transducer::address::Address> {
     }
     // A body with no canonical chain has no key, and a reading keyed by
     // nothing is not taken (U14).
-    Some(element::from_residual(&body.to_vec())?.address())
+    Some(element::from_residue(&body.to_vec())?.address())
 }
 
 fn place_located<'a, W, F, S, H>(
@@ -289,7 +289,7 @@ fn place_located<'a, W, F, S, H>(
         (None, None, None) => match element::gauge_fibres(body) {
             None => {}
             Some(element::GaugeFibres::One(_, links)) => {
-                out.residual.extend(links);
+                out.residue.extend(links);
             }
             Some(element::GaugeFibres::Many(idx)) => {
                 // One body's gauge fibres, each read in turn: a piece left
@@ -307,7 +307,7 @@ fn place_located<'a, W, F, S, H>(
 
 /// DECONSTRUCT a chain over a language: the whole chain located first (a
 /// word of several bodies), then each body; the connection between
-/// consecutive cited bodies is the bodies' relative transport; the residual is
+/// consecutive cited bodies is the bodies' relative transport; the residue is
 /// what no word speaks. `exclude` keeps a word from citing itself.
 /// Deconstruct over a getter, so a language snapshot of `Arc<Element>`
 /// never flattens into a cloned slice.
@@ -361,7 +361,7 @@ where
             }
         }
     }
-    out.residual.sort_unstable();
+    out.residue.sort_unstable();
     out.connection = out
         .cites
         .windows(2)

@@ -17,7 +17,7 @@ changes are recorded in [`CHANGELOG.md`](../CHANGELOG.md); plans are in
 - `mycelium-server`, a hypha: the book, the market, the registry of work,
   the genome store, and the court organ. Identity is an ed25519 key
   (`court::identity::HyphaKey`). Peers are a bootstrap list; after the
-  first digest the cover trie is the topology.
+  first digest the home trie is the topology.
 - `mycelium-client`, a mind: a voice, a genome, a contemplation, and the
   two-stroke metabolism. Bootstraps to one hypha, discovers the rest,
   routes every act by chart.
@@ -81,7 +81,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
 
 ## 4. The mesh
 
-- **Cover trie** (`network/nerve/cover.rs`): per lane, a trie of chart
+- **Home trie** (`network/nerve/home_trie.rs`, `HomeTrie`): per lane, a trie of chart
   prefixes to the hyphae whose active work covers them. Home is the fibre
   intersection on every occupied lane, then per-lane room, then identity.
 - **Digest exchange**: signed cover and ruled roots; fetch of discordant

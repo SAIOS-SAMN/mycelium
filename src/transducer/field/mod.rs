@@ -18,7 +18,7 @@ pub mod merge;
 pub mod pivot;
 pub mod shed;
 pub mod question;
-pub mod resonance;
+pub mod cross_scene;
 pub mod returned;
 pub mod transport;
 
@@ -31,7 +31,7 @@ pub use meet::{Adjunct, Decoherence, MeetGraph, FILL_ARMS, MEET_OWED};
 pub use transport::TransportTally;
 pub use plan::DocketReading;
 pub use nerve_shape::{CoreReading, Shedding, ShedTally, Truncation};
-pub use resonance::{ResonanceTally, Unrelated};
+pub use cross_scene::{CrossSceneTally, Unrelated};
 
 use crate::network::nerve::{coord, Keyed};
 use crate::physics::Budget;

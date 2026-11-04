@@ -95,7 +95,7 @@ Earn on install and on solve; stake to raise room; unstake when no escrow
 names the voice.
 
 **An operator.** Run the server, mint a hypha key on first run, bond from
-balance, join by one bootstrap address; the cover trie is the topology
+balance, join by one bootstrap address; the home trie is the topology
 after the first digest. Earn the pool share on homed work and accrual on
 open demands. A false root is slashed from the bond.
 

@@ -13,11 +13,11 @@ pub enum Comprehension {
     Understood(Vec<(Vec<u8>, Standing)>),
     /// Partially decomposed: `demand` is the EXACT element still missing —
     /// A12's canonical HNF residue against the span of what this mind holds
-    /// on the plane, the whole word off it, or the residual chain a listing
+    /// on the plane, the whole word off it, or the residue chain a listing
     /// left. `understood` is the part that did factor, kept rather than
     /// thrown away with the rest.
     ///
-    /// A count of residual links is not what M6 step 5 asks for: "No mind
+    /// A count of residue links is not what M6 step 5 asks for: "No mind
     /// emits `unknown`; it emits the element it lacks." A count cannot be
     /// docketed by a hypha, cannot be reduced by another mind, and cannot
     /// be replayed — and the remainder A12 computes exactly would be

@@ -75,12 +75,12 @@ impl Court {
         }
     }
 
-    /// List a residual on the book and admit its base chart. The draw occupies
+    /// List a residue on the book and admit its base chart. The draw occupies
     /// the uttering voice's bond; a receipt is sealed so lapse can fire.
     /// Where the listing stands is the stamp of the List act that admits
     /// it (78.24), sealed here.
-    pub(crate) fn book_list(&mut self, residual: Element, voice: [u8; 32]) {
-        self.list(residual, voice, Some(voice));
+    pub(crate) fn book_list(&mut self, residue: Element, voice: [u8; 32]) {
+        self.list(residue, voice, Some(voice));
     }
 
     /// THE CORPUS INTAKE'S LISTING (23.8; I31, S12.5b): the hypha lists its
@@ -93,19 +93,19 @@ impl Court {
     /// receipt names the hypha as the actor.
     /// The corpus's listing with its chart already read, outside the
     /// court (`market::prepare_intake`): the lock commits, it never reads.
-    pub(crate) fn book_list_charted(&mut self, residual: Element, chart: crate::transducer::stalk::Invariant) {
+    pub(crate) fn book_list_charted(&mut self, residue: Element, chart: crate::transducer::stalk::Invariant) {
         let actor = self.identity;
-        self.list_charted(residual, chart, actor, None);
+        self.list_charted(residue, chart, actor, None);
     }
 
-    fn list(&mut self, residual: Element, actor: [u8; 32], drawer: Option<[u8; 32]>) {
-        let chart = crate::transducer::stalk::invariant_of(&residual);
-        self.list_charted(residual, chart, actor, drawer);
+    fn list(&mut self, residue: Element, actor: [u8; 32], drawer: Option<[u8; 32]>) {
+        let chart = crate::transducer::stalk::invariant_of(&residue);
+        self.list_charted(residue, chart, actor, drawer);
     }
 
-    fn list_charted(&mut self, residual: Element, inv: crate::transducer::stalk::Invariant, actor: [u8; 32], drawer: Option<[u8; 32]>) {
-        let address = residual.address();
-        let mag = residual.magnitude();
+    fn list_charted(&mut self, residue: Element, inv: crate::transducer::stalk::Invariant, actor: [u8; 32], drawer: Option<[u8; 32]>) {
+        let address = residue.address();
+        let mag = residue.magnitude();
         // A LISTING IS DRAWN ONCE (§3.1 as ruled, S13.15): an address
         // already on the page keeps its drawer and its occupancy, so a
         // second vantage on it neither doubles the occupancy nor takes the
@@ -143,7 +143,7 @@ impl Court {
         }
         // A word listed again leaves the cavity it was relocated to.
         self.cavity_book.remove(&address);
-        self.pending.insert(&address, residual);
+        self.pending.insert(&address, residue);
         self.book_gen += 1;
         self.append_step_charted(crate::chronometry::ActKind::List, &address, actor, Some(inv));
     }
@@ -428,7 +428,7 @@ impl Court {
         base
     }
 
-    /// Torse one word: a closed orbit pays the torse coin on the residual
+    /// Torse one word: a closed orbit pays the torse coin on the residue
     /// lane immediately, not on the idle cursor.
     #[expect(
         clippy::disallowed_methods,

@@ -5,7 +5,7 @@
 // remainder scene's extraction read by the cover's own tally (L6) and its
 // demands by kind. Printed as data; nothing is decided.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::network::nerve::coord::BivectorKind;
 use mycelium::transducer::family::invert::{remainder_scene, Painted};
 use mycelium::transducer::family::luminal::{read_pair, Beyond, Stop};
@@ -49,7 +49,7 @@ impl Totals {
 }
 
 pub(crate) fn report(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let mut all = Totals::default();
     // Coverage by the remainder's dominant demand kind: deformation, source,
     // creation, none.

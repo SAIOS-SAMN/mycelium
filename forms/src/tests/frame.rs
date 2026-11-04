@@ -32,7 +32,7 @@ fn move_inverse_undoes_every_move_exactly() {
 /// frame with its inverse carries every reading to itself.
 #[test]
 fn frame_inverse_composes_to_identity() {
-    let frame = Frame::identity()
+    let frame = Reference::identity()
         .then(Move::Bend(v(&[(1, 5), (1, 7)])))
         .then(Move::Twist(v(&[(0, 1), (4, 1)])))
         .then(Move::Turn { plane: (0, 1), degrees: q(270, 1) })
@@ -53,13 +53,13 @@ fn frame_inverse_composes_to_identity() {
 /// spatial frames are the square's symmetries.
 #[test]
 fn twist_composes_twice_to_turn_of_180_degrees() {
-    let turn_180 = Frame::identity().then(Move::Twist(v(&[(1, 1), (0, 1)]))).then(Move::Twist(v(&[(0, 1), (1, 1)])));
+    let turn_180 = Reference::identity().then(Move::Twist(v(&[(1, 1), (0, 1)]))).then(Move::Twist(v(&[(0, 1), (1, 1)])));
     let x = v(&[(3, 5), (-2, 7)]);
     assert_eq!(turn_180.carry(&x), Ok(v(&[(-3, 5), (2, 7)])), "the antipode");
     assert_eq!(turn_180.carry(&x), Move::Turn { plane: (0, 1), degrees: q(180, 1) }.apply(&x), "the turn of 180°");
     let one = Move::Twist(v(&[(0, 1), (3, 1)])).apply(&x).expect("reflected");
     assert_eq!(dot(&one, &one), dot(&x, &x), "a twist keeps the distance");
-    assert_eq!(Move::Twist(v(&[(2, 1), (1, 1)])).apply(&x), Err(FrameRefusal::NotAxial), "a mirror off the axes: refused");
+    assert_eq!(Move::Twist(v(&[(2, 1), (1, 1)])).apply(&x), Err(ReferenceRefusal::NotAxial), "a mirror off the axes: refused");
 }
 
 /// AN ORDERED TURN IN DEGREES: held exactly as its angle, undone by its
@@ -73,10 +73,10 @@ fn turn_carries_exactly_and_refuses_inexact_degrees() {
     assert_eq!(quarter.apply(&x), Ok(v(&[(2, 7), (3, 5), (1, 1)])), "a 90° turn from axis 0 toward axis 1");
     assert_eq!(quarter.inverse().apply(&quarter.apply(&x).expect("turned")), Ok(x.clone()), "undone by its negation");
     let thirty = Move::Turn { plane: (0, 1), degrees: q(30, 1) };
-    assert_eq!(thirty.apply(&x), Err(FrameRefusal::Inexact), "30° alone: refused, never rounded");
-    let three = Frame::identity().then(thirty.clone()).then(thirty.clone()).then(thirty);
+    assert_eq!(thirty.apply(&x), Err(ReferenceRefusal::Inexact), "30° alone: refused, never rounded");
+    let three = Reference::identity().then(thirty.clone()).then(thirty.clone()).then(thirty);
     assert_eq!(three.carry(&x), quarter.apply(&x), "three turns of 30° in one plane compose to 90°, exactly");
-    assert_eq!(Move::Turn { plane: (1, 1), degrees: q(90, 1) }.apply(&x), Err(FrameRefusal::NoPlane));
+    assert_eq!(Move::Turn { plane: (1, 1), degrees: q(90, 1) }.apply(&x), Err(ReferenceRefusal::NoPlane));
 }
 
 /// REFUSED BY NAME: a bend's pole carried to infinity, a mirror of zero, a
@@ -84,9 +84,9 @@ fn turn_carries_exactly_and_refuses_inexact_degrees() {
 #[test]
 fn move_apply_refuses_pole_and_unmatched_move() {
     // The pole of a bend by b is x = −b/|b|².
-    assert_eq!(Move::Bend(v(&[(1, 2), (0, 1)])).apply(&v(&[(-2, 1), (0, 1)])), Err(FrameRefusal::AtPole));
-    assert_eq!(Move::Twist(v(&[(0, 1), (0, 1)])).apply(&v(&[(1, 1), (1, 1)])), Err(FrameRefusal::NoMirror));
-    assert_eq!(Move::Expand(q(1, 1)).apply(&v(&[(1, 1)])), Err(FrameRefusal::Ratio));
-    assert_eq!(Move::Contract(q(1, 2)).apply(&v(&[(1, 1)])), Err(FrameRefusal::Ratio));
-    assert_eq!(Move::Stretch(v(&[(1, 1)])).apply(&v(&[(1, 1), (1, 1)])), Err(FrameRefusal::Unmatched));
+    assert_eq!(Move::Bend(v(&[(1, 2), (0, 1)])).apply(&v(&[(-2, 1), (0, 1)])), Err(ReferenceRefusal::AtPole));
+    assert_eq!(Move::Twist(v(&[(0, 1), (0, 1)])).apply(&v(&[(1, 1), (1, 1)])), Err(ReferenceRefusal::NoMirror));
+    assert_eq!(Move::Expand(q(1, 1)).apply(&v(&[(1, 1)])), Err(ReferenceRefusal::Ratio));
+    assert_eq!(Move::Contract(q(1, 2)).apply(&v(&[(1, 1)])), Err(ReferenceRefusal::Ratio));
+    assert_eq!(Move::Stretch(v(&[(1, 1)])).apply(&v(&[(1, 1), (1, 1)])), Err(ReferenceRefusal::Unmatched));
 }

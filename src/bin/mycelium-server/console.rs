@@ -298,7 +298,7 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
             }
             None => format!("  {name}  {DIM}no clock carried{RESET}"),
         });
-        // 78.152 — the court's quorum-final point, its keepers, its residual.
+        // 78.152 — the court's quorum-final point, its keepers, its residue.
         if let Some(c) = readings.iter().find_map(|r| match r {
             Reading::Court(c) => Some(c),
             _ => None,
@@ -321,7 +321,7 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
 /// 78.152 TU-3, TU-4, TU-7 — A COURT'S TUNIVERSAL STANDING: the door's
 /// quorum-final point written whole (`TPoint::print`), its advances, each
 /// keeper with its newest verified tick and its own final point, and the
-/// residual — each edge's exact lane difference and the triangle's holonomy.
+/// residue — each edge's exact lane difference and the triangle's holonomy.
 fn standing(s: &observe::TStanding) -> Vec<String> {
     // Each signed lane exact, as `n/d` in lowest terms with its sign.
     let lanes = |d: &[mycelium::core::Q; 4]| {
@@ -356,10 +356,10 @@ fn standing(s: &observe::TStanding) -> Vec<String> {
         };
         out.push(format!("    keeper {}{own}  {newest}  {fin}", short(&k.key)));
     }
-    for e in &s.residual.edges {
-        out.push(format!("    residual {}→{} h {} Δ {}", short(&e.from), short(&e.to), e.h, lanes(&e.delta)));
+    for e in &s.residue.edges {
+        out.push(format!("    residue {}→{} h {} Δ {}", short(&e.from), short(&e.to), e.h, lanes(&e.delta)));
     }
-    out.push(match &s.residual.holonomy {
+    out.push(match &s.residue.holonomy {
         Some(d) => format!("    holonomy {}", lanes(d)),
         None => format!("    {DIM}holonomy unmeasured{RESET}"),
     });

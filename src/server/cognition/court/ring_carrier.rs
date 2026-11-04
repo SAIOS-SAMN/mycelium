@@ -58,7 +58,7 @@ pub struct RingTally {
     /// Ruled forms whose circuits' algebra did not read (a holonomy with no
     /// Cayley chart point, or the stroke spent): nothing written.
     pub rank_unread: u64,
-    /// Ruled words that are no sentence (a residual word, a connection).
+    /// Ruled words that are no sentence (a residue word, a connection).
     pub rank_formless: u64,
     /// Ruled sentences whose faces close no ring: no circuit to bring — by
     /// why (78.75): no cycle at all (a forest), every cycle trivial alone
@@ -406,7 +406,7 @@ impl Court {
     /// counted by why and writes nothing.
     pub(crate) fn step_rank(&mut self, address: &[u8], budget: &mut crate::physics::Budget) {
         let Some(w) = self.word_at(address) else { return };
-        // A ruled word that is no sentence — a residual word, a connection —
+        // A ruled word that is no sentence — a residue word, a connection —
         // carries no circuit: counted by that name (LD0), never silent.
         let Some(form) = crate::transducer::sentence::from_element_form(w) else {
             self.winding_tally.rank_formless += 1;

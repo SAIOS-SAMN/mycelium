@@ -35,7 +35,7 @@ assert_eq!(home.treasury().minted(), [0; 4], "the claim is not yet payment: noth
 // 78.153: every stroke the docket's replay takes.
 home.court_settle();
 let spoken = home.provisional.get(&addr).cloned().expect("still provisional until a peer glues");
-let mut cover = crate::network::nerve::Cover::new();
+let mut cover = crate::network::nerve::HomeTrie::new();
 assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 let cover = home.genesis_cover().expect("measured");
 home.enroll([2; 32], cover); // 47.3: a witness with room
@@ -90,7 +90,7 @@ let family = vec![(
     digits(&["1100", "0000"]),
     digits(&["0011", "0000"]),
 )];
-let chain = crate::transducer::family::speak::residual_of(Some(&family[0].0), &family[0].1).expect("one enclosure needs no ground");
+let chain = crate::transducer::family::speak::residue_of(Some(&family[0].0), &family[0].1).expect("one enclosure needs no ground");
 let frame = crate::transducer::element::Frame::new(2, 4, 2, 4);
 assert!(k.intake(&chain, &frame), "the listing stands");
 let listing = k.pending.scoped().next().expect("listed").1.address();
@@ -137,7 +137,7 @@ let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::tr
 assert!(spoken.is_sentence());
 let mut expect = [0u64; 4];
 for (x, y) in &family {
-    let chain = crate::transducer::raster::on_ground_of(&family, || crate::transducer::family::speak::residual_of(Some(x), y))
+    let chain = crate::transducer::raster::on_ground_of(&family, || crate::transducer::family::speak::residue_of(Some(x), y))
         .expect("one enclosure needs no ground");
     let lanes = crate::transducer::element::measure_lanes(&chain);
     for i in 0..4 {
@@ -203,7 +203,7 @@ let b = vec![(0, 0, 5), (0, 1, 2)];
 k.basis_insert(from_canonical(&germinate(&a, &b).expect("coboundary")), [1; 32]);
 k.treasury().audit().expect("an install conserves");
 
-// Two voices docket the same residual, then the court rules on it.
+// Two voices docket the same residue, then the court rules on it.
 // E1: an escrow holds μ⃗ that does not exist yet, so it is a claim on
 // issuance and not supply (§3.1, §6). A ruling discharges it into a
 // mint; a revocation makes it vanish with nothing ever issued. Counting

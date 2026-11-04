@@ -97,7 +97,7 @@ fn corpus_pairs_through_bridge_project_to_delta() {
             let need = need_of(&a, &b).expect("one rank");
             let t = Transduction::of(&a, &b, &mut mycelium::physics::Physics::default().stroke_n(need)).expect("the need is the stroke");
             let projected = links_of(&t.projected().expect("one enclosure projects"));
-            assert_eq!(projected, mycelium::transducer::family::speak::residual_of(Some(x), y).expect("one enclosure needs no ground"), "{name}");
+            assert_eq!(projected, mycelium::transducer::family::speak::residue_of(Some(x), y).expect("one enclosure needs no ground"), "{name}");
             read += 1;
         }
     }

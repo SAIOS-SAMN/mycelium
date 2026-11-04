@@ -290,7 +290,7 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
         }
         // Coarsening is along the RANK's declared coordinates and nothing
         // else. `Invariant::peel` drops one whole `ChartAxis`;
-        // `Keyed::peel`'s `Shell` cuts at a trie BIT boundary
+        // the `PeelBranch` of `Keyed::peel` cuts at a trie BIT boundary
         // (`clear_after_bit`) and can bisect a `ChartAxis::Ratio`, so it is
         // not a stratum reader and is not used here.
         at = at.peel();
@@ -309,7 +309,7 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
 pub type GeneratorIndex = Keyed<Keyed<crate::transducer::address::Address>>;
 
 /// The chart of a word's own versor: `connection_chart`'s shape — the
-/// leading 0 that keeps versor charts disjoint from residual charts (M4
+/// leading 0 that keeps versor charts disjoint from residue charts (M4
 /// step 2), then the rotor's conjugacy axes (15.3). A word with no
 /// conjugacy axes is not a generator and is not filed.
 pub fn versor_chart(w: &Word) -> Option<stalk::Invariant> {
@@ -367,7 +367,7 @@ pub fn lane_chart(
 }
 
 /// The leading value that keeps a lane chart disjoint from a versor chart
-/// (leading 0) and from a residual chart. Content, and the one place the
+/// (leading 0) and from a residue chart. Content, and the one place the
 /// four covers' key spaces are separated.
 /// FORMAT: layout, the lane chart's leading offset.
 pub const LANE_TAG: u64 = 1 << 32;
@@ -655,7 +655,7 @@ pub(crate) fn vertex_cited<'a>(f: &'a Form, vertex: &[u8]) -> Option<&'a Vertex>
     }
     let rotor = crate::transducer::alphabet::Rotor::from_key(&crate::transducer::address::take_key_bytes(vertex, &mut p)?)?;
     let at = coord::VertexAt::Word(coord::Transport {
-        kind: crate::transducer::layers::ShellKind::Whole,
+        kind: crate::transducer::layers::LayerKind::Whole,
         class: rotor.holonomy_key()?,
     });
     let v = f.vertices.at(&at)?;

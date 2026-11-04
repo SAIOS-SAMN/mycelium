@@ -527,7 +527,7 @@ pub fn turn_base_point(
 /// returned rather than one being collapsed into the other's absence.
 ///
 /// THE SPLIT IS TAKEN BY THE NORMAL EQUATIONS, `AᵀA p = Aᵀ t`, which over
-/// ℚ is exact elimination and nothing else: the residual `t − A p` is
+/// ℚ is exact elimination and nothing else: the residue `t − A p` is
 /// orthogonal to `Im(A)` by construction, hence lies in `ker(A)`, which is
 /// precisely the canonical twist. No tolerance, no rounding, no choice of
 /// free variable leaking into the answer (law 4, rule 11).
@@ -589,7 +589,7 @@ pub fn screw_of(
     // THE CENTRE, by the normal equations on the four rows. `AᵀA` is 3×3
     // over ℚ; where it is singular the rotor fixes a direction of the base
     // pointwise, the free coordinate is set to zero, and adding a kernel
-    // vector to `p` changes neither `A p` nor the residual below.
+    // vector to `p` changes neither `A p` nor the residue below.
     let a: [[Q; 3]; 4] = std::array::from_fn(|r| std::array::from_fn(|c| rows[r][c].clone()));
     let rhs: [Q; 4] = std::array::from_fn(|r| rows[r][3].clone());
     let mut normal: [[Q; 4]; 3] = std::array::from_fn(|_| std::array::from_fn(|_| Q::zero()));
@@ -600,22 +600,22 @@ pub fn screw_of(
         normal[i][3] = (0..4).map(|r| &a[r][i] * &rhs[r]).fold(Q::zero(), |s, x| s + x);
     }
     let centre = solve_base_point(square_to_rows(normal))?;
-    // THE RESIDUAL, exact: `t − A p`. Orthogonal to `Im(A)` by the normal
+    // THE RESIDUE, exact: `t − A p`. Orthogonal to `Im(A)` by the normal
     // equations, hence in `ker(A)`.
-    let residual: [Q; 4] = std::array::from_fn(|r| {
+    let residue: [Q; 4] = std::array::from_fn(|r| {
         (0..3).map(|c| &a[r][c] * &centre[c]).fold(Q::zero(), |s, x| s + x)
     });
-    let residual: [Q; 4] = std::array::from_fn(|r| &rhs[r] - &residual[r]);
+    let residue: [Q; 4] = std::array::from_fn(|r| &rhs[r] - &residue[r]);
     // THE OFF-BASE ROW IS NOT A SLIP. Row three says whether the turn
-    // carries the base off itself; a residual there is a reading this chart
+    // carries the base off itself; a residue there is a reading this chart
     // cannot take, which `Axis::OffPlane` carries, and it refuses rather
     // than being counted as a translation within the base (rule 11).
-    if !residual[3].is_zero() {
+    if !residue[3].is_zero() {
         return None;
     }
     Some(Screw {
         centre,
-        twist: [residual[0].clone(), residual[1].clone(), residual[2].clone()],
+        twist: [residue[0].clone(), residue[1].clone(), residue[2].clone()],
     })
 }
 
@@ -713,7 +713,7 @@ impl Letters {
 }
 
 impl Element {
-    /// The letters of this WORD — `None` for a residual germ or a word
+    /// The letters of this WORD — `None` for a residue germ or a word
     /// spoken before the alphabet (no tape: not a word of the language).
     ///
     /// Two tags, and they are the two the parser below reads: a connection
@@ -784,7 +784,7 @@ impl Element {
     }
 
     /// Is this word a CONNECTION — letters on the tape and an invertible
-    /// versor. A residual chain is never a connection.
+    /// versor. A residue chain is never a connection.
     pub fn is_connection(&self) -> bool {
         let Some(letters) = self.letters() else {
             return false;
@@ -816,7 +816,7 @@ impl Element {
     /// This read `description()[0] == SENTENCE_TAG`, which made the kind of
     /// a word a property of a byte buffer. It is a property of the word's
     /// ADDRESS: `TAG_FORM` opens the canonical A21 coordinates of a closed
-    /// form and `TAG_RESIDUAL` opens everything else, and the two were
+    /// form and `TAG_RESIDUE` opens everything else, and the two were
     /// separated for exactly this reason — one tag over both meant
     /// `from_address` could not tell which layout it held.
     ///

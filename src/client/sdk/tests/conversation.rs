@@ -7,7 +7,7 @@ use crate::client::sdk::chatter::{Chatter, Said};
 use crate::client::sdk::*;
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element::identity_versor;
-use crate::transducer::element::residual::from_connection;
+use crate::transducer::element::residue::from_connection;
 use std::io::{Read, Write};
 
 /// A connection word spelled by `letters` at the identity carriage.

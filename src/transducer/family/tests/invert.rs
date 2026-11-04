@@ -42,7 +42,7 @@ fn invert_remainder_inverts_nothing_for_whole_speech() {
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("a rule");
-    let empty = crate::client::sdk::Epigenome::new();
+    let empty = crate::client::sdk::MindLanguage::new();
     let (_, rem) = crate::transducer::family::form_deflation(&rule.form, &family, &empty);
     let left: usize = rem.iter().map(Vec::len).sum();
     match invert_remainder(&rule.form, &family, &empty, &mut budget) {

@@ -21,9 +21,9 @@ fn shed_keeps_glued_dialect_word_and_genome() {
     entity.contemplation.mark_glue(&idea, addr.clone());
     let _ = entity.shed();
     assert_eq!(entity.dialect_len(), 1, "the unreferenced word sheds; the glued one stands");
-    assert!(entity.epigenome.working_word(&addr).is_some(), "the glued word stands");
-    assert!(entity.epigenome.working_word(&e2.address()).is_none(), "the unreferenced word is gone");
-    assert_eq!(entity.epigenome.genome_len(), 0, "the genome is untouched by the shed");
+    assert!(entity.language.working_word(&addr).is_some(), "the glued word stands");
+    assert!(entity.language.working_word(&e2.address()).is_none(), "the unreferenced word is gone");
+    assert_eq!(entity.language.genome_len(), 0, "the genome is untouched by the shed");
 }
 
 /// MU-CLIENT §4.13 — A WORD THE MIND SAID AND A COURT TAUGHT STANDS UNTIL
@@ -35,12 +35,12 @@ fn shed_keeps_taught_word_until_ratified() {
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("taught"));
     entity.remember_spoken(&e1);
     let _ = entity.shed();
-    assert!(entity.epigenome.working_word(&e1.address()).is_some(), "taught and unratified, it stands");
+    assert!(entity.language.working_word(&e1.address()).is_some(), "taught and unratified, it stands");
     assert!(entity.already_taught(&e1), "and its receipt with it");
 }
 
 /// 45.4 — THE MIND'S K IS ITS OWN ACTS, and no reply moves it. The test
-/// above drives the epigenome with K values handed to it, so it proves the
+/// above drives the mind's language with K values handed to it, so it proves the
 /// shed's arithmetic and says nothing about where K comes from.
 ///
 /// This one calls `stand` alone, which is 24.3's own act -- "perceive,
@@ -268,7 +268,7 @@ fn release_thought_returns_only_what_hold_drew() {
 /// already handed out cannot be withdrawn.
 #[test]
 fn take_unpivoted_drains_set_of_coordinates() {
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     let a = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let addr = a.address();
     assert_eq!(epi.unpivoted_len(), 0, "a fresh mind has no pending work");

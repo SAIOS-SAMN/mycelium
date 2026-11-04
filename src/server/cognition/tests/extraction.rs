@@ -59,7 +59,7 @@ assert!(
 /// A shape deformation (L → bar) that NO versor carries is a pair the
 /// eyes cannot open: no body pair admitted, no vertex that acts, so the
 /// voice has no sentence and nothing is listed (50.5, L7) — never a
-/// residual chain germinated as a word, which was this test's claim in the
+/// residue chain germinated as a word, which was this test's claim in the
 /// chain era. The deformation is answered by the cover of 50.8 (L11), not
 /// by a listing of its links.
 #[test]
@@ -73,7 +73,7 @@ assert!(k.pending.is_empty(), "nothing on the book to await consilience");
 }
 
 /// Two distinct objects in one pair are one pair form, not a Cartesian
-/// fragment per body. Two voices docket the residual.
+/// fragment per body. Two voices docket the residue.
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]

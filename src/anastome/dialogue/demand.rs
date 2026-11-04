@@ -28,13 +28,13 @@ pub fn decode_probe(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> {
 }
 
 /// PR1 — THE PROBE'S READING ON THE WIRE: the settled μ⃗, the closure (its
-/// kind, and a residual's versor behind a flag, as its ray), the remaining μ⃗.
+/// kind, and a residue's versor behind a flag, as its ray), the remaining μ⃗.
 pub fn encode_probe_reply(r: &ProbeReading) -> Vec<u8> {
     let mut out = Vec::new();
     push_mu(&mut out, &r.settled);
     match &r.closure {
         ProbeClosure::Closed => out.push(0),
-        ProbeClosure::Residual(v) => {
+        ProbeClosure::Residue(v) => {
             out.push(1);
             match v {
                 Some(v) => {
@@ -61,7 +61,7 @@ pub fn decode_probe_reply(body: &[u8]) -> Option<ProbeReading> {
         1 => {
             let flag = *body.get(p)?;
             p += 1;
-            ProbeClosure::Residual(match flag {
+            ProbeClosure::Residue(match flag {
                 0 => None,
                 1 => Some(crate::transducer::cga::Mv::from_bytes(body, &mut p)?),
                 _ => return None,

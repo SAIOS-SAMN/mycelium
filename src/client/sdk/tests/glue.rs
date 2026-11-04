@@ -48,7 +48,7 @@ fn on_body_finds_stood_form_at_body_chart() {
         f.is_closed(),
         "the fixture's form is closed, so the crystal may return it at all"
     );
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     epi.stand_dialect_at(e.clone(), 1, 1)
         .expect("the mind stands what it spoke");
     let found = Crystal::on_body(&epi, &chart);
@@ -62,7 +62,7 @@ fn on_body_finds_stood_form_at_body_chart() {
 /// form cites it when it extracts a rule over a family that form closes
 /// part of. The same claim `perceive_speech_reconstructs_glued_form_through_court_genome`
 /// makes of a stub crystal whose `on_class` ignores the chart it is asked
-/// at — made here of the epigenome a deployed mind runs.
+/// at — made here of the `MindLanguage` a deployed mind runs.
 #[test]
 fn extract_rule_with_cites_stood_form() {
     let family = vec![
@@ -72,7 +72,7 @@ fn extract_rule_with_cites_stood_form() {
     let held = cipher_form(&family[0].0, &family[0].1);
     let mag = sentence_measure(&held, &family[..1], &NoCrystal, 0).expect("the body is spoken");
     let e = as_element_form(&held, mag).expect("a tape");
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     epi.stand_dialect_at(e.clone(), 1, 1).expect("stood");
 
     let rule = crate::transducer::family::extract_rule_with(&family, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
@@ -90,7 +90,7 @@ fn extract_rule_with_cites_stood_form() {
 #[test]
 fn on_body_answers_nothing_off_held_chart() {
     let (e, chart) = closed_form_and_body_chart();
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     epi.stand_dialect_at(e, 1, 1).expect("stood");
     let mut other = chart.0.clone();
     other.push(crate::transducer::stalk::ChartAxis::Count(u64::MAX));
@@ -110,7 +110,7 @@ fn on_body_answers_nothing_off_held_chart() {
 #[test]
 fn on_body_answers_after_genome_restore() {
     let (e, chart) = closed_form_and_body_chart();
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     epi.learn(&e.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).expect("the word enters the genome");
     assert!(
         !Crystal::on_body(&epi, &chart).is_empty(),
@@ -119,7 +119,7 @@ fn on_body_answers_after_genome_restore() {
     epi.admit_all_at(admitting());
     let (tape, refused) = epi.crystallize();
     assert_eq!(refused.total(), 0, "the word stands at its admitting stamp");
-    let mut booted = Epigenome::new();
+    let mut booted = MindLanguage::new();
     assert!(booted.uncrystallize(&tape).is_some(), "the genome restores");
     assert!(
         booted.genome_words().any(|w| w.same_vertex(&e)),
@@ -147,7 +147,7 @@ fn on_body_answers_after_genome_restore() {
 #[test]
 fn generators_under_survives_genome_restore() {
     let (e, _) = closed_form_and_body_chart();
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     epi.learn(&e.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).expect("the word enters the genome");
 
     // The presentation is filed at the versor chart of every word the
@@ -163,7 +163,7 @@ fn generators_under_survives_genome_restore() {
         .collect();
     assert!(!charts.is_empty(), "the form carries a word with a versor chart");
 
-    let read = |epi: &Epigenome, chart: &crate::transducer::stalk::Invariant| {
+    let read = |epi: &MindLanguage, chart: &crate::transducer::stalk::Invariant| {
         let mut budget = crate::physics::Physics::default().stroke();
         Crystal::generators_under(epi, chart, &mut budget)
     };
@@ -171,7 +171,7 @@ fn generators_under_survives_genome_restore() {
     epi.admit_all_at(admitting());
     let (tape, refused) = epi.crystallize();
     assert_eq!(refused.total(), 0, "the word stands at its admitting stamp");
-    let mut booted = Epigenome::new();
+    let mut booted = MindLanguage::new();
     assert!(booted.uncrystallize(&tape).is_some(), "the genome restores");
 
     let mut offered = 0usize;

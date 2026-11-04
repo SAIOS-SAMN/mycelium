@@ -55,7 +55,7 @@ pub(crate) fn find_id(dir: &str, names: &[String], want: &str) {
         }
         // And its form, which is what the census is for: the reading is
         // the family's own size, not the id.
-        let epi = mycelium::client::sdk::Epigenome::new();
+        let epi = mycelium::client::sdk::MindLanguage::new();
         let mut physics = mycelium::physics::Physics::default();
         let frames = perceive_family(&task.train);
         let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
@@ -105,7 +105,7 @@ pub(crate) fn report(dir: &str, name: &str) {
         eprintln!("  calibrate refused: not a task");
         return;
     };
-    let epi = mycelium::client::sdk::Epigenome::new();
+    let epi = mycelium::client::sdk::MindLanguage::new();
     let mut physics = mycelium::physics::Physics::default();
     let frames = perceive_family(&task.train);
     let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));

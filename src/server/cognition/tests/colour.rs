@@ -104,7 +104,7 @@ fn glue_fetched_admits_colour_word_by_rederived_witness() {
     // A PEER HOLDING THE TASK re-derives it.
     let mut peer = Court::new();
     peer.bind_task_family(tid, family);
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     assert!(!matches!(super::fixtures::fetched(&mut peer, &sent, [1; 32], [2; 32], &mut cover), Glue::Dialect), "proven here");
     // A COURT WITHOUT IT holds it as dialect — ruled so, never a replay the
     // stroke left unread.
@@ -173,7 +173,7 @@ fn colour_word_mints_rules_teaches_and_holds() {
     let mut mind = crate::client::sdk::Mind::open("127.0.0.1:1", crate::client::sdk::Voice::named("learner"));
     let mut budget = mind.stroke_n(1 << 16);
     assert!(mind.absorb_taught_at(&taught.word, Some(taught.at), &mut budget).is_some(), "learned");
-    assert_eq!(mind.epigenome.genome_words().filter(|w| w.is_colour_word()).count(), 1, "the mind holds what its court installed");
+    assert_eq!(mind.language.genome_words().filter(|w| w.is_colour_word()).count(), 1, "the mind holds what its court installed");
 }
 
 /// 78.58 (Closure I) — A MERGE IS UNITARY: hue 2 recoloured into hue 1,

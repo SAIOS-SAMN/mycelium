@@ -215,7 +215,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
 /// On the stroke of the offer act that asked (65.5): the door mints it.
 pub(crate) fn witness_vantage(
     k: &mut mycelium::cognition::Court,
-    cover: &mut mycelium::network::nerve::Cover,
+    cover: &mut mycelium::network::nerve::HomeTrie,
     word: mycelium::transducer::element::Element,
     home: [u8; 32],
     witness: [u8; 32],

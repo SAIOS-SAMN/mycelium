@@ -87,7 +87,7 @@ pub struct GenomeWord {
     pub(crate) shape: std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
 }
 
-/// An expressed word — a residual this mind germinated and has not had
+/// An expressed word — a residue this mind germinated and has not had
 /// ratified — at its own coordinate, for the same reason.
 #[cfg(test)]
 #[derive(Clone)]
@@ -96,13 +96,13 @@ pub struct ExpressedWord {
     pub(crate) shape: std::sync::OnceLock<Option<crate::transducer::blade::Shape>>,
 }
 
-/// AN OPEN QUESTION AS A GENOME FILE HELD IT: the residual chain's address,
+/// AN OPEN QUESTION AS A GENOME FILE HELD IT: the residue chain's address,
 /// its links (row, column, hue before, hue after), and the stratum it stands
 /// on (its chart invariant's key, the sheaf sync's coordinate).
-pub(crate) type OpenResidual = (Vec<u8>, Vec<(i64, i64, u8, u8)>, Vec<u8>);
+pub(crate) type OpenResidue = (Vec<u8>, Vec<(i64, i64, u8, u8)>, Vec<u8>);
 
 #[derive(Default, Clone)]
-pub struct Epigenome {
+pub struct MindLanguage {
     /// THE CRYSTALLIZED LANGUAGE AS THIS MIND HOLDS IT (L16): each word
     /// with the form its tape decodes to, decoded once at the admission.
     /// Held as `Element`, every reader that wanted a form decoded the tape
@@ -126,9 +126,9 @@ pub struct Epigenome {
     /// that is not a versor, a section that does not span the support) —
     /// the mind's measured discordance with what it was taught.
     pub(crate) refused: u64,
-    /// THE EXPRESSED WORDS (ephemeral, never persisted): the residual
+    /// THE EXPRESSED WORDS (ephemeral, never persisted): the residue
     /// bodies this mind germinated itself, before any court ratified
-    /// them. They let the mind recognise a residual it has already
+    /// them. They let the mind recognise a residue it has already
     /// claimed, so a claim is spoken once; a ratified word arrives by
     /// teaching and enters the genome.
     #[cfg(test)]
@@ -151,7 +151,7 @@ pub struct Epigenome {
     pub(crate) waiting_on: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// CLOSED FORMS BY THE CHART OF A BODY THEY CARRY (21 step 3, 24.1):
     /// body chart → the addresses of held forms with a `Word` vertex on
-    /// that chart. It is the epigenome's `Form.by_class` (18.2) — "the
+    /// that chart. It is the mind's language's `Form.by_class` (18.2) — "the
     /// fibre a listing body's chart reads" — one level up, filled and
     /// emptied beside `axis_index`.
     ///
@@ -163,11 +163,11 @@ pub struct Epigenome {
     /// no rule ever cited a held form, no citation was ever a use, and
     /// nothing was ever paid for one (26, 27).
     pub(crate) by_moduli: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
-    /// MU-CLIENT §7.1 — THE RESIDUAL CHAINS A RESTORED GENOME FILE HELD, by
-    /// address: a residual is an open question, never a word (ruled
+    /// MU-CLIENT §7.1 — THE RESIDUE CHAINS A RESTORED GENOME FILE HELD, by
+    /// address: a residue is an open question, never a word (ruled
     /// 2026-10-18), so the restore files it here and the boot hands it to the
     /// mind's carrier at once (`Mind::restore_genome`) — empty after.
-    pub(crate) restored_residuals: Vec<OpenResidual>,
+    pub(crate) restored_residues: Vec<OpenResidue>,
     /// The rewrites the restore read on the file and left out — acts on the
     /// language, never words of it: the file held more than the genome now
     /// does, and is written again (`Mind::restore_genome`).

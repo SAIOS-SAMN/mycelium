@@ -359,7 +359,7 @@ fn form_vertex_key_carries_ratio_and_sections() {
     // bytes. It stood at `form_address(7)`, two bytes that spell no stratum of
     // this system, and the carrier accepted them because it took bytes.
     let class = coord::SectionAt::Class(coord::Transport {
-        kind: crate::transducer::layers::ShellKind::Whole,
+        kind: crate::transducer::layers::LayerKind::Whole,
         class: w.rotor().holonomy_key().expect("the 90° turn has a class"),
     });
     // AT1 — A MEMBER HOLDS ITS FRAMES, and the sections are read off them:
@@ -442,10 +442,10 @@ fn depth_of_equals_one_plus_max_glued() {
 /// A language of a bar and a dot deconstructs a rotated, translated,
 /// and dilated bar through its moduli with a verified transport, speaks
 /// a chain of two bodies as two words with the words' relative transport,
-/// leaves the unknown body as the residual, and refuses to cite a word
+/// leaves the unknown body as the residue, and refuses to cite a word
 /// with itself.
 #[test]
-fn deconstruct_at_cites_words_and_leaves_residual() {
+fn deconstruct_at_cites_words_and_leaves_residue() {
     let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let dot = from_canonical(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
     let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
@@ -479,17 +479,17 @@ fn deconstruct_at_cites_words_and_leaves_residual() {
     assert_eq!(s.cites[0].word, words[2].address());
     assert!(s.is_closed());
     // Two bodies and an unknown: two citations with one relative
-    // transport between them, one residual body.
+    // transport between them, one residue body.
     let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4), (9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)];
     let s = deconstruct_at(&word_at, &atlas, &shape_at,&mixed, None, &mut super::fixtures::budget());
     assert_eq!(s.cites.len(), 2);
     assert_eq!(
         s.multiplicity.len(),
         4,
-        "the chain and each of bar, dot, residual have a width, never one maximum"
+        "the chain and each of bar, dot, residue have a width, never one maximum"
     );
     assert_eq!(s.connection.len(), 1, "one relative transport between two cited bodies");
-    assert_eq!(s.residual, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
+    assert_eq!(s.residue, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
     // Excluding the bar itself: a bar chain has no other word of hue 1→2.
     let s = deconstruct_at(&word_at, &atlas, &shape_at,words[0].sub(), Some(words[0].address().as_bytes()), &mut super::fixtures::budget());
     assert!(s.cites.is_empty() && !s.is_closed(), "no word but itself speaks it");
@@ -617,7 +617,7 @@ fn faces_follows_constancy_on_row_of_three() {
 }
 
 /// A21 §2 — THE CHART LEADS WITH ITS KIND AND THEN ITS RANK. The leading
-/// 2 keeps a sentence's chart disjoint from a residual's and a
+/// 2 keeps a sentence's chart disjoint from a residue's and a
 /// connection's; the four after it are A18's rank, which is the COARSE
 /// STRATUM (R5: the rank of a union is the sum of the parts). Nothing per
 /// vertex follows, so the chart's width does not grow with the object.

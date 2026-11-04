@@ -114,7 +114,7 @@ impl Withheld {
 /// Classify a withheld form by its coboundary before its residue.
 pub fn withheld_of(
     form: &Form,
-    remainders: &[crate::transducer::germinate::ResidualGerm],
+    remainders: &[crate::transducer::germinate::ResidueGerm],
 ) -> Withheld {
     let cocycle = form.delta1();
     let held = cocycle
@@ -143,8 +143,8 @@ pub fn withheld_of(
 /// THE DEFLATION a form measures by speaking every train pair through the
 /// crystal that resolves its cited forms. Per pair it is
 /// `deflation_of(lane_moves(after, before))` on the lane vectors of the two
-/// residuals, taken where the form CLOSES the pair and zero otherwise.
-/// Summed over pairs. The per-pair `residual_of(spoken, y)` chains sit
+/// residues, taken where the form CLOSES the pair and zero otherwise.
+/// Summed over pairs. The per-pair `residue_of(spoken, y)` chains sit
 /// beside the sum. `REFUSE_NOT_CLOSED` means a remainder was left.
 ///
 /// IT WAS `form_descent`, AND 12.6 FORBIDS THE MOTION THAT NAME ASSERTS.
@@ -157,7 +157,7 @@ pub fn form_deflation(
     form: &Form,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
-) -> ([u64; 4], Vec<crate::transducer::germinate::ResidualGerm>) {
+) -> ([u64; 4], Vec<crate::transducer::germinate::ResidueGerm>) {
     form_deflation_at(form, family, crystal, &crate::transducer::alphabet::Word::identity())
 }
 
@@ -170,7 +170,7 @@ pub fn form_deflation_at(
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
     placement: &crate::transducer::alphabet::Word,
-) -> ([u64; 4], Vec<crate::transducer::germinate::ResidualGerm>) {
+) -> ([u64; 4], Vec<crate::transducer::germinate::ResidueGerm>) {
     let read = form_deflation_read(form, family, crystal, placement);
     (read.pay, read.remainders)
 }
@@ -198,7 +198,7 @@ pub struct DeflationRead {
     /// modes, T null fluxes, H turns), each pair's at the mass it carried.
     /// Empty where nothing closed or nothing was carried.
     pub modes: crate::economy::modes::Modes,
-    pub remainders: Vec<crate::transducer::germinate::ResidualGerm>,
+    pub remainders: Vec<crate::transducer::germinate::ResidueGerm>,
     /// TRACK 26 S2 — the pairs whose residue cannot be written on the
     /// family's one ground (a vortex, or no ground, where a link names a
     /// site one side does not reach): each is unread, never closed and never
@@ -352,7 +352,7 @@ fn form_motions(form: &Form) -> Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)>
 /// stroke ends first — the residue is read against what it said: nothing,
 /// as for any speech that does not fit its frame. The record is drawn
 /// under `budget`, sized by `transduce::need_of`. Refused by name where a
-/// link needs the scene's one ground and the scope has none (`residual_of`).
+/// link needs the scene's one ground and the scope has none (`residue_of`).
 pub(crate) fn unspoken_residue(
     x: &Grid,
     y: &Grid,
@@ -360,14 +360,14 @@ pub(crate) fn unspoken_residue(
 ) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
     use crate::transducer::family::transduce::{Enclosure, Transduction};
     let (Ok(a), Ok(b)) = (crate::transducer::raster::sample_unplaced(x), crate::transducer::raster::sample_unplaced(y)) else {
-        return residual_of(None, y);
+        return residue_of(None, y);
     };
     if Enclosure::of(&a).is_same_periods(&Enclosure::of(&b)) {
-        return residual_of(Some(x), y);
+        return residue_of(Some(x), y);
     }
     match Transduction::of(&a, &b, budget).and_then(|t| t.projected()) {
         Ok(changes) => Ok(crate::transducer::raster::links_of(&changes)),
-        Err(_) => residual_of(None, y),
+        Err(_) => residue_of(None, y),
     }
 }
 
@@ -421,7 +421,7 @@ fn rule_flux(form: &Form, mass: u64) -> Option<u64> {
 }
 
 /// One pair's pay, remainder and closure-gate reading.
-type PairMeasure = ([u64; 4], crate::transducer::germinate::ResidualGerm, bool);
+type PairMeasure = ([u64; 4], crate::transducer::germinate::ResidueGerm, bool);
 
 /// ONE PAIR OF THE DEFLATION, from the speech already taken on it: what the
 /// pair pays (zero where the gate below withholds it), its remainder, and
@@ -436,9 +436,9 @@ fn pair_measure_read(
     // The identity's residue and the form's, both on the output's sites.
     let before_chain = before_chain_of(x, y)?;
     // A speech that does not fit its own frame lays down no grid, so the
-    // residual is measured against what the form actually said: nothing.
+    // residue is measured against what the form actually said: nothing.
     let grid = spoken.and_then(|s| s.grid());
-    let after_chain = residual_of(grid.as_ref(), y)?;
+    let after_chain = residue_of(grid.as_ref(), y)?;
     let before_mu = element::measure_lanes(&before_chain);
     let after_mu = element::measure_lanes(&after_chain);
     // S9.5 — THE PAY GATE IS CLOSURE. A pair pays when the form CLOSES
@@ -460,7 +460,7 @@ fn pair_measure_read(
 /// (`apply_form_metered`).
 pub(crate) enum PairRead {
     Read {
-        remainder: crate::transducer::germinate::ResidualGerm,
+        remainder: crate::transducer::germinate::ResidueGerm,
         unresolved: Vec<crate::transducer::address::Address>,
         cycled: Vec<crate::transducer::address::Address>,
     },
@@ -499,7 +499,7 @@ pub(crate) fn deflation_pair_metered(
     // the pair demanded before any form spoke prices the pay, which the
     // court's reconstruction does not read here.
     let grid = spoken.as_ref().and_then(|s| s.grid());
-    let Ok(remainder) = residual_of(grid.as_ref(), y) else { return PairRead::Ungrounded };
+    let Ok(remainder) = residue_of(grid.as_ref(), y) else { return PairRead::Ungrounded };
     PairRead::Read { remainder, unresolved, cycled }
 }
 
@@ -641,7 +641,7 @@ fn mint_or_refuse(
 /// withhold it.
 ///
 /// A remainder link is a demand only where the form SPOKE NOTHING there
-/// (`spoken == 0`, `residual_of`'s reading of absence): the court's own
+/// (`spoken == 0`, `residue_of`'s reading of absence): the court's own
 /// `undeclared_remainder` admits exactly that link against a demand naming
 /// its observed hue, and refuses a link the form spoke wrongly whatever a
 /// demand says of it. So the declared links are the unspoken ones, each
@@ -660,7 +660,7 @@ fn mint_or_refuse(
 pub fn declare_unspoken(
     form: &Form,
     family: &[(Grid, Grid)],
-    remainders: &[crate::transducer::germinate::ResidualGerm],
+    remainders: &[crate::transducer::germinate::ResidueGerm],
 ) -> Option<Form> {
     use crate::transducer::sentence::{pieces, Demand, Link};
     // THE COURT'S OWN READER SAYS WHAT IS UNDECLARED (law 12): a link a
@@ -694,7 +694,7 @@ pub fn declare_unspoken(
             .map(|&(r, c, _, observed)| {
                 // The hue the input's speech holds at the site. Where it
                 // lays down no grid there is none, and absence is the
-                // scene's ground in this encoding — `residual_of`'s own
+                // scene's ground in this encoding — `residue_of`'s own
                 // reading, not a floor. A scope with no one ground has no
                 // symbol for that absence, and nothing is declared.
                 let before = match (usize::try_from(r), usize::try_from(c)) {
@@ -758,7 +758,7 @@ pub fn sentence_measure_from(
     family: &[(Grid, Grid)],
     _stood: u64,
     pay: [u64; 4],
-    remainders: &[crate::transducer::germinate::ResidualGerm],
+    remainders: &[crate::transducer::germinate::ResidueGerm],
 ) -> Option<[u64; 4]> {
     sentence_measure_why(form, family, pay, remainders).ok()
 }
@@ -779,7 +779,7 @@ pub fn sentence_measure_why(
     form: &Form,
     family: &[(Grid, Grid)],
     pay: [u64; 4],
-    remainders: &[crate::transducer::germinate::ResidualGerm],
+    remainders: &[crate::transducer::germinate::ResidueGerm],
 ) -> Result<[u64; 4], crate::transducer::sentence::ObstructionRefusal> {
     use crate::transducer::sentence::ObstructionRefusal;
     if form.demand_vertices().next().is_none() {
@@ -839,7 +839,7 @@ pub fn sentence_measure_why(
 }
 
 /// Pressure of a form spoken over its germinating bundle (A1, 12.6):
-/// per pair, `measure_lanes` of that pair's own residual; over the bundle,
+/// per pair, `measure_lanes` of that pair's own residue; over the bundle,
 /// the lane-wise sum (the pairs are disjoint scenes). T is the extent
 /// held, passed in. None when there is no bundle to measure.
 pub fn bundle_pressure(
@@ -857,12 +857,12 @@ pub fn bundle_pressure(
         let spoken = apply_form_on(form, x, &crate::transducer::alphabet::Word::identity(), crystal, Some(pi));
 
         // A speech that does not fit its own frame lays down no grid, so the
-        // residual is measured against what the form actually said: nothing.
+        // residue is measured against what the form actually said: nothing.
         let grid = spoken.as_ref().and_then(|s| s.grid());
-        // A residual with no one ground to write it on leaves no pressure
+        // A residue with no one ground to write it on leaves no pressure
         // read for the bundle.
-        let residual = residual_of(grid.as_ref(), y).ok()?;
-        let m = element::measure_lanes(&residual);
+        let residue = residue_of(grid.as_ref(), y).ok()?;
+        let m = element::measure_lanes(&residue);
         for l in 0..4 {
             #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
             let next = sum[l].saturating_add(m[l]);

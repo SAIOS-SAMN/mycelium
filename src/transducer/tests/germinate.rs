@@ -25,7 +25,7 @@ fn germinate_chain_reproduces_demand_when_placed() {
 
 /// Creation/annihilation is carried too (hue 0 on the absent side).
 #[test]
-fn germinate_carries_creation_as_residual() {
+fn germinate_carries_creation_as_residue() {
     crate::transducer::raster::stand_on(0);
     let a = [(0, 0, 1u8)];
     let b = [(0, 0, 1u8), (0, 1, 5)]; // a site is painted

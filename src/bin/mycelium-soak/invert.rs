@@ -5,7 +5,7 @@
 // Nothing here decides anything; the engine's own functions are called as the
 // voice calls them, with an empty crystal.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::{extract_rule_with, invert::invert_remainder_as, invert::Painted};
 
 /// REGISTERED: STROKE
@@ -13,7 +13,7 @@ const STROKE: usize = 1 << 20;
 
 pub(crate) fn report(dir: &str, names: &[String], painted: Painted) {
     println!("invert: the remainder painted as {painted:?}");
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let (mut tasks, mut extracted, mut whole, mut with_rem) = (0u64, 0u64, 0u64, 0u64);
     let (mut unextracted, mut joined_any, mut accepted, mut closed) = (0u64, 0u64, 0u64, 0u64);
     let (mut links_before, mut links_after, mut accepted_before, mut accepted_after) = (0u64, 0u64, 0u64, 0u64);

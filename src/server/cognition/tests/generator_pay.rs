@@ -135,7 +135,7 @@ fn install_on(k: &mut Court, voice: [u8; 32], e: &Element, task: &[u8]) {
 /// already occupied the lane.
 #[test]
 fn use_credit_raises_teacher_room_without_mint() {
-    use crate::client::sdk::Epigenome;
+    use crate::client::sdk::MindLanguage;
     use crate::transducer::family::{
         extract_rule_with, mint_sentence, cipher_form, sentence_measure, NoCrystal,
     };
@@ -158,7 +158,7 @@ fn use_credit_raises_teacher_room_without_mint() {
     assert!(k.ruled_contains(g_addr.as_bytes()), "the generator is language");
     assert_eq!(k.discoverer_of(g_addr.as_bytes()), Some(teacher), "and it is the teacher's");
 
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     epi.learn(&g_e.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).expect("the syllabus teaches it back");
     let rule = extract_rule_with(&cite_fam, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
@@ -233,7 +233,7 @@ fn bar_turn_270() -> Vec<crate::transducer::family::TrainPair> {
 #[test]
 fn hear_frame_on_credits_each_teacher_of_two_derivations() {
     use crate::anastome::dialogue;
-    use crate::client::sdk::Epigenome;
+    use crate::client::sdk::MindLanguage;
     use crate::transducer::family::{
         extract_rule_with, mint_sentence, cipher_form, sentence_measure, NoCrystal,
     };
@@ -259,7 +259,7 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
     assert!(!g_a.same_vertex(&g_b), "the two minds are taught different generators");
 
     let mind = |g: &crate::transducer::element::Element| {
-        let mut epi = Epigenome::new();
+        let mut epi = MindLanguage::new();
         epi.learn(&g.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).expect("the syllabus teaches it back");
         let rule = extract_rule_with(&cite_fam, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
             .expect("the family extracts");

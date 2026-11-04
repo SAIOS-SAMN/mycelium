@@ -22,7 +22,7 @@
 //! WHAT REMAINS UNCARRIED IS NOT A QUEUE POSITION. A piece the cover
 //! cannot carry is read again on the next stroke and fails again; it is
 //! not "waiting its turn", it is the uncarried support — a standing defect
-//! the flow has not relaxed — and `Cover::uncarried` is where it already
+//! the flow has not relaxed — and `PiecewiseCarriage::uncarried` is where it already
 //! reports. The cover is incomplete because of it, and saying so is the
 //! reading.
 //!
@@ -34,7 +34,7 @@
 //! as F typed it — nothing a half-run cover placed reaches a form (rule
 //! 11) — but the placements are KEPT here, off the form, to be finished.
 
-use super::cover::{Cover, Supports};
+use super::cover::{PiecewiseCarriage, Supports};
 use crate::network::nerve::{coord, Keyed};
 use std::cell::RefCell;
 
@@ -44,7 +44,7 @@ use std::cell::RefCell;
 /// not kept either: it is a reading of `placed` and is re-derived, because
 /// law 12 keeps one fact on one carrier.
 pub(crate) struct Pending {
-    pub(crate) cover: Cover,
+    pub(crate) cover: PiecewiseCarriage,
     /// The two supports of each placed carriage, by the [`coord::CarriedPieces`]
     /// it is; the input pieces spoken, by the [`coord::Piece`] each is; and
     /// the sites of the base either body reached.
@@ -56,7 +56,7 @@ pub(crate) struct Pending {
 impl Pending {
     pub(crate) fn new() -> Pending {
         Pending {
-            cover: Cover::new(),
+            cover: PiecewiseCarriage::new(),
             placed: Keyed::new(),
             consumed: Keyed::new(),
             reached: Keyed::new(),

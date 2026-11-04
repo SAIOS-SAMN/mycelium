@@ -49,7 +49,7 @@ use crate::transport::{answer, arm_deadline, note_rtt_ok, read_frame, rtt_floor,
 use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh::{self};
-use mycelium::network::nerve::{Cover, Keyed, Router};
+use mycelium::network::nerve::{HomeTrie, Keyed, Router};
 use mycelium::network::wire::WireFrame;
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
@@ -595,7 +595,7 @@ fn main() {
     join_peers.retain(|p| p != &addr);
 
     let mesh = Mesh {
-        cover: Arc::new(Mutex::new(Cover::new())),
+        cover: Arc::new(Mutex::new(HomeTrie::new())),
         rooms: Arc::new(Mutex::new(Keyed::new())),
         addrs: Arc::new(Mutex::new(Keyed::new())),
         vk,

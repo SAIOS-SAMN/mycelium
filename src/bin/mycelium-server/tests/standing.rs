@@ -6,13 +6,13 @@
 use crate::Mesh;
 use ed25519_dalek::SigningKey;
 use mycelium::cognition::Court;
-use mycelium::network::nerve::{Cover, Keyed};
+use mycelium::network::nerve::{HomeTrie, Keyed};
 use mycelium::observe::{self, Judged, Reading, Source};
 use std::sync::{Arc, Mutex};
 
 fn mesh(sk: &SigningKey) -> Mesh {
     Mesh {
-        cover: Arc::new(Mutex::new(Cover::new())),
+        cover: Arc::new(Mutex::new(HomeTrie::new())),
         rooms: Arc::new(Mutex::new(Keyed::new())),
         addrs: Arc::new(Mutex::new(Keyed::new())),
         vk: sk.verifying_key().to_bytes(),

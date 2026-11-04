@@ -10,7 +10,7 @@ use super::*;
 /// The TRANSITION carrying chart X's view to chart Y's, from each chart's germ for
 /// the shared object: `g_XY = g_Y ∘ g_X⁻¹` (the change of view). Antisymmetric by
 /// construction — `g_YX = g_XY⁻¹`. `None` if X's germ is not invertible (a
-/// coboundary/residual chart has no group view-change; that overlap is handled by
+/// coboundary/residue chart has no group view-change; that overlap is handled by
 /// the additive coboundary, not this group transition), and `None` where the
 /// composite's counts would pass the counts' carrier (STD1, `Element::compose`).
 pub fn transition(g_x: &Element, g_y: &Element) -> Option<Element> {

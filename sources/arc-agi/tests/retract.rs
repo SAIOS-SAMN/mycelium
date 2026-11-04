@@ -149,7 +149,7 @@ fn from_address_retracts_every_corpus_form() {
     names.truncate(TASKS);
     assert!(!names.is_empty(), "the corpus directory holds no tasks");
 
-    let epi = mycelium::client::sdk::Epigenome::new();
+    let epi = mycelium::client::sdk::MindLanguage::new();
     let mut physics = mycelium::physics::Physics::default();
     let (mut seen, mut with_orbits) = (0usize, 0usize);
     for name in &names {
@@ -242,7 +242,7 @@ fn from_address_agrees_on_every_court_reading() {
     names.sort_unstable();
     names.truncate(TASKS);
 
-    let epi = mycelium::client::sdk::Epigenome::new();
+    let epi = mycelium::client::sdk::MindLanguage::new();
     let mut physics = mycelium::physics::Physics::default();
     let (mut seen, mut diverged) = (0usize, 0usize);
     let mut why: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
@@ -361,7 +361,7 @@ fn form_vertex_key_keeps_carrier_invariants() {
             .collect();
         names.sort_unstable();
         names.truncate(TASKS);
-        let epi = mycelium::client::sdk::Epigenome::new();
+        let epi = mycelium::client::sdk::MindLanguage::new();
         let mut physics = mycelium::physics::Physics::default();
         for name in &names {
             let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
