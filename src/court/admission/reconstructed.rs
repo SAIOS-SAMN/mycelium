@@ -81,3 +81,30 @@ impl Reconstructed<KStepReceipt> {
         (run, None)
     }
 }
+
+impl Reconstructed<crate::anastome::dialogue::RootProof> {
+    /// 78.147, 47.3 — A FOLD ROOT RECONSTRUCTED FROM THE SIGNATURES OVER
+    /// IT, as the fold was sealed: the home's signed position verifies
+    /// under the signer's key at `origin` (47.2 steps 1 and 2), the
+    /// witness's under another key (`REFUSE_WITNESS_DEPENDENT` otherwise),
+    /// and each position's commitment binds the root (`Commitment::binds`;
+    /// `REFUSE_RECEIPT` otherwise). A root claimed without both is refused
+    /// by name and nothing adopts it.
+    pub fn root(
+        proof: &crate::anastome::dialogue::RootProof,
+        origin: ([u8; 32], u32),
+    ) -> Result<Reconstructed<crate::anastome::dialogue::RootProof>, &'static str> {
+        super::admit_signature(origin, &proof.home.prefix, &proof.signer, &proof.home.sig)?;
+        let wk = proof.witness.receipt.stamp.vk;
+        if wk == proof.signer {
+            return Err(crate::verdict::REFUSE_WITNESS_DEPENDENT);
+        }
+        super::verify_signature(&proof.witness.prefix, &wk, &proof.witness.sig)?;
+        let signed = Reconstructed { object: proof.clone() };
+        let binds = |payload: &[u8]| <[u8; 32]>::try_from(payload).is_ok_and(|d| super::Commitment::of_bytes(d).binds(&signed));
+        match binds(&proof.home.prefix.payload) && binds(&proof.witness.prefix.payload) {
+            true => Ok(signed),
+            false => Err(crate::verdict::REFUSE_RECEIPT),
+        }
+    }
+}

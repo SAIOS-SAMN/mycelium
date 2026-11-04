@@ -299,6 +299,12 @@ impl ReceiptChain {
         self.node_at(&p.at).is_some_and(|n| Predecessor::named(p).continues(&Predecessor::of_bytes(n.hash)))
     }
 
+    /// Whether a signer's line holds a node at one place: the line relation
+    /// read, no node unpacked.
+    pub fn holds_place(&self, signer: &[u8; 32], at: Place) -> bool {
+        self.lines.contains(&Stamp::line_key(signer, at))
+    }
+
     /// The node a signer holds at one place, through the line relation.
     pub fn at(&self, signer: &[u8; 32], at: Place) -> Option<KStepReceipt> {
         self.node(&self.stamp_at(signer, at)?)
@@ -553,13 +559,14 @@ impl ReceiptChain {
         }
     }
 
-    /// 78.147 — A PEER'S FOLD ROOT ADOPTED, its two signatures verified by
-    /// the caller (`Court::adopt_root`): the signer's line stands on it here
-    /// as the signer's own line stands on it — the next receipt names it as
-    /// its predecessor and its height reads off its stamp — and nothing below
-    /// it is asked again. `false` for this chain's own key, or where the line
-    /// already stands at or past the root.
-    pub fn adopt_root(&mut self, root: Parent) -> bool {
+    /// 78.147 — A PEER'S FOLD ROOT ADOPTED, taken reconstructed from its two
+    /// signatures (`Reconstructed::root`, MU-HOSTING §5a.10): the signer's
+    /// line stands on it here as the signer's own line stands on it — the
+    /// next receipt names it as its predecessor and its height reads off its
+    /// stamp — and nothing below it is asked again. `false` for this chain's
+    /// own key, or where the line already stands at or past the root.
+    pub fn adopt_root(&mut self, proof: &crate::court::admission::Reconstructed<crate::anastome::dialogue::RootProof>) -> bool {
+        let root = proof.parent();
         let vk = root.at.vk;
         if vk == self.vk || self.line_tip(&vk).is_some_and(|t| t.at.place() >= root.at.place()) {
             return false;

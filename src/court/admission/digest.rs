@@ -142,6 +142,15 @@ impl Committed for KStepReceipt {
     }
 }
 
+/// 47.3, 78.147: a fold root is committed to by the home's and the
+/// witness's signed positions, each carrying the root's chain hash as the
+/// payload it signs.
+impl Committed for crate::anastome::dialogue::RootProof {
+    fn committed(&self) -> [u8; 32] {
+        self.root.hash
+    }
+}
+
 /// A DIGEST IN THE COMMITMENT SENSE: bytes a party signs (a signature's
 /// message, the Concordance text, a clause). It decides that a
 /// reconstructed object is the one committed to, after the object is
