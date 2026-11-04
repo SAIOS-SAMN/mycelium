@@ -44,7 +44,8 @@ chart addresses may change (CHANGELOG › Unreleased).
 
 | Item | Issue | State |
 |---|---|---|
-| Track 26 S4b: rank-`n` perception and transduction as factorisation ([MU-SENSING](docs/MU-SENSING.md) §3.6, §3.9) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress on branch `s4b-rank-n`. Built: the fixed axis constants replaced by a perspective's roles; the alphabet kept at `n = 3`, derived, and a higher rank refused by name; D2.5 O3 derived; the rank-`n` link; connection by grade; every pair factored as motion ∘ residue, held as a vortex, with the court's admission on a derived residue; every task perceived by the mind at its own rank. Open: the rank-2 carrier of the word machinery (`family::Grid`), the hypha serving tasks of any rank, a wire act for a claim of factorisation, and the alphabet past `n = 3` |
+| Track 26 S4b: rank-`n` perception and transduction as factorisation ([MU-SENSING](docs/MU-SENSING.md) §3.6, §3.9) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress on branch `s4b-rank-n`. Built: the fixed axis constants replaced by a perspective's roles; the alphabet kept at `n = 3`, derived, and a higher rank refused by name; D2.5 O3 derived; the rank-`n` link; connection by grade; every pair factored as motion ∘ residue, held as a vortex, with the court's admission on a derived residue; every task perceived by the mind at its own rank. Open: the rank-2 carrier of the word machinery (`family::Grid`) and the alphabet past `n = 3` |
+| Track 26 S4c: the hypha serves tasks of any rank; a claim of factorisation on the wire ([MU-SENSING](docs/MU-SENSING.md) §3.9, §6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Built on branch `s4c-rank-n-hypha`: the registry posts, serves and addresses tasks of any rank, the word machinery's readers on the section; `ACT_FACTORISATION` (`0x18`) admitted by reconstruction, recorded and not paid; the mind speaks one claim per held factorisation of a task beyond the alphabet |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | With track 26 S4b's remainder |
 | Track 26, S4a and S7–S9 | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 is agreed with the peer kernels |
 
@@ -1710,12 +1711,55 @@ Each phase is one commit:
         (`family::Grid`, about 94 files), held as the alphabet's
         section;
       - the hypha's registry and the court's solve replay, which load
-        posted tasks through the section (`decode_posted_task`);
-      - a wire act for a claim of factorisation, which needs the
-        operator's approval;
+        posted tasks through the section (`decode_posted_task`): built in
+        S4c;
+      - a wire act for a claim of factorisation: built in S4c;
       - the letters past `n = 3` (a plane a larger `n` opens receives a
         letter by 37.7);
       - versor motions past the signed permutations (T3).
+
+    **S4c (v0.4.0), the hypha at rank n and the claim of factorisation**
+    (MU-SENSING §3.9, §6, §6.2; the wire act decided for v0.4.0's break,
+    2026-11-04):
+    - Claims: `hypha_serves_a_rank_three_task`,
+      `factorisation_claim_round_trips`,
+      `court_admits_a_matching_factorisation_claim`,
+      `court_refuses_a_factorisation_whose_residue_differs`,
+      `mind_speaks_factorisations_beyond_the_alphabet`,
+      `factorisation_claim_states_its_ground`.
+    - **Built** (branch `s4c-rank-n-hypha`, three commits):
+      - **The hypha at rank n.** The registry holds each task as posted
+        (`PostedTask`), named by its content alone (`post`), served as
+        posted (`PostedTask::envelope`). The section
+        (`TaskRegistry::section`) feeds only the word machinery: a
+        solve's replay, the bound families and the routes (empty for a
+        task off it). A solve on a task off the section is refused by
+        the alphabet's name alone (`REFUSE_BEYOND_ALPHABET`).
+      - **The act.** `ACT_FACTORISATION` = `0x18`, the first free byte
+        after the party's transitions (`Action::Factorisation`, a
+        transition that seals nothing): a train pair, the motion (the
+        signed permutation and the periods it is taken onto), the
+        residue as rank-`n` links, the stated ground, signed
+        (`dialogue::factorisation`). In the SDK's `ACT_TABLE` and a MAY
+        row of both profiles in MU-CONFORMANCE.
+      - **Admission by reconstruction only**
+        (`server::factorisation::judge_factorisation`): the stated
+        ground read at any rank (`cognition::stated_ground_of`), the
+        motion rebuilt through `Factorisation::of`, the residue derived,
+        admitted on a match or refused with `FactorRefusal::Residue {
+        unclaimed, uncarried }`.
+      - **μ:** recorded (`TaskRegistry::record_factorisation`), not
+        paid. Paying it as a solve's discharge needs a first closure per
+        pair and a docket without a rule, economy changes beyond reuse;
+        a ruling on whether and how a factorisation is paid is open.
+      - **The mind** speaks one claim per held factorisation of a task
+        beyond the alphabet (`Mind::speak_factorisations`), stating the
+        ground it read where it read one symbol.
+      - The fixture: a rank-3 posted task (`server::tests::fixtures`),
+        run end to end in process.
+    - **Open:** the word machinery's rank-2 carrier, the letters past
+      `n = 3`, T3's versor motions, and the payment of an admitted
+      factorisation.
 12. **S10, emergent senses** (MU-SENSING §4.1; after S6 and S7–S9,
     because a sense is built on the field and its perspectives):
     - A sense is a typed object: a reading from a sample to a cochain of

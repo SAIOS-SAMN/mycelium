@@ -9,6 +9,52 @@ such change is named here.
 v0.4.0 is in progress. It opens a new break: word and chart addresses
 may change inside it.
 
+### The hypha serves tasks of any rank; a claim of factorisation on the wire (track 26 S4c)
+- **The hypha serves tasks of any rank.** The registry holds each task as
+  the source posted it (`PostedTask`, samples of any rank and width),
+  named by that content alone (`TaskRegistry::post`), and serves it as
+  posted (`PostedTask::envelope`). The word machinery's readers take the
+  alphabet's section (`TaskRegistry::section`): a solve's replay, the
+  families a court binds, and the routes. A task off the section is never
+  refused for its rank; a solve on it is refused by the alphabet's name
+  alone (`REFUSE_BEYOND_ALPHABET`), and its claims are factorisations.
+- **A claim of factorisation** (`dialogue::factorisation`). A mind states,
+  for one train pair, the motion (the signed permutation and the
+  enclosure it is taken onto) and the residue (rank-`n` links), with its
+  stated ground, signed. The court reconstructs the motion through
+  `Factorisation::of`, derives the residue itself and admits on a match,
+  else refuses with `FactorRefusal::Residue { unclaimed, uncarried }`. It
+  never searches for a factorisation. The stated ground is read at any
+  rank and width (`cognition::stated_ground_of`).
+- **μ:** an admitted factorisation is recorded on the book
+  (`TaskRegistry::record_factorisation`) and pays nothing. Paying it as a
+  solve's discharge would need a per-pair first closure and a docket
+  without a rule, economy changes beyond reuse.
+- **The mind speaks its factorisations** of a task beyond the alphabet,
+  one claim per held factorisation (`Mind::speak_factorisations`).
+- **Network contract**, inside v0.4.0's break:
+  - A new act, `ACT_FACTORISATION` = `0x18` (`Action::Factorisation`, a
+    transition that seals nothing), the first free byte after the
+    party's transitions: `[0x18][voice 32][task citation 32][pair
+    LEB128][rank u16][(source u16)(sense u8)·rank][period u16·rank][link
+    count LEB128][link·count]`, optionally `[GRND][len u32][symbol]`,
+    then `[SIGN][sig 64]` over the domain `mycelium factorisation v1`. A
+    link is its site (`n` by LEB128, then `i64` coordinates) and its two
+    symbols, each by LEB128 length.
+  - The verdict: `[0]` admitted; `[1][unclaimed links][uncarried links]`;
+    `[2][reason, LEB128 length]`.
+  - The SDK's `ACT_TABLE` names it `factorisation`; the conformance
+    statement carries it as a MAY act of both profiles
+    (`decode_factor_verdict`). `WIRE_VERSION` is unchanged.
+  - No task address changes: a raster task's address was already its
+    posted samples'.
+  - SDK surface: `task` re-exports the codec and the factorisation types
+    (`Motion`, `SignedPermutation`, `Enclosure`, `Sense`, `Link`,
+    `factorisations`).
+- **Not in this phase:** the word machinery's rank-2 carrier
+  (`family::Grid`), the letters past `n = 3`, and versor motions past the
+  signed permutations (T3).
+
 ### Rank-n perception and transduction as factorisation (track 26 S4b)
 - **No axis is fixed in the code.** `GRID_AXES`, `GRID_PLANE`,
   `is_grid_axis`, `FRAME_AXIS`, `GRID_N`, `PLANE_ROW` and `PLANE_COL`
@@ -64,8 +110,8 @@ may change inside it.
   - the rank-2 carrier the word, chart and rule-language machinery
     spells (`family::Grid`), kept as the alphabet's section;
   - the hypha's registry and solve replay reading posted tasks of any
-    rank;
-  - a wire act for a claim of factorisation.
+    rank (built in S4c, above);
+  - a wire act for a claim of factorisation (built in S4c, above).
 
 ### Replication by reconstruction (track 24, B0; #13)
 - **Network contract:** no wire byte, act or ledger layout changes. Each

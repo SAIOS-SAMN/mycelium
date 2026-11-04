@@ -89,6 +89,13 @@ closure answers `SOLVE_AGAIN` (code 1) and pays nothing.
 | MAY | `laws concordance` (mode 7), `laws signature` (mode 8) | `decode_concordance_reply`, `decode_signature_reply` | the Concordance's hash; a signature's verdict (accepted, or `Mismatched`, `Unsigned`, `Malformed`) |
 | MAY | `quote`, `receipts`, `entries` (the ledger entries, formerly `rows`), `observe query`, `why`, `wallet` | the readings' decoders | as each decoder reads |
 | MAY | `probe`, `peers`, `syllabus`, `speech` (each sentence with, optionally, the ground its claim was spoken under; MU-SENSING §6.2), `domain reserve`, `seat mail` | as the statement names | as each decoder reads |
+| MAY | `factorisation` (`ACT_FACTORISATION`, `0x18`; signed as `mycelium factorisation v1`: a train pair's motion and residue at any rank, with, optionally, the ground the claim was spoken under; MU-SENSING §3.9) | `decode_factorisation`, `decode_factor_verdict` | the act: voice, task, pair, motion (sources, senses, periods), residue (links), stated ground (or none), signature; the verdict: admitted, the residue of the residues (unclaimed, uncarried), or the refusal by name |
+
+**Factorisation (track 26 S4c).** A claim of factorisation is MAY for
+both profiles, inside v0.4.0's break. The in-process read checks a claim
+of a rank-3 motion and residue at width 2 with its stated ground, signed,
+and each of the three verdicts. An admitted claim pays nothing, so the
+verdict carries no μ field.
 
 **Samples (track 26 S5).** The envelope's train pairs and test inputs and
 a solve's outputs are samples, each written `[rank u16][extent u16 ·
@@ -120,7 +127,7 @@ read.
 | MUST | `domain founding` (`ACT_DOMAIN` genesis) | `decode_domain_reply` | sealed stamp and receipt, or the refusal by name |
 | MUST | `domain manifest` (`ACT_DOMAIN` sub-kind 17) | `decode_grant_reply` | granted μ S:G:T:H, founding, stamp and receipt, or the refusal by name |
 | MUST | `domain universe` (`ACT_DOMAIN` sub-kind 11) | `decode_universe_reading` | originated, geometry, parent, basket |
-| MAY | `task`, `solve`, `task by citation` | as the mind profile's | as the mind profile's |
+| MAY | `task`, `solve`, `task by citation`, `factorisation` | as the mind profile's | as the mind profile's |
 | MAY | `laws batch` (mode 2), `laws lexicon`, `laws parameters` | `decode_batch_reply` and the readings' decoders | as each decoder reads |
 | MAY | `domain reserve`, `domain designation`, `domain origin`, `domain origin reading`, `domain statement`, `domain endowment` | `decode_reserve_reading`, `decode_domain_reply`, `decode_origin_reading`, `decode_endowment_reading` | as each decoder reads |
 | MAY | `seat post`, `seat listing`, `seat mail` | `decode_post_reply`, `decode_listing_reply`, `decode_mail_reply_standing` | the relay's sequence or refusal; the latest listing; the mail at the relay's standing |

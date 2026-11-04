@@ -622,15 +622,47 @@ orbit about an attractor, and its shape is set by gravity:
   derives the residue itself. It admits on a match; otherwise it
   refuses with the residue of the residues (`FactorRefusal::Residue {
   unclaimed, uncarried }`), never a flag (claim
-  `court_derives_the_residue_and_admits_on_match`, rank 3). No wire act
-  carries such a claim yet: that is a wire change left for the
-  operator's approval.
+  `court_derives_the_residue_and_admits_on_match`, rank 3). Since S4c a
+  wire act carries the claim (below).
 - **The mind perceives every task at its own rank**
   (`transduce::TaskPercept`): the default perspective, the ground, each
   sample's bodies and each pair's factorisations, held under the task's
   citation (`Mind::perceive_envelope`) before the word path (claims
   `rank_three_task_is_perceived`, `rank_one_task_is_perceived`).
 - Shear, precession and the refusal of a `Loop` are S9's.
+
+**Built (track 26 S4c, v0.4.0 in progress).**
+- **A claim of factorisation on the wire** (`ACT_FACTORISATION`, `0x18`;
+  `dialogue::factorisation`). A mind states, for one train pair of a
+  task, the motion (the signed permutation written whole, and the periods
+  of the enclosure it is taken onto, so each phase's re-period is exact
+  from the posted pair) and the residue (rank-`n` links), with the ground
+  it was spoken under (§6.2), signed by its voice.
+- **Admission is reconstruction only** (`server::factorisation`). The
+  court finds the posted pair on its book, reads the stated ground as a
+  candidate at the samples' width (`cognition::stated_ground_of`),
+  rebuilds the stated motion through `Factorisation::of`, derives the
+  residue and admits on a match. A mismatch is refused with
+  `FactorRefusal::Residue { unclaimed, uncarried }`. A claim that is
+  unsigned, names no train pair (the withheld pairs are the court's: a
+  residue derived on one would show its answer) or states a motion that
+  is no motion of the pair is refused by name. The court never searches
+  for a factorisation (claims `court_admits_a_matching_factorisation_claim`,
+  `court_refuses_a_factorisation_whose_residue_differs`,
+  `factorisation_claim_states_its_ground`, `factorisation_claim_round_trips`).
+- **μ is not paid for an admitted factorisation.** It is recorded on the
+  book (`TaskRegistry::record_factorisation`). Paying it as a solve's
+  discharge would need a first closure per pair and a docket without a
+  rule, which are economy changes beyond reuse.
+- **The mind speaks per factorisation.** A task off the alphabet's
+  section stops `BeyondAlphabet`, and the mind states every factorisation
+  it holds of each train pair, one claim each (a vortex speaks per
+  factorisation, rule 15). Each claim states the ground the mind read
+  where it read one symbol, and none under a vortex or none, since the
+  motion and the residue are read under no ground
+  (`Mind::speak_factorisations`; claim
+  `mind_speaks_factorisations_beyond_the_alphabet`, end to end in
+  process at rank 3).
 
 ## 4. Perspective: one sample, many readings
 
@@ -786,9 +818,18 @@ u16][coordinate i64 · count][symbols, w · ∏ eᵢ bytes]`
   `TaskEnvelope::section` and `PostedTask::section` bridge rank 2 at
   width 1 and refuse any other sample by name
   (`sentence::SectionRefusal`: the alphabet's rank, or the width).
-  `NotRaster` is retired. The hypha's registry still loads posted tasks
-  through the section (`decode_posted_task`), so a court serves no task
-  of another rank yet.
+  `NotRaster` is retired.
+- **The hypha serves tasks of any rank** (track 26 S4c). The registry
+  holds each task as posted (`PostedTask`), names it by that content
+  alone (`TaskRegistry::post`) and serves it as posted
+  (`PostedTask::envelope`); the corpus intake reads posted samples
+  (`decode_posted_samples`). Only the word machinery's readers take the
+  alphabet's section (`TaskRegistry::section`): a solve's replay on the
+  withheld rasters, the families a court binds, and the routes, kept
+  empty for a task off the section. A solve on such a task is refused by
+  the alphabet's name alone (`REFUSE_BEYOND_ALPHABET`), never for its
+  rank, and its claims are factorisations (§3.9). Claim
+  `hypha_serves_a_rank_three_task`.
 - **Task identity** (`registry::task_address_of`) writes each posted
   sample's rank, extents, width, place and symbols, so it is lossless
   across ranks and widths; a raster task's address is its samples'
@@ -865,6 +906,14 @@ carries the stated ground as a `Bytes` argument between the outputs and
 the steps (`seat_mind::task::solve_args`). Claim
 `speech_states_its_ground_and_court_reconstructs_under_it`.
 
+**A claim of factorisation states its ground** (track 26 S4c). The act
+carries the stated ground as the solve does (`[GRND][len u32][symbol]`).
+The court reads it at any rank (`cognition::stated_ground_of`): one
+symbol at the samples' width, a candidate by the three conditions, or
+refused by the same names. The motion and the residue are read under no
+ground, so the stated ground is checked and never changes the residue
+derived. Claim `factorisation_claim_states_its_ground`.
+
 ## 7. Who owns a source's code
 
 Source-specific code exists only as a **decoder** from the source's format
@@ -907,7 +956,9 @@ holds samples of rank `n` (`dialogue::PostedTask`,
 [0|1] output?)·nx]`, each sample as the envelope writes it, a withheld
 test output absent where the source holds none. It holds decoded values,
 exactly. `encode_posted_task` places a raster task's grids, and
-`decode_posted_task` reads one back at the raster intake.
+`decode_posted_task` reads one back at the raster intake (the soak and a
+feed). The hypha reads posted samples whole (`decode_posted_samples`,
+track 26 S4c).
 
 ## 8. What is built today, and the defect
 
@@ -934,7 +985,9 @@ exactly. `encode_posted_task` places a raster task's grids, and
 | The roles of the axes from a perspective; the fixed-axis constants retired (`GRID_AXES`, `GRID_PLANE`, `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N`); `BASE_AXES` derived | **Built** (track 26 S4b) | `src/transducer/perspective.rs`; `alphabet::ALPHABET_BASE_N`, `slot_of_axis`, `sensor_plane` |
 | A link of rank `n`: a `Site` and the symbols at the source's width; the word, chart and field carriers read `SectionLink`, reached through `Link::section`, refused by name | **Built** (track 26 S4b); the stopped item of S5 closed | `src/transducer/sentence/link.rs` |
 | Connection by grade: bodies through a shared cell of grade `n − 1` at every rank; no fixed 4- or 6-neighbourhood | **Built** (track 26 S4b) | `sentence::incidence_of_sites`, `faces_of`, `surrounding`, `by_grade`; `transduce::Enclosed` |
-| Transduction as factorisation: motion ∘ residue, a vortex of factorisations, the court's admission on a derived residue | **Built** (track 26 S4b); no wire act yet | `transduce::factor`, `transduce::percept`; `court::verdict::factorisation` |
+| Transduction as factorisation: motion ∘ residue, a vortex of factorisations, the court's admission on a derived residue | **Built** (track 26 S4b) | `transduce::factor`, `transduce::percept`; `court::verdict::factorisation` |
+| A claim of factorisation on the wire (`ACT_FACTORISATION`, `0x18`), admitted by reconstruction, recorded and not paid; the mind speaking one claim per held factorisation of a task beyond the alphabet | **Built** (track 26 S4c) | `dialogue::factorisation`; `server::factorisation`; `client::sdk::mind::factor` |
+| The hypha posting, serving and addressing tasks of any rank; the word machinery's readers on the section, refused by the alphabet's name alone | **Built** (track 26 S4c) | `server::registry` (`post`, `section`), `server::route`; `PostedTask::envelope` |
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
 | A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
 | Speech and seat solves state their ground: each speech sentence and the seat's solve call carry an optional stated ground; the court hears each sentence under it, refused by name where it is no candidate, and deduces none on the speech path (§6.2) | **Built** (track 26 S5) | `dialogue::Spoken.ground`, `SpeechAct.grounds`; `Court::hear_speech`; `seat_mind::task::solve_args` |
@@ -947,7 +1000,7 @@ exactly. `encode_posted_task` places a raster task's grids, and
 | The symbol set deduced (§3.3): `Σ` read from the family, an index the order of first appearance in canonical address order, `e_∅` at `|Σ|`, every table over symbols keyed by the symbols it names; no `PALETTE`, no 10- or 256-slot table | **Built** (track 26, S3) | `src/transducer/symbols.rs` (`SymbolSet`, `SymbolRefusal`); `element::fibre_on_symbols`; `sentence::HueTable` (`Keyed<u8>`); `element::gauge_is_perm`, `stalk::connection_chart`, `field::idea`, `family::acts` (`onto_ground`), `client::sdk::rule` (`named_into`) |
 | `e_∅` as a typed record outside the symbols' bytes: a fibre relation's rows and its records apart, on a word's description and the law register's wire; `RESERVOIR = 10` retired, so a family using the byte 10 has its colour word | **Built** (track 26 S5; the defect of the record byte is closed) | `element::FibreRelation`, `colour_word`, `Letters::fibre`; `physics::laws::codec::put_transition` |
 | Axes and gauges deduced | **Built** for the rank, the periods and the roles (track 26 S4b); the nesting's family-invariance reading open | `transducer::perspective`; `transduce::Enclosure` |
-| A task on the wire as samples of rank `n`: the envelope, the posted task and a solve's outputs; limits derived and refused by name; task identity lossless across ranks and widths | **Built** (track 26 S5); the mind and the court read rank 2 at width 1 until S4 retires the raster carrier | `src/anastome/dialogue/samples.rs`; `registry::task_address_of` |
+| A task on the wire as samples of rank `n`: the envelope, the posted task and a solve's outputs; limits derived and refused by name; task identity lossless across ranks and widths | **Built** (track 26 S5); the mind perceives every rank since S4b and the hypha serves every rank since S4c; a solve's rule is replayed on the alphabet's section | `src/anastome/dialogue/samples.rs`; `registry::task_address_of` |
 | **Closed (S4b):** a link was `(i64, i64, u8, u8)`, two axes and one-byte symbols. `sentence::Link` now carries a site of rank `n` and the symbols at the source's width; the two-coordinate tuple is `SectionLink`, the alphabet's section | **Built** (track 26 S4b) | `transducer::sentence::link` |
 | Perspective as a sensor motion; perspectives as a cover | **Specified** | Track 26, S6 |
 
