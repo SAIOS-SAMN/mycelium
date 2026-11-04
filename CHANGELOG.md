@@ -6,6 +6,17 @@ such change is named here.
 
 ## Unreleased
 
+### The project's kept terms defined in the GLOSSARY (track 11, N5; #55)
+- Documents only. GLOSSARY rows for contemplation, tensegrity, breath,
+  hyperfluid, aperture, horizon, resonance, terrain, peel, beam, tower,
+  judge, working atlas, seat mind, chatter / utter, durable drill, the
+  soak instrument, xSEPTUM, fascicle, sporophore, callus, compartment,
+  germinate, epigenome, capacitor, the TUniversal shelf and mouth, each
+  with its governing section and code path.
+- Where a term names a second sense in the code (`germinate`, `winding`,
+  `Compartment`), the row defines the canonical sense and names the
+  other for N3; a metaphor module N2 renames is marked so.
+
 ### Identifiers that verify carry `reconstruct` (track 11, N1; #29, #55)
 - Names only: behaviour, wire bytes, reading labels and task addresses are
   unchanged. Every citation in comments and documents follows.

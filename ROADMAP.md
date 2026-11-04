@@ -36,7 +36,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
-| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 built (with #29); N2–N7 next, in order; N6 lands in v0.3.0's open break |
+| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 and N5 built (N1 with #29); N2–N4, N6 and N7 next, in order; N6 lands in v0.3.0's open break |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the items above (maintainers) |
 
 **2. Ready to start**
@@ -434,7 +434,7 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - `absorb_vortex` / `absorb_keyed` → `merge_…`.
    - The test names with a person word, "its" or "own" are renamed.
    - `lamina` and `FormCell` (retired by 0.7) are renamed.
-5. **N5, the GLOSSARY.** A row for each term a name keeps:
+5. **N5, the GLOSSARY** (**Built**). A row for each term a name keeps:
    - contemplation
    - tensegrity
    - breath
@@ -454,6 +454,11 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - the soak instrument
    - xSEPTUM
    - fascicle, sporophore, callus, compartment, germinate
+   - epigenome, capacitor, tshelf (the TUniversal shelf), mouth
+
+   Where a term names a second sense in the code (`germinate`,
+   `winding`, `Compartment`), the row defines the canonical sense and
+   names the other, which N3 renames.
 6. **N6, "residual" → "residue" or "remainder"** (retired by 0.7), about
    450 uses. `TAG_RESIDUAL` is wire-visible, so N6 lands in v0.3.0's open
    break and is stated under *Network contract*.
