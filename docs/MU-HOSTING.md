@@ -641,6 +641,12 @@ Much of this is in the code today, under each object's own `NotReserve`:
 | A handoff offer or traversal (78.126) | Any tier of the domain, today (`NotTheTier` checks only the signer) | none at the offer; its sides are consumed through the reserve's fold | **Specified**: carried in the reserve's act |
 | A sub-universe's act (78.155) | Its parent's universal core | none: no sub-court yet | **Specified** with 78.155 R-3 |
 
+Each refusal in the table reads the same at every hypha of a mesh
+(**Built**, B0, §5a.9). A domain's founding, tiers, reserve and origin
+are reconstructed at each hypha from the founding receipts it holds, so
+`Unbound` names a key that no genesis on the signed chain names. It never
+names a domain founded at another hypha.
+
 Under the boundary law the `NotReserve` variants are instances of one
 refusal and take its name, `NotThroughCore` (names only, byte values
 unchanged), so the boundary reads one name on every object. A line's
@@ -712,7 +718,7 @@ logs:
 
 | Phase | Delivers | Files | Wire and ledger effect |
 |---|---|---|---|
-| **B0** | Replication by reconstruction ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)): every hypha reconstructs each domain's state (founding, tiers, reserve, origin) from the founding receipts back-fill delivers (`Cite::Domain`, `Cite::Reserve`, `Cite::Origin`), checked against the signed chain, once by content, with the same refusals as at the founding hypha (a tier held, already founded, already originated) | `src/server/cognition/{state,cite,convert,universe}.rs` (`Court::admit_backfill`, `admit_domain`, `designate_reserve`, `record_origin`, `hold_domain`, `hold_genesis`) | None on the wire; each court's registries become a reconstruction of the chain it holds |
+| **B0** (**Built**) | Replication by reconstruction ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)): every hypha reconstructs each domain's state (founding, tiers, reserve, origin) from the founding receipts back-fill delivers (`Cite::Domain`, `Cite::Reserve`, `Cite::Origin`), checked against the signed chain, once by content, with the same refusals as at the founding hypha (a tier held, already founded, already originated) | `src/server/cognition/founding.rs` (`Court::file_unsigned_founding`, `sign_through`, `reconstruct_founding`, `founding_refusal`), called from `Court::admit_backfill` and `Court::admit_receipt` in `state.rs`; the rules of `admit_domain`, `designate_reserve`, `record_origin` and `hold_domain` | None on the wire or the ledger layout; each court's registries become a reconstruction of the chain it holds |
 | **B1** | The act audit (every act kind that names a domain, classed as a key's own or a universe's); `NotReserve` renamed `NotThroughCore` on each object; line mouth offers and tier handoff offers carried in the reserve's act (after the ruling on 78.126 and 78.136) | `src/anastome/dialogue/{uplink,atlas,handoff,endowment,domain}.rs`; `src/server/cognition/{cite,atlas,convert,endowment,mouth,handoff,universe}.rs` | The rename: none (names only). Carried offers: a wire change to `ACT_HANDOFF` |
 | **B2** | Clause-by-clause signatures (each clause's hash, enabled or vetoed; the network clauses never vetoed) recorded per domain; `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/concordance.rs`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/persistence/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
 | **B3** | The transitions a crossing states, verified under L0 and the core-shell forms at admission; `NotLawful` carrying the breaches; draft-4 laws as ruled | `src/anastome/dialogue/uplink.rs` (`TierFold`), `src/server/cognition/cite.rs`, `src/physics/laws/mod.rs` | A wire and layout change: a fold carries its transitions section |
@@ -722,6 +728,10 @@ logs:
 Claims each phase proves, by the algebra (MU-STANDARDS 3.1):
 `admit_backfill_reconstructs_domain_from_founding_receipts`,
 `admit_backfill_refuses_founding_not_on_signed_chain`,
+`backfilled_domain_accepts_reserve_fold_on_second_hypha`,
+`backfill_applies_founding_once_by_content`,
+`backfill_refuses_with_founding_hyphas_refusals` (the five of B0, built in
+`server/cognition/tests/founding.rs`),
 `admit_uplink_refuses_fold_not_through_core`,
 `handoff_refuses_line_offer_not_through_core`,
 `admit_uplink_refuses_unsigned_concordance`,
@@ -747,14 +757,55 @@ clause sets on its §0 SIGNING text.
 
 Every later phase stands on B0, **replication by reconstruction** (the
 operator's final ruling of 2026-11-02 on
-[issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)). Today a
-domain's founding, tiers, reserve and origin are written only by the court
-that sealed them, so another hypha reads a reserve's fold as `Unbound`.
-Any client may reach any hypha: every hypha reconstructs each domain's
-state from the founding receipts that back-fill already delivers, checked
+[issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)). Any
+client may reach any hypha: every hypha reconstructs each domain's state
+from the founding receipts that back-fill already delivers, checked
 against the signed chain, and the boundary then holds at every hypha. A
 home court is ruled out, and no kernel is asked to address a particular
 hypha.
+
+**B0 as built.** A back-filled receipt carries no signature of its own
+(47.2 step 3). The signer's signature reaches it only through a signed
+frame at or above its place on the signer's line, whose predecessor
+hashes link down to it; the hash links and never admits (§5a.10). So:
+1. A founding receipt admitted by back-fill (`Court::admit_backfill`)
+   waits, by its place on its signer's line.
+2. When a frame the signer signed at or above that place is admitted
+   (`Court::admit_receipt`, as a new frame or as the receipt already
+   held at its stamp), the receipts waiting below it are reconstructed in
+   line order (`Court::sign_through`). A founding receipt admitted under
+   its own signature is reconstructed at once.
+3. Each citation is applied by the founding hypha's own rules
+   (`Court::reconstruct_founding`): a genesis by `admit_domain`'s
+   refusals (`Unordered`, `AlreadyFounded`, `TierHeld`), a reserve by
+   `designate_reserve`'s rule (at once where the domain has none, pending
+   until the sitting reserve's next fold otherwise), an origin by
+   `record_origin`'s (`AlreadyOriginated`), held with the stamp and
+   receipt that sealed it.
+4. Once by content: the same content held already changes nothing (a
+   converse, MU-SCIENCE §5.0). Other content is refused by the founding
+   hypha's name and held by the receipt's stamp
+   (`Court::founding_refusal`), and the registries keep what they held (a
+   collision).
+5. A reserve or an origin whose domain is not yet founded at the hypha
+   waits for that founding (the mesh's topological order).
+6. A fold of a reserve tier (`Cite::Uplink`, `Cite::Chained`) passes its
+   era anchor at every hypha, as on the court that sealed it.
+
+The waiting receipts and the refusals are counted on the carrier reading
+(`founding.unsigned`, `founding.unfounded`, `founding.refused`).
+
+Open after B0:
+- A founding sealed inside a peer's era folded before the hypha caught
+  up is not reconstructed: a catch-up from a fold root (78.147) delivers
+  no receipt below the root.
+- A version-2 origin's geometry and parent face (`hold_genesis`) cross
+  only as the statement's hash (`Cite::Stated`), so they are not
+  reconstructed. Fetching the statement by its address (§5a.10) is
+  owed.
+- The waiting carriers are volatile. A founding back-filled but not yet
+  reached by a signature when a process stops is not read after the
+  restart, since its receipt is held and is not fetched again.
 
 ### 5a.10 What crosses: the exact object, never its digest
 

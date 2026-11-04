@@ -446,10 +446,24 @@ pub struct Court {
     /// `None` is unread (a restored court reads it once off its hot line);
     /// `Some(None)`, read and none held.
     pub(crate) last_transition: Option<Option<crate::chronometry::Place>>,
-    /// 78.120 — THE DOMAINS FOUNDED ON THIS COURT: each domain's key and the
-    /// tier keys its genesis names, ascending — the one carrier, persisted on
-    /// the court's own node (`LEAF_DOMAINS`).
+    /// 78.120 — THE DOMAINS FOUNDED ON THIS COURT OR RECONSTRUCTED HERE from
+    /// a peer's founding receipts (MU-HOSTING §5a.9 B0): each domain's key and
+    /// the tier keys its genesis names, ascending — the one carrier,
+    /// persisted on the court's own node (`LEAF_DOMAINS`).
     pub(crate) domains: crate::network::nerve::Keyed<Vec<[u8; 32]>>,
+    /// MU-HOSTING §5a.9 B0 — PEERS' FOUNDING RECEIPTS ADMITTED BY BACK-FILL
+    /// and not yet under a signature of each one's signer, keyed `vk‖K‖i`:
+    /// reconstructed when a frame the signer signed at or above the place is
+    /// admitted (`Court::sign_through`). Volatile.
+    pub(crate) unsigned_foundings: crate::network::nerve::Keyed<crate::chronometry::KStepReceipt>,
+    /// B0 — founding receipts under a signature whose reserve or origin
+    /// names a domain no founding here holds yet, keyed `domain‖vk‖K‖i`:
+    /// reconstructed when that domain's founding is. Volatile.
+    pub(crate) unfounded: crate::network::nerve::Keyed<crate::chronometry::KStepReceipt>,
+    /// B0 — the peers' founding receipts this court refused, by stamp, with
+    /// the founding hypha's own refusal: a collision held by name, the
+    /// registries unchanged. Volatile.
+    pub(crate) founding_refusals: crate::network::nerve::Keyed<crate::anastome::dialogue::domain::Founded>,
     /// Each tier key and the domain whose genesis names it: re-derived from
     /// `domains` wherever it changes or is restored, never persisted (law 12).
     pub(crate) tier_domain: crate::network::nerve::Keyed<[u8; 32]>,
@@ -1029,6 +1043,11 @@ impl Court {
                 self.chain.admit(r.clone());
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
+                // MU-HOSTING §5a.9 B0: the signature over this frame reaches
+                // every receipt of its signer's line below it, so the founding
+                // receipts back-filled there are reconstructed, then its own.
+                self.sign_through(&r.stamp.vk, r.stamp.place());
+                self.reconstruct_founding(r);
                 // THE ACT'S ROOT (65.5): the wire hands this receipt here, and
                 // one stroke is the admission's draw, threaded to the
                 // rulings it hears.
@@ -1057,6 +1076,13 @@ impl Court {
             crate::court::admission::Admitted::Equivocation { at, .. } => {
                 self.burn_equivocation(r.stamp.vk, *at);
             }
+            // B0: a signed frame this court holds already, the same receipt
+            // at its stamp, signs the line below it as a new frame does.
+            crate::court::admission::Admitted::Stale
+                if self.chain.holds(&crate::chronometry::Parent { at: r.stamp, hash: r.chain_hash }) =>
+            {
+                self.sign_through(&r.stamp.vk, r.stamp.place());
+            }
             _ => {}
         }
         verdict
@@ -1079,6 +1105,11 @@ impl Court {
     ///
     /// The page is admitted on the stroke of the chase that fetched it
     /// (65.5), threaded to the rulings an alias wakes.
+    ///
+    /// A FOUNDING RECEIPT ON THE PAGE (MU-HOSTING §5a.9 B0) — a domain's
+    /// genesis, its reserve, its origin — is held until a frame its signer
+    /// signed at or above it is admitted (`admit_receipt`), and the domain's
+    /// state is then reconstructed from it (`Court::reconstruct_founding`).
     pub fn admit_backfill(
         &mut self,
         receipts: &[crate::chronometry::KStepReceipt],
@@ -1104,6 +1135,9 @@ impl Court {
                     if r.kind == crate::chronometry::ActKind::Fold {
                         self.shed_folded_lines();
                     }
+                    // MU-HOSTING §5a.9 B0: a founding receipt waits for its
+                    // signer's signature before the registries read it.
+                    self.file_unsigned_founding(r);
                     n += 1;
                 }
                 crate::court::admission::Admitted::Stale => n += 1,
