@@ -49,11 +49,12 @@ lawful at one site and a defect at another.
 | Drift | Correct structure | Law |
 |---|---|---|
 | Re-sampling two frames onto a common grid or lattice (an `lcm` refinement of extents, unit cells, a per-cell table past the sensor) | Transduction: the motion that carries one state onto the other, each frame at its own resolution, each body held by its boundary, incidences between boundary arcs | MU-ANTI-FLATTENING 12 |
-| Lifting a site by a conformal point embedding (`x + ½x²e∞ + e₀`) | Turns of the frame's own periods: row `r` is `r/h`, held as a fraction in ℚ/ℤ, composed by addition mod 1 | MU-ANTI-FLATTENING 12; law 11 |
+| Lifting a site by a conformal point embedding (`x + ½x²e∞ + e₀`) | Turns of the sample's own periods: a site's coordinate `s` on an axis of extent `e` is the turn `s/e`, held as a fraction in ℚ/ℤ, composed by addition mod 1 | MU-ANTI-FLATTENING 12; law 11 |
 | A squared norm, `cos`/`sin`, a float, or a rational point on a circle | Exact ℚ arithmetic; turns as fractions; a named refusal where no exact value exists | MU-RECURSION law 11; Cargo lints |
 | Admitting an object because its hash, root or head equals one held | Reconstruct the object from its own evidence under the laws; a digest only locates (address), orders (link) or binds a reconstructed object (commitment) | MU-ANTI-FLATTENING 13; MU-HOSTING §5a.10 |
 | "Replay" or "rebuild" as verification; a restore that re-applies recorded outcomes | Reconstruction verifies; rebuild repeats a construction; replay reads history; resend repeats a message | MU-ANTI-FLATTENING 14; MU-SCIENCE §5.0 |
 | A boolean or scalar for a disagreement or a decision with magnitude | A residue (the composed motion, the differing boundary or holonomy), a graded reading, a named refusal | MU-HOSTING §5a.10; MU-STANDARDS 2.12 |
+| A reading used outside its scope: identity (an address) computed from a ground, a symbol's meaning or a frame fixing; a perspective applied before addressing | Identity from the posted samples' content alone (hypha); the ground and meanings deduced in the mind (client); perspectives taken after intake (sensor) | MU-SENSING §6.1 |
 | Code written for one data source (a module or type named for a dataset, a fixed palette, a ground of `0`, two axes or three coordinates fixed, a fixed cell size) | A generic sensor over samples of any rank: symbols compared by equality, the ground, the periods and every gauge deduced, perspective as a sensor motion; a source contributes only a decoder kept outside `src/` | MU-SENSING; MU-RECURSION 71 |
 | A constant chosen for a governing quantity | A live reading derived from the state, or an entry in the open-physics register | MU-DERIVATIONS; `xtask/lint/numbers.rs` |
 | A network of routes, a tree or a graph of crossings | Events with past and future cones on the TUniversal ledger; the universal core tube is the vertex | MU-HOSTING §5a.5 |
@@ -71,6 +72,15 @@ lawful at one site and a defect at another.
 ## While writing
 
 - Never run `cargo fmt`. The tree is not `rustfmt`-clean by design.
+- Name a file for what its area does, at a high level (`control.rs`,
+  `context.rs`, `sample.rs`). Never use a metaphor, a dataset or one
+  specific instance (`door.rs`, `arc.rs`, `pore.rs`). A term a name
+  introduces stands in the GLOSSARY. A doctrine term may name a type,
+  never a file.
+- One name, one meaning: a term the GLOSSARY defines names only that
+  meaning. Anything else is renamed by function (ROADMAP track 11, N3).
+  "Row" in its strict matrix sense and "arc" in its strict geometric
+  sense are exempt.
 - Use no possessive or personal pronouns in code, comments, test names,
   identifiers or documents: name the thing.
 - Keep a source file within the reading bound, with one organ per file.

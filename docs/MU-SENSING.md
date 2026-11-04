@@ -41,6 +41,16 @@ path:
 Where an older passage fixes three coordinates, ten hues, a ground of 0 or
 one benchmark, this document and the rulings it cites govern (§9).
 
+**What completes this work** (ruled 2026-11-04). The test is whether a
+mind can think about the perception of the senses that are adjudicated.
+It is not whether a benchmark such as ARC-AGI-2 is solved. A mind holds
+its perceptions as objects it reasons about: the ground it read, the
+vortex of candidates, its perspectives, its holonomy and its refusals. It
+can state, compare and revise them, and a court can reconstruct and
+adjudicate them. Claims test exactly that. Benchmark outcomes and corpus
+counts are observations, never criteria, and nothing is tuned to them
+(MU-STANDARDS 3.1).
+
 ## 1. The path: source, sample, sensor, senses, percept, perception
 
 ```
@@ -56,9 +66,9 @@ source ──decode──▶ sample ──lift──▶ field ──────
 | **Decode** | The source's format read into a sample, and nothing more: no meaning, no ground, no colour | The source's adapter, which lives with the source (§7) | Yes |
 | **Sample** | A finite array: rank `n`, an extent per axis, a symbol per site, and the sample's place in its family | The adapter's output; the only input the sensor takes | No |
 | **Lift** | The sample lifted into the mind's field: each axis a phase of its own period within the charts of its atlas; each symbol a fibre value; the ground deduced | The sensor | No |
-| **Senses** | Three eyes over one section: luminal (the fibre values), harmonic (the spectra of boundaries), holonomic (loops and their holonomy) | The sensor | No |
+| **Senses** | Three eyes over one section: luminal (the fibre values), harmonic (the spectra of boundaries), holonomic (loops and the holonomy of each) | The sensor | No |
 | **Cover** | The eyes' cochains, checked by the cocycle; a sensory verdict | The sensor (MU-CLIENT 24.4) | No |
-| **Percept** | Bodies held by their boundary, the motions between samples, and the residue | The mind's perception | No |
+| **Percept** | Bodies, each held by its boundary, the motions between samples, and the residue | The mind's perception | No |
 | **Perception** | Words formed from what the mind can spell; unspelled tension held as demand | The mind (MU-CLIENT §3, 60.1) | No |
 
 ## 2. The sample: what a source hands the sensor
@@ -106,7 +116,7 @@ differ (MU-RECURSION 71.2 (2)). A body is what stays connected under the
 contact the sample shows. No 4-neighbourhood, 6-neighbourhood or other
 fixed adjacency is written for a rank.
 
-### 3.3 Symbols are fibre values, and their meaning is deduced
+### 3.3 Symbols are fibre values, and a symbol's meaning is deduced
 
 A symbol's meaning is a relation, not a code (MU-RECURSION 70, 78.53).
 A permutation of the symbols that leaves the family's relations invariant
@@ -114,9 +124,18 @@ is a **gauge transformation**, and the percept is the same under it. So:
 - **Colours are not fixed.** "Red" is not symbol 2. A colour word names
   an invariant fibre relation across the family, such as *the symbol each
   body takes from its enclosure*, never a palette integer.
-- **The symbol set is the sample's.** Its size is read, so a source may
-  present 3 symbols, 10 or 10 000. The reservoir ray `e_∅` (78.58) is
-  the place after the family's own symbol set, never a fixed index.
+- **The symbol set is the family's.** A family's symbol set `Σ` is the
+  distinct symbols across all of its samples, compared by equality. Its
+  size `|Σ|` is read, so a source may present 3 symbols, 10 or 10 000.
+  - **An index into `Σ`** is a symbol's rank in canonical address order:
+    the order in which symbols first appear when the samples are walked
+    in address order. It is an addressing order, never a role and never
+    a choice.
+  - **The reservoir ray `e_∅`** (78.58) sits at index `|Σ|`, the place
+    after the family's own set, never at a fixed index.
+  - **A table over symbols** is keyed by `Σ` and sized `|Σ|`, never a
+    fixed array of slots.
+  - **Claim:** permuting `Σ` leaves every percept unchanged.
 - **Order and magnitude** enter only where the source declares them, as a
   typed axis of the fibre. A brightness or a temperature is an example of
   each. Without a declaration, symbols are compared only for equality.
@@ -229,7 +248,7 @@ one ground runs once per candidate `g`, each run as its own perspective
 as one of the vortex's sections, and nothing picks among them.
 - The mind perceives a vortex task once per candidate. It speaks one claim
   per candidate, and each claim states the ground it was spoken under
-  (§6).
+  (§6.2).
 - Under `Ground::None` the support is the whole sample. A writer that
   would leave a site needing a ground is refused.
 - Collapsing a vortex by a relation remains S6's.
@@ -367,6 +386,16 @@ bubble (a thought bubble), renamed 2026-11-02.
     orbit does to the class orthogonal to it, read from the orbits the
     mind holds. Where no orbit is held, nothing is produced, and the
     manifold there is flat.
+    - **The orthogonal class, exactly.** An orbit's plane is the
+      bivector `B` of its elliptic mode. Two orbit classes are
+      orthogonal when the two planes share no direction: `B₁ · B₂ = 0`
+      (no grade-0 part) and `B₁ ∧ B₂ ≠ 0`. Such planes are disjoint and
+      commute.
+    - **The shear on the orthogonal class** is the commuting part of
+      78.46's split, the drag. It changes the orbit's rate and leaves
+      its plane where it is. Orbits that are not in the orthogonal class
+      take the anticommuting part, the lift (a tilt), by 78.46, and are
+      not this shear.
   - **The court's exported gravity** (a reading the mind receives, never
     a force the court applies). A court's pressure, deficit and dwell
     reach the mind as the lanes of a deferral or a quote. They act as
@@ -468,13 +497,62 @@ runs.
 
 - **A shift of perspective is a motion of the sensor, never a rewrite of
   the data.** Examples: exchanging two axes' roles (one of the signed
-  swaps of the phases), taking a declared value axis as space, or reading
+  permutations of the phases), taking a declared value axis as space, or reading
   a sequence of samples as one section of rank `n + 1`.
-- **Several perspectives of one sample are a cover.** Their agreement is
-  the cocycle of MU-CLIENT 24.4, and their disagreement is a residue,
+- **Several perspectives of one sample are a cover.** The perspectives'
+  agreement is the cocycle of MU-CLIENT 24.4, and a disagreement is a residue,
   held and never discarded.
 - **A mind may ask for a perspective** it does not hold yet. Asking is a
   demand, never a fallback.
+- **A perspective is taken after intake, never before addressing.**
+  Frame fixing, the canonical turn or mirror of a sample, is a
+  perspective and belongs to the sensor's scope (§6.1).
+
+### 4.1 Emergent senses: variation, selection by admission, inheritance
+
+**Specified** (ruled 2026-11-04; ROADMAP track 26 S10). Senses and
+perspectives are open-ended. The three eyes of MU-CLIENT 24.4 (luminal,
+harmonic, holonomic) are the founding senses, not the only ones. A sense
+emerges the way a word does (MU-RECURSION 60.2; the genome is
+court-admitted words), by variation, selection and inheritance, and
+never by a score.
+
+- **A sense is a typed object.** A sense is a reading that turns a
+  sample into a cochain of the cover (MU-CLIENT 24.4): a 0-cochain over
+  bodies or a 1-cochain over overlaps. It is composed from the algebra's
+  existing readings and the generators the mind holds, so every sense is
+  an exact construction a court can reconstruct. A perspective (§4) is
+  likewise a typed object: an assignment of roles that the mind
+  constructs.
+- **Variation.** A mind constructs a candidate sense or perspective by
+  composing readings it holds, or from a generator it has adjoined (a
+  prime residue adjoined by closure, 25.12, 37.7). A residue that no
+  sense the mind holds can read is a demand for a sense, as an unspelled
+  tension is a demand for a word (MU-CLIENT 60.1).
+- **Selection, by admission, never by a score.** A candidate is admitted
+  only when all three hold:
+  1. **It adds information.** Its cochain is not already determined by
+     the cover the existing senses form. Exactly: adding it raises the
+     rank of the cover's cohomology over the family. A sense that only
+     restates the others adds nothing and is not admitted.
+  2. **It is adjudicable.** A court reconstructs what it perceives on
+     the posted samples, from its construction alone (MU-SCIENCE §5.0).
+     This is the test of MU-SENSING §0 applied to the sense itself.
+  3. **It converses.** Independent minds that hold it reconstruct the
+     same perceptions, each from the evidence it holds (converse), rather than
+     collide.
+- **Inheritance.** An admitted sense enters the genome like a word, at
+  an address that is its construction written out. Other minds may adopt
+  it. A mind is never required to hold a sense, since its drive is its
+  own.
+- **No sense is privileged.** Once admitted, a sense joins the cover on
+  equal terms with the founding three. Its disagreement with them is a
+  residue, held and never discarded (24.4).
+- **Scope.** Constructing a sense is the client mind's. Admitting it is
+  the court's, by reconstruction only: the court never proposes a sense,
+  as it never proposes a generator (MU-SCIENCE §5.0, grammar alignment).
+  Identity stays the hypha's (§6.1). A new sense changes no task's
+  address.
 
 ## 5. What the mind knows: a section of a larger world
 
@@ -512,9 +590,42 @@ claims as exact content, and it admits a claim by reconstruction
   frame is fixed before it is addressed (§3.4, scope separation).
 - **On the wire, a task carries samples of any rank:** `n`, the extents,
   then the symbols at the source's own width. It is never a pair of `u16`
-  extents with one byte per cell.
+  extents with one byte per cell. The limits are derived, never chosen:
+  - **The rank and each extent** are carried in the existing `u16`
+    length field. A value past it means a blob where a coordinate
+    belongs, so it is refused, never widened.
+  - **The symbol width `w`** is the source's own, sent once per sample.
+    A sample's symbol bytes are `w · ∏ eᵢ`, computed with checked
+    arithmetic and refused by name on overflow.
+  - **A phase's denominator** is its axis's extent (the turn is
+    `s / eᵢ`), so it is bounded by that extent's field and needs no
+    limit of its own.
 
-### 6.1 A claim states its ground
+### 6.1 Scope separation (ruled 2026-11-03)
+
+Each of three scopes owns a set of readings, and no reading crosses into
+another scope:
+
+| Scope | Owns | Never reads |
+|---|---|---|
+| **Hypha: identity** | A task's address and citation: the posted samples' full content as the source gave them (rank, extents, symbols, places), train and test alike (law 2; 78.170 O3) | A ground, a frame fixing, a perspective, any symbol's meaning |
+| **Client: the sensorium** | The ground (§3.4), the symbols' meanings (§3.3), bodies, wells and every perception | The identity computation; a perception never changes an address |
+| **Sensor: perspective** | Frame fixing and every assignment of axes to roles (§4), taken after intake on the mind's own reading | Addressing; a perspective is never applied before a task is addressed |
+
+- **A defect of this kind** is a reading from one scope used inside
+  another. The instance that defined it: the hypha's `task_address`
+  filtered the test inputs by `symbol ≠ 0`, which is a ground and so a
+  sensorium reading, and the decoder fixed each task's frame before it
+  was addressed, which is a perspective. Both made identity depend on
+  perception. Both are removed in track 26 S2.
+- **Two minds may perceive one task differently** (another ground,
+  another perspective, a vortex held), and the task is still one task:
+  its identity belongs to the hypha's scope alone.
+- **The court reconstructs a claim on the posted samples.** Where a
+  claim states a ground or a perspective, the court reads it as part of
+  the claim, never as part of the task (§6.2).
+
+### 6.2 A claim states its ground
 
 A claim (the solve act) states the ground it was spoken under, as an
 optional field: one symbol at the source's width, or absent. The field
@@ -559,9 +670,9 @@ ARC corpus enters the sensor, the mind, the court or the wire.
 **Built (track 26, S1).** The decoder is the workspace crate
 `sources/arc-agi` (package `mycelium-source-arc-agi`). It depends on the
 core; the core never depends on it. It owns:
-- the JSON parse (`decode`), with the task as the file gives it. Since S2
-  no ground is read and no frame is fixed here, and the former
-  `parse_task` is removed;
+- the JSON parse (`decode`), with the task as the file gives it. Fixing
+  the frame before the task is addressed was the defect of §6.1; S2
+  removed it with the former `parse_task`, and no ground is read here;
 - the corpus location (`corpus`: `MYCELIUM_CORPUS`, else `data/arc-agi-2`)
   and its split into `training` and `evaluation` (`task_names`);
 - the decode to samples (`samples_of`, each placed at `[split, pair,
@@ -586,7 +697,7 @@ with samples of rank `n` together with the envelope.
 | A percept as a series of located records (seat percepts) | **Built** | `src/anastome/dialogue/seat.rs` (78.146) |
 | The three eyes as a cover, with the sensory verdict | **Specified** | MU-CLIENT 24.4 |
 | The transduction at rank `n`: each axis a phase of its own period read from the sample, re-period between samples, bodies as `n`-dimensional bands of one symbol, each held by its boundary, contact by grade `n − 1`, the `2ⁿ·n!` signed permutations of the phases (generated), μ's shares over the product of the extents; no axis privileged | **Built** (v0.3.0 T2 with track 26 S4, [PR #41](https://github.com/SAIOS-SAMN/mycelium/pull/41)); rasters reach it only through `raster::sample_of` | `src/transducer/family/transduce/` (`Enclosure`, `Band`, `SignedPermutation`, `SiteChange`) |
-| The well (formerly the bubble): a held thought in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built**, without a body: no membrane, centre or curvature | `transducer/field/idea.rs` (`Well`), `field/{contemplation, merge, meet, resonance, line}.rs` |
+| The well: a held thought in the contemplation (word, nerve, cover, horizon of rotor classes, perceived bodies) | **Built**, without a body: no membrane, centre or curvature | `transducer/field/idea.rs` (`Well`), `field/{contemplation, merge, meet, resonance, line}.rs` |
 | The vortex: candidates held, collapsed by a perception, a glue or a ruling; monodromy read flat, torsion or rupture | **Built** in `Spin(4,0)(ℚ)`; forward to `Spin(n+1,1)` is specified (§3.8) | `Well.vortex`, `Well.torsion`, `contemplation::collapse_on`, `resonance::carry_vortices_round` |
 | Orbits with four readings; the court's gravity as drag | **Built**, on flat charts | `cech/orbit.rs` (`Field`, `Field::beat_under`) |
 | Exact motions: rotors by turns, dilators, reflectors, versors of reflections, cyclotomic periods | **Built** | `alphabet/`, `cga/{group, spin, period}.rs` |
@@ -601,13 +712,13 @@ with samples of rank `n` together with the envelope.
 | The rank-2 raster at intake, named by function: its extents, ground, painted sites, frame fixing and the bridge to the sample, moved from `arc.rs` unchanged | **Built** (track 26, S1) | `src/transducer/raster.rs`; `Task` in `src/transducer/family/train.rs` |
 | **Defect:** the raster carrier is rank 2 by its own storage (`raster::AXES = 2`, `extents`, `painted_sites`, `value_at`) | **Built, refused** by §2 and §3.6; moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S4 |
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
-| A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.1) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
+| A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
 | Speech and seat solves state no ground yet: the speech act and the seat's solve call carry no ground field, and the court's speech path still reads the family's deduced ground | **Open**; lands with track 26 S5's wire change | `court::verdict::replay` (`on_ground_of`); the seat call's arguments |
 | **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
 | **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One` | `src/transducer/raster.rs`; track 26, S6 |
 | **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residual.rs`; track 26, S4 |
 | **Defect:** a family's magnitude is read on planar chains (`pair_magnitude`, `family_cover`, `cover_join` over `raster::painted_of`) | **Built, refused** by §2 (samples of rank `n`); moved unchanged in S1 | `src/transducer/family/magnitude.rs`; track 26, S4 |
-| An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on the branch `transduction-core` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
+| An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on `main` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
 | Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
 | Symbol set, axes and gauges deduced | **Specified** | Track 26, S3–S4 |
 | A task on the wire as samples of rank `n` | **Specified** | Track 26, S5 |

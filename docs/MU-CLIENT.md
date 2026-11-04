@@ -391,8 +391,9 @@ taken where the field stands), its flux recorded, and only its ADMISSION
 touches the mind's field (`mind::admit`): the recorded flux lands on the
 field as it then stands, the lanes it booked beside its flux are added, its
 taught words, its lexicon's new words and its parked covers join the mind's.
-A court perceiving outside any mind's field books on the state its worker
-threads share, and is taught nothing.
+A court never perceives (the hypha never senses, MU-SENSING §6): a court
+reconstructing a claim outside any mind's field books on the state its
+worker threads share, and is taught nothing.
 
 The mind's carriers (§5.1) all act on this one field, each holding it
 briefly and never across a wait on a counterparty. The mind's own reserve is

@@ -17,8 +17,9 @@ excluded from the reasoning path.
    geometric contractions (V σ Ṽ), or boundary morphisms (∂₂Σ = Q) on the
    retained graded multivector manifold.
 3. Multi-dimensional perceptual axes (holonomy, harmonic spectrum, torsion,
-   scale) exist as intrinsic grades or fibre coordinates on the Cl(4,1)
-   blade (clause 7), not as standalone `*_cells` lookup tables.
+   scale) exist as intrinsic grades or fibre coordinates on the
+   `Cl(n+1, 1)` blade (clause 7; `Cl(4,1)` at `n = 3`), not as standalone
+   `*_cells` lookup tables.
 4. An operation that collapses manifold curvature into a flat 0-dimensional
    scalar or hash comparison, bypassing geometric deduction, is a structural
    violation and is refused. The algebra is never scalar (ruled
@@ -85,7 +86,8 @@ excluded from the reasoning path.
    frames relate by the motion that carries one state onto the other.
    Each frame keeps its own resolution, and each body is held by its
    boundary. A site lifts by enclosure into turns of the frame's own
-   periods: row `r` is the turn `r/h`, held as a fraction in ℚ/ℤ. It is
+   periods: a site's coordinate `s` on an axis of extent `e` is the turn
+   `s/e`, held as a fraction in ℚ/ℤ. It is
    never a point embedding with an unenclosed `e∞` or a squared norm
    (law 11). Subdividing two frames onto a common grid (the `lcm`
    refinement of the two extents) is refused. The least common multiple of
@@ -158,10 +160,10 @@ transduction, a digest in place of reconstruction, and replay or rebuild
 in place of reconstruction. A word list cannot guard them. The same word
 names a defect at one site and a law at another. In the tree today,
 `lcm` composes the periods of turns in
-`src/transducer/sentence/coordinates.rs`, which is lawful. It also
-re-samples two frames onto a common grid in
-`src/transducer/family/refine.rs` (`CommonRefinement`), which is the
-defect. So the guards are types, which make the wrong structure
+`src/transducer/sentence/coordinates.rs`, which is lawful. Until the
+transduction landed (v0.3.0 T2), `lcm` also re-sampled two frames onto a
+common grid in `src/transducer/family/refine.rs` (`CommonRefinement`),
+which was the defect; that file and type are deleted. So the guards are types, which make the wrong structure
 unwritable, and a register that names each guard and the ruling behind
 it. **Specified** (ROADMAP track 25, phase X0):
 
@@ -169,7 +171,7 @@ it. **Specified** (ROADMAP track 25, phase X0):
 |---|---|---|
 | A digest compared to admit an object (clause 13) | The bare `[u8; 32]` of a crossing is split into three types: `Address`, `Link` and `Commitment`. None implements `PartialEq`. The comparisons are named methods: `Address::locates`, `Link::follows(&prev)`, and `Commitment::binds(&Reconstructed<T>)`. The last takes the reconstructed object, so a commitment cannot be compared before reconstruction. | A `compile_fail` doc test per type for `==`; the claim `commitment_binds_only_a_reconstructed_object` |
 | Admission without reconstruction (clause 13) | `Reconstructed<T>` has a private constructor, called only by the law's reconstruction. Each `admit_*` takes a `Reconstructed<T>` and never the claimed `T`. | A `compile_fail` doc test that builds one outside the laws; a mutation-audit entry that admits the claim in place of the reconstruction |
-| A common grid past the sensor (clause 12) | The refinement onto a common grid is reachable only from the sensor's intake (`pub(in crate::sensor)`), or removed once the transduction replaces it. A site's lift has one constructor, `Turn::of(r, h)`, held in ℚ/ℤ. | A `compile_fail` doc test that calls the refinement from cognition; the transduction's claims (track 25, X5) |
+| A common grid past the sensor (clause 12) | The refinement onto a common grid is removed (the transduction replaced it in v0.3.0 T2); the guard keeps any such refinement from being reached past the sensor's intake. A site's lift has one constructor, `Turn::of(r, h)`, held in ℚ/ℤ. | A `compile_fail` doc test that calls the refinement from cognition; the transduction's claims (track 25, X5) |
 | Replay or rebuild used to verify (clause 14) | Identifiers that verify carry `reconstruct` (track 11). A restore returns a `Reconstructed<State>` checked against its receipts, never a replayed one. | The restore claim `restore_reconstructs_and_checks_receipts`; a mutation-audit entry that skips the receipt check |
 
 The register `xtask/lint/drift.rs` lists each guard: the regression, its

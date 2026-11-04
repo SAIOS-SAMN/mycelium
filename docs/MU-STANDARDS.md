@@ -145,7 +145,7 @@ cannot allow anything. What a line used to do is in git. A contributor who
 touches a function removes such comments from it in the same commit.
 
 2.9 **Exact arithmetic.** Every quantity is exact: ℚ, or the multivectors
-of Cl(4,1)(ℚ). `float_arithmetic`, `cast_precision_loss` and
+of `Cl(n+1, 1)`(ℚ), with `n` read from the data (`Cl(4,1)` at `n = 3`). `float_arithmetic`, `cast_precision_loss` and
 `cast_possible_truncation` are denied in `Cargo.toml`; a narrowing `as`
 stands only under an `#[expect]` naming where its bound comes from. A
 decimal approximation of an irrational is not served anywhere: in a value,
@@ -324,7 +324,8 @@ A run is green only when its saved output contains no `FAILED`,
 and the scoped tests in sequence. Before a pull request, `scripts/check`
 runs the gate (§4.1) and the workspace tests with `--no-fail-fast` and
 summarises both; without the ARC-AGI-2 corpus at `data/arc-agi-2`, its
-17 corpus-dependent tests are known exceptions, and the summary says so.
+20 corpus-dependent tests (all in the decoder's crate, `sources/arc-agi`)
+are known exceptions, and the summary says so.
 
 ## 4. The gate
 
@@ -335,8 +336,11 @@ summarises both; without the ARC-AGI-2 corpus at `data/arc-agi-2`, its
 ```
 
 Setting `CARGO_TARGET_DIR` (for example `CARGO_TARGET_DIR=target/gate`) is
-optional and keeps the gate's build apart from a release build. There is
-no `build.rs`; the gate runs only from `xtask`. It takes two readings,
+optional and keeps the gate's build apart from a release build. The
+library's `build.rs` only computes the Concordance's byte hash
+(`CONCORDANCE_HASH`), a defect retired by ROADMAP track 24 B2 (Concordance
+§0, signing by adjudicated reading); the gate runs only from
+`xtask`. It takes two readings,
 reports both whatever the first said, and exits non-zero if either
 refuses:
 
@@ -365,7 +369,8 @@ refuses:
      until it is empty.
 2. **The warning gate** (`lint/warnings.rs`):
    `cargo clippy --release --workspace --all-targets -- -D warnings`,
-   every workspace member (`mycelium`, `forms`, `mycelium-sdk`) and every
+   every workspace member (`mycelium`, `forms`, `mycelium-sdk`,
+   `mycelium-source-arc-agi`) and every
    target, tests included, rustc's warnings denied. A warning is a defect with a
    line number.
 

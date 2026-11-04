@@ -406,7 +406,7 @@ frame base point:    v = V v₀ Ṽ / ⟨V Ṽ⟩₀,  checked v² = −1
 ```
 
 A compartment lands on the interior sheet `v² = −1` exactly, with no
-square root; `M`, the lattice quantum, is an integer with
+square root; `M`, the integer quantum, is an integer with
 `M² > r² + c² + k²`. The transvection carries `v_a` to `v_b` forward,
 exactly, and is checked to be a versor. The same construction about `e₊`
 puts a frame's point on the 3-sphere `v² = +1`.
@@ -585,7 +585,7 @@ Sources: MU-RECURSION 16.4. Code:
 `src/transducer/element/sensor.rs::carry_site_centre`, `::carry_site`,
 `::site_at`.
 
-#### 2.25 The lattice step of a carriage
+#### 2.25 The integer step of a carriage
 
 ```text
 o = carried centre of (0, 0),  a = of (1, 0),  b = of (0, 1)
@@ -594,11 +594,12 @@ the step is (dr, dc)  ⇔  dr, dc ∈ ℤ,  a = (dr + 1 + ½, dc + ½),  b = (dr
                           and the frame coordinate stays 0
 ```
 
-The lattice translation a versor is, read on three cell centres; any other
-motion has no lattice step.
+The integer translation a versor is, read on three cell centres; any other
+motion has no integer step.
 
 Sources: MU-CLIENT §5.4. Code:
-`src/transducer/sentence/form/rule_element.rs::lattice_step`.
+`src/transducer/sentence/form/rule_element.rs::lattice_step` (renamed
+`substrate_step` by ROADMAP track 11, N4).
 
 #### 2.26 The twist about an attractor and the orbit about a star
 
@@ -867,6 +868,12 @@ Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::centred`.
 
 #### 4.2 The envelope and the dilation between envelopes
 
+**Refused defect.** The envelope below squares the extents
+(`r² = Σ eᵢ²/4`, an exact square root), which law 11 refuses; MU-SENSING
+§8 lists it as built and refused, and the re-period of each phase
+replaces it (MU-SENSING §3.1; track 26 S4). The formula records the code
+that still holds it.
+
 ```text
 r² = Σᵢ eᵢ² / 4                    (circumscribed sphere of a grid of extents eᵢ)
 s  = r_to / r_from = p/q           exact only where r²_to / r²_from is a rational square
@@ -905,9 +912,11 @@ axis reversed  ⇔  the first non-zero odd moment (k = 1, else k = 3) is negativ
 axes ordered by (moment_2, moment_4)
 ```
 
-Where the momentum vanishes, the lattice's frame is a gauge, fixed at the
+Where the momentum vanishes, the sample's frame is a gauge, fixed at the
 sensor by the scene's own moments. Ties and vanishing odd moments keep the
-frame given.
+frame given. MU-SENSING §4 and §8 refuse this fixing as built: the frame
+is a perspective, taken after intake and never before addressing
+(MU-SENSING §6.1; track 26 S2 and S6).
 
 Sources: MU-RECURSION 78.54, 78.56. Code: `src/transducer/raster.rs::frame_fixed`.
 
@@ -2043,7 +2052,7 @@ id is a hosted shell's own.
 | L0 conservative flow into e_∅ (`TAG_LAW‖4‖5`) | 5 | MU-RECURSION 78.59, 78.58 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
 | L0 continuity (`TAG_LAW‖5‖5`) | 5 | MU-RECURSION 78.89 | `src/physics/laws/mod.rs` (`verify`, `verify_flux`); `ACT_LAWS` mode 0 |
 | L0 parameters (the frame budget, an open protocol parameter; the challenge window is a sealed reach and return, no parameter) | 5 | MU-RECURSION 78.125 as amended; MU-DERIVATIONS D1.3; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
-| Concordance (`CONCORDANCE_HASH`) | 4 (the agreement's version); identified by its hash | `docs/MU-CONCORDANCE.md`; hash = BLAKE3 of its exact bytes | `src/physics/laws/concordance.rs`, `build.rs`; served on `ACT_LAWS` mode 7, signatures on mode 8 |
+| Concordance (`CONCORDANCE_HASH`) | 4 (the agreement's version); identified today by a hash of its bytes, a defect; each clause is to be identified by its content and signed by adjudicated reading (Concordance §0, ROADMAP track 24 B2) | `docs/MU-CONCORDANCE.md`; hash = BLAKE3 of its exact bytes, until B2 | `src/physics/laws/concordance.rs`, `build.rs`; served on `ACT_LAWS` mode 7, signatures on mode 8 |
 | `FORMS-FRAME` | 1 | `forms/src/frame.rs` (module documentation); Concordance 2.10, A6 | `forms::frame` (core shell) |
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |
 | `LAW-WAVEFRONT` | 1 | netstratum `docs/111` §2–§3 ([netstratum#9](https://github.com/SAIOS-SAMN/netstratum/issues/9)) | netstratum; no Mycelium code |

@@ -93,6 +93,104 @@ such change is named here.
   - the oracle's golden reading is rewritten, from 1 715 to 1 684
     readings.
 
+### The Concordance is signed by adjudicated reading (ruled 2026-11-04)
+- **Concordance §0 SIGNING:**
+  - A kernel signs by showing that it reads the agreement: each clause
+    is identified by its content (law form and fixtures), and the kernel
+    signs it by reconstructing the clause's fixtures, admitted only on
+    the same objects.
+  - A kernel that cannot read a clause is refused `NotSignatory`.
+  - A change of wording changes no clause.
+  - `CONCORDANCE_HASH`, BLAKE3 over the file's bytes, is the defect this
+    replaces. It stays served only until ROADMAP track 24 B2.
+- **Concordance 1.9:** the baseline-to-beat is struck. Cognition is
+  measured as adjudicated perception (MU-SENSING §0), and benchmark
+  outcomes are observations.
+- **§11's clause-by-clause text, MU-HOSTING §5a.4, MU-EQUATIONS,
+  MU-STANDARDS, MU-RELEASE §3a and ROADMAP track 24 B2 follow.**
+
+### Documentation aligned with the sensing rulings (audit 2026-11-04)
+- ROADMAP › Now: S2 and D2.5 in progress, T3 ready, #55 listed; track 26
+  marks S0, S1 and S4 built and S2 in progress; X5's transduction built.
+- The headline algebra is `Cl(n+1, 1)` throughout, with `Cl(4,1)` only as
+  its value at `n = 3`. ARC-AGI-2 is the first posted corpus, and its
+  outcomes are observations, never the goal or a baseline (MU-SENSING §0):
+  README, GLOSSARY, MU-COGNITION, MU-CONCORDANCE, MU-HOSTING, MU-PRODUCT.
+- A task's identity is the posted samples' full content (MU-SENSING §6.1)
+  in ROADMAP and MU-DERIVATIONS; μ's S lane is a share of the frame's
+  measure under the ground the claim states (MU-ECONOMY).
+- Terms: phases within charts in place of circles, signed permutations in
+  place of signed swaps, "lattice" kept only for the refused defect, the
+  former name of the field recorded once (MU-SENSING §3.7), person words
+  removed. README gains *Peer kernels*, the gate's numbers check and the
+  current versions.
+
+### Naming alignment, planned (issue #55, ruled 2026-11-04)
+- ROADMAP track 11 gains phases N1–N7: verification named reconstruction,
+  files by function, one name per meaning, retired terms and person
+  words, GLOSSARY rows, "residual" retired (N6, in v0.3.0's break), and
+  the two wire names (N7, with S5). Each phase renames names only.
+- GLOSSARY: **Section** is a section of a bundle or sheaf, and the sites
+  a word changes are its **support**.
+- AGENTS.md: a doctrine term may name a type, never a file. One name has
+  one meaning. Strict matrix "row" and geometric "arc" are exempt.
+
+### File names by function (plan)
+- AGENTS.md: a file is named for what its area does, at a high level,
+  never a metaphor, a dataset or one instance.
+- ROADMAP › Now and issue #53: `door.rs` is split into `control.rs` (the
+  mesh-control handler) and `context.rs` (`Context`, the server's state
+  as one act sees it). Names only, after S2 and D2.5 merge.
+
+### Emergent senses (specification, ruled 2026-11-04)
+- MU-SENSING §4.1: senses and perspectives are open-ended. A sense is a
+  typed reading from a sample to a cochain of the cover.
+  - **Variation:** minds construct candidates.
+  - **Selection, by admission and never by score:** a candidate is
+    admitted when it adds cohomology rank, a court reconstructs it, and
+    minds converse on it.
+  - **Inheritance:** an admitted sense enters the genome.
+  - The three eyes are the founding senses, not the only ones.
+- ROADMAP track 26 S10, with claims. GLOSSARY: Sense.
+
+### Perception as an adjudicated claim, in the roadmap (ruled 2026-11-04)
+- ROADMAP track 26 gains reflective claims. S3 adds a symbol meaning
+  stated as a relation. S6 adds a claim stating its perspective, and two
+  perspectives compared as a cover. S9 adds holonomy, precession and
+  vortex monodromy stated by a mind and reconstructed by a court.
+- ROADMAP track 10 gains the sovereign-mind phase. Its test is thinking
+  about adjudicated perception, never a solve rate. It follows S7–S9 and
+  has five claims and a live run of `mycelium-client`.
+
+### The symbol set, the wire's limits and the orthogonal class, derived (specification)
+- **S3** (MU-SENSING §3.3): a family's symbol set `Σ` is its distinct
+  symbols. An index is the order of first appearance in address order,
+  `e_∅` sits at `|Σ|`, and tables are `Keyed` and sized `|Σ|`.
+- **S5** (MU-SENSING §6): the rank and extents use the `u16` field and
+  are refused past it, never widened. The symbol width is the source's,
+  the symbol bytes are checked, and a phase's denominator is its extent.
+  This settles LAW-FIELD v1's open question on the denominator.
+- **S9** (MU-SENSING §3.7): two orbit classes are orthogonal when the two
+  elliptic planes satisfy `B₁ · B₂ = 0` and `B₁ ∧ B₂ ≠ 0`. Axiomatic
+  gravity's shear on that class is 78.46's drag: rate, not plane.
+- ROADMAP track 26 S3, S5 and S9 carry these, with claims.
+
+### Scope separation (specification, ruled 2026-11-03)
+- **MU-SENSING §6.1:** each of three scopes owns a set of readings.
+  - **Identity** (the hypha's): a task's address is the posted samples'
+    full content.
+  - **The sensorium** (the client's): the ground, symbol meanings,
+    perception.
+  - **Perspective** (the sensor's): frame fixing and axis roles, taken
+    after intake.
+
+  A reading used outside its scope is a defect. Its first instance is
+  the registry's `symbol ≠ 0` filter and the decoder's frame fixing
+  before addressing, both removed in track 26 S2. MU-SENSING §4 gains the
+  matching rule.
+- GLOSSARY: Scope separation. AGENTS.md: the drift row for a reading used
+  outside its scope.
+
 ### The ARC-AGI-2 decoder leaves the core (ROADMAP track 26, S1)
 - **`src/arc.rs` is removed**, with `src/tests/arc.rs`; the core library
   has no module named for a data source (a `compile_fail` claim on
@@ -245,6 +343,9 @@ such change is named here.
   axes, `Cl(n+1, 1)`.
 
 ### Sensing any source at any rank (specification, ruled 2026-11-02)
+- *Superseded wording:* the circles, spheres, Clifford torus, Hopf base and
+  angle excess in this entry are withdrawn by the correction entry above,
+  "A chart keeps its one meaning; the field's geometry is its atlas".
 - **`docs/MU-SENSING.md`** (new) states the path from source to
   perception. A source decodes to a **sample** (rank `n`, extents, symbols,
   the sample's place in its family). The sensor lifts each axis into a
@@ -371,7 +472,7 @@ such change is named here.
   by each reply's header (`RECEIPTS_REPLY_HEADER`, `ROWS_REPLY_HEADER`,
   `SYLLABUS_REPLY_HEADER`, `CLASS_RECORDS_HEADER`, `CITED_REQUEST_HEADER`,
   `QUOTE_REPLY_HEADER`, `LEDGER_PAGE_HEADER`, `presentation_answer_len`);
-  encoders that count their own header take the frame whole; a page may
+  encoders that count the header themselves take the frame whole; a page may
   carry up to 63 bytes more within the same frame. `BODY_BUDGET` stays an
   open protocol parameter (a receipt's `u32`-counted fields have no `u16`
   wall) and is now served on `ACT_LAWS` mode 5 as "frame budget".
@@ -444,8 +545,8 @@ such change is named here.
   wall are gone, the erf tail read off its own bound. `poisson_quantile`
   takes a `Budget`, doubles its precision from one that resolves
   `e^{−λ}`, and answers `Quantile::{At, Sector}`. `exp` at a positive
-  argument and `P`'s prefactor carry their values' magnitudes, so
-  `exp(100)` and `P(1, 1000)` are within their grids.
+  argument and `P`'s prefactor carry the values' magnitudes, so
+  `exp(100)` and `P(1, 1000)` are within the grids of the two values.
 
 ### μ as exact rationals per lane (MU-ECONOMY §1, MU-RECURSION 78.162, phase T1)
 μ is measured as a share of a frame, so every amount of μ is now an exact
@@ -534,7 +635,7 @@ Holding the modes themselves (78.162) remains the next step.
 - **TUniversal's lanes are exact rationals** (ruled 2026-11-01; MU-RECURSION
   78.152 TU-1, TU-5, TU-7 amended forward; MU-CHRONOMETRY §1). The clock
   reads μ issued, and μ holds shares of a unit, so `Tick` and `TPoint`
-  carry their four lanes as an `economy::Mu`; `Court::keeper_tick` no
+  carry the four lanes as an `economy::Mu`; `Court::keeper_tick` no
   longer refuses an issuance holding a share. `TPoint::print` writes `h`
   and `K` in 16 hex digits and each lane `n/d` in lowest terms, lowercase
   hex, no leading zero (`0/1` for none); text order is numeric order by `h`
