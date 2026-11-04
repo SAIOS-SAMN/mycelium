@@ -140,13 +140,16 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
         let mut tasked = 0usize;
         for f in &files {
             let Ok(bytes) = std::fs::read(f) else { continue };
-            let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&bytes) else { continue };
-            if let Some(fam) = mycelium::transducer::family::magnitude::family_cover(&task.train) {
+            // Track 26 S4c: a posted task of any rank is posted whole; the
+            // planar cover is read on the alphabet's section where the
+            // samples are on it.
+            let Ok(task) = mycelium::anastome::dialogue::decode_posted_samples(&bytes) else { continue };
+            if let Some(fam) = task.section().ok().and_then(|t| mycelium::transducer::family::magnitude::family_cover(&t.train)) {
                 cover_measured = true;
                 mycelium::transducer::family::magnitude::cover_join(&mut cover, &fam);
             }
             let Ok(mut reg) = registry.lock() else { continue };
-            reg.register(task);
+            reg.post(task);
             tasked += 1;
         }
         // No snapshot is no state restored (a count of zero is a reading);
@@ -197,7 +200,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
     // done held no family until its cover moved, so every scene a mind spoke
     // of measured nothing here. A poisoned registry binds none, and says so.
     let families: Vec<([u8; 32], Vec<mycelium::transducer::family::TrainPair>)> = match registry.lock() {
-        Ok(reg) => reg.families().map(|(c, train)| (c, train.to_vec())).collect(),
+        Ok(reg) => reg.families().collect(),
         Err(_) => {
             eprintln!("[{tag}] registry lock poisoned; no family bound");
             Vec::new()

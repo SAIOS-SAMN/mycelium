@@ -9,6 +9,7 @@ mod commitment;
 mod conformance;
 mod equivocation;
 mod evidence;
+mod factorisation;
 mod fold_wire;
 mod offer;
 mod probe_reply;

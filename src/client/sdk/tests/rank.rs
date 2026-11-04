@@ -73,6 +73,106 @@ fn rank_one_task_is_perceived() {
     assert_eq!(reversal.recomposed(&train[0].0).as_ref(), Ok(&train[0].1));
 }
 
+/// A claim the in-process court heard, and the verdict it answered.
+type Heard = (crate::anastome::dialogue::FactorisationAct, crate::anastome::dialogue::FactorVerdict);
+
+/// A HYPHA IN PROCESS (track 26 S4c): a book holding the posted rank-3
+/// task, heard on a socket; each claim of factorisation that arrives is
+/// judged as the hypha's control surface judges it
+/// (`server::factorisation::judge_factorisation`), recorded where
+/// admitted, answered with its verdict, and handed to the test with it.
+fn factoring_court(book: std::sync::Arc<std::sync::Mutex<crate::server::registry::TaskRegistry>>) -> (String, std::sync::mpsc::Receiver<Heard>) {
+    use crate::anastome::dialogue;
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("the court listens");
+    let addr = listener.local_addr().expect("an address").to_string();
+    let (heard, claims) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        for conn in listener.incoming() {
+            let Ok(mut s) = conn else { continue };
+            loop {
+                let mut head = [0u8; 5];
+                if s.read_exact(&mut head).is_err() {
+                    break;
+                }
+                let Some((lane, pointed)) = crate::network::wire::read_lane(head[0]) else { break };
+                let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
+                let mut body = vec![0u8; len];
+                if s.read_exact(&mut body).is_err() {
+                    break;
+                }
+                let Some((body, _)) = crate::network::wire::split_point(body, pointed) else { break };
+                let reply = match dialogue::decode_factorisation(&body) {
+                    Some(act) => {
+                        let task = book.lock().expect("the book").task(&act.task).cloned();
+                        let verdict = crate::server::factorisation::judge_factorisation(task.as_ref(), &act);
+                        if verdict == dialogue::FactorVerdict::Admitted {
+                            book.lock().expect("the book").record_factorisation(&act);
+                        }
+                        let reply = dialogue::encode_factor_verdict(&verdict);
+                        let _ = heard.send((act, verdict));
+                        reply
+                    }
+                    None => Vec::new(),
+                };
+                let frame = crate::network::wire::WireFrame { lane, body: reply };
+                let _ = s.write_all(&frame.encode().expect("framed"));
+            }
+        }
+    });
+    (addr, claims)
+}
+
+/// THE MIND SPEAKS ITS FACTORISATIONS BEYOND THE ALPHABET, end to end in
+/// process: a rank-3 task posted on a book, served as its envelope,
+/// perceived by a mind at its own rank (the alphabet does not spell it, so
+/// it stops `BeyondAlphabet`), and every factorisation the mind holds of
+/// each train pair spoken as one signed claim, which the court reconstructs
+/// and admits, and records once. A vortex speaks per factorisation; the
+/// task perceived again speaks nothing new.
+#[test]
+fn mind_speaks_factorisations_beyond_the_alphabet() {
+    use crate::anastome::dialogue::{decode_task_envelope, encode_task_envelope, FactorVerdict};
+    let book = std::sync::Arc::new(std::sync::Mutex::new(crate::server::registry::TaskRegistry::new()));
+    let posted = crate::server::tests::fixtures::rank_three_task();
+    let cite = book.lock().expect("the book").post(posted);
+    let served = {
+        let mut b = book.lock().expect("the book");
+        let (id, task) = b.dispatch().expect("the rank-3 task is dispatched");
+        let e = task.envelope(id);
+        encode_task_envelope(&id, &e.train, &e.tests).expect("served at rank 3")
+    };
+    let env = decode_task_envelope(&served).expect("the envelope reads");
+    assert_eq!(env.id, cite);
+    let (court, claims) = factoring_court(book.clone());
+    let name = "factoring beyond the alphabet";
+    let mut mind = Mind::open(&court, Voice::named(name));
+    assert!(mind.perceive_envelope(&env, SceneKind::Task).is_none(), "rank 3 is off the alphabet's section");
+    let percept = mind.board.percepts.get(&cite).cloned().expect("perceived at its own rank");
+    let ground = match &percept.ground {
+        crate::transducer::family::transduce::Ground::One(g) => Some(g.clone()),
+        _ => None,
+    };
+    let held: usize = percept.train.iter().map(|p| p.factored.held().len()).sum();
+    assert!(held > percept.train.len(), "a pair's vortex holds several factorisations: {held}");
+    mind.settle();
+    let heard: Vec<_> = claims.try_iter().collect();
+    assert_eq!(heard.len(), held, "one claim per held factorisation");
+    for (pair, p) in percept.train.iter().enumerate() {
+        let spoken: Vec<_> = heard.iter().filter(|(act, _)| act.pair == pair).collect();
+        assert_eq!(spoken.len(), p.factored.held().len(), "pair {pair}: the vortex speaks per factorisation");
+        for (f, (act, verdict)) in p.factored.held().iter().zip(spoken) {
+            assert_eq!((act.voice, act.task, act.signed), (Voice::named(name).id(), cite, true), "signed by the mind, naming the task");
+            assert_eq!((&act.motion, &act.residue), (&f.motion, &f.residue), "the motion and residue the mind read");
+            assert_eq!(act.ground, ground, "stating the ground the mind read where it read one symbol");
+            assert_eq!(*verdict, FactorVerdict::Admitted, "the court reconstructs it and admits");
+        }
+    }
+    assert_eq!(book.lock().expect("the book").factorisations_of(&cite), held, "each admitted claim recorded once");
+    assert!(mind.perceive_envelope(&env, SceneKind::Task).is_none());
+    assert_eq!(mind.hypha.in_flight(), 0, "the task perceived again speaks nothing new");
+}
+
 /// A RANK-2 TASK AT ONE BYTE A SYMBOL IS PERCEIVED AND SPELLED: the percept
 /// is held, and the alphabet's section is handed to the word path as before.
 #[test]

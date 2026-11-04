@@ -38,7 +38,7 @@ fn task_by_citation_round_trips_with_envelope() {
     let mut reg = TaskRegistry::new();
     let cite = reg.register(toy()).expect("a grid pair's chain is A5's");
     assert_eq!(cite, citation(&task_address(&toy()).expect("addressed")), "the book's id is the citation");
-    assert!(reg.task(&cite).is_some_and(|t| t.train == toy().train && t.test == toy().test), "the citation resolves to the task");
+    assert!(reg.section(&cite).is_some_and(|t| t.is_ok_and(|t| t.train == toy().train && t.test == toy().test)), "the citation resolves to the task");
     assert!(reg.task(&[9u8; 32]).is_none(), "an unknown citation names nothing");
     let ask = encode_task_by_citation(&voice, &cite);
     assert_eq!(decode_task_by_citation(&ask), Some((voice, cite)), "the citation reads back whole");
@@ -50,9 +50,7 @@ fn task_by_citation_round_trips_with_envelope() {
     longer.push(0);
     assert_eq!(decode_task_by_citation(&longer), None, "a byte left over is no request");
     // The door's answer: the task the citation names, its test inputs only.
-    let task = reg.task(&cite).expect("held");
-    let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
-    let sent = TaskEnvelope::of_rasters(cite, &task.train, &tests).expect("samples");
+    let sent = reg.task(&cite).expect("held").envelope(cite);
     let env = decode_task_envelope(&encode_task_envelope(&cite, &sent.train, &sent.tests).expect("writes")).expect("reads");
     assert_eq!(env.id, cite, "the envelope names the task by its citation");
     let read = env.section().expect("rank 2 at width 1");

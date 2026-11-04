@@ -53,6 +53,28 @@ pub const ACT_TASK: u8 = Action::Task.byte();
 /// task's citation; the hypha verifies against its held answers — first verified
 /// solve takes the bounty; a repeat closure is verified and paid nothing.
 pub const ACT_SOLVE: u8 = Action::Solve.byte();
+/// THE SOLVE'S CLAIM KINDS (78.126: the wire's bytes below the court's range
+/// are spent, so a new claim is a sub-kind; MU-SCIENCE §9.2: a claim kind
+/// under `ACT_SOLVE`). The kind is the byte after the act's tag, and the
+/// layout after it is the kind's own. Kind 0 is the solve that claims a
+/// task's outputs with its rule (`encode_solve_spoken`).
+/// FORMAT: the solve act's claim kind for outputs.
+pub const SOLVE_KIND_OUTPUTS: u8 = 0;
+/// Kind 1 (track 26 S4c) is a claim of factorisation: a train pair's motion
+/// and residue with the claim's stated ground, signed; the court
+/// reconstructs the motion on the posted samples and derives the residue
+/// (`dialogue::factorisation`).
+/// FORMAT: the solve act's claim kind for a factorisation.
+pub const SOLVE_KIND_FACTORISATION: u8 = 1;
+
+/// THE CLAIM KIND A SOLVE ACT CARRIES: the byte after its tag, or none
+/// where the body is no solve act or ends at its tag.
+pub fn solve_kind(body: &[u8]) -> Option<u8> {
+    match act_is(body, ACT_SOLVE) {
+        true => body.get(1).copied(),
+        false => None,
+    }
+}
 
 /// ADOPTION (genome synchronization): the court propagates an upheld word
 /// to every server with ITS OWN VOICE as provenance — the ratifier is the

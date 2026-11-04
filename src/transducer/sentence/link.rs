@@ -86,4 +86,14 @@ impl Link {
         put_key_bytes(out, &self.before);
         put_key_bytes(out, &self.after);
     }
+
+    /// The inverse of [`Link::put`]: `None` where the bytes do not hold a
+    /// site and its two symbols whole.
+    pub fn take(b: &[u8], p: &mut usize) -> Option<Link> {
+        use crate::transducer::address::take_key_bytes;
+        let site = Site::take(b, p)?;
+        let before = take_key_bytes(b, p)?;
+        let after = take_key_bytes(b, p)?;
+        Some(Link { site, before, after })
+    }
 }

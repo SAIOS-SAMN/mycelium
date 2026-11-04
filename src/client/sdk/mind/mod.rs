@@ -11,6 +11,7 @@ pub(super) mod chatter;
 pub(super) mod contract;
 pub(super) mod converge;
 pub(super) mod court;
+pub(super) mod factor;
 pub(super) mod family;
 pub(super) mod feed;
 pub(super) mod focus;

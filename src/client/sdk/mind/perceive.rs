@@ -808,18 +808,24 @@ impl Mind {
     /// its citation (`board.percepts`) as an object the mind reasons about.
     /// Then the envelope on the alphabet's section, which the word
     /// machinery spells, or `None` where the samples are off it: such a task
-    /// stops `BeyondAlphabet`, perceived and not spelled, never truncated.
-    /// A family the transduction refuses (samples of two ranks, a stroke
-    /// spent) holds no percept and is still offered to the section.
+    /// stops `BeyondAlphabet`, perceived and not spelled, never truncated,
+    /// and speaks each factorisation it holds as a claim to the court
+    /// (`speak_factorisations`; track 26 S4c). A family the transduction
+    /// refuses (samples of two ranks, a stroke spent) holds no percept and
+    /// is still offered to the section.
     pub(crate) fn perceive_envelope(&mut self, env: &crate::anastome::dialogue::TaskEnvelope, reading: SceneKind) -> Option<crate::anastome::dialogue::TaskRasters> {
         use crate::transducer::family::transduce::{factorisations_need, TaskPercept};
         // The stroke is the work's need (D2.5 O1): one read per motion of
         // each pair, at the samples' own rank.
         let rank = env.train.iter().map(|(x, _)| x.rank()).chain(env.tests.iter().map(crate::transducer::sample::Sample::rank)).next();
+        // The percept held before under this citation, where the task was
+        // perceived already: a citation names its content, so that percept
+        // is this one and its claims were spoken then.
+        let mut before = None;
         if let Some(need) = rank.and_then(|n| factorisations_need(n, env.train.len())) {
             let mut budget = self.physics.stroke_n(need);
             if let Ok(percept) = TaskPercept::of(&env.train, &env.tests, &mut budget) {
-                self.board.percepts.insert(env.id, percept);
+                before = self.board.percepts.insert(env.id, percept);
             }
         }
         match env.section() {
@@ -827,6 +833,9 @@ impl Mind {
             Err(_) => {
                 self.note_task(&env.id, reading, |t| t.taken = true);
                 self.stopped(&env.id, reading, Stop::BeyondAlphabet);
+                if before.is_none() {
+                    self.speak_factorisations(&env.id);
+                }
                 None
             }
         }

@@ -308,9 +308,10 @@ pub struct TaskRasters {
 }
 
 impl TaskEnvelope {
-    /// THE ENVELOPE OF A TASK THE REGISTRY HOLDS AS RASTERS: its train
-    /// pairs and test inputs, each a sample at its position. Refused by
-    /// name where a raster is no sample.
+    /// THE ENVELOPE OF A TASK HELD AS RASTERS: its train pairs and test
+    /// inputs, each a sample at its position. Refused by name where a
+    /// raster is no sample. The registry serves posted samples
+    /// (`PostedTask::envelope`).
     pub fn of_rasters(id: [u8; 32], train: &[TrainPair], tests: &[Grid]) -> Result<TaskEnvelope, SampleWire> {
         let mut pairs = Vec::with_capacity(train.len());
         for (i, (x, y)) in train.iter().enumerate() {
@@ -382,6 +383,14 @@ impl PostedTask {
     pub fn posted(&self) -> impl Iterator<Item = &Sample> + '_ {
         let train = self.train.iter().flat_map(|(x, y)| [x, y]);
         train.chain(self.test.iter().map(|(x, _)| x))
+    }
+
+    /// THE ENVELOPE THE POSTED TASK SERVES under its citation `id` (track
+    /// 26 S4c): the train pairs and the test inputs as posted, at any rank
+    /// and width, never a withheld output. No sample passes through the
+    /// alphabet's section on the way out.
+    pub fn envelope(&self, id: [u8; 32]) -> TaskEnvelope {
+        TaskEnvelope { id, train: self.train.clone(), tests: self.test.iter().map(|(x, _)| x.clone()).collect() }
     }
 }
 
