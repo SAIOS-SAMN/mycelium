@@ -64,11 +64,11 @@ pub fn budget() -> crate::physics::Budget {
 
 /// Two hours of one scene: two Ls apart, then both carried one column along —
 /// one motion, a slide, carries every body of the first onto the second.
-pub fn two_hours_of_a_slide() -> [(crate::transducer::family::Grid, crate::transducer::family::Grid); 2] {
+pub fn two_hours_of_a_slide() -> [(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample); 2] {
     let la = [(0usize, 1usize), (1, 1), (2, 1), (2, 2)];
     let lb = [(4usize, 4usize), (5, 4), (6, 4), (6, 5)];
-    let hour = |cells: &[(usize, usize)]| -> (crate::transducer::family::Grid, crate::transducer::family::Grid) {
-        let draw = |shift: usize| -> crate::transducer::family::Grid {
+    let hour = |cells: &[(usize, usize)]| -> (crate::transducer::family::SectionSample, crate::transducer::family::SectionSample) {
+        let draw = |shift: usize| -> crate::transducer::family::SectionSample {
             (0..7).map(|r| (0..9).map(|c| u8::from(c >= shift && cells.contains(&(r, c - shift)))).collect()).collect()
         };
         (draw(0), draw(1))

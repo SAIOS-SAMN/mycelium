@@ -4,7 +4,7 @@
 //! the rule as demands, and the form is closed with its depth, orbits, ratio
 //! and sections.
 
-use super::perceive::{frame_of, Grid};
+use super::perceive::{frame_of, SectionSample};
 use super::*;
 use crate::transducer::sentence::{Form, SentenceRule};
 
@@ -36,8 +36,8 @@ pub fn assignment_key(a: &crate::transducer::sentence::Acting) -> Vec<u8> {
 /// closer is paid and is never escrowed or minted, so it stays a count
 /// (ruled 2026-11-01; μ, a share of the frame, is the discharge).
 pub(crate) fn germ_of_pair(
-    a: &Grid,
-    b: &Grid,
+    a: &SectionSample,
+    b: &SectionSample,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::element::PlacedChain> {
     let residue = super::deflation::unspoken_residue(a, b, budget).ok()?;
@@ -63,7 +63,7 @@ pub(crate) fn germ_of_pair(
 ///
 /// A STROKE SIZE, never μ: the reads an extraction may take, so it counts
 /// reads and feeds no payment (ruled 2026-11-01).
-pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frames) -> usize {
+pub fn extraction_spend(family: &[(SectionSample, SectionSample)], frames: &super::perceive::Frames) -> usize {
     let mut n = 0usize;
     for (a, b) in family {
         for g in [a, b] {
@@ -88,8 +88,8 @@ pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frame
     // A pair of one enclosure visits at most its own sites, already counted
     // above.
     for (a, b) in family {
-        let (Ok(x), Ok(y)) = (crate::transducer::raster::sample_unplaced(a), crate::transducer::raster::sample_unplaced(b)) else { continue };
-        let (p, q) = (super::transduce::Enclosure::of(&x), super::transduce::Enclosure::of(&y));
+        let (x, y) = (a.sample(), b.sample());
+        let (p, q) = (super::transduce::Enclosure::of(x), super::transduce::Enclosure::of(y));
         if p.is_same_periods(&q) {
             continue;
         }
@@ -110,7 +110,7 @@ pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frame
 pub(crate) fn finish(
     mut form: Form,
     scale: ((usize, usize), (usize, usize)),
-    unreached: &[(Grid, Grid)],
+    unreached: &[(SectionSample, SectionSample)],
     budget: &mut crate::physics::Budget,
 ) -> Option<SentenceRule> {
     for (a, b) in unreached {

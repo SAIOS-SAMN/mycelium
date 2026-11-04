@@ -1,4 +1,4 @@
-use super::{apply_form, Grid, Speech};
+use super::{apply_form, SectionSample, Speech};
 use crate::transducer::element::Element;
 use crate::transducer::sentence::Form;
 use crate::transducer::stalk::{Invariant, Standing};
@@ -14,7 +14,7 @@ pub trait Crystal {
     /// `chart_of_form` and a body under its moduli, two coordinate systems
     /// that meet only at the empty root, so one reader cannot answer both.
     fn on_body(&self, chart: &Invariant) -> Vec<(&Element, &Form, Standing)>;
-    fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech>;
+    fn speak_form(&self, f: &Form, x: &SectionSample, placement: &crate::transducer::alphabet::Word) -> Option<Speech>;
     /// 21 step 3 — THE CLOSED FORMS ACTING AT ONE COORDINATE: a member's chart,
     /// whole motion and hue map (`presentation::act_key`), one keyed read. A
     /// crystal that never glues (the court, the cipher) holds none.
@@ -186,7 +186,7 @@ impl Crystal for NoCrystal {
     fn on_body(&self, _chart: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         Vec::new()
     }
-    fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+    fn speak_form(&self, f: &Form, x: &SectionSample, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
     fn by_address(&self, _address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {

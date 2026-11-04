@@ -72,10 +72,10 @@ pub enum Painted {
 /// (`raster::void`); a vortex, no ground, or no family open is refused by
 /// name, never written as 0.
 pub fn remainder_scene(
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     remainders: &[Vec<(i64, i64, u8, u8)>],
     painted: Painted,
-) -> Result<(Vec<(Grid, Grid)>, u64), crate::transducer::family::transduce::Unground> {
+) -> Result<(Vec<(SectionSample, SectionSample)>, u64), crate::transducer::family::transduce::Unground> {
     let void = crate::transducer::raster::void()?;
     let ground = crate::transducer::raster::ground();
     let mut erasures = 0u64;
@@ -83,10 +83,10 @@ pub fn remainder_scene(
         .iter()
         .zip(remainders)
         .map(|((x, y), rem)| {
-            let mut m: Grid = y.iter().map(|row| vec![void; row.len()]).collect();
+            let mut m = y.cleared(void);
             let mut paint = |r: i64, c: i64, h: u8| {
                 if let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) {
-                    if let Some(cell) = m.get_mut(ur).and_then(|row| row.get_mut(uc)) {
+                    if let Some(cell) = m.line_mut(ur).and_then(|row| row.get_mut(uc)) {
                         *cell = h;
                     }
                 }
@@ -143,7 +143,7 @@ fn links(remainders: &[Vec<(i64, i64, u8, u8)>]) -> u64 {
 /// leaves nothing unsaid: there is nothing to invert.
 pub fn invert_remainder(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<(Form, Inversion)> {
@@ -154,7 +154,7 @@ pub fn invert_remainder(
 /// bodies — the instrument reads both.
 pub fn invert_remainder_as(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
     painted: Painted,
@@ -171,7 +171,7 @@ pub fn invert_remainder_as(
 /// remainder scene has no one ground to be written on (`remainder_scene`).
 pub fn invert_measured(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     remainders: &[Vec<(i64, i64, u8, u8)>],
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,

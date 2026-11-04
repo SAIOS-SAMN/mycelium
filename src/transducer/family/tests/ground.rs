@@ -9,8 +9,8 @@ use crate::transducer::family::*;
 
 /// The family's rows with every `from` written `to`: the same scene on
 /// another canvas.
-fn on_canvas(family: &[(Grid, Grid)], to: u8) -> Vec<(Grid, Grid)> {
-    let paint = |g: &Grid| -> Grid { g.iter().map(|row| row.iter().map(|&h| if h == 0 { to } else { h }).collect()).collect() };
+fn on_canvas(family: &[(SectionSample, SectionSample)], to: u8) -> Vec<(SectionSample, SectionSample)> {
+    let paint = |g: &SectionSample| -> SectionSample { g.lines().map(|row| row.iter().map(|&h| if h == 0 { to } else { h }).collect()).collect() };
     family.iter().map(|(x, y)| (paint(x), paint(y))).collect()
 }
 
@@ -61,7 +61,7 @@ fn membrane_is_held_and_membrane_change_is_read() {
     let bodies = crate::transducer::raster::on_ground(Ground::One(0), || perceive(&x));
     let frame = bodies.iter().find(|b| b.compartments.iter().all(|l| l.hue == 8)).expect("the frame is a body of the percept");
     assert_eq!(frame.compartments.len(), 20, "every site of the frame, edge sites included");
-    let (a, b) = (crate::transducer::raster::sample_unplaced(&x).expect("stands"), crate::transducer::raster::sample_unplaced(&y).expect("stands"));
+    let (a, b) = (x.sample().clone(), y.sample().clone());
     let need = crate::transducer::family::transduce::need_of(&a, &b).expect("one rank");
     let t = Transduction::of(&a, &b, &mut crate::physics::Physics::default().stroke_n(need)).expect("the need is the stroke");
     assert!(

@@ -61,8 +61,8 @@ impl Unread {
 
 /// One training pair, its input perceived once.
 struct Pair<'f> {
-    x: &'f Grid,
-    y: &'f Grid,
+    x: &'f SectionSample,
+    y: &'f SectionSample,
     bodies: Vec<Body>,
 }
 
@@ -113,8 +113,8 @@ fn cells_of(b: &Body) -> Vec<(usize, usize, u8)> {
         .collect()
 }
 
-fn at(g: &Grid, r: usize, c: usize) -> Option<u8> {
-    g.get(r).and_then(|row| row.get(c)).copied()
+fn at(g: &SectionSample, r: usize, c: usize) -> Option<u8> {
+    g.line(r).and_then(|row| row.get(c)).copied()
 }
 
 fn insert_sorted<T: Ord>(v: &mut Vec<T>, x: T) {
@@ -300,7 +300,7 @@ fn map_of_class(key: &[u8]) -> Vec<(u8, u8)> {
 /// Σ is the whole family's, its posted test inputs included
 /// (`SymbolSet::of_family`).
 /// Written as a gauge listing is, in the symbols' key order.
-fn onto_ground(family: &[(Grid, Grid)], void: u8) -> Vec<(u8, u8)> {
+fn onto_ground(family: &[(SectionSample, SectionSample)], void: u8) -> Vec<(u8, u8)> {
     let symbols = crate::transducer::symbols::SymbolSet::of_family(family);
     let mut map: Vec<(u8, u8)> = symbols
         .symbols()
@@ -372,25 +372,26 @@ fn agrees(clause: &Clause, p: &Pair<'_>) -> bool {
     if frame_of(&said) != frame_of(p.y) {
         return false;
     }
-    said.iter().zip(p.x).zip(p.y).all(|((s, x), y)| s.iter().zip(x).zip(y).all(|((s, x), y)| s == x || s == y))
+    said.lines().zip(p.x.lines()).zip(p.y.lines()).all(|((s, x), y)| s.iter().zip(x).zip(y).all(|((s, x), y)| s == x || s == y))
 }
 
 /// The spoken clauses laid on the clauses' frame, an unpainted site on the
 /// scene's one ground; `None` where such a site is left and the scope reads
 /// none.
-fn grid_of(s: &statement::Spoken) -> Option<Grid> {
+fn grid_of(s: &statement::Spoken) -> Option<SectionSample> {
     let mut g: Vec<Vec<Option<u8>>> = vec![vec![None; s.frame.1]; s.frame.0];
     for &(r, c, h) in &s.painted {
         *g.get_mut(usize::try_from(r).ok()?)?.get_mut(usize::try_from(c).ok()?)? = Some(h);
     }
     let void = crate::transducer::raster::void().ok();
-    g.into_iter().map(|row| row.into_iter().map(|h| h.or(void)).collect::<Option<Vec<u8>>>()).collect()
+    let lines: Vec<Vec<u8>> = g.into_iter().map(|row| row.into_iter().map(|h| h.or(void)).collect::<Option<Vec<u8>>>()).collect::<Option<_>>()?;
+    SectionSample::of_lines(&lines).ok()
 }
 
 impl PredicateTable<'_, '_> {
     /// THE CLAUSES SPOKEN ON EVERY PAIR, one read each under the stroke;
     /// `None` where a clause is unstated on some pair.
-    fn speak(&mut self, clauses: &[Clause]) -> Result<Option<Vec<Grid>>, Unread> {
+    fn speak(&mut self, clauses: &[Clause]) -> Result<Option<Vec<SectionSample>>, Unread> {
         let mut out = Vec::with_capacity(self.pairs.len());
         for p in &self.pairs {
             if !self.budget.spend() {
@@ -507,11 +508,7 @@ fn slide_of(c: &Clause, pairs: &[Pair<'_>]) -> Option<Clause> {
 fn slide_ray(r: &PredicateTable<'_, '_>, gone: &[Vec<usize>]) -> Option<(i8, i8)> {
     let mut shared: Vec<(i8, i8)> = rays();
     for (p, g) in r.pairs.iter().zip(gone) {
-        let rows = p.y.len();
-        let cols = match p.y.as_slice() {
-            [row, ..] => row.len(),
-            [] => 0,
-        };
+        let [rows, cols] = p.y.extents();
         let reach = i64::try_from(if rows > cols { rows } else { cols }).ok()?;
         for &b in g {
             let cells = cells_of(&p.bodies[b]);
@@ -557,7 +554,7 @@ enum Fate {
     Changed,
 }
 
-fn fate(b: &Body, y: &Grid) -> Fate {
+fn fate(b: &Body, y: &SectionSample) -> Fate {
     let ground = crate::transducer::raster::ground();
     let cells = cells_of(b);
     let said: Vec<Option<u8>> = cells.iter().map(|&(r, c, _)| at(y, r, c)).collect();
@@ -584,7 +581,7 @@ fn fate(b: &Body, y: &Grid) -> Fate {
 
 /// READ THE FAMILY'S ACTS as the clauses its form carries, re-deriving every
 /// training pair exactly, or refused by name.
-pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate::physics::Budget) -> Result<Vec<Clause>, Unread> {
+pub(crate) fn read_acts(form: &Form, family: &[(SectionSample, SectionSample)], budget: &mut crate::physics::Budget) -> Result<Vec<Clause>, Unread> {
     let pairs: Vec<Pair<'_>> = family.iter().map(|(x, y)| Pair { x, y, bodies: perceive(x) }).collect();
     // A CARRIAGE THE EFFECT REFUTES IS NO ACT: one the form's vertices give
     // stands only where every cell it changes, spoken alone on each pair, is
@@ -832,7 +829,7 @@ fn created(r: &mut PredicateTable<'_, '_>, base: Vec<Clause>, touched: &[Vec<usi
 /// THE CANVAS THE CLAUSES SPEAK on each pair, and the RESIDUE: the cells
 /// left unlike the output. `None` where a clause is unstated, or the residue
 /// clears a cell — no creation says that.
-type Residue = (Vec<Grid>, PairCells);
+type Residue = (Vec<SectionSample>, PairCells);
 
 /// On each pair, a set of cells, each with its hue.
 type PairCells = Vec<Vec<(usize, usize, u8)>>;
@@ -849,7 +846,7 @@ fn residue_of(r: &mut PredicateTable<'_, '_>, clauses: &[Clause]) -> Result<Opti
         .zip(&r.pairs)
         .map(|(g, p)| {
             let mut out = Vec::new();
-            for (i, row) in p.y.iter().enumerate() {
+            for (i, row) in p.y.lines().enumerate() {
                 for (j, &h) in row.iter().enumerate() {
                     if at(g, i, j) != Some(h) {
                         out.push((i, j, h));
@@ -980,11 +977,8 @@ fn read_fills(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], e
 
 /// Each body's cell owner on a pair's input grid.
 fn owners(p: &Pair<'_>) -> Vec<Vec<Option<usize>>> {
-    let cols = match p.x.as_slice() {
-        [row, ..] => row.len(),
-        [] => 0,
-    };
-    let mut owner = vec![vec![None; cols]; p.x.len()];
+    let [rows, cols] = p.x.extents();
+    let mut owner = vec![vec![None; cols]; rows];
     for (b, body) in p.bodies.iter().enumerate() {
         for (i, j, _) in cells_of(body) {
             if let Some(o) = owner.get_mut(i).and_then(|row| row.get_mut(j)) {
@@ -1021,7 +1015,7 @@ struct Rays {
 /// the one hue every run carried, stopping at contact where any run did.
 /// `None` where the runs do not cover the residue, or a ray's bodies do not
 /// separate, or its runs carry no one paint.
-fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
+fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
     let ground = crate::transducer::raster::ground();
     let n = r.pairs.len();
     let unit_rays: Vec<(i64, i64)> = rays().into_iter().map(|(a, b)| (i64::from(a), i64::from(b))).collect();
@@ -1781,8 +1775,8 @@ fn read_tiles(r: &PredicateTable<'_, '_>) -> Option<Clause> {
         let fits = |t: u8| -> bool {
             r.pairs.iter().all(|p| {
                 let (hx, wx) = frame_of(p.x);
-                let block: Grid = (0..hx).map(|a| (0..wx).map(|b| p.y[bi * hx + a][bj * wx + b]).collect()).collect();
-                statement::turn_of(p.x, t).is_some_and(|g| g == block)
+                // The block of the output at `(bi, bj)`, read in place.
+                statement::turn_of(p.x, t).is_some_and(|g| g.extents() == [hx, wx] && (0..hx).all(|a| (0..wx).all(|b| g[a][b] == p.y[bi * hx + a][bj * wx + b])))
             })
         };
         turns.push((0u8..8).find(|&t| fits(t))?);

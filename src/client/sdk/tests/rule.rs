@@ -2,43 +2,44 @@
 // REAL court (`Court::judge_solve`) on pairs it never saw, and the seam's
 // own `would_judge` agrees with that verdict, solved or refused.
 
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::client::sdk::rule::{sentence, would_judge, NoRule, Step, Symmetry};
 use crate::cognition::{Court, SolveVerdict};
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::Element;
 use crate::transducer::family::NoCrystal;
 
-fn grid(rows: &[&str]) -> Grid {
+fn grid(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
 /// The symmetry read off by index, as a grid is read — the fixture's
 /// expectation, never the seam's construction.
-fn apply(kind: Symmetry, g: &Grid) -> Grid {
-    let (h, w) = (g.len(), g[0].len());
+fn apply(kind: Symmetry, g: &SectionSample) -> SectionSample {
+    let [h, w] = g.extents();
     match kind {
         Symmetry::Rotate90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
-        Symmetry::Rotate180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
+        Symmetry::Rotate180 => g.lines().rev().map(|row| row.iter().rev().copied().collect()).collect(),
         Symmetry::Rotate270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
-        Symmetry::FlipH => g.iter().map(|row| row.iter().rev().copied().collect()).collect(),
-        Symmetry::FlipV => g.iter().rev().cloned().collect(),
+        Symmetry::FlipH => g.lines().map(|row| row.iter().rev().copied().collect()).collect(),
+        Symmetry::FlipV => g.lines().rev().map(<[u8]>::to_vec).collect(),
         Symmetry::Transpose => (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
     }
 }
 
-fn recolour(map: &[(u8, u8)], g: &Grid) -> Grid {
-    g.iter()
+fn recolour(map: &[(u8, u8)], g: &SectionSample) -> SectionSample {
+    g.lines()
         .map(|row| row.iter().map(|&h| map.iter().find(|(f, _)| *f == h).map_or(h, |(_, t)| *t)).collect())
         .collect()
 }
 
-fn shape(g: &Grid) -> (usize, usize) {
-    (g.len(), g[0].len())
+fn shape(g: &SectionSample) -> (usize, usize) {
+    let [h, w] = g.extents();
+    (h, w)
 }
 
 /// The court's verdict and the seam's, which must agree.
-fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<(), NoRule>) {
+fn judged(rule: &Element, withheld: &[(SectionSample, SectionSample)]) -> (SolveVerdict, Result<(), NoRule>) {
     let mut k = Court::new();
     let verdict = k.judge_solve(rule, withheld);
     let court: &Court = &k;
@@ -46,7 +47,7 @@ fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<()
     (verdict, seam)
 }
 
-fn assert_solved(rule: &Element, withheld: &[(Grid, Grid)], what: &str) {
+fn assert_solved(rule: &Element, withheld: &[(SectionSample, SectionSample)], what: &str) {
     let (verdict, seam) = judged(rule, withheld);
     assert!(matches!(verdict, SolveVerdict::Solved { .. }), "{what}: the court solves it: {verdict:?}");
     assert!(seam.is_ok(), "{what}: the seam agrees: {seam:?}");
@@ -55,10 +56,10 @@ fn assert_solved(rule: &Element, withheld: &[(Grid, Grid)], what: &str) {
 /// An L-shaped tromino on a 3 × 3 grid in two hues, and the same L placed
 /// elsewhere and painted otherwise for the withheld pair: one chart, a
 /// scene the rule never saw.
-fn square_train() -> Grid {
+fn square_train() -> SectionSample {
     grid(&["120", "100", "000"])
 }
-fn square_withheld() -> Grid {
+fn square_withheld() -> SectionSample {
     grid(&["000", "034", "030"])
 }
 
@@ -80,7 +81,7 @@ fn grid_motion_carries_every_site_to_index_image() {
         let x = grid(&["123", "456"]);
         let y = apply(kind, &x);
         let Some(Step::Motion(v)) = Step::grid_motion(kind, shape(&x), shape(&y)) else { panic!("{kind:?} fits") };
-        for (r, row) in x.iter().enumerate() {
+        for (r, row) in x.lines().enumerate() {
             for (c, &h) in row.iter().enumerate() {
                 let site = Site::of([r as i64, c as i64, 0]);
                 let to = crate::transducer::element::carry_site(&v, &site).expect("a site lands");
@@ -159,7 +160,7 @@ fn sentence_of_solves_motion_then_recolour_as_one() {
     crate::transducer::raster::stand_on(0);
     let map = [(1u8, 5u8)];
     let steps = [Step::grid_motion(Symmetry::Rotate180, (3, 3), (3, 3)).expect("fits"), Step::Hue(map.to_vec())];
-    let then = |g: &Grid| recolour(&map, &apply(Symmetry::Rotate180, g));
+    let then = |g: &SectionSample| recolour(&map, &apply(Symmetry::Rotate180, g));
     let x = square_train();
     let rule = sentence(&steps, &[(x.clone(), then(&x))], &NoCrystal).expect("mints");
     let w = grid(&["000", "014", "010"]);

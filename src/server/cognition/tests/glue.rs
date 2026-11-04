@@ -9,7 +9,7 @@ use crate::transducer::element::Element;
 #[test]
 fn perceive_speech_reconstructs_glued_form_through_court_genome() {
 use crate::transducer::family::{
-    apply_form, extract_rule_with, mint_sentence, cipher_form, Crystal, Grid, Speech,
+    apply_form, extract_rule_with, mint_sentence, cipher_form, Crystal, SectionSample, Speech,
 };
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 use crate::transducer::stalk::{Invariant, Standing};
@@ -48,7 +48,7 @@ impl Crystal for CitedForm {
     fn speak_form(
         &self,
         f: &Form,
-        x: &Grid,
+        x: &SectionSample,
         placement: &crate::transducer::alphabet::Word,
     ) -> Option<Speech> {
         apply_form(f, x, placement, self)
@@ -131,7 +131,7 @@ fn cited_by_records_glued_citation_as_use() {
 use crate::client::sdk::MindLanguage;
 use crate::transducer::family::{extract_rule_with, mint_sentence, cipher_form, sentence_measure, NoCrystal};
 use crate::transducer::sentence::{as_element_form, Vertex};
-fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
+fn digits(rows: &[&str]) -> crate::transducer::spelled::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 let family = vec![

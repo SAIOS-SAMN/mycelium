@@ -117,7 +117,7 @@ impl Court {
                 // happened to miss.
                 let at = |x: i64| usize::try_from(x).ok();
                 let said = at(r - r0)
-                    .and_then(|dr| spoken.get(dr))
+                    .and_then(|dr| spoken.line(dr))
                     .and_then(|row| row.get(at(c - c0)?))
                     .copied();
                 if said == Some(a) {

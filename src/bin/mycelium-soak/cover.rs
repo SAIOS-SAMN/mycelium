@@ -6,7 +6,7 @@
 //! decides anything and no library function is changed: `scene::cover` and
 //! `scene::is_identity` are called exactly as extraction calls them.
 
-use mycelium::transducer::family::{cover, is_identity, restrict, scene_region, Grid, PlaneCut};
+use mycelium::transducer::family::{cover, is_identity, restrict, scene_region, SectionSample, PlaneCut};
 
 /// Per task: the regions Bands deduces on the train inputs, and the largest
 /// region's extent beside the scene's own.
@@ -17,7 +17,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
         let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         tasks += 1;
-        let scene: Vec<Grid> = task.train.iter().map(|(a, _)| a.clone()).collect();
+        let scene: Vec<SectionSample> = task.train.iter().map(|(a, _)| a.clone()).collect();
         let Some(cov) = cover(&scene, PlaneCut::Bands) else {
             none += 1;
             println!("  cover {file} none");
@@ -36,11 +36,8 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         for (_, chart) in cov.scoped() {
             let [first_in, ..] = scene.as_slice() else { continue };
             if let Some(g) = restrict(first_in, chart) {
-                // A grid's rows are all its width, so the first row's
-                // length IS the grid's width — content, not a member
-                // picked by arrival (rule 15). A slice pattern says so.
-                let [row, ..] = g.as_slice() else { continue };
-                let (h, w) = (g.len(), row.len());
+                // The sample's extents, read off the sample.
+                let [h, w] = g.extents();
                 if h * w > mh * mw {
                     mh = h;
                     mw = w;
@@ -48,10 +45,10 @@ pub(crate) fn report(dir: &str, names: &[String]) {
             }
         }
         let whole = match (scene_region(&scene), scene.as_slice()) {
-            (Some(_), [g, ..]) => match g.as_slice() {
-                [row, ..] => (g.len(), row.len()),
-                [] => (0, 0),
-            },
+            (Some(_), [g, ..]) => {
+                let [h, w] = g.extents();
+                (h, w)
+            }
             _ => (0, 0),
         };
         println!(

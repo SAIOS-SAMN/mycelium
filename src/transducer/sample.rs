@@ -183,6 +183,12 @@ impl Sample {
         &self.place
     }
 
+    /// THE SAMPLE AT ANOTHER PLACE in its family: the same content, the
+    /// place the family writes for it.
+    pub fn placed(&self, place: Place) -> Sample {
+        Sample { extents: self.extents.clone(), width: self.width, symbols: self.symbols.clone(), place }
+    }
+
     /// THE SYMBOL AT `site`: refused `RankMismatch` where the site's rank is
     /// not the sample's, and `Outside` where a coordinate leaves its axis.
     /// The site's offset is read in canonical address order (axis 0
@@ -209,6 +215,19 @@ impl Sample {
     /// the raster.
     pub fn symbols(&self) -> impl Iterator<Item = Symbol<'_>> + '_ {
         self.symbols.chunks(self.width).map(Symbol)
+    }
+
+    /// The symbols' bytes in canonical address order, at the sample's
+    /// width: for a reader of one byte per symbol (`spelled::SectionSample`)
+    /// and the two raster ends. Inside the crate only.
+    pub(crate) fn symbol_bytes(&self) -> &[u8] {
+        &self.symbols
+    }
+
+    /// The symbols' bytes, for a writer that paints sites in place: the
+    /// extents and the width stay as admitted, so the count is kept.
+    pub(crate) fn symbol_bytes_mut(&mut self) -> &mut [u8] {
+        &mut self.symbols
     }
 
     /// THE SAMPLE'S FULL CONTENT WRITTEN OUT (A21), as the source gave it:

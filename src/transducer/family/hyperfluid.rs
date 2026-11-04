@@ -79,7 +79,7 @@ fn null_plane(dir: (i64, i64)) -> crate::transducer::cga::Mv {
 
 /// The free reach along `dir` from `(r, c)` and how it ends: the input's
 /// empty sites up to the frame's edge (`true`) or the first body (`false`).
-fn reach(x: &Grid, (r, c): (i64, i64), (dr, dc): (i64, i64)) -> (i64, bool) {
+fn reach(x: &SectionSample, (r, c): (i64, i64), (dr, dc): (i64, i64)) -> (i64, bool) {
     let ground = crate::transducer::raster::ground();
     let mut t = 1i64;
     loop {
@@ -93,15 +93,15 @@ fn reach(x: &Grid, (r, c): (i64, i64), (dr, dc): (i64, i64)) -> (i64, bool) {
 
 /// HR5 — THE FLOW FIELD of one pair, in `field`'s order. `None` where the
 /// frames differ.
-pub fn flows(x: &Grid, y: &Grid) -> Option<Vec<Flow>> {
-    if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
+pub fn flows(x: &SectionSample, y: &SectionSample) -> Option<Vec<Flow>> {
+    if x.extents() != y.extents() {
         return None;
     }
     let mut out = Vec::new();
     // The void sites the light reaches, gathered where each ray is read.
     let ground = crate::transducer::raster::ground();
     let mut lit: Vec<(i64, i64)> = Vec::new();
-    for (r, row) in x.iter().enumerate() {
+    for (r, row) in x.lines().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let to = at(y, ri, ci)?;
@@ -131,7 +131,7 @@ pub fn flows(x: &Grid, y: &Grid) -> Option<Vec<Flow>> {
     // gauge is the void's (the ground symbol it holds, onto itself). Counted
     // as its own move it would read the light twice, once at its source and
     // once as a gauge lift where it lands.
-    let sites = x.iter().enumerate().flat_map(|(r, row)| (0..row.len()).map(move |c| (r as i64, c as i64)));
+    let sites = x.lines().enumerate().flat_map(|(r, row)| (0..row.len()).map(move |c| (r as i64, c as i64)));
     for (f, (r, c)) in out.iter_mut().zip(sites) {
         if let Some(h) = at(x, r, c).filter(|h| ground.holds(h)) {
             if lit.contains(&(r, c)) {
@@ -262,14 +262,14 @@ pub struct InTime {
 /// Carry an input field by a table in time. `Err(())` where a free ray's
 /// time is unread; `Ok(None)` where a key is unseen, or where the scene has
 /// no one ground to lay the field on (`raster::void`).
-fn carried(x: &Grid, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: usize) -> Result<Option<Grid>, ()> {
+fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: usize) -> Result<Option<SectionSample>, ()> {
     let Ok(void) = crate::transducer::raster::void() else { return Ok(None) };
-    let mut out: Grid = x.iter().map(|row| vec![void; row.len()]).collect();
+    let mut out = x.cleared(void);
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let Some(held) = t.get(&key(s, axis)) else { return Ok(None) };
         let (Ok(ur), Ok(uc)) = (usize::try_from(s.r), usize::try_from(s.c)) else { return Ok(None) };
-        if let Some(cell) = out.get_mut(ur).and_then(|row| row.get_mut(uc)) {
+        if let Some(cell) = out.line_mut(ur).and_then(|row| row.get_mut(uc)) {
             *cell = held.flow.to;
         }
         for l in &held.flow.light {
@@ -295,7 +295,7 @@ fn carried(x: &Grid, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: usize) -> 
         }
     }
     for (r, c, h) in emitted {
-        if let Some(cell) = usize::try_from(r).ok().zip(usize::try_from(c).ok()).and_then(|(ur, uc)| out.get_mut(ur)?.get_mut(uc)) {
+        if let Some(cell) = usize::try_from(r).ok().zip(usize::try_from(c).ok()).and_then(|(ur, uc)| out.line_mut(ur)?.get_mut(uc)) {
             *cell = h;
         }
     }
@@ -304,7 +304,7 @@ fn carried(x: &Grid, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: usize) -> 
 
 /// HR5 — RECONSTRUCT A FAMILY IN TIME, each pair left out in turn: the axes
 /// whose loops close in time on the others, the most compact carrying it.
-pub fn reconstruct_in_time(family: &[(Grid, Grid)]) -> InTime {
+pub fn reconstruct_in_time(family: &[(SectionSample, SectionSample)]) -> InTime {
     let mut read = InTime { pairs: family.len() as u64, ..InTime::default() };
     let fields: Vec<Option<(Vec<SiteAxes>, Vec<Flow>)>> = family.iter().map(|(x, y)| flows(x, y).map(|f| (field(x), f))).collect();
     let all: Vec<(&[SiteAxes], &[Flow])> = fields.iter().flatten().map(|(s, f)| (s.as_slice(), f.as_slice())).collect();

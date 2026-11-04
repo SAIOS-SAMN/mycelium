@@ -23,7 +23,7 @@ use crate::transducer::sentence::form::rule_element::lower_all;
 /// it did not reach (rule 11): the frames it never read leave as the
 /// demands of `finish`.
 pub fn extract_rule_with(
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
@@ -39,7 +39,7 @@ pub fn extract_rule_with(
 /// and the percept reads them; no frame is perceived a second time. Read on
 /// the family's own ground (`arc::on_ground_of`).
 pub fn extract_rule_on(
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     frames: &super::perceive::Frames,
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
@@ -48,7 +48,7 @@ pub fn extract_rule_on(
 }
 
 fn extract_rule_on_ground(
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     frames: &super::perceive::Frames,
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
@@ -79,7 +79,7 @@ fn extract_rule_on_ground(
     };
     // A percept with no one ground to write its absences on is refused.
     let Ok(Percept { form, varying, unreached }) = family_percept(family, frames, scale, budget) else { return None };
-    let unreached_pairs: Vec<(Grid, Grid)> = unreached.iter().filter_map(|&k| family.get(k).cloned()).collect();
+    let unreached_pairs: Vec<(SectionSample, SectionSample)> = unreached.iter().filter_map(|&k| family.get(k).cloned()).collect();
     trace::trace("extract/1 derive_against", trace::Wrote::Nothing, Some(budget));
     let mut form = derive_against(form, crystal, budget)?;
     trace::trace("extract/3 glue", trace::Wrote::Nothing, Some(budget));
@@ -213,7 +213,7 @@ fn extract_rule_on_ground(
 /// every pair, and is otherwise left with the reason counted.
 fn stated(
     mut rule: crate::transducer::sentence::SentenceRule,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> crate::transducer::sentence::SentenceRule {
@@ -254,7 +254,7 @@ fn stated(
 
 /// Extract the invariant cochain of a family.
 pub fn extract_rule(
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
     extract_rule_with(family, &NoCrystal, budget)
@@ -267,8 +267,8 @@ pub fn extract_rule(
 pub fn scene_form(
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
-    a: &Grid,
-    b: &Grid,
+    a: &SectionSample,
+    b: &SectionSample,
 ) -> Option<Form> {
     let pair = [(a.clone(), b.clone())];
     extract_rule_with(&pair, crystal, budget).map(|r| r.form)
@@ -279,8 +279,8 @@ pub fn scene_form(
 pub fn scene_form_on(
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
-    a: &Grid,
-    b: &Grid,
+    a: &SectionSample,
+    b: &SectionSample,
     frames: &super::perceive::Frames,
 ) -> Option<Form> {
     let pair = [(a.clone(), b.clone())];

@@ -263,7 +263,7 @@ impl crate::transducer::family::Crystal for Hold {
     fn speak_form(
         &self,
         _f: &Form,
-        _x: &crate::transducer::family::Grid,
+        _x: &crate::transducer::family::SectionSample,
         _p: &Word,
     ) -> Option<crate::transducer::family::Speech> {
         None
@@ -736,7 +736,7 @@ fn pivot_orbit_certifies_held_word_on_family() {
     crate::transducer::raster::stand_on(0);
     let q = word_turn_90();
     let mut f = chord_form(std::slice::from_ref(&q));
-    let family = vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])];
+    let family = crate::transducer::spelled::pairs_of(vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])]);
     let snaps = f.pivot_orbit(
         [0x11; 32],
         &Keyed::new(),
@@ -781,7 +781,7 @@ fn pivot_orbit_holds_two_discharges_as_vortex() {
     let q = word_turn_90();
     let qinv = q.inverse();
     let mut f = chord_form(std::slice::from_ref(&q));
-    let family = vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])];
+    let family = crate::transducer::spelled::pairs_of(vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])]);
     let snaps = f.pivot_orbit(
         [0x22; 32],
         &Keyed::new(),

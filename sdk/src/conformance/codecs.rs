@@ -30,12 +30,20 @@ fn share() -> Result<mycelium::economy::Mu, String> {
     mycelium::economy::Mu::of([q(1, 1), q(1, 2), q(22, 7), q(3, 1)]).map_err(|r| format!("the share is refused: {r:?}"))
 }
 
-fn train() -> Vec<crate::rule::TrainPair> {
-    vec![(vec![vec![1, 0], vec![0, 1]], vec![vec![2, 0], vec![0, 2]]), (vec![vec![3]], vec![vec![4]])]
+/// Lines read at intake as a sample on the alphabet's section.
+fn section(lines: &[Vec<u8>]) -> Result<crate::rule::SectionSample, String> {
+    crate::rule::SectionSample::of_lines(lines).map_err(|e| format!("the lines are no sample on the section: {e:?}"))
 }
 
-fn tests() -> Vec<Vec<Vec<u8>>> {
-    vec![vec![vec![0, 1, 2], vec![3, 4, 5]]]
+fn train() -> Result<Vec<crate::rule::TrainPair>, String> {
+    Ok(vec![
+        (section(&[vec![1, 0], vec![0, 1]])?, section(&[vec![2, 0], vec![0, 2]])?),
+        (section(&[vec![3]])?, section(&[vec![4]])?),
+    ])
+}
+
+fn tests() -> Result<Vec<crate::rule::SectionSample>, String> {
+    Ok(vec![section(&[vec![0, 1, 2], vec![3, 4, 5]])?])
 }
 
 /// `Ok(read)` where `got` equals `want`; `Err` naming what differed.
@@ -57,15 +65,15 @@ fn deep(member: d::samples::Member) -> Result<mycelium::transducer::sample::Samp
 
 fn task() -> Result<String, String> {
     same("the task request", d::decode_task_request(&d::encode_task_request(&voice())), voice())?;
-    let sent = d::TaskEnvelope::of_rasters(CITATION, &train(), &tests()).map_err(|e| format!("the rasters are no samples: {e:?}"))?;
+    let sent = d::TaskEnvelope::of_rasters(CITATION, &train()?, &tests()?).map_err(|e| format!("the rasters are no samples: {e:?}"))?;
     let bytes = d::encode_task_envelope(&CITATION, &sent.train, &sent.tests).map_err(|e| format!("the envelope does not encode: {e:?}"))?;
     let envelope = d::decode_task_envelope(&bytes).ok_or("the envelope did not decode")?;
     same("the envelope's citation", Some(envelope.id), CITATION)?;
     same("the envelope's train pairs", Some(envelope.train.clone()), sent.train.clone())?;
     same("the envelope's tests", Some(envelope.tests.clone()), sent.tests)?;
     let read = envelope.section().map_err(|e| format!("the envelope is off the alphabet's section: {e:?}"))?;
-    same("the envelope's train pairs as rasters", Some(read.train), train())?;
-    same("the envelope's tests as rasters", Some(read.tests), tests())?;
+    same("the envelope's train pairs on the section", Some(read.train), train()?)?;
+    same("the envelope's tests on the section", Some(read.tests), tests()?)?;
     let deep = vec![deep(d::samples::Member::Input)?];
     let bytes = d::encode_task_envelope(&CITATION, &sent.train, &deep).map_err(|e| format!("the rank-3 envelope does not encode: {e:?}"))?;
     let envelope = d::decode_task_envelope(&bytes).ok_or("the rank-3 envelope did not decode")?;

@@ -7,6 +7,7 @@
 
 use crate::transducer::family::{carried_site, envelope_dilation};
 use crate::transducer::raster::*;
+use crate::transducer::spelled::{pairs_of, SectionSample};
 
 /// 78.56 — THE ENVELOPES' DILATION: two rasters of one extent correspond
 /// site for site; 3×3 onto 9×9 is s = 3, carrying each site's centre to
@@ -15,12 +16,13 @@ use crate::transducer::raster::*;
 /// a point that lands between sites carries nothing.
 #[test]
 fn envelope_dilation_carries_sites_between_extents() {
-    let raster = |h: usize, w: usize| -> Vec<Vec<u8>> { vec![vec![1; w]; h] };
-    assert_eq!(envelope_dilation(&raster(3, 4), &raster(3, 4)), Some((1, 1)));
-    assert_eq!(envelope_dilation(&raster(3, 3), &raster(9, 9)), Some((3, 1)));
+    let raster = |h: usize, w: usize| SectionSample::from(vec![vec![1; w]; h]);
+    let dilation = |a: SectionSample, b: SectionSample| envelope_dilation(a.sample(), b.sample());
+    assert_eq!(dilation(raster(3, 4), raster(3, 4)), Some((1, 1)));
+    assert_eq!(dilation(raster(3, 3), raster(9, 9)), Some((3, 1)));
     assert_eq!(carried_site(&raster(3, 3), &raster(9, 9), (3, 1), [1, 1]), Some([4, 4]), "centre to centre");
     assert_eq!(carried_site(&raster(3, 3), &raster(9, 9), (3, 1), [0, 0]), Some([1, 1]), "a site to its block's centre");
-    assert_eq!(envelope_dilation(&raster(1, 1), &raster(1, 2)), None, "√(5/2) is no rational");
+    assert_eq!(dilation(raster(1, 1), raster(1, 2)), None, "√(5/2) is no rational");
     assert_eq!(carried_site(&raster(2, 2), &raster(4, 4), (2, 1), [0, 0]), None, "between sites");
 }
 
@@ -29,8 +31,8 @@ fn envelope_dilation_carries_sites_between_extents() {
 #[test]
 fn momentum_vanishes_only_without_drift() {
     stand_on(0);
-    let still = vec![(vec![vec![1, 1, 0]], vec![vec![2, 2, 0]])];
-    let drift = vec![(vec![vec![1, 1, 0]], vec![vec![0, 1, 1]])];
+    let still = pairs_of(vec![(vec![vec![1, 1, 0]], vec![vec![2, 2, 0]])]);
+    let drift = pairs_of(vec![(vec![vec![1, 1, 0]], vec![vec![0, 1, 1]])]);
     assert!(momentum_vanishes(&still));
     assert!(!momentum_vanishes(&drift));
 }
@@ -40,22 +42,24 @@ fn momentum_vanishes_only_without_drift() {
 #[test]
 fn painted_of_omits_ground() {
     stand_on(0);
-    let painted = painted_of(&[vec![0, 1], vec![2, 0]]);
+    let painted = painted_of(&SectionSample::from(vec![vec![0, 1], vec![2, 0]]));
     assert_eq!(painted, vec![(0, 1, 1), (1, 0, 2)], "only novelty (off the ground)");
-    assert!(painted_of(&[vec![0, 0], vec![0, 0]]).is_empty(), "all ground → no painted site");
+    assert!(painted_of(&SectionSample::from(vec![vec![0, 0], vec![0, 0]])).is_empty(), "all ground → no painted site");
 }
 
-/// TRACK 26, S4 — THE SAMPLE BRIDGE: a raster reaches the transduction as a
-/// sample of rank 2 and width 1 in canonical address order, and a spoken
-/// sample returns to the same raster; a ragged raster and an empty one are
-/// refused at intake, never padded.
+/// TRACK 26, S4, S4d — THE SAMPLE BRIDGE: a raster reaches the sensor as a
+/// sample of rank 2 and width 1 in canonical address order, held on the
+/// alphabet's section as the same sample, and spoken back as the same
+/// raster; a ragged raster and an empty one are refused at intake, never
+/// padded.
 #[test]
 fn sample_bridge_reads_raster_as_rank_two_sample() {
     use crate::transducer::sample::{AxisReading, Place, SampleRefusal};
     let g: Vec<Vec<u8>> = vec![vec![1, 2, 3], vec![4, 5, 6]];
     let s = sample_of(&g, Place::new(vec![0])).expect("the raster stands");
     assert_eq!((s.rank(), s.width(), s.extent(0), s.extent(1)), (2, 1, AxisReading::Read(2), AxisReading::Read(3)));
-    assert_eq!(raster_of(&s), Some(g));
+    let held = SectionSample::of(s.clone()).expect("rank 2 at width 1 is on the section");
+    assert_eq!((held.sample(), held.extents(), held.raster()), (&s, [2, 3], g));
     assert!(matches!(sample_unplaced(&[vec![1, 2], vec![3]]), Err(SampleRefusal::Length { .. })));
     assert_eq!(sample_unplaced(&[]), Err(SampleRefusal::EmptyAxis { axis: 0 }));
 }
@@ -67,19 +71,19 @@ fn sample_bridge_reads_raster_as_rank_two_sample() {
 #[test]
 fn posted_task_round_trips_exact_samples() {
     use crate::anastome::dialogue::{decode_posted_task, encode_posted_task};
-    use crate::transducer::family::Task;
-    let task = Task {
-        train: vec![(vec![vec![0, 1], vec![2, 0]], vec![vec![1, 0], vec![0, 2]]), (vec![vec![7]], vec![vec![7, 7]])],
-        test: vec![(vec![vec![3, 4, 5]], Vec::new())],
-    };
+    use crate::transducer::family::{task_of_lines, Task};
+    let task = task_of_lines(
+        vec![(vec![vec![0, 1], vec![2, 0]], vec![vec![1, 0], vec![0, 2]]), (vec![vec![7]], vec![vec![7, 7]])],
+        vec![(vec![vec![3, 4, 5]], Vec::new())],
+    );
     let bytes = encode_posted_task(&task).expect("the task posts");
     let back = decode_posted_task(&bytes).expect("the posted task reads");
     assert_eq!(back, task, "the same task");
-    let samples = |t: &Task| -> Vec<_> {
-        t.train.iter().chain(&t.test).flat_map(|(x, y)| [x, y]).filter(|g| !g.is_empty()).map(|g| sample_unplaced(g)).collect()
+    let samples = |t: &Task| -> Vec<SectionSample> {
+        t.train.iter().flat_map(|(x, y)| [x.clone(), y.clone()]).chain(t.test.iter().flat_map(|(x, y)| std::iter::once(x.clone()).chain(y.clone()))).collect()
     };
     assert_eq!(samples(&back), samples(&task), "every raster the same sample");
-    assert!(back.test[0].1.is_empty(), "a withheld output stays withheld");
+    assert!(back.test[0].1.is_none(), "a withheld output stays withheld");
     assert_eq!(decode_posted_task(&bytes[..bytes.len() - 1]), None, "a cut file is no task");
     let mut longer = bytes.clone();
     longer.push(0);

@@ -55,13 +55,12 @@ pub fn routes_of(task: &Task) -> Vec<PairRoute> {
     use crate::transducer::family::transduce::Enclosure;
     let mut out = Vec::with_capacity(task.train.len());
     for (a, b) in &task.train {
-        let (Ok(x), Ok(y)) = (crate::transducer::raster::sample_unplaced(a), crate::transducer::raster::sample_unplaced(b)) else { continue };
-        if !Enclosure::of(&x).is_same_periods(&Enclosure::of(&y)) {
+        if !Enclosure::of(a.sample()).is_same_periods(&Enclosure::of(b.sample())) {
             continue;
         }
         // One enclosure: the speech reaches every site and needs no ground.
         let Ok(chain) = crate::transducer::family::speak::residue_of(Some(a), b) else { continue };
-        let ([h, w], [h2, w2]) = (crate::transducer::raster::extents(a), crate::transducer::raster::extents(b));
+        let ([h, w], [h2, w2]) = (a.extents(), b.extents());
         let frame = crate::transducer::element::Frame::new(h, w, h2, w2);
         let Some(residue) = crate::transducer::element::from_residue_framed(&chain, &frame) else {
             continue;

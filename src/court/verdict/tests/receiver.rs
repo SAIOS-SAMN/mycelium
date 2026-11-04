@@ -9,17 +9,17 @@
 // needed an edge to write over. They come back with the fixture, when T2
 // gives two bodies a reason to relate.
 use crate::transducer::element::Element;
-use crate::transducer::family::{extract_rule, mint_sentence, cipher_form, sentence_measure, Grid, NoCrystal};
+use crate::transducer::family::{extract_rule, mint_sentence, cipher_form, sentence_measure, SectionSample, NoCrystal};
 use crate::transducer::sentence::{as_element_form, Vertex};
 use crate::verdict::*;
 
-fn digits(rows: &[&str]) -> Grid {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
 /// A bar recoloured and a compartment created beside it: one word vertex, one
 /// `Creation` demand, spoken as one sentence (50.5).
-fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
+fn a_recolour_with_a_creation() -> (Vec<(SectionSample, SectionSample)>, Element) {
     // The fixture stands on 0 (declared: its bar, in the input alone and on
     // the seam, reads as a second candidate).
     crate::transducer::raster::stand_on(0);

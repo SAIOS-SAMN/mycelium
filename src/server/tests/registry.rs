@@ -1,11 +1,11 @@
-use crate::transducer::family::{Grid, Task};
+use crate::transducer::family::{task_of_lines, SectionSample, Task};
 use crate::server::registry::*;
 
 fn toy_task() -> Task {
-    Task {
-        train: vec![(vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]])],
-        test: vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
-    }
+    task_of_lines(
+        vec![(vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]])],
+        vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
+    )
 }
 
 /// THE REGISTRY RECORDS, NEVER JUDGES: identity is content
@@ -63,8 +63,8 @@ fn overlay_restores_task_wider_than_u16_wall() {
     // Many pairs of busy frames: each sample's content is written into the
     // task's address, so the address grows with them (40 pairs of 30×30
     // frames pass the wall).
-    let busy = |s: u8| -> Grid { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
-    let wide = Task { train: (0..40u8).map(|s| (busy(s), busy(s + 1))).collect(), test: vec![(busy(41), Vec::new())] };
+    let busy = |s: u8| -> SectionSample { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
+    let wide = Task { train: (0..40u8).map(|s| (busy(s), busy(s + 1))).collect(), test: vec![(busy(41), None)] };
     let mut reg = TaskRegistry::new();
     reg.register(toy_task());
     let id = reg.register(wide.clone()).expect("the wide task has an identity");
@@ -80,15 +80,16 @@ fn overlay_restores_task_wider_than_u16_wall() {
     assert_eq!(reborn.close(&id), Some(ClosureOrder::Again), "and the restart does not re-open it");
 }
 
-/// LAW 2 — AN IDENTITY IS NEVER FORMED WITH A MEMBER SKIPPED: a train pair
-/// with no enclosure (a ragged grid) refuses the task's address, where it
-/// would be passed over and the task named by its other pairs alone.
+/// LAW 2 — AN IDENTITY IS NEVER FORMED WITH A MEMBER SKIPPED: a ragged grid
+/// is no sample, refused by name at intake (track 26 S4d), so no task holds
+/// a member that could be passed over and the task named by its other pairs
+/// alone.
 #[test]
 fn task_address_refuses_ragged_pair() {
-    let mut task = toy_task();
-    assert!(task_address(&task).is_some(), "every member has an enclosure");
-    task.train.push((vec![vec![1, 1], vec![1]], vec![vec![2, 2], vec![2, 2]]));
-    assert!(task_address(&task).is_none(), "a member with no enclosure leaves no identity");
+    use crate::transducer::sample::SampleRefusal;
+    use crate::transducer::spelled::Unspelled;
+    assert!(task_address(&toy_task()).is_some(), "every member has an enclosure");
+    assert_eq!(SectionSample::of_lines(&[vec![1, 1], vec![1]]), Err(Unspelled::Sample(SampleRefusal::Length { expected: 4, found: 3 })), "a ragged grid is no sample");
 }
 
 /// MU-DERIVATIONS D3.2, O3 — A PAIR'S MEMBER IS BOTH FRAMES' FULL CONTENT
@@ -99,12 +100,12 @@ fn task_address_refuses_ragged_pair() {
 /// so the two contents do.
 #[test]
 fn task_address_separates_isotropic_and_anisotropic_pairs() {
-    let with = |input: Grid| Task { train: vec![(input, vec![vec![2, 2]])], test: Vec::new() };
+    let with = |input: Vec<Vec<u8>>| task_of_lines(vec![(input, vec![vec![2, 2]])], Vec::new());
     let anisotropic = task_address(&with(vec![vec![1]])).expect("addressed");
     let planar = task_address(&with(vec![vec![1, 1]])).expect("addressed");
     assert!(anisotropic != planar, "the two pairs differ in one period, so the two tasks do");
     // And one change on different ground is different content.
-    let on = |ground: u8| Task { train: vec![(vec![vec![1, ground]], vec![vec![2, ground]])], test: Vec::new() };
+    let on = |ground: u8| task_of_lines(vec![(vec![vec![1, ground]], vec![vec![2, ground]])], Vec::new());
     assert!(task_address(&on(0)).expect("addressed") != task_address(&on(3)).expect("addressed"));
 }
 
@@ -113,10 +114,10 @@ fn task_address_separates_isotropic_and_anisotropic_pairs() {
 /// for its periods' lcm (870 per axis).
 #[test]
 fn task_address_separates_tasks_differing_in_incommensurate_pair() {
-    let coprime = |hue: u8| -> (Grid, Grid) {
-        let mut out: Grid = vec![vec![1; 30]; 30];
+    let coprime = |hue: u8| -> (SectionSample, SectionSample) {
+        let mut out = SectionSample::from(vec![vec![1; 30]; 30]);
         out[0][0] = hue;
-        (vec![vec![1; 29]; 29], out)
+        (SectionSample::from(vec![vec![1; 29]; 29]), out)
     };
     let with = |hue: u8| {
         let mut task = toy_task();
@@ -137,7 +138,7 @@ fn task_address_separates_tasks_differing_in_incommensurate_pair() {
 /// are needed, never held.
 fn busy_task() -> Task {
     // 40 pairs of 30 × 30 frames: their content passes 64 KiB.
-    let busy = |s: u8| -> Grid { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
+    let busy = |s: u8| -> SectionSample { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
     let mut task = toy_task();
     task.train.extend((0..40u8).map(|s| (busy(s), busy(s + 1))));
     task
@@ -165,15 +166,15 @@ fn task_identity_reads_no_ground() {
 /// where a frame fixed before addressing would read them as one.
 #[test]
 fn task_identity_reads_no_frame_fixing() {
-    let task = Task {
-        train: vec![(vec![vec![1, 0, 0], vec![1, 0, 0]], vec![vec![2, 0, 0], vec![2, 0, 0]])],
-        test: vec![(vec![vec![0, 0, 1], vec![0, 0, 1]], Vec::new())],
-    };
-    // A quarter turn of a raster: line `j` of the turn is column `j` read
+    let task = task_of_lines(
+        vec![(vec![vec![1, 0, 0], vec![1, 0, 0]], vec![vec![2, 0, 0], vec![2, 0, 0]])],
+        vec![(vec![vec![0, 0, 1], vec![0, 0, 1]], Vec::new())],
+    );
+    // A quarter turn of a sample: line `j` of the turn is column `j` read
     // from the last line up.
-    let turn = |g: &Grid| -> Grid {
-        let width = crate::transducer::raster::raster_width(g);
-        (0..width).map(|j| g.iter().rev().filter_map(|line| line.get(j).copied()).collect()).collect()
+    let turn = |g: &SectionSample| -> SectionSample {
+        let [_, width] = g.extents();
+        (0..width).map(|j| g.lines().rev().filter_map(|line| line.get(j).copied()).collect()).collect()
     };
     let turned = Task {
         train: task.train.iter().map(|(x, y)| (turn(x), turn(y))).collect(),
@@ -233,14 +234,14 @@ fn dispatch_rotates_and_dries_up() {
 /// refused whole.
 #[test]
 fn restore_cursor_resumes_dispatch_after_restart() {
-    let other = Task {
-        train: vec![(vec![vec![3, 0], vec![0, 0]], vec![vec![0, 3], vec![0, 0]])],
-        test: vec![(vec![vec![0, 0], vec![3, 0]], vec![vec![0, 0], vec![0, 3]])],
-    };
-    let third = Task {
-        train: vec![(vec![vec![4, 4, 0]], vec![vec![0, 4, 4]])],
-        test: vec![(vec![vec![0, 4, 4]], vec![vec![4, 4, 0]])],
-    };
+    let other = task_of_lines(
+        vec![(vec![vec![3, 0], vec![0, 0]], vec![vec![0, 3], vec![0, 0]])],
+        vec![(vec![vec![0, 0], vec![3, 0]], vec![vec![0, 0], vec![0, 3]])],
+    );
+    let third = task_of_lines(
+        vec![(vec![vec![4, 4, 0]], vec![vec![0, 4, 4]])],
+        vec![(vec![vec![0, 4, 4]], vec![vec![4, 4, 0]])],
+    );
     let book = || {
         let mut reg = TaskRegistry::new();
         let ids: Vec<TaskCitation> = [toy_task(), other.clone(), third.clone()]
@@ -317,7 +318,7 @@ fn task_identity_writes_rank_and_width() {
             assert_ne!(a, b, "a rank or a width is part of the identity");
         }
     }
-    let raster = Task { train: vec![(vec![vec![1, 2], vec![3, 4]], vec![vec![1, 2], vec![3, 4]])], test: Vec::new() };
+    let raster = task_of_lines(vec![(vec![vec![1, 2], vec![3, 4]], vec![vec![1, 2], vec![3, 4]])], Vec::new());
     assert_eq!(task_address(&raster), Some(addresses[1].clone()), "a raster task is its samples");
 
     use crate::transducer::family::transduce::Enclosed;

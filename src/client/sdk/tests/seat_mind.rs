@@ -324,21 +324,21 @@ fn grid_steps_reads_task_before_seat() {
     use crate::client::sdk::rule::Symmetry;
     // The symmetry read off by index, as a grid is read (the fixture's
     // expectation, never the seam's construction), and a hue map.
-    let apply = |kind: Symmetry, g: &crate::transducer::family::Grid| -> crate::transducer::family::Grid {
-        let (h, w) = (g.len(), g[0].len());
+    let apply = |kind: Symmetry, g: &crate::transducer::family::SectionSample| -> crate::transducer::family::SectionSample {
+        let [h, w] = g.extents();
         match kind {
             Symmetry::Rotate90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
-            Symmetry::Rotate180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
+            Symmetry::Rotate180 => g.lines().rev().map(|row| row.iter().rev().copied().collect()).collect(),
             Symmetry::Rotate270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
-            Symmetry::FlipH => g.iter().map(|row| row.iter().rev().copied().collect()).collect(),
-            Symmetry::FlipV => g.iter().rev().cloned().collect(),
+            Symmetry::FlipH => g.lines().map(|row| row.iter().rev().copied().collect()).collect(),
+            Symmetry::FlipV => g.lines().rev().map(<[u8]>::to_vec).collect(),
             Symmetry::Transpose => (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
         }
     };
-    let recolour = |from: u8, to: u8, g: &crate::transducer::family::Grid| -> crate::transducer::family::Grid {
-        g.iter().map(|row| row.iter().map(|&h| if h == from { to } else { h }).collect()).collect()
+    let recolour = |from: u8, to: u8, g: &crate::transducer::family::SectionSample| -> crate::transducer::family::SectionSample {
+        g.lines().map(|row| row.iter().map(|&h| if h == from { to } else { h }).collect()).collect()
     };
-    let x: crate::transducer::family::Grid = vec![vec![1, 2, 0], vec![1, 0, 0], vec![0, 0, 0]];
+    let x = crate::transducer::family::SectionSample::from(vec![vec![1, 2, 0], vec![1, 0, 0], vec![0, 0, 0]]);
     for (i, kind) in D4.iter().enumerate() {
         let Some(step) = Step::grid_motion(*kind, (3, 3), (3, 3)) else { panic!("{kind:?} fits a square") };
         let family = vec![(x.clone(), recolour(1, 3, &apply(*kind, &x)))];
@@ -352,9 +352,9 @@ fn grid_steps_reads_task_before_seat() {
         Ok(r) => r,
         Err(e) => panic!("the hue map mints: {e:?}"),
     };
-    let shape = |g: &crate::transducer::family::Grid| (g.len(), g[0].len());
+    let shape = |g: &crate::transducer::family::SectionSample| (g.extents()[0], g.extents()[1]);
     assert_eq!(grid_steps(&hue_only, shape(&x), shape(&x)), Ok(vec![0x100 + 16 * 2 + 5]));
-    let outs = vec![x.clone(), vec![vec![4]]];
+    let outs = vec![x.clone(), vec![vec![4]].into()];
     let args = solve_args(&hue_only, &outs, None, &[9]).expect("writes");
     let [Arg::Bytes(tape), Arg::Bytes(samples), Arg::Count(9)] = args.as_slice() else { panic!("{args:?}") };
     let spoken = crate::anastome::dialogue::spoken_outputs(&outs).expect("samples");

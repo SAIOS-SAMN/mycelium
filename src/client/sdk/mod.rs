@@ -42,7 +42,7 @@ pub use voice::*;
 pub use working_atlas::*;
 
 use crate::anastome::dialogue;
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::network::wire::{Lane, WireFrame};
 use crate::transducer::element::Element;
 use std::cell::RefCell;

@@ -13,9 +13,9 @@ use crate::transducer::raster::painted_of;
 /// from it could not cover the family it was measured from.
 #[test]
 fn family_cover_sums_pairs_lane_wise() {
-    type Pair = (Vec<Vec<u8>>, Vec<Vec<u8>>);
-    let small: Pair = (vec![vec![1, 1]], vec![vec![2, 2]]);
-    let wide: Pair = (vec![vec![1, 1, 1]], vec![vec![2, 2, 2]]);
+    type Pair = (crate::transducer::spelled::SectionSample, crate::transducer::spelled::SectionSample);
+    let small: Pair = (vec![vec![1, 1]].into(), vec![vec![2, 2]].into());
+    let wide: Pair = (vec![vec![1, 1, 1]].into(), vec![vec![2, 2, 2]].into());
     let cover = family_cover(&[small.clone(), wide.clone()]).expect("measured");
     let a = pair_magnitude(&small.0, &small.1).expect("small");
     let b = pair_magnitude(&wide.0, &wide.1).expect("wide");

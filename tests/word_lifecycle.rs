@@ -15,7 +15,7 @@ use mycelium::transducer::family::{extract_rule, perceive, speak_rule, mint_sent
 use mycelium::transducer::sentence::Vertex;
 use mycelium::transducer::stalk::Stalks;
 
-use mycelium::transducer::family::Grid;
+use mycelium::transducer::spelled::SectionSample;
 
 /// Read `f` on the fixtures' declared ground, 0 (MU-SENSING §3.4): a body
 /// recoloured away whole from an input it touches the seam of is, by the
@@ -25,11 +25,12 @@ fn on_zero<T>(f: impl FnOnce() -> T) -> T {
     mycelium::transducer::raster::on_ground(mycelium::transducer::family::transduce::Ground::One(0), f)
 }
 
-fn grid(rows: &[&str]) -> Grid {
+fn grid(rows: &[&str]) -> SectionSample {
     // A byte below '0' is not a hue; the row is the fixture and says so.
-    rows.iter()
+    let lines: Vec<Vec<u8>> = rows.iter()
         .map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect())
-        .collect()
+        .collect();
+    SectionSample::of_lines(&lines).expect("the fixture's lines are a sample")
 }
 
 fn conn(sigma: &[(u8, u8)], rem: Vec<(i64, i64, u8, u8)>, mag: [u64; 4]) -> Element {
@@ -91,10 +92,10 @@ fn element_record_round_trips_and_refuses_old_magic() {
 #[test]
 fn extract_rule_joins_three_squares_in_one_vertex() {
     let train_in = grid(&["11011", "11011", "00000", "11000", "11000"]);
-    let train_out: Grid = train_in
-        .iter()
+    let train_out = SectionSample::of_lines(&train_in
+        .lines()
         .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
-        .collect();
+        .collect::<Vec<Vec<u8>>>()).expect("a sample");
     let family = vec![(train_in.clone(), train_out.clone())];
     let rule = on_zero(|| extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20))).expect("three squares extract");
     let non_frame: Vec<(mycelium::network::nerve::coord::VertexAt, &Vertex)> = rule

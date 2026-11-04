@@ -12,7 +12,7 @@
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::element::{self, Versor};
-use crate::transducer::family::{on_grid, perceive, Body, Grid, Compartment};
+use crate::transducer::family::{on_grid, perceive, Body, SectionSample, Compartment};
 use crate::transducer::sentence::{self, Form, Vertex};
 use crate::transducer::stalk;
 
@@ -65,7 +65,7 @@ pub(crate) const FAIL_GAUGE_AMBIGUOUS: &str = "the gauge names two images for on
 /// perceives nothing itself: the frame's bodies are one fact of the frame,
 /// not of the vertex or the face asking about them.
 pub(crate) struct PerceivedPair<'a> {
-    pub(crate) y: &'a Grid,
+    pub(crate) y: &'a SectionSample,
     pub(crate) bodies: &'a [Body],
     pub(crate) images: &'a [Body],
     /// Chart key → the bodies standing on that chart, by index.
@@ -86,25 +86,25 @@ pub struct Perceived {
 }
 
 impl Perceived {
-    pub(crate) fn of(x: &Grid, y: &Grid) -> Perceived {
+    pub(crate) fn of(x: &SectionSample, y: &SectionSample) -> Perceived {
         Perceived { bodies: perceive(x), images: perceive(y) }
     }
 }
 
 /// Every pair of the family perceived, unmetered: the readers off a court's
 /// lock (the mint's own body check, the tests).
-pub(crate) fn perceive_family(family: &[(Grid, Grid)]) -> Vec<Perceived> {
+pub(crate) fn perceive_family(family: &[(SectionSample, SectionSample)]) -> Vec<Perceived> {
     family.iter().map(|(x, y)| Perceived::of(x, y)).collect()
 }
 
 /// The frames over pairs already perceived: the frames' indexes, built from the
 /// bodies (no sensor read).
-pub(crate) fn frames_over<'a>(family: &'a [(Grid, Grid)], perceived: &'a [Perceived]) -> Vec<PerceivedPair<'a>> {
+pub(crate) fn frames_over<'a>(family: &'a [(SectionSample, SectionSample)], perceived: &'a [Perceived]) -> Vec<PerceivedPair<'a>> {
     family.iter().zip(perceived).map(|((_, y), p)| PerceivedPair::over(p, y)).collect()
 }
 
 impl<'a> PerceivedPair<'a> {
-    pub(crate) fn over(p: &'a Perceived, y: &'a Grid) -> PerceivedPair<'a> {
+    pub(crate) fn over(p: &'a Perceived, y: &'a SectionSample) -> PerceivedPair<'a> {
         let (bodies, images) = (p.bodies.as_slice(), p.images.as_slice());
         let mut by_chart: Keyed<Vec<usize>> = Keyed::new();
         for (i, b) in bodies.iter().enumerate() {
@@ -211,7 +211,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, fr
                 let (Ok(ur), Ok(uc)) = (usize::try_from(tr), usize::try_from(tc)) else {
                     return Carried::Refused(FAIL_BEFORE_FRAME, at());
                 };
-                let Some(&observed) = y.get(ur).and_then(|row| row.get(uc)) else {
+                let Some(&observed) = y.line(ur).and_then(|row| row.get(uc)) else {
                     return Carried::Refused(FAIL_PAST_FRAME, at());
                 };
                 // The gauge is asked for ONE image and refuses where it
@@ -315,7 +315,7 @@ fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Si
 /// stands along the whole of `e₃` unless it is a section of some frames
 /// only — and the claim is a keyed read of its members' frames at the frame's
 /// own coordinate (AT1), never a walk of a list.
-pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<(Refusal, &'static str)> {
+pub(crate) fn vertices_carry_frames(f: &Form, family: &[(SectionSample, SectionSample)]) -> Option<(Refusal, &'static str)> {
     let perceived = perceive_family(family);
     let mut why = None;
     match carry_frames_from(f, family, &perceived, &mut Meter::Free, 0, &mut why) {
@@ -338,7 +338,7 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
 /// resumes at.
 pub(crate) fn vertices_carry_frames_from(
     f: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     perceived: &[Perceived],
     meter: &mut Meter<'_>,
     from: usize,
@@ -356,7 +356,7 @@ fn r_proof_unread() -> &'static str {
 /// by into `why` — the one reader both the replay and the mint read.
 fn carry_frames_from(
     f: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     perceived: &[Perceived],
     meter: &mut Meter<'_>,
     from: usize,
@@ -562,7 +562,7 @@ fn motor_carries(
 #[cfg(test)]
 pub(crate) fn edges_rederive_frames(
     f: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
     let perceived = perceive_family(family);
@@ -586,7 +586,7 @@ pub(crate) fn edges_rederive_frames(
 /// word on a spent stroke).
 pub(crate) fn edges_rederive_frames_from(
     f: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     perceived: &[Perceived],
     budget: &mut crate::physics::Budget,
     from: usize,

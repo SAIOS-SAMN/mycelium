@@ -10,7 +10,7 @@ fn stroke(n: usize) -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(n)
 }
 
-fn grid(rows: &[&str]) -> crate::transducer::family::Grid {
+fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

@@ -3,10 +3,10 @@
 // raises no vertex-body fault where the frames' hue maps differ (the
 // over-claim answered at the pivot, ruled 2026-10-18).
 
-use crate::transducer::family::{extract_rule, Grid};
+use crate::transducer::family::{extract_rule, SectionSample};
 use crate::verdict::body::vertices_carry_frames;
 
-fn digits(rows: &[&str]) -> Grid {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

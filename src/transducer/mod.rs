@@ -17,6 +17,9 @@ pub mod symbols;
 /// MU-SENSING §2 — the rank-2 raster at intake: its ground, its painted
 /// sites, its frame, and the bridge to the sample.
 pub mod raster;
+/// MU-SENSING §3.9, §5 — the sample the letters spell: a sample admitted
+/// onto the alphabet's section, read by lines along its last axis.
+pub mod spelled;
 /// 16.4 — the conformal model every transport is written in.
 pub mod cga;
 /// 52 — the Cayley chart: a versor's derivation is its bivector.

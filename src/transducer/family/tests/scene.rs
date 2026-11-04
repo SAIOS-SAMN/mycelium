@@ -69,12 +69,12 @@ fn cover_bands_scene_into_restricted_regions() {
         "the separator's own row is in no region: nothing of the scene crosses it"
     );
     // The restriction is the region's own extent, read at its origin.
-    let mut read: Vec<Grid> = banded_cover
+    let mut read: Vec<Vec<Vec<u8>>> = banded_cover
         .scoped()
-        .filter_map(|(_, region)| restrict(&banded[0], region))
+        .filter_map(|(_, region)| restrict(&banded[0], region).map(|g| g.raster()))
         .collect();
     read.sort();
-    assert_eq!(read, vec![grid(&["12"]), grid(&["21"])], "each region is a scene of its own");
+    assert_eq!(read, vec![grid(&["12"]).raster(), grid(&["21"]).raster()], "each region is a scene of its own");
 
     // THE CUT IS A FACT OF THE FAMILY. Row 1 is uniform in the first input
     // and not in the second, so it is no separator and the scene is its

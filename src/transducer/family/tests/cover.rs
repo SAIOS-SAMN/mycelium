@@ -17,7 +17,7 @@ use crate::transducer::sentence::{Demand, Vertex};
 /// deformation — and under 51.3 as ruled 2026-09-18 the cover does not
 /// reach below the body, so this carries NOTHING and stands as one typed
 /// demand. It is kept for exactly that reading.
-fn notched() -> (Grid, Grid) {
+fn notched() -> (SectionSample, SectionSample) {
     (
         grid(&["11111", "11111", "11111", "11111", "11111"]),
         grid(&["11111", "11111", "11111", "11111", "11110"]),
@@ -37,7 +37,7 @@ fn notched() -> (Grid, Grid) {
 /// place and the fourth slides one column, so no versor carries the
 /// composite whole — that is what makes it a deformation — while the
 /// slide still overlaps its own source, so the pullback places all four.
-fn four_bodies() -> (Grid, Grid) {
+fn four_bodies() -> (SectionSample, SectionSample) {
     (
         grid(&["1100110", "1100110", "0000000", "1100110", "1100110"]),
         grid(&["1100110", "1100110", "0000000", "1101100", "1101100"]),
@@ -48,7 +48,7 @@ fn four_bodies() -> (Grid, Grid) {
 /// row holds and its lower row slides, so the pullback cannot place it and
 /// pass (b) is offered it under the versors pass (a) placed. This is the
 /// fixture for propagation, which the sliding one does not reach.
-fn four_bodies_one_left() -> (Grid, Grid) {
+fn four_bodies_one_left() -> (SectionSample, SectionSample) {
     (
         grid(&["1100110", "1100110", "0000000", "1100110", "1100110"]),
         grid(&["1100110", "1100110", "0000000", "1100110", "1101100"]),
@@ -59,7 +59,7 @@ fn four_bodies_one_left() -> (Grid, Grid) {
 /// forms it for one chart (extract.rs:281). The cover is given a composite
 /// and reads its bodies back out with `pieces_of`; a fixture of one body
 /// has nothing for it to cover (51.3).
-fn composite(g: &Grid) -> Body {
+fn composite(g: &SectionSample) -> Body {
     body_of(perceive(g).iter().flat_map(|b| b.compartments.iter().cloned()).collect::<Vec<_>>())
         .expect("a composite of heard bodies is heard at n = 3")
 }
@@ -128,7 +128,7 @@ fn hold_form_reads_demand_candidates_from_bodies() {
 /// A stroke large enough that the cover runs to the end of its pieces.
 /// The machine's own stroke does not reach it, so a fixture on the machine
 /// stroke would assert the starvation and not the reading.
-fn measured(a: &Grid, b: &Grid) -> crate::transducer::sentence::Form {
+fn measured(a: &SectionSample, b: &SectionSample) -> crate::transducer::sentence::Form {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     scene_form(&NoCrystal, &mut budget, a, b).expect("a cover that runs to its end")
 }
@@ -575,7 +575,7 @@ fn scene_form_is_invariant_under_rebuild() {
 }
 
 /// One cover run to the end of its pieces.
-fn measured_cover(a: &Grid, b: &Grid) -> crate::transducer::family::cover::PiecewiseCarriage {
+fn measured_cover(a: &SectionSample, b: &SectionSample) -> crate::transducer::family::cover::PiecewiseCarriage {
     use crate::transducer::family::cover::cover_deformation;
     use crate::transducer::family::cursor;
     let (input, image) = (composite(a), composite(b));

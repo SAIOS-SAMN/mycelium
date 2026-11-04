@@ -129,7 +129,7 @@ fn harvest(tasks: &[crate::transducer::family::Task]) -> Vec<(String, Mv)> {
         .iter()
         .flat_map(|task| {
             // Σ is the whole family's, its test inputs included (§3.3).
-            let inputs: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
+            let inputs: Vec<_> = task.test.iter().map(|(x, _)| x.sample().clone()).collect();
             crate::transducer::symbols::on_test_inputs(&inputs, || {
                 crate::transducer::raster::on_each_perspective_of(&task.train, || {
                     let frames = crate::transducer::family::perceive_family(&task.train);

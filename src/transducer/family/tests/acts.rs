@@ -4,10 +4,10 @@
 // one; the claim is the perspective's own: a HELD-OUT pair the family never
 // showed is re-derived exactly, every body spoken for.
 
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::transducer::family::{extract_rule, speak::speak_rule, NoCrystal};
 
-fn grid(rows: &[&str]) -> Grid {
+fn grid(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -18,7 +18,7 @@ type Case<'a> = (&'a str, Vec<(&'a [&'a str], &'a [&'a str])>, (&'a [&'a str], &
 /// held-out input: exactly the held-out output, nothing unreached. The
 /// clauses it was read as.
 fn knows(family: &[(&[&str], &[&str])], held: (&[&str], &[&str])) -> Vec<crate::transducer::sentence::form::clause::Clause> {
-    let family: Vec<(Grid, Grid)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+    let family: Vec<(SectionSample, SectionSample)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
     // The fixtures are written on 0: the act reader is claimed on that
     // declared ground (track 26 S2 deduces the ground of a family; these
     // claims are about the act, not the deduction).
@@ -469,7 +469,7 @@ fn judge_solve_solves_act_reader_clauses() {
         ),
     ];
     for (name, fam, held) in cases {
-        let family: Vec<(Grid, Grid)> = fam.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+        let family: Vec<(SectionSample, SectionSample)> = fam.iter().map(|(x, y)| (grid(x), grid(y))).collect();
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
         assert!(!rule.form.elements.is_empty(), "{name}: stated as clauses");
@@ -514,7 +514,7 @@ fn judge_solve_solves_reaction_on_unseen_pair() {
         ),
     ];
     for (name, fam, held) in cases {
-        let family: Vec<(Grid, Grid)> = fam.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+        let family: Vec<(SectionSample, SectionSample)> = fam.iter().map(|(x, y)| (grid(x), grid(y))).collect();
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
         let reacted = glosses(&rule.form.elements).iter().any(|c| matches!(c.act, Act::Slide { .. } | Act::Repaint { paint: Paint::Of(_) }));
@@ -548,7 +548,7 @@ fn extract_rule_fills_hole_closed_jointly() {
     let clauses = knows(&family, held);
     use crate::transducer::sentence::form::clause::{Act, RegionKind};
     assert!(clauses.iter().any(|c| matches!(c.act, Act::Fill { region: RegionKind::Interior, .. })), "read as the joint interior: {clauses:?}");
-    let family: Vec<(Grid, Grid)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+    let family: Vec<(SectionSample, SectionSample)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
     let minted = crate::transducer::family::mint_sentence_why(&rule, &family, &NoCrystal, 0).expect("the rule mints over its family");
@@ -566,10 +566,10 @@ fn speak_clauses_settles_stack_and_stops_at_border() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::family::statement::{speak_clauses, Unstated};
     use crate::transducer::sentence::form::clause::{Act, Clause, Pred, Stop};
-    let say = |clause: &Clause, x: &[&str]| -> Result<Grid, Unstated> {
+    let say = |clause: &Clause, x: &[&str]| -> Result<SectionSample, Unstated> {
         let x = grid(x);
         let spoken = speak_clauses(std::slice::from_ref(clause), &x, &crate::transducer::family::perceive(&x))?;
-        let mut g: Grid = vec![vec![0; spoken.frame.1]; spoken.frame.0];
+        let mut g = SectionSample::filled([spoken.frame.0, spoken.frame.1], 0).expect("a frame");
         for (r, c, h) in spoken.painted {
             g[usize::try_from(r).expect("on the grid")][usize::try_from(c).expect("on the grid")] = h;
         }

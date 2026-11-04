@@ -158,9 +158,9 @@ fn sites_of(b: &Body) -> Vec<(i64, i64)> {
 
 /// READ ONE PAIR'S UNSAID OUTPUT BODIES as creations, single carriages and
 /// confluences.
-pub fn read_pair(x: &Grid, y: &Grid, remainder: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> PairConfluence {
+pub fn read_pair(x: &SectionSample, y: &SectionSample, remainder: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> PairConfluence {
     let mut read = PairConfluence::default();
-    let same_frame = x.len() == y.len() && x.iter().zip(y).all(|(a, b)| a.len() == b.len());
+    let same_frame = x.extents() == y.extents();
     if !same_frame {
         read.unframed = true;
         return read;

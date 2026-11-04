@@ -155,7 +155,7 @@ pub fn withheld_of(
 /// §2.2 — the name is the claim.
 pub fn form_deflation(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
 ) -> ([u64; 4], Vec<crate::transducer::germinate::ResidueGerm>) {
     form_deflation_at(form, family, crystal, &crate::transducer::alphabet::Word::identity())
@@ -167,7 +167,7 @@ pub fn form_deflation(
 /// its own frame, which is what `form_deflation` asks for.
 pub fn form_deflation_at(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     placement: &crate::transducer::alphabet::Word,
 ) -> ([u64; 4], Vec<crate::transducer::germinate::ResidueGerm>) {
@@ -219,7 +219,7 @@ pub struct DeflationRead {
 /// demand").
 pub fn form_deflation_read(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     placement: &crate::transducer::alphabet::Word,
 ) -> DeflationRead {
@@ -228,7 +228,7 @@ pub fn form_deflation_read(
 
 fn form_deflation_read_on_ground(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     placement: &crate::transducer::alphabet::Word,
 ) -> DeflationRead {
@@ -268,14 +268,13 @@ fn form_deflation_read_on_ground(
         }
         // The residues are read on the output's sites: their share is of
         // the output frame.
-        let frame = crate::transducer::raster::sample_unplaced(y).ok();
-        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, frame.as_ref()));
+        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, Some(y.sample())));
         if gated {
             // The pair's own work: the links its before side demanded moved
             // (𝒮), the mass the rule's motions carried on it.
             if let Some(m) = pair_mass(x, y).ok().flatten() {
                 carried_mass = carried_mass.and_then(|c| c.checked_add(m));
-                mass_share += crate::transducer::family::transduce::share_of_frame([m, 0, 0, 0], frame.as_ref()).lane(0);
+                mass_share += crate::transducer::family::transduce::share_of_frame([m, 0, 0, 0], Some(y.sample())).lane(0);
                 let mass = num_rational::BigRational::from_integer(m.into());
                 for (motion, gauge) in &moved {
                     // D2.5 — the stroke is the need of the modes it reads
@@ -354,30 +353,24 @@ fn form_motions(form: &Form) -> Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)>
 /// under `budget`, sized by `transduce::need_of`. Refused by name where a
 /// link needs the scene's one ground and the scope has none (`residue_of`).
 pub(crate) fn unspoken_residue(
-    x: &Grid,
-    y: &Grid,
+    x: &SectionSample,
+    y: &SectionSample,
     budget: &mut crate::physics::Budget,
 ) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
     use crate::transducer::family::transduce::{Enclosure, Transduction};
-    let (Ok(a), Ok(b)) = (crate::transducer::raster::sample_unplaced(x), crate::transducer::raster::sample_unplaced(y)) else {
-        return residue_of(None, y);
-    };
-    if Enclosure::of(&a).is_same_periods(&Enclosure::of(&b)) {
+    let (a, b) = (x.sample(), y.sample());
+    if Enclosure::of(a).is_same_periods(&Enclosure::of(b)) {
         return residue_of(Some(x), y);
     }
-    match Transduction::of(&a, &b, budget).and_then(|t| t.projected()) {
+    match Transduction::of(a, b, budget).and_then(|t| t.projected()) {
         Ok(changes) => Ok(crate::transducer::raster::links_of(&changes)),
         Err(_) => residue_of(None, y),
     }
 }
 
 /// [`unspoken_residue`] under the stroke the pair's own periods need.
-fn before_chain_of(x: &Grid, y: &Grid) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
-    let need = match (crate::transducer::raster::sample_unplaced(x), crate::transducer::raster::sample_unplaced(y)) {
-        (Ok(a), Ok(b)) => crate::transducer::family::transduce::need_of(&a, &b),
-        _ => None,
-    };
-    let need = match need {
+fn before_chain_of(x: &SectionSample, y: &SectionSample) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
+    let need = match crate::transducer::family::transduce::need_of(x.sample(), y.sample()) {
         Some(n) => n,
         None => 0,
     };
@@ -387,7 +380,7 @@ fn before_chain_of(x: &Grid, y: &Grid) -> Result<Vec<(i64, i64, u8, u8)>, crate:
 /// THE MASS A PAIR CARRIED: the 𝒮 measure of what its before side demanded
 /// moved (cells created or erased). `None` where the pair demanded nothing;
 /// refused where its residue cannot be written on one ground.
-fn pair_mass(x: &Grid, y: &Grid) -> Result<Option<u64>, crate::transducer::family::transduce::Unground> {
+fn pair_mass(x: &SectionSample, y: &SectionSample) -> Result<Option<u64>, crate::transducer::family::transduce::Unground> {
     let before_chain = before_chain_of(x, y)?;
     let m = element::measure_lanes(&before_chain)[crate::transducer::sentence::presentation::LANE_S];
     Ok((m > 0).then_some(m))
@@ -429,8 +422,8 @@ type PairMeasure = ([u64; 4], crate::transducer::germinate::ResidueGerm, bool);
 /// cannot be written on the family's one ground.
 fn pair_measure_read(
     form: &Form,
-    x: &Grid,
-    y: &Grid,
+    x: &SectionSample,
+    y: &SectionSample,
     spoken: Option<&Speech>,
 ) -> Result<PairMeasure, crate::transducer::family::transduce::Unground> {
     // The identity's residue and the form's, both on the output's sites.
@@ -473,7 +466,7 @@ pub(crate) enum PairRead {
 
 pub(crate) fn deflation_pair_metered(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     pi: usize,
     crystal: &dyn Crystal,
     placement: &crate::transducer::alphabet::Word,
@@ -521,7 +514,7 @@ pub(crate) fn deflation_pair_metered(
 /// achieved and nothing else. A sentence of zero word vertices mints nothing.
 pub fn mint_sentence(
     rule: &crate::transducer::sentence::SentenceRule,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     _stood: u64,
 ) -> Option<element::Element> {
@@ -533,7 +526,7 @@ pub fn mint_sentence(
 /// (a)).
 pub fn mint_sentence_why(
     rule: &crate::transducer::sentence::SentenceRule,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     _stood: u64,
 ) -> Result<element::Element, crate::transducer::sentence::ObstructionRefusal> {
@@ -573,7 +566,7 @@ pub fn mint_refusal_line(why: crate::transducer::sentence::ObstructionRefusal, f
 
 fn mint_or_refuse(
     rule: &crate::transducer::sentence::SentenceRule,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
 ) -> Result<element::Element, crate::transducer::sentence::ObstructionRefusal> {
     use crate::transducer::sentence::ObstructionRefusal;
@@ -659,7 +652,7 @@ fn mint_or_refuse(
 /// `None` where nothing was unspoken: the form as it stands is the form.
 pub fn declare_unspoken(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     remainders: &[crate::transducer::germinate::ResidueGerm],
 ) -> Option<Form> {
     use crate::transducer::sentence::{pieces, Demand, SectionLink};
@@ -682,10 +675,7 @@ pub fn declare_unspoken(
         // on one enclosure. Never the input read at the output's indices
         // from a shared corner, which is an arbitrary origin (78.56).
         use crate::transducer::family::transduce::{Enclosed, Enclosure};
-        let image = match (crate::transducer::raster::sample_unplaced(x), crate::transducer::raster::sample_unplaced(y)) {
-            (Ok(a), Ok(b)) => Enclosed::of(&a).spoken_onto(&Enclosure::of(&b)).ok().and_then(|s| crate::transducer::raster::raster_of(&s)),
-            _ => None,
-        };
+        let image = Enclosed::of(x.sample()).spoken_onto(&Enclosure::of(y.sample())).ok().and_then(|s| SectionSample::of(s).ok());
         let links: Vec<SectionLink> = rem
             .iter()
             .filter(|&&(r, c, spoken, observed)| {
@@ -698,7 +688,7 @@ pub fn declare_unspoken(
                 // reading, not a floor. A scope with no one ground has no
                 // symbol for that absence, and nothing is declared.
                 let before = match (usize::try_from(r), usize::try_from(c)) {
-                    (Ok(ur), Ok(uc)) => match image.as_ref().and_then(|g| g.get(ur)).and_then(|row| row.get(uc)) {
+                    (Ok(ur), Ok(uc)) => match image.as_ref().and_then(|g| g.line(ur)).and_then(|row| row.get(uc)) {
                         Some(h) => Some(*h),
                         None => void.ok(),
                     },
@@ -740,7 +730,7 @@ pub fn declare_unspoken(
 /// minted. The temporal lane of a measure is what its chains measure there.
 pub fn sentence_measure(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     _stood: u64,
 ) -> Option<[u64; 4]> {
@@ -755,7 +745,7 @@ pub fn sentence_measure(
 /// (78.149 (a)).
 pub fn sentence_measure_from(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     _stood: u64,
     pay: [u64; 4],
     remainders: &[crate::transducer::germinate::ResidueGerm],
@@ -777,7 +767,7 @@ pub fn sentence_measure_from(
 /// the discharge (`Court::discharge_of`), the ask only capping it (b).
 pub fn sentence_measure_why(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     pay: [u64; 4],
     remainders: &[crate::transducer::germinate::ResidueGerm],
 ) -> Result<[u64; 4], crate::transducer::sentence::ObstructionRefusal> {
@@ -844,7 +834,7 @@ pub fn sentence_measure_why(
 /// held, passed in. None when there is no bundle to measure.
 pub fn bundle_pressure(
     form: &Form,
-    bundle: &[(Grid, Grid)],
+    bundle: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     t_extent: u64,
 ) -> Option<(Vec<[u64; 4]>, [u64; 4])> {

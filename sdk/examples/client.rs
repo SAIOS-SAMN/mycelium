@@ -32,7 +32,7 @@
 use mycelium_sdk::deferral::{deferral_of, read_deferral, Deferral};
 use mycelium_sdk::laws;
 use mycelium_sdk::prelude::*;
-use mycelium_sdk::rule::{extract_rule, mint_sentence_why, on_each_perspective_of, on_test_inputs, speak_rule, stated, Physics};
+use mycelium_sdk::rule::{extract_rule, mint_sentence_why, on_each_perspective_of, on_test_inputs, speak_rule, stated, Physics, SectionSample};
 use mycelium_sdk::task;
 use mycelium_sdk::voice::hex32;
 use std::process::ExitCode;
@@ -105,7 +105,7 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
     // each test input, all under one perspective; under a vortex once per
     // candidate, every claim kept. The family's symbol set is read with
     // its test inputs posted (§3.3).
-    let read = on_test_inputs(&envelope.tests, || on_each_perspective_of(&envelope.train, || {
+    let read = on_test_inputs(envelope.tests.iter().map(SectionSample::sample), || on_each_perspective_of(&envelope.train, || {
         let mut budget = Physics::default().stroke_n(1 << 20);
         let Some(rule) = extract_rule(&envelope.train, &mut budget) else {
             return Err("the extractor states no rule for this family");
@@ -146,7 +146,7 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
 
 /// ONE CLAIM SENT: the solve stating the ground it was spoken under, signed
 /// by the voice the court pays, and the court's verdict.
-fn claim(session: &Session, key: &SigningKey, id: &[u8; 32], outputs: &[Vec<Vec<u8>>], tape: &[u8], ground: Option<&[u8]>) -> Result<Result<Outcome, Deferral>, String> {
+fn claim(session: &Session, key: &SigningKey, id: &[u8; 32], outputs: &[SectionSample], tape: &[u8], ground: Option<&[u8]>) -> Result<Result<Outcome, Deferral>, String> {
     let Ok(outputs) = task::spoken_outputs(outputs) else {
         return Ok(Ok(Outcome::NoRule("an output is no sample")));
     };

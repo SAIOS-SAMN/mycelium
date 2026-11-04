@@ -44,7 +44,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         // Readings by subject: the input body's chart, its key the coordinate.
         let mut by_subject: Vec<(Vec<u8>, Vec<SubjectBodies>)> = Vec::new();
         for ((x, y), rem) in task.train.iter().zip(&rems) {
-            if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
+            if x.extents() != y.extents() {
                 continue;
             }
             let unsaid: Vec<(i64, i64)> = rem.iter().filter(|l| l.3 != 0).map(|l| (l.0, l.1)).collect();

@@ -38,7 +38,7 @@ pub fn reconstruct_form(
 pub fn reconstruct_form_with(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
@@ -369,7 +369,7 @@ pub(crate) fn witnesses_carry_primes(f: &Form, meter: &mut Meter<'_>, from: usiz
 pub fn reconstruct_form_at(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
@@ -382,7 +382,7 @@ pub fn reconstruct_form_at(
 pub fn reconstruct_form_resume<'r>(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReconstructionCursor,
@@ -410,7 +410,7 @@ pub fn reconstruct_form_on(
     f: &Form,
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
@@ -436,7 +436,7 @@ pub fn reconstruct_form_on_resume<'r>(
     f: &Form,
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReconstructionCursor,
@@ -451,7 +451,7 @@ fn reconstruct_on_ground<'r>(
     f: &Form,
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReconstructionCursor,
@@ -681,7 +681,7 @@ fn reconstruct_on_ground<'r>(
 fn reconstruct_after_perceiving(
     f: &Form,
     spoken: &Element,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReconstructionCursor,
@@ -1030,7 +1030,7 @@ fn face_at(o: &crate::network::nerve::coord::Overlap, branch: sentence::Obstruct
 /// own order.
 pub(crate) fn vertex_tape_and_moves_from(
     f: &Form,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     spoken: &Element,
     meter: &mut Meter<'_>,
     from: usize,
@@ -1044,7 +1044,7 @@ pub(crate) fn vertex_tape_and_moves_from(
 
 fn vertex_moves(
     f: &Form,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     spoken: &Element,
     meter: &mut Meter<'_>,
     from: usize,
@@ -1063,7 +1063,7 @@ fn vertex_moves(
 /// One vertex of [`vertex_tape_and_moves_from`].
 fn vertex_move(
     f: &Form,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     spoken: &Element,
     vertex: &crate::network::nerve::coord::VertexAt,
     v: &Vertex,
@@ -1143,7 +1143,7 @@ fn vertex_move(
 /// 78.153 — one read per pair perceived, from the `from`-th pair.
 pub(crate) fn clauses_stated_from(
     f: &Form,
-    family: &[(crate::transducer::family::Grid, crate::transducer::family::Grid)],
+    family: &[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)],
     frames: &[super::body::Perceived],
     spoken: &Element,
     meter: &mut Meter<'_>,

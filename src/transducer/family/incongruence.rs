@@ -84,7 +84,7 @@ impl Difference {
 
 /// THE CONSTRUCTOR DIFFERENCE between an input body and the output body that
 /// stands on it, in place (the core motion the identity).
-pub fn difference(input: &[Cell], output: &[Cell], frame: &Grid) -> Difference {
+pub fn difference(input: &[Cell], output: &[Cell], frame: &SectionSample) -> Difference {
     let at = |cells: &[Cell], r: i64, c: i64| cells.iter().find(|x| x.0 == r && x.1 == c).map(|x| x.2);
     let mut d = Difference { shared: 0, accreted: Vec::new(), extinguished: Vec::new(), recoloured: Vec::new(), on_light: 0, runs: Vec::new(), carved: 0 };
     for &(r, c, h) in output {
@@ -122,7 +122,7 @@ pub fn difference(input: &[Cell], output: &[Cell], frame: &Grid) -> Difference {
                     }
                 }
                 let (er, ec) = (r + t * dr, c + t * dc);
-                let open = usize::try_from(er).ok().zip(usize::try_from(ec).ok()).and_then(|(ur, uc)| frame.get(ur)?.get(uc)).is_none();
+                let open = usize::try_from(er).ok().zip(usize::try_from(ec).ok()).and_then(|(ur, uc)| frame.line(ur)?.get(uc)).is_none();
                 d.runs.push(((t - 1) as u64, open));
             }
         }
@@ -416,10 +416,10 @@ fn cells_of(b: &Body) -> Vec<Cell> {
 
 /// EVERY SINGLE CHANGE of a family's remainder, pair by pair, in the order
 /// the eyes perceive the outputs. A pair whose frames differ is unread.
-pub fn single_changes(family: &[(Grid, Grid)], remainders: &[Vec<(i64, i64, u8, u8)>]) -> Vec<Change> {
+pub fn single_changes(family: &[(SectionSample, SectionSample)], remainders: &[Vec<(i64, i64, u8, u8)>]) -> Vec<Change> {
     let mut out = Vec::new();
     for (pair, ((x, y), rem)) in family.iter().zip(remainders).enumerate() {
-        if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
+        if x.extents() != y.extents() {
             continue;
         }
         let unsaid: Vec<(i64, i64)> = rem.iter().filter(|l| l.3 != 0).map(|l| (l.0, l.1)).collect();

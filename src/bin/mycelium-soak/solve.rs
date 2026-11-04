@@ -38,7 +38,7 @@ pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
         let frames = perceive_family(&task.train);
         let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
         // Σ is the whole family's, its test inputs included (MU-SENSING §3.3).
-        let inputs: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
+        let inputs: Vec<_> = task.test.iter().map(|(x, _)| x.sample().clone()).collect();
         let read = mycelium::transducer::symbols::on_test_inputs(&inputs, || extract_rule_on(&task.train, &frames, &epi, &mut b));
         let Some(rule) = read else { continue };
         extracted += 1;
@@ -50,7 +50,7 @@ pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
             let Some(sp) = speak_rule(&rule, x, &epi) else { continue };
             let Some(g) = sp.grid() else { continue };
             said += 1;
-            if &g == y {
+            if Some(&g) == y.as_ref() {
                 right += 1;
             }
         }

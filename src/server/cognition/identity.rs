@@ -52,7 +52,7 @@ impl crate::transducer::family::Crystal for Court {
     fn speak_form(
         &self,
         f: &crate::transducer::sentence::Form,
-        x: &crate::transducer::family::Grid,
+        x: &crate::transducer::family::SectionSample,
         placement: &crate::transducer::alphabet::Word,
     ) -> Option<crate::transducer::family::Speech> {
         crate::transducer::family::apply_form(f, x, placement, self)

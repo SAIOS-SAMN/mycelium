@@ -177,7 +177,7 @@ struct ClassRead {
 /// absence needs the scene's one ground; where the scope has none (a
 /// vortex, no ground) the percept is refused by name (`Unground`).
 pub(super) fn family_percept(
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     frames: &super::perceive::Frames,
     scale: Ratio,
     budget: &mut crate::physics::Budget,
