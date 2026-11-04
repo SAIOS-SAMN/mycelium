@@ -470,7 +470,8 @@ impl Court {
     }
 
     /// A domain and its tier keys held, and each tier indexed to it — the one
-    /// writer of both, at a founding and at a restore (law 12).
+    /// writer of both, at a founding, at a restore and at a reconstruction
+    /// from a peer's founding receipt (law 12; MU-HOSTING §5a.9 B0).
     pub(crate) fn hold_domain(&mut self, domain: [u8; 32], tiers: Vec<[u8; 32]>) {
         for t in &tiers {
             self.tier_domain.insert(t, domain);
