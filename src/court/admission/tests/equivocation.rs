@@ -17,10 +17,12 @@ fn court_key(name: &str) -> crate::court::identity::HyphaKey {
 }
 
 /// The first receipt of a fresh chain under `vk`, measuring `lane` on its
-/// frame: two such chains under one key are two roots at K 0.
-fn first_receipt(signer: [u8; 32], lane: u64) -> KStepReceipt {
+/// frame: two such chains under one key are two roots at K 0. Taken as
+/// admission takes it, reconstructed.
+fn first_receipt(signer: [u8; 32], lane: u64) -> Reconstructed<KStepReceipt> {
     let mut c = ReceiptChain::with_signer(signer);
-    c.append(crate::chronometry::ActKind::List, [lane, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone()
+    let r = c.append(crate::chronometry::ActKind::List, [lane, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
+    Reconstructed::receipt(&r).expect("a sealed receipt re-derives")
 }
 
 fn prefix_for(r: &KStepReceipt) -> SignedPrefix {
@@ -82,6 +84,7 @@ fn admit_equivocation_refuses_duplicate_two_signers_or_two_k() {
     let mut c = ReceiptChain::with_signer(vk);
     let r0 = c.append(crate::chronometry::ActKind::List, [1, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let r1 = c.append(crate::chronometry::ActKind::List, [2, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
+    let (r0, r1) = (Reconstructed::receipt(&r0).expect("re-derives"), Reconstructed::receipt(&r1).expect("re-derives"));
     let (p0, p1) = (prefix_for(&r0), prefix_for(&r1));
     assert_eq!(
         admit_equivocation(signed(&p0, &key), &r0, signed(&p1, &key), &r1).err(),
@@ -91,24 +94,20 @@ fn admit_equivocation_refuses_duplicate_two_signers_or_two_k() {
 }
 
 /// A half that disagrees with itself is not half a proof: a receipt whose
-/// hash nobody wrote, a prefix at another K than its receipt, or a
-/// signature under another key than the receipt names is `REFUSE_RECEIPT`,
-/// as `admit` refuses the same disagreement on a single frame.
+/// hash nobody wrote is never reconstructed, so it never reaches the proof
+/// (the judge refuses it `REFUSE_RECEIPT`); a prefix at another K than its
+/// receipt, or a signature under another key than the receipt names, is
+/// `REFUSE_RECEIPT`, as `admit` refuses the same disagreement on a single
+/// frame.
 #[test]
 fn admit_equivocation_refuses_self_disagreeing_half() {
     let key = court_key("liar");
     let vk = key.verifying_bytes();
     let (ra, rb) = (first_receipt(vk, 1), first_receipt(vk, 2));
     let (pa, pb) = (prefix_for(&ra), prefix_for(&rb));
-    let mut forged = rb.clone();
+    let mut forged = rb.object().clone();
     forged.chain_hash[0] ^= 1;
-    assert!(!forged.rederives(), "a tampered hash does not re-derive");
-    assert!(rb.rederives(), "and the receipt as written does");
-    assert_eq!(
-        admit_equivocation(signed(&pa, &key), &ra, signed(&pb, &key), &forged).err(),
-        Some(REFUSE_RECEIPT),
-        "a hash nobody wrote"
-    );
+    assert!(Reconstructed::receipt(&forged).is_none(), "a hash nobody wrote is not reconstructed");
     let mut at_another_k = pb.clone();
     at_another_k.at.k += 1;
     assert_eq!(

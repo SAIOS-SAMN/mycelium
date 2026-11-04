@@ -121,8 +121,9 @@ fn line_write_round_trips_evicted_stamp_refiled() {
     let mut forger = ReceiptChain::with_signer([4; 32]);
     let f0 = forger.append(ActKind::List, [0; 4], Vec::new(), [8; 32], Vec::new()).expect("a forged genesis").clone();
     let f1 = forger.append(ActKind::List, [0; 4], Vec::new(), [8; 32], Vec::new()).expect("a forged act").clone();
-    c.admit_unreached(f0.clone());
-    c.admit_unreached(f1.clone());
+    for f in [&f0, &f1] {
+        c.admit_unreached(crate::court::admission::Reconstructed::receipt(f).expect("a sealed receipt re-derives"));
+    }
     land(&mut file, c.line_write().expect("writes").expect("the first write"));
     same(&file, &c);
 

@@ -89,7 +89,7 @@ fn hear_cites_head_once_gap_closes() {
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,
             ORIGIN,
-            || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &head)),
+            || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &super::fixtures::reconstructed(&head))),
             || c.lock().ok().map(|mut k| k.physics.stroke_n(pass)),
             fetch,
         );
@@ -162,7 +162,7 @@ fn hear_fetches_cited_signer_then_cites_head() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &head)),
+        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &super::fixtures::reconstructed(&head))),
         || c.lock().ok().map(|mut k| k.stroke()),
         fetch,
     );
@@ -196,7 +196,7 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
     let mut c = Court::new();
     c.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut budget = c.stroke();
-    let (n, missing) = c.admit_backfill(&page, &mut budget);
+    let (n, missing) = c.admit_backfill(&super::fixtures::page(&page), &mut budget);
     assert_eq!(missing.map(|p| p.at.vk), Some(dvk), "the page stops on d's cited head");
     assert_eq!(n, page.len() - 1, "b's own acts before the citing receipt are admitted");
     let r = crate::observe::replication();
@@ -235,7 +235,7 @@ fn hear_proves_citation_into_closed_era() {
     let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut budget = c0.stroke();
-    let (n, missing) = c0.admit_backfill(&era, &mut budget);
+    let (n, missing) = c0.admit_backfill(&super::fixtures::page(&era), &mut budget);
     assert_eq!((n, missing), (era.len(), None), "e's line admitted whole");
     let signed = super::fixtures::admit_line(&mut c0, &ekey, &[folded]);
     assert!(matches!(signed.as_slice(), [crate::court::admission::Admitted::Parent(_)]), "e's fold under its signature: {signed:?}");
@@ -260,7 +260,7 @@ fn hear_proves_citation_into_closed_era() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &dkey), &head)),
+        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &dkey), &super::fixtures::reconstructed(&head))),
         || c.lock().ok().map(|mut k| k.stroke()),
         fetch,
     );

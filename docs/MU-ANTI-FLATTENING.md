@@ -145,7 +145,13 @@ in persistence and transport as in cognition.
     names, not structure.
 - **By type:** `Keyed::fibre` takes a `Prefix` that cannot be empty, and
   the μ⃗ type `Mu` implements neither `PartialEq` nor `PartialOrd`, so a
-  four-lane reading cannot be collapsed to one comparison.
+  four-lane reading cannot be collapsed to one comparison. The digests
+  compared at admission are typed by sense (`Locator`, `Predecessor`,
+  `Commitment`, none with `==`), and the receipt path's admissions take
+  a `Reconstructed<T>` (clause 13; *Drift guards* below).
+- **By register, in the gate:** `xtask/lint/drift.rs` refuses a drift
+  guard whose type or claim is missing from the tree (*Drift guards*
+  below).
 - **By review:** everything else — a `bool` deciding a branch in
   cognition (constraint I), a collapse to a scalar (clause 4), a
   projection to a plane (clause 5), a ring's holonomy discarded (clause
@@ -165,22 +171,25 @@ transduction landed (v0.3.0 T2), `lcm` also re-sampled two frames onto a
 common grid in `src/transducer/family/refine.rs` (`CommonRefinement`),
 which was the defect; that file and type are deleted. So the guards are types, which make the wrong structure
 unwritable, and a register that names each guard and the ruling behind
-it. **Specified** (ROADMAP track 25, phase X0):
+it (ROADMAP track 25, phase X0):
 
-| Regression | Guard | How it is proved |
-|---|---|---|
-| A digest compared to admit an object (clause 13) | The bare `[u8; 32]` of a crossing is split into three types: `Address`, `Link` and `Commitment`. None implements `PartialEq`. The comparisons are named methods: `Address::locates`, `Link::follows(&prev)`, and `Commitment::binds(&Reconstructed<T>)`. The last takes the reconstructed object, so a commitment cannot be compared before reconstruction. | A `compile_fail` doc test per type for `==`; the claim `commitment_binds_only_a_reconstructed_object` |
-| Admission without reconstruction (clause 13) | `Reconstructed<T>` has a private constructor, called only by the law's reconstruction. Each `admit_*` takes a `Reconstructed<T>` and never the claimed `T`. | A `compile_fail` doc test that builds one outside the laws; a mutation-audit entry that admits the claim in place of the reconstruction |
-| A common grid past the sensor (clause 12) | The refinement onto a common grid is removed (the transduction replaced it in v0.3.0 T2); the guard keeps any such refinement from being reached past the sensor's intake. A site's lift has one constructor, `Turn::of(r, h)`, held in ℚ/ℤ. | A `compile_fail` doc test that calls the refinement from cognition; the transduction's claims (track 25, X5) |
-| Replay or rebuild used to verify (clause 14) | Identifiers that verify carry `reconstruct` (track 11). A restore returns a `Reconstructed<State>` checked against its receipts, never a replayed one. | The restore claim `restore_reconstructs_and_checks_receipts`; a mutation-audit entry that skips the receipt check |
+| Regression | Guard | How it is proved | Status |
+|---|---|---|---|
+| A digest compared to admit an object (clause 13) | The bare `[u8; 32]` compared at admission is typed by its sense (`court::admission::digest`): `Locator` (address), `Predecessor` (link: the digest a record names the record before it by) and `Commitment`. None implements `PartialEq`. The comparisons are named methods: `Locator::locates`, `Predecessor::continues` (with `forks` for two records at one place and `cites` for a citation), and `Commitment::binds(&Reconstructed<T>)`. The last takes the reconstructed object, so a commitment cannot be compared before reconstruction. | A `compile_fail` doc test per type for `==` (`address_has_no_equality`, `predecessor_has_no_equality`, `commitment_has_no_equality`); the claim `commitment_binds_only_a_reconstructed_object` | **Built** at the receipt path's admission sites; the record fields themselves are still bare (ROADMAP track 25, X0) |
+| Admission without reconstruction (clause 13) | `Reconstructed<T>` has a private field, and only the law's reconstruction builds it (`Reconstructed::receipt`, `Reconstructed::receipts`). Each `admit_*` of the receipt path takes a `Reconstructed<T>` and never the claimed `T`. | A `compile_fail` doc test that builds one outside the laws (`reconstructed_is_built_only_by_the_laws`) | **Built** for the receipt path; the vertex's admissions take it with X2 |
+| A common grid past the sensor (clause 12) | The refinement onto a common grid is removed (the transduction replaced it in v0.3.0 T2); the guard keeps any such refinement from being reached past the sensor's intake. A site's lift has one constructor, `Turn::of(r, h)`, held in ℚ/ℤ. | A `compile_fail` doc test that calls the refinement from cognition; the transduction's claims (track 25, X5) | **Specified** |
+| Replay or rebuild used to verify (clause 14) | Identifiers that verify carry `reconstruct` (track 11). A restore returns a `Reconstructed<State>` checked against its receipts, never a replayed one. | The restore claim `restore_reconstructs_and_checks_receipts` | **Specified** |
 
-The register `xtask/lint/drift.rs` lists each guard: the regression, its
-ruling, the guarding type, and the claim and mutation-audit entry that
-prove it. The gate refuses a register entry whose guard type or claim is
-missing from the tree, as `numbers.rs` does for the open numbers. It also
-reads every changed document for a typed term (reconstruction, rebuild,
-replay, resend, digest, hash, lattice, grid) beside an admission verb
-(admit, verify, accept, check). It reports each such sentence for review
-and does not refuse it. The reviewer then confirms the sense the sentence
-uses. Contributors who work with AI coding agents point them at
-[`AGENTS.md`](../AGENTS.md), which states these guards as working rules.
+The register `xtask/lint/drift.rs` lists each guard that is built: the
+regression, its ruling, the guarding type, and the claim that proves it
+(a `#[test]` fn, or a `compile_fail` doc test whose comment names the
+claim). The gate refuses a register entry whose guard type or claim is
+named empty or missing from the tree, as `numbers.rs` does for the open
+numbers. The register records no mutation-audit entry (ruled
+2026-11-04). A report of changed document sentences that put a typed
+term (reconstruction, rebuild, replay, resend, digest, hash, lattice,
+grid) beside an admission verb (admit, verify, accept, check) is **open**:
+it would only report and never refuse, and reading which documents
+changed needs a base commit the gate does not hold. Contributors who
+work with AI coding agents point them at [`AGENTS.md`](../AGENTS.md),
+which states these guards as working rules.

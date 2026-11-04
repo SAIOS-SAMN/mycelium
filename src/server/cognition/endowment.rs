@@ -30,6 +30,7 @@
 use super::Court;
 use crate::anastome::dialogue::endowment::{nuclei_hold, put_nuclei, take_manifest, EndowmentReading, GrantRead, GrantRefusal, Granted, Nuclei, SignedManifest, KIND_MANIFEST};
 use crate::chronometry::{ActKind, Cite, Stamp};
+use crate::court::admission::Locator;
 use crate::economy::Mu;
 use crate::network::nerve::Keyed;
 use crate::transducer::address::{put_key_count, take_key_count};
@@ -142,8 +143,13 @@ fn add_nuclei(a: &Nuclei, b: &Nuclei) -> Nuclei {
 impl Court {
     /// Whether `domain`'s own ledger has applied the grant at `hash`: an
     /// entry citing it among what it applied (as a crossing is applied).
+    /// The grant's hash locates it (an address, MU-HOSTING §5a.10).
     fn grant_applied(&self, domain: &[u8; 32], hash: &[u8; 32]) -> bool {
-        self.atlas.ledgers.get(domain).is_some_and(|chain| chain.iter().any(|e| e.entry.applied.iter().any(|(h, _)| h == hash)))
+        let grant = Locator::of_bytes(*hash);
+        self.atlas
+            .ledgers
+            .get(domain)
+            .is_some_and(|chain| chain.iter().any(|e| e.entry.applied.iter().any(|(h, _)| Locator::of_bytes(*h).locates(&grant))))
     }
 
     /// 78.155b — A MANIFEST GRANTED, or refused by name: the domain founded
@@ -174,7 +180,10 @@ impl Court {
             Some(g) => g.clone(),
             None => Vec::new(),
         };
-        if held.iter().any(|g| g.hash == hash) {
+        // A RESEND, met by what is held: the manifest, checked above, is
+        // located among the grants made already by its hash (an address,
+        // MU-HOSTING §5a.10), and is never admitted on it.
+        if held.iter().any(|g| Locator::of_bytes(g.hash).locates(&Locator::of_bytes(hash))) {
             return refuse(GrantRefusal::Granted);
         }
         // One in flight: every grant made to this universe applied in its

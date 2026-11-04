@@ -22,9 +22,11 @@ use crate::anastome::dialogue::domain::{DomainGenesis, Founded, OriginReading};
 use crate::chronometry::{Cite, KStepReceipt, Stamp};
 
 /// WHAT ONE FOUNDING CITATION CAME TO at this court: the reconstruction
-/// events of MU-SCIENCE §5.0, read on the domain registries.
+/// events of MU-SCIENCE §5.0, read on the domain registries. Named for
+/// the event, so that `Reconstructed<T>` (`court::admission`) names only
+/// the reconstructed object (ROADMAP track 25, X0).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum Reconstructed {
+pub(crate) enum FoundingEvent {
     /// The registry now holds what the citation states (a collapse).
     Applied,
     /// The registry held the same content already, reached by another
@@ -53,7 +55,7 @@ impl Court {
             let read = match c {
                 Cite::Domain { domain, tiers } => {
                     let read = self.reconstruct_domain(*domain, tiers);
-                    if read == Reconstructed::Applied {
+                    if read == FoundingEvent::Applied {
                         founded.push(*domain);
                     }
                     read
@@ -74,9 +76,9 @@ impl Court {
                 _ => continue,
             };
             match read {
-                Reconstructed::Applied => self.mark_persist(),
-                Reconstructed::Held => {}
-                Reconstructed::Refused(why) => {
+                FoundingEvent::Applied => self.mark_persist(),
+                FoundingEvent::Held => {}
+                FoundingEvent::Refused(why) => {
                     if !self.founding_refusals.contains(&r.stamp.key()) {
                         self.founding_refusals.insert(r.stamp.key(), why);
                     }
@@ -125,29 +127,29 @@ impl Court {
     /// 78.120 — A DOMAIN'S GENESIS, by `admit_domain`'s refusals: the tier
     /// keys in the keys' one writing, no founding of the domain already, no tier
     /// another domain names.
-    fn reconstruct_domain(&mut self, domain: [u8; 32], tiers: &[[u8; 32]]) -> Reconstructed {
+    fn reconstruct_domain(&mut self, domain: [u8; 32], tiers: &[[u8; 32]]) -> FoundingEvent {
         match self.domains.get(&domain) {
-            Some(held) if held.as_slice() == tiers => return Reconstructed::Held,
-            Some(_) => return Reconstructed::Refused(Founded::AlreadyFounded),
+            Some(held) if held.as_slice() == tiers => return FoundingEvent::Held,
+            Some(_) => return FoundingEvent::Refused(Founded::AlreadyFounded),
             None => {}
         }
         if !(DomainGenesis { domain, tiers: tiers.to_vec() }).ordered() {
-            return Reconstructed::Refused(Founded::Unordered);
+            return FoundingEvent::Refused(Founded::Unordered);
         }
         if tiers.iter().any(|t| self.tier_domain.get(t).is_some()) {
-            return Reconstructed::Refused(Founded::TierHeld);
+            return FoundingEvent::Refused(Founded::TierHeld);
         }
         self.hold_domain(domain, tiers.to_vec());
-        Reconstructed::Applied
+        FoundingEvent::Applied
     }
 
     /// 78.127 — A RESERVE DESIGNATED, by `designate_reserve`'s rule: a tier
     /// the domain's genesis names, the reserve at once where the domain has
     /// none, pending until the sitting reserve's next fold otherwise.
-    fn reconstruct_reserve(&mut self, domain: [u8; 32], tier: [u8; 32]) -> Reconstructed {
-        let Some(tiers) = self.domains.get(&domain) else { return Reconstructed::Refused(Founded::NotFounded) };
+    fn reconstruct_reserve(&mut self, domain: [u8; 32], tier: [u8; 32]) -> FoundingEvent {
+        let Some(tiers) = self.domains.get(&domain) else { return FoundingEvent::Refused(Founded::NotFounded) };
         if !tiers.contains(&tier) {
-            return Reconstructed::Refused(Founded::NotATier);
+            return FoundingEvent::Refused(Founded::NotATier);
         }
         let held = match self.reserves.get(&domain) {
             Some(r) => *r,
@@ -159,25 +161,25 @@ impl Court {
             Some(_) => next.pending = Some(tier),
         }
         if next == held {
-            return Reconstructed::Held;
+            return FoundingEvent::Held;
         }
         self.reserves.insert(domain, next);
-        Reconstructed::Applied
+        FoundingEvent::Applied
     }
 
     /// 78.132 — A UNIVERSE'S ORIGIN, by `record_origin`'s refusals: the
     /// domain founded, and no other origin held for it; held with the stamp
     /// and receipt of the act that sealed it, as on the founding hypha.
-    fn reconstruct_origin(&mut self, r: &KStepReceipt, domain: [u8; 32], (kind, version, commitment): (u8, u8, [u8; 32])) -> Reconstructed {
+    fn reconstruct_origin(&mut self, r: &KStepReceipt, domain: [u8; 32], (kind, version, commitment): (u8, u8, [u8; 32])) -> FoundingEvent {
         if self.domains.get(&domain).is_none() {
-            return Reconstructed::Refused(Founded::NotFounded);
+            return FoundingEvent::Refused(Founded::NotFounded);
         }
         match self.origins.get(&domain) {
-            Some(o) if (o.kind, o.version, o.commitment) == (kind, version, commitment) => return Reconstructed::Held,
-            Some(_) => return Reconstructed::Refused(Founded::AlreadyOriginated),
+            Some(o) if (o.kind, o.version, o.commitment) == (kind, version, commitment) => return FoundingEvent::Held,
+            Some(_) => return FoundingEvent::Refused(Founded::AlreadyOriginated),
             None => {}
         }
         self.origins.insert(domain, OriginReading { kind, version, commitment, at: r.stamp, receipt: r.chain_hash });
-        Reconstructed::Applied
+        FoundingEvent::Applied
     }
 }
