@@ -6,19 +6,7 @@
 use crate::chronometry::{ActKind, Ruled};
 use crate::cognition::*;
 use crate::court::admission::Admitted;
-
-/// A court that docketed one word on its own book, bound to `own_vk`.
-fn docketed(own_vk: [u8; 32]) -> (Court, crate::transducer::address::Address) {
-    let mut k = Court::new();
-    k.bind_identity(own_vk);
-    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
-    assert_eq!(super::fixtures::speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
-    assert_eq!(super::fixtures::speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
-    k.court_stroke();
-    let addr = k.provisional.scoped().next().expect("docketed").0;
-    (k, crate::transducer::address::Address::from(addr))
-}
+use super::fixtures::docketed;
 
 /// EC1 — THE RECEIPT PATH. Court a upholds a word on its own book; its
 /// Ruling node carries the arm in its kind. Court b, holding the same word
@@ -81,7 +69,9 @@ fn admit_line_applies_peer_ruling_through_receipt() {
 /// exactly one word there, so a's stamp is filed as an alias — one word,
 /// two admissions, both stamps held — and a's ruling, located by it,
 /// applies at c. The alias is not persisted and comes back at restore,
-/// re-derived from the ledger's peer nodes.
+/// re-derived from the ledger's peer nodes that c's own line cites through
+/// (MU-HOSTING §5a.10: a peer node no cited signature reaches aliases
+/// nothing), so c seals a step citing a's line before its snapshot.
 #[test]
 fn admit_line_aliases_peer_stamp_to_one_word() {
     use crate::anastome::dialogue::RULING_UPHELD;
@@ -96,6 +86,8 @@ fn admit_line_aliases_peer_stamp_to_one_word() {
     super::fixtures::admit_line(&mut c, &key, &before_ruling);
     assert_eq!(c.word_admitted_at(&a_stamp), Some(&addr), "a's stamp is an alias of the word here");
     assert_eq!(c.admitted_at(addr.as_bytes()), Some(c_stamp), "and c's own stamp still holds it");
+    c.append_step(ActKind::Attest, [0xAA; 40], [3; 32]);
+    assert_eq!(c.pending_parents(), 0, "c's next step cites a's line");
     let mut restored = Court::new();
     assert!(restored.restore(&c.snapshot()), "clean restore");
     assert_eq!(restored.word_admitted_at(&a_stamp), Some(&addr), "the alias is re-derived at restore");

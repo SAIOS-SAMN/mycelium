@@ -183,7 +183,7 @@ impl Court {
             anchor_mismatches,
             anchor_evidence,
             domains,
-            unsigned_foundings,
+            unreached,
             unfounded,
             founding_refusals,
             tier_domain,
@@ -208,9 +208,10 @@ impl Court {
         // 78.120 — the domains founded here and the domains' tier index.
         c.count("domains", domains.len());
         c.count("tier_domain", tier_domain.len());
-        // MU-HOSTING §5a.9 B0 — peers' founding receipts waiting for a
-        // signature, waiting for a domain's founding, and refused.
-        c.count("founding.unsigned", unsigned_foundings.len());
+        // MU-HOSTING §5a.9, §5a.10 — peers' back-filled receipts no
+        // signature has reached yet; B0's founding receipts waiting for a
+        // domain's founding, and refused.
+        c.count("backfill.unreached", unreached.len());
         c.count("founding.unfounded", unfounded.len());
         c.count("founding.refused", founding_refusals.len());
         // 78.123 B — the ledger trees: children with value in flight, the

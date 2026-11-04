@@ -28,6 +28,7 @@ mod listings;
 mod market;
 mod domain_passage;
 mod published;
+mod reach;
 mod reads;
 pub use reads::HELD_KINDS;
 mod persistence;

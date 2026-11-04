@@ -480,9 +480,16 @@ impl Court {
             // THE STAMP ALIASES, re-derived from the ledger's peer nodes
             // against the words just restored — never persisted. Only a node
             // that admits a word at its own stamp can alias one, and only
-            // those are copied out of the ledger.
+            // those are copied out of the ledger. MU-HOSTING §5a.10: a node no
+            // signature has reached is marked first and aliases nothing.
+            court.hold_unreached_at_restore();
             let admits = |r: &KStepReceipt| r.cites.iter().any(|c| matches!(c, Cite::Word { at, .. } if *at == r.stamp));
-            let peers: Vec<KStepReceipt> = court.chain.admitted().into_iter().filter(|r| admits(r)).collect();
+            let peers: Vec<KStepReceipt> = court
+                .chain
+                .admitted()
+                .into_iter()
+                .filter(|r| admits(r) && court.unreached_at(&r.stamp.vk, r.stamp.place()).is_none())
+                .collect();
             for r in &peers {
                 court.alias_admitting(r, &mut budget);
             }
