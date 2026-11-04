@@ -502,7 +502,7 @@ pub(crate) fn word_or_demand_on_chart(
 pub(crate) fn word_vertex_with(
     a: &Body,
     b: &Body,
-    car: &Carriage,
+    car: &BodyTransport,
     derivation: crate::transducer::alphabet::Derivation,
 ) -> Option<Vertex> {
     word_vertex_on_chart(a, b, car, derivation, &b.moduli)
@@ -512,7 +512,7 @@ pub(crate) fn word_vertex_with(
 pub(crate) fn word_vertex_on_chart(
     a: &Body,
     b: &Body,
-    car: &Carriage,
+    car: &BodyTransport,
     derivation: crate::transducer::alphabet::Derivation,
     chart: &Invariant,
 ) -> Option<Vertex> {

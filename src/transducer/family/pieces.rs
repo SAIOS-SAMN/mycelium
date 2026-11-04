@@ -35,7 +35,7 @@ pub(crate) struct Piece {
 /// carriers holding them take the coordinate rather than loose bytes.
 ///
 /// The three functions that wrote these keys by hand are gone. What they
-/// wrote is `coord::Piece::encode`, `coord::Carriage::encode` and
+/// wrote is `coord::Piece::encode`, `coord::CarriedPieces::encode` and
 /// `coord::Meet::encode`, and what `meet_ends` read back out is
 /// `coord::Meet::ends`. There is one producer of each layout (law 12) and
 /// it is the one the trie decodes through.
@@ -46,12 +46,12 @@ pub(crate) struct Piece {
 /// collapse existed only so that the pullback (which assembles its domain
 /// and names a single output piece) and the propagation (which names a
 /// single input piece and assembles its image) would agree on the address
-/// of a carriage between two whole pieces. A [`coord::Carriage`] carries a
+/// of a carriage between two whole pieces. A [`coord::CarriedPieces`] carries a
 /// LIST on both sides and the two passes agree because both sides are
 /// lists, not because one collapses into the other's shape.
 ///
 /// [`coord::Piece`]: crate::network::nerve::coord::Piece
-/// [`coord::Carriage`]: crate::network::nerve::coord::Carriage
+/// [`coord::CarriedPieces`]: crate::network::nerve::coord::CarriedPieces
 /// [`coord::Meet`]: crate::network::nerve::coord::Meet
 pub(crate) fn piece_at(
     kind: ShellKind,

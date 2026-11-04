@@ -38,7 +38,7 @@ pub struct Cell {
     /// by (78.30(7), A21).
     pub coords: Vec<Vec<u8>>,
     /// The witnesses, in the base's own coordinate order.
-    pub witnesses: Vec<coord::Compartment>,
+    pub witnesses: Vec<coord::CoverSite>,
     /// `s₀ ∧ s₁ ∧ … ∧ s_k`; `None` where a member's nucleus did not read
     /// back (rule 11), the zero blade where the nuclei are dependent.
     pub meet: Option<Mv>,
@@ -95,15 +95,15 @@ pub struct NerveReading {
 
 /// ONE CHART OF A COVER: its section's coordinates — the carriage and the
 /// footprint, as `section_key` writes them — and the elements it stands on.
-pub type Chart = (Vec<u8>, Vec<coord::Compartment>);
+pub type CoverCoordinates = (Vec<u8>, Vec<coord::CoverSite>);
 
 /// READ THE NERVE OF ONE COVER. The support, the pairwise reading, the
 /// certified cells and the cells' meets come off ONE read of the base, so the
 /// numbers cannot drift apart (law 12). Each chart comes with its section's
 /// coordinates, which key its cells (KB1): two carriages over one region are
 /// two sections because the carriages differ, and nothing merges them.
-pub fn read_nerve(charts: &[Chart]) -> NerveReading {
-    let footprints: Vec<Vec<coord::Compartment>> = charts.iter().map(|(_, f)| f.clone()).collect();
+pub fn read_nerve(charts: &[CoverCoordinates]) -> NerveReading {
+    let footprints: Vec<Vec<coord::CoverSite>> = charts.iter().map(|(_, f)| f.clone()).collect();
     let support = support_of_cover(&footprints);
     let (cells, refused) = support.decoded();
     let shared = cells.iter().filter(|(_, s)| s.len() >= 2).count();
@@ -154,7 +154,7 @@ pub struct CellsOver {
 /// ordinals with one coordinate are one member. A single member standing
 /// alone is a point of the nerve, not a cell.
 pub fn cells_over<'a>(
-    standing: impl Iterator<Item = (coord::Compartment, &'a [usize])>,
+    standing: impl Iterator<Item = (coord::CoverSite, &'a [usize])>,
     coords: impl Fn(usize) -> Option<Vec<u8>>,
     meet: impl Fn(&[usize]) -> Option<Mv>,
 ) -> CellsOver {
@@ -275,9 +275,9 @@ pub fn cells_by_grade(cells: impl Iterator<Item = (usize, Option<Mv>)>) -> Vec<(
 /// own order and deduplicated as they arrive, so the reading does not depend
 /// on the order the elements were read.
 pub fn support_of_cover(
-    charts: &[Vec<coord::Compartment>],
-) -> crate::network::nerve::Keyed<Vec<usize>, coord::Compartment> {
-    let mut support: crate::network::nerve::Keyed<Vec<usize>, coord::Compartment> =
+    charts: &[Vec<coord::CoverSite>],
+) -> crate::network::nerve::Keyed<Vec<usize>, coord::CoverSite> {
+    let mut support: crate::network::nerve::Keyed<Vec<usize>, coord::CoverSite> =
         crate::network::nerve::Keyed::new();
     for (ix, compartments) in charts.iter().enumerate() {
         for p in compartments {

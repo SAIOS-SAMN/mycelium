@@ -54,31 +54,31 @@ pub fn frame_budget() -> usize {
 /// The four orthogonal polytonic lanes (𝒮 spatial, 𝒢 gauge, 𝒯 temporal,
 /// 𝒽 harmonic/shell). A frame rides exactly one — never summed across lanes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Stratum {
+pub enum Lane {
     Spatial,
     Gauge,
     Temporal,
     Harmonic,
 }
 
-impl Stratum {
-    pub const ALL: [Stratum; 4] = [Stratum::Spatial, Stratum::Gauge, Stratum::Temporal, Stratum::Harmonic];
+impl Lane {
+    pub const ALL: [Lane; 4] = [Lane::Spatial, Lane::Gauge, Lane::Temporal, Lane::Harmonic];
 
     pub fn byte(self) -> u8 {
         match self {
-            Stratum::Spatial => 0,
-            Stratum::Gauge => 1,
-            Stratum::Temporal => 2,
-            Stratum::Harmonic => 3,
+            Lane::Spatial => 0,
+            Lane::Gauge => 1,
+            Lane::Temporal => 2,
+            Lane::Harmonic => 3,
         }
     }
 
-    pub fn of(b: u8) -> Option<Stratum> {
+    pub fn of(b: u8) -> Option<Lane> {
         match b {
-            0 => Some(Stratum::Spatial),
-            1 => Some(Stratum::Gauge),
-            2 => Some(Stratum::Temporal),
-            3 => Some(Stratum::Harmonic),
+            0 => Some(Lane::Spatial),
+            1 => Some(Lane::Gauge),
+            2 => Some(Lane::Temporal),
+            3 => Some(Lane::Harmonic),
             _ => None,
         }
     }
@@ -86,8 +86,8 @@ impl Stratum {
 
 /// A lane-tagged wire frame. Body is opaque transport bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Frame {
-    pub lane: Stratum,
+pub struct WireFrame {
+    pub lane: Lane,
     pub body: Vec<u8>,
 }
 
@@ -101,8 +101,8 @@ pub struct Frame {
 pub const POINTED: u8 = 0x80;
 
 /// A lane byte read: the lane, and whether the frame carries a point.
-pub fn read_lane(byte: u8) -> Option<(Stratum, bool)> {
-    Some((Stratum::of(byte & !POINTED)?, byte & POINTED != 0))
+pub fn read_lane(byte: u8) -> Option<(Lane, bool)> {
+    Some((Lane::of(byte & !POINTED)?, byte & POINTED != 0))
 }
 
 /// A FRAME'S BODY AND ITS POINT: where the lane byte said the frame carries
@@ -120,7 +120,7 @@ pub fn split_point(
     Some((body, Some(point)))
 }
 
-impl Frame {
+impl WireFrame {
     /// `[lane:1][len:4 LE][body]`. `None` if the body exceeds the MTU budget.
     pub fn encode(&self) -> Option<Vec<u8>> {
         self.encode_at(None)
@@ -157,12 +157,12 @@ impl Frame {
     /// Decode one frame from the head of `bytes`; returns `(frame, bytes_read)`.
     /// `None` on a bad lane tag, a length over budget, or a truncated buffer.
     /// A point the frame carries is read and set aside (`decode_at`).
-    pub fn decode(bytes: &[u8]) -> Option<(Frame, usize)> {
+    pub fn decode(bytes: &[u8]) -> Option<(WireFrame, usize)> {
         Self::decode_at(bytes).map(|(f, _, n)| (f, n))
     }
 
     /// One frame from the head of `bytes`, with the point it carries.
-    pub fn decode_at(bytes: &[u8]) -> Option<(Frame, Option<crate::chronometry::tuniversal::TPoint>, usize)> {
+    pub fn decode_at(bytes: &[u8]) -> Option<(WireFrame, Option<crate::chronometry::tuniversal::TPoint>, usize)> {
         // The lane byte is the frame's own first coordinate (rule 15: a wire
         // tag's offset is content).
         let (&tag, _) = bytes.split_first()?;
@@ -173,13 +173,13 @@ impl Frame {
         }
         let body = bytes.get(5..5 + len)?.to_vec();
         let (body, point) = split_point(body, pointed)?;
-        Some((Frame { lane, body }, point, 5 + len))
+        Some((WireFrame { lane, body }, point, 5 + len))
     }
 }
 
 /// Multiplex a stream of lane-tagged frames onto one buffer; demultiplex reads
 /// them back in order (transport, no reordering).
-pub fn multiplex(frames: &[Frame]) -> Option<Vec<u8>> {
+pub fn multiplex(frames: &[WireFrame]) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     for f in frames {
         out.extend_from_slice(&f.encode()?);
@@ -187,10 +187,10 @@ pub fn multiplex(frames: &[Frame]) -> Option<Vec<u8>> {
     Some(out)
 }
 
-pub fn demultiplex(mut bytes: &[u8]) -> Option<Vec<Frame>> {
+pub fn demultiplex(mut bytes: &[u8]) -> Option<Vec<WireFrame>> {
     let mut out = Vec::new();
     while !bytes.is_empty() {
-        let (f, n) = Frame::decode(bytes)?;
+        let (f, n) = WireFrame::decode(bytes)?;
         out.push(f);
         bytes = &bytes[n..];
     }

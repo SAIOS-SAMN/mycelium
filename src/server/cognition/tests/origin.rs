@@ -5,7 +5,7 @@
 
 use crate::anastome::dialogue::domain::{
     decode_domain_reply, decode_domain_request, decode_origin_reading, encode_domain_reply, encode_origin, encode_origin_read,
-    encode_origin_reading, DomainGenesis, DomainRequest, Founded, Origin,
+    encode_origin_reading, BigBangRecord, DomainGenesis, DomainRequest, Founded,
 };
 use crate::chronometry::receipt::Cite;
 use crate::server::cognition::Court;
@@ -30,8 +30,8 @@ fn founded() -> Court {
     k
 }
 
-fn origin(commitment: u8) -> Origin {
-    Origin { domain: verifying(&domain()), kind: 1, version: 3, commitment: [commitment; 32], universe: None }
+fn origin(commitment: u8) -> BigBangRecord {
+    BigBangRecord { domain: verifying(&domain()), kind: 1, version: 3, commitment: [commitment; 32], universe: None }
 }
 
 /// AN ORIGIN IS THE DOMAIN'S, ONCE: another key's signature, a domain not
@@ -44,7 +44,7 @@ fn record_origin_seals_once_never_edited() {
     let d = verifying(&domain());
     assert_eq!(k.origin_of(&d), None, "a domain founded from keys alone has no origin");
     assert_eq!(k.record_origin(&origin(9).sign(&key(5))), Founded::Unsigned);
-    let stranger = Origin { domain: verifying(&key(5)), ..origin(9) }.sign(&key(5));
+    let stranger = BigBangRecord { domain: verifying(&key(5)), ..origin(9) }.sign(&key(5));
     assert_eq!(k.record_origin(&stranger), Founded::NotFounded);
     let Founded::Originated { at, receipt } = k.record_origin(&origin(9).sign(&domain())) else { panic!("sealed") };
     let head = k.chain.head().expect("the origin on the line");

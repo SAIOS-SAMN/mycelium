@@ -24,7 +24,7 @@ fn witness_vantage_reaches_offered_form_each_ask() {
     let w = word();
     for _ in 0..2 {
         // Each offer is its own act: its root, one stroke — its hold's.
-        let mut h = crate::held::held!(court).expect("the court");
+        let mut h = crate::court_lock::held!(court).expect("the court");
         let dialogue::Witnessed::Reached { vk, form } =
             h.run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, witness, budget))
         else {
@@ -48,16 +48,16 @@ fn witness_vantage_refuses_false_form_each_ask() {
     let mut cover = mycelium::network::nerve::Cover::new();
     let (home, witness) = ([2u8; 32], [3u8; 32]);
     let w = false_word();
-    let first = crate::held::held!(court).expect("the court").run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, witness, budget));
+    let first = crate::court_lock::held!(court).expect("the court").run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, witness, budget));
     let dialogue::Witnessed::Refused { vk, why } = first else {
         panic!("a replay that refused is a refusal");
     };
     assert_eq!(vk, witness);
     assert!(!why.is_empty(), "the refusal is named");
-    let heard = crate::held::held!(court).expect("the court").run(|k, _| k.heard_contains(w.address().as_bytes()));
+    let heard = crate::court_lock::held!(court).expect("the court").run(|k, _| k.heard_contains(w.address().as_bytes()));
     assert!(heard, "and the address is marked heard");
     // The second offer is a second act: a stroke of its own.
-    let again = crate::held::held!(court).expect("the court").run(|k, budget| witness_vantage(k, &mut cover, w, home, witness, budget));
+    let again = crate::court_lock::held!(court).expect("the court").run(|k, budget| witness_vantage(k, &mut cover, w, home, witness, budget));
     assert!(
         matches!(again, dialogue::Witnessed::Refused { .. }),
         "heard is not a verdict: the second offer is replayed and refused again"

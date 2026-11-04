@@ -26,12 +26,12 @@
 //! |---|---|
 //! | The Concordance | [`CONCORDANCE_HASH`], [`ConcordanceSignature`], [`verify_concordance_signature`], modes 7 and 8 |
 //! | The register and clock | [`encode_register_request`], [`decode_register_reply`], [`encode_clock_request`], [`decode_clock_reply`], [`CoreStamp`], [`TPoint`] |
-//! | Verification (L2) | [`Transition`], [`BodyState`], [`Body`], [`Flux`], [`verify_sized`], [`encode_verify_request`], [`decode_verify_reply`], [`Verdict`], [`Breach`], [`Law`] |
+//! | Verification (L2) | [`Transition`], [`BodyState`], [`BodyMoments`], [`Flux`], [`verify_sized`], [`encode_verify_request`], [`decode_verify_reply`], [`TransitionVerdict`], [`Breach`], [`Law`] |
 //! | Domain founding | [`DomainGenesis`], [`encode_domain`], [`decode_domain_reply`], [`Founded`]; the reserve, the bond, the origin |
-//! | The universe | [`Origin`], [`Genesis`], [`Geometry`], [`encode_universe_read`], [`decode_universe_reading`], [`UniverseReading`], the statements |
+//! | The universe | [`BigBangRecord`], [`Genesis`], [`Geometry`], [`encode_universe_read`], [`decode_universe_reading`], [`UniverseReading`], the statements |
 //! | The endowment | [`Manifest`], [`encode_manifest`], [`decode_grant_reply`], [`Granted`], [`encode_endowment_read`], [`decode_endowment_reading`] |
 //! | Seats | [`Post`], [`Seats`], [`Taken`], [`Percept`], [`Outcome`], [`HouseMail`], [`encode_post`], [`decode_seat_request`], the listing and the mail |
-//! | Framing and identity | [`Frame`], [`Stratum`], [`read_lane`], [`split_point`], [`BODY_BUDGET`], [`HyphaKey`], [`payload_hash`] |
+//! | Framing and identity | [`WireFrame`], [`Lane`], [`read_lane`], [`split_point`], [`BODY_BUDGET`], [`HyphaKey`], [`payload_hash`] |
 //! | Whole modules | [`domain`], [`universe`], [`endowment`], [`seat`], [`atlas`], [`uplink`], [`challenge`], [`commitment`], [`tuniversal`] |
 
 /// The Concordance's hash (BLAKE3 of its exact bytes at build time), a
@@ -61,9 +61,9 @@ pub use mycelium::chronometry::tuniversal::TPoint;
 /// verdict on it — every breach named with its law. `verify_sized` rules
 /// under the stroke the motion needs, as the court does, so a kernel that
 /// verifies with it agrees with the court exactly.
-pub use mycelium::physics::laws::{verify, verify_sized, BodyState, Breach, Flow, Flux, Law, Transition, Unmeasured, Verdict};
+pub use mycelium::physics::laws::{verify, verify_sized, BodyState, Breach, Flow, Flux, Law, Transition, TransitionVerdict, Unmeasured};
 /// A body as A.13 reads it (centre, mass, second moments).
-pub use mycelium::physics::equilibrium::Body;
+pub use mycelium::physics::equilibrium::BodyMoments;
 /// The multivector of Cl(4,1) over ℚ a motion and a nucleus are written in.
 pub use mycelium::transducer::cga::Mv;
 /// The verify act (mode 1) and its verdict; the batch (mode 2) and its
@@ -87,7 +87,7 @@ pub use mycelium::anastome::dialogue::domain::{
 pub use mycelium::anastome::dialogue::domain::{decode_bond_reading, encode_bond, encode_bond_read, Bond, SignedBond};
 /// A universe's origin, recorded once, and the origin read.
 pub use mycelium::anastome::dialogue::domain::{
-    decode_origin_reading, encode_origin, encode_origin_read, Origin, OriginReading, SignedOrigin,
+    decode_origin_reading, encode_origin, encode_origin_read, BigBangRecord, OriginReading, SignedOrigin,
 };
 
 /// THE UNIVERSE: its genesis (a geometry and a parent face) as an origin of
@@ -143,7 +143,7 @@ pub use mycelium::transducer::cga::{rotator, sphere_at, translator_at, Undecompo
 /// FRAMING: a lane-tagged frame, the four lanes, a lane byte read (and
 /// whether its frame carries a point), the point split off a body, the
 /// body's budget and the pointed bit.
-pub use mycelium::network::wire::{read_lane, split_point, Frame, Stratum, BODY_BUDGET, POINTED};
+pub use mycelium::network::wire::{read_lane, split_point, Lane, WireFrame, BODY_BUDGET, POINTED};
 /// A count, and a byte run, each written by its own coordinate (LEB128,
 /// minimal), as every count on the wire is.
 pub use mycelium::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};

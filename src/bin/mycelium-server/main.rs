@@ -19,11 +19,11 @@ mod backfill;
 mod console;
 mod context;
 mod control;
+mod court_lock;
+mod deferred_reads;
 mod exchange;
 mod fold;
 mod genesis;
-mod held;
-mod hold;
 mod judge;
 mod ledger;
 mod nerve;
@@ -50,7 +50,7 @@ use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh::{self};
 use mycelium::network::nerve::{Cover, Keyed, Router};
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -496,14 +496,14 @@ fn main() {
     // them.
     {
         // Boot: one thread, before the door opens (bounded per hold).
-        let Ok(mut h) = crate::held::held!(court) else { refuse_boot(&tag, "court lock poisoned at the line") };
+        let Ok(mut h) = crate::court_lock::held!(court) else { refuse_boot(&tag, "court lock poisoned at the line") };
         if let Err(why) = h.run(|k, _| k.bind_line(home.join("line")).and_then(|()| k.bind_eras(home.join("eras")))) {
             refuse_boot(&tag, &format!("{why}. `--check` on this home reports the same reading."));
         }
     }
     match std::fs::read(&state_path) {
         Ok(bytes) => {
-            let Ok(mut h) = crate::held::held!(court) else { refuse_boot(&tag, "court lock poisoned at restore") };
+            let Ok(mut h) = crate::court_lock::held!(court) else { refuse_boot(&tag, "court lock poisoned at restore") };
             let (restored, basis, entries) = h.run(|k, _| (k.restore(&bytes), k.basis_len(), k.treasury_entry_count()));
             if !restored {
                 // A REFUSAL THAT NAMES THE ROAD. This named the fault and
@@ -555,7 +555,7 @@ fn main() {
     {
         let mut live: Vec<[u8; 32]> = genesis.hypha.iter().map(|(who, _)| *who).collect();
         live.extend(genesis.voice.iter().map(|(who, _)| *who));
-        let Ok(mut h) = crate::held::held!(court) else { refuse_boot(&tag, "court lock poisoned at genesis") };
+        let Ok(mut h) = crate::court_lock::held!(court) else { refuse_boot(&tag, "court lock poisoned at genesis") };
         h.run(|k, _| {
         for (who, mu) in k.bind_live(&live) {
             eprintln!(
@@ -622,7 +622,7 @@ fn main() {
     }
     // 78.153b — the own cover is admitted off a published reading; at boot,
     // before the door's shelf stands, one read of the court published here.
-    if let Some(boot) = crate::held::held!(court).ok().and_then(|mut h| h.run(|k, _| k.publish(None))) {
+    if let Some(boot) = crate::court_lock::held!(court).ok().and_then(|mut h| h.run(|k, _| k.publish(None))) {
         read_published_cover(&boot, &mesh);
     }
     for p in &join_peers {
@@ -670,7 +670,7 @@ fn main() {
     }));
     {
         // Boot, before any other thread takes the court.
-        let seed = match crate::held::held!(court) {
+        let seed = match crate::court_lock::held!(court) {
             Ok(mut h) => h.run(|k, _| k.syllabus_seed()),
             Err(_) => refuse_boot(&tag, "court lock poisoned at syllabus seed"),
         };
@@ -701,7 +701,7 @@ fn main() {
     let (nerve_tx, nerve_rx) = crate::nerve::Nerve::of(&sealed);
     exchange::spawn_nerve(mesh.clone(), nerve_rx);
     // 78.152 TU-7: the lock watchdog, paced by the final point's advances.
-    held::spawn_watchdog();
+    court_lock::spawn_watchdog();
     // The roots this book already holds settled are announced to the nerve
     // at boot, so a family proven here is re-spoken on every peer's book.
     // A poisoned registry lock is no reading of the book; no root is
@@ -751,12 +751,12 @@ fn main() {
                         // volume; the two readings are taken or the line
                         // is not written.
                         let (Ok(before), Ok(())) =
-                            (crate::held::held!(court).map(|mut h| h.run(|k, _| k.volume())), Ok::<(), ()>(()))
+                            (crate::court_lock::held!(court).map(|mut h| h.run(|k, _| k.volume())), Ok::<(), ()>(()))
                         else {
                             continue;
                         };
                         let _ = mycelium::synthesis::adopt(&court, ratifier, &word);
-                        let Ok(after) = crate::held::held!(court).map(|mut h| h.run(|k, _| k.volume())) else {
+                        let Ok(after) = crate::court_lock::held!(court).map(|mut h| h.run(|k, _| k.volume())) else {
                             continue;
                         };
                         if after != before {
@@ -790,7 +790,7 @@ fn main() {
     // restored: a mind's exempt read is served without the court's lock.
     // 78.151 — and the court's first published reading, which the door's
     // reads answer off until the court stroke publishes the next.
-    let Ok((seat_relay, first)) = crate::held::held!(court).map(|mut h| h.run(|k, _| (k.seat_relay(), k.publish(None)))) else {
+    let Ok((seat_relay, first)) = crate::court_lock::held!(court).map(|mut h| h.run(|k, _| (k.seat_relay(), k.publish(None)))) else {
         eprintln!("the court's lock was poisoned before the door opened");
         return;
     };
@@ -853,7 +853,7 @@ fn main() {
     // an observation there and handing every other act, read, to the
     // WORKERS that judge it. A worker queue that is full defers the act (the
     // honest "come back"), as a full reflex queue did.
-    let (work_tx, work_rx) = std::sync::mpsc::sync_channel::<(TcpStream, Frame)>(cores);
+    let (work_tx, work_rx) = std::sync::mpsc::sync_channel::<(TcpStream, WireFrame)>(cores);
     let work_rx = Arc::new(Mutex::new(work_rx));
     for _ in 0..pool {
         let rx = Arc::clone(&reflex_rx);
@@ -881,7 +881,7 @@ fn main() {
             }
             // 78.146 amended — a seat read with nothing filed past it waits
             // for the court's next event (`hold`), off the judging pool.
-            let Some((stream, frame)) = hold::offer(stream, frame, &context) else { continue };
+            let Some((stream, frame)) = deferred_reads::offer(stream, frame, &context) else { continue };
             if let Err(e) = work_tx.try_send((stream, frame)) {
                 let (std::sync::mpsc::TrySendError::Full((mut stream, frame)) | std::sync::mpsc::TrySendError::Disconnected((mut stream, frame))) = e;
                 // 78.146 — a mind's own read is served, once per window.
@@ -894,7 +894,7 @@ fn main() {
                 }
                 let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-                answer(&mut stream, Frame { lane: frame.lane, body });
+                answer(&mut stream, WireFrame { lane: frame.lane, body });
             }
         });
     }
@@ -952,7 +952,7 @@ fn main() {
                 }
                 // 78.146 amended — a seat read with nothing filed past it
                 // waits for the court's next event (`hold`).
-                let Some((mut stream, frame)) = hold::offer(stream, frame, &context) else { continue };
+                let Some((mut stream, frame)) = deferred_reads::offer(stream, frame, &context) else { continue };
                 // 78.146 — a mind's own read is served, once per window.
                 if judge::seat::serve_exempt(&mut stream, &frame, &context) {
                     continue;
@@ -963,12 +963,12 @@ fn main() {
                 }
                 let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-                answer(&mut stream, Frame { lane: frame.lane, body });
+                answer(&mut stream, WireFrame { lane: frame.lane, body });
             }
         });
     }
     // 78.146 amended — the held seat reads, answered at the court's events.
-    hold::spawn(context.clone());
+    deferred_reads::spawn(context.clone());
 
     for stream in listener.incoming() {
         let Ok(s) = stream else { continue };
@@ -991,7 +991,7 @@ fn main() {
                 continue;
             };
             let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-            answer(&mut s, Frame { lane: mycelium::network::wire::Stratum::Spatial, body });
+            answer(&mut s, WireFrame { lane: mycelium::network::wire::Lane::Spatial, body });
         }
     }
 }

@@ -89,14 +89,14 @@ pub trait Crystal {
     }
 
     /// 78.161 — A WORD READ OVER THE RULED WORDS THIS MIND HOLDS, lane by lane
-    /// (`presentation::Reading`): its whole motion and its hue map, each mode
+    /// (`presentation::WordCitations`): its whole motion and its hue map, each mode
     /// cited where a ruled word stands on it at an exponent. `None` for a
     /// crystal with no ear (the court, the cipher).
     fn read_word(
         &self,
         _motion: &crate::transducer::cga::Mv,
         _gauge: &[(u8, u8)],
-    ) -> Option<crate::transducer::sentence::presentation::Reading> {
+    ) -> Option<crate::transducer::sentence::presentation::WordCitations> {
         None
     }
 

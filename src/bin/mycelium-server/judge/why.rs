@@ -13,7 +13,7 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::why::{decode_why, encode_why_reply, Why, WhyAsk};
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 use std::sync::Mutex;
 
@@ -24,29 +24,29 @@ static LEFT: Mutex<Option<WhyAsk>> = Mutex::new(None);
 /// The stroke's answer to the question left, served to its next asking.
 static ANSWERED: Mutex<Option<(WhyAsk, Option<Why>)>> = Mutex::new(None);
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(ask) = decode_why(&frame.body) else { return };
-    let why = match crate::held::held!(context.court) {
+    let why = match crate::court_lock::held!(context.court) {
         // Stays on the court (78.153b): stamp→word and its Reasons are not
         // on the shelf.
         Ok(mut h) => h.run(|k, _| k.why(ask)),
         Err(_) => return,
     };
-    answer(stream, Frame { lane: frame.lane, body: encode_why_reply(why.as_ref()) });
+    answer(stream, WireFrame { lane: frame.lane, body: encode_why_reply(why.as_ref()) });
 }
 
 /// A WHY THAT REACHED A FULL DOOR, taken without the court: served off the
 /// stroke's answer where the same question was answered, else left for the
 /// next stroke and deferred as every act a full door holds back is. Answers
 /// whether the frame was a why.
-pub(crate) fn serve_left(stream: &mut TcpStream, frame: &Frame, context: &Context) -> bool {
+pub(crate) fn serve_left(stream: &mut TcpStream, frame: &WireFrame, context: &Context) -> bool {
     let Some(ask) = decode_why(&frame.body) else { return false };
     let answered = match ANSWERED.lock() {
         Ok(a) => a.as_ref().filter(|(asked, _)| *asked == ask).map(|(_, why)| encode_why_reply(why.as_ref())),
         Err(_) => None,
     };
     if let Some(body) = answered {
-        answer(stream, Frame { lane: frame.lane, body });
+        answer(stream, WireFrame { lane: frame.lane, body });
         return true;
     }
     if let Ok(mut left) = LEFT.lock() {
@@ -54,7 +54,7 @@ pub(crate) fn serve_left(stream: &mut TcpStream, frame: &Frame, context: &Contex
     }
     if let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) {
         let body = mycelium::anastome::dialogue::encode_deferral(mycelium::anastome::dialogue::PENDING_CODE, &deficit);
-        answer(stream, Frame { lane: frame.lane, body });
+        answer(stream, WireFrame { lane: frame.lane, body });
     }
     true
 }

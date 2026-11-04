@@ -913,7 +913,7 @@ pub fn read_chamber_after(
     // its pair regime, and reading its modes would spend the stroke on what
     // is known (rule 10).
     let first = nuclei.map(|ns| super::read_coxeter(ns, &[], budget));
-    let refused = matches!(first.as_ref().map(|r| &r.closure), Some(super::Closure::Infinite(_)));
+    let refused = matches!(first.as_ref().map(|r| &r.closure), Some(super::GroupClosure::Infinite(_)));
     let products: Vec<super::CoxeterProduct> = match nuclei {
         Some(ns) => orders.iter().flatten().filter_map(|o| super::coxeter_product(ns, o, !refused, budget)).collect(),
         None => Vec::new(),
@@ -927,7 +927,7 @@ pub fn read_chamber_after(
     // A product of infinite order refuses what the pairs did not (CX1).
     let coxeter = first.map(|r| match products.iter().enumerate().find_map(|(i, p)| p.infinite.map(|k| (i, k))) {
         Some((circuit, kind)) if !refused => {
-            super::CoxeterReading { closure: super::Closure::Infinite(super::Refusal::Product { circuit, kind }), ..r }
+            super::CoxeterReading { closure: super::GroupClosure::Infinite(super::Refusal::Product { circuit, kind }), ..r }
         }
         _ => r,
     });

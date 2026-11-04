@@ -68,7 +68,7 @@ pub const CATALOGUE: &[Mutant] = &[
     },
     Mutant {
         law: "47.3: a second vantage is a bonded organ with room, independent of the home",
-        file: "src/server/cognition/germinate/attest.rs",
+        file: "src/server/cognition/listings/attest.rs",
         before: "                bond(other).is_some()\n                    && room(other).is_some_and(|r| r.iter().any(|&l| l > 0))",
         after: "                let _ = (&bond, &room, other);\n                true",
         target: &["--lib"],

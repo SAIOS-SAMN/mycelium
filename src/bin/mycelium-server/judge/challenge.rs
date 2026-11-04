@@ -9,14 +9,14 @@ use mycelium::anastome::dialogue::challenge::{
     decode_challenge_request, encode_challenge_reply, encode_finality_reading, encode_line_head_reply, encode_obstructions_reply,
     ChallengeRequest, FinalityReading, LineHead,
 };
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(request) = decode_challenge_request(&frame.body) else { return };
     // The reads stay on the court (78.153b): finality, obstructions, tolls
     // and line heads are not on the shelf yet, and the domain acts are 78.154's.
-    let body = match crate::held::held!(context.court) {
+    let body = match crate::court_lock::held!(context.court) {
         Ok(mut h) => {
             let body = h.run(|k, _| match request {
                 ChallengeRequest::Signed(c) => Some(encode_challenge_reply(&k.challenge(&c))),
@@ -42,5 +42,5 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, Frame { lane: frame.lane, body });
+    answer(stream, WireFrame { lane: frame.lane, body });
 }

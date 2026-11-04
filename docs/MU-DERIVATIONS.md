@@ -1018,7 +1018,7 @@ nowhere in the equations.
 - Readings the court already holds at the falsification, each read BEFORE
   `reverse` moves it:
   - `B_l ∈ ℤ≥0` — the bond held:
-    `treasury.held_of(bond_key(tier)).mu[l]` (`economy::pay::Held`).
+    `treasury.held_of(bond_key(tier)).mu[l]` (`economy::pay::SetAside`).
   - `X_l ∈ ℤ≥0` — the EXPOSURE: the value the falsified fold's commitment
     moved on lane `l`, the quantity reversal returns. From `FoldRecord`
     (`src/server/cognition/ledger.rs:116`) and `Ledgers.remaining`, with
@@ -1427,15 +1427,15 @@ one name, one meaning):
   - `server/cognition/court/reconstruct.rs:50, 271, 397` (the docket's reconstruction
     and its fresh-stroke reading);
   - `server/cognition/court/glue.rs:495, 593, 631`; `court/lapse.rs:74`;
-    `court/phase.rs:237`; `court/syllabus.rs:369, 611`; `court/task.rs:155`;
+    `court/height_window.rs:237`; `court/syllabus.rs:369, 611`; `court/task.rs:155`;
     `court/vantage_install.rs:240`;
   - `server/cognition/basis.rs:661, 687, 705`; `book/demand.rs:102`;
     `book/language.rs:235`; `book/listings.rs:35`;
     `book/speech.rs:63, 81, 378, 675`; `book/tension.rs:221`;
     `cite.rs:393`; `cocycle.rs:89`; `atlas.rs:353`; `state.rs:1028`;
-    `germinate/attest.rs:26`; `germinate/stroke.rs:33, 128, 165, 192`;
-    `snapshot/read.rs:109`;
-  - `server/held/mod.rs:258`; `court/verdict/blind.rs:127`;
+    `listings/attest.rs:26`; `listings/stroke.rs:33, 128, 165, 192`;
+    `persistence/read.rs:109`;
+  - `server/court_lock/mod.rs:258`; `court/verdict/blind.rs:127`;
   - `client/sdk/rule.rs:510`; `client/sdk/mind/boot.rs:13, 39`;
     `second_vantage.rs:35`; `chatter.rs:259, 519, 623, 842, 962`; `contract.rs:147`;
     `court.rs:137`; `family.rs:472`; `learn.rs:289, 440, 480, 515, 527`;
@@ -3102,7 +3102,7 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 **Derivation.**
 
 - The quantity: contention on the court lock, already counted exactly by
-  the lock book (`src/server/held/mod.rs`): per site `took`, `waited`,
+  the lock book (`src/server/court_lock/mod.rs`): per site `took`, `waited`,
   `blocked`; `WAITING` (threads blocked now), `SERVED`; and the door's
   deferrals (each `work_tx` `Full`). No clock is needed; all are counts.
 - Candidate rule (workers): with `W` workers whose acts all take the
@@ -3122,7 +3122,7 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 - **Open:**
   - **O1, the off-lock metering.** This entry is not settled by the
     readings the tree holds. Needed reading: per worker act, strokes spent
-    under the lock against strokes spent off it (`Held::run` already
+    under the lock against strokes spent off it (`CourtGuard::run` already
     meters reads under the lock via `physics::spent_here`; the off-lock
     part is unmetered). With both counts, `W = 1 + ⌈off/under⌉` (strokes,
     exact over ℚ, ceiled to threads), `R_readers` as above, queue depth

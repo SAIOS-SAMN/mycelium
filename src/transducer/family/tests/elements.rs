@@ -8,7 +8,7 @@ use crate::transducer::family::Grid;
 use crate::core::Q;
 use crate::transducer::cga::{rotator, translator_at, Mv};
 use crate::transducer::family::statement::{speak_clauses, speak_elements, Unstated};
-use crate::transducer::sentence::form::clause::{put_clauses, About, Act, Clause, Extent, Paint, Pred, Region, Stop};
+use crate::transducer::sentence::form::clause::{put_clauses, About, Act, Clause, Extent, Paint, Pred, RegionKind, Stop};
 use crate::transducer::sentence::form::rule_element::{gloss, lattice_step, lower, Carriage, Lowered, Reach, RuleElement, Trace};
 
 fn grid(rows: &[&str]) -> Grid {
@@ -50,7 +50,7 @@ fn gloss_inverts_lower_on_every_act() {
         Act::Echo { motion: shift(0, 2), about: About::Grid, gauge: Vec::new() },
         Act::Slide { ray: (1, -1), stop: Stop::Contact },
         Act::Extend { ray: (0, 2), paint: Paint::Hue(7), stop: Stop::Border },
-        Act::Fill { region: Region::Interior, hue: 4 },
+        Act::Fill { region: RegionKind::Interior, hue: 4 },
         Act::Connect { paint: Paint::Own },
         Act::Bend { to: Pred::Hue(2), paint: Paint::Hue(3) },
         Act::Copy { template: Pred::Hue(8) },
@@ -155,7 +155,7 @@ fn put_elements_writes_named_elements_as_clauses() {
         Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, 0), stop: Stop::Contact } },
         Clause { select: Pred::Hue(5), act: Act::Repaint { paint: Paint::Of(Pred::Hue(3)) } },
         Clause { select: Pred::All, act: Act::Carry { motion: rotator(&q(0), &q(1)), about: About::Body, gauge: vec![(2, 3)] } },
-        Clause { select: Pred::All, act: Act::Parts(Box::new(Act::Fill { region: Region::Halo, hue: 6 })) },
+        Clause { select: Pred::All, act: Act::Parts(Box::new(Act::Fill { region: RegionKind::Halo, hue: 6 })) },
     ];
     let elements = crate::transducer::sentence::form::rule_element::lower_all(&clauses).expect("lowers");
     let bytes = written(&elements);

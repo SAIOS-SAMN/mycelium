@@ -52,7 +52,7 @@ fn verify_sized_leaves_turn_unread_on_short_stroke() {
 /// named beside the others, not only the first.
 #[test]
 fn verify_names_every_breach_by_law() {
-    let laws_of = |v: &Verdict| v.breaches.iter().map(|(l, _)| *l).collect::<Vec<_>>();
+    let laws_of = |v: &TransitionVerdict| v.breaches.iter().map(|(l, _)| *l).collect::<Vec<_>>();
     // TIME: the height stands still.
     let still = Transition { motion: turn(), heights: (8, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     assert_eq!(laws_of(&verify(&still, &mut budget())), vec![Law::Time]);
@@ -119,7 +119,7 @@ fn verify_admits_dilation_momentum_up_to_one_ratio() {
         b.mass = q(mass);
         BodyState { nucleus: sphere_at(&b.centre, &q(radius)), body: b }
     };
-    let dilated = |s: &BodyState, mass: i64| BodyState { nucleus: d.sandwich(&s.nucleus), body: Body { mass: q(mass), ..s.body.clone() } };
+    let dilated = |s: &BodyState, mass: i64| BodyState { nucleus: d.sandwich(&s.nucleus), body: BodyMoments { mass: q(mass), ..s.body.clone() } };
     let one = at_origin(1, 1);
     let t = Transition { motion: d.clone(), heights: (1, 2), bodies: vec![(one.clone(), dilated(&one, 4))], hues: Vec::new(), fluxes: Vec::new() };
     let v = verify(&t, &mut budget());

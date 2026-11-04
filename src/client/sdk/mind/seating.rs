@@ -1,4 +1,4 @@
-// 78.164, 78.145, 78.146 — THE BODY, A BOUNDARY: the seats this mind sits in
+// 78.164, 78.145, 78.146 — THE SEATING, A BOUNDARY: the seats this mind sits in
 // a game's house. Inflow — the mail the house posts to the mind's key: TAKEN,
 // PERCEPT, OUTCOME, and the listing of a seat's functions. Outflow — the
 // mind's calls: its own call at each beat, and the solve of a task set
@@ -90,10 +90,10 @@ fn met(slot: &mut u64) {
     let _ = crate::physics::metabolism::step_or_refuse(slot, 1);
 }
 
-/// THE BODY: the seats sat, the key they are sat by, and the shared box's
+/// THE SEATING: the seats sat, the key they are sat by, and the shared box's
 /// cursor under the relay's epoch — with whether a page of it is on the
 /// seat's carrier now, and how many pages this reading has asked.
-pub(crate) struct Body {
+pub(crate) struct Seating {
     seats: Vec<Seat>,
     key: ed25519_dalek::SigningKey,
     domain: [u8; 32],
@@ -169,7 +169,7 @@ impl Mind {
             }
             Sitting::All => (Vec::new(), true),
         };
-        self.board.body = Some(Body {
+        self.board.seating = Some(Seating {
             seats,
             key,
             domain,
@@ -191,9 +191,9 @@ impl Mind {
     /// listing asked where it is due, each seat taken again where lost, and
     /// the shared box's first page asked where no reading of it is in flight.
     /// Nothing here waits on the house.
-    pub(crate) fn body_tick(&mut self) {
+    pub(crate) fn seating_tick(&mut self) {
         self.drain_seat_answers();
-        let Some(mut body) = self.board.body.take() else { return };
+        let Some(mut body) = self.board.seating.take() else { return };
         // The house's listing, read off the mind's own relay: which seats it
         // names, under which epoch — what a take waits on (MU-CLIENT §7.1).
         if let Some(n) = body.unlisted.checked_add(1) {
@@ -209,7 +209,7 @@ impl Mind {
             body.pages = 0;
             self.ask_mail(&mut body);
         }
-        self.board.body = Some(body);
+        self.board.seating = Some(body);
     }
 
     /// MU-CLIENT §7.1 — EACH SEAT SAT, AS THE OBSERVER READS IT: whether it is
@@ -217,7 +217,7 @@ impl Mind {
     /// tasks passed uncoupled and standing, the calls posted and the beats
     /// passed. None where the body sits no seat.
     pub(crate) fn seat_lines(&self) -> Vec<String> {
-        let Some(body) = self.board.body.as_ref() else { return Vec::new() };
+        let Some(body) = self.board.seating.as_ref() else { return Vec::new() };
         body.seats
             .iter()
             .map(|s| {
@@ -237,7 +237,7 @@ impl Mind {
 
     /// The seat at `at`, where the body still sits it.
     fn with_body_seat(&mut self, at: SeatName, f: impl FnOnce(&mut Seat)) {
-        if let Some(seat) = self.board.body.as_mut().and_then(|b| b.seats.iter_mut().find(|s| s.at == at)) {
+        if let Some(seat) = self.board.seating.as_mut().and_then(|b| b.seats.iter_mut().find(|s| s.at == at)) {
             f(seat);
         }
     }
@@ -247,7 +247,7 @@ impl Mind {
     /// now — nothing where the seat is no longer sat or the task was answered
     /// meanwhile.
     fn seat_act(&mut self, at: SeatName, task: Option<[u8; 32]>) {
-        let Some(mut body) = self.board.body.take() else { return };
+        let Some(mut body) = self.board.seating.take() else { return };
         let key = body.key.clone();
         if let Some(seat) = body.seats.iter_mut().find(|s| s.at == at) {
             // MU-CLIENT §7.1 — a task passed is pulled again only where its
@@ -286,14 +286,14 @@ impl Mind {
                 None => self.beat(seat, &key),
             }
         }
-        self.board.body = Some(body);
+        self.board.seating = Some(body);
     }
 
     /// THE DOMAIN'S LATEST LISTING, asked of the mind's own relay; where it
     /// lands, each seat sat reads whether it names it and under which epoch
     /// (a take waits on it), and — 78.158a SIT-ALL — the seats it offers are
     /// sat and those it no longer offers let go. No listing names no seat.
-    fn sit_listing(&mut self, body: &mut Body) {
+    fn sit_listing(&mut self, body: &mut Seating) {
         body.unlisted = 0;
         body.relist = false;
         let (domain, sub_origin) = (body.domain, body.sub_origin);
@@ -301,13 +301,13 @@ impl Mind {
             // A listing that could not be read still opens the mail: the held
             // read is what wakes a resting mind, and it must never be withheld.
             let Ok(read) = read else {
-                if let Some(b) = entity.board.body.as_mut() {
+                if let Some(b) = entity.board.seating.as_mut() {
                     b.listing_read = true;
                 }
                 return;
             };
             let named = read.as_ref().and_then(crate::client::sdk::seat::listed_seats);
-            let Some(mut body) = entity.board.body.take() else { return };
+            let Some(mut body) = entity.board.seating.take() else { return };
             if let (true, Some((_, listed))) = (body.all, named.as_ref()) {
                 let sat: Vec<u32> = body.seats.iter().map(|s| s.at.seat).collect();
                 let (take, let_go) = crate::client::sdk::seat::reseat(&sat, listed);
@@ -332,7 +332,7 @@ impl Mind {
             }
             body.listed = named.map(|(epoch, _)| epoch);
             body.listing_read = true;
-            entity.board.body = Some(body);
+            entity.board.seating = Some(body);
         });
     }
 
@@ -358,7 +358,7 @@ impl Mind {
     /// never seen again (2026-10-23: a restart read the house's percepts
     /// before its listing and lost them). The listing's landing wakes the
     /// mind, and its next tick asks.
-    fn ask_mail(&mut self, body: &mut Body) {
+    fn ask_mail(&mut self, body: &mut Seating) {
         if body.all && !body.listing_read {
             return;
         }
@@ -378,7 +378,7 @@ impl Mind {
     /// names, and the next page asked while this reading's patience lasts and
     /// the box gave mail.
     fn read_mail_page(&mut self, read: io::Result<Result<MindRead, Refusal>>) {
-        let Some(mut body) = self.board.body.take() else { return };
+        let Some(mut body) = self.board.seating.take() else { return };
         body.mailing = false;
         let (mail, standing_seq) = match read {
             Ok(Ok(MindRead { epoch, seq, mail })) => {
@@ -404,13 +404,13 @@ impl Mind {
             // renewal is paced by that deadline, never a spin.
             Err(_) => {
                 self.ask_mail(&mut body);
-                self.board.body = Some(body);
+                self.board.seating = Some(body);
                 return;
             }
             // A refusal names a fault in the read itself (unsigned,
             // malformed): asking again at once would only be refused again.
             Ok(Err(_)) => {
-                self.board.body = Some(body);
+                self.board.seating = Some(body);
                 return;
             }
         };
@@ -468,7 +468,7 @@ impl Mind {
                 self.ask_mail(&mut body);
             }
         }
-        self.board.body = Some(body);
+        self.board.seating = Some(body);
         // THE HOUSE'S PERCEPT IS ITS OWN EVENT (ruled
         // 2026-10-22, option (a)): each task it sets before a seat is taken up
         // where the mail lands, the body back on the board — never held for a
@@ -564,7 +564,7 @@ impl Mind {
                 }
                 None => crate::client::sdk::seat::listed_seats(&listing).map(|(e, _)| e),
             };
-            if let Some(body) = entity.board.body.as_mut() {
+            if let Some(body) = entity.board.seating.as_mut() {
                 if body.all && epoch.is_some() && epoch != body.listed {
                     body.relist = true;
                 }
@@ -637,12 +637,12 @@ impl Mind {
             // 2026-10-23): a seat's attention is its house's, and a resting
             // seat's field couples to nothing — the coupling gate passed every
             // petition. The petition path itself is the gate (`solve_before`).
-            let Some(mut b) = entity.board.body.take() else { return };
+            let Some(mut b) = entity.board.seating.take() else { return };
             if let Some(seat) = b.seats.iter_mut().find(|s| s.at == at) {
                 let _ = seat.unpulled.remove(&id);
                 entity.solve_before(seat, &key, &id, env.train, env.tests);
             }
-            entity.board.body = Some(b);
+            entity.board.seating = Some(b);
         });
     }
 
@@ -659,7 +659,7 @@ impl Mind {
     /// task read and not solved rests until the mind's language moves
     /// (`Seat::rested`).
     fn solve_before(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::transducer::family::Grid>) {
-        use super::perceive::{Reading, Stop};
+        use super::perceive::{SceneKind, Stop};
         let ground = crate::transducer::raster::ground_of(&train);
         // Σ is the whole family's, its test inputs included (MU-SENSING §3.3).
         let posted = tests.clone();
@@ -667,7 +667,7 @@ impl Mind {
             crate::transducer::raster::on_ground(ground, || self.solve_before_on_ground(seat, key, id, train, tests))
         });
         let Some(stop) = read else { return };
-        self.note_task(id, Reading::Task, |t| {
+        self.note_task(id, SceneKind::Task, |t| {
             t.taken = true;
             t.stop = Some(stop);
         });

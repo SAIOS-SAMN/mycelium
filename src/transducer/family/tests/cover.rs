@@ -239,7 +239,7 @@ fn pieces_of_keeps_polychrome_body_whole() {
 ///
 /// §4.4 E8 — AND NOW THE ADDRESS IS A COORDINATE. `meet_key` and
 /// `meet_ends` were a hand-written pair over loose bytes; the three
-/// addresses of a cover are [`coord::Piece`], [`coord::Carriage`] and
+/// addresses of a cover are [`coord::Piece`], [`coord::CarriedPieces`] and
 /// [`coord::Meet`], each of which decodes back to itself or refuses. The
 /// property this test always asserted is the coordinate's own law,
 /// `decode(encode(x)) == x`, and it is asserted here on the value rather
@@ -267,15 +267,15 @@ fn meet_decode_round_trips_and_refuses_truncation() {
     // `assembly_key` wrote a one-piece assembly as that piece's bare bytes
     // and a many-piece one as a run of length-prefixed pieces, so nothing
     // could read a carriage address back at all. Both decode now.
-    let one = coord::Carriage { domain: vec![a.clone()], codomain: vec![b.clone()] };
-    let many = coord::Carriage {
+    let one = coord::CarriedPieces { domain: vec![a.clone()], codomain: vec![b.clone()] };
+    let many = coord::CarriedPieces {
         domain: vec![a.clone(), b.clone(), c.clone()],
         codomain: vec![b.clone()],
     };
     assert_ne!(one.encode(), many.encode(), "two assemblies are two coordinates");
     for car in [&one, &many] {
         assert_eq!(
-            coord::Carriage::decode(car.encode().as_bytes()).as_ref(),
+            coord::CarriedPieces::decode(car.encode().as_bytes()).as_ref(),
             Ok(car),
             "a carriage's address gives the carriage back"
         );

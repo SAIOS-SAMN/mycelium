@@ -35,7 +35,7 @@ pub(crate) fn rotor_versor(g: &crate::transducer::alphabet::Rotor) -> Option<ele
     crate::transducer::element::conformal_of(&word, &crate::transducer::element::identity_versor())
 }
 
-pub(crate) fn union_remainders(entries: &[FieldEntry]) -> Vec<(i64, i64, u8, u8)> {
+pub(crate) fn union_remainders(entries: &[ProbedChart]) -> Vec<(i64, i64, u8, u8)> {
     let mut u = Vec::new();
     for e in entries {
         if !e.state.is_flat() {

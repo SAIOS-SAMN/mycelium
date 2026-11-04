@@ -15,7 +15,7 @@
 
 use super::*;
 use crate::core::Q;
-use crate::transducer::sentence::form::clause::{exact_root, About, Clause, Comparison, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value};
+use crate::transducer::sentence::form::clause::{exact_root, About, Clause, Comparison, Coord, Extent, Order, Paint, Pred, RegionKind, Stop, Tie, Value};
 use crate::transducer::sentence::form::rule_element::{self, Carriage, Lowered, Reach, RuleElement, Trace};
 
 /// WHY A CLAUSE IS NOT STATED ON A SCENE, by name.
@@ -364,10 +364,10 @@ impl<'a> Seen<'a> {
 
     /// THE BACKGROUND CELLS A REGION NAMES about the selection, each once
     /// per body that names it (a fill paints them all one hue).
-    fn region(&self, region: Region, sel: &[usize]) -> Vec<(usize, usize)> {
+    fn region(&self, region: RegionKind, sel: &[usize]) -> Vec<(usize, usize)> {
         match region {
-            Region::Interior => self.enclosed(sel),
-            Region::Halo => {
+            RegionKind::Interior => self.enclosed(sel),
+            RegionKind::Halo => {
                 let mut out = Vec::new();
                 for &b in sel {
                     for &(r, c, _) in &self.cells[b] {
@@ -382,7 +382,7 @@ impl<'a> Seen<'a> {
                 }
                 out
             }
-            Region::Extent => {
+            RegionKind::Extent => {
                 let mut out = Vec::new();
                 for &b in sel {
                     let Some((t, l, bt, r)) = extent_of(&self.cells[b]) else { continue };
@@ -856,7 +856,7 @@ pub(crate) fn select_each(preds: &[Pred], x: &Grid, bodies: &[Body]) -> Vec<Opti
 /// THE REGION SEVERAL BODIES NAME TOGETHER, as a fill selecting them speaks
 /// it (`Seen::region` over the set): the set's joint interior is every ground
 /// cell the set walls in, which no one of them may.
-pub(crate) fn region_of_set(region: Region, x: &Grid, bodies: &[Body], set: &[usize]) -> Vec<(usize, usize)> {
+pub(crate) fn region_of_set(region: RegionKind, x: &Grid, bodies: &[Body], set: &[usize]) -> Vec<(usize, usize)> {
     Seen::of(x, bodies).region(region, set)
 }
 
@@ -890,7 +890,7 @@ pub(crate) fn partner_hues(x: &Grid, bodies: &[Body]) -> Vec<Option<u8>> {
 /// 78.167 C — the cells a region names about each ONE body of the scene, as
 /// a fill would paint them: the act reading asks which bodies' regions the
 /// created cells lie in.
-pub(crate) fn regions_each(region: Region, x: &Grid, bodies: &[Body]) -> Vec<Vec<(usize, usize)>> {
+pub(crate) fn regions_each(region: RegionKind, x: &Grid, bodies: &[Body]) -> Vec<Vec<(usize, usize)>> {
     let seen = Seen::of(x, bodies);
     (0..bodies.len()).map(|b| seen.region(region, &[b])).collect()
 }

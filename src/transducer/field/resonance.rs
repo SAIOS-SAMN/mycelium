@@ -404,8 +404,8 @@ struct Row {
     other_mass: Vec<u64>,
     /// A.13 — this body and each of the other's as momentum reads them:
     /// centroid, mass, second moments (78.52 Row 1).
-    body: Option<crate::physics::equilibrium::Body>,
-    other_bodies: Vec<Option<crate::physics::equilibrium::Body>>,
+    body: Option<crate::physics::equilibrium::BodyMoments>,
+    other_bodies: Vec<Option<crate::physics::equilibrium::BodyMoments>>,
 }
 
 /// ONE LINE OF A PAIR'S SPECTRUM (78.50): a ray, the bodies of this
@@ -419,7 +419,7 @@ struct Line {
 }
 
 /// The physics' verdict on a relation: admitted, or refused by name.
-type Verdict = Result<(), crate::physics::equilibrium::Refusal>;
+type RelationAdmission = Result<(), crate::physics::equilibrium::Refusal>;
 
 /// A GROUND FROM ITS BODIES AND ITS STEP FORWARD (78.52): the step at its
 /// canonical ray, its class and its return (a period of at least two), and
@@ -1220,7 +1220,7 @@ impl Contemplation {
             // torque, every step read.
             if orbit {
                 for r in &on {
-                    let hours: Option<Vec<&crate::physics::equilibrium::Body>> =
+                    let hours: Option<Vec<&crate::physics::equilibrium::BodyMoments>> =
                         first.other_bodies.iter().chain(std::iter::once(&r.body)).map(Option::as_ref).collect();
                     let Some(hours) = hours else { continue };
                     for pair in hours.windows(2) {
@@ -1448,7 +1448,7 @@ impl Contemplation {
     /// rate) and LIFT (the tilt, 78.46), each counted. `None` where no
     /// rotation of the pull carries it: the body was carried off the
     /// attractor (a slide away, a change of size, another body).
-    fn twisted_return(&mut self, held: super::well::Grounded, perceived: &[(&Mv, &crate::physics::equilibrium::Body)], power: &Mv) -> Option<super::well::Grounded> {
+    fn twisted_return(&mut self, held: super::well::Grounded, perceived: &[(&Mv, &crate::physics::equilibrium::BodyMoments)], power: &Mv) -> Option<super::well::Grounded> {
         use crate::physics::equilibrium::{carried_body, GroundBody};
         let g = &held.ground;
         let centre = match crate::transducer::cga::centre_of(&g.generator, g.generator.n()) {
@@ -1487,10 +1487,10 @@ impl Contemplation {
     }
 
     /// `join_ground`'s reading: the verdict and the ground's generator.
-    fn read_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], budget: &mut crate::physics::Budget) -> Option<(Verdict, Mv)> {
+    fn read_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], budget: &mut crate::physics::Budget) -> Option<(RelationAdmission, Mv)> {
         use crate::physics::equilibrium::{carried_body, coherence, external_torque, hour, metric_defect, Constellation, Refusal};
         let held = self.wells.get(other)?.ground.clone()?;
-        let perceived: Vec<(&Mv, &crate::physics::equilibrium::Body)> = rows
+        let perceived: Vec<(&Mv, &crate::physics::equilibrium::BodyMoments)> = rows
             .iter()
             .filter(|r| r.chart == held.chart)
             .filter_map(|r| match (&r.nucleus, &r.body) {
@@ -1527,7 +1527,7 @@ impl Contemplation {
         let g = &grounded.ground;
         // Each body of the ground, at its predicted place, against the one of
         // this perception's bodies that stands there.
-        let mut matched: Vec<(&crate::physics::equilibrium::GroundBody, &Mv, &crate::physics::equilibrium::Body)> =
+        let mut matched: Vec<(&crate::physics::equilibrium::GroundBody, &Mv, &crate::physics::equilibrium::BodyMoments)> =
             Vec::with_capacity(perceived.len());
         for base in &g.bodies {
             let predicted = power.sandwich(&base.nucleus);

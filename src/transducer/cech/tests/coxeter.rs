@@ -31,7 +31,7 @@ fn read_coxeter_reads_a3_simple_roots_as_finite() {
     let roots = [v(&[(E1, 1), (E2, -1)]), v(&[(E2, 1), (E3, -1)]), v(&[(E2, 1), (E3, 1)])];
     let r = read_coxeter(&roots, &[], &mut stroke());
     assert_eq!(r.components, vec![(vec![0, 1, 2], ComponentClass::Finite)]);
-    assert_eq!(r.closure, Closure::Finite { by_theorem: true, order: Some(24) });
+    assert_eq!(r.closure, GroupClosure::Finite { by_theorem: true, order: Some(24) });
 }
 
 /// A₂'S THREE ROOTS ARE NOT A SYSTEM — dependent — so the theorem does not
@@ -42,7 +42,7 @@ fn read_coxeter_certifies_a2_roots_at_order_six() {
     let c = a.add(&b);
     let r = read_coxeter(&[a, b, c], &[], &mut stroke());
     assert_eq!(r.components, vec![(vec![0, 1, 2], ComponentClass::Unrecognized)]);
-    assert_eq!(r.closure, Closure::Finite { by_theorem: false, order: Some(6) });
+    assert_eq!(r.closure, GroupClosure::Finite { by_theorem: false, order: Some(6) });
 }
 
 /// THE CUBE'S CORNER — three orthogonal mirrors — READS FINITE `ℤ₂³`; ITS
@@ -52,7 +52,7 @@ fn read_coxeter_reads_cube_corner_finite_and_faces_affine() {
     let corner = [plane(E1, 0), plane(E2, 0), plane(E3, 0)];
     let r = read_coxeter(&corner, &[], &mut stroke());
     assert!(r.components.iter().all(|(_, k)| *k == ComponentClass::Finite));
-    assert_eq!(r.closure, Closure::Finite { by_theorem: true, order: Some(8) });
+    assert_eq!(r.closure, GroupClosure::Finite { by_theorem: true, order: Some(8) });
     let faces = [plane(E1, 0), plane(E1, 1), plane(E2, 0), plane(E2, 1), plane(E3, 0), plane(E3, 1)];
     let r = read_coxeter(&faces, &[], &mut stroke());
     assert_eq!(
@@ -63,7 +63,7 @@ fn read_coxeter_reads_cube_corner_finite_and_faces_affine() {
             (vec![4, 5], ComponentClass::Affine)
         ]
     );
-    assert!(matches!(r.closure, Closure::Infinite(Refusal::Affine(_))));
+    assert!(matches!(r.closure, GroupClosure::Infinite(Refusal::Affine(_))));
 }
 
 /// MG1b — A PARALLEL FAMILY READS AFFINE `Ã₁`, its translation `2·gcd` of
@@ -77,7 +77,7 @@ fn read_coxeter_reads_parallel_family_affine_at_twice_gcd() {
     let r = read_coxeter(&at(&[(0, 1), (1, 1), (2, 1)]), &[], &mut stroke());
     assert_eq!(r.components, vec![(vec![0, 1, 2], ComponentClass::Affine)]);
     assert_eq!(r.parallel, vec![(vec![0, 1, 2], q(2, 1))]);
-    assert!(matches!(r.closure, Closure::Infinite(Refusal::Affine(_))), "affine precedes the parabolic pair");
+    assert!(matches!(r.closure, GroupClosure::Infinite(Refusal::Affine(_))), "affine precedes the parabolic pair");
     let half = read_coxeter(&at(&[(0, 1), (1, 2), (1, 1)]), &[], &mut stroke());
     assert_eq!(half.parallel, vec![(vec![0, 1, 2], q(1, 1))]);
     let mut scaled = at(&[(0, 1), (1, 1), (2, 1)]);
@@ -93,7 +93,7 @@ fn coxeter_product_gives_rosette_pair_infinite_order() {
     let p = coxeter_product(&pair, &[0, 1], true, &mut stroke()).expect("a product");
     assert_eq!(p.infinite, Some(BivectorKind::Elliptic), "a turn that never closes");
     let r = read_coxeter(&pair, &[p], &mut stroke());
-    assert_eq!(r.closure, Closure::Infinite(Refusal::Pair(0, 1, PairRegime::Rosette)));
+    assert_eq!(r.closure, GroupClosure::Infinite(Refusal::Pair(0, 1, PairRegime::Rosette)));
 }
 
 /// A 1-CELL'S TETHER READS ITS PENCIL AS A MOTION: two intersecting spheres

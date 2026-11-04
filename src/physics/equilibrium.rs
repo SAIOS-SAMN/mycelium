@@ -58,9 +58,9 @@ use num_traits::Zero;
 
 type Q = BigRational;
 
-/// ONE FRAME OF A CONSTELLATION: a body's nucleus and its pose.
+/// ONE POSED NUCLEUS OF A CONSTELLATION: a body's nucleus and its pose.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Frame {
+pub struct PosedNucleus {
     pub nucleus: Mv,
     pub pose: Mv,
 }
@@ -69,7 +69,7 @@ pub struct Frame {
 /// one generator.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Constellation {
-    pub frames: Vec<Frame>,
+    pub frames: Vec<PosedNucleus>,
     pub generator: Mv,
 }
 
@@ -245,7 +245,7 @@ pub fn frames_stand(c: &Constellation) -> Result<(), Refusal> {
     if rest.is_empty() {
         return Err(Refusal::MonocularOrbit);
     }
-    let mut seen: Vec<&Frame> = vec![first];
+    let mut seen: Vec<&PosedNucleus> = vec![first];
     for f in rest {
         if seen.iter().any(|g| collapsed(g, f)) {
             return Err(Refusal::SingularCollapse);
@@ -257,7 +257,7 @@ pub fn frames_stand(c: &Constellation) -> Result<(), Refusal> {
 
 /// THE ATTITUDE COUPLING `V_ij = θ_j θ̃_i` between two frames (78.51(4′),
 /// 78.52 Row 1): the relative pose, the hour carried in it.
-pub fn coupling(i: &Frame, j: &Frame) -> Mv {
+pub fn coupling(i: &PosedNucleus, j: &PosedNucleus) -> Mv {
     j.pose.geo(&i.pose.reverse())
 }
 
@@ -309,7 +309,7 @@ pub fn succession(step: &Mv, centre: &[Q]) -> Option<Mv> {
 /// carried by the hour rotor's `m`-th power — the nucleus to its place on the
 /// succession, the pose the power itself. Each power held at its canonical
 /// ray.
-pub fn hour(s: &Mv, r_hour: &Mv, m: u64) -> Frame {
+pub fn hour(s: &Mv, r_hour: &Mv, m: u64) -> PosedNucleus {
     let mut power = Mv::scalar(num_traits::One::one());
     for _ in 0..m {
         let next = r_hour.geo(&power);
@@ -318,14 +318,14 @@ pub fn hour(s: &Mv, r_hour: &Mv, m: u64) -> Frame {
             None => next,
         };
     }
-    carried(&Frame { nucleus: s.clone(), pose: Mv::scalar(num_traits::One::one()) }, &power)
+    carried(&PosedNucleus { nucleus: s.clone(), pose: Mv::scalar(num_traits::One::one()) }, &power)
 }
 
 /// A BODY AS A.13 READS IT: its centroid, its mass (its sites), and its
 /// second moments about the centroid on its base axes, `moments[a][b] =
 /// ∫ x_a x_b` (`Blade::moment2`), exact.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Body {
+pub struct BodyMoments {
     pub centre: Vec<Q>,
     pub mass: Q,
     pub moments: Vec<Vec<Q>>,
@@ -336,13 +336,13 @@ pub struct Body {
 /// moments about the centroid on each pair of its base's axes
 /// (`Blade::moment2`). The one producer: perception's gate and the law
 /// register's bridge both read a body through it (law 12).
-pub fn body_of_shape(s: &crate::transducer::blade::Shape) -> Option<Body> {
+pub fn body_of_shape(s: &crate::transducer::blade::Shape) -> Option<BodyMoments> {
     let b = &s.blade;
     let nucleus = b.vertex_nucleus()?;
     let n = b.n();
     let centre = cga::base_at(&nucleus, n)?;
     let moments = (0..n).map(|i| (0..n).map(|j| b.moment2(i, j).cloned()).collect::<Option<Vec<_>>>()).collect::<Option<Vec<_>>>()?;
-    Some(Body { centre, mass: Q::from_integer((b.support.len() as u64).into()), moments })
+    Some(BodyMoments { centre, mass: Q::from_integer((b.support.len() as u64).into()), moments })
 }
 
 /// `e_a ∧ e_b` for two base axes, each by its mask.
@@ -365,7 +365,7 @@ fn body_axes(n: usize) -> Option<Vec<usize>> {
 /// weighed by the mass; the result is carried back to the centroid's place.
 /// Exact over ℚ; no velocity, no derivative (law 1): `B` is a step's own
 /// bivector. `None` where the body has more axes than the algebra holds.
-pub fn momentum(body: &Body, b: &Mv) -> Option<Mv> {
+pub fn momentum(body: &BodyMoments, b: &Mv) -> Option<Mv> {
     let t = cga::translator_at(&body.centre);
     let local = t.reverse().geo(b).geo(&t).grade(2);
     let held = body_axes(body.moments.len())?;
@@ -391,7 +391,7 @@ pub fn momentum(body: &Body, b: &Mv) -> Option<Mv> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GroundBody {
     pub nucleus: Mv,
-    pub body: Body,
+    pub body: BodyMoments,
 }
 
 /// A THOUGHT'S GROUND (78.52): the constellation a thought holds — PRIVATE to
@@ -443,7 +443,7 @@ pub fn ground_centre(g: &Ground) -> Option<Vec<Q>> {
 /// `C′ = R C Rᵀ`, `R`'s columns the images of the base axes read at unit
 /// weight; the mass unchanged. `None` where the step does not factor, scales
 /// or transverses (no rigid carriage), or the centroid goes to infinity.
-pub fn carried_body(body: &Body, g: &Mv) -> Option<Body> {
+pub fn carried_body(body: &BodyMoments, g: &Mv) -> Option<BodyMoments> {
     let f = crate::transducer::element::conformal_factors(g).ok()?;
     if !num_traits::One::is_one(&f.rho) || f.transverses() || f.inverted {
         return None;
@@ -476,7 +476,7 @@ pub fn carried_body(body: &Body, g: &Mv) -> Option<Body> {
             *slot = s;
         }
     }
-    Some(Body { centre, mass: body.mass.clone(), moments })
+    Some(BodyMoments { centre, mass: body.mass.clone(), moments })
 }
 
 /// A.13 · THE EXTERNAL TORQUE across one hour (78.52 Row 1): the body
@@ -488,7 +488,7 @@ pub fn carried_body(body: &Body, g: &Mv) -> Option<Body> {
 /// carried momentum is read at unit weight — divided by it, exactly (the
 /// scale is content here: momentum is compared coefficient by coefficient).
 /// `None` for a null versor, which has no weight to read.
-pub fn external_torque(before: &Body, after: &Body, step: &Mv) -> Option<Mv> {
+pub fn external_torque(before: &BodyMoments, after: &BodyMoments, step: &Mv) -> Option<Mv> {
     let b = step.grade(2);
     let w = step.geo(&step.reverse()).scalar_part();
     if w.is_zero() {
@@ -500,12 +500,12 @@ pub fn external_torque(before: &Body, after: &Body, step: &Mv) -> Option<Mv> {
 
 /// TWO FRAMES' PAIR: the frames' product at unit weight ([`unit_product`]) and
 /// the pair's regime, read in the algebra (GR1, 78.59) — never a squared ratio.
-pub fn inversive(i: &Frame, j: &Frame) -> (Option<Q>, PairRegime) {
+pub fn inversive(i: &PosedNucleus, j: &PosedNucleus) -> (Option<Q>, PairRegime) {
     (unit_product(&i.nucleus, &j.nucleus), cga::pair_regime(&[i.nucleus.clone(), j.nucleus.clone()], 0, 1))
 }
 
 /// Whether two frames' nuclei coincide as a ray: `s_i ∧ s_j = 0`.
-fn collapsed(i: &Frame, j: &Frame) -> bool {
+fn collapsed(i: &PosedNucleus, j: &PosedNucleus) -> bool {
     i.nucleus.geo(&j.nucleus).grade(2).is_zero()
 }
 
@@ -724,8 +724,8 @@ pub fn equilibrium(c: &Constellation) -> Result<(), Refusal> {
 
 /// A FRAME CARRIED BY AN OPERATION `T` (A.10.1 law IV): its nucleus by the
 /// sandwich, its pose composed.
-pub fn carried(f: &Frame, t: &Mv) -> Frame {
-    Frame { nucleus: t.sandwich(&f.nucleus), pose: t.geo(&f.pose) }
+pub fn carried(f: &PosedNucleus, t: &Mv) -> PosedNucleus {
+    PosedNucleus { nucleus: t.sandwich(&f.nucleus), pose: t.geo(&f.pose) }
 }
 
 /// THE FORCE AN OPERATION EXERTS (A.10.1 law IV, plane by plane by 78.62):

@@ -2,14 +2,14 @@
 // one certified cell per standing set, at the grade its members give.
 
 use crate::network::nerve::keyed::coord;
-use crate::transducer::cech::{cells_over, read_nerve, support_of_cover, Chart};
+use crate::transducer::cech::{cells_over, read_nerve, support_of_cover, CoverCoordinates};
 
-fn compartment(row: i64, col: i64, frame: i64) -> coord::Compartment {
-    coord::Compartment { site: crate::transducer::base::Site::from((row, col, frame)) }
+fn compartment(row: i64, col: i64, frame: i64) -> coord::CoverSite {
+    coord::CoverSite { site: crate::transducer::base::Site::from((row, col, frame)) }
 }
 
 /// Each chart with its own section coordinates: here, one carriage each.
-fn sections(footprints: &[Vec<coord::Compartment>]) -> Vec<Chart> {
+fn sections(footprints: &[Vec<coord::CoverSite>]) -> Vec<CoverCoordinates> {
     footprints.iter().enumerate().map(|(i, f)| (vec![b's', u8::try_from(i).expect("a fixture's chart ordinal, a few charts")], f.clone())).collect()
 }
 
@@ -100,8 +100,8 @@ fn read_nerve_keys_cells_by_member_coordinates() {
 fn compartment_round_trips() {
     use crate::network::nerve::keyed::Coordinate;
     for p in [compartment(0, 0, 0), compartment(1, 2, 3), compartment(-5, 7, -9), compartment(i64::MIN, i64::MAX, 0)] {
-        let written = coord::Compartment::encode(&p);
-        let round = coord::Compartment::decode(written.as_bytes()).expect("a written compartment decodes");
+        let written = coord::CoverSite::encode(&p);
+        let round = coord::CoverSite::decode(written.as_bytes()).expect("a written compartment decodes");
         assert_eq!(round, p, "a compartment is what its coordinate says it is");
     }
 }

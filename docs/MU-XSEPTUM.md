@@ -72,7 +72,7 @@ it can work instead (§6.3).
 
 ## 5. Wire
 
-All frames use `network::wire::Frame { lane, body }` with the first body
+All frames use `network::wire::WireFrame { lane, body }` with the first body
 byte the act. Reserved acts (new; verify against `anastome/dialogue/acts.rs`
 before building, 0x20–0x22 are taken by COVER/OFFER/INSTALLED):
 
@@ -361,7 +361,7 @@ Built: act 0x35 (`src/anastome/dialogue/equivocation.rs`,
 Existing, reused unchanged: `escrow_award`, `release_award`, `revoke_award`,
 `draw_escrow`, `balance_mu`, `price`, `lane_moves`, `bind_listing_task`,
 `record_deflation`, `reconstruct_blind`, `home_install`, `nerve::home`,
-`HyphaKey`, `Frame`.
+`HyphaKey`, `WireFrame`.
 
 ## 11. Tests the implementation must pass
 

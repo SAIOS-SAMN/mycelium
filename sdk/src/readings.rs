@@ -18,7 +18,7 @@
 
 /// The observer's readings: the query by prefix, the reply, and the typed
 /// reading each entry holds.
-pub use mycelium::observe::{decode_reply, encode_query, Held, Reading};
+pub use mycelium::observe::{decode_reply, encode_query, KeyedReading, Reading};
 
 /// Why: the ask, the answer, and the codec of each.
 pub use mycelium::anastome::dialogue::why::{decode_why_reply, encode_why, Why, WhyAsk};

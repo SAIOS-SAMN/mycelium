@@ -7,7 +7,7 @@
 //! ruled 2026-09-10); a voice speaks sentences, heard by `perceive_speech`.
 
 use crate::transducer::family::Grid;
-use crate::server::held::held;
+use crate::server::court_lock::held;
 
 /// The family's measured frame ratio — perception, identical across pairs
 /// or refused (never rounded), each circle's re-period.
@@ -34,7 +34,7 @@ pub fn probe(
     cites: &[crate::anastome::dialogue::CiteWire],
 ) -> crate::anastome::dialogue::ProbeReading {
     use crate::anastome::dialogue::ProbeReading;
-    // 78.153b — every take through the counted guard (`server::held`).
+    // 78.153b — every take through the counted guard (`server::court_lock`).
     let Ok(mut g) = held!(k) else { return ProbeReading::nothing() };
     let view = g.run(|k, _| k.market_open());
     drop(g);

@@ -214,7 +214,7 @@ const KIND_READ_ORIGIN: u8 = 7;
 /// domain. A domain with an origin reads as a universe; its folds descend
 /// from it by line precedence.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Origin {
+pub struct BigBangRecord {
     pub domain: [u8; 32],
     pub kind: u8,
     pub version: u8,
@@ -227,7 +227,7 @@ pub struct Origin {
 
 const ORIGIN: &[u8] = b"mycelium universe origin v1";
 
-impl Origin {
+impl BigBangRecord {
     pub fn signed_bytes(&self) -> Vec<u8> {
         let mut out = ORIGIN.to_vec();
         out.extend_from_slice(&self.domain);
@@ -249,7 +249,7 @@ impl Origin {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SignedOrigin {
-    pub origin: Origin,
+    pub origin: BigBangRecord,
     pub sig: [u8; 64],
 }
 
@@ -506,7 +506,7 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
             };
             let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;
             p += 64;
-            let origin = Origin { domain, kind, version, commitment, universe };
+            let origin = BigBangRecord { domain, kind, version, commitment, universe };
             return (p == rest.len()).then_some(DomainRequest::Origin(SignedOrigin { origin, sig }));
         }
         // 78.139 — a universe's statements (geometry, basket, join) and its read.

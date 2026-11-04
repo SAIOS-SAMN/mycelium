@@ -21,7 +21,7 @@
 //! adjudicate a theorem by re-checking it (78.69), never by re-running the
 //! family.
 
-use super::compose::{Closure, Composition};
+use super::compose::{RingClosure, Composition};
 use crate::transducer::cga::Mv;
 use num_rational::BigRational;
 use num_traits::{One, Zero};
@@ -82,16 +82,16 @@ impl Theorem {
     /// neither stands.
     pub fn of(proof: &Composition) -> Result<Theorem, Open> {
         let omega = proof.omega.clone();
-        if let Closure::Closes(ell) = proof.closure {
+        if let RingClosure::Closes(ell) = proof.closure {
             return Ok(Theorem { omega, certificate: Certificate::Periodic { ell } });
         }
         if let Some(generator) = nilpotent_generator(&omega) {
             return Ok(Theorem { omega, certificate: Certificate::Nilpotent { generator } });
         }
         Err(match proof.closure {
-            Closure::Rosette => Open::Rosette,
-            Closure::Unbound => Open::Unbound,
-            Closure::Closes(_) | Closure::Unread => Open::Unread,
+            RingClosure::Rosette => Open::Rosette,
+            RingClosure::Unbound => Open::Unbound,
+            RingClosure::Closes(_) | RingClosure::Unread => Open::Unread,
         })
     }
 

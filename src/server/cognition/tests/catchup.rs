@@ -9,10 +9,10 @@ use crate::cognition::*;
 use crate::court::admission::{Admitted, SignedPrefix};
 use crate::court::identity::HyphaKey;
 use crate::observe::{replication, serves, ServeAxis};
-use crate::server::backfill::{Ask, Origin};
+use crate::server::backfill::{AdoptedOrigin, Ask};
 use std::sync::Mutex;
 
-const ORIGIN: Origin = Some(([7; 32], 2));
+const ORIGIN: AdoptedOrigin =Some(([7; 32], 2));
 const AT: ([u8; 32], u32) = ([7; 32], 2);
 
 /// A 47.1 position signed by `key` at `head`, over `payload`.

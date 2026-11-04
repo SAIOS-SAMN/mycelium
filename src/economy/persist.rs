@@ -138,8 +138,8 @@ pub fn take_award(b: &[u8], pos: &mut usize) -> Option<Option<super::escrow::Esc
 impl Treasury {
     /// LD1 — THE BYTES EACH ESCROWED AWARD CARRIES as a field of its word's
     /// row: the award alone, flat in the size of the word it is on.
-    pub fn carriage(&self, c: &mut crate::observe::Carriage) {
-        crate::snapshot::persist(&self.escrowed, |_, row| {
+    pub fn carriage(&self, c: &mut crate::observe::CarrierTally) {
+        crate::trie_tape::persist(&self.escrowed, |_, row| {
             let mut field = Vec::new();
             // An award that does not write carries nothing to measure.
             if put_award(&mut field, Some(row)).is_some() {
@@ -176,23 +176,23 @@ impl Treasury {
     /// the audit catches.
     pub fn put_tries(&self, out: &mut Vec<u8>) {
         for (name, carrier) in [(STAKES_TRIE, &self.stakes), (BALANCES_TRIE, &self.balances)] {
-            let mut nodes: crate::network::nerve::Keyed<crate::snapshot::Leaves> = crate::network::nerve::Keyed::new();
-            crate::snapshot::persist(carrier, |who, mu| {
+            let mut nodes: crate::network::nerve::Keyed<crate::trie_tape::Leaves> = crate::network::nerve::Keyed::new();
+            crate::trie_tape::persist(carrier, |who, mu| {
                 nodes.insert(who, vec![(LEAF_MU, mu.to_bytes())]);
             });
-            crate::snapshot::put_trie(out, name, &nodes);
+            crate::trie_tape::put_trie(out, name, &nodes);
         }
         // E3 — THE HELD CARRIER, keyed by what each hold is against: its
         // μ⃗, its payer, and the act it was set aside at.
-        let mut nodes: crate::network::nerve::Keyed<crate::snapshot::Leaves> = crate::network::nerve::Keyed::new();
-        crate::snapshot::persist(&self.held, |key, h| {
+        let mut nodes: crate::network::nerve::Keyed<crate::trie_tape::Leaves> = crate::network::nerve::Keyed::new();
+        crate::trie_tape::persist(&self.held, |key, h| {
             let mu = h.mu.to_bytes();
             let mut anchor = Vec::new();
             h.anchor.0.put_canonical(&mut anchor);
             anchor.extend_from_slice(&h.anchor.1);
             nodes.insert(key, vec![(LEAF_MU, mu), (LEAF_PAYER, h.payer.to_vec()), (LEAF_ANCHOR, anchor)]);
         });
-        crate::snapshot::put_trie(out, HELD_TRIE, &nodes);
+        crate::trie_tape::put_trie(out, HELD_TRIE, &nodes);
     }
 
     /// The inverse of [`Treasury::put_tries`]: the stakes and the balances,
@@ -200,27 +200,27 @@ impl Treasury {
     /// carrier, or refused whole.
     pub fn take_tries(b: &[u8], pos: &mut usize) -> Option<(ByVk, ByVk, Holds)> {
         let mut read = |name: &str| -> Option<crate::network::nerve::Keyed<Mu>> {
-            let nodes = crate::snapshot::take_trie(b, pos, name, &[LEAF_MU])?;
+            let nodes = crate::trie_tape::take_trie(b, pos, name, &[LEAF_MU])?;
             let mut out = crate::network::nerve::Keyed::new();
             for (who, leaves) in nodes.scoped() {
                 let who: [u8; 32] = who.as_slice().try_into().ok()?;
-                let mu = Mu::from_bytes(crate::snapshot::leaf(leaves, LEAF_MU)?).ok()?;
+                let mu = Mu::from_bytes(crate::trie_tape::leaf(leaves, LEAF_MU)?).ok()?;
                 out.insert(who, mu);
             }
             Some(out)
         };
         let stakes = read(STAKES_TRIE)?;
         let balances = read(BALANCES_TRIE)?;
-        let nodes = crate::snapshot::take_trie(b, pos, HELD_TRIE, &[LEAF_MU, LEAF_PAYER, LEAF_ANCHOR])?;
+        let nodes = crate::trie_tape::take_trie(b, pos, HELD_TRIE, &[LEAF_MU, LEAF_PAYER, LEAF_ANCHOR])?;
         let mut held = crate::network::nerve::Keyed::new();
         for (key, leaves) in nodes.scoped() {
-            let mu = Mu::from_bytes(crate::snapshot::leaf(leaves, LEAF_MU)?).ok()?;
-            let payer: [u8; 32] = crate::snapshot::leaf(leaves, LEAF_PAYER)?.try_into().ok()?;
-            let a = crate::snapshot::leaf(leaves, LEAF_ANCHOR)?;
+            let mu = Mu::from_bytes(crate::trie_tape::leaf(leaves, LEAF_MU)?).ok()?;
+            let payer: [u8; 32] = crate::trie_tape::leaf(leaves, LEAF_PAYER)?.try_into().ok()?;
+            let a = crate::trie_tape::leaf(leaves, LEAF_ANCHOR)?;
             let mut p = 0usize;
             let at = crate::chronometry::Stamp::take_canonical(a, &mut p)?;
             let receipt: [u8; 32] = a.get(p..)?.try_into().ok()?;
-            held.insert(key, super::pay::Held { payer, mu, anchor: (at, receipt) });
+            held.insert(key, super::pay::SetAside { payer, mu, anchor: (at, receipt) });
         }
         Some((stakes, balances, held))
     }
@@ -267,7 +267,7 @@ pub const BALANCES_TRIE: &str = "balances";
 /// The held carrier's trie (E3), keyed by what each hold is against.
 pub const HELD_TRIE: &str = "held";
 /// The held carrier, keyed by what each hold is against.
-pub type Holds = crate::network::nerve::Keyed<super::pay::Held>;
+pub type Holds = crate::network::nerve::Keyed<super::pay::SetAside>;
 /// The one leaf of a stake or balance node: its μ⃗, four exact lanes
 /// ([`Mu::put`]); a hold's μ⃗ likewise.
 pub const LEAF_MU: u8 = 1;

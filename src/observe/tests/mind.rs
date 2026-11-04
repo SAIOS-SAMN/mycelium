@@ -7,7 +7,7 @@ use super::fixtures::*;
 #[test]
 fn mind_round_trips_with_agreements() {
     let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
-    let mind = Mind {
+    let mind = MindReading {
         k: 9,
         heard: 4,
         understood: 3,

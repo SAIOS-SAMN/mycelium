@@ -205,7 +205,7 @@ impl Mind {
         let Some((crate::anastome::dialogue::TaskEnvelope { id, train, tests }, _)) = self.board.court.task.take() else { return };
         self.physics_mut().bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
-        self.perceive_scene(super::perceive::Scene { id: id.to_vec(), train, tests, reading: super::perceive::Reading::Task });
+        self.perceive_scene(super::perceive::Scene { id: id.to_vec(), train, tests, reading: super::perceive::SceneKind::Task });
     }
 
     /// AT A RETURN, ONE WAITING SCENE READ AGAIN: the least by citation after
@@ -245,7 +245,7 @@ impl Mind {
             return;
         }
         let Some((task, _)) = self.comprehending.remove(&id) else { return };
-        self.perceive_scene(super::perceive::Scene { id: task.id.to_vec(), train: task.train, tests: task.tests, reading: super::perceive::Reading::Again });
+        self.perceive_scene(super::perceive::Scene { id: task.id.to_vec(), train: task.train, tests: task.tests, reading: super::perceive::SceneKind::Again });
     }
 
     /// THE COURT'S LANGUAGE FLOWS IN, where the COURT'S language may have

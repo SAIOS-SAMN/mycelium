@@ -23,7 +23,7 @@
 
 use super::clause::{
     put_act, put_gauge, put_paint, put_pred, put_stop, take_act, take_byte, take_gauge, take_paint, take_pred, take_stop, About, Act, Clause, Extent, Paint,
-    Pred, Region, Stop,
+    Pred, RegionKind, Stop,
 };
 use crate::core::Q;
 use crate::transducer::address::{put_key_count, take_key_count};
@@ -70,7 +70,7 @@ pub struct Carriage {
 pub enum RuleElement {
     Carriage(Carriage),
     /// The 2-chain the selection bounds, painted one hue.
-    Chain { region: Region, hue: u8 },
+    Chain { region: RegionKind, hue: u8 },
     /// 1-chains between selected bodies through ground: straight along rows
     /// and columns, or round one corner to each body `corner` selects.
     Join { corner: Option<Pred>, paint: Paint },

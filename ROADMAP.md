@@ -36,7 +36,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
-| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1, N2 and N5 built (N1 with #29, N2 with #53); N3, N4, N6 and N7 next, in order; N6 lands in v0.3.0's open break |
+| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1, N2, N3 and N5 built (N1 with #29, N2 with #53); N4, N6 and N7 next, in order; N6 lands in v0.3.0's open break |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the items above (maintainers) |
 
 **2. Ready to start**
@@ -441,6 +441,24 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - Near-identical files: `held.rs`, `hold.rs` and `server/held/`;
      `snapshot.rs` and `snapshot/`; `germinate` ×2; `winding` ×2. Each is
      renamed by function.
+
+   **Built** (N3). Every rename is listed in the CHANGELOG. As built:
+   `court/phase.rs` → `court/height_window.rs` (`cognition/window.rs`
+   already holds the challenge windows), `observe/phase.rs` →
+   `court_stage.rs`, `server/held/` → `server/court_lock/`, the binary's
+   `held.rs` → `court_lock.rs` and `hold.rs` → `deferred_reads.rs`,
+   `snapshot.rs` → `trie_tape.rs`, `cognition/snapshot/` →
+   `persistence/`, the court's `germinate/` → `listings/`,
+   `court/winding.rs` → `ring_carrier.rs`. The rule language's `Region`
+   becomes `RegionKind` so the sensor's `Region` names one thing. Waiting
+   on a ruling: which `Cover` is canonical (the mesh's cover trie
+   `nerve::Cover`, the Čech edge cochain `cech::Cover`, the scene's
+   `Cover` of regions and the extraction pass's `family::cover::Cover`);
+   whether the keyed trie's prefix `Fibre` is the bundle's fibre;
+   `forms::frame::Frame`, an observer's frame of reference in the `forms`
+   crate's public surface; `layers::Shell` against the GLOSSARY's
+   **Shell** (a universe's physics layer); the code's `Epigenome` and
+   `resonance.rs` against their GLOSSARY rows; `ListingField`.
 4. **N4, retired terms and person words.**
    - `Unstated::OffLattice` → `OffSubstrate`; `lattice_step` →
      `substrate_step`.

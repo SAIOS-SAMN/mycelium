@@ -55,7 +55,7 @@ fn tstanding_round_trips_and_refuses_other_version() {
         },
     };
     for standing in [read, built, TStanding::default()] {
-        let court = Reading::Court(Box::new(Court { k: 5, tuniversal: standing.clone(), ..Default::default() }));
+        let court = Reading::Court(Box::new(CourtReading { k: 5, tuniversal: standing.clone(), ..Default::default() }));
         let mut wire = Vec::new();
         court.put(&mut wire).expect("the court writes");
         let mut at = 0;

@@ -82,7 +82,7 @@ impl Budget {
     /// moves to the one returned, and this one is left spent. Never a share
     /// (the two attempts above): the reads are the same reads, carried by
     /// the one that goes on — a court hold that lets go of the court and
-    /// keeps its stroke for the wire (`server::held::Held::into_stroke`).
+    /// keeps its stroke for the wire (`server::court_lock::CourtGuard::into_stroke`).
     pub fn hand_over(&mut self) -> Budget {
         Budget { remaining: std::mem::take(&mut self.remaining) }
     }
@@ -96,7 +96,7 @@ thread_local! {
 
 /// 78.153b — THE READS THIS THREAD WAS GRANTED, by every token it spent:
 /// a court hold reads it at its take and its drop, and a hold that read
-/// none while waiters queued is named (`server::held`).
+/// none while waiters queued is named (`server::court_lock`).
 pub fn spent_here() -> u64 {
     SPENT.with(std::cell::Cell::get)
 }

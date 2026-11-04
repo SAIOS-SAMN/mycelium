@@ -5,7 +5,7 @@
 // close of a thought of that scene, which K moves by.
 
 use super::fixtures::*;
-use crate::client::sdk::mind::perceive::{Reading, Scene};
+use crate::client::sdk::mind::perceive::{SceneKind, Scene};
 use crate::client::sdk::*;
 
 /// THE SCENE, PERCEIVED OFF THE FIELD, LANDS UNDER ITS CITATION; ITS ESCAPING
@@ -24,7 +24,7 @@ fn perceive_scene_lands_and_drain_demands_binds_escape() {
     let [first, second] = two_hours_of_a_slide();
     let mut field = std::mem::take(&mut mind.field);
     let (bound, returned, k) = field.think(|| {
-        mind.perceive_scene(Scene { id: id.to_vec(), train: vec![first, second], tests: Vec::new(), reading: Reading::Task });
+        mind.perceive_scene(Scene { id: id.to_vec(), train: vec![first, second], tests: Vec::new(), reading: SceneKind::Task });
         mind.settle_perception();
         let mut b = budget();
         let bound = mind.drain_demands(&mut b);
@@ -49,9 +49,9 @@ fn perceive_scene_stops_once_on_reading() {
     let [first, second] = two_hours_of_a_slide();
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
-        mind.perceive_scene(Scene { id: vec![5u8; 32], train: vec![first.clone(), second.clone()], tests: Vec::new(), reading: Reading::Feed });
+        mind.perceive_scene(Scene { id: vec![5u8; 32], train: vec![first.clone(), second.clone()], tests: Vec::new(), reading: SceneKind::Feed });
         mind.settle_perception();
-        mind.perceive_scene(Scene { id: vec![6u8; 32], train: vec![first, second], tests: Vec::new(), reading: Reading::Task });
+        mind.perceive_scene(Scene { id: vec![6u8; 32], train: vec![first, second], tests: Vec::new(), reading: SceneKind::Task });
         mind.settle_perception();
     });
     mind.field = field;

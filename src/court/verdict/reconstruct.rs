@@ -420,10 +420,10 @@ pub fn reconstruct_form_on(
 
 /// 78.153 — THE WHOLE VERDICT, IN PHASES, ON THE STROKE. Every input-sized
 /// loop spends one read per item; where the stroke runs out the cursor
-/// keeps the phase and the item it stopped at (and the exact partials the
-/// later phases need) and the answer is `Unread` — not ruled this stroke,
+/// keeps the stage and the item it stopped at (and the exact partials the
+/// later stages need) and the answer is `Unread` — not ruled this stroke,
 /// never a refusal. Resumed from the cursor, a replay rules exactly as one
-/// run on a stroke that never ran out: every phase before the cursor
+/// run on a stroke that never ran out: every stage before the cursor
 /// passed, and passing is a function of the word's content and of cited
 /// forms that are content-addressed, so it does not change between strokes.
 ///
@@ -457,15 +457,15 @@ fn reconstruct_on_ground<'r>(
     cursor: &mut ReconstructionCursor,
 ) -> ReconstructionOutcome {
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
-    // One phase: skipped where the cursor is past it, entered at the item
+    // One stage: skipped where the cursor is past it, entered at the item
     // the cursor names where it stopped in it, and settled — passed (the
-    // cursor moves to the next phase), refused, or spent (the cursor keeps
+    // cursor moves to the next stage), refused, or spent (the cursor keeps
     // the item and the replay is unread).
-    macro_rules! phase {
-        ($phase:expr, |$from:ident| $step:expr) => {
-            if let Some($from) = cursor.enter($phase) {
+    macro_rules! stage {
+        ($stage:expr, |$from:ident| $step:expr) => {
+            if let Some($from) = cursor.enter($stage) {
                 let step: Step = $step;
-                if let Some(out) = cursor.settle($phase, step) {
+                if let Some(out) = cursor.settle($stage, step) {
                     return out;
                 }
             }
@@ -504,7 +504,7 @@ fn reconstruct_on_ground<'r>(
         }
     }
     // The Glued vertices are one fibre of the atlas, read at the Glued tag.
-    phase!(Phase::Ports, |from| {
+    stage!(Stage::Ports, |from| {
         let mut out: Step = Ok(());
         for (i, (vertex, v)) in f.glued_vertices().enumerate().skip(from) {
             // THE CHART COMES OFF THE VERTEX ITSELF, not through
@@ -548,7 +548,7 @@ fn reconstruct_on_ground<'r>(
     // never constructed — it WOULD resolve, replay and be paid for against a
     // boundary the form does not hold. Never erased, because erasure masks
     // perjury and corrupts the attestation that reads the cover for credit.
-    phase!(Phase::Phantoms, |from| {
+    stage!(Stage::Phantoms, |from| {
         let mut out: Step = Ok(());
         for (i, e) in cover.iter().enumerate().skip(from) {
             if !budget.spend() {
@@ -557,7 +557,7 @@ fn reconstruct_on_ground<'r>(
             }
             // The host is the Glued vertex's site, which IS its coordinate: a
             // keyed read, never a walk of the vertices.
-            let vertex = crate::network::nerve::coord::VertexAt::Glued(crate::network::nerve::coord::Site(e.host().as_bytes().to_vec()));
+            let vertex = crate::network::nerve::coord::VertexAt::Glued(crate::network::nerve::coord::GluedBoundary(e.host().as_bytes().to_vec()));
             if !matches!(f.vertices.at(&vertex), Some(Vertex::Glued { .. })) {
                 out = Err(Halt::Refused(Refusal::new(REFUSE_PHANTOM_EDGE, sentence::At::vertex(vertex, e.chart.clone()))));
                 break;
@@ -575,7 +575,7 @@ fn reconstruct_on_ground<'r>(
     // entirely — after which this loop would have found nothing to resolve
     // and every citation would have passed unchecked. Reading the edge list
     // now means the eviction changes this reader not at all.
-    phase!(Phase::Citations, |from| {
+    stage!(Stage::Citations, |from| {
     let mut out: Step = Ok(());
     for (i, edge) in spoken.receipts().nerve.iter().enumerate().skip(from) {
         if !budget.spend() {
@@ -638,7 +638,7 @@ fn reconstruct_on_ground<'r>(
     // deferral a `Glued` citation already takes above — the sentence is
     // docketed and the syllabus serves the generator (21 step 3), one
     // mechanism at two levels.
-    phase!(Phase::Derivations, |from| derivations_compose(
+    stage!(Stage::Derivations, |from| derivations_compose(
         f,
         spoken.receipts(),
         resolve,
@@ -648,18 +648,18 @@ fn reconstruct_on_ground<'r>(
     // 37.7 P2: a demand that names a prime must carry a witness that
     // carries it. Read before anything is docketed, so `list_demands`
     // never opens a letter on a witness the arithmetic refuses.
-    phase!(Phase::Witnesses, |from| witnesses_carry_primes(f, &mut Meter::Stroke(&mut *budget), from));
+    stage!(Stage::Witnesses, |from| witnesses_carry_primes(f, &mut Meter::Stroke(&mut *budget), from));
     // 23.1 step 3, 50.6 (L7): a tape whose only vertices are the Frame and
     // demands is a chain wearing a form's tape — nothing in it acts.
-    phase!(Phase::Moves, |from| match (from, f.acts()) {
+    stage!(Stage::Moves, |from| match (from, f.acts()) {
         (0, false) => Err(Halt::Refused(tape(REFUSE_NOT_A_SENTENCE))),
         _ => vertex_tape_and_moves_from(f, family, spoken, &mut Meter::Stroke(&mut *budget), from),
     });
     // 78.153 — THE FAMILY PERCEIVED ONCE PER REPLAY, one read a pair, the
-    // perceptions held on the cursor: every later phase of every stroke
+    // perceptions held on the cursor: every later stage of every stroke
     // reads them and the sensor reads each grid once (law 12).
     if let Some(fam) = family {
-        phase!(Phase::Perceive, |from| {
+        stage!(Stage::Perceive, |from| {
             let mut out: Step = Ok(());
             for (i, (x, y)) in fam.iter().enumerate().skip(from) {
                 if !budget.spend() {
@@ -677,7 +677,7 @@ fn reconstruct_on_ground<'r>(
     out
 }
 
-/// The phases after the family is perceived, over the cursor's perceptions.
+/// The stages after the family is perceived, over the cursor's perceptions.
 fn reconstruct_after_perceiving(
     f: &Form,
     spoken: &Element,
@@ -688,11 +688,11 @@ fn reconstruct_after_perceiving(
     frames: &[super::body::Perceived],
 ) -> ReconstructionOutcome {
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
-    macro_rules! phase {
-        ($phase:expr, |$from:ident| $step:expr) => {
-            if let Some($from) = cursor.enter($phase) {
+    macro_rules! stage {
+        ($stage:expr, |$from:ident| $step:expr) => {
+            if let Some($from) = cursor.enter($stage) {
                 let step: Step = $step;
-                if let Some(out) = cursor.settle($phase, step) {
+                if let Some(out) = cursor.settle($stage, step) {
                     return out;
                 }
             }
@@ -703,12 +703,12 @@ fn reconstruct_after_perceiving(
     // does not name, a coordinate that is not exact, no single body where
     // one is asked, a cell landing between cells.
     if let Some(fam) = family {
-        phase!(Phase::Clauses, |from| clauses_stated_from(f, fam, frames, spoken, &mut Meter::Stroke(&mut *budget), from));
+        stage!(Stage::Clauses, |from| clauses_stated_from(f, fam, frames, spoken, &mut Meter::Stroke(&mut *budget), from));
     }
     // G steps 2–3 (50.2) on the court's copy of the family: every word
     // vertex carries its body onto its image, exactly (L7).
     if let Some(fam) = family {
-        phase!(Phase::Bodies, |from| super::body::vertices_carry_frames_from(
+        stage!(Stage::Bodies, |from| super::body::vertices_carry_frames_from(
             f,
             fam,
             frames,
@@ -752,7 +752,7 @@ fn reconstruct_after_perceiving(
     for cert in &spoken.receipts().certificates {
         named.put(cert.by.face(), ());
     }
-    phase!(Phase::Faces, |from| {
+    stage!(Stage::Faces, |from| {
         let mut out: Step = Ok(());
         for (i, (o, face)) in f.faces.entries().enumerate().skip(from) {
             if !budget.spend() {
@@ -786,13 +786,13 @@ fn reconstruct_after_perceiving(
     // the reading names it there; the orbit reading over that same edge
     // would answer second-hand, as an unfiled class.
     if let Some(fam) = family {
-        phase!(Phase::Edges, |from| super::body::edges_rederive_frames_from(traversed, fam, frames, budget, from));
+        stage!(Stage::Edges, |from| super::body::edges_rederive_frames_from(traversed, fam, frames, budget, from));
     }
     // THE SPOKEN WORD'S OWN ATTESTATION, checked against the forest the
     // court just traversed (54.5) — one read per orbit (78.153), in the
     // order `incoherent_orbit` reads them, so the first that does not
     // cohere is the one the refusal carries.
-    phase!(Phase::Coherence, |from| {
+    stage!(Stage::Coherence, |from| {
         let mut out: Step = Ok(());
         for (i, lp) in traversed.orbits.iter().enumerate().skip(from) {
             if !budget.spend() {
@@ -819,7 +819,7 @@ fn reconstruct_after_perceiving(
     // AND THE SPEAKER'S CLAIM, CHECKED AGAINST THE GEOMETRY THE COURT JUST
     // TRAVERSED (54.5). The terrain is priced above; this is the labour, and
     // the two are never one reading.
-    phase!(Phase::Terrain, |from| receipts_price_the_terrain_from(
+    stage!(Stage::Terrain, |from| receipts_price_the_terrain_from(
         traversed,
         spoken,
         &mut Meter::Stroke(&mut *budget),
@@ -827,7 +827,7 @@ fn reconstruct_after_perceiving(
         &mut cursor.derived
     ));
     // The rank, one read.
-    phase!(Phase::Rank, |from| match (budget.spend(), traversed.rank()) {
+    stage!(Stage::Rank, |from| match (budget.spend(), traversed.rank()) {
         (false, _) => Err(Halt::Spent(from)),
         (true, None) => Err(Halt::Refused(tape(REFUSE_RANK_LOST))),
         (true, Some(_)) => Ok(()),
@@ -851,7 +851,7 @@ fn reconstruct_after_perceiving(
         // afresh inside it. The cursor keeps the undeclared links of the
         // pairs already read — the exact partial the refusal is built from —
         // so a resumed deflation reads each pair once.
-        phase!(Phase::Deflation, |from| {
+        stage!(Stage::Deflation, |from| {
             let mut out: Step = Ok(());
             for pi in from..fam.len() {
                 let here = crate::transducer::alphabet::Word::identity();
@@ -979,7 +979,7 @@ fn reconstruct_after_perceiving(
     // move, and the certificate whose chord names the overlap is the
     // producer of both. A factor with none was written by nothing the court can
     // replay.
-    phase!(Phase::Pivots, |from| {
+    stage!(Stage::Pivots, |from| {
         let mut out: Step = Ok(());
         for (i, (o, face)) in traversed.faces.entries().enumerate().skip(from) {
             if !budget.spend() {
@@ -993,7 +993,7 @@ fn reconstruct_after_perceiving(
         }
         out
     });
-    phase!(Phase::Certificates, |from| reconstruct_certificates_from(
+    stage!(Stage::Certificates, |from| reconstruct_certificates_from(
         traversed,
         &spoken.receipts().certificates,
         &by_chord,
@@ -1234,7 +1234,7 @@ pub(crate) fn torsion_chord_carries(
 /// step 7), and an orbit with no transition to read carries no obligation
 /// (rule 11: that is a refusal to read, not a flat reading).
 ///
-/// 78.153 — the court reads it one orbit per read (`Phase::Coherence`,
+/// 78.153 — the court reads it one orbit per read (`Stage::Coherence`,
 /// `Form::orbit_coheres`); this whole reading stays for the tests.
 #[cfg(test)]
 pub(crate) fn form_orbits_reconstruct(f: &Form) -> bool {

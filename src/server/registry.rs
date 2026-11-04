@@ -23,7 +23,7 @@ pub enum TaskState {
 /// closed (verified again, and paid nothing — the decay is the discharge
 /// itself, never a floor).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Closure {
+pub enum ClosureOrder {
     First,
     Again,
 }
@@ -455,19 +455,19 @@ impl TaskRegistry {
     /// asked, so a closure is recorded only after its payment and none is
     /// lost between the two. The first closes the task; later ones are
     /// counted. `None` where this book holds no such task.
-    pub fn close(&mut self, id: &[u8]) -> Option<Closure> {
+    pub fn close(&mut self, id: &[u8]) -> Option<ClosureOrder> {
         let &i = self.by_id.get(id)?;
         let entry = self.tasks.get_mut(i)?;
         Some(match &mut entry.2 {
             TaskState::Unsolved => {
                 entry.2 = TaskState::Settled(1);
-                Closure::First
+                ClosureOrder::First
             }
             TaskState::Settled(n) => {
                 #[expect(clippy::disallowed_methods, reason = "rule 11 — one per verified solve: a u64 cannot pass 2⁶⁴ events")]
                 let next = n.saturating_add(1);
                 *n = next;
-                Closure::Again
+                ClosureOrder::Again
             }
         })
     }

@@ -45,10 +45,10 @@ use std::cell::RefCell;
 /// law 12 keeps one fact on one carrier.
 pub(crate) struct Pending {
     pub(crate) cover: Cover,
-    /// The two supports of each placed carriage, by the [`coord::Carriage`]
+    /// The two supports of each placed carriage, by the [`coord::CarriedPieces`]
     /// it is; the input pieces spoken, by the [`coord::Piece`] each is; and
     /// the sites of the base either body reached.
-    pub(crate) placed: Keyed<Supports, coord::Carriage>,
+    pub(crate) placed: Keyed<Supports, coord::CarriedPieces>,
     pub(crate) consumed: Keyed<(), coord::Piece>,
     pub(crate) reached: Keyed<()>,
 }

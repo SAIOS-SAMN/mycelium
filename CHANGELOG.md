@@ -6,6 +6,80 @@ such change is named here.
 
 ## Unreleased
 
+### One name, one meaning (track 11, N3; #55)
+- Names only: behaviour, wire bytes, ledger layout, string literals and
+  task addresses are unchanged. Every citation in comments and documents
+  follows. The SDK paths that change are listed last (v0.3.0's open
+  break).
+- The GLOSSARY's meanings keep their names; every other type of the same
+  name is renamed by what it does:
+  - Field: `FieldEntry` → `ProbedChart`.
+  - Section: the keyed `Section { chart, carriage }` → `coord::ChartCarriage`.
+    `cech::Section` and `alphabet::bundle::Section` are sections and keep
+    the name.
+  - Chart: `family::scene::Chart` → `Region` (`scene_chart` →
+    `scene_region`, `chart_key` → `region_key`), and the rule language's
+    `Region` → `RegionKind`; `cech::nerve::Chart` → `CoverCoordinates`.
+    `coord::Chart` and the wire's `acts::Chart` are a chart encoded and
+    keep the name.
+  - Frame: `network::wire::Frame` → `WireFrame`; the verdict's per-pair
+    `Frame` → `PerceivedPair`; `physics::equilibrium::Frame` →
+    `PosedNucleus`.
+  - Phase: the court's 45.9 window `court/phase.rs` `Phase` →
+    `court/height_window.rs` `Window` (`phase_over` → `window_over`);
+    `verdict::Phase` → `Stage`; `observe::Phase` → `CourtStage`
+    (`observe/phase.rs` → `observe/court_stage.rs`).
+  - Compartment: the keyed `coord::Compartment` → `coord::CoverSite`.
+  - Held: `server::held::Held` → `server::court_lock::CourtGuard` (its
+    `Site` → `LockCounts`); `cognition::handoff::Held` → `HandoffRecord`;
+    `economy::Held` → `SetAside`; `observe::Held` → `KeyedReading`; the
+    rung's `Held` → `Shortcut`; `field::well::Held` → `SpokenSection`;
+    `hyperfluid::Held` → `AxisRecord`; `transduce::relation::Held` →
+    `ShapePeriods`; the shelf's `Held` → `ShelfState`; the server
+    binary's held reads → `DeferredReads`; the test-local pair →
+    `CitedForm`. `element::Held` keeps the name.
+  - Reading: the mind's scene `Reading` → `SceneKind`; `scene::Reading`
+    → `PlaneCut`; `sentence::Reading` → `Lookups`;
+    `presentation::Reading` → `WordCitations`; the act reader's →
+    `PredicateTable`; the soak's → `FamilyCensus`, `WalkCounts` and
+    `SubjectBodies`. `observe::Reading` keeps the name.
+  - Closure: `compose::Closure` → `RingClosure`; `registry::Closure` →
+    `ClosureOrder`; HR3's `Closure` → `AxisLoops`; `cech::Closure` →
+    `GroupClosure`. `stalk::Closure` keeps the name.
+  - Carriage: `observe::Carriage` → `CarrierTally`; `coord::Carriage` →
+    `coord::CarriedPieces`; the class segment → `CarriageSegment`;
+    `family::Carriage` → `BodyTransport`. The rule element's `Carriage`
+    keeps the name.
+  - Origin: `dialogue::domain::Origin` → `BigBangRecord`;
+    `backfill::Origin` → `AdoptedOrigin`; the binary's `Origin` →
+    `GenesisEpoch`. `tuniversal::Origin` keeps the name.
+  - Site: HR1's `Site` → `SiteAxes`; `coord::Site` → `coord::GluedBoundary`.
+  - Body: the client's `mind::body::Body` → `mind::seating::Seating`
+    (`body_tick` → `seating_tick`); `physics::equilibrium::Body` →
+    `BodyMoments`.
+  - Fibre: `physics::pivot_fibre::Fibre` → `PivotFibre`.
+  - Stratum: `network::wire::Stratum` → `Lane`; `address::Stratum` →
+    `CanonicalCoordinate`; the stalk's trie node → `ChartNode`.
+  - Tube, Shell, Verdict, Reconstruction, Source: `cech::flux::Tube` →
+    `FluxTube`; the keyed walk's `Shell` → `PeelBranch`; the mind's home
+    check `Verdict` → `HomeCheck`; `physics::laws::Verdict` →
+    `TransitionVerdict`; the resonance alias → `RelationAdmission`; HR4's
+    `Reconstruction` → `ReconstructionReport`; `physics::source::Source`
+    → `WhiteHoleSource`; the cover page `acts::Cover` → `CoverPage`.
+  - `Own` ×2 → `SeatFunction` (`seat_mind/own.rs` → `repertoire.rs`) and
+    `SelfReading`; `observe::Mind` / `Court` → `MindReading` /
+    `CourtReading`; `alphabet::Q` re-exports `core::q::Q`.
+- Near-identical files: `server/held/` → `server/court_lock/`, the server
+  binary's `held.rs` → `court_lock.rs` and `hold.rs` → `deferred_reads.rs`;
+  `src/snapshot.rs` → `src/trie_tape.rs` and `server/cognition/snapshot/`
+  → `persistence/`; the court's book `server/cognition/germinate/` →
+  `listings/`; `court/winding.rs` → `court/ring_carrier.rs` (`Winding` →
+  `RingCarrier`, `WindingTally` → `RingTally`).
+- SDK paths that change: `mycelium_sdk::house::{Frame, Stratum, Body,
+  Origin, Verdict}` → `{WireFrame, Lane, BodyMoments, BigBangRecord,
+  TransitionVerdict}`; `mycelium_sdk::rule::Region` → `RegionKind`;
+  `mycelium_sdk::readings::Held` → `KeyedReading`.
+
 ### Files named by function (track 11, N2; #53, #55)
 - Names only: behaviour, wire bytes, ledger layout and task addresses are
   unchanged. Every citation in comments and documents follows.

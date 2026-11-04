@@ -31,7 +31,7 @@ use crate::transducer::sentence::{self, Form};
 use crate::transducer::sentence::{Acting, Vertex};
 pub use crate::transducer::family::statement::Unstated;
 pub use crate::transducer::sentence::form::clause::{
-    About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value,
+    About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, RegionKind, Stop, Tie, Value,
 };
 
 /// ONE STEP OF A RULE: a motion of the base, or a map of the hue fibre —
@@ -48,7 +48,7 @@ pub enum Step {
     /// predicate selects, until the next selection.
     Select(Pred),
     /// REGION: the hue step after it acts on the region of the selection.
-    Region(Region),
+    Region(RegionKind),
     /// A motion read about each selected body's own centre.
     InPlace(Mv),
     /// CREATE: cells placed relative to each selected body.
@@ -293,7 +293,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
     }
     let mut out: Vec<Clause> = Vec::new();
     let mut select = Pred::All;
-    let mut region: Option<Region> = None;
+    let mut region: Option<RegionKind> = None;
     let mut pending: Option<Pending> = None;
     let flush = |pending: &mut Option<Pending>, out: &mut Vec<Clause>, select: &Pred| {
         if let Some(act) = pending.take().and_then(Pending::act) {
@@ -456,7 +456,7 @@ fn sentence_on_ground(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Cry
     let carriage = d.geo(&t);
     // THE CHARTS THE FAMILY'S INPUT BODIES STAND ON, perceived once.
     let frames = family::perceive_family(family);
-    let mut acts: crate::network::nerve::Keyed<Acting, crate::network::nerve::coord::Section> =
+    let mut acts: crate::network::nerve::Keyed<Acting, crate::network::nerve::coord::ChartCarriage> =
         crate::network::nerve::Keyed::new();
     for (ins, _) in &frames {
         for body in ins {

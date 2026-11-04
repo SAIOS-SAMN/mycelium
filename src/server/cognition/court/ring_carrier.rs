@@ -1,4 +1,4 @@
-// 78.68 — THE WINDING CARRIER: a ring already closed is traversed again
+// 78.68 — THE RING CARRIER: a ring already closed is traversed again
 // off the ledger, and the age it completes is the one act it writes.
 //
 //! A ring here is a simplex of a chart's complex. Its first close is new
@@ -30,7 +30,7 @@ pub(crate) struct Draw {
 /// minted, which the torsion it earns cites. `draws` and `torse` are the
 /// pay accrued since the last return, minted at the next.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct Winding {
+pub(crate) struct RingCarrier {
     pub ell: u64,
     pub m: u64,
     pub rewrite: Option<Address>,
@@ -40,7 +40,7 @@ pub(crate) struct Winding {
 
 /// What closing a ring did, counted on the court (LD0).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct WindingTally {
+pub struct RingTally {
     /// First closes: a ring entering the record, settled where it closed.
     pub first: u64,
     /// Traversals of an already-closed ring that wrote nothing.
@@ -119,7 +119,7 @@ pub struct WindingTally {
     pub heard_taught_nothing: u64,
 }
 
-impl Winding {
+impl RingCarrier {
     /// THE CARRIER WRITTEN BY ITS OWN COORDINATES: ℓ, m, the rewrite's
     /// address (or none), then each draw and each torsion share.
     pub(crate) fn put(&self, out: &mut Vec<u8>) {
@@ -152,8 +152,8 @@ impl Winding {
         }
     }
 
-    /// The inverse of [`Winding::put`]; `None` where the bytes do not hold it.
-    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Winding> {
+    /// The inverse of [`RingCarrier::put`]; `None` where the bytes do not hold it.
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<RingCarrier> {
         let ell = take_u64(b, p)?;
         let m = take_u64(b, p)?;
         let rewrite = match *b.get(*p)? {
@@ -185,7 +185,7 @@ impl Winding {
             let who = take_key(b, p)?;
             torse.push((who, [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?]));
         }
-        Some(Winding { ell, m, rewrite, draws, torse })
+        Some(RingCarrier { ell, m, rewrite, draws, torse })
     }
 }
 
@@ -255,7 +255,7 @@ impl Court {
             if let Some(rw) = &rewrite {
                 self.pay_torse(addrs, rw.as_bytes());
             }
-            self.windings.insert(&key, Winding { ell: 0, m: 0, rewrite, draws: Vec::new(), torse: Vec::new() });
+            self.windings.insert(&key, RingCarrier { ell: 0, m: 0, rewrite, draws: Vec::new(), torse: Vec::new() });
             self.winding_tally.unbound += 1;
             return;
         }
@@ -266,7 +266,7 @@ impl Court {
             if let Some(rw) = &rewrite {
                 self.pay_torse(addrs, rw.as_bytes());
             }
-            self.windings.insert(&key, Winding { ell, m: 1 % ell, rewrite, draws: Vec::new(), torse: Vec::new() });
+            self.windings.insert(&key, RingCarrier { ell, m: 1 % ell, rewrite, draws: Vec::new(), torse: Vec::new() });
             self.winding_tally.first += 1;
             return;
         };
@@ -295,7 +295,7 @@ impl Court {
 
     /// ONE AGE COMPLETED: the `Return` act, sealed citing the ring's own key,
     /// and every draw and torsion the age accrued minted at its anchor.
-    fn seal_return(&mut self, key: &[u8], w: &mut Winding) {
+    fn seal_return(&mut self, key: &[u8], w: &mut RingCarrier) {
         let own_vk = self.identity;
         self.append_step(crate::chronometry::ActKind::Return, key, own_vk);
         let anchor = self.anchor();
@@ -701,8 +701,8 @@ impl Court {
         }
     }
 
-    /// The winding carrier's reading, for the observer.
-    pub fn winding_tally(&self) -> WindingTally {
+    /// The ring carrier's reading, for the observer.
+    pub fn winding_tally(&self) -> RingTally {
         self.winding_tally
     }
 

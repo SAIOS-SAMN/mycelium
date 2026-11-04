@@ -140,7 +140,7 @@ impl Mind {
     /// passed, said to the observer.
     fn let_go_task(&mut self) {
         if let Some((e, _)) = self.board.court.task.take() {
-            self.note_task(&e.id, super::perceive::Reading::Task, |t| t.stop = Some(super::perceive::Stop::Lapsed));
+            self.note_task(&e.id, super::perceive::SceneKind::Task, |t| t.stop = Some(super::perceive::Stop::Lapsed));
         }
         self.passed(PASSED_TASK);
     }

@@ -23,9 +23,9 @@ fn close_records_first_then_again() {
     );
     assert_eq!(reg.len(), 1);
     assert_eq!(reg.open(&id), Some(true), "open before any closure");
-    assert_eq!(reg.close(&id), Some(Closure::First), "the first ruled closure");
+    assert_eq!(reg.close(&id), Some(ClosureOrder::First), "the first ruled closure");
     assert_eq!(reg.open(&id), Some(false));
-    assert_eq!(reg.close(&id), Some(Closure::Again), "a closure of a closed task");
+    assert_eq!(reg.close(&id), Some(ClosureOrder::Again), "a closure of a closed task");
     assert_eq!(reg.close(&[9u8; 32]), None, "no origin, no closure");
     assert_eq!(reg.unsolved(), 0);
 }
@@ -37,13 +37,13 @@ fn close_records_first_then_again() {
 fn overlay_restores_settled_states_after_restart() {
     let mut reg = TaskRegistry::new();
     let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
-    assert_eq!(reg.close(&id), Some(Closure::First));
+    assert_eq!(reg.close(&id), Some(ClosureOrder::First));
     let snap = reg.snapshot().expect("the snapshot writes");
 
     let mut reborn = TaskRegistry::new();
     reborn.register(toy_task()); // corpus re-registration at boot
     assert_eq!(reborn.overlay(&snap), 1, "one settled state restored");
-    assert_eq!(reborn.close(&id), Some(Closure::Again), "the restart must not re-open the task");
+    assert_eq!(reborn.close(&id), Some(ClosureOrder::Again), "the restart must not re-open the task");
     assert_eq!(reborn.overlay(&[]), 0, "garbage snapshot restores nothing");
     // STD1 — an older layout, with `u32` counts, is refused whole.
     let mut older = snap.clone();
@@ -71,13 +71,13 @@ fn overlay_restores_task_wider_than_u16_wall() {
     let address = task_address(&wide).expect("the wide task has an address");
     assert!(address.as_bytes().len() > usize::from(u16::MAX), "the fixture passes the wall: {} bytes", address.as_bytes().len());
     assert_eq!(id, citation(&address), "the book names it by its citation");
-    assert_eq!(reg.close(&id), Some(Closure::First));
+    assert_eq!(reg.close(&id), Some(ClosureOrder::First));
     let snap = reg.snapshot().expect("a book holding a task wider than the wall still snapshots");
     let mut reborn = TaskRegistry::new();
     reborn.register(toy_task());
     reborn.register(wide);
     assert_eq!(reborn.overlay(&snap), 1, "its settled state restored, by citation");
-    assert_eq!(reborn.close(&id), Some(Closure::Again), "and the restart does not re-open it");
+    assert_eq!(reborn.close(&id), Some(ClosureOrder::Again), "and the restart does not re-open it");
 }
 
 /// LAW 2 — AN IDENTITY IS NEVER FORMED WITH A MEMBER SKIPPED: a train pair
@@ -204,7 +204,7 @@ fn registry_indexes_by_citation_not_address() {
 fn citation_of_task_is_stable_across_registry_round_trip() {
     let mut reg = TaskRegistry::new();
     let id = reg.register(toy_task()).expect("registers");
-    assert_eq!(reg.close(&id), Some(Closure::First));
+    assert_eq!(reg.close(&id), Some(ClosureOrder::First));
     let snap = reg.snapshot().expect("writes");
     let mut reborn = TaskRegistry::new();
     let again = reborn.register(toy_task()).expect("registers");
@@ -222,7 +222,7 @@ fn dispatch_rotates_and_dries_up() {
     let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
     let (d1, _) = reg.dispatch().expect("work exists");
     assert_eq!(d1, id);
-    assert_eq!(reg.close(&id), Some(Closure::First));
+    assert_eq!(reg.close(&id), Some(ClosureOrder::First));
     assert!(reg.dispatch().is_none(), "a settled book dispatches nothing");
 }
 

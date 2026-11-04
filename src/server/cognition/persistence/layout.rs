@@ -163,8 +163,8 @@ pub const LEAF_GAUGE: u8 = 4;
 /// FORMAT: cocycles-tree leaf position for stood.
 pub const LEAF_STOOD: u8 = 5;
 
-/// 78.68 — THE WINDING CARRIERS, each keyed by `chart ‖ simplex`, its one
-/// leaf the carrier written by its own coordinates (`Winding::put`): the
+/// 78.68 — THE RING CARRIERS, each keyed by `chart ‖ simplex`, its one
+/// leaf the carrier written by its own coordinates (`RingCarrier::put`): the
 /// ring's period, its traversals since its last return, its Torse rewrite,
 /// and the pay accrued toward the next return — a claim, so it is kept.
 pub const WINDINGS_TRIE: &str = "windings";

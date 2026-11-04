@@ -19,11 +19,11 @@ let family = vec![
 ];
 let held_form = cipher_form(&family[0].0, &family[0].1);
 let held_e = as_element_form(&held_form, [1, 0, 0, 0]).expect("inner tape");
-struct Held {
+struct CitedForm {
     e: Element,
     f: Form,
 }
-impl Crystal for Held {
+impl Crystal for CitedForm {
     fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         vec![(&self.e, &self.f, Standing::Held)]
     }
@@ -83,7 +83,7 @@ impl Crystal for Held {
         Vec::new()
     }
 }
-let cover = Held {
+let cover = CitedForm {
     e: held_e.clone(),
     f: held_form,
 };

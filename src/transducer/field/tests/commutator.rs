@@ -35,7 +35,7 @@ fn form_of(carriages: &[crate::transducer::element::Versor]) -> Form {
     let mut form = Form::default();
     form.put_vertex(Vertex::Frame).expect("the frame");
     let derivation = Derivation::spelled(Word::identity());
-    let mut acts: Keyed<Acting, crate::network::nerve::coord::Section> = Keyed::new();
+    let mut acts: Keyed<Acting, crate::network::nerve::coord::ChartCarriage> = Keyed::new();
     for (n, c) in (1u64..).zip(carriages) {
         let chart = crate::transducer::stalk::Invariant::counts(&[n]);
         let member = Acting { chart, carriage: Box::new(c.clone()), gauge: Vec::new(), frames: Keyed::new() };

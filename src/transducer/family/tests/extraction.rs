@@ -493,11 +493,11 @@ let flat_words = flat
 let held_form = cipher_form(&family[0].0, &family[0].1);
 assert!(held_form.is_closed(), "a pair form of a shift coheres");
 let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
-struct Held {
+struct CitedForm {
     e: Element,
     f: Form,
 }
-impl Crystal for Held {
+impl Crystal for CitedForm {
     fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         vec![(&self.e, &self.f, Standing::Held)]
     }
@@ -548,7 +548,7 @@ impl Crystal for Held {
         Vec::new()
     }
 }
-let crystal = Held {
+let crystal = CitedForm {
     e: held_e,
     f: held_form,
 };
@@ -709,11 +709,11 @@ fn by_address_returns_citation_without_cloning() {
     assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
     let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
 
-    struct Held {
+    struct CitedForm {
         e: Element,
         f: Form,
     }
-    impl Crystal for Held {
+    impl Crystal for CitedForm {
         fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
             vec![(&self.e, &self.f, Standing::Held)]
         }
@@ -743,7 +743,7 @@ fn by_address_returns_citation_without_cloning() {
             Vec::new()
         }
     }
-    let crystal = Held { e: held_e, f: held_form };
+    let crystal = CitedForm { e: held_e, f: held_form };
 
     // A CITATION IS NEVER CLONED: the reader hands back the crystal's own
     // form, and `ptr::eq` is the whole question — a clone would be a

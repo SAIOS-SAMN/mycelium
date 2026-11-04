@@ -249,7 +249,7 @@ fn glue_retract_remaps_faces_and_refuses_placement() {
     // 54.7 B5a — A CITATION IS KEYED BY ITS SITE, and the site is what the
     // vertex holds; the cited address is the cover's. AT1: the site IS the
     // vertex's coordinate.
-    let site = coord::Site::decode(&crate::transducer::sentence::vertex_bytes(
+    let site = coord::GluedBoundary::decode(&crate::transducer::sentence::vertex_bytes(
         host.vertices.at(&gi).expect("the glued vertex"),
     ))
     .expect("a citation's own boundary record");

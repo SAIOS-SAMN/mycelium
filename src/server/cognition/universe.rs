@@ -14,7 +14,7 @@
 //! originate before joining a core tube or converting.
 
 use super::Court;
-use crate::anastome::dialogue::domain::{Founded, Origin};
+use crate::anastome::dialogue::domain::{BigBangRecord, Founded};
 use crate::anastome::dialogue::universe::{basket_holds, Geometry, Genesis, Parent, SignedStatement, Stated, Universe, UniverseReading, KIND_GEOMETRY, KIND_JOIN};
 use crate::anastome::dialogue::handoff::State;
 use crate::chronometry::{ActKind, Cite};
@@ -71,7 +71,7 @@ impl Court {
     /// geometry well formed and not stated already; a parent core an open
     /// core tube into this domain, its far end's space this geometry. The citations
     /// it adds, each by its coordinates.
-    pub(crate) fn origin_universe(&self, o: &Origin) -> Result<Vec<Cite>, Founded> {
+    pub(crate) fn origin_universe(&self, o: &BigBangRecord) -> Result<Vec<Cite>, Founded> {
         let Some(u) = &o.universe else {
             return match o.version {
                 2 => Err(Founded::Malformed),

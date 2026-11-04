@@ -15,7 +15,7 @@ fn encode_reply_round_trips_every_reading() {
         peak_resident: 44,
         samples: 3,
     };
-    let court = Court {
+    let court = CourtReading {
         k: 12,
         basis: 3,
         treasury: 2,

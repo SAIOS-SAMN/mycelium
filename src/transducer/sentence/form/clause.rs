@@ -133,7 +133,7 @@ impl Pred {
 
 /// A REGION READ FROM THE BLADE'S SUPPORT, addressable as a target.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Region {
+pub enum RegionKind {
     /// The background cells the selection's boundary encloses: every
     /// background cell no edge-connected path reaches from the border
     /// without crossing a selected body (a body inside stays inside).
@@ -193,7 +193,7 @@ pub enum Act {
     /// map on what lands.
     Carry { motion: Mv, about: About, gauge: Vec<(u8, u8)> },
     /// CREATE: the region's cells painted.
-    Fill { region: Region, hue: u8 },
+    Fill { region: RegionKind, hue: u8 },
     /// CREATE: from every cell of each selected body, a line along the ray
     /// `(dr, dc)` to its stop.
     Extend { ray: (i8, i8), paint: Paint, stop: Stop },
@@ -517,9 +517,9 @@ pub(super) fn put_act(buf: &mut Vec<u8>, act: &Act) {
         Act::Fill { region, hue } => {
             buf.push(2);
             buf.push(match region {
-                Region::Interior => 0,
-                Region::Halo => 1,
-                Region::Extent => 2,
+                RegionKind::Interior => 0,
+                RegionKind::Halo => 1,
+                RegionKind::Extent => 2,
             });
             buf.push(*hue);
         }
@@ -650,9 +650,9 @@ pub(super) fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
         }
         2 => {
             let region = match take_byte(k, p)? {
-                0 => Region::Interior,
-                1 => Region::Halo,
-                2 => Region::Extent,
+                0 => RegionKind::Interior,
+                1 => RegionKind::Halo,
+                2 => RegionKind::Extent,
                 _ => return None,
             };
             Act::Fill { region, hue: take_byte(k, p)? }

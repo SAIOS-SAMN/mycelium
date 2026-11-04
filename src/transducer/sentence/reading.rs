@@ -32,7 +32,7 @@ use crate::transducer::stalk::{self, Stalks};
 /// 11.5 MB on a voice eleven minutes into a soak. The address IS the
 /// coordinate (law 2) and the trie reaches the word by its prefix directly, so the
 /// round trip and all three carriers are gone.
-pub struct Reading<'r, W, F, S, H> {
+pub struct Lookups<'r, W, F, S, H> {
     pub word_at: &'r W,
     pub fibre_of: &'r F,
     pub shape_at: &'r S,
@@ -161,7 +161,7 @@ pub fn locate_or_puncture_at<'a>(
 ) -> Located {
     let fibre_of = |inv: &stalk::Invariant| atlas.fibre(inv);
     locate_or_puncture_on(
-        &Reading { word_at, fibre_of: &fibre_of, shape_at, held_at: &no_held },
+        &Lookups { word_at, fibre_of: &fibre_of, shape_at, held_at: &no_held },
         piece,
         exclude,
         budget,
@@ -180,7 +180,7 @@ fn unlocated(multiplicity: usize) -> Located {
 /// there exactly one held form's word must reconstruct the body; several
 /// are sections and stand as multiplicity, never a choice.
 pub fn locate_or_puncture_on<'a, W, F, S, H>(
-    read: &Reading<'_, W, F, S, H>,
+    read: &Lookups<'_, W, F, S, H>,
     piece: &[Link],
     exclude: Option<&[u8]>,
     budget: &mut crate::physics::Budget,
@@ -191,7 +191,7 @@ where
     S: Fn(&[u8]) -> Option<&'a Shape>,
     H: Fn(&stalk::Invariant, &[Link], &mut crate::physics::Budget) -> Vec<HeldCite>,
 {
-    let &Reading { word_at, fibre_of, shape_at, held_at } = read;
+    let &Lookups { word_at, fibre_of, shape_at, held_at } = read;
     let Some(shape) = element::shape_of_chain(piece) else {
         return unlocated(0);
     };
@@ -270,7 +270,7 @@ fn place_located<'a, W, F, S, H>(
     out: &mut Sentence,
     located: Located,
     body: &[Link],
-    read: &Reading<'_, W, F, S, H>,
+    read: &Lookups<'_, W, F, S, H>,
     exclude: Option<&[u8]>,
     budget: &mut crate::physics::Budget,
 ) where
@@ -321,7 +321,7 @@ pub fn deconstruct_at<'a>(
 ) -> Sentence {
     let fibre_of = |inv: &stalk::Invariant| atlas.fibre(inv);
     deconstruct_on(
-        &Reading { word_at, fibre_of: &fibre_of, shape_at, held_at: &no_held },
+        &Lookups { word_at, fibre_of: &fibre_of, shape_at, held_at: &no_held },
         chain,
         exclude,
         budget,
@@ -331,7 +331,7 @@ pub fn deconstruct_at<'a>(
 /// Deconstruct over a fibre the caller names — genome, dialect, or both —
 /// and over the held words the caller reads at each body's chart.
 pub fn deconstruct_on<'a, W, F, S, H>(
-    read: &Reading<'_, W, F, S, H>,
+    read: &Lookups<'_, W, F, S, H>,
     chain: &[Link],
     exclude: Option<&[u8]>,
     budget: &mut crate::physics::Budget,

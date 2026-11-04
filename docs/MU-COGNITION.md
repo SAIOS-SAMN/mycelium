@@ -268,7 +268,7 @@ The pipeline:
    is submitted by `admit_verdict` (`src/client/sdk/mind/perceive.rs`)
    through `submit_solve_rule` (`src/client/sdk/mind/learn.rs`). A mind
    on a seat runs the same steps in `solve_before_on_ground`
-   (`src/client/sdk/mind/body.rs`) and calls the house. The court's judge
+   (`src/client/sdk/mind/seating.rs`) and calls the house. The court's judge
    is `judge_solve` in `src/server/cognition/court/task.rs`.
 
 So a rule says either: *every body of this exact chart, in this frame,

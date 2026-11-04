@@ -6,12 +6,12 @@
 use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::uplink::{decode_uplink, encode_uplink_reply};
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(fold) = decode_uplink(&frame.body) else { return };
-    let verdict = match crate::held::held!(context.court) {
+    let verdict = match crate::court_lock::held!(context.court) {
         Ok(mut h) => h.run(|k, _| k.admit_uplink(&fold)),
         Err(_) => return,
     };
@@ -19,5 +19,5 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
     if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, Frame { lane: frame.lane, body: encode_uplink_reply(&verdict) });
+    answer(stream, WireFrame { lane: frame.lane, body: encode_uplink_reply(&verdict) });
 }

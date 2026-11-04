@@ -224,7 +224,7 @@ impl Court {
 
     /// Where `court_reconstruct` keeps this word's cursor, and how far it stands.
     #[cfg(test)]
-    pub(crate) fn court_reconstruction_progress(&self, spoken: &Element) -> Option<(crate::verdict::Phase, usize, usize)> {
+    pub(crate) fn court_reconstruction_progress(&self, spoken: &Element) -> Option<(crate::verdict::Stage, usize, usize)> {
         let task = self.court_task_of(spoken).filter(|_| reconstructs_on_family(spoken));
         let key = reconstruction_key(spoken, task.as_ref().map(|t| t.as_bytes()));
         self.reconstruction_cursors.get(&key).map(|c| c.progress())
@@ -448,7 +448,7 @@ impl Court {
     /// a stroke moved none.
     #[cfg(test)]
     pub(crate) fn court_settle(&mut self) {
-        let progress = |k: &Court| -> Vec<(Vec<u8>, (crate::verdict::Phase, usize, usize))> {
+        let progress = |k: &Court| -> Vec<(Vec<u8>, (crate::verdict::Stage, usize, usize))> {
             k.reconstruction_cursors.scoped().map(|(key, c)| (key, c.progress())).collect()
         };
         loop {

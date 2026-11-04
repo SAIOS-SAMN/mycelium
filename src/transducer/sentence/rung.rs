@@ -36,7 +36,7 @@
 //! often. A court hearing outside any mind's tick holds one lexicon across its
 //! worker threads, and transcribes nothing: no word is taught to it.
 
-use super::compose::{Closure, Composition};
+use super::compose::{RingClosure, Composition};
 use super::coordinates::{Coordinates, HoleIndex};
 use super::theorem::Theorem;
 use crate::network::nerve::Keyed;
@@ -50,7 +50,7 @@ use crate::transducer::cga::Mv;
 /// the alphabet spells it is read where it is transcribed (`Transcribed`),
 /// never held.
 #[derive(Clone, Debug)]
-struct Held {
+struct Shortcut {
     rung: u64,
     coords: Option<Coordinates>,
     heard: bool,
@@ -66,7 +66,7 @@ struct Held {
 /// mind's next return.
 #[derive(Default, Clone)]
 pub(crate) struct Lexicon {
-    held: Keyed<Held>,
+    held: Keyed<Shortcut>,
     holes: HoleIndex,
     reconsider: Keyed<()>,
 }
@@ -207,7 +207,7 @@ fn coords_of(word: &Mv) -> Option<Coordinates> {
 
 /// The coordinates of a word the mind KNOWS, by its key; a word only heard
 /// is no ground to derive from.
-fn known_coords<'a>(held: &'a Keyed<Held>, k: &[u8]) -> Option<&'a Coordinates> {
+fn known_coords<'a>(held: &'a Keyed<Shortcut>, k: &[u8]) -> Option<&'a Coordinates> {
     held.get(k).filter(|h| !h.heard).and_then(|h| h.coords.as_ref())
 }
 
@@ -241,7 +241,7 @@ pub(crate) fn hear_word(word: &Mv) -> Recognition {
                 if let Some(c) = &coords {
                     lex.holes.file(&key, c);
                 }
-                lex.held.insert(&key, Held { rung: 1, coords, heard: true, given: false });
+                lex.held.insert(&key, Shortcut { rung: 1, coords, heard: true, given: false });
                 Recognition::New
             }
         }
@@ -374,7 +374,7 @@ fn learn(word: &Mv, parts: &[Mv], given: bool) -> bool {
                 if let Some(c) = &coords {
                     lex.holes.file(&key, c);
                 }
-                lex.held.insert(&key, Held { rung, coords: coords.clone(), heard: false, given });
+                lex.held.insert(&key, Shortcut { rung, coords: coords.clone(), heard: false, given });
                 true
             }
         };
@@ -404,7 +404,7 @@ fn is_identity(m: &Mv) -> bool {
 /// THE RUNG OF A SENTENCE: one above the highest rung among its terms'
 /// WORDS that the mind holds as shortcuts — read apart from the spaces
 /// between them (78.105 N1); rung 1 for a sentence of perceived words alone.
-fn rung_of(words: &[Mv], held: &Keyed<Held>) -> u64 {
+fn rung_of(words: &[Mv], held: &Keyed<Shortcut>) -> u64 {
     let below = words.iter().filter_map(|m| held.get(&key_of(m)?).filter(|h| !h.heard).map(|h| h.rung)).fold(0u64, u64::max);
     below.checked_add(1).map_or(below, |r| r)
 }
@@ -539,8 +539,8 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
     // The period it returns at, one where it never returns (a null or named
     // word carries no return).
     let period = match s.closure {
-        Closure::Closes(l) => l,
-        Closure::Rosette | Closure::Unbound | Closure::Unread => 1,
+        RingClosure::Closes(l) => l,
+        RingClosure::Rosette | RingClosure::Unbound | RingClosure::Unread => 1,
     };
     if let Some(h) = lex.held.get_mut(&key) {
         return match h.heard {
@@ -583,6 +583,6 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
         lex.holes.file(&key, c);
         mark_given_beside(lex, &key, c);
     }
-    lex.held.insert(&key, Held { rung, coords, heard: false, given: false });
+    lex.held.insert(&key, Shortcut { rung, coords, heard: false, given: false });
     (Recognition::New, Some(Taught { motion: word.clone(), period }))
 }

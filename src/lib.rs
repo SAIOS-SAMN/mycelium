@@ -6,7 +6,7 @@
 pub mod core;
 pub mod transducer;
 pub mod network;
-mod snapshot;
+mod trie_tape;
 pub mod physics;
 pub mod economy;
 pub mod anastome;

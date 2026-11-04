@@ -110,7 +110,7 @@ pub(crate) fn contact_named_vertices(
                 // of one chart that both become the identity are one member
                 // standing on the frames of both.
                 let held: Vec<crate::transducer::sentence::Acting> = acts.entries().map(|(_, a)| a.clone()).collect();
-                let mut rekeyed: Keyed<crate::transducer::sentence::Acting, coord::Section> = Keyed::new();
+                let mut rekeyed: Keyed<crate::transducer::sentence::Acting, coord::ChartCarriage> = Keyed::new();
                 for mut a in held {
                     *a.carriage = element::identity_versor();
                     let k = a.key();

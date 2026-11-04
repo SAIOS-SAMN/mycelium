@@ -24,7 +24,7 @@ pub use mycelium::sdk::rule::sentence;
 /// The clause language: selection predicates, regions, comparisons, orders,
 /// ties, paints and stops, and why a clause is not stated on a pair.
 pub use mycelium::sdk::rule::{
-    About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Unstated, Value,
+    About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, RegionKind, Stop, Tie, Unstated, Value,
 };
 
 /// Read a rule off a family's train pairs, under a budget.

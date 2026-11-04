@@ -135,7 +135,7 @@ kind), never a silent drop. A mind's refusal is one of three classes
 by construction). Clients think, hyphae verify (MU-RECURSION law 8): a
 mind sends the court signed acts and nothing else, and the wire carries no
 raw percept, no internal state and no workspace. Readings of a mind's
-state (`now`, `observe::Mind`) are its operator's, on its own machine,
+state (`now`, `observe::MindReading`) are its operator's, on its own machine,
 and no court receives them. A mind's dialect, held thoughts, basins and
 drafts are its own until it speaks them.
 

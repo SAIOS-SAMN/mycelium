@@ -119,7 +119,7 @@ impl Court {
                 let n = listing.nonflat.saturating_add(1);
                 listing.nonflat = n;
             }
-            listing.entries.push(FieldEntry {
+            listing.entries.push(ProbedChart {
                 chart: chart.clone(),
                 state,
                 remainder,
@@ -215,7 +215,7 @@ impl Court {
     /// afford in one stroke is read off the court.
     ///
     /// 78.153b — THE CRATE'S, NEVER THE BINARY'S: a binary takes its stroke
-    /// with the court, one per hold (`server::held::lock`), so a hold cannot
+    /// with the court, one per hold (`server::court_lock::lock`), so a hold cannot
     /// mint itself a second.
     pub(crate) fn stroke(&mut self) -> crate::physics::Budget {
         self.physics.stroke()

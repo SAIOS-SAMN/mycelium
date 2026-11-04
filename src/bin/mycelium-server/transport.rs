@@ -6,7 +6,7 @@
 //! rtt an aperture holds is a stroke count.
 
 use crate::Mesh;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
@@ -75,7 +75,7 @@ fn spoke_pointed(s: &TcpStream) -> bool {
     was
 }
 
-pub(crate) fn answer(s: &mut TcpStream, frame: Frame) {
+pub(crate) fn answer(s: &mut TcpStream, frame: WireFrame) {
     let _ = answer_written(s, frame);
 }
 
@@ -85,7 +85,7 @@ pub(crate) fn answer(s: &mut TcpStream, frame: Frame) {
 /// is never silent there (2026-10-08). A LOWER BOUND: a reply written just
 /// after the asker closed can still land in the socket's buffer and read as
 /// written, so `unwritten` counts the misses the wire refused, not all.
-pub(crate) fn answer_written(s: &mut TcpStream, frame: Frame) -> bool {
+pub(crate) fn answer_written(s: &mut TcpStream, frame: WireFrame) -> bool {
     // 78.152 TU-7: a reply carries this door's final point where the speaker
     // carried one (`note_pointed`); otherwise it is the frame it always was.
     let point = match spoke_pointed(s) {
@@ -104,7 +104,7 @@ pub(crate) fn answer_written(s: &mut TcpStream, frame: Frame) -> bool {
     }
 }
 
-pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
+pub(crate) fn read_frame(s: &mut TcpStream) -> Option<WireFrame> {
     let mut head = [0u8; 5];
     s.read_exact(&mut head).ok()?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
@@ -116,11 +116,11 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
         // A lane byte that names no lane is answered on the spatial lane.
         let lane = match mycelium::network::wire::read_lane(head[0]) {
             Some((l, _)) => l,
-            None => mycelium::network::wire::Stratum::Spatial,
+            None => mycelium::network::wire::Lane::Spatial,
         };
         let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
         let body = mycelium::anastome::dialogue::encode_outcome(mycelium::cognition::outcome_code(&refused), 0, &[0; 4]);
-        answer(s, Frame { lane, body });
+        answer(s, WireFrame { lane, body });
         return None;
     }
     let mut buf = vec![0u8; 5 + len];
@@ -128,7 +128,7 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     s.read_exact(&mut buf[5..]).ok()?;
     // 78.152 TU-7: the point the speaker carried is heard at the door as the
     // frame is read, beside the published reading and outside the court.
-    let (frame, point, _) = Frame::decode_at(&buf)?;
+    let (frame, point, _) = WireFrame::decode_at(&buf)?;
     // A SPEAKER THAT CARRIED A POINT IS ANSWERED WITH ONE; one that carried
     // none is answered as it spoke. A kernel still on a mycelium before 78.152
     // refuses a pointed frame whole, so the door's point rides only to a
@@ -312,7 +312,7 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> O
     // very sites B6 exists to remove. A socket cannot be handed a stroke,
     // so the READ is budgeted instead: non-blocking, one spend per attempt,
     // refused when the transport's own deadline is spent.
-    let frame = Frame { lane: mycelium::network::wire::Stratum::Spatial, body };
+    let frame = WireFrame { lane: mycelium::network::wire::Lane::Spatial, body };
     // 78.152 TU-7: a court's act to a peer carries its door's final point.
     s.write_all(&frame.encode_at(crate::tuniversal::final_point().as_ref())?).ok()?;
     s.set_nonblocking(true).ok()?;

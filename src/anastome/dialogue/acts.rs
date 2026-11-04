@@ -437,7 +437,7 @@ pub type Roots = ([[u8; 32]; 4], [u8; 32]);
 
 /// A COVER, one page: who, where, and the charts under the roots it just
 /// signed. Read by `ACT_COVER` when those roots move, never on the digest.
-pub struct Cover {
+pub struct CoverPage {
     /// The announcing key.
     pub vk: [u8; 32],
     /// Where to reach it.

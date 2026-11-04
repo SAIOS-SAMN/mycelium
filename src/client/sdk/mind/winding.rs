@@ -53,7 +53,7 @@ use std::sync::atomic::AtomicBool;
 pub(crate) struct Board {
     pub(crate) court: super::court::CourtPace,
     pub(crate) feed: Option<super::feed::Feed>,
-    pub(crate) body: Option<super::body::Body>,
+    pub(crate) seating: Option<super::seating::Seating>,
     /// MU-CLIENT §7.1 R1 — the perception carrier, opened where the mind
     /// first takes a scene in.
     pub(crate) perceiver: Option<super::perceive::Perceiver>,
@@ -118,7 +118,7 @@ pub(crate) struct Board {
     /// (`offer::PASSED`) — a reading, never read back by cognition.
     pub(crate) offers_passed: [u64; 1],
     /// WHERE EACH SCENE'S COMPREHENSION STOPPED since the mind began, by what
-    /// it was taken as (`perceive::Reading`) and the stop (`perceive::Stop`) —
+    /// it was taken as (`perceive::SceneKind`) and the stop (`perceive::Stop`) —
     /// a reading, never read back by cognition.
     pub(crate) stopped: [[u64; super::perceive::STOPS.len()]; 3],
     /// EACH COURT TASK THIS MIND TOOK, by its citation (`perceive::TaskRead`):
@@ -242,7 +242,7 @@ impl Mind {
         }
         if !stopping() {
             self.at_law("admission: the seat's mail");
-            self.body_tick();
+            self.seating_tick();
         }
         // 2. THE FIELD MOVES. MU-CLIENT §4.12, R5 — REST IS METABOLISM: where
         // a lane runs short the mind relaxes and regenerates; where nothing

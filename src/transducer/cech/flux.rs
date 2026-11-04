@@ -151,7 +151,7 @@ impl Tubes {
 /// a ratio to the reference, and — in quanta weighed by mass — the net flux
 /// through it, the transport along it, and what is still open on it.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Tube {
+pub struct FluxTube {
     pub reference: Mv,
     pub generator: Mv,
     pub quantum: BigRational,
@@ -188,7 +188,7 @@ pub struct Admitted {
 ///   rescaled exactly, so nothing is lost and nothing is declared.
 #[derive(Clone, Debug, Default)]
 pub struct TubeRegistry {
-    tubes: Keyed<Tube>,
+    tubes: Keyed<FluxTube>,
     /// The lines released — a tube's net flux cancelled, its open flux
     /// dissipated, or the tube at rest — each with why, until taken.
     pub(crate) released: Vec<(Vec<u8>, super::orbit::Released)>,
@@ -245,7 +245,7 @@ impl TubeRegistry {
             };
             self.tubes.insert(
                 &key,
-                Tube {
+                FluxTube {
                     reference: flux.clone(),
                     generator: generator.clone(),
                     quantum: BigRational::from_integer(1.into()),
@@ -290,7 +290,7 @@ impl TubeRegistry {
         }
         // A movement of the field: it beats on it.
         self.moved = true;
-        let tube = Tube {
+        let tube = FluxTube {
             reference: t.reference,
             generator: t.generator,
             quantum: q2,
@@ -419,7 +419,7 @@ impl TubeRegistry {
     /// zero — `e_∞² = 0`, parallel field lines do not link — and a screw's
     /// coupled turn does not. Exact, a rational; never a norm.
     pub fn helicity(&self) -> BigRational {
-        let held: Vec<&Tube> = self.tubes.scoped().map(|(_, t)| t).collect();
+        let held: Vec<&FluxTube> = self.tubes.scoped().map(|(_, t)| t).collect();
         let mut h = BigRational::zero();
         for (i, a) in held.iter().enumerate() {
             for b in held.iter().skip(i) {
@@ -435,7 +435,7 @@ impl TubeRegistry {
     /// `None` where the stroke runs out first — the helicity UNREAD, never
     /// a partial sum standing for it.
     pub fn helicity_on(&self, reads: &mut crate::physics::Budget) -> Option<BigRational> {
-        let held: Vec<&Tube> = self.tubes.scoped().map(|(_, t)| t).collect();
+        let held: Vec<&FluxTube> = self.tubes.scoped().map(|(_, t)| t).collect();
         let mut h = BigRational::zero();
         for (i, a) in held.iter().enumerate() {
             if !reads.spend() {
@@ -455,7 +455,7 @@ impl TubeRegistry {
     /// the field's topology does — a tube opening across another, or a tube's
     /// net flux cancelling to nothing. A change in this is a reconnection.
     pub fn links(&self) -> usize {
-        let held: Vec<&Tube> = self.tubes.scoped().map(|(_, t)| t).filter(|t| !t.net.is_zero()).collect();
+        let held: Vec<&FluxTube> = self.tubes.scoped().map(|(_, t)| t).filter(|t| !t.net.is_zero()).collect();
         held.iter()
             .enumerate()
             .map(|(i, a)| held.iter().skip(i + 1).filter(|b| !a.generator.geo(&b.generator).scalar_part().is_zero()).count())
@@ -482,7 +482,7 @@ impl TubeRegistry {
                 Some(k) => k,
                 None => key,
             };
-            out.tubes.insert(&k, Tube { reference, generator: carry(&t.generator), ..t.clone() });
+            out.tubes.insert(&k, FluxTube { reference, generator: carry(&t.generator), ..t.clone() });
         }
         out
     }

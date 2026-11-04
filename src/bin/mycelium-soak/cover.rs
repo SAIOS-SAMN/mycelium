@@ -6,10 +6,10 @@
 //! decides anything and no library function is changed: `scene::cover` and
 //! `scene::is_identity` are called exactly as extraction calls them.
 
-use mycelium::transducer::family::{cover, is_identity, restrict, scene_chart, Grid, Reading};
+use mycelium::transducer::family::{cover, is_identity, restrict, scene_region, Grid, PlaneCut};
 
-/// Per task: the charts Bands deduces on the train inputs, and the largest
-/// chart's extent beside the scene's own.
+/// Per task: the regions Bands deduces on the train inputs, and the largest
+/// region's extent beside the scene's own.
 pub(crate) fn report(dir: &str, names: &[String]) {
     let (mut tasks, mut banded, mut identity, mut none) = (0u64, 0u64, 0u64, 0u64);
     let mut charts_total = 0u64;
@@ -18,19 +18,19 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         tasks += 1;
         let scene: Vec<Grid> = task.train.iter().map(|(a, _)| a.clone()).collect();
-        let Some(cov) = cover(&scene, Reading::Bands) else {
+        let Some(cov) = cover(&scene, PlaneCut::Bands) else {
             none += 1;
             println!("  cover {file} none");
             continue;
         };
         let n = cov.scoped().count() as u64;
         charts_total += n;
-        if is_identity(&cov, &scene, Reading::Bands) {
+        if is_identity(&cov, &scene, PlaneCut::Bands) {
             identity += 1;
             continue;
         }
         banded += 1;
-        // The largest chart's extent, read off the restriction so it is
+        // The largest region's extent, read off the restriction so it is
         // the extent extraction would actually see.
         let (mut mh, mut mw) = (0usize, 0usize);
         for (_, chart) in cov.scoped() {
@@ -47,7 +47,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                 }
             }
         }
-        let whole = match (scene_chart(&scene), scene.as_slice()) {
+        let whole = match (scene_region(&scene), scene.as_slice()) {
             (Some(_), [g, ..]) => match g.as_slice() {
                 [row, ..] => (g.len(), row.len()),
                 [] => (0, 0),

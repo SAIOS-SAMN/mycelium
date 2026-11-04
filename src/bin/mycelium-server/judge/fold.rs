@@ -11,16 +11,16 @@ use crate::context::Context;
 use crate::transport::{answer, tell_peer_measured};
 use mycelium::anastome::dialogue;
 use mycelium::chronometry::Place;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
+pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(p) = dialogue::decode_fold(&frame.body) else { return };
     let witness = context.mesh.vk;
     let home = p.section.receipt.stamp.vk;
     let say = |s: &mut TcpStream, w: dialogue::FoldWitness| {
         if let Some(body) = dialogue::encode_fold_reply(&w) {
-            answer(s, Frame { lane: frame.lane, body });
+            answer(s, WireFrame { lane: frame.lane, body });
         }
     };
     let refuse = |s: &mut TcpStream, why: &str| {
@@ -69,7 +69,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
     // left unanswered. The proof held for the home is this court's own
     // signed position over that root (`hold_era_proved`): what it said once,
     // it says again.
-    let held = crate::held::held!(context.court).ok().and_then(|mut h| h.run(|k, _| k.cosigned_root(&home, &p.root, &witness)));
+    let held = crate::court_lock::held!(context.court).ok().and_then(|mut h| h.run(|k, _| k.cosigned_root(&home, &p.root, &witness)));
     if let Some(section) = held {
         mycelium::observe::note_catchup(mycelium::observe::CatchupPath::FoldWitness, mycelium::observe::CatchupOutcome::Held);
         say(s, dialogue::FoldWitness::CoSigned { section: Box::new(section) });
@@ -149,7 +149,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
     // position verified above and this witness's own — so this court, the
     // root's second holder, answers a catch-up below it with it.
     // OWED (78.153b): the era frame and its disk append stay under the court.
-    if let Ok(mut h) = crate::held::held!(context.court) {
+    if let Ok(mut h) = crate::court_lock::held!(context.court) {
         h.run(|k, _| k.hold_era_proved(mycelium::chronometry::Era {
             root: p.root,
             signer: home,

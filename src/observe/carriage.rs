@@ -67,11 +67,11 @@ impl CarrierRow {
 /// LD1 — THE CARRIAGE: every (carrier, kind) that carried anything, in
 /// (carrier, kind) order. Read whole at the question; the later stands.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Carriage {
+pub struct CarrierTally {
     pub rows: Vec<CarrierRow>,
 }
 
-impl Carriage {
+impl CarrierTally {
     /// Fold one record into the row it is filed under, filing a new row in
     /// order.
     pub fn add(&mut self, carrier: u8, kind: u8, len: u64) {
@@ -138,7 +138,7 @@ impl Carriage {
         Some(())
     }
 
-    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Carriage> {
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<CarrierTally> {
         let m = take_len(b, p)?;
         if !holds(b, *p, m, 2 + 3 * 8) {
             return None;
@@ -154,7 +154,7 @@ impl Carriage {
             let [records, bytes, largest] = v;
             rows.push(CarrierRow { carrier, kind, records, bytes, largest });
         }
-        Some(Carriage { rows })
+        Some(CarrierTally { rows })
     }
 }
 

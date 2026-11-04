@@ -148,7 +148,7 @@ calibrated from the host at boot; pressure where an orbit or tube opens,
 order where one closes, relief where one returns (78.71–78.73); the deficit
 published, so an asker dwells on the lanes it names.
 
-Its COGNITION IS THE WINDING of its rings (`server/cognition/court/winding.rs`):
+Its COGNITION IS THE WINDING of its rings (`server/cognition/court/ring_carrier.rs`):
 a ring's first close is new work, settled where it closes; every later close
 is a traversal advancing its winding `m → m + 1 mod ℓ`, its earnings accruing
 off the ledger; at `m ≡ 0` the ring has RETURNED — one age — and one
@@ -1072,7 +1072,7 @@ the mind's energy — the modes its motion moves — and never its memory
 **What the drive never is:** a queue of tasks; a set of loops made to close
 exactly; a count to raise; a forecast organ beside the orbit's own
 prediction (§4.4(3)); the mind reading its observer readings
-(`observe::Mind` is the observer's — nothing in cognition reads it back).
+(`observe::MindReading` is the observer's — nothing in cognition reads it back).
 
 ### 4.13 Containment and memory: the orbit's own bound
 
@@ -1203,7 +1203,7 @@ scratch of the field and lands it for the winding to admit
 for the peer minds, whose court speech is handed to the field
 (`FieldWork::Speak`) and posted on the hypha carrier; and the SEAT'S CARRIER
 over the relay's session (`Mind::ask_seat`), on which every exchange with
-the house a seat stands in rides (`client/sdk/mind/body.rs`, §6).
+the house a seat stands in rides (`client/sdk/mind/seating.rs`, §6).
 
 The mind speaks where its winding acts — a return, a seal, a rise of its
 algebra for a class (§4.4, §4.5) — and says what changed, addressed by its
@@ -1621,7 +1621,7 @@ untried arguments run beside the mind, and never a game's score the mind
 plays to raise (§2.4(8)).
 
 As built, the seat has its own carrier (`Mind::ask_seat`; every exchange
-with the house rides it, `client/sdk/mind/body.rs`), the seat's calls are
+with the house rides it, `client/sdk/mind/seating.rs`), the seat's calls are
 held for the mind's return (`seat_act`), and a seat is held again when it is
 lost (`sdk::seat::SeatHold`, 78.148). A seat does not ascertain a rule by its
 perspectives: it is the domain's delegate presenting a petition
@@ -1634,7 +1634,7 @@ where every read function moved the favoured quantities against or not at
 all, a function the house counsels that this mind has not yet read, tried
 (`Why::Untried`). With no counsel the call is the mind's own: the dominant
 read call under its own valuation, REACH (`SeatMind::reach`, in
-`seat_mind/own.rs`), or none, and the mind passes. The pass is silence on
+`seat_mind/repertoire.rs`), or none, and the mind passes. The pass is silence on
 the wire and a typed reading to the observer.
 
 Specified: the seat's functions taken into the field as thoughts whose orbits
@@ -1657,7 +1657,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 
 | construct | § | where |
 |---|---|---|
-| carriers per counterparty: hypha, perception, conversation, seat | §5.1, §4.2 | `mind/hypha.rs` (`hypha::Carrier`, `Mind::ask_seat`); `mind/perceive.rs` (`take_perceived`); `mind/chatter.rs`; `mind/body.rs` |
+| carriers per counterparty: hypha, perception, conversation, seat | §5.1, §4.2 | `mind/hypha.rs` (`hypha::Carrier`, `Mind::ask_seat`); `mind/perceive.rs` (`take_perceived`); `mind/chatter.rs`; `mind/seating.rs` |
 | the field the mind's own; long laws off the field | §4.2 | `t/mind.rs` (`MindField`, `MindField::think`, `scratch_here`, `admit`) |
 | the winding carrier; outflow at returns; K counts returns | §4.4, §4.12, §4.13 | `mind/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `mind/boot.rs` (`close_cycle`) |
 | a ground's winding `m mod ℓ`; a grounded thought on its own line | §4.4(2) | `t/field/merge.rs` (`Contemplation::closing_ground`); `t/field/line.rs` |
@@ -1680,7 +1680,7 @@ is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 | the measures W, C, S; D2′ shares read locally; E2–E4 | §5.6 | `t/family/local.rs` (`word_local`, `spoken_section`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/court/vantage_install.rs` (`cited_deflation`); `server/cognition/book/demand.rs` (`pay_convergence`); `server/cognition/court/task.rs` (`grow_grants_by_paid`) |
 | the Rewrite (court side) | §5.4 | `server/cognition/book/rewrite.rs` (`offer_rewrite`) |
 | the modes carrier: μ as exact modes keyed by canonical coordinates, drawn whole or refused naming the mode short; read off a motion or a hue map; carried on a solve's verdict | §5.6 M | `economy/modes.rs` (`Mode`, `Modes::of_motion`, `of_gauge`, `take`); `anastome/dialogue/percept.rs` (`encode_solve_verdict`); `server/cognition/identity.rs` (`measured_discharge_read`) |
-| the seat's call chosen from what calls did; no enumeration | §6 | `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat_mind/own.rs` (`SeatMind::reach`); `client/sdk/seat.rs` (`SeatHold`) |
+| the seat's call chosen from what calls did; no enumeration | §6 | `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat_mind/repertoire.rs` (`SeatMind::reach`); `client/sdk/seat.rs` (`SeatHold`) |
 | the observer: where the winding carrier stands, and calls answered at its next law boundary | §7.2 | `mind/observer.rs` (`Mind::at_law`; calls `now`, `thoughts`, `thought`, `field`, `held`, `scenes`, `questions`, `perception`, `convergence`, `calls`); `observe/live.rs`; `mycelium-client --call "<call>" [--mind HEX]` |
 
 The observer is an instrument permitted against §2.4(1): every call reads,

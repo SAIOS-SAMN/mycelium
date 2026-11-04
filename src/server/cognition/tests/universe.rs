@@ -4,7 +4,7 @@
 // the core of the universe it bounced into, kept by both reserves. 78.140 — a
 // universe's space is curved or a flat torus, each tube end read in its own.
 
-use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Origin, Reservation};
+use crate::anastome::dialogue::domain::{BigBangRecord, DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::handoff::{ConvertOut, Handed, Handoff, HandoffRefusal, Level, Mouth, State, Tube};
 use crate::anastome::dialogue::universe::{Genesis, Geometry, Metric, Parent, Statement, Stated};
 use crate::chronometry::Cite;
@@ -53,12 +53,12 @@ fn founded() -> Court {
     k
 }
 
-fn origin(d: u8, universe: Option<Genesis>) -> Origin {
+fn origin(d: u8, universe: Option<Genesis>) -> BigBangRecord {
     let version = match universe {
         Some(_) => 2,
         None => 1,
     };
-    Origin { domain: verifying(&domain(d)), kind: 1, version, commitment: [d; 32], universe }
+    BigBangRecord { domain: verifying(&domain(d)), kind: 1, version, commitment: [d; 32], universe }
 }
 
 fn state(k: &mut Court, d: u8, stated: Stated, by: &SigningKey) -> Founded {
@@ -152,7 +152,7 @@ fn state_records_geometry_and_basket_once() {
 fn record_origin_child_through_core_tube() {
     let mut k = founded();
     assert_eq!(k.handoff(&Handoff::Mouth(Box::new(core_tube((2, 1)))).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotAUniverse), "the parent is no universe yet");
-    assert_eq!(k.record_origin(&Origin { version: 1, ..origin(4, Some(root())) }.sign(&domain(4))), Founded::Malformed, "version and fields agree");
+    assert_eq!(k.record_origin(&BigBangRecord { version: 1, ..origin(4, Some(root())) }.sign(&domain(4))), Founded::Malformed, "version and fields agree");
     assert!(matches!(k.record_origin(&origin(4, Some(root())).sign(&domain(4))), Founded::Originated { .. }));
     let by_line = Mouth { from_tier: verifying(&line(4)), ..core_tube((2, 1)) };
     assert_eq!(k.handoff(&Handoff::Mouth(Box::new(by_line)).sign(&line(4))), Handed::Refused(HandoffRefusal::NotReserve), "only the reserve offers a core");

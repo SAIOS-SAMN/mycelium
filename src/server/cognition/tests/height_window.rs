@@ -3,7 +3,7 @@
 
 use super::fixtures::speak_pair;
 use crate::chronometry::{ActKind, ReceiptChain};
-use crate::cognition::court::phase::{phase_over, CoverReading, Phase};
+use crate::cognition::court::height_window::{window_over, CoverReading, Window};
 use crate::cognition::*;
 use crate::network::nerve::Keyed;
 
@@ -27,7 +27,7 @@ fn reading(strata: &[(&[u8], usize)], sections: &[(&[u8], usize)]) -> CoverReadi
 /// opened and the strata split. Two readers of the same receipts and
 /// covers read the same phase (13.7).
 #[test]
-fn phase_over_reads_kinds_and_cover_at_window_ends() {
+fn window_over_reads_kinds_and_cover_at_window_ends() {
     let mut c = ReceiptChain::with_signer([1; 32]);
     for kind in [
         ActKind::List,
@@ -60,7 +60,7 @@ fn phase_over_reads_kinds_and_cover_at_window_ends() {
         &[(&[1], 3), (&[2, 0], 1), (&[2, 1], 1), (&[3], 1)],
         &[(&[1], 2), (&[3], 1)],
     );
-    let p = phase_over(&window, &at_h0, &at_h1, h0, h1);
+    let p = window_over(&window, &at_h0, &at_h1, h0, h1);
     assert_eq!((p.h0, p.h1), (0, h1));
     assert_eq!((p.deflated, p.held), (2, 3), "comprehension: settlements against listings");
     assert_eq!((p.sections, p.strata), (1, 4), "congruence: charts with two sections, against strata");
@@ -69,13 +69,13 @@ fn phase_over_reads_kinds_and_cover_at_window_ends() {
     assert_eq!(p.adjoined_by_closure, 0, "the window reads installs; adjunction is the court's, read at the court");
     assert_eq!((p.axes, p.splits), (1, 1), "expansion: [3] opened, [2] split into [2,0] and [2,1]");
     assert_eq!(
-        phase_over(&window, &at_h0, &at_h1, h0, h1),
+        window_over(&window, &at_h0, &at_h1, h0, h1),
         p,
         "the same receipts and covers read the same phase"
     );
     assert_eq!(
-        phase_over(&[], &at_h1, &at_h1, h1, h1),
-        Phase { h0: h1, h1, strata: 4, sections: 1, ..Phase::default() },
+        window_over(&[], &at_h1, &at_h1, h1, h1),
+        Window { h0: h1, h1, strata: 4, sections: 1, ..Window::default() },
         "a still window reads only what stands"
     );
     assert_eq!(
@@ -113,7 +113,7 @@ fn read_phase_on_keeps_only_window_mark() {
 
     // A READING OVER AN EMPTY WINDOW IS NOT A READING, and `read_phase` says
     // so. Nothing has been admitted since the call above, so the window is
-    // empty and `phase_over` would report zero out of zero over `h N..N` —
+    // empty and `window_over` would report zero out of zero over `h N..N` —
     // the vacuous assertion at the instrument. Hypha a wrote 25 598 of those
     // in nine minutes at e98e8a2 because its caller paces on docket circuits
     // and a docket that fits one budget completes one every stroke.

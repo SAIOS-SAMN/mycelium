@@ -17,7 +17,7 @@
 //! its law — never only the first — and every quantity is exact over ℚ: no
 //! angle, root, logarithm or decimal is formed anywhere.
 
-use crate::physics::equilibrium::{external_torque, metric_defect, similarity, unmeasured_pairs, Body};
+use crate::physics::equilibrium::{external_torque, metric_defect, similarity, unmeasured_pairs, BodyMoments};
 use crate::transducer::cga::{is_versor, motion_modes, projective_ratio, Mv, Undecomposed};
 use num_rational::BigRational;
 
@@ -135,7 +135,7 @@ impl Law {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BodyState {
     pub nucleus: Mv,
-    pub body: Body,
+    pub body: BodyMoments,
 }
 
 /// WHICH WAY A FLUX RUNS: a SOURCE emits mass into the composition (the
@@ -230,7 +230,7 @@ pub enum Breach {
 /// its body, since an exchange is content and not a breach. Admitted
 /// exactly where nothing is breached.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Verdict {
+pub struct TransitionVerdict {
     pub breaches: Vec<(Law, Breach)>,
     pub exchanged: Vec<(usize, Mv)>,
     /// How many commuting modes the motion split into (MR1).
@@ -260,7 +260,7 @@ pub struct Unmeasured {
     pub needed_stroke: Option<u64>,
 }
 
-impl Verdict {
+impl TransitionVerdict {
     /// Every law read, and none breached.
     pub fn admitted(&self) -> bool {
         self.breaches.is_empty() && self.unmeasured.is_empty()
@@ -282,7 +282,7 @@ impl Verdict {
 /// lawful motion read as a breach (found by a kernel's first uplink). A
 /// kernel that verifies with this agrees with the court byte
 /// for byte, whatever stroke it holds (law 12).
-pub fn verify_sized(t: &Transition) -> Verdict {
+pub fn verify_sized(t: &Transition) -> TransitionVerdict {
     let mut need = match crate::transducer::cga::modes_need(&t.motion) {
         Some(n) => crate::physics::Physics::default().stroke_n(n),
         None => crate::physics::Physics::default().stroke_n(0),
@@ -292,8 +292,8 @@ pub fn verify_sized(t: &Transition) -> Verdict {
 
 /// VERIFY ONE TRANSITION AGAINST THE FIVE LAWS: every law asked, every
 /// breach named. The kernel computed the transition; this replays it.
-pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
-    let mut v = Verdict::default();
+pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> TransitionVerdict {
+    let mut v = TransitionVerdict::default();
     // CONFORMAL KINEMATICS: a versor, split into its modes exactly, carrying
     // every body it moves. Its modes are read off its own action (MR1),
     // never a chart or an axis order.
@@ -342,7 +342,7 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
         // A flux at no finite place is named below (continuity), once.
         let Some(centre) = crate::transducer::cga::base_at(&f.at, usize::from(f.at.n())) else { continue };
         let n = centre.len();
-        let point = crate::physics::equilibrium::Body { centre, mass: f.mass.clone(), moments: vec![vec![Q::from_integer(0.into()); n]; n] };
+        let point = crate::physics::equilibrium::BodyMoments { centre, mass: f.mass.clone(), moments: vec![vec![Q::from_integer(0.into()); n]; n] };
         let Some(pi) = crate::physics::equilibrium::momentum(&point, &b) else {
             v.breaches.push((Law::Momentum, Breach::FluxUnplaced { index }));
             continue;
@@ -450,13 +450,13 @@ pub fn flux_of_links(links: &[(i64, i64, u8, u8)]) -> Option<Flux> {
 /// (a source), or the reverse (a sink) — under the identity motion. The
 /// court's verdict, every breach named: lawful exactly where the flux stands
 /// at a finite place with a positive mass.
-pub fn verify_flux(f: &Flux, budget: &mut crate::physics::Budget) -> Verdict {
+pub fn verify_flux(f: &Flux, budget: &mut crate::physics::Budget) -> TransitionVerdict {
     let zero = Q::from_integer(0.into());
     let Some(centre) = crate::transducer::cga::base_at(&f.at, usize::from(f.at.n())) else {
-        return Verdict { breaches: vec![(Law::Continuity, Breach::FluxUnplaced { index: 0 })], ..Verdict::default() };
+        return TransitionVerdict { breaches: vec![(Law::Continuity, Breach::FluxUnplaced { index: 0 })], ..TransitionVerdict::default() };
     };
     let n = centre.len();
-    let body = |mass: Q| BodyState { nucleus: f.at.clone(), body: Body { centre: centre.clone(), mass, moments: vec![vec![zero.clone(); n]; n] } };
+    let body = |mass: Q| BodyState { nucleus: f.at.clone(), body: BodyMoments { centre: centre.clone(), mass, moments: vec![vec![zero.clone(); n]; n] } };
     let (before, after) = match f.flow {
         Flow::Source => (body(zero.clone()), body(f.mass.clone())),
         Flow::Sink => (body(f.mass.clone()), body(zero.clone())),

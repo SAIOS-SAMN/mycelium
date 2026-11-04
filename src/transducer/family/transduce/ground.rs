@@ -28,7 +28,7 @@
 //! then each pair's transduction and moved frames, then the ground, and only
 //! then the readings that take the ground (`Transduction::lane_shares`).
 
-use super::relation::{centred_shape, Held};
+use super::relation::{centred_shape, ShapePeriods};
 use super::{need_of, Enclosed, SignedPermutation, Transduction, Turn};
 use crate::transducer::sample::{Sample, Symbol};
 
@@ -155,7 +155,7 @@ fn carried_as_body(x: &Sample, y: &Sample) -> Vec<Vec<u8>> {
         .collect();
     let loose: Vec<(usize, Vec<u8>, Vec<Turn>)> = (0..to.bodies)
         .filter(|q| !held.contains(q))
-        .map(|q| (q, centred_shape(&to, q, Held::InFrame), place_of(&to, q)))
+        .map(|q| (q, centred_shape(&to, q, ShapePeriods::InFrame), place_of(&to, q)))
         .collect();
     let mut out: Vec<Vec<u8>> = Vec::new();
     if loose.is_empty() {
@@ -165,7 +165,7 @@ fn carried_as_body(x: &Sample, y: &Sample) -> Vec<Vec<u8>> {
         let Ok(moved) = s.moved(&from) else { continue };
         for b in 0..moved.bodies {
             let Some(symbol) = moved.body_symbol(b) else { continue };
-            let shape = centred_shape(&moved, b, Held::InFrame);
+            let shape = centred_shape(&moved, b, ShapePeriods::InFrame);
             let place = place_of(&moved, b);
             let carried = loose
                 .iter()

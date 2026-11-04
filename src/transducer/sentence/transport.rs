@@ -305,7 +305,7 @@ impl Form {
                     // called `charts` and held `chart ‖ carriage`, which is
                     // the same confusion that sent a member key into a chart
                     // index at eight sites. The type now says which it is.
-                    let sections: Vec<coord::Section> =
+                    let sections: Vec<coord::ChartCarriage> =
                         acts.entries().map(|(k, _)| k).collect();
                     for k in sections {
                         if let Some(a) = acts.at_mut(&k) {
@@ -316,7 +316,7 @@ impl Form {
                 // A Rebased vertex's fibre regauges the same way its base's
                 // does — every member, at its own section.
                 Vertex::Rebased { acts, .. } => {
-                    let sections: Vec<coord::Section> =
+                    let sections: Vec<coord::ChartCarriage> =
                         acts.entries().map(|(k, _)| k).collect();
                     for k in sections {
                         if let Some(a) = acts.at_mut(&k) {
@@ -345,7 +345,7 @@ impl Form {
                 // EVERY MEMBER'S CARRIAGE composes: the placement moves the
                 // vertex wherever it acts, on every chart it acts on.
                 Vertex::Word { acts, .. } => {
-                    let sections: Vec<coord::Section> =
+                    let sections: Vec<coord::ChartCarriage> =
                         acts.entries().map(|(k, _)| k).collect();
                     for k in sections {
                         if let Some(a) = acts.at_mut(&k) {
@@ -354,7 +354,7 @@ impl Form {
                     }
                 }
                 Vertex::Rebased { acts, .. } => {
-                    let sections: Vec<coord::Section> =
+                    let sections: Vec<coord::ChartCarriage> =
                         acts.entries().map(|(k, _)| k).collect();
                     for k in sections {
                         if let Some(a) = acts.at_mut(&k) {

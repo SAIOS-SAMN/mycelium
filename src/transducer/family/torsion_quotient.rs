@@ -41,7 +41,7 @@
 //! (`physics::source`) — a null flow fixing the pivot, inside the manifold —
 //! and the percept's field reads it as flux.
 
-use crate::physics::pivot_fibre::{shape_of, Carried, Fibre, Shape};
+use crate::physics::pivot_fibre::{shape_of, Carried, PivotFibre, Shape};
 use crate::transducer::base::{is_grid_axis, Site};
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::Versor;
@@ -81,7 +81,7 @@ pub enum Sections {
 /// landed, weighed by its compartments at each end. `None` for a section
 /// carried in place (one pivot, no fibre) or landing nowhere readable.
 fn geoid(p: &Piece) -> Option<Mv> {
-    let fibre = Fibre::new(
+    let fibre = PivotFibre::new(
         p.point.clone(),
         p.out.clone()?,
         BigRational::from_integer(p.mass.into()),
@@ -102,7 +102,7 @@ pub(crate) fn relate_sections(first: &Piece, second: &Piece, budget: &mut crate:
             return Sections::Congruent;
         }
     }
-    let joining = Fibre::new(
+    let joining = PivotFibre::new(
         first.point.clone(),
         second.point.clone(),
         BigRational::from_integer(first.mass.into()),
@@ -240,7 +240,7 @@ pub(crate) fn aligned(p: &Piece) -> Option<bool> {
 
 /// One source held by its null ray's canonical coordinates: the generator
 /// first seen, and every pivot mass that emanated along that ray summed.
-fn hold_source(held: &mut crate::network::nerve::Keyed<(Mv, u64)>, src: &crate::physics::source::Source, mass: u64) {
+fn hold_source(held: &mut crate::network::nerve::Keyed<(Mv, u64)>, src: &crate::physics::source::WhiteHoleSource, mass: u64) {
     let Some(ray) = src.generator.canonical() else { return };
     let mut key = Vec::new();
     ray.put_canonical(&mut key);
@@ -308,7 +308,7 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                         }
                         // The tether between the two pieces, measured: one
                         // pivot (two pieces on one centroid) is no tether.
-                        let fibre = Fibre::new(
+                        let fibre = PivotFibre::new(
                             pi.point.clone(),
                             pj.point.clone(),
                             BigRational::from_integer(pi.mass.into()),
@@ -337,7 +337,7 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                             let lift = m.iter().fold(Mv::zero(), |l, mode| l.add(&fibre.split(&mode.ray.grade(2)).lift));
                             if let Some(k) = crate::physics::source::keeping(sigma, &lift) {
                                 for (p, mass) in [(&pi.point, pi.mass), (&pj.point, pj.mass)] {
-                                    if let Some(src) = crate::physics::source::Source::of(sigma, p, &k) {
+                                    if let Some(src) = crate::physics::source::WhiteHoleSource::of(sigma, p, &k) {
                                         hold_source(&mut sources, &src, mass);
                                     }
                                 }

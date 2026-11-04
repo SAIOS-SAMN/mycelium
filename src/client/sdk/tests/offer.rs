@@ -4,7 +4,7 @@
 
 use super::fixtures::*;
 use crate::client::sdk::mind::offer::{Offer, PASSED_TASK};
-use crate::client::sdk::mind::perceive::{Reading, Scene};
+use crate::client::sdk::mind::perceive::{SceneKind, Scene};
 use crate::client::sdk::*;
 
 /// A family of one cell stepping one column: a body of no chart the slide's
@@ -31,7 +31,7 @@ fn pull_task_asks_nothing_settled_and_strained_holds_tension() {
         let settled = mind.strained();
         mind.pull_task();
         let asked = mind.board.court.pulling;
-        mind.perceive_scene(Scene { id: vec![9; 32], train: vec![first, second], tests: Vec::new(), reading: Reading::Task });
+        mind.perceive_scene(Scene { id: vec![9; 32], train: vec![first, second], tests: Vec::new(), reading: SceneKind::Task });
         mind.settle_perception();
         (settled, asked, mind.strained())
     });
@@ -58,7 +58,7 @@ fn couples_reaches_only_what_mind_holds() {
     assert!(!mind.couples(&id, &slide.charts), "a mind that holds nothing couples to nothing");
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
-        mind.perceive_scene(Scene { id: id.to_vec(), train: train.clone(), tests: Vec::new(), reading: Reading::Task });
+        mind.perceive_scene(Scene { id: id.to_vec(), train: train.clone(), tests: Vec::new(), reading: SceneKind::Task });
         mind.settle_perception();
     });
     mind.field = field;
@@ -358,7 +358,7 @@ fn lapses_at_the_next_final(mind: &mut Mind) {
     let train = one_cell_steps();
     let offer = Offer { landed: Some(10), ..Offer::of(&train) };
     mind.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id, train, tests: Vec::new() }, offer));
-    mind.note_task(&id, Reading::Task, |_| {});
+    mind.note_task(&id, SceneKind::Task, |_| {});
     // A final heard on the hypha's carrier, read back off its view once the
     // carrier has published it.
     let hear = |mind: &mut Mind, h: u64| {

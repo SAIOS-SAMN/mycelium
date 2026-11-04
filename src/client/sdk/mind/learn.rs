@@ -43,7 +43,7 @@ impl Mind {
                 });
                 // Landed on this mind, not yet taken in: attributed here.
                 if let Some(id) = entity.board.court.task.as_ref().map(|(e, _)| e.id) {
-                    entity.note_task(&id, super::perceive::Reading::Task, |t| *t = super::perceive::TaskRead { taken: false, reading: t.reading, perspectives: None, stop: None });
+                    entity.note_task(&id, super::perceive::SceneKind::Task, |t| *t = super::perceive::TaskRead { taken: false, reading: t.reading, perspectives: None, stop: None });
                 }
             },
         );

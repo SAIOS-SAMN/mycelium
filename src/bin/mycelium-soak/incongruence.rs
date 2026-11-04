@@ -15,7 +15,7 @@ const STROKE: usize = 1 << 20;
 
 /// One reading of a subject: its input and output bodies, its relative
 /// difference, and its light's runs.
-type Reading = (Vec<Cell>, Vec<Cell>, mycelium::transducer::family::incongruence::Relative, Vec<(u64, bool)>);
+type SubjectBodies =(Vec<Cell>, Vec<Cell>, mycelium::transducer::family::incongruence::Relative, Vec<(u64, bool)>);
 
 fn cells(b: &mycelium::transducer::family::Body) -> Vec<Cell> {
     b.compartments.iter().filter_map(|l| Some((l.site.axis(0)?, l.site.axis(1)?, l.hue))).collect()
@@ -42,7 +42,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
             continue;
         }
         // Readings by subject: the input body's chart, its key the coordinate.
-        let mut by_subject: Vec<(Vec<u8>, Vec<Reading>)> = Vec::new();
+        let mut by_subject: Vec<(Vec<u8>, Vec<SubjectBodies>)> = Vec::new();
         for ((x, y), rem) in task.train.iter().zip(&rems) {
             if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
                 continue;

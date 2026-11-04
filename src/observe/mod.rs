@@ -7,18 +7,18 @@
 //! the source's own clock (what is held), and a court's standing — keyed
 //! by source and kind, so a hypha can answer for itself and any hypha can
 //! run the console (`mycelium-server --console`). A mind answers for itself
-//! on its own post (`Mind`), read straight from the running binary.
+//! on its own post (`MindReading`), read straight from the running binary.
 
 mod acts;
 mod carriage;
 mod carriers;
 mod clock;
+mod court_stage;
 mod dispatch;
 mod judged;
 mod economy;
 pub mod live;
 mod mind;
-mod phase;
 mod reading;
 mod relay;
 mod store;
@@ -30,11 +30,11 @@ pub use acts::*;
 pub use carriage::*;
 pub use carriers::*;
 pub use clock::*;
+pub use court_stage::*;
 pub use dispatch::*;
 pub use judged::*;
 pub use economy::*;
 pub use mind::*;
-pub use phase::*;
 pub use reading::*;
 pub use relay::*;
 pub use store::*;
