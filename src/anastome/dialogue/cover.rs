@@ -37,8 +37,9 @@ pub fn encode_peers_reply(addrs: &[String]) -> Option<Vec<u8>> {
 }
 
 pub fn decode_peers_reply(body: &[u8]) -> Option<Vec<String>> {
-    // A door deferral is 43 bytes that can look like a tiny peers list if we
-    // stop early; read WHOLE or refuse, and never take the deferral shape (#16).
+    // A door deferral is 43 bytes that read as a short peers list when the
+    // reading stops early: the reply is read whole or refused, and the
+    // deferral's shape is never taken for it (#16).
     if is_deferral(body, PENDING_CODE) {
         return None;
     }
