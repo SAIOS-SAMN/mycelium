@@ -17,7 +17,7 @@ use crate::trie_tape::{put_leaf, put_trie, Leaves};
 /// A LISTING'S COHERENCE FIELD as a leaf value: its entries — each chart as
 /// its own coordinates, each closure as its canonical ray, the remainder
 /// and the stagnation counts.
-pub(super) fn put_field(out: &mut Vec<u8>, listing: &ListingField) {
+pub(super) fn put_field(out: &mut Vec<u8>, listing: &ListingCoherence) {
     out.extend_from_slice(&(listing.entries.len() as u64).to_le_bytes());
     for e in &listing.entries {
         e.chart.put_canonical(out);

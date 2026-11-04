@@ -57,7 +57,7 @@ pub(crate) fn union_remainders(entries: &[ProbedChart]) -> Vec<(i64, i64, u8, u8
 pub(crate) fn open_charts_of(
     address: &[u8],
     listing: &Element,
-    field: &crate::network::nerve::Keyed<ListingField>,
+    field: &crate::network::nerve::Keyed<ListingCoherence>,
     atlas: &crate::transducer::stalk::Stalks,
 ) -> Vec<crate::transducer::stalk::Invariant> {
     match field.get(address) {
@@ -173,7 +173,7 @@ pub struct BookView<'a> {
     /// The atlas the listings are filed under: incidence reads this.
     pub listing_atlas: &'a crate::transducer::stalk::Stalks,
     /// The field each listing stands in — what its open charts are read from.
-    pub field: &'a crate::network::nerve::Keyed<ListingField>,
+    pub field: &'a crate::network::nerve::Keyed<ListingCoherence>,
     /// What is on the page at all.
     pub on_page: &'a crate::network::nerve::Keyed<()>,
     /// Which voices each listing has already been spoken to.
@@ -292,7 +292,7 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
 /// BOTH ARE CARRIED WHERE THE CLOSURE IS BOUND (`Rank::put_closure`), so
 /// this is a read of two integers. It read the whole closure map, once
 /// per call, for two numbers the write already knew -- the same shape as
-/// `ListingField::nonflat`, which is kept by `write_field` for exactly
+/// `ListingCoherence::nonflat`, which is kept by `write_field` for exactly
 /// this reason.
 pub fn cohesion_over(rank: &Rank) -> (u64, u64) {
     let (c, i) = rank.counts();

@@ -157,7 +157,7 @@ pub struct Court {
     /// THE COHERENCE FIELD: per listing, the charts it has been probed
     /// through and each chart's closure. One entry per chart; a later probe on
     /// the same chart replaces its state. Never summed, never ordered.
-    pub(crate) field: crate::network::nerve::Keyed<ListingField>,
+    pub(crate) field: crate::network::nerve::Keyed<ListingCoherence>,
     /// Listings still on the quote page (not relocated to the cavity atlas).
     pub(crate) on_page: crate::network::nerve::Keyed<()>,
 
@@ -290,7 +290,7 @@ pub struct Court {
     /// at no act, which the snapshot refuses by name and counts.
     pub(crate) dialect_chain: Vec<(Vec<u8>, element::Versor, Option<crate::chronometry::Stamp>)>,
     /// Field entries of listings that settled Flat or relocated — FLD1 cold.
-    pub(crate) field_cold: crate::network::nerve::Keyed<ListingField>,
+    pub(crate) field_cold: crate::network::nerve::Keyed<ListingCoherence>,
     /// Settlements the court has read; the SET2 section holds them.
     pub(crate) settlements_cold: Vec<crate::anastome::dialogue::Settlement>,
     /// Test height: when set, height() returns this instead of the chain head.

@@ -182,7 +182,7 @@ fn erase() -> Vec<(u8, u8)> {
 /// be94b721 — the output is the extent of the LARGEST body; a tie refused.
 #[test]
 fn sentence_crops_to_largest_body() {
-    solves("be94b721", &[Step::Select(Pred::extremum(Coord::Shell, Order::Greatest, Tie::Refuse)), Step::Crop(Extent::Body)]);
+    solves("be94b721", &[Step::Select(Pred::extremum(Coord::Cells, Order::Greatest, Tie::Refuse)), Step::Crop(Extent::Body)]);
 }
 
 /// 6e82a1ae — a body of 4 cells turns blue, of 3 red, of 2 green: exact counts.
@@ -191,11 +191,11 @@ fn sentence_recolours_by_exact_size() {
     solves(
         "6e82a1ae",
         &[
-            Step::Select(Pred::count(Coord::Shell, 4)),
+            Step::Select(Pred::count(Coord::Cells, 4)),
             Step::Hue(vec![(5, 1)]),
-            Step::Select(Pred::count(Coord::Shell, 3)),
+            Step::Select(Pred::count(Coord::Cells, 3)),
             Step::Hue(vec![(5, 2)]),
-            Step::Select(Pred::count(Coord::Shell, 2)),
+            Step::Select(Pred::count(Coord::Cells, 2)),
             Step::Hue(vec![(5, 3)]),
         ],
     );
@@ -204,7 +204,7 @@ fn sentence_recolours_by_exact_size() {
 /// d2abd087 — a body of six cells turns red, every other blue.
 #[test]
 fn sentence_recolours_by_count_and_complement() {
-    let six = Pred::count(Coord::Shell, 6);
+    let six = Pred::count(Coord::Cells, 6);
     solves(
         "d2abd087",
         &[Step::Select(six.clone()), Step::Hue(vec![(5, 2)]), Step::Select(Pred::Not(Box::new(six))), Step::Hue(vec![(5, 1)])],
@@ -260,6 +260,6 @@ fn sentence_fills_interior_by_frame_width() {
 fn sentence_erases_cells_touching_nothing() {
     solves(
         "42a50994",
-        &[Step::Select(Pred::And(vec![Pred::count(Coord::Shell, 1), Pred::count(Coord::Contacts, 0)])), Step::Hue(erase())],
+        &[Step::Select(Pred::And(vec![Pred::count(Coord::Cells, 1), Pred::count(Coord::Contacts, 0)])), Step::Hue(erase())],
     );
 }

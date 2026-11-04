@@ -23,14 +23,14 @@ fn judged(rule: &Element, withheld: &[(SectionSample, SectionSample)]) -> (Solve
 #[test]
 fn sentence_refuses_unnamed_tie() {
     crate::transducer::raster::stand_on(0);
-    let largest = || Step::Select(Pred::extremum(Coord::Shell, Order::Greatest, Tie::Refuse));
+    let largest = || Step::Select(Pred::extremum(Coord::Cells, Order::Greatest, Tie::Refuse));
     let g = |rows: &[&str]| -> SectionSample { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let tied = vec![(g(&["11000", "00000", "00022"]), g(&["11"]))];
     let got = sentence(&[largest(), Step::Crop(Extent::Body)], &tied, &NoCrystal);
     assert!(matches!(got, Err(NoRule::Unstated(Unstated::Tie))), "the seam refuses the tie: {got:?}");
     // HELD, the tie selects both, and a crop of two is refused by its own name.
     let held = sentence(
-        &[Step::Select(Pred::extremum(Coord::Shell, Order::Greatest, Tie::Hold)), Step::Crop(Extent::Body)],
+        &[Step::Select(Pred::extremum(Coord::Cells, Order::Greatest, Tie::Hold)), Step::Crop(Extent::Body)],
         &tied,
         &NoCrystal,
     );
