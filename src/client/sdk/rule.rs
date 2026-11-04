@@ -199,11 +199,35 @@ fn hue_under(map: &[(u8, u8)], h: u8) -> Option<u8> {
     sentence::hue_of(map, h)
 }
 
+/// THE PAINTED SYMBOLS A HUE MAP NAMES join the run, each standing where it
+/// is until this map acts (MU-SENSING §3.3): the run's domain is the
+/// symbols its maps name, of any count, never a fixed palette, and the
+/// scene's ground is no painted symbol (§3.4). A symbol named first by a
+/// later map was fixed by every map before it, so it joins standing still.
+fn named_into(sigma: &mut Vec<(u8, u8)>, map: &[(u8, u8)]) {
+    for &(f, t) in map {
+        for h in [f, t] {
+            if !crate::transducer::raster::is_ground(h) && !sigma.iter().any(|(s, _)| *s == h) {
+                sigma.push((h, h));
+            }
+        }
+    }
+}
+
+/// The run's moves, written as a gauge listing is: in the symbols' key
+/// order, each symbol the composite moves.
+fn moves_of(sigma: Vec<(u8, u8)>) -> Vec<(u8, u8)> {
+    let mut moved: Vec<(u8, u8)> = sigma.into_iter().filter(|(h, t)| h != t).collect();
+    moved.sort_unstable();
+    moved
+}
+
 /// THE STEPS COMPOSED: the motion `V = Vₙ ⋯ V₁` (the first step acts first
-/// under the sandwich) and the hue map `σ = σₙ ∘ … ∘ σ₁` on the painted hues.
+/// under the sandwich) and the hue map `σ = σₙ ∘ … ∘ σ₁` on the painted
+/// symbols the maps name.
 fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
     let mut v = element::identity_versor();
-    let mut sigma: Vec<(u8, u8)> = (1..=9u8).map(|h| (h, h)).collect();
+    let mut sigma: Vec<(u8, u8)> = Vec::new();
     for s in steps {
         match s {
             Step::Motion(m) => {
@@ -215,6 +239,7 @@ fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
                 v = m.geo(&v);
             }
             Step::Hue(map) => {
+                named_into(&mut sigma, map);
                 for (_, to) in sigma.iter_mut() {
                     *to = hue_under(map, *to).ok_or(NoRule::NotAHueMap)?;
                 }
@@ -224,8 +249,7 @@ fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
             _ => return Err(NoRule::NotASentence),
         }
     }
-    let moved: Vec<(u8, u8)> = sigma.into_iter().filter(|(h, t)| h != t).collect();
-    Ok((v, moved))
+    Ok((v, moves_of(sigma)))
 }
 
 /// A run of motion and hue steps on one target, composed as it arrives.
@@ -237,13 +261,13 @@ struct Pending {
 
 impl Pending {
     fn new(about: About) -> Pending {
-        Pending { v: element::identity_versor(), about, sigma: (1..=9u8).map(|h| (h, h)).collect() }
+        Pending { v: element::identity_versor(), about, sigma: Vec::new() }
     }
 
     /// The clause the run is: a carriage where it moves, a recolour where it
     /// only maps hues, nothing where it does neither.
     fn act(self) -> Option<Act> {
-        let gauge: Vec<(u8, u8)> = self.sigma.into_iter().filter(|(h, t)| h != t).collect();
+        let gauge = moves_of(self.sigma);
         let still = self.v.sub(&element::identity_versor()).is_zero();
         match (still, gauge.is_empty()) {
             (true, true) => None,
@@ -306,6 +330,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
                 }
                 None => {
                     let p = pending.get_or_insert_with(|| Pending::new(About::Grid));
+                    named_into(&mut p.sigma, map);
                     for (_, to) in p.sigma.iter_mut() {
                         *to = hue_under(map, *to).ok_or(NoRule::NotAHueMap)?;
                     }

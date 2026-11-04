@@ -475,8 +475,8 @@ pub fn hue_of(gauge: &[(u8, u8)], h: u8) -> Option<u8> {
     })
 }
 
-/// 18.2 — THE GAUGE AS THE MAP IT IS: the ten hues, each carried somewhere
-/// or left where it stands.
+/// 18.2 — THE GAUGE AS THE MAP IT IS: the symbols it names, each carried
+/// somewhere or left where it stands.
 ///
 /// A gauge is a partial map on the hues and absence is the identity. Held as
 /// a LISTING of `(from, to)` it is the graph of that map written out as
@@ -485,22 +485,25 @@ pub fn hue_of(gauge: &[(u8, u8)], h: u8) -> Option<u8> {
 /// one against the other. The hue is the coordinate and the listing has no
 /// index at it.
 ///
-/// This is the carrier `connection_chart` and `element::gauge` already use —
-/// `let mut image: [u8; 10]` indexed by the hue — so the tree holds one fact
-/// two ways (law 12). `None` is the hue nothing moves, kept apart from a hue
-/// carried to itself so a map that SAYS `3 → 3` and one that is silent about
-/// 3 read alike where it matters and differently where it does not.
-pub type HueTable = [Option<u8>; 10];
+/// This is the carrier `connection_chart` and `element::gauge` read too —
+/// a keyed table at the symbol — so the tree holds one fact one way (law
+/// 12). It is keyed by the symbols the map names and holds at most `|Σ|`
+/// of them, never a fixed array of slots (MU-SENSING §3.3). An absent key
+/// is the symbol nothing moves, kept apart from a symbol carried to itself
+/// so a map that SAYS `3 → 3` and one that is silent about 3 read alike
+/// where it matters and differently where it does not.
+pub type HueTable = Keyed<u8>;
 
-/// The listing read as the map. `None` where it sends one hue two ways —
-/// that is not a hue map and no vertex can claim it (rule 11) — or where a
-/// hue stands outside the ten the sensor has.
+/// The listing read as the map. `None` where it sends one symbol two ways:
+/// that is not a hue map and no vertex can claim it (rule 11). A symbol of
+/// any code is a key like any other.
 pub fn hue_table(gauge: &[(u8, u8)]) -> Option<HueTable> {
-    let mut t: HueTable = [None; 10];
+    let mut t: HueTable = Keyed::new();
     for &(from, to) in gauge {
-        let slot = t.get_mut(from as usize)?;
-        match slot {
-            None => *slot = Some(to),
+        match t.get(&hue_key(from)) {
+            None => {
+                t.insert(hue_key(from), to);
+            }
             Some(held) if *held == to => {}
             Some(_) => return None,
         }
@@ -508,12 +511,21 @@ pub fn hue_table(gauge: &[(u8, u8)]) -> Option<HueTable> {
     Some(t)
 }
 
-/// The map written back as a listing, in hue order. Only the hues it MOVES:
-/// a gauge lists its non-fixed points and absence is the identity, so a hue
-/// carried to itself is written and one nothing says of is not.
+/// The image the table holds at a symbol, or `None` where it names none.
+pub fn table_image(t: &HueTable, h: u8) -> Option<u8> {
+    t.get(&hue_key(h)).copied()
+}
+
+/// The map written back as a listing, in the symbols' key order. Only the
+/// symbols it names: a gauge lists its non-fixed points and absence is the
+/// identity, so a symbol carried to itself is written and one nothing says
+/// of is not.
 pub fn hue_listing(t: &HueTable) -> Vec<(u8, u8)> {
-    (0..10u8)
-        .filter_map(|h| t.get(h as usize).and_then(|s| s.map(|to| (h, to))))
+    t.scoped()
+        .filter_map(|(k, &to)| match k.as_slice() {
+            [h] => Some((*h, to)),
+            _ => None,
+        })
         .collect()
 }
 
@@ -539,19 +551,22 @@ pub enum HueAgreement {
 /// is found where it is rather than by comparing two listings against each
 /// other.
 pub fn hue_agreement(a: &HueTable, b: &HueTable) -> HueAgreement {
-    let mut out: HueTable = [None; 10];
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "STD1 C1 — the sensor's: a hue below PALETTE = 10, the HueTable's ten slots"
-    )]
-    for h in 0..10usize {
-        out[h] = match (a[h], b[h]) {
+    // The symbols either table names, each once, in key order.
+    let mut named: Keyed<()> = Keyed::new();
+    for (k, _) in a.scoped().chain(b.scoped()) {
+        named.insert(k, ());
+    }
+    let mut out: HueTable = Keyed::new();
+    for (k, _) in named.scoped() {
+        let [h] = k.as_slice() else { continue };
+        let joined = match (table_image(a, *h), table_image(b, *h)) {
             (None, x) | (x, None) => x,
             (Some(x), Some(y)) if x == y => Some(x),
-            (Some(x), Some(y)) => {
-                return HueAgreement::Apart { hue: h as u8, here: x, there: y }
-            }
+            (Some(x), Some(y)) => return HueAgreement::Apart { hue: *h, here: x, there: y },
         };
+        if let Some(to) = joined {
+            out.insert(hue_key(*h), to);
+        }
     }
     HueAgreement::Agreed(Box::new(out))
 }

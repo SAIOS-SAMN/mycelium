@@ -128,10 +128,14 @@ fn harvest(tasks: &[crate::transducer::family::Task]) -> Vec<(String, Mv)> {
     let rules: Vec<_> = tasks
         .iter()
         .flat_map(|task| {
-            crate::transducer::raster::on_each_perspective_of(&task.train, || {
-                let frames = crate::transducer::family::perceive_family(&task.train);
-                let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-                crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
+            // Σ is the whole family's, its test inputs included (§3.3).
+            let inputs: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
+            crate::transducer::symbols::on_test_inputs(&inputs, || {
+                crate::transducer::raster::on_each_perspective_of(&task.train, || {
+                    let frames = crate::transducer::family::perceive_family(&task.train);
+                    let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
+                    crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
+                })
             })
         })
         .filter_map(|(_, rule)| rule)

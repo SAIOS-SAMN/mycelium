@@ -80,10 +80,7 @@ pub(crate) fn emit_carried(
         let Some((r, c)) = on_grid(&l.site) else { continue };
         // A hue the map does not move keeps its own colour: that is what
         // the map says about it (rule 11).
-        let spoken = match hue[h as usize] {
-            Some(t) => t,
-            None => h,
-        };
+        let spoken = crate::transducer::sentence::transport::gauge_image(&hue, h);
         let frame = l.site.axis(crate::transducer::base::FRAME_AXIS);
         match element::carry_compartment_site(v, &l.site) {
             // The grid spoken onto is the body's own frame: a compartment

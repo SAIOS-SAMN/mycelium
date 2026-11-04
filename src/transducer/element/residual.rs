@@ -338,15 +338,20 @@ pub fn colour_word(sigma: &[(u8, u8)]) -> Option<Element> {
     )
 }
 
-/// 78.58 (Closure I) — THE RESERVOIR: the ancilla ray e_∅ of the colour
-/// fibre, the one coordinate outside the detector's channels
-/// (E = span{e_0..e_9} ⊕ ℚe_∅). The sensor's projection Π never sees it,
-/// so no scene can paint it; a word writes to it and nothing else does.
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "STD1 C1 — the sensor's: PALETTE = 10 channels, and the reservoir is the coordinate after the last"
-)]
-pub const RESERVOIR: u8 = PALETTE as u8;
+/// 78.58 (Closure I) — THE RESERVOIR ON THE TAPE: the byte a word's tape
+/// and the law register's wire (`physics::laws::codec`) write for the
+/// ancilla ray e_∅ in a RECORD row `(RESERVOIR, c)`. The fibre is the
+/// family's symbols extended by e_∅, `E = span{e_σ : σ ∈ Σ} ⊕ ℚe_∅`, and
+/// e_∅'s index is `|Σ|` (`symbols::SymbolSet::reservoir`, MU-SENSING
+/// §3.3); the sensor's projection Π never sees it, so no scene can paint
+/// it, and a word writes to it and nothing else does.
+///
+/// FORMAT: the record byte of the two existing layouts, which write a row's
+/// symbols as single bytes beside it. It is a byte of the layouts and never
+/// an index into a family's symbols. A family whose own symbols hold this
+/// byte has no fibre relation on the tape (`lift_fibre`) until track 26 S5
+/// carries e_∅ outside the symbols' bytes (MU-SENSING §8).
+pub const RESERVOIR: u8 = 10;
 
 /// WHAT A COLOUR WORD MAY CARRY (78.53, 78.58): a UNITARY relation of the
 /// fibre extended by the reservoir. Three kinds of row:
@@ -367,9 +372,11 @@ pub const RESERVOIR: u8 = PALETTE as u8;
 /// distinction returns to the hue it names, and a target standing still
 /// to itself. An injection has no records and no stills and is the 78.53
 /// partial injection unchanged. It is NOT completed to a permutation of the
-/// palette: a transition no scene showed would be a forward guess (78.45).
+/// family's symbols: a transition no scene showed would be a forward guess
+/// (78.45). A row's symbols are labels compared by equality, of any count;
+/// only the tape's record byte stands outside them.
 pub fn is_fibre_relation(sigma: &[(u8, u8)]) -> bool {
-    let within = |h: u8| usize::from(h) < PALETTE;
+    let within = |h: u8| h != RESERVOIR;
     let rows: Vec<(u8, u8)> = sigma.iter().copied().filter(|&(f, _)| f != RESERVOIR).collect();
     let recorded = |c: u8| sigma.contains(&(RESERVOIR, c));
     let merged = |t: u8| rows.iter().filter(|&&(_, u)| u == t).count() > 1;
@@ -392,8 +399,13 @@ pub fn fibre_function(sigma: &[(u8, u8)]) -> Vec<(u8, u8)> {
 /// merged target's still row where it stands still; and every moved
 /// preimage of a merged target rotated into the reservoir. A still hue no
 /// other hue merges into is no transition and is not written. `None` when
-/// the function moves no hue, or is not a function.
+/// the function moves no hue, is not a function, or names the tape's
+/// record byte as a symbol (`RESERVOIR`: the row could not be told from a
+/// record until track 26 S5).
 pub fn lift_fibre(function: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
+    if function.iter().any(|&(f, t)| f == RESERVOIR || t == RESERVOIR) {
+        return None;
+    }
     let mut out: Vec<(u8, u8)> = Vec::new();
     for &(f, t) in function {
         if function.iter().any(|&(g, u)| g == f && u != t) {
@@ -482,6 +494,23 @@ pub fn invert_fibre(sigma: &[(u8, u8)]) -> Vec<(u8, u8)> {
         .collect();
     out.sort_unstable();
     out
+}
+
+/// 78.58, MU-SENSING §3.3 — A FIBRE RELATION READ ON THE FAMILY'S OWN
+/// FIBRE `E = span{e_σ : σ ∈ Σ} ⊕ ℚe_∅`: each row's symbols at their
+/// indices into Σ, and each record's source at the reservoir's index `|Σ|`.
+/// The tape's labels become the family's addressing order, so two families
+/// that differ by a relabelling of their symbols read one relation here.
+/// `None` where a row names a symbol the family never showed.
+pub fn fibre_on_symbols(sigma: &[(u8, u8)], symbols: &crate::transducer::symbols::SymbolSet) -> Option<Vec<(usize, usize)>> {
+    let at = |h: u8| symbols.index(std::slice::from_ref(&h));
+    sigma
+        .iter()
+        .map(|&(f, t)| match f == RESERVOIR {
+            true => Some((symbols.reservoir(), at(t)?)),
+            false => Some((at(f)?, at(t)?)),
+        })
+        .collect()
 }
 
 impl Element {

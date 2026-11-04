@@ -166,11 +166,11 @@ impl GaugeMode {
 
 /// THE MODES OF A HUE MAP, each once: every cycle it closes and every move on
 /// a path that does not close. `None` where the listing sends a hue two ways —
-/// no map (rule 11). Each hue is followed at most around its own cycle, the
-/// palette's ten (a boundary, rule 10).
+/// no map (rule 11). Each hue is followed at most around its own cycle,
+/// which holds no more symbols than the map names (a boundary, rule 10).
 pub fn gauge_modes(g: &[(u8, u8)]) -> Option<Vec<GaugeMode>> {
     let t = super::hue_table(g)?;
-    let image = |h: u8| t.get(usize::from(h)).copied().flatten();
+    let image = |h: u8| super::table_image(&t, h);
     let mut out: Keyed<GaugeMode> = Keyed::new();
     for &(from, to) in g {
         if from == to {

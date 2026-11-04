@@ -17,10 +17,6 @@ pub const FIBRE_SHELL: u16 = 3;
 /// FORMAT: stratum tag.
 pub const FIBRE_GERMINATED: u16 = 4;
 
-/// Hue states on the gauge (ARC palette 0..9; 0 = absent).
-/// EXTERNAL: the ARC-AGI task format, colours 0 to 9.
-pub const PALETTE: usize = 10;
-
 /// WHAT A TORSION CYCLE TURNS BY — its generator, which the period is READ
 /// from at every writer, reader and replay (PD1, 78.43(2)): a stored period
 /// is a claim, never a bound, and a derivable quantity re-derives at every
@@ -53,7 +49,7 @@ impl Eq for Generator {}
 
 impl Generator {
     /// THE GENERATOR'S OWN ORDER, read with no base: σ's (the lcm of its
-    /// cycle lengths, where σ permutes its hues within the palette), or the
+    /// cycle lengths, where σ permutes the hues it names), or the
     /// ray's finite order. `None` where it has none.
     pub fn order(&self) -> Option<u64> {
         match self {
@@ -162,8 +158,8 @@ pub struct TorsionCycle {
     /// (78.43(2)) and verified against it at every writer into `torsion`,
     /// and the extent the word owes on the T lane. `u64` by the type's
     /// domain: a permutation of the u8 hues has order up to Landau's g(256)
-    /// ≈ 2⁵⁴, past `u32` (the sensor's PALETTE is site 4's constant, not
-    /// this width's provenance).
+    /// ≈ 2⁵⁴, past `u32` (the family's symbol set Σ, MU-SENSING §3.3,
+    /// is never this width's provenance).
     pub period: u64,
     /// The fibre it lives on: `FIBRE_SPATIAL`, or a germinated axis.
     pub fibre: u16,

@@ -7,4 +7,5 @@ mod raster;
 mod rewrite;
 mod sample;
 mod sheaf;
+mod symbols;
 mod torsion_witness;

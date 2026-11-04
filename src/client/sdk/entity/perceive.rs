@@ -369,6 +369,12 @@ pub(crate) type Perceiver = super::hypha::Carrier<crate::transducer::family::Ext
 /// that ground; the court reconstructs under it. Under a vortex each
 /// perspective extracts afresh: the memo holds one rule a task.
 fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Vec<Perceived> {
+    // Σ is the whole family's, its test inputs included (MU-SENSING §3.3).
+    let tests = scene.tests.clone();
+    crate::transducer::symbols::on_test_inputs(&tests, || perceive_family(memo, epi, scene))
+}
+
+fn perceive_family(memo: &mut crate::transducer::family::ExtractMemo, epi: &Epigenome, scene: Scene) -> Vec<Perceived> {
     let perspectives = crate::transducer::raster::ground_of(&scene.train).perspectives();
     match perspectives.as_slice() {
         [one] => {

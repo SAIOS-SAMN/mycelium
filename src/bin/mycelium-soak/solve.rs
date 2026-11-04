@@ -37,7 +37,10 @@ pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
         tasks += 1;
         let frames = perceive_family(&task.train);
         let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
-        let Some(rule) = extract_rule_on(&task.train, &frames, &epi, &mut b) else { continue };
+        // Σ is the whole family's, its test inputs included (MU-SENSING §3.3).
+        let inputs: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
+        let read = mycelium::transducer::symbols::on_test_inputs(&inputs, || extract_rule_on(&task.train, &frames, &epi, &mut b));
+        let Some(rule) = read else { continue };
         extracted += 1;
         // EVERY TEST PAIR, and the task counts as solved only if every one
         // of them is spoken exactly.

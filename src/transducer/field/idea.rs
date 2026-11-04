@@ -369,11 +369,10 @@ pub(crate) fn bundle_connections(
         // THE GAUGE COMPOSED AROUND THE CYCLE, not discarded and not filed
         // empty: each connection carries its own hue map and the orbit's is
         // the maps' composition, which is what a filed orbit's σ IS (52.3).
-        #[expect(
-            clippy::cast_possible_truncation,
-            reason = "STD1 C1 — the sensor's: a hue slot of the [u8; 10] image, below PALETTE = 10 as the sensor delivers it"
-        )]
-        let mut image: [u8; 10] = std::array::from_fn(|i| i as u8);
+        // Held as a keyed table over the symbols the maps name, never a
+        // fixed array of slots (MU-SENSING §3.3): a symbol no map names
+        // stands where it is.
+        let mut image: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
         for w in occupied.windows(2) {
             let [la, lb] = w else { continue };
             let (Some(a), Some(b)) = (
@@ -389,29 +388,20 @@ pub(crate) fn bundle_connections(
                 continue;
             };
             rotors.push(word.rotor());
-            let mut next = image;
-            for (f, t) in &car.sigma {
-                if let (Some(slot), Some(&from)) =
-                    (next.get_mut(*f as usize), image.get(*f as usize))
-                {
-                    let _ = from;
-                    *slot = *t;
-                }
+            for &(f, t) in &car.sigma {
+                image.insert(crate::transducer::sentence::transport::hue_key(f), t);
             }
-            image = next;
         }
         if rotors.is_empty() {
             continue;
         }
-        #[expect(
-            clippy::cast_possible_truncation,
-            reason = "STD1 C1 — the sensor's: a hue slot of the [u8; 10] image, below PALETTE = 10 as the sensor delivers it"
-        )]
+        // In the symbols' key order, each symbol the image moves.
         let sigma: Vec<(u8, u8)> = image
-            .iter()
-            .enumerate()
-            .filter(|(i, &t)| *i as u8 != t)
-            .map(|(i, &t)| (i as u8, t))
+            .scoped()
+            .filter_map(|(k, &t)| match k.as_slice() {
+                [f] if *f != t => Some((*f, t)),
+                _ => None,
+            })
             .collect();
         if let Some(chart) = charts.get(&ck) {
             out.push((chart.clone(), rotors, sigma));

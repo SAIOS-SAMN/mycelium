@@ -661,7 +661,12 @@ impl Mind {
     fn solve_before(&mut self, seat: &mut Seat, key: &ed25519_dalek::SigningKey, id: &[u8; 32], train: Vec<crate::transducer::family::TrainPair>, tests: Vec<crate::transducer::family::Grid>) {
         use super::perceive::{Reading, Stop};
         let ground = crate::transducer::raster::ground_of(&train);
-        let Some(stop) = crate::transducer::raster::on_ground(ground, || self.solve_before_on_ground(seat, key, id, train, tests)) else { return };
+        // Σ is the whole family's, its test inputs included (MU-SENSING §3.3).
+        let posted = tests.clone();
+        let read = crate::transducer::symbols::on_test_inputs(&posted, || {
+            crate::transducer::raster::on_ground(ground, || self.solve_before_on_ground(seat, key, id, train, tests))
+        });
+        let Some(stop) = read else { return };
         self.note_task(id, Reading::Task, |t| {
             t.taken = true;
             t.stop = Some(stop);

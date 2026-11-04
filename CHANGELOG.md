@@ -6,6 +6,46 @@ such change is named here.
 
 ## Unreleased
 
+### The symbol set is the family's own (track 26, S3)
+- **`transducer::symbols::SymbolSet`** (MU-SENSING §3.3): a family's
+  distinct symbols compared by equality, `|Σ|` read from the data.
+  - `of_samples` reads samples in the family's order and refuses by name
+    two widths (`SymbolRefusal::Width`) or no sample (`NoSample`).
+  - `of_rasters` and `of_pairs` read rasters at intake.
+  - `of_family` reads Σ across all of a family's posted samples: the
+    train pairs, then the test inputs posted beside them
+    (`symbols::on_test_inputs`, re-exported by the SDK's `rule` module).
+    The mind's perception and solve, the SDK's example client, the
+    oracle's harvest and the soak's solve open it, so a symbol seen only
+    in a test input is in Σ.
+  - `index` is a symbol's rank of first appearance in canonical address
+    order, and `reservoir` is `|Σ|`, the index of `e_∅`.
+- **`element::fibre_on_symbols`** reads a fibre relation on `Σ`'s
+  indices, each record at `|Σ|`, so two labellings of one family read one
+  relation.
+- **No fixed palette:**
+  - `element::PALETTE` (10) and `family::PALETTE` (256) are removed.
+  - `sentence::HueTable` and `family::HueMap` are `Keyed<u8>` tables over
+    the symbols they name, with `sentence::table_image` as the read.
+  - `gauge_is_perm`, `connection_chart`, `on_orbit` and the well's
+    composed gauge read over the symbols a map names.
+  - The erasure act maps the family's own `Σ` onto its ground
+    (`acts::onto_ground`), and the rule language composes hue maps over
+    the painted symbols they name, the ground excluded.
+- **`element::RESERVOIR`** is now the tape's record byte (`FORMAT`, 10),
+  never an index into `Σ`. A family whose symbols hold that byte has no
+  colour word until track 26 S5 carries `e_∅` as a typed record tag
+  outside the symbol bytes (MU-SENSING §8).
+- **Behaviour on symbols `0`–`9` is unchanged:** task addresses, the
+  oracle's 1 901 golden readings and the rule language's corpus tasks.
+- Claims: `percept_invariant_under_symbol_permutation`,
+  `symbol_index_is_first_appearance_in_address_order`,
+  `reservoir_follows_the_family_symbol_set`,
+  `family_with_eleven_symbols_is_read_whole`,
+  `symbol_seen_only_in_a_test_input_is_in_the_family_set`, and the
+  reflective
+  `mind_states_a_symbol_meaning_as_a_relation_and_court_reconstructs_it`.
+
 ### The project's kept terms defined in the GLOSSARY (track 11, N5; #55)
 - Documents only. GLOSSARY rows for contemplation, tensegrity, breath,
   hyperfluid, aperture, horizon, resonance, terrain, peel, beam, tower,
