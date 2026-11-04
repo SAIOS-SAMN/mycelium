@@ -1,4 +1,4 @@
-use super::{challenge, domain, equivocation, fold, handoff, laws, observe, probe, quote, receipts, rows, seat, speech, syllabus, tick, uplink, wallet, why};
+use super::{challenge, domain, entries, equivocation, fold, handoff, laws, observe, probe, quote, receipts, seat, speech, syllabus, tick, uplink, wallet, why};
 use crate::context::Context;
 use crate::control::serve_control;
 use crate::transport::answer;
@@ -26,8 +26,8 @@ pub(crate) fn serve_published(stream: &mut TcpStream, frame: &WireFrame, context
             true
         }
         // 78.153b — a fold witness's journal page, off the reading.
-        Some(Action::Rows) => {
-            rows::judge(stream, frame, context);
+        Some(Action::Entries) => {
+            entries::judge(stream, frame, context);
             true
         }
         // 78.154 (4) — a stake act is a write: it reaches the court.
@@ -90,7 +90,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: WireFrame, context: &Context)
         Action::Probe => probe::judge(stream, &frame, context),
         Action::Equivocation => equivocation::judge(stream, &frame, context),
         Action::Receipts => receipts::judge(stream, &frame, context),
-        Action::Rows => rows::judge(stream, &frame, context),
+        Action::Entries => entries::judge(stream, &frame, context),
         Action::Fold => fold::judge(stream, &frame, context),
         Action::Observe => observe::judge(stream, &frame, context),
         Action::Laws => laws::judge(stream, &frame, context),

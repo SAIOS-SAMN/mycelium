@@ -317,7 +317,7 @@ impl Court {
         self.mark_persist();
     }
 
-    /// THE ROWS READ (`ACT_ROWS`): this court's own ledger rows standing at
+    /// THE ROWS READ (`ACT_ENTRIES`): this court's own ledger rows standing at
     /// `from` or later and written before the act at `upto` (see
     /// `Treasury::rows_span`), in journal order, a page of at most
     /// `budget` from `cursor`, with the total the span holds. Another
@@ -336,7 +336,7 @@ impl Court {
 
 /// THE ROWS READ over a journal held by the court `identity` — the one
 /// reading the court (`Court::rows_range`) and the published reading
-/// (`Published::rows_range`, which the door answers `ACT_ROWS` with, off
+/// (`Published::rows_range`, which the door answers `ACT_ENTRIES` with, off
 /// the court) share.
 pub(crate) fn rows_range_of(
     identity: &[u8; 32],

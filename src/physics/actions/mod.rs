@@ -62,7 +62,8 @@ pub enum Action {
     Fetch,
     Peers,
     Receipts,
-    Rows,
+    /// The ledger entries a fold witness re-derives (`ACT_ENTRIES`).
+    Entries,
     Observe,
     Laws,
     Why,
@@ -178,7 +179,7 @@ pub const ACTIONS: [Action; 57] = [
     Action::Equivocation,
     Action::Receipts,
     Action::Fold,
-    Action::Rows,
+    Action::Entries,
     Action::Observe,
     Action::Laws,
     Action::Why,
@@ -245,7 +246,7 @@ impl Action {
             Action::Equivocation => 0x35,
             Action::Receipts => 0x36,
             Action::Fold => 0x37,
-            Action::Rows => 0x38,
+            Action::Entries => 0x38,
             Action::Observe => 0x39,
             Action::Laws => 0x3A,
             Action::Why => 0x3B,
@@ -305,7 +306,7 @@ impl Action {
             | Action::Fetch
             | Action::Peers
             | Action::Receipts
-            | Action::Rows
+            | Action::Entries
             | Action::Observe
             | Action::Laws
             | Action::Why
@@ -409,7 +410,7 @@ impl Action {
             Action::Fetch => b"fetch",
             Action::Peers => b"peers",
             Action::Receipts => b"receipts",
-            Action::Rows => b"rows",
+            Action::Entries => b"entries",
             Action::Observe => b"observe",
             Action::Laws => b"laws",
             Action::Why => b"why",

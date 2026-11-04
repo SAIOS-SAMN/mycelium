@@ -39,7 +39,7 @@ pub(crate) enum Carried {
 
 /// What a vertex failed at, for the journal. Coordinates, not a verdict.
 pub(crate) const FAIL_NO_VERSOR: &str = "the rotor and carriage lift to no versor";
-pub(crate) const FAIL_NO_CARRY: &str = "a lamina of its body carries nowhere";
+pub(crate) const FAIL_NO_CARRY: &str = "a site of the body carries nowhere";
 /// THREE FAULTS, NOT ONE: a carried centre the sensor cannot convert to a
 /// compartment at all, a compartment at a negative coordinate, and a compartment past the
 /// image's extent say different things about a rule — the first that the
@@ -47,10 +47,10 @@ pub(crate) const FAIL_NO_CARRY: &str = "a lamina of its body carries nowhere";
 /// is wrong, the third that the scale or the extent is — and a court that
 /// reported one string for all three would tell a voice nothing it can
 /// contract on (50.9, rule 11).
-pub(crate) const FAIL_NO_COMPARTMENT: &str = "a carried centre is not a lamina of the sensor";
-pub(crate) const FAIL_BEFORE_FRAME: &str = "a lamina lands before the image frame's origin";
-pub(crate) const FAIL_PAST_FRAME: &str = "a lamina lands past the image frame's extent";
-pub(crate) const FAIL_HUE: &str = "a lamina lands on the wrong hue";
+pub(crate) const FAIL_NO_COMPARTMENT: &str = "a carried centre is not a site of the sensor";
+pub(crate) const FAIL_BEFORE_FRAME: &str = "a carried site lands before the image frame's origin";
+pub(crate) const FAIL_PAST_FRAME: &str = "a carried site lands past the image frame's extent";
+pub(crate) const FAIL_HUE: &str = "a carried site lands on the wrong hue";
 pub(crate) const FAIL_PART: &str = "an image body is reached in part";
 /// The vertex's gauge names two images for one hue, so it is not a hue map
 /// and the compartment has no predicted hue to be right or wrong about. Read by

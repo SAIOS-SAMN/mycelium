@@ -196,15 +196,16 @@ pub const ACT_RECEIPTS: u8 = Action::Receipts.byte();
 /// THE FOLD PROPOSAL (47.3, 45.8; S13.10): a home asks a bonded peer to
 /// witness its fold — `[ACT_FOLD][k0 u64][root k u64 ‖ hash 32 ‖ height
 /// u64][n u32][(who 32 ‖ μ⃗ 4×u64)…][47.1 receipt section, payload the root
-/// hash]`. The witness fetches the prefix by `ACT_RECEIPTS` and `ACT_ROWS`,
-/// re-derives it, and answers refused, unmeasured, or co-signed with its
-/// own signed position over the root.
+/// hash]`. The witness fetches the prefix by `ACT_RECEIPTS` and
+/// `ACT_ENTRIES`, re-derives it, and answers refused, unmeasured, or
+/// co-signed with its own signed position over the root.
 pub const ACT_FOLD: u8 = Action::Fold.byte();
-/// THE ROWS A FOLD RE-EXPRESSES (§6 across a fold): `[ACT_ROWS][voice 32]
-/// [signer 32][from u64][to u64][cursor u32]` asks for the signer's own
-/// ledger rows anchored in `from..=to`, from `cursor`; reply `[total u32]
-/// [m u32][row…]`, a page within the frame budget.
-pub const ACT_ROWS: u8 = Action::Rows.byte();
+/// THE LEDGER ENTRIES A FOLD RE-EXPRESSES (§6 across a fold):
+/// `[ACT_ENTRIES][voice 32][signer 32][from u64][to u64][cursor u32]` asks
+/// for the signer's own ledger entries anchored in `from..=to`, from
+/// `cursor`; reply `[total u32][m u32][entry…]`, a page within the frame
+/// budget. The act byte is the one `ACT_ROWS` named (track 11, N7).
+pub const ACT_ENTRIES: u8 = Action::Entries.byte();
 /// THE OBSERVER (§8.1): a voice pushes its readings to its hypha, and any
 /// process queries a hypha for the readings it holds by key prefix. The
 /// layout and its codec are [`crate::observe`]'s, the one writer of it.

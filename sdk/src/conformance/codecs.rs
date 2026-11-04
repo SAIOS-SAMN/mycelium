@@ -329,16 +329,16 @@ fn receipts() -> Result<String, String> {
     Ok("the span asked and a page of one receipt decode".to_string())
 }
 
-fn rows() -> Result<String, String> {
+fn entries() -> Result<String, String> {
     use mycelium::chronometry::Place;
     use mycelium::economy::{Arm, Entry, Kind};
     let upto = Place { k: 3, i: 4 };
-    let want = d::RowsRequest { voice: voice(), signer: CITATION, from: None, upto, cursor: 7 };
-    same("the rows request", d::decode_rows_request(&d::encode_rows_request(&voice(), &CITATION, None, upto, 7)), want)?;
-    let row = Entry { kind: Kind::Transfer, who: voice(), mu: share()?, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
-    let bytes = d::encode_rows_reply(12, std::slice::from_ref(&row), mycelium::network::wire::BODY_BUDGET).ok_or("the rows do not encode")?;
-    same("the rows", d::decode_rows_reply(&bytes), (12, vec![row]))?;
-    Ok("the span asked and a page of one row decode".to_string())
+    let want = d::EntriesRequest { voice: voice(), signer: CITATION, from: None, upto, cursor: 7 };
+    same("the entries request", d::decode_entries_request(&d::encode_entries_request(&voice(), &CITATION, None, upto, 7)), want)?;
+    let entry = Entry { kind: Kind::Transfer, who: voice(), mu: share()?, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
+    let bytes = d::encode_entries_reply(12, std::slice::from_ref(&entry), mycelium::network::wire::BODY_BUDGET).ok_or("the entries do not encode")?;
+    same("the entries", d::decode_entries_reply(&bytes), (12, vec![entry]))?;
+    Ok("the span asked and a page of one entry decode".to_string())
 }
 
 fn why() -> Result<String, String> {
@@ -489,7 +489,7 @@ fn check(a: &ActRequirement) -> Option<Result<String, String>> {
         "seat mail" => seat_mail(),
         "quote" => quote(),
         "receipts" => receipts(),
-        "rows" => rows(),
+        "entries" => entries(),
         "why" => why(),
         "probe" => probe(),
         "peers" => peers(),

@@ -948,7 +948,7 @@ yet tagged (ROADMAP › Now).
 | `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element` |
 | `seat` | `SeatName`, `MindMail`, `MindRead`, the seat posts; `Session::{list_seats, take, call, mail, read_mail, seat_post}` |
 | `wallet` | `Mu`, an amount of μ exact per lane, and `MuRefusal`; wallet read; stake and unstake; lease open, reply and close |
-| `readings` | The typed readings a client may ask a hypha for: observer, why, law register, receipts, rows, reserve, probe |
+| `readings` | The typed readings a client may ask a hypha for: observer, why, law register, receipts, ledger entries (`encode_entries_request`, `decode_entries_reply`), reserve, probe |
 | `mind` | The reference mind, `Mind::open` and `Mind::open_persistent` |
 | `wire` | `WIRE_VERSION` (`0x0200`, wire v2.0: every μ field four exact rational lanes) and `ACT_TABLE`, every act the SDK may send |
 | `laws` | The L0 law register (`Law`, `LAWS`, `LAW_VERSION` 5, `PARAMETERS`), its read (`encode_register_request`, `decode_register_reply`), and the `forms` law ids (`FORM_LAW_IDS`); every law shared is tabled in [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) §11 |

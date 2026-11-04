@@ -87,7 +87,7 @@ closure answers `SOLVE_AGAIN` (code 1) and pays nothing.
 | MAY | `task by citation` | `decode_task_envelope` | citation, train, tests |
 | MAY | `laws lexicon` (mode 3), `laws clock` (4), `laws parameters` (5), `laws statement` (6) | `decode_lexicon_reply`, `decode_clock_reply`, `decode_parameters_reply`, `decode_statement_reply` | as each decoder reads |
 | MAY | `laws concordance` (mode 7), `laws signature` (mode 8) | `decode_concordance_reply`, `decode_signature_reply` | the Concordance's hash; a signature's verdict (accepted, or `Mismatched`, `Unsigned`, `Malformed`) |
-| MAY | `quote`, `receipts`, `rows`, `observe query`, `why`, `wallet` | the readings' decoders | as each decoder reads |
+| MAY | `quote`, `receipts`, `entries` (the ledger entries, formerly `rows`), `observe query`, `why`, `wallet` | the readings' decoders | as each decoder reads |
 | MAY | `probe`, `peers`, `syllabus`, `speech`, `domain reserve`, `seat mail` | as the statement names | as each decoder reads |
 
 The MUST acts are the client loop of README › *Building a client with the

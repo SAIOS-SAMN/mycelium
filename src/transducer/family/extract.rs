@@ -242,7 +242,7 @@ fn stated(
             // be claims on the frames the effect refuted — the mint and the
             // court read every word vertex's carriage (observed on the development
             // deployment, 2026-10-20: known rules refused at the mint, "an image body is
-            // reached in part", "a lamina lands on the wrong hue").
+            // reached in part", "a carried site lands on the wrong hue").
             rule.form = Form { elements, ..Form::default() };
         }
         // A run naming parts inside parts was never spoken, so never read.

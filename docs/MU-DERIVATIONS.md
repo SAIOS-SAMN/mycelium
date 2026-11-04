@@ -631,7 +631,7 @@ it by name; the door's receipts reply budget is the frame less the reading
 height behind it (`Court::receipts_reply_budget`), the tapes' budget that
 less the reply's count (`Court::receipts_frame`). Every page envelope is its
 codec's own header, a FORMAT constant beside the encoder
-(`RECEIPTS_REPLY_HEADER`, `ROWS_REPLY_HEADER`, `SYLLABUS_REPLY_HEADER`,
+(`RECEIPTS_REPLY_HEADER`, `ENTRIES_REPLY_HEADER`, `SYLLABUS_REPLY_HEADER`,
 `CLASS_RECORDS_HEADER`, `CITED_REQUEST_HEADER`, `QUOTE_REPLY_HEADER`,
 `atlas::LEDGER_PAGE_HEADER`, `presentation_answer_len`): the literal `64`,
 `66` and `34` are gone, and the encoders that count the reply's header
@@ -653,7 +653,7 @@ read (`wire.rs:171`, `noise.rs:399`, `transport.rs:88, 208`,
 `session.rs:682`), and is the fill bound of every paging codec: receipts
 (`receipts.rs:272`; `Court::receipts_frame`, `era.rs:102`,
 `frame_budget() − 64`), syllabus (`judge/syllabus.rs:66, 178, 209`,
-`− 64`, `− (64 + 2)`), rows (`judge/rows.rs:13`), observe
+`− 64`, `− (64 + 2)`), ledger entries (`judge/entries.rs:13`), observe
 (`judge/observe.rs:136`), quote (`judge/quote.rs:47`), seat mail
 (`seat.rs:28`, `− MailRead::HEAD`), atlas (`atlas.rs:623`), synthesis
 (`synthesis.rs:122`, `− 34`), chatter
@@ -2826,7 +2826,7 @@ what the reply claims to carry).
 
 - The quantity: the reply's body budget `B`, the one carrier the mesh
   agrees on (`frame_budget`, PH1, H4). The pattern is that of
-  `encode_rows_reply` and `encode_receipts_reply`: fill while the next
+  `encode_entries_reply` and `encode_receipts_reply`: fill while the next
   item fits.
 - Formula: with
   `σ(e) = 2 + |address(e)| + 4 + 16·|fp(e)| + 4 + 17·|scene(e)|` bytes
@@ -3157,21 +3157,21 @@ signature rides a body, the receipt section's `[sig 64]`, the length is
 the codecs' `take_*`/`decode_*` writings (N6 reads codecs as field widths) and are
 left for the sweep that types each signed act. Tests
 (`anastome::dialogue::tests::receipts_range`):
-`receipts_page_fills_budget_less_header`, `rows_reply_counts_reply_header`,
+`receipts_page_fills_budget_less_header`, `entries_reply_counts_reply_header`,
 `page_envelope_equals_codec_header`. The text below is the derivation as
 specified.
 
 **Site.** Nine sites: `src/server/cognition/court/era.rs:102`
 (`receipts_frame`), `src/server/cognition/atlas.rs:623`
 (`ledger_budget`), `src/bin/mycelium-server/judge/syllabus.rs:178, 209`,
-`judge/rows.rs:13`, `judge/observe.rs:136`, `exchange.rs:881`,
+`judge/entries.rs:13`, `judge/observe.rs:136`, `exchange.rs:881`,
 `src/client/sdk/mind/chatter.rs:309, 319`:
 
 ```rust
 let bytes = crate::network::wire::frame_budget().checked_sub(64)?;
 ```
 
-Comments call it "the reply's header" (`era.rs:97–99`, `rows.rs:12`,
+Comments call it "the reply's header" (`era.rs:97–99`, `entries.rs:12`,
 `atlas.rs:621`).
 
 **Governs.** Protocol size: the body bytes a page (receipts, rows,
@@ -3180,7 +3180,7 @@ readings, words, a cited ask) may fill.
 **Why it is underived.** `64` is bare. A first reading takes it as the
 Ed25519 signature length (RFC 8032 §5.1.6: a signature is 64 octets).
 Reading the encoders shows that NO reply at these sites appends a
-reply-level signature: `encode_rows_reply` (`[total u64][m u32][row…]`,
+reply-level signature: `encode_entries_reply` (`[total u64][m u32][entry…]`,
 header 12), `observe::encode_reply` (`[total u32][m u32]…`, header 8),
 `encode_receipts_reply` (`[n u32]…`, header 4; each receipt carries its
 own signature inside its tape), `encode_syllabus_reply` (`[n u8]…`,
@@ -3199,10 +3199,10 @@ constant whose name would mislead).
 
 - The quantity: each reply's own header length `H_kind`, fixed by its
   format. Two encoders already count the header against the budget inside
-  the encoder (`encode_rows_reply`: `out.len() + tape.len() > budget`, each
+  the encoder (`encode_entries_reply`: `out.len() + tape.len() > budget`, each
   row at its own length under the rational lane codec,
   with `out` holding the 12-byte header; `observe::encode_reply`:
-  `8 + body.len() + one.len() > budget`), so at `rows.rs`, `observe.rs:136`
+  `8 + body.len() + one.len() > budget`), so at `entries.rs`, `observe.rs:136`
   and `chatter.rs:309, 319` the subtraction double-counts: pass `B` whole.
 - Where the budget feeds a reader that does not see the header
   (`receipts_frame` → the `bytes` of `line_page`, `ledger_budget`, and
@@ -3233,7 +3233,7 @@ constant whose name would mislead).
 - Tests:
   - `receipts_page_fills_budget_less_header` (a fixture of minimal tapes:
     `at_most = (B − 4)/MIN_TAPE`).
-  - `rows_reply_counts_reply_header` (a page of `⌊(B − 12)/ℓ⌋` rows, `ℓ`
+  - `entries_reply_counts_reply_header` (a page of `⌊(B − 12)/ℓ⌋` entries, `ℓ`
     the row's own `Entry::tape_len`; the court's count at most
     `⌊(B − 12)/Entry::MIN_TAPE⌋`).
 - Size: S.

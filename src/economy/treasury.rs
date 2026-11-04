@@ -197,7 +197,7 @@ pub struct Treasury {
     pub(crate) touched: Touched,
     /// 78.153b — THE JOURNAL'S MARK: moved by every write, fold and rebind of
     /// `entries`, so a publisher shares the journal it read where the mark
-    /// stands and reads it again where it moved (the witness's `ACT_ROWS`,
+    /// stands and reads it again where it moved (the witness's `ACT_ENTRIES`,
     /// answered off the published reading). Volatile.
     pub(crate) journal_mark: u64,
     /// MU-CLIENT §5.6 (E4) — THE PROOF-OF-WORK PAYMENTS since the court last

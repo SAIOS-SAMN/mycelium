@@ -13,7 +13,7 @@
 
 use mycelium::anastome::dialogue::{
     ACT_ADOPT, ACT_COVER, ACT_DIGESTS, ACT_DOMAIN, ACT_FETCH, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE, ACT_QUOTE,
-    ACT_RECEIPTS, ACT_ROWS, ACT_SEAT, ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY,
+    ACT_RECEIPTS, ACT_ENTRIES, ACT_SEAT, ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY,
 };
 
 /// The wire's version, `major << 8 | minor`: `0x0200` is v2.0, every μ field
@@ -34,7 +34,7 @@ pub const ACT_TABLE: &[(u8, &str)] = &[
     (ACT_SPEECH, "speech"),
     (ACT_COVER, "cover"),
     (ACT_RECEIPTS, "receipts"),
-    (ACT_ROWS, "rows"),
+    (ACT_ENTRIES, "entries"),
     (ACT_OBSERVE, "observe"),
     (ACT_LAWS, "laws"),
     (ACT_WHY, "why"),

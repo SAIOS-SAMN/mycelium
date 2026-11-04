@@ -6,6 +6,29 @@ such change is named here.
 
 ## Unreleased
 
+### The two wire names (track 11, N7; #55)
+- **Network contract**, inside v0.3.0's open break (wire `0x0200`): the
+  act byte `0x38` is unchanged, and no layout moves. The names and two
+  strings change:
+  - `ACT_ROWS` → `ACT_ENTRIES` (ledger entries); `Action::Rows` →
+    `Action::Entries`, its name `"rows"` → `"entries"`, so the SDK's
+    `ACT_TABLE` and the served conformance statement name the act
+    `entries`.
+  - `RowsRequest` → `EntriesRequest`; `encode_rows_request` /
+    `decode_rows_request` → `encode_entries_request` /
+    `decode_entries_request`; `encode_rows_reply` / `decode_rows_reply` →
+    `encode_entries_reply` / `decode_entries_reply`; `ROWS_REPLY_HEADER`
+    → `ENTRIES_REPLY_HEADER`; the hypha's `judge/rows.rs` →
+    `judge/entries.rs`.
+  - `REFUSE_RULE_OFF_LATTICE` → `REFUSE_RULE_OFF_SUBSTRATE`, which reads
+    "a carried or copied site lands off the substrate".
+  - The vertex-body refusal strings (`verdict/body.rs` `FAIL_*`) name a
+    carried site where they said "lamina", for example "a carried site
+    lands on the wrong hue".
+- SDK: `mycelium_sdk::readings::{encode_entries_request,
+  decode_entries_reply}` replace the `rows` pair.
+- Claim: `entries_act_round_trips`.
+
 ### Retired terms and person words (track 11, N4; #55)
 - Names only: behaviour, wire bytes, refusal strings, ledger layout and
   task addresses are unchanged.

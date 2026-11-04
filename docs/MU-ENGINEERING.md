@@ -100,7 +100,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
     `ACT_PEERS`;
   - readers any party may send, which admit nothing: `ACT_OBSERVE`,
     `ACT_LAWS`, `ACT_WHY`, `ACT_WALLET` (which also carries signed stake
-    and unstake), `ACT_RECEIPTS`, `ACT_ROWS`;
+    and unstake), `ACT_RECEIPTS`, `ACT_ENTRIES`;
   - hypha to hypha (the court organ and the clock): `ACT_COVER`,
     `ACT_OFFER`, `ACT_INSTALLED`, `ACT_EVIDENCE`, `ACT_ROOT`, `ACT_TICK`,
     `ACT_FOLD`;

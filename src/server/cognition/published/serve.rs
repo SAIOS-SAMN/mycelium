@@ -92,7 +92,7 @@ impl Published {
         crate::cognition::atlas::Atlas::page(self.ledgers.get(domain), after, crate::cognition::atlas::ledger_budget())
     }
 
-    /// 78.153b — `ACT_ROWS` answered off this reading, as `Court::rows_range`
+    /// 78.153b — `ACT_ENTRIES` answered off this reading, as `Court::rows_range`
     /// answers it: this court's own journal entries below `upto`, a page
     /// from `cursor`, with the count standing there.
     pub fn rows_range(&self, signer: &[u8; 32], from: Option<Place>, upto: Place, cursor: u64, budget: usize) -> (u64, Vec<crate::economy::Entry>) {

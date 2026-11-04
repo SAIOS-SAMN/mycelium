@@ -9,7 +9,7 @@ use super::*;
 
 impl Entry {
     /// One row's tape: `[tag u8][arm u8][who 32][μ⃗][stamp 56][receipt 32]`
-    /// — the one layout the ledger, the snapshot and the wire (`ACT_ROWS`)
+    /// — the one layout the ledger, the snapshot and the wire (`ACT_ENTRIES`)
     /// share, its μ⃗ the exact rational lanes of [`Mu::put`]. The stamp is
     /// the act the row stands at (78.24); the arm the proof of work it pays
     /// (78.33).

@@ -1162,7 +1162,7 @@ pub(crate) fn clauses_stated_from(
                 Unstated::Tie => REFUSE_RULE_TIE,
                 Unstated::Inexact => REFUSE_RULE_INEXACT,
                 Unstated::NotOne => REFUSE_RULE_NOT_ONE,
-                Unstated::OffSubstrate => REFUSE_RULE_OFF_LATTICE,
+                Unstated::OffSubstrate => REFUSE_RULE_OFF_SUBSTRATE,
                 Unstated::Still => REFUSE_RULE_STILL,
                 Unstated::Nested => REFUSE_RULE_NESTED,
                 Unstated::Unframed => REFUSE_RULE_UNFRAMED,

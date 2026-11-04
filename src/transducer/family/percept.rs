@@ -405,7 +405,7 @@ pub(super) fn family_percept(
             // partial map whose absence is the IDENTITY (`hue_of`), so the
             // least frame's map read at a frame that moved a hue the least
             // frame never held sent it nowhere, and the court refused the
-            // vertex ("a lamina lands on the wrong hue", 6 of 8 carry
+            // vertex ("a carried site lands on the wrong hue", 6 of 8 carry
             // refusals on the development deployment, 2026-10-10). The claimed frames' maps are
             // merged as they agree, and that union is the member's gauge.
             let mut merged = crate::transducer::sentence::hue_table(&acting.gauge);

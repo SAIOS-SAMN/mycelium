@@ -507,6 +507,19 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - `ACT_ROWS` and its codecs → `ACT_ENTRIES` (ledger entries);
    - `REFUSE_RULE_OFF_LATTICE` → `REFUSE_RULE_OFF_SUBSTRATE`.
 
+   **Built** (N7, with S5, inside v0.3.0's break). `ACT_ENTRIES`
+   (`Action::Entries`, named `"entries"`; the act byte `0x38` is
+   unchanged), `EntriesRequest`, `encode_entries_request` /
+   `decode_entries_request`, `encode_entries_reply` /
+   `decode_entries_reply`, `ENTRIES_REPLY_HEADER` and the hypha's
+   `judge/entries.rs`. `REFUSE_RULE_OFF_SUBSTRATE` reads "a carried or
+   copied site lands off the substrate". The `FAIL_*` strings of
+   `verdict/body.rs` name a carried site where they said "lamina". The
+   SDK's `readings` module and `ACT_TABLE` follow, and the conformance
+   statement names the act `entries`. Claim: `entries_act_round_trips`.
+   The keyed `CoverSite`'s name `"lamina-cell"` and the oracle's
+   `"lamina_a"` key are not wire names and still wait on a ruling.
+
 **Exemptions:** "row" in its strict matrix sense (`rank_of_rows`,
 `OrbitRow`) and "arc" in its strict geometric sense (an arc of a
 boundary) keep the names they have. A source word in any other sense is a
