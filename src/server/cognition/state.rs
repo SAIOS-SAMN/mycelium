@@ -1010,7 +1010,13 @@ impl Court {
             }
             let proved = self
                 .era_receipts(era)
-                .is_some_and(|page| page.iter().any(|x| x.stamp == p.at && x.chain_hash == p.hash));
+                .is_some_and(|page| {
+                    page.iter().any(|x| {
+                        x.stamp == p.at
+                            && crate::court::admission::Predecessor::named(&p)
+                                .continues(&crate::court::admission::Predecessor::of(x))
+                    })
+                });
             if proved {
                 self.chain.recall_folded(p);
                 recalled.push(p);

@@ -6,7 +6,7 @@
 //! (MU-HOSTING §5a.10).
 
 use super::{
-    Reconstructed, SignedPrefix, REFUSE_EQUIVOCATION, REFUSE_NOT_EQUIVOCATION, REFUSE_ORIGIN, REFUSE_RECEIPT,
+    Commitment, Predecessor, Reconstructed, SignedPrefix, REFUSE_EQUIVOCATION, REFUSE_NOT_EQUIVOCATION, REFUSE_ORIGIN, REFUSE_RECEIPT,
     REFUSE_RECEIPT_STALE, REFUSE_SIGNATURE,
 };
 use crate::chronometry::{KStepReceipt, Parent, Place, ReceiptChain};
@@ -136,10 +136,11 @@ pub fn verify_signature<'a>(
     Ok(Verified { prefix, signer: *signer })
 }
 
-/// The prefix and the receipt are ONE claim: the prefix's place, height
-/// and predecessor are the receipt's stamp and predecessor.
-fn one_claim(p: &SignedPrefix, r: &KStepReceipt) -> bool {
-    p.at == r.stamp.place() && p.height == r.stamp.h && p.prev_receipt_hash == r.prev_hash()
+/// The prefix and the receipt are ONE claim: the prefix's place and height
+/// are the receipt's stamp, and the predecessor the prefix commits to binds
+/// the receipt as reconstructed (MU-HOSTING §5a.10).
+fn one_claim(p: &SignedPrefix, r: &Reconstructed<KStepReceipt>) -> bool {
+    p.at == r.stamp.place() && p.height == r.stamp.h && Commitment::signed(p).binds(r)
 }
 
 /// 47.4's PROOF, DECIDED: one signer, one place, two chain hashes, both
@@ -173,7 +174,7 @@ pub fn admit_equivocation(
             return Err(REFUSE_RECEIPT);
         }
     }
-    if ra.stamp.vk != rb.stamp.vk || ra.stamp.place() != rb.stamp.place() || ra.chain_hash == rb.chain_hash {
+    if ra.stamp.vk != rb.stamp.vk || ra.stamp.place() != rb.stamp.place() || !Predecessor::of(ra).forks(&Predecessor::of(rb)) {
         return Err(REFUSE_NOT_EQUIVOCATION);
     }
     Ok(Equivocated { vk: ra.stamp.vk, at: ra.stamp.place() })
@@ -245,12 +246,12 @@ fn admit_chain(r: &Reconstructed<KStepReceipt>, ledger: &ReceiptChain) -> Admitt
         (Some(head), Some(prev)) if prev.at.place() > head.at.place() => {
             return Admitted::Gap { vk, from: Some(head.at.place()), to: prev.at.place() };
         }
-        (Some(head), _) if r.prev != Some(head) => {
+        (Some(head), _) if !r.prev.is_some_and(|p| Predecessor::cites(&p, &head)) => {
             // At or below the head. The node held at that place tells a
             // duplicate from an equivocation; nothing held there is stale
             // to this court.
             return match ledger.at(&vk, at) {
-                Some(held) if held.chain_hash == r.chain_hash => Admitted::Stale,
+                Some(held) if !Predecessor::of(&held).forks(&Predecessor::of(r)) => Admitted::Stale,
                 Some(held) => Admitted::Equivocation { at, held: held.chain_hash, claimed: r.chain_hash },
                 None => Admitted::Stale,
             };

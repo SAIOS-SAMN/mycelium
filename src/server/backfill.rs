@@ -16,7 +16,7 @@
 use crate::anastome::dialogue::ReceiptsAnswer;
 use crate::chronometry::Place;
 use crate::cognition::{Court, RootAdoption};
-use crate::court::admission::Admitted;
+use crate::court::admission::{Admitted, Predecessor};
 use crate::observe::{note_replication, replication, set_replication};
 use crate::server::court_lock::held;
 use std::sync::Mutex;
@@ -238,7 +238,9 @@ pub fn chase(
                 let past = held!(court).ok().and_then(|mut h| {
                     h.run(|k, _| {
                         let head = k.known_head(&p.at.vk).map(|(at, _)| at)?;
-                        (head >= p.at.place()).then(|| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash == p.hash))
+                        (head >= p.at.place()).then(|| {
+                            k.chain().at(&p.at.vk, p.at.place()).map(|r| Predecessor::named(&p).continues(&Predecessor::of(&r)))
+                        })
                     })
                 });
                 if let Some(at) = past {
@@ -359,8 +361,8 @@ pub fn hear<E>(
             // there — the line forked. Counted as the equivocation it is,
             // per signer, never read as a hole still open.
             if let Ok(Admitted::MissingParent(p)) = &admitted {
-                let held = held!(court).ok().and_then(|mut h| h.run(|k, _| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash)));
-                if held.is_some_and(|h| h != p.hash) {
+                let held = held!(court).ok().and_then(|mut h| h.run(|k, _| k.chain().at(&p.at.vk, p.at.place()).map(|r| Predecessor::of(&r))));
+                if held.is_some_and(|h| h.forks(&Predecessor::named(p))) {
                     note_replication(Some(p.at.vk), replication::BACKFILL_EQUIVOCATION, 1);
                 }
             }

@@ -28,7 +28,7 @@
 
 use super::Court;
 use crate::chronometry::{KStepReceipt, Place, Stamp};
-use crate::court::admission::Reconstructed;
+use crate::court::admission::{Predecessor, Reconstructed};
 
 impl Court {
     /// A RECEIPT ADMITTED BY BACK-FILL, held by its place on its signer's
@@ -57,12 +57,12 @@ impl Court {
     fn contradicted(&self, r: &KStepReceipt) -> Option<Place> {
         let vk = &r.stamp.vk;
         let at = r.stamp.place();
-        if self.unreached_at(vk, at).is_some_and(|held| held.chain_hash != r.chain_hash) {
+        if self.unreached_at(vk, at).is_some_and(|held| Predecessor::of(held).forks(&Predecessor::of(r))) {
             return Some(at);
         }
         let prev = r.prev?;
         let named = self.unreached_at(vk, prev.at.place())?;
-        (prev.at.vk == *vk && named.chain_hash != prev.hash).then_some(prev.at.place())
+        (prev.at.vk == *vk && !Predecessor::named(&prev).continues(&Predecessor::of(named))).then_some(prev.at.place())
     }
 
     /// MU-HOSTING §5a.9 — EVICTION BY SIGNATURE: `r`, a frame its signer

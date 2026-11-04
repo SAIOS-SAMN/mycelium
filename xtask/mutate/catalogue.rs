@@ -37,7 +37,7 @@ pub const CATALOGUE: &[Mutant] = &[
     Mutant {
         law: "47.2 step 3: a duplicate frame at a held place is stale, never an equivocation",
         file: "src/court/admission/admit.rs",
-        before: "                Some(held) if held.chain_hash == r.chain_hash => Admitted::Stale,\n",
+        before: "                Some(held) if !Predecessor::of(&held).forks(&Predecessor::of(r)) => Admitted::Stale,\n",
         after: "",
         target: &["--lib"],
         filter: "court::admission",

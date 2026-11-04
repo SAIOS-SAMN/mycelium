@@ -49,7 +49,7 @@ impl ReceiptChain {
     pub(super) fn pack(&mut self, r: KStepReceipt) -> Node {
         let prev = match r.prev {
             None => Prev::Genesis,
-            Some(p) if p.at.vk == r.stamp.vk && self.node_at(&p.at).is_some_and(|n| n.hash == p.hash) => Prev::Line(p.at.place()),
+            Some(p) if p.at.vk == r.stamp.vk && self.holds(&p) => Prev::Line(p.at.place()),
             Some(p) => Prev::Named(Box::new(p)),
         };
         Node {
