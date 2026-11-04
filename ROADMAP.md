@@ -46,7 +46,7 @@ None of these waits on a ruling:
 | Item | Issue | Track | Notes |
 |---|---|---|---|
 | X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | Depends on nothing; the rest of track 25 stands on it |
-| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | The rest of track 24 stands on it |
+| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Open: foundings inside a folded era, a version-2 origin's geometry, the volatile waiting carriers (MU-HOSTING §5a.9) |
 | `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
 | Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Built with N1 |
 | Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Built with N2 |
@@ -1171,11 +1171,18 @@ read on the rings of inner routes, L0 verify as a reading, and the
 Concordance hash served and signatures verified. Each phase is one commit:
 
 1. **B0, replication by reconstruction** ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13),
-   ruled 2026-11-02): every hypha reconstructs each domain's state
-   (founding, tiers, reserve, origin) from the founding receipts back-fill
-   already delivers, checked against the signed chain, once by content and
-   with the founding hypha's refusals; any client may reach any hypha, and
-   the boundary holds at every hypha. Every later phase stands on it.
+   ruled 2026-11-02; **Built**): every hypha reconstructs each domain's
+   state (founding, tiers, reserve, origin) from the founding receipts
+   back-fill already delivers, checked against the signed chain, once by
+   content and with the founding hypha's refusals; any client may reach
+   any hypha, and the boundary holds at every hypha. Every later phase
+   stands on it. Built in `src/server/cognition/founding.rs`: a
+   back-filled founding receipt waits until a frame its signer signed at
+   or above it is admitted. Claims in
+   `server/cognition/tests/founding.rs`. Open: a founding inside an era
+   folded before a hypha caught up, a version-2 origin's geometry (only
+   its hash crosses), and the volatile waiting carriers (MU-HOSTING
+   §5a.9).
 2. **B1, the act audit and the boundary's name:** every act kind that
    names a domain classed as a key's own or a universe's; the `NotReserve`
    variants renamed `NotThroughCore` (names only); a line's mouth offer
