@@ -55,7 +55,7 @@ pub(crate) use keys::*;
 pub(crate) use cocycle::CocycleRow;
 pub(crate) use reduce::*;
 pub use language::{
-    Adoption, ProbedChart, Glue, Language, ListingField, MarketView, NormalForm, OfferStanding,
+    Adoption, ProbedChart, Glue, Language, ListingCoherence, MarketView, NormalForm, OfferStanding,
     Outcome, Priced, Rank,
 };
 pub use reduce::{cohesion_over, normal_form, quote_incidence, rank_over, Ask, BookView};

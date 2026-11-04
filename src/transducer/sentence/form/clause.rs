@@ -28,8 +28,8 @@ use crate::transducer::stalk;
 /// AN EXACT COORDINATE OF A PERCEIVED BODY that a predicate may read.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Coord {
-    /// The shell: its cell count.
-    Shell,
+    /// Its cell count.
+    Cells,
     /// The rows its support spans.
     Height,
     /// The columns its support spans.
@@ -280,7 +280,7 @@ pub(crate) const PRED_HEIGHT: usize = 3 + 1;
 
 fn put_coord(buf: &mut Vec<u8>, c: Coord) {
     let tag = match c {
-        Coord::Shell => 0,
+        Coord::Cells => 0,
         Coord::Height => 1,
         Coord::Width => 2,
         Coord::Top => 3,
@@ -306,7 +306,7 @@ fn take_coord(k: &[u8], p: &mut usize) -> Option<Coord> {
     let tag = *k.get(*p)?;
     *p += 1;
     Some(match tag {
-        0 => Coord::Shell,
+        0 => Coord::Cells,
         1 => Coord::Height,
         2 => Coord::Width,
         3 => Coord::Top,

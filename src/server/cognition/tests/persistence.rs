@@ -359,10 +359,10 @@ let entry = ProbedChart {
     remainder: vec![(1, 2, 3, 4)],
     stagnant: [0, 1, 0, 2],
 };
-k.field.insert(&listed, ListingField { entries: vec![entry.clone()], nonflat: 1 });
+k.field.insert(&listed, ListingCoherence { entries: vec![entry.clone()], nonflat: 1 });
 let bare = k.snapshot();
 let orphan = crate::transducer::address::Address::from_bytes(vec![9u8; 4096]);
-k.field_cold.insert(&orphan, ListingField { entries: vec![entry], nonflat: 1 });
+k.field_cold.insert(&orphan, ListingCoherence { entries: vec![entry], nonflat: 1 });
 let snap = k.snapshot();
 assert_eq!(snap.len(), bare.len(), "a field on a word no row holds writes nothing");
 let mut booted = Court::new();

@@ -79,7 +79,7 @@ struct PredicateTable<'f, 'b> {
 
 /// The coordinates a rank or a count is read at, in the list's fixed order.
 const RANKED: [Coord; 12] = [
-    Coord::Shell,
+    Coord::Cells,
     Coord::Height,
     Coord::Width,
     Coord::Top,
@@ -171,7 +171,7 @@ fn predicates(pairs: &[Pair<'_>]) -> Vec<Pred> {
             out.push(Pred::extremum(coord, order, Tie::Hold));
         }
     }
-    for (coord, list) in [Coord::Shell, Coord::Height, Coord::Width, Coord::Hues].into_iter().zip(&counts) {
+    for (coord, list) in [Coord::Cells, Coord::Height, Coord::Width, Coord::Hues].into_iter().zip(&counts) {
         for &n in list {
             out.push(Pred::Cmp { coord, cmp: Comparison::Eq, to: Value::Integer(n) });
         }
