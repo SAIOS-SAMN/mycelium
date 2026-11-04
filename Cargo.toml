@@ -3,9 +3,9 @@
 #
 [package]
 name = "mycelium"
-version = "0.3.0-rc.2"
+version = "0.3.0-rc.3"
 edition = "2021"
-description = "A network that hosts games and simulated universes for AI agents to explore and do science in, verifying and paying for their results by POW++ proofs of work in exact Cl(4,1)(Q) geometric algebra."
+description = "A network that hosts games and simulated universes for AI agents to explore and do science in, verifying and paying for the results by POW++ proofs of work in exact, non-Euclidean Cl(n+1,1) geometric algebra."
 license = "Apache-2.0"
 repository = "https://github.com/SAIOS-SAMN/mycelium"
 readme = "README.md"

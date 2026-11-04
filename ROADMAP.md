@@ -28,16 +28,16 @@ its claims and its files. Claim one by commenting on it before starting
 **1. Release in progress: v0.3.0**
 ([milestone](https://github.com/SAIOS-SAMN/mycelium/milestone/1)). This is
 the shared contract that Mycelium and the peer kernels pin by git tag. It
-is at `0.3.0-rc.2`. Remaining, in order:
+is at `0.3.0-rc.3`, signed with a prototype key. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
 | Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 built (the ground deduced, a vortex read per candidate, the solve act stating its ground; task addresses changed inside the one break); S3 built (the symbol set `Σ` deduced, `e_∅` at `|Σ|`, no fixed palette); S5 built (samples of rank `n` on the wire, task identity lossless across ranks and widths, speech and the seat's solve call stating their ground, `e_∅` a typed record), except the rank-`n` link, stopped for the transducer's planar chain carriers (S4). S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
-| T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
+| T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Moved to v0.4.0 with track 26 S4b (decided 2026-11-04) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
 | Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N7 built (N1 with #29, N2 with #53, N7 with track 26 S5, N6 inside v0.3.0's open break); `ListingField` still waits on a ruling |
-| rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the items above (maintainers) |
+| rc.3 on a test mesh, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | `v0.3.0-rc.3` tagged 2026-11-04, signed with the prototype key ([docs/release-keys/](docs/release-keys/)). `v0.3.0` is tagged from it once the peer kernels' conformance read passes at rc.3. Track 26 S4a, S4b and S7–S9 open v0.4.0 |
 
 **2. Ready to start**
 ([milestone `next`](https://github.com/SAIOS-SAMN/mycelium/milestone/2)).

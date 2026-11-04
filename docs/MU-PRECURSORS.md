@@ -836,11 +836,11 @@ mapping from the spaces world models already declare.
 
 ### 4.1 The current state
 
-- `Cargo.toml` is a workspace: the root package `mycelium` 0.3.0-rc.2,
+- `Cargo.toml` is a workspace: the root package `mycelium` 0.3.0-rc.3,
   Apache-2.0, `rust-version = "1.82"`, with three binaries
   (`mycelium-server`, `mycelium-client`, `mycelium-soak`), and the members
   `forms`, `mycelium-sdk` (`sdk/`) and `mycelium-source-arc-agi`
-  (`sources/arc-agi`), each at 0.3.0-rc.2, under one lock file and
+  (`sources/arc-agi`), each at 0.3.0-rc.3, under one lock file and
   one lint table (`[workspace.lints]`). `xtask` stays outside it.
 - The SDK is the crate `mycelium-sdk` (`sdk/`), re-exporting the library's
   client surface in modules: `voice`, `session`, `task`, `rule`, `seat`,
