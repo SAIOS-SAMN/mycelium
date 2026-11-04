@@ -80,12 +80,13 @@ pub fn encode_posted_task(task: &crate::transducer::family::Task) -> Option<Vec<
     encode_posted_samples(&PostedTask::of_rasters(task).ok()?).ok()
 }
 
-/// A posted task read back at the raster intake (`PostedTask::rasters`):
+/// A posted task read back on the alphabet's section (`PostedTask::section`):
 /// none where it does not decode whole (`samples::decode_posted_samples`)
-/// or where a sample is no raster, which the readers of rasters (the
-/// hypha's registry, the soak, a feed) do not read.
+/// or where a sample is off the section, which the readers of the section
+/// (the hypha's registry, the soak, a feed) do not read; such a task is
+/// read as samples by `decode_posted_samples`.
 pub fn decode_posted_task(b: &[u8]) -> Option<crate::transducer::family::Task> {
-    decode_posted_samples(b).ok()?.rasters().ok()
+    decode_posted_samples(b).ok()?.section().ok()
 }
 
 /// 78.141 — the signed bytes' domain of a solve. Version 3 (track 26 S5,

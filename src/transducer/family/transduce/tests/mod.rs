@@ -7,6 +7,7 @@ mod factor;
 mod ground;
 mod motion;
 mod nest;
+mod percept;
 mod rank;
 mod record;
 mod relation;

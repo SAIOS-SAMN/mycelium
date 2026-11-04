@@ -54,7 +54,7 @@ use mycelium_sdk::task::push_sample as _;
 use mycelium_sdk::task::read_sample as _;
 use mycelium_sdk::task::spoken_outputs as _;
 use mycelium_sdk::task::Member as _;
-use mycelium_sdk::task::NotRaster as _;
+use mycelium_sdk::task::SectionRefusal as _;
 use mycelium_sdk::task::Place as _;
 use mycelium_sdk::task::PostedTask as _;
 use mycelium_sdk::task::Sample as _;

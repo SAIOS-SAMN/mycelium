@@ -177,10 +177,11 @@ fn mind_loop(session: &Speaker, key: &SigningKey, report: &mut Report) {
     }
     let by_citation = task_by_citation(session, &voice, &envelope);
     session.record(report, "task by citation", by_citation);
-    // Track 26 S5: this client reads rasters; a task of another rank or
-    // width is carried exactly and left unread here, never misread.
-    let Ok(rasters) = envelope.rasters() else {
-        return report.unread("solve", "the task's samples are no rasters this client reads");
+    // Track 26 S4b: this client's rule seam spells the alphabet's section;
+    // a task of another rank or width is carried exactly and left unread
+    // here, never misread.
+    let Ok(rasters) = envelope.section() else {
+        return report.unread("solve", "the task's samples are off the alphabet's section this client spells");
     };
     let solved = solve(session, key, &rasters);
     session.record(report, "solve", solved);

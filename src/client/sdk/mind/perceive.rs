@@ -91,10 +91,15 @@ pub(crate) enum Stop {
     /// A court task that landed and coupled to nothing across a return: let
     /// go untaken (`lapse_offers`).
     Lapsed,
+    /// Perceived at its own rank (`transduce::TaskPercept`, held under its
+    /// citation), and not spelled: its samples are off the alphabet's
+    /// section, a rank the letters are not written on or a width past one
+    /// byte (`sentence::SectionRefusal`; track 26 S4b).
+    BeyondAlphabet,
 }
 
 /// The stops, as the observer names them, in `Stop::index` order.
-pub(crate) const STOPS: [&str; 16] = [
+pub(crate) const STOPS: [&str; 17] = [
     "no rule",
     "no rule (stroke ran out)",
     "one perspective",
@@ -111,6 +116,7 @@ pub(crate) const STOPS: [&str; 16] = [
     "unsubmitted",
     "sent",
     "lapsed uncoupled",
+    "perceived beyond the alphabet",
 ];
 
 /// The readings, as the observer names them, in `SceneKind::index` order.
@@ -250,6 +256,7 @@ impl Stop {
             Stop::Unsubmitted => 13,
             Stop::Sent => 14,
             Stop::Lapsed => 15,
+            Stop::BeyondAlphabet => 16,
         }
     }
 }
@@ -791,6 +798,36 @@ impl Mind {
             _ => {
                 self.stopped(&scene.id, reading, p.stop);
                 self.await_scene(scene);
+            }
+        }
+    }
+
+    /// A TASK'S SAMPLES PERCEIVED AT THEIR OWN RANK (MU-SENSING §0, §5;
+    /// track 26 S4b): every task the mind takes is perceived first, its
+    /// bodies, ground and each pair's vortex of factorisations held under
+    /// its citation (`board.percepts`) as an object the mind reasons about.
+    /// Then the envelope on the alphabet's section, which the word
+    /// machinery spells, or `None` where the samples are off it: such a task
+    /// stops `BeyondAlphabet`, perceived and not spelled, never truncated.
+    /// A family the transduction refuses (samples of two ranks, a stroke
+    /// spent) holds no percept and is still offered to the section.
+    pub(crate) fn perceive_envelope(&mut self, env: &crate::anastome::dialogue::TaskEnvelope, reading: SceneKind) -> Option<crate::anastome::dialogue::TaskRasters> {
+        use crate::transducer::family::transduce::{factorisations_need, TaskPercept};
+        // The stroke is the work's need (D2.5 O1): one read per motion of
+        // each pair, at the samples' own rank.
+        let rank = env.train.iter().map(|(x, _)| x.rank()).chain(env.tests.iter().map(crate::transducer::sample::Sample::rank)).next();
+        if let Some(need) = rank.and_then(|n| factorisations_need(n, env.train.len())) {
+            let mut budget = self.physics.stroke_n(need);
+            if let Ok(percept) = TaskPercept::of(&env.train, &env.tests, &mut budget) {
+                self.board.percepts.insert(env.id, percept);
+            }
+        }
+        match env.section() {
+            Ok(section) => Some(section),
+            Err(_) => {
+                self.note_task(&env.id, reading, |t| t.taken = true);
+                self.stopped(&env.id, reading, Stop::BeyondAlphabet);
+                None
             }
         }
     }

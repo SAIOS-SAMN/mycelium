@@ -152,6 +152,17 @@ pub fn need_of_motion(motion: &Motion) -> Option<usize> {
     need(&motion.onto, &motion.onto)
 }
 
+/// THE STROKE [`factorisations`] NEEDS FOR `pairs` PAIRS OF RANK `rank`:
+/// one read per signed permutation of the phases per pair, `pairs · 2ⁿ ·
+/// n!`, read off the group's order and never a guess. `None` past `usize`.
+pub fn factorisations_need(rank: usize, pairs: usize) -> Option<usize> {
+    let mut order = 1usize;
+    for k in 1..=rank {
+        order = order.checked_mul(k)?.checked_mul(2)?;
+    }
+    order.checked_mul(pairs)
+}
+
 /// EVERY FACTORISATION OF A PAIR (MU-SENSING §3.9): one per signed
 /// permutation of the phases, in [`SignedPermutation::all`]'s generated
 /// order, each spoken onto the output's enclosure. A motion that does not
