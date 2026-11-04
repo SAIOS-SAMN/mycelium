@@ -1226,6 +1226,15 @@ Concordance hash served and signatures verified. Each phase is one commit:
    states verified under L0 at `LAW_VERSION` 5 and the `forms` core shell,
    refused `NotLawful` naming each breach, never admitted on a declared
    law's name; the draft-4 shared laws as each is ruled.
+   - The first shared crossing law is **LAW-PASSAGE v1**, the linear
+     passage `R ↦ 2H − R` (first degree, an involution; the throat
+     sphere's `H²/R` is refused for squaring). It is held as
+     `forms::passage`, with joint fixtures
+     ([proposal 78.172](docs/proposals/78.172-law-passage.md); requested
+     by netstratum PR #40).
+   - Claims: `linear_passage_is_reflection_about_the_throat`,
+     `linear_passage_is_an_involution`,
+     `crossing_stating_inversion_is_refused_not_lawful`.
 5. **B4, the boundary reading:** refusals at the universal core tube by
    name and domain under `ACT_OBSERVE`, and the reconstruction events
    (Collapse, Converse, Collision) at the boundary, with track 8.
