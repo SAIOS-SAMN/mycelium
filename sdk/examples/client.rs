@@ -14,8 +14,10 @@
 //! 4. Rule — the task's family read by the SDK's extractor
 //!    (`rule::extract_rule`), minted as an element the court can replay
 //!    (`rule::mint_sentence_why`), and spoken on each test input.
-//! 5. Solve — the outputs and the rule's tape, signed by the voice
-//!    (`task::encode_solve_with_rule`); the court replays the rule on pairs
+//! 5. Solve — once per perspective of the family's ground
+//!    (`rule::on_each_perspective_of`), the outputs, the rule's tape and the
+//!    ground the claim was spoken under, signed by the voice
+//!    (`task::encode_solve_spoken`); the court replays the rule on pairs
 //!    the client never saw and answers a verdict. A replay the court's stroke
 //!    did not finish answers `SOLVE_UNREAD`; the same solve sent again
 //!    resumes it.
@@ -30,7 +32,7 @@
 use mycelium_sdk::deferral::{deferral_of, read_deferral, Deferral};
 use mycelium_sdk::laws;
 use mycelium_sdk::prelude::*;
-use mycelium_sdk::rule::{extract_rule, mint_sentence_why, speak_rule, Physics};
+use mycelium_sdk::rule::{extract_rule, mint_sentence_why, on_each_perspective_of, on_test_inputs, speak_rule, stated, Physics, SectionSample};
 use mycelium_sdk::task;
 use mycelium_sdk::voice::hex32;
 use std::process::ExitCode;
@@ -69,47 +71,87 @@ fn verdict_name(code: u8) -> &'static str {
     }
 }
 
-/// ONE TASK, ASKED AND ANSWERED: `Err` where the court could not be reached
-/// or answered with bytes this build does not read.
-fn one_task(session: &Session, key: &SigningKey) -> Result<(String, Outcome), String> {
+/// ONE TASK, ASKED AND ANSWERED, one outcome per perspective of its ground:
+/// `Err` where the court could not be reached or answered with bytes this
+/// build does not read.
+fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)>, String> {
     let voice = key.verifying_key().to_bytes();
     let reply = match session.speak(task::encode_task_request(&voice)) {
         Ok(r) => r,
-        Err(e) => return Ok((String::new(), Outcome::Deferred(deferred("task request", e)?))),
+        Err(e) => return Ok(vec![(String::new(), Outcome::Deferred(deferred("task request", e)?))]),
     };
     if reply.is_empty() {
-        return Ok((String::new(), Outcome::NoWork));
+        return Ok(vec![(String::new(), Outcome::NoWork)]);
     }
     // A client on a transport of its own reads the deferral off the bytes.
     if let Some(d) = read_deferral(&reply) {
-        return Ok((String::new(), Outcome::Deferred(d)));
+        return Ok(vec![(String::new(), Outcome::Deferred(d))]);
     }
-    let Some(envelope) = task::decode_task_envelope(&reply) else {
+    let Some(samples) = task::decode_task_envelope(&reply) else {
         return Err(format!("the court answered the task request with {} bytes that are no task envelope", reply.len()));
     };
+    // The envelope carries samples of any rank (track 26 S5); this client's
+    // rule seam spells the alphabet's section, so a task of another rank or
+    // width is named and left (track 26 S4b).
+    let envelope = match samples.section() {
+        Ok(r) => r,
+        Err(task::SectionRefusal::Width { .. }) => return Ok(vec![(hex32(&samples.id), Outcome::NoRule("the task's symbols are wider than the section's"))]),
+        Err(task::SectionRefusal::Rank(_)) => return Ok(vec![(hex32(&samples.id), Outcome::NoRule("the task's rank is not the one the alphabet spells"))]),
+    };
     let cite = hex32(&envelope.id);
-    // THE RULE: read off the train pairs on a stroke of the SDK's own
-    // metabolism, minted as an element the court replays.
-    let mut budget = Physics::default().stroke_n(1 << 20);
-    let Some(rule) = extract_rule(&envelope.train, &mut budget) else {
-        return Ok((cite, Outcome::NoRule("the extractor states no rule for this family")));
-    };
-    let Ok(element) = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0) else {
-        return Ok((cite, Outcome::NoRule("the rule does not mint over its family")));
-    };
-    let mut outputs = Vec::with_capacity(envelope.tests.len());
-    for x in &envelope.tests {
-        match speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid()) {
-            Some(g) => outputs.push(g),
-            None => return Ok((cite, Outcome::NoRule("the rule does not speak a test input"))),
+    // THE RULE, ONCE PER PERSPECTIVE OF THE FAMILY'S GROUND (MU-SENSING
+    // §3.4, §3.8): read off the train pairs on a stroke of the SDK's own
+    // metabolism, minted as an element the court replays, and spoken on
+    // each test input, all under one perspective; under a vortex once per
+    // candidate, every claim kept. The family's symbol set is read with
+    // its test inputs posted (§3.3).
+    let read = on_test_inputs(envelope.tests.iter().map(SectionSample::sample), || on_each_perspective_of(&envelope.train, || {
+        let mut budget = Physics::default().stroke_n(1 << 20);
+        let Some(rule) = extract_rule(&envelope.train, &mut budget) else {
+            return Err("the extractor states no rule for this family");
+        };
+        let Ok(element) = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0) else {
+            return Err("the rule does not mint over its family");
+        };
+        let mut outputs = Vec::with_capacity(envelope.tests.len());
+        for x in &envelope.tests {
+            match speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid()) {
+                Some(g) => outputs.push(g),
+                None => return Err("the rule does not speak a test input"),
+            }
         }
+        let Some(tape) = element.to_bytes() else {
+            return Err("the rule's tape passes its carrier");
+        };
+        Ok((outputs, tape))
+    }));
+    let mut outcomes = Vec::with_capacity(read.len());
+    for (ground, said) in read {
+        // Each claim names the ground it was spoken under.
+        let named = match stated(&ground) {
+            Some(g) => format!("{cite:.16}… on ground {g:?}"),
+            None => format!("{cite:.16}…"),
+        };
+        let outcome = match said {
+            Err(why) => Outcome::NoRule(why),
+            Ok((outputs, tape)) => match claim(session, key, &envelope.id, &outputs, &tape, stated(&ground).as_deref())? {
+                Ok(o) => o,
+                Err(d) => return Ok(vec![(named, Outcome::Deferred(d))]),
+            },
+        };
+        outcomes.push((named, outcome));
     }
-    let Some(tape) = element.to_bytes() else {
-        return Ok((cite, Outcome::NoRule("the rule's tape passes its carrier")));
+    Ok(outcomes)
+}
+
+/// ONE CLAIM SENT: the solve stating the ground it was spoken under, signed
+/// by the voice the court pays, and the court's verdict.
+fn claim(session: &Session, key: &SigningKey, id: &[u8; 32], outputs: &[SectionSample], tape: &[u8], ground: Option<&[u8]>) -> Result<Result<Outcome, Deferral>, String> {
+    let Ok(outputs) = task::spoken_outputs(outputs) else {
+        return Ok(Ok(Outcome::NoRule("an output is no sample")));
     };
-    // THE SOLVE, signed by the voice the court pays.
-    let Some(solve) = task::encode_solve_with_rule(key, &envelope.id, &outputs, Some(&tape)) else {
-        return Ok((cite, Outcome::NoRule("the outputs pass the solve act's fields")));
+    let Some(solve) = task::encode_solve_spoken(key, id, &outputs, Some(tape), ground) else {
+        return Ok(Ok(Outcome::NoRule("the outputs pass the solve act's fields")));
     };
     // A replay the court's stroke did not finish answers UNREAD and resumes
     // where it stopped when the same solve is sent again.
@@ -118,7 +160,7 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<(String, Outcome), St
         asked += 1;
         let reply = match session.speak(solve.clone()) {
             Ok(r) => r,
-            Err(e) => return Ok((cite, Outcome::Deferred(deferred("solve", e)?))),
+            Err(e) => return Ok(Err(deferred("solve", e)?)),
         };
         let Some((code, paid, refusal, _modes)) = task::decode_solve_verdict(&reply) else {
             return Err(format!("the court answered the solve with {} bytes that are no verdict", reply.len()));
@@ -127,7 +169,7 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<(String, Outcome), St
             continue;
         }
         let refused = refusal.map(|r| String::from_utf8_lossy(&r.reason).into_owned());
-        return Ok((cite, Outcome::Judged { code, paid, refused }));
+        return Ok(Ok(Outcome::Judged { code, paid, refused }));
     }
 }
 
@@ -173,23 +215,28 @@ fn main() -> ExitCode {
         },
     }
     for _ in 0..tasks {
-        match one_task(&session, &key) {
-            Ok((_, Outcome::NoWork)) => {
-                println!("no task: the court's registry has none to give");
-                break;
-            }
-            Ok((cite, Outcome::NoRule(why))) => println!("task {cite:.16}… not sent: {why}"),
-            Ok((_, Outcome::Deferred(d))) => {
-                println!("a deferral: the hypha's pool is full, deficit S:G:T:H {:?}; retry later", d.deficit);
-                break;
-            }
-            Ok((cite, Outcome::Judged { code, paid, refused })) => match refused {
-                Some(why) => println!("task {cite:.16}… {} — refused: {why}", verdict_name(code)),
-                None => println!("task {cite:.16}… {} — paid μ {paid}", verdict_name(code)),
-            },
+        let outcomes = match one_task(&session, &key) {
+            Ok(o) => o,
             Err(e) => {
                 eprintln!("{e}");
                 return ExitCode::from(1);
+            }
+        };
+        for (cite, outcome) in outcomes {
+            match outcome {
+                Outcome::NoWork => {
+                    println!("no task: the court's registry has none to give");
+                    return ExitCode::SUCCESS;
+                }
+                Outcome::NoRule(why) => println!("task {cite} not sent: {why}"),
+                Outcome::Deferred(d) => {
+                    println!("a deferral: the hypha's pool is full, deficit S:G:T:H {:?}; retry later", d.deficit);
+                    return ExitCode::SUCCESS;
+                }
+                Outcome::Judged { code, paid, refused } => match refused {
+                    Some(why) => println!("task {cite} {} — refused: {why}", verdict_name(code)),
+                    None => println!("task {cite} {} — paid μ {paid}", verdict_name(code)),
+                },
             }
         }
     }

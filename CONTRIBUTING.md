@@ -15,12 +15,17 @@ take part and the standards the tree is held to.
 1. Build the tree and run the gate:
    ```sh
    cargo build --release
-   (cd xtask && cargo run)        # the reading bound, the Euclidean check, clippy -D warnings
+   (cd xtask && cargo run)        # the reading bound, the Euclidean check, the numbers check, clippy -D warnings
    ```
    Before a pull request, run `scripts/check`: the gate and the workspace
-   tests (`--no-fail-fast`), with a summary of both. Without the ARC-AGI-2
-   corpus at `data/arc-agi-2`, 17 corpus-dependent tests fail, and the
-   summary says the corpus is absent.
+   tests (`--no-fail-fast`), with a summary of both. The core library
+   reads no corpus: the ARC-AGI-2 corpus is read only by its decoder, the
+   workspace crate `sources/arc-agi`, at `data/arc-agi-2` or under
+   `MYCELIUM_CORPUS`. Without it, that crate's 20 corpus-dependent tests
+   fail, and the summary says the corpus is absent. `scripts/quickstart`
+   reads the corpus through the same decoder (`mycelium-arc-agi decode`),
+   and the hyphae it starts read the posted task files the decoder
+   writes.
 2. Bring up a local network and run the SDK client against it, following
    [README › Running a node](README.md#running-a-node) and
    [README › Building a client with the SDK](README.md#building-a-client-with-the-sdk).
@@ -84,7 +89,8 @@ The full standards are [`docs/MU-STANDARDS.md`](docs/MU-STANDARDS.md). The
 essentials:
 
 **Arithmetic**
-- Every quantity is exact: ℚ, or the multivectors of Cl(4,1)(ℚ).
+- Every quantity is exact: ℚ, or the multivectors of `Cl(n+1, 1)`(ℚ), with
+  `n` read from the data (`Cl(4,1)` at `n = 3`).
 - Float arithmetic and lossy casts are denied by lint.
 - No structure is projected to a scalar
   ([`docs/MU-ANTI-FLATTENING.md`](docs/MU-ANTI-FLATTENING.md)).
@@ -137,7 +143,7 @@ essentials:
 
 ## The gate
 
-`cd xtask && cargo run` runs three checks and reports each one, so a
+`cd xtask && cargo run` runs four checks and reports each one, so a
 failure in one does not hide the others:
 
 1. **The reading bound** (`xtask/lint/length.rs`): no source file under
@@ -146,7 +152,11 @@ failure in one does not hide the others:
    indexing shapes named in code (Morton and space-filling curves, bit
    interleaving, bounding boxes, subdivision trees, spatial hashes,
    voxels), with the reason for each.
-3. **Clippy** (`xtask/lint/warnings.rs`): `cargo clippy --release
+3. **The numbers check** (`xtask/lint/numbers.rs`): every numeric item
+   that carries a literal is classified (`EXACT:`, `FORMAT:`, `EXTERNAL:`,
+   `MEASURED:` or `REGISTERED:`), and every underived one is named in the
+   open-physics register (MU-DERIVATIONS D1.4; MU-STANDARDS 2.12).
+4. **Clippy** (`xtask/lint/warnings.rs`): `cargo clippy --release
    --workspace --all-targets -- -D warnings`, every workspace member, with
    the project's disallowed types and
    methods (`clippy.toml`).

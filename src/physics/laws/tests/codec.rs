@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::cga::{point_at, sphere_at};
 
 /// 78.64 H4 — THE CONTRACT'S BYTES ARE THE OBJECTS. Every law read back from
@@ -18,7 +18,9 @@ fn codec_round_trips_transition_and_verdict() {
         motion: turn(),
         heights: (7, 8),
         bodies: carried(&turn()),
-        hues: vec![(1, 2), (2, 3)],
+        // Track 26 S5: rows, and a record in e_∅ as a typed entry beside
+        // them; the codec reads both back, the law reads them after.
+        hues: crate::transducer::element::FibreRelation { rows: vec![(1, 2), (2, 3), (10, 3)], records: vec![10] },
         fluxes: vec![
             Flux { flow: Flow::Source, at: point_at(&[q(1), q(2), q(0)]), mass: q(3) },
             Flux { flow: Flow::Sink, at: sphere_at(&[q(0), q(0), q(0)], &q(1)), mass: Q::new(1.into(), 2.into()) },
@@ -30,7 +32,7 @@ fn codec_round_trips_transition_and_verdict() {
     assert_eq!(take_transition(&bytes, &mut p), Some(t.clone()));
     assert_eq!(p, bytes.len(), "every byte read, none left over");
     let v = verify(&t, &mut budget());
-    let ruled = Verdict {
+    let ruled = TransitionVerdict {
         breaches: vec![
             (Law::Conformal, Breach::NotAVersor),
             (Law::Conformal, Breach::Undecomposed(crate::transducer::cga::Undecomposed::Irrational(3))),
@@ -68,7 +70,7 @@ fn codec_round_trips_transition_and_verdict() {
 fn decode_laws_request_reads_register_and_verify() {
     use super::super::codec::{decode_laws_request, decode_register_reply, encode_register_reply, encode_register_request, encode_verify_request, LawsRequest};
     assert_eq!(decode_laws_request(&encode_register_request()), Some(LawsRequest::Register));
-    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
+    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Default::default(), fluxes: Vec::new() };
     let mut asked = encode_verify_request(&t);
     assert_eq!(decode_laws_request(&asked), Some(LawsRequest::Verify(t)));
     asked.push(0);
@@ -84,7 +86,7 @@ fn decode_laws_request_reads_register_and_verify() {
 #[test]
 fn verify_reply_round_trips() {
     use super::super::codec::{decode_verify_reply, encode_verify_reply};
-    let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
+    let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Default::default(), fluxes: Vec::new() };
     let still = Transition { heights: (8, 8), ..lawful.clone() };
     for t in [lawful, still] {
         let v = verify_sized(&t);
@@ -104,14 +106,14 @@ fn verify_reply_round_trips() {
 #[test]
 fn encode_batch_reply_round_trips_verdicts_in_order() {
     use super::super::codec::{decode_batch_reply, decode_laws_request, encode_batch_reply, encode_batch_request, LawsRequest};
-    let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
+    let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Default::default(), fluxes: Vec::new() };
     let still = Transition { heights: (8, 8), ..lawful.clone() };
     let batch = vec![lawful.clone(), still.clone(), lawful];
     let mut asked = encode_batch_request(&batch);
     assert_eq!(decode_laws_request(&asked), Some(LawsRequest::Batch(batch.clone())));
     asked.push(0);
     assert_eq!(decode_laws_request(&asked), None, "a byte left over is no request");
-    let verdicts: Vec<Verdict> = batch.iter().map(verify_sized).collect();
+    let verdicts: Vec<TransitionVerdict> = batch.iter().map(verify_sized).collect();
     let back = decode_batch_reply(&encode_batch_reply(&verdicts)).expect("the verdicts read back");
     assert_eq!(back, verdicts);
     let laws: Vec<Vec<Law>> = back.iter().map(|v| v.breaches.iter().map(|(l, _)| *l).collect()).collect();

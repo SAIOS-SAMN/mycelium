@@ -30,7 +30,8 @@ use num_bigint::BigInt;
 
 /// THE VERIFICATION SHARE EACH ORGAN TAKES of the mint `mint`, per lane:
 /// `M_l · y_l / ((y_l + R) · n)` exactly, for strain `strain` (`y`),
-/// calibrated reserve `capacity` (`R`) and `organs` verifying courts (`n`).
+/// the process's sealed `capacity` (`R`, D2.5) and `organs` verifying
+/// courts (`n`).
 /// Zero on every lane where no organ verified, where the court is at rest
 /// on the lane, or where `y_l + R` is zero. The organs together take
 /// `M_l · y_l / (y_l + R) ≤ M_l`, at most half the lane unless the lane's

@@ -22,7 +22,7 @@
 //!
 //! NO CAUSE IS WRITTEN HERE. The trace is the deliverable.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::element::measure_lanes;
 use mycelium::transducer::family::{extract_rule_with, form_deflation, sentence_measure};
 use mycelium::transducer::sentence::{as_element_form, Vertex};
@@ -36,7 +36,7 @@ const MINT_STROKE: usize = 1 << 20;
 /// Walk the slice and trace the mint for every task whose rule form
 /// closes — the five, and any others a larger slice turns up.
 pub(crate) fn trace(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let mut closed_seen = 0u64;
     let (mut open_seen, mut open_demanded, mut open_minted, mut open_stood) = (0u64, 0u64, 0u64, 0u64);
     let mut open_acts = 0u64;
@@ -64,10 +64,10 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
     let (mut reach_one, mut reach_more) = (0u64, 0u64);
     let (mut form_sections, mut form_torsion) = (0u64, 0u64);
     for name in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else {
+        let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else {
             continue;
         };
-        let Some(task) = mycelium::arc::parse_task(&json) else {
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else {
             continue;
         };
         let mut physics = mycelium::physics::Physics::default();
@@ -158,7 +158,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 if rule.form.acts() {
                     open_acts += 1;
                 }
-                let mut mind = Epigenome::new();
+                let mut mind = MindLanguage::new();
                 if let Some(w) = minted {
                     if mind.stand_dialect_withheld(w, 1, 1).is_some() {
                         open_stood += 1;
@@ -190,35 +190,46 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             rule.ratio,
         );
         for (i, (x, y)) in task.train.iter().enumerate() {
-            // The pair as the trajectory sees it: the delta where the pair
-            // refines under the stroke its extents need, and the refusal
-            // `refine_delta` names where it does not — reported as the
+            // The pair as the trajectory sees it: its transduction under the
+            // stroke its periods need — incidences, the share of the frame
+            // it changes per lane (S, G), and the μ of its projection onto
+            // the output frame where the input's turns land, a share of that
+            // frame (78.170 O1) — or the refusal it names, reported as the
             // engine's own reading and not re-derived here.
-            let mut stroke = mycelium::physics::Physics::default().stroke_n(
-                match mycelium::transducer::family::refine::need_of(x, y) {
-                    Some(n) => n,
-                    None => 0,
-                },
-            );
-            let refined = mycelium::arc::refine_delta(x, y, &mut stroke);
-            // A grid's width is its rows' common length, and the slice
-            // pattern reads the row the shape is stated by without taking
-            // a member by position (rule 15).
-            let wide = |g: &mycelium::arc::Grid| match g.split_first() {
-                Some((row, _)) => row.len(),
+            use mycelium::transducer::family::transduce::{Transduction, TransductionRefusal};
+            let (a, b) = (x.sample(), y.sample());
+            let mut stroke = mycelium::physics::Physics::default().stroke_n(match mycelium::transducer::family::transduce::need_of(a, b) {
+                Some(n) => n,
                 None => 0,
-            };
+            });
+            let record: Result<Transduction, TransductionRefusal> = Transduction::of(a, b, &mut stroke);
+            let ground = mycelium::transducer::raster::ground_bytes(&mycelium::transducer::raster::ground_of(&task.train));
+            let ([xh, xw], [yh, yw]) = (x.extents(), y.extents());
             println!(
-                "  mint {name} pair {i}: in {}x{} out {}x{} | refine_delta {} | delta mu {:?}",
-                x.len(),
-                wide(x),
-                y.len(),
-                wide(y),
-                match &refined {
-                    Ok(_) => "some".to_string(),
+                "  mint {name} pair {i}: in {}x{} out {}x{} | transduction {} | share {} | projected mu {}",
+                xh,
+                xw,
+                yh,
+                yw,
+                match &record {
+                    Ok(t) => format!("{} incidences ({} changed)", t.incidences.len(), t.changed().count()),
                     Err(u) => format!("{u:?}"),
                 },
-                refined.as_ref().ok().map(|r| measure_lanes(&r.delta)),
+                match &record {
+                    Ok(t) => {
+                        let [s, g] = t.lane_shares(&ground);
+                        format!("{} (S {s} G {g})", t.share())
+                    }
+                    Err(_) => "-".to_string(),
+                },
+                match record.as_ref().map_err(|u| *u).and_then(Transduction::projected) {
+                    Ok(changes) => mycelium::transducer::family::transduce::share_of_frame(
+                        measure_lanes(&mycelium::transducer::raster::links_of(&changes)),
+                        Some(b),
+                    )
+                    .to_string(),
+                    Err(u) => format!("{u:?}"),
+                },
             );
         }
 
@@ -358,20 +369,20 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             let spoken = mycelium::transducer::family::speak_rule(&rule, x, &empty);
             println!(
                 "  mint {name} speak {i}: bodies perceived {} | fibre hits per word vertex {hits:?} \
-                 | unspoken {:?} | painted sites emitted {} | residual vs observed {}",
+                 | unspoken {:?} | painted sites emitted {} | residue vs observed {}",
                 bodies.len(),
                 spoken.as_ref().map(|s| s.unspoken.len()),
                 spoken.as_ref().map_or(0, |s| s.painted.len()),
                 spoken.as_ref().map_or(0, |s| {
                     let g = s.grid();
                     let mut n = 0usize;
-                    for (r, row) in y.iter().enumerate() {
+                    for (r, row) in y.lines().enumerate() {
                         for (c, &h) in row.iter().enumerate() {
                             // A site the speech does not reach is the
                             // ground, and hue 0 IS absence in this
-                            // encoding — `residual_of`'s own reading, not
+                            // encoding — `residue_of`'s own reading, not
                             // a default put here for a missing value.
-                            let got = match g.as_ref().and_then(|g| g.get(r)).and_then(|gr| gr.get(c)) {
+                            let got = match g.as_ref().and_then(|g| g.line(r)).and_then(|gr| gr.get(c)) {
                                 Some(h) => *h,
                                 None => 0,
                             };
@@ -450,7 +461,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                     "  mint {name} withheld path: as_element_form(pay {pay:?}) NONE — production stands nothing either"
                 ),
                 Some(word) => {
-                    let mut mind = Epigenome::new();
+                    let mut mind = MindLanguage::new();
                     let stood = mind.stand_dialect_withheld(word, 1, 1);
                     println!(
                         "  mint {name} withheld path: as_element_form(pay {pay:?}) some, stand_dialect_withheld {} — dialect now {}",

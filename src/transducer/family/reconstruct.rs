@@ -37,7 +37,7 @@ type Q = BigRational;
 
 /// HR1 — ONE SITE BY ITS COORDINATES ON EVERY AXIS.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Site {
+pub struct SiteAxes {
     pub r: i64,
     pub c: i64,
     pub hue: u8,
@@ -52,16 +52,16 @@ pub struct Site {
     pub ring: [u8; 8],
 }
 
-pub(crate) fn at(g: &Grid, r: i64, c: i64) -> Option<u8> {
+pub(crate) fn at(g: &SectionSample, r: i64, c: i64) -> Option<u8> {
     let (ur, uc) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
-    g.get(ur)?.get(uc).copied()
+    g.line(ur)?.get(uc).copied()
 }
 
 /// HR1 — THE FIELD OF A SCENE, site by site in row order.
-pub fn field(x: &Grid) -> Vec<Site> {
+pub fn field(x: &SectionSample) -> Vec<SiteAxes> {
     let bodies = perceive(x);
-    let rows = x.len();
-    let mut owner: Vec<Vec<Option<usize>>> = x.iter().map(|row| vec![None; row.len()]).collect();
+    let [rows, cols] = x.extents();
+    let mut owner: Vec<Vec<Option<usize>>> = vec![vec![None; cols]; rows];
     // Each body's sums: mass, Σr, Σc, Σ|x|² — its sphere's coordinates.
     let mut sums: Vec<(i128, i128, i128, i128)> = Vec::with_capacity(bodies.len());
     let mut masses: Vec<u64> = Vec::with_capacity(bodies.len());
@@ -80,20 +80,20 @@ pub fn field(x: &Grid) -> Vec<Site> {
         sums.push(s);
         masses.push(mass);
     }
-    let void = crate::arc::ground();
+    let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
     for r in 0..rows {
         for (c, &hue) in x[r].iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let mut near: Vec<Cell> = Vec::new();
-            if hue != void {
+            if !ground.holds(&hue) {
                 near.push((ri, ci, hue));
             }
             let mut ring = [255u8; 8];
             for (k, (dr, dc)) in DIRECTIONS.iter().enumerate() {
                 if let Some(h) = at(x, ri + dr, ci + dc) {
                     ring[k] = h;
-                    if h != void {
+                    if !ground.holds(&h) {
                         near.push((ri + dr, ci + dc, h));
                     }
                 }
@@ -110,7 +110,7 @@ pub fn field(x: &Grid) -> Vec<Site> {
                     (mass, rank, centrality)
                 }
             };
-            out.push(Site { r: ri, c: ci, hue, local: moments(&near), body_mass, rank, centrality, ring });
+            out.push(SiteAxes { r: ri, c: ci, hue, local: moments(&near), body_mass, rank, centrality, ring });
         }
     }
     out
@@ -126,26 +126,26 @@ pub struct Transport {
 
 /// HR2 — THE TRANSPORT FIELD of one pair, in `field`'s order. `None` where
 /// the frames differ: no site stands in both.
-pub fn transports(x: &Grid, y: &Grid) -> Option<Vec<Transport>> {
-    if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
+pub fn transports(x: &SectionSample, y: &SectionSample) -> Option<Vec<Transport>> {
+    if x.extents() != y.extents() {
         return None;
     }
-    let void = crate::arc::ground();
+    let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
-    for (r, row) in x.iter().enumerate() {
+    for (r, row) in x.lines().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let to = at(y, ri, ci)?;
             let mut rays = Vec::new();
-            if h != void {
+            if !ground.holds(&h) {
                 for (k, (dr, dc)) in (0u8..).zip(DIRECTIONS.iter()) {
                     let mut t = 1i64;
                     let mut lit: Option<u8> = None;
                     let mut whole = true;
-                    while at(x, ri + t * dr, ci + t * dc) == Some(0) {
+                    while at(x, ri + t * dr, ci + t * dc).is_some_and(|h| ground.holds(&h)) {
                         let o = at(y, ri + t * dr, ci + t * dc)?;
                         match lit {
-                            None if o != 0 => lit = Some(o),
+                            None if !ground.holds(&o) => lit = Some(o),
                             Some(l) if l == o => {}
                             _ => whole = false,
                         }
@@ -209,7 +209,7 @@ fn put_q(k: &mut Vec<u8>, q: &Option<Q>) {
 }
 
 /// A SITE'S COORDINATES ON ONE AXIS, as its key.
-pub fn key(s: &Site, axis: usize) -> Vec<u8> {
+pub fn key(s: &SiteAxes, axis: usize) -> Vec<u8> {
     let mut k = vec![s.hue];
     let int = |k: &mut Vec<u8>, v: i128| put_key_bytes(k, &v.to_be_bytes());
     match axis {
@@ -237,13 +237,13 @@ pub fn key(s: &Site, axis: usize) -> Vec<u8> {
 /// distinct keys (the compaction: fewer keys, more of the field carried by
 /// one transport).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct Closure {
+pub struct AxisLoops {
     pub loops: u64,
     pub closed: u64,
     pub keys: u64,
 }
 
-impl Closure {
+impl AxisLoops {
     /// Every loop closed, and there was at least one.
     pub fn closes(&self) -> bool {
         self.loops > 0 && self.closed == self.loops
@@ -252,9 +252,9 @@ impl Closure {
 
 /// The transport each key carries on one axis over a set of pairs, and the
 /// axis's closure there.
-fn table(pairs: &[(&[Site], &[Transport])], axis: usize) -> (Keyed<Transport>, Closure) {
+fn table(pairs: &[(&[SiteAxes], &[Transport])], axis: usize) -> (Keyed<Transport>, AxisLoops) {
     let mut t: Keyed<Transport> = Keyed::new();
-    let mut cl = Closure::default();
+    let mut cl = AxisLoops::default();
     for (sites, moves) in pairs {
         for (s, m) in sites.iter().zip(moves.iter()) {
             let k = key(s, axis);
@@ -274,13 +274,13 @@ fn table(pairs: &[(&[Site], &[Transport])], axis: usize) -> (Keyed<Transport>, C
 }
 
 /// HR3 — THE HOLONOMY OF EVERY AXIS over a set of pairs.
-pub fn holonomy(pairs: &[(&[Site], &[Transport])]) -> [Closure; 9] {
+pub fn holonomy(pairs: &[(&[SiteAxes], &[Transport])]) -> [AxisLoops; 9] {
     std::array::from_fn(|axis| table(pairs, axis).1)
 }
 
 /// HR4 — WHAT THE RECONSTRUCTION DID ON ONE FAMILY.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct Reconstruction {
+pub struct ReconstructionReport {
     pub pairs: u64,
     /// Pairs whose frames agree (a field transports), and those reproduced.
     pub framed: u64,
@@ -289,7 +289,7 @@ pub struct Reconstruction {
     pub by_axis: [u64; 9],
     /// The axes that close on the whole family, and each axis's loops there.
     pub closing: [bool; 9],
-    pub holonomy: [Closure; 9],
+    pub holonomy: [AxisLoops; 9],
     /// Left-out pairs no axis closed on the others for, and pairs where an
     /// axis closed but the pair holds a key the others never showed.
     pub unclosed: u64,
@@ -300,17 +300,18 @@ pub struct Reconstruction {
 
 /// Carry an input field by a table: every site to its key's target hue,
 /// then the light each emits laid along its free reach.
-fn carried(x: &Grid, sites: &[Site], t: &Keyed<Transport>, axis: usize) -> Option<Grid> {
-    let mut out: Grid = x.iter().map(|row| vec![crate::arc::ground(); row.len()]).collect();
+fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<Transport>, axis: usize) -> Option<SectionSample> {
+    let void = crate::transducer::raster::void().ok()?;
+    let mut out = x.cleared(void);
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let m = t.get(&key(s, axis))?;
         let (ur, uc) = (usize::try_from(s.r).ok()?, usize::try_from(s.c).ok()?);
-        *out.get_mut(ur)?.get_mut(uc)? = m.to;
+        *out.line_mut(ur)?.get_mut(uc)? = m.to;
         for &(k, h) in &m.rays {
             let (dr, dc) = *DIRECTIONS.get(usize::from(k))?;
             let mut step = 1i64;
-            while at(x, s.r + step * dr, s.c + step * dc) == Some(0) {
+            while at(x, s.r + step * dr, s.c + step * dc) == Some(void) {
                 emitted.push((s.r + step * dr, s.c + step * dc, h));
                 step += 1;
             }
@@ -318,24 +319,24 @@ fn carried(x: &Grid, sites: &[Site], t: &Keyed<Transport>, axis: usize) -> Optio
     }
     for (r, c, h) in emitted {
         let (ur, uc) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
-        *out.get_mut(ur)?.get_mut(uc)? = h;
+        *out.line_mut(ur)?.get_mut(uc)? = h;
     }
     Some(out)
 }
 
 /// HR4 — RECONSTRUCT A FAMILY BY ITS HOLONOMY, each pair left out in turn.
-pub fn reconstruct(family: &[(Grid, Grid)]) -> Reconstruction {
-    let mut read = Reconstruction { pairs: family.len() as u64, ..Reconstruction::default() };
-    let fields: Vec<Option<(Vec<Site>, Vec<Transport>)>> =
+pub fn reconstruct(family: &[(SectionSample, SectionSample)]) -> ReconstructionReport {
+    let mut read = ReconstructionReport { pairs: family.len() as u64, ..ReconstructionReport::default() };
+    let fields: Vec<Option<(Vec<SiteAxes>, Vec<Transport>)>> =
         family.iter().map(|(x, y)| transports(x, y).map(|t| (field(x), t))).collect();
-    let all: Vec<(&[Site], &[Transport])> = fields.iter().flatten().map(|(s, t)| (s.as_slice(), t.as_slice())).collect();
+    let all: Vec<(&[SiteAxes], &[Transport])> = fields.iter().flatten().map(|(s, t)| (s.as_slice(), t.as_slice())).collect();
     let whole_family = holonomy(&all);
     read.closing = whole_family.map(|c| c.closes());
     read.holonomy = whole_family;
     for (i, f) in fields.iter().enumerate() {
         let Some((sites, _)) = f else { continue };
         read.framed += 1;
-        let others: Vec<(&[Site], &[Transport])> =
+        let others: Vec<(&[SiteAxes], &[Transport])> =
             fields.iter().enumerate().filter(|(j, _)| *j != i).filter_map(|(_, g)| g.as_ref()).map(|(s, t)| (s.as_slice(), t.as_slice())).collect();
         // The axes that close on the others and hold every key this pair
         // asks for; the most compact carries it.

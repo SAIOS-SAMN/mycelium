@@ -13,7 +13,8 @@
 //! hypha to the values it meant, and every reply decodes to the fields named
 //! here.
 
-use super::{ACT_DOMAIN, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE, ACT_QUOTE, ACT_RECEIPTS, ACT_ROWS, ACT_SEAT};
+use super::{SOLVE_KIND_FACTORISATION, SOLVE_KIND_OUTPUTS};
+use super::{ACT_DOMAIN, ACT_ENTRIES, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE, ACT_QUOTE, ACT_RECEIPTS, ACT_SEAT};
 use super::{ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY, WIRE_VERSION};
 use crate::physics::laws::codec::{MODE_BATCH, MODE_CLOCK, MODE_CONCORDANCE, MODE_LEXICON, MODE_PARAMETERS, MODE_REGISTER};
 use crate::physics::laws::codec::{MODE_SIGNATURE, MODE_STATEMENT, MODE_VERIFY};
@@ -182,12 +183,14 @@ const MAIL: &[&str] = &["epoch", "sequence", "mail"];
 const WALLET: &[&str] = &["court", "balance S:G:T:H", "bond S:G:T:H", "held S:G:T:H", "stamp"];
 const VERDICT: &[&str] = &["breaches by law", "exchanged torques", "modes", "similarity", "expansion", "unmeasured laws"];
 const FOUNDED: &[&str] = &["sealed stamp and receipt, or the refusal by name"];
+/// Track 26 S4c — the verdict on a claim of factorisation.
+const FACTORED: &[&str] = &["admitted, or the residue of the residues (unclaimed, uncarried), or the refusal by name"];
 
 /// THE MIND PROFILE: the MUST acts of the client loop first, then every MAY
 /// act the reference mind and the SDK's readings speak.
 const MIND: &[ActRequirement] = &[
     must(ACT_TASK, None, "task", "decode_task_envelope", TASK),
-    must(ACT_SOLVE, None, "solve", "decode_solve_verdict", SOLVE),
+    must(ACT_SOLVE, Some(SOLVE_KIND_OUTPUTS), "solve", "decode_solve_verdict", SOLVE),
     must(ACT_LAWS, Some(MODE_REGISTER), "laws register", "decode_register_reply", REGISTER),
     may(ACT_TASK, None, "task by citation", "decode_task_envelope", TASK),
     may(ACT_LAWS, Some(MODE_LEXICON), "laws lexicon", "decode_lexicon_reply", LEXICON),
@@ -198,7 +201,7 @@ const MIND: &[ActRequirement] = &[
     may(ACT_LAWS, Some(MODE_SIGNATURE), "laws signature", "decode_signature_reply", SIGNATURE),
     may(ACT_QUOTE, None, "quote", "decode_quote_reply", &["height", "surface S:G:T:H", "k", "work items"]),
     may(ACT_RECEIPTS, None, "receipts", "decode_receipts_reply", &["receipts"]),
-    may(ACT_ROWS, None, "rows", "decode_rows_reply", &["height", "entries"]),
+    may(ACT_ENTRIES, None, "entries", "decode_entries_reply", &["height", "entries"]),
     may(ACT_OBSERVE, Some(crate::observe::MODE_QUERY), "observe query", "decode_reply", &["count", "held readings"]),
     may(ACT_WHY, None, "why", "decode_why_reply", &["stamp", "kind", "mu S:G:T:H", "named", "unheld", "refused"]),
     may(ACT_WALLET, None, "wallet", "decode_wallet_reply", WALLET),
@@ -206,6 +209,7 @@ const MIND: &[ActRequirement] = &[
     may(ACT_PEERS, None, "peers", "decode_peers_reply", &["endpoints"]),
     may(ACT_SYLLABUS, None, "syllabus", "decode_syllabus_reply", &["taught"]),
     may(ACT_SPEECH, None, "speech", "decode_speech_reply", &["adjudications"]),
+    may(ACT_SOLVE, Some(SOLVE_KIND_FACTORISATION), "solve factorisation", "decode_factor_verdict", FACTORED),
     may(ACT_DOMAIN, None, "domain reserve", "decode_reserve_reading", RESERVE),
     may(ACT_SEAT, None, "seat mail", "decode_mail_reply_standing", MAIL),
 ];
@@ -225,8 +229,9 @@ const KERNEL: &[ActRequirement] = &[
     must(ACT_DOMAIN, None, "domain manifest", "decode_grant_reply", &["granted μ S:G:T:H, founding, stamp and receipt, or the refusal by name"]),
     must(ACT_DOMAIN, None, "domain universe", "decode_universe_reading", &["originated", "geometry", "parent", "basket"]),
     may(ACT_TASK, None, "task", "decode_task_envelope", TASK),
-    may(ACT_SOLVE, None, "solve", "decode_solve_verdict", SOLVE),
+    may(ACT_SOLVE, Some(SOLVE_KIND_OUTPUTS), "solve", "decode_solve_verdict", SOLVE),
     may(ACT_TASK, None, "task by citation", "decode_task_envelope", TASK),
+    may(ACT_SOLVE, Some(SOLVE_KIND_FACTORISATION), "solve factorisation", "decode_factor_verdict", FACTORED),
     may(ACT_LAWS, Some(MODE_BATCH), "laws batch", "decode_batch_reply", &["verdicts, one per transition in order"]),
     may(ACT_LAWS, Some(MODE_LEXICON), "laws lexicon", "decode_lexicon_reply", LEXICON),
     may(ACT_LAWS, Some(MODE_PARAMETERS), "laws parameters", "decode_parameters_reply", PARAMETERS),

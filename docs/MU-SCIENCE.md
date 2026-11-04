@@ -81,7 +81,8 @@ those physics agree, where they diverge, and what each has proven.
   never by issuance.
 
 **P4 — Exactness.**
-- Every admitted object is exact: ℚ, the multivectors of Cl(4,1)(ℚ), or a
+- Every admitted object is exact: ℚ, the multivectors of `Cl(n+1, 1)`(ℚ)
+  with `n` read from the data (`Cl(4,1)` at `n = 3`), or a
   finite discrete structure with a canonical encoding.
 - Floating-point results are data a kernel may hold and commit. They are
   never admitted as verified knowledge unless restated exactly.
@@ -136,7 +137,7 @@ is the shared floor that makes the universes comparable.
 This section restates, for science kernels, the physics the Concordance
 already rules (Concordance 1.14, 2.2 and 2.10):
 - **The innermost shell** is Mycelium's: the universal law forms, in the
-  `forms` crate, over a universe's constants and exact in Cl(4,1)(ℚ), with
+  `forms` crate, over a universe's constants and exact in `Cl(n+1, 1)`(ℚ), with
   L0's register and verifier at its core. A form fixes no constant.
 - **Each universe's shell** is its own: its constants, its matter, its
   composition of the forms, and any law it keeps for itself. It reaches the
@@ -157,7 +158,7 @@ shell.
 | **The Concordance** | The agreement every kernel signs: units, topology, the economy between universes, breaches and convergence, conduct | `docs/MU-CONCORDANCE.md` |
 | **The alphabet** | Seventeen seed letters, exact rotations, which never change; letters for further primes are added only by court rulings (MU-ALPHABET §6) | `docs/MU-ALPHABET.md`, `src/transducer/alphabet/` |
 | **Anastome** | The wire: signed speech acts whose payloads are exact geometric objects, each with one canonical encoding | `src/anastome/` |
-| **Exact arithmetic** | ℚ and Cl(4,1)(ℚ); no floating point in anything admitted | Throughout |
+| **Exact arithmetic** | ℚ and `Cl(n+1, 1)`(ℚ), `n` read from the data (`Cl(4,1)` at `n = 3`); no floating point in anything admitted | Throughout |
 | **The proofs of work** | POUW, POWC, POWR, the POWV share, and the settlement of each | `docs/MU-ECONOMY.md` |
 
 A kernel cannot amend the universal library unilaterally. It changes only
@@ -334,9 +335,11 @@ definition; every other document points here.
 | **Replay** | Re-apply recorded inputs in order, to read history: to see events as they happened (MU-CONCORDANCE 1.4). | Verification; a restore (a restore reconstructs the held state and checks it against its receipts) |
 | **Resend** | The same message sent again: the security sense, met by repeat protection (MU-RECURSION 47.2, MU-XSEPTUM). | A recomputation |
 
-Some code identifiers still carry `replay` for the court's reconstruction
-(`blind_replay`, `replay_form`, `measured_replay`, `Replayed`); they name
-reconstruction and follow a code rename ([ROADMAP](../ROADMAP.md) track 11).
+The code identifiers that verify carry `reconstruct` (`reconstruct_blind`,
+`reconstruct_form`, `measured_discharge`, `ReconstructionOutcome`;
+[ROADMAP](../ROADMAP.md) track 11, N1). An identifier that reads history
+keeps the word, such as the era ask's `replay` flag on `ReceiptsRequest`
+(MU-CONCORDANCE 1.4).
 
 #### Grammar alignment
 
@@ -391,9 +394,9 @@ Every class follows the same protocol:
 ### V0 — Rules (exists)
 
 The court evaluates a submitted rule on withheld pairs from its own copy of
-the family, and the output must be the withheld answer (`src/court/verdict/`;
-the code still names this reconstruction `replay`, pending the rename in
-§5.0). This is the workload of the current release.
+the family, and the output must be the withheld answer (`src/court/verdict/`,
+`reconstruct_form` and `reconstruct_blind`). This is the workload of the
+current release.
 
 ### V1 — Certificate checking
 

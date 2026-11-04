@@ -7,9 +7,9 @@
 //! another and the chain of hue transitions it leaves.
 
 use super::*;
-use crate::transducer::base::{Site, FRAME_AXIS};
+use crate::transducer::base::Site;
 
-pub type Grid = Vec<Vec<u8>>;
+pub use crate::transducer::spelled::SectionSample;
 
 /// A painted site of one frame's grid, the sensor's planar token:
 /// `(row, col, hue)`.
@@ -18,14 +18,16 @@ pub(crate) type Painted = (i64, i64, u8);
 /// A compartment of a body's support: a site of the base and its hue (51.3, 71).
 pub type Compartment = crate::transducer::blade::Compartment;
 
-/// A scene of painted sites as a grid, origin at the scene's min-corner.
-/// The sensor embedding of one scene; not a ranking over candidates.
-pub fn grid_of_painted(painted: &[(i64, i64, u8)]) -> Grid {
+/// A scene of painted sites as a grid on `void`, origin at the scene's
+/// min-corner. The sensor embedding of one scene; not a ranking over
+/// candidates. The symbol the unpainted sites hold is the caller's, named:
+/// never a ground this reader defaults to. `None` where the box's sites
+/// pass the machine word.
+pub fn grid_of_painted(painted: &[(i64, i64, u8)], void: u8) -> Option<SectionSample> {
     // The head only SEEDS the bounding box; the box is folded over every
     // site below, so no member is chosen here.
-    let void = crate::arc::ground();
     let [(r0, c0, _), ..] = painted else {
-        return vec![vec![void]];
+        return SectionSample::filled([1, 1], void).ok();
     };
     let (r0, c0) = (*r0, *c0);
     let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
@@ -47,20 +49,21 @@ pub fn grid_of_painted(painted: &[(i64, i64, u8)]) -> Grid {
     let h = (max_r - min_r + 1) as usize;
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the painted sites' bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let w = (max_c - min_c + 1) as usize;
-    let mut g = vec![vec![void; w]; h];
+    let mut g = SectionSample::filled([h, w], void).ok()?;
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a painted site's offset inside the bounding box just sized from these same sites, 0 ≤ r − min_r < h and 0 ≤ c − min_c < w")]
     for &(r, c, hue) in painted {
         g[(r - min_r) as usize][(c - min_c) as usize] = hue;
     }
-    g
+    Some(g)
 }
 
 /// THE SCENE A CHAIN DESCRIBES, as the two grids of one frame (50.6 seam
 /// 1): the sites before and the sites after, both at the chain's own
 /// min-corner, so the motion between them is the chain's and never an
 /// artefact of two origins. `None` for an empty chain, which describes
-/// no scene.
-pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(Grid, Grid)> {
+/// no scene, and where the open scope reads no one ground to lay the
+/// unnamed sites on.
+pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(SectionSample, SectionSample)> {
     scene_at_of_chain(chain).map(|(_, before, after)| (before, after))
 }
 
@@ -69,7 +72,7 @@ pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(Grid, Grid)> {
 /// framing subtracted, and re-deriving that corner beside this reader is
 /// the second carrier for one fact (law 12) — one of them would be the
 /// one that drifts.
-pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), Grid, Grid)> {
+pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), SectionSample, SectionSample)> {
     // As above: the head seeds the box the fold below measures.
     let [(r0, c0, _, _), ..] = chain else { return None };
     let (r0, c0) = (*r0, *c0);
@@ -92,9 +95,11 @@ pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), Gr
     let h = (max_r - min_r + 1) as usize;
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the chain's bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let w = (max_c - min_c + 1) as usize;
-    let void = crate::arc::ground();
-    let mut before = vec![vec![void; w]; h];
-    let mut after = vec![vec![void; w]; h];
+    // Sites the chain does not name hold the scene's one ground; with none
+    // (a vortex, no ground, no family open) no scene is framed.
+    let void = crate::transducer::raster::void().ok()?;
+    let mut before = SectionSample::filled([h, w], void).ok()?;
+    let mut after = before.clone();
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a chain site's offset inside the bounding box just sized from these same sites, 0 ≤ r − min_r < h and 0 ≤ c − min_c < w")]
     for &(r, c, b, a) in chain {
         before[(r - min_r) as usize][(c - min_c) as usize] = b;
@@ -155,7 +160,7 @@ fn bodies_of(compartments: &[Compartment]) -> Vec<Body> {
 /// the edge transport of 50.3, so sliding and relative rotation are
 /// measured on the edge. The court reads the percept as one sentence with
 /// its body vertices and the vertices' edges, never as detached listings (50.1).
-pub fn perceive(grid: &Grid) -> Vec<Body> {
+pub fn perceive(grid: &SectionSample) -> Vec<Body> {
     perceive_frames(std::slice::from_ref(grid))
 }
 
@@ -166,12 +171,12 @@ pub fn perceive(grid: &Grid) -> Vec<Body> {
 /// when they read a frame alone; a body stacked along `e₃` has a chart
 /// that depends on its extent there, and a vertex keyed by it would find
 /// nothing on a frame perceived by itself.
-pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
-    let void = crate::arc::ground();
+pub fn perceive_at(grid: &SectionSample, k: i64) -> Vec<Body> {
+    let ground = crate::transducer::raster::ground();
     let mut compartments: Vec<Compartment> = Vec::new();
-    for (r, row) in grid.iter().enumerate() {
+    for (r, row) in grid.lines().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            if h != void {
+            if !ground.holds(&h) {
                 compartments.push(Compartment::from((r as i64, c as i64, k, h)));
             }
         }
@@ -184,12 +189,12 @@ pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
 /// several hues is several parts; a body of one hue is one part). What a
 /// clause on parts selects among (`Act::Parts`): a body recoloured in part is
 /// parts recoloured whole. Read in the lattice's order, hue by hue.
-pub fn perceive_parts(grid: &Grid) -> Vec<Body> {
-    let void = crate::arc::ground();
+pub fn perceive_parts(grid: &SectionSample) -> Vec<Body> {
+    let ground = crate::transducer::raster::ground();
     let mut by_hue: crate::network::nerve::Keyed<Vec<Compartment>> = crate::network::nerve::Keyed::new();
-    for (r, row) in grid.iter().enumerate() {
+    for (r, row) in grid.lines().enumerate() {
         for (c, &h) in row.iter().enumerate() {
-            if h == void {
+            if ground.holds(&h) {
                 continue;
             }
             let l = Compartment::from((r as i64, c as i64, 0, h));
@@ -212,8 +217,8 @@ pub type Frames = Vec<(Vec<Body>, Vec<Body>)>;
 /// frame's bodies read by its components, the one reading an extraction's
 /// stroke is sized by ([`super::extraction_spend`]) and the percept then
 /// reads, so no frame's components are read a second time to size the draw.
-pub fn perceive_family(family: &[(Grid, Grid)]) -> Frames {
-    crate::arc::on_ground_of(family, || {
+pub fn perceive_family(family: &[(SectionSample, SectionSample)]) -> Frames {
+    crate::transducer::raster::on_ground_of(family, || {
         family
             .iter()
             .enumerate()
@@ -225,13 +230,13 @@ pub fn perceive_family(family: &[(Grid, Grid)]) -> Frames {
 /// Perceive a family's frames as bodies on `(r, c, k)`: hue-blind
 /// 6-connected components across the frames (51.3, 51.4, 70.4), the frame of each
 /// grid its place in the family.
-pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
-    let void = crate::arc::ground();
+pub fn perceive_frames(grids: &[SectionSample]) -> Vec<Body> {
+    let ground = crate::transducer::raster::ground();
     let mut compartments: Vec<Compartment> = Vec::new();
     for (k, grid) in grids.iter().enumerate() {
-        for (r, row) in grid.iter().enumerate() {
+        for (r, row) in grid.lines().enumerate() {
             for (c, &h) in row.iter().enumerate() {
-                if h != void {
+                if !ground.holds(&h) {
                     compartments.push(Compartment::from((r as i64, c as i64, k as i64, h)));
                 }
             }
@@ -245,9 +250,9 @@ pub fn perceive_frames(grids: &[Grid]) -> Vec<Body> {
 /// it landed on. The chain is the sensor's planar token (16.5); the frame
 /// rides on the carriage. A body across frames puts two links on one site
 /// of the section, which A5 refuses downstream — its chain is its sections,
-/// one per frame (51.4).
-pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i64, i64, u8, u8)> {
-    let void = crate::arc::ground();
+/// one per frame (51.4). A side with no body writes its sites as the
+/// scene's one ground (`raster::void`); where the scope has none, `None`.
+pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Option<Vec<(i64, i64, u8, u8)>> {
     let mut chain = Vec::new();
     match (a, b) {
         (Some(src), Some(dst)) => {
@@ -261,6 +266,7 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i
             }
         }
         (None, Some(dst)) => {
+            let void = crate::transducer::raster::void().ok()?;
             for l in &dst.compartments {
                 if let Some((r, c)) = on_grid(&l.site) {
                     chain.push((r, c, void, l.hue));
@@ -268,6 +274,7 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i
             }
         }
         (Some(src), None) => {
+            let void = crate::transducer::raster::void().ok()?;
             for l in &src.compartments {
                 if let Some((r, c)) = on_grid(&l.site) {
                     chain.push((r, c, l.hue, void));
@@ -277,7 +284,7 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Vec<(i
         (None, None) => {}
     }
     chain.sort_unstable();
-    chain
+    Some(chain)
 }
 
 /// The hue of the compartment of `dst` that `v` carries the compartment at `site`
@@ -288,11 +295,12 @@ pub(crate) fn landed_hue(v: &Versor, site: &Site, dst: &Body) -> Option<u8> {
     dst.compartments.binary_search_by(|x| x.site.cmp(&t)).ok().map(|i| dst.compartments[i].hue)
 }
 
-/// A site's coordinates on the grid axes — the section's planar token
-/// (16.5); every other axis rides on the pose. `None` for a site of a base
-/// with fewer than the two grid axes, which has no section.
+/// A site's coordinates on the sensor's plane, the plane the default
+/// perspective assigns (`perspective::family_plane`) — the section's planar
+/// token (16.5); every other axis rides on the pose. `None` for a site of a
+/// base whose perspective holds no plane, which has no section.
 pub(crate) fn on_grid(s: &Site) -> Option<(i64, i64)> {
-    let [ga, gb] = crate::transducer::base::GRID_AXES;
+    let (ga, gb) = crate::transducer::perspective::family_plane(s.n())?;
     Some((s.axis(ga)?, s.axis(gb)?))
 }
 
@@ -311,10 +319,10 @@ pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
 
 /// What a demand vertex stands for: its kind, the chart it is listed under
 /// and the links of the bodies it carries (50.5).
-pub type Demanded = (crate::transducer::sentence::Demand, Invariant, Vec<Link>);
+pub type Demanded = (crate::transducer::sentence::Demand, Invariant, Vec<SectionLink>);
 
 /// 50.5: a demand vertex over the bodies it stands for.
-pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invariant, bodies: Vec<Link>) -> Vertex {
+pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invariant, bodies: Vec<SectionLink>) -> Vertex {
     Vertex::demand(kind, chart.clone(), bodies)
 }
 
@@ -383,7 +391,7 @@ pub(crate) fn stand_demands(vertices: &mut crate::transducer::sentence::Vertices
 ///    in it (rule 11).
 ///
 /// THE PLANE IS THE SENSOR'S OWN. `deviatoric` reads `(Ixx−Iyy, 2Ixy)`,
-/// which is `harmonic_on_plane((PLANE_ROW, PLANE_COL))` — the arc turns
+/// which is `harmonic_on_plane(alphabet::sensor_plane())` — the arc turns
 /// in `e₁e₂` and the demand says so rather than defaulting. It stays the
 /// sensor's after FR1: `Oblique` is the square base's question and the
 /// witness a Gaussian arc in that plane, so the pose over the tube
@@ -408,8 +416,8 @@ pub(crate) fn oblique_demanded(
     // no versor here, so the source's compartments each keeps its own hue and the
     // target's are read as they stand. Passing an identity versor instead
     // would write a carry the geometry just refused (checklist (m)).
-    let mut bodies = chain_of(Some(a), None, &crate::transducer::element::identity_versor());
-    bodies.extend(chain_of(None, Some(b), &crate::transducer::element::identity_versor()));
+    let mut bodies = chain_of(Some(a), None, &crate::transducer::element::identity_versor())?;
+    bodies.extend(chain_of(None, Some(b), &crate::transducer::element::identity_versor())?);
     bodies.sort_unstable();
     Some((demand, chart.clone(), bodies))
 }
@@ -423,18 +431,18 @@ pub(crate) fn oblique_rotor_prime(
     blade_b: &crate::transducer::blade::Blade,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::Demand> {
-    use crate::transducer::alphabet::{PLANE_COL, PLANE_ROW};
     use crate::transducer::blade;
-    // THE PLANE IS THE SENSOR'S OWN, named once for the frame, the arc and
-    // the demand (BQ4).
-    let sensor = crate::transducer::base::GRID_PLANE;
+    // THE PLANE IS THE SENSOR'S OWN, the one the default perspective
+    // assigns the bodies' base, named once for the frame, the arc and the
+    // demand (BQ4). A base with no plane carries no oblique arc.
+    let sensor = crate::transducer::perspective::family_plane(blade_a.n())?;
     // GATE 1: only the oblique arm passes. A turn is no refusal; a held
     // stabilizer is no refusal; any other answer is a refusal.
     let Err(blade::NoPose::Oblique) = blade::relative_rotor(blade_a, blade_b, sensor, budget) else {
         return None;
     };
     let (s, t) = blade::oblique_arc(blade_a, blade_b, sensor)?;
-    let plane = (PLANE_ROW, PLANE_COL);
+    let plane = crate::transducer::alphabet::slot_plane(sensor)?;
     let norm = &s * &s + &t * &t;
     let prime = crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane)?;
     Some(crate::transducer::sentence::Demand::RotorPrime {
@@ -475,7 +483,7 @@ pub(crate) fn word_or_demand_on_chart(
         // and minted only when the geometry proves it is one.
         return oblique_demand(a, b, chart, budget).map(Err);
     };
-    let chain = chain_of(Some(a), Some(b), &car.v);
+    let chain = chain_of(Some(a), Some(b), &car.v)?;
     // A22 alone: this is the PERCEPT, which is what the memo holds. The
     // presentation enters afterwards, per mind (50.2 step 2).
     let derivation = match peel_versor(&car.v)? {
@@ -496,7 +504,7 @@ pub(crate) fn word_or_demand_on_chart(
 pub(crate) fn word_vertex_with(
     a: &Body,
     b: &Body,
-    car: &Carriage,
+    car: &BodyTransport,
     derivation: crate::transducer::alphabet::Derivation,
 ) -> Option<Vertex> {
     word_vertex_on_chart(a, b, car, derivation, &b.moduli)
@@ -506,11 +514,11 @@ pub(crate) fn word_vertex_with(
 pub(crate) fn word_vertex_on_chart(
     a: &Body,
     b: &Body,
-    car: &Carriage,
+    car: &BodyTransport,
     derivation: crate::transducer::alphabet::Derivation,
     chart: &Invariant,
 ) -> Option<Vertex> {
-    let chain = chain_of(Some(a), Some(b), &car.v);
+    let chain = chain_of(Some(a), Some(b), &car.v)?;
     let t = element::translator_of(&car.v)?;
     let d = element::dilator_of(&car.v)?;
     let carriage = d.geo(&t);
@@ -536,7 +544,7 @@ pub(crate) fn word_vertex_on_chart(
 pub(crate) fn frame_of_body(b: &Body) -> Option<i64> {
     let mut at: Option<i64> = None;
     for l in &b.compartments {
-        let k = l.site.axis(FRAME_AXIS)?;
+        let k = l.site.axis(crate::transducer::perspective::family_place_axis(l.site.n())?)?;
         match at {
             None => at = Some(k),
             Some(f) if f == k => {}
@@ -559,7 +567,7 @@ fn at_frame(compartments: &[Compartment], k: i64) -> Vec<Compartment> {
     compartments
         .iter()
         .map(|l| Compartment {
-            site: match l.site.with_axis(FRAME_AXIS, k) {
+            site: match crate::transducer::perspective::family_place_axis(l.site.n()).and_then(|p| l.site.with_axis(p, k)) {
                 Some(s) => s,
                 None => l.site.clone(),
             },
@@ -813,19 +821,20 @@ pub(crate) fn support_of(body: &Body) -> Vec<Site> {
 // of 59.3, condensed at the mind's own horizon (59.6), and it enters
 // through the tether or it does not enter at all.
 
-pub(crate) fn frame_of(g: &Grid) -> (usize, usize) {
-    (g.len(), crate::arc::grid_width(g))
+pub(crate) fn frame_of(g: &SectionSample) -> (usize, usize) {
+    let [lines, width] = g.extents();
+    (lines, width)
 }
 
 /// Does everything a form spoke lie inside the grid it was spoken against?
 /// The test extraction's step 3 decides a glue by, and the same test a
 /// voice answers a demand by (L8q), so the two organs read one thing.
-pub fn painted_within_grid(painted: &[Painted], g: &Grid) -> bool {
+pub fn painted_within_grid(painted: &[Painted], g: &SectionSample) -> bool {
     // A negative site is off the grid by `try_from`, never by an index a
     // wrap happened to put out of range.
     painted.iter().all(|&(r, c, h)| {
         let at = |x: i64| usize::try_from(x).ok();
-        at(r).and_then(|r| g.get(r))
+        at(r).and_then(|r| g.line(r))
             .and_then(|row| row.get(at(c)?))
             .copied()
             == Some(h)

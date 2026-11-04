@@ -2,7 +2,7 @@
 // rational root theorem; what has none refused by its degree; the divisor
 // loop spending the stroke's budget and refusing by name when it is spent.
 
-use super::common::{budget, q};
+use super::fixtures::{budget, q};
 use crate::transducer::cga::modes::rational_roots;
 use crate::transducer::cga::Undecomposed;
 

@@ -12,7 +12,7 @@
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::element::{self, Versor};
-use crate::transducer::family::{on_grid, perceive, Body, Grid, Compartment};
+use crate::transducer::family::{on_grid, perceive, Body, SectionSample, Compartment};
 use crate::transducer::sentence::{self, Form, Vertex};
 use crate::transducer::stalk;
 
@@ -39,7 +39,7 @@ pub(crate) enum Carried {
 
 /// What a vertex failed at, for the journal. Coordinates, not a verdict.
 pub(crate) const FAIL_NO_VERSOR: &str = "the rotor and carriage lift to no versor";
-pub(crate) const FAIL_NO_CARRY: &str = "a lamina of its body carries nowhere";
+pub(crate) const FAIL_NO_CARRY: &str = "a site of the body carries nowhere";
 /// THREE FAULTS, NOT ONE: a carried centre the sensor cannot convert to a
 /// compartment at all, a compartment at a negative coordinate, and a compartment past the
 /// image's extent say different things about a rule — the first that the
@@ -47,10 +47,10 @@ pub(crate) const FAIL_NO_CARRY: &str = "a lamina of its body carries nowhere";
 /// is wrong, the third that the scale or the extent is — and a court that
 /// reported one string for all three would tell a voice nothing it can
 /// contract on (50.9, rule 11).
-pub(crate) const FAIL_NO_COMPARTMENT: &str = "a carried centre is not a lamina of the sensor";
-pub(crate) const FAIL_BEFORE_FRAME: &str = "a lamina lands before the image frame's origin";
-pub(crate) const FAIL_PAST_FRAME: &str = "a lamina lands past the image frame's extent";
-pub(crate) const FAIL_HUE: &str = "a lamina lands on the wrong hue";
+pub(crate) const FAIL_NO_COMPARTMENT: &str = "a carried centre is not a site of the sensor";
+pub(crate) const FAIL_BEFORE_FRAME: &str = "a carried site lands before the image frame's origin";
+pub(crate) const FAIL_PAST_FRAME: &str = "a carried site lands past the image frame's extent";
+pub(crate) const FAIL_HUE: &str = "a carried site lands on the wrong hue";
 pub(crate) const FAIL_PART: &str = "an image body is reached in part";
 /// The vertex's gauge names two images for one hue, so it is not a hue map
 /// and the compartment has no predicted hue to be right or wrong about. Read by
@@ -58,14 +58,14 @@ pub(crate) const FAIL_PART: &str = "an image body is reached in part";
 /// indistinguishable from `FAIL_HUE`.
 pub(crate) const FAIL_GAUGE_AMBIGUOUS: &str = "the gauge names two images for one hue";
 
-/// ONE FRAME OF THE FAMILY, PERCEIVED ONCE (law 12): the bodies of `x`
+/// ONE PAIR OF THE FAMILY, PERCEIVED ONCE (law 12): the bodies of `x`
 /// filed by chart, the images of `y`, and the image each base site
 /// belongs to. Every reader of a frame — a vertex's replay, an edge's
 /// re-measurement, the coverage of a part-reached image — reads this and
 /// perceives nothing itself: the frame's bodies are one fact of the frame,
 /// not of the vertex or the face asking about them.
-pub(crate) struct Frame<'a> {
-    pub(crate) y: &'a Grid,
+pub(crate) struct PerceivedPair<'a> {
+    pub(crate) y: &'a SectionSample,
     pub(crate) bodies: &'a [Body],
     pub(crate) images: &'a [Body],
     /// Chart key → the bodies standing on that chart, by index.
@@ -76,7 +76,7 @@ pub(crate) struct Frame<'a> {
 
 /// 78.153 — ONE PAIR AS THE SENSOR READ IT: the bodies of `x` and the
 /// images of `y`. Perceived ONCE PER REPLAY, one read each, and held on the
-/// replay's cursor across strokes (`ReplayCursor::frames`): the clauses, the
+/// replay's cursor across strokes (`ReconstructionCursor::frames`): the clauses, the
 /// bodies and the edges of every resumed stroke read these, and the sensor
 /// reads each grid once whatever the strokes the replay takes.
 #[derive(Clone, Debug)]
@@ -86,25 +86,25 @@ pub struct Perceived {
 }
 
 impl Perceived {
-    pub(crate) fn of(x: &Grid, y: &Grid) -> Perceived {
+    pub(crate) fn of(x: &SectionSample, y: &SectionSample) -> Perceived {
         Perceived { bodies: perceive(x), images: perceive(y) }
     }
 }
 
 /// Every pair of the family perceived, unmetered: the readers off a court's
 /// lock (the mint's own body check, the tests).
-pub(crate) fn perceive_family(family: &[(Grid, Grid)]) -> Vec<Perceived> {
+pub(crate) fn perceive_family(family: &[(SectionSample, SectionSample)]) -> Vec<Perceived> {
     family.iter().map(|(x, y)| Perceived::of(x, y)).collect()
 }
 
 /// The frames over pairs already perceived: the frames' indexes, built from the
 /// bodies (no sensor read).
-pub(crate) fn frames_over<'a>(family: &'a [(Grid, Grid)], perceived: &'a [Perceived]) -> Vec<Frame<'a>> {
-    family.iter().zip(perceived).map(|((_, y), p)| Frame::over(p, y)).collect()
+pub(crate) fn frames_over<'a>(family: &'a [(SectionSample, SectionSample)], perceived: &'a [Perceived]) -> Vec<PerceivedPair<'a>> {
+    family.iter().zip(perceived).map(|((_, y), p)| PerceivedPair::over(p, y)).collect()
 }
 
-impl<'a> Frame<'a> {
-    pub(crate) fn over(p: &'a Perceived, y: &'a Grid) -> Frame<'a> {
+impl<'a> PerceivedPair<'a> {
+    pub(crate) fn over(p: &'a Perceived, y: &'a SectionSample) -> PerceivedPair<'a> {
         let (bodies, images) = (p.bodies.as_slice(), p.images.as_slice());
         let mut by_chart: Keyed<Vec<usize>> = Keyed::new();
         for (i, b) in bodies.iter().enumerate() {
@@ -122,7 +122,7 @@ impl<'a> Frame<'a> {
                 image_at.insert(l.site.key(), i);
             }
         }
-        Frame { y, bodies, images, by_chart, image_at }
+        PerceivedPair { y, bodies, images, by_chart, image_at }
     }
 
     /// The bodies of `x` on one chart: a keyed read of the fibre.
@@ -150,7 +150,7 @@ fn site_key(r: i64, c: i64) -> Vec<u8> {
 /// 50.1 step 1 at one FRAME of the family's one body (51.8): `(V · W · γ) ·
 /// B_in = B_out` under exact equality compartment by compartment, for every body of
 /// the vertex's chart on the frame.
-pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64) -> Carried {
+pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, frame: u64) -> Carried {
     let Vertex::Word { derivation, contact, acts, .. } = vertex else {
         return Carried::Silent;
     };
@@ -211,7 +211,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
                 let (Ok(ur), Ok(uc)) = (usize::try_from(tr), usize::try_from(tc)) else {
                     return Carried::Refused(FAIL_BEFORE_FRAME, at());
                 };
-                let Some(&observed) = y.get(ur).and_then(|row| row.get(uc)) else {
+                let Some(&observed) = y.line(ur).and_then(|row| row.get(uc)) else {
                     return Carried::Refused(FAIL_PAST_FRAME, at());
                 };
                 // The gauge is asked for ONE image and refuses where it
@@ -254,7 +254,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
 fn form_covers_compartments(
     f: &Form,
     frame: u64,
-    at: &Frame<'_>,
+    at: &PerceivedPair<'_>,
     compartments: &[Compartment],
 ) -> bool {
     let mut covered: Keyed<u8> = Keyed::new();
@@ -292,16 +292,18 @@ fn form_covers_compartments(
     })
 }
 
-/// Do two sites stand in one frame — every coordinate off the grid axes
-/// equal? A compartment carried into another frame is no compartment of the grid this
-/// frame is replayed against.
+/// Do two sites stand in one frame — every coordinate off the space axes
+/// (the axes the default perspective reads as space) equal? A compartment
+/// carried into another frame is no compartment of the sample this frame is
+/// replayed against.
 fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Site) -> bool {
+    use crate::transducer::perspective::{family_role, Role};
     a.n() == b.n()
         && a.axes()
             .iter()
             .zip(b.axes())
             .enumerate()
-            .all(|(i, (x, y))| crate::transducer::base::is_grid_axis(i) || x == y)
+            .all(|(i, (x, y))| family_role(a.n(), i) == Some(Role::Space) || x == y)
 }
 
 /// 23.1 step 3 ALONG `e₃` (51.8): `REFUSE_VERTEX_BODY` at the vertex, with
@@ -313,7 +315,7 @@ fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Si
 /// stands along the whole of `e₃` unless it is a section of some frames
 /// only — and the claim is a keyed read of its members' frames at the frame's
 /// own coordinate (AT1), never a walk of a list.
-pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<(Refusal, &'static str)> {
+pub(crate) fn vertices_carry_frames(f: &Form, family: &[(SectionSample, SectionSample)]) -> Option<(Refusal, &'static str)> {
     let perceived = perceive_family(family);
     let mut why = None;
     match carry_frames_from(f, family, &perceived, &mut Meter::Free, 0, &mut why) {
@@ -336,7 +338,7 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
 /// resumes at.
 pub(crate) fn vertices_carry_frames_from(
     f: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     perceived: &[Perceived],
     meter: &mut Meter<'_>,
     from: usize,
@@ -354,7 +356,7 @@ fn r_proof_unread() -> &'static str {
 /// by into `why` — the one reader both the replay and the mint read.
 fn carry_frames_from(
     f: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     perceived: &[Perceived],
     meter: &mut Meter<'_>,
     from: usize,
@@ -442,7 +444,7 @@ fn fault_slot(why: &str) -> usize {
 /// `versor`: a keyed read of the frame's occupancy at the carried site. The
 /// anchor is the least compartment in the body's own order — a coordinate of
 /// the body, never a choice among its compartments.
-fn image_body<'a>(body: &Body, versor: &Versor, at: &'a Frame<'_>) -> Option<&'a Body> {
+fn image_body<'a>(body: &Body, versor: &Versor, at: &'a PerceivedPair<'_>) -> Option<&'a Body> {
     let [anchor, ..] = body.compartments.as_slice() else {
         return None;
     };
@@ -492,19 +494,19 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
 /// that does not place is a transition claimed over nothing the court
 /// holds: a claim that does not re-derive, I.
 fn motor_carries(
-    frames: &[Frame<'_>],
+    frames: &[PerceivedPair<'_>],
     x: &crate::network::nerve::coord::MemberAt,
     y: &crate::network::nerve::coord::MemberAt,
     motor: &Versor,
     budget: &mut crate::physics::Budget,
 ) -> Result<Option<Refusal>, Unbounded> {
-    use crate::transducer::base::FRAME_AXIS;
+    use crate::transducer::perspective::family_place_axis;
     let at = |k: u64| usize::try_from(k).ok().and_then(|i| frames.get(i));
     let placed = |fibre: &[&Body], k: i64| -> Option<Vec<crate::transducer::base::Site>> {
         let mut s: Vec<_> = fibre
             .iter()
             .flat_map(|b| b.compartments.iter())
-            .map(|l| l.site.with_axis(FRAME_AXIS, k))
+            .map(|l| l.site.with_axis(family_place_axis(l.site.n())?, k))
             .collect::<Option<_>>()?;
         s.sort_unstable();
         s.dedup();
@@ -560,7 +562,7 @@ fn motor_carries(
 #[cfg(test)]
 pub(crate) fn edges_rederive_frames(
     f: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
     let perceived = perceive_family(family);
@@ -584,7 +586,7 @@ pub(crate) fn edges_rederive_frames(
 /// word on a spent stroke).
 pub(crate) fn edges_rederive_frames_from(
     f: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     perceived: &[Perceived],
     budget: &mut crate::physics::Budget,
     from: usize,
@@ -715,7 +717,7 @@ pub(crate) fn undeclared_remainder(remainders: &[Vec<(i64, i64, u8, u8)>], f: &F
         .flatten()
         .copied()
         .filter(|&(r, c, spoken, observed)| {
-            spoken != crate::arc::ground() || !declared.get(&site_key(r, c)).is_some_and(|hues| hues.contains(&observed))
+            !crate::transducer::raster::is_ground(spoken) || !declared.get(&site_key(r, c)).is_some_and(|hues| hues.contains(&observed))
         })
         .collect();
     out.sort_unstable();

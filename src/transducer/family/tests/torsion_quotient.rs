@@ -44,15 +44,17 @@ fn said(q: &crate::transducer::family::torsion_quotient::Quotient, a: &[u8], b: 
 }
 
 /// A PIECE'S PIVOT IS ITS SITES' CENTROID IN VERTEX COORDINATES: each axis's
-/// mean, one half on each grid axis, the frame axis as it stands — the same
-/// point the lifted body reads (`Blade::vertex_point`). Sites of two bases,
-/// or none, give no pivot.
+/// mean, one half on each axis the default perspective reads as space, the
+/// sample's place as it stands — the same point the lifted body reads
+/// (`Blade::vertex_point`). A base of two coordinates is a rank-1 sample and
+/// its place (track 26 S4b), so only its first axis takes the half. Sites
+/// of two bases, or none, give no pivot.
 #[test]
 fn vertex_point_equals_sites_centroid() {
     let sites = [Site::of([0, 0]), Site::of([0, 1])];
     let (point, n) = vertex_point(&sites).expect("two sites of one base");
     assert_eq!(n, 2);
-    assert!(point.projective_eq(&cga::point_at(&[q(1, 2), q(1, 1)])), "(0, ½) + (½, ½)");
+    assert!(point.projective_eq(&cga::point_at(&[q(1, 2), q(1, 2)])), "(0, ½) + (½, 0): the place takes no half");
     let framed = [Site::of([1, 2, 5])];
     let (point, _) = vertex_point(&framed).expect("one site");
     assert!(point.projective_eq(&cga::point_at(&[q(3, 2), q(5, 2), q(5, 1)])), "the frame axis takes no half");
@@ -148,7 +150,8 @@ fn read_pieces_merges_nothing_for_sections_or_ended_stroke() {
 /// body turns in place.
 #[test]
 fn extract_rule_quotient_reads_percept_algorithms() {
-    use super::common::grid;
+    crate::transducer::raster::stand_on(0);
+    use super::fixtures::grid;
     let slides = vec![
         (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
         (grid(&["0000110", "0000000", "0200000", "0220000"]), grid(&["0000110", "0000000", "0002000", "0002200"])),

@@ -45,8 +45,8 @@ fn ratio(walk: i128, alloc: i128) -> String {
 /// and the census must read that family's own file.
 pub(crate) fn find_id(dir: &str, names: &[String], want: &str) {
     for file in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         // The registry names a task by its citation, the id a voice speaks.
         let Some(id) = mycelium::server::registry::task_citation(&task) else { continue };
         let hx: String = id.iter().take(2).map(|b| format!("{b:02x}")).collect();
@@ -55,7 +55,7 @@ pub(crate) fn find_id(dir: &str, names: &[String], want: &str) {
         }
         // And its form, which is what the census is for: the reading is
         // the family's own size, not the id.
-        let epi = mycelium::client::sdk::Epigenome::new();
+        let epi = mycelium::client::sdk::MindLanguage::new();
         let mut physics = mycelium::physics::Physics::default();
         let frames = perceive_family(&task.train);
         let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
@@ -97,15 +97,15 @@ pub(crate) fn report(dir: &str, name: &str) {
 
     // ── ONE FORM. The allocator's delta around a clone against the walk's
     // figure for the same object.
-    let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else {
+    let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else {
         eprintln!("  calibrate refused: {dir}/{name} does not read");
         return;
     };
-    let Some(task) = mycelium::arc::parse_task(&json) else {
+    let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else {
         eprintln!("  calibrate refused: not a task");
         return;
     };
-    let epi = mycelium::client::sdk::Epigenome::new();
+    let epi = mycelium::client::sdk::MindLanguage::new();
     let mut physics = mycelium::physics::Physics::default();
     let frames = perceive_family(&task.train);
     let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));

@@ -4,7 +4,7 @@
 //! prove the orbit admits the discharges' difference, and that difference is a measured
 //! rotor rather than a losing candidate.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::{LetterId, PlaneForm, Word};
 use crate::transducer::sentence::*;
 

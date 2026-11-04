@@ -20,11 +20,11 @@
 //! faculty (78.91's owed row).
 
 use crate::physics::laws::{flux_of_links, verify_flux, Flux};
-use crate::transducer::sentence::{Demand, Link};
+use crate::transducer::sentence::{Demand, SectionLink};
 use crate::transducer::stalk::Invariant;
 
 /// One demand as the percept carries it: its kind, its chart, its links.
-pub type Named = (Demand, Invariant, Vec<Link>);
+pub type Named = (Demand, Invariant, Vec<SectionLink>);
 
 /// THE FLUXES ONE PERCEPT PERCEIVED: every non-motion demand read as the
 /// flux its links carry and put to the law; the lawful ones returned, in the

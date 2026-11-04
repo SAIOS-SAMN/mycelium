@@ -15,7 +15,7 @@ use crate::anastome::dialogue::universe::{Geometry, Metric, Stated, Statement};
 use crate::transducer::cga::Mv;
 use crate::anastome::dialogue::wallet::{StakeAct, StakeRefusal};
 use crate::chronometry::tuniversal::{Origin, TPoint};
-use super::common::close_through;
+use super::fixtures::close_through;
 use crate::server::cognition::Court;
 use ed25519_dalek::{Signer, SigningKey};
 
@@ -37,7 +37,7 @@ fn reserve(d: u8) -> SigningKey {
 
 /// A final point of the mesh at tick `h`.
 fn fp(h: u64) -> TPoint {
-    TPoint { origin: Origin { genesis: [9; 32], epoch: 0 }, h, lanes: [h, 0, 0, 0], k: h }
+    TPoint { origin: Origin { genesis: [9; 32], epoch: 0 }, h, lanes: [h, 0, 0, 0].into(), k: h }
 }
 
 /// Domains 4 and 5 founded, each its own reserve, and a tube open between
@@ -134,7 +134,7 @@ fn traverse(k: &mut Court, m: [u8; 32], at: u64, route: Vec<[u8; 32]>, carried: 
     let ((entry_a, u_a), (entry_b, u_b)) = (head(k, 4), head(k, 5));
     let point = |k: &Court, d: u8, side: u8| {
         let id = crate::server::cognition::atlas::mouth_citation(&domain(d), &m, side);
-        k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point)
+        k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point.clone())
     };
     let (point_a, point_b) = (point(k, 4, 0), point(k, 5, 1));
     let payer = key(60);
@@ -154,7 +154,7 @@ fn traverse(k: &mut Court, m: [u8; 32], at: u64, route: Vec<[u8; 32]>, carried: 
 /// court's read price (a calm court: one μ a unit), claimed on the stake,
 /// and paid whole to the court when the window closes; never minted. The
 /// edge reads pending until the receiver applies the crossing in its next
-/// entry, then its residual.
+/// entry, then its residue.
 #[test]
 fn traverse_pays_exact_gas_to_map_keeper() {
     let (mut k, m, keeper) = founded();
@@ -185,7 +185,7 @@ fn traverse_pays_exact_gas_to_map_keeper() {
     assert_eq!(k.claims_on(&verifying(&payer)), exact, "held as a claim");
     assert_eq!(k.treasury.balance_mu(&court), court_before, "held, not yet paid");
     let edge = k.crossing_edge(&crossing).expect("the edge on the map");
-    assert_eq!((edge.u_a, edge.u_entry, edge.u_applied, edge.residual()), (100, 7, None, None), "pending, never a disagreement");
+    assert_eq!((edge.u_a, edge.u_entry, edge.u_applied, edge.residue()), (100, 7, None, None), "pending, never a disagreement");
     assert!(h <= k.chain.head_height());
     pass(&mut k);
     k.settle_windows();
@@ -196,7 +196,7 @@ fn traverse_pays_exact_gas_to_map_keeper() {
     assert!(k.treasury.audit().is_ok(), "both equations hold");
     assert!(matches!(commit(&mut k, 5, 9, 14, 14, vec![(crossing, 9)]), Ledgered::Sealed { .. }));
     let edge = k.crossing_edge(&crossing).expect("the edge");
-    assert_eq!((edge.u_applied, edge.residual()), (Some(9), Some(2)), "applied at 9 against the entry's 7");
+    assert_eq!((edge.u_applied, edge.residue()), (Some(9), Some(2)), "applied at 9 against the entry's 7");
     assert_eq!(commit(&mut k, 5, 10, 14, 14, vec![(crossing, 10)]), Ledgered::Refused(LedgerRefusal::Applied), "applied once");
 }
 
@@ -305,7 +305,7 @@ fn ledger_chains_refuses_forks_and_reads_dilation() {
     assert_eq!(k.ledger(&entry(12, 13, first).sign(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotFinal), "above the court's point");
     assert_eq!(k.ledger(&entry(12, 12, first).sign(&reserve(4)), None), Ledgered::Refused(LedgerRefusal::NotFinal), "no final point read");
     assert_eq!(k.ledger(&entry(12, 9, first).sign(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::Behind));
-    let other_lanes = TPoint { lanes: [1, 1, 1, 1], ..fp(10) };
+    let other_lanes = TPoint { lanes: [1, 1, 1, 1].into(), ..fp(10) };
     let forged = LedgerEntry { point: other_lanes, ..entry(12, 10, first) };
     assert_eq!(k.ledger(&forged.sign(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotFinal), "a point at a held tick that is not the point held");
     assert_eq!(k.ledger(&entry(12, 12, first).sign(&key(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotReserve), "the founder is not the reserve");
@@ -466,7 +466,7 @@ fn map_local_throat_reads_ends_exactly() {
 /// is A; its freshness the record's N; the gas S 3/2 (its throat segment), G
 /// and H as declared, T 0 (one record, one mapped point); the fee `[1, 2, 0,
 /// 3]` claimed and paid whole at the window, nothing minted; the edge
-/// pending, then applied in A's next entry at 101 against 100: residual 1.
+/// pending, then applied in A's next entry at 101 against 100: residue 1.
 #[test]
 fn traverse_local_throat_pays_and_applies() {
     let (mut k, _, _) = founded();
@@ -510,7 +510,7 @@ fn traverse_local_throat_pays_and_applies() {
     assert_eq!(fee, exact, "3/2 on S exactly");
     assert_eq!(k.claims_on(&verifying(&payer)), exact);
     let edge = k.crossing_edge(&crossing).expect("the edge");
-    assert_eq!((edge.from, edge.to, edge.u_entry, edge.residual()), (domain(4), domain(4), 100, None), "pending, into its own universe");
+    assert_eq!((edge.from, edge.to, edge.u_entry, edge.residue()), (domain(4), domain(4), 100, None), "pending, into its own universe");
     assert!(h <= k.chain.head_height());
     pass(&mut k);
     k.settle_windows();
@@ -518,6 +518,6 @@ fn traverse_local_throat_pays_and_applies() {
     assert_eq!(paid, exact, "paid whole to the court keeping the map");
     assert_eq!(k.treasury.minted(), minted_before, "never a mint");
     assert!(matches!(commit(&mut k, 4, 101, 14, 14, vec![(crossing, 101)]), Ledgered::Sealed { .. }));
-    assert_eq!(k.crossing_edge(&crossing).and_then(|e| e.residual()), Some(1), "applied at 101 against 100");
+    assert_eq!(k.crossing_edge(&crossing).and_then(|e| e.residue()), Some(1), "applied at 101 against 100");
     assert!(k.treasury.audit().is_ok());
 }

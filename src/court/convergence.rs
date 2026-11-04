@@ -37,7 +37,7 @@ impl Rederivation {
 #[derive(Debug, Default, Clone)]
 pub struct Convergence {
     rederived: Keyed<Keyed<Rederivation>>,
-    /// Voices that uttered an identical residual: a use and a settlement
+    /// Voices that uttered an identical residue: a use and a settlement
     /// party, kept apart from the organs so a mouth can never be mistaken
     /// for a vantage.
     uses: Keyed<Keyed<()>>,
@@ -88,7 +88,7 @@ impl Convergence {
         }
     }
 
-    /// A voice uttered an identical residual: a use, and a party to the
+    /// A voice uttered an identical residue: a use, and a party to the
     /// settlement. Never a vantage.
     /// AN OBJECT THE COURT NO LONGER HOLDS: its re-derivations and its uses
     /// leave with it.

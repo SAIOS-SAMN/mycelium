@@ -135,14 +135,14 @@ pub(crate) fn meet_edge(
 /// orbits, and the form is built by the extraction.
 pub(crate) struct Covered {
     pub(crate) demand: Demanded,
-    pub(crate) cover: crate::transducer::family::cover::Cover,
+    pub(crate) cover: crate::transducer::family::cover::PiecewiseCarriage,
     /// The frame the cover was read on; its pieces' supports stand there.
     pub(crate) frame: i64,
 }
 
 /// The links a deformation stands for: the union of both bodies' supports,
 /// each with the hue before and after (0 where a body has no compartment).
-pub(crate) fn delta_links(a: &Body, b: &Body) -> Vec<Link> {
+pub(crate) fn delta_links(a: &Body, b: &Body) -> Result<Vec<SectionLink>, transduce::Unground> {
     let mut before: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
     for l in &a.compartments {
         before.insert(l.site.key(), l.hue);
@@ -151,14 +151,15 @@ pub(crate) fn delta_links(a: &Body, b: &Body) -> Vec<Link> {
     for l in &b.compartments {
         after.insert(l.site.key(), l.hue);
     }
-    let void = crate::arc::ground();
-    let mut links: Vec<Link> = Vec::new();
+    // Read where a link needs it; a scope with no one ground refuses by name.
+    let void = crate::transducer::raster::void();
+    let mut links: Vec<SectionLink> = Vec::new();
     for l in &a.compartments {
         // A site the image does not hold is absent there, and the scene's
         // ground IS absence in this encoding.
         let gone = match after.get(&l.site.key()) {
             Some(h2) => *h2,
-            None => void,
+            None => void?,
         };
         if let Some((r, c)) = on_grid(&l.site) {
             links.push((r, c, l.hue, gone));
@@ -166,10 +167,10 @@ pub(crate) fn delta_links(a: &Body, b: &Body) -> Vec<Link> {
     }
     for l in &b.compartments {
         if let (false, Some((r, c))) = (before.contains(&l.site.key()), on_grid(&l.site)) {
-            links.push((r, c, void, l.hue));
+            links.push((r, c, void?, l.hue));
         }
     }
     links.sort_unstable();
     links.dedup();
-    links
+    Ok(links)
 }

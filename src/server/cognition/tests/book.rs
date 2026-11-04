@@ -1,7 +1,7 @@
 // 23 — THE BOOK and THE BASIS: what the mind holds, what it teaches, and
 // what it refuses to order.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::germinate::germinate;
 use crate::transducer::element::{self, Element};
@@ -53,6 +53,7 @@ assert_eq!(k.basis_len(), 1, "transposition mints nothing");
 /// leaves) is retired by the redundancy probe; an essential one survives it.
 #[test]
 fn optimize_retires_redundant_generator() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::germinate::germinate;
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
@@ -60,7 +61,7 @@ let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
 k.basis_insert(element::from_canonical(&germinate(&a, &rot).unwrap()), [1; 32]);
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
-k.basis_insert(element::from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)), [7; 32]);
+k.basis_insert(element::from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::transducer::element::Frame::new(4, 4, 8, 8)), [7; 32]);
 assert_eq!(k.basis_len(), 2);
 k.optimize();
 assert_eq!(k.basis_len(), 1, "the redundant rule is consolidated away");
@@ -72,6 +73,7 @@ assert_eq!(k.basis_len(), 1, "an essential generator survives the probe");
 /// earlier derivable sibling used to leave that index equal to len.
 #[test]
 fn refine_stratum_keeps_survivor_at_last_index() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::element::{from_canonical, from_canonical_framed};
 use crate::transducer::germinate::germinate;
 let mut k = Court::new();
@@ -81,11 +83,11 @@ k.basis_insert(from_canonical(&germinate(&a, &rot).unwrap()), [1; 32]);
 let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
 k.basis_insert(
-    from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(4, 4, 8, 8)),
+    from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::transducer::element::Frame::new(4, 4, 8, 8)),
     [7; 32],
 );
 k.basis_insert(
-    from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::arc::Frame::new(3, 3, 6, 6)),
+    from_canonical_framed(&germinate(&a_far, &rot_far).unwrap(), &crate::transducer::element::Frame::new(3, 3, 6, 6)),
     [8; 32],
 );
 assert!(k.basis_len() >= 2, "two distinct addresses remain");
@@ -149,6 +151,7 @@ assert_eq!(again.basis_len(), kept);
 /// An append shares the prior word's Arc; it does not clone the basis.
 #[test]
 fn language_append_shares_prior_word_arcs() {
+    crate::transducer::raster::stand_on(0);
 let mut k = Court::new();
 let w0 = crate::transducer::element::from_canonical(
     &germinate(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)], &[(0, 1, 1), (1, 0, 1), (1, 1, 1)]).unwrap(),
@@ -190,7 +193,7 @@ speak_pair(&mut k, &a, &b, [1; 32]);
 speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.scoped().next().unwrap().1.clone();
 let forged = strip_words(&spoken);
-let mut cover = crate::network::nerve::Cover::new();
+let mut cover = crate::network::nerve::HomeTrie::new();
 assert!(matches!(fetched(&mut k, &forged, [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
 // The simplices the complexes hold, each by its own key: a row that is not
 // re-filed moves none of them.
@@ -265,7 +268,7 @@ speak_pair(&mut k, &a, &b, [1; 32]);
 speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.scoped().next().unwrap().1.clone();
 let forged = strip_words(&spoken);
-let mut cover = crate::network::nerve::Cover::new();
+let mut cover = crate::network::nerve::HomeTrie::new();
 assert!(matches!(fetched(&mut k, &forged, [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
 assert_eq!(k.heard_len(), 1);
 let inv = crate::transducer::stalk::invariant_of(&forged);

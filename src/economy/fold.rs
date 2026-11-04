@@ -120,14 +120,14 @@ pub fn rows_below_page_of(entries: &[Entry], head: Place, skip: usize, n: usize)
 impl Treasury {
     /// The rows written before the act at `head`, in journal order: the
     /// prefix a fold at `head` re-expresses and a witness fetches
-    /// (`ACT_ROWS`).
+    /// (`ACT_ENTRIES`).
     pub fn rows_below(&self, head: Place) -> Vec<Entry> {
         self.entries.iter().filter(|e| e.stands_at() < Some(head)).cloned().collect()
     }
 
     /// 78.153b — ONE PAGE OF THE ROWS BELOW `head`, and how many stand
     /// there: the rows [`Treasury::rows_below`] answers, from the `skip`th,
-    /// at most `n` — only the page cloned, where `ACT_ROWS` cloned every row
+    /// at most `n` — only the page cloned, where `ACT_ENTRIES` cloned every row
     /// below the head for every page of them (the lock audit, row 17).
     ///
     /// THE JOURNAL IS NOT IN LINE ORDER: a release is written at its
@@ -140,7 +140,7 @@ impl Treasury {
     }
 
     /// The rows standing at `from` or later and written before the act at
-    /// `upto`, in journal order: what `ACT_ROWS` serves a witness. `from`
+    /// `upto`, in journal order: what `ACT_ENTRIES` serves a witness. `from`
     /// is the root the prefix stands on, `None` from the journal's start.
     ///
     /// 78.153b — A FILTER, NEVER A RUN. This bisected for `from` and broke at

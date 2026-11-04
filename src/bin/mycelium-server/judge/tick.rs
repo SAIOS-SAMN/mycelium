@@ -2,22 +2,22 @@
 // the door where the frame is read — before the work queue and on the
 // overflow path — so TUniversal never waits on this court's load.
 //
-//! The door takes no court here: `tshelf::hear_tick` is handed the mesh and
+//! The door takes no court here: `tuniversal::hear_tick` is handed the mesh and
 //! the frame, never the court. Answered one byte.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::{TICK_HEARD, TICK_REFUSED};
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
 /// A pushed ring heard and answered `TICK_HEARD`, or `TICK_REFUSED` where it
 /// does not read, its keeper is no known peer court, no origin is adopted
 /// here, or a reading was refused (counted by name in `hear_ring`).
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
-    let ack = match crate::tshelf::hear_tick(&door.mesh, &frame.body) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
+    let ack = match crate::tuniversal::hear_tick(&context.mesh, &frame.body) {
         Ok(_) => TICK_HEARD,
         Err(_) => TICK_REFUSED,
     };
-    answer(stream, Frame { lane: frame.lane, body: vec![ack] });
+    answer(stream, WireFrame { lane: frame.lane, body: vec![ack] });
 }

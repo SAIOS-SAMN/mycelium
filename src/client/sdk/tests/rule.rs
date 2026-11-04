@@ -2,43 +2,44 @@
 // REAL court (`Court::judge_solve`) on pairs it never saw, and the seam's
 // own `would_judge` agrees with that verdict, solved or refused.
 
-use crate::arc::Grid;
+use crate::transducer::family::SectionSample;
 use crate::client::sdk::rule::{sentence, would_judge, NoRule, Step, Symmetry};
 use crate::cognition::{Court, SolveVerdict};
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::Element;
 use crate::transducer::family::NoCrystal;
 
-fn grid(rows: &[&str]) -> Grid {
+fn grid(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
 /// The symmetry read off by index, as a grid is read — the fixture's
 /// expectation, never the seam's construction.
-fn apply(kind: Symmetry, g: &Grid) -> Grid {
-    let (h, w) = (g.len(), g[0].len());
+fn apply(kind: Symmetry, g: &SectionSample) -> SectionSample {
+    let [h, w] = g.extents();
     match kind {
         Symmetry::Rotate90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
-        Symmetry::Rotate180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
+        Symmetry::Rotate180 => g.lines().rev().map(|row| row.iter().rev().copied().collect()).collect(),
         Symmetry::Rotate270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
-        Symmetry::FlipH => g.iter().map(|row| row.iter().rev().copied().collect()).collect(),
-        Symmetry::FlipV => g.iter().rev().cloned().collect(),
+        Symmetry::FlipH => g.lines().map(|row| row.iter().rev().copied().collect()).collect(),
+        Symmetry::FlipV => g.lines().rev().map(<[u8]>::to_vec).collect(),
         Symmetry::Transpose => (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
     }
 }
 
-fn recolour(map: &[(u8, u8)], g: &Grid) -> Grid {
-    g.iter()
+fn recolour(map: &[(u8, u8)], g: &SectionSample) -> SectionSample {
+    g.lines()
         .map(|row| row.iter().map(|&h| map.iter().find(|(f, _)| *f == h).map_or(h, |(_, t)| *t)).collect())
         .collect()
 }
 
-fn shape(g: &Grid) -> (usize, usize) {
-    (g.len(), g[0].len())
+fn shape(g: &SectionSample) -> (usize, usize) {
+    let [h, w] = g.extents();
+    (h, w)
 }
 
 /// The court's verdict and the seam's, which must agree.
-fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<(), NoRule>) {
+fn judged(rule: &Element, withheld: &[(SectionSample, SectionSample)]) -> (SolveVerdict, Result<(), NoRule>) {
     let mut k = Court::new();
     let verdict = k.judge_solve(rule, withheld);
     let court: &Court = &k;
@@ -46,7 +47,7 @@ fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<()
     (verdict, seam)
 }
 
-fn assert_solved(rule: &Element, withheld: &[(Grid, Grid)], what: &str) {
+fn assert_solved(rule: &Element, withheld: &[(SectionSample, SectionSample)], what: &str) {
     let (verdict, seam) = judged(rule, withheld);
     assert!(matches!(verdict, SolveVerdict::Solved { .. }), "{what}: the court solves it: {verdict:?}");
     assert!(seam.is_ok(), "{what}: the seam agrees: {seam:?}");
@@ -55,10 +56,10 @@ fn assert_solved(rule: &Element, withheld: &[(Grid, Grid)], what: &str) {
 /// An L-shaped tromino on a 3 × 3 grid in two hues, and the same L placed
 /// elsewhere and painted otherwise for the withheld pair: one chart, a
 /// scene the rule never saw.
-fn square_train() -> Grid {
+fn square_train() -> SectionSample {
     grid(&["120", "100", "000"])
 }
-fn square_withheld() -> Grid {
+fn square_withheld() -> SectionSample {
     grid(&["000", "034", "030"])
 }
 
@@ -80,7 +81,7 @@ fn grid_motion_carries_every_site_to_index_image() {
         let x = grid(&["123", "456"]);
         let y = apply(kind, &x);
         let Some(Step::Motion(v)) = Step::grid_motion(kind, shape(&x), shape(&y)) else { panic!("{kind:?} fits") };
-        for (r, row) in x.iter().enumerate() {
+        for (r, row) in x.lines().enumerate() {
             for (c, &h) in row.iter().enumerate() {
                 let site = Site::of([r as i64, c as i64, 0]);
                 let to = crate::transducer::element::carry_site(&v, &site).expect("a site lands");
@@ -96,6 +97,7 @@ fn grid_motion_carries_every_site_to_index_image() {
 /// on a pair the rule never saw.
 #[test]
 fn sentence_of_solves_unseen_pair_by_square_symmetry() {
+    crate::transducer::raster::stand_on(0);
     for kind in [
         Symmetry::Rotate90,
         Symmetry::Rotate180,
@@ -120,6 +122,7 @@ fn sentence_of_solves_unseen_pair_by_square_symmetry() {
 /// shape the symmetry does not fit is no motion.
 #[test]
 fn grid_motion_exchanges_non_square_shape() {
+    crate::transducer::raster::stand_on(0);
     for kind in [Symmetry::Rotate90, Symmetry::Transpose] {
         let x = grid(&["120", "100"]);
         let y = apply(kind, &x);
@@ -143,6 +146,7 @@ fn grid_motion_exchanges_non_square_shape() {
 /// rule never saw.
 #[test]
 fn sentence_of_solves_unseen_pair_by_hue_permutation() {
+    crate::transducer::raster::stand_on(0);
     let map = [(1u8, 2u8), (2, 1)];
     let x = square_train();
     let rule = sentence(&[Step::Hue(map.to_vec())], &[(x.clone(), recolour(&map, &x))], &NoCrystal).expect("mints");
@@ -153,9 +157,10 @@ fn sentence_of_solves_unseen_pair_by_hue_permutation() {
 /// A motion followed by a recolour is minted and solved as one action.
 #[test]
 fn sentence_of_solves_motion_then_recolour_as_one() {
+    crate::transducer::raster::stand_on(0);
     let map = [(1u8, 5u8)];
     let steps = [Step::grid_motion(Symmetry::Rotate180, (3, 3), (3, 3)).expect("fits"), Step::Hue(map.to_vec())];
-    let then = |g: &Grid| recolour(&map, &apply(Symmetry::Rotate180, g));
+    let then = |g: &SectionSample| recolour(&map, &apply(Symmetry::Rotate180, g));
     let x = square_train();
     let rule = sentence(&steps, &[(x.clone(), then(&x))], &NoCrystal).expect("mints");
     let w = grid(&["000", "014", "010"]);
@@ -181,6 +186,7 @@ fn sentence_refuses_step_with_no_inverse() {
 /// refuse it where the plain motion is solved.
 #[test]
 fn judge_solve_refuses_dilated_motion_and_solves_plain() {
+    crate::transducer::raster::stand_on(0);
     let x = square_train();
     let y = apply(Symmetry::Rotate180, &x);
     let Some(Step::Motion(m)) = Step::grid_motion(Symmetry::Rotate180, (3, 3), (3, 3)) else { panic!("fits") };
@@ -213,6 +219,7 @@ fn judge_solve_refuses_dilated_motion_and_solves_plain() {
 /// replays on its training pairs, and is solved on the withheld pair.
 #[test]
 fn crossing_drops_training_frames_so_withheld_pair_solves() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::ObstructionKind;
     let train = vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
@@ -223,7 +230,7 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
     let spoken = crate::transducer::family::mint_sentence(&rule, &train, &NoCrystal, 0).expect("and mints");
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     assert!(
-        crate::verdict::blind_replay_at(&spoken, &|_| None, Some(&train), &NoCrystal, &mut budget).is_none(),
+        crate::verdict::reconstruct_blind_at(&spoken, &|_| None, Some(&train), &NoCrystal, &mut budget).is_none(),
         "the client's own replay on its training pairs passes"
     );
     let withheld = vec![(grid(&["1100", "0000"]), grid(&["0022", "0000"]))];
@@ -239,7 +246,7 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
     assert_ne!(crossed.address(), spoken.address(), "the training frames' overlaps are gone from the word");
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     assert!(
-        crate::verdict::blind_replay_at(&crossed, &|_| None, Some(&train), &NoCrystal, &mut budget).is_none(),
+        crate::verdict::reconstruct_blind_at(&crossed, &|_| None, Some(&train), &NoCrystal, &mut budget).is_none(),
         "the crossed word still replays on its training pairs"
     );
     assert_solved(&crossed, &withheld, "the crossed rule");
@@ -252,6 +259,7 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
 /// on its own strokes by its cursor — rules the same word.
 #[test]
 fn of_refusal_reads_unread_as_unjudged() {
+    crate::transducer::raster::stand_on(0);
     let train = vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0022"])),
@@ -276,7 +284,7 @@ fn of_refusal_reads_unread_as_unjudged() {
 /// check goes on to the replay.
 #[test]
 fn would_judge_refuses_citation_no_court_admitted() {
-    use crate::client::sdk::Epigenome;
+    use crate::client::sdk::MindLanguage;
     use crate::transducer::family::{cipher_form, sentence_measure};
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
@@ -285,9 +293,9 @@ fn would_judge_refuses_citation_no_court_admitted() {
     let held = cipher_form(&family[0].0, &family[0].1);
     let mag = sentence_measure(&held, &family[..1], &NoCrystal, 0).expect("the body is spoken");
     let cited = crate::transducer::sentence::as_element_form(&held, mag).expect("a tape");
-    let mut dialect = Epigenome::new();
+    let mut dialect = MindLanguage::new();
     dialect.stand_dialect_at(cited.clone(), 1, 1).expect("stood");
-    let rule = crate::transducer::family::extract_rule_with(&family, &dialect, &mut super::common::budget())
+    let rule = crate::transducer::family::extract_rule_with(&family, &dialect, &mut super::fixtures::budget())
         .expect("the family extracts");
     let spoken = crate::transducer::family::mint_sentence_why(&rule, &family, &dialect, 0).expect("and mints");
     assert!(
@@ -301,8 +309,8 @@ fn would_judge_refuses_citation_no_court_admitted() {
         "a dialect word is no citation the court holds: {home:?}"
     );
     // The same word, admitted at a court's stamp: the citation resolves.
-    let mut admitted = Epigenome::new();
-    admitted.learn(&cited.to_bytes().expect("the record writes"), &mut super::common::budget()).expect("learned");
+    let mut admitted = MindLanguage::new();
+    admitted.learn(&cited.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).expect("learned");
     admitted.admit_all_at(crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS));
     let court_words = |a: &[u8]| admitted.court_word(a).and_then(|w| w.form().cloned());
     let home = would_judge(&spoken, &family, &court_words, &admitted);

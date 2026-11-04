@@ -72,12 +72,14 @@ pub(super) fn unreached_demands(
     reached: &Keyed<()>,
     chart: &Invariant,
     n_in: usize,
-) -> Vec<Demanded> {
-    let void = crate::arc::ground();
-    let mut out_links: Vec<Link> = Vec::new();
+) -> Result<Vec<Demanded>, transduce::Unground> {
+    // Absence is written as the scene's one ground (`raster::void`), read
+    // where a link needs it; a scope with none refuses by name.
+    let void = crate::transducer::raster::void();
+    let mut out_links: Vec<SectionLink> = Vec::new();
     for l in &b0.compartments {
         if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
-            out_links.push((r, c, void, l.hue));
+            out_links.push((r, c, void?, l.hue));
         }
     }
     let mut out = Vec::new();
@@ -89,18 +91,18 @@ pub(super) fn unreached_demands(
             let at_zero = super::perceive::at_frame_zero(&body.compartments);
             let untouched = at_zero.iter().all(|l| !reached.contains(&l.site.key()));
             if untouched {
-                out.push(vanished(body));
+                out.push(vanished(body)?);
                 for l in &at_zero {
                     gone.insert(l.site.key(), ());
                 }
             }
         }
     }
-    let mut links: Vec<Link> = out_links;
+    let mut links: Vec<SectionLink> = out_links;
     for l in &a0.compartments {
         let k = l.site.key();
         if let (false, false, Some((r, c))) = (reached.contains(&k), gone.contains(&k), on_grid(&l.site)) {
-            links.push((r, c, l.hue, void));
+            links.push((r, c, l.hue, void?));
         }
     }
     links.sort_unstable();
@@ -108,17 +110,15 @@ pub(super) fn unreached_demands(
     if !links.is_empty() || out.is_empty() {
         out.push((Demand::Source { multiplicity: n_in }, chart.clone(), links));
     }
-    out
+    Ok(out)
 }
 
-/// A body that vanished: the empty chart on every axis (50.5).
-pub(super) fn vanished(body: &Body) -> Demanded {
+/// A body that vanished: the empty chart on every axis (50.5), each site
+/// gone to the scene's one ground; refused by name where the scope has none.
+pub(super) fn vanished(body: &Body) -> Result<Demanded, transduce::Unground> {
     #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the chart's Vec (an axis position in the body's moduli Invariant); the atlas row replaces the slot by the chart's coordinates")]
     let axes: Vec<u16> = (0..body.moduli.0.len() as u16).collect();
-    let links: Vec<Link> = body
-        .compartments
-        .iter()
-        .filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, l.hue, crate::arc::ground())))
-        .collect();
-    (Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, body.moduli.clone(), links)
+    let void = crate::transducer::raster::void()?;
+    let links: Vec<SectionLink> = body.compartments.iter().filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, l.hue, void))).collect();
+    Ok((Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, body.moduli.clone(), links))
 }

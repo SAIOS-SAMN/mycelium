@@ -465,12 +465,31 @@ pub fn conformal_factors(v: &Versor) -> Result<Conformal, Unfactored> {
     }
 }
 
-/// The base's three axes in the rotor chart (51.2): `e₀, e₁, e₃` are `r,
-/// c, k`, and `e₂` is off the base. Index 2 of a rotor's action is the row
-/// that says a turn leaves the base, and it is a row of the system here,
-/// never dropped.
-/// FORMAT: the rotor chart's axis indices of `r, c, k`.
-const BASE_AXES: [usize; 3] = [0, 1, 3];
+/// The alphabet base's axes in the rotor chart (51.2), each at its slot
+/// (`alphabet::slot_of_axis`): the sample's space axes and then its place,
+/// read off the slots and never listed. The orientation character
+/// ([`OFF_BASE_SLOT`]) is off the base: its row of a rotor's action says a
+/// turn leaves the base, and it is a row of the system here, never dropped.
+const BASE_AXES: [usize; crate::transducer::alphabet::ALPHABET_BASE_N] = base_slots();
+
+/// The slot of each axis of the alphabet's base, in axis order.
+const fn base_slots() -> [usize; crate::transducer::alphabet::ALPHABET_BASE_N] {
+    let mut out = [0usize; crate::transducer::alphabet::ALPHABET_BASE_N];
+    let mut axis = 0usize;
+    while axis < crate::transducer::alphabet::ALPHABET_BASE_N {
+        out[axis] = match crate::transducer::alphabet::slot_of_axis(axis) {
+            Some(s) => s as usize,
+            None => axis,
+        };
+        axis += 1;
+    }
+    out
+}
+
+/// THE ORIENTATION CHARACTER'S SLOT: the one slot of the chart no base axis
+/// stands on (`alphabet::axis_of_slot` reads none for it), after the
+/// sample's space axes.
+const OFF_BASE_SLOT: usize = crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
 
 /// THE BASE POINT OF A TURN (12.6; `cech::classify`'s standing note): a
 /// rotation about `p` rather than the origin is `T_p R T_p⁻¹ = T(p − R p)
@@ -527,7 +546,7 @@ pub fn turn_base_point(
 /// returned rather than one being collapsed into the other's absence.
 ///
 /// THE SPLIT IS TAKEN BY THE NORMAL EQUATIONS, `AᵀA p = Aᵀ t`, which over
-/// ℚ is exact elimination and nothing else: the residual `t − A p` is
+/// ℚ is exact elimination and nothing else: the residue `t − A p` is
 /// orthogonal to `Im(A)` by construction, hence lies in `ker(A)`, which is
 /// precisely the canonical twist. No tolerance, no rounding, no choice of
 /// free variable leaking into the answer (law 4, rule 11).
@@ -561,7 +580,10 @@ pub fn screw_of(
     // axes (51.2, law 6: `BASE_AXES` below), so the translation is read on
     // those three; a carriage with a component past them is no screw of
     // this rotor and refuses at the same-versor check.
-    let t = crate::transducer::cga::base_at(&carriage.sandwich(&crate::transducer::cga::point_at(&[])), 3)?;
+    let t = crate::transducer::cga::base_at(
+        &carriage.sandwich(&crate::transducer::cga::point_at(&[])),
+        crate::transducer::alphabet::ALPHABET_BASE_N,
+    )?;
     if !same_versor(carriage, &crate::transducer::cga::translator_at(&t)) {
         return None;
     }
@@ -581,7 +603,7 @@ pub fn screw_of(
                 false => -image[r_axis].clone(),
             };
         }
-        rows[3][col] = -image[2].clone();
+        rows[3][col] = -image[OFF_BASE_SLOT].clone();
     }
     for (row, rhs) in [t.0, t.1, t.2, Q::zero()].into_iter().enumerate() {
         rows[row][3] = rhs;
@@ -589,7 +611,7 @@ pub fn screw_of(
     // THE CENTRE, by the normal equations on the four rows. `AᵀA` is 3×3
     // over ℚ; where it is singular the rotor fixes a direction of the base
     // pointwise, the free coordinate is set to zero, and adding a kernel
-    // vector to `p` changes neither `A p` nor the residual below.
+    // vector to `p` changes neither `A p` nor the residue below.
     let a: [[Q; 3]; 4] = std::array::from_fn(|r| std::array::from_fn(|c| rows[r][c].clone()));
     let rhs: [Q; 4] = std::array::from_fn(|r| rows[r][3].clone());
     let mut normal: [[Q; 4]; 3] = std::array::from_fn(|_| std::array::from_fn(|_| Q::zero()));
@@ -600,22 +622,22 @@ pub fn screw_of(
         normal[i][3] = (0..4).map(|r| &a[r][i] * &rhs[r]).fold(Q::zero(), |s, x| s + x);
     }
     let centre = solve_base_point(square_to_rows(normal))?;
-    // THE RESIDUAL, exact: `t − A p`. Orthogonal to `Im(A)` by the normal
+    // THE RESIDUE, exact: `t − A p`. Orthogonal to `Im(A)` by the normal
     // equations, hence in `ker(A)`.
-    let residual: [Q; 4] = std::array::from_fn(|r| {
+    let residue: [Q; 4] = std::array::from_fn(|r| {
         (0..3).map(|c| &a[r][c] * &centre[c]).fold(Q::zero(), |s, x| s + x)
     });
-    let residual: [Q; 4] = std::array::from_fn(|r| &rhs[r] - &residual[r]);
+    let residue: [Q; 4] = std::array::from_fn(|r| &rhs[r] - &residue[r]);
     // THE OFF-BASE ROW IS NOT A SLIP. Row three says whether the turn
-    // carries the base off itself; a residual there is a reading this chart
+    // carries the base off itself; a residue there is a reading this chart
     // cannot take, which `Axis::OffPlane` carries, and it refuses rather
     // than being counted as a translation within the base (rule 11).
-    if !residual[3].is_zero() {
+    if !residue[3].is_zero() {
         return None;
     }
     Some(Screw {
         centre,
-        twist: [residual[0].clone(), residual[1].clone(), residual[2].clone()],
+        twist: [residue[0].clone(), residue[1].clone(), residue[2].clone()],
     })
 }
 
@@ -693,16 +715,27 @@ pub fn of_versor(v: Versor) -> Element {
 }
 
 /// THE LETTERS OF A CONNECTION as read off its description: the word,
-/// the A4 carriage, and the gauge map.
+/// the A4 carriage, the gauge map, and — a colour word's (track 26 S5) —
+/// the records its fibre relation keeps in e_∅, a typed section apart from
+/// the gauge map's symbols (`FibreRelation`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Letters {
     pub spelling: crate::transducer::alphabet::Spelling,
     pub carriage: Versor,
     pub sigma: Vec<(u8, u8)>,
+    pub records: Vec<u8>,
+}
+
+impl Letters {
+    /// The fibre relation the letters carry: the gauge map's rows and the
+    /// records in e_∅ (78.58).
+    pub fn fibre(&self) -> super::FibreRelation {
+        super::FibreRelation { rows: self.sigma.clone(), records: self.records.clone() }
+    }
 }
 
 impl Element {
-    /// The letters of this WORD — `None` for a residual germ or a word
+    /// The letters of this WORD — `None` for a residue germ or a word
     /// spoken before the alphabet (no tape: not a word of the language).
     ///
     /// Two tags, and they are the two the parser below reads: a connection
@@ -738,7 +771,21 @@ impl Element {
             pos += 2;
         }
         take_key_bytes(b, &mut pos)?;
-        Some((Letters { spelling, carriage, sigma }, pos))
+        // TRACK 26 S5 — A CONNECTION'S RECORD SECTION (`colour_word`): the
+        // records in e_∅ follow the remainder where there are any, `[n][c·n]`
+        // with n ≥ 1, strictly ascending, ending the description. Absent,
+        // nothing follows. A translation's sections follow its head instead
+        // (`translation_sections`), so only a connection reads one.
+        let mut records = Vec::new();
+        if tag == CONNECTION_TAG && pos < b.len() {
+            let m = take_key_count(b, &mut pos)?;
+            records = b.get(pos..pos + m)?.to_vec();
+            pos += m;
+            if m == 0 || pos != b.len() || !records.windows(2).all(|w| w[0] < w[1]) {
+                return None;
+            }
+        }
+        Some((Letters { spelling, carriage, sigma, records }, pos))
     }
 
     /// Tape re-derives vertex: the geodesic of the stored word is the same
@@ -759,7 +806,7 @@ impl Element {
     }
 
     /// Is this word a CONNECTION — letters on the tape and an invertible
-    /// versor. A residual chain is never a connection.
+    /// versor. A residue chain is never a connection.
     pub fn is_connection(&self) -> bool {
         let Some(letters) = self.letters() else {
             return false;
@@ -791,7 +838,7 @@ impl Element {
     /// This read `description()[0] == SENTENCE_TAG`, which made the kind of
     /// a word a property of a byte buffer. It is a property of the word's
     /// ADDRESS: `TAG_FORM` opens the canonical A21 coordinates of a closed
-    /// form and `TAG_RESIDUAL` opens everything else, and the two were
+    /// form and `TAG_RESIDUE` opens everything else, and the two were
     /// separated for exactly this reason — one tag over both meant
     /// `from_address` could not tell which layout it held.
     ///

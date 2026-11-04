@@ -6,7 +6,7 @@ use crate::cognition::book::speech::words_of_sentence;
 use crate::cognition::*;
 use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
 
-fn grid(rows: &[&str]) -> crate::arc::Grid {
+fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect()).collect()
 }
 
@@ -47,9 +47,10 @@ fn home_install_holds_sentence_words_in_language() {
     for family in [vec![(grid(&["11"]), grid(&["22"]))], vec![(grid(&["10", "11"]), grid(&["11", "10"]))]] {
         let Some(rule) = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)) else { continue };
         let Some(spoken) = mint_sentence(&rule, &family, &NoCrystal, 0) else { continue };
-        let task = crate::registry::task_address(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task identity");
+        let task = crate::registry::task_address(&crate::transducer::family::Task { train: family.clone(), test: Vec::new() }).expect("a task identity");
+        let stated = [super::fixtures::speaker_ground(&family)];
         k.bind_task_family(&task, family);
-        let codes = k.perceive_speech(speaker, task.as_bytes(), std::slice::from_ref(&spoken));
+        let codes = k.perceive_speech_under(speaker, task.as_bytes(), std::slice::from_ref(&spoken), &stated);
         assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD], "the sentence stands");
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let addr = spoken.address();

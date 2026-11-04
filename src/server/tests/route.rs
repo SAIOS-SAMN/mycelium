@@ -1,7 +1,7 @@
 // 26, mycelium#14 — A TASK'S ROUTES: read once on the intake's thread, kept
 // by the task's citation, and handed to every cover change by lookup.
 
-use crate::arc::Task;
+use crate::transducer::family::Task;
 use crate::cognition::Court;
 use crate::server::registry::TaskRegistry;
 use crate::server::route::{cover_walk, intake_walk, route_next};
@@ -9,13 +9,13 @@ use crate::transducer::stalk::chart::charts_read;
 use std::sync::{Arc, Mutex};
 
 fn pair_task() -> Task {
-    Task {
-        train: vec![
+    crate::transducer::family::task_of_lines(
+        vec![
             (vec![vec![1, 1, 0], vec![0, 3, 0]], vec![vec![2, 2, 0], vec![0, 3, 0]]),
             (vec![vec![0, 1], vec![1, 1]], vec![vec![0, 2], vec![2, 2]]),
         ],
-        test: vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
-    }
+        vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
+    )
 }
 
 /// A COVER CHANGE RE-HOMES BY LOOKUP: the walk `relocate_corpus` takes

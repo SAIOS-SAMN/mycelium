@@ -2,7 +2,7 @@
 // sign of the inversive product through GR1's pair reader; nesting is the
 // parse.
 
-use super::common::q;
+use super::fixtures::q;
 use crate::transducer::cga::*;
 
 fn z(n: i64) -> num_rational::BigRational {

@@ -68,10 +68,12 @@ impl Court {
         form: &crate::transducer::address::Address,
     ) {
         let address = s.address();
-        let entry = (voice, crate::transducer::address::Address::from(task), s.clone());
+        // The ground the sentence is being heard under (`hear_speech` opened
+        // it), kept for its re-hearing.
+        let entry = (voice, crate::transducer::address::Address::from(task), s.clone(), crate::transducer::raster::ground());
         match self.awaiting.get_mut(form.as_bytes()) {
             Some(bucket) => {
-                if bucket.iter().any(|(_, _, held)| held.address() == address) {
+                if bucket.iter().any(|(_, _, held, _)| held.address() == address) {
                     return;
                 }
                 bucket.push(entry);
@@ -80,10 +82,10 @@ impl Court {
                 self.awaiting.insert(form.clone(), vec![entry]);
             }
         }
-        // 76 — A SENTENCE WAITING ON A WORD IS THAT WORD'S PRESSURE: its frame
+        // 76 — A SENTENCE WAITING ON A WORD IS THAT WORD'S PRESSURE: a frame
         // is transported to the word's escrow and the word is carried again,
         // where this court holds it in flight.
-        self.press(form.as_bytes(), s.magnitude());
+        self.press(form.as_bytes());
     }
 
     /// THE WORD THEY WAITED ON LAPSED: every sentence waiting on it is
@@ -94,7 +96,7 @@ impl Court {
         let Some(waiting) = self.awaiting.remove(form) else {
             return;
         };
-        for (voice, _task, s) in waiting {
+        for (voice, _task, s, _ground) in waiting {
             let refusal = crate::court::verdict::Refusal::of_tape(crate::verdict::REFUSE_GLUED_UNRULED, &s);
             let _ = self.refuse_sentence(voice, &s, refusal);
         }
@@ -118,16 +120,18 @@ impl Court {
         // resumed where it stopped. Dropped, the citer was lost for good:
         // the form it waited on is ruled and nothing would wake it.
         let mut unread = Vec::new();
-        for (voice, task, s) in waiting {
+        for (voice, task, s, ground) in waiting {
             // Through `adjudicate_one`, not `hear_sentence`. A re-hearing
             // is an adjudication like any other: a refusal on it must be
             // RECORDED in `refusals` with its receipt, or the voice's next
             // utterance cannot cite it as a contraction certificate (50.9)
             // and the refusal exists only in a log line. Dropping the
             // outcome here made the second hearing the one hearing whose
-            // verdict nobody kept.
-            if let Err([0, 0, 0, 0]) = self.adjudicate_one(voice, task.as_bytes(), &s, None, budget) {
-                unread.push((voice, task, s));
+            // verdict nobody kept. Heard under the ground its claim was
+            // first heard under (MU-SENSING §6.2): none is deduced here.
+            let heard = crate::transducer::raster::on_ground(ground.clone(), || self.adjudicate_one(voice, task.as_bytes(), &s, None, budget));
+            if let Err([0, 0, 0, 0]) = heard {
+                unread.push((voice, task, s, ground));
             }
         }
         if !unread.is_empty() {

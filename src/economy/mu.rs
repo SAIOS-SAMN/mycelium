@@ -227,6 +227,15 @@ impl Mu {
         Some(out)
     }
 
+    /// EACH LANE OVER ITS OWN WHOLE, exactly: lane `l` divided by `by[l]`,
+    /// the share of that whole the lane holds. `None` where a whole is zero.
+    pub fn over(&self, by: [u64; 4]) -> Option<Mu> {
+        if by.contains(&0) {
+            return None;
+        }
+        Some(Mu::new(std::array::from_fn(|l| &self.0[l] / Q::from_integer(BigInt::from(by[l])))))
+    }
+
     /// `self · r` on every lane, exactly; `None` for a negative factor.
     pub fn scaled(&self, r: &Q) -> Option<Mu> {
         if r.is_negative() {

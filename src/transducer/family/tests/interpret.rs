@@ -3,7 +3,7 @@
 // mass among the bodies of its pair decides where its own volume, density and
 // direction cannot — judged by replay, leave one out.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::family::incongruence::{decide, single_changes};
 use crate::transducer::family::interpret::interpret;
 
@@ -15,6 +15,7 @@ use crate::transducer::family::interpret::interpret;
 /// recolour from the other pair, and the replay reproduces all four.
 #[test]
 fn decide_ranks_by_pair_where_body_alone_cannot() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
         (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),
@@ -25,7 +26,7 @@ fn decide_ranks_by_pair_where_body_alone_cannot() {
         .iter()
         .map(|(x, y)| {
             let mut rem = Vec::new();
-            for (r, row) in y.iter().enumerate() {
+            for (r, row) in y.lines().enumerate() {
                 for (c, &h) in row.iter().enumerate() {
                     if h != 0 {
                         rem.push((r as i64, c as i64, x[r][c], h));
@@ -51,13 +52,14 @@ fn decide_ranks_by_pair_where_body_alone_cannot() {
 /// remainders summing to what it read after.
 #[test]
 fn interpret_reads_speech_remainder() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
         (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("a rule");
-    let empty = crate::client::sdk::Epigenome::new();
+    let empty = crate::client::sdk::MindLanguage::new();
     let (_, rem) = crate::transducer::family::form_deflation(&rule.form, &family, &empty);
     let left: u64 = rem.iter().map(|r| r.len() as u64).sum();
     let (joined, read) = interpret(&rule.form, &family, &rem, &empty, &mut budget);

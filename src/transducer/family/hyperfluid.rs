@@ -27,7 +27,7 @@
 //! agreed on, or its time is unread and the pair is refused by name.
 
 use super::luminal::DIRECTIONS;
-use super::reconstruct::{at, field, key, Site, AXES};
+use super::reconstruct::{at, field, key, SiteAxes, AXES};
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::{base_vector, e_inf, wedge, FlowPoint};
@@ -79,11 +79,12 @@ fn null_plane(dir: (i64, i64)) -> crate::transducer::cga::Mv {
 
 /// The free reach along `dir` from `(r, c)` and how it ends: the input's
 /// empty sites up to the frame's edge (`true`) or the first body (`false`).
-fn reach(x: &Grid, (r, c): (i64, i64), (dr, dc): (i64, i64)) -> (i64, bool) {
+fn reach(x: &SectionSample, (r, c): (i64, i64), (dr, dc): (i64, i64)) -> (i64, bool) {
+    let ground = crate::transducer::raster::ground();
     let mut t = 1i64;
     loop {
         match at(x, r + t * dr, c + t * dc) {
-            Some(0) => t += 1,
+            Some(h) if ground.holds(&h) => t += 1,
             Some(_) => return (t - 1, false),
             None => return (t - 1, true),
         }
@@ -92,23 +93,23 @@ fn reach(x: &Grid, (r, c): (i64, i64), (dr, dc): (i64, i64)) -> (i64, bool) {
 
 /// HR5 — THE FLOW FIELD of one pair, in `field`'s order. `None` where the
 /// frames differ.
-pub fn flows(x: &Grid, y: &Grid) -> Option<Vec<Flow>> {
-    if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
+pub fn flows(x: &SectionSample, y: &SectionSample) -> Option<Vec<Flow>> {
+    if x.extents() != y.extents() {
         return None;
     }
     let mut out = Vec::new();
     // The void sites the light reaches, gathered where each ray is read.
-    let void = crate::arc::ground();
+    let ground = crate::transducer::raster::ground();
     let mut lit: Vec<(i64, i64)> = Vec::new();
-    for (r, row) in x.iter().enumerate() {
+    for (r, row) in x.lines().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let to = at(y, ri, ci)?;
             let mut light = Vec::new();
-            if h != void {
+            if !ground.holds(&h) {
                 for (k, &(dr, dc)) in (0u8..).zip(DIRECTIONS.iter()) {
                     let (free, edge) = reach(x, (ri, ci), (dr, dc));
-                    let Some(hue) = at(y, ri + dr, ci + dc).filter(|&o| o != void && free > 0) else { continue };
+                    let Some(hue) = at(y, ri + dr, ci + dc).filter(|&o| !ground.holds(&o) && free > 0) else { continue };
                     let mut len = 1i64;
                     while len < free && at(y, ri + (len + 1) * dr, ci + (len + 1) * dc) == Some(hue) {
                         len += 1;
@@ -127,12 +128,15 @@ pub fn flows(x: &Grid, y: &Grid) -> Option<Vec<Flow>> {
     }
     // A VOID SITE THE LIGHT REACHES MOVES NOTHING OF ITS OWN: its colour is
     // the arrival of a flow emitted elsewhere, carried by that ray, so its own
-    // gauge is the void's (0 → 0). Counted as its own move it would read the
-    // light twice, once at its source and once as a gauge lift where it lands.
-    let sites = x.iter().enumerate().flat_map(|(r, row)| (0..row.len()).map(move |c| (r as i64, c as i64)));
+    // gauge is the void's (the ground symbol it holds, onto itself). Counted
+    // as its own move it would read the light twice, once at its source and
+    // once as a gauge lift where it lands.
+    let sites = x.lines().enumerate().flat_map(|(r, row)| (0..row.len()).map(move |c| (r as i64, c as i64)));
     for (f, (r, c)) in out.iter_mut().zip(sites) {
-        if at(x, r, c) == Some(0) && lit.contains(&(r, c)) {
-            f.to = 0;
+        if let Some(h) = at(x, r, c).filter(|h| ground.holds(h)) {
+            if lit.contains(&(r, c)) {
+                f.to = h;
+            }
         }
     }
     Some(out)
@@ -192,13 +196,13 @@ impl TimeClosure {
 
 /// What a key carries on one axis: its flow, and per free ray (by direction
 /// and hue) every time it was observed at.
-struct Held {
+struct AxisRecord {
     flow: Flow,
     free_times: Vec<(u8, u8, Q)>,
 }
 
-fn table(pairs: &[(&[Site], &[Flow])], axis: usize) -> (Keyed<Held>, TimeClosure) {
-    let mut t: Keyed<Held> = Keyed::new();
+fn table(pairs: &[(&[SiteAxes], &[Flow])], axis: usize) -> (Keyed<AxisRecord>, TimeClosure) {
+    let mut t: Keyed<AxisRecord> = Keyed::new();
     let mut cl = TimeClosure::default();
     for (sites, moves) in pairs {
         for (s, m) in sites.iter().zip(moves.iter()) {
@@ -217,14 +221,14 @@ fn table(pairs: &[(&[Site], &[Flow])], axis: usize) -> (Keyed<Held>, TimeClosure
                         Congruence::InTime => cl.in_time += 1,
                         Congruence::Gauge => {
                             cl.gauge += 1;
-                            cl.gauge_void += u64::from(s.hue == crate::arc::ground());
+                            cl.gauge_void += u64::from(crate::transducer::raster::is_ground(s.hue));
                         }
                         Congruence::Light => cl.light += 1,
                     }
                     held.free_times.extend(free);
                 }
                 None => {
-                    t.insert(&k, Held { flow: m.clone(), free_times: free });
+                    t.insert(&k, AxisRecord { flow: m.clone(), free_times: free });
                     cl.keys += 1;
                 }
             }
@@ -234,7 +238,7 @@ fn table(pairs: &[(&[Site], &[Flow])], axis: usize) -> (Keyed<Held>, TimeClosure
 }
 
 /// HR5 — THE HOLONOMY OF EVERY AXIS IN TIME over a set of pairs.
-pub fn holonomy_in_time(pairs: &[(&[Site], &[Flow])]) -> [TimeClosure; 9] {
+pub fn holonomy_in_time(pairs: &[(&[SiteAxes], &[Flow])]) -> [TimeClosure; 9] {
     std::array::from_fn(|axis| table(pairs, axis).1)
 }
 
@@ -256,14 +260,16 @@ pub struct InTime {
 }
 
 /// Carry an input field by a table in time. `Err(())` where a free ray's
-/// time is unread; `Ok(None)` where a key is unseen.
-fn carried(x: &Grid, sites: &[Site], t: &Keyed<Held>, axis: usize) -> Result<Option<Grid>, ()> {
-    let mut out: Grid = x.iter().map(|row| vec![crate::arc::ground(); row.len()]).collect();
+/// time is unread; `Ok(None)` where a key is unseen, or where the scene has
+/// no one ground to lay the field on (`raster::void`).
+fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: usize) -> Result<Option<SectionSample>, ()> {
+    let Ok(void) = crate::transducer::raster::void() else { return Ok(None) };
+    let mut out = x.cleared(void);
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let Some(held) = t.get(&key(s, axis)) else { return Ok(None) };
         let (Ok(ur), Ok(uc)) = (usize::try_from(s.r), usize::try_from(s.c)) else { return Ok(None) };
-        if let Some(cell) = out.get_mut(ur).and_then(|row| row.get_mut(uc)) {
+        if let Some(cell) = out.line_mut(ur).and_then(|row| row.get_mut(uc)) {
             *cell = held.flow.to;
         }
         for l in &held.flow.light {
@@ -289,7 +295,7 @@ fn carried(x: &Grid, sites: &[Site], t: &Keyed<Held>, axis: usize) -> Result<Opt
         }
     }
     for (r, c, h) in emitted {
-        if let Some(cell) = usize::try_from(r).ok().zip(usize::try_from(c).ok()).and_then(|(ur, uc)| out.get_mut(ur)?.get_mut(uc)) {
+        if let Some(cell) = usize::try_from(r).ok().zip(usize::try_from(c).ok()).and_then(|(ur, uc)| out.line_mut(ur)?.get_mut(uc)) {
             *cell = h;
         }
     }
@@ -298,17 +304,17 @@ fn carried(x: &Grid, sites: &[Site], t: &Keyed<Held>, axis: usize) -> Result<Opt
 
 /// HR5 — RECONSTRUCT A FAMILY IN TIME, each pair left out in turn: the axes
 /// whose loops close in time on the others, the most compact carrying it.
-pub fn reconstruct_in_time(family: &[(Grid, Grid)]) -> InTime {
+pub fn reconstruct_in_time(family: &[(SectionSample, SectionSample)]) -> InTime {
     let mut read = InTime { pairs: family.len() as u64, ..InTime::default() };
-    let fields: Vec<Option<(Vec<Site>, Vec<Flow>)>> = family.iter().map(|(x, y)| flows(x, y).map(|f| (field(x), f))).collect();
-    let all: Vec<(&[Site], &[Flow])> = fields.iter().flatten().map(|(s, f)| (s.as_slice(), f.as_slice())).collect();
+    let fields: Vec<Option<(Vec<SiteAxes>, Vec<Flow>)>> = family.iter().map(|(x, y)| flows(x, y).map(|f| (field(x), f))).collect();
+    let all: Vec<(&[SiteAxes], &[Flow])> = fields.iter().flatten().map(|(s, f)| (s.as_slice(), f.as_slice())).collect();
     read.holonomy = holonomy_in_time(&all);
     for (i, f) in fields.iter().enumerate() {
         let Some((sites, _)) = f else { continue };
         read.framed += 1;
-        let others: Vec<(&[Site], &[Flow])> =
+        let others: Vec<(&[SiteAxes], &[Flow])> =
             fields.iter().enumerate().filter(|(j, _)| *j != i).filter_map(|(_, g)| g.as_ref()).map(|(s, f)| (s.as_slice(), f.as_slice())).collect();
-        let mut best: Option<(u64, usize, Keyed<Held>)> = None;
+        let mut best: Option<(u64, usize, Keyed<AxisRecord>)> = None;
         let mut any_closed = false;
         for axis in 0..AXES.len() {
             let (t, cl) = table(&others, axis);

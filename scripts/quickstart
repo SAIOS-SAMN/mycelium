@@ -12,8 +12,10 @@
 #   TASKS      how many tasks the SDK client asks for (default 8)
 #
 # The ARC-AGI-2 corpus is read from $MYCELIUM_CORPUS or data/arc-agi-2; its
-# first 30 training tasks form the network's corpus. The binaries are read
-# from $CARGO_TARGET_DIR (default target/).
+# first 30 training tasks, read by the corpus's decoder (`mycelium-arc-agi`,
+# the workspace crate sources/arc-agi) and written as posted tasks, form the
+# network's corpus: the hyphae read posted tasks and no dataset's format.
+# The binaries are read from $CARGO_TARGET_DIR (default target/).
 set -u
 cd "$(dirname "$0")/.." || exit 1
 ROOT=$(pwd)
@@ -27,6 +29,7 @@ CLI="$TARGET/release/mycelium-client"
 EX="$TARGET/release/examples/client"
 CONF="$TARGET/release/examples/conformance"
 HOUSE="$TARGET/release/examples/house"
+DECODE="$TARGET/release/mycelium-arc-agi"
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 
 if [ ! -d "$CORPUS_ROOT/training" ]; then
@@ -37,10 +40,11 @@ if [ ! -d "$CORPUS_ROOT/training" ]; then
   exit 1
 fi
 
-if [ ! -x "$SRV" ] || [ ! -x "$CLI" ] || [ ! -x "$EX" ] || [ ! -x "$CONF" ] || [ ! -x "$HOUSE" ]; then
+if [ ! -x "$SRV" ] || [ ! -x "$CLI" ] || [ ! -x "$EX" ] || [ ! -x "$CONF" ] || [ ! -x "$HOUSE" ] || [ ! -x "$DECODE" ]; then
   say "building (release)"
   cargo build --release --bins || exit 1
   cargo build --release -p mycelium-sdk --example client --example conformance --example house || exit 1
+  cargo build --release -p mycelium-source-arc-agi --bin mycelium-arc-agi || exit 1
 fi
 
 PIDS=()
@@ -53,7 +57,7 @@ trap stop EXIT
 trap 'exit 0' INT TERM
 
 rm -rf "$DIR"; mkdir -p "$DIR/corpus"
-find "$CORPUS_ROOT/training" -maxdepth 1 -name '*.json' | sort | head -30 | while read -r f; do cp "$f" "$DIR/corpus/"; done
+"$DECODE" decode "$CORPUS_ROOT/training" "$DIR/corpus" 30 || exit 1
 PORT_a=$BASE; PORT_b=$((BASE + 1)); PORT_c=$((BASE + 2))
 port() { eval "echo \$PORT_$1"; }
 

@@ -43,7 +43,7 @@ impl Form {
         // AND THE COVER LOSES THE BONDS WHOSE PORTS WENT (54.7 B5a): an edge
         // belongs exactly when its host is a Glued vertex still held.
         let held = |host: &crate::transducer::address::Address| {
-            coord::Site::decode(host.as_bytes()).is_ok_and(|s| self.vertices.holds(&coord::VertexAt::Glued(s)))
+            coord::GluedBoundary::decode(host.as_bytes()).is_ok_and(|s| self.vertices.holds(&coord::VertexAt::Glued(s)))
         };
         let cover: Vec<crate::transducer::element::NerveEdge> =
             self.cover.iter().filter(|e| held(&e.host())).cloned().collect();
@@ -363,8 +363,9 @@ pub(crate) fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
 }
 
 /// A VERTEX'S OWN RECORD, as the key writes it: a Glued vertex's SITE is
-/// this (54.7 B5a).
-pub(crate) fn vertex_bytes(v: &Vertex) -> Vec<u8> {
+/// this (54.7 B5a). Public so the corpus decoder's retract claims
+/// (`sources/arc-agi`, ROADMAP track 26 S1) read the site the key writes.
+pub fn vertex_bytes(v: &Vertex) -> Vec<u8> {
     let mut b = Vec::new();
     put_vertex(&mut b, v);
     b
@@ -382,7 +383,7 @@ pub(crate) fn vertex_bytes(v: &Vertex) -> Vec<u8> {
 /// frames it stood on in one family are no coordinate of the word.
 fn put_acts(
     buf: &mut Vec<u8>,
-    acts: &Keyed<Acting, coord::Section>,
+    acts: &Keyed<Acting, coord::ChartCarriage>,
     contact: Option<Option<crate::transducer::alphabet::Contact>>,
     frames: bool,
 ) {
@@ -414,7 +415,7 @@ fn put_acts(
 fn put_word_vertex(
     buf: &mut Vec<u8>,
     derivation: &crate::transducer::alphabet::Derivation,
-    acts: &Keyed<Acting, coord::Section>,
+    acts: &Keyed<Acting, coord::ChartCarriage>,
     contact: Option<crate::transducer::alphabet::Contact>,
     frames: bool,
 ) {
@@ -427,7 +428,7 @@ fn put_word_vertex(
 /// vertex is keyed by its class).
 pub fn word_vertex_address(
     derivation: &crate::transducer::alphabet::Derivation,
-    acts: &Keyed<Acting, coord::Section>,
+    acts: &Keyed<Acting, coord::ChartCarriage>,
     contact: Option<crate::transducer::alphabet::Contact>,
 ) -> crate::transducer::address::Address {
     let mut buf = vec![crate::transducer::address::TAG_FORM, 1];

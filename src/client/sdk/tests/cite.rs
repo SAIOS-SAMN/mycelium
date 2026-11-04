@@ -2,7 +2,7 @@
 // form's word and a served listing deflate, and what a withheld form does
 // not utter.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::client::sdk::*;
 
 /// The word of a chain a fixture wrote out: one entry per position, so A5
@@ -18,6 +18,7 @@ fn chain_word(links: &[(i64, i64, u8, u8)]) -> crate::transducer::element::Eleme
 /// forms' words, read at the chart (24.1).
 #[test]
 fn incident_chart_reads_working_atlas() {
+    crate::transducer::raster::stand_on(0);
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("atlas"));
 assert!(
@@ -51,33 +52,34 @@ assert!(stood >= 1, "a dialect word is stood");
 assert!(held >= 1, "an idea is held");
 }
 
-/// A stood residual word is cited by the next chain it deflates, and a
+/// A stood residue word is cited by the next chain it deflates, and a
 /// held remainder is cited with standing Held — never as covering itself.
 #[test]
 fn cite_reads_stood_and_held_words() {
-let residual = vec![(0i64, 0i64, 1u8, 2u8)];
+    crate::transducer::raster::stand_on(0);
+let residue = vec![(0i64, 0i64, 1u8, 2u8)];
 let next = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("cite-stood"));
 assert!(
-    entity.epigenome.express(&residual, 1, 1, &mut super::common::budget()),
-    "the residual stands in the dialect"
+    entity.language.express(&residue, 1, 1, &mut super::fixtures::budget()),
+    "the residue stands in the dialect"
 );
 let mut b = entity.stroke();
 let (cites, _rem) = entity.cite(&next, &mut b);
 assert!(
     cites.iter().any(|c| c.standing == Standing::Stood.byte()),
-    "the stood residual is cited with standing Stood, got {cites:?}"
+    "the stood residue is cited with standing Stood, got {cites:?}"
 );
 
 let mut held = Mind::open("127.0.0.1:1", Voice::named("cite-held"));
-held.hold_chain(residual.clone());
+held.hold_chain(residue.clone());
 let mut b = held.stroke();
-let (self_cites, self_rem) = held.cite(&residual, &mut b);
+let (self_cites, self_rem) = held.cite(&residue, &mut b);
 assert!(
     self_cites.is_empty(),
     "a remainder is not a citation of itself, got {self_cites:?}"
 );
-assert_eq!(self_rem, residual, "the remainder stays the residual");
+assert_eq!(self_rem, residue, "the remainder stays the residue");
 let mut b = held.stroke();
 let (cites, _rem) = held.cite(&next, &mut b);
 assert!(
@@ -94,11 +96,12 @@ assert!(
 /// `by_class` — and the vertex's action is evaluated on the listing body:
 /// the cite names the vertex by its address (the M2 key of the body the
 /// word speaks, A21 §4), carries the body it reconstructed in the
-/// listing's own frame, never the listing chain's key; the residual is
+/// listing's own frame, never the listing chain's key; the residue is
 /// exactly the body no word spoke; and no element for either chain exists
 /// anywhere on the working language, because none was minted to ask.
 #[test]
 fn cite_names_held_word_vertex_not_listing_chain() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::sentence::Vertex;
 let scene = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];
 let listing = vec![(4i64, 4i64, 1u8, 2u8), (4, 5, 1, 2), (9, 9, 3u8, 4u8)];
@@ -111,17 +114,17 @@ let [Vertex::Word { address: vertex, .. }] = on_chart.as_slice() else {
 };
 let vertex = vertex.clone();
 let mut b = entity.stroke();
-let (cites, residual) = entity.cite(&listing, &mut b);
+let (cites, residue) = entity.cite(&listing, &mut b);
 assert_eq!(cites.len(), 1, "one held word deflates the listing, got {cites:?}");
 assert_eq!(cites[0].standing, Standing::Held.byte(), "with standing Held");
 assert_eq!(cites[0].addr, vertex, "and it is the vertex's address: the word");
 assert_ne!(cites[0].addr, chain_word(&listing).address(), "never the listing chain's key");
 assert_eq!(cites[0].body, listing[..2].to_vec(), "it carries the body the vertex's action reconstructed, in the listing's frame");
-assert_eq!(residual, vec![(9, 9, 3, 4)], "the residual is the body no word spoke");
+assert_eq!(residue, vec![(9, 9, 3, 4)], "the residue is the body no word spoke");
 assert!(
-    entity.epigenome.working_word(chain_word(&listing).address().as_bytes()).is_none()
-        && entity.epigenome.working_word(chain_word(&scene).address().as_bytes()).is_none()
-        && entity.epigenome.working_word(vertex.as_bytes()).is_none(),
+    entity.language.working_word(chain_word(&listing).address().as_bytes()).is_none()
+        && entity.language.working_word(chain_word(&scene).address().as_bytes()).is_none()
+        && entity.language.working_word(vertex.as_bytes()).is_none(),
     "no element for a chain, and none for the vertex, exists on the working language"
 );
 }
@@ -129,13 +132,14 @@ assert!(
 /// A listing is expressed only when a held word deflates it.
 #[test]
 fn conclude_listing_expresses_only_when_held_word_deflates() {
+    crate::transducer::raster::stand_on(0);
 let prefix = vec![(0i64, 0i64, 1u8, 2u8)];
 let listing = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
 
 let mut bare = Mind::open("127.0.0.1:1", Voice::named("listing-bare"));
-let Concluded { cites, residual, .. } = bare.conclude_listing(&listing);
+let Concluded { cites, residue, .. } = bare.conclude_listing(&listing);
 assert!(cites.is_empty(), "nothing deflates an unseen listing, got {cites:?}");
-assert_eq!(residual, listing, "equal residual is the chain");
+assert_eq!(residue, listing, "equal residue is the chain");
 assert_eq!(
     bare.dialect_len(),
     0,
@@ -145,20 +149,20 @@ assert!(bare.ideas_len() >= 1, "it is held as thought");
 
 let mut held = Mind::open("127.0.0.1:1", Voice::named("listing-held"));
 held.hold_chain(prefix);
-let Concluded { cites, residual, .. } = held.conclude_listing(&listing);
+let Concluded { cites, residue, .. } = held.conclude_listing(&listing);
 assert!(
     cites.iter().any(|c| c.standing == Standing::Held.byte()),
     "a held word deflates the listing, got {cites:?}"
 );
-let r = crate::transducer::element::measure_lanes(&residual);
+let r = crate::transducer::element::measure_lanes(&residue);
 let c = crate::transducer::element::measure_lanes(&listing);
 assert!(
     (0..4).any(|i| r[i] < c[i]) && (0..4).all(|i| r[i] <= c[i]),
-    "residual strictly below the chain on a lane, residual {r:?} chain {c:?}"
+    "residue strictly below the chain on a lane, residue {r:?} chain {c:?}"
 );
 assert!(
     held.dialect_len() >= 1,
-    "the residual is expressed, dialect {}",
+    "the residue is expressed, dialect {}",
     held.dialect_len()
 );
 }
@@ -170,10 +174,10 @@ assert!(
 #[test]
 fn withhold_form_holds_idea_and_utters_nothing() {
 use crate::transducer::family::{extract_rule, form_deflation, NoCrystal};
-let family = vec![
+let family = crate::transducer::spelled::pairs_of(vec![
     (vec![vec![1u8]], vec![vec![2u8]]),
     (vec![vec![1u8, 0]], vec![vec![2u8, 3]]),
-];
+]);
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("rule");
 let (mag, rems) = form_deflation(&rule.form, &family, &NoCrystal);
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("withhold"));
@@ -184,6 +188,6 @@ assert!(entity.ideas_len() >= 1, "and is held as an idea");
 assert_eq!(entity.uttered_n(), 0, "nothing is uttered for a remainder, taught_up {}", entity.uttered_n());
 for r in rems.iter().filter(|r| !r.is_empty()) {
     let chain = chain_word(r);
-    assert!(entity.epigenome.working_word(chain.address().as_bytes()).is_none(), "a remainder never stands as a word");
+    assert!(entity.language.working_word(chain.address().as_bytes()).is_none(), "a remainder never stands as a word");
 }
 }

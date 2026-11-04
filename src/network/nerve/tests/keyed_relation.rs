@@ -168,7 +168,7 @@ fn fibre_agrees_with_filter_for_every_trie_shape() {
 /// the reading stays true whatever the trie's shape, since the assertion
 /// is against the carrier's own size and not a constant.
 #[test]
-fn fibre_visits_own_subtree_not_carrier() {
+fn fibre_visits_prefix_subtree_not_carrier() {
     use crate::network::nerve::keyed::work;
     let mut k: Keyed<u32> = Keyed::new();
     for i in 0u32..1000 {

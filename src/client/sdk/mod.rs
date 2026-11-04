@@ -4,8 +4,7 @@
 //! a scene of its own, speaks a sentence to a hypha, and learns the word the
 //! court teaches back. Painted sites in, sentences out (law 8).
 
-mod entity;
-mod epigenome;
+mod vocabulary;
 pub mod aperture;
 pub mod chatter;
 pub mod comprehension;
@@ -25,14 +24,17 @@ pub mod working_atlas;
 pub use aperture::*;
 pub use comprehension::*;
 pub use concluded::*;
-pub use entity::body::Sitting;
-pub use entity::boot::GenomeReading;
+pub use mind::seating::Sitting;
+pub use mind::boot::GenomeReading;
 /// The names a court task's reading is coded by, for the observer's typed
 /// reading (`observe::TaskSeen`).
-pub(crate) use entity::perceive::{PERSPECTIVES, READINGS, STOPS};
-pub use entity::winding::Wound;
+pub(crate) use mind::perceive::{PERSPECTIVES, READINGS, STOPS};
+pub use mind::winding::Wound;
 pub use genome::*;
-pub use mind::*;
+// The mind's items by name: its sub-modules stay inside the SDK and are
+// not re-exported with them.
+pub use mind::{Mind, Owed, Pending};
+pub(crate) use mind::HeldSaying;
 pub use quote::*;
 pub use session::*;
 pub use utterance::*;
@@ -40,8 +42,8 @@ pub use voice::*;
 pub use working_atlas::*;
 
 use crate::anastome::dialogue;
-use crate::arc::Grid;
-use crate::network::wire::{Frame, Stratum};
+use crate::transducer::family::SectionSample;
+use crate::network::wire::{Lane, WireFrame};
 use crate::transducer::element::Element;
 use std::cell::RefCell;
 use std::io::{self, Read, Write};

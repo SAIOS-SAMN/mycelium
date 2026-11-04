@@ -4,9 +4,9 @@
 // applies as it does without the reading.
 
 use crate::transducer::alphabet::{LetterId, Word};
-use crate::transducer::bubble::*;
+use crate::transducer::field::*;
 use crate::transducer::element;
-use crate::transducer::sentence::{Form, FormCell, Vertex};
+use crate::transducer::sentence::{Form, BodyContact, Vertex};
 use crate::transducer::stalk::Standing;
 
 /// A crystal offering one word on the axes it occupies, as the contemplation's
@@ -23,7 +23,7 @@ impl crate::transducer::family::Crystal for OneWord {
     fn speak_form(
         &self,
         _f: &Form,
-        _x: &crate::transducer::family::Grid,
+        _x: &crate::transducer::family::SectionSample,
         _p: &Word,
     ) -> Option<crate::transducer::family::Speech> {
         None
@@ -54,7 +54,7 @@ impl crate::transducer::family::Crystal for OneWord {
 fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
     let one = num_rational::BigRational::from_integer(1.into());
     let zero = num_rational::BigRational::from_integer(0.into());
-    use crate::transducer::sentence::tests::common::{chord as chord_between, stand_with_star, FRAME};
+    use crate::transducer::sentence::tests::fixtures::{chord as chord_between, stand_with_star, FRAME};
     let mut f = Form::default();
     // AT1 (Q1): both bodies speak the identity, so they are ONE vertex —
     // its class — with a member on each chart, each with its own star.
@@ -99,7 +99,7 @@ fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
         crate::transducer::cga::Mv::blade(crate::transducer::cga::E1, q(1)),
         crate::transducer::cga::Mv::blade(crate::transducer::cga::E2, q(1)),
     ];
-    f.cells.insert(vec![0xc], FormCell { bodies: vec![a, b], witnesses: Vec::new(), nuclei: Some(nuclei) });
+    f.cells.insert(vec![0xc], BodyContact { bodies: vec![a, b], witnesses: Vec::new(), nuclei: Some(nuclei) });
     f
 }
 
@@ -107,10 +107,10 @@ fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
 fn pivot(form: Form, offered: &Word) -> crate::transducer::sentence::PivotTally {
     let mut c = Contemplation::new();
     c.hold_form(form, &[], &[], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    let k = c.bubbles.scoped().next().map(|(k, _)| k).expect("held");
+    let k = c.wells.scoped().next().map(|(k, _)| k).expect("held");
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
     let mut tally = crate::transducer::sentence::PivotTally::default();
-    if let Some(b) = c.bubbles.get_mut(&k) {
+    if let Some(b) = c.wells.get_mut(&k) {
         let atlas = crate::transducer::stalk::Stalks::default();
         let _ = b.expand_with(&atlas, &|_| None, 0, &OneWord(offered.clone()), &mut budget, &mut tally);
     }

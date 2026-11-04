@@ -203,7 +203,7 @@ pub fn factor_off_plane(
 // check a `Path` beside the tape needed. `Derivation::verify_with` is the
 // re-derivation now, and it lives with the carrier it checks rather than
 // beside the algebra that produced it.
-pub fn replays(tape: &[(usize, i64)], basis: &[Rotor], g: &Rotor) -> bool {
+pub fn reconstructs(tape: &[(usize, i64)], basis: &[Rotor], g: &Rotor) -> bool {
     let mut p = Rotor::identity();
     for (i, e) in tape {
         let Some(b) = basis.get(*i) else { return false };

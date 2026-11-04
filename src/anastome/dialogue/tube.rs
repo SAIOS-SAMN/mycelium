@@ -199,7 +199,7 @@ pub fn place_in(space: &Geometry, frame: &Mv) -> Option<Mv> {
 /// `(2m/R) / π` (the upper bound): a cap past the antipode would cover the
 /// sphere. A level is a READING served to a reader (an instrument): whether a
 /// throat fits its face is decided exactly by the court, never on these
-/// bounds (MU-DERIVATIONS D1.2 Phase A, `server::cognition::mouth::fits_in`).
+/// bounds (MU-DERIVATIONS D1.2 Phase A, `server::cognition::domain_passage::fits_in`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Level {
     Curved(BigRational),

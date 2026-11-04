@@ -4,17 +4,17 @@
 // clause rule proven on both pairs is undetermined by its perspectives — sent
 // for the court to judge — never refuted by a sibling that cannot speak it.
 
-use crate::client::sdk::entity::family::{ascertain_on, Ascertained, Unexempt};
+use crate::client::sdk::mind::family::{ascertain_on, Ascertained, Unexempt};
 use crate::client::sdk::*;
 
-fn grid(rows: &[&str]) -> crate::arc::Grid {
+fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
 /// The mirrored echo: every body repeated three columns over, mirrored
 /// across its own columns — a clause rule the act reader states over two
 /// pairs and cannot state over one.
-fn mirrored(pairs: usize) -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
+fn mirrored(pairs: usize) -> Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> {
     let all = [
         (grid(&["1100000", "1000000", "0000000"]), grid(&["1101100", "1000100", "0000000"])),
         (grid(&["0000000", "0022000", "0020000"]), grid(&["0000000", "0022022", "0020002"])),
@@ -23,7 +23,7 @@ fn mirrored(pairs: usize) -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
     all.into_iter().take(pairs).collect()
 }
 
-fn rule_of(train: &[(crate::arc::Grid, crate::arc::Grid)]) -> crate::transducer::sentence::SentenceRule {
+fn rule_of(train: &[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]) -> crate::transducer::sentence::SentenceRule {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     crate::transducer::family::extract_rule(train, &mut budget).expect("the family has a rule")
 }
@@ -34,10 +34,11 @@ fn rule_of(train: &[(crate::arc::Grid, crate::arc::Grid)]) -> crate::transducer:
 /// reads undetermined, never a refutation.
 #[test]
 fn ascertain_on_leaves_two_pair_rule_undetermined() {
+    crate::transducer::raster::stand_on(0);
     let train = mirrored(2);
     let rule = rule_of(&train);
     assert!(!rule.form.elements.is_empty(), "the act reader stated it as clauses");
-    let epi = Epigenome::new();
+    let epi = MindLanguage::new();
     let (outcome, _) = ascertain_on(&epi, &train, &rule);
     assert!(matches!(outcome, Ascertained::Undetermined), "undetermined by its one-pair perspectives: {outcome:?}");
 }
@@ -49,7 +50,7 @@ fn ascertain_on_leaves_vertex_fit_unknown() {
     let train = mirrored(2);
     let mut rule = rule_of(&train);
     rule.form.elements.clear();
-    let (outcome, _) = ascertain_on(&Epigenome::new(), &train, &rule);
+    let (outcome, _) = ascertain_on(&MindLanguage::new(), &train, &rule);
     assert!(matches!(outcome, Ascertained::Unknown(Unexempt::Vertex)), "no clauses, no exemption — guard 1 named: {outcome:?}");
 }
 
@@ -63,7 +64,7 @@ fn ascertain_on_leaves_unclosing_rule_unproven() {
         (grid(&["0000", "0000", "0030", "0000"]), grid(&["0000", "0000", "0033", "0000"])),
     ]);
     assert!(!other.form.elements.is_empty(), "the other family's rule is clauses too");
-    let (outcome, _) = ascertain_on(&Epigenome::new(), &train, &other);
+    let (outcome, _) = ascertain_on(&MindLanguage::new(), &train, &other);
     assert!(matches!(outcome, Ascertained::Unknown(Unexempt::Unproven)), "unproven on these pairs — guard 2 named: {outcome:?}");
 }
 
@@ -72,8 +73,9 @@ fn ascertain_on_leaves_unclosing_rule_unproven() {
 /// by its perspectives — the exemption is never reached past two pairs.
 #[test]
 fn ascertain_on_knows_rule_on_three_pairs() {
+    crate::transducer::raster::stand_on(0);
     let train = mirrored(3);
     let rule = rule_of(&train);
-    let (outcome, _) = ascertain_on(&Epigenome::new(), &train, &rule);
+    let (outcome, _) = ascertain_on(&MindLanguage::new(), &train, &rule);
     assert!(matches!(outcome, Ascertained::Known), "known by its perspectives: {outcome:?}");
 }

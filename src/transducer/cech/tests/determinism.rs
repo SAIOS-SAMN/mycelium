@@ -41,7 +41,7 @@
 //! different jobs and both are required for those numbers to mean
 //! anything across hyphae.
 
-use super::common::{sheet, turn_90, v, vol};
+use super::fixtures::{sheet, turn_90, v, vol};
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::{CoboundaryOutcome, Complex, Fill, Section};
 use crate::transducer::element::identity_versor as ident;

@@ -62,7 +62,7 @@ fn mu_round_trips_and_refuses_unreduced_ratio() {
 
 /// A COUNT KEEPS ITS VALUE: n becomes n/1 on its lane, and reads back as n.
 #[test]
-fn mu_counts_equal_their_rationals() {
+fn mu_counts_equal_rationals() {
     let m = Mu::counts([3, 0, 8, 1]);
     assert_eq!(m, [3, 0, 8, 1]);
     assert_eq!(m.lane(2), &q(8, 1));

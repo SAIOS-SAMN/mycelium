@@ -40,7 +40,7 @@ fn from_bytes_round_trips_anchor_and_defaults_top() {
 /// A connection minted from a transport is a word with two components:
 /// the identity motion with a hue swap is a permutation on the hue rows
 /// (invertible, a connection), the remainder is its chain, and its
-/// address differs from the bare residual's. A non-bijective gauge
+/// address differs from the bare residue's. A non-bijective gauge
 /// leaves the hue rows the identity.
 #[test]
 fn from_connection_spells_group_and_remainder() {
@@ -55,7 +55,7 @@ fn from_connection_spells_group_and_remainder() {
     assert_eq!(back.letters(), w.letters(), "the letters survive the wire");
     assert!(w.reverse().is_some(), "the group component reads backward");
     assert_eq!(w.sub(), remainder.as_slice(), "the remainder is the chain");
-    assert_ne!(w.address(), from_canonical(&canonical_chain(&remainder).expect("one link is A5's chain")).address(), "the connection is not the bare residual");
+    assert_ne!(w.address(), from_canonical(&canonical_chain(&remainder).expect("one link is A5's chain")).address(), "the connection is not the bare residue");
     let qid = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
     let long = crate::transducer::alphabet::Word::from_letters(&[(qid, false), (qid, false), (qid, false), (qid, false)]);
     assert_eq!(long.key(), crate::transducer::alphabet::Word::identity().key());
@@ -75,11 +75,11 @@ fn from_connection_spells_group_and_remainder() {
     assert!(closed.is_connection() && closed.sub().is_empty(), "an empty remainder is a closed connection");
     let merge = from_connection(&id, &identity_versor(), &[(1, 2)], &Vec::new(), [1, 1, 0, 0]).expect("spells");
     assert!(!merge.is_connection(), "a merging gauge with the identity motion carries no group component");
-    assert!(!from_canonical(&canonical_chain(&remainder).expect("one link is A5's chain")).is_connection(), "a residual's tally is never a permutation");
+    assert!(!from_canonical(&canonical_chain(&remainder).expect("one link is A5's chain")).is_connection(), "a residue's tally is never a permutation");
     let unit = from_connection(&id, &identity_versor(), &[], &Vec::new(), [77, 0, 0, 0]).expect("spells");
     assert!(unit.is_identity(), "identity motion and gauge leave no action and no chain");
     assert!(!unit.is_connection(), "the unit is not a connection");
-    assert!(unit.sub().is_empty(), "nothing residual to hold as thought");
+    assert!(unit.sub().is_empty(), "no residue to hold as thought");
 }
 
 /// The element record round-trips from its magic, and records of an older
@@ -132,16 +132,17 @@ fn from_bytes_reads_transition_gauge_as_ray() {
 /// and action all survive, so a persisted basis reloads identically.
 #[test]
 fn from_bytes_round_trips_germ() {
-    let residual = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
+    crate::transducer::raster::stand_on(0);
+    let residue = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
     let swap = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
-    for g in [&residual, &swap] {
+    for g in [&residue, &swap] {
         let bytes = g.to_bytes().expect("the record writes");
         let mut pos = 0;
         let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
         assert_eq!(pos, bytes.len(), "consumed exactly");
         assert_eq!(back.address(), g.address(), "the reloaded word is the same citation");
         assert_eq!(back.sub(), g.sub(), "the centred chain survives");
-        assert!(back.carriage(g, &mut super::common::budget()).is_some(), "the thought survives: the identity carriage relates them");
+        assert!(back.carriage(g, &mut super::fixtures::budget()).is_some(), "the thought survives: the identity carriage relates them");
     }
 }
 
@@ -209,7 +210,7 @@ fn from_bytes_refuses_zero_period_and_clashing_chain() {
     //
     // The address is a u32 length and its bytes; the filing is a u32 count;
     // the envelope is a u32 block length and its body. This word is a
-    // residual — no filing, and an envelope of seven zero counts, which is
+    // residue — no filing, and an envelope of seven zero counts, which is
     // 56 bytes and never 0 (an unreadable envelope must not be able to
     // masquerade as an empty one). Six since AT1 (54.5 Road (d)): the nerve,
     // the rounds, the derivations and the certificates, and then the
@@ -217,10 +218,10 @@ fn from_bytes_refuses_zero_period_and_clashing_chain() {
     // record; seven since 78.55, the tasks that witnessed a colour word.
     let mut envelope = Vec::new();
     one.receipts().to_block(&mut envelope).expect("the envelope writes");
-    assert!(one.receipts().is_empty(), "a residual attests nothing");
+    assert!(one.receipts().is_empty(), "a residue attests nothing");
     assert_eq!(envelope.len(), 4 + 56, "the empty envelope is a block of seven zero counts");
     let at = 1 + 4 + one.description().len() + 4 + one.address().len() + 4 + envelope.len() + 32;
-    assert!(one.filing().scoped().next().is_none(), "a residual attests no filing");
+    assert!(one.filing().scoped().next().is_none(), "a residue attests no filing");
     assert_eq!(
         u32::from_le_bytes(bytes[at..at + 4].try_into().expect("the chain count")),
         1,

@@ -19,7 +19,7 @@ use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, t
 /// ONE HANDOFF HELD: its offer, the height it sealed at, where it stands,
 /// and the stamp key of the fold that consumed each side, where one has.
 #[derive(Clone, Debug)]
-pub(crate) struct Held {
+pub(crate) struct HandoffRecord {
     pub(crate) offer: Offer,
     pub(crate) sealed: u64,
     pub(crate) state: State,
@@ -31,7 +31,7 @@ pub(crate) struct Held {
 #[derive(Default)]
 pub(crate) struct Handoffs {
     /// Each handoff by its id.
-    pub(crate) held: Keyed<Held>,
+    pub(crate) held: Keyed<HandoffRecord>,
     /// Each fold that consumed sides, by its stamp key: the sides — what a
     /// replay reads and a reversal un-consumes.
     pub(crate) consumed_by: Keyed<Vec<([u8; 32], Side)>>,
@@ -41,14 +41,14 @@ pub(crate) struct Handoffs {
     /// 78.127 — each conversion by its id, held while its G side is open.
     pub(crate) conversions: Keyed<super::convert::Conversion>,
     /// 78.128 — each wormhole's mouth pair by its id.
-    pub(crate) mouths: Keyed<super::mouth::MouthHeld>,
+    pub(crate) mouths: Keyed<super::domain_passage::MouthHeld>,
     /// 78.128 — each traversal's mouth, by the handoff's id.
     pub(crate) through: Keyed<[u8; 32]>,
     /// 78.133 — each tariffed traversal's toll, split and held to its
     /// window's close, by the handoff's id.
-    pub(crate) tolls: Keyed<super::mouth::TollHeld>,
+    pub(crate) tolls: Keyed<super::domain_passage::TollHeld>,
     /// 78.135 — each tube's throat bank, by the mouth's id.
-    pub(crate) throats: Keyed<super::mouth::Throat>,
+    pub(crate) throats: Keyed<super::domain_passage::Throat>,
 }
 
 /// The escrow key a traversal's toll is held under.
@@ -60,7 +60,7 @@ pub(crate) fn toll_key(id: &[u8; 32]) -> Vec<u8> {
 
 /// The nets a side carries into its consuming fold: OUT, what leaves; IN
 /// accepted, what arrives; IN returned, what left, come back.
-fn side_nets(h: &Held, side: Side) -> Vec<Net> {
+fn side_nets(h: &HandoffRecord, side: Side) -> Vec<Net> {
     match (side, h.state) {
         (Side::Out, _) => h.offer.out_nets.clone(),
         (Side::In, State::Accepted) => h.offer.in_nets.clone(),
@@ -246,7 +246,7 @@ impl Handoffs {
                 }
             };
             let (o, i) = (side()?, side()?);
-            out.held.insert(key, Held { offer, sealed, state, out: o, inn: i });
+            out.held.insert(key, HandoffRecord { offer, sealed, state, out: o, inn: i });
         }
         for _ in 0..take_key_count(b, p)? {
             let k = take_key_bytes(b, p)?;
@@ -279,7 +279,7 @@ impl Handoffs {
         if *p < b.len() {
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
-                out.mouths.insert(k, super::mouth::MouthHeld::take(b, p)?);
+                out.mouths.insert(k, super::domain_passage::MouthHeld::take(b, p)?);
             }
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
@@ -296,7 +296,7 @@ impl Handoffs {
             }
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
-                out.tolls.insert(k, super::mouth::TollHeld::take(b, p)?);
+                out.tolls.insert(k, super::domain_passage::TollHeld::take(b, p)?);
             }
         }
         // 78.134 — the tubes — absent from a leaf written before them.
@@ -311,7 +311,7 @@ impl Handoffs {
         if *p < b.len() {
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
-                out.throats.insert(k, super::mouth::Throat::take(b, p)?);
+                out.throats.insert(k, super::domain_passage::Throat::take(b, p)?);
             }
         }
         // 78.140 — the tubes with a torus end and the core tubes — absent
@@ -467,7 +467,7 @@ impl Court {
         let now = match (state, &h.handoff) {
             (None, Handoff::Offer(o) | Handoff::Traverse { offer: o, .. }) => {
                 let opened = r.stamp.h;
-                let held = Held { offer: o.as_ref().clone(), sealed: r.stamp.h, state: State::Offered { opened }, out: None, inn: None };
+                let held = HandoffRecord { offer: o.as_ref().clone(), sealed: r.stamp.h, state: State::Offered { opened }, out: None, inn: None };
                 self.handoffs.held.insert(id, held);
                 self.handoffs.offered_at.insert(id, r.stamp.key());
                 if let Handoff::Traverse { mouth, .. } = &h.handoff {

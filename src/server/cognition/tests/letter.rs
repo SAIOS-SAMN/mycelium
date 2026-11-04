@@ -273,7 +273,7 @@ fn versor_of_arc(s: i64, t: i64) -> element::Versor {
 ///      refuses, factors against that mind's presentation and CITES the
 ///      letter at multiplicity two (50.2 step 2).
 ///   4. A COURT COMPOSES THE CITATION: the derived sentence is spoken to
-///      the court that ruled the letter, and `blind_replay`'s
+///      the court that ruled the letter, and `reconstruct_blind`'s
 ///      `derivations_compose` resolves the citation through its own ruled
 ///      cover and agrees. The sentence STANDS.
 ///
@@ -286,8 +286,8 @@ fn versor_of_arc(s: i64, t: i64) -> element::Versor {
 /// citation, and the court's resolution of that citation. A break at any
 /// hop leaves every existing test green.
 #[test]
-fn blind_replay_on_composes_letter_citation_from_taught_mind() {
-    use crate::client::sdk::Epigenome;
+fn reconstruct_blind_on_composes_letter_citation_from_taught_mind() {
+    use crate::client::sdk::MindLanguage;
     let voice = [1u8; 32];
     let said = demanding_sentence(turn_90(1), 1, seventeen());
 
@@ -328,9 +328,9 @@ fn blind_replay_on_composes_letter_citation_from_taught_mind() {
 
     // 2. THE PAGE CARRIES IT and a mind learns it from the bytes.
     let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20, crate::cognition::Asker::Court([0; 32]));
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     for t in &page {
-        let _ = epi.learn(&t.word, &mut super::common::budget());
+        let _ = epi.learn(&t.word, &mut super::fixtures::budget());
     }
 
     // 3. THE MIND DERIVES THROUGH IT. (4 + i)² = 15 + 8i, so the target's
@@ -370,7 +370,7 @@ fn blind_replay_on_composes_letter_citation_from_taught_mind() {
     assert!(derived.residue.is_identity(), "nothing is left for the alphabet");
 
     // 4. THE COURT COMPOSES IT. Spoken to the court that ruled the letter:
-    //    `blind_replay` resolves the citation through its own ruled cover,
+    //    `reconstruct_blind` resolves the citation through its own ruled cover,
     //    re-derives the rotor, and agrees. A court that had not ruled the
     //    letter would refuse at this vertex, which is what makes standing
     //    here a fact about the LANGUAGE and not about the arithmetic.
@@ -379,17 +379,17 @@ fn blind_replay_on_composes_letter_citation_from_taught_mind() {
     // is the control: it is what standing below is measured against, and
     // it is why standing is a fact about this court's ruled language.
     assert_eq!(
-        crate::court::verdict::blind_replay(&speaks, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&speaks, &mut super::fixtures::budget()),
         Some(crate::court::verdict::REFUSE_DERIVATION),
         "a court that resolves nothing cannot compose the citation"
     );
     assert_eq!(
-        crate::court::verdict::blind_replay_on(
+        crate::court::verdict::reconstruct_blind_on(
             &speaks,
             &|a| k.resolve_form(a),
             None,
             &crate::transducer::family::NoCrystal,
-            &mut super::common::budget(),
+            &mut super::fixtures::budget(),
         ),
         None,
         "the court that ruled the letter re-derives the citation through it and agrees"
@@ -410,7 +410,7 @@ fn blind_replay_on_composes_letter_citation_from_taught_mind() {
 /// that the letter travels, which is the whole of what a syllabus is for.
 #[test]
 fn serve_ruled_teaches_letter_as_generator() {
-    use crate::client::sdk::Epigenome;
+    use crate::client::sdk::MindLanguage;
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::element::Element as El;
     let voice = [1u8; 32];
@@ -449,9 +449,9 @@ fn serve_ruled_teaches_letter_as_generator() {
     // learned from its bytes.
     let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20, crate::cognition::Asker::Court([0; 32]));
     assert!(!page.is_empty(), "the syllabus serves what the court ruled");
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     for t in &page {
-        let _ = epi.learn(&t.word, &mut super::common::budget());
+        let _ = epi.learn(&t.word, &mut super::fixtures::budget());
     }
 
     // The mind now holds the letter as a GENERATOR, at the chart a versor
@@ -503,7 +503,7 @@ fn serve_ruled_teaches_letter_as_generator() {
 ///      for that mind through the same reader.
 #[test]
 fn letter_reading_flips_derivable_after_adjunction() {
-    use crate::client::sdk::Epigenome;
+    use crate::client::sdk::MindLanguage;
     use crate::transducer::alphabet::{Rotor, Word};
     use crate::transducer::family::{letter_reading, LetterReading};
     let stroke = || crate::physics::Physics::default().stroke_n(1 << 20);
@@ -512,7 +512,7 @@ fn letter_reading_flips_derivable_after_adjunction() {
     let pi = Rotor::scalar(q(4)).add(&Rotor::blade(0b0011, q(1)));
 
     // 1. D through the mind's own (empty) crystal.
-    let mut mind = Epigenome::new();
+    let mut mind = MindLanguage::new();
     assert_eq!(letter_reading(&mind, &mut stroke(), &pi), LetterReading::Unspelled, "the mind cannot spell it: D");
 
     // 2. CONSTRUCT, certified: T1, meets on the fixed loci (inside
@@ -572,7 +572,7 @@ fn letter_reading_flips_derivable_after_adjunction() {
 
     // 5. TAUGHT BACK — and the same class, through the same reader, flips.
     for t in &home.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20, crate::cognition::Asker::Court([0; 32])) {
-        let _ = mind.learn(&t.word, &mut super::common::budget());
+        let _ = mind.learn(&t.word, &mut super::fixtures::budget());
     }
     assert_eq!(
         letter_reading(&mind, &mut stroke(), &pi),

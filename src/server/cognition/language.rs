@@ -20,7 +20,7 @@ pub enum Outcome {
     /// A novel generator docketed on one vantage, awaiting a witness organ's
     /// independent re-derivation of the same address (47.3).
     GermPending,
-    /// An irreducible residual that CONVERGED and was adjoined as a generator
+    /// An irreducible residue that CONVERGED and was adjoined as a generator
     /// of the presentation (1.8): the base of the language grows, the group
     /// and the alphabet do not. Chapter 44 refuses a completion procedure.
     Installed(usize),
@@ -297,7 +297,7 @@ impl Rank {
 /// remainder that still stands on that chart, and per-lane stagnation on
 /// that chart. The closure is never a number.
 #[derive(Debug, Clone)]
-pub struct FieldEntry {
+pub struct ProbedChart {
     pub chart: crate::transducer::stalk::Invariant,
     pub state: crate::transducer::stalk::Closure,
     pub remainder: Vec<(i64, i64, u8, u8)>,
@@ -308,7 +308,7 @@ pub struct FieldEntry {
 /// in write_field so a read never scans the entries for closure.
 #[derive(Debug, Clone, Default)]
 pub struct ListingField {
-    pub entries: Vec<FieldEntry>,
+    pub entries: Vec<ProbedChart>,
     pub nonflat: u64,
 }
 

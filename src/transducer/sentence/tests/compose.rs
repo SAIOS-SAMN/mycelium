@@ -3,7 +3,7 @@
 // sentence's open path a word of the next rung.
 
 use crate::transducer::cga::{self, Mv, E1, E2, E3};
-use crate::transducer::sentence::compose::{compose, next_rung, Closure, Term};
+use crate::transducer::sentence::compose::{compose, next_rung, RingClosure, Term};
 use num_rational::BigRational;
 
 fn q(n: i64) -> BigRational {
@@ -31,9 +31,9 @@ fn compose_closes_at_holonomy_period() {
     let r = turn(E1 | E2);
     let back = Term { word: r.reverse(), transport: one() };
     let s = compose(&[Term { word: r.clone(), transport: one() }, back], &mut stroke()).expect("a sentence");
-    assert_eq!(s.closure, Closure::Closes(1), "a word and its inverse return at once");
+    assert_eq!(s.closure, RingClosure::Closes(1), "a word and its inverse return at once");
     let single = compose(&[Term { word: r, transport: one() }], &mut stroke()).expect("a sentence");
-    assert_eq!(single.closure, Closure::Closes(4), "a 90° turn returns at its fourth pass");
+    assert_eq!(single.closure, RingClosure::Closes(4), "a 90° turn returns at its fourth pass");
 }
 
 /// A TRANSLATION NEVER RETURNS, BUT IT CONDENSES: a sentence carried by a
@@ -44,7 +44,7 @@ fn compose_closes_at_holonomy_period() {
 fn next_rung_teaches_null_motion_of_translations() {
     let t = cga::translator_at(&[q(1), q(0), q(0)]);
     let s = compose(&[Term { word: one(), transport: t.clone() }], &mut stroke()).expect("a sentence");
-    assert_eq!(s.closure, Closure::Unbound, "a translation carries and never returns");
+    assert_eq!(s.closure, RingClosure::Unbound, "a translation carries and never returns");
     // 78.104 — its word is the identity and its motion rides the transport:
     // the algebra closes over the holonomy too, so the slide spans one
     // direction (it read 0 while only the words were closed).
@@ -92,7 +92,7 @@ fn next_rung_teaches_closed_sentences_open_path() {
     assert_eq!(words.len(), 1, "one closed sentence, one word");
     assert!(words[0].projective_eq(&r), "the shortcut is the open path");
     let again = compose(&[Term { word: words[0].clone(), transport: one() }], &mut stroke()).expect("a sentence");
-    assert_eq!(again.closure, Closure::Closes(4), "the next rung composes as this one does");
+    assert_eq!(again.closure, RingClosure::Closes(4), "the next rung composes as this one does");
 }
 
 /// A crossing of one face carrying the (3, 4, 5) turn in the `r, c` plane and
@@ -145,7 +145,7 @@ fn terms_of_composes_crossing_word_and_displacement() {
     assert_eq!(one_way.composite().map(|m| m.projective_eq(&motion)), Some(true), "the circuit's one reader is the master equation's product");
     let there_and_back = path_of(vec![crossing(true), crossing(false)]);
     let s = compose(&terms_of(&there_and_back).expect("read"), &mut stroke()).expect("a sentence");
-    assert_eq!(s.closure, Closure::Closes(1), "a crossing and its reverse: the identity");
+    assert_eq!(s.closure, RingClosure::Closes(1), "a crossing and its reverse: the identity");
     let mut unread = crossing(true);
     unread.transport = None;
     assert_eq!(
@@ -179,7 +179,7 @@ fn terms_of_composes_crossing_word_and_displacement() {
 /// refused too — no static read is invented at the decode.
 #[test]
 fn sentences_of_refuses_unrefracted_contact_after_decode() {
-    use super::common::{contact, stand_with_star, word_vertex_on};
+    use super::fixtures::{contact, stand_with_star, word_vertex_on};
     use crate::transducer::sentence::compose::{sentences_of, RingUnread, TermUnread};
     use crate::transducer::sentence::Form;
     let mut f = Form::default();
@@ -212,7 +212,7 @@ fn sentences_of_refuses_unrefracted_contact_after_decode() {
 /// the voice composed, never the static read alone.
 #[test]
 fn from_element_form_keeps_contact_refraction() {
-    use super::common::{contact, stand_with_star, word_vertex_on};
+    use super::fixtures::{contact, stand_with_star, word_vertex_on};
     use crate::transducer::sentence::{Form, Refraction, Transport};
     let mut f = Form::default();
     let ca = stand_with_star(&mut f, &word_vertex_on(1, crate::transducer::alphabet::Word::identity(), crate::transducer::stalk::Invariant::counts(&[1])));

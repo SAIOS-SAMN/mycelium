@@ -18,7 +18,7 @@
 
 /// The observer's readings: the query by prefix, the reply, and the typed
 /// reading each entry holds.
-pub use mycelium::observe::{decode_reply, encode_query, Held, Reading};
+pub use mycelium::observe::{decode_reply, encode_query, KeyedReading, Reading};
 
 /// Why: the ask, the answer, and the codec of each.
 pub use mycelium::anastome::dialogue::why::{decode_why_reply, encode_why, Why, WhyAsk};
@@ -36,8 +36,8 @@ pub use mycelium::anastome::dialogue::{decode_receipts_reply, encode_receipts_re
 /// A place on a court's chain.
 pub use mycelium::chronometry::Place;
 
-/// The economy's rows over a span.
-pub use mycelium::anastome::dialogue::{decode_rows_reply, encode_rows_request};
+/// The economy's ledger entries over a span.
+pub use mycelium::anastome::dialogue::{decode_entries_reply, encode_entries_request};
 
 /// A domain's reserve, as the hypha reads it.
 pub use mycelium::anastome::dialogue::domain::ReserveReading;

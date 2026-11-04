@@ -25,7 +25,7 @@ pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec
         return;
     }
     // The round's stroke is the first hold's, handed on whole (78.153b).
-    let Some(mut offer_budget) = crate::held::held!(court).ok().map(|h| h.into_stroke()) else {
+    let Some(mut offer_budget) = crate::court_lock::held!(court).ok().map(|h| h.into_stroke()) else {
         return;
     };
     let mut offered_out = 0usize;
@@ -42,7 +42,7 @@ pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec
         // An offer no hypha covers is counted, never silent: it waits for a
         // transition that concerns it.
         if witnesses.is_empty() {
-            if let Ok(mut h) = crate::held::held!(court) {
+            if let Ok(mut h) = crate::court_lock::held!(court) {
                 h.run(|k, _| k.note_provisional("offers with no eligible witness"));
             }
             continue;
@@ -66,7 +66,7 @@ pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec
             };
             // A witness that answered this word has given its vantage, and
             // is not asked again (S12.4d).
-            let (answered, k_now) = match crate::held::held!(court) {
+            let (answered, k_now) = match crate::court_lock::held!(court) {
                 Ok(mut h) => h.run(|k, _| {
                     (
                         matches!(
@@ -92,19 +92,19 @@ pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec
             }) else {
                 continue;
             };
-            if let Ok(mut h) = crate::held::held!(court) {
+            if let Ok(mut h) = crate::court_lock::held!(court) {
                 h.run(|k, _| k.note_offered(oaddr.as_bytes(), witness, k_now));
             }
             // D4.1 — at the witness's own measured patience, kept under its
             // voice key.
             let Some((reply, _)) = tell_peer_measured(mesh, &d, body) else {
-                if let Ok(mut h) = crate::held::held!(court) {
+                if let Ok(mut h) = crate::court_lock::held!(court) {
                     h.run(|k, _| k.note_provisional("offers a witness left unanswered"));
                 }
                 continue;
             };
             offered_out += 1;
-            if let Ok(mut h) = crate::held::held!(court) {
+            if let Ok(mut h) = crate::court_lock::held!(court) {
                 h.run(|k, _| k.note_provisional("offers sent to witnesses"));
             }
             // 23.8, I36 — A DEFERRAL IS IMPEDANCE, NEVER A VANTAGE: the
@@ -132,7 +132,7 @@ pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec
                         vk[1],
                         String::from_utf8_lossy(&why)
                     );
-                    if let Ok(mut h) = crate::held::held!(court) {
+                    if let Ok(mut h) = crate::court_lock::held!(court) {
                         h.run(|k, _| {
                             k.note_witness_answered(oaddr.as_bytes(), vk);
                             k.note_provisional("witness refused");
@@ -144,7 +144,7 @@ pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec
                         "  court offer unmeasured {:02x}{:02x}… at {:02x}{:02x}…",
                         oaddr[0], oaddr[1], vk[0], vk[1]
                     );
-                    if let Ok(mut h) = crate::held::held!(court) {
+                    if let Ok(mut h) = crate::court_lock::held!(court) {
                         h.run(|k, _| k.note_provisional("witness unmeasured"));
                     }
                 }
@@ -155,7 +155,7 @@ pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec
                     let Some(rederived) = mycelium::transducer::element::Element::from_bytes(&form, &mut p) else {
                         continue;
                     };
-                    if let Ok(mut h) = crate::held::held!(court) {
+                    if let Ok(mut h) = crate::court_lock::held!(court) {
                         h.run(|k, reads| k.witness_rederived(&oaddr, vk, rederived, reads));
                     }
                 }

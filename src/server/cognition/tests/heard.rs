@@ -2,7 +2,7 @@
 // rings re-derived by the court, whatever the adjudication, and the words they
 // teach read — spelled, or offered as letters.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::anastome::dialogue::{self, Spoken};
 use crate::cognition::*;
 use crate::transducer::sentence::as_element_form;
@@ -31,7 +31,7 @@ fn hear_frame_on_reads_rings_of_unstood_sentence() {
         &[0x5b; 32],
         [9u8; 4],
         0,
-        &[Spoken { tape: e.to_bytes().expect("the record writes"), standing: 0, contraction: None, agreement: None }],
+        &[Spoken { tape: e.to_bytes().expect("the record writes"), standing: 0, contraction: None, agreement: None, ground: None }],
     )
     .expect("the task frames");
     let act = dialogue::decode_speech(&frame).expect("the frame decodes");
@@ -39,7 +39,7 @@ fn hear_frame_on_reads_rings_of_unstood_sentence() {
     // 78.153: a stroke that holds the frame's replays.
     let heard = court.hear_frame_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let after = court.winding_tally();
-    let read = |t: &crate::server::cognition::court::winding::WindingTally| t.heard_spelled + t.heard_offered + t.heard_peel_unread + t.heard_rotor_unread;
+    let read = |t: &crate::server::cognition::court::ring_carrier::RingTally| t.heard_spelled + t.heard_offered + t.heard_peel_unread + t.heard_rotor_unread;
     assert!(read(&after) > read(&before), "the sentence's taught words were read ({heard:?}): {after:?}");
     assert!(after.heard_spelled > before.heard_spelled, "the slide words are spelled by the alphabet");
     assert_eq!(after.heard_offered, before.heard_offered, "and nothing the alphabet says is offered as a letter");

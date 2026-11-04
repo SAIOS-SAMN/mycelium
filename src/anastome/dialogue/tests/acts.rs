@@ -185,7 +185,7 @@ fn decode_peers_reply_refuses_deferral() {
 #[test]
 fn decode_solve_signs_payee_by_voice_key() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
-    let outputs = vec![vec![vec![1u8, 2], vec![0, 3]]];
+    let outputs = spoken_outputs(&[vec![vec![1u8, 2], vec![0, 3]].into()]).expect("a sample");
     for rule in [None, Some(&b"a rule's tape"[..])] {
         let body = encode_solve_with_rule(&key, &[7u8; 32], &outputs, rule).expect("fits");
         let act = decode_solve(&body).expect("reads back");
@@ -197,7 +197,8 @@ fn decode_solve_signs_payee_by_voice_key() {
         assert!(decode_solve(&tampered).is_some_and(|a| !a.signed), "a changed act is not what was signed");
         let other = ed25519_dalek::SigningKey::from_bytes(&[6u8; 32]).verifying_key().to_bytes();
         let mut swapped = body.clone();
-        swapped[1..33].copy_from_slice(&other);
+        // The voice follows the act's tag and its claim kind (track 26 S4c).
+        swapped[2..34].copy_from_slice(&other);
         assert!(decode_solve(&swapped).is_some_and(|a| !a.signed), "another voice named as payee");
         let unsigned = body.get(..body.len() - 68).expect("a signature at the end").to_vec();
         assert!(decode_solve(&unsigned).is_some_and(|a| !a.signed), "no signature, no payee");
@@ -205,4 +206,30 @@ fn decode_solve_signs_payee_by_voice_key() {
         trailing.push(0);
         assert!(decode_solve(&trailing).is_none(), "bytes after the signature");
     }
+}
+
+/// TRACK 26 S2 — A SOLVE STATES THE GROUND ITS CLAIM WAS SPOKEN UNDER, and
+/// reads it back exactly, at the symbol's own width; a solve stating none
+/// reads none; the stated ground is signed with the act, so a changed
+/// ground reads unsigned; an empty stated ground is no ground and refuses
+/// the act.
+#[test]
+fn solve_round_trips_stated_ground() {
+    let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
+    let outputs = spoken_outputs(&[vec![vec![1u8, 2], vec![0, 3]].into()]).expect("a sample");
+    let tape = &b"a rule's tape"[..];
+    for ground in [vec![7u8], vec![1u8, 2]] {
+        let body = encode_solve_spoken(&key, &[7u8; 32], &outputs, Some(tape), Some(&ground)).expect("fits");
+        let act = decode_solve(&body).expect("reads back");
+        assert_eq!((act.ground.as_deref(), act.rule.as_deref(), act.signed), (Some(&ground[..]), Some(tape), true));
+        // The ground's last byte stands just before `SIGN` and the signature.
+        let mut changed = body.clone();
+        let at = body.len() - 69;
+        changed[at] ^= 1;
+        assert!(decode_solve(&changed).is_some_and(|a| !a.signed), "the stated ground is signed with the act");
+    }
+    let none = decode_solve(&encode_solve_spoken(&key, &[7u8; 32], &outputs, Some(tape), None).expect("fits")).expect("reads back");
+    assert_eq!((none.ground, none.signed), (None, true), "no ground stated, none read");
+    let empty = encode_solve_spoken(&key, &[7u8; 32], &outputs, Some(tape), Some(&[])).expect("fits");
+    assert!(decode_solve(&empty).is_none(), "an empty stated ground is refused");
 }

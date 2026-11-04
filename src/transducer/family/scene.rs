@@ -1,13 +1,13 @@
-// 53.1, 53.2 — THE SCENE COVER: the charts a scene is cut into, under a
+// 53.1, 53.2 — THE SCENE COVER: the regions a scene is cut into, under a
 // reading, before it is perceived as one form.
 //
 //! A scene arriving at extraction as one form of 712 vertices is not a
 //! cost to optimise but the absence of a cut (53). This organ is the cut:
-//! a **reading** is a way the sensor plane is divided, a **chart** is a
-//! region of it named by its support written out, and a **cover** is the
-//! charts of one reading, keyed.
+//! a **reading** is a way the sensor plane is divided, a **region** is a
+//! part of it named by its support written out, and a **cover** is the
+//! regions of one reading, keyed.
 //!
-//! THE ROSTER IS THE ENUM. `Reading` has one member today and a new one
+//! THE ROSTER IS THE ENUM. `PlaneCut` has one member today and a new one
 //! enters behind a court receipt on a probe (law 6 as amended, rows K4 and
 //! K5) — never by a voice and never by a commit that merely adds a variant
 //! because it seemed useful. The enum IS the roster, so the governance has
@@ -17,76 +17,76 @@
 //! order, every cover that closes is kept, and the caller holds
 //! incomparable ones rather than taking the first that answers.
 
-use super::perceive::{frame_of, on_grid, Grid};
+use super::perceive::{frame_of, on_grid, SectionSample};
 use crate::network::nerve::Keyed;
 use crate::transducer::base::Site;
-use crate::transducer::peel::ShellKind;
+use crate::transducer::layers::LayerKind;
 
 /// A WAY THE SENSOR PLANE IS CUT (53.2). The roster is fixed and grows
 /// only by a court receipt on a probe — a reading whose first cover on the
 /// corpus closes a family no other reading closes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Reading {
+pub enum PlaneCut {
     /// The uniform separator rows and columns every input of the family
     /// carries. Deducible in one pass over the inputs, and the cut 850 of
     /// the 1 120 corpus tasks present.
     Bands,
 }
 
-impl Reading {
+impl PlaneCut {
     /// THE ROSTER, in its own order. Walked whole by the caller; a reading
     /// is never picked out of it by a measurement (rule 4).
-    pub const ROSTER: [Reading; 1] = [Reading::Bands];
+    pub const ROSTER: [PlaneCut; 1] = [PlaneCut::Bands];
 
-    /// The reading's own byte, ahead of every chart key it names, so two
-    /// readings that cut a scene into the same region name two charts and
-    /// a `Keyed` of charts under one reading is a stratum of its tag.
+    /// The reading's own byte, ahead of every region key it names, so two
+    /// readings that cut a scene into the same region name two regions and
+    /// a `Keyed` of regions under one reading is a stratum of its tag.
     pub fn byte(self) -> u8 {
         match self {
-            Reading::Bands => 0,
+            PlaneCut::Bands => 0,
         }
     }
 }
 
 /// A REGION OF THE SENSOR PLANE, by its support on the sites of the base
-/// (51.3, 71). A chart is itself a scene and is covered again; what ends
+/// (51.3, 71). A region is itself a scene and is covered again; what ends
 /// the recursion is 53.1's identity of coordinates, below.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Chart {
-    /// The sites the chart holds, in coordinate order.
+pub struct Region {
+    /// The sites the region holds, in coordinate order.
     pub support: Vec<Site>,
 }
 
-/// THE CHARTS OF ONE READING, each keyed by its own coordinates.
-pub type Cover = Keyed<Chart>;
+/// THE REGIONS OF ONE READING, each keyed by its own coordinates.
+pub type Regions = Keyed<Region>;
 
-/// A CHART'S KEY: the reading's tag, then the region written out as the
+/// A REGION'S KEY: the reading's tag, then the region written out as the
 /// [`coord::Piece`] it is (A21, §4.4 E8), of which every prefix is a
 /// coarser stratum.
 ///
 /// [`coord::Piece`]: crate::network::nerve::coord::Piece
 ///
-/// `ShellKind::Frame` is the kind because a chart is a region of the
-/// GRID'S OWN EXTENT and not a body shell — which is what that member of
+/// `LayerKind::Frame` is the kind because a region is a part of the
+/// GRID'S OWN EXTENT and not a body layer — which is what that member of
 /// the enum says. A reading that cut by something beyond the region would
-/// write it after its own tag, which leads the key, so its charts key apart
+/// write it after its own tag, which leads the key, so its regions key apart
 /// from these without a second key family (rule 6).
-pub fn chart_key(reading: Reading, support: &[Site]) -> Vec<u8> {
+pub fn region_key(reading: PlaneCut, support: &[Site]) -> Vec<u8> {
     let mut k = vec![reading.byte()];
     use crate::network::nerve::Coordinate;
-    k.extend_from_slice(super::pieces::piece_at(ShellKind::Frame, support).encode().as_bytes());
+    k.extend_from_slice(super::pieces::piece_at(LayerKind::Frame, support).encode().as_bytes());
     k
 }
 
-impl Chart {
-    pub fn key(&self, reading: Reading) -> Vec<u8> {
-        chart_key(reading, &self.support)
+impl Region {
+    pub fn key(&self, reading: PlaneCut) -> Vec<u8> {
+        region_key(reading, &self.support)
     }
 }
 
-/// THE WHOLE SCENE AS ONE CHART — the coordinate the recursion's end is
+/// THE WHOLE SCENE AS ONE REGION — the coordinate the recursion's end is
 /// compared against. `None` where the scene has no frame to name.
-pub fn scene_chart(scene: &[Grid]) -> Option<Chart> {
+pub fn scene_region(scene: &[SectionSample]) -> Option<Region> {
     let [first, rest @ ..] = scene else { return None };
     let (h, w) = frame_of(first);
     if h == 0 || w == 0 {
@@ -99,11 +99,11 @@ pub fn scene_chart(scene: &[Grid]) -> Option<Chart> {
             return None;
         }
     }
-    Some(Chart { support: block(0, h as i64, 0, w as i64) })
+    Some(Region { support: block(0, h as i64, 0, w as i64) })
 }
 
 /// THE SITES OF A RECTANGULAR BLOCK, in coordinate order. Frame `0`: a
-/// chart is a region of the sensor plane and the frame rides on the pose
+/// region is a part of the sensor plane and the frame rides on the pose
 /// (16.5), so the cut is one reading for every frame of the family.
 fn block(r0: i64, r1: i64, c0: i64, c1: i64) -> Vec<Site> {
     let mut out = Vec::new();
@@ -116,16 +116,16 @@ fn block(r0: i64, r1: i64, c0: i64, c1: i64) -> Vec<Site> {
     out
 }
 
-/// THE COVER'S OWN KEY: its charts' keys written out length-delimited, in
-/// the trie's order, which is the charts' coordinate order.
+/// THE COVER'S OWN KEY: its regions' keys written out length-delimited, in
+/// the trie's order, which is the regions' coordinate order.
 ///
 /// It exists so 53.1's identity end is A KEY COMPARISON and not a count. A
-/// cover of one chart equal to the whole scene has the same key as the
-/// one-element listing of the scene's own chart, and no other cover does:
-/// a second chart lengthens the listing, and a single chart cut smaller
+/// cover of one region equal to the whole scene has the same key as the
+/// one-element listing of the scene's own region, and no other cover does:
+/// a second region lengthens the listing, and a single region cut smaller
 /// writes different coordinates. `len() == 1`, `<`, and any constant are
 /// refused here under rules 2 and 5.
-pub fn cover_key(cover: &Cover) -> Vec<u8> {
+pub fn cover_key(cover: &Regions) -> Vec<u8> {
     let mut k = Vec::new();
     for (ck, _) in cover.scoped() {
         crate::transducer::address::put_key_bytes(&mut k, &ck);
@@ -135,11 +135,11 @@ pub fn cover_key(cover: &Cover) -> Vec<u8> {
 
 /// THE RECURSION'S END (53.1): the cover's key IS the scene's own key.
 ///
-/// A chart is itself a scene and is covered again; this is where that
+/// A region is itself a scene and is covered again; this is where that
 /// stops. There is no floor and no count — `FRAGMENT_FLOOR = 9` is refused
-/// by rule 5 and is not replaced by a count of charts (rule 2).
-pub fn is_identity(cover: &Cover, scene: &[Grid], reading: Reading) -> bool {
-    let Some(whole) = scene_chart(scene) else {
+/// by rule 5 and is not replaced by a count of regions (rule 2).
+pub fn is_identity(cover: &Regions, scene: &[SectionSample], reading: PlaneCut) -> bool {
+    let Some(whole) = scene_region(scene) else {
         return false;
     };
     let mut want = Vec::new();
@@ -150,24 +150,25 @@ pub fn is_identity(cover: &Cover, scene: &[Grid], reading: Reading) -> bool {
 /// THE COVER A READING DEDUCES (53.1). `None` is "this reading deduces no
 /// cover on this scene", which is not a demand and not a refusal: the
 /// caller walks the rest of the roster.
-pub fn cover(scene: &[Grid], reading: Reading) -> Option<Cover> {
+pub fn cover(scene: &[SectionSample], reading: PlaneCut) -> Option<Regions> {
     match reading {
-        Reading::Bands => bands(scene),
+        PlaneCut::Bands => bands(scene),
     }
 }
 
 /// Is this row of this grid one hue throughout?
-fn row_uniform(g: &Grid, r: usize) -> bool {
-    let Some(row) = g.get(r) else { return false };
-    let [first, rest @ ..] = row.as_slice() else { return false };
+fn row_uniform(g: &SectionSample, r: usize) -> bool {
+    let Some(row) = g.line(r) else { return false };
+    let [first, rest @ ..] = row else { return false };
     rest.iter().all(|h| h == first)
 }
 
 /// Is this column of this grid one hue throughout?
-fn col_uniform(g: &Grid, c: usize) -> bool {
-    let [first, rest @ ..] = g.as_slice() else { return false };
+fn col_uniform(g: &SectionSample, c: usize) -> bool {
+    let mut lines = g.lines();
+    let Some(first) = lines.next() else { return false };
     let Some(&want) = first.get(c) else { return false };
-    rest.iter().all(|row| row.get(c) == Some(&want))
+    lines.all(|row| row.get(c) == Some(&want))
 }
 
 /// THE MAXIMAL RUNS OF NON-SEPARATOR INDICES, in coordinate order: the
@@ -195,30 +196,30 @@ fn runs(sep: &[bool]) -> Vec<(i64, i64)> {
 }
 
 /// 53.2 BANDS: the rows and columns uniform across EVERY input of the
-/// family bound the charts.
+/// family bound the regions.
 ///
 /// A row is a separator where it is one hue throughout in every grid of
 /// the scene — the hue may differ from grid to grid, because what the
 /// reading deduces is that nothing of the scene's content crosses there.
-/// The charts are the maximal runs of non-separator rows crossed with the
+/// The regions are the maximal runs of non-separator rows crossed with the
 /// maximal runs of non-separator columns.
 ///
-/// A scene with no separator is its own single chart, which is 53.1's
+/// A scene with no separator is its own single region, which is 53.1's
 /// identity end reached in one pass and NOT a special case written here:
 /// `runs` over a boundary with no separator in it is the one run that
 /// spans it, and the block that names is the whole scene.
-fn bands(scene: &[Grid]) -> Option<Cover> {
-    let whole = scene_chart(scene)?;
+fn bands(scene: &[SectionSample]) -> Option<Regions> {
+    let whole = scene_region(scene)?;
     let [first, ..] = scene else { return None };
     let (h, w) = frame_of(first);
     let rows: Vec<bool> = (0..h).map(|r| scene.iter().all(|g| row_uniform(g, r))).collect();
     let cols: Vec<bool> = (0..w).map(|c| scene.iter().all(|g| col_uniform(g, c))).collect();
     let (rr, cc) = (runs(&rows), runs(&cols));
-    let mut out: Cover = Keyed::new();
+    let mut out: Regions = Keyed::new();
     for &(r0, r1) in &rr {
         for &(c0, c1) in &cc {
-            let chart = Chart { support: block(r0, r1, c0, c1) };
-            out.insert(chart.key(Reading::Bands), chart);
+            let region = Region { support: block(r0, r1, c0, c1) };
+            out.insert(region.key(PlaneCut::Bands), region);
         }
     }
     // A SCENE THAT IS ALL SEPARATOR HAS NO BAND, and an empty cover is not
@@ -231,18 +232,18 @@ fn bands(scene: &[Grid]) -> Option<Cover> {
     Some(out)
 }
 
-/// A GRID RESTRICTED TO A CHART: the chart's own sites, read at the
-/// chart's origin, so a chart's family is an ordinary family of its own
+/// A GRID RESTRICTED TO A REGION: the region's own sites, read at the
+/// region's origin, so a region's family is an ordinary family of its own
 /// extent and the moves below it are 52.5's unchanged.
 ///
-/// `None` where the chart names a site the grid does not have — a chart of
+/// `None` where the region names a site the grid does not have — a region of
 /// one scene restricted against another's extent, which is not a reading
 /// of anything (rule 11).
-pub fn restrict(g: &Grid, chart: &Chart) -> Option<Grid> {
-    // The chart's sites on the grid axes: a chart is a region of the
+pub fn restrict(g: &SectionSample, region: &Region) -> Option<SectionSample> {
+    // The region's sites on the grid axes: a region is a part of the
     // sensor plane (16.5).
-    let plane: Vec<(i64, i64)> = chart.support.iter().map(on_grid).collect::<Option<_>>()?;
-    // THE CHART'S EXTENT, both corners read off every site. The low corner
+    let plane: Vec<(i64, i64)> = region.support.iter().map(on_grid).collect::<Option<_>>()?;
+    // THE REGION'S EXTENT, both corners read off every site. The low corner
     // was the FIRST site's (rule 15's first-found), so a site above or left
     // of it gave a negative offset that wrapped to a huge index and dropped
     // the whole restriction silently, and the extent came out short.
@@ -266,11 +267,11 @@ pub fn restrict(g: &Grid, chart: &Chart) -> Option<Grid> {
     // `usize` or the restriction is refused (rule 11), never wrapped.
     let span = |lo: i64, hi: i64| usize::try_from(hi.checked_sub(lo)?.checked_add(1)?).ok();
     let (h, w) = (span(r0, r1)?, span(c0, c1)?);
-    let mut out = vec![vec![crate::arc::ground(); w]; h];
+    let mut out = SectionSample::filled([h, w], crate::transducer::raster::void().ok()?).ok()?;
     for &(r, c) in &plane {
-        let hue = *g.get(usize::try_from(r).ok()?).and_then(|row| row.get(usize::try_from(c).ok()?))?;
+        let hue = *g.line(usize::try_from(r).ok()?).and_then(|row| row.get(usize::try_from(c).ok()?))?;
         let (dr, dc) = (usize::try_from(r - r0).ok()?, usize::try_from(c - c0).ok()?);
-        *out.get_mut(dr).and_then(|row| row.get_mut(dc))? = hue;
+        *out.line_mut(dr).and_then(|row| row.get_mut(dc))? = hue;
     }
     Some(out)
 }

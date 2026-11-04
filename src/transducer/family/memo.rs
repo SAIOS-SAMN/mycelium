@@ -182,9 +182,9 @@ fn deformation_answer(
 }
 
 /// Re-derive the family's rule and check it agrees with `rule`.
-pub fn rule_replays_family(
+pub fn rule_reconstructs_family(
     rule: &crate::transducer::sentence::SentenceRule,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     budget: &mut crate::physics::Budget,
 ) -> bool {
     let Some(again) = extract_rule(family, budget) else {
@@ -269,7 +269,7 @@ impl ExtractMemo {
 pub fn extract_rule_cached(
     cache: &mut ExtractMemo,
     fam: &[u8],
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     atlas_root: crate::transducer::address::Address,
     budget: &mut crate::physics::Budget,
     crystal: &dyn Crystal,

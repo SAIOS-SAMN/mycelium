@@ -3,7 +3,7 @@
 // replays the sentence on that family — refusing it for an undeclared
 // remainder and never for the one its demands name.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 
 /// A spoken sentence is bound to the family of the task it was spoken for
@@ -23,7 +23,7 @@ fn speak_pair_binds_sentence_to_task_family_and_mints() {
     home.court_settle();
     assert!(home.ruled_contains(&addr), "the stroke replays the sentence on its pair and rules it");
     let spoken = home.provisional.get(&addr).cloned().expect("provisional until a witness");
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
     let cover = home.genesis_cover().expect("measured");
     home.enroll([2; 32], cover);

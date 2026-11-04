@@ -3,7 +3,7 @@
 // output, the loops across pairs closed on the axis that carries the rule,
 // and each pair rebuilt from the others by replay.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::family::reconstruct::{field, holonomy, reconstruct, transports};
 use num_rational::BigRational;
 
@@ -26,9 +26,10 @@ fn field_reads_centrality_against_body_sphere() {
 /// loops do not close; by mass, density, centrality and body the two strokes
 /// are alike and do not close either. The local inertia form's cross term
 /// has opposite signs on the two strokes: LOCAL DIRECTION closes, and each
-/// pair left out is rebuilt from the other two by it.
+/// pair left out is derived from the other two by it.
 #[test]
-fn reconstruct_rebuilds_each_pair_on_closing_axis() {
+fn reconstruct_derives_each_pair_on_closing_axis() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (
             grid(&["500000050", "050000500", "005005000", "000000000", "000000000"]),

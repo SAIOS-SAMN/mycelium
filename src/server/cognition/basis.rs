@@ -62,7 +62,7 @@ impl Court {
 
     /// Whether this court has marked `address` heard. A heard mark says the
     /// glue ran once for this address on this court; it is not a verdict,
-    /// and a reader that needs one replays (`court_replay`).
+    /// and a reader that needs one reconstructs (`court_reconstruct`).
     pub fn heard_contains(&self, address: &[u8]) -> bool {
         self.heard.contains(address)
     }
@@ -677,16 +677,16 @@ impl Court {
     #[cfg(test)]
     pub fn glue_local(&mut self) {
         let words: Vec<Element> = self.provisional.scoped().map(|(_, e)| e.clone()).collect();
-        let mut cover = crate::network::nerve::Cover::new();
+        let mut cover = crate::network::nerve::HomeTrie::new();
         // The fixture's act: its root, one stroke a word — fetched again, as
         // the exchange fetches it again, while its replay is unread and moved
         // on (78.153).
         for w in words {
             loop {
-                let before = self.court_replay_progress(&w);
+                let before = self.court_reconstruction_progress(&w);
                 let mut budget = self.physics.stroke();
                 match self.glue_fetched_ruled(w.clone(), [2; 32], [1; 32], &mut cover, &mut budget) {
-                    None if self.court_replay_progress(&w) != before => {}
+                    None if self.court_reconstruction_progress(&w) != before => {}
                     _ => break,
                 }
             }
@@ -847,17 +847,25 @@ impl Court {
     }
 
     /// 76, 78.42 (3) — PRESSURE ON A WORD IN FLIGHT: a sentence that cites it
-    /// transports its frame to the word's escrow, and carries the word — a
+    /// transports a frame to the word's escrow, and carries the word — a
     /// transition concerning it. A word this court does not hold in flight
     /// takes no pressure here.
-    pub(crate) fn press(&mut self, address: &[u8], frame: [u64; 4]) {
+    ///
+    /// The frame is the word's own discharge, the frame its carriage draws
+    /// (`carry`), in the escrow's currency: μ, a share of the frame (78.170
+    /// O1, ruled 2026-11-01). The waiting sentence cites a word this court
+    /// does not rule, so its own discharge cannot be measured here, and its
+    /// magnitude is a count, not μ: crediting it would credit a site count
+    /// to an escrow held in shares.
+    pub(crate) fn press(&mut self, address: &[u8]) {
         if !self.in_flight(address) {
             return;
         }
-        if self.treasury.credit_escrow(address, frame).is_none() {
+        let Some(frame) = self.provisional.get(address).map(|w| self.discharge_of(address, w)) else { return };
+        if self.treasury.credit_escrow(address, frame.clone()).is_none() {
             self.overflowed += 1;
         }
-        self.note_flux(address, frame);
+        self.note_flux(address, &frame);
         self.carry(address);
     }
 
@@ -873,9 +881,9 @@ impl Court {
     /// as silent (ZeroFlux, 78.37 (3)).
     pub(crate) fn carry(&mut self, address: &[u8]) {
         let Some(frame) = self.provisional.get(address).map(|w| self.discharge_of(address, w)) else { return };
-        match self.treasury.carry_escrow(address, frame) {
+        match self.treasury.carry_escrow(address, frame.clone()) {
             Some(Ok(_)) => {
-                self.note_flux(address, frame);
+                self.note_flux(address, &frame);
                 if let Some(at) = self.stamp_key(address) {
                     self.emitted.insert(&at, ());
                 }

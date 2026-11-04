@@ -10,7 +10,7 @@ use super::*;
 /// The TRANSITION carrying chart X's view to chart Y's, from each chart's germ for
 /// the shared object: `g_XY = g_Y ∘ g_X⁻¹` (the change of view). Antisymmetric by
 /// construction — `g_YX = g_XY⁻¹`. `None` if X's germ is not invertible (a
-/// coboundary/residual chart has no group view-change; that overlap is handled by
+/// coboundary/residue chart has no group view-change; that overlap is handled by
 /// the additive coboundary, not this group transition), and `None` where the
 /// composite's counts would pass the counts' carrier (STD1, `Element::compose`).
 pub fn transition(g_x: &Element, g_y: &Element) -> Option<Element> {
@@ -371,10 +371,7 @@ pub fn classify(
     // outside the seventeen. A rotor with no sensor block is not
     // unspellable — it is a letter acting elsewhere, and it carries a class
     // with no sensor section.
-    let plane = (
-        crate::transducer::alphabet::PLANE_ROW,
-        crate::transducer::alphabet::PLANE_COL,
-    );
+    let plane = crate::transducer::alphabet::sensor_plane();
     let acts_on_sensor = crate::transducer::alphabet::rotor_block_on(rotor, plane).is_some();
     if acts_on_sensor && crate::transducer::alphabet::word_of_rotor(rotor).is_none() {
         return Fill::Unspellable(Box::new(rotor.clone()));

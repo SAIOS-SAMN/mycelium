@@ -25,7 +25,7 @@ fn release_verified_pays_closer_whole_at_rest() {
     assert_eq!(strain, [0; 4], "a fresh court is at rest");
     let at = k.anchor();
     let organs = [k.identity, witness];
-    let paid = k.release_verified(addr.as_bytes(), held, &organs, at).expect("the claim releases");
+    let paid = k.release_verified(addr.as_bytes(), held.into(), &organs, at).expect("the claim releases");
     assert_eq!(paid, held, "the closer is paid the whole release");
     assert_eq!(k.treasury().balance_mu(&voice), held);
     assert_eq!(k.treasury().balance_mu(&witness), [0; 4], "the witness took nothing");
@@ -45,12 +45,12 @@ fn release_verified_shares_strained_release_with_witness() {
     k.physics.reserve = crate::physics::Reserve::of([0; 4]);
     let strain = crate::economy::yield_surface(&k.physics).expect("the surface reads");
     assert!(strain.iter().all(|&y| y > 0), "a spent reserve strains every lane: {strain:?}");
-    let each = crate::economy::verification_share(&held.into(), &strain, crate::physics::reserve_max(), 2);
+    let each = crate::economy::verification_share(&held.into(), &strain, k.physics.capacity(), 2);
     assert!(!each.is_zero(), "the strain pays verification something");
 
     let at = k.anchor();
     let organs = [k.identity, witness];
-    let paid = k.release_verified(addr.as_bytes(), held, &organs, at).expect("the claim releases");
+    let paid = k.release_verified(addr.as_bytes(), held.into(), &organs, at).expect("the claim releases");
     let court_vk = k.identity;
     assert_eq!(k.treasury().balance_mu(&court_vk), each, "this court is minted its share");
     assert_eq!(k.treasury().balance_mu(&witness), each, "the witness is minted the same share");
@@ -77,12 +77,12 @@ fn release_verified_shares_capped_base_once_per_organ() {
     k.physics.reserve = crate::physics::Reserve::of([0; 4]);
     let strain = crate::economy::yield_surface(&k.physics).expect("the surface reads");
     let base = [10, 20, 0, 8];
-    let each = crate::economy::verification_share(&base.into(), &strain, crate::physics::reserve_max(), 1);
+    let each = crate::economy::verification_share(&base.into(), &strain, k.physics.capacity(), 1);
 
     let at = k.anchor();
     let court_vk = k.identity;
     let organs = [court_vk, court_vk];
-    let paid = k.release_verified(addr.as_bytes(), discharge, &organs, at).expect("the claim releases");
+    let paid = k.release_verified(addr.as_bytes(), discharge.into(), &organs, at).expect("the claim releases");
     assert_eq!(k.treasury().balance_mu(&court_vk), each, "one organ, one share");
     assert_eq!(Ok(paid), crate::economy::Mu::from(base).draw(&each), "the closer the rest of the capped base");
     assert_eq!(k.treasury().minted(), base, "nothing above the discharge was issued");

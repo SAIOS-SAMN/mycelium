@@ -6,7 +6,7 @@
 use crate::anastome::dialogue::challenge::{line_head, Challenge, Challenged, Entry};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Mouth, Offer, Side, State, Unbalanced};
 use crate::anastome::dialogue::uplink::{Discontinuous, Net, SideRefusal, TierFold, Uplinked};
-use super::common::close_through;
+use super::fixtures::close_through;
 use crate::chronometry::Stamp;
 use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;

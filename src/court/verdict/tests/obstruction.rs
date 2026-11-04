@@ -69,7 +69,7 @@ fn ruled_obstruction_carries_ruled_kind_per_code() {
 fn obstruction_kind_classifies_withheld_and_pose_arms() {
     use crate::transducer::blade::NoPose;
     use crate::transducer::family::Withheld;
-    let chord = crate::transducer::sentence::tests::common::some_overlap();
+    let chord = crate::transducer::sentence::tests::fixtures::some_overlap();
     assert_eq!(Withheld::OrbitObstruction { chord, key: [0, 0] }.obstruction_kind(), ObstructionKind::Cover);
     assert_eq!(Withheld::CoboundaryResidue { links: 1, pairs: 1 }.obstruction_kind(), ObstructionKind::Cover);
     assert_eq!(Withheld::Acyclic { links: 0, pairs: 0 }.obstruction_kind(), ObstructionKind::NoQuestion);

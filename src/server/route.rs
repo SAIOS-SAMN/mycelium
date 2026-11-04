@@ -13,8 +13,10 @@
 //! there it went silent for minutes on a task whose chart takes seconds a
 //! pair once refinement was no longer capped (MU-DERIVATIONS D3.2).
 
-use crate::arc::Task;
+use crate::anastome::dialogue::PostedTask;
 use crate::server::registry::{TaskCitation, TaskRegistry};
+use crate::transducer::family::Task;
+use crate::transducer::sentence::SectionRefusal;
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 use crate::transducer::stalk::Invariant;
@@ -38,23 +40,29 @@ pub struct PairRoute {
 /// hands them out.
 pub type TaskRoutes = Arc<Vec<PairRoute>>;
 
-/// THE ROUTES OF A TASK, read: each train pair refined under the stroke its
-/// own extents need (no lcm is capped, 78.111), its chain in canonical
-/// order, its residue formed in the pair's frame, charted, and cut into the
-/// pieces the court lists. A pair with no common refinement or no A5 form
-/// cannot be addressed, so it has no route (U14).
+/// THE ROUTES OF A TASK, read: each train pair of one enclosure as its
+/// planar coboundary, in canonical order, its residue formed in the pair's
+/// frame, charted, and cut into the pieces the court lists. A pair with no
+/// A5 form cannot be addressed, so it has no route (U14).
+///
+/// A PAIR OF UNEQUAL ENCLOSURES HAS NO ROUTE YET. Its relation is its
+/// transduction (`transduce::Transduction`, bodies' bands in turns), and
+/// the listing's readers — the chart and the pieces — read a chain site by
+/// site; the record is not rebuilt as cells to feed them (MU-DERIVATIONS
+/// D3.2, the operator's ruling that no lattice stands past the sensor).
+/// The turn-native chart that will list it is its own entry (O8).
 pub fn routes_of(task: &Task) -> Vec<PairRoute> {
+    use crate::transducer::family::transduce::Enclosure;
     let mut out = Vec::with_capacity(task.train.len());
     for (a, b) in &task.train {
-        let mut stroke = crate::physics::Physics::default().stroke_n(match crate::transducer::family::refine::need_of(a, b) {
-            Some(n) => n,
-            None => 0,
-        });
-        let Ok(crate::arc::Refined { delta: mut chain, frame, .. }) = crate::arc::refine_delta(a, b, &mut stroke) else {
+        if !Enclosure::of(a.sample()).is_same_periods(&Enclosure::of(b.sample())) {
             continue;
-        };
-        chain.sort_unstable();
-        let Some(residue) = crate::transducer::element::from_residual_framed(&chain, &frame) else {
+        }
+        // One enclosure: the speech reaches every site and needs no ground.
+        let Ok(chain) = crate::transducer::family::speak::residue_of(Some(a), b) else { continue };
+        let ([h, w], [h2, w2]) = (a.extents(), b.extents());
+        let frame = crate::transducer::element::Frame::new(h, w, h2, w2);
+        let Some(residue) = crate::transducer::element::from_residue_framed(&chain, &frame) else {
             continue;
         };
         out.push(PairRoute {
@@ -67,39 +75,57 @@ pub fn routes_of(task: &Task) -> Vec<PairRoute> {
     out
 }
 
-/// A TASK A WALK HANDS THE LISTING STEP: its citation, the task (its train
-/// binds the court's family) and its routes.
+/// A TASK A WALK HANDS THE LISTING STEP: its citation, the task on the
+/// alphabet's section (its train binds the court's family) and its routes.
 pub struct Walked {
     pub citation: TaskCitation,
     pub task: Task,
     pub routes: TaskRoutes,
 }
 
+/// THE ROUTES OF A POSTED TASK (track 26 S4c): those of its section
+/// ([`routes_of`]); a task off the alphabet's section has none, since the
+/// listing's readers spell the section, and its section's refusal is kept
+/// by name. Its routes are kept all the same (none), so the walks pass it.
+fn section_routes(task: &PostedTask) -> (Result<Task, SectionRefusal>, Vec<PairRoute>) {
+    let section = task.section();
+    let routes = match &section {
+        Ok(t) => routes_of(t),
+        Err(_) => Vec::new(),
+    };
+    (section, routes)
+}
+
 /// The task's routes where the registry keeps them; otherwise read here,
 /// with no registry lock held, and kept. A poisoned lock keeps nothing.
-fn routed(registry: &Mutex<TaskRegistry>, citation: TaskCitation, task: Task) -> Walked {
+/// `None` where the task is off the alphabet's section: nothing is listed
+/// for it, and its (empty) routes are kept so no walk reads it again.
+fn routed(registry: &Mutex<TaskRegistry>, citation: TaskCitation, task: PostedTask) -> Option<Walked> {
     let kept = registry.lock().ok().and_then(|r| r.routes(&citation));
-    let routes = match kept {
-        Some(routes) => routes,
+    let (section, routes) = match kept {
+        Some(routes) => (task.section(), routes),
         None => {
-            let read: TaskRoutes = Arc::new(routes_of(&task));
-            match registry.lock() {
+            let (section, read) = section_routes(&task);
+            let read: TaskRoutes = Arc::new(read);
+            let routes = match registry.lock() {
                 Ok(mut r) => r.keep_routes(citation, read),
                 Err(_) => read,
-            }
+            };
+            (section, routes)
         }
     };
-    Walked { citation, task, routes }
+    Some(Walked { citation, task: section.ok()?, routes })
 }
 
 /// FIRST-TIME INTAKE: the next `n` tasks of the manifest, each routed and
-/// its routes kept.
+/// its routes kept; a task off the alphabet's section is routed to none
+/// and handed to no listing.
 pub fn intake_walk(registry: &Mutex<TaskRegistry>, n: usize) -> Vec<Walked> {
     let batch = match registry.lock() {
         Ok(mut r) => r.next_intake_batch(n),
         Err(_) => return Vec::new(),
     };
-    batch.into_iter().map(|(citation, task)| routed(registry, citation, task)).collect()
+    batch.into_iter().filter_map(|(citation, task)| routed(registry, citation, task)).collect()
 }
 
 /// A COVER CHANGE'S WALK: the next `n` tasks of the cover walk that the
@@ -113,15 +139,17 @@ pub fn cover_walk(registry: &Mutex<TaskRegistry>, n: usize) -> Vec<Walked> {
         .into_iter()
         .filter_map(|(citation, task)| {
             let routes = r.routes(&citation)?;
-            Some(Walked { citation, task, routes })
+            Some(Walked { citation, task: task.section().ok()?, routes })
         })
         .collect()
 }
 
 /// THE NEXT TASK NOT YET ROUTED, routed and kept: a court that restored its
 /// listings took no intake, and its corpus is routed here, one task at a
-/// time, on the intake's thread. `None` once every task is routed.
-pub fn route_next(registry: &Mutex<TaskRegistry>) -> Option<Walked> {
+/// time, on the intake's thread. The outer `None` once every task is
+/// routed; the inner `None` where the task routed was off the alphabet's
+/// section, so nothing is listed for it and the walk goes on.
+pub fn route_next(registry: &Mutex<TaskRegistry>) -> Option<Option<Walked>> {
     let (citation, task) = registry.lock().ok()?.unrouted()?;
     Some(routed(registry, citation, task))
 }

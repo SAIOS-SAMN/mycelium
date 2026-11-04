@@ -8,13 +8,13 @@
 //! reading, never the court, with the reading's height behind the answer;
 //! a range the reading does not yet reach is answered short at its height.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer_written;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(req) = dialogue::decode_receipts_request(&frame.body) else { return };
     // A budget smaller than the envelopes serves nothing: the page's tapes,
     // and the reply's whole budget behind which the reading height rides.
@@ -22,7 +22,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     else {
         return;
     };
-    let reading = door.published.take();
+    let reading = context.published.take();
     mycelium::observe::note_serve(mycelium::observe::ServeAxis::ReadsPublished, 1);
     // 78.147: a catch-up below the signer's fold root is answered with the
     // root and its two signatures; only an era replay pages the archive.
@@ -44,7 +44,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     dialogue::put_reading_height(&mut body, reading.height());
     // A page the asker no longer waits for is counted, never dropped silent.
-    if !answer_written(stream, Frame { lane: frame.lane, body }) {
+    if !answer_written(stream, WireFrame { lane: frame.lane, body }) {
         mycelium::observe::note_serve(mycelium::observe::ServeAxis::Unwritten, 1);
     }
 }

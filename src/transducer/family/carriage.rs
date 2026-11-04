@@ -4,7 +4,7 @@ use crate::transducer::element::Versor;
 
 /// One body carried onto another: the transport and the gauge map.
 #[derive(Clone, Debug)]
-pub struct Carriage {
+pub struct BodyTransport {
     pub v: Versor,
     pub sigma: Vec<(u8, u8)>,
 }
@@ -14,7 +14,7 @@ pub struct Carriage {
 /// reading for a body in one frame and a body across frames: a frame-0
 /// body's compartments stand at `k = 0` (51.3), which is the compartments' coordinate and
 /// not a second path.
-pub fn carriage(a: &Body, b: &Body, budget: &mut crate::physics::Budget) -> Option<Carriage> {
+pub fn carriage(a: &Body, b: &Body, budget: &mut crate::physics::Budget) -> Option<BodyTransport> {
     let v = blade::versor_between(&a.shape, &b.shape, budget).ok()?;
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
     for l in &a.compartments {
@@ -33,13 +33,13 @@ pub fn carriage(a: &Body, b: &Body, budget: &mut crate::physics::Budget) -> Opti
         .filter_map(|(k, t)| crate::transducer::element::hue_pair_of(&k).map(|(h, _)| (h, *t)))
         .collect();
     out.sort_unstable();
-    Some(Carriage { v, sigma: out })
+    Some(BodyTransport { v, sigma: out })
 }
 
 /// Carry `a` onto `b`: directly via `carriage`, or by factoring a
 /// planar projection artifact with `Surgery::factor` to align the homeomorphic core.
 /// The continuous versor is preserved; the tape remains an invertible group action.
-pub fn carriage_with_core(a: &Body, b: &Body, budget: &mut crate::physics::Budget) -> Option<Carriage> {
+pub fn carriage_with_core(a: &Body, b: &Body, budget: &mut crate::physics::Budget) -> Option<BodyTransport> {
     if let Some(car) = carriage(a, b, budget) {
         return Some(car);
     }
@@ -67,5 +67,5 @@ pub fn carriage_with_core(a: &Body, b: &Body, budget: &mut crate::physics::Budge
         .filter_map(|(k, t)| crate::transducer::element::hue_pair_of(&k).map(|(h, _)| (h, *t)))
         .collect();
     out.sort_unstable();
-    Some(Carriage { v, sigma: out })
+    Some(BodyTransport { v, sigma: out })
 }

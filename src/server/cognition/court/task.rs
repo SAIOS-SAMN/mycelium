@@ -8,24 +8,26 @@ use crate::transducer::element::Element;
 /// WHAT THE COURT READ OF A SOLVE (the actions' physics).
 #[derive(Clone, Debug)]
 pub enum SolveVerdict {
-    /// Replayed clean on every withheld pair; `pay` what it discharged there,
-    /// and `modes` the modes the closing form moved on the pairs it closed
-    /// (78.162), each exact: S boosts, G hue modes, T null fluxes, H turns.
-    Solved { pay: [u64; 4], modes: crate::economy::modes::Modes },
+    /// Reconstructed clean on every withheld pair; `pay` what it discharged there
+    /// as μ, each closed pair's share of its frame (78.170 O1, ruled
+    /// 2026-11-01), and `modes` the modes the closing form moved on the pairs
+    /// it closed (78.162), each exact: S boosts, G hue modes, T null fluxes,
+    /// H turns.
+    Solved { pay: crate::economy::Mu, modes: crate::economy::modes::Modes },
     /// Refused by the replay, with its reason, coordinate and kind (78.9).
     Refused(crate::verdict::Refusal),
     /// The solve carried no rule: a raster is no proof of a motion.
     NotARule,
     /// The task holds no withheld answer to replay against.
     Unverifiable,
-    /// Replayed clean but DISCHARGED NOTHING on the withheld pairs: no work,
+    /// Reconstructed clean but DISCHARGED NOTHING on the withheld pairs: no work,
     /// so no closure. Nothing is released, minted, docketed or offered, and
     /// the task's first closure is not spent (ruled 2026-10-08: μ is never
     /// paid out for the bare possibility of falsification).
     NoWork,
     /// 78.153 — NOT JUDGED YET: the act's one stroke ran out before the
     /// replay ruled. Nothing is refused, released or paid; where the replay
-    /// stopped is kept (`replay_cursors`, by the rule and the withheld
+    /// stopped is kept (`reconstruction_cursors`, by the rule and the withheld
     /// pairs), and the same solve asked again resumes it there. The wire
     /// carries it as `SOLVE_UNREAD` (3): a retry, never the final
     /// `SOLVE_NOTHING`.
@@ -72,7 +74,7 @@ impl Court {
         if !train.is_empty() {
             // 78.153 — a family that changes under a replay's cursor would
             // resume a replay on pairs it did not start on: THAT TASK'S cursors
-            // go (`replay_key` ends with the task). A first binding is a
+            // go (`reconstruction_key` ends with the task). A first binding is a
             // change too: a replay begun with no family passed the family's
             // phases unread. Every other cursor stands — a solve's is keyed by
             // its rule and the withheld pairs it was given, never by a task's
@@ -83,9 +85,9 @@ impl Court {
                 let mut tail = Vec::new();
                 crate::transducer::address::put_key_bytes(&mut tail, task.as_ref());
                 let stale: Vec<Vec<u8>> =
-                    self.replay_cursors.scoped().map(|(k, _)| k).filter(|k| k.ends_with(&tail)).collect();
+                    self.reconstruction_cursors.scoped().map(|(k, _)| k).filter(|k| k.ends_with(&tail)).collect();
                 for k in stale {
-                    self.replay_cursors.remove(&k);
+                    self.reconstruction_cursors.remove(&k);
                 }
             }
             self.task_family.insert(task, train);
@@ -94,11 +96,11 @@ impl Court {
 
     /// THE SOLVE'S VERDICT, BY ITS ACTION (the actions' physics, 2026-09-29).
     /// A solve is a RULE, and the court replays it on the task's withheld
-    /// pairs as it replays any sentence on its family (`blind_replay_at`
+    /// pairs as it replays any sentence on its family (`reconstruct_blind_at`
     /// with the family: its derivation re-derived, every pair closed — step
     /// 7, `REFUSE_NOT_CLOSED`); the rule's cited forms resolve through this
     /// court's ruled cover. Clean, the rule is priced by what it
-    /// discharges on those pairs, per lane (`measured_replay`, the deflation
+    /// discharges on those pairs, per lane (`measured_discharge`, the deflation
     /// paid only where a pair closes); refused, the refusal names its
     /// reason, coordinate and obstruction kind (78.9). Grids are never
     /// compared: a raster that matches is no proof of a motion.
@@ -111,9 +113,9 @@ impl Court {
     pub fn judge_solve(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
         let key = solve_key(rule, withheld);
         loop {
-            let before = self.replay_cursors.get(&key).map(|c| c.progress());
+            let before = self.reconstruction_cursors.get(&key).map(|c| c.progress());
             match self.judge_solve_on_stroke(rule, withheld) {
-                SolveVerdict::Unread if self.replay_cursors.get(&key).map(|c| c.progress()) != before => {}
+                SolveVerdict::Unread if self.reconstruction_cursors.get(&key).map(|c| c.progress()) != before => {}
                 verdict => return verdict,
             }
         }
@@ -154,13 +156,13 @@ impl Court {
         // 78.153 — the replay on the act's one stroke, resumed where the last
         // asking of this rule on these pairs stopped.
         let key = solve_key(rule, withheld);
-        let mut cursor = match self.replay_cursors.remove(&key) {
+        let mut cursor = match self.reconstruction_cursors.remove(&key) {
             Some(c) => c,
-            None => crate::verdict::ReplayCursor::default(),
+            None => crate::verdict::ReconstructionCursor::default(),
         };
         let out = {
             let court: &Court = self;
-            crate::verdict::replay_resume(
+            crate::verdict::reconstruct_resume(
                 rule,
                 &|a| court.resolve_form_ref(a),
                 Some(withheld),
@@ -171,20 +173,20 @@ impl Court {
             )
         };
         match out {
-            crate::verdict::Replayed::Refused(refusal) => return SolveVerdict::Refused(refusal),
-            crate::verdict::Replayed::Unread => {
+            crate::verdict::ReconstructionOutcome::Refused(refusal) => return SolveVerdict::Refused(refusal),
+            crate::verdict::ReconstructionOutcome::Unread => {
                 self.court_unread += 1;
-                self.replay_cursors.insert(&key, cursor);
+                self.reconstruction_cursors.insert(&key, cursor);
                 return SolveVerdict::Unread;
             }
-            crate::verdict::Replayed::Clean => {}
+            crate::verdict::ReconstructionOutcome::Clean => {}
         }
         // A CLEAN REPLAY THAT DISCHARGES NOTHING IS NO CLOSURE. It was
         // answered Solved with a zero pay, and the zero was checked only
         // after `pay_solve` had released every escrow bound to the task and
         // the door had spent the task's first closure on it.
-        let (pay, modes) = self.measured_replay_read(rule, withheld);
-        if pay.iter().all(|&x| x == 0) {
+        let (pay, modes) = self.measured_discharge_read(rule, withheld);
+        if pay.is_zero() {
             return SolveVerdict::NoWork;
         }
         SolveVerdict::Solved { pay, modes }
@@ -201,10 +203,10 @@ impl Court {
     /// discharged on the withheld pairs (`pay`), on the task's FIRST closure
     /// only: a repeat is verified and pays nothing — no floor, the decay is
     /// the discharge itself. Answers what the solver was paid, per lane.
-    pub fn pay_solve(&mut self, task: &[u8], voice: [u8; 32], rule: &Element, pay: [u64; 4], first: bool) -> crate::economy::Mu {
+    pub fn pay_solve(&mut self, task: &[u8], voice: [u8; 32], rule: &Element, pay: crate::economy::Mu, first: bool) -> crate::economy::Mu {
         // NO WORK, NO ACT: the check stands before every release, mint,
         // docket and offer (see `SolveVerdict::NoWork`).
-        if pay.iter().all(|&x| x == 0) {
+        if pay.is_zero() {
             return crate::economy::Mu::zero();
         }
         self.docket_connection(rule, voice);
@@ -226,16 +228,16 @@ impl Court {
             // escrow held; nothing above the discharge is minted.
             // POWV: this court's replay on the withheld pairs verified it.
             let organs = [self.identity];
-            let _ = self.release_verified(addr.as_bytes(), pay, &organs, settled);
+            let _ = self.release_verified(addr.as_bytes(), pay.clone(), &organs, settled);
         }
         // MU-ECONOMY §5.2 — a verified solve of a leased job pays its lease:
         // the solve's measured discharge, out of the payer's hold.
         if let Ok(job) = <[u8; 32]>::try_from(task) {
             let at = self.anchor();
-            let _ = self.pay_lease(voice, &job, pay, at);
+            let _ = self.pay_lease(voice, &job, pay.clone(), at);
         }
         self.acts.judge(if first { crate::observe::Judged::FirstClosure } else { crate::observe::Judged::ClosureAgain });
-        if !first || pay.iter().all(|&x| x == 0) {
+        if !first || pay.is_zero() {
             return crate::economy::Mu::zero();
         }
         self.append_step(crate::chronometry::ActKind::Settled, task, voice);
@@ -306,11 +308,77 @@ fn solve_key(rule: &Element, withheld: &crate::transducer::family::Family) -> Ve
     for (x, y) in withheld.iter() {
         for g in [x, y] {
             let mut rows = Vec::new();
-            for row in g {
+            for row in g.lines() {
                 crate::transducer::address::put_key_bytes(&mut rows, row);
             }
             crate::transducer::address::put_key_bytes(&mut key, &rows);
         }
     }
     key
+}
+
+/// WHY THE COURT DOES NOT RECONSTRUCT UNDER A CLAIM'S STATED GROUND
+/// (MU-SENSING §3.4, §6; track 26 S2).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StatedGroundRefusal {
+    /// The stated ground is not one symbol at the task's width.
+    NotOneSymbol,
+    /// The stated ground is no candidate of the task's ground: it fails
+    /// one of the three conditions on the task's train pairs.
+    NoCandidate,
+}
+
+impl StatedGroundRefusal {
+    /// The refusal's reason as the court names it, on the solve and the
+    /// speech alike (track 26 S5).
+    pub fn reason(self) -> &'static str {
+        match self {
+            StatedGroundRefusal::NotOneSymbol => crate::court::verdict::REFUSE_GROUND_NOT_ONE_SYMBOL,
+            StatedGroundRefusal::NoCandidate => crate::court::verdict::REFUSE_GROUND_NO_CANDIDATE,
+        }
+    }
+}
+
+/// THE GROUND A CLAIM IS RECONSTRUCTED UNDER: the ground the claim states,
+/// read against the task as a candidate (`Ground::candidacies`, the three
+/// conditions of MU-SENSING §3.4 on the task's train pairs), or refused by
+/// name. A claim that states none is reconstructed under no ground
+/// (`Ground::None`). The court verifies what the claim states; it never
+/// deduces, chooses or searches for a ground of its own: the reading of
+/// the stated symbol against the task's conditions is the reconstruction
+/// of the claim. Condition 2 reads the bodies around it (whether a body
+/// covering a seam is a membrane), and no other symbol is ever adopted as
+/// the ground.
+pub fn stated_ground(
+    train: &crate::transducer::family::Family,
+    stated: Option<&[u8]>,
+) -> Result<crate::transducer::family::transduce::Ground<u8>, StatedGroundRefusal> {
+    use crate::transducer::family::transduce::Ground;
+    let Some(bytes) = stated else { return Ok(Ground::None) };
+    let &[g] = bytes else { return Err(StatedGroundRefusal::NotOneSymbol) };
+    let pairs: Vec<_> = train.iter().map(|(x, y)| (x.sample().clone(), y.sample().clone())).collect();
+    stated_ground_of(&pairs, Some(bytes)).map(|_| Ground::One(g))
+}
+
+/// THE STATED GROUND READ AT ANY RANK (track 26 S4c): as [`stated_ground`],
+/// on the posted samples of the task's train pairs. The stated ground is
+/// one symbol at the samples' own width, or refused `NotOneSymbol`; read as
+/// a candidate by the three conditions, or refused `NoCandidate`. A family
+/// with no pair presents no candidate.
+pub fn stated_ground_of(
+    train: &[(crate::transducer::sample::Sample, crate::transducer::sample::Sample)],
+    stated: Option<&[u8]>,
+) -> Result<crate::transducer::family::transduce::Ground<Vec<u8>>, StatedGroundRefusal> {
+    use crate::transducer::family::transduce::{Candidacy, Ground};
+    let Some(bytes) = stated else { return Ok(Ground::None) };
+    if train.is_empty() {
+        return Err(StatedGroundRefusal::NoCandidate);
+    }
+    if train.iter().flat_map(|(x, y)| [x, y]).any(|s| s.width() != bytes.len()) {
+        return Err(StatedGroundRefusal::NotOneSymbol);
+    }
+    match Ground::candidacies(train).into_iter().find(|(s, _)| s.as_slice() == bytes) {
+        Some((_, Candidacy::Candidate)) => Ok(Ground::One(bytes.to_vec())),
+        _ => Err(StatedGroundRefusal::NoCandidate),
+    }
 }

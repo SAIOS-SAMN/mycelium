@@ -6,37 +6,37 @@
 // recoloured is one body whose gauge no single hue map carries — a pair the
 // voice has no sentence for (50.5), so nothing reaches a court.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::element::{self, Element};
 
 /// THE BLIND REPLAY refutes every tamper axis and upholds honest speech —
 /// the contradiction docket's whole force is this determinism.
 #[test]
-fn blind_replay_refutes_tampered_words() {
+fn reconstruct_blind_refutes_tampered_words() {
 use crate::transducer::germinate::germinate;
-use crate::verdict::blind_replay;
+use crate::verdict::reconstruct_blind;
 let w = element::from_canonical(
     &germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap(),
 );
-assert!(blind_replay(&w, &mut super::common::budget()).is_none(), "an honest derivation replays clean");
+assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "an honest derivation replays clean");
 // Tamper 1 CANNOT BE BUILT any more: A5's chain is the field's type, so
 // an element cannot hold one that is off its min corner. What a shifted
 // chain is, is the same substance said at another place — A5's quotient,
 // not false speech — and it comes back as the same word.
 let shifted: Vec<(i64, i64, u8, u8)> =
     w.sub().iter().map(|(r, c, b, a)| (r + 3, *c, *b, *a)).collect();
-let off = element::from_residual(&shifted).expect("a shift is still one transition per site");
+let off = element::from_residue(&shifted).expect("a shift is still one transition per site");
 assert_eq!(off.address(), w.address(), "A5 quotients the translation: one substance");
-assert!(blind_replay(&off, &mut super::common::budget()).is_none(), "so it replays clean — it is the same word");
+assert!(reconstruct_blind(&off, &mut super::fixtures::budget()).is_none(), "so it replays clean — it is the same word");
 // Tamper 2: inflate the claimed magnitude (yield fraud).
 let mut fat = w.clone();
 fat.mag = [999, 0, 0, 0];
-assert!(blind_replay(&fat, &mut super::common::budget()).is_some(), "inflated magnitude does not re-derive");
+assert!(reconstruct_blind(&fat, &mut super::fixtures::budget()).is_some(), "inflated magnitude does not re-derive");
 // Tamper 3: an empty chain claiming work.
 let mut empty = w.clone();
 empty.sub = element::CanonicalChain::default();
-assert!(blind_replay(&empty, &mut super::common::budget()).is_some(), "no evidence, no word");
+assert!(reconstruct_blind(&empty, &mut super::fixtures::budget()).is_some(), "no evidence, no word");
 }
 
 /// 47.3, 47.5, Stage 12 S12.4d — AN OFFER STANDS PENDING UNTIL THE WITNESS
@@ -130,7 +130,7 @@ assert!(k.dockets().is_empty());
 /// The forged word is the spoken sentence with its word vertices struck
 /// out: a tape of the Frame and a demand, refused as a chain (50.6).
 #[test]
-fn glue_fetched_admits_by_replay_not_signature() {
+fn glue_fetched_admits_by_reconstruction_not_signature() {
 let mut home = Court::new();
 let mut peer = Court::new();
 let mut third = Court::new();
@@ -144,7 +144,7 @@ assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
 home.court_stroke();
 let spoken = home.provisional.scoped().next().unwrap().1.clone();
-let mut cover = crate::network::nerve::Cover::new();
+let mut cover = crate::network::nerve::HomeTrie::new();
 assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 assert!(peer.basis_len() >= 1, "the word is language on the second organ");
 assert!(matches!(fetched(&mut third, &spoken, [2; 32], [3; 32], &mut cover), Glue::Admitted));
@@ -285,7 +285,7 @@ assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
 home.rule_all_provisionals();
 let spoken = home.provisional.scoped().next().unwrap().1.clone();
-let mut cover = crate::network::nerve::Cover::new();
+let mut cover = crate::network::nerve::HomeTrie::new();
 assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 assert!(peer.basis_len() >= 1);
 let cover = home.genesis_cover().expect("measured");
@@ -326,8 +326,9 @@ assert!(home.provisional.is_empty(), "the docket clears on install");
 /// only at speech and never again.
 #[test]
 fn court_settle_slashes_form_leaving_remainder() {
+    crate::transducer::raster::stand_on(0);
 use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
-let grid = |rows: &[&str]| -> crate::arc::Grid {
+let grid = |rows: &[&str]| -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 };
 let (x, y) = (grid(&["1"]), grid(&["2"]));
@@ -399,8 +400,9 @@ fn perceive_sentence_binds_none_without_task() {
 /// less than the whole.
 #[test]
 fn perceive_sentence_lists_declared_remainder_demand() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
-    let grid = |rows: &[&str]| -> crate::arc::Grid {
+    let grid = |rows: &[&str]| -> crate::transducer::family::SectionSample {
         rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
     };
     let learned = vec![(grid(&["1"]), grid(&["2"]))];
@@ -427,7 +429,7 @@ fn converge_witness_requires_bonded_hypha() {
     use crate::court::convergence::Converged;
     let mut k = Court::new();
     let peer = [2u8; 32];
-    let word = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)])
+    let word = crate::transducer::element::from_residue(&vec![(0i64, 0i64, 1u8, 2u8)])
         .expect("one link is A5's chain");
     let addr = word.address();
     k.docket_connection(&word, [9; 32]);
@@ -466,7 +468,7 @@ fn glue_fetched_files_offer_at_home_vantage() {
     let offered = spoken.address();
 
     let mut witness = Court::new();
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     assert!(matches!(fetched(&mut witness, &spoken, home_vk, witness_vk, &mut cover), Glue::Admitted));
     let cx = witness.complexes().get(&inv.key()).expect("the class has a complex");
     assert_eq!(
@@ -483,7 +485,7 @@ fn glue_fetched_files_offer_at_home_vantage() {
     // claim: gluing as oneself files the home's word under this court's own
     // vantage, and the simplex has one vertex where 13.9 needs two.
     let mut confused = Court::new();
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     let _ = fetched(&mut confused, &spoken, witness_vk, witness_vk, &mut cover);
     let cx = confused.complexes().get(&inv.key()).expect("the class has a complex");
     assert_eq!(
@@ -520,7 +522,7 @@ fn own_section_is_empty_without_rederivation() {
     // A witness that has done no work of its own on this class.
     let mut witness = Court::new();
     witness.bind_identity(witness_vk);
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     assert!(matches!(
         fetched(&mut witness, &spoken, home_vk, witness_vk, &mut cover),
         Glue::Admitted
@@ -592,7 +594,7 @@ fn own_section_keeps_court_ruling_not_peer_word() {
     // cover, and it is filed at the PEER's vantage, never at this one.
     let mut heard = Court::new();
     heard.bind_identity(own_vk);
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     assert!(matches!(
         fetched(&mut heard, &spoken, [0x0b; 32], own_vk, &mut cover),
         Glue::Admitted

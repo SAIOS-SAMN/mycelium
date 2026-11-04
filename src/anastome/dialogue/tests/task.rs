@@ -8,14 +8,14 @@
 // Conformance by decoded values, never bytes (Concordance 1.4).
 
 use crate::anastome::dialogue::*;
-use crate::arc::Task;
+use crate::transducer::family::Task;
 use crate::registry::{citation, task_address, TaskRegistry};
 
 fn toy() -> Task {
-    Task {
-        train: vec![(vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]])],
-        test: vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
-    }
+    crate::transducer::family::task_of_lines(
+        vec![(vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]])],
+        vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
+    )
 }
 
 /// A task whose content address passes 65 535 bytes: many test inputs, each
@@ -24,7 +24,7 @@ fn large() -> Task {
     let test = (0..4000u32)
         .map(|i| {
             let row: Vec<u8> = (0..30u32).map(|c| u8::try_from((i * 7 + c) % 9 + 1).expect("a hue")).collect();
-            (vec![row.clone(), row], Vec::new())
+            (vec![row.clone(), row].into(), None)
         })
         .collect();
     Task { train: toy().train, test }
@@ -38,7 +38,7 @@ fn task_by_citation_round_trips_with_envelope() {
     let mut reg = TaskRegistry::new();
     let cite = reg.register(toy()).expect("a grid pair's chain is A5's");
     assert_eq!(cite, citation(&task_address(&toy()).expect("addressed")), "the book's id is the citation");
-    assert!(reg.task(&cite).is_some_and(|t| t.train == toy().train && t.test == toy().test), "the citation resolves to the task");
+    assert!(reg.section(&cite).is_some_and(|t| t.is_ok_and(|t| t.train == toy().train && t.test == toy().test)), "the citation resolves to the task");
     assert!(reg.task(&[9u8; 32]).is_none(), "an unknown citation names nothing");
     let ask = encode_task_by_citation(&voice, &cite);
     assert_eq!(decode_task_by_citation(&ask), Some((voice, cite)), "the citation reads back whole");
@@ -50,12 +50,12 @@ fn task_by_citation_round_trips_with_envelope() {
     longer.push(0);
     assert_eq!(decode_task_by_citation(&longer), None, "a byte left over is no request");
     // The door's answer: the task the citation names, its test inputs only.
-    let task = reg.task(&cite).expect("held");
-    let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
-    let env = decode_task_envelope(&encode_task_envelope(&cite, &task.train, &tests).expect("writes")).expect("reads");
+    let sent = reg.task(&cite).expect("held").envelope(cite);
+    let env = decode_task_envelope(&encode_task_envelope(&cite, &sent.train, &sent.tests).expect("writes")).expect("reads");
     assert_eq!(env.id, cite, "the envelope names the task by its citation");
-    assert_eq!(env.train, toy().train);
-    assert_eq!(env.tests, vec![toy().test[0].0.clone()], "the held answers never ride");
+    let read = env.section().expect("rank 2 at width 1");
+    assert_eq!(read.train, toy().train);
+    assert_eq!(read.tests, vec![toy().test[0].0.clone()], "the held answers never ride");
 }
 
 /// A task whose content address passes the u16 wall is still named by its
@@ -69,7 +69,8 @@ fn citation_names_task_past_u16_wall() {
     assert_eq!(cite, citation(&id), "named by 32 bytes");
     assert!(reg.task(&cite).is_some(), "resolved court-side");
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
-    let solve = decode_solve(&encode_solve(&key, &cite, &[vec![vec![1]]]).expect("writes")).expect("reads");
+    let outputs = spoken_outputs(&[vec![vec![1]].into()]).expect("a sample");
+    let solve = decode_solve(&encode_solve(&key, &cite, &outputs).expect("writes")).expect("reads");
     assert_eq!((solve.task, solve.signed), (cite, true), "a solve names it by the citation, signed");
 }
 
@@ -80,7 +81,8 @@ fn citation_names_task_past_u16_wall() {
 fn task_envelope_refuses_trailing_bytes_and_deferral() {
     let cite = [3u8; 32];
     let tests = vec![toy().test[0].0.clone()];
-    let mut longer = encode_task_envelope(&cite, &toy().train, &tests).expect("writes");
+    let sent = TaskEnvelope::of_rasters(cite, &toy().train, &tests).expect("samples");
+    let mut longer = encode_task_envelope(&cite, &sent.train, &sent.tests).expect("writes");
     longer.push(0);
     assert!(decode_task_envelope(&longer).is_none(), "a byte left over is no envelope");
     let deferral = encode_deferral(PENDING_CODE, &[0; 4]);

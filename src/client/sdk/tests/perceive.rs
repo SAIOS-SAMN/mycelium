@@ -4,8 +4,8 @@
 // its hours escapes onto the docket, and the one demand taker binds it — a
 // close of a thought of that scene, which K moves by.
 
-use super::common::*;
-use crate::client::sdk::entity::perceive::{Reading, Scene};
+use super::fixtures::*;
+use crate::client::sdk::mind::perceive::{SceneKind, Scene};
 use crate::client::sdk::*;
 
 /// THE SCENE, PERCEIVED OFF THE FIELD, LANDS UNDER ITS CITATION; ITS ESCAPING
@@ -24,7 +24,7 @@ fn perceive_scene_lands_and_drain_demands_binds_escape() {
     let [first, second] = two_hours_of_a_slide();
     let mut field = std::mem::take(&mut mind.field);
     let (bound, returned, k) = field.think(|| {
-        mind.perceive_scene(Scene { id: id.to_vec(), train: vec![first, second], tests: Vec::new(), reading: Reading::Task });
+        mind.perceive_scene(Scene { id: id.to_vec(), train: vec![first, second], tests: Vec::new(), reading: SceneKind::Task });
         mind.settle_perception();
         let mut b = budget();
         let bound = mind.drain_demands(&mut b);
@@ -44,14 +44,14 @@ fn perceive_scene_lands_and_drain_demands_binds_escape() {
 /// carries no test, never reaches a solve.
 #[test]
 fn perceive_scene_stops_once_on_reading() {
-    use crate::client::sdk::entity::perceive::{Stop, STOPS};
+    use crate::client::sdk::mind::perceive::{Stop, STOPS};
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("stopping"));
     let [first, second] = two_hours_of_a_slide();
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
-        mind.perceive_scene(Scene { id: vec![5u8; 32], train: vec![first.clone(), second.clone()], tests: Vec::new(), reading: Reading::Feed });
+        mind.perceive_scene(Scene { id: vec![5u8; 32], train: vec![first.clone(), second.clone()], tests: Vec::new(), reading: SceneKind::Feed });
         mind.settle_perception();
-        mind.perceive_scene(Scene { id: vec![6u8; 32], train: vec![first, second], tests: Vec::new(), reading: Reading::Task });
+        mind.perceive_scene(Scene { id: vec![6u8; 32], train: vec![first, second], tests: Vec::new(), reading: SceneKind::Task });
         mind.settle_perception();
     });
     mind.field = field;
@@ -69,24 +69,24 @@ fn perceive_scene_stops_once_on_reading() {
 /// bodies do not stand on, so the slide is not read again; it moves when a
 /// word is filed on the slide's own chart.
 #[test]
-fn scene_language_moves_only_for_word_on_own_chart() {
+fn scene_language_moves_only_for_word_on_scene_chart() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
-    let word_of = |x: &crate::arc::Grid, y: &crate::arc::Grid| {
+    let word_of = |x: &crate::transducer::family::SectionSample, y: &crate::transducer::family::SectionSample| {
         let mut b = budget();
         let frames = perceive_family(&[(x.clone(), y.clone())]);
         let f = scene_form_on(&NoCrystal, &mut b, x, y, &frames).expect("the pair reads");
         crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word")
     };
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("resting"));
-    let slide: Vec<(crate::arc::Grid, crate::arc::Grid)> = two_hours_of_a_slide().to_vec();
+    let slide: Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> = two_hours_of_a_slide().to_vec();
     let before = mind.scene_language(&slide);
     // A word on a chart elsewhere: one cell stepping a column.
-    let at = |c: usize| -> crate::arc::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
-    mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word_of(&at(0), &at(1))));
+    let at = |c: usize| -> crate::transducer::family::SectionSample { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
+    mind.language.moduli_admit(&crate::transducer::element::Held::of(word_of(&at(0), &at(1))));
     assert_eq!(mind.scene_language(&slide), before, "a word elsewhere leaves the slide's language where it was: it rests");
     // A word on the slide's own chart: its first hour, said as a word.
     let [(x, y), _] = two_hours_of_a_slide();
-    mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word_of(&x, &y)));
+    mind.language.moduli_admit(&crate::transducer::element::Held::of(word_of(&x, &y)));
     assert_ne!(mind.scene_language(&slide), before, "a word where the slide stands moves its language: it is read again");
 }
 
@@ -97,7 +97,7 @@ fn scene_language_moves_only_for_word_on_own_chart() {
 /// the place of the first, and a different thing waits beside it.
 #[test]
 fn perceive_hearing_waits_once_on_repeat() {
-    use crate::client::sdk::entity::converge::Evident;
+    use crate::client::sdk::mind::converge::Evident;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("hearing"));
     let speaker = [3u8; 32];
     mind.perceive_hearing(speaker, b"first".to_vec(), Vec::new(), Evident::Unbound);
@@ -117,7 +117,7 @@ fn perceive_hearing_waits_once_on_repeat() {
 /// thing said again is heard in the traversal it was said in.
 #[test]
 fn act_on_returns_lapses_hearing_unread_across_return() {
-    use crate::client::sdk::entity::converge::Evident;
+    use crate::client::sdk::mind::converge::Evident;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("lapsing"));
     let speaker = [4u8; 32];
     for said in [&b"zero"[..], b"one", b"two"] {
@@ -142,10 +142,10 @@ fn act_on_returns_lapses_hearing_unread_across_return() {
 /// speak on wait, as an empty field couples to nothing else.
 #[test]
 fn perceive_hearing_on_hears_at_rest_on_language_charts() {
-    use crate::client::sdk::entity::converge::Evident;
-    use crate::client::sdk::entity::offer::Offer;
+    use crate::client::sdk::mind::converge::Evident;
+    use crate::client::sdk::mind::offer::Offer;
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
-    let at = |c: usize| -> crate::arc::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
+    let at = |c: usize| -> crate::transducer::family::SectionSample { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
     let cell = vec![(at(0), at(1))];
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("at rest"));
     let mut field = std::mem::take(&mut mind.field);
@@ -155,7 +155,7 @@ fn perceive_hearing_on_hears_at_rest_on_language_charts() {
         let frames = perceive_family(&cell);
         let f = scene_form_on(&NoCrystal, &mut b, x, y, &frames).expect("the pair reads");
         let word = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word");
-        mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
+        mind.language.moduli_admit(&crate::transducer::element::Held::of(word));
         let speaker = [3u8; 32];
         mind.perceive_hearing_on(speaker, b"elsewhere".to_vec(), Vec::new(), Evident::True, Offer::of(&two_hours_of_a_slide()).charts);
         let elsewhere = mind.board.hearing;

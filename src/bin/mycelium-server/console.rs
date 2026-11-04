@@ -28,7 +28,7 @@
 //! fibre, and `--reading NAME` one kind of reading: the hypha serves only
 //! the prefix asked, and the console reads nothing else.
 
-use mycelium::observe::{self, Court, Memory, Reading, Source};
+use mycelium::observe::{self, CourtReading, Memory, Reading, Source};
 use std::path::Path;
 
 const RESET: &str = "\x1b[0m";
@@ -180,7 +180,7 @@ pub(crate) fn run_minds(dir: &Path, ask: &Ask) -> ! {
         }
     };
     entries.sort();
-    let mut held: Vec<observe::Held> = Vec::new();
+    let mut held: Vec<observe::KeyedReading> = Vec::new();
     let mut silent: Vec<String> = Vec::new();
     for (voice, endpoint) in &entries {
         match chatter::ask(endpoint, &query) {
@@ -211,7 +211,7 @@ fn short(key: &[u8; 32]) -> String {
 
 /// Every source's readings gathered under it, in key order (courts first,
 /// by the source kind the key opens with).
-fn by_source(held: &[observe::Held]) -> Vec<(Source, Vec<Reading>)> {
+fn by_source(held: &[observe::KeyedReading]) -> Vec<(Source, Vec<Reading>)> {
     let mut out: Vec<(Source, Vec<Reading>)> = Vec::new();
     for (k, r) in held {
         let Some((source, _)) = Source::of_key(k) else { continue };
@@ -223,7 +223,7 @@ fn by_source(held: &[observe::Held]) -> Vec<(Source, Vec<Reading>)> {
     out
 }
 
-pub(crate) fn render(endpoint: &str, total: u64, held: &[observe::Held]) -> Vec<String> {
+pub(crate) fn render(endpoint: &str, total: u64, held: &[observe::KeyedReading]) -> Vec<String> {
     let sources = by_source(held);
     let mut lines = vec![format!(
         "{CYAN}{BOLD}═══ MYCELIUM OBSERVER ═══{RESET}  {endpoint}  {DIM}{} readings of {total} held, {} sources{RESET}",
@@ -298,7 +298,7 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
             }
             None => format!("  {name}  {DIM}no clock carried{RESET}"),
         });
-        // 78.152 — the court's quorum-final point, its keepers, its residual.
+        // 78.152 — the court's quorum-final point, its keepers, its residue.
         if let Some(c) = readings.iter().find_map(|r| match r {
             Reading::Court(c) => Some(c),
             _ => None,
@@ -321,11 +321,15 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
 /// 78.152 TU-3, TU-4, TU-7 — A COURT'S TUNIVERSAL STANDING: the door's
 /// quorum-final point written whole (`TPoint::print`), its advances, each
 /// keeper with its newest verified tick and its own final point, and the
-/// residual — each edge's exact lane difference and the triangle's holonomy.
+/// residue — each edge's exact lane difference and the triangle's holonomy.
 fn standing(s: &observe::TStanding) -> Vec<String> {
-    let lanes = |d: &[i128; 4]| {
-        let [a, b, c, e] = d;
-        format!("{a:+}:{b:+}:{c:+}:{e:+}")
+    // Each signed lane exact, as `n/d` in lowest terms with its sign.
+    let lanes = |d: &[mycelium::core::Q; 4]| {
+        let signed = |q: &mycelium::core::Q| match num_traits::Signed::is_negative(q) {
+            true => format!("{q}"),
+            false => format!("+{q}"),
+        };
+        d.iter().map(signed).collect::<Vec<_>>().join(":")
     };
     let mut out = vec![
         match &s.final_point {
@@ -341,7 +345,7 @@ fn standing(s: &observe::TStanding) -> Vec<String> {
         };
         let newest = match &k.newest {
             Some(t) => {
-                let [ls, lg, lt, lh] = t.lanes;
+                let [ls, lg, lt, lh] = t.lanes.lanes();
                 format!("newest h {} {ls}:{lg}:{lt}:{lh} K {}", t.h, t.k)
             }
             None => format!("{DIM}no reading held{RESET}"),
@@ -352,10 +356,10 @@ fn standing(s: &observe::TStanding) -> Vec<String> {
         };
         out.push(format!("    keeper {}{own}  {newest}  {fin}", short(&k.key)));
     }
-    for e in &s.residual.edges {
-        out.push(format!("    residual {}→{} h {} Δ {}", short(&e.from), short(&e.to), e.h, lanes(&e.delta)));
+    for e in &s.residue.edges {
+        out.push(format!("    residue {}→{} h {} Δ {}", short(&e.from), short(&e.to), e.h, lanes(&e.delta)));
     }
-    out.push(match &s.residual.holonomy {
+    out.push(match &s.residue.holonomy {
         Some(d) => format!("    holonomy {}", lanes(d)),
         None => format!("    {DIM}holonomy unmeasured{RESET}"),
     });
@@ -484,7 +488,7 @@ fn clock(c: &observe::Clock) -> Vec<String> {
     }
 }
 
-fn court(c: &Court) -> Vec<String> {
+fn court(c: &CourtReading) -> Vec<String> {
     let served: Vec<String> = c.served.iter().map(|(kind, n)| format!("{kind:02x}×{n}")).collect();
     vec![
         format!(
@@ -619,7 +623,7 @@ fn adjudication(a: &observe::Adjudication) -> Vec<String> {
 /// PH5 — A COURT'S PHASE (45.9): its last window's coordinates as it wrote
 /// them, adjoined-by-closure (I1) — the one number that bears on the
 /// architecture — named on its own line.
-fn phase(p: &observe::Phase) -> Vec<String> {
+fn phase(p: &observe::CourtStage) -> Vec<String> {
     let adjoined = match p.adjoined_by_closure {
         0 => format!("{DIM}adjoined-by-closure 0{RESET}"),
         n => format!("{GREEN}{BOLD}adjoined-by-closure {n}{RESET}"),
@@ -638,7 +642,7 @@ fn phase(p: &observe::Phase) -> Vec<String> {
 /// records, the records' bytes, the bytes per record, and the largest. A largest
 /// past the u16 wall is a form copied where a citation belongs, in red; the
 /// largest of each carrier is named.
-fn carriage(c: &observe::Carriage) -> Vec<String> {
+fn carriage(c: &observe::CarrierTally) -> Vec<String> {
     let kind_name = |carrier: u8, kind: u8| -> String {
         match carrier {
             observe::CARRIER_DELTA => match mycelium::chronometry::ActKind::of_sealed(kind) {

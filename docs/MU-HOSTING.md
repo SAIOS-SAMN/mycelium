@@ -68,7 +68,7 @@ two kinds among several:
 | **Cosmological simulations** | A universe grown from its origin under exact physics: galaxies, star systems and worlds | Inhabit the peoples its physics wakes on its worlds | Example: the peer kernel xylarium |
 | **Games** | Authored, replayable simulations, each with its own peoples, rules and seats | Hold seats, decide for simulated peoples, meet the game's puzzles | Examples: the peer kernels xylarium, netstratum, barren-realms (README › Peer kernels) |
 | **Science universes** | A declared physics, or a domain of mathematics, with open questions | Prove theorems, check certificates, run computations, test laws | **Specified** (MU-SCIENCE) |
-| **Task environments** | A bounded set of tasks the courts hold answers for | Solve tasks they did not set | **Built**: the ARC-AGI-2 registry |
+| **Task environments** | A bounded set of tasks the courts hold answers for: families of samples from any source | Solve tasks they did not set | **Built**: the task registry, holding posted tasks from any source; ARC-AGI-2 is the first posted corpus |
 | **Markets** | Demands posted and funded by requesters | Close demands, provide leased capacity | **Built**: the court's market, compute leases |
 | **Many-agent universes** | One shared universe in which many agents interact | Converse, agree, cite and build on each other's work (§4) | **Specified** |
 | **World models** | A learned model that predicts how an environment's state evolves | Act in the predicted environment; test its predictions against other universes (§3) | **Specified** |
@@ -593,15 +593,18 @@ clause** (the operator's ruling of 2026-11-02):
 | Part | Status | Where |
 |---|---|---|
 | The agreement's hash served (`ACT_LAWS` mode 7) | **Built** | `physics::laws::concordance::CONCORDANCE_HASH` |
-| A signature verified and answered by name (`Mismatched`, `Unsigned`, `Malformed`) on mode 8 | **Built**, over the whole text's hash | `verify_concordance_signature` |
-| A signature over a clause set: each clause's hash, enabled or vetoed | **Specified** | §5a.9, B2 |
+| A signature verified and answered by name (`Mismatched`, `Unsigned`, `Malformed`) on mode 8 | **Built**, over the whole text's byte hash, which is the defect B2 replaces (Concordance §0, ruled 2026-11-04) | `verify_concordance_signature` |
+| Signing by adjudicated reading: each clause identified by its content (law form and fixtures), signed by the kernel's reconstruction of its fixtures, admitted only on reaching the same objects; a kernel that cannot read a clause is refused `NotSignatory`, naming the clause and fixture | **Specified** | §5a.9, B2 |
+| A signature over a clause set, each clause enabled or vetoed | **Specified** | §5a.9, B2 |
 | The signed clause set recorded per domain (founding key and sitting reserve) | **Specified** | §5a.9, B2 |
 | A domain's crossings refused until its reserve has signed every network clause of the version served (proposed `NotSignatory`) | **Specified**: the release after v0.3.0 (Concordance §0) | §5a.9, B2 |
 | A tube between two universes bounded by the clauses both enabled, each stopped act naming the vetoed clause | **Specified** | §5a.9, B2 |
 | An act read under its clauses as signed; a changed clause's divergence held and named until the new version is signed | **Specified** | §5a.9, B2 |
 
-Today a signature is over the whole text's hash, verified, recorded
-nowhere and required of no kernel.
+Today a signature is over the whole text's byte hash, verified,
+recorded nowhere and required of no kernel. A byte hash changes with
+every edit of wording and proves no reading, so B2 replaces it with
+signing by adjudicated reading.
 
 ### 5a.5 The vertex: where a universe's cones join the hypha's
 
@@ -637,6 +640,12 @@ Much of this is in the code today, under each object's own `NotReserve`:
 | A mouth offered by a builder line (78.136) | Any tier of the domain, today | none: the line reaches the hypha directly | **Specified**: carried in the reserve's act |
 | A handoff offer or traversal (78.126) | Any tier of the domain, today (`NotTheTier` checks only the signer) | none at the offer; its sides are consumed through the reserve's fold | **Specified**: carried in the reserve's act |
 | A sub-universe's act (78.155) | Its parent's universal core | none: no sub-court yet | **Specified** with 78.155 R-3 |
+
+Each refusal in the table reads the same at every hypha of a mesh
+(**Built**, B0, §5a.9). A domain's founding, tiers, reserve and origin
+are reconstructed at each hypha from the founding receipts it holds, so
+`Unbound` names a key that no genesis on the signed chain names. It never
+names a domain founded at another hypha.
 
 Under the boundary law the `NotReserve` variants are instances of one
 refusal and take its name, `NotThroughCore` (names only, byte values
@@ -709,16 +718,25 @@ logs:
 
 | Phase | Delivers | Files | Wire and ledger effect |
 |---|---|---|---|
-| **B0** | Replication by reconstruction ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)): every hypha reconstructs each domain's state (founding, tiers, reserve, origin) from the founding receipts back-fill delivers (`Cite::Domain`, `Cite::Reserve`, `Cite::Origin`), checked against the signed chain, once by content, with the same refusals as at the founding hypha (a tier held, already founded, already originated) | `src/server/cognition/{state,cite,convert,universe}.rs` (`Court::admit_backfill`, `admit_domain`, `designate_reserve`, `record_origin`, `hold_domain`, `hold_genesis`) | None on the wire; each court's registries become a reconstruction of the chain it holds |
+| **B0** (**Built**) | Replication by reconstruction ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)): every hypha reconstructs each domain's state (founding, tiers, reserve, origin) from the founding receipts back-fill delivers (`Cite::Domain`, `Cite::Reserve`, `Cite::Origin`), checked against the signed chain, once by content, with the same refusals as at the founding hypha (a tier held, already founded, already originated) | `src/server/cognition/founding.rs` (`reconstruct_founding`, `founding_refusal`) behind the signed-reach gate of `src/server/cognition/reach.rs` (`Court::hold_unreached`, `sign_through`), called from `Court::admit_backfill` and `Court::admit_receipt` in `state.rs`; the rules of `admit_domain`, `designate_reserve`, `record_origin` and `hold_domain` | None on the wire or the ledger layout; each court's registries become a reconstruction of the chain it holds |
 | **B1** | The act audit (every act kind that names a domain, classed as a key's own or a universe's); `NotReserve` renamed `NotThroughCore` on each object; line mouth offers and tier handoff offers carried in the reserve's act (after the ruling on 78.126 and 78.136) | `src/anastome/dialogue/{uplink,atlas,handoff,endowment,domain}.rs`; `src/server/cognition/{cite,atlas,convert,endowment,mouth,handoff,universe}.rs` | The rename: none (names only). Carried offers: a wire change to `ACT_HANDOFF` |
-| **B2** | Clause-by-clause signatures (each clause's hash, enabled or vetoed; the network clauses never vetoed) recorded per domain; `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/concordance.rs`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/snapshot/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
+| **B2** | Clause-by-clause signatures (each clause's hash, enabled or vetoed; the network clauses never vetoed) recorded per domain; `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/concordance.rs`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/persistence/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
 | **B3** | The transitions a crossing states, verified under L0 and the core-shell forms at admission; `NotLawful` carrying the breaches; draft-4 laws as ruled | `src/anastome/dialogue/uplink.rs` (`TierFold`), `src/server/cognition/cite.rs`, `src/physics/laws/mod.rs` | A wire and layout change: a fold carries its transitions section |
-| **B4** | The boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | `src/observe/`, `src/bin/mycelium-server/door.rs` | A wire addition (a reading) |
+| **B4** | The boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | `src/observe/`, `src/bin/mycelium-server/control.rs` | A wire addition (a reading) |
 | **B5** | A sub-universe's acts through its parent's core, with 78.155 R-3 | `src/server/cognition/`, `chronometry::tuniversal` | With 78.155 R-3 |
 
 Claims each phase proves, by the algebra (MU-STANDARDS 3.1):
 `admit_backfill_reconstructs_domain_from_founding_receipts`,
 `admit_backfill_refuses_founding_not_on_signed_chain`,
+`backfilled_domain_accepts_reserve_fold_on_second_hypha`,
+`backfill_applies_founding_once_by_content`,
+`backfill_refuses_with_founding_hyphas_refusals` (the five of B0, built in
+`server/cognition/tests/founding.rs`),
+`backfilled_ruling_waits_for_a_signature`,
+`unsigned_backfilled_line_is_marked_unreached`,
+`signature_reaching_a_held_receipt_releases_it_once`,
+`forged_line_never_reaches_a_reader` (the signed-reach gate, #73, built in
+`server/cognition/tests/reach.rs`),
 `admit_uplink_refuses_fold_not_through_core`,
 `handoff_refuses_line_offer_not_through_core`,
 `admit_uplink_refuses_unsigned_concordance`,
@@ -732,11 +750,6 @@ Claims each phase proves, by the algebra (MU-STANDARDS 3.1):
 `carried_line_cycle_seals_provisional` (the existing
 `admit_uplink_seals_unclosed_rate_cycle_provisional` is its instance).
 
-Mutation-audit entries: the reserve check in `Court::admit_uplink`
-inverted (`!=` to `==`), the signatory check dropped, a verdict's
-breaches discarded before admission, and the holonomy's identity test
-inverted; each is killed by the claim named beside it.
-
 Size: B0 about 200 lines, B1 about 300 (most of it the rename and the
 carried offers), B2 about 400, B3 about 400, B4 about 200; B5 rides
 78.155 R-3. ROADMAP track 24. B3's shared laws wait on draft 4, and B2's
@@ -744,14 +757,119 @@ clause sets on its §0 SIGNING text.
 
 Every later phase stands on B0, **replication by reconstruction** (the
 operator's final ruling of 2026-11-02 on
-[issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)). Today a
-domain's founding, tiers, reserve and origin are written only by the court
-that sealed them, so another hypha reads a reserve's fold as `Unbound`.
-Any client may reach any hypha: every hypha reconstructs each domain's
-state from the founding receipts that back-fill already delivers, checked
+[issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)). Any
+client may reach any hypha: every hypha reconstructs each domain's state
+from the founding receipts that back-fill already delivers, checked
 against the signed chain, and the boundary then holds at every hypha. A
 home court is ruled out, and no kernel is asked to address a particular
 hypha.
+
+**B0 as built.** A back-filled receipt carries no signature of its own
+(47.2 step 3). The signer's signature reaches it only through a signed
+frame at or above its place on the signer's line, whose predecessor
+hashes link down to it; the hash links and never admits (§5a.10). So:
+1. A receipt admitted by back-fill (`Court::admit_backfill`) is stored
+   and marked unreached, by its place on its signer's line
+   (`Court::hold_unreached`; see "Every reader waits" below).
+2. When a frame the signer signed at or above that place is admitted
+   (`Court::admit_receipt`, as a new frame or as the receipt already
+   held at its stamp), the receipts waiting below it are read and
+   reconstructed in line order (`Court::sign_through`). A founding
+   receipt admitted under its own signature is reconstructed at once.
+3. Each citation is applied by the founding hypha's own rules
+   (`Court::reconstruct_founding`): a genesis by `admit_domain`'s
+   refusals (`Unordered`, `AlreadyFounded`, `TierHeld`), a reserve by
+   `designate_reserve`'s rule (at once where the domain has none, pending
+   until the sitting reserve's next fold otherwise), an origin by
+   `record_origin`'s (`AlreadyOriginated`), held with the stamp and
+   receipt that sealed it.
+4. Once by content: the same content held already changes nothing (a
+   converse, MU-SCIENCE §5.0). Other content is refused by the founding
+   hypha's name and held by the receipt's stamp
+   (`Court::founding_refusal`), and the registries keep what they held (a
+   collision).
+5. A reserve or an origin whose domain is not yet founded at the hypha
+   waits for that founding (the mesh's topological order).
+6. A fold of a reserve tier (`Cite::Uplink`, `Cite::Chained`) passes its
+   era anchor at every hypha, as on the court that sealed it.
+
+The waiting receipts and the refusals are counted on the carrier reading
+(`backfill.unreached`, `founding.unfounded`, `founding.refused`).
+
+**Every reader waits** (**Built**,
+[issue #73](https://github.com/SAIOS-SAMN/mycelium/issues/73)). B0's
+founding queue is the one signed-reach gate for every reader of a
+back-filled receipt (`src/server/cognition/reach.rs`). The readers it
+holds back:
+
+| Reader | What it acted on before #73 | Now |
+|---|---|---|
+| The depth index (`Court::note_attestor`, `settle_own_attestation`) | Each back-filled receipt as it arrived | Read when a signature reaches the receipt |
+| The stamp alias (`Court::alias_admitting`) and the ruling replay it wakes (`Court::rehear_rulings`) | A waiting ruling heard through an unsigned receipt's alias | The alias filed, and the ruling heard, when a signature reaches the receipt |
+| The peers' folded lines (`Court::shed_folded_lines`, on a `Fold`) | Shed on an unsigned fold | Shed when a signature reaches the fold |
+| The domain registries (`Court::reconstruct_founding`) | Held already by B0 | The same gate |
+| The equivocation burn (`Admitted::Equivocation` in `Court::admit_receipt`) | A bond burned against an unsigned receipt held at the place | Burns only against a reached receipt (47.4 asks two verified signatures) |
+| Restore (`Court::restore`: the alias derivation, `rebuild_attestors`) | Every peer node in the ledger | Only reached nodes. The marks are derived first (`Court::hold_unreached_at_restore`): a peer receipt is reached where the court's own hot line cites its signer's line at or above its place |
+
+The receipt is stored, not held outside the chain. The catch-up reads
+the stored line: the next receipt of a page links to it, the signed frame
+that closes the gap names it as predecessor, and the chase pages on from
+the head it moved. Holding it outside the chain would change admission
+and the chain itself. So the stored receipt is marked unreached, and no
+reader acts on it. A receipt a signature later reaches is read once, in
+line order: it leaves the gate as it is read, and admitted again it is
+`Stale` and filed nowhere.
+
+Open after B0:
+- A founding sealed inside a peer's era folded before the hypha caught
+  up is not reconstructed: a catch-up from a fold root (78.147) delivers
+  no receipt below the root.
+- A version-2 origin's geometry and parent face (`hold_genesis`) cross
+  only as the statement's hash (`Cite::Stated`), so they are not
+  reconstructed. Fetching the statement by its address (§5a.10) is
+  owed.
+- The waiting carriers are volatile. The signed-reach marks are derived
+  again at restore, so a receipt back-filled but not reached when a
+  process stops is read once its signer's next signed frame reaches it.
+  A frame admitted under its signature but not yet cited by the court's
+  own line reads as unreached after a restart until that next frame. The
+  `unfounded` queue and the refusals are still not derived again.
+- A held queue bounded by the process's capacity cannot hold a gap
+  longer than `C` receipts: such a gap closes only through a fold root
+  (78.147) or as the signer's line is folded below it.
+
+**Eviction, the bound and the fold root** (**Built**,
+[issue #79](https://github.com/SAIOS-SAMN/mycelium/issues/79)):
+- **Eviction by signature** (`Court::evict_contradicted`, called from
+  `Court::admit_receipt`). A signed frame contradicts its signer's line
+  where it is held unreached: at the frame's own place, held with
+  another hash, or at its predecessor's place, held with a hash other
+  than the one the frame names. The line's unreached top then leaves the
+  chain and the gate, read from the top down while each receipt is
+  unreached (`ReceiptChain::evict`, named gone on the line on disk). The
+  walk ends at the first reached receipt, so nothing a signature reached
+  is evicted and the reached part only moves forward. The frame is then
+  admitted against what the signatures reached. A forged genesis stored
+  first gives way to the signer's own genesis, and burns no bond.
+- **The held queue's bound** (`Court::unreached_refusal`). Each held
+  receipt was one read of its page (78.153b), and the reads the process
+  holds are its capacity `C = ⌊M_proc / b⌋` (MU-DERIVATIONS D2.5). A
+  back-filled receipt past `C` held receipts is refused by name
+  (`REFUSE_UNREACHED_PAST_MEMORY`, of 47.2's admission refusals), counted
+  `backfill_refused`, not stored, and its page stops. No wire change.
+- **The fold root waits** (`ReceiptChain::admit_unreached`,
+  `ReceiptChain::file_peer_root`). A back-filled `Fold` files its root
+  only once a signature reaches it. At restore, the roots are filed again
+  from the reached folds only (`ReceiptChain::refile_peer_roots`). The
+  peer roots are derived and never persisted, so the ledger layout is
+  unchanged.
+
+Claims in `server/cognition/tests/reach.rs`:
+`signed_line_evicts_forged_unreached_genesis`,
+`evict_contradicted_keeps_reached_receipts`,
+`unreached_queue_refuses_past_process_memory`,
+`fold_root_waits_for_a_signature`; and in `chronometry/tests/line.rs`,
+`line_write_round_trips_evicted_stamp_refiled`.
 
 ### 5a.10 What crosses: the exact object, never its digest
 
@@ -769,7 +887,7 @@ carries four parts:
 | Part | What | Why the hypha needs it |
 |---|---|---|
 | Place | The event's TUniversal coordinates and its past cone (what it cites) | Where the event stands in the cones (§5a.5) |
-| Content | The exact object: each body held by its boundary (turn breakpoints per circle, extent as a share of the frame) and the motion from the state before to the state after, as a versor of Cl(4,1)(ℚ), or as a pair of turns in ℚ/ℤ where no exact versor exists (Niven) | What is reconstructed |
+| Content | The exact object: each body held by its boundary (turn breakpoints per phase, extent as a share of the frame) and the motion from the state before to the state after, as a versor of `Cl(n+1, 1)`(ℚ), or as turns in ℚ/ℤ where no exact versor exists (Niven) | What is reconstructed |
 | Holonomy | Each ring the crossing closes, with its exact holonomy (§5a.3) | Curvature is content: a route's meaning |
 | Clauses | The clauses the act is read under, and the signatures (§5a.4) | Which laws the reconstruction applies |
 
@@ -784,11 +902,16 @@ reconstruct it.
 **The three senses of a digest.** A digest at the vertex has exactly
 three senses, and each permits one comparison:
 
-| Sense | Use | What equality may decide |
-|---|---|---|
-| **Address** | Locates coordinates held losslessly elsewhere: a fetch key or an index entry | Where the object is; never that it is admitted |
-| **Link** | A receipt chain's order: a record names its predecessor's digest | That the chain is unbroken. Each record's content is reconstructed separately (as `rederives` does). |
-| **Commitment** | Bytes a party signs: a signature's message, the Concordance text, a clause | That a reconstructed object is the one committed to, after it has been reconstructed and never instead |
+| Sense | Use | What equality may decide | Type and comparison |
+|---|---|---|---|
+| **Address** | Locates coordinates held losslessly elsewhere: a fetch key or an index entry | Where the object is; never that it is admitted | `Locator::locates` |
+| **Link** | A receipt chain's order: a record names its predecessor's digest | That the chain is unbroken. Each record's content is reconstructed separately (as `rederives` does). | `Predecessor::continues`; `Predecessor::forks` for two records at one place |
+| **Commitment** | Bytes a party signs: a signature's message, the Concordance text, a clause | That a reconstructed object is the one committed to, after it has been reconstructed and never instead | `Commitment::binds`, which takes only a `Reconstructed<T>` |
+
+The three types (`court::admission::digest`) carry the same 32 bytes and
+implement no `PartialEq`, so the only comparison a site can write is the
+one its sense permits. The link type is named `Predecessor`, since
+`Link` names the sentence link (GLOSSARY, *Section link*).
 
 Admitting an object because a digest it carries (a state hash, a root or
 a head) equals one already held, without reconstructing the object, is
@@ -801,7 +924,7 @@ algebraically and holds it with the crossing:
   reconstructed one, `M̃_rec · M_claim`. It is the identity exactly when
   the two motions agree, and otherwise is a motion of its own, read by
   its modes. For a turn, the residue is `t_claim − t_rec` in ℚ/ℤ.
-- **Bodies:** the boundary breakpoints that differ, named per circle,
+- **Bodies:** the boundary breakpoints that differ, named per phase,
   with the share of the frame they bound.
 - **Holonomy:** each ring whose holonomy differs, with both values.
 
@@ -826,9 +949,12 @@ proposed with the boundary reading (B4).
 |---|---|---|
 | Receipt chain links compared by digest, each record reconstructed (`rederives`) | **Built** | `src/chronometry/chain/mod.rs` |
 | A domain's stratum root recomputed from its members before comparison | **Built** | `src/server/cognition/court/glue.rs` |
+| A back-filled receipt, admitted by its chain's links, read by no reader (depth, alias, ruling replay, fold shed, founding, equivocation burn, restore) until a frame its signer signed at or above it is admitted (§5a.9, #73) | **Built** | `src/server/cognition/reach.rs` |
 | The Concordance text's digest served and signatures verified over it | **Built** | `build.rs`, `ACT_LAWS` modes 6–8 |
-| Digests typed by sense (`Address`, `Link`, `Commitment`), with no bare equality | **Specified** | Track 25, X0 |
-| Admission taking only a reconstructed object (`Reconstructed<T>`) | **Specified** | Track 25, X0 |
+| Digests typed by sense (`Locator`, `Predecessor`, `Commitment`), with no bare equality, at the admission sites converted first: the receipt line's checks, the signed prefix's claim, the equivocation proof, the signed-reach gate, the ledger's `holds`, `height_of` and era walk, the back-fill chase, a folded citation's recall, and the endowment's manifests | **Built** | `src/court/admission/digest.rs`; track 25, X0 |
+| The record fields typed by sense (`Parent::hash`, `KStepReceipt::chain_hash`, `SignedPrefix::prev_receipt_hash`, `Admitted::Equivocation`), so no bare comparison of them can be written | **Specified** | Track 25, X0 (later stage) |
+| Admission taking only a reconstructed object (`Reconstructed<T>`): `admission::admit`, `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`, `Court::admit_backfill`, `ReceiptChain::admit_unreached` | **Built** | `src/court/admission/reconstructed.rs`; track 25, X0 |
+| The vertex's admissions (`admit_uplink`, `admit_chained`, `admit_domain`) and `ReceiptChain::admit` taking `Reconstructed<T>` | **Specified** | Track 25, X2 |
 | The crossing record (place, content, holonomy, clauses) in the SDK and on the wire | **Specified** | Track 25, X1 (with B3) |
 | `AddressOnly`; the residue held with a refused or collided crossing | **Specified** | Track 25, X2–X3 |
 | Every site that admits on a digest alone, found and moved to reconstruction | **Specified** | Track 25, X4 |
@@ -867,7 +993,7 @@ agents perceive in:
 ### 6.2 Why agents of a kind are drawn
 
 The reference mind takes up an offer only where it resonates with what it
-already holds (**Written**, `entity/offer.rs`): an offer couples where one
+already holds (**Written**, `client/sdk/mind/offer.rs`): an offer couples where one
 of its charts is a chart a held thought stands on, a docket names, or the
 mind's language speaks on. An agent's *type* is its spectrum: the charts
 its language and held thoughts stand on, read from what it has done, never
@@ -968,7 +1094,7 @@ it does not ask to be trusted.
 ### 7.3 Scope: what a certificate attests
 
 A certificate is bounded by what the universe's task families can state.
-MU-COGNITION.md's ARC analysis shows a vocabulary limits what can be tested:
+MU-COGNITION §1.3's reading of the first posted corpus shows a vocabulary limits what can be tested:
 a universe that cannot state conditionals cannot certify behaviour under
 them. So a certificate attests **behaviour over the families the universe
 expresses, in the era it covers**, and never "safe in general" or

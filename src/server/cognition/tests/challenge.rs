@@ -7,7 +7,7 @@
 
 use crate::anastome::dialogue::challenge::{line_head, Challenge, ChallengeRefusal, Challenged, Entry, Finality};
 use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt, Net, TierFold, Uplinked};
-use super::common::close_through;
+use super::fixtures::close_through;
 use crate::chronometry::{Cite, Stamp};
 use crate::server::cognition::Court;
 use crate::transducer::cech::coefficient::Coefficient;
@@ -418,7 +418,7 @@ fn challenge_part_judges_stream_at_cited_prefix() {
 #[test]
 fn challenge_part_streams_span_within_frame_budget() {
     use crate::anastome::dialogue::challenge::encode_challenge;
-    use crate::network::wire::{Frame, Stratum, BODY_BUDGET};
+    use crate::network::wire::{WireFrame, Lane, BODY_BUDGET};
     let (a, ..) = tiers();
     let line: Vec<Entry> =
         (0..4096).map(|_| Entry { rows: vec![(who(1), g(2)), (who(2), g(-1)), (who(3), g(-1))], declared: Vec::new() }).collect();
@@ -426,7 +426,7 @@ fn challenge_part_streams_span_within_frame_budget() {
     let mut k = founded();
     let at = sealed(&mut k, f.clone(), &a);
     let whole = evidence(&f, &at, line.clone()).sign(&challenger());
-    let framed = |c: &crate::anastome::dialogue::challenge::SignedChallenge| Frame { lane: Stratum::Spatial, body: encode_challenge(c) }.encode();
+    let framed = |c: &crate::anastome::dialogue::challenge::SignedChallenge| WireFrame { lane: Lane::Spatial, body: encode_challenge(c) }.encode();
     assert!(framed(&whole).is_none(), "one act past the budget is refused before it is sent");
     let open = Challenge::Open { fold: at.clone(), rows: f.rows.clone(), declared: Vec::new(), children: Vec::new() }.sign(&challenger());
     assert!(matches!(k.challenge(&open), Challenged::Streaming { .. }));
@@ -563,12 +563,12 @@ fn finality_grandfathers_pre_line_fold() {
 /// Two other keepers of `court`: the keepers' keys, and each one's line citing the
 /// court at `carried` (the first) and at `carried + gap` (the second).
 fn keepers_citing(court: [u8; 32], carried: u64, gap: u64) -> Vec<([u8; 32], Vec<crate::chronometry::tuniversal::TickReading>)> {
-    use super::common::keeper_line;
+    use super::fixtures::keeper_line;
     let (x, y) = (key(61), key(62));
     vec![(verifying(&x), keeper_line(&x, court, carried, 1)), (verifying(&y), keeper_line(&y, court, carried + gap, 5))]
 }
 
-use super::common::reach_over as reach_of;
+use super::fixtures::reach_over as reach_of;
 
 /// 78.125, LAW VERSION 5 — A WINDOW CLOSES AT REACH AND RETURN: every other
 /// keeper cites the court at or above the opening and reads again; the reach
@@ -605,7 +605,7 @@ fn window_stays_open_while_one_keeper_uncited() {
     let at = sealed(&mut k, a_fold(), &a);
     let mut lines = keepers_citing(k.identity, at.stamp.h, 0);
     let silent = key(62);
-    lines[1].1 = super::common::keeper_line(&silent, [0x77; 32], at.stamp.h, 5);
+    lines[1].1 = super::fixtures::keeper_line(&silent, [0x77; 32], at.stamp.h, 5);
     let reach = reach_of(k.identity, &lines);
     assert_eq!(reach, Err(WindowRefusal::Unwitnessed { keeper: verifying(&silent) }));
     assert!(k.close_windows(&reach).is_none(), "nothing sealed");
@@ -623,7 +623,7 @@ fn window_never_closes_without_another_keeper() {
     let mut k = founded();
     let at = sealed(&mut k, a_fold(), &a);
     assert_eq!(k.window_close(at.stamp.h), Err(WindowRefusal::NoOtherKeeper), "never handed a reach");
-    let own = super::common::keeper_line(&key(63), k.identity, at.stamp.h, 1);
+    let own = super::fixtures::keeper_line(&key(63), k.identity, at.stamp.h, 1);
     let reach = reach_of(k.identity, &[(k.identity, own)]);
     assert_eq!(reach, Err(WindowRefusal::NoOtherKeeper));
     assert!(k.close_windows(&reach).is_none());

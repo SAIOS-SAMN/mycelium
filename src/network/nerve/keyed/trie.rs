@@ -15,7 +15,7 @@ use super::relation::Keyed;
 /// The key is the object's coordinates written out (law 2) and for a form
 /// it is megabytes: 7.3 MB on the 590-vertex rule, measured at e0f4e0d.
 /// Every carrier that files that form by its address held its OWN copy —
-/// `bubbles`, `dirty`, `ordinals`, the Čech complex's sections — and a
+/// `wells`, `dirty`, `ordinals`, the Čech complex's sections — and a
 /// hold paid for all of them.
 ///
 /// `Arc<[u8]>` moves WHO OWNS THE BYTES and nothing else. The content is
@@ -314,7 +314,7 @@ pub(crate) fn remove_at<V>(slot: &mut Option<Box<Node<V>>>, key: &[u8]) -> Optio
     removed
 }
 
-pub(crate) fn key_in_fibre(key: &[u8], prefix: &[u8]) -> bool {
+pub(crate) fn key_in_subtree(key: &[u8], prefix: &[u8]) -> bool {
     prefix.is_empty() || key.starts_with(prefix)
 }
 

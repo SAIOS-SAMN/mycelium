@@ -1,7 +1,7 @@
 // 54.7 R3/R4 — the bivector trichotomy, the split, Cayley, the screw, and
 // the curvature read off two boosts.
 
-use super::common::{budget, q};
+use super::fixtures::{budget, q};
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::multivector::one;
 use crate::transducer::cga::*;

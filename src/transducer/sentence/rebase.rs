@@ -54,7 +54,7 @@ impl Form {
             return None;
         };
         let single = held_acts.len() == 1;
-        let mut acts: Keyed<Acting, coord::Section> = Keyed::new();
+        let mut acts: Keyed<Acting, coord::ChartCarriage> = Keyed::new();
         for (_ck, a) in held_acts.scoped() {
             let relative = match (single, &base_inv) {
                 (true, _) => carriage.clone(),

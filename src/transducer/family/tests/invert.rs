@@ -3,7 +3,7 @@
 // stand in, erasures counted apart — and a form that speaks its family whole
 // has nothing to invert.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::family::invert::{invert_remainder, remainder_scene, Painted};
 
 /// THE REMAINDER AS A SCENE. A pair whose observed output holds a two-cell
@@ -19,11 +19,15 @@ fn remainder_scene_paints_sites_or_bodies() {
     let rem = vec![(0, 1, 0, 2), (1, 2, 5, 0)];
     let family = vec![(x.clone(), y.clone()), (x.clone(), y.clone())];
     let rems = vec![rem, Vec::new()];
-    let (sites, erasures) = remainder_scene(&family, &rems, Painted::Sites);
+    let on_zero = |painted: Painted| {
+        crate::transducer::raster::on_ground(crate::transducer::family::transduce::Ground::One(0), || remainder_scene(&family, &rems, painted))
+            .expect("on a ground of 0 the scene is written")
+    };
+    let (sites, erasures) = on_zero(Painted::Sites);
     assert_eq!(sites[0].1, grid(&["020", "000"]), "the unsaid site alone: a fragment of the body");
     assert_eq!(erasures, 1, "the wrong paint is an erasure, counted");
     assert_eq!(sites[1].1, grid(&["000", "000"]), "a pair with nothing unsaid asks for nothing, and stays a pair");
-    let (bodies, _) = remainder_scene(&family, &rems, Painted::Bodies);
+    let (bodies, _) = on_zero(Painted::Bodies);
     assert_eq!(bodies[0].1, grid(&["220", "000"]), "the whole observed body the unsaid site stands in");
     assert_eq!(sites.len(), family.len(), "every pair kept: the frames are the family's own");
 }
@@ -38,7 +42,7 @@ fn invert_remainder_inverts_nothing_for_whole_speech() {
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("a rule");
-    let empty = crate::client::sdk::Epigenome::new();
+    let empty = crate::client::sdk::MindLanguage::new();
     let (_, rem) = crate::transducer::family::form_deflation(&rule.form, &family, &empty);
     let left: usize = rem.iter().map(Vec::len).sum();
     match invert_remainder(&rule.form, &family, &empty, &mut budget) {

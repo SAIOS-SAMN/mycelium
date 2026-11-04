@@ -5,7 +5,7 @@
 // pivots on cells sharing no vertex commute; the walk `d, a, s, d` reads as
 // ruled.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::*;
 use crate::transducer::element::identity_versor as ident;
@@ -129,7 +129,7 @@ fn release_vertex_cauterizes_unreadable_classes() {
 /// burned: no scar.
 #[test]
 fn ascend_freezes_unreadable_class() {
-    let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    let mut mind = crate::transducer::field::contemplation::Contemplation::new();
     let (vs, key) = sealed_triangle(&mut mind.complex, 61, turn_90());
     assert!(matches!(mind.complex.descend(&key), Descended::Throat(_)), "the chamber crosses");
     assert!(
@@ -152,7 +152,7 @@ fn ascend_freezes_unreadable_class() {
 /// and the vacuum lets it go. The board is the sealed board again.
 #[test]
 fn freeze_thaws_when_boundary_closes_again() {
-    let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    let mut mind = crate::transducer::field::contemplation::Contemplation::new();
     let (vs, key) = sealed_triangle(&mut mind.complex, 71, turn_90());
     let sealed = mind.complex.board();
     let Descended::Throat(kept) = mind.complex.descend(&key) else { panic!("the chamber crosses") };
@@ -236,7 +236,7 @@ fn condense_inverts_drain_on_content() {
 /// re-reads; under a hole it is pinned and carries what it carried.
 #[test]
 fn tether_flexes_unless_pinned() {
-    let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    let mut mind = crate::transducer::field::contemplation::Contemplation::new();
     mind.complex.arm_outflow();
     let (a, b) = (v(1).as_bytes().to_vec(), v(2).as_bytes().to_vec());
     assert_eq!(mind.tether(&a, &b, Rotor::identity(), ident(), vol()), Condensed::Tethered);
@@ -263,7 +263,7 @@ fn tether_flexes_unless_pinned() {
 /// whole. Condensed back, the boundary stands and the cell seals.
 #[test]
 fn ascend_requires_standing_boundary() {
-    let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    let mut mind = crate::transducer::field::contemplation::Contemplation::new();
     let vs: Vec<Vec<u8>> = [v(21), v(22), v(23)].iter().map(|a| a.as_bytes().to_vec()).collect();
     for x in &vs {
         mind.complex.set_section(x, Section::at(crate::transducer::address::Address::from(x.clone()), Rotor::identity()), vol());
@@ -292,7 +292,7 @@ fn release_drains_returned_tethers_unless_pinned() {
     use crate::transducer::family::pairing::{mark_flux, FieldLine};
     let mut field = crate::transducer::mind::MindField::default();
     field.think(|| {
-        let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+        let mut mind = crate::transducer::field::contemplation::Contemplation::new();
         mind.complex.arm_outflow();
         let vs: Vec<Vec<u8>> = [v(31), v(32), v(33), v(34)].iter().map(|a| a.as_bytes().to_vec()).collect();
         let turn = turn_90();
@@ -323,7 +323,7 @@ fn release_drains_returned_tethers_unless_pinned() {
     let mut asked = Complex::new();
     let (vs, key) = sealed_triangle(&mut asked, 41, turn_90());
     let Punctured::Opened(_) = asked.puncture(&key) else { panic!("punctured: a question") };
-    let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+    let mut mind = crate::transducer::field::contemplation::Contemplation::new();
     mind.complex = asked;
     mind.release(&[(edge_key(&vs[0], &vs[1]), crate::transducer::cech::orbit::Released::Returned)]);
     assert_eq!(mind.complex.board().tethers.len(), 3, "the question's hole pins its boundary: the tether stands");
@@ -339,7 +339,7 @@ fn carry_moves_fibre_with_field() {
     use crate::transducer::family::pairing::{mark_flux, FieldLine};
     let mut field = crate::transducer::mind::MindField::default();
     field.think(|| {
-        let mut mind = crate::transducer::bubble::contemplation::Contemplation::new();
+        let mut mind = crate::transducer::field::contemplation::Contemplation::new();
         mind.complex.arm_outflow();
         let vs: Vec<Vec<u8>> = [v(51), v(52), v(53), v(54)].iter().map(|a| a.as_bytes().to_vec()).collect();
         assert_eq!(mind.tether(&vs[0], &vs[1], turn_90(), ident(), vol()), Condensed::Tethered);

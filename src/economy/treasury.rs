@@ -189,7 +189,7 @@ pub struct Treasury {
     /// E3 — value payers set aside, keyed by what it is held against, until
     /// released or refunded (`pay.rs`). A carrier of supply, unlike an
     /// award in escrow: it was issued, and it is the payer's until it moves.
-    pub(crate) held: crate::network::nerve::Keyed<super::pay::Held>,
+    pub(crate) held: crate::network::nerve::Keyed<super::pay::SetAside>,
     /// 78.151 — THE PARTIES WHOSE ACCOUNT MOVED since a publisher last took
     /// them (`take_touched`): every row written, every credit and debit
     /// names its party here. A treasury built fresh or read off disk says
@@ -197,7 +197,7 @@ pub struct Treasury {
     pub(crate) touched: Touched,
     /// 78.153b — THE JOURNAL'S MARK: moved by every write, fold and rebind of
     /// `entries`, so a publisher shares the journal it read where the mark
-    /// stands and reads it again where it moved (the witness's `ACT_ROWS`,
+    /// stands and reads it again where it moved (the witness's `ACT_ENTRIES`,
     /// answered off the published reading). Volatile.
     pub(crate) journal_mark: u64,
     /// MU-CLIENT §5.6 (E4) — THE PROOF-OF-WORK PAYMENTS since the court last
@@ -285,13 +285,13 @@ impl Treasury {
     /// of its own.
     pub(crate) fn parties(&self) -> crate::network::nerve::Keyed<()> {
         let mut out = crate::network::nerve::Keyed::new();
-        crate::snapshot::persist(&self.balances, |party, _| {
+        crate::trie_tape::persist(&self.balances, |party, _| {
             out.insert(party, ());
         });
-        crate::snapshot::persist(&self.stakes, |party, _| {
+        crate::trie_tape::persist(&self.stakes, |party, _| {
             out.insert(party, ());
         });
-        crate::snapshot::persist(&self.held, |_, h| {
+        crate::trie_tape::persist(&self.held, |_, h| {
             out.insert(h.payer, ());
         });
         out
@@ -301,7 +301,7 @@ impl Treasury {
     /// holds summed over ONE walk of the held carrier for all of them.
     pub(crate) fn accounts_of(&self, parties: &crate::network::nerve::Keyed<()>) -> Vec<([u8; 32], Holdings)> {
         let mut held: crate::network::nerve::Keyed<Mu> = crate::network::nerve::Keyed::new();
-        crate::snapshot::persist(&self.held, |_, h| {
+        crate::trie_tape::persist(&self.held, |_, h| {
             if !parties.contains(&h.payer) {
                 return;
             }
@@ -378,7 +378,7 @@ impl Treasury {
     /// The sum of live stakes, re-read, exactly.
     pub(crate) fn refresh_bond(&mut self) {
         let mut total = Mu::zero();
-        crate::snapshot::persist(&self.stakes, |_, mu| total.step(mu));
+        crate::trie_tape::persist(&self.stakes, |_, mu| total.step(mu));
         self.bond_total = total;
     }
 
@@ -407,7 +407,7 @@ impl Treasury {
     /// hypha of the 2026-09-08 soak (I38).
     pub fn bind_live(&mut self, live: &[[u8; 32]], anchor: Anchor) -> Vec<([u8; 32], Mu)> {
         let mut drop: Vec<([u8; 32], Mu)> = Vec::new();
-        crate::snapshot::persist(&self.stakes, |party, mu| {
+        crate::trie_tape::persist(&self.stakes, |party, mu| {
             let Ok(w) = <[u8; 32]>::try_from(party) else { return };
             if !live.contains(&w) {
                 drop.push((w, mu.clone()));
@@ -589,9 +589,9 @@ impl Treasury {
             f(&mut a);
             accounts.insert(party, a);
         };
-        crate::snapshot::persist(&self.balances, |party, mu| at(party, &mut |a| a.balance = mu.clone()));
-        crate::snapshot::persist(&self.stakes, |party, mu| at(party, &mut |a| a.bond = mu.clone()));
-        crate::snapshot::persist(&self.held, |_, h| at(&h.payer, &mut |a| a.held.step(&h.mu)));
+        crate::trie_tape::persist(&self.balances, |party, mu| at(party, &mut |a| a.balance = mu.clone()));
+        crate::trie_tape::persist(&self.stakes, |party, mu| at(party, &mut |a| a.bond = mu.clone()));
+        crate::trie_tape::persist(&self.held, |_, h| at(&h.payer, &mut |a| a.held.step(&h.mu)));
         e.accounts = accounts.scoped().map(|(_, a)| a.clone()).collect();
         Some(e)
     }
@@ -659,9 +659,9 @@ impl Treasury {
         // than moving it, so no escrow is a carrier of supply. Both sums are
         // exact over ℚ.
         let mut held = Mu::zero();
-        crate::snapshot::persist(&self.balances, |_, mu| held.step(mu));
-        crate::snapshot::persist(&self.stakes, |_, mu| held.step(mu));
-        crate::snapshot::persist(&self.held, |_, h| held.step(&h.mu));
+        crate::trie_tape::persist(&self.balances, |_, mu| held.step(mu));
+        crate::trie_tape::persist(&self.stakes, |_, mu| held.step(mu));
+        crate::trie_tape::persist(&self.held, |_, h| held.step(&h.mu));
         if held != issued {
             return Err(format!(
                 "supply {issued} is not the carriers {held}: balances + bond + held must be what was issued"
@@ -742,7 +742,7 @@ impl Treasury {
     /// seen holds zero on every lane — the reading of absence.
     pub fn account(&self, party: &[u8; 32]) -> Holdings {
         let mut held = Mu::zero();
-        crate::snapshot::persist(&self.held, |_, h| {
+        crate::trie_tape::persist(&self.held, |_, h| {
             if &h.payer == party {
                 held.step(&h.mu);
             }

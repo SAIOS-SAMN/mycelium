@@ -48,7 +48,7 @@ fn generator_form(w: Word, gauge: Vec<(u8, u8)>, tag: u8) -> (Address, Form) {
 
 /// A mind holding its generators in the FOUR COVERS, filled by
 /// `admit_generators_by_lane` and drained by `generators_under_lane` —
-/// the same pair the epigenome uses, so what this fixture proves about the
+/// the same pair the mind's language uses, so what this fixture proves about the
 /// read is what the live mind does (§3.4). `generators_at_meet` is the
 /// trait's own, unoverridden.
 struct Lanes {
@@ -75,7 +75,7 @@ impl Crystal for Lanes {
     fn speak_form(
         &self,
         f: &Form,
-        x: &crate::transducer::family::Grid,
+        x: &crate::transducer::family::SectionSample,
         placement: &Word,
     ) -> Option<crate::transducer::family::Speech> {
         crate::transducer::family::apply_form(f, x, placement, self)

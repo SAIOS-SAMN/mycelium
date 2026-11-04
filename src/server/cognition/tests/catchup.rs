@@ -9,10 +9,10 @@ use crate::cognition::*;
 use crate::court::admission::{Admitted, SignedPrefix};
 use crate::court::identity::HyphaKey;
 use crate::observe::{replication, serves, ServeAxis};
-use crate::server::backfill::{Ask, Origin};
+use crate::server::backfill::{AdoptedOrigin, Ask};
 use std::sync::Mutex;
 
-const ORIGIN: Origin = Some(([7; 32], 2));
+const ORIGIN: AdoptedOrigin =Some(([7; 32], 2));
 const AT: ([u8; 32], u32) = ([7; 32], 2);
 
 /// A 47.1 position signed by `key` at `head`, over `payload`.
@@ -32,7 +32,7 @@ fn position(key: &HyphaKey, head: &KStepReceipt, payload: Vec<u8>) -> ReceiptSec
 
 /// A court signing as the key `name` derives.
 fn court(name: &str) -> (HyphaKey, Court) {
-    let key = super::common::court_key(name);
+    let key = super::fixtures::court_key(name);
     let mut k = Court::new();
     k.bind_identity(key.verifying_bytes());
     (key, k)
@@ -53,7 +53,7 @@ fn fold(k: &mut Court, key: &HyphaKey) -> RootProof {
     let p = k.propose_fold().expect("a final prefix");
     let head = k.chain().head().expect("the court acted");
     let home = position(key, &head, p.root.hash.to_vec());
-    let wkey = super::common::court_key("catchup-witness");
+    let wkey = super::fixtures::court_key("catchup-witness");
     let mut wc = ReceiptChain::with_signer(wkey.verifying_bytes());
     let wh = wc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
     let witness = position(&wkey, &wh, p.root.hash.to_vec());
@@ -102,7 +102,7 @@ fn source<'a>(
             a.push((*signer, after, ask));
         }
         let k = courts.iter().find(|k| k.chain().signer() == *signer)?;
-        Some(k.serve_receipts(signer, after, upto, ask == Ask::Replay, 8, usize::MAX))
+        Some(k.serve_receipts(signer, after, upto, ask == Ask::Era, 8, usize::MAX))
     }
 }
 
@@ -125,7 +125,7 @@ fn hear_adopts_root_and_cites_head_behind_fold() {
     let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut budget = c0.stroke();
-    assert_eq!(c0.admit_backfill(&early, &mut budget), (early.len(), None), "c holds b's first stroke");
+    assert_eq!(c0.admit_backfill(&super::fixtures::page(&early), &mut budget), (early.len(), None), "c holds b's first stroke");
     let held = c0.known_head(&bvk).map(|(at, _)| at).expect("held");
     assert!(held < proof.root.at, "c's head of b stands below b's root");
     let c = Mutex::new(c0);
@@ -136,7 +136,7 @@ fn hear_adopts_root_and_cites_head_behind_fold() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(AT, super::common::verified(&pre, &bkey), &head)),
+        || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, &bkey), &super::fixtures::reconstructed(&head))),
         || c.lock().ok().map(|mut k| k.stroke()),
         source(&courts, &asked),
     );
@@ -198,7 +198,7 @@ fn serve_receipts_answers_below_root_with_root() {
     let uvk = u.chain().signer();
     strokes(&mut u, 3);
     let p = u.propose_fold().expect("a final prefix");
-    let wkey = super::common::court_key("catchup-witness");
+    let wkey = super::fixtures::court_key("catchup-witness");
     let mut wc = ReceiptChain::with_signer(wkey.verifying_bytes());
     let wh = wc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
     u.commit_fold([3; 64], &position(&wkey, &wh, p.root.hash.to_vec())).expect("sealed");
@@ -239,7 +239,7 @@ fn hear_proves_citation_into_held_era() {
     assert_eq!(c0.adopt_root(AT, &proof), RootAdoption::Held, "and adopts it once");
     assert_eq!(c0.known_head(&bvk).map(|(at, _)| at), Some(proof.root.at), "b's line stands at the root here");
     let c = Mutex::new(c0);
-    let dkey = super::common::court_key("catchup-era-d");
+    let dkey = super::fixtures::court_key("catchup-era-d");
     let dvk = dkey.verifying_bytes();
     let mut dc = ReceiptChain::with_signer(dvk);
     dc.admit(b0.clone());
@@ -263,14 +263,14 @@ fn hear_proves_citation_into_held_era() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(AT, super::common::verified(&pre, &dkey), &head)),
+        || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, &dkey), &super::fixtures::reconstructed(&head))),
         || c.lock().ok().map(|mut k| k.stroke()),
         source(&courts, &asked),
     );
     assert!(matches!(heard, Ok(Admitted::Parent(_))), "d's head is cited: {heard:?}");
     assert!(axes(bvk)[replication::FOLDED_PROVED] > proved, "the citation proved by its era");
     let asks = asked.into_inner().expect("asks");
-    assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Replay), "b's line asked only as the era's replay: {asks:?}");
+    assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Era), "b's line asked only as the era's replay: {asks:?}");
 }
 
 /// 47.3 — A ROOT ALREADY CO-SIGNED IS ANSWERED WITH THE CO-SIGNATURE HELD (the
@@ -285,7 +285,7 @@ fn cosigned_root_answers_with_held_cosignature() {
     let bvk = bkey.verifying_bytes();
     strokes(&mut b, 3);
     let proof = fold(&mut b, &bkey);
-    let wvk = super::common::court_key("catchup-witness").verifying_bytes();
+    let wvk = super::fixtures::court_key("catchup-witness").verifying_bytes();
     let mut w = Court::new();
     w.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     assert_eq!(w.adopt_root(AT, &proof), RootAdoption::Adopted, "the root held with both signed positions");
@@ -316,7 +316,7 @@ fn hear_proves_long_era_page_by_page() {
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     assert_eq!(c0.adopt_root(AT, &proof), RootAdoption::Adopted, "c stands on b's root");
     let c = Mutex::new(c0);
-    let dkey = super::common::court_key("catchup-long-era-d");
+    let dkey = super::fixtures::court_key("catchup-long-era-d");
     let mut dc = ReceiptChain::with_signer(dkey.verifying_bytes());
     dc.admit(b0.clone());
     dc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: b0.stamp, hash: b0.chain_hash }]).expect("d cites b0");
@@ -336,16 +336,16 @@ fn hear_proves_long_era_page_by_page() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(AT, super::common::verified(&pre, &dkey), &r)),
+        || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, &dkey), &super::fixtures::reconstructed(&r))),
         || c.lock().ok().map(|mut k| k.stroke()),
         source(&courts, &asked),
     );
     assert!(matches!(heard, Ok(Admitted::Parent(_))), "d's head is cited: {heard:?}");
     assert!(axes(bvk)[replication::FOLDED_PROVED] > proved, "the citation proved by its era");
     let asks = asked.into_inner().expect("asks");
-    let replays = asks.iter().filter(|(who, _, ask)| *who == bvk && *ask == Ask::Replay).count();
+    let replays = asks.iter().filter(|(who, _, ask)| *who == bvk && *ask == Ask::Era).count();
     assert!(replays > 1, "the era walked over more than one page: {asks:?}");
-    assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Replay), "b's line asked only as the era's replay");
+    assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Era), "b's line asked only as the era's replay");
 }
 
 /// 78.147 (4) — CROSS-CITING LINES EACH ADVANCE FROM ITS ROOT. Courts a
@@ -364,18 +364,18 @@ fn hear_advances_cross_citing_lines_from_roots() {
     strokes(&mut b, 1);
     let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
-    super::common::admit_line(&mut c0, &akey, &line(&a, None));
-    super::common::admit_line(&mut c0, &bkey, &line(&b, None));
+    super::fixtures::admit_line(&mut c0, &akey, &line(&a, None));
+    super::fixtures::admit_line(&mut c0, &bkey, &line(&b, None));
     // Each hears the other's line and cites it, twice over.
     let mut heard_a: Option<Place> = None;
     let mut heard_b: Option<Place> = None;
     let cross = |a: &mut Court, b: &mut Court, heard_a: &mut Option<Place>, heard_b: &mut Option<Place>| {
         let from_a = line(a, *heard_a);
-        super::common::admit_line(b, &akey, &from_a);
+        super::fixtures::admit_line(b, &akey, &from_a);
         *heard_a = from_a.last().map(|r| r.stamp.place()).or(*heard_a);
         strokes(b, 1);
         let from_b = line(b, *heard_b);
-        super::common::admit_line(a, &bkey, &from_b);
+        super::fixtures::admit_line(a, &bkey, &from_b);
         *heard_b = from_b.last().map(|r| r.stamp.place()).or(*heard_b);
         strokes(a, 1);
     };
@@ -385,7 +385,7 @@ fn hear_advances_cross_citing_lines_from_roots() {
     // b hears a's last stroke, so each holds the other's line whole; then
     // both fold, and what each reads of the other opens at the root.
     let rest = line(&a, heard_a);
-    super::common::admit_line(&mut b, &akey, &rest);
+    super::fixtures::admit_line(&mut b, &akey, &rest);
     heard_a = rest.last().map(|r| r.stamp.place()).or(heard_a);
     let ra = fold(&mut a, &akey);
     let rb = fold(&mut b, &bkey);
@@ -394,7 +394,7 @@ fn hear_advances_cross_citing_lines_from_roots() {
         cross(&mut a, &mut b, &mut heard_a, &mut heard_b);
     }
     // b answers a's last stroke, so neither head cites the other's.
-    super::common::admit_line(&mut b, &akey, &line(&a, heard_a));
+    super::fixtures::admit_line(&mut b, &akey, &line(&a, heard_a));
     strokes(&mut b, 1);
     let c = Mutex::new(c0);
     let courts = [&a, &b];
@@ -404,7 +404,7 @@ fn hear_advances_cross_citing_lines_from_roots() {
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,
             ORIGIN,
-            || Ok(c.lock().expect("c").admit_receipt(AT, super::common::verified(&pre, key), &head)),
+            || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, key), &super::fixtures::reconstructed(&head))),
             || c.lock().ok().map(|mut k| k.stroke()),
             source(&courts, &asked),
         );

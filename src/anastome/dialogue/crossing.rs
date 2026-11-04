@@ -387,7 +387,7 @@ pub fn decode_traverse_reply(b: &[u8]) -> Option<Crossed> {
 /// map: the two universes, the mouth, the crossing's point, `u_a` and
 /// `u_entry` (B's latest entry's `u`, cited), and `u_applied` — where B
 /// transduced what crossed, committed in B's NEXT entry. Until then the edge
-/// reads PENDING, never a disagreement; once applied, its RESIDUAL is
+/// reads PENDING, never a disagreement; once applied, its RESIDUE is
 /// `u_applied − u_entry`, exact and kept.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Edge {
@@ -401,9 +401,9 @@ pub struct Edge {
 }
 
 impl Edge {
-    /// The residual between where B applied it and the entry cited; `None`
+    /// The residue between where B applied it and the entry cited; `None`
     /// while pending.
-    pub fn residual(&self) -> Option<i128> {
+    pub fn residue(&self) -> Option<i128> {
         self.u_applied.map(|a| i128::from(a) - i128::from(self.u_entry))
     }
 

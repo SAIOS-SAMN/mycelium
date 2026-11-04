@@ -1,6 +1,6 @@
 // 39 — the client's tests, one file per ORGAN they prove.
 
-pub mod common;
+pub mod fixtures;
 
 mod aperture;
 mod ascertain;
@@ -22,6 +22,7 @@ mod hypha;
 mod occupancy;
 mod offer;
 mod perceive;
+mod rank;
 mod remainders;
 mod rule;
 mod rule_language;

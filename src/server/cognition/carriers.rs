@@ -31,7 +31,7 @@ impl Court {
             ruled,
             court_voice: _,
             axis_index,
-            replay_memo,
+            reconstruction_memo,
             cited_by,
             book,
             basis_gen: _,
@@ -73,7 +73,7 @@ impl Court {
             court_slashed: _,
             court_unread: _,
             court_stalled: _,
-            replay_cursors: _,
+            reconstruction_cursors: _,
             rehear_due: _,
             phase_unread: _,
             confirm_cursor: _,
@@ -183,6 +183,9 @@ impl Court {
             anchor_mismatches,
             anchor_evidence,
             domains,
+            unreached,
+            unfounded,
+            founding_refusals,
             tier_domain,
             ledgers,
             reconstructions,
@@ -205,6 +208,12 @@ impl Court {
         // 78.120 — the domains founded here and the domains' tier index.
         c.count("domains", domains.len());
         c.count("tier_domain", tier_domain.len());
+        // MU-HOSTING §5a.9, §5a.10 — peers' back-filled receipts no
+        // signature has reached yet; B0's founding receipts waiting for a
+        // domain's founding, and refused.
+        c.count("backfill.unreached", unreached.len());
+        c.count("founding.unfounded", unfounded.len());
+        c.count("founding.refused", founding_refusals.len());
         // 78.123 B — the ledger trees: children with value in flight, the
         // rates gauges' steps, the open obstructions.
         c.count("ledger.folds", ledgers.folds.len());
@@ -252,7 +261,7 @@ impl Court {
         c.count("axis_index", axis_index.scoped().map(|(_, a)| nested(a)).sum());
         c.count("generators", nested(generators));
         c.count("presentation", presentation.len());
-        c.count("replay_memo", nested(replay_memo));
+        c.count("replay_memo", nested(reconstruction_memo));
         c.count("cited_by", nested(cited_by));
         c.count("book", book.1.len());
         c.count("language", language.len());

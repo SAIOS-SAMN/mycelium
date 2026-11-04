@@ -8,7 +8,7 @@
 //! meets into carriers nothing read: 161 carriages and 3 964 meets over
 //! twelve tasks reached no form and left only a tally behind them.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 use crate::transducer::sentence::{Demand, Vertex};
 
@@ -17,7 +17,7 @@ use crate::transducer::sentence::{Demand, Vertex};
 /// deformation — and under 51.3 as ruled 2026-09-18 the cover does not
 /// reach below the body, so this carries NOTHING and stands as one typed
 /// demand. It is kept for exactly that reading.
-fn notched() -> (Grid, Grid) {
+fn notched() -> (SectionSample, SectionSample) {
     (
         grid(&["11111", "11111", "11111", "11111", "11111"]),
         grid(&["11111", "11111", "11111", "11111", "11110"]),
@@ -37,7 +37,7 @@ fn notched() -> (Grid, Grid) {
 /// place and the fourth slides one column, so no versor carries the
 /// composite whole — that is what makes it a deformation — while the
 /// slide still overlaps its own source, so the pullback places all four.
-fn four_bodies() -> (Grid, Grid) {
+fn four_bodies() -> (SectionSample, SectionSample) {
     (
         grid(&["1100110", "1100110", "0000000", "1100110", "1100110"]),
         grid(&["1100110", "1100110", "0000000", "1101100", "1101100"]),
@@ -48,7 +48,7 @@ fn four_bodies() -> (Grid, Grid) {
 /// row holds and its lower row slides, so the pullback cannot place it and
 /// pass (b) is offered it under the versors pass (a) placed. This is the
 /// fixture for propagation, which the sliding one does not reach.
-fn four_bodies_one_left() -> (Grid, Grid) {
+fn four_bodies_one_left() -> (SectionSample, SectionSample) {
     (
         grid(&["1100110", "1100110", "0000000", "1100110", "1100110"]),
         grid(&["1100110", "1100110", "0000000", "1100110", "1101100"]),
@@ -59,7 +59,7 @@ fn four_bodies_one_left() -> (Grid, Grid) {
 /// forms it for one chart (extract.rs:281). The cover is given a composite
 /// and reads its bodies back out with `pieces_of`; a fixture of one body
 /// has nothing for it to cover (51.3).
-fn composite(g: &Grid) -> Body {
+fn composite(g: &SectionSample) -> Body {
     body_of(perceive(g).iter().flat_map(|b| b.compartments.iter().cloned()).collect::<Vec<_>>())
         .expect("a composite of heard bodies is heard at n = 3")
 }
@@ -78,7 +78,8 @@ fn compartments<T: Copy + Into<Compartment>>(v: &[T]) -> Vec<Compartment> {
 /// is the case an uncarried body is in.
 #[test]
 fn hold_form_reads_demand_candidates_from_bodies() {
-    use crate::transducer::bubble::contemplation::Contemplation;
+    crate::transducer::raster::stand_on(0);
+    use crate::transducer::field::contemplation::Contemplation;
     let held = |ga: &[&str], gb: &[&str]| -> (usize, usize) {
         let f = measured(&grid(ga), &grid(gb));
         let chart = f
@@ -92,8 +93,8 @@ fn hold_form_reads_demand_candidates_from_bodies() {
             })
             .expect("the deformation stands as a typed demand");
         let mut c = Contemplation::new();
-        c.hold_form(f.clone(), &[], &[], [0; 4], &mut super::common::budget());
-        let (_, b) = c.bubbles.scoped().next().expect("the demand is held as an idea");
+        c.hold_form(f.clone(), &[], &[], [0; 4], &mut super::fixtures::budget());
+        let (_, b) = c.wells.scoped().next().expect("the demand is held as an idea");
         let over_chart =
             b.candidates.get(chart.key().as_bytes()).map_or(0, |m| m.len());
         let total: usize = b.candidates.scoped().map(|(_, m)| m.len()).sum();
@@ -127,7 +128,7 @@ fn hold_form_reads_demand_candidates_from_bodies() {
 /// A stroke large enough that the cover runs to the end of its pieces.
 /// The machine's own stroke does not reach it, so a fixture on the machine
 /// stroke would assert the starvation and not the reading.
-fn measured(a: &Grid, b: &Grid) -> crate::transducer::sentence::Form {
+fn measured(a: &SectionSample, b: &SectionSample) -> crate::transducer::sentence::Form {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     scene_form(&NoCrystal, &mut budget, a, b).expect("a cover that runs to its end")
 }
@@ -158,7 +159,7 @@ fn scene_form_groups_pieces_by_transport_class() {
     let members = w.acts().map_or(0, crate::network::nerve::Keyed::len);
     assert!(members >= 1, "with a member per chart it carries a piece on: {members}");
     assert!(
-        carriage(&composite(&a), &composite(&b), &mut super::common::budget()).is_none(),
+        carriage(&composite(&a), &composite(&b), &mut super::fixtures::budget()).is_none(),
         "the composite does not carry whole; this vertex is the cover's"
     );
 }
@@ -170,13 +171,14 @@ fn scene_form_groups_pieces_by_transport_class() {
 /// a scene with one body in it.
 #[test]
 fn scene_form_demands_uncarried_body_without_listing() {
+    crate::transducer::raster::stand_on(0);
     let (a, b) = notched();
     let f = measured(&a, &b);
     let (ia, ib) = (perceive(&a), perceive(&b));
     let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
         panic!("the notched fixture perceives one body on each side");
     };
-    assert!(carriage(input, image, &mut super::common::budget()).is_none(),"the whole body does not carry");
+    assert!(carriage(input, image, &mut super::fixtures::budget()).is_none(),"the whole body does not carry");
     let words = f.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count();
     assert_eq!(words, 0, "and the cover lists no pieces of it");
     assert!(
@@ -237,7 +239,7 @@ fn pieces_of_keeps_polychrome_body_whole() {
 ///
 /// §4.4 E8 — AND NOW THE ADDRESS IS A COORDINATE. `meet_key` and
 /// `meet_ends` were a hand-written pair over loose bytes; the three
-/// addresses of a cover are [`coord::Piece`], [`coord::Carriage`] and
+/// addresses of a cover are [`coord::Piece`], [`coord::CarriedPieces`] and
 /// [`coord::Meet`], each of which decodes back to itself or refuses. The
 /// property this test always asserted is the coordinate's own law,
 /// `decode(encode(x)) == x`, and it is asserted here on the value rather
@@ -245,15 +247,15 @@ fn pieces_of_keeps_polychrome_body_whole() {
 #[test]
 fn meet_decode_round_trips_and_refuses_truncation() {
     use crate::network::nerve::{coord, Coordinate};
-    use crate::transducer::peel::ShellKind;
+    use crate::transducer::layers::LayerKind;
     use crate::transducer::base::Site;
     let piece = |kind, support: Vec<Site>| coord::Piece { kind, support };
     // A PIECE WITH NO SUPPORT, one with a support, and one whose support
     // length bytes are the shape a length prefix has: the cases the byte
     // pair had to be checked against by hand.
-    let a = piece(ShellKind::Whole, Vec::new());
-    let b = piece(ShellKind::Outline, [(1i64, 2i64, 0i64), (4, 0, 0)].map(Site::from).to_vec());
-    let c = piece(ShellKind::Magnified, vec![Site::from((0i64, 0i64, 0i64))]);
+    let a = piece(LayerKind::Whole, Vec::new());
+    let b = piece(LayerKind::Outline, [(1i64, 2i64, 0i64), (4, 0, 0)].map(Site::from).to_vec());
+    let c = piece(LayerKind::Magnified, vec![Site::from((0i64, 0i64, 0i64))]);
     for p in [&a, &b, &c] {
         assert_eq!(
             coord::Piece::decode(p.encode().as_bytes()).as_ref(),
@@ -265,15 +267,15 @@ fn meet_decode_round_trips_and_refuses_truncation() {
     // `assembly_key` wrote a one-piece assembly as that piece's bare bytes
     // and a many-piece one as a run of length-prefixed pieces, so nothing
     // could read a carriage address back at all. Both decode now.
-    let one = coord::Carriage { domain: vec![a.clone()], codomain: vec![b.clone()] };
-    let many = coord::Carriage {
+    let one = coord::CarriedPieces { domain: vec![a.clone()], codomain: vec![b.clone()] };
+    let many = coord::CarriedPieces {
         domain: vec![a.clone(), b.clone(), c.clone()],
         codomain: vec![b.clone()],
     };
     assert_ne!(one.encode(), many.encode(), "two assemblies are two coordinates");
     for car in [&one, &many] {
         assert_eq!(
-            coord::Carriage::decode(car.encode().as_bytes()).as_ref(),
+            coord::CarriedPieces::decode(car.encode().as_bytes()).as_ref(),
             Ok(car),
             "a carriage's address gives the carriage back"
         );
@@ -343,7 +345,7 @@ fn scene_form_chords_name_live_faces() {
 //
 // THE MEASURED FACT IT WAS REACHING FOR is narrower and stands on the
 // code rather than on this fixture: `spell_peel_with` is called at
-// `(PLANE_ROW, PLANE_COL)` and nowhere else, so every word a pair form
+// `alphabet::sensor_plane()` and nowhere else, so every word a pair form
 // composes is a sensor-plane word, and on this corpus they are rotations
 // in one plane, which commute. That is L22 §51.6's four-letter
 // sub-alphabet appearing as a consequence. Its observable is a deployment
@@ -460,6 +462,7 @@ fn scene_form_evaluates_every_orbit() {
 /// lane AND no orbit over its pieces stands.
 #[test]
 fn scene_form_keeps_deformation_for_uncarried_remainder() {
+    crate::transducer::raster::stand_on(0);
     let (a, b) = notched();
     let f = measured(&a, &b);
     let stands = f
@@ -490,6 +493,7 @@ fn scene_form_keeps_deformation_for_uncarried_remainder() {
 /// it is that the stroke is too small for this scene.
 #[test]
 fn cover_deformation_parks_and_resumes_across_strokes() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::family::cover::cover_deformation;
     use crate::transducer::family::cursor;
     let (ga, gb) = four_bodies();
@@ -571,7 +575,7 @@ fn scene_form_is_invariant_under_rebuild() {
 }
 
 /// One cover run to the end of its pieces.
-fn measured_cover(a: &Grid, b: &Grid) -> crate::transducer::family::cover::Cover {
+fn measured_cover(a: &SectionSample, b: &SectionSample) -> crate::transducer::family::cover::PiecewiseCarriage {
     use crate::transducer::family::cover::cover_deformation;
     use crate::transducer::family::cursor;
     let (input, image) = (composite(a), composite(b));
@@ -586,6 +590,7 @@ fn measured_cover(a: &Grid, b: &Grid) -> crate::transducer::family::cover::Cover
 /// the pullback reaches carries the pieces that stand in place.
 #[test]
 fn cover_deformation_propagates_only_from_placed_pieces() {
+    crate::transducer::raster::stand_on(0);
     // TWO BODIES THAT DO NOT MEET. No compartment of the input stands under any
     // compartment of the image, so the pullback names no preimage and places
     // nothing; with nothing placed there is nothing to propagate.
@@ -620,7 +625,7 @@ fn cover_deformation_propagates_only_from_placed_pieces() {
 fn edge_holonomies_refuses_orbit_without_edges() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::Form;
-    use crate::transducer::sentence::tests::common::{stand_with_star, FRAME};
+    use crate::transducer::sentence::tests::fixtures::{stand_with_star, FRAME};
     let mut f = Form::default();
     // Three bodies, three charts. AT1 — one transport class is ONE vertex
     // (Q1), so the three are three MEMBERS of the identity's class, each at

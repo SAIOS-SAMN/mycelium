@@ -4,13 +4,13 @@
 
 use crate::cognition::*;
 use crate::transducer::element::Element;
-use crate::verdict::Replayed;
+use crate::verdict::ReconstructionOutcome;
 
 fn stroke(n: usize) -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(n)
 }
 
-fn grid(rows: &[&str]) -> crate::arc::Grid {
+fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -40,18 +40,19 @@ fn docketed(word: &Element, family: Vec<crate::transducer::family::TrainPair>) -
 /// exactly the whole replay's verdict. Every unread stroke kept the cursor;
 /// none slashed; the ruled replay leaves no cursor behind.
 #[test]
-fn court_replay_resumes_unread_to_whole_verdict() {
+fn court_reconstruct_resumes_unread_to_whole_verdict() {
+    crate::transducer::raster::stand_on(0);
     let (word, one, wider) = fixture();
     for family in [one, wider] {
-        let whole = docketed(&word, family.clone()).court_replay(&word, &mut stroke(1 << 20));
+        let whole = docketed(&word, family.clone()).court_reconstruct(&word, &mut stroke(1 << 20));
         let mut k = docketed(&word, family);
         let mut strokes = 0u64;
         let out = loop {
             strokes += 1;
             assert!(strokes <= 4096, "a stroke of two reads moves the replay on");
-            match k.court_replay(&word, &mut stroke(2)) {
-                Replayed::Unread => {
-                    assert_eq!(k.replay_cursors.len(), 1, "the unread replay keeps its cursor");
+            match k.court_reconstruct(&word, &mut stroke(2)) {
+                ReconstructionOutcome::Unread => {
+                    assert_eq!(k.reconstruction_cursors.len(), 1, "the unread replay keeps its cursor");
                     assert_eq!(k.court_slashed, 0, "an unread replay slashes nothing");
                 }
                 out => break out,
@@ -60,7 +61,7 @@ fn court_replay_resumes_unread_to_whole_verdict() {
         assert!(strokes > 1, "the replay needs more than one stroke of two reads");
         assert_eq!(out, whole, "resumed, it rules as the whole replay does");
         assert_eq!(k.court_unread, strokes - 1, "every stroke before the ruling was unread");
-        assert!(k.replay_cursors.is_empty(), "a ruled replay keeps no cursor");
+        assert!(k.reconstruction_cursors.is_empty(), "a ruled replay keeps no cursor");
     }
 }
 
@@ -70,6 +71,7 @@ fn court_replay_resumes_unread_to_whole_verdict() {
 /// still slashed, once its replay is read.
 #[test]
 fn court_stroke_rules_word_across_unfinished_strokes() {
+    crate::transducer::raster::stand_on(0);
     let (word, one, wider) = fixture();
     let addr = word.address();
     let mut ruling = docketed(&word, one);
@@ -80,7 +82,7 @@ fn court_stroke_rules_word_across_unfinished_strokes() {
         ruling.court_stroke();
         assert_eq!(ruling.court_slashed, 0, "a good word is never slashed, on any stroke");
     }
-    assert!(ruling.replay_cursors.is_empty(), "its replay is ruled and keeps no cursor");
+    assert!(ruling.reconstruction_cursors.is_empty(), "its replay is ruled and keeps no cursor");
 
     let mut refusing = docketed(&word, wider);
     let mut strokes = 0;
@@ -98,17 +100,18 @@ fn court_stroke_rules_word_across_unfinished_strokes() {
 /// resumes, to the verdict the whole replay gives.
 #[test]
 fn judge_solve_on_stroke_resumes_unread_solve() {
+    crate::transducer::raster::stand_on(0);
     let (word, one, _) = fixture();
     // The act's stroke is the host's; asked again and again, the solve
     // resumes and is judged — never refused for a spent stroke — and each
     // `Unread` kept the cursor the next asking resumed.
-    let solve = |k: &mut Court| -> ([u64; 4], u64) {
+    let solve = |k: &mut Court| -> (crate::economy::Mu, u64) {
         let mut asked = 0u64;
         loop {
             asked += 1;
             assert!(asked <= 4096, "asked again, the solve is judged");
             match k.judge_solve_on_stroke(&word, &one) {
-                SolveVerdict::Unread => assert_eq!(k.replay_cursors.len(), 1, "the unread solve keeps its cursor"),
+                SolveVerdict::Unread => assert_eq!(k.reconstruction_cursors.len(), 1, "the unread solve keeps its cursor"),
                 SolveVerdict::Solved { pay, .. } => return (pay, asked),
                 other => panic!("never refused for a spent stroke: {other:?}"),
             }
@@ -117,7 +120,7 @@ fn judge_solve_on_stroke_resumes_unread_solve() {
     let mut first = Court::new();
     let (pay, asked) = solve(&mut first);
     let (again, asked_again) = solve(&mut Court::new());
-    assert!(pay.iter().any(|&m| m > 0), "the rule discharges its pair: {pay:?}");
+    assert!(!pay.is_zero(), "the rule discharges its pair: {pay}");
     assert_eq!((pay, asked), (again, asked_again), "one verdict, one price, one number of strokes");
     // 78.153c — EVERY UNREAD ASKING IS COUNTED, under "unread": the askings
     // before the judging one, exactly; the solved one is counted where it is

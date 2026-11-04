@@ -43,7 +43,7 @@ pub(crate) struct Percept {
 struct Quotient {
     /// The frame, by its own coordinate (AT1 Q4): no width walls it.
     frame: u64,
-    car: Carriage,
+    car: BodyTransport,
     a0: Body,
     b0: Body,
     a_k: Body,
@@ -173,13 +173,15 @@ struct ClassRead {
 /// THE PERCEPT (52.5 items 1 to 4), under the stroke (rule 10): every
 /// frame the budget reaches is perceived once; every chart's fibre is read
 /// frame by frame; a budget that ends leaves the frames it did not measure
-/// as the demands of `finish` and says so.
+/// as the demands of `finish` and says so. A demand whose link writes an
+/// absence needs the scene's one ground; where the scope has none (a
+/// vortex, no ground) the percept is refused by name (`Unground`).
 pub(super) fn family_percept(
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     frames: &super::perceive::Frames,
     scale: Ratio,
     budget: &mut crate::physics::Budget,
-) -> Percept {
+) -> Result<Percept, transduce::Unground> {
     trace::trace("extract/0 frames", trace::Wrote::Nothing, Some(budget));
     let n = family.len();
     let mut unreached: Vec<usize> = Vec::new();
@@ -315,14 +317,14 @@ pub(super) fn family_percept(
                         for (_, d) in cover.refused.scoped() {
                             demanded.push(d.clone());
                         }
-                        let mut demands = unreached_demands(ai, &a0, &b0, &cover.reached, c, ai.len());
+                        let mut demands = unreached_demands(ai, &a0, &b0, &cover.reached, c, ai.len())?;
                         let first = demands.split_off(1);
                         demanded.extend(first);
                         let [demand] = demands.as_slice() else { continue };
                         covers.push(Covered { demand: demand.clone(), cover, frame: k });
                     }
                     Err(_) => {
-                        demanded.extend(unreached_demands(ai, &a0, &b0, &Keyed::new(), c, ai.len()));
+                        demanded.extend(unreached_demands(ai, &a0, &b0, &Keyed::new(), c, ai.len())?);
                     }
                 },
             }
@@ -403,7 +405,7 @@ pub(super) fn family_percept(
             // partial map whose absence is the IDENTITY (`hue_of`), so the
             // least frame's map read at a frame that moved a hue the least
             // frame never held sent it nowhere, and the court refused the
-            // vertex ("a lamina lands on the wrong hue", 6 of 8 carry
+            // vertex ("a carried site lands on the wrong hue", 6 of 8 carry
             // refusals on the development deployment, 2026-10-10). The claimed frames' maps are
             // merged as they agree, and that union is the member's gauge.
             let mut merged = crate::transducer::sentence::hue_table(&acting.gauge);
@@ -603,7 +605,7 @@ pub(super) fn family_percept(
                     let demand = (
                         Demand::TopologicalDeformation { image: image.moduli.clone(), axes },
                         body.moduli.clone(),
-                        delta_links(&a0, &b0),
+                        delta_links(&a0, &b0)?,
                     );
                     match cover_deformation(&a0, &b0, Some(scale), budget) {
                         Ok(cover) => {
@@ -616,7 +618,7 @@ pub(super) fn family_percept(
                     }
                 }
                 if !any {
-                    demanded.push(vanished(body));
+                    demanded.push(vanished(body)?);
                 }
             }
             for body in outs_k {
@@ -628,11 +630,9 @@ pub(super) fn family_percept(
                 if fib_in.get(&ck).is_some_and(|(_, f)| f.contains(&fk)) {
                     continue;
                 }
-                let links: Vec<Link> = body
-                    .compartments
-                    .iter()
-                    .filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, crate::arc::ground(), l.hue)))
-                    .collect();
+                let void = crate::transducer::raster::void()?;
+                let links: Vec<SectionLink> =
+                    body.compartments.iter().filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, void, l.hue))).collect();
                 demanded.push((Demand::Creation, body.moduli.clone(), links));
             }
         }
@@ -706,7 +706,7 @@ pub(super) fn family_percept(
             let Vertex::Word { address, derivation, .. } = v else { continue };
             let support: Vec<Site> = codomain
                 .iter()
-                .map(|s| match s.with_axis(crate::transducer::base::FRAME_AXIS, c.frame) {
+                .map(|s| match crate::transducer::perspective::family_place_axis(s.n()).and_then(|p| s.with_axis(p, c.frame)) {
                     Some(at) => at,
                     None => s.clone(),
                 })
@@ -730,7 +730,7 @@ pub(super) fn family_percept(
                         _ => super::torsion_quotient::Sections::Standing,
                     };
                     if relation == super::torsion_quotient::Sections::Standing {
-                        let links: Vec<Link> = support
+                        let links: Vec<SectionLink> = support
                             .iter()
                             .filter_map(|s| on_grid(s).map(|(r, cc)| (r, cc, 0u8, 0u8)))
                             .collect();
@@ -787,7 +787,7 @@ pub(super) fn family_percept(
         // its chart at each of them. Two members of one section key — one
         // action placed twice, at two frames — are one member standing on
         // the union of both frames.
-        let mut acts: Keyed<Acting, coord::Section> = Keyed::new();
+        let mut acts: Keyed<Acting, coord::ChartCarriage> = Keyed::new();
         for m in &read.members {
             let key = m.acting.key();
             let mut acting = match acts.drop_at(&key) {
@@ -949,7 +949,7 @@ pub(super) fn family_percept(
     // deformation dissolves when every compartment of both bodies is carried AND
     // no orbit over its pieces stands (50.8).
     let mut by_demand: Keyed<Demanded, coord::DemandVertex> = Keyed::new();
-    let mut declare = |kind: Demand, chart: Invariant, links: Vec<Link>| {
+    let mut declare = |kind: Demand, chart: Invariant, links: Vec<SectionLink>| {
         let key = crate::transducer::sentence::demand_key(&kind, &chart);
         match by_demand.at_mut(&key) {
             Some((_, _, held)) => held.extend(links),
@@ -1010,7 +1010,7 @@ pub(super) fn family_percept(
     // identically. `0 orbits` everywhere, and with no cycle there is no
     // held obstruction, so `pivot_orbit` had nothing to discharge:
     // `pivoted [0,0,0,0]` on all five voices at epoch 94, `stood` and
-    // `closed` likewise, and `court basis 0` on all three courts. The residual
+    // `closed` likewise, and `court basis 0` on all three courts. The residue
     // probe worked because it asks whether the genome already holds a word
     // that reproduces the demand, which needs no cycle; everything above
     // grade 0 consumes H₁ and H₁ was empty.
@@ -1408,5 +1408,5 @@ pub(super) fn family_percept(
     }
     form.reindex();
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
-    Percept { form, varying, unreached }
+    Ok(Percept { form, varying, unreached })
 }

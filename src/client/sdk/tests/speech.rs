@@ -2,18 +2,18 @@
 // it does not read into one that says less than it asked about, and where
 // it looks to know whether it has spoken a vertex before.
 
-use crate::client::sdk::entity::utter::{read_speech_reply, vertex_stratum};
+use crate::client::sdk::mind::utter::{read_speech_reply, vertex_stratum};
 use crate::anastome::dialogue;
 
 /// 50.6 seam 1 — A WITHHELD REMAINDER IS NEVER A WORD: neither body of a
 /// pair remainder stands in the dialect, none is filed as an utterance,
 /// and the chain of both never stands; the withheld form itself stands
 /// and is held as an idea. (Before this each body stood and was attested
-/// as a word of its own — the residual utterance the soak of 2026-09-09
+/// as a word of its own — the residue utterance the soak of 2026-09-09
 /// read as garbage.)
 #[test]
 fn withhold_form_stands_no_remainder_as_word() {
-    use super::common::closed_turn;
+    use super::fixtures::closed_turn;
     use crate::client::sdk::*;
     use crate::transducer::element::{canonical_chain, from_canonical};
     let chain_word = |links: &[(i64, i64, u8, u8)]| {
@@ -28,7 +28,7 @@ fn withhold_form_stands_no_remainder_as_word() {
     let second = chain_word(&[(5, 5, 3u8, 4u8)]);
     let whole = chain_word(&remainder);
     for (name, w) in [("first body", &first), ("second body", &second), ("chain of both", &whole)] {
-        assert!(entity.epigenome.working_word(w.address().as_bytes()).is_none(), "the {name} never stands as a word");
+        assert!(entity.language.working_word(w.address().as_bytes()).is_none(), "the {name} never stands as a word");
         assert!(!entity.already_taught(w), "the {name} is not an utterance");
     }
     assert!(entity.dialect_len() >= 1, "the withheld form stands");
@@ -104,7 +104,7 @@ fn vertex_stratum_is_one_per_vertex_however_spelled() {
     // one site has no canonical form, so there is no word to ask a stratum
     // of. This read the word A5 refused and then asked whether it had one.
     assert!(
-        crate::transducer::element::from_residual(&vec![(0, 0, 1, 2), (0, 0, 3, 4)]).is_none(),
+        crate::transducer::element::from_residue(&vec![(0, 0, 1, 2), (0, 0, 3, 4)]).is_none(),
         "a chain A5 refuses mints no word"
     );
     let _ = identity_versor();
@@ -180,7 +180,7 @@ fn read_speech_reply_admits_only_codes_sent() {
 fn act_on_returns_speaks_closed_thought_into_dialect() {
     use crate::client::sdk::*;
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
-    let grid = |rows: &[&str]| -> Vec<Vec<u8>> { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
+    let grid = |rows: &[&str]| -> crate::transducer::spelled::SectionSample { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let hours: [([&str; 5], [&str; 5]); 4] = [
         (["010000", "010000", "011000", "000000", "000000"], ["001000", "001000", "001100", "000000", "000000"]),
         (["000000", "001110", "001000", "000000", "000000"], ["000000", "000111", "000100", "000000", "000000"]),
@@ -189,7 +189,7 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
     ];
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("bodies"));
     let spoken = |e: &Mind| {
-        e.epigenome
+        e.language
             .dialect
             .scoped()
             .map(|(_, d)| d.sentence.element())
@@ -216,7 +216,7 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
     // word is the one carrying its return (`ℓ − 1 = 3` on the shell); the
     // words its sentences taught stand beside it in the dialect (78.100 D1).
     let words: Vec<_> = entity
-        .epigenome
+        .language
         .dialect
         .scoped()
         .map(|(_, d)| d.sentence.element().clone())
@@ -224,5 +224,5 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
         .collect();
     let [word] = words.as_slice() else { panic!("one word carrying the thought's return: {}", words.len()) };
     let mut budget = entity.stroke_n(1 << 16);
-    assert_eq!(crate::court::verdict::blind_replay(word, &mut budget), None, "the court's replay of the word is clean");
+    assert_eq!(crate::court::verdict::reconstruct_blind(word, &mut budget), None, "the court's replay of the word is clean");
 }

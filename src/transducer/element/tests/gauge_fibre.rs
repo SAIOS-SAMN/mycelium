@@ -47,9 +47,9 @@ fn torse_closes_swap_and_refuses_thin_evidence() {
 }
 
 // PD1, 78.43(2) — THE PERIOD IS READ, THE MEMBERSHIP IS DECIDED ON THE
-// CYCLES. Under the sensor's PALETTE = 10 the largest order is Landau's
+// CYCLES. Over a family of ten symbols the largest order is Landau's
 // g(10) = 30, below the retired cap of 32, so no reading of the suite moves
-// and the guard is the MECHANISM: every cycle type the palette admits, each
+// and the guard is the MECHANISM: every cycle type ten symbols admit, each
 // read against the walk the traversal made. The walk lives only here, as the
 // reference the reading must agree with.
 
@@ -146,13 +146,19 @@ fn on_orbit_agrees_with_walk_on_every_cycle_type() {
     }
 }
 
-/// (3) A HUE PAST THE PALETTE IS REFUSED BY NAME, never walked: the sensor
-/// delivers none, and a map naming one has no period on any base.
+/// (3) EVERY BYTE IS A SYMBOL: the reservoir e_∅ travels as a typed record
+/// (track 26 S5), never as the byte 10, so a 2-cycle through 10 has its
+/// period like any other. A symbol past ten is a symbol like any other
+/// (MU-SENSING §3.3); a map that is no permutation has no period.
 #[test]
-fn orbit_period_refuses_hue_past_palette() {
+fn orbit_period_reads_every_byte_and_symbols_past_ten() {
     let sigma = vec![(1, 10), (10, 1)];
-    assert_eq!(orbit_period(&sigma, &[(1, 10)]), Err(PeriodRefusal::NotAPermutation));
-    assert!(!on_orbit(&sigma, &[(1, 10)], &[(10, 1)]), "and nothing is on its orbit");
+    assert_eq!(orbit_period(&sigma, &[(1, 10)]), Ok(2), "a 2-cycle through the byte 10");
+    assert!(on_orbit(&sigma, &[(1, 10)], &[(10, 1)]), "and its one step is on the orbit");
+    assert_eq!(orbit_period(&[(1, 2), (2, 2)], &[(1, 2)]), Err(PeriodRefusal::NotAPermutation), "a merge has no period");
+    let past = vec![(1, 11), (11, 1)];
+    assert_eq!(orbit_period(&past, &[(1, 11)]), Ok(2), "a 2-cycle through a symbol past ten");
+    assert!(on_orbit(&past, &[(1, 11)], &[(11, 1)]), "and its one step is on the orbit");
     // A base hue the map does not list ends the orbit at its first step.
     assert_eq!(orbit_period(&[(1, 2), (2, 1)], &[(1, 3)]), Err(PeriodRefusal::OffDomain));
 }

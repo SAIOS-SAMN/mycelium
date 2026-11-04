@@ -17,11 +17,16 @@ excluded from the reasoning path.
    geometric contractions (V σ Ṽ), or boundary morphisms (∂₂Σ = Q) on the
    retained graded multivector manifold.
 3. Multi-dimensional perceptual axes (holonomy, harmonic spectrum, torsion,
-   scale) exist as intrinsic grades or fibre coordinates on the Cl(4,1)
-   blade (clause 7), not as standalone `*_cells` lookup tables.
+   scale) exist as intrinsic grades or fibre coordinates on the
+   `Cl(n+1, 1)` blade (clause 7; `Cl(4,1)` at `n = 3`), not as standalone
+   `*_cells` lookup tables.
 4. An operation that collapses manifold curvature into a flat 0-dimensional
    scalar or hash comparison, bypassing geometric deduction, is a structural
-   violation and is refused.
+   violation and is refused. The algebra is never scalar (ruled
+   2026-11-02): a number enters only as the gauge of a one-dimensional
+   reading on the base algebra, which is ℤ a winding, ℚ/ℤ a phase, ℚ a
+   share along one line, ℚ(ζ_ℓ) a rotation in one plane, or ℝ a span
+   between exact bounds, never stored ([MU-SENSING §3.7](MU-SENSING.md#37-the-field-non-euclidean-never-scalar)).
 5. Projections that artificially flatten higher-dimensional kinematics, bivectors,
    or inertia tensors into flat 2D planes (e.g. collapsing Cl(4,0) bivectors
    Λ²(ℝ⁴) to a single E₁ ∧ E₂ blade, forcing transverse temporal coordinates
@@ -47,7 +52,9 @@ excluded from the reasoning path.
    rule 11's one stated exception (51.2); the curvature itself is read off
    a remainder, never a constant. `Spin(4,0) ⋉ ℚ⁴` is the Euclidean group,
    in which translations commute, and carries no non-commuting displacement.
-8. **The similarity group is derived from the base.** The base has three
+8. **The similarity group is derived from the base.** *(Read through
+   [MU-SENSING](MU-SENSING.md): the base's rank is data, MU-RECURSION 71;
+   three is its value at one source.)* The base has three
    point coordinates `(r, c, k)` (51.2); a fourth is an invented value until
    a corpus writes one (51.11, rule 11). Every scalar is a rational or a
    cyclotomic element (law 4); no finite field enters cognition, and a prime
@@ -79,7 +86,8 @@ excluded from the reasoning path.
    frames relate by the motion that carries one state onto the other.
    Each frame keeps its own resolution, and each body is held by its
    boundary. A site lifts by enclosure into turns of the frame's own
-   periods: row `r` is the turn `r/h`, held as a fraction in ℚ/ℤ. It is
+   periods: a site's coordinate `s` on an axis of extent `e` is the turn
+   `s/e`, held as a fraction in ℚ/ℤ. It is
    never a point embedding with an unenclosed `e∞` or a squared norm
    (law 11). Subdividing two frames onto a common grid (the `lcm`
    refinement of the two extents) is refused. The least common multiple of
@@ -137,7 +145,13 @@ in persistence and transport as in cognition.
     names, not structure.
 - **By type:** `Keyed::fibre` takes a `Prefix` that cannot be empty, and
   the μ⃗ type `Mu` implements neither `PartialEq` nor `PartialOrd`, so a
-  four-lane reading cannot be collapsed to one comparison.
+  four-lane reading cannot be collapsed to one comparison. The digests
+  compared at admission are typed by sense (`Locator`, `Predecessor`,
+  `Commitment`, none with `==`), and the receipt path's admissions take
+  a `Reconstructed<T>` (clause 13; *Drift guards* below).
+- **By register, in the gate:** `xtask/lint/drift.rs` refuses a drift
+  guard whose type or claim is missing from the tree (*Drift guards*
+  below).
 - **By review:** everything else — a `bool` deciding a branch in
   cognition (constraint I), a collapse to a scalar (clause 4), a
   projection to a plane (clause 5), a ring's holonomy discarded (clause
@@ -152,27 +166,29 @@ transduction, a digest in place of reconstruction, and replay or rebuild
 in place of reconstruction. A word list cannot guard them. The same word
 names a defect at one site and a law at another. In the tree today,
 `lcm` composes the periods of turns in
-`src/transducer/sentence/coordinates.rs`, which is lawful. It also
-re-samples two frames onto a common grid in
-`src/transducer/family/refine.rs` (`CommonRefinement`), which is the
-defect. So the guards are types, which make the wrong structure
+`src/transducer/sentence/coordinates.rs`, which is lawful. Until the
+transduction landed (v0.3.0 T2), `lcm` also re-sampled two frames onto a
+common grid in `src/transducer/family/refine.rs` (`CommonRefinement`),
+which was the defect; that file and type are deleted. So the guards are types, which make the wrong structure
 unwritable, and a register that names each guard and the ruling behind
-it. **Specified** (ROADMAP track 25, phase X0):
+it (ROADMAP track 25, phase X0):
 
-| Regression | Guard | How it is proved |
-|---|---|---|
-| A digest compared to admit an object (clause 13) | The bare `[u8; 32]` of a crossing is split into three types: `Address`, `Link` and `Commitment`. None implements `PartialEq`. The comparisons are named methods: `Address::locates`, `Link::follows(&prev)`, and `Commitment::binds(&Reconstructed<T>)`. The last takes the reconstructed object, so a commitment cannot be compared before reconstruction. | A `compile_fail` doc test per type for `==`; the claim `commitment_binds_only_a_reconstructed_object` |
-| Admission without reconstruction (clause 13) | `Reconstructed<T>` has a private constructor, called only by the law's reconstruction. Each `admit_*` takes a `Reconstructed<T>` and never the claimed `T`. | A `compile_fail` doc test that builds one outside the laws; a mutation-audit entry that admits the claim in place of the reconstruction |
-| A common grid past the sensor (clause 12) | The refinement onto a common grid is reachable only from the sensor's intake (`pub(in crate::sensor)`), or removed once the transduction replaces it. A site's lift has one constructor, `Turn::of(r, h)`, held in ℚ/ℤ. | A `compile_fail` doc test that calls the refinement from cognition; the transduction's claims (track 25, X5) |
-| Replay or rebuild used to verify (clause 14) | Identifiers that verify carry `reconstruct` (track 11). A restore returns a `Reconstructed<State>` checked against its receipts, never a replayed one. | The restore claim `restore_reconstructs_and_checks_receipts`; a mutation-audit entry that skips the receipt check |
+| Regression | Guard | How it is proved | Status |
+|---|---|---|---|
+| A digest compared to admit an object (clause 13) | The bare `[u8; 32]` compared at admission is typed by its sense (`court::admission::digest`): `Locator` (address), `Predecessor` (link: the digest a record names the record before it by) and `Commitment`. None implements `PartialEq`. The comparisons are named methods: `Locator::locates`, `Predecessor::continues` (with `forks` for two records at one place and `cites` for a citation), and `Commitment::binds(&Reconstructed<T>)`. The last takes the reconstructed object, so a commitment cannot be compared before reconstruction. | A `compile_fail` doc test per type for `==` (`address_has_no_equality`, `predecessor_has_no_equality`, `commitment_has_no_equality`); the claim `commitment_binds_only_a_reconstructed_object` | **Built** at the receipt path's admission sites; the record fields themselves are still bare (ROADMAP track 25, X0) |
+| Admission without reconstruction (clause 13) | `Reconstructed<T>` has a private field, and only the law's reconstruction builds it (`Reconstructed::receipt`, `Reconstructed::receipts`). Each `admit_*` of the receipt path takes a `Reconstructed<T>` and never the claimed `T`. | A `compile_fail` doc test that builds one outside the laws (`reconstructed_is_built_only_by_the_laws`) | **Built** for the receipt path; the vertex's admissions take it with X2 |
+| A common grid past the sensor (clause 12) | The refinement onto a common grid is removed (the transduction replaced it in v0.3.0 T2); the guard keeps any such refinement from being reached past the sensor's intake. A site's lift has one constructor, `Turn::of(r, h)`, held in ℚ/ℤ. | A `compile_fail` doc test that calls the refinement from cognition; the transduction's claims (track 25, X5) | **Specified** |
+| Replay or rebuild used to verify (clause 14) | Identifiers that verify carry `reconstruct` (track 11). A restore returns a `Reconstructed<State>` checked against its receipts, never a replayed one. | The restore claim `restore_reconstructs_and_checks_receipts` | **Specified** |
 
-The register `xtask/lint/drift.rs` lists each guard: the regression, its
-ruling, the guarding type, and the claim and mutation-audit entry that
-prove it. The gate refuses a register entry whose guard type or claim is
-missing from the tree, as `numbers.rs` does for the open numbers. It also
-reads every changed document for a typed term (reconstruction, rebuild,
-replay, resend, digest, hash, lattice, grid) beside an admission verb
-(admit, verify, accept, check). It reports each such sentence for review
-and does not refuse it. The reviewer then confirms the sense the sentence
-uses. Contributors who work with AI coding agents point them at
-[`AGENTS.md`](../AGENTS.md), which states these guards as working rules.
+The register `xtask/lint/drift.rs` lists each guard that is built: the
+regression, its ruling, the guarding type, and the claim that proves it
+(a `#[test]` fn, or a `compile_fail` doc test whose comment names the
+claim). The gate refuses a register entry whose guard type or claim is
+named empty or missing from the tree, as `numbers.rs` does for the open
+numbers. A report of changed document sentences that put a typed
+term (reconstruction, rebuild, replay, resend, digest, hash, lattice,
+grid) beside an admission verb (admit, verify, accept, check) is **open**:
+it would only report and never refuse, and reading which documents
+changed needs a base commit the gate does not hold. Contributors who
+work with AI coding agents point them at [`AGENTS.md`](../AGENTS.md),
+which states these guards as working rules.

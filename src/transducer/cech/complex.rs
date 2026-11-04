@@ -623,7 +623,7 @@ impl Complex {
         Some((t.rotor, t.carriage))
     }
 
-    /// Drop every simplex that contains `vertex`. Used when bubbles merge.
+    /// Drop every simplex that contains `vertex`. Used when wells merge.
     pub fn drop_vertex(&mut self, vertex: &[u8]) {
         // No class is dropped silently: the holes on the vertex are
         // cauterized and its frozen classes pass from cold to heat, each

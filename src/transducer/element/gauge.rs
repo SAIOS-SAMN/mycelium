@@ -80,27 +80,25 @@ pub(crate) fn compose_perm(a: &[(u8, u8)], b: &[(u8, u8)]) -> Vec<(u8, u8)> {
     out
 }
 
+/// WHETHER σ PERMUTES THE SYMBOLS IT NAMES (MU-SENSING §3.3): the image
+/// of each named symbol (the last row naming it, the identity where no
+/// row does) read over the symbols the listing names and no fixed set, so
+/// a family of any `|Σ|` reads alike. A symbol the listing never names is
+/// fixed and cannot break the permutation. Every byte is a symbol: a
+/// record in e_∅ is no row of a gauge map (track 26 S5, `FibreRelation`).
 pub(crate) fn gauge_is_perm(sigma: &[(u8, u8)]) -> bool {
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "STD1 C1 — the sensor's: a hue below PALETTE = 10, the slots of the [u8; PALETTE] it fills"
-    )]
-    let mut image: [u8; PALETTE] = std::array::from_fn(|i| i as u8);
+    use crate::network::nerve::Keyed;
+    use crate::transducer::sentence::transport::{gauge_image, gauge_keyed, hue_key};
+    let image = gauge_keyed(sigma);
+    let mut named: Keyed<()> = Keyed::new();
     for &(f, t) in sigma {
-        if (f as usize) >= PALETTE || (t as usize) >= PALETTE {
-            return false;
-        }
-        image[f as usize] = t;
+        named.insert(hue_key(f), ());
+        named.insert(hue_key(t), ());
     }
-    let mut seen = [false; PALETTE];
-    image.iter().all(|&t| {
-        let i = t as usize;
-        if i >= PALETTE || seen[i] {
-            false
-        } else {
-            seen[i] = true;
-            true
-        }
+    let mut seen: Keyed<()> = Keyed::new();
+    named.scoped().all(|(k, _)| {
+        let [h] = k.as_slice() else { return false };
+        seen.insert(hue_key(gauge_image(&image, *h)), ()).is_none()
     })
 }
 
@@ -176,8 +174,8 @@ pub enum PeriodRefusal {
     /// A hue the base carries is not in the map's domain: the orbit ends at
     /// the first step (the traversal's `apply_hue_map` answered `None`).
     OffDomain,
-    /// The map names a hue past the sensor's PALETTE, or does not permute
-    /// its hues: no orbit of the base returns (`gauge_is_perm`).
+    /// The map does not permute the symbols it names, or names the tape's
+    /// record byte: no orbit of the base returns (`gauge_is_perm`).
     NotAPermutation,
     /// The lcm of the cycle lengths passes the period's carrier.
     PastCarrier,
@@ -222,15 +220,16 @@ pub fn on_orbit(sigma: &[(u8, u8)], base: &[(u8, u8)], section: &[(u8, u8)]) -> 
     let Ok(period) = orbit_period(sigma, base) else { return false };
     let Some(tau) = derive_hue_map(base, section) else { return false };
     let cycles = crate::transducer::sentence::hue_cycles(sigma);
-    // Each hue's cycle and its place on it, read by the hue itself: a table
-    // over the u8 hue domain, written once off the cycles.
-    let mut places: [Option<(usize, usize)>; 256] = [None; 256];
+    // Each symbol's cycle and its place on it, read by the symbol itself: a
+    // keyed table over the symbols the cycles carry (MU-SENSING §3.3), never
+    // a fixed array of slots, written once off the cycles.
+    let mut places: crate::network::nerve::Keyed<(usize, usize)> = crate::network::nerve::Keyed::new();
     for (ci, c) in cycles.iter().enumerate() {
         for (p, &h) in c.iter().enumerate() {
-            places[usize::from(h)] = Some((ci, p));
+            places.insert(crate::transducer::sentence::transport::hue_key(h), (ci, p));
         }
     }
-    let place = |h: u8| places[usize::from(h)];
+    let place = |h: u8| places.get(&crate::transducer::sentence::transport::hue_key(h)).copied();
     // `t ≡ r (mod m)`, the congruences met so far: m = 1 is no constraint.
     let (mut r, mut m) = (0u64, 1u64);
     for &(h, image) in &tau {

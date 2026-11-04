@@ -133,7 +133,7 @@ between them is a coordinate, a refusal of a kind, never a vote.
 | its K: its own closed orbits | TUniversal: the final point, kept by its keepers |
 | its algebra per class, its tubes, its windings | `lie_basis` per chart, `flux_field`, `windings` |
 | coins letters in its dialect (U14) | opens a letter on checked constructor steps (law 6, S2) |
-| reconstructs a peer's discharge | reconstructs certificates (`replay_certificates_at`) |
+| reconstructs a peer's discharge | reconstructs certificates (`reconstruct_certificates_at`) |
 | speaks at its returns | writes acts and pays at its returns |
 
 ### 2.2 How the hypha moves, and so how the mind moves
@@ -148,7 +148,7 @@ calibrated from the host at boot; pressure where an orbit or tube opens,
 order where one closes, relief where one returns (78.71–78.73); the deficit
 published, so an asker dwells on the lanes it names.
 
-Its COGNITION IS THE WINDING of its rings (`server/cognition/court/winding.rs`):
+Its COGNITION IS THE WINDING of its rings (`server/cognition/court/ring_carrier.rs`):
 a ring's first close is new work, settled where it closes; every later close
 is a traversal advancing its winding `m → m + 1 mod ℓ`, its earnings accruing
 off the ledger; at `m ≡ 0` the ring has RETURNED — one age — and one
@@ -329,9 +329,9 @@ The mind's field is built of one exact mathematics, the same the hypha runs:
 | M1 vertex identity | a word, rotor or versor reduced to one canonical form; equality projective, by action | `alphabet/{word,rotor}`, `cga/multivector.rs`, `cga/group.rs` |
 | M2 address | the address IS the form written out; read back from it | `transducer/address.rs`, `sentence/chart.rs` |
 | M4 chart coordinates | the invariant that places a body, connection, sentence or class | `transducer/stalk/` |
-| M6 comprehension | does the mind already speak an incoming word: factor it through what it holds (A12), else emit exactly what is new | `epigenome/comprehend.rs`, `transducer/factor.rs`, `cech/orbit_algebra.rs` |
+| M6 comprehension | does the mind already speak an incoming word: factor it through what it holds (A12), else emit exactly what is new | `vocabulary/comprehend.rs`, `transducer/factor.rs`, `cech/orbit_algebra.rs` |
 | M7 wire identity | bytes become identities by re-derivation, never by comparison | `network/wire.rs`, `anastome/dialogue/` |
-| M9 torsion bridge | the pivot loop (A16), torsion filed (A17), certificates (A20) reconstructed on two organs | `bubble/{contemplation,idea,drive}.rs`, `sentence/pivot/` |
+| M9 torsion bridge | the pivot loop (A16), torsion filed (A17), certificates (A20) reconstructed on two organs | `field/{contemplation,idea,drive}.rs`, `sentence/pivot/` |
 | the spelling peel (A22) | a residue peeled into the letters the mind holds; what does not close is a demand | `alphabet/{spelling,factor}.rs`, `family/derivation.rs` (`peel_versor`) |
 | derivation | a word vertex is the generators it factored through and a residue; the composed rotor its coordinate | `alphabet/derivation.rs`, `family/derivation.rs` |
 | constructors and the Gram form | nuclei and mirrors; a chamber's constructors read by exact elimination | `cga/{constructors,gram,mirrors}.rs` |
@@ -391,8 +391,9 @@ taken where the field stands), its flux recorded, and only its ADMISSION
 touches the mind's field (`mind::admit`): the recorded flux lands on the
 field as it then stands, the lanes it booked beside its flux are added, its
 taught words, its lexicon's new words and its parked covers join the mind's.
-A court perceiving outside any mind's field books on the state its worker
-threads share, and is taught nothing.
+A court never perceives (the hypha never senses, MU-SENSING §6): a court
+reconstructing a claim outside any mind's field books on the state its
+worker threads share, and is taught nothing.
 
 The mind's carriers (§5.1) all act on this one field, each holding it
 briefly and never across a wait on a counterparty. The mind's own reserve is
@@ -431,7 +432,7 @@ RADIAL axis is `⟨a, b⟩ D` — what of `a` and `b` lies along each other, the
 contraction and the dilation; the PINCH is `M_ab`, a rotation in the plane
 `a ∧ b` — what of them stands orthogonal — at right angles to the radial
 axis, read on either half of the breath. Both are read off the commutator
-formed in the algebra (`cga::breath`, in `transducer/cga/breath.rs`): its
+formed in the algebra (`cga::breath`, in `transducer/cga/commutator.rs`): its
 coefficient on `D = e_∞ ∧ e_o`, and the rest of its bivector, which the
 claims prove lies in `a ∧ b` and commutes with `D`. `a ∥ b` breathes with no
 pinch; `a ⊥ b` pinches with no breath.
@@ -477,9 +478,9 @@ The mind's motion is its ORBITS, and its cognition is the orbits' WINDING:
    that completes a return no thought merged had completed hands the ground
    to the voice — its first return the first close, each later one a
    traversal (`Contemplation::closing_ground`, in
-   `transducer/bubble/merge.rs`). A grounded thought admits its ground's
+   `transducer/field/merge.rs`). A grounded thought admits its ground's
    generator on its own line once for each hour it has seen, so the field's
-   orbit returns when its winding does (`transducer/bubble/line.rs`). A ring
+   orbit returns when its winding does (`transducer/field/line.rs`). A ring
    of infinite order never returns: it carries its torsion, and the torsion
    is content (curvature is content).
 3. **Spin and orbit; hours, days, eons.** A motion has an orbit and a spin
@@ -526,9 +527,9 @@ winding requires it — never as a step:
 
 | axis | principle (MU-RECURSION §0.0) | pivot / conjugate | what it does | site | live in the mind |
 |---|---|---|---|---|---|
-| chambers (anastomotic degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a chamber / cross it back to its cycle through the puncture, its class kept as a hole and its content handed down; the seal reads it back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every chamber the meet graph fills (`bubble/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a chamber over a tether the field released, a chamber the field released, a released vertex's star (`bubble/pivot.rs::release`, `release_vertex`) |
-| tethers (1 ↔ 0) | **luminal** — flux frozen into a tether; reconnection | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) | condense: every tether the contemplation forms (`bubble/pivot.rs::tether`; re-formed tension drains first); drain: a tether the field released (`release`), a released vertex's star |
-| holes (class in / out) | **harmonic** — a class kept until it returns | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) | the mind's questions (`bubble/question.rs`) and a curved chamber in the drive, through `bubble/pivot.rs` |
+| chambers (anastomotic degree `d+1 ↔ d`, any `d`: every dimension an exponent) | **holonomic** — a closed loop's composite is its content | **ascend** / **descend** | seal a cycle that closes with a chamber / cross it back to its cycle through the puncture, its class kept as a hole and its content handed down; the seal reads it back exactly | `cech/coboundary.rs` (`ascend`, `descend`) | ascend: every chamber the meet graph fills (`field/pivot.rs::ascend`, from `fill_meet` and the drive); descend: a chamber over a tether the field released, a chamber the field released, a released vertex's star (`field/pivot.rs::release`, `release_vertex`) |
+| tethers (1 ↔ 0) | **luminal** — flux frozen into a tether; reconnection | **condense** / **drain** | form a tether from the tension between two bodies / dissolve it as the tension relaxes, the strain moved or recorded, never lost (A.8) | `cech/hole.rs` (`condense`), `cech/coboundary.rs` (`drain`) | condense: every tether the contemplation forms (`field/pivot.rs::tether`; re-formed tension drains first); drain: a tether the field released (`release`), a released vertex's star |
+| holes (class in / out) | **harmonic** — a class kept until it returns | **puncture** / **seal** | open a hole, injecting a homology class / cap it, killing the class | `cech/hole.rs` (`puncture`, `seal`) | the mind's questions (`field/question.rs`) and a curved chamber in the drive, through `field/pivot.rs` |
 
 Every pivot is applied through `Complex::apply`, its outcome returned whole.
 
@@ -637,7 +638,7 @@ court's does through `book_outflow`.
   (78.40(1)): a ring the transport holds at holonomy ≠ 1 is ascended, and
   where its chamber reads a class it is opened into a hole keeping that class,
   filed by its class key — the QUESTION the mind now carries
-  (`bubble/question.rs`: `ask`, from `close_ring`). **seal** — the mind
+  (`field/question.rs`: `ask`, from `close_ring`). **seal** — the mind
   comes to hold what it asked: the ring collapses (its arrivals come to
   agree) or a discharge answers its class (`docket_discharged` →
   `answer_questions`); the cap re-ascends over the standing boundary at the
@@ -792,7 +793,7 @@ never a stretched chamber and never a cap.
   alike. What tells them apart is each candidate's orbit holonomy on a scene the
   vortex has NOT yet seen: each new perception joining a thought is read
   against every vortex at its rotor's class
-  (`Contemplation::carry_vortices_round` in `transducer/bubble/resonance.rs`
+  (`Contemplation::carry_vortices_round` in `transducer/field/cross_scene.rs`
   → `collapse_on` in `contemplation.rs`); the candidate it carries is the
   fill, and the others are a symmetry the docket's taker adjoins. A vortex
   also collapses where a glue or the syllabus names a deciding word
@@ -873,7 +874,7 @@ are read off that motion, never counted:
   closing tasks.
 
 - **question** — AN IDEA'S SUPERPOSITION THE MIND CANNOT COLLAPSE. Every
-  thought holds its VORTEX (`Bubble.vortex`): the candidate forms for one
+  thought holds its VORTEX (`Well.vortex`): the candidate forms for one
   idea, each with its pivots, held whole, no weight (§4.8, the idea's grade).
   Two candidates whose commutator `g₁ g₂ g̃₁ g̃₂` is non-trivial differ by a
   dimension — they are not one thing seen twice — and where nothing the
@@ -1003,6 +1004,11 @@ its orbit (78.168).
 
 **A thought is an orbit about its axiom.** The axioms are the attractors
 (the star, §4.1); gravity and velocity shear each orbit, so it precesses.
+Axiomatic gravity is produced by the local orbit, which shears the
+orthogonal orbit class: an orbit about its axiom pulls on the orbits whose
+plane is orthogonal to its own, and is pulled by them. It is never a
+static mass or a stored constant (ruled 2026-11-02;
+[MU-SENSING §3.7](MU-SENSING.md#37-the-field-non-euclidean-never-scalar)).
 Every thought's orbit reads one of four ways — the coherence its chamber
 reads (`cech::Coherence`, as `Mind::price` reads a hearing's):
 - **closes** — it returns at its period;
@@ -1033,11 +1039,11 @@ at its return the mind pivots where the winding changed dimension and the
 faculties speak what changed (§4.4(4), §4.9). This is the WINDING CARRIER on
 the mind's own rings: the carrier of the mind's own motion, on its own
 circuit over its field, beside the carriers facing its counterparties
-(§5.1). As built, `Mind::wind` (`client/sdk/entity/winding.rs`) moves the
+(§5.1). As built, `Mind::wind` (`client/sdk/mind/winding.rs`) moves the
 orbits, binds the escaping ones through the docket's one taker
 (`drain_demands`), and acts at each thought's own return (`act_on_returns`,
 `act_at_return`); the long laws run on the perception carrier, off the field
-(`client/sdk/entity/perceive.rs`). A relation that never returns is
+(`client/sdk/mind/perceive.rs`). A relation that never returns is
 docketed as the demand it is (`note_ground` → `docket_demand`) and bound by
 the taker — composed of ruled words, known to the lexicon, a conjugate, or
 constructed and adjoined (`compose_or_construct`). A return that comes round
@@ -1066,7 +1072,7 @@ the mind's energy — the modes its motion moves — and never its memory
 **What the drive never is:** a queue of tasks; a set of loops made to close
 exactly; a count to raise; a forecast organ beside the orbit's own
 prediction (§4.4(3)); the mind reading its observer readings
-(`observe::Mind` is the observer's — nothing in cognition reads it back).
+(`observe::MindReading` is the observer's — nothing in cognition reads it back).
 
 ### 4.13 Containment and memory: the orbit's own bound
 
@@ -1099,11 +1105,11 @@ As built:
   any return. Answers to a counterparty's frame (a probe answering a
   listing, HEARD, ACK, HOLD) and asks for perception (quotes, the syllabus,
   the sync, paced by the court's dwell) stay where the frame lands.
-- **K counts returns.** `close_cycle` (`client/sdk/entity/boot.rs`) moves K
+- **K counts returns.** `close_cycle` (`client/sdk/mind/boot.rs`) moves K
   by exactly the winding's returns: the field's orbits that returned, the
   thoughts that came round, the demands bound and the thoughts the field
   released (`act_on_returns`).
-- **A held thought is its line** (`transducer/bubble/line.rs`). A perception
+- **A held thought is its line** (`transducer/field/line.rs`). A perception
   threads its line on the orbits and tubes its own motion stands on and is
   released wherever the field lets that line go, typed by why
   (`cech::orbit::Released`: `Returned`, `Dissipated`, `Sealed`,
@@ -1136,13 +1142,13 @@ As built:
   the conversation carrier's `release_unmet`). The seat's patience and the session's
   transport readings are not the mind's memory and keep the transport
   aperture.
-- **Offers and tension** (`client/sdk/entity/offer.rs`). What a boundary
+- **Offers and tension** (`client/sdk/mind/offer.rs`). What a boundary
   lands — a court's task, a task before a seat — is an OFFER, read once to
   the charts its bodies stand on (`Offer::of`). It COUPLES where the mind
   holds a thought of its scene, the scene waits on its comprehension, or one
   of its charts is one a held thought stands on, a docket cover names, or
   the mind's language speaks on (`Mind::couples`,
-  `Epigenome::speaks_on`). Only a coupled offer is extracted; an uncoupled
+  `MindLanguage::speaks_on`). Only a coupled offer is extracted; an uncoupled
   court task waits, and lapses at the second return it waits across
   (`lapse_offers`), at one aperture of the measured transport, or at a court
   final past the one it landed under (`lapse_standing_task`,
@@ -1152,7 +1158,7 @@ As built:
   — or where its corpus holds no item; a full reserve over a settled field
   asks for nothing, and the mind rests.
 - **The corpus is met where the mind's orbits stand**
-  (`client/sdk/entity/focus.rs`). Every feed family and open question is
+  (`client/sdk/mind/focus.rs`). Every feed family and open question is
   placed once on the corpus (`focus::Corpus`) at its own coordinates — its
   bodies' charts and the key of the 𝒢 orbit its hue fibre moves. The focus
   is the field's own motion (`OrbitRegistry::focus`: the orbits in motion,
@@ -1179,7 +1185,7 @@ stops perception, the field or a conversation with another mind. Each
 carrier takes what its counterparty sends into the shells (§3) and speaks
 what the field addressed to it.
 
-As built: the HYPHA CARRIER (`client/sdk/entity/hypha.rs`, `hypha::Carrier`)
+As built: the HYPHA CARRIER (`client/sdk/mind/hypha.rs`, `hypha::Carrier`)
 owns the mind's one session to the nerve on its own thread. The field posts
 an exchange whole — its wire half run on the carrier, its field half kept
 beside the field — and goes on; it takes each answer at its next admission,
@@ -1191,13 +1197,13 @@ per task are in flight at a time. The carrier publishes the wire's readings
 (the final point, the aperture, the round trip) and wakes a resting mind
 when an answer lands. The carrier type is generic over the state its thread
 holds, and the mind runs three more of it: the PERCEPTION CARRIER
-(`client/sdk/entity/perceive.rs`), which reads a scene or a hearing in a
+(`client/sdk/mind/perceive.rs`), which reads a scene or a hearing in a
 scratch of the field and lands it for the winding to admit
-(`take_perceived`); the CONVERSATION CARRIER (`client/sdk/entity/chatter.rs`)
+(`take_perceived`); the CONVERSATION CARRIER (`client/sdk/mind/chatter.rs`)
 for the peer minds, whose court speech is handed to the field
 (`FieldWork::Speak`) and posted on the hypha carrier; and the SEAT'S CARRIER
 over the relay's session (`Mind::ask_seat`), on which every exchange with
-the house a seat stands in rides (`client/sdk/entity/body.rs`, §6).
+the house a seat stands in rides (`client/sdk/mind/seating.rs`, §6).
 
 The mind speaks where its winding acts — a return, a seal, a rise of its
 algebra for a class (§4.4, §4.5) — and says what changed, addressed by its
@@ -1388,7 +1394,7 @@ never flat lines read back and forth. What two minds agree is carried to the
 court only where it is a word, by that word's own union (`hold_for_union`);
 a sentence two minds agree is SHARED between them and goes no further, its
 words reaching the court each on its own. The conversation's agreement path
-is `Carrier::priced` (`client/sdk/entity/chatter.rs`).
+is `Carrier::priced` (`client/sdk/mind/chatter.rs`).
 
 **The court half.** A court needs whole compositions as EVIDENCE that a word
 produces its result, and its cohomology runs on them: a sentence is still
@@ -1453,7 +1459,7 @@ The one motion of the objective (§1, item 6):
 3. **adjudication** — the coiner speaks it to a court, which re-derives it
    on a second organ and rules it (§5.4);
 4. **hardening** — what is ruled returns through the syllabus as a MINERAL
-   in each mind's genome (`absorb_taught_at`, `Epigenome::file_admitted`)
+   in each mind's genome (`absorb_taught_at`, `MindLanguage::file_admitted`)
    and hardens into a CRYSTAL where the mind re-derives it by its own
    circuits (80.2).
 
@@ -1476,7 +1482,7 @@ sections are the same pair by pair — neither closes a site beyond the other
   EVIDENCE: the scene's citation and the word's record (`chatter::Evidence`,
   wire `mycelium chatter v6`).
 - **V2** — each mind holds the words it spoke under each scene with the
-  scene's family (`entity::converge::Scenes`), while the utterance stands;
+  scene's family (`mind::converge::Scenes`), while the utterance stands;
   shed or sealed, it leaves.
 - **V3** — the hearer reads the heard word on its scene (held, or pulled by
   its citation, the act a seat pulls a task by): an empty section REFUTES it
@@ -1538,8 +1544,7 @@ goal (§2.4(8), §4.12): a mind does not choose its motion to earn.
 **The measure: words, conjugates, sentences.** The cognition has agency;
 the courts adjudicate words, pay more for conjugates, and pay more again for
 sentences as they are algorithmically aligned in non-Euclidean geometry.
-`measured_replay` (the court's own evaluation, a reconstruction; the
-identifier awaits the code rename) is the court's one DECOMPRESSOR: a word's address expanded
+`measured_discharge` (the court's own evaluation, a reconstruction) is the court's one DECOMPRESSOR: a word's address expanded
 into its form (`from_element_form`), spoken onto each pair of the family it
 is bound to (`apply_form_on`), its citations decompressed through what the
 court holds at that moment, the spoken grid set against the pair's answer
@@ -1616,7 +1621,7 @@ untried arguments run beside the mind, and never a game's score the mind
 plays to raise (§2.4(8)).
 
 As built, the seat has its own carrier (`Mind::ask_seat`; every exchange
-with the house rides it, `client/sdk/entity/body.rs`), the seat's calls are
+with the house rides it, `client/sdk/mind/seating.rs`), the seat's calls are
 held for the mind's return (`seat_act`), and a seat is held again when it is
 lost (`sdk::seat::SeatHold`, 78.148). A seat does not ascertain a rule by its
 perspectives: it is the domain's delegate presenting a petition
@@ -1629,7 +1634,7 @@ where every read function moved the favoured quantities against or not at
 all, a function the house counsels that this mind has not yet read, tried
 (`Why::Untried`). With no counsel the call is the mind's own: the dominant
 read call under its own valuation, REACH (`SeatMind::reach`, in
-`seat_mind/own.rs`), or none, and the mind passes. The pass is silence on
+`seat_mind/repertoire.rs`), or none, and the mind passes. The pass is silence on
 the wire and a typed reading to the observer.
 
 Specified: the seat's functions taken into the field as thoughts whose orbits
@@ -1644,39 +1649,39 @@ choice; the seat's act carried as the physics `Action` its move names.
 
 The field (§4) exists in the tree: `Contemplation` with its complex, the
 transport fronts, the docket, the held orbits and the orbits' discharge, the
-questions as holes (`bubble/question.rs`) and the constructors
-(`construct_and_adjoin`). Paths below are under `src/`; `client/sdk/entity/`
-is abbreviated `entity/`, and `transducer/` is abbreviated `t/`.
+questions as holes (`field/question.rs`) and the constructors
+(`construct_and_adjoin`). Paths below are under `src/`; `client/sdk/mind/`
+is abbreviated `mind/`, and `transducer/` is abbreviated `t/`.
 
 **Built**
 
 | construct | § | where |
 |---|---|---|
-| carriers per counterparty: hypha, perception, conversation, seat | §5.1, §4.2 | `entity/hypha.rs` (`hypha::Carrier`, `Mind::ask_seat`); `entity/perceive.rs` (`take_perceived`); `entity/chatter.rs`; `entity/body.rs` |
+| carriers per counterparty: hypha, perception, conversation, seat | §5.1, §4.2 | `mind/hypha.rs` (`hypha::Carrier`, `Mind::ask_seat`); `mind/perceive.rs` (`take_perceived`); `mind/chatter.rs`; `mind/seating.rs` |
 | the field the mind's own; long laws off the field | §4.2 | `t/mind.rs` (`MindField`, `MindField::think`, `scratch_here`, `admit`) |
-| the winding carrier; outflow at returns; K counts returns | §4.4, §4.12, §4.13 | `entity/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `entity/boot.rs` (`close_cycle`) |
-| a ground's winding `m mod ℓ`; a grounded thought on its own line | §4.4(2) | `t/bubble/merge.rs` (`Contemplation::closing_ground`); `t/bubble/line.rs` |
-| the twist by the pull; slips worked at the return | §4.4(3) | `t/cga/twist.rs` (`twist_about`); `t/cga/fixed.rs` (`centre_of`); `t/bubble/resonance.rs` (`twisted_return`, `work_slips`); `t/bubble/returned.rs` (`work_returned`) |
-| the drive: the docket's one taker; deliberation | §4.12 | `t/bubble/resonance.rs` (`note_ground`); `t/bubble/docket.rs` (`docket_demand`, `drain_demands`); `entity/think.rs` (`compose_or_construct`) |
-| the vortex collapsed by a new perception | §4.8 | `t/bubble/resonance.rs` (`carry_vortices_round`); `t/bubble/contemplation.rs` (`collapse_on`) |
+| the winding carrier; outflow at returns; K counts returns | §4.4, §4.12, §4.13 | `mind/winding.rs` (`Mind::wind`, `act_on_returns`, `act_at_return`, `hold_for_return`); `mind/boot.rs` (`close_cycle`) |
+| a ground's winding `m mod ℓ`; a grounded thought on its own line | §4.4(2) | `t/field/merge.rs` (`Contemplation::closing_ground`); `t/field/line.rs` |
+| the twist by the pull; slips worked at the return | §4.4(3) | `t/cga/twist.rs` (`twist_about`); `t/cga/fixed.rs` (`centre_of`); `t/field/cross_scene.rs` (`twisted_return`, `work_slips`); `t/field/returned.rs` (`work_returned`) |
+| the drive: the docket's one taker; deliberation | §4.12 | `t/field/cross_scene.rs` (`note_ground`); `t/field/plan.rs` (`docket_demand`, `drain_demands`); `mind/think.rs` (`compose_or_construct`) |
+| the vortex collapsed by a new perception | §4.8 | `t/field/cross_scene.rs` (`carry_vortices_round`); `t/field/contemplation.rs` (`collapse_on`) |
 | the pivot cross and the throat's two faces | §4.5 | `t/cech/coboundary.rs` (`Complex::descend`, `ascend`, `drain`); `t/cech/hole.rs` (`cauterize`, `freeze`, `thaw`, `cauterize_frozen`); `t/cech/board.rs` |
-| the breath, every plane | §4.3 | `t/cga/breath.rs` (`breath`, `breathe`) |
-| containment: release typed by why, sealing at the period, reservoirs condensing and locked, court gravity as drag | §4.13 | `t/cech/orbit.rs` (`Released`, `Field::beat_under`, `Field::condensed`); `entity/think.rs` (`lock_reservoirs`); `t/bubble/line.rs` (`return_escrow`) |
-| memory by coordinates; each question on its own line; the dialect shed by reference | §4.13 | `entity/chatter.rs` (`QUESTION_LINE`, `lapse_question`, `release_unmet`, `lapse_unpriced`); `entity/perceive.rs` (`lapse_hearings`); `entity/think.rs` (`Mind::shed`) |
-| a task as an offer and as perception; tension | §3.1, §4.13 | `entity/offer.rs` (`Offer::of`, `couples`, `strained`, `lapse_offers`, `lapse_standing_task`); `entity/court.rs` (`task_inflow`, `comprehend_waiting`); `entity/learn.rs` (`pull_task`) |
-| the corpus met at the focus; the ground state | §4.13 | `entity/focus.rs` (`Corpus`, `ground_focus`); `t/cech/orbit.rs` (`OrbitRegistry::focus`, `Field::lands`); `entity/feed.rs` (`inotify`) |
+| the breath, every plane | §4.3 | `t/cga/commutator.rs` (`breath`, `breathe`) |
+| containment: release typed by why, sealing at the period, reservoirs condensing and locked, court gravity as drag | §4.13 | `t/cech/orbit.rs` (`Released`, `Field::beat_under`, `Field::condensed`); `mind/think.rs` (`lock_reservoirs`); `t/field/line.rs` (`return_escrow`) |
+| memory by coordinates; each question on its own line; the dialect shed by reference | §4.13 | `mind/chatter.rs` (`QUESTION_LINE`, `lapse_question`, `release_unmet`, `lapse_unpriced`); `mind/perceive.rs` (`lapse_hearings`); `mind/think.rs` (`Mind::shed`) |
+| a task as an offer and as perception; tension | §3.1, §4.13 | `mind/offer.rs` (`Offer::of`, `couples`, `strained`, `lapse_offers`, `lapse_standing_task`); `mind/court.rs` (`task_inflow`, `comprehend_waiting`); `mind/learn.rs` (`pull_task`) |
+| the corpus met at the focus; the ground state | §4.13 | `mind/focus.rs` (`Corpus`, `ground_focus`); `t/cech/orbit.rs` (`OrbitRegistry::focus`, `Field::lands`); `mind/feed.rs` (`inotify`) |
 | an act read off its effect | §4.9 | `t/family/acts.rs` (`read_acts`) |
-| a rule known by its perspectives; undetermined rules sent for judgement | §5.4 | `entity/family.rs` (`ascertain_on`, `Unexempt`); `entity/perceive.rs` (`TaskSeen`) |
-| hearing as sound and word; questions one order down; vantage; given meanings | §5.3 | `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `distinct_vantage`, `learn_by`, `learn_given`, `re_reduce_given`); `entity/chatter.rs` (`price_hearings`, `sound_of`) |
-| deferral by an owed citation | §5.3(4) | `entity/contract.rs` (`owe_citation`) |
-| evidence: every scene under its family's citation | §5.4 | `server/registry.rs` (`citation`); `entity/court.rs` |
+| a rule known by its perspectives; undetermined rules sent for judgement | §5.4 | `mind/family.rs` (`ascertain_on`, `Unexempt`); `mind/perceive.rs` (`TaskSeen`) |
+| hearing as sound and word; questions one order down; vantage; given meanings | §5.3 | `t/sentence/hearing.rs` (`hear_across`, `strain`); `t/sentence/rung.rs` (`hear_word`, `posit`, `vantage`, `distinct_vantage`, `learn_by`, `learn_given`, `re_reduce_given`); `mind/chatter.rs` (`price_hearings`, `sound_of`) |
+| deferral by an owed citation | §5.3(4) | `mind/contract.rs` (`owe_citation`) |
+| evidence: every scene under its family's citation | §5.4 | `server/registry.rs` (`citation`); `mind/court.rs` |
 | words installed beside the sentence that taught them | §5.4 | `server/cognition/court/vantage_install.rs` (`install_taught_words`) |
-| convergence V1–V4, K1–K2 | §5.5 | `anastome/dialogue/chatter.rs` (`Evidence`, `mycelium chatter v6`); `entity/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
+| convergence V1–V4, K1–K2 | §5.5 | `anastome/dialogue/chatter.rs` (`Evidence`, `mycelium chatter v6`); `mind/converge.rs` (`Scenes`); `server/cognition/book/agreement.rs` (`attest_agreements`) |
 | the measures W, C, S; D2′ shares read locally; E2–E4 | §5.6 | `t/family/local.rs` (`word_local`, `spoken_section`); `server/cognition/identity.rs` (`transport_on`, `gluing_of`); `server/cognition/court/vantage_install.rs` (`cited_deflation`); `server/cognition/book/demand.rs` (`pay_convergence`); `server/cognition/court/task.rs` (`grow_grants_by_paid`) |
 | the Rewrite (court side) | §5.4 | `server/cognition/book/rewrite.rs` (`offer_rewrite`) |
-| the modes carrier: μ as exact modes keyed by canonical coordinates, drawn whole or refused naming the mode short; read off a motion or a hue map; carried on a solve's verdict | §5.6 M | `economy/modes.rs` (`Mode`, `Modes::of_motion`, `of_gauge`, `take`); `anastome/dialogue/percept.rs` (`encode_solve_verdict`); `server/cognition/identity.rs` (`measured_replay_read`) |
-| the seat's call chosen from what calls did; no enumeration | §6 | `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat_mind/own.rs` (`SeatMind::reach`); `client/sdk/seat.rs` (`SeatHold`) |
-| the observer: where the winding carrier stands, and calls answered at its next law boundary | §7.2 | `entity/observer.rs` (`Mind::at_law`; calls `now`, `thoughts`, `thought`, `field`, `held`, `scenes`, `questions`, `perception`, `convergence`, `calls`); `observe/live.rs`; `mycelium-client --call "<call>" [--mind HEX]` |
+| the modes carrier: μ as exact modes keyed by canonical coordinates, drawn whole or refused naming the mode short; read off a motion or a hue map; carried on a solve's verdict | §5.6 M | `economy/modes.rs` (`Mode`, `Modes::of_motion`, `of_gauge`, `take`); `anastome/dialogue/percept.rs` (`encode_solve_verdict`); `server/cognition/identity.rs` (`measured_discharge_read`) |
+| the seat's call chosen from what calls did; no enumeration | §6 | `client/sdk/seat_mind/choice.rs` (`Why::Untried`); `client/sdk/seat_mind/repertoire.rs` (`SeatMind::reach`); `client/sdk/seat.rs` (`SeatHold`) |
+| the observer: where the winding carrier stands, and calls answered at its next law boundary | §7.2 | `mind/observer.rs` (`Mind::at_law`; calls `now`, `thoughts`, `thought`, `field`, `held`, `scenes`, `questions`, `perception`, `convergence`, `calls`); `observe/live.rs`; `mycelium-client --call "<call>" [--mind HEX]` |
 
 The observer is an instrument permitted against §2.4(1): every call reads,
 none moves the mind, and nothing in cognition reads it back.

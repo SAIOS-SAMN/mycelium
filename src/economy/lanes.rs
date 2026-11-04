@@ -10,7 +10,7 @@ use super::*;
 /// A germ's polytonic magnitude — per-lane support size (‖Δ‖'s |supp| component),
 /// never summed, computed EXACTLY from the germ's description. 𝒮 = motion support
 /// (shift/rotation/scale), 𝒢 = relabeled-hue count, 𝒯 = temporal extent,
-/// 𝒽 = holonomic volume. A settled demand's residual magnitude is the zero
+/// 𝒽 = holonomic volume. A settled demand's residue magnitude is the zero
 /// vector and a real germ's is nonzero; the reading between two
 /// measurements is `lane_moves`, per lane, never a verdict (12.6).
 pub fn magnitude(g: &Element) -> [u64; 4] {
@@ -137,25 +137,27 @@ pub fn yield_surface(p: &crate::physics::Physics) -> Option<[u64; 4]> {
 }
 
 /// MU-DERIVATIONS D2.3 (ruled 2026-10-31, κ = 1) — THE COURT'S READ PRICE,
-/// μ per unit of gas on each lane: `p_l = 1 + y_l / R`, exact, `y` the
-/// court's strain (`yield_surface`) and `R` its calibrated reserve. At rest
-/// a unit of gas costs one μ — the identity from gas, measured in the
-/// lane's own court unit, to μ — and at full deficit (`y = R`) two; the same
-/// relative strain prices the same on every host, so the price reads the
-/// strain, never the hardware. `None` for a reserve of zero.
-pub fn read_price(surface: &[u64; 4], reserve: u64) -> Option<super::Mu> {
+/// μ per unit of gas on each lane: `p_l = 1 + y_l / C`, exact, `y` the
+/// court's strain (`yield_surface`) and `C` the process's sealed capacity
+/// (D2.5). At rest a unit of gas costs one μ — the identity from gas,
+/// measured in the lane's own court unit, to μ — and at full deficit
+/// (`y = C`) two; the same relative strain prices the same on every host,
+/// so the price reads the strain, never the hardware. `None` for a
+/// capacity of zero, which no sealed process has.
+pub fn read_price(surface: &[u64; 4], capacity: u64) -> Option<super::Mu> {
     use crate::core::q::Q;
     use num_bigint::BigInt;
-    if reserve == 0 {
+    if capacity == 0 {
         return None;
     }
-    let r = BigInt::from(reserve);
+    let r = BigInt::from(capacity);
     let price: [Q; 4] = std::array::from_fn(|l| Q::from_integer(1.into()) + Q::new(BigInt::from(surface[l]), r.clone()));
     super::Mu::of(price).ok()
 }
 
 /// PRICE IS THE MAGNITUDE ON THE LANE: a verified word is worth what it
-/// deflated. The surface paces pressure, it does not scale the mint.
-pub fn price(mag: &[u64; 4], _surface: &[u64; 4]) -> [u64; 4] {
-    *mag
+/// deflated. The surface paces pressure, it does not scale the mint. The
+/// same identity whether what deflated is a count or μ's share of a frame.
+pub fn price<M: Clone>(mag: &M, _surface: &[u64; 4]) -> M {
+    mag.clone()
 }

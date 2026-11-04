@@ -26,9 +26,7 @@ pub use spelling::*;
 pub use turn::*;
 pub use word::*;
 
-use num_rational::BigRational;
-
-pub type Q = BigRational;
+pub use crate::core::q::Q;
 
 #[cfg(test)]
 mod tests;

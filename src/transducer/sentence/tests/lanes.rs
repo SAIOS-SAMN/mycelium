@@ -2,7 +2,7 @@
 // content on, which lanes a class occupies, and that the four covers are
 // independent.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{self, identity_versor};
 use crate::transducer::sentence::*;

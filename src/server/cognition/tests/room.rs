@@ -1,7 +1,7 @@
 // 23.8, 12.6 — ROOM: what a voice's draw takes, what the corpus takes, and
 // what the book does before it refuses.
 
-use super::common::{sentence_of, speak_pair};
+use super::fixtures::{sentence_of, speak_pair};
 use crate::cognition::*;
 use crate::transducer::germinate::germinate;
 
@@ -87,6 +87,7 @@ assert_eq!(
 /// speaks a chain (law 8); the next draw is a sentence the voice speaks.
 #[test]
 fn speak_pair_relocates_unreachable_before_refusing_room() {
+    crate::transducer::raster::stand_on(0);
 use crate::anastome::dialogue::ProbeClosure;
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
@@ -108,10 +109,10 @@ assert_eq!(
     Outcome::Refused(crate::verdict::REFUSE_ROOM),
     "while the first listing is reachable the second draw is refused"
 );
-// One residual opens a face on the listing, then a full aperture of probes
+// One residue opens a face on the listing, then a full aperture of probes
 // that move nothing: the listing is unreachable.
 let rem = vec![(0, 1, 1u8, 0u8)];
-assert!(matches!(k.settle_probe([3; 32], &target, rem, &[], false).closure, ProbeClosure::Residual(_)));
+assert!(matches!(k.settle_probe([3; 32], &target, rem, &[], false).closure, ProbeClosure::Residue(_)));
 let mut listed_sorted = listed.clone();
 listed_sorted.sort_unstable();
 for _ in 0..crate::physics::aperture_cycle() {
@@ -137,7 +138,7 @@ assert_eq!(k.pending.len(), 1, "the new listing is on the page");
 #[test]
 fn intake_draws_no_room_from_hypha() {
 let mut k = Court::new();
-let cover = crate::arc::family_cover(&[(vec![vec![1]], vec![vec![2]])])
+let cover = crate::transducer::family::magnitude::family_cover(&crate::transducer::spelled::pairs_of(vec![(vec![vec![1]], vec![vec![2]])]))
     .expect("a one-site pair measures");
 k.bind_identity([9; 32]);
 k.set_genesis_cover(cover);
@@ -164,7 +165,7 @@ assert!(
 }
 
 /// 20, 24.4 P6, Stage 12 S12.3a — THE CORPUS INTAKE LISTS EACH BODY AS ITS
-/// OWN DEMAND. A task whose residual is two disjoint bodies lists two
+/// OWN DEMAND. A task whose residue is two disjoint bodies lists two
 /// demands on two body charts; a second task of the same frame that shares
 /// one body lists only the body it adds, and the shared body is one listing.
 #[test]
@@ -339,7 +340,7 @@ fn prune_basis_to_ruled_synchronizes_discovered_by() {
     let mut k = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
-    super::common::glue_pair(&mut k, &a, &b);
+    super::fixtures::glue_pair(&mut k, &a, &b);
     let kept = k.basis_len();
     assert!(kept >= 1);
 

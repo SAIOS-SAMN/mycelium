@@ -199,7 +199,7 @@ impl ClassVector {
     ///
     /// `read` takes a WORD, and the only route from a rotor to a word runs
     /// through the sensor plane — `Word::form` is `plane_block`, which is
-    /// `rotor_block_on` at `(PLANE_ROW, PLANE_COL)`. A rotor acting on
+    /// `rotor_block_on` at `alphabet::sensor_plane()`. A rotor acting on
     /// `e₁∧e₂` maps `e₁` off the plane, has no block there, and so has no
     /// word: read through `read` it would have no class at all, though it
     /// is a letter of the seventeen and its conjugacy invariants exist.
@@ -797,9 +797,9 @@ impl Segment for HueCycle {
 /// the one reader of that layout: its `n`, then one coefficient per slot of
 /// that algebra. The segment restated it and read the old widths once the
 /// value's spelling moved (ruled (a)).
-struct Carriage;
+struct CarriageSegment;
 
-impl Segment for Carriage {
+impl Segment for CarriageSegment {
     fn name(&self) -> &'static str {
         "carriage"
     }
@@ -834,7 +834,7 @@ impl Segment for Placement {
 static CONJUGACY: Conjugacy = Conjugacy;
 static PLANE_SECTION: PlaneSection = PlaneSection;
 static HUE_CYCLE: HueCycle = HueCycle;
-static CARRIAGE: Carriage = Carriage;
+static CARRIAGE: CarriageSegment = CarriageSegment;
 static PLACEMENT: Placement = Placement;
 
 static CLASS_SEGMENTS: [&dyn Segment; 5] =

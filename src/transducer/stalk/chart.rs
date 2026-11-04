@@ -7,8 +7,9 @@
 
 use super::*;
 
-/// A chain link: (row, col, hue before, hue after).
-pub(crate) type Link = (i64, i64, u8, u8);
+/// A chain link: the one carrier `sentence::SectionLink` (track 26 S5 holds the
+/// three former aliases as one type).
+pub(crate) use crate::transducer::sentence::SectionLink;
 
 /// Standing of a word on the working atlas: a coordinate, never a gate.
 /// Ruled weights above Stood, Stood above Held.
@@ -361,7 +362,7 @@ pub(crate) fn charts_read() -> u64 {
 
 /// Measure the moduli of a chain's support (hues are fibre coordinates over
 /// the base point, not part of the geometry class).
-pub fn invariant(chain: &[Link]) -> Invariant {
+pub fn invariant(chain: &[SectionLink]) -> Invariant {
     let mut sites = element::positions(chain);
     sites.sort_unstable();
     sites.dedup();
@@ -371,14 +372,14 @@ pub fn invariant(chain: &[Link]) -> Invariant {
     Invariant(crate::transducer::blade::section_moduli(&sites))
 }
 
-/// THE INVARIANT OF A WORD, read on its kind. A residual word (a chain) is
+/// THE INVARIANT OF A WORD, read on its kind. A residue word (a chain) is
 /// charted by its support's moduli. A connection is charted on its fibres:
 /// the conjugacy class of the affine block's linear part (trace and
 /// determinant, exact rationals packed as the moduli are) and the cycle
 /// type of the gauge permutation. The translation part is the versor's
-/// business on the fibre, exactly as position is quotiented for a residual
+/// business on the fibre, exactly as position is quotiented for a residue
 /// word: two identical motions at different origins share the chart. A
-/// leading axis of 0 keeps connection charts disjoint from residual charts,
+/// leading axis of 0 keeps connection charts disjoint from residue charts,
 /// whose first axis is a component count of at least one. A word that is
 /// neither — no support, no group component — has the empty chart:
 /// novelty, not a stratum.
@@ -416,31 +417,31 @@ pub(crate) fn connection_chart(word: &element::Element) -> Option<Invariant> {
     // between (A21 §2).
     let mut axes = vec![ChartAxis::Count(0)];
     axes.extend(rotor_axes(&letters.spelling.word.rotor())?);
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the identity image of the hues, each below PALETTE (the array's slots)")]
-    let mut image: [u8; element::PALETTE] = std::array::from_fn(|i| i as u8);
-    // The gauge is read off the word's tape: a hue past the palette names
-    // no slot, and the word has no conjugacy stratum (refused, never an
-    // index past the array).
-    for &(f, t) in &letters.sigma {
-        if (f as usize) >= element::PALETTE || (t as usize) >= element::PALETTE {
-            return None;
-        }
-        image[f as usize] = t;
+    // The gauge is read off the word's tape, over the symbols it names and
+    // no fixed set (MU-SENSING §3.3): a symbol it never names stands still
+    // and closes no cycle. A word that records a distinction in e_∅ (a
+    // typed record, track 26 S5) is no permutation, and has no conjugacy
+    // stratum (refused).
+    use crate::transducer::sentence::transport::{gauge_image, gauge_keyed, hue_key};
+    if !letters.records.is_empty() {
+        return None;
     }
-    let mut seen = [false; element::PALETTE];
+    let image = gauge_keyed(&letters.sigma);
+    let mut named: Keyed<()> = Keyed::new();
+    for &(f, t) in &letters.sigma {
+        named.insert(hue_key(f), ());
+        named.insert(hue_key(t), ());
+    }
+    // Each walk starts at the least symbol not yet seen, in the symbols'
+    // key order, as the walk over the slots did.
+    let mut seen: Keyed<()> = Keyed::new();
     let mut cycles: Vec<u64> = Vec::new();
-    for start in 0..element::PALETTE {
-        if seen[start] {
-            continue;
-        }
-        let (mut i, mut len) = (start, 0u64);
-        while !seen[i] {
-            seen[i] = true;
+    for (k, _) in named.scoped() {
+        let [start] = k.as_slice() else { continue };
+        let (mut i, mut len) = (*start, 0u64);
+        while seen.insert(hue_key(i), ()).is_none() {
             len += 1;
-            i = image[i] as usize;
-            if i >= element::PALETTE {
-                return None;
-            }
+            i = gauge_image(&image, i);
         }
         if len > 1 {
             cycles.push(len);
@@ -478,7 +479,7 @@ pub fn placement_of(g: &element::Element) -> Option<Versor> {
 }
 
 /// CONGRUENCE on elements: the held word that is `spoken`'s base point,
-/// with the versor carrying `spoken` onto it. For a residual word the chart
+/// with the versor carrying `spoken` onto it. For a residue word the chart
 /// narrows the candidates and the versor between shapes decides; exactly
 /// one relating word is a base point, several is the measurement that the
 /// chart is too coarse (multiplicity — an axis to extend, returned as no
@@ -513,7 +514,7 @@ pub fn congruent<'a>(
     }
 }
 
-/// 78.74 — EVERY HELD WORD CONGRUENT TO A RESIDUAL `spoken`: each a rigid
+/// 78.74 — EVERY HELD WORD CONGRUENT TO A RESIDUE `spoken`: each a rigid
 /// image of its shape, with the versor carrying it there. Where there are
 /// several, they are rigid copies of `spoken` and so of one another — one
 /// algorithm, congruent — and the condenser makes them one bundle rather
@@ -544,7 +545,7 @@ pub fn congruent_all<'a>(
 pub fn congruent_shaped<'a>(
     stalks: &Stalks,
     shape_at: impl Fn(&[u8]) -> Option<&'a crate::transducer::blade::Shape>,
-    chain: &[Link],
+    chain: &[SectionLink],
     budget: &mut crate::physics::Budget,
 ) -> Option<(crate::transducer::address::Address, Versor)> {
     let shape = element::shape_of_chain(chain)?;

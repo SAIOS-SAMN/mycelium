@@ -32,11 +32,11 @@ pub use contract::*;
 pub use keys::*;
 pub use spectrum::*;
 
-use crate::transducer::sentence::chain::Link;
+use crate::transducer::sentence::chain::SectionLink;
 use crate::transducer::sentence::class::{Axis, ClassVector};
 use crate::transducer::sentence::transport::{relative_gauge, FacePlace, Transport};
 use crate::network::nerve::{coord, Coordinate, Keyed};
 use crate::transducer::alphabet::{self, Rotor, Word};
 use crate::transducer::element::{self, Versor};
-use crate::transducer::peel::ShellKind;
+use crate::transducer::layers::LayerKind;
 use crate::transducer::stalk;

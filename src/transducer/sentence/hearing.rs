@@ -22,7 +22,7 @@
 //! ring sits whole and none is left over: every period then divides the
 //! outer one, so the outer return is the joint return.
 
-use super::compose::{Closure, Composition};
+use super::compose::{RingClosure, Composition};
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::cga::{motion_modes, Mv};
 use num_traits::{One, Zero};
@@ -37,11 +37,11 @@ pub enum Size {
 }
 
 impl Size {
-    fn of(c: Closure) -> Option<Size> {
+    fn of(c: RingClosure) -> Option<Size> {
         match c {
-            Closure::Closes(l) => Some(Size::Returns(l)),
-            Closure::Rosette | Closure::Unbound => Some(Size::Carrier),
-            Closure::Unread => None,
+            RingClosure::Closes(l) => Some(Size::Returns(l)),
+            RingClosure::Rosette | RingClosure::Unbound => Some(Size::Carrier),
+            RingClosure::Unread => None,
         }
     }
 

@@ -4,7 +4,7 @@
 //! Everything here runs over the `Language` SNAPSHOT with no lock held.
 //! `rank_over` and `quote_incidence` read the book as a market view;
 //! `normal_form` says whether the held words span a chain. Nothing here
-//! builds an element from a residual: the four sites that did were the
+//! builds an element from a residue: the four sites that did were the
 //! court's F on a voice's painted sites (50.6, seam 3; law 8, ruled 2026-09-10),
 //! deleted with the percept and demand acts.
 
@@ -35,7 +35,7 @@ pub(crate) fn rotor_versor(g: &crate::transducer::alphabet::Rotor) -> Option<ele
     crate::transducer::element::conformal_of(&word, &crate::transducer::element::identity_versor())
 }
 
-pub(crate) fn union_remainders(entries: &[FieldEntry]) -> Vec<(i64, i64, u8, u8)> {
+pub(crate) fn union_remainders(entries: &[ProbedChart]) -> Vec<(i64, i64, u8, u8)> {
     let mut u = Vec::new();
     for e in entries {
         if !e.state.is_flat() {
@@ -195,7 +195,7 @@ pub struct Ask<'a> {
 }
 
 /// QUOTE — pure, over a language snapshot and the open book. The yield
-/// surface is read from genuine metabolic tension; each un-factored residual
+/// surface is read from genuine metabolic tension; each un-factored residue
 /// is priced against it, μ⃗[l] = magnitude[l] · (1 + surface[l]). The (C, I)
 /// pair differentiates the market (never summed): closure work (open demand
 /// whose geometry a held word speaks, up to isometry, through the atlas)
@@ -319,7 +319,7 @@ pub fn normal_form(
         exclude,
         budget,
     );
-    match (sentence.residual.as_slice(), sentence.punctures.as_slice()) {
+    match (sentence.residue.as_slice(), sentence.punctures.as_slice()) {
         ([], []) => NormalForm::Decomposed(sentence.cites.iter().map(|c| c.word.clone()).collect()),
         _ => NormalForm::Irreducible,
     }

@@ -115,7 +115,7 @@ fn hear_speech_adjudicates_stood_and_awaiting_apart() {
     let spoken = vec![(plain.clone(), None), (citer.clone(), None)];
     // 78.153: a stroke that holds the frame's replays.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
-    let heard = k.hear_speech([1; 32], &[0; 32], &spoken, &mut frame).expect("the frame is heard");
+    let heard = k.hear_speech([1; 32], &[0; 32], &spoken, &[], &mut frame).expect("the frame is heard");
 
     // The adjudications come back in the order the sentences were spoken,
     // so index zero is the first sentence's verdict — the frame's own
@@ -165,6 +165,14 @@ fn hear_speech_adjudicates_stood_and_awaiting_apart() {
 #[test]
 fn ruled_admit_absent_word_rehears_nothing() {
     let mut k = Court::new();
+    // D2.5 O4 — the re-hearing below replays a sentence whose replay has no
+    // closed-form need yet, so the court runs on an explicit calibration: a
+    // process of 40 bytes at one byte per read, `C = 40`.
+    let nz = |n| std::num::NonZeroU64::new(n).expect("a fixture size is positive");
+    let memory = crate::physics::Memory::of(nz(40), crate::physics::MemorySource::CgroupMax);
+    let minimal = crate::physics::minimal_stroke().expect("the founding motions' modes have a need");
+    let calibration = crate::physics::Calibration::of(memory, nz(1), minimal).expect("a spend of five fits the minimal stroke");
+    k.physics = crate::physics::Physics::calibrated(&calibration);
     // An address this court holds no word at, and a sentence with nothing
     // to wait on, docketed under it.
     let absent = sentence_with(Derivation::spelled(turn_90(1)), 1).address();
@@ -314,14 +322,16 @@ fn witness_rederived_fresh_rules_pressured_word_and_citer() {
         vec![crate::anastome::dialogue::SPEECH_DIALECT],
         "the citer waits on the word (D)"
     );
-    // THE PRESSURE, in the algebra of the lanes: the citer's frame arrived
-    // and one carriage drew the word's own, exactly — its frame read in the
-    // escrow's currency, the word's discharge (78.149), which a word heard
-    // for no task measures as nothing.
+    // THE PRESSURE, in the algebra of the lanes: a frame arrived and one
+    // carriage drew the word's own, exactly — both read in the escrow's
+    // currency, the word's discharge (78.149), μ a share of the frame
+    // (78.170 O1): the citer's magnitude is a count, not μ, so the frame it
+    // transports is the carriage it causes, and a word heard for no task
+    // measures as nothing.
     let escrow_after = k.treasury().escrow_of(w.as_bytes()).map(|e| e.mu.clone()).expect("still under escrow");
     let drawn = k.discharge_of(w.as_bytes(), &word);
-    let expected = escrow_before.add(&citer.magnitude().into()).draw(&drawn.into()).expect("the draw fits the escrow");
-    assert_eq!(escrow_after, expected, "escrow + citer's frame − the carriage's draw, per lane");
+    let expected = escrow_before.add(&drawn).draw(&drawn).expect("the draw fits the escrow");
+    assert_eq!(escrow_after, expected, "escrow + the transported frame − the carriage's draw, per lane");
     assert!(k.take_offers().iter().any(|(a, _)| *a == w), "and the carriage emitted the word's offer again");
     // A bonded second vantage re-derives the word; the ruling closes its orbit.
     let witness = [2u8; 32];

@@ -17,10 +17,6 @@ pub const FIBRE_SHELL: u16 = 3;
 /// FORMAT: stratum tag.
 pub const FIBRE_GERMINATED: u16 = 4;
 
-/// Hue states on the gauge (ARC palette 0..9; 0 = absent).
-/// EXTERNAL: the ARC-AGI task format, colours 0 to 9.
-pub const PALETTE: usize = 10;
-
 /// WHAT A TORSION CYCLE TURNS BY — its generator, which the period is READ
 /// from at every writer, reader and replay (PD1, 78.43(2)): a stored period
 /// is a claim, never a bound, and a derivable quantity re-derives at every
@@ -53,7 +49,7 @@ impl Eq for Generator {}
 
 impl Generator {
     /// THE GENERATOR'S OWN ORDER, read with no base: σ's (the lcm of its
-    /// cycle lengths, where σ permutes its hues within the palette), or the
+    /// cycle lengths, where σ permutes the hues it names), or the
     /// ray's finite order. `None` where it has none.
     pub fn order(&self) -> Option<u64> {
         match self {
@@ -162,8 +158,8 @@ pub struct TorsionCycle {
     /// (78.43(2)) and verified against it at every writer into `torsion`,
     /// and the extent the word owes on the T lane. `u64` by the type's
     /// domain: a permutation of the u8 hues has order up to Landau's g(256)
-    /// ≈ 2⁵⁴, past `u32` (the sensor's PALETTE is site 4's constant, not
-    /// this width's provenance).
+    /// ≈ 2⁵⁴, past `u32` (the family's symbol set Σ, MU-SENSING §3.3,
+    /// is never this width's provenance).
     pub period: u64,
     /// The fibre it lives on: `FIBRE_SPATIAL`, or a germinated axis.
     pub fibre: u16,
@@ -389,7 +385,7 @@ pub struct Action {
 /// A germ as tape, action, chain, and magnitude.
 #[derive(Debug, Clone)]
 pub struct Element {
-    /// Coordinate-exact ANASTOME description (empty for a pure residual chain).
+    /// Coordinate-exact ANASTOME description (empty for a pure residue chain).
     ///
     /// IT IS NOT CALLED `word`, and that is a ruling applied rather than a
     /// preference. `word` is the document's noun for a path in the Cayley
@@ -403,7 +399,7 @@ pub struct Element {
     pub(crate) action: Action,
     /// Per-lane support, exact from the description.
     pub(crate) mag: [u64; 4],
-    /// The CENTRED COBOUNDARY CHAIN — the residual's substance with geometry
+    /// The CENTRED COBOUNDARY CHAIN — the residue's substance with geometry
     /// preserved up to translation: `(row, col, before, after)` over the changed
     /// sites, min-corner framed to the origin, sorted. Empty for a closed word.
     ///
@@ -656,7 +652,7 @@ impl Element {
     }
 
     pub fn is_identity(&self) -> bool {
-        // A residual with a canceling hue tally has identity action but a
+        // A residue with a canceling hue tally has identity action but a
         // real chain — the chain decides. A word with a description tape
         // is never the identity.
         //
@@ -1016,24 +1012,25 @@ pub const MEASURE_BOUND: &str =
 pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     let mut spatial = 0u64;
     let mut gauge = 0u64;
-    let void = crate::arc::ground();
+    let ground = crate::transducer::raster::ground();
     let mut before_pos: Vec<(i64, i64)> = Vec::new();
     let mut after_pos: Vec<(i64, i64)> = Vec::new();
     for &(r, c, b, a) in chain {
-        if b != void {
+        let (painted_b, painted_a) = (!ground.holds(&b), !ground.holds(&a));
+        if painted_b {
             before_pos.push((r, c));
         }
-        if a != void {
+        if painted_a {
             after_pos.push((r, c));
         }
-        match (b != void, a != void) {
+        match (painted_b, painted_a) {
             (true, true) if b != a => gauge += 1,
             (true, false) | (false, true) => spatial += 1,
             _ => {}
         }
     }
-    let sb = crate::transducer::beam::signature(&before_pos, &[]);
-    let sa = crate::transducer::beam::signature(&after_pos, &[]);
+    let sb = crate::transducer::candidates::signature(&before_pos, &[]);
+    let sa = crate::transducer::candidates::signature(&after_pos, &[]);
     let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
     // LANE 2 IS NOT THE CHAIN'S TO REPORT. 𝒯 is temporal extent — the
     // scene-state span in receipts (51.9) — and a chain is a set of links
@@ -1047,6 +1044,23 @@ pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     [spatial, gauge, 0, shell]
 }
 
+/// [`measure_lanes`] OF SUPPORT THAT VANISHED AND APPEARED, read without a
+/// symbol written for the absence: each site of `vanished` a link from a
+/// body to nothing and each of `appeared` from nothing to a body, so each is
+/// one spatial count, none is gauge, and the shell lane is the difference
+/// of the two supports' topology. Equal to `measure_lanes` over those links
+/// on any scope with one ground, and readable where the scope has none.
+pub fn measure_supports(vanished: &[(i64, i64)], appeared: &[(i64, i64)]) -> [u64; 4] {
+    let mut spatial = 0u64;
+    for _ in vanished.iter().chain(appeared) {
+        spatial += 1;
+    }
+    let sb = crate::transducer::candidates::signature(vanished, &[]);
+    let sa = crate::transducer::candidates::signature(appeared, &[]);
+    let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
+    [spatial, 0, 0, shell]
+}
+
 impl Element {
     /// The four lanes this germ carries content on — 𝒮 spatial, 𝒢 gauge, 𝒯
     /// temporal, 𝒽 holonomic — exactly where the coordinate-exact magnitude
@@ -1058,8 +1072,8 @@ impl Element {
 
     /// The germ's polytonic MAGNITUDE — per-lane support size (‖Δ‖'s |supp|
     /// component), never summed, computed EXACTLY from the description at
-    /// germination. A settled demand's residual magnitude is 0⃗; a real germ's is
-    /// nonzero — the residual the POW++ gate reads.
+    /// germination. A settled demand's residue magnitude is 0⃗; a real germ's is
+    /// nonzero — the residue the POW++ gate reads.
     /// Spatial, gauge, and shell from the chain (and what a connection
     /// carries). Lane 2 is temporal extent at mint (scene-state span).
     /// Lane 3 gains the holonomic volume — sections and torsion cycles.
@@ -1087,7 +1101,7 @@ impl Element {
     /// 𝒽 shell. Lane 𝒯 is temporal extent, measured on the standing
     /// carrier and never on the chain (`measure_lanes` writes it zero), so
     /// it is quotiented here by the same law. This is the vector the court
-    /// compares with `from_residual(chain).base_magnitude()`, as one
+    /// compares with `from_residue(chain).base_magnitude()`, as one
     /// equality, never lane by lane.
     pub fn chain_magnitude(&self) -> [u64; 4] {
         let [spatial, gauge, _, shell] = self.mag;
@@ -1096,7 +1110,7 @@ impl Element {
 
     /// THE TRANSPOSITION QUOTIENT — factor out the translation (the ℤ² orbit) so
     /// the element becomes its position-independent SUBSTANCE
-    /// (dilation·rotation·gauge·residual). Two transposition-equivalent demands
+    /// (dilation·rotation·gauge·residue). Two transposition-equivalent demands
     /// (same substance, different position) share ONE substance — the object of
     /// confluent reduction, not the coordinate-exact word. (Gauge S₁₀ canonical
     /// relabel is a further quotient, still to land.)

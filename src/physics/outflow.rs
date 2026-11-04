@@ -35,7 +35,7 @@
 //! Every claim is checked on the value before it is returned and refused by
 //! name otherwise (rule 11): nothing is asserted the algebra does not hold, and
 //! nothing is approximated. On `n = 3` the organ is the `Cl(4,1)` source
-//! (`source::Source::of`), coefficient for coefficient.
+//! (`source::WhiteHoleSource::of`), coefficient for coefficient.
 
 use num_rational::BigRational;
 use num_traits::{One, Zero};

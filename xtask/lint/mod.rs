@@ -1,9 +1,11 @@
 // MU-STANDARDS 4.1 — THE GATES THE COMPILER CANNOT READ, over `src/`,
 // `forms/src/`, `sdk/src/` and `xtask/`: the reading bound (§4.1), the Euclidean grid vocabulary
-// (law 2, rule 15, the Anti-Flattening Law) and the numbers gate (MU-STANDARDS
-// 2.12, MU-DERIVATIONS D1.4). Every other rule is a clippy lint (§4.2) or a
-// type (§4.4).
+// (law 2, rule 15, the Anti-Flattening Law), the numbers gate (MU-STANDARDS
+// 2.12, MU-DERIVATIONS D1.4) and the drift register (MU-ANTI-FLATTENING
+// *Drift guards*). Every other rule is a clippy lint (§4.2) or a type
+// (§4.4).
 
+pub mod drift;
 pub mod euclidean;
 pub mod length;
 pub mod numbers;
@@ -47,6 +49,9 @@ pub fn run() -> Result<(), String> {
             numbers.inventory.len()
         );
         hits.extend(numbers.hits);
+        // THE DRIFT REGISTER: each guard's type and claim stand in the tree.
+        drift::lint_drift(repo, drift::REGISTER, &mut hits)?;
+        eprintln!("drift: {} guards registered", drift::REGISTER.len());
     }
     if hits.is_empty() {
         return Ok(());

@@ -10,8 +10,8 @@
 //! law's coordinate is its address (`Law::address`), read back by
 //! [`law_at`].
 
-use super::{BodyState, Breach, Flow, Flux, Law, Transition, Verdict, LAWS, LAW_VERSION};
-use crate::physics::tensegrity::Body;
+use super::{BodyState, Breach, Flow, Flux, Law, Transition, TransitionVerdict, LAWS, LAW_VERSION};
+use crate::physics::equilibrium::BodyMoments;
 use crate::transducer::address::{put_key_count, take_key_count, Address, TAG_LAW};
 use crate::transducer::alphabet::{put_q, take_q};
 use crate::transducer::cga::{Mv, Undecomposed};
@@ -60,19 +60,19 @@ fn take_qs(b: &[u8], p: &mut usize) -> Option<Vec<Q>> {
 }
 
 /// A BODY AS A.13 READS IT: its centre, its mass, its second moments.
-pub fn put_body(out: &mut Vec<u8>, body: &Body) {
+pub fn put_body(out: &mut Vec<u8>, body: &BodyMoments) {
     put_qs(out, &body.centre);
     put_q(out, &body.mass);
     put_key_count(out, body.moments.len());
     body.moments.iter().for_each(|row| put_qs(out, row));
 }
 
-pub fn take_body(b: &[u8], p: &mut usize) -> Option<Body> {
+pub fn take_body(b: &[u8], p: &mut usize) -> Option<BodyMoments> {
     let centre = take_qs(b, p)?;
     let mass = take_q(b, p)?;
     let n = take_key_count(b, p)?;
     let moments = (0..n).map(|_| take_qs(b, p)).collect::<Option<Vec<_>>>()?;
-    Some(Body { centre, mass, moments })
+    Some(BodyMoments { centre, mass, moments })
 }
 
 fn put_state(out: &mut Vec<u8>, s: &BodyState) {
@@ -95,11 +95,15 @@ pub fn put_transition(out: &mut Vec<u8>, t: &Transition) {
         put_state(out, before);
         put_state(out, after);
     }
-    put_key_count(out, t.hues.len());
-    for (f, h) in &t.hues {
+    // The hue relation's rows, then — track 26 S5 — its records in e_∅ as a
+    // typed list of their own, never a symbol byte among the rows.
+    put_key_count(out, t.hues.rows.len());
+    for (f, h) in &t.hues.rows {
         out.push(*f);
         out.push(*h);
     }
+    put_key_count(out, t.hues.records.len());
+    out.extend_from_slice(&t.hues.records);
     put_key_count(out, t.fluxes.len());
     for f in &t.fluxes {
         out.push(match f.flow {
@@ -117,7 +121,10 @@ pub fn take_transition(b: &[u8], p: &mut usize) -> Option<Transition> {
     let n = take_key_count(b, p)?;
     let bodies = (0..n).map(|_| Some((take_state(b, p)?, take_state(b, p)?))).collect::<Option<Vec<_>>>()?;
     let m = take_key_count(b, p)?;
-    let hues = (0..m).map(|_| Some((take_u8(b, p)?, take_u8(b, p)?))).collect::<Option<Vec<_>>>()?;
+    let rows = (0..m).map(|_| Some((take_u8(b, p)?, take_u8(b, p)?))).collect::<Option<Vec<_>>>()?;
+    let r = take_key_count(b, p)?;
+    let records = (0..r).map(|_| take_u8(b, p)).collect::<Option<Vec<_>>>()?;
+    let hues = crate::transducer::element::FibreRelation { rows, records };
     let f = take_key_count(b, p)?;
     let fluxes = (0..f)
         .map(|_| {
@@ -213,7 +220,7 @@ fn take_breach(b: &[u8], p: &mut usize) -> Option<Breach> {
 
 /// THE COURT'S ANSWER: every breach with its law (by the law's coordinate in
 /// the register), the torques exchanged, the modes, the similarity.
-pub fn put_verdict(out: &mut Vec<u8>, v: &Verdict) {
+pub fn put_verdict(out: &mut Vec<u8>, v: &TransitionVerdict) {
     put_key_count(out, v.breaches.len());
     for (law, breach) in &v.breaches {
         out.push(law.index());
@@ -477,7 +484,7 @@ pub fn encode_batch_request(ts: &[Transition]) -> Vec<u8> {
 
 /// The batch's reply: `[count][verdict …]`, one verdict per transition in the
 /// order they were sent.
-pub fn encode_batch_reply(verdicts: &[Verdict]) -> Vec<u8> {
+pub fn encode_batch_reply(verdicts: &[TransitionVerdict]) -> Vec<u8> {
     let mut out = Vec::new();
     put_key_count(&mut out, verdicts.len());
     for v in verdicts {
@@ -488,7 +495,7 @@ pub fn encode_batch_reply(verdicts: &[Verdict]) -> Vec<u8> {
 
 /// The verdicts a batch reply carries, read whole: bytes left over, or a
 /// verdict that does not read, is no reply.
-pub fn decode_batch_reply(b: &[u8]) -> Option<Vec<Verdict>> {
+pub fn decode_batch_reply(b: &[u8]) -> Option<Vec<TransitionVerdict>> {
     let mut p = 0;
     let n = take_key_count(b, &mut p)?;
     let verdicts = (0..n).map(|_| take_verdict(b, &mut p)).collect::<Option<Vec<_>>>()?;
@@ -508,7 +515,7 @@ pub fn encode_verify_request(t: &Transition) -> Vec<u8> {
 }
 
 /// The verify reply: the one verdict, as [`put_verdict`] writes it.
-pub fn encode_verify_reply(v: &Verdict) -> Vec<u8> {
+pub fn encode_verify_reply(v: &TransitionVerdict) -> Vec<u8> {
     let mut out = Vec::new();
     put_verdict(&mut out, v);
     out
@@ -516,7 +523,7 @@ pub fn encode_verify_reply(v: &Verdict) -> Vec<u8> {
 
 /// The verdict a verify reply carries, read whole: bytes left over, or a
 /// verdict that does not read, is no reply.
-pub fn decode_verify_reply(b: &[u8]) -> Option<Verdict> {
+pub fn decode_verify_reply(b: &[u8]) -> Option<TransitionVerdict> {
     let mut p = 0;
     let v = take_verdict(b, &mut p)?;
     (p == b.len()).then_some(v)
@@ -588,7 +595,7 @@ pub fn decode_register_reply(b: &[u8]) -> Option<Vec<Served>> {
     (p == b.len()).then_some(laws)
 }
 
-pub fn take_verdict(b: &[u8], p: &mut usize) -> Option<Verdict> {
+pub fn take_verdict(b: &[u8], p: &mut usize) -> Option<TransitionVerdict> {
     let n = take_key_count(b, p)?;
     let breaches = (0..n)
         .map(|_| Some((*LAWS.get(usize::from(take_u8(b, p)?))?, take_breach(b, p)?)))
@@ -610,5 +617,5 @@ pub fn take_verdict(b: &[u8], p: &mut usize) -> Option<Verdict> {
             Some(crate::physics::laws::Unmeasured { law, needed_stroke })
         })
         .collect::<Option<Vec<_>>>()?;
-    Some(Verdict { breaches, exchanged, modes, similarity, expansion, unmeasured })
+    Some(TransitionVerdict { breaches, exchanged, modes, similarity, expansion, unmeasured })
 }

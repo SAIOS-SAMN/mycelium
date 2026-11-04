@@ -1,7 +1,7 @@
 // 12.6 — THE TRAJECTORY and THE PIVOT: the trajectory certifies and never selects, the
 // pivot reads only occupied axes, and what cannot be ordered is held.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::network::nerve::Keyed;
 use super::orbit::Hold;
 use crate::transducer::alphabet::{Order, Word};
@@ -62,6 +62,7 @@ fn select_discharge_holds_several_as_vortex() {
 /// a lane, and never enters the comparison between certified discharges.
 #[test]
 fn select_discharge_never_selects_by_mu() {
+    crate::transducer::raster::stand_on(0);
     let loose = cert(Axis::Unit(0), [4, 4, 4, 4]);
     let tight = cert(Axis::Unit(0), [1, 1, 1, 1]);
     let Discharge::Vortex(candidates) = select_discharge(&[loose.clone(), tight.clone()]) else {
@@ -99,14 +100,14 @@ fn select_discharge_never_selects_by_mu() {
 
     let q = word_turn_90();
     let qinv = q.inverse();
-    let x: Vec<Vec<u8>> = vec![
+    let x = crate::transducer::spelled::SectionSample::from(vec![
         vec![0, 0, 0, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0],
         vec![0, 0, 1, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0],
-    ];
+    ]);
     let bodies = crate::transducer::family::perceive(&x);
     assert!(!bodies.is_empty(), "the bar is a body");
     let class = bodies[0].moduli.clone();
@@ -131,7 +132,7 @@ fn select_discharge_never_selects_by_mu() {
     .and_then(|s| s.grid())
     .expect("q speaks the bar and it fits the frame");
     assert!(
-        y.iter().flatten().any(|&h| h != 0),
+        y.symbols().iter().any(|&h| h != 0),
         "the spoken image is not the empty frame"
     );
     // THE CHORD'S FIRST END STANDS ON THE BODY'S CHART. The chart is the

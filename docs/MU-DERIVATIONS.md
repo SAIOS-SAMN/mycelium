@@ -45,7 +45,7 @@ rest fall into six classes.
 | 3. External standard | fixed by a published standard or a governing rule outside the physics | ~12 | §9 |
 | 4. Measured | read at run time off the host or the running system | 3 statics + 6 functions | D2.5–D2.7, D4.1 |
 | 5. Underived parameter | a chosen number standing where a reading belongs | ~11 consts + ~12 literal sites | §3–§6 |
-| 6. Derivation specified, not built | a governing document states the derivation; the code still holds the number | 2: `CHALLENGE_WINDOW` (D1.1), `THROAT_GRID` (D1.2); the slash and bounty halves (D2.1, D2.2) are **Built** | §3–§6 |
+| 6. Derivation specified, not built | a governing document states the derivation; the code still holds the number | 2: `CHALLENGE_WINDOW` (D1.1), `THROAT_LEVEL_BITS` (D1.2); the slash and bounty halves (D2.1, D2.2) are **Built** | §3–§6 |
 
 Classes 1–3 need no derivation (§9), but each carries a class tag the
 gate reads (D1.4). Class 4 numbers are readings, and the entries for them
@@ -71,8 +71,8 @@ Each entry `D<group>.<n>` has the same fields:
   ruling that decides. A conjecture is never presented as settled physics.
 - **Implementation scope.** Files and types touched; wire, ledger,
   snapshot and Concordance effect; the tests that prove it, as claims by
-  the algebra (MU-STANDARDS 3.1 `<unit>_<behaviour>`); the mutation-audit
-  entry where it guards a law; dependencies; size (S / M / L).
+  the algebra (MU-STANDARDS 3.1 `<unit>_<behaviour>`); dependencies;
+  size (S / M / L).
 
 Line numbers are as read at the time of writing; the path and the quoted
 code locate a site when lines move.
@@ -90,8 +90,10 @@ code locate a site when lines move.
   decimal in the text is an illustration of size only.
 - **Heights and strokes.** A height is a court's receipt count
   (`Stamp.h`). A read is one `Budget::spend()`. A stroke is the budget
-  `Physics::stroke` mints. `A = aperture_cycle() = 2^(FRAME_AXIS+1) = 8`
-  strokes per reserve cycle. `R = reserve_max()`, the calibrated reserve.
+  `Physics::stroke` mints. `A = aperture_cycle() = 2^ALPHABET_BASE_N = 8`
+  strokes per reserve cycle. `R = reserve_max()`, the calibrated reserve,
+  in the entries written before D2.5's O1 ruling; since it, `C =
+  physics::capacity()`, the process's sealed capacity (D2.5).
 - **No clock.** No wall-clock time enters any formula (law 9; Concordance
   1.11). Time is distance along an orbit: a height on TUniversal, a count
   of strokes, a distance along a sequence (78.43).
@@ -126,23 +128,23 @@ MU-STANDARDS 2.12 binds it on every line written:
 | Id | Constant | Site | Governs | Sev. | Derivation in one line | Open | Size | Track |
 |---|---|---|---|---|---|---|---|---|
 | D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws/mod.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations (**Built** 2026-10-31, law version 5; O1 ruled every keeper) | yes | L | 22, 20 |
-| D1.2 | `THROAT_GRID = 64` | `server/cognition/mouth.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet (**Built** 2026-10-31); Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
+| D1.2 | `THROAT_LEVEL_BITS = 64` | `server/cognition/domain_passage.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet (**Built** 2026-10-31); Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
 | D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page (**Built** 2026-10-31: the defect fixed, every envelope its codec's header; O1 read (b): REGISTERED, served on `ACT_LAWS` mode 5) | yes | S/M | 5, 14 |
 | D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) (**Built** 2026-10-31: N1–N5 enforced, N6 an inventory) | yes | M | 22 |
 | D2.1 | `held.mu[l] / 2` (slash) | `server/cognition/convert.rs:582` | μ, discipline | High | `cut = B·X/(B + X)`, exposure against bond (**Built**, ruled 2026-10-31) | no | M | 3, 14 |
 | D2.2 | `cut[l] / 2` (bounty) | `server/cognition/convert.rs:586` | μ, challenge incentive | High | `bounty = cut·D/(D + X)` (**Built**, ruled 2026-10-31) | no | S | 3, 14 |
 | D2.3 | `surface + 1` (read price) | `server/cognition/crossing.rs:57–64` | μ, admission | High | `p = 1 + y/R`, scale-free (**Built**, κ = 1 ruled 2026-10-31) | O2 | S | 21, 3 |
 | D2.4 | `UNIT_BOND = [1, 1, 1, 1]` | `economy/treasury.rs:163` | none (test fixture) | Low | deleted, not derived (**Built**, 2026-10-31) | no | S | 3 |
-| D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` | yes | M | 14 |
-| D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name (**Built** 2026-10-31 but the reserve's memory and cores terms, D2.5's organ) | yes | M | 14 |
+| D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` (**Built** 2026-11-04: one boot calibration stroke seals the capacity `C = ⌊M_proc/b⌋`; O1 ruled into four readings: metabolism on `C`, strokes on the work's need (owed sites listed), a quiet peer asked again once the final point advances, cooling on the challenge window, the pointed book on `M_proc`; O3, the ratio's `8`, derived in track 26 S4b as `2ⁿ` at the alphabet's base `n = LETTER_RANK − 1`) | yes | M | 14 |
+| D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name (**Built** 2026-10-31; the reserve's memory term with D2.5, 2026-11-04) | yes | M | 14 |
 | D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state (**Built** 2026-10-31: a CLI's first ask to the stream's end, a court's the mesh floor) | yes | S–M | 5 |
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111; **Built**) | yes | S | 7 |
-| D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` | `transducer/family/refine.rs:40–41` | task identity, μ | High | metered by `need = R_h·R_w + 2·L_h·L_w` (**Built**, O1 (a)) | no | M | 7 |
+| D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600`, then the common refinement `K_lcm` | `transducer/family/refine.rs` (deleted) | task identity, μ | High | the transduction in turns, `need = R_h·R_w`; μ a share of the frame (**Built**, 78.170; O1 wired 2026-11-01) | no | L | 7 |
 | D3.3 | `truncate(32)` | `transducer/anchor/derive.rs:182` | court admission (π*) | High | keep every carrying term, keyed; metered (**Built** 2026-10-31; O1 ruled (a): π* binds the whole common set) | yes | M | 7 |
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state (**Built** 2026-10-31) | no | S | 10 |
 | D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` (**Built** 2026-10-31; O1 read (a), `seq`) | yes | S | 10 |
 | D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture (**Built** 2026-10-31) | yes | M | 5 |
-| D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` (**Built** 2026-10-31; the cursor, O1, not built) | yes | S/M | 5 |
+| D4.2 | `take(32)` (evidence reply) | `mycelium-server/control.rs:102` | protocol size | Medium | fill to the frame budget by `σ(e)` (**Built** 2026-10-31; the cursor, O1, not built) | yes | S/M | 5 |
 | D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused (**Built** 2026-10-31; `0 × 0` admitted) | yes | S | 14 |
 | D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration (**Built** 2026-10-31: (iii), both producers' depths closed forms) | yes | M/L | 14 |
 | D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book (**REGISTERED** 2026-10-31 as `POOL_DIVISOR`: the off-lock strokes are unmetered) | yes | M | 5 |
@@ -205,8 +207,7 @@ version 4's window (EXTERNAL), out of the register. Tests
 `window_close_reconstructs_from_sealed_citation`,
 `window_opened_under_v4_closes_at_fixed_end`,
 `window_refuses_witness_with_forged_signature`,
-`window_refuses_return_not_above_reach`; the three mutation entries as
-specified. O2–O4 stay open. The text below is the derivation as specified.
+`window_refuses_return_not_above_reach`. O2–O4 stay open. The text below is the derivation as specified.
 
 **Site.** `src/physics/laws/mod.rs:64` — `pub const CHALLENGE_WINDOW: u64 = 1024;`,
 served as the register's one parameter (`laws.rs:68`,
@@ -221,12 +222,12 @@ pub(super) fn window_end(h: u64) -> u64 {
 ```
 
 `window_end` is called by fold finality and demand deadlines
-(`challenge.rs:152, 184, 202, 214, 595`), toll holds (`mouth.rs:543`,
-`TollHeld.until`), mouth offers (`mouth.rs:704`,
+(`challenge.rs:152, 184, 202, 214, 595`), toll holds (`domain_passage.rs:543`,
+`TollHeld.until`), mouth offers (`domain_passage.rs:704`,
 `State::Offered { until }`, which also bounds handoff Accept/Expire,
 78.126), and atlas crossing claims (`crossing.rs:75`, `Claim.until`).
 Each `until` is persisted as a `u64` height (`atlas.rs:48`,
-`mouth.rs:109`).
+`domain_passage.rs:109`).
 
 **Governs.** Finality. A fold sealed at height `h₀` reads
 `Finality::Provisional { until: h₀ + W }` until the court's head reaches
@@ -234,7 +235,7 @@ Each `until` is persisted as a `u64` height (`atlas.rs:48`,
 reads `Blocked` and defaults to FALSIFIED; tolls and claims release at
 `h₀ + W`; an offered mouth or handoff expires at `h₀ + W`. Past the
 carrier the window never closes (`u64::MAX`, named, rule 11). The boundary
-is `head >= until` (`challenge.rs:596, 602`; `mouth.rs:458`;
+is `head >= until` (`challenge.rs:596, 602`; `domain_passage.rs:458`;
 `crossing.rs:198`).
 
 **Why it is underived.** 78.125 set `W = 1024` "heights, a law parameter
@@ -260,7 +261,7 @@ holds).
   `{h, lanes[4], k}`, a parent hash, and `cites: Vec<Cited { keeper, reading, h }>`,
   the last reading it verified from each other keeper (TU-2). `Keepers`
   (`keepers.rs:103`) holds two rings per keeper (`window_len = 2·ring_len`,
-  `ring_len = aperture_cycle = 2^(FRAME_AXIS+1) = 8`). "Reach every keeper
+  `ring_len = aperture_cycle = 2^ALPHABET_BASE_N = 8`). "Reach every keeper
   and return" names one round trip on the keeper graph, measured on the
   keepers' own citations. The present rule counts heights of the sealing
   court alone, so under load the sealing court can pass `h₀ + W` before
@@ -364,7 +365,7 @@ holds).
   `settle_windows` seals `Cite::Window`);
   `src/chronometry/tuniversal/keepers.rs` (new read
   `Keepers::reach(vk, h₀) -> Option<Reach { witnesses }>`);
-  `src/server/cognition/mouth.rs`, `crossing.rs`, `atlas.rs`
+  `src/server/cognition/domain_passage.rs`, `crossing.rs`, `atlas.rs`
   (`until: u64` → `Window { opened: u64, closed: Option<u64> }`);
   `src/anastome/dialogue/challenge.rs` (`Finality::Provisional { until }` →
   `Provisional { opened, closed: Option<u64> }`);
@@ -387,41 +388,38 @@ holds).
     of readings; `until = T(h₀)` equals the closed form.
   - `window_stays_open_while_one_keeper_uncited`.
   - `window_never_closes_without_another_keeper`: `NoOtherKeeper`.
-  - `window_close_replays_from_sealed_citation`: boot from the leaf, same
+  - `window_close_reconstructs_from_sealed_citation`: boot from the leaf, same
     finality; T1.
   - `window_opened_under_v4_closes_at_fixed_end`.
   - `window_refuses_witness_with_forged_signature`.
-- Mutation audit: `>=` → `>` in reach; one keeper dropped from the `∀`;
-  `>` → `>=` in return. Each must fail a test above.
 - Dependencies: D1.4 (the register entry retires); MU-CHRONOMETRY §1
   (keepers); O2 may need the cover digest sealed. Size: L.
 
 ---
 
-### D1.2 `THROAT_GRID` — a throat's horizon level and fit, against its μ-S bank
+### D1.2 `THROAT_LEVEL_BITS` — a throat's horizon level and fit, against its μ-S bank
 
 **Status.** Phase A **Built** (2026-10-31, the live-readings ruling; no law
-change). `server::cognition::mouth::fits_in(space, mass)` decides every
+change). `server::cognition::domain_passage::fits_in(space, mass)` decides every
 face's fit, at offer and at every feed (`fits_both`): curved holds; a
 sphere face by `core::certified::separates(r, pi)` (π refined from the bits
 that resolve `r`, doubled until its enclosure leaves `r`); a torus face by
 `cga::containment(horizon, image) = Apart` against the image under every
 period (`translator_at` sandwich). `Level::fits` (a ratio) is deleted; the
-served `Level` stays a reading on `THROAT_GRID`, which stays REGISTERED
+served `Level` stays a reading on `THROAT_LEVEL_BITS`, which stays REGISTERED
 until Phase B. Tests: `server::cognition::tests::sphere`
 (`sphere_fit_is_decided_past_any_grid`, `flat_fit_meet_equals_half_ratio`,
 `sphere_throat_fits_cap_short_of_antipode` rewritten onto `fits_in`),
-`core::tests::certified::separates_terminates_on_rational_radius`; two
-mutation entries (the refinement's direction, `Apart` in the flat fit).
+`core::tests::certified::separates_terminates_on_rational_radius`.
 Phase B is not built. The text below is the derivation as specified.
 
-**Site.** `src/server/cognition/mouth.rs:234` —
-`pub const THROAT_GRID: u32 = 64;`, used at three sites:
+**Site.** `src/server/cognition/domain_passage.rs:234` —
+`pub const THROAT_LEVEL_BITS: u32 = 64;`, used at three sites:
 
 ```rust
-let level = cos(&Encl::exact(r.clone()), THROAT_GRID).lo;          // sphere_throat, :225
-let ratio = Encl::exact(r).div(&pi(THROAT_GRID))?.hi;               // sphere_throat, :226
-Some(cosh(&Encl::exact(r), THROAT_GRID).hi)                         // throat_level,  :249
+let level = cos(&Encl::exact(r.clone()), THROAT_LEVEL_BITS).lo;          // sphere_throat, :225
+let ratio = Encl::exact(r).div(&pi(THROAT_LEVEL_BITS))?.hi;               // sphere_throat, :226
+Some(cosh(&Encl::exact(r), THROAT_LEVEL_BITS).hi)                         // throat_level,  :249
 ```
 
 with `r = 2m/R` (`m` = `Court::mass_now`, committed `(n, d)` plus
@@ -429,9 +427,9 @@ with `r = 2m/R` (`m` = `Court::mass_now`, committed `(n, d)` plus
 `Level::{Curved(c), Sphere{level, ratio}}`
 (`src/anastome/dialogue/tube.rs:202`). `Level::fits` decides
 `Curved → true`, `Flat: ratio < ½`, `Sphere: ratio < 1`. It is called by
-`fits_both` at offer acceptance (`mouth.rs:612`) and at each feed
-(`mouth.rs:352`), refusing `TooWide`. `tube_of` serves both levels
-(`mouth.rs:786`, `ACT_HANDOFF` kind 13).
+`fits_both` at offer acceptance (`domain_passage.rs:612`) and at each feed
+(`domain_passage.rs:352`), refusing `TooWide`. `tube_of` serves both levels
+(`domain_passage.rs:786`, `ACT_HANDOFF` kind 13).
 
 **Governs.** Admission: whether a tube's throat fits each face, at offer
 and at every feed. A `Sphere` face whose true `r/π` is below 1 but within
@@ -582,7 +580,7 @@ Concordance amendment.
 
 **Implementation scope.**
 
-- Phase A (no law change; S/M): `src/server/cognition/mouth.rs`
+- Phase A (no law change; S/M): `src/server/cognition/domain_passage.rs`
   (`sphere_throat` fit by refinement; the flat fit through
   `enclosure::containment` on period images);
   `src/anastome/dialogue/tube.rs` (`Level::fits` reads the decision, not a
@@ -594,7 +592,7 @@ Concordance amendment.
   - `flat_fit_meet_equals_half_ratio`: on fixtures either side of
     `L = 4m`.
   - `refinement_terminates_on_rational_radius`.
-- Phase B (law amendment; L): `src/server/cognition/mouth.rs` (`Throat`
+- Phase B (law amendment; L): `src/server/cognition/domain_passage.rs` (`Throat`
   holds `Modes`;
   `Court::throat_round(mouth, face) -> Result<Mv, ThroatRefusal>`);
   `src/anastome/dialogue/tube.rs` (`Level` → `Horizon::Round(Mv)` per
@@ -603,7 +601,7 @@ Concordance amendment.
   part). Wire: `Tube` and `TubeReading` new writings under new handoff
   kinds (as 78.140 did); ledger: a `Throat` layout bump. Concordance 2.6
   amended ("taken as the upper bound … on a fixed grid" struck; size =
-  the round its bank carries). `THROAT_GRID` leaves `OPEN_PHYSICS` when no
+  the round its bank carries). `THROAT_LEVEL_BITS` leaves `OPEN_PHYSICS` when no
   scalar-mass tube is open (O3). Tests:
   - `throat_round_level_equals_flow_c`: `c = (1 + t²)/(1 − t²)` on a
     fixture bank.
@@ -614,8 +612,6 @@ Concordance amendment.
     refused `TooWide`.
   - `throat_torus_fit_is_meet_with_period_image`.
   - `throat_sphere_refuses_wrap_at_pole`.
-- Mutation audit: the refinement's comparison direction; `Apart` ↔ `On`
-  in the flat fit; `1 − t₁t₂ ≤ 0` → `< 0` at the pole.
 - Dependencies: MU-ECONOMY §1 held modes (blocks Phase B); D1.4.
 
 ---
@@ -629,11 +625,11 @@ it by name; the door's receipts reply budget is the frame less the reading
 height behind it (`Court::receipts_reply_budget`), the tapes' budget that
 less the reply's count (`Court::receipts_frame`). Every page envelope is its
 codec's own header, a FORMAT constant beside the encoder
-(`RECEIPTS_REPLY_HEADER`, `ROWS_REPLY_HEADER`, `SYLLABUS_REPLY_HEADER`,
+(`RECEIPTS_REPLY_HEADER`, `ENTRIES_REPLY_HEADER`, `SYLLABUS_REPLY_HEADER`,
 `CLASS_RECORDS_HEADER`, `CITED_REQUEST_HEADER`, `QUOTE_REPLY_HEADER`,
 `atlas::LEDGER_PAGE_HEADER`, `presentation_answer_len`): the literal `64`,
-`66` and `34` are gone, and the encoders that count their own header
-(rows, observe, the mind's chatter replies) take the frame whole. O1 read:
+`66` and `34` are gone, and the encoders that count the reply's header
+themselves (rows, observe, the mind's chatter replies) take the frame whole. O1 read:
 a receipt carries `u32`-counted parents, cites and cover blobs, no `u16`
 wall, so `MAX_WIRE(receipt)` is not finite in the derivation's sense and
 candidate (b) holds: `BODY_BUDGET` stays REGISTERED as an open protocol
@@ -651,15 +647,19 @@ read (`wire.rs:171`, `noise.rs:399`, `transport.rs:88, 208`,
 `session.rs:682`), and is the fill bound of every paging codec: receipts
 (`receipts.rs:272`; `Court::receipts_frame`, `era.rs:102`,
 `frame_budget() − 64`), syllabus (`judge/syllabus.rs:66, 178, 209`,
-`− 64`, `− (64 + 2)`), rows (`judge/rows.rs:13`), observe
+`− 64`, `− (64 + 2)`), ledger entries (`judge/entries.rs:13`), observe
 (`judge/observe.rs:136`), quote (`judge/quote.rs:47`), seat mail
 (`seat.rs:28`, `− MailRead::HEAD`), atlas (`atlas.rs:623`), synthesis
 (`synthesis.rs:122`, `− 34`), chatter
-(`client/sdk/entity/chatter.rs:309, 319`), learn (`learn.rs:249, 372`),
+(`client/sdk/mind/chatter.rs:309, 319`), learn (`learn.rs:249, 372`),
 the awaited-citations ask (`exchange.rs:881`), and the seat mind's series
 bound (`seat_mind/mind.rs:170`). A frame is
 `[lane 1][len u32 LE 4][body][TPoint 84]?`
-(`TPoint::LEN = 32 + 4 + 8 + 4·8 + 8 = 84`). Under Noise a frame rides in
+(`TPoint::LEN = 32 + 4 + 8 + 4·8 + 8 = 84`; ruled 2026-11-01, the point's
+lanes are exact rationals and the trailer is `[point][point len u16]`, of
+no fixed length: at least `96 + 2` bytes and at most `TPoint::TRAILER_MAX =
+u16::MAX + 2`, so the `84` below reads as the trailer a given point takes).
+Under Noise a frame rides in
 plaintext chunks of `CHUNK = MESSAGE_MAX − TAG_LEN = 65535 − 16 = 65519`
 bytes (`noise.rs:36–40`).
 
@@ -762,8 +762,7 @@ carrying 293 bytes. PH1 (MU-RECURSION) names it "the protocol carrier
     `max MAX_WIRE + R_max ≤ BODY_BUDGET`.
   - `encode_receipts_reply_refuses_head_over_budget`.
   - `page_envelope_equals_codec_header`.
-- Mutation audit: none (format). Size: S (alignment + defect), M (with
-  `MAX_WIRE`).
+- Size: S (alignment + defect), M (with `MAX_WIRE`).
 
 ---
 
@@ -780,13 +779,13 @@ literal-bearing numeric item carries its class. Registered at the build
 beyond the two named before: `BODY_BUDGET` (D1.3 O1), `ACCOUNT_SHARDS`
 (O2), `P_SERIES_CAP` (D4.8), `NESTING` (D4.4), `CANDIDATES_PER_PAIR` (its
 `EXACT` test not yet written), and the soak instruments' strokes and
-calibration count. The mutation-audit entry stays as specified.
+calibration count.
 
 **Site.** `src/physics/axioms/founding.rs:58–74`:
 
 ```rust
 pub const NO_CONSTANT: &str = "a number in the physics is read off the field or the geometry, or it is undefined physics named until it is derived";
-pub const OPEN_PHYSICS: [(&str, &str); 2] = [("CHALLENGE_WINDOW = 1024", "…"), ("THROAT_GRID = 64", "…")];
+pub const OPEN_PHYSICS: [(&str, &str); 2] = [("CHALLENGE_WINDOW = 1024", "…"), ("THROAT_LEVEL_BITS = 64", "…")];
 ```
 
 It is checked by `open_physics_names_value_and_derivation`
@@ -869,7 +868,7 @@ specifies its carrier and its gate.
     `REGISTERED:`, followed by non-empty text.
     - `EXACT: <test fn>`: the text names a `#[test]` fn that exists in the
       tree (`syn` visit). That test is the claim that the value equals its
-      reading, e.g. `aperture = 2^(FRAME_AXIS+1)` in `founding.rs`' tests.
+      reading, e.g. `aperture = 2^ALPHABET_BASE_N` in `founding.rs`' tests.
     - `FORMAT: <layout>`: a coordinate of a writing (wire byte, tag,
       length, magic, version, enum position, escape code, file name).
     - `EXTERNAL: <spec and clause>`: Noise, RFC 8032, a MU-STANDARDS rule.
@@ -925,7 +924,7 @@ specifies its carrier and its gate.
 **Implementation scope.**
 
 - Files: `src/physics/axioms/founding.rs` (`OpenNumber`, `Governs`,
-  `OpenKind`; entries for `CHALLENGE_WINDOW`, `THROAT_GRID`,
+  `OpenKind`; entries for `CHALLENGE_WINDOW`, `THROAT_LEVEL_BITS`,
   `BODY_BUDGET`, and the others the first run finds);
   `src/physics/axioms/mod.rs` (re-exports); `xtask/lint/numbers.rs` (new,
   N1–N5); `xtask/lint/mod.rs` (calls `lint_numbers`); `xtask/Cargo.toml`
@@ -949,8 +948,6 @@ specifies its carrier and its gate.
     `numbers_ignores_cfg_test_items`.
   - Tree: `open_physics_entries_resolve_to_sites` (replacing the
     `=`-only check).
-- Mutation audit: an `xtask mutate` catalogue entry that strips one tag
-  from a known site and expects the gate red.
 - Dependencies: D1.1–D1.3 leave the register as each is derived. N6
   follows N1–N5. Size: M (lint + carrier), with a mechanical tagging pass
   of about 300 items.
@@ -960,7 +957,8 @@ specifies its carrier and its gate.
 ## 4. Group G2 — economy ratios, prices and calibration
 
 Symbols for this group, beyond §0.4: `R ∈ ℤ>0` is the calibrated reserve,
-`physics::reserve_max()` (reserve units). `y_l ∈ ℤ≥0` is the court's
+`physics::reserve_max()` (reserve units), read since D2.5's O1 ruling as
+the capacity the court's metabolism holds, `C = court.physics.capacity()`. `y_l ∈ ℤ≥0` is the court's
 yield surface, `economy::yield_surface(&court.physics)[l]` (reserve
 deficit plus entropic excess).
 
@@ -1011,7 +1009,7 @@ nowhere in the equations.
 - Readings the court already holds at the falsification, each read BEFORE
   `reverse` moves it:
   - `B_l ∈ ℤ≥0` — the bond held:
-    `treasury.held_of(bond_key(tier)).mu[l]` (`economy::pay::Held`).
+    `treasury.held_of(bond_key(tier)).mu[l]` (`economy::pay::SetAside`).
   - `X_l ∈ ℤ≥0` — the EXPOSURE: the value the falsified fold's commitment
     moved on lane `l`, the quantity reversal returns. From `FoldRecord`
     (`src/server/cognition/ledger.rs:116`) and `Ledgers.remaining`, with
@@ -1103,8 +1101,6 @@ nowhere in the equations.
   - `defect_is_zero_iff_reconstructs`.
   - `slash_conserves_bond`: `kept + bounty + retired = B` on each lane,
     and the audit holds.
-- Mutation audit: `slash_never_exceeds_bond_or_defect` and
-  `defect_is_zero_iff_reconstructs` guard the slash.
 - Depends on D2.2 (the same reading). Size: M.
 
 ---
@@ -1184,7 +1180,6 @@ honesty).
   - `bounty_plus_retired_equals_cut`.
   - `bounty_is_taken_from_cut_never_minted` (supply falls by exactly
     `retired`).
-- Mutation audit: `bounty_plus_retired_equals_cut`.
 - Depends on D2.1. Size: S, on top of D2.1.
 
 ---
@@ -1367,6 +1362,160 @@ Deleted, not derived.
 
 ### D2.5 `kb >> 20` and `cores · (1 + GiB)` — the reserve's memory term
 
+**Status.** **Built** (2026-11-04; O2 ruled 2026-11-01: "one boot
+calibration stroke measures bytes per read and seals the reserve before
+serving"; O1 ruled 2026-11-04: `R` is one name with four meanings, split
+into four readings, below). `physics::calibrate() -> Result<Sealed,
+Uncalibrated>` reads the cores and the stroke floor (D2.6), then
+`calibration_of(limit, MemAvailable_kB, held)`:
+
+1. `M_proc` (`physics::memory`): the least cgroup v2 `memory.max` on the
+   process's path (`/proc/self/cgroup`'s `0::` line, read up the unified
+   hierarchy at `/sys/fs/cgroup`), else `1024 · MemAvailable_kB` where no
+   limit is set; named `MemorySource::{CgroupMax, MemAvailable}`, and
+   refused `Uncalibrated::Memory` before any stroke runs.
+2. `b` on the one boot calibration stroke (`boot_stroke`): the stroke is
+   sized by the MINIMAL STROKE, the founding motions' modes' need
+   (`minimal_stroke` = `modes_need` of the turn of the plane of the first
+   two axes plus that of the slide along the first axis, D3.1); it reads
+   the motions' modes and measures `b = ⌈ retained / reads ⌉` (`footprint_of`). A
+   stroke that cannot complete is `Uncalibrated::Footprint(Unstroked::
+   {Allocator, Incomplete, Retained { retained, reads }})`.
+3. `C = ⌊M_proc / b⌋` exactly (`Calibration::of`), refused
+   `Uncalibrated::Unfit { capacity, minimal }` where one spend `⌊C / 8⌋`
+   does not cover the minimal stroke: such a process does not boot.
+
+The seal holds `Calibration { memory, footprint, minimal, capacity }`,
+derived once. The server, client and soak binaries call `calibrate` first
+and refuse to boot on a refusal, naming it. At boot the server logs
+`calibrated: M <bytes> (<source>), b <bytes> per read, minimal stroke <n>
+reads, capacity C <reads> sealed`. Only `calibrate` writes a `Sealed`
+witness (a `compile_fail` doc test), and the server's nerve is built from
+it, so nothing is served before the seal. `reserve_max` is renamed
+`capacity`.
+
+**O1, resolved: four readings where `R` stood** (ruled 2026-11-04; AGENTS.md:
+one name, one meaning):
+
+- **The metabolism reads the process's capacity `C`.** `Physics` holds
+  the capacity it was built on (`Physics::default` reads the seal;
+  `Physics::calibrated(&Calibration)` an explicit one): the pool's
+  ceiling, the spend `⌊C/8⌋`, the regeneration, the shortfall and the
+  deficit, the yield surface, the read price `1 + y/C` (D2.3's κ = 1
+  stands, scale-free in `y/C`) and the verification share all read it.
+  Sealed once, so `C > 0` and the price is always defined; per process,
+  never the host's whole memory, so no overcommit.
+- **Stroke budgets read the work's own need where a closed-form need
+  exists.** Converted: `transducer/family/deflation.rs` (the modes of each
+  moved motion, `modes_need`) and `transducer/family/derivation.rs` (the
+  orbit census's modes, `modes_need`). Every other stroke keeps the
+  capacity's spend, each a **need reading owed** (paths under `src/`):
+  - `bin/mycelium-server/exchange.rs:323, 592, 627` (the court's intake,
+    docket and organ strokes, `expansion_unit`);
+  - `server/cognition/court/reconstruct.rs:50, 271, 397` (the docket's reconstruction
+    and its fresh-stroke reading);
+  - `server/cognition/court/glue.rs:495, 593, 631`; `court/lapse.rs:74`;
+    `court/height_window.rs:237`; `court/syllabus.rs:369, 611`; `court/task.rs:155`;
+    `court/vantage_install.rs:240`;
+  - `server/cognition/basis.rs:661, 687, 705`; `book/demand.rs:102`;
+    `book/language.rs:235`; `book/listings.rs:35`;
+    `book/speech.rs:63, 81, 378, 675`; `book/tension.rs:221`;
+    `cite.rs:393`; `cocycle.rs:89`; `atlas.rs:353`; `state.rs:1028`;
+    `listings/attest.rs:26`; `listings/stroke.rs:33, 128, 165, 192`;
+    `persistence/read.rs:109`;
+  - `server/court_lock/mod.rs:258`; `court/verdict/blind.rs:127`;
+  - `client/sdk/rule.rs:510`; `client/sdk/mind/boot.rs:13, 39`;
+    `second_vantage.rs:35`; `chatter.rs:259, 519, 623, 842, 962`; `contract.rs:147`;
+    `court.rs:137`; `family.rs:472`; `learn.rs:289, 440, 480, 515, 527`;
+    `perceive.rs:634, 663, 738, 847`; `present.rs:59`; `quote.rs:58`;
+    `think.rs:511, 782, 1004`; `utter.rs:266, 415`; `winding.rs:258, 426`;
+  - `transducer/family/deflation.rs:418` (the transport order's stroke);
+  - the soak's instruments, `bin/mycelium-soak/main.rs:623`,
+    `regime.rs:95, 137, 147`.
+- **A quiet peer is asked again only once the TUniversal final point has
+  advanced** since the last ask, which follows the peer's last answer
+  (`mycelium-server` `transport::quiet_due`, ruled 2026-11-04 from 78.43:
+  time is distance along an orbit; no constant, no backoff). An idle
+  network stays quiet, and a moving one is heard at the rate it moves. The
+  round trip still measures the transport (patience, deadlines), and an
+  unmeasured one stays `Lambda::Unmeasured`. `digest_ceiling` is deleted:
+  read first as a full reserve of round trips, then as one round trip,
+  it polled (about 180 asks a second per hypha on an idle quickstart
+  mesh).
+- **The settlement cooling floor reads the challenge window**: a
+  settlement goes cold once the window opened at its height has closed at a
+  sealed reach and return of every other keeper (D1.1, law version 5).
+  Settlements on the docket are held windows (`held_windows`), so the court
+  seals the close they wait on; a lone court closes none.
+- **The pointed-connection book and the nerve's queue are bounded by
+  `M_proc`**: an unanswered pointed connection is kept while the book's
+  held bytes fit it, and a new one past it is refused by name
+  (`PointedRefusal::{Unsealed, PastMemory}`), never an entry let go; the
+  nerve holds spoken acts while the acts' bytes fit it, an act past it
+  dropped.
+
+Choices the entry left open, as built:
+
+- **Readings, 2026-11-04.** The earlier reading under (a): `M = 10 306 015
+  232` (`MemAvailable`), `b = 376`, `R = 27 409 608` against `R = 40` under
+  the GiB unit. Under the ruled readings, the three-hypha quickstart mesh
+  (each hypha in a 6 GiB cgroup scope): `M = 6 442 450 944` (cgroup
+  `memory.max`), `b = 372`, minimal stroke 4 reads, `C = 17 318 416`; the
+  mesh served, paid two tasks and passed both conformance profiles, at
+  27–29 MB resident per hypha. With the quiet ask on the final point's
+  advances, each hypha logged 14, 16 and 19 peer-exchange tallies over the
+  run (18–20 asks), against 27 141 to 36 883 with the ask at one round
+  trip.
+- **The allocator reading.** `b` reads jemalloc's per-thread counters
+  (`thread.allocatedp` less `thread.deallocatedp`), exact on every
+  allocation. `stats::allocated`, named below, moves only as a thread cache
+  fills and flushes, and read zero across the whole stroke.
+- **One stroke, not an aperture.** The ruling names one stroke; the
+  maximum over an aperture of strokes below is not taken.
+- **O3, the ratio's `8`, derived (closed by ROADMAP track 26 S4b,
+  2026-11-04).** `STROKES_PER_RESERVE` counts the vertices of the unit cell
+  of the base the founding motions act on: `2ⁿ` for that base's `n`. The
+  founding motions (the turn of the plane of the first two axes and the
+  slide along the first) are written in the alphabet's algebra, whose base
+  is `n = LETTER_RANK − 1 = 3` (`alphabet::ALPHABET_BASE_N`: the letters'
+  chart `e0..e3` less the orientation character, the value of `Cl(n+1, 1)`
+  at `n = 3`). So `STROKES_PER_RESERVE = 1 << ALPHABET_BASE_N = 8`, and
+  `aperture_cycle` reads the same. It is not read off a task's rank: the
+  capacity is the process's, sealed at boot before any task arrives, so a
+  task of rank 1 or 3 does not move the spend. The fixed frame axis it was
+  written on (`2^(FRAME_AXIS + 1)`) is gone with `FRAME_AXIS`. Claim
+  `strokes_per_reserve_equals_vertices_of_alphabet_base_cell`. The value
+  is unchanged, so no reading moves. The floor `16` is gone.
+- **The unsealed capacity.** A process that never calibrates (the
+  library's unit-test harness, an embedding library) reads the capacity
+  whose one spend is the minimal stroke, `8 · minimal_stroke`, derived from
+  the least work there is and the same on every host; no fixed floor.
+- **O4, resolved.** The `#[cfg(test)]` branch in `reserve_max` is deleted.
+  The unit suite runs on the unsealed capacity; the one claim whose replay
+  needs more than one minimal stroke and has no closed-form need yet
+  (`server::cognition::tests::awaiting::ruled_admit_absent_word_rehears_nothing`)
+  builds its court on an explicit calibration, `Physics::calibrated` of
+  `Calibration::of(40 bytes, 1 byte per read, minimal)`, in the test.
+
+Tests: `physics::tests::calibration` (`capacity_equals_memory_over_footprint`,
+`calibration_refuses_unfit_minimal_stroke`,
+`capacity_unsealed_spends_minimal_stroke`,
+`memory_of_reads_cgroup_limit_before_available`,
+`cgroup_limit_of_reads_least_limit_on_path`,
+`footprint_is_bytes_per_read_on_fixture_stroke`,
+`footprint_of_refuses_unread_stroke`, `boot_stroke_refuses_unread_allocator`,
+`stroke_that_holds_nothing_refuses`, `unreadable_memory_refuses_boot`,
+`open_physics_reads_capacity_measured`); `mycelium-server tests::pacing`
+(`quiet_peer_not_asked_again_while_final_point_still`,
+`quiet_peer_asked_once_after_final_point_advances`);
+`server::cognition::tests::market::record_settlement_cools_after_window_closes`;
+`mycelium-server tests::pointed` (`admit_pointed_refuses_past_memory`,
+`admit_pointed_refuses_unsealed`); `tests/calibration.rs`
+(`reserve_sealed_from_measured_bytes_per_read_before_serving`, a process
+allocating through jemalloc as the binaries do). The open-physics register reads
+the capacity MEASURED: no entry stands at a calibration or memory site or
+cites this entry. The text below is the derivation as specified.
+
 **Site.** `src/physics/calibration.rs:31–40` (`read_mem_available_gib`:
 `Some(kb >> 20)`, where `MemAvailable` is in KiB, so the result is whole
 GiB) and `:70–91` (`reserve_max`):
@@ -1395,7 +1544,7 @@ MU-EQUATIONS §7.1: `reserve_max = ⌊ max(cores · (1 + GiB available), 16) / 8
 familiar size. Below a GiB, memory adds nothing; at 31 GiB it multiplies
 the reserve by 32. Nothing about one reserve unit (one read of one
 stroke) has a size of a GiB. The ratio algebra
-(`8 = 2^(FRAME_AXIS+1)`, the floor `16`) is derived; the scale is not.
+(`8 = 2^ALPHABET_BASE_N`, the floor `16`) is derived; the scale is not.
 
 **Severity.** Medium (cognition reach per stroke, memory).
 
@@ -1411,7 +1560,7 @@ stroke) has a size of a GiB. The ratio algebra
     `tikv_jemalloc_ctl::stats::allocated` (epoch advanced) after minus
     before the stroke, and `reads_spent` is the `Budget`'s spend. jemalloc
     stats are already built (`Cargo.toml:45–49`) and read at
-    `observe/reading.rs:112`, `transducer/bubble/contemplation.rs:29` and
+    `observe/reading.rs:112`, `transducer/field/contemplation.rs:29` and
     `mycelium-soak/calibrate.rs`. Over one aperture of strokes
     (`aperture_cycle()` = 8), take the maximum: a full reserve must fit
     whichever stroke held most.
@@ -1466,7 +1615,7 @@ stroke) has a size of a GiB. The ratio algebra
   - `reserve_is_whole_number_of_strokes`.
   - `reserve_floor_holds_on_small_host`.
   - `footprint_is_bytes_per_read_on_fixture_stroke`.
-  - The existing notes at `chronometry/tests/common.rs:7`,
+  - The existing notes at `chronometry/tests/fixtures.rs:7`,
     `client/sdk/tests/aperture.rs:171` and
     `transducer/family/tests/budget.rs:70`, re-read against the new form.
 - Depends on D2.6. Size: M, plus a soak reading before choosing (a) or
@@ -1477,12 +1626,13 @@ stroke) has a size of a GiB. The ratio algebra
 ### D2.6 Calibration fallbacks — 1 core, 0 GiB, 1 ns, 1 stroke, `usize::MAX`
 
 **Status.** **Built** (2026-10-31, the live-readings ruling) for the
-physics and transport arms; the reserve's own `Calibration` organ (its
-memory term and the cores it multiplies) is D2.5's and lands with it.
-`physics::calibrate() -> Result<(), Uncalibrated>` reads every arm the
-host must say, `Uncalibrated::{Cores, StrokeFloor}`; the server, client and
-soak binaries refuse to boot naming the arm, so `reserve_max`'s one-core
-arm is reached by no booted binary. `stroke_floor_of(hz, slack)`: one tick
+physics and transport arms; the reserve's own `Calibration` organ landed
+with D2.5 (2026-11-04): `Uncalibrated::{Memory, Footprint}` beside `Cores`
+and `StrokeFloor`, and cores no longer multiply the reserve.
+`physics::calibrate() -> Result<Sealed, Uncalibrated>` reads every arm the
+host must say, `Uncalibrated::{Cores, StrokeFloor, Memory, Footprint}`;
+the server, client and soak binaries refuse to boot naming the arm, and
+the reserve has no one-core arm. `stroke_floor_of(hz, slack)`: one tick
 where `CONFIG_HZ` is published, else the thread's `timerslack_ns`, else
 refused (the one-nanosecond ask is deleted; an unbooted uncalibrated
 library parks nothing). `idle_park(Option<NonZeroU64>)` parks the floor, the
@@ -1593,8 +1743,6 @@ memory). Low for the 1-stroke arms.
   - `rtt_is_nonzero_by_measurement`.
   - `stall_beyond_reads_to_stream_end`.
   - `read_budgeted_refuses_unmeasured_stall`.
-- Mutation audit: `read_budgeted_refuses_unmeasured_stall` (a liveness
-  guard).
 - Depends on D2.5 for `Footprint`, and on D2.7. Size: M.
 
 ---
@@ -1705,8 +1853,7 @@ n, None => 0 }`, the `think.rs` form. Tests (`client::sdk::tests::rule`):
 `sentence_refuses_non_versor_without_spending`, and
 `construction_stroke_constructs_wide_coefficient_versor` (a versor whose
 need passes `1 << 16` constructs under its need; its reads stay under
-`1 << 16`, so a fixture the former stroke refused is still to find, and the
-mutation entry below waits on it). O1 (b)/(c), drawing the reads from a
+`1 << 16`, so a fixture the former stroke refused is still to find). O1 (b)/(c), drawing the reads from a
 caller's token, stays open. The text below is the derivation as specified.
 
 **Site.** `src/client/sdk/rule.rs:402` (in `sentence`), value 65 536:
@@ -1727,9 +1874,9 @@ language mints through this constructor).
 **Why it is underived.** No comment; a power of two chosen as "large
 enough". It contradicts 78.111 (MU-CLIENT rulings index): "no
 construction is refused for a stroke sized for something else". Every
-sibling site already follows 78.111: `client/sdk/entity/think.rs:265`
-(`construct_and_adjoin`), `bubble/pivot.rs:130`,
-`physics/tensegrity.rs:652`,
+sibling site already follows 78.111: `client/sdk/mind/think.rs:265`
+(`construct_and_adjoin`), `field/pivot.rs:130`,
+`physics/equilibrium.rs:652`,
 `sentence/{presentation,rung,hearing,word}.rs`.
 
 **Severity.** Medium (cognition: a constructible rule refused, or a
@@ -1806,35 +1953,184 @@ stroke minted that is not the residue's).
   - `sentence_constructs_wide_coefficient_versor` (a composed versor with
     `ρ > 815` constructs, where `1 << 16` refused `Unbounded`).
   - `sentence_refuses_non_versor` (`NotVersor`, not `Unbounded`).
-- Mutation audit: an `xtask mutate` entry on the `need` expression
-  (replacing it by a constant must fail
-  `sentence_constructs_wide_coefficient_versor`).
 - Dependencies: none. Size: S.
 
 ---
 
-### D3.2 `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600` — the common refinement refused by a cap
+### D3.2 The common refinement `K_lcm` — two frames related by transduction in turns, never by a common lattice
 
-**Status.** **Built**, by O1 (a). Both constants are deleted.
-`refine::need(h_in, w_in, h_out, w_out)` is the closed form below, checked
-over `usize`; `refine::need_of` reads it off two grids. `CommonRefinement::of`
-refuses only `Unrefined::Empty` (and `Unbounded`, where the lcm or the need
-passes `usize`); `bipartite_cochain`, `pulled_back` and `refined` take
-`&mut Budget` and refuse `Ragged` or `Spent { need }` with nothing
-returned. Every caller sizes its stroke from `need_of` (the D3.1 / 78.111
-pattern); the extraction's stroke adds `need` per non-trivial pair
-(`extraction_spend`) and `finish` refines its unreached pairs from it,
-standing a pair it does not refine as the demand its site-for-site residue
-is. `task_address` returns `None` on any `Unrefined`. Tests:
-`transducer::family::tests::refine`
-(`common_refinement_reads_coprime_thirty`,
-`common_refinement_refuses_spent_stroke`, `runs_count_equals_sum_less_gcd`),
-`server::tests::registry` (`task_address_refuses_unrefinable_pair`,
-`task_address_separates_tasks_differing_in_incommensurate_pair`),
-`transducer::family::tests::budget`
-(`extraction_spend_includes_refinement_need`); a mutant on the refusal arm
-of `task_address` in `xtask/mutate/catalogue.rs`. The text below is the
-derivation as specified.
+**Status.** **Built** (MU-RECURSION 78.170, the operator's rulings of
+2026-10-31). The lcm cap (`MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600`) and
+the metered common refinement that first replaced it (`CommonRefinement`,
+`bipartite_cochain`, both `refine_delta`s, `arc::Refined`, `need =
+R_h·R_w + 2·L_h·L_w`, `Unrefined`) are deleted; no reader forms an lcm. The
+organ is `src/transducer/family/transduce/`.
+
+**What was wrong.** `K_lcm = lcm(h_in, h_out) × lcm(w_in, w_out)` is the
+uniform subdivision both grids embed in. It turned an incidence question
+into an equality question by writing unit cells, so its size was the lcm,
+not the frames: on `18 × 19 → 7 × 9` (task `0b148d64`, pair 0) `K_lcm` is
+`126 × 171 = 21 546` cells, the change set 14 045 links, and charting it
+(`invariant_of`) took ≥ 19 s a pair. Reading the code whole found four more
+defects: the input pulled back onto `K_lcm` was written (`L_h·L_w` per
+call) and never read; an anisotropic frame was absent from the listing key,
+so `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]` (one `K_lcm` coboundary,
+neither writing its frame) gave two tasks one address (law 2); μ counted
+`K_lcm` cells (one changed output site of `29 × 29 → 30 × 30` measured
+841); and the deflation subtracted an output-native `after` from a `K_lcm`
+`before`.
+
+**The transduction, as built.** LIFT → ACT → PROJECT; past the sensor the
+state is bodies and motions, and per-site values are written only at the
+sensor and where a grid is spoken.
+
+- **LIFT** (`turn.rs`, `enclosed.rs`), at rank `n`. A sample of extents
+  `e₁, …, eₙ` is `n` phases of turns, `ℚ/ℤ`, each of its own period
+  (`Enclosure`, read from the sample: `Enclosure::of`). A boundary is the
+  `Turn` `index / period`, compared with another by integer
+  cross-multiplication, never reduced, never a `(cos, sin)` point, never a
+  conformal point; the seam `0 ≡ 1` is held, never wrapped. The sensor reads
+  the sample once into BANDS (`Enclosed::of`): `n`-dimensional boxes of one
+  symbol, read in canonical address order as the maximal runs along the
+  last axis, each continued along every earlier axis while the slice before
+  shows the same box. Every band boundary is a boundary of its body
+  somewhere along it, so a body is held by its boundary record,
+  O(perimeter), never by its interior. `put_content` writes the frame's
+  full content as its periods and bands, losslessly.
+- **ACT** (`record.rs`, `motion.rs`). `Transduction::of(x, y, budget)`
+  records the INCIDENCES between the input's bands and the output's under
+  the re-period of each phase: the pairs of bands whose arcs overlap with
+  positive length on every phase. Each visit holds an arc of every phase's
+  merge no other visit holds, so the spend is bounded by `need = Π R_k`,
+  `R(a, b) = a + b − gcd(a, b)` the arcs of phase `k`'s merge
+  (`transduce::need`, `need_of`; at rank 2, `R_h·R_w`). An anisotropic
+  scale is a re-period per phase, carried by no versor (Liouville: a
+  versor's differential is a scalar times an orthogonal map). `share` is
+  the changed share of the frame, exact (O1). `carried` reads a body
+  carried whole onto one output body, else `Mixed`. The motions keeping the
+  seams are the `2ⁿ·n!` signed permutations of the `n` phases
+  (`SignedPermutation`, generated, the identity one element among them;
+  eight at rank 2), read from an integer matrix (`of_matrix`) or off an
+  alphabet word's images of the sensor plane's two generators (`of_word`);
+  anything else (a shear, a `(3, 4, 5)` letter) is `Oblique`. A turn
+  carries no period, so a quarter turn followed by any re-period is exact
+  on turns.
+- **PROJECT**. `Turn::lands(period)` is the exact floor's question: the turn
+  lands on a boundary of the output phase, or `OffSite { turn, period }`.
+  `Enclosed::spoken_onto` and `SignedPermutation::spoken_onto` speak a
+  (moved) frame onto an output enclosure; `Transduction::projected` reads
+  the record back on the output frame (on one enclosure, the planar
+  coboundary link for link).
+- **Refusals** (`TransductionRefusal`): `Empty`, `Rank { from, to }`,
+  `Spent { need }` (`None` where the bound passes `usize`), `Seam`,
+  `Oblique`, `OffSite { turn, period }`, `Mixed { body }`, `Unfactored`,
+  `Sample`, `Unenclosed`; there is no `Ragged`. No constant enters: the
+  compartment centre's ½, the envelope radius `r² = Σ eᵢ²/4` and the
+  conformal `½‖x‖²` are not used.
+
+**The readers, as built.**
+
+| Reader | Reads now |
+|---|---|
+| Task identity, `registry::task_address` (law 2) | the posted samples' full content (rank, extents, symbols, places), train and test alike (MU-SENSING §6.1; O3); built in track 26 S2 (`Sample::put_content`), with no ground and no frame fixing |
+| Deflation (client mint) and the court's measured reconstruction, one function | `deflation::unspoken_residue`: the identity's speech (the record projected onto the output frame) against the observed output, on output sites, the unit of the form's remainder; the output against nothing where the input's turns do not land |
+| Demands of unreached pairs, `finish::germ_of_pair` | the same unspoken residue |
+| Unspoken links, `declare_unspoken` | the input's hue on the output's sites through `spoken_onto`, never off a shared corner |
+| Extraction strokes, `extraction_spend` | `transduce::need` per non-planar pair |
+| Intake routes, `route::routes_of` | planar pairs as before; a pair of unequal enclosures has no route yet (its chart and pieces read a chain site by site, O8) |
+| Family magnitude, `family_magnitude` | the planar pairs' count, the mind's metabolism and not μ, so it stays a count; `transduce::family_share` reads every pair's exact share beside it |
+| μ, the discharge (O1, Built 2026-11-01) | `DeflationRead::mu` and `Local::mu`: per closed pair, S and G over the output frame's `h·w`, H the shell count, T the flux over the carried mass as the frames' share of it (`transduce::share_of_frame`, `Transduction::lane_shares`); every escrow, release and payment reads it (`Court::discharge_on` and its arms, `pay_solve`, `release_verified`, `pay_lease`, `settle_solve`, the install's cited and taught shares and gluing) |
+| `family_ratio`, `Form.ratio` | each phase's re-period (`Enclosure::reperiod`) |
+
+**Readings.**
+
+- `0b148d64` pair 0: 111 input bands and 32 output bands, 226 incidences
+  (157 a change of hue), under the bound `24 · 27 = 648`; the transitional
+  claim that `share · L_h·L_w` equals the `K_lcm` cell count held there
+  (14 045) and on four more pairs before the common refinement was deleted. The input's
+  boundary `1/18` lands inside an output compartment of period 7, so its
+  projection refuses `OffSite` and its route waits for the turn-native chart.
+- **O9** (the demand payload), read: the readers of a demand's links read
+  metric — `memo::ring_answer` and `memo::deformation_answer` take a
+  carriage between the demand's two sides, `field::hold` a transport over
+  its bodies, the book's probe `scene_at_of_chain` and `measure_lanes`, and
+  `stalk::invariant` the chart's moduli — so the merged-partition payload
+  (b) is refused and the payload is (a), both sites. As built, a demand's
+  links are the unspoken residue in the output frame, one frame and metric
+  where the input's turns land; the incidence payload for a pair whose turns
+  do not land is a later change (its demand is the output against nothing
+  meanwhile, never dropped).
+- **O10** (is every pair relation a product of signed swap, re-period,
+  offset and re-enclosure?), the census `mycelium-soak
+  --transduction-census DIR` (`transduce::relation_of`): over the training
+  split's 1 118 unequal-extent train pairs, carried 23 (all by the identity
+  swap), offset 6, re-enclosed 650 (635 identity, 6 column flips, 3 row
+  flips, 1 transpose, 3 at 90°, 2 anti-transposes), cover 15, unenclosed
+  424; over the evaluation split's 111, re-enclosed 35 and unenclosed 76.
+  The re-enclosed class reads each body's shape in its own enclosure and does
+  not check position or hue, so it bounds re-enclosure from above.
+
+**O1 wired (ruled 2026-11-01).** μ is a share of the frame. The deflation
+keeps its count beside μ — the word's magnitude, its identity in the tape,
+is the count — and reads μ per closed pair on the output frame its residues
+are read on: S (ground ↔ painted) and G (painted → painted) over `h·w`, H
+the shell count as it stands (topological, already resolution-free), T
+the flux over the carried mass taken as the frames' share of it,
+`T = flux · (Σᵢ mᵢ/(hᵢ·wᵢ)) / Σᵢ mᵢ`. Against today's counts, on pairs of
+one extent a changed site of an `h × w` frame is `1/(h·w)` of it, so every
+test value is the old count over `h·w` on S, G and T and the count on H
+(the `2 × 4` recolour family: `counts / [8, 8, 8, 1]`; the `1 × 7` slide:
+`/ [7, 7, 7, 1]`; the `18 × 12` closed sub-complex: `/ [216, 216, 216,
+1]`; the doubled `2 × 2 → 4 × 4` recolour, read on its 4 × 4 outputs:
+`/ [16, 16, 16, 1]`; a slide closing a `1 × 4` and a `1 × 6` pair: S `4/4 +
+4/6 = 5/3`, T `flux · 5/24`). A discharge with no frame (a rewrite's
+magnitude, a listing bound to no family) keeps its measure as `n/1`. The
+family magnitude feeding the mind's metabolism, a demand's ask and the
+extraction need (a stroke size) are not μ and stay counts. A sentence
+waiting on a word presses the word's escrow by the word's own discharge,
+the carriage it causes, where it pressed the waiting sentence's magnitude
+(a count credited to an escrow held in shares). The keeper tick carries
+the rational issuance (78.152, amended forward). Tests:
+`lane_shares_equal_chain_counts_over_frame`,
+`deflation_reads_mu_as_share_of_each_frame`,
+`keeper_tick_advances_past_fractional_issuance`, and the mint, solve,
+discharge, measure, local and awaiting claims re-derived as above.
+
+**Sites still read site by site** (listed, not fed a rebuilt cell record):
+the route's chart and pieces for unequal enclosures (`stalk::invariant_of`,
+`sentence::pieces`; O8, the turn-native chart); the family magnitude's
+count for them (a count, the mind's metabolism); the demand payload where the
+identity's speech does not land (O9 (a)); the percept's cross-frame meets
+by equal site keys (`percept.rs` `out_at_site`, `cover.rs` `occ_in`,
+`pair.rs` `delta_links`), ruled to read through incidences under the
+re-period (O6) and not yet rebuilt.
+
+**Tests.** `transducer::family::transduce::tests`:
+`incidences_project_to_delta_on_equal_extents` (every equal-extent fixture
+and every equal-extent pair of the training corpus),
+`incidences_of_0b148d64_pair_count`, `arcs_equal_sum_less_gcd`,
+`share_of_one_changed_site_is_lcm_free`, `transduction_refuses_spent_stroke`,
+`transduction_carries_bodies_or_names_mixed`, `projection_refuses_off_site`,
+`projection_agrees_with_spoken_frame`,
+`signed_swaps_are_the_seam_keeping_actions`,
+`signed_swap_reads_the_alphabet_letters`,
+`turn_90_between_unequal_frames_is_exact`,
+`turn_90_onto_unequal_periods_refuses_off_site`,
+`relation_of_reads_each_class`, the `enclosed` claims;
+`server::tests::registry::task_address_separates_isotropic_and_anisotropic_pairs`,
+`task_address_refuses_ragged_pair`;
+`transducer::family::tests::deflation::{unspoken_residue_is_read_on_output_sites,
+deflation_closure_pays_before_on_one_record}`;
+`server::cognition::tests::mint::measured_reconstruction_equals_client_deflation_on_unequal_enclosures`
+(T1); `transducer::family::tests::budget::extraction_spend_includes_transduction_need`.
+
+**Ledger, wire, Concordance.** Every task address changes (full content):
+a ledger break, recut from genesis. Wire: none (the 32-byte citation is
+unchanged in form). Concordance: a note in 2.3 (O11), which changes the
+Concordance hash.
+
+The text below is the derivation of the metered refinement, superseded by
+the transduction above; the code it names is deleted.
 
 **Cost exposed by the uncapping (mycelium#14).** A pair the cap refused
 now refines, and its residue's chart (`invariant_of`, the exact moduli of
@@ -1871,13 +2167,13 @@ and `arc`) return `None`. Effects at the callers:
   function's own doc says "skipping one would give two different tasks
   one id (law 2)". Two tasks that differ only in an incommensurate pair
   get one identity. Admission and identity.
-- `src/client/sdk/entity/family.rs:16`, `family_magnitude`: the pair
+- `src/client/sdk/mind/family.rs:16`, `family_magnitude`: the pair
   contributes zero to the family's lane magnitude (μ drawn).
 - `src/transducer/family/finish.rs:79`, `finish`:
   `germ_of_pair → None → continue`: an unreached incommensurate pair is
   dropped instead of riding as a demand (rule 7: remainders are never
   discarded).
-- `family/deflation.rs:302/348/709`, `door.rs:629`, soak `mint.rs`:
+- `family/deflation.rs:302/348/709`, `control.rs:606`, soak `mint.rs`:
   refused readings.
 
 **Why it is underived.** The comment: ARC grids are ≤ 30×30, "real
@@ -1960,10 +2256,10 @@ discarded).
   on `bipartite_cochain`/`refined`; `Unrefined { Empty, Ragged, Spent { need } }`
   replacing the bare `None`), `src/arc.rs::refine_delta`,
   `src/server/registry.rs::task_address` (refuse, never skip),
-  `src/client/sdk/entity/family.rs::family_magnitude`,
+  `src/client/sdk/mind/family.rs::family_magnitude`,
   `src/transducer/family/finish.rs` (`extraction_spend` adds `need`;
   `finish` stands an unrefined pair as a demand rather than `continue`),
-  callers in `deflation.rs`, `door.rs`, soak `mint.rs`.
+  callers in `deflation.rs`, `control.rs`, soak `mint.rs`.
 - Wire / ledger: the task address changes for every task holding a
   previously skipped pair, a content-identity change (M2 form), recut from
   genesis; snapshot: none. Concordance: none (applies 78.43(2), law 2).
@@ -1978,8 +2274,6 @@ discarded).
     member skipped).
   - `extraction_spend_includes_refinement_need`.
   - Replace `of_refuses_incommensurate_frames` (it asserts the cap).
-- Mutation audit: an entry on the refusal arm of `task_address` (guards
-  law 2).
 - Dependencies: D3.1's pattern (`need` read off the object); ROADMAP
   track 7. Size: M ((a)/(b)); L ((c)).
 
@@ -2002,8 +2296,7 @@ withheld footprint stands, none is chosen by key. `truncate(32)` and both
 `carrying_set_keeps_thirty_third_term`, `carrying_set_refuses_spent_token_whole`),
 `court::verdict::tests::selection`
 (`derive_pi_keeps_every_term_reconstructing_withheld`,
-`derive_pi_refuses_spent_token_whole`); a mutation entry on the
-intersection. The text below is the derivation as specified.
+`derive_pi_refuses_spent_token_whole`). The text below is the derivation as specified.
 
 **Site.** `src/transducer/anchor/derive.rs:182` (in
 `derive_carrying_all`):
@@ -2100,7 +2393,6 @@ checklist (r), 78.43(2) (a cap).
     ranks past 32 on one scene binds in `derive_pi`).
   - `carrying_set_refuses_spent_token_whole` (`Unread`, no partial set).
   - A reconstruction test per the L9a ruling.
-- Mutation audit: an entry on the intersection (guards admission).
 - Dependencies: the L9a ruling (ROADMAP track 7). Size: M.
 
 ---
@@ -2110,8 +2402,8 @@ checklist (r), 78.43(2) (a cap).
 **Status.** **Built** (2026-10-31, the live-readings ruling).
 `Confluence::reproduces` is `Reproduces { Yes, No, Unread }`, read by
 `carried_onto`: the output's sites keyed once, each input's image read back
-to its lattice site (`cga::base_at`, `element::sensor::site_at`; a point off
-the lattice is `No`) and looked up, two reads a site on the pair's token,
+to its integer site (`cga::base_at`, `element::sensor::site_at`; a point at
+no integer site is `No`) and looked up, two reads a site on the pair's token,
 no cap; a spent token is `Unread`, never `No`. `luminal.rs` does not share
 the shape. The soak's printer counts `Yes` and `Unread` apart. Tests
 (`transducer::family::tests::confluence`):
@@ -2155,7 +2447,7 @@ carriers (rule 1) with a reading inside it (rule 17).
   comparisons: at `m = 400`, 160 000. Written as rules 1 and 17 prescribe
   (the output's sites keyed once, `Keyed` over the site coordinates; each
   image read back to its site by the sensor's reader,
-  `element::sensor::site_of`, which refuses an image off the lattice; then
+  `element::sensor::site_of`, which refuses an image at no integer site; then
   looked up), the cost is
   ```text
   cost_reproduces = m (sandwich + site_of) + m (keyed lookups)  =  2·m reads,     m = |in_sites|
@@ -2171,7 +2463,7 @@ carriers (rule 1) with a reading inside it (rule 17).
 - Laws: no capping constant (78.43(2)); exact or refused (rule 11); rule 1
   (no pair loop across two carriers); rule 17 (the reading hoisted to the
   keyed site); rule 10 (token).
-- Boundary: `site_of` refusing an image (not a lattice point) is `No` for
+- Boundary: `site_of` refusing an image (not an integer site) is `No` for
   that site (the image is no compartment of any frame), and the whole
   check is `No`; never rounded to a nearby site.
 
@@ -2188,7 +2480,6 @@ carriers (rule 1) with a reading inside it (rule 17).
   - `confluence_reads_unread_on_spent_token` (a token of `2m − 1` reads
     gives `Unread`, not `No`).
   - `confluence_off_lattice_image_reads_no`.
-- Mutation audit: none (an instrument).
 - Dependencies: none. Size: S.
 
 ---
@@ -2202,7 +2493,7 @@ percept with a whole beat between (`made_at < β < beat`, i.e.
 `beat − made_at ≥ 2`, the dissipation rule's own reading, MU-CLIENT §4.13),
 and `Perceived.abandoned` carries `(fn, distance)`. A percept at or before
 the call's beat advances nothing. Tests (`client::sdk::tests::seat_mind`):
-`pending_stands_through_its_own_beat`,
+`pending_stands_through_beat`,
 `pending_dissipates_after_one_whole_beat`,
 `pending_gap_in_seq_dissipates_at_once`, `pending_ignores_redelivered_percept`.
 O1's `answered_at` reading and O2 stay open. The text below is the
@@ -2290,7 +2581,7 @@ counts as generations").
   seat-mind snapshot, the field changes (check the epigenome persistence
   at implementation). Concordance: none.
 - Tests:
-  - `pending_stands_through_its_own_beat` (percepts at `b₀` again and at
+  - `pending_stands_through_beat` (percepts at `b₀` again and at
     `b₀ + 1` leave it standing).
   - `pending_dissipates_after_one_whole_beat` (the first percept at
     `b₀ + 2` lets it go, distance 2).
@@ -2298,7 +2589,6 @@ counts as generations").
     lets it go at the first percept, distance 5, where the count would
     have waited for a second percept).
   - `pending_ignores_redelivered_percept`.
-- Mutation audit: none.
 - Dependencies: O1; MU-CLIENT §7.1 seat play. Size: S.
 
 ---
@@ -2459,7 +2749,6 @@ path was written for).
     with floors {3, 7} on two keys: a third peer's stall is `3·A`).
   - `tell_peer_empty_mesh_waits_one_aperture` (`Unmeasured` → `A`).
   - `rtt_window_keeps_one_key_per_peer` (noted by voice, read by voice).
-- Mutation audit: none (liveness, not a law guard).
 - Size: M (the key unification touches every `note_rtt_*` caller).
 
 ---
@@ -2481,7 +2770,7 @@ frame carries. Tests (`anastome::dialogue::tests::evidence`):
 `evidence_reply_fills_frame_budget`, `evidence_reply_refuses_unframable_item`.
 The text below is the derivation as specified.
 
-**Site.** `src/bin/mycelium-server/door.rs:123–126`:
+**Site.** `src/bin/mycelium-server/control.rs:100–103`:
 
 ```rust
 let items: Vec<_> = {
@@ -2513,7 +2802,7 @@ what the reply claims to carry).
 
 - The quantity: the reply's body budget `B`, the one carrier the mesh
   agrees on (`frame_budget`, PH1, H4). The pattern is that of
-  `encode_rows_reply` and `encode_receipts_reply`: fill while the next
+  `encode_entries_reply` and `encode_receipts_reply`: fill while the next
   item fits.
 - Formula: with
   `σ(e) = 2 + |address(e)| + 4 + 16·|fp(e)| + 4 + 17·|scene(e)|` bytes
@@ -2541,7 +2830,7 @@ what the reply claims to carry).
 
 **Implementation scope.**
 
-- `door.rs` (the fill), `docket.rs` (a `σ` reader beside the encoder,
+- `control.rs` (the fill), `docket.rs` (a `σ` reader beside the encoder,
   `EvidenceOf::tape_len`), and, with the cursor, a version bump of the
   evidence pull (`[ACT_EVIDENCE][voice 32][after u32]`, 37 bytes; a
   33-byte body stays the legacy pull from index 0, so a deposit stays
@@ -2566,6 +2855,12 @@ rows but no columns. The empty `0 × 0` stays admitted (O1 read: it is the
 grid `push_grid` writes for an empty input, and it reads back). Tests
 (`anastome::dialogue::tests::grid`): `read_grid_admits_wide_grid_within_bytes`,
 `read_grid_refuses_rows_without_columns`, `push_grid_refuses_ragged_rows`.
+**Superseded** by ROADMAP track 26 S5: the grid codec is removed and the
+wire carries samples of rank `n` (`dialogue::samples`), bounded the same
+way, by the bytes the tape carries and by nothing chosen: `read_sample`
+checks each count against what remains before it allocates, counts
+`w · ∏ eᵢ` with checked arithmetic, and refuses an empty axis by the
+sample's name (MU-SENSING §6; tests `anastome::dialogue::tests::samples`).
 The text below is the derivation as specified.
 
 **Site.** `src/anastome/dialogue/carrier.rs:102–115`:
@@ -2643,15 +2938,15 @@ levels; a Level-2 step at most the enclosure's three more; Level 3 within
 it), so `anchor::SELECTION_HEIGHT = 4 + 3`; `Pred` is minted only by
 `family::acts` (atoms at most `Not(Touches(leaf))`, a description at most
 one meet), so `form::clause::PRED_HEIGHT = 3 + 1`. Both are closed forms,
-EXACT against their tests; `Selection::height` reads a term's levels. The
+EXACT against the tests that name them; `Selection::height` reads a term's levels. The
 decoders refuse a term deeper than its language mints (`depth >=` the
 height), which bounds every walker of a decoded tree at once. `NESTING`
 leaves the register; the `16` is gone. Tests:
 `transducer::anchor::tests::depth` (`derive_closure_height_equals_selection_height`,
 `sel_parse_survives_frame_length_nesting`: a frame of `Delta` opcodes on a
 2 MiB thread, refused), `transducer::sentence::form::tests::depth`
-(`take_pred_refuses_past_language_depth`, `take_pred_survives_frame_length_nesting`);
-a mutation entry on the selection refusal. A kernel whose own rule language
+(`take_pred_refuses_past_language_depth`, `take_pred_survives_frame_length_nesting`).
+A kernel whose own rule language
 mints deeper terms is refused at decode until the language's height is
 amended. The text below is the derivation as specified.
 
@@ -2746,7 +3041,6 @@ the process, a court stopped); Medium as a reading bound.
   - `sel_parse_survives_frame_length_nesting` (a tape of `B` bytes of
     `Delta` opcodes on a 2 MiB thread: refused by (iii), or parsed and
     dropped without abort under (i)).
-- Mutation audit: yes (the refusal guards §2.4).
 - Size: M (iii) / L (i).
 
 ---
@@ -2789,7 +3083,7 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 **Derivation.**
 
 - The quantity: contention on the court lock, already counted exactly by
-  the lock book (`src/server/held/mod.rs`): per site `took`, `waited`,
+  the lock book (`src/server/court_lock/mod.rs`): per site `took`, `waited`,
   `blocked`; `WAITING` (threads blocked now), `SERVED`; and the door's
   deferrals (each `work_tx` `Full`). No clock is needed; all are counts.
 - Candidate rule (workers): with `W` workers whose acts all take the
@@ -2809,7 +3103,7 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 - **Open:**
   - **O1, the off-lock metering.** This entry is not settled by the
     readings the tree holds. Needed reading: per worker act, strokes spent
-    under the lock against strokes spent off it (`Held::run` already
+    under the lock against strokes spent off it (`CourtGuard::run` already
     meters reads under the lock via `physics::spent_here`; the off-lock
     part is unmetered). With both counts, `W = 1 + ⌈off/under⌉` (strokes,
     exact over ℚ, ceiled to threads), `R_readers` as above, queue depth
@@ -2832,8 +3126,8 @@ worker count beyond the lock's capacity adds waiters, not throughput.
 ### D4.6 `frame_budget().checked_sub(64)` — the reply header reserve
 
 **Status.** **Built** (2026-10-31, the live-readings ruling). The nine
-sites read their reply's own header, built with D1.3: the encoders that
-count their own header (rows, observe, the mind's chatter replies) take the
+sites read each reply's own header, built with D1.3: the encoders that
+count the header themselves (rows, observe, the mind's chatter replies) take the
 frame whole; the rest subtract `RECEIPTS_REPLY_HEADER` (with the
 `READING_HEIGHT_LEN` behind it), `SYLLABUS_REPLY_HEADER` (and
 `CLASS_RECORDS_HEADER` for a fetch), `atlas::LEDGER_PAGE_HEADER`,
@@ -2841,24 +3135,24 @@ frame whole; the rest subtract `RECEIPTS_REPLY_HEADER` (with the
 signature rides a body, the receipt section's `[sig 64]`, the length is
 `ED25519_SIGNATURE_LEN = ed25519_dalek::SIGNATURE_LENGTH`, citing RFC 8032
 §5.1.6; the other codecs' `[u8; 64]` signature fields are field widths of
-their `take_*`/`decode_*` writings (N6 reads codecs as field widths) and are
+the codecs' `take_*`/`decode_*` writings (N6 reads codecs as field widths) and are
 left for the sweep that types each signed act. Tests
 (`anastome::dialogue::tests::receipts_range`):
-`receipts_page_fills_budget_less_header`, `rows_reply_counts_own_header`,
+`receipts_page_fills_budget_less_header`, `entries_reply_counts_reply_header`,
 `page_envelope_equals_codec_header`. The text below is the derivation as
 specified.
 
 **Site.** Nine sites: `src/server/cognition/court/era.rs:102`
 (`receipts_frame`), `src/server/cognition/atlas.rs:623`
 (`ledger_budget`), `src/bin/mycelium-server/judge/syllabus.rs:178, 209`,
-`judge/rows.rs:13`, `judge/observe.rs:136`, `exchange.rs:881`,
-`src/client/sdk/entity/chatter.rs:309, 319`:
+`judge/entries.rs:13`, `judge/observe.rs:136`, `exchange.rs:881`,
+`src/client/sdk/mind/chatter.rs:309, 319`:
 
 ```rust
 let bytes = crate::network::wire::frame_budget().checked_sub(64)?;
 ```
 
-Comments call it "the reply's header" (`era.rs:97–99`, `rows.rs:12`,
+Comments call it "the reply's header" (`era.rs:97–99`, `entries.rs:12`,
 `atlas.rs:621`).
 
 **Governs.** Protocol size: the body bytes a page (receipts, rows,
@@ -2867,14 +3161,15 @@ readings, words, a cited ask) may fill.
 **Why it is underived.** `64` is bare. A first reading takes it as the
 Ed25519 signature length (RFC 8032 §5.1.6: a signature is 64 octets).
 Reading the encoders shows that NO reply at these sites appends a
-reply-level signature: `encode_rows_reply` (`[total u64][m u32][row…]`,
+reply-level signature: `encode_entries_reply` (`[total u64][m u32][entry…]`,
 header 12), `observe::encode_reply` (`[total u32][m u32]…`, header 8),
 `encode_receipts_reply` (`[n u32]…`, header 4; each receipt carries its
 own signature inside its tape), `encode_syllabus_reply` (`[n u8]…`,
 header 1), `encode_cited_request`
 (`[act][voice 32][CITED u?][count u16]…`). The `TPoint` a pointed frame
 carries is outside `B` (the frame admits `B + TPoint::LEN`,
-`wire.rs:171`). So `64` is not a signature here, and naming it
+`wire.rs:171`; from 2026-11-01 the point's lanes are exact rationals and
+the frame admits `B + TPoint::TRAILER_MAX`, the point and its u16 count). So `64` is not a signature here, and naming it
 `ED25519_SIGNATURE_LEN` citing RFC 8032 would put a false citation on the
 wire's size (§2 item 10).
 
@@ -2885,10 +3180,10 @@ constant whose name would mislead).
 
 - The quantity: each reply's own header length `H_kind`, fixed by its
   format. Two encoders already count the header against the budget inside
-  the encoder (`encode_rows_reply`: `out.len() + tape.len() > budget`, each
+  the encoder (`encode_entries_reply`: `out.len() + tape.len() > budget`, each
   row at its own length under the rational lane codec,
   with `out` holding the 12-byte header; `observe::encode_reply`:
-  `8 + body.len() + one.len() > budget`), so at `rows.rs`, `observe.rs:136`
+  `8 + body.len() + one.len() > budget`), so at `entries.rs`, `observe.rs:136`
   and `chatter.rs:309, 319` the subtraction double-counts: pass `B` whole.
 - Where the budget feeds a reader that does not see the header
   (`receipts_frame` → the `bytes` of `line_page`, `ledger_budget`, and
@@ -2919,7 +3214,7 @@ constant whose name would mislead).
 - Tests:
   - `receipts_page_fills_budget_less_header` (a fixture of minimal tapes:
     `at_most = (B − 4)/MIN_TAPE`).
-  - `rows_reply_counts_own_header` (a page of `⌊(B − 12)/ℓ⌋` rows, `ℓ`
+  - `entries_reply_counts_reply_header` (a page of `⌊(B − 12)/ℓ⌋` entries, `ℓ`
     the row's own `Entry::tape_len`; the court's count at most
     `⌊(B − 12)/Entry::MIN_TAPE⌋`).
 - Size: S.
@@ -2984,7 +3279,6 @@ the naming.
     `None`, no panic).
   - `connection_chart_reads_cycle_type_of_permutation` (a fixture σ with
     cycles (2, 3) → `Count(2), 2, 3`).
-- Mutation audit: yes (the guard).
 - Size: S.
 
 ---
@@ -3015,9 +3309,8 @@ open). Tests (`core::tests::certified`): `gamma_p_terms_equal_closed_form`,
 `erf_tail_branch_is_derived_without_cap` (`erf 101` at `w = 14 600`),
 `poisson_quantile_answers_sector_on_spent_budget`,
 `poisson_quantile_decides_at_large_lambda`,
-`exp_width_is_within_grid_at_positive_argument`; two mutation entries (the
-up-front refusal, the stop rule). The text below is the derivation as
-specified.
+`exp_width_is_within_grid_at_positive_argument`. The text below is the
+derivation as specified.
 
 **Site.** `src/core/certified.rs`:
 
@@ -3040,8 +3333,8 @@ specified.
 **Governs.** Termination and width of every certified transcendental
 (78.130, the network's standard mathematics, server side; an exception
 ruled beside law 1's "no series"). Production callers today: `cos` and
-`pi` (`mouth.rs:219–226`) and `cosh` (`mouth.rs:249`) at
-`THROAT_GRID = 64` (D1.2). NO production caller of `gamma_p`, `erf` or
+`pi` (`domain_passage.rs:219–226`) and `cosh` (`domain_passage.rs:249`) at
+`THROAT_LEVEL_BITS = 64` (D1.2). NO production caller of `gamma_p`, `erf` or
 `poisson_quantile` exists (only `src/core/tests/certified.rs`).
 
 **Why it is underived.** `P_SERIES_CAP` and the `+256` precision ceiling
@@ -3050,7 +3343,7 @@ rounded consequence of the cap; the guard-bit offsets are rounded
 allowances with no stated error budget per operation.
 
 **Severity.** Low for `gamma_p`/`erf`/`poisson` (no caller); Medium for
-the guard bits of `exp`/`cosh`/`cos`/`pi` (reached by `mouth.rs`).
+the guard bits of `exp`/`cosh`/`cos`/`pi` (reached by `domain_passage.rs`).
 
 **Derivation.**
 
@@ -3137,7 +3430,7 @@ the term count, each bounded by the series' ratio):
   `exp(100)` at `w = 64` is wide by about `2^{144 − 88}`; §2 item 11).
   Whether `Encl` promises absolute width or only outward rounding is O1
   (the module doc promises rounding to the grid, not a width); the
-  `mouth.rs` callers read `cosh(r).hi` and `cos(r).lo` as bounds, which
+  `domain_passage.rs` callers read `cosh(r).hi` and `cos(r).lo` as bounds, which
   stay proven either way.
 - `ln2`, `atanh2(z ≤ ⅓)`: ratio `z² ≤ 1/9`,
   `N ≤ ⌈(w₂ − 8)/log₂9⌉ + 1` (`log₂9 > 3`, so `N ≤ ⌈(w₂ − 8)/3⌉ + 1`),
@@ -3231,7 +3524,7 @@ the term count, each bounded by the series' ratio):
   `poisson_quantile` returns `Quantile::{At(k), Sector(k, k + 1)}`; a
   private `guard(op, w, …) -> u32` per operation computes the fixed point;
   `stop_at` is replaced by the width-relative stop.
-- Callers: `src/core/tests/certified.rs`; `mouth.rs` unchanged in
+- Callers: `src/core/tests/certified.rs`; `domain_passage.rs` unchanged in
   signature (`cos`, `pi` and `cosh` keep the same signatures; the guards
   inside change).
 - Wire / ledger / snapshot: none, unless a certified value is written to a
@@ -3248,7 +3541,6 @@ the term count, each bounded by the series' ratio):
   - `exp_width_is_within_grid_at_positive_argument` (`exp(100)`, under
     the absolute contract).
   - `tan_guard_reads_cos_margin` (`tan` near `π/2 − 2^{-20}`).
-- Mutation audit: the stop rule and the up-front budget refusal.
 - Dependencies: none on other G4 entries. Size: M (the termination parts
   (a)–(d)), L (all guards (e) under the absolute contract).
 
@@ -3302,9 +3594,17 @@ Each line names its entry and the reading or ruling that decides it.
     lanes.
 16. **D2.5 O1** — memory bound (a) or the current shape (b), or memory
     out of `R` altogether: decided by `b` and `⌊M/b⌋` against today's `R`
-    on the soak.
+    on the soak. **Ruled** (2026-11-04): `R` split into four readings, the
+    metabolism on the process's capacity `C = ⌊M_proc/b⌋`, stroke budgets
+    on the work's need (the sites without one listed as owed), the
+    quiet peer asked again once the TUniversal final point advances, the settlement cooling
+    on the challenge window, and the pointed book on `M_proc`; **Built**
+    (2026-11-04). O4 resolved with it.
 17. **D2.5 O2** — the order of calibration (a sealed second calibration,
-    or a boot calibration stroke): a ruling.
+    or a boot calibration stroke): a ruling. **Ruled** (2026-11-01): one
+    boot calibration stroke seals the reserve before serving; **Built**
+    (2026-11-04). D2.5 O3, the ratio's `8`, is derived since track 26 S4b:
+    `2ⁿ` at the alphabet's base `n = LETTER_RANK − 1`, not a ruling.
 18. **D2.6 O1** — `CONFIG_HZ` or the timer slack as the stroke floor:
     decided by the parked thread's measured wakeup gap against both.
 19. **D2.7 O1** — the first ask's bound (stream end, host floor, loopback
@@ -3318,8 +3618,10 @@ Each line names its entry and the reading or ruling that decides it.
 21. **D3.2 O1** — whose token pays a refinement, or the run complex in
     place of the lcm lattice: decided by the corpus count of capped pairs
     and whether any reader needs unit links. **Ruled (a)** by the
-    operator, before v0.3.0, one ledger break; **Built**. The run complex
-    (c) stays open as a cheaper object, not as a defect.
+    operator, before v0.3.0, one ledger break; **Built**. Superseded on
+    2026-10-31 by the transduction (78.170): no lattice past the sensor,
+    the two frames related by the bodies' bands in turns, and the open
+    questions of that entry (O1–O12) ruled there.
 22. **D3.3 O1** — whether the court may bind a superposition of anchor
     terms (closes L9a): decided by whether two common terms ever differ on
     a withheld pair in the A9 reconstruction. **Ruled (a)** (2026-10-31):
@@ -3387,8 +3689,8 @@ is non-substantive and carries no release of its own.
 
 **Class 1, exact (algebraic).** The value equals a reading of the algebra
 or the geometry, and a test is its claim; the gate's `EXACT:` tag names
-that test. Examples: `STROKES_PER_RESERVE = 1 << (FRAME_AXIS + 1)`
-(`src/physics/calibration.rs:49`), the aperture `2^(FRAME_AXIS+1) = 8`, the sensor
+that test. Examples: `STROKES_PER_RESERVE = 1 << ALPHABET_BASE_N`
+(`src/physics/calibration.rs`), the aperture `2^ALPHABET_BASE_N = 8`, the alphabet
 base's unit cell `2³` (MU-RECURSION §0.0); `RESERVE_FLOOR =
 STROKES_PER_RESERVE * 2 = 16` (`src/physics/calibration.rs:55`), the `2` the
 rotor's double cover; `CANDIDATES_PER_PAIR = 8`

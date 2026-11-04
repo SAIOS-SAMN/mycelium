@@ -41,8 +41,19 @@ impl Court {
     /// listed, `SPEECH_RATIFIED` for one already language, `SPEECH_REFUSED`
     /// for one the replay refused, and `SPEECH_DIALECT` on every sentence
     /// of an act the door deferred — stood there, unanswered here, spoken
-    /// again later. The adjudications themselves are `hear_speech`.
+    /// again later. The adjudications themselves are `hear_speech`. The
+    /// speaker is the caller: every sentence states the ground open on the
+    /// caller's thread (MU-SENSING §6.2; none where no family's reading is
+    /// open), and `perceive_speech_under` states each one.
     pub fn perceive_speech(&mut self, voice: [u8; 32], task: &[u8], sentences: &[Element]) -> Vec<u8> {
+        let stated = crate::transducer::raster::stated(&crate::transducer::raster::ground());
+        let grounds = vec![stated; sentences.len()];
+        self.perceive_speech_under(voice, task, sentences, &grounds)
+    }
+
+    /// [`Court::perceive_speech`] with the ground each sentence's claim was
+    /// spoken under (MU-SENSING §6.2), in the order sent.
+    pub fn perceive_speech_under(&mut self, voice: [u8; 32], task: &[u8], sentences: &[Element], grounds: &[Option<Vec<u8>>]) -> Vec<u8> {
         let spoken: Vec<(Element, Option<crate::transducer::sentence::Contraction>)> =
             sentences.iter().map(|s| (s.clone(), None)).collect();
         // THE ACT'S ROOT (65.5): one stroke of this court's own metabolism
@@ -53,15 +64,15 @@ impl Court {
         // the frame's replays move on.
         let keys: Vec<Vec<u8>> = sentences
             .iter()
-            .map(|s| crate::cognition::court::replay::replay_key(s, (!s.is_colour_word() && crate::cognition::court::replay::replays_on_family(s)).then_some(task)))
+            .map(|s| crate::cognition::court::reconstruct::reconstruction_key(s, (!s.is_colour_word() && crate::cognition::court::reconstruct::reconstructs_on_family(s)).then_some(task)))
             .collect();
-        let progress = |k: &Court| -> Vec<Option<(crate::verdict::Phase, usize, usize)>> {
-            keys.iter().map(|key| k.replay_cursors.get(key).map(|c| c.progress())).collect()
+        let progress = |k: &Court| -> Vec<Option<(crate::verdict::Stage, usize, usize)>> {
+            keys.iter().map(|key| k.reconstruction_cursors.get(key).map(|c| c.progress())).collect()
         };
         loop {
             let before = progress(self);
             let mut budget = self.physics.stroke();
-            match self.hear_speech(voice, task, &spoken, &mut budget) {
+            match self.hear_speech(voice, task, &spoken, grounds, &mut budget) {
                 Ok(adjudicated) => return adjudicated.iter().map(|a| a.code()).collect(),
                 Err(lanes) if lanes == [0; 4] && progress(self) != before => {}
                 Err(_) => return vec![crate::anastome::dialogue::SPEECH_DIALECT; sentences.len()],
@@ -92,15 +103,19 @@ impl Court {
         use crate::anastome::dialogue::Adjudication;
         use crate::transducer::sentence::{At, RefusalKind};
         let mut spoken = Vec::with_capacity(act.sentences.len());
+        let mut grounds = Vec::with_capacity(act.sentences.len());
         let mut unparsed: Vec<usize> = Vec::new();
         for (i, tape) in act.sentences.iter().enumerate() {
             let mut p = 0usize;
             match Element::from_bytes(tape, &mut p) {
-                Some(e) => spoken.push((e, act.contractions.get(i).cloned().flatten())),
+                Some(e) => {
+                    spoken.push((e, act.contractions.get(i).cloned().flatten()));
+                    grounds.push(act.grounds.get(i).cloned().flatten());
+                }
                 None => unparsed.push(i),
             }
         }
-        let heard = self.hear_speech(act.voice, &act.task, &spoken, budget)?;
+        let heard = self.hear_speech(act.voice, &act.task, &spoken, &grounds, budget)?;
         let receipt = self.chain.head_hash();
         let mut out = Vec::with_capacity(act.sentences.len());
         let mut next = heard.into_iter();
@@ -161,18 +176,32 @@ impl Court {
     /// names, for the whole act — nothing was heard — as it is for a
     /// sentence whose draw the voice's room does not cover (23.8): the
     /// voice dwells on those lanes and speaks again.
+    ///
+    /// MU-SENSING §6.2 (track 26 S5) — EACH SENTENCE IS HEARD UNDER THE
+    /// GROUND ITS CLAIM STATES (`grounds`, in the order sent; a missing
+    /// entry states none): read as a candidate of the task's ground on this
+    /// court's copy of the family (`cognition::stated_ground`) and opened
+    /// for the whole adjudication, or refused by name. A sentence stating
+    /// none is heard under no ground. The court never deduces a ground of
+    /// its own here: every reader inside sees the ground opened.
     pub fn hear_speech(
         &mut self,
         voice: [u8; 32],
         task: &[u8],
         spoken: &[(Element, Option<crate::transducer::sentence::Contraction>)],
+        grounds: &[Option<Vec<u8>>],
         budget: &mut crate::physics::Budget,
     ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
         let mut out = Vec::with_capacity(spoken.len());
-        for (s, cited) in spoken {
+        for (i, (s, cited)) in spoken.iter().enumerate() {
+            let stated = grounds.get(i).and_then(Option::as_deref);
+            let heard = match self.claim_ground(task, stated) {
+                Ok(g) => crate::transducer::raster::on_ground(g, || self.adjudicate_one(voice, task, s, cited.as_ref(), budget)),
+                Err(why) => Ok(self.refuse_sentence(voice, s, crate::court::verdict::Refusal::of_tape(why.reason(), s))),
+            };
             // CV5 — EVERY VERDICT COUNTED WHERE IT IS REACHED, by its kind,
             // for the observer's adjudication reading.
-            match self.adjudicate_one(voice, task, s, cited.as_ref(), budget) {
+            match heard {
                 Ok(a) => {
                     note_verdict_of(&a);
                     out.push(a);
@@ -184,6 +213,21 @@ impl Court {
             }
         }
         Ok(out)
+    }
+
+    /// THE GROUND A SPOKEN CLAIM IS HEARD UNDER (MU-SENSING §6.2): the
+    /// stated ground read against this court's copy of the task's family,
+    /// or no ground where none is stated or no family is held for the task
+    /// (nothing of the task is read on a ground then).
+    fn claim_ground(
+        &self,
+        task: &[u8],
+        stated: Option<&[u8]>,
+    ) -> Result<crate::transducer::family::transduce::Ground<u8>, crate::cognition::StatedGroundRefusal> {
+        match self.task_family.get(task) {
+            Some(family) => crate::cognition::stated_ground(family, stated),
+            None => Ok(crate::transducer::family::transduce::Ground::None),
+        }
     }
 
     /// ONE SENTENCE ADJUDICATED. A cited contraction is verified first
@@ -293,12 +337,12 @@ impl Court {
     /// whose composite it is (law 8: the court composes what is cited, never
     /// peels); or UNPROVEN.
     pub(crate) fn colour_proof(&self, s: &Element, task: Option<&[u8]>) -> ColourProof {
-        let Some(sigma) = s.letters().map(|l| l.sigma.clone()) else { return ColourProof::Unproven };
+        let Some(fibre) = s.letters().map(|l| l.fibre()) else { return ColourProof::Unproven };
         let witnesses = |t: &[u8]| {
             self.task_family
                 .get(t)
                 .and_then(|family| crate::transducer::family::fibre_relation(family))
-                .is_some_and(|seen| seen == sigma)
+                .is_some_and(|seen| seen == fibre)
         };
         if let Some(t) = task.filter(|t| witnesses(t)) {
             return ColourProof::Witnessed(Address::from_bytes(t));
@@ -310,7 +354,7 @@ impl Court {
             match (self.installed_word(first.as_bytes()), self.installed_word(after.as_bytes())) {
                 (Some(f), Some(a)) if f.is_colour_word() && a.is_colour_word() => match (f.letters(), a.letters()) {
                     (Some(fl), Some(al)) => {
-                        crate::transducer::element::compose_fibre(&al.sigma, &fl.sigma).as_ref() == Some(&sigma)
+                        crate::transducer::element::compose_fibre(&al.fibre(), &fl.fibre()).as_ref() == Some(&fibre)
                     }
                     _ => false,
                 },
@@ -372,13 +416,13 @@ impl Court {
         // The test's own act: its root, one stroke — spoken again, as the
         // voice speaks again, while the court defers it on no lane with its
         // replay moved on (78.153: a replay longer than one stroke resumes).
-        let key = crate::cognition::court::replay::replay_key(s, (!s.is_colour_word() && crate::cognition::court::replay::replays_on_family(s)).then_some(task));
+        let key = crate::cognition::court::reconstruct::reconstruction_key(s, (!s.is_colour_word() && crate::cognition::court::reconstruct::reconstructs_on_family(s)).then_some(task));
         loop {
-            let before = self.replay_cursors.get(&key).map(|c| c.progress());
+            let before = self.reconstruction_cursors.get(&key).map(|c| c.progress());
             let mut budget = self.physics.stroke();
             match self.hear_sentence(voice, task, s, &mut budget) {
                 Ok(Outcome::Deferred(lanes))
-                    if lanes == [0; 4] && self.replay_cursors.get(&key).map(|c| c.progress()) != before => {}
+                    if lanes == [0; 4] && self.reconstruction_cursors.get(&key).map(|c| c.progress()) != before => {}
                 Ok(out) => return out,
                 Err(refusal) => return Outcome::Refused(refusal.reason),
             }
@@ -423,8 +467,8 @@ impl Court {
         // evidence, and here it is replayed for integrity alone.
         // MU-CLIENT §5.6 (C) — and a conjugate's evidence is its section,
         // measured below: replayed for integrity, never for closing every
-        // pair (`replays_on_family`).
-        let family_task = match s.is_colour_word() || !crate::cognition::court::replay::replays_on_family(s) {
+        // pair (`reconstructs_on_family`).
+        let family_task = match s.is_colour_word() || !crate::cognition::court::reconstruct::reconstructs_on_family(s) {
             true => None,
             false => Some(task),
         };
@@ -434,15 +478,15 @@ impl Court {
         // 78.153 — ON THAT ONE STROKE, RESUMED: a replay the stroke could not
         // finish is NOT HEARD — deferred on no lane, the voice speaks again,
         // and the replay resumes where it stopped. Never a refusal.
-        match self.replay_on_cursor(s, family_task, true, budget).0 {
-            crate::verdict::Replayed::Refused(refusal) => {
+        match self.reconstruct_on_cursor(s, family_task, true, budget).0 {
+            crate::verdict::ReconstructionOutcome::Refused(refusal) => {
                 // CV1 — every refusal carries its kind (78.9), and the observer
                 // counts it by kind.
                 crate::observe::note_obstruction(refusal.obstruction.kind());
                 return Err(refusal);
             }
-            crate::verdict::Replayed::Unread => return Ok(Outcome::Deferred([0; 4])),
-            crate::verdict::Replayed::Clean => {}
+            crate::verdict::ReconstructionOutcome::Unread => return Ok(Outcome::Deferred([0; 4])),
+            crate::verdict::ReconstructionOutcome::Clean => {}
         }
         // 78.149 — WHAT THE SENTENCE DISCHARGES, measured on the family of
         // the task it was heard for (the family its binding below will name,
@@ -488,7 +532,7 @@ impl Court {
     /// the word stood, never what it asks, nothing for a word that names no
     /// body. Its magnitude is still what the field and the deflation record
     /// carry: the word's measure, not its price.
-    pub(crate) fn docket_discharged(&mut self, word: &Element, ratifier: [u8; 32], discharge: [u64; 4]) {
+    pub(crate) fn docket_discharged(&mut self, word: &Element, ratifier: [u8; 32], discharge: crate::economy::Mu) {
         if word.is_identity() && !word.is_rewrite() {
             return;
         }
@@ -541,10 +585,10 @@ impl Court {
         self.court_voice = Some(voice);
     }
 
-    /// SETTLE A PROBE: the replayed residual of an open listing against the
-    /// speaker's sentence. Closure (empty residual) of a fibre section or a
+    /// SETTLE A PROBE: the replayed residue of an open listing against the
+    /// speaker's sentence. Closure (empty residue) of a fibre section or a
     /// connection listing pays morphism deflation; a tape covering pays
-    /// nothing. A partial residual updates tension and relieves the physics
+    /// nothing. A partial residue updates tension and relieves the physics
     /// (the measurement is real) but pays μ⃗ = 0⃗ — covering links is not
     /// an axial move. Cited words still earn settle_use. Returns
     /// (code, paid μ⃗, remaining μ⃗).
@@ -552,7 +596,7 @@ impl Court {
         &mut self,
         voice: [u8; 32],
         target: &[u8],
-        residual: Vec<(i64, i64, u8, u8)>,
+        residue: Vec<(i64, i64, u8, u8)>,
         cites: &[crate::anastome::dialogue::CiteWire],
         section: bool,
     ) -> crate::anastome::dialogue::ProbeReading {
@@ -577,7 +621,7 @@ impl Court {
             Some(t) => *t,
             None => listing.magnitude(),
         };
-        let rem = element::measure_lanes(&residual);
+        let rem = element::measure_lanes(&residue);
         let after = rem;
         let anchor = self.anchor();
         let mag = listing.magnitude();
@@ -603,7 +647,7 @@ impl Court {
             .iter()
             .map(|c| c.transport.clone())
             .reduce(|acc, g| acc.geo(&g));
-        if residual.as_slice().is_empty() {
+        if residue.as_slice().is_empty() {
             // The subsidy a section or a connection earns is the treasury's,
             // written on its own rows; the reading carries the tension the
             // closure removed.
@@ -642,8 +686,8 @@ impl Court {
         }
         let mut listed = listing.sub().to_vec();
         listed.sort_unstable();
-        if residual == listed {
-            // What the field already stands on, and this residual where the
+        if residue == listed {
+            // What the field already stands on, and this residue where the
             // field stands on nothing.
             let standing = match self
                 .field
@@ -652,14 +696,14 @@ impl Court {
                 .filter(|r| !r.is_empty())
             {
                 Some(r) => r,
-                None => residual.clone(),
+                None => residue.clone(),
             };
             for chart in charts {
                 self.write_field(target, chart, Closure::Cavity, standing.clone(), &before, &before);
             }
             return ProbeReading { settled: [0; 4], closure: ProbeClosure::Nothing, remaining: before };
         }
-        let rem_inv = crate::transducer::stalk::invariant(&residual);
+        let rem_inv = crate::transducer::stalk::invariant(&residue);
         for chart in &charts {
             if *chart != rem_inv {
                 self.write_field(target, chart.clone(), Closure::Flat, Vec::new(), &before, &after);
@@ -670,7 +714,7 @@ impl Court {
         }
         let v_disloc = {
             let base_shape = element::shape_of_chain(listing.sub());
-            let rem_shape = element::shape_of_chain(&residual);
+            let rem_shape = element::shape_of_chain(&residue);
             // One stroke of this court's own metabolism reads the candidates.
             let mut budget = self.physics.stroke();
             match (base_shape, rem_shape) {
@@ -682,32 +726,32 @@ impl Court {
             Some(v) => Closure::Twisted(Box::new(v)),
             None => Closure::Cavity,
         };
-        self.write_field(target, rem_inv.clone(), state, residual.clone(), &before, &after);
+        self.write_field(target, rem_inv.clone(), state, residue.clone(), &before, &after);
         self.listing_atlas.admit_also(&rem_inv, target);
-        // THE RESIDUAL IS ON THE FIELD, AND NOWHERE ELSE. `write_field` above
-        // carries what the probe left — the residual chain and the closure
+        // THE RESIDUE IS ON THE FIELD, AND NOWHERE ELSE. `write_field` above
+        // carries what the probe left — the residue chain and the closure
         // it stands at — which is the whole of what a probe measures.
         //
-        // NOTHING IS WRITTEN TO THE LISTING'S MAGNITUDE. `blind_replay`
-        // re-derives a residual germ's lanes from its own chain and refuses
+        // NOTHING IS WRITTEN TO THE LISTING'S MAGNITUDE. `reconstruct_blind`
+        // re-derives a residue germ's lanes from its own chain and refuses
         // a word claiming more than the chain supports, which is what stops
         // a voice inflating its own measure; a court that wrote a count of
         // leftover links into a lane would slash its own listing on the
         // next circuit, and every listing a voice made progress on would be
         // destroyed by the court's own write. Three laws say so: `𝒽` is
         // boundary topology and the rotor's own coordinates (16.16, 42.6),
-        // never a tally of links; the field already holds the residual, and
+        // never a tally of links; the field already holds the residue, and
         // a second carrier for it drifts (law 12); and a word's magnitude is
         // a function of its chain, which is the one property the replay
         // checks.
         //
         // The dislocation stays: a versor relating the base shape to the
-        // residual's is a fibre fact and belongs on the word.
+        // residue's is a fibre fact and belongs on the word.
         if let (Some(held), Some(v)) = (self.pending.get_mut(target), v_disloc) {
-            held.record_dislocation(element::assignment(&residual), v, element::FIBRE_SPATIAL);
+            held.record_dislocation(element::assignment(&residue), v, element::FIBRE_SPATIAL);
         }
         // What the speech SETTLED: the tension it removed, per lane, and
-        // nothing on a lane where the residual stands as high as before.
+        // nothing on a lane where the residue stands as high as before.
         let settled = crate::economy::shortfall(&before, &after);
         self.forget_spoken(target);
         self.physics.relieve(&settled);
@@ -716,7 +760,7 @@ impl Court {
         self.append_step(crate::chronometry::ActKind::Settled, target, voice);
         ProbeReading {
             settled,
-            closure: ProbeClosure::Residual(residual_versor(listing.sub(), &residual)),
+            closure: ProbeClosure::Residue(residue_versor(listing.sub(), &residue)),
             remaining: after,
         }
     }
@@ -734,7 +778,7 @@ impl Court {
 /// alphabet does not spell is offered as a letter by `hear_open`, which every
 /// heard sentence passes.
 pub(crate) fn words_of_sentence(s: &Element, budget: &mut crate::physics::Budget) -> Vec<Element> {
-    use crate::transducer::sentence::compose::{sentences_of, Closure};
+    use crate::transducer::sentence::compose::{sentences_of, RingClosure};
     let Some(form) = crate::transducer::sentence::from_element_form(s) else { return Vec::new() };
     if form.faces.is_empty() {
         return Vec::new();
@@ -762,8 +806,8 @@ pub(crate) fn words_of_sentence(s: &Element, budget: &mut crate::physics::Budget
         let Ok(comp) = read else { continue };
         let Some(word) = crate::transducer::sentence::word::taught(&comp) else { continue };
         let period = match comp.closure {
-            Closure::Closes(l) => l,
-            Closure::Rosette | Closure::Unbound | Closure::Unread => 1,
+            RingClosure::Closes(l) => l,
+            RingClosure::Rosette | RingClosure::Unbound | RingClosure::Unread => 1,
         };
         let Some(e) = spelled_word(&word.word, period) else { continue };
         if seen.insert(e.address(), ()).is_none() {
@@ -788,15 +832,15 @@ pub(crate) fn spelled_word(motion: &crate::transducer::cga::Mv, period: u64) -> 
     crate::transducer::element::from_connection(&word, &f.carriage(), &[], &Vec::new(), [0, 0, 0, period.checked_sub(1)?])
 }
 
-/// PR1 — THE VERSOR A RESIDUAL STANDS OFF THE LISTING BY: the tether between
-/// the listing's body and the residual's, `V = s_b s_a` over the two nuclei
-/// (`blade::tether`, the one producer). `None` — the residual's versor unread
+/// PR1 — THE VERSOR A RESIDUE STANDS OFF THE LISTING BY: the tether between
+/// the listing's body and the residue's, `V = s_b s_a` over the two nuclei
+/// (`blade::tether`, the one producer). `None` — the residue's versor unread
 /// by name — where either body does not lift or its nucleus does not read.
-pub(crate) fn residual_versor(listing: &[(i64, i64, u8, u8)], residual: &[(i64, i64, u8, u8)]) -> Option<crate::transducer::cga::Mv> {
+pub(crate) fn residue_versor(listing: &[(i64, i64, u8, u8)], residue: &[(i64, i64, u8, u8)]) -> Option<crate::transducer::cga::Mv> {
     let lift = |links: &[(i64, i64, u8, u8)]| {
         crate::transducer::blade::lift(
             &links.iter().map(|&(r, c, _, h)| crate::transducer::blade::Compartment::from((r, c, 0i64, h))).collect::<Vec<_>>(),
         )
     };
-    crate::transducer::blade::tether(&lift(listing), &lift(residual))
+    crate::transducer::blade::tether(&lift(listing), &lift(residue))
 }

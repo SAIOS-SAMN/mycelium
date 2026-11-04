@@ -12,7 +12,7 @@
 //! prime outside a plane's letters — is a demand, never a chain.
 
 use crate::transducer::alphabet::{rational_sqrt, rotor_block_on, spell_peel_rotor_on, LetterId, Rotor, Word, Q};
-use crate::transducer::peel::PeelNest;
+use crate::transducer::layers::PeelNest;
 use crate::transducer::sentence::Demand;
 use num_bigint::BigInt;
 use num_integer::Integer;

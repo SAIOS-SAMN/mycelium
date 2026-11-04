@@ -1,8 +1,8 @@
 // 78.75 — THE WHITE-HOLE SOURCE, AN ORGAN: the inversion of a refusal is a
 // flow out of a point of the manifold's own, kept inside it (78.74, derived
-// in `tests/capacitor.rs`, where it stood alone until now).
+// in `tests/pivot_fibre.rs`, where it stood alone until now).
 //
-//! A GEOID `Σ` is the round a frame's pivots fix (`capacitor::shape_of`),
+//! A GEOID `Σ` is the round a frame's pivots fix (`pivot_fibre::shape_of`),
 //! held as one vector `σ` — the dual of the pivots' outer product — so a
 //! point lies on it by one scalar, `P·σ = 0`, and a motion keeps it exactly
 //! where its generator commutes with `σ`.
@@ -58,16 +58,16 @@ pub fn keeping(sigma: &Mv, l: &Mv) -> Option<Mv> {
 
 /// A WHITE-HOLE SOURCE: the point it emanates from and its null generator.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Source {
+pub struct WhiteHoleSource {
     pub at: Mv,
     pub generator: Mv,
 }
 
-impl Source {
+impl WhiteHoleSource {
     /// THE SOURCE AT `p` ON THE GEOID `sigma`, pushed by `k`: `N = P ∧ (P·K)`,
     /// verified null, non-zero, fixing `P` and keeping `σ`. `None` where `P`
     /// is not on `Σ`, `K` does not move `P`, or any check fails.
-    pub fn of(sigma: &Mv, p: &Mv, k: &Mv) -> Option<Source> {
+    pub fn of(sigma: &Mv, p: &Mv, k: &Mv) -> Option<WhiteHoleSource> {
         if !p.geo(sigma).scalar_part().is_zero() {
             return None;
         }
@@ -80,7 +80,7 @@ impl Source {
         let null = !n.is_zero() && n.geo(&n).is_zero();
         let fixes = n.geo(p).sub(&p.geo(&n)).is_zero();
         let keeps = n.geo(sigma).sub(&sigma.geo(&n)).is_zero();
-        (null && fixes && keeps).then(|| Source { at: p.clone(), generator: n })
+        (null && fixes && keeps).then(|| WhiteHoleSource { at: p.clone(), generator: n })
     }
 
     /// THE SLIVER AT PARAMETER `t`: `1 + tN`, exact (`N² = 0`, so the flow is

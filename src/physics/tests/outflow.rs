@@ -4,7 +4,7 @@
 // outflow, read exactly.
 
 use crate::physics::outflow::{keeping, outflow_planes, Bivector, NullPoint, Plane, OutflowRefusal, SourceN, Vector};
-use crate::physics::source::{geoid_vector, Source};
+use crate::physics::source::{geoid_vector, WhiteHoleSource};
 use crate::transducer::cga::{self, Mv, E1, E2, E3, EM, EP};
 use num_rational::BigRational;
 use num_traits::{One, Zero};
@@ -39,8 +39,8 @@ fn at(x: i64, y: i64, z: i64) -> Mv {
 /// off the pivots (as `tests/source.rs` reads it).
 fn sigma() -> Mv {
     let pivots = vec![at(5, 0, 0), at(0, 5, 0), at(-3, 4, 0), at(0, 0, 5), at(3, 0, 4)];
-    match crate::physics::capacitor::shape_of(&pivots, 3) {
-        crate::physics::capacitor::Shape::Stable(round) => geoid_vector(&round).expect("a sphere"),
+    match crate::physics::pivot_fibre::shape_of(&pivots, 3) {
+        crate::physics::pivot_fibre::Shape::Stable(round) => geoid_vector(&round).expect("a sphere"),
         other => panic!("five pivots on one sphere stand: {other:?}"),
     }
 }
@@ -61,7 +61,7 @@ fn source_n_equals_cl41_source_on_three_axes() {
     assert_eq!(kn, bivector_of(&k), "the part kept, read on two grades, is the whole algebra's");
     for p in [at(5, 0, 0), at(0, 5, 0), at(-3, 4, 0), at(0, 0, 5), at(3, 0, 4)] {
         let pn = NullPoint::new(vector_of(&p)).expect("a pivot is null");
-        match (Source::of(&s, &p, &k), SourceN::of(&sn, &pn, &kn)) {
+        match (WhiteHoleSource::of(&s, &p, &k), SourceN::of(&sn, &pn, &kn)) {
             (Some(a), Ok(b)) => assert_eq!(b.generator, bivector_of(&a.generator), "one source"),
             (None, Err(_)) => {}
             (a, b) => panic!("the two organs disagree on a pivot: {a:?} / {b:?}"),

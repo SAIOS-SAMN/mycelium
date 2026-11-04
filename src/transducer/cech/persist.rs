@@ -6,7 +6,7 @@
 
 use super::*;
 use crate::network::nerve::Keyed;
-use crate::snapshot::{leaf, put_trie, take_trie, Leaves};
+use crate::trie_tape::{leaf, put_trie, take_trie, Leaves};
 
 /// The sections trie: the vertex's key → its address, its rotation as a
 /// ray, its placement as a ray.
@@ -59,7 +59,7 @@ impl Complex {
     /// remainder, each by its own keys.
     pub fn put_tries(&self, out: &mut Vec<u8>) {
         let mut sections: Keyed<Leaves> = Keyed::new();
-        crate::snapshot::persist(&self.sections, |k, s: &Section| {
+        crate::trie_tape::persist(&self.sections, |k, s: &Section| {
             sections.insert(
                 k,
                 vec![
@@ -71,11 +71,11 @@ impl Complex {
         });
         put_trie(out, SECTIONS, &sections);
         let mut simplices: Keyed<Leaves> = Keyed::new();
-        crate::snapshot::persist(&self.by_key, |k, d| {
+        crate::trie_tape::persist(&self.by_key, |k, d| {
             let Some(c) = self.degrees.get(*d).and_then(|l| l.get(k)) else { return };
             let mut verts = (c.vertices.len() as u64).to_le_bytes().to_vec();
             for v in &c.vertices {
-                crate::snapshot::put_key(&mut verts, v);
+                crate::trie_tape::put_key(&mut verts, v);
             }
             let mut volume = Vec::with_capacity(32);
             for x in &c.volume {
@@ -138,7 +138,7 @@ impl Complex {
         });
         put_trie(out, SIMPLICES, &simplices);
         let mut remainder: Keyed<Leaves> = Keyed::new();
-        crate::snapshot::persist(&self.remainder, |k, _| {
+        crate::trie_tape::persist(&self.remainder, |k, _| {
             remainder.insert(k, Vec::new());
         });
         put_trie(out, REMAINDER, &remainder);
@@ -174,7 +174,7 @@ impl Complex {
                 }
                 let mut out = Vec::with_capacity(n);
                 for _ in 0..n {
-                    out.push(crate::snapshot::take_key(b, p)?);
+                    out.push(crate::trie_tape::take_key(b, p)?);
                 }
                 Some(out)
             })?;

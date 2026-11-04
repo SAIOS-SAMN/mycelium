@@ -8,23 +8,23 @@
 // decides the new hues, leave one out, judged by replay (`incongruence::
 // decide`, the voice's own reading). Data; nothing is decided.
 
-use mycelium::client::sdk::Epigenome;
-use mycelium::transducer::family::incongruence::{decide, replayable, single_changes, Decision, KEYS};
+use mycelium::client::sdk::MindLanguage;
+use mycelium::transducer::family::incongruence::{decide, map_holds_whole, single_changes, Decision, KEYS};
 use mycelium::transducer::family::{extract_rule_with, form_deflation};
 
 /// REGISTERED: STROKE
 const STROKE: usize = 1 << 20;
 
 pub(crate) fn report(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let (mut changes, mut mass_kept, mut hues_kept, mut spread_kept, mut density_kept) = (0u64, 0u64, 0u64, 0u64, 0u64);
     let (mut gained, mut gained_on_light, mut lost, mut lost_carved, mut both) = (0u64, 0u64, 0u64, 0u64, 0u64);
     let (mut tasks_recoloured, mut own) = (0u64, 0u64);
     let mut total = [Decision::default(); 8];
     let mut whole = [0u64; 8];
     for name in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         let mut physics = mycelium::physics::Physics::default();
         let mut budget = physics.stroke_n(STROKE);
         let Some(rule) = extract_rule_with(&task.train, &empty, &mut budget) else { continue };
@@ -50,7 +50,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                 (true, true) => {}
             }
         }
-        own += found.iter().filter(|c| c.difference.kinematic() && !c.difference.recoloured.is_empty() && replayable(c)).count() as u64;
+        own += found.iter().filter(|c| c.difference.kinematic() && !c.difference.recoloured.is_empty() && map_holds_whole(c)).count() as u64;
         let decided = decide(&found);
         let n = decided[0].predicted + decided[0].refused + decided[0].alone;
         if n == 0 {

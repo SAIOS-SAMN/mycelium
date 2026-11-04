@@ -1,7 +1,7 @@
 // 12.6, A20 — THE PIVOT ORBIT: what a pivot discharges, what it holds as
 // a vortex, and what it writes.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{self, Element};
@@ -263,7 +263,7 @@ impl crate::transducer::family::Crystal for Hold {
     fn speak_form(
         &self,
         _f: &Form,
-        _x: &crate::transducer::family::Grid,
+        _x: &crate::transducer::family::SectionSample,
         _p: &Word,
     ) -> Option<crate::transducer::family::Speech> {
         None
@@ -343,7 +343,7 @@ fn pivot_orbit_discharges_held_word_and_vortices_pair() {
         "Frame is the least vertex coordinate of the crystallized form"
     );
     assert_eq!(
-        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
         "a certified discharge replays: every after-face is face_of, then the certificate"
     );
@@ -733,9 +733,10 @@ fn file_orbit_files_under_edge_composite() {
 /// and certifies on a constructed family.
 #[test]
 fn pivot_orbit_certifies_held_word_on_family() {
+    crate::transducer::raster::stand_on(0);
     let q = word_turn_90();
     let mut f = chord_form(std::slice::from_ref(&q));
-    let family = vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])];
+    let family = crate::transducer::spelled::pairs_of(vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])]);
     let snaps = f.pivot_orbit(
         [0x11; 32],
         &Keyed::new(),
@@ -776,10 +777,11 @@ fn pivot_orbit_certifies_held_word_on_family() {
 /// on a constructed family.
 #[test]
 fn pivot_orbit_holds_two_discharges_as_vortex() {
+    crate::transducer::raster::stand_on(0);
     let q = word_turn_90();
     let qinv = q.inverse();
     let mut f = chord_form(std::slice::from_ref(&q));
-    let family = vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])];
+    let family = crate::transducer::spelled::pairs_of(vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])]);
     let snaps = f.pivot_orbit(
         [0x22; 32],
         &Keyed::new(),

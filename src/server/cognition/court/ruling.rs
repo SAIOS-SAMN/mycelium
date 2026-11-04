@@ -100,7 +100,7 @@ impl Court {
             Ruled::Upheld => RULING_UPHELD,
             Ruled::Demoted => RULING_DEMOTED,
             Ruled::Slashed => RULING_SLASHED,
-            Ruled::Retired => return self.replay_retirement(&addr, rest, author, budget),
+            Ruled::Retired => return self.reconstruct_retirement(&addr, rest, author, budget),
         };
         if !self.provisional.contains(addr.as_bytes()) {
             return Heard::Inert;
@@ -121,7 +121,7 @@ impl Court {
     /// and this court seals its own `Ruling(Retired)` with the peer's
     /// receipt among its parents. The replay draws on the stroke of the act
     /// that heard the ruling (65.5), never one of its own.
-    fn replay_retirement(
+    fn reconstruct_retirement(
         &mut self,
         addr: &crate::transducer::address::Address,
         rest: &[crate::chronometry::Cite],

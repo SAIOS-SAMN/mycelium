@@ -30,12 +30,20 @@ fn share() -> Result<mycelium::economy::Mu, String> {
     mycelium::economy::Mu::of([q(1, 1), q(1, 2), q(22, 7), q(3, 1)]).map_err(|r| format!("the share is refused: {r:?}"))
 }
 
-fn train() -> Vec<crate::rule::TrainPair> {
-    vec![(vec![vec![1, 0], vec![0, 1]], vec![vec![2, 0], vec![0, 2]]), (vec![vec![3]], vec![vec![4]])]
+/// Lines read at intake as a sample on the alphabet's section.
+fn section(lines: &[Vec<u8>]) -> Result<crate::rule::SectionSample, String> {
+    crate::rule::SectionSample::of_lines(lines).map_err(|e| format!("the lines are no sample on the section: {e:?}"))
 }
 
-fn tests() -> Vec<Vec<Vec<u8>>> {
-    vec![vec![vec![0, 1, 2], vec![3, 4, 5]]]
+fn train() -> Result<Vec<crate::rule::TrainPair>, String> {
+    Ok(vec![
+        (section(&[vec![1, 0], vec![0, 1]])?, section(&[vec![2, 0], vec![0, 2]])?),
+        (section(&[vec![3]])?, section(&[vec![4]])?),
+    ])
+}
+
+fn tests() -> Result<Vec<crate::rule::SectionSample>, String> {
+    Ok(vec![section(&[vec![0, 1, 2], vec![3, 4, 5]])?])
 }
 
 /// `Ok(read)` where `got` equals `want`; `Err` naming what differed.
@@ -47,14 +55,30 @@ fn same<T: PartialEq + std::fmt::Debug>(what: &str, got: Option<T>, want: T) -> 
     }
 }
 
+/// TRACK 26 S5 — a sample of rank 3 at width 2, at `[test, 0, member]`:
+/// the envelope and the solve carry samples of any rank.
+fn deep(member: d::samples::Member) -> Result<mycelium::transducer::sample::Sample, String> {
+    let place = d::samples::position(d::samples::Split::Test, 0, member).map_err(|e| format!("{e:?}"))?;
+    let symbols: Vec<u8> = (0u8..24).collect();
+    mycelium::transducer::sample::Sample::new(vec![2, 3, 2], 2, symbols, place).map_err(|e| format!("{e:?}"))
+}
+
 fn task() -> Result<String, String> {
     same("the task request", d::decode_task_request(&d::encode_task_request(&voice())), voice())?;
-    let bytes = d::encode_task_envelope(&CITATION, &train(), &tests()).ok_or("the envelope does not encode")?;
+    let sent = d::TaskEnvelope::of_rasters(CITATION, &train()?, &tests()?).map_err(|e| format!("the rasters are no samples: {e:?}"))?;
+    let bytes = d::encode_task_envelope(&CITATION, &sent.train, &sent.tests).map_err(|e| format!("the envelope does not encode: {e:?}"))?;
     let envelope = d::decode_task_envelope(&bytes).ok_or("the envelope did not decode")?;
     same("the envelope's citation", Some(envelope.id), CITATION)?;
-    same("the envelope's train pairs", Some(envelope.train), train())?;
-    same("the envelope's tests", Some(envelope.tests), tests())?;
-    Ok("request and envelope decode to the values sent".to_string())
+    same("the envelope's train pairs", Some(envelope.train.clone()), sent.train.clone())?;
+    same("the envelope's tests", Some(envelope.tests.clone()), sent.tests)?;
+    let read = envelope.section().map_err(|e| format!("the envelope is off the alphabet's section: {e:?}"))?;
+    same("the envelope's train pairs on the section", Some(read.train), train()?)?;
+    same("the envelope's tests on the section", Some(read.tests), tests()?)?;
+    let deep = vec![deep(d::samples::Member::Input)?];
+    let bytes = d::encode_task_envelope(&CITATION, &sent.train, &deep).map_err(|e| format!("the rank-3 envelope does not encode: {e:?}"))?;
+    let envelope = d::decode_task_envelope(&bytes).ok_or("the rank-3 envelope did not decode")?;
+    same("the rank-3 test input at width 2", Some(envelope.tests), deep)?;
+    Ok("request and envelope decode to the samples sent, of rank 2 and 3".to_string())
 }
 
 fn task_by_citation() -> Result<String, String> {
@@ -66,14 +90,22 @@ fn task_by_citation() -> Result<String, String> {
 
 fn solve() -> Result<String, String> {
     let tape = vec![1u8, 2, 3, 5, 8];
-    let outputs = tests();
+    let outputs = vec![deep(d::samples::Member::Output)?];
     let bytes = d::encode_solve_with_rule(&key(), &CITATION, &outputs, Some(&tape)).ok_or("the solve does not encode")?;
     let act = d::decode_solve(&bytes).ok_or("the solve did not decode")?;
     same("the solve's voice", Some(act.voice), voice())?;
     same("the solve's task", Some(act.task), CITATION)?;
-    same("the solve's outputs", Some(act.outputs), outputs)?;
-    same("the solve's rule", Some(act.rule), Some(tape))?;
+    same("the solve's outputs", Some(act.outputs), outputs.clone())?;
+    same("the solve's rule", Some(act.rule), Some(tape.clone()))?;
+    same("the solve's stated ground, none stated", Some(act.ground), None)?;
     same("the solve's signature", Some(act.signed), true)?;
+    // TRACK 26 S2 — a claim stating the ground it was spoken under.
+    let ground = vec![7u8];
+    let spoken = d::encode_solve_spoken(&key(), &CITATION, &outputs, Some(&tape), Some(&ground)).ok_or("the spoken solve does not encode")?;
+    let act = d::decode_solve(&spoken).ok_or("the spoken solve did not decode")?;
+    same("the spoken solve's rule", Some(act.rule), Some(tape))?;
+    same("the spoken solve's stated ground", Some(act.ground), Some(ground))?;
+    same("the spoken solve's signature", Some(act.signed), true)?;
     let paid = d::encode_solve_verdict(d::SOLVE_BOUNTY, &share()?, None, None).ok_or("the verdict does not encode")?;
     same("the paid verdict", d::decode_solve_verdict(&paid), (d::SOLVE_BOUNTY, share()?, None, None))?;
     same("the paid receipt", d::decode_solve_receipt(&d::encode_solve_receipt(d::SOLVE_BOUNTY, &share()?)), (d::SOLVE_BOUNTY, share()?))?;
@@ -82,7 +114,35 @@ fn solve() -> Result<String, String> {
     let refusal = d::SolveRefusal { reason: b"form leaves a remainder on the family".to_vec(), kind: 1 };
     let refused = d::encode_solve_verdict(d::SOLVE_NOTHING, &mycelium::economy::Mu::zero(), Some(&refusal), None).ok_or("the refusal does not encode")?;
     same("the refused verdict", d::decode_solve_verdict(&refused), (d::SOLVE_NOTHING, mycelium::economy::Mu::zero(), Some(refusal), None))?;
-    Ok("the signed solve and the three verdicts decode to the values sent, the paid μ exact".to_string())
+    Ok("the signed solve of a rank-3 output, with and without its stated ground, and the three verdicts decode to the values sent, the paid μ exact".to_string())
+}
+
+/// TRACK 26 S4c — a claim of factorisation at rank 3 and width 2: the
+/// motion (a signed permutation and the enclosure it is taken onto), the
+/// residue's links and the stated ground, signed; and each of the three
+/// verdicts.
+fn factorisation() -> Result<String, String> {
+    use mycelium::transducer::base::Site;
+    use mycelium::transducer::family::transduce::{Enclosure, Motion, Sense, SignedPermutation};
+    use mycelium::transducer::sentence::Link;
+    let permutation = SignedPermutation::new(vec![(1, Sense::Reversed), (0, Sense::Kept), (2, Sense::Kept)]).map_err(|e| format!("{e:?}"))?;
+    let motion = Motion { permutation, onto: Enclosure::new(vec![3, 2, 2]).map_err(|e| format!("{e:?}"))? };
+    let residue = vec![Link::new(Site::of([0, 1, 1]), vec![0, 0], vec![0, 7]), Link::new(Site::of([2, 0, 1]), vec![0, 3], vec![0, 0])];
+    let ground = vec![0u8, 0];
+    let bytes = d::encode_factorisation(&key(), &CITATION, 1, &motion, &residue, Some(&ground)).ok_or("the claim does not encode")?;
+    let act = d::decode_factorisation(&bytes).ok_or("the claim did not decode")?;
+    let want = d::FactorisationAct { voice: voice(), task: CITATION, pair: 1, motion, residue: residue.clone(), ground: Some(ground), signed: true };
+    same("the claim of factorisation", Some(act), want)?;
+    same("the claim's kind under the solve", d::solve_kind(&bytes), d::SOLVE_KIND_FACTORISATION)?;
+    same("the claim read as a solve of outputs", Some(d::decode_solve(&bytes).is_none()), true)?;
+    for v in [
+        d::FactorVerdict::Admitted,
+        d::FactorVerdict::Residue { unclaimed: residue.clone(), uncarried: Vec::new() },
+        d::FactorVerdict::Refused { reason: b"no such train pair".to_vec() },
+    ] {
+        same("the factorisation verdict", d::decode_factor_verdict(&d::encode_factor_verdict(&v)), v)?;
+    }
+    Ok("the signed claim of a rank-3 motion and residue at width 2, its stated ground, and the three verdicts decode to the values sent".to_string())
 }
 
 fn laws_register() -> Result<String, String> {
@@ -321,16 +381,16 @@ fn receipts() -> Result<String, String> {
     Ok("the span asked and a page of one receipt decode".to_string())
 }
 
-fn rows() -> Result<String, String> {
+fn entries() -> Result<String, String> {
     use mycelium::chronometry::Place;
     use mycelium::economy::{Arm, Entry, Kind};
     let upto = Place { k: 3, i: 4 };
-    let want = d::RowsRequest { voice: voice(), signer: CITATION, from: None, upto, cursor: 7 };
-    same("the rows request", d::decode_rows_request(&d::encode_rows_request(&voice(), &CITATION, None, upto, 7)), want)?;
-    let row = Entry { kind: Kind::Transfer, who: voice(), mu: share()?, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
-    let bytes = d::encode_rows_reply(12, std::slice::from_ref(&row), mycelium::network::wire::BODY_BUDGET).ok_or("the rows do not encode")?;
-    same("the rows", d::decode_rows_reply(&bytes), (12, vec![row]))?;
-    Ok("the span asked and a page of one row decode".to_string())
+    let want = d::EntriesRequest { voice: voice(), signer: CITATION, from: None, upto, cursor: 7 };
+    same("the entries request", d::decode_entries_request(&d::encode_entries_request(&voice(), &CITATION, None, upto, 7)), want)?;
+    let entry = Entry { kind: Kind::Transfer, who: voice(), mu: share()?, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
+    let bytes = d::encode_entries_reply(12, std::slice::from_ref(&entry), mycelium::network::wire::BODY_BUDGET).ok_or("the entries do not encode")?;
+    same("the entries", d::decode_entries_reply(&bytes), (12, vec![entry]))?;
+    Ok("the span asked and a page of one entry decode".to_string())
 }
 
 fn why() -> Result<String, String> {
@@ -481,12 +541,13 @@ fn check(a: &ActRequirement) -> Option<Result<String, String>> {
         "seat mail" => seat_mail(),
         "quote" => quote(),
         "receipts" => receipts(),
-        "rows" => rows(),
+        "entries" => entries(),
         "why" => why(),
         "probe" => probe(),
         "peers" => peers(),
         "syllabus" => syllabus(),
         "speech" => speech(),
+        "solve factorisation" => factorisation(),
         "wallet" => wallet(),
         "observe query" => observe_query(),
         _ => return None,

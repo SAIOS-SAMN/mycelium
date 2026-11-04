@@ -290,9 +290,9 @@ impl Court {
 
     /// WHETHER `p` IS FINAL IN THIS COURT'S VIEW, `fin` the door's final
     /// point now (held on the ladder first).
-    pub(crate) fn final_in_view(&mut self, p: &TPoint, fin: Option<TPoint>) -> bool {
+    pub(crate) fn final_in_view(&mut self, p: &TPoint, fin: Option<&TPoint>) -> bool {
         let Some(f) = fin else { return false };
-        self.note_final(f);
+        self.note_final(f.clone());
         let held = self.atlas.ladder.get(&ladder_key(p));
         p.origin == f.origin && p.h <= f.h && held.is_none_or(|h| h == p)
     }
@@ -313,7 +313,7 @@ impl Court {
             if !reads.spend() {
                 return;
             }
-            latest.extend(c.iter().next_back().map(|e| e.entry.point));
+            latest.extend(c.iter().next_back().map(|e| e.entry.point.clone()));
         }
         // The ladder's key order is its points' order within an origin.
         let newest = self.atlas.ladder.scoped().map(|(k, _)| k).last();
@@ -369,7 +369,7 @@ impl Court {
             Err(true) => return refuse(R::NotReserve),
             Err(false) => return refuse(R::Unsigned),
         };
-        if !self.final_in_view(&e.point, fin) {
+        if !self.final_in_view(&e.point, fin.as_ref()) {
             return refuse(R::NotFinal);
         }
         let head = self.atlas.head(&e.domain).cloned();
@@ -395,7 +395,7 @@ impl Court {
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], reserve, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
         let Some(court) = fin else { return refuse(R::NotFinal) };
         let dilation = head.as_ref().filter(|h| h.entry.point.origin == e.point.origin).and_then(|h| dilation((h.entry.u, e.u), (h.entry.point.h, e.point.h)));
-        let held = HeldEntry { entry: e.clone(), hash, sealed: r.stamp.h, court, dilation };
+        let held = HeldEntry { entry: e.clone(), hash, sealed: r.stamp.h, court: court.clone(), dilation };
         match self.atlas.ledgers.get_mut(&e.domain) {
             Some(chain) => Arc::make_mut(chain).push(held),
             None => {
@@ -403,7 +403,7 @@ impl Court {
             }
         }
         // 78.154 (3) — where the receiver applied each crossing: the edge
-        // reads its residual from here, never before.
+        // reads its residue from here, never before.
         for (c, ua) in &e.applied {
             if let Some(edge) = self.atlas.edges.get_mut(c) {
                 edge.u_applied = Some(*ua);
@@ -515,7 +515,7 @@ impl Court {
             Err(true) => return refuse(R::NotReserve),
             Err(false) => return refuse(R::Unsigned),
         };
-        if !self.final_in_view(&a.point, fin) {
+        if !self.final_in_view(&a.point, fin.as_ref()) {
             return refuse(R::NotFinal);
         }
         let mapped = |k: &Court, place: &Place| k.mapped_place(&a.domain, place).is_some();
@@ -586,7 +586,7 @@ impl Court {
         let cite = Cite::Stated { domain: a.domain, kind: KIND_MAP, body: crate::chronometry::payload_hash(&a.signed_bytes()) };
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], reserve, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
         let Some(court) = fin else { return refuse(R::NotFinal) };
-        self.atlas.records.insert(key, HeldRecord { record: a.record.clone(), point: a.point, sealed: r.stamp.h });
+        self.atlas.records.insert(key, HeldRecord { record: a.record.clone(), point: a.point.clone(), sealed: r.stamp.h });
         self.mark_persist();
         Mapped::Sealed { record: id, h: r.stamp.h, point: court }
     }

@@ -8,14 +8,14 @@ use crate::transport::answer;
 use crate::Mesh;
 use ed25519_dalek::{Signer, SigningKey};
 use mycelium::anastome::dialogue::{cover_signed_prefix, encode_cover_digest};
-use mycelium::network::nerve::{Cover, Keyed, Router};
-use mycelium::network::wire::{Frame, Stratum};
+use mycelium::network::nerve::{HomeTrie, Keyed, Router};
+use mycelium::network::wire::{WireFrame, Lane};
 use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
 
 fn mesh(sk: &SigningKey) -> Mesh {
     Mesh {
-        cover: Arc::new(Mutex::new(Cover::new())),
+        cover: Arc::new(Mutex::new(HomeTrie::new())),
         rooms: Arc::new(Mutex::new(Keyed::new())),
         addrs: Arc::new(Mutex::new(Keyed::new())),
         vk: sk.verifying_key().to_bytes(),
@@ -45,7 +45,7 @@ fn door_answering(sk: SigningKey) -> (String, std::thread::JoinHandle<()>) {
         let sig = sk.sign(&cover_signed_prefix(&roots, &ruled, &room)).to_bytes();
         let vk = sk.verifying_key().to_bytes();
         let body = encode_cover_digest(&room, &roots, &ruled, &vk, &bind, &[], &sig).expect("a digest writes");
-        answer(&mut s, Frame { lane: Stratum::Spatial, body });
+        answer(&mut s, WireFrame { lane: Lane::Spatial, body });
     });
     (addr, served)
 }

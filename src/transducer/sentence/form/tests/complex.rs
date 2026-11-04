@@ -1,7 +1,7 @@
 // 18.2 — THE FORM: vertices, faces by constancy, glue and retract, depth,
 // and what a chain deconstructs into.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::sentence::ToralPeriod;
 use crate::network::nerve::{coord, Coordinate, Keyed};
 use crate::transducer::alphabet::{self, Word};
@@ -202,7 +202,7 @@ fn face_place_of_is_none_for_missing_vertex() {
     // AT1 — A FACE IS AN OVERLAP OF TWO CHARTS, and its place is read off
     // the two ends' vertices: a chart of a vertex the form does not hold
     // places nothing.
-    let missing = super::common::chart_of(&word_vertex_on(5, word_turn_90(), stalk::Invariant::counts(&[5])), stalk::Invariant::counts(&[5]));
+    let missing = super::fixtures::chart_of(&word_vertex_on(5, word_turn_90(), stalk::Invariant::counts(&[5])), stalk::Invariant::counts(&[5]));
     assert!(
         f.face_place(&coord::ChartAt::Frame, &missing, None).is_none(),
         "a missing vertex is not the identity word"
@@ -249,7 +249,7 @@ fn glue_retract_remaps_faces_and_refuses_placement() {
     // 54.7 B5a — A CITATION IS KEYED BY ITS SITE, and the site is what the
     // vertex holds; the cited address is the cover's. AT1: the site IS the
     // vertex's coordinate.
-    let site = coord::Site::decode(&crate::transducer::sentence::vertex_bytes(
+    let site = coord::GluedBoundary::decode(&crate::transducer::sentence::vertex_bytes(
         host.vertices.at(&gi).expect("the glued vertex"),
     ))
     .expect("a citation's own boundary record");
@@ -283,9 +283,9 @@ fn glue_retract_remaps_faces_and_refuses_placement() {
     let mut taped = host.clone();
     let mag = [1u64, 0, 0, 0];
     let clean = as_element_form(&taped, mag).expect("tape");
-    assert_eq!(crate::court::verdict::blind_replay(&clean, &mut super::common::budget()), Some(crate::court::verdict::REFUSE_GLUED_UNRULED));
+    assert_eq!(crate::court::verdict::reconstruct_blind(&clean, &mut super::fixtures::budget()), Some(crate::court::verdict::REFUSE_GLUED_UNRULED));
     let resolve = |a: &[u8]| (a == inner_e.address().as_bytes()).then(|| inner.clone());
-    assert_eq!(crate::court::verdict::blind_replay_with(&clean, &resolve, &mut super::common::budget()), None);
+    assert_eq!(crate::court::verdict::reconstruct_blind_with(&clean, &resolve, &mut super::fixtures::budget()), None);
     // THE WORD TAMPER: the placement overlap's derived word made the
     // identity. The word is derived (AT1 Q2), so the only way to write it
     // is a left factor — and a factor no certificate produced is refused at
@@ -298,7 +298,7 @@ fn glue_retract_remaps_faces_and_refuses_placement() {
     assert!(worded.face_word(placement).is_some_and(|x| x.is_identity()), "tampered to the identity");
     let bad = as_element_form(&worded, mag).expect("tampered placement word");
     assert_eq!(
-        crate::court::verdict::blind_replay_with(&bad, &resolve, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind_with(&bad, &resolve, &mut super::fixtures::budget()),
         Some(crate::court::verdict::REFUSE_PIVOT_INEXACT),
         "a factor no pivot produced refuses"
     );
@@ -307,7 +307,7 @@ fn glue_retract_remaps_faces_and_refuses_placement() {
     taped.faces.at_mut(placement).expect("placement overlap").place.carriage = element::translator_versor(1, 0);
     let bad = as_element_form(&taped, mag).expect("tampered placement");
     assert_eq!(
-        crate::court::verdict::blind_replay_with(&bad, &resolve, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind_with(&bad, &resolve, &mut super::fixtures::budget()),
         Some(crate::court::verdict::REFUSE_FACE),
         "a tampered placement face refuses"
     );
@@ -359,7 +359,7 @@ fn form_vertex_key_carries_ratio_and_sections() {
     // bytes. It stood at `form_address(7)`, two bytes that spell no stratum of
     // this system, and the carrier accepted them because it took bytes.
     let class = coord::SectionAt::Class(coord::Transport {
-        kind: crate::transducer::peel::ShellKind::Whole,
+        kind: crate::transducer::layers::LayerKind::Whole,
         class: w.rotor().holonomy_key().expect("the 90° turn has a class"),
     });
     // AT1 — A MEMBER HOLDS ITS FRAMES, and the sections are read off them:
@@ -442,10 +442,10 @@ fn depth_of_equals_one_plus_max_glued() {
 /// A language of a bar and a dot deconstructs a rotated, translated,
 /// and dilated bar through its moduli with a verified transport, speaks
 /// a chain of two bodies as two words with the words' relative transport,
-/// leaves the unknown body as the residual, and refuses to cite a word
+/// leaves the unknown body as the residue, and refuses to cite a word
 /// with itself.
 #[test]
-fn deconstruct_at_cites_words_and_leaves_residual() {
+fn deconstruct_at_cites_words_and_leaves_residue() {
     let bar = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let dot = from_canonical(&germinate(&[(0, 0, 3u8)], &[(0, 0, 4u8)]).unwrap());
     let bar_other = from_canonical(&germinate(&[(0, 0, 7u8), (0, 1, 7)], &[(0, 0, 8u8), (0, 1, 8)]).unwrap());
@@ -463,35 +463,35 @@ fn deconstruct_at_cites_words_and_leaves_residual() {
     let shape_at = |a: &[u8]| shapes.get(a).and_then(|s| s.as_ref());
     // A vertical bar far away: the bar rotated and translated.
     let target = vec![(5, 5, 1, 2), (6, 5, 1, 2)];
-    let s = deconstruct_at(&word_at, &atlas, &shape_at,&target, None, &mut super::common::budget());
+    let s = deconstruct_at(&word_at, &atlas, &shape_at,&target, None, &mut super::fixtures::budget());
     assert_eq!(s.cites.len(), 1);
     assert_eq!(s.cites[0].word, words[0].address(), "the bar, not the other-hued bar");
     assert!(s.is_closed());
-    assert!(replay_at(&word_at, &s.cites, &target).is_empty(), "the citation replays to closure");
+    assert!(reconstruct_at(&word_at, &s.cites, &target).is_empty(), "the citation replays to closure");
     assert!(
         !s.multiplicity.is_empty(),
         "stratum width is recorded per body"
     );
     // A 2× dilated bar with the other hues: the other bar at ρ = 2.
     let big = vec![(0, 0, 7, 8), (0, 1, 7, 8), (0, 2, 7, 8), (0, 3, 7, 8), (1, 0, 7, 8), (1, 1, 7, 8), (1, 2, 7, 8), (1, 3, 7, 8)];
-    let s = deconstruct_at(&word_at, &atlas, &shape_at,&big, None, &mut super::common::budget());
+    let s = deconstruct_at(&word_at, &atlas, &shape_at,&big, None, &mut super::fixtures::budget());
     assert_eq!(s.cites.len(), 1);
     assert_eq!(s.cites[0].word, words[2].address());
     assert!(s.is_closed());
     // Two bodies and an unknown: two citations with one relative
-    // transport between them, one residual body.
+    // transport between them, one residue body.
     let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4), (9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)];
-    let s = deconstruct_at(&word_at, &atlas, &shape_at,&mixed, None, &mut super::common::budget());
+    let s = deconstruct_at(&word_at, &atlas, &shape_at,&mixed, None, &mut super::fixtures::budget());
     assert_eq!(s.cites.len(), 2);
     assert_eq!(
         s.multiplicity.len(),
         4,
-        "the chain and each of bar, dot, residual have a width, never one maximum"
+        "the chain and each of bar, dot, residue have a width, never one maximum"
     );
     assert_eq!(s.connection.len(), 1, "one relative transport between two cited bodies");
-    assert_eq!(s.residual, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
+    assert_eq!(s.residue, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
     // Excluding the bar itself: a bar chain has no other word of hue 1→2.
-    let s = deconstruct_at(&word_at, &atlas, &shape_at,words[0].sub(), Some(words[0].address().as_bytes()), &mut super::common::budget());
+    let s = deconstruct_at(&word_at, &atlas, &shape_at,words[0].sub(), Some(words[0].address().as_bytes()), &mut super::fixtures::budget());
     assert!(s.cites.is_empty() && !s.is_closed(), "no word but itself speaks it");
 }
 
@@ -512,7 +512,7 @@ fn deconstruct_at_records_multiplicity_per_body() {
     let word_at = |a: &[u8]| at.get(a);
     let shape_at = |a: &[u8]| shapes.get(a).and_then(|s| s.as_ref());
     let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4)];
-    let s = deconstruct_at(&word_at, &atlas, &shape_at, &mixed, None, &mut super::common::budget());
+    let s = deconstruct_at(&word_at, &atlas, &shape_at, &mixed, None, &mut super::fixtures::budget());
     assert_eq!(s.cites.len(), 2);
     assert_eq!(
         s.multiplicity.len(),
@@ -551,7 +551,7 @@ fn seam_defect_at_agrees_with_is_flat() {
         Cite { word: words[0].address(), transport: id.clone(), assignment: element::assignment(words[0].sub()) },
         Cite { word: words[1].address(), transport: id.clone(), assignment: element::assignment(words[1].sub()) },
     ];
-    assert!(replay_at(&word_at, &cites[..1], &target).is_empty());
+    assert!(reconstruct_at(&word_at, &cites[..1], &target).is_empty());
     assert_eq!(seam_defect_at(&word_at, &cites, &target), target, "both links spoken twice, differently");
     assert_eq!(verify_at(&word_at, &cites, &target), target);
     assert!(verify_at(&word_at, &cites[..1], &target).is_empty(), "one word, no seam");
@@ -617,7 +617,7 @@ fn faces_follows_constancy_on_row_of_three() {
 }
 
 /// A21 §2 — THE CHART LEADS WITH ITS KIND AND THEN ITS RANK. The leading
-/// 2 keeps a sentence's chart disjoint from a residual's and a
+/// 2 keeps a sentence's chart disjoint from a residue's and a
 /// connection's; the four after it are A18's rank, which is the COARSE
 /// STRATUM (R5: the rank of a union is the sum of the parts). Nothing per
 /// vertex follows, so the chart's width does not grow with the object.

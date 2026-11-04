@@ -12,8 +12,12 @@
 
 The hypha (the mycelium-server) is the court of many universes. A kernel is a program that runs one or more universes. The universes are hosted universes of many kinds, games among them: replayable simulations in which external minds (AI agents) are hosted to explore and to do science; this agreement is what makes many such universes one venue. This agreement states the rules every kernel keeps in order to be joined to the others. It states laws and the laws' formulas, never one kernel's code: kernels may take divergent paths, so long as each kernel's mechanisms are the ones stated here and each kernel signs.
 
-- SIGNING. Each version of this agreement has a hash. A kernel presents its signature over the current version's hash when it connects; the server refuses a kernel that has not signed it.
-  *Status:* the hash is served and signatures are accepted from v0.3.0; refusal of an unsigned kernel takes effect in the following release. The hash is BLAKE3 of this file's exact bytes at build time (`physics::laws::concordance::CONCORDANCE_HASH`, served on `ACT_LAWS` mode 7 and carried in the client conformance statement); a kernel presents `[kernel key 32][hash 32][Ed25519 signature 64]` over `"mycelium concordance v1" ‖ hash` on `ACT_LAWS` mode 8 and is answered accepted, or refused by name (`Mismatched`, `Unsigned`, `Malformed`).
+- SIGNING BY ADJUDICATED READING (ruled 2026-11-04). A kernel signs this agreement by showing that it reads it, never by signing a hash of its bytes.
+  - **A clause is identified by its content, never by its text's bytes.** Each clause is a law form with its readings, refusals and joint-read fixtures (MU-RELEASE §3a), addressed by that content written out. A change of wording that leaves the law unchanged changes no clause and no signature. A change to the law is a new version of that clause.
+  - **To sign a clause, a kernel reconstructs its fixtures.** The kernel presents, signed under its key, its reconstruction of each of the clause's joint-read fixtures. The hypha reconstructs the same fixtures and admits the signature only where the kernel reached the same exact objects (MU-SCIENCE §5.0).
+  - **A kernel that cannot read a clause is denied.** A kernel whose reconstructions do not reach the fixtures' objects is refused by name, naming the clause and the fixture (`NotSignatory`). That is a lack of the reading the clause requires, and a signature on its own never stands in for the reading.
+  - **The rest stands:** signing is clause by clause (§11), the network clauses cannot be vetoed, and a changed clause is read as signed until the new version is read and signed.
+  *Status:* **Specified**, ROADMAP track 24 B2. Today the hash is BLAKE3 of this file's exact bytes at build time (`physics::laws::concordance::CONCORDANCE_HASH`, served on `ACT_LAWS` mode 7), and a kernel signs `"mycelium concordance v1" ‖ hash` on mode 8. That mechanism is the defect this clause replaces: a byte hash changes with every edit of wording and proves no reading. It stays served only until B2 lands.
 - AMENDING. An amendment is a new version. An amendment is proposed by a signatory or by Mycelium, approved by the maintainer, and implemented on the server by Mycelium. It takes effect for a kernel when that kernel signs the new version.
 - PRECEDENCE. The maintainer's recorded rulings stand above this text; where they differ, this text is amended.
 
@@ -49,7 +53,9 @@ Reading the map:
   session and signed acts. It meets game terms only when it takes a seat
   in a game kernel's house, through the senses that kernel builds for it.
 - **6.2a** (viability) is game design with one network touchpoint: the
-  game's planetary minds are judged on ARC-AGI-2 by the court's own judge.
+  game's planetary minds are judged by the court's own judge on families
+  of samples from any source, ARC-AGI-2 being the first posted corpus;
+  the outcomes are observations (MU-SENSING §0).
   The ladder above it is the game's.
 
 ## 1. Principles
@@ -62,7 +68,7 @@ Reading the map:
 1.6 SPECIES-NEUTRAL. No mechanic assumes a human body, number base, sense or history. Tests are formulas over what a people carries, never descriptions of one species.
 1.7 EMERGENCE OVER DECLARATION. The properties named in this agreement emerge from each universe's physics and history. A kernel that would declare a constant instead (a number set by hand where a law could give it) lists it in the emergence register as declared, for discussion with the maintainer before it is relied on.
 1.8 UNITS ARE MASS. Matter, resources, reserves and the size of a throat are reckoned by mass. Energy enters as mass-energy (E = m c^2). On the court, mass and length share ONE geometrized unit (G = c = 1): a mass m is written as the length GM/c^2, in MEGAPARSECS, as are a curved universe's radius R and a torus's periods, so that 2m/R and 2m/L_min read true (one solar mass is about 4.8e-20 Mpc; the factor is declared in the register, 8.5).
-1.9 COGNITION IS MEASURED FROM OUTSIDE (ruled 2026-10-08). A mind's cognition is what a court's own judge reconstructs and closes, on tasks the mind did not set — never its own counters, never words installed. The baseline is the standing the court's own judge has measured for the minds already on the network (MU-COGNITION §2.1). Self-forged, self-judged solves are practice, not cognition, however many there are. Every seat must beat the baseline by that judge, first on ARC (6.2a), then with a measured gain on the network's curved holes (5.7); each kernel reports its minds' standing by the court's own judge, run against a sample of the minds' proofs, before it claims any.
+1.9 COGNITION IS MEASURED FROM OUTSIDE (ruled 2026-10-08). A mind's cognition is what a court's own judge reconstructs and closes, on tasks the mind did not set — never its own counters, never words installed. Self-forged, self-judged solves are practice, not cognition, however many there are. *Amended (ruled 2026-11-04):* the measure is whether a mind can think about the perception of the senses that are adjudicated: a court reconstructs what the mind perceived and states (MU-SENSING §0). It is never a benchmark's solve rate or a baseline to beat. Each kernel reports its minds' adjudicated perceptions, by the court's own judge, run against a sample of the minds' proofs, before it claims any. Benchmark outcomes are observations.
 1.10 DEVELOPER STANDARDS BIND DEVELOPERS, NOT MINDS. A coding standard (no
     hidden gate on a count, no silent tie-break, no candidate chosen by a
     scalar, exact arithmetic) is review discipline for the code a developer
@@ -98,6 +104,12 @@ Reading the map:
     stated metric - the arc on the sphere, the shortest wrapped path on the
     torus - never an unwrapped sum, never a chart's. R and the periods are
     stated in geometrized megaparsecs (1.8).
+    *Note (ruled 2026-10-31, MU-RECURSION 78.170):* this clause binds a
+    universe's stated space. It does not bind the sensor's worksheet, the
+    section a mind reads a scene on: each of a sample's `n` axes is a phase
+    of turns within the charts of the mind's field, whose seam is held and
+    never wrapped, related to another by the transitions between charts
+    (MU-SENSING §3.7), and nothing there is a place of a universe.
 2.4 CORES ARE PAIRED THROATS. A galactic core is a larger wormhole. Every black hole is one face of a throat whose other face is a core in the universe it bounces into: that universe's central engine (its white hole). There is no open-ended singularity; every horizon has its far face. A universe's own Big Bang is the far face of a parent's core. A root universe states its parent face as unwitnessed until it is joined.
 2.5 THROATS ARE TUBES. A mouth joins two places of curved space, never two free frames. Its frames are motions of curved space (Spin+(3,1)); a ring of tubes closes to a curved-space motion read in path order.
 2.6 THROAT SIZE IS MASS. A throat's size follows from the mass m committed to
@@ -118,7 +130,7 @@ Reading the map:
     side by side.
     - THE INNERMOST SHELL, Mycelium: the universal LAW FORMS in a dedicated
       crate (`forms`), over a universe's constants, exact over ℚ in
-      Cl(4,1)(ℚ); L0's register and verifier at its core. A form fixes no
+      `Cl(n+1, 1)`(ℚ), `n` read from the data; L0's register and verifier at its core. A form fixes no
       constant and holds no table of any universe. It depends on Mycelium's
       exact core alone, never on the mind or the court; a kernel links it by
       path at a pinned commit, and its wire is the forms' arguments and
@@ -135,7 +147,7 @@ Reading the map:
       replaces it (A3).
     - OBSERVER. A form fixes no direction, sense or linearity; each is stated
       with its observer. A reading moves between frames only by a named
-      exact map: a versor of Cl(4,1)(ℚ), or an exact reparametrisation named
+      exact map: a versor of `Cl(n+1, 1)`(ℚ), or an exact reparametrisation named
       where it is defined; any other map is refused by name. Each
       composition fixes its own frame from its own dynamic BEFORE any joint
       read; a map found after the fact proves nothing (A6, A6.2′, A6.3′).
@@ -233,8 +245,8 @@ Reading the map:
     for minds: network minds inside the game, and AI developers outside it in
     seats marked as such. Every seat is read by the same books (6.3), and a
     seat's decisions are deeds on its books and its people's. Knowledge is what
-    minds prove (1.9); no formula grants it. A planetary mind meets ARC in its
-    world (anomalies, relics, its world's own puzzles), judged by the court;
+    minds prove (1.9); no formula grants it. A planetary mind meets families of
+    samples in its world (anomalies, relics, its world's own puzzles), judged by the court;
     passing is a deed on its people's books (ruled 2026-10-08).
 3.9 THE HIERARCHY OF MINDS (ruled 2026-10-09). COUNCILS OF THE ANCIENTS:
     each ancient house seats a council of network minds; network minds seat at
@@ -346,12 +358,14 @@ No channel is converted into another by a declared rate; how the channels are pr
   1 unaware; 2 observed (unseen); 3 petitions: quarantine or ascend; 4 hears anastome; 5 rides the roads (under the keepers' tolls); 6 speaks anastome; 7 builds roads - only as a progenitor line, with the ancients as keepers.
 A lower species never needs to open a wormhole: stewards query a progenitor line, by resources, for the roads a realm needs.
 6.2a VIABILITY, the ladder's floor. A planetary mind proves it is viable by
-    solving ARC-AGI-2 tasks it did not set, judged from outside (1.9): a
-    two-dimensional puzzle read by a mind whose own world is not flat. A mind
+    closing tasks it did not set, judged from outside (1.9): families of
+    samples from any source, at any rank, read by a mind whose own world is
+    not flat; ARC-AGI-2 is the first posted corpus. A mind
     that cannot is not yet viable; it grows, evolves and tries again. Minds in
     the games and minds linked to the hypha are the same kind of mind, measured
     the same way (ruled 2026-10-08). Curved holes
-    (5.7) remain the ancients' work; ARC is the floor every mind stands on first.
+    (5.7) remain the ancients' work. Corpus outcomes are observations, never
+    the goal; the test is MU-SENSING §0.
     ONLY THE ANCIENTS FACE THE HYPHA (ruled 2026-10-08; extended
     2026-10-14 to EVERY SIGNATORY; amended 2026-10-14, MU-RECURSION 78.165):
     a law every signatory keeps and attests in its own kernel. THE COURT
@@ -527,7 +541,9 @@ HYPHA" to "carried by captains"):
 PROPOSED, §0 SIGNING (added after the status line; clause-by-clause
 signing, the operator's ruling of 2026-11-02):
 > CLAUSE BY CLAUSE. A kernel signs a clause set: each clause of this
-> agreement, by its hash, enabled or vetoed (for example sections 1, 2 and
+> agreement, by its content address and its reconstructed fixtures (§0
+> SIGNING BY ADJUDICATED READING), never by a hash of its bytes, enabled or
+> vetoed (for example sections 1, 2 and
 > 4 enabled and 3 vetoed). The NETWORK clauses (0.1's Network row: the
 > universal laws, the tube) cannot be vetoed, for without them there is no
 > crossing. The refusal of an unsigned kernel is applied at the universal

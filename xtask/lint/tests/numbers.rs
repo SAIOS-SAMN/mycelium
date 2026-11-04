@@ -136,7 +136,7 @@ fn numbers_ignores_cfg_test_items() {
 
 /// NO CONSTANT over the tree itself: every literal-bearing numeric item of
 /// the repository this gate sits in is classified, and the register agrees
-/// with its sites (the claim the mutation audit strips a tag against).
+/// with its sites.
 #[test]
 fn numbers_refuses_nothing_in_tree() {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).parent().expect("the xtask manifest sits in the repository");

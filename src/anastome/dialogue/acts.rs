@@ -53,6 +53,28 @@ pub const ACT_TASK: u8 = Action::Task.byte();
 /// task's citation; the hypha verifies against its held answers — first verified
 /// solve takes the bounty; a repeat closure is verified and paid nothing.
 pub const ACT_SOLVE: u8 = Action::Solve.byte();
+/// THE SOLVE'S CLAIM KINDS (78.126: the wire's bytes below the court's range
+/// are spent, so a new claim is a sub-kind; MU-SCIENCE §9.2: a claim kind
+/// under `ACT_SOLVE`). The kind is the byte after the act's tag, and the
+/// layout after it is the kind's own. Kind 0 is the solve that claims a
+/// task's outputs with its rule (`encode_solve_spoken`).
+/// FORMAT: the solve act's claim kind for outputs.
+pub const SOLVE_KIND_OUTPUTS: u8 = 0;
+/// Kind 1 (track 26 S4c) is a claim of factorisation: a train pair's motion
+/// and residue with the claim's stated ground, signed; the court
+/// reconstructs the motion on the posted samples and derives the residue
+/// (`dialogue::factorisation`).
+/// FORMAT: the solve act's claim kind for a factorisation.
+pub const SOLVE_KIND_FACTORISATION: u8 = 1;
+
+/// THE CLAIM KIND A SOLVE ACT CARRIES: the byte after its tag, or none
+/// where the body is no solve act or ends at its tag.
+pub fn solve_kind(body: &[u8]) -> Option<u8> {
+    match act_is(body, ACT_SOLVE) {
+        true => body.get(1).copied(),
+        false => None,
+    }
+}
 
 /// ADOPTION (genome synchronization): the court propagates an upheld word
 /// to every server with ITS OWN VOICE as provenance — the ratifier is the
@@ -68,7 +90,7 @@ pub const TRANSLATION_TAG: u8 = 0x13;
 /// Word-tape tag for an optimisation (a Rewrite). Same value as `element::REWRITE_TAG`.
 /// FORMAT: word-tape tag for a rewrite.
 pub const REWRITE_TAG: u8 = 0x14;
-/// Genome-file section holding persisted thought bubbles.
+/// Genome-file section holding persisted wells (held thoughts).
 /// Snapshot section holding Čech complexes (addresses and rotors only).
 pub const COC1: &[u8; 4] = b"COC1";
 
@@ -196,15 +218,16 @@ pub const ACT_RECEIPTS: u8 = Action::Receipts.byte();
 /// THE FOLD PROPOSAL (47.3, 45.8; S13.10): a home asks a bonded peer to
 /// witness its fold — `[ACT_FOLD][k0 u64][root k u64 ‖ hash 32 ‖ height
 /// u64][n u32][(who 32 ‖ μ⃗ 4×u64)…][47.1 receipt section, payload the root
-/// hash]`. The witness fetches the prefix by `ACT_RECEIPTS` and `ACT_ROWS`,
-/// re-derives it, and answers refused, unmeasured, or co-signed with its
-/// own signed position over the root.
+/// hash]`. The witness fetches the prefix by `ACT_RECEIPTS` and
+/// `ACT_ENTRIES`, re-derives it, and answers refused, unmeasured, or
+/// co-signed with its own signed position over the root.
 pub const ACT_FOLD: u8 = Action::Fold.byte();
-/// THE ROWS A FOLD RE-EXPRESSES (§6 across a fold): `[ACT_ROWS][voice 32]
-/// [signer 32][from u64][to u64][cursor u32]` asks for the signer's own
-/// ledger rows anchored in `from..=to`, from `cursor`; reply `[total u32]
-/// [m u32][row…]`, a page within the frame budget.
-pub const ACT_ROWS: u8 = Action::Rows.byte();
+/// THE LEDGER ENTRIES A FOLD RE-EXPRESSES (§6 across a fold):
+/// `[ACT_ENTRIES][voice 32][signer 32][from u64][to u64][cursor u32]` asks
+/// for the signer's own ledger entries anchored in `from..=to`, from
+/// `cursor`; reply `[total u32][m u32][entry…]`, a page within the frame
+/// budget. The act byte is the one `ACT_ROWS` named (track 11, N7).
+pub const ACT_ENTRIES: u8 = Action::Entries.byte();
 /// THE OBSERVER (§8.1): a voice pushes its readings to its hypha, and any
 /// process queries a hypha for the readings it holds by key prefix. The
 /// layout and its codec are [`crate::observe`]'s, the one writer of it.
@@ -260,28 +283,28 @@ pub const ACT_SEAT: u8 = Action::Seat.byte();
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)
 /// the hypha replays linearly. Yield settles on the graded trajectory of
-/// the residual without germination; closure clears the listing.
+/// the residue without germination; closure clears the listing.
 /// Request: `[ACT_PROBE][voice 32][target 32][n u32][(addr 32)(g 17)(asg u32)]·n`.
 /// Reply: the probe's READING (PR1) — `[settled μ⃗ 4×u64][closure][remaining
 /// μ⃗ 4×u64]`, never an outcome code.
 pub const ACT_PROBE: u8 = Action::Probe.byte();
 
-/// PR1 — WHERE A PROBE LEFT THE LISTING: closed; a residual, with the versor
-/// it stands off the listing by where a residual body reads on both sides
-/// (`V = s_b s_a` between the listing's residual body and the probe's, the
+/// PR1 — WHERE A PROBE LEFT THE LISTING: closed; a residue, with the versor
+/// it stands off the listing by where a residue body reads on both sides
+/// (`V = s_b s_a` between the listing's residue body and the probe's, the
 /// one producer `tether_of`), `None` — unread by name — where one does not;
 /// nothing covered or settled; or the listing gone from the book in the
 /// state it was quoted (another voice settled or moved it first).
 #[derive(Clone, Debug)]
 pub enum ProbeClosure {
     Closed,
-    Residual(Option<crate::transducer::cga::Mv>),
+    Residue(Option<crate::transducer::cga::Mv>),
     Nothing,
     Gone,
 }
 
 impl PartialEq for ProbeClosure {
-    /// Residuals are equal where the two versors write one ray.
+    /// Residues are equal where the two versors write one ray.
     fn eq(&self, other: &ProbeClosure) -> bool {
         let ray = |v: &Option<crate::transducer::cga::Mv>| {
             v.as_ref().map(|m| {
@@ -294,7 +317,7 @@ impl PartialEq for ProbeClosure {
             (ProbeClosure::Closed, ProbeClosure::Closed)
             | (ProbeClosure::Nothing, ProbeClosure::Nothing)
             | (ProbeClosure::Gone, ProbeClosure::Gone) => true,
-            (ProbeClosure::Residual(a), ProbeClosure::Residual(b)) => ray(a) == ray(b),
+            (ProbeClosure::Residue(a), ProbeClosure::Residue(b)) => ray(a) == ray(b),
             _ => false,
         }
     }
@@ -320,9 +343,9 @@ impl ProbeReading {
         ProbeReading { settled: [0; 4], closure: ProbeClosure::Gone, remaining: [0; 4] }
     }
 
-    /// Did the probe move the listing — close it or leave a residual?
+    /// Did the probe move the listing — close it or leave a residue?
     pub fn moved(&self) -> bool {
-        matches!(self.closure, ProbeClosure::Closed | ProbeClosure::Residual(_))
+        matches!(self.closure, ProbeClosure::Closed | ProbeClosure::Residue(_))
     }
 }
 
@@ -367,7 +390,7 @@ pub struct CiteWire {
     // body says the assignment; the hypha reads whether it is a section.
     /// The word's links as the speaker says them, under the body's own
     /// transitions.
-    pub body: Vec<Link>,
+    pub body: Vec<SectionLink>,
 }
 
 /// A fetch names every discordant chart with the asker's have-list in each;
@@ -390,7 +413,7 @@ pub type Chart = ChartOf<Address>;
 /// its voice; the hypha serves the ratified stream from that voice's cursor
 /// (each ratification reaches each voice exactly once, in ruling order).
 /// Request: `[ACT_SYLLABUS][voice 32]`. Reply: `[n u8][(len u32)(word
-/// bytes)·n]` — full lossless element forms (Epigenome::learn refreshes by
+/// bytes)·n]` — full lossless element forms (MindLanguage::learn refreshes by
 /// address, so rebinds propagate too).
 pub const ACT_SYLLABUS: u8 = Action::Syllabus.byte();
 
@@ -422,6 +445,11 @@ pub struct SpeechAct {
     /// that agreed it, or none: the court verifies it and seals that mind's
     /// attestation.
     pub agreements: Vec<Option<Vec<u8>>>,
+    /// MU-SENSING §6.2 (track 26 S5) — per sentence, in the same order, the
+    /// ground its claim was spoken under: one symbol at the source's width,
+    /// or none. Part of the claim, never of the task: the court
+    /// reconstructs under it and never deduces a ground of its own.
+    pub grounds: Vec<Option<Vec<u8>>>,
     // 50.2 step 2 as ruled 2026-09-10: `paths` was here. The derivation
     // of every word vertex travels inside the tape at v7, so two voices
     // sending one address are told apart by the tapes themselves and the
@@ -437,7 +465,7 @@ pub type Roots = ([[u8; 32]; 4], [u8; 32]);
 
 /// A COVER, one page: who, where, and the charts under the roots it just
 /// signed. Read by `ACT_COVER` when those roots move, never on the digest.
-pub struct Cover {
+pub struct CoverPage {
     /// The announcing key.
     pub vk: [u8; 32],
     /// Where to reach it.
@@ -571,11 +599,18 @@ pub struct SolveAct {
     /// The task answered, by its citation (wire v1.2): the door resolves it
     /// to the task's content address (`TaskRegistry::by_citation`).
     pub task: [u8; 32],
-    /// One output grid per test input, in the order they were served.
-    pub outputs: Vec<Vec<Vec<u8>>>,
+    /// One output per test input, in the order they were served: a sample
+    /// of any rank at `[test, i, output]` (track 26 S5).
+    pub outputs: Vec<crate::transducer::sample::Sample>,
     /// The rule the voice extracted, when it speaks one. `None` is an
     /// answer with no rule behind it — the registry prices it differently.
     pub rule: Option<Vec<u8>>,
+    /// TRACK 26 S2 — THE GROUND THE CLAIM WAS SPOKEN UNDER: one symbol at
+    /// the source's width, or `None` where the voice spoke under no one
+    /// ground. Part of the claim, never of the task (MU-SENSING §6): the
+    /// court reconstructs under it, once it reads it as a candidate of the
+    /// task's ground.
+    pub ground: Option<Vec<u8>>,
     /// 78.141 — whether the voice signed the act. The court pays the voice
     /// a solve names, so an unsigned solve names no payee and is refused.
     pub signed: bool,
@@ -639,13 +674,15 @@ pub const SOLVE_NOTHING: u8 = 0;
 /// FORMAT: reply code for a solve not yet judged.
 pub const SOLVE_UNREAD: u8 = 3;
 
-/// One link of a centred coboundary chain: `(row, col, before, after)`.
-pub type Link = (i64, i64, u8, u8);
+/// One link of a centred coboundary chain: the one carrier
+/// `sentence::SectionLink` (track 26 S5 holds the three former aliases as one
+/// type; its rank-n form waits on the transducer's planar chain carriers).
+pub use crate::transducer::sentence::SectionLink;
 
 /// One quoted work item: the listing's address, its priced μ⃗, the listing
 /// WHOLE, and the open (non-flat) charts of its coherence field.
 ///
-/// THE WHOLE ELEMENT, NOT ITS LINKS (L8q). A `chain: Vec<Link>` here — a
+/// THE WHOLE ELEMENT, NOT ITS LINKS (L8q). A `chain: Vec<SectionLink>` here — a
 /// flat projection of a coboundary — would leave a voice one move, to
 /// subtract links it held, which is deflation and not comprehension. A
 /// listing is an `Element`, and served whole it may be a SENTENCE carrying
@@ -711,7 +748,7 @@ pub struct Settlement {
     /// The listing settled.
     pub listing: crate::transducer::address::Address,
     /// Its chain.
-    pub chain: Vec<Link>,
+    pub chain: Vec<SectionLink>,
     /// The voice that settled it.
     pub voice: [u8; 32],
     /// The utterance: the citations the voice spoke. The court replays

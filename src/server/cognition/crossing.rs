@@ -60,13 +60,13 @@ pub enum Unretrieved {
 }
 
 impl Court {
-    /// THE COURT'S READ PRICE per lane, μ per unit of gas: `1 + y_l / R`,
-    /// exact, the court's strain against its calibrated reserve
-    /// (`economy::read_price`, MU-DERIVATIONS D2.3). `None` where the surface
-    /// passes its carrier.
+    /// THE COURT'S READ PRICE per lane, μ per unit of gas: `1 + y_l / C`,
+    /// exact, the court's strain against the process's sealed capacity
+    /// (`economy::read_price`, MU-DERIVATIONS D2.3, D2.5). `None` where the
+    /// surface passes its carrier.
     pub fn read_price(&self) -> Option<Mu> {
         let surface = crate::economy::yield_surface(&self.physics)?;
-        crate::economy::read_price(&surface, crate::physics::reserve_max())
+        crate::economy::read_price(&surface, self.physics.capacity())
     }
 
     /// A claim drawn on `staker`'s stake for `fee`, its parts to this court,
@@ -120,7 +120,7 @@ impl Court {
         if self.domains.get(&to).is_none() {
             return refuse(R::UnknownDomain);
         }
-        if !self.final_in_view(&t.at, fin) {
+        if !self.final_in_view(&t.at, fin.as_ref()) {
             return refuse(R::NotFinal);
         }
         if [&t.point_a, &t.point_b].iter().any(|p| p.origin != t.at.origin) {
@@ -188,7 +188,7 @@ impl Court {
         if self.draw_claim(t.payer, &crossing, fee.clone(), &r).is_none() {
             return refuse(R::Short);
         }
-        let edge = Edge { from: t.from, to, mouth: t.mouth, at: t.at, u_a: t.u_a, u_entry: t.u_b, u_applied: None };
+        let edge = Edge { from: t.from, to, mouth: t.mouth, at: t.at.clone(), u_a: t.u_a, u_entry: t.u_b, u_applied: None };
         self.atlas.edges.insert(crossing, edge);
         self.mark_persist();
         Crossed::Sealed { crossing, h: r.stamp.h, point: court, gas, price, fee }
@@ -278,7 +278,7 @@ impl Court {
     /// `staker`'s stake as a claim held to the window. `nonce` names the
     /// claim.
     pub fn retrieve(&mut self, staker: [u8; 32], p: &TPoint, fin: Option<TPoint>, nonce: [u8; 32]) -> Result<Vec<KStepReceipt>, Unretrieved> {
-        if !self.final_in_view(p, fin) {
+        if !self.final_in_view(p, fin.as_ref()) {
             return Err(Unretrieved::NotFinal);
         }
         let read = self.pinpoint(p);

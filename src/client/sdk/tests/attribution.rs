@@ -2,9 +2,9 @@
 // lands on a mind is kept by its whole citation: taken in or let go, and
 // where its comprehension stopped.
 
-use super::common::*;
-use crate::client::sdk::entity::offer::Offer;
-use crate::client::sdk::entity::perceive::{Reading, Scene, Stop};
+use super::fixtures::*;
+use crate::client::sdk::mind::offer::Offer;
+use crate::client::sdk::mind::perceive::{SceneKind, Scene, Stop};
 use crate::client::sdk::*;
 
 /// A TASK TAKEN IN IS KEPT BY ITS CITATION, TAKEN, WITH ITS STOP: the slide's
@@ -16,13 +16,13 @@ fn perceive_scene_keeps_task_by_citation_with_stop() {
     let id = [7u8; 32];
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| {
-        mind.perceive_scene(Scene { id: id.to_vec(), train: two_hours_of_a_slide().to_vec(), tests: Vec::new(), reading: Reading::Task });
+        mind.perceive_scene(Scene { id: id.to_vec(), train: two_hours_of_a_slide().to_vec(), tests: Vec::new(), reading: SceneKind::Task });
         mind.settle_perception();
     });
     mind.field = field;
     let t = mind.board.tasks.get(&id).copied().expect("the task is kept by its citation");
     assert!(t.taken, "taken in");
-    assert_eq!(t.reading, Reading::Task);
+    assert_eq!(t.reading, SceneKind::Task);
     assert!(t.stop.is_some(), "its comprehension stopped somewhere, named: {t:?}");
     assert!(mind.board.tasks.get(&[6u8; 32]).is_none(), "a citation never landed is not kept");
 }
@@ -36,8 +36,8 @@ fn lapse_offers_keeps_uncoupled_task_as_lapsed() {
     let id = [5u8; 32];
     let train = two_hours_of_a_slide().to_vec();
     let offer = Offer::of(&train);
-    mind.board.court.task = Some((crate::anastome::dialogue::TaskEnvelope { id, train, tests: Vec::new() }, offer));
-    mind.note_task(&id, Reading::Task, |_| {});
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskRasters { id, train, tests: Vec::new() }, offer));
+    mind.note_task(&id, SceneKind::Task, |_| {});
     mind.lapse_offers();
     assert_eq!(mind.board.tasks.get(&id).map(|t| t.stop), Some(None), "one return crossed: still waiting");
     mind.lapse_offers();

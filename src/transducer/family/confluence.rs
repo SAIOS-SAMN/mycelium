@@ -158,9 +158,9 @@ fn sites_of(b: &Body) -> Vec<(i64, i64)> {
 
 /// READ ONE PAIR'S UNSAID OUTPUT BODIES as creations, single carriages and
 /// confluences.
-pub fn read_pair(x: &Grid, y: &Grid, remainder: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> PairConfluence {
+pub fn read_pair(x: &SectionSample, y: &SectionSample, remainder: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> PairConfluence {
     let mut read = PairConfluence::default();
-    let same_frame = x.len() == y.len() && x.iter().zip(y).all(|(a, b)| a.len() == b.len());
+    let same_frame = x.extents() == y.extents();
     if !same_frame {
         read.unframed = true;
         return read;
@@ -219,11 +219,11 @@ pub fn read_pair(x: &Grid, y: &Grid, remainder: &[(i64, i64, u8, u8)], budget: &
         let closes = match nuclei {
             None => Closes::Unread,
             Some(ns) => match crate::transducer::cech::read_coxeter(&ns, &[], budget).closure {
-                crate::transducer::cech::Closure::Finite { .. } => Closes::Finite,
-                crate::transducer::cech::Closure::Infinite(crate::transducer::cech::Refusal::Affine(_)) => Closes::Affine,
-                crate::transducer::cech::Closure::Infinite(_) => Closes::Fluid,
-                crate::transducer::cech::Closure::Unbounded { .. } => Closes::Unbounded,
-                crate::transducer::cech::Closure::Unread => Closes::Unread,
+                crate::transducer::cech::GroupClosure::Finite { .. } => Closes::Finite,
+                crate::transducer::cech::GroupClosure::Infinite(crate::transducer::cech::Refusal::Affine(_)) => Closes::Affine,
+                crate::transducer::cech::GroupClosure::Infinite(_) => Closes::Fluid,
+                crate::transducer::cech::GroupClosure::Unbounded { .. } => Closes::Unbounded,
+                crate::transducer::cech::GroupClosure::Unread => Closes::Unread,
             },
         };
         read.confluences.push(Confluence {

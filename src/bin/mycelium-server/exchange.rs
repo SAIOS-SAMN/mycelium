@@ -5,15 +5,16 @@
 //! the addresses, the apertures, the origin it adopted. `Exchange` is the
 //! cycle: a court stroke, the intake, then one digest round-trip per peer.
 
-use crate::admission::{admit_peer_digest, admit_peer_receipt, rebuild_own_cover, AdmissionTally};
-use crate::door::{intake_corpus, relocate_corpus, route_corpus};
+use crate::admission::{admit_peer_digest, admit_peer_receipt, read_published_cover, AdmissionTally};
+use crate::control::{intake_corpus, relocate_corpus, route_corpus};
+use crate::nerve::{Nerve, NerveRx};
 use crate::persist::persist_if_due;
 use crate::syllabus::{syllabus_admit, Syllabus};
 use crate::transport::{note_rtt_ok, note_rtt_timeout, patience, tell_peer_measured, tell_peer_within};
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
-use mycelium::network::nerve::{Cover, Keyed, Router};
+use mycelium::network::nerve::{HomeTrie, Keyed, Router};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -26,7 +27,7 @@ pub(crate) use mycelium::anastome::dialogue::Roots;
 
 /// A NODE'S ORIGIN: the genesis hash it adopted and the epoch it adopted it
 /// at — the pair 47.2 step 1 tests every signed frame against.
-pub(crate) type Origin = ([u8; 32], u32);
+pub(crate) type GenesisEpoch = ([u8; 32], u32);
 
 /// THE LOCK ORDER of this binary (Stage 11 I26), read from every site that
 /// holds one lock while taking another. The court is taken first, and
@@ -42,7 +43,7 @@ pub(crate) type Origin = ([u8; 32], u32);
 /// a time. A new site that nests two of these locks keeps this order or is
 /// returned.
 pub(crate) struct Mesh {
-    pub(crate) cover: Arc<Mutex<Cover>>,
+    pub(crate) cover: Arc<Mutex<HomeTrie>>,
     pub(crate) rooms: Arc<Mutex<Keyed<[u64; 4]>>>,
     pub(crate) addrs: Arc<Mutex<Keyed<String>>>,
     pub(crate) vk: [u8; 32],
@@ -78,7 +79,7 @@ pub(crate) struct Mesh {
     /// every signed frame against. `None` is UNMEASURED, not zero: a node
     /// that has not adopted a genesis admits no receipt at all rather than
     /// admitting everything under a zero sentinel.
-    pub(crate) origin: Arc<Mutex<Option<Origin>>>,
+    pub(crate) origin: Arc<Mutex<Option<GenesisEpoch>>>,
 }
 
 impl Clone for Mesh {
@@ -143,7 +144,7 @@ pub(crate) fn note_root(roots: &mut Keyed<Keyed<u64>>, task: impl AsRef<[u8]>, s
 
 pub(crate) fn speak_root(
     router: &Router,
-    nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
+    nerve: &Nerve,
     self_id: &[u8; 32],
     task: &[u8],
     solver: &[u8; 32],
@@ -167,7 +168,7 @@ pub(crate) fn speak_root(
 
 pub(crate) fn speak_root_locked(
     router: &Mutex<Router>,
-    nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
+    nerve: &Nerve,
     self_id: &[u8; 32],
     task: &[u8],
     solver: &[u8; 32],
@@ -179,11 +180,11 @@ pub(crate) fn speak_root_locked(
     }
 }
 
-/// THE NERVE THREAD: every act this node speaks to a peer leaves through a
-/// bounded channel drained here, so the door never dials. The bound is the
-/// reserve ceiling; a full nerve drops the act, as a full reflex pool
-/// defers a demand.
-pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(String, Vec<u8>)>) {
+/// THE NERVE THREAD: every act this node speaks to a peer leaves through
+/// the nerve (`crate::nerve`), drained here, so the door never dials. The
+/// bound is the sealed reserve ceiling; a full nerve drops the act, as a
+/// full reflex pool defers a demand.
+pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: NerveRx) {
     std::thread::spawn(move || {
         let mesh_nerve = mesh;
         // R2 (34.2): a peer's deferrals of the acts routed to it — demands
@@ -236,7 +237,7 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
                     }
                 }
                 None => {
-                    // A silent keeper is read on the residual and the final
+                    // A silent keeper is read on the residue and the final
                     // point, not one line per pushed ring.
                     if !tick {
                         eprintln!("  nerve → {addr}: no answer");
@@ -266,7 +267,7 @@ pub(crate) struct Exchange {
     pub syllabus: Arc<Mutex<Syllabus>>,
     pub genesis_held: bool,
     /// 78.152b — the nerve this court's keeper pushes its ring on.
-    pub nerve: std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
+    pub nerve: Nerve,
 }
 
 /// THE PEER COURTS A CYCLE SPEAKS TO: the configured peers and every door a
@@ -295,7 +296,7 @@ fn peer_doors(mesh: &Mesh, join: &[String]) -> Keyed<String> {
 /// its ring is queued as `ACT_TICK` to every peer court on the nerve, never
 /// blocking (`try_send`: a full nerve drops it, and the next reading's ring
 /// carries it again, as the digest still does). Called with no court held.
-fn push_tick(mesh: &Mesh, join: &[String], nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>, ring: &[mycelium::chronometry::tuniversal::TickReading]) {
+fn push_tick(mesh: &Mesh, join: &[String], nerve: &Nerve, ring: &[mycelium::chronometry::tuniversal::TickReading]) {
     let Some(body) = dialogue::encode_tick(&mesh.vk, ring) else {
         eprintln!("  court tuniversal tick refused: a reading cannot be written");
         return;
@@ -357,7 +358,7 @@ impl Exchange {
         } = self;
         // 78.152b: the tick the court loop last handed the keepers, at the
         // origin then held — a stroke where neither moved asks them nothing.
-        let mut last_tick: (Option<mycelium::chronometry::tuniversal::Tick>, Option<Origin>) = (None, None);
+        let mut last_tick: (Option<mycelium::chronometry::tuniversal::Tick>, Option<GenesisEpoch>) = (None, None);
         let genesis_written =
             std::sync::Arc::new(std::sync::atomic::AtomicBool::new(genesis_held));
         let mut last_organs = (usize::MAX, usize::MAX);
@@ -370,15 +371,15 @@ impl Exchange {
         // a live loop is visibly alive without becoming the noise it is here
         // to cut through.
         let mut cycles = 0u64;
-        // The cycle each peer was last asked at: the quiet-digest ceiling's
-        // reading, one entry per peer this court knows.
-        let mut asked_cycle: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
+        // The final point's advances each peer was last asked at: the quiet
+        // peer's reading (D2.5), one entry per peer this court knows.
+        let mut asked_advance: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
         // The orbits this court sealed since the ledger was last persisted.
         let mut sealed_since_persist = 0u64;
         let mut idle = 0u64;
         // 78.152: what the door's shelf had moved when this cycle last
         // parked or worked — a park waits for motion past it.
-        let mut park_seen = crate::tshelf::shelf().seen();
+        let mut park_seen = crate::tuniversal::shelf().seen();
         let mut last_tally = AdmissionTally::default();
         let mut last_cover: Option<[[u8; 32]; 4]> = None;
         // 78.153c — whether this court's standing (its acts among it) has
@@ -389,26 +390,26 @@ impl Exchange {
         let mut reach_seen = 0u64;
         loop {
             std::thread::yield_now();
-            crate::held::yield_to_waiters();
+            crate::court_lock::yield_to_waiters();
             // The keepers' reach of this court, read off the keepers' own
             // lock before the court's, where it moved.
-            let reach = crate::tshelf::reach_moved(&mut reach_seen);
-            if let Ok(mut h) = crate::held::held!(court) {
+            let reach = crate::tuniversal::reach_moved(&mut reach_seen);
+            if let Ok(mut h) = crate::court_lock::held!(court) {
                 let (offers, deficit, tick) = h.run(|k, reads| {
-                    crate::held::step("court stroke");
+                    crate::court_lock::step("court stroke");
                     // 78.153b — the stroke the hold was taken with.
                     k.court_stroke_on(reads);
                     // 78.125 (law version 5) — the windows the reach closes,
                     // sealed once.
                     if let Some(r) = &reach {
-                        crate::held::step("close windows");
+                        crate::court_lock::step("close windows");
                         if let (Some(sealed), Ok(x)) = (k.close_windows(r), r) {
                             eprintln!("  court windows closed through h {} at h {}", x.through, sealed.stamp.h);
                         }
                     }
                     // A question the observer left while this stroke held the
                     // court is answered under the lock already held.
-                    crate::held::step("answer standing");
+                    crate::court_lock::step("answer standing");
                     // 78.153c — the first stroke after boot publishes it
                     // unasked, so the first question finds it.
                     if crate::judge::observe::answer_standing(k, &mesh, mesh.vk, !standing_published) {
@@ -418,9 +419,9 @@ impl Exchange {
                     crate::judge::why::answer_left(k);
                     // 78.151 — the door's reading, published whole under the
                     // lock the stroke already holds.
-                    crate::held::step("publish");
+                    crate::court_lock::step("publish");
                     published.publish(k);
-                    crate::held::step("offers");
+                    crate::court_lock::step("offers");
                     // The words the stroke moved onto the docket — a rewrite,
                     // the citers a slash re-docketed — are offered by it.
                     // 23.8, S13.4: the door's deficit, read under the court
@@ -445,12 +446,12 @@ impl Exchange {
                 // since: a reading verifies only at an origin.
                 let at = (tick, mesh.origin.lock().ok().and_then(|o| *o));
                 if at.0.is_some() && at != last_tick {
-                    last_tick = at;
-                    if let Some(ring) = crate::tshelf::sign_tick(&mesh, tick) {
+                    last_tick = at.clone();
+                    if let Some(ring) = crate::tuniversal::sign_tick(&mesh, at.0) {
                         push_tick(&mesh, &join, &nerve, &ring);
                         // A reading signed is the court's clock advancing:
                         // the held seat reads are answered (`hold`).
-                        crate::hold::stir();
+                        crate::deferred_reads::stir();
                     }
                 }
                 if let Ok(mut sy) = syllabus.lock() {
@@ -474,7 +475,7 @@ impl Exchange {
                 // and the fold's round by outcome. None of this reached the
                 // journal, so epoch 117's fold storm and its reserve were
                 // read only by hand.
-                if let Ok(mut h) = crate::held::held!(court) {
+                if let Ok(mut h) = crate::court_lock::held!(court) {
                     h.run(|k, reads| {
                     let folds = mycelium::observe::folds();
                     // 78.68: the winding carrier — first closes, carried
@@ -590,7 +591,7 @@ impl Exchange {
             #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
             let budget = mycelium::physics::expansion_unit() as usize;
             // 78.153b — off the published reading, never the court.
-            rebuild_own_cover(&published.take(), &mesh);
+            read_published_cover(&published.take(), &mesh);
             let roots = mesh.cover.lock().ok().map(|mut c| c.roots());
             // 45.7, S13.1: this court's own roots moving is one of the two
             // readings that ask a peer again; the other is the peer's Λ.
@@ -599,7 +600,7 @@ impl Exchange {
                 relocate_corpus(&court, &published, &mesh, &registry, budget);
                 last_cover = roots;
             }
-            let k_now = match crate::held::held!(court) {
+            let k_now = match crate::court_lock::held!(court) {
                 Ok(mut h) => h.run(|k, _| k.k_step()),
                 Err(_) => continue,
             };
@@ -658,23 +659,13 @@ impl Exchange {
                 // A QUIET COURT STILL ASKS: Λ is read on this court's K, which
                 // moves only when the court acts, so hypha a — spinning 340
                 // idle cycles a second with its K standing — asked each peer
-                // once in six minutes (2026-09-30). The quiet-digest ceiling
-                // bounds the wait in this loop's own strokes: a full reserve
-                // of the peer's measured transports.
-                let quiet = {
-                    // An unmeasured wire is read at the instrument's own
-                    // resolution: one poll, as a first-poll reply measures.
-                    let ceiling = match mycelium::physics::digest_ceiling(crate::transport::rtt_floor(&mesh, &pid).map_or(1, |f| f)) {
-                        mycelium::physics::Lambda::Strokes(n) => Some(n),
-                        mycelium::physics::Lambda::BeyondTheLedger | mycelium::physics::Lambda::Unmeasured => None,
-                    };
-                    let since = asked_cycle.get(&pid).copied();
-                    match (since, ceiling) {
-                        (Some(at), Some(c)) => cycles.checked_sub(at).is_some_and(|gap| gap >= c),
-                        (None, _) => true,
-                        (Some(_), None) => false,
-                    }
-                };
+                // once in six minutes (2026-09-30). A quiet peer is asked
+                // again once the TUniversal final point has advanced since
+                // the last ask (D2.5, 78.43): time is distance along an
+                // orbit, so a still network stays quiet and a moving one is
+                // heard at the rate it moves.
+                let advances = crate::tuniversal::shelf().advances();
+                let quiet = crate::transport::quiet_due(asked_advance.get(&pid).copied(), advances);
                 let due = crate::transport::exchange_due(last, k_now, lambda, own_moved) || quiet;
                 // 45.7, S13.3: the exchange to one peer is a carrier whose
                 // circuit is one ask; every cycle strokes it, so its period
@@ -692,7 +683,7 @@ impl Exchange {
                 if let Ok(mut a) = mesh.asked_at.lock() {
                     a.insert(&pid, k_now);
                 }
-                asked_cycle.insert(&pid, cycles);
+                asked_advance.insert(&pid, advances);
                 asked_any = true;
                 eprintln!("  court exchange asked {d} K {k_now}");
                 if let Some((n, period)) = circuit {
@@ -737,7 +728,7 @@ impl Exchange {
                             origin,
                             || admit_peer_receipt(&court, &mesh, &reply),
                             // 78.153b — a page's stroke is a hold's, handed on.
-                            || crate::held::held!(court).ok().map(|h| h.into_stroke()),
+                            || crate::court_lock::held!(court).ok().map(|h| h.into_stroke()),
                             crate::backfill::fetch(&mesh, &d),
                         );
                         // The signer is the key the digest names; a digest
@@ -771,7 +762,7 @@ impl Exchange {
                             // the installed language's stalks taken by the stalks'
                             // pointer in the same hold, its digests read off it
                             // with no court held.
-                            let stalks = match crate::held::held!(court) {
+                            let stalks = match crate::court_lock::held!(court) {
                                 Ok(mut h) => h.run(|k, reads| {
                                     k.confirm_peer_holds_on(&remote, vk_peer, reads);
                                     std::sync::Arc::clone(&k.language().stalks)
@@ -876,7 +867,7 @@ impl Exchange {
                                 // OWED (78.153b): `carry_chart` per chart × word
                                 // in flight is not yet metered (the lock audit,
                                 // row 5).
-                                let offers = match crate::held::held!(court) {
+                                let offers = match crate::court_lock::held!(court) {
                                     Ok(mut h) => h.run(|k, _| {
                                         for (_, inv) in &cover.charts {
                                             k.carry_chart(inv);
@@ -898,7 +889,7 @@ impl Exchange {
                         // and one reply's count carry (the reply's `u8` count
                         // wall); the addresses share the ask's frame with its
                         // own header (D4.6). Nothing waits, nothing is asked.
-                        let awaited = match crate::held::held!(court) {
+                        let awaited = match crate::court_lock::held!(court) {
                             Ok(mut h) => h.run(|k, _| match mycelium::network::wire::frame_budget().checked_sub(mycelium::anastome::dialogue::CITED_REQUEST_HEADER) {
                                 Some(bytes) => k.awaited_citations(usize::from(u8::MAX), bytes),
                                 None => Vec::new(),
@@ -926,7 +917,7 @@ impl Exchange {
                                     {
                                         let addr = spoken.address();
                                         named.push(addr.clone());
-                                        if let Ok(mut h) = crate::held::held!(court) {
+                                        if let Ok(mut h) = crate::court_lock::held!(court) {
                                             // 78.24 (2b): a word learned from a peer is
                                             // located by the stamp that admitted it there,
                                             // the peer's key its coordinate; every act
@@ -979,7 +970,7 @@ impl Exchange {
                                 // decoded here, each handed to the glue.
                                 mycelium::observe::note_replication(Some(vk_peer), mycelium::observe::replication::FETCH_RECEIVED, named.len() as u64);
                                 if !named.is_empty() {
-                                    if let Ok(mut h) = crate::held::held!(court) {
+                                    if let Ok(mut h) = crate::court_lock::held!(court) {
                                         h.run(|k, reads| k.confirm_peer_holds_addrs_on(&named, vk_peer, reads));
                                     }
                                 }
@@ -1020,7 +1011,7 @@ impl Exchange {
                     held
                 } else if mint_genesis {
                     // 78.153b — counted, as every take of the court is.
-                    crate::held::held!(court)
+                    crate::court_lock::held!(court)
                         .ok()
                         .and_then(|mut h| h.run(|k, _| k.chain().opening().map(|r| r.chain_hash)))
                         .map(|h| (h, epoch))
@@ -1068,7 +1059,7 @@ impl Exchange {
             // persist — closes its orbit by name. `K` moves here and nowhere
             // else; a cycle that sealed no act closes nothing. A withheld
             // close is counted on the clock, never printed beside it.
-            if let Ok(mut h) = crate::held::held!(court) {
+            if let Ok(mut h) = crate::court_lock::held!(court) {
                 if matches!(h.run(|k, _| k.orbit()), mycelium::chronometry::Close::Sealed(_)) {
                     sealed_since_persist += 1;
                 }
@@ -1086,10 +1077,10 @@ impl Exchange {
                 // bounded by the one scheduler floor (`stroke_floor`), told
                 // to the scheduler and read by no one.
                 idle += 1;
-                let shelf = crate::tshelf::shelf();
+                let shelf = crate::tuniversal::shelf();
                 let _ = shelf.park(park_seen, mycelium::physics::stroke_floor());
             }
-            park_seen = crate::tshelf::shelf().seen();
+            park_seen = crate::tuniversal::shelf().seen();
             // Written when the READING CHANGES, not every cycle. As
             // first shipped this fired on any silence and logged 17,588
             // lines in 35 minutes on one hypha: it found the deadlock

@@ -21,7 +21,7 @@
 
 use super::*;
 use crate::physics::laws::{verify, Breach, BodyState, Transition};
-use crate::physics::tensegrity::body_of_shape;
+use crate::physics::equilibrium::body_of_shape;
 
 /// WHAT THE LAWS SAID OF ONE PAIR (or, summed, of a slice).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -114,11 +114,11 @@ fn state(b: &Body) -> Option<BodyState> {
 
 /// THE LAWS ON ONE PAIR: its transitions, built from the perception's own
 /// carriages, each verified.
-pub fn bridge_pair(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> Bridge {
+pub fn bridge_pair(x: &SectionSample, y: &SectionSample, budget: &mut crate::physics::Budget) -> Bridge {
     let mut read = Bridge::default();
     let (ins, outs) = (perceive(x), perceive(y));
     // Every carriage, grouped by its canonical ray: one motion, one transition.
-    let mut motions: crate::network::nerve::Keyed<Vec<(usize, usize, Carriage)>> = crate::network::nerve::Keyed::new();
+    let mut motions: crate::network::nerve::Keyed<Vec<(usize, usize, BodyTransport)>> = crate::network::nerve::Keyed::new();
     for (i, a) in ins.iter().enumerate() {
         read.bodies += 1;
         let mut any = false;
@@ -161,9 +161,9 @@ pub fn bridge_pair(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> B
         function.dedup();
         let moves = function.iter().any(|(f, t)| f != t);
         let hues = match (moves, crate::transducer::element::lift_fibre(&function)) {
-            (false, _) => Vec::new(),
+            (false, _) => crate::transducer::element::FibreRelation::default(),
             (true, Some(lifted)) => lifted,
-            (true, None) => function,
+            (true, None) => crate::transducer::element::FibreRelation { rows: function, records: Vec::new() },
         };
         read.transitions += 1;
         let single = bodies.len() == 1;
@@ -188,7 +188,7 @@ pub fn bridge_pair(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> B
                     t.bodies
                         .iter()
                         .map(|(before, after)| {
-                            use crate::physics::tensegrity::momentum;
+                            use crate::physics::equilibrium::momentum;
                             let carried = t.motion.sandwich(&momentum(&before.body, &b)?).scale(&(num_rational::BigRational::from_integer(1.into()) / &w));
                             crate::transducer::cga::projective_ratio(&carried, &momentum(&after.body, &b)?)
                         })

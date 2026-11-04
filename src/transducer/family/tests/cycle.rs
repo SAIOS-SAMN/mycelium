@@ -3,7 +3,7 @@
 // again while still speaking it, the mint refuses it, and the court's replay
 // refuses it as `REFUSE_CITATION_CYCLE`.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 use crate::transducer::stalk::Standing;
 
@@ -21,7 +21,7 @@ impl Crystal for Mutual {
     fn on_body(&self, _chart: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         Vec::new()
     }
-    fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+    fn speak_form(&self, f: &Form, x: &SectionSample, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
     fn by_address(&self, address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
@@ -46,7 +46,7 @@ impl Crystal for Mutual {
 /// `b`, the form at `b` cites `a`. A form's citations are its cover, which
 /// its key leaves out (the envelope is evidence), so the mutual incidence the
 /// nerve admits is constructible exactly as it stands on a court.
-fn mutual() -> (Grid, Grid, Mutual, Form) {
+fn mutual() -> (SectionSample, SectionSample, Mutual, Form) {
     let (x, y) = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
     let s = cipher_form(&x, &y);
     let e = crate::transducer::sentence::as_element_form(&s, [1, 0, 0, 0]).expect("tape");
@@ -81,8 +81,8 @@ fn apply_form_refuses_mutual_citation() {
     // speech passes or is read, and the speech refuses by the cycle's name.
     let word = crate::transducer::sentence::as_element_form(&top, [1, 0, 0, 0]).expect("tape");
     let resolve = |address: &[u8]| crystal.by_address(address).map(|(_, f)| f);
-    let mut cursor = crate::verdict::ReplayCursor::default();
-    let out = crate::verdict::replay_resume(
+    let mut cursor = crate::verdict::ReconstructionCursor::default();
+    let out = crate::verdict::reconstruct_resume(
         &word,
         &resolve,
         Some(&family),
@@ -92,7 +92,7 @@ fn apply_form_refuses_mutual_citation() {
         true,
     );
     assert!(
-        matches!(&out, crate::verdict::Replayed::Refused(r) if r.reason == crate::verdict::REFUSE_CITATION_CYCLE),
+        matches!(&out, crate::verdict::ReconstructionOutcome::Refused(r) if r.reason == crate::verdict::REFUSE_CITATION_CYCLE),
         "the court refuses the cycle by name: {out:?}"
     );
 }

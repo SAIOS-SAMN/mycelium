@@ -86,8 +86,8 @@ Mycelium's current types, admission path and treasury.
 | Precursor | What Mycelium draws from it |
 |---|---|
 | **A predecessor Mycelium implementation** | The Noise XX transport and its pinning; the fault-injection campaign and its invariant auditor; the SDK depths and the file-feed door. |
-| **An earlier settlement-layer prototype** | Smith normal form over ℤ, integer homology and the free and torsion parts; the declared chain-complex checker; the malformed-input conformance corpus and its refuse/wait distinction; the falsification scripts the mutation audit generalizes; the representation of homology as a coefficient-change functor. |
-| **ipsal-autic, the language project the alphabet came from** | Act parameters measured per pair; templates placed over a lattice; first contact as a relation; colour-role equivariance and the class quotient; the representation functor (chains add as transports compose); the table of refused functionals. |
+| **An earlier settlement-layer prototype** | Smith normal form over ℤ, integer homology and the free and torsion parts; the declared chain-complex checker; the malformed-input conformance corpus and its refuse/wait distinction; the representation of homology as a coefficient-change functor. |
+| **ipsal-autic, the language project the alphabet came from** | Act parameters measured per pair; templates placed by repeated placement; first contact as a relation; colour-role equivariance and the class quotient; the representation functor (chains add as transports compose); the table of refused functionals. |
 | **convergence-engine, the public prototype harness** ([github.com/SAIOS-SAMN/convergence-engine](https://github.com/SAIOS-SAMN/convergence-engine)) | The rational canonical form over ℚ[x] (invariant factors of a linear map); exact rational arithmetic and coboundary reduction, already kept (§7). |
 | **An earlier design study** | The statement of what determinism gives alignment and what it does not. |
 | **An earlier visualization prototype** | Renderer notes for a future explorer of the network's readings. |
@@ -100,7 +100,7 @@ Mycelium's current types, admission path and treasury.
 | # | Component | Track | Effort | Status |
 |---|---|---|---|---|
 | 3.1 | Noise XX encrypted transport | 5 | Medium | In progress |
-| 3.2 | Mutation audit (`mutate` in the gate) | 14 | Medium | In progress |
+| 3.2 | ~~Mutation audit~~ | 14 | — | Retired |
 | 3.3 | Named refusals in `learn_form` | 7 | Small | In progress |
 | 3.4 | Integer homology and invariant factors | 18, 19, 12 | Medium | Specified |
 | 3.5 | Chain-complex checker (V1 certificate kind) | 12 (S2) | Medium | Specified |
@@ -186,62 +186,12 @@ constructor that refuses instead.
 `src/network/noise.rs`; wiring into the server door and the SDK session,
 and the pin store in the home, may remain after the first commit.
 
-### 3.2 Mutation audit
+### 3.2 ~~Mutation audit~~
 
-**What it is.** A standing check that the tests guard the laws they
-claim to guard. A catalogue of mutants is kept: each one names a law, the
-file, the exact source span that implements the law, the replacement that
-breaks it, and the narrowest test that must fail when it is broken. The
-audit applies each mutant in a scratch worktree, runs that test, and
-reports a verdict per mutant.
-
-**The gap.** In release 0.2.0, the gate (`xtask/main.rs`, `xtask/lint/`) takes three
-readings: the reading bound (`length.rs`), the Euclidean vocabulary
-(`euclidean.rs`) and clippy (`warnings.rs`). Nothing in it checks that a
-law's breakage is detected by a test. `proptest` is a dev-dependency and
-is not yet used by any test. MU-STANDARDS §3 states tests as claims, and
-nothing measures whether each claim can fail.
-
-**Design.**
-- `cargo run -- mutate` in `xtask` reads the catalogue (a text file kept
-  beside the gate, one entry per mutant).
-- Each mutant: `law` (the specification section it implements), `file`,
-  the exact original span, the replacement, and `test` (a module path).
-- The audit creates a scratch worktree of the current commit, applies one
-  mutant at a time by exact span replacement, runs only the named test,
-  and restores the span. The working tree is never modified.
-- **Verdicts, three and exact:**
-  - `killed`: the named test failed with the mutant applied;
-  - `survived`: the named test passed with the mutant applied (a law no
-    test notices; a defect in the tests);
-  - `stale`: the original span is not found in the file (the code moved;
-    the entry is re-anchored, never counted as either of the others).
-- The audit reports every verdict and exits non-zero on any `survived` or
-  `stale` entry. It is run before a release and on a change to a file the
-  catalogue names; it is not part of every gate run, because each mutant
-  is a build.
-- Builds run under the gate's own target directory, so the audit never
-  disturbs a running build.
-
-**Adaptations from the precursor.** The earlier settlement-layer
-prototype kept mutants in two scripts run from the workspace root on a
-clean tree, reverting through the version-control tool. Mycelium keeps
-the catalogue as data, runs it from the gate binary in a scratch
-worktree, and adds the `stale` verdict so a moved span is reported rather
-than read as a surviving law.
-
-**Acceptance claims.**
-- A mutant whose test fails is `killed`, and one whose test passes has
-  `survived`, on a fixture catalogue against a fixture crate.
-- A span not in the file is `stale`: a refusal by name, never counted as
-  killed.
-- The working tree is unchanged after an audit: a fixed locus.
-- A first catalogue covering at least the treasury audit
-  (`Treasury::audit`), canonical decoding of one act, second-vantage
-  equality (`same_vertex`) and a clause's tie rule, every entry `killed`.
-
-**Track** 14 (and MU-STANDARDS §4, the gate). **Effort** medium.
-**Status** In progress: the `mutate` subcommand is being added to `xtask`.
+**Status** Retired (2026-11-04, ruled theatre). The catalogue and the
+`gate mutate` subcommand are removed from `xtask`; a law is guarded by
+its claims and, where a regression recurs, by a type in the drift
+register (`xtask/lint/drift.rs`).
 
 ### 3.3 Named refusals in `learn_form`
 
@@ -306,7 +256,7 @@ are those being built; the final names are the code's).
 - No Smith normal form, invariant factor or elementary divisor appears in
   `src/`. `src/core/exponents.rs` holds the Hermite normal form with its
   transform (`hnf_with_transform`, `reduce_against`): exact over ℤ, it
-  decides membership in a lattice and gives the factorization, but it does
+  decides membership in the integer span of the held rows and gives the factorization, but it does
   not give torsion or the diagonal form.
 - `src/transducer/cga/linear.rs` holds `LinearFunction`, which reads the
   characteristic polynomial (Newton's identities over power-sum traces),
@@ -445,8 +395,8 @@ invariants after every campaign. A campaign is reproducible from a printed
 seed: the mesh size, the topology, the fault list and the seed are its
 whole description.
 
-**The gap.** `tests/` holds two integration suites (`alpha_plan.rs`,
-`g_cga.rs`). The court's equivocation proof is tested in
+**The gap.** `tests/` holds two integration suites (`word_lifecycle.rs`,
+`conformal_algebra.rs`). The court's equivocation proof is tested in
 `court/admission/tests/equivocation.rs`, and the treasury audit
 (`Treasury::audit`) is checked from the rows. No harness composes faults
 across several courts and audits the invariants mesh-wide.
@@ -459,7 +409,7 @@ not a fault campaign.
   | Fault | What it injects |
   |---|---|
   | `InvalidSignature` | An act whose Ed25519 signature does not verify. |
-  | `Replay` (a resend; the class follows the code rename to `Resend`) | A valid signed act sent twice. |
+  | `Resend` | A valid signed act sent twice. |
   | `DoubleClaimRace` | One work claimed at two courts across a partition. |
   | `EquivocatingLedger` | Two signed receipts from one key at one position. |
   | `SybilSwarm` | Many unbonded voices from one operator. |
@@ -596,18 +546,18 @@ it.
 - *Claims:* a scale by the frames' ratio holds where the ratio differs
   pair to pair; a non-integer frame ratio is refused by name.
 
-**(b) A template placed over a lattice.**
+**(b) A template placed by its repeats.**
 - *Gap:* `Act::Copy { template }` places one template centre onto centre
-  on each selected body. A template repeated over a lattice of positions
-  (a skew lattice included) is not stated.
-- *Design:* the lattice is read from the placement differences of the
+  on each selected body. A template repeated at positions spanned by
+  integer steps (skew steps included) is not stated.
+- *Design:* the repeat span is read from the placement differences of the
   witnessed copies as the differences' Hermite normal form (`core::exponents`,
   exact over ℤ at any size), and its offset is anchored to a body a
   predicate selects. Membership of a position is decided by reduction
   against the form. No candidate positions are enumerated; a single
-  witnessed copy mints no lattice and is refused by name.
-- *Claims:* a skew lattice is read whole from its placement differences;
-  a lone witness mints no lattice.
+  witnessed copy mints no span and is refused by name.
+- *Claims:* a skew repeat span is read whole from its placement
+  differences; a lone witness mints no span.
 
 **(c) First contact as a relation, and a slide toward a partner.**
 - *Gap:* `Pred::Touches` reads contact that already holds; `Act::Slide`
@@ -619,10 +569,11 @@ it.
   `Act::Slide { toward: Pred, stop }` carries each selected body along the
   ray to its partner. Partners met at one distance are held whole (every
   one of them is the partner), never reduced to one. Where the ray to the
-  partner is not a lattice unit, the slide is refused by name. The grid
-  has a border: there is no toroidal wrap.
+  partner is not a primitive integer step, the slide is refused by name.
+  The sample has a border: there is no toroidal wrap.
 - *Claims:* a body slides to its first-met partner; partners at one
-  distance are held whole; a ray that is not a lattice unit is refused.
+  distance are held whole; a ray that is not a primitive integer step is
+  refused.
 
 **(d) Colour-role equivariance.**
 - *Gap:* `Act::Recolour` and the gauges of `Carry` and `Echo` are fixed hue
@@ -670,7 +621,7 @@ or minority), lattice placement with a phase anchored to a minimal origin,
 toroidal first contact and the class quotient. In Mycelium: a hue named by
 a count is a `Rank` over a named coordinate with its tie named; an anchor
 is a body a predicate selects, never a minimal origin; first contact stops
-at the border; the lattice is read in `BigInt` through the existing
+at the border; the repeat span is read in `BigInt` through the existing
 Hermite form, not in fixed-width integers; and every addition is judged by
 closure on families it did not see, never by the task it closed.
 
@@ -835,10 +786,11 @@ mapping from the spaces world models already declare.
 
 ### 4.1 The current state
 
-- `Cargo.toml` is a workspace: the root package `mycelium` 0.2.0,
+- `Cargo.toml` is a workspace: the root package `mycelium` 0.3.0-rc.3,
   Apache-2.0, `rust-version = "1.82"`, with three binaries
   (`mycelium-server`, `mycelium-client`, `mycelium-soak`), and the members
-  `forms` (0.1.0) and `mycelium-sdk` (0.3.0-dev), under one lock file and
+  `forms`, `mycelium-sdk` (`sdk/`) and `mycelium-source-arc-agi`
+  (`sources/arc-agi`), each at 0.3.0-rc.3, under one lock file and
   one lint table (`[workspace.lints]`). `xtask` stays outside it.
 - The SDK is the crate `mycelium-sdk` (`sdk/`), re-exporting the library's
   client surface in modules: `voice`, `session`, `task`, `rule`, `seat`,
@@ -984,10 +936,9 @@ similarity classes are not carried forward (§5).
 
 ## 7. Order of work
 
-1. The three components in progress land first: the transport (§3.1),
-   the mutation audit (§3.2) and `learn_form`'s refusals (§3.3).
-2. The malformed-input corpus (§3.7) and the first mutation catalogue
-   follow, as the base of the security review (track 14).
+1. The two components in progress land first: the transport (§3.1) and
+   `learn_form`'s refusals (§3.3).
+2. The malformed-input corpus (§3.7) follows, as the base of the security review (track 14).
 3. Integer homology (§3.4) precedes the chain-complex checker (§3.5),
    which waits on the verifier interface (track 12, S1).
 4. The rule-language extensions (§3.8) land one court change at a time,

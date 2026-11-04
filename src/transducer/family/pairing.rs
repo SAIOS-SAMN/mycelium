@@ -723,7 +723,7 @@ pub(crate) fn interface_of(
 
 /// WHAT ONE READ OF THE OCCUPANCY NAMES: the faces, each contact on its
 /// pair, and the contact complex's certified cells.
-pub(crate) type SceneIncidence = (Vec<NamedFace>, crate::network::nerve::Keyed<crate::transducer::sentence::FormCell>);
+pub(crate) type SceneIncidence = (Vec<NamedFace>, crate::network::nerve::Keyed<crate::transducer::sentence::BodyContact>);
 
 /// THE FACES THE BUNDLE NAMES, each carrying its contacts, and the CONTACT
 /// COMPLEX'S CERTIFIED CELLS, read on the same pass (NB1): one reading of the
@@ -848,7 +848,7 @@ pub(crate) fn named_incidence(
         .into_iter()
         .map(|mut sup| {
             sup.sort_unstable();
-            super::pieces::piece_at(crate::transducer::peel::ShellKind::Whole, &sup).encode().as_bytes().to_vec()
+            super::pieces::piece_at(crate::transducer::layers::LayerKind::Whole, &sup).encode().as_bytes().to_vec()
         })
         .collect();
     // NB1, 78.2 — THE CONTACT COMPLEX'S CELLS, read off the base's elements:
@@ -870,7 +870,7 @@ pub(crate) fn named_incidence(
     // keyed by the cells' bodies' pieces, framed, in the pieces' own order.
     let over = crate::transducer::cech::cells_over(
         standing.iter().map(|(element, bodies)| {
-            (crate::network::nerve::coord::Compartment { site: element.clone() }, bodies.as_slice())
+            (crate::network::nerve::coord::CoverSite { site: element.clone() }, bodies.as_slice())
         }),
         |m| address_of.get(m).cloned(),
         |members| {
@@ -889,7 +889,7 @@ pub(crate) fn named_incidence(
     // a projection that two bodies can share. A piece is small (C3); the
     // cell holds its bodies' pieces, and `cells_over` has already keyed and
     // ordered it by them (KB1), the constructors riding in the same order.
-    let mut cells: crate::network::nerve::Keyed<crate::transducer::sentence::FormCell> =
+    let mut cells: crate::network::nerve::Keyed<crate::transducer::sentence::BodyContact> =
         crate::network::nerve::Keyed::new();
     for c in over.cells {
         let mut key: Vec<u8> = Vec::new();
@@ -899,7 +899,7 @@ pub(crate) fn named_incidence(
         let nuclei: Option<Vec<crate::transducer::cga::Mv>> =
             c.members.iter().map(|&m| nucleus_of.get(m).cloned().flatten()).collect();
         let witnesses = c.witnesses.into_iter().map(|l| l.site).collect();
-        cells.insert(&key, crate::transducer::sentence::FormCell { bodies: c.coords, witnesses, nuclei });
+        cells.insert(&key, crate::transducer::sentence::BodyContact { bodies: c.coords, witnesses, nuclei });
     }
     let mut contacts: crate::network::nerve::Keyed<Gathered> = crate::network::nerve::Keyed::new();
     for crate::transducer::sentence::SharedCell { i, j, grade, .. } in
@@ -1012,15 +1012,12 @@ pub(crate) fn named_incidence(
     (faces, cells)
 }
 
-/// Physical size of the hue carrier. Index by hue, never search.
-/// FORMAT: the range of a `u8` hue, `2⁸`.
-pub const PALETTE: usize = 256;
-pub type HueMap = [Option<u8>; PALETTE];
+/// A HUE MAP read by the symbol (MU-SENSING §3.3): keyed by the symbols the
+/// pairs name, at most `|Σ|` of them, never a fixed array over the byte's
+/// range. A symbol no pair names is absent, and the reader keeps it.
+pub type HueMap = crate::transducer::sentence::HueTable;
 
+/// The pairs read as the map, the last pair naming a symbol standing.
 pub(crate) fn hue_map_from_pairs(pairs: &[(u8, u8)]) -> HueMap {
-    let mut m = [None; PALETTE];
-    for &(f, t) in pairs {
-        m[f as usize] = Some(t);
-    }
-    m
+    crate::transducer::sentence::transport::gauge_keyed(pairs)
 }

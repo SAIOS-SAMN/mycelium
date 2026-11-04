@@ -1,0 +1,654 @@
+// 26 — UTTERANCE: what this mind speaks to a court and what it cites.
+//
+//! A citation is a word this mind holds; a speech is a sentence it has
+//! not spoken before. `already_taught` reads what the court has, so the
+//! same word is not spoken twice.
+
+use crate::client::sdk::*;
+
+/// WHAT THE HYPHA SAID ABOUT EACH SENTENCE SENT, written into `codes` in
+/// the order the sentences stand, and the indices it ADMITTED.
+///
+/// A slot still holding `0xff` is one this mind put on the wire; the reply
+/// answers those in order. A CODE THE HYPHA DID NOT SEND IS NOT AN
+/// OUTCOME: this read `got.get(gi).copied().unwrap_or(SPEECH_STOOD)`, so
+/// a reply shorter than the sentences sent — a truncated frame, a hypha
+/// that answered about fewer — was read as the hypha having STOOD the
+/// rest. The mind then stepped its clock for an act nobody admitted
+/// (45.4) and filed the word in `taught_up`, where it would never be
+/// spoken again. An invented value, and the value it invents is the
+/// favourable one (rule 11, checklist (i)). Nothing was heard about that
+/// sentence, so it is `SPEECH_DIALECT` — stood here, unanswered there —
+/// and it may be spoken again.
+pub(crate) fn read_speech_reply(codes: &mut [u8], got: &[u8]) -> Vec<usize> {
+    let mut admitted = Vec::new();
+    let mut gi = 0usize;
+    for (i, slot) in codes.iter_mut().enumerate() {
+        if *slot != 0xff {
+            continue;
+        }
+        let Some(c) = got.get(gi).copied() else {
+            *slot = dialogue::SPEECH_DIALECT;
+            continue;
+        };
+        gi += 1;
+        *slot = c;
+        // AN ADMISSION IS A VERDICT: stood or ratified. A refusal is not an
+        // act, and a wait (`SPEECH_DIALECT`, "stood there, unanswered here,
+        // spoken again later") admitted nothing either — filed as taught,
+        // the waiting sentence would never be spoken again (50.9).
+        if matches!(c, dialogue::SPEECH_STOOD | dialogue::SPEECH_RATIFIED) {
+            admitted.push(i);
+        }
+    }
+    admitted
+}
+
+/// A SPEECH STOOD: heard already (nothing fresh went on the wire), or the
+/// frame posted with the codes so far and the sentences it asks about.
+enum Posted {
+    Heard(Vec<u8>),
+    Asked { body: Vec<u8>, codes: Vec<u8>, fresh: Vec<usize> },
+}
+
+/// THE STRATUM A WORD'S VERTEX LIES IN: the M1 key of its rotor where it
+/// has letters, its canonical chain where it does not, its address where it
+/// is a sentence.
+///
+/// Every one is a NECESSARY condition of `same_vertex`: that test requires
+/// the rotors to be projectively equal (M1), the canonical chains to be
+/// equal (A5), and it decides two sentence forms by address alone. So two
+/// words that are one vertex share this key, and a fibre read under it
+/// holds every candidate. It is not sufficient — the exact test still
+/// decides — which is A21 §3's own shape.
+///
+/// `None` when the chain is one A5 refuses (two transitions on one site):
+/// such a word is not a vertex, and it has no stratum. It was keyed by its
+/// raw bytes instead — `unwrap_or_else(|| word.sub().to_vec())`, a key
+/// invented where the canonical one is refused (rule 11, checklist i).
+pub(crate) fn vertex_stratum(word: &Element) -> Option<Vec<u8>> {
+    if word.is_sentence() {
+        return Some(word.address().into_vec());
+    }
+    match word.letters() {
+        Some(l) => Some(l.spelling.word.key().as_bytes().to_vec()),
+        None => {
+            let chain = crate::transducer::element::canonical_chain(word.sub())?;
+            let mut out = Vec::with_capacity(chain.len() * 18);
+            for (r, c, b, a) in chain.as_slice() {
+                out.extend_from_slice(&r.to_le_bytes());
+                out.extend_from_slice(&c.to_le_bytes());
+                out.push(*b);
+                out.push(*a);
+            }
+            Some(out)
+        }
+    }
+}
+
+impl Mind {
+    /// THE KEY AN UTTERANCE RECEIPT IS FILED UNDER: its address's 32-byte
+    /// hash — the address compacted, located exactly by every reader that
+    /// holds it (`taught_up`).
+    pub(crate) fn taught_key(address: &[u8]) -> [u8; 32] {
+        crate::chronometry::payload_hash(address)
+    }
+
+    /// File an uttered word in both indices at once: by address, and in
+    /// the stratum its vertex lies in.
+    pub(crate) fn file_taught(&mut self, word: &Element) {
+        let address = word.address();
+        // A word with no stratum (a chain A5 refuses) is filed by address
+        // alone: there is no vertex for another spelling to share. A
+        // SENTENCE is one vertex by its address alone (`same_vertex`), which
+        // the receipt's own key answers: it is filed in no stratum.
+        let at = match word.is_sentence() {
+            true => None,
+            false => vertex_stratum(word),
+        };
+        if let Some(at) = &at {
+            self.taught_at.nested_insert(at, &address, ());
+        }
+        // An admitted citer is owed to no court any more.
+        self.owed_tries.remove(address.as_bytes());
+        self.taught_up.insert(Self::taught_key(address.as_bytes()), at);
+    }
+
+    /// The utterance receipt of a word that left the dialect leaves both
+    /// indices with it (S12.6a): by address, and in its vertex stratum.
+    pub(crate) fn forget_utterance(&mut self, address: &[u8]) {
+        // MU-CLIENT §5.5 — and the scenes it was spoken under let it go.
+        self.scenes.forget(address);
+        // MU-CLIENT §4.13 — a word the dialect shed is not said again.
+        self.unheard.remove(address);
+        let Some(at) = self.taught_up.remove(&Self::taught_key(address)) else {
+            return;
+        };
+        if let Some(at) = at {
+            let empty = match self.taught_at.get_mut(&at) {
+                Some(inner) => {
+                    inner.remove(address);
+                    inner.is_empty()
+                }
+                None => false,
+            };
+            if empty {
+                self.taught_at.remove(&at);
+            }
+        }
+    }
+
+    /// CITE a chain over the working atlas: the genome and the dialect by
+    /// index, and the held forms' words read at each body's chart as the
+    /// reading asks (24.1 as ruled 2026-09-09) — the vertex's action
+    /// evaluated on the body, never a list of elements built ahead of the
+    /// question. A remainder is not a citation of itself: the vertex whose
+    /// address is the chain's own key is passed over, since deconstruction
+    /// reads other words, never the chain under locate. A citation is a use
+    /// (45.4): a stood word cited here is touched at the mind's own K.
+    #[cfg(test)]
+    pub(crate) fn cite(&mut self, chain: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> Cited {
+        // The chain's own key, a listing key (17.2): the one address the
+        // held stratum does not answer with.
+        // A chain with no A5 form cites nothing and stands whole as the
+        // residue: there is no word here to be a use of.
+        let Some(own) = crate::transducer::element::from_residue(&chain.to_vec()) else {
+            return (Vec::new(), chain.to_vec());
+        };
+        let own = own.address();
+        let _ = &own;
+        // The chain as the cite would reconstruct it: sorted and deduped,
+        // which is the form `vertex_cites` hands back.
+        let whole = {
+            let mut w = chain.to_vec();
+            w.sort_unstable();
+            w.dedup();
+            w
+        };
+        // The caller's stroke reads the citation (65.5).
+        let contemplation = &self.contemplation;
+        let held_at = |inv: &crate::transducer::stalk::Invariant,
+                       piece: &[(i64, i64, u8, u8)],
+                       budget: &mut crate::physics::Budget| {
+            contemplation
+                .held_at(inv)
+                .into_iter()
+                .filter_map(|v| crate::transducer::sentence::vertex_cites(v, piece, budget))
+                // A REMAINDER IS NOT A CITATION OF ITSELF, and what says so
+                // is the BODY the cite reconstructs (L6: "a cite IS the
+                // body it reconstructs"), not the vertex's name.
+                //
+                // It used to drop a held vertex whose ADDRESS equalled the
+                // chain's, which worked only while a word vertex carried
+                // the address of the word the reading located. Under 54.2
+                // a vertex's address is its own coordinates and that
+                // citation is a receipt, so the guard now asks the question
+                // it always meant: does this cite reconstruct the very
+                // chain being cited.
+                .filter(|c| {
+                    let mut body = c.body.clone();
+                    body.sort_unstable();
+                    body.dedup();
+                    body != whole
+                })
+                .collect::<Vec<_>>()
+        };
+        let located = self.language.locate_on(chain, None, &held_at, budget);
+        let word_of = |a: &[u8]| -> Option<&Element> {
+            self.language.working_word(a).map(|h| h.element())
+        };
+        // STANDING IS A COORDINATE ON THE CITED WORD (Ruled, Stood, Held),
+        // never a weight multiplied into μ⃗ — and never, as it was here, a
+        // comparison of an offset against the genome's length. Each stratum
+        // is asked at the address, in the strata's own order (24.1); a word
+        // the working language does not hold has no standing to report and
+        // is not put on the wire.
+        let standing_of = |a: &[u8]| -> Option<Standing> { self.language.standing_of(a) };
+        let mut cites: Vec<dialogue::CiteWire> = located
+            .cites
+            .into_iter()
+            .filter_map(|c| {
+                let w = word_of(c.word.as_bytes())?;
+                // L6: A CITE IS THE BODY IT RECONSTRUCTS. One whose gauge
+                // reconstructs none is not a cite carrying nothing — it is
+                // no cite, and it does not go on the wire.
+                let body = crate::transducer::sentence::cited_pattern(w, &c.assignment)?;
+                Some(dialogue::CiteWire {
+                    addr: w.address(),
+                    standing: standing_of(c.word.as_bytes())?.byte(),
+                    transport: c.transport,
+                    body,
+                })
+            })
+            .collect();
+        for p in &located.punctures {
+            let Some(w) = word_of(p.word.as_bytes()) else { continue };
+            let Some(st) = standing_of(p.word.as_bytes()) else { continue };
+            cites.push(dialogue::CiteWire {
+                addr: w.address(),
+                standing: st.byte(),
+                transport: p.transport.clone(),
+                body: p.links.clone(),
+            });
+        }
+        // A held cite carries the body in the frame the vertex's action
+        // was evaluated in — the chain's own — so its transport is the
+        // identity and its one section is the vertex's gauge.
+        for h in located.held {
+            cites.push(dialogue::CiteWire {
+                addr: h.address,
+                standing: Standing::Held.byte(),
+                transport: crate::transducer::element::identity_versor(),
+                body: h.body,
+            });
+        }
+        let k = self.own_k();
+        for c in &cites {
+            if c.standing == Standing::Stood.byte() {
+                self.language.touch(&c.addr, k);
+            }
+        }
+        (cites, located.residue)
+    }
+
+
+    /// A served listing: cite over the working atlas. Residue strictly
+    /// below the chain on a lane is expressed; residue that raised a
+    /// lane or moved nothing is held as thought — the form of the listing's chain
+    /// (50.6) — and never expressed.
+    #[cfg(test)]
+    pub(crate) fn conclude_listing(
+        &mut self,
+        chain: &[(i64, i64, u8, u8)],
+    ) -> crate::client::sdk::Concluded {
+        // The root of this act (no caller holds a stroke): one stroke for
+        // the citation and the expression both (65.5).
+        let mut budget = self.physics.stroke();
+        let (cites, residue) = self.cite(chain, &mut budget);
+        // 24.2: a residue that raised a lane, or moved nothing at all, is
+        // held as thought and never spoken. The reading says which case.
+        let reading = residue_move(&residue, chain);
+        if !crate::economy::lanes_risen(&reading).is_empty()
+            || crate::economy::lanes_fallen(&reading).is_empty()
+        {
+            self.hold_chain(chain.to_vec());
+            return Concluded { cites, residue: chain.to_vec(), familiar: false };
+        }
+        let familiar = !self
+            .language
+            .express(&residue, self.own_k(), self.now_tu(), &mut budget);
+        Concluded { cites, residue, familiar }
+    }
+
+    /// STAND every sentence in the dialect, and say which of them are
+    /// fresh. 24.3 fixes the order — "perceive, think, stand, utter" — and
+    /// these are two of those acts, not one: standing is complete before
+    /// anything reaches the wire, and it is what steps this mind's clock.
+    ///
+    /// A slot reads `0xff` when the sentence is fresh and the utterance
+    /// will ask about it; `SPEECH_STOOD` when this mind has already taught
+    /// that vertex, which stands in the dialect and goes nowhere.
+    ///
+    /// It is its own function so that the claim "standing steps the mind's
+    /// own K, and no reply moves it" can be proved without a socket, which
+    /// §3.7 does not let a test open.
+    pub(crate) fn stand(&mut self, sentences: &[Element], tu: u64, family: &[u8]) -> Vec<u8> {
+        let mut codes = vec![dialogue::SPEECH_STOOD; sentences.len()];
+        for (i, e) in sentences.iter().enumerate() {
+            let taught = self.already_taught(e);
+            // 78.49: STANDING A FORM IS AN ACT of this mind, and the form
+            // stands at the mind's own K — never a number the hypha last
+            // replied with. The court seals what it admits. Standing a form
+            // the mind already holds again is a USE of it, never a new act:
+            // a mind repeating itself does not step its own K.
+            let k = match taught {
+                true => self.own_k(),
+                false => self.act(),
+            };
+            self.language.stand_dialect_at(e.clone(), k, tu);
+            if !taught {
+                codes[i] = 0xff; // asked about on the wire below
+                // 78.161 — and said to the minds this one chatters with,
+                // under the scene it was spoken under (E1).
+                self.say(e, family);
+            }
+        }
+        codes
+    }
+
+    /// SPEAK sentences as one act, bound to no family and no task: a word
+    /// spoken for itself (an axis germ, a crystallized idea). `heard` takes
+    /// the codes when the court's answer lands.
+    pub(crate) fn speak(&mut self, sentences: &[Element], heard: impl FnOnce(&mut Mind, io::Result<Vec<u8>>) + 'static) {
+        self.speak_with(sentences, &[], &[], heard)
+    }
+
+    /// SPEAK a family's cohering sentences as one act, naming the task so
+    /// the court replays them on its copy of the family (23.8, 50.2 G).
+    /// Each word STANDS in the dialect before it is uttered (24.3:
+    /// perceive, think, stand, utter); the genome is frozen. A vertex
+    /// already on `taught_up` stands in the dialect and does not go on the
+    /// wire. THE SEALED SET IS READ FIRST (50.9): a tape a court refused is
+    /// refused by this mind before any frame is built, and never stood.
+    ///
+    /// THE SPEECH IS POSTED, NEVER WAITED ON (MU-CLIENT §5.1): the carrier
+    /// speaks it, and where the court's answer lands (`hear_speech`) it is
+    /// one adjudication per sentence sent — a stood or ratified sentence is
+    /// filed and its receipt sealed, a refused one contracted and its
+    /// contraction queued — and `heard` takes the codes. A speech with nothing
+    /// fresh to say is heard at once.
+    pub(crate) fn speak_with(
+        &mut self,
+        sentences: &[Element],
+        train: &crate::transducer::family::Family,
+        task: &[u8],
+        heard: impl FnOnce(&mut Mind, io::Result<Vec<u8>>) + 'static,
+    ) {
+        // MU-CLIENT §5.5 — every word with a section spoken under a scene is
+        // held there, what a word another mind says of that scene is read
+        // against; a word a court sealed is not this mind's to speak.
+        for e in sentences.iter().filter(|e| self.sealed.get(&e.address()).is_none()) {
+            self.scenes.hold(task, train, e);
+        }
+        // MU-SENSING §6.2 (track 26 S5) — THE SPEECH STATES THE GROUND ITS
+        // CLAIMS WERE SPOKEN UNDER: the scope open on this thread, else this
+        // mind's own reading of the family it speaks under (§6.1: the ground
+        // is the mind's). It is opened while the speech is framed, so every
+        // sentence and every word said to the minds this one chatters with
+        // states it; the court reconstructs under it and deduces none.
+        let ground = crate::transducer::raster::on_ground_of(train, crate::transducer::raster::ground);
+        match crate::transducer::raster::on_ground(ground, || self.post_speech(sentences, task)) {
+            Ok(Posted::Heard(codes)) => heard(self, Ok(codes)),
+            // MU-CLIENT §4.4(4) — STOOD NOW, SAID AT THE RETURN: the words
+            // stand in the dialect at once (the mind's own act), and the
+            // speech leaves where the mind's orbits next return.
+            Ok(Posted::Asked { body, codes, fresh }) => {
+                // Its coordinates: the scene it names, then each sentence's
+                // address — the same speech said again is one speech.
+                let mut at = vec![0u8];
+                crate::transducer::address::put_key_bytes(&mut at, task);
+                for e in sentences {
+                    crate::transducer::address::put_key_bytes(&mut at, e.address().as_bytes());
+                }
+                let (sentences, train, task) = (sentences.to_vec(), train.to_vec(), task.to_vec());
+                // MU-CLIENT §4.13 — unjudged until the court's answer lands.
+                for i in &fresh {
+                    if let Some(e) = sentences.get(*i) {
+                        self.speaking.insert(e.address().as_bytes(), ());
+                    }
+                }
+                // R2 — held for the return of a thought of the scene it is
+                // spoken under; a FEED family's speech for the mind's own
+                // return (ruled 2026-10-18: a family read off disk is
+                // no standing orbit, and its words waited on a return of its
+                // scene that never came — 32 sayings over 16 scenes on one
+                // mind). It still names its scene on the wire, where the
+                // court measures it (E1).
+                let scene = match self.board.feed_scenes.contains(&task) {
+                    true => Vec::new(),
+                    false => task.clone(),
+                };
+                self.hold_for_return(&at, &scene, move |entity| {
+                    entity.ask(
+                        move |s| s.speak_nerve(body),
+                        move |entity, reply| {
+                            for e in &sentences {
+                                entity.speaking.remove(e.address().as_bytes());
+                            }
+                            let codes = entity.hear_speech(&sentences, codes, &fresh, reply, &train, &task);
+                            heard(entity, codes);
+                        },
+                    );
+                });
+            }
+            Err(e) => heard(self, Err(e)),
+        }
+    }
+
+    /// THE COURT'S ANSWER TO A SPEECH, landed: the adjudications read into
+    /// the codes of the sentences sent (`fresh`), each admitted one filed,
+    /// each refused one contracted, each awaiting one owed.
+    fn hear_speech(
+        &mut self,
+        sentences: &[Element],
+        mut codes: Vec<u8>,
+        fresh: &[usize],
+        reply: io::Result<Vec<u8>>,
+        train: &crate::transducer::family::Family,
+        task: &[u8],
+    ) -> io::Result<Vec<u8>> {
+        let reply = reply?;
+        // The root of this act, the answer's landing (65.5).
+        let mut budget = self.physics.stroke();
+        let budget = &mut budget;
+        // B7: A REPLY THAT DOES NOT DECODE IS NOT AN OUTCOME. Reading it as
+        // zero adjudications says the court answered and adjudicated
+        // nothing, which is a different fact from "this mind cannot read
+        // what came back" — and it is the second that happened.
+        let Some(adjudicated) = dialogue::decode_speech_reply(&reply) else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "speech reply does not decode",
+            ));
+        };
+        let got: Vec<u8> = adjudicated.iter().map(|a| a.code()).collect();
+        for i in read_speech_reply(&mut codes, &got) {
+            // The utterance was admitted by the court: an act of this mind
+            // (78.49). A refused utterance is not an admitted one.
+            let Some(e) = sentences.get(i).cloned() else { continue };
+            self.act();
+            self.file_taught(&e);
+            self.contractions.remove(&e.address());
+            if let Some(k) = crate::transducer::sentence::from_element_form(&e)
+                .map(|f| crate::transducer::sentence::form_vertex_key(&f))
+            {
+                self.contractions.remove(&k);
+            }
+        }
+        for (j, &i) in fresh.iter().enumerate() {
+            let Some(sentence) = sentences.get(i) else { continue };
+            match adjudicated.get(j) {
+                Some(dialogue::Adjudication::Refused { kind, at, receipt }) => {
+                    self.receive_adjudication(sentence, *kind, at.clone(), *receipt, train, task, budget);
+                }
+                // 21 step 3: the court has not ruled a form this sentence
+                // cited. Nothing is sealed — this is not a refusal — and
+                // the mind owes that court the cited form before the
+                // citer (chapter 6's depth order). The mind HOLDS it,
+                // because it derived through it.
+                Some(dialogue::Adjudication::Awaiting { form }) => {
+                    let _ = self.owe_citation(sentence, form, train, task);
+                }
+                // Stood or ratified: sealed and filed above.
+                Some(_) | None => {}
+            }
+        }
+        Ok(codes)
+    }
+
+    /// The speech stood and framed: heard already where nothing in it is
+    /// fresh, else the frame to post with the codes so far and the sentences
+    /// it asks about.
+    fn post_speech(&mut self, sentences: &[Element], task: &[u8]) -> io::Result<Posted> {
+        if sentences.is_empty() {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "no sentence"));
+        }
+        let tu = self.now_tu();
+        let mut codes = vec![0xffu8; sentences.len()];
+        let mut open: Vec<usize> = Vec::new();
+        for (i, e) in sentences.iter().enumerate() {
+            let address = e.address();
+            // Refused at a K this mind sealed: never uttered again.
+            match self.sealed.get(&address) {
+                Some(_) => codes[i] = dialogue::SPEECH_REFUSED,
+                None => open.push(i),
+            }
+        }
+        let standing: Vec<Element> = open.iter().map(|&i| sentences[i].clone()).collect();
+        let stood = self.stand(&standing, tu, task);
+        for (j, &i) in open.iter().enumerate() {
+            codes[i] = stood[j];
+        }
+        let fresh: Vec<usize> = (0..sentences.len()).filter(|&i| codes[i] == 0xff).collect();
+        if fresh.is_empty() {
+            return Ok(Posted::Heard(codes));
+        }
+        let voice = self.hypha.voice().id();
+        // The ground open while the speech is framed (`speak_with`): one
+        // symbol under one ground, none otherwise (MU-SENSING §6.2).
+        let ground = crate::transducer::raster::stated(&crate::transducer::raster::ground());
+        // STD1 3c: a sentence whose record does not write refuses the speech
+        // whole, never a speech with that sentence left out.
+        let spoken: Option<Vec<dialogue::Spoken>> = fresh
+            .iter()
+            .map(|&i| {
+                Some(dialogue::Spoken {
+                    tape: sentences[i].to_bytes()?,
+                    standing: Standing::Stood.byte(),
+                    contraction: self.certificate_for(&sentences[i]),
+                    agreement: None,
+                    ground: ground.clone(),
+                })
+            })
+            .collect();
+        let Some(spoken) = spoken else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "speech refused: a sentence's record passes a length its field writes",
+            ));
+        };
+        // LD0: a speech whose task address cannot be framed is not spoken.
+        let Some(body) = dialogue::encode_speech_spoken(&voice, task, tu, &spoken) else {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "speech refused: the task's address cannot be framed"));
+        };
+        Ok(Posted::Asked { body, codes, fresh })
+    }
+
+    /// 78.55 — A COLOUR THEOREM: the language's closure, spoken. The ruled
+    /// colour words this mind holds are composed in pairs (the genome's own
+    /// key order, so minds holding one genome propose one theorem), and the
+    /// first composite it neither holds nor has said is spoken with its
+    /// derivation cited — no task, no scene: the court admits it by
+    /// composing the two words it cites. Each composition draws one read.
+    /// Nothing is said where the language is closed under composition as far
+    /// as the stroke reached.
+    pub(crate) fn speak_colour_theorem(&mut self, budget: &mut crate::physics::Budget) {
+        let held: Vec<Element> =
+            self.language.genome_words().filter(|w| w.is_colour_word()).map(|w| (**w).clone()).collect();
+        let mut theorem: Option<Element> = None;
+        'pairs: for first in &held {
+            for after in &held {
+                if !budget.spend() {
+                    break 'pairs;
+                }
+                let Some(w) = crate::transducer::element::derived_colour_word(first, after) else { continue };
+                let address = w.address();
+                // A theorem the court refused is sealed here and never
+                // proposed again (it would be counted and not sent).
+                if !self.already_taught_address(address.as_bytes())
+                    && !self.language.holds(address.as_bytes())
+                    && self.sealed.get(&address).is_none()
+                {
+                    theorem = Some(w);
+                    break 'pairs;
+                }
+            }
+        }
+        if let Some(theorem) = theorem {
+            self.speak(std::slice::from_ref(&theorem), |_, _| {});
+        }
+    }
+
+    pub(crate) fn already_taught_address(&self, address: &[u8]) -> bool {
+        self.taught_up.contains(&Self::taught_key(address))
+    }
+
+    /// Already uttered this operator: same vertex on the working atlas
+    /// or already sent up, not the same digest. A dialect hit is a use.
+    pub(crate) fn already_taught(&mut self, word: &Element) -> bool {
+        if self.already_taught_address(word.address().as_bytes()) {
+            return true;
+        }
+        // THE STRATUM, THEN THE EXACT TEST, never a walk of every word this
+        // mind uttered (law 3). `taught_at` names the words that COULD be
+        // one vertex with this one; the exact test decides over that fibre
+        // and nothing else, on each word as the language holds it. A sentence
+        // is one vertex by its address, answered above.
+        if word.is_sentence() {
+            return self.language.same_vertex_in_genome(word).is_some() || self.touched_in_dialect(word);
+        }
+        if let Some(fibre) = vertex_stratum(word).and_then(|at| self.taught_at.get(&at)) {
+            let candidates: Vec<Vec<u8>> = fibre.scoped().map(|(k, _)| k).collect();
+            for a in candidates {
+                if self.language.working_word(&a).is_some_and(|h| h.element().same_vertex(word)) {
+                    return true;
+                }
+            }
+        }
+        if self.language.same_vertex_in_genome(word).is_some() {
+            return true;
+        }
+        self.touched_in_dialect(word)
+    }
+
+    /// The same vertex standing in the dialect, touched as a use.
+    fn touched_in_dialect(&mut self, word: &Element) -> bool {
+        let Some(a) = self.language.same_vertex_in_dialect(word) else { return false };
+        self.language.touch(&a, self.own_k());
+        true
+    }
+
+    /// Stand the vertex in the dialect and mark it taught, without the wire.
+    pub(crate) fn remember_spoken(&mut self, word: &Element) {
+        let k = self.own_k();
+        self.language.stand_dialect_at(word.clone(), k, self.now_tu());
+        self.file_taught(word);
+    }
+
+    /// SPEAK A WORD as a one-sentence family. The word enters the dialect
+    /// when it stands; the genome receives it only from the syllabus.
+    /// `Spoken` is said, posted to the court; its answer files itself.
+    pub(crate) fn speak_word(&mut self, word: &Element) -> io::Result<Utterance> {
+        self.speak_word_on(word, &[], &[])
+    }
+
+    /// [`Self::speak_word`] UNDER THE SCENE THAT TAUGHT IT (MU-CLIENT §5.4,
+    /// E1): `family` is the citation of the family the word's sentence was
+    /// perceived on, so the court measures the word's own section there (W);
+    /// empty where no family evidences it.
+    pub(crate) fn speak_word_on(&mut self, word: &Element, train: &crate::transducer::family::Family, family: &[u8]) -> io::Result<Utterance> {
+        // A thought that still has a remainder is work, not a message: the
+        // wire never carries ∂g. A word with a chain is held, not uttered.
+        if let [_, ..] = word.sub() {
+            self.hold_chain(word.sub().to_vec());
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "a remainder is thought, not speech"));
+        }
+        // Speech is a connection or a connection with an opened axis; a
+        // residue germ or the unit is not a message. A thought is never
+        // speech: a closed thought is spoken as the word it transcribes to
+        // (78.52), a connection like any other.
+        if word.is_identity() || (!word.is_connection() && word.opened_axes().is_empty()) {
+            return Ok(Utterance::Silent);
+        }
+        if self.already_taught(word) {
+            return Ok(Utterance::Already);
+        }
+        self.speak_with(std::slice::from_ref(word), train, family, |_, _| {});
+        // Filed as said once it is posted, so the next stroke does not say
+        // it again while the court's answer is on its way.
+        self.file_taught(word);
+        Ok(Utterance::Spoken)
+    }
+
+    /// Addresses this mind has uttered (receipt: address at this K).
+    #[cfg(test)]
+    pub(crate) fn uttered_n(&self) -> usize {
+        self.taught_up.len()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn uttered(&self, address: &[u8]) -> bool {
+        self.already_taught_address(address)
+    }
+
+}

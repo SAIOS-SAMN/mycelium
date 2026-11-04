@@ -256,7 +256,7 @@ fn classify_files_self_turned_body_with_placement() {
     let l = vec![(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)];
     let turned = vec![(0i64, 0i64, 0i64), (0, 1, 0), (0, 2, 0), (1, 0, 0)];
     let (a, b) = (shape_of(&l), shape_of(&turned));
-    let members = versor_coset_ordered(&a, &b, &mut super::common::budget()).expect("a 90° turn carries the L onto its image");
+    let members = versor_coset_ordered(&a, &b, &mut super::fixtures::budget()).expect("a 90° turn carries the L onto its image");
     let mut read = 0usize;
     let mut placed = 0usize;
     let mut filed = 0usize;
@@ -301,7 +301,7 @@ fn classify_fills_turned_cycle_and_files_twisted_residue() {
     let c = shape_of(&[(0i64, 0i64, 0i64), (0, 1, 0), (1, 1, 0), (2, 1, 0)]);
     let d = shape_of(&[(0i64, 2i64, 0i64), (1, 0, 0), (1, 1, 0), (1, 2, 0)]);
     let edge = |x: &crate::transducer::blade::Shape, y: &crate::transducer::blade::Shape| {
-        versor_between(x, y, &mut super::common::budget()).expect("a transition")
+        versor_between(x, y, &mut super::fixtures::budget()).expect("a transition")
     };
     let (ab, bc) = (edge(&a, &b), edge(&b, &c));
     let fill_of = |h: &Versor| {
@@ -333,7 +333,7 @@ fn classify_fills_turned_cycle_and_files_twisted_residue() {
 /// the identity and not flat. `π₁₇` as a rotor: its arc is `15 + 8i`,
 /// whose norm is `17²`, and no product of the alphabet's primes reaches it.
 #[test]
-fn classify_reads_unspellable_rotor_as_own_arm() {
+fn classify_reads_unspellable_rotor_as_separate_arm() {
     let pi17 = Rotor::scalar(q(4)).add(&Rotor::blade(0b0011, q(1)));
     assert!(
         crate::transducer::alphabet::word_of_rotor(&pi17).is_none(),

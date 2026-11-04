@@ -2,7 +2,7 @@
 // Anti-Flattening Law).
 //
 //! A coordinate in this engine is a geometric invariant over ℚ — a
-//! canonical rotor (A1), a projective chart, a lamina translation, a class
+//! canonical rotor (A1), a projective chart, a site translation, a class
 //! vector's occupied axes. It is never a bin, a cell index, or a curve
 //! through a bounding volume.
 //!

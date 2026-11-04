@@ -6,10 +6,9 @@
 pub mod core;
 pub mod transducer;
 pub mod network;
-mod snapshot;
+mod trie_tape;
 pub mod physics;
 pub mod economy;
-pub mod arc;
 pub mod anastome;
 pub mod chronometry;
 /// §8.1 — the readings the live mesh holds about itself (the observer).
@@ -19,9 +18,6 @@ pub mod observe;
 pub mod server;
 pub mod client;
 pub mod court;
-
-#[cfg(test)]
-mod tests;
 
 // Path stability across the component split: the historical flat module
 // paths (`mycelium::cognition`, `::sdk`, `::registry`, `::synthesis`,

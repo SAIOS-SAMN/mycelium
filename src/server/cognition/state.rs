@@ -7,6 +7,12 @@
 
 use super::*;
 
+/// ONE SENTENCE WAITING ON A CITED FORM (`Court::awaiting`): the voice that
+/// spoke it, the task it was bound to, the tape, and the ground its claim
+/// was heard under (MU-SENSING §6.2, track 26 S5).
+pub(crate) type AwaitingSentence =
+    ([u8; 32], crate::transducer::address::Address, Element, crate::transducer::family::transduce::Ground<u8>);
+
 /// The court's evolving state: the installed generator basis + the germ
 /// admission ledger + the Čech peer table.
 #[derive(Default)]
@@ -50,7 +56,7 @@ pub struct Court {
     pub(crate) axis_index: crate::transducer::sentence::AxisIndex,
     /// Court replay of A20 certificates: citer → (certificate key → (ok,
     /// the head's place when it was replayed, none before genesis)).
-    pub(crate) replay_memo:
+    pub(crate) reconstruction_memo:
         crate::network::nerve::Keyed<crate::network::nerve::Keyed<(bool, Option<crate::chronometry::Place>)>>,
     /// Cited form → citers. Slash of a cited form redockets each citer.
     pub(crate) cited_by: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
@@ -76,7 +82,7 @@ pub struct Court {
     /// organs reaching one address is the admission condition; a voice is a
     /// use and a settlement party, never a vantage.
     pub(crate) convergence: crate::court::convergence::Convergence,
-    /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
+    /// THE OPEN-DEMAND MARKET: irreducible residues still awaiting consilience —
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
     /// ephemeral — the market is runtime tension, not persisted language).
     /// THE OPEN-DEMAND MARKET — the listings. Where each stands on the
@@ -198,7 +204,7 @@ pub struct Court {
     pub(crate) court_fed_index: crate::network::nerve::Keyed<usize>,
     pub(crate) court_upheld: u64,
     pub(crate) court_slashed: u64,
-    /// 78.153 — replays the court's stroke ran out on (`Replayed::Unread`):
+    /// 78.153 — replays the court's stroke ran out on (`ReconstructionOutcome::Unread`):
     /// not ruled that stroke, resumed the next. Since boot.
     pub(crate) court_unread: u64,
     /// 78.153 — replays a whole stroke moved no further: one unit of them
@@ -210,7 +216,7 @@ pub struct Court {
     /// the phase cursor the next stroke resumes from. VOLATILE: never
     /// persisted, so a restart starts every replay over; a binding that
     /// changes a family drops the cursors it could invalidate.
-    pub(crate) replay_cursors: crate::network::nerve::Keyed<crate::verdict::ReplayCursor>,
+    pub(crate) reconstruction_cursors: crate::network::nerve::Keyed<crate::verdict::ReconstructionCursor>,
     /// 78.153 — forms ruled whose waiting citers' re-hearing was unread on
     /// the ruling's stroke: the court stroke hears them again. VOLATILE.
     pub(crate) rehear_due: crate::network::nerve::Keyed<()>,
@@ -419,13 +425,13 @@ pub struct Court {
     /// 78.26(6), TP1 — closed rings of the cover's nerve the glue reopened
     /// because a gauge moved: `[filled, congruent]`, since boot.
     pub(crate) reopened: [u64; 2],
-    /// 78.68 — THE WINDING CARRIERS, by `chart ‖ simplex`: each closed
+    /// 78.68 — THE RING CARRIERS, by `chart ‖ simplex`: each closed
     /// ring's period, its traversals since its last return and the pay they
     /// accrued — held off the ledger and closed by the `Return` act
-    /// (`court/winding.rs`). Persisted: the accrued pay is a claim.
-    pub(crate) windings: crate::network::nerve::Keyed<crate::cognition::court::winding::Winding>,
+    /// (`court/ring_carrier.rs`). Persisted: the accrued pay is a claim.
+    pub(crate) windings: crate::network::nerve::Keyed<crate::cognition::court::ring_carrier::RingCarrier>,
     /// What closing rings did, since boot.
-    pub(crate) winding_tally: crate::cognition::court::winding::WindingTally,
+    pub(crate) winding_tally: crate::cognition::court::ring_carrier::RingTally,
     /// 78.68 — EACH CHART'S HOLONOMY ALGEBRA: a basis over ℚ of the Lie
     /// closure of the Cayley bivectors of every ruled form's circuits on it,
     /// by the chart's key. Its rank rising is a `RankStep` act. Persisted, so
@@ -440,10 +446,26 @@ pub struct Court {
     /// `None` is unread (a restored court reads it once off its hot line);
     /// `Some(None)`, read and none held.
     pub(crate) last_transition: Option<Option<crate::chronometry::Place>>,
-    /// 78.120 — THE DOMAINS FOUNDED ON THIS COURT: each domain's key and the
-    /// tier keys its genesis names, ascending — the one carrier, persisted on
-    /// the court's own node (`LEAF_DOMAINS`).
+    /// 78.120 — THE DOMAINS FOUNDED ON THIS COURT OR RECONSTRUCTED HERE from
+    /// a peer's founding receipts (MU-HOSTING §5a.9 B0): each domain's key and
+    /// the tier keys its genesis names, ascending — the one carrier,
+    /// persisted on the court's own node (`LEAF_DOMAINS`).
     pub(crate) domains: crate::network::nerve::Keyed<Vec<[u8; 32]>>,
+    /// MU-HOSTING §5a.9, §5a.10 — THE SIGNED-REACH GATE: peers' receipts
+    /// admitted by back-fill, stored on the chain and not yet reached by a
+    /// signature of each one's signer, keyed `vk‖K‖i`. No reader acts on
+    /// one until a frame the signer signed at or above its place is admitted
+    /// (`Court::sign_through`). Volatile; derived again at restore
+    /// (`Court::hold_unreached_at_restore`).
+    pub(crate) unreached: crate::network::nerve::Keyed<crate::chronometry::KStepReceipt>,
+    /// B0 — founding receipts under a signature whose reserve or origin
+    /// names a domain no founding here holds yet, keyed `domain‖vk‖K‖i`:
+    /// reconstructed when that domain's founding is. Volatile.
+    pub(crate) unfounded: crate::network::nerve::Keyed<crate::chronometry::KStepReceipt>,
+    /// B0 — the peers' founding receipts this court refused, by stamp, with
+    /// the founding hypha's own refusal: a collision held by name, the
+    /// registries unchanged. Volatile.
+    pub(crate) founding_refusals: crate::network::nerve::Keyed<crate::anastome::dialogue::domain::Founded>,
     /// Each tier key and the domain whose genesis names it: re-derived from
     /// `domains` wherever it changes or is restored, never persisted (law 12).
     pub(crate) tier_domain: crate::network::nerve::Keyed<[u8; 32]>,
@@ -573,9 +595,10 @@ pub struct Court {
     /// sentence is not refused: it waits here, and `rehear_awaiting`
     /// hears it again when that address is ruled. Without this the voice
     /// received a refusal and sealed the address, losing the sentence
-    /// permanently for being early.
-    pub(crate) awaiting:
-        crate::network::nerve::Keyed<Vec<([u8; 32], crate::transducer::address::Address, Element)>>,
+    /// permanently for being early. Each entry keeps the ground its claim
+    /// was heard under (MU-SENSING §6.2, track 26 S5), so the re-hearing
+    /// opens the same ground and deduces none.
+    pub(crate) awaiting: crate::network::nerve::Keyed<Vec<AwaitingSentence>>,
     /// E2, 26 — THE INVERSE OF `discoverers`: voice → the addresses that
     /// voice discovered. `use_credit` asks "which forms are this voice's",
     /// and `discoverers` answers the other question; without this carrier
@@ -628,14 +651,14 @@ pub struct Court {
     /// after it — and the cover reading at the last docket circuit. A
     /// reading of the carriers, never a phase — the phase is computed and
     /// written.
-    pub(crate) phase_mark: Option<(Option<crate::chronometry::Place>, crate::cognition::court::phase::CoverReading)>,
+    pub(crate) phase_mark: Option<(Option<crate::chronometry::Place>, crate::cognition::court::height_window::CoverReading)>,
     /// Keyed cursors into `unfilled` and `pending_refine` for `stroke_fills`
     /// (rule 10): each stroke resumes where the last left off, so a tail
     /// beyond one budget is reached rather than starved by the head.
     pub(crate) fill_cursor: Option<Vec<u8>>,
     pub(crate) refine_cursor: Option<Vec<u8>>,
     /// This hypha's cover, admitted in write_field; own_cover_charts reads it.
-    pub(crate) own_cover: crate::network::nerve::Cover,
+    pub(crate) own_cover: crate::network::nerve::HomeTrie,
     /// Listings keyed by chart, so rank_over's moved set is a fibre.
     pub(crate) chart_listings: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Ruled addresses beside the ruled cover trie.
@@ -661,7 +684,7 @@ pub struct Court {
     pub(crate) lane_listings: [crate::network::nerve::Keyed<()>; 4],
     /// Anchor evidence membership keyed by address+footprint.
     pub(crate) evidence_at: crate::network::nerve::Keyed<()>,
-    /// SELECTION-FIBRE CRITICAL PAIRS (Step 7): Q_anchor residuals — a word's
+    /// SELECTION-FIBRE CRITICAL PAIRS (Step 7): Q_anchor residues — a word's
     /// substance matched a defect but its π refused the support. (word address,
     /// the symmetric difference, the scene it arose in). The court's admission
     /// docket refines these into rebound anchors. Bounded; in-memory work queue.
@@ -708,7 +731,9 @@ impl Court {
     /// so it is the lane-wise SUM over these pairs (12.6) and covers each of
     /// them; an envelope over them would not.
     pub(crate) fn measured_test_cover() -> Option<[u64; 4]> {
-        crate::arc::family_cover(&[
+        use crate::transducer::spelled::SectionSample;
+        type Lines = Vec<Vec<u8>>;
+        let lines: [(Lines, Lines); 6] = [
             (vec![vec![1, 1], vec![1, 0]], vec![vec![0, 1], vec![1, 1]]),
             (vec![vec![1, 1]], vec![vec![2, 2]]),
             (vec![vec![1, 1, 0, 0], vec![0, 0, 0, 0]], vec![vec![0, 0, 1, 1], vec![0, 0, 0, 0]]),
@@ -718,7 +743,11 @@ impl Court {
                 vec![vec![2, 2, 2], vec![2, 2, 2], vec![2, 2, 2]],
             ),
             (vec![vec![1, 1, 1, 1, 1, 1]], vec![vec![2, 2, 2, 2, 2, 2]]),
-        ])
+        ];
+        // The starting corpus read at intake, each pair as samples.
+        let family: Vec<(SectionSample, SectionSample)> =
+            lines.iter().map(|(x, y)| Some((SectionSample::of_lines(x).ok()?, SectionSample::of_lines(y).ok()?))).collect::<Option<_>>()?;
+        crate::transducer::family::magnitude::family_cover(&family)
     }
 
     /// The genesis covering bond, if measured.
@@ -987,7 +1016,13 @@ impl Court {
             }
             let proved = self
                 .era_receipts(era)
-                .is_some_and(|page| page.iter().any(|x| x.stamp == p.at && x.chain_hash == p.hash));
+                .is_some_and(|page| {
+                    page.iter().any(|x| {
+                        x.stamp == p.at
+                            && crate::court::admission::Predecessor::named(&p)
+                                .continues(&crate::court::admission::Predecessor::of(x))
+                    })
+                });
             if proved {
                 self.chain.recall_folded(p);
                 recalled.push(p);
@@ -1003,11 +1038,15 @@ impl Court {
         }
     }
 
+    /// 47.2 ON A SIGNED FRAME: the signature verified (`verified`, step 2)
+    /// and the receipt reconstructed from its own coordinates (`r`,
+    /// MU-HOSTING §5a.10), then steps 1, 3 and 4 against this court's
+    /// ledger.
     pub fn admit_receipt(
         &mut self,
         origin: ([u8; 32], u32),
         verified: crate::court::admission::Verified<'_>,
-        r: &crate::chronometry::KStepReceipt,
+        r: &crate::court::admission::Reconstructed<crate::chronometry::KStepReceipt>,
     ) -> crate::court::admission::Admitted {
         if verified.signer() != r.stamp.vk {
             return crate::court::admission::Admitted::Refused(
@@ -1015,17 +1054,31 @@ impl Court {
             );
         }
         let recalled = self.recall_cited(r);
-        let verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
+        let mut verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
+        // MU-HOSTING §5a.9 — EVICTION BY SIGNATURE: a signed frame that
+        // contradicts its line where the line is held unreached (a forged
+        // genesis stored first, a forged predecessor) evicts the unreached
+        // top of the line, and is admitted against what the signatures
+        // reached.
+        if !matches!(verdict, crate::court::admission::Admitted::Refused(_)) && self.evict_contradicted(r) > 0 {
+            verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
+        }
         self.forget_recalled(&recalled);
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
-                self.chain.admit(r.clone());
+                self.chain.admit(r.object().clone());
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
                 // THE ACT'S ROOT (65.5): the wire hands this receipt here, and
                 // one stroke is the admission's draw, threaded to the
                 // rulings it hears.
                 let mut budget = self.physics.stroke();
+                // MU-HOSTING §5a.9, §5a.10: the signature over this frame
+                // reaches every receipt of its signer's line below it, so the
+                // receipts back-filled there are read in line order, then its
+                // own founding citations.
+                self.sign_through(&r.stamp.vk, r.stamp.place(), &mut budget);
+                self.reconstruct_founding(r);
                 // LD3-a: a word the peer's act admitted, located here by its
                 // fibre where exactly one word stands on it.
                 self.alias_admitting(r, &mut budget);
@@ -1047,8 +1100,20 @@ impl Court {
                     self.shed_folded_lines();
                 }
             }
-            crate::court::admission::Admitted::Equivocation { at, .. } => {
+            // 47.4 asks two VERIFIED signatures at one place. A receipt held
+            // there by back-fill and reached by no signature is not one
+            // (§5a.10: its hash links, it never admits): it proves nothing,
+            // and nothing burns against it.
+            crate::court::admission::Admitted::Equivocation { at, .. } if self.unreached_at(&r.stamp.vk, *at).is_none() => {
                 self.burn_equivocation(r.stamp.vk, *at);
+            }
+            // B0: a signed frame this court holds already, the same receipt
+            // at its stamp, signs the line below it as a new frame does.
+            crate::court::admission::Admitted::Stale
+                if self.chain.holds(&crate::chronometry::Parent { at: r.stamp, hash: r.chain_hash }) =>
+            {
+                let mut budget = self.physics.stroke();
+                self.sign_through(&r.stamp.vk, r.stamp.place(), &mut budget);
             }
             _ => {}
         }
@@ -1072,9 +1137,21 @@ impl Court {
     ///
     /// The page is admitted on the stroke of the chase that fetched it
     /// (65.5), threaded to the rulings an alias wakes.
+    ///
+    /// EVERY RECEIPT ON THE PAGE IS STORED AND MARKED UNREACHED (MU-HOSTING
+    /// §5a.9, §5a.10): the chain holds it, so the page and the signed frame
+    /// that closes the gap link on through it, and no reader acts on it —
+    /// the depth index, the stamp alias and the rulings it would wake, a
+    /// fold's shed, a founding's reconstruction — until a frame its signer
+    /// signed at or above it is admitted (`admit_receipt`,
+    /// `Court::sign_through`).
+    ///
+    /// The page is taken reconstructed (MU-HOSTING §5a.10): the fetch
+    /// reconstructs it up to the first receipt that does not re-derive
+    /// (`Reconstructed::receipts`), and only that run reaches here.
     pub fn admit_backfill(
         &mut self,
-        receipts: &[crate::chronometry::KStepReceipt],
+        receipts: &[crate::court::admission::Reconstructed<crate::chronometry::KStepReceipt>],
         budget: &mut crate::physics::Budget,
     ) -> (usize, Option<crate::chronometry::Parent>) {
         let mut n = 0usize;
@@ -1086,17 +1163,24 @@ impl Court {
                 break;
             }
             let recalled = self.recall_cited(r);
-            let verdict = crate::court::admission::admit_backfilled(r, &self.chain);
+            let verdict = match crate::court::admission::admit_backfilled(r, &self.chain) {
+                // MU-DERIVATIONS D2.5: held unreached only while the held
+                // receipts fit the process's capacity; past it, refused by
+                // name and the page stops.
+                crate::court::admission::Admitted::Parent(p) => match self.unreached_refusal() {
+                    None => crate::court::admission::Admitted::Parent(p),
+                    Some(why) => crate::court::admission::Admitted::Refused(why),
+                },
+                other => other,
+            };
             self.forget_recalled(&recalled);
             match verdict {
                 crate::court::admission::Admitted::Parent(_) => {
-                    self.chain.admit(r.clone());
-                    self.note_attestor(r);
-                    self.alias_admitting(r, budget);
-                    self.settle_own_attestation(r);
-                    if r.kind == crate::chronometry::ActKind::Fold {
-                        self.shed_folded_lines();
-                    }
+                    // MU-HOSTING §5a.9, §5a.10: stored, and read by nothing
+                    // until its signer's signature reaches it — a fold's
+                    // root included (`ReceiptChain::admit_unreached`).
+                    self.chain.admit_unreached(r.clone());
+                    self.hold_unreached(r);
                     n += 1;
                 }
                 crate::court::admission::Admitted::Stale => n += 1,

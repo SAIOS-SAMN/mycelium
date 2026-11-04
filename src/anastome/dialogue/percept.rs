@@ -2,6 +2,7 @@
 // solve that answers it.
 
 use super::*;
+use super::samples::Member;
 
 /// task request: `[ACT_TASK][voice 32]`.
 pub fn encode_task_request(voice: &[u8; 32]) -> Vec<u8> {
@@ -36,87 +37,63 @@ pub fn decode_task_by_citation(body: &[u8]) -> Option<([u8; 32], [u8; 32])> {
     Some((body.get(1..33)?.try_into().ok()?, body.get(33..65)?.try_into().ok()?))
 }
 
-/// work envelope (wire v1.2): `[citation 32][nt u8][(input grid, output
-/// grid)·nt][nx u8][test-input grid·nx]` — train pairs to STUDY, test inputs
-/// to SOLVE; the held answers never ride the wire. An empty body = no work.
+/// work envelope (wire v1.2; track 26 S5): `[citation 32][nt u8][(input,
+/// output)·nt][nx u8][test input·nx]`, each a sample of any rank as
+/// `samples::push_sample` writes it, at its position `[split, pair,
+/// member]` — train pairs to STUDY, test inputs to SOLVE; the held answers
+/// never ride the wire. An empty body = no work. Refused by name where a
+/// sample or a count passes its field.
 pub fn encode_task_envelope(
     citation: &[u8; 32],
-    train: &crate::transducer::family::Family,
-    tests: &[Vec<Vec<u8>>],
-) -> Option<Vec<u8>> {
+    train: &[(crate::transducer::sample::Sample, crate::transducer::sample::Sample)],
+    tests: &[crate::transducer::sample::Sample],
+) -> Result<Vec<u8>, SampleWire> {
     let mut out = citation.to_vec();
-    crate::transducer::address::put_u8_count(&mut out, train.len())?;
-    for (a, b) in train {
-        push_grid(&mut out, a)?;
-        push_grid(&mut out, b)?;
-    }
-    crate::transducer::address::put_u8_count(&mut out, tests.len())?;
-    for x in tests {
-        push_grid(&mut out, x)?;
-    }
-    Some(out)
+    super::samples::push_train(&mut out, train)?;
+    super::samples::push_tests(&mut out, tests, Member::Input)?;
+    Ok(out)
 }
 
-/// A REGISTERED TASK as the registry hands it over: the family to learn
-/// from and the inputs to answer, never the answers.
-pub struct TaskEnvelope {
-    /// The task's citation (wire v1.2) — what a solve names it by.
-    pub id: [u8; 32],
-    /// The TRAIN pairs: the family the rule is extracted from.
-    pub train: Vec<crate::transducer::family::TrainPair>,
-    /// The TEST inputs. The outputs for these inputs are what a solve claims; the registry
-    /// never sends them.
-    pub tests: Vec<Vec<Vec<u8>>>,
-}
-
+/// The envelope read back whole and exactly, or none.
 pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
     let id: [u8; 32] = body.get(0..32)?.try_into().ok()?;
     let mut p = 32usize;
-    let nt = *body.get(p)? as usize;
-    p += 1;
-    let mut train = Vec::with_capacity(nt.min(64));
-    for _ in 0..nt {
-        let a = read_grid(body, &mut p)?;
-        let b = read_grid(body, &mut p)?;
-        train.push((a, b));
-    }
-    let nx = *body.get(p)? as usize;
-    p += 1;
-    let mut tests = Vec::with_capacity(nx.min(64));
-    for _ in 0..nx {
-        tests.push(read_grid(body, &mut p)?);
-    }
+    let train = super::samples::read_train(body, &mut p).ok()?;
+    let tests = super::samples::read_tests(body, &mut p, Member::Input).ok()?;
     // NOTHING AFTER THE LAST TEST INPUT: an envelope is read whole or
     // refused. Read leniently, the 43-byte deferral of a zero deficit was an
     // envelope of no train pair and no test input.
     (p == body.len()).then_some(TaskEnvelope { id, train, tests })
 }
 
-/// 78.146 — GRIDS AS THE SOLVE ACT WRITES THEM: `[n u8][grid·n]`. `None`
-/// where a count or a grid passes its field.
-pub fn encode_grids(grids: &[Vec<Vec<u8>>]) -> Option<Vec<u8>> {
-    let mut out = Vec::new();
-    crate::transducer::address::put_u8_count(&mut out, grids.len())?;
-    for g in grids {
-        push_grid(&mut out, g)?;
-    }
-    Some(out)
+/// THE POSTED TASK FILE'S EXTENSION: what a hypha's corpus directory, a
+/// client's feed and the soak list (ROADMAP track 26, S1).
+pub const POSTED_TASK: &str = "task";
+
+/// A TASK AS A SOURCE POSTS IT (MU-SENSING §6; ROADMAP track 26, S1, S5):
+/// the source-neutral form a decoder writes and the hypha, the soak and a
+/// client's feed read, so none of them parses a dataset's format. Its
+/// samples, of any rank, as `samples::encode_posted_samples` writes them;
+/// this writer takes a raster task and places each raster at its position.
+/// `None` where a raster is no sample or a count passes its field.
+pub fn encode_posted_task(task: &crate::transducer::family::Task) -> Option<Vec<u8>> {
+    encode_posted_samples(&PostedTask::of_rasters(task).ok()?).ok()
 }
 
-/// The grids read back whole, or none.
-pub fn decode_grids(b: &[u8]) -> Option<Vec<Vec<Vec<u8>>>> {
-    let [n, ..] = b else { return None };
-    let n = usize::from(*n);
-    let mut p = 1usize;
-    let mut out = Vec::new();
-    for _ in 0..n {
-        out.push(read_grid(b, &mut p)?);
-    }
-    (p == b.len()).then_some(out)
+/// A posted task read back on the alphabet's section (`PostedTask::section`):
+/// none where it does not decode whole (`samples::decode_posted_samples`)
+/// or where a sample is off the section, which the readers of the section
+/// (the hypha's registry, the soak, a feed) do not read; such a task is
+/// read as samples by `decode_posted_samples`.
+pub fn decode_posted_task(b: &[u8]) -> Option<crate::transducer::family::Task> {
+    decode_posted_samples(b).ok()?.section().ok()
 }
 
-/// 78.141 — the signed bytes' domain of a solve.
-const SIGNED_SOLVE: &[u8] = b"mycelium solve v1";
+/// 78.141 — the signed bytes' domain of a solve. Version 4 (track 26 S4c,
+/// inside v0.4.0's break): the claim kind follows the act's tag
+/// (`SOLVE_KIND_OUTPUTS`). Version 3 (S5): the outputs are samples of any
+/// rank. Version 2 (S2) added the ground the claim was spoken under.
+const SIGNED_SOLVE: &[u8] = b"mycelium solve v4";
 
 /// The bytes a solve's voice signs: the domain, then the act up to its
 /// signature.
@@ -126,36 +103,55 @@ fn solve_signed_bytes(unsigned: &[u8]) -> Vec<u8> {
     b
 }
 
-/// solve submission (wire v1.2): `[ACT_SOLVE][voice 32][task citation
-/// 32][n u8][grid·n]`,
-/// optionally `[RULE][len u32][element]` so the home speaks the rule, then —
-/// 78.141 — `[SIGN][sig 64]`: the voice, which the court pays, signs the act,
-/// and the voice is its key's verifying half.
+/// solve submission (wire v1.2; track 26 S5, S4c): `[ACT_SOLVE][kind 0][voice
+/// 32][task citation 32][n u8][sample·n]`, the claim kind
+/// `SOLVE_KIND_OUTPUTS`, output `i` a sample of any rank
+/// at `[test, i, output]` (`samples::encode_samples`'s writing),
+/// optionally `[RULE][len u32][element]` so the home speaks the rule, then
+/// optionally — track 26 S2 — `[GRND][len u32][symbol]`, the ground the
+/// claim was spoken under, then — 78.141 — `[SIGN][sig 64]`: the voice,
+/// which the court pays, signs the act, and the voice is its key's
+/// verifying half.
 pub fn encode_solve(
     key: &ed25519_dalek::SigningKey,
     citation: &[u8; 32],
-    outputs: &[Vec<Vec<u8>>],
+    outputs: &[crate::transducer::sample::Sample],
 ) -> Option<Vec<u8>> {
     encode_solve_with_rule(key, citation, outputs, None)
 }
 
+/// [`encode_solve_spoken`] stating no ground.
 pub fn encode_solve_with_rule(
     key: &ed25519_dalek::SigningKey,
     citation: &[u8; 32],
-    outputs: &[Vec<Vec<u8>>],
+    outputs: &[crate::transducer::sample::Sample],
     rule: Option<&[u8]>,
 ) -> Option<Vec<u8>> {
+    encode_solve_spoken(key, citation, outputs, rule, None)
+}
+
+/// A SOLVE THAT STATES THE GROUND ITS CLAIM WAS SPOKEN UNDER (MU-SENSING
+/// §6): `ground` is one symbol at the source's width, or `None`. `None`
+/// where an output or a count passes its field.
+pub fn encode_solve_spoken(
+    key: &ed25519_dalek::SigningKey,
+    citation: &[u8; 32],
+    outputs: &[crate::transducer::sample::Sample],
+    rule: Option<&[u8]>,
+    ground: Option<&[u8]>,
+) -> Option<Vec<u8>> {
     use ed25519_dalek::Signer;
-    let mut out = vec![ACT_SOLVE];
+    let mut out = vec![ACT_SOLVE, SOLVE_KIND_OUTPUTS];
     out.extend_from_slice(&key.verifying_key().to_bytes());
     out.extend_from_slice(citation);
-    crate::transducer::address::put_u8_count(&mut out, outputs.len())?;
-    for g in outputs {
-        push_grid(&mut out, g)?;
-    }
+    super::samples::push_tests(&mut out, outputs, Member::Output).ok()?;
     if let Some(r) = rule {
         out.extend_from_slice(b"RULE");
         crate::transducer::address::put_bytes(&mut out, r)?;
+    }
+    if let Some(g) = ground {
+        out.extend_from_slice(b"GRND");
+        crate::transducer::address::put_bytes(&mut out, g)?;
     }
     let sig = key.sign(&solve_signed_bytes(&out)).to_bytes();
     out.extend_from_slice(b"SIGN");
@@ -166,18 +162,13 @@ pub fn encode_solve_with_rule(
 /// A solve read back: `None` where it does not decode, or where bytes stand
 /// after it that are no signature; `signed` whether its voice signed it.
 pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
-    if !act_is(body, ACT_SOLVE) {
+    if solve_kind(body) != Some(SOLVE_KIND_OUTPUTS) {
         return None;
     }
-    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let id: [u8; 32] = body.get(33..65)?.try_into().ok()?;
-    let mut p = 65usize;
-    let n = *body.get(p)? as usize;
-    p += 1;
-    let mut outputs = Vec::with_capacity(n.min(64));
-    for _ in 0..n {
-        outputs.push(read_grid(body, &mut p)?);
-    }
+    let voice: [u8; 32] = body.get(2..34)?.try_into().ok()?;
+    let id: [u8; 32] = body.get(34..66)?.try_into().ok()?;
+    let mut p = 66usize;
+    let outputs = super::samples::read_tests(body, &mut p, Member::Output).ok()?;
     let rule = if body.get(p..p + 4) == Some(&b"RULE"[..]) {
         p += 4;
         let len = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
@@ -187,6 +178,18 @@ pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
         None
     };
     p += rule.as_ref().map_or(0, Vec::len);
+    let ground = match body.get(p..p + 4) == Some(&b"GRND"[..]) {
+        true => {
+            p += 4;
+            let g = crate::transducer::address::take_bytes(body, &mut p)?;
+            // A stated ground is one symbol: never empty.
+            if g.is_empty() {
+                return None;
+            }
+            Some(g)
+        }
+        false => None,
+    };
     let signed = match body.get(p..) {
         Some([]) => false,
         Some([b'S', b'I', b'G', b'N', sig @ ..]) => {
@@ -195,7 +198,7 @@ pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
         }
         _ => return None,
     };
-    Some(SolveAct { voice, task: id, outputs, rule, signed })
+    Some(SolveAct { voice, task: id, outputs, rule, ground, signed })
 }
 
 

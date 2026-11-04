@@ -74,7 +74,7 @@ impl Source {
 }
 
 /// ONE HELD READING: the key it stands at and the reading.
-pub type Held = (Vec<u8>, Reading);
+pub type KeyedReading = (Vec<u8>, Reading);
 
 static STORE: LazyLock<Mutex<Keyed<Reading>>> = LazyLock::new(|| Mutex::new(Keyed::new()));
 
@@ -105,7 +105,7 @@ pub fn replace(source: Source, reading: Reading) -> bool {
 
 /// Every reading held under `prefix`, in key order; the empty prefix reads
 /// the whole store, which is itself the one fibre the console asks for.
-pub fn readings(prefix: &[u8]) -> Vec<Held> {
+pub fn readings(prefix: &[u8]) -> Vec<KeyedReading> {
     let Ok(s) = STORE.lock() else { return Vec::new() };
     let fibre = match s.fibre_at(prefix) {
         Some(f) => f,
@@ -154,17 +154,17 @@ pub fn digest_askers() -> Vec<([u8; 32], u64)> {
 /// PH5 — THE LAST PHASE WINDOW THIS PROCESS'S COURT WROTE, and the windows
 /// written: the instrument's copy, handed over where the court writes its
 /// line, so the court itself keeps no phase (45.9).
-static PHASE: LazyLock<Mutex<Option<super::Phase>>> = LazyLock::new(|| Mutex::new(None));
+static PHASE: LazyLock<Mutex<Option<super::CourtStage>>> = LazyLock::new(|| Mutex::new(None));
 
 /// Hold one written window, counting it.
-pub fn note_phase(mut p: super::Phase) {
+pub fn note_phase(mut p: super::CourtStage) {
     let Ok(mut held) = PHASE.lock() else { return };
     p.windows = held.as_ref().map_or(0, |h| h.windows) + 1;
     *held = Some(p);
 }
 
 /// The last window written; `None` before the first.
-pub fn last_phase() -> Option<super::Phase> {
+pub fn last_phase() -> Option<super::CourtStage> {
     PHASE.lock().ok()?.clone()
 }
 
@@ -391,7 +391,7 @@ pub fn decode_act(b: &[u8]) -> Option<ObserveAct> {
 /// refuses the reply WHOLE — a total written beside a skipped entry would
 /// be a count the entries do not bear out — and so does a total past its
 /// four bytes. Only the budget leaves entries unsent, and the total says so.
-pub fn encode_reply(entries: &[Held], budget: usize) -> Option<Vec<u8>> {
+pub fn encode_reply(entries: &[KeyedReading], budget: usize) -> Option<Vec<u8>> {
     // The total first: `m` counts at most one per entry, so it fits too.
     let total = u32::try_from(entries.len()).ok()?;
     let mut body = Vec::new();
@@ -414,7 +414,7 @@ pub fn encode_reply(entries: &[Held], budget: usize) -> Option<Vec<u8>> {
 }
 
 /// The inverse of [`encode_reply`]: the total held, and the readings sent.
-pub fn decode_reply(b: &[u8]) -> Option<(u32, Vec<Held>)> {
+pub fn decode_reply(b: &[u8]) -> Option<(u32, Vec<KeyedReading>)> {
     let mut p = 0usize;
     let total = take_u32(b, &mut p)?;
     let m = take_u32(b, &mut p)? as usize;

@@ -1,6 +1,6 @@
 // 78.15(1), CX1 — the tree conjugacy, tested before the cells read it.
 
-use crate::transducer::cech::{coxeter_product, product_class, read_coxeter, Closure};
+use crate::transducer::cech::{coxeter_product, product_class, read_coxeter, GroupClosure};
 use crate::transducer::cga::{Mv, E1, E2, E3};
 use num_rational::BigRational;
 
@@ -15,7 +15,7 @@ fn v(coords: &[(usize, i64)]) -> Mv {
 fn coxeter_product_reads_one_class_over_six_orders() {
     let roots = [v(&[(E1, 1), (E2, -1)]), v(&[(E2, 1), (E3, -1)]), v(&[(E2, 1), (E3, 1)])];
     let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
-    assert!(matches!(read_coxeter(&roots, &[], &mut stroke).closure, Closure::Finite { by_theorem: true, .. }));
+    assert!(matches!(read_coxeter(&roots, &[], &mut stroke).closure, GroupClosure::Finite { by_theorem: true, .. }));
     let orders = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
     let classes: Vec<Vec<u8>> = orders
         .iter()

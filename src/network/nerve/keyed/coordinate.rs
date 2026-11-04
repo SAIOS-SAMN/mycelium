@@ -1,7 +1,7 @@
 // A21, §4.4 — THE COORDINATE AN INDEX ANSWERS, AS A VALUE THAT DECODES.
 //
 //! A first cut of this made `Key<C>` a phantom type wrapped around an
-//! opaque `Arc<[u8]>`. `Key<Chart>` and `Key<Section>` were then BYTE
+//! opaque `Arc<[u8]>`. `Key<Chart>` and `Key<ChartCarriage>` were then BYTE
 //! IDENTICAL at runtime, the claim about which coordinate they carried
 //! lived in a type parameter that `declared`, `as_bytes` and `into_vec`
 //! discarded on contact, and `declared` accepted any bytes at all for a
@@ -117,7 +117,7 @@ pub trait Coordinate: Eq + Clone + std::fmt::Debug + Send + Sync + 'static {
 pub trait Stratum<Fine: Coordinate>: Coordinate {
     /// THE OPENING BYTES OF A FINE KEY THAT THIS COARSE COORDINATE FIXES.
     ///
-    /// Not always `encode()`: a [`coord::Section`] opens with the chart's
+    /// Not always `encode()`: a [`coord::ChartCarriage`] opens with the chart's
     /// key LENGTH-DELIMITED, so the chart's own bytes are not a byte
     /// prefix of it and reading the fibre at `encode()` would follow
     /// the wrong bits. Stating the opening separately is what keeps the
@@ -290,28 +290,28 @@ pub mod coord {
         }
     }
 
-    /// A COMPARTMENT OF THE BASE — `(row, col, frame)`, the three SPATIAL
+    /// A SITE OF A COVER'S BASE — `(row, col, frame)`, the three SPATIAL
     /// coordinates the sensor writes, and a genuine coordinate of the
     /// manifold rather than an ordinal.
     ///
     /// THE THIRD AXIS IS THE FRAME, NOT THE HUE (§4.4 E8, corrected
     /// 2026-09-22). It was named `hue` and every caller fed it
-    /// `support_of`'s third component, which is `Compartment`'s `k` — the
+    /// `support_of`'s third component, which is `blade::Compartment`'s `k` — the
     /// corpus's own `e₃`, 51.3's sixth adjacency direction, the axis
     /// `at_frame_zero` recentres. The colour never reached this coordinate
     /// and could not: a cover piece is of ONE hue by construction and
     /// carries it on [`Piece`], which is why the base a cover is read over
     /// is three spatial axes and the palette is a coordinate of the chart.
-    /// 71.2(1), BQ1 — the compartment IS a site of the base, `n` coordinates with
+    /// 71.2(1), BQ1 — the cover site IS a site of the base, `n` coordinates with
     /// `n` written first ([`Site::put`](crate::transducer::base::Site::put)):
     /// row, column and frame at the corpus's `n = 3`, and whatever the base
     /// has at any other.
     ///
     /// It exists so the nerve's overlaps can be derived by READING THE
-    /// BASE. A 2-simplex of a cover is certified by a WITNESS: a compartment
+    /// BASE. A 2-simplex of a cover is certified by a WITNESS: a cover site
     /// standing in three charts at once, `p ∈ U_i ∩ U_j ∩ U_k`. Keyed by
     /// this coordinate, the support of the cover is an inverted reading
-    /// `p ↦ charts(p)` built in one linear pass, and any compartment whose
+    /// `p ↦ charts(p)` built in one linear pass, and any cover site whose
     /// reading names three or more charts hands back the simplex directly.
     ///
     /// THE ALTERNATIVE IS FALSE. Taking 3-cliques of the pairwise meet
@@ -322,12 +322,12 @@ pub mod coord {
     /// base read is `O(compartments · valence)` and derives the simplex from the
     /// cover the engine already built.
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct Compartment {
+    pub struct CoverSite {
         pub site: crate::transducer::base::Site,
     }
 
-    impl Coordinate for Compartment {
-        const NAME: &'static str = "lamina-cell";
+    impl Coordinate for CoverSite {
+        const NAME: &'static str = "cover-site";
         const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
 
         fn encode(&self) -> CompactBytes {
@@ -341,13 +341,13 @@ pub mod coord {
             reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen"
         )]
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
-            let refuse = || Self::refuse("a lamina cell is a tag byte and a site, n first");
+            let refuse = || Self::refuse("a cover site is a tag byte and a site, n first");
             match bytes.first() {
                 Some(7u8) => {
                     let mut pos = 1usize;
                     let site = crate::transducer::base::Site::take(bytes, &mut pos).ok_or_else(refuse)?;
                     match pos == bytes.len() {
-                        true => Ok(Compartment { site }),
+                        true => Ok(CoverSite { site }),
                         false => Err(refuse()),
                     }
                 }
@@ -445,7 +445,7 @@ pub mod coord {
         }
     }
 
-    /// A SECTION OF A CHART — `chart ‖ carriage`, the coordinate that
+    /// A CHART AND ITS CARRIAGE — `chart ‖ carriage`, the coordinate that
     /// separates two sheets of one fibre (18.2, 21 step 1).
     ///
     /// It opens with `TAG_CHART` exactly as [`Chart`] does, which is why
@@ -453,13 +453,13 @@ pub mod coord {
     /// with one of these and got nothing. It is a strictly finer
     /// coordinate, and a [`Stratum`] of it.
     #[derive(Clone, Debug, PartialEq, Eq)]
-    pub struct Section {
+    pub struct ChartCarriage {
         pub chart: crate::transducer::stalk::Invariant,
         pub carriage: crate::transducer::element::Versor,
     }
 
-    impl Coordinate for Section {
-        const NAME: &'static str = "section";
+    impl Coordinate for ChartCarriage {
+        const NAME: &'static str = "chart-carriage";
         const SYSTEM: CoordinateSystem = CoordinateSystem::Chart;
 
         fn encode(&self) -> CompactBytes {
@@ -480,20 +480,20 @@ pub mod coord {
             if pos != bytes.len() {
                 return Err(Self::refuse("the key carries bytes past its last coordinate"));
             }
-            Ok(Section { chart, carriage })
+            Ok(ChartCarriage { chart, carriage })
         }
     }
 
-    /// A TRANSPORT CLASS — shell kind and the conjugacy of the word
+    /// A TRANSPORT CLASS — layer kind and the conjugacy of the word
     /// (21 step 1, 15.4). Never the hue map and never the body's moduli,
     /// which are section coordinates.
     ///
-    /// It opens with the shell kind, not an A21 tag, so `SYSTEM` is `Any`
+    /// It opens with the layer kind, not an A21 tag, so `SYSTEM` is `Any`
     /// and the decode is the whole check — which is the honest spelling of
     /// a system whose keys are not tag-led.
     #[derive(Clone, Debug, PartialEq, Eq)]
     pub struct Transport {
-        pub kind: crate::transducer::peel::ShellKind,
+        pub kind: crate::transducer::layers::LayerKind,
         pub class: Holonomy,
     }
 
@@ -515,8 +515,8 @@ pub mod coord {
             let kind = bytes
                 .first()
                 .copied()
-                .and_then(crate::transducer::peel::ShellKind::of)
-                .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
+                .and_then(crate::transducer::layers::LayerKind::of)
+                .ok_or_else(|| Self::refuse("the leading byte names no layer kind"))?;
             let mut pos = 1usize;
             let cb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the word class is not length-delimited"))?;
@@ -567,8 +567,8 @@ pub mod coord {
             let kind = bytes
                 .first()
                 .copied()
-                .and_then(crate::transducer::peel::ShellKind::of)
-                .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
+                .and_then(crate::transducer::layers::LayerKind::of)
+                .ok_or_else(|| Self::refuse("the leading byte names no layer kind"))?;
             let mut pos = 1usize;
             let cb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the word class is not length-delimited"))?;
@@ -684,7 +684,7 @@ pub mod coord {
         }
     }
 
-    /// A SITE OF THE COVER — where a citation stands, as distinct from what
+    /// A GLUED VERTEX'S BOUNDARY — where a citation stands, as distinct from what
     /// it cites (54.7 B5a): the Glued vertex's own boundary record as
     /// `put_vertex` writes it, in the form's local encoding.
     ///
@@ -692,10 +692,10 @@ pub mod coord {
     /// vertex parser does not exist. `decode` checks the record's
     /// discriminant and carries the bytes, and that gap is counted.
     #[derive(Clone, Debug, PartialEq, Eq)]
-    pub struct Site(pub Vec<u8>);
+    pub struct GluedBoundary(pub Vec<u8>);
 
-    impl Coordinate for Site {
-        const NAME: &'static str = "cover-site";
+    impl Coordinate for GluedBoundary {
+        const NAME: &'static str = "glued-boundary";
         const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
 
         fn encode(&self) -> CompactBytes {
@@ -710,7 +710,7 @@ pub mod coord {
             // `put_vertex` writes the kind discriminant first, and a
             // citation is kind 2.
             match bytes.first() {
-                Some(2) => Ok(Site(bytes.to_vec())),
+                Some(2) => Ok(GluedBoundary(bytes.to_vec())),
                 _ => Err(Self::refuse("the record is not a citation's boundary")),
             }
         }
@@ -767,11 +767,11 @@ pub mod coord {
         }
     }
 
-    /// THE CHART A SECTION STANDS OVER is the section's own opening
-    /// segment, so every section over one chart is a fibre read at it —
+    /// THE CHART A CHART CARRIAGE STANDS OVER is its own opening segment,
+    /// so every chart carriage over one chart is a fibre read at it —
     /// following the LENGTH-DELIMITED chart key, which is what
-    /// `Section::encode` writes first and what the bare chart key is not.
-    impl Stratum<Section> for Chart {
+    /// `ChartCarriage::encode` writes first and what the bare chart key is not.
+    impl Stratum<ChartCarriage> for Chart {
         fn opening(&self) -> CompactBytes {
             let mut k = Vec::new();
             a::put_key_bytes(&mut k, self.0.key().as_bytes());
@@ -782,7 +782,7 @@ pub mod coord {
     /// §4.4 E8 — THE THREE COORDINATES OF A COVER (ruled 2026-09-22).
     ///
     /// `family::pieces` has always written these three addresses out of
-    /// the pieces' own content — a piece by its shell kind and its support written
+    /// the pieces' own content — a piece by its layer kind and its support written
     /// out; a carriage by its domain and codomain in that order; a meet by
     /// its two ends unordered — and every carrier
     /// holding one was `Keyed<V, Any>`. The bytes were a coordinate and the
@@ -804,7 +804,7 @@ pub mod coord {
     /// a colour back off a piece's key, so none is written there (law 12).
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Piece {
-        pub kind: crate::transducer::peel::ShellKind,
+        pub kind: crate::transducer::layers::LayerKind,
         pub support: Vec<crate::transducer::base::Site>,
     }
 
@@ -841,7 +841,7 @@ pub mod coord {
                 Some(&t) if t == a::TAG_PIECE => *pos += 1,
                 _ => return None,
             }
-            let kind = crate::transducer::peel::ShellKind::of(*bytes.get(*pos)?)?;
+            let kind = crate::transducer::layers::LayerKind::of(*bytes.get(*pos)?)?;
             *pos += 1;
             Some(Piece { kind, support: take_support(bytes, pos)? })
         }
@@ -888,12 +888,12 @@ pub mod coord {
     /// bookkeeping and not by geometry — leaving no second node in the nerve
     /// and no transition to have an order at all.
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct Carriage {
+    pub struct CarriedPieces {
         pub domain: Vec<Piece>,
         pub codomain: Vec<Piece>,
     }
 
-    impl Carriage {
+    impl CarriedPieces {
         fn put(&self, buf: &mut Vec<u8>) {
             buf.push(a::TAG_CARRIAGE);
             for side in [&self.domain, &self.codomain] {
@@ -904,7 +904,7 @@ pub mod coord {
             }
         }
 
-        fn take(bytes: &[u8], pos: &mut usize) -> Option<Carriage> {
+        fn take(bytes: &[u8], pos: &mut usize) -> Option<CarriedPieces> {
             match bytes.get(*pos) {
                 Some(&t) if t == a::TAG_CARRIAGE => *pos += 1,
                 _ => return None,
@@ -919,12 +919,12 @@ pub mod coord {
             };
             let domain = side()?;
             let codomain = side()?;
-            Some(Carriage { domain, codomain })
+            Some(CarriedPieces { domain, codomain })
         }
     }
 
-    impl Coordinate for Carriage {
-        const NAME: &'static str = "cover-carriage";
+    impl Coordinate for CarriedPieces {
+        const NAME: &'static str = "carried-pieces";
         const SYSTEM: CoordinateSystem = CoordinateSystem::Carriage;
 
         fn encode(&self) -> CompactBytes {
@@ -935,7 +935,7 @@ pub mod coord {
 
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateRefusal> {
             let mut pos = 0usize;
-            let c = Carriage::take(bytes, &mut pos)
+            let c = CarriedPieces::take(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the bytes do not spell a domain and a codomain"))?;
             match pos == bytes.len() {
                 true => Ok(c),
@@ -952,13 +952,13 @@ pub mod coord {
     /// they were stored and the nerve keeps nothing beside the key (law 12).
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Meet {
-        lo: Carriage,
-        hi: Carriage,
+        lo: CarriedPieces,
+        hi: CarriedPieces,
     }
 
     impl Meet {
         /// The seam between two carriages, in the order the key stores.
-        pub fn of(a: Carriage, b: Carriage) -> Meet {
+        pub fn of(a: CarriedPieces, b: CarriedPieces) -> Meet {
             match a <= b {
                 true => Meet { lo: a, hi: b },
                 false => Meet { lo: b, hi: a },
@@ -966,7 +966,7 @@ pub mod coord {
         }
 
         /// The two ends, read back out of the coordinate itself.
-        pub fn ends(&self) -> (&Carriage, &Carriage) {
+        pub fn ends(&self) -> (&CarriedPieces, &CarriedPieces) {
             (&self.lo, &self.hi)
         }
     }
@@ -993,8 +993,8 @@ pub mod coord {
                 None => return Err(Self::refuse("an empty key spells no coordinate")),
             };
             let refuse = || Self::refuse("the bytes do not spell two carriages");
-            let lo = Carriage::take(bytes, &mut pos).ok_or_else(refuse)?;
-            let hi = Carriage::take(bytes, &mut pos).ok_or_else(refuse)?;
+            let lo = CarriedPieces::take(bytes, &mut pos).ok_or_else(refuse)?;
+            let hi = CarriedPieces::take(bytes, &mut pos).ok_or_else(refuse)?;
             if pos != bytes.len() {
                 return Err(Self::refuse("the key carries bytes past its last coordinate"));
             }
@@ -1090,7 +1090,7 @@ pub mod coord {
             measure: [u64; 4],
             pieces: u64,
         },
-        Glued(Site),
+        Glued(GluedBoundary),
     }
 
     impl VertexAt {
@@ -1153,7 +1153,7 @@ pub mod coord {
                 Self::FRAME if body.is_empty() => Ok(VertexAt::Frame),
                 Self::WORD => Ok(VertexAt::Word(Transport::decode(body)?)),
                 Self::UNFOLDED => Ok(VertexAt::Unfolded(Unfolded::decode(body)?)),
-                Self::GLUED => Ok(VertexAt::Glued(Site::decode(body)?)),
+                Self::GLUED => Ok(VertexAt::Glued(GluedBoundary::decode(body)?)),
                 Self::REBASED => {
                     let mut pos = 1usize;
                     let bb = a::take_key_bytes(bytes, &mut pos)

@@ -33,7 +33,7 @@ fn turn_90_inv(n: usize) -> Word {
 /// A TRANSPORT as the Čech readers take one: a connection carrying the
 /// word and nothing else — no chain, identity carriage, identity gauge.
 /// `cech::rotor_of` reads its letters, which is what makes it a transport
-/// and not a residual.
+/// and not a residue.
 fn transport(w: &Word) -> Element {
     element::from_demand(w).expect("a connection carrying the word")
 }
@@ -270,7 +270,7 @@ fn court_torsion_files_relator_at_period() {
     // is not `face_of`, and the orbit's reading is the orbit's. The period-2
     // class above is what replays.
     assert_eq!(
-        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
         "the filed relator replays on the orbit's own reading"
     );
@@ -377,7 +377,7 @@ fn mint_rewrite_retires_to_one_address_on_two_courts() {
 
         // THE DERIVABILITY, RE-DERIVED by the redundancy probe over this
         // court's own basis with the candidate excluded.
-        let decomposed = k.reduce_excluding(&relator, Some(addr.as_bytes()), &mut super::common::budget());
+        let decomposed = k.reduce_excluding(&relator, Some(addr.as_bytes()), &mut super::fixtures::budget());
         let NormalForm::Decomposed(through) = decomposed else {
             panic!("the relator must decompose through the transport: {decomposed:?}");
         };
@@ -432,7 +432,7 @@ fn mint_rewrite_retires_to_one_address_on_two_courts() {
         // THE MEANING IS UNCHANGED: the language still speaks it.
         assert!(
             matches!(
-                k.reduce_excluding(&relator, None, &mut super::common::budget()),
+                k.reduce_excluding(&relator, None, &mut super::fixtures::budget()),
                 NormalForm::Decomposed(_)
             ),
             "the structure changed and the result did not"
@@ -473,14 +473,14 @@ fn retirement_line(
 /// speaker WAITS on its stamp. Per arm, admitted = applied + awaiting +
 /// refused.
 #[test]
-fn admit_line_replays_peer_retirement() {
+fn admit_line_reconstructs_peer_retirement() {
     use crate::chronometry::{ActKind, Cite, Ruled};
     let t = transport(&turn_90(1));
     let relator = transport(&turn_90(2));
     let retired = Ruled::Retired.index();
     let (r_addr, t_addr) = (relator.address(), t.address());
 
-    let key = super::common::court_key("retirer");
+    let key = super::fixtures::court_key("retirer");
     // Each court signs under its own key, so no two courts' stamps
     // coincide: a stamp names one act of one line.
     let mut b = Court::new();
@@ -491,7 +491,7 @@ fn admit_line_replays_peer_retirement() {
     let r_at = b.admitted_at(r_addr.as_bytes()).expect("the relator's stamp");
     let t_at = b.admitted_at(t_addr.as_bytes()).expect("the transport's stamp");
     let line = retirement_line(&key, vec![Cite::word(&relator, r_at), Cite::word(&t, t_at)]);
-    super::common::admit_line(&mut b, &key, &line);
+    super::fixtures::admit_line(&mut b, &key, &line);
     assert_eq!(b.clock(None).rulings[retired], [1, 1, 0, 0], "replayed and applied");
     assert!(!b.basis.contains(r_addr.as_bytes()), "the relator retired here");
     assert!(b.cavity_book.contains(r_addr.as_bytes()), "onto the cavity book, keeping its address");
@@ -501,13 +501,13 @@ fn admit_line_replays_peer_retirement() {
     let peer_stamp = last.stamp;
     assert!(own_head.parents.iter().any(|p| p.at == peer_stamp), "with the peer's receipt among its parents");
 
-    let lone = super::common::court_key("lone retirer");
+    let lone = super::fixtures::court_key("lone retirer");
     let mut e = Court::new();
     e.bind_identity([0xe4; 32]);
     e.set_court_voice([34; 32]);
     install(&mut e, [44; 32], &relator);
     let e_at = e.admitted_at(r_addr.as_bytes()).expect("the relator's stamp");
-    super::common::admit_line(&mut e, &lone, &retirement_line(&lone, vec![Cite::word(&relator, e_at)]));
+    super::fixtures::admit_line(&mut e, &lone, &retirement_line(&lone, vec![Cite::word(&relator, e_at)]));
     assert_eq!(e.clock(None).rulings[retired], [1, 0, 0, 1], "it does not re-derive here: refused, counted");
     assert_eq!(
         e.clock(None).ruling_refusals[retired],
@@ -516,13 +516,13 @@ fn admit_line_replays_peer_retirement() {
     );
     assert!(e.basis.contains(r_addr.as_bytes()), "and the word stays");
 
-    let early = super::common::court_key("early retirer");
+    let early = super::fixtures::court_key("early retirer");
     let mut w = Court::new();
     w.bind_identity([0x75; 32]);
     w.set_court_voice([35; 32]);
     install(&mut w, [45; 32], &relator);
     let w_at = w.admitted_at(r_addr.as_bytes()).expect("the relator's stamp");
     let line = retirement_line(&early, vec![Cite::word(&relator, w_at), Cite::word(&t, t_at)]);
-    super::common::admit_line(&mut w, &early, &line);
+    super::fixtures::admit_line(&mut w, &early, &line);
     assert_eq!(w.clock(None).rulings[retired], [1, 0, 1, 0], "a speaker w does not hold: the ruling waits on its stamp");
 }

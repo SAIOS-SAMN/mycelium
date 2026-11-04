@@ -9,7 +9,7 @@
 //! strokes in a row. These tests run at the PRODUCTION budget; the file
 //! beside this one runs at `1 << 20`, which is why none of them saw it.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 
 /// L8w, RADICAL CONSERVATION: AN EXTRACTION THE BUDGET CUTS OFF KEEPS
@@ -158,6 +158,7 @@ fn extract_rule_cached_keeps_partial_until_language_moves() {
 /// fixture; the invariant it rests on is this one.
 #[test]
 fn extract_rule_cached_never_keeps_none() {
+    crate::transducer::raster::stand_on(0);
     let root = crate::transducer::address::Address::new(vec![3u8]);
     let ph = &mut crate::physics::Physics::default();
     let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
@@ -174,19 +175,22 @@ fn extract_rule_cached_never_keeps_none() {
     assert!(again.remaining() < 1 << 20, "asked again, the family is read again, never answered by the memo");
 }
 
-/// MU-DERIVATIONS D3.2 — THE EXTRACTION'S STROKE CARRIES EACH REFINEMENT IT
-/// READS: a pair of unequal extents adds the need its four extents name
-/// (`refine::need`), beside every cell of both frames and the contacts of
-/// the frames' bodies; a site-for-site pair adds nothing beyond its cells.
+/// MU-DERIVATIONS D3.2 — THE EXTRACTION'S STROKE CARRIES EACH TRANSDUCTION
+/// IT READS: a pair of unequal enclosures adds the need its four periods
+/// name (`transduce::need`), beside every cell of both frames and the
+/// contacts of the frames' bodies; a pair of one enclosure adds nothing
+/// beyond its cells.
 #[test]
-fn extraction_spend_includes_refinement_need() {
+fn extraction_spend_includes_transduction_need() {
     let contacts = |frames: &Frames| -> usize {
         frames.iter().map(|(i, o)| (i.len() + o.len()) * 3 * crate::transducer::blade::CANDIDATES_PER_PAIR).sum()
     };
     let scaled = vec![(grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"]))];
     let frames = perceive_family(&scaled);
-    let need = crate::transducer::family::refine::need(2, 2, 4, 4).expect("extents stand");
-    assert_eq!(need, 4 * 4 + 2 * 4 * 4, "R(2, 4) = 4 runs per axis, L = 4");
+    use crate::transducer::family::transduce::{need, Enclosure};
+    let periods = |p: Vec<usize>| Enclosure::new(p).expect("periods stand");
+    let need = need(&periods(vec![2, 2]), &periods(vec![4, 4])).expect("periods stand");
+    assert_eq!(need, 4 * 4, "R(2, 4) = 2 + 4 − 2 = 4 arcs per circle");
     assert_eq!(extraction_spend(&scaled, &frames), 2 * 2 + 4 * 4 + contacts(&frames) + need);
 
     let square = vec![(grid(&["10", "00"]), grid(&["01", "00"]))];

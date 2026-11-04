@@ -50,12 +50,12 @@ pub const TAG_DEMAND: u8 = 17;
 /// FORMAT: demand-vertex address tag byte.
 pub const TAG_DEMAND_AT: u8 = 18;
 
-/// AN ELEMENT THAT IS NOT A CLOSED FORM: a residual 1-chain, a letter, a
+/// AN ELEMENT THAT IS NOT A CLOSED FORM: a residue 1-chain, a letter, a
 /// rewrite — everything `form_key_bytes` addresses.
 ///
 /// It shared `TAG_FORM` with the closed forms, and the two are different
 /// algebraic objects: a form is a graded cell complex whose faces and
-/// orbits satisfy `δ¹g = 1`, written in the vertex-key layout; a residual
+/// orbits satisfy `δ¹g = 1`, written in the vertex-key layout; a residue
 /// is an unclosed chain, `∂c ≠ 0`, written as its own bytes. One tag over
 /// both meant `from_address` could not tell which layout it held, so a
 /// master equation needed a second decoder beside it — and
@@ -65,15 +65,15 @@ pub const TAG_DEMAND_AT: u8 = 18;
 ///
 /// Two kinds, two tags. `from_address` reads `TAG_FORM` and refuses this
 /// one rather than misreading it.
-/// FORMAT: residual-chain address tag byte.
-pub const TAG_RESIDUAL: u8 = 19;
+/// FORMAT: residue-chain address tag byte.
+pub const TAG_RESIDUE: u8 = 19;
 
 /// §4.4 E8 — THE THREE ADDRESSES OF A COVER, DECLARED (ruled 2026-09-22).
 ///
 /// `pieces.rs` wrote these three by hand and the carriers holding them were
 /// `Keyed<V, coord::Any>`: loose bytes that could not tell a piece's address
 /// from a carriage's, and a carriage's from a meet's. They are genuine
-/// coordinates — a piece IS its shell kind, its hue and its support; a
+/// coordinates — a piece IS its layer kind, its hue and its support; a
 /// carriage IS its domain and codomain in that order, because a carriage has
 /// a direction; a meet IS its two carriages unordered, because a seam does
 /// not — so each gets a tag and an invertible reading, and the carriers
@@ -99,7 +99,7 @@ pub const TAG_LAW: u8 = 23;
 /// The address IS the object's coordinates written out (law 2, A21), and
 /// for a form that is megabytes: `form_vertex_key` writes every vertex,
 /// member and gauge, 7.3 MB on the 590-vertex rule. Every carrier that
-/// names the form by it held a separate copy — the bubbles trie, `dirty`,
+/// names the form by it held a separate copy — the wells trie, `dirty`,
 /// `ordinals`, the Čech complex's sections — and a hold paid for all of
 /// them.
 ///
@@ -248,7 +248,7 @@ impl From<Address> for Vec<u8> {
 }
 
 /// A mathematical coordinate with a canonical, self-delimiting boundary (Rule 6).
-pub trait Stratum: Eq {
+pub trait CanonicalCoordinate: Eq {
     fn write_canonical(&self, out: &mut Vec<u8>);
     fn read_canonical(bytes: &[u8]) -> Option<(Self, &[u8])>
     where
@@ -259,7 +259,7 @@ pub trait Stratum: Eq {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Nil;
 
-impl Stratum for Nil {
+impl CanonicalCoordinate for Nil {
     fn write_canonical(&self, _out: &mut Vec<u8>) {}
     fn read_canonical(bytes: &[u8]) -> Option<(Self, &[u8])> {
         Some((Nil, bytes))
@@ -273,7 +273,7 @@ pub struct CoordinatePath<Head, Tail> {
     pub tail: Tail,
 }
 
-impl<Head: Stratum, Tail: Stratum> CoordinatePath<Head, Tail> {
+impl<Head: CanonicalCoordinate, Tail: CanonicalCoordinate> CoordinatePath<Head, Tail> {
     pub fn new(head: Head, tail: Tail) -> Self {
         CoordinatePath { head, tail }
     }
@@ -285,7 +285,7 @@ impl<Head: Stratum, Tail: Stratum> CoordinatePath<Head, Tail> {
     }
 }
 
-impl<Head: Stratum, Tail: Stratum> Stratum for CoordinatePath<Head, Tail> {
+impl<Head: CanonicalCoordinate, Tail: CanonicalCoordinate> CanonicalCoordinate for CoordinatePath<Head, Tail> {
     fn write_canonical(&self, out: &mut Vec<u8>) {
         self.head.write_canonical(out);
         self.tail.write_canonical(out);
@@ -307,7 +307,7 @@ impl<Target> PrefixOf<Target> for Nil {
     fn write_prefix(&self, _out: &mut Vec<u8>) {}
 }
 
-impl<Head: Stratum, Tail: PrefixOf<TailTarget>, TailTarget>
+impl<Head: CanonicalCoordinate, Tail: PrefixOf<TailTarget>, TailTarget>
     PrefixOf<CoordinatePath<Head, TailTarget>> for CoordinatePath<Head, Tail>
 {
     fn write_prefix(&self, out: &mut Vec<u8>) {
@@ -316,7 +316,7 @@ impl<Head: Stratum, Tail: PrefixOf<TailTarget>, TailTarget>
     }
 }
 
-impl Stratum for Address {
+impl CanonicalCoordinate for Address {
     /// A key component (ruled (d)): its length by its own coordinate.
     fn write_canonical(&self, out: &mut Vec<u8>) {
         put_key_bytes(out, self.as_bytes());

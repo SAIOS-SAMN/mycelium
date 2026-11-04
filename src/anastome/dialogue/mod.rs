@@ -19,6 +19,7 @@ pub mod cover;
 pub mod demand;
 pub mod docket;
 pub mod equivocation;
+pub mod factorisation;
 pub mod fold;
 pub mod offer;
 pub mod percept;
@@ -26,6 +27,7 @@ pub mod present;
 pub mod quote;
 pub mod receipts;
 pub mod root;
+pub mod samples;
 pub mod seat;
 pub mod speech;
 pub mod syllabus;
@@ -44,6 +46,7 @@ pub use cover::*;
 pub use demand::*;
 pub use docket::*;
 pub use equivocation::*;
+pub use factorisation::*;
 pub use fold::*;
 pub use offer::*;
 pub use percept::*;
@@ -51,6 +54,10 @@ pub use present::*;
 pub use quote::*;
 pub use receipts::*;
 pub use root::*;
+pub use samples::{
+    decode_posted_samples, decode_samples, encode_posted_samples, encode_samples, push_sample, read_sample, section_of,
+    spoken_outputs, PostedTask, SampleWire, TaskEnvelope, TaskRasters,
+};
 pub use speech::*;
 pub use syllabus::*;
 

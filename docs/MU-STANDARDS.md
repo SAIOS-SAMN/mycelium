@@ -30,8 +30,8 @@ the moves of one chapter, the codec of one act family, one carrier and its
 impls, one stratum of the mind. A file is named for what it holds in the
 specification's vocabulary (`refract.rs`, `carriage.rs`, `admission.rs`,
 `lapse.rs`), never for its shape (`util`, `helpers`, `misc`, `common`,
-`types`, `part2`, `extra`). The one exception is a module's
-`tests/common.rs` (§3.3).
+`types`, `part2`, `extra`). A module's test fixtures stand in its
+`tests/fixtures.rs` (§3.3).
 
 1.3 **`mod.rs` holds declarations.** A `mod.rs` contains `mod`, `pub mod`,
 `pub use` and `#[cfg(test)] mod tests;`, and nothing else. A binary's
@@ -45,7 +45,7 @@ site's integer coordinates. The permitted readers are the functions of
 `carry_compartment_site`, `pullback`), `transducer::element::letters::carriage`,
 `transducer::blade::carry::carry`, `Blade::centroid` in
 `transducer/blade/body.rs`, `transducer::alphabet::letters::rotor_pair`,
-the rotor transition `rotor_between` in `transducer/bubble/contemplation.rs`,
+the rotor transition `rotor_between` in `transducer/field/contemplation.rs`,
 and the base sites of `transducer::base`. Nothing else touches a site's
 integers, a centre's rationals or a grid. This is a review rule (§4.4),
 not a gate.
@@ -145,7 +145,7 @@ cannot allow anything. What a line used to do is in git. A contributor who
 touches a function removes such comments from it in the same commit.
 
 2.9 **Exact arithmetic.** Every quantity is exact: ℚ, or the multivectors
-of Cl(4,1)(ℚ). `float_arithmetic`, `cast_precision_loss` and
+of `Cl(n+1, 1)`(ℚ), with `n` read from the data (`Cl(4,1)` at `n = 3`). `float_arithmetic`, `cast_precision_loss` and
 `cast_possible_truncation` are denied in `Cargo.toml`; a narrowing `as`
 stands only under an `#[expect]` naming where its bound comes from. A
 decimal approximation of an irrational is not served anywhere: in a value,
@@ -276,7 +276,7 @@ nothing and prints is not a test.
 the owning module's `#[cfg(test)] mod tests;`, one file per organ they
 prove, named for what its tests claim (`sentence/pivot/tests/orbit.rs`,
 `cognition/tests/ledger.rs`), never for a chapter number. A module's
-`tests/common.rs` holds fixture constructors only, named for what they
+`tests/fixtures.rs` holds fixture constructors only, named for what they
 build. Integration tests live in the crate's `tests/` directory.
 
 3.4 **Fixtures are the engine's constructs.** Addresses come from
@@ -322,9 +322,11 @@ cargo test --release --lib -- <module path filter>...
 A run is green only when its saved output contains no `FAILED`,
 `panicked` or `error` line. `scripts/ship-scoped <filter>...` runs clippy
 and the scoped tests in sequence. Before a pull request, `scripts/check`
-runs the gate (§4.1) and the workspace tests with `--no-fail-fast` and
-summarises both; without the ARC-AGI-2 corpus at `data/arc-agi-2`, its
-17 corpus-dependent tests are known exceptions, and the summary says so.
+runs the gate (§4.1), the gate's own unit tests (`cargo test --release`
+in `xtask`) and the workspace tests with `--no-fail-fast`, and summarises
+all three; a failing gate test fails the check; without the ARC-AGI-2 corpus at `data/arc-agi-2`, its
+20 corpus-dependent tests (all in the decoder's crate, `sources/arc-agi`)
+are known exceptions, and the summary says so.
 
 ## 4. The gate
 
@@ -335,8 +337,11 @@ summarises both; without the ARC-AGI-2 corpus at `data/arc-agi-2`, its
 ```
 
 Setting `CARGO_TARGET_DIR` (for example `CARGO_TARGET_DIR=target/gate`) is
-optional and keeps the gate's build apart from a release build. There is
-no `build.rs`; the gate runs only from `xtask`. It takes two readings,
+optional and keeps the gate's build apart from a release build. The
+library's `build.rs` only computes the Concordance's byte hash
+(`CONCORDANCE_HASH`), a defect retired by ROADMAP track 24 B2 (Concordance
+§0, signing by adjudicated reading); the gate runs only from
+`xtask`. It takes two readings,
 reports both whatever the first said, and exits non-zero if either
 refuses:
 
@@ -365,7 +370,8 @@ refuses:
      until it is empty.
 2. **The warning gate** (`lint/warnings.rs`):
    `cargo clippy --release --workspace --all-targets -- -D warnings`,
-   every workspace member (`mycelium`, `forms`, `mycelium-sdk`) and every
+   every workspace member (`mycelium`, `forms`, `mycelium-sdk`,
+   `mycelium-source-arc-agi`) and every
    target, tests included, rustc's warnings denied. A warning is a defect with a
    line number.
 

@@ -9,9 +9,11 @@
 //! Nothing is rounded and nothing is a digest.
 //!
 //! STD1 — THE WRITER IS A FLAG, NEVER AN IGNORED TEST: `mycelium-soak
-//! --write-oracle-golden` writes the golden file ([`write_golden`]) on the
-//! carrier it stands for; the suite's `readings_agrees_with_golden_oracle`
-//! reads it and takes the readings again (§6.4: verification never writes).
+//! --write-oracle-golden DIR` writes the golden file ([`write_golden`]) on
+//! the carrier it stands for, over the posted tasks a decoder wrote to DIR;
+//! `readings_agrees_with_golden_oracle`, in the corpus decoder's own tests
+//! (`sources/arc-agi/tests/oracle.rs`, ROADMAP track 26 S1), reads it and
+//! takes the readings again (§6.4: verification never writes).
 
 use super::{self as cga, Mv};
 use num_rational::BigRational;
@@ -21,7 +23,7 @@ pub const GOLDEN: &str = "src/transducer/cga/tests/oracle.golden";
 /// The corpus slice the versors are harvested from, and how many distinct
 /// ones are read. A slice of the corpus, in the directory's sorted order.
 /// FORMAT: an input of the golden file's writing, the tasks it reads.
-const TASKS: usize = 40;
+pub const TASKS: usize = 40;
 /// FORMAT: an input of the golden file's writing, the versors it holds.
 const HARVEST: usize = 48;
 /// The reading budget the golden was written under: a fixture of the golden
@@ -89,7 +91,7 @@ fn fixtures() -> Vec<(String, Mv)> {
     }
     let compartment = |r: i64, c: i64, k: i64| cga::hyperbolic_compartment(&[q(r, 1), q(c, 1), q(k, 1)], &q(9, 1));
     if let (Some(a), Some(b)) = (compartment(1, 2, 0), compartment(-3, 1, 2)) {
-        out.push(("lamina_a".into(), a.clone()));
+        out.push(("compartment_a".into(), a.clone()));
         if let Some(g) = cga::geodesic_transvection(&a, &b) {
             out.push(("geodesic".into(), g));
         }
@@ -106,16 +108,12 @@ fn fixtures() -> Vec<(String, Mv)> {
 /// faces (each member pair's carriage and 50.3 edge) and on the members.
 /// Read in key order of the versors' canonical bytes, so the slice is the corpus's
 /// content and not the order the extractor happened to meet them in.
-fn harvest() -> Vec<(String, Mv)> {
-    let corpus = crate::arc::corpus("training");
-    let Ok(dir) = std::fs::read_dir(&corpus) else { return Vec::new() };
-    let mut names: Vec<String> = dir
-        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
-        .filter(|n| n.ends_with(".json"))
-        .collect();
-    names.sort_unstable();
-    names.truncate(TASKS);
-    let epi = crate::client::sdk::Epigenome::new();
+///
+/// `tasks` is the slice the caller read: the tasks of the corpus's first
+/// [`TASKS`] files in name order, through the corpus's decoder (outside
+/// `src/`, ROADMAP track 26 S1). The oracle reads no file format.
+fn harvest(tasks: &[crate::transducer::family::Task]) -> Vec<(String, Mv)> {
+    let epi = crate::client::sdk::MindLanguage::new();
     let mut physics = crate::physics::Physics::default();
     let mut held: crate::network::nerve::Keyed<Mv> = crate::network::nerve::Keyed::new();
     let mut hold = |m: &Mv| {
@@ -125,14 +123,24 @@ fn harvest() -> Vec<(String, Mv)> {
             held.insert(k, c);
         }
     };
-    for name in &names {
-        let Ok(json) = std::fs::read_to_string(format!("{corpus}/{name}")) else { continue };
-        let Some(task) = crate::arc::parse_task(&json) else { continue };
-        let frames = crate::transducer::family::perceive_family(&task.train);
-        let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget) else {
-            continue;
-        };
+    // Each task read once per perspective of its ground (MU-SENSING §3.8):
+    // every perspective's rule is harvested, none picked.
+    let rules: Vec<_> = tasks
+        .iter()
+        .flat_map(|task| {
+            // Σ is the whole family's, its test inputs included (§3.3).
+            let inputs: Vec<_> = task.test.iter().map(|(x, _)| x.sample().clone()).collect();
+            crate::transducer::symbols::on_test_inputs(&inputs, || {
+                crate::transducer::raster::on_each_perspective_of(&task.train, || {
+                    let frames = crate::transducer::family::perceive_family(&task.train);
+                    let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
+                    crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
+                })
+            })
+        })
+        .filter_map(|(_, rule)| rule)
+        .collect();
+    for rule in rules {
         for (_, face) in rule.form.faces.entries() {
             hold(&face.place.carriage);
             if let Some(e) = &face.place.edge {
@@ -236,18 +244,19 @@ pub fn readings(inputs: &[(String, Mv)]) -> Vec<String> {
     out
 }
 
-/// The inputs the oracle is read over: the fixtures, then the harvest.
-pub fn inputs() -> Vec<(String, Mv)> {
+/// The inputs the oracle is read over: the fixtures, then the harvest of
+/// `tasks` (the corpus's slice, [`harvest`]).
+pub fn inputs(tasks: &[crate::transducer::family::Task]) -> Vec<(String, Mv)> {
     let mut all = fixtures();
-    all.extend(harvest());
+    all.extend(harvest(tasks));
     all
 }
 
 /// WRITES THE GOLDEN FILE on the carrier it stands for: the readings over
 /// the inputs, one per line. Returns how many were written. Run by the
 /// soak's flag, never by a verification (§6.4).
-pub fn write_golden() -> std::io::Result<usize> {
-    let lines = readings(&inputs());
+pub fn write_golden(tasks: &[crate::transducer::family::Task]) -> std::io::Result<usize> {
+    let lines = readings(&inputs(tasks));
     std::fs::write(GOLDEN, lines.join("\n") + "\n")?;
     Ok(lines.len())
 }

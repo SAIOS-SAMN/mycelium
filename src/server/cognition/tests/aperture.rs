@@ -1,7 +1,7 @@
 // 24.1 — THE APERTURE: what the mind can afford to hold, what it sheds,
 // and that the cost of one word does not grow with the book.
 
-use super::common::speak_pair;
+use super::fixtures::speak_pair;
 use crate::cognition::*;
 
 /// THE TWO-STROKE BREATHES: sustained germination depletes the reserve; a germ
@@ -16,7 +16,7 @@ let mut k = Court::new();
 // A bar: a body the eyes pair with its image (20 as ruled, L7). An L that
 // lost a site is a body no versor carries — no sentence, no listing.
 let a = vec![(0, 0, 1), (0, 1, 1)];
-// ENTROPIC EXPANSION: eight distinct germs drain the residual lane — each
+// ENTROPIC EXPANSION: eight distinct germs drain the residue lane — each
 // a new site painted its own hue beside the bar, a creation the voice's
 // sentence carries as a demand beside the bar's own word (50.5). H1b, 70.4 —
 // separated: at `(0, 2)` the site is one hue-blind piece with the bar.
@@ -50,8 +50,8 @@ let ga_spoken = k
 assert_eq!(speak_pair(&mut k, &a, &gb, [4; 32]), Outcome::GermPending);
 // A's quorum lands on the recovered lane and installs — spending it back out…
 assert_eq!(speak_pair(&mut k, &a, &ga, [2; 32]), Outcome::GermPending);
-let mut cover = crate::network::nerve::Cover::new();
-let _ = super::common::fetched(&mut k, &ga_spoken, [2; 32], [1; 32], &mut cover);
+let mut cover = crate::network::nerve::HomeTrie::new();
+let _ = super::fixtures::fetched(&mut k, &ga_spoken, [2; 32], [1; 32], &mut cover);
 // …so B finds the lane DEPLETED. The METABOLISM is what defers -- the
 // only thing that should gate here (E3) -- and the germ is not lost: a
 // later submission dockets it once the reserve recovers. What does NOT
@@ -164,18 +164,18 @@ assert_eq!(
 );
 }
 
-/// 24.1, 26 — THE OPEN-DEMAND ARM. When the lane a residual occupies is
-/// depleted, germination DEFERS and the residual is listed on the open
+/// 24.1, 26 — THE OPEN-DEMAND ARM. When the lane a residue occupies is
+/// depleted, germination DEFERS and the residue is listed on the open
 /// market instead: the demand stands, quotable, until the reserve recovers.
 /// Each of the three carriers charges for itself — a word of finite order
 /// charges its order, an unclosed orbit charges the letters it spelled, and a
-/// pure residual chain charges the support its chain touches — and all three
+/// pure residue chain charges the support its chain touches — and all three
 /// are LISTED. Only an element with neither word nor chain is degenerate.
 ///
 /// This arm had no test at all: a probe at its head ran zero times across
 /// the whole suite while the corrections of F2r1 and F2r1c were written into
 /// it (backtrack ledger, 2026-09-07). This test reaches it and takes the
-/// PURE RESIDUAL CHAIN carrier — the one F2r1c corrected, and the one that
+/// PURE RESIDUE CHAIN carrier — the one F2r1c corrected, and the one that
 /// was being refused. The two tape carriers (a word of finite order, an
 /// unclosed orbit) are still unreached; the fixture that spells one under a
 /// depleted lane is owed as F2r1d.
@@ -284,7 +284,7 @@ fn list_sentence_charges_orbit_orders_on_depleted_lane() {
 
 /// THE HOLONOMY THE METABOLISM CHARGES ON IS THE ONE THE ORBIT CARRIES.
 ///
-/// `germinate/listing.rs` charges the physics off `Form::orbit_words`: an orbit
+/// `listings/listing.rs` charges the physics off `Form::orbit_words`: an orbit
 /// of FINITE order raises pressure by its period, an orbit of INFINITE order
 /// charges TORSION — "what will not close". That reader returned
 /// `lp.holonomy`, the orbit's WORD, and a face's word is the coboundary

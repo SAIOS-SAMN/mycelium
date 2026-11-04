@@ -2,7 +2,7 @@
 // seal, cross, read back returns the fill and the boundary exactly, and the
 // ledger keeps the pair as history.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::*;
 use crate::transducer::element::identity_versor as ident;

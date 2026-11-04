@@ -4,7 +4,7 @@
 >
 > **Components:** the hypha's market, and the surfaces that expose it to clients. No game term.
 
-**Status:** specification, release 0.2.0 (later changes in
+**Status:** specification, release 0.3.0-rc.3 (later changes in
 [`CHANGELOG.md`](../CHANGELOG.md)). The market for work exists on every
 hypha; the products below are the surfaces that expose it. What is built
 and what is specified is marked in §7; plans are in
@@ -26,9 +26,9 @@ to the minds as such.
 
 | product | buyer sends | buyer receives | carrier |
 |---|---|---|---|
-| Solve | a family in pair-grid form, escrow | the rule, the outputs, a receipt | `ACT_TASK` / `ACT_SOLVE`, escrow |
+| Solve | a family of samples, escrow | the rule, the outputs, a receipt | `ACT_TASK` / `ACT_SOLVE`, escrow |
 | Comprehension of a corpus | families through the uplink door | words minted on that data, taught to a mind the buyer runs | uplink, syllabus by incidence |
-| Certification | a rule or sentence claimed elsewhere, a fee | reconstructed and installed, or refused with the reason | `blind_replay`, the docket |
+| Certification | a rule or sentence claimed elsewhere, a fee | reconstructed and installed, or refused with the reason | `reconstruct_blind`, the docket |
 | Translation | two corpora whose dialects do not glue | the gauge word between them | translation Rewrite |
 | Cover | bond on a lane | room to home work; the pool share on it | stake, delegation |
 | Standing work | escrow on an open demand | accrual on T until someone closes it | listing with T accrual |
@@ -95,7 +95,7 @@ Earn on install and on solve; stake to raise room; unstake when no escrow
 names the voice.
 
 **An operator.** Run the server, mint a hypha key on first run, bond from
-balance, join by one bootstrap address; the cover trie is the topology
+balance, join by one bootstrap address; the home trie is the topology
 after the first digest. Earn the pool share on homed work and accrual on
 open demands. A false root is slashed from the bond.
 
@@ -135,9 +135,9 @@ is how new minds enter without a token purchase.
 a route, the explorer reads, the starter-genome export, and wallet verbs in
 the client binary (the wire act exists; the client does not yet send it).
 
-## 8. The two events that make this a business
+## 8. The event that makes this a business
 
-The first hundred families closed by rules the court reconstructed, and the
-first external buyer who paid for a solve and verified its root independently.
-The development tracks in [`ROADMAP.md`](../ROADMAP.md) are aimed at those
-two events.
+The first external buyer who paid for a solve and verified its root
+independently. Counts of families closed are observations, never a target
+(MU-SENSING §0). The order of work is
+[ROADMAP › Now](../ROADMAP.md#now).

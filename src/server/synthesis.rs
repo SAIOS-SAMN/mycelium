@@ -6,13 +6,13 @@
 //! that were judged here carried a voice's painted sites to the court (law 8,
 //! ruled 2026-09-10); a voice speaks sentences, heard by `perceive_speech`.
 
-use crate::arc::Grid;
-use crate::server::held::held;
+use crate::transducer::family::SectionSample;
+use crate::server::court_lock::held;
 
 /// The family's measured frame ratio — perception, identical across pairs
-/// or refused (never rounded), measured on the common refinement.
-pub fn family_ratio(train: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, usize))> {
-    crate::transducer::family::refine::family_ratio(train)
+/// or refused (never rounded), each circle's re-period.
+pub fn family_ratio(train: &[(SectionSample, SectionSample)]) -> Option<((usize, usize), (usize, usize))> {
+    crate::transducer::family::family_ratio(train)
 }
 
 /// Work items for the server's deliberation worker — everything that would
@@ -25,7 +25,7 @@ pub enum Deliberation {
 }
 
 /// THE PROBE, off the lock: the sentence replays over the language snapshot
-/// against the listing's chain; the settlement (closure or graded residual)
+/// against the listing's chain; the settlement (closure or graded residue)
 /// runs under a brief lock. Returns the probe's reading (PR1).
 pub fn probe(
     k: &std::sync::Mutex<crate::cognition::Court>,
@@ -34,7 +34,7 @@ pub fn probe(
     cites: &[crate::anastome::dialogue::CiteWire],
 ) -> crate::anastome::dialogue::ProbeReading {
     use crate::anastome::dialogue::ProbeReading;
-    // 78.153b — every take through the counted guard (`server::held`).
+    // 78.153b — every take through the counted guard (`server::court_lock`).
     let Ok(mut g) = held!(k) else { return ProbeReading::nothing() };
     let view = g.run(|k, _| k.market_open());
     drop(g);
@@ -50,7 +50,7 @@ pub fn probe(
     };
     // The utterance is verified as spoken — its operators against the
     // listing — never against this hypha's copies of the words.
-    let residual = crate::transducer::sentence::verify_utterance(cites, listing.sub());
+    let residue = crate::transducer::sentence::verify_utterance(cites, listing.sub());
     let Ok(mut g) = held!(k) else { return ProbeReading::nothing() };
     g.run(|g, _| {
         // A SECTION is the hypha's reading, never the speaker's flag: a cite
@@ -65,7 +65,7 @@ pub fn probe(
         // The court replays the settlement on the chains it is handed, so the
         // measure spoken here is the chain's own, not the listing's fibre.
         let before = crate::transducer::element::measure_lanes(listing.sub());
-        let settled = g.settle_probe(voice, target, residual, cites, section);
+        let settled = g.settle_probe(voice, target, residue, cites, section);
         if settled.moved() {
             g.puncture_from(cites); // the fibre deepens on what was verified
             // The settlement goes to the court with the utterance that made it,
@@ -191,22 +191,22 @@ pub fn adopt(
     // 78.153 — the replay on the one stroke: unread is not adopted now and
     // not refused; the next adoption resumes it (the court's cursor) where
     // the word replays under the lock, or starts it over where it is pure.
-    let (replayed, mut budget) = match word.is_sentence() {
+    let (reconstructed, mut budget) = match word.is_sentence() {
         true => {
-            let replayed = g.run(|k, reads| k.court_replay(word, reads));
-            (replayed, g.into_stroke())
+            let reconstructed = g.run(|k, reads| k.court_reconstruct(word, reads));
+            (reconstructed, g.into_stroke())
         }
         false => {
             let mut budget = g.into_stroke();
-            let mut cursor = crate::verdict::ReplayCursor::default();
-            let replayed = crate::verdict::replay_resume(word, &|_| None, None, &crate::transducer::family::NoCrystal, &mut budget, &mut cursor, false);
-            (replayed, budget)
+            let mut cursor = crate::verdict::ReconstructionCursor::default();
+            let reconstructed = crate::verdict::reconstruct_resume(word, &|_| None, None, &crate::transducer::family::NoCrystal, &mut budget, &mut cursor, false);
+            (reconstructed, budget)
         }
     };
-    match replayed {
-        crate::verdict::Replayed::Refused(r) => return Adoption::Refused(r.reason),
-        crate::verdict::Replayed::Unread => return Adoption::Unread,
-        crate::verdict::Replayed::Clean => {}
+    match reconstructed {
+        crate::verdict::ReconstructionOutcome::Refused(r) => return Adoption::Refused(r.reason),
+        crate::verdict::ReconstructionOutcome::Unread => return Adoption::Unread,
+        crate::verdict::ReconstructionOutcome::Clean => {}
     }
     let Ok(mut g) = held!(k) else { return Adoption::Refused(crate::verdict::REFUSE_COURT_UNAVAILABLE) };
     // The install spends the adoption's stroke, carried in; this hold's own
@@ -233,7 +233,7 @@ pub fn adopt(
         None,
         &mut budget,
     );
-    if let ([], [], [_, ..]) = (sentence.residual.as_slice(), sentence.punctures.as_slice(), sentence.cites.as_slice()) {
+    if let ([], [], [_, ..]) = (sentence.residue.as_slice(), sentence.punctures.as_slice(), sentence.cites.as_slice()) {
         return Adoption::Derivable;
     }
     let Ok(mut g) = held!(k) else { return Adoption::Refused(crate::verdict::REFUSE_COURT_UNAVAILABLE) };

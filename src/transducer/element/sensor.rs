@@ -16,13 +16,19 @@
 
 use num_bigint::BigInt;
 use super::*;
-use crate::transducer::base::{is_grid_axis, Site};
+use crate::transducer::base::Site;
+use crate::transducer::perspective::{family_role, Role};
 
-/// THE `n` THE GRID PRESENTS (71.2(1)): row, column and frame. It is read
-/// here, at intake, and every site the sensor hands over carries it; a form
-/// extracted from grids stands on this base.
-/// FORMAT: the coordinates of a site the sensor writes, `(r, c, k)`.
-pub const GRID_N: u8 = 3;
+/// THE `n` OF THE BASE A FORM IS WRITTEN ON BY DEFAULT (71.2(1)): the
+/// alphabet's base, a sample of the rank the letters spell and its place
+/// in its family (`alphabet::ALPHABET_BASE_N`, derived from the letters'
+/// rank). A form read from a sample of another rank carries that rank's
+/// `n` on its address.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "STD1 C1 — the algebra's range: ALPHABET_BASE_N = LETTER_RANK − 1 = 3"
+)]
+pub const BASE_N: u8 = crate::transducer::alphabet::ALPHABET_BASE_N as u8;
 
 /// A point of the base, `(r, c, k)` in ℚ³ (51.1): the corpus's three
 /// coordinates as the grid presents them.
@@ -65,8 +71,9 @@ pub fn site_of(p: &Point) -> Option<(i64, i64, i64)> {
 }
 
 /// Carry a compartment's centre by V and read the base point back (None at
-/// infinity). The centre stands at the site plus ½ on each grid axis: the
-/// other axes' origins lie at the compartments' centres (16.4), so a dilator
+/// infinity). The centre stands at the site plus ½ on each axis the default
+/// perspective reads as space (the compartment's cube spans them): the
+/// place's origin lies at the compartments' centres (16.4), so a dilator
 /// about a point of the frame fixes the frame. At the site's own `n`.
 pub fn carry_site_centre(v: &Versor, s: &Site) -> Option<Vec<num_rational::BigRational>> {
     let half = num_rational::BigRational::new(BigInt::from(1), BigInt::from(2));
@@ -76,9 +83,9 @@ pub fn carry_site_centre(v: &Versor, s: &Site) -> Option<Vec<num_rational::BigRa
         .enumerate()
         .map(|(i, a)| {
             let q = num_rational::BigRational::from_integer(BigInt::from(*a));
-            match is_grid_axis(i) {
-                true => q + &half,
-                false => q,
+            match family_role(s.n(), i) {
+                Some(Role::Space) => q + &half,
+                Some(Role::Sequence | Role::Value) | None => q,
             }
         })
         .collect();
@@ -98,32 +105,32 @@ pub fn carry_centre(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
     }
 }
 
-/// Carry a whole compartment by V — its unit square standing on the grid
-/// axes — and read back the block of compartments its image IS: the sites whose squares
-/// tile it exactly. The square is carried by its four corners, and the
-/// image is a block of the sensor only where the corners land on the
-/// base's vertices, with every non-grid coordinate shared by all four, as
-/// an axis-aligned square of integer side: one site under an isometry, an
-/// s×s block under a dilation by an integer s. Everything else is no
-/// compartment of the sensor and is refused (law 11): a tilted image (a rotor off the
-/// 90° turns), a fractional image (a shrink, a dilation by a ratio), a
-/// square standing across the frames (a versor turning a non-grid axis into
-/// the plane, 16.4), a corner at infinity or off the base (W6). Nothing is
-/// read off a span of centres.
+/// Carry a whole compartment by V — its unit cube standing on the axes the
+/// default perspective reads as space (`perspective::Perspective`) — and
+/// read back the block of compartments its image IS: the sites whose cubes
+/// tile it exactly. The cube is carried by its least corner, the corner one
+/// step along each space axis, and its far corner (at two space axes, its
+/// four corners), and the image is a block of the sensor only where the
+/// corners land on the base's vertices, with every coordinate off the space
+/// axes shared by all, as an axis-aligned cube of integer side: one site
+/// under an isometry, an `sᵐ` block under a dilation by an integer `s`.
+/// Everything else is no compartment of the sensor and is refused (law
+/// 11): a tilted image (a rotor off the 90° turns), a fractional image (a
+/// shrink, a dilation by a ratio), a cube standing across the frames (a
+/// versor turning the place into a space axis, 16.4), a corner at infinity
+/// or off the base (W6). Nothing is read off a span of centres. At any `n`:
+/// no axis is named.
 pub fn carry_compartment_site(v: &Versor, s: &Site) -> Option<Vec<Site>> {
-    let [ga, gb] = crate::transducer::base::GRID_AXES;
-    // A corner carried onto a vertex of the base, or nothing.
-    let corner = |da: i64, db: i64| -> Option<Vec<i64>> {
+    let space = crate::transducer::perspective::Perspective::of_family_site(s.n()).space_axes();
+    // A corner carried onto a vertex of the base, or nothing: the site one
+    // step along each space axis in `ones`.
+    let corner = |ones: &[usize]| -> Option<Vec<i64>> {
         let x: Vec<num_rational::BigRational> = s
             .axes()
             .iter()
             .enumerate()
             .map(|(i, a)| {
-                let d = match i {
-                    i if i == ga => da,
-                    i if i == gb => db,
-                    _ => 0,
-                };
+                let d = i64::from(ones.contains(&i));
                 num_rational::BigRational::from_integer(BigInt::from(a + d))
             })
             .collect();
@@ -138,48 +145,60 @@ pub fn carry_compartment_site(v: &Versor, s: &Site) -> Option<Vec<Site>> {
             })
             .collect()
     };
-    let (p00, p10, p01, p11) = (corner(0, 0)?, corner(1, 0)?, corner(0, 1)?, corner(1, 1)?);
-    // Every non-grid coordinate is one for all four corners: the image
-    // stands in one frame.
-    let off_grid_equal = |p: &[i64]| {
-        p.iter().enumerate().all(|(i, a)| is_grid_axis(i) || p00.get(i) == Some(a))
-    };
-    if !(off_grid_equal(&p10) && off_grid_equal(&p01) && off_grid_equal(&p11)) {
-        return None;
-    }
-    let at = |p: &[i64], i: usize| p.get(i).copied();
-    let a = (at(&p10, ga)? - at(&p00, ga)?, at(&p10, gb)? - at(&p00, gb)?);
-    let b = (at(&p01, ga)? - at(&p00, ga)?, at(&p01, gb)? - at(&p00, gb)?);
-    let along = |d: (i64, i64)| -> Option<(bool, i64)> {
-        match (d.0 == 0, d.1 == 0) {
-            (false, true) => Some((true, d.0.abs())),
-            (true, false) => Some((false, d.1.abs())),
-            _ => None,
+    let least = corner(&[])?;
+    let far = corner(&space)?;
+    // Every coordinate off the space axes is one for every corner: the
+    // image stands in one frame.
+    let off_space_equal = |p: &[i64]| p.iter().enumerate().all(|(i, a)| space.contains(&i) || least.get(i) == Some(a));
+    // THE EDGES: each space axis's step carried, the image an edge along
+    // one space axis, every edge of one side and no two on one axis — a
+    // signed permutation of the space axes times the side.
+    let mut side: Option<i64> = None;
+    let mut taken: Vec<usize> = Vec::with_capacity(space.len());
+    let mut lift = vec![0i64; least.len()];
+    for &axis in &space {
+        let p = corner(&[axis])?;
+        if !off_space_equal(&p) {
+            return None;
         }
-    };
-    let (a_rows, side) = along(a)?;
-    let (b_rows, side_b) = along(b)?;
-    if a_rows == b_rows || side != side_b {
+        let d: Vec<i64> = p.iter().zip(&least).map(|(a, b)| a - b).collect();
+        let moved: Vec<usize> = (0..d.len()).filter(|&i| d.get(i).is_some_and(|x| *x != 0)).collect();
+        let &[along] = moved.as_slice() else { return None };
+        let step = *d.get(along)?;
+        if !space.contains(&along) || taken.contains(&along) || side.is_some_and(|s| s != step.abs()) {
+            return None;
+        }
+        side = Some(step.abs());
+        taken.push(along);
+        *lift.get_mut(along)? += step;
+    }
+    if !off_space_equal(&far) || far.iter().zip(&least).zip(&lift).any(|((f, l), d)| *f != l + d) {
         return None;
     }
-    if at(&p11, ga)? != at(&p00, ga)? + a.0 + b.0 || at(&p11, gb)? != at(&p00, gb)? + a.1 + b.1 {
-        return None;
-    }
-    // The block: `side` rows and `side` columns from the image's lowest
+    // The block: `side` sites along each space axis from the image's least
     // corner, each read off the sign of the edge along that axis, at the
-    // image's own non-grid coordinates.
-    let r0 = if a.0 + b.0 < 0 { at(&p00, ga)? - side } else { at(&p00, ga)? };
-    let c0 = if a.1 + b.1 < 0 { at(&p00, gb)? - side } else { at(&p00, gb)? };
-    let mut out = Vec::new();
-    for i in r0..r0 + side {
-        for j in c0..c0 + side {
-            let mut axes = p00.clone();
-            axes[ga] = i;
-            axes[gb] = j;
-            out.push(Site::new(axes)?);
-        }
+    // image's own coordinates off the space axes; in canonical order.
+    let side = match side {
+        Some(s) => s,
+        None => 1,
+    };
+    let mut out: Vec<Vec<i64>> = vec![least.clone()];
+    for &axis in &space {
+        let lo = least.get(axis)? + (*lift.get(axis)?).min(0);
+        out = out
+            .into_iter()
+            .flat_map(|p| {
+                (lo..lo + side).map(move |x| {
+                    let mut q = p.clone();
+                    if let Some(slot) = q.get_mut(axis) {
+                        *slot = x;
+                    }
+                    q
+                })
+            })
+            .collect();
     }
-    Some(out)
+    out.into_iter().map(Site::new).collect()
 }
 
 /// A whole compartment carried at the corpus's three coordinates.

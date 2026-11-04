@@ -9,14 +9,14 @@ use super::*;
 /// ends here.
 ///
 /// X3: BOTH CARRIERS ARE ALREADY ONE NODE'S FIBRE, and every iteration
-/// below reads them with `scoped`. A `Stratum` is reached by following the
+/// below reads them with `scoped`. A `ChartNode` is reached by following the
 /// chart's axes — `branches.get(&axis_key(a))`, one keyed read per axis —
 /// so `members` is the addresses at THIS chart and `branches` is this
 /// node's own children. There is no prefix to follow inside either: the
 /// prefix was already followed, above.
 #[derive(Debug, Clone, Default)]
-pub(crate) struct Stratum {
-    branches: Keyed<Stratum>,
+pub(crate) struct ChartNode {
+    branches: Keyed<ChartNode>,
     members: Keyed<()>,
 }
 
@@ -38,7 +38,7 @@ pub(crate) fn axis_of(key: &[u8]) -> Option<ChartAxis> {
     ChartAxis::from_key_bytes(key)
 }
 
-impl Stratum {
+impl ChartNode {
     /// Z10 — the bytes this stratum and everything under it reach: its
     /// members' addresses and its branches' coordinates, all the way down.
     /// An atlas is a trie of tries and a reading that stopped at the root
@@ -61,7 +61,7 @@ impl Stratum {
                 match self.branches.get_mut(&key) {
                     Some(s) => s.admit(rest, address),
                     None => {
-                        let mut s = Stratum::default();
+                        let mut s = ChartNode::default();
                         s.admit(rest, address);
                         self.branches.insert(key, s);
                     }

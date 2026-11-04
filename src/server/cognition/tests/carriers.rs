@@ -5,7 +5,7 @@
 use crate::cognition::*;
 use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
 
-fn grid(rows: &[&str]) -> crate::arc::Grid {
+fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect()).collect()
 }
 
@@ -29,16 +29,18 @@ fn table(c: &crate::observe::Carriers) -> crate::network::nerve::Keyed<u64> {
 /// by the census (which names every field) and fails here.
 #[test]
 fn lapse_word_leaves_no_carrier_grown() {
+    crate::transducer::raster::stand_on(0);
     let mut k = Court::new();
     let family = vec![(grid(&["11"]), grid(&["22"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
     let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");
-    let task = crate::registry::task_address(&crate::arc::Task { train: family.clone(), test: Vec::new() })
+    let task = crate::registry::task_address(&crate::transducer::family::Task { train: family.clone(), test: Vec::new() })
         .expect("a grid pair's chain is A5's, so the task has an identity");
     k.bind_task_family(&task, family);
     let before = table(&k.carriers());
 
-    let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
+    // The family shows no 0: the speaker states no ground (MU-SENSING §6.2).
+    let codes = k.perceive_speech_under([1; 32], task.as_bytes(), std::slice::from_ref(&spoken), &[None]);
     assert_eq!(codes, vec![crate::anastome::dialogue::SPEECH_STOOD], "the sentence is listed");
     // The word stands on the book and on the docket; nothing flows to it,
     // and it lapses (78.37 (3)) — off both, the lapse sealed.

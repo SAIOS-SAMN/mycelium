@@ -6,19 +6,19 @@
 //! claim with its prefix and re-derives its hash, and the two differ
 //! (`admit_equivocation`); then the burn, once. The reply is `Ruled`.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some((a, b)) = dialogue::decode_equivocation(&frame.body) else {
         return;
     };
     let say = |s: &mut TcpStream, r: dialogue::Ruled| {
         match dialogue::encode_ruled(&r) {
-            Some(body) => answer(s, Frame { lane: frame.lane, body }),
+            Some(body) => answer(s, WireFrame { lane: frame.lane, body }),
             None => eprintln!("  court equivocation answer refused: the reason passes its u16"),
         }
     };
@@ -31,7 +31,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     // 47.2 steps 1 and 2 on each half, before any carrier is touched. A
     // node that has adopted no origin has none equal to the frame's.
-    let origin = match door.mesh.origin.lock() {
+    let origin = match context.mesh.origin.lock() {
         Ok(o) => *o,
         Err(_) => None,
     };
@@ -53,7 +53,15 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             return;
         }
     };
-    let proof = match mycelium::court::admission::admit_equivocation(va, &a.receipt, vb, &b.receipt) {
+    // MU-HOSTING §5a.10: each half's receipt reconstructed from its own
+    // coordinates; a half whose chain hash does not re-derive disagrees
+    // with itself, `REFUSE_RECEIPT`.
+    let reconstructed = mycelium::court::admission::Reconstructed::<mycelium::chronometry::KStepReceipt>::receipt;
+    let (Some(ra), Some(rb)) = (reconstructed(&a.receipt), reconstructed(&b.receipt)) else {
+        refuse(s, mycelium::court::admission::REFUSE_RECEIPT);
+        return;
+    };
+    let proof = match mycelium::court::admission::admit_equivocation(va, &ra, vb, &rb) {
         Ok(p) => p,
         Err(why) => {
             refuse(s, why);
@@ -61,7 +69,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         }
     };
     // A court that cannot be read has judged nothing and answers nothing.
-    let Ok(mut h) = crate::held::held!(door.court) else {
+    let Ok(mut h) = crate::court_lock::held!(context.court) else {
         eprintln!(
             "  court equivocation unread {:02x}{:02x}… K {}: the court is not readable",
             proof.vk[0], proof.vk[1], proof.at.print()

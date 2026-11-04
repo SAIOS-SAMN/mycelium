@@ -1,11 +1,11 @@
 // 13 — the Čech cocycles a mind files, and the torsion it condenses: a
 // cycle is consilient, filed, or refused, and never invented.
 
-use super::common::speak_pair;
+use super::fixtures::speak_pair;
 use crate::cognition::*;
 use crate::transducer::element::{self, Element};
 
-/// Residual torsion without a readable class is not filed as identity.
+/// Residue torsion without a readable class is not filed as identity.
 #[test]
 fn court_torsion_files_nothing_without_class() {
 use crate::transducer::element::from_canonical;
@@ -31,7 +31,7 @@ let filed = k
     .is_some_and(|cx| !cx.congruent(&idk).is_empty());
 assert!(
     !filed,
-    "the residual arm files nothing when no class can be read"
+    "the residue arm files nothing when no class can be read"
 );
 let mut k2 = Court::new();
 let mut cx = crate::transducer::cech::Complex::new();
@@ -266,13 +266,13 @@ assert!(!k.basis().is_empty(), "the pair forms stand");
 k.optimize();
 assert!(
     matches!(speak_pair(&mut k, &a, &b, [3; 32]), Outcome::Decomposed(_) | Outcome::GermPending),
-    "the forward pair still speaks or its residual pends"
+    "the forward pair still speaks or its residue pends"
 );
 // A fourth voice: the third may hold its one claim in flight on this
 // lane from the forward pair (§3.1 as ruled, S13.15).
 assert!(
     matches!(speak_pair(&mut k, &fwd, &rev, [4; 32]), Outcome::Decomposed(_) | Outcome::GermPending),
-    "the reverse pair is the same form or its residual"
+    "the reverse pair is the same form or its residue"
 );
 }
 

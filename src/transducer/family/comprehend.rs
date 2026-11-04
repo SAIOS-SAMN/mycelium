@@ -22,7 +22,7 @@ use crate::transducer::sentence::Form;
 /// step's way (BD2).
 fn crossings(
     form: &Form,
-    cell: &crate::transducer::sentence::FormCell,
+    cell: &crate::transducer::sentence::BodyContact,
     traversed: &[crate::transducer::sentence::TraversedCircuit],
 ) -> Vec<(usize, Vec<usize>)> {
     let mut body_of: Keyed<usize> = Keyed::new();

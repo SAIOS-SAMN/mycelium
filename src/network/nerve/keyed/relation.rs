@@ -40,7 +40,7 @@ pub enum CoordinateSystem {
     Task,
     Demand,
     DemandAt,
-    Residual,
+    Residue,
     /// §4.4 E8 — the three addresses of a cover (ruled 2026-09-22).
     Piece,
     Carriage,
@@ -70,7 +70,7 @@ impl CoordinateSystem {
             CoordinateSystem::Task => Some(a::TAG_TASK),
             CoordinateSystem::Demand => Some(a::TAG_DEMAND),
             CoordinateSystem::DemandAt => Some(a::TAG_DEMAND_AT),
-            CoordinateSystem::Residual => Some(a::TAG_RESIDUAL),
+            CoordinateSystem::Residue => Some(a::TAG_RESIDUE),
             CoordinateSystem::Piece => Some(a::TAG_PIECE),
             CoordinateSystem::Carriage => Some(a::TAG_CARRIAGE),
             CoordinateSystem::Meet => Some(a::TAG_MEET),
@@ -210,7 +210,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
     }
 
     /// Read a fibre under the declared coordinate system, refusing on a foreign system (Rule 11).
-    pub fn read_fibre<'a>(&'a self, prefix: Prefix<'a>) -> Result<Fibre<'a, V>, SchemaRefusal> {
+    pub fn read_fibre<'a>(&'a self, prefix: Prefix<'a>) -> Result<Subtree<'a, V>, SchemaRefusal> {
         if self.system != CoordinateSystem::Any {
             if let Some(tag) = crate::transducer::address::tag_of(prefix.as_bytes()) {
                 if let Some(expected) = self.system.tag() {
@@ -352,7 +352,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// opening of a `C` key — a chart under a carrier of sections. Without
     /// the bound there is no fibre read, so a byte-prefix coincidence
     /// cannot be mistaken for a stratum.
-    pub fn fibre_over<D: Stratum<C>>(&self, coarse: &D) -> Result<Fibre<'_, V>, CoordinateRefusal> {
+    pub fn fibre_over<D: Stratum<C>>(&self, coarse: &D) -> Result<Subtree<'_, V>, CoordinateRefusal> {
         let opening = coarse.opening();
         match Prefix::new(opening.as_bytes()) {
             Some(p) => Ok(self.fibre(p)),
@@ -465,7 +465,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
     ///
     /// THE WALK IS THE SUBTREE, NOT THE CARRIER. This pushed the root for
     /// every prefix and filtered the leaves as they came out — `stack` held
-    /// `self.root` whatever the prefix was, and `Fibre` carried the prefix
+    /// `self.root` whatever the prefix was, and `Subtree` carried the prefix
     /// only to test each leaf against it —
     /// so a fibre read of one stratum cost the whole trie — every node of
     /// it, to yield the handful of keys under the prefix. That is rule 1's
@@ -477,26 +477,26 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// under one node, and `subtree` reaches it by the prefix in O(bits). The leaf
     /// filter stays: path compression leaves bits between branch points
     /// untested, so the subtree can hold keys that diverge from the prefix
-    /// at one of them, and `key_in_fibre` is what decides. What changes is
+    /// at one of them, and `key_in_subtree` is what decides. What changes is
     /// the extent — the walk visits that subtree and nothing above it.
-    pub fn fibre(&self, prefix: Prefix<'_>) -> Fibre<'_, V> {
+    pub fn fibre(&self, prefix: Prefix<'_>) -> Subtree<'_, V> {
         let prefix = prefix.as_bytes();
         let mut stack = Vec::new();
         if let Some(node) = self.subtree(prefix) {
             stack.push(node);
         }
-        Fibre { stack, prefix: prefix.to_vec() }
+        Subtree { stack, prefix: prefix.to_vec() }
     }
 
     /// The fibre under `prefix`, or the reading of an EMPTY prefix, which
     /// is not a fibre: `None`. Sites that build a key from coordinates and
     /// cannot prove it non-empty at the type level ask here and refuse the
     /// empty case themselves (rule 11), rather than reading the whole carrier.
-    pub fn fibre_at(&self, prefix: &[u8]) -> Option<Fibre<'_, V>> {
+    pub fn fibre_at(&self, prefix: &[u8]) -> Option<Subtree<'_, V>> {
         Prefix::new(prefix).map(|p| self.fibre(p))
     }
 
-    /// THE WHOLE OF A CARRIER THAT IS ITSELF A FIBRE — one bubble's charts,
+    /// THE WHOLE OF A CARRIER THAT IS ITSELF A FIBRE — one well's charts,
     /// one vertex's star, one chart's incidence, one form's cited
     /// addresses. Calling this ASSERTS that scoping: the carrier was
     /// reached by a key already, so its whole content is one stratum's
@@ -506,12 +506,12 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// to follow or is already at one, and which of the two it is
     /// should be legible without reading the carrier's provenance. The
     /// empty prefix said neither.
-    pub fn scoped(&self) -> Fibre<'_, V> {
+    pub fn scoped(&self) -> Subtree<'_, V> {
         let mut stack = Vec::new();
         if let Some(root) = self.root.as_deref() {
             stack.push(root);
         }
-        Fibre { stack, prefix: Vec::new() }
+        Subtree { stack, prefix: Vec::new() }
     }
 
     /// 78.153 — THE KEYS STRICTLY AFTER `from`, in key order, reached by
@@ -528,7 +528,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
     /// (exactly that long) is a prefix of `from` and not after it; `from`'s
     /// next bit picks the child to follow, and a 1-side sibling of a 0 step
     /// is wholly after.
-    pub(crate) fn after(&self, from: &[u8]) -> Fibre<'_, V> {
+    pub(crate) fn after(&self, from: &[u8]) -> Subtree<'_, V> {
         // Taken in descent order: each subtree taken lies before every one
         // taken above it, so the last taken is the least, and the fibre's
         // stack yields from its top.
@@ -570,7 +570,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
                 },
             }
         }
-        Fibre { stack: taken, prefix: Vec::new() }
+        Subtree { stack: taken, prefix: Vec::new() }
     }
 
     /// The node every key carrying `prefix` hangs under, by following the
@@ -616,7 +616,7 @@ impl<V, C: Coordinate> Keyed<V, C> {
 
     /// Parent shell of `key`: the branch that split this leaf. None when
     /// the key is unbound or is the sole leaf.
-    pub fn peel(&self, key: &[u8]) -> Option<Shell<'_, V>> {
+    pub fn peel(&self, key: &[u8]) -> Option<PeelBranch<'_, V>> {
         let mut node = self.root.as_deref()?;
         let mut parent: Option<&Node<V>> = None;
         let mut parent_bit = 0usize;
@@ -627,8 +627,8 @@ impl<V, C: Coordinate> Keyed<V, C> {
                         return None;
                     }
                     let p = parent?;
-                    return Some(Shell {
-                        fibre: Fibre { stack: vec![p], prefix: Vec::new() },
+                    return Some(PeelBranch {
+                        fibre: Subtree { stack: vec![p], prefix: Vec::new() },
                         prefix: clear_after_bit(key, parent_bit),
                     });
                 }
@@ -638,8 +638,8 @@ impl<V, C: Coordinate> Keyed<V, C> {
                         if &k[..] != key {
                             return None;
                         }
-                        return Some(Shell {
-                            fibre: Fibre { stack: vec![node], prefix: Vec::new() },
+                        return Some(PeelBranch {
+                            fibre: Subtree { stack: vec![node], prefix: Vec::new() },
                             prefix: clear_after_bit(key, *bit),
                         });
                     }
@@ -762,7 +762,7 @@ impl<'a> Prefix<'a> {
     }
 }
 
-/// Sealed persist walk: only [`crate::snapshot`] names this.
+/// Sealed persist walk: only [`crate::trie_tape`] names this.
 pub(crate) fn keyed_persist_walk<V, C: Coordinate>(k: &Keyed<V, C>, f: &mut impl FnMut(&[u8], &V)) {
     // A SNAPSHOT IS THE CARRIER. Persisting less than all of it is a
     // ledger that loses what it does not name, which is X8's row from the

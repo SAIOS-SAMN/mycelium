@@ -170,7 +170,7 @@ pub(crate) fn path_word(c: &PathCarried) -> Word {
 /// faces are all coboundaries, not a default standing in for one" — and an
 /// orbit with no path at all has no edge composite anywhere, so the same
 /// reading applies with nothing to read it over. Returning `None` there made
-/// the RANK unmeasured on every such form: `rank_counts_offplane_as_own_lane`
+/// the RANK unmeasured on every such form: `rank_counts_offplane_as_separate_lane`
 /// went from a measured `(offplane 1, free 0)` to no rank at all.
 pub(crate) fn orbit_holonomy_on(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Word> {
     let ws = holonomy_words_on(faces, vertices, lp);
@@ -263,7 +263,7 @@ impl Form {
 
     /// A16 on the form. Certificates and vortex live here.
     /// `bundle` is the pairs the idea germinated from; `t_extent` is how
-    /// long the orbit has been held on the bubble's clock.
+    /// long the orbit has been held on the well's clock.
     pub fn pivot_orbit(
         &mut self,
         idea: impl AsRef<[u8]>,
@@ -626,7 +626,7 @@ impl Form {
         &mut self,
         kind: crate::transducer::sentence::Demand,
         chart: &stalk::Invariant,
-        links: Vec<crate::transducer::sentence::Link>,
+        links: Vec<crate::transducer::sentence::SectionLink>,
     ) {
         // The one filer of a demand's bodies (AT1): the vertex re-files at
         // its new coordinates when its chain grows.

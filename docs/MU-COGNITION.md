@@ -15,9 +15,12 @@
 > *alignment* name receipted ledgers of the inhabitants' in-game deeds, read as pairs
 > and never as scores. Nothing in this document asserts sentience of, or
 > an ethics for, any software: the measurements are real, and the
-> inhabitants are simulated. The external test every mind is judged on is
-> ARC-AGI-2: tasks the mind did not set, solved and verified by a
-> Mycelium court.
+> inhabitants are simulated. The test of a mind is whether it can think
+> about the perception of the senses that are adjudicated
+> ([MU-SENSING §0](MU-SENSING.md#0-the-rule)). A court judges its work on
+> tasks it did not set: families of samples from any source, ARC-AGI-2
+> being the first posted corpus. Its outcomes are observations, never the
+> goal or a baseline.
 >
 > **Which component each part belongs to.**
 >
@@ -28,7 +31,7 @@
 > | Seats in a house | Client and kernel, through the hypha's seat relay | No. Only for a mind that chooses to sit in a universe. |
 > | Planetary minds, peoples, civilizations, ancients | Game kernel | No. They exist inside the games. |
 > | Virtue books, awareness, the ascension ladder (§1.5) | Game kernel | No. The ladder and its books are each game's design (Concordance 6.2–6.4). |
-> | Viability on ARC-AGI-2 (the ladder's floor) | Judged by the court | No. It is the one point where a game's ladder touches the hypha: the court's own judge (`judge_solve`) reads a simulated mind's ARC closures, as it reads any client's. |
+> | Viability (the ladder's first rung): closures on tasks the mind did not set | Judged by the court | No. It is the one point where a game's ladder touches the hypha: the court's own judge (`judge_solve`) reads a simulated mind's closures, as it reads any client's, on families of samples from any source (ARC-AGI-2 is the first posted corpus). |
 >
 > **Components:** the client (`mycelium-client`, the SDK) and the court's
 > judge; game kernels appear only through the patterns of §1.
@@ -72,9 +75,12 @@ measures it.
   (`would_judge`). Every engine's minds enter the court through it; no
   engine forges element bytes.
 
-### 1.3 Why no mind passes ARC-AGI-2 yet
+### 1.3 Where the mind's perception stands
 
-The binding limit is what a rule can say, not how a grid is seen (for
+The completion test is MU-SENSING §0: a mind thinks about its adjudicated
+perception. Closures on the first posted corpus, ARC-AGI-2, are
+observations of where that stands, never the goal. What they show: the
+binding limit is what a rule can say, not how a sample is seen (for
 Mycelium's mind, read from its code, §2.1–§2.2). The word vertices of the
 first rule language could not state:
 - rules relative to objects, and test objects of an unseen shape;
@@ -106,10 +112,11 @@ a family's effects by 78.167 (§2.2). The road's parts:
   not minds).
 
 It changes the form language and the judge's reconstruction (a court change).
-Observed on one reader over 40 training tasks: about 15% of ARC-AGI-2
-families need a comparison. Then: (1) the language can state the rule;
-(2) composition over it; (3) learning that grows it (admitted words),
-each measured by the court's judge on tasks the minds did not set.
+An observation, not a target: on one reader over 40 ARC-AGI-2 training
+tasks, about 15% of the families needed a comparison. Then: (1) the
+language can state the rule; (2) composition over it; (3) learning that
+grows it (admitted words), each adjudicated by the court's judge on tasks
+the minds did not set.
 
 ### 1.4 A universe with its own engine: the empty client kernel
 
@@ -123,7 +130,7 @@ fed by the engine, never a rival to it.
   two or more independent lines of the engine closed; it holds citations,
   never averages or votes; disagreement stays as distinct claims; each line
   keeps its own private workspace.
-- **Cohesion is proved, not assumed:** the same ARC task, solved by an
+- **Cohesion is proved, not assumed:** the same task, solved by an
   engine's line and by an attached client, closes on the same rule by the
   court's judge, or the two stand as distinct claims.
 
@@ -132,7 +139,8 @@ fed by the engine, never a rival to it.
 *This section describes game mechanics that game kernels may
 adopt (Concordance §0.1, game design). A planetary mind is a simulated
 people's mind in a game; its virtues are ledgers of its in-game
-deeds; its viability is measured by the court on ARC-AGI-2.*
+deeds; its viability is its closures, judged by the court, on tasks it
+did not set from any source (ARC-AGI-2 is the first posted corpus).*
 
 The design aim: a simulated mind that understands it lives among other
 inhabitants, with its conduct read mathematically, so that alignment,
@@ -171,7 +179,7 @@ books.
 **The ladder** (Concordance 6.2):
 
 ```
-  1 viable          solves ARC tasks it did not set (6.2a), judged by the court
+  1 viable          closes tasks it did not set (6.2a), judged by the court
   2 aware           its awareness books, read against its realm's peoples
   3 aligned         its virtue books, read against its realm's peoples
   4 hears anastome  its work enters the court's language (the seam)
@@ -187,17 +195,23 @@ books.
 This section is a summary. [`MU-CLIENT.md`](MU-CLIENT.md) specifies the
 reference mind in full; where the two differ, MU-CLIENT governs.
 
-### 2.1 The baseline it must beat
+### 2.1 What the mind is measured by
 
-No mind has yet closed an ARC-AGI-2 task by a rule a court judged; a
-solve the judge refuses is refused by one of the kinds of §2.3. What the
-reference minds have produced is court-admitted language: words the courts
-installed, small and mostly on the colour fibre of the grid's plane. A court's judged counts are read on its own
-console (`mycelium-server --console`). The first ARC-AGI-2 task closed by
-a court-judged rule is the baseline every change to the mind is measured
-against.
+The mind is measured by the test of MU-SENSING §0: whether it can think
+about the perception of the senses that are adjudicated. Corpus counts are
+observations, never the goal and never a baseline. Observed so far: no
+mind has closed an ARC-AGI-2 task by a rule a court judged; a solve the
+judge refuses is refused by one of the kinds of §2.3. What the reference
+minds have produced is court-admitted language: words the courts
+installed, small and mostly on the symbol fibre. A court's judged counts
+are read on its own console (`mycelium-server --console`).
 
-### 2.2 Why it fails ARC-AGI-2
+### 2.2 What the first corpus shows
+
+*The perception described in this section is superseded by MU-SENSING §3
+and MU-ANTI-FLATTENING clause 12: a sample of any rank is lifted by
+enclosure into turns, with no point embedding and no squared norm. The
+text records the code as it was read, for the code paths it names.*
 
 **What a grid is perceived as.** A lattice in conformal 3-space. Each
 painted cell is a site `(r, c, k)`: row, column, and the pair index `k` as
@@ -208,7 +222,7 @@ The pipeline:
 
 1. **Perception.** `perceive_family` calls `perceive_at` on each grid of
    each pair (`src/transducer/family/perceive.rs`). The family's ground
-   (`ground_of` in `src/arc.rs`: hue 0 where any grid shows it, otherwise
+   (`ground_of` in `src/transducer/raster.rs`: hue 0 where any grid shows it, otherwise
    the hue of the greatest exact cell count, untied) is the background the
    eye does not see. The other cells are grouped into hue-blind,
    edge-connected bodies (MU-RECURSION 70.4).
@@ -244,17 +258,17 @@ The pipeline:
    template, echo, slide, crop, scale, panes, tiles, and acts on parts)
    paints the canvas.
 5. **Minting and submission.** Where the rule speaks every test input
-   whole (`tests_spoken` in `src/client/sdk/entity/family.rs`), the client
+   whole (`tests_spoken` in `src/client/sdk/mind/family.rs`), the client
    constructs it (`construct_solve`, the same file, which calls `mint_sentence_why`
    in `src/transducer/family/deflation.rs`). Before it is sent, `judge_on`
-   (`src/client/sdk/entity/perceive.rs`) strips the overlaps between
+   (`src/client/sdk/mind/perceive.rs`) strips the overlaps between
    different frames (`crossing` in `src/client/sdk/rule.rs`) and reconstructs
    the rule blind on the training pairs by the judge's own steps
    (`would_judge_with`, the same file). A rule that passes that home check
-   is submitted by `admit_verdict` (`src/client/sdk/entity/perceive.rs`)
-   through `submit_solve_rule` (`src/client/sdk/entity/learn.rs`). A mind
+   is submitted by `admit_verdict` (`src/client/sdk/mind/perceive.rs`)
+   through `submit_solve_rule` (`src/client/sdk/mind/learn.rs`). A mind
    on a seat runs the same steps in `solve_before_on_ground`
-   (`src/client/sdk/entity/body.rs`) and calls the house. The court's judge
+   (`src/client/sdk/mind/seating.rs`) and calls the house. The court's judge
    is `judge_solve` in `src/server/cognition/court/task.rs`.
 
 So a rule says either: *every body of this exact chart, in this frame,
@@ -283,9 +297,10 @@ copied onto, or cropped to*.
    before submission, but a member's frames still bind where it speaks.
 6. **Test-time gate.** Nothing is submitted unless every test speech has
    an empty remainder and lays out as a grid (`tests_spoken` in
-   `src/client/sdk/entity/family.rs`; `solve_before_on_ground` on a seat).
+   `src/client/sdk/mind/family.rs`; `solve_before_on_ground` on a seat).
 
-The sensorium is multi-dimensional (Cl(4,1), blades, moments, gauge), but
+The sensorium is multi-dimensional (`Cl(n+1, 1)`, read in this code at
+its value `Cl(4,1)` for `n = 3`; blades, moments, gauge), but
 it spends its third axis on the pair index rather than on the puzzle, and
 the rule language, though it now states selections, regions, creation and
 counts, states them from a fixed vocabulary read off the training effects.
@@ -370,6 +385,8 @@ earlier project, ipsal-autic ([`MU-ALPHABET.md`](MU-ALPHABET.md)).
 ### 2.7 What comes next
 
 The reference mind's next steps are on the [ROADMAP](../ROADMAP.md): the
-rule language that lets a mind state what ARC-AGI-2 asks (track 7, and
-§1.3 here), the reference mind's court traffic (track 10), and the frame
-index defect of §2.3.
+sensor for any source at any rank (track 26), the rule language that lets
+a mind state what a family of samples shows (track 7, and §1.3 here), the
+sovereign mind that thinks about its adjudicated perception and the
+reference mind's court traffic (track 10), and the frame index defect of
+§2.3. Its measure is MU-SENSING §0; corpus counts are observations.

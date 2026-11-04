@@ -119,16 +119,38 @@ pub const REFUSE_FIBRE_UNWITNESSED: &str = "colour word's fibre relation is not 
 /// meets a tie its order does not name (Concordance 1.10: held or refused,
 /// never broken silently); a predicate reads a coordinate that is not exact
 /// (a radius no rational, a μ lane); a crop or a copy's template selects no
-/// single body; a carried or copied cell lands between cells; a line names
+/// single body; a carried or copied site lands between sites; a line names
 /// no ray. Each is a claim the pair cannot re-derive: I.
 pub const REFUSE_RULE_TIE: &str = "a rank the rule names meets a tie its order does not name";
 pub const REFUSE_RULE_INEXACT: &str = "a predicate reads a coordinate that is not exact";
 pub const REFUSE_RULE_NOT_ONE: &str = "a crop or a copy's template selects no single body";
-pub const REFUSE_RULE_OFF_LATTICE: &str = "a carried or copied cell lands off the lattice";
+pub const REFUSE_RULE_OFF_SUBSTRATE: &str = "a carried or copied site lands off the substrate";
 pub const REFUSE_RULE_STILL: &str = "a created line names no ray";
 pub const REFUSE_RULE_NESTED: &str = "an act on parts names another act on parts";
 pub const REFUSE_RULE_UNFRAMED: &str = "the input has not the frame the act names";
 pub const REFUSE_RULE_UNPARTNERED: &str = "a hue read off a partner finds no one touched body of one hue";
+/// MU-SENSING §6.2 (track 26 S5) — A CLAIM'S STATED GROUND THE COURT DOES
+/// NOT RECONSTRUCT UNDER (`cognition::stated_ground`): not one symbol at
+/// the task's width, or no candidate of the task's ground by the three
+/// conditions of §3.4. No other ground is read in its place: I.
+pub const REFUSE_GROUND_NOT_ONE_SYMBOL: &str = "the stated ground is not one symbol of the task";
+pub const REFUSE_GROUND_NO_CANDIDATE: &str = "the stated ground is no candidate of the task's ground";
+/// MU-SENSING §3.9 (track 26 S4c) — A RULE CLAIMED ON A TASK THE ALPHABET
+/// DOES NOT SPELL: a solve's rule is replayed on the alphabet's section, and
+/// a task whose samples are off it (another rank, a wider symbol) is
+/// refused by the alphabet's name alone, never for its rank; its claims are
+/// factorisations (the solve's claim kind `SOLVE_KIND_FACTORISATION`),
+/// reconstructed on the samples: I.
+pub const REFUSE_BEYOND_ALPHABET: &str = "the task's samples are off the alphabet's section: a claim on it is a factorisation";
+/// MU-SENSING §3.9 (track 26 S4c) — A CLAIM OF FACTORISATION REFUSED BEFORE
+/// ITS RESIDUE IS DERIVED: unsigned (it names its voice by the voice's
+/// signature); naming no train pair of the task (the withheld pairs are the
+/// court's, and a residue derived on one would show its answer); or stating
+/// a motion that is no motion of the posted pair (the transduction's own
+/// refusal follows the reason): I.
+pub const REFUSE_FACTOR_UNSIGNED: &str = "unsigned: a claim of factorisation names its voice by the voice's signature";
+pub const REFUSE_FACTOR_NO_PAIR: &str = "no such train pair: a claim of factorisation names a train pair of the task";
+pub const REFUSE_FACTOR_MOTION: &str = "the stated motion is no motion of the posted pair";
 /// 78.153, defect 4 of the lock audit — A CYCLE OF CITATIONS: a cited form
 /// reached again while it is still being spoken. The nerve admits mutual
 /// citation (a posetal height forbade every 2-simplex), and no speech of a
@@ -137,7 +159,7 @@ pub const REFUSE_CITATION_CYCLE: &str = "a cited form cites back into its own sp
 /// 78.153 — A REPLAY NO STROKE HOLDS: an off-lock reader ran the replay
 /// over fresh strokes and one moved its cursor nowhere — a single unit of it
 /// costs more reads than a stroke grants. Not a reading of the word: N.
-/// A court under its lock never answers this; it answers `Replayed::Unread`.
+/// A court under its lock never answers this; it answers `ReconstructionOutcome::Unread`.
 pub const REFUSE_UNREAD: &str = "the replay holds a unit no stroke can read";
 /// A ruling's slashed axis: the word does not parse.
 pub const REFUSE_UNPARSEABLE_WORD: &str = "unparseable word";
@@ -187,10 +209,11 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
         REFUSE_DERIVATION | REFUSE_FACE | REFUSE_RANK_LOST | REFUSE_PIVOT_INEXACT | REFUSE_INFLATED_YIELD
         | REFUSE_LETTER_WITNESS | REFUSE_NOT_CONTRACTION | REFUSE_PERIOD_UNDERIVED => O::Integrity,
         REFUSE_REBASE_TRIVIAL | REFUSE_UNFOLD_STILL | REFUSE_ORBIT_STILL => O::Integrity,
-        REFUSE_RULE_TIE | REFUSE_RULE_INEXACT | REFUSE_RULE_NOT_ONE | REFUSE_RULE_OFF_LATTICE | REFUSE_RULE_STILL | REFUSE_RULE_NESTED | REFUSE_RULE_UNFRAMED | REFUSE_RULE_UNPARTNERED => {
+        REFUSE_RULE_TIE | REFUSE_RULE_INEXACT | REFUSE_RULE_NOT_ONE | REFUSE_RULE_OFF_SUBSTRATE | REFUSE_RULE_STILL | REFUSE_RULE_NESTED | REFUSE_RULE_UNFRAMED | REFUSE_RULE_UNPARTNERED => {
             O::Integrity
         }
-        REFUSE_CITATION_CYCLE => O::Integrity,
+        REFUSE_CITATION_CYCLE | REFUSE_GROUND_NOT_ONE_SYMBOL | REFUSE_GROUND_NO_CANDIDATE | REFUSE_BEYOND_ALPHABET => O::Integrity,
+        REFUSE_FACTOR_UNSIGNED | REFUSE_FACTOR_NO_PAIR | REFUSE_FACTOR_MOTION => O::Integrity,
         REFUSE_UNREAD => O::NoQuestion,
         REFUSE_ROOM | REFUSE_WITNESS_ROOM | REFUSE_WITNESS_DEPENDENT | REFUSE_FOLD_OPEN | REFUSE_FOLD_INEXACT => {
             O::Integrity
@@ -237,7 +260,7 @@ impl Refusal {
             // A remainder the form was SILENT on (`spoken == 0`) is a
             // demand the speaker can mount; one it SPOKE WRONGLY is not,
             // and `undeclared_remainder` keeps the latter whatever a demand
-            // says of it. `replay_form_at` partitions them and packs one or
+            // says of it. `reconstruct_form_at` partitions them and packs one or
             // the other, never both, so the links themselves say which
             // refusal this is — and the kind is read from them rather than
             // from the reason, which cannot tell them apart.
@@ -249,7 +272,7 @@ impl Refusal {
             // coordinate — one minted word per cycle.
             REFUSE_NOT_CLOSED => match &self.at {
                 sentence::At::Chart(_, links)
-                    if links.iter().any(|&(_, _, spoken, _)| spoken != crate::arc::ground()) =>
+                    if links.iter().any(|&(_, _, spoken, _)| !crate::transducer::raster::is_ground(spoken)) =>
                 {
                     sentence::RefusalKind::RemainderWrong
                 }
@@ -292,6 +315,10 @@ pub const REFUSE_ORIGIN: &str = "receipt names another genesis or origin epoch";
 pub const REFUSE_RECEIPT: &str = "receipt height does not re-derive from its parents";
 /// 47.2 step 3: a duplicate frame at a K already held, ignored.
 pub const REFUSE_RECEIPT_STALE: &str = "receipt index at or below the signer's known head";
+/// 47.2 step 3, MU-HOSTING §5a.9, MU-DERIVATIONS D2.5: a back-filled
+/// receipt that would be held unreached past the process's capacity, the
+/// reads `M_proc` holds at the measured bytes per read (`C = ⌊M_proc / b⌋`).
+pub const REFUSE_UNREACHED_PAST_MEMORY: &str = "back-filled receipt held unreached past the process's memory";
 /// 47.4: two receipts at one K on one chain with different hashes.
 pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chain hashes";
 /// 47.2 step 2: the signature does not verify over the 47.1 prefix under

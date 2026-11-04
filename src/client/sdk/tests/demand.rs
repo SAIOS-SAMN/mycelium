@@ -8,7 +8,7 @@ use crate::client::sdk::*;
 /// remainder — the exact boundary demand, unique for that lattice, with no
 /// choice in it — and keeps the part that did factor. `Admitted` there,
 /// "new geometry", would be said of a word the mind can name the missing
-/// part of; and on the chain arm a count of residual links is what no hypha
+/// part of; and on the chain arm a count of residue links is what no hypha
 /// can docket and no mind can reduce.
 #[test]
 fn comprehend_demands_missing_element_not_count() {
@@ -20,18 +20,18 @@ fn comprehend_demands_missing_element_not_count() {
     let held = Word::from_letters(&[(q, false)]);
     let spoken = Word::from_letters(&[(q, false), (p5, false)]);
 
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     let one = from_connection(&held, &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
-    epi.learn(&one.to_bytes().expect("the record writes"), &mut super::common::budget());
+    epi.learn(&one.to_bytes().expect("the record writes"), &mut super::fixtures::budget());
     assert_eq!(epi.genome_len(), 1, "the mind holds the 90° turn");
 
     // The 90° turn IS held; the prime is not. The demand must ask for
     // the prime and nothing else.
     let ask = from_connection(&spoken, &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
-    let Comprehension::Novel { demand, understood } = epi.comprehend(&ask, &mut super::common::budget()) else {
-        panic!("a word outside the span is a demand, got {:?}", epi.comprehend(&ask, &mut super::common::budget()));
+    let Comprehension::Novel { demand, understood } = epi.comprehend(&ask, &mut super::fixtures::budget()) else {
+        panic!("a word outside the span is a demand, got {:?}", epi.comprehend(&ask, &mut super::fixtures::budget()));
     };
     let asked = demand
         .letters()
@@ -56,9 +56,9 @@ fn comprehend_demands_missing_element_not_count() {
 
     // THE DEMAND IS THE SAME DEMAND ON EVERY MIND THAT HOLDS THE SAME
     // WORDS. The HNF residue is canonical, so two minds speak one element.
-    let mut twin = Epigenome::new();
-    twin.learn(&one.to_bytes().expect("the record writes"), &mut super::common::budget());
-    let Comprehension::Novel { demand: twins, .. } = twin.comprehend(&ask, &mut super::common::budget()) else {
+    let mut twin = MindLanguage::new();
+    twin.learn(&one.to_bytes().expect("the record writes"), &mut super::fixtures::budget());
+    let Comprehension::Novel { demand: twins, .. } = twin.comprehend(&ask, &mut super::fixtures::budget()) else {
         panic!("the twin reaches the same arm");
     };
     assert!(
@@ -90,10 +90,10 @@ fn stratum_reads_factoring_basis_coarser_than_chart() {
 
     let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
     let p5 = LetterId::pythagorean_5((0, 1)).expect("a prime on the same plane");
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     let one = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
-    epi.learn(&one.to_bytes().expect("the record writes"), &mut super::common::budget());
+    epi.learn(&one.to_bytes().expect("the record writes"), &mut super::fixtures::budget());
     let ask = from_connection(&Word::from_letters(&[(q, false), (p5, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
 
@@ -111,7 +111,7 @@ fn stratum_reads_factoring_basis_coarser_than_chart() {
     );
     assert!(at.0.len() < exact.0.len(), "read one or more axes coarser than the exact chart");
     assert!(
-        matches!(epi.comprehend(&ask, &mut super::common::budget()), Comprehension::Novel { .. }),
+        matches!(epi.comprehend(&ask, &mut super::fixtures::budget()), Comprehension::Novel { .. }),
         "so the word is factored and its remainder is the demand, never Admitted"
     );
 }

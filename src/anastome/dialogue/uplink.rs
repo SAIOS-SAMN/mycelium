@@ -397,7 +397,7 @@ impl TierFold {
         for (l, e) in emitted.iter_mut().enumerate() {
             *e = declared[l].checked_add(crossing[l]).ok_or(Discontinuous::Overflow { lane: l })?;
         }
-        let mut residual: [Q; 4] = std::array::from_fn(|l| Q::from_integer(nets[l].into()) - Q::from_integer(emitted[l].into()));
+        let mut residue: [Q; 4] = std::array::from_fn(|l| Q::from_integer(nets[l].into()) - Q::from_integer(emitted[l].into()));
         for c in &self.children {
             for nets in [&c.rows, &c.declared, &c.included_rows, &c.included_declared] {
                 if !ascending(nets) {
@@ -411,12 +411,12 @@ impl TierFold {
                 }
             }
             let included = sum(&c.included_rows).map_err(|lane| Discontinuous::Overflow { lane })?;
-            for (l, r) in residual.iter_mut().enumerate() {
+            for (l, r) in residue.iter_mut().enumerate() {
                 let (n, d) = c.rate[l];
                 *r -= Q::new(n.into(), d.into()) * Q::from_integer(included[l].into());
             }
         }
-        match (0..4).find(|&l| !num_traits::Zero::is_zero(&residual[l])) {
+        match (0..4).find(|&l| !num_traits::Zero::is_zero(&residue[l])) {
             Some(lane) => Err(Discontinuous::Unbalanced { lane }),
             None => Ok(()),
         }

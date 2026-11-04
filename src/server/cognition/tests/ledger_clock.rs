@@ -1,7 +1,7 @@
 // 45.2, 45.3 — THE LEDGER IS THE CLOCK: causal order is partial, and an
 // extent is replayed from the chain that holds it.
 
-use super::common::speak_pair;
+use super::fixtures::speak_pair;
 use crate::cognition::*;
 
 /// A2 / 5.2b. Supersession on the dialect book is CAUSAL ORDER (45.3), not
@@ -63,7 +63,7 @@ speak_pair(&mut k, &a, &b, [1; 32]);
 let own_head = k.chain().head_stamp().expect("the mind has acted");
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), Some(own_head));
 
-let key = super::common::court_key("peer");
+let key = super::fixtures::court_key("peer");
 let mut peer = crate::chronometry::ReceiptChain::with_signer(key.verifying_bytes());
 let pr = peer.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
 let pre = crate::court::admission::SignedPrefix {
@@ -76,7 +76,7 @@ let pre = crate::court::admission::SignedPrefix {
     payload: pr.stamp.key(),
 };
 assert!(matches!(
-    k.admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &pr),
+    k.admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &super::fixtures::reconstructed(&pr)),
     crate::court::admission::Admitted::Parent(_)
 ));
 let chain_before = k.dialect_chain_len();
@@ -101,7 +101,7 @@ assert_eq!(
 /// Standing T is a height difference on the home chain; a witness
 /// re-derives it from the receipts (T16).
 #[test]
-fn t_extent_replays_from_home_chain() {
+fn t_extent_reconstructs_from_home_chain() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
@@ -288,7 +288,7 @@ k.note_persisted(at);
 assert_eq!(k.clock(None).persisted, Some(at));
 
 // A peer's line: the last height admitted from it, and the gap.
-let key = super::common::court_key("peer");
+let key = super::fixtures::court_key("peer");
 let mut peer = crate::chronometry::ReceiptChain::with_signer(key.verifying_bytes());
 let pr = peer.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
 let pre = crate::court::admission::SignedPrefix {
@@ -301,11 +301,39 @@ let pre = crate::court::admission::SignedPrefix {
     payload: pr.stamp.key(),
 };
 assert!(matches!(
-    k.admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &pr),
+    k.admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &super::fixtures::reconstructed(&pr)),
     crate::court::admission::Admitted::Parent(_)
 ));
 let c = k.clock(None);
 let own_h = i64::try_from(c.head[0]).expect("a height");
 assert_eq!(c.peers, vec![(key.verifying_bytes(), pr.stamp.h, own_h - i64::try_from(pr.stamp.h).expect("a height"))]);
 assert_eq!(c.rulings, [[0; 4]; 4], "a List is no ruling");
+}
+
+/// 78.152 TU-1, TU-5 (ruled 2026-11-01) — THE KEEPER TICK CARRIES μ ISSUED
+/// EXACTLY: a mint of `1/900` on S (one changed site of a 30×30 frame) moves
+/// the tick's S lane by exactly `1/900`, never rounded and never refused, and
+/// a keeper signs the tick that holds it once the head has risen past it.
+#[test]
+fn keeper_tick_advances_past_fractional_issuance() {
+use crate::chronometry::tuniversal::{Keepers, Origin};
+use crate::economy::Mu;
+let mut k = Court::new();
+let a = vec![(0, 0, 1), (0, 1, 1)];
+speak_pair(&mut k, &a, &[(0, 0, 2), (0, 1, 2)], [1; 32]);
+let before = k.keeper_tick().expect("the court has acted");
+let q = |n: i64, d: i64| crate::core::Q::new(n.into(), d.into());
+let share = Mu::of([q(1, 900), q(0, 1), q(0, 1), q(0, 1)]).expect("non-negative");
+let at = k.anchor_pub();
+k.treasury.mint_to([3; 32], share.clone(), at, None);
+speak_pair(&mut k, &a, &[(0, 0, 5), (0, 1, 5)], [2; 32]);
+let after = k.keeper_tick().expect("the court has acted");
+assert!(after.h > before.h, "the head rose");
+assert_eq!(after.lanes.lane(0) - before.lanes.lane(0), q(1, 900), "S moved by the share exactly");
+assert!(!after.lanes.is_integral(), "the issuance holds a share of a unit");
+let sk = ed25519_dalek::SigningKey::from_bytes(&[7; 32]);
+let mut keepers = Keepers::new(Origin { genesis: [1; 32], epoch: 0 }, sk.verifying_key().to_bytes());
+assert_eq!(keepers.read_own(&sk, before), Some(true));
+assert_eq!(keepers.read_own(&sk, after.clone()), Some(true), "the fractional tick is signed");
+assert!(keepers.own_ring().iter().any(|r| r.tick == after), "the ring carries the fractional tick");
 }

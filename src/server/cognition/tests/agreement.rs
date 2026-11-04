@@ -13,7 +13,7 @@ fn key(b: u8) -> ed25519_dalek::SigningKey {
     ed25519_dalek::SigningKey::from_bytes(&[b; 32])
 }
 
-fn grid(rows: &[&str]) -> crate::arc::Grid {
+fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -26,7 +26,7 @@ fn family() -> Vec<crate::transducer::family::TrainPair> {
 /// The slide by `(r, c)`, spelled as a connection.
 fn slide(r: i64, c: i64) -> Element {
     let w = crate::transducer::alphabet::Word::identity();
-    crate::transducer::element::residual::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a slide spells")
+    crate::transducer::element::residue::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a slide spells")
 }
 
 /// The 180° turn of the sensor plane carried by `(r, c)`: the unit square at
@@ -34,7 +34,7 @@ fn slide(r: i64, c: i64) -> Element {
 fn turn_180(r: i64, c: i64) -> Element {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
     let w = crate::transducer::alphabet::Word::from_letters(&[(q, false), (q, false)]);
-    crate::transducer::element::residual::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a 180° turn spells")
+    crate::transducer::element::residue::from_connection(&w, &crate::transducer::element::translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a 180° turn spells")
 }
 
 /// A court holding the scene's family, with `words` on its docket bound to
@@ -64,7 +64,7 @@ fn speech(voice: [u8; 32], e: &Element, agreement: Vec<u8>) -> dialogue::SpeechA
         &voice,
         SCENE,
         0,
-        &[Spoken { tape: e.to_bytes().expect("the record writes"), standing: 0, contraction: None, agreement: Some(agreement) }],
+        &[Spoken { tape: e.to_bytes().expect("the record writes"), standing: 0, contraction: None, agreement: Some(agreement), ground: None }],
     )
     .expect("the speech frames");
     dialogue::decode_speech(&frame).expect("the frame decodes")
@@ -82,6 +82,7 @@ fn attests(k: &Court) -> usize {
 /// not hold seal nothing.
 #[test]
 fn attest_agreements_seals_second_mind_hold_once() {
+    crate::transducer::raster::stand_on(0);
     let (speaker, hearer) = (key(1), key(2));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let hearer_vk = hearer.verifying_key().to_bytes();
@@ -137,6 +138,7 @@ fn attest_agreements_refuses_word_scene_refutes() {
 /// section, converge with nothing.
 #[test]
 fn attest_agreements_converges_words_with_one_section() {
+    crate::transducer::raster::stand_on(0);
     let (speaker, hearer, third) = (key(1), key(2), key(3));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let hearer_vk = hearer.verifying_key().to_bytes();
@@ -166,6 +168,7 @@ fn attest_agreements_converges_words_with_one_section() {
 /// standing (installed, or its claim dropped) gains no party.
 #[test]
 fn attest_agreements_joins_hearer_to_claim() {
+    crate::transducer::raster::stand_on(0);
     let (speaker, hearer) = (key(1), key(2));
     let speaker_vk = speaker.verifying_key().to_bytes();
     let hearer_vk = hearer.verifying_key().to_bytes();

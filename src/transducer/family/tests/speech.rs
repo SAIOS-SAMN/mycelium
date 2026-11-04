@@ -1,7 +1,7 @@
 // 21 speak_rule — SPEECH: what an extracted rule says on the test pair, and
 // what it refuses to say rather than guess.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 use crate::transducer::stalk::Standing;
 
@@ -12,6 +12,7 @@ use crate::transducer::stalk::Standing;
 /// spoken onto them at its composed placement.
 #[test]
 fn apply_form_speaks_glued_citation_on_one_perception() {
+    crate::transducer::raster::stand_on(0);
     let (x, y) = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
     let held_form = cipher_form(&x, &y);
     assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
@@ -27,7 +28,7 @@ fn apply_form_speaks_glued_citation_on_one_perception() {
         fn on_body(&self, _chart: &Invariant) -> Vec<(&Element, &Form, Standing)> {
             Vec::new()
         }
-        fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+        fn speak_form(&self, f: &Form, x: &SectionSample, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
             apply_form(f, x, placement, self)
         }
         fn by_address(&self, address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
@@ -164,6 +165,7 @@ assert!(
 /// Grow-to-frame is Unfolded{{Occupied}}; the tape carries no step count.
 #[test]
 fn extract_rule_with_unfolds_grow_to_frame() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["10", "00"]), grid(&["11", "11"])),
     (grid(&["100", "000", "000"]), grid(&["111", "111", "111"])),
@@ -192,13 +194,14 @@ assert!(
 /// twofold each extract a form and speak a new input exactly.
 #[test]
 fn extract_rule_comprehends_shift_mirror_dilation() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
     (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
 ];
-let family: Vec<(Grid, Grid)> = family
+let family: Vec<(SectionSample, SectionSample)> = family
     .into_iter()
-    .map(|(a, b)| (a, b.into_iter().map(|row| row.into_iter().map(|h| if h == 1 { 2 } else { h }).collect()).collect()))
+    .map(|(a, b)| (a, b.lines().map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect()).collect()))
     .collect();
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the shift family extracts");
 let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
@@ -263,17 +266,18 @@ assert!(extract_rule(&disagree, &mut crate::physics::Physics::default().stroke_n
 /// A shift family extracts a rule and speaks the test.
 #[test]
 fn speak_rule_speaks_shift_family() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
     (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
 ];
-let family: Vec<(Grid, Grid)> = family
+let family: Vec<(SectionSample, SectionSample)> = family
     .into_iter()
     .map(|(a, b)| {
         (
             a,
-            b.into_iter()
-                .map(|row| row.into_iter().map(|h| if h == 1 { 2 } else { h }).collect())
+            b.lines()
+                .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
                 .collect(),
         )
     })
@@ -325,6 +329,7 @@ assert_eq!(spoken.grid(), Some(grid(&["0022", "0000"])));
 /// grid that silently is not what the form said.
 #[test]
 fn speech_grid_refuses_site_outside_frame() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::family::Speech;
     let fits = Speech {
         unresolved: Vec::new(),
@@ -359,6 +364,7 @@ fn speech_grid_refuses_site_outside_frame() {
 /// recolours all three.
 #[test]
 fn speak_rule_recolours_three_identical_squares() {
+    crate::transducer::raster::stand_on(0);
 let train_in = grid(&[
     "11011",
     "11011",
@@ -366,8 +372,8 @@ let train_in = grid(&[
     "11000",
     "11000",
 ]);
-let train_out: Grid = train_in
-    .iter()
+let train_out: SectionSample = train_in
+    .lines()
     .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
     .collect();
 let family = vec![(train_in.clone(), train_out.clone())];
@@ -400,7 +406,7 @@ assert_eq!(
     "the minted address is the form's address"
 );
 assert_eq!(
-    crate::verdict::blind_replay(&minted, &mut super::common::budget()),
+    crate::verdict::reconstruct_blind(&minted, &mut super::fixtures::budget()),
     None,
     "the court replays the minted form from its tape"
 );

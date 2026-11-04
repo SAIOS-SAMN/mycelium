@@ -5,7 +5,7 @@
 // remainder scene's extraction read by the cover's own tally (L6) and its
 // demands by kind. Printed as data; nothing is decided.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::network::nerve::coord::BivectorKind;
 use mycelium::transducer::family::invert::{remainder_scene, Painted};
 use mycelium::transducer::family::luminal::{read_pair, Beyond, Stop};
@@ -49,14 +49,14 @@ impl Totals {
 }
 
 pub(crate) fn report(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let mut all = Totals::default();
     // Coverage by the remainder's dominant demand kind: deformation, source,
     // creation, none.
     let mut by_kind: [(u64, u64); 4] = [(0, 0); 4];
     for name in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         let mut physics = mycelium::physics::Physics::default();
         let mut budget = physics.stroke_n(STROKE);
         let Some(rule) = extract_rule_with(&task.train, &empty, &mut budget) else { continue };
@@ -129,9 +129,9 @@ pub(crate) fn report(dir: &str, names: &[String]) {
             }
         }
         // L6 — the remainder scene, extracted, and its demands by kind.
-        let (scene, _) = remainder_scene(&task.train, &rems, Painted::Sites);
+        let scene = mycelium::transducer::raster::on_ground_of(&task.train, || remainder_scene(&task.train, &rems, Painted::Sites));
         let mut b = physics.stroke_n(STROKE);
-        let kinds = match extract_rule_with(&scene, &empty, &mut b) {
+        let kinds = match scene.ok().and_then(|(scene, _)| extract_rule_with(&scene, &empty, &mut b)) {
             Some(r) => r.form.vertices.entries().fold([0u64; 3], |mut k, (_, v)| {
                 if let Vertex::Demand { kind, .. } = v {
                     match kind {

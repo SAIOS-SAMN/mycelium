@@ -28,7 +28,7 @@ impl Court {
             }
         }
         let Some(strain) = crate::economy::yield_surface(&self.physics) else { return Mu::zero() };
-        let each = crate::economy::verification_share(base, &strain, crate::physics::reserve_max(), distinct.len());
+        let each = crate::economy::verification_share(base, &strain, self.physics.capacity(), distinct.len());
         if each.is_zero() {
             return each;
         }
@@ -53,11 +53,11 @@ impl Court {
     pub(crate) fn release_verified(
         &mut self,
         address: &[u8],
-        discharge: [u64; 4],
+        discharge: Mu,
         organs: &[[u8; 32]],
         at: crate::economy::Anchor,
     ) -> Option<Mu> {
-        let base = self.treasury.escrow_of(address)?.mu.capped(&Mu::counts(discharge));
+        let base = self.treasury.escrow_of(address)?.mu.capped(&discharge);
         let taken = self.pay_verification(&base, organs, at);
         // taken ≤ base on every lane: the organs' shares sum to at most it.
         let rest = base.shortfall(&taken);

@@ -1,7 +1,7 @@
 // 16, A6 — the moduli are exact coordinates of a chart: its prefix is the
 // topological stratum, and a ratio is one coordinate whatever its width.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::blade::*;
 
 /// 24.4, A21 §2, Stage 12 S12.1a — A CHART'S PREFIX IS THE TOPOLOGICAL

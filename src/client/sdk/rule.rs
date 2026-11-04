@@ -7,7 +7,7 @@
 //! the motion peels to, and minted through the one mint
 //! (`family::mint_sentence_why`): no Element byte is forged here. Before the
 //! word leaves, `would_judge` runs exactly the judge's own steps — the
-//! decoder, then `verdict::blind_replay_at` on the pairs given — so a client
+//! decoder, then `verdict::reconstruct_blind_at` on the pairs given — so a client
 //! knows the verdict its rule earns without asking for it.
 
 //!
@@ -22,7 +22,7 @@
 //! on every pair it replays; a rule of motions and hue maps alone is the
 //! one word vertex it always was.
 
-use crate::arc::Grid;
+use crate::transducer::family::SectionSample;
 use crate::core::Q;
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::{self, Element};
@@ -31,7 +31,7 @@ use crate::transducer::sentence::{self, Form};
 use crate::transducer::sentence::{Acting, Vertex};
 pub use crate::transducer::family::statement::Unstated;
 pub use crate::transducer::sentence::form::clause::{
-    About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value,
+    About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, RegionKind, Stop, Tie, Value,
 };
 
 /// ONE STEP OF A RULE: a motion of the base, or a map of the hue fibre —
@@ -48,7 +48,7 @@ pub enum Step {
     /// predicate selects, until the next selection.
     Select(Pred),
     /// REGION: the hue step after it acts on the region of the selection.
-    Region(Region),
+    Region(RegionKind),
     /// A motion read about each selected body's own centre.
     InPlace(Mv),
     /// CREATE: cells placed relative to each selected body.
@@ -115,7 +115,7 @@ pub enum NoRule {
     Unread,
     /// 78.158a, 78.157 §3a — CITES UNHELD: the rule cites a word the
     /// resolver given does not hold — at home, a word no court admitted
-    /// (`Epigenome::court_word`). The court resolves only the words it
+    /// (`MindLanguage::court_word`). The court resolves only the words it
     /// holds, so a home pass on such a citation would be a pass the court
     /// cannot give. Its own outcome, by the cited address; never a pass.
     CitesUnheld(Vec<u8>),
@@ -199,11 +199,35 @@ fn hue_under(map: &[(u8, u8)], h: u8) -> Option<u8> {
     sentence::hue_of(map, h)
 }
 
+/// THE PAINTED SYMBOLS A HUE MAP NAMES join the run, each standing where it
+/// is until this map acts (MU-SENSING §3.3): the run's domain is the
+/// symbols its maps name, of any count, never a fixed palette, and the
+/// scene's ground is no painted symbol (§3.4). A symbol named first by a
+/// later map was fixed by every map before it, so it joins standing still.
+fn named_into(sigma: &mut Vec<(u8, u8)>, map: &[(u8, u8)]) {
+    for &(f, t) in map {
+        for h in [f, t] {
+            if !crate::transducer::raster::is_ground(h) && !sigma.iter().any(|(s, _)| *s == h) {
+                sigma.push((h, h));
+            }
+        }
+    }
+}
+
+/// The run's moves, written as a gauge listing is: in the symbols' key
+/// order, each symbol the composite moves.
+fn moves_of(sigma: Vec<(u8, u8)>) -> Vec<(u8, u8)> {
+    let mut moved: Vec<(u8, u8)> = sigma.into_iter().filter(|(h, t)| h != t).collect();
+    moved.sort_unstable();
+    moved
+}
+
 /// THE STEPS COMPOSED: the motion `V = Vₙ ⋯ V₁` (the first step acts first
-/// under the sandwich) and the hue map `σ = σₙ ∘ … ∘ σ₁` on the painted hues.
+/// under the sandwich) and the hue map `σ = σₙ ∘ … ∘ σ₁` on the painted
+/// symbols the maps name.
 fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
     let mut v = element::identity_versor();
-    let mut sigma: Vec<(u8, u8)> = (1..=9u8).map(|h| (h, h)).collect();
+    let mut sigma: Vec<(u8, u8)> = Vec::new();
     for s in steps {
         match s {
             Step::Motion(m) => {
@@ -215,6 +239,7 @@ fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
                 v = m.geo(&v);
             }
             Step::Hue(map) => {
+                named_into(&mut sigma, map);
                 for (_, to) in sigma.iter_mut() {
                     *to = hue_under(map, *to).ok_or(NoRule::NotAHueMap)?;
                 }
@@ -224,8 +249,7 @@ fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
             _ => return Err(NoRule::NotASentence),
         }
     }
-    let moved: Vec<(u8, u8)> = sigma.into_iter().filter(|(h, t)| h != t).collect();
-    Ok((v, moved))
+    Ok((v, moves_of(sigma)))
 }
 
 /// A run of motion and hue steps on one target, composed as it arrives.
@@ -237,13 +261,13 @@ struct Pending {
 
 impl Pending {
     fn new(about: About) -> Pending {
-        Pending { v: element::identity_versor(), about, sigma: (1..=9u8).map(|h| (h, h)).collect() }
+        Pending { v: element::identity_versor(), about, sigma: Vec::new() }
     }
 
     /// The clause the run is: a carriage where it moves, a recolour where it
     /// only maps hues, nothing where it does neither.
     fn act(self) -> Option<Act> {
-        let gauge: Vec<(u8, u8)> = self.sigma.into_iter().filter(|(h, t)| h != t).collect();
+        let gauge = moves_of(self.sigma);
         let still = self.v.sub(&element::identity_versor()).is_zero();
         match (still, gauge.is_empty()) {
             (true, true) => None,
@@ -269,7 +293,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
     }
     let mut out: Vec<Clause> = Vec::new();
     let mut select = Pred::All;
-    let mut region: Option<Region> = None;
+    let mut region: Option<RegionKind> = None;
     let mut pending: Option<Pending> = None;
     let flush = |pending: &mut Option<Pending>, out: &mut Vec<Clause>, select: &Pred| {
         if let Some(act) = pending.take().and_then(Pending::act) {
@@ -295,7 +319,9 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
             }
             Step::Hue(map) => match region {
                 Some(r) => {
-                    let void = crate::arc::ground();
+                    // The fill's hue is the image of the scene's one ground;
+                    // with none (a vortex, no ground), no hue map names it.
+                    let void = crate::transducer::raster::void().map_err(|_| NoRule::NotAHueMap)?;
                     let hue = hue_under(map, void).ok_or(NoRule::NotAHueMap)?;
                     if hue == void {
                         return Err(NoRule::NotAHueMap);
@@ -304,6 +330,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
                 }
                 None => {
                     let p = pending.get_or_insert_with(|| Pending::new(About::Grid));
+                    named_into(&mut p.sigma, map);
                     for (_, to) in p.sigma.iter_mut() {
                         *to = hue_under(map, *to).ok_or(NoRule::NotAHueMap)?;
                     }
@@ -345,7 +372,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
 /// every pair, minted through the one mint. No vertex names a training
 /// frame or a training cell: the clauses select on whatever scene they are
 /// spoken onto, so the word crosses to pairs it never saw.
-fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+fn clause_sentence(clauses: Vec<Clause>, family: &[(SectionSample, SectionSample)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if clauses.is_empty() || family.is_empty() {
         return Err(NoRule::NoFamily);
     }
@@ -394,7 +421,14 @@ pub(crate) fn construction_stroke(linear: &cga::Mv) -> usize {
 /// (2026-10-22, reversing Strip 7 for this path): such a client constructs
 /// its solver programs as rule elements only through this constructor,
 /// never as forged bytes.
-pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+///
+/// Read on the family's own ground (`raster::on_ground_of`, MU-SENSING
+/// §3.4), unless the caller already opened one.
+pub fn sentence(steps: &[Step], family: &[(SectionSample, SectionSample)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+    crate::transducer::raster::on_ground_of(family, || sentence_on_ground(steps, family, crystal))
+}
+
+fn sentence_on_ground(steps: &[Step], family: &[(SectionSample, SectionSample)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if let Some(clauses) = clauses_of(steps)? {
         return clause_sentence(clauses, family, crystal);
     }
@@ -422,7 +456,7 @@ pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) 
     let carriage = d.geo(&t);
     // THE CHARTS THE FAMILY'S INPUT BODIES STAND ON, perceived once.
     let frames = family::perceive_family(family);
-    let mut acts: crate::network::nerve::Keyed<Acting, crate::network::nerve::coord::Section> =
+    let mut acts: crate::network::nerve::Keyed<Acting, crate::network::nerve::coord::ChartCarriage> =
         crate::network::nerve::Keyed::new();
     for (ins, _) in &frames {
         for body in ins {
@@ -461,7 +495,7 @@ pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) 
 /// family through the one mint — which re-checks every vertex on every
 /// training pair — at the span the word stood over. A rule with no such
 /// overlap crosses as it is.
-pub(crate) fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+pub(crate) fn crossing(rule: &Element, train: &[(SectionSample, SectionSample)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     use crate::network::nerve::coord::ChartAt;
     let held = element::Held::of(rule.clone());
     let form = held.form().ok_or(NoRule::NotASentence)?;
@@ -487,13 +521,14 @@ pub(crate) fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Cry
 /// pair to replay against is no verdict; the decoder reads the word's form
 /// from its address (`Held::of`, which runs `from_element_form`) or it is
 /// not a rule; every word it cites resolves by `resolve` or it CITES
-/// UNHELD; then `verdict::blind_replay_at` on the pairs, its cited forms
+/// UNHELD; then `verdict::reconstruct_blind_at` on the pairs, its cited forms
 /// resolved by `resolve`, spoken through `crystal`. A replay no stroke
-/// could read is `Unread` — unjudged, never refuted (78.158a U2).
-#[cfg(test)]
-pub(crate) fn would_judge(
+/// could read is `Unread` — unjudged, never refuted (78.158a U2). Public so
+/// the corpus decoder's tests (`sources/arc-agi`, ROADMAP track 26 S1) ask
+/// it as the core's own tests do.
+pub fn would_judge(
     rule: &Element,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     crystal: &dyn Crystal,
 ) -> Result<(), NoRule> {
@@ -512,10 +547,10 @@ pub(crate) fn would_judge(
 /// serves it), so a rule citing a word only this mind holds read clean at
 /// home and was refused or deferred at the court; asked here, it is
 /// `CitesUnheld` by its address. A client resolves through the court's
-/// words alone (`Epigenome::court_word`).
+/// words alone (`MindLanguage::court_word`).
 pub(crate) fn would_judge_with(
     rule: &Element,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
@@ -529,7 +564,7 @@ pub(crate) fn would_judge_with(
     if let Some(unheld) = rule.receipts().cited_addresses().into_iter().find(|a| resolve(a.as_bytes()).is_none()) {
         return Err(NoRule::CitesUnheld(unheld.as_bytes().to_vec()));
     }
-    match crate::verdict::blind_replay_at(rule, resolve, Some(family), crystal, budget) {
+    match crate::verdict::reconstruct_blind_at(rule, resolve, Some(family), crystal, budget) {
         Some(refusal) => Err(NoRule::of_refusal(refusal)),
         None => Ok(()),
     }

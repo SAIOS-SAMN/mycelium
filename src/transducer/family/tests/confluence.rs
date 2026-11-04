@@ -3,7 +3,7 @@
 // on; a confluence's mass, centre, inverse generator and containment are read
 // exactly.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::family::confluence::{read_pair, Reproduces};
 
 fn budget() -> crate::physics::Budget {
@@ -63,6 +63,7 @@ fn confluence_off_lattice_image_reads_no() {
 /// the dilation does not carry two cells onto five.
 #[test]
 fn read_pair_reads_bridged_pair_as_confluence() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["10001"]);
     let y = grid(&["11111"]);
     let rem = vec![(0, 1, 0, 1), (0, 2, 0, 1), (0, 3, 0, 1)];
@@ -79,6 +80,7 @@ fn read_pair_reads_bridged_pair_as_confluence() {
 /// one on exactly one input is a single carriage.
 #[test]
 fn read_pair_tells_creation_from_single_carriage() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["100", "000"]);
     let y = grid(&["110", "002"]);
     let rem = vec![(0, 1, 0, 1), (1, 2, 0, 2)];

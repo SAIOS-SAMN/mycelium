@@ -1,7 +1,7 @@
 // Law 11, 16.4 — THE SENSOR: a carried compartment is exact or refused, and a
 // body a versor shrinks is carried as a body.
 
-use super::common::q;
+use super::fixtures::q;
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::cga;
 use crate::transducer::element::*;
@@ -64,7 +64,7 @@ fn carry_compartment_refuses_shrink_except_as_body() {
     assert_eq!(carry_compartment(&half, 4, 4, 0), None, "even where its centre lands in one");
     let block = shape_of(&[(0i64, 0i64, 0i64), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
     let one = shape_of(&[(0i64, 0i64, 0i64)]);
-    let v = versor_between(&block, &one, &mut super::common::budget()).expect("a shrink by one half carries the block onto the compartment");
+    let v = versor_between(&block, &one, &mut super::fixtures::budget()).expect("a shrink by one half carries the block onto the compartment");
     for s in &block.blade.support {
         assert_eq!(carry_compartment_site(&v, s), None, "no compartment of the block is carried alone: {s:?}");
     }

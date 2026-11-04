@@ -3,7 +3,7 @@
 // none where it is connected or the loop is flat, refuses an inexact glue,
 // and reads a hole one part caps.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::*;
 use crate::transducer::element::identity_versor as ident;

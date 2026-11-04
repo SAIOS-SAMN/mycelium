@@ -5,7 +5,7 @@
 // inverse generator, reproduction, containment and closure. Data; nothing is
 // decided.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::confluence::{read_pair, Closes, Reproduces};
 use mycelium::transducer::family::{extract_rule_with, form_deflation};
 
@@ -13,7 +13,7 @@ use mycelium::transducer::family::{extract_rule_with, form_deflation};
 const STROKE: usize = 1 << 20;
 
 pub(crate) fn report(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let (mut unframed, mut creation_sites, mut single_sites, mut confluence_sites) = (0u64, 0u64, 0u64, 0u64);
     let (mut creations, mut singles, mut confluences) = (0u64, 0u64, 0u64);
     let (mut mass_kept, mut centre_kept, mut ratio, mut reproduces, mut contains) = (0u64, 0u64, 0u64, 0u64, 0u64);
@@ -22,8 +22,8 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     let mut closes = [0u64; 5];
     let mut inputs_hist = [0u64; 4];
     for name in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         let mut physics = mycelium::physics::Physics::default();
         let mut budget = physics.stroke_n(STROKE);
         let Some(rule) = extract_rule_with(&task.train, &empty, &mut budget) else { continue };

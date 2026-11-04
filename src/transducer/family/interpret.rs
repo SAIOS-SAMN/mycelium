@@ -30,7 +30,7 @@ pub type Spoken = (Form, Vec<Vec<(i64, i64, u8, u8)>>);
 /// Paid from the voice's stroke, through the remainder scene's extraction.
 pub fn interpret(
     form: &Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     remainders: &[Vec<(i64, i64, u8, u8)>],
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,

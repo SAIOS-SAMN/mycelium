@@ -11,7 +11,7 @@ use super::transport::*;
 use crate::network::nerve::{Coordinate, Keyed};
 use crate::transducer::alphabet::{Rotor, Word};
 use crate::transducer::element::Versor;
-use crate::transducer::sentence::Link;
+use crate::transducer::sentence::SectionLink;
 use crate::transducer::stalk;
 use super::chart::word_vertex_address;
 use crate::transducer::address::take_key_count;
@@ -349,7 +349,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
 /// The contact is the VERTEX's and the writer repeats it at every member,
 /// so it rides beside the run rather than inside it.
 struct Acts(
-    Keyed<Acting, crate::network::nerve::coord::Section>,
+    Keyed<Acting, crate::network::nerve::coord::ChartCarriage>,
     Option<crate::transducer::alphabet::Contact>,
 );
 
@@ -428,12 +428,12 @@ fn take_u16k(k: &[u8], p: &mut usize) -> Option<u16> {
 
 use crate::network::nerve::coord;
 
-/// 54.3 — THE INVERSE OF A RESIDUAL ADDRESS: the chain a non-sentence word
+/// 54.3 — THE INVERSE OF A RESIDUE ADDRESS: the chain a non-sentence word
 /// stands for, read back out of the coordinate it is keyed at.
 ///
 /// `from_address` and this are the language's two decoders and they REFUSE
 /// EACH OTHER. A form is a closed cell complex written in the vertex-key
-/// layout; a residual is an unclosed 1-chain, `∂c ≠ 0`, written as its own
+/// layout; a residue is an unclosed 1-chain, `∂c ≠ 0`, written as its own
 /// bytes. They shared `TAG_FORM` until `8b861ea`, so a reader could not
 /// tell which layout it held and `Element::address` fell through from the
 /// first to the second whenever a sentence's tape did not decode — which
@@ -445,10 +445,10 @@ use crate::network::nerve::coord;
 /// names the forms it rewrites and nothing else, so this refuses it rather
 /// than returning an empty chain, which would read as "a word that says
 /// nothing" instead of "not a chain" (rule 11).
-pub fn from_residual(address: &[u8]) -> Option<Vec<Link>> {
+pub fn from_residue(address: &[u8]) -> Option<Vec<SectionLink>> {
     let mut p = 0usize;
     match address {
-        [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL => p += 1,
+        [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUE => p += 1,
         // A form's address is not a chain's, and reading one as the other
         // is the collision this pair exists to end.
         _ => return None,

@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// Every reading written by its codec reads back as itself, and a query
 /// reply carries them whole.
@@ -15,7 +15,7 @@ fn encode_reply_round_trips_every_reading() {
         peak_resident: 44,
         samples: 3,
     };
-    let court = Court {
+    let court = CourtReading {
         k: 12,
         basis: 3,
         treasury: 2,

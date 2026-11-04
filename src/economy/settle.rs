@@ -186,9 +186,9 @@ impl Treasury {
     pub fn settle_recursive(
         &mut self,
         escrow: &[u8],
-        shares: &[([u8; 32], [u64; 4])],
+        shares: &[([u8; 32], Mu)],
         pay: &Mu,
-        premium: Option<[u64; 4]>,
+        premium: Option<Mu>,
         anchor: Anchor,
     ) -> Mu {
         let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.release_award(escrow)
@@ -200,7 +200,7 @@ impl Treasury {
         // words achieved (`pay`) and nothing else, bounded by what was escrowed.
         let mut left = pay.capped(&mu);
         for (discoverer, share) in shares {
-            let (paid, rest) = left.split_at(&Mu::counts(*share));
+            let (paid, rest) = left.split_at(share);
             if paid.is_zero() {
                 continue;
             }
@@ -208,7 +208,7 @@ impl Treasury {
             self.mint_to(*discoverer, paid, anchor, Some(Arm::Pouw));
         }
         let taken = match premium {
-            Some(p) => Mu::counts(p).capped(&left),
+            Some(p) => p.capped(&left),
             None => left,
         };
         self.mint_claim(&voices, taken.clone(), anchor);

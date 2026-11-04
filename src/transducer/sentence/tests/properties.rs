@@ -1,7 +1,7 @@
 // 54.3 — THE A21 PROPERTY AT THE ONE KIND THE ENGINE IS MADE OF:
 // `from_address(address(f)) ≡ f`.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk;
@@ -102,8 +102,8 @@ fn generated() -> Vec<(&'static str, Form)> {
         ))
         .expect("a demand has a coordinate");
 
-    let mut residual = closed_word_form(w, None);
-    residual.remainder =
+    let mut residue = closed_word_form(w, None);
+    residue.remainder =
         crate::transducer::element::place_chain(&[(7, 7, 3, 4), (7, 8, 3, 4)]).expect("places");
 
     vec![
@@ -112,7 +112,7 @@ fn generated() -> Vec<(&'static str, Form)> {
         ("a glued citation", glued),
         ("a nested citation", nested),
         ("a demand with its bodies", demanding),
-        ("a form with an A5 remainder", residual),
+        ("a form with an A5 remainder", residue),
         ("a star of two spokes", star_form(2, Vec::new())),
         ("a star of three spokes", star_form(3, Vec::new())),
     ]
@@ -370,7 +370,7 @@ fn glue_under_keys_and_recovers_morphism() {
 ///
 /// What the byte actually guarded was a foreign LAYOUT reaching a decoder
 /// that would misread it. `from_address` refuses that by construction: a
-/// key it cannot parse yields no form, and `TAG_RESIDUAL` and `TAG_FORM`
+/// key it cannot parse yields no form, and `TAG_RESIDUE` and `TAG_FORM`
 /// were split precisely so one decoder cannot be handed the other's bytes.
 #[test]
 fn as_element_form_tags_sentence_without_tape() {
@@ -452,36 +452,36 @@ fn form_vertex_key_ignores_append_order() {
 
 /// 54.3 — THE LANGUAGE HAS TWO DECODERS AND THEY REFUSE EACH OTHER.
 ///
-/// A form is a closed cell complex in the vertex-key layout; a residual is
+/// A form is a closed cell complex in the vertex-key layout; a residue is
 /// an unclosed 1-chain written as its own bytes. They shared `TAG_FORM`,
 /// so neither could be decoded without guessing which it held, and
 /// `Element::address` fell through from the first to the second whenever a
 /// sentence's tape did not decode — a genome then reported a 0.9 KB
 /// address against a 46 KB tape and looked like a 50x saving.
 ///
-/// Four readings: a residual address gives its chain back; a form's
-/// address is refused by the chain reader; a residual's address is refused
+/// Four readings: a residue address gives its chain back; a form's
+/// address is refused by the chain reader; a residue's address is refused
 /// by the form reader; and a REWRITE, which names the forms it rewrites
 /// and carries no chain, is refused rather than answered with an empty one
 /// — "not a chain" is not "a chain that says nothing" (rule 11).
 #[test]
-fn from_residual_round_trips_and_refuses_form_address() {
-    use crate::transducer::element::from_residual as mint_residual;
-    use crate::transducer::sentence::from_residual;
+fn from_residue_round_trips_and_refuses_form_address() {
+    use crate::transducer::element::from_residue as mint_residue;
+    use crate::transducer::sentence::from_residue;
 
     let chain: Vec<(i64, i64, u8, u8)> = vec![(2, 2, 1, 2), (2, 3, 1, 2)];
-    let residual = mint_residual(&chain).expect("a chain mints a residual");
-    let r_addr = residual.address();
+    let residue = mint_residue(&chain).expect("a chain mints a residue");
+    let r_addr = residue.address();
     assert!(
-        matches!(r_addr.as_bytes(), [t, ..] if *t == crate::transducer::address::TAG_RESIDUAL),
-        "a residual says so by its tag"
+        matches!(r_addr.as_bytes(), [t, ..] if *t == crate::transducer::address::TAG_RESIDUE),
+        "a residue says so by its tag"
     );
 
     // THE CHAIN COMES BACK, centred: A5 quotients placement, so the
     // reading is the chain it is and not where it sat.
-    let back = from_residual(r_addr.as_bytes()).expect("a residual address inverts");
+    let back = from_residue(r_addr.as_bytes()).expect("a residue address inverts");
     assert_eq!(
-        mint_residual(&back).map(|e| e.address()),
+        mint_residue(&back).map(|e| e.address()),
         Some(r_addr.clone()),
         "the chain read back mints the address it was read from"
     );
@@ -495,14 +495,14 @@ fn from_residual_round_trips_and_refuses_form_address() {
         "a form says so by its tag"
     );
     assert!(
-        from_residual(f_addr.as_bytes()).is_none(),
+        from_residue(f_addr.as_bytes()).is_none(),
         "the chain reader refuses a form's address"
     );
     assert!(
         from_address(&r_addr).is_none(),
-        "the form reader refuses a residual's address"
+        "the form reader refuses a residue's address"
     );
-    assert!(from_residual(&[]).is_none(), "and refuses nothing at all");
+    assert!(from_residue(&[]).is_none(), "and refuses nothing at all");
 }
 
 /// 54.3 — THE FILED TORSION IS A THEOREM OF THE ADDRESS, and is re-derived

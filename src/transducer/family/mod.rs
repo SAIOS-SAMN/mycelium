@@ -35,6 +35,7 @@ pub mod invert;
 mod keys;
 pub mod local;
 pub mod luminal;
+pub mod magnitude;
 pub mod memo;
 pub mod orbit;
 pub mod pair;
@@ -43,13 +44,13 @@ pub mod perceive;
 pub mod pairing;
 pub mod rebase;
 pub mod reconstruct;
-pub mod refine;
 pub mod scene;
 pub mod pieces;
 pub mod span;
 pub mod speak;
 pub mod statement;
 pub mod trace;
+pub mod transduce;
 mod train;
 
 #[cfg(test)]
@@ -59,14 +60,19 @@ pub(crate) use correspondence::*;
 pub use deflation::*;
 pub use derivation::*;
 pub use finish::extraction_spend;
-pub use carriage::{carriage, carriage_with_core, Carriage};
+pub use carriage::{carriage, carriage_with_core, BodyTransport};
 pub use crystal::{Crystal, NoCrystal};
 pub use fibre_relation::{fibre_map, fibre_relation};
+pub(crate) use fibre_relation::envelope_dilation;
+#[cfg(test)]
+pub(crate) use fibre_relation::carried_site;
 pub use frame::{family_ratio, frame_vertex};
 pub(crate) use keys::{member_key, member_pair_key, read_member_key, read_member_pair_key, site_key};
 #[cfg(test)]
-pub use tests::common::cipher_form;
-pub use train::{Family, TrainPair};
+pub use tests::fixtures::cipher_form;
+pub use train::{Family, Task, TestPair, TrainPair};
+#[cfg(test)]
+pub(crate) use train::task_of_lines;
 pub use extract::*;
 pub(crate) use incidence::*;
 pub use memo::*;
@@ -82,5 +88,5 @@ use crate::network::nerve::{coord, Coordinate};
 use super::blade::{self, Shape};
 use super::element::{self, Element, Versor};
 use super::base::Site;
-use super::sentence::{Form, Link, Vertex};
+use super::sentence::{Form, SectionLink, Vertex};
 use super::stalk::Invariant;

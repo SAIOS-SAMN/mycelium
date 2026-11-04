@@ -2,7 +2,7 @@
 // ATTESTED OF IT: two typed readings served straight from the running
 // binaries, never read off a log.
 //
-//! [`Mind`] — ONE MIND'S CONVERSATION AND WHAT IT BUILT: the things other
+//! [`MindReading`] — ONE MIND'S CONVERSATION AND WHAT IT BUILT: the things other
 //! minds said that it heard, the thoughts understood both ways, each
 //! hearing's chamber as the field priced it (closed, held, open, unread), the
 //! demands open chambers raised and what the demand taker made of every
@@ -220,7 +220,7 @@ fn short(b: &[u8]) -> String {
 
 /// ONE MIND'S CONVERSATION AND WHAT IT BUILT (module doc).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Mind {
+pub struct MindReading {
     /// The mind's own K at its last tick.
     pub k: u64,
     /// Things other minds said, heard.
@@ -321,9 +321,9 @@ pub struct Mind {
     pub tasks: Vec<TaskSeen>,
 }
 
-impl Default for Mind {
-    fn default() -> Mind {
-        Mind {
+impl Default for MindReading {
+    fn default() -> MindReading {
+        MindReading {
             k: 0,
             heard: 0,
             understood: 0,
@@ -374,7 +374,7 @@ impl Default for Mind {
     }
 }
 
-impl Mind {
+impl MindReading {
     /// One court task's reading, standing in the place of the last one kept
     /// for its citation.
     pub fn task(&mut self, t: TaskSeen) {
@@ -439,7 +439,7 @@ impl Mind {
         Some(())
     }
 
-    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Mind> {
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<MindReading> {
         let [k, heard, understood, returned] = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let priced = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
         let demanded = take_u64(b, p)?;
@@ -510,7 +510,7 @@ impl Mind {
             *p += 36;
             tasks.push(TaskSeen { citation, taken, reading, perspectives, stop });
         }
-        Some(Mind {
+        Some(MindReading {
             k,
             heard,
             understood,
@@ -628,20 +628,20 @@ impl Mind {
     }
 }
 
-static MIND: LazyLock<Mutex<Mind>> = LazyLock::new(|| Mutex::new(Mind::default()));
+static MIND: LazyLock<Mutex<MindReading>> = LazyLock::new(|| Mutex::new(MindReading::default()));
 
 /// WRITE what the mind just did into its reading, where it did it.
-pub fn note_mind(f: impl FnOnce(&mut Mind)) {
+pub fn note_mind(f: impl FnOnce(&mut MindReading)) {
     if let Ok(mut m) = MIND.lock() {
         f(&mut m);
     }
 }
 
 /// The mind's reading as it stands.
-pub fn mind() -> Mind {
+pub fn mind() -> MindReading {
     match MIND.lock() {
         Ok(m) => m.clone(),
-        Err(_) => Mind::default(),
+        Err(_) => MindReading::default(),
     }
 }
 

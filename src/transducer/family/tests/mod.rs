@@ -1,7 +1,7 @@
 // The family's tests, one file per ORGAN they prove. Each file's header
 // names the chapter of MU-RECURSION the claim comes from.
 
-pub mod common;
+pub mod fixtures;
 
 mod acts;
 mod address_set;
@@ -33,8 +33,7 @@ mod scene;
 mod span;
 mod perception;
 mod reasons;
+mod magnitude;
 mod reconstruct;
-mod refine;
-mod retract;
 mod rung;
 mod speech;

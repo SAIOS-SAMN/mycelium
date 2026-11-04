@@ -68,7 +68,7 @@ fn from_key_decodes_rotor_and_versor_keys() {
 #[test]
 fn form_vertex_key_is_function_of_content() {
     use crate::transducer::alphabet::Derivation;
-    use crate::transducer::sentence::tests::common::{stand_with_star, FRAME};
+    use crate::transducer::sentence::tests::fixtures::{stand_with_star, FRAME};
     use crate::transducer::sentence::{form_vertex_key, Form, Vertex};
     use crate::transducer::stalk::Invariant;
     let build = |gauge: Vec<(u8, u8)>, chart: Invariant| -> Form {

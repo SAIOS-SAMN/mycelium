@@ -1,7 +1,7 @@
 // 24.1, 24.2, MU-CLIENT §4.13 — the shed: what a mind holds, and what it
 // lets go where nothing live references it.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::client::sdk::*;
 
 /// MU-CLIENT §4.13 — A DIALECT WORD STANDS WHILE A THOUGHT GLUES IT, and one
@@ -9,6 +9,7 @@ use crate::client::sdk::*;
 /// never sheds.
 #[test]
 fn shed_keeps_glued_dialect_word_and_genome() {
+    crate::transducer::raster::stand_on(0);
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let e2 = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("shed"));
@@ -16,13 +17,13 @@ fn shed_keeps_glued_dialect_word_and_genome() {
     assert_eq!(entity.dialect_len(), 2);
     let addr = e1.address();
     entity.hold_chain(vec![(9, 0, 1, 2)]);
-    let idea = entity.contemplation.bubbles.scoped().next().map(|(k, _)| k).expect("idea");
+    let idea = entity.contemplation.wells.scoped().next().map(|(k, _)| k).expect("idea");
     entity.contemplation.mark_glue(&idea, addr.clone());
     let _ = entity.shed();
     assert_eq!(entity.dialect_len(), 1, "the unreferenced word sheds; the glued one stands");
-    assert!(entity.epigenome.working_word(&addr).is_some(), "the glued word stands");
-    assert!(entity.epigenome.working_word(&e2.address()).is_none(), "the unreferenced word is gone");
-    assert_eq!(entity.epigenome.genome_len(), 0, "the genome is untouched by the shed");
+    assert!(entity.language.working_word(&addr).is_some(), "the glued word stands");
+    assert!(entity.language.working_word(&e2.address()).is_none(), "the unreferenced word is gone");
+    assert_eq!(entity.language.genome_len(), 0, "the genome is untouched by the shed");
 }
 
 /// MU-CLIENT §4.13 — A WORD THE MIND SAID AND A COURT TAUGHT STANDS UNTIL
@@ -34,12 +35,12 @@ fn shed_keeps_taught_word_until_ratified() {
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("taught"));
     entity.remember_spoken(&e1);
     let _ = entity.shed();
-    assert!(entity.epigenome.working_word(&e1.address()).is_some(), "taught and unratified, it stands");
+    assert!(entity.language.working_word(&e1.address()).is_some(), "taught and unratified, it stands");
     assert!(entity.already_taught(&e1), "and its receipt with it");
 }
 
 /// 45.4 — THE MIND'S K IS ITS OWN ACTS, and no reply moves it. The test
-/// above drives the epigenome with K values handed to it, so it proves the
+/// above drives the mind's language with K values handed to it, so it proves the
 /// shed's arithmetic and says nothing about where K comes from.
 ///
 /// This one calls `stand` alone, which is 24.3's own act -- "perceive,
@@ -87,7 +88,7 @@ assert_eq!(
 ///
 /// Each carrier says which it wants, and two said one thing and were fed the
 /// other. `Contemplation.now_k` reads "TUniversal the entity last stamped"
-/// and `Bubble.moved_k` reads "TUniversal when this bubble's charts last
+/// and `Well.moved_k` reads "TUniversal when this well's charts last
 /// moved"; both were stamped from the mind's own K. Everything
 /// downstream is a span between two of those stamps —
 /// `held_since(now_k, moved_k)` is `pivot_orbit`'s `t_extent`, `span_of` is
@@ -126,7 +127,7 @@ fn expand_ideas_stamps_contemplation_with_tuniversal() {
 ///
 /// Room is `boundary_measure` against the voice's reserve, LANE BY LANE
 /// (law 5): the open thoughts' own four-lane measure, never the thoughts' sum and
-/// never a count of bubbles. `retire_on_t` read a bubble count against
+/// never a count of wells. `retire_on_t` read a well count against
 /// `reserve_max`, which is the box's RAM at boot — probed at 88 on this
 /// machine — and it is deleted.
 ///
@@ -139,6 +140,7 @@ fn expand_ideas_stamps_contemplation_with_tuniversal() {
 /// whether or not there was room.
 #[test]
 fn hold_form_withholds_without_room_never_evicts() {
+    crate::transducer::raster::stand_on(0);
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("room"));
     entity.hold_chain(vec![(9, 0, 1, 2)]);
     let held_now = entity.contemplation.len();
@@ -222,7 +224,7 @@ fn hold_form_draws_lanes_that_release_returns() {
     // MU-CLIENT §7.1 Phase 3 — THE ESCROW RETURNS ONCE, EXACTLY, when the
     // thought is released by its orbit: the reserve stands where it stood
     // before the hold, lane by lane.
-    let held: Vec<Vec<u8>> = entity.contemplation.bubbles.scoped().filter(|(_, b)| b.escrow == drew).map(|(k, _)| k).collect();
+    let held: Vec<Vec<u8>> = entity.contemplation.wells.scoped().filter(|(_, b)| b.escrow == drew).map(|(k, _)| k).collect();
     let [key] = held.as_slice() else { panic!("one thought holds the draw: {}", held.len()) };
     entity.contemplation.release_thought(key);
     entity.physics.reserve.restore(entity.contemplation.take_returned_escrow());
@@ -236,15 +238,16 @@ fn hold_form_draws_lanes_that_release_returns() {
 /// draws nothing and holds nothing in escrow; released, it returns nothing.
 #[test]
 fn release_thought_returns_only_what_hold_drew() {
+    crate::transducer::raster::stand_on(0);
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("drew"));
     let before = entity.physics.reserve.clone();
     entity.hold_chain(vec![(9, 0, 1, 2)]);
     assert_eq!(entity.physics.reserve, before, "a hold that drew nothing takes nothing");
-    let held: Vec<Vec<u8>> = entity.contemplation.bubbles.scoped().map(|(k, _)| k).collect();
+    let held: Vec<Vec<u8>> = entity.contemplation.wells.scoped().map(|(k, _)| k).collect();
     let [key] = held.as_slice() else { panic!("one thought held: {}", held.len()) };
-    assert_eq!(entity.contemplation.bubbles.get(key).map(|b| b.escrow), Some([0; 4]), "it holds nothing in escrow");
+    assert_eq!(entity.contemplation.wells.get(key).map(|b| b.escrow), Some([0; 4]), "it holds nothing in escrow");
     entity.contemplation.release_thought(key);
-    assert!(entity.contemplation.bubbles.get(key).is_none(), "released");
+    assert!(entity.contemplation.wells.get(key).is_none(), "released");
     entity.physics.reserve.restore(entity.contemplation.take_returned_escrow());
     assert_eq!(entity.physics.reserve, before, "and it returns NOTHING, because nothing was drawn");
 }
@@ -265,12 +268,12 @@ fn release_thought_returns_only_what_hold_drew() {
 /// already handed out cannot be withdrawn.
 #[test]
 fn take_unpivoted_drains_set_of_coordinates() {
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     let a = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let addr = a.address();
     assert_eq!(epi.unpivoted_len(), 0, "a fresh mind has no pending work");
 
-    epi.learn(&a.to_bytes().expect("the record writes"), &mut super::common::budget());
+    epi.learn(&a.to_bytes().expect("the record writes"), &mut super::fixtures::budget());
     assert_eq!(epi.unpivoted_len(), 1, "an admitted word is work the pivot has not reached");
 
     let taken = epi.take_unpivoted();
@@ -286,7 +289,7 @@ fn take_unpivoted_drains_set_of_coordinates() {
     // taken back; a coordinate leaves the set with the word.
     let b = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
     let b_addr = b.address();
-    epi.learn(&b.to_bytes().expect("the record writes"), &mut super::common::budget());
+    epi.learn(&b.to_bytes().expect("the record writes"), &mut super::fixtures::budget());
     assert_eq!(epi.unpivoted_len(), 1);
     assert!(epi.retire(b_addr.as_bytes()), "the word retires");
     assert_eq!(epi.unpivoted_len(), 0, "and leaves the pending set with it");

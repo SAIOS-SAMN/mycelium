@@ -6,7 +6,8 @@
 //! that vanished, cells created, a body moved, the frame resized — and the
 //! form's vertices say only the motions. This organ reads the ACT each effect
 //! is and writes it in the rule language of 78.143 as a clause the form
-//! carries: the motions as carriages, a vanished body as `Recolour(h → 0)`,
+//! carries: the motions as carriages, a vanished body as `Recolour(h → Ω)`
+//! over the family's symbols onto its ground,
 //! a recoloured one by its map, created cells as `Fill`, `Extend` or `Copy`,
 //! a resized frame as `Scale` or `Crop`.
 //!
@@ -20,7 +21,7 @@
 //! perspective's own test — and otherwise it is refused by name ([`Unread`]).
 
 use super::*;
-use crate::transducer::sentence::form::clause::{About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value};
+use crate::transducer::sentence::form::clause::{About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, RegionKind, Stop, Tie, Value};
 
 /// WHY NO ACT WAS READ, by name (rule 11).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -60,14 +61,14 @@ impl Unread {
 
 /// One training pair, its input perceived once.
 struct Pair<'f> {
-    x: &'f Grid,
-    y: &'f Grid,
+    x: &'f SectionSample,
+    y: &'f SectionSample,
     bodies: Vec<Body>,
 }
 
 /// THE READING over the family: its pairs, the fixed list of predicates
 /// the pairs' bodies carry, and what each predicate selects on each pair.
-struct Reading<'f, 'b> {
+struct PredicateTable<'f, 'b> {
     pairs: Vec<Pair<'f>>,
     preds: Vec<Pred>,
     /// `[pair][pred]`: the bodies selected, `None` where it is unstated.
@@ -91,8 +92,16 @@ const RANKED: [Coord; 12] = [
     Coord::Peers,
 ];
 
-/// The eight rays a created line can run along.
-const RAYS: [(i8, i8); 8] = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)];
+/// THE RAYS A CREATED LINE CAN RUN ALONG on the alphabet's section: every
+/// neighbour of a site, generated at the section's rank by grade of contact
+/// (`sentence::by_grade`: the faces first, then the corners), never a list
+/// of offsets.
+fn rays() -> Vec<(i8, i8)> {
+    crate::transducer::sentence::on_section(crate::transducer::sentence::by_grade(crate::transducer::alphabet::ALPHABET_SAMPLE_RANK))
+        .into_iter()
+        .filter_map(|(a, b)| Some((i8::try_from(a).ok()?, i8::try_from(b).ok()?)))
+        .collect()
+}
 
 fn cells_of(b: &Body) -> Vec<(usize, usize, u8)> {
     b.compartments
@@ -104,8 +113,8 @@ fn cells_of(b: &Body) -> Vec<(usize, usize, u8)> {
         .collect()
 }
 
-fn at(g: &Grid, r: usize, c: usize) -> Option<u8> {
-    g.get(r).and_then(|row| row.get(c)).copied()
+fn at(g: &SectionSample, r: usize, c: usize) -> Option<u8> {
+    g.line(r).and_then(|row| row.get(c)).copied()
 }
 
 fn insert_sorted<T: Ord>(v: &mut Vec<T>, x: T) {
@@ -286,6 +295,24 @@ fn map_of_class(key: &[u8]) -> Vec<(u8, u8)> {
     key.chunks_exact(2).map(|p| (p[0], p[1])).collect()
 }
 
+/// A VANISHED BODY'S MAP: every symbol of the family's own set Σ sent to
+/// the ground `void` (MU-SENSING §3.3), never every slot of a fixed palette.
+/// Σ is the whole family's, its posted test inputs included
+/// (`SymbolSet::of_family`).
+/// Written as a gauge listing is, in the symbols' key order.
+fn onto_ground(family: &[(SectionSample, SectionSample)], void: u8) -> Vec<(u8, u8)> {
+    let symbols = crate::transducer::symbols::SymbolSet::of_family(family);
+    let mut map: Vec<(u8, u8)> = symbols
+        .symbols()
+        .filter_map(|s| match s {
+            [h] if *h != void => Some((*h, void)),
+            _ => None,
+        })
+        .collect();
+    map.sort_unstable();
+    map
+}
+
 /// 78.167 Phase A — THE RECOLOURS READ ON THE SCENE'S PARTS, where a body
 /// changed in part: each monochrome part (`perceive_parts`) of the bodies no
 /// carriage moves is kept, sent to the ground, or recoloured by one map —
@@ -294,7 +321,9 @@ fn map_of_class(key: &[u8]) -> Vec<(u8, u8)> {
 /// `None` where a part is itself changed in part (no part reading says it),
 /// or a class separates on no coordinate.
 fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::Invariant]) -> Option<Vec<Clause>> {
-    let void = crate::arc::ground();
+    // A part sent to the ground is recoloured onto the scene's one ground;
+    // with none (a vortex, no ground) that clause is unstated.
+    let void = crate::transducer::raster::void();
     let parted: Vec<Pair<'_>> = pairs.iter().map(|p| Pair { x: p.x, y: p.y, bodies: perceive_parts(p.x) }).collect();
     let preds = predicates(&parted);
     let sels: Vec<Vec<Option<Vec<usize>>>> = parted.iter().map(|p| statement::select_each(&preds, p.x, &p.bodies)).collect();
@@ -317,7 +346,10 @@ fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::I
             s.push(i);
             let map = match fate(part, p.y) {
                 Fate::Kept => continue,
-                Fate::Erased => cells.iter().map(|&(_, _, h)| h).filter(|&h| h != void).map(|h| (h, void)).take(1).collect(),
+                Fate::Erased => {
+                    let void = void.ok()?;
+                    cells.iter().map(|&(_, _, h)| h).filter(|&h| h != void).map(|h| (h, void)).take(1).collect()
+                }
                 Fate::Recoloured(map) => map,
                 Fate::Changed => return None,
             };
@@ -340,22 +372,26 @@ fn agrees(clause: &Clause, p: &Pair<'_>) -> bool {
     if frame_of(&said) != frame_of(p.y) {
         return false;
     }
-    said.iter().zip(p.x).zip(p.y).all(|((s, x), y)| s.iter().zip(x).zip(y).all(|((s, x), y)| s == x || s == y))
+    said.lines().zip(p.x.lines()).zip(p.y.lines()).all(|((s, x), y)| s.iter().zip(x).zip(y).all(|((s, x), y)| s == x || s == y))
 }
 
-/// The spoken clauses laid on the clauses' frame.
-fn grid_of(s: &statement::Spoken) -> Option<Grid> {
-    let mut g: Grid = vec![vec![crate::arc::ground(); s.frame.1]; s.frame.0];
+/// The spoken clauses laid on the clauses' frame, an unpainted site on the
+/// scene's one ground; `None` where such a site is left and the scope reads
+/// none.
+fn grid_of(s: &statement::Spoken) -> Option<SectionSample> {
+    let mut g: Vec<Vec<Option<u8>>> = vec![vec![None; s.frame.1]; s.frame.0];
     for &(r, c, h) in &s.painted {
-        *g.get_mut(usize::try_from(r).ok()?)?.get_mut(usize::try_from(c).ok()?)? = h;
+        *g.get_mut(usize::try_from(r).ok()?)?.get_mut(usize::try_from(c).ok()?)? = Some(h);
     }
-    Some(g)
+    let void = crate::transducer::raster::void().ok();
+    let lines: Vec<Vec<u8>> = g.into_iter().map(|row| row.into_iter().map(|h| h.or(void)).collect::<Option<Vec<u8>>>()).collect::<Option<_>>()?;
+    SectionSample::of_lines(&lines).ok()
 }
 
-impl Reading<'_, '_> {
+impl PredicateTable<'_, '_> {
     /// THE CLAUSES SPOKEN ON EVERY PAIR, one read each under the stroke;
     /// `None` where a clause is unstated on some pair.
-    fn speak(&mut self, clauses: &[Clause]) -> Result<Option<Vec<Grid>>, Unread> {
+    fn speak(&mut self, clauses: &[Clause]) -> Result<Option<Vec<SectionSample>>, Unread> {
         let mut out = Vec::with_capacity(self.pairs.len());
         for p in &self.pairs {
             if !self.budget.spend() {
@@ -469,14 +505,10 @@ fn slide_of(c: &Clause, pairs: &[Pair<'_>]) -> Option<Clause> {
 /// each found again on the output — its own cells, its own hues — at an
 /// offset along a unit ray. The ONE ray every one of them is found along;
 /// `None` where none is shared, or more than one (no ray is chosen).
-fn slide_ray(r: &Reading<'_, '_>, gone: &[Vec<usize>]) -> Option<(i8, i8)> {
-    let mut shared: Vec<(i8, i8)> = RAYS.to_vec();
+fn slide_ray(r: &PredicateTable<'_, '_>, gone: &[Vec<usize>]) -> Option<(i8, i8)> {
+    let mut shared: Vec<(i8, i8)> = rays();
     for (p, g) in r.pairs.iter().zip(gone) {
-        let rows = p.y.len();
-        let cols = match p.y.as_slice() {
-            [row, ..] => row.len(),
-            [] => 0,
-        };
+        let [rows, cols] = p.y.extents();
         let reach = i64::try_from(if rows > cols { rows } else { cols }).ok()?;
         for &b in g {
             let cells = cells_of(&p.bodies[b]);
@@ -496,7 +528,7 @@ fn slide_ray(r: &Reading<'_, '_>, gone: &[Vec<usize>]) -> Option<(i8, i8)> {
 /// pair, every recoloured body painted whole the one hue the bodies it
 /// touches carry (`statement::partner_hues`). A fixed map fits each pair and
 /// fails a held-out pair whose partner is another hue.
-fn takes_partners_hue(r: &Reading<'_, '_>, recoloured: &[Vec<usize>]) -> bool {
+fn takes_partners_hue(r: &PredicateTable<'_, '_>, recoloured: &[Vec<usize>]) -> bool {
     if recoloured.iter().all(Vec::is_empty) {
         return false;
     }
@@ -522,20 +554,20 @@ enum Fate {
     Changed,
 }
 
-fn fate(b: &Body, y: &Grid) -> Fate {
-    let void = crate::arc::ground();
+fn fate(b: &Body, y: &SectionSample) -> Fate {
+    let ground = crate::transducer::raster::ground();
     let cells = cells_of(b);
     let said: Vec<Option<u8>> = cells.iter().map(|&(r, c, _)| at(y, r, c)).collect();
     if cells.iter().zip(&said).all(|(c, s)| *s == Some(c.2)) {
         return Fate::Kept;
     }
-    if said.iter().all(|s| *s == Some(void)) {
+    if said.iter().all(|s| s.is_some_and(|t| ground.holds(&t))) {
         return Fate::Erased;
     }
     let mut map: Vec<(u8, u8)> = Vec::new();
     for (&(_, _, h), s) in cells.iter().zip(&said) {
         let Some(t) = *s else { return Fate::Changed };
-        if t == void {
+        if ground.holds(&t) {
             return Fate::Changed;
         }
         match map.iter().find(|(f, _)| *f == h) {
@@ -549,7 +581,7 @@ fn fate(b: &Body, y: &Grid) -> Fate {
 
 /// READ THE FAMILY'S ACTS as the clauses its form carries, re-deriving every
 /// training pair exactly, or refused by name.
-pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate::physics::Budget) -> Result<Vec<Clause>, Unread> {
+pub(crate) fn read_acts(form: &Form, family: &[(SectionSample, SectionSample)], budget: &mut crate::physics::Budget) -> Result<Vec<Clause>, Unread> {
     let pairs: Vec<Pair<'_>> = family.iter().map(|(x, y)| Pair { x, y, bodies: perceive(x) }).collect();
     // A CARRIAGE THE EFFECT REFUTES IS NO ACT: one the form's vertices give
     // stands only where every cell it changes, spoken alone on each pair, is
@@ -567,7 +599,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
         .collect();
     let preds = predicates(&pairs);
     let sels = pairs.iter().map(|p| statement::select_each(&preds, p.x, &p.bodies)).collect();
-    let mut r = Reading { pairs, preds, sels, budget };
+    let mut r = PredicateTable { pairs, preds, sels, budget };
     let every = r.every();
     if r.pairs.iter().any(|p| frame_of(p.x) != frame_of(p.y)) {
         // 78.167 Phase B, Step 4 — A NEW FRAME read off the frames: the panes
@@ -642,9 +674,10 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
                     Some(true)
                 }
                 (Some(select), None) => {
-                    let void = crate::arc::ground();
-                    let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
-                    reacted.push(Clause { select, act: Act::Recolour(ground) });
+                    // Erased onto the scene's one ground; with none, the
+                    // clearing is stated by no act (`Overwritten`).
+                    let void = crate::transducer::raster::void().map_err(|_| Unread::Overwritten)?;
+                    reacted.push(Clause { select, act: Act::Recolour(onto_ground(family, void)) });
                     related
                 }
                 (None, _) => None,
@@ -680,13 +713,14 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
     match on_parts {
         Some(clauses) => base.extend(clauses),
         None => {
-            // C1 — A VANISHED BODY: every hue of the palette sent to the
-            // ground, on the bodies the separating coordinate selects.
+            // C1 — A VANISHED BODY: every symbol of the family's set sent to
+            // the ground, on the bodies the separating coordinate selects.
             if erased.iter().any(|e| !e.is_empty()) {
                 let select = r.separate(&erased, &still).ok_or(Unread::Inseparable)?;
-                let void = crate::arc::ground();
-                let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
-                base.push(Clause { select, act: Act::Recolour(ground) });
+                // Erased onto the scene's one ground; with none, the
+                // clearing is stated by no act (`Overwritten`).
+                let void = crate::transducer::raster::void().map_err(|_| Unread::Overwritten)?;
+                base.push(Clause { select, act: Act::Recolour(onto_ground(family, void)) });
             }
             for (key, at) in classes.scoped() {
                 let select = r.separate(at, &still).ok_or(Unread::Inseparable)?;
@@ -737,7 +771,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
 /// The composed sentence stands where it re-derives every pair — one proof,
 /// never a filter. A residue that clears a cell is no creation (OVERWRITTEN);
 /// one no reading says is UNCREATED.
-fn created(r: &mut Reading<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], every: &[Vec<usize>]) -> Result<Vec<Clause>, Unread> {
+fn created(r: &mut PredicateTable<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], every: &[Vec<usize>]) -> Result<Vec<Clause>, Unread> {
     // 78.167 Phase B, Step 1 — THE RESIDUE READ PIECE BY PIECE, each reading
     // composing its clauses onto the sentence and the next reading taking
     // what is left (ruled 2026-10-20: one act over all the
@@ -795,7 +829,7 @@ fn created(r: &mut Reading<'_, '_>, base: Vec<Clause>, touched: &[Vec<usize>], e
 /// THE CANVAS THE CLAUSES SPEAK on each pair, and the RESIDUE: the cells
 /// left unlike the output. `None` where a clause is unstated, or the residue
 /// clears a cell — no creation says that.
-type Residue = (Vec<Grid>, PairCells);
+type Residue = (Vec<SectionSample>, PairCells);
 
 /// On each pair, a set of cells, each with its hue.
 type PairCells = Vec<Vec<(usize, usize, u8)>>;
@@ -804,15 +838,15 @@ type PairCells = Vec<Vec<(usize, usize, u8)>>;
 /// fill explains.
 type FillClass = (Vec<Vec<usize>>, PairCells);
 
-fn residue_of(r: &mut Reading<'_, '_>, clauses: &[Clause]) -> Result<Option<Residue>, Unread> {
+fn residue_of(r: &mut PredicateTable<'_, '_>, clauses: &[Clause]) -> Result<Option<Residue>, Unread> {
     let Some(canvas) = r.speak(clauses)? else { return Ok(None) };
-    let void = crate::arc::ground();
+    let ground = crate::transducer::raster::ground();
     let residue: Vec<Vec<(usize, usize, u8)>> = canvas
         .iter()
         .zip(&r.pairs)
         .map(|(g, p)| {
             let mut out = Vec::new();
-            for (i, row) in p.y.iter().enumerate() {
+            for (i, row) in p.y.lines().enumerate() {
                 for (j, &h) in row.iter().enumerate() {
                     if at(g, i, j) != Some(h) {
                         out.push((i, j, h));
@@ -822,7 +856,7 @@ fn residue_of(r: &mut Reading<'_, '_>, clauses: &[Clause]) -> Result<Option<Resi
             out
         })
         .collect();
-    if residue.iter().flatten().any(|&(_, _, h)| h == void) {
+    if residue.iter().flatten().any(|&(_, _, h)| ground.holds(&h)) {
         return Ok(None);
     }
     Ok(Some((canvas, residue)))
@@ -858,12 +892,12 @@ fn pieces_of(res: &[(usize, usize, u8)]) -> Vec<Vec<(usize, usize, u8)>> {
 /// region and hue are one clause, the pieces' bodies separated by the list. What
 /// no fill reads is left for the lines. A class whose bodies do not separate
 /// is left for them too.
-fn read_fills(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+fn read_fills(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
     let n = r.pairs.len();
     // (region, hue) → its class.
     let mut classes: crate::network::nerve::Keyed<FillClass> = crate::network::nerve::Keyed::new();
     let mut rest: PairCells = vec![Vec::new(); n];
-    let regions = [(0u8, Region::Interior), (1, Region::Halo), (2, Region::Extent)];
+    let regions = [(0u8, RegionKind::Interior), (1, RegionKind::Halo), (2, RegionKind::Extent)];
     for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
         let mut all_cells: Vec<(usize, usize)> = res.iter().map(|&(i, j, _)| (i, j)).collect();
         all_cells.sort_unstable();
@@ -900,7 +934,7 @@ fn read_fills(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &
                         if holders.len() < 2 {
                             return None;
                         }
-                        let union = statement::region_of_set(Region::Interior, p.x, &p.bodies, &holders);
+                        let union = statement::region_of_set(RegionKind::Interior, p.x, &p.bodies, &holders);
                         let covers = piece.iter().all(|&(i, j, _)| union.contains(&(i, j)));
                         let within = union.iter().all(|c| all_cells.binary_search(c).is_ok());
                         (covers && within).then_some(([0, *hue], holders))
@@ -943,11 +977,8 @@ fn read_fills(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &
 
 /// Each body's cell owner on a pair's input grid.
 fn owners(p: &Pair<'_>) -> Vec<Vec<Option<usize>>> {
-    let cols = match p.x.as_slice() {
-        [row, ..] => row.len(),
-        [] => 0,
-    };
-    let mut owner = vec![vec![None; cols]; p.x.len()];
+    let [rows, cols] = p.x.extents();
+    let mut owner = vec![vec![None; cols]; rows];
     for (b, body) in p.bodies.iter().enumerate() {
         for (i, j, _) in cells_of(body) {
             if let Some(o) = owner.get_mut(i).and_then(|row| row.get_mut(j)) {
@@ -984,9 +1015,10 @@ struct Rays {
 /// the one hue every run carried, stopping at contact where any run did.
 /// `None` where the runs do not cover the residue, or a ray's bodies do not
 /// separate, or its runs carry no one paint.
-fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
-    let void = crate::arc::ground();
+fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
+    let ground = crate::transducer::raster::ground();
     let n = r.pairs.len();
+    let unit_rays: Vec<(i64, i64)> = rays().into_iter().map(|(a, b)| (i64::from(a), i64::from(b))).collect();
     let mut rays: crate::network::nerve::Keyed<Rays> = crate::network::nerve::Keyed::new();
     for (k, ((p, res), before)) in r.pairs.iter().zip(residue).zip(canvas).enumerate() {
         let (rows, cols) = frame_of(p.x);
@@ -994,7 +1026,7 @@ fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize
         let created = |i: usize, j: usize| res.iter().find(|&&(a, b, _)| (a, b) == (i, j)).map(|&(_, _, h)| h);
         let mut covered: Vec<(usize, usize)> = Vec::new();
         for &(i, j, _) in res {
-            for (dr, dc) in RAYS.map(|(a, b)| (i64::from(a), i64::from(b))) {
+            for &(dr, dc) in &unit_rays {
                 // The body cell this residue cell stands beside, and the
                 // displacement from it: the ray, measured.
                 let Some((bi, bj)) = step(i, j, (-dr, -dc), rows, cols) else { continue };
@@ -1008,7 +1040,7 @@ fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize
                             at_cell = (ni, nj);
                         }
                         None => {
-                            stop = Some(before[ni][nj] != void);
+                            stop = Some(!ground.holds(&before[ni][nj]));
                             break;
                         }
                     }
@@ -1028,7 +1060,7 @@ fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize
                 let whole = cells_of(&p.bodies[b]).into_iter().all(|(ci, cj, _)| {
                     let mut at_cell = (ci, cj);
                     while let Some((ni, nj)) = step(at_cell.0, at_cell.1, (dr, dc), rows, cols) {
-                        if before[ni][nj] != void {
+                        if !ground.holds(&before[ni][nj]) {
                             break;
                         }
                         if created(ni, nj).is_none() {
@@ -1088,7 +1120,7 @@ fn read_lines(r: &Reading<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize
 /// bodies. The pieces of one hue are one clause, `Connect` painted that hue,
 /// on the bodies they join (separated by the list). What is no connector, or
 /// whose class does not separate, is left for the lines.
-fn read_connects(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+fn read_connects(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
     let n = r.pairs.len();
     let mut classes: crate::network::nerve::Keyed<FillClass> = crate::network::nerve::Keyed::new();
     let mut rest: PairCells = vec![Vec::new(); n];
@@ -1185,7 +1217,7 @@ fn shape_of(cells: &[(usize, usize, u8)]) -> Option<Shape> {
 /// offset swept. Its sources are the bodies landing on a piece there,
 /// separated by the list. `None` read (no clauses) where no one offset is
 /// offered by every echo-shaped piece.
-fn read_echoes(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+fn read_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
     let n = r.pairs.len();
     // Per piece: (pair, cells, the offers it makes) — an offer is the offset
     // and map as bytes, and the body making it.
@@ -1353,7 +1385,7 @@ fn echo_of(key: &[u8]) -> Option<Act> {
 /// it (separated by the list), and each standing only where, spoken alone,
 /// it paints nothing the output does not hold. What no echo stated covers
 /// is left for the fills, the joins and the lines.
-fn read_turned_echoes(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
     let n = r.pairs.len();
     let mut pieces: Vec<Weighed> = Vec::new();
     for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
@@ -1539,7 +1571,7 @@ fn bend_of(piece: &[(usize, usize, u8)], p: &Pair<'_>, owner: &[Vec<Option<usize
 /// hue are one clause, `Bend` painted that hue, on the sources they leave,
 /// `to` the targets they reach — each separated by the list. What is no
 /// bend, or whose class does not separate, is left for the lines.
-fn read_bends(r: &Reading<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+fn read_bends(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
     let n = r.pairs.len();
     let mut classes: crate::network::nerve::Keyed<BendClass> = crate::network::nerve::Keyed::new();
     let mut rest: PairCells = vec![Vec::new(); n];
@@ -1612,7 +1644,7 @@ fn stamped_key(seed: &[(usize, usize, u8)], out_bodies: &[Body]) -> Option<Vec<u
 /// of templates tried. The seeds and the template are each separated by the
 /// list. `None` where the seeds stamp two patterns, or no body is the one
 /// they stamp.
-fn read_copy(r: &Reading<'_, '_>, touched: &[Vec<usize>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
+fn read_copy(r: &PredicateTable<'_, '_>, touched: &[Vec<usize>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
     let mut templates: Vec<Vec<usize>> = Vec::with_capacity(r.pairs.len());
     for (p, seeds) in r.pairs.iter().zip(touched) {
         let out_bodies = perceive(p.y);
@@ -1651,8 +1683,8 @@ fn read_copy(r: &Reading<'_, '_>, touched: &[Vec<usize>], every: &[Vec<usize>]) 
 /// output cell is painted. `None` where an entry is unseen on every pair (no
 /// table is read past what the pairs show), two pairs disagree on one, or
 /// the output is painted in more than one hue.
-fn read_panes(r: &Reading<'_, '_>) -> Option<Clause> {
-    let void = crate::arc::ground();
+fn read_panes(r: &PredicateTable<'_, '_>) -> Option<Clause> {
+    let ground = crate::transducer::raster::ground();
     let split = |along_rows: bool| -> Option<bool> {
         let gaps: Vec<Option<bool>> = r
             .pairs
@@ -1690,8 +1722,8 @@ fn read_panes(r: &Reading<'_, '_>) -> Option<Clause> {
                     true => (p.x[i][j], p.x[i + hy + usize::from(gap)][j]),
                     false => (p.x[i][j], p.x[i][j + wy + usize::from(gap)]),
                 };
-                let bit = 2 * usize::from(a != void) + usize::from(b != void);
-                let painted = p.y[i][j] != void;
+                let bit = 2 * usize::from(!ground.holds(&a)) + usize::from(!ground.holds(&b));
+                let painted = !ground.holds(&p.y[i][j]);
                 match table[bit] {
                     Some(was) if was != painted => return None,
                     _ => table[bit] = Some(painted),
@@ -1724,7 +1756,7 @@ fn read_panes(r: &Reading<'_, '_>) -> Option<Clause> {
 /// group's first in its code order (itself before any turn), which is every
 /// pair's block alike. `None` where a block admits none on some pair, or the
 /// pairs share none.
-fn read_tiles(r: &Reading<'_, '_>) -> Option<Clause> {
+fn read_tiles(r: &PredicateTable<'_, '_>) -> Option<Clause> {
     let factors: Vec<Option<(usize, usize)>> = r
         .pairs
         .iter()
@@ -1743,8 +1775,8 @@ fn read_tiles(r: &Reading<'_, '_>) -> Option<Clause> {
         let fits = |t: u8| -> bool {
             r.pairs.iter().all(|p| {
                 let (hx, wx) = frame_of(p.x);
-                let block: Grid = (0..hx).map(|a| (0..wx).map(|b| p.y[bi * hx + a][bj * wx + b]).collect()).collect();
-                statement::turn_of(p.x, t).is_some_and(|g| g == block)
+                // The block of the output at `(bi, bj)`, read in place.
+                statement::turn_of(p.x, t).is_some_and(|g| g.extents() == [hx, wx] && (0..hx).all(|a| (0..wx).all(|b| g[a][b] == p.y[bi * hx + a][bj * wx + b])))
             })
         };
         turns.push((0u8..8).find(|&t| fits(t))?);
@@ -1758,7 +1790,7 @@ fn read_tiles(r: &Reading<'_, '_>) -> Option<Clause> {
 /// C5 — THE FRAME RESIZED: every cell scaled by the one exact ratio the
 /// frames read, or the output cropped to the extent of the one body (or
 /// the one enclosure) whose extent is the output's frame.
-fn sized(r: &mut Reading<'_, '_>, carried: Vec<Clause>, every: &[Vec<usize>]) -> Result<Vec<Clause>, Unread> {
+fn sized(r: &mut PredicateTable<'_, '_>, carried: Vec<Clause>, every: &[Vec<usize>]) -> Result<Vec<Clause>, Unread> {
     let ratio = |p: &Pair<'_>| -> Option<(u8, u8)> {
         let ((xr, xc), (yr, yc)) = (frame_of(p.x), frame_of(p.y));
         if xr == 0 || xc == 0 || yr == 0 || yc == 0 {
@@ -1793,7 +1825,7 @@ fn sized(r: &mut Reading<'_, '_>, carried: Vec<Clause>, every: &[Vec<usize>]) ->
                 let (yr, yc) = frame_of(p.y);
                 let spans: Vec<Vec<(usize, usize)>> = match extent {
                     Extent::Body => p.bodies.iter().map(|b| cells_of(b).into_iter().map(|(i, j, _)| (i, j)).collect()).collect(),
-                    Extent::Interior => statement::regions_each(Region::Interior, p.x, &p.bodies),
+                    Extent::Interior => statement::regions_each(RegionKind::Interior, p.x, &p.bodies),
                 };
                 spans
                     .iter()

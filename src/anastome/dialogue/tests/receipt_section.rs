@@ -30,7 +30,7 @@ fn decode_receipt_section_reads_past_cover_digest() {
     let origin = crate::chronometry::tuniversal::Origin { genesis: [8; 32], epoch: 2 };
     let mut keepers = crate::chronometry::tuniversal::Keepers::new(origin, vk);
     for (h, s) in [(4u64, 1u64), (5, 3)] {
-        keepers.read_own(&keeper, crate::chronometry::tuniversal::Tick { h, lanes: [s, 0, 0, 0], k: h }).expect("writes");
+        keepers.read_own(&keeper, crate::chronometry::tuniversal::Tick { h, lanes: [s, 0, 0, 0].into(), k: h }).expect("writes");
     }
     let ring = keepers.own_ring();
     assert_eq!(ring.len(), 2);

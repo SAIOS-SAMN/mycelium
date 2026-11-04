@@ -16,9 +16,9 @@
 use crate::anastome::dialogue::ReceiptsAnswer;
 use crate::chronometry::Place;
 use crate::cognition::{Court, RootAdoption};
-use crate::court::admission::Admitted;
+use crate::court::admission::{Admitted, Predecessor};
 use crate::observe::{note_replication, replication, set_replication};
-use crate::server::held::held;
+use crate::server::court_lock::held;
 use std::sync::Mutex;
 
 /// 78.147 — WHAT A PAGE IS ASKED AS: a catch-up, which a court answers below
@@ -27,12 +27,12 @@ use std::sync::Mutex;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Ask {
     CatchUp,
-    Replay,
+    Era,
 }
 
 /// This node's own `(H_genesis, E_origin)`, which a fold root's home
 /// signature is verified at; `None` before it adopted one.
-pub type Origin = Option<([u8; 32], u32)>;
+pub type AdoptedOrigin = Option<([u8; 32], u32)>;
 
 /// WHAT ONE PASS OF THE CHASE DID: whether it admitted anything (the
 /// caller re-admits the reporting frame on that) and whether the chain
@@ -90,7 +90,7 @@ fn prove_folded(
         let root = held!(court).ok()?.run(|k, _| k.chain().peer_root(&p.at.vk))?;
         // THE ONE ERA-REPLAY ASK (78.147): the era's own receipts, from where
         // the walk stands to the root; a root answer proves no citation.
-        let Some(ReceiptsAnswer::Page(page)) = fetch(&p.at.vk, place_before(from.at.place()), root, Ask::Replay) else {
+        let Some(ReceiptsAnswer::Page(page)) = fetch(&p.at.vk, place_before(from.at.place()), root, Ask::Era) else {
             return Some(false);
         };
         match held!(court).ok()?.run(|k, _| k.walk_folded(p, &page)) {
@@ -107,7 +107,7 @@ fn prove_folded(
 /// 78.147 — A ROOT ANSWERED FOR A CATCH-UP, adopted on its two signatures
 /// at this node's origin: whether the line now stands on it. A root no
 /// origin can verify is refused and counted, never silent.
-fn adopt(court: &Mutex<Court>, origin: Origin, proof: &crate::anastome::dialogue::RootProof) -> bool {
+fn adopt(court: &Mutex<Court>, origin: AdoptedOrigin, proof: &crate::anastome::dialogue::RootProof) -> bool {
     let Some(origin) = origin else {
         note_replication(Some(proof.signer), replication::ROOT_REFUSED, 1);
         return false;
@@ -139,7 +139,7 @@ fn adopt(court: &Mutex<Court>, origin: Origin, proof: &crate::anastome::dialogue
 /// below a root this court holds is asked again (`known_head` reads it).
 pub fn chase(
     court: &Mutex<Court>,
-    origin: Origin,
+    origin: AdoptedOrigin,
     signer: [u8; 32],
     to: Place,
     budget: &mut crate::physics::Budget,
@@ -195,11 +195,19 @@ pub fn chase(
         };
         // The page admitted on the chase's stroke, one read per receipt
         // (78.153b): a stroke spent mid-page keeps what it admitted, and the
-        // next pass asks on from the head that moved.
+        // next pass asks on from the head that moved. The page is
+        // reconstructed first (MU-HOSTING §5a.10), up to the first receipt
+        // whose chain hash does not re-derive: only that run is admitted,
+        // and where admission reaches the run's end the receipt that
+        // stopped it is counted refused, under its signer.
+        let (run, unreconstructed) = crate::court::admission::Reconstructed::receipts(&receipts);
         let (n, missing) = match held!(court) {
-            Ok(mut h) => h.run(|k, _| k.admit_backfill(&receipts, budget)),
+            Ok(mut h) => h.run(|k, _| k.admit_backfill(&run, budget)),
             Err(_) => return short(advanced),
         };
+        if let Some(at) = unreconstructed.filter(|_| missing.is_none() && n == run.len()) {
+            note_replication(Some(at.vk), replication::BACKFILL_REFUSED, 1);
+        }
         // CV5: the receipts of `who` this page admitted, on the observer —
         // the typed reading, and no per-page print beside it (RC2).
         note_replication(Some(who), replication::BACKFILL, n as u64);
@@ -230,7 +238,9 @@ pub fn chase(
                 let past = held!(court).ok().and_then(|mut h| {
                     h.run(|k, _| {
                         let head = k.known_head(&p.at.vk).map(|(at, _)| at)?;
-                        (head >= p.at.place()).then(|| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash == p.hash))
+                        (head >= p.at.place()).then(|| {
+                            k.chain().at(&p.at.vk, p.at.place()).map(|r| Predecessor::named(&p).continues(&Predecessor::of(&r)))
+                        })
                     })
                 });
                 if let Some(at) = past {
@@ -290,7 +300,7 @@ pub fn chase(
 /// advances this court's height (45.2).
 pub fn hear<E>(
     court: &Mutex<Court>,
-    origin: Origin,
+    origin: AdoptedOrigin,
     mut admit: impl FnMut() -> Result<Admitted, E>,
     mut stroke: impl FnMut() -> Option<crate::physics::Budget>,
     mut fetch: impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer>,
@@ -351,8 +361,8 @@ pub fn hear<E>(
             // there — the line forked. Counted as the equivocation it is,
             // per signer, never read as a hole still open.
             if let Ok(Admitted::MissingParent(p)) = &admitted {
-                let held = held!(court).ok().and_then(|mut h| h.run(|k, _| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash)));
-                if held.is_some_and(|h| h != p.hash) {
+                let held = held!(court).ok().and_then(|mut h| h.run(|k, _| k.chain().at(&p.at.vk, p.at.place()).map(|r| Predecessor::of(&r))));
+                if held.is_some_and(|h| h.forks(&Predecessor::named(p))) {
                     note_replication(Some(p.at.vk), replication::BACKFILL_EQUIVOCATION, 1);
                 }
             }

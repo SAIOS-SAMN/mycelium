@@ -92,7 +92,7 @@ fn perceive_bounds_seat_values_to_one_frame() {
 fn dilation_reads_du_dh_exactly() {
     use crate::chronometry::tuniversal::{Origin, TPoint};
     let origin = Origin { genesis: [6; 32], epoch: 156 };
-    let at = |h: u64| TPoint { origin, h, lanes: [1, 0, 0, 0], k: 1 };
+    let at = |h: u64| TPoint { origin, h, lanes: [1, 0, 0, 0].into(), k: 1 };
     let located = |seq: u64, u: Arg, h: u64| Percept { point: Some(at(h)), ..percept(seq, u, vec![]) };
     let mut m = SeatMind::scoped(verifying(&domain()), Some([3; 32]), 7);
     assert_eq!(m.sub_origin, Some([3; 32]));
@@ -311,6 +311,7 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
 /// outputs cross as the solve act writes grids.
 #[test]
 fn grid_steps_reads_task_before_seat() {
+    crate::transducer::raster::stand_on(0);
     use crate::client::sdk::rule::{sentence, Step};
     use crate::client::sdk::seat_mind::task::*;
     use crate::transducer::family::NoCrystal;
@@ -323,21 +324,21 @@ fn grid_steps_reads_task_before_seat() {
     use crate::client::sdk::rule::Symmetry;
     // The symmetry read off by index, as a grid is read (the fixture's
     // expectation, never the seam's construction), and a hue map.
-    let apply = |kind: Symmetry, g: &crate::arc::Grid| -> crate::arc::Grid {
-        let (h, w) = (g.len(), g[0].len());
+    let apply = |kind: Symmetry, g: &crate::transducer::family::SectionSample| -> crate::transducer::family::SectionSample {
+        let [h, w] = g.extents();
         match kind {
             Symmetry::Rotate90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
-            Symmetry::Rotate180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
+            Symmetry::Rotate180 => g.lines().rev().map(|row| row.iter().rev().copied().collect()).collect(),
             Symmetry::Rotate270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
-            Symmetry::FlipH => g.iter().map(|row| row.iter().rev().copied().collect()).collect(),
-            Symmetry::FlipV => g.iter().rev().cloned().collect(),
+            Symmetry::FlipH => g.lines().map(|row| row.iter().rev().copied().collect()).collect(),
+            Symmetry::FlipV => g.lines().rev().map(<[u8]>::to_vec).collect(),
             Symmetry::Transpose => (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
         }
     };
-    let recolour = |from: u8, to: u8, g: &crate::arc::Grid| -> crate::arc::Grid {
-        g.iter().map(|row| row.iter().map(|&h| if h == from { to } else { h }).collect()).collect()
+    let recolour = |from: u8, to: u8, g: &crate::transducer::family::SectionSample| -> crate::transducer::family::SectionSample {
+        g.lines().map(|row| row.iter().map(|&h| if h == from { to } else { h }).collect()).collect()
     };
-    let x: crate::arc::Grid = vec![vec![1, 2, 0], vec![1, 0, 0], vec![0, 0, 0]];
+    let x = crate::transducer::family::SectionSample::from(vec![vec![1, 2, 0], vec![1, 0, 0], vec![0, 0, 0]]);
     for (i, kind) in D4.iter().enumerate() {
         let Some(step) = Step::grid_motion(*kind, (3, 3), (3, 3)) else { panic!("{kind:?} fits a square") };
         let family = vec![(x.clone(), recolour(1, 3, &apply(*kind, &x)))];
@@ -351,12 +352,18 @@ fn grid_steps_reads_task_before_seat() {
         Ok(r) => r,
         Err(e) => panic!("the hue map mints: {e:?}"),
     };
-    let shape = |g: &crate::arc::Grid| (g.len(), g[0].len());
+    let shape = |g: &crate::transducer::family::SectionSample| (g.extents()[0], g.extents()[1]);
     assert_eq!(grid_steps(&hue_only, shape(&x), shape(&x)), Ok(vec![0x100 + 16 * 2 + 5]));
-    let outs = vec![x.clone(), vec![vec![4]]];
-    let args = solve_args(&hue_only, &outs, &[9]).expect("writes");
-    let [Arg::Bytes(tape), Arg::Bytes(grids), Arg::Count(9)] = args.as_slice() else { panic!("{args:?}") };
-    assert_eq!(crate::anastome::dialogue::decode_grids(grids), Some(outs), "the outputs read back as the solve act writes them");
+    let outs = vec![x.clone(), vec![vec![4]].into()];
+    let args = solve_args(&hue_only, &outs, None, &[9]).expect("writes");
+    let [Arg::Bytes(tape), Arg::Bytes(samples), Arg::Count(9)] = args.as_slice() else { panic!("{args:?}") };
+    let spoken = crate::anastome::dialogue::spoken_outputs(&outs).expect("samples");
+    assert_eq!(crate::anastome::dialogue::decode_samples(samples), Ok(spoken), "the outputs read back as the solve act writes them");
+    // MU-SENSING §6.2 — a stated ground rides between the outputs and the
+    // steps, a `Bytes` where each step is a `Count`.
+    let stated = solve_args(&hue_only, &outs, Some(&[0]), &[9]).expect("writes");
+    let [Arg::Bytes(_), Arg::Bytes(_), Arg::Bytes(ground), Arg::Count(9)] = stated.as_slice() else { panic!("{stated:?}") };
+    assert_eq!(ground.as_slice(), &[0u8]);
     let mut p = 0;
     assert_eq!(crate::transducer::element::Element::from_bytes(tape, &mut p).map(|e| e.address()), Some(hue_only.address()), "the tape is the rule");
 }
@@ -675,7 +682,7 @@ fn called_at_ten() -> SeatMind {
 /// perceived again, and the next beat, leave it standing; no beat stood
 /// whole between.
 #[test]
-fn pending_stands_through_its_own_beat() {
+fn pending_stands_through_beat() {
     let mut m = called_at_ten();
     assert_eq!(m.perceive(&percept(10, Arg::Count(10), vec![])).abandoned, None);
     assert_eq!(m.perceive(&percept(11, Arg::Count(11), vec![])).abandoned, None);

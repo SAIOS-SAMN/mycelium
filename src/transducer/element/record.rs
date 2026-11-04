@@ -69,7 +69,7 @@ impl Element {
         // alive; retiring it inverts the derivation, and the address is
         // what a word IS (law 2) rather than a summary of a byte run.
         //
-        // Written for every kind, because a residual's address is just as
+        // Written for every kind, because a residue's address is just as
         // much its name as a form's.
         let a = self.address();
         put_bytes(&mut out, a.as_bytes())?;
@@ -77,9 +77,9 @@ impl Element {
         // and not a zero length standing in for one. A form's content is a
         // cell complex and its key writes that complex out in full, so a
         // description beside it would be a second statement of the same
-        // object (law 12). Words, connections and residual chains keep
+        // object (law 12). Words, connections and residue chains keep
         // the field: for them the description IS the content, read by
-        // `letters`, `rewrite` and `residual` as the object itself.
+        // `letters`, `rewrite` and `residue` as the object itself.
         //
         // §10 — a layout change is a recut, and B7 is the recut.
         if a.tag() != Some(crate::transducer::address::TAG_FORM) {

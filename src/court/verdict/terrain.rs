@@ -3,10 +3,10 @@
 //! 54.5, A20 — THE TERRAIN AND THE CERTIFICATES: the speaker's claims about
 //! the complex, read against the geometry the court traversed.
 //!
-//! Split from `replay.rs` at the §1.1 1200-line reading bound when 78.153
+//! Split from `reconstruct.rs` at the §1.1 1200-line reading bound when 78.153
 //! metered them; the items are moved, and each gained its stroke.
 
-use super::replay::chord_orbits;
+use super::reconstruct::chord_orbits;
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::element::{self, Element};
@@ -129,21 +129,21 @@ fn terrain(
 /// The orbit's class key and rank before and after must match the tape.
 /// The orbit is reached by its chord's coordinates on each side (AT1), never
 /// by its position in either form's list.
-pub(crate) fn replay_certificates(
+pub(crate) fn reconstruct_certificates(
     f: &Form,
     certificates: &[crate::transducer::sentence::PivotCertificate],
     by_chord: &Keyed<crate::transducer::sentence::Orbit, crate::network::nerve::coord::Overlap>,
 ) -> Option<&'static str> {
-    match replay_certificates_from(f, certificates, by_chord, &mut Meter::Free, 0) {
+    match reconstruct_certificates_from(f, certificates, by_chord, &mut Meter::Free, 0) {
         Err(Cut::Refused(why)) => Some(why),
         Err(Cut::Spent(_)) | Ok(()) => None,
     }
 }
 
-/// 78.153 — [`replay_certificates`] on a meter: one read per certificate
+/// 78.153 — [`reconstruct_certificates`] on a meter: one read per certificate
 /// (each one a whole-form clone, a forest, two class vectors and two
 /// ranks), from the `from`-th of the envelope's order.
-pub(crate) fn replay_certificates_from(
+pub(crate) fn reconstruct_certificates_from(
     f: &Form,
     certificates: &[crate::transducer::sentence::PivotCertificate],
     by_chord: &Keyed<crate::transducer::sentence::Orbit, crate::network::nerve::coord::Overlap>,
@@ -163,15 +163,15 @@ pub(crate) fn replay_certificates_from(
         if !meter.spend() {
             return Err(Cut::Spent(i));
         }
-        if let Some(why) = certificate_replays(f, cert, by_chord) {
+        if let Some(why) = certificate_reconstructs(f, cert, by_chord) {
             return Err(Cut::Refused(why));
         }
     }
     Ok(())
 }
 
-/// One certificate of [`replay_certificates_from`].
-fn certificate_replays(
+/// One certificate of [`reconstruct_certificates_from`].
+fn certificate_reconstructs(
     f: &Form,
     cert: &crate::transducer::sentence::PivotCertificate,
     by_chord: &Keyed<crate::transducer::sentence::Orbit, crate::network::nerve::coord::Overlap>,

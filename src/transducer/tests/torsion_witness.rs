@@ -18,7 +18,7 @@ fn witness_thought_closes_on_cycle_and_names_open() {
         "the cycle's monodromy is proven, not assumed"
     );
     assert_eq!(total_winding(&ws), HolonomicValency::new(1, 3).0, "Σ windings, exact ℚ");
-    // An open orbit (σ leaves its domain) witnesses Open with the residual span.
+    // An open orbit (σ leaves its domain) witnesses Open with the residue span.
     let open = witness_cycle(&t, &[(1, 9)], 8);
     assert!(matches!(open, HolonomicOrbitWitness::Open { .. }), "no closure is never faked");
 }

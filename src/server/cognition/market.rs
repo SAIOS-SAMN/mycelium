@@ -67,7 +67,7 @@ impl Court {
     pub fn settle_solve(
         &mut self,
         voice: [u8; 32],
-        mu: [u64; 4],
+        mu: crate::economy::Mu,
         anchor: crate::economy::Anchor,
     ) -> crate::economy::Mu {
         self.treasury.settle_solve(voice, mu, anchor)
@@ -142,7 +142,7 @@ impl Court {
         // A CONNECTION arriving from an entity is listed as itself: it enters
         // the docket with its own magnitude as the deflation it claims, so
         // the court rules it (inversion, remainder, torsion) and the mesh
-        // pays it as a word, never as a copied pair. A residual word taught
+        // pays it as a word, never as a copied pair. A residue word taught
         // up is installed as before. A sentence is the same: Offered on the
         // docket so a second organ's replay installs it as language.
         if word.is_connection() || word.is_sentence() || word.is_rewrite() {
@@ -192,9 +192,8 @@ impl Court {
         deepened
     }
 
-    /// RECORD a settlement for the court, bounded by the reserve ceiling
-    /// (the oldest leaves when the docket is full and the court has not
-    /// pulled).
+    /// RECORD a settlement for the court; the oldest go cold once each one's
+    /// challenge window has closed (D2.5, D1.1), heard or not.
     pub fn record_settlement(
         &mut self,
         listing: crate::transducer::address::Address,
@@ -226,20 +225,17 @@ impl Court {
             after,
             at,
         });
-        // A court whose clock has not yet reached a full reserve of steps
-        // has nothing behind the floor to cool.
-        let Some(floor) = self.k_step().checked_sub(crate::physics::reserve_max()) else {
-            return;
-        };
+        // MU-DERIVATIONS D2.5 — A SETTLEMENT GOES COLD WHEN IT CAN NO LONGER
+        // BE CHALLENGED: once the challenge window opened at its height has
+        // closed at a sealed reach and return of every other keeper (D1.1,
+        // law version 5). A court with no other keeper closes no window, so
+        // its settlements stay until heard.
+        let head = self.chain.head_height();
         #[expect(
             clippy::disallowed_methods,
-            reason = "rule 15 — FIFO drain head: the settlements are pushed in K order and drained from the oldest"
+            reason = "rule 15 — FIFO drain head: the settlements are pushed in height order and drained from the oldest"
         )]
-        while self
-            .settlements
-            .first()
-            .is_some_and(|s| s.at.k < floor && s.at.k + 1 < self.k_step())
-        {
+        while self.settlements.first().is_some_and(|s| self.window_closed(s.at.h, head)) {
             let old = self.settlements.remove(0);
             self.settlements_cold.push(old);
         }
@@ -302,7 +298,7 @@ impl Court {
     /// magnitude of the listed demand at that address, or nothing.
     pub(super) fn record_deflation(&mut self, word: Address, listing: Address, own: [u64; 4]) {
         // The demand a percept settles is the listing of its whole chain;
-        // the word installed may be the residual after citations, so the
+        // the word installed may be the residue after citations, so the
         // deflation is read on the listing, then on the word itself. A germ
         // consilienced at this home from routed demands whose listing never
         // stood here (or was evicted) deflated at least its own measure —
@@ -340,18 +336,18 @@ impl Court {
     /// the book, and room stays the throttle on what voices utter.
     ///
     /// A task is listed one BODY at a time (20, 24.4 P6; S12.3a): each
-    /// connected piece of the residual is its own demand on its own body
+    /// connected piece of the residue is its own demand on its own body
     /// chart, so a body two tasks share is one listing on one stratum and a
     /// held word deflates it wherever it recurs. Listed whole, a task's
-    /// residual was a chain of several bodies with a chart no other task
+    /// residue was a chain of several bodies with a chart no other task
     /// shared — a thousand unrelated descriptions (I34). A body already
     /// speakable or already listed is not listed again; the intake answers
     /// whether anything new was.
-    pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> bool {
+    pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)], frame: &crate::transducer::element::Frame) -> bool {
         self.intake_prepared(&prepare_intake(chain, frame))
     }
 
-    /// THE COMMIT HALF OF THE INTAKE: pieces already read — each residual
+    /// THE COMMIT HALF OF THE INTAKE: pieces already read — each residue
     /// and its chart — listed under the court. The reading is
     /// `prepare_intake`'s and takes no lock: hypha b, ten minutes after
     /// boot, held its court in `intake → list → invariant_of` in seven
@@ -361,13 +357,13 @@ impl Court {
     /// piece listed here is copied.
     pub fn intake_prepared(&mut self, pieces: &[(Element, crate::transducer::stalk::Invariant)]) -> bool {
         let mut listed = false;
-        for (residual, chart) in pieces {
-            let address = residual.address();
+        for (residue, chart) in pieces {
+            let address = residue.address();
             if self.basis.contains(&address) || self.pending.contains(&address) {
                 continue; // already speakable or already listed
             }
             self.stamp_standing(address);
-            self.book_list_charted(residual.clone(), chart.clone());
+            self.book_list_charted(residue.clone(), chart.clone());
             listed = true;
         }
         listed
@@ -375,21 +371,21 @@ impl Court {
 }
 
 /// THE READING HALF OF THE INTAKE, with no court: the chain's pieces, each
-/// as its residual and its chart. A piece that cannot be addressed is a
+/// as its residue and its chart. A piece that cannot be addressed is a
 /// refusal that travels: never listed and never counted (U14).
 pub fn prepare_intake(
     chain: &[(i64, i64, u8, u8)],
-    frame: &crate::arc::Frame,
+    frame: &crate::transducer::element::Frame,
 ) -> Vec<(Element, crate::transducer::stalk::Invariant)> {
     if chain.is_empty() {
         return Vec::new();
     }
     crate::transducer::sentence::pieces(chain)
         .into_iter()
-        .filter_map(|body| element::from_residual_framed(&body, frame))
-        .map(|residual| {
-            let chart = crate::transducer::stalk::invariant_of(&residual);
-            (residual, chart)
+        .filter_map(|body| element::from_residue_framed(&body, frame))
+        .map(|residue| {
+            let chart = crate::transducer::stalk::invariant_of(&residue);
+            (residue, chart)
         })
         .collect()
 }

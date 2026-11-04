@@ -1,7 +1,7 @@
 // 78.155b — THE HYPHA SPONSORS A UNIVERSE'S PACKAGE: a manifest of nuclei per
 // Z answered by a grant from what the court has earned, never a mint.
 
-use crate::anastome::dialogue::domain::{decode_domain_request, DomainGenesis, DomainRequest, Founded, Origin, Reservation};
+use crate::anastome::dialogue::domain::{decode_domain_request, DomainGenesis, BigBangRecord, DomainRequest, Founded, Reservation};
 use crate::anastome::dialogue::endowment::{
     decode_endowment_reading, decode_grant_reply, encode_endowment_read, encode_endowment_reading, encode_grant_reply, encode_manifest, GrantRefusal, Granted, Manifest, SignedManifest,
 };
@@ -31,7 +31,7 @@ fn universe(origin: bool) -> Court {
     let r = Reservation { domain: verifying(&key(DOMAIN)), tier: verifying(&key(RESERVE)), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&key(DOMAIN))), Founded::Reserved { .. }));
     if origin {
-        let o = Origin { domain: verifying(&key(DOMAIN)), kind: 1, version: 1, commitment: [DOMAIN; 32], universe: None };
+        let o = BigBangRecord { domain: verifying(&key(DOMAIN)), kind: 1, version: 1, commitment: [DOMAIN; 32], universe: None };
         assert!(matches!(k.record_origin(&o.sign(&key(DOMAIN))), Founded::Originated { .. }));
     }
     k
@@ -152,13 +152,13 @@ fn growth_size_sums_closures_in_universe() {
     let mut k = universe(true);
     let domain = reserve_domain();
     assert_eq!(k.growth_size(&domain), Err(GrantRefusal::NoNewClosures), "no closure judged: no growth grant");
-    let rule = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)]).expect("a rule");
+    let rule = crate::transducer::element::from_residue(&vec![(0i64, 0i64, 1u8, 2u8)]).expect("a rule");
     let line = verifying(&key(47));
-    let _ = k.pay_solve(b"task-a", line, &rule, [3, 0, 2, 1], true);
+    let _ = k.pay_solve(b"task-a", line, &rule, [3, 0, 2, 1].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([3, 0, 2, 1]), "the closure's measured discharge, a line's key counting for its universe");
-    let _ = k.pay_solve(b"task-b", [0xee; 32], &rule, [9, 9, 9, 9], true);
+    let _ = k.pay_solve(b"task-b", [0xee; 32], &rule, [9, 9, 9, 9].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([3, 0, 2, 1]), "a key no domain names grows nothing here");
-    let _ = k.pay_solve(b"task-c", verifying(&key(RESERVE)), &rule, [1, 1, 0, 0], true);
+    let _ = k.pay_solve(b"task-c", verifying(&key(RESERVE)), &rule, [1, 1, 0, 0].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([4, 1, 2, 1]), "a second closure adds, exact per lane");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "clean restore");

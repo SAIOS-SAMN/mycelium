@@ -2,7 +2,7 @@
 // states, read off the pair forms and refused when the family does not
 // agree.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 use crate::transducer::stalk::Standing;
 
@@ -23,6 +23,7 @@ fn sections_short_of(rule: &crate::transducer::sentence::SentenceRule, frames: u
 /// 3, 4, 3 instances stay one class. A class in only some pairs is a section.
 #[test]
 fn extract_rule_with_groups_class_into_sections() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (squares(3, 1, 9), squares(3, 2, 9)),
     (squares(4, 1, 12), squares(4, 2, 12)),
@@ -65,6 +66,7 @@ assert!(
 /// refuses a motor that does not — never solving for one.
 #[test]
 fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
+    crate::transducer::raster::stand_on(0);
     let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
     let a = ["111000", "100000", "000000", "000000", "000550", "000000"];
     let b = ["001000", "111000", "000000", "000000", "000550", "000000"];
@@ -80,7 +82,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
         .collect();
     let [motor, ..] = motors.as_slice() else { panic!("the family's frame axis carries a motor overlap") };
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::common::budget()).is_none(),
+        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::fixtures::budget()).is_none(),
         "the measured motor carries the body across its frames"
     );
     let mut forged = rule.form.clone();
@@ -89,7 +91,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
         let q = |n: i64| num_rational::BigRational::from_integer(n.into());
         f.place.carriage = crate::transducer::cga::at_three::translator(&q(0), &q(1), &q(0));
     }
-    let refusal = crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::common::budget())
+    let refusal = crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::fixtures::budget())
         .expect("a forged frame-axis motor is refused by application, never admitted");
     // PARALLEL TRANSPORT (A.13): the refusal carries the curvature the claim
     // missed — the transport the fibre took, against the forged motor — and
@@ -111,6 +113,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
 /// passed unread, and a forged motor on it is refused.
 #[test]
 fn edges_rederive_frames_applies_motor_to_whole_fibre() {
+    crate::transducer::raster::stand_on(0);
     let a_in = ["110000", "000000", "110000", "000000"];
     let a_out = ["220000", "000000", "220000", "000000"];
     let b_in = ["011000", "000000", "011000", "000000"];
@@ -129,7 +132,7 @@ fn edges_rederive_frames_applies_motor_to_whole_fibre() {
         panic!("the two dominoes' chart steps between its frames: a motor overlap")
     };
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::common::budget()).is_none(),
+        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::fixtures::budget()).is_none(),
         "the measured motor carries the chart's two bodies onto its two bodies at the next frame"
     );
     let mut forged = rule.form.clone();
@@ -139,7 +142,7 @@ fn edges_rederive_frames_applies_motor_to_whole_fibre() {
         f.place.carriage = crate::transducer::cga::at_three::translator(&q(1), &q(0), &q(0));
     }
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::common::budget()).is_some(),
+        crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::fixtures::budget()).is_some(),
         "a forged motor on a chart of two bodies is refused, never passed unread"
     );
 }
@@ -239,6 +242,7 @@ assert!(!snaps.is_empty(), "the pivot orbit reads the held orbit and answers");
 /// closes the family and speaks a fourth frame.
 #[test]
 fn extract_rule_reads_translation_as_one_vertex() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
         (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
@@ -285,7 +289,7 @@ fn extract_rule_reaches_one_address_on_two_courts() {
     for rule in [&first, &second] {
         let word = mint_sentence(rule, &family, &NoCrystal, 0).expect("the family mints");
         assert_eq!(
-            crate::verdict::blind_replay_on(&word, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+            crate::verdict::reconstruct_blind_on(&word, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
             None,
             "and a court replays it on its own copy of the family"
         );
@@ -315,6 +319,7 @@ assert!(
 /// through A's class or A's gauge would be visible.
 #[test]
 fn rebase_keeps_rebased_body_hues_and_placement() {
+    crate::transducer::raster::stand_on(0);
 let letter = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
 let rot = crate::transducer::alphabet::Word::from_letters(&[(letter, false)]);
 // A is the single hue-1 compartment; B is the hue-3 bar, another shape.
@@ -332,7 +337,7 @@ let b = bodies
     .find(|b| b.compartments.iter().any(|c| c.hue == 3))
     .expect("body B");
 assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
-use crate::transducer::sentence::tests::common::FRAME;
+use crate::transducer::sentence::tests::fixtures::FRAME;
 let word_at = |w: &crate::transducer::alphabet::Word, chart: &Invariant, gauge: Vec<(u8, u8)>| {
     Vertex::word_on(
         crate::transducer::alphabet::Derivation::spelled(w.clone()),
@@ -473,6 +478,7 @@ fn acts_at(f: &Form, act: &[u8]) -> bool {
 /// A held closed form glued as a vertex: depth 1, fewer Word vertices.
 #[test]
 fn extract_rule_with_glues_held_form() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
     (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
@@ -487,11 +493,11 @@ let flat_words = flat
 let held_form = cipher_form(&family[0].0, &family[0].1);
 assert!(held_form.is_closed(), "a pair form of a shift coheres");
 let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
-struct Held {
+struct CitedForm {
     e: Element,
     f: Form,
 }
-impl Crystal for Held {
+impl Crystal for CitedForm {
     fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         vec![(&self.e, &self.f, Standing::Held)]
     }
@@ -507,7 +513,7 @@ impl Crystal for Held {
     fn speak_form(
         &self,
         f: &Form,
-        x: &Grid,
+        x: &SectionSample,
         placement: &crate::transducer::alphabet::Word,
     ) -> Option<Speech> {
         apply_form(f, x, placement, self)
@@ -542,7 +548,7 @@ impl Crystal for Held {
         Vec::new()
     }
 }
-let crystal = Held {
+let crystal = CitedForm {
     e: held_e,
     f: held_form,
 };
@@ -644,7 +650,7 @@ fn glue_speaks_once_per_placement_and_chart() {
                 false => Vec::new(),
             }
         }
-        fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+        fn speak_form(&self, f: &Form, x: &SectionSample, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
             self.speeches.set(self.speeches.get() + 1);
             apply_form(f, x, placement, self)
         }
@@ -703,11 +709,11 @@ fn by_address_returns_citation_without_cloning() {
     assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
     let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
 
-    struct Held {
+    struct CitedForm {
         e: Element,
         f: Form,
     }
-    impl Crystal for Held {
+    impl Crystal for CitedForm {
         fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
             vec![(&self.e, &self.f, Standing::Held)]
         }
@@ -720,7 +726,7 @@ fn by_address_returns_citation_without_cloning() {
                 false => Vec::new(),
             }
         }
-        fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+        fn speak_form(&self, f: &Form, x: &SectionSample, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
             apply_form(f, x, placement, self)
         }
         fn by_address(&self, address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
@@ -737,7 +743,7 @@ fn by_address_returns_citation_without_cloning() {
             Vec::new()
         }
     }
-    let crystal = Held { e: held_e, f: held_form };
+    let crystal = CitedForm { e: held_e, f: held_form };
 
     // A CITATION IS NEVER CLONED: the reader hands back the crystal's own
     // form, and `ptr::eq` is the whole question — a clone would be a
@@ -759,10 +765,11 @@ fn by_address_returns_citation_without_cloning() {
     assert!(cited > 0, "the bar's shift, which reproduces the family, is cited");
 }
 
-/// A withheld remainder is a listing chain: from_residual reads it,
-/// so the residual path can mint against the book.
+/// A withheld remainder is a listing chain: from_residue reads it,
+/// so the residue path can mint against the book.
 #[test]
 fn form_deflation_leaves_listing_shaped_remainders() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1"]), grid(&["2"])),
     (grid(&["10"]), grid(&["23"])),
@@ -776,11 +783,11 @@ assert!(
     "a withheld form leaves at least one remainder chain"
 );
 for r in listings {
-    let e = element::from_residual(r).expect("a listing chain is A5's");
+    let e = element::from_residue(r).expect("a listing chain is A5's");
     assert_eq!(
         e.sub().len(),
         r.len(),
-        "the remainder is a listing chain the residual path speaks"
+        "the remainder is a listing chain the residue path speaks"
     );
 }
 }
@@ -789,6 +796,7 @@ for r in listings {
 /// nothing and a new generation re-extracts.
 #[test]
 fn extract_rule_cached_spends_once_per_generation() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
 let fam = b"fam";
 let mut cache = ExtractMemo::new();
@@ -827,6 +835,7 @@ assert!(budget.remaining() < left, "a new atlas generation re-extracts");
 /// handing back another family's rule.
 #[test]
 fn extract_memo_replaces_rule_on_second_family() {
+    crate::transducer::raster::stand_on(0);
     let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
     let two = vec![(grid(&["0011", "0000"]), grid(&["0033", "0000"]))];
     let atlas = crate::transducer::address::Address::from(vec![1]);
@@ -857,6 +866,7 @@ fn extract_memo_replaces_rule_on_second_family() {
 /// end on the other pair is not a constancy violation.
 #[test]
 fn extract_rule_keeps_star_face_of_some_pair_class() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
@@ -905,6 +915,7 @@ assert!(
 /// A class present in some pairs is a section.
 #[test]
 fn extract_rule_reads_some_pair_class_as_section() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
     (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
@@ -923,6 +934,7 @@ assert!(
 /// 1→2 are one class; frames of different sizes match by kind.
 #[test]
 fn extract_rule_corresponds_by_transport_class_not_shape() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "1100"]), grid(&["2200", "2200"])),
     (grid(&["1110", "0000"]), grid(&["2220", "0000"])),
@@ -951,6 +963,7 @@ assert!(
 /// maps are two sections, not two classes.
 #[test]
 fn extract_rule_shares_one_vertex_across_recolours() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["1100", "0000"]), grid(&["2200", "0000"])),
     (grid(&["1100", "0000"]), grid(&["3300", "0000"])),
@@ -1028,6 +1041,7 @@ assert_eq!(
 /// recovery it owed before.
 #[test]
 fn cipher_form_reads_meeting_hues_as_one_body() {
+    crate::transducer::raster::stand_on(0);
 let family = vec![
     (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
     (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
@@ -1241,7 +1255,7 @@ fn mint_sentence_why_mints_mirrored_pair_as_derivable() {
     // The pair's transport is the reflection itself — odd — read exactly.
     let la = crate::transducer::blade::shape_of(&[(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let jb = crate::transducer::blade::shape_of(&[(0i64, 1i64, 0i64), (1, 1, 0), (2, 1, 0), (2, 0, 0)]);
-    let v = crate::transducer::blade::versor_between(&la, &jb, &mut super::common::budget()).expect("a versor carries the L onto its mirror");
+    let v = crate::transducer::blade::versor_between(&la, &jb, &mut super::fixtures::budget()).expect("a versor carries the L onto its mirror");
     assert_eq!(v.parity(), Some(true), "and it is odd: the mirror, never a turn at an angle no lattice turns");
     let form = crate::transducer::sentence::from_element_form(&word).expect("the form the court holds");
     let rotors: Vec<crate::transducer::alphabet::Rotor> = form
@@ -1253,7 +1267,7 @@ fn mint_sentence_why_mints_mirrored_pair_as_derivable() {
         })
         .collect();
     assert!(!rotors.is_empty(), "the minted form carries its word vertices");
-    let epi = crate::client::sdk::Epigenome::new();
+    let epi = crate::client::sdk::MindLanguage::new();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
     for r in &rotors {
         assert_eq!(

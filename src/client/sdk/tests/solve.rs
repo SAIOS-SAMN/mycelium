@@ -5,12 +5,12 @@
 
 use crate::client::sdk::*;
 
-fn grid(rows: &[&str]) -> Vec<Vec<u8>> {
+fn grid(rows: &[&str]) -> crate::transducer::spelled::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
 /// The domino painted 2 and carried two columns right, on two rows.
-fn family() -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
+fn family() -> Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> {
     vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0022"])),
@@ -21,12 +21,13 @@ fn family() -> Vec<(crate::arc::Grid, crate::arc::Grid)> {
 /// train it does not speak is refused at home, as the court would refuse it.
 #[test]
 fn judge_on_keeps_home_solve_train_refutes() {
+    crate::transducer::raster::stand_on(0);
     let train = family();
     let rule = crate::transducer::family::extract_rule(&train, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
     let spoken = crate::transducer::family::mint_sentence(&rule, &train, &crate::transducer::family::NoCrystal, 0)
         .expect("and mints");
-    use crate::client::sdk::entity::perceive::{judge_on, Judge, Reading, Scene, Verdict};
+    use crate::client::sdk::mind::perceive::{judge_on, Judge, SceneKind, Scene, HomeCheck};
     let entity = Mind::open("127.0.0.1:1", Voice::named("solver"));
     let outs = vec![grid(&["0000", "0000"])];
     // NO RULE: nothing is read, nothing sent — the home check reads a minted
@@ -39,8 +40,14 @@ fn judge_on_keeps_home_solve_train_refutes() {
         (grid(&["1100", "0000"]), grid(&["1100", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "1100"])),
     ];
-    let judge = Judge { scene: Scene { id: task.to_vec(), train: other, tests: Vec::new(), reading: Reading::Task }, outputs: outs, rule: spoken };
-    assert!(matches!(judge_on(&entity.epigenome, &judge), Verdict::Kept(crate::client::sdk::entity::perceive::Stop::Uncrossed)), "refuted at home: it cannot be re-minted without its own pairs");
+    // Spoken under the fixture's ground, 0, which the claim states.
+    let judge = Judge {
+        scene: Scene { id: task.to_vec(), train: other, tests: Vec::new(), reading: SceneKind::Task },
+        outputs: outs,
+        rule: spoken,
+        ground: crate::transducer::family::transduce::Ground::One(0),
+    };
+    assert!(matches!(judge_on(&entity.language, &judge), HomeCheck::Kept(crate::client::sdk::mind::perceive::Stop::Uncrossed)), "refuted at home: it cannot be re-minted without its own pairs");
 }
 
 /// 78.158a U4 — THE SEAT'S SOLVE IS THE MIND'S OWN CALL. Told it called fn

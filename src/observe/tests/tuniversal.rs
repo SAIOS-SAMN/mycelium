@@ -1,19 +1,20 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// 78.152 — A COURT'S TUNIVERSAL STANDING TRAVELS EXACTLY: three keepers
 /// exchange readings, the observer reads one court's keepers off them, and
-/// the Court reading carrying that standing — and a hand-built residual
+/// the Court reading carrying that standing — and a hand-built residue
 /// with signed lanes at the lane carrier's ends — reads back as itself.
 #[test]
 fn tstanding_round_trips_and_refuses_other_version() {
-    use crate::chronometry::tuniversal::{Edge, Keepers, Origin, Residual, TPoint, Tick};
+    use crate::chronometry::tuniversal::{Edge, Keepers, Origin, Residue, TPoint, Tick};
     use ed25519_dalek::SigningKey;
     let origin = Origin { genesis: [0x6a; 32], epoch: 146 };
     let keys = [1u8, 2, 3].map(|n| SigningKey::from_bytes(&[n; 32]));
     let vks = keys.clone().map(|k| k.verifying_key().to_bytes());
     let mut courts = vks.map(|v| Keepers::new(origin, v));
-    let tick = |h, lanes, k| Tick { h, lanes, k };
+    let tick = |h, lanes: [u64; 4], k| Tick { h, lanes: lanes.into(), k };
+    let q = |n: i64, d: i64| crate::core::Q::new(n.into(), d.into());
     let hear = |courts: &mut [Keepers; 3], to: usize, from: usize| {
         let ring = courts[from].own_ring();
         courts[to].admit(vks[from], ring).expect("the ring admits");
@@ -27,32 +28,34 @@ fn tstanding_round_trips_and_refuses_other_version() {
     // c's view: a final at 10 on b's citation, b at 12 on c's, c cited by
     // nobody; the door's point the greatest final.
     let seen = keepers_seen(&courts[2]);
-    let a10 = TPoint { origin, h: 10, lanes: [4, 0, 0, 0], k: 1 };
-    let b12 = TPoint { origin, h: 12, lanes: [0, 5, 0, 0], k: 3 };
+    let a10 = TPoint { origin, h: 10, lanes: [4, 0, 0, 0].into(), k: 1 };
+    let b12 = TPoint { origin, h: 12, lanes: [0, 5, 0, 0].into(), k: 3 };
     let of = |v: [u8; 32]| seen.iter().find(|s| s.key == v).cloned().expect("the keeper is seen");
     assert_eq!(seen.len(), 3);
     assert_eq!(seen.iter().filter(|s| s.own).map(|s| s.key).collect::<Vec<_>>(), [vks[2]]);
-    assert_eq!(of(vks[0]), KeeperSeen { key: vks[0], own: false, newest: Some(tick(10, [4, 0, 0, 0], 1)), final_of: Some(a10) });
-    assert_eq!(of(vks[1]), KeeperSeen { key: vks[1], own: false, newest: Some(tick(12, [0, 5, 0, 0], 3)), final_of: Some(b12) });
+    assert_eq!(of(vks[0]), KeeperSeen { key: vks[0], own: false, newest: Some(tick(10, [4, 0, 0, 0], 1)), final_of: Some(a10.clone()) });
+    assert_eq!(of(vks[1]), KeeperSeen { key: vks[1], own: false, newest: Some(tick(12, [0, 5, 0, 0], 3)), final_of: Some(b12.clone()) });
     assert_eq!(of(vks[2]), KeeperSeen { key: vks[2], own: true, newest: Some(tick(14, [0, 0, 6, 0], 2)), final_of: None });
     assert_eq!(courts[2].final_point(), Some(b12));
-    let read = TStanding { final_point: courts[2].final_point(), advances: 2, keepers: seen, residual: courts[2].residual() };
-    // A residual measured on all three edges, signed, at the carrier's ends.
+    let read = TStanding { final_point: courts[2].final_point(), advances: 2, keepers: seen, residue: courts[2].residue() };
+    // A residue measured on all three edges, signed and holding shares of
+    // a unit, beside a point at the tick carrier's end.
+    let lanes = crate::economy::Mu::of([q(i64::MAX, 1), q(0, 1), q(1, 900), q(7, 30)]).expect("non-negative");
     let built = TStanding {
-        final_point: Some(TPoint { origin, h: u64::MAX, lanes: [u64::MAX, 0, 1, 2], k: 7 }),
+        final_point: Some(TPoint { origin, h: u64::MAX, lanes, k: 7 }),
         advances: u64::MAX,
         keepers: vec![KeeperSeen { key: party(4), own: true, newest: None, final_of: None }],
-        residual: Residual {
+        residue: Residue {
             edges: vec![
-                Edge { from: party(4), to: party(5), h: 20, delta: [-3, 5, 0, i128::MIN] },
-                Edge { from: party(5), to: party(6), h: 21, delta: [i128::MAX, -1, 2, 0] },
-                Edge { from: party(4), to: party(6), h: 20, delta: [1, 1, -1, 0] },
+                Edge { from: party(4), to: party(5), h: 20, delta: [q(-3, 1), q(5, 2), q(0, 1), q(i64::MIN, 1)] },
+                Edge { from: party(5), to: party(6), h: 21, delta: [q(i64::MAX, 1), q(-1, 900), q(2, 1), q(0, 1)] },
+                Edge { from: party(4), to: party(6), h: 20, delta: [q(1, 1), q(1, 1), q(-1, 1), q(0, 1)] },
             ],
-            holonomy: Some([-4, 3, 3, -9]),
+            holonomy: Some([q(-4, 1), q(3, 2), q(3, 1), q(-9, 1)]),
         },
     };
     for standing in [read, built, TStanding::default()] {
-        let court = Reading::Court(Box::new(Court { k: 5, tuniversal: standing.clone(), ..Default::default() }));
+        let court = Reading::Court(Box::new(CourtReading { k: 5, tuniversal: standing.clone(), ..Default::default() }));
         let mut wire = Vec::new();
         court.put(&mut wire).expect("the court writes");
         let mut at = 0;

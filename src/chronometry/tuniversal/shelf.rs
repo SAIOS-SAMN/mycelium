@@ -8,8 +8,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Condvar, Mutex};
 
 /// What the shelf holds under its lock.
-#[derive(Debug, Default, Clone, Copy)]
-struct Held {
+#[derive(Debug, Default, Clone)]
+struct ShelfState {
     /// The greatest point final in this door's view (TU-3).
     final_point: Option<TPoint>,
     /// The greatest point a speaker CARRIED in on a frame (TU-7): a claim the
@@ -22,7 +22,7 @@ struct Held {
 /// THE SHELF. A watchdog or the court loop reads it without the court.
 #[derive(Debug, Default)]
 pub struct TShelf {
-    held: Mutex<Held>,
+    held: Mutex<ShelfState>,
     moved: Condvar,
     /// How many times the final point advanced: the count a hold is
     /// measured in (TU-7), read without the shelf's lock.
@@ -41,10 +41,10 @@ impl TShelf {
         TShelf::default()
     }
 
-    fn held(&self) -> Held {
+    fn held(&self) -> ShelfState {
         match self.held.lock() {
-            Ok(h) => *h,
-            Err(p) => *p.into_inner(),
+            Ok(h) => h.clone(),
+            Err(p) => p.into_inner().clone(),
         }
     }
 
@@ -143,7 +143,7 @@ impl TShelf {
             Ok(h) => h,
             Err(e) => e.into_inner(),
         };
-        let moved = |h: &Held| h.acts != seen.acts || self.advances() != seen.advances;
+        let moved = |h: &ShelfState| h.acts != seen.acts || self.advances() != seen.advances;
         // Released before the shelf is read again: on waking, or at once
         // where something already moved.
         match moved(&guard) {

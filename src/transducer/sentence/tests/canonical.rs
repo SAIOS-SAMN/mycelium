@@ -4,7 +4,7 @@
 // vertex address, the certificate key — is the same bytes for every λ, so a
 // differing key is a differing object and never a differing derivation.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::{self};
 use crate::transducer::element::{self, same_versor};
 use crate::transducer::sentence::*;

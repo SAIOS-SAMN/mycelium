@@ -35,7 +35,7 @@
     reason = "D1 2026-09-19: the standing reading's pull and mint times; law 9 binds kernels and this is an instrument"
 )]
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::{extract_rule_on, extraction_spend, mint_sentence, perceive_family};
 use std::time::Instant;
 
@@ -61,13 +61,13 @@ fn stem_of(file: &str) -> &str {
 
 /// Stand the mind on `slice`, then pull `name` under the voice's budget.
 pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     let mut physics = mycelium::physics::Physics::default();
     let mut stood = 0u64;
     let stand_start = Instant::now();
     for (k, file) in slice.iter().enumerate() {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         // THE MARKER A TRACE LINE IS GROUPED UNDER, written in the shape a
         // voice writes it so `scripts/timeline` reads one renderer for
         // both streams. It goes to stderr, where the traces are: a marker
@@ -94,8 +94,8 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     let probe_reserve = physics.reserve.lanes();
     let probe_stroke = physics.stroke().remaining();
     println!(
-        "  regime physics reserve {probe_reserve:?} | stroke {probe_stroke} | reserve_max {} spend_unit {}",
-        mycelium::physics::reserve_max(),
+        "  regime physics reserve {probe_reserve:?} | stroke {probe_stroke} | capacity {} spend_unit {}",
+        mycelium::physics::capacity(),
         mycelium::physics::spend_unit()
     );
     println!(
@@ -109,12 +109,12 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     // census the shed's filter, so the term that rejects is measured and
     // not named from one family.
     {
-        use mycelium::transducer::bubble::contemplation::Contemplation;
+        use mycelium::transducer::field::contemplation::Contemplation;
         let mut hold = Contemplation::new();
         let mut held = 0u64;
         for file in slice {
-            let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
-            let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+            let Ok(posted) = std::fs::read(format!("{dir}/{file}")) else { continue };
+            let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
             let frames = perceive_family(&task.train);
             let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
             let Some(r) = extract_rule_on(&task.train, &frames, &epi, &mut b) else { continue };
@@ -131,7 +131,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             epi.working_word(a).and_then(|h| mycelium::transducer::cech::section_of(h.element()))
         };
         // COLUMN 2 — THE VOICE'S OWN STROKE, not a million. `expand_ideas`
-        // passes `physics.stroke()`, so that is what the deployment's bubbles
+        // passes `physics.stroke()`, so that is what the deployment's wells
         // are expanded under; a reading at a million says nothing about
         // whether a voice finishes.
         let mut voiced = physics.stroke();
@@ -168,19 +168,19 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             c[0], c[1], c[2], c[3]
         );
         println!("    budget left {} of {}", b.remaining(), 1u32 << 20);
-        // COLUMN 1 — DEAD PINS. A citing bubble is held by `glues`; is what
+        // COLUMN 1 — DEAD PINS. A citing well is held by `glues`; is what
         // it cites still standing? Live means the mind holds the word, or a
-        // bubble stands at that address. Neither is a count compared to a
+        // well stands at that address. Neither is a count compared to a
         // number: each pin is asked at its own coordinate.
         let (mut pinned, mut live_pins, mut dead_pins, mut all_dead) = (0u64, 0u64, 0u64, 0u64);
-        for (_, bub) in hold.bubbles.scoped() {
-            if bub.glues.is_empty() {
+        for (_, well) in hold.wells.scoped() {
+            if well.glues.is_empty() {
                 continue;
             }
             pinned += 1;
             let (mut l, mut d) = (0u64, 0u64);
-            for (addr, ()) in bub.glues.scoped() {
-                let held = epi.working_word(&addr).is_some() || hold.bubbles.get(&addr).is_some();
+            for (addr, ()) in well.glues.scoped() {
+                let held = epi.working_word(&addr).is_some() || hold.wells.get(&addr).is_some();
                 if held {
                     l += 1;
                 } else {
@@ -194,18 +194,18 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
             }
         }
         println!(
-            "    pins: citing bubbles {pinned} | pins live {live_pins} dead {dead_pins} | \
-             bubbles whose every pin is dead {all_dead}"
+            "    pins: citing wells {pinned} | pins live {live_pins} dead {dead_pins} | \
+             wells whose every pin is dead {all_dead}"
         );
         println!("  regime slice shed_unglued retired {}", hold.shed_unglued());
     }
 
     let path = format!("{dir}/{name}");
-    let Ok(json) = std::fs::read_to_string(&path) else {
+    let Ok(posted) = std::fs::read(&path) else {
         eprintln!("  regime refused: {path} does not read");
         std::process::exit(1);
     };
-    let Some(task) = mycelium::arc::parse_task(&json) else {
+    let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else {
         eprintln!("  regime refused: {path} is not a task");
         std::process::exit(1);
     };
@@ -242,7 +242,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     // A leak is a number that does not come back down across repeats of
     // one pull, and one pull cannot show that whatever it reads.
     {
-        use mycelium::transducer::bubble::contemplation::Contemplation;
+        use mycelium::transducer::field::contemplation::Contemplation;
         // WHERE THE FIRST HOLD'S BYTES GO, component by component, so the
         // fix is aimed at a measurement and not at a guess.
         {

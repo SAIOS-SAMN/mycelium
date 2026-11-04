@@ -6,7 +6,7 @@
 //! rtt an aperture holds is a stroke count.
 
 use crate::Mesh;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
@@ -32,15 +32,38 @@ fn note_pointed(s: &TcpStream, pointed: bool) {
     let (Ok(at), Ok(mut held)) = (s.peer_addr(), POINTED.lock()) else { return };
     held.retain(|a| *a != at);
     if pointed {
-        // A connection read and never answered leaves its entry: the book
-        // keeps at most the reflex pool's worth of speakers waiting at once
-        // (a full reserve of polls), the oldest let go first.
-        let Ok(bound) = usize::try_from(mycelium::physics::reserve_max()) else { return };
-        while !held.is_empty() && held.len() >= bound {
-            held.remove(0);
+        if let Err(why) = admit_pointed(&mut held, at, mycelium::physics::sealed().map(|c| c.memory())) {
+            eprintln!("  pointed connection from {at} refused: {why:?}");
         }
-        held.push(at);
     }
+}
+
+/// WHY A POINTED CONNECTION WAS NOT KEPT (MU-DERIVATIONS D2.5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PointedRefusal {
+    /// The process sealed no memory to hold the book against.
+    Unsealed,
+    /// Keeping it would hold `held` bytes, past the process's memory.
+    PastMemory { held: Option<u64> },
+}
+
+/// KEEP AN UNANSWERED POINTED CONNECTION while the book's held bytes fit
+/// the process's memory `M_proc` (D2.5 (a)); a connection past that is
+/// refused by name and the book is left as it stood, never an entry let go
+/// to make room.
+pub(crate) fn admit_pointed(
+    held: &mut Vec<std::net::SocketAddr>,
+    at: std::net::SocketAddr,
+    memory: Option<mycelium::physics::Memory>,
+) -> Result<(), PointedRefusal> {
+    let memory = memory.ok_or(PointedRefusal::Unsealed)?;
+    let entries = u64::try_from(held.len()).ok().and_then(|n| n.checked_add(1));
+    let bytes = entries.and_then(|n| n.checked_mul(std::mem::size_of::<std::net::SocketAddr>() as u64));
+    if !memory.holds(bytes) {
+        return Err(PointedRefusal::PastMemory { held: bytes });
+    }
+    held.push(at);
+    Ok(())
 }
 
 /// Whether this connection's speaker carried a point, its entry let go: one
@@ -52,7 +75,7 @@ fn spoke_pointed(s: &TcpStream) -> bool {
     was
 }
 
-pub(crate) fn answer(s: &mut TcpStream, frame: Frame) {
+pub(crate) fn answer(s: &mut TcpStream, frame: WireFrame) {
     let _ = answer_written(s, frame);
 }
 
@@ -62,11 +85,11 @@ pub(crate) fn answer(s: &mut TcpStream, frame: Frame) {
 /// is never silent there (2026-10-08). A LOWER BOUND: a reply written just
 /// after the asker closed can still land in the socket's buffer and read as
 /// written, so `unwritten` counts the misses the wire refused, not all.
-pub(crate) fn answer_written(s: &mut TcpStream, frame: Frame) -> bool {
+pub(crate) fn answer_written(s: &mut TcpStream, frame: WireFrame) -> bool {
     // 78.152 TU-7: a reply carries this door's final point where the speaker
     // carried one (`note_pointed`); otherwise it is the frame it always was.
     let point = match spoke_pointed(s) {
-        true => crate::tshelf::final_point(),
+        true => crate::tuniversal::final_point(),
         false => None,
     };
     match frame.encode_at(point.as_ref()) {
@@ -81,11 +104,11 @@ pub(crate) fn answer_written(s: &mut TcpStream, frame: Frame) -> bool {
     }
 }
 
-pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
+pub(crate) fn read_frame(s: &mut TcpStream) -> Option<WireFrame> {
     let mut head = [0u8; 5];
     s.read_exact(&mut head).ok()?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::LEN {
+    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::TRAILER_MAX {
         // REFUSED BY NAME, NOT DROPPED (78.125): the frame names a body past
         // the wire's one budget. Its body is never read — a length is no
         // licence to allocate — but the act is answered refused before the
@@ -93,11 +116,11 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
         // A lane byte that names no lane is answered on the spatial lane.
         let lane = match mycelium::network::wire::read_lane(head[0]) {
             Some((l, _)) => l,
-            None => mycelium::network::wire::Stratum::Spatial,
+            None => mycelium::network::wire::Lane::Spatial,
         };
         let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
         let body = mycelium::anastome::dialogue::encode_outcome(mycelium::cognition::outcome_code(&refused), 0, &[0; 4]);
-        answer(s, Frame { lane, body });
+        answer(s, WireFrame { lane, body });
         return None;
     }
     let mut buf = vec![0u8; 5 + len];
@@ -105,14 +128,14 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     s.read_exact(&mut buf[5..]).ok()?;
     // 78.152 TU-7: the point the speaker carried is heard at the door as the
     // frame is read, beside the published reading and outside the court.
-    let (frame, point, _) = Frame::decode_at(&buf)?;
+    let (frame, point, _) = WireFrame::decode_at(&buf)?;
     // A SPEAKER THAT CARRIED A POINT IS ANSWERED WITH ONE; one that carried
     // none is answered as it spoke. A kernel still on a mycelium before 78.152
     // refuses a pointed frame whole, so the door's point rides only to a
     // speaker that showed it reads one (2026-10-09: each kernel re-vendors on
     // its own time, and the hyphae must not cut them off meanwhile).
     note_pointed(s, point.is_some());
-    crate::tshelf::heard_at_door(point);
+    crate::tuniversal::heard_at_door(point);
     Some(frame)
 }
 
@@ -289,9 +312,9 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> O
     // very sites B6 exists to remove. A socket cannot be handed a stroke,
     // so the READ is budgeted instead: non-blocking, one spend per attempt,
     // refused when the transport's own deadline is spent.
-    let frame = Frame { lane: mycelium::network::wire::Stratum::Spatial, body };
+    let frame = WireFrame { lane: mycelium::network::wire::Lane::Spatial, body };
     // 78.152 TU-7: a court's act to a peer carries its door's final point.
-    s.write_all(&frame.encode_at(crate::tshelf::final_point().as_ref())?).ok()?;
+    s.write_all(&frame.encode_at(crate::tuniversal::final_point().as_ref())?).ok()?;
     s.set_nonblocking(true).ok()?;
     let mut head = [0u8; 5];
     // THE ROUND TRIP IS MEASURED HERE (45.4, W9b): the strokes this court
@@ -304,7 +327,7 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> O
     let rtt = std::num::NonZeroU64::new(read_budgeted(&mut s, &mut head, stall)?)?;
     let (_, pointed) = mycelium::network::wire::read_lane(head[0])?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::LEN {
+    if len > mycelium::network::wire::BODY_BUDGET + mycelium::chronometry::tuniversal::TPoint::TRAILER_MAX {
         return None;
     }
     let mut reply = vec![0u8; len];
@@ -312,7 +335,7 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> O
     // The peer door's final point leaves the body: a claim of that door, read
     // as heard here — this court's final point is its own keepers' quorum.
     let (reply, point) = mycelium::network::wire::split_point(reply, pointed)?;
-    crate::tshelf::shelf().heard_at_door(point);
+    crate::tuniversal::shelf().heard_at_door(point);
     Some((reply, rtt))
 }
 
@@ -406,6 +429,18 @@ pub(crate) fn exchange_due(last_asked: Option<u64>, k_now: u64, lambda: Option<u
             k_now.checked_sub(last).is_some_and(|gap| gap >= u64::from(mycelium::physics::aperture_cycle()))
         }
     }
+}
+
+/// WHETHER A QUIET PEER IS ASKED AGAIN (MU-DERIVATIONS D2.5; 78.43, time is
+/// distance along an orbit), a predicate at the wire boundary (§2.3):
+/// never asked, or the TUniversal final point has advanced since the last
+/// ask, which follows the peer's last answer. `asked_at` is the count of the
+/// final point's advances read at that ask, `advances` the count now. An
+/// idle network stays quiet, and a moving one is heard at the rate it
+/// moves; no constant and no backoff enter. A silent peer is not asked
+/// again while the network is still, either.
+pub(crate) fn quiet_due(asked_at: Option<u64>, advances: u64) -> bool {
+    asked_at.is_none_or(|at| advances > at)
 }
 
 /// The floor of the last aperture of measured round trips to a peer.

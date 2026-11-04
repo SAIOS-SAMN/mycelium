@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// MU-CLIENT §5.3, §5.5 — A MIND'S READING AND A COURT'S AGREEMENTS travel
 /// whole, the agreements' deviations exact rationals lane by lane, and a mind's
@@ -7,7 +7,7 @@ use super::common::*;
 #[test]
 fn mind_round_trips_with_agreements() {
     let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
-    let mind = Mind {
+    let mind = MindReading {
         k: 9,
         heard: 4,
         understood: 3,

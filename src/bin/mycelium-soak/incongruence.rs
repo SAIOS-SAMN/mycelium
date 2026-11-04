@@ -6,7 +6,7 @@
 // moved — and the core judged by the plane: replayed on every reading's input
 // body, it reproduces the output or it does not. Data; nothing is decided.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::incongruence::{contrast, difference, manifold, relative, reproduces, Cell};
 use mycelium::transducer::family::{extract_rule_with, form_deflation, perceive};
 
@@ -15,14 +15,14 @@ const STROKE: usize = 1 << 20;
 
 /// One reading of a subject: its input and output bodies, its relative
 /// difference, and its light's runs.
-type Reading = (Vec<Cell>, Vec<Cell>, mycelium::transducer::family::incongruence::Relative, Vec<(u64, bool)>);
+type SubjectBodies =(Vec<Cell>, Vec<Cell>, mycelium::transducer::family::incongruence::Relative, Vec<(u64, bool)>);
 
 fn cells(b: &mycelium::transducer::family::Body) -> Vec<Cell> {
     b.compartments.iter().filter_map(|l| Some((l.site.axis(0)?, l.site.axis(1)?, l.hue))).collect()
 }
 
 pub(crate) fn report(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let (mut changes, mut kinematic, mut accreted, mut extinguished, mut recoloured, mut on_light, mut carved) = (0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64);
     let (mut subjects, mut solo, mut multi) = (0u64, 0u64, 0u64);
     let (mut judged, mut reproduced, mut subjects_whole) = (0u64, 0u64, 0u64);
@@ -32,8 +32,8 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     let (mut c_shared, mut c_first, mut c_second) = (0u64, 0u64, 0u64);
     let (mut tasks_whole, mut tasks_judged) = (0u64, 0u64);
     for name in names {
-        let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
-        let Some(task) = mycelium::arc::parse_task(&json) else { continue };
+        let Ok(posted) = std::fs::read(format!("{dir}/{name}")) else { continue };
+        let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         let mut physics = mycelium::physics::Physics::default();
         let mut budget = physics.stroke_n(STROKE);
         let Some(rule) = extract_rule_with(&task.train, &empty, &mut budget) else { continue };
@@ -42,9 +42,9 @@ pub(crate) fn report(dir: &str, names: &[String]) {
             continue;
         }
         // Readings by subject: the input body's chart, its key the coordinate.
-        let mut by_subject: Vec<(Vec<u8>, Vec<Reading>)> = Vec::new();
+        let mut by_subject: Vec<(Vec<u8>, Vec<SubjectBodies>)> = Vec::new();
         for ((x, y), rem) in task.train.iter().zip(&rems) {
-            if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
+            if x.extents() != y.extents() {
                 continue;
             }
             let unsaid: Vec<(i64, i64)> = rem.iter().filter(|l| l.3 != 0).map(|l| (l.0, l.1)).collect();

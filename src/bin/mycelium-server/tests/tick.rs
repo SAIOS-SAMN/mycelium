@@ -2,12 +2,12 @@
 // reading is signed in the court loop with no digest asked, and a peer's ring
 // pushed as ACT_TICK is heard at the door with no court.
 
-use crate::tshelf::{hear_tick, sign_tick, TickRefusal};
+use crate::tuniversal::{hear_tick, sign_tick, TickRefusal};
 use crate::Mesh;
 use ed25519_dalek::SigningKey;
 use mycelium::anastome::dialogue::encode_tick;
 use mycelium::chronometry::tuniversal::{Admitted, Keepers, Origin, TPoint, Tick};
-use mycelium::network::nerve::{Cover, Keyed};
+use mycelium::network::nerve::{HomeTrie, Keyed};
 use std::sync::{Arc, Mutex};
 
 const GENESIS: [u8; 32] = [0x6b; 32];
@@ -15,7 +15,7 @@ const EPOCH: u32 = 152;
 
 fn mesh(sk: &SigningKey) -> Mesh {
     Mesh {
-        cover: Arc::new(Mutex::new(Cover::new())),
+        cover: Arc::new(Mutex::new(HomeTrie::new())),
         rooms: Arc::new(Mutex::new(Keyed::new())),
         addrs: Arc::new(Mutex::new(Keyed::new())),
         vk: sk.verifying_key().to_bytes(),
@@ -32,7 +32,7 @@ fn mesh(sk: &SigningKey) -> Mesh {
     }
 }
 
-/// ONE TEST, for the keepers are this process's own (`tshelf`'s statics):
+/// ONE TEST, for the keepers are this process's own (`tuniversal`'s statics):
 /// the court loop's signing needs no digest, and the door hears a known
 /// peer's pushed ring, refuses a stranger's, and takes no court doing so.
 #[test]
@@ -43,22 +43,22 @@ fn sign_tick_needs_no_digest() {
     let origin = Origin { genesis: GENESIS, epoch: EPOCH };
     // Read on this thread: the signing and the door run here, and the tests
     // beside this one each take a court of its own on a thread of its own.
-    let holds = crate::held::holds_here();
+    let holds = crate::court_lock::holds_here();
 
     // THE COURT LOOP SIGNS: a tick read, a reading due, no digest built.
     assert_eq!(sign_tick(&m, None), None, "no tick read, nothing signed");
-    let t10 = Tick { h: 10, lanes: [4, 0, 0, 0], k: 1 };
-    let ring = sign_tick(&m, Some(t10)).expect("a reading is due");
+    let t10 = Tick { h: 10, lanes: [4, 0, 0, 0].into(), k: 1 };
+    let ring = sign_tick(&m, Some(t10.clone())).expect("a reading is due");
     let [first] = ring.as_slice() else { panic!("one reading: {}", ring.len()) };
-    assert_eq!((first.keeper, first.tick), (va, t10));
+    assert_eq!((first.keeper, &first.tick), (va, &t10));
     assert!(first.verifies(&origin), "signed by this court at its origin");
-    assert_eq!(sign_tick(&m, Some(t10)), None, "the same tick is not due again");
+    assert_eq!(sign_tick(&m, Some(t10.clone())), None, "the same tick is not due again");
     assert_eq!(sign_tick(&m, Some(Tick { h: 11, ..t10 })), None, "nor a tick whose measure stood");
 
     // A PEER'S RING, PUSHED: b heard a's reading and cites it.
     let mut kb = Keepers::new(origin, vb);
     assert_eq!(kb.admit(va, ring), Ok(Admitted::Anchored));
-    assert_eq!(kb.read_own(&b, Tick { h: 12, lanes: [0, 5, 0, 0], k: 3 }), Some(true));
+    assert_eq!(kb.read_own(&b, Tick { h: 12, lanes: [0, 5, 0, 0].into(), k: 3 }), Some(true));
     let body = encode_tick(&vb, &kb.own_ring()).expect("a tick writes");
 
     assert_eq!(hear_tick(&m, &body), Err(TickRefusal::Stranger), "a keeper no signed digest named");
@@ -66,8 +66,8 @@ fn sign_tick_needs_no_digest() {
     assert_eq!(hear_tick(&m, &body), Ok(Admitted::Anchored), "a known peer court's ring is heard");
     assert_eq!(hear_tick(&m, &body), Ok(Admitted::Stale), "and heard once");
     assert_eq!(
-        crate::tshelf::final_point(),
-        Some(TPoint { origin, h: 10, lanes: [4, 0, 0, 0], k: 1 }),
+        crate::tuniversal::final_point(),
+        Some(TPoint { origin, h: 10, lanes: [4, 0, 0, 0].into(), k: 1 }),
         "a's 10 is final: a signed it, b cites it"
     );
 
@@ -78,5 +78,5 @@ fn sign_tick_needs_no_digest() {
     long.push(0);
     assert_eq!(hear_tick(&m, &long), Err(TickRefusal::Unreadable));
 
-    assert_eq!(crate::held::holds_here(), holds, "no court was taken: not by the signing, not by the door");
+    assert_eq!(crate::court_lock::holds_here(), holds, "no court was taken: not by the signing, not by the door");
 }

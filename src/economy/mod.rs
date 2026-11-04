@@ -21,7 +21,7 @@ pub use forfeit::{forfeit, Forfeit};
 pub use verify::verification_share;
 pub use lanes::*;
 pub use mu::{Mu, MuRefusal};
-pub use pay::{Held, Unpaid, RECYCLED};
+pub use pay::{SetAside, Unpaid, RECYCLED};
 pub use treasury::*;
 
 use crate::transducer::element::Element;

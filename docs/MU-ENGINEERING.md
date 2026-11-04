@@ -4,7 +4,7 @@
 >
 > **Components:** the hypha and client binaries as built. No game term.
 
-**Status:** overview, release 0.2.0. §1, the wire description in §4, and
+**Status:** overview, release 0.3.0-rc.3. §1, the wire description in §4, and
 §5–§8 are checked against the code. §2, §3 and the rest of §4 describe the language, the
 court organ and the mesh module by module;
 where a part is specified and not wired, the section says so. Later
@@ -17,7 +17,7 @@ changes are recorded in [`CHANGELOG.md`](../CHANGELOG.md); plans are in
 - `mycelium-server`, a hypha: the book, the market, the registry of work,
   the genome store, and the court organ. Identity is an ed25519 key
   (`court::identity::HyphaKey`). Peers are a bootstrap list; after the
-  first digest the cover trie is the topology.
+  first digest the home trie is the topology.
 - `mycelium-client`, a mind: a voice, a genome, a contemplation, and the
   two-stroke metabolism. Bootstraps to one hypha, discovers the rest,
   routes every act by chart.
@@ -63,8 +63,7 @@ corpus manifests (configuration) and the ledger or genome it writes
 
 Inside every hypha (`server/cognition/`, `court/verdict/`):
 
-- `blind_replay` (`court/verdict/blind.rs`; the name awaits the code
-  rename, it reconstructs) re-derives every kind of word from its own
+- `reconstruct_blind` (`court/verdict/blind.rs`) re-derives every kind of word from its own
   tape; false speech is slashed with a reason.
 - The docket is the field's projection: listings whose closure is not Flat
   with nonzero deflation, read by key under a stroke budget.
@@ -82,7 +81,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
 
 ## 4. The mesh
 
-- **Cover trie** (`network/nerve/cover.rs`): per lane, a trie of chart
+- **Home trie** (`network/nerve/home_trie.rs`, `HomeTrie`): per lane, a trie of chart
   prefixes to the hyphae whose active work covers them. Home is the fibre
   intersection on every occupied lane, then per-lane room, then identity.
 - **Digest exchange**: signed cover and ruled roots; fetch of discordant
@@ -101,7 +100,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
     `ACT_PEERS`;
   - readers any party may send, which admit nothing: `ACT_OBSERVE`,
     `ACT_LAWS`, `ACT_WHY`, `ACT_WALLET` (which also carries signed stake
-    and unstake), `ACT_RECEIPTS`, `ACT_ROWS`;
+    and unstake), `ACT_RECEIPTS`, `ACT_ENTRIES`;
   - hypha to hypha (the court organ and the clock): `ACT_COVER`,
     `ACT_OFFER`, `ACT_INSTALLED`, `ACT_EVIDENCE`, `ACT_ROOT`, `ACT_TICK`,
     `ACT_FOLD`;
@@ -205,10 +204,10 @@ tags in the code are:
 
 | tag | what | where |
 |---|---|---|
-| `MYT2` | a hypha's snapshot (the current layout) | `server/cognition/snapshot/layout.rs` |
+| `MYT2` | a hypha's snapshot (the current layout) | `server/cognition/persistence/layout.rs` |
 | `MYL2` | a court's line | `chronometry/chain/line.rs` |
 | `MYE2` | a cold era segment | `chronometry/era.rs` |
-| `GEN7` | a mind's genome: the words a court admitted | `client/sdk/epigenome/persist.rs` |
+| `GEN7` | a mind's genome: the words a court admitted | `client/sdk/vocabulary/persist.rs` |
 | `TRI1` | an on-disk keyed trie | `network/nerve/keyed/ondisk.rs` |
 | `MSH2` | a signed mesh record | `network/mesh.rs` |
 | `CUR3`, `INT1` | the registry's snapshot: its dispatch cursor and task states, then its intake cursor | `server/registry.rs` |

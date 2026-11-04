@@ -4,15 +4,16 @@
 // lowering on every act, the identity carriage IS the hue map, and an
 // element no act names is said all the same.
 
-use crate::arc::Grid;
+use crate::transducer::family::SectionSample;
 use crate::core::Q;
 use crate::transducer::cga::{rotator, translator_at, Mv};
 use crate::transducer::family::statement::{speak_clauses, speak_elements, Unstated};
-use crate::transducer::sentence::form::clause::{put_clauses, About, Act, Clause, Extent, Paint, Pred, Region, Stop};
-use crate::transducer::sentence::form::rule_element::{gloss, lattice_step, lower, Carriage, Lowered, Reach, RuleElement, Trace};
+use crate::transducer::sentence::form::clause::{put_clauses, About, Act, Clause, Extent, Paint, Pred, RegionKind, Stop};
+use crate::transducer::sentence::form::rule_element::{gloss, substrate_step, lower, Carriage, Lowered, Reach, RuleElement, Trace};
 
-fn grid(rows: &[&str]) -> Grid {
-    rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
+fn grid(rows: &[&str]) -> SectionSample {
+    let lines: Vec<Vec<u8>> = rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect();
+    SectionSample::of_lines(&lines).expect("a sample")
 }
 
 fn q(n: i64) -> Q {
@@ -23,9 +24,9 @@ fn shift(dr: i64, dc: i64) -> Mv {
     translator_at(&[q(dr), q(dc)])
 }
 
-fn drawn(spoken: Result<crate::transducer::family::statement::Spoken, Unstated>) -> Result<Grid, Unstated> {
+fn drawn(spoken: Result<crate::transducer::family::statement::Spoken, Unstated>) -> Result<SectionSample, Unstated> {
     let spoken = spoken?;
-    let mut g: Grid = vec![vec![0; spoken.frame.1]; spoken.frame.0];
+    let mut g = SectionSample::filled([spoken.frame.0, spoken.frame.1], 0).expect("a frame");
     for (r, c, h) in spoken.painted {
         g[usize::try_from(r).expect("on the grid")][usize::try_from(c).expect("on the grid")] = h;
     }
@@ -50,7 +51,7 @@ fn gloss_inverts_lower_on_every_act() {
         Act::Echo { motion: shift(0, 2), about: About::Grid, gauge: Vec::new() },
         Act::Slide { ray: (1, -1), stop: Stop::Contact },
         Act::Extend { ray: (0, 2), paint: Paint::Hue(7), stop: Stop::Border },
-        Act::Fill { region: Region::Interior, hue: 4 },
+        Act::Fill { region: RegionKind::Interior, hue: 4 },
         Act::Connect { paint: Paint::Own },
         Act::Bend { to: Pred::Hue(2), paint: Paint::Hue(3) },
         Act::Copy { template: Pred::Hue(8) },
@@ -75,6 +76,7 @@ fn gloss_inverts_lower_on_every_act() {
 /// its element glosses as the recolour.
 #[test]
 fn speak_clauses_reads_identity_carriage_as_hue_map() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["110", "000", "033"]);
     let bodies = crate::transducer::family::perceive(&x);
     let map = vec![(1, 2), (3, 0)];
@@ -94,6 +96,7 @@ fn speak_clauses_reads_identity_carriage_as_hue_map() {
 /// stays where it stood; it has no gloss.
 #[test]
 fn speak_elements_speaks_unnamed_carriage_without_gloss() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["0100", "0000", "0000", "2222"]);
     let bodies = crate::transducer::family::perceive(&x);
     let echo_to_meet = Lowered {
@@ -108,10 +111,10 @@ fn speak_elements_speaks_unnamed_carriage_without_gloss() {
 /// ITERATION READS A LATTICE TRANSLATION: a translator by `(2, −1)` is that
 /// step; a turn is no step, and a carriage iterating one is refused by name.
 #[test]
-fn lattice_step_iterates_translation_and_refuses_turn() {
-    assert_eq!(lattice_step(&shift(2, -1)), Some((2, -1)));
+fn substrate_step_iterates_translation_and_refuses_turn() {
+    assert_eq!(substrate_step(&shift(2, -1)), Some((2, -1)));
     let turn = rotator(&q(0), &q(1));
-    assert_eq!(lattice_step(&turn), None, "a turn names no ray");
+    assert_eq!(substrate_step(&turn), None, "a turn names no ray");
     let x = grid(&["010", "000"]);
     let bodies = crate::transducer::family::perceive(&x);
     let spun = Lowered {
@@ -153,7 +156,7 @@ fn put_elements_writes_named_elements_as_clauses() {
         Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, 0), stop: Stop::Contact } },
         Clause { select: Pred::Hue(5), act: Act::Repaint { paint: Paint::Of(Pred::Hue(3)) } },
         Clause { select: Pred::All, act: Act::Carry { motion: rotator(&q(0), &q(1)), about: About::Body, gauge: vec![(2, 3)] } },
-        Clause { select: Pred::All, act: Act::Parts(Box::new(Act::Fill { region: Region::Halo, hue: 6 })) },
+        Clause { select: Pred::All, act: Act::Parts(Box::new(Act::Fill { region: RegionKind::Halo, hue: 6 })) },
     ];
     let elements = crate::transducer::sentence::form::rule_element::lower_all(&clauses).expect("lowers");
     let bytes = written(&elements);

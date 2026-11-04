@@ -46,7 +46,7 @@ use crate::transducer::element::Element;
 pub fn generator_form(
     rotor: &crate::transducer::alphabet::Rotor,
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Link],
+    bodies: &[crate::transducer::sentence::SectionLink],
 ) -> Option<Element> {
     letter_form(rotor, &crate::transducer::element::identity_versor(), chart, bodies)
 }
@@ -63,7 +63,7 @@ pub fn generator_form(
 pub fn motion_letter_form(
     residue: &crate::transducer::cga::Mv,
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Link],
+    bodies: &[crate::transducer::sentence::SectionLink],
 ) -> Option<Element> {
     let f = crate::transducer::element::conformal_factors(residue).ok()?;
     let rotor = crate::transducer::element::rotor_of_factors(&f).ok()?;
@@ -77,7 +77,7 @@ fn letter_form(
     rotor: &crate::transducer::alphabet::Rotor,
     carriage: &crate::transducer::element::Versor,
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Link],
+    bodies: &[crate::transducer::sentence::SectionLink],
 ) -> Option<Element> {
     rotor.is_versor().then_some(())?;
     word_form(crate::transducer::alphabet::Derivation::adjoined(rotor.clone()), carriage, chart, bodies)
@@ -109,7 +109,7 @@ fn word_form(
     derivation: crate::transducer::alphabet::Derivation,
     carriage: &crate::transducer::element::Versor,
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Link],
+    bodies: &[crate::transducer::sentence::SectionLink],
 ) -> Option<Element> {
     let mut f = Form::default();
     // A LETTER STANDS AT NO FRAME: it is the carrier of an action, not a
@@ -149,7 +149,7 @@ pub fn callus_form(
     if charts.is_empty() {
         return None;
     }
-    let mut acts: Keyed<Acting, crate::network::nerve::coord::Section> = Keyed::new();
+    let mut acts: Keyed<Acting, crate::network::nerve::coord::ChartCarriage> = Keyed::new();
     for chart in charts {
         // A callus names no body either: its members stand at no frame.
         let member = Acting {
@@ -169,7 +169,7 @@ pub fn callus_form(
 }
 
 /// SENTENCE_TAG v6: the Form tape. Hue maps are derived from vertices.
-/// Addresses are len16 + bytes. `mag` is the residual the form measures over
+/// Addresses are len16 + bytes. `mag` is the residue the form measures over
 /// its bundle. Zero is not a word. The magnitude is the word's measure — its
 /// existence, the ask a demand carries — and never its price: what a word is
 /// escrowed or paid is its discharge (78.149).
@@ -192,9 +192,9 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     // (law 2) and is set below, the kind is the address's own `TAG_FORM`,
     // and the evidence the key excludes rides `ReceiptsEnvelope`.
     //
-    // WORDS, CONNECTIONS AND RESIDUAL CHAINS STILL MINT A TAPE. For those the
+    // WORDS, CONNECTIONS AND RESIDUE CHAINS STILL MINT A TAPE. For those the
     // description is the content carrier and not a second copy of a
-    // coordinate — `letters`, `rewrite` and `residual` read it as the
+    // coordinate — `letters`, `rewrite` and `residue` read it as the
     // object itself. It is the SENTENCE tape that was redundant, because a
     // sentence's content is a cell complex its key writes out in full.
     let n = 0usize;
@@ -266,7 +266,7 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // here, so the two were one cycle with a byte run at the centre.
     // Switching it failed 20 tests with a single cause — a form decoded
     // from its address arrived with its FILED CYCLES gone, and
-    // `form_orbits_replay` refused it.
+    // `form_orbits_reconstruct` refused it.
     //
     // The filing was never the form's to carry. `pivot_orbit` takes the mesh
     // horizon, the mind's crystal and a budget and files only in its
@@ -381,7 +381,7 @@ pub(crate) fn held_form(
 /// The tape hid this completely. A taped form carried its own filing, so
 /// `decode → regauge → as_element_form` round-tripped the attestation by
 /// accident; the moment the decoder read the address the accident stopped.
-/// `germinate::stroke`'s re-anchor is the live site.
+/// `listings::stroke`'s re-anchor is the live site.
 ///
 /// WHY THE FILING SURVIVES THE MOVE, which is a theorem and not a
 /// convenience. A re-gauge conjugates: §3.6 rewrites every face word as
@@ -429,7 +429,7 @@ pub fn form_torsion(
 }
 
 /// Whether a spoken word carries a torsion cycle: the speaker's filing
-/// first, then the residual element's own section, so a word whose cycles
+/// first, then the residue element's own section, so a word whose cycles
 /// live on the axis rather than on a form's orbits still reads as a bundle.
 pub fn carries_torsion(e: &Element) -> bool {
     !e.filing().is_empty() || !e.torsion().is_empty()

@@ -6,7 +6,7 @@ use crate::anastome::dialogue;
 use crate::client::sdk::*;
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element::identity_versor;
-use crate::transducer::element::residual::from_connection;
+use crate::transducer::element::residue::from_connection;
 use crate::transducer::sentence::{At, RefusalKind};
 use std::io::{Read, Write};
 
@@ -49,7 +49,7 @@ fn held_court() -> (String, std::sync::mpsc::Receiver<dialogue::SpeechAct>, std:
                     }
                     None => Vec::new(),
                 };
-                let reply = crate::network::wire::Frame { lane, body: dialogue::encode_speech_reply(&refused).expect("a reply") };
+                let reply = crate::network::wire::WireFrame { lane, body: dialogue::encode_speech_reply(&refused).expect("a reply") };
                 let _ = s.write_all(&reply.encode().expect("framed"));
             }
         }
@@ -70,7 +70,7 @@ fn speak_word_goes_on_while_court_is_slow() {
     let said = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
     assert!(matches!(mind.speak_word(&said), Ok(Utterance::Spoken)), "said, and the field goes on");
     // MU-CLIENT §4.4(4) — it leaves when the mind's own field comes round.
-    assert!(super::common::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
+    assert!(super::fixtures::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
     let act = speeches.recv().expect("the speech reached the court");
     assert_eq!(act.voice, Voice::named("unwaiting").id(), "spoken by the mind");
     assert_eq!(mind.hypha.in_flight(), 1, "its answer is in flight");
@@ -113,12 +113,12 @@ fn wind_reads_occluded_wire_again() {
 
 /// MU-CLIENT §5.1, §6 — A SILENT HOUSE HOLDS ONLY THE SEAT'S CARRIERS. A mind
 /// sits a seat in a house that takes every connection and never answers. Its
-/// body's stroke returns at once — the take posted on the seat's own carrier,
+/// seating's stroke returns at once — the take posted on the seat's own carrier,
 /// the first page of its mail on the perceiving carrier, which the court holds
 /// to its next event and so never stands in front of a take, solve or
 /// declination (2026-10-23) — and nothing of it rides the court's carrier.
 #[test]
-fn body_tick_holds_silent_house_on_seat_carriers() {
+fn seating_tick_holds_silent_house_on_seat_carriers() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("the house listens");
     let addr = listener.local_addr().expect("an address").to_string();
     std::thread::spawn(move || {
@@ -130,11 +130,11 @@ fn body_tick_holds_silent_house_on_seat_carriers() {
     });
     let mut mind = Mind::open(&addr, Voice::named("seated"));
     let key = ed25519_dalek::SigningKey::from_bytes(&[7; 32]);
-    mind.sit([5; 32], None, crate::client::sdk::entity::body::Sitting::Seats(vec![1]), key);
-    mind.body_tick();
+    mind.sit([5; 32], None, crate::client::sdk::mind::seating::Sitting::Seats(vec![1]), key);
+    mind.seating_tick();
     assert_eq!(mind.seat.in_flight(), 1, "the take waits on the seat's carrier");
     assert_eq!(mind.held.in_flight(), 1, "the first page waits on the perceiving carrier, apart from the take");
     assert_eq!(mind.hypha.in_flight(), 0, "the court's carrier carries none of it");
-    mind.body_tick();
+    mind.seating_tick();
     assert_eq!(mind.held.in_flight(), 1, "a page in flight is not asked again: one reading of the box at a time");
 }

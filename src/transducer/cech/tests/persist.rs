@@ -1,7 +1,7 @@
 // 13, 78.27 — THE COMPLEX'S TRIES ARE A BIJECTION, and a bad byte is a
 // refusal.
 
-use super::common::{turn_90, v, vol};
+use super::fixtures::{turn_90, v, vol};
 use crate::transducer::cech::{Complex, Fill};
 use crate::transducer::element::identity_versor;
 

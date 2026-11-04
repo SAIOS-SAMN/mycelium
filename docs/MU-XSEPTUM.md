@@ -40,7 +40,7 @@ except what the pore admits. Here the pore is reconstruction.
 - **Voice**: a 32-byte identity of a mind (`Session::voice().id()`), a FROST group key over Ed25519 (new, §8; MU-RECURSION 46.1).
 - **Hypha**: a server; identity is its ed25519 verifying key (`court::identity::HyphaKey`).
 - **Listing key**: `listing_key(chain, frame)`, the framed residue address of a demand; every priced request is a listing at exactly one home hypha.
-- **Home**: the hypha the cover trie homes the listing to (`nerve::home`).
+- **Home**: the hypha the home trie homes the listing to (`nerve::home`).
 - **Witness**: any other hypha whose cover meets the listing's chart; the second organ.
 - **μ⃗**: an exact non-negative rational on each of the four lanes (`economy::Mu`).
 - **Escrow**: `Treasury::escrow_award(addr, voices, mu, anchor)`; released by `release_award`, revoked or slashed by `revoke_award`, drawn by `draw_escrow`.
@@ -72,7 +72,7 @@ it can work instead (§6.3).
 
 ## 5. Wire
 
-All frames use `network::wire::Frame { lane, body }` with the first body
+All frames use `network::wire::WireFrame { lane, body }` with the first body
 byte the act. Reserved acts (new; verify against `anastome/dialogue/acts.rs`
 before building, 0x20–0x22 are taken by COVER/OFFER/INSTALLED):
 
@@ -153,6 +153,14 @@ The payer countersigns after receiving the bytes and checking the digest.
 Two signatures from two distinct voices are the two vantages; the home
 verifies the two signatures and reads the escrow state, then releases.
 
+*Open review.* A digest never admits (MU-ANTI-FLATTENING 13;
+MU-HOSTING §5a.10): `delivery_digest` is a commitment that binds the
+delivered bytes to the payer's countersignature, and the release follows
+the receipts' reconstruction, the digest only linking. How mode 0 states
+that reconstruction for delivered bytes (what the home reconstructs, and
+from which receipts) is not yet specified; this section is held for that
+review before it is built.
+
 Mode 1, work:
 
 ```
@@ -163,7 +171,7 @@ Mode 1, work:
 ```
 
 No countersignature. The word enters the docket like any attested word:
-reconstruction at the home (`blind_replay`), Offer to the overlap,
+reconstruction at the home (`reconstruct_blind`), Offer to the overlap,
 reconstruction at a witness,
 Installed. Release happens on the Installed, through the same path that
 grows the language (`Court::home_install` → `release_award`). A word that
@@ -308,7 +316,7 @@ learning it: the reply is signed by the home and the payee returns it in
 | 4 | INSUFFICIENT_LANE(l) | balance or note short on lane `l` |
 | 5 | NOT_HOME | this hypha does not home the listing; body carries the home's address |
 | 6 | NO_LISTING | the listing key is unknown or dropped |
-| 7 | REPLAY_FAILED | mode 1 word failed `blind_replay`; slashed |
+| 7 | RECONSTRUCTION_FAILED | mode 1 word failed `reconstruct_blind`; slashed |
 | 8 | NO_WITNESS | no overlap organ reconstructed and signed within `Λ`; escrow returned |
 | 9 | EQUIVOCATION | two signed receipts, one key, one K, two hashes; bond burned (MU-RECURSION 47.4) |
 | 10 | ORIGIN | the prefix names another genesis or epoch (MU-RECURSION 45.5) |
@@ -352,8 +360,8 @@ Built: act 0x35 (`src/anastome/dialogue/equivocation.rs`,
 
 Existing, reused unchanged: `escrow_award`, `release_award`, `revoke_award`,
 `draw_escrow`, `balance_mu`, `price`, `lane_moves`, `bind_listing_task`,
-`record_deflation`, `blind_replay`, `home_install`, `nerve::home`,
-`HyphaKey`, `Frame`.
+`record_deflation`, `reconstruct_blind`, `home_install`, `nerve::home`,
+`HyphaKey`, `WireFrame`.
 
 ## 11. Tests the implementation must pass
 

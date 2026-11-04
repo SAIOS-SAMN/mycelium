@@ -442,7 +442,7 @@ pub fn cover_cursor(lane: u8, inv: &crate::transducer::stalk::Invariant) -> Vec<
 
 /// One page of a peer's cover, and whether more of it stands. `None` for
 /// an ask, which rides the same act.
-pub fn decode_cover_page(body: &[u8]) -> Option<(Cover, bool)> {
+pub fn decode_cover_page(body: &[u8]) -> Option<(CoverPage, bool)> {
     if !act_is(body, ACT_COVER) {
         return None;
     }
@@ -467,5 +467,5 @@ pub fn decode_cover_page(body: &[u8]) -> Option<(Cover, bool)> {
         1 => true,
         _ => return None,
     };
-    Some((Cover { vk, bind: addr, charts }, more))
+    Some((CoverPage { vk, bind: addr, charts }, more))
 }

@@ -17,28 +17,30 @@ const POOL_DIVISOR: usize = 2;
 mod admission;
 mod backfill;
 mod console;
-mod door;
+mod context;
+mod control;
+mod court_lock;
+mod deferred_reads;
 mod exchange;
 mod fold;
 mod genesis;
-mod held;
-mod hold;
 mod judge;
 mod ledger;
+mod nerve;
 mod offer;
 mod persist;
 mod published;
 mod syllabus;
 mod transport;
-mod tshelf;
+mod tuniversal;
 mod wallet;
 mod why;
 #[cfg(test)]
 mod tests;
 
-use crate::admission::{admit_peer_digest, rebuild_own_cover};
+use crate::admission::{admit_peer_digest, read_published_cover};
 use mycelium::anastome::dialogue;
-use crate::door::Door;
+use crate::context::Context;
 use crate::exchange::{note_root, speak_root_locked, Exchange, Mesh, RootHear};
 use crate::genesis::Genesis;
 use crate::persist::{persist, persist_if_due};
@@ -47,8 +49,8 @@ use crate::transport::{answer, arm_deadline, note_rtt_ok, read_frame, rtt_floor,
 use mycelium::cognition::Court;
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh::{self};
-use mycelium::network::nerve::{Cover, Keyed, Router};
-use mycelium::network::wire::Frame;
+use mycelium::network::nerve::{HomeTrie, Keyed, Router};
+use mycelium::network::wire::WireFrame;
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -263,7 +265,7 @@ fn check_home(home: &Path) -> ! {
             }
         }
     }
-    match mycelium::chronometry::tuniversal::record::read(&tshelf::record_path(home)) {
+    match mycelium::chronometry::tuniversal::record::read(&tuniversal::record_path(home)) {
         mycelium::chronometry::tuniversal::Recorded::None => println!("  keeper: no record — this keeper has not signed here"),
         mycelium::chronometry::tuniversal::Recorded::Last(r) => {
             println!("  keeper: last signed h {} at epoch {}; the next reading signs above it", r.reading.tick.h, r.origin.epoch);
@@ -350,11 +352,17 @@ struct ReflexJob {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     // D2.6 — a host that does not say is fixed by its operator, never run on
-    // a guess: the boot refuses, naming the arm it cannot read.
-    if let Err(why) = mycelium::physics::calibrate() {
-        eprintln!("mycelium-server: the host is uncalibrated ({why:?}); it does not say what the calibration reads");
-        std::process::exit(2)
-    }
+    // a guess: the boot refuses, naming the arm it cannot read. D2.5 — the
+    // one boot calibration stroke measures the bytes per read and seals the
+    // reserve here, first, before anything is served: the nerve every door
+    // speaks on is built from the seal.
+    let sealed = match mycelium::physics::calibrate() {
+        Ok(sealed) => sealed,
+        Err(why) => {
+            eprintln!("mycelium-server: the host is uncalibrated ({why:?}); it does not say what the calibration reads");
+            std::process::exit(2)
+        }
+    };
     // 45.5: H_genesis is written ONCE, by the first hypha started on a fresh
     // state, and PROVISIONED to every other node the way the bootstrap peer
     // list is. Self-adoption from a node's own first receipt is not that:
@@ -488,14 +496,14 @@ fn main() {
     // them.
     {
         // Boot: one thread, before the door opens (bounded per hold).
-        let Ok(mut h) = crate::held::held!(court) else { refuse_boot(&tag, "court lock poisoned at the line") };
+        let Ok(mut h) = crate::court_lock::held!(court) else { refuse_boot(&tag, "court lock poisoned at the line") };
         if let Err(why) = h.run(|k, _| k.bind_line(home.join("line")).and_then(|()| k.bind_eras(home.join("eras")))) {
             refuse_boot(&tag, &format!("{why}. `--check` on this home reports the same reading."));
         }
     }
     match std::fs::read(&state_path) {
         Ok(bytes) => {
-            let Ok(mut h) = crate::held::held!(court) else { refuse_boot(&tag, "court lock poisoned at restore") };
+            let Ok(mut h) = crate::court_lock::held!(court) else { refuse_boot(&tag, "court lock poisoned at restore") };
             let (restored, basis, entries) = h.run(|k, _| (k.restore(&bytes), k.basis_len(), k.treasury_entry_count()));
             if !restored {
                 // A REFUSAL THAT NAMES THE ROAD. This named the fault and
@@ -534,7 +542,7 @@ fn main() {
     // court can sign: a restarted keeper signs only above it and names it as
     // its next reading's parent. A record that does not read refuses the
     // boot — a floor this court cannot read is one it could sign under.
-    match tshelf::bind_home(&home) {
+    match tuniversal::bind_home(&home) {
         Ok(Some(r)) => eprintln!("[{tag}] keeper record: last signed h {} at epoch {}", r.reading.tick.h, r.origin.epoch),
         Ok(None) => eprintln!("[{tag}] keeper record: none — this keeper has not signed here"),
         Err(why) => refuse_boot(&tag, &why),
@@ -547,7 +555,7 @@ fn main() {
     {
         let mut live: Vec<[u8; 32]> = genesis.hypha.iter().map(|(who, _)| *who).collect();
         live.extend(genesis.voice.iter().map(|(who, _)| *who));
-        let Ok(mut h) = crate::held::held!(court) else { refuse_boot(&tag, "court lock poisoned at genesis") };
+        let Ok(mut h) = crate::court_lock::held!(court) else { refuse_boot(&tag, "court lock poisoned at genesis") };
         h.run(|k, _| {
         for (who, mu) in k.bind_live(&live) {
             eprintln!(
@@ -587,7 +595,7 @@ fn main() {
     join_peers.retain(|p| p != &addr);
 
     let mesh = Mesh {
-        cover: Arc::new(Mutex::new(Cover::new())),
+        cover: Arc::new(Mutex::new(HomeTrie::new())),
         rooms: Arc::new(Mutex::new(Keyed::new())),
         addrs: Arc::new(Mutex::new(Keyed::new())),
         vk,
@@ -614,8 +622,8 @@ fn main() {
     }
     // 78.153b — the own cover is admitted off a published reading; at boot,
     // before the door's shelf stands, one read of the court published here.
-    if let Some(boot) = crate::held::held!(court).ok().and_then(|mut h| h.run(|k, _| k.publish(None))) {
-        rebuild_own_cover(&boot, &mesh);
+    if let Some(boot) = crate::court_lock::held!(court).ok().and_then(|mut h| h.run(|k, _| k.publish(None))) {
+        read_published_cover(&boot, &mesh);
     }
     for p in &join_peers {
         if p == &addr {
@@ -662,7 +670,7 @@ fn main() {
     }));
     {
         // Boot, before any other thread takes the court.
-        let seed = match crate::held::held!(court) {
+        let seed = match crate::court_lock::held!(court) {
             Ok(mut h) => h.run(|k, _| k.syllabus_seed()),
             Err(_) => refuse_boot(&tag, "court lock poisoned at syllabus seed"),
         };
@@ -678,14 +686,22 @@ fn main() {
     // proves it shares the root.
     let roots: Arc<Mutex<Keyed<Keyed<u64>>>> = Arc::new(Mutex::new(Keyed::new()));
     // THE NERVE THREAD: every act this node speaks to a peer leaves through
-    // a bounded channel drained here, so the door never dials. The bound is
-    // the reserve ceiling; a full nerve drops the act, as a full reflex
-    // pool defers a demand.
-    #[expect(clippy::cast_possible_truncation, reason = "site 4 — reserve_max, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
-    let (nerve_tx, nerve_rx) = std::sync::mpsc::sync_channel::<(String, Vec<u8>)>(mycelium::physics::reserve_max() as usize);
+    // the nerve drained here, so the door never dials. The bound is the
+    // sealed process memory (D2.5 (a)); an act past it is dropped, as a full
+    // reflex pool defers a demand.
+    let c = sealed.calibration();
+    eprintln!(
+        "  calibrated: M {} bytes ({}), b {} bytes per read, minimal stroke {} reads, capacity C {} reads sealed",
+        c.memory().bytes(),
+        c.memory().source().file(),
+        c.footprint(),
+        c.minimal(),
+        c.capacity()
+    );
+    let (nerve_tx, nerve_rx) = crate::nerve::Nerve::of(&sealed);
     exchange::spawn_nerve(mesh.clone(), nerve_rx);
     // 78.152 TU-7: the lock watchdog, paced by the final point's advances.
-    held::spawn_watchdog();
+    court_lock::spawn_watchdog();
     // The roots this book already holds settled are announced to the nerve
     // at boot, so a family proven here is re-spoken on every peer's book.
     // A poisoned registry lock is no reading of the book; no root is
@@ -735,12 +751,12 @@ fn main() {
                         // volume; the two readings are taken or the line
                         // is not written.
                         let (Ok(before), Ok(())) =
-                            (crate::held::held!(court).map(|mut h| h.run(|k, _| k.volume())), Ok::<(), ()>(()))
+                            (crate::court_lock::held!(court).map(|mut h| h.run(|k, _| k.volume())), Ok::<(), ()>(()))
                         else {
                             continue;
                         };
                         let _ = mycelium::synthesis::adopt(&court, ratifier, &word);
-                        let Ok(after) = crate::held::held!(court).map(|mut h| h.run(|k, _| k.volume())) else {
+                        let Ok(after) = crate::court_lock::held!(court).map(|mut h| h.run(|k, _| k.volume())) else {
                             continue;
                         };
                         if after != before {
@@ -774,7 +790,7 @@ fn main() {
     // restored: a mind's exempt read is served without the court's lock.
     // 78.151 — and the court's first published reading, which the door's
     // reads answer off until the court stroke publishes the next.
-    let Ok((seat_relay, first)) = crate::held::held!(court).map(|mut h| h.run(|k, _| (k.seat_relay(), k.publish(None)))) else {
+    let Ok((seat_relay, first)) = crate::court_lock::held!(court).map(|mut h| h.run(|k, _| (k.seat_relay(), k.publish(None)))) else {
         eprintln!("the court's lock was poisoned before the door opened");
         return;
     };
@@ -784,7 +800,7 @@ fn main() {
     };
     published::note_cost(&first);
     let shelf = published::Shelf::new(first);
-    let door = Door {
+    let context = Context {
         seat_relay,
         published: shelf.clone(),
         court: Arc::clone(&court),
@@ -837,11 +853,11 @@ fn main() {
     // an observation there and handing every other act, read, to the
     // WORKERS that judge it. A worker queue that is full defers the act (the
     // honest "come back"), as a full reflex queue did.
-    let (work_tx, work_rx) = std::sync::mpsc::sync_channel::<(TcpStream, Frame)>(cores);
+    let (work_tx, work_rx) = std::sync::mpsc::sync_channel::<(TcpStream, WireFrame)>(cores);
     let work_rx = Arc::new(Mutex::new(work_rx));
     for _ in 0..pool {
         let rx = Arc::clone(&reflex_rx);
-        let door = door.clone();
+        let context = context.clone();
         let work_tx = work_tx.clone();
         std::thread::spawn(move || loop {
             let job = match rx.lock() {
@@ -855,36 +871,36 @@ fn main() {
             arm_deadline(&stream);
             let Some(frame) = read_frame(&mut stream) else { continue };
             if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
-                judge::observe::judge(&mut stream, &frame, &door);
+                judge::observe::judge(&mut stream, &frame, &context);
                 mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
                 continue;
             }
             // 78.151 — a read that takes no court is answered here.
-            if judge::serve_published(&mut stream, &frame, &door) {
+            if judge::serve_published(&mut stream, &frame, &context) {
                 continue;
             }
             // 78.146 amended — a seat read with nothing filed past it waits
             // for the court's next event (`hold`), off the judging pool.
-            let Some((stream, frame)) = hold::offer(stream, frame, &door) else { continue };
+            let Some((stream, frame)) = deferred_reads::offer(stream, frame, &context) else { continue };
             if let Err(e) = work_tx.try_send((stream, frame)) {
                 let (std::sync::mpsc::TrySendError::Full((mut stream, frame)) | std::sync::mpsc::TrySendError::Disconnected((mut stream, frame))) = e;
                 // 78.146 — a mind's own read is served, once per window.
-                if judge::seat::serve_exempt(&mut stream, &frame, &door) {
+                if judge::seat::serve_exempt(&mut stream, &frame, &context) {
                     continue;
                 }
                 // 78.92 — a why is left for the court stroke, never waited on.
-                if judge::why::serve_left(&mut stream, &frame, &door) {
+                if judge::why::serve_left(&mut stream, &frame, &context) {
                     continue;
                 }
-                let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
+                let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-                answer(&mut stream, Frame { lane: frame.lane, body });
+                answer(&mut stream, WireFrame { lane: frame.lane, body });
             }
         });
     }
     for _ in 0..pool {
         let rx = Arc::clone(&work_rx);
-        let door = door.clone();
+        let context = context.clone();
         let served = Arc::clone(&served);
         std::thread::spawn(move || loop {
             let job = match rx.lock() {
@@ -896,7 +912,7 @@ fn main() {
             // counted under no kind: 0xff was a sentinel standing for a byte
             // that was not read.
             let kind = mycelium::anastome::dialogue::act_tag(&frame.body);
-            judge::judge(&mut stream, frame, &door);
+            judge::judge(&mut stream, frame, &context);
             if let Some(kind) = kind {
                 mycelium::observe::note_served(kind);
                 let n = served[kind as usize].fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
@@ -920,39 +936,39 @@ fn main() {
     // defers unread, as it did.
     let (overflow_tx, overflow_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
     {
-        let door = door.clone();
+        let context = context.clone();
         std::thread::spawn(move || {
             for ReflexJob { mut stream } in overflow_rx {
                 arm_deadline(&stream);
                 let Some(frame) = read_frame(&mut stream) else { continue };
                 if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
-                    judge::observe::judge(&mut stream, &frame, &door);
+                    judge::observe::judge(&mut stream, &frame, &context);
                     mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
                     continue;
                 }
                 // 78.151 — a read that takes no court is answered here.
-                if judge::serve_published(&mut stream, &frame, &door) {
+                if judge::serve_published(&mut stream, &frame, &context) {
                     continue;
                 }
                 // 78.146 amended — a seat read with nothing filed past it
                 // waits for the court's next event (`hold`).
-                let Some((mut stream, frame)) = hold::offer(stream, frame, &door) else { continue };
+                let Some((mut stream, frame)) = deferred_reads::offer(stream, frame, &context) else { continue };
                 // 78.146 — a mind's own read is served, once per window.
-                if judge::seat::serve_exempt(&mut stream, &frame, &door) {
+                if judge::seat::serve_exempt(&mut stream, &frame, &context) {
                     continue;
                 }
                 // 78.92 — a why is left for the court stroke, never waited on.
-                if judge::why::serve_left(&mut stream, &frame, &door) {
+                if judge::why::serve_left(&mut stream, &frame, &context) {
                     continue;
                 }
-                let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
+                let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-                answer(&mut stream, Frame { lane: frame.lane, body });
+                answer(&mut stream, WireFrame { lane: frame.lane, body });
             }
         });
     }
     // 78.146 amended — the held seat reads, answered at the court's events.
-    hold::spawn(door.clone());
+    deferred_reads::spawn(context.clone());
 
     for stream in listener.incoming() {
         let Ok(s) = stream else { continue };
@@ -975,7 +991,7 @@ fn main() {
                 continue;
             };
             let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
-            answer(&mut s, Frame { lane: mycelium::network::wire::Stratum::Spatial, body });
+            answer(&mut s, WireFrame { lane: mycelium::network::wire::Lane::Spatial, body });
         }
     }
 }

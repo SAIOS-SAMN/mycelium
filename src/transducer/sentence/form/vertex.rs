@@ -29,7 +29,7 @@ impl Vertex {
         contact: Option<alphabet::Contact>,
     ) -> Vertex {
         let member = super::Acting { chart, carriage, gauge, frames: section_of_frames(frames) };
-        let mut acts: Keyed<super::Acting, coord::Section> = Keyed::new();
+        let mut acts: Keyed<super::Acting, coord::ChartCarriage> = Keyed::new();
         acts.put(&member.key(), member);
         // 54.2 — the vertex's address is its own coordinates, derived.
         let address = crate::transducer::sentence::word_vertex_address(&derivation, &acts, contact);
@@ -50,7 +50,7 @@ impl Vertex {
         frames: impl IntoIterator<Item = u64>,
     ) -> Vertex {
         let member = super::Acting { chart, carriage, gauge, frames: section_of_frames(frames) };
-        let mut acts: Keyed<super::Acting, coord::Section> = Keyed::new();
+        let mut acts: Keyed<super::Acting, coord::ChartCarriage> = Keyed::new();
         acts.put(&member.key(), member);
         Vertex::Rebased { by, class, acts }
     }
@@ -59,7 +59,7 @@ impl Vertex {
     /// read off the bodies here, the one place a demand is made from them, so
     /// the coordinates the key writes and the evidence the record carries
     /// cannot disagree (law 12).
-    pub fn demand(kind: crate::transducer::sentence::Demand, chart: stalk::Invariant, bodies: Vec<Link>) -> Vertex {
+    pub fn demand(kind: crate::transducer::sentence::Demand, chart: stalk::Invariant, bodies: Vec<SectionLink>) -> Vertex {
         let (measure, pieces) = demand_coordinates(&bodies);
         Vertex::Demand { kind, chart, measure, pieces, bodies }
     }
@@ -71,7 +71,7 @@ impl Vertex {
     pub fn class(&self) -> Option<coord::Transport> {
         match self {
             Vertex::Word { derivation, .. } => Some(coord::Transport {
-                kind: crate::transducer::peel::ShellKind::Whole,
+                kind: crate::transducer::layers::LayerKind::Whole,
                 class: derivation.rotor().holonomy_key()?,
             }),
             Vertex::Rebased { class, .. } => Some(class.clone()),
@@ -97,7 +97,7 @@ impl Vertex {
                 measure: *measure,
                 pieces: *pieces,
             },
-            v @ Vertex::Glued { .. } => coord::VertexAt::Glued(coord::Site(crate::transducer::sentence::vertex_bytes(v))),
+            v @ Vertex::Glued { .. } => coord::VertexAt::Glued(coord::GluedBoundary(crate::transducer::sentence::vertex_bytes(v))),
         })
     }
 
@@ -217,7 +217,7 @@ impl Vertex {
     /// reliably. Deleted, the compiler names all of them, exactly as
     /// `Keyed::fibre` taking a non-empty `Prefix` named the walk sites in X3.
     /// The type does the enumeration.
-    pub fn acts(&self) -> Option<&Keyed<super::Acting, coord::Section>> {
+    pub fn acts(&self) -> Option<&Keyed<super::Acting, coord::ChartCarriage>> {
         match self {
             // A REBASED VERTEX HAS THE SAME FIBRE SHAPE, with the relative in
             // place of the placement at each chart (D10). A reader that wants
@@ -463,7 +463,7 @@ pub(crate) fn base_class(by: &coord::VertexAt) -> Option<coord::Transport> {
         coord::VertexAt::Word(t) => Some(t.clone()),
         coord::VertexAt::Rebased { base, .. } => Some(base.clone()),
         coord::VertexAt::Frame => Some(coord::Transport {
-            kind: crate::transducer::peel::ShellKind::Whole,
+            kind: crate::transducer::layers::LayerKind::Whole,
             class: Word::identity().rotor().holonomy_key()?,
         }),
         _ => None,
@@ -473,7 +473,7 @@ pub(crate) fn base_class(by: &coord::VertexAt) -> Option<coord::Transport> {
 /// A DEMAND'S KEYED COORDINATES, read off its bodies: the chain's measure
 /// per lane and its pieces (54.5 Road (d)). The one reader of both, so the
 /// key and the evidence agree by construction.
-pub(crate) fn demand_coordinates(bodies: &[Link]) -> ([u64; 4], u64) {
+pub(crate) fn demand_coordinates(bodies: &[SectionLink]) -> ([u64; 4], u64) {
     (
         crate::transducer::element::measure_lanes(bodies),
         crate::transducer::sentence::pieces(bodies).len() as u64,

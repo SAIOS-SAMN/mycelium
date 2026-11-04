@@ -1,11 +1,11 @@
-use crate::arc::{Grid, Task};
+use crate::transducer::family::{task_of_lines, SectionSample, Task};
 use crate::server::registry::*;
 
 fn toy_task() -> Task {
-    Task {
-        train: vec![(vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]])],
-        test: vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
-    }
+    task_of_lines(
+        vec![(vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]])],
+        vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
+    )
 }
 
 /// THE REGISTRY RECORDS, NEVER JUDGES: identity is content
@@ -23,9 +23,9 @@ fn close_records_first_then_again() {
     );
     assert_eq!(reg.len(), 1);
     assert_eq!(reg.open(&id), Some(true), "open before any closure");
-    assert_eq!(reg.close(&id), Some(Closure::First), "the first ruled closure");
+    assert_eq!(reg.close(&id), Some(ClosureOrder::First), "the first ruled closure");
     assert_eq!(reg.open(&id), Some(false));
-    assert_eq!(reg.close(&id), Some(Closure::Again), "a closure of a closed task");
+    assert_eq!(reg.close(&id), Some(ClosureOrder::Again), "a closure of a closed task");
     assert_eq!(reg.close(&[9u8; 32]), None, "no origin, no closure");
     assert_eq!(reg.unsolved(), 0);
 }
@@ -37,13 +37,13 @@ fn close_records_first_then_again() {
 fn overlay_restores_settled_states_after_restart() {
     let mut reg = TaskRegistry::new();
     let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
-    assert_eq!(reg.close(&id), Some(Closure::First));
+    assert_eq!(reg.close(&id), Some(ClosureOrder::First));
     let snap = reg.snapshot().expect("the snapshot writes");
 
     let mut reborn = TaskRegistry::new();
     reborn.register(toy_task()); // corpus re-registration at boot
     assert_eq!(reborn.overlay(&snap), 1, "one settled state restored");
-    assert_eq!(reborn.close(&id), Some(Closure::Again), "the restart must not re-open the task");
+    assert_eq!(reborn.close(&id), Some(ClosureOrder::Again), "the restart must not re-open the task");
     assert_eq!(reborn.overlay(&[]), 0, "garbage snapshot restores nothing");
     // STD1 — an older layout, with `u32` counts, is refused whole.
     let mut older = snap.clone();
@@ -60,76 +60,137 @@ fn overlay_restores_settled_states_after_restart() {
 /// citation, it snapshots, restores, and stays closed.
 #[test]
 fn overlay_restores_task_wider_than_u16_wall() {
-    // Many pairs of busy frames: each pair's listing key is written
-    // into the task's address, so the address grows with them.
-    let busy = |s: u8| -> Grid { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
-    let wide = Task { train: (0..12u8).map(|s| (busy(s), busy(s + 1))).collect(), test: vec![(busy(40), Vec::new())] };
+    // Many pairs of busy frames: each sample's content is written into the
+    // task's address, so the address grows with them (40 pairs of 30×30
+    // frames pass the wall).
+    let busy = |s: u8| -> SectionSample { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
+    let wide = Task { train: (0..40u8).map(|s| (busy(s), busy(s + 1))).collect(), test: vec![(busy(41), None)] };
     let mut reg = TaskRegistry::new();
     reg.register(toy_task());
     let id = reg.register(wide.clone()).expect("the wide task has an identity");
     let address = task_address(&wide).expect("the wide task has an address");
     assert!(address.as_bytes().len() > usize::from(u16::MAX), "the fixture passes the wall: {} bytes", address.as_bytes().len());
     assert_eq!(id, citation(&address), "the book names it by its citation");
-    assert_eq!(reg.close(&id), Some(Closure::First));
+    assert_eq!(reg.close(&id), Some(ClosureOrder::First));
     let snap = reg.snapshot().expect("a book holding a task wider than the wall still snapshots");
     let mut reborn = TaskRegistry::new();
     reborn.register(toy_task());
     reborn.register(wide);
     assert_eq!(reborn.overlay(&snap), 1, "its settled state restored, by citation");
-    assert_eq!(reborn.close(&id), Some(Closure::Again), "and the restart does not re-open it");
+    assert_eq!(reborn.close(&id), Some(ClosureOrder::Again), "and the restart does not re-open it");
 }
 
-/// LAW 2 — AN IDENTITY IS NEVER FORMED WITH A MEMBER SKIPPED: a train pair
-/// with no common refinement (a ragged grid) refuses the task's address,
-/// where it was passed over and the task named by its other pairs alone.
+/// LAW 2 — AN IDENTITY IS NEVER FORMED WITH A MEMBER SKIPPED: a ragged grid
+/// is no sample, refused by name at intake (track 26 S4d), so no task holds
+/// a member that could be passed over and the task named by its other pairs
+/// alone.
 #[test]
-fn task_address_refuses_unrefinable_pair() {
-    let mut task = toy_task();
-    assert!(task_address(&task).is_some(), "every member refines");
-    task.train.push((vec![vec![1, 1], vec![1]], vec![vec![2, 2], vec![2, 2]]));
-    assert!(task_address(&task).is_none(), "a member with no refinement leaves no identity");
+fn task_address_refuses_ragged_pair() {
+    use crate::transducer::sample::SampleRefusal;
+    use crate::transducer::spelled::Unspelled;
+    assert!(task_address(&toy_task()).is_some(), "every member has an enclosure");
+    assert_eq!(SectionSample::of_lines(&[vec![1, 1], vec![1]]), Err(Unspelled::Sample(SampleRefusal::Length { expected: 4, found: 3 })), "a ragged grid is no sample");
+}
+
+/// MU-DERIVATIONS D3.2, O3 — A PAIR'S MEMBER IS BOTH FRAMES' FULL CONTENT
+/// WITH THE FOUR PERIODS. `[[1]] → [[2, 2]]` and `[[1, 1]] → [[2, 2]]`
+/// read one coboundary on `K_lcm`, `{(0,0,1,2), (0,1,1,2)}`, and neither
+/// wrote its frame (one ratio anisotropic, one the identity), so two tasks
+/// differing only there shared an address. The two input periods differ,
+/// so the two contents do.
+#[test]
+fn task_address_separates_isotropic_and_anisotropic_pairs() {
+    let with = |input: Vec<Vec<u8>>| task_of_lines(vec![(input, vec![vec![2, 2]])], Vec::new());
+    let anisotropic = task_address(&with(vec![vec![1]])).expect("addressed");
+    let planar = task_address(&with(vec![vec![1, 1]])).expect("addressed");
+    assert!(anisotropic != planar, "the two pairs differ in one period, so the two tasks do");
+    // And one change on different ground is different content.
+    let on = |ground: u8| task_of_lines(vec![(vec![vec![1, ground]], vec![vec![2, ground]])], Vec::new());
+    assert!(task_address(&on(0)).expect("addressed") != task_address(&on(3)).expect("addressed"));
 }
 
 /// MU-DERIVATIONS D3.2 — TWO TASKS DIFFERING ONLY IN A 29×29 → 30×30 PAIR
-/// ARE TWO TASKS. The pair's lcm is 870 per axis, past the former cap of
-/// 60, so it was skipped and both tasks were named by their other pairs:
-/// one address for two contents. It now refines, under the stroke its
-/// extents need, and the pair is a member of each address.
+/// ARE TWO TASKS: the pair is a member of each address, never passed over
+/// for its periods' lcm (870 per axis).
 #[test]
 fn task_address_separates_tasks_differing_in_incommensurate_pair() {
-    let coprime = |hue: u8| -> (Grid, Grid) {
-        let mut out: Grid = vec![vec![1; 30]; 30];
+    let coprime = |hue: u8| -> (SectionSample, SectionSample) {
+        let mut out = SectionSample::from(vec![vec![1; 30]; 30]);
         out[0][0] = hue;
-        (vec![vec![1; 29]; 29], out)
+        (SectionSample::from(vec![vec![1; 29]; 29]), out)
     };
     let with = |hue: u8| {
         let mut task = toy_task();
         task.train.push(coprime(hue));
         task
     };
-    let two = task_address(&with(2)).expect("a 29×29 → 30×30 pair refines");
-    let three = task_address(&with(3)).expect("a 29×29 → 30×30 pair refines");
+    let two = task_address(&with(2)).expect("a 29×29 → 30×30 pair is addressed");
+    let three = task_address(&with(3)).expect("a 29×29 → 30×30 pair is addressed");
     assert!(two != three, "the tasks differ in one member, so their addresses do");
-    let without = task_address(&toy_task()).expect("the toy task refines");
+    let without = task_address(&toy_task()).expect("the toy task is addressed");
     assert!(two != without, "the pair is a member of the address, never passed over");
 }
 
-/// A 29×29 → 30×30 train pair makes a task's content address megabytes,
-/// and an index copies the address it is keyed by. The book keys and holds
-/// the task by its 32-byte citation; the address is recomputed from the task
-/// where its coordinates are needed, never held.
-fn coprime_task() -> Task {
-    // Every site changes hue, so the chain holds every cell of K_lcm (870²).
+/// A task of many busy frames has a content address of tens of kilobytes
+/// (every site of every sample is written), and an index copies the
+/// address it is keyed by. The book keys and holds the task by its 32-byte
+/// citation; the address is recomputed from the task where its coordinates
+/// are needed, never held.
+fn busy_task() -> Task {
+    // 40 pairs of 30 × 30 frames: their content passes 64 KiB.
+    let busy = |s: u8| -> SectionSample { (0..30).map(|r| (0..30).map(|c| u8::try_from((r * 7 + c * 3 + usize::from(s)) % 9).expect("a residue mod 9") + 1).collect()).collect() };
     let mut task = toy_task();
-    task.train.push((vec![vec![1; 29]; 29], vec![vec![2; 30]; 30]));
+    task.train.extend((0..40u8).map(|s| (busy(s), busy(s + 1))));
     task
+}
+
+/// TRACK 26 S2 (scope separation, ruled 2026-11-03) — A TASK'S IDENTITY
+/// READS NO GROUND: the address of one task is the same whatever ground a
+/// reader opened (0, 7, a vortex) and with none open; and the same samples
+/// always give the same address.
+#[test]
+fn task_identity_reads_no_ground() {
+    use crate::transducer::family::transduce::Ground;
+    use crate::transducer::raster::on_ground;
+    let task = toy_task();
+    let bare = task_address(&task).expect("addressed");
+    assert_eq!(on_ground(Ground::One(0), || task_address(&task)), Some(bare.clone()), "on a ground of 0");
+    assert_eq!(on_ground(Ground::One(7), || task_address(&task)), Some(bare.clone()), "on a ground of 7");
+    assert_eq!(on_ground(Ground::Vortex(vec![0, 1]), || task_address(&task)), Some(bare.clone()), "on a vortex");
+    assert_eq!(task_address(&toy_task()), Some(bare), "the same samples, the same address");
+}
+
+/// TRACK 26 S2 (scope separation, ruled 2026-11-03) — A TASK'S IDENTITY
+/// FIXES NO FRAME: a task and the same task turned by a quarter turn as a
+/// whole (every raster of it) are two posted tasks with two addresses,
+/// where a frame fixed before addressing would read them as one.
+#[test]
+fn task_identity_reads_no_frame_fixing() {
+    let task = task_of_lines(
+        vec![(vec![vec![1, 0, 0], vec![1, 0, 0]], vec![vec![2, 0, 0], vec![2, 0, 0]])],
+        vec![(vec![vec![0, 0, 1], vec![0, 0, 1]], Vec::new())],
+    );
+    // A quarter turn of a sample: line `j` of the turn is column `j` read
+    // from the last line up.
+    let turn = |g: &SectionSample| -> SectionSample {
+        let [_, width] = g.extents();
+        (0..width).map(|j| g.lines().rev().filter_map(|line| line.get(j).copied()).collect()).collect()
+    };
+    let turned = Task {
+        train: task.train.iter().map(|(x, y)| (turn(x), turn(y))).collect(),
+        test: task.test.iter().map(|(x, y)| (turn(x), y.clone())).collect(),
+    };
+    assert_ne!(task, turned, "the turn moves the samples");
+    let (a, b) = (task_address(&task).expect("addressed"), task_address(&turned).expect("addressed"));
+    assert!(a != b, "two posted tasks that differ by a turn have two addresses");
+    assert_eq!(task_address(&task), Some(a), "and the same samples always give the same address");
 }
 
 #[test]
 fn registry_indexes_by_citation_not_address() {
-    let task = coprime_task();
-    let address = task_address(&task).expect("the coprime pair refines");
-    assert!(address.as_bytes().len() > 1 << 20, "the fixture's address passes 1 MB: {} bytes", address.as_bytes().len());
+    let task = busy_task();
+    let address = task_address(&task).expect("the busy pairs are addressed");
+    assert!(address.as_bytes().len() > usize::from(u16::MAX), "the fixture's address passes 64 KiB: {} bytes", address.as_bytes().len());
     let mut reg = TaskRegistry::new();
     let id = reg.register(task).expect("registers");
     assert_eq!(id, citation(&address));
@@ -144,7 +205,7 @@ fn registry_indexes_by_citation_not_address() {
 fn citation_of_task_is_stable_across_registry_round_trip() {
     let mut reg = TaskRegistry::new();
     let id = reg.register(toy_task()).expect("registers");
-    assert_eq!(reg.close(&id), Some(Closure::First));
+    assert_eq!(reg.close(&id), Some(ClosureOrder::First));
     let snap = reg.snapshot().expect("writes");
     let mut reborn = TaskRegistry::new();
     let again = reborn.register(toy_task()).expect("registers");
@@ -162,7 +223,7 @@ fn dispatch_rotates_and_dries_up() {
     let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
     let (d1, _) = reg.dispatch().expect("work exists");
     assert_eq!(d1, id);
-    assert_eq!(reg.close(&id), Some(Closure::First));
+    assert_eq!(reg.close(&id), Some(ClosureOrder::First));
     assert!(reg.dispatch().is_none(), "a settled book dispatches nothing");
 }
 
@@ -173,14 +234,14 @@ fn dispatch_rotates_and_dries_up() {
 /// refused whole.
 #[test]
 fn restore_cursor_resumes_dispatch_after_restart() {
-    let other = Task {
-        train: vec![(vec![vec![3, 0], vec![0, 0]], vec![vec![0, 3], vec![0, 0]])],
-        test: vec![(vec![vec![0, 0], vec![3, 0]], vec![vec![0, 0], vec![0, 3]])],
-    };
-    let third = Task {
-        train: vec![(vec![vec![4, 4, 0]], vec![vec![0, 4, 4]])],
-        test: vec![(vec![vec![0, 4, 4]], vec![vec![4, 4, 0]])],
-    };
+    let other = task_of_lines(
+        vec![(vec![vec![3, 0], vec![0, 0]], vec![vec![0, 3], vec![0, 0]])],
+        vec![(vec![vec![0, 0], vec![3, 0]], vec![vec![0, 0], vec![0, 3]])],
+    );
+    let third = task_of_lines(
+        vec![(vec![vec![4, 4, 0]], vec![vec![0, 4, 4]])],
+        vec![(vec![vec![0, 4, 4]], vec![vec![4, 4, 0]])],
+    );
     let book = || {
         let mut reg = TaskRegistry::new();
         let ids: Vec<TaskCitation> = [toy_task(), other.clone(), third.clone()]
@@ -231,4 +292,80 @@ fn next_intake_batch_walks_manifest_once() {
     assert!(reg.intake_done());
     assert!(reg.next_intake_batch(8).is_empty(), "the manifest is exhausted");
     assert_eq!(reg.next_cover_batch(1).len(), 1, "cover re-home still walks");
+}
+
+/// TRACK 26 S5 — A TASK'S IDENTITY WRITES RANK AND WIDTH: four posted tasks
+/// whose symbol bytes are the same four bytes, read as one axis of four
+/// sites, two axes of two, one axis of two sites at width two, and one of
+/// one site at width four, are four tasks; the raster task's address is its
+/// posted samples' address. The frame's own content (`Enclosed::put_content`)
+/// writes the rank and the width as well, so it is lossless across both.
+#[test]
+fn task_identity_writes_rank_and_width() {
+    use crate::anastome::dialogue::samples::{position, Member, Split};
+    use crate::anastome::dialogue::PostedTask;
+    use crate::transducer::sample::Sample;
+    let bytes = vec![1u8, 2, 3, 4];
+    let posted = |extents: Vec<usize>, width: usize| {
+        let place = |member| position(Split::Train, 0, member).expect("a position");
+        let x = Sample::new(extents.clone(), width, bytes.clone(), place(Member::Input)).expect("a sample");
+        let y = Sample::new(extents, width, bytes.clone(), place(Member::Output)).expect("a sample");
+        task_address_of(&PostedTask { train: vec![(x, y)], test: Vec::new() })
+    };
+    let addresses = [posted(vec![4], 1), posted(vec![2, 2], 1), posted(vec![2], 2), posted(vec![1], 4)];
+    for (i, a) in addresses.iter().enumerate() {
+        for b in &addresses[i + 1..] {
+            assert_ne!(a, b, "a rank or a width is part of the identity");
+        }
+    }
+    let raster = task_of_lines(vec![(vec![vec![1, 2], vec![3, 4]], vec![vec![1, 2], vec![3, 4]])], Vec::new());
+    assert_eq!(task_address(&raster), Some(addresses[1].clone()), "a raster task is its samples");
+
+    use crate::transducer::family::transduce::Enclosed;
+    use crate::transducer::sample::Place;
+    let frame = |extents: Vec<usize>, width: usize| {
+        let mut out = Vec::new();
+        Enclosed::of(&Sample::new(extents, width, vec![5; 4], Place::new(Vec::new())).expect("a sample")).put_content(&mut out);
+        out
+    };
+    assert_ne!(frame(vec![4], 1), frame(vec![2, 2], 1), "the rank is written");
+    assert_ne!(frame(vec![2], 2), frame(vec![1], 4), "the width is written");
+}
+
+/// TRACK 26 S4c — THE HYPHA SERVES A RANK-3 TASK: posted from its samples,
+/// it is named by their content alone, dispatched, and its envelope served
+/// as posted at rank 3, the withheld output never riding. Only the
+/// alphabet limits it, by name: the word machinery's readers (the section,
+/// the withheld rasters a rule is replayed on, the bound families, the
+/// routes) take nothing of it, and the walks pass it once routed to none.
+#[test]
+fn hypha_serves_a_rank_three_task() {
+    use crate::anastome::dialogue::{decode_task_envelope, encode_task_envelope};
+    use crate::transducer::alphabet::AlphabetRank;
+    use crate::transducer::sentence::SectionRefusal;
+    let posted = crate::server::tests::fixtures::rank_three_task();
+    let mut reg = TaskRegistry::new();
+    let id = reg.post(posted.clone());
+    assert_eq!(id, citation(&task_address_of(&posted)), "named by the posted samples' content alone");
+    assert_eq!(reg.post(posted.clone()), id, "content is identity: posting again posts nothing");
+    assert_eq!(reg.len(), 1);
+    let (served, task) = reg.dispatch().expect("the open task is dispatched whatever its rank");
+    assert_eq!(served, id);
+    let sent = task.envelope(id);
+    let env = decode_task_envelope(&encode_task_envelope(&id, &sent.train, &sent.tests).expect("the envelope writes at rank 3")).expect("and reads whole");
+    assert_eq!(env.id, id);
+    assert_eq!(env.train, posted.train, "the train pairs served as posted");
+    assert_eq!(env.tests, vec![posted.test[0].0.clone()], "the test input, never the withheld output");
+    assert!(env.train.iter().all(|(x, y)| x.rank() == 3 && y.rank() == 3), "served at its own rank");
+    assert!(
+        matches!(reg.section(&id), Some(Err(SectionRefusal::Rank(AlphabetRank { rank: 3 })))),
+        "the alphabet's section refuses it by the alphabet's name"
+    );
+    assert!(reg.withheld(&id).is_empty(), "no rule is replayed on it");
+    assert_eq!(reg.families().count(), 0, "it binds no word family");
+    let registry = std::sync::Mutex::new(reg);
+    assert!(crate::server::route::intake_walk(&registry, 8).is_empty(), "nothing is listed for it");
+    let reg = registry.lock().expect("a fresh lock");
+    assert_eq!(reg.routes(&id).map(|r| r.len()), Some(0), "routed to none, so no walk reads it again");
+    assert_eq!(reg.open(&id), Some(true), "and it stays open");
 }

@@ -1,7 +1,7 @@
 // 16 — THE ROTOR and ITS CLASS: what order a word has, what is filed as
 // torsion, and what is refused rather than read as the zero class.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, Order, Word};
 use crate::transducer::element::{self};
@@ -10,7 +10,7 @@ use crate::transducer::stalk::{self, Standing};
 
 /// 12.6, 16.16 step 3, 3.7 (I6): an orbit whose class has a free part and
 /// which no held word discharges OPENS A CHART AXIS seeded by its own
-/// holonomy — the residual measured how narrow the cover was, and the
+/// holonomy — the residue measured how narrow the cover was, and the
 /// cover grew an axis along which it is a section. The orbit then reads
 /// zero, the rank moves one unit from `free` into `axes`, the form coheres
 /// on the refined cover, and it is never filed as torsion (T3). The
@@ -67,7 +67,7 @@ fn pivot_orbit_opens_axis_for_undischarged_free_class() {
     let back = crate::transducer::sentence::from_element_form(&e).expect("tape");
     assert_eq!(back.axes.len(), 1, "the axis rides the tape");
     assert_eq!(
-        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
         "the court re-derives the seed from the orbit and the certificate re-reads"
     );
@@ -75,7 +75,7 @@ fn pivot_orbit_opens_axis_for_undischarged_free_class() {
     struck.axes = Keyed::new();
     let bad = as_element_form(&struck, [1, 0, 0, 0]).expect("tape without its axis");
     assert_eq!(
-        crate::court::verdict::blind_replay(&bad, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&bad, &mut super::fixtures::budget()),
         Some(crate::court::verdict::REFUSE_ORBIT),
         "without the axis the orbit is a free class again, and it does not replay"
     );
@@ -113,7 +113,7 @@ fn record_cycle_refuses_unwitnessed_period() {
 /// The rank's off-plane count is its own lane, counted once per class and
 /// never folded into the free rank.
 #[test]
-fn rank_counts_offplane_as_own_lane() {
+fn rank_counts_offplane_as_separate_lane() {
     // A ROTOR WITH NO INVARIANT PAIR PLANE. It was a `(0, 2)` 90° turn,
     // which was off-plane only because the speller could not see its
     // plane; it turns plane one and reads as torsion now. Two 90° turns on
@@ -159,7 +159,7 @@ fn rank_counts_offplane_as_own_lane() {
 /// not the holonomy refuses the face; a missing torsion entry refuses
 /// the orbit.
 #[test]
-fn blind_replay_replays_filed_torsion_chord() {
+fn reconstruct_blind_reconstructs_filed_torsion_chord() {
     // AT1: the measured torsion rides the chord's EDGE; an uncertified
     // pivot factor is refused at replay (REFUSE_PIVOT_INEXACT).
     let mut f0 = edge_chord_form(&[word_turn_90()]);
@@ -206,7 +206,7 @@ fn blind_replay_replays_filed_torsion_chord() {
         "the carrier stores a live chord face"
     );
     assert_eq!(
-        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
         "a filed torsion chord replays: the chord carries the holonomy"
     );
@@ -233,7 +233,7 @@ fn blind_replay_replays_filed_torsion_chord() {
         "a face's word is in the key, so moving it names another word"
     );
     // THE FORGERY IS NOT UNGUARDED, IT IS UNCONSTRUCTIBLE (54.5, as ruled
-    // 2026-09-20) — the same reading `replay_form_replays_filed_torsion_without_taped_forest` already carries
+    // 2026-09-20) — the same reading `reconstruct_form_reconstructs_filed_torsion_without_taped_forest` already carries
     // one carrier up.
     //
     // This stripped `Form.torsion` and expected `REFUSE_ORBIT`: a filed
@@ -256,7 +256,7 @@ fn blind_replay_replays_filed_torsion_chord() {
         "stripping a filing changes no byte of the word: it was never in the key"
     );
     assert_eq!(
-        crate::court::verdict::blind_replay(&missing, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&missing, &mut super::fixtures::budget()),
         None,
         "and the geometry replays as it did, because that is what replay reads"
     );
@@ -365,7 +365,7 @@ fn word_closes_offplane_turn_90_at_fourth_power() {
     );
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("the identity chord crystallizes");
     assert_eq!(
-        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
         "the court reads projective identity"
     );
@@ -410,7 +410,7 @@ fn class_key_reads_rotor_conjugacy_first() {
 /// invariant plane at all rather than one whose plane is simply not the
 /// sensor's.
 #[test]
-fn of_word_occupies_own_plane_off_sensor() {
+fn of_word_occupies_separate_plane_off_sensor() {
     let w = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 2)).unwrap(), false)]);
     assert!(w.plane_block().is_none(), "it moves the sensor plane, as it always did");
     let f = w.form().expect("and it turns (0, 2), which the carrier has a seat for");

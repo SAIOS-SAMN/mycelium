@@ -1,15 +1,15 @@
 // 21 step 3, 13.6 — THE GLUE AT THE COURT: a form that cites a held form
 // replays its trajectory through the genome that holds the citation.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::element::Element;
 
 /// A glued form's trajectory is measured through the court genome as Crystal.
 #[test]
-fn perceive_speech_replays_glued_form_through_court_genome() {
+fn perceive_speech_reconstructs_glued_form_through_court_genome() {
 use crate::transducer::family::{
-    apply_form, extract_rule_with, mint_sentence, cipher_form, Crystal, Grid, Speech,
+    apply_form, extract_rule_with, mint_sentence, cipher_form, Crystal, SectionSample, Speech,
 };
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 use crate::transducer::stalk::{Invariant, Standing};
@@ -19,11 +19,11 @@ let family = vec![
 ];
 let held_form = cipher_form(&family[0].0, &family[0].1);
 let held_e = as_element_form(&held_form, [1, 0, 0, 0]).expect("inner tape");
-struct Held {
+struct CitedForm {
     e: Element,
     f: Form,
 }
-impl Crystal for Held {
+impl Crystal for CitedForm {
     fn on_class(&self, _class: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         vec![(&self.e, &self.f, Standing::Held)]
     }
@@ -48,7 +48,7 @@ impl Crystal for Held {
     fn speak_form(
         &self,
         f: &Form,
-        x: &Grid,
+        x: &SectionSample,
         placement: &crate::transducer::alphabet::Word,
     ) -> Option<Speech> {
         apply_form(f, x, placement, self)
@@ -83,7 +83,7 @@ impl Crystal for Held {
         Vec::new()
     }
 }
-let cover = Held {
+let cover = CitedForm {
     e: held_e.clone(),
     f: held_form,
 };
@@ -124,14 +124,14 @@ assert_eq!(
 /// court records the citation as a use of the cited address (`cited_by`).
 /// This is the chain the index fault of L8r held shut end to end — no
 /// `Glued` vertex, so no `cited_by`, so nothing a citation could ever pay
-/// for (26, 27) — measured here through the epigenome the mesh runs and
+/// for (26, 27) — measured here through the `MindLanguage` the mesh runs and
 /// not through a stub.
 #[test]
 fn cited_by_records_glued_citation_as_use() {
-use crate::client::sdk::Epigenome;
+use crate::client::sdk::MindLanguage;
 use crate::transducer::family::{extract_rule_with, mint_sentence, cipher_form, sentence_measure, NoCrystal};
 use crate::transducer::sentence::{as_element_form, Vertex};
-fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
+fn digits(rows: &[&str]) -> crate::transducer::spelled::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 let family = vec![
@@ -142,7 +142,7 @@ let family = vec![
 let held = cipher_form(&family[0].0, &family[0].1);
 let mag = sentence_measure(&held, &family[..1], &NoCrystal, 0).expect("the body is spoken");
 let held_e = as_element_form(&held, mag).expect("a tape");
-let mut epi = Epigenome::new();
+let mut epi = MindLanguage::new();
 epi.stand_dialect_at(held_e.clone(), 1, 1).expect("stood");
 
 // The rule the voice extracts over the whole bundle cites it.
@@ -310,7 +310,7 @@ fn glue_fetched_records_true_section_geometry() {
     // A peer arrives with spoken
     let mut heard = Court::new();
     heard.bind_identity(own_vk);
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     let outcome = fetched(&mut heard, &spoken, peer_id, own_vk, &mut cover);
     assert!(matches!(outcome, Glue::Admitted));
 
@@ -343,7 +343,7 @@ fn glue_fetched_reads_peer_sentence_against_own_section() {
     let axes = |peer: [u8; 32]| {
         crate::observe::replication().signers.into_iter().find(|(k, _)| *k == peer).map(|(_, a)| a)
     };
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     // 78.153: a stroke that holds the glue's replay.
     let mut glue = crate::physics::Physics::default().stroke_n(1 << 20);
     let _ = own.glue_fetched(spoken.clone(), same_peer, own_vk, &mut cover, &mut glue);
@@ -395,7 +395,7 @@ fn glue_fetched_holds_attached_word() {
     assert_eq!(own.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&held)), vec![crate::anastome::dialogue::SPEECH_STOOD]);
     own.court_stroke();
     let peer_word = word(2);
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     let outcome = fetched(&mut own, &peer_word, peer, own_vk, &mut cover);
     if outcome == Glue::Attached {
         assert!(own.word_at(peer_word.address().as_bytes()).is_some(), "the attached word is held");

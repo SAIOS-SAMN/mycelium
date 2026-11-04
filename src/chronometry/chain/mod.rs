@@ -12,6 +12,7 @@
 
 use super::era::Root;
 use super::receipt::{ActKind, Cite, KStepReceipt, Parent, Place, Stamp};
+use crate::court::admission::Predecessor;
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
 
@@ -292,9 +293,10 @@ impl ReceiptChain {
         self.unpack(*at, self.node_at(at)?)
     }
 
-    /// Whether a node stands at this stamp with this hash.
+    /// Whether a node stands at this stamp with this hash: the citation
+    /// continues the chain held there (a link, MU-HOSTING §5a.10).
     pub fn holds(&self, p: &Parent) -> bool {
-        self.node_at(&p.at).is_some_and(|n| n.hash == p.hash)
+        self.node_at(&p.at).is_some_and(|n| Predecessor::named(p).continues(&Predecessor::of_bytes(n.hash)))
     }
 
     /// The node a signer holds at one place, through the line relation.
@@ -506,27 +508,30 @@ impl ReceiptChain {
             return broken(self);
         }
         let from = self.era_walk_from(p);
-        let Some(start) = page.iter().position(|r| r.stamp == from.at && r.chain_hash == from.hash && r.rederives()) else {
+        let Some(start) = page
+            .iter()
+            .position(|r| r.stamp == from.at && Predecessor::named(&from).continues(&Predecessor::of(r)) && r.rederives())
+        else {
             return broken(self);
         };
         let mut last = from;
-        let mut reached = last == root;
+        let mut reached = Predecessor::cites(&last, &root);
         for r in page.iter().skip(start + 1) {
             if reached {
                 break;
             }
-            if !r.rederives() || r.prev != Some(last) {
+            if !r.rederives() || !r.prev.is_some_and(|prev| Predecessor::cites(&prev, &last)) {
                 return broken(self);
             }
             last = Parent { at: r.stamp, hash: r.chain_hash };
-            reached = last == root;
+            reached = Predecessor::cites(&last, &root);
         }
         if reached {
             self.walking.remove(&key);
             self.proved.insert(p.at.key(), p.hash);
             return EraWalk::Proved;
         }
-        if last == from {
+        if Predecessor::cites(&last, &from) {
             return EraWalk::Stalled;
         }
         self.walking.insert(key, last);
@@ -700,7 +705,7 @@ impl ReceiptChain {
                 None => *self.proved.get(&p.at.key())?,
             },
         };
-        (hash == p.hash).then_some(p.at.h)
+        Predecessor::named(p).continues(&Predecessor::of_bytes(hash)).then_some(p.at.h)
     }
 
     /// A folded receipt, read back from its era and proved there, held by
@@ -739,27 +744,74 @@ impl ReceiptChain {
     }
 
     /// ADMIT a verified peer node: held once at its stamp, entered on its
-    /// signer's line, and PLACED against this chain's own line.
+    /// signer's line, and PLACED against this chain's own line. A `Fold`
+    /// files the root it names (`file_peer_root`).
     pub fn admit(&mut self, r: KStepReceipt) {
-        let key = r.stamp.key();
-        // 78.94 — a peer's node of an action no court seals is no node.
-        if r.stamp.vk == self.vk || self.nodes.contains(&key) || !r.kind.sealed() {
-            return;
+        if self.admits(&r) {
+            self.file_peer_root(&r);
+            self.store(r);
         }
+    }
+
+    /// MU-HOSTING §5a.9 — A PEER NODE NO SIGNATURE HAS REACHED, admitted by
+    /// its chain alone (a back-filled receipt): held, entered on its
+    /// signer's line and placed as `admit` holds it, and a `Fold` files NO
+    /// root. The root a fold names is filed once a signature reaches the
+    /// fold (`file_peer_root`, from the court's signed-reach gate). Taken
+    /// reconstructed: its chain hash re-derives (MU-HOSTING §5a.10).
+    pub fn admit_unreached(&mut self, r: crate::court::admission::Reconstructed<KStepReceipt>) {
+        if self.admits(&r) {
+            self.store(r.into_object());
+        }
+    }
+
+    /// Whether `admit` holds `r`: a peer's node not held yet, of an action
+    /// a court seals (78.94: a peer's node of an action no court seals is
+    /// no node).
+    fn admits(&self, r: &KStepReceipt) -> bool {
+        r.stamp.vk != self.vk && !self.nodes.contains(&r.stamp.key()) && r.kind.sealed()
+    }
+
+    /// One peer node held at its stamp, on its line, placed.
+    fn store(&mut self, r: KStepReceipt) {
+        let key = r.stamp.key();
         let own_in = self.own_in_of(&r);
         let reach = self.placed.get(&key).and_then(|p| p.reach);
         self.placed.insert(&key, Placed { own_in, reach });
         self.file_on_line(&r.stamp);
-        self.file_peer_root(&r);
         self.journal.filed(&key);
         let n = self.pack(r);
         self.nodes.insert(key, n);
     }
 
+    /// MU-HOSTING §5a.9 — A PEER NODE NO SIGNATURE HAS REACHED LEAVES (an
+    /// eviction by signature): a node of another signer's line, taken off
+    /// the line and its placement, and named gone on the line on disk.
+    /// `None` for this chain's own node, or where none is held at `at`.
+    pub fn evict(&mut self, at: &Stamp) -> Option<KStepReceipt> {
+        if at.vk == self.vk {
+            return None;
+        }
+        let r = self.take_node(at)?;
+        self.journal.left(&at.key());
+        Some(r)
+    }
+
+    /// AT RESTORE, THE PEERS' FOLD ROOTS FILED AGAIN from the fold nodes
+    /// held, but for the folds `waits` names: a fold no signature has
+    /// reached files no root until one does (`file_peer_root`).
+    pub fn refile_peer_roots(&mut self, waits: impl Fn(&KStepReceipt) -> bool) {
+        let folds: Vec<KStepReceipt> = self.admitted().into_iter().filter(|r| r.kind == ActKind::Fold && !waits(r)).collect();
+        self.peer_roots = Keyed::new();
+        for r in &folds {
+            self.file_peer_root(r);
+        }
+    }
+
     /// A PEER'S FOLD ROOT, read off its `Fold` node: the root it cites on
     /// its own signer's line, raising that signer's entry. Any other node
     /// names no root.
-    fn file_peer_root(&mut self, r: &KStepReceipt) {
+    pub fn file_peer_root(&mut self, r: &KStepReceipt) {
         if r.kind != ActKind::Fold {
             return;
         }

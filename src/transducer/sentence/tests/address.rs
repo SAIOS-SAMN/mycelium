@@ -2,7 +2,7 @@
 // round-trips its v4 tape exactly, and a short or partial tape is refused
 // rather than partly read.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::network::nerve::coord;
 use crate::transducer::sentence::ToralPeriod;
 use crate::transducer::alphabet::{self, Word};
@@ -66,7 +66,7 @@ fn from_element_form_round_trips_every_vertex_kind() {
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
     assert!(inner.is_closed(), "a tree of two vertices coheres");
-    assert!(as_element_form(&inner, [0; 4]).is_none(), "zero residual is not spoken");
+    assert!(as_element_form(&inner, [0; 4]).is_none(), "zero residue is not spoken");
     let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
     let inner_addr = inner_e.address();
 
@@ -351,7 +351,7 @@ fn stand_demand_gathers_bodies_per_kind_and_chart() {
     f.stand_demand(Demand::Creation, &chart, vec![(0, 0, 0, 3)]);
     f.stand_demand(Demand::Creation, &chart, vec![(0, 1, 0, 3), (0, 0, 0, 3)]);
     f.stand_demand(Demand::Creation, &other, vec![(5, 5, 0, 1)]);
-    let demanded: Vec<(Demand, Vec<Link>)> =
+    let demanded: Vec<(Demand, Vec<SectionLink>)> =
         f.demand_vertices().map(|(_, k, _, links)| (k.clone(), links.to_vec())).collect();
     assert_eq!(demanded.len(), 2, "one vertex per (kind, chart), got {demanded:?}");
     // AT1 — THE DEMAND STANDS AT ITS OWN COORDINATE, in the Demand stratum

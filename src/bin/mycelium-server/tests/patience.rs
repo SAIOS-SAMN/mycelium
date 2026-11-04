@@ -6,14 +6,14 @@
 use crate::transport::{note_rtt_ok, patience, tell_peer_within, voice_at, AskWindow, Stall};
 use crate::Mesh;
 use ed25519_dalek::SigningKey;
-use mycelium::network::nerve::{Cover, Keyed};
+use mycelium::network::nerve::{HomeTrie, Keyed};
 use mycelium::physics::{aperture_cycle, transport_deadline};
 use std::sync::{Arc, Mutex};
 
 fn mesh() -> Mesh {
     let sk = SigningKey::from_bytes(&[3; 32]);
     Mesh {
-        cover: Arc::new(Mutex::new(Cover::new())),
+        cover: Arc::new(Mutex::new(HomeTrie::new())),
         rooms: Arc::new(Mutex::new(Keyed::new())),
         addrs: Arc::new(Mutex::new(Keyed::new())),
         vk: sk.verifying_key().to_bytes(),
@@ -122,7 +122,7 @@ fn rtt_is_nonzero_by_measurement() {
         let (mut s, _) = listener.accept().expect("accept");
         let mut head = [0u8; 6];
         s.read_exact(&mut head).expect("the act");
-        let frame = mycelium::network::wire::Frame { lane: mycelium::network::wire::Stratum::Spatial, body: vec![7] };
+        let frame = mycelium::network::wire::WireFrame { lane: mycelium::network::wire::Lane::Spatial, body: vec![7] };
         s.write_all(&frame.encode().expect("encode")).expect("write");
     });
     let (_, rtt) = tell_peer_within(&addr, vec![0x10], Stall::Beyond).expect("answered");

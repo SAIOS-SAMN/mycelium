@@ -6,32 +6,32 @@
 // the shelf outside the court; READ-LEDGER served off the published reading
 // (78.151), never the court.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::atlas::{encode_ledger_page, encode_ledger_reply, encode_map_reading, encode_map_reply};
 use mycelium::anastome::dialogue::crossing::encode_traverse_reply;
 use mycelium::anastome::dialogue::domain::{decode_domain_request, encode_domain_reply, DomainRequest};
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
 /// 78.154 — READ-LEDGER off the published reading: `true` where the frame
 /// was one and was answered here.
-pub(crate) fn serve_ledger(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
+pub(crate) fn serve_ledger(stream: &mut TcpStream, frame: &WireFrame, context: &Context) -> bool {
     let Some(DomainRequest::ReadLedger { domain, after }) = decode_domain_request(&frame.body) else { return false };
     mycelium::observe::note_serve(mycelium::observe::ServeAxis::ReadsPublished, 1);
-    let page = door.published.take().ledger_page(&domain, after);
-    answer(stream, Frame { lane: frame.lane, body: encode_ledger_page(&page) });
+    let page = context.published.take().ledger_page(&domain, after);
+    answer(stream, WireFrame { lane: frame.lane, body: encode_ledger_page(&page) });
     true
 }
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(request) = decode_domain_request(&frame.body) else { return };
-    if serve_ledger(stream, frame, door) {
+    if serve_ledger(stream, frame, context) {
         return;
     }
     // The final point is read off the shelf before the court is taken.
-    let fin = crate::tshelf::final_point();
-    let body = match crate::held::held!(door.court) {
+    let fin = crate::tuniversal::final_point();
+    let body = match crate::court_lock::held!(context.court) {
         // 78.153b — on the hold's stroke: a LEDGER entry's ladder pruning
         // spends it; MAP and TRAVERSE read what the frame carries; READ-MAP
         // walks one universe's records (a fibre), owed to the shelf.
@@ -61,8 +61,8 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Err(_) => return,
     };
     // 78.137 — acknowledged only once durable.
-    if !crate::persist::durable(&door.court, &door.state_path) {
+    if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
-    answer(stream, Frame { lane: frame.lane, body });
+    answer(stream, WireFrame { lane: frame.lane, body });
 }

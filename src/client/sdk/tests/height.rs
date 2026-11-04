@@ -23,9 +23,9 @@ fn advance_height_only_advances_and_stamps_dialect() {
     // What the mind stands is stamped with the height it read.
     let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let tu = e.now_tu();
-    e.epigenome.stand_dialect_at(word.clone(), 1, tu);
+    e.language.stand_dialect_at(word.clone(), 1, tu);
     assert_eq!(
-        e.epigenome.dialect.get(word.address().as_bytes()).map(|d| d.last_used_tu),
+        e.language.dialect.get(word.address().as_bytes()).map(|d| d.last_used_tu),
         Some(9),
         "the dialect entry carries the height read, not zero"
     );
@@ -44,7 +44,7 @@ fn close_cycle_counts_returns_without_persisting_k() {
     assert_eq!(e.own_k(), 0, "acting moved no clock");
     assert!(e.close_cycle(1), "one orbit returned: the stroke closes");
     assert!(e.close_cycle(2), "two returned in one stroke");
-    assert_eq!((e.epigenome.genome_len(), e.own_k()), (0, 3), "three returns, no word admitted");
+    assert_eq!((e.language.genome_len(), e.own_k()), (0, 3), "three returns, no word admitted");
     let (bytes, refused) = e.genome_bytes();
     assert_eq!(refused.total(), 0, "no word, nothing refused");
     let mut booted = Mind::open("127.0.0.1:1", Voice::named("no-words"));
@@ -59,8 +59,8 @@ fn close_cycle_counts_returns_without_persisting_k() {
 /// development deployment, 2026-10-19: rewrites were 88% of a 48 MB genome).
 #[test]
 fn absorb_taught_never_admits_rewrite_to_genome() {
-    let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
-    let other = super::common::two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
+    let word = super::fixtures::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let other = super::fixtures::two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
     let payload = crate::transducer::rewrite::RewritePayload::Retire { cites: vec![other.address()], freed: word.magnitude() };
     let rewrite = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Retire, &[word.address()], word.address(), payload, word.magnitude())
         .expect("the retirement mints");
@@ -68,15 +68,15 @@ fn absorb_taught_never_admits_rewrite_to_genome() {
     let tape = rewrite.to_bytes().expect("the record writes");
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("rewritten"));
     let _ = mind.absorb_taught(&tape);
-    assert!(!mind.epigenome.holds(rewrite.address().as_bytes()) && mind.epigenome.genome_len() == 0, "never learned into the genome");
+    assert!(!mind.language.holds(rewrite.address().as_bytes()) && mind.language.genome_len() == 0, "never learned into the genome");
     let stratum = crate::transducer::stalk::invariant_of(&rewrite).key();
-    assert!(mind.board.residual_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");
-    let mut epi = Epigenome::new();
-    if epi.learn(&tape, &mut super::common::budget()).is_some() && epi.holds(rewrite.address().as_bytes()) {
+    assert!(mind.board.residue_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");
+    let mut epi = MindLanguage::new();
+    if epi.learn(&tape, &mut super::fixtures::budget()).is_some() && epi.holds(rewrite.address().as_bytes()) {
         epi.admit_all_at(crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS));
         let (frozen, refused) = epi.crystallize();
         assert_eq!(refused.rewrite, 1, "a rewrite the language holds is left out of the genome by name");
-        let mut back = Epigenome::new();
+        let mut back = MindLanguage::new();
         assert!(back.uncrystallize(&frozen).is_some() && !back.holds(rewrite.address().as_bytes()), "and never restored as a word");
     }
 }
@@ -88,7 +88,7 @@ fn absorb_taught_never_admits_rewrite_to_genome() {
 /// and never more; a file holding only words is kept as it is.
 #[test]
 fn keep_genome_rewrites_file_restore_left_short() {
-    let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let word = super::fixtures::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let payload = crate::transducer::rewrite::RewritePayload::Retire { cites: vec![word.address()], freed: word.magnitude() };
     let rewrite = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Retire, &[word.address()], word.address(), payload, word.magnitude())
         .expect("the retirement mints");
@@ -97,16 +97,16 @@ fn keep_genome_rewrites_file_restore_left_short() {
     let at = crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS);
     let mut key = Vec::new();
     crate::chronometry::Cite::word(&rewrite, at).put_canonical(&mut key).expect("its citation writes");
-    let mut nodes: crate::network::nerve::Keyed<crate::snapshot::Leaves> = crate::network::nerve::Keyed::new();
+    let mut nodes: crate::network::nerve::Keyed<crate::trie_tape::Leaves> = crate::network::nerve::Keyed::new();
     nodes.insert(key, vec![(1, rewrite.to_bytes().expect("the record writes"))]);
     let mut older = b"GEN7".to_vec();
-    crate::snapshot::put_trie(&mut older, "words", &nodes);
+    crate::trie_tape::put_trie(&mut older, "words", &nodes);
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("rewritten-file"));
     assert_eq!(mind.restore_genome(&older), Ok(()), "the older file restores");
-    assert_eq!(mind.epigenome.genome_len(), 0, "without its rewrite");
+    assert_eq!(mind.language.genome_len(), 0, "without its rewrite");
     mind.keep_genome("unused".to_string());
     assert!(mind.board.genome_unwritten, "the file held more than the genome: written again at the first stroke");
-    let (plain, _) = Epigenome::new().crystallize();
+    let (plain, _) = MindLanguage::new().crystallize();
     let mut fresh = Mind::open("127.0.0.1:1", Voice::named("plain-file"));
     assert_eq!(fresh.restore_genome(&plain), Ok(()), "a file of words alone restores");
     fresh.keep_genome("unused".to_string());
@@ -120,21 +120,21 @@ fn keep_genome_rewrites_file_restore_left_short() {
 /// court rules it. A genome that carried a voice's ledger is refused by name.
 #[test]
 fn genome_bytes_crystallizes_word_only_at_court_stamp() {
-    // A sentence of the language: a residual chain is an open question, never
+    // A sentence of the language: a residue chain is an open question, never
     // a word (MU-CLIENT §7.1), and never reaches the genome.
-    let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let word = super::fixtures::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let court = crate::chronometry::Stamp::new(7, [3; 32], crate::chronometry::Place { k: 2, i: 1 });
     let mut e = Mind::open("127.0.0.1:1", Voice::named("learned-word"));
     let mut budget = e.stroke();
     let bytes = word.to_bytes().expect("the record writes");
     assert!(e.absorb_taught_at(&bytes, Some(court), &mut budget).is_some(), "the word is learned");
-    assert_eq!(e.epigenome.admitted_at(word.address().as_bytes()), Some(court), "filed at the court's stamp");
+    assert_eq!(e.language.admitted_at(word.address().as_bytes()), Some(court), "filed at the court's stamp");
     let (genome, refused) = e.genome_bytes();
     assert_eq!(refused.total(), 0, "nothing refused");
     let mut booted = Mind::open("127.0.0.1:1", Voice::named("learned-word"));
     assert_eq!(booted.restore_genome(&genome), Ok(()), "the genome restores");
-    assert_eq!(booted.epigenome.genome_len(), 1, "with its word");
-    assert_eq!(booted.epigenome.admitted_at(word.address().as_bytes()), Some(court), "at the court's stamp");
+    assert_eq!(booted.language.genome_len(), 1, "with its word");
+    assert_eq!(booted.language.admitted_at(word.address().as_bytes()), Some(court), "at the court's stamp");
 
     let mut unruled = Mind::open("127.0.0.1:1", Voice::named("unruled"));
     assert!(unruled.absorb_taught(&bytes).is_some(), "a word with no court's stamp is learned");
@@ -150,8 +150,8 @@ fn genome_bytes_crystallizes_word_only_at_court_stamp() {
     let mut budget = booted.stroke();
     assert_eq!(booted.absorb_taught_at(&bytes, Some(again), &mut budget), Some(Comprehension::Held), "a held word re-served is heard by holding it");
     assert_eq!(booted.take_learned_mu(), [0; 4], "the page brought nothing the mind did not hold");
-    assert_eq!(booted.epigenome.genome_len(), 1, "nothing admitted again");
-    assert_eq!(booted.epigenome.admitted_at(word.address().as_bytes()), Some(court), "a word admitted once keeps its stamp");
+    assert_eq!(booted.language.genome_len(), 1, "nothing admitted again");
+    assert_eq!(booted.language.admitted_at(word.address().as_bytes()), Some(court), "a word admitted once keeps its stamp");
     let mut fresh = Mind::open("127.0.0.1:1", Voice::named("learned-word"));
     let mut budget = fresh.stroke();
     let _ = fresh.absorb_taught_at(&bytes, Some(court), &mut budget);
@@ -161,5 +161,5 @@ fn genome_bytes_crystallizes_word_only_at_court_stamp() {
     ledgered[..4].copy_from_slice(b"GEN6");
     let mut refused_boot = Mind::open("127.0.0.1:1", Voice::named("learned-word"));
     assert!(refused_boot.restore_genome(&ledgered).is_err_and(|why| why.contains("voice's ledger")), "GEN6 refused by name");
-    assert_eq!(refused_boot.epigenome.genome_len(), 0, "and nothing is partly restored");
+    assert_eq!(refused_boot.language.genome_len(), 0, "and nothing is partly restored");
 }

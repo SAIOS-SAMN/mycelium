@@ -3,7 +3,7 @@
 // with its last thought; a meaning given whole is derived once the words
 // beside it are known.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::client::sdk::*;
 use crate::transducer::alphabet::{LetterId, Word};
 
@@ -17,7 +17,7 @@ use crate::transducer::alphabet::{LetterId, Word};
 /// that return, K moves by exactly it, and the first scene's speech is posted —
 /// the second's, whose scene no thought of has returned, is still held.
 #[test]
-fn speak_with_posts_only_at_own_thought_return() {
+fn speak_with_posts_only_at_thought_return() {
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let e2 = two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
     let (one, two) = ([1u8; 32], [2u8; 32]);
@@ -38,12 +38,12 @@ fn speak_with_posts_only_at_own_thought_return() {
 }
 
 /// The scene a task's pairs make: one bar carried a column along.
-fn scene() -> (crate::arc::Grid, crate::arc::Grid) {
-    (vec![vec![0, 0, 0], vec![1, 1, 0], vec![0, 0, 0]], vec![vec![0, 0, 0], vec![0, 1, 1], vec![0, 0, 0]])
+fn scene() -> (crate::transducer::family::SectionSample, crate::transducer::family::SectionSample) {
+    (vec![vec![0, 0, 0], vec![1, 1, 0], vec![0, 0, 0]].into(), vec![vec![0, 0, 0], vec![0, 1, 1], vec![0, 0, 0]].into())
 }
 
-fn envelope(id: [u8; 32]) -> crate::anastome::dialogue::TaskEnvelope {
-    crate::anastome::dialogue::TaskEnvelope { id, train: vec![scene()], tests: Vec::new() }
+fn envelope(id: [u8; 32]) -> crate::anastome::dialogue::TaskRasters {
+    crate::anastome::dialogue::TaskRasters { id, train: vec![scene()], tests: Vec::new() }
 }
 
 /// A SCENE WAITING ON COMPREHENSION STANDS WITH ITS THOUGHTS. With no thought
@@ -63,7 +63,7 @@ fn comprehend_waiting_lapses_scene_with_last_thought() {
     let (a, b) = scene();
     let frames = crate::transducer::family::perceive_family(&[(a.clone(), b.clone())]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
-    let f = crate::transducer::family::scene_form_on(&held.epigenome, &mut budget, &a, &b, &frames).expect("the scene reads");
+    let f = crate::transducer::family::scene_form_on(&held.language, &mut budget, &a, &b, &frames).expect("the scene reads");
     held.contemplation.hold_perceived(f, &frames, &Vec::new(), &[], [0; 4], &id, &mut budget).expect("held");
     assert!(held.contemplation.holds_family(&id), "a thought stands on the scene");
     // Its own language — the words on the charts it stands on — as it was

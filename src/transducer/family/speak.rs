@@ -7,13 +7,13 @@
 use super::*;
 use crate::transducer::sentence::frame_key;
 
-pub(crate) fn grows_to_frame(a: &Grid, b: &Grid) -> bool {
+pub(crate) fn grows_to_frame(a: &SectionSample, b: &SectionSample) -> bool {
     let (fa, fb) = (frame_of(a), frame_of(b));
     if fa != fb || fa.0 == 0 || fa.1 == 0 {
         return false;
     }
-    let ins: Vec<Painted> = crate::arc::painted_of_grid(a);
-    let outs: Vec<Painted> = crate::arc::painted_of_grid(b);
+    let ins: Vec<Painted> = crate::transducer::raster::painted_of(a);
+    let outs: Vec<Painted> = crate::transducer::raster::painted_of(b);
     if ins.is_empty() || outs.len() <= ins.len() {
         return false;
     }
@@ -80,16 +80,14 @@ pub(crate) fn emit_carried(
         let Some((r, c)) = on_grid(&l.site) else { continue };
         // A hue the map does not move keeps its own colour: that is what
         // the map says about it (rule 11).
-        let spoken = match hue[h as usize] {
-            Some(t) => t,
-            None => h,
-        };
-        let frame = l.site.axis(crate::transducer::base::FRAME_AXIS);
+        let spoken = crate::transducer::sentence::transport::gauge_image(&hue, h);
+        let place = crate::transducer::perspective::family_place_axis(l.site.n());
+        let frame = place.and_then(|p| l.site.axis(p));
         match element::carry_compartment_site(v, &l.site) {
             // The grid spoken onto is the body's own frame: a compartment
             // carried into another frame is not spoken on it, and is
             // remainder.
-            Some(image) if image.iter().all(|s| s.axis(crate::transducer::base::FRAME_AXIS) == frame) => {
+            Some(image) if image.iter().all(|s| place.and_then(|p| s.axis(p)) == frame) => {
                 // A carried site can be any i64: inside the frame by
                 // `try_from` and a comparison, exact at every width — a cast
                 // could wrap a far site into the frame.
@@ -124,7 +122,7 @@ pub(crate) fn hue_from_neighbours(r: i64, c: i64, occ: &crate::network::nerve::K
 /// names the bodies. An empty fibre is unspoken, never every body.
 pub fn apply_form(
     f: &Form,
-    x: &Grid,
+    x: &SectionSample,
     placement: &crate::transducer::alphabet::Word,
     crystal: &dyn Crystal,
 ) -> Option<Speech> {
@@ -135,7 +133,7 @@ pub fn apply_form(
 /// active on that pair are spoken.
 pub fn apply_form_on(
     f: &Form,
-    x: &Grid,
+    x: &SectionSample,
     placement: &crate::transducer::alphabet::Word,
     crystal: &dyn Crystal,
     pair: Option<usize>,
@@ -151,7 +149,7 @@ pub fn apply_form_on(
 /// that perception (the court's replay cursor); `None` perceives `x` here.
 pub(crate) fn apply_form_metered(
     f: &Form,
-    x: &Grid,
+    x: &SectionSample,
     placement: &crate::transducer::alphabet::Word,
     crystal: &dyn Crystal,
     pair: Option<usize>,
@@ -185,7 +183,7 @@ pub(crate) enum Spoken {
 /// the speaking stack, and the stroke it spends where it is metered.
 ///
 /// THE STACK IS THE CYCLE GUARD (defect 4 of the lock audit). Mutual
-/// citation is admitted by the nerve (`replay_form_on`'s citation reading:
+/// citation is admitted by the nerve (`reconstruct_form_on`'s citation reading:
 /// a posetal height forbade every 2-simplex), and speaking it recursed
 /// without end: `A` cites `B`, `B` cites `A`, and each speech spoke the
 /// other before its own memo entry was written. A citation already on the
@@ -260,7 +258,7 @@ type Cited = (
 );
 
 impl Scene {
-    pub(crate) fn of(x: &Grid) -> Scene {
+    pub(crate) fn of(x: &SectionSample) -> Scene {
         Scene::of_bodies(perceive(x))
     }
 
@@ -290,7 +288,7 @@ impl Scene {
 /// emits onto the scene's bodies, read by chart from its atlas.
 fn speak_on_scene(
     f: &Form,
-    x: &Grid,
+    x: &SectionSample,
     scene: &Scene,
     placement: &crate::transducer::alphabet::Word,
     crystal: &dyn Crystal,
@@ -664,20 +662,26 @@ impl Speech {
     /// Dropping the site instead would lay down a grid that silently is
     /// not what the form said, and indexing on it would kill the process
     /// where the court refuses.
-    pub fn grid(&self) -> Option<Grid> {
+    pub fn grid(&self) -> Option<SectionSample> {
         // A speech missing a citation is not the form's whole speech, and no
         // grid stands for it; the measure reads the citation by name.
         if !self.unresolved.is_empty() || !self.cycled.is_empty() {
             return None;
         }
-        let mut out: Grid = vec![vec![crate::arc::ground(); self.frame.1]; self.frame.0];
+        // A site the speech does not paint holds the family's one ground;
+        // where one is left and the scope has none (a vortex, no ground, no
+        // family open), no grid stands for the speech. A speech that paints
+        // every site needs no ground.
+        let mut out: Vec<Vec<Option<u8>>> = vec![vec![None; self.frame.1]; self.frame.0];
         for &(r, c, h) in &self.painted {
             let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {
                 return None;
             };
-            *out.get_mut(ur).and_then(|row| row.get_mut(uc))? = h;
+            *out.get_mut(ur).and_then(|row| row.get_mut(uc))? = Some(h);
         }
-        Some(out)
+        let void = crate::transducer::raster::void().ok();
+        let lines: Vec<Vec<u8>> = out.into_iter().map(|row| row.into_iter().map(|h| h.or(void)).collect::<Option<Vec<u8>>>()).collect::<Option<_>>()?;
+        SectionSample::of_lines(&lines).ok()
     }
 }
 
@@ -687,21 +691,35 @@ impl Speech {
 /// a section; one body on two germs is a section whose face words to
 /// already-placed anchors agree. None only when two anchors conflict on
 /// the same output sites.
-pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &Grid, crystal: &dyn Crystal) -> Option<Speech> {
+pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &SectionSample, crystal: &dyn Crystal) -> Option<Speech> {
     apply_form(&rule.form, x, &crate::transducer::alphabet::Word::identity(), crystal)
 }
 
-/// The residual between what was spoken and what was observed, as a chain
+/// The residue between what was spoken and what was observed, as a chain
 /// (row, col, spoken hue, observed hue) over every site that differs.
-pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i64, u8, u8)> {
+/// Public so the corpus decoder's sweep (`sources/arc-agi`, ROADMAP track
+/// 26 S1) reads the same planar coboundary the core's tests read.
+///
+/// A site one side does not reach holds the scene's ground there, the one
+/// symbol the open scope writes for it (`raster::void`). Where a link needs
+/// it and the scope has none (a vortex, no ground, no family open), the
+/// residue cannot be written on this carrier and is refused by name; a
+/// speech that reaches every observed site, on the observed frame, needs no
+/// ground and is never refused.
+pub fn residue_of(
+    spoken: Option<&SectionSample>,
+    observed: &SectionSample,
+) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
+    let void = crate::transducer::raster::void();
+    let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
-    for (r, row) in observed.iter().enumerate() {
+    for (r, row) in observed.lines().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             // A site the speech does not reach is unoccupied there, and
             // the scene's ground IS absence in this encoding.
-            let s = match spoken.and_then(|g| g.get(r)).and_then(|row| row.get(c)) {
+            let s = match spoken.and_then(|g| g.line(r)).and_then(|row| row.get(c)) {
                 Some(h) => *h,
-                None => crate::arc::ground(),
+                None => void?,
             };
             if s != h {
                 out.push((r as i64, c as i64, s, h));
@@ -709,17 +727,16 @@ pub(crate) fn residual_of(spoken: Option<&Grid>, observed: &Grid) -> Vec<(i64, i
         }
     }
     if let Some(g) = spoken {
-        for (r, row) in g.iter().enumerate() {
+        for (r, row) in g.lines().enumerate() {
             for (c, &s) in row.iter().enumerate() {
-                let inside = observed.get(r).and_then(|row| row.get(c)).is_some();
-                let void = crate::arc::ground();
-                if !inside && s != void {
-                    out.push((r as i64, c as i64, s, void));
+                let inside = observed.line(r).and_then(|row| row.get(c)).is_some();
+                if !inside && !ground.holds(&s) {
+                    out.push((r as i64, c as i64, s, void?));
                 }
             }
         }
     }
     out.sort_unstable();
     out.dedup();
-    out
+    Ok(out)
 }

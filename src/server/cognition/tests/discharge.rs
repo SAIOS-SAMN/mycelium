@@ -3,7 +3,7 @@
 // discharge and never more, and a word that names no body escrows and is
 // paid nothing.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::family::{cipher_form, extract_rule, form_deflation, mint_sentence, sentence_measure, NoCrystal, TrainPair};
@@ -37,6 +37,7 @@ fn rule_over(family: &[TrainPair]) -> crate::transducer::element::Element {
 /// on that family escrows `price(d)` and nothing for the span.
 #[test]
 fn mint_sentence_escrows_discharge_not_span() {
+    crate::transducer::raster::stand_on(0);
     let family = recoloured();
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
     let at_once = mint_sentence(&rule, &family, &NoCrystal, 0).expect("it mints");
@@ -55,15 +56,21 @@ fn mint_sentence_escrows_discharge_not_span() {
     assert_eq!(stood.magnitude(), d, "a closed sentence's magnitude is its discharge, 𝒯 included");
 
     let mut k = Court::new();
-    let task = crate::registry::task_address(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task");
-    k.bind_task_family(&task, family);
+    let task = crate::registry::task_address(&crate::transducer::family::Task { train: family.clone(), test: Vec::new() }).expect("a task");
+    k.bind_task_family(&task, family.clone());
     assert_eq!(
         k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&stood)),
         vec![crate::anastome::dialogue::SPEECH_STOOD]
     );
+    // μ IS A SHARE OF THE FRAME (78.170 O1): both frames are 2×4, so S, G
+    // and T (the flux over the carried mass, every pair on one extent) are
+    // each over 8 sites, and H, the shell count, stands as it is.
+    let mu = crate::economy::Mu::counts(d).over([8, 8, 8, 1]).expect("non-zero wholes");
+    let read = crate::transducer::family::form_deflation_read(&held, &family, &NoCrystal, &crate::transducer::alphabet::Word::identity());
+    assert_eq!(read.mu, mu, "the discharge is d over the frame's 2·4 sites");
     let escrow = k.treasury().escrow_of(stood.address().as_bytes()).map(|e| e.mu.clone()).expect("escrowed");
-    assert_eq!(escrow, crate::economy::price(&d, &k.physics().pressure), "escrowed at price(d), exactly");
-    assert_eq!(k.discharge_of(stood.address().as_bytes(), &stood), d, "the one reader reads the same discharge");
+    assert_eq!(escrow, crate::economy::price(&mu, &k.physics().pressure), "escrowed at price(μ), exactly");
+    assert_eq!(k.discharge_of(stood.address().as_bytes(), &stood), mu, "the one reader reads the same discharge");
 }
 
 /// 78.149 (b) — A CLOSURE PAYS EACH CLAIM THE CLOSER'S MEASURED DISCHARGE,
@@ -81,30 +88,28 @@ fn pay_solve_pays_discharge_capped_by_escrow() {
         SolveVerdict::Solved { pay, .. } => pay,
         other => panic!("the replay closes every pair: {other:?}"),
     };
-    assert!(pay.iter().any(|&m| m > 0), "the solve discharges something: {pay:?}");
+    assert!(!pay.is_zero(), "the solve discharges something: {pay}");
 
     let task = [7u8; 32];
     let (above, below) = (Address::from_bytes([41u8; 32]), Address::from_bytes([42u8; 32]));
     let (rich, poor) = ([3u8; 32], [4u8; 32]);
-    let held_above: [u64; 4] = std::array::from_fn(|l| pay[l] + 3);
-    let held_below: [u64; 4] = std::array::from_fn(|l| pay[l] / 2);
+    // Above the discharge by three units on every lane; below it by half,
+    // exactly (μ is a share of the frame: no lane is floored).
+    let held_above = pay.add(&crate::economy::Mu::counts([3; 4]));
+    let held_below = pay.part(2).expect("two parts");
     let anchor = k.anchor();
     k.treasury.escrow_award(&above, vec![rich], held_above, anchor);
-    k.treasury.escrow_award(&below, vec![poor], held_below, anchor);
+    k.treasury.escrow_award(&below, vec![poor], held_below.clone(), anchor);
     k.bind_listing_task(&above, task);
     k.bind_listing_task(&below, task);
 
     // Not the task's first closure: the solver is not paid, so every row
     // minted is a released claim.
-    let _ = k.pay_solve(&task, [9; 32], &rule, pay, false);
+    let _ = k.pay_solve(&task, [9; 32], &rule, pay.clone(), false);
     assert_eq!(k.treasury().balance_mu(&rich), pay, "an escrow above the discharge pays the discharge");
     assert_eq!(k.treasury().balance_mu(&poor), held_below, "an escrow below it caps it");
     let minted = k.treasury().minted();
-    assert_eq!(
-        minted,
-        std::array::from_fn::<u64, 4, _>(|l| pay[l] + held_below[l]),
-        "nothing above the discharge was minted"
-    );
+    assert_eq!(minted, pay.add(&held_below), "nothing above the discharge was minted");
     assert!(k.treasury().escrow_of(above.as_bytes()).is_none() && k.treasury().escrow_of(below.as_bytes()).is_none(), "both claims released");
 }
 
@@ -119,7 +124,7 @@ fn open_unspellable_letter_escrows_and_pays_nothing() {
     let quarter = LetterId::turn_90((0, 1)).expect("the 90° turn");
     let rotor = Word::from_letters(&[(quarter, false)]).rotor();
     let chart = crate::transducer::stalk::Invariant::counts(&[3]);
-    let bodies: Vec<crate::transducer::sentence::Link> = vec![(0, 0, 0, 1), (0, 1, 0, 1)];
+    let bodies: Vec<crate::transducer::sentence::SectionLink> = vec![(0, 0, 0, 1), (0, 1, 0, 1)];
     let letter = crate::transducer::sentence::generator_form(&rotor, &chart, &bodies).expect("a letter");
     assert_ne!(letter.magnitude(), [0; 4], "the letter measures the bodies it was opened for");
     let addr = letter.address();

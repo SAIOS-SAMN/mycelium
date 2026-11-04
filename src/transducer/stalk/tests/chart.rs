@@ -9,7 +9,7 @@ use crate::transducer::stalk::*;
 
 
 fn chain(sites: &[(i64, i64)]) -> element::CanonicalChain {
-    let raw: Vec<Link> = sites.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect();
+    let raw: Vec<SectionLink> = sites.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect();
     element::canonical_chain(&raw).expect("one entry per site is A5's chain")
 }
 
@@ -81,7 +81,7 @@ fn invariant_is_invariant_under_conformal_group() {
     assert_eq!(invariant(&moved), base, "an isometry image shares the chart");
     let mirrored = chain(&[(0, 1), (1, 1), (2, 1), (2, 0)]);
     assert_eq!(invariant(&mirrored), base, "a reflection shares the chart");
-    let big: Vec<Link> = l
+    let big: Vec<SectionLink> = l
         .iter()
         .flat_map(|&(r, c, b, a)| {
             [(2 * r, 2 * c), (2 * r, 2 * c + 1), (2 * r + 1, 2 * c), (2 * r + 1, 2 * c + 1)]
@@ -138,7 +138,7 @@ fn congruent_finds_base_point_and_versor() {
 
 /// A connection is charted on its fibres: the linear class and the
 /// gauge's cycle type, never a translation and never the empty chart;
-/// residual charts and connection charts are disjoint families.
+/// residue charts and connection charts are disjoint families.
 #[test]
 fn invariant_of_charts_connection_on_fibres() {
     let a = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(0, 2), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
@@ -149,7 +149,7 @@ fn invariant_of_charts_connection_on_fibres() {
     assert_ne!(invariant_of(&a), invariant_of(&c), "a different cycle type is a different chart");
     assert_eq!(invariant_of(&a).0[0], ChartAxis::Count(0), "the connection family's leading axis");
     let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-    assert!(matches!(invariant_of(&word).0[0], ChartAxis::Count(n) if n >= 1), "a residual chart leads with its component count");
+    assert!(matches!(invariant_of(&word).0[0], ChartAxis::Count(n) if n >= 1), "a residue chart leads with its component count");
     // Congruence on connections: the fibre's representative and the transition.
     let stalks = Stalks::over_elements([&a, &c].into_iter());
     let at = |x: &[u8]| [&a, &c].into_iter().find(|w| w.address().as_bytes() == x);
@@ -158,15 +158,23 @@ fn invariant_of_charts_connection_on_fibres() {
     assert_eq!(congruent(&stalks, at, &c, &mut budget), None, "c has no other word on its chart");
 }
 
-/// A gauge read off a tape may name a hue past the palette; such a word has
-/// no conjugacy stratum, and the chart refuses it rather than index past the
-/// palette's slots.
+/// MU-SENSING §3.3 — A gauge read off a tape is read over the symbols it
+/// names, of any code: a 2-cycle through a symbol past ten is a stratum
+/// like any other, and so is the byte 10 (track 26 S5: e_∅ travels as a
+/// typed record). A word that records a distinction in e_∅ is no
+/// permutation, so it has no conjugacy stratum.
 #[test]
-fn connection_chart_refuses_hue_past_palette() {
-    let past = u8::try_from(element::PALETTE + 2).expect("a hue byte");
-    let word = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(0, 2), &[(past, 3), (3, past)], &Vec::new(), [4, 2, 0, 0])
-        .expect("the tape carries any hue byte");
-    assert_eq!(connection_chart(&word), None, "a hue past the palette names no slot");
+fn connection_chart_reads_symbols_past_ten_and_refuses_records() {
+    let identity = crate::transducer::alphabet::Word::identity();
+    for symbol in [12u8, 10] {
+        let word = from_connection(&identity, &element::translator_versor(0, 2), &[(symbol, 3), (3, symbol)], &Vec::new(), [4, 2, 0, 0])
+            .expect("the tape carries any symbol byte");
+        let chart = connection_chart(&word).expect("every byte is a symbol");
+        assert!(chart.0.ends_with(&[ChartAxis::Count(1), ChartAxis::Count(2)]), "one 2-cycle: {chart:?}");
+    }
+    let merge = element::FibreRelation { rows: vec![(1, 1), (2, 1)], records: vec![2] };
+    let word = element::colour_word(&merge).expect("a unitary merge is a colour word");
+    assert_eq!(connection_chart(&word), None, "a word recording in e_∅ has no stratum");
     assert!(!word.is_connection(), "and the word is no connection, so it charts at the root");
     assert_eq!(invariant_of(&word).0, Vec::new(), "unstratified");
 }
@@ -270,9 +278,9 @@ fn key_of_prefix_is_byte_prefix() {
 /// the value was perfectly exact).
 #[test]
 fn rotor_axes_writes_whole_coordinates() {
-    use crate::transducer::alphabet::{LetterId, Rotor, Word, PLANE_COL, PLANE_ROW};
+    use crate::transducer::alphabet::{sensor_plane, LetterId, Rotor, Word};
     let turn_90 = {
-        let id = LetterId::turn_90((PLANE_ROW, PLANE_COL)).expect("the sensor plane");
+        let id = LetterId::turn_90(sensor_plane()).expect("the sensor plane");
         Word::from_letters(&[(id, false)]).rotor()
     };
     let axes = rotor_axes(&turn_90).expect("a 90° turn carries a class");

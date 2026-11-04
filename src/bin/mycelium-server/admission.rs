@@ -16,7 +16,7 @@ use std::sync::Mutex;
 /// published them, never the court — `lane_room`'s credit walk and the
 /// cover trie's walk ran under the court on every exchange cycle and every
 /// digest asked. The room it admitted, `[0; 4]` where none reads.
-pub(crate) fn rebuild_own_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
+pub(crate) fn read_published_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
     // A room that cannot be read is a broken count, and this hypha admits
     // no cover against one.
     let Some(room) = read.lane_room() else { return [0; 4] };
@@ -70,7 +70,7 @@ pub(crate) fn sign_position(
     // Read on the court, constant in what it holds (one node unpacked):
     // a signed position is the court's head AT SIGNING, so it stays off the
     // shelf, whose head may stand one stroke behind (78.153b).
-    let head = crate::held::held!(court).ok()?.run(|k, _| k.chain().head())?;
+    let head = crate::court_lock::held!(court).ok()?.run(|k, _| k.chain().head())?;
     let prefix = mycelium::court::admission::SignedPrefix {
         genesis,
         epoch,
@@ -95,13 +95,13 @@ pub(crate) fn sign_cover_digest(court: &Mutex<Court>, shelf: &crate::published::
     // 78.153b — the cover, the room and the ruled root off the published
     // reading; the keeper tick (78.152 TU-1) alone is read on the court.
     let read = shelf.take();
-    let room = rebuild_own_cover(&read, mesh);
+    let room = read_published_cover(&read, mesh);
     let ruled_root = read.ruled_root();
-    let tick = match crate::held::held!(court) {
+    let tick = match crate::court_lock::held!(court) {
         Ok(mut h) => h.run(|k, _| k.keeper_tick()),
         Err(_) => return Vec::new(),
     };
-    let ring = crate::tshelf::own_ring(mesh, tick);
+    let ring = crate::tuniversal::own_ring(mesh, tick);
     // A poisoned cover lock is no reading of the cover; this hypha signs
     // no digest against one (§2.4, rule 11).
     let Ok(mut cover) = mesh.cover.lock() else {
@@ -223,7 +223,14 @@ pub(crate) fn admit_peer_receipt(
         .ok()
         .and_then(|o| *o)
         .ok_or(NoAdmission::NoOrigin)?;
-    let mut h = crate::held::held!(court).map_err(|_| NoAdmission::Malformed)?;
+    // MU-HOSTING §5a.10: the receipt is reconstructed from its own
+    // coordinates before admission reads it; one whose chain hash does not
+    // re-derive is refused as `admit` refuses a receipt that disagrees with
+    // itself.
+    let Some(receipt) = mycelium::court::admission::Reconstructed::receipt(&receipt) else {
+        return Ok(Admitted::Refused(mycelium::court::admission::REFUSE_RECEIPT));
+    };
+    let mut h = crate::court_lock::held!(court).map_err(|_| NoAdmission::Malformed)?;
     // OWED (78.153b): `recall_cited` reads a whole era per missing parent
     // (the lock audit, row 15), unmetered.
     Ok(h.run(|k, _| k.admit_receipt(origin, verified, &receipt)))
@@ -374,7 +381,7 @@ pub(crate) fn admit_peer_digest(
     // so the ring stands apart from the digest's signature. 78.152b: the
     // ring also travels on its own act (`ACT_TICK`); this one stays beside
     // it, and its outcome is counted and journalled where it is heard.
-    let _ = crate::tshelf::hear_ring(mesh, vk, ring);
+    let _ = crate::tuniversal::hear_ring(mesh, vk, ring);
     // The digest names the peer's room, its address and its ROOTS. Its
     // charts are read by page when those roots move (`admit_peer_cover`),
     // so nothing here retracts a cover this reading cannot replace.

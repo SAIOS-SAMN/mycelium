@@ -8,7 +8,7 @@ use super::*;
 /// also carries its chart in a keyed relation, so a removal follows one path.
 #[derive(Debug, Clone, Default)]
 pub struct Stalks {
-    root: Stratum,
+    root: ChartNode,
     charts: Keyed<Invariant>,
 }
 
@@ -89,7 +89,7 @@ impl Stalks {
     // `each_child(inv, after, budget, f)` stood here: a budgeted page of one
     // stratum's child branches, resumed from a cursor, returning the last key
     // visited. It existed for `AtlasRead::children`, whose only caller was
-    // `Bubble::expand_with`, which read outward from an idea's chart to meet
+    // `Well::expand_with`, which read outward from an idea's chart to meet
     // whatever the trie held nearby. An idea's overlaps are the charts its own
     // vertices stand on, which are coordinates it already holds, so the
     // expansion reads `fibre` at those charts and this outward read has no caller.
@@ -119,7 +119,7 @@ impl Stalks {
     }
 
     pub fn clear(&mut self) {
-        self.root = Stratum::default();
+        self.root = ChartNode::default();
         self.charts = Keyed::new();
     }
 

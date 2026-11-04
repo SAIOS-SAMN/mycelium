@@ -130,13 +130,14 @@ fn transitions_between_carries_blow_up_with_order_four_residue() {
         (4, 0, 0), (4, 1, 0), (5, 0, 0), (5, 1, 0),
         (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
     ]);
-    let fit = crate::transducer::blade::certify(&l.blade, &l2.blade, crate::transducer::base::GRID_PLANE)
+    let plane = crate::transducer::perspective::alphabet_base_plane().expect("the alphabet's base holds a plane");
+    let fit = crate::transducer::blade::certify(&l.blade, &l2.blade, plane)
         .expect("the rounds fit the pair");
     assert_eq!(fit.through, Harmonic::Three, "exact through order three, the residue at four");
-    let members = transitions_between(&l.blade, &l2.blade, crate::transducer::base::GRID_PLANE, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("carried");
+    let members = transitions_between(&l.blade, &l2.blade, plane, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("carried");
     let [t] = members.as_slice() else { panic!("one member: h₃ settles the 180° turn, got {}", members.len()) };
     assert!(t.residue.iter().all(|r| r.order == Harmonic::Four), "nothing below order four is left: {:?}", t.residue);
-    let grid: Vec<_> = t.residue.iter().filter(|r| r.plane == crate::transducer::base::GRID_PLANE).collect();
+    let grid: Vec<_> = t.residue.iter().filter(|r| r.plane == plane).collect();
     assert_eq!(
         grid.iter().map(|r| r.vector.clone()).collect::<Vec<_>>(),
         vec![[q(-1, 4), q(0, 1)]],

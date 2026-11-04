@@ -3,11 +3,11 @@
 // read twice does not; a word false on its scene is refuted; a word leaving
 // takes its scene with it.
 
-use crate::client::sdk::entity::converge::{Evident, Scenes};
+use crate::client::sdk::mind::converge::{Evident, Scenes};
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element::{from_connection, translator_versor, Element};
 
-fn grid(rows: &[&str]) -> crate::arc::Grid {
+fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -33,6 +33,7 @@ fn turn_180(r: i64, c: i64) -> Element {
 /// convergence.
 #[test]
 fn scenes_read_converges_two_words_on_one_section() {
+    crate::transducer::raster::stand_on(0);
     let scene = [7u8; 32];
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let (held, heard) = (slide(0, 2), turn_180(1, 4));
@@ -51,6 +52,7 @@ fn scenes_read_converges_two_words_on_one_section() {
 /// it changed are right — and converges with nothing either: another section.
 #[test]
 fn scenes_read_refutes_word_false_on_scene() {
+    crate::transducer::raster::stand_on(0);
     let scene = [7u8; 32];
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let mut s = Scenes::default();
@@ -87,5 +89,5 @@ fn scenes_evidence_carries_body_charts() {
     let (held, charts) = s.evidence(&scene).expect("held");
     assert_eq!(held.len(), family.len(), "the family as held");
     assert!(!charts.is_empty(), "a scene with bodies stands on charts");
-    assert_eq!(charts, crate::client::sdk::entity::offer::Offer::of(&family).charts, "the charts its bodies stand on");
+    assert_eq!(charts, crate::client::sdk::mind::offer::Offer::of(&family).charts, "the charts its bodies stand on");
 }

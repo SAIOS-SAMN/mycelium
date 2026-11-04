@@ -3,10 +3,10 @@
 // vertex reached, a body displaced, cells never created, cells never cleared —
 // and a speech names the bodies it did not reach.
 
-use crate::arc::Grid;
-use crate::client::sdk::entity::family::occupancy_causes;
+use crate::transducer::family::SectionSample;
+use crate::client::sdk::mind::family::occupancy_causes;
 
-fn grid(rows: &[&str]) -> Grid {
+fn grid(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -17,6 +17,7 @@ fn grid(rows: &[&str]) -> Grid {
 /// created cell ground.
 #[test]
 fn occupancy_causes_reads_wrong_speech_by_cause() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["100", "000", "002"]);
     let y = grid(&["000", "030", "002"]);
     // The body at index 1 is the bottom-right one (perception reads bodies
@@ -41,6 +42,7 @@ fn occupancy_causes_reads_wrong_speech_by_cause() {
 /// never silently absent from the speech.
 #[test]
 fn speak_rule_names_unreached_bodies() {
+    crate::transducer::raster::stand_on(0);
     let family = vec![
         (grid(&["1000", "0000", "0000"]), grid(&["0000", "1000", "0000"])),
         (grid(&["0000", "0100", "0000"]), grid(&["0000", "0000", "0100"])),
@@ -61,6 +63,7 @@ fn speak_rule_names_unreached_bodies() {
 /// sent with the bar silently erased.
 #[test]
 fn tests_spoken_withholds_speech_with_unreached_body() {
+    crate::transducer::raster::stand_on(0);
     use crate::client::sdk::*;
     let family = vec![
         (grid(&["1000", "0000", "0000"]), grid(&["0000", "1000", "0000"])),
@@ -68,11 +71,11 @@ fn tests_spoken_withholds_speech_with_unreached_body() {
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("the family has a rule");
-    use crate::client::sdk::entity::family::tests_spoken;
+    use crate::client::sdk::mind::family::tests_spoken;
     let e = Mind::open("127.0.0.1:1", Voice::named("withheld"));
-    let (reached, _) = tests_spoken(&e.epigenome, &rule, &[grid(&["0010", "0000", "0000"])]);
+    let (reached, _) = tests_spoken(&e.language, &rule, &[grid(&["0010", "0000", "0000"])]);
     assert_eq!(reached.expect("every body reached: the answer stands"), vec![grid(&["0000", "0010", "0000"])]);
-    let (unreached, held) = tests_spoken(&e.epigenome, &rule, &[grid(&["0010", "0000", "2220"])]);
+    let (unreached, held) = tests_spoken(&e.language, &rule, &[grid(&["0010", "0000", "2220"])]);
     assert!(unreached.is_none(), "the bar unreached: nothing is sent");
     assert!(!held.is_empty(), "the bar is held as a question");
 }

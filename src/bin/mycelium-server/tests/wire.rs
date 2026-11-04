@@ -4,7 +4,7 @@
 use crate::syllabus::{syllabus_admit, Syllabus};
 use crate::transport::answer;
 use mycelium::network::nerve::Keyed;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::net::TcpStream;
 
 /// AN ENCODE FAILURE REFUSES THE FRAME. Twenty-one sites wrote
@@ -28,7 +28,7 @@ fn answer_refuses_frame_over_budget_writing_nothing() {
     let over = mycelium::network::wire::BODY_BUDGET + 1;
     answer(
         &mut s,
-        Frame { lane: mycelium::network::wire::Stratum::Spatial, body: vec![0u8; over] },
+        WireFrame { lane: mycelium::network::wire::Lane::Spatial, body: vec![0u8; over] },
     );
     drop(s);
     assert!(reader.join().expect("join").is_empty(), "an unframeable act writes nothing");
@@ -51,7 +51,7 @@ fn answer_writes_frame_within_budget() {
     let body = vec![7u8, 8, 9];
     answer(
         &mut s,
-        Frame { lane: mycelium::network::wire::Stratum::Spatial, body: body.clone() },
+        WireFrame { lane: mycelium::network::wire::Lane::Spatial, body: body.clone() },
     );
     drop(s);
     let got = reader.join().expect("join");

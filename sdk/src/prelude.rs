@@ -17,7 +17,7 @@ pub use crate::task::{TaskEnvelope, SOLVE_AGAIN, SOLVE_BOUNTY, SOLVE_NOTHING, SO
 pub use crate::wallet::Mu;
 
 /// The rule seam's steps, its refusal, and the carriers a rule acts on.
-pub use crate::rule::{Crystal, Element, Grid, NoCrystal, NoRule, Step, Symmetry};
+pub use crate::rule::{Crystal, Element, NoCrystal, NoRule, Step, Symmetry};
 
 /// A seat's name.
 pub use crate::seat::SeatName;

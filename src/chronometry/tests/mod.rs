@@ -1,4 +1,4 @@
-mod common;
+mod fixtures;
 mod height;
 mod integrity;
 mod line;

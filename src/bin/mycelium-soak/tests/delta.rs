@@ -1,5 +1,5 @@
 use crate::delta::*;
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 
 /// Y1 — THE INSTRUMENT MUST BE ABLE TO SEE A DIFFERENCE, or its zero
 /// on the corpus says nothing about the engine and everything about
@@ -16,18 +16,27 @@ use mycelium::client::sdk::Epigenome;
 /// and not of anything else in the walk.
 #[test]
 fn task_walk_of_is_function_of_given_mind() {
+    // The whole frame recoloured is read with no ground stated, the frame
+    // its one body: by MU-SENSING §3.4 its old symbol, present in the
+    // input and covered whole in the output, reads as the ground and
+    // leaves no body to recolour.
+    mycelium::transducer::raster::on_ground(mycelium::transducer::family::transduce::Ground::None, walk_of_is_function_of_given_mind);
+}
+
+fn walk_of_is_function_of_given_mind() {
     // A recolour: one body, one hue changed. The simplest family there
     // is, built through the instrument's OWN public path so the test
     // exercises what the walk exercises and nothing else.
-    let a = vec![vec![1u8, 1], vec![1, 1]];
-    let b = vec![vec![2u8, 2], vec![2, 2]];
+    let section = |lines: &[Vec<u8>]| mycelium::transducer::spelled::SectionSample::of_lines(lines).expect("a sample");
+    let a = section(&[vec![1u8, 1], vec![1, 1]]);
+    let b = section(&[vec![2u8, 2], vec![2, 2]]);
     let fam = vec![(a, b)];
 
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let cold = TaskWalk::of(&fam, &empty);
     // TWO EMPTY MINDS READ ALIKE. Without this, a difference below
     // could be noise in the walk rather than the mind.
-    let cold_again = TaskWalk::of(&fam, &Epigenome::new());
+    let cold_again = TaskWalk::of(&fam, &MindLanguage::new());
     assert!(cold == cold_again, "one family, two identical minds, one reading");
 
     // A mind holding this family's own closed form — the same form a
@@ -40,7 +49,7 @@ fn task_walk_of_is_function_of_given_mind() {
             why.label()
         )
     };
-    let mut warm = Epigenome::new();
+    let mut warm = MindLanguage::new();
     assert!(
         warm.stand_dialect_at(e, 1, 1).is_some(),
         "the mind stands the form it is given, or this test proves nothing"

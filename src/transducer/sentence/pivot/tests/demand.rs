@@ -3,7 +3,7 @@
 // carrying its holonomy. Beside `orbit.rs` under the §1.1 bound; the
 // `Hold` crystal is read across the split.
 
-use super::common::*;
+use super::fixtures::*;
 use super::orbit::Hold;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, factor_rotor, LetterId, Rotor, Word, Q};
@@ -69,7 +69,7 @@ fn axis_seed_of_is_holonomy_base_action() {
     let q13 = Word::from_letters(&[(LetterId::turn_90((1, 3)).expect("90° turn (1,3)"), false)]);
     let double = q01.compose(&q13);
     assert_eq!(
-        double.rotor().off_plane_blades((alphabet::PLANE_ROW, alphabet::PLANE_COL)).len(),
+        double.rotor().off_plane_blades(alphabet::sensor_plane()).len(),
         2,
         "e₀₃ and e₁₃ turn beyond the sensor plane"
     );
@@ -214,7 +214,7 @@ fn pivot_orbit_files_free_part_open_beside_demand() {
     // THE DEMAND IS ON THE SNAPS, NOT YET ON THE FORM, and this asserted
     // otherwise on the test author's reading rather than on the engine's. `pivot_orbit`
     // REPORTS the obstruction it met; `Form::stand_demand` is what writes
-    // the vertex, and the bubble calls it — `bubble/tests/demand.rs` is
+    // the vertex, and the well calls it — `field/tests/demand.rs` is
     // where the vertex on the form is asserted, on both pivot paths.
     // Claiming it here named a carrier this call does not write (rule 11).
     assert!(

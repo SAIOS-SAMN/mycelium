@@ -1,10 +1,10 @@
 // 47.3, 13.9 — ACT_OFFER: the second organ replays a home's first-vantage
 // germ on its own tapes and answers with what it reached.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use std::io::Write;
 use std::net::TcpStream;
 
@@ -16,13 +16,13 @@ use std::net::TcpStream;
 /// saw a provisional, no root ever moved, and every percept sat at `germ
 /// pending (one voice)` forever with basis 0. The gate was never the germ
 /// quorum; it was that the offer never left the process.
-pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(dialogue::Offer { addr, home, elem: elem_bytes, section, .. }) =
         dialogue::decode_offer(&frame.body)
     else {
         return;
     };
-    let witness = door.mesh.vk;
+    let witness = context.mesh.vk;
     // 47.2, BEFORE ANY CARRIER IS TOUCHED. `glue_fetched` below writes a
     // Čech section into THIS MESH'S OWN COVER at the vantage the frame
     // names, pushes cocycles, marks classes, admits into `ruled`, releases
@@ -43,11 +43,11 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             home[1]
         );
         match dialogue::encode_offer_reply(&dialogue::Witnessed::Refused { vk: witness, why: why.as_bytes().to_vec() }) {
-            Some(body) => answer(s, Frame { lane: frame.lane, body }),
+            Some(body) => answer(s, WireFrame { lane: frame.lane, body }),
             None => eprintln!("  court offer answer refused: the reason passes its u16"),
         }
     };
-    let origin = match door.mesh.origin.lock() {
+    let origin = match context.mesh.origin.lock() {
         Ok(o) => *o,
         Err(_) => None,
     };
@@ -102,7 +102,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                 }
             }
             Some(word) => {
-                match (crate::held::held!(door.court), door.mesh.cover.lock()) {
+                match (crate::court_lock::held!(context.court), context.mesh.cover.lock()) {
                     (Ok(mut h), Ok(mut cover)) => h.run(|k, budget| {
                         // One typed reading, every arm of `Glue` named. The
                         // REFUSAL travels, not a bit saying there was one:
@@ -125,7 +125,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                         // REPLAYING THE OFFER on its own cover — the tape
                         // re-derived vertex by vertex, face by face, its
                         // citations resolved from THIS court's ruled words
-                        // (`court_replay` inside `glue_fetched`) — and not
+                        // (`court_reconstruct` inside `glue_fetched`) — and not
                         // the word this court happened to hold on the chart.
                         // `own_section(&inv)` stood here and answered with
                         // this court's OWN word on the chart, an older and
@@ -176,13 +176,13 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // a hand-built frame for the case where a five-byte frame fails to
     // encode, which is the shape rule 11 refuses.
     let full = dialogue::encode_offer_reply(&answered)
-        .and_then(|body| Frame { lane: frame.lane, body }.encode_at(crate::tshelf::final_point().as_ref()));
+        .and_then(|body| WireFrame { lane: frame.lane, body }.encode_at(crate::tuniversal::final_point().as_ref()));
     match full {
         Some(bytes) => {
             let _ = s.write_all(&bytes);
         }
         None => match dialogue::encode_offer_reply(&dialogue::Witnessed::Unmeasured { vk: witness }) {
-            Some(body) => answer(s, Frame { lane: frame.lane, body }),
+            Some(body) => answer(s, WireFrame { lane: frame.lane, body }),
             None => eprintln!("  court offer answer refused: the unmeasured reply does not frame"),
         },
     }
@@ -192,7 +192,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
 /// own tapes, and nothing else decides the answer.
 ///
 /// THE REPLAY DECIDES, NOT THE GLUE. `glue_fetched` replays the form
-/// (`court_replay`) and then files it on this court's cover — a section at
+/// (`court_reconstruct`) and then files it on this court's cover — a section at
 /// the home's vantage, edges to the words this court holds, simplices filled —
 /// and its `Glue` says how the form RELATES TO THIS COURT'S OWN SECTION on
 /// the chart: `Dialect` is "a different section of the same chart", which
@@ -206,7 +206,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
 /// `Dialect` before the replay for any address this court marked heard,
 /// slashed or not. So the second offer of a form this court had SLASHED
 /// would have read as placed. Heard, the form is replayed here by name
-/// (`court_replay`, the same reader the glue runs) and the answer is that
+/// (`court_reconstruct`, the same reader the glue runs) and the answer is that
 /// replay's; unheard, the glue runs once and its slash is the replay's
 /// refusal. Either way the vantage is: this court re-derived the form, or
 /// it refused it by name. Unmeasured is left for a court that could not
@@ -215,7 +215,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
 /// On the stroke of the offer act that asked (65.5): the door mints it.
 pub(crate) fn witness_vantage(
     k: &mut mycelium::cognition::Court,
-    cover: &mut mycelium::network::nerve::Cover,
+    cover: &mut mycelium::network::nerve::HomeTrie,
     word: mycelium::transducer::element::Element,
     home: [u8; 32],
     witness: [u8; 32],
@@ -233,10 +233,10 @@ pub(crate) fn witness_vantage(
     // nothing and refused nothing: the witness answers UNMEASURED, and the
     // home's next offer resumes the replay where this one stopped.
     if k.heard_contains(word.address().as_bytes()) {
-        return match k.court_replay(&word, budget) {
-            mycelium::verdict::Replayed::Refused(r) => refused(r.reason),
-            mycelium::verdict::Replayed::Clean => reached(&word),
-            mycelium::verdict::Replayed::Unread => dialogue::Witnessed::Unmeasured { vk: witness },
+        return match k.court_reconstruct(&word, budget) {
+            mycelium::verdict::ReconstructionOutcome::Refused(r) => refused(r.reason),
+            mycelium::verdict::ReconstructionOutcome::Clean => reached(&word),
+            mycelium::verdict::ReconstructionOutcome::Unread => dialogue::Witnessed::Unmeasured { vk: witness },
         };
     }
     match k.glue_fetched_ruled(word.clone(), home, witness, cover, budget) {

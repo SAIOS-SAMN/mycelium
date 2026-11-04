@@ -1,7 +1,7 @@
 // 21 — extraction: what a spoken pair becomes when the court replays it,
 // and what a family does to an axis instead of minting a second card.
 
-use super::common::speak_pair;
+use super::fixtures::speak_pair;
 use crate::cognition::*;
 
 /// A novel SUBSTANCE (here a rotation) germinates: one voice pends, a second
@@ -59,7 +59,7 @@ assert!(
 /// A shape deformation (L → bar) that NO versor carries is a pair the
 /// eyes cannot open: no body pair admitted, no vertex that acts, so the
 /// voice has no sentence and nothing is listed (50.5, L7) — never a
-/// residual chain germinated as a word, which was this test's claim in the
+/// residue chain germinated as a word, which was this test's claim in the
 /// chain era. The deformation is answered by the cover of 50.8 (L11), not
 /// by a listing of its links.
 #[test]
@@ -73,7 +73,7 @@ assert!(k.pending.is_empty(), "nothing on the book to await consilience");
 }
 
 /// Two distinct objects in one pair are one pair form, not a Cartesian
-/// fragment per body. Two voices docket the residual.
+/// fragment per body. Two voices docket the residue.
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
@@ -94,7 +94,7 @@ fn speak_pair_lists_extracted_form() {
 use crate::transducer::family::{extract_rule_with, grid_of_painted, mint_sentence, NoCrystal};
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
-let family = vec![(grid_of_painted(&a), grid_of_painted(&b))];
+let family = vec![(grid_of_painted(&a, 0).expect("a scene"), grid_of_painted(&b, 0).expect("a scene"))];
 let mut k = Court::new();
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listed = &k.quote().1;

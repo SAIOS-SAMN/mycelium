@@ -57,9 +57,9 @@ pub const LAW_ID: &str = "FORMS-FRAME";
 /// The law's version: an amendment raises it.
 pub const LAW_VERSION: u16 = 1;
 
-/// WHY A FRAME OR A READING CARRIED BY IT IS REFUSED, by name.
+/// WHY A REFERENCE FRAME OR A READING CARRIED BY IT IS REFUSED, by name.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FrameRefusal {
+pub enum ReferenceRefusal {
     /// A move's vector, or the reading, over a different number of axes.
     Unmatched,
     /// A dilation by a ratio not above one (an expand or a contract is named
@@ -118,10 +118,10 @@ impl Move {
     }
 
     /// The point `x` carried by this move.
-    pub fn apply(&self, x: &[Q]) -> Result<Vec<Q>, FrameRefusal> {
+    pub fn apply(&self, x: &[Q]) -> Result<Vec<Q>, ReferenceRefusal> {
         let matched = |v: &[Q]| match v.len() == x.len() {
             true => Ok(()),
-            false => Err(FrameRefusal::Unmatched),
+            false => Err(ReferenceRefusal::Unmatched),
         };
         match self {
             Move::Stretch(t) => {
@@ -132,17 +132,17 @@ impl Move {
                 matched(v)?;
                 let vv = dot(v, v);
                 if vv.is_zero() {
-                    return Err(FrameRefusal::NoMirror);
+                    return Err(ReferenceRefusal::NoMirror);
                 }
                 if v.iter().filter(|c| !c.is_zero()).count() != 1 {
-                    return Err(FrameRefusal::NotAxial);
+                    return Err(ReferenceRefusal::NotAxial);
                 }
                 let k = Q::from_integer(2.into()) * dot(v, x) / vv;
                 Ok(x.iter().zip(v).map(|(a, b)| a - &k * b).collect())
             }
             Move::Expand(r) | Move::Contract(r) => {
                 if r <= &Q::one() {
-                    return Err(FrameRefusal::Ratio);
+                    return Err(ReferenceRefusal::Ratio);
                 }
                 let s = match self {
                     Move::Expand(_) => r.clone(),
@@ -155,15 +155,15 @@ impl Move {
                 let xx = dot(x, x);
                 let den = Q::one() + Q::from_integer(2.into()) * dot(b, x) + dot(b, b) * &xx;
                 if den.is_zero() {
-                    return Err(FrameRefusal::AtPole);
+                    return Err(ReferenceRefusal::AtPole);
                 }
                 Ok(x.iter().zip(b).map(|(a, c)| (a + c * &xx) / &den).collect())
             }
             Move::Turn { plane: (i, j), degrees } => {
                 if i == j || *i >= x.len() || *j >= x.len() {
-                    return Err(FrameRefusal::NoPlane);
+                    return Err(ReferenceRefusal::NoPlane);
                 }
-                let (c, s) = exact_cos_sin(degrees).ok_or(FrameRefusal::Inexact)?;
+                let (c, s) = exact_cos_sin(degrees).ok_or(ReferenceRefusal::Inexact)?;
                 let mut out = x.to_vec();
                 let (xi, xj) = (x[*i].clone(), x[*j].clone());
                 out[*i] = &xi * &c - &xj * &s;
@@ -195,33 +195,33 @@ fn exact_cos_sin(degrees: &Q) -> Option<(Q, Q)> {
     }
 }
 
-/// A FRAME: its moves, applied in order. The empty frame is the identity.
+/// A REFERENCE FRAME: the moves, applied in order. The empty reference is the identity.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct Frame {
+pub struct Reference {
     moves: Vec<Move>,
 }
 
-impl Frame {
+impl Reference {
     /// The identity frame.
-    pub fn identity() -> Frame {
-        Frame::default()
+    pub fn identity() -> Reference {
+        Reference::default()
     }
 
     /// This frame, then `m`.
-    pub fn then(mut self, m: Move) -> Frame {
+    pub fn then(mut self, m: Move) -> Reference {
         self.moves.push(m);
         self
     }
 
     /// This frame, then every move of `later`.
-    pub fn compose(mut self, later: &Frame) -> Frame {
+    pub fn compose(mut self, later: &Reference) -> Reference {
         self.moves.extend(later.moves.iter().cloned());
         self
     }
 
     /// The frame that undoes this one: its moves undone, in reverse order.
-    pub fn inverse(&self) -> Frame {
-        Frame { moves: self.moves.iter().rev().map(Move::inverse).collect() }
+    pub fn inverse(&self) -> Reference {
+        Reference { moves: self.moves.iter().rev().map(Move::inverse).collect() }
     }
 
     /// The moves, as held.
@@ -233,7 +233,7 @@ impl Frame {
     /// consecutive turns in one plane composed first by adding the turns'
     /// degrees, so a run that sums to whole 90° turns carries exactly
     /// even where its parts would not.
-    pub fn carry(&self, x: &[Q]) -> Result<Vec<Q>, FrameRefusal> {
+    pub fn carry(&self, x: &[Q]) -> Result<Vec<Q>, ReferenceRefusal> {
         self.composed().iter().try_fold(x.to_vec(), |p, m| m.apply(&p))
     }
 
@@ -257,7 +257,7 @@ pub trait ReadIn {
     fn reading_point(&self) -> Vec<Q>;
 
     /// The form's reading carried into `frame`.
-    fn read_in(&self, frame: &Frame) -> Result<Vec<Q>, FrameRefusal> {
+    fn read_in(&self, frame: &Reference) -> Result<Vec<Q>, ReferenceRefusal> {
         frame.carry(&self.reading_point())
     }
 }

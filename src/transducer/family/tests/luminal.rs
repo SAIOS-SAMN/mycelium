@@ -3,7 +3,7 @@
 // one lit site is no waveform; an enclosure captures what the output fills
 // inside it, read as a standing wave, its rectangle's billiard a translation.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::family::luminal::{read_pair, Beyond, Stop};
 
@@ -16,6 +16,7 @@ fn budget() -> crate::physics::Budget {
 /// waveform of period 1 in the source's own hue, stopped at the body.
 #[test]
 fn read_pair_explains_ray_light_and_names_stop() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["100002"]);
     let y = grid(&["111112"]);
     let rem = vec![(0, 1, 0, 1), (0, 2, 0, 1), (0, 3, 0, 1), (0, 4, 0, 1)];
@@ -35,6 +36,7 @@ fn read_pair_explains_ray_light_and_names_stop() {
 /// translation, parabolic.
 #[test]
 fn read_pair_captures_standing_wave_in_enclosure() {
+    crate::transducer::raster::stand_on(0);
     let x = grid(&["3333", "3003", "3003", "3333"]);
     let y = grid(&["3333", "3443", "3443", "3333"]);
     let rem = vec![(1, 1, 0, 4), (1, 2, 0, 4), (2, 1, 0, 4), (2, 2, 0, 4)];

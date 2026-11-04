@@ -1,7 +1,7 @@
 // 26 — THE MARKET: the five-act conversation, the docket and its room, the
-// door's strain, the probe, and the residual that opens a face.
+// door's strain, the probe, and the residue that opens a face.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::element;
 use crate::transducer::germinate::germinate;
@@ -70,7 +70,7 @@ assert_eq!(short.treasury().entries().len(), entries, "nothing escrowed");
 assert_eq!(short.k_step(), k, "no receipt sealed for a refused act");
 
 let mut bonded = Court::new();
-let cover = crate::arc::family_cover(&[(vec![vec![1]], vec![vec![2]])])
+let cover = crate::transducer::family::magnitude::family_cover(&crate::transducer::spelled::pairs_of(vec![(vec![vec![1]], vec![vec![2]])]))
     .expect("a one-site pair measures");
 bonded.bind_identity([9; 32]);
 bonded.set_genesis_cover(cover);
@@ -186,14 +186,14 @@ assert!(
 }
 
 /// THE CONVERSATION: a listing is probed with a cited sentence. A graded
-/// residual settles the reduction and the residual replaces the listing
+/// residue settles the reduction and the residue replaces the listing
 /// under its frame; closure clears it and advances the lineage; a
 /// sentence that names nothing settles nothing. The replay is linear in
 /// the proof and the hypha runs no search.
 #[test]
-fn settle_probe_settles_residual_then_closure() {
+fn settle_probe_settles_residue_then_closure() {
 use crate::anastome::dialogue::ProbeClosure;
-use crate::transducer::sentence::replay_at;
+use crate::transducer::sentence::reconstruct_at;
 let mut k = Court::new();
 // A coboundary listed on an empty language: a chain listing under a
 // voice's draw — the shape the corpus intake lists (23.8) and a probe
@@ -211,7 +211,7 @@ let b = vec![(0, 0, 2u8), (0, 1, 2)];
 k.basis_insert(element::from_canonical(&germinate(&a, &b).unwrap()), [2; 32]);
 let _word = k.basis()[0].address();
 // The entity's reduction over the language: the word cited at the
-// origin, the far link left as the residual.
+// origin, the far link left as the residue.
 let language = k.language();
 let sentence = crate::transducer::sentence::deconstruct_at(
     &|a| language.word_at(a),
@@ -219,33 +219,33 @@ let sentence = crate::transducer::sentence::deconstruct_at(
     &|a| language.shape_at(a),
     &chain,
     None,
-    &mut super::common::budget(),
+    &mut super::fixtures::budget(),
 );
-let (void, cites) = (sentence.residual.clone(), sentence.cites.clone());
+let (void, cites) = (sentence.residue.clone(), sentence.cites.clone());
 assert_eq!(void, vec![(0, 3, 3, 4)]);
 assert_eq!(cites.len(), 1);
 let basis = k.basis();
 assert_eq!(
-    replay_at(&|a| basis.iter().find(|w| w.address().as_bytes() == a).map(|w| w.element()), &cites, &chain),
+    reconstruct_at(&|a| basis.iter().find(|w| w.address().as_bytes() == a).map(|w| w.element()), &cites, &chain),
     void,
-    "the replay reproduces the residual"
+    "the replay reproduces the residue"
 );
 let before = match k.tension.get(&target) {
     Some(t) => *t,
     None => k.quote().1[0].0.magnitude(),
 };
 let r = k.settle_probe([3; 32], &target, void.clone(), &[], false);
-assert!(matches!(r.closure, ProbeClosure::Residual(_)), "{r:?}");
+assert!(matches!(r.closure, ProbeClosure::Residue(_)), "{r:?}");
 assert_eq!(r.remaining, crate::transducer::element::measure_lanes(&void));
-// PR1 — the reading settles what the residual removed, per lane; a residual
+// PR1 — the reading settles what the residue removed, per lane; a residue
 // is measured, never paid, and the payment is the treasury's.
 assert_eq!(r.settled, crate::economy::shortfall(&before, &r.remaining));
 let listing = k.quote().1[0].0.clone();
-assert_eq!(listing.address(), target, "the listing stays the body: a residual never re-lists a fragment");
+assert_eq!(listing.address(), target, "the listing stays the body: a residue never re-lists a fragment");
 assert_eq!(
     k.tension.get(&target).copied(),
     Some(crate::transducer::element::measure_lanes(&void)),
-    "the body's remaining tension is the residual's measure, keyed by the listing"
+    "the body's remaining tension is the residue's measure, keyed by the listing"
 );
 // A probe that moves nothing settles nothing; closure clears the book.
 let t2 = listing.address();
@@ -254,7 +254,7 @@ assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[], false).closure, ProbeCl
 assert!(k.quote().1.is_empty(), "the listing cleared");
 }
 
-/// A residual records a remainder FACE, stagnation counts only unmoved
+/// A residue records a remainder FACE, stagnation counts only unmoved
 /// occupied lanes, and a full aperture of failed probes sheds the listing
 /// as a cavity.
 ///
@@ -262,15 +262,16 @@ assert!(k.quote().1.is_empty(), "the listing cleared");
 /// demand written as the remainder's link count would be a tally of links
 /// in the lane that carries boundary topology and the rotor's own
 /// coordinates (16.16, 42.6), a second carrier for a fact the field
-/// already holds (law 12), and a magnitude `blind_replay` refuses: it
-/// re-derives a residual germ's lanes from its own chain and refuses a
+/// already holds (law 12), and a magnitude `reconstruct_blind` refuses: it
+/// re-derives a residue germ's lanes from its own chain and refuses a
 /// word claiming more than the chain supports, so the court would slash
 /// its own listing on the next circuit and every listing a voice made
 /// progress on would be destroyed by the court's own write. The assertion
-/// here is that property: after a residual the listing still re-derives
+/// here is that property: after a residue the listing still re-derives
 /// from its chain.
 #[test]
 fn settle_probe_opens_face_and_drain_sheds_unmoved() {
+    crate::transducer::raster::stand_on(0);
 use crate::anastome::dialogue::ProbeClosure;
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
@@ -285,23 +286,23 @@ let before = match k.tension.get(&target) {
     None => k.quote().1[0].0.magnitude(),
 };
 let after = crate::transducer::element::measure_lanes(&rem);
-assert_ne!(after, before, "the residual moves the listing's measure");
+assert_ne!(after, before, "the residue moves the listing's measure");
 let r = k.settle_probe([3; 32], &target, rem.clone(), &[], false);
-assert!(matches!(r.closure, ProbeClosure::Residual(_)), "{r:?}");
+assert!(matches!(r.closure, ProbeClosure::Residue(_)), "{r:?}");
 assert_eq!(r.remaining, after);
 let listing = k.quote().1[0].0.clone();
 assert_eq!(listing.address(), target, "the listing stays the body");
 // THE LISTING'S MEASURE STILL RE-DERIVES FROM ITS OWN CHAIN, which is
-// what the court checks on every circuit. A residual is recorded on the
+// what the court checks on every circuit. A residue is recorded on the
 // FIELD, read below as the remainder face and the remainder chart; it
 // does not rewrite the word.
 assert_eq!(
     listing.base_magnitude(),
     crate::transducer::element::measure_lanes(&listed),
-    "a residual leaves the listing's measure a function of its chain"
+    "a residue leaves the listing's measure a function of its chain"
 );
 assert_eq!(
-    crate::court::verdict::blind_replay(&listing, &mut super::common::budget()),
+    crate::court::verdict::reconstruct_blind(&listing, &mut super::fixtures::budget()),
     None,
     "so the court's own next circuit does not slash it"
 );
@@ -462,6 +463,7 @@ assert_eq!(
 /// the admission.
 #[test]
 fn intake_prepared_computes_no_chart_under_hold() {
+    crate::transducer::raster::stand_on(0);
     use crate::transducer::stalk::chart::charts_read;
     let mut k = Court::new();
     let a = vec![(0, 0, 1u8), (0, 1, 1), (1, 0, 3)];
@@ -482,4 +484,25 @@ fn intake_prepared_computes_no_chart_under_hold() {
     assert!(!k.has_listing(target.as_bytes()), "the listing left the page for the cavity");
     let _ = k.snapshot();
     assert_eq!(charts_read(), before, "citation, relocation and snapshot read the filed chart");
+}
+
+/// MU-DERIVATIONS D2.5 — A SETTLEMENT GOES COLD WHEN ITS CHALLENGE WINDOW
+/// CLOSES: recorded at the court's head, it stays on the docket while its
+/// window stands open (a lone court closes none), whatever the capacity;
+/// once every other keeper's reach and return closes the window opened at
+/// its height (D1.1), the next settlement recorded moves it cold.
+#[test]
+fn record_settlement_cools_after_window_closes() {
+    let mut k = Court::new();
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
+    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+    let listing = k.pending.scoped().next().expect("listed").1.address();
+    k.record_settlement(listing.clone(), vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+    let opened = k.chain().head_height();
+    k.record_settlement(listing.clone(), vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+    assert_eq!(k.settlements_cold_len(), 0, "an open window keeps the settlement on the docket");
+    close_through(&mut k, opened).expect("the window opened at its height closes");
+    k.record_settlement(listing, vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+    assert!(k.settlements_cold_len() >= 1, "a settlement past its closed window goes cold");
 }

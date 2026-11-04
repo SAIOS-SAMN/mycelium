@@ -2,7 +2,7 @@
 // `c`, exact rays that commute and multiply back to the motion, the 180° turn
 // the plane's blade; rays equal by proportion; rational roots at any degree.
 
-use super::common::{ax, budget, q};
+use super::fixtures::{ax, budget, q};
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::*;

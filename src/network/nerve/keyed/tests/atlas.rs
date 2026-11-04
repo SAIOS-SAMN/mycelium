@@ -6,7 +6,7 @@ use crate::network::nerve::Coordinate;
 
 fn class() -> Transport {
     Transport {
-        kind: crate::transducer::peel::ShellKind::Whole,
+        kind: crate::transducer::layers::LayerKind::Whole,
         class: crate::transducer::alphabet::Word::identity()
             .rotor()
             .holonomy_key()

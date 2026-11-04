@@ -58,7 +58,7 @@ exact rational, and the computation refuses otherwise.
 
 Sources: MU-RECURSION, "The laws this document is written under", laws 1
 and 4; MU-RECURSION 78.45. Code: `src/transducer/alphabet/rotor.rs::rational_sqrt`,
-`src/arc.rs::exact_root`.
+`src/transducer/family/fibre_relation.rs::exact_root`.
 
 #### 1.2 The algebra Cl(n+1, 1) over ℚ
 
@@ -273,7 +273,7 @@ weight. Its generator `−½ d e_∞` is null, so the translator fixes the point
 at infinity.
 
 Sources: MU-RECURSION 78.52 Row 2, 54.7 R3. Code:
-`src/physics/fascicle.rs::Fascicle::parallel`, `::versor`, `::weight`,
+`src/physics/sphere_pair.rs::Fascicle::parallel`, `::versor`, `::weight`,
 `::act`, `::streamline`, `::stream`; `src/transducer/cga/embedding.rs::translator_at`.
 
 #### 2.9 The rotator
@@ -406,7 +406,7 @@ frame base point:    v = V v₀ Ṽ / ⟨V Ṽ⟩₀,  checked v² = −1
 ```
 
 A compartment lands on the interior sheet `v² = −1` exactly, with no
-square root; `M`, the lattice quantum, is an integer with
+square root; `M`, the integer quantum, is an integer with
 `M² > r² + c² + k²`. The transvection carries `v_a` to `v_b` forward,
 exactly, and is checked to be a versor. The same construction about `e₊`
 puts a frame's point on the 3-sphere `v² = +1`.
@@ -568,7 +568,7 @@ output's centre `c′`, in compartment-centre coordinates.
 Sources: MU-RECURSION 78.51(3); MU-CLIENT 78.142. Code:
 `src/transducer/family/statement.rs::carriage` (`About::Body`);
 `src/client/sdk/rule.rs::Step::grid_motion`;
-`src/physics/tensegrity.rs::centred`.
+`src/physics/equilibrium.rs::centred`.
 
 #### 2.24 Carrying a compartment's centre
 
@@ -585,7 +585,7 @@ Sources: MU-RECURSION 16.4. Code:
 `src/transducer/element/sensor.rs::carry_site_centre`, `::carry_site`,
 `::site_at`.
 
-#### 2.25 The lattice step of a carriage
+#### 2.25 The integer step of a carriage
 
 ```text
 o = carried centre of (0, 0),  a = of (1, 0),  b = of (0, 1)
@@ -594,11 +594,12 @@ the step is (dr, dc)  ⇔  dr, dc ∈ ℤ,  a = (dr + 1 + ½, dc + ½),  b = (dr
                           and the frame coordinate stays 0
 ```
 
-The lattice translation a versor is, read on three cell centres; any other
-motion has no lattice step.
+The integer translation a versor is, read on three cell centres; any other
+motion has no integer step.
 
 Sources: MU-CLIENT §5.4. Code:
-`src/transducer/sentence/form/rule_element.rs::lattice_step`.
+`src/transducer/sentence/form/rule_element.rs::substrate_step` (formerly
+`lattice_step`, renamed by ROADMAP track 11, N4).
 
 #### 2.26 The twist about an attractor and the orbit about a star
 
@@ -617,7 +618,7 @@ refused where the body was carried off the attractor.
 
 Sources: MU-CLIENT §4.4(3); MU-RECURSION 78.51(2). Code:
 `src/transducer/cga/twist.rs::twist_about`;
-`src/physics/tensegrity.rs::orbit_about`.
+`src/physics/equilibrium.rs::orbit_about`.
 
 ---
 
@@ -727,7 +728,7 @@ typed demand; the court opens the letter on two independent witnesses.
 Sources: MU-RECURSION 50.4, A22, 36.3, 37.7, law 6; MU-ALPHABET.md. Code:
 `src/transducer/alphabet/factor.rs::factor_rotor`, `BLOCK_ORDER`,
 `::prime_outside_the_alphabet`; `src/transducer/family/derivation.rs::peel_versor`,
-`::peel_versor_with`; `src/transducer/peel.rs::peel_nest`.
+`::peel_versor_with`; `src/transducer/layers.rs::peel_nest`.
 
 #### 3.8 The master condensation equation
 
@@ -863,9 +864,15 @@ X = 2x − (n − 1)
 A grid coordinate centred on its extent `n` and doubled, so every centre is
 an integer.
 
-Sources: MU-RECURSION 78.56. Code: `src/arc.rs::centred`.
+Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::centred`.
 
 #### 4.2 The envelope and the dilation between envelopes
+
+**Refused defect.** The envelope below squares the extents
+(`r² = Σ eᵢ²/4`, an exact square root), which law 11 refuses; MU-SENSING
+§8 lists it as built and refused, and the re-period of each phase
+replaces it (MU-SENSING §3.1; track 26 S4). The formula records the code
+that still holds it.
 
 ```text
 r² = Σᵢ eᵢ² / 4                    (circumscribed sphere of a grid of extents eᵢ)
@@ -879,8 +886,11 @@ onto the other. The code reduces `Σ e_to² / Σ e_from²` by its gcd and takes
 exact integer roots of numerator and denominator; it answers nothing where
 either is not a square.
 
-Sources: MU-RECURSION 78.56, 78.45. Code: `src/arc.rs::envelope_dilation`,
-`::carried_site`.
+Sources: MU-RECURSION 78.56, 78.45. Code:
+`src/transducer/family/fibre_relation.rs::envelope_dilation`,
+`::carried_site`. The squared extents are a defect against law 11
+(MU-SENSING §8), kept unchanged until the re-period of each phase
+replaces them (ROADMAP track 26, S4).
 
 #### 4.3 Momentum vanishing
 
@@ -892,7 +902,7 @@ A task carries no polar vector when this mass-weighted displacement is
 exactly zero. Where any pair's dilation is irrational the momentum is not
 read and the orientation is held physical.
 
-Sources: MU-RECURSION 78.56. Code: `src/arc.rs::momentum_vanishes`.
+Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::momentum_vanishes`.
 
 #### 4.4 Frame fixing by moments
 
@@ -902,11 +912,13 @@ axis reversed  ⇔  the first non-zero odd moment (k = 1, else k = 3) is negativ
 axes ordered by (moment_2, moment_4)
 ```
 
-Where the momentum vanishes, the lattice's frame is a gauge, fixed at the
+Where the momentum vanishes, the sample's frame is a gauge, fixed at the
 sensor by the scene's own moments. Ties and vanishing odd moments keep the
-frame given.
+frame given. MU-SENSING §4 and §8 refuse this fixing as built: the frame
+is a perspective, taken after intake and never before addressing
+(MU-SENSING §6.1; track 26 S2 and S6).
 
-Sources: MU-RECURSION 78.54, 78.56. Code: `src/arc.rs::frame_fixed`.
+Sources: MU-RECURSION 78.54, 78.56. Code: `src/transducer/raster.rs::frame_fixed`.
 
 #### 4.5 The four-lane measure of a chain
 
@@ -1123,7 +1135,7 @@ kind. `a ∥ b` breathes with no pinch; `a ⊥ b` pinches with no breath. The
 silence between words is the pseudoscalar `I = e₁e₂e₃e₊e₋`, with `I² = −1`.
 
 Sources: MU-CLIENT §4.3 (ruled 2026-10-21); MU-RECURSION 78.39(1), 78.105.
-Code: `src/transducer/cga/breath.rs::breathe`, `::breath`,
+Code: `src/transducer/cga/commutator.rs::breathe`, `::breath`,
 `Breath::pinches`, `::twists`, `::by_kind`.
 
 #### 5.10 Reciprocity and the coherence of a ring
@@ -1162,10 +1174,10 @@ transition; against a dilating step every pair scales by one ratio, read as
 the dilation lane.
 
 Sources: MU-RECURSION 78.51, 78.52 Row 1, 78.59, 78.62; A.10.1, A.13.
-Code: `src/physics/tensegrity.rs::coupling`, `::torque`, `::net_torque`,
+Code: `src/physics/equilibrium.rs::coupling`, `::torque`, `::net_torque`,
 `::unit_product`, `::metric_defect`, `::rigid`, `::similarity`,
 `::succession`, `::momentum`, `::external_torque`, `::barycentre`,
-`::stability`; `src/physics/axioms/tensegrity.rs`.
+`::stability`; `src/physics/axioms/equilibrium.rs`.
 
 #### 5.12 The fibre as a capacitor
 
@@ -1185,7 +1197,7 @@ torque²         ⟨T T̃⟩₀
 
 A fibre between two weighted pivots, everything read off the pair.
 
-Sources: MU-RECURSION 78.74. Code: `src/physics/capacitor.rs::Fibre`
+Sources: MU-RECURSION 78.74. Code: `src/physics/pivot_fibre.rs::Fibre`
 (`switch`, `level`, `charge`, `length2`, `strength`, `capacity`,
 `torque2`, `project`, `field_line`, `on_field_line`, `split`).
 
@@ -1301,7 +1313,7 @@ Sources: MU-RECURSION law 5, 12.6, 78.162; MU-ECONOMY §1. Code:
 ```text
 price(mag, surface) = mag                                         (per lane)
 surface_l = reserve_deficit_l + max(0, −order_flux_l)
-read price p_l = 1 + surface_l / R   per unit of gas, exact     (R the calibrated reserve)
+read price p_l = 1 + surface_l / R   per unit of gas, exact     (R the court's capacity C, §7.1)
 ```
 
 Price is the magnitude on the lane: a verified word is worth what it
@@ -1516,7 +1528,7 @@ closer_l = M_l − n · v_l
 
 Each court whose reconstruction verified a closure is minted `v` as POWV: the
 home, plus the witness or peer that re-derived it on an install or glue.
-`R` is the court's calibrated reserve. A court at rest (`y = 0`) takes
+`R` is the court's capacity `C` (§7.1). A court at rest (`y = 0`) takes
 nothing, and a lane at full deficit (`y = R`) pays verification half the
 lane. The closer takes exactly the rest, and the total issued equals the
 base. (Until v0.3.0 the share was `⌊⌊M_l · y_l / (y_l + R)⌋ / n⌋` and
@@ -1526,7 +1538,7 @@ Sources: MU-ECONOMY §5.1, §8. Code:
 `src/economy/verify.rs::verification_share`,
 `src/server/cognition/court/verify.rs::Court::pay_verification`,
 `::release_verified`; `src/economy/lanes.rs::yield_surface`;
-`src/physics/calibration.rs::reserve_max`.
+`src/physics/stroke.rs::Physics::capacity`.
 
 #### 6.14 The compute lease
 
@@ -1561,23 +1573,50 @@ Sources: MU-ECONOMY §1, §9; MU-RECURSION A21. Code:
 
 ## 7. The metabolism
 
-#### 7.1 The reserve and its units
+#### 7.1 The capacity and its units
 
 ```text
-STROKES_PER_RESERVE = 2^{FRAME_AXIS + 1} = 2³ = 8          (FRAME_AXIS = 2)
-RESERVE_FLOOR       = 2 · STROKES_PER_RESERVE = 16
-reserve_max         = ⌊ max(cores · (1 + GiB available), 16) / 8 ⌋ · 8
-spend_unit          = reserve_max / 8
+STROKES_PER_RESERVE = 2^{ALPHABET_BASE_N} = 2³ = 8         (ALPHABET_BASE_N = LETTER_RANK − 1 = 3)
+M_proc              = least cgroup v2 memory.max on the process's path,
+                      else 1024 · MemAvailable_kB            read once at boot, its source named
+minimal             = modes_need(turn) + modes_need(slide)   the founding motions' modes' need
+b                   = ⌈ retained / reads ⌉                   bytes one read retains, on the boot stroke of `minimal` reads
+C = capacity        = ⌊ M_proc / b ⌋                         sealed once; refused Unfit where ⌊C / 8⌋ < minimal
+                    = 8 · minimal                            before any seal (a process that never calibrates)
+spend_unit          = ⌊ C / 8 ⌋
 regen_unit          = ⌈ spend_unit / 2 ⌉
-aperture_cycle      = 2^{FRAME_AXIS + 1} = 8
+read price          = 1 + y_l / C                            D2.3, κ = 1
+quiet ask           = once the final point advances            no capacity, no constant (§7.6)
+aperture_cycle      = 2^{ALPHABET_BASE_N} = 8
 ```
 
-The ratio is the vertex count of the sensor base's unit cell. The reserve
-ceiling is measured from the host, rounded to a whole number of strokes.
+The ratio is the vertex count of the unit cell of the base the founding
+motions act on, the alphabet's (D2.5 O3); no task's rank enters it. The capacity
+is the process's own: the reads its memory holds at the measured bytes per
+read, exact, never the host's whole memory. One boot calibration stroke,
+sized by the minimal stroke's need, measures `b` (the bytes its reads left
+held, by the allocator's per-thread counters, over the reads it spent) and
+seals the capacity before anything is served. A process that says no
+`M_proc`, whose stroke cannot complete, or whose one spend cannot cover the
+minimal stroke is refused by name (`Uncalibrated::Memory`,
+`Uncalibrated::Footprint`, `Uncalibrated::Unfit`); `M_proc` is read before
+the stroke runs. The metabolism (pool, spend, regeneration, shortfall,
+deficit, yield surface, read price, verification share) reads the capacity
+its `Physics` holds. A stroke budget reads its work's own need where one
+exists in closed form (`modes_need`, `need`, `need_of`), the capacity's
+spend otherwise (MU-DERIVATIONS D2.5 lists those owed). A settlement goes
+cold when its challenge window closes; the pointed-connection book and the
+nerve's queue are bounded by `M_proc`. The ratio `8` reads the fixed frame
+axis, which ROADMAP track 26 S4 removes; it is an open dependency
+(MU-DERIVATIONS D2.5 O3).
 
-Sources: MU-RECURSION 78.8, 45.7; MU-CLIENT §4.13. Code:
-`src/physics/calibration.rs` (`STROKES_PER_RESERVE`, `RESERVE_FLOOR`,
-`reserve_max`, `spend_unit`, `regen_unit`, `aperture_cycle`).
+Sources: MU-RECURSION 78.8, 45.7; MU-CLIENT §4.13; MU-DERIVATIONS D2.5.
+Code: `src/physics/memory.rs` (`Memory`, `MemorySource`, `memory_of`,
+`cgroup_limit_of`); `src/physics/calibration.rs` (`STROKES_PER_RESERVE`,
+`minimal_stroke`, `footprint_of`, `boot_stroke`, `calibration_of`,
+`Calibration`, `Sealed`, `calibrate`, `capacity`, `sealed`, `spend_unit`,
+`aperture_cycle`); `src/physics/stroke.rs` (`Physics::calibrated`,
+`capacity`, `unit_spend`).
 
 #### 7.2 Spend
 
@@ -1633,7 +1672,7 @@ Sources: MU-RECURSION law 5, 12.6, 78.71(2), PHY1; MU-CLIENT §4.13. Code:
 
 ```text
 order_flux_l      = syntropic_l − torsion_l          (in i128)
-reserve_deficit_l = max(0, reserve_max − reserve_l)
+reserve_deficit_l = max(0, C − reserve_l)            C the capacity the metabolism holds (§7.1)
 reserve_shortfall_l = max(0, spend_unit − reserve_l)   on the wanted lanes
 torse relief:  torsion_l −= spanned,  syntropic_l += spanned  on the active lanes (refused if torsion_l < spanned)
 ```
@@ -1649,7 +1688,7 @@ stroke_floor   = 1 s / CONFIG_HZ                (or the least wait the kernel gr
 idle_park      = stroke_floor · max(rtt, 1)      (one stroke where no rtt is measured)
 Λ(rtt, n)      = rtt · max(n, 1)  strokes        (BeyondTheLedger where it overflows)
 persist_dwell  = Λ(rtt, aperture_cycle)
-digest_ceiling = Λ(rtt, reserve_max)
+quiet ask      = due where never asked, or advances(final point) > advances at the last ask   (D2.5)
 circuit period = strokes − strokes at the last circuit
 ```
 
@@ -1659,8 +1698,8 @@ work is counted in strokes or in final-point advances.
 Sources: MU-RECURSION 47.5, 45.7, 78.152, PH1. Code:
 `src/physics/calibration.rs::stroke_floor`, `::idle_park`,
 `src/physics/lambda.rs::from_transport`, `::persist_dwell`,
-`::transport_deadline`, `::digest_ceiling`,
-`src/physics/circuits.rs::Circuits::stroke`.
+`::transport_deadline`, `src/physics/circuits.rs::Circuits::stroke`,
+`src/bin/mycelium-server/transport.rs::quiet_due`.
 
 ---
 
@@ -1729,9 +1768,10 @@ prefix). Code: `src/chronometry/receipt.rs::KStepReceipt::seal`, `::hash`,
 
 ```text
 TPoint = { origin: (genesis, epoch), h, S, G, T, H, K }
-writing:  <genesis 64 hex>.<epoch 8 hex>/<h>:<S>:<G>:<T>:<H>:<K>     (each field 16 lowercase hex)
+writing:  <genesis 64 hex>.<epoch 8 hex>/<h>:<S>:<G>:<T>:<H>:<K>     (h, K: 16 lowercase hex; each lane n/d, lowest terms, lowercase hex, no leading zero)
 origin.genesis = the chain hash of the mesh's first receipt
-S:G:T:H  = Treasury::issued per lane at the keeper's court
+S:G:T:H  = Treasury::issued per lane at the keeper's court, exact in ℚ≥0 (ruled 2026-11-01)
+a ≤ b    ⇔  (origin, h, S, G, T, H, K) of a ≤ that of b, each lane by value   (TPoint::compare_writings on writings)
 advances on held  ⇔  nothing held,  or same origin and greater h,  or a later epoch
 ```
 
@@ -1768,7 +1808,7 @@ the residue; it is never averaged into the point. Read at one common tick
 it is zero.
 
 Sources: MU-RECURSION 78.152 TU-4. Code:
-`src/chronometry/tuniversal/keepers.rs::Keepers::residual`.
+`src/chronometry/tuniversal/keepers.rs::Keepers::residue`.
 
 #### 8.8 The fold and the era
 
@@ -1849,11 +1889,11 @@ equivocation:     two signed receipts, one key, one K, two chain hashes  ⇒  bu
 
 The court reconstructs and never composes (MU-SCIENCE §5.0); its work on a
 theorem is the finite check of its certificate. The code names the
-discharge reader `measured_replay`, pending the rename.
+discharge reader `measured_discharge`.
 
 Sources: MU-RECURSION law 8, 78.69, 78.70, 47.4; MU-CLIENT §5.6; MU-XSEPTUM
-(EQUIVOCATION). Code: `src/server/cognition/identity.rs::measured_replay`,
-`::measured_replay_read`; `src/transducer/sentence/theorem.rs::Theorem::check`.
+(EQUIVOCATION). Code: `src/server/cognition/identity.rs::measured_discharge`,
+`::measured_discharge_read`; `src/transducer/sentence/theorem.rs::Theorem::check`.
 
 #### 9.5 The law register
 
@@ -1888,7 +1928,7 @@ reconstruction methods that reach the same object admit the same claim at
 one address.
 
 Sources: MU-SCIENCE P1, P2, P5, §3.2, §5.0; MU-RECURSION 47.3. Code: rules
-(V0) through `src/court/verdict/` and §9.4's `measured_replay`.
+(V0) through `src/court/verdict/` and §9.4's `measured_discharge`.
 
 **Specified.** The verifier interface `reconstruct(claim, physics, budget)
 → Verdict` (MU-SCIENCE §9.1), ROADMAP track 12, S1.
@@ -1923,8 +1963,8 @@ Sources: MU-SCIENCE §5, V1.
 #### 10.1 Named open physics
 
 ```text
-THROAT_GRID      = 64       the 2⁻⁶⁴ grid a throat's horizon level is enclosed on
-LAW_VERSION      = 5
+THROAT_LEVEL_BITS = 64    the 2⁻⁶⁴ grid a throat's horizon level is enclosed on
+LAW_VERSION       = 5
 ```
 
 The founding principles admit no constant: a number in the physics is read
@@ -1943,7 +1983,7 @@ Sources: MU-RECURSION §0.0, 78.125, 78.134. Code:
 `src/physics/axioms/founding.rs::OPEN_PHYSICS`;
 `src/physics/laws/mod.rs::CHALLENGE_WINDOW`, `PARAMETERS`;
 `src/server/cognition/window.rs::window_close`;
-`src/server/cognition/mouth.rs::THROAT_GRID`.
+`src/server/cognition/domain_passage.rs::THROAT_LEVEL_BITS`.
 
 #### 10.2 Throat size is mass
 
@@ -1958,7 +1998,7 @@ A mouth's horizon is read in its own space from the mass committed to hold
 it open; the size is never undersized by the enclosure.
 
 Sources: CONCORDANCE 2.6; MU-RECURSION 78.134, 78.140. Code:
-`src/server/cognition/mouth.rs::throat_level`, `::sphere_throat`,
+`src/server/cognition/domain_passage.rs::throat_level`, `::sphere_throat`,
 `::flat_throat`; `src/core/certified.rs` (`cosh`, `cos`, `pi`, `Encl`).
 
 #### 10.3 The founding principles
@@ -2039,8 +2079,9 @@ id is a hosted shell's own.
 | L0 conservative flow into e_∅ (`TAG_LAW‖4‖5`) | 5 | MU-RECURSION 78.59, 78.58 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
 | L0 continuity (`TAG_LAW‖5‖5`) | 5 | MU-RECURSION 78.89 | `src/physics/laws/mod.rs` (`verify`, `verify_flux`); `ACT_LAWS` mode 0 |
 | L0 parameters (the frame budget, an open protocol parameter; the challenge window is a sealed reach and return, no parameter) | 5 | MU-RECURSION 78.125 as amended; MU-DERIVATIONS D1.3; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
-| Concordance (`CONCORDANCE_HASH`) | 4 (the agreement's version); identified by its hash | `docs/MU-CONCORDANCE.md`; hash = BLAKE3 of its exact bytes | `src/physics/laws/concordance.rs`, `build.rs`; served on `ACT_LAWS` mode 7, signatures on mode 8 |
+| Concordance (`CONCORDANCE_HASH`) | 4 (the agreement's version); identified today by a hash of its bytes, a defect; each clause is to be identified by its content and signed by adjudicated reading (Concordance §0, ROADMAP track 24 B2) | `docs/MU-CONCORDANCE.md`; hash = BLAKE3 of its exact bytes, until B2 | `src/physics/laws/concordance.rs`, `build.rs`; served on `ACT_LAWS` mode 7, signatures on mode 8 |
 | `FORMS-FRAME` | 1 | `forms/src/frame.rs` (module documentation); Concordance 2.10, A6 | `forms::frame` (core shell) |
+| `FORMS-PASSAGE` | 1 | `forms/src/passage.rs` (module documentation); LAW-PASSAGE v1, [proposal 78.172](proposals/78.172-law-passage.md); ROADMAP track 24 B3 | `forms::passage` (at the crate root, as 78.172 §6 names it; xylarium's reading of the fixtures is owed) |
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |
 | `LAW-WAVEFRONT` | 1 | netstratum `docs/111` §2–§3 ([netstratum#9](https://github.com/SAIOS-SAMN/netstratum/issues/9)) | netstratum; no Mycelium code |
 
@@ -2048,6 +2089,6 @@ The six L0 laws share one register version (`LAW_VERSION`, 5): an
 amendment to any of them raises it for all, and the register is served
 whole (`ACT_LAWS` mode 0, `decode_register_reply`), decoding only at the
 version the reader holds. The `forms` ids are versioned per shell
-(`frame::LAW_VERSION`, `shares::LAW_VERSION`). A peer law is recorded by id
+(`frame::LAW_VERSION`, `passage::LAW_VERSION`, `shares::LAW_VERSION`). A peer law is recorded by id
 and version only: its canonical text and its implementation stay with the
 kernel that states it, and Mycelium neither restates nor computes it.

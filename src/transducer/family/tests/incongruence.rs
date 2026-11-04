@@ -11,7 +11,7 @@ use num_rational::BigRational;
 /// accreted all on light, one run of three leaving by the edge, one recolour.
 #[test]
 fn difference_reads_constructors_and_light() {
-    let frame = vec![vec![0u8; 4]];
+    let frame = crate::transducer::spelled::SectionSample::from(vec![vec![0u8; 4]]);
     let input = vec![(0, 0, 1)];
     let output = vec![(0, 0, 2), (0, 1, 2), (0, 2, 2), (0, 3, 2)];
     let d = difference(&input, &output, &frame);
@@ -29,8 +29,8 @@ fn difference_reads_constructors_and_light() {
 /// input reproduces its output. A third reading growing left instead narrows
 /// the core and sharpens an edge — the contrast held, not dissolved.
 #[test]
-fn manifold_keeps_readings_core_judged_by_replay() {
-    let frame = vec![vec![0u8; 8]; 3];
+fn manifold_keeps_readings_core_judged_by_reconstruction() {
+    let frame = crate::transducer::spelled::SectionSample::from(vec![vec![0u8; 8]; 3]);
     let a_in = vec![(1, 1, 3)];
     let a_out = vec![(1, 1, 3), (1, 2, 3)];
     let b_in = vec![(0, 5, 3)];
@@ -61,7 +61,7 @@ fn manifold_keeps_readings_core_judged_by_replay() {
 /// one out, the second mass-3 reading is predicted by the first and the
 /// replay reproduces it; the lone mass-1 reading has no other to decide by.
 #[test]
-fn moments_reads_density_and_decided_replays() {
+fn moments_reads_density_and_decided_reconstructs() {
     let bar = vec![(0, 0, 1), (0, 1, 1), (0, 2, 1)];
     let ell = vec![(4, 4, 1), (4, 5, 1), (5, 4, 1)];
     let (mb, ml) = (moments(&bar), moments(&ell));

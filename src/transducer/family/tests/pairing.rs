@@ -16,7 +16,7 @@ fn nucleus(b: &blade::Blade) -> crate::transducer::cga::Mv {
 }
 
 fn pose(before: &blade::Blade, after: &blade::Blade) -> crate::transducer::cga::Mv {
-    match blade::relative_pose(before, after, &mut super::common::budget()) {
+    match blade::relative_pose(before, after, &mut super::fixtures::budget()) {
         Ok(blade::Pose::Turn(r)) => r,
         other => panic!("a determined turn: {other:?}"),
     }
@@ -41,7 +41,7 @@ fn contact_edge_carries_refraction_not_rigidity() {
     let (theta_a, theta_b) = (pose(&a, &a_after), pose(&b, &b));
     let relative = theta_b.geo(&theta_a.reverse());
     let ContactEdge::Formed(edge) =
-        contact_edge((&nucleus(&a), &nucleus(&b)), Some((&a, &a_after)), Some((&b, &b)), &mut super::common::budget())
+        contact_edge((&nucleus(&a), &nucleus(&b)), Some((&a, &a_after)), Some((&b, &b)), &mut super::fixtures::budget())
     else {
         panic!("the band gates nothing: the contact carries its edge");
     };
@@ -55,10 +55,10 @@ fn contact_edge_carries_refraction_not_rigidity() {
     // still each carry a refraction: each is read against itself.
     // (An asymmetric one: a bar's own 180° turn would hold its pose open.)
     let bar = body(&[(3, 0, 0), (4, 0, 0), (5, 0, 0), (5, 1, 0)]);
-    assert!(blade::relative_pose(&a, &bar, &mut super::common::budget()).is_err(), "an L-tromino and an L-tetromino are not one turn apart");
+    assert!(blade::relative_pose(&a, &bar, &mut super::fixtures::budget()).is_err(), "an L-tromino and an L-tetromino are not one turn apart");
     assert!(
         matches!(
-            contact_edge((&nucleus(&a), &nucleus(&bar)), Some((&a, &a)), Some((&bar, &bar)), &mut super::common::budget()),
+            contact_edge((&nucleus(&a), &nucleus(&bar)), Some((&a, &a)), Some((&bar, &bar)), &mut super::fixtures::budget()),
             ContactEdge::Formed(_)
         ),
         "yet the bodies' contact is read, never refused for unlikeness"
@@ -69,7 +69,7 @@ fn contact_edge_carries_refraction_not_rigidity() {
     // its refraction where it used to be refused.
     let j = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let j_after = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
-    let edge = contact_edge((&nucleus(&j), &nucleus(&bar)), Some((&j, &j_after)), Some((&bar, &bar)), &mut super::common::budget());
+    let edge = contact_edge((&nucleus(&j), &nucleus(&bar)), Some((&j, &j_after)), Some((&bar, &bar)), &mut super::fixtures::budget());
     assert!(
         matches!(edge, ContactEdge::Formed(_) | ContactEdge::Held(_)),
         "a mirrored transition carries its refraction"
@@ -94,13 +94,13 @@ fn oblique_rotor_prime_raises_demand_where_edge_refuses() {
     let bar = body(&[(10, 0, 0), (11, 0, 0), (10, 1, 0)]);
     assert!(
         matches!(
-            contact_edge((&nucleus(&l), &nucleus(&bar)), Some((&l, &image)), Some((&bar, &bar)), &mut super::common::budget()),
+            contact_edge((&nucleus(&l), &nucleus(&bar)), Some((&l, &image)), Some((&bar, &bar)), &mut super::fixtures::budget()),
             ContactEdge::Refused { poses: [Some(blade::NoPose::Oblique), None] }
         ),
         "a similarity at an unspelled angle carries no edge, and the refusal names the arm"
     );
 
-    let Some(Demand::RotorPrime { prime, witness, .. }) = oblique_rotor_prime(&l, &image, &mut super::common::budget()) else {
+    let Some(Demand::RotorPrime { prime, witness, .. }) = oblique_rotor_prime(&l, &image, &mut super::fixtures::budget()) else {
         panic!("the oblique member raises the rotor-prime demand");
     };
     assert_eq!(prime, 17, "the prime 4 + i lies over");
@@ -108,7 +108,7 @@ fn oblique_rotor_prime_raises_demand_where_edge_refuses() {
     assert_eq!(*witness, arc, "the witness is the arc of (4 + i)²");
 
     let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
-    assert!(oblique_rotor_prime(&s, &image, &mut super::common::budget()).is_none(), "a different shape raises nothing");
+    assert!(oblique_rotor_prime(&s, &image, &mut super::fixtures::budget()).is_none(), "a different shape raises nothing");
 }
 
 /// F5 — GATE 1 PASSES THE OBLIQUE ARM ALONE: a pair reading a turn of the
@@ -120,9 +120,9 @@ fn oblique_rotor_prime_passes_oblique_arm_alone() {
     let turn_90 = body(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (-1, 2, 0)]);
     let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
     let empty = blade::shape_of::<(i64, i64, i64)>(&[]).blade;
-    assert!(blade::relative_pose(&l, &turn_90, &mut super::common::budget()).is_ok(), "the fixture: a 90° turn apart");
+    assert!(blade::relative_pose(&l, &turn_90, &mut super::fixtures::budget()).is_ok(), "the fixture: a 90° turn apart");
     for (a, b) in [(&l, &turn_90),(&l, &s), (&empty, &l)] {
-        assert!(oblique_rotor_prime(a, b, &mut super::common::budget()).is_none(), "none of them is oblique");
+        assert!(oblique_rotor_prime(a, b, &mut super::fixtures::budget()).is_none(), "none of them is oblique");
     }
 }
 
@@ -137,7 +137,7 @@ fn stand_demands_stands_rotor_prime_once() {
     use crate::transducer::stalk::Invariant;
     let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let image = body(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
-    let rotor_prime = oblique_rotor_prime(&l, &image, &mut super::common::budget()).expect("the oblique pair's demand");
+    let rotor_prime = oblique_rotor_prime(&l, &image, &mut super::fixtures::budget()).expect("the oblique pair's demand");
     let Demand::RotorPrime { plane, prime, .. } = rotor_prime.clone() else { panic!("a rotor prime") };
     let empty = Demand::RotorPrime { plane, prime, witness: Box::default() };
     let chart = Invariant::default();
@@ -163,13 +163,13 @@ fn contact_edge_reads_turn_180_as_coset() {
     let s4 = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)];
     let s = body(&s4);
     let turned = body(&s4.map(|(r, c, k)| (-c, r, k)));
-    let Ok(blade::Pose::Open180(candidates)) = blade::relative_pose(&s, &turned, &mut super::common::budget()) else {
+    let Ok(blade::Pose::Open180(candidates)) = blade::relative_pose(&s, &turned, &mut super::fixtures::budget()) else {
         panic!("the S holds its 180° turn");
     };
     let b = body(&[(4, 0, 0), (5, 0, 0), (4, 1, 0)]);
     let v = blade::tether(&s, &b).expect("both nuclei read");
     let ContactEdge::Held(Refraction::Coset(coset)) =
-        contact_edge((&nucleus(&s), &nucleus(&b)), Some((&s, &turned)), Some((&b, &b)), &mut super::common::budget())
+        contact_edge((&nucleus(&s), &nucleus(&b)), Some((&s, &turned)), Some((&b, &b)), &mut super::fixtures::budget())
     else {
         panic!("a held pose is a coset edge");
     };
@@ -194,7 +194,7 @@ fn contact_edge_carries_static_tether_and_pose() {
     let b_after = body(&[(2, 1, 0), (2, 2, 0), (1, 1, 0)]);
     let v = blade::tether(&a, &b).expect("both nuclei read");
     let ContactEdge::Held(Refraction::Static { tether, poses }) =
-        contact_edge((&nucleus(&a), &nucleus(&b)), None, Some((&b, &b_after)), &mut super::common::budget())
+        contact_edge((&nucleus(&a), &nucleus(&b)), None, Some((&b, &b_after)), &mut super::fixtures::budget())
     else {
         panic!("a piece at one frame is a static edge");
     };

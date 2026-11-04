@@ -81,9 +81,9 @@ impl Reconstruction {
     }
 }
 
-/// A replay's key: the fold, then the filer — so no filer's publication can
+/// A reconstruction's key: the fold, then the filer — so no filer's publication can
 /// reset another's.
-fn replay_key(fold: &[u8], filer: &[u8; 32]) -> Vec<u8> {
+fn reconstruction_key(fold: &[u8], filer: &[u8; 32]) -> Vec<u8> {
     let mut k = Vec::with_capacity(fold.len() + 40);
     crate::transducer::address::put_key_bytes(&mut k, fold);
     k.extend_from_slice(filer);
@@ -231,7 +231,7 @@ impl Court {
                 if !(window_open || deadline_open) {
                     return refuse(R::Closed);
                 }
-                let k = replay_key(&key, &c.who);
+                let k = reconstruction_key(&key, &c.who);
                 let proves = |rows: &[Net], declared: &[Net], children: &[ChildNet]| {
                     let shown = TierFold {
                         tier: rec.tier,

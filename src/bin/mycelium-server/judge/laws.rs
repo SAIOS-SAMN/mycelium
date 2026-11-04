@@ -8,13 +8,13 @@
 //! as the observer's census does: the court's metabolism is the acts it
 //! admits, and this admits none.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
-use mycelium::network::wire::Frame;
+use mycelium::network::wire::WireFrame;
 use mycelium::physics::laws::codec::{decode_laws_request, encode_register_reply, LawsRequest};
 use std::net::TcpStream;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context) {
     let Some(request) = decode_laws_request(&frame.body) else { return };
     let body = match request {
         LawsRequest::Register => encode_register_reply(),
@@ -23,7 +23,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         // stamp is its own height.
         LawsRequest::Clock => {
             mycelium::observe::note_serve(mycelium::observe::ServeAxis::ReadsPublished, 1);
-            mycelium::physics::laws::codec::encode_clock_reply(door.published.take().clock())
+            mycelium::physics::laws::codec::encode_clock_reply(context.published.take().clock())
         }
         // 78.125 — the register's parameters (the challenge window), at its version.
         LawsRequest::Parameters => mycelium::physics::laws::codec::encode_parameters_reply(),
@@ -50,5 +50,5 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             mycelium::physics::laws::codec::encode_batch_reply(&verdicts)
         }
     };
-    answer(stream, Frame { lane: frame.lane, body });
+    answer(stream, WireFrame { lane: frame.lane, body });
 }

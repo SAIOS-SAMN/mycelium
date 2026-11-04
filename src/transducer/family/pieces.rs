@@ -16,7 +16,7 @@
 //! moved, not rewritten (§1.6).
 
 use super::*;
-use crate::transducer::peel::ShellKind;
+use crate::transducer::layers::LayerKind;
 
 /// A piece of a body: one shell, one HUE-BLIND connected component (70.4).
 /// Its hues are the gauge its compartments carry, read off them where a reader
@@ -35,7 +35,7 @@ pub(crate) struct Piece {
 /// carriers holding them take the coordinate rather than loose bytes.
 ///
 /// The three functions that wrote these keys by hand are gone. What they
-/// wrote is `coord::Piece::encode`, `coord::Carriage::encode` and
+/// wrote is `coord::Piece::encode`, `coord::CarriedPieces::encode` and
 /// `coord::Meet::encode`, and what `meet_ends` read back out is
 /// `coord::Meet::ends`. There is one producer of each layout (law 12) and
 /// it is the one the trie decodes through.
@@ -46,15 +46,15 @@ pub(crate) struct Piece {
 /// collapse existed only so that the pullback (which assembles its domain
 /// and names a single output piece) and the propagation (which names a
 /// single input piece and assembles its image) would agree on the address
-/// of a carriage between two whole pieces. A [`coord::Carriage`] carries a
+/// of a carriage between two whole pieces. A [`coord::CarriedPieces`] carries a
 /// LIST on both sides and the two passes agree because both sides are
 /// lists, not because one collapses into the other's shape.
 ///
 /// [`coord::Piece`]: crate::network::nerve::coord::Piece
-/// [`coord::Carriage`]: crate::network::nerve::coord::Carriage
+/// [`coord::CarriedPieces`]: crate::network::nerve::coord::CarriedPieces
 /// [`coord::Meet`]: crate::network::nerve::coord::Meet
 pub(crate) fn piece_at(
-    kind: ShellKind,
+    kind: LayerKind,
     support: &[crate::transducer::base::Site],
 ) -> crate::network::nerve::coord::Piece {
     crate::network::nerve::coord::Piece { kind, support: support.to_vec() }
@@ -80,7 +80,7 @@ pub(crate) fn piece_at(
 ///
 /// What no single versor carries whole is one demand of the kind its
 /// reading types (50.5), declared from `Cover::uncarried` in `extract.rs`,
-/// never a listing of pieces. `ShellKind::Whole` is the kind of a body read
+/// never a listing of pieces. `LayerKind::Whole` is the kind of a body read
 /// without a peel — the value, not a placeholder for one.
 pub(crate) fn pieces_of(
     compartments: &[Compartment],
@@ -97,7 +97,7 @@ pub(crate) fn pieces_of(
         // A component whose moduli are not read at its `n` is no piece
         // (38.2, BQ4); the perceivers count such a body where it arises.
         let Some(body) = body_of(comp) else { continue };
-        let k = piece_at(ShellKind::Whole, &support_of(&body));
+        let k = piece_at(LayerKind::Whole, &support_of(&body));
         out.put(&k, Piece { body });
     }
     out

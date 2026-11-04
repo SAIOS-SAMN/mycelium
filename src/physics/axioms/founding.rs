@@ -122,9 +122,9 @@ pub const OPEN_PHYSICS: [OpenNumber; 17] = [
         kind: OpenKind::Engineering,
     },
     OpenNumber {
-        name: "THROAT_GRID",
+        name: "THROAT_LEVEL_BITS",
         value: "64",
-        site: "src/server/cognition/mouth.rs::THROAT_GRID",
+        site: "src/server/cognition/domain_passage.rs::THROAT_LEVEL_BITS",
         governs: Governs::Admission,
         doc: "MU-RECURSION 78.134, 78.162 (5); MU-CONCORDANCE 2.6; MU-DERIVATIONS D1.2",
         derivation: "the 2^-64 grid a throat's cosh horizon is enclosed on (78.134): an approximation; the throat is a Cl(4,1) \
@@ -257,7 +257,7 @@ pub const OPEN_PHYSICS: [OpenNumber; 17] = [
     OpenNumber {
         name: "STROKE",
         value: "1 << 20",
-        site: "src/bin/mycelium-soak/sporophore.rs::STROKE",
+        site: "src/bin/mycelium-soak/enclosure.rs::STROKE",
         governs: Governs::Instrument,
         doc: "MU-DERIVATIONS D1.4, D3.1",
         derivation: SOAK_STROKE,

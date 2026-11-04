@@ -20,11 +20,11 @@ type Torsed = (Box<crate::transducer::sentence::ClassVector>, Box<Rotor>, u32);
 enum Stop {
     /// Heard on its chart; the confirm re-opens it when a peer's root moves.
     Heard,
-    /// This court's replay refused it.
-    Replay(&'static str),
-    /// 78.153 — this court's stroke ran out before its replay ruled: the
+    /// This court's reconstruction refused it.
+    Reconstruction(&'static str),
+    /// 78.153 — this court's stroke ran out before its reconstruction ruled: the
     /// word is neither refused nor heard, and the next fetch resumes the
-    /// replay where it stopped (`replay_cursors`).
+    /// reconstruction where it stopped (`reconstruction_cursors`).
     Unread,
     /// A colour word whose proof does not stand here yet (78.55): it waits as
     /// dialect, unheard, and the next fetch proves it once its citations are
@@ -77,7 +77,7 @@ impl Court {
         spoken: Element,
         peer: [u8; 32],
         self_id: [u8; 32],
-        cover: &mut crate::network::nerve::Cover,
+        cover: &mut crate::network::nerve::HomeTrie,
         budget: &mut crate::physics::Budget,
     ) -> Glue {
         match self.glue_fetched_ruled(spoken, peer, self_id, cover, budget) {
@@ -93,7 +93,7 @@ impl Court {
         spoken: Element,
         peer: [u8; 32],
         self_id: [u8; 32],
-        cover: &mut crate::network::nerve::Cover,
+        cover: &mut crate::network::nerve::HomeTrie,
         budget: &mut crate::physics::Budget,
     ) -> Option<Glue> {
         let address = spoken.address();
@@ -187,10 +187,10 @@ impl Court {
         if self.heard.contains(address) {
             return Some(Stop::Heard);
         }
-        match self.court_replay(spoken, budget) {
-            crate::verdict::Replayed::Refused(r) => return Some(Stop::Replay(r.reason)),
-            crate::verdict::Replayed::Unread => return Some(Stop::Unread),
-            crate::verdict::Replayed::Clean => {}
+        match self.court_reconstruct(spoken, budget) {
+            crate::verdict::ReconstructionOutcome::Refused(r) => return Some(Stop::Reconstruction(r.reason)),
+            crate::verdict::ReconstructionOutcome::Unread => return Some(Stop::Unread),
+            crate::verdict::ReconstructionOutcome::Clean => {}
         }
         if spoken.is_colour_word() && !self.colour_proof(spoken, None).stands() {
             return Some(Stop::ColourUnproven);
@@ -211,7 +211,7 @@ impl Court {
                 crate::observe::note_replication(Some(peer), replication::GLUE_HEARD, 1);
                 Glue::Dialect
             }
-            Stop::Replay(why) => self.refuse(address, &inv, peer, replication::GLUE_REPLAY_REFUSED, why),
+            Stop::Reconstruction(why) => self.refuse(address, &inv, peer, replication::GLUE_RECONSTRUCTION_REFUSED, why),
             // Not ruled this stroke: nothing heard, nothing refused.
             Stop::Unread => Glue::Dialect,
             Stop::ColourUnproven => {
@@ -549,7 +549,7 @@ impl Court {
     /// Deflation a form may mint: its DISCHARGE on the bound family
     /// (`discharge_of`, 78.149, the one reader every escrow and release
     /// takes). Association with a listing is not a mint.
-    pub(crate) fn verified_install_deflation(&self, address: &[u8], form: &Element) -> [u64; 4] {
+    pub(crate) fn verified_install_deflation(&self, address: &[u8], form: &Element) -> crate::economy::Mu {
         self.discharge_of(address, form)
     }
 
@@ -762,7 +762,7 @@ fn write_peer_section(cx: &mut crate::transducer::cech::Complex, spoken: &Elemen
 /// THE COVER'S VERTICES on the chart: this court, the peer, and every hypha
 /// the cover names on a lane the word occupies.
 fn cover_vertices(
-    cover: &crate::network::nerve::Cover,
+    cover: &crate::network::nerve::HomeTrie,
     spoken: &Element,
     inv: &crate::transducer::stalk::Invariant,
     self_id: [u8; 32],

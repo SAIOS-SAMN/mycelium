@@ -2,7 +2,7 @@
 // `m` read off the bivector, each with its plane and class; undecomposed by
 // name; and the inverse Cayley chart.
 
-use super::common::{ax, budget, q};
+use super::fixtures::{ax, budget, q};
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::*;

@@ -49,7 +49,7 @@ fn drop_dialect_removes_word_from_axis_index() {
         .coordinates();
     assert!(!axes.is_empty(), "a 90° turn occupies a coordinate");
 
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     let addr = epi
         .stand_dialect_at(sentence, 1, 1)
         .expect("the sentence stands in the dialect");

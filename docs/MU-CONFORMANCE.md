@@ -81,14 +81,36 @@ closure answers `SOLVE_AGAIN` (code 1) and pays nothing.
 
 | Need | Act | Reply decoder | Fields read back |
 |---|---|---|---|
-| MUST | `task` (`[ACT_TASK][voice 32]`) | `decode_task_envelope` | citation, train, tests (an empty reply: no work) |
-| MUST | `solve` (signed, with the rule's tape) | `decode_solve_verdict` | code, paid S:G:T:H, refusal, modes |
+| MUST | `task` (`[ACT_TASK][voice 32]`) | `decode_task_envelope` | citation, train, tests, each a sample of any rank (rank, extents, width, place, symbols; MU-SENSING §6) (an empty reply: no work) |
+| MUST | `solve` (`ACT_SOLVE`, claim kind 0; signed as `mycelium solve v4`, its outputs samples of any rank, with the rule's tape and, optionally, the ground the claim was spoken under; MU-SENSING §6.2) | `decode_solve`, `decode_solve_verdict` | the act: voice, task, outputs (samples), rule, stated ground (or none), signature; the verdict: code, paid S:G:T:H, refusal, modes |
 | MUST | `laws register` (`ACT_LAWS` mode 0) | `decode_register_reply` | law version, laws |
 | MAY | `task by citation` | `decode_task_envelope` | citation, train, tests |
 | MAY | `laws lexicon` (mode 3), `laws clock` (4), `laws parameters` (5), `laws statement` (6) | `decode_lexicon_reply`, `decode_clock_reply`, `decode_parameters_reply`, `decode_statement_reply` | as each decoder reads |
 | MAY | `laws concordance` (mode 7), `laws signature` (mode 8) | `decode_concordance_reply`, `decode_signature_reply` | the Concordance's hash; a signature's verdict (accepted, or `Mismatched`, `Unsigned`, `Malformed`) |
-| MAY | `quote`, `receipts`, `rows`, `observe query`, `why`, `wallet` | the readings' decoders | as each decoder reads |
-| MAY | `probe`, `peers`, `syllabus`, `speech`, `domain reserve`, `seat mail` | as the statement names | as each decoder reads |
+| MAY | `quote`, `receipts`, `entries` (the ledger entries, formerly `rows`), `observe query`, `why`, `wallet` | the readings' decoders | as each decoder reads |
+| MAY | `probe`, `peers`, `syllabus`, `speech` (each sentence with, optionally, the ground its claim was spoken under; MU-SENSING §6.2), `domain reserve`, `seat mail` | as the statement names | as each decoder reads |
+| MAY | `solve factorisation` (`ACT_SOLVE`, claim kind 1, `SOLVE_KIND_FACTORISATION`; signed as `mycelium factorisation v1`: a train pair's motion and residue at any rank, with, optionally, the ground the claim was spoken under; MU-SENSING §3.9) | `decode_factorisation`, `decode_factor_verdict` | the act: voice, task, pair, motion (sources, senses, periods), residue (links), stated ground (or none), signature; the verdict: admitted, the residue of the residues (unclaimed, uncarried), or the refusal by name |
+
+**Claim kinds of the solve (track 26 S4c).** The solve act carries its
+claim kind as the byte after its tag, the statement's mode for the act:
+kind 0 the solve of outputs, kind 1 a claim of factorisation (78.126: a
+new act is a sub-kind, never a new byte). The claim of factorisation is
+MAY for both profiles, inside v0.4.0's break. The in-process read checks
+a claim of a rank-3 motion and residue at width 2 with its stated
+ground, signed, that it is never read as a solve of outputs, and each of
+the three verdicts. An admitted claim is never paid (ruled; MU-SENSING
+§3.9), so the verdict carries no μ field.
+
+**Samples (track 26 S5).** The envelope's train pairs and test inputs and
+a solve's outputs are samples, each written `[rank u16][extent u16 ·
+rank][width u16][place count u16][coordinate i64 · count][symbols]` at its
+position `[split, pair, member]`. The in-process read checks the envelope
+at rank 2 and at rank 3 with two-byte symbols, and a solve whose output is
+of rank 3; the network read solves the tasks whose samples are rasters
+(rank 2, width 1) and reads a task of another rank or width as unread for
+this client, never as a failure. The wire version stays `0x0200`: the
+layouts of v0.3.0's break, this one included, ride the one version no tag
+has carried yet.
 
 The MUST acts are the client loop of README › *Building a client with the
 SDK*. The register decodes only at the reader's law version, so a hypha at
@@ -109,7 +131,7 @@ read.
 | MUST | `domain founding` (`ACT_DOMAIN` genesis) | `decode_domain_reply` | sealed stamp and receipt, or the refusal by name |
 | MUST | `domain manifest` (`ACT_DOMAIN` sub-kind 17) | `decode_grant_reply` | granted μ S:G:T:H, founding, stamp and receipt, or the refusal by name |
 | MUST | `domain universe` (`ACT_DOMAIN` sub-kind 11) | `decode_universe_reading` | originated, geometry, parent, basket |
-| MAY | `task`, `solve`, `task by citation` | as the mind profile's | as the mind profile's |
+| MAY | `task`, `solve`, `task by citation`, `solve factorisation` | as the mind profile's | as the mind profile's |
 | MAY | `laws batch` (mode 2), `laws lexicon`, `laws parameters` | `decode_batch_reply` and the readings' decoders | as each decoder reads |
 | MAY | `domain reserve`, `domain designation`, `domain origin`, `domain origin reading`, `domain statement`, `domain endowment` | `decode_reserve_reading`, `decode_domain_reply`, `decode_origin_reading`, `decode_endowment_reading` | as each decoder reads |
 | MAY | `seat post`, `seat listing`, `seat mail` | `decode_post_reply`, `decode_listing_reply`, `decode_mail_reply_standing` | the relay's sequence or refusal; the latest listing; the mail at the relay's standing |
@@ -162,8 +184,9 @@ running hypha, as the voice `key` seats. For every profile, the law
 register is read and each law checked at its coordinate with its
 statement, and the served statement, the Concordance's hash and a
 signature over it are read. For a mind, a task is taken and its envelope
-decoded, asked again by its citation, and solved: the solve signed by the
-voice and its verdict checked (a code of the four the statement names, a
+decoded, asked again by its citation, and solved once per perspective of
+its ground (MU-SENSING §3.4, §6.2): each solve signed by the voice and
+stating the ground it was spoken under, and each verdict checked (a code of the four the statement names, a
 final refusal paying nothing, a payment naming no refusal). For a kernel,
 the house's domain is the voice's own key, its one tier the same key:
 

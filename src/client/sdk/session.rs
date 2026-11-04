@@ -26,8 +26,8 @@ pub struct Session {
     pub(crate) strokes: std::cell::Cell<u64>,
     /// Keep-alive streams keyed by destination address.
     pub(crate) streams: RefCell<crate::network::nerve::Keyed<TcpStream>>,
-    /// Cover trie learned by page from `ACT_COVER`. Same read as the hypha.
-    pub(crate) cover: RefCell<crate::network::nerve::Cover>,
+    /// The home trie learned by page from `ACT_COVER`. Same read as the hypha.
+    pub(crate) cover: RefCell<crate::network::nerve::HomeTrie>,
     /// The four cover roots and the ruled root last read from each hypha:
     /// the cover is fetched when they MOVE, and not on every digest.
     pub(crate) last_roots: RefCell<crate::network::nerve::Keyed<crate::anastome::dialogue::Roots>>,
@@ -41,7 +41,7 @@ pub struct Session {
     /// 78.152 TU-7 — THE LAST FINAL POINT this session read: carried behind
     /// every act it speaks, raised by every door reply that carries a later
     /// one. `None` before the first.
-    pub(crate) final_point: std::cell::Cell<Option<crate::chronometry::tuniversal::TPoint>>,
+    pub(crate) final_point: RefCell<Option<crate::chronometry::tuniversal::TPoint>>,
 }
 
 impl Session {
@@ -61,13 +61,13 @@ impl Session {
             },
             strokes: std::cell::Cell::new(0),
             streams: RefCell::new(crate::network::nerve::Keyed::new()),
-            cover: RefCell::new(crate::network::nerve::Cover::new()),
+            cover: RefCell::new(crate::network::nerve::HomeTrie::new()),
             last_roots: RefCell::new(crate::network::nerve::Keyed::new()),
             rooms: RefCell::new(crate::network::nerve::Keyed::new()),
             addrs: RefCell::new(crate::network::nerve::Keyed::new()),
             rtt: RefCell::new(crate::network::nerve::Keyed::new()),
             rtt_window: RefCell::new(crate::network::nerve::Keyed::new()),
-            final_point: std::cell::Cell::new(None),
+            final_point: RefCell::new(None),
         }
     }
 
@@ -76,16 +76,19 @@ impl Session {
     /// verified readings (TU-3) — or `None` before the first. No ask is
     /// spoken: every door reply carries the door's final point, and this is
     /// the greatest read. A mind drives its clock by it and stamps what it
-    /// publishes with it (`TPoint::print`); its own step clock stays its own.
+    /// publishes with it (`TPoint::print`, its lanes exact rationals; two
+    /// writings compare by `TPoint::compare_writings`); its own step clock
+    /// stays its own. The point is a clone of the one held.
     pub fn tuniversal(&self) -> Option<crate::chronometry::tuniversal::TPoint> {
-        self.final_point.get()
+        self.final_point.borrow().clone()
     }
 
     /// A point read off a door reply: held where it advances on the one held.
     pub(crate) fn hear_point(&self, point: Option<crate::chronometry::tuniversal::TPoint>) {
         if let Some(p) = point {
-            if p.advances(self.final_point.get().as_ref()) {
-                self.final_point.set(Some(p));
+            let mut held = self.final_point.borrow_mut();
+            if p.advances(held.as_ref()) {
+                *held = Some(p);
             }
         }
     }
@@ -593,7 +596,7 @@ impl Session {
     }
 
     pub(crate) fn exchange_inner(&self, endpoint: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        let frame = Frame { lane: Stratum::Spatial, body: act_body };
+        let frame = WireFrame { lane: Lane::Spatial, body: act_body };
         // A body past the wire's one budget is refused here, by name, before
         // a byte is sent (78.125): a large publication is streamed in parts.
         let len = frame.body.len();
@@ -602,7 +605,7 @@ impl Session {
         // "this speaker reads points": the door answers a pointed speaker with
         // its own point and an unpointed one (a mind before 78.152) as it
         // always did, so a session that never pointed would never learn one.
-        let carried = match self.final_point.get() {
+        let carried = match self.tuniversal() {
             Some(p) => p,
             None => crate::chronometry::tuniversal::TPoint::default(),
         };
@@ -666,7 +669,7 @@ impl Session {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "a reply frame names no lane"));
         };
         let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
-        if len > crate::network::wire::BODY_BUDGET + crate::chronometry::tuniversal::TPoint::LEN {
+        if len > crate::network::wire::BODY_BUDGET + crate::chronometry::tuniversal::TPoint::TRAILER_MAX {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "frame too large"));
         }
         let mut body = vec![0u8; len];

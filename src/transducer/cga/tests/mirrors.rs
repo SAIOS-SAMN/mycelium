@@ -1,8 +1,8 @@
 // 78.14, MG1 — the base's mirrors as constructors, and a nucleus read against
 // the mirrors that bracket its centre.
 
-use super::common::{budget, q};
-use crate::transducer::cech::{read_coxeter, Closure, ComponentClass, Refusal};
+use super::fixtures::{budget, q};
+use crate::transducer::cech::{read_coxeter, GroupClosure, ComponentClass, Refusal};
 use crate::transducer::cga::*;
 
 /// A NUCLEUS SITS IN THE GRID BY ITS OFFSET FROM ITS BRACKETING MIRRORS, at
@@ -52,5 +52,5 @@ fn base_mirror_brackets_reads_affine_group() {
             (vec![3, 4], ComponentClass::Affine)
         ]
     );
-    assert!(matches!(r.closure, Closure::Infinite(Refusal::Affine(_))));
+    assert!(matches!(r.closure, GroupClosure::Infinite(Refusal::Affine(_))));
 }

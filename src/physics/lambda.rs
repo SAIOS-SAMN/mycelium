@@ -1,4 +1,4 @@
-use super::calibration::{aperture_cycle, reserve_max};
+use super::calibration::aperture_cycle;
 
 /// 47.5's Λ as a reading, with its two refusing arms told apart (law 5).
 ///
@@ -47,9 +47,4 @@ pub fn transport_deadline(rtt: u64) -> Lambda {
 /// Persist dwell: a full aperture of measured transports, in strokes.
 pub fn persist_dwell(rtt: u64) -> Lambda {
     of_measured(rtt, u64::from(aperture_cycle()))
-}
-
-/// Quiet-digest ceiling: a full reserve of measured transports, in strokes.
-pub fn digest_ceiling(rtt: u64) -> Lambda {
-    of_measured(rtt, reserve_max())
 }
