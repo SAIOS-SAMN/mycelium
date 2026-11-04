@@ -282,5 +282,5 @@ fn reproduces(epi: &MindLanguage, f: &crate::transducer::sentence::Form, links: 
     let Some(spoken) = sp.grid() else { return false };
     // An offset below the corner, or past `i64`, is off the spoken grid.
     let at = |x: i64, o: i64| x.checked_sub(o).and_then(|d| usize::try_from(d).ok());
-    links.iter().all(|&(r, c, _, a)| at(r, r0).and_then(|dr| spoken.get(dr)).and_then(|row| row.get(at(c, c0)?)).copied() == Some(a))
+    links.iter().all(|&(r, c, _, a)| at(r, r0).and_then(|dr| spoken.line(dr)).and_then(|row| row.get(at(c, c0)?)).copied() == Some(a))
 }

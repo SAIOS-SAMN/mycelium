@@ -1,7 +1,7 @@
 // 21 step 3, 24.1 — THE CRYSTAL AT A BODY'S CHART: the closed forms a
 // perceived body's chart reaches, which is what the glue asks for.
 
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::client::sdk::*;
 use crate::transducer::family::{cipher_form, sentence_measure, Crystal, NoCrystal};
 use crate::transducer::sentence::as_element_form;
@@ -12,7 +12,7 @@ fn admitting() -> crate::chronometry::Stamp {
     crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS)
 }
 
-fn digits(rows: &[&str]) -> Grid {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

@@ -12,10 +12,10 @@ use crate::transducer::family::Task;
 use crate::registry::{citation, task_address, TaskRegistry};
 
 fn toy() -> Task {
-    Task {
-        train: vec![(vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]])],
-        test: vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
-    }
+    crate::transducer::family::task_of_lines(
+        vec![(vec![vec![1, 1], vec![0, 0]], vec![vec![2, 2], vec![0, 0]])],
+        vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
+    )
 }
 
 /// A task whose content address passes 65 535 bytes: many test inputs, each
@@ -24,7 +24,7 @@ fn large() -> Task {
     let test = (0..4000u32)
         .map(|i| {
             let row: Vec<u8> = (0..30u32).map(|c| u8::try_from((i * 7 + c) % 9 + 1).expect("a hue")).collect();
-            (vec![row.clone(), row], Vec::new())
+            (vec![row.clone(), row].into(), None)
         })
         .collect();
     Task { train: toy().train, test }
@@ -69,7 +69,7 @@ fn citation_names_task_past_u16_wall() {
     assert_eq!(cite, citation(&id), "named by 32 bytes");
     assert!(reg.task(&cite).is_some(), "resolved court-side");
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
-    let outputs = spoken_outputs(&[vec![vec![1]]]).expect("a sample");
+    let outputs = spoken_outputs(&[vec![vec![1]].into()]).expect("a sample");
     let solve = decode_solve(&encode_solve(&key, &cite, &outputs).expect("writes")).expect("reads");
     assert_eq!((solve.task, solve.signed), (cite, true), "a solve names it by the citation, signed");
 }

@@ -3,11 +3,11 @@
 // one that never ran out.
 
 use crate::transducer::element::Element;
-use crate::transducer::family::{extract_rule, extract_rule_with, mint_sentence, Grid, NoCrystal};
+use crate::transducer::family::{extract_rule, extract_rule_with, mint_sentence, SectionSample, NoCrystal};
 use crate::transducer::sentence::{as_element_form, Vertex};
 use crate::verdict::*;
 
-fn digits(rows: &[&str]) -> Grid {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -17,7 +17,7 @@ fn stroke(n: usize) -> crate::physics::Budget {
 
 /// A bar recoloured and a compartment created beside it (the receiver's
 /// fixture): one word vertex, one `Creation` demand — a GOOD word.
-fn good() -> (Vec<(Grid, Grid)>, Element) {
+fn good() -> (Vec<(SectionSample, SectionSample)>, Element) {
     let family = vec![(digits(&["110", "000"]), digits(&["220", "003"]))];
     let rule = extract_rule(&family, &mut stroke(1 << 20)).expect("the bar's recolour extracts");
     let e = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence with a demand is spoken whole");
@@ -26,7 +26,7 @@ fn good() -> (Vec<(Grid, Grid)>, Element) {
 
 /// The same sentence with its demand struck out: it leaves a compartment it
 /// does not declare, `REFUSE_NOT_CLOSED`.
-fn undeclared() -> (Vec<(Grid, Grid)>, Element) {
+fn undeclared() -> (Vec<(SectionSample, SectionSample)>, Element) {
     let (family, e) = good();
     let mut f = crate::transducer::sentence::from_element_form(&e).expect("the tape reads back");
     let demands: Vec<_> = f.demand_vertices().map(|(at, ..)| at).collect();
@@ -38,12 +38,12 @@ fn undeclared() -> (Vec<(Grid, Grid)>, Element) {
 }
 
 /// One attempt on a stroke of `n` reads from `cursor`.
-fn attempt(e: &Element, family: &[(Grid, Grid)], n: usize, cursor: &mut ReconstructionCursor) -> ReconstructionOutcome {
+fn attempt(e: &Element, family: &[(SectionSample, SectionSample)], n: usize, cursor: &mut ReconstructionCursor) -> ReconstructionOutcome {
     reconstruct_resume(e, &|_| None, Some(family), &NoCrystal, &mut stroke(n), cursor, true)
 }
 
 /// The verdict on a stroke that never runs out, and the reads it took.
-fn whole(e: &Element, family: &[(Grid, Grid)]) -> (ReconstructionOutcome, usize) {
+fn whole(e: &Element, family: &[(SectionSample, SectionSample)]) -> (ReconstructionOutcome, usize) {
     let mut b = stroke(1 << 20);
     let out = reconstruct_resume(e, &|_| None, Some(family), &NoCrystal, &mut b, &mut ReconstructionCursor::default(), true);
     (out, (1 << 20) - b.remaining())
@@ -51,7 +51,7 @@ fn whole(e: &Element, family: &[(Grid, Grid)]) -> (ReconstructionOutcome, usize)
 
 /// Strokes of `n` reads, each resuming the last, until the replay rules:
 /// the verdict and the strokes it took.
-fn resumed(e: &Element, family: &[(Grid, Grid)], n: usize) -> (ReconstructionOutcome, usize) {
+fn resumed(e: &Element, family: &[(SectionSample, SectionSample)], n: usize) -> (ReconstructionOutcome, usize) {
     let mut cursor = ReconstructionCursor::default();
     let mut strokes = 0usize;
     loop {

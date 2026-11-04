@@ -104,7 +104,7 @@ fn l_turn_180() -> Vec<crate::transducer::family::TrainPair> {
     vec![(digits(&["00000", "01100", "01000", "00000", "00000"]), digits(&["00000", "00000", "00010", "00110", "00000"]))]
 }
 
-fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
+fn digits(rows: &[&str]) -> crate::transducer::spelled::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

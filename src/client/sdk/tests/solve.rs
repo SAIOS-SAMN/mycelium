@@ -5,12 +5,12 @@
 
 use crate::client::sdk::*;
 
-fn grid(rows: &[&str]) -> Vec<Vec<u8>> {
+fn grid(rows: &[&str]) -> crate::transducer::spelled::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
 /// The domino painted 2 and carried two columns right, on two rows.
-fn family() -> Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)> {
+fn family() -> Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> {
     vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0022"])),

@@ -513,7 +513,7 @@ impl Crystal for CitedForm {
     fn speak_form(
         &self,
         f: &Form,
-        x: &Grid,
+        x: &SectionSample,
         placement: &crate::transducer::alphabet::Word,
     ) -> Option<Speech> {
         apply_form(f, x, placement, self)
@@ -650,7 +650,7 @@ fn glue_speaks_once_per_placement_and_chart() {
                 false => Vec::new(),
             }
         }
-        fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+        fn speak_form(&self, f: &Form, x: &SectionSample, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
             self.speeches.set(self.speeches.get() + 1);
             apply_form(f, x, placement, self)
         }
@@ -726,7 +726,7 @@ fn by_address_returns_citation_without_cloning() {
                 false => Vec::new(),
             }
         }
-        fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+        fn speak_form(&self, f: &Form, x: &SectionSample, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
             apply_form(f, x, placement, self)
         }
         fn by_address(&self, address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {

@@ -16,7 +16,7 @@
 use crate::anastome::dialogue::PostedTask;
 use crate::network::nerve::Keyed;
 use crate::transducer::address::Address;
-use crate::transducer::family::{Grid, Task, TrainPair};
+use crate::transducer::family::{SectionSample, Task, TrainPair};
 use crate::transducer::sentence::SectionRefusal;
 
 /// The closed task lifecycle. Settled carries the settle count — the decay's
@@ -289,9 +289,9 @@ impl TaskRegistry {
     /// on the alphabet's section. A task this book does not hold, or one off
     /// the section, withholds nothing a rule is replayed on: a claim on it
     /// is a factorisation's, reconstructed on its samples.
-    pub fn withheld(&self, id: &[u8]) -> Vec<(Grid, Grid)> {
+    pub fn withheld(&self, id: &[u8]) -> Vec<(SectionSample, SectionSample)> {
         match self.section(id) {
-            Some(Ok(t)) => t.test.into_iter().filter(|(_, y)| !y.is_empty()).collect(),
+            Some(Ok(t)) => t.test.into_iter().filter_map(|(x, y)| Some((x, y?))).collect(),
             Some(Err(_)) | None => Vec::new(),
         }
     }

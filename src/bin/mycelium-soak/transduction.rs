@@ -68,17 +68,13 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         let Some(task) = mycelium::anastome::dialogue::decode_posted_task(&posted) else { continue };
         let ground = mycelium::transducer::raster::ground_bytes(&mycelium::transducer::raster::ground_of(&task.train));
         for (x, y) in &task.train {
-            let extent = |g: &mycelium::transducer::family::Grid| (g.len(), g.iter().next().map(Vec::len));
-            if extent(x) == extent(y) {
+            if x.extents() == y.extents() {
                 continue;
             }
             tally.pairs += 1;
-            let (Ok(a), Ok(b)) = (mycelium::transducer::raster::sample_unplaced(x), mycelium::transducer::raster::sample_unplaced(y)) else {
-                tally.refused += 1;
-                continue;
-            };
+            let (a, b) = (x.sample(), y.sample());
             tally.rank = a.rank();
-            match relation_of(&a, &b, &ground) {
+            match relation_of(a, b, &ground) {
                 Ok(PairRelation::Carried(s)) => count(&mut tally.carried, &s),
                 Ok(PairRelation::Cover { .. }) => tally.covers += 1,
                 Ok(PairRelation::Offset(s)) => count(&mut tally.offset, &s),

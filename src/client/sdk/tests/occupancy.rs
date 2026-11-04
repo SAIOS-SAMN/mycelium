@@ -3,10 +3,10 @@
 // vertex reached, a body displaced, cells never created, cells never cleared —
 // and a speech names the bodies it did not reach.
 
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::client::sdk::mind::family::occupancy_causes;
 
-fn grid(rows: &[&str]) -> Grid {
+fn grid(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

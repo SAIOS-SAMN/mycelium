@@ -7,14 +7,14 @@
 use crate::client::sdk::mind::family::{ascertain_on, Ascertained, Unexempt};
 use crate::client::sdk::*;
 
-fn grid(rows: &[&str]) -> crate::transducer::family::Grid {
+fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
 /// The mirrored echo: every body repeated three columns over, mirrored
 /// across its own columns — a clause rule the act reader states over two
 /// pairs and cannot state over one.
-fn mirrored(pairs: usize) -> Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)> {
+fn mirrored(pairs: usize) -> Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> {
     let all = [
         (grid(&["1100000", "1000000", "0000000"]), grid(&["1101100", "1000100", "0000000"])),
         (grid(&["0000000", "0022000", "0020000"]), grid(&["0000000", "0022022", "0020002"])),
@@ -23,7 +23,7 @@ fn mirrored(pairs: usize) -> Vec<(crate::transducer::family::Grid, crate::transd
     all.into_iter().take(pairs).collect()
 }
 
-fn rule_of(train: &[(crate::transducer::family::Grid, crate::transducer::family::Grid)]) -> crate::transducer::sentence::SentenceRule {
+fn rule_of(train: &[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]) -> crate::transducer::sentence::SentenceRule {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     crate::transducer::family::extract_rule(train, &mut budget).expect("the family has a rule")
 }

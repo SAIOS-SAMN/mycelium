@@ -70,7 +70,9 @@ pub use frame::{family_ratio, frame_vertex};
 pub(crate) use keys::{member_key, member_pair_key, read_member_key, read_member_pair_key, site_key};
 #[cfg(test)]
 pub use tests::fixtures::cipher_form;
-pub use train::{Family, Task, TrainPair};
+pub use train::{Family, Task, TestPair, TrainPair};
+#[cfg(test)]
+pub(crate) use train::task_of_lines;
 pub use extract::*;
 pub(crate) use incidence::*;
 pub use memo::*;

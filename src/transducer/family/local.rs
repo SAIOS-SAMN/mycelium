@@ -40,7 +40,7 @@ impl Local {
     /// on `family`: what this section closes that `other` does not (C: a
     /// conjugate's transport; S: a sentence's gluing). A pair `other` does
     /// not reach keeps all of this section's sites there.
-    pub fn beyond(&self, other: &Local, family: &[(Grid, Grid)]) -> Local {
+    pub fn beyond(&self, other: &Local, family: &[(SectionSample, SectionSample)]) -> Local {
         let sites: Vec<Keyed<()>> = self
             .sites
             .iter()
@@ -77,9 +77,9 @@ impl Local {
 }
 
 /// The hue at `(r, c)` of `g`, or `None` off the grid.
-fn hue_at(g: &Grid, r: i64, c: i64) -> Option<u8> {
+fn hue_at(g: &SectionSample, r: i64, c: i64) -> Option<u8> {
     let (r, c) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
-    g.get(r)?.get(c).copied()
+    g.line(r)?.get(c).copied()
 }
 
 /// THE DEMAND OF EACH PAIR OVER ITS SITES, priced: the pair's residue links
@@ -89,7 +89,7 @@ fn hue_at(g: &Grid, r: i64, c: i64) -> Option<u8> {
 /// a sum past its carrier refused lane by lane and left where it stood. Beside
 /// the counts, the same closure as μ: each pair's share of its own frame
 /// (`transduce::share_of_frame`, O1 ruled 2026-11-01).
-pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> ([u64; 4], crate::economy::Mu) {
+pub fn measure_sites(family: &[(SectionSample, SectionSample)], sites: &[Keyed<()>]) -> ([u64; 4], crate::economy::Mu) {
     let mut pay = [0u64; 4];
     let mut mu = crate::economy::Mu::zero();
     for ((x, y), at) in family.iter().zip(sites) {
@@ -101,7 +101,7 @@ pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> ([u64; 4],
         let Ok(residue) = residue_of(Some(x), y) else { continue };
         let links: Vec<(i64, i64, u8, u8)> = residue.into_iter().filter(|&(r, c, _, _)| at.contains(&site_key(r, c))).collect();
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&[0; 4], &element::measure_lanes(&links)));
-        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, crate::transducer::raster::sample_unplaced(y).ok().as_ref()));
+        mu.step(&crate::transducer::family::transduce::share_of_frame(closed, Some(y.sample())));
         if let Some(next) = crate::core::lanes::lanes_add(pay, closed) {
             pay = next;
         }
@@ -122,7 +122,7 @@ pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> ([u64; 4],
 /// pair pays nothing. Never a choice of the bodies it happens to fit. Empty
 /// for anything that is not a connection: a letter standing at no frame names
 /// no body (78.149(c)).
-pub fn word_local(word: &Element, family: &[(Grid, Grid)]) -> Local {
+pub fn word_local(word: &Element, family: &[(SectionSample, SectionSample)]) -> Local {
     let mut out = Local { pay: [0; 4], mu: crate::economy::Mu::zero(), sites: Vec::with_capacity(family.len()) };
     let versor = match (word.is_connection(), word.letters()) {
         (true, Some(l)) => element::conformal_of(&l.spelling.word, &l.carriage).map(|v| (v, l.sigma.clone())),
@@ -153,12 +153,12 @@ pub fn word_local(word: &Element, family: &[(Grid, Grid)]) -> Local {
 /// `Some(changed)` where nothing it says is false; `None` where a site is
 /// carried off the frame along `e₃`, two sites land on one with two hues, or
 /// a changed site's answer differs.
-fn spoken_section(x: &Grid, y: &Grid, v: &element::Versor, recolour: &dyn Fn(u8) -> u8) -> Option<Keyed<()>> {
+fn spoken_section(x: &SectionSample, y: &SectionSample, v: &element::Versor, recolour: &dyn Fn(u8) -> u8) -> Option<Keyed<()>> {
     // A vacated site is written as the scene's one ground; with none (a
     // vortex, no ground, no family open) nothing is spoken.
     let void = crate::transducer::raster::void().ok()?;
     let mut painted: Vec<Painted> = Vec::new();
-    for (r, row) in x.iter().enumerate() {
+    for (r, row) in x.lines().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             if h != void {
                 painted.push((r as i64, c as i64, h));
@@ -219,7 +219,7 @@ fn spoken_section(x: &Grid, y: &Grid, v: &element::Versor, recolour: &dyn Fn(u8)
 /// where the answer holds a hue asserts nothing.
 pub fn form_local(
     form: &crate::transducer::sentence::Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     crystal: &dyn Crystal,
     placement: &crate::transducer::alphabet::Word,
 ) -> Local {
@@ -229,7 +229,7 @@ pub fn form_local(
         let spoken = apply_form_on(form, x, placement, crystal, Some(pi)).and_then(|s| s.grid());
         if let Some(g) = spoken {
             let mut false_site = false;
-            for (r, row) in g.iter().enumerate() {
+            for (r, row) in g.lines().enumerate() {
                 for (c, &s) in row.iter().enumerate() {
                     let (r, c) = (r as i64, c as i64);
                     let answer = hue_at(y, r, c);

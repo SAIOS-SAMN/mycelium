@@ -5,9 +5,9 @@
 
 use crate::chronometry::Cite;
 use crate::transducer::field::Contemplation;
-use crate::transducer::family::{perceive_family, scene_form_on, Grid, NoCrystal};
+use crate::transducer::family::{perceive_family, scene_form_on, SectionSample, NoCrystal};
 
-fn grid(rows: &[&str]) -> Grid {
+fn grid(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

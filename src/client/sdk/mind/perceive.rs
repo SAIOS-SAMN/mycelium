@@ -267,7 +267,7 @@ impl Stop {
 pub(crate) struct Scene {
     pub(crate) id: Vec<u8>,
     pub(crate) train: Vec<crate::transducer::family::TrainPair>,
-    pub(crate) tests: Vec<crate::transducer::family::Grid>,
+    pub(crate) tests: Vec<crate::transducer::family::SectionSample>,
     pub(crate) reading: SceneKind,
 }
 
@@ -295,7 +295,7 @@ pub(crate) struct Perceived {
     speech: Option<(Prepared, crate::transducer::family::Frames)>,
     /// A rule its perspectives know, with the tests' outputs where it speaks
     /// them whole.
-    known: Option<(SentenceRule, Option<Vec<crate::transducer::family::Grid>>)>,
+    known: Option<(SentenceRule, Option<Vec<crate::transducer::family::SectionSample>>)>,
     /// The chains the tests' speech left, as the forms of the tests' scenes.
     chains: Vec<PairPercept>,
     /// Where the reading stopped, on the carrier; the winding reads on
@@ -322,7 +322,7 @@ pub(crate) struct Hearing {
 /// on the carrier: the scene, the outputs, and the rule minted at its span.
 pub(crate) struct Judge {
     pub(crate) scene: Scene,
-    pub(crate) outputs: Vec<crate::transducer::family::Grid>,
+    pub(crate) outputs: Vec<crate::transducer::family::SectionSample>,
     pub(crate) rule: Element,
     /// The perspective the solve was spoken under, which the claim states.
     pub(crate) ground: crate::transducer::family::transduce::Ground<u8>,
@@ -377,7 +377,7 @@ pub(crate) type Perceiver = super::hypha::Carrier<crate::transducer::family::Ext
 /// perspective extracts afresh: the memo holds one rule a task.
 fn perceive(memo: &mut crate::transducer::family::ExtractMemo, epi: &MindLanguage, scene: Scene) -> Vec<Perceived> {
     // Σ is the whole family's, its test inputs included (MU-SENSING §3.3).
-    let tests = scene.tests.clone();
+    let tests: Vec<crate::transducer::sample::Sample> = scene.tests.iter().map(|t| t.sample().clone()).collect();
     crate::transducer::symbols::on_test_inputs(&tests, || perceive_family(memo, epi, scene))
 }
 

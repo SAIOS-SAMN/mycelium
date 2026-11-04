@@ -213,8 +213,8 @@ fn ring_layer(
 /// recoloured offsets).
 type Places = Vec<(usize, usize)>;
 
-fn sections(x: &mycelium::transducer::family::Grid, y: &mycelium::transducer::family::Grid) -> (Places, Places) {
-    let ([hx, wx], [hy, wy]) = (mycelium::transducer::raster::extents(x), mycelium::transducer::raster::extents(y));
+fn sections(x: &mycelium::transducer::spelled::SectionSample, y: &mycelium::transducer::spelled::SectionSample) -> (Places, Places) {
+    let ([hx, wx], [hy, wy]) = (x.extents(), y.extents());
     let (mut exact, mut recoloured) = (Vec::new(), Vec::new());
     if hy > hx || wy > wx || hy == 0 || wy == 0 {
         return (exact, recoloured);
@@ -254,7 +254,7 @@ enum SectionPlacement {
     Neither,
 }
 
-fn region(x: &mycelium::transducer::family::Grid, at: (usize, usize), ext: (usize, usize)) -> SectionPlacement {
+fn region(x: &mycelium::transducer::spelled::SectionSample, at: (usize, usize), ext: (usize, usize)) -> SectionPlacement {
     let bodies = perceive(x);
     let sites = |b: &mycelium::transducer::family::Body| -> Vec<(i64, i64)> {
         b.compartments.iter().filter_map(|l| Some((l.site.axis(0)?, l.site.axis(1)?))).collect()
@@ -262,7 +262,7 @@ fn region(x: &mycelium::transducer::family::Grid, at: (usize, usize), ext: (usiz
     let (r0, c0, h, w) = (at.0 as i64, at.1 as i64, ext.0 as i64, ext.1 as i64);
     let inside = |&(r, c): &(i64, i64)| r >= r0 && r < r0 + h && c >= c0 && c < c0 + w;
     // The ring just outside the region, those of its sites in the frame.
-    let [hx, wx] = mycelium::transducer::raster::extents(x);
+    let [hx, wx] = x.extents();
     let ring: Vec<(i64, i64)> = (r0 - 1..=r0 + h)
         .flat_map(|r| (c0 - 1..=c0 + w).map(move |c| (r, c)))
         .filter(|s| !inside(s))
@@ -302,7 +302,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         let mut family_budget = physics.stroke_n(STROKE);
         let places = family_rings(&perceived, &mut family_budget, &mut t.family_unread);
         for ((x, y), per) in task.train.iter().zip(&places) {
-            let (ex, ey) = (mycelium::transducer::raster::extents(x), mycelium::transducer::raster::extents(y));
+            let (ex, ey) = (x.extents(), y.extents());
             let cut = ex != ey && ey.iter().zip(&ex).all(|(o, i)| o <= i);
             for &place in per {
                 t.family_all[place] += 1;
@@ -314,7 +314,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         for (x, y) in &task.train {
             let mut budget = physics.stroke_n(STROKE);
             t.pairs += 1;
-            let (ex, ey) = (mycelium::transducer::raster::extents(x), mycelium::transducer::raster::extents(y));
+            let (ex, ey) = (x.extents(), y.extents());
             let resized = ex != ey;
             t.resized += u64::from(resized);
             // In proportion: one ratio on every axis.

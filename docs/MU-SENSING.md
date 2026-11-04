@@ -819,8 +819,9 @@ u16][coordinate i64 · count][symbols, w · ∏ eᵢ bytes]`
   and widths 1, 2 and 4 (claim `task_round_trips_samples_of_rank_n`).
 - The mind perceives every task's samples at the samples' own rank (track 26
   S4b). The word machinery spells the alphabet's section:
-  `TaskEnvelope::section` and `PostedTask::section` bridge rank 2 at
-  width 1 and refuse any other sample by name
+  `TaskEnvelope::section` and `PostedTask::section` admit the samples of
+  the letters' rank at width 1 as `spelled::SectionSample`, each the
+  posted sample itself (track 26 S4d), and refuse any other sample by name
   (`sentence::SectionRefusal`: the alphabet's rank, or the width).
   `NotRaster` is retired.
 - **The hypha serves tasks of any rank** (track 26 S4c). The registry
@@ -990,7 +991,8 @@ track 26 S4c).
 | The sample as the sensor's only input, of rank `n` | **Built** | `src/transducer/sample.rs` (`Sample`, `Symbol`, `Place`; Track 26, S0) |
 | A corpus's decoder outside `src/`; the core has no `arc` module (a `compile_fail` claim); the hypha, the soak and the client's feed read posted tasks; the SDK re-exports no `Grid` | **Built** (track 26, S1) | `sources/arc-agi/` (`mycelium-source-arc-agi`, binary `mycelium-arc-agi`); `src/anastome/dialogue/percept.rs` (`encode_posted_task`, `decode_posted_task`, `POSTED_TASK`) |
 | The rank-2 raster at intake, named by function: its extents, ground, painted sites, frame fixing and the bridge to the sample, moved from `arc.rs` unchanged | **Built** (track 26, S1) | `src/transducer/raster.rs`; `Task` in `src/transducer/family/train.rs` |
-| **Defect, narrowed:** the raster carrier is rank 2 by its own storage (`raster::AXES = 2`, `extents`, `painted_sites`, `value_at`) | **Narrowed** in S4b: perception no longer passes through it. Every task is perceived at its own rank (`TaskPercept`), and the carrier is the alphabet's section, the one rank the letters spell, entered only through `section`, refused by name. It stays the word, chart and rule-language machinery's carrier (`family::Grid`, about 94 files) until the letters are generalised past `n = 3` | `src/transducer/raster.rs`; track 26, S4b's remainder |
+| **Closed (S4d, stage 1):** the raster carrier was rank 2 by its own storage (`family::Grid = Vec<Vec<u8>>`, `raster::AXES = 2`, `extents`, `raster_of`) | **Built** (track 26 S4d): the word, chart and rule-language machinery reads `SectionSample`, a `Sample` admitted onto the alphabet's section and held whole with its place, refused by name off it. Of the 94 files that named `Grid`: about 17 now read the sample at its own rank (the symbol set's test inputs, the ground, the envelopes' dilation, every re-period, need, share and transduction of a pair, the stated ground, the routes); about 77 are rank 2 by the letters' mathematics and read the section sample; one, the ARC-AGI-2 decoder's JSON rows, stays in `sources/arc-agi` and is read at intake. A raster remains only at intake (`raster::sample_of`) and at speech's canvas (`statement::speak_elements`) | `src/transducer/spelled.rs`; `src/transducer/raster.rs`; claim `word_machinery_reads_a_rank_three_sample_end_to_end` |
+| The planar readers of the section (`SectionLink`, the `(i64, i64, u8)` painted sites, `Painted`, the chart's two coordinates) and the section's own line readers | **Open** (track 26 S4d, later stages): read through a perspective's plane of a sample, so a rank-3 sample's planes reach the letters only by a ruling (§5) | Track 26 S4d |
 | The roles of the axes from a perspective; the fixed-axis constants retired (`GRID_AXES`, `GRID_PLANE`, `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N`); `BASE_AXES` derived | **Built** (track 26 S4b) | `src/transducer/perspective.rs`; `alphabet::ALPHABET_BASE_N`, `slot_of_axis`, `sensor_plane` |
 | A link of rank `n`: a `Site` and the symbols at the source's width; the word, chart and field carriers read `SectionLink`, reached through `Link::section`, refused by name | **Built** (track 26 S4b); the stopped item of S5 closed | `src/transducer/sentence/link.rs` |
 | Connection by grade: bodies through a shared cell of grade `n − 1` at every rank; no fixed 4- or 6-neighbourhood | **Built** (track 26 S4b) | `sentence::incidence_of_sites`, `faces_of`, `surrounding`, `by_grade`; `transduce::Enclosed` |
@@ -1020,8 +1022,8 @@ for one source:
   files. S1 removed it: the decoder is `sources/arc-agi`, the raster's
   readings are `transducer::raster`, and each cross-frame reading stands
   beside its caller, listed above as a defect. The raster carrier itself
-  (`transducer::family::Grid = Vec<Vec<u8>>`) remains the transduction's
-  intake until S4.
+  (`transducer::family::Grid = Vec<Vec<u8>>`) was retired in S4d for
+  `spelled::SectionSample`, a sample on the alphabet's section.
 - The palette was fixed at 10 (`PALETTE`, `RESERVOIR`, the 10-slot hue
   tables), with a conflicting 256 elsewhere. S3 removed the fixed sets: the
   symbol set is the family's own, and S5 carries the record in `e_∅` as a

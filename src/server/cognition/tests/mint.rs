@@ -245,7 +245,7 @@ assert!(
 fn mint_sentence_mints_closed_subcomplex_deflation() {
     use crate::transducer::sentence::{Demand, Vertex};
     use crate::transducer::stalk;
-    let mut x = vec![vec![0u8; 12]; 18];
+    let mut x = crate::transducer::spelled::SectionSample::from(vec![vec![0u8; 12]; 18]);
     // Body 1: length 1 at (0, 0)
     x[0][0] = 1;
     // Body 2: length 2 at (0, 2), (0, 3)
@@ -256,7 +256,7 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     x[0][6] = 3;
     x[0][7] = 3;
 
-    let mut y_recoloured = vec![vec![0u8; 12]; 18];
+    let mut y_recoloured = crate::transducer::spelled::SectionSample::from(vec![vec![0u8; 12]; 18]);
     y_recoloured[0][0] = 4;
     y_recoloured[0][2] = 5;
     y_recoloured[0][3] = 5;
@@ -492,7 +492,7 @@ crate::transducer::raster::stand_on(0);
 fn lift_compares_coherent_across_atlases() {
 crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::{compare, from_element_form, lift, Transport};
-    type Family = [(Vec<Vec<u8>>, Vec<Vec<u8>>)];
+    type Family = crate::transducer::family::Family;
     let mint = |family: &Family| {
         let rule = crate::transducer::family::extract_rule(family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
         let spoken = crate::transducer::family::mint_sentence(&rule, family, &crate::transducer::family::NoCrystal, 0).expect("mint");

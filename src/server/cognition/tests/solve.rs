@@ -165,10 +165,10 @@ fn judge_solve_refuses_rule_leaving_pair_open() {
 #[test]
 fn frame_fixed_on_ground_reads_permuted_palette_as_other_scene() {
     let read = |a: u8, b: u8, c: u8| {
-        crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task {
-            train: vec![(vec![vec![a, a, 0, b, 0, 0, 0]], vec![vec![0, 0, a, a, 0, b, 0]])],
-            test: vec![(vec![vec![b, 0, a, a, 0, c, 0]], vec![vec![0, 0, b, 0, a, a, c]])],
-        })
+        crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::task_of_lines(
+            vec![(vec![vec![a, a, 0, b, 0, 0, 0]], vec![vec![0, 0, a, a, 0, b, 0]])],
+            vec![(vec![vec![b, 0, a, a, 0, c, 0]], vec![vec![0, 0, b, 0, a, a, c]])],
+        ))
     };
     let task = read(1, 2, 3);
     let permuted = read(7, 4, 9);
@@ -193,8 +193,9 @@ fn frame_fixed_on_ground_reads_permuted_palette_as_other_scene() {
 #[test]
 fn judge_solve_reads_reframed_task_as_one_verdict() {
     crate::transducer::raster::stand_on(0);
-    type Pairs = Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>;
-    type Reframing<'a> = &'a dyn Fn(&Vec<Vec<u8>>) -> Vec<Vec<u8>>;
+    use crate::transducer::spelled::SectionSample;
+    type Pairs = Vec<(SectionSample, SectionSample)>;
+    type Reframing<'a> = &'a dyn Fn(&SectionSample) -> SectionSample;
     let base: (Pairs, Pairs) = (
         vec![(digits(&["1100", "0020", "0000"]), digits(&["3300", "0040", "0000"]))],
         vec![(digits(&["0110", "2000", "0000"]), digits(&["0330", "4000", "0000"]))],
@@ -205,26 +206,27 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
     );
     // Every grid of the task turned by 90°, clockwise, and mirrored across
     // its diagonal; and the palette permuted (1→6, 2→7, 3→8, 4→9).
-    let turn = |g: &Vec<Vec<u8>>| -> Vec<Vec<u8>> {
-        let (h, w) = (g.len(), g[0].len());
+    let turn = |g: &SectionSample| -> SectionSample {
+        let [h, w] = g.extents();
         (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect()
     };
-    let mirror = |g: &Vec<Vec<u8>>| -> Vec<Vec<u8>> {
-        let (h, w) = (g.len(), g[0].len());
+    let mirror = |g: &SectionSample| -> SectionSample {
+        let [h, w] = g.extents();
         (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect()
     };
-    let paint = |g: &Vec<Vec<u8>>| -> Vec<Vec<u8>> {
-        g.iter().map(|row| row.iter().map(|&h| match h { 1 => 6, 2 => 7, 3 => 8, 4 => 9, x => x }).collect()).collect()
+    let paint = |g: &SectionSample| -> SectionSample {
+        g.lines().map(|row| row.iter().map(|&h| match h { 1 => 6, 2 => 7, 3 => 8, 4 => 9, x => x }).collect()).collect()
     };
     let each = |ps: &Pairs, f: Reframing<'_>| -> Pairs { ps.iter().map(|(a, b)| (f(a), f(b))).collect() };
     // Read through the frame-fixing perspective (ROADMAP track 26, S2).
     let read = |train: &Pairs, test: &Pairs| {
-        crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task { train: train.clone(), test: test.clone() })
+        let test = test.iter().map(|(x, y)| (x.clone(), Some(y.clone()))).collect();
+        crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task { train: train.clone(), test })
     };
     let one = read(&base.0, &base.1);
-    let turn180 = |g: &Vec<Vec<u8>>| turn(&turn(g));
-    let turn270 = |g: &Vec<Vec<u8>>| turn(&turn(&turn(g)));
-    let turned_mirror = |g: &Vec<Vec<u8>>| turn(&mirror(g));
+    let turn180 = |g: &SectionSample| turn(&turn(g));
+    let turn270 = |g: &SectionSample| turn(&turn(&turn(g)));
+    let turned_mirror = |g: &SectionSample| turn(&mirror(g));
     let frames: Vec<Reframing<'_>> = vec![&turn, &turn180, &turn270, &mirror, &turned_mirror];
     let mut k = Court::new();
     let rule = rule_over(&one.train);

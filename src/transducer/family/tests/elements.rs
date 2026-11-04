@@ -4,15 +4,16 @@
 // lowering on every act, the identity carriage IS the hue map, and an
 // element no act names is said all the same.
 
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::core::Q;
 use crate::transducer::cga::{rotator, translator_at, Mv};
 use crate::transducer::family::statement::{speak_clauses, speak_elements, Unstated};
 use crate::transducer::sentence::form::clause::{put_clauses, About, Act, Clause, Extent, Paint, Pred, RegionKind, Stop};
 use crate::transducer::sentence::form::rule_element::{gloss, substrate_step, lower, Carriage, Lowered, Reach, RuleElement, Trace};
 
-fn grid(rows: &[&str]) -> Grid {
-    rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
+fn grid(rows: &[&str]) -> SectionSample {
+    let lines: Vec<Vec<u8>> = rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect();
+    SectionSample::of_lines(&lines).expect("a sample")
 }
 
 fn q(n: i64) -> Q {
@@ -23,9 +24,9 @@ fn shift(dr: i64, dc: i64) -> Mv {
     translator_at(&[q(dr), q(dc)])
 }
 
-fn drawn(spoken: Result<crate::transducer::family::statement::Spoken, Unstated>) -> Result<Grid, Unstated> {
+fn drawn(spoken: Result<crate::transducer::family::statement::Spoken, Unstated>) -> Result<SectionSample, Unstated> {
     let spoken = spoken?;
-    let mut g: Grid = vec![vec![0; spoken.frame.1]; spoken.frame.0];
+    let mut g = SectionSample::filled([spoken.frame.0, spoken.frame.1], 0).expect("a frame");
     for (r, c, h) in spoken.painted {
         g[usize::try_from(r).expect("on the grid")][usize::try_from(c).expect("on the grid")] = h;
     }

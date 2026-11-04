@@ -99,9 +99,9 @@ pub struct PairLight {
     pub cavities: Vec<Cavity>,
 }
 
-fn at(g: &Grid, r: i64, c: i64) -> Option<u8> {
+fn at(g: &SectionSample, r: i64, c: i64) -> Option<u8> {
     let (ur, uc) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
-    g.get(ur)?.get(uc).copied()
+    g.line(ur)?.get(uc).copied()
 }
 
 /// THE PERIOD OF A HUE SEQUENCE: the least `p` with `h[t + p] = h[t]` over
@@ -124,7 +124,7 @@ fn waveform(h: &[u8]) -> Option<(u64, Vec<u8>)> {
 
 /// The output's lit run along `dir` from `(r, c)` (exclusive), over sites the
 /// input leaves free: its hues and its sites.
-fn lit_run(x: &Grid, y: &Grid, (r, c): (i64, i64), dir: (i64, i64)) -> (Vec<u8>, Vec<(i64, i64)>) {
+fn lit_run(x: &SectionSample, y: &SectionSample, (r, c): (i64, i64), dir: (i64, i64)) -> (Vec<u8>, Vec<(i64, i64)>) {
     let ground = crate::transducer::raster::ground();
     let (mut hues, mut sites) = (Vec::new(), Vec::new());
     let mut t = 1i64;
@@ -143,10 +143,10 @@ fn lit_run(x: &Grid, y: &Grid, (r, c): (i64, i64), dir: (i64, i64)) -> (Vec<u8>,
 }
 
 /// L1–L3 ON ONE PAIR: every waveform ray out of every input body's sites.
-fn rays_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], lit_by_ray: &mut Vec<(i64, i64)>) -> Vec<Ray> {
+fn rays_of(x: &SectionSample, y: &SectionSample, unsaid: &[(i64, i64)], lit_by_ray: &mut Vec<(i64, i64)>) -> Vec<Ray> {
     let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
-    for (r, row) in x.iter().enumerate() {
+    for (r, row) in x.lines().enumerate() {
         for (c, &src) in row.iter().enumerate() {
             if ground.holds(&src) {
                 continue;
@@ -216,12 +216,12 @@ fn wall(axis: usize, delta: BigRational) -> Mv {
 
 /// L4, L5 ON ONE PAIR: the input's enclosures, each read as a standing wave
 /// and, where rectangular, a billiard.
-fn cavities_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], captured: &mut Vec<(i64, i64)>, budget: &mut crate::physics::Budget) -> Vec<Cavity> {
-    let rows = x.len() as i64;
+fn cavities_of(x: &SectionSample, y: &SectionSample, unsaid: &[(i64, i64)], captured: &mut Vec<(i64, i64)>, budget: &mut crate::physics::Budget) -> Vec<Cavity> {
+    let rows = x.extents()[0] as i64;
     let ground = crate::transducer::raster::ground();
     let mut seen: Vec<(i64, i64)> = Vec::new();
     let mut out = Vec::new();
-    for (r0, row) in x.iter().enumerate() {
+    for (r0, row) in x.lines().enumerate() {
         for (c0, &h) in row.iter().enumerate() {
             let start = (r0 as i64, c0 as i64);
             if !ground.holds(&h) || seen.contains(&start) {
@@ -312,10 +312,10 @@ fn cavities_of(x: &Grid, y: &Grid, unsaid: &[(i64, i64)], captured: &mut Vec<(i6
 }
 
 /// READ THE LIGHT ON ONE PAIR against what the form left unsaid there.
-pub fn read_pair(x: &Grid, y: &Grid, remainder: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> PairLight {
+pub fn read_pair(x: &SectionSample, y: &SectionSample, remainder: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> PairLight {
     let unsaid: Vec<(i64, i64)> = remainder.iter().filter(|l| !crate::transducer::raster::is_ground(l.3)).map(|l| (l.0, l.1)).collect();
     let mut read = PairLight { unsaid: unsaid.len() as u64, ..PairLight::default() };
-    let same_frame = x.len() == y.len() && x.iter().zip(y).all(|(a, b)| a.len() == b.len());
+    let same_frame = x.extents() == y.extents();
     if !same_frame {
         read.unframed = true;
         read.neither = read.unsaid;

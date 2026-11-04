@@ -7,7 +7,7 @@
 use super::*;
 use crate::transducer::sentence::frame_key;
 
-pub(crate) fn grows_to_frame(a: &Grid, b: &Grid) -> bool {
+pub(crate) fn grows_to_frame(a: &SectionSample, b: &SectionSample) -> bool {
     let (fa, fb) = (frame_of(a), frame_of(b));
     if fa != fb || fa.0 == 0 || fa.1 == 0 {
         return false;
@@ -122,7 +122,7 @@ pub(crate) fn hue_from_neighbours(r: i64, c: i64, occ: &crate::network::nerve::K
 /// names the bodies. An empty fibre is unspoken, never every body.
 pub fn apply_form(
     f: &Form,
-    x: &Grid,
+    x: &SectionSample,
     placement: &crate::transducer::alphabet::Word,
     crystal: &dyn Crystal,
 ) -> Option<Speech> {
@@ -133,7 +133,7 @@ pub fn apply_form(
 /// active on that pair are spoken.
 pub fn apply_form_on(
     f: &Form,
-    x: &Grid,
+    x: &SectionSample,
     placement: &crate::transducer::alphabet::Word,
     crystal: &dyn Crystal,
     pair: Option<usize>,
@@ -149,7 +149,7 @@ pub fn apply_form_on(
 /// that perception (the court's replay cursor); `None` perceives `x` here.
 pub(crate) fn apply_form_metered(
     f: &Form,
-    x: &Grid,
+    x: &SectionSample,
     placement: &crate::transducer::alphabet::Word,
     crystal: &dyn Crystal,
     pair: Option<usize>,
@@ -258,7 +258,7 @@ type Cited = (
 );
 
 impl Scene {
-    pub(crate) fn of(x: &Grid) -> Scene {
+    pub(crate) fn of(x: &SectionSample) -> Scene {
         Scene::of_bodies(perceive(x))
     }
 
@@ -288,7 +288,7 @@ impl Scene {
 /// emits onto the scene's bodies, read by chart from its atlas.
 fn speak_on_scene(
     f: &Form,
-    x: &Grid,
+    x: &SectionSample,
     scene: &Scene,
     placement: &crate::transducer::alphabet::Word,
     crystal: &dyn Crystal,
@@ -662,7 +662,7 @@ impl Speech {
     /// Dropping the site instead would lay down a grid that silently is
     /// not what the form said, and indexing on it would kill the process
     /// where the court refuses.
-    pub fn grid(&self) -> Option<Grid> {
+    pub fn grid(&self) -> Option<SectionSample> {
         // A speech missing a citation is not the form's whole speech, and no
         // grid stands for it; the measure reads the citation by name.
         if !self.unresolved.is_empty() || !self.cycled.is_empty() {
@@ -680,7 +680,8 @@ impl Speech {
             *out.get_mut(ur).and_then(|row| row.get_mut(uc))? = Some(h);
         }
         let void = crate::transducer::raster::void().ok();
-        out.into_iter().map(|row| row.into_iter().map(|h| h.or(void)).collect::<Option<Vec<u8>>>()).collect()
+        let lines: Vec<Vec<u8>> = out.into_iter().map(|row| row.into_iter().map(|h| h.or(void)).collect::<Option<Vec<u8>>>()).collect::<Option<_>>()?;
+        SectionSample::of_lines(&lines).ok()
     }
 }
 
@@ -690,7 +691,7 @@ impl Speech {
 /// a section; one body on two germs is a section whose face words to
 /// already-placed anchors agree. None only when two anchors conflict on
 /// the same output sites.
-pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &Grid, crystal: &dyn Crystal) -> Option<Speech> {
+pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &SectionSample, crystal: &dyn Crystal) -> Option<Speech> {
     apply_form(&rule.form, x, &crate::transducer::alphabet::Word::identity(), crystal)
 }
 
@@ -706,17 +707,17 @@ pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &Grid, cr
 /// speech that reaches every observed site, on the observed frame, needs no
 /// ground and is never refused.
 pub fn residue_of(
-    spoken: Option<&Grid>,
-    observed: &Grid,
+    spoken: Option<&SectionSample>,
+    observed: &SectionSample,
 ) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
     let void = crate::transducer::raster::void();
     let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
-    for (r, row) in observed.iter().enumerate() {
+    for (r, row) in observed.lines().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             // A site the speech does not reach is unoccupied there, and
             // the scene's ground IS absence in this encoding.
-            let s = match spoken.and_then(|g| g.get(r)).and_then(|row| row.get(c)) {
+            let s = match spoken.and_then(|g| g.line(r)).and_then(|row| row.get(c)) {
                 Some(h) => *h,
                 None => void?,
             };
@@ -726,9 +727,9 @@ pub fn residue_of(
         }
     }
     if let Some(g) = spoken {
-        for (r, row) in g.iter().enumerate() {
+        for (r, row) in g.lines().enumerate() {
             for (c, &s) in row.iter().enumerate() {
-                let inside = observed.get(r).and_then(|row| row.get(c)).is_some();
+                let inside = observed.line(r).and_then(|row| row.get(c)).is_some();
                 if !inside && !ground.holds(&s) {
                     out.push((r as i64, c as i64, s, void?));
                 }

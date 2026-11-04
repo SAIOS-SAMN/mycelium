@@ -725,7 +725,7 @@ fn reconstruct_form_refuses_free_orbit_and_wrong_period() {
 fn reconstruct_blind_on_refuses_remainder_as_not_closed() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
-    let grid = |rows: &[&str]| -> crate::transducer::family::Grid {
+    let grid = |rows: &[&str]| -> crate::transducer::family::SectionSample {
         rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
     };
     let (x, y) = (grid(&["1"]), grid(&["2"]));

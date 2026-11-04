@@ -7,9 +7,9 @@
 use crate::client::sdk::rule::{sentence, would_judge, Coord, Extent, NoRule, Order, Pred, Step, Tie, Unstated};
 use crate::cognition::{Court, SolveVerdict};
 use crate::transducer::element::Element;
-use crate::transducer::family::{Grid, NoCrystal};
+use crate::transducer::family::{SectionSample, NoCrystal};
 
-fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<(), NoRule>) {
+fn judged(rule: &Element, withheld: &[(SectionSample, SectionSample)]) -> (SolveVerdict, Result<(), NoRule>) {
     let mut k = Court::new();
     let verdict = k.judge_solve(rule, withheld);
     let court: &Court = &k;
@@ -24,7 +24,7 @@ fn judged(rule: &Element, withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<()
 fn sentence_refuses_unnamed_tie() {
     crate::transducer::raster::stand_on(0);
     let largest = || Step::Select(Pred::extremum(Coord::Shell, Order::Greatest, Tie::Refuse));
-    let g = |rows: &[&str]| -> Grid { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
+    let g = |rows: &[&str]| -> SectionSample { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let tied = vec![(g(&["11000", "00000", "00022"]), g(&["11"]))];
     let got = sentence(&[largest(), Step::Crop(Extent::Body)], &tied, &NoCrystal);
     assert!(matches!(got, Err(NoRule::Unstated(Unstated::Tie))), "the seam refuses the tie: {got:?}");
@@ -51,7 +51,7 @@ fn sentence_refuses_unnamed_tie() {
 #[test]
 fn sentence_refuses_inexact_coordinate() {
     crate::transducer::raster::stand_on(0);
-    let g = |rows: &[&str]| -> Grid { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
+    let g = |rows: &[&str]| -> SectionSample { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let family = vec![(g(&["110", "000", "000"]), g(&["220", "000", "000"]))];
     let lane = sentence(&[Step::Select(Pred::count(Coord::Lane(0), 1)), Step::Hue(vec![(1, 2)])], &family, &NoCrystal);
     assert!(matches!(lane, Err(NoRule::Unstated(Unstated::Inexact))), "a μ lane: {lane:?}");

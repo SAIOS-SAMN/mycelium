@@ -27,8 +27,9 @@ fn walk_of_is_function_of_given_mind() {
     // A recolour: one body, one hue changed. The simplest family there
     // is, built through the instrument's OWN public path so the test
     // exercises what the walk exercises and nothing else.
-    let a = vec![vec![1u8, 1], vec![1, 1]];
-    let b = vec![vec![2u8, 2], vec![2, 2]];
+    let section = |lines: &[Vec<u8>]| mycelium::transducer::spelled::SectionSample::of_lines(lines).expect("a sample");
+    let a = section(&[vec![1u8, 1], vec![1, 1]]);
+    let b = section(&[vec![2u8, 2], vec![2, 2]]);
     let fam = vec![(a, b)];
 
     let empty = MindLanguage::new();

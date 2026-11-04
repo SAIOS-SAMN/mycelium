@@ -150,7 +150,7 @@ pub fn grid_steps(rule: &Element, in_shape: (usize, usize), out_shape: (usize, u
 /// and the steps where there are any (`Count`s, so a reader tells the
 /// stated ground from a step by the argument's kind). `None` where a tape
 /// or an output passes its carrier.
-pub fn solve_args(rule: &Element, outputs: &[crate::transducer::family::Grid], ground: Option<&[u8]>, steps: &[u64]) -> Option<Vec<Arg>> {
+pub fn solve_args(rule: &Element, outputs: &[crate::transducer::family::SectionSample], ground: Option<&[u8]>, steps: &[u64]) -> Option<Vec<Arg>> {
     let spoken = crate::anastome::dialogue::spoken_outputs(outputs).ok()?;
     let mut args = vec![Arg::Bytes(rule.to_bytes()?), Arg::Bytes(crate::anastome::dialogue::encode_samples(&spoken).ok()?)];
     if let Some(g) = ground {

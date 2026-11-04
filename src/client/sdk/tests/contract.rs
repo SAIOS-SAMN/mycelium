@@ -2,12 +2,12 @@
 // and seals the address; a sealed tape is refused by the mind before the
 // wire.
 
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::client::sdk::*;
 use crate::transducer::family::{cipher_form, sentence_measure, NoCrystal, TrainPair};
 use crate::transducer::sentence::{as_element_form, At, Contracted, RefusalKind, Vertex};
 
-fn digits(rows: &[&str]) -> Grid {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

@@ -173,6 +173,57 @@ fn mind_speaks_factorisations_beyond_the_alphabet() {
     assert_eq!(mind.hypha.in_flight(), 0, "the task perceived again speaks nothing new");
 }
 
+/// TRACK 26 S4d — THE WORD MACHINERY READS A SAMPLE OF ANY RANK, END TO
+/// END: its carrier is the posted sample itself, admitted onto the
+/// alphabet's section (`spelled::SectionSample`), never a copy written out
+/// as rows. At rank 2 the word path holds the very samples posted, each
+/// with its place. At rank 3 the same carrier refuses by the alphabet's
+/// rank, read off the sample; the family's symbol set is read over the
+/// rank-3 samples posted beside it; and the mind holds the perception under
+/// the task's citation and states it, one signed claim per factorisation it
+/// holds, each the motion and residue it read.
+#[test]
+fn word_machinery_reads_a_rank_three_sample_end_to_end() {
+    use crate::anastome::dialogue::decode_factorisation;
+    use crate::transducer::alphabet::AlphabetRank;
+    use crate::transducer::sentence::SectionRefusal;
+    use crate::transducer::spelled::SectionSample;
+    use crate::transducer::symbols::{on_test_inputs, SymbolSet};
+    // RANK 2: the word path holds the samples posted, as posted.
+    let flat = TaskEnvelope { id: [2u8; 32], train: vec![(sample(&[2, 3], "100000"), sample(&[2, 3], "000001"))], tests: vec![sample(&[2, 3], "010000")] };
+    let (section, _) = perceived(&flat);
+    let section = section.expect("rank 2 at one byte is on the section");
+    assert_eq!(section.train[0].0.sample(), &flat.train[0].0, "the input sample itself, its place included");
+    assert_eq!(section.tests[0].sample(), &flat.tests[0], "and the test input");
+    // RANK 3: the carrier refuses by the rank it reads, never truncated.
+    let id = [33u8; 32];
+    let train = vec![
+        (sample(&[2, 2, 3], "100000000000"), sample(&[2, 2, 3], "100000000002")),
+        (sample(&[2, 2, 3], "010000000000"), sample(&[2, 2, 3], "010000000002")),
+    ];
+    let deep = TaskEnvelope { id, train: train.clone(), tests: vec![sample(&[2, 2, 3], "001000000003")] };
+    let off = SectionRefusal::Rank(AlphabetRank { rank: 3 });
+    assert_eq!(SectionSample::of(train[0].0.clone()), Err(off), "the word machinery's carrier reads the rank off the sample");
+    assert!(matches!(deep.section(), Err(r) if r == off), "the envelope is refused by the alphabet's name");
+    // The symbol set the word path reads is read over the rank-3 samples.
+    let sigma = on_test_inputs(&deep.tests, || SymbolSet::of_family(&[]));
+    assert_eq!((sigma.len(), sigma.index(&[3])), (3, Some(2)), "0, 1 and 3, read off the rank-3 test input");
+    // THE MIND HOLDS THE PERCEPTION AND STATES IT.
+    let (section, mind) = perceived(&deep);
+    assert!(section.is_none(), "rank 3 stops beyond the alphabet");
+    let percept = mind.board.percepts.get(&id).expect("held under the citation");
+    assert_eq!(percept.rank(), 3, "an object of rank 3, every axis read");
+    let held: Vec<_> = percept.train.iter().enumerate().flat_map(|(pair, p)| p.factored.held().iter().map(move |f| (pair, f))).collect();
+    let claims = mind.factorisation_claims(&id);
+    assert_eq!(claims.len(), held.len(), "one stated claim per held factorisation");
+    for (bytes, (pair, f)) in claims.iter().zip(&held) {
+        let act = decode_factorisation(bytes).expect("the claim reads");
+        assert!(act.signed, "signed by the mind");
+        assert_eq!((act.task, act.pair), (id, *pair), "naming the task and the pair");
+        assert_eq!((&act.motion, &act.residue), (&f.motion, &f.residue), "the motion and the residue the mind read");
+    }
+}
+
 /// A RANK-2 TASK AT ONE BYTE A SYMBOL IS PERCEIVED AND SPELLED: the percept
 /// is held, and the alphabet's section is handed to the word path as before.
 #[test]
@@ -181,6 +232,6 @@ fn rank_two_task_is_perceived_and_offered_to_section() {
     let env = TaskEnvelope { id, train: vec![(sample(&[2, 3], "100000"), sample(&[2, 3], "000001"))], tests: vec![sample(&[2, 3], "010000")] };
     let (section, mind) = perceived(&env);
     let section = section.expect("rank 2 at width 1 is on the section");
-    assert_eq!(section.train, vec![(vec![vec![1, 0, 0], vec![0, 0, 0]], vec![vec![0, 0, 0], vec![0, 0, 1]])]);
+    assert_eq!(section.train, crate::transducer::spelled::pairs_of(vec![(vec![vec![1, 0, 0], vec![0, 0, 0]], vec![vec![0, 0, 0], vec![0, 0, 1]])]));
     assert_eq!(mind.board.percepts.get(&id).map(|p| p.rank()), Some(2));
 }

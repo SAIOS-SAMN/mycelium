@@ -70,7 +70,7 @@ assert_eq!(short.treasury().entries().len(), entries, "nothing escrowed");
 assert_eq!(short.k_step(), k, "no receipt sealed for a refused act");
 
 let mut bonded = Court::new();
-let cover = crate::transducer::family::magnitude::family_cover(&[(vec![vec![1]], vec![vec![2]])])
+let cover = crate::transducer::family::magnitude::family_cover(&crate::transducer::spelled::pairs_of(vec![(vec![vec![1]], vec![vec![2]])]))
     .expect("a one-site pair measures");
 bonded.bind_identity([9; 32]);
 bonded.set_genesis_cover(cover);

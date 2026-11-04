@@ -6,12 +6,12 @@
 //! that were judged here carried a voice's painted sites to the court (law 8,
 //! ruled 2026-09-10); a voice speaks sentences, heard by `perceive_speech`.
 
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::server::court_lock::held;
 
 /// The family's measured frame ratio — perception, identical across pairs
 /// or refused (never rounded), each circle's re-period.
-pub fn family_ratio(train: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, usize))> {
+pub fn family_ratio(train: &[(SectionSample, SectionSample)]) -> Option<((usize, usize), (usize, usize))> {
     crate::transducer::family::family_ratio(train)
 }
 

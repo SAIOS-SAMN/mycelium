@@ -328,7 +328,7 @@ assert!(home.provisional.is_empty(), "the docket clears on install");
 fn court_settle_slashes_form_leaving_remainder() {
     crate::transducer::raster::stand_on(0);
 use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
-let grid = |rows: &[&str]| -> crate::transducer::family::Grid {
+let grid = |rows: &[&str]| -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 };
 let (x, y) = (grid(&["1"]), grid(&["2"]));
@@ -402,7 +402,7 @@ fn perceive_sentence_binds_none_without_task() {
 fn perceive_sentence_lists_declared_remainder_demand() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
-    let grid = |rows: &[&str]| -> crate::transducer::family::Grid {
+    let grid = |rows: &[&str]| -> crate::transducer::family::SectionSample {
         rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
     };
     let learned = vec![(grid(&["1"]), grid(&["2"]))];

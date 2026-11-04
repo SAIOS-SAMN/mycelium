@@ -308,7 +308,7 @@ fn solve_key(rule: &Element, withheld: &crate::transducer::family::Family) -> Ve
     for (x, y) in withheld.iter() {
         for g in [x, y] {
             let mut rows = Vec::new();
-            for row in g {
+            for row in g.lines() {
                 crate::transducer::address::put_key_bytes(&mut rows, row);
             }
             crate::transducer::address::put_key_bytes(&mut key, &rows);
@@ -356,13 +356,7 @@ pub fn stated_ground(
     use crate::transducer::family::transduce::Ground;
     let Some(bytes) = stated else { return Ok(Ground::None) };
     let &[g] = bytes else { return Err(StatedGroundRefusal::NotOneSymbol) };
-    let mut pairs = Vec::with_capacity(train.len());
-    for (x, y) in train {
-        let (Ok(a), Ok(b)) = (crate::transducer::raster::sample_unplaced(x), crate::transducer::raster::sample_unplaced(y)) else {
-            return Err(StatedGroundRefusal::NoCandidate);
-        };
-        pairs.push((a, b));
-    }
+    let pairs: Vec<_> = train.iter().map(|(x, y)| (x.sample().clone(), y.sample().clone())).collect();
     stated_ground_of(&pairs, Some(bytes)).map(|_| Ground::One(g))
 }
 

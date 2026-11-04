@@ -197,32 +197,20 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             // frame (78.170 O1) — or the refusal it names, reported as the
             // engine's own reading and not re-derived here.
             use mycelium::transducer::family::transduce::{Transduction, TransductionRefusal};
-            let samples = (mycelium::transducer::raster::sample_unplaced(x), mycelium::transducer::raster::sample_unplaced(y));
-            let mut stroke = mycelium::physics::Physics::default().stroke_n(match &samples {
-                (Ok(a), Ok(b)) => match mycelium::transducer::family::transduce::need_of(a, b) {
-                    Some(n) => n,
-                    None => 0,
-                },
-                _ => 0,
-            });
-            let record = match &samples {
-                (Ok(a), Ok(b)) => Transduction::of(a, b, &mut stroke),
-                _ => Err(TransductionRefusal::Empty),
-            };
-            let ground = mycelium::transducer::raster::ground_bytes(&mycelium::transducer::raster::ground_of(&task.train));
-            // A grid's width is its rows' common length, and the slice
-            // pattern reads the row the shape is stated by without taking
-            // a member by position (rule 15).
-            let wide = |g: &mycelium::transducer::family::Grid| match g.split_first() {
-                Some((row, _)) => row.len(),
+            let (a, b) = (x.sample(), y.sample());
+            let mut stroke = mycelium::physics::Physics::default().stroke_n(match mycelium::transducer::family::transduce::need_of(a, b) {
+                Some(n) => n,
                 None => 0,
-            };
+            });
+            let record: Result<Transduction, TransductionRefusal> = Transduction::of(a, b, &mut stroke);
+            let ground = mycelium::transducer::raster::ground_bytes(&mycelium::transducer::raster::ground_of(&task.train));
+            let ([xh, xw], [yh, yw]) = (x.extents(), y.extents());
             println!(
                 "  mint {name} pair {i}: in {}x{} out {}x{} | transduction {} | share {} | projected mu {}",
-                x.len(),
-                wide(x),
-                y.len(),
-                wide(y),
+                xh,
+                xw,
+                yh,
+                yw,
                 match &record {
                     Ok(t) => format!("{} incidences ({} changed)", t.incidences.len(), t.changed().count()),
                     Err(u) => format!("{u:?}"),
@@ -237,7 +225,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 match record.as_ref().map_err(|u| *u).and_then(Transduction::projected) {
                     Ok(changes) => mycelium::transducer::family::transduce::share_of_frame(
                         measure_lanes(&mycelium::transducer::raster::links_of(&changes)),
-                        samples.1.as_ref().ok(),
+                        Some(b),
                     )
                     .to_string(),
                     Err(u) => format!("{u:?}"),
@@ -388,13 +376,13 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 spoken.as_ref().map_or(0, |s| {
                     let g = s.grid();
                     let mut n = 0usize;
-                    for (r, row) in y.iter().enumerate() {
+                    for (r, row) in y.lines().enumerate() {
                         for (c, &h) in row.iter().enumerate() {
                             // A site the speech does not reach is the
                             // ground, and hue 0 IS absence in this
                             // encoding — `residue_of`'s own reading, not
                             // a default put here for a missing value.
-                            let got = match g.as_ref().and_then(|g| g.get(r)).and_then(|gr| gr.get(c)) {
+                            let got = match g.as_ref().and_then(|g| g.line(r)).and_then(|gr| gr.get(c)) {
                                 Some(h) => *h,
                                 None => 0,
                             };

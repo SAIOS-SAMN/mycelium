@@ -11,19 +11,20 @@ use crate::transducer::family::transduce::Ground;
 use crate::transducer::family::{fibre_relation, perceive, Family};
 
 /// A family held whole: its pairs in the order the family gives them.
-type Pairs = Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>;
+type Pairs = Vec<(SectionSample, SectionSample)>;
+use crate::transducer::spelled::SectionSample;
 use crate::transducer::raster::{ground_of, on_ground_of};
 use crate::transducer::sample::{Place, Sample};
 use crate::transducer::symbols::{SymbolRefusal, SymbolSet};
 
 /// One row of symbols framed by the ground 0: a row of 0 above and below,
 /// and a 0 at each end, so only 0 meets the seam.
-fn framed(row: &[u8]) -> Vec<Vec<u8>> {
+fn framed(row: &[u8]) -> SectionSample {
     let width = row.len() + 2;
     let mut middle = vec![0];
     middle.extend_from_slice(row);
     middle.push(0);
-    vec![vec![0; width], middle, vec![0; width]]
+    SectionSample::from(vec![vec![0; width], middle, vec![0; width]])
 }
 
 /// A family on the ground 0: one body recoloured 1 → 3 in place on each
@@ -49,7 +50,7 @@ fn relabel(h: u8) -> u8 {
 }
 
 fn relabelled(family: &Family) -> Pairs {
-    let raster = |g: &Vec<Vec<u8>>| g.iter().map(|row| row.iter().map(|&h| relabel(h)).collect()).collect();
+    let raster = |g: &SectionSample| g.lines().map(|row| row.iter().map(|&h| relabel(h)).collect()).collect();
     family.iter().map(|(x, y)| (raster(x), raster(y))).collect()
 }
 
@@ -63,7 +64,7 @@ type Read = (Vec<crate::transducer::blade::Compartment>, crate::transducer::stal
 
 /// The bodies of one raster under the family's own ground, with the
 /// compartments' symbols relabelled by `by`.
-fn bodies(family: &Family, raster: &Vec<Vec<u8>>, by: impl Fn(u8) -> u8) -> Vec<Read> {
+fn bodies(family: &Family, raster: &SectionSample, by: impl Fn(u8) -> u8) -> Vec<Read> {
     on_ground_of(family, || {
         perceive(raster)
             .into_iter()
@@ -249,16 +250,17 @@ fn family_using_symbol_ten_reads_its_colour_word() {
 fn symbol_seen_only_in_a_test_input_is_in_the_family_set() {
     use crate::transducer::symbols::on_test_inputs;
     let train: Pairs = vec![(framed(&[1, 2]), framed(&[1, 0])), (framed(&[2, 1]), framed(&[0, 1]))];
-    let tests = vec![framed(&[7, 2])];
+    let tests = [framed(&[7, 2])];
     let pairs = SymbolSet::of_family(&train);
     assert_eq!(listed(&pairs), vec![vec![0], vec![1], vec![2]], "the pairs alone show 0, 1, 2");
+    let tests: Vec<Sample> = tests.iter().map(|t| t.sample().clone()).collect();
     let whole = on_test_inputs(&tests, || SymbolSet::of_family(&train));
     assert_eq!(listed(&whole), vec![vec![0], vec![1], vec![2], vec![7]], "7, seen only in the test input, is in Σ");
     assert_eq!((whole.index(&[7]), whole.reservoir()), (Some(3), 4), "after the pairs' symbols; e_∅ at |Σ| = 4");
     assert_eq!(SymbolSet::of_family(&train), pairs, "the scope closed as it returned");
     // Nested, the inner posting stands, and the outer is restored after it.
     let inner = on_test_inputs(&tests, || {
-        let none = on_test_inputs(&[], || SymbolSet::of_family(&train));
+        let none = on_test_inputs(&[] as &[Sample], || SymbolSet::of_family(&train));
         (none, SymbolSet::of_family(&train))
     });
     assert_eq!(inner, (pairs, whole));

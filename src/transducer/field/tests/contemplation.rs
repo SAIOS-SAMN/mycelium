@@ -240,7 +240,7 @@ fn hold_form_keeps_glued_open_orbit() {
         fn speak_form(
             &self,
             _f: &Form,
-            _x: &crate::transducer::family::Grid,
+            _x: &crate::transducer::family::SectionSample,
             _p: &Word,
         ) -> Option<crate::transducer::family::Speech> {
             None
@@ -318,7 +318,7 @@ fn hold_form_carries_bundle_and_remainder() {
         None,
     );
     crate::transducer::sentence::tests::fixtures::stand_with_star(&mut f, &v);
-    let train = vec![(vec![vec![1u8]], vec![vec![2u8]])];
+    let train = crate::transducer::spelled::pairs_of(vec![(vec![vec![1u8]], vec![vec![2u8]])]);
     let rem = vec![vec![(0i64, 0i64, 1u8, 2u8)]];
     let mut c = Contemplation::new();
     c.hold_form(f.clone(), &train, &rem, [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
@@ -350,15 +350,15 @@ fn hold_form_carries_bundle_and_remainder() {
 #[test]
 fn expand_all_crystallizes_closed_idea_and_releases_it() {
     crate::transducer::raster::stand_on(0);
-    use crate::transducer::family::{extract_rule, mint_sentence, Grid, NoCrystal};
-    let grid = |rows: &[&str]| -> Grid {
+    use crate::transducer::family::{extract_rule, mint_sentence, SectionSample, NoCrystal};
+    let grid = |rows: &[&str]| -> SectionSample {
         rows.iter()
             .map(|r| r.bytes().map(|b| b - b'0').collect())
             .collect()
     };
     let train_in = grid(&["11011", "11011", "00000", "11000", "11000"]);
-    let train_out: Grid = train_in
-        .iter()
+    let train_out: SectionSample = train_in
+        .lines()
         .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
         .collect();
     let family = vec![(train_in, train_out)];

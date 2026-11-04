@@ -80,7 +80,7 @@ fn laws_concordance(session: &Speaker, key: &SigningKey, report: &mut Report) {
 }
 
 /// One claim: the ground it states, its outputs and its rule's tape.
-type Claim = (Option<Vec<u8>>, Vec<Vec<Vec<u8>>>, Option<Vec<u8>>);
+type Claim = (Option<Vec<u8>>, Vec<crate::rule::SectionSample>, Option<Vec<u8>>);
 
 /// The outputs a solve claims: the rule the SDK's extractor states, spoken
 /// on each test input, with its tape; or, where no rule stands, the test
@@ -113,8 +113,8 @@ fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskRasters) -> Resu
     Ok(said.join("; "))
 }
 
-fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskRasters, ground: Option<&[u8]>, outputs: &[Vec<Vec<u8>>], tape: Option<&[u8]>) -> Result<String, String> {
-    // Track 26 S5: the spoken rasters go out as samples at their places.
+fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskRasters, ground: Option<&[u8]>, outputs: &[crate::rule::SectionSample], tape: Option<&[u8]>) -> Result<String, String> {
+    // Track 26 S5: the spoken outputs go out as samples, each at its place.
     let outputs = d::spoken_outputs(outputs).map_err(|e| format!("an output is no sample: {e:?}"))?;
     let act = d::encode_solve_spoken(key, &envelope.id, &outputs, tape, ground).ok_or("the outputs pass the solve act's fields")?;
     let mut asked = 0u32;

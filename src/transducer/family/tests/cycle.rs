@@ -21,7 +21,7 @@ impl Crystal for Mutual {
     fn on_body(&self, _chart: &Invariant) -> Vec<(&Element, &Form, Standing)> {
         Vec::new()
     }
-    fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
+    fn speak_form(&self, f: &Form, x: &SectionSample, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
     fn by_address(&self, address: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
@@ -46,7 +46,7 @@ impl Crystal for Mutual {
 /// `b`, the form at `b` cites `a`. A form's citations are its cover, which
 /// its key leaves out (the envelope is evidence), so the mutual incidence the
 /// nerve admits is constructible exactly as it stands on a court.
-fn mutual() -> (Grid, Grid, Mutual, Form) {
+fn mutual() -> (SectionSample, SectionSample, Mutual, Form) {
     let (x, y) = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
     let s = cipher_form(&x, &y);
     let e = crate::transducer::sentence::as_element_form(&s, [1, 0, 0, 0]).expect("tape");

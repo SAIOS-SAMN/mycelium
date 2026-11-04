@@ -13,13 +13,13 @@ use crate::transducer::element::FibreRelation;
 /// read through the frame-fixing perspective (`raster::frame_fixed_on_ground`,
 /// ROADMAP track 26 S2).
 fn task(a: u8, b: u8, c: u8) -> crate::transducer::family::Task {
-    crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task {
-        train: vec![
+    crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::task_of_lines(
+        vec![
             (vec![vec![a, a, 0, c]], vec![vec![b, b, 0, a]]),
             (vec![vec![0, c, a, 0]], vec![vec![0, a, b, 0]]),
         ],
-        test: vec![(vec![vec![a, 0, c, 0]], vec![vec![b, 0, a, 0]])],
-    })
+        vec![(vec![vec![a, 0, c, 0]], vec![vec![b, 0, a, 0]])],
+    ))
 }
 
 /// 78.55 — A THEOREM STANDS BY ITS PROOF. With {1→2} and {2→3} installed,
@@ -35,7 +35,7 @@ fn perceive_speech_admits_colour_theorem_by_composition() {
     let mut k = Court::new();
     let install = |k: &mut Court, task: u8, from: u8, to: u8| {
         let word = colour_word(&FibreRelation::of_rows(&[(from, to)])).expect("a colour word");
-        k.bind_task_family([task; 32], vec![(vec![vec![from, from]], vec![vec![to, to]])]);
+        k.bind_task_family([task; 32], crate::transducer::spelled::pairs_of(vec![(vec![vec![from, from]], vec![vec![to, to]])]));
         // The scene shows no 0: the speaker states no ground (MU-SENSING §6.2).
         assert_eq!(k.perceive_speech_under([1; 32], &[task; 32], std::slice::from_ref(&word), &[None]), vec![crate::anastome::dialogue::SPEECH_STOOD]);
         k.rule_all_provisionals();
@@ -87,7 +87,7 @@ fn perceive_speech_admits_colour_theorem_by_composition() {
 fn glue_fetched_admits_colour_word_by_rederived_witness() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::element::colour_word;
-    let family = vec![(vec![vec![1u8, 1]], vec![vec![2u8, 2]])];
+    let family = crate::transducer::spelled::pairs_of(vec![(vec![vec![1u8, 1]], vec![vec![2u8, 2]])]);
     let tid = [30u8; 32];
     let mut home = Court::new();
     home.bind_task_family(tid, family.clone());
@@ -191,7 +191,7 @@ fn fibre_relation_rotates_merge_into_reservoir() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::element::{colour_word, compose_fibre, fibre_function, invert_fibre, is_fibre_relation};
     let rel = |rows: &[(u8, u8)], records: &[u8]| FibreRelation { rows: rows.to_vec(), records: records.to_vec() };
-    let family = vec![(vec![vec![1u8, 2, 0]], vec![vec![1u8, 1, 0]])];
+    let family = crate::transducer::spelled::pairs_of(vec![(vec![vec![1u8, 2, 0]], vec![vec![1u8, 1, 0]])]);
     let sigma = crate::transducer::family::fibre_relation(&family).expect("the fibre moved");
     assert_eq!(sigma, rel(&[(1, 1), (2, 1)], &[2]), "1 still, 2 → 1: 2's distinction in e_∅");
     assert_eq!(fibre_function(&sigma), vec![(1, 1), (2, 1)], "Π∘U on the empty reservoir: what the scene showed");
@@ -232,11 +232,11 @@ fn fibre_relation_rotates_merge_into_reservoir() {
 fn mind_states_a_symbol_meaning_as_a_relation_and_court_reconstructs_it() {
     use crate::transducer::element::{colour_word, fibre_on_symbols};
     use crate::transducer::symbols::SymbolSet;
-    let framed = |row: &[u8], g: u8| -> Vec<Vec<u8>> {
+    let framed = |row: &[u8], g: u8| -> crate::transducer::spelled::SectionSample {
         let mut middle = vec![g];
         middle.extend_from_slice(row);
         middle.push(g);
-        vec![vec![g; row.len() + 2], middle, vec![g; row.len() + 2]]
+        vec![vec![g; row.len() + 2], middle, vec![g; row.len() + 2]].into()
     };
     // Each body of `a` takes `b`, and each body of `c` takes `a`.
     let family = |a: u8, b: u8, c: u8, g: u8| {

@@ -58,7 +58,7 @@ impl Mind {
     /// The verdict filed: a closure clears the task, a refusal is remembered
     /// against its rule, and an UNREAD solve is kept to be asked again (78.153:
     /// the court's replay resumes where its stroke ran out).
-    fn file_verdict(&mut self, id: &[u8; 32], rule: &Element, outputs: &[Grid], ground: &Ground<u8>, code: u8) {
+    fn file_verdict(&mut self, id: &[u8; 32], rule: &Element, outputs: &[SectionSample], ground: &Ground<u8>, code: u8) {
         match code {
             dialogue::SOLVE_BOUNTY | dialogue::SOLVE_AGAIN => {
                 self.solve_refused.remove(id);
@@ -116,7 +116,7 @@ impl Mind {
     /// `Ground::One`, none otherwise. The court reconstructs under it
     /// (MU-SENSING §6). Under a vortex each candidate's claim is its own
     /// solve, held for the return apart from the others.
-    pub(crate) fn submit_solve_rule(&mut self, id: &[u8; 32], outputs: &[Grid], rule: &Element, ground: &Ground<u8>) -> io::Result<()> {
+    pub(crate) fn submit_solve_rule(&mut self, id: &[u8; 32], outputs: &[SectionSample], rule: &Element, ground: &Ground<u8>) -> io::Result<()> {
         let stated = crate::transducer::raster::stated(ground);
         // 78.141 — a solve names its payee by the voice's signature: a
         // voice seated without its key sends none.
@@ -155,7 +155,7 @@ impl Mind {
 
     /// THE SOLVE POSTED at a return (`submit_solve_rule`): counted sent, its
     /// verdict filed where it lands.
-    fn post_solve(&mut self, id: [u8; 32], act: Vec<u8>, rule: Element, outputs: Vec<Grid>, ground: Ground<u8>) {
+    fn post_solve(&mut self, id: [u8; 32], act: Vec<u8>, rule: Element, outputs: Vec<SectionSample>, ground: Ground<u8>) {
         crate::observe::note_mind(|m| m.perspective[6] += 1);
         self.ask(move |s| s.speak_keyed(&id, act), move |entity, body: io::Result<Vec<u8>>| {
             entity.board.court.solving.remove(&id);

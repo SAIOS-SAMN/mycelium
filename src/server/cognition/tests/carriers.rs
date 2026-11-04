@@ -5,7 +5,7 @@
 use crate::cognition::*;
 use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
 
-fn grid(rows: &[&str]) -> crate::transducer::family::Grid {
+fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect()).collect()
 }
 

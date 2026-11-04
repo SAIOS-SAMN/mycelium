@@ -23,7 +23,7 @@ impl crate::transducer::family::Crystal for OneWord {
     fn speak_form(
         &self,
         _f: &Form,
-        _x: &crate::transducer::family::Grid,
+        _x: &crate::transducer::family::SectionSample,
         _p: &Word,
     ) -> Option<crate::transducer::family::Speech> {
         None

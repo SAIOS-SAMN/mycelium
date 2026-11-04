@@ -3,7 +3,7 @@
 // whose word orbits, is a contact word; its placement leaves the form.
 
 use super::orbit::positions_of;
-use super::perceive::{frame_of, Grid, Painted};
+use super::perceive::{frame_of, SectionSample, Painted};
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
@@ -34,7 +34,7 @@ impl Varying {
 
 /// The ring distance every output frame reads from its painted sites to
 /// the frame's edge, when it is one value on every frame.
-fn one_ring(family: &[(Grid, Grid)]) -> Option<u8> {
+fn one_ring(family: &[(SectionSample, SectionSample)]) -> Option<u8> {
     let mut rings: Option<u8> = None;
     for (_x, y) in family {
         let fy = frame_of(y);
@@ -66,7 +66,7 @@ fn one_ring(family: &[(Grid, Grid)]) -> Option<u8> {
 /// Does a contact word move the body on every input of the family (22)? A
 /// word whose motion fixes the body as a set stands still, and the court
 /// refuses it (23.1 step 6); the voice does not mint it.
-fn orbits_everywhere(v: &Vertex, family: &[(Grid, Grid)]) -> bool {
+fn orbits_everywhere(v: &Vertex, family: &[(SectionSample, SectionSample)]) -> bool {
     let Vertex::Word { derivation, .. } = v else { return false };
     if derivation.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
         return false;
@@ -82,7 +82,7 @@ fn orbits_everywhere(v: &Vertex, family: &[(Grid, Grid)]) -> bool {
 /// off. `false` when the stroke ended.
 pub(crate) fn contact_named_vertices(
     form: &mut Form,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     varying: &Varying,
     budget: &mut Budget,
 ) -> bool {

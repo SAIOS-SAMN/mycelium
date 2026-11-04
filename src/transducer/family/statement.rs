@@ -45,21 +45,26 @@ pub enum Unstated {
     Unpartnered,
 }
 
-/// THE SQUARE'S SYMMETRY `t` ON A GRID (`Act::Tile`'s codes): 0 itself, 1
-/// mirrored across its columns, 2 across its rows, 3 a turn of 180°, 4 a turn
-/// of 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose. `None` for a
-/// code past 7, or a 90° turn or transpose of a grid that is not square.
-pub(crate) fn turn_of(g: &[Vec<u8>], t: u8) -> Option<Grid> {
-    let h = g.len();
-    let w = match g {
-        [row, ..] => row.len(),
-        [] => 0,
+/// THE SQUARE'S SYMMETRY `t` ON A SECTION SAMPLE (`Act::Tile`'s codes): 0
+/// itself, 1 mirrored across its columns, 2 across its rows, 3 a turn of
+/// 180°, 4 a turn of 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose.
+/// `None` for a code past 7, or a 90° turn or transpose of a sample that is
+/// not square.
+pub(crate) fn turn_of(g: &SectionSample, t: u8) -> Option<SectionSample> {
+    let [h, w] = g.extents();
+    let at = |i: usize, j: usize| g.line(i).and_then(|row| row.get(j)).copied();
+    let grid = |rows: usize, cols: usize, f: &dyn Fn(usize, usize) -> Option<u8>| -> Option<SectionSample> {
+        let mut out = SectionSample::filled([rows, cols], g[0][0]).ok()?;
+        for i in 0..rows {
+            for j in 0..cols {
+                out[i][j] = f(i, j)?;
+            }
+        }
+        Some(out)
     };
-    let at = |i: usize, j: usize| g.get(i).and_then(|row| row.get(j)).copied();
-    let grid = |rows: usize, cols: usize, f: &dyn Fn(usize, usize) -> Option<u8>| -> Option<Grid> { (0..rows).map(|i| (0..cols).map(|j| f(i, j)).collect()).collect() };
     let last = |n: usize, i: usize| n.checked_sub(1).and_then(|m| m.checked_sub(i));
     match t {
-        0 => Some(g.to_vec()),
+        0 => Some(g.clone()),
         1 => grid(h, w, &|i, j| at(i, last(w, j)?)),
         2 => grid(h, w, &|i, j| at(last(h, i)?, j)),
         3 => grid(h, w, &|i, j| at(last(h, i)?, last(w, j)?)),
@@ -83,7 +88,7 @@ pub struct Spoken {
 /// THE SCENE AS THE CLAUSES READ IT, perceived once: each body's cells and
 /// the body each cell belongs to.
 struct Seen<'a> {
-    x: &'a Grid,
+    x: &'a SectionSample,
     bodies: &'a [Body],
     rows: usize,
     cols: usize,
@@ -134,12 +139,8 @@ pub(crate) fn extent_of(cells: &[(usize, usize, u8)]) -> Option<(usize, usize, u
 }
 
 impl<'a> Seen<'a> {
-    fn of(x: &'a Grid, bodies: &'a [Body]) -> Seen<'a> {
-        let rows = x.len();
-        let cols = match x.as_slice() {
-            [row, ..] => row.len(),
-            [] => 0,
-        };
+    fn of(x: &'a SectionSample, bodies: &'a [Body]) -> Seen<'a> {
+        let [rows, cols] = x.extents();
         let mut owner = vec![vec![None; cols]; rows];
         let mut cells = Vec::with_capacity(bodies.len());
         for (i, b) in bodies.iter().enumerate() {
@@ -165,7 +166,7 @@ impl<'a> Seen<'a> {
 
     /// The symbol at a cell; `None` off the grid, which holds none.
     fn hue(&self, r: usize, c: usize) -> Option<u8> {
-        self.x.get(r).and_then(|row| row.get(c)).copied()
+        self.x.line(r).and_then(|row| row.get(c)).copied()
     }
 
     /// Is the cell on the grid and read as ground?
@@ -279,7 +280,7 @@ impl<'a> Seen<'a> {
             Coord::Contacts => qu(self.touching(b).len()),
             Coord::Enclosed => qu(self.enclosed(&[b]).len()),
             Coord::Tally => match hues.as_slice() {
-                [h] => qu(self.x.iter().flatten().filter(|&&v| v == *h).count()),
+                [h] => qu(self.x.symbols().iter().filter(|&&v| v == *h).count()),
                 _ => None,
             },
             Coord::Peers => qu(self.bodies.iter().filter(|o| o.moduli == self.bodies[b].moduli).count()),
@@ -602,7 +603,7 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) ->
 /// is spoken onto, perceived once): each clause lowered to its element
 /// ([`rule_element::lower`]) and the elements spoken. A run naming parts
 /// inside parts is refused by name.
-pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Spoken, Unstated> {
+pub fn speak_clauses(clauses: &[Clause], x: &SectionSample, bodies: &[Body]) -> Result<Spoken, Unstated> {
     speak_elements(&rule_element::lower_all(clauses).ok_or(Unstated::Nested)?, x, bodies)
 }
 
@@ -610,18 +611,20 @@ pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Sp
 /// selects on the input and paints the canvas; a window sets the output's
 /// extent. An element on parts selects among the scene's monochrome parts
 /// (`perceive_parts`), read once where one asks.
-pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spoken, Unstated> {
+pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> Result<Spoken, Unstated> {
     let whole = Seen::of(x, bodies);
     let parts: Vec<Body> = match said.iter().any(|l| l.parts) {
         true => perceive_parts(x),
         false => Vec::new(),
     };
     let on_parts = Seen::of(x, &parts);
-    let mut canvas: Vec<Vec<u8>> = x.clone();
+    // The canvas is the speech end (MU-SENSING §2): the input's lines,
+    // painted into the output the clauses write.
+    let mut canvas: Vec<Vec<u8>> = x.raster();
     let mut window: Option<(usize, usize, usize, usize)> = None;
     let mut scale: Option<(u8, u8)> = None;
     // A frame element's output stands in place of the canvas (`Panes`, `Tile`).
-    let mut framed: Option<Grid> = None;
+    let mut framed: Option<Vec<Vec<u8>>> = None;
     for l in said {
         let seen = match l.parts {
             true => &on_parts,
@@ -690,7 +693,7 @@ pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spo
                     let bit = 2 * usize::from(first) + usize::from(second);
                     if (table >> bit) & 1 == 1 { *hue } else { void }
                 };
-                let out: Grid = match along_rows {
+                let out: Vec<Vec<u8>> = match along_rows {
                     true => (0..k).map(|a| (0..other).map(|b| at(a, b)).collect()).collect(),
                     false => (0..other).map(|b| (0..k).map(|a| at(a, b)).collect()).collect(),
                 };
@@ -705,16 +708,17 @@ pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spo
                 // Every cell is a block's: a cell no block lays is unframed,
                 // never a ground written in for it.
                 let mut out: Vec<Vec<Option<u8>>> = vec![vec![None; w * cols]; h * rows];
+                let laid = SectionSample::of_lines(&canvas).map_err(|_| Unstated::Unframed)?;
                 for (i, &t) in turns.iter().enumerate() {
-                    let block = turn_of(&canvas, t).ok_or(Unstated::Unframed)?;
+                    let block = turn_of(&laid, t).ok_or(Unstated::Unframed)?;
                     let (bi, bj) = (i / cols, i % cols);
-                    for (r, row) in block.iter().enumerate() {
+                    for (r, row) in block.lines().enumerate() {
                         for (c, &v) in row.iter().enumerate() {
                             out[bi * h + r][bj * w + c] = Some(v);
                         }
                     }
                 }
-                framed = Some(out.into_iter().map(|row| row.into_iter().collect::<Option<Vec<u8>>>()).collect::<Option<Grid>>().ok_or(Unstated::Unframed)?);
+                framed = Some(out.into_iter().map(|row| row.into_iter().collect::<Option<Vec<u8>>>()).collect::<Option<Vec<Vec<u8>>>>().ok_or(Unstated::Unframed)?);
             }
             RuleElement::Join { corner: None, paint: with } => {
                 // A join has two ends, and no one partner to take a hue off.
@@ -860,7 +864,7 @@ pub fn speak_elements(said: &[Lowered], x: &Grid, bodies: &[Body]) -> Result<Spo
 /// 78.167 C — WHAT EACH PREDICATE SELECTS on one scene, as a clause reads
 /// it (the scene seen once): `None` where the predicate is unstated there.
 /// The act reading separates an effect's bodies by these and nothing else.
-pub(crate) fn select_each(preds: &[Pred], x: &Grid, bodies: &[Body]) -> Vec<Option<Vec<usize>>> {
+pub(crate) fn select_each(preds: &[Pred], x: &SectionSample, bodies: &[Body]) -> Vec<Option<Vec<usize>>> {
     let seen = Seen::of(x, bodies);
     let all = seen.all();
     preds.iter().map(|p| seen.select(p, &all).ok()).collect()
@@ -869,13 +873,13 @@ pub(crate) fn select_each(preds: &[Pred], x: &Grid, bodies: &[Body]) -> Vec<Opti
 /// THE REGION SEVERAL BODIES NAME TOGETHER, as a fill selecting them speaks
 /// it (`Seen::region` over the set): the set's joint interior is every ground
 /// cell the set walls in, which no one of them may.
-pub(crate) fn region_of_set(region: RegionKind, x: &Grid, bodies: &[Body], set: &[usize]) -> Vec<(usize, usize)> {
+pub(crate) fn region_of_set(region: RegionKind, x: &SectionSample, bodies: &[Body], set: &[usize]) -> Vec<(usize, usize)> {
     Seen::of(x, bodies).region(region, set)
 }
 
 /// The bodies of the scene owning a cell beside one of `cells`, corners
 /// included, each once, in the scene's order.
-pub(crate) fn bodies_around(x: &Grid, bodies: &[Body], cells: &[(usize, usize, u8)]) -> Vec<usize> {
+pub(crate) fn bodies_around(x: &SectionSample, bodies: &[Body], cells: &[(usize, usize, u8)]) -> Vec<usize> {
     let seen = Seen::of(x, bodies);
     let mut out: Vec<usize> = Vec::new();
     let around = around();
@@ -896,7 +900,7 @@ pub(crate) fn bodies_around(x: &Grid, bodies: &[Body], cells: &[(usize, usize, u
 /// one scene: the one hue of every body it touches, `None` where it touches
 /// none or bodies of two hues. The act reading asks whether a recoloured
 /// body took its partner's hue.
-pub(crate) fn partner_hues(x: &Grid, bodies: &[Body]) -> Vec<Option<u8>> {
+pub(crate) fn partner_hues(x: &SectionSample, bodies: &[Body]) -> Vec<Option<u8>> {
     let seen = Seen::of(x, bodies);
     (0..bodies.len()).map(|b| seen.partner_hue(b, &Pred::All).ok()).collect()
 }
@@ -904,7 +908,7 @@ pub(crate) fn partner_hues(x: &Grid, bodies: &[Body]) -> Vec<Option<u8>> {
 /// 78.167 C — the cells a region names about each ONE body of the scene, as
 /// a fill would paint them: the act reading asks which bodies' regions the
 /// created cells lie in.
-pub(crate) fn regions_each(region: RegionKind, x: &Grid, bodies: &[Body]) -> Vec<Vec<(usize, usize)>> {
+pub(crate) fn regions_each(region: RegionKind, x: &SectionSample, bodies: &[Body]) -> Vec<Vec<(usize, usize)>> {
     let seen = Seen::of(x, bodies);
     (0..bodies.len()).map(|b| seen.region(region, &[b])).collect()
 }
