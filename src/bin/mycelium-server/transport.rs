@@ -32,15 +32,38 @@ fn note_pointed(s: &TcpStream, pointed: bool) {
     let (Ok(at), Ok(mut held)) = (s.peer_addr(), POINTED.lock()) else { return };
     held.retain(|a| *a != at);
     if pointed {
-        // A connection read and never answered leaves its entry: the book
-        // keeps at most the reflex pool's worth of speakers waiting at once
-        // (a full reserve of polls), the oldest let go first.
-        let Ok(bound) = usize::try_from(mycelium::physics::reserve_max()) else { return };
-        while !held.is_empty() && held.len() >= bound {
-            held.remove(0);
+        if let Err(why) = admit_pointed(&mut held, at, mycelium::physics::sealed().map(|c| c.memory())) {
+            eprintln!("  pointed connection from {at} refused: {why:?}");
         }
-        held.push(at);
     }
+}
+
+/// WHY A POINTED CONNECTION WAS NOT KEPT (MU-DERIVATIONS D2.5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PointedRefusal {
+    /// The process sealed no memory to hold the book against.
+    Unsealed,
+    /// Keeping it would hold `held` bytes, past the process's memory.
+    PastMemory { held: Option<u64> },
+}
+
+/// KEEP AN UNANSWERED POINTED CONNECTION while the book's held bytes fit
+/// the process's memory `M_proc` (D2.5 (a)); a connection past that is
+/// refused by name and the book is left as it stood, never an entry let go
+/// to make room.
+pub(crate) fn admit_pointed(
+    held: &mut Vec<std::net::SocketAddr>,
+    at: std::net::SocketAddr,
+    memory: Option<mycelium::physics::Memory>,
+) -> Result<(), PointedRefusal> {
+    let memory = memory.ok_or(PointedRefusal::Unsealed)?;
+    let entries = u64::try_from(held.len()).ok().and_then(|n| n.checked_add(1));
+    let bytes = entries.and_then(|n| n.checked_mul(std::mem::size_of::<std::net::SocketAddr>() as u64));
+    if !memory.holds(bytes) {
+        return Err(PointedRefusal::PastMemory { held: bytes });
+    }
+    held.push(at);
+    Ok(())
 }
 
 /// Whether this connection's speaker carried a point, its entry let go: one
@@ -406,6 +429,18 @@ pub(crate) fn exchange_due(last_asked: Option<u64>, k_now: u64, lambda: Option<u
             k_now.checked_sub(last).is_some_and(|gap| gap >= u64::from(mycelium::physics::aperture_cycle()))
         }
     }
+}
+
+/// WHETHER A QUIET PEER IS ASKED AGAIN (MU-DERIVATIONS D2.5; 78.43, time is
+/// distance along an orbit), a predicate at the wire boundary (§2.3):
+/// never asked, or the TUniversal final point has advanced since the last
+/// ask, which follows the peer's last answer. `asked_at` is the count of the
+/// final point's advances read at that ask, `advances` the count now. An
+/// idle network stays quiet, and a moving one is heard at the rate it
+/// moves; no constant and no backoff enter. A silent peer is not asked
+/// again while the network is still, either.
+pub(crate) fn quiet_due(asked_at: Option<u64>, advances: u64) -> bool {
+    asked_at.is_none_or(|at| advances > at)
 }
 
 /// The floor of the last aperture of measured round trips to a peer.

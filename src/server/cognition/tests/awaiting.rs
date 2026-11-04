@@ -165,6 +165,14 @@ fn hear_speech_adjudicates_stood_and_awaiting_apart() {
 #[test]
 fn ruled_admit_absent_word_rehears_nothing() {
     let mut k = Court::new();
+    // D2.5 O4 — the re-hearing below replays a sentence whose replay has no
+    // closed-form need yet, so the court runs on an explicit calibration: a
+    // process of 40 bytes at one byte per read, `C = 40`.
+    let nz = |n| std::num::NonZeroU64::new(n).expect("a fixture size is positive");
+    let memory = crate::physics::Memory::of(nz(40), crate::physics::MemorySource::CgroupMax);
+    let minimal = crate::physics::minimal_stroke().expect("the founding motions' modes have a need");
+    let calibration = crate::physics::Calibration::of(memory, nz(1), minimal).expect("a spend of five fits the minimal stroke");
+    k.physics = crate::physics::Physics::calibrated(&calibration);
     // An address this court holds no word at, and a sentence with nothing
     // to wait on, docketed under it.
     let absent = sentence_with(Derivation::spelled(turn_90(1)), 1).address();

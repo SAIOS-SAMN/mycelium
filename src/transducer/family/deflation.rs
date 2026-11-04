@@ -278,8 +278,11 @@ fn form_deflation_read_on_ground(
                 mass_share += crate::transducer::family::transduce::share_of_frame([m, 0, 0, 0], frame.as_ref()).lane(0);
                 let mass = num_rational::BigRational::from_integer(m.into());
                 for (motion, gauge) in &moved {
-                    let mut budget = crate::physics::Physics::default().stroke();
-                    if let Some(ms) = crate::economy::modes::Modes::of_motion(motion, &mass, &mut budget) {
+                    // D2.5 — the stroke is the need of the modes it reads
+                    // (`cga::modes_need`, D3.1); a motion with no need reads
+                    // no modes.
+                    let need = crate::transducer::cga::modes_need(motion);
+                    if let Some(ms) = need.and_then(|n| crate::economy::modes::Modes::of_motion(motion, &mass, &mut crate::physics::Physics::default().stroke_n(n))) {
                         modes.add(&ms);
                     }
                     if let Some(gs) = crate::economy::modes::Modes::of_gauge(gauge, &mass) {

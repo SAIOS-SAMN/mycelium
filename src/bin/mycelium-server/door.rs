@@ -33,7 +33,9 @@ pub(crate) struct Door {
     pub(crate) roots: Arc<Mutex<Keyed<Keyed<u64>>>>,
     pub(crate) registry: Arc<Mutex<mycelium::registry::TaskRegistry>>,
     pub(crate) syllabus: Arc<Mutex<Syllabus>>,
-    pub(crate) nerve_tx: std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
+    /// The nerve, built from the seal (D2.5): a door exists only
+    /// after the boot calibration stroke sealed it.
+    pub(crate) nerve_tx: crate::nerve::Nerve,
     pub(crate) synth_tx: std::sync::mpsc::SyncSender<mycelium::synthesis::Deliberation>,
     pub(crate) state_path: String,
 }

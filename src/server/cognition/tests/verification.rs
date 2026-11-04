@@ -45,7 +45,7 @@ fn release_verified_shares_strained_release_with_witness() {
     k.physics.reserve = crate::physics::Reserve::of([0; 4]);
     let strain = crate::economy::yield_surface(&k.physics).expect("the surface reads");
     assert!(strain.iter().all(|&y| y > 0), "a spent reserve strains every lane: {strain:?}");
-    let each = crate::economy::verification_share(&held.into(), &strain, crate::physics::reserve_max(), 2);
+    let each = crate::economy::verification_share(&held.into(), &strain, k.physics.capacity(), 2);
     assert!(!each.is_zero(), "the strain pays verification something");
 
     let at = k.anchor();
@@ -77,7 +77,7 @@ fn release_verified_shares_capped_base_once_per_organ() {
     k.physics.reserve = crate::physics::Reserve::of([0; 4]);
     let strain = crate::economy::yield_surface(&k.physics).expect("the surface reads");
     let base = [10, 20, 0, 8];
-    let each = crate::economy::verification_share(&base.into(), &strain, crate::physics::reserve_max(), 1);
+    let each = crate::economy::verification_share(&base.into(), &strain, k.physics.capacity(), 1);
 
     let at = k.anchor();
     let court_vk = k.identity;

@@ -91,7 +91,9 @@ code locate a site when lines move.
 - **Heights and strokes.** A height is a court's receipt count
   (`Stamp.h`). A read is one `Budget::spend()`. A stroke is the budget
   `Physics::stroke` mints. `A = aperture_cycle() = 2^(FRAME_AXIS+1) = 8`
-  strokes per reserve cycle. `R = reserve_max()`, the calibrated reserve.
+  strokes per reserve cycle. `R = reserve_max()`, the calibrated reserve,
+  in the entries written before D2.5's O1 ruling; since it, `C =
+  physics::capacity()`, the process's sealed capacity (D2.5).
 - **No clock.** No wall-clock time enters any formula (law 9; Concordance
   1.11). Time is distance along an orbit: a height on TUniversal, a count
   of strokes, a distance along a sequence (78.43).
@@ -133,8 +135,8 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D2.2 | `cut[l] / 2` (bounty) | `server/cognition/convert.rs:586` | μ, challenge incentive | High | `bounty = cut·D/(D + X)` (**Built**, ruled 2026-10-31) | no | S | 3, 14 |
 | D2.3 | `surface + 1` (read price) | `server/cognition/crossing.rs:57–64` | μ, admission | High | `p = 1 + y/R`, scale-free (**Built**, κ = 1 ruled 2026-10-31) | O2 | S | 21, 3 |
 | D2.4 | `UNIT_BOND = [1, 1, 1, 1]` | `economy/treasury.rs:163` | none (test fixture) | Low | deleted, not derived (**Built**, 2026-10-31) | no | S | 3 |
-| D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` | yes | M | 14 |
-| D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name (**Built** 2026-10-31 but the reserve's memory and cores terms, D2.5's organ) | yes | M | 14 |
+| D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` (**Built** 2026-11-04: one boot calibration stroke seals the capacity `C = ⌊M_proc/b⌋`; O1 ruled into four readings: metabolism on `C`, strokes on the work's need (owed sites listed), a quiet peer asked again once the final point advances, cooling on the challenge window, the pointed book on `M_proc`; O3, the ratio's `8` on the frame axis, open on track 26 S4) | yes | M | 14 |
+| D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name (**Built** 2026-10-31; the reserve's memory term with D2.5, 2026-11-04) | yes | M | 14 |
 | D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state (**Built** 2026-10-31: a CLI's first ask to the stream's end, a court's the mesh floor) | yes | S–M | 5 |
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111; **Built**) | yes | S | 7 |
 | D3.2 | `MAX_LCM_AXIS = 60`, `MAX_LCM_SITES = 3600`, then the common refinement `K_lcm` | `transducer/family/refine.rs` (deleted) | task identity, μ | High | the transduction in turns, `need = R_h·R_w`; μ a share of the frame (**Built**, 78.170; O1 wired 2026-11-01) | no | L | 7 |
@@ -964,7 +966,8 @@ specifies its carrier and its gate.
 ## 4. Group G2 — economy ratios, prices and calibration
 
 Symbols for this group, beyond §0.4: `R ∈ ℤ>0` is the calibrated reserve,
-`physics::reserve_max()` (reserve units). `y_l ∈ ℤ≥0` is the court's
+`physics::reserve_max()` (reserve units), read since D2.5's O1 ruling as
+the capacity the court's metabolism holds, `C = court.physics.capacity()`. `y_l ∈ ℤ≥0` is the court's
 yield surface, `economy::yield_surface(&court.physics)[l]` (reserve
 deficit plus entropic excess).
 
@@ -1371,6 +1374,154 @@ Deleted, not derived.
 
 ### D2.5 `kb >> 20` and `cores · (1 + GiB)` — the reserve's memory term
 
+**Status.** **Built** (2026-11-04; O2 ruled 2026-11-01: "one boot
+calibration stroke measures bytes per read and seals the reserve before
+serving"; O1 ruled 2026-11-04: `R` is one name with four meanings, split
+into four readings, below). `physics::calibrate() -> Result<Sealed,
+Uncalibrated>` reads the cores and the stroke floor (D2.6), then
+`calibration_of(limit, MemAvailable_kB, held)`:
+
+1. `M_proc` (`physics::memory`): the least cgroup v2 `memory.max` on the
+   process's path (`/proc/self/cgroup`'s `0::` line, read up the unified
+   hierarchy at `/sys/fs/cgroup`), else `1024 · MemAvailable_kB` where no
+   limit is set; named `MemorySource::{CgroupMax, MemAvailable}`, and
+   refused `Uncalibrated::Memory` before any stroke runs.
+2. `b` on the one boot calibration stroke (`boot_stroke`): the stroke is
+   sized by the MINIMAL STROKE, the founding motions' modes' need
+   (`minimal_stroke` = `modes_need` of the turn of the plane of the first
+   two axes plus that of the slide along the first axis, D3.1); it reads
+   the motions' modes and measures `b = ⌈ retained / reads ⌉` (`footprint_of`). A
+   stroke that cannot complete is `Uncalibrated::Footprint(Unstroked::
+   {Allocator, Incomplete, Retained { retained, reads }})`.
+3. `C = ⌊M_proc / b⌋` exactly (`Calibration::of`), refused
+   `Uncalibrated::Unfit { capacity, minimal }` where one spend `⌊C / 8⌋`
+   does not cover the minimal stroke: such a process does not boot.
+
+The seal holds `Calibration { memory, footprint, minimal, capacity }`,
+derived once. The server, client and soak binaries call `calibrate` first
+and refuse to boot on a refusal, naming it. At boot the server logs
+`calibrated: M <bytes> (<source>), b <bytes> per read, minimal stroke <n>
+reads, capacity C <reads> sealed`. Only `calibrate` writes a `Sealed`
+witness (a `compile_fail` doc test), and the server's nerve is built from
+it, so nothing is served before the seal. `reserve_max` is renamed
+`capacity`.
+
+**O1, resolved: four readings where `R` stood** (ruled 2026-11-04; AGENTS.md:
+one name, one meaning):
+
+- **The metabolism reads the process's capacity `C`.** `Physics` holds
+  the capacity it was built on (`Physics::default` reads the seal;
+  `Physics::calibrated(&Calibration)` an explicit one): the pool's
+  ceiling, the spend `⌊C/8⌋`, the regeneration, the shortfall and the
+  deficit, the yield surface, the read price `1 + y/C` (D2.3's κ = 1
+  stands, scale-free in `y/C`) and the verification share all read it.
+  Sealed once, so `C > 0` and the price is always defined; per process,
+  never the host's whole memory, so no overcommit.
+- **Stroke budgets read the work's own need where a closed-form need
+  exists.** Converted: `transducer/family/deflation.rs` (the modes of each
+  moved motion, `modes_need`) and `transducer/family/derivation.rs` (the
+  orbit census's modes, `modes_need`). Every other stroke keeps the
+  capacity's spend, each a **need reading owed** (paths under `src/`):
+  - `bin/mycelium-server/exchange.rs:323, 592, 627` (the court's intake,
+    docket and organ strokes, `expansion_unit`);
+  - `server/cognition/court/replay.rs:50, 271, 397` (the docket's replay
+    and its fresh-stroke reading);
+  - `server/cognition/court/glue.rs:495, 593, 631`; `court/lapse.rs:74`;
+    `court/phase.rs:237`; `court/syllabus.rs:369, 611`; `court/task.rs:155`;
+    `court/vantage_install.rs:240`;
+  - `server/cognition/basis.rs:661, 687, 705`; `book/demand.rs:102`;
+    `book/language.rs:235`; `book/listings.rs:35`;
+    `book/speech.rs:63, 81, 378, 675`; `book/tension.rs:221`;
+    `cite.rs:393`; `cocycle.rs:89`; `atlas.rs:353`; `state.rs:1028`;
+    `germinate/attest.rs:26`; `germinate/stroke.rs:33, 128, 165, 192`;
+    `snapshot/read.rs:109`;
+  - `server/held/mod.rs:258`; `court/verdict/blind.rs:127`;
+  - `client/sdk/rule.rs:510`; `client/sdk/entity/boot.rs:13, 39`;
+    `callus.rs:35`; `chatter.rs:259, 519, 623, 842, 962`; `contract.rs:147`;
+    `court.rs:137`; `family.rs:472`; `learn.rs:289, 440, 480, 515, 527`;
+    `perceive.rs:634, 663, 738, 847`; `present.rs:59`; `quote.rs:58`;
+    `think.rs:511, 782, 1004`; `utter.rs:266, 415`; `winding.rs:258, 426`;
+  - `transducer/family/deflation.rs:418` (the transport order's stroke);
+  - the soak's instruments, `bin/mycelium-soak/main.rs:623`,
+    `regime.rs:95, 137, 147`.
+- **A quiet peer is asked again only once the TUniversal final point has
+  advanced** since the last ask, which follows the peer's last answer
+  (`mycelium-server` `transport::quiet_due`, ruled 2026-11-04 from 78.43:
+  time is distance along an orbit; no constant, no backoff). An idle
+  network stays quiet, and a moving one is heard at the rate it moves. The
+  round trip still measures the transport (patience, deadlines), and an
+  unmeasured one stays `Lambda::Unmeasured`. `digest_ceiling` is deleted:
+  read first as a full reserve of round trips, then as one round trip,
+  it polled (about 180 asks a second per hypha on an idle quickstart
+  mesh).
+- **The settlement cooling floor reads the challenge window**: a
+  settlement goes cold once the window opened at its height has closed at a
+  sealed reach and return of every other keeper (D1.1, law version 5).
+  Settlements on the docket are held windows (`held_windows`), so the court
+  seals the close they wait on; a lone court closes none.
+- **The pointed-connection book and the nerve's queue are bounded by
+  `M_proc`**: an unanswered pointed connection is kept while the book's
+  held bytes fit it, and a new one past it is refused by name
+  (`PointedRefusal::{Unsealed, PastMemory}`), never an entry let go; the
+  nerve holds spoken acts while the acts' bytes fit it, an act past it
+  dropped.
+
+Choices the entry left open, as built:
+
+- **Readings, 2026-11-04.** The earlier reading under (a): `M = 10 306 015
+  232` (`MemAvailable`), `b = 376`, `R = 27 409 608` against `R = 40` under
+  the GiB unit. Under the ruled readings, the three-hypha quickstart mesh
+  (each hypha in a 6 GiB cgroup scope): `M = 6 442 450 944` (cgroup
+  `memory.max`), `b = 372`, minimal stroke 4 reads, `C = 17 318 416`; the
+  mesh served, paid two tasks and passed both conformance profiles, at
+  27–29 MB resident per hypha. With the quiet ask on the final point's
+  advances, each hypha logged 14, 16 and 19 peer-exchange tallies over the
+  run (18–20 asks), against 27 141 to 36 883 with the ask at one round
+  trip.
+- **The allocator reading.** `b` reads jemalloc's per-thread counters
+  (`thread.allocatedp` less `thread.deallocatedp`), exact on every
+  allocation. `stats::allocated`, named below, moves only as a thread cache
+  fills and flushes, and read zero across the whole stroke.
+- **One stroke, not an aperture.** The ruling names one stroke; the
+  maximum over an aperture of strokes below is not taken.
+- **O3, open dependency: the ratio's `8`.** `STROKES_PER_RESERVE =
+  2^(FRAME_AXIS + 1)` ties the spend `⌊C/8⌋`, the unfit refusal and the
+  unsealed capacity to the fixed frame axis, which ROADMAP track 26 S4
+  removes. It is unchanged in this phase. When S4 lands, the ratio is read
+  off the rank the sensor deduces, or is registered; until then it is an
+  open dependency of this entry. The floor `16` is gone.
+- **The unsealed capacity.** A process that never calibrates (the
+  library's unit-test harness, an embedding library) reads the capacity
+  whose one spend is the minimal stroke, `8 · minimal_stroke`, derived from
+  the least work there is and the same on every host; no fixed floor.
+- **O4, resolved.** The `#[cfg(test)]` branch in `reserve_max` is deleted.
+  The unit suite runs on the unsealed capacity; the one claim whose replay
+  needs more than one minimal stroke and has no closed-form need yet
+  (`server::cognition::tests::awaiting::ruled_admit_absent_word_rehears_nothing`)
+  builds its court on an explicit calibration, `Physics::calibrated` of
+  `Calibration::of(40 bytes, 1 byte per read, minimal)`, in the test.
+
+Tests: `physics::tests::calibration` (`capacity_equals_memory_over_footprint`,
+`calibration_refuses_unfit_minimal_stroke`,
+`capacity_unsealed_spends_minimal_stroke`,
+`memory_of_reads_cgroup_limit_before_available`,
+`cgroup_limit_of_reads_least_limit_on_path`,
+`footprint_is_bytes_per_read_on_fixture_stroke`,
+`footprint_of_refuses_unread_stroke`, `boot_stroke_refuses_unread_allocator`,
+`stroke_that_holds_nothing_refuses`, `unreadable_memory_refuses_boot`,
+`open_physics_reads_capacity_measured`); `mycelium-server tests::pacing`
+(`quiet_peer_not_asked_again_while_final_point_still`,
+`quiet_peer_asked_once_after_final_point_advances`);
+`server::cognition::tests::market::record_settlement_cools_after_window_closes`;
+`mycelium-server tests::pointed` (`admit_pointed_refuses_past_memory`,
+`admit_pointed_refuses_unsealed`); `tests/calibration.rs`
+(`reserve_sealed_from_measured_bytes_per_read_before_serving`, a process
+allocating through jemalloc as the binaries do). Mutation audit: the
+measured `b` replaced by the fixed unit `2³⁰`, killed by
+`capacity_equals_memory_over_footprint`. The open-physics register reads
+the capacity MEASURED: no entry stands at a calibration or memory site or
+cites this entry. The text below is the derivation as specified.
+
 **Site.** `src/physics/calibration.rs:31–40` (`read_mem_available_gib`:
 `Some(kb >> 20)`, where `MemAvailable` is in KiB, so the result is whole
 GiB) and `:70–91` (`reserve_max`):
@@ -1481,12 +1632,13 @@ stroke) has a size of a GiB. The ratio algebra
 ### D2.6 Calibration fallbacks — 1 core, 0 GiB, 1 ns, 1 stroke, `usize::MAX`
 
 **Status.** **Built** (2026-10-31, the live-readings ruling) for the
-physics and transport arms; the reserve's own `Calibration` organ (its
-memory term and the cores it multiplies) is D2.5's and lands with it.
-`physics::calibrate() -> Result<(), Uncalibrated>` reads every arm the
-host must say, `Uncalibrated::{Cores, StrokeFloor}`; the server, client and
-soak binaries refuse to boot naming the arm, so `reserve_max`'s one-core
-arm is reached by no booted binary. `stroke_floor_of(hz, slack)`: one tick
+physics and transport arms; the reserve's own `Calibration` organ landed
+with D2.5 (2026-11-04): `Uncalibrated::{Memory, Footprint}` beside `Cores`
+and `StrokeFloor`, and cores no longer multiply the reserve.
+`physics::calibrate() -> Result<Sealed, Uncalibrated>` reads every arm the
+host must say, `Uncalibrated::{Cores, StrokeFloor, Memory, Footprint}`;
+the server, client and soak binaries refuse to boot naming the arm, and
+the reserve has no one-core arm. `stroke_floor_of(hz, slack)`: one tick
 where `CONFIG_HZ` is published, else the thread's `timerslack_ns`, else
 refused (the one-nanosecond ask is deleted; an unbooted uncalibrated
 library parks nothing). `idle_park(Option<NonZeroU64>)` parks the floor, the
@@ -3464,9 +3616,18 @@ Each line names its entry and the reading or ruling that decides it.
     lanes.
 16. **D2.5 O1** — memory bound (a) or the current shape (b), or memory
     out of `R` altogether: decided by `b` and `⌊M/b⌋` against today's `R`
-    on the soak.
+    on the soak. **Ruled** (2026-11-04): `R` split into four readings, the
+    metabolism on the process's capacity `C = ⌊M_proc/b⌋`, stroke budgets
+    on the work's need (the sites without one listed as owed), the
+    quiet peer asked again once the TUniversal final point advances, the settlement cooling
+    on the challenge window, and the pointed book on `M_proc`; **Built**
+    (2026-11-04). O4 resolved with it.
 17. **D2.5 O2** — the order of calibration (a sealed second calibration,
-    or a boot calibration stroke): a ruling.
+    or a boot calibration stroke): a ruling. **Ruled** (2026-11-01): one
+    boot calibration stroke seals the reserve before serving; **Built**
+    (2026-11-04). D2.5 O3, the ratio's `8 = 2^(FRAME_AXIS + 1)` on the
+    fixed frame axis, is an open dependency on ROADMAP track 26 S4, not a
+    ruling.
 18. **D2.6 O1** — `CONFIG_HZ` or the timer slack as the stroke floor:
     decided by the parked thread's measured wakeup gap against both.
 19. **D2.7 O1** — the first ask's bound (stream end, host floor, loopback

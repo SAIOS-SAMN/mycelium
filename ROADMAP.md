@@ -35,7 +35,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 | Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 built (the ground deduced, a vortex read per candidate, the solve act stating its ground; task addresses changed inside the one break); S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
-| D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | In progress (maintainers) |
+| D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
 | Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | After S2 and D2.5 merge; N6 lands in v0.3.0's open break |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the items above (maintainers) |
 
@@ -1001,6 +1001,13 @@ than skipping it. Today's code still filters the test inputs by
 `symbol ≠ 0`; track 26 S2 removes that filter.
 D3.1 is **Built** (NC1): a sentence's linear part is constructed under
 the stroke `modes_need` reads off it.
+D2.5 is **Built** (NC4, O2 ruled 2026-11-01, O1 ruled 2026-11-04): one
+boot calibration stroke measures the bytes per read `b` and seals the
+process's capacity `C = ⌊M_proc/b⌋` before serving; `R`'s four meanings
+read four readings (the metabolism `C`, strokes the work's need, the quiet
+ceiling one round trip, cooling the challenge window), with the need
+readings owed listed in MU-DERIVATIONS; O3 (the ratio's `8` on the frame
+axis) waits on track 26 S4.
 
 The groups also serve existing tracks: the economy entries (D2.1–D2.7)
 tracks 3, 14 and 21; the cognition entries (D3.1–D3.5) tracks 7 and 10;

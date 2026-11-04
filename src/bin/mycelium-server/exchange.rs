@@ -7,6 +7,7 @@
 
 use crate::admission::{admit_peer_digest, admit_peer_receipt, rebuild_own_cover, AdmissionTally};
 use crate::door::{intake_corpus, relocate_corpus, route_corpus};
+use crate::nerve::{Nerve, NerveRx};
 use crate::persist::persist_if_due;
 use crate::syllabus::{syllabus_admit, Syllabus};
 use crate::transport::{note_rtt_ok, note_rtt_timeout, patience, tell_peer_measured, tell_peer_within};
@@ -143,7 +144,7 @@ pub(crate) fn note_root(roots: &mut Keyed<Keyed<u64>>, task: impl AsRef<[u8]>, s
 
 pub(crate) fn speak_root(
     router: &Router,
-    nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
+    nerve: &Nerve,
     self_id: &[u8; 32],
     task: &[u8],
     solver: &[u8; 32],
@@ -167,7 +168,7 @@ pub(crate) fn speak_root(
 
 pub(crate) fn speak_root_locked(
     router: &Mutex<Router>,
-    nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
+    nerve: &Nerve,
     self_id: &[u8; 32],
     task: &[u8],
     solver: &[u8; 32],
@@ -179,11 +180,11 @@ pub(crate) fn speak_root_locked(
     }
 }
 
-/// THE NERVE THREAD: every act this node speaks to a peer leaves through a
-/// bounded channel drained here, so the door never dials. The bound is the
-/// reserve ceiling; a full nerve drops the act, as a full reflex pool
-/// defers a demand.
-pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(String, Vec<u8>)>) {
+/// THE NERVE THREAD: every act this node speaks to a peer leaves through
+/// the nerve (`crate::nerve`), drained here, so the door never dials. The
+/// bound is the sealed reserve ceiling; a full nerve drops the act, as a
+/// full reflex pool defers a demand.
+pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: NerveRx) {
     std::thread::spawn(move || {
         let mesh_nerve = mesh;
         // R2 (34.2): a peer's deferrals of the acts routed to it — demands
@@ -266,7 +267,7 @@ pub(crate) struct Exchange {
     pub syllabus: Arc<Mutex<Syllabus>>,
     pub genesis_held: bool,
     /// 78.152b — the nerve this court's keeper pushes its ring on.
-    pub nerve: std::sync::mpsc::SyncSender<(String, Vec<u8>)>,
+    pub nerve: Nerve,
 }
 
 /// THE PEER COURTS A CYCLE SPEAKS TO: the configured peers and every door a
@@ -295,7 +296,7 @@ fn peer_doors(mesh: &Mesh, join: &[String]) -> Keyed<String> {
 /// its ring is queued as `ACT_TICK` to every peer court on the nerve, never
 /// blocking (`try_send`: a full nerve drops it, and the next reading's ring
 /// carries it again, as the digest still does). Called with no court held.
-fn push_tick(mesh: &Mesh, join: &[String], nerve: &std::sync::mpsc::SyncSender<(String, Vec<u8>)>, ring: &[mycelium::chronometry::tuniversal::TickReading]) {
+fn push_tick(mesh: &Mesh, join: &[String], nerve: &Nerve, ring: &[mycelium::chronometry::tuniversal::TickReading]) {
     let Some(body) = dialogue::encode_tick(&mesh.vk, ring) else {
         eprintln!("  court tuniversal tick refused: a reading cannot be written");
         return;
@@ -370,9 +371,9 @@ impl Exchange {
         // a live loop is visibly alive without becoming the noise it is here
         // to cut through.
         let mut cycles = 0u64;
-        // The cycle each peer was last asked at: the quiet-digest ceiling's
-        // reading, one entry per peer this court knows.
-        let mut asked_cycle: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
+        // The final point's advances each peer was last asked at: the quiet
+        // peer's reading (D2.5), one entry per peer this court knows.
+        let mut asked_advance: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
         // The orbits this court sealed since the ledger was last persisted.
         let mut sealed_since_persist = 0u64;
         let mut idle = 0u64;
@@ -658,23 +659,13 @@ impl Exchange {
                 // A QUIET COURT STILL ASKS: Λ is read on this court's K, which
                 // moves only when the court acts, so hypha a — spinning 340
                 // idle cycles a second with its K standing — asked each peer
-                // once in six minutes (2026-09-30). The quiet-digest ceiling
-                // bounds the wait in this loop's own strokes: a full reserve
-                // of the peer's measured transports.
-                let quiet = {
-                    // An unmeasured wire is read at the instrument's own
-                    // resolution: one poll, as a first-poll reply measures.
-                    let ceiling = match mycelium::physics::digest_ceiling(crate::transport::rtt_floor(&mesh, &pid).map_or(1, |f| f)) {
-                        mycelium::physics::Lambda::Strokes(n) => Some(n),
-                        mycelium::physics::Lambda::BeyondTheLedger | mycelium::physics::Lambda::Unmeasured => None,
-                    };
-                    let since = asked_cycle.get(&pid).copied();
-                    match (since, ceiling) {
-                        (Some(at), Some(c)) => cycles.checked_sub(at).is_some_and(|gap| gap >= c),
-                        (None, _) => true,
-                        (Some(_), None) => false,
-                    }
-                };
+                // once in six minutes (2026-09-30). A quiet peer is asked
+                // again once the TUniversal final point has advanced since
+                // the last ask (D2.5, 78.43): time is distance along an
+                // orbit, so a still network stays quiet and a moving one is
+                // heard at the rate it moves.
+                let advances = crate::tshelf::shelf().advances();
+                let quiet = crate::transport::quiet_due(asked_advance.get(&pid).copied(), advances);
                 let due = crate::transport::exchange_due(last, k_now, lambda, own_moved) || quiet;
                 // 45.7, S13.3: the exchange to one peer is a carrier whose
                 // circuit is one ask; every cycle strokes it, so its period
@@ -692,7 +683,7 @@ impl Exchange {
                 if let Ok(mut a) = mesh.asked_at.lock() {
                     a.insert(&pid, k_now);
                 }
-                asked_cycle.insert(&pid, cycles);
+                asked_advance.insert(&pid, advances);
                 asked_any = true;
                 eprintln!("  court exchange asked {d} K {k_now}");
                 if let Some((n, period)) = circuit {

@@ -485,3 +485,24 @@ fn intake_prepared_computes_no_chart_under_hold() {
     let _ = k.snapshot();
     assert_eq!(charts_read(), before, "citation, relocation and snapshot read the filed chart");
 }
+
+/// MU-DERIVATIONS D2.5 — A SETTLEMENT GOES COLD WHEN ITS CHALLENGE WINDOW
+/// CLOSES: recorded at the court's head, it stays on the docket while its
+/// window stands open (a lone court closes none), whatever the capacity;
+/// once every other keeper's reach and return closes the window opened at
+/// its height (D1.1), the next settlement recorded moves it cold.
+#[test]
+fn record_settlement_cools_after_window_closes() {
+    let mut k = Court::new();
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
+    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+    let listing = k.pending.scoped().next().expect("listed").1.address();
+    k.record_settlement(listing.clone(), vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+    let opened = k.chain().head_height();
+    k.record_settlement(listing.clone(), vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+    assert_eq!(k.settlements_cold_len(), 0, "an open window keeps the settlement on the docket");
+    close_through(&mut k, opened).expect("the window opened at its height closes");
+    k.record_settlement(listing, vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+    assert!(k.settlements_cold_len() >= 1, "a settlement past its closed window goes cold");
+}

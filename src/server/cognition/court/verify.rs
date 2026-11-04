@@ -28,7 +28,7 @@ impl Court {
             }
         }
         let Some(strain) = crate::economy::yield_surface(&self.physics) else { return Mu::zero() };
-        let each = crate::economy::verification_share(base, &strain, crate::physics::reserve_max(), distinct.len());
+        let each = crate::economy::verification_share(base, &strain, self.physics.capacity(), distinct.len());
         if each.is_zero() {
             return each;
         }

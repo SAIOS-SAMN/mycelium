@@ -394,7 +394,7 @@ impl Court {
                 self.open_cursor = Some(address);
                 continue;
             };
-            let fresh = u64::try_from(budget.remaining()).is_ok_and(|r| r.checked_add(1).is_some_and(|r| r >= crate::physics::spend_unit()));
+            let fresh = u64::try_from(budget.remaining()).is_ok_and(|r| r.checked_add(1).is_some_and(|r| r >= self.physics.unit_spend()));
             match self.court_replay_moved(&spoken, budget) {
                 (crate::verdict::Replayed::Refused(_), _) => {
                     // EC1: A SLASH IS ALWAYS AN ACT. A provisional word is ruled

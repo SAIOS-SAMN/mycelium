@@ -259,6 +259,14 @@ pub const CATALOGUE: &[Mutant] = &[
         filter: "core::tests::certified",
     },
     Mutant {
+        law: "NO CONSTANT (MU-DERIVATIONS D2.5): the capacity reads the process's memory at the measured bytes per read, never a fixed unit (2³⁰)",
+        file: "src/physics/calibration.rs",
+        before: "        let reads = memory.bytes().get() / footprint.get();",
+        after: "        let reads = memory.bytes().get() / (1u64 << 30);",
+        target: &["--lib"],
+        filter: "physics::tests::calibration::capacity_equals_memory_over_footprint",
+    },
+    Mutant {
         law: "NO CONSTANT (MU-DERIVATIONS D1.4): a registered number keeps its class tag, or the numbers gate refuses the tree",
         file: "src/server/cognition/mouth.rs",
         before: "/// REGISTERED: THROAT_GRID\npub const THROAT_GRID",

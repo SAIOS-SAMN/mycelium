@@ -125,6 +125,47 @@ such change is named here.
   removed. README gains *Peer kernels*, the gate's numbers check and the
   current versions.
 
+### The reserve split into four readings; the capacity sealed at boot (MU-DERIVATIONS D2.5, O2 ruled 2026-11-01, O1 ruled 2026-11-04)
+- **One boot calibration stroke** measures `b`, the bytes one read
+  retains, on a stroke sized by the minimal stroke (the founding motions'
+  modes' need), and seals the process's **capacity** `C = ⌊M_proc / b⌋`
+  before anything is served. `M_proc` is the least cgroup v2 `memory.max`
+  on the process's path, else `1024 · MemAvailable_kB` where no limit is
+  set. The GiB unit (`kb >> 20`), the cores factor and the floor `16` are
+  gone. Each hypha logs `calibrated: M <bytes> (<source>), b <bytes> per
+  read, minimal stroke <n> reads, capacity C <reads> sealed`.
+- **`R` is split into four readings** (one name, one meaning):
+  - the metabolism (pool, spend, regeneration, shortfall, deficit, yield
+    surface, read price `1 + y/C`, verification share) reads the capacity
+    its `Physics` holds;
+  - stroke budgets read the work's own need where a closed form exists
+    (the deflation's and the orbit census's modes, `modes_need`); every
+    other stroke keeps the capacity's spend and is listed in D2.5 as a
+    need reading owed;
+  - a quiet peer is asked again only once the TUniversal final point has
+    advanced since the last ask (`quiet_due`), so an idle mesh stays
+    quiet; `physics::digest_ceiling` is removed;
+  - a settlement goes cold when its challenge window closes (settlements
+    on the docket are held windows);
+  - the pointed-connection book and the nerve's queue are bounded by
+    `M_proc`, a connection or act past it refused by name.
+- **API.** `physics::reserve_max` is renamed `physics::capacity`;
+  `available_of` is replaced by `memory_of` and `cgroup_limit_of`
+  (`Memory`, `MemorySource`); new: `minimal_stroke`, `sealed`,
+  `Physics::calibrated`, `Physics::capacity`, `Physics::unit_spend`.
+  `Calibration::of(memory, b, minimal)` returns a `Result`. `calibrate`
+  returns the `Sealed` witness, which only it writes. `Uncalibrated` gains
+  `Memory`, `Footprint(Unstroked)` and `Unfit { capacity, minimal }`: a
+  process whose memory cannot be read, whose stroke cannot complete, or
+  whose one spend cannot cover the minimal stroke refuses to boot by name.
+- **Unsealed processes** (the unit-test harness, an embedding library)
+  read `8 · minimal_stroke`, the same on every host; no test branch remains
+  in a production function. One claim builds its court on an explicit
+  `Physics::calibrated` calibration.
+- **Open dependency:** the ratio `8 = 2^(FRAME_AXIS + 1)` ties the spend to
+  the fixed frame axis that ROADMAP track 26 S4 removes (D2.5 O3);
+  unchanged here.
+
 ### Naming alignment, planned (issue #55, ruled 2026-11-04)
 - ROADMAP track 11 gains phases N1–N7: verification named reconstruction,
   files by function, one name per meaning, retired terms and person

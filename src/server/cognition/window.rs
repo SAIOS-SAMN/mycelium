@@ -118,7 +118,9 @@ impl Court {
     }
 
     /// EVERY WINDOW STILL HELD, by the height it opened at: each open fold's
-    /// seal, demand and withdrawal; each toll, claim and offer.
+    /// seal, demand and withdrawal; each toll, claim and offer; each
+    /// settlement still on the docket (D2.5: it goes cold once its window
+    /// closes).
     fn held_windows(&self) -> Vec<u64> {
         let mut out = Vec::new();
         for (key, r) in self.ledgers.records.scoped() {
@@ -138,6 +140,7 @@ impl Court {
         out.extend(self.handoffs.mouths.scoped().filter_map(|(_, m)| offered(&m.state)));
         out.extend(self.handoffs.held.scoped().filter_map(|(_, h)| offered(&h.state)));
         out.extend(self.handoffs.conversions.scoped().filter_map(|(_, c)| offered(&c.state)));
+        out.extend(self.settlements.iter().map(|s| s.at.h));
         out
     }
 

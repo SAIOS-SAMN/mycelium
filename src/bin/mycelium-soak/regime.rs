@@ -94,8 +94,8 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     let probe_reserve = physics.reserve.lanes();
     let probe_stroke = physics.stroke().remaining();
     println!(
-        "  regime physics reserve {probe_reserve:?} | stroke {probe_stroke} | reserve_max {} spend_unit {}",
-        mycelium::physics::reserve_max(),
+        "  regime physics reserve {probe_reserve:?} | stroke {probe_stroke} | capacity {} spend_unit {}",
+        mycelium::physics::capacity(),
         mycelium::physics::spend_unit()
     );
     println!(
