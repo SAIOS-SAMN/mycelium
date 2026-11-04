@@ -25,7 +25,7 @@ fn letter_form(
     pi: &crate::core::gaussian::Gauss,
     plane: (u8, u8),
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Link],
+    bodies: &[crate::transducer::sentence::SectionLink],
 ) -> Option<Element> {
     use crate::transducer::alphabet::Rotor;
     let mask = (1usize << plane.0) | (1usize << plane.1);
@@ -62,8 +62,8 @@ impl Court {
         // its own witness (16.16 step 6): the court dockets that rotor as
         // the candidate generator, by the same docket the court's own
         // unspellable simplex takes (37.7, the rotor level).
-        let mut opened: Vec<(crate::transducer::sentence::Demand, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::Link>)> = Vec::new();
-        let mut stood: Vec<(crate::transducer::alphabet::Rotor, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::Link>)> = Vec::new();
+        let mut opened: Vec<(crate::transducer::sentence::Demand, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::SectionLink>)> = Vec::new();
+        let mut stood: Vec<(crate::transducer::alphabet::Rotor, crate::transducer::stalk::Invariant, Vec<crate::transducer::sentence::SectionLink>)> = Vec::new();
         for (_, kind, chart, bodies) in f.demand_vertices() {
             match kind {
                 crate::transducer::sentence::Demand::RotorPrime { .. } => {
@@ -114,7 +114,7 @@ impl Court {
         &mut self,
         rotor: &crate::transducer::alphabet::Rotor,
         chart: &crate::transducer::stalk::Invariant,
-        bodies: &[crate::transducer::sentence::Link],
+        bodies: &[crate::transducer::sentence::SectionLink],
         voice: &[u8; 32],
     ) {
         let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, bodies) else {
@@ -127,7 +127,7 @@ impl Court {
         &mut self,
         kind: &crate::transducer::sentence::Demand,
         chart: &crate::transducer::stalk::Invariant,
-        bodies: &[crate::transducer::sentence::Link],
+        bodies: &[crate::transducer::sentence::SectionLink],
         voice: &[u8; 32],
     ) {
         use crate::transducer::sentence::Demand;

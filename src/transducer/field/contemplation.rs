@@ -136,7 +136,7 @@ pub struct Contemplation {
     pub classes: u64,
     pub formed: u64,
     /// Wells retired to a cavity chart, address kept, remainder in the tape.
-    pub(crate) cavity: Keyed<Vec<Link>>,
+    pub(crate) cavity: Keyed<Vec<SectionLink>>,
     pub(crate) pending_rewrites: Vec<Element>,
     /// 78.52, THE BRIDGE TO LANGUAGE — each admitted single-body relation's
     /// GROUND, by the pair it relates (the two ideas' keys, least first), with
@@ -302,13 +302,13 @@ pub(crate) fn rotor_of_transport(v: &crate::transducer::cga::Mv) -> Option<Rotor
 
 /// THE TRANSPORT A DEMAND'S BODIES RE-DERIVE (`carriage_with_core`), whole:
 /// the versor between its two sides, never stored beside them (law 12).
-pub(crate) fn transport_over(bodies: &[Link], budget: &mut crate::physics::Budget) -> Option<crate::transducer::cga::Mv> {
-    let before: Vec<Link> = bodies.iter().copied().filter(|c| c.2 != 0).collect();
-    let after: Vec<Link> = bodies.iter().copied().filter(|c| c.3 != 0).collect();
+pub(crate) fn transport_over(bodies: &[SectionLink], budget: &mut crate::physics::Budget) -> Option<crate::transducer::cga::Mv> {
+    let before: Vec<SectionLink> = bodies.iter().copied().filter(|c| c.2 != 0).collect();
+    let after: Vec<SectionLink> = bodies.iter().copied().filter(|c| c.3 != 0).collect();
     if before.is_empty() || after.is_empty() {
         return None;
     }
-    let lift = |links: &[Link]| {
+    let lift = |links: &[SectionLink]| {
         crate::transducer::family::body_of(
             links
                 .iter()
@@ -508,7 +508,7 @@ impl Contemplation {
         Some(self.cavity.fibre_at(k.as_bytes())?.map(|(k, _)| k).collect())
     }
 
-    pub fn remainders(&self) -> Vec<&[Link]> {
+    pub fn remainders(&self) -> Vec<&[SectionLink]> {
         self.wells.scoped().map(|(_, b)| b.remainder.as_slice()).collect()
     }
 
@@ -519,7 +519,7 @@ impl Contemplation {
     /// unmeasured space is an open thought (∂g ≠ 0), not infinite
     /// discordance; no thought is `[0; 4]`.
     pub fn boundary_measure(&self) -> [u64; 4] {
-        let mut acc: Vec<Link> = Vec::new();
+        let mut acc: Vec<SectionLink> = Vec::new();
         for r in self.remainders() {
             acc.extend(r.iter().copied());
         }
@@ -931,7 +931,7 @@ impl Contemplation {
         read
     }
 
-    /// Link of one new well: edges to wells sharing a chart (by_chart
+    /// SectionLink of one new well: edges to wells sharing a chart (by_chart
     /// peel), higher simplices where shared remainder volume is nonzero. The
     /// caller names the ADJUNCT the link is (78.26(6)): a new candidate held,
     /// or a merged thought's re-gauged sections; a filled ring it reopens is
@@ -967,7 +967,7 @@ impl Contemplation {
             }
         }
         let nbs: Vec<Vec<u8>> = neighbours.scoped().map(|(k, _)| k).collect();
-        let mut rems: Keyed<Vec<Link>> = Keyed::new();
+        let mut rems: Keyed<Vec<SectionLink>> = Keyed::new();
         // Overlap is read in the SCENE: the chain carried through its own
         // translator (§2.1). Two wells holding one chain at two
         // translators are one substance said at two places, and the two
@@ -1037,7 +1037,7 @@ impl Contemplation {
     }
 
     /// Admit a remainder as a well with its cover a peel of its invariant.
-    pub fn hold(&mut self, remainder: Vec<Link>) {
+    pub fn hold(&mut self, remainder: Vec<SectionLink>) {
         if remainder.is_empty() {
             return;
         }

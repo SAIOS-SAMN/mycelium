@@ -662,7 +662,7 @@ pub fn declare_unspoken(
     family: &[(Grid, Grid)],
     remainders: &[crate::transducer::germinate::ResidueGerm],
 ) -> Option<Form> {
-    use crate::transducer::sentence::{pieces, Demand, Link};
+    use crate::transducer::sentence::{pieces, Demand, SectionLink};
     // THE COURT'S OWN READER SAYS WHAT IS UNDECLARED (law 12): a link a
     // demand the extraction already emitted names is declared, and naming
     // it again under `Source` would be one fact said twice. Sorted and
@@ -686,7 +686,7 @@ pub fn declare_unspoken(
             (Ok(a), Ok(b)) => Enclosed::of(&a).spoken_onto(&Enclosure::of(&b)).ok().and_then(|s| crate::transducer::raster::raster_of(&s)),
             _ => None,
         };
-        let links: Vec<Link> = rem
+        let links: Vec<SectionLink> = rem
             .iter()
             .filter(|&&(r, c, spoken, observed)| {
                 ground.holds(&spoken) && undeclared.binary_search(&(r, c, spoken, observed)).is_ok()
@@ -706,7 +706,7 @@ pub fn declare_unspoken(
                 };
                 before.map(|before| (r, c, before, observed))
             })
-            .collect::<Option<Vec<Link>>>()?;
+            .collect::<Option<Vec<SectionLink>>>()?;
         if links.is_empty() {
             continue;
         }
@@ -823,7 +823,7 @@ pub fn sentence_measure_why(
     // measure so a sentence that closes nothing still exists as the listing
     // it is. It is the word's measure and the book's tension, a CAP on what
     // a closer is paid; it is never escrowed and never minted.
-    let mut demanded: Vec<Link> = Vec::new();
+    let mut demanded: Vec<SectionLink> = Vec::new();
     for (_, _, _, links) in form.demand_vertices() {
         demanded.extend(links.iter().copied().filter(|c| c.2 != c.3));
     }

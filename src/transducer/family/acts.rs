@@ -92,8 +92,16 @@ const RANKED: [Coord; 12] = [
     Coord::Peers,
 ];
 
-/// The eight rays a created line can run along.
-const RAYS: [(i8, i8); 8] = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)];
+/// THE RAYS A CREATED LINE CAN RUN ALONG on the alphabet's section: every
+/// neighbour of a site, generated at the section's rank by grade of contact
+/// (`sentence::by_grade`: the faces first, then the corners), never a list
+/// of offsets.
+fn rays() -> Vec<(i8, i8)> {
+    crate::transducer::sentence::on_section(crate::transducer::sentence::by_grade(crate::transducer::alphabet::ALPHABET_SAMPLE_RANK))
+        .into_iter()
+        .filter_map(|(a, b)| Some((i8::try_from(a).ok()?, i8::try_from(b).ok()?)))
+        .collect()
+}
 
 fn cells_of(b: &Body) -> Vec<(usize, usize, u8)> {
     b.compartments
@@ -497,7 +505,7 @@ fn slide_of(c: &Clause, pairs: &[Pair<'_>]) -> Option<Clause> {
 /// offset along a unit ray. The ONE ray every one of them is found along;
 /// `None` where none is shared, or more than one (no ray is chosen).
 fn slide_ray(r: &PredicateTable<'_, '_>, gone: &[Vec<usize>]) -> Option<(i8, i8)> {
-    let mut shared: Vec<(i8, i8)> = RAYS.to_vec();
+    let mut shared: Vec<(i8, i8)> = rays();
     for (p, g) in r.pairs.iter().zip(gone) {
         let rows = p.y.len();
         let cols = match p.y.as_slice() {
@@ -1016,6 +1024,7 @@ struct Rays {
 fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
     let ground = crate::transducer::raster::ground();
     let n = r.pairs.len();
+    let unit_rays: Vec<(i64, i64)> = rays().into_iter().map(|(a, b)| (i64::from(a), i64::from(b))).collect();
     let mut rays: crate::network::nerve::Keyed<Rays> = crate::network::nerve::Keyed::new();
     for (k, ((p, res), before)) in r.pairs.iter().zip(residue).zip(canvas).enumerate() {
         let (rows, cols) = frame_of(p.x);
@@ -1023,7 +1032,7 @@ fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[Grid], residue: &[Vec<(usize
         let created = |i: usize, j: usize| res.iter().find(|&&(a, b, _)| (a, b) == (i, j)).map(|&(_, _, h)| h);
         let mut covered: Vec<(usize, usize)> = Vec::new();
         for &(i, j, _) in res {
-            for (dr, dc) in RAYS.map(|(a, b)| (i64::from(a), i64::from(b))) {
+            for &(dr, dc) in &unit_rays {
                 // The body cell this residue cell stands beside, and the
                 // displacement from it: the ray, measured.
                 let Some((bi, bj)) = step(i, j, (-dr, -dc), rows, cols) else { continue };

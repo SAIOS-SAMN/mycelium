@@ -170,7 +170,7 @@ impl Form {
     /// per (kind, chart), never a whole-carrier read with a filter.
     pub fn demand_vertices(
         &self,
-    ) -> impl Iterator<Item = (coord::VertexAt, &crate::transducer::sentence::Demand, &stalk::Invariant, &[Link])> {
+    ) -> impl Iterator<Item = (coord::VertexAt, &crate::transducer::sentence::Demand, &stalk::Invariant, &[SectionLink])> {
         self.demands().filter_map(|(at, v)| match v {
             Vertex::Demand { kind, chart, bodies, .. } => Some((at, kind, chart, bodies.as_slice())),
             _ => None,

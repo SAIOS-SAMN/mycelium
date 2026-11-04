@@ -59,7 +59,7 @@ impl Vertex {
     /// read off the bodies here, the one place a demand is made from them, so
     /// the coordinates the key writes and the evidence the record carries
     /// cannot disagree (law 12).
-    pub fn demand(kind: crate::transducer::sentence::Demand, chart: stalk::Invariant, bodies: Vec<Link>) -> Vertex {
+    pub fn demand(kind: crate::transducer::sentence::Demand, chart: stalk::Invariant, bodies: Vec<SectionLink>) -> Vertex {
         let (measure, pieces) = demand_coordinates(&bodies);
         Vertex::Demand { kind, chart, measure, pieces, bodies }
     }
@@ -473,7 +473,7 @@ pub(crate) fn base_class(by: &coord::VertexAt) -> Option<coord::Transport> {
 /// A DEMAND'S KEYED COORDINATES, read off its bodies: the chain's measure
 /// per lane and its pieces (54.5 Road (d)). The one reader of both, so the
 /// key and the evidence agree by construction.
-pub(crate) fn demand_coordinates(bodies: &[Link]) -> ([u64; 4], u64) {
+pub(crate) fn demand_coordinates(bodies: &[SectionLink]) -> ([u64; 4], u64) {
     (
         crate::transducer::element::measure_lanes(bodies),
         crate::transducer::sentence::pieces(bodies).len() as u64,

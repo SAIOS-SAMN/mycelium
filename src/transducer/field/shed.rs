@@ -16,7 +16,7 @@ use super::*;
 /// at; making it the key puts that derivation at the write, where it
 /// happens once, and not at the read, where it would happen for every
 /// entry on every call.
-pub(crate) fn cavity_key(rem: &[Link], well: &[u8]) -> Vec<u8> {
+pub(crate) fn cavity_key(rem: &[SectionLink], well: &[u8]) -> Vec<u8> {
     let inv = stalk::invariant(rem);
     let mut k = inv.key().into_vec();
     crate::transducer::address::put_key_bytes(&mut k, well);

@@ -368,7 +368,7 @@ pub struct CiteWire {
     // body says the assignment; the hypha reads whether it is a section.
     /// The word's links as the speaker says them, under the body's own
     /// transitions.
-    pub body: Vec<Link>,
+    pub body: Vec<SectionLink>,
 }
 
 /// A fetch names every discordant chart with the asker's have-list in each;
@@ -653,14 +653,14 @@ pub const SOLVE_NOTHING: u8 = 0;
 pub const SOLVE_UNREAD: u8 = 3;
 
 /// One link of a centred coboundary chain: the one carrier
-/// `sentence::Link` (track 26 S5 holds the three former aliases as one
+/// `sentence::SectionLink` (track 26 S5 holds the three former aliases as one
 /// type; its rank-n form waits on the transducer's planar chain carriers).
-pub use crate::transducer::sentence::Link;
+pub use crate::transducer::sentence::SectionLink;
 
 /// One quoted work item: the listing's address, its priced μ⃗, the listing
 /// WHOLE, and the open (non-flat) charts of its coherence field.
 ///
-/// THE WHOLE ELEMENT, NOT ITS LINKS (L8q). A `chain: Vec<Link>` here — a
+/// THE WHOLE ELEMENT, NOT ITS LINKS (L8q). A `chain: Vec<SectionLink>` here — a
 /// flat projection of a coboundary — would leave a voice one move, to
 /// subtract links it held, which is deflation and not comprehension. A
 /// listing is an `Element`, and served whole it may be a SENTENCE carrying
@@ -726,7 +726,7 @@ pub struct Settlement {
     /// The listing settled.
     pub listing: crate::transducer::address::Address,
     /// Its chain.
-    pub chain: Vec<Link>,
+    pub chain: Vec<SectionLink>,
     /// The voice that settled it.
     pub voice: [u8; 32],
     /// The utterance: the citations the voice spoke. The court replays

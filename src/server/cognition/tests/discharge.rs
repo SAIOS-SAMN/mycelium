@@ -124,7 +124,7 @@ fn open_unspellable_letter_escrows_and_pays_nothing() {
     let quarter = LetterId::turn_90((0, 1)).expect("the 90° turn");
     let rotor = Word::from_letters(&[(quarter, false)]).rotor();
     let chart = crate::transducer::stalk::Invariant::counts(&[3]);
-    let bodies: Vec<crate::transducer::sentence::Link> = vec![(0, 0, 0, 1), (0, 1, 0, 1)];
+    let bodies: Vec<crate::transducer::sentence::SectionLink> = vec![(0, 0, 0, 1), (0, 1, 0, 1)];
     let letter = crate::transducer::sentence::generator_form(&rotor, &chart, &bodies).expect("a letter");
     assert_ne!(letter.magnitude(), [0; 4], "the letter measures the bodies it was opened for");
     let addr = letter.address();

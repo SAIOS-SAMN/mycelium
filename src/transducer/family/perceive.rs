@@ -318,10 +318,10 @@ pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
 
 /// What a demand vertex stands for: its kind, the chart it is listed under
 /// and the links of the bodies it carries (50.5).
-pub type Demanded = (crate::transducer::sentence::Demand, Invariant, Vec<Link>);
+pub type Demanded = (crate::transducer::sentence::Demand, Invariant, Vec<SectionLink>);
 
 /// 50.5: a demand vertex over the bodies it stands for.
-pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invariant, bodies: Vec<Link>) -> Vertex {
+pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invariant, bodies: Vec<SectionLink>) -> Vertex {
     Vertex::demand(kind, chart.clone(), bodies)
 }
 

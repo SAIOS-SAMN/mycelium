@@ -26,7 +26,7 @@ impl Form {
     /// (50.5): a vertex already standing for that kind on that chart takes
     /// the bodies, and its coordinates — the chain's measure and pieces —
     /// move with them, so the vertex is re-filed at its new key.
-    pub(crate) fn file_demand(&mut self, kind: crate::transducer::sentence::Demand, chart: &stalk::Invariant, links: &[Link]) {
+    pub(crate) fn file_demand(&mut self, kind: crate::transducer::sentence::Demand, chart: &stalk::Invariant, links: &[SectionLink]) {
         let held = self
             .demand_vertices()
             .find(|(_, k, c, _)| **k == kind && *c == chart)
@@ -52,7 +52,7 @@ impl Form {
     /// for it could never re-derive. `remainder` is what the contracted form
     /// leaves on the speaker's family, the bodies a refused word's demand
     /// stands for.
-    pub fn contract(&mut self, kind: RefusalKind, at: &At, remainder: &[Link]) -> Option<Contracted> {
+    pub fn contract(&mut self, kind: RefusalKind, at: &At, remainder: &[SectionLink]) -> Option<Contracted> {
         match (kind, at) {
             (RefusalKind::VertexBody, At::Vertex { vertex, chart }) => {
                 let Some(Vertex::Word { acts, .. }) = self.vertices.at_mut(vertex) else {
@@ -123,7 +123,7 @@ impl Form {
             // where the demand is mounted. A coordinate with nothing
             // declarable in it contracts to NOTHING.
             (RefusalKind::RemainderUndeclared, At::Chart(inv, links)) => {
-                let links: Vec<Link> = links.iter().copied().filter(|&(_, _, spoken, _)| crate::transducer::raster::is_ground(spoken)).collect();
+                let links: Vec<SectionLink> = links.iter().copied().filter(|&(_, _, spoken, _)| crate::transducer::raster::is_ground(spoken)).collect();
                 if links.is_empty() {
                     return None;
                 }

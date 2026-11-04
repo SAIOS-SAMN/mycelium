@@ -11,7 +11,7 @@ use super::transport::*;
 use crate::network::nerve::{Coordinate, Keyed};
 use crate::transducer::alphabet::{Rotor, Word};
 use crate::transducer::element::Versor;
-use crate::transducer::sentence::Link;
+use crate::transducer::sentence::SectionLink;
 use crate::transducer::stalk;
 use super::chart::word_vertex_address;
 use crate::transducer::address::take_key_count;
@@ -445,7 +445,7 @@ use crate::network::nerve::coord;
 /// names the forms it rewrites and nothing else, so this refuses it rather
 /// than returning an empty chain, which would read as "a word that says
 /// nothing" instead of "not a chain" (rule 11).
-pub fn from_residue(address: &[u8]) -> Option<Vec<Link>> {
+pub fn from_residue(address: &[u8]) -> Option<Vec<SectionLink>> {
     let mut p = 0usize;
     match address {
         [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUE => p += 1,

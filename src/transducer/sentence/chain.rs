@@ -14,9 +14,14 @@ fn index_key(i: usize) -> [u8; 32] {
     k
 }
 
-/// A chain link: (row, col, hue before, hue after) at a site of one
-/// section (16.5).
-pub type Link = (i64, i64, u8, u8);
+/// A LINK OF THE ALPHABET'S SECTION: `(axis 0, axis 1, symbol before,
+/// symbol after)` at a site of one section (16.5), the sample of the rank
+/// the seventeen letters spell (`alphabet::ALPHABET_SAMPLE_RANK`) at one
+/// byte per symbol. The word, chart and field carriers that spell a chain
+/// read this projection; a link of any other rank or width reaches them
+/// only through [`Link::section`], refused by name ([`SectionRefusal`]),
+/// never truncated.
+pub type SectionLink = (i64, i64, u8, u8);
 
 /// A CITATION: the coordinates a sentence speaks for one word — its
 /// address, the transport carrying the word's chain into the utterance's
@@ -58,7 +63,7 @@ pub struct Puncture {
     pub transport: Versor,
     /// The word's links under the BODY's own transitions — what the section
     /// says, in the body's hues and not the word's.
-    pub links: Vec<Link>,
+    pub links: Vec<SectionLink>,
 }
 
 /// A HELD CITE (24.1 as ruled 2026-09-09): the word at a vertex of a held
@@ -73,7 +78,7 @@ pub struct HeldCite {
     /// The vertex's address (M2): the word, never the chain.
     pub address: crate::transducer::address::Address,
     /// The body's links the vertex's action reconstructed, sorted.
-    pub body: Vec<Link>,
+    pub body: Vec<SectionLink>,
 }
 
 /// What deconstruction produced: the citations in body order, the held
@@ -92,7 +97,7 @@ pub struct Sentence {
     /// body, each derived at the body's chart when the reading asked.
     pub held: Vec<HeldCite>,
     pub connection: Vec<Versor>,
-    pub residue: Vec<Link>,
+    pub residue: Vec<SectionLink>,
     /// Stratum width per body key, never a maximum over bodies.
     pub multiplicity: Keyed<usize>,
 }
@@ -107,8 +112,8 @@ impl Sentence {
     /// The operators this sentence's citations carry: each cited word's
     /// pattern under its transport, and each held cite's body in the frame
     /// it was derived in, which is the chain's own.
-    fn operators_at<'a>(&self, word_at: &impl Fn(&[u8]) -> Option<&'a Element>) -> Vec<(Versor, Vec<Link>)> {
-        let mut ops: Vec<(Versor, Vec<Link>)> = self
+    fn operators_at<'a>(&self, word_at: &impl Fn(&[u8]) -> Option<&'a Element>) -> Vec<(Versor, Vec<SectionLink>)> {
+        let mut ops: Vec<(Versor, Vec<SectionLink>)> = self
             .cites
             .iter()
             .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, &c.assignment)?)))
@@ -120,7 +125,7 @@ impl Sentence {
     /// What the language does not yet hold: the residue, together with the
     /// bodies spoken only as punctures — novelty in the fibre is novelty.
     /// Measured as the replay of the citations alone over the chain.
-    pub fn open_at<'a>(&self, word_at: &impl Fn(&[u8]) -> Option<&'a Element>, chain: &[Link]) -> Vec<Link> {
+    pub fn open_at<'a>(&self, word_at: &impl Fn(&[u8]) -> Option<&'a Element>, chain: &[SectionLink]) -> Vec<SectionLink> {
         match self.punctures.is_empty() {
             true => self.residue.clone(),
             false => reconstruct_operators(&self.operators_at(word_at), chain),
@@ -163,14 +168,15 @@ pub fn puncture_from(
     deepened
 }
 
-/// The connected components of a chain's support under 4-adjacency, each
-/// as a sorted chain. The sensor's segmentation, not a search.
-pub fn pieces(chain: &[Link]) -> Vec<Vec<Link>> {
-    let mut links: Vec<Link> = chain.to_vec();
+/// The connected components of a chain's support under contact through a
+/// shared cell of grade `n − 1` (a face, MU-RECURSION 71.2 (2)), each as a
+/// sorted chain. The sensor's segmentation, not a search.
+pub fn pieces(chain: &[SectionLink]) -> Vec<Vec<SectionLink>> {
+    let mut links: Vec<SectionLink> = chain.to_vec();
     links.sort_unstable();
     links.dedup();
     let owner = components(links.len(), &incidence(&links));
-    let mut by: Keyed<Vec<Link>> = Keyed::new();
+    let mut by: Keyed<Vec<SectionLink>> = Keyed::new();
     for (i, link) in links.into_iter().enumerate() {
         let k = index_key(owner[i]);
         match by.get_mut(&k) {
@@ -186,40 +192,43 @@ pub fn pieces(chain: &[Link]) -> Vec<Vec<Link>> {
 }
 
 /// THE INCIDENCE of a support: its 1-skeleton, the pairs of links whose
-/// sites share an edge, read off the support itself and never by looking a
-/// coordinate up. In row order two sites are edge-adjacent along a row
-/// exactly when they are consecutive in the list and differ by one column;
-/// in column order, exactly when consecutive and one row apart. Two linear
-/// passes over two orderings of the same support. `links` must be sorted
-/// and deduplicated; the pairs are indices into it.
-pub fn incidence(links: &[Link]) -> Vec<(usize, usize)> {
+/// sites share a cell of grade `n − 1` (a face), read off the support itself
+/// and never by looking a coordinate up ([`incidence_of_sites`]). `links`
+/// must be sorted and deduplicated; the pairs are indices into it.
+pub fn incidence(links: &[SectionLink]) -> Vec<(usize, usize)> {
     let positions: Vec<(i64, i64)> = links.iter().map(|c| (c.0, c.1)).collect();
     incidence_of(&positions)
 }
 
-/// The incidence of a support given as sites in row order (sorted,
-/// deduplicated): the same two linear passes, for any carrier of sites.
+/// The incidence of a support of the alphabet's section given as sites in
+/// canonical order (sorted, deduplicated): [`incidence_of_sites`] on the
+/// same sites at rank 2.
 pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
-    let mut edges = Vec::new();
-    for i in 1..positions.len() {
-        let (p, q) = (positions[i - 1], positions[i]);
-        if p.0 == q.0 && p.1 + 1 == q.1 {
-            edges.push((i - 1, i));
-        }
-    }
-    let mut by_column: Vec<usize> = (0..positions.len()).collect();
+    let sites: Vec<crate::transducer::base::Site> =
+        positions.iter().map(|&(a, b)| crate::transducer::base::Site::of([a, b])).collect();
+    incidence_of_sites(&sites)
+}
+
+/// THE FACE INCIDENCE OF A SUPPORT AT ANY RANK (MU-RECURSION 71.2 (2);
+/// MU-SENSING §3.2): the pairs of sites whose unit cubes share a cell of
+/// grade `n − 1`, read by [`shared_cells`] and never by a fixed 4- or
+/// 6-neighbourhood. Ordered by the axis the two sites differ on, the last
+/// axis (the fastest in canonical address order) first, and along each axis
+/// in the canonical order of its lines: at rank 2 this is the order of the
+/// two linear passes the planar reading took (consecutive along the fastest
+/// axis, then along the slower), so a component's root is read as before.
+/// `positions` must be sorted and deduplicated; the pairs are indices into
+/// it.
+pub fn incidence_of_sites(positions: &[crate::transducer::base::Site]) -> Vec<(usize, usize)> {
+    let mut faces: Vec<SharedCell> = shared_cells(positions).into_iter().filter(SharedCell::is_face).collect();
+    // A stable order by the differing axis, last first: the order within one
+    // axis is `shared_cells`' own canonical one, kept.
     #[expect(
         clippy::disallowed_methods,
-        reason = "rule 4 — canonical key order: column-major over the sites' own coordinates, which is where a vertical adjacency is adjacent"
+        reason = "rule 4 — canonical key order: the differing axis is the face's own coordinate, the fastest axis first"
     )]
-    by_column.sort_unstable_by_key(|&i| (positions[i].1, positions[i].0));
-    for w in by_column.windows(2) {
-        let (p, q) = (positions[w[0]], positions[w[1]]);
-        if p.1 == q.1 && p.0 + 1 == q.0 {
-            edges.push((w[0], w[1]));
-        }
-    }
-    edges
+    faces.sort_by_key(|c| std::cmp::Reverse(c.axes.first().copied()));
+    faces.into_iter().map(|c| (c.i, c.j)).collect()
 }
 
 /// THE FACE INCIDENCE of a support of sites (51.3, 71.2(2)): the pairs of
@@ -260,7 +269,7 @@ pub fn same_profile(a: &[((u8, u8), u32)], b: &[((u8, u8), u32)]) -> bool {
 /// THE ASSIGNMENT A CITED BODY CARRIES, read off it in its support's
 /// order — the order a word's canonical chain stands in, so it compares
 /// with the word's own assignments.
-pub fn body_assignment(body: &[Link]) -> Vec<(u8, u8)> {
+pub fn body_assignment(body: &[SectionLink]) -> Vec<(u8, u8)> {
     let mut carried = body.to_vec();
     carried.sort_unstable();
     element::assignment(&carried)
@@ -278,13 +287,13 @@ pub fn holds_assignment(word: &Element, asg: &[(u8, u8)]) -> bool {
 /// that assignment (rule 11): the word is ASKED — the charge's keyed read,
 /// then exact equality among the assignments of that charge — never
 /// indexed, so no position along the axis stands for an assignment.
-pub fn cited_pattern(word: &Element, asg: &[(u8, u8)]) -> Option<Vec<Link>> {
+pub fn cited_pattern(word: &Element, asg: &[(u8, u8)]) -> Option<Vec<SectionLink>> {
     holds_assignment(word, asg).then_some(())?;
     let pos = element::positions(word.sub());
     // One transition per site: an assignment of another length is not this
     // word's, whatever its charge.
     (pos.len() == asg.len()).then_some(())?;
-    let mut pat: Vec<Link> = pos.iter().zip(asg).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
+    let mut pat: Vec<SectionLink> = pos.iter().zip(asg).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
     pat.sort_unstable();
     Some(pat)
 }
@@ -299,8 +308,8 @@ pub fn cited_pattern(word: &Element, asg: &[(u8, u8)]) -> Option<Vec<Link>> {
 /// residue is R = Q △ S: the target links no citation speaks, plus the
 /// over-explained links. An empty residue is closure; a citation naming
 /// nothing held speaks nothing.
-pub fn reconstruct_at<'a>(word_at: &impl Fn(&[u8]) -> Option<&'a Element>, cites: &[Cite], target: &[Link]) -> Vec<Link> {
-    let ops: Vec<(Versor, Vec<Link>)> = cites
+pub fn reconstruct_at<'a>(word_at: &impl Fn(&[u8]) -> Option<&'a Element>, cites: &[Cite], target: &[SectionLink]) -> Vec<SectionLink> {
+    let ops: Vec<(Versor, Vec<SectionLink>)> = cites
         .iter()
         .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, &c.assignment)?)))
         .collect();
@@ -319,13 +328,13 @@ pub(crate) fn section_site_key(r: i64, c: i64) -> Vec<u8> {
 /// utterance is verified as it was spoken. The target is one section, in
 /// its own frame: a word's compartment carried into another frame speaks
 /// nothing of it, and the section's site it was to cover stays unspoken.
-pub fn reconstruct_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Link> {
-    let mut at: Keyed<Link> = Keyed::new();
+pub fn reconstruct_operators(ops: &[(Versor, Vec<SectionLink>)], target: &[SectionLink]) -> Vec<SectionLink> {
+    let mut at: Keyed<SectionLink> = Keyed::new();
     for &link in target {
         at.insert(section_site_key(link.0, link.1), link);
     }
     let mut spoken: Keyed<()> = Keyed::new();
-    let mut over: Vec<Link> = Vec::new();
+    let mut over: Vec<SectionLink> = Vec::new();
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
             let Some(image) = element::carry_compartment(v, wr, wc, 0) else { continue };
@@ -346,7 +355,7 @@ pub fn reconstruct_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Ve
     }
     // ONE CHAIN'S LINKS, keyed by site: the residue is what the word did
     // not speak, so every link is asked and none may be skipped.
-    let mut residue: Vec<Link> = at
+    let mut residue: Vec<SectionLink> = at
         .scoped()
         .filter(|(k, _)| !spoken.contains(k))
         .map(|(_, t)| *t)
@@ -363,8 +372,8 @@ pub fn reconstruct_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Ve
 /// stable coordinate across copies of the word (a copy that gained a
 /// section orders them differently); the target's own transitions are.
 /// None when no assignment agrees.
-pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<Vec<(u8, u8)>> {
-    let mut at: Keyed<Link> = Keyed::new();
+pub fn gauge_of(word: &Element, v: &Versor, target: &[SectionLink]) -> Keyed<Vec<(u8, u8)>> {
+    let mut at: Keyed<SectionLink> = Keyed::new();
     for &link in target {
         at.insert(section_site_key(link.0, link.1), link);
     }
@@ -413,19 +422,19 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<Vec<(u8, u
 pub fn seam_defect_at<'a>(
     word_at: &impl Fn(&[u8]) -> Option<&'a Element>,
     cites: &[Cite],
-    target: &[Link],
-) -> Vec<Link> {
-    let ops: Vec<(Versor, Vec<Link>)> = cites
+    target: &[SectionLink],
+) -> Vec<SectionLink> {
+    let ops: Vec<(Versor, Vec<SectionLink>)> = cites
         .iter()
         .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, &c.assignment)?)))
         .collect();
     seam_defect_operators(&ops, target)
 }
 
-pub fn seam_defect_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Link> {
+pub fn seam_defect_operators(ops: &[(Versor, Vec<SectionLink>)], target: &[SectionLink]) -> Vec<SectionLink> {
     let mut first: Keyed<(u8, u8)> = Keyed::new();
     let mut conflict: Keyed<()> = Keyed::new();
-    let mut at: Keyed<Link> = Keyed::new();
+    let mut at: Keyed<SectionLink> = Keyed::new();
     for &link in target {
         at.insert(section_site_key(link.0, link.1), link);
     }
@@ -464,8 +473,8 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Ve
 pub fn verify_at<'a>(
     word_at: &impl Fn(&[u8]) -> Option<&'a Element>,
     cites: &[Cite],
-    target: &[Link],
-) -> Vec<Link> {
+    target: &[SectionLink],
+) -> Vec<SectionLink> {
     let mut out = reconstruct_at(word_at, cites, target);
     out.extend(seam_defect_at(word_at, cites, target));
     out.sort_unstable();
@@ -477,8 +486,8 @@ pub fn verify_at<'a>(
 /// replayed against the target and checked on the seams, with no copy
 /// of any word fetched. The hearer's lexicon is consulted only afterward,
 /// to name what was verified.
-pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[Link]) -> Vec<Link> {
-    let ops: Vec<(Versor, Vec<Link>)> =
+pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[SectionLink]) -> Vec<SectionLink> {
+    let ops: Vec<(Versor, Vec<SectionLink>)> =
         cites.iter().map(|c| (c.transport.clone(), c.body.clone())).collect();
     let mut out = reconstruct_operators(&ops, target);
     out.extend(seam_defect_operators(&ops, target));
@@ -684,6 +693,71 @@ pub fn elements_standing(positions: &[crate::transducer::base::Site]) -> Vec<(cr
         }
     }
     held.scoped().map(|(_, v)| v.clone()).collect()
+}
+
+/// EVERY NEIGHBOUR OF A CUBE OF ℤⁿ, BOTH SENSES, GENERATED (71.2 (2)):
+/// `d ∈ {−1,0,1}ⁿ ∖ 0`, `3ⁿ − 1` of them, in lexicographic order with `−1`
+/// first, axis 0 the most significant. A contact at every grade, never a
+/// list of offsets written for one rank.
+pub fn surrounding(n: usize) -> Vec<Vec<i64>> {
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: n is a base's n, the n of Cl(n+1,1); 3ⁿ is refused past usize by checked_pow")]
+    let Some(count) = 3usize.checked_pow(n as u32) else { return Vec::new() };
+    let mut out = Vec::with_capacity(count);
+    for code in 0..count {
+        let mut rest = code;
+        let mut d = vec![0i64; n];
+        for slot in d.iter_mut().rev() {
+            *slot = match rest % 3 {
+                0 => -1,
+                1 => 0,
+                _ => 1,
+            };
+            rest /= 3;
+        }
+        if d.iter().any(|x| *x != 0) {
+            out.push(d);
+        }
+    }
+    out
+}
+
+/// [`surrounding`] ORDERED BY THE GRADE OF CONTACT: the faces (one axis
+/// differs, the cell of grade `n − 1`) first, then each lower grade; within
+/// a grade by the set of differing axes, then by their senses, `−` before
+/// `+`. The faces alone ([`faces_of`]) are the contact that makes a body.
+pub fn by_grade(n: usize) -> Vec<Vec<i64>> {
+    let mut all = surrounding(n);
+    let key = |d: &Vec<i64>| {
+        let axes: Vec<usize> = (0..d.len()).filter(|&i| d.get(i).is_some_and(|x| *x != 0)).collect();
+        let senses: Vec<i64> = axes.iter().filter_map(|&i| d.get(i).copied()).collect();
+        (axes.len(), axes, senses)
+    };
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 4 — canonical key order: the grade, the differing axes and the senses are the direction's own coordinates"
+    )]
+    all.sort_by_key(key);
+    all
+}
+
+/// DIRECTIONS OF THE ALPHABET'S SECTION as coordinate pairs: each direction
+/// of a base of rank 2 (`alphabet::ALPHABET_SAMPLE_RANK`) as its two
+/// coordinates, in the order given. A direction of another rank has no pair
+/// and is left out, which no direction generated at rank 2 is.
+pub fn on_section(directions: Vec<Vec<i64>>) -> Vec<(i64, i64)> {
+    directions
+        .into_iter()
+        .filter_map(|d| match d.as_slice() {
+            &[a, b] => Some((a, b)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// THE FACE NEIGHBOURS OF A CUBE OF ℤⁿ, both senses, in [`by_grade`]'s
+/// order: `2n` of them, the contact of grade `n − 1`.
+pub fn faces_of(n: usize) -> Vec<Vec<i64>> {
+    by_grade(n).into_iter().filter(|d| d.iter().filter(|x| **x != 0).count() == 1).collect()
 }
 
 /// THE NEIGHBOURHOOD OF A CUBE OF ℤⁿ, GENERATED (71.2(2)): every

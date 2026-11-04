@@ -152,7 +152,7 @@ impl Contemplation {
         // drains only here, so a read that cloned every entry to find the
         // few whose chart matched would grow without bound while the thing
         // it searched for stayed rare.
-        let mut back: Vec<(Vec<u8>, Vec<Link>)> = Vec::new();
+        let mut back: Vec<(Vec<u8>, Vec<SectionLink>)> = Vec::new();
         for p in inv.prefixes() {
             let pk = p.key();
             let Some(f) = self.cavity.fibre_at(pk.as_bytes()) else {

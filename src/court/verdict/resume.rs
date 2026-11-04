@@ -122,7 +122,7 @@ pub struct ReconstructionCursor {
     pub(crate) stage: Stage,
     pub(crate) at: usize,
     pub(crate) frames: Vec<super::body::Perceived>,
-    pub(crate) undeclared: Vec<sentence::Link>,
+    pub(crate) undeclared: Vec<sentence::SectionLink>,
     pub(crate) derived: Vec<(crate::network::nerve::coord::Holonomy, sentence::ToralPeriod)>,
 }
 

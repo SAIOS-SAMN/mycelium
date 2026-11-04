@@ -39,7 +39,7 @@ use crate::transducer::alphabet::{Order, Rotor};
 use crate::transducer::cech::{self, CoboundaryOutcome, Complex, Fill, Section, Simplex};
 use crate::transducer::element::{self, Element};
 use crate::transducer::family::Crystal;
-use crate::transducer::sentence::{self, Form, Link, PivotCertificate, Vertex};
+use crate::transducer::sentence::{self, Form, SectionLink, PivotCertificate, Vertex};
 use crate::transducer::stalk::{self, AtlasRead, Invariant, Standing};
 
 #[cfg(test)]

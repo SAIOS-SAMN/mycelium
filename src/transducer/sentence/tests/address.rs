@@ -351,7 +351,7 @@ fn stand_demand_gathers_bodies_per_kind_and_chart() {
     f.stand_demand(Demand::Creation, &chart, vec![(0, 0, 0, 3)]);
     f.stand_demand(Demand::Creation, &chart, vec![(0, 1, 0, 3), (0, 0, 0, 3)]);
     f.stand_demand(Demand::Creation, &other, vec![(5, 5, 0, 1)]);
-    let demanded: Vec<(Demand, Vec<Link>)> =
+    let demanded: Vec<(Demand, Vec<SectionLink>)> =
         f.demand_vertices().map(|(_, k, _, links)| (k.clone(), links.to_vec())).collect();
     assert_eq!(demanded.len(), 2, "one vertex per (kind, chart), got {demanded:?}");
     // AT1 — THE DEMAND STANDS AT ITS OWN COORDINATE, in the Demand stratum

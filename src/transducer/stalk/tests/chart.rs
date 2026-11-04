@@ -9,7 +9,7 @@ use crate::transducer::stalk::*;
 
 
 fn chain(sites: &[(i64, i64)]) -> element::CanonicalChain {
-    let raw: Vec<Link> = sites.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect();
+    let raw: Vec<SectionLink> = sites.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect();
     element::canonical_chain(&raw).expect("one entry per site is A5's chain")
 }
 
@@ -81,7 +81,7 @@ fn invariant_is_invariant_under_conformal_group() {
     assert_eq!(invariant(&moved), base, "an isometry image shares the chart");
     let mirrored = chain(&[(0, 1), (1, 1), (2, 1), (2, 0)]);
     assert_eq!(invariant(&mirrored), base, "a reflection shares the chart");
-    let big: Vec<Link> = l
+    let big: Vec<SectionLink> = l
         .iter()
         .flat_map(|&(r, c, b, a)| {
             [(2 * r, 2 * c), (2 * r, 2 * c + 1), (2 * r + 1, 2 * c), (2 * r + 1, 2 * c + 1)]
