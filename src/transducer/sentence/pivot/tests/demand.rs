@@ -3,7 +3,7 @@
 // carrying its holonomy. Beside `orbit.rs` under the §1.1 bound; the
 // `Hold` crystal is read across the split.
 
-use super::common::*;
+use super::fixtures::*;
 use super::orbit::Hold;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, factor_rotor, LetterId, Rotor, Word, Q};

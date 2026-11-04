@@ -3,7 +3,7 @@
 // pairs, prices what it discharges per lane, mints it on the task's first
 // closure only, and refuses by the replay's reason and kind.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::family::{cipher_form, sentence_measure, NoCrystal, TrainPair};
 use crate::transducer::sentence::as_element_form;

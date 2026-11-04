@@ -1,7 +1,7 @@
 // 42 — REFRACTION as its three moves, and the sensor gate: no coordinate
 // pair lives outside the four functions law 11 allows one.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::network::nerve::coord;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element::{self};

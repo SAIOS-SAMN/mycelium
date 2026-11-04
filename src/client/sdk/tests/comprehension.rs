@@ -1,7 +1,7 @@
 // 25, 26 — comprehension: what an utterance becomes in a client, what is
 // withheld, and what a stood word closes.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::client::sdk::*;
 
 /// THE C-STACK TERMINAL: a taught word enters the GENOME (inheritance via
@@ -16,10 +16,10 @@ use crate::transducer::germinate::germinate;
 let mut epi = Epigenome::new();
 // The mesh teaches a word down: first hearing is novel, then it is held.
 let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 4u8), (0, 1, 2)]).unwrap());
-assert!(matches!(epi.learn(&word.to_bytes().expect("the record writes"), &mut super::common::budget()), Some(Comprehension::Novel { .. })));
+assert!(matches!(epi.learn(&word.to_bytes().expect("the record writes"), &mut super::fixtures::budget()), Some(Comprehension::Novel { .. })));
 assert_eq!(epi.genome_len(), 1);
 // The same utterance again — COMPREHENDED as the held word; expression rises.
-match epi.comprehend(&word, &mut super::common::budget()) {
+match epi.comprehend(&word, &mut super::fixtures::budget()) {
     Comprehension::Understood(v) => {
         assert_eq!(v.len(), 1);
         assert_eq!(v[0].0.as_slice(), word.address().as_bytes());
@@ -31,7 +31,7 @@ assert_eq!(epi.peak_expression(), Some(1), "the dialect's recollection weight mo
 // An unrelated utterance is heard as novel — a prospective, not a failure —
 // and the genome is untouched by hearing it.
 let other = from_canonical(&germinate(&[(0, 0, 5u8)], &[(0, 0, 9u8)]).unwrap());
-assert!(matches!(epi.comprehend(&other, &mut super::common::budget()), Comprehension::Novel { .. }));
+assert!(matches!(epi.comprehend(&other, &mut super::fixtures::budget()), Comprehension::Novel { .. }));
 assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
 // 5a: the genome crystallizes and restores EXACTLY; the epigenome does
 // not persist (expression resets — dialect is ephemeral by ruling).
@@ -61,10 +61,10 @@ assert!(Epigenome::new().uncrystallize(b"GEN7\xff\xff\xff\xff\xff\xff\xff\xff").
 assert!(Epigenome::new().uncrystallize(b"GEN3\x00\x00\x00\x00").is_none(), "an older layout refused");
 // THE POSITIONAL GENOME IS REFUSED BY NAME (78.27).
 let mut positional = frozen.clone();
-positional[..4].copy_from_slice(crate::client::sdk::epigenome::PRE_TRIE_GENOME_MAGIC);
+positional[..4].copy_from_slice(crate::client::sdk::vocabulary::PRE_TRIE_GENOME_MAGIC);
 assert!(Epigenome::new().uncrystallize(&positional).is_none(), "a positional genome restores nothing");
 assert!(
-    crate::client::sdk::epigenome::genome_refused(&positional).is_some_and(|n| n.starts_with("GEN5")),
+    crate::client::sdk::vocabulary::genome_refused(&positional).is_some_and(|n| n.starts_with("GEN5")),
     "and is refused by its own name"
 );
 // A tape cut short at any byte restores nothing.
@@ -74,13 +74,13 @@ for cut in 4..frozen.len() {
 // THE GENOME BEFORE THE ORBIT COORDINATES IS REFUSED BY NAME (ACT1-orbit):
 // the same tape under GEN4 restores nothing, and the refusal names it.
 let mut older = frozen.clone();
-older[..4].copy_from_slice(crate::client::sdk::epigenome::PRE_ORBIT_GENOME_MAGIC);
+older[..4].copy_from_slice(crate::client::sdk::vocabulary::PRE_ORBIT_GENOME_MAGIC);
 assert!(Epigenome::new().uncrystallize(&older).is_none(), "a pre-orbit genome restores nothing");
 assert!(
-    crate::client::sdk::epigenome::genome_refused(&older).is_some_and(|n| n.starts_with("GEN4")),
+    crate::client::sdk::vocabulary::genome_refused(&older).is_some_and(|n| n.starts_with("GEN4")),
     "and is refused by its own name"
 );
-assert_eq!(crate::client::sdk::epigenome::genome_refused(&frozen), None, "this build's genome is not refused");
+assert_eq!(crate::client::sdk::vocabulary::genome_refused(&frozen), None, "this build's genome is not refused");
 }
 
 /// Chapter 24.2: a sentence that cites a form this mind does not hold
@@ -115,14 +115,14 @@ let _gi = outer
     .expect("glue");
 let e = as_element_form(&outer, [1, 0, 0, 0]).expect("v2 tape");
 let mut epi = Epigenome::new();
-match epi.comprehend(&e, &mut super::common::budget()) {
+match epi.comprehend(&e, &mut super::fixtures::budget()) {
     Comprehension::Withheld { missing } => {
         assert_eq!(missing, vec![missing_addr.as_bytes().to_vec()], "the cited address is named")
     }
     other => panic!("expected Withheld, got {other:?}"),
 }
 assert!(
-    matches!(epi.learn(&e.to_bytes().expect("the record writes"), &mut super::common::budget()), Some(Comprehension::Withheld { .. })),
+    matches!(epi.learn(&e.to_bytes().expect("the record writes"), &mut super::fixtures::budget()), Some(Comprehension::Withheld { .. })),
     "learn banks the withheld sentence"
 );
 assert_eq!(epi.genome_len(), 0, "withheld does not enter the genome");
@@ -197,7 +197,7 @@ assert!(
 let e = as_element_form(&outer, [1, 0, 0, 0]).expect("outer tape");
 let mut epi = Epigenome::new();
 assert!(
-    matches!(epi.learn(&e.to_bytes().expect("the record writes"), &mut super::common::budget()), Some(Comprehension::Withheld { .. })),
+    matches!(epi.learn(&e.to_bytes().expect("the record writes"), &mut super::fixtures::budget()), Some(Comprehension::Withheld { .. })),
     "learn banks the withheld sentence"
 );
 assert_eq!(
@@ -208,7 +208,7 @@ assert_eq!(
 assert_eq!(epi.genome_len(), 0, "withheld does not enter the genome");
 assert!(
     matches!(
-        epi.learn(&inner_e.to_bytes().expect("the record writes"), &mut super::common::budget()),
+        epi.learn(&inner_e.to_bytes().expect("the record writes"), &mut super::fixtures::budget()),
         Some(Comprehension::Understood(_) | Comprehension::Admitted)
     ),
     "the cited form is learned"
@@ -243,13 +243,13 @@ assert_eq!(
     "the class is the chart"
 );
 let mut epi = Epigenome::new();
-assert!(epi.learn(&eb.to_bytes().expect("the record writes"), &mut super::common::budget()).is_some());
+assert!(epi.learn(&eb.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_some());
 let mut outer = crate::transducer::sentence::Form::default();
 outer
     .glue(&inner_a, ea.address(), Word::identity(), [1, 0, 0, 0])
     .expect("glue A");
 let e = as_element_form(&outer, [1, 0, 0, 0]).expect("citer");
-match epi.comprehend(&e, &mut super::common::budget()) {
+match epi.comprehend(&e, &mut super::fixtures::budget()) {
     Comprehension::Understood(entries) => {
         assert_eq!(entries.len(), 1, "one held form of the cited chart");
         assert_eq!(entries[0].0.as_slice(), eb.address().as_bytes());
@@ -331,13 +331,13 @@ assert_ne!(
     crate::transducer::sentence::chart_of(&eo)
 );
 let mut epi = Epigenome::new();
-assert!(epi.learn(&eo.to_bytes().expect("the record writes"), &mut super::common::budget()).is_some());
+assert!(epi.learn(&eo.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_some());
 let mut outer = Form::default();
 outer
     .glue(&inner_a, ea.address(), Word::identity(), [1, 0, 0, 0])
     .expect("glue A");
 let e = as_element_form(&outer, [1, 0, 0, 0]).expect("citer");
-match epi.comprehend(&e, &mut super::common::budget()) {
+match epi.comprehend(&e, &mut super::fixtures::budget()) {
     Comprehension::Withheld { missing } => {
         assert_eq!(missing, vec![ea.address().as_bytes().to_vec()], "a foreign class is withheld")
     }
@@ -371,7 +371,7 @@ assert!(f.is_closed(), "a tree of two vertices coheres");
 let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
 let mut epi = Epigenome::new();
 assert!(
-    matches!(epi.comprehend(&e, &mut super::common::budget()), Comprehension::Admitted),
+    matches!(epi.comprehend(&e, &mut super::fixtures::budget()), Comprehension::Admitted),
     "no held citations, not Understood(vec![])"
 );
 }
@@ -447,7 +447,7 @@ let _gi = outer
 let e = as_element_form(&outer, [1, 0, 0, 0]).expect("v2 tape");
 let mut epi = Epigenome::new();
 assert!(matches!(
-    epi.learn_at(&e.to_bytes().expect("the record writes"), 7, 11, &mut super::common::budget()),
+    epi.learn_at(&e.to_bytes().expect("the record writes"), 7, 11, &mut super::fixtures::budget()),
     Some(Comprehension::Withheld { .. })
 ));
 let d = epi
@@ -492,7 +492,7 @@ assert_eq!(epi.dialect_len(), 1);
 assert_eq!(epi.genome_len(), 0);
 let uses = 2u64;
 let _ = uses;
-let heard = epi.learn(&e1.to_bytes().expect("the record writes"), &mut super::common::budget()).expect("promoted");
+let heard = epi.learn(&e1.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).expect("promoted");
 let _ = heard;
 assert_eq!(epi.dialect_len(), 0, "dialect moves, it is not copied");
 assert_eq!(epi.genome_len(), 1, "genome is the promoted vertex");
@@ -535,9 +535,9 @@ let honest = from_canonical(
 let mut fat = honest.clone();
 assert!(fat.set_magnitude([999, 0, 0, 0]), "a residual holds no section, so any lane fits");
 let mut epi = Epigenome::new();
-assert!(epi.learn(&fat.to_bytes().expect("the record writes"), &mut super::common::budget()).is_none(), "a record that fails replay is not learned");
+assert!(epi.learn(&fat.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_none(), "a record that fails replay is not learned");
 assert_eq!(epi.genome_len(), 0, "genome stays empty");
-assert!(epi.learn(&honest.to_bytes().expect("the record writes"), &mut super::common::budget()).is_some(), "an honest derivation reads");
+assert!(epi.learn(&honest.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_some(), "an honest derivation reads");
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("syllabus-refuse"));
 let _ = entity.absorb_taught(&honest.to_bytes().expect("the record writes"));
 assert_eq!((entity.epigenome.genome_len(), entity.dialect_len()), (0, 0), "a residual taught is never learned");
@@ -580,13 +580,13 @@ let chain = crate::transducer::element::canonical_chain(word.sub())
     .expect("a stood word's chain is A5's");
 let located = {
     // locate is private; comprehend over the same chain is the public read.
-    epi.comprehend(&from_canonical(&chain), &mut super::common::budget())
+    epi.comprehend(&from_canonical(&chain), &mut super::fixtures::budget())
 };
 match located {
     Comprehension::Understood(_) | Comprehension::Held | Comprehension::Admitted => {}
     other => {
         // residual words locate as the chain of the stood word
-        let again = epi.comprehend(&word, &mut super::common::budget());
+        let again = epi.comprehend(&word, &mut super::fixtures::budget());
         assert!(
             matches!(again, Comprehension::Understood(_) | Comprehension::Admitted | Comprehension::Held),
             "a stood word is on the working language, got {other:?} then {again:?}"
@@ -605,9 +605,9 @@ let swap = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new
 let cycle = from_connection(&id, &identity_versor(), &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [1, 0, 0, 0]).expect("cycle");
 let place = from_connection(&id, &translator_versor(5, 0), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("shift");
 let mut epi = Epigenome::new();
-assert!(epi.learn(&swap.to_bytes().expect("the record writes"), &mut super::common::budget()).is_some());
-assert!(epi.learn(&cycle.to_bytes().expect("the record writes"), &mut super::common::budget()).is_some());
-assert!(epi.learn(&place.to_bytes().expect("the record writes"), &mut super::common::budget()).is_some());
+assert!(epi.learn(&swap.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_some());
+assert!(epi.learn(&cycle.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_some());
+assert!(epi.learn(&place.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_some());
 assert_eq!(epi.genome_len(), 3, "ρ/σ/shift are three vertices");
 let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
 let long = crate::transducer::alphabet::Word::from_letters(&[
@@ -627,6 +627,6 @@ alt.set_description(crate::transducer::element::connection_description(
     &rem,
 ));
 assert_eq!(alt.address(), swap.address(), "two spellings, one address");
-assert!(epi.learn(&alt.to_bytes().expect("the record writes"), &mut super::common::budget()).is_some());
+assert!(epi.learn(&alt.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_some());
 assert_eq!(epi.genome_len(), 3, "a second tape of the same address does not mint");
 }

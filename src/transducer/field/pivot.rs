@@ -38,8 +38,8 @@ use crate::transducer::element::Versor;
 /// One flex counted on the mind's reading by what it did to the fibre —
 /// rigid, torsion, field, lift, or no fibre to read it on (counted as lift:
 /// work) — and, pinned, beside it.
-fn note_flex(carried: Option<crate::physics::capacitor::Carried>, pinned: bool) {
-    use crate::physics::capacitor::Carried;
+fn note_flex(carried: Option<crate::physics::pivot_fibre::Carried>, pinned: bool) {
+    use crate::physics::pivot_fibre::Carried;
     let slot = match carried {
         Some(Carried::Rigid) => 0,
         Some(Carried::Torsion) => 1,
@@ -73,16 +73,16 @@ impl Contemplation {
                     .collect::<Vec<_>>()
             })
             .collect();
-        let star = crate::physics::tensegrity::barycentre(&bodies)?;
+        let star = crate::physics::equilibrium::barycentre(&bodies)?;
         Some((crate::transducer::cga::point_at(&star.centre), star.mass))
     }
 
     /// 78.74 — THE TETHER AS A FIBRE between its two thoughts' pivots, read
     /// off the pivots' coordinates whenever it is asked, never held. `None` where
     /// either thought has no pivot or the two stand at one point.
-    pub(crate) fn fibre_of(&self, a: &[u8], b: &[u8]) -> Option<crate::physics::capacitor::Fibre> {
+    pub(crate) fn fibre_of(&self, a: &[u8], b: &[u8]) -> Option<crate::physics::pivot_fibre::Fibre> {
         let ((pa, ma), (pb, mb)) = (self.pivot_of(a)?, self.pivot_of(b)?);
-        crate::physics::capacitor::Fibre::new(pa, pb, ma, mb)
+        crate::physics::pivot_fibre::Fibre::new(pa, pb, ma, mb)
     }
 
     /// CONDENSE the tension between `a` and `b` into a tether carrying
@@ -97,7 +97,7 @@ impl Contemplation {
     /// tether whose thoughts hold no pivots is read as working. A new tether
     /// FORMS the shortcuts its pivots bind (`form_through`).
     pub(crate) fn tether(&mut self, a: &[u8], b: &[u8], rotor: Rotor, carriage: Versor, volume: [u64; 4]) -> Condensed {
-        use crate::physics::capacitor::Carried;
+        use crate::physics::pivot_fibre::Carried;
         let pair = Pivot::Condense(a.to_vec(), b.to_vec(), Box::new(rotor), carriage);
         let condensed = match self.complex.apply(&pair, |_| volume, volume) {
             Applied::Condensed(c) => c,
@@ -125,10 +125,10 @@ impl Contemplation {
     /// What a motion does to the fibre between `a` and `b`, read off its
     /// modes (`Fibre::reads`): rigid, torsion, field or lift. `None` where
     /// there is no fibre or the motion's modes do not read.
-    fn carried_by(&self, a: &[u8], b: &[u8], motion: &crate::transducer::cga::Mv) -> Option<crate::physics::capacitor::Carried> {
+    fn carried_by(&self, a: &[u8], b: &[u8], motion: &crate::transducer::cga::Mv) -> Option<crate::physics::pivot_fibre::Carried> {
         let fibre = self.fibre_of(a, b)?;
         let mut stroke = crate::physics::Physics::default().stroke_n(crate::transducer::cga::modes_need(motion)?);
-        let modes = crate::physics::capacitor::modes_of(motion, motion.n(), &mut stroke)?;
+        let modes = crate::physics::pivot_fibre::modes_of(motion, motion.n(), &mut stroke)?;
         Some(fibre.reads(&modes))
     }
 

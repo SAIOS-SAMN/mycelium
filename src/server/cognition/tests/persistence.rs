@@ -1,7 +1,7 @@
 // 28 — PERSISTENCE: what a mind is after a restart is what it was before
 // one, carrier for carrier.
 
-use super::common::speak_pair;
+use super::fixtures::speak_pair;
 use crate::cognition::*;
 
 /// P7 — the germinated language survives restart: install two germs, snapshot,

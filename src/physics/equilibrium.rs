@@ -296,7 +296,7 @@ pub fn succession(step: &Mv, centre: &[Q]) -> Option<Mv> {
         // Row 2); an elliptic reading here would be a turn the factors did
         // not see, and a composite of two fascicles winds on no one parameter.
         true => {
-            use crate::physics::fascicle::{streamline_of, Streamline};
+            use crate::physics::sphere_pair::{streamline_of, Streamline};
             let moves = !f.rho.is_one() || f.transverses() || !f.translation.iter().all(Zero::is_zero);
             let carriage = f.carriage();
             let flows = matches!(streamline_of(&carriage), Some(Streamline::Parabolic | Streamline::Hyperbolic));

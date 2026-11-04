@@ -69,7 +69,7 @@ impl Mind {
         }
     }
 
-    fn stand_callus(&mut self, c: crate::client::sdk::epigenome::remainder::Callus, budget: &mut crate::physics::Budget) {
+    fn stand_callus(&mut self, c: crate::client::sdk::vocabulary::remainder::Callus, budget: &mut crate::physics::Budget) {
         let Some(tops) = c.chains.iter().map(|ch| top_of(ch)).collect::<Option<Vec<Invariant>>>() else {
             self.epigenome.calluses.untopped += 1;
             return;

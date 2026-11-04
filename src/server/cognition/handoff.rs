@@ -41,14 +41,14 @@ pub(crate) struct Handoffs {
     /// 78.127 — each conversion by its id, held while its G side is open.
     pub(crate) conversions: Keyed<super::convert::Conversion>,
     /// 78.128 — each wormhole's mouth pair by its id.
-    pub(crate) mouths: Keyed<super::mouth::MouthHeld>,
+    pub(crate) mouths: Keyed<super::domain_passage::MouthHeld>,
     /// 78.128 — each traversal's mouth, by the handoff's id.
     pub(crate) through: Keyed<[u8; 32]>,
     /// 78.133 — each tariffed traversal's toll, split and held to its
     /// window's close, by the handoff's id.
-    pub(crate) tolls: Keyed<super::mouth::TollHeld>,
+    pub(crate) tolls: Keyed<super::domain_passage::TollHeld>,
     /// 78.135 — each tube's throat bank, by the mouth's id.
-    pub(crate) throats: Keyed<super::mouth::Throat>,
+    pub(crate) throats: Keyed<super::domain_passage::Throat>,
 }
 
 /// The escrow key a traversal's toll is held under.
@@ -279,7 +279,7 @@ impl Handoffs {
         if *p < b.len() {
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
-                out.mouths.insert(k, super::mouth::MouthHeld::take(b, p)?);
+                out.mouths.insert(k, super::domain_passage::MouthHeld::take(b, p)?);
             }
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
@@ -296,7 +296,7 @@ impl Handoffs {
             }
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
-                out.tolls.insert(k, super::mouth::TollHeld::take(b, p)?);
+                out.tolls.insert(k, super::domain_passage::TollHeld::take(b, p)?);
             }
         }
         // 78.134 — the tubes — absent from a leaf written before them.
@@ -311,7 +311,7 @@ impl Handoffs {
         if *p < b.len() {
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
-                out.throats.insert(k, super::mouth::Throat::take(b, p)?);
+                out.throats.insert(k, super::domain_passage::Throat::take(b, p)?);
             }
         }
         // 78.140 — the tubes with a torus end and the core tubes — absent

@@ -2,7 +2,7 @@
 // and the oldest well is the one that moves.
 
 use crate::transducer::field::*;
-use crate::transducer::sentence::tests::common::{stand_with_star, FRAME};
+use crate::transducer::sentence::tests::fixtures::{stand_with_star, FRAME};
 
 /// Every well the contemplation holds, by address — what a door is
 /// handed. `retire_on_t` picked ONE by age against a count; the doors are
@@ -294,7 +294,7 @@ fn pivot_on_collapses_vortex_and_adjoins_symmetry() {
         charts.push(f.stand_member(&v, FRAME).expect("a word vertex stands"));
     }
     let [ca, cb] = charts.as_slice() else { panic!("two members stood") };
-    let face = crate::transducer::sentence::tests::common::chord(&mut f, ca, cb, a.clone());
+    let face = crate::transducer::sentence::tests::fixtures::chord(&mut f, ca, cb, a.clone());
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
 
@@ -335,7 +335,7 @@ fn pivot_on_collapses_vortex_and_adjoins_symmetry() {
         .expect("a rotor mints a generator");
     let mut cover = crate::network::nerve::Keyed::new();
     cover.insert(Invariant::counts(&[1, 3, 5]).key(), ());
-    let key = crate::transducer::field::idea::idea_key(&f);
+    let key = crate::transducer::field::well::idea_key(&f);
     let well = Well { form: Some(f), vortex, cover, ..Default::default() };
     let mut c = Contemplation::new();
     c.admit_incidence(&std::sync::Arc::from(&key[..]), &well);
@@ -477,7 +477,7 @@ fn hold_form_keeps_moved_k_and_ages_when_unchanged() {
     let again = c.wells.get(&key).expect("still held");
     assert_eq!(again.moved_k, 10, "retention is not motion: the stamp is preserved");
     assert_eq!(
-        crate::transducer::field::idea::held_since(c.now_k(), again.moved_k),
+        crate::transducer::field::well::held_since(c.now_k(), again.moved_k),
         Some(54),
         "so the well has aged 54 in TUniversal"
     );
@@ -555,8 +555,8 @@ fn rekey_keeps_inception_stamp_across_mutation() {
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold_form(before.clone(), &[], std::slice::from_ref(&rem), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
-    let old_key = crate::transducer::field::idea::idea_key(&before);
-    let new_key = crate::transducer::field::idea::idea_key(&after);
+    let old_key = crate::transducer::field::well::idea_key(&before);
+    let new_key = crate::transducer::field::well::idea_key(&after);
     assert_ne!(old_key, new_key, "the mutation is a different form, so a different key");
 
     // The form mutates in place, as a pivot rewrites it, and the entry

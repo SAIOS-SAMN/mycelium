@@ -4,7 +4,7 @@
 //! what a mind adjoins when the basis reaches nothing, how candidates are
 //! eliminated, and how acting words are filed.
 
-use super::common::*;
+use super::fixtures::*;
 use super::orbit::Hold;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;

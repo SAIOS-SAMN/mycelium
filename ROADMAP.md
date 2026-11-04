@@ -36,7 +36,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
-| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 and N5 built (N1 with #29); N2–N4, N6 and N7 next, in order; N6 lands in v0.3.0's open break |
+| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1, N2 and N5 built (N1 with #29, N2 with #53); N3, N4, N6 and N7 next, in order; N6 lands in v0.3.0's open break |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the items above (maintainers) |
 
 **2. Ready to start**
@@ -49,7 +49,7 @@ None of these waits on a ruling:
 | B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | The rest of track 24 stands on it |
 | `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
 | Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Built with N1 |
-| Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Maintainers; after S2 and D2.5 merge |
+| Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Built with N2 |
 
 **3. Waiting on an operator ruling.** Do not start these until the ruling
 is recorded:
@@ -283,7 +283,7 @@ The reference mind (`mycelium-client`) runs its court asks on one carrier
 per boundary. The track bounds each carrier's outstanding asks per path,
 so a mind's court traffic stays proportional to its work across restarts
 of the courts it speaks to. The `now` reading lists outstanding answers by
-path (`src/client/sdk/entity/hypha.rs`).
+path (`src/client/sdk/mind/hypha.rs`).
 
 **Open defect: the ask queue.** On a long-running network, a mind's
 outstanding court asks grew without bound while its work did not. The
@@ -379,8 +379,8 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - `replayable` → `map_holds_whole`;
    - test names that say "rebuilds" for a construction → `derives`;
    - `rebuild_own_cover` → `read_published_cover`.
-2. **N2, files by function.**
-   - `door.rs` → `control.rs` and `context.rs` (#53).
+2. **N2, files by function** (**Built**, with #53).
+   - `door.rs` → `control.rs` and `context.rs` (#53; `Door` → `Context`).
    - Field files:
      - `field/core.rs`'s `Door` → `Shedding`, landed first;
      - `field/idea.rs` → `field/well.rs`;
@@ -403,7 +403,21 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
        retired for `Mind`;
      - `breath`, `tensegrity`, `sporophore`, `mouth`, `peel`, `beam`,
        `callus`, `fascicle` and `epigenome` are each renamed by what the
-       module does, read from its header.
+       module does, read from its header. As built:
+       - `cga/breath.rs` → `cga/commutator.rs`;
+       - `physics/tensegrity.rs` and `physics/axioms/tensegrity.rs` →
+         `equilibrium.rs`;
+       - the soak's `sporophore.rs` → `enclosure.rs` (its `sporophore`
+         subcommand is unchanged);
+       - `cognition/mouth.rs` → `cognition/domain_passage.rs`;
+       - `transducer/peel.rs` → `transducer/layers.rs`;
+       - `transducer/beam.rs` → `transducer/candidates.rs`;
+       - `entity/callus.rs` → `mind/second_vantage.rs`;
+       - `physics/fascicle.rs` → `physics/sphere_pair.rs`;
+       - `client/sdk/epigenome/` → `client/sdk/vocabulary/`.
+
+       Each module's tests follow its name. The types keep their names
+       with their GLOSSARY rows.
 3. **N3, one name, one meaning.** The canonical meanings (GLOSSARY) are:
    - **Field** is the object, and `cech::orbit::Field` is that type.
      `FieldEntry` → `ProbedChart`.
@@ -1237,7 +1251,7 @@ Each phase is one commit:
    - `src/server/cognition/court/glue.rs` (a stratum root recomputed from
      its members): a commitment bound to a reconstruction, already in
      the right order.
-   - `src/client/sdk/entity/learn.rs` (a starved root): an address.
+   - `src/client/sdk/mind/learn.rs` (a starved root): an address.
    - Each peer kernel tracks its counterparts in its own repository.
 6. **X5, the transduction in place of the common grid.** Two frames
    relate by the motion between them; each keeps its own resolution;
@@ -1480,7 +1494,7 @@ Each phase is one commit:
    LAW-FIELD v1):
    - The field's curvature is read from the orbits it holds, flat where
      nothing is held.
-   - The existing `Well` (`transducer/field/idea.rs`) gains its body:
+   - The existing `Well` (`transducer/field/well.rs`) gains its body:
      its membrane where it encloses, its charts in the field's atlas, its centre
      and its inflation as a gauge.
    - Its stage becomes a coordinate. `percept: bool` and `dirty: bool`

@@ -1,48 +1,25 @@
-// 23.8, 26 — THE DOOR: what one hypha holds for the act it is serving, and
-// the control surface a client or an operator speaks to.
+// 23.8, 26 — THE CONTROL SURFACE a client or an operator speaks to.
 //
-//! `Door` is the whole of a server's state as one act sees it.
 //! `serve_control` answers the acts that are about the mesh rather than
 //! about the language: peers, roots, the syllabus, task listing and intake.
+//! The server's state as one act sees it is `context::Context`.
 
+use crate::context::Context;
 use crate::exchange::{note_root, speak_root_locked, Mesh, RootHear};
-use crate::syllabus::{syllabus_admit, syllabus_window, Syllabus};
+use crate::syllabus::{syllabus_admit, syllabus_window};
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Court;
 use mycelium::economy::Mu;
-use mycelium::network::nerve::{home, Keyed, Router};
+use mycelium::network::nerve::{home, Keyed};
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
-
-#[derive(Clone)]
-pub(crate) struct Door {
-    /// 78.146 — the seat relay on its own lock (`judge::seat::serve_exempt`).
-    pub(crate) seat_relay: mycelium::cognition::seat::SharedRelay,
-    /// 78.151 — the court's published reading, which the door's reads
-    /// answer off without the court (`judge::serve_published`).
-    pub(crate) published: crate::published::Shelf,
-    pub(crate) court: Arc<Mutex<Court>>,
-    pub(crate) mesh: Mesh,
-    pub(crate) router: Arc<Mutex<Router>>,
-    pub(crate) id: [u8; 32],
-    pub(crate) bind: String,
-    pub(crate) join_peers: Arc<Vec<String>>,
-    pub(crate) roots: Arc<Mutex<Keyed<Keyed<u64>>>>,
-    pub(crate) registry: Arc<Mutex<mycelium::registry::TaskRegistry>>,
-    pub(crate) syllabus: Arc<Mutex<Syllabus>>,
-    /// The nerve, built from the seal (D2.5): a door exists only
-    /// after the boot calibration stroke sealed it.
-    pub(crate) nerve_tx: crate::nerve::Nerve,
-    pub(crate) synth_tx: std::sync::mpsc::SyncSender<mycelium::synthesis::Deliberation>,
-    pub(crate) state_path: String,
-}
 
 /// Control acts that used to run on the accept thread. The listener never
 /// holds the court lock; these run on a reflex worker.
-pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
+pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, context: &Context) -> bool {
     let Some((&kind, _rest)) = frame.body.split_first() else { return false };
     if kind == dialogue::ACT_ROOT {
         let Some((from, task, solver, spoken_at)) = dialogue::decode_root(&frame.body) else { return true };
@@ -54,19 +31,19 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             return true;
         };
         // A poisoned router lock knows no peer; the root is not heard.
-        if !door.router.lock().is_ok_and(|r| r.knows(&from)) {
+        if !context.router.lock().is_ok_and(|r| r.knows(&from)) {
             answer(s, Frame { lane: frame.lane, body: Vec::new() });
             return true;
         }
         let hear = {
-            let Ok(mut roots) = door.roots.lock() else { return true };
+            let Ok(mut roots) = context.roots.lock() else { return true };
             note_root(&mut roots, task, solver, spoken_at)
         };
         match hear {
             RootHear::Known => {}
             RootHear::First => {
                 // A poisoned registry lock prioritises nothing.
-                let prioritized = door.registry.lock().is_ok_and(|mut r| r.prioritize(&task));
+                let prioritized = context.registry.lock().is_ok_and(|mut r| r.prioritize(&task));
                 // THE TASK BY ITS CITATION (wire v1.2), the name every other
                 // reading speaks it by: its address opens on the task tag, so
                 // two bytes of it named one task in ten of the corpus.
@@ -76,22 +53,22 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     from[0], cite[0], cite[1], cite[2], cite[3], solver[0],
                     if prioritized { "re-dispatched first here" } else { "not open on this book" }
                 );
-                speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
+                speak_root_locked(&context.router, &context.nerve_tx, &context.id, &task, &solver, Some(from), spoken_at);
             }
             RootHear::Second => {
-                rewind_syllabus(door);
+                rewind_syllabus(context);
                 let cite = task;
                 eprintln!("  ROOT CONSILIENT task {:02x}{:02x}{:02x}{:02x}… two voices; syllabus rewound", cite[0], cite[1], cite[2], cite[3]);
-                speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
+                speak_root_locked(&context.router, &context.nerve_tx, &context.id, &task, &solver, Some(from), spoken_at);
             }
             // A further solver of a consilient root is spoken on, never
             // re-dispatched as a first nor re-wound as a second.
             RootHear::Joined => {
-                speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
+                speak_root_locked(&context.router, &context.nerve_tx, &context.id, &task, &solver, Some(from), spoken_at);
             }
         }
         let reply = {
-            let Ok(roots) = door.roots.lock() else { return true };
+            let Ok(roots) = context.roots.lock() else { return true };
             dialogue::encode_root_reply(
                 roots.get(&task).and_then(|v| {
                     // `get(task)` follows the task's prefix: the solvers standing on
@@ -109,7 +86,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     if kind == dialogue::ACT_EVIDENCE {
         if let Some((_dvoice, items)) = dialogue::decode_evidence_deposit(&frame.body) {
             let accepted = {
-                let Ok(mut h) = crate::held::held!(door.court) else { return true };
+                let Ok(mut h) = crate::held::held!(context.court) else { return true };
                 // Bounded by the deposit's own items, which the frame bounds.
                 h.run(|k, _| {
                     items
@@ -134,7 +111,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // stroke an item; an item no frame carries is refused by name and
         // the page ends before it, never past it.
         let (items, end): (Vec<_>, _) = {
-            let Ok(mut h) = crate::held::held!(door.court) else { return true };
+            let Ok(mut h) = crate::held::held!(context.court) else { return true };
             h.run(|k, reads| {
                 let store = k.anchor_evidence();
                 let (m, end) = dialogue::evidence_page(store, mycelium::network::wire::frame_budget(), reads);
@@ -176,10 +153,10 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // The dispatch observation (ruled 2026-10-22): each task that
         // leaves, by its citation, to the voice that asked, at this court's
         // height — read-only, never read back by the court.
-        let sent = |cite: [u8; 32], voice: [u8; 32]| mycelium::observe::note_dispatch(cite, voice, door.published.take().height());
+        let sent = |cite: [u8; 32], voice: [u8; 32]| mycelium::observe::note_dispatch(cite, voice, context.published.take().height());
         let body = match (dialogue::decode_task_request(&frame.body), dialogue::decode_task_by_citation(&frame.body)) {
             (Some(voice), _) => {
-                let Ok(mut reg) = door.registry.lock() else { return true };
+                let Ok(mut reg) = context.registry.lock() else { return true };
                 let mut body = Vec::new();
                 for _ in 0..reg.len() {
                     let Some((tid, task)) = reg.dispatch() else { break };
@@ -194,12 +171,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 // written beside the snapshot, so a restart continues the
                 // corpus instead of re-serving its head.
                 if let Some(record) = reg.cursor_due(u64::from(mycelium::physics::aperture_cycle())) {
-                    write_beside(&door.state_path, "cursor", &record);
+                    write_beside(&context.state_path, "cursor", &record);
                 }
                 body
             }
             (None, Some((voice, cite))) => {
-                let Ok(reg) = door.registry.lock() else { return true };
+                let Ok(reg) = context.registry.lock() else { return true };
                 let found = reg.task(&cite).and_then(|task| envelope(&cite, task));
                 match found {
                     Some(b) => {
@@ -236,7 +213,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // ground of its own. A citation this book holds no task for has no
         // ground read at all, and is refused by name below.
         let (tid, withheld, open, ground) = {
-            let Ok(reg) = door.registry.lock() else { return true };
+            let Ok(reg) = context.registry.lock() else { return true };
             let g = reg.task(&cite).map(|t| mycelium::cognition::stated_ground(&t.train, stated.as_deref()));
             (cite, reg.withheld(&cite), reg.open(&cite), g)
         };
@@ -270,7 +247,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // at all where every one of them stopped here.
         use mycelium::observe::Judged;
         let rule_carried = rule.is_some();
-        let pre: Option<Judged> = match crate::held::held!(door.court) {
+        let pre: Option<Judged> = match crate::held::held!(context.court) {
             Ok(mut h) => h.run(|k, _| {
                 if signed && k.inner_seat(&svoice) {
                     k.note_judged(Judged::InnerSeat);
@@ -331,7 +308,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             }
             (None, Some(first), Some(rule), Some(Ok(ground))) => {
                 let (verdict, offers) = {
-                    let Ok(mut h) = crate::held::held!(door.court) else { return true };
+                    let Ok(mut h) = crate::held::held!(context.court) else { return true };
                     // OWED (78.153b): the solve's replay mints its own stroke
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
@@ -379,22 +356,22 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     })
                 };
                 // The solving rule docketed is offered by the act that docketed it.
-                crate::offer::offer(&door.court, &door.mesh, offers);
+                crate::offer::offer(&context.court, &context.mesh, offers);
                 verdict
             }
         };
         if let Some((at, _)) = stamp {
             // PAID, THEN RECORDED: the closure enters the registry after its
             // payment, so none is lost between the two.
-            if let Ok(mut reg) = door.registry.lock() {
+            if let Ok(mut reg) = context.registry.lock() {
                 if reg.close(&tid) == Some(mycelium::registry::Closure::First) {
                     if let Some(snap) = reg.snapshot() {
-                        write_beside(&door.state_path, "registry", &snap);
+                        write_beside(&context.state_path, "registry", &snap);
                     }
                     // The cursor's record with it, so the record is never
                     // older than the snapshot's own cursor.
                     if let Some(record) = reg.cursor_record() {
-                        write_beside(&door.state_path, "cursor", &record);
+                        write_beside(&context.state_path, "cursor", &record);
                     }
                 }
             }
@@ -402,17 +379,17 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             // spoken onward; the second makes the root consilient and rewinds
             // the syllabus; a later one is consilient already.
             let hear = {
-                let Ok(mut roots) = door.roots.lock() else { return true };
+                let Ok(mut roots) = context.roots.lock() else { return true };
                 note_root(&mut roots, tid, svoice, at)
             };
             match hear {
                 RootHear::Known => {}
                 RootHear::First | RootHear::Joined => {
-                    speak_root_locked(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, at);
+                    speak_root_locked(&context.router, &context.nerve_tx, &context.id, &tid, &svoice, None, at);
                 }
                 RootHear::Second => {
-                    rewind_syllabus(door);
-                    speak_root_locked(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, at);
+                    rewind_syllabus(context);
+                    speak_root_locked(&context.router, &context.nerve_tx, &context.id, &tid, &svoice, None, at);
                 }
             }
         }
@@ -421,7 +398,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // was paid, or the published height where nothing was.
         let judged_at = match stamp.as_ref() {
             Some((at, _)) => *at,
-            None => door.published.take().height(),
+            None => context.published.take().height(),
         };
         mycelium::observe::note_judged_solve(cite, svoice, code, judged_at);
         // The paid modes ride behind the receipt; modes that do not write
@@ -437,13 +414,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     }
     if kind == dialogue::ACT_PEERS {
         if dialogue::decode_peers_request(&frame.body).is_some() {
-            let mut nerve_addrs = vec![door.bind.clone()];
-            for p in door.join_peers.iter() {
+            let mut nerve_addrs = vec![context.bind.clone()];
+            for p in context.join_peers.iter() {
                 if !nerve_addrs.iter().any(|a| a == p) {
                     nerve_addrs.push(p.clone());
                 }
             }
-            if let Ok(addrs) = door.mesh.addrs.lock() {
+            if let Ok(addrs) = context.mesh.addrs.lock() {
                 for (_, a) in addrs.scoped() {
                     if !nerve_addrs.iter().any(|x| x == a) {
                         nerve_addrs.push(a.clone());
@@ -466,7 +443,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         if let Some((_voice, from)) = dialogue::decode_cover_request(&frame.body) {
             // 78.153b — this court's own charts off the published reading,
             // never the cover trie walked and cloned under the court.
-            let read = door.published.take();
+            let read = context.published.take();
             let charts = read.own_cover_charts();
             // A chart wider than the page's axis count is passed over by
             // the encoder, so the count of them is said here once, where
@@ -478,8 +455,8 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 eprintln!("  cover page passed over {wide} of {} charts: wider than the axis count", charts.len());
             }
             let Some(body) = dialogue::encode_cover_page(
-                &door.mesh.vk,
-                &door.bind,
+                &context.mesh.vk,
+                &context.bind,
                 charts,
                 &from,
                 mycelium::network::wire::frame_budget(),
@@ -492,7 +469,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         return true;
     }
     if kind == dialogue::ACT_OFFER {
-        crate::judge::offer::judge(s, frame, door);
+        crate::judge::offer::judge(s, frame, context);
         return true;
     }
     if kind == dialogue::ACT_ADOPT {
@@ -501,10 +478,10 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         let queued = mycelium::transducer::element::Element::from_bytes(&elem_bytes, &mut pos)
             .map(|word| {
                 let addr = word.address();
-                if let Ok(mut sy) = door.syllabus.lock() {
+                if let Ok(mut sy) = context.syllabus.lock() {
                     syllabus_admit(&mut sy, [addr]);
                 }
-                door.synth_tx.try_send(mycelium::synthesis::Deliberation::Adopt(ratifier, word)).is_ok()
+                context.synth_tx.try_send(mycelium::synthesis::Deliberation::Adopt(ratifier, word)).is_ok()
             })
             // A word whose tape does not parse queues nothing.
             .is_some_and(|q| q);
@@ -518,8 +495,8 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // 78.153b — the seed off the published reading, never every ruled
         // address copied under the court per page asked.
         let (cursor, window) = {
-            let read = door.published.take();
-            let Ok(mut sy) = door.syllabus.lock() else { return true };
+            let read = context.published.take();
+            let Ok(mut sy) = context.syllabus.lock() else { return true };
             syllabus_admit(&mut sy, read.syllabus_seed());
             syllabus_window(&mut sy, &svoice)
         };
@@ -530,7 +507,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // sealed as a Syllabus act and carries that stamp. Nothing is sealed
         // for a word that is not sent.
         let (page, classes) = {
-            let Ok(mut h) = crate::held::held!(door.court) else { return true };
+            let Ok(mut h) = crate::held::held!(context.court) else { return true };
             // The page is bounded by the window (one wire count); the whole
             // nerve's class records on the hold's stroke, resumed page to
             // page past the chart the last reading stopped at (78.153b).
@@ -539,7 +516,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 (page, k.class_records_on(&mycelium::transducer::stalk::Invariant::default(), &svoice, reads))
             });
             drop(h);
-            if let Ok(mut sy) = door.syllabus.lock() {
+            if let Ok(mut sy) = context.syllabus.lock() {
                 sy.served.insert(svoice, cursor + page.consumed);
             }
             (page, classes)
@@ -555,7 +532,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // O(missed × order) where O(order) already stands (rule 10). The
         // index is built once, and the `.unwrap()`s with it (§2.4).
         if !missed.is_empty() {
-            if let Ok(mut sy) = door.syllabus.lock() {
+            if let Ok(mut sy) = context.syllabus.lock() {
                 let ahead = match sy.served.get(&svoice) {
                     Some(&n) => n,
                     None => 0,
@@ -613,8 +590,8 @@ pub(crate) fn write_beside(state_path: &str, name: &str, bytes: &[u8]) {
 /// the proven word reaches each of them on its next page (26). Read and
 /// rewound under one lock; it read the fibre under one lock and wrote under
 /// a second, and panicked on a poisoned first (§2.4).
-fn rewind_syllabus(door: &Door) {
-    let Ok(mut sy) = door.syllabus.lock() else { return };
+fn rewind_syllabus(context: &Context) {
+    let Ok(mut sy) = context.syllabus.lock() else { return };
     // EVERY voice's cursor returns to the start -- that is what a rewind
     // is -- and the carrier holds one entry per voice.
     let voices: Vec<Vec<u8>> = sy.served.scoped().map(|(v, _)| v).collect();

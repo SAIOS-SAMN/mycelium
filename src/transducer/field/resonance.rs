@@ -404,8 +404,8 @@ struct Row {
     other_mass: Vec<u64>,
     /// A.13 — this body and each of the other's as momentum reads them:
     /// centroid, mass, second moments (78.52 Row 1).
-    body: Option<crate::physics::tensegrity::Body>,
-    other_bodies: Vec<Option<crate::physics::tensegrity::Body>>,
+    body: Option<crate::physics::equilibrium::Body>,
+    other_bodies: Vec<Option<crate::physics::equilibrium::Body>>,
 }
 
 /// ONE LINE OF A PAIR'S SPECTRUM (78.50): a ray, the bodies of this
@@ -419,13 +419,13 @@ struct Line {
 }
 
 /// The physics' verdict on a relation: admitted, or refused by name.
-type Verdict = Result<(), crate::physics::tensegrity::Refusal>;
+type Verdict = Result<(), crate::physics::equilibrium::Refusal>;
 
 /// A GROUND FROM ITS BODIES AND ITS STEP FORWARD (78.52): the step at its
 /// canonical ray, its class and its return (a period of at least two), and
 /// the coupling — the step's succession at the bodies' barycentre. Refused
 /// with what failed: the step does not return, or reads no succession.
-fn ground_of(bodies: Vec<crate::physics::tensegrity::GroundBody>, forward: &Mv) -> Result<crate::physics::tensegrity::Ground, Ungrounded> {
+fn ground_of(bodies: Vec<crate::physics::equilibrium::GroundBody>, forward: &Mv) -> Result<crate::physics::equilibrium::Ground, Ungrounded> {
     use crate::transducer::alphabet::Order;
     let generator = forward.canonical().ok_or(Ungrounded::NoReturn)?;
     let f = crate::transducer::element::conformal_factors(&generator).map_err(|_| Ungrounded::NoReturn)?;
@@ -437,12 +437,12 @@ fn ground_of(bodies: Vec<crate::physics::tensegrity::GroundBody>, forward: &Mv) 
         return Err(Ungrounded::NoReturn);
     }
     let class = generator.class_key().ok_or(Ungrounded::NoSuccession)?;
-    let draft = crate::physics::tensegrity::Ground { class, period, bodies, generator: generator.clone(), coupling: generator };
-    let centre = crate::physics::tensegrity::ground_centre(&draft).ok_or(Ungrounded::NoSuccession)?;
-    let coupling = crate::physics::tensegrity::succession(&draft.generator, &centre)
+    let draft = crate::physics::equilibrium::Ground { class, period, bodies, generator: generator.clone(), coupling: generator };
+    let centre = crate::physics::equilibrium::ground_centre(&draft).ok_or(Ungrounded::NoSuccession)?;
+    let coupling = crate::physics::equilibrium::succession(&draft.generator, &centre)
         .and_then(|c| c.canonical())
         .ok_or(Ungrounded::NoSuccession)?;
-    Ok(crate::physics::tensegrity::Ground { coupling, ..draft })
+    Ok(crate::physics::equilibrium::Ground { coupling, ..draft })
 }
 
 /// Why an admitted relation filed no ground — its slot in
@@ -732,8 +732,8 @@ impl Contemplation {
                         nucleus: x.blade.vertex_nucleus(),
                         other_nuclei: other_shapes.iter().map(|y| y.blade.vertex_nucleus()).collect(),
                         other_mass: other_shapes.iter().map(|y| y.blade.support.len() as u64).collect(),
-                        body: crate::physics::tensegrity::body_of_shape(x),
-                        other_bodies: other_shapes.iter().map(crate::physics::tensegrity::body_of_shape).collect(),
+                        body: crate::physics::equilibrium::body_of_shape(x),
+                        other_bodies: other_shapes.iter().map(crate::physics::equilibrium::body_of_shape).collect(),
                     };
                     for y in &other_shapes {
                         match transition(x, y, budget) {
@@ -1100,7 +1100,7 @@ impl Contemplation {
 
     /// A.10.1 — THE CONSOLIDATION GATE, before any thought is formed. The
     /// other's bodies are the constellation BEFORE, and with this perception's
-    /// bodies joined, AFTER; the physics decides (`physics::tensegrity`):
+    /// bodies joined, AFTER; the physics decides (`physics::equilibrium`):
     /// admitted where every constellation's attitudes stand in equilibrium,
     /// its strain did not rise, and — in a scene — every pair of bodies kept
     /// its inversive distance.
@@ -1129,8 +1129,8 @@ impl Contemplation {
     ///
     /// What the admitted relation holds in the mind's field is wound on its
     /// tether's line, `line` (MU-CLIENT §4.13, Reading 2).
-    fn gate(&mut self, rows: &[Row], generator: &Mv, orbit: bool, line: &[u8], budget: &mut crate::physics::Budget) -> Result<(), crate::physics::tensegrity::Refusal> {
-        use crate::physics::tensegrity::{
+    fn gate(&mut self, rows: &[Row], generator: &Mv, orbit: bool, line: &[u8], budget: &mut crate::physics::Budget) -> Result<(), crate::physics::equilibrium::Refusal> {
+        use crate::physics::equilibrium::{
             barycentre, coherence, external_torque, hour, metric_defect, succession, Constellation, Defect, Refusal,
         };
         // 78.57 — THE COHERENCE FORM: every defect of this transition read,
@@ -1141,7 +1141,7 @@ impl Contemplation {
         // MU-CLIENT §4.5 — THE BODIES THAT MET in a scene: each by its slot
         // (fused, precessing, contact) and the sphere pair's versor.
         let mut met: Vec<(usize, Mv)> = Vec::new();
-        let mut coupled: Vec<crate::physics::tensegrity::Coupling> = Vec::new();
+        let mut coupled: Vec<crate::physics::equilibrium::Coupling> = Vec::new();
         if unit_ray(generator) {
             self.resonance.reflexive += 1;
             return Ok(());
@@ -1220,7 +1220,7 @@ impl Contemplation {
             // torque, every step read.
             if orbit {
                 for r in &on {
-                    let hours: Option<Vec<&crate::physics::tensegrity::Body>> =
+                    let hours: Option<Vec<&crate::physics::equilibrium::Body>> =
                         first.other_bodies.iter().chain(std::iter::once(&r.body)).map(Option::as_ref).collect();
                     let Some(hours) = hours else { continue };
                     for pair in hours.windows(2) {
@@ -1267,7 +1267,7 @@ impl Contemplation {
                     // carrying this body about the other's barycentre, split
                     // into orbit and spin and read as a lock or a drift.
                     if let (Some(from), Some(to)) = (cga::base_at(x, usize::from(x.n())), cga::base_at(&landed, usize::from(landed.n()))) {
-                        if let Some(c) = crate::physics::tensegrity::spin_orbit(generator, &star, &from, &to) {
+                        if let Some(c) = crate::physics::equilibrium::spin_orbit(generator, &star, &from, &to) {
                             coupled.push(c);
                         }
                     }
@@ -1285,7 +1285,7 @@ impl Contemplation {
         // nothing; a precession's sphere-pair turn and a contact's null flux
         // are held in the mind's field (𝒽, 𝒯), the torsion and the graze its
         // content.
-        use crate::physics::tensegrity::Coupling;
+        use crate::physics::equilibrium::Coupling;
         let drifts = coupled.iter().filter_map(|c| match c {
             Coupling::Drift(d) => Some(d),
             Coupling::Lock(..) => None,
@@ -1351,14 +1351,14 @@ impl Contemplation {
         if rest.iter().any(|r| r.chart != first.chart) {
             return self.ungrounded(Ungrounded::Unplaced);
         }
-        let bodies: Option<Vec<crate::physics::tensegrity::GroundBody>> = match orbit {
+        let bodies: Option<Vec<crate::physics::equilibrium::GroundBody>> = match orbit {
             true => {
                 let ([], [Some(nucleus), ..], [Some(body), ..]) =
                     (rest, first.other_nuclei.as_slice(), first.other_bodies.as_slice())
                 else {
                     return self.ungrounded(Ungrounded::Unplaced);
                 };
-                Some(vec![crate::physics::tensegrity::GroundBody { nucleus: nucleus.clone(), body: body.clone() }])
+                Some(vec![crate::physics::equilibrium::GroundBody { nucleus: nucleus.clone(), body: body.clone() }])
             }
             false => first
                 .other_nuclei
@@ -1366,7 +1366,7 @@ impl Contemplation {
                 .zip(&first.other_bodies)
                 .map(|(s, b)| match (s, b) {
                     (Some(nucleus), Some(body)) => {
-                        Some(crate::physics::tensegrity::GroundBody { nucleus: nucleus.clone(), body: body.clone() })
+                        Some(crate::physics::equilibrium::GroundBody { nucleus: nucleus.clone(), body: body.clone() })
                     }
                     _ => None,
                 })
@@ -1377,7 +1377,7 @@ impl Contemplation {
         let forward = if orbit { generator.clone() } else { generator.reverse() };
         match ground_of(bodies, &forward) {
             Ok(ground) => {
-                let grounded = super::idea::Grounded { chart: first.chart.clone(), hours, ground, twist: None };
+                let grounded = super::well::Grounded { chart: first.chart.clone(), hours, ground, twist: None };
                 self.wind_ground(&grounded, hours, budget);
                 self.grounds.insert(pair_key(key, other), grounded);
                 self.resonance.grounds[0] += 1;
@@ -1448,8 +1448,8 @@ impl Contemplation {
     /// rate) and LIFT (the tilt, 78.46), each counted. `None` where no
     /// rotation of the pull carries it: the body was carried off the
     /// attractor (a slide away, a change of size, another body).
-    fn twisted_return(&mut self, held: super::idea::Grounded, perceived: &[(&Mv, &crate::physics::tensegrity::Body)], power: &Mv) -> Option<super::idea::Grounded> {
-        use crate::physics::tensegrity::{carried_body, GroundBody};
+    fn twisted_return(&mut self, held: super::well::Grounded, perceived: &[(&Mv, &crate::physics::equilibrium::Body)], power: &Mv) -> Option<super::well::Grounded> {
+        use crate::physics::equilibrium::{carried_body, GroundBody};
         let g = &held.ground;
         let centre = match crate::transducer::cga::centre_of(&g.generator, g.generator.n()) {
             crate::transducer::cga::Centre::Fixed { point, .. } => point,
@@ -1483,14 +1483,14 @@ impl Contemplation {
             Some(t) => at_zero.geo(t),
             None => at_zero,
         });
-        Some(super::idea::Grounded { ground: sheared, twist, ..held })
+        Some(super::well::Grounded { ground: sheared, twist, ..held })
     }
 
     /// `join_ground`'s reading: the verdict and the ground's generator.
     fn read_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], budget: &mut crate::physics::Budget) -> Option<(Verdict, Mv)> {
-        use crate::physics::tensegrity::{carried_body, coherence, external_torque, hour, metric_defect, Constellation, Refusal};
+        use crate::physics::equilibrium::{carried_body, coherence, external_torque, hour, metric_defect, Constellation, Refusal};
         let held = self.wells.get(other)?.ground.clone()?;
-        let perceived: Vec<(&Mv, &crate::physics::tensegrity::Body)> = rows
+        let perceived: Vec<(&Mv, &crate::physics::equilibrium::Body)> = rows
             .iter()
             .filter(|r| r.chart == held.chart)
             .filter_map(|r| match (&r.nucleus, &r.body) {
@@ -1527,7 +1527,7 @@ impl Contemplation {
         let g = &grounded.ground;
         // Each body of the ground, at its predicted place, against the one of
         // this perception's bodies that stands there.
-        let mut matched: Vec<(&crate::physics::tensegrity::GroundBody, &Mv, &crate::physics::tensegrity::Body)> =
+        let mut matched: Vec<(&crate::physics::equilibrium::GroundBody, &Mv, &crate::physics::equilibrium::Body)> =
             Vec::with_capacity(perceived.len());
         for base in &g.bodies {
             let predicted = power.sandwich(&base.nucleus);
@@ -1597,7 +1597,7 @@ impl Contemplation {
         let Some(seen) = grounded.hours.checked_add(1) else {
             return Some((Err(Refusal::NoSuccession), g.generator.clone()));
         };
-        let next = super::idea::Grounded { hours: seen, ..grounded.clone() };
+        let next = super::well::Grounded { hours: seen, ..grounded.clone() };
         // MU-CLIENT §4.13 (Q1 as ruled) — the hour joined is one more
         // transition of the thought's orbit in the field, on its own line.
         self.wind_ground(&next, 1, budget);
@@ -1611,8 +1611,8 @@ impl Contemplation {
     /// residue, the change in the pair's inversive distance, or the external
     /// torque; a monocular orbit, a collapse or a step with no succession is
     /// counted.
-    fn note_refusal(&mut self, why: &crate::physics::tensegrity::Refusal, generator: &Mv, rows: &[Row]) {
-        use crate::physics::tensegrity::Refusal;
+    fn note_refusal(&mut self, why: &crate::physics::equilibrium::Refusal, generator: &Mv, rows: &[Row]) {
+        use crate::physics::equilibrium::Refusal;
         // The residues this refusal files, each its own demand: one blade
         // per defect component, never summed (78.57).
         let residues: Vec<Option<Mv>> = match why {

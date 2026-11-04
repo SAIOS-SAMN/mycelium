@@ -1,6 +1,6 @@
 // 54.7 — the Niven trap: a period is crystallographic or it is infinite.
 
-use super::common::q;
+use super::fixtures::q;
 use crate::transducer::cga::*;
 
 /// 54.7 — THE NIVEN TRAP: an open orbit has TWO causes, and reading
@@ -24,7 +24,7 @@ fn compact_period_is_crystallographic_or_open() {
     // purely elliptic — a non-zero compact part — and its orbit is dense
     // and closes never. `B_ell ≠ 0` does not imply a finite period.
     let pyth = rotator(&q(3, 1), &q(4, 1));
-    let (e, h) = bivector_split(&pyth, &mut super::common::budget()).expect("a simple rotation splits");
+    let (e, h) = bivector_split(&pyth, &mut super::fixtures::budget()).expect("a simple rotation splits");
     assert!(!e.is_zero(), "the (3,4,5) rotor HAS a compact part");
     assert!(h.is_zero(), "and no open part at all");
     assert_eq!(

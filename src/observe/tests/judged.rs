@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// THE JUDGED-SOLVE OBSERVATION (2026-10-24): each solve a court judged
 /// stands under its task's citation and the voice that sent it, with the

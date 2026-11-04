@@ -3,7 +3,7 @@
 
 use crate::transducer::element::*;
 use crate::transducer::germinate::germinate;
-use super::common::*;
+use super::fixtures::*;
 
 /// ONE SEAT PER OPENED AXIS, HOWEVER OFTEN IT IS OPENED.
 ///
@@ -86,7 +86,7 @@ fn germinate_keeps_canceling_swap_nonidentity() {
     // The two descriptions share one base geometry: a versor carries one
     // support onto the other, and the reversed gauge is a second section
     // of the same word, never a second card.
-    assert!(l_to_bar.carriage(&bar_to_l, &mut super::common::budget()).is_some(), "one base geometry, two sections");
+    assert!(l_to_bar.carriage(&bar_to_l, &mut super::fixtures::budget()).is_some(), "one base geometry, two sections");
 }
 
 /// Multi-axial: distinct axes compose INDEPENDENTLY (no cross-talk, no cap on

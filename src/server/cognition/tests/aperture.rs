@@ -1,7 +1,7 @@
 // 24.1 — THE APERTURE: what the mind can afford to hold, what it sheds,
 // and that the cost of one word does not grow with the book.
 
-use super::common::speak_pair;
+use super::fixtures::speak_pair;
 use crate::cognition::*;
 
 /// THE TWO-STROKE BREATHES: sustained germination depletes the reserve; a germ
@@ -51,7 +51,7 @@ assert_eq!(speak_pair(&mut k, &a, &gb, [4; 32]), Outcome::GermPending);
 // A's quorum lands on the recovered lane and installs — spending it back out…
 assert_eq!(speak_pair(&mut k, &a, &ga, [2; 32]), Outcome::GermPending);
 let mut cover = crate::network::nerve::Cover::new();
-let _ = super::common::fetched(&mut k, &ga_spoken, [2; 32], [1; 32], &mut cover);
+let _ = super::fixtures::fetched(&mut k, &ga_spoken, [2; 32], [1; 32], &mut cover);
 // …so B finds the lane DEPLETED. The METABOLISM is what defers -- the
 // only thing that should gate here (E3) -- and the germ is not lost: a
 // later submission dockets it once the reserve recovers. What does NOT

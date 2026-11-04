@@ -78,28 +78,28 @@ enum Refusal {
 
 /// A shedding door, as the tally's index.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Door {
+pub enum Shedding {
     Orbit,
     Citation,
     Unglued,
 }
 
-impl Door {
-    pub const ALL: [Door; 3] = [Door::Orbit, Door::Citation, Door::Unglued];
+impl Shedding {
+    pub const ALL: [Shedding; 3] = [Shedding::Orbit, Shedding::Citation, Shedding::Unglued];
 
     pub fn index(self) -> usize {
         match self {
-            Door::Orbit => 0,
-            Door::Citation => 1,
-            Door::Unglued => 2,
+            Shedding::Orbit => 0,
+            Shedding::Citation => 1,
+            Shedding::Unglued => 2,
         }
     }
 
     pub fn name(self) -> &'static str {
         match self {
-            Door::Orbit => "orbit",
-            Door::Citation => "citation",
-            Door::Unglued => "unglued",
+            Shedding::Orbit => "orbit",
+            Shedding::Citation => "citation",
+            Shedding::Unglued => "unglued",
         }
     }
 }
@@ -276,9 +276,9 @@ impl Contemplation {
     }
 
     /// AND AFTER: counted on the door's own row.
-    pub(crate) fn shed_after(&mut self, door: Door, removed: usize, before: Option<(u64, i64)>) {
+    pub(crate) fn shed_after(&mut self, shedding: Shedding, removed: usize, before: Option<(u64, i64)>) {
         let Some((in_core, before)) = before else { return };
-        let d = door.index();
+        let d = shedding.index();
         self.shed.removed[d] += removed as u64;
         self.shed.in_core[d] += in_core;
         self.shed.rank_lost[d] += before - self.h1_rank().0;

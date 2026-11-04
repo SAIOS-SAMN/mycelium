@@ -168,7 +168,7 @@ fn owe_citation_owes_once_per_court_never_sealed() {
     let (family, cited) = two_bars();
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("owing"));
     entity.epigenome.stand_dialect_at(cited.clone(), 1, 1);
-    let citer = super::common::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
+    let citer = super::fixtures::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
     let courts = entity.hypha.courts();
     assert!(courts >= 1, "the mind knows a court: {courts}");
     for n in 0..courts {

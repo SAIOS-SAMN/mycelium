@@ -5,7 +5,7 @@
 // pivots on cells sharing no vertex commute; the walk `d, a, s, d` reads as
 // ruled.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::*;
 use crate::transducer::element::identity_versor as ident;

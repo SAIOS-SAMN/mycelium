@@ -252,7 +252,7 @@ const O3: [&str; 5] = ["000000", "000000", "001000", "111000", "000000"];
 const O3_OUT: [&str; 5] = ["000000", "000000", "000100", "011100", "000000"];
 
 /// The one thought held, and the one ground its closing handed its voice.
-fn the_thought_and_its_ground(c: &Contemplation) -> (crate::transducer::field::Well, crate::physics::tensegrity::Ground) {
+fn the_thought_and_its_ground(c: &Contemplation) -> (crate::transducer::field::Well, crate::physics::equilibrium::Ground) {
     let [(_, thought)] = c.wells.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
     let [(ground, _)] = c.closed.as_slice() else { panic!("one thought closed: {}", c.closed.len()) };
     (thought.clone(), ground.clone())
@@ -462,7 +462,7 @@ fn drain_demands_hands_out_escaping_slide_once() {
     assert_eq!((c.resonance.scene_motions, c.resonance.grounds[0]), (1, 0), "one scene motion, no ground: {}", c.resonance.line());
     assert!(c.resonance.grounds[1] > 0, "no return: {}", c.resonance.line());
     let taken = c.drain_demands();
-    let slides: Vec<&crate::transducer::field::docket::TakenDemand> =
+    let slides: Vec<&crate::transducer::field::plan::TakenDemand> =
         taken.iter().filter(|d| d.residue.as_ref().is_some_and(|r| !crate::transducer::sentence::presentation::is_still(r))).collect();
     assert!(!slides.is_empty(), "the escaping orbit docketed with the motion that carries it: {}", c.resonance.line());
     assert!(slides.iter().all(|d| !d.charts.is_empty()), "on the chart it stands on");
@@ -482,7 +482,7 @@ fn drain_demands_hands_out_escaping_slide_once() {
     }
     let filed = c.demand_scenes.len();
     let taken = c.drain_demands();
-    let slides: Vec<&crate::transducer::field::docket::TakenDemand> =
+    let slides: Vec<&crate::transducer::field::plan::TakenDemand> =
         taken.iter().filter(|d| d.residue.as_ref().is_some_and(|r| !crate::transducer::sentence::presentation::is_still(r))).collect();
     assert!(!slides.is_empty(), "the escaping orbit is still docketed");
     let families: Vec<&Vec<Vec<u8>>> = slides.iter().map(|d| &d.families).collect();

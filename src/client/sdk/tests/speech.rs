@@ -2,7 +2,7 @@
 // it does not read into one that says less than it asked about, and where
 // it looks to know whether it has spoken a vertex before.
 
-use crate::client::sdk::entity::utter::{read_speech_reply, vertex_stratum};
+use crate::client::sdk::mind::utter::{read_speech_reply, vertex_stratum};
 use crate::anastome::dialogue;
 
 /// 50.6 seam 1 — A WITHHELD REMAINDER IS NEVER A WORD: neither body of a
@@ -13,7 +13,7 @@ use crate::anastome::dialogue;
 /// read as garbage.)
 #[test]
 fn withhold_form_stands_no_remainder_as_word() {
-    use super::common::closed_turn;
+    use super::fixtures::closed_turn;
     use crate::client::sdk::*;
     use crate::transducer::element::{canonical_chain, from_canonical};
     let chain_word = |links: &[(i64, i64, u8, u8)]| {

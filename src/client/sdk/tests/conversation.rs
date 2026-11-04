@@ -93,7 +93,7 @@ fn take_in_conversation_derives_meaning_from_posited_residue() {
     let said = from_connection(&Word::from_letters(&[(q, false)]), &along, &[], &Vec::new(), [1, 0, 0, 0]).expect("a connection");
     a.say(&said, &[]);
     // MU-CLIENT §4.4(4) — what A says leaves when A's own field comes round.
-    assert!(super::common::bind_a_thought(&mut a, &[]) > 0, "A's orbit returned");
+    assert!(super::fixtures::bind_a_thought(&mut a, &[]) > 0, "A's orbit returned");
     let derived = |b: &mut Mind| {
         let mut field = std::mem::take(&mut b.field);
         let read = field.think(|| (known(&screw), held_rung(&screw)));
@@ -178,7 +178,7 @@ fn compose_or_construct_speaks_remainder_ruled_words_compose() {
     mind.field = field;
     assert!(knows, "the whole word is known: the turn with the double slide");
     // MU-CLIENT §4.4(4) — what the mind composed leaves when its field comes round.
-    assert!(super::common::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
+    assert!(super::fixtures::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
     let mut act = None;
     for _ in 0..4_000_000u32 {
         if let Ok(heard) = speeches.try_recv() {
@@ -221,7 +221,7 @@ fn compose_or_construct_speaks_conjugate_as_transported_word() {
     field.think(|| mind.compose_or_construct(&residue, Some(&chart), &mut budget));
     mind.field = field;
     // MU-CLIENT §4.4(4) — what the mind composed leaves when its field comes round.
-    assert!(super::common::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
+    assert!(super::fixtures::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
     let mut act = None;
     for _ in 0..4_000_000u32 {
         if let Ok(heard) = speeches.try_recv() {
@@ -272,7 +272,7 @@ fn compose_or_construct_speaks_ruled_composition_to_court() {
     field.think(|| mind.compose_or_construct(&twice, Some(&chart), &mut budget));
     mind.field = field;
     // MU-CLIENT §4.4(4) — what the mind composed leaves when its field comes round.
-    assert!(super::common::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
+    assert!(super::fixtures::bind_a_thought(&mut mind, &[]) > 0, "the mind's orbit returned");
     let mut act = None;
     for _ in 0..4_000_000u32 {
         if let Ok(heard) = speeches.try_recv() {
@@ -366,7 +366,7 @@ fn say_carries_shared_word_to_court_with_hold() {
     let said = word(&[(q, false), (q, false)]);
     a.say(&said, &[]);
     // MU-CLIENT §4.4(4) — what A says leaves when A's own field comes round.
-    assert!(super::common::bind_a_thought(&mut a, &[]) > 0, "A's orbit returned");
+    assert!(super::fixtures::bind_a_thought(&mut a, &[]) > 0, "A's orbit returned");
     // Each mind's field prices what its conversation understood, as its tick
     // does at admission; the court hears once both fields converged.
     let mut act = None;
@@ -445,7 +445,7 @@ fn conformal_of_word(letters: &[(LetterId, bool)]) -> crate::transducer::cga::Mv
 /// into nothing smaller and comes back whole — an atom.
 #[test]
 fn factors_of_answers_question_by_word_factors() {
-    use crate::client::sdk::entity::chatter::factors_of;
+    use crate::client::sdk::mind::chatter::factors_of;
     use crate::transducer::element::conformal_of;
     let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let two = conformal_of(&Word::from_letters(&[(q, false), (q, false)]), &identity_versor()).expect("a motion");
@@ -464,7 +464,7 @@ fn factors_of_answers_question_by_word_factors() {
 /// meanwhile; the next stroke prices what is left and owes none for it.
 #[test]
 fn price_hearings_prices_one_budget_rest_wait() {
-    use crate::client::sdk::entity::chatter::FieldWork;
+    use crate::client::sdk::mind::chatter::FieldWork;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("pricing"));
     let field = mind.pricing_for_test();
     let reads = crate::physics::Physics::default().stroke().remaining();
@@ -483,8 +483,8 @@ fn price_hearings_prices_one_budget_rest_wait() {
 /// strokes are owed; with the pipeline clear, it is priced.
 #[test]
 fn price_hearings_defers_while_task_waits() {
-    use crate::client::sdk::entity::chatter::FieldWork;
-    use crate::client::sdk::entity::offer::Offer;
+    use crate::client::sdk::mind::chatter::FieldWork;
+    use crate::client::sdk::mind::offer::Offer;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("task first"));
     let field = mind.pricing_for_test();
     field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
@@ -507,7 +507,7 @@ fn price_hearings_defers_while_task_waits() {
 /// is owed for it.
 #[test]
 fn lapse_unpriced_lapses_hearing_at_second_return() {
-    use crate::client::sdk::entity::chatter::FieldWork;
+    use crate::client::sdk::mind::chatter::FieldWork;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("lapsing hearing"));
     let field = mind.pricing_for_test();
     field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");

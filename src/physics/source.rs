@@ -1,8 +1,8 @@
 // 78.75 — THE WHITE-HOLE SOURCE, AN ORGAN: the inversion of a refusal is a
 // flow out of a point of the manifold's own, kept inside it (78.74, derived
-// in `tests/capacitor.rs`, where it stood alone until now).
+// in `tests/pivot_fibre.rs`, where it stood alone until now).
 //
-//! A GEOID `Σ` is the round a frame's pivots fix (`capacitor::shape_of`),
+//! A GEOID `Σ` is the round a frame's pivots fix (`pivot_fibre::shape_of`),
 //! held as one vector `σ` — the dual of the pivots' outer product — so a
 //! point lies on it by one scalar, `P·σ = 0`, and a motion keeps it exactly
 //! where its generator commutes with `σ`.

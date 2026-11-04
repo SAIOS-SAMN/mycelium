@@ -16,7 +16,7 @@
 //! moved, not rewritten (§1.6).
 
 use super::*;
-use crate::transducer::peel::ShellKind;
+use crate::transducer::layers::ShellKind;
 
 /// A piece of a body: one shell, one HUE-BLIND connected component (70.4).
 /// Its hues are the gauge its compartments carry, read off them where a reader

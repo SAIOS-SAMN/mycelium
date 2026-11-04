@@ -149,7 +149,7 @@ fn read_pieces_merges_nothing_for_sections_or_ended_stroke() {
 #[test]
 fn extract_rule_quotient_reads_percept_algorithms() {
     crate::transducer::raster::stand_on(0);
-    use super::common::grid;
+    use super::fixtures::grid;
     let slides = vec![
         (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
         (grid(&["0000110", "0000000", "0200000", "0220000"]), grid(&["0000110", "0000000", "0002000", "0002200"])),

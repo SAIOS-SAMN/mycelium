@@ -4,7 +4,7 @@
 
 > **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
-> **Components:** the shared algebra (`src/transducer/alphabet/`, `src/transducer/peel.rs`), used alike by the client and the court; letter admission on the court (`src/server/cognition/germinate/listing.rs`). No game term.
+> **Components:** the shared algebra (`src/transducer/alphabet/`, `src/transducer/layers.rs`), used alike by the client and the court; letter admission on the court (`src/server/cognition/germinate/listing.rs`). No game term.
 
 **Status:** reference, release 0.3.0-rc.2. It describes the alphabet as built,
 with the ruled form of a letter marked **Specified** (§8).
@@ -117,7 +117,7 @@ followed by a 90° turn it spells as that letter and one 90° letter. Reconstruc
 rotation it spelled.
 
 Code: `src/transducer/alphabet/spelling.rs` (`spell`, `spell_on`),
-`src/transducer/peel.rs` (`peel_nest`).
+`src/transducer/layers.rs` (`peel_nest`).
 
 ## 5. Motions that cannot be spelled
 
@@ -163,7 +163,7 @@ two courts reconstruct it (MU-RECURSION 37.7).
 
 A mind that meets a residue it cannot say constructs a letter of its own
 and adjoins it to its dialect (`construct_and_adjoin`,
-`client/sdk/entity/think.rs`; MU-RECURSION 78.109). The letter is the
+`client/sdk/mind/think.rs`; MU-RECURSION 78.109). The letter is the
 mind's until a court admits a word built from it; it reaches the shared
 language only through that ruling.
 
@@ -210,11 +210,11 @@ change; the carrier of those rotations does.
 | Letters, relators, slots | `src/transducer/alphabet/letters.rs` |
 | Rotors and inverses | `src/transducer/alphabet/rotor.rs` |
 | Words | `src/transducer/alphabet/word.rs` |
-| Spelling | `src/transducer/alphabet/spelling.rs`, `src/transducer/peel.rs` |
+| Spelling | `src/transducer/alphabet/spelling.rs`, `src/transducer/layers.rs` |
 | Four-space factoring | `src/transducer/alphabet/factor.rs` |
 | Derivations of a word | `src/transducer/alphabet/derivation.rs` |
 | Admitted letters | `src/server/cognition/germinate/listing.rs` |
-| Dialect letters | `src/client/sdk/entity/think.rs` |
+| Dialect letters | `src/client/sdk/mind/think.rs` |
 
 The alphabet's letters were restored from ipsal-autic v0.4, an earlier
 language project.

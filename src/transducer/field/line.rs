@@ -20,7 +20,7 @@
 //! (78.168: a dissipated escaping orbit is bound). Escrow is conserved: every
 //! door that removes a thought returns what it holds, once.
 
-use super::core::Door;
+use super::nerve_shape::Shedding;
 use super::*;
 use crate::transducer::cech::orbit::Released;
 
@@ -71,7 +71,7 @@ impl Contemplation {
                 self.released_scenes.push(b.family.clone());
             }
         }
-        self.shed_after(Door::Orbit, 1, before);
+        self.shed_after(Shedding::Orbit, 1, before);
         self.truncate(&touched);
     }
 
@@ -137,7 +137,7 @@ impl Contemplation {
     /// line once for each of `hours` hours seen, so the orbit returns when
     /// the winding does. The line is the key the thought is filed under, its
     /// ground's coordinates on its chart.
-    pub(crate) fn wind_ground(&mut self, grounded: &super::idea::Grounded, hours: u64, budget: &mut crate::physics::Budget) {
+    pub(crate) fn wind_ground(&mut self, grounded: &super::well::Grounded, hours: u64, budget: &mut crate::physics::Budget) {
         let Some(line) = grounded.ground.key_on(&grounded.chart) else { return };
         let Ok(n) = usize::try_from(hours) else { return };
         let lines: Vec<crate::transducer::family::pairing::FieldLine> = (0..n)

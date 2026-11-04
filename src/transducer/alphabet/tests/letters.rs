@@ -2,7 +2,7 @@
 // the dihedral motions spell.
 
 use crate::transducer::alphabet::*;
-use crate::transducer::peel::PeelNest;
+use crate::transducer::layers::PeelNest;
 
 /// THE DERIVED LAYOUT IS THE TABULATED ONE, coordinate for coordinate.
 ///

@@ -4,7 +4,7 @@
 // on a Clifford torus and A.13's momentum is carried by an unforced orbit
 // (78.52 Row 1).
 
-use crate::physics::tensegrity::{
+use crate::physics::equilibrium::{
     barycentre, carried, coherence, consolidate, coupling, equilibrium, external_torque, force, hour, inversive,
     metric_defect, momentum, net_torque, rigid, spin_of, stability, succession, torque, Body, Constellation, Frame, Stability,
     Refusal, Star,

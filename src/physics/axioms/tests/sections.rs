@@ -16,8 +16,8 @@
 //   nothing binds.
 
 use crate::network::nerve::coord::BivectorKind;
-use crate::physics::capacitor::{Carried, Fibre};
-use crate::physics::fascicle::{Fascicle, Streamline};
+use crate::physics::pivot_fibre::{Carried, Fibre};
+use crate::physics::sphere_pair::{Fascicle, Streamline};
 use crate::transducer::cga::{self, Mv, E1, E2};
 use num_rational::BigRational;
 use num_traits::{Signed, Zero};
@@ -82,7 +82,7 @@ fn fibre_reads_coherent_sections_as_torsion() {
     let mirror = Mv::blade(E1, q(4, 1)).sub(&Mv::blade(E2, q(3, 1)));
     let slid = cga::translator_at(&[q(1, 1), q(0, 1)]);
     let read = |m: &Mv| {
-        let modes = crate::physics::capacitor::modes_of(m, 2, &mut crate::physics::Physics::default().stroke_n(1 << 16));
+        let modes = crate::physics::pivot_fibre::modes_of(m, 2, &mut crate::physics::Physics::default().stroke_n(1 << 16));
         joining.reads(&modes.expect("the modes read"))
     };
     assert_eq!(read(&v1.reverse().geo(&mirror)), Carried::Torsion, "coherent: the flip about the sources' line");
@@ -234,14 +234,14 @@ fn sigma_points_is_stable_only_under_axial_turn() {
         let r2_half = -cc.geo(&pt(u, 1)).scalar_part();
         cc.sub(&cga::e_inf().scale(&r2_half))
     };
-    let source = crate::physics::fascicle::Fascicle { first: through(along(w, q(1, 1))), second: through(along(w, q(2, 1))) }.versor();
+    let source = crate::physics::sphere_pair::Fascicle { first: through(along(w, q(1, 1))), second: through(along(w, q(2, 1))) }.versor();
     for s in &sigma {
         assert!(inside(&source.sandwich(s)), "the source keeps every sigma point inside");
     }
     assert!(!source.sandwich(&centre).projective_eq(&centre), "but the nucleus moves: marginal");
 
     // HYPERBOLIC: unstable.
-    let fibre = crate::physics::capacitor::Fibre::new(pt(u, 1), pt(u, -1), q(1, 1), q(1, 1)).expect("a fibre through c");
+    let fibre = crate::physics::pivot_fibre::Fibre::new(pt(u, 1), pt(u, -1), q(1, 1), q(1, 1)).expect("a fibre through c");
     let step = fibre.charge(&q(3, 2));
     let moved = step.sandwich(&centre);
     assert!(!moved.projective_eq(&centre), "the nucleus is driven along the field line: unstable");

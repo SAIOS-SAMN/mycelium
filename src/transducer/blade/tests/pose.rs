@@ -8,7 +8,7 @@ use crate::transducer::cga::{self, E1, E2, E3};
 type Cells = [(i64, i64, i64)];
 
 fn body(cells: &Cells) -> Blade {
-    shape_of(&super::common::sites(cells)).blade
+    shape_of(&super::fixtures::sites(cells)).blade
 }
 
 /// `V e_i Ṽ` as the multiple of one base axis it must be: every other
@@ -30,7 +30,7 @@ const S4: [(i64, i64, i64); 4] = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)];
 /// and on the tube.
 #[test]
 fn relative_pose_reads_symmetric_body_open_180() {
-    let mut b = super::common::budget();
+    let mut b = super::fixtures::budget();
     let s = body(&S4);
     // At one section, against its own 90° turn: the planar reader.
     let turned = body(&S4.map(|(r, c, k)| (-c, r, k)));
@@ -70,7 +70,7 @@ fn relative_pose_turns_centrosymmetric_solid() {
     let solid = [(0, 0, 0), (1, 0, 0), (0, 2, 0), (0, 0, 3), (-1, 0, 0), (0, -2, 0), (0, 0, -3), (1, 1, 1), (-1, -1, -1)];
     let a = body(&solid);
     let turned = body(&solid.map(|(r, c, k)| (r, -k, c)));
-    let mut b = super::common::budget();
+    let mut b = super::fixtures::budget();
     let Ok(Pose::Turn(v)) = relative_pose(&a, &turned, &mut b) else {
         panic!("a determined turn: {:?}", relative_pose(&a, &turned, &mut b));
     };
@@ -84,7 +84,7 @@ fn relative_pose_agrees_with_relative_rotor_at_one_section() {
     let turned = body(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (-1, 2, 0)]);
     let j = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
     let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
-    let mut b = super::common::budget();
+    let mut b = super::fixtures::budget();
     for other in [&turned, &j, &s, &l] {
         assert!(!on_tube(&l, other), "one section, both");
         let (pose, planar) = (relative_pose(&l, other, &mut b), relative_rotor(&l, other, GRID_PLANE, &mut b));
@@ -104,7 +104,7 @@ fn relative_pose_turns_flat_bodies_in_sensor_plane() {
     let a = body(&L4);
     let b = body(&[(0, 0, 1), (1, 0, 1), (2, 0, 1), (2, 1, 1)]);
     assert!(!on_tube(&a, &b));
-    assert!(matches!(relative_pose(&a, &b, &mut super::common::budget()), Ok(Pose::Turn(_)) | Ok(Pose::Open180(_))));
+    assert!(matches!(relative_pose(&a, &b, &mut super::fixtures::budget()), Ok(Pose::Turn(_)) | Ok(Pose::Open180(_))));
 }
 
 /// A body turning between two sections reads a pose whose plane contains e3.
@@ -116,8 +116,8 @@ fn relative_pose_lights_plane_with_e3_across_sections() {
     let a = body(&L4);
     let b = body(&[(0, 0, 0), (0, 0, 1), (0, 0, 2), (0, 1, 2)]);
     assert!(on_tube(&a, &b), "the turned body spans sections");
-    let Ok(Pose::Turn(v)) = relative_pose(&a, &b, &mut super::common::budget()) else {
-        panic!("a turn: {:?}", relative_pose(&a, &b, &mut super::common::budget()));
+    let Ok(Pose::Turn(v)) = relative_pose(&a, &b, &mut super::fixtures::budget()) else {
+        panic!("a turn: {:?}", relative_pose(&a, &b, &mut super::fixtures::budget()));
     };
     assert!(*v.coeff(E1 | E3) != num_rational::BigRational::from_integer(0.into()), "the plane e13 is lit: {v:?}");
     assert!(sends(&v, E1, E3), "the row goes to the succession axis: {v:?}");
@@ -137,7 +137,7 @@ fn mapped(f: impl Fn((i64, i64, i64)) -> (i64, i64, i64)) -> Blade {
 /// A solid on the tube reads its turn, its mirror and its irrational scale.
 #[test]
 fn relative_pose_reads_turn_mirror_and_irrational_scale() {
-    let mut b = super::common::budget();
+    let mut b = super::fixtures::budget();
     let a = body(&SOLID);
     // Turned 90° in `e₂₃`: `(x₂, x₃) ↦ (−x₃, x₂)`.
     let turned = mapped(|(r, c, k)| (r, -k, c));

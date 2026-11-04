@@ -25,10 +25,10 @@ fn sentence_of(w: Word, tag: u8) -> (Address, Form) {
         Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
-        [crate::transducer::sentence::tests::common::FRAME],
+        [crate::transducer::sentence::tests::fixtures::FRAME],
         None,
     );
-    let c = f.stand_member(&v, crate::transducer::sentence::tests::common::FRAME).expect("a generator stands");
+    let c = f.stand_member(&v, crate::transducer::sentence::tests::fixtures::FRAME).expect("a generator stands");
     // THE STAR, WHERE ITS PLACE DERIVES (AT1): an overlap's place is measured
     // through the coboundary's versor, and an off-plane word has none on the
     // sensor plane — as `letter_of`'s letter has none — so its star is not
@@ -200,7 +200,7 @@ fn letter_of(a: i64, b: i64, tag: u8) -> (Address, Form) {
         Invariant::counts(&[u64::from(tag)]),
         Box::new(element::identity_versor()),
         Vec::new(),
-        [crate::transducer::sentence::tests::common::FRAME],
+        [crate::transducer::sentence::tests::fixtures::FRAME],
         None,
     ))
     .expect("an adjoined letter has a class");
@@ -397,7 +397,7 @@ fn adjoined_basis_finds_offplane_generator() {
         Invariant::default(),
         Box::new(element::identity_versor()),
         Vec::new(),
-        [crate::transducer::sentence::tests::common::FRAME],
+        [crate::transducer::sentence::tests::fixtures::FRAME],
         None,
     ))
     .expect("an adjoined generator has a class");

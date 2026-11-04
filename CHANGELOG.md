@@ -6,6 +6,41 @@ such change is named here.
 
 ## Unreleased
 
+### Files named by function (track 11, N2; #53, #55)
+- Names only: behaviour, wire bytes, ledger layout and task addresses are
+  unchanged. Every citation in comments and documents follows.
+- #53: `bin/mycelium-server/door.rs` is split into `context.rs`
+  (`Door` → `Context`, the server's state as one act sees it) and
+  `control.rs` (`serve_control`, the corpus intake and listing). The
+  GLOSSARY gains rows for both.
+- `transducer::field::Door` (the shedding index) → `Shedding`.
+- Field and transducer files: `field/idea.rs` → `well.rs`,
+  `field/core.rs` → `nerve_shape.rs`, `field/docket.rs` → `plan.rs`,
+  `cayley/chart.rs` → `map.rs`, `observe/fleet.rs` → `phase.rs`.
+- Vague names: `chronometry/tuniversal/ops.rs` → `navigate.rs`, the 13
+  `tests/common.rs` → `tests/fixtures.rs`, `cga/tests/generic.rs` →
+  `rank_n.rs`, `tests/g_cga.rs` → `tests/conformal_algebra.rs`,
+  `tests/alpha_plan.rs` → `tests/word_lifecycle.rs`.
+- Metaphor module files, the types kept with their GLOSSARY rows:
+  - `bin/mycelium-server/tshelf.rs` → `tuniversal.rs`;
+  - `physics/capacitor.rs` → `pivot_fibre.rs`;
+  - `physics/tensegrity.rs` and `physics/axioms/tensegrity.rs` →
+    `equilibrium.rs`;
+  - `physics/fascicle.rs` → `sphere_pair.rs`;
+  - `cga/breath.rs` → `commutator.rs`;
+  - `server/cognition/mouth.rs` → `domain_passage.rs`;
+  - `transducer/peel.rs` → `layers.rs`;
+  - `transducer/beam.rs` → `candidates.rs`;
+  - the soak's `sporophore.rs` → `enclosure.rs` (its `sporophore`
+    subcommand is unchanged);
+  - `client/sdk/entity/` → `client/sdk/mind/`, with `client/sdk/mind.rs`
+    as its `mod.rs` and `callus.rs` → `second_vantage.rs`;
+  - `client/sdk/epigenome/` → `client/sdk/vocabulary/`.
+- Each renamed module's tests module follows its name. The SDK's public
+  paths are unchanged: `client::sdk::Mind`, `Owed`, `Pending`, `Sitting`,
+  `GenomeReading` and `Wound` re-export as before, and the mind's
+  sub-modules stay private to the SDK.
+
 ### The symbol set is the family's own (track 26, S3)
 - **`transducer::symbols::SymbolSet`** (MU-SENSING §3.3): a family's
   distinct symbols compared by equality, `|Σ|` read from the data.

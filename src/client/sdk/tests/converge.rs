@@ -3,7 +3,7 @@
 // read twice does not; a word false on its scene is refuted; a word leaving
 // takes its scene with it.
 
-use crate::client::sdk::entity::converge::{Evident, Scenes};
+use crate::client::sdk::mind::converge::{Evident, Scenes};
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element::{from_connection, translator_versor, Element};
 
@@ -89,5 +89,5 @@ fn scenes_evidence_carries_body_charts() {
     let (held, charts) = s.evidence(&scene).expect("held");
     assert_eq!(held.len(), family.len(), "the family as held");
     assert!(!charts.is_empty(), "a scene with bodies stands on charts");
-    assert_eq!(charts, crate::client::sdk::entity::offer::Offer::of(&family).charts, "the charts its bodies stand on");
+    assert_eq!(charts, crate::client::sdk::mind::offer::Offer::of(&family).charts, "the charts its bodies stand on");
 }

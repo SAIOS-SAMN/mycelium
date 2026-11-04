@@ -1,7 +1,7 @@
 // A4, 51.2 — the rational conformal group acts exactly, and the frame axis
 // is a base coordinate.
 
-use super::common::q;
+use super::fixtures::q;
 use crate::transducer::cga::at_three::{base, point, sphere, translator};
 use crate::transducer::cga::*;
 use num_traits::Zero;

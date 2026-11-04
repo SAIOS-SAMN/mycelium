@@ -12,9 +12,9 @@ pub mod actions;
 pub mod axioms;
 pub mod budget;
 mod calibration;
-pub mod capacitor;
+pub mod pivot_fibre;
 mod circuits;
-pub mod fascicle;
+pub mod sphere_pair;
 mod lambda;
 pub mod laws;
 pub mod malleability;
@@ -23,7 +23,7 @@ pub mod metabolism;
 pub mod outflow;
 pub mod source;
 mod stroke;
-pub mod tensegrity;
+pub mod equilibrium;
 
 #[cfg(test)]
 mod tests;

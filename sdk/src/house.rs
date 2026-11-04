@@ -63,7 +63,7 @@ pub use mycelium::chronometry::tuniversal::TPoint;
 /// verifies with it agrees with the court exactly.
 pub use mycelium::physics::laws::{verify, verify_sized, BodyState, Breach, Flow, Flux, Law, Transition, Unmeasured, Verdict};
 /// A body as A.13 reads it (centre, mass, second moments).
-pub use mycelium::physics::tensegrity::Body;
+pub use mycelium::physics::equilibrium::Body;
 /// The multivector of Cl(4,1) over ℚ a motion and a nucleus are written in.
 pub use mycelium::transducer::cga::Mv;
 /// The verify act (mode 1) and its verdict; the batch (mode 2) and its
@@ -135,7 +135,7 @@ pub use mycelium::anastome::dialogue::seat::{
 pub use mycelium::sdk::seat_mind::task::{FN_DECLINE, FN_SOLVE, KIND_TASK};
 
 /// A body carried rigidly by a motion: its state after a transition.
-pub use mycelium::physics::tensegrity::carried_body;
+pub use mycelium::physics::equilibrium::carried_body;
 /// Building a transition: a rational rotor, a translator, a sphere at a
 /// centre; and why a motion's modes did not split.
 pub use mycelium::transducer::cga::{rotator, sphere_at, translator_at, Undecomposed};

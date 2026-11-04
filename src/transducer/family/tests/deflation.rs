@@ -1,7 +1,7 @@
 // 12.6, 26 — DEFLATION over a family: what each pair measures, and the
 // pressure a bundle is under.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 
 /// Deflation is `deflation_of(lane_moves(after, before))` per pair, taken
@@ -94,7 +94,7 @@ crate::transducer::raster::stand_on(0);
         "on the form the court holds, the mint left nothing undeclared: {rems:?}"
     );
     assert_eq!(
-        crate::court::verdict::reconstruct_blind_at(&spoken, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind_at(&spoken, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
         None,
         "the court admits on the same family what the mint admitted"
     );

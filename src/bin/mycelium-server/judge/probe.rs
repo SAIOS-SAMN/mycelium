@@ -4,7 +4,7 @@
 //! a probe is a claim about a listing that already exists, so it either
 //! measures a trajectory against it or it says nothing.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::Frame;
@@ -12,8 +12,8 @@ use std::net::TcpStream;
 
 
 /// One probe against one open listing (23.8, 26).
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
-    let court = &door.court;
+pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
+    let court = &context.court;
 
     let Some((pvoice, target, cites)) = dialogue::decode_probe(&frame.body) else { return };
     let reading = mycelium::synthesis::probe(court, pvoice, &target, &cites);

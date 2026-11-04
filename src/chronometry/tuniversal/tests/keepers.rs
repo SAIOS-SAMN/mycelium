@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// Three keepers exchange readings, and a point is final only once two keepers hold it.
 #[test]

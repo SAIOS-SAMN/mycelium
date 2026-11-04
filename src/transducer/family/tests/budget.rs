@@ -9,7 +9,7 @@
 //! strokes in a row. These tests run at the PRODUCTION budget; the file
 //! beside this one runs at `1 << 20`, which is why none of them saw it.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 
 /// L8w, RADICAL CONSERVATION: AN EXTRACTION THE BUDGET CUTS OFF KEEPS

@@ -1,13 +1,13 @@
 // §6 across a fold, 47.3 — ACT_ROWS: the ledger rows a witness re-derives a
 // fold over, a page from a cursor within the frame budget.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
     let Some(req) = dialogue::decode_rows_request(&frame.body) else { return };
     // The frame's whole body: `encode_rows_reply` counts its own header
     // against it, and the rows the page can hold are the body less that
@@ -23,7 +23,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     // deferred, and the fold went unmeasured (217–284 an hour per court,
     // epoch 147). The reading carries the journal at the head the receipts
     // were published at, so a witness's two fetches read one standing.
-    let (total, rows) = door.published.take().rows_range(&req.signer, req.from, req.upto, req.cursor, at_most);
+    let (total, rows) = context.published.take().rows_range(&req.signer, req.from, req.upto, req.cursor, at_most);
     let Some(body) = dialogue::encode_rows_reply(total, &rows, budget) else {
         eprintln!("  rows reply refused: the page's count passes its u32");
         return;

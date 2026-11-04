@@ -2,9 +2,9 @@
 // lands on a mind is kept by its whole citation: taken in or let go, and
 // where its comprehension stopped.
 
-use super::common::*;
-use crate::client::sdk::entity::offer::Offer;
-use crate::client::sdk::entity::perceive::{Reading, Scene, Stop};
+use super::fixtures::*;
+use crate::client::sdk::mind::offer::Offer;
+use crate::client::sdk::mind::perceive::{Reading, Scene, Stop};
 use crate::client::sdk::*;
 
 /// A TASK TAKEN IN IS KEPT BY ITS CITATION, TAKEN, WITH ITS STOP: the slide's

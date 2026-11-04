@@ -6,7 +6,7 @@
 //! cycle: a court stroke, the intake, then one digest round-trip per peer.
 
 use crate::admission::{admit_peer_digest, admit_peer_receipt, read_published_cover, AdmissionTally};
-use crate::door::{intake_corpus, relocate_corpus, route_corpus};
+use crate::control::{intake_corpus, relocate_corpus, route_corpus};
 use crate::nerve::{Nerve, NerveRx};
 use crate::persist::persist_if_due;
 use crate::syllabus::{syllabus_admit, Syllabus};
@@ -379,7 +379,7 @@ impl Exchange {
         let mut idle = 0u64;
         // 78.152: what the door's shelf had moved when this cycle last
         // parked or worked — a park waits for motion past it.
-        let mut park_seen = crate::tshelf::shelf().seen();
+        let mut park_seen = crate::tuniversal::shelf().seen();
         let mut last_tally = AdmissionTally::default();
         let mut last_cover: Option<[[u8; 32]; 4]> = None;
         // 78.153c — whether this court's standing (its acts among it) has
@@ -393,7 +393,7 @@ impl Exchange {
             crate::held::yield_to_waiters();
             // The keepers' reach of this court, read off the keepers' own
             // lock before the court's, where it moved.
-            let reach = crate::tshelf::reach_moved(&mut reach_seen);
+            let reach = crate::tuniversal::reach_moved(&mut reach_seen);
             if let Ok(mut h) = crate::held::held!(court) {
                 let (offers, deficit, tick) = h.run(|k, reads| {
                     crate::held::step("court stroke");
@@ -447,7 +447,7 @@ impl Exchange {
                 let at = (tick, mesh.origin.lock().ok().and_then(|o| *o));
                 if at.0.is_some() && at != last_tick {
                     last_tick = at.clone();
-                    if let Some(ring) = crate::tshelf::sign_tick(&mesh, at.0) {
+                    if let Some(ring) = crate::tuniversal::sign_tick(&mesh, at.0) {
                         push_tick(&mesh, &join, &nerve, &ring);
                         // A reading signed is the court's clock advancing:
                         // the held seat reads are answered (`hold`).
@@ -664,7 +664,7 @@ impl Exchange {
                 // the last ask (D2.5, 78.43): time is distance along an
                 // orbit, so a still network stays quiet and a moving one is
                 // heard at the rate it moves.
-                let advances = crate::tshelf::shelf().advances();
+                let advances = crate::tuniversal::shelf().advances();
                 let quiet = crate::transport::quiet_due(asked_advance.get(&pid).copied(), advances);
                 let due = crate::transport::exchange_due(last, k_now, lambda, own_moved) || quiet;
                 // 45.7, S13.3: the exchange to one peer is a carrier whose
@@ -1077,10 +1077,10 @@ impl Exchange {
                 // bounded by the one scheduler floor (`stroke_floor`), told
                 // to the scheduler and read by no one.
                 idle += 1;
-                let shelf = crate::tshelf::shelf();
+                let shelf = crate::tuniversal::shelf();
                 let _ = shelf.park(park_seen, mycelium::physics::stroke_floor());
             }
-            park_seen = crate::tshelf::shelf().seen();
+            park_seen = crate::tuniversal::shelf().seen();
             // Written when the READING CHANGES, not every cycle. As
             // first shipped this fired on any silence and logged 17,588
             // lines in 35 minutes on one hypha: it found the deadlock

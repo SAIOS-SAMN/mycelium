@@ -2,7 +2,7 @@
 // reading is signed in the court loop with no digest asked, and a peer's ring
 // pushed as ACT_TICK is heard at the door with no court.
 
-use crate::tshelf::{hear_tick, sign_tick, TickRefusal};
+use crate::tuniversal::{hear_tick, sign_tick, TickRefusal};
 use crate::Mesh;
 use ed25519_dalek::SigningKey;
 use mycelium::anastome::dialogue::encode_tick;
@@ -32,7 +32,7 @@ fn mesh(sk: &SigningKey) -> Mesh {
     }
 }
 
-/// ONE TEST, for the keepers are this process's own (`tshelf`'s statics):
+/// ONE TEST, for the keepers are this process's own (`tuniversal`'s statics):
 /// the court loop's signing needs no digest, and the door hears a known
 /// peer's pushed ring, refuses a stranger's, and takes no court doing so.
 #[test]
@@ -66,7 +66,7 @@ fn sign_tick_needs_no_digest() {
     assert_eq!(hear_tick(&m, &body), Ok(Admitted::Anchored), "a known peer court's ring is heard");
     assert_eq!(hear_tick(&m, &body), Ok(Admitted::Stale), "and heard once");
     assert_eq!(
-        crate::tshelf::final_point(),
+        crate::tuniversal::final_point(),
         Some(TPoint { origin, h: 10, lanes: [4, 0, 0, 0].into(), k: 1 }),
         "a's 10 is final: a signed it, b cites it"
     );

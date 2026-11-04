@@ -1,7 +1,7 @@
 // 45.9 — PHASE IS A READING: the four coordinates are read off the receipt
 // kinds and the cover at the window's ends, and nothing stores them.
 
-use super::common::speak_pair;
+use super::fixtures::speak_pair;
 use crate::chronometry::{ActKind, ReceiptChain};
 use crate::cognition::court::phase::{phase_over, CoverReading, Phase};
 use crate::cognition::*;

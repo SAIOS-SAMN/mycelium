@@ -1,7 +1,7 @@
 // 20 — PERCEPTION: what one pair form costs the sensor, and what the
 // adjacency of a scene's bodies is.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::base::Site;
 use crate::transducer::family::*;
 
@@ -44,7 +44,7 @@ use crate::transducer::family::perceive::Carried;
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
 let (b1, b2) = (body(&["0110", "0000"]), body(&["0000", "0220"]));
-let mut budget = super::common::budget();
+let mut budget = super::fixtures::budget();
 let v1 = carriage(&a1, &b1, &mut budget).expect("a translated bar carries").v;
 let v2 = carriage(&a2, &b2, &mut budget).expect("the second bar carries").v;
 let (edge, carried) = edge_transport((&v1, &v2), &a1, &a2, &b1, &b2, &mut budget).expect("the pair moved rigidly: an edge transport");
@@ -79,7 +79,7 @@ fn edge_transport_refuses_tear_as_not_rigid() {
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
 let (b1, b2) = (body(&["0110", "0000"]), body(&["0000", "2200"]));
-let mut budget = super::common::budget();
+let mut budget = super::fixtures::budget();
 let v1 = carriage(&a1, &b1, &mut budget).expect("a translated bar carries").v;
 let torn = crate::transducer::cga::Mv::blade(crate::transducer::cga::E1, num_rational::BigRational::from_integer(1.into()))
     .add(&crate::transducer::cga::Mv::blade(crate::transducer::cga::E1 | crate::transducer::cga::E2, num_rational::BigRational::from_integer(1.into())));
@@ -119,7 +119,7 @@ fn edge_transport_reads_exchange_with_identity_word() {
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["100"]), body(&["002"]));
 let (b1, b2) = (body(&["001"]), body(&["200"]));
-let mut budget = super::common::budget();
+let mut budget = super::fixtures::budget();
 let v1 = carriage(&a1, &b1, &mut budget).expect("a translated compartment carries").v;
 let v2 = carriage(&a2, &b2, &mut budget).expect("and the other").v;
 let (edge, _) = edge_transport((&v1, &v2), &a1, &a2, &b1, &b2, &mut budget).expect("the pair-body is carried by the identity: an edge");
@@ -662,7 +662,7 @@ fn interface_between_moves_with_placement_as_versor() {
 #[test]
 fn body_pair_key_round_trips_two_addresses() {
     use crate::transducer::family::pairing::{body_pair_key, read_body_pair_key};
-    use crate::transducer::peel::ShellKind;
+    use crate::transducer::layers::ShellKind;
     let piece = |s: &[(i64, i64, i64)]| {
         let mut sup = sites(s);
         sup.sort_unstable();
@@ -789,7 +789,7 @@ assert_eq!(bodies, 1, "one body is one vertex under ∃V, got {}", rule.form.ver
 let a = perceive(&family[0].0);
 let b = perceive(&family[0].1);
 assert_eq!(a[0].moduli, b[0].moduli, "the chart is exact axes, not a hash");
-assert!(carriage(&a[0], &b[0], &mut super::common::budget()).is_some(), "a versor carries the bar");
+assert!(carriage(&a[0], &b[0], &mut super::fixtures::budget()).is_some(), "a versor carries the bar");
 }
 
 /// Y4 (24.4, 20, 21 step 1, W10, Rule 2):
@@ -881,7 +881,7 @@ fn body_of_keeps_frame_on_support() {
     )
     .expect("a square is heard at n = 3");
     assert_eq!(at_zero.moduli, b3d.moduli, "a frame carries no meaning on the chart (51.1)");
-    assert!(carriage(&at_zero, &b3d, &mut super::common::budget()).is_some(), "and the translation along e₃ carries one onto the other");
+    assert!(carriage(&at_zero, &b3d, &mut super::fixtures::budget()).is_some(), "and the translation along e₃ carries one onto the other");
 }
 
 /// Six-adjacency connects bodies across frames into one streamline.

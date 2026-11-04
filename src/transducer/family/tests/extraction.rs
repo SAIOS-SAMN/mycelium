@@ -2,7 +2,7 @@
 // states, read off the pair forms and refused when the family does not
 // agree.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 use crate::transducer::stalk::Standing;
 
@@ -82,7 +82,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
         .collect();
     let [motor, ..] = motors.as_slice() else { panic!("the family's frame axis carries a motor overlap") };
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::common::budget()).is_none(),
+        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::fixtures::budget()).is_none(),
         "the measured motor carries the body across its frames"
     );
     let mut forged = rule.form.clone();
@@ -91,7 +91,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
         let q = |n: i64| num_rational::BigRational::from_integer(n.into());
         f.place.carriage = crate::transducer::cga::at_three::translator(&q(0), &q(1), &q(0));
     }
-    let refusal = crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::common::budget())
+    let refusal = crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::fixtures::budget())
         .expect("a forged frame-axis motor is refused by application, never admitted");
     // PARALLEL TRANSPORT (A.13): the refusal carries the curvature the claim
     // missed — the transport the fibre took, against the forged motor — and
@@ -132,7 +132,7 @@ fn edges_rederive_frames_applies_motor_to_whole_fibre() {
         panic!("the two dominoes' chart steps between its frames: a motor overlap")
     };
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::common::budget()).is_none(),
+        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::fixtures::budget()).is_none(),
         "the measured motor carries the chart's two bodies onto its two bodies at the next frame"
     );
     let mut forged = rule.form.clone();
@@ -142,7 +142,7 @@ fn edges_rederive_frames_applies_motor_to_whole_fibre() {
         f.place.carriage = crate::transducer::cga::at_three::translator(&q(1), &q(0), &q(0));
     }
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::common::budget()).is_some(),
+        crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::fixtures::budget()).is_some(),
         "a forged motor on a chart of two bodies is refused, never passed unread"
     );
 }
@@ -289,7 +289,7 @@ fn extract_rule_reaches_one_address_on_two_courts() {
     for rule in [&first, &second] {
         let word = mint_sentence(rule, &family, &NoCrystal, 0).expect("the family mints");
         assert_eq!(
-            crate::verdict::reconstruct_blind_on(&word, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+            crate::verdict::reconstruct_blind_on(&word, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
             None,
             "and a court replays it on its own copy of the family"
         );
@@ -337,7 +337,7 @@ let b = bodies
     .find(|b| b.compartments.iter().any(|c| c.hue == 3))
     .expect("body B");
 assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
-use crate::transducer::sentence::tests::common::FRAME;
+use crate::transducer::sentence::tests::fixtures::FRAME;
 let word_at = |w: &crate::transducer::alphabet::Word, chart: &Invariant, gauge: Vec<(u8, u8)>| {
     Vertex::word_on(
         crate::transducer::alphabet::Derivation::spelled(w.clone()),
@@ -1255,7 +1255,7 @@ fn mint_sentence_why_mints_mirrored_pair_as_derivable() {
     // The pair's transport is the reflection itself — odd — read exactly.
     let la = crate::transducer::blade::shape_of(&[(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let jb = crate::transducer::blade::shape_of(&[(0i64, 1i64, 0i64), (1, 1, 0), (2, 1, 0), (2, 0, 0)]);
-    let v = crate::transducer::blade::versor_between(&la, &jb, &mut super::common::budget()).expect("a versor carries the L onto its mirror");
+    let v = crate::transducer::blade::versor_between(&la, &jb, &mut super::fixtures::budget()).expect("a versor carries the L onto its mirror");
     assert_eq!(v.parity(), Some(true), "and it is odd: the mirror, never a turn at an angle no lattice turns");
     let form = crate::transducer::sentence::from_element_form(&word).expect("the form the court holds");
     let rotors: Vec<crate::transducer::alphabet::Rotor> = form

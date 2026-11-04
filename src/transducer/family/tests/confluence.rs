@@ -3,7 +3,7 @@
 // on; a confluence's mass, centre, inverse generator and containment are read
 // exactly.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::family::confluence::{read_pair, Reproduces};
 
 fn budget() -> crate::physics::Budget {

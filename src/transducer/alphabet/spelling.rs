@@ -6,7 +6,7 @@
 
 use crate::core::gaussian::Gauss;
 use crate::transducer::alphabet::{rational_sqrt, LetterId, Word, Q};
-use crate::transducer::peel::{peel_nest, PeelNest, ShellMotion, ShellStep, ShrinkGovernor};
+use crate::transducer::layers::{peel_nest, PeelNest, ShellMotion, ShellStep, ShrinkGovernor};
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::{One, Zero};

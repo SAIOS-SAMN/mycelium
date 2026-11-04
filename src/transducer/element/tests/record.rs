@@ -142,7 +142,7 @@ fn from_bytes_round_trips_germ() {
         assert_eq!(pos, bytes.len(), "consumed exactly");
         assert_eq!(back.address(), g.address(), "the reloaded word is the same citation");
         assert_eq!(back.sub(), g.sub(), "the centred chain survives");
-        assert!(back.carriage(g, &mut super::common::budget()).is_some(), "the thought survives: the identity carriage relates them");
+        assert!(back.carriage(g, &mut super::fixtures::budget()).is_some(), "the thought survives: the identity carriage relates them");
     }
 }
 

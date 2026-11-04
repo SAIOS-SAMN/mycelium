@@ -2,7 +2,7 @@
 // are read off the sentence itself, so the speaker and the court that holds
 // the bytes it was sent read the same reasons.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::element::Element;
 use crate::transducer::sentence::{as_element_form, Reasons, Vertex};
 

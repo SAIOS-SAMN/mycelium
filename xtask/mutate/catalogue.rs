@@ -220,7 +220,7 @@ pub const CATALOGUE: &[Mutant] = &[
     },
     Mutant {
         law: "78.140, 78.162 (5) (MU-DERIVATIONS D1.2 Phase A): a torus throat fits only APART from its period image",
-        file: "src/server/cognition/mouth.rs",
+        file: "src/server/cognition/domain_passage.rs",
         before: "!= crate::transducer::cga::Containment::Apart {",
         after: "!= crate::transducer::cga::Containment::On {",
         target: &["--lib"],
@@ -268,7 +268,7 @@ pub const CATALOGUE: &[Mutant] = &[
     },
     Mutant {
         law: "NO CONSTANT (MU-DERIVATIONS D1.4): a registered number keeps its class tag, or the numbers gate refuses the tree",
-        file: "src/server/cognition/mouth.rs",
+        file: "src/server/cognition/domain_passage.rs",
         before: "/// REGISTERED: THROAT_GRID\npub const THROAT_GRID",
         after: "pub const THROAT_GRID",
         target: &["--manifest-path", "xtask/Cargo.toml"],

@@ -4,7 +4,7 @@
 // clause rule proven on both pairs is undetermined by its perspectives — sent
 // for the court to judge — never refuted by a sibling that cannot speak it.
 
-use crate::client::sdk::entity::family::{ascertain_on, Ascertained, Unexempt};
+use crate::client::sdk::mind::family::{ascertain_on, Ascertained, Unexempt};
 use crate::client::sdk::*;
 
 fn grid(rows: &[&str]) -> crate::transducer::family::Grid {

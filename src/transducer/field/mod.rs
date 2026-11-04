@@ -6,12 +6,12 @@
 
 
 pub mod contemplation;
-pub mod core;
-pub mod docket;
+pub mod nerve_shape;
+pub mod plan;
 pub mod hold;
 pub mod drive;
 pub mod horizon;
-pub mod idea;
+pub mod well;
 pub mod line;
 pub mod meet;
 pub mod merge;
@@ -23,14 +23,14 @@ pub mod returned;
 pub mod transport;
 
 pub use contemplation::Contemplation;
-pub use idea::{Well, ClassRecord};
+pub use well::{Well, ClassRecord};
 pub(crate) use horizon::horizon_put;
-pub(crate) use idea::*;
+pub(crate) use well::*;
 pub(crate) use merge::*;
 pub use meet::{Adjunct, Decoherence, MeetGraph, FILL_ARMS, MEET_OWED};
 pub use transport::TransportTally;
-pub use docket::DocketReading;
-pub use self::core::{CoreReading, Door, ShedTally, Truncation};
+pub use plan::DocketReading;
+pub use nerve_shape::{CoreReading, Shedding, ShedTally, Truncation};
 pub use resonance::{ResonanceTally, Unrelated};
 
 use crate::network::nerve::{coord, Keyed};

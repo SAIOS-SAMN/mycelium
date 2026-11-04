@@ -2,7 +2,7 @@
 // closed at once where the generators are flat, closed at its own size under
 // a finite turn, open by the mode that carries a constructor off.
 
-use super::common::{budget, q};
+use super::fixtures::{budget, q};
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::*;

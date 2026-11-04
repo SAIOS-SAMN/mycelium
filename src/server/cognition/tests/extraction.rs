@@ -1,7 +1,7 @@
 // 21 — extraction: what a spoken pair becomes when the court replays it,
 // and what a family does to an axis instead of minting a second card.
 
-use super::common::speak_pair;
+use super::fixtures::speak_pair;
 use crate::cognition::*;
 
 /// A novel SUBSTANCE (here a rotation) germinates: one voice pends, a second

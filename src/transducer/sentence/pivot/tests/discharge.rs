@@ -1,7 +1,7 @@
 // 12.6 — THE TRAJECTORY and THE PIVOT: the trajectory certifies and never selects, the
 // pivot reads only occupied axes, and what cannot be ordered is held.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::network::nerve::Keyed;
 use super::orbit::Hold;
 use crate::transducer::alphabet::{Order, Word};

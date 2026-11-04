@@ -20,7 +20,7 @@
 use super::perceive::{frame_of, on_grid, Grid};
 use crate::network::nerve::Keyed;
 use crate::transducer::base::Site;
-use crate::transducer::peel::ShellKind;
+use crate::transducer::layers::ShellKind;
 
 /// A WAY THE SENSOR PLANE IS CUT (53.2). The roster is fixed and grows
 /// only by a court receipt on a probe — a reading whose first cover on the

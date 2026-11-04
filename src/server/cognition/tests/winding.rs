@@ -98,7 +98,7 @@ fn book_outflow_steps_chart_holonomy_algebra() {
     use crate::transducer::cga::{self, Mv, E1, E3};
     let charge = {
         let (pi, pj) = (cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]), cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]));
-        crate::physics::capacitor::Fibre::new(pi, pj, q(2, 1), q(1, 1)).expect("a fibre").charge(&q(3, 2))
+        crate::physics::pivot_fibre::Fibre::new(pi, pj, q(2, 1), q(1, 1)).expect("a fibre").charge(&q(3, 2))
     };
     let sliver = {
         let (c, p) = ([q(1, 1), q(1, 1), q(0, 1)], [q(4, 1), q(5, 1), q(0, 1)]);
@@ -149,7 +149,7 @@ fn book_outflow_steps_chart_holonomy_algebra() {
 #[test]
 fn step_rank_reads_rederived_sentence_rings() {
     crate::transducer::raster::stand_on(0);
-    let g = |rows: &[&str]| super::common::digits(rows);
+    let g = |rows: &[&str]| super::fixtures::digits(rows);
     let slides = vec![
         (g(&["1100000", "0000000", "0002000", "0002200"]), g(&["1100000", "0000000", "0000020", "0000022"])),
         (g(&["0000110", "0000000", "0200000", "0220000"]), g(&["0000110", "0000000", "0002000", "0002200"])),
@@ -173,7 +173,7 @@ fn step_rank_reads_rederived_sentence_rings() {
     k.step_rank(addr.as_bytes(), b);
     assert_eq!(k.winding_tally().rank_held, 1, "the same sentence again adds no dimension: held");
 
-    let one_pair = super::common::sentence_of(&[(0, 0, 1), (0, 1, 1), (2, 3, 2)], &[(1, 0, 1), (1, 1, 1), (2, 4, 2)]).expect("a sentence");
+    let one_pair = super::fixtures::sentence_of(&[(0, 0, 1), (0, 1, 1), (2, 3, 2)], &[(1, 0, 1), (1, 1, 1), (2, 4, 2)]).expect("a sentence");
     let tree = one_pair.address();
     k.provisional.insert(&tree, one_pair);
     let before = k.winding_tally();
@@ -207,7 +207,7 @@ fn winding_round_trips() {
 #[test]
 fn pending_take_relieves_witnessed_charge_whole() {
     let mut k = Court::new();
-    let word = super::common::sentence_of(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).expect("a sentence");
+    let word = super::fixtures::sentence_of(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).expect("a sentence");
     let addr = word.address();
     k.pending.insert(&addr, word);
     let before = k.physics.pressure;

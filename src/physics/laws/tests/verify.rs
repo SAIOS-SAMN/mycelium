@@ -1,6 +1,6 @@
 use super::super::*;
-use super::common::*;
-use crate::physics::tensegrity::{metric_defect, similarity};
+use super::fixtures::*;
+use crate::physics::equilibrium::{metric_defect, similarity};
 use crate::transducer::cga::{point_at, sphere_at};
 
 /// The register holds every law, each at its own coordinate with a

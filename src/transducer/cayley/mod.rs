@@ -2,9 +2,9 @@
 //! either direction by the algebra's own products and refused at the
 //! chart's boundary.
 
-pub mod chart;
+pub mod map;
 
-pub use chart::*;
+pub use map::*;
 
 #[cfg(test)]
 mod tests;

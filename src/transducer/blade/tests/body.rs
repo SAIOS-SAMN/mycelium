@@ -1,7 +1,7 @@
 // 20 — the body: what lifts to an invertible blade, what has volume, and
 // what joins by adjacency within one hue.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::blade::*;
 
 /// Topology on the cube complex: a square has no hole, a ring one hole,

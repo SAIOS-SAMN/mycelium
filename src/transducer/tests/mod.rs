@@ -1,8 +1,8 @@
 mod address;
-mod beam;
+mod candidates;
 mod factor;
 mod germinate;
-mod peel;
+mod layers;
 mod raster;
 mod rewrite;
 mod sample;

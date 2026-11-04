@@ -41,7 +41,7 @@
 //! (`physics::source`) — a null flow fixing the pivot, inside the manifold —
 //! and the percept's field reads it as flux.
 
-use crate::physics::capacitor::{shape_of, Carried, Fibre, Shape};
+use crate::physics::pivot_fibre::{shape_of, Carried, Fibre, Shape};
 use crate::transducer::base::{is_grid_axis, Site};
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::Versor;
@@ -110,7 +110,7 @@ pub(crate) fn relate_sections(first: &Piece, second: &Piece, budget: &mut crate:
     );
     let relative = first.carriage.reverse().geo(&second.carriage);
     let n = u8::try_from(first.n.max(second.n)).ok();
-    let modes = n.and_then(|n| crate::physics::capacitor::modes_of(&relative, n, budget));
+    let modes = n.and_then(|n| crate::physics::pivot_fibre::modes_of(&relative, n, budget));
     match (joining, modes) {
         (Some(f), Some(modes)) => match f.reads(&modes) {
             Carried::Rigid | Carried::Torsion => Sections::Coherent,
@@ -319,7 +319,7 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                         };
                         let needs_modes = (*ki && *kj) || sigma.is_some();
                         if needs_modes && modes.is_none() {
-                            modes = Some(base.and_then(|n| crate::physics::capacitor::modes_of(&r, n, budget)));
+                            modes = Some(base.and_then(|n| crate::physics::pivot_fibre::modes_of(&r, n, budget)));
                         }
                         let read = modes.as_ref().and_then(|m| m.as_deref());
                         let carried = match (ki, kj, read) {

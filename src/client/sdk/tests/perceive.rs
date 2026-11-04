@@ -4,8 +4,8 @@
 // its hours escapes onto the docket, and the one demand taker binds it — a
 // close of a thought of that scene, which K moves by.
 
-use super::common::*;
-use crate::client::sdk::entity::perceive::{Reading, Scene};
+use super::fixtures::*;
+use crate::client::sdk::mind::perceive::{Reading, Scene};
 use crate::client::sdk::*;
 
 /// THE SCENE, PERCEIVED OFF THE FIELD, LANDS UNDER ITS CITATION; ITS ESCAPING
@@ -44,7 +44,7 @@ fn perceive_scene_lands_and_drain_demands_binds_escape() {
 /// carries no test, never reaches a solve.
 #[test]
 fn perceive_scene_stops_once_on_reading() {
-    use crate::client::sdk::entity::perceive::{Stop, STOPS};
+    use crate::client::sdk::mind::perceive::{Stop, STOPS};
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("stopping"));
     let [first, second] = two_hours_of_a_slide();
     let mut field = std::mem::take(&mut mind.field);
@@ -97,7 +97,7 @@ fn scene_language_moves_only_for_word_on_own_chart() {
 /// the place of the first, and a different thing waits beside it.
 #[test]
 fn perceive_hearing_waits_once_on_repeat() {
-    use crate::client::sdk::entity::converge::Evident;
+    use crate::client::sdk::mind::converge::Evident;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("hearing"));
     let speaker = [3u8; 32];
     mind.perceive_hearing(speaker, b"first".to_vec(), Vec::new(), Evident::Unbound);
@@ -117,7 +117,7 @@ fn perceive_hearing_waits_once_on_repeat() {
 /// thing said again is heard in the traversal it was said in.
 #[test]
 fn act_on_returns_lapses_hearing_unread_across_return() {
-    use crate::client::sdk::entity::converge::Evident;
+    use crate::client::sdk::mind::converge::Evident;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("lapsing"));
     let speaker = [4u8; 32];
     for said in [&b"zero"[..], b"one", b"two"] {
@@ -142,8 +142,8 @@ fn act_on_returns_lapses_hearing_unread_across_return() {
 /// speak on wait, as an empty field couples to nothing else.
 #[test]
 fn perceive_hearing_on_hears_at_rest_on_language_charts() {
-    use crate::client::sdk::entity::converge::Evident;
-    use crate::client::sdk::entity::offer::Offer;
+    use crate::client::sdk::mind::converge::Evident;
+    use crate::client::sdk::mind::offer::Offer;
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let at = |c: usize| -> crate::transducer::family::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
     let cell = vec![(at(0), at(1))];

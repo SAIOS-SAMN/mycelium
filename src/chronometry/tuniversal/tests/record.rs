@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// 78.152 (PERSISTED) — A KEEPER RESTARTED FROM ITS RECORD never signs a
 /// height at or below its last, and its next reading extends its line at a

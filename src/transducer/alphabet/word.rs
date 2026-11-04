@@ -462,7 +462,7 @@ pub(crate) fn plane_nf(w: &Word) -> Word {
         return w.clone();
     };
     match spell_peel_rotor_on(plane, &block) {
-        Some((crate::transducer::peel::PeelNest::Closed { cores }, rho)) if rho.is_one() => {
+        Some((crate::transducer::layers::PeelNest::Closed { cores }, rho)) if rho.is_one() => {
             let Some(tape) = crate::transducer::alphabet::word_of_cores(&cores) else {
                 return w.clone();
             };

@@ -1,7 +1,7 @@
 // 21 speak_rule — SPEECH: what an extracted rule says on the test pair, and
 // what it refuses to say rather than guess.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 use crate::transducer::stalk::Standing;
 
@@ -406,7 +406,7 @@ assert_eq!(
     "the minted address is the form's address"
 );
 assert_eq!(
-    crate::verdict::reconstruct_blind(&minted, &mut super::common::budget()),
+    crate::verdict::reconstruct_blind(&minted, &mut super::fixtures::budget()),
     None,
     "the court replays the minted form from its tape"
 );

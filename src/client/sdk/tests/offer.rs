@@ -2,9 +2,9 @@
 // only under tension, and takes an offer only where it couples to what its
 // field holds; an offer that couples to nothing lapses at its second return.
 
-use super::common::*;
-use crate::client::sdk::entity::offer::{Offer, PASSED_TASK};
-use crate::client::sdk::entity::perceive::{Reading, Scene};
+use super::fixtures::*;
+use crate::client::sdk::mind::offer::{Offer, PASSED_TASK};
+use crate::client::sdk::mind::perceive::{Reading, Scene};
 use crate::client::sdk::*;
 
 /// A family of one cell stepping one column: a body of no chart the slide's
@@ -222,7 +222,7 @@ fn corpus_inflow_meets_language_charts_at_rest() {
 /// axis, or the language speaks on no chart, the least corpus chart alone.
 #[test]
 fn curiosity_couples_to_nearest_stratum() {
-    use crate::client::sdk::entity::focus::curiosity;
+    use crate::client::sdk::mind::focus::curiosity;
     use crate::transducer::stalk::Invariant;
     let coord = |ns: &[u64]| {
         let mut c = vec![b'c'];
@@ -288,7 +288,7 @@ fn absorb_taught_holds_residual_as_open_question() {
 /// that carries a chain is one.
 #[test]
 fn is_residual_is_true_only_for_chain_under_tag() {
-    use crate::client::sdk::epigenome::is_residual;
+    use crate::client::sdk::vocabulary::is_residual;
     let bare = crate::transducer::element::Element::identity();
     assert!(
         matches!(bare.address().as_bytes(), [tag, ..] if *tag == crate::transducer::address::TAG_RESIDUAL),
@@ -353,7 +353,7 @@ fn lapse_standing_task_lapses_in_moving_field() {
 
 fn lapses_at_the_next_final(mind: &mut Mind) {
     use crate::chronometry::tuniversal::{Origin, TPoint};
-    use crate::client::sdk::entity::perceive::Stop;
+    use crate::client::sdk::mind::perceive::Stop;
     let id = [6u8; 32];
     let train = one_cell_steps();
     let offer = Offer { landed: Some(10), ..Offer::of(&train) };

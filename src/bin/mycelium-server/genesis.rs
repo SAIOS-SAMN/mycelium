@@ -171,7 +171,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
         );
     }
     // 78.153c — THE DISPATCH CURSOR, restored from its own record once the
-    // whole book is registered (`door::write_beside`, a page of dispatches
+    // whole book is registered (`control::write_beside`, a page of dispatches
     // at a time): the snapshot's cursor was written only on a first closure,
     // so every restart of a book nothing closed re-served its head.
     match (std::fs::read(home.join("corpora").join("cursor")), registry.lock()) {

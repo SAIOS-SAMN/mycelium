@@ -3,7 +3,7 @@
 // becomes a null flow out of the pivot it moves — signal recovered from the
 // refusal, read into the field as flux.
 
-use crate::physics::capacitor::{shape_of, Fibre, Shape};
+use crate::physics::pivot_fibre::{shape_of, Fibre, Shape};
 use crate::physics::source::{geoid_vector, keeping, Source};
 use crate::transducer::cga::{self, FlowKind, Mv, E1, E2, E3};
 use num_rational::BigRational;
@@ -88,8 +88,8 @@ fn keeping_inverts_fibre_lift_into_source() {
     // The relative motion: a turn about an axis through the centre that is
     // not the fibre's — it carries both pivots along the geoid.
     let r = Mv::scalar(q(2, 1)).add(&Mv::blade(E1, q(1, 1)).geo(&Mv::blade(E3, q(1, 1))));
-    let modes = crate::physics::capacitor::modes_of(&r, 3, &mut crate::physics::Physics::default().stroke_n(1 << 16)).expect("modes");
-    assert_eq!(fibre.reads(&modes), crate::physics::capacitor::Carried::Lift, "the turn lifts the fibre: a refusal");
+    let modes = crate::physics::pivot_fibre::modes_of(&r, 3, &mut crate::physics::Physics::default().stroke_n(1 << 16)).expect("modes");
+    assert_eq!(fibre.reads(&modes), crate::physics::pivot_fibre::Carried::Lift, "the turn lifts the fibre: a refusal");
     let lift = modes.iter().fold(Mv::zero(), |l, m| l.add(&fibre.split(&m.ray.grade(2)).lift));
     assert!(!lift.is_zero(), "the lift does work");
     let k = keeping(&s, &lift).expect("σ is a sphere");
@@ -102,7 +102,7 @@ fn keeping_inverts_fibre_lift_into_source() {
     // A slide along e₁: the fibre's lift of it, and of that the part keeping
     // the geoid — not zero, and commuting with σ.
     let slide = cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
-    let modes = crate::physics::capacitor::modes_of(&slide, 3, &mut crate::physics::Physics::default().stroke_n(1 << 16)).expect("modes");
+    let modes = crate::physics::pivot_fibre::modes_of(&slide, 3, &mut crate::physics::Physics::default().stroke_n(1 << 16)).expect("modes");
     let lift = modes.iter().fold(Mv::zero(), |l, m| l.add(&fibre.split(&m.ray.grade(2)).lift));
     let k = keeping(&s, &lift).expect("σ is a sphere");
     assert!(!k.is_zero() && k.geo(&s).sub(&s.geo(&k)).is_zero(), "a part of the slide's lift keeps the geoid");

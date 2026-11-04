@@ -148,7 +148,7 @@ fn factor_rotor_demands_standing_for_irrational_block() {
 fn spell_peel_on_closes_alphabet_prime_products() {
     use crate::core::gaussian::Gauss;
     use crate::transducer::alphabet::{rotor_block_on, spell_peel_on, PLANE_COL, PLANE_ROW};
-    use crate::transducer::peel::PeelNest;
+    use crate::transducer::layers::PeelNest;
     let plane = (PLANE_ROW, PLANE_COL);
     // The letters as Gaussians: what the alphabet actually holds here.
     let gens = [

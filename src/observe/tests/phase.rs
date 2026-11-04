@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// PH5 — a court's phase travels whole, and the later window stands.
 #[test]

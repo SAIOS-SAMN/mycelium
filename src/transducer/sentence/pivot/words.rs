@@ -655,7 +655,7 @@ pub(crate) fn vertex_cited<'a>(f: &'a Form, vertex: &[u8]) -> Option<&'a Vertex>
     }
     let rotor = crate::transducer::alphabet::Rotor::from_key(&crate::transducer::address::take_key_bytes(vertex, &mut p)?)?;
     let at = coord::VertexAt::Word(coord::Transport {
-        kind: crate::transducer::peel::ShellKind::Whole,
+        kind: crate::transducer::layers::ShellKind::Whole,
         class: rotor.holonomy_key()?,
     });
     let v = f.vertices.at(&at)?;

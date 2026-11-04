@@ -2,7 +2,7 @@
 // round-trips its v4 tape exactly, and a short or partial tape is refused
 // rather than partly read.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::network::nerve::coord;
 use crate::transducer::sentence::ToralPeriod;
 use crate::transducer::alphabet::{self, Word};

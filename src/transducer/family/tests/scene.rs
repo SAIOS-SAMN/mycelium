@@ -1,7 +1,7 @@
 // 53.1, 53.2 — THE SCENE COVER: what a reading deduces, and where the
 // recursion ends.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 
 /// 53.1's IDENTITY END, as a key comparison and not a count. A scene with

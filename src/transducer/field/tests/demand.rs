@@ -4,7 +4,7 @@
 
 use crate::transducer::alphabet::{Rotor, Word, Q};
 use crate::transducer::field::*;
-use crate::transducer::sentence::tests::common::edge_chord_form;
+use crate::transducer::sentence::tests::fixtures::edge_chord_form;
 use crate::transducer::sentence::Demand;
 use crate::transducer::stalk::{Invariant, Stalks};
 

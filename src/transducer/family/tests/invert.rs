@@ -3,7 +3,7 @@
 // stand in, erasures counted apart — and a form that speaks its family whole
 // has nothing to invert.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::family::invert::{invert_remainder, remainder_scene, Painted};
 
 /// THE REMAINDER AS A SCENE. A pair whose observed output holds a two-cell

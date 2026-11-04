@@ -114,7 +114,7 @@ impl Contemplation {
                 self.return_escrow(&b.escrow);
             }
         }
-        self.shed_after(super::core::Door::Citation, n, before);
+        self.shed_after(super::nerve_shape::Shedding::Citation, n, before);
         // The removal moved degrees: the touched components truncate.
         if n > 0 {
             self.truncate(&touched);
@@ -179,7 +179,7 @@ impl Contemplation {
                 self.return_escrow(&b.escrow);
             }
         }
-        self.shed_after(super::core::Door::Unglued, n, before);
+        self.shed_after(super::nerve_shape::Shedding::Unglued, n, before);
         if n > 0 {
             self.truncate(&touched);
         }

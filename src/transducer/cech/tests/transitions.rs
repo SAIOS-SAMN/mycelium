@@ -1,7 +1,7 @@
 // 13 — the Čech complex: transitions cancel, consilient charts glue, an
 // equivocation shows up as curvature, and a fill is a gauge or a class.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::{Order, Rotor};
 use crate::transducer::cech::*;
 use crate::transducer::element::{identity_versor as ident, same_versor};
@@ -30,7 +30,7 @@ fn transition_between_answers_agreed_rotor_for_sentences() {
     use crate::transducer::sentence::{as_element_form, Form, Vertex};
     use crate::transducer::stalk;
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
-    use crate::transducer::sentence::tests::common::FRAME;
+    use crate::transducer::sentence::tests::fixtures::FRAME;
     // AT1: a star overlap's place is MEASURED (the coboundary word's base
     // versor), and these words carry no conformal action on the base — the
     // premise of the test — so no star derives (rule 11). The member stands

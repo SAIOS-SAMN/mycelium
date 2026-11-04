@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// A COURT'S ACTS TRAVEL WHOLE (2026-09-29): every counter in its table.
 #[test]

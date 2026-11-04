@@ -258,17 +258,17 @@ The pipeline:
    template, echo, slide, crop, scale, panes, tiles, and acts on parts)
    paints the canvas.
 5. **Minting and submission.** Where the rule speaks every test input
-   whole (`tests_spoken` in `src/client/sdk/entity/family.rs`), the client
+   whole (`tests_spoken` in `src/client/sdk/mind/family.rs`), the client
    constructs it (`construct_solve`, the same file, which calls `mint_sentence_why`
    in `src/transducer/family/deflation.rs`). Before it is sent, `judge_on`
-   (`src/client/sdk/entity/perceive.rs`) strips the overlaps between
+   (`src/client/sdk/mind/perceive.rs`) strips the overlaps between
    different frames (`crossing` in `src/client/sdk/rule.rs`) and reconstructs
    the rule blind on the training pairs by the judge's own steps
    (`would_judge_with`, the same file). A rule that passes that home check
-   is submitted by `admit_verdict` (`src/client/sdk/entity/perceive.rs`)
-   through `submit_solve_rule` (`src/client/sdk/entity/learn.rs`). A mind
+   is submitted by `admit_verdict` (`src/client/sdk/mind/perceive.rs`)
+   through `submit_solve_rule` (`src/client/sdk/mind/learn.rs`). A mind
    on a seat runs the same steps in `solve_before_on_ground`
-   (`src/client/sdk/entity/body.rs`) and calls the house. The court's judge
+   (`src/client/sdk/mind/body.rs`) and calls the house. The court's judge
    is `judge_solve` in `src/server/cognition/court/task.rs`.
 
 So a rule says either: *every body of this exact chart, in this frame,
@@ -297,7 +297,7 @@ copied onto, or cropped to*.
    before submission, but a member's frames still bind where it speaks.
 6. **Test-time gate.** Nothing is submitted unless every test speech has
    an empty remainder and lays out as a grid (`tests_spoken` in
-   `src/client/sdk/entity/family.rs`; `solve_before_on_ground` on a seat).
+   `src/client/sdk/mind/family.rs`; `solve_before_on_ground` on a seat).
 
 The sensorium is multi-dimensional (`Cl(n+1, 1)`, read in this code at
 its value `Cl(4,1)` for `n = 3`; blades, moments, gauge), but

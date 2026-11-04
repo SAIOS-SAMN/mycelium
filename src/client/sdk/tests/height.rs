@@ -59,8 +59,8 @@ fn close_cycle_counts_returns_without_persisting_k() {
 /// development deployment, 2026-10-19: rewrites were 88% of a 48 MB genome).
 #[test]
 fn absorb_taught_never_admits_rewrite_to_genome() {
-    let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
-    let other = super::common::two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
+    let word = super::fixtures::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let other = super::fixtures::two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
     let payload = crate::transducer::rewrite::RewritePayload::Retire { cites: vec![other.address()], freed: word.magnitude() };
     let rewrite = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Retire, &[word.address()], word.address(), payload, word.magnitude())
         .expect("the retirement mints");
@@ -72,7 +72,7 @@ fn absorb_taught_never_admits_rewrite_to_genome() {
     let stratum = crate::transducer::stalk::invariant_of(&rewrite).key();
     assert!(mind.board.residual_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");
     let mut epi = Epigenome::new();
-    if epi.learn(&tape, &mut super::common::budget()).is_some() && epi.holds(rewrite.address().as_bytes()) {
+    if epi.learn(&tape, &mut super::fixtures::budget()).is_some() && epi.holds(rewrite.address().as_bytes()) {
         epi.admit_all_at(crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS));
         let (frozen, refused) = epi.crystallize();
         assert_eq!(refused.rewrite, 1, "a rewrite the language holds is left out of the genome by name");
@@ -88,7 +88,7 @@ fn absorb_taught_never_admits_rewrite_to_genome() {
 /// and never more; a file holding only words is kept as it is.
 #[test]
 fn keep_genome_rewrites_file_restore_left_short() {
-    let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let word = super::fixtures::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let payload = crate::transducer::rewrite::RewritePayload::Retire { cites: vec![word.address()], freed: word.magnitude() };
     let rewrite = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Retire, &[word.address()], word.address(), payload, word.magnitude())
         .expect("the retirement mints");
@@ -122,7 +122,7 @@ fn keep_genome_rewrites_file_restore_left_short() {
 fn genome_bytes_crystallizes_word_only_at_court_stamp() {
     // A sentence of the language: a residual chain is an open question, never
     // a word (MU-CLIENT §7.1), and never reaches the genome.
-    let word = super::common::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
+    let word = super::fixtures::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let court = crate::chronometry::Stamp::new(7, [3; 32], crate::chronometry::Place { k: 2, i: 1 });
     let mut e = Mind::open("127.0.0.1:1", Voice::named("learned-word"));
     let mut budget = e.stroke();

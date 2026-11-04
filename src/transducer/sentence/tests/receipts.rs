@@ -8,7 +8,7 @@
 //! that a triangle of edges composes to a holonomy the envelope can read
 //! without anything else in hand.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{NerveEdge, ReceiptsEnvelope};
 use crate::transducer::sentence::*;

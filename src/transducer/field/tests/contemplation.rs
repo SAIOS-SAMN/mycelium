@@ -57,7 +57,7 @@ fn hold_form_stands_demand_on_chart() {
     );
     // THE COORDINATE IS WHAT A MEET IS READ AT, so the claim is that the
     // chart reaches the idea back — not merely that a cover is non-empty.
-    let key = super::super::idea::idea_key(&f);
+    let key = super::super::well::idea_key(&f);
     // THE CLAIM IS UNCHANGED — the chart names this idea — and the index
     // now names it by its ORDINAL (Z4 item 2), so the check resolves the
     // ordinal to the address rather than looking for the address in the
@@ -154,7 +154,7 @@ fn hold_form_keeps_glued_open_orbit() {
     let w = Word::from_letters(&[(q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    use crate::transducer::sentence::tests::common::{chord, stand_with_star, FRAME};
+    use crate::transducer::sentence::tests::fixtures::{chord, stand_with_star, FRAME};
     let inner = {
         let mut f = Form::default();
         let v = Vertex::word_on(
@@ -214,7 +214,7 @@ fn hold_form_keeps_glued_open_orbit() {
     let mut c2 = Contemplation::new();
     c2.hold_form(open.clone(), &[], &[], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let k = c2.wells.scoped().next().map(|(k, _)| k).expect("held");
-    assert_eq!(k.as_slice(), crate::transducer::field::idea::idea_key(&open).as_bytes(), "hold, merge and Well::key share idea_key");
+    assert_eq!(k.as_slice(), crate::transducer::field::well::idea_key(&open).as_bytes(), "hold, merge and Well::key share idea_key");
     struct HoldQ(Word);
     impl crate::transducer::family::Crystal for HoldQ {
         fn on_class(
@@ -289,7 +289,7 @@ fn hold_form_keeps_glued_open_orbit() {
         form.certificates.len(),
         form.torsion.len()
     );
-    let mag = crate::transducer::field::idea::form_magnitude(form).expect("the form's measure reads");
+    let mag = crate::transducer::field::well::form_magnitude(form).expect("the form's measure reads");
     if mag.iter().any(|&x| x > 0) && form.is_cauterized() {
         let e = sentence::as_element_form(form, mag).expect("spoken tape");
         assert!(
@@ -314,17 +314,17 @@ fn hold_form_carries_bundle_and_remainder() {
         crate::transducer::stalk::Invariant::default(),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         vec![(1, 2)],
-        [crate::transducer::sentence::tests::common::FRAME],
+        [crate::transducer::sentence::tests::fixtures::FRAME],
         None,
     );
-    crate::transducer::sentence::tests::common::stand_with_star(&mut f, &v);
+    crate::transducer::sentence::tests::fixtures::stand_with_star(&mut f, &v);
     let train = vec![(vec![vec![1u8]], vec![vec![2u8]])];
     let rem = vec![vec![(0i64, 0i64, 1u8, 2u8)]];
     let mut c = Contemplation::new();
     c.hold_form(f.clone(), &train, &rem, [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     assert_eq!(c.wells.len(), 1);
     let (k, b) = c.wells.scoped().next().expect("held");
-    assert_eq!(k.as_slice(), crate::transducer::field::idea::idea_key(&f).as_bytes(), "idea_key stays the form's vertex key");
+    assert_eq!(k.as_slice(), crate::transducer::field::well::idea_key(&f).as_bytes(), "idea_key stays the form's vertex key");
     assert!(
         b.bundle.as_ref().is_some_and(|t| t.len() == 1),
         "the idea carries the train"
@@ -487,7 +487,7 @@ fn expand_all_circuits_dirty_ring_and_reports_period() {
 #[test]
 fn monodromy_order_reads_flat_period_or_rupture() {
     use crate::transducer::alphabet::{Order, Rotor, Q};
-    use crate::transducer::field::idea::monodromy;
+    use crate::transducer::field::well::monodromy;
     let q = |n: i64| Q::from_integer(num_bigint::BigInt::from(n));
     let v = Rotor::scalar(q(3)).add(&Rotor::blade(0b0011, q(4)));
 

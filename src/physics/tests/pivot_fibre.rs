@@ -1,10 +1,10 @@
 // 78.74 — A TEST PER CLAUSE OF THE CAPACITOR AND ITS TORSION
-// (`physics::capacitor`), and of the white-hole source it was derived from:
+// (`physics::pivot_fibre`), and of the white-hole source it was derived from:
 // the inversion of a refusal is a flow out of a point of its own manifold,
 // kept inside it, every scale the manifold's own.
 
-use crate::physics::capacitor::{shape_of, Carried, Fibre, Shape};
-use crate::physics::fascicle::{Fascicle, Streamline};
+use crate::physics::pivot_fibre::{shape_of, Carried, Fibre, Shape};
+use crate::physics::sphere_pair::{Fascicle, Streamline};
 use crate::transducer::cga::{self, Mv, E1, E2, E3};
 use num_rational::BigRational;
 use num_traits::{Signed, Zero};
@@ -258,7 +258,7 @@ fn fibre_reads_strength_capacity_and_torque_exactly() {
 fn fibre_reads_motion_by_flow_of_modes() {
     let f = fibre(2, 1);
     let read = |m: &Mv| {
-        let modes = crate::physics::capacitor::modes_of(m, 3, &mut crate::physics::Physics::default().stroke_n(1 << 16));
+        let modes = crate::physics::pivot_fibre::modes_of(m, 3, &mut crate::physics::Physics::default().stroke_n(1 << 16));
         f.reads(&modes.expect("the modes read"))
     };
     assert_eq!(read(&Mv::scalar(q(3, 1))), Carried::Rigid, "no mode: rigid");

@@ -154,7 +154,7 @@ fn use_credit_raises_teacher_room_without_mint() {
     assert_eq!(k.discoverer_of(g_addr.as_bytes()), Some(teacher), "and it is the teacher's");
 
     let mut epi = Epigenome::new();
-    epi.learn(&g_e.to_bytes().expect("the record writes"), &mut super::common::budget()).expect("the syllabus teaches it back");
+    epi.learn(&g_e.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).expect("the syllabus teaches it back");
     let rule = extract_rule_with(&cite_fam, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
     let cited: Vec<_> = rule
@@ -255,7 +255,7 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
 
     let mind = |g: &crate::transducer::element::Element| {
         let mut epi = Epigenome::new();
-        epi.learn(&g.to_bytes().expect("the record writes"), &mut super::common::budget()).expect("the syllabus teaches it back");
+        epi.learn(&g.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).expect("the syllabus teaches it back");
         let rule = extract_rule_with(&cite_fam, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
             .expect("the family extracts");
         mint_sentence(&rule, &cite_fam, &epi, 0).expect("minted over the mind's own crystal")

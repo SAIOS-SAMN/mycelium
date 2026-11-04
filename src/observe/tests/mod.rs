@@ -2,7 +2,7 @@
 
 mod acts;
 mod carriage;
-mod common;
+mod fixtures;
 mod dispatch;
 mod judged;
 mod live;

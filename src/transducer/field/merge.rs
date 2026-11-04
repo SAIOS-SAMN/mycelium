@@ -240,7 +240,7 @@ impl Contemplation {
 
     /// 78.52 — THE GROUNDS OF THE THOUGHTS THAT CLOSED, drained for the voice
     /// to transcribe and speak in the act that closed them.
-    pub(crate) fn take_closed(&mut self) -> Vec<(crate::physics::tensegrity::Ground, Vec<u8>)> {
+    pub(crate) fn take_closed(&mut self) -> Vec<(crate::physics::equilibrium::Ground, Vec<u8>)> {
         std::mem::take(&mut self.closed)
     }
 
@@ -259,7 +259,7 @@ impl Contemplation {
     /// the thought's first close, new structure; each later one is a
     /// TRAVERSAL the winding completed, where the voice says only what changed
     /// (a word its letters now spell that they did not before).
-    fn closing_ground(&self, vertices: &[Vec<u8>]) -> Option<(super::idea::Grounded, bool)> {
+    fn closing_ground(&self, vertices: &[Vec<u8>]) -> Option<(super::well::Grounded, bool)> {
         let [a, b] = vertices else { return None };
         let pair = self.grounds.get(&super::resonance::pair_key(a, b))?;
         let period = pair.ground.period;
@@ -280,7 +280,7 @@ impl Contemplation {
     /// return (`Mind::transcribe_closed`), and its slips are worked there
     /// (`work_returned`). Counted as a first close or as a later return of
     /// its winding.
-    fn close_thought(&mut self, (grounded, first): (super::idea::Grounded, bool), thought: &[u8]) {
+    fn close_thought(&mut self, (grounded, first): (super::well::Grounded, bool), thought: &[u8]) {
         // MU-CLIENT §4.4(1) — a later return says what changed: the twist its
         // pull has put on the orbit, transcribed by the voice beside the
         // thought's own word.
@@ -352,7 +352,7 @@ impl Contemplation {
             Keyed::new();
         let mut certificates = Keyed::new();
         let mut vortex = Keyed::new();
-        let mut ground: Option<super::idea::Grounded> = None;
+        let mut ground: Option<super::well::Grounded> = None;
         let mut slips: Vec<(Vec<u8>, crate::transducer::cga::Mv)> = Vec::new();
         let mut bundle = None;
         let mut remainders: Keyed<Vec<Link>> = Keyed::new();

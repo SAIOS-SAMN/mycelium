@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// Every reading written by its codec reads back as itself, and a query
 /// reply carries them whole.

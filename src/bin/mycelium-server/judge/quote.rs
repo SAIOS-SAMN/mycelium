@@ -5,7 +5,7 @@
 //! compute over the snapshot with no lock held. Items ride in rank order
 //! until the next would not fit the frame budget.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::Frame;
@@ -13,8 +13,8 @@ use std::net::TcpStream;
 
 
 /// The market view for one voice, over the charts it named (23.8).
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
-    let court = &door.court;
+pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
+    let court = &context.court;
 
     let Some((qvoice, charts)) = dialogue::decode_quote_request(&frame.body) else { return };
     let Some(quoted) = mycelium::synthesis::quote(court, qvoice, &charts) else {

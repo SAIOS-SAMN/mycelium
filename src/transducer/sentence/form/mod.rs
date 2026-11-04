@@ -38,5 +38,5 @@ use crate::transducer::sentence::transport::{relative_gauge, FacePlace, Transpor
 use crate::network::nerve::{coord, Coordinate, Keyed};
 use crate::transducer::alphabet::{self, Rotor, Word};
 use crate::transducer::element::{self, Versor};
-use crate::transducer::peel::ShellKind;
+use crate::transducer::layers::ShellKind;
 use crate::transducer::stalk;

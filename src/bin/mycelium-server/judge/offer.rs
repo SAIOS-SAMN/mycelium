@@ -1,7 +1,7 @@
 // 47.3, 13.9 — ACT_OFFER: the second organ replays a home's first-vantage
 // germ on its own tapes and answers with what it reached.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::Frame;
@@ -16,13 +16,13 @@ use std::net::TcpStream;
 /// saw a provisional, no root ever moved, and every percept sat at `germ
 /// pending (one voice)` forever with basis 0. The gate was never the germ
 /// quorum; it was that the offer never left the process.
-pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
     let Some(dialogue::Offer { addr, home, elem: elem_bytes, section, .. }) =
         dialogue::decode_offer(&frame.body)
     else {
         return;
     };
-    let witness = door.mesh.vk;
+    let witness = context.mesh.vk;
     // 47.2, BEFORE ANY CARRIER IS TOUCHED. `glue_fetched` below writes a
     // Čech section into THIS MESH'S OWN COVER at the vantage the frame
     // names, pushes cocycles, marks classes, admits into `ruled`, releases
@@ -47,7 +47,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             None => eprintln!("  court offer answer refused: the reason passes its u16"),
         }
     };
-    let origin = match door.mesh.origin.lock() {
+    let origin = match context.mesh.origin.lock() {
         Ok(o) => *o,
         Err(_) => None,
     };
@@ -102,7 +102,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                 }
             }
             Some(word) => {
-                match (crate::held::held!(door.court), door.mesh.cover.lock()) {
+                match (crate::held::held!(context.court), context.mesh.cover.lock()) {
                     (Ok(mut h), Ok(mut cover)) => h.run(|k, budget| {
                         // One typed reading, every arm of `Glue` named. The
                         // REFUSAL travels, not a bit saying there was one:
@@ -176,7 +176,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // a hand-built frame for the case where a five-byte frame fails to
     // encode, which is the shape rule 11 refuses.
     let full = dialogue::encode_offer_reply(&answered)
-        .and_then(|body| Frame { lane: frame.lane, body }.encode_at(crate::tshelf::final_point().as_ref()));
+        .and_then(|body| Frame { lane: frame.lane, body }.encode_at(crate::tuniversal::final_point().as_ref()));
     match full {
         Some(bytes) => {
             let _ = s.write_all(&bytes);

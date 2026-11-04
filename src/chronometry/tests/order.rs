@@ -1,7 +1,7 @@
 // 45.3, T15, 78.24 — the order two nodes stand in, read off the nodes' stamps,
 // and what an exhausted budget answers.
 
-use super::common::budget;
+use super::fixtures::budget;
 use crate::chronometry::*;
 
 /// One act with nothing named.

@@ -1,7 +1,7 @@
 // 78.14, GR1 — the constructors' Gram form: the span signature beside the
 // vector rank, and each pair's regime read in the algebra, with no iteration.
 
-use super::common::q;
+use super::fixtures::q;
 use crate::transducer::cga::*;
 
 fn v(coords: &[(usize, i64)]) -> Mv {

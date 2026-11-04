@@ -2,7 +2,7 @@
 // answers an act on its ledger with every word it names, each with the
 // reasons read off the word it holds — the reasons the speaker read.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::anastome::dialogue::why::{decode_why, decode_why_reply, encode_why, encode_why_reply, head_of, WhyAsk};
 use crate::anastome::dialogue::Adjudication;
 use crate::cognition::*;

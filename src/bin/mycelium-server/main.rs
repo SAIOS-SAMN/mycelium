@@ -17,7 +17,8 @@ const POOL_DIVISOR: usize = 2;
 mod admission;
 mod backfill;
 mod console;
-mod door;
+mod context;
+mod control;
 mod exchange;
 mod fold;
 mod genesis;
@@ -31,7 +32,7 @@ mod persist;
 mod published;
 mod syllabus;
 mod transport;
-mod tshelf;
+mod tuniversal;
 mod wallet;
 mod why;
 #[cfg(test)]
@@ -39,7 +40,7 @@ mod tests;
 
 use crate::admission::{admit_peer_digest, read_published_cover};
 use mycelium::anastome::dialogue;
-use crate::door::Door;
+use crate::context::Context;
 use crate::exchange::{note_root, speak_root_locked, Exchange, Mesh, RootHear};
 use crate::genesis::Genesis;
 use crate::persist::{persist, persist_if_due};
@@ -264,7 +265,7 @@ fn check_home(home: &Path) -> ! {
             }
         }
     }
-    match mycelium::chronometry::tuniversal::record::read(&tshelf::record_path(home)) {
+    match mycelium::chronometry::tuniversal::record::read(&tuniversal::record_path(home)) {
         mycelium::chronometry::tuniversal::Recorded::None => println!("  keeper: no record — this keeper has not signed here"),
         mycelium::chronometry::tuniversal::Recorded::Last(r) => {
             println!("  keeper: last signed h {} at epoch {}; the next reading signs above it", r.reading.tick.h, r.origin.epoch);
@@ -541,7 +542,7 @@ fn main() {
     // court can sign: a restarted keeper signs only above it and names it as
     // its next reading's parent. A record that does not read refuses the
     // boot — a floor this court cannot read is one it could sign under.
-    match tshelf::bind_home(&home) {
+    match tuniversal::bind_home(&home) {
         Ok(Some(r)) => eprintln!("[{tag}] keeper record: last signed h {} at epoch {}", r.reading.tick.h, r.origin.epoch),
         Ok(None) => eprintln!("[{tag}] keeper record: none — this keeper has not signed here"),
         Err(why) => refuse_boot(&tag, &why),
@@ -799,7 +800,7 @@ fn main() {
     };
     published::note_cost(&first);
     let shelf = published::Shelf::new(first);
-    let door = Door {
+    let context = Context {
         seat_relay,
         published: shelf.clone(),
         court: Arc::clone(&court),
@@ -856,7 +857,7 @@ fn main() {
     let work_rx = Arc::new(Mutex::new(work_rx));
     for _ in 0..pool {
         let rx = Arc::clone(&reflex_rx);
-        let door = door.clone();
+        let context = context.clone();
         let work_tx = work_tx.clone();
         std::thread::spawn(move || loop {
             let job = match rx.lock() {
@@ -870,28 +871,28 @@ fn main() {
             arm_deadline(&stream);
             let Some(frame) = read_frame(&mut stream) else { continue };
             if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
-                judge::observe::judge(&mut stream, &frame, &door);
+                judge::observe::judge(&mut stream, &frame, &context);
                 mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
                 continue;
             }
             // 78.151 — a read that takes no court is answered here.
-            if judge::serve_published(&mut stream, &frame, &door) {
+            if judge::serve_published(&mut stream, &frame, &context) {
                 continue;
             }
             // 78.146 amended — a seat read with nothing filed past it waits
             // for the court's next event (`hold`), off the judging pool.
-            let Some((stream, frame)) = hold::offer(stream, frame, &door) else { continue };
+            let Some((stream, frame)) = hold::offer(stream, frame, &context) else { continue };
             if let Err(e) = work_tx.try_send((stream, frame)) {
                 let (std::sync::mpsc::TrySendError::Full((mut stream, frame)) | std::sync::mpsc::TrySendError::Disconnected((mut stream, frame))) = e;
                 // 78.146 — a mind's own read is served, once per window.
-                if judge::seat::serve_exempt(&mut stream, &frame, &door) {
+                if judge::seat::serve_exempt(&mut stream, &frame, &context) {
                     continue;
                 }
                 // 78.92 — a why is left for the court stroke, never waited on.
-                if judge::why::serve_left(&mut stream, &frame, &door) {
+                if judge::why::serve_left(&mut stream, &frame, &context) {
                     continue;
                 }
-                let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
+                let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
                 answer(&mut stream, Frame { lane: frame.lane, body });
             }
@@ -899,7 +900,7 @@ fn main() {
     }
     for _ in 0..pool {
         let rx = Arc::clone(&work_rx);
-        let door = door.clone();
+        let context = context.clone();
         let served = Arc::clone(&served);
         std::thread::spawn(move || loop {
             let job = match rx.lock() {
@@ -911,7 +912,7 @@ fn main() {
             // counted under no kind: 0xff was a sentinel standing for a byte
             // that was not read.
             let kind = mycelium::anastome::dialogue::act_tag(&frame.body);
-            judge::judge(&mut stream, frame, &door);
+            judge::judge(&mut stream, frame, &context);
             if let Some(kind) = kind {
                 mycelium::observe::note_served(kind);
                 let n = served[kind as usize].fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
@@ -935,39 +936,39 @@ fn main() {
     // defers unread, as it did.
     let (overflow_tx, overflow_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
     {
-        let door = door.clone();
+        let context = context.clone();
         std::thread::spawn(move || {
             for ReflexJob { mut stream } in overflow_rx {
                 arm_deadline(&stream);
                 let Some(frame) = read_frame(&mut stream) else { continue };
                 if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
-                    judge::observe::judge(&mut stream, &frame, &door);
+                    judge::observe::judge(&mut stream, &frame, &context);
                     mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
                     continue;
                 }
                 // 78.151 — a read that takes no court is answered here.
-                if judge::serve_published(&mut stream, &frame, &door) {
+                if judge::serve_published(&mut stream, &frame, &context) {
                     continue;
                 }
                 // 78.146 amended — a seat read with nothing filed past it
                 // waits for the court's next event (`hold`).
-                let Some((mut stream, frame)) = hold::offer(stream, frame, &door) else { continue };
+                let Some((mut stream, frame)) = hold::offer(stream, frame, &context) else { continue };
                 // 78.146 — a mind's own read is served, once per window.
-                if judge::seat::serve_exempt(&mut stream, &frame, &door) {
+                if judge::seat::serve_exempt(&mut stream, &frame, &context) {
                     continue;
                 }
                 // 78.92 — a why is left for the court stroke, never waited on.
-                if judge::why::serve_left(&mut stream, &frame, &door) {
+                if judge::why::serve_left(&mut stream, &frame, &context) {
                     continue;
                 }
-                let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
+                let Ok(deficit) = context.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(dialogue::PENDING_CODE, &deficit);
                 answer(&mut stream, Frame { lane: frame.lane, body });
             }
         });
     }
     // 78.146 amended — the held seat reads, answered at the court's events.
-    hold::spawn(door.clone());
+    hold::spawn(context.clone());
 
     for stream in listener.incoming() {
         let Ok(s) = stream else { continue };

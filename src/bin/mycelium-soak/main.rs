@@ -30,7 +30,7 @@ mod interpret;
 mod invert;
 mod luminal;
 mod solve;
-mod sporophore;
+mod enclosure;
 mod mint;
 mod transduction;
 mod reconstruct;
@@ -144,7 +144,7 @@ fn main() {
             _ => 60,
         };
         match slice_names(dir, limit) {
-            Ok(names) => sporophore::report(dir, &names),
+            Ok(names) => enclosure::report(dir, &names),
             Err(e) => {
                 eprintln!("  sporophore refused: {e}");
                 std::process::exit(1);

@@ -17,7 +17,7 @@
 //!   (`imported.rs`), RX1–RX7 reciprocity (`reciprocity.rs`), the routes
 //!   (`routes.rs`);
 //! - the bodies' equilibrium — A.10.1 tensegrity and A.13 momentum
-//!   (`tensegrity.rs`, `native.rs`); A.9 metric autonomy, per mind;
+//!   (`equilibrium.rs`, `native.rs`); A.9 metric autonomy, per mind;
 //! - the ledger — OK1, `K` a node's cycles closed by name (`native.rs`);
 //! - refused — A.4, A.7, A.6-bind-11 (`refused.rs`), each with why.
 //!
@@ -34,7 +34,7 @@ mod native;
 mod reciprocity;
 mod refused;
 mod routes;
-mod tensegrity;
+mod equilibrium;
 
 pub use founding::{
     DIMENSION_IS_EXPONENT, HARMONIC_RETURN, HOLONOMIC_CONTENT, LUMINAL_NULL_FLUX, NO_CONSTANT, OPEN_PHYSICS, ORBIT_IS_A_RETURN,
@@ -54,7 +54,7 @@ pub use reciprocity::{
     RX1_RECIPROCITY, RX2_EXACTNESS, RX3_FILTRATION, RX4_COMPOSITION, RX5_COHERENCE, RX6_SPLIT, RX7_COHESION,
 };
 pub use refused::{A4_POSITIVE_DEFINITE_REFUSED, A6_BIND_11_REFUSED, A7_ABELIAN_RETURN_REFUSED};
-pub use tensegrity::{
+pub use equilibrium::{
     A10_1_III_STRAIN, A10_1_II_BALANCE, A10_1_INTRINSIC_AXIS, A10_1_IV_FORCE, A10_1_I_CO_PRESENCE, A10_1_METRIC_RIGIDITY, A10_1_ORBITAL_TENSEGRITY,
     A10_1_STAR_SETS_SPIN, A10_1_T1_RECIPROCITY, A10_1_T2_COPLANARITY, A10_1_T3_ANTI_MONOCULARITY, A10_1_TORQUE,
     A10_1_VILLARCEAU_SUCCESSION, A13_MOMENTUM_CARRIED, R2_HYPHAL_FASCICLES,

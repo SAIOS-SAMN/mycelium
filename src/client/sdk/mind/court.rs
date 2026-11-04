@@ -186,7 +186,7 @@ impl Mind {
     /// metabolism) — and perceived on the perception
     /// carrier, off the field (R1): its colour, its hours under its citation
     /// (78.56 III), its rule spoken, and its comprehension, which may emit a
-    /// solve (`entity/perceive.rs`). A scene that couples to nothing, or that
+    /// solve (`mind/perceive.rs`). A scene that couples to nothing, or that
     /// the metabolism cannot yet carry, waits where it landed, and one that
     /// still couples to nothing at its second return lapses
     /// (`lapse_offers`); one scene is perceived at a time.

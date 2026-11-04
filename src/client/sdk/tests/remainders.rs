@@ -49,7 +49,7 @@ fn chains() -> (Chain, Chain, Chain) {
 fn stand_with(entity: &mut Mind, gauges: [&[(u8, u8)]; 2], at: &[Vec<u8>], ray: crate::transducer::alphabet::Rotor) -> Element {
     let mut r = remainder(&[]);
     r.at = at.to_vec();
-    let mut w = super::common::two_body_sentence(gauges);
+    let mut w = super::fixtures::two_body_sentence(gauges);
     w.record_cycle(cycle_by(ray, Some(r)));
     let k = entity.act();
     let _ = entity.epigenome.stand_dialect_at(w.clone(), k, 0);
@@ -132,7 +132,7 @@ fn stand_calluses_raises_callus_only_across_two_vantages() {
         crate::transducer::alphabet::Rotor::scalar(q(4)).add(&crate::transducer::alphabet::Rotor::blade(0b0011, q(1)))
     };
     assert_eq!(Generator::Holonomy(Box::new(pi17())).order(), None, "an infinite order is no period");
-    let mut w = super::common::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
+    let mut w = super::fixtures::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
     let mut r = remainder(&[]);
     r.at = a.clone();
     let claimed = TorsionCycle {
@@ -180,7 +180,7 @@ fn cycle(r: Option<Remainder>) -> TorsionCycle {
 #[test]
 fn record_cycle_keeps_remainder_through_restart() {
     let r = remainder(&[b"", b"c"]);
-    let mut e = super::common::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
+    let mut e = super::fixtures::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
     let addr = e.address();
     assert_eq!(e.record_cycle(cycle(None)), Filed::New);
     assert_eq!(e.record_cycle(cycle(Some(r.clone()))), Filed::Gained, "a cycle filed without one gains it");
@@ -203,7 +203,7 @@ fn record_cycle_keeps_remainder_through_restart() {
     assert_eq!(booted.remainders_at(&r.at, &r.class), vec![addr.clone()], "the index is rebuilt from the record");
     assert_eq!(booted.remainders_len(), 1);
 
-    let mut other = super::common::two_body_sentence([&[(5, 6)], &[(7, 8)]]);
+    let mut other = super::fixtures::two_body_sentence([&[(5, 6)], &[(7, 8)]]);
     other.record_cycle(cycle(Some(r.clone())));
     let _ = booted.stand_dialect_at(other, 1, 1);
     assert_eq!(booted.remainders_at(&r.at, &r.class), vec![addr], "one remainder per class at a chart");

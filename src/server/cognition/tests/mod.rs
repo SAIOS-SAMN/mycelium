@@ -1,6 +1,6 @@
 // 39 — THE MIND'S TESTS: one file per organ of the court they prove.
 
-pub mod common;
+pub mod fixtures;
 
 mod admission;
 mod composed;
@@ -48,7 +48,7 @@ mod ledger;
 mod challenge;
 mod handoff;
 mod convert;
-mod mouth;
+mod domain_passage;
 mod bond;
 mod origin;
 mod sphere;

@@ -294,7 +294,7 @@ fn would_judge_refuses_citation_no_court_admitted() {
     let cited = crate::transducer::sentence::as_element_form(&held, mag).expect("a tape");
     let mut dialect = Epigenome::new();
     dialect.stand_dialect_at(cited.clone(), 1, 1).expect("stood");
-    let rule = crate::transducer::family::extract_rule_with(&family, &dialect, &mut super::common::budget())
+    let rule = crate::transducer::family::extract_rule_with(&family, &dialect, &mut super::fixtures::budget())
         .expect("the family extracts");
     let spoken = crate::transducer::family::mint_sentence_why(&rule, &family, &dialect, 0).expect("and mints");
     assert!(
@@ -309,7 +309,7 @@ fn would_judge_refuses_citation_no_court_admitted() {
     );
     // The same word, admitted at a court's stamp: the citation resolves.
     let mut admitted = Epigenome::new();
-    admitted.learn(&cited.to_bytes().expect("the record writes"), &mut super::common::budget()).expect("learned");
+    admitted.learn(&cited.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).expect("learned");
     admitted.admit_all_at(crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS));
     let court_words = |a: &[u8]| admitted.court_word(a).and_then(|w| w.form().cloned());
     let home = would_judge(&spoken, &family, &court_words, &admitted);

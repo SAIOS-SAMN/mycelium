@@ -3,7 +3,7 @@
 // with its last thought; a meaning given whole is derived once the words
 // beside it are known.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::client::sdk::*;
 use crate::transducer::alphabet::{LetterId, Word};
 

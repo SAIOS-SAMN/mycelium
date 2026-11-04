@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// LD1 — THE CARRIAGE TRAVELS WHOLE, each record filed under its carrier and
 /// kind in order, its largest kept.

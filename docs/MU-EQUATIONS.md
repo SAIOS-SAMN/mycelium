@@ -273,7 +273,7 @@ weight. Its generator `−½ d e_∞` is null, so the translator fixes the point
 at infinity.
 
 Sources: MU-RECURSION 78.52 Row 2, 54.7 R3. Code:
-`src/physics/fascicle.rs::Fascicle::parallel`, `::versor`, `::weight`,
+`src/physics/sphere_pair.rs::Fascicle::parallel`, `::versor`, `::weight`,
 `::act`, `::streamline`, `::stream`; `src/transducer/cga/embedding.rs::translator_at`.
 
 #### 2.9 The rotator
@@ -568,7 +568,7 @@ output's centre `c′`, in compartment-centre coordinates.
 Sources: MU-RECURSION 78.51(3); MU-CLIENT 78.142. Code:
 `src/transducer/family/statement.rs::carriage` (`About::Body`);
 `src/client/sdk/rule.rs::Step::grid_motion`;
-`src/physics/tensegrity.rs::centred`.
+`src/physics/equilibrium.rs::centred`.
 
 #### 2.24 Carrying a compartment's centre
 
@@ -618,7 +618,7 @@ refused where the body was carried off the attractor.
 
 Sources: MU-CLIENT §4.4(3); MU-RECURSION 78.51(2). Code:
 `src/transducer/cga/twist.rs::twist_about`;
-`src/physics/tensegrity.rs::orbit_about`.
+`src/physics/equilibrium.rs::orbit_about`.
 
 ---
 
@@ -728,7 +728,7 @@ typed demand; the court opens the letter on two independent witnesses.
 Sources: MU-RECURSION 50.4, A22, 36.3, 37.7, law 6; MU-ALPHABET.md. Code:
 `src/transducer/alphabet/factor.rs::factor_rotor`, `BLOCK_ORDER`,
 `::prime_outside_the_alphabet`; `src/transducer/family/derivation.rs::peel_versor`,
-`::peel_versor_with`; `src/transducer/peel.rs::peel_nest`.
+`::peel_versor_with`; `src/transducer/layers.rs::peel_nest`.
 
 #### 3.8 The master condensation equation
 
@@ -1135,7 +1135,7 @@ kind. `a ∥ b` breathes with no pinch; `a ⊥ b` pinches with no breath. The
 silence between words is the pseudoscalar `I = e₁e₂e₃e₊e₋`, with `I² = −1`.
 
 Sources: MU-CLIENT §4.3 (ruled 2026-10-21); MU-RECURSION 78.39(1), 78.105.
-Code: `src/transducer/cga/breath.rs::breathe`, `::breath`,
+Code: `src/transducer/cga/commutator.rs::breathe`, `::breath`,
 `Breath::pinches`, `::twists`, `::by_kind`.
 
 #### 5.10 Reciprocity and the coherence of a ring
@@ -1174,10 +1174,10 @@ transition; against a dilating step every pair scales by one ratio, read as
 the dilation lane.
 
 Sources: MU-RECURSION 78.51, 78.52 Row 1, 78.59, 78.62; A.10.1, A.13.
-Code: `src/physics/tensegrity.rs::coupling`, `::torque`, `::net_torque`,
+Code: `src/physics/equilibrium.rs::coupling`, `::torque`, `::net_torque`,
 `::unit_product`, `::metric_defect`, `::rigid`, `::similarity`,
 `::succession`, `::momentum`, `::external_torque`, `::barycentre`,
-`::stability`; `src/physics/axioms/tensegrity.rs`.
+`::stability`; `src/physics/axioms/equilibrium.rs`.
 
 #### 5.12 The fibre as a capacitor
 
@@ -1197,7 +1197,7 @@ torque²         ⟨T T̃⟩₀
 
 A fibre between two weighted pivots, everything read off the pair.
 
-Sources: MU-RECURSION 78.74. Code: `src/physics/capacitor.rs::Fibre`
+Sources: MU-RECURSION 78.74. Code: `src/physics/pivot_fibre.rs::Fibre`
 (`switch`, `level`, `charge`, `length2`, `strength`, `capacity`,
 `torque2`, `project`, `field_line`, `on_field_line`, `split`).
 
@@ -1982,7 +1982,7 @@ Sources: MU-RECURSION §0.0, 78.125, 78.134. Code:
 `src/physics/axioms/founding.rs::OPEN_PHYSICS`;
 `src/physics/laws/mod.rs::CHALLENGE_WINDOW`, `PARAMETERS`;
 `src/server/cognition/window.rs::window_close`;
-`src/server/cognition/mouth.rs::THROAT_GRID`.
+`src/server/cognition/domain_passage.rs::THROAT_GRID`.
 
 #### 10.2 Throat size is mass
 
@@ -1997,7 +1997,7 @@ A mouth's horizon is read in its own space from the mass committed to hold
 it open; the size is never undersized by the enclosure.
 
 Sources: CONCORDANCE 2.6; MU-RECURSION 78.134, 78.140. Code:
-`src/server/cognition/mouth.rs::throat_level`, `::sphere_throat`,
+`src/server/cognition/domain_passage.rs::throat_level`, `::sphere_throat`,
 `::flat_throat`; `src/core/certified.rs` (`cosh`, `cos`, `pi`, `Encl`).
 
 #### 10.3 The founding principles

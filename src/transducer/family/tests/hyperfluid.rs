@@ -3,7 +3,7 @@
 // transports are one flow at two times where they differ only there; and a
 // free ray's time is read from what every observation of it agreed on.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::family::hyperfluid::{congruence, flows, reconstruct_in_time, Congruence};
 use crate::transducer::family::reconstruct::reconstruct;
 

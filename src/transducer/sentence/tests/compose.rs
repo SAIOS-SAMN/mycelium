@@ -179,7 +179,7 @@ fn terms_of_composes_crossing_word_and_displacement() {
 /// refused too — no static read is invented at the decode.
 #[test]
 fn sentences_of_refuses_unrefracted_contact_after_decode() {
-    use super::common::{contact, stand_with_star, word_vertex_on};
+    use super::fixtures::{contact, stand_with_star, word_vertex_on};
     use crate::transducer::sentence::compose::{sentences_of, RingUnread, TermUnread};
     use crate::transducer::sentence::Form;
     let mut f = Form::default();
@@ -212,7 +212,7 @@ fn sentences_of_refuses_unrefracted_contact_after_decode() {
 /// the voice composed, never the static read alone.
 #[test]
 fn from_element_form_keeps_contact_refraction() {
-    use super::common::{contact, stand_with_star, word_vertex_on};
+    use super::fixtures::{contact, stand_with_star, word_vertex_on};
     use crate::transducer::sentence::{Form, Refraction, Transport};
     let mut f = Form::default();
     let ca = stand_with_star(&mut f, &word_vertex_on(1, crate::transducer::alphabet::Word::identity(), crate::transducer::stalk::Invariant::counts(&[1])));

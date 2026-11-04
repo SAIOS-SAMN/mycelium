@@ -2,7 +2,7 @@
 // a versor's reading unchanged, a contraction named by rank, a degenerate
 // action read, never refused.
 
-use super::common::q;
+use super::fixtures::q;
 use crate::transducer::cga::at_three::translator;
 use crate::transducer::cga::*;
 

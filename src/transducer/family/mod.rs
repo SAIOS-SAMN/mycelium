@@ -69,7 +69,7 @@ pub(crate) use fibre_relation::carried_site;
 pub use frame::{family_ratio, frame_vertex};
 pub(crate) use keys::{member_key, member_pair_key, read_member_key, read_member_pair_key, site_key};
 #[cfg(test)]
-pub use tests::common::cipher_form;
+pub use tests::fixtures::cipher_form;
 pub use train::{Family, Task, TrainPair};
 pub use extract::*;
 pub(crate) use incidence::*;

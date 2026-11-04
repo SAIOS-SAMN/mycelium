@@ -1,6 +1,6 @@
 // 54.7 Axiom B — compartments on the sheet, and the frame's base point.
 
-use super::common::q;
+use super::fixtures::q;
 use crate::transducer::cga::at_three::hyperbolic_compartment;
 use crate::transducer::cga::multivector::one;
 use crate::transducer::cga::*;

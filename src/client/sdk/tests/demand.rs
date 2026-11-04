@@ -23,15 +23,15 @@ fn comprehend_demands_missing_element_not_count() {
     let mut epi = Epigenome::new();
     let one = from_connection(&held, &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
-    epi.learn(&one.to_bytes().expect("the record writes"), &mut super::common::budget());
+    epi.learn(&one.to_bytes().expect("the record writes"), &mut super::fixtures::budget());
     assert_eq!(epi.genome_len(), 1, "the mind holds the 90° turn");
 
     // The 90° turn IS held; the prime is not. The demand must ask for
     // the prime and nothing else.
     let ask = from_connection(&spoken, &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
-    let Comprehension::Novel { demand, understood } = epi.comprehend(&ask, &mut super::common::budget()) else {
-        panic!("a word outside the span is a demand, got {:?}", epi.comprehend(&ask, &mut super::common::budget()));
+    let Comprehension::Novel { demand, understood } = epi.comprehend(&ask, &mut super::fixtures::budget()) else {
+        panic!("a word outside the span is a demand, got {:?}", epi.comprehend(&ask, &mut super::fixtures::budget()));
     };
     let asked = demand
         .letters()
@@ -57,8 +57,8 @@ fn comprehend_demands_missing_element_not_count() {
     // THE DEMAND IS THE SAME DEMAND ON EVERY MIND THAT HOLDS THE SAME
     // WORDS. The HNF residue is canonical, so two minds speak one element.
     let mut twin = Epigenome::new();
-    twin.learn(&one.to_bytes().expect("the record writes"), &mut super::common::budget());
-    let Comprehension::Novel { demand: twins, .. } = twin.comprehend(&ask, &mut super::common::budget()) else {
+    twin.learn(&one.to_bytes().expect("the record writes"), &mut super::fixtures::budget());
+    let Comprehension::Novel { demand: twins, .. } = twin.comprehend(&ask, &mut super::fixtures::budget()) else {
         panic!("the twin reaches the same arm");
     };
     assert!(
@@ -93,7 +93,7 @@ fn stratum_reads_factoring_basis_coarser_than_chart() {
     let mut epi = Epigenome::new();
     let one = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
-    epi.learn(&one.to_bytes().expect("the record writes"), &mut super::common::budget());
+    epi.learn(&one.to_bytes().expect("the record writes"), &mut super::fixtures::budget());
     let ask = from_connection(&Word::from_letters(&[(q, false), (p5, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
 
@@ -111,7 +111,7 @@ fn stratum_reads_factoring_basis_coarser_than_chart() {
     );
     assert!(at.0.len() < exact.0.len(), "read one or more axes coarser than the exact chart");
     assert!(
-        matches!(epi.comprehend(&ask, &mut super::common::budget()), Comprehension::Novel { .. }),
+        matches!(epi.comprehend(&ask, &mut super::fixtures::budget()), Comprehension::Novel { .. }),
         "so the word is factored and its remainder is the demand, never Admitted"
     );
 }

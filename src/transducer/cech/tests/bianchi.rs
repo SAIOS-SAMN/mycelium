@@ -1,7 +1,7 @@
 // 14 — the class at degree three is the Bianchi form, and one fetched
 // vertex costs the same whatever the complex already holds.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::*;
 

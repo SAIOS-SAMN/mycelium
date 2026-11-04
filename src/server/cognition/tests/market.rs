@@ -1,7 +1,7 @@
 // 26 — THE MARKET: the five-act conversation, the docket and its room, the
 // door's strain, the probe, and the residual that opens a face.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::element;
 use crate::transducer::germinate::germinate;
@@ -219,7 +219,7 @@ let sentence = crate::transducer::sentence::deconstruct_at(
     &|a| language.shape_at(a),
     &chain,
     None,
-    &mut super::common::budget(),
+    &mut super::fixtures::budget(),
 );
 let (void, cites) = (sentence.residual.clone(), sentence.cites.clone());
 assert_eq!(void, vec![(0, 3, 3, 4)]);
@@ -302,7 +302,7 @@ assert_eq!(
     "a residual leaves the listing's measure a function of its chain"
 );
 assert_eq!(
-    crate::court::verdict::reconstruct_blind(&listing, &mut super::common::budget()),
+    crate::court::verdict::reconstruct_blind(&listing, &mut super::fixtures::budget()),
     None,
     "so the court's own next circuit does not slash it"
 );

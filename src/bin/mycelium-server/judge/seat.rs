@@ -5,7 +5,7 @@
 //! A relay, not a court act: nothing is sealed and nothing is persisted, so
 //! the answer waits on no durability.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::seat::{decode_seat_request, encode_mail_reply, encode_mail_reply_standing, encode_post_reply, MailRead, ReadMail, Refusal, SeatRequest};
 use mycelium::network::wire::Frame;
@@ -27,13 +27,13 @@ fn mail_reply(r: &ReadMail, read: Result<MailRead, Refusal>) -> Option<Vec<u8>> 
 /// (`SharedRelay::exempt_read`). `false` where the frame is no read, or the
 /// read is not exempt: the caller defers it as before. A task read, a
 /// wallet read and a seat post are served here too (2026-10-09).
-pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
+pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, context: &Context) -> bool {
     // A TASK READ takes the registry's lock and never the court's, so a
     // full pool waiting on cognition has no reason to defer it: a seated
     // mind's fetch of the task before its seat was deferred 2026-10-08 on
     // every hypha and no call was made. Served here, as observe is.
     if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_TASK) {
-        return crate::door::serve_control(stream, frame, door);
+        return crate::control::serve_control(stream, frame, context);
     }
     // A wallet read and a seat listing are answered off the published
     // reading before this (`judge::serve_published`, 78.151).
@@ -41,11 +41,11 @@ pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -
     // after every restart, minds read the minds' percepts and never held the
     // seats again (2026-10-09). Served here the same way, in its turn.
     if let Some(Ok(SeatRequest::Post(_))) = decode_seat_request(&frame.body) {
-        judge(stream, frame, door);
+        judge(stream, frame, context);
         return true;
     }
     let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&frame.body) else { return false };
-    let Some(mail) = door.seat_relay.exempt_read(&r) else { return false };
+    let Some(mail) = context.seat_relay.exempt_read(&r) else { return false };
     let Some(body) = mail_reply(&r, mail) else { return false };
     answer(stream, Frame { lane: frame.lane, body });
     true
@@ -54,29 +54,29 @@ pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -
 /// 78.151 — A SEAT LISTING, read on the relay's own lock: relay state, never
 /// the court's, so no court is taken. `false` where the frame is no listing.
 /// v1.4: at the sub-origin it names, where it names one.
-pub(crate) fn serve_listing(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
+pub(crate) fn serve_listing(stream: &mut TcpStream, frame: &Frame, context: &Context) -> bool {
     let Some(Ok(SeatRequest::ReadListing(domain, sub_origin))) = decode_seat_request(&frame.body) else { return false };
     // A domain with no listing is answered with none: an empty body.
-    match door.seat_relay.listing(&domain, sub_origin.as_ref()) {
+    match context.seat_relay.listing(&domain, sub_origin.as_ref()) {
         Some(body) => answer(stream, Frame { lane: frame.lane, body }),
         None => answer(stream, Frame { lane: frame.lane, body: Vec::new() }),
     }
     true
 }
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
     let Some(request) = decode_seat_request(&frame.body) else { return };
     let body = match request {
         Err(why) => {
             // A frame that names no domain: counted on the relay's reading.
-            door.seat_relay.note_unread();
+            context.seat_relay.note_unread();
             encode_post_reply(Err(why))
         }
         Ok(SeatRequest::ReadListing(..)) => {
-            serve_listing(stream, frame, door);
+            serve_listing(stream, frame, context);
             return;
         }
-        Ok(SeatRequest::Post(s)) => match crate::held::held!(door.court) {
+        Ok(SeatRequest::Post(s)) => match crate::held::held!(context.court) {
             Ok(mut h) => {
                 let filed = h.run(|k, _| k.seat_post(&s));
                 drop(h);
@@ -89,7 +89,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             }
             Err(_) => return,
         },
-        Ok(SeatRequest::ReadMail(r)) => match crate::held::held!(door.court) {
+        Ok(SeatRequest::ReadMail(r)) => match crate::held::held!(context.court) {
             Ok(mut h) => {
                 let mail = h.run(|k, _| k.seat_mail(&r));
                 let Some(b) = mail_reply(&r, mail) else { return };

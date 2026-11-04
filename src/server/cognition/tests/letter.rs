@@ -330,7 +330,7 @@ fn reconstruct_blind_on_composes_letter_citation_from_taught_mind() {
     let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20, crate::cognition::Asker::Court([0; 32]));
     let mut epi = Epigenome::new();
     for t in &page {
-        let _ = epi.learn(&t.word, &mut super::common::budget());
+        let _ = epi.learn(&t.word, &mut super::fixtures::budget());
     }
 
     // 3. THE MIND DERIVES THROUGH IT. (4 + i)² = 15 + 8i, so the target's
@@ -379,7 +379,7 @@ fn reconstruct_blind_on_composes_letter_citation_from_taught_mind() {
     // is the control: it is what standing below is measured against, and
     // it is why standing is a fact about this court's ruled language.
     assert_eq!(
-        crate::court::verdict::reconstruct_blind(&speaks, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&speaks, &mut super::fixtures::budget()),
         Some(crate::court::verdict::REFUSE_DERIVATION),
         "a court that resolves nothing cannot compose the citation"
     );
@@ -389,7 +389,7 @@ fn reconstruct_blind_on_composes_letter_citation_from_taught_mind() {
             &|a| k.resolve_form(a),
             None,
             &crate::transducer::family::NoCrystal,
-            &mut super::common::budget(),
+            &mut super::fixtures::budget(),
         ),
         None,
         "the court that ruled the letter re-derives the citation through it and agrees"
@@ -451,7 +451,7 @@ fn serve_ruled_teaches_letter_as_generator() {
     assert!(!page.is_empty(), "the syllabus serves what the court ruled");
     let mut epi = Epigenome::new();
     for t in &page {
-        let _ = epi.learn(&t.word, &mut super::common::budget());
+        let _ = epi.learn(&t.word, &mut super::fixtures::budget());
     }
 
     // The mind now holds the letter as a GENERATOR, at the chart a versor
@@ -572,7 +572,7 @@ fn letter_reading_flips_derivable_after_adjunction() {
 
     // 5. TAUGHT BACK — and the same class, through the same reader, flips.
     for t in &home.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20, crate::cognition::Asker::Court([0; 32])) {
-        let _ = mind.learn(&t.word, &mut super::common::budget());
+        let _ = mind.learn(&t.word, &mut super::fixtures::budget());
     }
     assert_eq!(
         letter_reading(&mind, &mut stroke(), &pi),
