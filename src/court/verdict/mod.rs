@@ -6,6 +6,7 @@
 
 pub mod blind;
 pub mod body;
+pub mod factorisation;
 pub mod reconstruct;
 mod refusals;
 pub mod resume;

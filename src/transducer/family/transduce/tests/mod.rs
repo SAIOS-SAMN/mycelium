@@ -3,6 +3,7 @@
 // sample: the transduction reads nothing else.
 
 mod enclosed;
+mod factor;
 mod ground;
 mod motion;
 mod nest;

@@ -39,4 +39,11 @@ pub enum TransductionRefusal {
     /// other's: the pair's change stands as its record (rule 7), never
     /// dropped.
     Unenclosed,
+    /// A motion stated onto an enclosure that is not the output's: its
+    /// speech would stand in another frame than the one it is read against
+    /// (MU-SENSING §3.9).
+    OntoAnother,
+    /// A residue link that does not stand on the motion's speech: a site
+    /// outside its enclosure, or a symbol of another width.
+    OffSpeech,
 }
