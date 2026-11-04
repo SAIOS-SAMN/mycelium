@@ -6,6 +6,7 @@
 
 pub mod axis;
 pub mod chain;
+pub mod link;
 pub mod form;
 pub mod transport;
 pub mod class;
@@ -29,6 +30,7 @@ pub mod reasons;
 
 pub use reasons::{Reasons, ReasonsTally};
 pub use chain::*;
+pub use link::{Link, SectionRefusal};
 pub use demand::*;
 pub use form::*;
 pub use transport::*;

@@ -463,7 +463,7 @@ pub enum Vertex {
         chart: stalk::Invariant,
         measure: [u64; 4],
         pieces: u64,
-        bodies: Vec<Link>,
+        bodies: Vec<SectionLink>,
     },
 }
 
@@ -801,7 +801,7 @@ impl ChainAt {
     /// The coordinates of a chain, read off it; `None` for the empty chain,
     /// which has no corner and is written as the absence it is.
     #[expect(clippy::disallowed_methods, reason = "rule 4 — the min corner is the chain's extent, content; §1.4, the sensor boundary where a site's coordinates are read")]
-    pub fn of(chain: &[Link]) -> Option<ChainAt> {
+    pub fn of(chain: &[SectionLink]) -> Option<ChainAt> {
         let r = chain.iter().map(|(r, _, _, _)| *r).min()?;
         let c = chain.iter().map(|(_, c, _, _)| *c).min()?;
         let (measure, pieces) = demand_coordinates(chain);
@@ -970,7 +970,7 @@ impl Default for Form {
         let mut vertices = Keyed::new();
         vertices.put(&coord::VertexAt::Frame, Vertex::Frame);
         Form {
-            n: crate::transducer::element::GRID_N,
+            n: crate::transducer::element::BASE_N,
             vertices,
             faces: Keyed::new(),
             orbits: Vec::new(),

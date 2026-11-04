@@ -89,7 +89,7 @@ pub(crate) fn read_invariant(b: &[u8], p: &mut usize) -> Option<crate::transduce
 
 /// `None` where the chain's count passes its four bytes (STD1 3c).
 #[must_use]
-pub fn push_chain(out: &mut Vec<u8>, chain: &[Link]) -> Option<()> {
+pub fn push_chain(out: &mut Vec<u8>, chain: &[SectionLink]) -> Option<()> {
     crate::transducer::address::put_u32_count(out, chain.len())?;
     for link in chain {
         push_link(out, link);
@@ -98,7 +98,7 @@ pub fn push_chain(out: &mut Vec<u8>, chain: &[Link]) -> Option<()> {
 }
 
 /// ONE LINK on the wire: the one writer `push_chain` and the width share.
-fn push_link(out: &mut Vec<u8>, &(r, c, before, after): &Link) {
+fn push_link(out: &mut Vec<u8>, &(r, c, before, after): &SectionLink) {
     out.extend_from_slice(&r.to_le_bytes());
     out.extend_from_slice(&c.to_le_bytes());
     out.push(before);
@@ -113,7 +113,7 @@ pub fn link_wire_width() -> usize {
     probe.len()
 }
 
-pub fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<Link>> {
+pub fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<SectionLink>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
     if n > b.len().checked_sub(*p)? / 18 {

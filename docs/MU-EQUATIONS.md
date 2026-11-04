@@ -1576,7 +1576,7 @@ Sources: MU-ECONOMY §1, §9; MU-RECURSION A21. Code:
 #### 7.1 The capacity and its units
 
 ```text
-STROKES_PER_RESERVE = 2^{FRAME_AXIS + 1} = 2³ = 8          (FRAME_AXIS = 2)
+STROKES_PER_RESERVE = 2^{ALPHABET_BASE_N} = 2³ = 8         (ALPHABET_BASE_N = LETTER_RANK − 1 = 3)
 M_proc              = least cgroup v2 memory.max on the process's path,
                       else 1024 · MemAvailable_kB            read once at boot, its source named
 minimal             = modes_need(turn) + modes_need(slide)   the founding motions' modes' need
@@ -1587,10 +1587,11 @@ spend_unit          = ⌊ C / 8 ⌋
 regen_unit          = ⌈ spend_unit / 2 ⌉
 read price          = 1 + y_l / C                            D2.3, κ = 1
 quiet ask           = once the final point advances            no capacity, no constant (§7.6)
-aperture_cycle      = 2^{FRAME_AXIS + 1} = 8
+aperture_cycle      = 2^{ALPHABET_BASE_N} = 8
 ```
 
-The ratio is the vertex count of the sensor base's unit cell. The capacity
+The ratio is the vertex count of the unit cell of the base the founding
+motions act on, the alphabet's (D2.5 O3); no task's rank enters it. The capacity
 is the process's own: the reads its memory holds at the measured bytes per
 read, exact, never the host's whole memory. One boot calibration stroke,
 sized by the minimal stroke's need, measures `b` (the bytes its reads left

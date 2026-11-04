@@ -12,34 +12,67 @@ use super::*;
 /// EXACT: alphabet_layout_derives_tabulated_values
 pub const LETTER_RANK: usize = 4;
 
-/// The sensor's plane inside the chart: rows on `e0`, columns on `e1`.
-pub const PLANE_ROW: u8 = 0;
-pub const PLANE_COL: u8 = 1;
+/// THE BASE THE LETTERS ARE WRITTEN ON (51.2; MU-RECURSION 71.2 (1), (3)):
+/// the chart `e0..e3` holds the base's `n` axes and one channel more, the
+/// orientation character, so `n = LETTER_RANK − 1`. It is the VALUE of
+/// `Cl(n+1, 1)` at `n = 3` (51.2's `Cl(4,1)`), derived from the letters'
+/// rank and never written beside it. A base of another `n` is refused by
+/// name where only the alphabet limits it ([`AlphabetRank`]); a plane a
+/// larger `n` opens receives a letter by 37.7 or not at all (71.2 (3)).
+pub const ALPHABET_BASE_N: usize = LETTER_RANK - 1;
 
-/// THE ALPHABET'S SLOT FOR A BASE AXIS (51.2): rows on `e0`, columns on
-/// `e1`, the frame on `e3`; `e2` is the orientation character and no base
-/// axis. An axis past the frame has no slot: the seventeen act on the
-/// planes they were written on, and a plane a larger `n` opens receives a
-/// letter by 37.7 or not at all (71.2(3)).
-pub fn slot_of_axis(axis: usize) -> Option<u8> {
+/// THE RANK OF A SAMPLE THE ALPHABET SPELLS: its base less the sample's
+/// place in its family, under the default perspective
+/// (`perspective::Perspective::of_family_site`).
+pub const ALPHABET_SAMPLE_RANK: usize = ALPHABET_BASE_N - 1;
+
+/// A BASE THE ALPHABET IS NOT WRITTEN ON, refused by name: the letters act
+/// on the planes of a base of `ALPHABET_BASE_N` coordinates, and a sample of
+/// another rank is perceived (its bodies, motions and residue, at any rank)
+/// but not spelled. Never truncated to the letters' planes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AlphabetRank {
+    /// The rank of the sample offered to the alphabet.
+    pub rank: usize,
+}
+
+/// THE ALPHABET ADMITS A SAMPLE OF RANK `rank` exactly where it is the rank
+/// the letters are written on; otherwise [`AlphabetRank`] names it.
+pub fn alphabet_admits(rank: usize) -> Result<(), AlphabetRank> {
+    match rank == ALPHABET_SAMPLE_RANK {
+        true => Ok(()),
+        false => Err(AlphabetRank { rank }),
+    }
+}
+
+/// THE ALPHABET'S SLOT FOR A BASE AXIS (51.2), under the default
+/// perspective of the alphabet's base: each space axis `i` on `eᵢ`, then
+/// the orientation character, then the sample's place in its family on the
+/// chart's last slot. `e2` is the orientation character and no base axis.
+/// An axis past the place has no slot: the seventeen act on the planes they
+/// were written on (71.2 (3)).
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "STD1 C1 — the algebra's range: a slot of the chart, below LETTER_RANK = 4"
+)]
+pub const fn slot_of_axis(axis: usize) -> Option<u8> {
     match axis {
-        0 => Some(PLANE_ROW),
-        1 => Some(PLANE_COL),
-        2 => Some(3),
+        a if a < ALPHABET_SAMPLE_RANK => Some(a as u8),
+        a if a == ALPHABET_SAMPLE_RANK => Some((LETTER_RANK - 1) as u8),
         _ => None,
     }
 }
 
 /// THE BASE AXIS A SLOT STANDS FOR, the reading [`slot_of_axis`] inverts:
-/// `e0` rows, `e1` columns, `e3` the frame. `None` for `e2`, the
-/// orientation character, which is no base axis — the chart's off-plane
-/// channel, carried by the conformal algebra's `e₊` (65.6). Every slot is
-/// its axis's slot and no other (`tests` holds the two against each other).
-pub fn axis_of_slot(slot: u8) -> Option<usize> {
-    match slot {
-        PLANE_ROW => Some(0),
-        PLANE_COL => Some(1),
-        3 => Some(2),
+/// a space slot its axis, the chart's last slot the sample's place. `None`
+/// for the orientation character, which is no base axis — the chart's
+/// off-plane channel, carried by the conformal algebra's `e₊` (65.6). Every
+/// slot is its axis's slot and no other (`tests` holds the two against
+/// each other).
+pub const fn axis_of_slot(slot: u8) -> Option<usize> {
+    match slot as usize {
+        s if s < ALPHABET_SAMPLE_RANK => Some(s),
+        s if s + 1 == LETTER_RANK => Some(ALPHABET_SAMPLE_RANK),
         _ => None,
     }
 }
@@ -103,10 +136,19 @@ pub(crate) const SLOT_PLANES_SIX: [(u8, u8); PAIR_PLANES] = pair_planes_of_rank(
 /// FORMAT: the chart's axis indices `e0..e3`, one pair per plane.
 pub(crate) const SLOT_PLANES_13: [(u8, u8); 4] = [(0, 1), (0, 2), (0, 3), (1, 2)];
 
-/// THE SENSOR PLANE as a pair, so a reader asking "is this the sensor's"
-/// compares planes instead of testing a slot index against zero.
+/// THE SENSOR PLANE as a pair of slots, so a reader asking "is this the
+/// sensor's" compares planes instead of testing a slot index against zero.
+/// It is the plane the default perspective of the alphabet's base assigns
+/// (MU-SENSING §9 on MU-ALPHABET §2): its first two space axes, each at its
+/// slot ([`slot_of_axis`]). A const reading of
+/// `Perspective::of_family_site(ALPHABET_BASE_N).plane()`; the tests hold
+/// the two against each other.
 pub const fn sensor_plane() -> (u8, u8) {
-    (PLANE_ROW, PLANE_COL)
+    const { assert!(ALPHABET_SAMPLE_RANK >= 2, "the alphabet's base holds a plane") };
+    match (slot_of_axis(0), slot_of_axis(1)) {
+        (Some(a), Some(b)) => (a, b),
+        _ => (0, 1),
+    }
 }
 
 /// THE PLANE WHOSE 180°-TURN IS THE ORIENTATION CHARACTER of `plane`: the

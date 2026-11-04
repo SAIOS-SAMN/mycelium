@@ -319,6 +319,28 @@ no pair of axes is *the* plane.
   its axes were lifted and how each was taken apart, so speech projects back
   to the source's own extents exactly. Nesting goes to any depth the data
   shows, and each level is read by the same path.
+- **Built (track 26 S4b): the roles are a perspective's.** No constant
+  of the core names an axis (`GRID_AXES`, `GRID_PLANE`, `FRAME_AXIS`,
+  `PLANE_ROW`/`PLANE_COL` and `GRID_N` are retired).
+  `transducer::perspective::Perspective` assigns each axis a `Role`
+  (space, sequence, value):
+  - The default reads every axis of a sample as space
+    (`Perspective::of_sample`).
+  - A site of a family's base carries the sample's axes and then the
+    sample's place in its family, the sequence the pair's motion runs
+    along (`of_family_site`). A frame's index is that place, never a
+    fixed axis.
+  - The sensor plane is the perspective's first two space axes
+    (`plane`). A rank-1 sample has none, refused `NoPose::Planeless`
+    where a turn is asked of it.
+  - A compartment's cube spans every space axis
+    (`element::carry_compartment_site`, at any `n`).
+  - Relabelling the axes moves the roles with them (`relabelled`), and
+    the percept is permuted exactly (claim
+    `no_axis_is_privileged_in_perception`).
+
+  S6 makes perspectives general. Which factorings a family is invariant
+  under (the nesting's reading) stays open.
 
 ### 3.7 The field: non-Euclidean, never scalar
 
@@ -571,6 +593,45 @@ orbit about an attractor, and its shape is set by gravity:
 4. **Any rank.** Motions live in `Spin(n+1, 1)` with re-periods per
    phase, so residues are read at any rank (v0.4.0, the rest of S4).
 
+**Built (track 26 S4b, v0.4.0 in progress).**
+- **A motion** (`transduce::Motion`) is a signed permutation of the
+  phases and the re-period of each moved phase onto the output's
+  enclosure. It is exact on turns or refused by name (`OffSite`,
+  `OntoAnother`). The alphabet's versors act on turns as signed
+  permutations at the seams; versor motions past them (T3's turn-valued
+  Conformal motion) are not yet carried.
+- **A factorisation** (`transduce::Factorisation::of`) holds:
+  - the motion;
+  - the bodies the motion carries whole (or `Mixed`);
+  - the residue: every output site where the motion's speech and the
+    output differ, as links of the pair's own rank and width
+    (`sentence::Link`).
+
+  `Factorisation::recomposed` applies the residue to the motion's speech
+  and gives the output exactly (claim
+  `deformation_factors_as_motion_then_residue`, ranks 1 to 3).
+- **Every motion that lands is held** (`transduce::factorisations`):
+  - one as `Factored::One`;
+  - several as `Factored::Vortex`, in the group's generated order;
+  - none as `Factored::None`, each refusal named.
+
+  No scalar picks one (claim `several_factorisations_held_as_a_vortex`).
+- **The court's admission** (`court::verdict::factorisation`). A claim
+  states a motion and a residue. The court reconstructs the motion on
+  its copy of the samples through the same `Factorisation::of` and
+  derives the residue itself. It admits on a match; otherwise it
+  refuses with the residue of the residues (`FactorRefusal::Residue {
+  unclaimed, uncarried }`), never a flag (claim
+  `court_derives_the_residue_and_admits_on_match`, rank 3). No wire act
+  carries such a claim yet: that is a wire change left for the
+  operator's approval.
+- **The mind perceives every task at its own rank**
+  (`transduce::TaskPercept`): the default perspective, the ground, each
+  sample's bodies and each pair's factorisations, held under the task's
+  citation (`Mind::perceive_envelope`) before the word path (claims
+  `rank_three_task_is_perceived`, `rank_one_task_is_perceived`).
+- Shear, precession and the refusal of a `Loop` are S9's.
+
 ## 4. Perspective: one sample, many readings
 
 A **perspective** is the sensor's assignment of the sample's axes and its
@@ -659,6 +720,18 @@ so it always knows how many dimensions it read and that the world has more:
   with the source: a section of rank 1, 2, 3 or `n`, with any symbol set,
   is held and related by the same path.
 
+**Built (track 26 S4b).**
+- A task's percept (`transduce::TaskPercept`) carries its rank and the
+  roles of its axes (`perspective`), so the mind holds how many
+  dimensions it read; every dimension past the rank is unread.
+- A family of two ranks is refused by name (`PerceptRefusal::Rank`),
+  never padded or cut.
+- What a mind can perceive and what it can spell are now told apart.
+  The seventeen letters are written on one rank
+  (`alphabet::ALPHABET_SAMPLE_RANK`, a rank-2 sample and its place).
+  A task off that section is perceived and stops by name
+  (`Stop::BeyondAlphabet`), never truncated onto the letters' planes.
+
 ## 6. What the hypha holds
 
 The hypha never senses. It holds what a source posts and what a mind
@@ -708,10 +781,14 @@ u16][coordinate i64 · count][symbols, w · ∏ eᵢ bytes]`
   (`encode_solve_spoken`, `SolveAct.outputs`; `encode_samples` for the
   seat's solve call) carry samples, read back exactly at ranks 1 to 4
   and widths 1, 2 and 4 (claim `task_round_trips_samples_of_rank_n`).
-- The mind and the court read rasters until track 26 S4 retires the
-  raster carrier: `TaskEnvelope::rasters` and `PostedTask::rasters`
-  bridge rank 2 at width 1 and refuse any other sample by name
-  (`NotRaster`), carried exactly but not read.
+- The mind perceives every task's samples at the samples' own rank (track 26
+  S4b). The word machinery spells the alphabet's section:
+  `TaskEnvelope::section` and `PostedTask::section` bridge rank 2 at
+  width 1 and refuse any other sample by name
+  (`sentence::SectionRefusal`: the alphabet's rank, or the width).
+  `NotRaster` is retired. The hypha's registry still loads posted tasks
+  through the section (`decode_posted_task`), so a court serves no task
+  of another rank yet.
 - **Task identity** (`registry::task_address_of`) writes each posted
   sample's rank, extents, width, place and symbols, so it is lossless
   across ranks and widths; a raster task's address is its samples'
@@ -853,7 +930,11 @@ exactly. `encode_posted_task` places a raster task's grids, and
 | The sample as the sensor's only input, of rank `n` | **Built** | `src/transducer/sample.rs` (`Sample`, `Symbol`, `Place`; Track 26, S0) |
 | A corpus's decoder outside `src/`; the core has no `arc` module (a `compile_fail` claim); the hypha, the soak and the client's feed read posted tasks; the SDK re-exports no `Grid` | **Built** (track 26, S1) | `sources/arc-agi/` (`mycelium-source-arc-agi`, binary `mycelium-arc-agi`); `src/anastome/dialogue/percept.rs` (`encode_posted_task`, `decode_posted_task`, `POSTED_TASK`) |
 | The rank-2 raster at intake, named by function: its extents, ground, painted sites, frame fixing and the bridge to the sample, moved from `arc.rs` unchanged | **Built** (track 26, S1) | `src/transducer/raster.rs`; `Task` in `src/transducer/family/train.rs` |
-| **Defect:** the raster carrier is rank 2 by its own storage (`raster::AXES = 2`, `extents`, `painted_sites`, `value_at`) | **Built, refused** by §2 and §3.6; moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S4 |
+| **Defect, narrowed:** the raster carrier is rank 2 by its own storage (`raster::AXES = 2`, `extents`, `painted_sites`, `value_at`) | **Narrowed** in S4b: perception no longer passes through it. Every task is perceived at its own rank (`TaskPercept`), and the carrier is the alphabet's section, the one rank the letters spell, entered only through `section`, refused by name. It stays the word, chart and rule-language machinery's carrier (`family::Grid`, about 94 files) until the letters are generalised past `n = 3` | `src/transducer/raster.rs`; track 26, S4b's remainder |
+| The roles of the axes from a perspective; the fixed-axis constants retired (`GRID_AXES`, `GRID_PLANE`, `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N`); `BASE_AXES` derived | **Built** (track 26 S4b) | `src/transducer/perspective.rs`; `alphabet::ALPHABET_BASE_N`, `slot_of_axis`, `sensor_plane` |
+| A link of rank `n`: a `Site` and the symbols at the source's width; the word, chart and field carriers read `SectionLink`, reached through `Link::section`, refused by name | **Built** (track 26 S4b); the stopped item of S5 closed | `src/transducer/sentence/link.rs` |
+| Connection by grade: bodies through a shared cell of grade `n − 1` at every rank; no fixed 4- or 6-neighbourhood | **Built** (track 26 S4b) | `sentence::incidence_of_sites`, `faces_of`, `surrounding`, `by_grade`; `transduce::Enclosed` |
+| Transduction as factorisation: motion ∘ residue, a vortex of factorisations, the court's admission on a derived residue | **Built** (track 26 S4b); no wire act yet | `transduce::factor`, `transduce::percept`; `court::verdict::factorisation` |
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
 | A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
 | Speech and seat solves state their ground: each speech sentence and the seat's solve call carry an optional stated ground; the court hears each sentence under it, refused by name where it is no candidate, and deduces none on the speech path (§6.2) | **Built** (track 26 S5) | `dialogue::Spoken.ground`, `SpeechAct.grounds`; `Court::hear_speech`; `seat_mind::task::solve_args` |
@@ -865,9 +946,9 @@ exactly. `encode_posted_task` places a raster task's grids, and
 | Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
 | The symbol set deduced (§3.3): `Σ` read from the family, an index the order of first appearance in canonical address order, `e_∅` at `|Σ|`, every table over symbols keyed by the symbols it names; no `PALETTE`, no 10- or 256-slot table | **Built** (track 26, S3) | `src/transducer/symbols.rs` (`SymbolSet`, `SymbolRefusal`); `element::fibre_on_symbols`; `sentence::HueTable` (`Keyed<u8>`); `element::gauge_is_perm`, `stalk::connection_chart`, `field::idea`, `family::acts` (`onto_ground`), `client::sdk::rule` (`named_into`) |
 | `e_∅` as a typed record outside the symbols' bytes: a fibre relation's rows and its records apart, on a word's description and the law register's wire; `RESERVOIR = 10` retired, so a family using the byte 10 has its colour word | **Built** (track 26 S5; the defect of the record byte is closed) | `element::FibreRelation`, `colour_word`, `Letters::fibre`; `physics::laws::codec::put_transition` |
-| Axes and gauges deduced | **Specified** | Track 26, S4 |
+| Axes and gauges deduced | **Built** for the rank, the periods and the roles (track 26 S4b); the nesting's family-invariance reading open | `transducer::perspective`; `transduce::Enclosure` |
 | A task on the wire as samples of rank `n`: the envelope, the posted task and a solve's outputs; limits derived and refused by name; task identity lossless across ranks and widths | **Built** (track 26 S5); the mind and the court read rank 2 at width 1 until S4 retires the raster carrier | `src/anastome/dialogue/samples.rs`; `registry::task_address_of` |
-| **Defect:** a link is `(i64, i64, u8, u8)`, two axes and one-byte symbols. The three aliases are one type since S5 (`sentence::Link`), but the rank-`n` link waits: the transducer's chain, chart and field carriers read the two coordinates of every link | **Built, refused** by §2; stopped in S5 as more than a contained wire change | `transducer::sentence::chain::Link`; track 26 S4 |
+| **Closed (S4b):** a link was `(i64, i64, u8, u8)`, two axes and one-byte symbols. `sentence::Link` now carries a site of rank `n` and the symbols at the source's width; the two-coordinate tuple is `SectionLink`, the alphabet's section | **Built** (track 26 S4b) | `transducer::sentence::link` |
 | Perspective as a sensor motion; perspectives as a cover | **Specified** | Track 26, S6 |
 
 **The defect** ([ROADMAP track 26](../ROADMAP.md#26-sensing-any-source-at-any-rank);
@@ -884,12 +965,14 @@ for one source:
   symbol set is the family's own, and S5 carries the record in `e_∅` as a
   typed entry, so `RESERVOIR` is gone. (The ground that defaulted to `0`
   at about 64 sites is deduced since S2.)
-- Two space axes and one frame axis are fixed (`GRID_AXES`, `FRAME_AXIS`,
-  `PLANE_ROW`/`PLANE_COL`, `GRID_N = 3`, a 3-tuple `Point`, and planar
-  `(rows, cols)` carriers).
+- Two space axes and one frame axis were fixed (`GRID_AXES`,
+  `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N = 3`). S4b retired them
+  for a perspective's roles. The 3-tuple `Point` and the planar `(rows,
+  cols)` carriers remain inside the alphabet's section, which spells one
+  rank.
 - The wire carried a task as `u16 × u16` one-byte cells; since S5 it
-  carries samples of rank `n`. A link is still `(r, c, before, after)`
-  (the table above).
+  carries samples of rank `n`, and since S4b a link carries a site of
+  rank `n` (the table above).
 
 **The S2 behaviour check** (2026-11-03; the census
 `sources/arc-agi/tests/ground_census.rs`). Over the 1 000 training tasks of
@@ -967,4 +1050,6 @@ stands:
 - MU-ANTI-FLATTENING clause 8's three point coordinates are the value at
   one source (71).
 - MU-ALPHABET §2's sensor plane `(0, 1)` is the plane a perspective
-  assigns, not a fixed pair of axes.
+  assigns, not a fixed pair of axes (built in track 26 S4b:
+  `alphabet::sensor_plane` reads the default perspective of the
+  alphabet's base).

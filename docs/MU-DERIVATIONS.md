@@ -90,7 +90,7 @@ code locate a site when lines move.
   decimal in the text is an illustration of size only.
 - **Heights and strokes.** A height is a court's receipt count
   (`Stamp.h`). A read is one `Budget::spend()`. A stroke is the budget
-  `Physics::stroke` mints. `A = aperture_cycle() = 2^(FRAME_AXIS+1) = 8`
+  `Physics::stroke` mints. `A = aperture_cycle() = 2^ALPHABET_BASE_N = 8`
   strokes per reserve cycle. `R = reserve_max()`, the calibrated reserve,
   in the entries written before D2.5's O1 ruling; since it, `C =
   physics::capacity()`, the process's sealed capacity (D2.5).
@@ -135,7 +135,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D2.2 | `cut[l] / 2` (bounty) | `server/cognition/convert.rs:586` | μ, challenge incentive | High | `bounty = cut·D/(D + X)` (**Built**, ruled 2026-10-31) | no | S | 3, 14 |
 | D2.3 | `surface + 1` (read price) | `server/cognition/crossing.rs:57–64` | μ, admission | High | `p = 1 + y/R`, scale-free (**Built**, κ = 1 ruled 2026-10-31) | O2 | S | 21, 3 |
 | D2.4 | `UNIT_BOND = [1, 1, 1, 1]` | `economy/treasury.rs:163` | none (test fixture) | Low | deleted, not derived (**Built**, 2026-10-31) | no | S | 3 |
-| D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` (**Built** 2026-11-04: one boot calibration stroke seals the capacity `C = ⌊M_proc/b⌋`; O1 ruled into four readings: metabolism on `C`, strokes on the work's need (owed sites listed), a quiet peer asked again once the final point advances, cooling on the challenge window, the pointed book on `M_proc`; O3, the ratio's `8` on the frame axis, open on track 26 S4) | yes | M | 14 |
+| D2.5 | `kb >> 20`, `cores · (1 + GiB)` | `physics/calibration.rs:31–80` | cognition reach, memory | Medium | the unit is the measured bytes per read `b`, not `2³⁰` (**Built** 2026-11-04: one boot calibration stroke seals the capacity `C = ⌊M_proc/b⌋`; O1 ruled into four readings: metabolism on `C`, strokes on the work's need (owed sites listed), a quiet peer asked again once the final point advances, cooling on the challenge window, the pointed book on `M_proc`; O3, the ratio's `8`, derived in track 26 S4b as `2ⁿ` at the alphabet's base `n = LETTER_RANK − 1`) | yes | M | 14 |
 | D2.6 | calibration fallbacks | `physics/calibration.rs`, `mycelium-server/transport.rs` | liveness, scale | Medium | each arm a typed state, refused by name (**Built** 2026-10-31; the reserve's memory term with D2.5, 2026-11-04) | yes | M | 14 |
 | D2.7 | `reserve_max()` as rtt hint | five server CLI sites | liveness | Medium | the measured floor of the page loop; the first ask a state (**Built** 2026-10-31: a CLI's first ask to the stream's end, a court's the mesh floor) | yes | S–M | 5 |
 | D3.1 | `stroke_n(1 << 16)` | `client/sdk/rule.rs:402` | cognition (rule minting) | Medium | the stroke is `modes_need(linear)` (78.111; **Built**) | yes | S | 7 |
@@ -262,7 +262,7 @@ holds).
   `{h, lanes[4], k}`, a parent hash, and `cites: Vec<Cited { keeper, reading, h }>`,
   the last reading it verified from each other keeper (TU-2). `Keepers`
   (`keepers.rs:103`) holds two rings per keeper (`window_len = 2·ring_len`,
-  `ring_len = aperture_cycle = 2^(FRAME_AXIS+1) = 8`). "Reach every keeper
+  `ring_len = aperture_cycle = 2^ALPHABET_BASE_N = 8`). "Reach every keeper
   and return" names one round trip on the keeper graph, measured on the
   keepers' own citations. The present rule counts heights of the sealing
   court alone, so under load the sealing court can pass `h₀ + W` before
@@ -875,7 +875,7 @@ specifies its carrier and its gate.
     `REGISTERED:`, followed by non-empty text.
     - `EXACT: <test fn>`: the text names a `#[test]` fn that exists in the
       tree (`syn` visit). That test is the claim that the value equals its
-      reading, e.g. `aperture = 2^(FRAME_AXIS+1)` in `founding.rs`' tests.
+      reading, e.g. `aperture = 2^ALPHABET_BASE_N` in `founding.rs`' tests.
     - `FORMAT: <layout>`: a coordinate of a writing (wire byte, tag,
       length, magic, version, enum position, escape code, file name).
     - `EXTERNAL: <spec and clause>`: Noise, RFC 8032, a MU-STANDARDS rule.
@@ -1484,12 +1484,20 @@ Choices the entry left open, as built:
   fills and flushes, and read zero across the whole stroke.
 - **One stroke, not an aperture.** The ruling names one stroke; the
   maximum over an aperture of strokes below is not taken.
-- **O3, open dependency: the ratio's `8`.** `STROKES_PER_RESERVE =
-  2^(FRAME_AXIS + 1)` ties the spend `⌊C/8⌋`, the unfit refusal and the
-  unsealed capacity to the fixed frame axis, which ROADMAP track 26 S4
-  removes. It is unchanged in this phase. When S4 lands, the ratio is read
-  off the rank the sensor deduces, or is registered; until then it is an
-  open dependency of this entry. The floor `16` is gone.
+- **O3, the ratio's `8`, derived (closed by ROADMAP track 26 S4b,
+  2026-11-04).** `STROKES_PER_RESERVE` counts the vertices of the unit cell
+  of the base the founding motions act on: `2ⁿ` for that base's `n`. The
+  founding motions (the turn of the plane of the first two axes and the
+  slide along the first) are written in the alphabet's algebra, whose base
+  is `n = LETTER_RANK − 1 = 3` (`alphabet::ALPHABET_BASE_N`: the letters'
+  chart `e0..e3` less the orientation character, the value of `Cl(n+1, 1)`
+  at `n = 3`). So `STROKES_PER_RESERVE = 1 << ALPHABET_BASE_N = 8`, and
+  `aperture_cycle` reads the same. It is not read off a task's rank: the
+  capacity is the process's, sealed at boot before any task arrives, so a
+  task of rank 1 or 3 does not move the spend. The fixed frame axis it was
+  written on (`2^(FRAME_AXIS + 1)`) is gone with `FRAME_AXIS`. Claim
+  `strokes_per_reserve_equals_vertices_of_alphabet_base_cell`. The value
+  is unchanged, so no reading moves. The floor `16` is gone.
 - **The unsealed capacity.** A process that never calibrates (the
   library's unit-test harness, an embedding library) reads the capacity
   whose one spend is the minimal stroke, `8 · minimal_stroke`, derived from
@@ -1550,7 +1558,7 @@ MU-EQUATIONS §7.1: `reserve_max = ⌊ max(cores · (1 + GiB available), 16) / 8
 familiar size. Below a GiB, memory adds nothing; at 31 GiB it multiplies
 the reserve by 32. Nothing about one reserve unit (one read of one
 stroke) has a size of a GiB. The ratio algebra
-(`8 = 2^(FRAME_AXIS+1)`, the floor `16`) is derived; the scale is not.
+(`8 = 2^ALPHABET_BASE_N`, the floor `16`) is derived; the scale is not.
 
 **Severity.** Medium (cognition reach per stroke, memory).
 
@@ -3631,9 +3639,8 @@ Each line names its entry and the reading or ruling that decides it.
 17. **D2.5 O2** — the order of calibration (a sealed second calibration,
     or a boot calibration stroke): a ruling. **Ruled** (2026-11-01): one
     boot calibration stroke seals the reserve before serving; **Built**
-    (2026-11-04). D2.5 O3, the ratio's `8 = 2^(FRAME_AXIS + 1)` on the
-    fixed frame axis, is an open dependency on ROADMAP track 26 S4, not a
-    ruling.
+    (2026-11-04). D2.5 O3, the ratio's `8`, is derived since track 26 S4b:
+    `2ⁿ` at the alphabet's base `n = LETTER_RANK − 1`, not a ruling.
 18. **D2.6 O1** — `CONFIG_HZ` or the timer slack as the stroke floor:
     decided by the parked thread's measured wakeup gap against both.
 19. **D2.7 O1** — the first ask's bound (stream end, host floor, loopback
@@ -3718,8 +3725,8 @@ is non-substantive and carries no release of its own.
 
 **Class 1, exact (algebraic).** The value equals a reading of the algebra
 or the geometry, and a test is its claim; the gate's `EXACT:` tag names
-that test. Examples: `STROKES_PER_RESERVE = 1 << (FRAME_AXIS + 1)`
-(`src/physics/calibration.rs:49`), the aperture `2^(FRAME_AXIS+1) = 8`, the sensor
+that test. Examples: `STROKES_PER_RESERVE = 1 << ALPHABET_BASE_N`
+(`src/physics/calibration.rs`), the aperture `2^ALPHABET_BASE_N = 8`, the alphabet
 base's unit cell `2³` (MU-RECURSION §0.0); `RESERVE_FLOOR =
 STROKES_PER_RESERVE * 2 = 16` (`src/physics/calibration.rs:55`), the `2` the
 rotor's double cover; `CANDIDATES_PER_PAIR = 8`

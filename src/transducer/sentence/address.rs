@@ -46,7 +46,7 @@ use crate::transducer::element::Element;
 pub fn generator_form(
     rotor: &crate::transducer::alphabet::Rotor,
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Link],
+    bodies: &[crate::transducer::sentence::SectionLink],
 ) -> Option<Element> {
     letter_form(rotor, &crate::transducer::element::identity_versor(), chart, bodies)
 }
@@ -63,7 +63,7 @@ pub fn generator_form(
 pub fn motion_letter_form(
     residue: &crate::transducer::cga::Mv,
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Link],
+    bodies: &[crate::transducer::sentence::SectionLink],
 ) -> Option<Element> {
     let f = crate::transducer::element::conformal_factors(residue).ok()?;
     let rotor = crate::transducer::element::rotor_of_factors(&f).ok()?;
@@ -77,7 +77,7 @@ fn letter_form(
     rotor: &crate::transducer::alphabet::Rotor,
     carriage: &crate::transducer::element::Versor,
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Link],
+    bodies: &[crate::transducer::sentence::SectionLink],
 ) -> Option<Element> {
     rotor.is_versor().then_some(())?;
     word_form(crate::transducer::alphabet::Derivation::adjoined(rotor.clone()), carriage, chart, bodies)
@@ -109,7 +109,7 @@ fn word_form(
     derivation: crate::transducer::alphabet::Derivation,
     carriage: &crate::transducer::element::Versor,
     chart: &crate::transducer::stalk::Invariant,
-    bodies: &[crate::transducer::sentence::Link],
+    bodies: &[crate::transducer::sentence::SectionLink],
 ) -> Option<Element> {
     let mut f = Form::default();
     // A LETTER STANDS AT NO FRAME: it is the carrier of an action, not a

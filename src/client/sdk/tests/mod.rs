@@ -22,6 +22,7 @@ mod hypha;
 mod occupancy;
 mod offer;
 mod perceive;
+mod rank;
 mod remainders;
 mod rule;
 mod rule_language;

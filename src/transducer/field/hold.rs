@@ -69,7 +69,7 @@ impl Contemplation {
         &mut self,
         f: Form,
         train: &crate::transducer::family::Family,
-        remainders: &[Vec<Link>],
+        remainders: &[Vec<SectionLink>],
         escrow: [u64; 4],
         budget: &mut crate::physics::Budget,
     ) {
@@ -125,7 +125,7 @@ impl Contemplation {
         f: Form,
         frames: &crate::transducer::family::Frames,
         train: &crate::transducer::family::Family,
-        remainders: &[Vec<Link>],
+        remainders: &[Vec<SectionLink>],
         escrow: [u64; 4],
         family: &[u8],
         budget: &mut crate::physics::Budget,
@@ -174,7 +174,7 @@ impl Contemplation {
         &mut self,
         f: Form,
         train: &crate::transducer::family::Family,
-        remainders: &[Vec<Link>],
+        remainders: &[Vec<SectionLink>],
         escrow: [u64; 4],
         budget: &mut crate::physics::Budget,
         spores: super::cross_scene::Spores,
@@ -206,7 +206,7 @@ impl Contemplation {
                 form_key
             }
         };
-        let mut rem_keyed: Keyed<Vec<Link>> = Keyed::new();
+        let mut rem_keyed: Keyed<Vec<SectionLink>> = Keyed::new();
         let mut volume = [0u64; 4];
         let mut cover = Keyed::new();
         for (i, r) in remainders.iter().enumerate() {

@@ -23,14 +23,18 @@
 //! refuses one that is not the sample's position
 //! ([`SampleWire::PlaceOffPosition`]), so one family has one writing.
 //!
-//! The rasters of rank 2 and width 1 the mind and the court read today are
-//! bridged here at the two ends (MU-SENSING §2): [`TaskEnvelope::rasters`]
-//! and [`PostedTask::rasters`] at intake, [`spoken_outputs`] at speech. A
-//! sample of another rank or width is carried exactly and refused by the
-//! bridge by name ([`NotRaster`]).
+//! A mind perceives the samples of any rank (`transduce::TaskPercept`). The
+//! word machinery that spells a percept is the alphabet's, written on one
+//! rank at one byte per symbol; its section is bridged here at the two ends
+//! (MU-SENSING §2): [`TaskEnvelope::section`] and [`PostedTask::section`]
+//! at intake, [`spoken_outputs`] at speech. A sample of another rank or
+//! width is carried exactly, perceived, and refused by the section by name
+//! (`sentence::SectionRefusal`: the alphabet's rank, or the width), never
+//! truncated.
 
 use crate::transducer::family::{Grid, Task, TrainPair};
 use crate::transducer::sample::{Place, Sample, SampleRefusal};
+use crate::transducer::sentence::SectionRefusal;
 
 /// WHY A SAMPLE IS NOT WRITTEN OR NOT READ, named with its cause.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -269,18 +273,14 @@ pub fn spoken_outputs(outputs: &[Grid]) -> Result<Vec<Sample>, SampleWire> {
     outputs.iter().enumerate().map(|(i, g)| placed(g, Split::Test, i, Member::Output)).collect()
 }
 
-/// WHY A SAMPLE IS NO RASTER: the reader reads rank 2 at width 1 (the
-/// raster carrier S4 retires, MU-SENSING §8), and this sample is of
-/// another rank or width. Carried exactly on the wire; refused here.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct NotRaster {
-    pub rank: usize,
-    pub width: usize,
-}
-
-/// A sample as a raster, or the refusal that names its rank and width.
-pub fn raster_of(s: &Sample) -> Result<Grid, NotRaster> {
-    crate::transducer::raster::raster_of(s).ok_or(NotRaster { rank: s.rank(), width: s.width() })
+/// A SAMPLE ON THE ALPHABET'S SECTION: the sample of the rank the letters
+/// spell (`alphabet::alphabet_admits`) at one byte per symbol, as the
+/// section's carrier holds it. A sample of another rank is refused by the
+/// alphabet's name, one of another width by its width: carried exactly on
+/// the wire and perceived at its rank, never truncated onto the section.
+pub fn section_of(s: &Sample) -> Result<Grid, SectionRefusal> {
+    crate::transducer::alphabet::alphabet_admits(s.rank()).map_err(SectionRefusal::Rank)?;
+    crate::transducer::raster::raster_of(s).ok_or(SectionRefusal::Width { width: s.width() })
 }
 
 /// A REGISTERED TASK AS THE REGISTRY HANDS IT OVER (wire v1.2; track 26
@@ -298,8 +298,8 @@ pub struct TaskEnvelope {
     pub tests: Vec<Sample>,
 }
 
-/// A TASK ENVELOPE AT THE RASTER INTAKE (MU-SENSING §2): the envelope's
-/// samples read as the rasters the mind perceives today.
+/// A TASK ENVELOPE ON THE ALPHABET'S SECTION (MU-SENSING §2): the
+/// envelope's samples as the section's carrier the word machinery spells.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TaskRasters {
     pub id: [u8; 32],
@@ -320,11 +320,11 @@ impl TaskEnvelope {
         Ok(TaskEnvelope { id, train: pairs, tests })
     }
 
-    /// THE ENVELOPE AT THE RASTER INTAKE, or the refusal naming the first
-    /// sample that is no raster.
-    pub fn rasters(&self) -> Result<TaskRasters, NotRaster> {
-        let train = self.train.iter().map(|(x, y)| Ok((raster_of(x)?, raster_of(y)?))).collect::<Result<_, NotRaster>>()?;
-        let tests = self.tests.iter().map(raster_of).collect::<Result<_, NotRaster>>()?;
+    /// THE ENVELOPE ON THE ALPHABET'S SECTION, or the refusal naming the
+    /// first sample off it ([`section_of`]).
+    pub fn section(&self) -> Result<TaskRasters, SectionRefusal> {
+        let train = self.train.iter().map(|(x, y)| Ok((section_of(x)?, section_of(y)?))).collect::<Result<_, SectionRefusal>>()?;
+        let tests = self.tests.iter().map(section_of).collect::<Result<_, SectionRefusal>>()?;
         Ok(TaskRasters { id: self.id, train, tests })
     }
 }
@@ -357,21 +357,22 @@ impl PostedTask {
         Ok(PostedTask { train, test })
     }
 
-    /// THE POSTED TASK AT THE RASTER INTAKE: an absent output the empty
-    /// raster. Refused naming the first sample that is no raster.
-    pub fn rasters(&self) -> Result<Task, NotRaster> {
-        let train = self.train.iter().map(|(x, y)| Ok((raster_of(x)?, raster_of(y)?))).collect::<Result<_, NotRaster>>()?;
+    /// THE POSTED TASK ON THE ALPHABET'S SECTION: an absent output the
+    /// empty carrier. Refused naming the first sample off the section
+    /// ([`section_of`]).
+    pub fn section(&self) -> Result<Task, SectionRefusal> {
+        let train = self.train.iter().map(|(x, y)| Ok((section_of(x)?, section_of(y)?))).collect::<Result<_, SectionRefusal>>()?;
         let test = self
             .test
             .iter()
             .map(|(x, y)| {
                 let output = match y {
-                    Some(y) => raster_of(y)?,
+                    Some(y) => section_of(y)?,
                     None => Grid::new(),
                 };
-                Ok((raster_of(x)?, output))
+                Ok((section_of(x)?, output))
             })
-            .collect::<Result<_, NotRaster>>()?;
+            .collect::<Result<_, SectionRefusal>>()?;
         Ok(Task { train, test })
     }
 

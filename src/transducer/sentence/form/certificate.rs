@@ -393,7 +393,7 @@ impl RefusalKind {
 pub enum At {
     Vertex { vertex: Box<coord::VertexAt>, chart: stalk::Invariant },
     Face(Box<coord::VertexAt>, Box<coord::VertexAt>),
-    Chart(stalk::Invariant, Vec<Link>),
+    Chart(stalk::Invariant, Vec<SectionLink>),
     Tape(crate::transducer::address::Address),
 }
 

@@ -2,7 +2,7 @@
 // rectangle in frame 0, its exact dilation, and a list of compartments. Every
 // site is handed to the base through the sensor's own reading (71.2(1)).
 
-use crate::transducer::base::{Site, GRID_AXES};
+use crate::transducer::base::Site;
 use crate::transducer::blade::Compartment;
 
 pub fn rect(r0: i64, c0: i64, h: i64, w: i64) -> Vec<Site> {
@@ -12,13 +12,14 @@ pub fn rect(r0: i64, c0: i64, h: i64, w: i64) -> Vec<Site> {
     v
 }
 
-/// Each site replaced by the `k × k` block on the grid axes it dilates to;
-/// every other coordinate is kept.
+/// Each site replaced by the `k × k` block on the sensor's plane it dilates
+/// to (the plane the default perspective assigns); every other coordinate
+/// is kept.
 pub fn dilate(support: &[Site], k: i64) -> Vec<Site> {
-    let [ga, gb] = GRID_AXES;
     let mut v: Vec<Site> = support
         .iter()
         .flat_map(|s| {
+            let (ga, gb) = crate::transducer::perspective::family_plane(s.n()).expect("a fixture site on a plane");
             (0..k).flat_map(move |i| {
                 (0..k).map(move |j| {
                     let mut axes = s.axes().to_vec();

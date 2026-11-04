@@ -13,6 +13,7 @@ mod contract;
 mod gauge;
 mod lanes;
 mod letters;
+mod link;
 mod refraction;
 mod rotor_class;
 mod stratum;

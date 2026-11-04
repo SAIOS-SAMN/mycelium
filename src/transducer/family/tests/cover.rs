@@ -345,7 +345,7 @@ fn scene_form_chords_name_live_faces() {
 //
 // THE MEASURED FACT IT WAS REACHING FOR is narrower and stands on the
 // code rather than on this fixture: `spell_peel_with` is called at
-// `(PLANE_ROW, PLANE_COL)` and nowhere else, so every word a pair form
+// `alphabet::sensor_plane()` and nowhere else, so every word a pair form
 // composes is a sensor-plane word, and on this corpus they are rotations
 // in one plane, which commute. That is L22 §51.6's four-letter
 // sub-alphabet appearing as a consequence. Its observable is a deployment

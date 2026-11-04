@@ -53,8 +53,8 @@ pub use quote::*;
 pub use receipts::*;
 pub use root::*;
 pub use samples::{
-    decode_posted_samples, decode_samples, encode_posted_samples, encode_samples, push_sample, read_sample, spoken_outputs,
-    NotRaster, PostedTask, SampleWire, TaskEnvelope, TaskRasters,
+    decode_posted_samples, decode_samples, encode_posted_samples, encode_samples, push_sample, read_sample, section_of,
+    spoken_outputs, PostedTask, SampleWire, TaskEnvelope, TaskRasters,
 };
 pub use speech::*;
 pub use syllabus::*;

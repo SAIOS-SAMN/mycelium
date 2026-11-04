@@ -48,8 +48,9 @@
 //! let session = Session::open("127.0.0.1:7500", voice);
 //! let reply = session.speak(task::encode_task_request(&key.verifying_key().to_bytes()));
 //! let Some(samples) = reply.ok().and_then(|r| task::decode_task_envelope(&r)) else { return };
-//! // The envelope carries samples of any rank; the rule seam reads rasters.
-//! let Ok(envelope) = samples.rasters() else { return };
+//! // The envelope carries samples of any rank; the rule seam spells the
+//! // alphabet's section.
+//! let Ok(envelope) = samples.section() else { return };
 //! let mut budget = rule::Physics::default().stroke_n(1 << 20);
 //! let Some(stated) = rule::extract_rule(&envelope.train, &mut budget) else { return };
 //! let Ok(element) = rule::mint_sentence_why(&stated, &envelope.train, &NoCrystal, 0) else { return };

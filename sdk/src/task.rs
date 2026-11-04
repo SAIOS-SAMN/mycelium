@@ -8,9 +8,11 @@
 //! [`encode_task_request`] asks the court for a task; the reply is a
 //! [`TaskEnvelope`] ([`decode_task_envelope`]): the train pairs to study and
 //! the test inputs to answer, never the answers, each a [`Sample`] of any
-//! rank at its source's symbol width (track 26 S5). A client that reads
-//! rasters takes [`TaskEnvelope::rasters`] ([`TaskRasters`]), refused by
-//! name ([`NotRaster`]) for a sample of another rank or width.
+//! rank at its source's symbol width (track 26 S5). A client perceives the
+//! samples at any rank; one whose rule seam spells words takes
+//! [`TaskEnvelope::section`] ([`TaskRasters`]), the alphabet's section,
+//! refused by name ([`SectionRefusal`]) for a sample of another rank or
+//! width (track 26 S4b).
 //! [`encode_solve_with_rule`] writes the outputs, as samples
 //! ([`spoken_outputs`] places rasters), and the rule's tape, signed by the
 //! voice; the court replays the rule and answers a verdict
@@ -23,8 +25,11 @@
 pub use mycelium::anastome::dialogue::{encode_task_by_citation, encode_task_request};
 
 /// A registered task as the registry hands it over, its writer and its
-/// reader, and the envelope read at the raster intake.
-pub use mycelium::anastome::dialogue::{decode_task_envelope, encode_task_envelope, NotRaster, TaskEnvelope, TaskRasters};
+/// reader, and the envelope read on the alphabet's section.
+pub use mycelium::anastome::dialogue::{decode_task_envelope, encode_task_envelope, TaskEnvelope, TaskRasters};
+
+/// Why a sample is off the alphabet's section: its rank, or its width.
+pub use mycelium::transducer::sentence::SectionRefusal;
 
 /// A solve: the outputs alone, or with the rule's tape, and optionally the
 /// ground its claim was spoken under (`encode_solve_spoken`); signed by the

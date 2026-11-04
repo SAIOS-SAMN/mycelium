@@ -21,10 +21,12 @@
 //! the projection that speaks onto an output frame.
 
 mod enclosed;
+mod factor;
 mod ground;
 mod membrane;
 mod motion;
 mod nest;
+mod percept;
 mod record;
 mod refusal;
 mod relation;
@@ -34,9 +36,11 @@ mod turn;
 mod tests;
 
 pub use enclosed::{Band, Enclosed};
+pub use factor::{factorisations, factorisations_need, need_of_motion, Factored, Factorisation, Motion};
 pub use ground::{Candidacy, Ground, Unground};
 pub use motion::{Generated, Sense, SignedPermutation};
 pub use nest::{Factoring, Factorings};
+pub use percept::{PairFactored, PerceptRefusal, TaskPercept};
 pub use record::{arcs, family_share, need, need_of, share_of_frame, Incidence, SiteChange, Transduction};
 pub use refusal::TransductionRefusal;
 pub use relation::{relation_of, PairRelation};

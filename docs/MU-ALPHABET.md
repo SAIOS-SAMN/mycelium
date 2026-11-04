@@ -44,8 +44,24 @@ inverse is ever computed.
 
 The seed letters live on a four-axis Euclidean chart with axes
 `e0, e1, e2, e3`. Its six coordinate planes are `(0,1) (0,2) (0,3) (1,2)
-(1,3) (2,3)`. The **sensor plane** is `(0,1)`: rows of a grid on `e0`,
-columns on `e1`.
+(1,3) (2,3)`.
+
+- **The base the letters are written on.** The chart holds a base of
+  `n = LETTER_RANK − 1 = 3` coordinates and the orientation character:
+  the value of `Cl(n+1, 1)` at `n = 3` (MU-RECURSION 51.2, 71.2), derived
+  from the letters' rank (`ALPHABET_BASE_N`). Under the default perspective
+  (MU-SENSING §4) that base is a sample of rank 2 and the sample's place
+  in its family: the space axes on `e0` and `e1`, the orientation
+  character on `e2`, the place on `e3` (`slot_of_axis`).
+- **The sensor plane** is the plane a perspective assigns, its first two
+  space axes, each at its slot (MU-SENSING §9). Under the default perspective
+  it is `(0,1)` (`sensor_plane`). No axis of it is a row or a column.
+- **A sample of another rank** is perceived at any rank (its bodies,
+  motions and residue; MU-SENSING §3.9), but the seventeen letters do not
+  spell it: the alphabet refuses it by name (`AlphabetRank`), never
+  truncating it onto its planes. Generalising the letters past `n = 3`
+  (a plane a larger `n` opens receives a letter by 37.7 or not at all) is
+  the phase after ROADMAP track 26 S4b.
 
 | Slots | Letter | Planes | What it does on its plane |
 |---|---|---|---|

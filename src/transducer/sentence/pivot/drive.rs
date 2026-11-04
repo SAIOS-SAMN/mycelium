@@ -626,7 +626,7 @@ impl Form {
         &mut self,
         kind: crate::transducer::sentence::Demand,
         chart: &stalk::Invariant,
-        links: Vec<crate::transducer::sentence::Link>,
+        links: Vec<crate::transducer::sentence::SectionLink>,
     ) {
         // The one filer of a demand's bodies (AT1): the vertex re-files at
         // its new coordinates when its chain grows.

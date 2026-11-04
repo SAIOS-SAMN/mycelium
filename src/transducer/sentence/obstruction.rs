@@ -19,7 +19,7 @@
 //! — no circuit stood to be asked. `Unclassified` is a refusal the reader
 //! cannot place: a defect count, never a home.
 
-use super::Link;
+use super::SectionLink;
 use crate::transducer::element::Versor;
 
 /// THE KIND OF AN OBSTRUCTION (74, 78.9).
@@ -79,7 +79,7 @@ pub enum ClosureObstruction {
     /// ruled (CV2) — carries no coset: its content is the cited address,
     /// which rides the court's docket.
     Dialect { coset: Vec<(u64, num_rational::BigRational)>, chart: Option<Vec<u8>> },
-    Cover { cocycle: Vec<Link> },
+    Cover { cocycle: Vec<SectionLink> },
     Integrity,
     NoQuestion,
     Unclassified,
@@ -104,7 +104,7 @@ pub enum Content<'a> {
     /// with the reader's name for why — and the chart it acts on.
     Holonomy { versor: Option<&'a Versor>, chart: Option<&'a [u8]>, proof: &'static str },
     /// A residue on the cover: the links the sections leave.
-    Residue(&'a [Link]),
+    Residue(&'a [SectionLink]),
 }
 
 /// THE ONE READER OF A CLOSURE REFUSAL'S KIND (78.9): no versor, or one with

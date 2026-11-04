@@ -56,7 +56,7 @@ assert_eq!(
 // than the whole.
 let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("spoken with its demand");
 let f = crate::transducer::sentence::from_element_form(&spoken).expect("a sentence tape");
-let demanded: Vec<(crate::network::nerve::coord::VertexAt, crate::transducer::sentence::Demand, Vec<crate::transducer::sentence::Link>)> = f
+let demanded: Vec<(crate::network::nerve::coord::VertexAt, crate::transducer::sentence::Demand, Vec<crate::transducer::sentence::SectionLink>)> = f
     .demand_vertices()
     .map(|(i, k, _, links)| (i, k.clone(), links.to_vec()))
     .collect();
@@ -189,7 +189,7 @@ fn sentence_measure_from_refuses_undeclared_remainder() {
 fn sentence_measure_from_refuses_uncovered_remainder() {
     let (x, y) = (grid(&["12"]), grid(&["34"]));
     let rems = vec![residue_of(Some(&x), &y).expect("one enclosure needs no ground")];
-    let elsewhere: Vec<crate::transducer::sentence::Link> = vec![(5, 5, 0, 9)];
+    let elsewhere: Vec<crate::transducer::sentence::SectionLink> = vec![(5, 5, 0, 9)];
     let chart = crate::transducer::stalk::invariant(&elsewhere);
     let mut f = Form::default();
     f.put_vertex(demand_vertex(crate::transducer::sentence::Demand::Creation, &chart, elsewhere))
@@ -266,7 +266,7 @@ fn mint_sentence_why_refuses_form_where_nothing_acts() {
 #[test]
 fn mint_refusal_line_names_arm_proof_kind_demands() {
     use crate::transducer::sentence::{Demand, ObstructionKind, ObstructionRefusal};
-    let elsewhere: Vec<crate::transducer::sentence::Link> = vec![(5, 5, 0, 9)];
+    let elsewhere: Vec<crate::transducer::sentence::SectionLink> = vec![(5, 5, 0, 9)];
     let chart = crate::transducer::stalk::invariant(&elsewhere);
     let mut f = Form::default();
     f.put_vertex(demand_vertex(Demand::Creation, &chart, elsewhere)).expect("a demand vertex has a coordinate");

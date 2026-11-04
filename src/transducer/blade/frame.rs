@@ -192,6 +192,10 @@ impl Pose {
 pub enum NoPose {
     /// A body with no support. Nothing to orient.
     Bodiless,
+    /// The perspective of the bodies' base assigns no plane: fewer than two
+    /// axes are read as space (a rank-1 sample), so there is no turn to
+    /// read and none is invented (MU-SENSING §4).
+    Planeless,
     /// One body has a principal axis and the other does not, so no turn of
     /// one is the other whatever the two sizes.
     Isotropy,
@@ -291,7 +295,7 @@ impl NoPose {
         match self {
             NoPose::Isotropy | NoPose::Mirrored | NoPose::Oblique | NoPose::NullStep | NoPose::Ungauged => Some(LANE_SHELL),
             NoPose::Incongruent(_) | NoPose::Irrational => Some(LANE_SPATIAL),
-            NoPose::Uncarried(_) | NoPose::Unoriented | NoPose::Unbounded | NoPose::Bodiless => None,
+            NoPose::Uncarried(_) | NoPose::Unoriented | NoPose::Unbounded | NoPose::Bodiless | NoPose::Planeless => None,
         }
     }
 
@@ -313,8 +317,9 @@ impl NoPose {
             NoPose::Ungauged => Some(ObstructionKind::Unclassified),
             NoPose::Oblique => Some(ObstructionKind::Dialect),
             NoPose::Bodiless => Some(ObstructionKind::Integrity),
-            // A cut by the stroke is no reading of the pair at all.
-            NoPose::Unoriented | NoPose::Unbounded => None,
+            // A cut by the stroke is no reading of the pair at all, and
+            // neither is a perspective with no plane to turn in.
+            NoPose::Unoriented | NoPose::Unbounded | NoPose::Planeless => None,
         }
     }
 }

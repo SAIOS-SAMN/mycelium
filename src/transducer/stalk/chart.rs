@@ -7,9 +7,9 @@
 
 use super::*;
 
-/// A chain link: the one carrier `sentence::Link` (track 26 S5 holds the
+/// A chain link: the one carrier `sentence::SectionLink` (track 26 S5 holds the
 /// three former aliases as one type).
-pub(crate) use crate::transducer::sentence::Link;
+pub(crate) use crate::transducer::sentence::SectionLink;
 
 /// Standing of a word on the working atlas: a coordinate, never a gate.
 /// Ruled weights above Stood, Stood above Held.
@@ -362,7 +362,7 @@ pub(crate) fn charts_read() -> u64 {
 
 /// Measure the moduli of a chain's support (hues are fibre coordinates over
 /// the base point, not part of the geometry class).
-pub fn invariant(chain: &[Link]) -> Invariant {
+pub fn invariant(chain: &[SectionLink]) -> Invariant {
     let mut sites = element::positions(chain);
     sites.sort_unstable();
     sites.dedup();
@@ -545,7 +545,7 @@ pub fn congruent_all<'a>(
 pub fn congruent_shaped<'a>(
     stalks: &Stalks,
     shape_at: impl Fn(&[u8]) -> Option<&'a crate::transducer::blade::Shape>,
-    chain: &[Link],
+    chain: &[SectionLink],
     budget: &mut crate::physics::Budget,
 ) -> Option<(crate::transducer::address::Address, Versor)> {
     let shape = element::shape_of_chain(chain)?;

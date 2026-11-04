@@ -127,7 +127,7 @@ impl Bytes for Vertex {
                 n += chart.key().as_bytes().len();
             }
             Vertex::Demand { chart, bodies, .. } => {
-                n += chart.key().as_bytes().len() + bodies.len() * std::mem::size_of::<crate::transducer::sentence::Link>();
+                n += chart.key().as_bytes().len() + bodies.len() * std::mem::size_of::<crate::transducer::sentence::SectionLink>();
             }
             Vertex::Unfolded { .. } => {}
         }

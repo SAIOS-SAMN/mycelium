@@ -631,7 +631,7 @@ pub(super) fn family_percept(
                     continue;
                 }
                 let void = crate::transducer::raster::void()?;
-                let links: Vec<Link> =
+                let links: Vec<SectionLink> =
                     body.compartments.iter().filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, void, l.hue))).collect();
                 demanded.push((Demand::Creation, body.moduli.clone(), links));
             }
@@ -706,7 +706,7 @@ pub(super) fn family_percept(
             let Vertex::Word { address, derivation, .. } = v else { continue };
             let support: Vec<Site> = codomain
                 .iter()
-                .map(|s| match s.with_axis(crate::transducer::base::FRAME_AXIS, c.frame) {
+                .map(|s| match crate::transducer::perspective::family_place_axis(s.n()).and_then(|p| s.with_axis(p, c.frame)) {
                     Some(at) => at,
                     None => s.clone(),
                 })
@@ -730,7 +730,7 @@ pub(super) fn family_percept(
                         _ => super::torsion_quotient::Sections::Standing,
                     };
                     if relation == super::torsion_quotient::Sections::Standing {
-                        let links: Vec<Link> = support
+                        let links: Vec<SectionLink> = support
                             .iter()
                             .filter_map(|s| on_grid(s).map(|(r, cc)| (r, cc, 0u8, 0u8)))
                             .collect();
@@ -949,7 +949,7 @@ pub(super) fn family_percept(
     // deformation dissolves when every compartment of both bodies is carried AND
     // no orbit over its pieces stands (50.8).
     let mut by_demand: Keyed<Demanded, coord::DemandVertex> = Keyed::new();
-    let mut declare = |kind: Demand, chart: Invariant, links: Vec<Link>| {
+    let mut declare = |kind: Demand, chart: Invariant, links: Vec<SectionLink>| {
         let key = crate::transducer::sentence::demand_key(&kind, &chart);
         match by_demand.at_mut(&key) {
             Some((_, _, held)) => held.extend(links),

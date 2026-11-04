@@ -7,7 +7,7 @@
 //! another and the chain of hue transitions it leaves.
 
 use super::*;
-use crate::transducer::base::{Site, FRAME_AXIS};
+use crate::transducer::base::Site;
 
 pub type Grid = Vec<Vec<u8>>;
 
@@ -294,11 +294,12 @@ pub(crate) fn landed_hue(v: &Versor, site: &Site, dst: &Body) -> Option<u8> {
     dst.compartments.binary_search_by(|x| x.site.cmp(&t)).ok().map(|i| dst.compartments[i].hue)
 }
 
-/// A site's coordinates on the grid axes — the section's planar token
-/// (16.5); every other axis rides on the pose. `None` for a site of a base
-/// with fewer than the two grid axes, which has no section.
+/// A site's coordinates on the sensor's plane, the plane the default
+/// perspective assigns (`perspective::family_plane`) — the section's planar
+/// token (16.5); every other axis rides on the pose. `None` for a site of a
+/// base whose perspective holds no plane, which has no section.
 pub(crate) fn on_grid(s: &Site) -> Option<(i64, i64)> {
-    let [ga, gb] = crate::transducer::base::GRID_AXES;
+    let (ga, gb) = crate::transducer::perspective::family_plane(s.n())?;
     Some((s.axis(ga)?, s.axis(gb)?))
 }
 
@@ -317,10 +318,10 @@ pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
 
 /// What a demand vertex stands for: its kind, the chart it is listed under
 /// and the links of the bodies it carries (50.5).
-pub type Demanded = (crate::transducer::sentence::Demand, Invariant, Vec<Link>);
+pub type Demanded = (crate::transducer::sentence::Demand, Invariant, Vec<SectionLink>);
 
 /// 50.5: a demand vertex over the bodies it stands for.
-pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invariant, bodies: Vec<Link>) -> Vertex {
+pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invariant, bodies: Vec<SectionLink>) -> Vertex {
     Vertex::demand(kind, chart.clone(), bodies)
 }
 
@@ -389,7 +390,7 @@ pub(crate) fn stand_demands(vertices: &mut crate::transducer::sentence::Vertices
 ///    in it (rule 11).
 ///
 /// THE PLANE IS THE SENSOR'S OWN. `deviatoric` reads `(Ixx−Iyy, 2Ixy)`,
-/// which is `harmonic_on_plane((PLANE_ROW, PLANE_COL))` — the arc turns
+/// which is `harmonic_on_plane(alphabet::sensor_plane())` — the arc turns
 /// in `e₁e₂` and the demand says so rather than defaulting. It stays the
 /// sensor's after FR1: `Oblique` is the square base's question and the
 /// witness a Gaussian arc in that plane, so the pose over the tube
@@ -429,18 +430,18 @@ pub(crate) fn oblique_rotor_prime(
     blade_b: &crate::transducer::blade::Blade,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::Demand> {
-    use crate::transducer::alphabet::{PLANE_COL, PLANE_ROW};
     use crate::transducer::blade;
-    // THE PLANE IS THE SENSOR'S OWN, named once for the frame, the arc and
-    // the demand (BQ4).
-    let sensor = crate::transducer::base::GRID_PLANE;
+    // THE PLANE IS THE SENSOR'S OWN, the one the default perspective
+    // assigns the bodies' base, named once for the frame, the arc and the
+    // demand (BQ4). A base with no plane carries no oblique arc.
+    let sensor = crate::transducer::perspective::family_plane(blade_a.n())?;
     // GATE 1: only the oblique arm passes. A turn is no refusal; a held
     // stabilizer is no refusal; any other answer is a refusal.
     let Err(blade::NoPose::Oblique) = blade::relative_rotor(blade_a, blade_b, sensor, budget) else {
         return None;
     };
     let (s, t) = blade::oblique_arc(blade_a, blade_b, sensor)?;
-    let plane = (PLANE_ROW, PLANE_COL);
+    let plane = crate::transducer::alphabet::slot_plane(sensor)?;
     let norm = &s * &s + &t * &t;
     let prime = crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane)?;
     Some(crate::transducer::sentence::Demand::RotorPrime {
@@ -542,7 +543,7 @@ pub(crate) fn word_vertex_on_chart(
 pub(crate) fn frame_of_body(b: &Body) -> Option<i64> {
     let mut at: Option<i64> = None;
     for l in &b.compartments {
-        let k = l.site.axis(FRAME_AXIS)?;
+        let k = l.site.axis(crate::transducer::perspective::family_place_axis(l.site.n())?)?;
         match at {
             None => at = Some(k),
             Some(f) if f == k => {}
@@ -565,7 +566,7 @@ fn at_frame(compartments: &[Compartment], k: i64) -> Vec<Compartment> {
     compartments
         .iter()
         .map(|l| Compartment {
-            site: match l.site.with_axis(FRAME_AXIS, k) {
+            site: match crate::transducer::perspective::family_place_axis(l.site.n()).and_then(|p| l.site.with_axis(p, k)) {
                 Some(s) => s,
                 None => l.site.clone(),
             },

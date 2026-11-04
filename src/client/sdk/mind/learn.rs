@@ -37,9 +37,12 @@ impl Mind {
                 // The court's final point it landed under: the aperture lapse
                 // reads the next one past it (`lapse_standing_task`).
                 let landed = entity.hypha.tuniversal().map(|p| p.h);
-                // Track 26 S5: the envelope's samples are read at the raster
-                // intake; a task of another rank or width is not taken.
-                entity.board.court.task = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b)).and_then(|e| e.rasters().ok()).map(|env| {
+                // Track 26 S4b: the envelope's samples are perceived at
+                // the samples' own rank; the word path takes the alphabet's section,
+                // and a task off it stops perceived (`perceive_envelope`).
+                let envelope = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b));
+                let section = envelope.and_then(|e| entity.perceive_envelope(&e, super::perceive::SceneKind::Task));
+                entity.board.court.task = section.map(|env| {
                     let offer = super::offer::Offer { landed, ..super::offer::Offer::of(&env.train) };
                     (env, offer)
                 });

@@ -63,7 +63,7 @@ fn task() -> Result<String, String> {
     same("the envelope's citation", Some(envelope.id), CITATION)?;
     same("the envelope's train pairs", Some(envelope.train.clone()), sent.train.clone())?;
     same("the envelope's tests", Some(envelope.tests.clone()), sent.tests)?;
-    let read = envelope.rasters().map_err(|e| format!("the envelope is no raster: {e:?}"))?;
+    let read = envelope.section().map_err(|e| format!("the envelope is off the alphabet's section: {e:?}"))?;
     same("the envelope's train pairs as rasters", Some(read.train), train())?;
     same("the envelope's tests as rasters", Some(read.tests), tests())?;
     let deep = vec![deep(d::samples::Member::Input)?];

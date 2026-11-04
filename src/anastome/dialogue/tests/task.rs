@@ -55,7 +55,7 @@ fn task_by_citation_round_trips_with_envelope() {
     let sent = TaskEnvelope::of_rasters(cite, &task.train, &tests).expect("samples");
     let env = decode_task_envelope(&encode_task_envelope(&cite, &sent.train, &sent.tests).expect("writes")).expect("reads");
     assert_eq!(env.id, cite, "the envelope names the task by its citation");
-    let read = env.rasters().expect("rank 2 at width 1");
+    let read = env.section().expect("rank 2 at width 1");
     assert_eq!(read.train, toy().train);
     assert_eq!(read.tests, vec![toy().test[0].0.clone()], "the held answers never ride");
 }

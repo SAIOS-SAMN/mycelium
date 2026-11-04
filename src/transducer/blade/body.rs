@@ -7,7 +7,8 @@
 //! invariant signature is what two congruent bodies share.
 
 use super::*;
-use crate::transducer::base::{is_grid_axis, Site, GRID_AXES};
+use crate::transducer::base::Site;
+use crate::transducer::perspective::{family_role, Role};
 
 /// A compartment as the sensor hands it over: the site it stands at and the hue
 /// it carries (16.4, 51.3, 71.2(1)). The support of a body is a list of
@@ -248,15 +249,16 @@ fn pair_index(i: usize, j: usize) -> usize {
 /// A COMPARTMENT'S ROUND, ALONG ONE AXIS (A4, A.12; ruled 2026-09-26): the
 /// compartment is lifted at the sensor, once, to its ROUND — the null point of
 /// its centre with the unit cube's inversive extent, `1/12` along each axis the
-/// cube spans, so a compartment (whose cube spans the grid axes) is the round of
-/// extent `ρ² = 2/12`, and a point along every other axis. A round is
-/// isotropic and holds nothing of its own above order two: its centre and its
-/// extent are the whole of it. Never a square, whose own higher moments are
-/// the lattice's rigidity.
-pub(crate) fn round_extent(axis: usize) -> BigRational {
-    match is_grid_axis(axis) {
-        true => qn(1, 12),
-        false => q(0),
+/// cube spans, so a compartment (whose cube spans the axes the default
+/// perspective of its base of `n` coordinates reads as space) is the round
+/// of extent `ρ² = m/12` for `m` space axes, and a point along every other
+/// axis. A round is isotropic and holds nothing of its own above order two:
+/// its centre and its extent are the whole of it. Never a square, whose own
+/// higher moments are the lattice's rigidity.
+pub(crate) fn round_extent(n: usize, axis: usize) -> BigRational {
+    match crate::transducer::perspective::family_role(n, axis) {
+        Some(Role::Space) => qn(1, 12),
+        Some(Role::Sequence | Role::Value) | None => q(0),
     }
 }
 
@@ -281,13 +283,13 @@ fn times(z: &[BigRational; 2], w: &[BigRational; 2]) -> [BigRational; 2] {
 pub(crate) fn round_harmonic(
     u: &BigRational,
     v: &BigRational,
-    plane: (usize, usize),
+    (n, plane): (usize, (usize, usize)),
     m: super::tower::Harmonic,
 ) -> [BigRational; 2] {
     use super::tower::Harmonic;
     let z = [u.clone(), v.clone()];
     let power = |k: u32| (0..k).fold([q(1), q(0)], |acc, _| times(&acc, &z));
-    let eps = round_extent(plane.0) - round_extent(plane.1);
+    let eps = round_extent(n, plane.0) - round_extent(n, plane.1);
     // `C(m, 2)` and `z^{m−2}` beside `z^m`, by the order's type.
     let (pairs, lower, order) = match m {
         Harmonic::Two => (1, 0, 2),
@@ -304,9 +306,9 @@ pub(crate) fn round_harmonic(
 /// centre's `|z|⁴` and the extent's coupling to it,
 /// `4(u²·e_i + v²·e_j) + 2|z|²·(e_i + e_j)` — every term the round holds,
 /// none of its own fourth order (it has none).
-fn round_isotropic4(u: &BigRational, v: &BigRational, plane: (usize, usize)) -> BigRational {
+fn round_isotropic4(u: &BigRational, v: &BigRational, (n, plane): (usize, (usize, usize))) -> BigRational {
     let (u2, v2) = (u * u, v * v);
-    let (ei, ej) = (round_extent(plane.0), round_extent(plane.1));
+    let (ei, ej) = (round_extent(n, plane.0), round_extent(n, plane.1));
     let r2 = &u2 + &v2;
     &r2 * &r2 + q(4) * (&u2 * &ei + &v2 * &ej) + q(2) * &r2 * (&ei + &ej)
 }
@@ -353,38 +355,40 @@ pub fn lift(comp: &[Compartment]) -> Blade {
     let mut inertia: Vec<BigRational> = vec![q(0); pairs.len()];
     let planes = crate::transducer::base::planes(dim);
     let mut quartic: Vec<[BigRational; 3]> = vec![[q(0), q(0), q(0)]; planes.len()];
-    let [ga, gb] = GRID_AXES;
     for l in comp {
         let d: Vec<BigRational> = (0..dim).map(|i| q(coord(l, i)) - &centroid[i]).collect();
         for (slot, &(i, j)) in inertia.iter_mut().zip(&pairs) {
             let mut m = &d[i] * &d[j];
             if i == j {
-                m += round_extent(i);
+                m += round_extent(dim, i);
             }
             *slot += m;
         }
         // THE FOURTH MOMENTS ON EVERY PLANE generated from `n` (BQ4): the
         // round's isotropic part and its fourth harmonic.
         for (slot, &(i, j)) in quartic.iter_mut().zip(&planes) {
-            let [h0, h1] = round_harmonic(&d[i], &d[j], (i, j), super::tower::Harmonic::Four);
-            slot[0] += round_isotropic4(&d[i], &d[j], (i, j));
+            let [h0, h1] = round_harmonic(&d[i], &d[j], (dim, (i, j)), super::tower::Harmonic::Four);
+            slot[0] += round_isotropic4(&d[i], &d[j], (dim, (i, j)));
             slot[1] += h0;
             slot[2] += h1;
         }
     }
 
-    // Extent r² = the per-unit-mass polar second moment on the grid plane,
-    // with each round's own extent (1/6) in it, so r² > 0 even for a single
+    // Extent r² = the per-unit-mass polar second moment on the axes the
+    // default perspective reads as space (at a rank-2 sample, its plane),
+    // with each round's own extent in it, so r² > 0 even for a single
     // compartment — off the null cone, invertible (A.12).
-    // A grid axis the base lacks has no moment there, which is zero by the
-    // inclusion ℚᵐ ⊂ ℚⁿ, as `coord` reads it.
     let diag = |i: usize| -> BigRational {
         match inertia.get(pair_index(i, i)) {
             Some(m) => m.clone(),
             None => q(0),
         }
     };
-    let r2 = (diag(ga) + diag(gb)) / &n_q;
+    let polar = crate::transducer::perspective::Perspective::of_family_site(dim)
+        .space_axes()
+        .into_iter()
+        .fold(q(0), |s, i| s + diag(i));
+    let r2 = polar / &n_q;
     let spatial = cga::sphere_at(&centroid, &r2);
 
     // Gauge: the hue multiset as sorted (hue, count) relations — Vec, not a map.
@@ -476,24 +480,34 @@ pub fn components(compartments: &[Compartment]) -> Vec<Vec<Compartment>> {
     out.into_iter().map(|(_, comp)| comp).collect()
 }
 
-/// A site's coordinates off the grid plane: the frame, and every further
-/// base axis. The key a section is filed under.
-fn off_grid(s: &Site) -> Vec<i64> {
-    s.axes().iter().enumerate().filter(|(i, _)| !is_grid_axis(*i)).map(|(_, a)| *a).collect()
+/// The axes a section's plane stands on: the first two the default
+/// perspective of a base of `n` coordinates reads as space, fewer where it
+/// reads fewer.
+fn section_axes(n: usize) -> Vec<usize> {
+    crate::transducer::perspective::Perspective::of_family_site(n).space_axes().into_iter().take(2).collect()
 }
 
-/// A site's two grid coordinates: row and column.
+/// A site's coordinates off the sensor's plane: the place, and every further
+/// base axis. The key a section is filed under.
+fn off_grid(s: &Site) -> Vec<i64> {
+    let on = section_axes(s.n());
+    s.axes().iter().enumerate().filter(|(i, _)| !on.contains(i)).map(|(_, a)| *a).collect()
+}
+
+/// A site's two coordinates on the sensor's plane. A plane axis the
+/// perspective of a smaller base does not hold is zero there: the inclusion
+/// ℚᵐ ⊂ ℚⁿ (71), as `lift` reads it.
 fn on_grid(s: &Site) -> (i64, i64) {
-    let [ga, gb] = GRID_AXES;
+    let on = section_axes(s.n());
     #[expect(
         clippy::manual_unwrap_or_default,
-        reason = "the inclusion ℚᵐ ⊂ ℚⁿ (71), as `lift` reads it: a grid axis a smaller base lacks is zero"
+        reason = "the inclusion ℚᵐ ⊂ ℚⁿ (71), as `lift` reads it: a plane axis a smaller base lacks is zero"
     )]
-    let at = |i: usize| match s.axis(i) {
+    let at = |k: usize| match on.get(k).and_then(|&i| s.axis(i)) {
         Some(a) => a,
         None => 0,
     };
-    (at(ga), at(gb))
+    (at(0), at(1))
 }
 
 /// ONE SECTION OF A STACK: its coordinates off the grid plane, and its
@@ -603,12 +617,13 @@ pub fn boundary_length(support: &[Site]) -> usize {
         .sum()
 }
 
-/// THE BOUNDARY OFF THE GRID PLANE of a body: its sides open along every
-/// axis the compartment has no extent on — a compartment's face toward the site
-/// before it and toward the site after it on that axis, each counted where
-/// no compartment of the body stands there (51.3). At the corpus's `n = 3` that
-/// axis is the frame: two for every compartment of a body of one frame; fewer
-/// for a stack.
+/// THE BOUNDARY OFF THE SPACE AXES of a body: its sides open along every
+/// axis the compartment has no extent on (every axis the default
+/// perspective does not read as space) — a compartment's face toward the
+/// site before it and toward the site after it on that axis, each counted
+/// where no compartment of the body stands there (51.3). At a rank-2 sample
+/// that axis is the sample's place: two for every compartment of a body of
+/// one frame; fewer for a stack.
 pub fn frame_faces(support: &[Site]) -> usize {
     let mut sorted: Vec<Site> = support.to_vec();
     sorted.sort_unstable();
@@ -616,7 +631,7 @@ pub fn frame_faces(support: &[Site]) -> usize {
     let held = |p: &Site| sorted.binary_search(p).is_ok();
     let mut open = 0usize;
     for s in &sorted {
-        for axis in (0..s.n()).filter(|i| !is_grid_axis(*i)) {
+        for axis in (0..s.n()).filter(|&i| family_role(s.n(), i) != Some(Role::Space)) {
             for step in [-1i64, 1] {
                 let mut d = vec![0i64; s.n()];
                 d[axis] = step;

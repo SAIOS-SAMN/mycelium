@@ -89,7 +89,7 @@ pub(crate) fn merge_vortex(
     }
 }
 
-pub(crate) fn intersect(a: &[Link], b: &[Link]) -> Vec<Link> {
+pub(crate) fn intersect(a: &[SectionLink], b: &[SectionLink]) -> Vec<SectionLink> {
     let mut kb = Keyed::new();
     for &(r, c, _, _) in b {
         kb.insert(remainder_site_key(r, c), ());
@@ -355,8 +355,8 @@ impl Contemplation {
         let mut ground: Option<super::well::Grounded> = None;
         let mut slips: Vec<(Vec<u8>, crate::transducer::cga::Mv)> = Vec::new();
         let mut bundle = None;
-        let mut remainders: Keyed<Vec<Link>> = Keyed::new();
-        let mut old_rems: Keyed<Vec<Link>> = Keyed::new();
+        let mut remainders: Keyed<Vec<SectionLink>> = Keyed::new();
+        let mut old_rems: Keyed<Vec<SectionLink>> = Keyed::new();
         let mut merged_volume = [0u64; 4];
         // ESCROW CONSERVED (MU-CLIENT §7.1 Phase 3): what each merged thought
         // holds is carried whole into the merge, never re-drawn and never its

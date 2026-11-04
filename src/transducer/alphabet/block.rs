@@ -139,7 +139,7 @@ pub(crate) fn word_of_block(block: &[[Q; 2]; 2], plane: (u8, u8)) -> Option<supe
 /// `None` where the seventeen do not reach it, which is exactly 37.7's
 /// condition and not an error.
 pub(crate) fn word_of_rotor(rotor: &super::Rotor) -> Option<super::Word> {
-    let plane = (super::PLANE_ROW, super::PLANE_COL);
+    let plane = super::sensor_plane();
     word_of_block(&super::rotor_block_on(rotor, plane)?, plane)
 }
 

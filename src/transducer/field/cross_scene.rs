@@ -968,7 +968,7 @@ impl Contemplation {
     /// as the edge, and every slipped prediction is a demand at its chart.
     /// Then the complex climbs and decides, as for any held idea.
     fn file_thoughts(&mut self, key: &[u8], to: &Keyed<Vec<Row>>, budget: &mut crate::physics::Budget) {
-        let mut rems: Keyed<Vec<Link>> = Keyed::new();
+        let mut rems: Keyed<Vec<SectionLink>> = Keyed::new();
         if let Some(b) = self.wells.get(key) {
             rems.insert(key, b.remainder.placed());
         }

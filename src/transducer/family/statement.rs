@@ -91,8 +91,18 @@ struct Seen<'a> {
     owner: Vec<Vec<Option<usize>>>,
 }
 
-const EDGES: [(i64, i64); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
-const AROUND: [(i64, i64); 8] = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
+/// THE FACE NEIGHBOURS of a site of the alphabet's section, both senses:
+/// the contact of grade `n − 1`, generated at the section's rank
+/// (`sentence::faces_of`), never a list of offsets.
+fn edges() -> Vec<(i64, i64)> {
+    crate::transducer::sentence::on_section(crate::transducer::sentence::faces_of(crate::transducer::alphabet::ALPHABET_SAMPLE_RANK))
+}
+
+/// EVERY NEIGHBOUR of a site of the alphabet's section, corners included,
+/// in lexicographic order (`sentence::surrounding`), generated.
+fn around() -> Vec<(i64, i64)> {
+    crate::transducer::sentence::on_section(crate::transducer::sentence::surrounding(crate::transducer::alphabet::ALPHABET_SAMPLE_RANK))
+}
 
 fn q(n: i64) -> Q {
     Q::from_integer(n.into())
@@ -184,8 +194,9 @@ impl<'a> Seen<'a> {
                 }
             }
         }
+        let edges = edges();
         while let Some((a, b)) = stack.pop() {
-            for (dr, dc) in EDGES {
+            for &(dr, dc) in &edges {
                 let Some((na, nb)) = self.at(a, b, dr, dc) else { continue };
                 if !reached[na][nb] && !wall(na, nb) {
                     reached[na][nb] = true;
@@ -207,8 +218,9 @@ impl<'a> Seen<'a> {
     /// The other bodies `b` touches.
     fn touching(&self, b: usize) -> Vec<usize> {
         let mut out = Vec::new();
+        let around = around();
         for &(r, c, _) in &self.cells[b] {
-            for (dr, dc) in AROUND {
+            for &(dr, dc) in &around {
                 if let Some(o) = self.at(r, c, dr, dc).and_then(|(a, d)| self.owner_at(a, d)) {
                     if o != b && !out.contains(&o) {
                         out.push(o);
@@ -369,9 +381,10 @@ impl<'a> Seen<'a> {
             RegionKind::Interior => self.enclosed(sel),
             RegionKind::Halo => {
                 let mut out = Vec::new();
+                let around = around();
                 for &b in sel {
                     for &(r, c, _) in &self.cells[b] {
-                        for (dr, dc) in AROUND {
+                        for &(dr, dc) in &around {
                             if let Some((a, d)) = self.at(r, c, dr, dc) {
                                 if self.grounded(a, d) {
                                     out.push((a, d));
@@ -865,8 +878,9 @@ pub(crate) fn region_of_set(region: RegionKind, x: &Grid, bodies: &[Body], set: 
 pub(crate) fn bodies_around(x: &Grid, bodies: &[Body], cells: &[(usize, usize, u8)]) -> Vec<usize> {
     let seen = Seen::of(x, bodies);
     let mut out: Vec<usize> = Vec::new();
+    let around = around();
     for &(r, c, _) in cells {
-        for (dr, dc) in AROUND {
+        for &(dr, dc) in &around {
             if let Some(o) = seen.at(r, c, dr, dc).and_then(|(a, d)| seen.owner_at(a, d)) {
                 if !out.contains(&o) {
                     out.push(o);

@@ -90,7 +90,7 @@ fn geo_carries_k_generators_to_grade_k_blade() {
         assert!(product.projective_eq(&Mv::blade(mask, q(1, 1))), "the product of {} is one blade", k + 1);
         assert!(product.projective_eq(&product.grade(grade)), "of grade {}", k + 1);
     }
-    let axes = crate::transducer::base::FRAME_AXIS + 1;
+    let axes = crate::transducer::alphabet::ALPHABET_BASE_N;
     let vertices = (0..axes).fold(1u64, |cell, _| cell * 2);
     assert_eq!(crate::physics::STROKES_PER_RESERVE, vertices, "the aperture is the base's unit cell");
     assert_eq!(u64::from(crate::physics::aperture_cycle()), vertices);

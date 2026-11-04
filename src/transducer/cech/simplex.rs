@@ -371,10 +371,7 @@ pub fn classify(
     // outside the seventeen. A rotor with no sensor block is not
     // unspellable — it is a letter acting elsewhere, and it carries a class
     // with no sensor section.
-    let plane = (
-        crate::transducer::alphabet::PLANE_ROW,
-        crate::transducer::alphabet::PLANE_COL,
-    );
+    let plane = crate::transducer::alphabet::sensor_plane();
     let acts_on_sensor = crate::transducer::alphabet::rotor_block_on(rotor, plane).is_some();
     if acts_on_sensor && crate::transducer::alphabet::word_of_rotor(rotor).is_none() {
         return Fill::Unspellable(Box::new(rotor.clone()));

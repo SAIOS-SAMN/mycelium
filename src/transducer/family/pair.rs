@@ -142,7 +142,7 @@ pub(crate) struct Covered {
 
 /// The links a deformation stands for: the union of both bodies' supports,
 /// each with the hue before and after (0 where a body has no compartment).
-pub(crate) fn delta_links(a: &Body, b: &Body) -> Result<Vec<Link>, transduce::Unground> {
+pub(crate) fn delta_links(a: &Body, b: &Body) -> Result<Vec<SectionLink>, transduce::Unground> {
     let mut before: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
     for l in &a.compartments {
         before.insert(l.site.key(), l.hue);
@@ -153,7 +153,7 @@ pub(crate) fn delta_links(a: &Body, b: &Body) -> Result<Vec<Link>, transduce::Un
     }
     // Read where a link needs it; a scope with no one ground refuses by name.
     let void = crate::transducer::raster::void();
-    let mut links: Vec<Link> = Vec::new();
+    let mut links: Vec<SectionLink> = Vec::new();
     for l in &a.compartments {
         // A site the image does not hold is absent there, and the scene's
         // ground IS absence in this encoding.

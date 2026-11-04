@@ -35,9 +35,18 @@ is at `0.3.0-rc.3`, signed with a prototype key. Remaining, in order:
 | Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 built (the ground deduced, a vortex read per candidate, the solve act stating its ground; task addresses changed inside the one break); S3 built (the symbol set `Σ` deduced, `e_∅` at `|Σ|`, no fixed palette); S5 built (samples of rank `n` on the wire, task identity lossless across ranks and widths, speech and the seat's solve call stating their ground, `e_∅` a typed record), except the rank-`n` link, stopped for the transducer's planar chain carriers (S4). S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Moved to v0.4.0 with track 26 S4b (decided 2026-11-04) |
-| D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
+| D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved; O3 derived in track 26 S4b as `2ⁿ` at the alphabet's base). The need readings owed are listed in MU-DERIVATIONS D2.5 |
 | Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N7 built (N1 with #29, N2 with #53, N7 with track 26 S5, N6 inside v0.3.0's open break); `ListingField` still waits on a ruling |
 | rc.3 on a test mesh, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | `v0.3.0-rc.3` tagged 2026-11-04, signed with the prototype key ([docs/release-keys/](docs/release-keys/)). `v0.3.0` is tagged from it once the peer kernels' conformance read passes at rc.3. Track 26 S4a, S4b and S7–S9 open v0.4.0 |
+
+**1a. In progress: v0.4.0.** It opens a new break, in which word and
+chart addresses may change (CHANGELOG › Unreleased).
+
+| Item | Issue | State |
+|---|---|---|
+| Track 26 S4b: rank-`n` perception and transduction as factorisation ([MU-SENSING](docs/MU-SENSING.md) §3.6, §3.9) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress on branch `s4b-rank-n`. Built: the fixed axis constants replaced by a perspective's roles; the alphabet kept at `n = 3`, derived, and a higher rank refused by name; D2.5 O3 derived; the rank-`n` link; connection by grade; every pair factored as motion ∘ residue, held as a vortex, with the court's admission on a derived residue; every task perceived by the mind at its own rank. Open: the rank-2 carrier of the word machinery (`family::Grid`), the hypha serving tasks of any rank, a wire act for a claim of factorisation, and the alphabet past `n = 3` |
+| T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | With track 26 S4b's remainder |
+| Track 26, S4a and S7–S9 | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 is agreed with the peer kernels |
 
 **2. Ready to start**
 ([milestone `next`](https://github.com/SAIOS-SAMN/mycelium/milestone/2)).
@@ -1513,9 +1522,9 @@ Each phase is one commit:
      the transduction at rank `n` (`src/transducer/family/transduce/`) and
      the nested map (`nest.rs`). Open: the reading of which factorings the
      family is invariant under, which keeps or dissolves each candidate.
-     The fixed axis constants above (`GRID_AXES`, `FRAME_AXIS`,
-     `PLANE_ROW`/`PLANE_COL`, `GRID_N`, `BASE_AXES`) are still in the
-     tree outside the transduction.
+     The fixed axis constants above are retired in S4b: a perspective
+     assigns the roles (`transducer::perspective`), and `BASE_AXES` is
+     derived from the alphabet's slots.
 
    **S4a, the sample lifted into the field** (MU-SENSING §3.7; in the
    same commit series as S4, after LAW-FIELD v1 is agreed with the peer
@@ -1667,6 +1676,46 @@ Each phase is one commit:
       `rank_three_task_is_perceived`, `link_carries_rank_n_coordinates`.
     - Track 10 takes 78.73's three responses (elastic, plastic,
       fracture) as the mind's response to a residue.
+    - **Built in part** (branch `s4b-rank-n`, four commits):
+      - **Perspective.** `GRID_AXES`, `GRID_PLANE`, `is_grid_axis`,
+        `FRAME_AXIS`, `GRID_N`, `PLANE_ROW` and `PLANE_COL` are retired.
+        `transducer::perspective` assigns roles: the default reads every
+        axis as space, and a family's site carries the sample's place
+        after its axes. The sensor plane is the perspective's first two
+        space axes, and a rank-1 sample has none (`NoPose::Planeless`).
+      - **The alphabet** stays at `n = 3`, derived:
+        `ALPHABET_BASE_N = LETTER_RANK − 1`, the slots and the sensor
+        plane read from it. A higher rank is refused by name
+        (`AlphabetRank`). D2.5 O3: `STROKES_PER_RESERVE = 1 <<
+        ALPHABET_BASE_N`.
+      - **The link.** `sentence::Link` is a `Site` of rank `n` and the
+        symbols at the source's width. The word, chart and field
+        carriers read `SectionLink`, reached through `Link::section`,
+        refused by name.
+      - **Connection by grade** (`incidence_of_sites`); the rule
+        language's offsets generated.
+      - **Factorisation** (`transduce::factorisations`, `Factored`) and
+        the court's admission (`court::verdict::factorisation`).
+      - **Perception at any rank:** the mind perceives every task it
+        takes (`TaskPercept`, `Mind::perceive_envelope`). A task off the
+        section stops `BeyondAlphabet`. `NotRaster` is retired for
+        `SectionRefusal`.
+      - Claims: the five above, `rank_one_task_is_perceived`,
+        `no_axis_is_privileged_in_perception`,
+        `bodies_connect_by_shared_cell_of_grade_n_minus_one`,
+        `rank_beyond_the_alphabet_is_refused_by_name`.
+      - No task, word or chart address changes.
+    - **Open** (the next phase):
+      - the word, chart and rule-language machinery's rank-2 carrier
+        (`family::Grid`, about 94 files), held as the alphabet's
+        section;
+      - the hypha's registry and the court's solve replay, which load
+        posted tasks through the section (`decode_posted_task`);
+      - a wire act for a claim of factorisation, which needs the
+        operator's approval;
+      - the letters past `n = 3` (a plane a larger `n` opens receives a
+        letter by 37.7);
+      - versor motions past the signed permutations (T3).
 12. **S10, emergent senses** (MU-SENSING §4.1; after S6 and S7–S9,
     because a sense is built on the field and its perspectives):
     - A sense is a typed object: a reading from a sample to a cochain of

@@ -86,5 +86,5 @@ use crate::network::nerve::{coord, Coordinate};
 use super::blade::{self, Shape};
 use super::element::{self, Element, Versor};
 use super::base::Site;
-use super::sentence::{Form, Link, Vertex};
+use super::sentence::{Form, SectionLink, Vertex};
 use super::stalk::Invariant;

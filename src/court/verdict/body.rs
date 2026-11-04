@@ -292,16 +292,18 @@ fn form_covers_compartments(
     })
 }
 
-/// Do two sites stand in one frame — every coordinate off the grid axes
-/// equal? A compartment carried into another frame is no compartment of the grid this
-/// frame is replayed against.
+/// Do two sites stand in one frame — every coordinate off the space axes
+/// (the axes the default perspective reads as space) equal? A compartment
+/// carried into another frame is no compartment of the sample this frame is
+/// replayed against.
 fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Site) -> bool {
+    use crate::transducer::perspective::{family_role, Role};
     a.n() == b.n()
         && a.axes()
             .iter()
             .zip(b.axes())
             .enumerate()
-            .all(|(i, (x, y))| crate::transducer::base::is_grid_axis(i) || x == y)
+            .all(|(i, (x, y))| family_role(a.n(), i) == Some(Role::Space) || x == y)
 }
 
 /// 23.1 step 3 ALONG `e₃` (51.8): `REFUSE_VERTEX_BODY` at the vertex, with
@@ -498,13 +500,13 @@ fn motor_carries(
     motor: &Versor,
     budget: &mut crate::physics::Budget,
 ) -> Result<Option<Refusal>, Unbounded> {
-    use crate::transducer::base::FRAME_AXIS;
+    use crate::transducer::perspective::family_place_axis;
     let at = |k: u64| usize::try_from(k).ok().and_then(|i| frames.get(i));
     let placed = |fibre: &[&Body], k: i64| -> Option<Vec<crate::transducer::base::Site>> {
         let mut s: Vec<_> = fibre
             .iter()
             .flat_map(|b| b.compartments.iter())
-            .map(|l| l.site.with_axis(FRAME_AXIS, k))
+            .map(|l| l.site.with_axis(family_place_axis(l.site.n())?, k))
             .collect::<Option<_>>()?;
         s.sort_unstable();
         s.dedup();

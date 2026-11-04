@@ -109,7 +109,7 @@ pub(crate) fn form_magnitude(f: &Form) -> Option<[u64; 4]> {
 }
 
 /// Every remainder link this well holds: the form's own and each pair's.
-pub(crate) fn remainder_links_of(b: &Well) -> Vec<Link> {
+pub(crate) fn remainder_links_of(b: &Well) -> Vec<SectionLink> {
     let mut out = b.remainder.to_vec();
     for (_, r) in b.remainders.scoped() {
         out.extend_from_slice(r);
@@ -125,7 +125,7 @@ pub(crate) fn cover_of(inv: &Invariant) -> Keyed<()> {
     c
 }
 
-pub(crate) fn volume_of(rems: &Keyed<Vec<Link>>, verts: &[impl AsRef<[u8]>]) -> [u64; 4] {
+pub(crate) fn volume_of(rems: &Keyed<Vec<SectionLink>>, verts: &[impl AsRef<[u8]>]) -> [u64; 4] {
     if verts.is_empty() {
         return [0; 4];
     }
@@ -142,7 +142,7 @@ pub(crate) fn volume_of(rems: &Keyed<Vec<Link>>, verts: &[impl AsRef<[u8]>]) -> 
     element::measure_lanes(&acc)
 }
 
-pub(crate) fn union_rem(a: &[Link], b: &[Link]) -> Vec<Link> {
+pub(crate) fn union_rem(a: &[SectionLink], b: &[SectionLink]) -> Vec<SectionLink> {
     let mut out = a.to_vec();
     let mut have = Keyed::new();
     for &(r, c, _, _) in a {
@@ -248,7 +248,7 @@ pub struct Well {
     /// Pairs the idea germinated from; trial speaks over them for μ⃗.
     pub bundle: Option<Vec<crate::transducer::family::TrainPair>>,
     /// Per-pair remainder chains, keyed by pair index. `remainder` is the chains' union.
-    pub remainders: Keyed<Vec<Link>>,
+    pub remainders: Keyed<Vec<SectionLink>>,
     /// CS2 — THE CELLS THIS IDEA'S PIVOT READS AGAINST, memoised by the form's
     /// own address: read once per form per change, re-read where the form
     /// moved, because the algebra depends on the form and not on the orbit.

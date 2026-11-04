@@ -42,7 +42,8 @@
 //! and the percept's field reads it as flux.
 
 use crate::physics::pivot_fibre::{shape_of, Carried, PivotFibre, Shape};
-use crate::transducer::base::{is_grid_axis, Site};
+use crate::transducer::base::Site;
+use crate::transducer::perspective::{family_role, Role};
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::Versor;
 use num_rational::BigRational;
@@ -137,9 +138,9 @@ pub(crate) fn vertex_point(sites: &[Site]) -> Option<(Mv, usize)> {
         .map(|i| {
             let sum: BigRational = sites.iter().filter_map(|s| s.axis(i)).map(|a| BigRational::from_integer(a.into())).sum();
             let mean = sum / &count;
-            match is_grid_axis(i) {
-                true => mean + &half,
-                false => mean,
+            match family_role(n, i) {
+                Some(Role::Space) => mean + &half,
+                Some(Role::Sequence | Role::Value) | None => mean,
             }
         })
         .collect();

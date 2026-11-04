@@ -96,9 +96,9 @@ fn block(n: usize) -> Vec<Site> {
 /// [`contact_cells`]: crate::transducer::sentence::contact_cells
 #[test]
 fn shared_cells_reads_every_neighbour_once_by_grade() {
-    use crate::transducer::base::FRAME_AXIS;
     use crate::transducer::sentence::{contact_cells, face_incidence, shared_cells};
     for n in [3usize, 4] {
+        let place = crate::transducer::perspective::family_place_axis(n).expect("a base of n ≥ 1 has a place");
         let positions = block(n);
         let origin = Site::new(vec![0; n]).expect("the origin within the algebra");
         let centre = positions.binary_search(&origin).expect("the centre is in its block");
@@ -112,7 +112,7 @@ fn shared_cells_reads_every_neighbour_once_by_grade() {
             assert_eq!(c.axes, differ, "the axes are the ones the two sites differ on");
             assert_eq!(c.grade, n - differ.len(), "the grade is n − m");
             assert_eq!(c.is_face(), c.grade == n - 1, "a face is the cell of grade n − 1");
-            assert_eq!(c.crosses(FRAME_AXIS), offset[FRAME_AXIS] != 0, "across the frames iff the frame differs");
+            assert_eq!(c.crosses(place), offset[place] != 0, "across the frames iff the place differs");
         }
         let faces = face_incidence(&positions);
         let contacts = contact_cells(&positions);

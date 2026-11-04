@@ -91,11 +91,12 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
         return Err(format!("the court answered the task request with {} bytes that are no task envelope", reply.len()));
     };
     // The envelope carries samples of any rank (track 26 S5); this client's
-    // rule seam reads rasters, so a task of another rank or width is named
-    // and left.
-    let envelope = match samples.rasters() {
+    // rule seam spells the alphabet's section, so a task of another rank or
+    // width is named and left (track 26 S4b).
+    let envelope = match samples.section() {
         Ok(r) => r,
-        Err(e) => return Ok(vec![(hex32(&samples.id), Outcome::NoRule(if e.rank == 2 { "the task's symbols are wider than a raster's" } else { "the task's rank is not a raster's" }))]),
+        Err(task::SectionRefusal::Width { .. }) => return Ok(vec![(hex32(&samples.id), Outcome::NoRule("the task's symbols are wider than the section's"))]),
+        Err(task::SectionRefusal::Rank(_)) => return Ok(vec![(hex32(&samples.id), Outcome::NoRule("the task's rank is not the one the alphabet spells"))]),
     };
     let cite = hex32(&envelope.id);
     // THE RULE, ONCE PER PERSPECTIVE OF THE FAMILY'S GROUND (MU-SENSING
