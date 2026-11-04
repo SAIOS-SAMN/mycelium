@@ -12,7 +12,7 @@
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::element::{self, Versor};
-use crate::transducer::family::{on_grid, perceive, Body, SectionSample, Compartment};
+use crate::transducer::family::{perceive, Body, SectionSample, SectionSite, Compartment};
 use crate::transducer::sentence::{self, Form, Vertex};
 use crate::transducer::stalk;
 
@@ -140,10 +140,11 @@ impl<'a> PerceivedPair<'a> {
 }
 
 /// A section's site, written out: the key a landed compartment is filed under.
-fn site_key(r: i64, c: i64) -> Vec<u8> {
-    let mut k = Vec::with_capacity(16);
-    k.extend_from_slice(&r.to_le_bytes());
-    k.extend_from_slice(&c.to_le_bytes());
+fn site_key(site: SectionSite) -> Vec<u8> {
+    let mut k = Vec::new();
+    for c in site.coordinates() {
+        k.extend_from_slice(&c.to_le_bytes());
+    }
     k
 }
 
@@ -202,16 +203,16 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, fr
                 let Some(t) = element::site_at(&p) else {
                     return Carried::Refused(FAIL_NO_COMPARTMENT, at());
                 };
-                let (Some((tr, tc)), true) = (on_grid(&t), same_frame(&t, &l.site)) else {
+                let (Some(landed_at), true) = (SectionSite::of_family(&t), same_frame(&t, &l.site)) else {
                     return Carried::Refused(FAIL_NO_COMPARTMENT, at());
                 };
                 // Before the origin, and past the extent, are two different
                 // statements about the rule: the first about its placement,
                 // the second about its scale.
-                if tr < 0 || tc < 0 {
+                if landed_at.indices().is_none() {
                     return Carried::Refused(FAIL_BEFORE_FRAME, at());
                 }
-                let Some(observed) = y.at(crate::transducer::spelled::SectionSite::on_plane([tr, tc])) else {
+                let Some(observed) = y.at(landed_at) else {
                     return Carried::Refused(FAIL_PAST_FRAME, at());
                 };
                 // The gauge is asked for ONE image and refuses where it
@@ -224,7 +225,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, fr
                 if observed != want {
                     return Carried::Refused(FAIL_HUE, at());
                 }
-                landed.insert(site_key(tr, tc), ());
+                landed.insert(site_key(landed_at), ());
             }
         }
     }
@@ -237,7 +238,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, fr
     // cover it between them, and asking per member would call that coverage
     // a part.
     for image in here.images {
-        let landed_on = |l: &Compartment| on_grid(&l.site).is_some_and(|(r, c)| landed.contains(&site_key(r, c)));
+        let landed_on = |l: &Compartment| SectionSite::of_family(&l.site).is_some_and(|site| landed.contains(&site_key(site)));
         let touched = image.compartments.iter().any(landed_on);
         if touched && !image.compartments.iter().all(landed_on) {
             // The image body is reached in part BY THE FIBRE AS A WHOLE, so the
@@ -259,8 +260,8 @@ fn form_covers_compartments(
 ) -> bool {
     let mut covered: Keyed<u8> = Keyed::new();
     for (_, _, _, demand_links) in f.demand_vertices() {
-        for &(r, c, _, after) in demand_links {
-            covered.insert(site_key(r, c), after);
+        for l in demand_links {
+            covered.insert(site_key(l.site), l.after);
         }
     }
     for (_, v) in f.vertices.scoped() {
@@ -278,17 +279,17 @@ fn form_covers_compartments(
             for b in at.on_chart(&member.chart) {
                 for l in &b.compartments {
                     let Some(t) = element::carry_site(&versor, &l.site) else { continue; };
-                    let (Some((tr, tc)), true) = (on_grid(&t), same_frame(&t, &l.site)) else {
+                    let (Some(landed_at), true) = (SectionSite::of_family(&t), same_frame(&t, &l.site)) else {
                         continue;
                     };
                     let Some(want) = crate::transducer::sentence::hue_of(&member.gauge, l.hue) else { continue; };
-                    covered.insert(site_key(tr, tc), want);
+                    covered.insert(site_key(landed_at), want);
                 }
             }
         }
     }
     compartments.iter().all(|l| {
-        on_grid(&l.site).is_some_and(|(r, c)| covered.get(&site_key(r, c)).is_some_and(|&w| w == l.hue))
+        SectionSite::of_family(&l.site).is_some_and(|site| covered.get(&site_key(site)).is_some_and(|&w| w == l.hue))
     })
 }
 
@@ -699,25 +700,31 @@ pub(crate) fn edges_rederive_frames_from(
 /// carries — and a sentence with any other remainder does not close the
 /// family. The undeclared links, read as content: empty when every
 /// remainder link is declared.
-pub(crate) fn undeclared_remainder(remainders: &[Vec<(i64, i64, u8, u8)>], f: &Form) -> Vec<(i64, i64, u8, u8)> {
+pub(crate) fn undeclared_remainder(
+    remainders: &[Vec<crate::transducer::sentence::SectionLink>],
+    f: &Form,
+) -> Vec<crate::transducer::sentence::SectionLink> {
     let mut declared: Keyed<Vec<u8>> = Keyed::new();
     for (_, _, _, links) in f.demand_vertices() {
-        for &(r, c, _, after) in links {
-            let k = site_key(r, c);
+        for l in links {
+            let k = site_key(l.site);
             match declared.get_mut(&k) {
-                Some(hues) => hues.push(after),
+                Some(hues) => hues.push(l.after),
                 None => {
-                    declared.insert(k, vec![after]);
+                    declared.insert(k, vec![l.after]);
                 }
             }
         }
     }
-    let mut out: Vec<(i64, i64, u8, u8)> = remainders
+    let mut out: Vec<crate::transducer::sentence::SectionLink> = remainders
         .iter()
         .flatten()
         .copied()
-        .filter(|&(r, c, spoken, observed)| {
-            !crate::transducer::raster::is_ground(spoken) || !declared.get(&site_key(r, c)).is_some_and(|hues| hues.contains(&observed))
+        .filter(|l| {
+            // The link's symbol before is the one spoken, after the one
+            // observed.
+            !crate::transducer::raster::is_ground(l.before)
+                || !declared.get(&site_key(l.site)).is_some_and(|hues| hues.contains(&l.after))
         })
         .collect();
     out.sort_unstable();

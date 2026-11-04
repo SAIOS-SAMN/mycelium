@@ -197,7 +197,7 @@ impl Court {
     pub fn record_settlement(
         &mut self,
         listing: crate::transducer::address::Address,
-        chain: Vec<(i64, i64, u8, u8)>,
+        chain: Vec<crate::transducer::sentence::SectionLink>,
         voice: [u8; 32],
         cites: &[crate::anastome::dialogue::CiteWire],
         before: [u64; 4],
@@ -343,7 +343,7 @@ impl Court {
     /// shared — a thousand unrelated descriptions (I34). A body already
     /// speakable or already listed is not listed again; the intake answers
     /// whether anything new was.
-    pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)], frame: &crate::transducer::element::Frame) -> bool {
+    pub fn intake(&mut self, chain: &[crate::transducer::sentence::SectionLink], frame: &crate::transducer::element::Frame) -> bool {
         self.intake_prepared(&prepare_intake(chain, frame))
     }
 
@@ -374,7 +374,7 @@ impl Court {
 /// as its residue and its chart. A piece that cannot be addressed is a
 /// refusal that travels: never listed and never counted (U14).
 pub fn prepare_intake(
-    chain: &[(i64, i64, u8, u8)],
+    chain: &[crate::transducer::sentence::SectionLink],
     frame: &crate::transducer::element::Frame,
 ) -> Vec<(Element, crate::transducer::stalk::Invariant)> {
     if chain.is_empty() {

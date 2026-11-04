@@ -47,7 +47,14 @@ pub(crate) fn report(dir: &str, names: &[String]) {
             if x.extents() != y.extents() {
                 continue;
             }
-            let unsaid: Vec<(i64, i64)> = rem.iter().filter(|l| l.3 != 0).map(|l| (l.0, l.1)).collect();
+            let unsaid: Vec<(i64, i64)> = rem
+                .iter()
+                .filter(|l| l.after != 0)
+                .map(|l| {
+                    let [r, c] = l.site.coordinates();
+                    (r, c)
+                })
+                .collect();
             let ins = perceive(x);
             for out in perceive(y) {
                 let o = cells(&out);

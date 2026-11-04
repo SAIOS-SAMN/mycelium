@@ -4,10 +4,10 @@
 //! per changed site over the union of the two supports, minted when no
 //! conformal-and-gauge element closes a body. Anonymous, addressed by form.
 
-/// A residue germ: sorted `(row, col, hue_before, hue_after)` over the union of
-/// A's and B's painted sites. The scene's ground (`arc::ground`: hue 0, or the
-/// hue its family is drawn on) means the site is unpainted on that side.
-pub type ResidueGerm = Vec<(i64, i64, u8, u8)>;
+/// A residue germ: sorted links of the section (a site of the section and
+/// the symbols before and after it) over the union of A's and B's painted
+/// sites. The scene's ground means the site is unpainted on that side.
+pub type ResidueGerm = Vec<crate::transducer::sentence::SectionLink>;
 
 /// Mint A5's chain from two grids' painted sites — the exact coboundary.
 ///
@@ -44,11 +44,11 @@ pub fn germinate(
             Some(h) => Some(h),
             None => void.ok(),
         };
-        links.push((r, c, side(before)?, side(after)?));
+        links.push(crate::transducer::sentence::SectionLink::on_plane([r, c], side(before)?, side(after)?));
     }
     // Keep only links that actually change (before != after); a net-zero
     // demand needs no germ.
-    links.retain(|(_, _, before, after)| before != after);
+    links.retain(|l| l.before != l.after);
     if links.is_empty() {
         return None;
     }
@@ -62,26 +62,30 @@ pub fn germinate(
 /// Apply a residue germ to a scene: at each link's site, replace `before`
 /// with `after`. Reproduces the demand it was minted from — the germination
 /// closes.
-pub fn apply(germ: &[(i64, i64, u8, u8)], a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
+pub fn apply(germ: &[crate::transducer::sentence::SectionLink], a: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     let mut out: Vec<(i64, i64, u8)> = a.to_vec();
-    for (r, c, _before, after) in germ {
-        out.retain(|(rr, cc, _)| !(rr == r && cc == c)); // clear the site
-        if !crate::transducer::raster::is_ground(*after) {
-            out.push((*r, *c, *after));
+    for l in germ {
+        let [r, c] = l.site.coordinates();
+        out.retain(|&(rr, cc, _)| !(rr == r && cc == c)); // clear the site
+        if !crate::transducer::raster::is_ground(l.after) {
+            out.push((r, c, l.after));
         }
     }
     out.sort_unstable();
     out
 }
 
-/// Canonical bytes of a residue germ — its ANASTOME address payload.
-pub fn germ_bytes(germ: &[(i64, i64, u8, u8)]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(germ.len() * 18);
-    for (r, c, before, after) in germ {
-        out.extend_from_slice(&r.to_le_bytes());
-        out.extend_from_slice(&c.to_le_bytes());
-        out.push(*before);
-        out.push(*after);
+/// Canonical bytes of a residue germ — its ANASTOME address payload: each
+/// link's coordinates along the section's plane in the plane's order, then
+/// its two symbols.
+pub fn germ_bytes(germ: &[crate::transducer::sentence::SectionLink]) -> Vec<u8> {
+    let mut out = Vec::new();
+    for l in germ {
+        for c in l.site.coordinates() {
+            out.extend_from_slice(&c.to_le_bytes());
+        }
+        out.push(l.before);
+        out.push(l.after);
     }
     out
 }

@@ -111,7 +111,7 @@ assert_eq!(
 );
 // One residue opens a face on the listing, then a full aperture of probes
 // that move nothing: the listing is unreachable.
-let rem = vec![(0, 1, 1u8, 0u8)];
+let rem = vec![crate::transducer::sentence::tests::fixtures::link(0, 1, 1, 0)];
 assert!(matches!(k.settle_probe([3; 32], &target, rem, &[], false).closure, ProbeClosure::Residue(_)));
 let mut listed_sorted = listed.clone();
 listed_sorted.sort_unstable();

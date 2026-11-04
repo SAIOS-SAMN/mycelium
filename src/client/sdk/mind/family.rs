@@ -63,8 +63,8 @@ pub(crate) fn occupancy_causes(said: &crate::transducer::family::SectionSample, 
     for &i in unreached {
         let Some(b) = bodies.get(i) else { continue };
         for l in &b.compartments {
-            if let Some((r, c)) = crate::transducer::family::on_grid(&l.site) {
-                erased.insert(crate::transducer::family::site_key(r, c), ());
+            if let Some(site) = crate::transducer::family::SectionSite::of_family(&l.site) {
+                erased.insert(crate::transducer::family::site_key(site), ());
             }
         }
     }
@@ -73,11 +73,10 @@ pub(crate) fn occupancy_causes(said: &crate::transducer::family::SectionSample, 
         // The spoken and the observed sample read at one site.
         let Some(t) = y.at(site) else { continue };
         {
-            let [ri, ci] = site.coordinates();
             match (s == 0, t == 0) {
                 (true, false) => {
                     let input = x.at(site).is_some_and(|h| h != 0);
-                    let at = match (erased.contains(&crate::transducer::family::site_key(ri, ci)), input) {
+                    let at = match (erased.contains(&crate::transducer::family::site_key(site)), input) {
                         (true, _) => 0,
                         (false, true) => 2,
                         (false, false) => 1,
@@ -146,7 +145,7 @@ pub(crate) struct Thought {
 
 /// A chain of painted sites, before and after: what a perception's
 /// remainder and a test's unreached bodies are held as.
-pub(crate) type Chain = Vec<(i64, i64, u8, u8)>;
+pub(crate) type Chain = Vec<crate::transducer::sentence::SectionLink>;
 
 /// ONE PAIR PERCEIVED AS ITS FORM, off the mind's field (MU-CLIENT §7.1 R1):
 /// the form, the frames it was perceived on, the pair, and what it closes
@@ -201,7 +200,7 @@ pub(crate) fn scene_percept(epi: &MindLanguage, x: &crate::transducer::family::S
 /// THE SCENE A CHAIN DESCRIBES, perceived as its form on the language given
 /// (50.6 seam 1): its painted sites before against after in one frame.
 /// `None` where it describes no scene or the presentation cannot factor it.
-pub(crate) fn chain_percept(epi: &MindLanguage, chain: &[(i64, i64, u8, u8)]) -> Option<PairPercept> {
+pub(crate) fn chain_percept(epi: &MindLanguage, chain: &[crate::transducer::sentence::SectionLink]) -> Option<PairPercept> {
     let scene = crate::transducer::family::scene_of_chain(chain)?;
     scene_percept(epi, &scene.0, &scene.1)
 }
@@ -357,7 +356,7 @@ pub(crate) fn tests_spoken(epi: &MindLanguage, rule: &SentenceRule, tests: &[cra
             let spoken = crate::transducer::family::speak_rule(rule, x, epi);
             if let Some(s) = &spoken {
                 if !s.remainder.is_empty() {
-                    chains.push(s.remainder.iter().map(|&(r, c, h)| (r, c, h, h)).collect());
+                    chains.push(s.remainder.iter().map(|&(r, c, h)| crate::transducer::sentence::SectionLink::on_plane([r, c], h, h)).collect());
                 }
                 if !s.unreached.is_empty() {
                     let bodies = crate::transducer::family::perceive(x);
@@ -365,7 +364,12 @@ pub(crate) fn tests_spoken(epi: &MindLanguage, rule: &SentenceRule, tests: &[cra
                         .unreached
                         .iter()
                         .filter_map(|&i| bodies.get(i))
-                        .flat_map(|b| b.compartments.iter().filter_map(|l| crate::transducer::family::on_grid(&l.site).map(|(r, c)| (r, c, l.hue, l.hue))))
+                        .flat_map(|b| {
+                            b.compartments.iter().filter_map(|l| {
+                                crate::transducer::family::SectionSite::of_family(&l.site)
+                                    .map(|site| crate::transducer::sentence::SectionLink::new(site, l.hue, l.hue))
+                            })
+                        })
                         .collect();
                     crate::observe::note_mind(|m| m.withheld_tests[0] += 1);
                     chains.push(chain);
@@ -448,7 +452,7 @@ impl Mind {
         rule: &SentenceRule,
         (train, frames): (&Family, &Frames),
         family: &[u8],
-        remainders: &[Vec<(i64, i64, u8, u8)>],
+        remainders: &[Chain],
         budget: &mut crate::physics::Budget,
     ) -> Option<[u64; 4]> {
         let form = &rule.form;

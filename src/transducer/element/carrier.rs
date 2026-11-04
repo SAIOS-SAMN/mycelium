@@ -680,7 +680,7 @@ impl Element {
         self
     }
 
-    pub fn sub(&self) -> &[(i64, i64, u8, u8)] {
+    pub fn sub(&self) -> &[crate::transducer::sentence::SectionLink] {
         &self.sub
     }
 
@@ -1009,13 +1009,14 @@ pub const MEASURE_BOUND: &str =
 ///
 /// STD1 — the lanes are support counts, and [`MEASURE_BOUND`] is what that
 /// buys every sum of them.
-pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
+pub fn measure_lanes(chain: &[crate::transducer::sentence::SectionLink]) -> [u64; 4] {
     let mut spatial = 0u64;
     let mut gauge = 0u64;
     let ground = crate::transducer::raster::ground();
     let mut before_pos: Vec<(i64, i64)> = Vec::new();
     let mut after_pos: Vec<(i64, i64)> = Vec::new();
-    for &(r, c, b, a) in chain {
+    for l in chain {
+        let ([r, c], (b, a)) = (l.site.coordinates(), l.transition());
         let (painted_b, painted_a) = (!ground.holds(&b), !ground.holds(&a));
         if painted_b {
             before_pos.push((r, c));

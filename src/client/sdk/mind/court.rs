@@ -275,14 +275,14 @@ impl Mind {
 /// READING (`Court::settle_demand`): the demand's bodies framed as a scene
 /// at the bodies' own corner, the form spoken on it at the identity placement
 /// (L14), and every link's AFTER colour said at its own site.
-fn reproduces(epi: &MindLanguage, f: &crate::transducer::sentence::Form, links: &[(i64, i64, u8, u8)]) -> bool {
-    let Some(((r0, c0), scene, _)) = crate::transducer::family::scene_at_of_chain(links) else { return false };
+fn reproduces(epi: &MindLanguage, f: &crate::transducer::sentence::Form, links: &[crate::transducer::sentence::SectionLink]) -> bool {
+    let Some((corner, scene, _)) = crate::transducer::family::scene_at_of_chain(links) else { return false };
     let placement = crate::transducer::alphabet::Word::identity();
     let Some(sp) = crate::transducer::family::Crystal::speak_form(epi, f, &scene, &placement) else { return false };
     let Some(spoken) = sp.grid() else { return false };
     // An offset below the corner, or past `i64`, is off the spoken sample.
-    links.iter().all(|&(r, c, _, a)| {
-        let at = r.checked_sub(r0).zip(c.checked_sub(c0)).and_then(|(dr, dc)| spoken.at(crate::transducer::spelled::SectionSite::on_plane([dr, dc])));
-        at == Some(a)
+    links.iter().all(|l| {
+        let at = l.site.offset_from(corner).and_then(|site| spoken.at(site));
+        at == Some(l.after)
     })
 }

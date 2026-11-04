@@ -1,4 +1,6 @@
 use crate::transducer::germinate::*;
+use crate::transducer::sentence::tests::fixtures::link;
+use crate::transducer::sentence::SectionLink;
 
 fn norm(mut v: Vec<(i64, i64, u8)>) -> Vec<(i64, i64, u8)> {
     v.sort_unstable();
@@ -15,11 +17,11 @@ fn germinate_chain_reproduces_demand_when_placed() {
     let g = germinate(&a, &b).expect("a change germinates");
     assert_eq!(
         g.as_slice(),
-        &[(0, 0, 2, 9)],
+        &[link(0, 0, 2, 9)],
         "A5 centres the chain: the same change anywhere is one substance"
     );
-    let placed: Vec<(i64, i64, u8, u8)> =
-        g.iter().map(|&(r, c, hb, ha)| (r, c + 1, hb, ha)).collect();
+    let placed: Vec<SectionLink> =
+        g.iter().map(|l| SectionLink::new(l.site.moved([0, 1]).expect("in range"), l.before, l.after)).collect();
     assert_eq!(norm(apply(&placed, &a)), norm(b.to_vec()), "it closes A→B at its corner");
 }
 
@@ -30,9 +32,9 @@ fn germinate_carries_creation_as_residue() {
     let a = [(0, 0, 1u8)];
     let b = [(0, 0, 1u8), (0, 1, 5)]; // a site is painted
     let g = germinate(&a, &b).expect("appearance germinates");
-    assert_eq!(g.as_slice(), &[(0, 0, 0, 5)], "centred, as A5 leaves every chain");
-    let placed: Vec<(i64, i64, u8, u8)> =
-        g.iter().map(|&(r, c, hb, ha)| (r, c + 1, hb, ha)).collect();
+    assert_eq!(g.as_slice(), &[link(0, 0, 0, 5)], "centred, as A5 leaves every chain");
+    let placed: Vec<SectionLink> =
+        g.iter().map(|l| SectionLink::new(l.site.moved([0, 1]).expect("in range"), l.before, l.after)).collect();
     assert_eq!(norm(apply(&placed, &a)), norm(b.to_vec()));
 }
 

@@ -40,7 +40,7 @@ fn demanding_sentence(w: crate::transducer::alphabet::Word, tag: u8, kind: Deman
         crate::transducer::stalk::Invariant::counts(&[17]),
         // The links the demand stands for, and they MOVE: a demand
         // whose bodies measure nothing cost the language nothing.
-        vec![(0, 0, 0, 1), (0, 1, 0, 1)],
+        vec![crate::transducer::sentence::tests::fixtures::link(0, 0, 0, 1), crate::transducer::sentence::tests::fixtures::link(0, 1, 0, 1)],
     ))
     .expect("a demand has a coordinate");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);

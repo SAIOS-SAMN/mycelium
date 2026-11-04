@@ -6,13 +6,14 @@ use crate::core::Q;
 use crate::transducer::element::*;
 use num_bigint::BigInt;
 use crate::transducer::germinate::germinate;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// γ = (π, Δ): the anchor fibre survives serde exactly; pre-anchor bytes
 /// (no tail) parse to the ⊤ carrier — full backward compatibility.
 #[test]
 fn from_bytes_round_trips_anchor_and_defaults_top() {
     use crate::transducer::anchor::Selection;
-    let g = crate::transducer::element::canonical_chain(&[(0, 0, 1, 2), (0, 1, 1, 2)])
+    let g = crate::transducer::element::canonical_chain(&[link(0, 0, 1, 2), link(0, 1, 1, 2)])
         .expect("one entry per position is A5's chain");
     let plain = from_canonical(&g);
     assert!(plain.anchor().is_none(), "born ⊤ until germination binds");
@@ -45,7 +46,7 @@ fn from_bytes_round_trips_anchor_and_defaults_top() {
 #[test]
 fn from_connection_spells_group_and_remainder() {
     let id = crate::transducer::alphabet::Word::identity();
-    let remainder = vec![(0, 0, 3u8, 4u8)];
+    let remainder = vec![link(0, 0, 3, 4)];
     let w = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &remainder, [5, 2, 0, 0]).expect("the identity spells");
     assert!(w.is_connection(), "invertible versor and a permutation on the hues");
     assert_eq!(w.letters_rederive(), Some(true), "the tape re-derives V");
@@ -86,7 +87,7 @@ fn from_connection_spells_group_and_remainder() {
 /// generation (GEN2, pre-whole) are refused.
 #[test]
 fn from_bytes_round_trips_and_refuses_older_records() {
-    let w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &vec![(0, 0, 3u8, 4)], [5, 2, 0, 0]).expect("spells");
+    let w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &vec![link(0, 0, 3, 4)], [5, 2, 0, 0]).expect("spells");
     let bytes = w.to_bytes().expect("the record writes");
     assert_eq!(
         crate::transducer::address::tag_of(&bytes),
@@ -113,7 +114,7 @@ fn from_bytes_round_trips_and_refuses_older_records() {
 /// the identity, because `tape_of_versor` answered the identity for all.
 #[test]
 fn from_bytes_reads_transition_gauge_as_ray() {
-    let mut w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &vec![(0, 0, 3u8, 4)], [5, 2, 0, 0]).expect("spells");
+    let mut w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &vec![link(0, 0, 3, 4)], [5, 2, 0, 0]).expect("spells");
     let t = translator_versor(2, 3);
     let scaled = t.scale(&num_rational::BigRational::new(num_bigint::BigInt::from(-5), num_bigint::BigInt::from(3)));
     w.transitions.push(Transition { asg: vec![(1, 2)], gauge: scaled, fibre: 7 });
@@ -160,7 +161,7 @@ fn from_bytes_round_trips_torsion() {
     let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
     assert_eq!(pos, bytes.len());
     assert_eq!(back.address(), t.address(), "the reloaded word is the same citation");
-    assert!(back.matches_chain(&[(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)]), "capacity survives restart");
+    assert!(back.matches_chain(&[link(0, 0, 3, 1), link(0, 1, 1, 2), link(0, 2, 2, 3)]), "capacity survives restart");
     assert!(t.transitions().is_empty());
 }
 
@@ -188,7 +189,7 @@ fn from_bytes_refuses_zero_period_and_clashing_chain() {
         "a filed period of zero is a malformed tape, not a cycle spanning nothing"
     );
 
-    let one = from_canonical(&canonical_chain(&[(0, 0, 1, 2)]).expect("one link is a chain"));
+    let one = from_canonical(&canonical_chain(&[link(0, 0, 1, 2)]).expect("one link is a chain"));
     let bytes = one.to_bytes().expect("the record writes");
     let mut pos = 0;
     assert!(Element::from_bytes(&bytes, &mut pos).is_some(), "one transition decodes");

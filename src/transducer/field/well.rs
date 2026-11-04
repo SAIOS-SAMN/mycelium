@@ -67,10 +67,11 @@ pub struct ClassRecord {
 
 /// THE KEY A REMAINDER LINK IS FILED UNDER: its site, written out. It opens
 /// with the simplex tag, the one byte a site key and a simplex key share.
-pub(crate) fn remainder_site_key(r: i64, c: i64) -> crate::transducer::address::Address {
+pub(crate) fn remainder_site_key(site: crate::transducer::spelled::SectionSite) -> crate::transducer::address::Address {
     let mut buf = vec![crate::transducer::address::TAG_SIMPLEX];
-    buf.extend_from_slice(&r.to_le_bytes());
-    buf.extend_from_slice(&c.to_le_bytes());
+    for c in site.coordinates() {
+        buf.extend_from_slice(&c.to_le_bytes());
+    }
     crate::transducer::address::Address::new(buf)
 }
 
@@ -145,11 +146,11 @@ pub(crate) fn volume_of(rems: &Keyed<Vec<SectionLink>>, verts: &[impl AsRef<[u8]
 pub(crate) fn union_rem(a: &[SectionLink], b: &[SectionLink]) -> Vec<SectionLink> {
     let mut out = a.to_vec();
     let mut have = Keyed::new();
-    for &(r, c, _, _) in a {
-        have.insert(remainder_site_key(r, c), ());
+    for l in a {
+        have.insert(remainder_site_key(l.site), ());
     }
     for link in b {
-        let k = remainder_site_key(link.0, link.1);
+        let k = remainder_site_key(link.site);
         if !have.contains(&k) {
             have.insert(k, ());
             out.push(*link);

@@ -1,13 +1,14 @@
 use crate::transducer::blade;
 use crate::transducer::blade::harmonics::*;
+use crate::transducer::sentence::tests::fixtures::link;
 use num_rational::BigRational;
 
 /// A body sounds the same at every size, place, and orientation, and
 /// its harmonics are the atlas's axes.
 #[test]
 fn hear_is_invariant_under_motion() {
-    let l: Vec<(i64, i64, u8, u8)> = vec![(0, 0, 1, 2), (1, 0, 1, 2), (2, 0, 1, 2), (2, 1, 1, 2)];
-    let moved: Vec<(i64, i64, u8, u8)> = vec![(7, -3, 1, 2), (7, -2, 1, 2), (7, -1, 1, 2), (6, -1, 1, 2)];
+    let l = vec![link(0, 0, 1, 2), link(1, 0, 1, 2), link(2, 0, 1, 2), link(2, 1, 1, 2)];
+    let moved = vec![link(7, -3, 1, 2), link(7, -2, 1, 2), link(7, -1, 1, 2), link(6, -1, 1, 2)];
     let (a, b) = (hear(&l).unwrap(), hear(&moved).unwrap());
     assert_eq!(a, b);
     assert_eq!(a.n, 3, "the corpus's base");

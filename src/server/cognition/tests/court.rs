@@ -9,6 +9,7 @@
 use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::element::{self, Element};
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// THE BLIND REPLAY refutes every tamper axis and upholds honest speech —
 /// the contradiction docket's whole force is this determinism.
@@ -24,8 +25,8 @@ assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "an hon
 // an element cannot hold one that is off its min corner. What a shifted
 // chain is, is the same substance said at another place — A5's quotient,
 // not false speech — and it comes back as the same word.
-let shifted: Vec<(i64, i64, u8, u8)> =
-    w.sub().iter().map(|(r, c, b, a)| (r + 3, *c, *b, *a)).collect();
+let shifted: Vec<crate::transducer::sentence::SectionLink> =
+    w.sub().iter().map(|l| crate::transducer::sentence::SectionLink::new(l.site.moved([3, 0]).expect("in range"), l.before, l.after)).collect();
 let off = element::from_residue(&shifted).expect("a shift is still one transition per site");
 assert_eq!(off.address(), w.address(), "A5 quotients the translation: one substance");
 assert!(reconstruct_blind(&off, &mut super::fixtures::budget()).is_none(), "so it replays clean — it is the same word");
@@ -210,7 +211,7 @@ let inv = Invariant::counts(&[7]);
 let listed = Address::from(&b"listed"[..]);
 let flat = Address::from(&b"flat"[..]);
 let elsewhere = Address::from(&b"elsewhere"[..]);
-let rem = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 0)];
+let rem = vec![link(0, 0, 1, 2), link(0, 1, 1, 0)];
 let mag = crate::transducer::element::measure_lanes(&rem);
 assert!(mag.iter().any(|&x| x > 0));
 k.write_field(listed.as_bytes(), inv.clone(), Closure::Cavity, rem.clone(), &[0; 4], &mag);
@@ -429,7 +430,7 @@ fn converge_witness_requires_bonded_hypha() {
     use crate::court::convergence::Converged;
     let mut k = Court::new();
     let peer = [2u8; 32];
-    let word = crate::transducer::element::from_residue(&vec![(0i64, 0i64, 1u8, 2u8)])
+    let word = crate::transducer::element::from_residue(&vec![link(0, 0, 1, 2)])
         .expect("one link is A5's chain");
     let addr = word.address();
     k.docket_connection(&word, [9; 32]);

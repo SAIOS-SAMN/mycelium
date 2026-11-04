@@ -38,7 +38,7 @@ impl Court {
         address: &[u8],
         chart: crate::transducer::stalk::Invariant,
         state: crate::transducer::stalk::Closure,
-        remainder: Vec<(i64, i64, u8, u8)>,
+        remainder: Vec<crate::transducer::sentence::SectionLink>,
         before: &[u64; 4],
         after: &[u64; 4],
     ) {

@@ -774,7 +774,8 @@ fn take_field(b: &[u8], p: &mut usize) -> Option<ListingCoherence> {
             }
             _ => return None,
         };
-        // A remainder cell is its row, column and two hues.
+        // A remainder link is its coordinates along the section's plane and
+        // its two hues.
         let nc = take_count(b, p)?;
         let mut remainder = Vec::new();
         for _ in 0..nc {
@@ -783,7 +784,7 @@ fn take_field(b: &[u8], p: &mut usize) -> Option<ListingCoherence> {
             let hb = *b.get(*p + 16)?;
             let ha = *b.get(*p + 17)?;
             *p += 18;
-            remainder.push((r, c, hb, ha));
+            remainder.push(crate::transducer::sentence::SectionLink::on_plane([r, c], hb, ha));
         }
         let mut stagnant = [0u64; 4];
         for s in &mut stagnant {

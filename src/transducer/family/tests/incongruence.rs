@@ -19,7 +19,7 @@ fn difference_reads_constructors_and_light() {
     assert_eq!(d.accreted.len(), 3);
     assert_eq!(d.on_light, 3, "every accreted constructor on the ray out of the body");
     assert_eq!(d.runs, vec![(3, true)], "one run of three, leaving by the frame's edge: luminal");
-    assert_eq!(d.recoloured, vec![(0, 0, 1, 2)]);
+    assert_eq!(d.recoloured, vec![crate::transducer::sentence::tests::fixtures::link(0, 0, 1, 2)]);
     assert!(!d.kinematic());
 }
 

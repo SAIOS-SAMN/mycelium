@@ -3,6 +3,7 @@
 
 use crate::transducer::element::*;
 use crate::transducer::germinate::germinate;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// THE TORSE CAPACITY THEOREM: a 3-cycle hue rotation derived from ONE
 /// witnessed section closes (σ³ = id), so the cycle speaks the THIRD orbit
@@ -22,9 +23,9 @@ fn torse_speaks_unwitnessed_orbit_members() {
     assert!(t.sections().is_empty(), "the free list drained into the cycle");
     // THE UNWITNESSED MEMBER: σ²·base = transitions 3→1, 1→2, 2→3 — never
     // punctured, never seen — yet the cycle speaks it.
-    let unwitnessed = vec![(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)];
+    let unwitnessed = vec![link(0, 0, 3, 1), link(0, 1, 1, 2), link(0, 2, 2, 3)];
     assert!(t.matches_chain(&unwitnessed), "capacity beyond the evidence, exactly");
-    assert!(!t.matches_chain(&[(0, 0, 5, 6), (0, 1, 1, 2), (0, 2, 2, 3)]), "no hallucination");
+    assert!(!t.matches_chain(&[link(0, 0, 5, 6), link(0, 1, 1, 2), link(0, 2, 2, 3)]), "no hallucination");
     assert_eq!(t.fibre_span(), Some(3), "the volume counts the full orbit");
 }
 

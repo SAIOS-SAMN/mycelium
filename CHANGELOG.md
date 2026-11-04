@@ -35,6 +35,21 @@ such change is named here.
 v0.4.0 is in progress. It opens a new break: word and chart addresses
 may change inside it.
 
+### The section's planar tuples held as section sites (track 26 S4d, stage 2b)
+- **`SectionLink` is a named type.** The tuple `(i64, i64, u8, u8)` is
+  now `sentence::SectionLink { site, before, after }`: a section site
+  (`spelled::SectionSite`) and the two symbols. It orders by the site,
+  then the symbols, as the tuple did. Every carrier that spelled the
+  tuple reads it: the element's chain (`CanonicalChain`, `sub`), the
+  receipts, the form's demands and remainder, the field, the court, the
+  mind and the soak. The keys of a section site (`family::site_key`,
+  `sentence::section_site_key`, `field::remainder_site_key`) take the
+  site. A chain's least corner is one reader, `element::corner_of`,
+  and `ChainAt::corner` is a section site. Claim
+  `section_link_holds_section_site_and_transition`. Every codec writes
+  the coordinates in the plane's order and then the two symbols, so no
+  wire, tape, task, word or chart address changes.
+
 ### Track 11's last two names ruled (#55)
 - `ListingField` → `ListingCoherence`: "field" now names only the
   object, the curved nested manifold (MU-SENSING §3.7); the struct is a

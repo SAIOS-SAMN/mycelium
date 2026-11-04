@@ -207,11 +207,7 @@ pub fn reconstruct_blind_with(
 
 /// The rest of a word that is not a sentence: a translation, a chain, an
 /// opened axis, a connection's remainder, and its torsion witnessed.
-#[expect(
-    clippy::disallowed_methods,
-    reason = "rule 4 — a chain's min corner is its extent, content: the court checks the chain is framed to its own origin"
-)]
-fn word_rest_checks(spoken: &Element, chain: &[(i64, i64, u8, u8)], connection: bool) -> Option<&'static str> {
+fn word_rest_checks(spoken: &Element, chain: &[crate::transducer::sentence::SectionLink], connection: bool) -> Option<&'static str> {
     if spoken.is_translation() {
         match spoken.letters_rederive() {
             None => return Some("translation has no letters — not a word of the alphabet"),
@@ -258,14 +254,11 @@ fn word_rest_checks(spoken: &Element, chain: &[(i64, i64, u8, u8)], connection: 
         (false, _) => {
             // The chain's min corner is its extent, content (rule 4). An
             // empty chain has no corner to be at the origin, and that is
-            // not a corner of (0, 0) read for it.
-            let (Some(min_r), Some(min_c)) = (
-                chain.iter().map(|(r, _, _, _)| *r).min(),
-                chain.iter().map(|(_, c, _, _)| *c).min(),
-            ) else {
+            // not a corner at the origin read for it.
+            let Some(corner) = element::corner_of(chain) else {
                 return Some("chain is empty and frames to no origin");
             };
-            if (min_r, min_c) != (0, 0) {
+            if corner.iter().any(|&c| c != 0) {
                 return Some("chain not framed to origin");
             }
             if !chain.windows(2).all(|w| w[0] <= w[1]) {

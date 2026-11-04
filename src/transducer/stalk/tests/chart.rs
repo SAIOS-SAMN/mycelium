@@ -6,10 +6,11 @@ use crate::transducer::element::{from_canonical, from_connection};
 use crate::transducer::germinate::germinate;
 use crate::transducer::element::{self, identity_versor, Element};
 use crate::transducer::stalk::*;
+use crate::transducer::sentence::tests::fixtures::link;
 
 
 fn chain(sites: &[(i64, i64)]) -> element::CanonicalChain {
-    let raw: Vec<SectionLink> = sites.iter().map(|&(r, c)| (r, c, 0u8, 1u8)).collect();
+    let raw: Vec<SectionLink> = sites.iter().map(|&(r, c)| link(r, c, 0, 1)).collect();
     element::canonical_chain(&raw).expect("one entry per site is A5's chain")
 }
 
@@ -83,10 +84,11 @@ fn invariant_is_invariant_under_conformal_group() {
     assert_eq!(invariant(&mirrored), base, "a reflection shares the chart");
     let big: Vec<SectionLink> = l
         .iter()
-        .flat_map(|&(r, c, b, a)| {
+        .flat_map(|x| {
+            let ([r, c], (b, a)) = (x.site.coordinates(), x.transition());
             [(2 * r, 2 * c), (2 * r, 2 * c + 1), (2 * r + 1, 2 * c), (2 * r + 1, 2 * c + 1)]
                 .into_iter()
-                .map(move |(rr, cc)| (rr, cc, b, a))
+                .map(move |(rr, cc)| link(rr, cc, b, a))
         })
         .collect();
     assert_eq!(invariant(&big), base, "a dilation shares the chart");
@@ -205,7 +207,7 @@ fn attach_adds_sibling_as_transported_section_once() {
 fn split_stratum_rehomes_by_new_coordinate() {
     let a = from_canonical(&chain(&[(0, 0), (0, 1), (0, 2)]));
     let b = from_canonical(
-        &element::canonical_chain(&[(0, 0, 2, 3), (0, 1, 2, 3), (0, 2, 2, 3)])
+        &element::canonical_chain(&[link(0, 0, 2, 3), link(0, 1, 2, 3), link(0, 2, 2, 3)])
             .expect("one entry per site is A5's chain"),
     );
     let mut stalks = Stalks::over_elements([&a, &b].into_iter());

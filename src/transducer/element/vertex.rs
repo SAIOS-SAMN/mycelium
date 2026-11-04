@@ -333,7 +333,7 @@ impl Element {
             let rev: ResidueGerm = self
                 .sub
                 .iter()
-                .map(|&(r, c, b, a)| (r, c, a, b))
+                .map(|l| crate::transducer::sentence::SectionLink::new(l.site, l.after, l.before))
                 .collect();
             // A chain whose reverse says two things at one site has no
             // canonical form, so this element has no inverse to name.
@@ -445,11 +445,12 @@ impl Element {
         // where the element is built. Its count is a coordinate of the key,
         // written by its own coordinate (STD1 3c-2, ruled (d)).
         crate::transducer::address::put_key_count(&mut out, self.sub.len());
-        for (r, c, b, a) in self.sub.as_slice() {
-            out.extend_from_slice(&r.to_le_bytes());
-            out.extend_from_slice(&c.to_le_bytes());
-            out.push(*b);
-            out.push(*a);
+        for l in self.sub.as_slice() {
+            for c in l.site.coordinates() {
+                out.extend_from_slice(&c.to_le_bytes());
+            }
+            out.push(l.before);
+            out.push(l.after);
         }
         out
     }

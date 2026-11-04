@@ -252,7 +252,7 @@ match extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 <
             rems.iter().any(|r| !r.is_empty()),
             "a family the form does not close leaves remainder"
         );
-        assert!(rems.iter().flatten().all(|&(_, _, s, h)| s != h));
+        assert!(rems.iter().flatten().all(|l| l.before != l.after));
     }
 }
 let disagree = vec![

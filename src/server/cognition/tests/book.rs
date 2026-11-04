@@ -209,14 +209,15 @@ assert_eq!(simplices(&k), n, "a heard slash is not re-rowed");
 /// change the quoted addresses; Rank carries no scalar order.
 #[test]
 fn quote_incidence_ignores_pending_order() {
-let one = |links: &[(i64, i64, u8, u8)]| {
+let one = |links: &[crate::transducer::sentence::SectionLink]| {
     element::from_canonical(
         &element::canonical_chain(links).expect("one entry per position is A5's chain"),
     )
 };
-let e1 = one(&[(0, 0, 1, 2)]);
-let e2 = one(&[(1, 0, 1, 3)]);
-let e3 = one(&[(2, 0, 1, 4)]);
+use crate::transducer::sentence::tests::fixtures::link;
+let e1 = one(&[link(0, 0, 1, 2)]);
+let e2 = one(&[link(1, 0, 1, 3)]);
+let e3 = one(&[link(2, 0, 1, 4)]);
 let keyed = |es: &[Element]| {
     let mut k = crate::network::nerve::Keyed::new();
     for e in es {

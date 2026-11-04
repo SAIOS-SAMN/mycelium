@@ -424,7 +424,7 @@ fn orbit_words_reads_true_holonomy_not_coboundary() {
         .put_vertex(crate::transducer::family::demand_vertex(
             crate::transducer::sentence::Demand::Source { multiplicity: 1 },
             &crate::transducer::stalk::Invariant::counts(&[3, 5]),
-            vec![(0, 0, 0, 1)],
+            vec![crate::transducer::sentence::tests::fixtures::link(0, 0, 0, 1)],
         ))
         .expect("a demand has a coordinate");
     demanding.reindex();

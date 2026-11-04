@@ -121,14 +121,15 @@ fn address_ignores_position_keeps_geometry() {
     assert!(here.carriage(&far, &mut super::fixtures::budget()).is_some(), "one thought: a versor carries one onto the other");
     // Equal tally, different geometry — the cured conflation: {1→0 here, 0→4
     // there} at two different relative offsets must stay DISTINCT.
-    let chain = |links: &[(i64, i64, u8, u8)]| {
+    use crate::transducer::sentence::tests::fixtures::link;
+    let chain = |links: &[crate::transducer::sentence::SectionLink]| {
         from_canonical(
             &crate::transducer::element::canonical_chain(links)
                 .expect("one entry per position is A5's chain"),
         )
     };
-    let g1 = chain(&[(0, 0, 1, 0), (1, 1, 0, 4)]);
-    let g2 = chain(&[(1, 0, 1, 0), (0, 2, 0, 4)]);
+    let g1 = chain(&[link(0, 0, 1, 0), link(1, 1, 0, 4)]);
+    let g2 = chain(&[link(1, 0, 1, 0), link(0, 2, 0, 4)]);
     assert!(g1.carriage(&g2, &mut super::fixtures::budget()).is_none(), "equal tally, different geometry — no versor relates them");
     assert_ne!(g1.address(), g2.address(), "and distinct identity");
 }

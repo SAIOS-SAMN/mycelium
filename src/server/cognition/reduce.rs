@@ -35,7 +35,7 @@ pub(crate) fn rotor_versor(g: &crate::transducer::alphabet::Rotor) -> Option<ele
     crate::transducer::element::conformal_of(&word, &crate::transducer::element::identity_versor())
 }
 
-pub(crate) fn union_remainders(entries: &[ProbedChart]) -> Vec<(i64, i64, u8, u8)> {
+pub(crate) fn union_remainders(entries: &[ProbedChart]) -> Vec<crate::transducer::sentence::SectionLink> {
     let mut u = Vec::new();
     for e in entries {
         if !e.state.is_flat() {
@@ -307,7 +307,7 @@ pub fn cohesion_over(rank: &Rank) -> (u64, u64) {
 /// the rest of the basis derives a held word.
 pub fn normal_form(
     language: &Language,
-    chain: &[(i64, i64, u8, u8)],
+    chain: &[crate::transducer::sentence::SectionLink],
     exclude: Option<&[u8]>,
     budget: &mut crate::physics::Budget,
 ) -> NormalForm {

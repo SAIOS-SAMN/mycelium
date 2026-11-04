@@ -303,7 +303,8 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     let family = vec![(x.clone(), y_with_7_creations.clone())];
 
     for s in &demand_shapes {
-        let links: Vec<(i64, i64, u8, u8)> = s.iter().map(|&(r, c)| (r, c, 0u8, 7u8)).collect();
+        let links: Vec<crate::transducer::sentence::SectionLink> =
+            s.iter().map(|&(r, c)| crate::transducer::sentence::tests::fixtures::link(r, c, 0, 7)).collect();
         let chart = stalk::invariant(&links);
         pf.put_vertex(Vertex::demand(Demand::Creation, chart, links)).expect("a demand has a coordinate");
     }

@@ -92,12 +92,13 @@ fn vertex_cites_by(
     let mut after: Keyed<u8> = Keyed::new();
     let mut out_support: Vec<(i64, i64)> = Vec::new();
     let ground = crate::transducer::raster::ground();
-    for &(r, c, b, a) in piece {
-        if !ground.holds(&b) {
-            before.push((r, c, b));
+    for l in piece {
+        let [r, c] = l.site.coordinates();
+        if !ground.holds(&l.before) {
+            before.push((r, c, l.before));
         }
-        if !ground.holds(&a) {
-            after.insert(section_site_key(r, c), a);
+        if !ground.holds(&l.after) {
+            after.insert(section_site_key(l.site), l.after);
             out_support.push((r, c));
         }
     }
@@ -119,7 +120,7 @@ fn vertex_cites_by(
         if tk != 0 {
             return None;
         }
-        let landed = *after.get(&section_site_key(tr, tc))?;
+        let landed = *after.get(&section_site_key(crate::transducer::spelled::SectionSite::on_plane([tr, tc])))?;
         if Some(landed) != super::hue_of(gauge, h) {
             return None;
         }
@@ -243,7 +244,7 @@ where
     }
     let pos = element::positions(word.sub());
     if let Some(asg) = element::pullback(&pos, piece, &v) {
-        let mut body: Vec<SectionLink> = pos.iter().zip(&asg).map(|(&(r, c), &(b, a))| (r, c, b, a)).collect();
+        let mut body: Vec<SectionLink> = pos.iter().zip(&asg).map(|(&(r, c), &(b, a))| SectionLink::on_plane([r, c], b, a)).collect();
         body.sort_unstable();
         if reconstruct_operators(&[(v.clone(), body.clone())], piece).is_empty() {
             let puncture = Puncture {

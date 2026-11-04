@@ -7,6 +7,12 @@ use crate::transducer::element::{self};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self};
 
+/// A LINK OF THE SECTION at the site whose coordinates along the plane are
+/// `a` and `b`, carrying `before` to `after`.
+pub fn link(a: i64, b: i64, before: u8, after: u8) -> SectionLink {
+    SectionLink::on_plane([a, b], before, after)
+}
+
 pub fn q0() -> num_rational::BigRational {
     num_rational::BigRational::from_integer(num_bigint::BigInt::from(0))
 }

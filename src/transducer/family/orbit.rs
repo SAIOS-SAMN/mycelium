@@ -17,7 +17,7 @@ pub(crate) fn positions_of(painted: &[Painted]) -> Vec<(i64, i64)> {
 pub(crate) fn occupy_keys(painted: &[(i64, i64, u8)]) -> crate::network::nerve::Keyed<()> {
     let mut occ = crate::network::nerve::Keyed::new();
     for &(r, c, _) in painted {
-        occ.insert(site_key(r, c), ());
+        occ.insert(site_key(SectionSite::on_plane([r, c])), ());
     }
     occ
 }
@@ -35,7 +35,7 @@ pub(crate) fn ring_dist_peel(image: &[(i64, i64)], anchor: &[(i64, i64)], bound:
     let mut have: Vec<(i64, i64, u8)> = anchor.iter().map(|&(r, c)| (r, c, 0)).collect();
     for k in 0..=bound {
         let occ = occupy_keys(&have);
-        if image.iter().all(|&(r, c)| occ.contains(&site_key(r, c))) {
+        if image.iter().all(|&(r, c)| occ.contains(&site_key(SectionSite::on_plane([r, c])))) {
             return Some(k);
         }
         let ring = crate::transducer::blade::adjacent_ring(&have);
@@ -102,7 +102,7 @@ pub fn moves(v: &Vertex, painted: &[Painted]) -> bool {
         let Some(versor) = vertex_versor_at(v, chart) else { return false };
         match carry_painted(&versor, painted) {
             None => true,
-            Some(image) => image.is_empty() || !image.iter().all(|&(r, c, _)| body.contains(&site_key(r, c))),
+            Some(image) => image.is_empty() || !image.iter().all(|&(r, c, _)| body.contains(&site_key(SectionSite::on_plane([r, c])))),
         }
     })
 }

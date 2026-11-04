@@ -2,7 +2,7 @@ use super::super::offer::*;
 use mycelium::anastome::dialogue;
 
 fn word() -> mycelium::transducer::element::Element {
-    mycelium::transducer::element::from_residue(&vec![(0i64, 0i64, 1u8, 2u8)])
+    mycelium::transducer::element::from_residue(&vec![mycelium::transducer::sentence::SectionLink::on_plane([0, 0], 1, 2)])
         .expect("one link is A5's chain")
 }
 

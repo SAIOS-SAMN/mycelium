@@ -23,7 +23,7 @@ pub struct Interpretation {
 }
 
 /// A form the voice speaks from here on, with the remainders it leaves.
-pub type Spoken = (Form, Vec<Vec<(i64, i64, u8, u8)>>);
+pub type Spoken = (Form, Vec<Vec<crate::transducer::sentence::SectionLink>>);
 
 /// INVERT A SPOKEN FORM'S REMAINDER: the joined form with its remainders
 /// where the speech accepted the inversion, and what the inversion read.
@@ -31,7 +31,7 @@ pub type Spoken = (Form, Vec<Vec<(i64, i64, u8, u8)>>);
 pub fn interpret(
     form: &Form,
     family: &[(SectionSample, SectionSample)],
-    remainders: &[Vec<(i64, i64, u8, u8)>],
+    remainders: &[Vec<crate::transducer::sentence::SectionLink>],
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> (Option<Spoken>, Interpretation) {

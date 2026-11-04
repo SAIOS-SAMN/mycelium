@@ -123,7 +123,8 @@ impl Form {
             // where the demand is mounted. A coordinate with nothing
             // declarable in it contracts to NOTHING.
             (RefusalKind::RemainderUndeclared, At::Chart(inv, links)) => {
-                let links: Vec<SectionLink> = links.iter().copied().filter(|&(_, _, spoken, _)| crate::transducer::raster::is_ground(spoken)).collect();
+                // A link's symbol before is the one spoken.
+                let links: Vec<SectionLink> = links.iter().copied().filter(|l| crate::transducer::raster::is_ground(l.before)).collect();
                 if links.is_empty() {
                     return None;
                 }
@@ -203,19 +204,20 @@ impl Form {
             (RefusalKind::RemainderUndeclared, At::Chart(_, links)) => {
                 let mut declared: Keyed<Vec<u8>> = Keyed::new();
                 for (_, _, _, bodies) in self.demand_vertices() {
-                    for &(r, c, _, after) in bodies {
-                        let k = site_key(r, c);
+                    for l in bodies {
+                        let k = site_key(l.site);
                         match declared.get_mut(&k) {
-                            Some(hues) => hues.push(after),
+                            Some(hues) => hues.push(l.after),
                             None => {
-                                declared.insert(k, vec![after]);
+                                declared.insert(k, vec![l.after]);
                             }
                         }
                     }
                 }
+                // A link's symbol after is the one observed.
                 links
                     .iter()
-                    .all(|&(r, c, _, observed)| declared.get(&site_key(r, c)).is_some_and(|hues| hues.contains(&observed)))
+                    .all(|l| declared.get(&site_key(l.site)).is_some_and(|hues| hues.contains(&l.after)))
             }
             (RefusalKind::OrbitStill, at @ At::Vertex { .. }) => self.is_contraction_at(RefusalKind::VertexBody, at),
             (RefusalKind::FaceDerivation, At::Face(a, b)) => self.overlaps_between_vertices(a, b).is_empty(),
@@ -224,10 +226,12 @@ impl Form {
     }
 }
 
-/// The key of a site of one section: its two coordinates written out.
-fn site_key(r: i64, c: i64) -> Vec<u8> {
-    let mut k = Vec::with_capacity(16);
-    k.extend_from_slice(&r.to_le_bytes());
-    k.extend_from_slice(&c.to_le_bytes());
+/// The key of a site of one section: its coordinates along the plane
+/// written out.
+fn site_key(site: crate::transducer::spelled::SectionSite) -> Vec<u8> {
+    let mut k = Vec::new();
+    for c in site.coordinates() {
+        k.extend_from_slice(&c.to_le_bytes());
+    }
     k
 }

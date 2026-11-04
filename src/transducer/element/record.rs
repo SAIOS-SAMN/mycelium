@@ -119,11 +119,12 @@ impl Element {
             out.extend_from_slice(&m.to_le_bytes());
         }
         put_u32_count(&mut out, self.sub.len())?;
-        for (r, c, before, after) in self.sub.as_slice() {
-            out.extend_from_slice(&r.to_le_bytes());
-            out.extend_from_slice(&c.to_le_bytes());
-            out.push(*before);
-            out.push(*after);
+        for l in self.sub.as_slice() {
+            for c in l.site.coordinates() {
+                out.extend_from_slice(&c.to_le_bytes());
+            }
+            out.push(l.before);
+            out.push(l.after);
         }
         put_u32_count(&mut out, self.sections.len())?;
         for s in &self.sections {
@@ -285,7 +286,7 @@ impl Element {
             let before = *b.get(*pos + 16)?;
             let after = *b.get(*pos + 17)?;
             *pos += 18;
-            sub.push((r, c, before, after));
+            sub.push(crate::transducer::sentence::SectionLink::on_plane([r, c], before, after));
         }
         // A5 STEP 3 AT THE TAPE: a chain that says two things at one site has
         // no canonical form, so the element it would make has no address

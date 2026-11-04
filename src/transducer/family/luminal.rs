@@ -312,8 +312,15 @@ fn cavities_of(x: &SectionSample, y: &SectionSample, unsaid: &[(i64, i64)], capt
 }
 
 /// READ THE LIGHT ON ONE PAIR against what the form left unsaid there.
-pub fn read_pair(x: &SectionSample, y: &SectionSample, remainder: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> PairLight {
-    let unsaid: Vec<(i64, i64)> = remainder.iter().filter(|l| !crate::transducer::raster::is_ground(l.3)).map(|l| (l.0, l.1)).collect();
+pub fn read_pair(x: &SectionSample, y: &SectionSample, remainder: &[crate::transducer::sentence::SectionLink], budget: &mut crate::physics::Budget) -> PairLight {
+    let unsaid: Vec<(i64, i64)> = remainder
+        .iter()
+        .filter(|l| !crate::transducer::raster::is_ground(l.after))
+        .map(|l| {
+            let [r, c] = l.site.coordinates();
+            (r, c)
+        })
+        .collect();
     let mut read = PairLight { unsaid: unsaid.len() as u64, ..PairLight::default() };
     let same_frame = x.extents() == y.extents();
     if !same_frame {

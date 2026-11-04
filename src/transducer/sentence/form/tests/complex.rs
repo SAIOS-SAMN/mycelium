@@ -9,6 +9,7 @@ use crate::transducer::blade::Shape;
 use crate::transducer::element::{self, from_canonical, Element};
 use crate::transducer::germinate::germinate;
 use crate::transducer::sentence::*;
+use crate::transducer::sentence::tests::fixtures::link;
 use crate::transducer::stalk::{self, Stalks};
 
 /// 50.3 — THE EDGE HOLONOMY DOES NOT TELESCOPE. The face transports of an
@@ -462,7 +463,7 @@ fn deconstruct_at_cites_words_and_leaves_residue() {
     let word_at = |a: &[u8]| at.get(a);
     let shape_at = |a: &[u8]| shapes.get(a).and_then(|s| s.as_ref());
     // A vertical bar far away: the bar rotated and translated.
-    let target = vec![(5, 5, 1, 2), (6, 5, 1, 2)];
+    let target = vec![link(5, 5, 1, 2), link(6, 5, 1, 2)];
     let s = deconstruct_at(&word_at, &atlas, &shape_at,&target, None, &mut super::fixtures::budget());
     assert_eq!(s.cites.len(), 1);
     assert_eq!(s.cites[0].word, words[0].address(), "the bar, not the other-hued bar");
@@ -473,14 +474,14 @@ fn deconstruct_at_cites_words_and_leaves_residue() {
         "stratum width is recorded per body"
     );
     // A 2× dilated bar with the other hues: the other bar at ρ = 2.
-    let big = vec![(0, 0, 7, 8), (0, 1, 7, 8), (0, 2, 7, 8), (0, 3, 7, 8), (1, 0, 7, 8), (1, 1, 7, 8), (1, 2, 7, 8), (1, 3, 7, 8)];
+    let big = vec![link(0, 0, 7, 8), link(0, 1, 7, 8), link(0, 2, 7, 8), link(0, 3, 7, 8), link(1, 0, 7, 8), link(1, 1, 7, 8), link(1, 2, 7, 8), link(1, 3, 7, 8)];
     let s = deconstruct_at(&word_at, &atlas, &shape_at,&big, None, &mut super::fixtures::budget());
     assert_eq!(s.cites.len(), 1);
     assert_eq!(s.cites[0].word, words[2].address());
     assert!(s.is_closed());
     // Two bodies and an unknown: two citations with one relative
     // transport between them, one residue body.
-    let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4), (9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)];
+    let mixed = vec![link(0, 0, 1, 2), link(0, 1, 1, 2), link(4, 4, 3, 4), link(9, 9, 5, 6), link(9, 10, 5, 6), link(10, 9, 5, 6)];
     let s = deconstruct_at(&word_at, &atlas, &shape_at,&mixed, None, &mut super::fixtures::budget());
     assert_eq!(s.cites.len(), 2);
     assert_eq!(
@@ -489,7 +490,7 @@ fn deconstruct_at_cites_words_and_leaves_residue() {
         "the chain and each of bar, dot, residue have a width, never one maximum"
     );
     assert_eq!(s.connection.len(), 1, "one relative transport between two cited bodies");
-    assert_eq!(s.residue, vec![(9, 9, 5, 6), (9, 10, 5, 6), (10, 9, 5, 6)]);
+    assert_eq!(s.residue, vec![link(9, 9, 5, 6), link(9, 10, 5, 6), link(10, 9, 5, 6)]);
     // Excluding the bar itself: a bar chain has no other word of hue 1→2.
     let s = deconstruct_at(&word_at, &atlas, &shape_at,words[0].sub(), Some(words[0].address().as_bytes()), &mut super::fixtures::budget());
     assert!(s.cites.is_empty() && !s.is_closed(), "no word but itself speaks it");
@@ -511,7 +512,7 @@ fn deconstruct_at_records_multiplicity_per_body() {
     }
     let word_at = |a: &[u8]| at.get(a);
     let shape_at = |a: &[u8]| shapes.get(a).and_then(|s| s.as_ref());
-    let mixed = vec![(0, 0, 1, 2), (0, 1, 1, 2), (4, 4, 3, 4)];
+    let mixed = vec![link(0, 0, 1, 2), link(0, 1, 1, 2), link(4, 4, 3, 4)];
     let s = deconstruct_at(&word_at, &atlas, &shape_at, &mixed, None, &mut super::fixtures::budget());
     assert_eq!(s.cites.len(), 2);
     assert_eq!(
@@ -545,7 +546,7 @@ fn seam_defect_at_agrees_with_is_flat() {
         at.insert(w.address(), w.clone());
     }
     let word_at = |a: &[u8]| at.get(a);
-    let target = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
+    let target = vec![link(0, 0, 1, 2), link(0, 1, 1, 2)];
     let id = element::identity_versor();
     let cites: Vec<Cite> = vec![
         Cite { word: words[0].address(), transport: id.clone(), assignment: element::assignment(words[0].sub()) },
@@ -754,7 +755,7 @@ fn by_class_names_word_vertices_on_chart() {
     for (k, word, class) in [(1u8, Word::identity(), &near), (2, word_turn_90(), &far), (3, word_turn_180(), &near)] {
         at.push(f.put_vertex(word_vertex_on(k, word, class.clone())).expect("a word vertex has a coordinate"));
     }
-    f.put_vertex(Vertex::demand(Demand::Creation, near.clone(), vec![(0, 0, 0, 1)])).expect("a demand has a coordinate");
+    f.put_vertex(Vertex::demand(Demand::Creation, near.clone(), vec![link(0, 0, 0, 1)])).expect("a demand has a coordinate");
     f.reindex();
     // THE READ IS WRITTEN AS THE CHART IT IS (54.7 R5). `by_class` takes a
     // `Key<coord::Chart>` and nothing else, so the test asks at the same
@@ -950,7 +951,7 @@ fn from_address_recovers_demand_and_remainder_coordinates() {
     let mut f = Form::default();
     // A demand standing for two bodies, and a remainder the form does not
     // close.
-    let bodies: Vec<(i64, i64, u8, u8)> = vec![(1, 1, 1, 2), (1, 2, 1, 2)];
+    let bodies: Vec<SectionLink> = vec![link(1, 1, 1, 2), link(1, 2, 1, 2)];
     let demand = f
         .put_vertex(Vertex::demand(
             crate::transducer::sentence::Demand::Source { multiplicity: 2 },
@@ -958,7 +959,7 @@ fn from_address_recovers_demand_and_remainder_coordinates() {
             bodies.clone(),
         ))
         .expect("a demand has a coordinate");
-    let rem: Vec<(i64, i64, u8, u8)> = vec![(7, 7, 3, 4)];
+    let rem: Vec<SectionLink> = vec![link(7, 7, 3, 4)];
     f.remainder = crate::transducer::element::place_chain(&rem).expect("a chain places");
 
     let key = form_vertex_key(&f);

@@ -6,7 +6,7 @@ use crate::transducer::element::{self, Element};
 /// hue `n`, which is a different vertex for each n.
 fn obj(n: u8) -> Element {
     element::from_canonical(
-        &element::canonical_chain(&[(0i64, 0i64, 1u8, n)]).expect("one link is A5's chain"),
+        &element::canonical_chain(&[crate::transducer::sentence::tests::fixtures::link(0, 0, 1, n)]).expect("one link is A5's chain"),
     )
 }
 fn r(n: u8) -> Rederivation {

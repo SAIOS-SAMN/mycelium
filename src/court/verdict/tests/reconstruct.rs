@@ -596,7 +596,7 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
     dem.put_vertex(Vertex::demand(
         crate::transducer::sentence::Demand::Source { multiplicity: 0 },
         stalk::Invariant::counts(&[1, 2, 2]),
-        vec![(3, 3, 0, 2)],
+        vec![crate::transducer::sentence::tests::fixtures::link(3, 3, 0, 2)],
     ))
     .expect("a demand has a coordinate");
     let dem_e = as_element_form(&dem, [1, 0, 0, 0]).expect("demand tape");
@@ -610,7 +610,7 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
         .put_vertex(Vertex::demand(
             crate::transducer::sentence::Demand::Creation,
             stalk::Invariant::counts(&[1, 2, 2]),
-            vec![(3, 3, 0, 2)],
+            vec![crate::transducer::sentence::tests::fixtures::link(3, 3, 0, 2)],
         ))
         .expect("a demand has a coordinate");
     let typed_e = as_element_form(&typed, [1, 0, 0, 0]).expect("typed demand tape");

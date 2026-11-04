@@ -447,11 +447,12 @@ impl At {
                 rec.push(2);
                 inv.put_canonical(&mut rec);
                 crate::transducer::address::put_u32_count(&mut rec, links.len())?;
-                for (r, c, before, after) in links {
-                    rec.extend_from_slice(&r.to_le_bytes());
-                    rec.extend_from_slice(&c.to_le_bytes());
-                    rec.push(*before);
-                    rec.push(*after);
+                for l in links {
+                    for c in l.site.coordinates() {
+                        rec.extend_from_slice(&c.to_le_bytes());
+                    }
+                    rec.push(l.before);
+                    rec.push(l.after);
                 }
             }
             At::Tape(a) => {
@@ -489,7 +490,7 @@ impl At {
                     let before = *b.get(*pos + 16)?;
                     let after = *b.get(*pos + 17)?;
                     *pos += 18;
-                    links.push((r, c, before, after));
+                    links.push(SectionLink::on_plane([r, c], before, after));
                 }
                 At::Chart(inv, links)
             }

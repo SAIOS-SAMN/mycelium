@@ -96,7 +96,7 @@ fn hear_speech_verifies_contraction_before_reconstruction() {
         crate::transducer::sentence::from_element_form(&s).expect("the tape reads back");
     let mut probe = f.clone();
     assert_eq!(probe.contract(*kind, at, &[]), Some(Contracted::Moved));
-    let remainder: Vec<(i64, i64, u8, u8)> =
+    let remainder: Vec<crate::transducer::sentence::SectionLink> =
         crate::transducer::family::form_deflation(&probe, &f_v, &NoCrystal).1.into_iter().flatten().collect();
     assert!(!remainder.is_empty(), "the refused word's body is what the contraction leaves");
     assert_eq!(f.contract(*kind, at, &remainder), Some(Contracted::Moved));

@@ -358,17 +358,15 @@ pub fn sample_of(g: &[Vec<u8>], place: Place) -> Result<Sample, SampleRefusal> {
     Sample::new(vec![g.len(), width], 1, g.concat(), place)
 }
 
-/// A PROJECTED RECORD AS THE PLANAR CHAIN `(axis 0, axis 1, before,
-/// after)`: the speech end of the bridge for a residue. A change off rank 2
-/// or width 1 has no planar link and is left out, which no raster pair
+/// A PROJECTED RECORD AS THE SECTION'S CHAIN: the speech end of the bridge
+/// for a residue, each change read as a link of the section
+/// (`sentence::Link::section`). A change off the section's rank or wider
+/// than one byte has no link there and is left out, which no raster pair
 /// produces.
-pub fn links_of(changes: &[super::family::transduce::SiteChange]) -> Vec<(i64, i64, u8, u8)> {
+pub fn links_of(changes: &[super::family::transduce::SiteChange]) -> Vec<crate::transducer::sentence::SectionLink> {
     changes
         .iter()
-        .filter_map(|c| match (c.site().axes(), c.before().bytes(), c.after().bytes()) {
-            (&[i, j], &[before], &[after]) => Some((i, j, before, after)),
-            _ => None,
-        })
+        .filter_map(|c| crate::transducer::sentence::Link::of_change(c).section().ok())
         .collect()
 }
 

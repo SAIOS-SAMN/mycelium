@@ -5,6 +5,7 @@
 
 use super::fixtures::grid;
 use crate::transducer::family::confluence::{read_pair, Reproduces};
+use crate::transducer::sentence::tests::fixtures::link;
 
 fn budget() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(1 << 16)
@@ -66,7 +67,7 @@ fn read_pair_reads_bridged_pair_as_confluence() {
     crate::transducer::raster::stand_on(0);
     let x = grid(&["10001"]);
     let y = grid(&["11111"]);
-    let rem = vec![(0, 1, 0, 1), (0, 2, 0, 1), (0, 3, 0, 1)];
+    let rem = vec![link(0, 1, 0, 1), link(0, 2, 0, 1), link(0, 3, 0, 1)];
     let p = read_pair(&x, &y, &rem, &mut budget());
     let [c] = p.confluences.as_slice() else { panic!("one confluence: {p:?}") };
     assert_eq!((c.inputs, c.mass_in, c.mass_out), (2, 2, 5));
@@ -83,7 +84,7 @@ fn read_pair_tells_creation_from_single_carriage() {
     crate::transducer::raster::stand_on(0);
     let x = grid(&["100", "000"]);
     let y = grid(&["110", "002"]);
-    let rem = vec![(0, 1, 0, 1), (1, 2, 0, 2)];
+    let rem = vec![link(0, 1, 0, 1), link(1, 2, 0, 2)];
     let p = read_pair(&x, &y, &rem, &mut budget());
     assert_eq!((p.singles, p.single_sites), (1, 1), "the grown cell stands on its one input");
     assert_eq!((p.creations, p.creation_sites), (1, 1), "the new cell stands on none");

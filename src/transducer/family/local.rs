@@ -98,7 +98,7 @@ pub fn measure_sites(family: &[(SectionSample, SectionSample)], sites: &[Keyed<(
         // A pair whose residue cannot be written on the family's one ground
         // measures nothing it could pay (track 26 S2).
         let Ok(residue) = residue_of(Some(x), y) else { continue };
-        let links: Vec<(i64, i64, u8, u8)> = residue.into_iter().filter(|&(r, c, _, _)| at.contains(&site_key(r, c))).collect();
+        let links: Vec<crate::transducer::sentence::SectionLink> = residue.into_iter().filter(|l| at.contains(&site_key(l.site))).collect();
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&[0; 4], &element::measure_lanes(&links)));
         mu.step(&crate::transducer::family::transduce::share_of_frame(closed, Some(y.sample())));
         if let Some(next) = crate::core::lanes::lanes_add(pay, closed) {
@@ -167,15 +167,15 @@ fn spoken_section(x: &SectionSample, y: &SectionSample, v: &element::Versor, rec
     // THE SPEECH: every painted site vacated, every image site painted.
     let mut said: Keyed<u8> = Keyed::new();
     for &(r, c, _) in &painted {
-        said.insert(site_key(r, c), void);
+        said.insert(site_key(SectionSite::on_plane([r, c])), void);
     }
     let mut landed: Keyed<u8> = Keyed::new();
     for &(r, c, h) in &image {
         let hue = recolour(h);
-        match landed.get(&site_key(r, c)) {
+        match landed.get(&site_key(SectionSite::on_plane([r, c]))) {
             Some(&held) if held != hue => return None,
             _ => {
-                landed.insert(site_key(r, c), hue);
+                landed.insert(site_key(SectionSite::on_plane([r, c])), hue);
             }
         }
     }
@@ -184,7 +184,7 @@ fn spoken_section(x: &SectionSample, y: &SectionSample, v: &element::Versor, rec
     sites.dedup();
     let mut changed = Keyed::new();
     for (r, c) in sites {
-        let key = site_key(r, c);
+        let key = site_key(SectionSite::on_plane([r, c]));
         let spoken = match landed.get(&key) {
             Some(&h) => h,
             None => match said.get(&key) {
@@ -238,7 +238,7 @@ pub fn form_local(
                     // hue painted, or an erasure (absence said where the
                     // answer is absence and the before side was not).
                     if answer == Some(s) && hue_at(x, r, c) != Some(s) {
-                        closed.insert(site_key(r, c), ());
+                        closed.insert(site_key(SectionSite::on_plane([r, c])), ());
                     }
                 }
             }

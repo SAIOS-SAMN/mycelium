@@ -194,8 +194,9 @@ pub(crate) fn put_chain_at(buf: &mut Vec<u8>, at: Option<&ChainAt>) {
         buf.extend_from_slice(&lane.to_le_bytes());
     }
     buf.extend_from_slice(&at.pieces.to_le_bytes());
-    buf.extend_from_slice(&at.corner.0.to_le_bytes());
-    buf.extend_from_slice(&at.corner.1.to_le_bytes());
+    for c in at.corner.coordinates() {
+        buf.extend_from_slice(&c.to_le_bytes());
+    }
 }
 
 /// ONE OVERLAP'S MEASURED AND PRODUCED CONTENT (AT1): its producer, its

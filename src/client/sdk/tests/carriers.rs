@@ -12,7 +12,8 @@ use crate::client::sdk::*;
 fn carriers_counts_one_word_per_expression_once() {
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("carriers"));
     assert_eq!(entity.carriers(), [0; 10], "a fresh entity holds nothing unreported");
-    let residue = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];
+    use crate::transducer::sentence::tests::fixtures::link;
+    let residue = vec![link(0, 0, 1, 2), link(0, 1, 1, 2)];
     assert!(entity.language.express(&residue, 1, 1, &mut super::fixtures::budget()), "a residue with an A5 form is expressed");
     let after = entity.carriers();
     assert_eq!(after[6], 1, "one word expressed: {after:?}");

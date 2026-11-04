@@ -19,7 +19,7 @@ fn grid(rows: &[&str]) -> SectionSample {
 fn sites(at: &[(i64, i64)]) -> Keyed<()> {
     let mut k = Keyed::new();
     for &(r, c) in at {
-        k.insert(site_key(r, c), ());
+        k.insert(site_key(crate::transducer::spelled::SectionSite::on_plane([r, c])), ());
     }
     k
 }

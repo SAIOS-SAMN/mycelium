@@ -5,6 +5,7 @@
 use crate::physics::laws::Flow;
 use crate::transducer::family::flux::{perceive_fluxes, Named};
 use crate::transducer::sentence::Demand;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// A creation is perceived as a source, a vanishing as a sink, a deformation
 /// at constant mass as no flux; a demand of another kind is not read.
@@ -12,10 +13,10 @@ use crate::transducer::sentence::Demand;
 fn perceive_fluxes_reads_creation_source_vanishing_sink() {
     let chart = crate::transducer::stalk::Invariant::default();
     let demands: Vec<Named> = vec![
-        (Demand::Creation, chart.clone(), vec![(0, 0, 0, 3), (0, 2, 0, 3)]),
-        (Demand::TopologicalDeformation { image: chart.clone(), axes: Vec::new() }, chart.clone(), vec![(1, 1, 2, 0)]),
-        (Demand::TopologicalDeformation { image: chart.clone(), axes: Vec::new() }, chart.clone(), vec![(1, 1, 2, 0), (1, 2, 0, 2)]),
-        (Demand::RotorPrime { plane: (0, 1), prime: 3, witness: Box::default() }, chart.clone(), vec![(0, 0, 0, 1)]),
+        (Demand::Creation, chart.clone(), vec![link(0, 0, 0, 3), link(0, 2, 0, 3)]),
+        (Demand::TopologicalDeformation { image: chart.clone(), axes: Vec::new() }, chart.clone(), vec![link(1, 1, 2, 0)]),
+        (Demand::TopologicalDeformation { image: chart.clone(), axes: Vec::new() }, chart.clone(), vec![link(1, 1, 2, 0), link(1, 2, 0, 2)]),
+        (Demand::RotorPrime { plane: (0, 1), prime: 3, witness: Box::default() }, chart.clone(), vec![link(0, 0, 0, 1)]),
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
     let fluxes = perceive_fluxes(&demands, &mut budget);

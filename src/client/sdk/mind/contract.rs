@@ -58,7 +58,7 @@ impl Mind {
         if probe.contract(kind, &at, &[]).is_none() {
             return self.quiescent(spoken, train, budget);
         }
-        let mut remainder: Vec<(i64, i64, u8, u8)> =
+        let mut remainder: Vec<crate::transducer::sentence::SectionLink> =
             form_deflation(&probe, train, &self.language).1.into_iter().flatten().collect();
         remainder.sort_unstable();
         remainder.dedup();

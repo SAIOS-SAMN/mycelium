@@ -21,7 +21,7 @@ fn contract_turns_still_contact_word_into_demand() {
     };
     let chart = stalk::Invariant::counts(&[3, 5]);
     let at = At::vertex(word.clone(), chart.clone());
-    let remainder = vec![(0i64, 1i64, 1u8, 2u8)];
+    let remainder = vec![link(0, 1, 1, 2)];
     assert!(
         f.overlaps_at(&word).iter().any(|o| o.from == crate::network::nerve::coord::ChartAt::Frame),
         "the contact word has its star face"
@@ -30,7 +30,7 @@ fn contract_turns_still_contact_word_into_demand() {
     // AT1: the demand stands at its OWN coordinate (kind, chart, measure,
     // pieces), and the word's coordinate is empty.
     assert!(!f.vertices.holds(&word), "the contact word's coordinate is empty");
-    let demands: Vec<Vec<(i64, i64, u8, u8)>> = f
+    let demands: Vec<Vec<SectionLink>> = f
         .demand_vertices()
         .filter(|(_, k, c, _)| matches!(k, Demand::Creation) && **c == chart)
         .map(|(_, _, _, b)| b.to_vec())
@@ -103,8 +103,8 @@ fn contract_mounts_demand_on_silent_links_only() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::Demand;
     let chart = crate::transducer::stalk::Invariant::counts(&[3, 5]);
-    let silent = |r: i64| (r, 0i64, 0u8, 4u8);
-    let wrong = |r: i64| (r, 1i64, 2u8, 4u8);
+    let silent = |r: i64| link(r, 0, 0, 4);
+    let wrong = |r: i64| link(r, 1, 2, 4);
 
     // SILENT ALONE: the demand mounts, over exactly those links.
     let mut f = chord_form(&[word_turn_90()]);
@@ -114,7 +114,7 @@ fn contract_mounts_demand_on_silent_links_only() {
         Some(Contracted::Moved),
         "a remainder the form was silent on is a demand it can mount"
     );
-    let stood: Vec<Vec<(i64, i64, u8, u8)>> = f
+    let stood: Vec<Vec<SectionLink>> = f
         .demand_vertices()
         .filter(|(_, k, _, _)| matches!(k, Demand::Source { .. }))
         .map(|(_, _, _, b)| b.to_vec())
@@ -149,7 +149,7 @@ fn contract_mounts_demand_on_silent_links_only() {
         Some(Contracted::Moved),
         "a coordinate with something declarable in it contracts"
     );
-    let stood: Vec<Vec<(i64, i64, u8, u8)>> = h
+    let stood: Vec<Vec<SectionLink>> = h
         .demand_vertices()
         .filter(|(_, k, _, _)| matches!(k, Demand::Source { .. }))
         .map(|(_, _, _, b)| b.to_vec())

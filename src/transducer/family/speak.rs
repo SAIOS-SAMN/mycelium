@@ -40,7 +40,7 @@ pub(crate) fn grows_to_frame(a: &SectionSample, b: &SectionSample) -> bool {
             if r < 0 || c < 0 || (r as usize) >= fa.0 || (c as usize) >= fa.1 {
                 continue;
             }
-            if keyed.contains(&site_key(r, c)) {
+            if keyed.contains(&site_key(SectionSite::on_plane([r, c]))) {
                 continue;
             }
             occ.push((r, c, 0));
@@ -106,7 +106,7 @@ pub(crate) fn emit_carried(
 pub(crate) fn hue_from_neighbours(r: i64, c: i64, occ: &crate::network::nerve::Keyed<u8>) -> Option<u8> {
     let mut held: Option<u8> = None;
     for (nr, nc) in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)] {
-        let Some(&h) = occ.get(&site_key(nr, nc)) else {
+        let Some(&h) = occ.get(&site_key(SectionSite::on_plane([nr, nc]))) else {
             continue;
         };
         match held {
@@ -562,7 +562,7 @@ fn speak_on_scene(
             let ring = crate::transducer::blade::adjacent_ring(&painted);
             let mut hues: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
             for &(r, c, h) in &painted {
-                hues.insert(site_key(r, c), h);
+                hues.insert(site_key(SectionSite::on_plane([r, c])), h);
             }
             let mut grew = false;
             for (r, c, _) in ring {
@@ -570,7 +570,7 @@ fn speak_on_scene(
                 if r < 0 || c < 0 || (r as usize) >= fy.0 || (c as usize) >= fy.1 {
                     continue;
                 }
-                if hues.contains(&site_key(r, c)) {
+                if hues.contains(&site_key(SectionSite::on_plane([r, c]))) {
                     continue;
                 }
                 match hue_from_neighbours(r, c, &hues) {
@@ -709,7 +709,8 @@ pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &SectionS
 pub fn residue_of(
     spoken: Option<&SectionSample>,
     observed: &SectionSample,
-) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
+) -> Result<Vec<crate::transducer::sentence::SectionLink>, crate::transducer::family::transduce::Unground> {
+    use crate::transducer::sentence::SectionLink;
     let void = crate::transducer::raster::void();
     let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
@@ -721,16 +722,14 @@ pub fn residue_of(
             None => void?,
         };
         if s != h {
-            let [r, c] = site.coordinates();
-            out.push((r, c, s, h));
+            out.push(SectionLink::new(site, s, h));
         }
     }
     if let Some(g) = spoken {
         for (site, s) in g.sites() {
             let inside = observed.at(site).is_some();
             if !inside && !ground.holds(&s) {
-                let [r, c] = site.coordinates();
-                out.push((r, c, s, void?));
+                out.push(SectionLink::new(site, s, void?));
             }
         }
     }

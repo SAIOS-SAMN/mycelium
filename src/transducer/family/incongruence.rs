@@ -64,8 +64,9 @@ pub struct Difference {
     pub shared: u64,
     pub accreted: Vec<Cell>,
     pub extinguished: Vec<Cell>,
-    /// Shared sites whose hue changed: (site, from, to).
-    pub recoloured: Vec<(i64, i64, u8, u8)>,
+    /// Shared sites whose hue changed, each a link from the input's hue to
+    /// the output's.
+    pub recoloured: Vec<crate::transducer::sentence::SectionLink>,
     /// Accreted sites on a straight run out of the input body, and the runs'
     /// lengths with how each ended: at the frame's edge (open) or at a body.
     pub on_light: u64,
@@ -92,7 +93,7 @@ pub fn difference(input: &[Cell], output: &[Cell], frame: &SectionSample) -> Dif
             Some(g) => {
                 d.shared += 1;
                 if g != h {
-                    d.recoloured.push((r, c, g, h));
+                    d.recoloured.push(crate::transducer::sentence::SectionLink::on_plane([r, c], g, h));
                 }
             }
             None => d.accreted.push((r, c, h)),
@@ -155,7 +156,7 @@ pub fn relative(input: &[Cell], d: &Difference) -> Option<Relative> {
     let off = |x: &Cell| (Q::from_integer(x.0.into()) - &br, Q::from_integer(x.1.into()) - &bc, x.2);
     let mut accreted: Vec<(Q, Q, u8)> = d.accreted.iter().map(off).collect();
     let mut extinguished: Vec<(Q, Q, u8)> = d.extinguished.iter().map(off).collect();
-    let mut recolours: Vec<(u8, u8)> = d.recoloured.iter().map(|x| (x.2, x.3)).collect();
+    let mut recolours: Vec<(u8, u8)> = d.recoloured.iter().map(crate::transducer::sentence::SectionLink::transition).collect();
     accreted.sort();
     extinguished.sort();
     recolours.sort_unstable();
@@ -416,13 +417,20 @@ fn cells_of(b: &Body) -> Vec<Cell> {
 
 /// EVERY SINGLE CHANGE of a family's remainder, pair by pair, in the order
 /// the eyes perceive the outputs. A pair whose frames differ is unread.
-pub fn single_changes(family: &[(SectionSample, SectionSample)], remainders: &[Vec<(i64, i64, u8, u8)>]) -> Vec<Change> {
+pub fn single_changes(family: &[(SectionSample, SectionSample)], remainders: &[Vec<crate::transducer::sentence::SectionLink>]) -> Vec<Change> {
     let mut out = Vec::new();
     for (pair, ((x, y), rem)) in family.iter().zip(remainders).enumerate() {
         if x.extents() != y.extents() {
             continue;
         }
-        let unsaid: Vec<(i64, i64)> = rem.iter().filter(|l| l.3 != 0).map(|l| (l.0, l.1)).collect();
+        let unsaid: Vec<(i64, i64)> = rem
+            .iter()
+            .filter(|l| l.after != 0)
+            .map(|l| {
+                let [r, c] = l.site.coordinates();
+                (r, c)
+            })
+            .collect();
         if unsaid.is_empty() {
             continue;
         }
@@ -493,7 +501,7 @@ fn judged<K: PartialEq>(keyed: Vec<(K, HueMap)>, readings: &[&Change]) -> Decisi
 
 /// A change's hue map: its recolours, each source hue once.
 pub fn hue_map(c: &Change) -> HueMap {
-    let mut map: HueMap = c.difference.recoloured.iter().map(|x| (x.2, x.3)).collect();
+    let mut map: HueMap = c.difference.recoloured.iter().map(crate::transducer::sentence::SectionLink::transition).collect();
     map.sort_unstable();
     map.dedup();
     map

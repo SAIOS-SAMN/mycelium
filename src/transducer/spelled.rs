@@ -101,6 +101,17 @@ impl SectionSite {
         Some(SectionSite(out))
     }
 
+    /// THE SITE READ FROM `origin`: each coordinate less the origin's along
+    /// the same axis of the plane; `None` where a coordinate would leave
+    /// `i64`.
+    pub fn offset_from(&self, origin: SectionSite) -> Option<SectionSite> {
+        let mut out = self.0;
+        for (slot, o) in out.iter_mut().zip(origin.0) {
+            *slot = slot.checked_sub(o)?;
+        }
+        Some(SectionSite(out))
+    }
+
     /// THE SITE ON THE FAMILY'S BASE (MU-SENSING §4): the plane's
     /// coordinates on the family site's plane and the sample's place in its
     /// family on the place axis, under the default perspective of a site of

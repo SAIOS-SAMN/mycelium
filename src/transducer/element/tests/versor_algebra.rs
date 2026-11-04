@@ -6,6 +6,8 @@ use crate::transducer::element::*;
 use num_bigint::BigInt;
 use num_traits::Zero;
 use crate::transducer::germinate::germinate;
+use crate::transducer::sentence::tests::fixtures::link;
+use crate::transducer::sentence::SectionLink;
 use super::fixtures::*;
 
 /// Congruence on the conformal orbit: translations, rotations,
@@ -15,22 +17,23 @@ use super::fixtures::*;
 /// any scale exactly.
 #[test]
 fn transition_carries_conformal_images_for_pullback() {
-    let l = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (1, 0, 1, 2)];
-    let shifted: Vec<_> = l.iter().map(|(r, c, b, a)| (r + 7, c + 3, *b, *a)).collect();
-    let rotated = vec![(0i64, 0i64, 1u8, 2u8), (1, 0, 1, 2), (0, -1, 1, 2)];
-    let bar = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (0, 2, 1, 2)];
+    let l = vec![link(0, 0, 1, 2), link(0, 1, 1, 2), link(1, 0, 1, 2)];
+    let shifted: Vec<_> = l.iter().map(|x| SectionLink::new(x.site.moved([7, 3]).expect("in range"), x.before, x.after)).collect();
+    let rotated = vec![link(0, 0, 1, 2), link(1, 0, 1, 2), link(0, -1, 1, 2)];
+    let bar = vec![link(0, 0, 1, 2), link(0, 1, 1, 2), link(0, 2, 1, 2)];
     let mut budget = super::fixtures::budget();
     assert!(transition(&l, &shifted, &mut budget).is_some(), "translation is a versor");
     assert!(transition(&l, &rotated, &mut budget).is_some(), "rotation is a versor");
     assert!(transition(&l, &bar, &mut budget).is_none(), "distinct shapes refuse");
     // A 2× dilated L with other hues: the versor exists and the pullback
     // reads its assignment onto the base's three sites.
-    let big: Vec<(i64, i64, u8, u8)> = l
+    let big: Vec<SectionLink> = l
         .iter()
-        .flat_map(|&(r, c, _, _)| {
+        .flat_map(|x| {
+            let [r, c] = x.site.coordinates();
             [(2 * r, 2 * c), (2 * r, 2 * c + 1), (2 * r + 1, 2 * c), (2 * r + 1, 2 * c + 1)]
                 .into_iter()
-                .map(|(rr, cc)| (rr, cc, 5u8, 6u8))
+                .map(|(rr, cc)| link(rr, cc, 5, 6))
         })
         .collect();
     let v = transition(&big, &l, &mut budget).expect("a dilation by 1/2 carries the big L onto the L");
@@ -102,7 +105,7 @@ fn inverse_of_residue_swaps_chain() {
     let g = from_canonical(&germinate(&a, &b).unwrap());
     assert!(g.reverse().is_none(), "a residue has no versor reverse");
     let inv = g.inverse().expect("the reverse chain exists");
-    let want: Vec<_> = g.sub().iter().map(|&(r, c, b, a)| (r, c, a, b)).collect();
+    let want: Vec<_> = g.sub().iter().map(|x| SectionLink::new(x.site, x.after, x.before)).collect();
     assert_eq!(inv.sub(), want.as_slice(), "inverse swaps before/after on the chain");
     let again = inv.inverse().expect("reverse of reverse");
     assert_eq!(again.sub(), g.sub(), "inverse ∘ inverse is the chain");
@@ -111,8 +114,8 @@ fn inverse_of_residue_swaps_chain() {
 /// The A5 canonical chain is idempotent and free of translation.
 #[test]
 fn canonical_chain_is_idempotent_and_translation_free() {
-    let a = vec![(3, 4, 1u8, 2u8), (3, 5, 1, 2)];
-    let b = vec![(0, 1, 1u8, 2u8), (0, 0, 1, 2)];
+    let a = vec![link(3, 4, 1, 2), link(3, 5, 1, 2)];
+    let b = vec![link(0, 1, 1, 2), link(0, 0, 1, 2)];
     let ca = canonical_chain(&a).unwrap();
     let cb = canonical_chain(&b).unwrap();
     assert_eq!(ca, cb);

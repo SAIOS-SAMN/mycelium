@@ -776,7 +776,7 @@ let family = vec![
 ];
 let rule = extract_rule(&[(grid(&["1"]), grid(&["2"]))], &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
 let (_pay, rems) = form_deflation(&rule.form, &family, &NoCrystal);
-let listings: Vec<&Vec<(i64, i64, u8, u8)>> =
+let listings: Vec<&Vec<crate::transducer::sentence::SectionLink>> =
     rems.iter().filter(|r| !r.is_empty()).collect();
 assert!(
     !listings.is_empty(),

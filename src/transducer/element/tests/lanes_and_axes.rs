@@ -3,6 +3,7 @@
 
 use crate::transducer::element::*;
 use crate::transducer::germinate::germinate;
+use crate::transducer::sentence::tests::fixtures::link;
 use super::fixtures::*;
 
 /// ONE SEAT PER OPENED AXIS, HOWEVER OFTEN IT IS OPENED.
@@ -132,17 +133,17 @@ fn open_axis_refuses_past_last_seat() {
 fn measure_lanes_never_claims_span() {
     crate::transducer::raster::stand_on(0);
     // Compartments appearing and vanishing are spatial; a hue change is gauge.
-    let appears = measure_lanes(&[(0, 0, 0, 1), (1, 1, 0, 1)]);
+    let appears = measure_lanes(&[link(0, 0, 0, 1), link(1, 1, 0, 1)]);
     assert!(appears[0] > 0, "compartments that appear are spatial");
     assert_eq!(appears[2], 0, "and none of them is a span");
 
-    let recoloured = measure_lanes(&[(0, 0, 1, 2), (0, 1, 1, 2)]);
+    let recoloured = measure_lanes(&[link(0, 0, 1, 2), link(0, 1, 1, 2)]);
     assert!(recoloured[1] > 0, "a hue change is gauge");
     assert_eq!(recoloured[2], 0, "and none of it is a span");
 
     // However large or long the chain, 𝒯 does not move: there is no clock in
     // a set of links to read one from.
-    let long: Vec<(i64, i64, u8, u8)> = (0..64).map(|i| (i, 0, 0, 1)).collect();
+    let long: Vec<crate::transducer::sentence::SectionLink> = (0..64).map(|i| link(i, 0, 0, 1)).collect();
     assert_eq!(measure_lanes(&long)[2], 0, "a longer chain is not an older one");
     assert_eq!(measure_lanes(&[])[2], 0, "and an empty one is not either");
 }
@@ -161,7 +162,7 @@ fn reduction_magnitude_agrees_with_axes() {
 
     // Letters with sigma permutation from a connection
     let id = Word::identity();
-    let remainder = vec![(0, 0, 1u8, 2u8)];
+    let remainder = vec![link(0, 0, 1, 2)];
     let conn = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &remainder, [0, 1, 0, 0])
         .expect("connection spells");
     assert_eq!(conn.axes(), vec![FIBRE_GAUGE], "axes reports occupied gauge stratum");

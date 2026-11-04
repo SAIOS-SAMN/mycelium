@@ -161,13 +161,13 @@ pub(crate) fn delta_links(a: &Body, b: &Body) -> Result<Vec<SectionLink>, transd
             Some(h2) => *h2,
             None => void?,
         };
-        if let Some((r, c)) = on_grid(&l.site) {
-            links.push((r, c, l.hue, gone));
+        if let Some(site) = SectionSite::of_family(&l.site) {
+            links.push(SectionLink::new(site, l.hue, gone));
         }
     }
     for l in &b.compartments {
-        if let (false, Some((r, c))) = (before.contains(&l.site.key()), on_grid(&l.site)) {
-            links.push((r, c, void?, l.hue));
+        if let (false, Some(site)) = (before.contains(&l.site.key()), SectionSite::of_family(&l.site)) {
+            links.push(SectionLink::new(site, void?, l.hue));
         }
     }
     links.sort_unstable();

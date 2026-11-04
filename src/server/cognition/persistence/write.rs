@@ -35,11 +35,12 @@ pub(super) fn put_field(out: &mut Vec<u8>, listing: &ListingCoherence) {
             }
         }
         out.extend_from_slice(&(e.remainder.len() as u64).to_le_bytes());
-        for &(r, c, hb, ha) in &e.remainder {
-            out.extend_from_slice(&r.to_le_bytes());
-            out.extend_from_slice(&c.to_le_bytes());
-            out.push(hb);
-            out.push(ha);
+        for l in &e.remainder {
+            for c in l.site.coordinates() {
+                out.extend_from_slice(&c.to_le_bytes());
+            }
+            out.push(l.before);
+            out.push(l.after);
         }
         for s in e.stagnant {
             out.extend_from_slice(&s.to_le_bytes());

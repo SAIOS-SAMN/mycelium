@@ -160,7 +160,7 @@ impl MindLanguage {
     #[cfg(test)]
     pub(crate) fn express(
         &mut self,
-        residue: &[(i64, i64, u8, u8)],
+        residue: &[crate::transducer::sentence::SectionLink],
         k: u64,
         now_tu: u64,
         budget: &mut crate::physics::Budget,

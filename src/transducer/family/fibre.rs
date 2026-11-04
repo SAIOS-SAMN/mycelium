@@ -78,8 +78,8 @@ pub(super) fn unreached_demands(
     let void = crate::transducer::raster::void();
     let mut out_links: Vec<SectionLink> = Vec::new();
     for l in &b0.compartments {
-        if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
-            out_links.push((r, c, void?, l.hue));
+        if let (false, Some(site)) = (reached.contains(&l.site.key()), SectionSite::of_family(&l.site)) {
+            out_links.push(SectionLink::new(site, void?, l.hue));
         }
     }
     let mut out = Vec::new();
@@ -101,8 +101,8 @@ pub(super) fn unreached_demands(
     let mut links: Vec<SectionLink> = out_links;
     for l in &a0.compartments {
         let k = l.site.key();
-        if let (false, false, Some((r, c))) = (reached.contains(&k), gone.contains(&k), on_grid(&l.site)) {
-            links.push((r, c, l.hue, void?));
+        if let (false, false, Some(site)) = (reached.contains(&k), gone.contains(&k), SectionSite::of_family(&l.site)) {
+            links.push(SectionLink::new(site, l.hue, void?));
         }
     }
     links.sort_unstable();
@@ -119,6 +119,6 @@ pub(super) fn vanished(body: &Body) -> Result<Demanded, transduce::Unground> {
     #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the chart's Vec (an axis position in the body's moduli Invariant); the atlas row replaces the slot by the chart's coordinates")]
     let axes: Vec<u16> = (0..body.moduli.0.len() as u16).collect();
     let void = crate::transducer::raster::void()?;
-    let links: Vec<SectionLink> = body.compartments.iter().filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, l.hue, void))).collect();
+    let links: Vec<SectionLink> = body.compartments.iter().filter_map(|l| SectionSite::of_family(&l.site).map(|site| SectionLink::new(site, l.hue, void))).collect();
     Ok((Demand::TopologicalDeformation { image: Invariant(Vec::new()), axes }, body.moduli.clone(), links))
 }
