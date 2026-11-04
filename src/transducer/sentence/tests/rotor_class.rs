@@ -10,7 +10,7 @@ use crate::transducer::stalk::{self, Standing};
 
 /// 12.6, 16.16 step 3, 3.7 (I6): an orbit whose class has a free part and
 /// which no held word discharges OPENS A CHART AXIS seeded by its own
-/// holonomy — the residual measured how narrow the cover was, and the
+/// holonomy — the residue measured how narrow the cover was, and the
 /// cover grew an axis along which it is a section. The orbit then reads
 /// zero, the rank moves one unit from `free` into `axes`, the form coheres
 /// on the refined cover, and it is never filed as torsion (T3). The

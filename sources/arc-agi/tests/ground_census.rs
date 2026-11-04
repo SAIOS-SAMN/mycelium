@@ -66,7 +66,7 @@ fn former_address(task: &Task) -> Option<Address> {
             .enumerate()
             .flat_map(|(r, row)| row.iter().enumerate().filter_map(move |(c, &h)| (h != 0).then_some((r as i64, c as i64, h, h))))
             .collect();
-        put_key_bytes(&mut buf, &mycelium::transducer::element::from_residual(&chain)?.address());
+        put_key_bytes(&mut buf, &mycelium::transducer::element::from_residue(&chain)?.address());
     }
     Some(Address::new(buf))
 }

@@ -1,7 +1,7 @@
 // 78.152 TU-2..4 — THE KEEPERS AS ONE COURT HOLDS THEM: its own line of
 // readings and each other keeper's, verified on admission (signature, parent
 // chain, cites); the final point, on two keepers' verified readings (TU-3);
-// the residual the keepers' disagreement leaves on the keeper triangle (TU-4).
+// the residue the keepers' disagreement leaves on the keeper triangle (TU-4).
 
 use super::point::{Origin, TPoint};
 use super::reach::{KeeperLine, Reach, WindowRefusal};
@@ -87,7 +87,7 @@ pub struct Edge {
     pub delta: [Q; 4],
 }
 
-/// THE CLOCK'S RESIDUAL (TU-4): each edge of the triangle where its two
+/// THE CLOCK'S RESIDUE (TU-4): each edge of the triangle where its two
 /// keepers hold readings at one tick, and the holonomy round the triangle
 /// in key order — the sum of the three edges' differences, each read at the
 /// greatest tick its two keepers share. Zero where all three were read at one
@@ -95,7 +95,7 @@ pub struct Edge {
 /// carry from different ticks is what stays. `None` while an edge is
 /// unmeasured. A reading on the observer, never folded into the point.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct Residual {
+pub struct Residue {
     pub edges: Vec<Edge>,
     pub holonomy: Option<[Q; 4]>,
 }
@@ -354,7 +354,7 @@ impl Keepers {
     /// THE FINAL TUNIVERSAL IN THIS COURT'S VIEW (TU-3): the greatest tick at
     /// which every keeper's final point stands equal — never averaged. Two
     /// keepers final at one tick and differing on a lane leave that tick to
-    /// the residual (TU-4), and the final point is the greatest tick below it
+    /// the residue (TU-4), and the final point is the greatest tick below it
     /// at which the finals agree. `None` before any point is final.
     /// Held: a point once final stays final after its readings leave the
     /// window — the clock never runs back (raised by `settle`).
@@ -397,12 +397,12 @@ impl Keepers {
         out
     }
 
-    /// THE CLOCK'S RESIDUAL (TU-4) over the first three keepers in key order.
-    pub fn residual(&self) -> Residual {
+    /// THE CLOCK'S RESIDUE (TU-4) over the first three keepers in key order.
+    pub fn residue(&self) -> Residue {
         // The triangle's corners in key order: the keepers' own order.
         let mut ks = self.keepers().into_iter();
         let (Some(a), Some(b), Some(c)) = (ks.next(), ks.next(), ks.next()) else {
-            return Residual::default();
+            return Residue::default();
         };
         let (ab, bc, ac) = (self.edge(a, b), self.edge(b, c), self.edge(a, c));
         // a → b → c → a: the third edge is read backwards, exactly.
@@ -410,7 +410,7 @@ impl Keepers {
             (Some(ab), Some(bc), Some(ac)) => Some(std::array::from_fn(|l| &ab.delta[l] + &bc.delta[l] - &ac.delta[l])),
             _ => None,
         };
-        Residual { edges: [ab, bc, ac].into_iter().flatten().collect(), holonomy }
+        Residue { edges: [ab, bc, ac].into_iter().flatten().collect(), holonomy }
     }
 
     /// One edge: the greatest tick both keepers hold a reading at, and the

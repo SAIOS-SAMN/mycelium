@@ -237,7 +237,7 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: NerveRx) {
                     }
                 }
                 None => {
-                    // A silent keeper is read on the residual and the final
+                    // A silent keeper is read on the residue and the final
                     // point, not one line per pushed ring.
                     if !tick {
                         eprintln!("  nerve → {addr}: no answer");

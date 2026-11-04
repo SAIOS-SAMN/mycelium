@@ -1807,7 +1807,7 @@ the residue; it is never averaged into the point. Read at one common tick
 it is zero.
 
 Sources: MU-RECURSION 78.152 TU-4. Code:
-`src/chronometry/tuniversal/keepers.rs::Keepers::residual`.
+`src/chronometry/tuniversal/keepers.rs::Keepers::residue`.
 
 #### 8.8 The fold and the era
 

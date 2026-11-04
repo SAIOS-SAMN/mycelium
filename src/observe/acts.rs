@@ -270,7 +270,7 @@ impl std::ops::DerefMut for PayLanes {
 }
 
 /// The kinds a deferred word is read as, on [`Deferred::kind`].
-pub const DEFERRED_KINDS: [&str; 4] = ["residual word", "connection", "sentence", "colour word"];
+pub const DEFERRED_KINDS: [&str; 4] = ["residue word", "connection", "sentence", "colour word"];
 
 /// ONE WORD THE RESERVE KEPT FROM A SYLLABUS PAGE.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

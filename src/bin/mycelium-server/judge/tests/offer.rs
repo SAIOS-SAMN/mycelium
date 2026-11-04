@@ -2,7 +2,7 @@ use super::super::offer::*;
 use mycelium::anastome::dialogue;
 
 fn word() -> mycelium::transducer::element::Element {
-    mycelium::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)])
+    mycelium::transducer::element::from_residue(&vec![(0i64, 0i64, 1u8, 2u8)])
         .expect("one link is A5's chain")
 }
 
@@ -10,7 +10,7 @@ fn word() -> mycelium::transducer::element::Element {
 /// refuses it by name, every time it is asked.
 fn false_word() -> mycelium::transducer::element::Element {
     let mut w = word();
-    assert!(w.set_magnitude([9, 9, 9, 9]), "a residual holds no section, so any lane fits");
+    assert!(w.set_magnitude([9, 9, 9, 9]), "a residue holds no section, so any lane fits");
     w
 }
 

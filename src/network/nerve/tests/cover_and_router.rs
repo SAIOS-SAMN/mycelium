@@ -78,7 +78,7 @@ fn home_ranks_room_then_chart_nearness() {
     // Novel chart: both have room; the chart's nearness decides.
     let (id, _) = home(&c, &inv(&[99]), &[1, 0, 0, 0], &rooms, &addrs, None);
     assert_eq!(id, nearer(&inv(&[99]), lo, hi));
-    // Room: hi has room on the residual lane, lo does not.
+    // Room: hi has room on the residue lane, lo does not.
     rooms.insert(lo, [8, 0, 8, 8]);
     rooms.insert(hi, [0, 3, 0, 0]);
     let (id, _) = home(&c, &inv(&[99]), &[0, 1, 0, 0], &rooms, &addrs, None);

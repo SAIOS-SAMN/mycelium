@@ -152,7 +152,7 @@ fn growth_size_sums_closures_in_universe() {
     let mut k = universe(true);
     let domain = reserve_domain();
     assert_eq!(k.growth_size(&domain), Err(GrantRefusal::NoNewClosures), "no closure judged: no growth grant");
-    let rule = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)]).expect("a rule");
+    let rule = crate::transducer::element::from_residue(&vec![(0i64, 0i64, 1u8, 2u8)]).expect("a rule");
     let line = verifying(&key(47));
     let _ = k.pay_solve(b"task-a", line, &rule, [3, 0, 2, 1].into(), true);
     assert_eq!(k.growth_size(&domain).n(), Ok([3, 0, 2, 1]), "the closure's measured discharge, a line's key counting for its universe");

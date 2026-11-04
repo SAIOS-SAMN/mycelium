@@ -381,7 +381,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             let spoken = mycelium::transducer::family::speak_rule(&rule, x, &empty);
             println!(
                 "  mint {name} speak {i}: bodies perceived {} | fibre hits per word vertex {hits:?} \
-                 | unspoken {:?} | painted sites emitted {} | residual vs observed {}",
+                 | unspoken {:?} | painted sites emitted {} | residue vs observed {}",
                 bodies.len(),
                 spoken.as_ref().map(|s| s.unspoken.len()),
                 spoken.as_ref().map_or(0, |s| s.painted.len()),
@@ -392,7 +392,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                         for (c, &h) in row.iter().enumerate() {
                             // A site the speech does not reach is the
                             // ground, and hue 0 IS absence in this
-                            // encoding — `residual_of`'s own reading, not
+                            // encoding — `residue_of`'s own reading, not
                             // a default put here for a missing value.
                             let got = match g.as_ref().and_then(|g| g.get(r)).and_then(|gr| gr.get(c)) {
                                 Some(h) => *h,

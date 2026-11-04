@@ -99,18 +99,18 @@ pub(crate) struct Board {
     /// the mind's own return, not the scenes' (`speak_with`). Bounded by the
     /// families the feed held.
     pub(crate) feed_scenes: crate::network::nerve::Keyed<()>,
-    /// MU-CLIENT §7.1 — THE OPEN QUESTIONS: residual chains a court taught or
+    /// MU-CLIENT §7.1 — THE OPEN QUESTIONS: residue chains a court taught or
     /// an older genome file held, by address — what perception could not
     /// say, never words (ruled 2026-10-18). Volatile: a court teaches
     /// them again after a restart. Each is placed on the corpus and taken
     /// into thought where the focus meets it (`focus`); while any stands, the
     /// mind holds tension.
-    pub(crate) open_residuals: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>>,
-    /// The strata residual chains and rewrites stand on, by the chart
+    pub(crate) open_residues: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>>,
+    /// The strata residue chains and rewrites stand on, by the chart
     /// invariant's key: the sheaf sync never fetches them, the mind holding
-    /// residual chains as open questions and rewrites as the court's acts,
+    /// residue chains as open questions and rewrites as the court's acts,
     /// never as words (`fetch_discordant`).
-    pub(crate) residual_strata: crate::network::nerve::Keyed<()>,
+    pub(crate) residue_strata: crate::network::nerve::Keyed<()>,
     /// An open question waits on the reserve: the mind's strokes regenerate
     /// it, so the mind does not block meanwhile.
     pub(crate) question_waits: bool,
@@ -130,7 +130,7 @@ pub(crate) struct Board {
     pub(crate) corpus: super::focus::Corpus,
     genome_path: Option<String>,
     saved_len: Option<usize>,
-    /// The genome restored holds less than its file did (the residual chains
+    /// The genome restored holds less than its file did (the residue chains
     /// and rewrites the restore left out): the file is written again at the
     /// first stroke, whatever the genome's length.
     pub(crate) genome_unwritten: bool,

@@ -93,14 +93,14 @@ fn reverse_carries_motion_back() {
     );
 }
 
-/// The inverse of a germinated residual is its chain with before and after
+/// The inverse of a germinated residue is its chain with before and after
 /// swapped, and inverting twice gives the chain back.
 #[test]
-fn inverse_of_residual_swaps_chain() {
+fn inverse_of_residue_swaps_chain() {
     let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
     let g = from_canonical(&germinate(&a, &b).unwrap());
-    assert!(g.reverse().is_none(), "a residual has no versor reverse");
+    assert!(g.reverse().is_none(), "a residue has no versor reverse");
     let inv = g.inverse().expect("the reverse chain exists");
     let want: Vec<_> = g.sub().iter().map(|&(r, c, b, a)| (r, c, a, b)).collect();
     assert_eq!(inv.sub(), want.as_slice(), "inverse swaps before/after on the chain");

@@ -1,10 +1,10 @@
 use crate::transducer::layers::*;
 
-/// A residual of tokens; a shell takes the head. The governor reads
+/// A residue of tokens; a shell takes the head. The governor reads
 /// emptiness and strict shortening by exact comparison.
 struct TakeHead;
 impl ShellStep for TakeHead {
-    type Residual = Vec<u8>;
+    type Residue = Vec<u8>;
     type Core = u8;
     fn shell(&self, r: &Vec<u8>) -> Option<(u8, Vec<u8>)> {
         let [head, ..] = r.as_slice() else { return None };
@@ -15,7 +15,7 @@ impl ShellStep for TakeHead {
 
 struct Shorter(Option<usize>);
 impl ShrinkGovernor for Shorter {
-    type Residual = Vec<u8>;
+    type Residue = Vec<u8>;
     fn read(&mut self, r: &Vec<u8>) -> ShellMotion {
         let motion = match (r.is_empty(), self.0) {
             (true, _) => ShellMotion::Closed,
@@ -32,7 +32,7 @@ impl ShrinkGovernor for Shorter {
 /// the cores already taken.
 struct TakeUnlessPoison;
 impl ShellStep for TakeUnlessPoison {
-    type Residual = Vec<u8>;
+    type Residue = Vec<u8>;
     type Core = u8;
     fn shell(&self, r: &Vec<u8>) -> Option<(u8, Vec<u8>)> {
         let [head, ..] = r.as_slice() else { return None };

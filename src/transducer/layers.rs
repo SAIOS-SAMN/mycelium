@@ -1,33 +1,33 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 20 — THE PEEL: a nested manifold read outer shell to inner with the
-//! residual riding inward, continuing while the governor reads `Shrinking`
-//! and routing the residual out whole — the standing arc — when it does not.
+//! residue riding inward, continuing while the governor reads `Shrinking`
+//! and routing the residue out whole — the standing arc — when it does not.
 
-/// What the governor reads off a residual.
+/// What the governor reads off a residue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShellMotion {
     /// Nothing remains: the nest closed.
     Closed,
     /// Strictly less remains than before this shell.
     Shrinking,
-    /// The shell did not shrink the residual: the arc rides out.
+    /// The shell did not shrink the residue: the arc rides out.
     Stalled,
 }
 
-/// One shell of a nest: from a residual, the core it takes and what it
+/// One shell of a nest: from a residue, the core it takes and what it
 /// leaves. `None` when the shell cannot take anything whole.
 pub trait ShellStep {
-    type Residual;
+    type Residue;
     type Core;
-    fn shell(&self, residual: &Self::Residual) -> Option<(Self::Core, Self::Residual)>;
+    fn shell(&self, residue: &Self::Residue) -> Option<(Self::Core, Self::Residue)>;
 }
 
-/// The governor reads the residual between shells; it carries what it
+/// The governor reads the residue between shells; it carries what it
 /// needs to read strict shrinking.
 pub trait ShrinkGovernor {
-    type Residual;
-    fn read(&mut self, residual: &Self::Residual) -> ShellMotion;
+    type Residue;
+    fn read(&mut self, residue: &Self::Residue) -> ShellMotion;
 }
 
 /// The verdict of a nested peel — the cores outer-to-inner and, when it
@@ -50,13 +50,13 @@ impl<R, C> PeelNest<R, C> {
     }
 }
 
-/// THE PEEL LAW: iterate the step with the residual riding inward, outer
+/// THE PEEL LAW: iterate the step with the residue riding inward, outer
 /// constraining inner by construction. Bounded because a strictly
-/// shrinking finite residual reaches empty or stalls.
-pub fn peel_nest<S, G>(target: S::Residual, step: &S, governor: &mut G) -> PeelNest<S::Residual, S::Core>
+/// shrinking finite residue reaches empty or stalls.
+pub fn peel_nest<S, G>(target: S::Residue, step: &S, governor: &mut G) -> PeelNest<S::Residue, S::Core>
 where
     S: ShellStep,
-    G: ShrinkGovernor<Residual = S::Residual>,
+    G: ShrinkGovernor<Residue = S::Residue>,
 {
     let mut cores: Vec<S::Core> = Vec::new();
     if let ShellMotion::Closed = governor.read(&target) {
@@ -64,15 +64,15 @@ where
     }
     let mut arc = target;
     loop {
-        let (core, residual) = match step.shell(&arc) {
+        let (core, residue) = match step.shell(&arc) {
             Some(shell) => shell,
             None => return PeelNest::Standing { cores, arc },
         };
         cores.push(core);
-        match governor.read(&residual) {
+        match governor.read(&residue) {
             ShellMotion::Closed => return PeelNest::Closed { cores },
-            ShellMotion::Shrinking => arc = residual,
-            ShellMotion::Stalled => return PeelNest::Standing { cores, arc: residual },
+            ShellMotion::Shrinking => arc = residue,
+            ShellMotion::Stalled => return PeelNest::Standing { cores, arc: residue },
         }
     }
 }
@@ -155,17 +155,17 @@ impl ShellKind {
     }
 }
 
-/// Residual of the outline peel: the content still riding inward.
+/// Residue of the outline peel: the content still riding inward.
 struct OutlineStep;
 impl ShellStep for OutlineStep {
-    type Residual = Vec<(i64, i64, u8)>;
+    type Residue = Vec<(i64, i64, u8)>;
     type Core = SectionShell;
-    fn shell(&self, residual: &Vec<(i64, i64, u8)>) -> Option<(SectionShell, Vec<(i64, i64, u8)>)> {
-        if residual.is_empty() {
+    fn shell(&self, residue: &Vec<(i64, i64, u8)>) -> Option<(SectionShell, Vec<(i64, i64, u8)>)> {
+        if residue.is_empty() {
             return None;
         }
-        let outline = crate::transducer::blade::outline(residual);
-        let core = crate::transducer::blade::core(residual);
+        let outline = crate::transducer::blade::outline(residue);
+        let core = crate::transducer::blade::core(residue);
         if outline.is_empty() {
             return None;
         }
@@ -175,9 +175,9 @@ impl ShellStep for OutlineStep {
 
 struct CountGov(Option<usize>);
 impl ShrinkGovernor for CountGov {
-    type Residual = Vec<(i64, i64, u8)>;
-    fn read(&mut self, residual: &Vec<(i64, i64, u8)>) -> ShellMotion {
-        let n = residual.len();
+    type Residue = Vec<(i64, i64, u8)>;
+    fn read(&mut self, residue: &Vec<(i64, i64, u8)>) -> ShellMotion {
+        let n = residue.len();
         let motion = match (n == 0, self.0) {
             (true, _) => ShellMotion::Closed,
             (false, Some(before)) if n < before => ShellMotion::Shrinking,
@@ -204,9 +204,9 @@ fn scale_factor(num: usize, den: usize) -> Option<(ShellKind, i64)> {
     }
 }
 
-/// Peel a body: whole, then outline with the core as residual, then the
+/// Peel a body: whole, then outline with the core as residue, then the
 /// interior the outline encloses, then the adjacent ring. Each shell is
-/// taken from the residual the last shell left; the governor reads shrink.
+/// taken from the residue the last shell left; the governor reads shrink.
 /// Scale shells only when a frame ratio is supplied and is not one.
 /// Cut is not produced here: it is taken only with sites a face names.
 pub fn peel_body(compartments: &[(i64, i64, i64, u8)]) -> Vec<Shell> {
@@ -263,29 +263,29 @@ fn peel_section_scaled(
         return Vec::new();
     }
     let mut out = vec![SectionShell { kind: ShellKind::Whole, painted: painted.to_vec() }];
-    let mut residual = painted.to_vec();
-    let mut gov = CountGov(Some(residual.len()));
-    if let Some((outline, core)) = OutlineStep.shell(&residual) {
+    let mut residue = painted.to_vec();
+    let mut gov = CountGov(Some(residue.len()));
+    if let Some((outline, core)) = OutlineStep.shell(&residue) {
         match gov.read(&core) {
             ShellMotion::Closed => {
                 if outline.painted != painted {
                     out.push(outline);
                 }
-                residual = core;
+                residue = core;
             }
             ShellMotion::Shrinking => {
                 if outline.painted != painted {
                     out.push(outline);
                 }
-                residual = core;
-                if !residual.is_empty() {
-                    out.push(SectionShell { kind: ShellKind::Core, painted: residual.clone() });
+                residue = core;
+                if !residue.is_empty() {
+                    out.push(SectionShell { kind: ShellKind::Core, painted: residue.clone() });
                 }
             }
             ShellMotion::Stalled => {}
         }
     }
-    let interior = crate::transducer::blade::enclosed_interior(&residual);
+    let interior = crate::transducer::blade::enclosed_interior(&residue);
     if !interior.is_empty() {
         match gov.read(&interior) {
             ShellMotion::Shrinking | ShellMotion::Closed => {
@@ -294,7 +294,7 @@ fn peel_section_scaled(
             ShellMotion::Stalled => {}
         }
     }
-    let ring = crate::transducer::blade::adjacent_ring(&residual);
+    let ring = crate::transducer::blade::adjacent_ring(&residue);
     if !ring.is_empty() {
         match gov.read(&ring) {
             ShellMotion::Shrinking | ShellMotion::Closed | ShellMotion::Stalled => {

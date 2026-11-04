@@ -190,8 +190,8 @@ fn word_rest(spoken: &Element) -> Option<&'static str> {
 
 /// Deterministic re-derivation of a spoken word from its own evidence
 /// (the contradiction docket). Returns None when the word replays clean;
-/// Some(reason) when the speech was false. A residual word re-derives from
-/// its chain (from_residual is deterministic, the chain canonically
+/// Some(reason) when the speech was false. A residue word re-derives from
+/// its chain (from_residue is deterministic, the chain canonically
 /// framed); a CONNECTION re-derives by inversion of its group component,
 /// with its remainder chain re-deriving as any germ's; every torsion cycle
 /// is traversed; and an install measures something on some lane
@@ -273,7 +273,7 @@ fn word_rest_checks(spoken: &Element, chain: &[(i64, i64, u8, u8)], connection: 
             }
             // A chain with no A5 form re-derives nothing, and a word whose
             // chain says two things at one site is slashed on that.
-            let Some(rederived) = element::from_residual(&chain.to_vec()) else {
+            let Some(rederived) = element::from_residue(&chain.to_vec()) else {
                 return Some("chain has no canonical form");
             };
             match connection {

@@ -62,7 +62,7 @@ fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh
         catchup: observe::catchups(),
         serve: observe::serves(),
         // 78.152 — the door's quorum-final point, the keepers and the
-        // residual, read off the shelf (a leaf lock) outside the court.
+        // residue, read off the shelf (a leaf lock) outside the court.
         tuniversal: crate::tuniversal::standing(),
     };
     // ACT1 — this court on the clock; EC1 — its payments by proof of work;

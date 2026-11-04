@@ -385,7 +385,7 @@ pub struct Action {
 /// A germ as tape, action, chain, and magnitude.
 #[derive(Debug, Clone)]
 pub struct Element {
-    /// Coordinate-exact ANASTOME description (empty for a pure residual chain).
+    /// Coordinate-exact ANASTOME description (empty for a pure residue chain).
     ///
     /// IT IS NOT CALLED `word`, and that is a ruling applied rather than a
     /// preference. `word` is the document's noun for a path in the Cayley
@@ -399,7 +399,7 @@ pub struct Element {
     pub(crate) action: Action,
     /// Per-lane support, exact from the description.
     pub(crate) mag: [u64; 4],
-    /// The CENTRED COBOUNDARY CHAIN — the residual's substance with geometry
+    /// The CENTRED COBOUNDARY CHAIN — the residue's substance with geometry
     /// preserved up to translation: `(row, col, before, after)` over the changed
     /// sites, min-corner framed to the origin, sorted. Empty for a closed word.
     ///
@@ -652,7 +652,7 @@ impl Element {
     }
 
     pub fn is_identity(&self) -> bool {
-        // A residual with a canceling hue tally has identity action but a
+        // A residue with a canceling hue tally has identity action but a
         // real chain — the chain decides. A word with a description tape
         // is never the identity.
         //
@@ -1072,8 +1072,8 @@ impl Element {
 
     /// The germ's polytonic MAGNITUDE — per-lane support size (‖Δ‖'s |supp|
     /// component), never summed, computed EXACTLY from the description at
-    /// germination. A settled demand's residual magnitude is 0⃗; a real germ's is
-    /// nonzero — the residual the POW++ gate reads.
+    /// germination. A settled demand's residue magnitude is 0⃗; a real germ's is
+    /// nonzero — the residue the POW++ gate reads.
     /// Spatial, gauge, and shell from the chain (and what a connection
     /// carries). Lane 2 is temporal extent at mint (scene-state span).
     /// Lane 3 gains the holonomic volume — sections and torsion cycles.
@@ -1101,7 +1101,7 @@ impl Element {
     /// 𝒽 shell. Lane 𝒯 is temporal extent, measured on the standing
     /// carrier and never on the chain (`measure_lanes` writes it zero), so
     /// it is quotiented here by the same law. This is the vector the court
-    /// compares with `from_residual(chain).base_magnitude()`, as one
+    /// compares with `from_residue(chain).base_magnitude()`, as one
     /// equality, never lane by lane.
     pub fn chain_magnitude(&self) -> [u64; 4] {
         let [spatial, gauge, _, shell] = self.mag;
@@ -1110,7 +1110,7 @@ impl Element {
 
     /// THE TRANSPOSITION QUOTIENT — factor out the translation (the ℤ² orbit) so
     /// the element becomes its position-independent SUBSTANCE
-    /// (dilation·rotation·gauge·residual). Two transposition-equivalent demands
+    /// (dilation·rotation·gauge·residue). Two transposition-equivalent demands
     /// (same substance, different position) share ONE substance — the object of
     /// confluent reduction, not the coordinate-exact word. (Gauge S₁₀ canonical
     /// relabel is a further quotient, still to land.)

@@ -693,7 +693,7 @@ pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &Grid, cr
     apply_form(&rule.form, x, &crate::transducer::alphabet::Word::identity(), crystal)
 }
 
-/// The residual between what was spoken and what was observed, as a chain
+/// The residue between what was spoken and what was observed, as a chain
 /// (row, col, spoken hue, observed hue) over every site that differs.
 /// Public so the corpus decoder's sweep (`sources/arc-agi`, ROADMAP track
 /// 26 S1) reads the same planar coboundary the core's tests read.
@@ -704,7 +704,7 @@ pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &Grid, cr
 /// residue cannot be written on this carrier and is refused by name; a
 /// speech that reaches every observed site, on the observed frame, needs no
 /// ground and is never refused.
-pub fn residual_of(
+pub fn residue_of(
     spoken: Option<&Grid>,
     observed: &Grid,
 ) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {

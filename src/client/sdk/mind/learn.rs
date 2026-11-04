@@ -232,12 +232,12 @@ impl Mind {
         let local = sheaf::digests(&atlas);
         // The outer index names what differs by address; a stratum the
         // fibre Čech already glued is not walked again, and a stratum of
-        // residual chains — open questions the mind holds on its carrier and
+        // residue chains — open questions the mind holds on its carrier and
         // never as words (MU-CLIENT §7.1, ruled 2026-10-18) — differs
         // from the court's by doctrine and is never fetched for it.
         let all: Vec<_> = sheaf::discordant(&remote, &local)
             .into_iter()
-            .filter(|d| !self.glued.contains(&d.inv.key()) && !self.board.residual_strata.contains(d.inv.key().as_bytes()))
+            .filter(|d| !self.glued.contains(&d.inv.key()) && !self.board.residue_strata.contains(d.inv.key().as_bytes()))
             .cloned()
             .collect();
         self.discordance = all.len();
@@ -562,24 +562,24 @@ impl Mind {
             if pos == before {
                 break;
             }
-            // MU-CLIENT §7.1 — A RESIDUAL CHAIN IS AN OPEN QUESTION, NEVER A
+            // MU-CLIENT §7.1 — A RESIDUE CHAIN IS AN OPEN QUESTION, NEVER A
             // WORD (ruled 2026-10-18): what the court teaches of one
             // is filed on the mind's carrier of open questions, by address,
             // and never learned into the genome.
-            if crate::client::sdk::vocabulary::is_residual(&e) {
+            if crate::client::sdk::vocabulary::is_residue(&e) {
                 let address = e.address();
-                if !self.board.open_residuals.contains(address.as_bytes()) {
-                    self.board.open_residuals.insert(address.as_bytes(), e.sub().to_vec());
+                if !self.board.open_residues.contains(address.as_bytes()) {
+                    self.board.open_residues.insert(address.as_bytes(), e.sub().to_vec());
                     self.place_question(address.as_bytes(), e.sub());
                 }
-                self.board.residual_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
+                self.board.residue_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
                 continue;
             }
             // A REWRITE IS AN ACT ON THE LANGUAGE, NEVER A WORD OF IT: the
             // court applied it; the mind does not learn it, and its stratum
             // is one the sheaf sync never fetches.
             if crate::client::sdk::vocabulary::is_rewrite_act(&e) {
-                self.board.residual_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
+                self.board.residue_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
                 continue;
             }
             // A WORD THE GENOME HOLDS AT ITS ADDRESS IS ALREADY LEARNED (law

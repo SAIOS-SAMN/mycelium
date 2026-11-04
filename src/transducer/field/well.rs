@@ -160,7 +160,7 @@ pub(crate) fn union_rem(a: &[Link], b: &[Link]) -> Vec<Link> {
 }
 
 /// A held remainder with the complex it has so far and the chart prefixes
-/// it sits on. Keyed by the remainder's address. Persisted; residuals are
+/// it sits on. Keyed by the remainder's address. Persisted; residues are
 /// never lost on restart.
 #[derive(Clone, Debug, Default)]
 pub struct Well {

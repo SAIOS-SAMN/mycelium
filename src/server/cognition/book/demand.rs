@@ -27,16 +27,16 @@ impl Court {
     /// one the court holds under it, so a voice cannot answer a demand by
     /// asserting that it did.
     ///
-    /// An empty residual is `Closed`: the demand is answered, the
+    /// An empty residue is `Closed`: the demand is answered, the
     /// discoverer of the cited form is paid for the use, and WHAT answered
     /// is recorded in `answered` — the address and the transport. The
     /// listing stays on the book: a sentence has as many demands as it
     /// has, and one answered vertex is not a closed sentence. What retires
     /// it is the expansion (item 5).
     ///
-    /// A non-empty residual is `Residual`: the demand's chart carries
+    /// A non-empty residue is `Residue`: the demand's chart carries
     /// what the form did not reproduce, on the field, and NOTHING is
-    /// written to any magnitude. A residual that writes a link count into a
+    /// written to any magnitude. A residue that writes a link count into a
     /// word's lanes makes the court slash its own listing on the next
     /// circuit.
     pub(crate) fn settle_demand(
@@ -131,13 +131,13 @@ impl Court {
         let Some((cited, transport)) = spoke else {
             return ProbeReading::nothing();
         };
-        let residual: Vec<(i64, i64, u8, u8)> = bodies
+        let residue: Vec<(i64, i64, u8, u8)> = bodies
             .iter()
             .copied()
             .filter(|&(r, c, _, _)| open.contains(&crate::transducer::family::site_key(r, c)))
             .collect();
-        let after = element::measure_lanes(&residual);
-        if residual.is_empty() {
+        let after = element::measure_lanes(&residue);
+        if residue.is_empty() {
             let used = cited.clone();
             self.answered.nested_insert(
                 at,
@@ -164,7 +164,7 @@ impl Court {
         }
         // WHAT WAS RELEASED IS WHAT WAS SAID, measured on the links the
         // citations actually reached — not the difference of two measures.
-        // Subtracting `after` from `before` assumes the residual's measure
+        // Subtracting `after` from `before` assumes the residue's measure
         // is below the demand's on every lane, which is a claim about
         // `measure_lanes` and not something this settlement knows.
         let reached: Vec<(i64, i64, u8, u8)> = bodies
@@ -172,13 +172,13 @@ impl Court {
             .copied()
             .filter(|&(r, c, _, _)| !open.contains(&crate::transducer::family::site_key(r, c)))
             .collect();
-        let v = super::speech::residual_versor(&bodies, &residual);
-        self.write_field(at, chart, Closure::Cavity, residual, &before, &after);
+        let v = super::speech::residue_versor(&bodies, &residue);
+        self.write_field(at, chart, Closure::Cavity, residue, &before, &after);
         let settled = element::measure_lanes(&reached);
         self.physics.relieve(&settled);
         self.book_gen += 1;
         self.append_step(crate::chronometry::ActKind::Settled, at, voice);
-        ProbeReading { settled, closure: ProbeClosure::Residual(v), remaining: after }
+        ProbeReading { settled, closure: ProbeClosure::Residue(v), remaining: after }
     }
 
     /// MU-CLIENT §5.6 (E2) — A DEMAND CLOSED AT ANOTHER PERSPECTIVE PAYS THE

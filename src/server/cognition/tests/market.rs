@@ -1,5 +1,5 @@
 // 26 — THE MARKET: the five-act conversation, the docket and its room, the
-// door's strain, the probe, and the residual that opens a face.
+// door's strain, the probe, and the residue that opens a face.
 
 use super::fixtures::*;
 use crate::cognition::*;
@@ -186,12 +186,12 @@ assert!(
 }
 
 /// THE CONVERSATION: a listing is probed with a cited sentence. A graded
-/// residual settles the reduction and the residual replaces the listing
+/// residue settles the reduction and the residue replaces the listing
 /// under its frame; closure clears it and advances the lineage; a
 /// sentence that names nothing settles nothing. The replay is linear in
 /// the proof and the hypha runs no search.
 #[test]
-fn settle_probe_settles_residual_then_closure() {
+fn settle_probe_settles_residue_then_closure() {
 use crate::anastome::dialogue::ProbeClosure;
 use crate::transducer::sentence::reconstruct_at;
 let mut k = Court::new();
@@ -211,7 +211,7 @@ let b = vec![(0, 0, 2u8), (0, 1, 2)];
 k.basis_insert(element::from_canonical(&germinate(&a, &b).unwrap()), [2; 32]);
 let _word = k.basis()[0].address();
 // The entity's reduction over the language: the word cited at the
-// origin, the far link left as the residual.
+// origin, the far link left as the residue.
 let language = k.language();
 let sentence = crate::transducer::sentence::deconstruct_at(
     &|a| language.word_at(a),
@@ -221,31 +221,31 @@ let sentence = crate::transducer::sentence::deconstruct_at(
     None,
     &mut super::fixtures::budget(),
 );
-let (void, cites) = (sentence.residual.clone(), sentence.cites.clone());
+let (void, cites) = (sentence.residue.clone(), sentence.cites.clone());
 assert_eq!(void, vec![(0, 3, 3, 4)]);
 assert_eq!(cites.len(), 1);
 let basis = k.basis();
 assert_eq!(
     reconstruct_at(&|a| basis.iter().find(|w| w.address().as_bytes() == a).map(|w| w.element()), &cites, &chain),
     void,
-    "the replay reproduces the residual"
+    "the replay reproduces the residue"
 );
 let before = match k.tension.get(&target) {
     Some(t) => *t,
     None => k.quote().1[0].0.magnitude(),
 };
 let r = k.settle_probe([3; 32], &target, void.clone(), &[], false);
-assert!(matches!(r.closure, ProbeClosure::Residual(_)), "{r:?}");
+assert!(matches!(r.closure, ProbeClosure::Residue(_)), "{r:?}");
 assert_eq!(r.remaining, crate::transducer::element::measure_lanes(&void));
-// PR1 — the reading settles what the residual removed, per lane; a residual
+// PR1 — the reading settles what the residue removed, per lane; a residue
 // is measured, never paid, and the payment is the treasury's.
 assert_eq!(r.settled, crate::economy::shortfall(&before, &r.remaining));
 let listing = k.quote().1[0].0.clone();
-assert_eq!(listing.address(), target, "the listing stays the body: a residual never re-lists a fragment");
+assert_eq!(listing.address(), target, "the listing stays the body: a residue never re-lists a fragment");
 assert_eq!(
     k.tension.get(&target).copied(),
     Some(crate::transducer::element::measure_lanes(&void)),
-    "the body's remaining tension is the residual's measure, keyed by the listing"
+    "the body's remaining tension is the residue's measure, keyed by the listing"
 );
 // A probe that moves nothing settles nothing; closure clears the book.
 let t2 = listing.address();
@@ -254,7 +254,7 @@ assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[], false).closure, ProbeCl
 assert!(k.quote().1.is_empty(), "the listing cleared");
 }
 
-/// A residual records a remainder FACE, stagnation counts only unmoved
+/// A residue records a remainder FACE, stagnation counts only unmoved
 /// occupied lanes, and a full aperture of failed probes sheds the listing
 /// as a cavity.
 ///
@@ -263,11 +263,11 @@ assert!(k.quote().1.is_empty(), "the listing cleared");
 /// in the lane that carries boundary topology and the rotor's own
 /// coordinates (16.16, 42.6), a second carrier for a fact the field
 /// already holds (law 12), and a magnitude `reconstruct_blind` refuses: it
-/// re-derives a residual germ's lanes from its own chain and refuses a
+/// re-derives a residue germ's lanes from its own chain and refuses a
 /// word claiming more than the chain supports, so the court would slash
 /// its own listing on the next circuit and every listing a voice made
 /// progress on would be destroyed by the court's own write. The assertion
-/// here is that property: after a residual the listing still re-derives
+/// here is that property: after a residue the listing still re-derives
 /// from its chain.
 #[test]
 fn settle_probe_opens_face_and_drain_sheds_unmoved() {
@@ -286,20 +286,20 @@ let before = match k.tension.get(&target) {
     None => k.quote().1[0].0.magnitude(),
 };
 let after = crate::transducer::element::measure_lanes(&rem);
-assert_ne!(after, before, "the residual moves the listing's measure");
+assert_ne!(after, before, "the residue moves the listing's measure");
 let r = k.settle_probe([3; 32], &target, rem.clone(), &[], false);
-assert!(matches!(r.closure, ProbeClosure::Residual(_)), "{r:?}");
+assert!(matches!(r.closure, ProbeClosure::Residue(_)), "{r:?}");
 assert_eq!(r.remaining, after);
 let listing = k.quote().1[0].0.clone();
 assert_eq!(listing.address(), target, "the listing stays the body");
 // THE LISTING'S MEASURE STILL RE-DERIVES FROM ITS OWN CHAIN, which is
-// what the court checks on every circuit. A residual is recorded on the
+// what the court checks on every circuit. A residue is recorded on the
 // FIELD, read below as the remainder face and the remainder chart; it
 // does not rewrite the word.
 assert_eq!(
     listing.base_magnitude(),
     crate::transducer::element::measure_lanes(&listed),
-    "a residual leaves the listing's measure a function of its chain"
+    "a residue leaves the listing's measure a function of its chain"
 );
 assert_eq!(
     crate::court::verdict::reconstruct_blind(&listing, &mut super::fixtures::budget()),

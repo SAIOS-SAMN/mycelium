@@ -26,7 +26,7 @@
 //! task is kept by its charts and pulled again only where they couple.
 //!
 //! THE TENSION. The mind ASKS for an offer (`pull_task`) where it holds
-//! strain it has not resolved: an open question (a residual chain, never a
+//! strain it has not resolved: an open question (a residue chain, never a
 //! word), a demand on its plan, an orbit that rings, a reservoir that neither
 //! re-formed nor condensed (`strained`) — or where its corpus holds no item
 //! (2026-10-24). A full reserve over a settled field whose corpus holds items
@@ -72,7 +72,7 @@ impl Mind {
     /// field that is strained (`Field::strained`). Read where the field
     /// stands in the winding carrier's slots; outside them, the plan alone.
     pub(crate) fn strained(&self) -> bool {
-        !self.board.open_residuals.is_empty() || self.contemplation.holds_demand() || matches!(crate::transducer::mind::with_field(|f| f.strained()), Ok(true))
+        !self.board.open_residues.is_empty() || self.contemplation.holds_demand() || matches!(crate::transducer::mind::with_field(|f| f.strained()), Ok(true))
     }
 
 

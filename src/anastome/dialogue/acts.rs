@@ -261,28 +261,28 @@ pub const ACT_SEAT: u8 = Action::Seat.byte();
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)
 /// the hypha replays linearly. Yield settles on the graded trajectory of
-/// the residual without germination; closure clears the listing.
+/// the residue without germination; closure clears the listing.
 /// Request: `[ACT_PROBE][voice 32][target 32][n u32][(addr 32)(g 17)(asg u32)]·n`.
 /// Reply: the probe's READING (PR1) — `[settled μ⃗ 4×u64][closure][remaining
 /// μ⃗ 4×u64]`, never an outcome code.
 pub const ACT_PROBE: u8 = Action::Probe.byte();
 
-/// PR1 — WHERE A PROBE LEFT THE LISTING: closed; a residual, with the versor
-/// it stands off the listing by where a residual body reads on both sides
-/// (`V = s_b s_a` between the listing's residual body and the probe's, the
+/// PR1 — WHERE A PROBE LEFT THE LISTING: closed; a residue, with the versor
+/// it stands off the listing by where a residue body reads on both sides
+/// (`V = s_b s_a` between the listing's residue body and the probe's, the
 /// one producer `tether_of`), `None` — unread by name — where one does not;
 /// nothing covered or settled; or the listing gone from the book in the
 /// state it was quoted (another voice settled or moved it first).
 #[derive(Clone, Debug)]
 pub enum ProbeClosure {
     Closed,
-    Residual(Option<crate::transducer::cga::Mv>),
+    Residue(Option<crate::transducer::cga::Mv>),
     Nothing,
     Gone,
 }
 
 impl PartialEq for ProbeClosure {
-    /// Residuals are equal where the two versors write one ray.
+    /// Residues are equal where the two versors write one ray.
     fn eq(&self, other: &ProbeClosure) -> bool {
         let ray = |v: &Option<crate::transducer::cga::Mv>| {
             v.as_ref().map(|m| {
@@ -295,7 +295,7 @@ impl PartialEq for ProbeClosure {
             (ProbeClosure::Closed, ProbeClosure::Closed)
             | (ProbeClosure::Nothing, ProbeClosure::Nothing)
             | (ProbeClosure::Gone, ProbeClosure::Gone) => true,
-            (ProbeClosure::Residual(a), ProbeClosure::Residual(b)) => ray(a) == ray(b),
+            (ProbeClosure::Residue(a), ProbeClosure::Residue(b)) => ray(a) == ray(b),
             _ => false,
         }
     }
@@ -321,9 +321,9 @@ impl ProbeReading {
         ProbeReading { settled: [0; 4], closure: ProbeClosure::Gone, remaining: [0; 4] }
     }
 
-    /// Did the probe move the listing — close it or leave a residual?
+    /// Did the probe move the listing — close it or leave a residue?
     pub fn moved(&self) -> bool {
-        matches!(self.closure, ProbeClosure::Closed | ProbeClosure::Residual(_))
+        matches!(self.closure, ProbeClosure::Closed | ProbeClosure::Residue(_))
     }
 }
 

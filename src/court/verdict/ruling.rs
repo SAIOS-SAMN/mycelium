@@ -25,7 +25,7 @@ pub enum Ruling {
     /// never punished. The obstruction rides the arm: the holonomy element
     /// (a group view-change, or the triangle's composite) when the views
     /// are group elements; the symmetric difference of the chains, as a
-    /// residual word, when the overlap is only the additive coboundary.
+    /// residue word, when the overlap is only the additive coboundary.
     Dialect(Element),
     /// New address, a placement of a federated base geometry — the bundle
     /// connects: `base` indexes the federation entry and `g` is the
@@ -178,7 +178,7 @@ pub fn rule(
             // conflicting difference is not a chain this can speak.
             let mut obstruction = match diff.as_slice() {
                 [] => Element::identity(),
-                _ => match element::from_residual(&diff) {
+                _ => match element::from_residue(&diff) {
                     Some(e) => e,
                     None => return Ruling::Slashed(REFUSE_OBSTRUCTION_UNCANONICAL),
                 },

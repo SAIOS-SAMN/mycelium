@@ -2,7 +2,7 @@ use crate::court::convergence::*;
 
 use crate::transducer::element::{self, Element};
 
-/// A distinct object per `n`: the residual of one compartment recoloured to
+/// A distinct object per `n`: the residue of one compartment recoloured to
 /// hue `n`, which is a different vertex for each n.
 fn obj(n: u8) -> Element {
     element::from_canonical(
@@ -134,7 +134,7 @@ fn state_refuses_disagreeing_rederivations_as_inexact() {
     }
 }
 
-/// A second voice uttering the same residual is a USE and a settlement
+/// A second voice uttering the same residue is a USE and a settlement
 /// party. It never moves the object toward admission.
 #[test]
 fn used_by_records_party_never_witness() {

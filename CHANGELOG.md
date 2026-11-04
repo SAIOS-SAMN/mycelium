@@ -6,6 +6,47 @@ such change is named here.
 
 ## Unreleased
 
+### "Residual" retired for "residue" (track 11, N6; #55)
+- **Network contract**, inside v0.3.0's open break (wire `0x0200`): no
+  byte, layout, ledger entry or task address moves. `TAG_RESIDUAL` →
+  `TAG_RESIDUE` (its byte, 19, is unchanged; `CoordinateSystem::Residual`
+  → `Residue`). `ProbeClosure::Residual` → `Residue` (its kind byte, 1,
+  is unchanged). No string on the wire or in a persisted key said
+  "residual". Reading labels change: the deferred kind `"residual word"`
+  → `"residue word"` (`observe::DEFERRED_KINDS`), the genome write
+  tally's `"residue chains, open questions and never words"`, and the
+  console's `residue …` and `residue holonomy` lines.
+- The code's "residual" is the residue of MU-RECURSION 0.7: the exact
+  versor or vector a reduction leaves. "Remainder" stays only for the
+  record leaf that keeps a residue (RM1), and no identifier was renamed
+  to it. Every citation in comments, documents and the GLOSSARY follows.
+  - `transducer/element/residual.rs` → `residue.rs` (the chain that
+    writes one residue, its A5 canonical form and its listing key);
+    `germinate::ResidualGerm` → `ResidueGerm`; `from_residual` /
+    `from_residual_framed` → `from_residue` / `from_residue_framed`;
+    `family::speak::residual_of` → `residue_of`.
+  - `alphabet::spelling::SpellResidual` / `SpellResidualView` →
+    `SpellResidue` / `SpellResidueView`; the layers' associated type
+    `Residual` → `Residue`.
+  - The sentence's `residual` field → `residue`; `book::speech::residual_versor`
+    → `residue_versor`; the crossing edge's `residual()` → `residue()`.
+  - `chronometry::tuniversal::Residual` → `Residue`, `Keepers::residual`
+    → `residue`, `observe::TStanding.residual` → `residue`.
+  - The client's `Concluded.residual` → `residue`,
+    `GenomeWriteTally.residual` → `residue`, `is_residual` →
+    `is_residue`, `OpenResidual` → `OpenResidue`, `open_residuals` /
+    `restored_residuals` / `residual_strata` → `open_residues` /
+    `restored_residues` / `residue_strata`, `residual_move` →
+    `residue_move`.
+  - Ten test names say "residue", for example
+    `settle_probe_settles_residue_then_closure` and
+    `residue_keeps_disagreement_never_averaged`.
+- SDK paths that change: `mycelium_sdk::house::tuniversal::{Residue,
+  Keepers::residue}`; the closure of `mycelium_sdk::readings::ProbeReading`
+  reads `ProbeClosure::Residue`; in the library's client SDK,
+  `client::sdk::Concluded.residue` and
+  `client::sdk::vocabulary::GenomeWriteTally.residue`.
+
 ### μ is the metabolic cost of traversal (ruled 2026-11-04)
 - μ is what moving through the field costs, paid as the share of the
   frame a change covers. It is never a measure of meaning: holonomy is

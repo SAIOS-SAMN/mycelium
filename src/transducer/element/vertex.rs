@@ -4,11 +4,11 @@
 //! coordinates, projectively equal carriages, equal sigma, an A5-equal chain.
 //! The address is the M2 composite of that same content.
 
-use crate::transducer::germinate::ResidualGerm;
+use crate::transducer::germinate::ResidueGerm;
 use super::*;
 
 /// THE SHAPE OF A NON-SENTENCE ADDRESS, written as its first byte so a
-/// reader knows what follows (rule 11). `TAG_RESIDUAL` covers four shapes
+/// reader knows what follows (rule 11). `TAG_RESIDUE` covers four shapes
 /// and nothing distinguished them; an inverse could only have guessed.
 pub const KIND_REWRITE: u8 = 0;
 pub const KIND_LETTERS: u8 = 1;
@@ -212,7 +212,7 @@ impl Element {
         let carriage = v.geo(&sensor.reverse());
         let spelling = crate::transducer::alphabet::Spelling { word };
         let gauge = self.action.gauge.clone();
-        self.description = crate::transducer::element::residual::connection_description(
+        self.description = crate::transducer::element::residue::connection_description(
             &spelling,
             &carriage,
             &gauge,
@@ -326,18 +326,18 @@ impl Element {
     }
 
     /// Inverse: versor inverse when the action is a versor; the reverse
-    /// coboundary chain when the substance is a residual germ. `None` when
+    /// coboundary chain when the substance is a residue germ. `None` when
     /// a versor is not invertible.
     pub fn inverse(&self) -> Option<Element> {
         if !self.sub.is_empty() && self.versor().is_none() && self.action.germinated.is_empty() {
-            let rev: ResidualGerm = self
+            let rev: ResidueGerm = self
                 .sub
                 .iter()
                 .map(|&(r, c, b, a)| (r, c, a, b))
                 .collect();
             // A chain whose reverse says two things at one site has no
             // canonical form, so this element has no inverse to name.
-            return from_residual(&rev);
+            return from_residue(&rev);
         }
         self.reverse()
     }
@@ -366,7 +366,7 @@ impl Element {
                 // carries it and refuses an empty one rather than guessing
                 // (rule 11). An element that reaches this closure is not a
                 // closed form, and says so by its tag.
-                let mut buf = vec![crate::transducer::address::TAG_RESIDUAL];
+                let mut buf = vec![crate::transducer::address::TAG_RESIDUE];
                 // W6: AN ADDRESS IS NEVER THE TAG ALONE, and never a tape.
                 // Both refusals this reader used to carry are gone by
                 // type: `sub` is A5's accepted chain, and a rewrite's
@@ -385,12 +385,12 @@ impl Element {
     /// different shapes were written here with nothing saying which: a
     /// rewrite, a letters word, a spatial action with or without its
     /// rotor, and a bare chain. A reader could not tell a rewrite's tag
-    /// byte from a chain's length prefix, so `TAG_RESIDUAL` had the same
+    /// byte from a chain's length prefix, so `TAG_RESIDUE` had the same
     /// collision one level down that `TAG_FORM` had one level up — and an
     /// inverse for it could only have guessed.
     ///
     /// 0 rewrite · 1 letters · 2 spatial · 3 spatial with rotor · 4 chain.
-    /// Every residual address in the tree changes; §10, a layout change is
+    /// Every residue address in the tree changes; §10, a layout change is
     /// a recut.
     fn form_key_bytes(&self) -> Vec<u8> {
         let mut out = Vec::new();

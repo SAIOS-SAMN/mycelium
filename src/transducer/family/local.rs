@@ -82,8 +82,8 @@ fn hue_at(g: &Grid, r: i64, c: i64) -> Option<u8> {
     g.get(r)?.get(c).copied()
 }
 
-/// THE DEMAND OF EACH PAIR OVER ITS SITES, priced: the pair's residual links
-/// (`residual_of`, the sites where before and after differ) standing at the
+/// THE DEMAND OF EACH PAIR OVER ITS SITES, priced: the pair's residue links
+/// (`residue_of`, the sites where before and after differ) standing at the
 /// section's sites, closed to nothing — `deflation_of` of the move from
 /// the sites' measure to zero, the one deflation reader. Summed over the pairs,
 /// a sum past its carrier refused lane by lane and left where it stood. Beside
@@ -98,8 +98,8 @@ pub fn measure_sites(family: &[(Grid, Grid)], sites: &[Keyed<()>]) -> ([u64; 4],
         }
         // A pair whose residue cannot be written on the family's one ground
         // measures nothing it could pay (track 26 S2).
-        let Ok(residual) = residual_of(Some(x), y) else { continue };
-        let links: Vec<(i64, i64, u8, u8)> = residual.into_iter().filter(|&(r, c, _, _)| at.contains(&site_key(r, c))).collect();
+        let Ok(residue) = residue_of(Some(x), y) else { continue };
+        let links: Vec<(i64, i64, u8, u8)> = residue.into_iter().filter(|&(r, c, _, _)| at.contains(&site_key(r, c))).collect();
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&[0; 4], &element::measure_lanes(&links)));
         mu.step(&crate::transducer::family::transduce::share_of_frame(closed, crate::transducer::raster::sample_unplaced(y).ok().as_ref()));
         if let Some(next) = crate::core::lanes::lanes_add(pay, closed) {

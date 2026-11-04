@@ -145,7 +145,7 @@ These are not restated in each chapter; every chapter assumes them.
    else, the court reconstructs them by G and never composes by F, and the
    wire never carries raw percept laminae to a court. A court that
    extracts boundaries, measures versors or peels letters is thinking,
-   and a second engine; the four `from_residual` sites of the court's
+   and a second engine; the four `from_residue` sites of the court's
    reduction were that engine (50.6, 50.9). *(Read as amended by 78.102,
    2026-10-05: a sentence is any composition by the master equation,
    closed or open; an open sentence carrying an ineffable word is heard,
@@ -980,7 +980,7 @@ read at the cited function. "Stands" has the same sense in 0.3–0.5.
 | master | as stated | site in the tree | physics over it | stands |
 |---|---|---|---|---|
 | **M1 Vertex identity** (17.1) | a word, rotor or versor reduces to one canonical form and one key; equality is key equality or projective equality of rays `a_i b_k = a_k b_i`, never a digest; a versor is known by its action `m eᵢ m̃ ∈ grade 1`, never by `Φ Φ̃` as a sum of squares (78.28); the ray's inverse is its reverse | `transducer/alphabet/{word,rotor,plane,factor}.rs` (A1–A3), `cga/multivector.rs` (A4, `projective_eq`), `cga/group.rs` (`is_versor`), `element/vertex.rs` (`same_vertex`) | law 1 (ℚ only), law 2 (a key is coordinates), law 11 (no squaring), EQ1 (rays equal by proportion, 78.12), A21 | landed; governs. EQ1 landed. VA1's reader landed: `is_versor` reads by action — the twisted adjoint carries every generator to an independent vector and `I` to its own line (`cga/group.rs`; `Rotor::is_versor` the same on the rotor); what may stay open is only the sweep of the sites that divide by the weight (VA1-inverse) |
-| **M2 Address derivation** (17.2) | the address IS the form written out, field by field, length-prefixed; the form is read back from its address; a citation is coordinates, never a copy | `transducer/address.rs`, `sentence/chart.rs` (`form_vertex_key`), `element/{vertex,receipts,residual}.rs` | law 2, law 12, K6 (54: the complete key and its inverse; the tape retired), LD0 (78.22: coordinate / address held once / citation) | landed; governs as amended by 54 and 78.22. The snapshot's positional tape is the last carrier off it (78.25, LD3 open) |
+| **M2 Address derivation** (17.2) | the address IS the form written out, field by field, length-prefixed; the form is read back from its address; a citation is coordinates, never a copy | `transducer/address.rs`, `sentence/chart.rs` (`form_vertex_key`), `element/{vertex,receipts,residue}.rs` | law 2, law 12, K6 (54: the complete key and its inverse; the tape retired), LD0 (78.22: coordinate / address held once / citation) | landed; governs as amended by 54 and 78.22. The snapshot's positional tape is the last carrier off it (78.25, LD3 open) |
 | **M3 Cold-boot migration** (17.3) | bring old stores onto M2 addresses once | `element/record.rs` (`RECORD_MAGIC`; an older record refused by name) | §10: a layout change is a clean break, never a migration | HISTORICAL: RMP1 retired; the tree migrates nothing and refuses the old by one equality |
 | **M4 Chart coordinates** (17.4) | the invariant that places a body, connection, sentence or class on the atlas, exact and identical on every node; refinement appends an axis | `transducer/stalk/` (`Invariant`, `Stalks::refine_axis` and `Stalks::refine_axes`, `stalks.rs`), `blade/` (harmonics, A.11), `sentence/chart.rs` (`chart_of`) | A.11 harmonic completeness, A6 exact axis packing, 71 (n is data) | landed; governs. HL1 open: the harmonic lift as a pencil (78.14) |
 | **M5 Class ledger identity** (17.5) | a holonomy or transition canonicalised by M1, keyed by class (15.4), one entry per (chart, pair, class) in `cocycle_at`, refined by M4 | `server/cognition/cocycle.rs`, `sentence/class.rs`, carried by `server/cognition/persistence/{read,write}.rs` (the tape is retired) | 15.4–15.6 naturality; 78.27(7) the class inline as coordinates | landed; governs as amended by 78.27 (LD3-3 rewrites its carrier) |
@@ -1482,7 +1482,7 @@ in one landing (chapter 41, 0.11):
 |---|---|---|
 | `src/transducer/alphabet/rotor.rs` (`Rotor::key`), `src/transducer/alphabet/word.rs` (`Word::class_key`), `src/transducer/alphabet/plane.rs` (`PlaneForm::key`) | blake3 over canonical coefficients or conjugacy invariants | the coefficients and invariants written out (A21) |
 | `src/transducer/cga/multivector.rs` (`Mv::key`) | blake3 over canonical versor coefficients | the coefficients written out |
-| `src/transducer/element/vertex.rs` (`Element::address`, `form_key_bytes`); `src/transducer/element/residual.rs` (`listing_key`) | blake3 over the M2 composite | the M2 composite itself (17.2) |
+| `src/transducer/element/vertex.rs` (`Element::address`, `form_key_bytes`); `src/transducer/element/residue.rs` (`listing_key`) | blake3 over the M2 composite | the M2 composite itself (17.2) |
 | `src/transducer/stalk/chart.rs` (`Invariant::key`) | blake3 over the exact axes before the trie sees them | the axes' bytes, so `fibre_under` is a prefix read |
 | `src/transducer/sentence/class.rs` (`ClassVector::class_key`, `CLOSED_KEY`) | blake3 over the class vector | the class vector's coordinates; closed is the zero vector |
 | `src/transducer/sentence/form/keys.rs` (`hue_section_key`, `vertex_transport_key`, `class_key_of_versor`) | blake3 over conjugacy ‖ gauge | the conjugacy coordinates ‖ the gauge |
@@ -3400,7 +3400,7 @@ placed chain per frame; a frame origin carries no meaning (51.1).
    after` belongs to a chain is the producer's decision (`germinate`).
 4. Output the chain; empty input, empty chain.
 
-`from_residual` (element/residual.rs) does 1–2 today. A5 is that code named and
+`from_residue` (element/residue.rs) does 1–2 today. A5 is that code named and
 called from every place that hashes or compares links:
 `composite_parent_id`, `footprint_key`, `section_address`'s assignment
 (sorted), and `reconstruct_blind`'s chain compare (the spoken chain
@@ -3455,7 +3455,7 @@ Runs once per store at load (`Court::restore`
 1. For every stored tape `T` with stored address `a_old`: `a_new =
    address(T)` by M2; if different, `remap.insert(a_old, a_new)`.
 2. For every sentence tape, each germ's address is recomputed as
-   `from_residual(A5(chain)).address()`; the stored germ address is
+   `from_residue(A5(chain)).address()`; the stored germ address is
    ignored. `from_element` does this always.
 3. Rebuild every address-keyed carrier by inserting each entry under
    `remap.get(k).unwrap_or(k)`: `provisional`, `provisional_k`,
@@ -3531,7 +3531,7 @@ For a percept (server `judge`, `src/bin/mycelium-server/judge/`):
 3. `key = element::listing_key(chain, frame)`: the framed remainder's address
    by M2, the canonical chain and the frame rationals written out, never
    a digest of them.
-4. `inv = invariant_of(framed residual)`: the **body chart** (M4 step 1);
+4. `inv = invariant_of(framed residue)`: the **body chart** (M4 step 1);
    `mag` its measured lanes.
 5. Destination = `nerve::home(cover, inv, mag, rooms, addrs, self)`
    (`src/network/nerve/cover.rs`):
@@ -4054,7 +4054,7 @@ and writes the inverse.
 
 **Binding.** `Element::address`, `sentence::vertex_address`,
 `element::listing_key`, `composite_parent_id` and `section_address`
-rewritten to `from_residual(A5(..)).address()` and a sorted assignment.
+rewritten to `from_residue(A5(..)).address()` and a sorted assignment.
 
 ### 17.3 M3 — Cold-boot migration
 
@@ -4428,7 +4428,7 @@ mutators, and the four-lane measurement; `vertex.rs` M1 and M2 —
 `form_key_bytes`; `letters.rs` the versor constructors, `projective_eq`,
 the decomposition into rho and translation, and `Letters`; `gauge.rs` the
 hue permutation, its profile and key, the transition versor, and the
-fibre of assignments a body can be spoken with; `residual.rs` A5's
+fibre of assignments a body can be spoken with; `residue.rs` A5's
 `canonical_chain` and every constructor that reads a chain; `record.rs` the
 generation magic, the four tags, and the codec; `sensor.rs` the four
 functions permitted a coordinate pair (`site_of`, `carry_centre`,
@@ -5465,7 +5465,7 @@ lines.
 *Historical.* The migration from `Nerve`, `Germ` and `Cycle` to `Vertex`,
 `Face`, `Loop` and `Form`, landed in steps with adapters so the suite stayed
 green at every step; the old types and the adapters are deleted. The
-remainder chain type `ResidualGerm` is not this `Germ`.
+residue chain type `ResidueGerm` is not this `Germ`.
 
 ### 30.2 Order
 
@@ -6235,7 +6235,7 @@ carries one (51.11), and `Cl(5,1)` is not derived.
 
 ### 38.6 B6 Binding
 
-`element/{carrier,residual}.rs`: the link unchanged, the pose carrying `z`
+`element/{carrier,residue}.rs`: the link unchanged, the pose carrying `z`
 as it carries `k` (38.1); `blade/`,
 `blade/harmonics.rs`: `d`-dimensional moments and Betti numbers, axes
 prefixed by `d`; `layers.rs`:
@@ -6817,7 +6817,7 @@ a vortex; nothing searches and nothing terminates a search. Code:
 `seed_horizon_collapses_vortex_by_matching_certificate`, `pivot_orbit_holds_two_discharges_as_vortex`.
 
 **T23 The quotient carries the refraction.** For a trial transport `Γ` on
-a pair `(I, O)` with `R = residual_of(Γ·I, O)`, the element deposited in
+a pair `(I, O)` with `R = residue_of(Γ·I, O)`, the element deposited in
 the contemplation, uttered, and docketed is `Refraction { pair, remainder:
 R, transport: Γ }`, never `R` alone. `Transport::inverse(Γ).refract` reads
 `R` in `I`'s frame with the closed part identity, and the next trial acts
@@ -7924,7 +7924,7 @@ closed by this ruling and stays closed by the invariant below.
 
 1. **The voice's remainder.** `Mind::withhold_form`
    (client/sdk/mind/think.rs) attested every uncovered body of a
-   withheld form through `from_residual` as a word (`remainder expressed`,
+   withheld form through `from_residue` as a word (`remainder expressed`,
    `uttered … cites 0`), and `hold_thought` held the same chain as an
    idea. The withheld form is stood with its demand vertices and uttered
    whole; no remainder is expressed, `attest` is never called with a bare
@@ -7939,16 +7939,16 @@ closed by this ruling and stays closed by the invariant below.
    harmonics differ.
 3. **The court's irreducible listing.** `reduce_proven` and `reduce_germ`
    (server/cognition/reduce.rs) answered
-   `NormalForm::Irreducible(from_residual_framed(residual))`, and
+   `NormalForm::Irreducible(from_residue_framed(residue))`, and
    `commit_germ` listed, escrowed, ruled and installed it; `attest(chain)`
-   on the wire and `from_residual` on any utterance path are the same
+   on the wire and `from_residue` on any utterance path are the same
    seam. The seam is severed at the wire (ruled 2026-09-10, law 8): a
    voice sends sentences only, the court's entry point takes a sentence
    and calls G (`perceive_speech`, 23.1), and the percept act, the demand
    act, `adjudicate`, `percept_elements`, `reduce_all`, `reduce_germ`,
    `reduce_proven` and `commit_germ`'s chain arms are deleted rather than
-   refused — the four `from_residual` sites of the court's reduction fall
-   with them, as a side effect and not a checklist. `from_residual`
+   refused — the four `from_residue` sites of the court's reduction fall
+   with them, as a side effect and not a checklist. `from_residue`
    remains only where a chain is the object — a listing key, a remainder's
    measure, a fixture — and never as a word, a citation or a genome entry.
 
@@ -7971,7 +7971,7 @@ client/sdk/mind/think.rs withhold_form stands the sentence withheld and holds it
 court/verdict/reconstruct.rs    reconstruct_form_with: G steps 1–4; REFUSE_NOT_A_SENTENCE, REFUSE_VERTEX_BODY, REFUSE_EDGE, REFUSE_DEMAND_UNTYPED (L7)
 court/verdict/body.rs      vertices_carry_family (23.1 step 3), edges_rederive_family (step 4), remainder_undeclared (step 7 on the closed sub-complex) — G on the court's copy of the family (L7)
 server/cognition/listings/listing.rs  bind_percept_family: the adjudicated pair is the sentence's family (23.8); list_demands: `court demand listed` per demand vertex (L7)
-server/cognition/reduce.rs percept_family (the court's copy of the pair); percept_elements lists no form without a vertex that acts (50.5, L7); reduce_proven, reduce_germ: no Irreducible(from_residual*) (L8); a demand vertex is listed by kind; a chain is refused
+server/cognition/reduce.rs percept_family (the court's copy of the pair); percept_elements lists no form without a vertex that acts (50.5, L7); reduce_proven, reduce_germ: no Irreducible(from_residue*) (L8); a demand vertex is listed by kind; a chain is refused
 server/cognition/listings/ingest.rs   commit_germ lists demand vertices, never a remainder (L8)
 ```
 
@@ -7987,7 +7987,7 @@ a test that a ring's holonomy in the stabilizer does not telescope,
 `cipher_form_keys_one_demand_per_kind_and_chart`,
 `court_settle_lists_demands_and_rules_closed_subcomplex`,
 a test that a bare chain is refused by the court, and
-a gate that no utterance path calls `from_residual` (over `client/` and the
+a gate that no utterance path calls `from_residue` (over `client/` and the
 attest arms). Traces (chapter 40): on a cold boot every voice's first
 `form withheld` is followed by `sentence spoken … demands d` with `d ≥ 1`
 and `d` `demand` lines, the court answers `court demand listed` `d` times
@@ -9188,7 +9188,7 @@ chart** and that member's A4 carriage, contact and sorted gauge; for every
 face its two ends, its word, and at every member pair the carriage, the
 gauge and **the edge's value** as the transport it is; for every demand
 its kind, its chart and **its remainder as that chain's own address**
-(from_residual, A5); the ratio, the sections, each at its frame coordinates,
+(from_residue, A5); the ratio, the sections, each at its frame coordinates,
 the opened axes. Nothing in it is a digest, a position or a count standing
 for a property.
 
@@ -13261,7 +13261,7 @@ labellings, held as a superposition (law 10), never broken by the integer.
 As amended by 78.56 II, the sensor's channels are a Dirichlet boundary and
 the palette is not relabelled at the sensor; a merge of hues is recorded
 into the reservoir (78.58). Code: `src/transducer/family/fibre_relation.rs`
-(`fibre_relation`), `src/transducer/element/residual.rs` (`colour_word`).
+(`fibre_relation`), `src/transducer/element/residue.rs` (`colour_word`).
 
 ### 78.54 The lattice's frame is a gauge too
 
@@ -13293,7 +13293,7 @@ installed; an admitted theorem mints nothing (78.56 IV). FEDERATION BY
 PROOF, NEVER BY TRUST: a peer court admits a fetched colour word only by
 re-deriving the witnessing task from its own copy of the family or by
 composing the installed words it cites; unproven, it waits as dialect.
-Code: `src/transducer/element/residual.rs` (`compose_fibre`,
+Code: `src/transducer/element/residue.rs` (`compose_fibre`,
 `invert_fibre`, `derived_colour_word`, `colour_citation`),
 `src/client/sdk/mind/utter.rs` (`speak_colour_theorem`),
 `src/server/cognition/book/speech.rs` (`colour_proof`).
@@ -13372,7 +13372,7 @@ by a channel index (rule 4). `fibre_function` is the action on the empty
 reservoir, `lift_fibre` the one reader from a function the scenes showed to
 the word, words compose by composing functions and lifting
 (`compose_fibre`), and the inverse returns a recorded hue only with its
-record (`invert_fibre`). Code: `src/transducer/element/residual.rs`;
+record (`invert_fibre`). Code: `src/transducer/element/residue.rs`;
 test `src/server/cognition/tests/colour.rs`
 (`fibre_relation_rotates_merge_into_reservoir`).
 
@@ -15498,7 +15498,7 @@ The mesh keeps one clock, TUniversal: a point read off the keepers' signed readi
 - **TU-1 KEEPERS.** The keepers are distinct courts with distinct keys (three in the founding mesh). A keeper's reading is its point at its head: `h` (its head receipt's height), `S:G:T:H` (its court's cumulative measured change per lane, carried by the one exact counter `Treasury::issued`, genesis plus mint, which only rises and which a treasury fold keeps exactly) and `K` (a ledger coordinate, OK1); a reading advances only where the head rose and a lane or `K` moved (`Court::keeper_tick`).
 - **TU-2 READINGS ARE RECEIPTS.** A keeper signs a `TickReading`: its key, the point, `parent` (the citation of its previous reading, empty where its line starts or restarts) and `cites` (the last reading it verified from each other keeper); the signed bytes carry the origin, so a reading never verifies in another universe. Readings travel as the keeper's ring of its newest `aperture_cycle` readings (on the cover digest and on `ACT_TICK`, 78.152b), and `Keepers::admit` verifies every signature, the parent chain and rising ticks, the cites and the link to the line held.
 - **TU-3 FINALITY BY MAJORITY.** A point is final when a strict majority of the keeper set holds verified readings of it (two of three, three of four, three of five): the keeper's own signed reading and others' verified readings citing it or a later reading on its parent chain. The final TUniversal is the greatest point final in this court's view (`Keepers::final_point`); it never runs back and is never averaged: where finals at one tick differ, that tick goes to the residue. One keeper alone finalises nothing, and a restarted keeper never re-signs a height (78.152c).
-- **TU-4 DISAGREEMENT IS A RESIDUE.** Two keepers' readings differing at one tick leave the exact per-lane difference `to − from` as a 1-cochain on the keeper triangle; its holonomy round the triangle in key order is the clock's residue (`Keepers::residual`), journaled and never folded into the point.
+- **TU-4 DISAGREEMENT IS A RESIDUE.** Two keepers' readings differing at one tick leave the exact per-lane difference `to − from` as a 1-cochain on the keeper triangle; its holonomy round the triangle in key order is the clock's residue (`Keepers::residue`), journaled and never folded into the point.
 - **TU-5 THE POINT.** `TPoint { origin: Origin { genesis, epoch }, h, lanes, k }`, exact integers, written one way: `<genesis 64 hex>.<epoch 8 hex>/<h>:<S>:<G>:<T>:<H>:<K>`, each field 16 lowercase hex digits; `TPoint::parse` reads back exactly that writing and nothing else. Points are distinct across universes by origin; within one origin text order is numeric order.
 - **TU-6 OPERATIONS BY A FINAL POINT.** PINPOINT (`Court::pinpoint`), UNPACK (`TPoint::unpack`, `Court::unpack`) and UNROLL (`Court::unroll`) are kernel reads; RESET (`ops::Reset`, the next epoch citing the point), BRANCH (`ops::Branch`, a sub-universe whose genesis is the citation of the point and the branch's name) and SUPERPOSE (`ops::Superposed`, two branches' points with the points' exact residue, merged only by a quorum-final point past both that cites both, `merged_by`) are typed values carrying the citation each needs.
 - **TU-7 SYNC AND WATCHDOG.** Every act carries its speaker's last final point behind its body on the frame (a wire change in `network::wire`: the lane byte's bit `0x80`, the last 84 bytes the `TPoint`); door replies carry the door's final point and a session keeps the greatest it read; a percept is stamped with the house's point, signed with its fields (seat v1.3: `[0]` or `[1][TPoint]` after the records). The door keeps the greatest final point on its shelf (`TShelf`), raised only by the keepers' quorum, a speaker's carried point held apart as heard; the lock watchdog wakes on each advance of the final point and names a hold standing across `aperture_cycle` advances.

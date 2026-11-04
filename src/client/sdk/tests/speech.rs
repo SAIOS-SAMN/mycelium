@@ -9,7 +9,7 @@ use crate::anastome::dialogue;
 /// pair remainder stands in the dialect, none is filed as an utterance,
 /// and the chain of both never stands; the withheld form itself stands
 /// and is held as an idea. (Before this each body stood and was attested
-/// as a word of its own — the residual utterance the soak of 2026-09-09
+/// as a word of its own — the residue utterance the soak of 2026-09-09
 /// read as garbage.)
 #[test]
 fn withhold_form_stands_no_remainder_as_word() {
@@ -104,7 +104,7 @@ fn vertex_stratum_is_one_per_vertex_however_spelled() {
     // one site has no canonical form, so there is no word to ask a stratum
     // of. This read the word A5 refused and then asked whether it had one.
     assert!(
-        crate::transducer::element::from_residual(&vec![(0, 0, 1, 2), (0, 0, 3, 4)]).is_none(),
+        crate::transducer::element::from_residue(&vec![(0, 0, 1, 2), (0, 0, 3, 4)]).is_none(),
         "a chain A5 refuses mints no word"
     );
     let _ = identity_versor();

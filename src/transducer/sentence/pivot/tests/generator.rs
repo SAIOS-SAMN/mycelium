@@ -700,7 +700,7 @@ fn trial_certifies_opening_rank_form_makes() {
 
 /// 12.6, 16.16 step 3, A17, I6 — REDUCE, PUBLISH, THEN WIDEN.
 ///
-/// A pivot is a REDUCTION: it divides the residual by a generator the mind
+/// A pivot is a REDUCTION: it divides the residue by a generator the mind
 /// holds. Where the basis holds no word on the coordinate there is nothing
 /// to divide by, every contraction candidate is terminal by algebra, and
 /// asking again next stroke asks the same question of the same basis. The
@@ -726,7 +726,7 @@ fn trial_certifies_opening_rank_form_makes() {
 /// Every arm of the sequence is asserted, because the gate is the CRYSTAL'S
 /// OWN ANSWER and the FORM'S OWN FILING, never a trial's failure.
 #[test]
-fn candidates_for_widens_only_published_unanswered_residual() {
+fn candidates_for_widens_only_published_unanswered_residue() {
     let q = word_turn_90();
     let mut f = chord_form(std::slice::from_ref(&q));
     let kappa = f.class_vector(0).expect("the chord closes one orbit");
@@ -748,7 +748,7 @@ fn candidates_for_widens_only_published_unanswered_residual() {
     );
     assert!(
         !reducible.iter().any(|c| c.axis == Axis::Open),
-        "a residual the basis can divide is not widened: {:?}",
+        "a residue the basis can divide is not widened: {:?}",
         reducible.iter().map(|c| c.axis).collect::<Vec<_>>()
     );
 
@@ -759,7 +759,7 @@ fn candidates_for_widens_only_published_unanswered_residual() {
         f.candidates_for(0, &kappa, &crate::transducer::family::NoCrystal, false, &unpublished);
     assert!(
         !unasked.iter().any(|c| c.axis == Axis::Open),
-        "an unpublished residual is filed, not widened: {:?}",
+        "an unpublished residue is filed, not widened: {:?}",
         unasked.iter().map(|c| c.axis).collect::<Vec<_>>()
     );
 
@@ -784,7 +784,7 @@ fn candidates_for_widens_only_published_unanswered_residual() {
         f.candidates_for(0, &kappa, &crate::transducer::family::NoCrystal, false, &published);
     assert!(
         asked.iter().any(|c| c.axis == Axis::Open),
-        "a published, unanswered, irreducible residual is widened: {:?}",
+        "a published, unanswered, irreducible residue is widened: {:?}",
         asked.iter().map(|c| c.axis).collect::<Vec<_>>()
     );
 

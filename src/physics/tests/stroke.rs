@@ -62,7 +62,7 @@ fn lanes_of_reads_germinated_recolour_as_gauge() {
     use crate::transducer::element::from_canonical;
     use crate::transducer::germinate::germinate;
     // A two-site recolour: hue transitions on a standing support are
-    // GAUGE content, carried alongside the residual defect — the lane
+    // GAUGE content, carried alongside the residue defect — the lane
     // projection is measured from the chain, never funneled to one axis.
     let g = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     assert_eq!(g.lanes(), [false, true, false, false], "a recolour is gauge content; temporal is empty until the listing stands");
@@ -73,7 +73,7 @@ fn lanes_of_reads_germinated_recolour_as_gauge() {
 fn pivot_unattributed_charges_torsion_on_every_lane() {
     let mut p = Physics::default();
     p.pivot([false, false, false, false]); // unattributable
-    assert_eq!(p.torsion, [1, 1, 1, 1], "an unresolved residual charges torsion");
+    assert_eq!(p.torsion, [1, 1, 1, 1], "an unresolved residue charges torsion");
 }
 
 /// THE TWO-STROKE RESERVE: entropic expansion SPENDS per lane; depletion is
@@ -86,7 +86,7 @@ fn spend_depletes_and_regenerate_restores_per_lane() {
     let mut p = Physics::default();
     assert_eq!(p.reserve_shortfall([true; 4]), [0; 4], "full at rest: no lane is short");
     for _ in 0..8 {
-        p.spend(t); // 32 − 8·4 = 0 on the residual lane
+        p.spend(t); // 32 − 8·4 = 0 on the residue lane
     }
     let short = p.reserve_shortfall([true; 4]);
     assert!(short[2] > 0, "the spent lane is short by what one expansion needs: {short:?}");

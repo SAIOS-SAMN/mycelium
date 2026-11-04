@@ -42,24 +42,24 @@ fn open_axis_answers_one_seat_when_repeated() {
 
 // ─── THE GERM CARRIER: centred coboundary chains (post-excision) ───────
 
-/// THE RESIDUAL GERMINATES: a pivot that no motor closes becomes a first-class
-/// germ on the residual lane — the description that used to be discarded. Its
+/// THE RESIDUE GERMINATES: a pivot that no motor closes becomes a first-class
+/// germ on the residue lane — the description that used to be discarded. Its
 /// magnitude is nonzero there, so the POW++ gate admits it.
 #[test]
-fn germinate_keeps_residual_as_coboundary_germ() {
-    // (0,1): 2→9 with the rest fixed — not a rigid motion; a pure residual.
+fn germinate_keeps_residue_as_coboundary_germ() {
+    // (0,1): 2→9 with the rest fixed — not a rigid motion; a pure residue.
     let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
     let g = germinate(&a, &b).unwrap();
     let germ = from_canonical(&g);
     // A hue transition on a standing compartment measures as GAUGE content
-    // alongside the residual defect (the four-lane projection).
+    // alongside the residue defect (the four-lane projection).
     assert_eq!(germ.lanes(), [false, true, false, false], "a recolour is 𝒢 content; temporal and holonomic are empty until standing or punctured");
     let mag = germ.magnitude();
     assert!(mag[2] == 0 && mag[1] >= 1 && mag[0] == 0, "gauge only: no spatial, no temporal extent yet");
     assert_eq!(mag[3], 0, "holonomic volume is empty until sections or torsion");
-    // A residual has no group inverse (its block is antisymmetric/singular);
-    // its reverse is the reverse coboundary (from_residual of b→a), not a
+    // A residue has no group inverse (its block is antisymmetric/singular);
+    // its reverse is the reverse coboundary (from_residue of b→a), not a
     // versor's — the group reverse() correctly declines.
     assert!(germ.reverse().is_none(), "no versor reverse for a coboundary");
     let reverse = from_canonical(&germinate(&b, &a).unwrap());
@@ -76,7 +76,7 @@ fn germinate_keeps_canceling_swap_nonidentity() {
     let b = [(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]; // bar
     let l_to_bar = from_canonical(&germinate(&a, &b).unwrap());
     // One compartment vacates and one appears: SPATIAL content (mass moved)
-    // alongside the two-link residual defect — measured, not defaulted.
+    // alongside the two-link residue defect — measured, not defaulted.
     assert_eq!(l_to_bar.magnitude(), [2, 0, 0, 0], "two moved compartments, exact — not a canceled 0; the fibre lane is empty until punctured");
     assert_eq!(l_to_bar.lanes(), [true, false, false, false], "a real spatial germ");
     assert!(!l_to_bar.is_identity(), "the chain decides — a canceled tally is not identity");

@@ -40,7 +40,7 @@ pub enum CoordinateSystem {
     Task,
     Demand,
     DemandAt,
-    Residual,
+    Residue,
     /// §4.4 E8 — the three addresses of a cover (ruled 2026-09-22).
     Piece,
     Carriage,
@@ -70,7 +70,7 @@ impl CoordinateSystem {
             CoordinateSystem::Task => Some(a::TAG_TASK),
             CoordinateSystem::Demand => Some(a::TAG_DEMAND),
             CoordinateSystem::DemandAt => Some(a::TAG_DEMAND_AT),
-            CoordinateSystem::Residual => Some(a::TAG_RESIDUAL),
+            CoordinateSystem::Residue => Some(a::TAG_RESIDUE),
             CoordinateSystem::Piece => Some(a::TAG_PIECE),
             CoordinateSystem::Carriage => Some(a::TAG_CARRIAGE),
             CoordinateSystem::Meet => Some(a::TAG_MEET),

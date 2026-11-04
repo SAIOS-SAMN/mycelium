@@ -12,7 +12,7 @@ pub mod remainder;
 pub mod shed;
 
 pub(crate) use persist::genome_refused;
-pub(crate) use persist::{is_residual, is_rewrite_act};
+pub(crate) use persist::{is_residue, is_rewrite_act};
 pub use persist::GenomeWriteTally;
 #[cfg(test)]
 pub use persist::{PRE_ORBIT_GENOME_MAGIC, PRE_TRIE_GENOME_MAGIC};

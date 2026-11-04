@@ -11,7 +11,7 @@
 
 use crate::Mesh;
 use mycelium::chronometry::tuniversal::{
-    record, Admitted, KeeperRefusal, Keepers, LastSigned, Origin, Reach, Recorded, Residual, TPoint, TShelf, Tick, TickReading, WindowRefusal,
+    record, Admitted, KeeperRefusal, Keepers, LastSigned, Origin, Reach, Recorded, Residue, TPoint, TShelf, Tick, TickReading, WindowRefusal,
 };
 use mycelium::observe;
 use std::sync::{LazyLock, Mutex};
@@ -19,15 +19,15 @@ use std::sync::{LazyLock, Mutex};
 static SHELF: LazyLock<TShelf> = LazyLock::new(TShelf::new);
 
 /// The keepers as this court holds them, at the origin it adopted; the last
-/// residual written to the journal.
-static KEEPERS: Mutex<Option<(Keepers, Residual)>> = Mutex::new(None);
+/// residue written to the journal.
+static KEEPERS: Mutex<Option<(Keepers, Residue)>> = Mutex::new(None);
 
-/// THE KEEPERS AS THE OBSERVER READS THEM: each keeper and the residual,
+/// THE KEEPERS AS THE OBSERVER READS THEM: each keeper and the residue,
 /// copied whenever the keepers are touched. A leaf lock, held only for the
 /// copy, so the court stroke reads it under the court without waiting on a
 /// ring's verification under the keepers' own lock.
-static SEEN: Mutex<(Vec<observe::KeeperSeen>, Residual)> =
-    Mutex::new((Vec::new(), Residual { edges: Vec::new(), holonomy: None }));
+static SEEN: Mutex<(Vec<observe::KeeperSeen>, Residue)> =
+    Mutex::new((Vec::new(), Residue { edges: Vec::new(), holonomy: None }));
 
 /// 78.125 (law version 5) — THIS COURT'S REACH AS LAST READ BY THE KEEPERS,
 /// with the count of its changes: copied where the keepers' reading moved,
@@ -114,7 +114,7 @@ fn origin(mesh: &Mesh) -> Option<Origin> {
 
 /// The keepers at `origin`, under the keepers' lock: begun where none are held or
 /// they stand at another origin (a recut re-originates them).
-fn with_keepers<R>(mesh: &Mesh, origin: Origin, f: impl FnOnce(&mut Keepers, &mut Residual) -> R) -> Option<R> {
+fn with_keepers<R>(mesh: &Mesh, origin: Origin, f: impl FnOnce(&mut Keepers, &mut Residue) -> R) -> Option<R> {
     let mut g = match KEEPERS.lock() {
         Ok(g) => g,
         Err(p) => p.into_inner(),
@@ -129,7 +129,7 @@ fn with_keepers<R>(mesh: &Mesh, origin: Origin, f: impl FnOnce(&mut Keepers, &mu
                 false => eprintln!("  court tuniversal keeper record at h {} not resumed: not this court's at this origin", rec.reading.tick.h),
             }
         }
-        *g = Some((k, Residual::default()));
+        *g = Some((k, Residue::default()));
     }
     let (k, r) = g.as_mut()?;
     let out = f(k, r);
@@ -137,7 +137,7 @@ fn with_keepers<R>(mesh: &Mesh, origin: Origin, f: impl FnOnce(&mut Keepers, &mu
     if let Some(p) = k.final_point() {
         SHELF.raise_final(p);
     }
-    let seen = (observe::keepers_seen(k), k.residual());
+    let seen = (observe::keepers_seen(k), k.residue());
     match SEEN.lock() {
         Ok(mut s) => *s = seen,
         Err(p) => *p.into_inner() = seen,
@@ -169,14 +169,14 @@ pub(crate) fn reach_moved(seen: &mut u64) -> Option<Result<Reach, WindowRefusal>
 }
 
 /// 78.152 — THE COURT'S TUNIVERSAL STANDING for the observer: the shelf's
-/// final point and its advances, and the keepers and residual as last
+/// final point and its advances, and the keepers and residue as last
 /// copied. Nothing held before an origin is adopted.
 pub(crate) fn standing() -> observe::TStanding {
-    let (keepers, residual) = match SEEN.lock() {
+    let (keepers, residue) = match SEEN.lock() {
         Ok(s) => s.clone(),
         Err(p) => p.into_inner().clone(),
     };
-    observe::TStanding { final_point: SHELF.final_point(), advances: SHELF.advances(), keepers, residual }
+    observe::TStanding { final_point: SHELF.final_point(), advances: SHELF.advances(), keepers, residue }
 }
 
 /// THIS COURT'S RING FOR ITS DIGEST (TU-1, TU-2): its tick read (where the
@@ -251,7 +251,7 @@ pub(crate) fn hear_tick(mesh: &Mesh, body: &[u8]) -> Result<Admitted, TickRefusa
 
 /// A PEER'S RING HEARD — on its digest or pushed as `ACT_TICK` (TU-2):
 /// admitted, a refusal counted by name, the final point raised (TU-3), and
-/// the residual (TU-4) written to the journal where it moved. `None` before
+/// the residue (TU-4) written to the journal where it moved. `None` before
 /// an origin is adopted.
 pub(crate) fn hear_ring(mesh: &Mesh, keeper: [u8; 32], ring: Vec<TickReading>) -> Option<Result<Admitted, KeeperRefusal>> {
     let origin = origin(mesh)?;
@@ -267,10 +267,10 @@ pub(crate) fn hear_ring(mesh: &Mesh, keeper: [u8; 32], ring: Vec<TickReading>) -
                 }
             }
         }
-        let now = k.residual();
+        let now = k.residue();
         if now != *last {
             eprintln!(
-                "  court tuniversal final {} | residual holonomy {:?} edges {}",
+                "  court tuniversal final {} | residue holonomy {:?} edges {}",
                 match k.final_point() {
                     Some(p) => p.local(),
                     None => "none".to_string(),

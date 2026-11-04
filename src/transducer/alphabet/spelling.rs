@@ -2,7 +2,7 @@
 //
 //! `spell` peels a 2x2 rational block into syllables of the alphabet under
 //! a shrinking governor, and refuses when no word spells it. Each step reads
-//! the block's own unit and the residual it leaves, never a candidate list.
+//! the block's own unit and the residue it leaves, never a candidate list.
 
 use crate::core::gaussian::Gauss;
 use crate::transducer::alphabet::{rational_sqrt, LetterId, Word, Q};
@@ -47,7 +47,7 @@ impl Spelling {
 // anything noticing. The peel uses the core's, which gained `div_exact`
 // and `valuation` (the exact division and the shell count) to serve it.
 
-/// THE ADJOINED SHELLS A RESIDUAL CARRIES: which generators of the basis
+/// THE ADJOINED SHELLS A RESIDUE CARRIES: which generators of the basis
 /// divide it and at what signed exponent, with the arc and the weight
 /// after they all leave.
 pub(crate) struct AdjoinedShells {
@@ -56,7 +56,7 @@ pub(crate) struct AdjoinedShells {
     weight: BigInt,
 }
 
-/// WHAT ONE READING OF A RESIDUAL FOUND: the alphabet's own prime
+/// WHAT ONE READING OF A RESIDUE FOUND: the alphabet's own prime
 /// exponents, the adjoined generators that divide it with the generators' signed
 /// exponents, and the unit that is left. Named fields rather than a tuple,
 /// because the tuple grew a fourth member and `(m5, m13, cited, unit)` at
@@ -68,10 +68,10 @@ pub(crate) struct Read {
     unit: Gauss,
 }
 
-/// The residual of the spelling peel: the rotation as a Gaussian integer
+/// The residue of the spelling peel: the rotation as a Gaussian integer
 /// over its weight, and the orientation sheet still to be peeled.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct SpellResidual {
+pub(crate) struct SpellResidue {
     z: Gauss,
     n: BigInt,
     flipped: bool,
@@ -214,7 +214,7 @@ impl SpellStep {
         })
     }
 
-    /// THE ADJOINED SHELLS a residual carries: the index of each generator
+    /// THE ADJOINED SHELLS a residue carries: the index of each generator
     /// that divides it and the signed exponent, with the arc and the weight
     /// after they all leave.
     ///
@@ -262,10 +262,10 @@ impl SpellStep {
     }
 
     /// The signed prime exponents, the adjoined shells, and the unit
-    /// remainder of a residual — `None` when a prime outside the BASIS
+    /// remainder of a residue — `None` when a prime outside the BASIS
     /// remains, the prime 13 included on a plane that has no (5,12,13)
     /// letter. The basis is the seventeen plus whatever the mind adjoined.
-    fn read(&self, r: &SpellResidual) -> Option<Read> {
+    fn read(&self, r: &SpellResidue) -> Option<Read> {
         let (v5p, z) = r.z.valuation(&self.pi5);
         let (v5m, z) = z.valuation(&self.pi5.conj());
         let (v13p, z) = z.valuation(&self.pi13);
@@ -321,12 +321,12 @@ impl SpellStep {
         None
     }
 
-    /// How far this residual is from closing, in shells. The adjoined
-    /// shells count too: a residual a generator divides is one shell
+    /// How far this residue is from closing, in shells. The adjoined
+    /// shells count too: a residue a generator divides is one shell
     /// nearer than one it does not, and leaving them out would let the
     /// governor read a peel as stalled while the basis was still removing
     /// content.
-    fn distance(&self, r: &SpellResidual) -> Option<u64> {
+    fn distance(&self, r: &SpellResidue) -> Option<u64> {
         let read = self.read(r)?;
         let cited: u64 = read.cited.iter().map(|(_, e)| e.unsigned_abs()).sum();
         Some(
@@ -340,7 +340,7 @@ impl SpellStep {
 }
 
 impl ShellStep for SpellStep {
-    type Residual = SpellResidual;
+    type Residue = SpellResidue;
     type Core = SpellCore;
 
     /// Peel one shell, outer first: the orientation sheet, then a prime-5
@@ -351,11 +351,11 @@ impl ShellStep for SpellStep {
     /// The adjoined shells come after the alphabet's own, so the seventeen
     /// are always preferred and a mind that holds a generator still spells
     /// with letters whatever it can.
-    fn shell(&self, r: &SpellResidual) -> Option<(SpellCore, SpellResidual)> {
+    fn shell(&self, r: &SpellResidue) -> Option<(SpellCore, SpellResidue)> {
         if r.flipped {
             return Some((
                 SpellCore::Letters(vec![(self.flip, false), (self.flip, false)]),
-                SpellResidual { flipped: false, ..r.clone() },
+                SpellResidue { flipped: false, ..r.clone() },
             ));
         }
         let Read { m5, m13, cited, unit } = self.read(r)?;
@@ -369,7 +369,7 @@ impl ShellStep for SpellStep {
             let z = remove(&r.z, &self.pi5, forward)?;
             return Some((
                 SpellCore::Letters(vec![(self.l5, forward != self.l5_forward)]),
-                SpellResidual { z, ..r.clone() },
+                SpellResidue { z, ..r.clone() },
             ));
         }
         if m5 != 0 {
@@ -381,7 +381,7 @@ impl ShellStep for SpellStep {
             let z = remove(&r.z, &self.pi13, forward)?;
             return Some((
                 SpellCore::Letters(vec![(l13, forward != self.l13_forward)]),
-                SpellResidual { z, ..r.clone() },
+                SpellResidue { z, ..r.clone() },
             ));
         }
         if m13 != 0 {
@@ -405,7 +405,7 @@ impl ShellStep for SpellStep {
                     vertex: gen.vertex.clone(),
                     exponent: if forward { 1 } else { -1 },
                 },
-                SpellResidual { z, n, ..r.clone() },
+                SpellResidue { z, n, ..r.clone() },
             ));
         }
         // The unit: one 90° letter toward 1, oriented by the shorter arc.
@@ -417,7 +417,7 @@ impl ShellStep for SpellStep {
         let forward = unit == self.turn_90_unit || unit == self.turn_90_unit.mul(&self.turn_90_unit);
         let (id_inv, step) = if forward { (false, q_inv) } else { (true, self.turn_90_unit.clone()) };
         let z = r.z.mul(&step);
-        Some((SpellCore::Letters(vec![(self.turn_90, id_inv)]), SpellResidual { z, ..r.clone() }))
+        Some((SpellCore::Letters(vec![(self.turn_90, id_inv)]), SpellResidue { z, ..r.clone() }))
     }
 }
 
@@ -427,8 +427,8 @@ pub(crate) struct SpellGovernor<'a> {
 }
 
 impl ShrinkGovernor for SpellGovernor<'_> {
-    type Residual = SpellResidual;
-    fn read(&mut self, r: &SpellResidual) -> ShellMotion {
+    type Residue = SpellResidue;
+    fn read(&mut self, r: &SpellResidue) -> ShellMotion {
         if !r.flipped && r.z.b.is_zero() && r.z.a == r.n {
             return ShellMotion::Closed;
         }
@@ -475,7 +475,7 @@ pub fn spell_rotor_on(plane: (u8, u8), block: &[[Q; 2]; 2]) -> Option<Spelling> 
 pub fn spell_peel_rotor_on(
     plane: (u8, u8),
     block: &[[Q; 2]; 2],
-) -> Option<(PeelNest<SpellResidualView, SpellCore>, Q)> {
+) -> Option<(PeelNest<SpellResidueView, SpellCore>, Q)> {
     spell_peel_rotor_with(plane, block, Vec::new())
 }
 
@@ -484,7 +484,7 @@ pub fn spell_peel_rotor_on(
 fn closed_spelling(
     plane: (u8, u8),
     block: &[[Q; 2]; 2],
-    peeled: (PeelNest<SpellResidualView, SpellCore>, Q),
+    peeled: (PeelNest<SpellResidueView, SpellCore>, Q),
 ) -> Option<Spelling> {
     match peeled {
         (PeelNest::Closed { cores }, rho) => {
@@ -511,7 +511,7 @@ fn closed_spelling(
 /// The spelling peel itself: the nest of syllables and, when the peel
 /// stalls, the standing arc (the Gaussian remainder the alphabet cannot
 /// speak) — carried out whole for the caller to hold as thought.
-pub fn spell_peel(block: &[[Q; 2]; 2]) -> Option<(PeelNest<SpellResidualView, SpellCore>, Q)> {
+pub fn spell_peel(block: &[[Q; 2]; 2]) -> Option<(PeelNest<SpellResidueView, SpellCore>, Q)> {
     spell_peel_on((PLANE_ROW, PLANE_COL), block)
 }
 
@@ -520,7 +520,7 @@ pub fn spell_peel(block: &[[Q; 2]; 2]) -> Option<(PeelNest<SpellResidualView, Sp
 pub fn spell_peel_on(
     plane: (u8, u8),
     block: &[[Q; 2]; 2],
-) -> Option<(PeelNest<SpellResidualView, SpellCore>, Q)> {
+) -> Option<(PeelNest<SpellResidueView, SpellCore>, Q)> {
     spell_peel_with(plane, block, Vec::new())
 }
 
@@ -544,7 +544,7 @@ pub fn spell_peel_with(
     plane: (u8, u8),
     block: &[[Q; 2]; 2],
     adjoined: Vec<AdjoinedPrime>,
-) -> Option<(PeelNest<SpellResidualView, SpellCore>, Q)> {
+) -> Option<(PeelNest<SpellResidueView, SpellCore>, Q)> {
     let (a, b, c, d) = (&block[0][0], &block[0][1], &block[1][0], &block[1][1]);
     let rho2 = a * a + c * c;
     if rho2.is_zero() || (b * b + d * d) != rho2 || !(a * b + c * d).is_zero() {
@@ -563,7 +563,7 @@ pub fn spell_peel_rotor_with(
     plane: (u8, u8),
     block: &[[Q; 2]; 2],
     adjoined: Vec<AdjoinedPrime>,
-) -> Option<(PeelNest<SpellResidualView, SpellCore>, Q)> {
+) -> Option<(PeelNest<SpellResidueView, SpellCore>, Q)> {
     Some((peel_orthonormal(plane, block, adjoined)?, Q::one()))
 }
 
@@ -574,7 +574,7 @@ fn peel_orthonormal(
     plane: (u8, u8),
     unit: &[[Q; 2]; 2],
     adjoined: Vec<AdjoinedPrime>,
-) -> Option<PeelNest<SpellResidualView, SpellCore>> {
+) -> Option<PeelNest<SpellResidueView, SpellCore>> {
     let (r00, r01, r10, r11) = (unit[0][0].clone(), unit[0][1].clone(), unit[1][0].clone(), unit[1][1].clone());
     let det = &r00 * &r11 - &r01 * &r10;
     let flipped = if det.is_one() {
@@ -596,12 +596,12 @@ fn peel_orthonormal(
     }
     let step = SpellStep::on_with(plane, adjoined)?;
     let mut governor = SpellGovernor { step: &step, last: None };
-    let nest = peel_nest(SpellResidual { z, n, flipped }, &step, &mut governor);
+    let nest = peel_nest(SpellResidue { z, n, flipped }, &step, &mut governor);
     Some(match nest {
         PeelNest::Closed { cores } => PeelNest::Closed { cores },
         PeelNest::Standing { cores, arc } => PeelNest::Standing {
             cores,
-            arc: SpellResidualView { p: arc.z.a, q: arc.z.b, weight: arc.n, flipped: arc.flipped },
+            arc: SpellResidueView { p: arc.z.a, q: arc.z.b, weight: arc.n, flipped: arc.flipped },
         },
     })
 }
@@ -609,7 +609,7 @@ fn peel_orthonormal(
 /// The standing arc of a spelling that did not close: the rotation the
 /// alphabet cannot speak, as `(p + q·i)/weight` and the unpeeled sheet.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SpellResidualView {
+pub struct SpellResidueView {
     pub p: BigInt,
     pub q: BigInt,
     pub weight: BigInt,

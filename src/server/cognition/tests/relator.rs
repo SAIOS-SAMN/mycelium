@@ -33,7 +33,7 @@ fn turn_90_inv(n: usize) -> Word {
 /// A TRANSPORT as the Čech readers take one: a connection carrying the
 /// word and nothing else — no chain, identity carriage, identity gauge.
 /// `cech::rotor_of` reads its letters, which is what makes it a transport
-/// and not a residual.
+/// and not a residue.
 fn transport(w: &Word) -> Element {
     element::from_demand(w).expect("a connection carrying the word")
 }

@@ -22,7 +22,7 @@ pub fn pair_magnitude(a: &[Vec<u8>], b: &[Vec<u8>]) -> Option<[u64; 4]> {
 /// Lane-wise accumulation of one pair's μ⃗ into a bundle's. The pairs of a
 /// bundle are DISJOINT SCENES, so a bundle's measure on a lane is the sum of
 /// its pairs': chapter 12.6, "the lane-wise sum of the per-pair pressures,
-/// each pair measured by `measure_lanes` on its own residual, the pairs
+/// each pair measured by `measure_lanes` on its own residue, the pairs
 /// being disjoint scenes; never a maximum over pairs". A maximum reports a
 /// bundle as no larger than its largest pair, which is how a genesis bond
 /// measured from a corpus came out too small to cover a single pair of it.

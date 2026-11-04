@@ -138,7 +138,7 @@ fn congruent_finds_base_point_and_versor() {
 
 /// A connection is charted on its fibres: the linear class and the
 /// gauge's cycle type, never a translation and never the empty chart;
-/// residual charts and connection charts are disjoint families.
+/// residue charts and connection charts are disjoint families.
 #[test]
 fn invariant_of_charts_connection_on_fibres() {
     let a = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(0, 2), &[(1, 2), (2, 1)], &Vec::new(), [4, 2, 0, 0]).expect("spells");
@@ -149,7 +149,7 @@ fn invariant_of_charts_connection_on_fibres() {
     assert_ne!(invariant_of(&a), invariant_of(&c), "a different cycle type is a different chart");
     assert_eq!(invariant_of(&a).0[0], ChartAxis::Count(0), "the connection family's leading axis");
     let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
-    assert!(matches!(invariant_of(&word).0[0], ChartAxis::Count(n) if n >= 1), "a residual chart leads with its component count");
+    assert!(matches!(invariant_of(&word).0[0], ChartAxis::Count(n) if n >= 1), "a residue chart leads with its component count");
     // Congruence on connections: the fibre's representative and the transition.
     let stalks = Stalks::over_elements([&a, &c].into_iter());
     let at = |x: &[u8]| [&a, &c].into_iter().find(|w| w.address().as_bytes() == x);

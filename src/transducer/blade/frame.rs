@@ -51,7 +51,7 @@ use super::*;
 /// rotation: `φ = 0` and `φ = π` both give `2φ ≡ 0`. The two differ as
 /// rotors — `1` against `e₁₂` — and are NOT projectively equal, so this
 /// returns the double angle and does not mint a rotor from it. Resolving
-/// the residual 180° turn is a question about the SUPPORT, answered by
+/// the residue 180° turn is a question about the SUPPORT, answered by
 /// carrying a candidate through [`versor_coset_ordered`], which tests it
 /// against the sites rather than guessing.
 ///

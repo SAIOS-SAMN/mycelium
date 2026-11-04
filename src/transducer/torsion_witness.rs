@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! A17, T5 — THAT A TORSION CYCLE CLOSES: the circuit of `σ` round the fibre,
-//! and the exact residual when it does not. A period is believed only where
+//! and the exact residue when it does not. A period is believed only where
 //! the orbit returns to base (∮ dX = 0); an open orbit names the anholonomity
 //! the label was filing over.
 
@@ -21,13 +21,13 @@ impl HolonomicValency {
 }
 
 /// The closed-orbit integrity witness: either the orbit CLOSES (∮ dX = 0 — the
-/// orbit returned to its start, trivial monodromy) or the residual step count
+/// orbit returned to its start, trivial monodromy) or the residue step count
 /// names the anholonomity (how far from closure the run ended).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HolonomicOrbitWitness {
     /// ∮_γ dX = 0: the orbit closed in `period` steps — valency 1/period.
     Closed { period: u64, valency: HolonomicValency },
-    /// The orbit did not close within the span run — the open residual.
+    /// The orbit did not close within the span run — the open residue.
     Open { run: u64 },
 }
 

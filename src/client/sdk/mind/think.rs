@@ -704,7 +704,7 @@ impl Mind {
     }
 
     /// Stand a withheld form and hold it as an idea (24.3 as amended,
-    /// 50.6 seam 1). Nothing is expressed as a residual word and no chain
+    /// 50.6 seam 1). Nothing is expressed as a residue word and no chain
     /// is uttered: what the form could not close is its demand vertices,
     /// spoken with the sentence by `speak_form`, and a remainder no demand
     /// names is the idea's own work.

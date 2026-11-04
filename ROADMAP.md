@@ -321,7 +321,7 @@ specification's wording and the code differ:
 Each becomes one documentation commit that brings the specification to
 the code. A further documentation commit adds to `docs/MU-EQUATIONS.md` the
 table of refused functionals (squared-norm coherence, scored-argmin
-search, ratios of scalar residuals, ε-bands), so that no port brings them
+search, ratios of scalar residues, ε-bands), so that no port brings them
 over ([MU-PRECURSORS §3.11](docs/MU-PRECURSORS.md#311-documentation)).
 
 The documentation uses the typed vocabulary of

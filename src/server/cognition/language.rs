@@ -20,7 +20,7 @@ pub enum Outcome {
     /// A novel generator docketed on one vantage, awaiting a witness organ's
     /// independent re-derivation of the same address (47.3).
     GermPending,
-    /// An irreducible residual that CONVERGED and was adjoined as a generator
+    /// An irreducible residue that CONVERGED and was adjoined as a generator
     /// of the presentation (1.8): the base of the language grows, the group
     /// and the alphabet do not. Chapter 44 refuses a completion procedure.
     Installed(usize),

@@ -309,7 +309,7 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
 pub type GeneratorIndex = Keyed<Keyed<crate::transducer::address::Address>>;
 
 /// The chart of a word's own versor: `connection_chart`'s shape — the
-/// leading 0 that keeps versor charts disjoint from residual charts (M4
+/// leading 0 that keeps versor charts disjoint from residue charts (M4
 /// step 2), then the rotor's conjugacy axes (15.3). A word with no
 /// conjugacy axes is not a generator and is not filed.
 pub fn versor_chart(w: &Word) -> Option<stalk::Invariant> {
@@ -367,7 +367,7 @@ pub fn lane_chart(
 }
 
 /// The leading value that keeps a lane chart disjoint from a versor chart
-/// (leading 0) and from a residual chart. Content, and the one place the
+/// (leading 0) and from a residue chart. Content, and the one place the
 /// four covers' key spaces are separated.
 /// FORMAT: layout, the lane chart's leading offset.
 pub const LANE_TAG: u64 = 1 << 32;

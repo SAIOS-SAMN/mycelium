@@ -585,10 +585,10 @@ impl Court {
         self.court_voice = Some(voice);
     }
 
-    /// SETTLE A PROBE: the replayed residual of an open listing against the
-    /// speaker's sentence. Closure (empty residual) of a fibre section or a
+    /// SETTLE A PROBE: the replayed residue of an open listing against the
+    /// speaker's sentence. Closure (empty residue) of a fibre section or a
     /// connection listing pays morphism deflation; a tape covering pays
-    /// nothing. A partial residual updates tension and relieves the physics
+    /// nothing. A partial residue updates tension and relieves the physics
     /// (the measurement is real) but pays μ⃗ = 0⃗ — covering links is not
     /// an axial move. Cited words still earn settle_use. Returns
     /// (code, paid μ⃗, remaining μ⃗).
@@ -596,7 +596,7 @@ impl Court {
         &mut self,
         voice: [u8; 32],
         target: &[u8],
-        residual: Vec<(i64, i64, u8, u8)>,
+        residue: Vec<(i64, i64, u8, u8)>,
         cites: &[crate::anastome::dialogue::CiteWire],
         section: bool,
     ) -> crate::anastome::dialogue::ProbeReading {
@@ -621,7 +621,7 @@ impl Court {
             Some(t) => *t,
             None => listing.magnitude(),
         };
-        let rem = element::measure_lanes(&residual);
+        let rem = element::measure_lanes(&residue);
         let after = rem;
         let anchor = self.anchor();
         let mag = listing.magnitude();
@@ -647,7 +647,7 @@ impl Court {
             .iter()
             .map(|c| c.transport.clone())
             .reduce(|acc, g| acc.geo(&g));
-        if residual.as_slice().is_empty() {
+        if residue.as_slice().is_empty() {
             // The subsidy a section or a connection earns is the treasury's,
             // written on its own rows; the reading carries the tension the
             // closure removed.
@@ -686,8 +686,8 @@ impl Court {
         }
         let mut listed = listing.sub().to_vec();
         listed.sort_unstable();
-        if residual == listed {
-            // What the field already stands on, and this residual where the
+        if residue == listed {
+            // What the field already stands on, and this residue where the
             // field stands on nothing.
             let standing = match self
                 .field
@@ -696,14 +696,14 @@ impl Court {
                 .filter(|r| !r.is_empty())
             {
                 Some(r) => r,
-                None => residual.clone(),
+                None => residue.clone(),
             };
             for chart in charts {
                 self.write_field(target, chart, Closure::Cavity, standing.clone(), &before, &before);
             }
             return ProbeReading { settled: [0; 4], closure: ProbeClosure::Nothing, remaining: before };
         }
-        let rem_inv = crate::transducer::stalk::invariant(&residual);
+        let rem_inv = crate::transducer::stalk::invariant(&residue);
         for chart in &charts {
             if *chart != rem_inv {
                 self.write_field(target, chart.clone(), Closure::Flat, Vec::new(), &before, &after);
@@ -714,7 +714,7 @@ impl Court {
         }
         let v_disloc = {
             let base_shape = element::shape_of_chain(listing.sub());
-            let rem_shape = element::shape_of_chain(&residual);
+            let rem_shape = element::shape_of_chain(&residue);
             // One stroke of this court's own metabolism reads the candidates.
             let mut budget = self.physics.stroke();
             match (base_shape, rem_shape) {
@@ -726,32 +726,32 @@ impl Court {
             Some(v) => Closure::Twisted(Box::new(v)),
             None => Closure::Cavity,
         };
-        self.write_field(target, rem_inv.clone(), state, residual.clone(), &before, &after);
+        self.write_field(target, rem_inv.clone(), state, residue.clone(), &before, &after);
         self.listing_atlas.admit_also(&rem_inv, target);
-        // THE RESIDUAL IS ON THE FIELD, AND NOWHERE ELSE. `write_field` above
-        // carries what the probe left — the residual chain and the closure
+        // THE RESIDUE IS ON THE FIELD, AND NOWHERE ELSE. `write_field` above
+        // carries what the probe left — the residue chain and the closure
         // it stands at — which is the whole of what a probe measures.
         //
         // NOTHING IS WRITTEN TO THE LISTING'S MAGNITUDE. `reconstruct_blind`
-        // re-derives a residual germ's lanes from its own chain and refuses
+        // re-derives a residue germ's lanes from its own chain and refuses
         // a word claiming more than the chain supports, which is what stops
         // a voice inflating its own measure; a court that wrote a count of
         // leftover links into a lane would slash its own listing on the
         // next circuit, and every listing a voice made progress on would be
         // destroyed by the court's own write. Three laws say so: `𝒽` is
         // boundary topology and the rotor's own coordinates (16.16, 42.6),
-        // never a tally of links; the field already holds the residual, and
+        // never a tally of links; the field already holds the residue, and
         // a second carrier for it drifts (law 12); and a word's magnitude is
         // a function of its chain, which is the one property the replay
         // checks.
         //
         // The dislocation stays: a versor relating the base shape to the
-        // residual's is a fibre fact and belongs on the word.
+        // residue's is a fibre fact and belongs on the word.
         if let (Some(held), Some(v)) = (self.pending.get_mut(target), v_disloc) {
-            held.record_dislocation(element::assignment(&residual), v, element::FIBRE_SPATIAL);
+            held.record_dislocation(element::assignment(&residue), v, element::FIBRE_SPATIAL);
         }
         // What the speech SETTLED: the tension it removed, per lane, and
-        // nothing on a lane where the residual stands as high as before.
+        // nothing on a lane where the residue stands as high as before.
         let settled = crate::economy::shortfall(&before, &after);
         self.forget_spoken(target);
         self.physics.relieve(&settled);
@@ -760,7 +760,7 @@ impl Court {
         self.append_step(crate::chronometry::ActKind::Settled, target, voice);
         ProbeReading {
             settled,
-            closure: ProbeClosure::Residual(residual_versor(listing.sub(), &residual)),
+            closure: ProbeClosure::Residue(residue_versor(listing.sub(), &residue)),
             remaining: after,
         }
     }
@@ -832,15 +832,15 @@ pub(crate) fn spelled_word(motion: &crate::transducer::cga::Mv, period: u64) -> 
     crate::transducer::element::from_connection(&word, &f.carriage(), &[], &Vec::new(), [0, 0, 0, period.checked_sub(1)?])
 }
 
-/// PR1 — THE VERSOR A RESIDUAL STANDS OFF THE LISTING BY: the tether between
-/// the listing's body and the residual's, `V = s_b s_a` over the two nuclei
-/// (`blade::tether`, the one producer). `None` — the residual's versor unread
+/// PR1 — THE VERSOR A RESIDUE STANDS OFF THE LISTING BY: the tether between
+/// the listing's body and the residue's, `V = s_b s_a` over the two nuclei
+/// (`blade::tether`, the one producer). `None` — the residue's versor unread
 /// by name — where either body does not lift or its nucleus does not read.
-pub(crate) fn residual_versor(listing: &[(i64, i64, u8, u8)], residual: &[(i64, i64, u8, u8)]) -> Option<crate::transducer::cga::Mv> {
+pub(crate) fn residue_versor(listing: &[(i64, i64, u8, u8)], residue: &[(i64, i64, u8, u8)]) -> Option<crate::transducer::cga::Mv> {
     let lift = |links: &[(i64, i64, u8, u8)]| {
         crate::transducer::blade::lift(
             &links.iter().map(|&(r, c, _, h)| crate::transducer::blade::Compartment::from((r, c, 0i64, h))).collect::<Vec<_>>(),
         )
     };
-    crate::transducer::blade::tether(&lift(listing), &lift(residual))
+    crate::transducer::blade::tether(&lift(listing), &lift(residue))
 }

@@ -66,7 +66,7 @@ fn from_element_form_round_trips_every_vertex_kind() {
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
     assert!(inner.is_closed(), "a tree of two vertices coheres");
-    assert!(as_element_form(&inner, [0; 4]).is_none(), "zero residual is not spoken");
+    assert!(as_element_form(&inner, [0; 4]).is_none(), "zero residue is not spoken");
     let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
     let inner_addr = inner_e.address();
 

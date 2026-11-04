@@ -79,7 +79,7 @@ impl Court {
         exclude: Option<&[u8]>,
         budget: &mut crate::physics::Budget,
     ) -> NormalForm {
-        // A held residual word is a CENTRED COBOUNDARY CHAIN: the chain
+        // A held residue word is a CENTRED COBOUNDARY CHAIN: the chain
         // reduction decomposes it over the other held words. The group path
         // below remains for pure-algebra elements.
         let sub = g.substance();
@@ -188,7 +188,7 @@ impl Court {
             }
             // A remainder is a demand and an unmeasured factorisation is
             // neither: both leave the substance irreducible here, and the
-            // remainder travels as the residual it already is.
+            // remainder travels as the residue it already is.
             _ => NormalForm::Irreducible,
         }
     }

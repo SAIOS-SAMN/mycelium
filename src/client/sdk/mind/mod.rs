@@ -108,7 +108,7 @@ pub struct Mind {
     pub(crate) glued: crate::network::nerve::Keyed<()>,
     /// OPEN THOUGHTS: the contemplation over wells, the one carrier of
     /// held forms (24.1 as ruled 2026-09-09); a cite reads the forms' words at
-    /// the listing body's chart. Remainders persist; residuals are never
+    /// the listing body's chart. Remainders persist; residues are never
     /// lost on restart.
     pub(crate) contemplation: crate::transducer::field::Contemplation,
     pub(crate) physics: crate::physics::Physics,

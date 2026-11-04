@@ -71,7 +71,7 @@ impl Branch {
 }
 
 /// SUPERPOSE (TU-6): two branches' points held side by side with the
-/// residual between them — `b − a` per lane, an exact signed rational, and
+/// residue between them — `b − a` per lane, an exact signed rational, and
 /// on `K` — never merged by a reader.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Superposed {

@@ -169,7 +169,7 @@ impl Mind {
                                     entity.physics_mut().syntropy(&mag);
                                     StrokeOutcome::add(&mut entity.board.court.probed.closed, &mag);
                                 }
-                                crate::anastome::dialogue::ProbeClosure::Residual(_) => entity.physics_mut().bump(&mag),
+                                crate::anastome::dialogue::ProbeClosure::Residue(_) => entity.physics_mut().bump(&mag),
                                 crate::anastome::dialogue::ProbeClosure::Gone | crate::anastome::dialogue::ProbeClosure::Nothing => {}
                             }
                         },

@@ -8,7 +8,7 @@ use crate::client::sdk::*;
 /// remainder — the exact boundary demand, unique for that lattice, with no
 /// choice in it — and keeps the part that did factor. `Admitted` there,
 /// "new geometry", would be said of a word the mind can name the missing
-/// part of; and on the chain arm a count of residual links is what no hypha
+/// part of; and on the chain arm a count of residue links is what no hypha
 /// can docket and no mind can reduce.
 #[test]
 fn comprehend_demands_missing_element_not_count() {

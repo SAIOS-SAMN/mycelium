@@ -151,8 +151,8 @@ impl Mind {
         // The chain's own key, a listing key (17.2): the one address the
         // held stratum does not answer with.
         // A chain with no A5 form cites nothing and stands whole as the
-        // residual: there is no word here to be a use of.
-        let Some(own) = crate::transducer::element::from_residual(&chain.to_vec()) else {
+        // residue: there is no word here to be a use of.
+        let Some(own) = crate::transducer::element::from_residue(&chain.to_vec()) else {
             return (Vec::new(), chain.to_vec());
         };
         let own = own.address();
@@ -248,12 +248,12 @@ impl Mind {
                 self.epigenome.touch(&c.addr, k);
             }
         }
-        (cites, located.residual)
+        (cites, located.residue)
     }
 
 
-    /// A served listing: cite over the working atlas. Residual strictly
-    /// below the chain on a lane is expressed; residual that raised a
+    /// A served listing: cite over the working atlas. Residue strictly
+    /// below the chain on a lane is expressed; residue that raised a
     /// lane or moved nothing is held as thought — the form of the listing's chain
     /// (50.6) — and never expressed.
     #[cfg(test)]
@@ -264,20 +264,20 @@ impl Mind {
         // The root of this act (no caller holds a stroke): one stroke for
         // the citation and the expression both (65.5).
         let mut budget = self.physics.stroke();
-        let (cites, residual) = self.cite(chain, &mut budget);
-        // 24.2: a residual that raised a lane, or moved nothing at all, is
+        let (cites, residue) = self.cite(chain, &mut budget);
+        // 24.2: a residue that raised a lane, or moved nothing at all, is
         // held as thought and never spoken. The reading says which case.
-        let reading = residual_move(&residual, chain);
+        let reading = residue_move(&residue, chain);
         if !crate::economy::lanes_risen(&reading).is_empty()
             || crate::economy::lanes_fallen(&reading).is_empty()
         {
             self.hold_chain(chain.to_vec());
-            return Concluded { cites, residual: chain.to_vec(), familiar: false };
+            return Concluded { cites, residue: chain.to_vec(), familiar: false };
         }
         let familiar = !self
             .epigenome
-            .express(&residual, self.own_k(), self.now_tu(), &mut budget);
-        Concluded { cites, residual, familiar }
+            .express(&residue, self.own_k(), self.now_tu(), &mut budget);
+        Concluded { cites, residue, familiar }
     }
 
     /// STAND every sentence in the dialect, and say which of them are
@@ -624,7 +624,7 @@ impl Mind {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "a remainder is thought, not speech"));
         }
         // Speech is a connection or a connection with an opened axis; a
-        // residual germ or the unit is not a message. A thought is never
+        // residue germ or the unit is not a message. A thought is never
         // speech: a closed thought is spoken as the word it transcribes to
         // (78.52), a connection like any other.
         if word.is_identity() || (!word.is_connection() && word.opened_axes().is_empty()) {

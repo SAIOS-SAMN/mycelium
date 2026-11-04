@@ -70,7 +70,7 @@ fn absorb_taught_never_admits_rewrite_to_genome() {
     let _ = mind.absorb_taught(&tape);
     assert!(!mind.epigenome.holds(rewrite.address().as_bytes()) && mind.epigenome.genome_len() == 0, "never learned into the genome");
     let stratum = crate::transducer::stalk::invariant_of(&rewrite).key();
-    assert!(mind.board.residual_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");
+    assert!(mind.board.residue_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");
     let mut epi = Epigenome::new();
     if epi.learn(&tape, &mut super::fixtures::budget()).is_some() && epi.holds(rewrite.address().as_bytes()) {
         epi.admit_all_at(crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS));
@@ -120,7 +120,7 @@ fn keep_genome_rewrites_file_restore_left_short() {
 /// court rules it. A genome that carried a voice's ledger is refused by name.
 #[test]
 fn genome_bytes_crystallizes_word_only_at_court_stamp() {
-    // A sentence of the language: a residual chain is an open question, never
+    // A sentence of the language: a residue chain is an open question, never
     // a word (MU-CLIENT §7.1), and never reaches the genome.
     let word = super::fixtures::two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let court = crate::chronometry::Stamp::new(7, [3; 32], crate::chronometry::Place { k: 2, i: 1 });

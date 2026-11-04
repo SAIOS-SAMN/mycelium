@@ -58,9 +58,9 @@ fn admit_refuses_forged_signature_and_broken_parent() {
     assert_eq!(m.hear(1, 0), Ok(Admitted::Extended(1)));
 }
 
-/// A disagreement between final points is held as an exact residual per lane and never averaged.
+/// A disagreement between final points is held as an exact residue per lane and never averaged.
 #[test]
-fn residual_keeps_disagreement_never_averaged() {
+fn residue_keeps_disagreement_never_averaged() {
     let mut m = Mesh::new();
     // a and b read at one tick, differing on S and G.
     m.read(0, tick(20, [10, 4, 0, 0], 5));
@@ -74,8 +74,8 @@ fn residual_keeps_disagreement_never_averaged() {
     let pa = TPoint { origin: ORIGIN, h: 20, lanes: [10, 4, 0, 0].into(), k: 5 };
     let pb = TPoint { origin: ORIGIN, h: 20, lanes: [7, 9, 0, 0].into(), k: 5 };
     assert_eq!((m.courts[2].final_of(&a), m.courts[2].final_of(&b)), (Some(pa), Some(pb)));
-    assert_eq!(m.courts[2].final_point(), None, "tick 20 is held to the residual; no average, no pick");
-    let r = m.courts[2].residual();
+    assert_eq!(m.courts[2].final_point(), None, "tick 20 is held to the residue; no average, no pick");
+    let r = m.courts[2].residue();
     let edge = r.edges.iter().find(|e| e.h == 20 && [e.from, e.to] == [a, b] || [e.from, e.to] == [b, a]).expect("the a–b edge at 20");
     let sign = if edge.from == a { 1 } else { -1 };
     let q = |n: i64| crate::core::Q::from_integer(n.into());

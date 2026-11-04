@@ -765,8 +765,8 @@ fn by_address_returns_citation_without_cloning() {
     assert!(cited > 0, "the bar's shift, which reproduces the family, is cited");
 }
 
-/// A withheld remainder is a listing chain: from_residual reads it,
-/// so the residual path can mint against the book.
+/// A withheld remainder is a listing chain: from_residue reads it,
+/// so the residue path can mint against the book.
 #[test]
 fn form_deflation_leaves_listing_shaped_remainders() {
     crate::transducer::raster::stand_on(0);
@@ -783,11 +783,11 @@ assert!(
     "a withheld form leaves at least one remainder chain"
 );
 for r in listings {
-    let e = element::from_residual(r).expect("a listing chain is A5's");
+    let e = element::from_residue(r).expect("a listing chain is A5's");
     assert_eq!(
         e.sub().len(),
         r.len(),
-        "the remainder is a listing chain the residual path speaks"
+        "the remainder is a listing chain the residue path speaks"
     );
 }
 }

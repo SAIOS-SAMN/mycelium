@@ -82,7 +82,7 @@ pub struct Court {
     /// organs reaching one address is the admission condition; a voice is a
     /// use and a settlement party, never a vantage.
     pub(crate) convergence: crate::court::convergence::Convergence,
-    /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
+    /// THE OPEN-DEMAND MARKET: irreducible residues still awaiting consilience —
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
     /// ephemeral — the market is runtime tension, not persisted language).
     /// THE OPEN-DEMAND MARKET — the listings. Where each stands on the
@@ -668,7 +668,7 @@ pub struct Court {
     pub(crate) lane_listings: [crate::network::nerve::Keyed<()>; 4],
     /// Anchor evidence membership keyed by address+footprint.
     pub(crate) evidence_at: crate::network::nerve::Keyed<()>,
-    /// SELECTION-FIBRE CRITICAL PAIRS (Step 7): Q_anchor residuals — a word's
+    /// SELECTION-FIBRE CRITICAL PAIRS (Step 7): Q_anchor residues — a word's
     /// substance matched a defect but its π refused the support. (word address,
     /// the symmetric difference, the scene it arose in). The court's admission
     /// docket refines these into rebound anchors. Bounded; in-memory work queue.

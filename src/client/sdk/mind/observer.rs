@@ -200,7 +200,7 @@ impl Mind {
                 format!(
                     "attention: tension {} · open questions {} · feed families {} · corpus {} items on {} coordinates · met item waits on the reserve: family {} question {} · court task {} · passed uncoupled: {}",
                     self.strained(),
-                    self.board.open_residuals.len(),
+                    self.board.open_residues.len(),
                     families,
                     items,
                     coords,

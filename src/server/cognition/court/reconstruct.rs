@@ -151,7 +151,7 @@ impl Court {
             if slash {
                 self.redocket_citers_of(address);
                 // A slashed word leaves the language and is admitted as a
-                // cavity chart: the residual is a boundary, never garbage.
+                // cavity chart: the residue is a boundary, never garbage.
                 if let Some(elem) = self.basis.get(address).map(|w| w.element().clone()) {
                     self.basis_remove(address);
                     let inv = crate::transducer::stalk::invariant_of(&elem);
@@ -520,7 +520,7 @@ impl Court {
     /// Same class key and ℓ is consilience; same key different ℓ is
     /// [`crate::verdict::REFUSE_PERIOD_UNDERIVED`]; a new finite key files.
     /// A v2 form reads `Form.torsion` (keyed by the filed orbit's class);
-    /// a residual word still reads the element's cycles.
+    /// a residue word still reads the element's cycles.
     pub(crate) fn court_torsion(
         &mut self,
         spoken: &Element,
@@ -588,7 +588,7 @@ impl Court {
     }
 
     /// Torsion cycles a spoken word names: class key, period, representative
-    /// rotor of the filed orbit. Residual germs keep the element's section.
+    /// rotor of the filed orbit. Residue germs keep the element's section.
     pub(crate) fn spoken_torsion_cycles(
         spoken: &Element,
     ) -> Vec<(crate::network::nerve::coord::Holonomy, crate::transducer::sentence::ToralPeriod, Option<crate::transducer::alphabet::Rotor>)> {

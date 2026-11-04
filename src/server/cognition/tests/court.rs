@@ -26,7 +26,7 @@ assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "an hon
 // not false speech — and it comes back as the same word.
 let shifted: Vec<(i64, i64, u8, u8)> =
     w.sub().iter().map(|(r, c, b, a)| (r + 3, *c, *b, *a)).collect();
-let off = element::from_residual(&shifted).expect("a shift is still one transition per site");
+let off = element::from_residue(&shifted).expect("a shift is still one transition per site");
 assert_eq!(off.address(), w.address(), "A5 quotients the translation: one substance");
 assert!(reconstruct_blind(&off, &mut super::fixtures::budget()).is_none(), "so it replays clean — it is the same word");
 // Tamper 2: inflate the claimed magnitude (yield fraud).
@@ -429,7 +429,7 @@ fn converge_witness_requires_bonded_hypha() {
     use crate::court::convergence::Converged;
     let mut k = Court::new();
     let peer = [2u8; 32];
-    let word = crate::transducer::element::from_residual(&vec![(0i64, 0i64, 1u8, 2u8)])
+    let word = crate::transducer::element::from_residue(&vec![(0i64, 0i64, 1u8, 2u8)])
         .expect("one link is A5's chain");
     let addr = word.address();
     k.docket_connection(&word, [9; 32]);

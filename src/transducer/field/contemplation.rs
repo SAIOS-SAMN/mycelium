@@ -1013,7 +1013,7 @@ impl Contemplation {
     /// ruled 2026-09-09): its words are read at a chart when a cite asks,
     /// through the form's own `by_class`, which is derived here as the
     /// form is taken into custody. The train is the germinating bundle;
-    /// remainders are per-pair residual chains. idea_key is the form's
+    /// remainders are per-pair residue chains. idea_key is the form's
     /// vertex key.
     /// Z4's instrument (§8.1): the allocator bytes a hold ADDS, read
     /// between `hold_form`'s entry and its exit and totalled per stroke.
