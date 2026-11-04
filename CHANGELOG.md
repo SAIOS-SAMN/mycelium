@@ -26,26 +26,37 @@ may change inside it.
   else refuses with `FactorRefusal::Residue { unclaimed, uncarried }`. It
   never searches for a factorisation. The stated ground is read at any
   rank and width (`cognition::stated_ground_of`).
-- **μ:** an admitted factorisation is recorded on the book
-  (`TaskRegistry::record_factorisation`) and pays nothing. Paying it as a
-  solve's discharge would need a per-pair first closure and a docket
-  without a rule, economy changes beyond reuse.
+- **μ, ruled (2026-11-04): an admitted factorisation is never paid.** μ
+  is the metabolic cost of traversal. A factorisation is an adjudicated
+  perception, and its residue is meaning; meaning is content, never paid
+  (MU-SENSING §3.7, §3.9). It is recorded on the book
+  (`TaskRegistry::record_factorisation`), and its verdict carries no μ.
 - **The mind speaks its factorisations** of a task beyond the alphabet,
   one claim per held factorisation (`Mind::speak_factorisations`).
 - **Network contract**, inside v0.4.0's break:
-  - A new act, `ACT_FACTORISATION` = `0x18` (`Action::Factorisation`, a
-    transition that seals nothing), the first free byte after the
-    party's transitions: `[0x18][voice 32][task citation 32][pair
-    LEB128][rank u16][(source u16)(sense u8)·rank][period u16·rank][link
-    count LEB128][link·count]`, optionally `[GRND][len u32][symbol]`,
-    then `[SIGN][sig 64]` over the domain `mycelium factorisation v1`. A
-    link is its site (`n` by LEB128, then `i64` coordinates) and its two
+  - **The solve act gains a claim kind**, the byte after its tag
+    (`solve_kind`), by 78.126: the wire's bytes below the court's range
+    are spent, so a new act is a sub-kind, never a new byte. No act byte
+    is added.
+  - Kind 0 (`SOLVE_KIND_OUTPUTS`) is the solve of outputs, its layout
+    unchanged after the kind byte: `[ACT_SOLVE][0][voice 32][task
+    citation 32][n u8][sample·n]`, then the optional rule and ground and
+    the signature, now signed as `mycelium solve v4`. A solve without the
+    kind byte no longer reads.
+  - Kind 1 (`SOLVE_KIND_FACTORISATION`) is the claim of factorisation:
+    `[ACT_SOLVE][1][voice 32][task citation 32][pair LEB128][rank
+    u16][(source u16)(sense u8)·rank][period u16·rank][link count
+    LEB128][link·count]`, optionally `[GRND][len u32][symbol]`, then
+    `[SIGN][sig 64]` over the domain `mycelium factorisation v1`. A link
+    is its site (`n` by LEB128, then `i64` coordinates) and its two
     symbols, each by LEB128 length.
-  - The verdict: `[0]` admitted; `[1][unclaimed links][uncarried links]`;
-    `[2][reason, LEB128 length]`.
-  - The SDK's `ACT_TABLE` names it `factorisation`; the conformance
-    statement carries it as a MAY act of both profiles
-    (`decode_factor_verdict`). `WIRE_VERSION` is unchanged.
+  - The claim's verdict: `[0]` admitted; `[1][unclaimed
+    links][uncarried links]`; `[2][reason, LEB128 length]`.
+  - The SDK's `ACT_TABLE` is unchanged; `wire` re-exports `solve_kind`
+    and the two kinds. The conformance statement names the solve rows at
+    mode 0 and carries the claim as `solve factorisation` (`ACT_SOLVE`,
+    mode 1), MAY for both profiles (`decode_factor_verdict`).
+    `WIRE_VERSION` is unchanged.
   - No task address changes: a raster task's address was already its
     posted samples'.
   - SDK surface: `task` re-exports the codec and the factorisation types

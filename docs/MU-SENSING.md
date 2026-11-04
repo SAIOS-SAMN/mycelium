@@ -632,8 +632,10 @@ orbit about an attractor, and its shape is set by gravity:
 - Shear, precession and the refusal of a `Loop` are S9's.
 
 **Built (track 26 S4c, v0.4.0 in progress).**
-- **A claim of factorisation on the wire** (`ACT_FACTORISATION`, `0x18`;
-  `dialogue::factorisation`). A mind states, for one train pair of a
+- **A claim of factorisation on the wire**, a claim kind under the solve
+  (`ACT_SOLVE` with `SOLVE_KIND_FACTORISATION`, the byte after the tag;
+  78.126: the wire's bytes below the court's range are spent, so a new
+  act is a sub-kind; `dialogue::factorisation`). A mind states, for one train pair of a
   task, the motion (the signed permutation written whole, and the periods
   of the enclosure it is taken onto, so each phase's re-period is exact
   from the posted pair) and the residue (rank-`n` links), with the ground
@@ -650,10 +652,12 @@ orbit about an attractor, and its shape is set by gravity:
   for a factorisation (claims `court_admits_a_matching_factorisation_claim`,
   `court_refuses_a_factorisation_whose_residue_differs`,
   `factorisation_claim_states_its_ground`, `factorisation_claim_round_trips`).
-- **μ is not paid for an admitted factorisation.** It is recorded on the
-  book (`TaskRegistry::record_factorisation`). Paying it as a solve's
-  discharge would need a first closure per pair and a docket without a
-  rule, which are economy changes beyond reuse.
+- **An admitted factorisation is never paid** (ruled 2026-11-04). μ is
+  the metabolic cost of traversal. A factorisation is an adjudicated
+  perception, and its residue is meaning; meaning is content, and content
+  is never paid (§3.7). The claim is recorded on the book
+  (`TaskRegistry::record_factorisation`), and its verdict carries no μ.
+  Paying for it is not an open question.
 - **The mind speaks per factorisation.** A task off the alphabet's
   section stops `BeyondAlphabet`, and the mind states every factorisation
   it holds of each train pair, one claim each (a vortex speaks per
@@ -841,6 +845,11 @@ u16][coordinate i64 · count][symbols, w · ∏ eᵢ bytes]`
   layout). `WIRE_VERSION` stays `0x0200`: no tag carries `0x0200` yet
   (v0.3.0-rc.2 is `0x0104`), and every layout change of v0.3.0's break
   rides that one version.
+- Since track 26 S4c the solve act carries its claim kind as the byte
+  after its tag (`solve_kind`): kind 0 the solve of outputs
+  (`SOLVE_KIND_OUTPUTS`), signed as `mycelium solve v4`, and kind 1 a
+  claim of factorisation (§3.9). The layout after the kind byte is each
+  kind's own, inside v0.4.0's break.
 
 ### 6.1 Scope separation (ruled 2026-11-03)
 
@@ -986,7 +995,7 @@ track 26 S4c).
 | A link of rank `n`: a `Site` and the symbols at the source's width; the word, chart and field carriers read `SectionLink`, reached through `Link::section`, refused by name | **Built** (track 26 S4b); the stopped item of S5 closed | `src/transducer/sentence/link.rs` |
 | Connection by grade: bodies through a shared cell of grade `n − 1` at every rank; no fixed 4- or 6-neighbourhood | **Built** (track 26 S4b) | `sentence::incidence_of_sites`, `faces_of`, `surrounding`, `by_grade`; `transduce::Enclosed` |
 | Transduction as factorisation: motion ∘ residue, a vortex of factorisations, the court's admission on a derived residue | **Built** (track 26 S4b) | `transduce::factor`, `transduce::percept`; `court::verdict::factorisation` |
-| A claim of factorisation on the wire (`ACT_FACTORISATION`, `0x18`), admitted by reconstruction, recorded and not paid; the mind speaking one claim per held factorisation of a task beyond the alphabet | **Built** (track 26 S4c) | `dialogue::factorisation`; `server::factorisation`; `client::sdk::mind::factor` |
+| A claim of factorisation on the wire (the solve's claim kind 1, `SOLVE_KIND_FACTORISATION`), admitted by reconstruction, recorded and never paid (ruled); the mind speaking one claim per held factorisation of a task beyond the alphabet | **Built** (track 26 S4c) | `dialogue::factorisation`; `server::factorisation`; `client::sdk::mind::factor` |
 | The hypha posting, serving and addressing tasks of any rank; the word machinery's readers on the section, refused by the alphabet's name alone | **Built** (track 26 S4c) | `server::registry` (`post`, `section`), `server::route`; `PostedTask::envelope` |
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
 | A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |

@@ -13,14 +13,11 @@
 //! At any rank: nothing here reads the rank, and nothing passes through the
 //! alphabet's section.
 //!
-//! AN ADMITTED FACTORISATION IS RECORDED, NOT PAID (track 26 S4c). μ is the
-//! cost of the traversal, the share of the frame the change covers, and a
-//! solve's pay is its discharge on the withheld pairs, docketed with its
-//! rule and paid on the task's first closure. A claim of factorisation
-//! names a train pair the mind was served, carries no rule to docket, and
-//! the book keeps no first closure per pair, so paying it as a solve's
-//! discharge would need economy changes beyond reuse. The book records it
-//! (`TaskRegistry::record_factorisation`) and the verdict pays nothing.
+//! AN ADMITTED FACTORISATION IS RECORDED, NEVER PAID (ruled 2026-11-04;
+//! MU-SENSING §3.9). μ is the metabolic cost of traversal. A factorisation
+//! is an adjudicated perception, and its residue is meaning; meaning is
+//! content, never paid (§3.7). The book records it
+//! (`TaskRegistry::record_factorisation`) and the verdict carries no μ.
 
 use crate::anastome::dialogue::{FactorVerdict, FactorisationAct, PostedTask};
 use crate::court::verdict::factorisation::{admit_factorisation, FactorClaim, FactorRefusal};
