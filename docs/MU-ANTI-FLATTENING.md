@@ -185,8 +185,7 @@ regression, its ruling, the guarding type, and the claim that proves it
 (a `#[test]` fn, or a `compile_fail` doc test whose comment names the
 claim). The gate refuses a register entry whose guard type or claim is
 named empty or missing from the tree, as `numbers.rs` does for the open
-numbers. The register records no mutation-audit entry (ruled
-2026-11-04). A report of changed document sentences that put a typed
+numbers. A report of changed document sentences that put a typed
 term (reconstruction, rebuild, replay, resend, digest, hash, lattice,
 grid) beside an admission verb (admit, verify, accept, check) is **open**:
 it would only report and never refuse, and reading which documents

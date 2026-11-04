@@ -1,12 +1,7 @@
 // MU-STANDARDS 4.1, 6.1 — THE GATE BINARY: the reading bound and clippy
 // with warnings denied, both run and both reported. Non-zero on either.
-//
-// `gate mutate` runs the mutation audit instead (mutate/): each
-// protected law broken on purpose in a scratch worktree, its suite required
-// to fail. Non-zero on any mutant not killed.
 
 mod lint;
-mod mutate;
 
 #[path = "lint/warnings.rs"]
 mod warnings;
@@ -29,17 +24,9 @@ fn verdict(bound: Result<(), String>, clippy: Result<(), String>) -> Result<(), 
 fn main() {
     match std::env::args().nth(1).as_deref() {
         None => gate(),
-        Some("mutate") => match mutate::run() {
-            Ok(true) => {}
-            Ok(false) => std::process::exit(1),
-            Err(e) => {
-                eprintln!("{e}");
-                std::process::exit(1)
-            }
-        },
         Some("inventory") => inventory(),
         Some(other) => {
-            eprintln!("gate: unknown subcommand `{other}`; the subcommands are none (the gate), `mutate` and `inventory`");
+            eprintln!("gate: unknown subcommand `{other}`; the subcommands are none (the gate) and `inventory`");
             std::process::exit(2)
         }
     }

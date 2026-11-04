@@ -1103,7 +1103,7 @@ exact with drift guarded by type, and sensing any source at any rank
 (track 26). ROADMAP.md is the one list; this summary does not replace it.
 
 Components brought over from precursor implementations (an encrypted
-transport, a mutation audit, integer homology, a chain-complex
+transport, integer homology, a chain-complex
 certificate kind, a fault-injection campaign, rule-language extensions
 and others) are specified in
 [`docs/MU-PRECURSORS.md`](docs/MU-PRECURSORS.md), each under the track it

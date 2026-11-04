@@ -86,7 +86,7 @@ Mycelium's current types, admission path and treasury.
 | Precursor | What Mycelium draws from it |
 |---|---|
 | **A predecessor Mycelium implementation** | The Noise XX transport and its pinning; the fault-injection campaign and its invariant auditor; the SDK depths and the file-feed door. |
-| **An earlier settlement-layer prototype** | Smith normal form over ℤ, integer homology and the free and torsion parts; the declared chain-complex checker; the malformed-input conformance corpus and its refuse/wait distinction; the falsification scripts the mutation audit generalizes; the representation of homology as a coefficient-change functor. |
+| **An earlier settlement-layer prototype** | Smith normal form over ℤ, integer homology and the free and torsion parts; the declared chain-complex checker; the malformed-input conformance corpus and its refuse/wait distinction; the representation of homology as a coefficient-change functor. |
 | **ipsal-autic, the language project the alphabet came from** | Act parameters measured per pair; templates placed by repeated placement; first contact as a relation; colour-role equivariance and the class quotient; the representation functor (chains add as transports compose); the table of refused functionals. |
 | **convergence-engine, the public prototype harness** ([github.com/SAIOS-SAMN/convergence-engine](https://github.com/SAIOS-SAMN/convergence-engine)) | The rational canonical form over ℚ[x] (invariant factors of a linear map); exact rational arithmetic and coboundary reduction, already kept (§7). |
 | **An earlier design study** | The statement of what determinism gives alignment and what it does not. |
@@ -100,7 +100,7 @@ Mycelium's current types, admission path and treasury.
 | # | Component | Track | Effort | Status |
 |---|---|---|---|---|
 | 3.1 | Noise XX encrypted transport | 5 | Medium | In progress |
-| 3.2 | Mutation audit (`mutate` in the gate) | 14 | Medium | In progress |
+| 3.2 | ~~Mutation audit~~ | 14 | — | Retired |
 | 3.3 | Named refusals in `learn_form` | 7 | Small | In progress |
 | 3.4 | Integer homology and invariant factors | 18, 19, 12 | Medium | Specified |
 | 3.5 | Chain-complex checker (V1 certificate kind) | 12 (S2) | Medium | Specified |
@@ -186,62 +186,12 @@ constructor that refuses instead.
 `src/network/noise.rs`; wiring into the server door and the SDK session,
 and the pin store in the home, may remain after the first commit.
 
-### 3.2 Mutation audit
+### 3.2 ~~Mutation audit~~
 
-**What it is.** A standing check that the tests guard the laws they
-claim to guard. A catalogue of mutants is kept: each one names a law, the
-file, the exact source span that implements the law, the replacement that
-breaks it, and the narrowest test that must fail when it is broken. The
-audit applies each mutant in a scratch worktree, runs that test, and
-reports a verdict per mutant.
-
-**The gap.** In release 0.2.0, the gate (`xtask/main.rs`, `xtask/lint/`) takes three
-readings: the reading bound (`length.rs`), the Euclidean vocabulary
-(`euclidean.rs`) and clippy (`warnings.rs`). Nothing in it checks that a
-law's breakage is detected by a test. `proptest` is a dev-dependency and
-is not yet used by any test. MU-STANDARDS §3 states tests as claims, and
-nothing measures whether each claim can fail.
-
-**Design.**
-- `cargo run -- mutate` in `xtask` reads the catalogue (a text file kept
-  beside the gate, one entry per mutant).
-- Each mutant: `law` (the specification section it implements), `file`,
-  the exact original span, the replacement, and `test` (a module path).
-- The audit creates a scratch worktree of the current commit, applies one
-  mutant at a time by exact span replacement, runs only the named test,
-  and restores the span. The working tree is never modified.
-- **Verdicts, three and exact:**
-  - `killed`: the named test failed with the mutant applied;
-  - `survived`: the named test passed with the mutant applied (a law no
-    test notices; a defect in the tests);
-  - `stale`: the original span is not found in the file (the code moved;
-    the entry is re-anchored, never counted as either of the others).
-- The audit reports every verdict and exits non-zero on any `survived` or
-  `stale` entry. It is run before a release and on a change to a file the
-  catalogue names; it is not part of every gate run, because each mutant
-  is a build.
-- Builds run under the gate's own target directory, so the audit never
-  disturbs a running build.
-
-**Adaptations from the precursor.** The earlier settlement-layer
-prototype kept mutants in two scripts run from the workspace root on a
-clean tree, reverting through the version-control tool. Mycelium keeps
-the catalogue as data, runs it from the gate binary in a scratch
-worktree, and adds the `stale` verdict so a moved span is reported rather
-than read as a surviving law.
-
-**Acceptance claims.**
-- A mutant whose test fails is `killed`, and one whose test passes has
-  `survived`, on a fixture catalogue against a fixture crate.
-- A span not in the file is `stale`: a refusal by name, never counted as
-  killed.
-- The working tree is unchanged after an audit: a fixed locus.
-- A first catalogue covering at least the treasury audit
-  (`Treasury::audit`), canonical decoding of one act, second-vantage
-  equality (`same_vertex`) and a clause's tie rule, every entry `killed`.
-
-**Track** 14 (and MU-STANDARDS §4, the gate). **Effort** medium.
-**Status** In progress: the `mutate` subcommand is being added to `xtask`.
+**Status** Retired (2026-11-04, ruled theatre). The catalogue and the
+`gate mutate` subcommand are removed from `xtask`; a law is guarded by
+its claims and, where a regression recurs, by a type in the drift
+register (`xtask/lint/drift.rs`).
 
 ### 3.3 Named refusals in `learn_form`
 
@@ -986,10 +936,9 @@ similarity classes are not carried forward (§5).
 
 ## 7. Order of work
 
-1. The three components in progress land first: the transport (§3.1),
-   the mutation audit (§3.2) and `learn_form`'s refusals (§3.3).
-2. The malformed-input corpus (§3.7) and the first mutation catalogue
-   follow, as the base of the security review (track 14).
+1. The two components in progress land first: the transport (§3.1) and
+   `learn_form`'s refusals (§3.3).
+2. The malformed-input corpus (§3.7) follows, as the base of the security review (track 14).
 3. Integer homology (§3.4) precedes the chain-complex checker (§3.5),
    which waits on the verifier interface (track 12, S1).
 4. The rule-language extensions (§3.8) land one court change at a time,
