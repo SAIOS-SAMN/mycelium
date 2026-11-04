@@ -109,6 +109,34 @@ fn solve() -> Result<String, String> {
     Ok("the signed solve of a rank-3 output, with and without its stated ground, and the three verdicts decode to the values sent, the paid μ exact".to_string())
 }
 
+/// TRACK 26 S4c — a claim of factorisation at rank 3 and width 2: the
+/// motion (a signed permutation and the enclosure it is taken onto), the
+/// residue's links and the stated ground, signed; and each of the three
+/// verdicts.
+fn factorisation() -> Result<String, String> {
+    use mycelium::transducer::base::Site;
+    use mycelium::transducer::family::transduce::{Enclosure, Motion, Sense, SignedPermutation};
+    use mycelium::transducer::sentence::Link;
+    let permutation = SignedPermutation::new(vec![(1, Sense::Reversed), (0, Sense::Kept), (2, Sense::Kept)]).map_err(|e| format!("{e:?}"))?;
+    let motion = Motion { permutation, onto: Enclosure::new(vec![3, 2, 2]).map_err(|e| format!("{e:?}"))? };
+    let residue = vec![Link::new(Site::of([0, 1, 1]), vec![0, 0], vec![0, 7]), Link::new(Site::of([2, 0, 1]), vec![0, 3], vec![0, 0])];
+    let ground = vec![0u8, 0];
+    let bytes = d::encode_factorisation(&key(), &CITATION, 1, &motion, &residue, Some(&ground)).ok_or("the claim does not encode")?;
+    let act = d::decode_factorisation(&bytes).ok_or("the claim did not decode")?;
+    let want = d::FactorisationAct { voice: voice(), task: CITATION, pair: 1, motion, residue: residue.clone(), ground: Some(ground), signed: true };
+    same("the claim of factorisation", Some(act), want)?;
+    same("the claim's kind under the solve", d::solve_kind(&bytes), d::SOLVE_KIND_FACTORISATION)?;
+    same("the claim read as a solve of outputs", Some(d::decode_solve(&bytes).is_none()), true)?;
+    for v in [
+        d::FactorVerdict::Admitted,
+        d::FactorVerdict::Residue { unclaimed: residue.clone(), uncarried: Vec::new() },
+        d::FactorVerdict::Refused { reason: b"no such train pair".to_vec() },
+    ] {
+        same("the factorisation verdict", d::decode_factor_verdict(&d::encode_factor_verdict(&v)), v)?;
+    }
+    Ok("the signed claim of a rank-3 motion and residue at width 2, its stated ground, and the three verdicts decode to the values sent".to_string())
+}
+
 fn laws_register() -> Result<String, String> {
     same("the register request", laws::decode_laws_request(&laws::encode_register_request()), laws::LawsRequest::Register)?;
     let served = laws::decode_register_reply(&laws::encode_register_reply()).ok_or("the register did not decode at its version")?;
@@ -511,6 +539,7 @@ fn check(a: &ActRequirement) -> Option<Result<String, String>> {
         "peers" => peers(),
         "syllabus" => syllabus(),
         "speech" => speech(),
+        "solve factorisation" => factorisation(),
         "wallet" => wallet(),
         "observe query" => observe_query(),
         _ => return None,

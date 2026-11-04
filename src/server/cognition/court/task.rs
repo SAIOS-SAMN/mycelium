@@ -353,7 +353,7 @@ pub fn stated_ground(
     train: &crate::transducer::family::Family,
     stated: Option<&[u8]>,
 ) -> Result<crate::transducer::family::transduce::Ground<u8>, StatedGroundRefusal> {
-    use crate::transducer::family::transduce::{Candidacy, Ground};
+    use crate::transducer::family::transduce::Ground;
     let Some(bytes) = stated else { return Ok(Ground::None) };
     let &[g] = bytes else { return Err(StatedGroundRefusal::NotOneSymbol) };
     let mut pairs = Vec::with_capacity(train.len());
@@ -363,8 +363,28 @@ pub fn stated_ground(
         };
         pairs.push((a, b));
     }
-    match Ground::candidacies(&pairs).into_iter().find(|(s, _)| s.as_slice() == [g]) {
-        Some((_, Candidacy::Candidate)) => Ok(Ground::One(g)),
+    stated_ground_of(&pairs, Some(bytes)).map(|_| Ground::One(g))
+}
+
+/// THE STATED GROUND READ AT ANY RANK (track 26 S4c): as [`stated_ground`],
+/// on the posted samples of the task's train pairs. The stated ground is
+/// one symbol at the samples' own width, or refused `NotOneSymbol`; read as
+/// a candidate by the three conditions, or refused `NoCandidate`. A family
+/// with no pair presents no candidate.
+pub fn stated_ground_of(
+    train: &[(crate::transducer::sample::Sample, crate::transducer::sample::Sample)],
+    stated: Option<&[u8]>,
+) -> Result<crate::transducer::family::transduce::Ground<Vec<u8>>, StatedGroundRefusal> {
+    use crate::transducer::family::transduce::{Candidacy, Ground};
+    let Some(bytes) = stated else { return Ok(Ground::None) };
+    if train.is_empty() {
+        return Err(StatedGroundRefusal::NoCandidate);
+    }
+    if train.iter().flat_map(|(x, y)| [x, y]).any(|s| s.width() != bytes.len()) {
+        return Err(StatedGroundRefusal::NotOneSymbol);
+    }
+    match Ground::candidacies(train).into_iter().find(|(s, _)| s.as_slice() == bytes) {
+        Some((_, Candidacy::Candidate)) => Ok(Ground::One(bytes.to_vec())),
         _ => Err(StatedGroundRefusal::NoCandidate),
     }
 }

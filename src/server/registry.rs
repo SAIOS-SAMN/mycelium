@@ -4,10 +4,20 @@
 //! named by the listing identity of its train pairs and test inputs; the
 //! first verified solve takes the bounty; a repeat is verified and paid
 //! nothing.
+//!
+//! TRACK 26 S4c — THE BOOK HOLDS TASKS OF ANY RANK: each task as the source
+//! posted it (`PostedTask`, samples of any rank and width), addressed by
+//! that content alone and served as it was posted. The word machinery's
+//! readers (the routes, the bound families, a solve's replay) take the
+//! alphabet's section of a task (`TaskRegistry::section`), refused by name
+//! where the alphabet does not spell the samples; nothing else in the book
+//! reads a rank.
 
-use crate::transducer::family::{Grid, Task};
+use crate::anastome::dialogue::PostedTask;
 use crate::network::nerve::Keyed;
 use crate::transducer::address::Address;
+use crate::transducer::family::{Grid, Task, TrainPair};
+use crate::transducer::sentence::SectionRefusal;
 
 /// The closed task lifecycle. Settled carries the settle count — the decay's
 /// exact denominator, never a boolean "done".
@@ -32,12 +42,12 @@ pub enum ClosureOrder {
 pub type TaskCitation = [u8; 32];
 
 pub struct TaskRegistry {
-    /// (citation, the task, state) — append-only, content-addressed. The
-    /// task's full content address ([`task_address`]) is never held here:
-    /// it is recomputed losslessly from the task it names, where a reader
-    /// needs its coordinates, and a task of busy frames makes it tens of
-    /// kilobytes (an index copies the address it is keyed by).
-    tasks: Vec<(TaskCitation, Task, TaskState)>,
+    /// (citation, the posted task, state) — append-only, content-addressed.
+    /// The task's full content address ([`task_address_of`]) is never held
+    /// here: it is recomputed losslessly from the task it names, where a
+    /// reader needs its coordinates, and a task of busy frames makes it
+    /// tens of kilobytes (an index copies the address it is keyed by).
+    tasks: Vec<(TaskCitation, PostedTask, TaskState)>,
     /// 78.146, wire v1.2 — each task's CITATION, the 32 bytes that name it
     /// on every wire, to its position. Dispatch still walks the Vec;
     /// lookup, overlay, and settle read here.
@@ -56,6 +66,11 @@ pub struct TaskRegistry {
     /// Each task's routes by its citation (`route::routes_of`), read once
     /// off the court: a cover change re-homes by them (mycelium#14).
     routes: Keyed<crate::server::route::TaskRoutes>,
+    /// TRACK 26 S4c — EVERY ADMITTED CLAIM OF FACTORISATION, keyed by its
+    /// coordinates written out: the task's citation, the train pair, the
+    /// voice and the motion (`server::factorisation`). Recorded, never
+    /// paid; volatile, as the routes are.
+    factorisations: Keyed<()>,
 }
 
 /// A TASK'S IDENTITY IS ITS CONTENT (law 2; MU-SENSING §6; track 26 S2):
@@ -136,7 +151,31 @@ impl TaskRegistry {
             intake_cursor: 0,
             intake_done: false,
             routes: Keyed::new(),
+            factorisations: Keyed::new(),
         }
+    }
+
+    /// RECORD AN ADMITTED CLAIM OF FACTORISATION (track 26 S4c): under the
+    /// task's citation, the train pair, the voice and the motion, written
+    /// out. A claim admitted again records nothing new; a citation this
+    /// book does not hold records nothing, as does a motion that does not
+    /// write.
+    pub fn record_factorisation(&mut self, act: &crate::anastome::dialogue::FactorisationAct) {
+        if !self.by_id.contains(&act.task) {
+            return;
+        }
+        let mut key = act.task.to_vec();
+        crate::transducer::address::put_key_count(&mut key, act.pair);
+        key.extend_from_slice(&act.voice);
+        if crate::anastome::dialogue::put_motion(&mut key, &act.motion).is_some() {
+            self.factorisations.insert(key, ());
+        }
+    }
+
+    /// The admitted claims of factorisation recorded under a task's
+    /// citation.
+    pub fn factorisations_of(&self, id: &[u8]) -> usize {
+        self.factorisations.fibre_at(id).map_or(0, |f| f.count())
     }
 
     /// The routes kept for a task, by its citation.
@@ -162,13 +201,13 @@ impl TaskRegistry {
     }
 
     /// The first task this book holds no routes for, in manifest order.
-    pub fn unrouted(&self) -> Option<(TaskCitation, Task)> {
+    pub fn unrouted(&self) -> Option<(TaskCitation, PostedTask)> {
         self.tasks.iter().find(|(id, _, _)| !self.routes.contains(id)).map(|(id, task, _)| (*id, task.clone()))
     }
 
     /// Next `n` tasks for first-time listing. Empty once the manifest has
     /// been walked; cover changes re-home through [`next_cover_batch`].
-    pub fn next_intake_batch(&mut self, n: usize) -> Vec<(TaskCitation, Task)> {
+    pub fn next_intake_batch(&mut self, n: usize) -> Vec<(TaskCitation, PostedTask)> {
         let len = self.tasks.len();
         if self.intake_done || len == 0 || n == 0 {
             return Vec::new();
@@ -197,7 +236,7 @@ impl TaskRegistry {
     }
 
     /// Next `n` tasks for a cover-change re-home stroke.
-    pub fn next_cover_batch(&mut self, n: usize) -> Vec<(TaskCitation, Task)> {
+    pub fn next_cover_batch(&mut self, n: usize) -> Vec<(TaskCitation, PostedTask)> {
         let len = self.tasks.len();
         if len == 0 || n == 0 {
             return Vec::new();
@@ -229,43 +268,65 @@ impl TaskRegistry {
         self.tasks.iter().filter(|(_, _, s)| *s == TaskState::Unsolved).count()
     }
 
-    pub fn task(&self, id: &[u8]) -> Option<&Task> {
+    /// The task a citation names, as it was posted: samples of any rank.
+    pub fn task(&self, id: &[u8]) -> Option<&PostedTask> {
         self.by_id
             .get(id)
             .and_then(|&i| self.tasks.get(i).map(|(_, task, _)| task))
     }
 
-    /// Withheld test pairs (input, held output) the home speaks a rule onto.
+    /// THE TASK ON THE ALPHABET'S SECTION (track 26 S4c), the carrier the
+    /// word machinery spells: `None` where the book holds no such task, and
+    /// the refusal by name (`SectionRefusal`: the alphabet's rank, or the
+    /// width) where its samples are off the section. The task itself is
+    /// served whatever its rank; only the readers of the section are
+    /// limited by the alphabet.
+    pub fn section(&self, id: &[u8]) -> Option<Result<Task, SectionRefusal>> {
+        self.task(id).map(PostedTask::section)
+    }
+
+    /// Withheld test pairs (input, held output) the home speaks a rule onto,
+    /// on the alphabet's section. A task this book does not hold, or one off
+    /// the section, withholds nothing a rule is replayed on: a claim on it
+    /// is a factorisation's, reconstructed on its samples.
     pub fn withheld(&self, id: &[u8]) -> Vec<(Grid, Grid)> {
-        // A task this book does not hold withholds nothing.
-        match self.task(id) {
-            Some(t) => t.test.iter().filter(|(_, y)| !y.is_empty()).cloned().collect(),
-            None => Vec::new(),
+        match self.section(id) {
+            Some(Ok(t)) => t.test.into_iter().filter(|(_, y)| !y.is_empty()).collect(),
+            Some(Err(_)) | None => Vec::new(),
         }
     }
 
-    /// REGISTER a task (idempotent by content — re-feeding under a new file
-    /// name registers nothing). Returns the id, or `None` where a member of
-    /// the task has no A5 form and the task therefore has no identity. The
-    /// id is the task's CITATION: its content address is formed only to be
-    /// compacted, and is never held by the book or its index.
+    /// REGISTER a raster task: its samples, each at its position, posted
+    /// ([`TaskRegistry::post`]). `None` where a member is no sample (an
+    /// empty or ragged raster), so the task has no identity.
     pub fn register(&mut self, task: Task) -> Option<TaskCitation> {
-        let id = task_citation(&task)?;
+        Some(self.post(PostedTask::of_rasters(&task).ok()?))
+    }
+
+    /// POST a task of any rank (idempotent by content — re-feeding under a
+    /// new file name posts nothing). Returns the task's CITATION: its
+    /// content address ([`task_address_of`]) is formed only to be compacted,
+    /// and is never held by the book or its index. No ground is read and
+    /// no rank is limited: the identity is the posted samples' content.
+    pub fn post(&mut self, task: PostedTask) -> TaskCitation {
+        let id = citation(&task_address_of(&task));
         if !self.by_id.contains(&id) {
             let i = self.tasks.len();
             self.tasks.push((id, task, TaskState::Unsolved));
             self.by_id.insert(id, i);
         }
-        Some(id)
+        id
     }
 
-    /// MU-CLIENT §5.4 (E1, finding 8) — EVERY FAMILY THIS BOOK HOLDS, by its
-    /// citation: the name a court binds a family under and a mind speaks a
-    /// scene by. The book is the one carrier of its tasks (law 12), so a
-    /// court restored from its snapshot reads its families here at boot,
-    /// never from a copy kept beside them.
-    pub fn families(&self) -> impl Iterator<Item = ([u8; 32], &[(Grid, Grid)])> {
-        self.tasks.iter().map(|(id, task, _)| (*id, task.train.as_slice()))
+    /// MU-CLIENT §5.4 (E1, finding 8) — EVERY FAMILY THIS BOOK HOLDS ON THE
+    /// ALPHABET'S SECTION, by its citation: the name a court binds a family
+    /// under and a mind speaks a scene by. The book is the one carrier of
+    /// its tasks (law 12), so a court restored from its snapshot reads its
+    /// families here at boot, never from a copy kept beside them. A family
+    /// off the section binds no word family (track 26 S4c): it is judged
+    /// by factorisation, on its posted samples.
+    pub fn families(&self) -> impl Iterator<Item = ([u8; 32], Vec<TrainPair>)> + '_ {
+        self.tasks.iter().filter_map(|(id, task, _)| Some((*id, task.section().ok()?.train)))
     }
 
     /// DISPATCH a work envelope: the next Unsolved task, rotating so pulls
@@ -289,7 +350,7 @@ impl TaskRegistry {
         }
     }
 
-    pub fn dispatch(&mut self) -> Option<(TaskCitation, &Task)> {
+    pub fn dispatch(&mut self) -> Option<(TaskCitation, &PostedTask)> {
         let n = self.tasks.len();
         for k in 0..n {
             let i = (self.cursor + k) % n;

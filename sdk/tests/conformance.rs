@@ -20,7 +20,7 @@ const CLIENT_EXAMPLE: &[&str] = &["laws register", "task", "solve"];
 
 /// The acts the reference mind (`mycelium-client`) speaks.
 const REFERENCE_MIND: &[&str] =
-    &["laws register", "task", "task by citation", "solve", "quote", "probe", "peers", "syllabus", "speech", "domain reserve", "seat mail"];
+    &["laws register", "task", "task by citation", "solve", "quote", "probe", "peers", "syllabus", "speech", "solve factorisation", "domain reserve", "seat mail"];
 
 /// The acts `sdk/examples/house.rs` speaks through the kernel profile.
 const HOUSE_EXAMPLE: &[&str] = &[

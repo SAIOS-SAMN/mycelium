@@ -330,3 +330,41 @@ fn task_identity_writes_rank_and_width() {
     assert_ne!(frame(vec![4], 1), frame(vec![2, 2], 1), "the rank is written");
     assert_ne!(frame(vec![2], 2), frame(vec![1], 4), "the width is written");
 }
+
+/// TRACK 26 S4c — THE HYPHA SERVES A RANK-3 TASK: posted from its samples,
+/// it is named by their content alone, dispatched, and its envelope served
+/// as posted at rank 3, the withheld output never riding. Only the
+/// alphabet limits it, by name: the word machinery's readers (the section,
+/// the withheld rasters a rule is replayed on, the bound families, the
+/// routes) take nothing of it, and the walks pass it once routed to none.
+#[test]
+fn hypha_serves_a_rank_three_task() {
+    use crate::anastome::dialogue::{decode_task_envelope, encode_task_envelope};
+    use crate::transducer::alphabet::AlphabetRank;
+    use crate::transducer::sentence::SectionRefusal;
+    let posted = crate::server::tests::fixtures::rank_three_task();
+    let mut reg = TaskRegistry::new();
+    let id = reg.post(posted.clone());
+    assert_eq!(id, citation(&task_address_of(&posted)), "named by the posted samples' content alone");
+    assert_eq!(reg.post(posted.clone()), id, "content is identity: posting again posts nothing");
+    assert_eq!(reg.len(), 1);
+    let (served, task) = reg.dispatch().expect("the open task is dispatched whatever its rank");
+    assert_eq!(served, id);
+    let sent = task.envelope(id);
+    let env = decode_task_envelope(&encode_task_envelope(&id, &sent.train, &sent.tests).expect("the envelope writes at rank 3")).expect("and reads whole");
+    assert_eq!(env.id, id);
+    assert_eq!(env.train, posted.train, "the train pairs served as posted");
+    assert_eq!(env.tests, vec![posted.test[0].0.clone()], "the test input, never the withheld output");
+    assert!(env.train.iter().all(|(x, y)| x.rank() == 3 && y.rank() == 3), "served at its own rank");
+    assert!(
+        matches!(reg.section(&id), Some(Err(SectionRefusal::Rank(AlphabetRank { rank: 3 })))),
+        "the alphabet's section refuses it by the alphabet's name"
+    );
+    assert!(reg.withheld(&id).is_empty(), "no rule is replayed on it");
+    assert_eq!(reg.families().count(), 0, "it binds no word family");
+    let registry = std::sync::Mutex::new(reg);
+    assert!(crate::server::route::intake_walk(&registry, 8).is_empty(), "nothing is listed for it");
+    let reg = registry.lock().expect("a fresh lock");
+    assert_eq!(reg.routes(&id).map(|r| r.len()), Some(0), "routed to none, so no walk reads it again");
+    assert_eq!(reg.open(&id), Some(true), "and it stays open");
+}

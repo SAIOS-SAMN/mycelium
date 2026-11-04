@@ -16,6 +16,10 @@ use mycelium::anastome::dialogue::{
     ACT_RECEIPTS, ACT_ENTRIES, ACT_SEAT, ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY,
 };
 
+/// THE SOLVE'S CLAIM KINDS, the byte after its tag (78.126; track 26 S4c):
+/// a solve of outputs, or a claim of factorisation.
+pub use mycelium::anastome::dialogue::{solve_kind, SOLVE_KIND_FACTORISATION, SOLVE_KIND_OUTPUTS};
+
 /// The wire's version, `major << 8 | minor`: `0x0200` is v2.0, every μ field
 /// four exact rational lanes.
 pub use mycelium::anastome::dialogue::WIRE_VERSION;

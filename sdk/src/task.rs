@@ -56,6 +56,16 @@ pub use mycelium::anastome::dialogue::{decode_solve_verdict, SolveRefusal, Solve
 /// The verdict's receipt alone: the code and the μ paid per lane.
 pub use mycelium::anastome::dialogue::decode_solve_receipt;
 
+/// A CLAIM OF FACTORISATION (MU-SENSING §3.9; track 26 S4c): a train pair's
+/// motion and residue at any rank, with the ground it was spoken under,
+/// signed by the voice; the court reconstructs the motion, derives the
+/// residue and answers a [`FactorVerdict`]. The pair's factorisations are
+/// read by [`factorisations`]; each holds the [`Motion`] and the residue as
+/// [`Link`]s.
+pub use mycelium::anastome::dialogue::{decode_factor_verdict, decode_factorisation, encode_factorisation, FactorVerdict, FactorisationAct};
+pub use mycelium::transducer::family::transduce::{factorisations, Enclosure, Factored, Factorisation, Motion, Sense, SignedPermutation};
+pub use mycelium::transducer::sentence::Link;
+
 /// The modes a paid verdict carries.
 pub use mycelium::economy::modes::Modes;
 

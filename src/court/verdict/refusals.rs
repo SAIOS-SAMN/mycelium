@@ -135,6 +135,22 @@ pub const REFUSE_RULE_UNPARTNERED: &str = "a hue read off a partner finds no one
 /// conditions of §3.4. No other ground is read in its place: I.
 pub const REFUSE_GROUND_NOT_ONE_SYMBOL: &str = "the stated ground is not one symbol of the task";
 pub const REFUSE_GROUND_NO_CANDIDATE: &str = "the stated ground is no candidate of the task's ground";
+/// MU-SENSING §3.9 (track 26 S4c) — A RULE CLAIMED ON A TASK THE ALPHABET
+/// DOES NOT SPELL: a solve's rule is replayed on the alphabet's section, and
+/// a task whose samples are off it (another rank, a wider symbol) is
+/// refused by the alphabet's name alone, never for its rank; its claims are
+/// factorisations (the solve's claim kind `SOLVE_KIND_FACTORISATION`),
+/// reconstructed on the samples: I.
+pub const REFUSE_BEYOND_ALPHABET: &str = "the task's samples are off the alphabet's section: a claim on it is a factorisation";
+/// MU-SENSING §3.9 (track 26 S4c) — A CLAIM OF FACTORISATION REFUSED BEFORE
+/// ITS RESIDUE IS DERIVED: unsigned (it names its voice by the voice's
+/// signature); naming no train pair of the task (the withheld pairs are the
+/// court's, and a residue derived on one would show its answer); or stating
+/// a motion that is no motion of the posted pair (the transduction's own
+/// refusal follows the reason): I.
+pub const REFUSE_FACTOR_UNSIGNED: &str = "unsigned: a claim of factorisation names its voice by the voice's signature";
+pub const REFUSE_FACTOR_NO_PAIR: &str = "no such train pair: a claim of factorisation names a train pair of the task";
+pub const REFUSE_FACTOR_MOTION: &str = "the stated motion is no motion of the posted pair";
 /// 78.153, defect 4 of the lock audit — A CYCLE OF CITATIONS: a cited form
 /// reached again while it is still being spoken. The nerve admits mutual
 /// citation (a posetal height forbade every 2-simplex), and no speech of a
@@ -196,7 +212,8 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
         REFUSE_RULE_TIE | REFUSE_RULE_INEXACT | REFUSE_RULE_NOT_ONE | REFUSE_RULE_OFF_SUBSTRATE | REFUSE_RULE_STILL | REFUSE_RULE_NESTED | REFUSE_RULE_UNFRAMED | REFUSE_RULE_UNPARTNERED => {
             O::Integrity
         }
-        REFUSE_CITATION_CYCLE | REFUSE_GROUND_NOT_ONE_SYMBOL | REFUSE_GROUND_NO_CANDIDATE => O::Integrity,
+        REFUSE_CITATION_CYCLE | REFUSE_GROUND_NOT_ONE_SYMBOL | REFUSE_GROUND_NO_CANDIDATE | REFUSE_BEYOND_ALPHABET => O::Integrity,
+        REFUSE_FACTOR_UNSIGNED | REFUSE_FACTOR_NO_PAIR | REFUSE_FACTOR_MOTION => O::Integrity,
         REFUSE_UNREAD => O::NoQuestion,
         REFUSE_ROOM | REFUSE_WITNESS_ROOM | REFUSE_WITNESS_DEPENDENT | REFUSE_FOLD_OPEN | REFUSE_FOLD_INEXACT => {
             O::Integrity
