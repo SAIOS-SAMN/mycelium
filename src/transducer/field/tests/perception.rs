@@ -8,10 +8,10 @@ use crate::chronometry::Cite;
 use crate::transducer::alphabet::Order;
 use crate::transducer::field::Contemplation;
 use crate::transducer::cech::Fill;
-use crate::transducer::family::{perceive_family, scene_form_on, Grid, NoCrystal};
+use crate::transducer::family::{perceive_family, scene_form_on, SectionSample, NoCrystal};
 use crate::transducer::rewrite::{Rewrite, RewritePayload};
 
-fn grid(rows: &[&str]) -> Grid {
+fn grid(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

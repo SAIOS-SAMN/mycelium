@@ -29,14 +29,14 @@ thread_local! {
     /// THE TEST INPUTS POSTED BESIDE THE FAMILY READ ON THIS THREAD, in the
     /// order the task gives them; empty where the reader holds the train
     /// pairs alone (a family of pairs with no test posted).
-    static POSTED: std::cell::RefCell<Vec<super::family::Grid>> = const { std::cell::RefCell::new(Vec::new()) };
+    static POSTED: std::cell::RefCell<Vec<Sample>> = const { std::cell::RefCell::new(Vec::new()) };
 }
 
 /// READ `f` WITH THE FAMILY'S TEST INPUTS POSTED: every Σ read inside it
-/// (`SymbolSet::of_family`) walks the train pairs, then these inputs. The
-/// previous scope is restored as `f` returns.
-pub fn on_test_inputs<T>(tests: &[super::family::Grid], f: impl FnOnce() -> T) -> T {
-    let before = POSTED.with(|c| c.replace(tests.to_vec()));
+/// (`SymbolSet::of_family`) walks the train pairs, then these inputs, each
+/// a sample of its own rank. The previous scope is restored as `f` returns.
+pub fn on_test_inputs<'a, T>(tests: impl IntoIterator<Item = &'a Sample>, f: impl FnOnce() -> T) -> T {
+    let before = POSTED.with(|c| c.replace(tests.into_iter().cloned().collect()));
     let out = f();
     POSTED.with(|c| *c.borrow_mut() = before);
     out
@@ -110,20 +110,32 @@ impl SymbolSet {
         set
     }
 
-    /// THE SYMBOL SET OF A FAMILY OF PAIRS at intake: each pair's two
-    /// members in the order the pair gives them.
+    /// THE SYMBOL SET OF A FAMILY OF PAIRS: each pair's two members in the
+    /// order the pair gives them, read as samples. A family of no pair
+    /// holds no symbol.
     pub fn of_pairs(family: &[super::family::TrainPair]) -> SymbolSet {
-        SymbolSet::of_rasters(family.iter().flat_map(|(x, y)| [x.as_slice(), y.as_slice()]))
+        SymbolSet::of_section(family.iter().flat_map(|(x, y)| [x.sample(), y.sample()]))
+    }
+
+    /// THE SYMBOL SET OF SAMPLES ON THE ALPHABET'S SECTION, one byte each:
+    /// every sample there is at the section's one width, so the set is
+    /// read whole; samples of no width hold no symbol.
+    fn of_section<'a>(samples: impl IntoIterator<Item = &'a Sample>) -> SymbolSet {
+        match SymbolSet::of_samples(samples) {
+            Ok(set) => set,
+            Err(_) => SymbolSet::empty(1),
+        }
     }
 
     /// THE SYMBOL SET OF THE WHOLE FAMILY: its train pairs in the family's
     /// order, then the test inputs posted beside them (`on_test_inputs`), so
-    /// a symbol seen only in a test input is in Σ (MU-SENSING §3.3).
+    /// a symbol seen only in a test input is in Σ (MU-SENSING §3.3). A
+    /// family of no sample, or of two widths, holds no symbol.
     pub fn of_family(train: &[super::family::TrainPair]) -> SymbolSet {
         POSTED.with(|c| {
             let tests = c.borrow();
-            let pairs = train.iter().flat_map(|(x, y)| [x.as_slice(), y.as_slice()]);
-            SymbolSet::of_rasters(pairs.chain(tests.iter().map(|g| g.as_slice())))
+            let pairs = train.iter().flat_map(|(x, y)| [x.sample(), y.sample()]);
+            SymbolSet::of_section(pairs.chain(tests.iter()))
         })
     }
 

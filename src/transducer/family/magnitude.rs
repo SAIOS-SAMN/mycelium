@@ -12,7 +12,7 @@ use crate::transducer::raster::painted_of;
 
 /// The μ⃗ of one train pair: the coboundary's lane measure. T is not on the chain.
 /// None when the coboundary is unmeasured.
-pub fn pair_magnitude(a: &[Vec<u8>], b: &[Vec<u8>]) -> Option<[u64; 4]> {
+pub fn pair_magnitude(a: &super::SectionSample, b: &super::SectionSample) -> Option<[u64; 4]> {
     let ca = painted_of(a);
     let cb = painted_of(b);
     crate::transducer::germinate::germinate(&ca, &cb)

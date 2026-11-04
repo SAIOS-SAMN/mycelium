@@ -14,23 +14,23 @@ use mycelium::client::sdk::rule::{
 use mycelium::cognition::{Court, SolveVerdict};
 use mycelium::transducer::element::Element;
 use mycelium::transducer::family::NoCrystal;
-use mycelium_source_arc_agi::Grid;
+use mycelium::transducer::spelled::SectionSample;
 
-type Pairs = Vec<(Grid, Grid)>;
+type Pairs = Vec<(SectionSample, SectionSample)>;
 
 /// The task as written (the frame as the file gives it): its train pairs
-/// and its test pairs.
+/// and the test pairs whose outputs the file holds.
 fn task(id: &str) -> (Pairs, Pairs) {
     let text = std::fs::read_to_string(format!("{}/{id}.json", mycelium_source_arc_agi::corpus("training"))).expect("the corpus holds the task");
     let t = mycelium_source_arc_agi::decode(&text).expect("the task parses");
-    (t.train, t.test)
+    (t.train, t.test.into_iter().filter_map(|(x, y)| Some((x, y?))).collect())
 }
 
 /// The court judges the withheld pairs under the ground the claim states,
 /// read against the task's train pairs (`cognition::stated_ground`), as
 /// the door reads it (MU-SENSING §3.4, §6); a stated ground that is no
 /// candidate is refused before any replay.
-fn judged(rule: &Element, stated: Option<&[u8]>, train: &[(Grid, Grid)], withheld: &[(Grid, Grid)]) -> (SolveVerdict, Result<(), NoRule>) {
+fn judged(rule: &Element, stated: Option<&[u8]>, train: &[(SectionSample, SectionSample)], withheld: &[(SectionSample, SectionSample)]) -> (SolveVerdict, Result<(), NoRule>) {
     let Ok(ground) = mycelium::cognition::stated_ground(train, stated) else {
         return (SolveVerdict::NotARule, Err(NoRule::NotAVersor));
     };
@@ -133,7 +133,7 @@ fn sentence_of_mints_no_word_for_scale_alone() {
         for &(r, c, h) in &spoken.painted {
             out[usize::try_from(r).expect("a row")][usize::try_from(c).expect("a column")] = h;
         }
-        assert_eq!(&out, y, "the scaled grid is the output");
+        assert_eq!(out, y.raster(), "the scaled grid is the output");
     }
     let got = sentence(&[Step::Scale { up: 2, down: 1 }], &train, &NoCrystal);
     assert!(

@@ -42,7 +42,7 @@ fn fibre_map_on_ground(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
         // each input site at the output site the envelopes' dilation
         // carries it to, never aligned at a corner. A pair whose dilation
         // is irrational has no site that corresponds, and witnesses nothing.
-        let Some(s) = envelope_dilation(x, y) else { continue };
+        let Some(s) = envelope_dilation(x.sample(), y.sample()) else { continue };
         for (site, h) in crate::transducer::raster::painted_sites(x) {
             let Some(there) = carried_site(x, y, s, site) else { continue };
             let Some(t) = crate::transducer::raster::value_at(y, there) else { continue };
@@ -71,9 +71,10 @@ fn fibre_map_on_ground(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
 /// carrying one envelope onto the other, by s = r_to / r_from. It is exact
 /// only where r²_to / r²_from is a rational square: answered as `s = p/q`
 /// in lowest terms, `None` where s is irrational (78.45: no approximation)
-/// or an extent is empty. Two rasters of one extent: 1/1.
-pub(crate) fn envelope_dilation(from: &[Vec<u8>], to: &[Vec<u8>]) -> Option<(i64, i64)> {
-    let r2 = |g: &[Vec<u8>]| -> i64 { crate::transducer::raster::extents(g).iter().map(|&e| (e as i64) * (e as i64)).sum() };
+/// or an extent is empty. Two samples of one extent: 1/1. Read off the
+/// samples' extents alone, at each sample's own rank.
+pub(crate) fn envelope_dilation(from: &crate::transducer::sample::Sample, to: &crate::transducer::sample::Sample) -> Option<(i64, i64)> {
+    let r2 = |g: &crate::transducer::sample::Sample| -> i64 { g.extents().iter().map(|&e| (e as i64) * (e as i64)).sum() };
     let (a, b) = (r2(to), r2(from));
     if a == 0 || b == 0 {
         return None;
@@ -89,16 +90,17 @@ pub(crate) fn envelope_dilation(from: &[Vec<u8>], to: &[Vec<u8>]) -> Option<(i64
 /// so every centre is an integer: `X = 2x − (e − 1)`. `None` where the
 /// carried point is not a site of `to`: between sites, or outside it.
 pub(crate) fn carried_site(
-    from: &[Vec<u8>],
-    to: &[Vec<u8>],
+    from: &super::SectionSample,
+    to: &super::SectionSample,
     (p, q): (i64, i64),
-    site: [usize; crate::transducer::raster::AXES],
-) -> Option<[usize; crate::transducer::raster::AXES]> {
-    use crate::transducer::raster::{centred, extents, AXES};
-    let (e_from, e_to) = (extents(from), extents(to));
+    site: [usize; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK],
+) -> Option<[usize; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK]> {
+    use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
+    use crate::transducer::raster::centred;
+    let (e_from, e_to) = (from.extents(), to.extents());
     let (p, q) = (i128::from(p), i128::from(q));
-    let mut out = [0usize; AXES];
-    for axis in 0..AXES {
+    let mut out = [0usize; ALPHABET_SAMPLE_RANK];
+    for axis in 0..ALPHABET_SAMPLE_RANK {
         let scaled = centred(site[axis], e_from[axis]).checked_mul(p)?;
         if scaled % q != 0 {
             return None;

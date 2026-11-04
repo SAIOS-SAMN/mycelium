@@ -52,16 +52,16 @@ pub struct SiteAxes {
     pub ring: [u8; 8],
 }
 
-pub(crate) fn at(g: &Grid, r: i64, c: i64) -> Option<u8> {
+pub(crate) fn at(g: &SectionSample, r: i64, c: i64) -> Option<u8> {
     let (ur, uc) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
-    g.get(ur)?.get(uc).copied()
+    g.line(ur)?.get(uc).copied()
 }
 
 /// HR1 — THE FIELD OF A SCENE, site by site in row order.
-pub fn field(x: &Grid) -> Vec<SiteAxes> {
+pub fn field(x: &SectionSample) -> Vec<SiteAxes> {
     let bodies = perceive(x);
-    let rows = x.len();
-    let mut owner: Vec<Vec<Option<usize>>> = x.iter().map(|row| vec![None; row.len()]).collect();
+    let [rows, cols] = x.extents();
+    let mut owner: Vec<Vec<Option<usize>>> = vec![vec![None; cols]; rows];
     // Each body's sums: mass, Σr, Σc, Σ|x|² — its sphere's coordinates.
     let mut sums: Vec<(i128, i128, i128, i128)> = Vec::with_capacity(bodies.len());
     let mut masses: Vec<u64> = Vec::with_capacity(bodies.len());
@@ -126,13 +126,13 @@ pub struct Transport {
 
 /// HR2 — THE TRANSPORT FIELD of one pair, in `field`'s order. `None` where
 /// the frames differ: no site stands in both.
-pub fn transports(x: &Grid, y: &Grid) -> Option<Vec<Transport>> {
-    if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
+pub fn transports(x: &SectionSample, y: &SectionSample) -> Option<Vec<Transport>> {
+    if x.extents() != y.extents() {
         return None;
     }
     let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
-    for (r, row) in x.iter().enumerate() {
+    for (r, row) in x.lines().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             let (ri, ci) = (r as i64, c as i64);
             let to = at(y, ri, ci)?;
@@ -300,14 +300,14 @@ pub struct ReconstructionReport {
 
 /// Carry an input field by a table: every site to its key's target hue,
 /// then the light each emits laid along its free reach.
-fn carried(x: &Grid, sites: &[SiteAxes], t: &Keyed<Transport>, axis: usize) -> Option<Grid> {
+fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<Transport>, axis: usize) -> Option<SectionSample> {
     let void = crate::transducer::raster::void().ok()?;
-    let mut out: Grid = x.iter().map(|row| vec![void; row.len()]).collect();
+    let mut out = x.cleared(void);
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let m = t.get(&key(s, axis))?;
         let (ur, uc) = (usize::try_from(s.r).ok()?, usize::try_from(s.c).ok()?);
-        *out.get_mut(ur)?.get_mut(uc)? = m.to;
+        *out.line_mut(ur)?.get_mut(uc)? = m.to;
         for &(k, h) in &m.rays {
             let (dr, dc) = *DIRECTIONS.get(usize::from(k))?;
             let mut step = 1i64;
@@ -319,13 +319,13 @@ fn carried(x: &Grid, sites: &[SiteAxes], t: &Keyed<Transport>, axis: usize) -> O
     }
     for (r, c, h) in emitted {
         let (ur, uc) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
-        *out.get_mut(ur)?.get_mut(uc)? = h;
+        *out.line_mut(ur)?.get_mut(uc)? = h;
     }
     Some(out)
 }
 
 /// HR4 — RECONSTRUCT A FAMILY BY ITS HOLONOMY, each pair left out in turn.
-pub fn reconstruct(family: &[(Grid, Grid)]) -> ReconstructionReport {
+pub fn reconstruct(family: &[(SectionSample, SectionSample)]) -> ReconstructionReport {
     let mut read = ReconstructionReport { pairs: family.len() as u64, ..ReconstructionReport::default() };
     let fields: Vec<Option<(Vec<SiteAxes>, Vec<Transport>)>> =
         family.iter().map(|(x, y)| transports(x, y).map(|t| (field(x), t))).collect();

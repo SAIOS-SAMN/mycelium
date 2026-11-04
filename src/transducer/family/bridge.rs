@@ -114,7 +114,7 @@ fn state(b: &Body) -> Option<BodyState> {
 
 /// THE LAWS ON ONE PAIR: its transitions, built from the perception's own
 /// carriages, each verified.
-pub fn bridge_pair(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> Bridge {
+pub fn bridge_pair(x: &SectionSample, y: &SectionSample, budget: &mut crate::physics::Budget) -> Bridge {
     let mut read = Bridge::default();
     let (ins, outs) = (perceive(x), perceive(y));
     // Every carriage, grouped by its canonical ray: one motion, one transition.

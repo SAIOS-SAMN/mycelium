@@ -334,7 +334,7 @@ pub(crate) fn bundle_connections(
     bundle: &[crate::transducer::family::TrainPair],
     budget: &mut crate::physics::Budget,
 ) -> Vec<Connection> {
-    let ins: Vec<crate::transducer::family::Grid> =
+    let ins: Vec<crate::transducer::family::SectionSample> =
         bundle.iter().map(|(a, _)| a.clone()).collect();
     let frame_key = |k: i64| ((k as u64) ^ (1u64 << 63)).to_be_bytes();
     let mut charts: Keyed<Invariant> = Keyed::new();

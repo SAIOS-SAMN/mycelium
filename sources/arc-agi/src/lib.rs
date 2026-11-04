@@ -9,7 +9,8 @@
 //! the corpus enters the sensor, the mind, the court or the wire.
 //!
 //! What it writes:
-//! - a [`Task`] as the file gives it ([`decode`]), its frame as read: no
+//! - a [`Task`] as the file gives it ([`decode`]), each grid read at intake
+//!   as a sample on the alphabet's section, its frame as read: no
 //!   ground is read and no frame is fixed here (track 26 S2: frame fixing
 //!   is a perspective a sensor may take after intake, never before the
 //!   hypha addresses the task);
@@ -20,6 +21,7 @@
 
 use mycelium::transducer::family::Task;
 use mycelium::transducer::sample::{Place, Sample, SampleRefusal};
+use mycelium::transducer::spelled::SectionSample;
 use serde::Deserialize;
 
 /// A grid of the corpus: its rows of symbols, as the JSON writes them.
@@ -68,14 +70,30 @@ pub fn task_names(dir: &str) -> std::io::Result<Vec<String>> {
 }
 
 /// A TASK'S JSON AS WRITTEN: its train pairs and its test pairs, a withheld
-/// test output empty, the frame as the file gives it. `None` where the text
-/// is not a task.
+/// (empty) test output absent, the frame as the file gives it. Each grid is
+/// read at intake as a sample of rank 2 and width 1 at its place
+/// `[split, pair, member]` (`raster::sample_of`), on the alphabet's section.
+/// `None` where the text is not a task, or a grid is no such sample (ragged
+/// or empty).
 pub fn decode(json: &str) -> Option<Task> {
     let raw: RawTask = serde_json::from_str(json).ok()?;
-    Some(Task {
-        train: raw.train.into_iter().map(|p| (p.input, p.output)).collect(),
-        test: raw.test.into_iter().map(|p| (p.input, p.output)).collect(),
-    })
+    let read = |g: &Grid, split: i64, pair: i64, member: i64| -> Option<SectionSample> {
+        let sample = mycelium::transducer::raster::sample_of(g, Place::new(vec![split, pair, member])).ok()?;
+        SectionSample::of(sample).ok()
+    };
+    let mut train = Vec::with_capacity(raw.train.len());
+    for (pair, p) in (0i64..).zip(&raw.train) {
+        train.push((read(&p.input, TRAIN, pair, INPUT)?, read(&p.output, TRAIN, pair, OUTPUT)?));
+    }
+    let mut test = Vec::with_capacity(raw.test.len());
+    for (pair, p) in (0i64..).zip(&raw.test) {
+        let output = match p.output.is_empty() {
+            true => None,
+            false => Some(read(&p.output, TEST, pair, OUTPUT)?),
+        };
+        test.push((read(&p.input, TEST, pair, INPUT)?, output));
+    }
+    Some(Task { train, test })
 }
 
 /// A pair's place in its split: train or test.
@@ -87,17 +105,19 @@ const OUTPUT: i64 = 1;
 
 /// THE TASK'S SAMPLES, each placed in its family (MU-SENSING §2 (4)): the
 /// place is `[split, pair, member]`, the split 0 for train and 1 for test,
-/// the member 0 for the input and 1 for the output. Each grid is a sample
-/// of rank 2 and width 1 (`raster::sample_of`). A withheld (empty) output
-/// has no sample and is left out; a ragged grid is refused by name.
+/// the member 0 for the input and 1 for the output. A withheld (absent)
+/// output has no sample and is left out.
 pub fn samples_of(task: &Task) -> Result<Vec<Sample>, SampleRefusal> {
+    let place = |split: i64, pair: i64, member: i64| Place::new(vec![split, pair, member]);
     let mut out = Vec::new();
-    for (split, pairs) in [(TRAIN, &task.train), (TEST, &task.test)] {
-        for (pair, (x, y)) in (0i64..).zip(pairs) {
-            out.push(mycelium::transducer::raster::sample_of(x, Place::new(vec![split, pair, INPUT]))?);
-            if !y.is_empty() {
-                out.push(mycelium::transducer::raster::sample_of(y, Place::new(vec![split, pair, OUTPUT]))?);
-            }
+    for (pair, (x, y)) in (0i64..).zip(&task.train) {
+        out.push(x.sample().placed(place(TRAIN, pair, INPUT)));
+        out.push(y.sample().placed(place(TRAIN, pair, OUTPUT)));
+    }
+    for (pair, (x, y)) in (0i64..).zip(&task.test) {
+        out.push(x.sample().placed(place(TEST, pair, INPUT)));
+        if let Some(y) = y {
+            out.push(y.sample().placed(place(TEST, pair, OUTPUT)));
         }
     }
     Ok(out)

@@ -174,10 +174,10 @@ assert!(
 #[test]
 fn withhold_form_holds_idea_and_utters_nothing() {
 use crate::transducer::family::{extract_rule, form_deflation, NoCrystal};
-let family = vec![
+let family = crate::transducer::spelled::pairs_of(vec![
     (vec![vec![1u8]], vec![vec![2u8]]),
     (vec![vec![1u8, 0]], vec![vec![2u8, 3]]),
-];
+]);
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("rule");
 let (mag, rems) = form_deflation(&rule.form, &family, &NoCrystal);
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("withhold"));

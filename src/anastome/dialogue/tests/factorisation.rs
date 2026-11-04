@@ -48,7 +48,7 @@ fn factorisation_claim_round_trips() {
     // outputs, and a solve of outputs never read as a claim.
     assert_eq!((bytes[0], solve_kind(&bytes)), (ACT_SOLVE, Some(SOLVE_KIND_FACTORISATION)));
     assert!(decode_solve(&bytes).is_none(), "a claim of factorisation is no solve of outputs");
-    let outputs = spoken_outputs(&[vec![vec![1]]]).expect("a sample");
+    let outputs = spoken_outputs(&[vec![vec![1]].into()]).expect("a sample");
     let solve = encode_solve(&key(), &cite, &outputs).expect("a solve writes");
     assert_eq!(solve_kind(&solve), Some(SOLVE_KIND_OUTPUTS));
     assert_eq!(decode_factorisation(&solve), None, "a solve of outputs is no claim of factorisation");

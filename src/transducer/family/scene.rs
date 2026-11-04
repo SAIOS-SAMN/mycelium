@@ -17,7 +17,7 @@
 //! order, every cover that closes is kept, and the caller holds
 //! incomparable ones rather than taking the first that answers.
 
-use super::perceive::{frame_of, on_grid, Grid};
+use super::perceive::{frame_of, on_grid, SectionSample};
 use crate::network::nerve::Keyed;
 use crate::transducer::base::Site;
 use crate::transducer::layers::LayerKind;
@@ -86,7 +86,7 @@ impl Region {
 
 /// THE WHOLE SCENE AS ONE REGION — the coordinate the recursion's end is
 /// compared against. `None` where the scene has no frame to name.
-pub fn scene_region(scene: &[Grid]) -> Option<Region> {
+pub fn scene_region(scene: &[SectionSample]) -> Option<Region> {
     let [first, rest @ ..] = scene else { return None };
     let (h, w) = frame_of(first);
     if h == 0 || w == 0 {
@@ -138,7 +138,7 @@ pub fn cover_key(cover: &Regions) -> Vec<u8> {
 /// A region is itself a scene and is covered again; this is where that
 /// stops. There is no floor and no count — `FRAGMENT_FLOOR = 9` is refused
 /// by rule 5 and is not replaced by a count of regions (rule 2).
-pub fn is_identity(cover: &Regions, scene: &[Grid], reading: PlaneCut) -> bool {
+pub fn is_identity(cover: &Regions, scene: &[SectionSample], reading: PlaneCut) -> bool {
     let Some(whole) = scene_region(scene) else {
         return false;
     };
@@ -150,24 +150,25 @@ pub fn is_identity(cover: &Regions, scene: &[Grid], reading: PlaneCut) -> bool {
 /// THE COVER A READING DEDUCES (53.1). `None` is "this reading deduces no
 /// cover on this scene", which is not a demand and not a refusal: the
 /// caller walks the rest of the roster.
-pub fn cover(scene: &[Grid], reading: PlaneCut) -> Option<Regions> {
+pub fn cover(scene: &[SectionSample], reading: PlaneCut) -> Option<Regions> {
     match reading {
         PlaneCut::Bands => bands(scene),
     }
 }
 
 /// Is this row of this grid one hue throughout?
-fn row_uniform(g: &Grid, r: usize) -> bool {
-    let Some(row) = g.get(r) else { return false };
-    let [first, rest @ ..] = row.as_slice() else { return false };
+fn row_uniform(g: &SectionSample, r: usize) -> bool {
+    let Some(row) = g.line(r) else { return false };
+    let [first, rest @ ..] = row else { return false };
     rest.iter().all(|h| h == first)
 }
 
 /// Is this column of this grid one hue throughout?
-fn col_uniform(g: &Grid, c: usize) -> bool {
-    let [first, rest @ ..] = g.as_slice() else { return false };
+fn col_uniform(g: &SectionSample, c: usize) -> bool {
+    let mut lines = g.lines();
+    let Some(first) = lines.next() else { return false };
     let Some(&want) = first.get(c) else { return false };
-    rest.iter().all(|row| row.get(c) == Some(&want))
+    lines.all(|row| row.get(c) == Some(&want))
 }
 
 /// THE MAXIMAL RUNS OF NON-SEPARATOR INDICES, in coordinate order: the
@@ -207,7 +208,7 @@ fn runs(sep: &[bool]) -> Vec<(i64, i64)> {
 /// identity end reached in one pass and NOT a special case written here:
 /// `runs` over a boundary with no separator in it is the one run that
 /// spans it, and the block that names is the whole scene.
-fn bands(scene: &[Grid]) -> Option<Regions> {
+fn bands(scene: &[SectionSample]) -> Option<Regions> {
     let whole = scene_region(scene)?;
     let [first, ..] = scene else { return None };
     let (h, w) = frame_of(first);
@@ -238,7 +239,7 @@ fn bands(scene: &[Grid]) -> Option<Regions> {
 /// `None` where the region names a site the grid does not have — a region of
 /// one scene restricted against another's extent, which is not a reading
 /// of anything (rule 11).
-pub fn restrict(g: &Grid, region: &Region) -> Option<Grid> {
+pub fn restrict(g: &SectionSample, region: &Region) -> Option<SectionSample> {
     // The region's sites on the grid axes: a region is a part of the
     // sensor plane (16.5).
     let plane: Vec<(i64, i64)> = region.support.iter().map(on_grid).collect::<Option<_>>()?;
@@ -266,11 +267,11 @@ pub fn restrict(g: &Grid, region: &Region) -> Option<Grid> {
     // `usize` or the restriction is refused (rule 11), never wrapped.
     let span = |lo: i64, hi: i64| usize::try_from(hi.checked_sub(lo)?.checked_add(1)?).ok();
     let (h, w) = (span(r0, r1)?, span(c0, c1)?);
-    let mut out = vec![vec![crate::transducer::raster::void().ok()?; w]; h];
+    let mut out = SectionSample::filled([h, w], crate::transducer::raster::void().ok()?).ok()?;
     for &(r, c) in &plane {
-        let hue = *g.get(usize::try_from(r).ok()?).and_then(|row| row.get(usize::try_from(c).ok()?))?;
+        let hue = *g.line(usize::try_from(r).ok()?).and_then(|row| row.get(usize::try_from(c).ok()?))?;
         let (dr, dc) = (usize::try_from(r - r0).ok()?, usize::try_from(c - c0).ok()?);
-        *out.get_mut(dr).and_then(|row| row.get_mut(dc))? = hue;
+        *out.line_mut(dr).and_then(|row| row.get_mut(dc))? = hue;
     }
     Some(out)
 }

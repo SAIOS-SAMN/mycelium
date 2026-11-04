@@ -4,7 +4,7 @@
 // conjugator added, lane by lane; a sentence's gluing only where its rings
 // compose.
 
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::cognition::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
@@ -12,7 +12,7 @@ use crate::transducer::element::{from_connection, translator_versor};
 use crate::transducer::family::local::{form_local, measure_sites};
 use crate::transducer::family::{extract_rule, mint_sentence, site_key, NoCrystal};
 
-fn grid(rows: &[&str]) -> Grid {
+fn grid(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

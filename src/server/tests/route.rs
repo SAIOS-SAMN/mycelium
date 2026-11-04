@@ -9,13 +9,13 @@ use crate::transducer::stalk::chart::charts_read;
 use std::sync::{Arc, Mutex};
 
 fn pair_task() -> Task {
-    Task {
-        train: vec![
+    crate::transducer::family::task_of_lines(
+        vec![
             (vec![vec![1, 1, 0], vec![0, 3, 0]], vec![vec![2, 2, 0], vec![0, 3, 0]]),
             (vec![vec![0, 1], vec![1, 1]], vec![vec![0, 2], vec![2, 2]]),
         ],
-        test: vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
-    }
+        vec![(vec![vec![0, 0], vec![1, 1]], vec![vec![0, 0], vec![2, 2]])],
+    )
 }
 
 /// A COVER CHANGE RE-HOMES BY LOOKUP: the walk `relocate_corpus` takes

@@ -29,7 +29,7 @@ pub fn reconstruct_blind(spoken: &Element, budget: &mut crate::physics::Budget) 
 pub fn reconstruct_blind_on(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
@@ -44,7 +44,7 @@ pub fn reconstruct_blind_on(
 pub fn reconstruct_blind_at(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
@@ -60,7 +60,7 @@ pub fn reconstruct_blind_at(
 pub fn reconstruct_resume<'r>(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReconstructionCursor,
@@ -72,7 +72,7 @@ pub fn reconstruct_resume<'r>(
 fn reconstruct_word<'r>(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
-    family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
+    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
     cursor: &mut ReconstructionCursor,

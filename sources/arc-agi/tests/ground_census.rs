@@ -14,14 +14,14 @@
 use mycelium::transducer::address::{put_key_bytes, Address, TAG_TASK};
 use mycelium::transducer::family::transduce::{Candidacy, Enclosed, Ground};
 use mycelium::transducer::family::{Family, Task};
-use mycelium::transducer::raster::{frame_fixed, ground_of, on_ground, sample_unplaced};
+use mycelium::transducer::raster::{frame_fixed, ground_of, on_ground};
 use mycelium_source_arc_agi::{corpus, decode, task_names};
 
 /// The former count, kept here alone to read what S2 changed.
 fn former_ground(family: &Family) -> u8 {
     let mut count = [0u64; 256];
     for (x, y) in family {
-        for &h in x.iter().chain(y).flatten() {
+        for &h in x.symbols().iter().chain(y.symbols()) {
             count[usize::from(h)] += 1;
         }
     }
@@ -56,13 +56,13 @@ fn former_address(task: &Task) -> Option<Address> {
     for (a, b) in &task.train {
         let mut pair = Vec::new();
         for g in [a, b] {
-            Enclosed::of(&sample_unplaced(g).ok()?).put_content(&mut pair);
+            Enclosed::of(g.sample()).put_content(&mut pair);
         }
         put_key_bytes(&mut buf, &pair);
     }
     for (x, _) in &task.test {
         let chain: Vec<(i64, i64, u8, u8)> = x
-            .iter()
+            .lines()
             .enumerate()
             .flat_map(|(r, row)| row.iter().enumerate().filter_map(move |(c, &h)| (h != 0).then_some((r as i64, c as i64, h, h))))
             .collect();
@@ -106,7 +106,7 @@ fn ground_census_over_training() {
         let Some(name) = line.split(' ').next().map(str::to_string) else { continue };
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
         let Some(task) = decode(&json) else { continue };
-        let pairs: Vec<_> = task.train.iter().filter_map(|(x, y)| Some((sample_unplaced(x).ok()?, sample_unplaced(y).ok()?))).collect();
+        let pairs: Vec<_> = task.train.iter().map(|(x, y)| (x.sample().clone(), y.sample().clone())).collect();
         let former = former_ground(&task.train);
         let readings = Ground::candidacies(&pairs);
         if ["017c7c7b.json", "045e512c.json", "05269061.json", "0a1d4ef5.json", "0c786b71.json"].contains(&name.as_str()) {

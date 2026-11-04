@@ -3,14 +3,14 @@
 // right, a body it carries wrong is no part of it, a letter names no body,
 // and a sentence's gluing is the set of sites it closes beyond its words'.
 
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{from_connection, translator_versor};
 use crate::transducer::family::local::{form_local, measure_sites, word_local, Local};
 use crate::transducer::family::{extract_rule, site_key, NoCrystal};
 
-fn grid(rows: &[&str]) -> Grid {
+fn grid(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

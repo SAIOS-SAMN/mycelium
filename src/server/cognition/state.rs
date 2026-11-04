@@ -731,7 +731,9 @@ impl Court {
     /// so it is the lane-wise SUM over these pairs (12.6) and covers each of
     /// them; an envelope over them would not.
     pub(crate) fn measured_test_cover() -> Option<[u64; 4]> {
-        crate::transducer::family::magnitude::family_cover(&[
+        use crate::transducer::spelled::SectionSample;
+        type Lines = Vec<Vec<u8>>;
+        let lines: [(Lines, Lines); 6] = [
             (vec![vec![1, 1], vec![1, 0]], vec![vec![0, 1], vec![1, 1]]),
             (vec![vec![1, 1]], vec![vec![2, 2]]),
             (vec![vec![1, 1, 0, 0], vec![0, 0, 0, 0]], vec![vec![0, 0, 1, 1], vec![0, 0, 0, 0]]),
@@ -741,7 +743,11 @@ impl Court {
                 vec![vec![2, 2, 2], vec![2, 2, 2], vec![2, 2, 2]],
             ),
             (vec![vec![1, 1, 1, 1, 1, 1]], vec![vec![2, 2, 2, 2, 2, 2]]),
-        ])
+        ];
+        // The starting corpus read at intake, each pair as samples.
+        let family: Vec<(SectionSample, SectionSample)> =
+            lines.iter().map(|(x, y)| Some((SectionSample::of_lines(x).ok()?, SectionSample::of_lines(y).ok()?))).collect::<Option<_>>()?;
+        crate::transducer::family::magnitude::family_cover(&family)
     }
 
     /// The genesis covering bond, if measured.

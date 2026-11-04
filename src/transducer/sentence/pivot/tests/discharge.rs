@@ -100,14 +100,14 @@ fn select_discharge_never_selects_by_mu() {
 
     let q = word_turn_90();
     let qinv = q.inverse();
-    let x: Vec<Vec<u8>> = vec![
+    let x = crate::transducer::spelled::SectionSample::from(vec![
         vec![0, 0, 0, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0],
         vec![0, 0, 1, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0],
         vec![0, 0, 0, 0, 0, 0],
-    ];
+    ]);
     let bodies = crate::transducer::family::perceive(&x);
     assert!(!bodies.is_empty(), "the bar is a body");
     let class = bodies[0].moduli.clone();
@@ -132,7 +132,7 @@ fn select_discharge_never_selects_by_mu() {
     .and_then(|s| s.grid())
     .expect("q speaks the bar and it fits the frame");
     assert!(
-        y.iter().flatten().any(|&h| h != 0),
+        y.symbols().iter().any(|&h| h != 0),
         "the spoken image is not the empty frame"
     );
     // THE CHORD'S FIRST END STANDS ON THE BODY'S CHART. The chart is the

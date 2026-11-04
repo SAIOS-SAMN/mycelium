@@ -9,8 +9,8 @@ use crate::client::sdk::*;
 
 /// A family of one cell stepping one column: a body of no chart the slide's
 /// bodies stand on.
-fn one_cell_steps() -> Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)> {
-    let at = |c: usize| -> crate::transducer::family::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
+fn one_cell_steps() -> Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> {
+    let at = |c: usize| -> crate::transducer::family::SectionSample { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
     vec![(at(0), at(1))]
 }
 
@@ -110,7 +110,7 @@ fn task_inflow_takes_offer_in_restored_language() {
 /// A family as a decoder posts it (`dialogue::encode_posted_task`): its
 /// pairs with the frame fixed on the family's own ground, as every decoder
 /// hands a task through, and no test.
-fn posted_family(train: &[(crate::transducer::family::Grid, crate::transducer::family::Grid)]) -> Vec<u8> {
+fn posted_family(train: &[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]) -> Vec<u8> {
     let task = crate::transducer::raster::frame_fixed_on_ground(crate::transducer::family::Task { train: train.to_vec(), test: Vec::new() });
     crate::anastome::dialogue::encode_posted_task(&task).expect("the family posts")
 }
@@ -118,13 +118,13 @@ fn posted_family(train: &[(crate::transducer::family::Grid, crate::transducer::f
 /// A family of two cells whose hues `a` and `b` swap where they stand: a hue
 /// map that is a cycle, so its 𝒢 orbit stands (an injection seals at once,
 /// its order one).
-fn two_cells_swapped(a: u8, b: u8) -> Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)> {
-    let at = |left: u8, right: u8| -> crate::transducer::family::Grid { vec![vec![0, 0, 0, 0], vec![0, left, right, 0], vec![0, 0, 0, 0]] };
+fn two_cells_swapped(a: u8, b: u8) -> Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> {
+    let at = |left: u8, right: u8| -> crate::transducer::family::SectionSample { vec![vec![0, 0, 0, 0], vec![0, left, right, 0], vec![0, 0, 0, 0]].into() };
     vec![(at(a, b), at(b, a))]
 }
 
 /// A feed folder holding these families, each at its file.
-fn feed_of(name: &str, families: &[(&str, Vec<(crate::transducer::family::Grid, crate::transducer::family::Grid)>)]) -> std::path::PathBuf {
+fn feed_of(name: &str, families: &[(&str, Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)>)]) -> std::path::PathBuf {
     let home = std::env::temp_dir().join(format!("mycelium-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&home);
     std::fs::create_dir_all(home.join("feed")).expect("the feed folder");

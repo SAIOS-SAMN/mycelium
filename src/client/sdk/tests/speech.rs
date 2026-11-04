@@ -180,7 +180,7 @@ fn read_speech_reply_admits_only_codes_sent() {
 fn act_on_returns_speaks_closed_thought_into_dialect() {
     use crate::client::sdk::*;
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
-    let grid = |rows: &[&str]| -> Vec<Vec<u8>> { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
+    let grid = |rows: &[&str]| -> crate::transducer::spelled::SectionSample { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let hours: [([&str; 5], [&str; 5]); 4] = [
         (["010000", "010000", "011000", "000000", "000000"], ["001000", "001000", "001100", "000000", "000000"]),
         (["000000", "001110", "001000", "000000", "000000"], ["000000", "000111", "000100", "000000", "000000"]),

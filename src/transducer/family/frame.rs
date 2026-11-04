@@ -1,4 +1,4 @@
-use super::Grid;
+use super::SectionSample;
 use crate::transducer::sentence::Vertex;
 
 /// The scene frame as a form vertex.
@@ -10,12 +10,11 @@ pub fn frame_vertex() -> Vertex {
 /// exact ratio `h′/h`, `w′/w` in lowest terms (`transduce::Enclosure::
 /// reperiod`), identical across pairs or refused — never rounded, and
 /// `None` where a frame has no enclosure (empty or ragged).
-pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, usize))> {
+pub fn family_ratio(family: &[(SectionSample, SectionSample)]) -> Option<((usize, usize), (usize, usize))> {
     use super::transduce::Enclosure;
     let mut ratio = None;
     for (a, b) in family {
-        let (x, y) = (crate::transducer::raster::sample_unplaced(a).ok()?, crate::transducer::raster::sample_unplaced(b).ok()?);
-        let r = match Enclosure::of(&x).reperiod(&Enclosure::of(&y))?.as_slice() {
+        let r = match Enclosure::of(a.sample()).reperiod(&Enclosure::of(b.sample()))?.as_slice() {
             &[first, second] => (first, second),
             _ => return None,
         };

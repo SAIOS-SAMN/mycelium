@@ -68,7 +68,7 @@ impl Crystal for Holds {
     fn speak_form(
         &self,
         f: &Form,
-        x: &crate::transducer::family::Grid,
+        x: &crate::transducer::family::SectionSample,
         placement: &Word,
     ) -> Option<crate::transducer::family::Speech> {
         crate::transducer::family::apply_form(f, x, placement, self)

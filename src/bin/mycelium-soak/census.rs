@@ -27,7 +27,7 @@
 //! content (law 2); the paint is the SUM over the train inputs, which is a
 //! measure of the family and not a member elected to stand for it.
 
-use mycelium::transducer::family::{Grid, Task};
+use mycelium::transducer::family::{SectionSample, Task};
 use mycelium::network::nerve::Keyed;
 
 /// What one family reads as. Each field is a reading taken over EVERY
@@ -52,7 +52,9 @@ struct FamilyCensus {
 /// A FULL EXTENT OF ONE HUE. A separator row is a row whose every cell is
 /// the same non-zero hue; a separator column is the same read the other
 /// way. A grid too short to be cut carries none.
-fn has_separator(g: &Grid) -> bool {
+fn has_separator(g: &SectionSample) -> bool {
+    // Instrumentation reads the sample's lines as written out.
+    let g = g.raster();
     let w = match g.as_slice() {
         [row, ..] => row.len(),
         [] => return false,
@@ -81,15 +83,12 @@ fn has_separator(g: &Grid) -> bool {
 /// reciprocal — the output is `|a|` times SMALLER. A ratio that is not a
 /// whole number either way is no ratio at all and refuses (rule 11), and a
 /// pair whose factors disagree with an earlier pair's refuses the family.
-fn frame_ratio(input: &Grid, output: &Grid) -> Option<(i64, i64)> {
-    let width = |g: &Grid| -> i64 {
-        match g.as_slice() {
-            [row, ..] => row.len() as i64,
-            [] => 0,
-        }
+fn frame_ratio(input: &SectionSample, output: &SectionSample) -> Option<(i64, i64)> {
+    let shape = |g: &SectionSample| -> (i64, i64) {
+        let [h, w] = g.extents();
+        (h as i64, w as i64)
     };
-    let (ih, iw) = (input.len() as i64, width(input));
-    let (oh, ow) = (output.len() as i64, width(output));
+    let ((ih, iw), (oh, ow)) = (shape(input), shape(output));
     if ih == 0 || iw == 0 || oh == 0 || ow == 0 {
         return None;
     }
@@ -123,11 +122,11 @@ fn site_key(r: usize, c: usize) -> Vec<u8> {
 ///
 /// An empty grid paints nothing and is not one body: there is no body, and
 /// the `paint` column beside this one says which case a `false` is.
-fn one_body(g: &Grid) -> bool {
+fn one_body(g: &SectionSample) -> bool {
     let mut painted: Keyed<()> = Keyed::new();
     let mut n = 0usize;
     let mut seed: Option<(usize, usize)> = None;
-    for (r, row) in g.iter().enumerate() {
+    for (r, row) in g.lines().enumerate() {
         for (c, &h) in row.iter().enumerate() {
             if h != 0 {
                 painted.insert(site_key(r, c), ());
@@ -183,7 +182,7 @@ fn read(task: &Task) -> FamilyCensus {
         paint: task
             .train
             .iter()
-            .map(|(i, _)| i.iter().flatten().filter(|&&h| h != 0).count())
+            .map(|(i, _)| i.symbols().iter().filter(|&&h| h != 0).count())
             .sum(),
         pairs: task.train.len(),
     }

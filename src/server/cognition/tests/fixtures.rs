@@ -14,7 +14,7 @@ pub fn family_of_pair(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Vec<TrainPa
     // The fixtures stand on that 0 (track 26 S2: declared, never deduced
     // from one pair).
     crate::transducer::raster::stand_on(0);
-    vec![(grid_of_painted(a, 0), grid_of_painted(b, 0))]
+    vec![(grid_of_painted(a, 0).expect("a scene"), grid_of_painted(b, 0).expect("a scene"))]
 }
 
 /// THE GROUND A SPEAKER STATES FOR A FAMILY (MU-SENSING §6.2), as the mind
@@ -147,7 +147,7 @@ pub fn admit_line(
         .collect()
 }
 
-pub fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
+pub fn digits(rows: &[&str]) -> crate::transducer::spelled::SectionSample {
 rows.iter()
     .map(|r| r.bytes().map(|b| b - b'0').collect())
     .collect()

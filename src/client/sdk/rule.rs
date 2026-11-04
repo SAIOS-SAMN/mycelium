@@ -22,7 +22,7 @@
 //! on every pair it replays; a rule of motions and hue maps alone is the
 //! one word vertex it always was.
 
-use crate::transducer::family::Grid;
+use crate::transducer::family::SectionSample;
 use crate::core::Q;
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::{self, Element};
@@ -372,7 +372,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
 /// every pair, minted through the one mint. No vertex names a training
 /// frame or a training cell: the clauses select on whatever scene they are
 /// spoken onto, so the word crosses to pairs it never saw.
-fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+fn clause_sentence(clauses: Vec<Clause>, family: &[(SectionSample, SectionSample)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if clauses.is_empty() || family.is_empty() {
         return Err(NoRule::NoFamily);
     }
@@ -424,11 +424,11 @@ pub(crate) fn construction_stroke(linear: &cga::Mv) -> usize {
 ///
 /// Read on the family's own ground (`raster::on_ground_of`, MU-SENSING
 /// §3.4), unless the caller already opened one.
-pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+pub fn sentence(steps: &[Step], family: &[(SectionSample, SectionSample)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     crate::transducer::raster::on_ground_of(family, || sentence_on_ground(steps, family, crystal))
 }
 
-fn sentence_on_ground(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+fn sentence_on_ground(steps: &[Step], family: &[(SectionSample, SectionSample)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if let Some(clauses) = clauses_of(steps)? {
         return clause_sentence(clauses, family, crystal);
     }
@@ -495,7 +495,7 @@ fn sentence_on_ground(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Cry
 /// family through the one mint — which re-checks every vertex on every
 /// training pair — at the span the word stood over. A rule with no such
 /// overlap crosses as it is.
-pub(crate) fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+pub(crate) fn crossing(rule: &Element, train: &[(SectionSample, SectionSample)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     use crate::network::nerve::coord::ChartAt;
     let held = element::Held::of(rule.clone());
     let form = held.form().ok_or(NoRule::NotASentence)?;
@@ -528,7 +528,7 @@ pub(crate) fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Cry
 /// it as the core's own tests do.
 pub fn would_judge(
     rule: &Element,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     crystal: &dyn Crystal,
 ) -> Result<(), NoRule> {
@@ -550,7 +550,7 @@ pub fn would_judge(
 /// words alone (`MindLanguage::court_word`).
 pub(crate) fn would_judge_with(
     rule: &Element,
-    family: &[(Grid, Grid)],
+    family: &[(SectionSample, SectionSample)],
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,

@@ -1,17 +1,18 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE RANK-2 RASTER AT INTAKE (MU-SENSING §2; ROADMAP track 26, S1): the
-//! two-level carrier `Vec<Vec<u8>>` the transduction still reads, its
-//! extents, its ground, its painted sites, its frame fixed where the frame
-//! is a gauge, and the bridge that hands it to the sensor as a [`Sample`]
-//! and takes a spoken sample back. A source's decoder, kept outside `src/`
-//! (MU-SENSING §7), writes the raster; nothing here reads a file format or
-//! names a source.
+//! THE RASTER AT INTAKE AND THE SECTION'S READINGS (MU-SENSING §2; ROADMAP
+//! track 26, S1, S4d): the bridge that hands a source's lines to the sensor
+//! as a [`Sample`], and the readings the word machinery takes of a sample on
+//! the alphabet's section ([`SectionSample`]): its extents, its ground, its
+//! painted sites and its frame fixed where the frame is a gauge. A source's
+//! decoder, kept outside `src/` (MU-SENSING §7), writes the lines; nothing
+//! here reads a file format or names a source.
 //!
-//! The ground is deduced per family ([`ground_of`], track 26 S2) and never
-//! defaults to a symbol. One defect stands here unchanged and named
-//! (MU-SENSING §8): the carrier is rank 2 by its own storage ([`AXES`],
-//! track 26 S4).
+//! The ground is deduced per family ([`ground_of`], track 26 S2) over the
+//! samples themselves, each at its own rank, and never defaults to a symbol.
+//! The planar readings are the section's, of the rank the letters spell
+//! (`alphabet::ALPHABET_SAMPLE_RANK`); no carrier here fixes a rank of its
+//! own (track 26 S4d).
 //!
 //! No module of the core is named for a data source:
 //!
@@ -21,7 +22,9 @@
 
 use super::family::transduce::{Ground, Unground};
 use super::family::{Family, Task};
-use super::sample::{AxisReading, Place, Sample, SampleRefusal};
+use super::alphabet::ALPHABET_SAMPLE_RANK;
+use super::sample::{Place, Sample, SampleRefusal};
+use super::spelled::SectionSample;
 
 /// THE WIDTH OF A RASTER. A raster is rectangular (every reader that takes
 /// one refuses a ragged one), so line zero is a COORDINATE of the raster
@@ -37,19 +40,13 @@ pub fn raster_width(g: &[Vec<u8>]) -> usize {
 }
 
 /// THE SCENE'S AMBIENT GROUND Ω, DEDUCED (MU-SENSING §3.4; track 26 S2):
-/// the symbol the bodies of a family stand on, read over its rasters as
-/// samples by [`Ground::of`] (ambient, enclosing, never carried as a body),
-/// each candidate held as the raster's one byte. Never a code: no symbol is
-/// the ground by default, by count or by order. A raster that is no sample
-/// (ragged, or with no site) presents no site, so no symbol is ambient
-/// across it and the family reads `None`. The symbols are never relabelled
+/// the symbol the bodies of a family stand on, read over its samples by
+/// [`Ground::of`] (ambient, enclosing, never carried as a body), each
+/// candidate held as the section's one byte. Never a code: no symbol is
+/// the ground by default, by count or by order. The symbols are never relabelled
 /// (78.56 II): a ground of 7 stays 7 on every raster, word and wire.
 pub fn ground_of(family: &Family) -> Ground<u8> {
-    let mut pairs = Vec::with_capacity(family.len());
-    for (x, y) in family {
-        let (Ok(a), Ok(b)) = (sample_unplaced(x), sample_unplaced(y)) else { return Ground::None };
-        pairs.push((a, b));
-    }
+    let pairs: Vec<(Sample, Sample)> = family.iter().map(|(x, y)| (x.sample().clone(), y.sample().clone())).collect();
     Ground::of(&pairs).map(|s| match s.as_slice() {
         &[b] => Some(b),
         _ => None,
@@ -206,11 +203,11 @@ pub fn frame_fixed(task: Task) -> Task {
     if !momentum_vanishes(&task.train) {
         return task;
     }
-    // THE MOMENTS, per axis and per order 1..=4, over the visible rasters.
-    let mut moment = [[0i128; 4]; AXES];
+    // THE MOMENTS, per axis and per order 1..=4, over the visible samples.
+    let mut moment = [[0i128; 4]; ALPHABET_SAMPLE_RANK];
     let visible = task.train.iter().flat_map(|(a, b)| [a, b]).chain(task.test.iter().map(|(a, _)| a));
     for g in visible {
-        let e = extents(g);
+        let e = g.extents();
         for (site, _) in painted_sites(g) {
             for (axis, m) in moment.iter_mut().enumerate() {
                 let x = centred(site[axis], e[axis]);
@@ -222,21 +219,21 @@ pub fn frame_fixed(task: Task) -> Task {
             }
         }
     }
-    let reversed: [bool; AXES] = std::array::from_fn(|axis| {
+    let reversed: [bool; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|axis| {
         let [first, _, third, _] = moment[axis];
         match first {
             0 => third < 0,
             f => f < 0,
         }
     });
-    let mut order: [usize; AXES] = std::array::from_fn(|axis| axis);
+    let mut order: [usize; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|axis| axis);
     // A stable ordering: axes whose even moments tie keep the order given.
     #[expect(clippy::disallowed_methods, reason = "rule 4 — a gauge-fixing condition, not a choice among candidates: the axes are ordered by the even moments the scene itself carries (78.54)")]
     order.sort_by_key(|&axis| (moment[axis][1], moment[axis][3]));
-    let at = |g: &Vec<Vec<u8>>| reoriented(g, order, reversed);
+    let at = |g: &SectionSample| reoriented(g, order, reversed);
     Task {
         train: task.train.iter().map(|(a, b)| (at(a), at(b))).collect(),
-        test: task.test.iter().map(|(a, b)| (at(a), at(b))).collect(),
+        test: task.test.iter().map(|(a, b)| (at(a), b.as_ref().map(at))).collect(),
     }
 }
 
@@ -249,13 +246,13 @@ pub fn frame_fixed(task: Task) -> Task {
 /// the frame is never un-fixed by a guess). Read by [`frame_fixed`] alone.
 pub fn momentum_vanishes(train: &Family) -> bool {
     use num_rational::Ratio;
-    let mut total: [Ratio<i128>; AXES] = std::array::from_fn(|_| Ratio::from_integer(0));
+    let mut total: [Ratio<i128>; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|_| Ratio::from_integer(0));
     for (a, b) in train {
-        let Some((p, q)) = super::family::envelope_dilation(a, b) else { return false };
+        let Some((p, q)) = super::family::envelope_dilation(a.sample(), b.sample()) else { return false };
         // A scene's first moment, per axis, each painted site a unit of mass.
-        let moment = |g: &[Vec<u8>]| -> [i128; AXES] {
-            let e = extents(g);
-            let mut m = [0i128; AXES];
+        let moment = |g: &SectionSample| -> [i128; ALPHABET_SAMPLE_RANK] {
+            let e = g.extents();
+            let mut m = [0i128; ALPHABET_SAMPLE_RANK];
             for (site, _) in painted_sites(g) {
                 for (axis, at) in m.iter_mut().enumerate() {
                     *at += centred(site[axis], e[axis]);
@@ -271,27 +268,15 @@ pub fn momentum_vanishes(train: &Family) -> bool {
     total.iter().all(|t| *t == Ratio::from_integer(0))
 }
 
-/// THE RASTER'S AXES. The carrier is two nested vectors, and every
-/// geometric reader here is written ONCE PER AXIS over this count, never an
-/// axis by hand. The count is the carrier's, not the data's: a sample
-/// carries its own rank (MU-SENSING §2), and this count leaves with the
-/// carrier (track 26, S4).
-/// FORMAT: the rank of the carrier `Vec<Vec<u8>>`, two levels of nesting.
-pub const AXES: usize = 2;
-
-/// A raster's extent on each axis.
-pub fn extents(g: &[Vec<u8>]) -> [usize; AXES] {
-    [g.len(), raster_width(g)]
-}
-
-/// THE SENSOR'S ONE READING OF A RASTER: each painted site (its coordinate
-/// on every axis) with its symbol, in canonical address order. The one pass
-/// over a scene's sites (law 11's sensor clause); every reader here takes
-/// it.
-pub fn painted_sites(g: &[Vec<u8>]) -> Vec<([usize; AXES], u8)> {
+/// THE SENSOR'S ONE READING OF A SECTION SAMPLE: each painted site (its
+/// coordinate on every axis) with its symbol, in canonical address order.
+/// The one pass over a scene's sites (law 11's sensor clause); every reader
+/// here takes it. Every geometric reader here is written once per axis of
+/// the section's rank, never an axis by hand.
+pub fn painted_sites(g: &SectionSample) -> Vec<([usize; ALPHABET_SAMPLE_RANK], u8)> {
     let ground = ground();
     let mut out = Vec::new();
-    for (i, line) in g.iter().enumerate() {
+    for (i, line) in g.lines().enumerate() {
         for (j, &h) in line.iter().enumerate() {
             if !ground.holds(&h) {
                 out.push(([i, j], h));
@@ -301,10 +286,11 @@ pub fn painted_sites(g: &[Vec<u8>]) -> Vec<([usize; AXES], u8)> {
     out
 }
 
-/// The symbol at a site; `None` where the site is not in the raster, which
+/// The symbol at a site; `None` where the site is not in the sample, which
 /// carries no symbol (never the ground written in for it).
-pub fn value_at(g: &[Vec<u8>], site: [usize; AXES]) -> Option<u8> {
-    g.get(site[0]).and_then(|line| line.get(site[1])).copied()
+pub fn value_at(g: &SectionSample, site: [usize; ALPHABET_SAMPLE_RANK]) -> Option<u8> {
+    let [line, at] = site;
+    g.line(line).and_then(|l| l.get(at)).copied()
 }
 
 /// A coordinate centred on its extent and doubled, so every centre is an
@@ -313,18 +299,20 @@ pub(crate) fn centred(x: usize, n: usize) -> i128 {
     2 * x as i128 - (n as i128 - 1)
 }
 
-/// A raster with its axes permuted (`order[j]` is the axis read as the
-/// j-th) and reversed where `reversed[axis]`: one pass over every site, so
-/// no symbol is written that the raster did not hold.
-fn reoriented(g: &[Vec<u8>], order: [usize; AXES], reversed: [bool; AXES]) -> Vec<Vec<u8>> {
-    let e = extents(g);
-    let ne: [usize; AXES] = std::array::from_fn(|j| e[order[j]]);
-    let mut out: Vec<Vec<u8>> = vec![Vec::with_capacity(ne[1]); ne[0]];
-    for (j, line) in out.iter_mut().enumerate() {
-        for k in 0..ne[1] {
+/// A section sample with its axes permuted (`order[j]` is the axis read as
+/// the j-th) and reversed where `reversed[axis]`: one pass over every site,
+/// so no symbol is written that the sample did not hold. The sample keeps
+/// its place.
+fn reoriented(g: &SectionSample, order: [usize; ALPHABET_SAMPLE_RANK], reversed: [bool; ALPHABET_SAMPLE_RANK]) -> SectionSample {
+    let e = g.extents();
+    let ne: [usize; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|j| e[order[j]]);
+    let mut symbols = Vec::with_capacity(g.symbols().len());
+    let [lines, width] = ne;
+    for j in 0..lines {
+        for k in 0..width {
             let at = [j, k];
             // The source site: output axis `i` reads source axis `order[i]`.
-            let mut site = [0usize; AXES];
+            let mut site = [0usize; ALPHABET_SAMPLE_RANK];
             for (i, &axis) in order.iter().enumerate() {
                 site[axis] = match reversed[axis] {
                     true => e[axis] - 1 - at[i],
@@ -332,20 +320,24 @@ fn reoriented(g: &[Vec<u8>], order: [usize; AXES], reversed: [bool; AXES]) -> Ve
                 };
             }
             if let Some(h) = value_at(g, site) {
-                line.push(h);
+                symbols.push(h);
             }
         }
     }
-    out
+    // The permuted extents hold the same sites, each read once.
+    match Sample::new(ne.to_vec(), 1, symbols, g.sample().place().clone()).ok().and_then(|s| SectionSample::of(s).ok()) {
+        Some(s) => s,
+        None => g.clone(),
+    }
 }
 
-/// A raster → its painted sites, the PERCEPTUAL convention: the scene's
-/// ground is omitted (the eye sees only novelty). The walk is the raster's
-/// own sites (a scene boundary), not a product of carriers.
-pub fn painted_of(g: &[Vec<u8>]) -> Vec<(i64, i64, u8)> {
+/// A section sample → its painted sites, the PERCEPTUAL convention: the
+/// scene's ground is omitted (the eye sees only novelty). The walk is the
+/// sample's own sites (a scene boundary), not a product of carriers.
+pub fn painted_of(g: &SectionSample) -> Vec<(i64, i64, u8)> {
     let ground = ground();
     let mut out = Vec::new();
-    for (i, line) in g.iter().enumerate() {
+    for (i, line) in g.lines().enumerate() {
         for (j, &h) in line.iter().enumerate() {
             if !ground.holds(&h) {
                 out.push((i as i64, j as i64, h));
@@ -357,9 +349,9 @@ pub fn painted_of(g: &[Vec<u8>]) -> Vec<(i64, i64, u8)> {
 
 // ── THE SAMPLE BRIDGE (ROADMAP track 26, S4; MU-SENSING §2) ────────────────
 //
-// A raster reaches the transduction only as a `Sample` read here, and the
-// transduction's speech returns to a raster only here. No transduce file
-// reads a raster.
+// A source's lines reach the sensor only as a `Sample` read here; past
+// intake the word machinery reads samples on the alphabet's section
+// (`spelled::SectionSample`), and no transduce file reads a raster.
 
 /// A RASTER AS A SAMPLE: rank 2, extents (axis 0, axis 1), one byte per
 /// site in canonical address order (axis 0 slowest). A ragged raster is not
@@ -372,22 +364,6 @@ pub fn sample_of(g: &[Vec<u8>], place: Place) -> Result<Sample, SampleRefusal> {
         return Err(SampleRefusal::Length { expected, found: g.iter().map(Vec::len).sum() });
     }
     Sample::new(vec![g.len(), width], 1, g.concat(), place)
-}
-
-/// A SPOKEN SAMPLE AS A RASTER: the speech end of the bridge. `None` where
-/// the sample is not of rank 2 and width 1, which no raster holds.
-pub fn raster_of(s: &Sample) -> Option<Vec<Vec<u8>>> {
-    let (AxisReading::Read(lines), AxisReading::Read(width), 2, 1) = (s.extent(0), s.extent(1), s.rank(), s.width()) else {
-        return None;
-    };
-    let bytes: Vec<u8> = s
-        .symbols()
-        .filter_map(|symbol| match symbol.bytes() {
-            &[b] => Some(b),
-            _ => None,
-        })
-        .collect();
-    (bytes.len() == lines * width).then(|| bytes.chunks(width).map(<[u8]>::to_vec).collect())
 }
 
 /// A PROJECTED RECORD AS THE PLANAR CHAIN `(axis 0, axis 1, before,

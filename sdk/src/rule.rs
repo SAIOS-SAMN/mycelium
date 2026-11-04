@@ -47,8 +47,13 @@ pub use mycelium::transducer::family::speak::{speak_rule, Speech};
 /// resolver that holds none.
 pub use mycelium::transducer::family::{Crystal, NoCrystal};
 
-/// One train pair: an input grid and its output grid.
+/// One train pair: an input sample and its output sample, each on the
+/// alphabet's section.
 pub use mycelium::transducer::family::TrainPair;
+
+/// A sample on the alphabet's section, the carrier a rule reads and speaks
+/// (track 26 S4d); a source's lines enter it through `of_lines`.
+pub use mycelium::transducer::spelled::SectionSample;
 
 /// THE GROUND (MU-SENSING §3.4): a family's deduced reading (`One`,
 /// `Vortex`, `None`). A rule is read, minted and spoken once per

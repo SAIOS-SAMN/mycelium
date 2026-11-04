@@ -166,7 +166,7 @@ fn encode_peers_reply_refuses_address_past_wall() {
 #[test]
 fn decode_solve_signs_payee_by_voice_key() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
-    let outputs = spoken_outputs(&[vec![vec![1u8, 2], vec![0, 3]]]).expect("a sample");
+    let outputs = spoken_outputs(&[vec![vec![1u8, 2], vec![0, 3]].into()]).expect("a sample");
     for rule in [None, Some(&b"a rule's tape"[..])] {
         let body = encode_solve_with_rule(&key, &[7u8; 32], &outputs, rule).expect("fits");
         let act = decode_solve(&body).expect("reads back");
@@ -197,7 +197,7 @@ fn decode_solve_signs_payee_by_voice_key() {
 #[test]
 fn solve_round_trips_stated_ground() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
-    let outputs = spoken_outputs(&[vec![vec![1u8, 2], vec![0, 3]]]).expect("a sample");
+    let outputs = spoken_outputs(&[vec![vec![1u8, 2], vec![0, 3]].into()]).expect("a sample");
     let tape = &b"a rule's tape"[..];
     for ground in [vec![7u8], vec![1u8, 2]] {
         let body = encode_solve_spoken(&key, &[7u8; 32], &outputs, Some(tape), Some(&ground)).expect("fits");

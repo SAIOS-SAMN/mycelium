@@ -38,8 +38,8 @@ fn speak_with_posts_only_at_thought_return() {
 }
 
 /// The scene a task's pairs make: one bar carried a column along.
-fn scene() -> (crate::transducer::family::Grid, crate::transducer::family::Grid) {
-    (vec![vec![0, 0, 0], vec![1, 1, 0], vec![0, 0, 0]], vec![vec![0, 0, 0], vec![0, 1, 1], vec![0, 0, 0]])
+fn scene() -> (crate::transducer::family::SectionSample, crate::transducer::family::SectionSample) {
+    (vec![vec![0, 0, 0], vec![1, 1, 0], vec![0, 0, 0]].into(), vec![vec![0, 0, 0], vec![0, 1, 1], vec![0, 0, 0]].into())
 }
 
 fn envelope(id: [u8; 32]) -> crate::anastome::dialogue::TaskRasters {

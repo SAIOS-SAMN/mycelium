@@ -7,7 +7,7 @@ use crate::client::sdk::mind::converge::{Evident, Scenes};
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element::{from_connection, translator_versor, Element};
 
-fn grid(rows: &[&str]) -> crate::transducer::family::Grid {
+fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
