@@ -1251,7 +1251,19 @@ Concordance hash served and signatures verified. Each phase is one commit:
      `forms::passage`, with joint fixtures
      ([proposal 78.172](docs/proposals/78.172-law-passage.md); requested
      by netstratum PR #40).
-   - Claims: `linear_passage_is_reflection_about_the_throat`,
+   - **The form is built** (v0.4.0; no wire or layout change):
+     `forms/src/passage.rs`, shell id `FORMS-PASSAGE` v1. `Throat::pass`
+     gives `2H − R` exact over ℚ and signed, `pass_share` gives `1 − δ`,
+     and `Throat::verify` reconstructs the passage and refuses any other
+     stated reach `PassageRefusal::NotLawful`, carrying the `Breach`
+     (`claimed`, `reconstructed`).
+     The six joint-read fixtures and the algebra's claims (involution,
+     the fixed throat, the squaring candidate refused off the throat)
+     stand in `forms/src/tests/passage.rs`. A kernel does not yet sign
+     by reconstructing them: no clause is registered for reading until
+     B2 lands, so the fixtures are claims of the form only. Open: the
+     admission at the vertex, below.
+   - Claims (admission, open): `linear_passage_is_reflection_about_the_throat`,
      `linear_passage_is_an_involution`,
      `crossing_stating_inversion_is_refused_not_lawful`.
 5. **B4, the boundary reading:** refusals at the universal core tube by
