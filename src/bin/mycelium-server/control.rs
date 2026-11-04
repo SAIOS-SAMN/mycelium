@@ -139,13 +139,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
         // tasks with no family; the task's long address passed the u16
         // wall, which the v1.2 citation removes). A plain request steps on
         // to the next open task, once round the book at most.
-        let envelope = |tid: &mycelium::registry::TaskCitation, task: &mycelium::transducer::family::Task| {
-            // Track 26 S5: the registry's rasters go out as samples, each at
-            // its position in the family.
-            let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
-            let b = dialogue::TaskEnvelope::of_rasters(*tid, &task.train, &tests)
-                .and_then(|e| dialogue::encode_task_envelope(&e.id, &e.train, &e.tests))
-                .ok();
+        let envelope = |tid: &mycelium::registry::TaskCitation, task: &dialogue::PostedTask| {
+            // Track 26 S4c: the posted samples go out as posted, at any rank
+            // and width, each at its position in the family.
+            let e = task.envelope(*tid);
+            let b = dialogue::encode_task_envelope(&e.id, &e.train, &e.tests).ok();
             if b.is_none() {
                 eprintln!("  task passed over: its envelope does not fit its lengths");
             }
@@ -216,9 +214,16 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
         // reconstructed under no ground. The court never deduces or picks a
         // ground of its own. A citation this book holds no task for has no
         // ground read at all, and is refused by name below.
+        // A solve's rule is replayed on the alphabet's section (track 26
+        // S4c): a task off it is refused by the alphabet's name alone, never
+        // for its rank, and a claim on it is a factorisation
+        // (`ACT_FACTORISATION`).
         let (tid, withheld, open, ground) = {
             let Ok(reg) = context.registry.lock() else { return true };
-            let g = reg.task(&cite).map(|t| mycelium::cognition::stated_ground(&t.train, stated.as_deref()));
+            let g = reg.section(&cite).map(|section| match section {
+                Ok(t) => mycelium::cognition::stated_ground(&t.train, stated.as_deref()).map_err(|why| why.reason()),
+                Err(_) => Err(mycelium::verdict::REFUSE_BEYOND_ALPHABET),
+            });
             (cite, reg.withheld(&cite), reg.open(&cite), g)
         };
         // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
@@ -302,9 +307,10 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
                 None,
             ),
             // A stated ground the court does not reconstruct under, refused
-            // by name: no other ground is read in its place.
+            // by name: no other ground is read in its place. A task off the
+            // alphabet's section is refused by the alphabet's name.
             (None, Some(_), Some(_), Some(Err(why))) => {
-                (dialogue::SOLVE_NOTHING, Mu::zero(), Some(refused(why.reason(), mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
+                (dialogue::SOLVE_NOTHING, Mu::zero(), Some(refused(why, mycelium::transducer::sentence::ObstructionKind::Integrity)), None)
             }
             (None, Some(first), Some(rule), Some(Ok(ground))) => {
                 let (verdict, offers) = {
@@ -682,11 +688,14 @@ pub(crate) fn route_corpus(
     mesh: &Mesh,
     registry: &Mutex<mycelium::registry::TaskRegistry>,
 ) -> bool {
+    // A task off the alphabet's section is routed to nothing and listed
+    // nowhere (track 26 S4c); the walk goes on past it.
     match mycelium::server::route::route_next(registry) {
-        Some(walked) => {
+        Some(Some(walked)) => {
             list_task(court, shelf, mesh, &walked, true);
             true
         }
+        Some(None) => true,
         None => false,
     }
 }

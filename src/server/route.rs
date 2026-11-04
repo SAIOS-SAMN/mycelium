@@ -13,8 +13,10 @@
 //! there it went silent for minutes on a task whose chart takes seconds a
 //! pair once refinement was no longer capped (MU-DERIVATIONS D3.2).
 
-use crate::transducer::family::Task;
+use crate::anastome::dialogue::PostedTask;
 use crate::server::registry::{TaskCitation, TaskRegistry};
+use crate::transducer::family::Task;
+use crate::transducer::sentence::SectionRefusal;
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 use crate::transducer::stalk::Invariant;
@@ -74,39 +76,57 @@ pub fn routes_of(task: &Task) -> Vec<PairRoute> {
     out
 }
 
-/// A TASK A WALK HANDS THE LISTING STEP: its citation, the task (its train
-/// binds the court's family) and its routes.
+/// A TASK A WALK HANDS THE LISTING STEP: its citation, the task on the
+/// alphabet's section (its train binds the court's family) and its routes.
 pub struct Walked {
     pub citation: TaskCitation,
     pub task: Task,
     pub routes: TaskRoutes,
 }
 
+/// THE ROUTES OF A POSTED TASK (track 26 S4c): those of its section
+/// ([`routes_of`]); a task off the alphabet's section has none, since the
+/// listing's readers spell the section, and its section's refusal is kept
+/// by name. Its routes are kept all the same (none), so the walks pass it.
+fn section_routes(task: &PostedTask) -> (Result<Task, SectionRefusal>, Vec<PairRoute>) {
+    let section = task.section();
+    let routes = match &section {
+        Ok(t) => routes_of(t),
+        Err(_) => Vec::new(),
+    };
+    (section, routes)
+}
+
 /// The task's routes where the registry keeps them; otherwise read here,
 /// with no registry lock held, and kept. A poisoned lock keeps nothing.
-fn routed(registry: &Mutex<TaskRegistry>, citation: TaskCitation, task: Task) -> Walked {
+/// `None` where the task is off the alphabet's section: nothing is listed
+/// for it, and its (empty) routes are kept so no walk reads it again.
+fn routed(registry: &Mutex<TaskRegistry>, citation: TaskCitation, task: PostedTask) -> Option<Walked> {
     let kept = registry.lock().ok().and_then(|r| r.routes(&citation));
-    let routes = match kept {
-        Some(routes) => routes,
+    let (section, routes) = match kept {
+        Some(routes) => (task.section(), routes),
         None => {
-            let read: TaskRoutes = Arc::new(routes_of(&task));
-            match registry.lock() {
+            let (section, read) = section_routes(&task);
+            let read: TaskRoutes = Arc::new(read);
+            let routes = match registry.lock() {
                 Ok(mut r) => r.keep_routes(citation, read),
                 Err(_) => read,
-            }
+            };
+            (section, routes)
         }
     };
-    Walked { citation, task, routes }
+    Some(Walked { citation, task: section.ok()?, routes })
 }
 
 /// FIRST-TIME INTAKE: the next `n` tasks of the manifest, each routed and
-/// its routes kept.
+/// its routes kept; a task off the alphabet's section is routed to none
+/// and handed to no listing.
 pub fn intake_walk(registry: &Mutex<TaskRegistry>, n: usize) -> Vec<Walked> {
     let batch = match registry.lock() {
         Ok(mut r) => r.next_intake_batch(n),
         Err(_) => return Vec::new(),
     };
-    batch.into_iter().map(|(citation, task)| routed(registry, citation, task)).collect()
+    batch.into_iter().filter_map(|(citation, task)| routed(registry, citation, task)).collect()
 }
 
 /// A COVER CHANGE'S WALK: the next `n` tasks of the cover walk that the
@@ -120,15 +140,17 @@ pub fn cover_walk(registry: &Mutex<TaskRegistry>, n: usize) -> Vec<Walked> {
         .into_iter()
         .filter_map(|(citation, task)| {
             let routes = r.routes(&citation)?;
-            Some(Walked { citation, task, routes })
+            Some(Walked { citation, task: task.section().ok()?, routes })
         })
         .collect()
 }
 
 /// THE NEXT TASK NOT YET ROUTED, routed and kept: a court that restored its
 /// listings took no intake, and its corpus is routed here, one task at a
-/// time, on the intake's thread. `None` once every task is routed.
-pub fn route_next(registry: &Mutex<TaskRegistry>) -> Option<Walked> {
+/// time, on the intake's thread. The outer `None` once every task is
+/// routed; the inner `None` where the task routed was off the alphabet's
+/// section, so nothing is listed for it and the walk goes on.
+pub fn route_next(registry: &Mutex<TaskRegistry>) -> Option<Option<Walked>> {
     let (citation, task) = registry.lock().ok()?.unrouted()?;
     Some(routed(registry, citation, task))
 }

@@ -12,4 +12,4 @@ pub mod route;
 pub mod synthesis;
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;
