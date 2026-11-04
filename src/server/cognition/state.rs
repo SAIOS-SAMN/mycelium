@@ -1038,7 +1038,15 @@ impl Court {
             );
         }
         let recalled = self.recall_cited(r);
-        let verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
+        let mut verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
+        // MU-HOSTING §5a.9 — EVICTION BY SIGNATURE: a signed frame that
+        // contradicts its line where the line is held unreached (a forged
+        // genesis stored first, a forged predecessor) evicts the unreached
+        // top of the line, and is admitted against what the signatures
+        // reached.
+        if !matches!(verdict, crate::court::admission::Admitted::Refused(_)) && self.evict_contradicted(r) > 0 {
+            verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
+        }
         self.forget_recalled(&recalled);
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
@@ -1135,13 +1143,23 @@ impl Court {
                 break;
             }
             let recalled = self.recall_cited(r);
-            let verdict = crate::court::admission::admit_backfilled(r, &self.chain);
+            let verdict = match crate::court::admission::admit_backfilled(r, &self.chain) {
+                // MU-DERIVATIONS D2.5: held unreached only while the held
+                // receipts fit the process's capacity; past it, refused by
+                // name and the page stops.
+                crate::court::admission::Admitted::Parent(p) => match self.unreached_refusal() {
+                    None => crate::court::admission::Admitted::Parent(p),
+                    Some(why) => crate::court::admission::Admitted::Refused(why),
+                },
+                other => other,
+            };
             self.forget_recalled(&recalled);
             match verdict {
                 crate::court::admission::Admitted::Parent(_) => {
-                    self.chain.admit(r.clone());
-                    // MU-HOSTING §5a.10: stored, and read by nothing until
-                    // its signer's signature reaches it.
+                    // MU-HOSTING §5a.9, §5a.10: stored, and read by nothing
+                    // until its signer's signature reaches it — a fold's
+                    // root included (`ReceiptChain::admit_unreached`).
+                    self.chain.admit_unreached(r.clone());
                     self.hold_unreached(r);
                     n += 1;
                 }

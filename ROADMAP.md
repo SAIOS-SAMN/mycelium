@@ -55,7 +55,7 @@ None of these waits on a ruling:
 | Item | Issue | Track | Notes |
 |---|---|---|---|
 | X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | Depends on nothing; the rest of track 25 stands on it |
-| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Open: foundings inside a folded era, a version-2 origin's geometry, eviction of a stored line no signature reaches (MU-HOSTING §5a.9) |
+| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Eviction by signature, the held queue's bound and the waiting fold root are built ([#79](https://github.com/SAIOS-SAMN/mycelium/issues/79)). Open: foundings inside a folded era, a version-2 origin's geometry, a gap longer than the capacity (MU-HOSTING §5a.9) |
 | `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
 | Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Built with N1 |
 | Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Built with N2 |
@@ -1202,10 +1202,14 @@ Concordance hash served and signatures verified. Each phase is one commit:
    admitted: not the depth index, the stamp alias, the ruling replay it
    would wake, a fold's shed, a founding's reconstruction, the
    equivocation burn, or restore. Claims in
-   `server/cognition/tests/reach.rs`. Open: eviction of a stored line no
-   signature reaches (a forged genesis holds its signer's places at the
-   hypha), a bound on the held queue, and the fold root a stored `Fold`
-   files on the chain (MU-HOSTING §5a.9).
+   `server/cognition/tests/reach.rs`. Its three open items are built
+   ([issue #79](https://github.com/SAIOS-SAMN/mycelium/issues/79)): a
+   signed frame that contradicts a stored unreached line evicts its
+   unreached top and never a reached receipt; the held queue is bounded
+   by the process's capacity `C = ⌊M_proc / b⌋` and refuses past it by
+   name; and a back-filled `Fold` files its root once a signature reaches
+   it. Open: a gap longer than `C` closes only through a fold root
+   (MU-HOSTING §5a.9).
 2. **B1, the act audit and the boundary's name:** every act kind that
    names a domain classed as a key's own or a universe's; the `NotReserve`
    variants renamed `NotThroughCore` (names only); a line's mouth offer

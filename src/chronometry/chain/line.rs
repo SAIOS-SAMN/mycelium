@@ -184,6 +184,13 @@ impl ReceiptChain {
             false => {
                 let mut packer = j.packer.clone();
                 let mut body = Vec::new();
+                // The nodes that left are named first: a node evicted
+                // (`evict`) and another filed at its stamp since are read
+                // back as the one leaving, then the other held.
+                for (key, ()) in j.left.scoped() {
+                    let Some(at) = super::Stamp::from_key(&key) else { continue };
+                    packer.gone(&mut body, &at);
+                }
                 for (key, ()) in j.filed.scoped() {
                     let Some(at) = super::Stamp::from_key(&key) else { continue };
                     let Some(r) = self.node(&at) else { continue };
@@ -191,10 +198,6 @@ impl ReceiptChain {
                 }
                 if let (true, Some(root)) = (j.rooted, &self.root) {
                     packer.root(&mut body, root);
-                }
-                for (key, ()) in j.left.scoped() {
-                    let Some(at) = super::Stamp::from_key(&key) else { continue };
-                    packer.gone(&mut body, &at);
                 }
                 packer.anchors(&mut body);
                 (frame(body), packer)

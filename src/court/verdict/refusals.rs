@@ -298,6 +298,10 @@ pub const REFUSE_ORIGIN: &str = "receipt names another genesis or origin epoch";
 pub const REFUSE_RECEIPT: &str = "receipt height does not re-derive from its parents";
 /// 47.2 step 3: a duplicate frame at a K already held, ignored.
 pub const REFUSE_RECEIPT_STALE: &str = "receipt index at or below the signer's known head";
+/// 47.2 step 3, MU-HOSTING §5a.9, MU-DERIVATIONS D2.5: a back-filled
+/// receipt that would be held unreached past the process's capacity, the
+/// reads `M_proc` holds at the measured bytes per read (`C = ⌊M_proc / b⌋`).
+pub const REFUSE_UNREACHED_PAST_MEMORY: &str = "back-filled receipt held unreached past the process's memory";
 /// 47.4: two receipts at one K on one chain with different hashes.
 pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chain hashes";
 /// 47.2 step 2: the signature does not verify over the 47.1 prefix under
