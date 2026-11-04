@@ -274,7 +274,7 @@ impl<'a> Seen<'a> {
         hues.sort_unstable();
         hues.dedup();
         Ok(match coord {
-            Coord::Shell => qu(cells.len()),
+            Coord::Cells => qu(cells.len()),
             Coord::Height => ext.and_then(|(t, _, bt, _)| span(t, bt)),
             Coord::Width => ext.and_then(|(_, l, _, r)| span(l, r)),
             Coord::Top => ext.and_then(|(t, ..)| qu(t)),

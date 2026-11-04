@@ -36,7 +36,7 @@ is at `0.3.0-rc.3`, signed with a prototype key. Remaining, in order:
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Moved to v0.4.0 with track 26 S4b (decided 2026-11-04) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved; O3 derived in track 26 S4b as `2ⁿ` at the alphabet's base). The need readings owed are listed in MU-DERIVATIONS D2.5 |
-| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N7 built (N1 with #29, N2 with #53, N7 with track 26 S5, N6 inside v0.3.0's open break); `ListingField` still waits on a ruling |
+| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N7 built (N1 with #29, N2 with #53, N7 with track 26 S5, N6 inside v0.3.0's open break, N4's `ListingField`→`ListingCoherence` and `Coord::Shell`→`Coord::Cells` ruled and built); #55 done |
 | rc.3 on a test mesh, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | `v0.3.0-rc.3` tagged 2026-11-04, signed with the prototype key ([docs/release-keys/](docs/release-keys/)). `v0.3.0` is tagged from it once the peer kernels' conformance read passes at rc.3. Track 26 S4a, S4b and S7–S9 open v0.4.0 |
 
 **1a. In progress: v0.4.0.** It opens a new break, in which word and
@@ -466,7 +466,7 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    keyed trie's prefix `Fibre` is no bundle fibre and is `Subtree`;
    `forms::frame::Frame` is `Reference`; `layers::Shell` is `Layer`; the
    code's `Epigenome` is `MindLanguage`; `resonance.rs` is
-   `cross_scene.rs`. `ListingField` still waits on a ruling.
+   `cross_scene.rs`. `ListingField` is `ListingCoherence`, ruled and built.
 4. **N4, retired terms and person words.**
    - `Unstated::OffLattice` → `OffSubstrate`; `lattice_step` →
      `substrate_step`.
@@ -545,8 +545,9 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
      `"compartment_a"`, the golden file written again through the
      corpus's decoder.
 
-   Still open: `ListingField`, and the rule language's `Coord::Shell` (a
-   body's cell count, on the SDK's `rule` surface), each for a ruling.
+   `ListingField` is `ListingCoherence`, and the rule language's
+   `Coord::Shell` is `Coord::Cells` (a body's cell count, on the SDK's
+   `rule` surface): both ruled and built.
 7. **N7, the two wire names, with track 26 S5:**
    - `ACT_ROWS` and its codecs → `ACT_ENTRIES` (ledger entries);
    - `REFUSE_RULE_OFF_LATTICE` → `REFUSE_RULE_OFF_SUBSTRATE`.

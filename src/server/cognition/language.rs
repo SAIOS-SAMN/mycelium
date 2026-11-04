@@ -229,7 +229,7 @@ pub struct Rank {
     pub retire_gen: u64,
     /// THE COHESION READING, CARRIED WHERE THE CLOSURE IS BOUND: listings
     /// with a base point in the language, and listings without one. Kept
-    /// by `put_closure` for the same reason `ListingField::nonflat` is
+    /// by `put_closure` for the same reason `ListingCoherence::nonflat` is
     /// kept by `write_field` — so a read never reads the whole book to count
     /// what the write already knew (rule 1). `cohesion_over` read the
     /// whole closure map, and `synthesis` read it a second time, with
@@ -307,7 +307,7 @@ pub struct ProbedChart {
 /// One listing's coherence field: the charts and the non-Flat count, updated
 /// in write_field so a read never scans the entries for closure.
 #[derive(Debug, Clone, Default)]
-pub struct ListingField {
+pub struct ListingCoherence {
     pub entries: Vec<ProbedChart>,
     pub nonflat: u64,
 }

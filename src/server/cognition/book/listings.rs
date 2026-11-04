@@ -233,7 +233,7 @@ impl Court {
     }
 
     /// The coherence field, keyed by listing.
-    pub fn field(&self) -> &crate::network::nerve::Keyed<ListingField> {
+    pub fn field(&self) -> &crate::network::nerve::Keyed<ListingCoherence> {
         &self.field
     }
 

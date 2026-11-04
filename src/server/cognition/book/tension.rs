@@ -48,7 +48,7 @@ impl Court {
         let mut listing =
             match self.field.get(address).cloned().or_else(|| self.field_cold.remove(address)) {
                 Some(f) => f,
-                None => ListingField::default(),
+                None => ListingCoherence::default(),
             };
         for e in &mut listing.entries {
             if e.state.is_flat() {

@@ -756,7 +756,7 @@ fn take_count(b: &[u8], p: &mut usize) -> Option<usize> {
 /// The inverse of `write::put_field`: a listing's field, or a refusal. A
 /// closure tag that is none of the four refuses the leaf; it was read as a
 /// cavity.
-fn take_field(b: &[u8], p: &mut usize) -> Option<ListingField> {
+fn take_field(b: &[u8], p: &mut usize) -> Option<ListingCoherence> {
     use crate::transducer::stalk::Closure;
     let ne = take_count(b, p)?;
     let mut entries = Vec::new();
@@ -795,5 +795,5 @@ fn take_field(b: &[u8], p: &mut usize) -> Option<ListingField> {
     // A count that does not fit its carrier refuses the leaf (STD1): the
     // `as u32` this was truncated it — the same defect at a second site.
     let nonflat = u64::try_from(entries.iter().filter(|e| !e.state.is_flat()).count()).ok()?;
-    Some(ListingField { entries, nonflat })
+    Some(ListingCoherence { entries, nonflat })
 }

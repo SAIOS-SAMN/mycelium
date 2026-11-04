@@ -4702,7 +4702,7 @@ compare canonicalises the spoken chain by A5 first. `selection_key` is A9.
 `state.rs` the `Court` struct and the reads that count what is in it;
 `language.rs` the `Language` snapshot and what a reduction answers with
 (`Outcome`, `Glue`, `NormalForm`, `MarketView`, `Rank`, `ProbedChart`,
-`ListingField`, `Reduction`, `Adoption`); `basis.rs` how a ruled word
+`ListingCoherence`, `Reduction`, `Adoption`); `basis.rs` how a ruled word
 enters, occupies, relocates and leaves; `cocycle.rs` the filed cocycles and
 the cocycles' causal supersession (45.3); `reduce.rs` the reduction and the quote
 over the snapshot; `keys.rs` the A21 keys the mind indexes by; `wire.rs`
