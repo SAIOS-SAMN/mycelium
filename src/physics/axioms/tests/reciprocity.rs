@@ -9,8 +9,14 @@ fn q(n: i64, d: i64) -> num_rational::BigRational {
     num_rational::BigRational::new(n.into(), d.into())
 }
 
+/// The sensor plane of the fixtures' base, as the default perspective
+/// assigns it.
+fn plane() -> (usize, usize) {
+    crate::transducer::perspective::alphabet_base_plane().expect("the alphabet's base holds a plane")
+}
+
 fn coset(a: &blade::Shape, b: &blade::Shape) -> Vec<Transition> {
-    transitions_between(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+    transitions_between(&a.blade, &b.blade, plane(), &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the pair is carried")
 }
 
@@ -66,8 +72,8 @@ fn reciprocal_reads_every_transition_from_both_sides() {
 fn certify_fit_is_symmetric_in_order() {
     let (a, b) = (l(), l_blown_up());
     let (ab, ba) = (
-        certify(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE).expect("fit"),
-        certify(&b.blade, &a.blade, crate::transducer::base::GRID_PLANE).expect("fit"),
+        certify(&a.blade, &b.blade, plane()).expect("fit"),
+        certify(&b.blade, &a.blade, plane()).expect("fit"),
     );
     assert_eq!(ab.through, Harmonic::Three);
     assert_eq!(ab.through, ba.through, "m_AB = m_BA");
@@ -77,7 +83,7 @@ fn certify_fit_is_symmetric_in_order() {
     let on_grid = |x: &Transition| -> Vec<[num_rational::BigRational; 2]> {
         x.residue
             .iter()
-            .filter(|r| r.order == Harmonic::Four && r.plane == crate::transducer::base::GRID_PLANE)
+            .filter(|r| r.order == Harmonic::Four && r.plane == plane())
             .map(|r| r.vector.clone())
             .collect()
     };

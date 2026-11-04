@@ -63,7 +63,7 @@ impl Harmonics {
         let open = count(blade::frame_faces(&b.support));
         // The anisotropy is read on the grid plane, named (BQ4); the spread is
         // the trace on every axis the body has.
-        let (gi, gj) = crate::transducer::base::GRID_PLANE;
+        let (gi, gj) = crate::transducer::perspective::family_plane(b.n())?;
         let (ixx, iyy, ixy) = (b.moment2(gi, gi)?, b.moment2(gj, gj)?, b.moment2(gi, gj)?);
         let tr = ixx + iyy;
         let det = ixx * iyy - ixy * ixy;

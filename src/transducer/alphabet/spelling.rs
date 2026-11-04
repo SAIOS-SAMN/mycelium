@@ -449,7 +449,7 @@ impl ShrinkGovernor for SpellGovernor<'_> {
 /// not rational, or its rotation has a Gaussian factor outside the
 /// alphabet's primes — a remainder, never a rounding.
 pub fn spell(block: &[[Q; 2]; 2]) -> Option<Spelling> {
-    spell_on((PLANE_ROW, PLANE_COL), block)
+    spell_on(sensor_plane(), block)
 }
 
 /// THE SAME SPELLING ON ANY PAIR PLANE (50.4, A22). `spell_peel_on`
@@ -512,7 +512,7 @@ fn closed_spelling(
 /// stalls, the standing arc (the Gaussian remainder the alphabet cannot
 /// speak) — carried out whole for the caller to hold as thought.
 pub fn spell_peel(block: &[[Q; 2]; 2]) -> Option<(PeelNest<SpellResidueView, SpellCore>, Q)> {
-    spell_peel_on((PLANE_ROW, PLANE_COL), block)
+    spell_peel_on(sensor_plane(), block)
 }
 
 /// The same peel on any pair plane (50.4, A22): the block's rows and

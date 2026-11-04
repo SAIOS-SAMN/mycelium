@@ -140,7 +140,7 @@ fn founding_motions() -> [crate::transducer::cga::Mv; 2] {
     use crate::transducer::cga::{translator_at, Mv, E1, E2};
     let unit = || crate::core::q::Q::from_integer(1.into());
     let turn = Mv::scalar(unit()).add(&Mv::blade(E1 | E2, unit()));
-    let slide: Vec<crate::core::q::Q> = (0..=crate::transducer::base::FRAME_AXIS)
+    let slide: Vec<crate::core::q::Q> = (0..crate::transducer::alphabet::ALPHABET_BASE_N)
         .map(|axis| match axis {
             0 => unit(),
             _ => crate::core::q::Q::from_integer(0.into()),
@@ -199,7 +199,7 @@ pub fn boot_stroke(held: impl Fn() -> Option<i128>) -> Result<std::num::NonZeroU
 
 /// THE PROCESS'S CAPACITY in reads (D2.5): the sealed `C`. Before the seal
 /// (a process that never calibrates: a library, a test harness), the
-/// capacity whose one spend is the minimal stroke, `2^(FRAME_AXIS+1)`
+/// capacity whose one spend is the minimal stroke, [`STROKES_PER_RESERVE`]
 /// minimal strokes, derived from the least work there is and the same on
 /// every host; zero only where the founding motions have no need to read.
 pub fn capacity() -> u64 {
@@ -218,13 +218,16 @@ pub fn sealed() -> Option<Calibration> {
 }
 
 /// THE APERTURE — EVERY DIMENSION IS AN EXPONENT (founding, MU-RECURSION
-/// §0.0): a full pool holds one expansion stroke per vertex of the sensor
-/// base's unit cell, `2ⁿ` for its `n` axes — the two grid axes and the
-/// frame axis (`transducer::base`), so `2³`. It is algebra, not a scale —
-/// the scale is the process's (`capacity`). It reads the fixed frame axis,
-/// which ROADMAP track 26 S4 removes: an open dependency (MU-DERIVATIONS
-/// D2.5 O3).
-pub const STROKES_PER_RESERVE: u64 = 1 << (crate::transducer::base::FRAME_AXIS + 1);
+/// §0.0): a full pool holds one expansion stroke per vertex of the unit
+/// cell of the base the founding motions act on, `2ⁿ` for its `n` axes.
+/// That base is the alphabet's (`alphabet::ALPHABET_BASE_N = LETTER_RANK −
+/// 1`, the value of `Cl(n+1, 1)` the process holds: a sample of the rank
+/// the letters spell and its place), so `2³`. It counts vertices of the
+/// algebra the process holds, never of a task: the capacity is the
+/// process's and is read before any task arrives, so no task's rank enters
+/// it (MU-DERIVATIONS D2.5 O3, closed by ROADMAP track 26 S4b). It is
+/// algebra, not a scale — the scale is the process's (`capacity`).
+pub const STROKES_PER_RESERVE: u64 = 1 << crate::transducer::alphabet::ALPHABET_BASE_N;
 
 /// One entropic expansion's spend — the capacity over the ratio.
 pub fn spend_unit() -> u64 {
@@ -378,8 +381,8 @@ pub fn idle_park(rtt: Option<std::num::NonZeroU64>) -> std::time::Duration {
 }
 
 /// Strokes per pool cycle — the aperture: the full pool over one spend,
-/// the vertices of the sensor base's unit cell (`STROKES_PER_RESERVE`), in
+/// the vertices of the alphabet base's unit cell (`STROKES_PER_RESERVE`), in
 /// the `u32` its readers count circuits in.
 pub fn aperture_cycle() -> u32 {
-    1 << (crate::transducer::base::FRAME_AXIS + 1)
+    1 << crate::transducer::alphabet::ALPHABET_BASE_N
 }

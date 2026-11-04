@@ -1,7 +1,6 @@
 // 72.1c, FR1 — The relative pose: read on the tube over every plane the two
 // bodies occupy, and unchanged on the sensor's plane at one section.
 
-use crate::transducer::base::GRID_PLANE;
 use crate::transducer::blade::*;
 use crate::transducer::cga::{self, E1, E2, E3};
 
@@ -87,7 +86,8 @@ fn relative_pose_agrees_with_relative_rotor_at_one_section() {
     let mut b = super::fixtures::budget();
     for other in [&turned, &j, &s, &l] {
         assert!(!on_tube(&l, other), "one section, both");
-        let (pose, planar) = (relative_pose(&l, other, &mut b), relative_rotor(&l, other, GRID_PLANE, &mut b));
+        let plane = crate::transducer::perspective::family_plane(l.n()).expect("the fixture's plane");
+        let (pose, planar) = (relative_pose(&l, other, &mut b), relative_rotor(&l, other, plane, &mut b));
         assert_eq!(pose.as_ref().err(), planar.as_ref().err(), "the same refusal");
         if let (Ok(p), Ok(r)) = (&pose, &planar) {
             assert!(p.rotor().projective_eq(r.rotor()), "the same turn");

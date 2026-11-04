@@ -706,7 +706,7 @@ pub(super) fn family_percept(
             let Vertex::Word { address, derivation, .. } = v else { continue };
             let support: Vec<Site> = codomain
                 .iter()
-                .map(|s| match s.with_axis(crate::transducer::base::FRAME_AXIS, c.frame) {
+                .map(|s| match crate::transducer::perspective::family_place_axis(s.n()).and_then(|p| s.with_axis(p, c.frame)) {
                     Some(at) => at,
                     None => s.clone(),
                 })

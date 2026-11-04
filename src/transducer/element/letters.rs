@@ -465,12 +465,31 @@ pub fn conformal_factors(v: &Versor) -> Result<Conformal, Unfactored> {
     }
 }
 
-/// The base's three axes in the rotor chart (51.2): `e₀, e₁, e₃` are `r,
-/// c, k`, and `e₂` is off the base. Index 2 of a rotor's action is the row
-/// that says a turn leaves the base, and it is a row of the system here,
-/// never dropped.
-/// FORMAT: the rotor chart's axis indices of `r, c, k`.
-const BASE_AXES: [usize; 3] = [0, 1, 3];
+/// The alphabet base's axes in the rotor chart (51.2), each at its slot
+/// (`alphabet::slot_of_axis`): the sample's space axes and then its place,
+/// read off the slots and never listed. The orientation character
+/// ([`OFF_BASE_SLOT`]) is off the base: its row of a rotor's action says a
+/// turn leaves the base, and it is a row of the system here, never dropped.
+const BASE_AXES: [usize; crate::transducer::alphabet::ALPHABET_BASE_N] = base_slots();
+
+/// The slot of each axis of the alphabet's base, in axis order.
+const fn base_slots() -> [usize; crate::transducer::alphabet::ALPHABET_BASE_N] {
+    let mut out = [0usize; crate::transducer::alphabet::ALPHABET_BASE_N];
+    let mut axis = 0usize;
+    while axis < crate::transducer::alphabet::ALPHABET_BASE_N {
+        out[axis] = match crate::transducer::alphabet::slot_of_axis(axis) {
+            Some(s) => s as usize,
+            None => axis,
+        };
+        axis += 1;
+    }
+    out
+}
+
+/// THE ORIENTATION CHARACTER'S SLOT: the one slot of the chart no base axis
+/// stands on (`alphabet::axis_of_slot` reads none for it), after the
+/// sample's space axes.
+const OFF_BASE_SLOT: usize = crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
 
 /// THE BASE POINT OF A TURN (12.6; `cech::classify`'s standing note): a
 /// rotation about `p` rather than the origin is `T_p R T_p⁻¹ = T(p − R p)
@@ -561,7 +580,10 @@ pub fn screw_of(
     // axes (51.2, law 6: `BASE_AXES` below), so the translation is read on
     // those three; a carriage with a component past them is no screw of
     // this rotor and refuses at the same-versor check.
-    let t = crate::transducer::cga::base_at(&carriage.sandwich(&crate::transducer::cga::point_at(&[])), 3)?;
+    let t = crate::transducer::cga::base_at(
+        &carriage.sandwich(&crate::transducer::cga::point_at(&[])),
+        crate::transducer::alphabet::ALPHABET_BASE_N,
+    )?;
     if !same_versor(carriage, &crate::transducer::cga::translator_at(&t)) {
         return None;
     }
@@ -581,7 +603,7 @@ pub fn screw_of(
                 false => -image[r_axis].clone(),
             };
         }
-        rows[3][col] = -image[2].clone();
+        rows[3][col] = -image[OFF_BASE_SLOT].clone();
     }
     for (row, rhs) in [t.0, t.1, t.2, Q::zero()].into_iter().enumerate() {
         rows[row][3] = rhs;

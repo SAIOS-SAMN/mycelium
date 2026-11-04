@@ -224,9 +224,9 @@ impl Word {
     /// the path, never the sensor's shadow (50.4). The element is unchanged:
     /// a rotor carried is carried onto the reduced tape.
     pub fn normal_form(&self) -> Word {
-        let sensor = (PLANE_ROW, PLANE_COL);
-        let sheet = (PLANE_COL, 2);
-        let on_sensor = self.0.iter().all(|(id, _)| plane_of(*id).is_none_or(|p| p == sensor || p == sheet));
+        let sensor = sensor_plane();
+        let sheet = flip_plane(sensor);
+        let on_sensor = self.0.iter().all(|(id, _)| plane_of(*id).is_none_or(|p| p == sensor || Some(p) == sheet));
         if on_sensor {
             if let Some(f) = self.form() {
                 return self.carrying(f.to_word());
@@ -345,7 +345,7 @@ impl Word {
     /// The word's action on the sensor's plane `(e0, e1)` as a 2×2 block —
     /// only when the word preserves that plane (no third axis mixed in).
     pub fn plane_block(&self) -> Option<[[Q; 2]; 2]> {
-        self.block_on((PLANE_ROW, PLANE_COL))
+        self.block_on(sensor_plane())
     }
 
     /// The word's action on the pair plane `(i, j)` as a 2×2 block, columns
@@ -452,7 +452,7 @@ pub(crate) fn plane_nf(w: &Word) -> Word {
     let Some(plane) = plane_of_run(w) else {
         return w.clone();
     };
-    if plane == (PLANE_ROW, PLANE_COL) {
+    if plane == sensor_plane() {
         return match w.form() {
             Some(f) => f.to_word(),
             None => w.clone(),

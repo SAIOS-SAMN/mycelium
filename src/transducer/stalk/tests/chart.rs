@@ -278,9 +278,9 @@ fn key_of_prefix_is_byte_prefix() {
 /// the value was perfectly exact).
 #[test]
 fn rotor_axes_writes_whole_coordinates() {
-    use crate::transducer::alphabet::{LetterId, Rotor, Word, PLANE_COL, PLANE_ROW};
+    use crate::transducer::alphabet::{sensor_plane, LetterId, Rotor, Word};
     let turn_90 = {
-        let id = LetterId::turn_90((PLANE_ROW, PLANE_COL)).expect("the sensor plane");
+        let id = LetterId::turn_90(sensor_plane()).expect("the sensor plane");
         Word::from_letters(&[(id, false)]).rotor()
     };
     let axes = rotor_axes(&turn_90).expect("a 90° turn carries a class");

@@ -39,9 +39,9 @@ pub(super) fn vertex_centroid(b: &Blade) -> Option<Vec<BigRational>> {
         b.centroid()?
             .into_iter()
             .enumerate()
-            .map(|(i, x)| match crate::transducer::base::is_grid_axis(i) {
-                true => x + qn(1, 2),
-                false => x,
+            .map(|(i, x)| match crate::transducer::perspective::family_role(b.n(), i) {
+                Some(crate::transducer::perspective::Role::Space) => x + qn(1, 2),
+                _ => x,
             })
             .collect(),
     )
@@ -100,7 +100,8 @@ pub struct Transition {
 /// is refused by the pose's named cause, and a stroke spent before every
 /// candidate was read is the typed cut [`NoPose::Unbounded`].
 pub fn versor_coset(a: &Shape, b: &Shape, budget: &mut crate::physics::Budget) -> Result<Vec<Transition>, NoPose> {
-    transitions_between(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE, budget)
+    let plane = crate::transducer::perspective::family_plane(a.blade.n()).ok_or(NoPose::Planeless)?;
+    transitions_between(&a.blade, &b.blade, plane, budget)
 }
 
 /// THE DOUBLE-ANGLE POINT of a harmonic of degree `m` between two bodies:
@@ -461,7 +462,8 @@ pub fn versor_carrying(
     if a.blade.support.is_empty() || b.blade.support.is_empty() {
         return Err(NoPose::Bodiless);
     }
-    let fit = certify(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE)
+    let plane = crate::transducer::perspective::family_plane(a.blade.n()).ok_or(NoPose::Planeless)?;
+    let fit = certify(&a.blade, &b.blade, plane)
         .map_err(|(region, sites)| NoPose::Incongruent(Incongruence::Order { region, sites }))?;
     // One candidate verified: one read from the stroke (65.5).
     if !budget.spend() {

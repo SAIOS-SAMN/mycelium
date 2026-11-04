@@ -3,6 +3,7 @@ mod candidates;
 mod factor;
 mod germinate;
 mod layers;
+mod perspective;
 mod raster;
 mod rewrite;
 mod sample;

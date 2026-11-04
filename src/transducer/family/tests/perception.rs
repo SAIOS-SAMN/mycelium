@@ -570,7 +570,7 @@ assert!(
 // And the corner in one frame alone names nothing here.
 let in_frame: Vec<_> = crate::transducer::sentence::contact_cells(&sites(&[(0i64, 0i64, 0i64), (0, 1, 1)]))
     .into_iter()
-    .filter(|c| !c.crosses(crate::transducer::base::FRAME_AXIS))
+    .filter(|c| crate::transducer::perspective::family_place_axis(3).is_none_or(|p| !c.crosses(p)))
     .collect();
 assert!(in_frame.is_empty(), "no in-frame adjacency relates them: {in_frame:?}");
 }

@@ -32,10 +32,7 @@ fn oblique_arc_mints_witness_court_can_open() {
     let (s, t) = blade::oblique_arc(&l.blade, &big.blade).expect("the pair has an arc");
     assert_eq!(s.gcd(&t), num_bigint::BigInt::from(1), "the arc is primitive: {s} + {t}i");
     let norm = &s * &s + &t * &t;
-    let plane = (
-        crate::transducer::alphabet::PLANE_ROW,
-        crate::transducer::alphabet::PLANE_COL,
-    );
+    let plane = crate::transducer::alphabet::sensor_plane();
     let prime = crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane)
         .expect("the norm carries a prime the alphabet does not");
     let block = crate::transducer::alphabet::arc_block(&s, &t);

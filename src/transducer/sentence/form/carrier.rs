@@ -970,7 +970,7 @@ impl Default for Form {
         let mut vertices = Keyed::new();
         vertices.put(&coord::VertexAt::Frame, Vertex::Frame);
         Form {
-            n: crate::transducer::element::GRID_N,
+            n: crate::transducer::element::BASE_N,
             vertices,
             faces: Keyed::new(),
             orbits: Vec::new(),

@@ -81,12 +81,13 @@ pub(crate) fn emit_carried(
         // A hue the map does not move keeps its own colour: that is what
         // the map says about it (rule 11).
         let spoken = crate::transducer::sentence::transport::gauge_image(&hue, h);
-        let frame = l.site.axis(crate::transducer::base::FRAME_AXIS);
+        let place = crate::transducer::perspective::family_place_axis(l.site.n());
+        let frame = place.and_then(|p| l.site.axis(p));
         match element::carry_compartment_site(v, &l.site) {
             // The grid spoken onto is the body's own frame: a compartment
             // carried into another frame is not spoken on it, and is
             // remainder.
-            Some(image) if image.iter().all(|s| s.axis(crate::transducer::base::FRAME_AXIS) == frame) => {
+            Some(image) if image.iter().all(|s| place.and_then(|p| s.axis(p)) == frame) => {
                 // A carried site can be any i64: inside the frame by
                 // `try_from` and a comparison, exact at every width — a cast
                 // could wrap a far site into the frame.

@@ -237,7 +237,7 @@ fn region_third(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]
     for site in &blade.support {
         let a = BigRational::from_integer(BigInt::from(site.axis(i)?)) - ci;
         let b = BigRational::from_integer(BigInt::from(site.axis(j)?)) - cj;
-        let [h0, h1] = super::body::round_harmonic(&a, &b, plane, Harmonic::Three);
+        let [h0, h1] = super::body::round_harmonic(&a, &b, (blade.n(), plane), Harmonic::Three);
         re += h0;
         im += h1;
     }

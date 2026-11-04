@@ -10,16 +10,10 @@
 //! The order is the coordinates' own, lexicographic. It is the order the
 //! tuple `(r, c, k)` had at `n = 3`, so a support sorts exactly as before.
 
-/// THE AXES A COMPARTMENT'S UNIT SQUARE SPANS (16.4): the grid's rows and
-/// columns, the first two axes of the base. A compartment has extent along these
-/// and none along the frame axis or any further base axis; that is what a
-/// compartment IS at the sensor, and it is read here once rather than at every
-/// site that needs the square.
-pub const GRID_AXES: [usize; 2] = [0, 1];
-
-/// THE SENSOR'S OWN PLANE: the two grid axes. A reader that reads on this
-/// plane names it at its call (BQ4); every other plane is generated.
-pub const GRID_PLANE: (usize, usize) = (GRID_AXES[0], GRID_AXES[1]);
+//! No axis is named here. Which axes a compartment's cube spans, which
+//! plane the sensor reads on and which coordinate is a sample's place in
+//! its family are a perspective's roles (`transducer::perspective`;
+//! MU-SENSING §3.6, §4), read from the site's `n`.
 
 /// THE PLANES OF THE BASE AT `n` (71.2(3)): every pair of base axes `i < j`,
 /// `C(n, 2)` of them, generated and never listed. Ordered by the larger axis
@@ -40,17 +34,6 @@ pub fn plane_index((i, j): (usize, usize)) -> Option<usize> {
         true => Some(j * (j - 1) / 2 + i),
         false => None,
     }
-}
-
-/// THE AXIS A FAMILY'S FRAMES STAND ALONG (51.3): the third coordinate the
-/// grid presents, a frame's place in its family. A section is the compartments
-/// of one value of it, and the frame rides on the pose (16.5).
-/// FORMAT: the index of the frame coordinate `k` in a site `(r, c, k)`.
-pub const FRAME_AXIS: usize = 2;
-
-/// Is axis `i` one the compartment's square spans?
-pub fn is_grid_axis(i: usize) -> bool {
-    GRID_AXES.contains(&i)
 }
 
 /// A SITE OF THE BASE: its coordinates, `n` of them (71.2(1)).

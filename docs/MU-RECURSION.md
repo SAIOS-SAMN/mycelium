@@ -8518,7 +8518,7 @@ touching `e₃`, acting on the same body every other versor acts on. 18.2's
 quotient of absolute position applies along `e₃` as on `(e₀, e₁)`: a
 family and the same family with its pairs shifted by one frame are one
 body. Code: `src/transducer/element/sensor.rs` (`Point`),
-`src/transducer/base.rs` (`FRAME_AXIS`),
+`src/transducer/perspective.rs` (the place axis, `family_place_axis`),
 `src/transducer/sentence/form/carrier.rs` (`frame_key`).
 
 ### 51.2 The algebra, derived

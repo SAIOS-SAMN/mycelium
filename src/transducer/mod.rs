@@ -8,6 +8,9 @@
 pub mod base;
 /// MU-SENSING §2 — the sample: the sensor's only input, of any rank.
 pub mod sample;
+/// MU-SENSING §4 — the perspective: the roles of a sample's axes and of its
+/// place in its family; no axis is privileged by the code.
+pub mod perspective;
 /// MU-SENSING §3.3 — the symbol set Σ: a family's distinct symbols, indexed
 /// by first appearance in canonical address order, `e_∅` at `|Σ|`.
 pub mod symbols;

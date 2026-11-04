@@ -42,35 +42,40 @@ mod tests;
 #[cfg(test)]
 pub mod sensor_plane {
     pub use super::*;
-    use crate::transducer::base::GRID_PLANE as P;
     use num_bigint::BigInt;
     use num_rational::BigRational;
 
+    /// The sensor's plane of a fixture blade's base, as the default
+    /// perspective assigns it (`perspective::family_plane`).
+    fn p(b: &Blade) -> (usize, usize) {
+        crate::transducer::perspective::family_plane(b.n()).expect("the fixture's base holds a plane")
+    }
+
     pub fn relative_rotor(a: &Blade, b: &Blade, budget: &mut crate::physics::Budget) -> Result<Pose, NoPose> {
-        super::relative_rotor(a, b, P, budget)
+        super::relative_rotor(a, b, p(a), budget)
     }
     pub fn oblique_arc(a: &Blade, b: &Blade) -> Option<(BigInt, BigInt)> {
-        super::oblique_arc(a, b, P)
+        super::oblique_arc(a, b, p(a))
     }
     pub fn deviatoric(b: &Blade) -> Option<[BigRational; 2]> {
-        super::deviatoric(b, P)
+        super::deviatoric(b, p(b))
     }
     pub fn quartic_harmonic(b: &Blade) -> Option<[BigRational; 2]> {
-        super::quartic_harmonic(b, P)
+        super::quartic_harmonic(b, p(b))
     }
     pub fn third_harmonic(b: &Blade) -> Option<[BigRational; 2]> {
-        super::third_harmonic(b, P)
+        super::third_harmonic(b, p(b))
     }
     pub fn chirality(b: &Blade) -> Option<(BigRational, BigRational)> {
-        super::chirality(b, P)
+        super::chirality(b, p(b))
     }
     pub fn dilation_certified(a: &Blade, b: &Blade) -> bool {
-        super::dilation_certified(a, b, P)
+        super::dilation_certified(a, b, p(a))
     }
     pub fn dilation(a: &Blade, b: &Blade) -> Result<Dilation, (TowerRefusal, TowerRefusal)> {
-        super::dilation(a, b, P)
+        super::dilation(a, b, p(a))
     }
     pub fn chirality_on(b: &Blade, tower: Tower) -> Option<(BigRational, BigRational)> {
-        super::chirality_on(b, P, tower)
+        super::chirality_on(b, p(b), tower)
     }
 }

@@ -69,7 +69,7 @@ fn axis_seed_of_is_holonomy_base_action() {
     let q13 = Word::from_letters(&[(LetterId::turn_90((1, 3)).expect("90° turn (1,3)"), false)]);
     let double = q01.compose(&q13);
     assert_eq!(
-        double.rotor().off_plane_blades((alphabet::PLANE_ROW, alphabet::PLANE_COL)).len(),
+        double.rotor().off_plane_blades(alphabet::sensor_plane()).len(),
         2,
         "e₀₃ and e₁₃ turn beyond the sensor plane"
     );

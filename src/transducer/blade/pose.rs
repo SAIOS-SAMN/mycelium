@@ -38,7 +38,7 @@
 //! (q)). The pose reads the sites as the points they stand at.
 
 use super::*;
-use crate::transducer::base::is_grid_axis;
+use crate::transducer::perspective::{family_plane, family_role, Role};
 use num_traits::One;
 
 type Q = BigRational;
@@ -53,7 +53,7 @@ fn q(n: i64) -> Q {
 /// the sites are not all one value there under any order of them. A body at
 /// one section does not, and its pose is a turn in the sensor's plane.
 pub fn spans_sections(b: &Blade) -> bool {
-    (0..b.n()).filter(|&i| !is_grid_axis(i)).any(|i| {
+    (0..b.n()).filter(|&i| family_role(b.n(), i) != Some(Role::Space)).any(|i| {
         b.support.windows(2).any(|w| match w {
             [x, y] => x.axis(i) != y.axis(i),
             _ => false,
@@ -98,7 +98,7 @@ pub fn relative_pose(a: &Blade, b: &Blade, budget: &mut crate::physics::Budget) 
         return Err(NoPose::Incongruent(Incongruence::Base));
     }
     match on_tube(a, b) {
-        false => relative_rotor(a, b, crate::transducer::base::GRID_PLANE, budget),
+        false => relative_rotor(a, b, family_plane(n).ok_or(NoPose::Planeless)?, budget),
         true => tube_pose(a, b, n, budget),
     }
 }
