@@ -1,5 +1,6 @@
 // 78.147 — CATCH-UP FROM A FOLD ROOT: courts in one process, one far behind
-// another's fold, read on the replication and serving counters.
+// another's fold, read on the replication and serving counters, and a gap
+// past a court's capacity closed through the root (MU-HOSTING §5a.9).
 
 use crate::anastome::dialogue::{
     decode_receipts_answer, encode_fold_root_reply, ReceiptSection, ReceiptsAnswer, RootProof,
@@ -417,4 +418,176 @@ fn hear_advances_cross_citing_lines_from_roots() {
     c.append_step(ActKind::Attest, [0xAB; 40], [1; 32]);
     let top = a.chain().head_height().max(b.chain().head_height());
     assert!(c.chain().head_height() > top, "c's act cites both heads");
+}
+
+/// D2.5 — A CAPACITY OF EIGHT READS: `C = ⌊M_proc / b⌋` at eight bytes and
+/// one byte a read.
+fn eight_reads() -> crate::physics::Physics {
+    use crate::physics::{Calibration, Memory, MemorySource, Physics};
+    let one = std::num::NonZeroU64::MIN;
+    let eight = std::num::NonZeroU64::new(8).expect("eight bytes");
+    Physics::calibrated(&Calibration::of(Memory::of(eight, MemorySource::CgroupMax), one, one).expect("eight reads of one byte"))
+}
+
+/// A PAGE SOURCE HOLDING `line` AND NO ROOT: every ask is answered with
+/// the line's receipts strictly after `after` up to `upto`, eight a page —
+/// a court that holds the signer's line but not its fold's proof.
+fn mirror(line: &[KStepReceipt]) -> impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer> + '_ {
+    move |_: &[u8; 32], after: Option<Place>, upto: Place, _: Ask| {
+        let page = line.iter().filter(|r| after.is_none_or(|a| a < r.stamp.place()) && r.stamp.place() <= upto).take(8).cloned();
+        Some(ReceiptsAnswer::Page(page.collect()))
+    }
+}
+
+/// `k`'s head heard at `c` over `fetch`, a stroke of a fixture's size each
+/// pass: what the head came to.
+fn hear_head(
+    c: &Mutex<Court>,
+    key: &HyphaKey,
+    k: &Court,
+    fetch: impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer>,
+) -> Result<Admitted, ()> {
+    let (head, pre) = frame(k);
+    crate::server::backfill::hear(
+        c,
+        ORIGIN,
+        || Ok(c.lock().expect("c").admit_receipt(AT, super::fixtures::verified(&pre, key), &super::fixtures::reconstructed(&head))),
+        || Some(super::fixtures::budget()),
+        fetch,
+    )
+}
+
+/// A COURT BEHIND A SIGNER BY MORE THAN ITS CAPACITY, AT THE BOUND. Court c,
+/// of capacity eight, heard b's first stroke under b's signature. b then
+/// acted `below` strokes, folded on two signatures, and acted `above`
+/// strokes past the root. c hears b's head through a source holding b's
+/// line and no root: eight receipts of the gap are held unreached, the
+/// ninth is refused, and the head waits on its gap. Answers b's key, b, c,
+/// b's root proof and the place c's reached line of b stands at.
+fn behind_past_capacity(name: &str, below: u64, above: u64) -> (HyphaKey, Court, Mutex<Court>, RootProof, Place) {
+    let (bkey, mut b) = court(name);
+    let bvk = bkey.verifying_bytes();
+    strokes(&mut b, 1);
+    let mut c0 = Court::new();
+    c0.physics = eight_reads();
+    c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
+    let signed = super::fixtures::admit_line(&mut c0, &bkey, &line(&b, None));
+    assert!(signed.iter().all(|v| matches!(v, Admitted::Parent(_))), "c holds b's first stroke under b's signature: {signed:?}");
+    let reached = c0.known_head(&bvk).map(|(at, _)| at).expect("b's first stroke held");
+    strokes(&mut b, below);
+    let early = line(&b, None);
+    let proof = fold(&mut b, &bkey);
+    strokes(&mut b, above);
+    let mut whole: Vec<KStepReceipt> = early.into_iter().filter(|r| r.stamp.place() <= proof.root.at).collect();
+    whole.extend(line(&b, None));
+    let gap = whole.iter().filter(|r| r.stamp.place() > reached).count();
+    assert!(u64::try_from(gap).is_ok_and(|g| g > c0.physics.capacity()), "the gap, {gap} receipts, is longer than c's capacity");
+    let c = Mutex::new(c0);
+    let heard = hear_head(&c, &bkey, &b, mirror(&whole));
+    assert!(matches!(heard, Ok(Admitted::Gap { .. })), "no root, no close: the head waits on its gap: {heard:?}");
+    let held = c.lock().expect("c").unreached_held();
+    assert_eq!(u64::try_from(held).ok(), Some(c.lock().expect("c").physics.capacity()), "the gap fills the held bound and stops there");
+    (bkey, b, c, proof, reached)
+}
+
+/// MU-HOSTING §5a.9, 78.147 (#88) — A GAP PAST THE CAPACITY CLOSES THROUGH
+/// A FOLD ROOT. c, of capacity eight, holds eight receipts of b's gap
+/// unreached, past b's root, and refuses the ninth. Heard from b, whose
+/// door holds the root's proof, the page past the bound stops and the range
+/// is asked from below c's unreached floor: b answers with its root. The
+/// receipt c holds at the root's place is the one the root names, so the
+/// root's two signatures reach it and every receipt held below it; the gate
+/// frees, the rest of the gap is held within the bound, and b's head is
+/// cited.
+#[test]
+fn gap_past_capacity_closes_through_a_fold_root() {
+    let (bkey, b, c, proof, _) = behind_past_capacity("catchup-capacity-reach-b", 3, 3);
+    let bvk = bkey.verifying_bytes();
+    let top = c.lock().expect("c").known_head(&bvk).map(|(at, _)| at).expect("held");
+    assert!(top > proof.root.at, "c's held line of b stands past b's root");
+    let before = serves();
+    let asked = Mutex::new(Vec::new());
+    let courts = [&b];
+    let heard = hear_head(&c, &bkey, &b, source(&courts, &asked));
+    assert!(matches!(heard, Ok(Admitted::Parent(_))), "b's head is cited: {heard:?}");
+    assert!(serves()[ServeAxis::ServedRoot as usize] > before[ServeAxis::ServedRoot as usize], "the gap was answered with b's root");
+    let asks = asked.into_inner().expect("asks");
+    assert!(asks.iter().any(|(_, at, _)| at.is_some_and(|a| a < proof.root.at)), "the root was asked from below c's unreached floor: {asks:?}");
+    let mut c = c.into_inner().expect("c");
+    assert_eq!(c.unreached_held(), 0, "b's signatures reached every receipt of the gap");
+    assert_eq!(c.known_head(&bvk).map(|(at, _)| at), Some(frame(&b).0.stamp.place()), "c holds b's line to its head");
+    c.append_step(ActKind::Attest, [0xAB; 40], [1; 32]);
+    assert!(c.chain().head_height() > b.chain().head_height(), "c's act cites b's head and stands above it");
+}
+
+/// D2.5, MU-HOSTING §5a.9 (#88) — THE BOUND HOLDS WHILE A LONG GAP CLOSES.
+/// c, of capacity eight, holds eight receipts of a gap of b's line more
+/// than twice its capacity, all below b's root. Heard from b, the gap is
+/// answered with the root, adopted on its two signatures; the receipts held
+/// unreached below it leave the chain and the gate with the root's shed,
+/// and the hot line past the root is held within the bound. At every ask
+/// and at the close, c holds at most eight receipts unreached.
+#[test]
+fn capacity_bound_holds_while_a_long_gap_closes() {
+    let (bkey, b, c, proof, _) = behind_past_capacity("catchup-capacity-bound-b", 9, 1);
+    let bvk = bkey.verifying_bytes();
+    let capacity = c.lock().expect("c").physics.capacity();
+    let top = c.lock().expect("c").known_head(&bvk).map(|(at, _)| at).expect("held");
+    assert!(top < proof.root.at, "c's held line of b stands below b's root");
+    let mut most = 0usize;
+    let asked = Mutex::new(Vec::new());
+    let courts = [&b];
+    let mut serve = source(&courts, &asked);
+    let heard = hear_head(&c, &bkey, &b, |who: &[u8; 32], after: Option<Place>, upto: Place, ask: Ask| {
+        let held = c.lock().expect("c").unreached_held();
+        most = most.max(held);
+        serve(who, after, upto, ask)
+    });
+    assert!(matches!(heard, Ok(Admitted::Parent(_))), "b's head is cited: {heard:?}");
+    assert!(axes(bvk)[replication::ROOT_ADOPTED] > 0, "the root adopted, counted under b");
+    let c = c.into_inner().expect("c");
+    assert!(u64::try_from(most).is_ok_and(|m| m <= capacity), "at most {capacity} held unreached at every ask: {most}");
+    assert_eq!(c.unreached_held(), 0, "and none at the close");
+    assert_eq!(c.known_head(&bvk).map(|(at, _)| at), Some(frame(&b).0.stamp.place()), "c holds b's line to its head");
+}
+
+/// 78.147, MU-HOSTING §5a.10 (#88) — A FORGED FOLD ROOT IS REFUSED BY NAME
+/// AND EVICTS NOTHING REACHED. c holds b's first stroke under b's signature
+/// and eight receipts of b's gap unreached, at its bound. A root whose
+/// witness signature is broken is refused `REFUSE_SIGNATURE`, and one whose
+/// hash was moved off the signed positions `REFUSE_RECEIPT`; heard through
+/// a source that answers with the forged root, the head still waits and the
+/// refusal is counted under b. Every receipt c held stands: each reached
+/// one at its place, each unreached one still held.
+#[test]
+fn adopt_root_refuses_forged_root_keeping_reached() {
+    let (bkey, b, c, proof, reached) = behind_past_capacity("catchup-capacity-forged-b", 3, 3);
+    let bvk = bkey.verifying_bytes();
+    let held_before: Vec<KStepReceipt> = c.lock().expect("c").chain().line_between(&bvk, None, Place { k: u64::MAX, i: u64::MAX }, usize::MAX);
+    let mut forged = proof.clone();
+    forged.witness.sig[0] ^= 1;
+    let mut moved = proof.clone();
+    moved.root.hash[0] ^= 1;
+    {
+        let mut k = c.lock().expect("c");
+        assert_eq!(k.adopt_root(AT, &forged), RootAdoption::Refused(crate::verdict::REFUSE_SIGNATURE), "a broken witness signature");
+        assert_eq!(k.adopt_root(AT, &moved), RootAdoption::Refused(crate::verdict::REFUSE_RECEIPT), "a root the signed positions do not bind");
+    }
+    let refused = axes(bvk)[replication::ROOT_REFUSED];
+    let courts = [&b];
+    let asked = Mutex::new(Vec::new());
+    let mut serve = source(&courts, &asked);
+    let heard = hear_head(&c, &bkey, &b, |who: &[u8; 32], after: Option<Place>, upto: Place, ask: Ask| match serve(who, after, upto, ask) {
+        Some(ReceiptsAnswer::Root(_)) => Some(ReceiptsAnswer::Root(Box::new(forged.clone()))),
+        other => other,
+    });
+    assert!(matches!(heard, Ok(Admitted::Gap { .. })), "the head still waits on its gap: {heard:?}");
+    assert!(axes(bvk)[replication::ROOT_REFUSED] > refused, "the forged root refused, counted under b");
+    let c = c.into_inner().expect("c");
+    assert_eq!(c.chain().peer_root(&bvk), None, "no root of b stands at c");
+    for r in &held_before {
+        assert_eq!(c.chain().at(&bvk, r.stamp.place()).map(|h| h.chain_hash), Some(r.chain_hash), "{:?} stands", r.stamp.place());
+        let unreached = c.unreached_at(&bvk, r.stamp.place()).is_some();
+        assert_eq!(unreached, r.stamp.place() > reached, "{:?}: reached below the signed stroke, held unreached above it", r.stamp.place());
+    }
 }

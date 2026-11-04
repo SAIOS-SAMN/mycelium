@@ -105,14 +105,50 @@ fn prove_folded(
 }
 
 /// 78.147 — A ROOT ANSWERED FOR A CATCH-UP, adopted on its two signatures
-/// at this node's origin: whether the line now stands on it. A root no
-/// origin can verify is refused and counted, never silent.
+/// at this node's origin: whether the line moved on it — it now stands on
+/// the root, or the root's signatures reached receipts held unreached below
+/// it and freed the gate (MU-HOSTING §5a.9, #88). A root no origin can
+/// verify is refused and counted, never silent.
 fn adopt(court: &Mutex<Court>, origin: AdoptedOrigin, proof: &crate::anastome::dialogue::RootProof) -> bool {
     let Some(origin) = origin else {
         note_replication(Some(proof.signer), replication::ROOT_REFUSED, 1);
         return false;
     };
-    held!(court).ok().is_some_and(|mut h| h.run(|k, _| k.adopt_root(origin, proof)) == RootAdoption::Adopted)
+    held!(court).ok().is_some_and(|mut h| {
+        h.run(|k, _| {
+            let held = k.unreached_held();
+            k.adopt_root(origin, proof) == RootAdoption::Adopted || k.unreached_held() < held
+        })
+    })
+}
+
+/// MU-HOSTING §5a.9, D2.5 (#88) — WHERE A PAGE STOPPED ON THE HELD BOUND:
+/// the receipts held unreached fill the process's capacity `C`, so no
+/// further receipt of the gap is held. The gap closes through the signer's
+/// fold root (78.147), carried instead of the receipts it covers: the
+/// range is asked again from below the signer's unreached floor, which a
+/// court holding the root's proof answers with the root. Adopted, the
+/// root's signatures reach what it covers, or its shed takes it off the
+/// chain, and the gate frees. `Some(true)` where the line moved on it;
+/// `Some(false)` where the source holds no root below the floor, the root
+/// did not stand, or the stroke is spent; `None` where nothing of `who` is
+/// held unreached, so no root reaches the gate from it.
+fn close_through_root(
+    court: &Mutex<Court>,
+    origin: AdoptedOrigin,
+    who: [u8; 32],
+    upto: Place,
+    budget: &mut crate::physics::Budget,
+    fetch: &mut impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer>,
+) -> Option<bool> {
+    let floor = held!(court).ok()?.run(|k, _| k.unreached_floor(&who))?;
+    if !budget.spend() {
+        return Some(false);
+    }
+    match fetch(&who, place_before(floor), upto, Ask::CatchUp) {
+        Some(ReceiptsAnswer::Root(proof)) => Some(adopt(court, origin, &proof)),
+        Some(ReceiptsAnswer::Page(_)) | None => Some(false),
+    }
 }
 
 /// Fetch and admit pages of `vk`'s receipts up to `to`, the place of the
@@ -137,6 +173,11 @@ fn adopt(court: &Mutex<Court>, origin: AdoptedOrigin, proof: &crate::anastome::d
 /// fold root is answered with the root, which is adopted on its two
 /// signatures, and the signer's line is paged on from it, hot — nothing
 /// below a root this court holds is asked again (`known_head` reads it).
+///
+/// A GAP LONGER THAN `C` (MU-HOSTING §5a.9, #88): a page that stops on the
+/// held bound asks the root from below the signer's unreached floor
+/// (`close_through_root`), so the gap closes through the root without
+/// ever holding more than `C` receipts unreached.
 pub fn chase(
     court: &Mutex<Court>,
     origin: AdoptedOrigin,
@@ -213,6 +254,22 @@ pub fn chase(
         note_replication(Some(who), replication::BACKFILL, n as u64);
         if n > 0 {
             advanced = true;
+        }
+        // D2.5 (#88): the page stopped on the held bound, so the gap past
+        // `C` closes through the signer's fold root or waits for one.
+        let bounded = n < run.len()
+            && missing.is_none()
+            && held!(court).ok().is_some_and(|mut h| h.run(|k, _| k.unreached_refusal().is_some()));
+        if bounded {
+            match close_through_root(court, origin, who, upto, budget, &mut fetch) {
+                Some(true) => {
+                    advanced = true;
+                    asked = crate::network::nerve::Keyed::new();
+                    frontier.push((who, upto));
+                    continue;
+                }
+                Some(false) | None => return short(advanced),
+            }
         }
         match missing {
             // The page stopped on a citation: fetch that signer up to the
