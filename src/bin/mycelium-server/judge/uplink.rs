@@ -3,20 +3,20 @@
 // (`Court::admit_uplink`), answered by the receipt's stamp and chain hash, or
 // the refusal by name.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::uplink::{decode_uplink, encode_uplink_reply};
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
     let Some(fold) = decode_uplink(&frame.body) else { return };
-    let verdict = match crate::held::held!(door.court) {
+    let verdict = match crate::held::held!(context.court) {
         Ok(mut h) => h.run(|k, _| k.admit_uplink(&fold)),
         Err(_) => return,
     };
     // 78.137 — acknowledged only once durable.
-    if !crate::persist::durable(&door.court, &door.state_path) {
+    if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
     answer(stream, Frame { lane: frame.lane, body: encode_uplink_reply(&verdict) });

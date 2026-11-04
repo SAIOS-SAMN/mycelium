@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 use crate::core::Q;
 use crate::economy::Mu;
 

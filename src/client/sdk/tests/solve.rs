@@ -27,7 +27,7 @@ fn judge_on_keeps_home_solve_train_refutes() {
         .expect("the family extracts");
     let spoken = crate::transducer::family::mint_sentence(&rule, &train, &crate::transducer::family::NoCrystal, 0)
         .expect("and mints");
-    use crate::client::sdk::entity::perceive::{judge_on, Judge, Reading, Scene, Verdict};
+    use crate::client::sdk::mind::perceive::{judge_on, Judge, Reading, Scene, Verdict};
     let entity = Mind::open("127.0.0.1:1", Voice::named("solver"));
     let outs = vec![grid(&["0000", "0000"])];
     // NO RULE: nothing is read, nothing sent — the home check reads a minted
@@ -47,7 +47,7 @@ fn judge_on_keeps_home_solve_train_refutes() {
         rule: spoken,
         ground: crate::transducer::family::transduce::Ground::One(0),
     };
-    assert!(matches!(judge_on(&entity.epigenome, &judge), Verdict::Kept(crate::client::sdk::entity::perceive::Stop::Uncrossed)), "refuted at home: it cannot be re-minted without its own pairs");
+    assert!(matches!(judge_on(&entity.epigenome, &judge), Verdict::Kept(crate::client::sdk::mind::perceive::Stop::Uncrossed)), "refuted at home: it cannot be re-minted without its own pairs");
 }
 
 /// 78.158a U4 — THE SEAT'S SOLVE IS THE MIND'S OWN CALL. Told it called fn

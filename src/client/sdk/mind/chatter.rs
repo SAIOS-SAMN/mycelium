@@ -81,7 +81,7 @@ pub(crate) struct Question {
 }
 
 impl Question {
-    /// The question as its observer reads it (`entity::observer`): the
+    /// The question as its observer reads it (`mind::observer`): the
     /// words it was posited over, whether an answer came, and the mind's K
     /// it was asked at.
     pub(crate) fn observed(&self) -> String {

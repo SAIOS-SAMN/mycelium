@@ -3,7 +3,7 @@
 // as the void the eye does not see; the channels are never relabelled
 // (78.56 II); no reader stands on a code where no family is open.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::transduce::{Ground, Unground};
 use crate::transducer::family::*;
 

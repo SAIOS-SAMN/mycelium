@@ -2,7 +2,7 @@
 // an action and no letters; every reader that lists a form's words must
 // list it, or a mind holding a letter offers it to nobody.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk;

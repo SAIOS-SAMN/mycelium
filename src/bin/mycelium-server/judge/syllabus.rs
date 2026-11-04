@@ -5,7 +5,7 @@
 //! reply carries this court's signed cover digest behind it, so one round
 //! trip tells a peer what sections differ and where this court stands.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::Frame;
@@ -15,16 +15,16 @@ use crate::admission::sign_cover_digest;
 
 /// The section digests over this court's atlas, with the signed cover
 /// digest behind them (A19, 47.1).
-pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
-    let court = &door.court;
-    let mesh = &door.mesh;
+pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, context: &Context) {
+    let court = &context.court;
+    let mesh = &context.mesh;
 
     let Some(dvoice) = dialogue::decode_digests_request(&frame.body) else { return };
     mycelium::observe::note_digest_ask(&dvoice);
     // 78.153b — the voice's own ruled digests off the published reading, the
     // language's atlas off its snapshot taken by pointer: neither read under
     // the court, which `ruled_digests_for` walked whole per ask.
-    let read = door.published.take();
+    let read = context.published.take();
     let digests = match read.ruled_digests_for(&dvoice) {
         Some(d) => d.to_vec(),
         None => {
@@ -40,26 +40,26 @@ pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         eprintln!("  digests reply refused: a chart or a root passes the field that carries it");
         return;
     };
-    body.extend(sign_cover_digest(court, &door.published, mesh));
+    body.extend(sign_cover_digest(court, &context.published, mesh));
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);
 }
 
 /// The stratum fetch: the ruled words of the charts a peer named, up to
 /// the frame budget, with the class records behind them (A19).
-pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, context: &Context) {
     // 78.160 P1 — a mind's residue asked of the presentation rides the
     // fetch's act under its own marker.
     if let Some((pvoice, motion)) = dialogue::decode_presentation_request(&frame.body) {
-        present(stream, frame, door, pvoice, &motion);
+        present(stream, frame, context,pvoice, &motion);
         return;
     }
     // 2026-10-14 — a peer court's citation ask, by address.
     if let Some((cvoice, addrs)) = dialogue::decode_cited_request(&frame.body) {
-        cited(stream, frame, door, cvoice, &addrs);
+        cited(stream, frame, context,cvoice, &addrs);
         return;
     }
-    let court = &door.court;
+    let court = &context.court;
     let Some((fvoice, charts)) = dialogue::decode_fetch(&frame.body) else { return };
     // The words' and records' share of the frame, exact: its body less the
     // reply's count and the class records' count (D4.6).
@@ -71,12 +71,12 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let mut overran = false;
     // 78.100 — WHO ASKS: a key this court's mesh holds an address for is a
     // peer court (its exchange); any other is a voice, a learner who pays.
-    let asker = match door.mesh.addrs.lock().is_ok_and(|a| a.get(&fvoice).is_some()) {
+    let asker = match context.mesh.addrs.lock().is_ok_and(|a| a.get(&fvoice).is_some()) {
         true => mycelium::cognition::Asker::Court(fvoice),
         false => mycelium::cognition::Asker::Voice(fvoice),
     };
     // 78.153b — the seed of an empty chart off the published reading.
-    let read = door.published.take();
+    let read = context.published.take();
     if let Ok(mut h) = crate::held::held!(court) {
         h.run(|k, reads| {
         // A VOICE'S HAVE-LIST IS NEVER A VANTAGE (47.3, 1.7). `have` says
@@ -173,12 +173,12 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
 /// waiting sentence cites, never a stratum's whole lack. Only a key this
 /// court's mesh knows is a court; any other asker is a learner, taught at
 /// its own expense through the fetch, and is answered with nothing here.
-fn cited(stream: &mut TcpStream, frame: &Frame, door: &Door, cvoice: [u8; 32], addrs: &[mycelium::transducer::address::Address]) {
-    let court = door.mesh.addrs.lock().is_ok_and(|a| a.get(&cvoice).is_some());
+fn cited(stream: &mut TcpStream, frame: &Frame, context: &Context, cvoice: [u8; 32], addrs: &[mycelium::transducer::address::Address]) {
+    let court = context.mesh.addrs.lock().is_ok_and(|a| a.get(&cvoice).is_some());
     let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
     let mut words: Vec<dialogue::Taught> = Vec::new();
     if court {
-        if let Ok(mut h) = crate::held::held!(door.court) {
+        if let Ok(mut h) = crate::held::held!(context.court) {
             h.run(|k, reads| {
                 for a in addrs {
                     if words.len() == usize::from(u8::MAX) || !reads.spend() {
@@ -205,11 +205,11 @@ fn cited(stream: &mut TcpStream, frame: &Frame, door: &Door, cvoice: [u8; 32], a
 /// 78.160 P1 — THE PRESENTATION ASKED BY A RESIDUE: the motion deconstructed
 /// over this court's presentation on the hold's stroke, and the words that
 /// deconstruct it the asker lacks, within the frame's body budget.
-fn present(stream: &mut TcpStream, frame: &Frame, door: &Door, voice: [u8; 32], motion: &mycelium::transducer::cga::Mv) {
+fn present(stream: &mut TcpStream, frame: &Frame, context: &Context, voice: [u8; 32], motion: &mycelium::transducer::cga::Mv) {
     // The words' and the answer's share of the frame: its body less the
     // reply's count; `present` keeps the answer's own width out of it.
     let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(dialogue::SYLLABUS_REPLY_HEADER) else { return };
-    let Ok(mut h) = crate::held::held!(&door.court) else { return };
+    let Ok(mut h) = crate::held::held!(&context.court) else { return };
     let presented = h.run(|k, reads| k.present(voice, motion, budget, reads));
     drop(h);
     let Some(body) = dialogue::encode_presentation_reply(&presented.words, &presented.answer) else {

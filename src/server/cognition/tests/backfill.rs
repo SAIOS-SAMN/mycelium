@@ -53,7 +53,7 @@ fn act(b: &mut crate::chronometry::ReceiptChain, n: u64) {
 /// reaches `K − 1` and cites the head.
 #[test]
 fn hear_cites_head_once_gap_closes() {
-    let key = super::common::court_key("backfill-b");
+    let key = super::fixtures::court_key("backfill-b");
     let vk = key.verifying_bytes();
     let mut b = crate::chronometry::ReceiptChain::with_signer(vk);
     // c has acted on its own line, as a running court has: its height is
@@ -79,7 +79,7 @@ fn hear_cites_head_once_gap_closes() {
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,
             ORIGIN,
-            || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &head)),
+            || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &head)),
             || c.lock().ok().map(|mut k| k.stroke()),
             fetch,
         );
@@ -117,9 +117,9 @@ fn hear_cites_head_once_gap_closes() {
 /// citing the other's receipts, never advanced at a.
 #[test]
 fn hear_fetches_cited_signer_then_cites_head() {
-    let key = super::common::court_key("backfill-cites-b");
+    let key = super::fixtures::court_key("backfill-cites-b");
     let vk = key.verifying_bytes();
-    let dvk = super::common::court_key("backfill-cites-d").verifying_bytes();
+    let dvk = super::fixtures::court_key("backfill-cites-d").verifying_bytes();
     let mut d = crate::chronometry::ReceiptChain::with_signer(dvk);
     act(&mut d, 2);
     let dh = d.head().expect("d has acted").clone();
@@ -152,7 +152,7 @@ fn hear_fetches_cited_signer_then_cites_head() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &head)),
+        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &head)),
         || c.lock().ok().map(|mut k| k.stroke()),
         fetch,
     );
@@ -171,8 +171,8 @@ fn hear_fetches_cited_signer_then_cites_head() {
 #[test]
 fn admit_backfill_counts_missing_parent_under_cited_signer() {
     use crate::chronometry::{ActKind, Parent, ReceiptChain};
-    let vk = super::common::court_key("missing-parent-b").verifying_bytes();
-    let dvk = super::common::court_key("missing-parent-d").verifying_bytes();
+    let vk = super::fixtures::court_key("missing-parent-b").verifying_bytes();
+    let dvk = super::fixtures::court_key("missing-parent-d").verifying_bytes();
     let mut d = ReceiptChain::with_signer(dvk);
     act(&mut d, 3);
     let dh = d.head().expect("d has acted").clone();
@@ -208,7 +208,7 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
 #[test]
 fn hear_proves_citation_into_closed_era() {
     use crate::chronometry::{ActKind, Cite, Parent, ReceiptChain, Stamp};
-    let evk = super::common::court_key("closed-era-e").verifying_bytes();
+    let evk = super::fixtures::court_key("closed-era-e").verifying_bytes();
     let mut e = ReceiptChain::with_signer(evk);
     act(&mut e, 1);
     let shut = e.head().expect("e closed its orbit");
@@ -229,7 +229,7 @@ fn hear_proves_citation_into_closed_era() {
     assert!(c0.chain().node(&e0.stamp).is_none(), "e's first receipt was shed with its era");
     let c = std::sync::Mutex::new(c0);
     // d's head cites e's first receipt, inside the closed era.
-    let dkey = super::common::court_key("closed-era-d");
+    let dkey = super::fixtures::court_key("closed-era-d");
     let dvk = dkey.verifying_bytes();
     let mut d = ReceiptChain::with_signer(dvk);
     d.admit(e0.clone());
@@ -247,7 +247,7 @@ fn hear_proves_citation_into_closed_era() {
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::common::verified(&pre, &dkey), &head)),
+        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &dkey), &head)),
         || c.lock().ok().map(|mut k| k.stroke()),
         fetch,
     );

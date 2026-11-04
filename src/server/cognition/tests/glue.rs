@@ -1,7 +1,7 @@
 // 21 step 3, 13.6 — THE GLUE AT THE COURT: a form that cites a held form
 // replays its trajectory through the genome that holds the citation.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::element::Element;
 

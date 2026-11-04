@@ -716,7 +716,7 @@ logs:
 | **B1** | The act audit (every act kind that names a domain, classed as a key's own or a universe's); `NotReserve` renamed `NotThroughCore` on each object; line mouth offers and tier handoff offers carried in the reserve's act (after the ruling on 78.126 and 78.136) | `src/anastome/dialogue/{uplink,atlas,handoff,endowment,domain}.rs`; `src/server/cognition/{cite,atlas,convert,endowment,mouth,handoff,universe}.rs` | The rename: none (names only). Carried offers: a wire change to `ACT_HANDOFF` |
 | **B2** | Clause-by-clause signatures (each clause's hash, enabled or vetoed; the network clauses never vetoed) recorded per domain; `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/concordance.rs`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/snapshot/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
 | **B3** | The transitions a crossing states, verified under L0 and the core-shell forms at admission; `NotLawful` carrying the breaches; draft-4 laws as ruled | `src/anastome/dialogue/uplink.rs` (`TierFold`), `src/server/cognition/cite.rs`, `src/physics/laws/mod.rs` | A wire and layout change: a fold carries its transitions section |
-| **B4** | The boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | `src/observe/`, `src/bin/mycelium-server/door.rs` | A wire addition (a reading) |
+| **B4** | The boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | `src/observe/`, `src/bin/mycelium-server/control.rs` | A wire addition (a reading) |
 | **B5** | A sub-universe's acts through its parent's core, with 78.155 R-3 | `src/server/cognition/`, `chronometry::tuniversal` | With 78.155 R-3 |
 
 Claims each phase proves, by the algebra (MU-STANDARDS 3.1):
@@ -870,7 +870,7 @@ agents perceive in:
 ### 6.2 Why agents of a kind are drawn
 
 The reference mind takes up an offer only where it resonates with what it
-already holds (**Written**, `entity/offer.rs`): an offer couples where one
+already holds (**Written**, `client/sdk/mind/offer.rs`): an offer couples where one
 of its charts is a chart a held thought stands on, a docket names, or the
 mind's language speaks on. An agent's *type* is its spectrum: the charts
 its language and held thoughts stand on, read from what it has done, never

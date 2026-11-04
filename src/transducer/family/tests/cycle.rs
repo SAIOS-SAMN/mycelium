@@ -3,7 +3,7 @@
 // again while still speaking it, the mint refuses it, and the court's replay
 // refuses it as `REFUSE_CITATION_CYCLE`.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 use crate::transducer::stalk::Standing;
 

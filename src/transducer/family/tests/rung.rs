@@ -2,7 +2,7 @@
 // percept's rings composed and named, the rung recursing on closed sentences,
 // and a sentence heard again recognized — comprehension, live.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::cga::{self, Mv, E1, E2, E3};
 use crate::transducer::sentence::compose::{compose, terms_of, Closure, Term};
 use crate::transducer::sentence::rung::{hear, lexicon};

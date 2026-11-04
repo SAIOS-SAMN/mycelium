@@ -1,5 +1,5 @@
 use super::super::*;
-use crate::physics::tensegrity::carried_body;
+use crate::physics::equilibrium::carried_body;
 use crate::transducer::cga::{rotator, sphere_at};
 
 pub(super) fn q(n: i64) -> Q {

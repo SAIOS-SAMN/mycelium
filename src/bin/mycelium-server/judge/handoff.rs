@@ -3,15 +3,15 @@
 // by the receipt or the refusal by name; or, sealing nothing, a handoff's
 // standing read.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue::handoff::{decode_handoff_request, encode_handoff_reply, encode_read_reply, HandoffRequest};
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
     let Some(request) = decode_handoff_request(&frame.body) else { return };
-    let body = match crate::held::held!(door.court) {
+    let body = match crate::held::held!(context.court) {
         Ok(mut held) => held.run(|k, _| match request {
             HandoffRequest::Signed(h) => encode_handoff_reply(&k.handoff(&h)),
             HandoffRequest::Read(id) => encode_read_reply(k.handoff_read(&id)),
@@ -21,7 +21,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Err(_) => return,
     };
     // 78.137 — acknowledged only once durable.
-    if !crate::persist::durable(&door.court, &door.state_path) {
+    if !crate::persist::durable(&context.court, &context.state_path) {
         return;
     }
     answer(stream, Frame { lane: frame.lane, body });

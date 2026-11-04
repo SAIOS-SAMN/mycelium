@@ -1,7 +1,7 @@
 // 10 — THE GAUGE and its coboundary: the hue permutation around an orbit,
 // the spanning forest that solves it, and the residue a placement leaves.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::network::nerve::{coord, Keyed};
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element::{self};

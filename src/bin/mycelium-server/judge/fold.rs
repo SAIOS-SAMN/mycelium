@@ -7,16 +7,16 @@
 //! the witness's own signed position over the root hash in reply, and the
 //! era filed under the home's key.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::{answer, tell_peer_measured};
 use mycelium::anastome::dialogue;
 use mycelium::chronometry::Place;
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
     let Some(p) = dialogue::decode_fold(&frame.body) else { return };
-    let witness = door.mesh.vk;
+    let witness = context.mesh.vk;
     let home = p.section.receipt.stamp.vk;
     let say = |s: &mut TcpStream, w: dialogue::FoldWitness| {
         if let Some(body) = dialogue::encode_fold_reply(&w) {
@@ -27,7 +27,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         eprintln!("  court fold refused {:02x}{:02x}…: {why}", home[0], home[1]);
         say(s, dialogue::FoldWitness::Refused { vk: witness, why: why.as_bytes().to_vec() });
     };
-    let origin = door.mesh.origin.lock().ok().and_then(|o| *o);
+    let origin = context.mesh.origin.lock().ok().and_then(|o| *o);
     // R5 (34.2): a witness with no origin says so by name, and an origin
     // refusal names the two origins it compared, so a fold refused after
     // a co-sign can be read for which side moved.
@@ -69,7 +69,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // left unanswered. The proof held for the home is this court's own
     // signed position over that root (`hold_era_proved`): what it said once,
     // it says again.
-    let held = crate::held::held!(door.court).ok().and_then(|mut h| h.run(|k, _| k.cosigned_root(&home, &p.root, &witness)));
+    let held = crate::held::held!(context.court).ok().and_then(|mut h| h.run(|k, _| k.cosigned_root(&home, &p.root, &witness)));
     if let Some(section) = held {
         mycelium::observe::note_catchup(mycelium::observe::CatchupPath::FoldWitness, mycelium::observe::CatchupOutcome::Held);
         say(s, dialogue::FoldWitness::CoSigned { section: Box::new(section) });
@@ -77,18 +77,18 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     }
     // The prefix, fetched from the home by place range and by rows cursor;
     // a home that cannot be reached leaves the fold unmeasured.
-    let Some(dest) = door.mesh.addrs.lock().ok().and_then(|a| a.get(&home).cloned()) else {
+    let Some(dest) = context.mesh.addrs.lock().ok().and_then(|a| a.get(&home).cloned()) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: home address unknown", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
-        learn_doors(&door.mesh, &door.join_peers, &door.router);
+        learn_doors(&context.mesh, &context.join_peers, &context.router);
         return;
     };
-    let Some(receipts) = fetch_receipts(&door.mesh, &dest, &witness, &home, p.after, p.root.at) else {
+    let Some(receipts) = fetch_receipts(&context.mesh, &dest, &witness, &home, p.after, p.root.at) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: fetch receipts failed", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
         return;
     };
-    let Some(rows) = fetch_rows(&door.mesh, &dest, &witness, &home, p.after, p.root.at) else {
+    let Some(rows) = fetch_rows(&context.mesh, &dest, &witness, &home, p.after, p.root.at) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: fetch rows failed", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
         return;
@@ -98,7 +98,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // the shelf's, the rest is what the home sent; the hash of every fetched
     // receipt and the nets of every row no longer run under the court (the
     // lock audit, row 11).
-    let verdict = door.published.take().verify_fold(home, &proposal, &receipts, &rows);
+    let verdict = context.published.take().verify_fold(home, &proposal, &receipts, &rows);
     if let Err(why) = verdict {
         // PHASE 1 DIAGNOSTIC — the witness's side of a fold that does not
         // conserve: what it fetched against what the home proposed.
@@ -131,7 +131,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     }
     // The witness's own signed position over the root hash (47.1).
-    let Some(section) = crate::admission::sign_position(&door.court, &door.mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else {
+    let Some(section) = crate::admission::sign_position(&context.court, &context.mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else {
         say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
         return;
     };
@@ -149,7 +149,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // position verified above and this witness's own — so this court, the
     // root's second holder, answers a catch-up below it with it.
     // OWED (78.153b): the era frame and its disk append stay under the court.
-    if let Ok(mut h) = crate::held::held!(door.court) {
+    if let Ok(mut h) = crate::held::held!(context.court) {
         h.run(|k, _| k.hold_era_proved(mycelium::chronometry::Era {
             root: p.root,
             signer: home,

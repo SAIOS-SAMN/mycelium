@@ -274,7 +274,7 @@ pub struct Well {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Grounded {
     pub chart: Vec<u8>,
-    pub ground: crate::physics::tensegrity::Ground,
+    pub ground: crate::physics::equilibrium::Ground,
     pub hours: u64,
     /// MU-CLIENT §4.4(1) — THE TWIST ITS PULL HAS PUT ON IT: every rotation
     /// about its attractor its returns came round by, composed, read at hour

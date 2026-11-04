@@ -1029,8 +1029,8 @@ pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
             _ => {}
         }
     }
-    let sb = crate::transducer::beam::signature(&before_pos, &[]);
-    let sa = crate::transducer::beam::signature(&after_pos, &[]);
+    let sb = crate::transducer::candidates::signature(&before_pos, &[]);
+    let sa = crate::transducer::candidates::signature(&after_pos, &[]);
     let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
     // LANE 2 IS NOT THE CHAIN'S TO REPORT. 𝒯 is temporal extent — the
     // scene-state span in receipts (51.9) — and a chain is a set of links
@@ -1055,8 +1055,8 @@ pub fn measure_supports(vanished: &[(i64, i64)], appeared: &[(i64, i64)]) -> [u6
     for _ in vanished.iter().chain(appeared) {
         spatial += 1;
     }
-    let sb = crate::transducer::beam::signature(vanished, &[]);
-    let sa = crate::transducer::beam::signature(appeared, &[]);
+    let sb = crate::transducer::candidates::signature(vanished, &[]);
+    let sa = crate::transducer::candidates::signature(appeared, &[]);
     let shell = sb.components.abs_diff(sa.components) + sb.boundary.abs_diff(sa.boundary);
     [spatial, 0, 0, shell]
 }

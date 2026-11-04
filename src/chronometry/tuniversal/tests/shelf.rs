@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// The shelf advances without the court and wakes a parked reader.
 #[test]

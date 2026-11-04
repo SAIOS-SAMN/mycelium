@@ -412,7 +412,7 @@ fn peel_core(
         factors, is_identity_block, pair_rotors, rotor_block_on, spell_peel_rotor_with, standing,
         tait_bryan, BLOCK_ORDER,
     };
-    use crate::transducer::peel::PeelNest;
+    use crate::transducer::layers::PeelNest;
     use crate::transducer::sentence::Demand;
 
     // THE DE-COMPACTION'S INVERSION (AL1 as amended): an odd versor is the

@@ -6,7 +6,7 @@
 //! file holds the readings that say what it actually was and what stands
 //! in its place.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk;

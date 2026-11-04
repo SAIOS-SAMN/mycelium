@@ -1,7 +1,7 @@
 // 23 — THE BOOK and THE BASIS: what the mind holds, what it teaches, and
 // what it refuses to order.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::germinate::germinate;
 use crate::transducer::element::{self, Element};

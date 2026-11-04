@@ -7,7 +7,7 @@
 //! (TU-5) and read by every act (TU-7).
 
 pub mod keepers;
-pub mod ops;
+pub mod navigate;
 pub mod point;
 pub mod reach;
 pub mod reading;

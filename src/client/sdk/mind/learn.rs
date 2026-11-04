@@ -562,7 +562,7 @@ impl Mind {
             // WORD (ruled 2026-10-18): what the court teaches of one
             // is filed on the mind's carrier of open questions, by address,
             // and never learned into the genome.
-            if crate::client::sdk::epigenome::is_residual(&e) {
+            if crate::client::sdk::vocabulary::is_residual(&e) {
                 let address = e.address();
                 if !self.board.open_residuals.contains(address.as_bytes()) {
                     self.board.open_residuals.insert(address.as_bytes(), e.sub().to_vec());
@@ -574,7 +574,7 @@ impl Mind {
             // A REWRITE IS AN ACT ON THE LANGUAGE, NEVER A WORD OF IT: the
             // court applied it; the mind does not learn it, and its stratum
             // is one the sheaf sync never fetches.
-            if crate::client::sdk::epigenome::is_rewrite_act(&e) {
+            if crate::client::sdk::vocabulary::is_rewrite_act(&e) {
                 self.board.residual_strata.insert(crate::transducer::stalk::invariant_of(&e).key().as_bytes(), ());
                 continue;
             }

@@ -1,7 +1,7 @@
 // 24.1, 24.2, MU-CLIENT §4.13 — the shed: what a mind holds, and what it
 // lets go where nothing live references it.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::client::sdk::*;
 
 /// MU-CLIENT §4.13 — A DIALECT WORD STANDS WHILE A THOUGHT GLUES IT, and one
@@ -273,7 +273,7 @@ fn take_unpivoted_drains_set_of_coordinates() {
     let addr = a.address();
     assert_eq!(epi.unpivoted_len(), 0, "a fresh mind has no pending work");
 
-    epi.learn(&a.to_bytes().expect("the record writes"), &mut super::common::budget());
+    epi.learn(&a.to_bytes().expect("the record writes"), &mut super::fixtures::budget());
     assert_eq!(epi.unpivoted_len(), 1, "an admitted word is work the pivot has not reached");
 
     let taken = epi.take_unpivoted();
@@ -289,7 +289,7 @@ fn take_unpivoted_drains_set_of_coordinates() {
     // taken back; a coordinate leaves the set with the word.
     let b = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
     let b_addr = b.address();
-    epi.learn(&b.to_bytes().expect("the record writes"), &mut super::common::budget());
+    epi.learn(&b.to_bytes().expect("the record writes"), &mut super::fixtures::budget());
     assert_eq!(epi.unpivoted_len(), 1);
     assert!(epi.retire(b_addr.as_bytes()), "the word retires");
     assert_eq!(epi.unpivoted_len(), 0, "and leaves the pending set with it");

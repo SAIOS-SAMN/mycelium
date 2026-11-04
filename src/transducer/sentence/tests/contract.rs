@@ -2,7 +2,7 @@
 // does not re-derive each shrink the closed sub-complex, and the court's
 // reader recognises each.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Contact;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk;

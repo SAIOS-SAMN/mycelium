@@ -143,13 +143,13 @@ pub struct Contemplation {
     /// the chart its hours stand on: read by the merge the relation's fill
     /// decides, and spoken as the thought's word once its hours close a
     /// return. Volatile, as the epigenome is; dropped when spoken.
-    pub(crate) grounds: Keyed<super::idea::Grounded>,
+    pub(crate) grounds: Keyed<super::well::Grounded>,
     /// 78.52 — the grounds of thoughts whose hours closed a return, waiting for
     /// the voice that transcribes them in the act that closed them: the voice
     /// spells each against its OWN held letters (78.47, finding (i)), never
     /// the fixed seventeen. And how many closed. Each with the scene its
     /// thought was perceived in (MU-CLIENT §5.4, E1), empty for none.
-    pub(crate) closed: Vec<(crate::physics::tensegrity::Ground, Vec<u8>)>,
+    pub(crate) closed: Vec<(crate::physics::equilibrium::Ground, Vec<u8>)>,
     pub closed_thoughts: u64,
     /// MU-CLIENT §4.4(2) — the later returns thoughts' windings completed
     /// (each a traversal past the first close).
@@ -238,9 +238,9 @@ pub struct Contemplation {
     /// 78.48(9) — open entries the fold lapsed at a close.
     pub(crate) docket_lapsed: u64,
     /// TC1 — what each shedding door removed, and of it what carried a loop.
-    pub(crate) shed: super::core::ShedTally,
+    pub(crate) shed: super::nerve_shape::ShedTally,
     /// TC1's fix — what the truncation did.
-    pub(crate) truncation: super::core::Truncation,
+    pub(crate) truncation: super::nerve_shape::Truncation,
     /// MU-CLIENT §7.1 Phase 3 — THE ESCROW RETURNED, by whatever door removed
     /// the thought that held it, not yet credited to the room: drawn once,
     /// returned once (`line::return_escrow`).
@@ -359,7 +359,7 @@ impl Contemplation {
     /// deliberation began when the first of them began, as where two
     /// lineages converge (`rekey`).
     pub fn span_of(&self, form: &crate::transducer::sentence::Form) -> Option<Deliberation> {
-        let key = super::idea::idea_key(form);
+        let key = super::well::idea_key(form);
         let mut since: Option<u64> = None;
         if let Some(fibre) = self.wells.fibre_at(key.as_bytes()) {
             for (_, b) in fibre {
@@ -373,7 +373,7 @@ impl Contemplation {
             // Held nowhere: minted in the stroke it was extracted in, so it
             // stood over no receipts. That is a reading of zero.
             None => Some(Deliberation::Fresh),
-            Some(k) => super::idea::held_since(self.now_k, k).map(Deliberation::Held),
+            Some(k) => super::well::held_since(self.now_k, k).map(Deliberation::Held),
         }
     }
 

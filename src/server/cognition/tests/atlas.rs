@@ -15,7 +15,7 @@ use crate::anastome::dialogue::universe::{Geometry, Metric, Stated, Statement};
 use crate::transducer::cga::Mv;
 use crate::anastome::dialogue::wallet::{StakeAct, StakeRefusal};
 use crate::chronometry::tuniversal::{Origin, TPoint};
-use super::common::close_through;
+use super::fixtures::close_through;
 use crate::server::cognition::Court;
 use ed25519_dalek::{Signer, SigningKey};
 

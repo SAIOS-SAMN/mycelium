@@ -128,7 +128,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | Id | Constant | Site | Governs | Sev. | Derivation in one line | Open | Size | Track |
 |---|---|---|---|---|---|---|---|---|
 | D1.1 | `CHALLENGE_WINDOW = 1024` | `physics/laws/mod.rs:64` | finality, μ holds | High | the window ends at a sealed reach-and-return of every other keeper's citations (**Built** 2026-10-31, law version 5; O1 ruled every keeper) | yes | L | 22, 20 |
-| D1.2 | `THROAT_GRID = 64` | `server/cognition/mouth.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet (**Built** 2026-10-31); Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
+| D1.2 | `THROAT_GRID = 64` | `server/cognition/domain_passage.rs:234` | tube admission | High | Phase A: exact fit by refinement and by meet (**Built** 2026-10-31); Phase B: the throat a round carried by its bank's modes | yes | S/M, L | 22, 19 |
 | D1.3 | `BODY_BUDGET = 768 * 1024` | `network/wire.rs:9` | protocol size | Medium | `B(k) = 65519·k − 89`, `k` from the largest unit that cannot page (**Built** 2026-10-31: the defect fixed, every envelope its codec's header; O1 read (b): REGISTERED, served on `ACT_LAWS` mode 5) | yes | S/M | 5, 14 |
 | D1.4 | the register and its gate | `physics/axioms/founding.rs:58–74` | NO CONSTANT | High | `OpenNumber` carrier; the `syn` gate NUMBERS (N1–N6) (**Built** 2026-10-31: N1–N5 enforced, N6 an inventory) | yes | M | 22 |
 | D2.1 | `held.mu[l] / 2` (slash) | `server/cognition/convert.rs:582` | μ, discipline | High | `cut = B·X/(B + X)`, exposure against bond (**Built**, ruled 2026-10-31) | no | M | 3, 14 |
@@ -144,7 +144,7 @@ MU-STANDARDS 2.12 binds it on every line written:
 | D3.4 | `in_sites.len() <= 400` | `transducer/family/confluence.rs:162` | an instrument's reading | Low | `2·m` reads, keyed, tri-state (**Built** 2026-10-31) | no | S | 10 |
 | D3.5 | `percepts_since >= 2` | `client/sdk/seat_mind/mind.rs:284` | seat liveness, learning | Medium | distance along the house's sequence `b − b₀ ≥ 2` (**Built** 2026-10-31; O1 read (a), `seq`) | yes | S | 10 |
 | D4.1 | `tell_peer_within(.., 5)` | `mycelium-server/transport.rs:136` | liveness | Medium | the mesh's measured floor; `Unmeasured` one aperture (**Built** 2026-10-31) | yes | M | 5 |
-| D4.2 | `take(32)` (evidence reply) | `mycelium-server/door.rs:125` | protocol size | Medium | fill to the frame budget by `σ(e)` (**Built** 2026-10-31; the cursor, O1, not built) | yes | S/M | 5 |
+| D4.2 | `take(32)` (evidence reply) | `mycelium-server/control.rs:102` | protocol size | Medium | fill to the frame budget by `σ(e)` (**Built** 2026-10-31; the cursor, O1, not built) | yes | S/M | 5 |
 | D4.3 | `h > 1024 \|\| w > 1024` | `anastome/dialogue/carrier.rs:106` | grid admission, memory | Medium | the bytes the tape carries; degenerate shapes refused (**Built** 2026-10-31; `0 × 0` admitted) | yes | S | 14 |
 | D4.4 | `NESTING = 32`, `depth > 16` | `sentence/form/clause.rs:273`, `anchor/codec.rs:70` | stack safety | High/Medium | the producer's depth, else iteration (**Built** 2026-10-31: (iii), both producers' depths closed forms) | yes | M/L | 14 |
 | D4.5 | `sync_channel(cores)`, `(cores/2).max(1)` | `mycelium-server/main.rs:751–902` | door liveness | Medium | `W = 1 + ⌈off/under⌉` from the lock book (**REGISTERED** 2026-10-31 as `POOL_DIVISOR`: the off-lock strokes are unmetered) | yes | M | 5 |
@@ -223,12 +223,12 @@ pub(super) fn window_end(h: u64) -> u64 {
 ```
 
 `window_end` is called by fold finality and demand deadlines
-(`challenge.rs:152, 184, 202, 214, 595`), toll holds (`mouth.rs:543`,
-`TollHeld.until`), mouth offers (`mouth.rs:704`,
+(`challenge.rs:152, 184, 202, 214, 595`), toll holds (`domain_passage.rs:543`,
+`TollHeld.until`), mouth offers (`domain_passage.rs:704`,
 `State::Offered { until }`, which also bounds handoff Accept/Expire,
 78.126), and atlas crossing claims (`crossing.rs:75`, `Claim.until`).
 Each `until` is persisted as a `u64` height (`atlas.rs:48`,
-`mouth.rs:109`).
+`domain_passage.rs:109`).
 
 **Governs.** Finality. A fold sealed at height `h₀` reads
 `Finality::Provisional { until: h₀ + W }` until the court's head reaches
@@ -236,7 +236,7 @@ Each `until` is persisted as a `u64` height (`atlas.rs:48`,
 reads `Blocked` and defaults to FALSIFIED; tolls and claims release at
 `h₀ + W`; an offered mouth or handoff expires at `h₀ + W`. Past the
 carrier the window never closes (`u64::MAX`, named, rule 11). The boundary
-is `head >= until` (`challenge.rs:596, 602`; `mouth.rs:458`;
+is `head >= until` (`challenge.rs:596, 602`; `domain_passage.rs:458`;
 `crossing.rs:198`).
 
 **Why it is underived.** 78.125 set `W = 1024` "heights, a law parameter
@@ -366,7 +366,7 @@ holds).
   `settle_windows` seals `Cite::Window`);
   `src/chronometry/tuniversal/keepers.rs` (new read
   `Keepers::reach(vk, h₀) -> Option<Reach { witnesses }>`);
-  `src/server/cognition/mouth.rs`, `crossing.rs`, `atlas.rs`
+  `src/server/cognition/domain_passage.rs`, `crossing.rs`, `atlas.rs`
   (`until: u64` → `Window { opened: u64, closed: Option<u64> }`);
   `src/anastome/dialogue/challenge.rs` (`Finality::Provisional { until }` →
   `Provisional { opened, closed: Option<u64> }`);
@@ -403,7 +403,7 @@ holds).
 ### D1.2 `THROAT_GRID` — a throat's horizon level and fit, against its μ-S bank
 
 **Status.** Phase A **Built** (2026-10-31, the live-readings ruling; no law
-change). `server::cognition::mouth::fits_in(space, mass)` decides every
+change). `server::cognition::domain_passage::fits_in(space, mass)` decides every
 face's fit, at offer and at every feed (`fits_both`): curved holds; a
 sphere face by `core::certified::separates(r, pi)` (π refined from the bits
 that resolve `r`, doubled until its enclosure leaves `r`); a torus face by
@@ -417,7 +417,7 @@ until Phase B. Tests: `server::cognition::tests::sphere`
 mutation entries (the refinement's direction, `Apart` in the flat fit).
 Phase B is not built. The text below is the derivation as specified.
 
-**Site.** `src/server/cognition/mouth.rs:234` —
+**Site.** `src/server/cognition/domain_passage.rs:234` —
 `pub const THROAT_GRID: u32 = 64;`, used at three sites:
 
 ```rust
@@ -431,9 +431,9 @@ with `r = 2m/R` (`m` = `Court::mass_now`, committed `(n, d)` plus
 `Level::{Curved(c), Sphere{level, ratio}}`
 (`src/anastome/dialogue/tube.rs:202`). `Level::fits` decides
 `Curved → true`, `Flat: ratio < ½`, `Sphere: ratio < 1`. It is called by
-`fits_both` at offer acceptance (`mouth.rs:612`) and at each feed
-(`mouth.rs:352`), refusing `TooWide`. `tube_of` serves both levels
-(`mouth.rs:786`, `ACT_HANDOFF` kind 13).
+`fits_both` at offer acceptance (`domain_passage.rs:612`) and at each feed
+(`domain_passage.rs:352`), refusing `TooWide`. `tube_of` serves both levels
+(`domain_passage.rs:786`, `ACT_HANDOFF` kind 13).
 
 **Governs.** Admission: whether a tube's throat fits each face, at offer
 and at every feed. A `Sphere` face whose true `r/π` is below 1 but within
@@ -584,7 +584,7 @@ Concordance amendment.
 
 **Implementation scope.**
 
-- Phase A (no law change; S/M): `src/server/cognition/mouth.rs`
+- Phase A (no law change; S/M): `src/server/cognition/domain_passage.rs`
   (`sphere_throat` fit by refinement; the flat fit through
   `enclosure::containment` on period images);
   `src/anastome/dialogue/tube.rs` (`Level::fits` reads the decision, not a
@@ -596,7 +596,7 @@ Concordance amendment.
   - `flat_fit_meet_equals_half_ratio`: on fixtures either side of
     `L = 4m`.
   - `refinement_terminates_on_rational_radius`.
-- Phase B (law amendment; L): `src/server/cognition/mouth.rs` (`Throat`
+- Phase B (law amendment; L): `src/server/cognition/domain_passage.rs` (`Throat`
   holds `Modes`;
   `Court::throat_round(mouth, face) -> Result<Mv, ThroatRefusal>`);
   `src/anastome/dialogue/tube.rs` (`Level` → `Horizon::Round(Mv)` per
@@ -657,7 +657,7 @@ read (`wire.rs:171`, `noise.rs:399`, `transport.rs:88, 208`,
 (`judge/observe.rs:136`), quote (`judge/quote.rs:47`), seat mail
 (`seat.rs:28`, `− MailRead::HEAD`), atlas (`atlas.rs:623`), synthesis
 (`synthesis.rs:122`, `− 34`), chatter
-(`client/sdk/entity/chatter.rs:309, 319`), learn (`learn.rs:249, 372`),
+(`client/sdk/mind/chatter.rs:309, 319`), learn (`learn.rs:249, 372`),
 the awaited-citations ask (`exchange.rs:881`), and the seat mind's series
 bound (`seat_mind/mind.rs:170`). A frame is
 `[lane 1][len u32 LE 4][body][TPoint 84]?`
@@ -1436,8 +1436,8 @@ one name, one meaning):
     `germinate/attest.rs:26`; `germinate/stroke.rs:33, 128, 165, 192`;
     `snapshot/read.rs:109`;
   - `server/held/mod.rs:258`; `court/verdict/blind.rs:127`;
-  - `client/sdk/rule.rs:510`; `client/sdk/entity/boot.rs:13, 39`;
-    `callus.rs:35`; `chatter.rs:259, 519, 623, 842, 962`; `contract.rs:147`;
+  - `client/sdk/rule.rs:510`; `client/sdk/mind/boot.rs:13, 39`;
+    `second_vantage.rs:35`; `chatter.rs:259, 519, 623, 842, 962`; `contract.rs:147`;
     `court.rs:137`; `family.rs:472`; `learn.rs:289, 440, 480, 515, 527`;
     `perceive.rs:634, 663, 738, 847`; `present.rs:59`; `quote.rs:58`;
     `think.rs:511, 782, 1004`; `utter.rs:266, 415`; `winding.rs:258, 426`;
@@ -1621,7 +1621,7 @@ stroke) has a size of a GiB. The ratio algebra
   - `reserve_is_whole_number_of_strokes`.
   - `reserve_floor_holds_on_small_host`.
   - `footprint_is_bytes_per_read_on_fixture_stroke`.
-  - The existing notes at `chronometry/tests/common.rs:7`,
+  - The existing notes at `chronometry/tests/fixtures.rs:7`,
     `client/sdk/tests/aperture.rs:171` and
     `transducer/family/tests/budget.rs:70`, re-read against the new form.
 - Depends on D2.6. Size: M, plus a soak reading before choosing (a) or
@@ -1883,9 +1883,9 @@ language mints through this constructor).
 **Why it is underived.** No comment; a power of two chosen as "large
 enough". It contradicts 78.111 (MU-CLIENT rulings index): "no
 construction is refused for a stroke sized for something else". Every
-sibling site already follows 78.111: `client/sdk/entity/think.rs:265`
+sibling site already follows 78.111: `client/sdk/mind/think.rs:265`
 (`construct_and_adjoin`), `field/pivot.rs:130`,
-`physics/tensegrity.rs:652`,
+`physics/equilibrium.rs:652`,
 `sentence/{presentation,rung,hearing,word}.rs`.
 
 **Severity.** Medium (cognition: a constructible rule refused, or a
@@ -2184,13 +2184,13 @@ and `arc`) return `None`. Effects at the callers:
   function's own doc says "skipping one would give two different tasks
   one id (law 2)". Two tasks that differ only in an incommensurate pair
   get one identity. Admission and identity.
-- `src/client/sdk/entity/family.rs:16`, `family_magnitude`: the pair
+- `src/client/sdk/mind/family.rs:16`, `family_magnitude`: the pair
   contributes zero to the family's lane magnitude (μ drawn).
 - `src/transducer/family/finish.rs:79`, `finish`:
   `germ_of_pair → None → continue`: an unreached incommensurate pair is
   dropped instead of riding as a demand (rule 7: remainders are never
   discarded).
-- `family/deflation.rs:302/348/709`, `door.rs:629`, soak `mint.rs`:
+- `family/deflation.rs:302/348/709`, `control.rs:606`, soak `mint.rs`:
   refused readings.
 
 **Why it is underived.** The comment: ARC grids are ≤ 30×30, "real
@@ -2273,10 +2273,10 @@ discarded).
   on `bipartite_cochain`/`refined`; `Unrefined { Empty, Ragged, Spent { need } }`
   replacing the bare `None`), `src/arc.rs::refine_delta`,
   `src/server/registry.rs::task_address` (refuse, never skip),
-  `src/client/sdk/entity/family.rs::family_magnitude`,
+  `src/client/sdk/mind/family.rs::family_magnitude`,
   `src/transducer/family/finish.rs` (`extraction_spend` adds `need`;
   `finish` stands an unrefined pair as a demand rather than `continue`),
-  callers in `deflation.rs`, `door.rs`, soak `mint.rs`.
+  callers in `deflation.rs`, `control.rs`, soak `mint.rs`.
 - Wire / ledger: the task address changes for every task holding a
   previously skipped pair, a content-identity change (M2 form), recut from
   genesis; snapshot: none. Concordance: none (applies 78.43(2), law 2).
@@ -2794,7 +2794,7 @@ frame carries. Tests (`anastome::dialogue::tests::evidence`):
 `evidence_reply_fills_frame_budget`, `evidence_reply_refuses_unframable_item`.
 The text below is the derivation as specified.
 
-**Site.** `src/bin/mycelium-server/door.rs:123–126`:
+**Site.** `src/bin/mycelium-server/control.rs:100–103`:
 
 ```rust
 let items: Vec<_> = {
@@ -2854,7 +2854,7 @@ what the reply claims to carry).
 
 **Implementation scope.**
 
-- `door.rs` (the fill), `docket.rs` (a `σ` reader beside the encoder,
+- `control.rs` (the fill), `docket.rs` (a `σ` reader beside the encoder,
   `EvidenceOf::tape_len`), and, with the cursor, a version bump of the
   evidence pull (`[ACT_EVIDENCE][voice 32][after u32]`, 37 bytes; a
   33-byte body stays the legacy pull from index 0, so a deposit stays
@@ -3165,7 +3165,7 @@ specified.
 (`receipts_frame`), `src/server/cognition/atlas.rs:623`
 (`ledger_budget`), `src/bin/mycelium-server/judge/syllabus.rs:178, 209`,
 `judge/rows.rs:13`, `judge/observe.rs:136`, `exchange.rs:881`,
-`src/client/sdk/entity/chatter.rs:309, 319`:
+`src/client/sdk/mind/chatter.rs:309, 319`:
 
 ```rust
 let bytes = crate::network::wire::frame_budget().checked_sub(64)?;
@@ -3354,7 +3354,7 @@ specified.
 **Governs.** Termination and width of every certified transcendental
 (78.130, the network's standard mathematics, server side; an exception
 ruled beside law 1's "no series"). Production callers today: `cos` and
-`pi` (`mouth.rs:219–226`) and `cosh` (`mouth.rs:249`) at
+`pi` (`domain_passage.rs:219–226`) and `cosh` (`domain_passage.rs:249`) at
 `THROAT_GRID = 64` (D1.2). NO production caller of `gamma_p`, `erf` or
 `poisson_quantile` exists (only `src/core/tests/certified.rs`).
 
@@ -3364,7 +3364,7 @@ rounded consequence of the cap; the guard-bit offsets are rounded
 allowances with no stated error budget per operation.
 
 **Severity.** Low for `gamma_p`/`erf`/`poisson` (no caller); Medium for
-the guard bits of `exp`/`cosh`/`cos`/`pi` (reached by `mouth.rs`).
+the guard bits of `exp`/`cosh`/`cos`/`pi` (reached by `domain_passage.rs`).
 
 **Derivation.**
 
@@ -3451,7 +3451,7 @@ the term count, each bounded by the series' ratio):
   `exp(100)` at `w = 64` is wide by about `2^{144 − 88}`; §2 item 11).
   Whether `Encl` promises absolute width or only outward rounding is O1
   (the module doc promises rounding to the grid, not a width); the
-  `mouth.rs` callers read `cosh(r).hi` and `cos(r).lo` as bounds, which
+  `domain_passage.rs` callers read `cosh(r).hi` and `cos(r).lo` as bounds, which
   stay proven either way.
 - `ln2`, `atanh2(z ≤ ⅓)`: ratio `z² ≤ 1/9`,
   `N ≤ ⌈(w₂ − 8)/log₂9⌉ + 1` (`log₂9 > 3`, so `N ≤ ⌈(w₂ − 8)/3⌉ + 1`),
@@ -3545,7 +3545,7 @@ the term count, each bounded by the series' ratio):
   `poisson_quantile` returns `Quantile::{At(k), Sector(k, k + 1)}`; a
   private `guard(op, w, …) -> u32` per operation computes the fixed point;
   `stop_at` is replaced by the width-relative stop.
-- Callers: `src/core/tests/certified.rs`; `mouth.rs` unchanged in
+- Callers: `src/core/tests/certified.rs`; `domain_passage.rs` unchanged in
   signature (`cos`, `pi` and `cosh` keep the same signatures; the guards
   inside change).
 - Wire / ledger / snapshot: none, unless a certified value is written to a

@@ -3,9 +3,9 @@
 // a forgery and a broken parent are refused, a disagreement is a residual and
 // never an average, silence holds the clock, the point's writing reads back.
 
-mod common;
+mod fixtures;
 mod keepers;
-mod ops;
+mod navigate;
 mod point;
 mod record;
 mod shelf;

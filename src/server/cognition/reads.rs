@@ -62,7 +62,7 @@ impl Court {
     pub fn unpack(
         &self,
         p: &crate::chronometry::tuniversal::TPoint,
-    ) -> (crate::chronometry::tuniversal::ops::Unpacked, Vec<(crate::chronometry::Stamp, [u64; 4])>) {
+    ) -> (crate::chronometry::tuniversal::navigate::Unpacked, Vec<(crate::chronometry::Stamp, [u64; 4])>) {
         (p.unpack(), self.chain.at_tick(p.h).into_iter().map(|r| (r.stamp, r.mu)).collect())
     }
 

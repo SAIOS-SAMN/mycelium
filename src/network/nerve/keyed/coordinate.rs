@@ -493,7 +493,7 @@ pub mod coord {
     /// a system whose keys are not tag-led.
     #[derive(Clone, Debug, PartialEq, Eq)]
     pub struct Transport {
-        pub kind: crate::transducer::peel::ShellKind,
+        pub kind: crate::transducer::layers::ShellKind,
         pub class: Holonomy,
     }
 
@@ -515,7 +515,7 @@ pub mod coord {
             let kind = bytes
                 .first()
                 .copied()
-                .and_then(crate::transducer::peel::ShellKind::of)
+                .and_then(crate::transducer::layers::ShellKind::of)
                 .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
             let mut pos = 1usize;
             let cb = a::take_key_bytes(bytes, &mut pos)
@@ -567,7 +567,7 @@ pub mod coord {
             let kind = bytes
                 .first()
                 .copied()
-                .and_then(crate::transducer::peel::ShellKind::of)
+                .and_then(crate::transducer::layers::ShellKind::of)
                 .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
             let mut pos = 1usize;
             let cb = a::take_key_bytes(bytes, &mut pos)
@@ -804,7 +804,7 @@ pub mod coord {
     /// a colour back off a piece's key, so none is written there (law 12).
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Piece {
-        pub kind: crate::transducer::peel::ShellKind,
+        pub kind: crate::transducer::layers::ShellKind,
         pub support: Vec<crate::transducer::base::Site>,
     }
 
@@ -841,7 +841,7 @@ pub mod coord {
                 Some(&t) if t == a::TAG_PIECE => *pos += 1,
                 _ => return None,
             }
-            let kind = crate::transducer::peel::ShellKind::of(*bytes.get(*pos)?)?;
+            let kind = crate::transducer::layers::ShellKind::of(*bytes.get(*pos)?)?;
             *pos += 1;
             Some(Piece { kind, support: take_support(bytes, pos)? })
         }

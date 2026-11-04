@@ -202,9 +202,9 @@ pub struct Epigenome {
     /// what the voice made of them.
     pub(crate) remainders_nested: u64,
     pub(crate) remainders_discordant: u64,
-    pub(crate) calluses_pending: Vec<super::epigenome::remainder::Callus>,
+    pub(crate) calluses_pending: Vec<super::vocabulary::remainder::Callus>,
     pub(crate) calloused: crate::network::nerve::Keyed<()>,
-    pub(crate) calluses: super::epigenome::remainder::CallusTally,
+    pub(crate) calluses: super::vocabulary::remainder::CallusTally,
     /// 78.49 — THE COURT'S STAMP EACH WORD WAS ADMITTED AT, keyed by the
     /// word and sharing its address's bytes: the court seals and
     /// adjudicates, so a word is crystallized knowledge exactly where a
@@ -231,7 +231,7 @@ pub struct Epigenome {
     /// it is admitted and unfiled where it retires — the language a motion is
     /// deconstructed over with no court asked. Derived, never persisted: a
     /// restore learns each word again as it admits it.
-    pub(crate) vocabulary: super::epigenome::Vocabulary,
+    pub(crate) vocabulary: super::vocabulary::Vocabulary,
     /// 21 step 3 — CLOSED FORMS BY WHAT THE FORMS' MEMBERS DO: `act_key` (chart,
     /// whole motion, hue map) → each held word vertex with a member acting
     /// exactly so, by its `generator_key`, as (form, vertex); filled and

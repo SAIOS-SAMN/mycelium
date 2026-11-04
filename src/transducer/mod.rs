@@ -31,7 +31,7 @@ pub mod cech;
 /// A9 — the selection term a family's evidence derives.
 pub mod anchor;
 /// A9 — candidate selections with the selections' exact invariant signatures.
-pub mod beam;
+pub mod candidates;
 /// A6, A7, 17.4 — the chart a word is filed under.
 pub mod stalk;
 pub mod bytes;
@@ -44,7 +44,7 @@ pub mod family;
 /// Chapter 13 — reconciliation of two holders of the language, by stratum.
 pub mod sheaf;
 /// The shell-by-shell reading law: outer to inner, the residual riding in.
-pub mod peel;
+pub mod layers;
 /// 1.1, 1.2, 16.1 — the seventeen letters and the rotor's canonical form.
 pub mod alphabet;
 /// A21, law 2 — structured keys: coordinates written out, never a digest.

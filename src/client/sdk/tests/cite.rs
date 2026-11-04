@@ -2,7 +2,7 @@
 // form's word and a served listing deflate, and what a withheld form does
 // not utter.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::client::sdk::*;
 
 /// The word of a chain a fixture wrote out: one entry per position, so A5
@@ -61,7 +61,7 @@ let residual = vec![(0i64, 0i64, 1u8, 2u8)];
 let next = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("cite-stood"));
 assert!(
-    entity.epigenome.express(&residual, 1, 1, &mut super::common::budget()),
+    entity.epigenome.express(&residual, 1, 1, &mut super::fixtures::budget()),
     "the residual stands in the dialect"
 );
 let mut b = entity.stroke();

@@ -3,7 +3,7 @@
 // receipt, a fold's re-derivation), off a page of the journal's prefix, and
 // off the language snapshot touched in place — exact values, compared.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::chronometry::{ActKind, Place};
 use crate::cognition::*;
 

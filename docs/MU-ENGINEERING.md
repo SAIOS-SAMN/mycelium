@@ -207,7 +207,7 @@ tags in the code are:
 | `MYT2` | a hypha's snapshot (the current layout) | `server/cognition/snapshot/layout.rs` |
 | `MYL2` | a court's line | `chronometry/chain/line.rs` |
 | `MYE2` | a cold era segment | `chronometry/era.rs` |
-| `GEN7` | a mind's genome: the words a court admitted | `client/sdk/epigenome/persist.rs` |
+| `GEN7` | a mind's genome: the words a court admitted | `client/sdk/vocabulary/persist.rs` |
 | `TRI1` | an on-disk keyed trie | `network/nerve/keyed/ondisk.rs` |
 | `MSH2` | a signed mesh record | `network/mesh.rs` |
 | `CUR3`, `INT1` | the registry's snapshot: its dispatch cursor and task states, then its intake cursor | `server/registry.rs` |

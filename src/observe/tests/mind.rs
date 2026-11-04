@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// MU-CLIENT §5.3, §5.5 — A MIND'S READING AND A COURT'S AGREEMENTS travel
 /// whole, the agreements' deviations exact rationals lane by lane, and a mind's

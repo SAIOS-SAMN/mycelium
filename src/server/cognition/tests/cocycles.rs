@@ -1,7 +1,7 @@
 // 13 — the Čech cocycles a mind files, and the torsion it condenses: a
 // cycle is consilient, filed, or refused, and never invented.
 
-use super::common::speak_pair;
+use super::fixtures::speak_pair;
 use crate::cognition::*;
 use crate::transducer::element::{self, Element};
 

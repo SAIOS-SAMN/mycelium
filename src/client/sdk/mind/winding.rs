@@ -188,7 +188,7 @@ impl Mind {
 
     fn stroke_in_field(&mut self, stop: &AtomicBool) -> Wound {
         // The observer reads where the carrier stands at every law it enters
-        // (`observe::live`, `entity::observer`).
+        // (`observe::live`, `mind::observer`).
         self.stroke_begins();
         if self.board.saved_len != Some(self.epigenome.genome_len()) {
             self.at_law("genome written");

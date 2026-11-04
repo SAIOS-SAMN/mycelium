@@ -21,7 +21,7 @@
 
 use super::*;
 use crate::physics::laws::{verify, Breach, BodyState, Transition};
-use crate::physics::tensegrity::body_of_shape;
+use crate::physics::equilibrium::body_of_shape;
 
 /// WHAT THE LAWS SAID OF ONE PAIR (or, summed, of a slice).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -188,7 +188,7 @@ pub fn bridge_pair(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> B
                     t.bodies
                         .iter()
                         .map(|(before, after)| {
-                            use crate::physics::tensegrity::momentum;
+                            use crate::physics::equilibrium::momentum;
                             let carried = t.motion.sandwich(&momentum(&before.body, &b)?).scale(&(num_rational::BigRational::from_integer(1.into()) / &w));
                             crate::transducer::cga::projective_ratio(&carried, &momentum(&after.body, &b)?)
                         })

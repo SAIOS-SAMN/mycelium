@@ -5,7 +5,7 @@
 //! These assert the four outcomes of the release and, above all, that an
 //! edge beneath a READING cannot be pulled out from under it.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::*;
 use crate::transducer::element::identity_versor as ident;
@@ -110,7 +110,7 @@ fn wide() -> crate::physics::Budget {
 fn charge() -> crate::transducer::cga::Mv {
     let pi = crate::transducer::cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]);
     let pj = crate::transducer::cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]);
-    crate::physics::capacitor::Fibre::new(pi, pj, q(2, 1), q(1, 1)).expect("a fibre").charge(&q(3, 2))
+    crate::physics::pivot_fibre::Fibre::new(pi, pj, q(2, 1), q(1, 1)).expect("a fibre").charge(&q(3, 2))
 }
 
 fn sliver() -> crate::transducer::cga::Mv {

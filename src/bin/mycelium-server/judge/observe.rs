@@ -1,7 +1,7 @@
 // §8.1 — ACT_OBSERVE: every reading this hypha holds of its own court served
 // to whoever asks.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::network::wire::Frame;
 use mycelium::observe::{self, Court, Memory, ObserveAct, Reading, Source};
@@ -63,7 +63,7 @@ fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh
         serve: observe::serves(),
         // 78.152 — the door's quorum-final point, the keepers and the
         // residual, read off the shelf (a leaf lock) outside the court.
-        tuniversal: crate::tshelf::standing(),
+        tuniversal: crate::tuniversal::standing(),
     };
     // ACT1 — this court on the clock; EC1 — its payments by proof of work;
     // and its acts and metabolism.
@@ -81,7 +81,7 @@ fn publish_standing(k: &mycelium::cognition::Court, mesh: &crate::exchange::Mesh
     observe::replace(own, Reading::Court(Box::new(court)));
 }
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, context: &Context) {
     let Some(act) = observe::decode_act(&frame.body) else { return };
     match act {
         ObserveAct::Query(prefix) => {
@@ -94,7 +94,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                 }
                 *last = hold;
             }
-            let own = Source::Court(door.id);
+            let own = Source::Court(context.id);
             // THE OBSERVER NEVER WAITS ON COGNITION, AND NEVER COMPUTES FOR
             // IT. The question is LEFT for the court stroke, which publishes
             // the standing at its end under the lock it already holds
@@ -122,7 +122,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // 78.145 — the seat relay, read on its own lock (never the
             // court's): its standing and each domain's posts filed and
             // refused since boot.
-            observe::replace(own, Reading::Relay(Box::new(door.seat_relay.reading())));
+            observe::replace(own, Reading::Relay(Box::new(context.seat_relay.reading())));
             // MU-CLIENT §5.5 — the agreed language this court attested, per
             // speaker → hearer, read off its own counters.
             observe::replace(own, Reading::Agreements(Box::new(observe::agreements())));

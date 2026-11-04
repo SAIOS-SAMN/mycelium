@@ -1,7 +1,7 @@
 // 12.6, A20 — THE PIVOT ORBIT: what a pivot discharges, what it holds as
 // a vortex, and what it writes.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element::{self, Element};
@@ -343,7 +343,7 @@ fn pivot_orbit_discharges_held_word_and_vortices_pair() {
         "Frame is the least vertex coordinate of the crystallized form"
     );
     assert_eq!(
-        crate::court::verdict::reconstruct_blind(&e, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
         "a certified discharge replays: every after-face is face_of, then the certificate"
     );

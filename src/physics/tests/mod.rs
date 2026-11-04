@@ -1,13 +1,13 @@
 // Law 5, 12.6 — the physics' tests, one file per organ they prove.
 
 mod calibration;
-mod capacitor;
+mod pivot_fibre;
 mod circuits;
-mod fascicle;
+mod sphere_pair;
 mod lambda;
 mod malleability;
 mod metabolism;
 mod outflow;
 mod source;
 mod stroke;
-mod tensegrity;
+mod equilibrium;

@@ -1,7 +1,7 @@
 // 54.3 — THE A21 PROPERTY AT THE ONE KIND THE ENGINE IS MADE OF:
 // `from_address(address(f)) ≡ f`.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk;

@@ -89,7 +89,7 @@ pub(crate) fn answer_written(s: &mut TcpStream, frame: Frame) -> bool {
     // 78.152 TU-7: a reply carries this door's final point where the speaker
     // carried one (`note_pointed`); otherwise it is the frame it always was.
     let point = match spoke_pointed(s) {
-        true => crate::tshelf::final_point(),
+        true => crate::tuniversal::final_point(),
         false => None,
     };
     match frame.encode_at(point.as_ref()) {
@@ -135,7 +135,7 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     // speaker that showed it reads one (2026-10-09: each kernel re-vendors on
     // its own time, and the hyphae must not cut them off meanwhile).
     note_pointed(s, point.is_some());
-    crate::tshelf::heard_at_door(point);
+    crate::tuniversal::heard_at_door(point);
     Some(frame)
 }
 
@@ -314,7 +314,7 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> O
     // refused when the transport's own deadline is spent.
     let frame = Frame { lane: mycelium::network::wire::Stratum::Spatial, body };
     // 78.152 TU-7: a court's act to a peer carries its door's final point.
-    s.write_all(&frame.encode_at(crate::tshelf::final_point().as_ref())?).ok()?;
+    s.write_all(&frame.encode_at(crate::tuniversal::final_point().as_ref())?).ok()?;
     s.set_nonblocking(true).ok()?;
     let mut head = [0u8; 5];
     // THE ROUND TRIP IS MEASURED HERE (45.4, W9b): the strokes this court
@@ -335,7 +335,7 @@ pub(crate) fn tell_peer_within(endpoint: &str, body: Vec<u8>, stall: Stall) -> O
     // The peer door's final point leaves the body: a claim of that door, read
     // as heard here — this court's final point is its own keepers' quorum.
     let (reply, point) = mycelium::network::wire::split_point(reply, pointed)?;
-    crate::tshelf::shelf().heard_at_door(point);
+    crate::tuniversal::shelf().heard_at_door(point);
     Some((reply, rtt))
 }
 

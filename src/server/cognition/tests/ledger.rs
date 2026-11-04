@@ -294,7 +294,7 @@ fn admit_uplink_carries_nested_line_in_one_receipt() {
 /// A witness's signed position over a root hash (as the era tests make one).
 fn co_sign(name: &str, root_hash: [u8; 32]) -> crate::anastome::dialogue::ReceiptSection {
     use crate::chronometry::{ActKind, ReceiptChain};
-    let key = super::common::court_key(name);
+    let key = super::fixtures::court_key(name);
     let mut c = ReceiptChain::with_signer(key.verifying_bytes());
     let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let prefix = crate::court::admission::SignedPrefix {

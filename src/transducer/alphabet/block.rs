@@ -130,7 +130,7 @@ pub(crate) fn cited_of_cores(cores: &[SpellCore]) -> Option<(Vec<super::Cited>, 
 /// a block the seventeen do not reach — a refusal, never a shorter word.
 pub(crate) fn word_of_block(block: &[[Q; 2]; 2], plane: (u8, u8)) -> Option<super::Word> {
     match super::spell_peel_rotor_on(plane, block)? {
-        (crate::transducer::peel::PeelNest::Closed { cores }, _) => super::word_of_cores(&cores),
+        (crate::transducer::layers::PeelNest::Closed { cores }, _) => super::word_of_cores(&cores),
         _ => None,
     }
 }

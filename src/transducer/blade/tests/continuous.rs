@@ -19,14 +19,14 @@ fn versor_carrying_refuses_pythagorean_rotor_reads_free_row() {
     // the other's. The (3,4,5) rotor does not — and the norm comparison this
     // replaces accepted it (and accepted a body "matching itself" under any
     // turn), because a squared norm cannot see the angle.
-    let row_bar = super::common::sites(&[(0, 0, 0), (0, 1, 0), (0, 2, 0)]);
-    let col_bar = super::common::sites(&[(0, 0, 0), (1, 0, 0), (2, 0, 0)]);
+    let row_bar = super::fixtures::sites(&[(0, 0, 0), (0, 1, 0), (0, 2, 0)]);
+    let col_bar = super::fixtures::sites(&[(0, 0, 0), (1, 0, 0), (2, 0, 0)]);
     let (row, col) = (shape_of(&row_bar), shape_of(&col_bar));
     let turn_90 =
         versor_of_word(&Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn on (0, 1)"), false)]))
             .expect("the 90° turn's base action");
     let p5_turn = versor_of_word(&w).expect("the (3,4,5) turn's base action");
-    let mut b = super::common::budget();
+    let mut b = super::fixtures::budget();
     assert!(versor_carrying(&row, &col, &turn_90, &mut b).is_ok(), "the 90° turn carries the row bar onto the column bar");
     assert!(
         matches!(versor_carrying(&row, &col, &p5_turn, &mut b), Err(NoPose::Uncarried(_))),

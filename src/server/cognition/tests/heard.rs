@@ -2,7 +2,7 @@
 // rings re-derived by the court, whatever the adjudication, and the words they
 // teach read — spelled, or offered as letters.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::anastome::dialogue::{self, Spoken};
 use crate::cognition::*;
 use crate::transducer::sentence::as_element_form;

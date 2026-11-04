@@ -114,7 +114,7 @@ pub fn base_at(p: &Mv, n: usize) -> Option<Vec<BigRational>> {
 /// kissing there, a parabolic fascicle — compose `|d|² (1 − ½ d e_∞)`, read
 /// here at the first plane's unit weight. No translation is written as a
 /// formula of its own: the fascicle is the motion
-/// (`physics::fascicle::Fascicle::parallel`). The identity where `d = 0`.
+/// (`physics::sphere_pair::Fascicle::parallel`). The identity where `d = 0`.
 /// Acts by sandwich: `T X(x) T̃ = X(x + d)`, up to the homogeneous scale.
 ///
 /// 54.7 R3 — THIS IS THE PARABOLIC PINNING, and it is what the hyperbolic
@@ -124,7 +124,7 @@ pub fn base_at(p: &Mv, n: usize) -> Option<Vec<BigRational>> {
 /// fascicle kissing at a finite point fixes that point instead, and is not
 /// rigid.
 pub fn translator_at(d: &[BigRational]) -> Mv {
-    match crate::physics::fascicle::Fascicle::parallel(d) {
+    match crate::physics::sphere_pair::Fascicle::parallel(d) {
         Some(pair) => pair.versor().scale(&(one() / pair.first.norm2())),
         None => Mv::scalar(one()),
     }

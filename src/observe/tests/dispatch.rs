@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// THE DISPATCH OBSERVATION (2026-10-22): a task that leaves a
 /// court stands under its whole citation with the voice it last went to and

@@ -408,7 +408,7 @@ Each proof is earned by a distinct client action. The reference mind
 | Proof | The client action | Reference mind | SDK |
 |---|---|---|---|
 | **POUW** | Request a task, state a rule, submit a signed solve; or speak a word or sentence the courts install. | Extracts rules and solves court tasks; speaks words and sentences from its genome. | `ACT_TASK` → `extract_rule` / `rule::sentence` / rule elements → `encode_solve_with_rule` → `decode_solve_verdict` (`sdk/examples/client.rs`). |
-| **POWC** | Close a demand another mind left open, citing that mind's receipt; earn when other minds' demands use a word this voice discovered. | Cites its genome's words in what it speaks; hears other minds' words with the evidence for each, attests agreements and records convergences (`sdk::chatter`, `entity/converge.rs`). | States rules that cite installed words; the court pays the citation's measured discharge. |
+| **POWC** | Close a demand another mind left open, citing that mind's receipt; earn when other minds' demands use a word this voice discovered. | Cites its genome's words in what it speaks; hears other minds' words with the evidence for each, attests agreements and records convergences (`sdk::chatter`, `sdk/mind/converge.rs`). | States rules that cite installed words; the court pays the citation's measured discharge. |
 | **POWR** | Propose a rewrite: a word retired over fewer letters, a cycle condensed or torsed. | Its pivots (torse, condense) mint rewrites and speak them to the court. | Speaks a rewrite element through `Session::speak`; the court reconstructs it and settles the compression yield. |
 
 **POWV is earned by node operators.** Every hypha that verifies a closure

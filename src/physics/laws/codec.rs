@@ -11,7 +11,7 @@
 //! [`law_at`].
 
 use super::{BodyState, Breach, Flow, Flux, Law, Transition, Verdict, LAWS, LAW_VERSION};
-use crate::physics::tensegrity::Body;
+use crate::physics::equilibrium::Body;
 use crate::transducer::address::{put_key_count, take_key_count, Address, TAG_LAW};
 use crate::transducer::alphabet::{put_q, take_q};
 use crate::transducer::cga::{Mv, Undecomposed};

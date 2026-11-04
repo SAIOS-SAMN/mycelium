@@ -104,7 +104,7 @@ pub const A12_IRREDUCIBLE_INVERSIVE_EXTENT: &str =
 /// THE MOMENTUM HALF IS BUILT (78.52 Row 1, 2026-09-28): `Π = M₂(B)`, the
 /// body's inertia acting on the step's bivector at its centroid, carried by
 /// an unforced orbit, the external torque what it did not carry
-/// (`physics::tensegrity::{momentum, external_torque}`, register
+/// (`physics::equilibrium::{momentum, external_torque}`, register
 /// `A13_MOMENTUM_CARRIED`). THE INVERSIVE HALF IS NOT BUILT: `K_i` stays
 /// unvoiced. Stated so the asymmetry is a recorded gap rather than an
 /// unnoticed one (T21(iii)).

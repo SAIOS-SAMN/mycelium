@@ -1,7 +1,7 @@
 // 78.84 — THE BRIDGE (`family/bridge.rs`): a pair's motions, as the
 // perception carries them, put through the universal law register.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::family::bridge::bridge_pair;
 
 /// ONE MOTION, ONE TRANSITION. Two bars slide one site right: the two

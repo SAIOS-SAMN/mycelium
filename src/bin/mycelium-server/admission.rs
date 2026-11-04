@@ -101,7 +101,7 @@ pub(crate) fn sign_cover_digest(court: &Mutex<Court>, shelf: &crate::published::
         Ok(mut h) => h.run(|k, _| k.keeper_tick()),
         Err(_) => return Vec::new(),
     };
-    let ring = crate::tshelf::own_ring(mesh, tick);
+    let ring = crate::tuniversal::own_ring(mesh, tick);
     // A poisoned cover lock is no reading of the cover; this hypha signs
     // no digest against one (§2.4, rule 11).
     let Ok(mut cover) = mesh.cover.lock() else {
@@ -374,7 +374,7 @@ pub(crate) fn admit_peer_digest(
     // so the ring stands apart from the digest's signature. 78.152b: the
     // ring also travels on its own act (`ACT_TICK`); this one stays beside
     // it, and its outcome is counted and journalled where it is heard.
-    let _ = crate::tshelf::hear_ring(mesh, vk, ring);
+    let _ = crate::tuniversal::hear_ring(mesh, vk, ring);
     // The digest names the peer's room, its address and its ROOTS. Its
     // charts are read by page when those roots move (`admit_peer_cover`),
     // so nothing here retracts a cover this reading cannot replace.

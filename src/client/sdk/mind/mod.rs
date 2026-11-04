@@ -1,4 +1,32 @@
+// AI-GENERATED CONTENT — see DISCLAIMER.md.
+//
 // 24 — the mind: a voice with its genome, and what it owes its courts.
+//
+//! 24.3 — THE MIND: perceive, think, stand, utter, contract — the stroke,
+//! the quote, the speech, the adjudication, and what each writes.
+
+pub(super) mod body;
+pub(super) mod boot;
+pub(super) mod chatter;
+pub(super) mod contract;
+pub(super) mod converge;
+pub(super) mod court;
+pub(super) mod family;
+pub(super) mod feed;
+pub(super) mod focus;
+pub(super) mod hypha;
+pub(super) mod learn;
+pub(super) mod observer;
+pub(super) mod offer;
+pub(super) mod perceive;
+pub(super) mod present;
+pub(super) mod quote;
+pub(super) mod relax;
+pub(super) mod second_vantage;
+pub(super) mod think;
+pub(super) mod winding;
+pub(super) mod transport;
+pub(super) mod utter;
 
 use super::*;
 
@@ -10,17 +38,17 @@ pub(crate) type HeldSaying = Box<dyn FnOnce(&mut Mind)>;
 /// learns what the mesh teaches (comprehending, not storing), asks quotes, and
 /// probes listings, and never waits on the answer.
 pub struct Mind {
-    pub(crate) hypha: super::entity::hypha::HyphaLink,
+    pub(crate) hypha: self::hypha::HyphaLink,
     /// MU-CLIENT §6 — THE SEAT'S OWN CARRIER: the seat surface's link to the
     /// hypha on its own thread (`Mind::ask_seat`), so a slow house holds
     /// that carrier and never the mind.
-    pub(crate) seat: super::entity::hypha::HyphaLink,
+    pub(crate) seat: self::hypha::HyphaLink,
     /// THE SEAT'S PERCEIVING CARRIER (2026-10-23): the held mail read alone
     /// (`Mind::ask_held`), on its own thread and session. The court holds
     /// that read to its next event; on the seat's carrier it blocked every
     /// take, solve and declination queued behind it, and a call the court
     /// never received could not be the event that released the read.
-    pub(crate) held: super::entity::hypha::HyphaLink,
+    pub(crate) held: self::hypha::HyphaLink,
     pub epigenome: Epigenome,
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
@@ -167,10 +195,10 @@ pub struct Mind {
     /// mind's own, never persisted).
     pub(crate) seats: crate::network::nerve::Keyed<super::seat_mind::SeatMind>,
     /// 78.161 — this mind's chatter with other minds, where it opened one.
-    pub(crate) chat: Option<super::entity::chatter::Chat>,
+    pub(crate) chat: Option<self::chatter::Chat>,
     /// 78.164 — the boundaries this mind is open on, and what its field
     /// keeps from tick to tick to meet them.
-    pub(crate) board: super::entity::winding::Board,
+    pub(crate) board: self::winding::Board,
     /// MU-CLIENT §4.2 — THIS MIND'S OWN FIELD: its tubes and orbits, its
     /// lanes, its lexicon, the words taught it, the covers it parked; it
     /// thinks in it for the length of each tick.
@@ -188,11 +216,11 @@ pub struct Mind {
     /// the mind knows and the residue asked about, until a relation derives
     /// its meaning or it stands an aperture cycle unanswered. The mind's,
     /// never its conversation's carrier's.
-    pub(crate) questions: crate::network::nerve::Keyed<super::entity::chatter::Question>,
+    pub(crate) questions: crate::network::nerve::Keyed<self::chatter::Question>,
     /// MU-CLIENT §5.5 — THE SCENES THIS MIND SPOKE WORDS ON, what a heard
     /// word is read against, and the convergences found there
-    /// (`entity::converge`).
-    pub(crate) scenes: super::entity::converge::Scenes,
+    /// (`mind::converge`).
+    pub(crate) scenes: self::converge::Scenes,
 }
 
 /// A cited form owed to a court, with the citer that waits on it and the

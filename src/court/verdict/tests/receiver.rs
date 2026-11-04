@@ -39,7 +39,7 @@ fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
 fn reconstruct_form_with_accepts_remainder_demand_names() {
     let (family, e) = a_recolour_with_a_creation();
     assert_eq!(
-        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
         None,
         "the closed sub-complex closes; the demand carries the rest"
     );
@@ -59,7 +59,7 @@ fn reconstruct_form_with_refuses_undeclared_remainder() {
     f.reindex();
     let tampered = as_element_form(&f, e.magnitude()).expect("a tape");
     assert_eq!(
-        reconstruct_form_with(&tampered, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&tampered, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
         Some(REFUSE_NOT_CLOSED)
     );
 }
@@ -74,7 +74,7 @@ fn reconstruct_form_with_refuses_vertex_missing_body() {
     let (_, e) = a_recolour_with_a_creation();
     let other = vec![(digits(&["110", "000"]), digits(&["330", "003"]))];
     assert_eq!(
-        reconstruct_form_with(&e, &|_| None, Some(&other), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&e, &|_| None, Some(&other), &NoCrystal, &mut super::fixtures::budget()),
         Some(REFUSE_VERTEX_BODY)
     );
 }
@@ -94,7 +94,7 @@ fn reconstruct_form_with_refuses_tape_without_acting_vertex() {
     let mag = sentence_measure(&f, &family, &NoCrystal, 0).expect("the demands measure what they ask");
     let e = as_element_form(&f, mag).expect("a tape");
     assert_eq!(
-        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
         Some(REFUSE_NOT_A_SENTENCE)
     );
 }
@@ -149,7 +149,7 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
     // not a broken form — the relation is absent and the absence is the
     // reading (rule 11) — so the court replays it clean.
     assert_eq!(
-        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
         None,
         "a form with no edge to re-derive replays clean"
     );
@@ -195,7 +195,7 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
     // refuses nothing. That is not the tampering assertion and it is not
     // offered as one.
     let rederives = |f: &crate::transducer::sentence::Form| {
-        crate::verdict::body::edges_rederive_frames(f, &family, &mut super::common::budget()).map(|r| r.reason)
+        crate::verdict::body::edges_rederive_frames(f, &family, &mut super::fixtures::budget()).map(|r| r.reason)
     };
     assert_eq!(
         rederives(&f),
@@ -255,7 +255,7 @@ fn vertices_carry_frames_perceives_each_frame_once() {
         rule.form.faces
     );
     let _ = crate::verdict::body::vertices_carry_frames(&rule.form, &family);
-    let _ = crate::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::common::budget());
+    let _ = crate::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::fixtures::budget());
 }
 
 /// MEMBER REPLAY IS SCOPED TO ACTIVE CHART SECTIONS.
@@ -278,7 +278,7 @@ fn reconstruct_form_with_scopes_members_to_active_sections() {
         .expect("multi-member rule extracts");
     let e = mint_sentence(&rule, &family, &NoCrystal, 0).expect("sentence mints");
     assert_eq!(
-        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+        reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
         None,
         "court replays multi-member rule when input scene has bodies of the other chart"
     );

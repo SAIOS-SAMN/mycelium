@@ -3,7 +3,7 @@
 // mass among the bodies of its pair decides where its own volume, density and
 // direction cannot — judged by replay, leave one out.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::transducer::family::incongruence::{decide, single_changes};
 use crate::transducer::family::interpret::interpret;
 

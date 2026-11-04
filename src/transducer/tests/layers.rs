@@ -1,4 +1,4 @@
-use crate::transducer::peel::*;
+use crate::transducer::layers::*;
 
 /// A residual of tokens; a shell takes the head. The governor reads
 /// emptiness and strict shortening by exact comparison.

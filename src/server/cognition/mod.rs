@@ -25,7 +25,7 @@ mod language;
 mod lease;
 mod ledger;
 mod market;
-mod mouth;
+mod domain_passage;
 mod published;
 mod reads;
 pub use reads::HELD_KINDS;

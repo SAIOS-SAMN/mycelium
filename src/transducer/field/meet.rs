@@ -124,13 +124,13 @@ pub struct MeetGraph {
     pub transport: super::transport::TransportTally,
     /// 78.37 — the docket: pending this orbit, open for the next, owed
     /// enclosures, unwritten entries.
-    pub docket: super::docket::DocketReading,
+    pub docket: super::plan::DocketReading,
     /// TC1 — the nerve's shape (free vertices and faces, the 2-core, its
     /// `Ȟ¹`), and what each shedding door removed that carried a loop.
-    pub core: super::core::CoreReading,
-    pub shed: super::core::ShedTally,
+    pub core: super::nerve_shape::CoreReading,
+    pub shed: super::nerve_shape::ShedTally,
     /// TC1's fix — what the truncation removed, refused and deferred.
-    pub truncation: super::core::Truncation,
+    pub truncation: super::nerve_shape::Truncation,
     /// RM1 — the mind's remainders: `Congruent` fills by `ℓ`, the fills' classes
     /// and those standing across charts, the re-fills.
     pub remainders: crate::transducer::cech::RemainderReading,
@@ -175,7 +175,7 @@ impl MeetGraph {
         let owed = MEET_OWED.iter().map(|(f, _)| *f).collect::<Vec<_>>().join(", ");
         let t = &self.transport;
         let c = &self.core;
-        let doors = super::core::Door::ALL
+        let doors = super::nerve_shape::Shedding::ALL
             .iter()
             .map(|d| {
                 let i = d.index();

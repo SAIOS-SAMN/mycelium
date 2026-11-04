@@ -71,7 +71,7 @@ impl Vertex {
     pub fn class(&self) -> Option<coord::Transport> {
         match self {
             Vertex::Word { derivation, .. } => Some(coord::Transport {
-                kind: crate::transducer::peel::ShellKind::Whole,
+                kind: crate::transducer::layers::ShellKind::Whole,
                 class: derivation.rotor().holonomy_key()?,
             }),
             Vertex::Rebased { class, .. } => Some(class.clone()),
@@ -463,7 +463,7 @@ pub(crate) fn base_class(by: &coord::VertexAt) -> Option<coord::Transport> {
         coord::VertexAt::Word(t) => Some(t.clone()),
         coord::VertexAt::Rebased { base, .. } => Some(base.clone()),
         coord::VertexAt::Frame => Some(coord::Transport {
-            kind: crate::transducer::peel::ShellKind::Whole,
+            kind: crate::transducer::layers::ShellKind::Whole,
             class: Word::identity().rotor().holonomy_key()?,
         }),
         _ => None,

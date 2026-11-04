@@ -13,7 +13,7 @@ const FAR: Place = Place { k: u64::MAX, i: u64::MAX };
 
 /// A court signing as the key `name` derives.
 fn court(name: &str) -> (HyphaKey, Court) {
-    let key = super::common::court_key(name);
+    let key = super::fixtures::court_key(name);
     let mut k = Court::new();
     k.bind_identity(key.verifying_bytes());
     (key, k)
@@ -47,7 +47,7 @@ fn fold(k: &mut Court, key: &HyphaKey) {
     let p = k.propose_fold().expect("a final prefix");
     let head = k.chain().head().expect("the court acted");
     let home = position(key, &head, p.root.hash.to_vec());
-    let wkey = super::common::court_key("published-witness");
+    let wkey = super::fixtures::court_key("published-witness");
     let mut wc = ReceiptChain::with_signer(wkey.verifying_bytes());
     let wh = wc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
     let witness = position(&wkey, &wh, p.root.hash.to_vec());
@@ -134,10 +134,10 @@ fn publish_serves_peer_line_admitted_in_pieces() {
     let (first, rest) = line.split_at(3);
     let (_, mut c) = court("published-peer-c");
     strokes(&mut c, 1);
-    super::common::admit_line(&mut c, &akey, first);
+    super::fixtures::admit_line(&mut c, &akey, first);
     let p1 = c.publish(None).expect("published");
     alike(&c, &p1, &avk, &[(None, FAR, false)]);
-    super::common::admit_line(&mut c, &akey, rest);
+    super::fixtures::admit_line(&mut c, &akey, rest);
     let p2 = c.publish(Some(&p1)).expect("the peer's line moved");
     alike(&c, &p2, &avk, &[(None, FAR, false), (Some(Place::GENESIS), FAR, false)]);
 }

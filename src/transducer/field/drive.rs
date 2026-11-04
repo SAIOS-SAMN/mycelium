@@ -41,7 +41,7 @@ impl Contemplation {
     pub fn expand_all(
         &mut self,
         atlas: &dyn AtlasRead,
-        section_at: crate::transducer::field::idea::SectionAt,
+        section_at: crate::transducer::field::well::SectionAt,
         crystal: &dyn Crystal,
         budget: &mut Budget,
     ) -> Expanded {
@@ -213,14 +213,14 @@ impl Contemplation {
             let bundle = b.bundle.clone();
             // A well marked above this clock has no measurable extent, and
             // the pivot orbit is not paced by a count that went backwards.
-            let Some(t) = super::idea::held_since(self.now_k, b.moved_k) else {
+            let Some(t) = super::well::held_since(self.now_k, b.moved_k) else {
                 continue;
             };
             if let Some(mut form) = b.form.clone() {
                 // CS2 — the cells this pivot reads against, from the idea's
                 // memo where the form stands, read afresh where it moved.
                 let mut memo = b.cells_read.clone();
-                let cells = super::idea::cells_for_pivot(&mut memo, &form, budget);
+                let cells = super::well::cells_for_pivot(&mut memo, &form, budget);
                 if let Some(b) = self.wells.get_mut(bk) {
                     b.cells_read = memo;
                 }

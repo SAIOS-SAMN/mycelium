@@ -4,7 +4,7 @@
 // and a speech names the bodies it did not reach.
 
 use crate::transducer::family::Grid;
-use crate::client::sdk::entity::family::occupancy_causes;
+use crate::client::sdk::mind::family::occupancy_causes;
 
 fn grid(rows: &[&str]) -> Grid {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
@@ -71,7 +71,7 @@ fn tests_spoken_withholds_speech_with_unreached_body() {
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
     let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("the family has a rule");
-    use crate::client::sdk::entity::family::tests_spoken;
+    use crate::client::sdk::mind::family::tests_spoken;
     let e = Mind::open("127.0.0.1:1", Voice::named("withheld"));
     let (reached, _) = tests_spoken(&e.epigenome, &rule, &[grid(&["0010", "0000", "0000"])]);
     assert_eq!(reached.expect("every body reached: the answer stands"), vec![grid(&["0000", "0010", "0000"])]);

@@ -1,7 +1,7 @@
 // 16 — THE ROTOR and ITS CLASS: what order a word has, what is filed as
 // torsion, and what is refused rather than read as the zero class.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, Order, Word};
 use crate::transducer::element::{self};
@@ -67,7 +67,7 @@ fn pivot_orbit_opens_axis_for_undischarged_free_class() {
     let back = crate::transducer::sentence::from_element_form(&e).expect("tape");
     assert_eq!(back.axes.len(), 1, "the axis rides the tape");
     assert_eq!(
-        crate::court::verdict::reconstruct_blind(&e, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
         "the court re-derives the seed from the orbit and the certificate re-reads"
     );
@@ -75,7 +75,7 @@ fn pivot_orbit_opens_axis_for_undischarged_free_class() {
     struck.axes = Keyed::new();
     let bad = as_element_form(&struck, [1, 0, 0, 0]).expect("tape without its axis");
     assert_eq!(
-        crate::court::verdict::reconstruct_blind(&bad, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&bad, &mut super::fixtures::budget()),
         Some(crate::court::verdict::REFUSE_ORBIT),
         "without the axis the orbit is a free class again, and it does not replay"
     );
@@ -206,7 +206,7 @@ fn reconstruct_blind_reconstructs_filed_torsion_chord() {
         "the carrier stores a live chord face"
     );
     assert_eq!(
-        crate::court::verdict::reconstruct_blind(&e, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
         "a filed torsion chord replays: the chord carries the holonomy"
     );
@@ -256,7 +256,7 @@ fn reconstruct_blind_reconstructs_filed_torsion_chord() {
         "stripping a filing changes no byte of the word: it was never in the key"
     );
     assert_eq!(
-        crate::court::verdict::reconstruct_blind(&missing, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&missing, &mut super::fixtures::budget()),
         None,
         "and the geometry replays as it did, because that is what replay reads"
     );
@@ -365,7 +365,7 @@ fn word_closes_offplane_turn_90_at_fourth_power() {
     );
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("the identity chord crystallizes");
     assert_eq!(
-        crate::court::verdict::reconstruct_blind(&e, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
         "the court reads projective identity"
     );

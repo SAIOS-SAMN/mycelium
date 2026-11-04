@@ -1,4 +1,4 @@
-use crate::transducer::sentence::tests::common;
+use crate::transducer::sentence::tests::fixtures;
 
 mod cells;
 mod demand;

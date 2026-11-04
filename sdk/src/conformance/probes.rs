@@ -9,7 +9,7 @@ use mycelium::anastome::dialogue::endowment::{Manifest, Nuclei};
 use mycelium::anastome::dialogue::seat::{Arg, Post, Role, Seat, SeatFn, Seats, TAG_COUNT};
 use mycelium::anastome::dialogue::universe::{Genesis, Geometry, Parent};
 use mycelium::physics::laws::{BodyState, Transition};
-use mycelium::physics::tensegrity::{carried_body, Body};
+use mycelium::physics::equilibrium::{carried_body, Body};
 use mycelium::transducer::cga::{rotator, sphere_at, Mv};
 use num_rational::BigRational as Q;
 

@@ -15,7 +15,7 @@ use crate::verdict::{
 /// chain of one receipt and a 47.1 prefix whose payload is the hash,
 /// signed by the key its name derives.
 fn co_sign(name: &str, root_hash: [u8; 32]) -> ReceiptSection {
-    let key = super::common::court_key(name);
+    let key = super::fixtures::court_key(name);
     let mut c = ReceiptChain::with_signer(key.verifying_bytes());
     let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let prefix = SignedPrefix {
@@ -155,7 +155,7 @@ assert_eq!(k.chain().root().map(|r| r.at), Some(close(3)));
 let mut open = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
-assert_eq!(super::common::speak_pair(&mut open, &a, &b, [7; 32]), Outcome::GermPending);
+assert_eq!(super::fixtures::speak_pair(&mut open, &a, &b, [7; 32]), Outcome::GermPending);
 assert_eq!(open.final_prefix_head(), None, "no orbit has closed: no cut yet");
 assert_eq!(open.propose_fold(), Err(REFUSE_FOLD_OPEN));
 assert!(open.chain().root().is_none() && open.archive().is_empty(), "nothing was archived");
@@ -325,7 +325,7 @@ fn admit_backfill_admits_citation_of_folded_receipt() {
     let p = k.propose_fold().expect("a final prefix");
     k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
     assert!(k.chain().at(&home, cited.stamp.place()).is_none(), "the cited receipt left the nodes for the archive");
-    let dvk = super::common::court_key("folded-cite-d").verifying_bytes();
+    let dvk = super::fixtures::court_key("folded-cite-d").verifying_bytes();
     let mut d = ReceiptChain::with_signer(dvk);
     d.admit(cited.clone());
     d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![crate::chronometry::Parent { at: cited.stamp, hash: cited.chain_hash }])
@@ -411,7 +411,7 @@ fn propose_fold_passes_open_listing_and_escrow() {
     k.bind_identity(home);
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
     let b = vec![(0, 0, 2u8), (0, 1, 2)];
-    assert_eq!(super::common::speak_pair(&mut k, &a, &b, [7; 32]), Outcome::GermPending);
+    assert_eq!(super::fixtures::speak_pair(&mut k, &a, &b, [7; 32]), Outcome::GermPending);
     let word: Vec<u8> = k.provisional.scoped().map(|(a, _)| a).next().expect("a provisional word");
     let admitted = k.admitted_at(&word).expect("the word stands at its admitting act");
     assert!(k.pending.contains(&word), "and is listed");

@@ -5,7 +5,7 @@
 
 use crate::anastome::dialogue::tube::{decode_tube_reading, encode_tube_reading, is_spin_4, is_spin_plus_31, place_in, Level, TubeReading};
 use crate::anastome::dialogue::universe::Geometry;
-use crate::server::cognition::mouth::{fits_in, sphere_throat};
+use crate::server::cognition::domain_passage::{fits_in, sphere_throat};
 use crate::transducer::cga::{rotator_on_blade, sphere_pole, translator_at, Mv, E1, EM, EP};
 use num_rational::BigRational as Q;
 

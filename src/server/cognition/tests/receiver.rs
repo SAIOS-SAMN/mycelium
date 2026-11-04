@@ -3,7 +3,7 @@
 // replays the sentence on that family — refusing it for an undeclared
 // remainder and never for the one its demands name.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 
 /// A spoken sentence is bound to the family of the task it was spoken for

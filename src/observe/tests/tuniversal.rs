@@ -1,5 +1,5 @@
 use super::super::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// 78.152 — A COURT'S TUNIVERSAL STANDING TRAVELS EXACTLY: three keepers
 /// exchange readings, the observer reads one court's keepers off them, and

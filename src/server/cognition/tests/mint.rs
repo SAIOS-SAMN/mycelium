@@ -2,7 +2,7 @@
 // witness re-derives; association with a listing is not a mint; a rule that
 // speaks its family mints what it measured.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::germinate::germinate;
 

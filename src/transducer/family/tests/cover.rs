@@ -8,7 +8,7 @@
 //! meets into carriers nothing read: 161 carriages and 3 964 meets over
 //! twelve tasks reached no form and left only a tally behind them.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::transducer::family::*;
 use crate::transducer::sentence::{Demand, Vertex};
 
@@ -93,7 +93,7 @@ fn hold_form_reads_demand_candidates_from_bodies() {
             })
             .expect("the deformation stands as a typed demand");
         let mut c = Contemplation::new();
-        c.hold_form(f.clone(), &[], &[], [0; 4], &mut super::common::budget());
+        c.hold_form(f.clone(), &[], &[], [0; 4], &mut super::fixtures::budget());
         let (_, b) = c.wells.scoped().next().expect("the demand is held as an idea");
         let over_chart =
             b.candidates.get(chart.key().as_bytes()).map_or(0, |m| m.len());
@@ -159,7 +159,7 @@ fn scene_form_groups_pieces_by_transport_class() {
     let members = w.acts().map_or(0, crate::network::nerve::Keyed::len);
     assert!(members >= 1, "with a member per chart it carries a piece on: {members}");
     assert!(
-        carriage(&composite(&a), &composite(&b), &mut super::common::budget()).is_none(),
+        carriage(&composite(&a), &composite(&b), &mut super::fixtures::budget()).is_none(),
         "the composite does not carry whole; this vertex is the cover's"
     );
 }
@@ -178,7 +178,7 @@ fn scene_form_demands_uncarried_body_without_listing() {
     let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
         panic!("the notched fixture perceives one body on each side");
     };
-    assert!(carriage(input, image, &mut super::common::budget()).is_none(),"the whole body does not carry");
+    assert!(carriage(input, image, &mut super::fixtures::budget()).is_none(),"the whole body does not carry");
     let words = f.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count();
     assert_eq!(words, 0, "and the cover lists no pieces of it");
     assert!(
@@ -247,7 +247,7 @@ fn pieces_of_keeps_polychrome_body_whole() {
 #[test]
 fn meet_decode_round_trips_and_refuses_truncation() {
     use crate::network::nerve::{coord, Coordinate};
-    use crate::transducer::peel::ShellKind;
+    use crate::transducer::layers::ShellKind;
     use crate::transducer::base::Site;
     let piece = |kind, support: Vec<Site>| coord::Piece { kind, support };
     // A PIECE WITH NO SUPPORT, one with a support, and one whose support
@@ -625,7 +625,7 @@ fn cover_deformation_propagates_only_from_placed_pieces() {
 fn edge_holonomies_refuses_orbit_without_edges() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::Form;
-    use crate::transducer::sentence::tests::common::{stand_with_star, FRAME};
+    use crate::transducer::sentence::tests::fixtures::{stand_with_star, FRAME};
     let mut f = Form::default();
     // Three bodies, three charts. AT1 — one transport class is ONE vertex
     // (Q1), so the three are three MEMBERS of the identity's class, each at

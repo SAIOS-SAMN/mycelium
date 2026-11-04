@@ -1,9 +1,9 @@
 //! 39 — THE ELEMENT'S TESTS: one file per organ they prove — the gauge
 //! fibre, the four lanes and the germinated axes, the sensor, the tape,
-//! the versor algebra, the vertex and its address, over the fixtures in
-//! `common`.
+//! the versor algebra, the vertex and its address, over the shared
+//! fixtures (`fixtures`).
 
-pub mod common;
+pub mod fixtures;
 
 mod both_poles;
 mod gauge_fibre;

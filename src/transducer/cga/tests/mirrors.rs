@@ -1,7 +1,7 @@
 // 78.14, MG1 — the base's mirrors as constructors, and a nucleus read against
 // the mirrors that bracket its centre.
 
-use super::common::{budget, q};
+use super::fixtures::{budget, q};
 use crate::transducer::cech::{read_coxeter, Closure, ComponentClass, Refusal};
 use crate::transducer::cga::*;
 

@@ -1,7 +1,7 @@
 // 23.8, 12.6 — ROOM: what a voice's draw takes, what the corpus takes, and
 // what the book does before it refuses.
 
-use super::common::{sentence_of, speak_pair};
+use super::fixtures::{sentence_of, speak_pair};
 use crate::cognition::*;
 use crate::transducer::germinate::germinate;
 
@@ -340,7 +340,7 @@ fn prune_basis_to_ruled_synchronizes_discovered_by() {
     let mut k = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
-    super::common::glue_pair(&mut k, &a, &b);
+    super::fixtures::glue_pair(&mut k, &a, &b);
     let kept = k.basis_len();
     assert!(kept >= 1);
 

@@ -1,7 +1,7 @@
 // A.10.1 — ORBITAL TENSEGRITY (ruled 2026-09-28;
 // MU-RECURSION 78.51): coherence is the stationary equilibrium of a
 // constellation of at least two co-present congruent frames. The physics is
-// `physics::tensegrity`; each clause carries a test in `tests/tensegrity.rs`.
+// `physics::equilibrium`; each clause carries a test in `tests/equilibrium.rs`.
 
 /// A.10.1 · THE AXIOM. Coherence is an equilibrium condition of a multi-frame
 /// constellation, never an intrinsic property of an isolated frame: an orbit

@@ -14,7 +14,7 @@ use super::*;
 /// Frame matches by kind alone and is not a class.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct TransportClass {
-    kind: crate::transducer::peel::ShellKind,
+    kind: crate::transducer::layers::ShellKind,
     /// 54.7 — THE CONJUGACY AS THE COORDINATE IT IS, not its bytes. It was
     /// a `Vec<u8>` holding a class key, which made every reader of it
     /// trust a comment; it is the holonomy class itself now, so a
@@ -44,7 +44,7 @@ pub(crate) fn transport_class(v: &Vertex) -> Option<TransportClass> {
         // minds reaching one vertex by different derivations correspond
         // (50.2 step 2), and a class read off a residue would split them.
         Vertex::Word { derivation, .. } => Some(TransportClass {
-            kind: crate::transducer::peel::ShellKind::Whole,
+            kind: crate::transducer::layers::ShellKind::Whole,
             class: derivation.rotor().holonomy_key()?,
         }),
         _ => None,

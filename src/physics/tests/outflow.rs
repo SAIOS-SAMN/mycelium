@@ -39,8 +39,8 @@ fn at(x: i64, y: i64, z: i64) -> Mv {
 /// off the pivots (as `tests/source.rs` reads it).
 fn sigma() -> Mv {
     let pivots = vec![at(5, 0, 0), at(0, 5, 0), at(-3, 4, 0), at(0, 0, 5), at(3, 0, 4)];
-    match crate::physics::capacitor::shape_of(&pivots, 3) {
-        crate::physics::capacitor::Shape::Stable(round) => geoid_vector(&round).expect("a sphere"),
+    match crate::physics::pivot_fibre::shape_of(&pivots, 3) {
+        crate::physics::pivot_fibre::Shape::Stable(round) => geoid_vector(&round).expect("a sphere"),
         other => panic!("five pivots on one sphere stand: {other:?}"),
     }
 }

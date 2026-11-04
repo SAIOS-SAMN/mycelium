@@ -3,7 +3,7 @@
 // pays the provider that solve's measured discharge out of the hold, capped
 // by what is left; the rest returns to the payer when the lease ends.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::anastome::dialogue::lease::{CloseLease, LeaseAct, LeaseRefusal};
 use crate::cognition::*;
 use crate::transducer::family::{cipher_form, sentence_measure, NoCrystal, TrainPair};

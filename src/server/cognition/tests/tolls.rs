@@ -8,7 +8,7 @@ use crate::anastome::dialogue::challenge::{Challenge, Challenged, Finality};
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Mouth, Offer, Side, State, Tariff, Untariffed};
 use crate::anastome::dialogue::uplink::{TierFold, Uplinked};
-use super::common::close_through;
+use super::fixtures::close_through;
 use crate::server::cognition::handoff::toll_key;
 use crate::server::cognition::Court;
 use ed25519_dalek::SigningKey;

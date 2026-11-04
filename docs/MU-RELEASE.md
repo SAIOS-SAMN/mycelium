@@ -245,9 +245,9 @@ The two sides stay comparable through what they share:
 | Test mesh: a genesis of its own for release candidates | `scripts/quickstart`, genesis | Specified |
 | `activates_at` per release: the law, wire and ledger version applied by final point | `src/physics/laws.rs` (`LAW_VERSION`), the door, `chronometry::tuniversal` | Specified |
 | Versions advertised in the cover | `src/anastome/dialogue` cover codec | Specified |
-| BRANCH as an act: a branch origin citing the fork point (78.155 R-1) | `chronometry::tuniversal::ops`, the court | Specified |
+| BRANCH as an act: a branch origin citing the fork point (78.155 R-1) | `chronometry::tuniversal::navigate`, the court | Specified |
 | A sub-court bound to a branch origin, folding up by the tier fold (78.155 R-3) | `server/cognition` | Specified |
-| SUPERPOSE as an act: realignment by a quorum-final point citing both branches | `chronometry::tuniversal::ops`, the court | Specified |
+| SUPERPOSE as an act: realignment by a quorum-final point citing both branches | `chronometry::tuniversal::navigate`, the court | Specified |
 | Duplicate-issuance burn on realignment (47.4) | the court, the treasury | Specified (MU-ECONOMY §11.4 F2b) |
 | Reproducible builds and build attestation | ROADMAP track 14, item 5 | Specified |
 

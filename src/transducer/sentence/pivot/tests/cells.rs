@@ -54,7 +54,7 @@ impl crate::transducer::family::Crystal for OneWord {
 fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
     let one = num_rational::BigRational::from_integer(1.into());
     let zero = num_rational::BigRational::from_integer(0.into());
-    use crate::transducer::sentence::tests::common::{chord as chord_between, stand_with_star, FRAME};
+    use crate::transducer::sentence::tests::fixtures::{chord as chord_between, stand_with_star, FRAME};
     let mut f = Form::default();
     // AT1 (Q1): both bodies speak the identity, so they are ONE vertex —
     // its class — with a member on each chart, each with its own star.

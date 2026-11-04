@@ -13,8 +13,8 @@ fn docketed(own_vk: [u8; 32]) -> (Court, crate::transducer::address::Address) {
     k.bind_identity(own_vk);
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
-    assert_eq!(super::common::speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
-    assert_eq!(super::common::speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
+    assert_eq!(super::fixtures::speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(super::fixtures::speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
     k.court_stroke();
     let addr = k.provisional.scoped().next().expect("docketed").0;
     (k, crate::transducer::address::Address::from(addr))
@@ -32,7 +32,7 @@ fn docketed(own_vk: [u8; 32]) -> (Court, crate::transducer::address::Address) {
 #[test]
 fn admit_line_applies_peer_ruling_through_receipt() {
     use crate::anastome::dialogue::RULING_UPHELD;
-    let key = super::common::court_key("ruler");
+    let key = super::fixtures::court_key("ruler");
     let (mut a, addr) = docketed(key.verifying_bytes());
     let at = a.admitted_at(addr.as_bytes()).expect("the docket admitted it at an act");
     let word = a.provisional.get(addr.as_bytes()).cloned().expect("provisional");
@@ -47,7 +47,7 @@ fn admit_line_applies_peer_ruling_through_receipt() {
     b.provisional.insert(addr.clone(), word.clone());
     let mut filing = b.stroke();
     b.file_admitted(&addr, at, &mut filing);
-    let heard = super::common::admit_line(&mut b, &key, &line);
+    let heard = super::fixtures::admit_line(&mut b, &key, &line);
     assert!(heard.iter().all(|h| matches!(h, Admitted::Parent(_))), "a's line admits whole: {heard:?}");
     assert!(!b.provisional.contains(addr.as_bytes()), "the arm applied here: the word left b's docket");
     let own_head = b.chain().head().expect("b sealed").clone();
@@ -57,7 +57,7 @@ fn admit_line_applies_peer_ruling_through_receipt() {
 
     let mut c = Court::new();
     c.bind_identity([0xc0; 32]);
-    super::common::admit_line(&mut c, &key, &line);
+    super::fixtures::admit_line(&mut c, &key, &line);
     assert_eq!(c.clock(None).rulings[upheld], [1, 0, 1, 0], "a stamp c does not hold: the ruling waits");
     c.provisional.insert(addr.clone(), word.clone());
     let mut filing = c.stroke();
@@ -70,7 +70,7 @@ fn admit_line_applies_peer_ruling_through_receipt() {
     d.basis_insert(word, [1; 32]);
     let mut filing = d.stroke();
     d.file_admitted(&addr, at, &mut filing);
-    super::common::admit_line(&mut d, &key, &line);
+    super::fixtures::admit_line(&mut d, &key, &line);
     assert_eq!(d.clock(None).rulings[upheld], [0; 4], "a word d holds only ruled: the arm is inert, uncounted");
 }
 
@@ -85,7 +85,7 @@ fn admit_line_applies_peer_ruling_through_receipt() {
 #[test]
 fn admit_line_aliases_peer_stamp_to_one_word() {
     use crate::anastome::dialogue::RULING_UPHELD;
-    let key = super::common::court_key("aliased ruler");
+    let key = super::fixtures::court_key("aliased ruler");
     let (mut a, addr) = docketed(key.verifying_bytes());
     let a_stamp = a.admitted_at(addr.as_bytes()).expect("a admitted it");
     let (mut c, same) = docketed([0xc1; 32]);
@@ -93,7 +93,7 @@ fn admit_line_aliases_peer_stamp_to_one_word() {
     let c_stamp = c.admitted_at(addr.as_bytes()).expect("c admitted it");
     assert_ne!(c_stamp, a_stamp, "at two stamps: each court's own act");
     let before_ruling: Vec<_> = a.chain().own().collect();
-    super::common::admit_line(&mut c, &key, &before_ruling);
+    super::fixtures::admit_line(&mut c, &key, &before_ruling);
     assert_eq!(c.word_admitted_at(&a_stamp), Some(&addr), "a's stamp is an alias of the word here");
     assert_eq!(c.admitted_at(addr.as_bytes()), Some(c_stamp), "and c's own stamp still holds it");
     let mut restored = Court::new();
@@ -103,7 +103,7 @@ fn admit_line_aliases_peer_stamp_to_one_word() {
     assert!(a.apply_verdict(addr.as_bytes(), RULING_UPHELD), "a upholds it");
     let line: Vec<_> = a.chain().own().collect();
     let [.., ruling] = line.as_slice() else { panic!("a ruled") };
-    super::common::admit_line(&mut c, &key, std::slice::from_ref(ruling));
+    super::fixtures::admit_line(&mut c, &key, std::slice::from_ref(ruling));
     assert_eq!(c.clock(None).rulings[Ruled::Upheld.index()], [1, 1, 0, 0], "a's ruling, located by the alias, applies at c");
     assert!(!c.provisional.contains(addr.as_bytes()), "the word left c's docket");
 }
@@ -127,13 +127,13 @@ fn admit_line_files_no_alias_on_shared_fibre() {
         c.file_fibre(&addr, at, key);
     }
     assert_eq!(c.fibre_read(&chart, &None).len(), 2, "two words on the fibre");
-    let key = super::common::court_key("ambiguous peer");
+    let key = super::fixtures::court_key("ambiguous peer");
     let mut peer = ReceiptChain::with_signer(key.verifying_bytes());
     let at = peer.next_stamp(&[]).expect("its first stamp");
     let cite = Cite::Word { chart: chart.clone(), class: None, at };
     peer.append(ActKind::List, [0; 4], vec![cite], [0; 32], Vec::new()).expect("it admits by its own act");
     let line: Vec<_> = peer.own().collect();
-    super::common::admit_line(&mut c, &key, &line);
+    super::fixtures::admit_line(&mut c, &key, &line);
     assert_eq!(c.word_admitted_at(&at), None, "no alias: two candidates, and none is chosen");
 }
 
@@ -152,7 +152,7 @@ fn admit_line_replaces_alias_on_later_admission() {
     let mut fibre = Vec::new();
     Cite::Word { chart: chart.clone(), class: None, at: own_stamp }.put_canonical(&mut fibre).expect("a citation");
     c.file_fibre(&addr, own_stamp, fibre);
-    let key = super::common::court_key("twice-admitting peer");
+    let key = super::fixtures::court_key("twice-admitting peer");
     let mut peer = ReceiptChain::with_signer(key.verifying_bytes());
     let mut stamps = Vec::new();
     for _ in 0..2 {
@@ -162,7 +162,7 @@ fn admit_line_replaces_alias_on_later_admission() {
         stamps.push(at);
     }
     let line: Vec<_> = peer.own().collect();
-    super::common::admit_line(&mut c, &key, &line);
+    super::fixtures::admit_line(&mut c, &key, &line);
     let [first, second] = stamps.as_slice() else { panic!("two admissions") };
     assert_eq!(c.word_admitted_at(second), Some(&addr), "the later admission is the alias");
     assert_eq!(c.word_admitted_at(first), None, "the earlier one left");

@@ -3,7 +3,7 @@
 // discharge and never more, and a word that names no body escrows and is
 // paid nothing.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::family::{cipher_form, extract_rule, form_deflation, mint_sentence, sentence_measure, NoCrystal, TrainPair};

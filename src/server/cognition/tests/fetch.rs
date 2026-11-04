@@ -3,7 +3,7 @@
 // word's chart, and a refracted word's bytes whole are read beside the bytes
 // it would take as (held, Γ).
 
-use super::common::*;
+use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::sentence::{as_element_form, from_element_form, Transport};
 use crate::cognition::Asker;

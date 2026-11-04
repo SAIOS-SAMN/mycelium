@@ -364,7 +364,7 @@ fn seed_horizon_collapses_vortex_by_matching_certificate() {
     let before = ClassVector::of_word(&w).expect("a 90° turn has a class vector").class_key();
     let after = ClassVector::zero().class_key();
     // The one orbit's chord, both candidates' (AT1: a chord is an overlap).
-    let chord = crate::transducer::sentence::tests::common::some_overlap;
+    let chord = crate::transducer::sentence::tests::fixtures::some_overlap;
     let hit = PivotCertificate {
         chord: chord(),
         axis: Axis::Unit(0),

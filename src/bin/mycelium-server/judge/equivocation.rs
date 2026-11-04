@@ -6,13 +6,13 @@
 //! claim with its prefix and re-derives its hash, and the two differ
 //! (`admit_equivocation`); then the burn, once. The reply is `Ruled`.
 
-use crate::door::Door;
+use crate::context::Context;
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
 
-pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
+pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, context: &Context) {
     let Some((a, b)) = dialogue::decode_equivocation(&frame.body) else {
         return;
     };
@@ -31,7 +31,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     // 47.2 steps 1 and 2 on each half, before any carrier is touched. A
     // node that has adopted no origin has none equal to the frame's.
-    let origin = match door.mesh.origin.lock() {
+    let origin = match context.mesh.origin.lock() {
         Ok(o) => *o,
         Err(_) => None,
     };
@@ -61,7 +61,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         }
     };
     // A court that cannot be read has judged nothing and answers nothing.
-    let Ok(mut h) = crate::held::held!(door.court) else {
+    let Ok(mut h) = crate::held::held!(context.court) else {
         eprintln!(
             "  court equivocation unread {:02x}{:02x}… K {}: the court is not readable",
             proof.vk[0], proof.vk[1], proof.at.print()

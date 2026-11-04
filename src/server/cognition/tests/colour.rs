@@ -102,11 +102,11 @@ fn glue_fetched_admits_colour_word_by_rederived_witness() {
     let mut peer = Court::new();
     peer.bind_task_family(tid, family);
     let mut cover = crate::network::nerve::Cover::new();
-    assert!(!matches!(super::common::fetched(&mut peer, &sent, [1; 32], [2; 32], &mut cover), Glue::Dialect), "proven here");
+    assert!(!matches!(super::fixtures::fetched(&mut peer, &sent, [1; 32], [2; 32], &mut cover), Glue::Dialect), "proven here");
     // A COURT WITHOUT IT holds it as dialect — ruled so, never a replay the
     // stroke left unread.
     let mut stranger = Court::new();
-    assert!(matches!(super::common::fetched(&mut stranger, &sent, [1; 32], [3; 32], &mut cover), Glue::Dialect), "unproven here");
+    assert!(matches!(super::fixtures::fetched(&mut stranger, &sent, [1; 32], [3; 32], &mut cover), Glue::Dialect), "unproven here");
 }
 
 /// A colour word is minted from the fibre relation, ruled by the court's

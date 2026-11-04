@@ -2,7 +2,7 @@
 // verified before the sentence is replayed, and two courts of distinct
 // identity reach one standing through the codec with no shared memory.
 
-use super::common::*;
+use super::fixtures::*;
 use crate::anastome::dialogue::{self, Adjudication, Spoken};
 use crate::cognition::*;
 use crate::transducer::family::{mint_sentence, cipher_form, sentence_measure, NoCrystal, TrainPair};

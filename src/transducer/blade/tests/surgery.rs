@@ -1,4 +1,4 @@
-use super::common::{at_frame_0, sites};
+use super::fixtures::{at_frame_0, sites};
 use crate::transducer::blade::{body::*, surgery::*};
 use num_rational::BigRational;
 
@@ -135,7 +135,7 @@ fn factor_splits_deformation_into_versor_and_surgery() {
     let src = shape_of(&ring);
     let dst = shape_of(&solid);
 
-    let (surg, versor) = Surgery::factor(&src, &dst, &mut super::common::budget()).expect("factor Phi into V circ S");
+    let (surg, versor) = Surgery::factor(&src, &dst, &mut super::fixtures::budget()).expect("factor Phi into V circ S");
     assert_eq!(surg.kind, SurgeryKind::FillHole);
     assert_eq!(surg.delta_betti, (0, -1));
     // The core after surgery is the solid square at identical location, so versor is identity

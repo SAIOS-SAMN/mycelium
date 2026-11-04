@@ -3,7 +3,7 @@
 // one lit site is no waveform; an enclosure captures what the output fills
 // inside it, read as a standing wave, its rectangle's billiard a translation.
 
-use super::common::grid;
+use super::fixtures::grid;
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::family::luminal::{read_pair, Beyond, Stop};
 

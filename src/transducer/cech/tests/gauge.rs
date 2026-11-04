@@ -122,7 +122,7 @@ fn solve_gauge_returns_cocycle_per_chord() {
 /// own fill is untouched: the orbits are filed BESIDE it.
 #[test]
 fn fill_files_disagreeing_chord_orbit_on_complex() {
-    use super::common::{turn_90, v, vol};
+    use super::fixtures::{turn_90, v, vol};
     use crate::transducer::cech::{Complex, Fill};
     use crate::transducer::element::identity_versor as ident;
     let (a, b, c) = (v(1), v(2), v(3));

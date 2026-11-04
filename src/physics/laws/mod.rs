@@ -17,7 +17,7 @@
 //! its law — never only the first — and every quantity is exact over ℚ: no
 //! angle, root, logarithm or decimal is formed anywhere.
 
-use crate::physics::tensegrity::{external_torque, metric_defect, similarity, unmeasured_pairs, Body};
+use crate::physics::equilibrium::{external_torque, metric_defect, similarity, unmeasured_pairs, Body};
 use crate::transducer::cga::{is_versor, motion_modes, projective_ratio, Mv, Undecomposed};
 use num_rational::BigRational;
 
@@ -342,8 +342,8 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
         // A flux at no finite place is named below (continuity), once.
         let Some(centre) = crate::transducer::cga::base_at(&f.at, usize::from(f.at.n())) else { continue };
         let n = centre.len();
-        let point = crate::physics::tensegrity::Body { centre, mass: f.mass.clone(), moments: vec![vec![Q::from_integer(0.into()); n]; n] };
-        let Some(pi) = crate::physics::tensegrity::momentum(&point, &b) else {
+        let point = crate::physics::equilibrium::Body { centre, mass: f.mass.clone(), moments: vec![vec![Q::from_integer(0.into()); n]; n] };
+        let Some(pi) = crate::physics::equilibrium::momentum(&point, &b) else {
             v.breaches.push((Law::Momentum, Breach::FluxUnplaced { index }));
             continue;
         };
@@ -477,7 +477,7 @@ pub fn verify_flux(f: &Flux, budget: &mut crate::physics::Budget) -> Verdict {
 /// where the motion does not dilate (its conformal factor `ρ = 1`), has no
 /// weight, or any body stands to it by another ratio or by none.
 fn expansion_of(t: &Transition) -> Option<Q> {
-    use crate::physics::tensegrity::momentum;
+    use crate::physics::equilibrium::momentum;
     let f = crate::transducer::element::conformal_factors(&t.motion).ok()?;
     if num_traits::One::is_one(&f.rho) {
         return None;

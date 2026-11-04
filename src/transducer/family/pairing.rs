@@ -848,7 +848,7 @@ pub(crate) fn named_incidence(
         .into_iter()
         .map(|mut sup| {
             sup.sort_unstable();
-            super::pieces::piece_at(crate::transducer::peel::ShellKind::Whole, &sup).encode().as_bytes().to_vec()
+            super::pieces::piece_at(crate::transducer::layers::ShellKind::Whole, &sup).encode().as_bytes().to_vec()
         })
         .collect();
     // NB1, 78.2 — THE CONTACT COMPLEX'S CELLS, read off the base's elements:

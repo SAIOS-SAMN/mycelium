@@ -2,7 +2,7 @@
 // streamlines, the slide as the fascicle kissing at infinity, and the fascicle
 // kissing at a finite point, which is conformal but not rigid.
 
-use crate::physics::fascicle::{streamline_of, Fascicle, Streamline};
+use crate::physics::sphere_pair::{streamline_of, Fascicle, Streamline};
 use crate::transducer::cga::{point_at, sphere_at, translator_at, Mv, PairRegime};
 use num_traits::One;
 

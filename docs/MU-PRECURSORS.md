@@ -445,8 +445,8 @@ invariants after every campaign. A campaign is reproducible from a printed
 seed: the mesh size, the topology, the fault list and the seed are its
 whole description.
 
-**The gap.** `tests/` holds two integration suites (`alpha_plan.rs`,
-`g_cga.rs`). The court's equivocation proof is tested in
+**The gap.** `tests/` holds two integration suites (`word_lifecycle.rs`,
+`conformal_algebra.rs`). The court's equivocation proof is tested in
 `court/admission/tests/equivocation.rs`, and the treasury audit
 (`Treasury::audit`) is checked from the rows. No harness composes faults
 across several courts and audits the invariants mesh-wide.

@@ -194,7 +194,7 @@ fn mouth_loops_records_turning_loop() {
 fn legacy(k: &mut Court, a: u8, b: u8, from_frame: Mv) -> [u8; 32] {
     let m = Mouth { tube: None, ..mouth(a, b, from_frame, one(), [0; 4]) };
     let id = m.citation();
-    let held = crate::server::cognition::mouth::MouthHeld { mouth: m, state: State::Accepted, opened: Some(k.chain.head_height()), at: Vec::new() };
+    let held = crate::server::cognition::domain_passage::MouthHeld { mouth: m, state: State::Accepted, opened: Some(k.chain.head_height()), at: Vec::new() };
     k.handoffs.mouths.insert(id, held);
     id
 }
@@ -271,7 +271,7 @@ fn handoff_mouth_line_builds_road_reserve_keeps() {
 /// every face gets back what it holds, and no μ is lost.
 #[test]
 fn handoff_feed_keeps_throat_bank_with_draw() {
-    use crate::server::cognition::mouth::throat_key;
+    use crate::server::cognition::domain_passage::throat_key;
     let mut k = founded();
     let (offerer, keeper) = (verifying(&reserve(4)), verifying(&reserve(5)));
     let refused = Mouth { tube: Some(Tube { mass: (5, 2), ..tube() }), nonce: [3; 32], ..mouth(4, 5, one(), one(), [0; 4]) };

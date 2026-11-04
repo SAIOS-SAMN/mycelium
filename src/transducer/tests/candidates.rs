@@ -1,5 +1,5 @@
 use crate::transducer::anchor::Selection;
-use crate::transducer::beam::*;
+use crate::transducer::candidates::*;
 
 /// One coherent domino vs. the same volume scattered: topology tells
 /// them apart (β₀, boundary), volume cannot.

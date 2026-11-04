@@ -7,10 +7,10 @@ use crate::network::nerve::Keyed;
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::{Form, Vertex};
 use crate::transducer::stalk::{self, Stalks};
-use crate::transducer::sentence::tests::common::{only_word, stand_with_star, FRAME};
+use crate::transducer::sentence::tests::fixtures::{only_word, stand_with_star, FRAME};
 use crate::transducer::sentence::{Closes, ToralPeriod};
 use crate::verdict::*;
-use super::common::*;
+use super::fixtures::*;
 
 /// A VERTEX RE-WRITTEN UNDER ITS NEW COORDINATE (AT1). A vertex is keyed by
 /// what it is, so a tamper that moves a coordinate the key writes moves the
@@ -48,10 +48,10 @@ fn star_of(f: &Form, v: &coord::VertexAt) -> coord::Overlap {
 #[test]
 fn reconstruct_blind_accepts_clean_rule_slashes_unparseable() {
     let w = clean_word();
-    assert!(reconstruct_blind(&w, &mut super::common::budget()).is_none(), "a clean derivation replays");
-    let ruling = rule(&[], &Keyed::new(), &Stalks::default(),&w.address(), None, None, &mut super::common::budget());
+    assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "a clean derivation replays");
+    let ruling = rule(&[], &Keyed::new(), &Stalks::default(),&w.address(), None, None, &mut super::fixtures::budget());
     assert!(
-        matches!(rule(&[], &Keyed::new(), &Stalks::default(),&w.address(), Some(&w), Some(&[0; 4]), &mut super::common::budget()), Ruling::Slashed(_)),
+        matches!(rule(&[], &Keyed::new(), &Stalks::default(),&w.address(), Some(&w), Some(&[0; 4]), &mut super::fixtures::budget()), Ruling::Slashed(_)),
         "a word that deflated nothing on the book is slashed"
     );
     assert_eq!(ruling, Ruling::Slashed(REFUSE_UNPARSEABLE_WORD));
@@ -65,17 +65,17 @@ fn reconstruct_blind_accepts_clean_rule_slashes_unparseable() {
 #[test]
 fn reconstruct_blind_accepts_deepened_word_on_peer() {
     let mut w = clean_word();
-    assert!(reconstruct_blind(&w, &mut super::common::budget()).is_none());
+    assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none());
     let base = w.base_magnitude();
     assert!(w.puncture(vec![(1, 3), (1, 3)]), "a fresh section punctures");
     assert_eq!(w.base_magnitude(), base, "the chain's lanes do not move");
     assert_eq!(w.magnitude()[3], base[3] + 1, "the section is counted on the word");
-    assert!(reconstruct_blind(&w, &mut super::common::budget()).is_none(), "the deepened word replays at home");
+    assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "the deepened word replays at home");
     let bytes = w.to_bytes().expect("the record writes");
     let mut pos = 0usize;
     let served = Element::from_bytes(&bytes, &mut pos).expect("wire round trip");
     assert_eq!(pos, bytes.len());
-    assert!(reconstruct_blind(&served, &mut super::common::budget()).is_none(), "the served copy replays on the peer");
+    assert!(reconstruct_blind(&served, &mut super::fixtures::budget()).is_none(), "the served copy replays on the peer");
 }
 
 /// A closed depth-0 form: Frame, one 90°-turn word, the star face.
@@ -154,12 +154,12 @@ fn reconstruct_form_refuses_unruled_glue_and_reconstructs_resolved() {
         .expect("a depth-0 host glues a closed form");
     let outer_e = as_element_form(&outer, [1, 0, 0, 0]).expect("outer tape");
     assert_eq!(
-        reconstruct_blind(&outer_e, &mut super::common::budget()),
+        reconstruct_blind(&outer_e, &mut super::fixtures::budget()),
         Some(REFUSE_GLUED_UNRULED),
         "with no cover behind it the citation refuses"
     );
     let resolve = |a: &[u8]| (a == inner_addr.as_bytes()).then(|| inner.clone());
-    assert_eq!(reconstruct_blind_with(&outer_e, &resolve, &mut super::common::budget()), None, "a resolved citation replays");
+    assert_eq!(reconstruct_blind_with(&outer_e, &resolve, &mut super::fixtures::budget()), None, "a resolved citation replays");
     let mut bad = outer.clone();
     let glued_star = star_of(&outer, &gi);
     {
@@ -176,12 +176,12 @@ fn reconstruct_form_refuses_unruled_glue_and_reconstructs_resolved() {
         face.place = taken.place;
     }
     let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
-    assert_eq!(reconstruct_blind_with(&bad_e, &resolve, &mut super::common::budget()), Some(REFUSE_FACE));
+    assert_eq!(reconstruct_blind_with(&bad_e, &resolve, &mut super::fixtures::budget()), Some(REFUSE_FACE));
     // 50.9 (R1): the face that does not re-derive is refused at its two
     // addresses and travels as `FaceDerivation`. AT1: the Frame HAS a
     // coordinate — its tag alone — so the Frame's star overlap names both
     // its ends, the Frame and the citation's site, like every other face.
-    let face_refusal = reconstruct_form_at(&bad_e, &resolve, None, &crate::transducer::family::NoCrystal, &mut super::common::budget())
+    let face_refusal = reconstruct_form_at(&bad_e, &resolve, None, &crate::transducer::family::NoCrystal, &mut super::fixtures::budget())
         .expect("the tampered face refuses");
     assert_eq!(face_refusal.kind(), crate::transducer::sentence::RefusalKind::FaceDerivation);
     assert!(
@@ -198,7 +198,7 @@ fn reconstruct_form_refuses_unruled_glue_and_reconstructs_resolved() {
     let mut flat = as_element_form(&outer, [1, 0, 0, 0]).expect("tape");
     assert!(flat.set_magnitude([0; 4]), "a zero lane always fits");
     assert_eq!(
-        reconstruct_blind_with(&flat, &resolve, &mut super::common::budget()),
+        reconstruct_blind_with(&flat, &resolve, &mut super::fixtures::budget()),
         None,
         "closure certifies; a zero magnitude prices at zero and refuses nothing"
     );
@@ -258,7 +258,7 @@ fn reconstruct_form_refuses_unruled_glue_and_reconstructs_resolved() {
     // because the citation's own depth is in the key — and that word
     // replays honestly as itself.
     assert_eq!(
-        reconstruct_blind_with(&deeper_e, &resolve, &mut super::common::budget()),
+        reconstruct_blind_with(&deeper_e, &resolve, &mut super::fixtures::budget()),
         None,
         "the forged depth is erased by derivation, not caught by a check"
     );
@@ -276,13 +276,13 @@ fn reconstruct_form_refuses_unruled_glue_and_reconstructs_resolved() {
 fn reconstruct_form_refuses_unparsed_tape() {
     use crate::transducer::sentence::as_element_form;
     let e = as_element_form(&closed_turn_form(), [1, 0, 0, 0]).expect("tape");
-    assert_eq!(reconstruct_form(&e, &|_| None, &mut super::common::budget()), None, "the whole tape replays");
+    assert_eq!(reconstruct_form(&e, &|_| None, &mut super::fixtures::budget()), None, "the whole tape replays");
     let mut short = e.description().to_vec();
     short.pop();
     let mut cut = e.clone();
     cut.set_description(short);
     assert_eq!(
-        reconstruct_form(&cut, &|_| None, &mut super::common::budget()),
+        reconstruct_form(&cut, &|_| None, &mut super::fixtures::budget()),
         Some(REFUSE_FORM_TAPE),
         "a tape one byte short is refused, not read up to the cut"
     );
@@ -343,7 +343,7 @@ fn pivot_certificate_reconstructs_or_refuses() {
     let f = closed_turn_form();
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("tape");
     assert_eq!(
-        reconstruct_form(&e, &|_| None, &mut super::common::budget()),
+        reconstruct_form(&e, &|_| None, &mut super::fixtures::budget()),
         None,
         "a closed form with no certificates replays"
     );
@@ -367,7 +367,7 @@ fn pivot_certificate_reconstructs_or_refuses() {
     bad.certificates.insert(bogus.key(), bogus);
     let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
     assert_eq!(
-        reconstruct_form(&bad_e, &|_| None, &mut super::common::budget()),
+        reconstruct_form(&bad_e, &|_| None, &mut super::fixtures::budget()),
         Some(REFUSE_PIVOT_INEXACT),
         "a certificate that does not re-derive refuses the form"
     );
@@ -403,7 +403,7 @@ fn reconstruct_form_reconstructs_filed_torsion_without_taped_forest() {
     // AT1: derived face words telescope around a cycle, so the torsion a
     // pivot did not write lives in MEASURED content — the overlap's edge
     // (50.3) — with no factor and so no certificate involved.
-    crate::transducer::sentence::tests::common::edge_chord(
+    crate::transducer::sentence::tests::fixtures::edge_chord(
         &mut f,
         c1,
         c2,
@@ -423,7 +423,7 @@ fn reconstruct_form_reconstructs_filed_torsion_without_taped_forest() {
         "finite holonomy files when no word discharges"
     );
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("filed tape");
-    assert_eq!(reconstruct_form(&e, &|_| None, &mut super::common::budget()), None, "filed torsion replays");
+    assert_eq!(reconstruct_form(&e, &|_| None, &mut super::fixtures::budget()), None, "filed torsion replays");
     // S9.2'S FORGERY CANNOT BE BUILT ANY MORE (54.5, as ruled 2026-09-20).
     //
     // This went on to strip the tape's orbits, then to add an orbit of a class
@@ -454,7 +454,7 @@ fn reconstruct_form_reconstructs_filed_torsion_without_taped_forest() {
         f.orbits.len(),
         "clearing the orbits changes no byte of the tape: they were never on it"
     );
-    assert_eq!(reconstruct_form(&bad, &|_| None, &mut super::common::budget()), None, "so the same form replays");
+    assert_eq!(reconstruct_form(&bad, &|_| None, &mut super::fixtures::budget()), None, "so the same form replays");
 
     // WHAT `REFUSE_RANK_LOST` STILL MEANS, and it is the reading that was
     // always underneath: the rank is UNMEASURABLE. An orbit whose holonomy is
@@ -477,7 +477,7 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let f = closed_turn_form();
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("tape");
-    assert_eq!(reconstruct_form(&e, &|_| None, &mut super::common::budget()), None, "a closed word vertex re-derives");
+    assert_eq!(reconstruct_form(&e, &|_| None, &mut super::fixtures::budget()), None, "a closed word vertex re-derives");
 
     let mut rho0 = f.clone();
     // AT1: the derivation's rotor is the vertex's class, its coordinate, so
@@ -492,7 +492,7 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
     });
     let bad_e = as_element_form(&rho0, [1, 0, 0, 0]).expect("off-plane tape");
     assert_eq!(
-        reconstruct_form(&bad_e, &|_| None, &mut super::common::budget()),
+        reconstruct_form(&bad_e, &|_| None, &mut super::fixtures::budget()),
         Some(REFUSE_VERTEX_TAPE),
         "a word that does not keep the sensor plane refuses the tape"
     );
@@ -522,7 +522,7 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
     re.orbits =Form::orbits_of(&re.faces, &re.vertices);
     let re_e = as_element_form(&re, [1, 0, 0, 0]).expect("rebased tape");
     assert_eq!(
-        reconstruct_form(&re_e, &|_| None, &mut super::common::budget()),
+        reconstruct_form(&re_e, &|_| None, &mut super::fixtures::budget()),
         Some(REFUSE_REBASE_TRIVIAL),
         "rebasing onto the identity equals the base"
     );
@@ -541,7 +541,7 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
     un.orbits =Form::orbits_of(&un.faces, &un.vertices);
     let un_e = as_element_form(&un, [1, 0, 0, 0]).expect("unfold tape");
     assert_eq!(
-        reconstruct_form(&un_e, &|_| None, &mut super::common::budget()),
+        reconstruct_form(&un_e, &|_| None, &mut super::fixtures::budget()),
         Some(REFUSE_UNFOLD_STILL),
         "an empty remainder does not unfold"
     );
@@ -561,14 +561,14 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
     orb.orbits =Form::orbits_of(&orb.faces, &orb.vertices);
     let orb_e = as_element_form(&orb, [1, 0, 0, 0]).expect("orbit tape");
     assert_eq!(
-        reconstruct_form(&orb_e, &|_| None, &mut super::common::budget()),
+        reconstruct_form(&orb_e, &|_| None, &mut super::fixtures::budget()),
         Some(REFUSE_ORBIT_STILL),
         "an identity word does not orbit"
     );
     // 50.9 (R1): the orbit's refusal names the contact vertex with the
     // chart it acts on, and travels as `OrbitStill`, never as a malformed
     // complex at the tape.
-    let still = reconstruct_form_at(&orb_e, &|_| None, None, &crate::transducer::family::NoCrystal, &mut super::common::budget())
+    let still = reconstruct_form_at(&orb_e, &|_| None, None, &crate::transducer::family::NoCrystal, &mut super::fixtures::budget())
         .expect("the still orbit refuses");
     assert_eq!(still.kind(), crate::transducer::sentence::RefusalKind::OrbitStill);
     // THE CONTACT VERTEX IS NAMED BY ITS OWN COORDINATE (54.2, AT1). It was
@@ -601,7 +601,7 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
     .expect("a demand has a coordinate");
     let dem_e = as_element_form(&dem, [1, 0, 0, 0]).expect("demand tape");
     assert_eq!(
-        reconstruct_form(&dem_e, &|_| None, &mut super::common::budget()),
+        reconstruct_form(&dem_e, &|_| None, &mut super::fixtures::budget()),
         Some(REFUSE_DEMAND_UNTYPED),
         "a demand vertex carrying nothing is refused by name"
     );
@@ -614,7 +614,7 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
         ))
         .expect("a demand has a coordinate");
     let typed_e = as_element_form(&typed, [1, 0, 0, 0]).expect("typed demand tape");
-    assert_eq!(reconstruct_form(&typed_e, &|_| None, &mut super::common::budget()), None, "a typed demand vertex replays beside its words");
+    assert_eq!(reconstruct_form(&typed_e, &|_| None, &mut super::fixtures::budget()), None, "a typed demand vertex replays beside its words");
 }
 
 /// 50.3, 52.3 — AN EDGE TRANSPORT OF ANY ORDER IS A FACE. A (3,4,5) rotor
@@ -639,11 +639,11 @@ fn reconstruct_form_accepts_edge_of_infinite_order() {
     assert_eq!(tilt.order(), Order::Infinite, "the (3,4,5) rotor has no period");
     set_edge(&mut edged, &fi, tilt);
     let edged_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
-    assert_eq!(reconstruct_form(&edged_e, &|_| None, &mut super::common::budget()), None, "an edge of infinite order is not refused for its order");
+    assert_eq!(reconstruct_form(&edged_e, &|_| None, &mut super::fixtures::budget()), None, "an edge of infinite order is not refused for its order");
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     set_edge(&mut edged, &fi, Word::from_letters(&[(q, false)]));
     let fine_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
-    assert_eq!(reconstruct_form(&fine_e, &|_| None, &mut super::common::budget()), None, "a 90° turn on an edge is a stabilizer element and replays");
+    assert_eq!(reconstruct_form(&fine_e, &|_| None, &mut super::fixtures::budget()), None, "a 90° turn on an edge is a stabilizer element and replays");
 }
 
 /// 52.3 — AN ORBIT OF INFINITE ORDER REPLAYS ON ITS FILING. The transports
@@ -692,7 +692,7 @@ fn reconstruct_form_refuses_free_orbit_and_wrong_period() {
     assert!(!form_orbits_reconstruct(&filed), "and filing it as open does not close a circuit that runs on");
     let filed_e = as_element_form(&filed, [1, 0, 0, 0]).expect("the tape carries the filed zero");
     assert_eq!(
-        reconstruct_form(&filed_e, &|_| None, &mut super::common::budget()),
+        reconstruct_form(&filed_e, &|_| None, &mut super::fixtures::budget()),
         Some(REFUSE_ORBIT),
         "the court refuses it on the geometry, by name"
     );
@@ -733,7 +733,7 @@ fn reconstruct_blind_on_refuses_remainder_as_not_closed() {
     let rule = extract_rule(&one_pair, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour is a rule");
     let word = mint_sentence(&rule, &one_pair, &NoCrystal, 0).expect("it closes its own pair");
     assert_eq!(
-        reconstruct_blind_on(&word, &|_| None, Some(&one_pair), &NoCrystal, &mut super::common::budget()),
+        reconstruct_blind_on(&word, &|_| None, Some(&one_pair), &NoCrystal, &mut super::fixtures::budget()),
         None,
         "the form closes the family it was minted over"
     );
@@ -742,7 +742,7 @@ fn reconstruct_blind_on_refuses_remainder_as_not_closed() {
     // H1, 70.4 — separated, because `"23"` is ONE two-hue body now.
     let wider = vec![(x, y), (grid(&["100"]), grid(&["203"]))];
     assert_eq!(
-        reconstruct_blind_on(&word, &|_| None, Some(&wider), &NoCrystal, &mut super::common::budget()),
+        reconstruct_blind_on(&word, &|_| None, Some(&wider), &NoCrystal, &mut super::fixtures::budget()),
         Some(REFUSE_NOT_CLOSED),
         "a remainder on any pair is the refusal"
     );
@@ -812,7 +812,7 @@ fn reconstruct_form_at_composes_citation_refuses_missing_vertex() {
         }
     };
     assert_eq!(
-        reconstruct_form_at(&citer_e, &cover, None, &NoCrystal, &mut super::common::budget()).map(|r| r.reason),
+        reconstruct_form_at(&citer_e, &cover, None, &NoCrystal, &mut super::fixtures::budget()).map(|r| r.reason),
         None,
         "the court resolved the citation, composed it, and agreed"
     );
@@ -825,7 +825,7 @@ fn reconstruct_form_at_composes_citation_refuses_missing_vertex() {
             false => None,
         }
     };
-    let refusal = reconstruct_form_at(&citer_e, &hollow, None, &NoCrystal, &mut super::common::budget())
+    let refusal = reconstruct_form_at(&citer_e, &hollow, None, &NoCrystal, &mut super::fixtures::budget())
         .expect("the cited form carries no such vertex");
     assert_eq!(refusal.reason, REFUSE_DERIVATION);
     assert!(
@@ -872,7 +872,7 @@ fn reconstruct_form_at_refuses_uncomposed_derivation_at_vertex() {
         &cover,
         None,
         &NoCrystal,
-        &mut super::common::budget(),
+        &mut super::fixtures::budget(),
     )
     .expect("the citations reach a different vertex than the word carried");
     assert_eq!(refusal.reason, REFUSE_DERIVATION);

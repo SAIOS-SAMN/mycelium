@@ -1,7 +1,7 @@
 // 45.2, 45.3 — THE LEDGER IS THE CLOCK: causal order is partial, and an
 // extent is replayed from the chain that holds it.
 
-use super::common::speak_pair;
+use super::fixtures::speak_pair;
 use crate::cognition::*;
 
 /// A2 / 5.2b. Supersession on the dialect book is CAUSAL ORDER (45.3), not
@@ -63,7 +63,7 @@ speak_pair(&mut k, &a, &b, [1; 32]);
 let own_head = k.chain().head_stamp().expect("the mind has acted");
 k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), Some(own_head));
 
-let key = super::common::court_key("peer");
+let key = super::fixtures::court_key("peer");
 let mut peer = crate::chronometry::ReceiptChain::with_signer(key.verifying_bytes());
 let pr = peer.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
 let pre = crate::court::admission::SignedPrefix {
@@ -76,7 +76,7 @@ let pre = crate::court::admission::SignedPrefix {
     payload: pr.stamp.key(),
 };
 assert!(matches!(
-    k.admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &pr),
+    k.admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &pr),
     crate::court::admission::Admitted::Parent(_)
 ));
 let chain_before = k.dialect_chain_len();
@@ -288,7 +288,7 @@ k.note_persisted(at);
 assert_eq!(k.clock(None).persisted, Some(at));
 
 // A peer's line: the last height admitted from it, and the gap.
-let key = super::common::court_key("peer");
+let key = super::fixtures::court_key("peer");
 let mut peer = crate::chronometry::ReceiptChain::with_signer(key.verifying_bytes());
 let pr = peer.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
 let pre = crate::court::admission::SignedPrefix {
@@ -301,7 +301,7 @@ let pre = crate::court::admission::SignedPrefix {
     payload: pr.stamp.key(),
 };
 assert!(matches!(
-    k.admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &pr),
+    k.admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &pr),
     crate::court::admission::Admitted::Parent(_)
 ));
 let c = k.clock(None);

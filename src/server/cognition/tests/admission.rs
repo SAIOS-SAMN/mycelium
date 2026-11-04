@@ -42,23 +42,23 @@ fn before_genesis() -> crate::economy::Anchor {
 #[test]
 fn admit_receipt_cites_and_climbs_above_peer_height() {
     use crate::court::admission::Admitted;
-    let key = super::common::court_key("peer");
+    let key = super::fixtures::court_key("peer");
     let peer = peer_line(key.verifying_bytes(), 3);
     let mut k = Court::new();
     let a = vec![(0, 0, 1), (0, 1, 1)];
     let b = vec![(0, 0, 2), (0, 1, 2)];
-    super::common::speak_pair(&mut k, &a, &b, [1; 32]);
+    super::fixtures::speak_pair(&mut k, &a, &b, [1; 32]);
     let local_h = k.height();
     let peer_h = peer[2].stamp.h;
     assert!(local_h < peer_h, "the peer is ahead: {local_h} < {peer_h}");
     let head = peer[2].clone();
     assert!(
-        matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head), Admitted::Gap { .. }),
+        matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &head), Admitted::Gap { .. }),
         "a chain this mind has never held is a gap, not an admission"
     );
     for r in &peer {
         assert!(
-            matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(r), &key), r), Admitted::Parent(_)),
+            matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(r), &key), r), Admitted::Parent(_)),
             "back-fill in order admits K {}",
             r.stamp.k
         );
@@ -66,7 +66,7 @@ fn admit_receipt_cites_and_climbs_above_peer_height() {
     assert_eq!(k.pending_parents(), 3, "three admitted, none cited yet");
     assert_eq!(k.known_head(&key.verifying_bytes()), Some((head.stamp.place(), head.chain_hash)));
     let c = vec![(0, 0, 5), (0, 1, 5)];
-    super::common::speak_pair(&mut k, &a, &c, [2; 32]);
+    super::fixtures::speak_pair(&mut k, &a, &c, [2; 32]);
     assert_eq!(k.pending_parents(), 0, "the step consumed them");
     assert!(k.height() > peer_h, "height climbed on an ADMITTED receipt: {} over the peer's {peer_h}", k.height());
 }
@@ -82,17 +82,17 @@ fn bind_identity_seals_under_key_and_refuses_rebind() {
     k.bind_identity([0xab; 32]);
     let a = vec![(0, 0, 1), (0, 1, 1)];
     let b = vec![(0, 0, 2), (0, 1, 2)];
-    super::common::speak_pair(&mut k, &a, &b, [1; 32]);
+    super::fixtures::speak_pair(&mut k, &a, &b, [1; 32]);
     assert!(k.chain().own().count() > 0, "the mind sealed nodes");
     assert!(k.chain().own().all(|r| r.stamp.vk == [0xab; 32]), "under the key bound before its first act");
     k.bind_identity([0xcd; 32]);
     assert_eq!(k.chain().signer(), [0xab; 32], "a sealed ledger keeps the key it sealed under");
     assert!(k.chain().verify_chain_integrity(), "and its line still verifies");
 
-    let key = super::common::court_key("peer");
+    let key = super::fixtures::court_key("peer");
     let r = peer_line(key.verifying_bytes(), 1).remove(0);
     assert!(matches!(
-        k.admit_receipt(ORIGIN, super::common::verified(&pre(&r), &key), &r),
+        k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&r), &key), &r),
         crate::court::admission::Admitted::Parent(_)
     ));
     assert_eq!(k.known_head(&key.verifying_bytes()).map(|h| h.0), Some(crate::chronometry::Place::GENESIS), "the peer's author stands");
@@ -102,12 +102,12 @@ fn bind_identity_seals_under_key_and_refuses_rebind() {
 #[test]
 fn admit_receipt_refuses_foreign_origin() {
     use crate::court::admission::{Admitted, REFUSE_ORIGIN};
-    let key = super::common::court_key("peer");
+    let key = super::fixtures::court_key("peer");
     let r = peer_line(key.verifying_bytes(), 1).remove(0);
     let mut k = Court::new();
     let mut foreign = pre(&r);
     foreign.genesis = [1; 32];
-    assert_eq!(k.admit_receipt(ORIGIN, super::common::verified(&foreign, &key), &r), Admitted::Refused(REFUSE_ORIGIN));
+    assert_eq!(k.admit_receipt(ORIGIN, super::fixtures::verified(&foreign, &key), &r), Admitted::Refused(REFUSE_ORIGIN));
     assert_eq!(k.pending_parents(), 0);
     assert!(k.known_head(&key.verifying_bytes()).is_none());
 }
@@ -118,17 +118,17 @@ fn admit_receipt_refuses_foreign_origin() {
 #[test]
 fn admit_receipt_refuses_signature_by_other_key() {
     use crate::court::admission::{Admitted, REFUSE_RECEIPT};
-    let victim = super::common::court_key("victim");
-    let forger = super::common::court_key("forger");
+    let victim = super::fixtures::court_key("victim");
+    let forger = super::fixtures::court_key("forger");
     let r = peer_line(victim.verifying_bytes(), 1).remove(0);
     let mut k = Court::new();
     assert_eq!(
-        k.admit_receipt(ORIGIN, super::common::verified(&pre(&r), &forger), &r),
+        k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&r), &forger), &r),
         Admitted::Refused(REFUSE_RECEIPT),
         "the signature verified under the forger; the receipt names the victim"
     );
     assert!(k.known_head(&victim.verifying_bytes()).is_none(), "and the victim's head is untouched");
-    assert!(matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&r), &victim), &r), Admitted::Parent(_)));
+    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&r), &victim), &r), Admitted::Parent(_)));
 }
 
 /// Two roots under one key at one K, each measuring its own lane.
@@ -148,7 +148,7 @@ fn two_roots(liar: [u8; 32]) -> (crate::chronometry::KStepReceipt, crate::chrono
 #[test]
 fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
     use crate::court::admission::Admitted;
-    let key = super::common::court_key("liar");
+    let key = super::fixtures::court_key("liar");
     let liar = key.verifying_bytes();
     let (ra, rb) = two_roots(liar);
     assert_eq!(ra.stamp.k, rb.stamp.k, "one K");
@@ -159,8 +159,8 @@ fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
     k.treasury_mut().enroll(liar, bond, before_genesis());
     assert_eq!(k.treasury().bond_of(&liar), Some(bond.into()), "the liar is bonded");
     let supply = k.treasury().supply().expect("measured");
-    assert!(matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&ra), &key), &ra), Admitted::Parent(_)));
-    assert!(matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&rb), &key), &rb), Admitted::Equivocation { .. }));
+    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&ra), &key), &ra), Admitted::Parent(_)));
+    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&rb), &key), &rb), Admitted::Equivocation { .. }));
     assert_eq!(k.treasury().bond_of(&liar), Some([0; 4].into()), "the bond is burned whole");
     assert_eq!(
         Ok(k.treasury().supply().expect("still measured")),
@@ -169,7 +169,7 @@ fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
     );
     assert!(k.treasury().audit().is_ok(), "and §6 holds through the forfeiture");
     let after = k.treasury().supply();
-    assert!(matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&rb), &key), &rb), Admitted::Equivocation { .. }));
+    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&rb), &key), &rb), Admitted::Equivocation { .. }));
     assert_eq!(k.treasury().supply(), after, "a second frame burns nothing");
 }
 
@@ -178,7 +178,7 @@ fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
 #[test]
 fn accept_equivocation_burns_bond_once() {
     use crate::court::admission::admit_equivocation;
-    let key = super::common::court_key("liar");
+    let key = super::fixtures::court_key("liar");
     let liar = key.verifying_bytes();
     let (ra, rb) = two_roots(liar);
     let mut k = Court::new();
@@ -187,7 +187,7 @@ fn accept_equivocation_burns_bond_once() {
     k.treasury_mut().enroll(liar, bond, before_genesis());
     let supply = k.treasury().supply().expect("measured");
     assert!(k.known_head(&liar).is_none(), "this court heard neither truth itself");
-    let proof = admit_equivocation(super::common::verified(&pre(&ra), &key), &ra, super::common::verified(&pre(&rb), &key), &rb)
+    let proof = admit_equivocation(super::fixtures::verified(&pre(&ra), &key), &ra, super::fixtures::verified(&pre(&rb), &key), &rb)
         .expect("two signed roots at one K are the proof");
     assert_eq!(k.accept_equivocation(proof), Some(bond.into()), "the reply reports the bond that left");
     assert_eq!(k.treasury().bond_of(&liar), Some([0; 4].into()), "burned whole");
@@ -208,13 +208,13 @@ fn accept_equivocation_burns_bond_once() {
 #[test]
 fn admit_backfill_closes_gap_as_receipts_arrive() {
     use crate::court::admission::Admitted;
-    let key = super::common::court_key("peer");
+    let key = super::fixtures::court_key("peer");
     let vk = key.verifying_bytes();
     let peer = peer_line(vk, 4);
     let head = peer[3].clone();
     let place = |n: usize| peer[n].stamp.place();
     let mut k = Court::new();
-    let first = k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head);
+    let first = k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &head);
     assert_eq!(first, Admitted::Gap { vk, from: None, to: place(2) }, "from the line's start to the predecessor");
     assert_eq!(k.pending_parents(), 0, "nothing is cited while the chain is gapped");
     assert!(k.known_head(&vk).is_none());
@@ -223,14 +223,14 @@ fn admit_backfill_closes_gap_as_receipts_arrive() {
     assert_eq!(k.admit_backfill(&peer[..2], &mut chase), (2, None), "a page of two admits by its chain, citing nothing unheld");
     assert_eq!(k.known_head(&vk).map(|h| h.0), Some(place(1)), "the head this node holds moved to the second");
     assert_eq!(
-        k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head),
+        k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &head),
         Admitted::Gap { vk, from: Some(place(1)), to: place(2) },
         "the page stopped short: still a gap"
     );
     assert_eq!(k.pending_parents(), 0, "and still nothing cited");
     assert_eq!(k.admit_backfill(&peer[2..3], &mut chase), (1, None), "the next page closes the chain");
     assert!(
-        matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head), Admitted::Parent(_)),
+        matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &head), Admitted::Parent(_)),
         "the head admits once the chain reaches it"
     );
     assert_eq!(k.pending_parents(), 1, "only the closing frame is cited");

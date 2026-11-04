@@ -1,7 +1,7 @@
 // 78.11, MR1 — a linear function of the vectors, held by its images: the
 // laws it is read by, on the actions of the engine's own versors.
 
-use super::common::q;
+use super::fixtures::q;
 use crate::transducer::cga::*;
 
 /// A (3, 4, 5) turn in `e₁e₂` and a translation, both in `Cl(4, 1)`: a
@@ -50,7 +50,7 @@ fn kernel_of_is_fixed_flat_for_turn_less_one() {
 #[test]
 fn motion_modes_composes_back_to_action() {
     let (turn, _) = motions();
-    let modes = match motion_modes(&turn, &mut super::common::budget()) {
+    let modes = match motion_modes(&turn, &mut super::fixtures::budget()) {
         Some(Ok(ms)) => ms,
         other => panic!("the modes read: {other:?}"),
     };
