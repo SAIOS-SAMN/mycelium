@@ -95,6 +95,24 @@ such change is named here.
   `client::sdk::Concluded.residue` and
   `client::sdk::vocabulary::GenomeWriteTally.residue`.
 
+### Transduction is factorisation; every path is an orbit (ruled 2026-11-04)
+- **MU-SENSING §3.9:** transducing a pair splits its deformation into the
+  motion the held algebra carries and the residue it does not
+  (deformation = motion ∘ residue). Several factorisations are held as a
+  vortex. The court derives the residue and admits a claim on a match. A
+  residue no word spells demands a word, and one no sense reads demands a
+  sense.
+- **Every path of perception is an orbit, never a loop.**
+  - Shear is gravitational alignment toward the motion an attractor
+    compels.
+  - Precession is the residue per lap.
+  - A path with no shear is a loop, refused.
+  - Alignment is learning: elastic, plastic or fracture (78.73).
+- "Loop" is replaced by "orbit" in MU-SENSING §3.7, LAW-FIELD v1 (its
+  carrier, readings, wire and fixtures), GLOSSARY (Orbit of perception,
+  Transduction as factorisation) and ROADMAP. ROADMAP track 26 gains
+  S4b, rank n and factorisation, for v0.4.0.
+
 ### μ is the metabolic cost of traversal (ruled 2026-11-04)
 - μ is what moving through the field costs, paid as the share of the
   frame a change covers. It is never a measure of meaning: holonomy is

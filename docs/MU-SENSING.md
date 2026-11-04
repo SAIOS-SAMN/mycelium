@@ -341,13 +341,15 @@ bubble (a thought bubble), renamed 2026-11-02.
 - **The geometry is the field's connection.** Moving from one chart to
   another is a **transition**, a versor (the refraction of A.16; the
   transitions of 25.12). The transitions are the field's connection.
-- **Curvature is the holonomy of a loop of transitions:** the product of
-  the transitions around the loop, read by its modes. Where the product
-  is elliptic, it is an exact turn. This is the holonomy of MU-RECURSION
-  10.3 and 12.6, already built. Curvature is gravity: it is produced by
-  the field's orbits, local orbits shearing the orthogonal orbit class.
-  Where nothing is held, the transitions around every loop compose to the
-  identity, and the field is flat.
+- **Curvature is the holonomy of an orbit through the atlas:** the
+  product of the transitions along one lap of the orbit, read by its
+  modes. Where the product is elliptic, it is an exact turn. This is the
+  holonomy of MU-RECURSION 10.3 and 12.6, already built. A path through
+  the charts is never a closed loop: it is an orbit, sheared by gravity
+  (§3.9). Curvature is gravity: it is produced by the field's orbits,
+  local orbits shearing the orthogonal orbit class. Where nothing is held,
+  the transitions along every lap compose to the identity, and the field
+  is flat.
 - **A well is the curvature around one attractor**, produced by its local
   orbit. A held percept and a held thought are one well at two stages
   (`transducer/field/`, MU-CLIENT §4).
@@ -440,9 +442,9 @@ bubble (a thought bubble), renamed 2026-11-02.
   "base the class, fibre the gauge" (MU-RECURSION 25.12). An axis taken
   apart (§3.6) adds a level, a field within the field, which gives a
   tower of fibrations, never a flat product.
-- **Holonomy in turns, exactly.** A loop of perception is a loop of
-  charts. Its holonomy is the product of the transitions around it, read
-  by its modes. An elliptic mode gives an exact turn in ℚ/ℤ, and its
+- **Holonomy in turns, exactly.** Perception moves in orbits through the
+  charts. An orbit's holonomy is the product of the transitions along one
+  lap, read by its modes. An elliptic mode gives an exact turn in ℚ/ℤ, and its
   order gives a winding in ℤ. There are no coordinates on a reference
   surface and no trigonometry.
 - **Motions stay exact.** A rotation by a rational turn `t/ℓ` is exact
@@ -451,10 +453,10 @@ bubble (a thought bubble), renamed 2026-11-02.
   rational points on a circle or a sphere would mean squaring, so neither
   is used. A turn the mind cannot carry exactly is a named residue
   (78.170).
-- **Orbits.** A thought's orbit lives in the fibration. It is a loop of
-  charts in the base together with a winding in the fibre. On each lap,
-  the base loop's holonomy, which is the curvature the attractors'
-  gravity puts inside it, advances the fibre phase. That advance is the
+- **Orbits.** A thought's orbit lives in the fibration. It is a lap
+  through charts in the base together with a winding in the fibre. On
+  each lap, the base lap's holonomy, which is the curvature the
+  attractors' gravity puts along it, advances the fibre phase. That advance is the
   orbit's **precession**: the orbit closes on the base but not in the
   fibre, so it comes round held and never returns exactly. It reads as
   one of MU-CLIENT 78.168's four readings:
@@ -494,14 +496,15 @@ reading holds. Each candidate is a section of the gauge fibre, and none
 is chosen by a scalar (MU-RECURSION 25, 25.12; MU-CLIENT §4.6, §4.8; rule
 15). Every superposition in this document is a vortex: the ground's
 candidates (§3.4), the factorings of an axis (§3.6), a sample's
-perspectives (§4), and a thought's candidate forms (`Well.vortex`).
+perspectives (§4), a pair's factorisations (§3.9), and a thought's
+candidate forms (`Well.vortex`).
 
 - **A candidate's monodromy** over the family reads one of three ways
   (25.12):
   - **Flat**, order 1: no twist, an exact return. As an orbit it is
-    refused as a loop (§3.7, *Orbits*).
+    refused as a loop (§3.9).
   - **Torsion**, order `ℓ`: the fibre twists by `ℓ` and closes after `ℓ`
-    circuits. This is the precession of §3.7.
+    circuits. This is the precession of §3.7 and §3.9.
   - **Rupture**, infinite order: the candidate fails to close on that
     chart. As an orbit it is the open, escaping mode.
 - **A vortex collapses** by a perception, a glue or a court ruling. A
@@ -512,6 +515,61 @@ perspectives (§4), and a thought's candidate forms (`Well.vortex`).
   `Spin(4,0)(ℚ)`: Euclidean, with four fixed axes. Under §3.7 they are
   read in `Spin(n+1, 1)` between the charts of the field's atlas, non-Euclidean, with
   orders read as windings (ℤ) and phases (ℚ/ℤ), never as scalars.
+
+### 3.9 Transduction is factorisation; every path is an orbit
+
+**Specified** (ruled 2026-11-04; ROADMAP track 26, v0.4.0). Transducing a
+pair splits its deformation into what the held algebra carries and what
+it does not:
+
+```
+deformation  =  motion  ∘  residue
+```
+
+- **Deformation:** the whole change of the field from one sample to the
+  next, before anything absorbs it (MU-CLIENT 78.73).
+- **Motion:** what the transduction carries exactly. That is the signed
+  permutations of the phases, the re-periods and the versors: the
+  incidences that carry a body onto a body.
+- **Residue:** what no held motion carries (MU-RECURSION 0.7). It is the
+  strain, the demand, and the germ of the next word.
+- **μ** is paid for the traversal, the share of the frame the change
+  covers. The residue's meaning is never paid (§3.7).
+
+**Every path is an orbit, never a loop** (ruled 2026-11-04). A path of
+perception through the charts never closes on itself as a loop. It is an
+orbit about an attractor, and its shape is set by gravity:
+- **Shear is gravitational alignment toward motion compellment.** An
+  attractor compels a motion (its local orbit, the axiom it turns about),
+  and the gravity it produces shears every orbit of the orthogonal class
+  toward that motion (§3.7, axiomatic gravity). Shear is that alignment,
+  read per lap from the orbits held. It is never a stored force or a
+  constant.
+- **Precession is the residue per lap.** On each lap the shear advances
+  the orbit's phase by the residue of that lap's transitions. The orbit
+  comes round aligned a little further toward the compelled motion, held
+  and never repeating.
+- **A loop is refused.** A path with no shear (flat, no attractor)
+  returns exactly. That is a loop, the squaring a thought must not be,
+  and it is refused by name (`Loop`).
+- **Alignment is learning.** As shear brings an orbit's motion into line
+  with the motion its attractor compels, the residue per lap shrinks
+  toward the identity. The response is one of 78.73's three:
+  - **elastic:** the residue is absorbed;
+  - **plastic:** a held form is amended forward;
+  - **fracture:** the residue's germ mints a new word.
+
+**What follows from the factorisation:**
+1. **Exact, and held when ambiguous.** Every pair factors as motion ∘
+   residue. Where several factorisations hold, all are held as a vortex,
+   never reduced to the "smallest" residue by a scalar.
+2. **Adjudicated.** A claim states its motion and its residue. The court
+   reconstructs the motion, derives the residue itself, and admits the
+   claim on a match (§0).
+3. **Emergence at two levels.** A residue no word spells is a demand for
+   a word. A residue no sense reads is a demand for a sense (§4.1).
+4. **Any rank.** Motions live in `Spin(n+1, 1)` with re-periods per
+   phase, so residues are read at any rank (v0.4.0, the rest of S4).
 
 ## 4. Perspective: one sample, many readings
 
