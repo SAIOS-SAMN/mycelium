@@ -9,7 +9,7 @@
 //! and never reads the claimed residue into its own: a disagreement is
 //! returned as the residue of the residues, the links each side holds that
 //! the other does not (MU-HOSTING §5a.10), never a flag. At any rank: the
-//! samples, the motion and the links carry their own.
+//! samples, the motion and the links each carry the rank.
 
 use crate::transducer::family::transduce::{need_of_motion, Factorisation, Motion, TransductionRefusal};
 use crate::transducer::sample::Sample;

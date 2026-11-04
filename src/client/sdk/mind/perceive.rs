@@ -802,7 +802,7 @@ impl Mind {
         }
     }
 
-    /// A TASK'S SAMPLES PERCEIVED AT THEIR OWN RANK (MU-SENSING §0, §5;
+    /// A TASK'S SAMPLES PERCEIVED AT THE SAMPLES' OWN RANK (MU-SENSING §0, §5;
     /// track 26 S4b): every task the mind takes is perceived first, its
     /// bodies, ground and each pair's vortex of factorisations held under
     /// its citation (`board.percepts`) as an object the mind reasons about.

@@ -1,6 +1,6 @@
 // MU-SENSING §0, §5; ROADMAP track 26 S4b — A TASK OF ANY RANK IS
-// PERCEIVED, NOT ONLY CARRIED: the mind takes a task's samples at their own
-// rank, holds the percept under the task's citation (its bodies, its ground,
+// PERCEIVED, NOT ONLY CARRIED: the mind takes a task's samples at the
+// samples' own rank, holds the percept under the task's citation (its bodies, its ground,
 // each pair's vortex of factorisations), and only then offers the samples to
 // the alphabet's section, which spells one rank.
 

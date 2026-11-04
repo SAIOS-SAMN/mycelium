@@ -125,7 +125,7 @@ pub(crate) struct Board {
     /// one entry per task, the corpus its bound — a reading, never read back
     /// by cognition.
     pub(crate) tasks: crate::network::nerve::Keyed<super::perceive::TaskRead>,
-    /// EACH COURT TASK'S SAMPLES PERCEIVED AT THEIR OWN RANK, by its
+    /// EACH COURT TASK'S SAMPLES PERCEIVED AT THE SAMPLES' OWN RANK, by its
     /// citation (`perceive_envelope`; track 26 S4b): the bodies, the ground
     /// and each pair's vortex of factorisations, one entry per task, the
     /// corpus its bound.

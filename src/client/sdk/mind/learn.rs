@@ -38,7 +38,7 @@ impl Mind {
                 // reads the next one past it (`lapse_standing_task`).
                 let landed = entity.hypha.tuniversal().map(|p| p.h);
                 // Track 26 S4b: the envelope's samples are perceived at
-                // their own rank; the word path takes the alphabet's section,
+                // the samples' own rank; the word path takes the alphabet's section,
                 // and a task off it stops perceived (`perceive_envelope`).
                 let envelope = body.ok().filter(|b| !b.is_empty()).and_then(|b| dialogue::decode_task_envelope(&b));
                 let section = envelope.and_then(|e| entity.perceive_envelope(&e, super::perceive::SceneKind::Task));

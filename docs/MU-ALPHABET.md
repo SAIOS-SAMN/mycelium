@@ -54,7 +54,7 @@ The seed letters live on a four-axis Euclidean chart with axes
   in its family: the space axes on `e0` and `e1`, the orientation
   character on `e2`, the place on `e3` (`slot_of_axis`).
 - **The sensor plane** is the plane a perspective assigns, its first two
-  space axes at their slots (MU-SENSING §9). Under the default perspective
+  space axes, each at its slot (MU-SENSING §9). Under the default perspective
   it is `(0,1)` (`sensor_plane`). No axis of it is a row or a column.
 - **A sample of another rank** is perceived at any rank (its bodies,
   motions and residue; MU-SENSING §3.9), but the seventeen letters do not

@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! A TASK OF ANY RANK PERCEIVED (MU-SENSING §1, §3, §5; ROADMAP track 26
-//! S4b): the family's samples lifted into their enclosures and bodies, the
+//! S4b): the family's samples lifted into enclosures and bodies, the
 //! ground deduced, and every pair factored as motion ∘ residue. One path at
 //! every rank; nothing in it names an axis, and the roles of the axes are
 //! the perspective's (`perspective::Perspective`, the default reading every
@@ -10,8 +10,8 @@
 //! The mind holds the percept as an object it reasons about (MU-SENSING §0):
 //! its rank and the roles of its axes (so it knows how many dimensions it
 //! read and that the world has more, §5), the ground it read, the bodies of
-//! each sample by their boundaries, and each pair's vortex of
-//! factorisations with their residues. Spelling a percept in words is the
+//! each sample by the bodies' boundaries, and each pair's vortex of
+//! factorisations with the residues. Spelling a percept in words is the
 //! alphabet's, which spells one rank (`alphabet::alphabet_admits`); the
 //! percept itself is read at any rank.
 
