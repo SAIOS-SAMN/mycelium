@@ -46,6 +46,7 @@ chart addresses may change (CHANGELOG › Unreleased).
 |---|---|---|
 | Track 26 S4b: rank-`n` perception and transduction as factorisation ([MU-SENSING](docs/MU-SENSING.md) §3.6, §3.9) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress on branch `s4b-rank-n`. Built: the fixed axis constants replaced by a perspective's roles; the alphabet kept at `n = 3`, derived, and a higher rank refused by name; D2.5 O3 derived; the rank-`n` link; connection by grade; every pair factored as motion ∘ residue, held as a vortex, with the court's admission on a derived residue; every task perceived by the mind at its own rank. Open: the rank-2 carrier of the word machinery (`family::Grid`) and the alphabet past `n = 3` |
 | Track 26 S4c: the hypha serves tasks of any rank; a claim of factorisation on the wire ([MU-SENSING](docs/MU-SENSING.md) §3.9, §6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Built on branch `s4c-rank-n-hypha`: the registry posts, serves and addresses tasks of any rank, the word machinery's readers on the section; the claim of factorisation as the solve's claim kind 1 (78.126), admitted by reconstruction, recorded and never paid (ruled); the mind speaks one claim per held factorisation of a task beyond the alphabet |
+| Track 26 S4d: the word machinery reads a sample; `family::Grid` retired ([MU-SENSING](docs/MU-SENSING.md) §3.9, §5) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Stage 1 built on branch `s4d-rank-n-words` (`spelled::SectionSample`); stages 2 and 3 open; spelling a rank-3 sample's planes waits on a ruling |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | With track 26 S4b's remainder |
 | Track 26, S4a and S7–S9 | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 is agreed with the peer kernels |
 
@@ -1744,7 +1745,7 @@ Each phase is one commit:
     - **Open** (the next phase):
       - the word, chart and rule-language machinery's rank-2 carrier
         (`family::Grid`, about 94 files), held as the alphabet's
-        section;
+        section: retired in S4d, stage 1;
       - the hypha's registry and the court's solve replay, which load
         posted tasks through the section (`decode_posted_task`): built in
         S4c;
@@ -1796,8 +1797,37 @@ Each phase is one commit:
         ground it read where it read one symbol.
       - The fixture: a rank-3 posted task (`server::tests::fixtures`),
         run end to end in process.
-    - **Open:** the word machinery's rank-2 carrier, the letters past
-      `n = 3`, and T3's versor motions.
+    - **Open:** the word machinery's rank-2 carrier (S4d), the letters
+      past `n = 3`, and T3's versor motions.
+
+    **S4d (v0.4.0), the word machinery reads a sample** (MU-SENSING §3.6,
+    §3.9, §5; the last of S4). Every use of `family::Grid` is read one of
+    three ways: (a) a reader of any rank reads the `Sample` itself; (b) a
+    reader that is rank 2 by the letters' mathematics reads a sample on
+    the alphabet's section, never a carrier that fixes a rank of its own;
+    (c) a corpus's own rows stay in its decoder (`sources/arc-agi`).
+    - **Stage 1, built** (branch `s4d-rank-n-words`):
+      `transducer::spelled::SectionSample`, a `Sample` admitted onto the
+      section, held whole with its place and refused by name off it,
+      replaces `family::Grid` throughout (about 17 files of class (a), 77
+      of (b), one of (c)). The symbol set's posted test inputs, the ground,
+      the envelopes' dilation and every re-period, need, share and
+      transduction of a pair read the sample at its own rank. An absent
+      test output is `None`. `raster::AXES`, `extents` and `raster_of`
+      are retired. No wire or address change. Claim
+      `word_machinery_reads_a_rank_three_sample_end_to_end`.
+    - **Stage 2:** the section's planar readers (`SectionLink`, the
+      `(i64, i64, u8)` painted sites, the chart's two coordinates, the
+      line readers of `SectionSample`) read through a perspective's plane
+      of a sample (`Perspective::plane`), and speech's canvas
+      (`statement::speak_elements`) writes the sample in place, not a
+      raster.
+    - **Stage 3:** the rule-language's `About::Grid` and the remaining
+      planar names renamed by function (track 11).
+    - **Waits on a ruling:** whether a rank-3 sample's planes (one
+      section per coordinate of its other axis, under a perspective) may
+      be spelled by the letters, or a rank-3 task stays `BeyondAlphabet`
+      until the letters are generalised past `n = 3` (MU-SENSING §5).
 12. **S10, emergent senses** (MU-SENSING §4.1; after S6 and S7–S9,
     because a sense is built on the field and its perspectives):
     - A sense is a typed object: a reading from a sample to a cochain of
