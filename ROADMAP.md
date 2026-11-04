@@ -1482,14 +1482,14 @@ Each phase is one commit:
      `Cl(n+1, 1)`, so the geometry is non-Euclidean.
    - Nesting is a fibration (25.12: base the class, fibre the gauge). A
      nested axis adds a field within the field.
-   - The holonomy of a loop of perception is the product of the
-     transitions around its loop of charts, read by its modes: an exact
-     turn in ℚ/ℤ where elliptic. Motions by rational turns are exact over
+   - The holonomy of an orbit of perception is the product of its
+     transitions over one lap through the charts, read by its modes: an
+     exact turn in ℚ/ℤ where elliptic. Motions by rational turns are exact over
      `ℚ(ζ_ℓ)`.
    - One field carrier serves perception and the physics' shells
      (MU-TOPOLOGY §6, Concordance 2.10; MU-RECURSION D4).
    - Claims: `sample_lifts_into_the_field_without_unit_norm`,
-     `loop_holonomy_is_the_product_of_its_transitions`,
+     `orbit_holonomy_is_the_product_of_its_transitions_per_lap`,
      `flat_product_reads_no_holonomy_where_curved_field_reads_it`,
      `orbit_precesses_by_the_holonomy_its_attractors_curve`,
      `zero_precession_orbit_refused_as_loop`,
@@ -1596,9 +1596,10 @@ Each phase is one commit:
     - Claim: `only_disjoint_plane_orbits_change_rate_under_axiomatic_gravity`.
     - The court's pressure (`Field::beat_under`) is wired to the field's
       shape.
-    - `Field` orbits are attached to wells. Precession is the base
-      loop's holonomy, and an orbit with zero precession is refused
-      `Loop`.
+    - `Field` orbits are attached to wells. Shear is gravitational
+      alignment toward the motion the attractor compels; precession is
+      the residue per lap; a path with zero precession is a loop, refused
+      `Loop` (MU-SENSING §3.9).
     - The vortex's monodromy (25.12) is read in `Spin(n+1, 1)` between
       the charts of the field's atlas, not in `Spin(4,0)(ℚ)`.
     - Claims: `axiomatic_gravity_shears_the_orthogonal_class`,
@@ -1611,7 +1612,18 @@ Each phase is one commit:
     - Reflective claims: `holonomy_stated_by_a_mind_reconstructed_by_a_court`,
       `precession_stated_by_a_mind_reconstructed_by_a_court`,
       `vortex_stated_with_its_monodromy_reconstructed_by_a_court`.
-11. **S10, emergent senses** (MU-SENSING §4.1; after S6 and S7–S9,
+11. **S4b (v0.4.0), rank n and transduction as factorisation**
+    (MU-SENSING §3.9): the rest of S4 (`GRID_AXES`, `FRAME_AXIS`,
+    `PLANE_ROW`/`PLANE_COL`, the rank-2 raster and `Link`), so tasks of
+    any rank are perceived, not only carried; and every pair factored as
+    motion ∘ residue, with several factorisations held as a vortex.
+    - Claims: `deformation_factors_as_motion_then_residue`,
+      `several_factorisations_held_as_a_vortex`,
+      `court_derives_the_residue_and_admits_on_match`,
+      `rank_three_task_is_perceived`, `link_carries_rank_n_coordinates`.
+    - Track 10 takes 78.73's three responses (elastic, plastic,
+      fracture) as the mind's response to a residue.
+12. **S10, emergent senses** (MU-SENSING §4.1; after S6 and S7–S9,
     because a sense is built on the field and its perspectives):
     - A sense is a typed object: a reading from a sample to a cochain of
       the cover, composed from held readings and adjoined generators. A
