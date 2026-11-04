@@ -8,12 +8,17 @@
 // under, signed. The court reconstructs the motion on its copy of the posted
 // samples, derives the residue itself, and answers the verdict.
 //
-//! The act:
+//! The act is a claim kind under the solve (78.126: the wire's bytes below
+//! the court's range are spent, so a new act is a sub-kind; MU-SCIENCE
+//! §9.2):
 //!
-//! `[ACT_FACTORISATION][voice 32][task citation 32][pair][rank u16][(source
-//! u16)(sense u8) · rank][period u16 · rank][link count][link · count]`,
-//! then optionally `[GRND][len u32][symbol]`, then `[SIGN][sig 64]`.
+//! `[ACT_SOLVE][SOLVE_KIND_FACTORISATION][voice 32][task citation
+//! 32][pair][rank u16][(source u16)(sense u8) · rank][period u16 ·
+//! rank][link count][link · count]`, then optionally `[GRND][len
+//! u32][symbol]`, then `[SIGN][sig 64]`.
 //!
+//! - The kind byte tells the claim from a solve of outputs
+//!   (`SOLVE_KIND_OUTPUTS`); neither reader reads the other's act.
 //! - `pair` and `link count` are counts written by their own coordinate
 //!   (LEB128, minimal); `pair` is the train pair's index in the family.
 //! - Output phase `j` of the motion reads source phase `source` in `sense`
@@ -31,10 +36,11 @@
 //!
 //! The reply is the verdict: admitted, the residue of the residues
 //! (`unclaimed`, `uncarried`), or a refusal by name. An admitted claim pays
-//! nothing on this wire (MU-SENSING §3.9: μ is the traversal's cost, and a
-//! factorisation of a train pair discharges no withheld pair).
+//! nothing, by ruling (MU-SENSING §3.9): μ is the metabolic cost of
+//! traversal; a factorisation is an adjudicated perception and its residue
+//! is meaning, which is content and never paid (§3.7).
 
-use super::{act_is, ACT_FACTORISATION};
+use super::{solve_kind, ACT_SOLVE, SOLVE_KIND_FACTORISATION};
 use crate::transducer::address::{put_bytes, put_key_bytes, put_key_count, put_u16_count, take_bytes, take_key_bytes, take_key_count, take_u16_count};
 use crate::transducer::family::transduce::{Enclosure, Motion, Sense, SignedPermutation};
 use crate::transducer::sentence::Link;
@@ -165,7 +171,7 @@ pub fn encode_factorisation(
     ground: Option<&[u8]>,
 ) -> Option<Vec<u8>> {
     use ed25519_dalek::Signer;
-    let mut out = vec![ACT_FACTORISATION];
+    let mut out = vec![ACT_SOLVE, SOLVE_KIND_FACTORISATION];
     out.extend_from_slice(&key.verifying_key().to_bytes());
     out.extend_from_slice(citation);
     put_key_count(&mut out, pair);
@@ -185,12 +191,12 @@ pub fn encode_factorisation(
 /// decode, or where bytes stand after it that are no signature; `signed`
 /// whether its voice signed it. A stated ground is one symbol, never empty.
 pub fn decode_factorisation(body: &[u8]) -> Option<FactorisationAct> {
-    if !act_is(body, ACT_FACTORISATION) {
+    if solve_kind(body) != Some(SOLVE_KIND_FACTORISATION) {
         return None;
     }
-    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let task: [u8; 32] = body.get(33..65)?.try_into().ok()?;
-    let mut p = 65usize;
+    let voice: [u8; 32] = body.get(2..34)?.try_into().ok()?;
+    let task: [u8; 32] = body.get(34..66)?.try_into().ok()?;
+    let mut p = 66usize;
     let pair = take_key_count(body, &mut p)?;
     let motion = take_motion(body, &mut p)?;
     let residue = take_links(body, &mut p)?;

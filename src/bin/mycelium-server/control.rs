@@ -194,8 +194,9 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
         answer(s, reply);
         return true;
     }
-    if kind == dialogue::ACT_FACTORISATION {
-        // MU-SENSING §3.9; track 26 S4c — A CLAIM OF FACTORISATION, judged
+    if dialogue::solve_kind(&frame.body) == Some(dialogue::SOLVE_KIND_FACTORISATION) {
+        // MU-SENSING §3.9; track 26 S4c — A CLAIM OF FACTORISATION, the
+        // solve's claim kind 1 (78.126: a sub-kind, never a new byte), judged
         // by reconstruction on the posted pair it names, at any rank, off
         // the registry's lock; an admitted claim is recorded and pays
         // nothing (`mycelium::server::factorisation`). A frame that does not
@@ -237,7 +238,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
         // A solve's rule is replayed on the alphabet's section (track 26
         // S4c): a task off it is refused by the alphabet's name alone, never
         // for its rank, and a claim on it is a factorisation
-        // (`ACT_FACTORISATION`).
+        // (the solve's claim kind `SOLVE_KIND_FACTORISATION`).
         let (tid, withheld, open, ground) = {
             let Ok(reg) = context.registry.lock() else { return true };
             let g = reg.section(&cite).map(|section| match section {

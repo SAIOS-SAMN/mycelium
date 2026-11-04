@@ -178,7 +178,8 @@ fn decode_solve_signs_payee_by_voice_key() {
         assert!(decode_solve(&tampered).is_some_and(|a| !a.signed), "a changed act is not what was signed");
         let other = ed25519_dalek::SigningKey::from_bytes(&[6u8; 32]).verifying_key().to_bytes();
         let mut swapped = body.clone();
-        swapped[1..33].copy_from_slice(&other);
+        // The voice follows the act's tag and its claim kind (track 26 S4c).
+        swapped[2..34].copy_from_slice(&other);
         assert!(decode_solve(&swapped).is_some_and(|a| !a.signed), "another voice named as payee");
         let unsigned = body.get(..body.len() - 68).expect("a signature at the end").to_vec();
         assert!(decode_solve(&unsigned).is_some_and(|a| !a.signed), "no signature, no payee");

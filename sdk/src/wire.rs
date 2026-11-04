@@ -12,9 +12,13 @@
 //! keeper's tick) is not in it.
 
 use mycelium::anastome::dialogue::{
-    ACT_ADOPT, ACT_COVER, ACT_DIGESTS, ACT_DOMAIN, ACT_FACTORISATION, ACT_FETCH, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE,
-    ACT_QUOTE, ACT_RECEIPTS, ACT_ENTRIES, ACT_SEAT, ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY,
+    ACT_ADOPT, ACT_COVER, ACT_DIGESTS, ACT_DOMAIN, ACT_FETCH, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE, ACT_QUOTE,
+    ACT_RECEIPTS, ACT_ENTRIES, ACT_SEAT, ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY,
 };
+
+/// THE SOLVE'S CLAIM KINDS, the byte after its tag (78.126; track 26 S4c):
+/// a solve of outputs, or a claim of factorisation.
+pub use mycelium::anastome::dialogue::{solve_kind, SOLVE_KIND_FACTORISATION, SOLVE_KIND_OUTPUTS};
 
 /// The wire's version, `major << 8 | minor`: `0x0200` is v2.0, every μ field
 /// four exact rational lanes.
@@ -32,7 +36,6 @@ pub const ACT_TABLE: &[(u8, &str)] = &[
     (ACT_PROBE, "probe"),
     (ACT_PEERS, "peers"),
     (ACT_SPEECH, "speech"),
-    (ACT_FACTORISATION, "factorisation"),
     (ACT_COVER, "cover"),
     (ACT_RECEIPTS, "receipts"),
     (ACT_ENTRIES, "entries"),

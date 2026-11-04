@@ -89,10 +89,11 @@ pub fn decode_posted_task(b: &[u8]) -> Option<crate::transducer::family::Task> {
     decode_posted_samples(b).ok()?.section().ok()
 }
 
-/// 78.141 — the signed bytes' domain of a solve. Version 3 (track 26 S5,
-/// inside wire 0x0200's ruled break): the outputs are samples of any rank.
-/// Version 2 (S2) added the ground the claim was spoken under.
-const SIGNED_SOLVE: &[u8] = b"mycelium solve v3";
+/// 78.141 — the signed bytes' domain of a solve. Version 4 (track 26 S4c,
+/// inside v0.4.0's break): the claim kind follows the act's tag
+/// (`SOLVE_KIND_OUTPUTS`). Version 3 (S5): the outputs are samples of any
+/// rank. Version 2 (S2) added the ground the claim was spoken under.
+const SIGNED_SOLVE: &[u8] = b"mycelium solve v4";
 
 /// The bytes a solve's voice signs: the domain, then the act up to its
 /// signature.
@@ -102,8 +103,9 @@ fn solve_signed_bytes(unsigned: &[u8]) -> Vec<u8> {
     b
 }
 
-/// solve submission (wire v1.2; track 26 S5): `[ACT_SOLVE][voice
-/// 32][task citation 32][n u8][sample·n]`, output `i` a sample of any rank
+/// solve submission (wire v1.2; track 26 S5, S4c): `[ACT_SOLVE][kind 0][voice
+/// 32][task citation 32][n u8][sample·n]`, the claim kind
+/// `SOLVE_KIND_OUTPUTS`, output `i` a sample of any rank
 /// at `[test, i, output]` (`samples::encode_samples`'s writing),
 /// optionally `[RULE][len u32][element]` so the home speaks the rule, then
 /// optionally — track 26 S2 — `[GRND][len u32][symbol]`, the ground the
@@ -139,7 +141,7 @@ pub fn encode_solve_spoken(
     ground: Option<&[u8]>,
 ) -> Option<Vec<u8>> {
     use ed25519_dalek::Signer;
-    let mut out = vec![ACT_SOLVE];
+    let mut out = vec![ACT_SOLVE, SOLVE_KIND_OUTPUTS];
     out.extend_from_slice(&key.verifying_key().to_bytes());
     out.extend_from_slice(citation);
     super::samples::push_tests(&mut out, outputs, Member::Output).ok()?;
@@ -160,12 +162,12 @@ pub fn encode_solve_spoken(
 /// A solve read back: `None` where it does not decode, or where bytes stand
 /// after it that are no signature; `signed` whether its voice signed it.
 pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
-    if !act_is(body, ACT_SOLVE) {
+    if solve_kind(body) != Some(SOLVE_KIND_OUTPUTS) {
         return None;
     }
-    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let id: [u8; 32] = body.get(33..65)?.try_into().ok()?;
-    let mut p = 65usize;
+    let voice: [u8; 32] = body.get(2..34)?.try_into().ok()?;
+    let id: [u8; 32] = body.get(34..66)?.try_into().ok()?;
+    let mut p = 66usize;
     let outputs = super::samples::read_tests(body, &mut p, Member::Output).ok()?;
     let rule = if body.get(p..p + 4) == Some(&b"RULE"[..]) {
         p += 4;

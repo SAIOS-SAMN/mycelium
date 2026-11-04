@@ -76,13 +76,6 @@ pub enum Action {
     Syllabus,
     Probe,
     Speech,
-    /// MU-SENSING §3.9 (track 26 S4c) — A CLAIM OF FACTORISATION: a mind
-    /// states a train pair's motion and residue with its stated ground; the
-    /// court reconstructs the motion on the posted samples, derives the
-    /// residue itself and admits on a match, at any rank. Its byte 0x18 is
-    /// the first free byte after the party's transitions, taken inside
-    /// v0.4.0's break (decided 2026-11-04). It seals nothing.
-    Factorisation,
     /// 78.119 — A TIER'S FOLD ADMITTED (78.62 step 3): a kernel's settlement
     /// tier sends up its net positions per identity per lane, signed, with
     /// its prefix head; the court checks continuity and seals the fold's
@@ -154,11 +147,9 @@ pub enum Action {
 /// bytes below the court's range are spent, so the next act is a sub-kind
 /// under an existing one, never a new byte. 78.145's seat relay is one
 /// exception, at 0x53 past the court's acts, by the wire the kernels agreed;
-/// 78.152b's keeper tick another, at 0x23 among the courts' exchanges, by
-/// ruling (2026-10-09); track 26 S4c's claim of factorisation the third, at
-/// 0x18 after the party's transitions, inside v0.4.0's break (decided
-/// 2026-11-04).
-pub const ACTIONS: [Action; 58] = [
+/// 78.152b's keeper tick the other, at 0x23 among the courts' exchanges, by
+/// ruling (2026-10-09).
+pub const ACTIONS: [Action; 57] = [
     Action::Percept,
     Action::Gossip,
     Action::Demand,
@@ -181,7 +172,6 @@ pub const ACTIONS: [Action; 58] = [
     Action::Peers,
     Action::Speech,
     Action::RefineAlgebraic,
-    Action::Factorisation,
     Action::Cover,
     Action::Offer,
     Action::Installed,
@@ -249,7 +239,6 @@ impl Action {
             Action::Peers => 0x15,
             Action::Speech => 0x16,
             Action::RefineAlgebraic => 0x17,
-            Action::Factorisation => 0x18,
             Action::Cover => 0x20,
             Action::Offer => 0x21,
             Action::Installed => 0x22,
@@ -327,7 +316,6 @@ impl Action {
             | Action::Syllabus
             | Action::Probe
             | Action::Speech
-            | Action::Factorisation
             | Action::Uplink
             | Action::Domain
             | Action::Challenge
@@ -434,7 +422,6 @@ impl Action {
             Action::Syllabus => b"syllabus",
             Action::Probe => b"probe",
             Action::Speech => b"speech",
-            Action::Factorisation => b"factorisation",
             Action::Uplink => b"uplink",
             Action::Domain => b"domain",
             Action::Challenge => b"challenge",

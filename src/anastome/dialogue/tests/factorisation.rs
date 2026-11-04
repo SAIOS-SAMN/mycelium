@@ -44,6 +44,14 @@ fn factorisation_claim_round_trips() {
             signed: true
         }
     );
+    // A claim kind under the solve (78.126): never read as a solve of
+    // outputs, and a solve of outputs never read as a claim.
+    assert_eq!((bytes[0], solve_kind(&bytes)), (ACT_SOLVE, Some(SOLVE_KIND_FACTORISATION)));
+    assert!(decode_solve(&bytes).is_none(), "a claim of factorisation is no solve of outputs");
+    let outputs = spoken_outputs(&[vec![vec![1]]]).expect("a sample");
+    let solve = encode_solve(&key(), &cite, &outputs).expect("a solve writes");
+    assert_eq!(solve_kind(&solve), Some(SOLVE_KIND_OUTPUTS));
+    assert_eq!(decode_factorisation(&solve), None, "a solve of outputs is no claim of factorisation");
     let bare = decode_factorisation(&encode_factorisation(&key(), &cite, 0, &motion(), &[], None).expect("writes")).expect("reads");
     assert_eq!((bare.ground, bare.residue, bare.signed), (None, Vec::new(), true), "no ground stated reads none");
 
@@ -56,7 +64,7 @@ fn factorisation_claim_round_trips() {
     assert_eq!(decode_factorisation(&encode_factorisation(&key(), &cite, 0, &motion(), &[], Some(&[])).expect("writes")), None, "an empty ground is no symbol");
     // A permutation written with one source twice moves the seam set: no claim.
     let mut oblique = encode_factorisation(&key(), &cite, 0, &motion(), &[], None).expect("writes");
-    let at = 32 + 32 + 1 + 1 + 2; // act, voice, task, pair, rank: the first source
+    let at = 1 + 1 + 32 + 32 + 1 + 2; // act, kind, voice, task, pair, rank: the first source
     oblique[at + 3] = oblique[at];
     assert_eq!(decode_factorisation(&oblique), None, "no signed permutation, no claim");
 

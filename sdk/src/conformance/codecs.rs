@@ -125,6 +125,8 @@ fn factorisation() -> Result<String, String> {
     let act = d::decode_factorisation(&bytes).ok_or("the claim did not decode")?;
     let want = d::FactorisationAct { voice: voice(), task: CITATION, pair: 1, motion, residue: residue.clone(), ground: Some(ground), signed: true };
     same("the claim of factorisation", Some(act), want)?;
+    same("the claim's kind under the solve", d::solve_kind(&bytes), d::SOLVE_KIND_FACTORISATION)?;
+    same("the claim read as a solve of outputs", Some(d::decode_solve(&bytes).is_none()), true)?;
     for v in [
         d::FactorVerdict::Admitted,
         d::FactorVerdict::Residue { unclaimed: residue.clone(), uncarried: Vec::new() },
@@ -537,7 +539,7 @@ fn check(a: &ActRequirement) -> Option<Result<String, String>> {
         "peers" => peers(),
         "syllabus" => syllabus(),
         "speech" => speech(),
-        "factorisation" => factorisation(),
+        "solve factorisation" => factorisation(),
         "wallet" => wallet(),
         "observe query" => observe_query(),
         _ => return None,

@@ -139,7 +139,8 @@ pub const REFUSE_GROUND_NO_CANDIDATE: &str = "the stated ground is no candidate 
 /// DOES NOT SPELL: a solve's rule is replayed on the alphabet's section, and
 /// a task whose samples are off it (another rank, a wider symbol) is
 /// refused by the alphabet's name alone, never for its rank; its claims are
-/// factorisations (`ACT_FACTORISATION`), reconstructed on the samples: I.
+/// factorisations (the solve's claim kind `SOLVE_KIND_FACTORISATION`),
+/// reconstructed on the samples: I.
 pub const REFUSE_BEYOND_ALPHABET: &str = "the task's samples are off the alphabet's section: a claim on it is a factorisation";
 /// MU-SENSING §3.9 (track 26 S4c) — A CLAIM OF FACTORISATION REFUSED BEFORE
 /// ITS RESIDUE IS DERIVED: unsigned (it names its voice by the voice's

@@ -53,6 +53,28 @@ pub const ACT_TASK: u8 = Action::Task.byte();
 /// task's citation; the hypha verifies against its held answers — first verified
 /// solve takes the bounty; a repeat closure is verified and paid nothing.
 pub const ACT_SOLVE: u8 = Action::Solve.byte();
+/// THE SOLVE'S CLAIM KINDS (78.126: the wire's bytes below the court's range
+/// are spent, so a new claim is a sub-kind; MU-SCIENCE §9.2: a claim kind
+/// under `ACT_SOLVE`). The kind is the byte after the act's tag, and the
+/// layout after it is the kind's own. Kind 0 is the solve that claims a
+/// task's outputs with its rule (`encode_solve_spoken`).
+/// FORMAT: the solve act's claim kind for outputs.
+pub const SOLVE_KIND_OUTPUTS: u8 = 0;
+/// Kind 1 (track 26 S4c) is a claim of factorisation: a train pair's motion
+/// and residue with the claim's stated ground, signed; the court
+/// reconstructs the motion on the posted samples and derives the residue
+/// (`dialogue::factorisation`).
+/// FORMAT: the solve act's claim kind for a factorisation.
+pub const SOLVE_KIND_FACTORISATION: u8 = 1;
+
+/// THE CLAIM KIND A SOLVE ACT CARRIES: the byte after its tag, or none
+/// where the body is no solve act or ends at its tag.
+pub fn solve_kind(body: &[u8]) -> Option<u8> {
+    match act_is(body, ACT_SOLVE) {
+        true => body.get(1).copied(),
+        false => None,
+    }
+}
 
 /// ADOPTION (genome synchronization): the court propagates an upheld word
 /// to every server with ITS OWN VOICE as provenance — the ratifier is the
@@ -75,11 +97,6 @@ pub const COC1: &[u8; 4] = b"COC1";
 pub const ACT_ADOPT: u8 = Action::Adopt.byte();
 /// One family's cohering sentences. `[ACT_SPEECH][voice 32][task address][tu u64][n u32][len u32|element]…`.
 pub const ACT_SPEECH: u8 = Action::Speech.byte();
-/// A CLAIM OF FACTORISATION (MU-SENSING §3.9, track 26 S4c): a train pair's
-/// motion and residue with the claim's stated ground, signed; the court
-/// reconstructs the motion on the posted samples and derives the residue.
-/// The layout and its codec are `dialogue::factorisation`'s.
-pub const ACT_FACTORISATION: u8 = Action::Factorisation.byte();
 
 /// Per-sentence: 0 Stood, 1 Dialect, 2 Refused, 3 Ratified. Since 50.9
 /// (ruled 2026-09-10) these survive only as the adjudication's kind byte
