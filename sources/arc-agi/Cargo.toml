@@ -8,7 +8,7 @@
 # (ROADMAP track 26, S1).
 [package]
 name = "mycelium-source-arc-agi"
-version = "0.3.0-rc.2"
+version = "0.3.0-rc.3"
 edition = "2021"
 description = "The ARC-AGI-2 corpus's decoder for the Mycelium network: its JSON read into tasks and samples and written as posted task files, so nothing of the corpus enters the core."
 license = "Apache-2.0"

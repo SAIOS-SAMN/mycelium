@@ -6,6 +6,33 @@ such change is named here.
 
 ## Unreleased
 
+## 0.3.0-rc.3 — 2026-11-04 (release candidate)
+
+The contract the three projects pin as v0.3.0, in its one break. It
+contains everything below, down to rc.2. Its main parts:
+- **Transduction (T2):** frames related by the motion between them, at
+  any rank. The common lattice is gone, and μ is paid as an exact share
+  of the frame.
+- **Sensing (track 26 S0–S3, S5):** the `Sample` carrier; the ARC
+  decoder outside the core; the ground deduced and stated by every claim;
+  each family's own symbol set; samples of any rank on the wire.
+- **Capacity (D2.5):** sealed per process from measured bytes per read,
+  with the reserve split into its readings.
+- **Naming (track 11 N1–N7)** and the Concordance's signing by
+  adjudicated reading (specified).
+
+**Signed with the prototype key** `SHA256:G0WgTTsRvfexVZRL9OQjxUZFs4rbGvusjnFrCVUZeHg`
+([docs/release-keys/](docs/release-keys/)). It will be replaced when real
+nodes come online.
+
+**Not in v0.3.0:**
+- the rest of S4 (rank-n perception: the fixed axes, the rank-2 raster
+  and link);
+- T3;
+- track 26 S4a and S7–S9.
+
+These open v0.4.0.
+
 ### The open names closed (track 11, N6; #55)
 - **Network contract**, inside v0.3.0's open break: no wire byte, act,
   ledger layout or task address moves. Four keyed coordinate names

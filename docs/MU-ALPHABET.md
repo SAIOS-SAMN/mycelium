@@ -6,7 +6,7 @@
 >
 > **Components:** the shared algebra (`src/transducer/alphabet/`, `src/transducer/layers.rs`), used alike by the client and the court; letter admission on the court (`src/server/cognition/listings/listing.rs`). No game term.
 
-**Status:** reference, release 0.3.0-rc.2. It describes the alphabet as built,
+**Status:** reference, release 0.3.0-rc.3. It describes the alphabet as built,
 with the ruled form of a letter marked **Specified** (§8).
 
 ---

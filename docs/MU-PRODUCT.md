@@ -4,7 +4,7 @@
 >
 > **Components:** the hypha's market, and the surfaces that expose it to clients. No game term.
 
-**Status:** specification, release 0.3.0-rc.2 (later changes in
+**Status:** specification, release 0.3.0-rc.3 (later changes in
 [`CHANGELOG.md`](../CHANGELOG.md)). The market for work exists on every
 hypha; the products below are the surfaces that expose it. What is built
 and what is specified is marked in §7; plans are in
