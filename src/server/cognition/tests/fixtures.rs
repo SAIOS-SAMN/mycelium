@@ -88,6 +88,19 @@ let _ = speak_pair(k, a, b, [2; 32]);
 k.glue_local();
 }
 
+/// A court that docketed one word on its own book, bound to `own_vk`.
+pub fn docketed(own_vk: [u8; 32]) -> (Court, crate::transducer::address::Address) {
+    let mut k = Court::new();
+    k.bind_identity(own_vk);
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
+    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
+    k.court_stroke();
+    let addr = k.provisional.scoped().next().expect("docketed").0;
+    (k, crate::transducer::address::Address::from(addr))
+}
+
 /// A hypha's signing key from a name, for a receipt fixture that must be
 /// SIGNED: 47.2 step 2 is a value (`Verified`), and a test reaches the
 /// chain checks only through it. The seed is a KDF over the name, which is

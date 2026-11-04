@@ -451,11 +451,13 @@ pub struct Court {
     /// the tier keys its genesis names, ascending — the one carrier,
     /// persisted on the court's own node (`LEAF_DOMAINS`).
     pub(crate) domains: crate::network::nerve::Keyed<Vec<[u8; 32]>>,
-    /// MU-HOSTING §5a.9 B0 — PEERS' FOUNDING RECEIPTS ADMITTED BY BACK-FILL
-    /// and not yet under a signature of each one's signer, keyed `vk‖K‖i`:
-    /// reconstructed when a frame the signer signed at or above the place is
-    /// admitted (`Court::sign_through`). Volatile.
-    pub(crate) unsigned_foundings: crate::network::nerve::Keyed<crate::chronometry::KStepReceipt>,
+    /// MU-HOSTING §5a.9, §5a.10 — THE SIGNED-REACH GATE: peers' receipts
+    /// admitted by back-fill, stored on the chain and not yet reached by a
+    /// signature of each one's signer, keyed `vk‖K‖i`. No reader acts on
+    /// one until a frame the signer signed at or above its place is admitted
+    /// (`Court::sign_through`). Volatile; derived again at restore
+    /// (`Court::hold_unreached_at_restore`).
+    pub(crate) unreached: crate::network::nerve::Keyed<crate::chronometry::KStepReceipt>,
     /// B0 — founding receipts under a signature whose reserve or origin
     /// names a domain no founding here holds yet, keyed `domain‖vk‖K‖i`:
     /// reconstructed when that domain's founding is. Volatile.
@@ -1043,15 +1045,16 @@ impl Court {
                 self.chain.admit(r.clone());
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
-                // MU-HOSTING §5a.9 B0: the signature over this frame reaches
-                // every receipt of its signer's line below it, so the founding
-                // receipts back-filled there are reconstructed, then its own.
-                self.sign_through(&r.stamp.vk, r.stamp.place());
-                self.reconstruct_founding(r);
                 // THE ACT'S ROOT (65.5): the wire hands this receipt here, and
                 // one stroke is the admission's draw, threaded to the
                 // rulings it hears.
                 let mut budget = self.physics.stroke();
+                // MU-HOSTING §5a.9, §5a.10: the signature over this frame
+                // reaches every receipt of its signer's line below it, so the
+                // receipts back-filled there are read in line order, then its
+                // own founding citations.
+                self.sign_through(&r.stamp.vk, r.stamp.place(), &mut budget);
+                self.reconstruct_founding(r);
                 // LD3-a: a word the peer's act admitted, located here by its
                 // fibre where exactly one word stands on it.
                 self.alias_admitting(r, &mut budget);
@@ -1073,7 +1076,11 @@ impl Court {
                     self.shed_folded_lines();
                 }
             }
-            crate::court::admission::Admitted::Equivocation { at, .. } => {
+            // 47.4 asks two VERIFIED signatures at one place. A receipt held
+            // there by back-fill and reached by no signature is not one
+            // (§5a.10: its hash links, it never admits): it proves nothing,
+            // and nothing burns against it.
+            crate::court::admission::Admitted::Equivocation { at, .. } if self.unreached_at(&r.stamp.vk, *at).is_none() => {
                 self.burn_equivocation(r.stamp.vk, *at);
             }
             // B0: a signed frame this court holds already, the same receipt
@@ -1081,7 +1088,8 @@ impl Court {
             crate::court::admission::Admitted::Stale
                 if self.chain.holds(&crate::chronometry::Parent { at: r.stamp, hash: r.chain_hash }) =>
             {
-                self.sign_through(&r.stamp.vk, r.stamp.place());
+                let mut budget = self.physics.stroke();
+                self.sign_through(&r.stamp.vk, r.stamp.place(), &mut budget);
             }
             _ => {}
         }
@@ -1106,10 +1114,13 @@ impl Court {
     /// The page is admitted on the stroke of the chase that fetched it
     /// (65.5), threaded to the rulings an alias wakes.
     ///
-    /// A FOUNDING RECEIPT ON THE PAGE (MU-HOSTING §5a.9 B0) — a domain's
-    /// genesis, its reserve, its origin — is held until a frame its signer
-    /// signed at or above it is admitted (`admit_receipt`), and the domain's
-    /// state is then reconstructed from it (`Court::reconstruct_founding`).
+    /// EVERY RECEIPT ON THE PAGE IS STORED AND MARKED UNREACHED (MU-HOSTING
+    /// §5a.9, §5a.10): the chain holds it, so the page and the signed frame
+    /// that closes the gap link on through it, and no reader acts on it —
+    /// the depth index, the stamp alias and the rulings it would wake, a
+    /// fold's shed, a founding's reconstruction — until a frame its signer
+    /// signed at or above it is admitted (`admit_receipt`,
+    /// `Court::sign_through`).
     pub fn admit_backfill(
         &mut self,
         receipts: &[crate::chronometry::KStepReceipt],
@@ -1129,15 +1140,9 @@ impl Court {
             match verdict {
                 crate::court::admission::Admitted::Parent(_) => {
                     self.chain.admit(r.clone());
-                    self.note_attestor(r);
-                    self.alias_admitting(r, budget);
-                    self.settle_own_attestation(r);
-                    if r.kind == crate::chronometry::ActKind::Fold {
-                        self.shed_folded_lines();
-                    }
-                    // MU-HOSTING §5a.9 B0: a founding receipt waits for its
-                    // signer's signature before the registries read it.
-                    self.file_unsigned_founding(r);
+                    // MU-HOSTING §5a.10: stored, and read by nothing until
+                    // its signer's signature reaches it.
+                    self.hold_unreached(r);
                     n += 1;
                 }
                 crate::court::admission::Admitted::Stale => n += 1,

@@ -56,7 +56,7 @@ None of these waits on a ruling:
 | Item | Issue | Track | Notes |
 |---|---|---|---|
 | X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | Depends on nothing; the rest of track 25 stands on it |
-| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Open: foundings inside a folded era, a version-2 origin's geometry, the volatile waiting carriers (MU-HOSTING §5a.9) |
+| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Open: foundings inside a folded era, a version-2 origin's geometry, eviction of a stored line no signature reaches (MU-HOSTING §5a.9) |
 | `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
 | Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Built with N1 |
 | Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Built with N2 |
@@ -1193,6 +1193,20 @@ Concordance hash served and signatures verified. Each phase is one commit:
    folded before a hypha caught up, a version-2 origin's geometry (only
    its hash crosses), and the volatile waiting carriers (MU-HOSTING
    §5a.9).
+
+   **Every reader of a back-filled receipt waits for a signature**
+   ([issue #73](https://github.com/SAIOS-SAMN/mycelium/issues/73);
+   **Built**). B0's founding queue is one signed-reach gate
+   (`src/server/cognition/reach.rs`). A back-filled receipt is stored,
+   since the catch-up links through it. It is marked unreached, and no
+   reader acts on it until a frame its signer signed at or above it is
+   admitted: not the depth index, the stamp alias, the ruling replay it
+   would wake, a fold's shed, a founding's reconstruction, the
+   equivocation burn, or restore. Claims in
+   `server/cognition/tests/reach.rs`. Open: eviction of a stored line no
+   signature reaches (a forged genesis holds its signer's places at the
+   hypha), a bound on the held queue, and the fold root a stored `Fold`
+   files on the chain (MU-HOSTING §5a.9).
 2. **B1, the act audit and the boundary's name:** every act kind that
    names a domain classed as a key's own or a universe's; the `NotReserve`
    variants renamed `NotThroughCore` (names only); a line's mouth offer
@@ -1227,6 +1241,15 @@ Concordance hash served and signatures verified. Each phase is one commit:
    states verified under L0 at `LAW_VERSION` 5 and the `forms` core shell,
    refused `NotLawful` naming each breach, never admitted on a declared
    law's name; the draft-4 shared laws as each is ruled.
+   - The first shared crossing law is **LAW-PASSAGE v1**, the linear
+     passage `R ↦ 2H − R` (first degree, an involution; the throat
+     sphere's `H²/R` is refused for squaring). It is held as
+     `forms::passage`, with joint fixtures
+     ([proposal 78.172](docs/proposals/78.172-law-passage.md); requested
+     by netstratum PR #40).
+   - Claims: `linear_passage_is_reflection_about_the_throat`,
+     `linear_passage_is_an_involution`,
+     `crossing_stating_inversion_is_refused_not_lawful`.
 5. **B4, the boundary reading:** refusals at the universal core tube by
    name and domain under `ACT_OBSERVE`, and the reconstruction events
    (Collapse, Converse, Collision) at the boundary, with track 8.

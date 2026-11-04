@@ -131,9 +131,13 @@ impl Court {
     pub(crate) fn rebuild_attestors(&mut self) {
         self.attestors = crate::network::nerve::Keyed::new();
         // Only a node that cites by stamp is filed, and only those are
-        // copied out of the ledger.
-        let nodes: Vec<crate::chronometry::KStepReceipt> =
-            self.chain.nodes().filter(|r| r.cites.iter().any(|c| c.at().is_some())).collect();
+        // copied out of the ledger. MU-HOSTING §5a.10: a peer node no
+        // signature has reached files nothing until one does.
+        let nodes: Vec<crate::chronometry::KStepReceipt> = self
+            .chain
+            .nodes()
+            .filter(|r| r.cites.iter().any(|c| c.at().is_some()) && self.unreached_at(&r.stamp.vk, r.stamp.place()).is_none())
+            .collect();
         for r in &nodes {
             self.note_attestor(r);
         }
