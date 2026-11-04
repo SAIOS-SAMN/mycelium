@@ -45,7 +45,7 @@ fn fibre_map_on_ground(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
         let Some(s) = envelope_dilation(x.sample(), y.sample()) else { continue };
         for (site, h) in crate::transducer::raster::painted_sites(x) {
             let Some(there) = carried_site(x, y, s, site) else { continue };
-            let Some(t) = crate::transducer::raster::value_at(y, there) else { continue };
+            let Some(t) = y.at(there) else { continue };
             if crate::transducer::raster::is_ground(t) {
                 continue;
             }
@@ -93,12 +93,13 @@ pub(crate) fn carried_site(
     from: &super::SectionSample,
     to: &super::SectionSample,
     (p, q): (i64, i64),
-    site: [usize; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK],
-) -> Option<[usize; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK]> {
+    site: crate::transducer::spelled::SectionSite,
+) -> Option<crate::transducer::spelled::SectionSite> {
     use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
     use crate::transducer::raster::centred;
     let (e_from, e_to) = (from.extents(), to.extents());
     let (p, q) = (i128::from(p), i128::from(q));
+    let site = site.coordinates();
     let mut out = [0usize; ALPHABET_SAMPLE_RANK];
     for axis in 0..ALPHABET_SAMPLE_RANK {
         let scaled = centred(site[axis], e_from[axis]).checked_mul(p)?;
@@ -115,7 +116,7 @@ pub(crate) fn carried_site(
         }
         out[axis] = at;
     }
-    Some(out)
+    crate::transducer::spelled::SectionSite::of_indices(out)
 }
 
 /// The greatest common divisor of two positive integers.

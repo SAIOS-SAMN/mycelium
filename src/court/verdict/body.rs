@@ -208,10 +208,10 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, fr
                 // Before the origin, and past the extent, are two different
                 // statements about the rule: the first about its placement,
                 // the second about its scale.
-                let (Ok(ur), Ok(uc)) = (usize::try_from(tr), usize::try_from(tc)) else {
+                if tr < 0 || tc < 0 {
                     return Carried::Refused(FAIL_BEFORE_FRAME, at());
-                };
-                let Some(&observed) = y.line(ur).and_then(|row| row.get(uc)) else {
+                }
+                let Some(observed) = y.at(crate::transducer::spelled::SectionSite::on_plane([tr, tc])) else {
                     return Carried::Refused(FAIL_PAST_FRAME, at());
                 };
                 // The gauge is asked for ONE image and refuses where it

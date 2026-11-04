@@ -7,7 +7,7 @@
 
 use crate::transducer::family::{carried_site, envelope_dilation};
 use crate::transducer::raster::*;
-use crate::transducer::spelled::{pairs_of, SectionSample};
+use crate::transducer::spelled::{pairs_of, SectionSample, SectionSite};
 
 /// 78.56 — THE ENVELOPES' DILATION: two rasters of one extent correspond
 /// site for site; 3×3 onto 9×9 is s = 3, carrying each site's centre to
@@ -20,10 +20,11 @@ fn envelope_dilation_carries_sites_between_extents() {
     let dilation = |a: SectionSample, b: SectionSample| envelope_dilation(a.sample(), b.sample());
     assert_eq!(dilation(raster(3, 4), raster(3, 4)), Some((1, 1)));
     assert_eq!(dilation(raster(3, 3), raster(9, 9)), Some((3, 1)));
-    assert_eq!(carried_site(&raster(3, 3), &raster(9, 9), (3, 1), [1, 1]), Some([4, 4]), "centre to centre");
-    assert_eq!(carried_site(&raster(3, 3), &raster(9, 9), (3, 1), [0, 0]), Some([1, 1]), "a site to its block's centre");
+    let site = SectionSite::on_plane;
+    assert_eq!(carried_site(&raster(3, 3), &raster(9, 9), (3, 1), site([1, 1])), Some(site([4, 4])), "centre to centre");
+    assert_eq!(carried_site(&raster(3, 3), &raster(9, 9), (3, 1), site([0, 0])), Some(site([1, 1])), "a site to its block's centre");
     assert_eq!(dilation(raster(1, 1), raster(1, 2)), None, "√(5/2) is no rational");
-    assert_eq!(carried_site(&raster(2, 2), &raster(4, 4), (2, 1), [0, 0]), None, "between sites");
+    assert_eq!(carried_site(&raster(2, 2), &raster(4, 4), (2, 1), site([0, 0])), None, "between sites");
 }
 
 /// 78.56 — THE MOMENTUM: a change of symbol in place carries none; a drift
@@ -88,4 +89,33 @@ fn posted_task_round_trips_exact_samples() {
     let mut longer = bytes.clone();
     longer.push(0);
     assert_eq!(decode_posted_task(&longer), None, "nothing after the last pair");
+}
+
+/// TRACK 26 S4d, stage 2 — A SITE OF THE SECTION IS THE SAMPLE'S
+/// COORDINATE VECTOR RESTRICTED BY ITS PERSPECTIVE: the section is read
+/// through the sample's default perspective, whose plane spans every axis;
+/// each site the walk yields is the sample's own site restricted to that
+/// plane, in canonical address order, with the sample's symbol there; a
+/// site off the sample carries no symbol; a write lands in place, keeping
+/// the extents and the place; and the site on the family's base carries the
+/// plane's coordinates and the place on the perspective's place axis.
+#[test]
+fn section_site_is_the_sample_coordinate_restricted_by_the_perspective() {
+    use crate::transducer::perspective::Perspective;
+    use crate::transducer::sample::Place;
+    let s = sample_of(&[vec![1, 2, 3], vec![4, 5, 6]], Place::new(vec![3])).expect("a raster at intake");
+    let mut held = SectionSample::of(s.clone()).expect("on the section");
+    assert_eq!(held.perspective(), &Perspective::of_sample(2), "the default perspective of the sample");
+    let walked: Vec<(Vec<i64>, u8)> = held.sites().map(|(site, h)| (site.coordinates().to_vec(), h)).collect();
+    let read: Vec<(Vec<i64>, u8)> = s.sites().zip(s.symbols()).map(|(site, h)| (site.axes().to_vec(), h.bytes()[0])).collect();
+    assert_eq!(walked, read, "each site the sample's own, restricted to the plane, with its symbol");
+    assert_eq!(held.at(SectionSite::on_plane([1, 2])), Some(6));
+    assert_eq!(held.at(SectionSite::on_plane([2, 0])), None, "off the sample: no symbol, never the ground");
+    assert_eq!(held.at(SectionSite::on_plane([-1, 0])), None);
+    assert_eq!(held.paint(SectionSite::on_plane([0, 3]), 9), None, "nothing written off the sample");
+    held.paint(SectionSite::on_plane([0, 1]), 9).expect("a site of the sample");
+    assert_eq!((held.raster(), held.sample().place()), (vec![vec![1, 9, 3], vec![4, 5, 6]], &Place::new(vec![3])), "written in place");
+    let on_base = SectionSite::on_plane([1, 2]).on_family(4).expect("the alphabet's base");
+    assert_eq!(on_base.axes(), &[1, 2, 4], "the plane's coordinates, then the place");
+    assert_eq!(SectionSite::of_family(&on_base), Some(SectionSite::on_plane([1, 2])), "and read back off the base");
 }

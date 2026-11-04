@@ -92,10 +92,12 @@ fn element_record_round_trips_and_refuses_old_magic() {
 #[test]
 fn extract_rule_joins_three_squares_in_one_vertex() {
     let train_in = grid(&["11011", "11011", "00000", "11000", "11000"]);
-    let train_out = SectionSample::of_lines(&train_in
-        .lines()
-        .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
-        .collect::<Vec<Vec<u8>>>()).expect("a sample");
+    let mut train_out: SectionSample = train_in.clone();
+    for (site, h) in train_in.sites() {
+        if h == 1 {
+            train_out.paint(site, 2).expect("a site of the sample");
+        }
+    }
     let family = vec![(train_in.clone(), train_out.clone())];
     let rule = on_zero(|| extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20))).expect("three squares extract");
     let non_frame: Vec<(mycelium::network::nerve::coord::VertexAt, &Vertex)> = rule

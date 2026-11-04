@@ -116,7 +116,7 @@ fn task_address_separates_isotropic_and_anisotropic_pairs() {
 fn task_address_separates_tasks_differing_in_incommensurate_pair() {
     let coprime = |hue: u8| -> (SectionSample, SectionSample) {
         let mut out = SectionSample::from(vec![vec![1; 30]; 30]);
-        out[0][0] = hue;
+        out.set([0, 0], hue);
         (SectionSample::from(vec![vec![1; 29]; 29]), out)
     };
     let with = |hue: u8| {
@@ -173,8 +173,8 @@ fn task_identity_reads_no_frame_fixing() {
     // A quarter turn of a sample: line `j` of the turn is column `j` read
     // from the last line up.
     let turn = |g: &SectionSample| -> SectionSample {
-        let [_, width] = g.extents();
-        (0..width).map(|j| g.lines().rev().filter_map(|line| line.get(j).copied()).collect()).collect()
+        let ([_, width], lines) = (g.extents(), g.raster());
+        (0..width).map(|j| lines.iter().rev().filter_map(|line| line.get(j).copied()).collect()).collect()
     };
     let turned = Task {
         train: task.train.iter().map(|(x, y)| (turn(x), turn(y))).collect(),

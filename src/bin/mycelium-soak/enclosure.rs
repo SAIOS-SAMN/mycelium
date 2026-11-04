@@ -226,7 +226,8 @@ fn sections(x: &mycelium::transducer::spelled::SectionSample, y: &mycelium::tran
             let mut function = true;
             for i in 0..hy {
                 for j in 0..wy {
-                    let (a, b) = (x[r + i][c + j], y[i][j]);
+                    let at = |g: &mycelium::transducer::spelled::SectionSample, a: usize, b: usize| mycelium::transducer::spelled::SectionSite::of_indices([a, b]).and_then(|s| g.at(s));
+                    let (Some(a), Some(b)) = (at(x, r + i, c + j), at(y, i, j)) else { continue };
                     same &= a == b;
                     match map.iter().find(|(f, _)| *f == a) {
                         Some((_, t)) if *t != b => function = false,

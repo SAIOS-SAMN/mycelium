@@ -129,13 +129,15 @@ impl SymbolSet {
 
     /// THE SYMBOL SET OF THE WHOLE FAMILY: its train pairs in the family's
     /// order, then the test inputs posted beside them (`on_test_inputs`), so
-    /// a symbol seen only in a test input is in Σ (MU-SENSING §3.3). A
-    /// family of no sample, or of two widths, holds no symbol.
-    pub fn of_family(train: &[super::family::TrainPair]) -> SymbolSet {
+    /// a symbol seen only in a test input is in Σ (MU-SENSING §3.3).
+    /// Refused by name, never read empty: `Width` where a posted test input's
+    /// symbol width is not the train pairs' (two widths are two sources), and
+    /// `NoSample` for a family of no pair and no posted input.
+    pub fn of_family(train: &[super::family::TrainPair]) -> Result<SymbolSet, SymbolRefusal> {
         POSTED.with(|c| {
             let tests = c.borrow();
             let pairs = train.iter().flat_map(|(x, y)| [x.sample(), y.sample()]);
-            SymbolSet::of_section(pairs.chain(tests.iter()))
+            SymbolSet::of_samples(pairs.chain(tests.iter()))
         })
     }
 

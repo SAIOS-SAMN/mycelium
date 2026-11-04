@@ -46,7 +46,7 @@ chart addresses may change (CHANGELOG › Unreleased).
 |---|---|---|
 | Track 26 S4b: rank-`n` perception and transduction as factorisation ([MU-SENSING](docs/MU-SENSING.md) §3.6, §3.9) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress on branch `s4b-rank-n`. Built: the fixed axis constants replaced by a perspective's roles; the alphabet kept at `n = 3`, derived, and a higher rank refused by name; D2.5 O3 derived; the rank-`n` link; connection by grade; every pair factored as motion ∘ residue, held as a vortex, with the court's admission on a derived residue; every task perceived by the mind at its own rank. Open: the rank-2 carrier of the word machinery (`family::Grid`) and the alphabet past `n = 3` |
 | Track 26 S4c: the hypha serves tasks of any rank; a claim of factorisation on the wire ([MU-SENSING](docs/MU-SENSING.md) §3.9, §6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Built on branch `s4c-rank-n-hypha`: the registry posts, serves and addresses tasks of any rank, the word machinery's readers on the section; the claim of factorisation as the solve's claim kind 1 (78.126), admitted by reconstruction, recorded and never paid (ruled); the mind speaks one claim per held factorisation of a task beyond the alphabet |
-| Track 26 S4d: the word machinery reads a sample; `family::Grid` retired ([MU-SENSING](docs/MU-SENSING.md) §3.9, §5) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Stage 1 built on branch `s4d-rank-n-words` (`spelled::SectionSample`); stages 2 and 3 open; spelling a rank-3 sample's planes waits on a ruling |
+| Track 26 S4d: the word machinery reads a sample; `family::Grid` retired ([MU-SENSING](docs/MU-SENSING.md) §3.9, §5) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Stage 1 merged (PR #84, `spelled::SectionSample`); stage 2's readers built on branch `s4d2-section-readers` (`spelled::SectionSite`), its planar tuples and stage 3 open; a rank-3 task stays `BeyondAlphabet` (Law VIII, MU-SENSING §5) |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | With track 26 S4b's remainder |
 | Track 26, S4a and S7–S9 | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 is agreed with the peer kernels |
 
@@ -1832,18 +1832,36 @@ Each phase is one commit:
       test output is `None`. `raster::AXES`, `extents` and `raster_of`
       are retired. No wire or address change. Claim
       `word_machinery_reads_a_rank_three_sample_end_to_end`.
-    - **Stage 2:** the section's planar readers (`SectionLink`, the
-      `(i64, i64, u8)` painted sites, the chart's two coordinates, the
-      line readers of `SectionSample`) read through a perspective's plane
-      of a sample (`Perspective::plane`), and speech's canvas
-      (`statement::speak_elements`) writes the sample in place, not a
-      raster.
+    - **Stage 2, readers built** (branch `s4d2-section-readers`): a
+      section sample is read through its perspective
+      (`SectionSample::perspective`), admitted only where the
+      perspective's plane (`Perspective::plane`) spans every axis. A site
+      of the section, `spelled::SectionSite`, is the sample's coordinate
+      vector restricted to that plane. The line readers (`lines`, `line`,
+      `line_mut`, the `[r][c]` index) are retired: readers walk `sites`,
+      read `at` and write `paint` in place, in perception, the painted
+      readings, the frame fixing, the fibre map, the rule language, the
+      court's and the mind's replays, the soak and the tests. Speech's
+      canvas (`statement::speak_elements`) is the input sample painted in
+      place; panes, tiles, the crop and the scaling write samples. The
+      symbol set refuses a test input of another width by name
+      (`SymbolSet::of_family` returns `SymbolRefusal::Width`). Claims
+      `section_site_is_the_sample_coordinate_restricted_by_the_perspective`,
+      `test_input_of_another_width_refuses_the_family_set_by_name`. No
+      wire, task, word or chart address change.
+    - **Stage 2, remainder (open):** the planar tuples held as
+      `SectionSite`: `SectionLink = (i64, i64, u8, u8)` (about 138 uses),
+      the painted triple `(i64, i64, u8)` and `Painted` (about 110), the
+      chart's coordinate pairs (`perceive::on_grid`, `orbit::positions_of`,
+      the anchor's footprints, `confluence`, `Spoken.painted`), and the
+      clause reader's planar tables (`Seen`'s owner rows, `extent_of`).
     - **Stage 3:** the rule-language's `About::Grid` and the remaining
       planar names renamed by function (track 11).
-    - **Waits on a ruling:** whether a rank-3 sample's planes (one
-      section per coordinate of its other axis, under a perspective) may
-      be spelled by the letters, or a rank-3 task stays `BeyondAlphabet`
-      until the letters are generalised past `n = 3` (MU-SENSING §5).
+    - **Decided from existing rulings** (Law VIII; MU-SENSING §5): the
+      letters never spell a rank-3 sample plane by plane, since planes
+      are peeled, never iterated. A rank-3 task stays `BeyondAlphabet`
+      and is held through its factorisations (S4c) until the letters are
+      generalised past `n = 3`.
 12. **S10, emergent senses** (MU-SENSING §4.1; after S6 and S7–S9,
     because a sense is built on the field and its perspectives):
     - A sense is a typed object: a reading from a sample to a cochain of

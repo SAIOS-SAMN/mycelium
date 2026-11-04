@@ -713,26 +713,24 @@ pub fn residue_of(
     let void = crate::transducer::raster::void();
     let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
-    for (r, row) in observed.lines().enumerate() {
-        for (c, &h) in row.iter().enumerate() {
-            // A site the speech does not reach is unoccupied there, and
-            // the scene's ground IS absence in this encoding.
-            let s = match spoken.and_then(|g| g.line(r)).and_then(|row| row.get(c)) {
-                Some(h) => *h,
-                None => void?,
-            };
-            if s != h {
-                out.push((r as i64, c as i64, s, h));
-            }
+    for (site, h) in observed.sites() {
+        // A site the speech does not reach is unoccupied there, and the
+        // scene's ground IS absence in this encoding.
+        let s = match spoken.and_then(|g| g.at(site)) {
+            Some(h) => h,
+            None => void?,
+        };
+        if s != h {
+            let [r, c] = site.coordinates();
+            out.push((r, c, s, h));
         }
     }
     if let Some(g) = spoken {
-        for (r, row) in g.lines().enumerate() {
-            for (c, &s) in row.iter().enumerate() {
-                let inside = observed.line(r).and_then(|row| row.get(c)).is_some();
-                if !inside && !ground.holds(&s) {
-                    out.push((r as i64, c as i64, s, void?));
-                }
+        for (site, s) in g.sites() {
+            let inside = observed.at(site).is_some();
+            if !inside && !ground.holds(&s) {
+                let [r, c] = site.coordinates();
+                out.push((r, c, s, void?));
             }
         }
     }

@@ -299,19 +299,18 @@ impl Court {
 }
 
 /// 78.153 — WHERE A SOLVE'S REPLAY IS KEPT: the rule's address and the
-/// withheld pairs written out, each grid's rows length-delimited (A21), so
-/// one rule asked on other pairs is another replay.
+/// withheld pairs written out, each sample's content written whole (A21:
+/// its extents, place and symbols, `Sample::put_content`), so one rule
+/// asked on other pairs is another replay.
 fn solve_key(rule: &Element, withheld: &crate::transducer::family::Family) -> Vec<u8> {
     let mut key = Vec::new();
     crate::transducer::address::put_key_bytes(&mut key, rule.address().as_bytes());
     crate::transducer::address::put_key_bytes(&mut key, b"withheld");
     for (x, y) in withheld.iter() {
         for g in [x, y] {
-            let mut rows = Vec::new();
-            for row in g.lines() {
-                crate::transducer::address::put_key_bytes(&mut rows, row);
-            }
-            crate::transducer::address::put_key_bytes(&mut key, &rows);
+            let mut content = Vec::new();
+            g.sample().put_content(&mut content);
+            crate::transducer::address::put_key_bytes(&mut key, &content);
         }
     }
     key

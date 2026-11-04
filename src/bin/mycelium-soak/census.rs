@@ -126,8 +126,8 @@ fn one_body(g: &SectionSample) -> bool {
     let mut painted: Keyed<()> = Keyed::new();
     let mut n = 0usize;
     let mut seed: Option<(usize, usize)> = None;
-    for (r, row) in g.lines().enumerate() {
-        for (c, &h) in row.iter().enumerate() {
+    for (site, h) in g.sites() {
+        if let Some([r, c]) = site.indices() {
             if h != 0 {
                 painted.insert(site_key(r, c), ());
                 n += 1;

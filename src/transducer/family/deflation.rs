@@ -687,12 +687,9 @@ pub fn declare_unspoken(
                 // scene's ground in this encoding — `residue_of`'s own
                 // reading, not a floor. A scope with no one ground has no
                 // symbol for that absence, and nothing is declared.
-                let before = match (usize::try_from(r), usize::try_from(c)) {
-                    (Ok(ur), Ok(uc)) => match image.as_ref().and_then(|g| g.line(ur)).and_then(|row| row.get(uc)) {
-                        Some(h) => Some(*h),
-                        None => void.ok(),
-                    },
-                    _ => void.ok(),
+                let before = match image.as_ref().and_then(|g| g.at(SectionSite::on_plane([r, c]))) {
+                    Some(h) => Some(h),
+                    None => void.ok(),
                 };
                 before.map(|before| (r, c, before, observed))
             })

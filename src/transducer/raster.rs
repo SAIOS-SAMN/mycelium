@@ -24,7 +24,7 @@ use super::family::transduce::{Ground, Unground};
 use super::family::{Family, Task};
 use super::alphabet::ALPHABET_SAMPLE_RANK;
 use super::sample::{Place, Sample, SampleRefusal};
-use super::spelled::SectionSample;
+use super::spelled::{SectionSample, SectionSite};
 
 /// THE WIDTH OF A RASTER. A raster is rectangular (every reader that takes
 /// one refuses a ragged one), so line zero is a COORDINATE of the raster
@@ -209,6 +209,7 @@ pub fn frame_fixed(task: Task) -> Task {
     for g in visible {
         let e = g.extents();
         for (site, _) in painted_sites(g) {
+            let site = site.coordinates();
             for (axis, m) in moment.iter_mut().enumerate() {
                 let x = centred(site[axis], e[axis]);
                 let mut power = 1i128;
@@ -254,6 +255,7 @@ pub fn momentum_vanishes(train: &Family) -> bool {
             let e = g.extents();
             let mut m = [0i128; ALPHABET_SAMPLE_RANK];
             for (site, _) in painted_sites(g) {
+                let site = site.coordinates();
                 for (axis, at) in m.iter_mut().enumerate() {
                     *at += centred(site[axis], e[axis]);
                 }
@@ -268,83 +270,73 @@ pub fn momentum_vanishes(train: &Family) -> bool {
     total.iter().all(|t| *t == Ratio::from_integer(0))
 }
 
-/// THE SENSOR'S ONE READING OF A SECTION SAMPLE: each painted site (its
-/// coordinate on every axis) with its symbol, in canonical address order.
-/// The one pass over a scene's sites (law 11's sensor clause); every reader
-/// here takes it. Every geometric reader here is written once per axis of
-/// the section's rank, never an axis by hand.
-pub fn painted_sites(g: &SectionSample) -> Vec<([usize; ALPHABET_SAMPLE_RANK], u8)> {
+/// THE SENSOR'S ONE READING OF A SECTION SAMPLE: each painted site (the
+/// sample's coordinate vector restricted to the perspective's plane) with
+/// its symbol, in canonical address order. The one pass over a scene's
+/// sites (law 11's sensor clause); every reader here takes it. Every
+/// geometric reader here is written once per axis of the plane, never an
+/// axis by hand.
+pub fn painted_sites(g: &SectionSample) -> Vec<(SectionSite, u8)> {
     let ground = ground();
-    let mut out = Vec::new();
-    for (i, line) in g.lines().enumerate() {
-        for (j, &h) in line.iter().enumerate() {
-            if !ground.holds(&h) {
-                out.push(([i, j], h));
-            }
-        }
-    }
-    out
-}
-
-/// The symbol at a site; `None` where the site is not in the sample, which
-/// carries no symbol (never the ground written in for it).
-pub fn value_at(g: &SectionSample, site: [usize; ALPHABET_SAMPLE_RANK]) -> Option<u8> {
-    let [line, at] = site;
-    g.line(line).and_then(|l| l.get(at)).copied()
+    g.sites().filter(|(_, h)| !ground.holds(h)).collect()
 }
 
 /// A coordinate centred on its extent and doubled, so every centre is an
 /// integer: `X = 2x − (n − 1)`.
-pub(crate) fn centred(x: usize, n: usize) -> i128 {
-    2 * x as i128 - (n as i128 - 1)
+pub(crate) fn centred(x: i64, n: usize) -> i128 {
+    2 * i128::from(x) - (n as i128 - 1)
 }
 
-/// A section sample with its axes permuted (`order[j]` is the axis read as
-/// the j-th) and reversed where `reversed[axis]`: one pass over every site,
-/// so no symbol is written that the sample did not hold. The sample keeps
-/// its place.
+/// A section sample with the axes of its plane permuted (`order[j]` is the
+/// axis read as the j-th) and reversed where `reversed[axis]`: one pass over
+/// every site, so no symbol is written that the sample did not hold. The
+/// sample keeps its place.
 fn reoriented(g: &SectionSample, order: [usize; ALPHABET_SAMPLE_RANK], reversed: [bool; ALPHABET_SAMPLE_RANK]) -> SectionSample {
-    let e = g.extents();
-    let ne: [usize; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|j| e[order[j]]);
-    let mut symbols = Vec::with_capacity(g.symbols().len());
-    let [lines, width] = ne;
-    for j in 0..lines {
-        for k in 0..width {
-            let at = [j, k];
-            // The source site: output axis `i` reads source axis `order[i]`.
-            let mut site = [0usize; ALPHABET_SAMPLE_RANK];
-            for (i, &axis) in order.iter().enumerate() {
-                site[axis] = match reversed[axis] {
-                    true => e[axis] - 1 - at[i],
-                    false => at[i],
-                };
-            }
-            if let Some(h) = value_at(g, site) {
-                symbols.push(h);
-            }
-        }
-    }
-    // The permuted extents hold the same sites, each read once.
-    match Sample::new(ne.to_vec(), 1, symbols, g.sample().place().clone()).ok().and_then(|s| SectionSample::of(s).ok()) {
+    match reoriented_of(g, order, reversed) {
         Some(s) => s,
         None => g.clone(),
     }
+}
+
+/// [`reoriented`], or `None` where the permuted extents hold no sample on
+/// the section or a site reads none of `g`'s.
+fn reoriented_of(g: &SectionSample, order: [usize; ALPHABET_SAMPLE_RANK], reversed: [bool; ALPHABET_SAMPLE_RANK]) -> Option<SectionSample> {
+    let e = g.extents();
+    let ne: [usize; ALPHABET_SAMPLE_RANK] = std::array::from_fn(|j| e[order[j]]);
+    // The permuted extents hold the same count of sites: the canvas holds
+    // `g`'s symbols until every site of it is written below, each once.
+    let sample = Sample::new(ne.to_vec(), 1, g.symbols().to_vec(), g.sample().place().clone()).ok()?;
+    let mut out = SectionSample::of(sample).ok()?;
+    let mut writes = Vec::with_capacity(g.symbols().len());
+    for (at, _) in out.sites() {
+        let at = at.coordinates();
+        // The source site: output axis `i` reads source axis `order[i]`.
+        let mut site = [0i64; ALPHABET_SAMPLE_RANK];
+        for (i, &axis) in order.iter().enumerate() {
+            site[axis] = match reversed[axis] {
+                true => i64::try_from(e[axis]).ok()? - 1 - at[i],
+                false => at[i],
+            };
+        }
+        writes.push((SectionSite::on_plane(at), g.at(SectionSite::on_plane(site))?));
+    }
+    for (at, h) in writes {
+        out.paint(at, h)?;
+    }
+    Some(out)
 }
 
 /// A section sample → its painted sites, the PERCEPTUAL convention: the
 /// scene's ground is omitted (the eye sees only novelty). The walk is the
 /// sample's own sites (a scene boundary), not a product of carriers.
 pub fn painted_of(g: &SectionSample) -> Vec<(i64, i64, u8)> {
-    let ground = ground();
-    let mut out = Vec::new();
-    for (i, line) in g.lines().enumerate() {
-        for (j, &h) in line.iter().enumerate() {
-            if !ground.holds(&h) {
-                out.push((i as i64, j as i64, h));
-            }
-        }
-    }
-    out
+    painted_sites(g)
+        .into_iter()
+        .map(|(site, h)| {
+            let [a, b] = site.coordinates();
+            (a, b, h)
+        })
+        .collect()
 }
 
 // ── THE SAMPLE BRIDGE (ROADMAP track 26, S4; MU-SENSING §2) ────────────────

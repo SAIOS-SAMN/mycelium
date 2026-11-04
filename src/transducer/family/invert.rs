@@ -84,12 +84,9 @@ pub fn remainder_scene(
         .zip(remainders)
         .map(|((x, y), rem)| {
             let mut m = y.cleared(void);
+            // A site off the canvas is not written.
             let mut paint = |r: i64, c: i64, h: u8| {
-                if let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) {
-                    if let Some(cell) = m.line_mut(ur).and_then(|row| row.get_mut(uc)) {
-                        *cell = h;
-                    }
-                }
+                let _ = m.paint(SectionSite::on_plane([r, c]), h);
             };
             let unsaid: Vec<(i64, i64)> = rem
                 .iter()

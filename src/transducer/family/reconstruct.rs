@@ -52,9 +52,10 @@ pub struct SiteAxes {
     pub ring: [u8; 8],
 }
 
+/// The symbol at `(r, c)` along the perspective's plane; `None` off the
+/// sample.
 pub(crate) fn at(g: &SectionSample, r: i64, c: i64) -> Option<u8> {
-    let (ur, uc) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
-    g.line(ur)?.get(uc).copied()
+    g.at(SectionSite::on_plane([r, c]))
 }
 
 /// HR1 — THE FIELD OF A SCENE, site by site in row order.
@@ -69,7 +70,7 @@ pub fn field(x: &SectionSample) -> Vec<SiteAxes> {
         let mut s = (0i128, 0i128, 0i128, 0i128);
         let mut mass = 0u64;
         for l in &b.compartments {
-            let (Some(r), Some(c)) = (l.site.axis(0), l.site.axis(1)) else { continue };
+            let Some([r, c]) = SectionSite::of_family(&l.site).map(|s| s.coordinates()) else { continue };
             if let Some(slot) = usize::try_from(r).ok().zip(usize::try_from(c).ok()).and_then(|(ur, uc)| owner.get_mut(ur)?.get_mut(uc)) {
                 *slot = Some(i);
             }
@@ -82,9 +83,10 @@ pub fn field(x: &SectionSample) -> Vec<SiteAxes> {
     }
     let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
-    for r in 0..rows {
-        for (c, &hue) in x[r].iter().enumerate() {
-            let (ri, ci) = (r as i64, c as i64);
+    for (site, hue) in x.sites() {
+        let Some([r, c]) = site.indices() else { continue };
+        {
+            let [ri, ci] = site.coordinates();
             let mut near: Vec<Cell> = Vec::new();
             if !ground.holds(&hue) {
                 near.push((ri, ci, hue));
@@ -132,10 +134,10 @@ pub fn transports(x: &SectionSample, y: &SectionSample) -> Option<Vec<Transport>
     }
     let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
-    for (r, row) in x.lines().enumerate() {
-        for (c, &h) in row.iter().enumerate() {
-            let (ri, ci) = (r as i64, c as i64);
-            let to = at(y, ri, ci)?;
+    for (site, h) in x.sites() {
+        {
+            let [ri, ci] = site.coordinates();
+            let to = y.at(site)?;
             let mut rays = Vec::new();
             if !ground.holds(&h) {
                 for (k, (dr, dc)) in (0u8..).zip(DIRECTIONS.iter()) {
@@ -306,8 +308,7 @@ fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<Transport>, axis: us
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let m = t.get(&key(s, axis))?;
-        let (ur, uc) = (usize::try_from(s.r).ok()?, usize::try_from(s.c).ok()?);
-        *out.line_mut(ur)?.get_mut(uc)? = m.to;
+        out.paint(SectionSite::on_plane([s.r, s.c]), m.to)?;
         for &(k, h) in &m.rays {
             let (dr, dc) = *DIRECTIONS.get(usize::from(k))?;
             let mut step = 1i64;
@@ -318,8 +319,7 @@ fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<Transport>, axis: us
         }
     }
     for (r, c, h) in emitted {
-        let (ur, uc) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
-        *out.line_mut(ur)?.get_mut(uc)? = h;
+        out.paint(SectionSite::on_plane([r, c]), h)?;
     }
     Some(out)
 }

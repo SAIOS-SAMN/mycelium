@@ -247,22 +247,22 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     use crate::transducer::stalk;
     let mut x = crate::transducer::spelled::SectionSample::from(vec![vec![0u8; 12]; 18]);
     // Body 1: length 1 at (0, 0)
-    x[0][0] = 1;
+    x.set([0, 0], 1);
     // Body 2: length 2 at (0, 2), (0, 3)
-    x[0][2] = 2;
-    x[0][3] = 2;
+    x.set([0, 2], 2);
+    x.set([0, 3], 2);
     // Body 3: length 3 at (0, 5), (0, 6), (0, 7)
-    x[0][5] = 3;
-    x[0][6] = 3;
-    x[0][7] = 3;
+    x.set([0, 5], 3);
+    x.set([0, 6], 3);
+    x.set([0, 7], 3);
 
     let mut y_recoloured = crate::transducer::spelled::SectionSample::from(vec![vec![0u8; 12]; 18]);
-    y_recoloured[0][0] = 4;
-    y_recoloured[0][2] = 5;
-    y_recoloured[0][3] = 5;
-    y_recoloured[0][5] = 6;
-    y_recoloured[0][6] = 6;
-    y_recoloured[0][7] = 6;
+    y_recoloured.set([0, 0], 4);
+    y_recoloured.set([0, 2], 5);
+    y_recoloured.set([0, 3], 5);
+    y_recoloured.set([0, 5], 6);
+    y_recoloured.set([0, 6], 6);
+    y_recoloured.set([0, 7], 6);
     let pure_family = vec![(x.clone(), y_recoloured.clone())];
     let mut pf = crate::transducer::family::cipher_form(&x, &y_recoloured);
     // THREE BODIES OF ONE TRANSPORT CLASS — each recoloured in place — are
@@ -297,11 +297,7 @@ fn mint_sentence_mints_closed_subcomplex_deflation() {
     let mut y_with_7_creations = y_recoloured.clone();
     for s in &demand_shapes {
         for &(r, c) in s {
-            let (r, c) = (
-                usize::try_from(r).expect("a literal row of the fixture's grid"),
-                usize::try_from(c).expect("a literal column of the fixture's grid"),
-            );
-            y_with_7_creations[r][c] = 7;
+            y_with_7_creations.set([r, c], 7);
         }
     }
     let family = vec![(x.clone(), y_with_7_creations.clone())];

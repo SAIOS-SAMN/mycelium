@@ -357,10 +357,12 @@ fn expand_all_crystallizes_closed_idea_and_releases_it() {
             .collect()
     };
     let train_in = grid(&["11011", "11011", "00000", "11000", "11000"]);
-    let train_out: SectionSample = train_in
-        .lines()
-        .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
-        .collect();
+    let mut train_out: SectionSample = train_in.clone();
+    for (site, h) in train_in.sites() {
+        if h == 1 {
+            train_out.paint(site, 2).expect("a site of the sample");
+        }
+    }
     let family = vec![(train_in, train_out)];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the recolour family extracts");
     let minted = mint_sentence(&rule, &family, &NoCrystal, 0).expect("the family mints");

@@ -201,7 +201,7 @@ let family = vec![
 ];
 let family: Vec<(SectionSample, SectionSample)> = family
     .into_iter()
-    .map(|(a, b)| (a, b.lines().map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect()).collect()))
+    .map(|(a, b)| (a, b.mapped(|h| if h == 1 { 2 } else { h })))
     .collect();
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the shift family extracts");
 let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
@@ -276,9 +276,7 @@ let family: Vec<(SectionSample, SectionSample)> = family
     .map(|(a, b)| {
         (
             a,
-            b.lines()
-                .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
-                .collect(),
+            b.mapped(|h| if h == 1 { 2 } else { h }),
         )
     })
     .collect();
@@ -372,10 +370,7 @@ let train_in = grid(&[
     "11000",
     "11000",
 ]);
-let train_out: SectionSample = train_in
-    .lines()
-    .map(|row| row.iter().map(|&h| if h == 1 { 2 } else { h }).collect())
-    .collect();
+let train_out: SectionSample = train_in.mapped(|h| if h == 1 { 2 } else { h });
 let family = vec![(train_in.clone(), train_out.clone())];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("three squares extract as a section");
 let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("the test is spoken");

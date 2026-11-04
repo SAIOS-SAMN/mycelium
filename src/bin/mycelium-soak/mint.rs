@@ -376,19 +376,17 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 spoken.as_ref().map_or(0, |s| {
                     let g = s.grid();
                     let mut n = 0usize;
-                    for (r, row) in y.lines().enumerate() {
-                        for (c, &h) in row.iter().enumerate() {
-                            // A site the speech does not reach is the
-                            // ground, and hue 0 IS absence in this
-                            // encoding — `residue_of`'s own reading, not
-                            // a default put here for a missing value.
-                            let got = match g.as_ref().and_then(|g| g.line(r)).and_then(|gr| gr.get(c)) {
-                                Some(h) => *h,
-                                None => 0,
-                            };
-                            if got != h {
-                                n += 1;
-                            }
+                    for (site, h) in y.sites() {
+                        // A site the speech does not reach is the ground,
+                        // and hue 0 IS absence in this encoding —
+                        // `residue_of`'s own reading, not a default put
+                        // here for a missing value.
+                        let got = match g.as_ref().and_then(|g| g.at(site)) {
+                            Some(h) => h,
+                            None => 0,
+                        };
+                        if got != h {
+                            n += 1;
                         }
                     }
                     n

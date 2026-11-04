@@ -122,7 +122,7 @@ pub fn difference(input: &[Cell], output: &[Cell], frame: &SectionSample) -> Dif
                     }
                 }
                 let (er, ec) = (r + t * dr, c + t * dc);
-                let open = usize::try_from(er).ok().zip(usize::try_from(ec).ok()).and_then(|(ur, uc)| frame.line(ur)?.get(uc)).is_none();
+                let open = frame.at(SectionSite::on_plane([er, ec])).is_none();
                 d.runs.push(((t - 1) as u64, open));
             }
         }
