@@ -28,7 +28,7 @@ fn drawn(spoken: Result<crate::transducer::family::statement::Spoken, Unstated>)
     let spoken = spoken?;
     let mut g = SectionSample::filled([spoken.frame.0, spoken.frame.1], 0).expect("a frame");
     for (r, c, h) in spoken.painted {
-        g[usize::try_from(r).expect("on the grid")][usize::try_from(c).expect("on the grid")] = h;
+        g.paint(crate::transducer::spelled::SectionSite::on_plane([r, c]), h).expect("on the sample");
     }
     Ok(g)
 }

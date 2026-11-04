@@ -206,17 +206,17 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
     );
     // Every grid of the task turned by 90°, clockwise, and mirrored across
     // its diagonal; and the palette permuted (1→6, 2→7, 3→8, 4→9).
+    // The fixture's expectations are written as a source writes its lines
+    // (the speech end, `SectionSample::raster`), then read at intake.
     let turn = |g: &SectionSample| -> SectionSample {
-        let [h, w] = g.extents();
-        (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect()
+        let ([h, w], l) = (g.extents(), g.raster());
+        (0..w).map(|c| (0..h).rev().map(|r| l[r][c]).collect()).collect()
     };
     let mirror = |g: &SectionSample| -> SectionSample {
-        let [h, w] = g.extents();
-        (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect()
+        let ([h, w], l) = (g.extents(), g.raster());
+        (0..w).map(|c| (0..h).map(|r| l[r][c]).collect()).collect()
     };
-    let paint = |g: &SectionSample| -> SectionSample {
-        g.lines().map(|row| row.iter().map(|&h| match h { 1 => 6, 2 => 7, 3 => 8, 4 => 9, x => x }).collect()).collect()
-    };
+    let paint = |g: &SectionSample| -> SectionSample { g.mapped(|h| match h { 1 => 6, 2 => 7, 3 => 8, 4 => 9, x => x }) };
     let each = |ps: &Pairs, f: Reframing<'_>| -> Pairs { ps.iter().map(|(a, b)| (f(a), f(b))).collect() };
     // Read through the frame-fixing perspective (ROADMAP track 26, S2).
     let read = |train: &Pairs, test: &Pairs| {

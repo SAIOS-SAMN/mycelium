@@ -22,6 +22,7 @@
 
 use super::*;
 use crate::transducer::sentence::form::clause::{About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, RegionKind, Stop, Tie, Value};
+use crate::transducer::spelled::SectionSite;
 
 /// WHY NO ACT WAS READ, by name (rule 11).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -113,8 +114,10 @@ fn cells_of(b: &Body) -> Vec<(usize, usize, u8)> {
         .collect()
 }
 
+/// The symbol at indices `(r, c)` along the perspective's plane; `None` off
+/// the sample.
 fn at(g: &SectionSample, r: usize, c: usize) -> Option<u8> {
-    g.line(r).and_then(|row| row.get(c)).copied()
+    g.at(SectionSite::of_indices([r, c])?)
 }
 
 fn insert_sorted<T: Ord>(v: &mut Vec<T>, x: T) {
@@ -372,20 +375,37 @@ fn agrees(clause: &Clause, p: &Pair<'_>) -> bool {
     if frame_of(&said) != frame_of(p.y) {
         return false;
     }
-    said.lines().zip(p.x.lines()).zip(p.y.lines()).all(|((s, x), y)| s.iter().zip(x).zip(y).all(|((s, x), y)| s == x || s == y))
+    let agrees = said.sites().all(|(site, s)| Some(s) == p.x.at(site) || Some(s) == p.y.at(site));
+    agrees
 }
 
 /// The spoken clauses laid on the clauses' frame, an unpainted site on the
 /// scene's one ground; `None` where such a site is left and the scope reads
 /// none.
 fn grid_of(s: &statement::Spoken) -> Option<SectionSample> {
-    let mut g: Vec<Vec<Option<u8>>> = vec![vec![None; s.frame.1]; s.frame.0];
-    for &(r, c, h) in &s.painted {
-        *g.get_mut(usize::try_from(r).ok()?)?.get_mut(usize::try_from(c).ok()?)? = Some(h);
-    }
+    // An unpainted site holds the scene's one ground; with none, every site
+    // must be painted, and the canvas's opening symbol is overwritten at
+    // every site before it is read.
     let void = crate::transducer::raster::void().ok();
-    let lines: Vec<Vec<u8>> = g.into_iter().map(|row| row.into_iter().map(|h| h.or(void)).collect::<Option<Vec<u8>>>()).collect::<Option<_>>()?;
-    SectionSample::of_lines(&lines).ok()
+    let opening = match void {
+        Some(v) => v,
+        None => s.painted.iter().map(|&(_, _, h)| h).next()?,
+    };
+    let mut g = SectionSample::filled([s.frame.0, s.frame.1], opening).ok()?;
+    let mut written: Vec<SectionSite> = Vec::with_capacity(s.painted.len());
+    for &(r, c, h) in &s.painted {
+        let site = SectionSite::on_plane([r, c]);
+        g.paint(site, h)?;
+        written.push(site);
+    }
+    if void.is_none() {
+        written.sort_unstable();
+        written.dedup();
+        if written.len() != g.symbols().len() {
+            return None;
+        }
+    }
+    Some(g)
 }
 
 impl PredicateTable<'_, '_> {
@@ -846,9 +866,9 @@ fn residue_of(r: &mut PredicateTable<'_, '_>, clauses: &[Clause]) -> Result<Opti
         .zip(&r.pairs)
         .map(|(g, p)| {
             let mut out = Vec::new();
-            for (i, row) in p.y.lines().enumerate() {
-                for (j, &h) in row.iter().enumerate() {
-                    if at(g, i, j) != Some(h) {
+            for (site, h) in p.y.sites() {
+                if g.at(site) != Some(h) {
+                    if let Some([i, j]) = site.indices() {
                         out.push((i, j, h));
                     }
                 }
@@ -1031,7 +1051,7 @@ fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[V
                 // displacement from it: the ray, measured.
                 let Some((bi, bj)) = step(i, j, (-dr, -dc), rows, cols) else { continue };
                 let Some(b) = owner[bi][bj] else { continue };
-                let own = p.x[bi][bj];
+                let Some(own) = at(p.x, bi, bj) else { continue };
                 let (mut run, mut at_cell, mut stop) = (Vec::new(), (bi, bj), None);
                 while let Some((ni, nj)) = step(at_cell.0, at_cell.1, (dr, dc), rows, cols) {
                     match created(ni, nj) {
@@ -1040,7 +1060,7 @@ fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[V
                             at_cell = (ni, nj);
                         }
                         None => {
-                            stop = Some(!ground.holds(&before[ni][nj]));
+                            stop = at(before, ni, nj).map(|h| !ground.holds(&h));
                             break;
                         }
                     }
@@ -1060,7 +1080,7 @@ fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[V
                 let whole = cells_of(&p.bodies[b]).into_iter().all(|(ci, cj, _)| {
                     let mut at_cell = (ci, cj);
                     while let Some((ni, nj)) = step(at_cell.0, at_cell.1, (dr, dc), rows, cols) {
-                        if !ground.holds(&before[ni][nj]) {
+                        if at(before, ni, nj).is_none_or(|h| !ground.holds(&h)) {
                             break;
                         }
                         if created(ni, nj).is_none() {
@@ -1716,23 +1736,29 @@ fn read_panes(r: &PredicateTable<'_, '_>) -> Option<Clause> {
     let mut hue: Option<u8> = None;
     for p in &r.pairs {
         let (hy, wy) = frame_of(p.y);
-        for i in 0..hy {
-            for j in 0..wy {
-                let (a, b) = match along_rows {
-                    true => (p.x[i][j], p.x[i + hy + usize::from(gap)][j]),
-                    false => (p.x[i][j], p.x[i][j + wy + usize::from(gap)]),
-                };
-                let bit = 2 * usize::from(!ground.holds(&a)) + usize::from(!ground.holds(&b));
-                let painted = !ground.holds(&p.y[i][j]);
-                match table[bit] {
-                    Some(was) if was != painted => return None,
-                    _ => table[bit] = Some(painted),
-                }
-                if painted {
-                    match hue {
-                        Some(h) if h != p.y[i][j] => return None,
-                        _ => hue = Some(p.y[i][j]),
-                    }
+        // The second pane stands one pane and the gap further along the split.
+        let pane = match along_rows {
+            true => hy,
+            false => wy,
+        };
+        let further = i64::try_from(pane).ok()?.checked_add(i64::from(gap))?;
+        let across = match along_rows {
+            true => [further, 0],
+            false => [0, further],
+        };
+        for (site, y) in p.y.sites() {
+            let a = p.x.at(site)?;
+            let b = p.x.at(site.moved(across)?)?;
+            let bit = 2 * usize::from(!ground.holds(&a)) + usize::from(!ground.holds(&b));
+            let painted = !ground.holds(&y);
+            match table[bit] {
+                Some(was) if was != painted => return None,
+                _ => table[bit] = Some(painted),
+            }
+            if painted {
+                match hue {
+                    Some(h) if h != y => return None,
+                    _ => hue = Some(y),
                 }
             }
         }
@@ -1776,7 +1802,12 @@ fn read_tiles(r: &PredicateTable<'_, '_>) -> Option<Clause> {
             r.pairs.iter().all(|p| {
                 let (hx, wx) = frame_of(p.x);
                 // The block of the output at `(bi, bj)`, read in place.
-                statement::turn_of(p.x, t).is_some_and(|g| g.extents() == [hx, wx] && (0..hx).all(|a| (0..wx).all(|b| g[a][b] == p.y[bi * hx + a][bj * wx + b])))
+                let corner = [bi * hx, bj * wx];
+                let block = |site: SectionSite| -> Option<u8> {
+                    let [a, b] = site.indices()?;
+                    at(p.y, corner[0] + a, corner[1] + b)
+                };
+                statement::turn_of(p.x, t).is_some_and(|g| g.extents() == [hx, wx] && g.sites().all(|(site, h)| block(site) == Some(h)))
             })
         };
         turns.push((0u8..8).find(|&t| fits(t))?);

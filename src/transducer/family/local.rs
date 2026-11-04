@@ -78,8 +78,7 @@ impl Local {
 
 /// The hue at `(r, c)` of `g`, or `None` off the grid.
 fn hue_at(g: &SectionSample, r: i64, c: i64) -> Option<u8> {
-    let (r, c) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
-    g.line(r)?.get(c).copied()
+    g.at(crate::transducer::spelled::SectionSite::on_plane([r, c]))
 }
 
 /// THE DEMAND OF EACH PAIR OVER ITS SITES, priced: the pair's residue links
@@ -158,11 +157,10 @@ fn spoken_section(x: &SectionSample, y: &SectionSample, v: &element::Versor, rec
     // vortex, no ground, no family open) nothing is spoken.
     let void = crate::transducer::raster::void().ok()?;
     let mut painted: Vec<Painted> = Vec::new();
-    for (r, row) in x.lines().enumerate() {
-        for (c, &h) in row.iter().enumerate() {
-            if h != void {
-                painted.push((r as i64, c as i64, h));
-            }
+    for (site, h) in x.sites() {
+        if h != void {
+            let [r, c] = site.coordinates();
+            painted.push((r, c, h));
         }
     }
     let image = carry_painted(v, &painted)?;
@@ -229,9 +227,9 @@ pub fn form_local(
         let spoken = apply_form_on(form, x, placement, crystal, Some(pi)).and_then(|s| s.grid());
         if let Some(g) = spoken {
             let mut false_site = false;
-            for (r, row) in g.lines().enumerate() {
-                for (c, &s) in row.iter().enumerate() {
-                    let (r, c) = (r as i64, c as i64);
+            for (site, s) in g.sites() {
+                {
+                    let [r, c] = site.coordinates();
                     let answer = hue_at(y, r, c);
                     if s != 0 && answer != Some(s) {
                         false_site = true;

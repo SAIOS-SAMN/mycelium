@@ -10,7 +10,15 @@ use crate::transducer::family::*;
 /// The family's rows with every `from` written `to`: the same scene on
 /// another canvas.
 fn on_canvas(family: &[(SectionSample, SectionSample)], to: u8) -> Vec<(SectionSample, SectionSample)> {
-    let paint = |g: &SectionSample| -> SectionSample { g.lines().map(|row| row.iter().map(|&h| if h == 0 { to } else { h }).collect()).collect() };
+    let paint = |g: &SectionSample| -> SectionSample {
+        let mut out = g.clone();
+        for (site, h) in g.sites() {
+            if h == 0 {
+                out.paint(site, to).expect("a site of the sample");
+            }
+        }
+        out
+    };
     family.iter().map(|(x, y)| (paint(x), paint(y))).collect()
 }
 

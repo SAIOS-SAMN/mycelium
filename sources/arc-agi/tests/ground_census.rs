@@ -62,9 +62,12 @@ fn former_address(task: &Task) -> Option<Address> {
     }
     for (x, _) in &task.test {
         let chain: Vec<(i64, i64, u8, u8)> = x
-            .lines()
-            .enumerate()
-            .flat_map(|(r, row)| row.iter().enumerate().filter_map(move |(c, &h)| (h != 0).then_some((r as i64, c as i64, h, h))))
+            .sites()
+            .filter(|&(_, h)| h != 0)
+            .map(|(site, h)| {
+                let [r, c] = site.coordinates();
+                (r, c, h, h)
+            })
             .collect();
         put_key_bytes(&mut buf, &mycelium::transducer::element::from_residue(&chain)?.address());
     }

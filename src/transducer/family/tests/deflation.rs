@@ -320,7 +320,7 @@ fn unspoken_residue_is_read_on_output_sites() {
     };
     let x = crate::transducer::family::SectionSample::from(vec![vec![1; 29]; 29]);
     let mut y = crate::transducer::family::SectionSample::from(vec![vec![1; 30]; 30]);
-    y[1][2] = 5;
+    y.paint(crate::transducer::spelled::SectionSite::on_plane([1, 2]), 5).expect("a site of the sample");
     assert_eq!(residue(&x, &y), vec![(1, 2, 1, 5)]);
     assert_eq!(
         residue(&grid(&["10", "00"]), &grid(&["2200", "2200", "0000", "0000"])),

@@ -50,7 +50,7 @@ fn relabel(h: u8) -> u8 {
 }
 
 fn relabelled(family: &Family) -> Pairs {
-    let raster = |g: &SectionSample| g.lines().map(|row| row.iter().map(|&h| relabel(h)).collect()).collect();
+    let raster = |g: &SectionSample| g.mapped(relabel);
     family.iter().map(|(x, y)| (raster(x), raster(y))).collect()
 }
 

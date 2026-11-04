@@ -325,18 +325,19 @@ fn grid_steps_reads_task_before_seat() {
     // The symmetry read off by index, as a grid is read (the fixture's
     // expectation, never the seam's construction), and a hue map.
     let apply = |kind: Symmetry, g: &crate::transducer::family::SectionSample| -> crate::transducer::family::SectionSample {
-        let [h, w] = g.extents();
+        // Written as a source writes its lines, then read at intake.
+        let ([h, w], g) = (g.extents(), g.raster());
         match kind {
             Symmetry::Rotate90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
-            Symmetry::Rotate180 => g.lines().rev().map(|row| row.iter().rev().copied().collect()).collect(),
+            Symmetry::Rotate180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
             Symmetry::Rotate270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
-            Symmetry::FlipH => g.lines().map(|row| row.iter().rev().copied().collect()).collect(),
-            Symmetry::FlipV => g.lines().rev().map(<[u8]>::to_vec).collect(),
+            Symmetry::FlipH => g.iter().map(|row| row.iter().rev().copied().collect()).collect(),
+            Symmetry::FlipV => g.iter().rev().cloned().collect(),
             Symmetry::Transpose => (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
         }
     };
     let recolour = |from: u8, to: u8, g: &crate::transducer::family::SectionSample| -> crate::transducer::family::SectionSample {
-        g.lines().map(|row| row.iter().map(|&h| if h == from { to } else { h }).collect()).collect()
+        g.mapped(|h| if h == from { to } else { h })
     };
     let x = crate::transducer::family::SectionSample::from(vec![vec![1, 2, 0], vec![1, 0, 0], vec![0, 0, 0]]);
     for (i, kind) in D4.iter().enumerate() {

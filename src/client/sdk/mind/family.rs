@@ -69,12 +69,14 @@ pub(crate) fn occupancy_causes(said: &crate::transducer::family::SectionSample, 
         }
     }
     let mut kinds = [false; 4];
-    for (r, (srow, trow)) in said.lines().zip(y.lines()).enumerate() {
-        for (c, (s, t)) in srow.iter().zip(trow).enumerate() {
-            let (Ok(ri), Ok(ci)) = (i64::try_from(r), i64::try_from(c)) else { continue };
-            match (*s == 0, *t == 0) {
+    for (site, s) in said.sites() {
+        // The spoken and the observed sample read at one site.
+        let Some(t) = y.at(site) else { continue };
+        {
+            let [ri, ci] = site.coordinates();
+            match (s == 0, t == 0) {
                 (true, false) => {
-                    let input = x.line(r).and_then(|row| row.get(c)).is_some_and(|&h| h != 0);
+                    let input = x.at(site).is_some_and(|h| h != 0);
                     let at = match (erased.contains(&crate::transducer::family::site_key(ri, ci)), input) {
                         (true, _) => 0,
                         (false, true) => 2,

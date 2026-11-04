@@ -101,10 +101,10 @@ pub fn flows(x: &SectionSample, y: &SectionSample) -> Option<Vec<Flow>> {
     // The void sites the light reaches, gathered where each ray is read.
     let ground = crate::transducer::raster::ground();
     let mut lit: Vec<(i64, i64)> = Vec::new();
-    for (r, row) in x.lines().enumerate() {
-        for (c, &h) in row.iter().enumerate() {
-            let (ri, ci) = (r as i64, c as i64);
-            let to = at(y, ri, ci)?;
+    for (site, h) in x.sites() {
+        {
+            let [ri, ci] = site.coordinates();
+            let to = y.at(site)?;
             let mut light = Vec::new();
             if !ground.holds(&h) {
                 for (k, &(dr, dc)) in (0u8..).zip(DIRECTIONS.iter()) {
@@ -131,7 +131,10 @@ pub fn flows(x: &SectionSample, y: &SectionSample) -> Option<Vec<Flow>> {
     // gauge is the void's (the ground symbol it holds, onto itself). Counted
     // as its own move it would read the light twice, once at its source and
     // once as a gauge lift where it lands.
-    let sites = x.lines().enumerate().flat_map(|(r, row)| (0..row.len()).map(move |c| (r as i64, c as i64)));
+    let sites = x.sites().map(|(site, _)| {
+        let [r, c] = site.coordinates();
+        (r, c)
+    });
     for (f, (r, c)) in out.iter_mut().zip(sites) {
         if let Some(h) = at(x, r, c).filter(|h| ground.holds(h)) {
             if lit.contains(&(r, c)) {
@@ -268,10 +271,11 @@ fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: u
     let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
     for s in sites {
         let Some(held) = t.get(&key(s, axis)) else { return Ok(None) };
-        let (Ok(ur), Ok(uc)) = (usize::try_from(s.r), usize::try_from(s.c)) else { return Ok(None) };
-        if let Some(cell) = out.line_mut(ur).and_then(|row| row.get_mut(uc)) {
-            *cell = held.flow.to;
+        if s.r < 0 || s.c < 0 {
+            return Ok(None);
         }
+        // A site off the canvas is not written.
+        let _ = out.paint(SectionSite::on_plane([s.r, s.c]), held.flow.to);
         for l in &held.flow.light {
             let Some(&(dr, dc)) = DIRECTIONS.get(usize::from(l.dir)) else { return Ok(None) };
             let (free, _) = reach(x, (s.r, s.c), (dr, dc));
@@ -295,9 +299,8 @@ fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: u
         }
     }
     for (r, c, h) in emitted {
-        if let Some(cell) = usize::try_from(r).ok().zip(usize::try_from(c).ok()).and_then(|(ur, uc)| out.line_mut(ur)?.get_mut(uc)) {
-            *cell = h;
-        }
+        // A site off the canvas is not written.
+        let _ = out.paint(SectionSite::on_plane([r, c]), h);
     }
     Ok(Some(out))
 }

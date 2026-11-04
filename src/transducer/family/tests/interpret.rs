@@ -26,11 +26,10 @@ fn decide_ranks_by_pair_where_body_alone_cannot() {
         .iter()
         .map(|(x, y)| {
             let mut rem = Vec::new();
-            for (r, row) in y.lines().enumerate() {
-                for (c, &h) in row.iter().enumerate() {
-                    if h != 0 {
-                        rem.push((r as i64, c as i64, x[r][c], h));
-                    }
+            for (site, h) in y.sites() {
+                if h != 0 {
+                    let [r, c] = site.coordinates();
+                    rem.push((r, c, x.at(site).expect("one frame"), h));
                 }
             }
             rem

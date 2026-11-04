@@ -52,13 +52,18 @@ pub enum Unstated {
 /// not square.
 pub(crate) fn turn_of(g: &SectionSample, t: u8) -> Option<SectionSample> {
     let [h, w] = g.extents();
-    let at = |i: usize, j: usize| g.line(i).and_then(|row| row.get(j)).copied();
+    let at = |i: usize, j: usize| read(g, i, j);
+    // The turned sample opens as the symbol at the origin and is written at
+    // every one of its sites before it is read.
     let grid = |rows: usize, cols: usize, f: &dyn Fn(usize, usize) -> Option<u8>| -> Option<SectionSample> {
-        let mut out = SectionSample::filled([rows, cols], g[0][0]).ok()?;
-        for i in 0..rows {
-            for j in 0..cols {
-                out[i][j] = f(i, j)?;
-            }
+        let mut out = SectionSample::filled([rows, cols], at(0, 0)?).ok()?;
+        let mut writes = Vec::with_capacity(rows * cols);
+        for (site, _) in out.sites() {
+            let [i, j] = site.indices()?;
+            writes.push((site, f(i, j)?));
+        }
+        for (site, h) in writes {
+            out.paint(site, h)?;
         }
         Some(out)
     };
@@ -166,7 +171,7 @@ impl<'a> Seen<'a> {
 
     /// The symbol at a cell; `None` off the grid, which holds none.
     fn hue(&self, r: usize, c: usize) -> Option<u8> {
-        self.x.line(r).and_then(|row| row.get(c)).copied()
+        read(self.x, r, c)
     }
 
     /// Is the cell on the grid and read as ground?
@@ -448,16 +453,33 @@ fn mapped(map: &[(u8, u8)], h: u8) -> u8 {
 
 /// A landed cell past the frame is no cell of this grid and is not spoken on
 /// it, as a carried compartment past the frame is not.
-fn lay(canvas: &mut [Vec<u8>], r: i64, c: i64, h: u8) {
-    if let (Ok(r), Ok(c)) = (usize::try_from(r), usize::try_from(c)) {
-        if let Some(cell) = canvas.get_mut(r).and_then(|row| row.get_mut(c)) {
-            *cell = h;
-        }
+fn lay(canvas: &mut SectionSample, r: i64, c: i64, h: u8) {
+    // A site off the canvas is not written.
+    let _ = canvas.paint(SectionSite::on_plane([r, c]), h);
+}
+
+/// THE SYMBOL AT INDICES `(r, c)` ALONG THE PERSPECTIVE'S PLANE of a
+/// section sample; `None` off it.
+fn read(g: &SectionSample, r: usize, c: usize) -> Option<u8> {
+    g.at(SectionSite::of_indices([r, c])?)
+}
+
+/// WRITE `h` AT INDICES `(r, c)` of the canvas, in place: the sample is
+/// painted where it stands, never copied into a raster. A cell off the
+/// canvas is not written.
+fn write(canvas: &mut SectionSample, r: usize, c: usize, h: u8) {
+    if let Some(site) = SectionSite::of_indices([r, c]) {
+        let _ = canvas.paint(site, h);
     }
 }
 
+/// Is the canvas's cell at `(r, c)` read as ground? Never off the canvas.
+fn grounded_on(canvas: &SectionSample, ground: &crate::transducer::family::transduce::Ground<u8>, r: usize, c: usize) -> bool {
+    read(canvas, r, c).is_some_and(|h| ground.holds(&h))
+}
+
 /// SPEAK A CARRIAGE on the selection `sel` of `seen`, onto `canvas`.
-fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) -> Result<(), Unstated> {
+fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut SectionSample) -> Result<(), Unstated> {
     // A cleared cell is laid on the scene's one ground, read where a cell is
     // cleared; a stop reads the ground as membership.
     let ground = crate::transducer::raster::ground();
@@ -491,7 +513,7 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) ->
             if t.trace == Trace::Clears {
                 for &b in sel {
                     for &(r, c, _) in &seen.cells[b] {
-                        canvas[r][c] = void()?;
+                        write(canvas, r, c, void()?);
                     }
                 }
             }
@@ -506,16 +528,16 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) ->
                     // A line stops at what was painted BEFORE this clause, so
                     // no line of the clause stops another and the order the
                     // bodies are read in is no part of what it says.
-                    let before = canvas.to_vec();
+                    let before = canvas.clone();
                     for &b in sel {
                         for &(r, c, h) in &seen.cells[b] {
                             let colour = colour(b, h)?;
                             let (mut a, mut d) = (r, c);
                             while let Some((na, nd)) = seen.at(a, d, dr, dc) {
-                                if stop == Stop::Contact && !ground.holds(&before[na][nd]) {
+                                if stop == Stop::Contact && !grounded_on(&before, &ground, na, nd) {
                                     break;
                                 }
-                                canvas[na][nd] = colour;
+                                write(canvas, na, nd, colour);
                                 (a, d) = (na, nd);
                             }
                         }
@@ -550,7 +572,7 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) ->
                         at += group.len();
                         for &b in &group {
                             for &(r, c, _) in &seen.cells[b] {
-                                canvas[r][c] = void()?;
+                                write(canvas, r, c, void()?);
                             }
                         }
                         let mut landed: Vec<(usize, usize, u8)> = Vec::new();
@@ -561,7 +583,7 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) ->
                             // meet ends it.
                             let lands = |k: i64| -> bool {
                                 cells.iter().all(|&(r, c, _)| match seen.at(r, c, k * dr, k * dc) {
-                                    Some((a, d)) => stop == Stop::Border || ground.holds(&canvas[a][d]),
+                                    Some((a, d)) => stop == Stop::Border || grounded_on(canvas, &ground, a, d),
                                     None => false,
                                 })
                             };
@@ -578,15 +600,15 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut [Vec<u8>]) ->
                             }
                         }
                         for (a, d, h) in landed {
-                            canvas[a][d] = h;
+                            write(canvas, a, d, h);
                         }
                         // A carriage that keeps its source leaves it where
                         // nothing landed on it.
                         if t.trace == Trace::Keeps {
                             for &b in &group {
                                 for &(r, c, h) in &seen.cells[b] {
-                                    if ground.holds(&canvas[r][c]) {
-                                        canvas[r][c] = h;
+                                    if grounded_on(canvas, &ground, r, c) {
+                                        write(canvas, r, c, h);
                                     }
                                 }
                             }
@@ -618,13 +640,14 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
         false => Vec::new(),
     };
     let on_parts = Seen::of(x, &parts);
-    // The canvas is the speech end (MU-SENSING §2): the input's lines,
-    // painted into the output the clauses write.
-    let mut canvas: Vec<Vec<u8>> = x.raster();
+    // The canvas opens as the input sample and is painted in place, site by
+    // site through the perspective's plane, into the output the clauses
+    // write; no raster is laid (MU-SENSING §2).
+    let mut canvas: SectionSample = x.clone();
     let mut window: Option<(usize, usize, usize, usize)> = None;
     let mut scale: Option<(u8, u8)> = None;
     // A frame element's output stands in place of the canvas (`Panes`, `Tile`).
-    let mut framed: Option<Vec<Vec<u8>>> = None;
+    let mut framed: Option<SectionSample> = None;
     for l in said {
         let seen = match l.parts {
             true => &on_parts,
@@ -636,7 +659,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
             RuleElement::Carriage(t) => carriage(seen, t, &sel, &mut canvas)?,
             RuleElement::Chain { region, hue } => {
                 for (r, c) in seen.region(*region, &sel) {
-                    canvas[r][c] = *hue;
+                    write(&mut canvas, r, c, *hue);
                 }
             }
             RuleElement::Stamp { template } => {
@@ -656,7 +679,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 }
                 for &b in &seeds {
                     for &(r, c, _) in &seen.cells[b] {
-                        canvas[r][c] = crate::transducer::raster::void().map_err(|_| Unstated::Unframed)?;
+                        write(&mut canvas, r, c, crate::transducer::raster::void().map_err(|_| Unstated::Unframed)?);
                     }
                 }
                 for (r, c, h) in landed {
@@ -685,18 +708,36 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 if k == 0 {
                     return Err(Unstated::Unframed);
                 }
-                let cell = |a: usize, b: usize| -> u8 { if *along_rows { canvas[a][b] } else { canvas[b][a] } };
+                let cell = |a: usize, b: usize| -> Option<u8> {
+                    match *along_rows {
+                        true => read(&canvas, a, b),
+                        false => read(&canvas, b, a),
+                    }
+                };
                 // The pane's cell at `a` along the split, `b` across it.
-                let at = |a: usize, b: usize| -> u8 {
-                    let first = !ground.holds(&cell(a, b));
-                    let second = !ground.holds(&cell(a + k + usize::from(*gap), b));
+                let at = |a: usize, b: usize| -> Option<u8> {
+                    let first = !ground.holds(&cell(a, b)?);
+                    let second = !ground.holds(&cell(a + k + usize::from(*gap), b)?);
                     let bit = 2 * usize::from(first) + usize::from(second);
-                    if (table >> bit) & 1 == 1 { *hue } else { void }
+                    Some(if (table >> bit) & 1 == 1 { *hue } else { void })
                 };
-                let out: Vec<Vec<u8>> = match along_rows {
-                    true => (0..k).map(|a| (0..other).map(|b| at(a, b)).collect()).collect(),
-                    false => (0..other).map(|b| (0..k).map(|a| at(a, b)).collect()).collect(),
+                let extents = match along_rows {
+                    true => [k, other],
+                    false => [other, k],
                 };
+                let mut out = SectionSample::filled(extents, void).map_err(|_| Unstated::Unframed)?;
+                let mut writes = Vec::with_capacity(out.symbols().len());
+                for (site, _) in out.sites() {
+                    let [i, j] = site.indices().ok_or(Unstated::Unframed)?;
+                    let (a, b) = match along_rows {
+                        true => (i, j),
+                        false => (j, i),
+                    };
+                    writes.push((site, at(a, b).ok_or(Unstated::Unframed)?));
+                }
+                for (site, h) in writes {
+                    out.paint(site, h).ok_or(Unstated::Unframed)?;
+                }
                 framed = Some(out);
             }
             RuleElement::Tile { rows, cols, turns } => {
@@ -705,20 +746,26 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 if turns.len() != rows * cols || rows == 0 || cols == 0 {
                     return Err(Unstated::Unframed);
                 }
-                // Every cell is a block's: a cell no block lays is unframed,
-                // never a ground written in for it.
-                let mut out: Vec<Vec<Option<u8>>> = vec![vec![None; w * cols]; h * rows];
-                let laid = SectionSample::of_lines(&canvas).map_err(|_| Unstated::Unframed)?;
+                // Every cell is a block's: each block holds the canvas's
+                // extents, so the blocks lay every cell of the tiling once,
+                // and a block of other extents is unframed, never a ground
+                // written in for a cell it leaves. The tiling opens as the
+                // canvas's symbol at the origin, written over at every cell.
+                let laid = canvas.clone();
+                let origin = read(&laid, 0, 0).ok_or(Unstated::Unframed)?;
+                let mut out = SectionSample::filled([h * rows, w * cols], origin).map_err(|_| Unstated::Unframed)?;
                 for (i, &t) in turns.iter().enumerate() {
                     let block = turn_of(&laid, t).ok_or(Unstated::Unframed)?;
-                    let (bi, bj) = (i / cols, i % cols);
-                    for (r, row) in block.lines().enumerate() {
-                        for (c, &v) in row.iter().enumerate() {
-                            out[bi * h + r][bj * w + c] = Some(v);
-                        }
+                    if block.extents() != [h, w] {
+                        return Err(Unstated::Unframed);
+                    }
+                    let corner = [i64::try_from((i / cols) * h), i64::try_from((i % cols) * w)];
+                    let [Ok(br), Ok(bc)] = corner else { return Err(Unstated::Unframed) };
+                    for (site, v) in block.sites() {
+                        out.paint(site.moved([br, bc]).ok_or(Unstated::Unframed)?, v).ok_or(Unstated::Unframed)?;
                     }
                 }
-                framed = Some(out.into_iter().map(|row| row.into_iter().collect::<Option<Vec<u8>>>()).collect::<Option<Vec<Vec<u8>>>>().ok_or(Unstated::Unframed)?);
+                framed = Some(out);
             }
             RuleElement::Join { corner: None, paint: with } => {
                 // A join has two ends, and no one partner to take a hue off.
@@ -742,7 +789,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                         for i in 0..inner {
                             let (r, c) = cell(i);
                             let Some((o, h)) = chosen(r, c) else {
-                                if !ground.holds(&before[r][c]) {
+                                if !grounded_on(&before, &ground, r, c) {
                                     last = None;
                                 }
                                 continue;
@@ -765,7 +812,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                     }
                 }
                 for (r, c, h) in joins {
-                    canvas[r][c] = h;
+                    write(&mut canvas, r, c, h);
                 }
             }
             RuleElement::Join { corner: Some(to), paint: with } => {
@@ -815,50 +862,60 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                             false => (tb + 1..row).collect(),
                         };
                         let path: Vec<(usize, usize)> = across.into_iter().map(|c| (row, c)).chain(along.into_iter().map(|r| (r, col))).collect();
-                        if path.iter().all(|&(r, c)| ground.holds(&before[r][c])) {
+                        if path.iter().all(|&(r, c)| grounded_on(&before, &ground, r, c)) {
                             joins.extend(path.into_iter().map(|(r, c)| (r, c, hue)));
                         }
                     }
                 }
                 for (r, c, h) in joins {
-                    canvas[r][c] = h;
+                    write(&mut canvas, r, c, h);
                 }
             }
         }
     }
-    let out: Vec<Vec<u8>> = match framed {
+    let out: SectionSample = match (framed, window) {
         // A frame act's output is the output; a crop of the input's frame
         // does not cut it.
-        Some(g) => g,
-        None => {
-            let (t, l, b, r) = match window {
-                Some(w) => w,
-                None => (0, 0, whole.rows.checked_sub(1).ok_or(Unstated::NotOne)?, whole.cols.checked_sub(1).ok_or(Unstated::NotOne)?),
-            };
-            canvas.iter().take(b + 1).skip(t).map(|row| row.iter().take(r + 1).skip(l).copied().collect()).collect()
-        }
+        (Some(g), _) => g,
+        (None, None) => canvas,
+        (None, Some((t, l, b, r))) => cropped(&canvas, (t, l), (b, r))?,
     };
     let out = match scale {
         None => out,
         Some((up, down)) => scaled(&out, up, down)?,
     };
     let ground = crate::transducer::raster::ground();
-    let mut painted = Vec::new();
-    for (i, row) in out.iter().enumerate() {
-        for (j, &h) in row.iter().enumerate() {
-            if !ground.holds(&h) {
-                let (Ok(pi), Ok(pj)) = (i64::try_from(i), i64::try_from(j)) else {
-                    return Err(Unstated::OffSubstrate);
-                };
-                painted.push((pi, pj, h));
-            }
-        }
+    let painted = out
+        .sites()
+        .filter(|(_, h)| !ground.holds(h))
+        .map(|(site, h)| {
+            let [pi, pj] = site.coordinates();
+            (pi, pj, h)
+        })
+        .collect();
+    let [rows, cols] = out.extents();
+    Ok(Spoken { frame: (rows, cols), painted })
+}
+
+/// THE CANVAS CROPPED to the window from `low` to `high`, both corners
+/// included, read in place. A window that reaches past the canvas keeps the
+/// part on it; one that holds no site is refused by name.
+fn cropped(canvas: &SectionSample, (t, l): (usize, usize), (b, r): (usize, usize)) -> Result<SectionSample, Unstated> {
+    let [rows, cols] = canvas.extents();
+    let (b, r) = (b.min(rows.checked_sub(1).ok_or(Unstated::NotOne)?), r.min(cols.checked_sub(1).ok_or(Unstated::NotOne)?));
+    let extent = |lo: usize, hi: usize| hi.checked_sub(lo).map(|d| d + 1).ok_or(Unstated::NotOne);
+    let origin = read(canvas, t, l).ok_or(Unstated::NotOne)?;
+    let mut out = SectionSample::filled([extent(t, b)?, extent(l, r)?], origin).map_err(|_| Unstated::NotOne)?;
+    let corner = [i64::try_from(t).map_err(|_| Unstated::OffSubstrate)?, i64::try_from(l).map_err(|_| Unstated::OffSubstrate)?];
+    let mut writes = Vec::with_capacity(out.symbols().len());
+    for (site, _) in out.sites() {
+        let from = site.moved(corner).ok_or(Unstated::OffSubstrate)?;
+        writes.push((site, canvas.at(from).ok_or(Unstated::OffSubstrate)?));
     }
-    let cols = match out.as_slice() {
-        [row, ..] => row.len(),
-        [] => 0,
-    };
-    Ok(Spoken { frame: (out.len(), cols), painted })
+    for (site, h) in writes {
+        out.paint(site, h).ok_or(Unstated::OffSubstrate)?;
+    }
+    Ok(out)
 }
 
 /// 78.167 C — WHAT EACH PREDICATE SELECTS on one scene, as a clause reads
@@ -917,33 +974,36 @@ pub(crate) fn regions_each(region: RegionKind, x: &SectionSample, bodies: &[Body
 /// block, or each `down × down` block, uniform, one cell. A block that is
 /// not uniform, an extent `down` does not divide, a zero or a ratio of two
 /// factors is no scaling of cells, refused by name.
-fn scaled(g: &[Vec<u8>], up: u8, down: u8) -> Result<Vec<Vec<u8>>, Unstated> {
+fn scaled(g: &SectionSample, up: u8, down: u8) -> Result<SectionSample, Unstated> {
     let (up, down) = (usize::from(up), usize::from(down));
-    let cols = match g {
-        [row, ..] => row.len(),
-        [] => 0,
+    let [rows, cols] = g.extents();
+    // Each site of the scaled sample reads the site of `g` it stands in (a
+    // block of `up`), or each block of `down` reads one uniform symbol.
+    let extents = match (up, down) {
+        (1, 1) => return Ok(g.clone()),
+        (u, 1) if u > 1 => [rows * u, cols * u],
+        (1, d) if d > 1 && rows % d == 0 && cols % d == 0 => [rows / d, cols / d],
+        _ => return Err(Unstated::OffSubstrate),
     };
-    match (up, down) {
-        (1, 1) => Ok(g.to_vec()),
-        (u, 1) if u > 1 => Ok((0..g.len() * u)
-            .map(|i| (0..cols * u).map(|j| g[i / u][j / u]).collect())
-            .collect()),
-        (1, d) if d > 1 && g.len() % d == 0 && cols % d == 0 => {
-            let mut out = Vec::with_capacity(g.len() / d);
-            for bi in 0..g.len() / d {
-                let mut row = Vec::with_capacity(cols / d);
-                for bj in 0..cols / d {
-                    let h = g[bi * d][bj * d];
-                    let uniform = (0..d).all(|i| (0..d).all(|j| g[bi * d + i][bj * d + j] == h));
-                    if !uniform {
-                        return Err(Unstated::OffSubstrate);
-                    }
-                    row.push(h);
-                }
-                out.push(row);
+    let from = |bi: usize, bj: usize| -> Option<u8> {
+        match down {
+            1 => read(g, bi / up, bj / up),
+            d => {
+                let h = read(g, bi * d, bj * d)?;
+                let uniform = (0..d).all(|i| (0..d).all(|j| read(g, bi * d + i, bj * d + j) == Some(h)));
+                uniform.then_some(h)
             }
-            Ok(out)
         }
-        _ => Err(Unstated::OffSubstrate),
+    };
+    let origin = read(g, 0, 0).ok_or(Unstated::OffSubstrate)?;
+    let mut out = SectionSample::filled(extents, origin).map_err(|_| Unstated::OffSubstrate)?;
+    let mut writes = Vec::with_capacity(out.symbols().len());
+    for (site, _) in out.sites() {
+        let [i, j] = site.indices().ok_or(Unstated::OffSubstrate)?;
+        writes.push((site, from(i, j).ok_or(Unstated::OffSubstrate)?));
     }
+    for (site, h) in writes {
+        out.paint(site, h).ok_or(Unstated::OffSubstrate)?;
+    }
+    Ok(out)
 }

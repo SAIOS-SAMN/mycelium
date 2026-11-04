@@ -17,7 +17,7 @@
 //! order, every cover that closes is kept, and the caller holds
 //! incomparable ones rather than taking the first that answers.
 
-use super::perceive::{frame_of, on_grid, SectionSample};
+use super::perceive::{frame_of, on_grid, SectionSample, SectionSite};
 use crate::network::nerve::Keyed;
 use crate::transducer::base::Site;
 use crate::transducer::layers::LayerKind;
@@ -156,19 +156,23 @@ pub fn cover(scene: &[SectionSample], reading: PlaneCut) -> Option<Regions> {
     }
 }
 
+/// Is the run of sites at `coordinate` on the plane's axis `axis` one hue
+/// throughout? A coordinate the sample does not reach holds no run.
+fn uniform_at(g: &SectionSample, axis: usize, coordinate: usize) -> bool {
+    let Ok(coordinate) = i64::try_from(coordinate) else { return false };
+    let mut run = g.sites().filter(|(s, _)| s.coordinates().get(axis) == Some(&coordinate)).map(|(_, h)| h);
+    let Some(want) = run.next() else { return false };
+    run.all(|h| h == want)
+}
+
 /// Is this row of this grid one hue throughout?
 fn row_uniform(g: &SectionSample, r: usize) -> bool {
-    let Some(row) = g.line(r) else { return false };
-    let [first, rest @ ..] = row else { return false };
-    rest.iter().all(|h| h == first)
+    uniform_at(g, 0, r)
 }
 
 /// Is this column of this grid one hue throughout?
 fn col_uniform(g: &SectionSample, c: usize) -> bool {
-    let mut lines = g.lines();
-    let Some(first) = lines.next() else { return false };
-    let Some(&want) = first.get(c) else { return false };
-    lines.all(|row| row.get(c) == Some(&want))
+    uniform_at(g, 1, c)
 }
 
 /// THE MAXIMAL RUNS OF NON-SEPARATOR INDICES, in coordinate order: the
@@ -269,9 +273,8 @@ pub fn restrict(g: &SectionSample, region: &Region) -> Option<SectionSample> {
     let (h, w) = (span(r0, r1)?, span(c0, c1)?);
     let mut out = SectionSample::filled([h, w], crate::transducer::raster::void().ok()?).ok()?;
     for &(r, c) in &plane {
-        let hue = *g.line(usize::try_from(r).ok()?).and_then(|row| row.get(usize::try_from(c).ok()?))?;
-        let (dr, dc) = (usize::try_from(r - r0).ok()?, usize::try_from(c - c0).ok()?);
-        *out.line_mut(dr).and_then(|row| row.get_mut(dc))? = hue;
+        let hue = g.at(SectionSite::on_plane([r, c]))?;
+        out.paint(SectionSite::on_plane([r.checked_sub(r0)?, c.checked_sub(c0)?]), hue)?;
     }
     Some(out)
 }

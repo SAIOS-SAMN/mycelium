@@ -16,21 +16,20 @@ fn grid(rows: &[&str]) -> SectionSample {
 /// The symmetry read off by index, as a grid is read — the fixture's
 /// expectation, never the seam's construction.
 fn apply(kind: Symmetry, g: &SectionSample) -> SectionSample {
-    let [h, w] = g.extents();
+    // Written as a source writes its lines, then read at intake.
+    let ([h, w], g) = (g.extents(), g.raster());
     match kind {
         Symmetry::Rotate90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
-        Symmetry::Rotate180 => g.lines().rev().map(|row| row.iter().rev().copied().collect()).collect(),
+        Symmetry::Rotate180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
         Symmetry::Rotate270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
-        Symmetry::FlipH => g.lines().map(|row| row.iter().rev().copied().collect()).collect(),
-        Symmetry::FlipV => g.lines().rev().map(<[u8]>::to_vec).collect(),
+        Symmetry::FlipH => g.iter().map(|row| row.iter().rev().copied().collect()).collect(),
+        Symmetry::FlipV => g.iter().rev().cloned().collect(),
         Symmetry::Transpose => (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
     }
 }
 
 fn recolour(map: &[(u8, u8)], g: &SectionSample) -> SectionSample {
-    g.lines()
-        .map(|row| row.iter().map(|&h| map.iter().find(|(f, _)| *f == h).map_or(h, |(_, t)| *t)).collect())
-        .collect()
+    g.mapped(|h| map.iter().find(|(f, _)| *f == h).map_or(h, |(_, t)| *t))
 }
 
 fn shape(g: &SectionSample) -> (usize, usize) {
@@ -69,7 +68,6 @@ fn square_withheld() -> SectionSample {
 /// index map names.
 #[test]
 fn grid_motion_carries_every_site_to_index_image() {
-    use crate::transducer::base::Site;
     for kind in [
         Symmetry::Rotate90,
         Symmetry::Rotate180,
@@ -81,14 +79,11 @@ fn grid_motion_carries_every_site_to_index_image() {
         let x = grid(&["123", "456"]);
         let y = apply(kind, &x);
         let Some(Step::Motion(v)) = Step::grid_motion(kind, shape(&x), shape(&y)) else { panic!("{kind:?} fits") };
-        for (r, row) in x.lines().enumerate() {
-            for (c, &h) in row.iter().enumerate() {
-                let site = Site::of([r as i64, c as i64, 0]);
-                let to = crate::transducer::element::carry_site(&v, &site).expect("a site lands");
-                let [tr, tc, _] = to.axes() else { panic!("three axes") };
-                let (tr, tc) = (usize::try_from(*tr).expect("a row on the grid"), usize::try_from(*tc).expect("a column on the grid"));
-                assert_eq!(y[tr][tc], h, "{kind:?}: ({r}, {c}) lands on its image");
-            }
+        for (at, h) in x.sites() {
+            let site = at.on_family(0).expect("a site of the base");
+            let to = crate::transducer::element::carry_site(&v, &site).expect("a site lands");
+            let landed = crate::transducer::spelled::SectionSite::of_family(&to).expect("on the plane");
+            assert_eq!(y.at(landed), Some(h), "{kind:?}: {at:?} lands on its image");
         }
     }
 }

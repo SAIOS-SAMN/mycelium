@@ -9,7 +9,7 @@
 use super::*;
 use crate::transducer::base::Site;
 
-pub use crate::transducer::spelled::SectionSample;
+pub use crate::transducer::spelled::{SectionSample, SectionSite};
 
 /// A painted site of one frame's grid, the sensor's planar token:
 /// `(row, col, hue)`.
@@ -50,9 +50,8 @@ pub fn grid_of_painted(painted: &[(i64, i64, u8)], void: u8) -> Option<SectionSa
     #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the painted sites' bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let w = (max_c - min_c + 1) as usize;
     let mut g = SectionSample::filled([h, w], void).ok()?;
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a painted site's offset inside the bounding box just sized from these same sites, 0 ≤ r − min_r < h and 0 ≤ c − min_c < w")]
     for &(r, c, hue) in painted {
-        g[(r - min_r) as usize][(c - min_c) as usize] = hue;
+        g.paint(SectionSite::on_plane([r - min_r, c - min_c]), hue)?;
     }
     Some(g)
 }
@@ -100,10 +99,10 @@ pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), Se
     let void = crate::transducer::raster::void().ok()?;
     let mut before = SectionSample::filled([h, w], void).ok()?;
     let mut after = before.clone();
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a chain site's offset inside the bounding box just sized from these same sites, 0 ≤ r − min_r < h and 0 ≤ c − min_c < w")]
     for &(r, c, b, a) in chain {
-        before[(r - min_r) as usize][(c - min_c) as usize] = b;
-        after[(r - min_r) as usize][(c - min_c) as usize] = a;
+        let site = SectionSite::on_plane([r - min_r, c - min_c]);
+        before.paint(site, b)?;
+        after.paint(site, a)?;
     }
     Some(((min_r, min_c), before, after))
 }
@@ -172,16 +171,17 @@ pub fn perceive(grid: &SectionSample) -> Vec<Body> {
 /// that depends on its extent there, and a vertex keyed by it would find
 /// nothing on a frame perceived by itself.
 pub fn perceive_at(grid: &SectionSample, k: i64) -> Vec<Body> {
-    let ground = crate::transducer::raster::ground();
-    let mut compartments: Vec<Compartment> = Vec::new();
-    for (r, row) in grid.lines().enumerate() {
-        for (c, &h) in row.iter().enumerate() {
-            if !ground.holds(&h) {
-                compartments.push(Compartment::from((r as i64, c as i64, k, h)));
-            }
-        }
-    }
-    bodies_of(&compartments)
+    bodies_of(&compartments_at(grid, k))
+}
+
+/// THE COMPARTMENTS OF ONE FRAME: each painted site of the section on the
+/// family's base, the frame's place `k` on the place axis
+/// (`SectionSite::on_family`), with its symbol.
+fn compartments_at(grid: &SectionSample, k: i64) -> Vec<Compartment> {
+    crate::transducer::raster::painted_sites(grid)
+        .into_iter()
+        .filter_map(|(s, hue)| Some(Compartment { site: s.on_family(k)?, hue }))
+        .collect()
 }
 
 /// 78.167 Phase A — THE SCENE'S MONOCHROME PARTS: each hue's 4-connected
@@ -190,19 +190,13 @@ pub fn perceive_at(grid: &SectionSample, k: i64) -> Vec<Body> {
 /// clause on parts selects among (`Act::Parts`): a body recoloured in part is
 /// parts recoloured whole. Read in the lattice's order, hue by hue.
 pub fn perceive_parts(grid: &SectionSample) -> Vec<Body> {
-    let ground = crate::transducer::raster::ground();
     let mut by_hue: crate::network::nerve::Keyed<Vec<Compartment>> = crate::network::nerve::Keyed::new();
-    for (r, row) in grid.lines().enumerate() {
-        for (c, &h) in row.iter().enumerate() {
-            if ground.holds(&h) {
-                continue;
-            }
-            let l = Compartment::from((r as i64, c as i64, 0, h));
-            match by_hue.get_mut(&[h]) {
-                Some(ls) => ls.push(l),
-                None => {
-                    by_hue.insert([h], vec![l]);
-                }
+    for l in compartments_at(grid, 0) {
+        let h = l.hue;
+        match by_hue.get_mut(&[h]) {
+            Some(ls) => ls.push(l),
+            None => {
+                by_hue.insert([h], vec![l]);
             }
         }
     }
@@ -231,16 +225,9 @@ pub fn perceive_family(family: &[(SectionSample, SectionSample)]) -> Frames {
 /// 6-connected components across the frames (51.3, 51.4, 70.4), the frame of each
 /// grid its place in the family.
 pub fn perceive_frames(grids: &[SectionSample]) -> Vec<Body> {
-    let ground = crate::transducer::raster::ground();
     let mut compartments: Vec<Compartment> = Vec::new();
     for (k, grid) in grids.iter().enumerate() {
-        for (r, row) in grid.lines().enumerate() {
-            for (c, &h) in row.iter().enumerate() {
-                if !ground.holds(&h) {
-                    compartments.push(Compartment::from((r as i64, c as i64, k as i64, h)));
-                }
-            }
-        }
+        compartments.extend(compartments_at(grid, k as i64));
     }
     bodies_of(&compartments)
 }
@@ -830,15 +817,8 @@ pub(crate) fn frame_of(g: &SectionSample) -> (usize, usize) {
 /// The test extraction's step 3 decides a glue by, and the same test a
 /// voice answers a demand by (L8q), so the two organs read one thing.
 pub fn painted_within_grid(painted: &[Painted], g: &SectionSample) -> bool {
-    // A negative site is off the grid by `try_from`, never by an index a
-    // wrap happened to put out of range.
-    painted.iter().all(|&(r, c, h)| {
-        let at = |x: i64| usize::try_from(x).ok();
-        at(r).and_then(|r| g.line(r))
-            .and_then(|row| row.get(at(c)?))
-            .copied()
-            == Some(h)
-    })
+    // A site off the sample carries no symbol, so it lies outside.
+    painted.iter().all(|&(r, c, h)| g.at(SectionSite::on_plane([r, c])) == Some(h))
 }
 
 /// The scene's bodies, each indexed by its own chart (Y4, 24.4, 20).

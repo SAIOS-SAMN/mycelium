@@ -100,8 +100,7 @@ pub struct PairLight {
 }
 
 fn at(g: &SectionSample, r: i64, c: i64) -> Option<u8> {
-    let (ur, uc) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
-    g.line(ur)?.get(uc).copied()
+    g.at(crate::transducer::spelled::SectionSite::on_plane([r, c]))
 }
 
 /// THE PERIOD OF A HUE SEQUENCE: the least `p` with `h[t + p] = h[t]` over
@@ -146,12 +145,12 @@ fn lit_run(x: &SectionSample, y: &SectionSample, (r, c): (i64, i64), dir: (i64, 
 fn rays_of(x: &SectionSample, y: &SectionSample, unsaid: &[(i64, i64)], lit_by_ray: &mut Vec<(i64, i64)>) -> Vec<Ray> {
     let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
-    for (r, row) in x.lines().enumerate() {
-        for (c, &src) in row.iter().enumerate() {
+    for (site, src) in x.sites() {
+        {
             if ground.holds(&src) {
                 continue;
             }
-            let (r, c) = (r as i64, c as i64);
+            let [r, c] = site.coordinates();
             for dir in DIRECTIONS {
                 // The free reach: sites the input leaves empty, to the edge or
                 // the first body.
@@ -221,9 +220,10 @@ fn cavities_of(x: &SectionSample, y: &SectionSample, unsaid: &[(i64, i64)], capt
     let ground = crate::transducer::raster::ground();
     let mut seen: Vec<(i64, i64)> = Vec::new();
     let mut out = Vec::new();
-    for (r0, row) in x.lines().enumerate() {
-        for (c0, &h) in row.iter().enumerate() {
-            let start = (r0 as i64, c0 as i64);
+    for (site, h) in x.sites() {
+        {
+            let [r0, c0] = site.coordinates();
+            let start = (r0, c0);
             if !ground.holds(&h) || seen.contains(&start) {
                 continue;
             }
