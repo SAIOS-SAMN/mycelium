@@ -6,11 +6,59 @@ such change is named here.
 
 ## Unreleased
 
+### The open names closed (track 11, N6; #55)
+- **Network contract**, inside v0.3.0's open break: no wire byte, act,
+  ledger layout or task address moves. Four keyed coordinate names
+  change; a name is read only as the coordinate a `CoordinateRefusal`
+  names, and no key, address or persisted record writes it: `CoverSite` `"lamina-cell"` → `"cover-site"`,
+  `ChartCarriage` `"section"` → `"chart-carriage"`, `GluedBoundary`
+  `"cover-site"` → `"glued-boundary"`, `CarriedPieces` `"cover-carriage"`
+  → `"carried-pieces"`; `CoverSite`'s refusal reads "a cover site is a
+  tag byte and a site, n first". The refusals of `Transport` and
+  `MemberSection` read "names no layer kind". The oracle's key `"lamina_a"` →
+  `"compartment_a"`, and the golden file is written again through the
+  corpus's decoder (`mycelium-arc-agi decode`, then `mycelium-soak
+  --write-oracle-golden`).
+- The names track 11 N3 left waiting on a ruling, renamed by function:
+  - **Cover.** The canonical Cover is the Čech cover the senses form,
+    `cech::Cover` (MU-CLIENT 24.4). `network::nerve::Cover` →
+    `HomeTrie` (the module `nerve::cover` → `nerve::home_trie`, the node
+    `HomeTrieNode`, the test file `home_trie_and_router.rs`);
+    `family::scene::Cover` → `Regions`; `family::cover::Cover` →
+    `PiecewiseCarriage`. The documents' "cover trie" is the home trie.
+  - **Fibre.** The keyed trie's `walks::Fibre` → `Subtree` (re-exported
+    as `nerve::Subtree`; `key_in_fibre` → `key_in_subtree`); the methods
+    that return one keep the names they had. `alphabet::bundle::Fibre` is the
+    fibre.
+  - **Frame.** In the `forms` crate, `frame::Frame` → `frame::Reference`,
+    `frame::FrameRefusal` → `frame::ReferenceRefusal`, and
+    `shares::InFrame::Frame` → `InFrame::Reference`. The module `frame`,
+    `LAW_ID` `"FORMS-FRAME"` and `LAW_VERSION` are unchanged.
+  - **Shell.** `transducer::layers::Shell` → `Layer`, `ShellKind` →
+    `LayerKind` (bytes unchanged), `ShellMotion` → `LayerMotion`,
+    `ShellStep` → `LayerStep` (the method `shell` → `layer`),
+    `SectionShell` → `SectionLayer`.
+  - **Epigenome.** The client's `Epigenome`, which holds the genome and
+    the dialect with the atlases over them, → `MindLanguage`; the field
+    `Mind::epigenome` → `Mind::language`. "Epigenome" keeps the dialect.
+  - **Resonance.** `transducer/field/resonance.rs` → `cross_scene.rs`
+    (module `field::cross_scene`), `ResonanceTally` → `CrossSceneTally`,
+    and the fields `Contemplation.resonance` / `MeetGraph.resonance` →
+    `cross_scene`. Commensurate return keeps "resonance".
+- GLOSSARY: rows for Cover, Fibre and Frame name the canonical sense;
+  the Epigenome, Resonance, Shell and Peel rows follow.
+- SDK paths that change: `mycelium_sdk::forms::frame::{Reference,
+  ReferenceRefusal}` and `mycelium_sdk::forms::shares::InFrame::Reference`;
+  `mycelium_sdk::mind::Mind` holds `language: MindLanguage` where it held
+  `epigenome: Epigenome`.
+- Still waiting on a ruling: `ListingField`, and the rule language's
+  `Coord::Shell` (a body's cell count, on `mycelium_sdk::rule`).
+
 ### "Residual" retired for "residue" (track 11, N6; #55)
 - **Network contract**, inside v0.3.0's open break (wire `0x0200`): no
   byte, layout, ledger entry or task address moves. `TAG_RESIDUAL` →
-  `TAG_RESIDUE` (its byte, 19, is unchanged; `CoordinateSystem::Residual`
-  → `Residue`). `ProbeClosure::Residual` → `Residue` (its kind byte, 1,
+  `TAG_RESIDUE` (the byte, 19, is unchanged; `CoordinateSystem::Residual`
+  → `Residue`). `ProbeClosure::Residual` → `Residue` (the kind byte, 1,
   is unchanged). No string on the wire or in a persisted key said
   "residual". Reading labels change: the deferred kind `"residual word"`
   → `"residue word"` (`observe::DEFERRED_KINDS`), the genome write
@@ -21,7 +69,7 @@ such change is named here.
   record leaf that keeps a residue (RM1), and no identifier was renamed
   to it. Every citation in comments, documents and the GLOSSARY follows.
   - `transducer/element/residual.rs` → `residue.rs` (the chain that
-    writes one residue, its A5 canonical form and its listing key);
+    writes one residue, the A5 canonical form and the listing key);
     `germinate::ResidualGerm` → `ResidueGerm`; `from_residual` /
     `from_residual_framed` → `from_residue` / `from_residue_framed`;
     `family::speak::residual_of` → `residue_of`.

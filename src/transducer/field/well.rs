@@ -186,9 +186,9 @@ pub struct Well {
     /// glue.
     pub percept: bool,
     /// N4 — A PERCEPTION'S BODIES, by the chart each stands on, at its input
-    /// and output frames (`resonance::Spores`): the bodies heard against
+    /// and output frames (`cross_scene::Spores`): the bodies heard against
     /// another perception's. Empty for every other idea.
-    pub spores: super::resonance::Spores,
+    pub spores: super::cross_scene::Spores,
     /// 78.56 III — THE FAMILY A PERCEPTION WAS SEEN IN, by its task's
     /// coordinate (empty where none was named): a thought's hours wind only
     /// across the demonstration frames of one family, so a perception meets
@@ -432,19 +432,19 @@ impl Well {
     /// Read off what the well holds on every call, never stored beside
     /// it (rule 6, law 12): the remainder carries A5's proof in its type,
     /// so the address never refuses. A perception's is its form's and its
-    /// spores' (`resonance::perceived_key`): the address it is filed at.
+    /// spores' (`cross_scene::perceived_key`): the address it is filed at.
     pub fn key(&self) -> crate::transducer::address::Address {
         // A GROUNDED THOUGHT is filed where its word stands (78.52(6)).
         if let Some(k) = self.ground.as_ref().and_then(|g| g.ground.key_on(&g.chart)) {
             return k;
         }
         match &self.form {
-            Some(f) => super::resonance::perceived_key(idea_key(f), &self.spores),
+            Some(f) => super::cross_scene::perceived_key(idea_key(f), &self.spores),
             // A thought with no form and no ground is filed by the bodies it
             // stands on, under the chart stratum; with none, by its remainder.
             None if !self.spores.is_empty() => {
                 let mut k = vec![crate::transducer::address::TAG_CHART];
-                k.extend(super::resonance::spores_key(&self.spores));
+                k.extend(super::cross_scene::spores_key(&self.spores));
                 crate::transducer::address::Address::from(k)
             }
             None => remainder_address(&self.remainder),

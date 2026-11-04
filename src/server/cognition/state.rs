@@ -642,7 +642,7 @@ pub struct Court {
     pub(crate) fill_cursor: Option<Vec<u8>>,
     pub(crate) refine_cursor: Option<Vec<u8>>,
     /// This hypha's cover, admitted in write_field; own_cover_charts reads it.
-    pub(crate) own_cover: crate::network::nerve::Cover,
+    pub(crate) own_cover: crate::network::nerve::HomeTrie,
     /// Listings keyed by chart, so rank_over's moved set is a fibre.
     pub(crate) chart_listings: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Ruled addresses beside the ruled cover trie.

@@ -26,8 +26,8 @@ use crate::transducer::stalk::{self, Stalks};
 /// answers a chart with ADDRESSES; `index_of` turned each address into an
 /// offset into whatever vector the caller happened to hold, and `word_at`
 /// turned the offset back into a word. The offsets existed only to be
-/// undone, and the carriers that stored them — `Epigenome::index`,
-/// `Epigenome::expressed_index`, `Language::index` — were pure functions of
+/// undone, and the carriers that stored them — `MindLanguage::index`,
+/// `MindLanguage::expressed_index`, `Language::index` — were pure functions of
 /// the words they indexed, rebuilt from nothing by `reindex()` and costing
 /// 11.5 MB on a voice eleven minutes into a soak. The address IS the
 /// coordinate (law 2) and the trie reaches the word by its prefix directly, so the

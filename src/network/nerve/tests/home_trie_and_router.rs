@@ -1,4 +1,4 @@
-// 16.10, 16.11 — the cover homes a word by incidence and refuses when no
+// 16.10, 16.11 — the home trie homes a word by incidence and refuses when no
 // node dominates; the router finds a node by identity.
 
 use crate::network::nerve::*;
@@ -9,11 +9,11 @@ fn inv(axes: &[u64]) -> Invariant {
     Invariant::counts(axes)
 }
 
-/// The cover's longest common prefix is the plane both hyphae cover, and a
+/// The home trie's longest common prefix is the plane both hyphae cover, and a
 /// miss at the first axis is novel.
 #[test]
 fn fibre_reads_first_axis_miss_as_novel() {
-    let mut c = Cover::new();
+    let mut c = HomeTrie::new();
     let a = [1u8; 32];
     let b = [2u8; 32];
     c.admit(0, &inv(&[1, 2, 3]), a);
@@ -45,7 +45,7 @@ fn nearer(chart: &Invariant, a: [u8; 32], b: [u8; 32]) -> [u8; 32] {
 /// room when the chart is novel.
 #[test]
 fn home_ranks_room_then_chart_nearness() {
-    let mut c = Cover::new();
+    let mut c = HomeTrie::new();
     let mut rooms = Keyed::new();
     let mut addrs = Keyed::new();
     let lo = [1u8; 32];
@@ -96,7 +96,7 @@ fn home_ranks_room_then_chart_nearness() {
 /// homes at the same hypha however often it is asked.
 #[test]
 fn home_shares_charts_among_equal_rooms() {
-    let mut c = Cover::new();
+    let mut c = HomeTrie::new();
     let mut rooms = Keyed::new();
     let mut addrs = Keyed::new();
     let ids = [[0x24u8; 32], [0xceu8; 32], [0x6cu8; 32]];
@@ -121,7 +121,7 @@ fn home_shares_charts_among_equal_rooms() {
 /// Retracting a hypha leaves no stale chart on its fibre.
 #[test]
 fn retract_hypha_leaves_no_stale_charts() {
-    let mut c = Cover::new();
+    let mut c = HomeTrie::new();
     let a = [1u8; 32];
     c.admit(0, &inv(&[1]), a);
     c.retract_hypha(&a);
@@ -132,7 +132,7 @@ fn retract_hypha_leaves_no_stale_charts() {
 /// the home counts sum to the corpus.
 #[test]
 fn home_counts_over_three_covers_sum_to_corpus() {
-    let mut c = Cover::new();
+    let mut c = HomeTrie::new();
     let mut rooms = Keyed::new();
     let mut addrs = Keyed::new();
     let ha = [1u8; 32];
@@ -200,7 +200,7 @@ fn witnesses_names_covering_hyphae_not_every_peer() {
     let far = [3u8; 32];
     let elsewhere = [4u8; 32];
     let chart = inv(&[1, 2, 3]);
-    let mut c = Cover::new();
+    let mut c = HomeTrie::new();
     // Three hyphae on the form's lane: the home, one on its exact chart,
     // one on the plane above it. A fourth covers a different chart, and a
     // fifth covers this chart on a lane the form does not occupy.

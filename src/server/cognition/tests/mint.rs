@@ -35,7 +35,7 @@ assert_eq!(home.treasury().minted(), [0; 4], "the claim is not yet payment: noth
 // 78.153: every stroke the docket's replay takes.
 home.court_settle();
 let spoken = home.provisional.get(&addr).cloned().expect("still provisional until a peer glues");
-let mut cover = crate::network::nerve::Cover::new();
+let mut cover = crate::network::nerve::HomeTrie::new();
 assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 let cover = home.genesis_cover().expect("measured");
 home.enroll([2; 32], cover); // 47.3: a witness with room

@@ -662,11 +662,11 @@ fn interface_between_moves_with_placement_as_versor() {
 #[test]
 fn body_pair_key_round_trips_two_addresses() {
     use crate::transducer::family::pairing::{body_pair_key, read_body_pair_key};
-    use crate::transducer::layers::ShellKind;
+    use crate::transducer::layers::LayerKind;
     let piece = |s: &[(i64, i64, i64)]| {
         let mut sup = sites(s);
         sup.sort_unstable();
-        crate::network::nerve::coord::Piece { kind: ShellKind::Whole, support: sup }
+        crate::network::nerve::coord::Piece { kind: LayerKind::Whole, support: sup }
     };
     let (a, b) = (piece(&[(0, 0, 0), (0, 1, 0)]), piece(&[(1, 2, 0)]));
     let enc = |p: &crate::network::nerve::coord::Piece| p.encode().as_bytes().to_vec();

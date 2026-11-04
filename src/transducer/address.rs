@@ -73,7 +73,7 @@ pub const TAG_RESIDUE: u8 = 19;
 /// `pieces.rs` wrote these three by hand and the carriers holding them were
 /// `Keyed<V, coord::Any>`: loose bytes that could not tell a piece's address
 /// from a carriage's, and a carriage's from a meet's. They are genuine
-/// coordinates — a piece IS its shell kind, its hue and its support; a
+/// coordinates — a piece IS its layer kind, its hue and its support; a
 /// carriage IS its domain and codomain in that order, because a carriage has
 /// a direction; a meet IS its two carriages unordered, because a seam does
 /// not — so each gets a tag and an invertible reading, and the carriers

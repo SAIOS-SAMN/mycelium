@@ -261,7 +261,7 @@ impl Contemplation {
     /// (a word its letters now spell that they did not before).
     fn closing_ground(&self, vertices: &[Vec<u8>]) -> Option<(super::well::Grounded, bool)> {
         let [a, b] = vertices else { return None };
-        let pair = self.grounds.get(&super::resonance::pair_key(a, b))?;
+        let pair = self.grounds.get(&super::cross_scene::pair_key(a, b))?;
         let period = pair.ground.period;
         let returns = pair.hours.checked_div(period)?;
         if returns == 0 {
@@ -366,7 +366,7 @@ impl Contemplation {
         // perceptions' bodies by chart, IN THE ORDER THEY ARRIVED — each
         // idea's ordinal counts admissions, written big-endian so the keyed
         // read is that order — which is the orbit's order of hours (78.48(7)).
-        let mut arrived: Keyed<super::resonance::Spores> = Keyed::new();
+        let mut arrived: Keyed<super::cross_scene::Spores> = Keyed::new();
         // 78.56 III — the thought is of the family its perceptions were seen
         // in: they met only within it, so they share it.
         let mut family: Vec<u8> = Vec::new();
@@ -419,7 +419,7 @@ impl Contemplation {
         // 78.52(6) — THE PAIR'S GROUND, read at the gate with the hours the
         // merged thought has now seen, is the thought's ground from here on.
         if let [a, b] = verts {
-            let pk = super::resonance::pair_key(a, b);
+            let pk = super::cross_scene::pair_key(a, b);
             if let Some(pair) = self.grounds.get(&pk).cloned() {
                 self.grounds.remove(&pk);
                 ground = Some(pair);
@@ -431,14 +431,14 @@ impl Contemplation {
         // hour 0 — is the same frame and is never held twice: a thought's
         // frames on an orbit are bounded by one return (78.43), and its
         // address with them (the epoch-105 growth).
-        let mut spores: super::resonance::Spores = Keyed::new();
+        let mut spores: super::cross_scene::Spores = Keyed::new();
         let mut held: Keyed<()> = Keyed::new();
         for (_, bodies_by_chart) in arrived.scoped() {
             for (chart, bodies) in bodies_by_chart.scoped() {
                 for b in bodies {
                     let mut at = Vec::new();
                     crate::transducer::address::put_key_bytes(&mut at, &chart);
-                    crate::transducer::address::put_key_bytes(&mut at, &super::resonance::body_coordinates(b));
+                    crate::transducer::address::put_key_bytes(&mut at, &super::cross_scene::body_coordinates(b));
                     if held.contains(&at) {
                         continue;
                     }

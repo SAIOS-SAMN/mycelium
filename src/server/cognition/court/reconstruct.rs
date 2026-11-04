@@ -685,7 +685,7 @@ impl Court {
         inv: &crate::transducer::stalk::Invariant,
         class: crate::transducer::alphabet::Rotor,
         _degree: usize,
-        mut cover: Option<&mut crate::network::nerve::Cover>,
+        mut cover: Option<&mut crate::network::nerve::HomeTrie>,
     ) {
         // A class with no axes of its own refines on the leading axis,
         // which is where a chart with no coordinate sits.

@@ -290,7 +290,7 @@ pub fn on_axis_of(index: &AxisIndex, chart: &stalk::Invariant, axis: Axis) -> Ve
         }
         // Coarsening is along the RANK's declared coordinates and nothing
         // else. `Invariant::peel` drops one whole `ChartAxis`;
-        // `Keyed::peel`'s `Shell` cuts at a trie BIT boundary
+        // the `PeelBranch` of `Keyed::peel` cuts at a trie BIT boundary
         // (`clear_after_bit`) and can bisect a `ChartAxis::Ratio`, so it is
         // not a stratum reader and is not used here.
         at = at.peel();
@@ -655,7 +655,7 @@ pub(crate) fn vertex_cited<'a>(f: &'a Form, vertex: &[u8]) -> Option<&'a Vertex>
     }
     let rotor = crate::transducer::alphabet::Rotor::from_key(&crate::transducer::address::take_key_bytes(vertex, &mut p)?)?;
     let at = coord::VertexAt::Word(coord::Transport {
-        kind: crate::transducer::layers::ShellKind::Whole,
+        kind: crate::transducer::layers::LayerKind::Whole,
         class: rotor.holonomy_key()?,
     });
     let v = f.vertices.at(&at)?;

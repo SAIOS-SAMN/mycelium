@@ -118,7 +118,7 @@ impl GenomeWriteTally {
     }
 }
 
-impl Epigenome {
+impl MindLanguage {
     /// FILE A WORD'S ADMITTING STAMP (78.24 (2b), 78.49): the court's stamp
     /// for a word it admitted — a syllabus page's. A word admitted once keeps
     /// its stamp.

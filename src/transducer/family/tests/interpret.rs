@@ -59,7 +59,7 @@ fn interpret_reads_speech_remainder() {
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("a rule");
-    let empty = crate::client::sdk::Epigenome::new();
+    let empty = crate::client::sdk::MindLanguage::new();
     let (_, rem) = crate::transducer::family::form_deflation(&rule.form, &family, &empty);
     let left: u64 = rem.iter().map(|r| r.len() as u64).sum();
     let (joined, read) = interpret(&rule.form, &family, &rem, &empty, &mut budget);

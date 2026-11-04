@@ -22,7 +22,7 @@
 //!
 //! NO CAUSE IS WRITTEN HERE. The trace is the deliverable.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::element::measure_lanes;
 use mycelium::transducer::family::{extract_rule_with, form_deflation, sentence_measure};
 use mycelium::transducer::sentence::{as_element_form, Vertex};
@@ -36,7 +36,7 @@ const MINT_STROKE: usize = 1 << 20;
 /// Walk the slice and trace the mint for every task whose rule form
 /// closes — the five, and any others a larger slice turns up.
 pub(crate) fn trace(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let mut closed_seen = 0u64;
     let (mut open_seen, mut open_demanded, mut open_minted, mut open_stood) = (0u64, 0u64, 0u64, 0u64);
     let mut open_acts = 0u64;
@@ -158,7 +158,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 if rule.form.acts() {
                     open_acts += 1;
                 }
-                let mut mind = Epigenome::new();
+                let mut mind = MindLanguage::new();
                 if let Some(w) = minted {
                     if mind.stand_dialect_withheld(w, 1, 1).is_some() {
                         open_stood += 1;
@@ -473,7 +473,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                     "  mint {name} withheld path: as_element_form(pay {pay:?}) NONE — production stands nothing either"
                 ),
                 Some(word) => {
-                    let mut mind = Epigenome::new();
+                    let mut mind = MindLanguage::new();
                     let stood = mind.stand_dialect_withheld(word, 1, 1);
                     println!(
                         "  mint {name} withheld path: as_element_form(pay {pay:?}) some, stand_dialect_withheld {} — dialect now {}",

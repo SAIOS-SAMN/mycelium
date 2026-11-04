@@ -5,7 +5,7 @@
 //! behaviour and it is not the mesh.
 //!
 //! What it measures is the chain L8r opened: a mind extracts a rule over
-//! a family with its own epigenome as the crystal (21 step 3), stands
+//! a family with the mind's language as the crystal (21 step 3), stands
 //! what closes, and the next family may cite what the last one stood.
 //! The reading that matters is `glued` — rules citing a form this mind
 //! holds — which was structurally zero while the glue's read was
@@ -40,7 +40,7 @@ mod volume;
 #[cfg(test)]
 mod tests;
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::{extract_rule_with, mint_sentence};
 use mycelium::transducer::sentence::Vertex;
 
@@ -593,7 +593,7 @@ fn slice_names(dir: &str, limit: usize) -> Result<Vec<String>, String> {
 /// order.
 fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<WalkCounts, String> {
     let names = slice_names(dir, limit)?;
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     let mut physics = mycelium::physics::Physics::default();
     let mut r = WalkCounts::default();
     let mut k = 0u64;
@@ -674,7 +674,7 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<WalkCounts, St
 /// 45.9: the engine's coordinates, read off the mind at the end of the
 /// walk. Every one is read from CONTENT — the forms the mind holds and
 /// the vertices in them — and nothing is counted that was not derived.
-fn read_engine(epi: &mut Epigenome, r: &mut WalkCounts) {
+fn read_engine(epi: &mut MindLanguage, r: &mut WalkCounts) {
     let mut seen: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     let mut charts: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
     for e in epi.genome_words() {

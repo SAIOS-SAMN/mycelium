@@ -144,7 +144,7 @@ assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
 home.court_stroke();
 let spoken = home.provisional.scoped().next().unwrap().1.clone();
-let mut cover = crate::network::nerve::Cover::new();
+let mut cover = crate::network::nerve::HomeTrie::new();
 assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 assert!(peer.basis_len() >= 1, "the word is language on the second organ");
 assert!(matches!(fetched(&mut third, &spoken, [2; 32], [3; 32], &mut cover), Glue::Admitted));
@@ -285,7 +285,7 @@ assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
 home.rule_all_provisionals();
 let spoken = home.provisional.scoped().next().unwrap().1.clone();
-let mut cover = crate::network::nerve::Cover::new();
+let mut cover = crate::network::nerve::HomeTrie::new();
 assert!(matches!(fetched(&mut peer, &spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
 assert!(peer.basis_len() >= 1);
 let cover = home.genesis_cover().expect("measured");
@@ -468,7 +468,7 @@ fn glue_fetched_files_offer_at_home_vantage() {
     let offered = spoken.address();
 
     let mut witness = Court::new();
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     assert!(matches!(fetched(&mut witness, &spoken, home_vk, witness_vk, &mut cover), Glue::Admitted));
     let cx = witness.complexes().get(&inv.key()).expect("the class has a complex");
     assert_eq!(
@@ -485,7 +485,7 @@ fn glue_fetched_files_offer_at_home_vantage() {
     // claim: gluing as oneself files the home's word under this court's own
     // vantage, and the simplex has one vertex where 13.9 needs two.
     let mut confused = Court::new();
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     let _ = fetched(&mut confused, &spoken, witness_vk, witness_vk, &mut cover);
     let cx = confused.complexes().get(&inv.key()).expect("the class has a complex");
     assert_eq!(
@@ -522,7 +522,7 @@ fn own_section_is_empty_without_rederivation() {
     // A witness that has done no work of its own on this class.
     let mut witness = Court::new();
     witness.bind_identity(witness_vk);
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     assert!(matches!(
         fetched(&mut witness, &spoken, home_vk, witness_vk, &mut cover),
         Glue::Admitted
@@ -594,7 +594,7 @@ fn own_section_keeps_court_ruling_not_peer_word() {
     // cover, and it is filed at the PEER's vantage, never at this one.
     let mut heard = Court::new();
     heard.bind_identity(own_vk);
-    let mut cover = crate::network::nerve::Cover::new();
+    let mut cover = crate::network::nerve::HomeTrie::new();
     assert!(matches!(
         fetched(&mut heard, &spoken, [0x0b; 32], own_vk, &mut cover),
         Glue::Admitted

@@ -33,15 +33,15 @@ impl Mind {
     /// spent budget cannot spell waits, pending, for the next close.
     pub(crate) fn stand_calluses(&mut self) {
         let mut budget = self.physics.stroke();
-        let mut pending = self.epigenome.take_calluses().into_iter();
+        let mut pending = self.language.take_calluses().into_iter();
         for c in pending.by_ref() {
             if budget.remaining() == 0 {
-                self.epigenome.calluses_pending.push(c);
+                self.language.calluses_pending.push(c);
                 break;
             }
             self.stand_callus(c, &mut budget);
         }
-        self.epigenome.calluses_pending.extend(pending);
+        self.language.calluses_pending.extend(pending);
         // Door (b), on the same budget: the demands a discharge answered.
         self.refill_answered(&mut budget);
     }
@@ -57,7 +57,7 @@ impl Mind {
     ) -> Option<crate::transducer::alphabet::Derivation> {
         let v = crate::transducer::element::identity_versor();
         let adjoined = crate::transducer::family::derivation::adjoined_basis_target(
-            &self.epigenome,
+            &self.language,
             budget,
             &v,
             Some(ray),
@@ -71,7 +71,7 @@ impl Mind {
 
     fn stand_callus(&mut self, c: crate::client::sdk::vocabulary::remainder::Callus, budget: &mut crate::physics::Budget) {
         let Some(tops) = c.chains.iter().map(|ch| top_of(ch)).collect::<Option<Vec<Invariant>>>() else {
-            self.epigenome.calluses.untopped += 1;
+            self.language.calluses.untopped += 1;
             return;
         };
         // One cover for the act and the demand: both chains' charts, each
@@ -85,7 +85,7 @@ impl Mind {
         let Some(derivation) = self.spell_held(&c.ray, budget) else {
             // Two vantages agreeing on a class no held word spells: CS2's
             // demand with its second vantage in hand, up through the docket.
-            self.epigenome.calluses.unspelled += 1;
+            self.language.calluses.unspelled += 1;
             let charts: Vec<Invariant> = cover.scoped().filter_map(|(k, _)| Invariant::from_key(&k)).collect();
             // Its residue is the two remainders' ray. 78.47(6) kept it off the
             // CITATION because a chain reached it on RM1's leaf; the plan is
@@ -99,11 +99,11 @@ impl Mind {
             return;
         };
         let Some(callus) = crate::transducer::sentence::callus_form(derivation, &tops) else {
-            self.epigenome.calluses.unminted += 1;
+            self.language.calluses.unminted += 1;
             return;
         };
         let callus = self.stand_word(callus);
-        self.epigenome.calluses.stood += 1;
+        self.language.calluses.stood += 1;
         // RM1 (c), door (a) — THE CALLUS SPELLS THE TWIST: its two remainder
         // words re-fill, each at the chain it was perceived on.
         for (w, chain) in c.words.iter().zip(&c.chains) {
@@ -117,7 +117,7 @@ impl Mind {
     fn stand_word(&mut self, word: crate::transducer::element::Element) -> crate::transducer::element::Element {
         let k = self.act();
         let tu = self.contemplation.now_k();
-        let _ = self.epigenome.stand_dialect_at(word.clone(), k, tu);
+        let _ = self.language.stand_dialect_at(word.clone(), k, tu);
         word
     }
 
@@ -133,13 +133,13 @@ impl Mind {
         at: &[Vec<u8>],
         spelling: &crate::transducer::element::Element,
     ) -> bool {
-        match self.epigenome.mark_refilled(word.as_bytes(), class, at, &spelling.address()) {
+        match self.language.mark_refilled(word.as_bytes(), class, at, &spelling.address()) {
             true => {
-                self.epigenome.calluses.refilled += 1;
+                self.language.calluses.refilled += 1;
                 true
             }
             false => {
-                self.epigenome.calluses.refill_refused += 1;
+                self.language.calluses.refill_refused += 1;
                 false
             }
         }
@@ -152,17 +152,17 @@ impl Mind {
     fn refill_answered(&mut self, budget: &mut crate::physics::Budget) {
         let classes = std::mem::take(&mut self.contemplation.demands_answered);
         for class in classes {
-            for (word, chain, ray) in self.epigenome.open_remainders_of(&class) {
+            for (word, chain, ray) in self.language.open_remainders_of(&class) {
                 if budget.remaining() == 0 {
                     return;
                 }
                 let Some(derivation) = self.spell_held(&ray, budget) else { continue };
                 let Some(top) = top_of(&chain) else {
-                    self.epigenome.calluses.untopped += 1;
+                    self.language.calluses.untopped += 1;
                     continue;
                 };
                 let Some(form) = crate::transducer::sentence::callus_form(derivation, std::slice::from_ref(&top)) else {
-                    self.epigenome.calluses.unminted += 1;
+                    self.language.calluses.unminted += 1;
                     continue;
                 };
                 let spelling = self.stand_word(form);

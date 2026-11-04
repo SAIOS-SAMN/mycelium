@@ -4,7 +4,7 @@
 use crate::client::sdk::*;
 use crate::transducer::element::Element;
 
-impl crate::transducer::family::Crystal for Epigenome {
+impl crate::transducer::family::Crystal for MindLanguage {
     fn on_class(
         &self,
         class: &crate::transducer::stalk::Invariant,

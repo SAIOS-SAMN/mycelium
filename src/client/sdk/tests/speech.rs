@@ -28,7 +28,7 @@ fn withhold_form_stands_no_remainder_as_word() {
     let second = chain_word(&[(5, 5, 3u8, 4u8)]);
     let whole = chain_word(&remainder);
     for (name, w) in [("first body", &first), ("second body", &second), ("chain of both", &whole)] {
-        assert!(entity.epigenome.working_word(w.address().as_bytes()).is_none(), "the {name} never stands as a word");
+        assert!(entity.language.working_word(w.address().as_bytes()).is_none(), "the {name} never stands as a word");
         assert!(!entity.already_taught(w), "the {name} is not an utterance");
     }
     assert!(entity.dialect_len() >= 1, "the withheld form stands");
@@ -189,7 +189,7 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
     ];
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("bodies"));
     let spoken = |e: &Mind| {
-        e.epigenome
+        e.language
             .dialect
             .scoped()
             .map(|(_, d)| d.sentence.element())
@@ -216,7 +216,7 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
     // word is the one carrying its return (`ℓ − 1 = 3` on the shell); the
     // words its sentences taught stand beside it in the dialect (78.100 D1).
     let words: Vec<_> = entity
-        .epigenome
+        .language
         .dialect
         .scoped()
         .map(|(_, d)| d.sentence.element().clone())

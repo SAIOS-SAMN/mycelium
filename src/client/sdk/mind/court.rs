@@ -125,7 +125,7 @@ impl Mind {
             self.quote();
         }
         if crate::economy::lanes_short(&self.physics().reserve_shortfall([true; 4])).is_empty()
-            && (self.epigenome.genome_len() == 0 || self.epigenome.atlas_is_empty())
+            && (self.language.genome_len() == 0 || self.language.atlas_is_empty())
         {
             self.pull_syllabus();
         }
@@ -147,13 +147,13 @@ impl Mind {
                 if !crate::economy::lanes_short(&self.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
                     continue;
                 }
-                for addr in &self.epigenome.chart_stratum(chart) {
+                for addr in &self.language.chart_stratum(chart) {
                     if !spend.spend() {
                         return;
                     }
-                    let (Some(word), Some(st)) = (self.epigenome.working_word(addr), self.epigenome.standing_of(addr)) else { continue };
+                    let (Some(word), Some(st)) = (self.language.working_word(addr), self.language.standing_of(addr)) else { continue };
                     let Some(f) = word.form().cloned() else { continue };
-                    if !f.is_closed() || !reproduces(&self.epigenome, &f, links) {
+                    if !f.is_closed() || !reproduces(&self.language, &f, links) {
                         continue;
                     }
                     let target = crate::transducer::sentence::demand_at(cluster.address.as_bytes(), demand);
@@ -259,7 +259,7 @@ impl Mind {
     /// stratum.
     pub(crate) fn language_inflow(&mut self) {
         let pace = &self.board.court;
-        let due = pace.last_height > pace.last_synced_height || pace.dwell_elapsed() || self.epigenome.atlas_is_empty();
+        let due = pace.last_height > pace.last_synced_height || pace.dwell_elapsed() || self.language.atlas_is_empty();
         if !due {
             return;
         }
@@ -275,7 +275,7 @@ impl Mind {
 /// READING (`Court::settle_demand`): the demand's bodies framed as a scene
 /// at the bodies' own corner, the form spoken on it at the identity placement
 /// (L14), and every link's AFTER colour said at its own site.
-fn reproduces(epi: &Epigenome, f: &crate::transducer::sentence::Form, links: &[(i64, i64, u8, u8)]) -> bool {
+fn reproduces(epi: &MindLanguage, f: &crate::transducer::sentence::Form, links: &[(i64, i64, u8, u8)]) -> bool {
     let Some(((r0, c0), scene, _)) = crate::transducer::family::scene_at_of_chain(links) else { return false };
     let placement = crate::transducer::alphabet::Word::identity();
     let Some(sp) = crate::transducer::family::Crystal::speak_form(epi, f, &scene, &placement) else { return false };

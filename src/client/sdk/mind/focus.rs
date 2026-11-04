@@ -161,7 +161,7 @@ impl Mind {
         let mut out: Keyed<()> = Keyed::new();
         for (coord, _) in self.board.corpus.at.scoped() {
             if let [COORD_CHART, chart @ ..] = coord.as_slice() {
-                if self.epigenome.speaks_on(chart) {
+                if self.language.speaks_on(chart) {
                     out.insert(&coord, ());
                 }
             }
@@ -185,7 +185,7 @@ impl Mind {
     /// the focus over.
     fn curiosity_focus(&self) -> Keyed<()> {
         let language: Vec<crate::transducer::stalk::Invariant> =
-            self.epigenome.spoken_charts().iter().filter_map(|k| crate::transducer::stalk::Invariant::from_key(k)).collect();
+            self.language.spoken_charts().iter().filter_map(|k| crate::transducer::stalk::Invariant::from_key(k)).collect();
         curiosity(&language, self.board.corpus.at.scoped().map(|(coord, _)| coord))
     }
 }

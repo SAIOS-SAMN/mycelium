@@ -114,7 +114,7 @@ pub enum Unrelated {
 /// read and why some are no circuit; the cells read and how they cohere; the
 /// circuits by the regime of the circuits' modes (78.26(5)); and what was filed.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct ResonanceTally {
+pub struct CrossSceneTally {
     /// Circuits: body pairs a reciprocal transition carries.
     pub circuits: u64,
     pub uncarried: u64,
@@ -211,7 +211,7 @@ pub struct ResonanceTally {
     pub grounds: [u64; 4],
 }
 
-impl ResonanceTally {
+impl CrossSceneTally {
     pub fn line(&self) -> String {
         format!(
             "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} held {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} twisted {} lifted {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} tilted {} stability unread {} reflexive {} non-rigid {} no succession {} external torque {} incoherent {} | demanded {} undemanded {} | grounds: filed {} no return {} unplaced {} no succession {}",
@@ -342,8 +342,8 @@ impl ResonanceTally {
     }
 
     /// The reading off the observer's wire.
-    pub fn take(b: &[u8], p: &mut usize) -> Option<ResonanceTally> {
-        let mut t = ResonanceTally::default();
+    pub fn take(b: &[u8], p: &mut usize) -> Option<CrossSceneTally> {
+        let mut t = CrossSceneTally::default();
         for v in t.fields() {
             *v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
             *p += 8;
@@ -446,7 +446,7 @@ fn ground_of(bodies: Vec<crate::physics::equilibrium::GroundBody>, forward: &Mv)
 }
 
 /// Why an admitted relation filed no ground — its slot in
-/// `ResonanceTally::grounds` (slot 0 counts the grounds filed).
+/// `CrossSceneTally::grounds` (slot 0 counts the grounds filed).
 #[derive(Clone, Copy)]
 enum Ungrounded {
     NoReturn = 1,
@@ -738,7 +738,7 @@ impl Contemplation {
                     for y in &other_shapes {
                         match transition(x, y, budget) {
                             Ok(t) => {
-                                self.resonance.circuits += 1;
+                                self.cross_scene.circuits += 1;
                                 circuits.push(ChamberCircuit {
                                     ring: circuit_ring(ok, x, *o, y),
                                     holonomy: Ok(t.versor.clone()),
@@ -750,11 +750,11 @@ impl Contemplation {
                                 row.ts.push(Some(t));
                             }
                             Err(Unrelated::Unbounded) => {
-                                self.resonance.note(Unrelated::Unbounded);
+                                self.cross_scene.note(Unrelated::Unbounded);
                                 return;
                             }
                             Err(why) => {
-                                self.resonance.note(why);
+                                self.cross_scene.note(why);
                                 row.ts.push(None);
                                 row.lanes.push(None);
                             }
@@ -833,16 +833,16 @@ impl Contemplation {
                 for x in own_shapes {
                     for y in &other_shapes {
                         if !topological(axis) {
-                            self.resonance.apart += 1;
+                            self.cross_scene.apart += 1;
                             continue;
                         }
                         if budget.remaining() == 0 {
-                            self.resonance.note(Unrelated::Unbounded);
+                            self.cross_scene.note(Unrelated::Unbounded);
                             return false;
                         }
                         match crate::transducer::blade::surgery::Surgery::factor(x, y, budget) {
                             Some((_, core)) => self.file_deformation(&here, &there, &core),
-                            None => self.resonance.unfactored += 1,
+                            None => self.cross_scene.unfactored += 1,
                         }
                     }
                 }
@@ -857,14 +857,14 @@ impl Contemplation {
     /// class for a change in place — with the core's ray as its residue: the
     /// question of the deformation.
     fn file_deformation(&mut self, here: &stalk::Invariant, there: &stalk::Invariant, core: &Mv) {
-        self.resonance.deformed += 1;
+        self.cross_scene.deformed += 1;
         let class = halves(core).and_then(|(r, c)| sentence::ClassVector::of_rotor(&r, c, sentence::CycleType::Identity));
         match class {
             Some(k) => {
                 self.docket_demand(&k, &[here.clone(), there.clone()], Some(core));
-                self.resonance.demanded += 1;
+                self.cross_scene.demanded += 1;
             }
-            None => self.resonance.undemanded += 1,
+            None => self.cross_scene.undemanded += 1,
         }
     }
 
@@ -889,9 +889,9 @@ impl Contemplation {
             }
         }
         match (circuits, rays.len(), unkeyed) {
-            ([_], _, _) => self.resonance.unperturbed += 1,
-            (_, 1, false) => self.resonance.flat += 1,
-            _ => self.resonance.curved += 1,
+            ([_], _, _) => self.cross_scene.unperturbed += 1,
+            (_, 1, false) => self.cross_scene.flat += 1,
+            _ => self.cross_scene.curved += 1,
         }
     }
 
@@ -927,19 +927,19 @@ impl Contemplation {
                 m.escapes += escapes as u64;
             });
         }
-        self.resonance.cells += 1;
+        self.cross_scene.cells += 1;
         let r = &cell.rings;
-        self.resonance.resonant += r.resonant as u64;
-        self.resonance.rosette += r.rosette as u64;
-        self.resonance.parabolic += r.parabolic as u64;
-        self.resonance.boost += r.boost as u64;
-        self.resonance.holonomic += r.holonomic as u64;
+        self.cross_scene.resonant += r.resonant as u64;
+        self.cross_scene.rosette += r.rosette as u64;
+        self.cross_scene.parabolic += r.parabolic as u64;
+        self.cross_scene.boost += r.boost as u64;
+        self.cross_scene.holonomic += r.holonomic as u64;
         match &cell.coherence {
-            Coherence::Closes(_) => self.resonance.closes += 1,
-            Coherence::Held { .. } => self.resonance.held += 1,
-            Coherence::Unread => self.resonance.chambers_unread += 1,
+            Coherence::Closes(_) => self.cross_scene.closes += 1,
+            Coherence::Held { .. } => self.cross_scene.held += 1,
+            Coherence::Unread => self.cross_scene.chambers_unread += 1,
             Coherence::Open { escapes, .. } => {
-                self.resonance.open += 1;
+                self.cross_scene.open += 1;
                 let charts: Vec<stalk::Invariant> = stalk::Invariant::from_key(chart).into_iter().collect();
                 for inc in escapes {
                     match &inc.class {
@@ -950,9 +950,9 @@ impl Contemplation {
                         Ok(class) => {
                             // 78.114 — with the ring's holonomy as its residue.
                             self.docket_demand(class, &charts, Some(&inc.residue));
-                            self.resonance.demanded += 1;
+                            self.cross_scene.demanded += 1;
                         }
-                        Err(_) => self.resonance.undemanded += 1,
+                        Err(_) => self.cross_scene.undemanded += 1,
                     }
                 }
             }
@@ -999,7 +999,7 @@ impl Contemplation {
                     Hour::NoOrbit | Hour::Slipped { .. } => None,
                 })
                 .collect();
-            self.resonance.predicted += steps.len() as u64;
+            self.cross_scene.predicted += steps.len() as u64;
             let every = hours.iter().all(|h| matches!(h, Hour::Predicted(_)));
             if let (true, [g, more @ ..]) = (every, steps.as_slice()) {
                 if let (true, Some((rotor, carriage))) = (more.iter().all(|s| s.projective_eq(g)), halves(g)) {
@@ -1017,7 +1017,7 @@ impl Contemplation {
                         self.carry_vortices_round(&rotor, &row.chart);
                     }
                     let _ = self.tether(key, &other, rotor, carriage, lanes);
-                    self.resonance.edges += 1;
+                    self.cross_scene.edges += 1;
                     continue;
                 }
             }
@@ -1026,7 +1026,7 @@ impl Contemplation {
             // whole of one side onto the other — every body of this
             // perception carried, or every body of the other landed on.
             let (spectrum, unread) = spectrum_of(rows);
-            self.resonance.unread_lines += unread;
+            self.cross_scene.unread_lines += unread;
             let other_lands = Self::other_bodies_of(rows);
             let whole: Vec<&Line> = spectrum
                 .scoped()
@@ -1062,13 +1062,13 @@ impl Contemplation {
                         }
                         let chart = Self::chart_of_rows(rows);
                         self.scene_edge(key, &other, rep, first.lanes, &chart);
-                        self.resonance.cosets += 1;
+                        self.cross_scene.cosets += 1;
                         for m in &members {
                             let q = m.versor.geo(&rep.versor.reverse());
                             if unit_ray(&q) {
                                 continue;
                             }
-                            self.resonance.symmetries += 1;
+                            self.cross_scene.symmetries += 1;
                             if let Some((r, c)) = halves(&q) {
                                 let fill = crate::transducer::cech::classify(&r, &c, sentence::CycleType::Identity);
                                 self.complex.index_congruent(&fill);
@@ -1081,7 +1081,7 @@ impl Contemplation {
                 // ray by its class, and every slipped hour is the demand of the
                 // thought it slipped against, worked at that thought's return.
                 _ => {
-                    self.resonance.several += 1;
+                    self.cross_scene.several += 1;
                     for (_, line) in spectrum.scoped() {
                         self.keep_orbit(key, &other, &line.t);
                     }
@@ -1143,7 +1143,7 @@ impl Contemplation {
         let mut met: Vec<(usize, Mv)> = Vec::new();
         let mut coupled: Vec<crate::physics::equilibrium::Coupling> = Vec::new();
         if unit_ray(generator) {
-            self.resonance.reflexive += 1;
+            self.cross_scene.reflexive += 1;
             return Ok(());
         }
         let ray = |m: Mv| match m.canonical() {
@@ -1319,7 +1319,7 @@ impl Contemplation {
                 }
             });
         }
-        self.resonance.consolidated += 1;
+        self.cross_scene.consolidated += 1;
         Ok(())
     }
 
@@ -1380,7 +1380,7 @@ impl Contemplation {
                 let grounded = super::well::Grounded { chart: first.chart.clone(), hours, ground, twist: None };
                 self.wind_ground(&grounded, hours, budget);
                 self.grounds.insert(pair_key(key, other), grounded);
-                self.resonance.grounds[0] += 1;
+                self.cross_scene.grounds[0] += 1;
             }
             // MU-CLIENT §4.12 — A RELATION THAT NEVER RETURNS IS AN ESCAPING
             // ORBIT, NEVER NOTHING: no ground (it has no period to wind), and
@@ -1400,9 +1400,9 @@ impl Contemplation {
                 match (class, stalk::Invariant::from_key(&first.chart)) {
                     (Some(k), Some(chart)) => {
                         self.docket_demand(&k, &[chart], Some(&forward));
-                        self.resonance.demanded += 1;
+                        self.cross_scene.demanded += 1;
                     }
-                    _ => self.resonance.undemanded += 1,
+                    _ => self.cross_scene.undemanded += 1,
                 }
             }
             Err(why) => self.ungrounded(why),
@@ -1410,7 +1410,7 @@ impl Contemplation {
     }
 
     fn ungrounded(&mut self, why: Ungrounded) {
-        self.resonance.grounds[why as usize] += 1;
+        self.cross_scene.grounds[why as usize] += 1;
     }
 
     /// 78.52(6) Stage C — A NEW PERCEPTION MEETS A GROUNDED THOUGHT BY ITS
@@ -1473,10 +1473,10 @@ impl Contemplation {
             .map(|b| Some(GroundBody { nucleus: at_zero.sandwich(&b.nucleus), body: carried_body(&b.body, &at_zero)? }))
             .collect();
         let sheared = ground_of(bodies?, &g.generator).ok()?;
-        self.resonance.twisted += 1;
+        self.cross_scene.twisted += 1;
         if let Some(split) = crate::transducer::cga::lift_drag(&g.generator.grade(2), &tau.grade(2)) {
             if !split.lift.is_zero() {
-                self.resonance.lifted += 1;
+                self.cross_scene.lifted += 1;
             }
         }
         let twist = Some(match &held.twist {
@@ -1586,10 +1586,10 @@ impl Contemplation {
         let Some((rotor, carriage)) = halves(&generator) else {
             return Some((Err(Refusal::NoSuccession), generator));
         };
-        self.resonance.consolidated += 1;
-        self.resonance.predicted += 1;
+        self.cross_scene.consolidated += 1;
+        self.cross_scene.predicted += 1;
         let _ = self.tether(key, other, rotor, carriage, [0; 4]);
-        self.resonance.edges += 1;
+        self.cross_scene.edges += 1;
         // MU-CLIENT §4.4(2) — THE WINDING ADVANCES, never stops at the period:
         // the hour past a return is hour 0 again (`hours % period` above), and
         // the thought keeps every hour it has seen, so each return it completes
@@ -1617,56 +1617,56 @@ impl Contemplation {
         // per defect component, never summed (78.57).
         let residues: Vec<Option<Mv>> = match why {
             Refusal::MonocularOrbit => {
-                self.resonance.monocular += 1;
+                self.cross_scene.monocular += 1;
                 return;
             }
             Refusal::SingularCollapse => {
-                self.resonance.collapsed += 1;
+                self.cross_scene.collapsed += 1;
                 return;
             }
             Refusal::UnbalancedTensegrity { net_torque } => {
-                self.resonance.unbalanced += 1;
+                self.cross_scene.unbalanced += 1;
                 vec![Some(net_torque.clone())]
             }
             // 78.62 — the planes the operation raised, each its own demand.
             Refusal::DestabilizingOperation { rising } => {
-                self.resonance.destabilizing += 1;
+                self.cross_scene.destabilizing += 1;
                 rising.iter().cloned().map(Some).collect()
             }
             Refusal::StabilityUnread { .. } => {
-                self.resonance.stability_unread += 1;
+                self.cross_scene.stability_unread += 1;
                 return;
             }
             Refusal::NoSuccession => {
-                self.resonance.unsucceeded += 1;
+                self.cross_scene.unsucceeded += 1;
                 return;
             }
             // A.13: the external torque — what exerted it is the demand.
             Refusal::ExternalTorque { tau } => {
-                self.resonance.torqued += 1;
+                self.cross_scene.torqued += 1;
                 vec![Some(tau.clone())]
             }
             // The metric demand: the pair's unit-weight ratio.
             Refusal::NonRigid { delta, .. } => {
-                self.resonance.nonrigid += 1;
+                self.cross_scene.nonrigid += 1;
                 vec![Some(Mv::scalar(delta.clone()))]
             }
             // 78.57 — THE COHERENCE FORM, whole: each component counted on its
             // own counter and filed as its own demand — Δω the missing rotor,
             // the metric defect the missing tangency, τ_ext the unmodelled force.
             Refusal::Incoherent { defect } => {
-                self.resonance.incoherent += 1;
+                self.cross_scene.incoherent += 1;
                 if !defect.torsion.is_empty() {
-                    self.resonance.unbalanced += 1;
+                    self.cross_scene.unbalanced += 1;
                 }
                 if !defect.metric.is_empty() {
-                    self.resonance.nonrigid += 1;
+                    self.cross_scene.nonrigid += 1;
                 }
                 if !defect.momentum.is_empty() {
-                    self.resonance.torqued += 1;
+                    self.cross_scene.torqued += 1;
                 }
                 if !defect.tilted.is_empty() {
-                    self.resonance.tilted += 1;
+                    self.cross_scene.tilted += 1;
                 }
                 defect
                     .torsion
@@ -1681,7 +1681,7 @@ impl Contemplation {
         };
         let class = halves(generator).and_then(|(r, c)| sentence::ClassVector::of_rotor(&r, c, sentence::CycleType::Identity));
         let Some(class) = class else {
-            self.resonance.undemanded += 1;
+            self.cross_scene.undemanded += 1;
             return;
         };
         let mut charts: Keyed<()> = Keyed::new();
@@ -1691,7 +1691,7 @@ impl Contemplation {
         let charts: Vec<stalk::Invariant> = charts.scoped().filter_map(|(k, _)| stalk::Invariant::from_key(&k)).collect();
         for residue in &residues {
             self.docket_demand(&class, &charts, residue.as_ref());
-            self.resonance.demanded += 1;
+            self.cross_scene.demanded += 1;
         }
     }
 
@@ -1713,13 +1713,13 @@ impl Contemplation {
     /// what the thought is.
     fn scene_edge(&mut self, key: &[u8], other: &[u8], t: &Transition, lanes: [u64; 4], chart: &[u8]) {
         let Some((rotor, carriage)) = halves(&t.versor) else {
-            self.resonance.undemanded += 1;
+            self.cross_scene.undemanded += 1;
             return;
         };
         self.carry_vortices_round(&rotor, chart);
         let _ = self.tether(key, other, rotor, carriage, lanes);
-        self.resonance.edges += 1;
-        self.resonance.scene_motions += 1;
+        self.cross_scene.edges += 1;
+        self.cross_scene.scene_motions += 1;
     }
 
     /// MU-CLIENT §4.8, §7.1 R3 — THE VORTEX CARRIED ROUND ON A NEW
@@ -1762,8 +1762,8 @@ impl Contemplation {
     /// does not carry — this is the newer scene, so they APPEARED — and the
     /// other's bodies it lands nothing on, which VANISHED.
     fn note_unmatched(&mut self, rows: &[Row], other_lands: &Keyed<()>, line: &Line) {
-        self.resonance.appeared += (0..rows.len()).filter(|&i| !line.carried.contains(&row_key(i))).count() as u64;
-        self.resonance.vanished += other_lands.scoped().filter(|(k, _)| !line.lands.contains(k)).count() as u64;
+        self.cross_scene.appeared += (0..rows.len()).filter(|&i| !line.carried.contains(&row_key(i))).count() as u64;
+        self.cross_scene.vanished += other_lands.scoped().filter(|(k, _)| !line.lands.contains(k)).count() as u64;
     }
 
     /// ONE ORBIT OF A PAIR THAT HOLDS SEVERAL, KEPT BY ITS OWN COORDINATES
@@ -1774,18 +1774,18 @@ impl Contemplation {
     /// an index keyed by two addresses copies both.
     fn keep_orbit(&mut self, a: &[u8], b: &[u8], t: &Transition) {
         let Some((rotor, carriage)) = halves(&t.versor) else {
-            self.resonance.undemanded += 1;
+            self.cross_scene.undemanded += 1;
             return;
         };
         let fill = crate::transducer::cech::classify(&rotor, &carriage, sentence::CycleType::Identity);
         let held = match &fill {
             Fill::Congruent(..) => {
                 self.complex.index_congruent(&fill);
-                self.resonance.kept_congruent += 1;
+                self.cross_scene.kept_congruent += 1;
                 true
             }
             Fill::Class(..) => {
-                self.resonance.kept_class += 1;
+                self.cross_scene.kept_class += 1;
                 true
             }
             Fill::Filled(..) | Fill::Unspellable(_) | Fill::Unread(_) | Fill::Open => false,
@@ -1811,8 +1811,8 @@ impl Contemplation {
     /// (`work_slips`). Where no thought stands to hold it, it is docketed now.
     fn file_slip(&mut self, chart: &[u8], residue: &Mv, on_orbit: bool, thought: &[u8]) {
         match on_orbit {
-            true => self.resonance.phase_slips += 1,
-            false => self.resonance.off_orbit += 1,
+            true => self.cross_scene.phase_slips += 1,
+            false => self.cross_scene.off_orbit += 1,
         }
         match self.wells.get_mut(thought) {
             Some(b) => b.slips.push((chart.to_vec(), residue.clone())),
@@ -1843,9 +1843,9 @@ impl Contemplation {
             Some(k) => {
                 let charts: Vec<stalk::Invariant> = stalk::Invariant::from_key(chart).into_iter().collect();
                 self.docket_demand(&k, &charts, Some(residue));
-                self.resonance.demanded += 1;
+                self.cross_scene.demanded += 1;
             }
-            None => self.resonance.undemanded += 1,
+            None => self.cross_scene.undemanded += 1,
         }
     }
 }

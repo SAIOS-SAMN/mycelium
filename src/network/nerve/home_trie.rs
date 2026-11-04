@@ -1,4 +1,4 @@
-// 16.11, 26 — THE COVER: the trie that homes a word by incidence.
+// 16.11, 26 — THE HOME TRIE: the trie that homes a word by incidence.
 //
 //! Placement follows the longest common prefix on the chart's lane, never XOR
 //! distance: a word goes where its own coordinates say, and a node's room
@@ -13,14 +13,14 @@ use crate::transducer::stalk::ChartAxis;
 // numerator and its denominator, and the branch a walk read back was half a
 // value. The coordinate's own kind-tagged, length-prefixed bytes are
 // `ChartAxis::key_bytes`, which is the one construction the chart key, this
-// cover's trie and the stalk's stratum all branch on (law 12).
+// home trie and the stalk's stratum all branch on (law 12).
 
-/// Cover trie: per lane, nested Keyed by invariant axes. The fibre at a
+/// The home trie: per lane, nested Keyed by invariant axes. The fibre at a
 /// node is the hyphas covering that plane (this prefix and every finer
 /// chart beneath it). Own charts and peer charts share the trie.
 #[derive(Clone, Debug)]
-pub struct Cover {
-    lanes: [CoverNode; 4],
+pub struct HomeTrie {
+    lanes: [HomeTrieNode; 4],
     /// Cover root per lane, hashed in trie order on admit/retract.
     roots: [[u8; 32]; 4],
     /// Whether each lane has moved since its root was hashed.
@@ -37,9 +37,9 @@ fn empty_cover_root() -> [u8; 32] {
     *blake3::Hasher::new().finalize().as_bytes()
 }
 
-impl Default for Cover {
+impl Default for HomeTrie {
     fn default() -> Self {
-        Cover {
+        HomeTrie {
             lanes: Default::default(),
             roots: [empty_cover_root(); 4],
             due: [false; 4],
@@ -49,12 +49,12 @@ impl Default for Cover {
 }
 
 #[derive(Clone, Debug, Default)]
-struct CoverNode {
+struct HomeTrieNode {
     here: Keyed<()>,
-    next: Keyed<CoverNode>,
+    next: Keyed<HomeTrieNode>,
 }
 
-impl CoverNode {
+impl HomeTrieNode {
     fn is_empty(&self) -> bool {
         self.here.is_empty() && self.next.is_empty()
     }
@@ -74,7 +74,7 @@ impl CoverNode {
                 match self.next.get_mut(&k) {
                     Some(ch) => ch.admit(rest, hypha),
                     None => {
-                        let mut ch = CoverNode::default();
+                        let mut ch = HomeTrieNode::default();
                         ch.admit(rest, hypha);
                         self.next.insert(k, ch);
                     }
@@ -167,15 +167,15 @@ impl CoverNode {
     }
 }
 
-impl Cover {
+impl HomeTrie {
     pub fn new() -> Self {
-        Cover::default()
+        HomeTrie::default()
     }
 
-    /// THE ENTRIES THE COVER HOLDS: every hypha filed on every lane's
+    /// THE ENTRIES THE HOME TRIE HOLDS: every hypha filed on every lane's
     /// trie, and every chart each hypha is filed under.
     pub fn held(&self) -> usize {
-        let lanes: usize = self.lanes.iter().map(CoverNode::held).sum();
+        let lanes: usize = self.lanes.iter().map(HomeTrieNode::held).sum();
         lanes + self.held.scoped().map(|(_, charts)| charts.len()).sum::<usize>()
     }
 
@@ -424,7 +424,7 @@ fn xor_nearer(key: &[u8; 32], a: &[u8; 32], b: &[u8; 32]) -> bool {
 /// `244be…`, took every learner's tuition and every mint). The hash spreads
 /// what the structured chart keys would not: they share leading bytes.
 pub fn home(
-    cover: &Cover,
+    cover: &HomeTrie,
     inv: &crate::transducer::stalk::Invariant,
     mag: &[u64; 4],
     rooms: &Keyed<[u64; 4]>,
@@ -529,7 +529,7 @@ pub fn home(
             }
         }
     }
-    // The best hypha the cover named; failing that this node, which is a
+    // The best hypha the home trie named; failing that this node, which is a
     // candidate at its own room; failing that no home at all, which is the
     // empty identity and the empty address read out.
     match (best, self_id) {

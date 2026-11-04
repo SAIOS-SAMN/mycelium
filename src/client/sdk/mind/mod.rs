@@ -49,7 +49,7 @@ pub struct Mind {
     /// take, solve and declination queued behind it, and a call the court
     /// never received could not be the event that released the read.
     pub(crate) held: self::hypha::HyphaLink,
-    pub epigenome: Epigenome,
+    pub language: MindLanguage,
     /// Rotating cursor for the refinement probe — one genome word examined
     /// per stroke, so the compression search is metabolic, never a sweep.
     /// The rule the court last refused for each task, by task id — so the

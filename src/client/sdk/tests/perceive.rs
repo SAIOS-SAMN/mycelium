@@ -82,11 +82,11 @@ fn scene_language_moves_only_for_word_on_scene_chart() {
     let before = mind.scene_language(&slide);
     // A word on a chart elsewhere: one cell stepping a column.
     let at = |c: usize| -> crate::transducer::family::Grid { (0..3).map(|r| (0..3).map(|x| u8::from(r == 1 && x == c)).collect()).collect() };
-    mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word_of(&at(0), &at(1))));
+    mind.language.moduli_admit(&crate::transducer::element::Held::of(word_of(&at(0), &at(1))));
     assert_eq!(mind.scene_language(&slide), before, "a word elsewhere leaves the slide's language where it was: it rests");
     // A word on the slide's own chart: its first hour, said as a word.
     let [(x, y), _] = two_hours_of_a_slide();
-    mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word_of(&x, &y)));
+    mind.language.moduli_admit(&crate::transducer::element::Held::of(word_of(&x, &y)));
     assert_ne!(mind.scene_language(&slide), before, "a word where the slide stands moves its language: it is read again");
 }
 
@@ -155,7 +155,7 @@ fn perceive_hearing_on_hears_at_rest_on_language_charts() {
         let frames = perceive_family(&cell);
         let f = scene_form_on(&NoCrystal, &mut b, x, y, &frames).expect("the pair reads");
         let word = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word");
-        mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
+        mind.language.moduli_admit(&crate::transducer::element::Held::of(word));
         let speaker = [3u8; 32];
         mind.perceive_hearing_on(speaker, b"elsewhere".to_vec(), Vec::new(), Evident::True, Offer::of(&two_hours_of_a_slide()).charts);
         let elsewhere = mind.board.hearing;

@@ -1267,7 +1267,7 @@ fn mint_sentence_why_mints_mirrored_pair_as_derivable() {
         })
         .collect();
     assert!(!rotors.is_empty(), "the minted form carries its word vertices");
-    let epi = crate::client::sdk::Epigenome::new();
+    let epi = crate::client::sdk::MindLanguage::new();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
     for r in &rotors {
         assert_eq!(

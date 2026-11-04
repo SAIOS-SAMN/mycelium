@@ -7,7 +7,7 @@
 //! cursor; the answer carries the words the mind lacked and the citations,
 //! and the mind absorbs the words as it absorbs a syllabus page, at the words'
 //! admitting stamps. A citation whose powers the court read composing to the
-//! motion is kept as a mineral (`Epigenome::presented`) and becomes the
+//! motion is kept as a mineral (`MindLanguage::presented`) and becomes the
 //! mind's own only where its derivation re-derives it (`heard_citation`).
 //! A motion is asked once per language: the asks clear when the atlas root
 //! moves, so the mind asks again once it holds more.
@@ -22,10 +22,10 @@ impl Mind {
     pub(crate) fn ask_presentation(&mut self, form: &crate::transducer::sentence::Form) {
         use crate::transducer::sentence::presentation::{is_still, motion_key, vertex_motion};
         use crate::transducer::sentence::Vertex;
-        let root = self.epigenome.atlas_root();
-        if self.epigenome.asked_root.as_ref() != Some(&root) {
-            self.epigenome.asked = crate::network::nerve::Keyed::new();
-            self.epigenome.asked_root = Some(root);
+        let root = self.language.atlas_root();
+        if self.language.asked_root.as_ref() != Some(&root) {
+            self.language.asked = crate::network::nerve::Keyed::new();
+            self.language.asked_root = Some(root);
         }
         // THE RESIDUES: word vertices whose derivation cites nothing and whose
         // whole motion moves something.
@@ -42,15 +42,15 @@ impl Mind {
         let voice = self.hypha.voice().id();
         for m in motions {
             let Some(key) = motion_key(&m) else { continue };
-            if self.epigenome.asked.contains(&key) || self.epigenome.presented.contains(&key) {
+            if self.language.asked.contains(&key) || self.language.presented.contains(&key) {
                 continue;
             }
             // What the mind's own ruled words already say is said from them:
             // no court is asked for it.
-            if crate::transducer::family::Crystal::read_word(&self.epigenome, &m, &[]).is_some_and(|r| r.composes) {
+            if crate::transducer::family::Crystal::read_word(&self.language, &m, &[]).is_some_and(|r| r.composes) {
                 continue;
             }
-            self.epigenome.asked.insert(&key, ());
+            self.language.asked.insert(&key, ());
             let ask = dialogue::encode_presentation_request(&voice, &m);
             self.ask(move |s| s.speak_keyed(&voice, ask), move |entity, body| {
                 let Ok(body) = body else { return };
@@ -61,7 +61,7 @@ impl Mind {
                     let _ = entity.absorb_taught_at(&t.word, Some(t.at), &mut budget);
                 }
                 if answer.read && answer.composes && !answer.cites.is_empty() {
-                    entity.epigenome.presented.insert(&key, answer.cites);
+                    entity.language.presented.insert(&key, answer.cites);
                 }
             });
         }

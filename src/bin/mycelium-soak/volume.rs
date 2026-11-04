@@ -8,7 +8,7 @@
 // decides the new hues, leave one out, judged by replay (`incongruence::
 // decide`, the voice's own reading). Data; nothing is decided.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::incongruence::{decide, map_holds_whole, single_changes, Decision, KEYS};
 use mycelium::transducer::family::{extract_rule_with, form_deflation};
 
@@ -16,7 +16,7 @@ use mycelium::transducer::family::{extract_rule_with, form_deflation};
 const STROKE: usize = 1 << 20;
 
 pub(crate) fn report(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let (mut changes, mut mass_kept, mut hues_kept, mut spread_kept, mut density_kept) = (0u64, 0u64, 0u64, 0u64, 0u64);
     let (mut gained, mut gained_on_light, mut lost, mut lost_carved, mut both) = (0u64, 0u64, 0u64, 0u64, 0u64);
     let (mut tasks_recoloured, mut own) = (0u64, 0u64);

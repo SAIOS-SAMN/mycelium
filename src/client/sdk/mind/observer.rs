@@ -78,9 +78,9 @@ impl Mind {
             },
             ["field"] => self.read_field(),
             // What perception's cells did, every outcome counted where it
-            // forms (`ResonanceTally`): where thoughts and grounds are made
+            // forms (`CrossSceneTally`): where thoughts and grounds are made
             // or refused, by name.
-            ["perception"] => self.contemplation.resonance.line().split(" | ").map(str::to_string).collect(),
+            ["perception"] => self.contemplation.cross_scene.line().split(" | ").map(str::to_string).collect(),
             ["held"] => self.read_held(),
             ["scenes"] => self.read_scenes(),
             ["tasks"] => self.read_tasks(""),
@@ -163,9 +163,9 @@ impl Mind {
             // strata glued, the obstructions kept.
             format!(
                 "language: genome {} · dialect {} · taught words refused {} · discordant strata {} (measured {}; resting unpaid {}, paid solves {}) · glued {} · obstructions {} over {} strata",
-                self.epigenome.genome_len(),
-                self.epigenome.dialect_len(),
-                self.epigenome.refused,
+                self.language.genome_len(),
+                self.language.dialect_len(),
+                self.language.refused,
                 self.discordance,
                 self.discordance_measured,
                 self.board.court.starved.len(),

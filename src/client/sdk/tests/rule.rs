@@ -283,7 +283,7 @@ fn of_refusal_reads_unread_as_unjudged() {
 /// check goes on to the replay.
 #[test]
 fn would_judge_refuses_citation_no_court_admitted() {
-    use crate::client::sdk::Epigenome;
+    use crate::client::sdk::MindLanguage;
     use crate::transducer::family::{cipher_form, sentence_measure};
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
@@ -292,7 +292,7 @@ fn would_judge_refuses_citation_no_court_admitted() {
     let held = cipher_form(&family[0].0, &family[0].1);
     let mag = sentence_measure(&held, &family[..1], &NoCrystal, 0).expect("the body is spoken");
     let cited = crate::transducer::sentence::as_element_form(&held, mag).expect("a tape");
-    let mut dialect = Epigenome::new();
+    let mut dialect = MindLanguage::new();
     dialect.stand_dialect_at(cited.clone(), 1, 1).expect("stood");
     let rule = crate::transducer::family::extract_rule_with(&family, &dialect, &mut super::fixtures::budget())
         .expect("the family extracts");
@@ -308,7 +308,7 @@ fn would_judge_refuses_citation_no_court_admitted() {
         "a dialect word is no citation the court holds: {home:?}"
     );
     // The same word, admitted at a court's stamp: the citation resolves.
-    let mut admitted = Epigenome::new();
+    let mut admitted = MindLanguage::new();
     admitted.learn(&cited.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).expect("learned");
     admitted.admit_all_at(crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS));
     let court_words = |a: &[u8]| admitted.court_word(a).and_then(|w| w.form().cloned());

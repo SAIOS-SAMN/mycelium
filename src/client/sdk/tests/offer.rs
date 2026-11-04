@@ -88,7 +88,7 @@ fn task_inflow_takes_offer_in_restored_language() {
         let frames = perceive_family(&[(x.clone(), y.clone())]);
         let f = scene_form_on(&NoCrystal, &mut b, &x, &y, &frames).expect("the pair reads");
         let word = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("a word");
-        mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
+        mind.language.moduli_admit(&crate::transducer::element::Held::of(word));
         let settled = mind.strained();
         mind.pull_task();
         (settled, mind.board.court.pulling)
@@ -198,7 +198,7 @@ fn corpus_inflow_meets_language_charts_at_rest() {
     });
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("ground"));
     mind.open_feed(home.clone());
-    mind.epigenome.moduli_admit(&crate::transducer::element::Held::of(word));
+    mind.language.moduli_admit(&crate::transducer::element::Held::of(word));
     let mut field = std::mem::take(&mut mind.field);
     let (quiet, excited) = field.think(|| {
         let quiet = mind.contemplation.is_empty() && matches!(crate::transducer::mind::with_field(|f| f.orbits.focus().is_empty()), Ok(true));
@@ -266,7 +266,7 @@ fn absorb_taught_holds_residue_as_open_question() {
     });
     mind.field = field;
     assert!(!settled, "a mind just opened holds no strain");
-    assert!(!mind.epigenome.holds(residue.address().as_bytes()), "never learned into the genome");
+    assert!(!mind.language.holds(residue.address().as_bytes()), "never learned into the genome");
     assert_eq!(mind.board.open_residues.len(), 1, "one open question, however often taught");
     let stratum = crate::transducer::stalk::invariant_of(&residue).key();
     assert!(mind.board.residue_strata.contains(stratum.as_bytes()), "its stratum is one the sheaf sync never fetches");

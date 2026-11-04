@@ -254,7 +254,7 @@ impl Mind {
             // offer now couples to the mind.
             let uncoupled = |id: &[u8; 32]| seat.passed.get(id).is_some_and(|charts| !self.couples(id, charts));
             // A task read and not solved rests until the language moves.
-            let rests = |id: &[u8; 32]| seat.rested.get(id).is_some_and(|root| *root == self.epigenome.atlas_root());
+            let rests = |id: &[u8; 32]| seat.rested.get(id).is_some_and(|root| *root == self.language.atlas_root());
             match task {
                 Some(id) if uncoupled(&id) => {}
                 // A TASK RESTING, SET BEFORE THE SEAT AGAIN, IS DECLINED AGAIN
@@ -539,7 +539,7 @@ impl Mind {
                             let _ = seat.refused.remove(&id);
                         }
                         false => {
-                            seat.refused.insert(&id, (self.epigenome.atlas_root(), addr));
+                            seat.refused.insert(&id, (self.language.atlas_root(), addr));
                         }
                     }
                 }
@@ -673,7 +673,7 @@ impl Mind {
             t.stop = Some(stop);
         });
         if stop != Stop::Sent {
-            seat.rested.insert(id, self.epigenome.atlas_root());
+            seat.rested.insert(id, self.language.atlas_root());
             // THE DECLINATION (ruled 2026-10-23): a reading
             // stopped short of a solve is said to the house, which frees the
             // seat at once — never left to its patience.
@@ -692,7 +692,7 @@ impl Mind {
         if !seat.hold.held {
             return None;
         }
-        let gen = self.epigenome.atlas_root();
+        let gen = self.language.atlas_root();
         if seat.refused.get(id).is_some_and(|(root, _)| *root == gen) {
             return Some(Stop::RefusedBefore);
         }
@@ -701,24 +701,24 @@ impl Mind {
             false => crate::transducer::family::perceive_family(&train),
         };
         let mut budget = self.stroke_n(crate::transducer::family::extraction_spend(&train, &frames));
-        let Some(rule) = crate::transducer::family::extract_rule_cached(&mut seat.memo, id, &train, gen, &mut budget, &self.epigenome, Some(&frames)) else {
+        let Some(rule) = crate::transducer::family::extract_rule_cached(&mut seat.memo, id, &train, gen, &mut budget, &self.language, Some(&frames)) else {
             return Some(match budget.remaining() {
                 0 => Stop::NoRuleUnread,
                 _ => Stop::NoRule,
             });
         };
         let _ = self.speak_form(&rule, &train, &frames, id, &mut budget);
-        let outs: Option<Vec<crate::transducer::family::Grid>> = tests.iter().map(|x| crate::transducer::family::speak_rule(&rule, x, &self.epigenome).filter(|s| s.remainder.is_empty()).and_then(|s| s.grid())).collect();
+        let outs: Option<Vec<crate::transducer::family::Grid>> = tests.iter().map(|x| crate::transducer::family::speak_rule(&rule, x, &self.language).filter(|s| s.remainder.is_empty()).and_then(|s| s.grid())).collect();
         let Some(outs) = outs else { return Some(Stop::TestsUnspoken) };
         let Some(minted) = self.construct_solve(&rule, &train) else { return Some(Stop::Unminted) };
-        let Ok(crossed) = crate::client::sdk::rule::crossing(&minted, &train, &self.epigenome) else { return Some(Stop::Uncrossed) };
+        let Ok(crossed) = crate::client::sdk::rule::crossing(&minted, &train, &self.language) else { return Some(Stop::Uncrossed) };
         if seat.refused.get(id).is_some_and(|(_, addr)| addr.as_slice() == crossed.address().as_bytes()) {
             return Some(Stop::RefusedBefore);
         }
         // 78.157 §3a, 78.158a U2 — the home check on the court-stamped words;
         // unread at home goes to the court, which resumes it.
-        let resolve = |a: &[u8]| self.epigenome.court_word(a).and_then(|e| e.form().cloned());
-        match crate::client::sdk::rule::would_judge_with(&crossed, &train, &resolve, &self.epigenome, &mut budget) {
+        let resolve = |a: &[u8]| self.language.court_word(a).and_then(|e| e.form().cloned());
+        match crate::client::sdk::rule::would_judge_with(&crossed, &train, &resolve, &self.language, &mut budget) {
             Ok(()) | Err(crate::client::sdk::rule::NoRule::Unread) => {}
             Err(crate::client::sdk::rule::NoRule::CitesUnheld(_)) => return Some(Stop::CitesUnheld),
             Err(_) => return Some(Stop::Refuted),

@@ -3079,7 +3079,7 @@ and makes the Mayer–Vietoris ladder commute, connecting map included.
 | **change of basepoint** (3.2) | conjugation of every orbit value by the tree path | class keys (15.4) unchanged |
 | **refinement of the cover** (admit / retract / rehome; splitting by components) | `r : N(𝒱) → N(𝒰)` sends each finer simplex to the coarser simplex containing it; `r*` reads the coarse coefficient on the fine simplex | for good covers `r*` is an isomorphism on `H^k` (14.2); class keys unchanged; representatives change |
 | **refinement of the base** (`refine_chart`) | restriction of sections and faces to each child | each class is **carried** (same key on the child whose forms support the orbit) or **discharged** (its orbit's vertices fall into different children; it becomes a face between children), 15.5 |
-| **pullback to a mind** (`Epigenome::comprehend`, `learn`) | the mind's copy of a ruled form and its faces | the mind's `coheres` agrees with the court's `reconstruct_form` on the same tapes; the memo relies on it |
+| **pullback to a mind** (`MindLanguage::comprehend`, `learn`) | the mind's copy of a ruled form and its faces | the mind's `coheres` agrees with the court's `reconstruct_form` on the same tapes; the memo relies on it |
 
 A violation of a commutation identity is not a class; it is inconsistent
 data, refused as `REFUSE_NOT_NATURAL`.
@@ -3449,7 +3449,7 @@ are deleted.
 
 Runs once per store at load (`Court::restore`
 `src/server/cognition/persistence/read.rs`, `Treasury::restore`
-`src/economy/persist.rs`, `Epigenome::uncrystallize`
+`src/economy/persist.rs`, `MindLanguage::uncrystallize`
 `src/client/sdk/vocabulary/persist.rs`) and once per tape arriving from a peer on the old build.
 
 1. For every stored tape `T` with stored address `a_old`: `a_new =
@@ -3534,7 +3534,7 @@ For a percept (server `judge`, `src/bin/mycelium-server/judge/`):
 4. `inv = invariant_of(framed residue)`: the **body chart** (M4 step 1);
    `mag` its measured lanes.
 5. Destination = `nerve::home(cover, inv, mag, rooms, addrs, self)`
-   (`src/network/nerve/cover.rs`):
+   (`src/network/nerve/home_trie.rs`):
    fibre intersection on the occupied lanes, then per-lane room, then
    identity. A class axis (A7) is never a routing coordinate; a percept has
    no class yet.
@@ -3593,7 +3593,7 @@ measured into the letters. The remainders of both are typed the same way
 (50.5): a Gaussian prime outside the alphabet on a plane, or a block the
 order does not decompose.
 
-Binding: `Epigenome::comprehend` (`src/client/sdk/vocabulary/comprehend.rs`)
+Binding: `MindLanguage::comprehend` (`src/client/sdk/vocabulary/comprehend.rs`)
 for connections replaces the
 single-representative `transition` test with A12 over the fibre's basis;
 `Court::reduce_excluding` keeps its decomposition for chains and calls
@@ -4073,7 +4073,7 @@ Trace: `court remap {n} entries merged {m}`, zero `word_at` misses over the
 ruled fibres.
 
 **Binding.** `Court::restore`, `Treasury::restore`,
-`Epigenome::uncrystallize`, `sentence::from_element`, the `RMP1` section in
+`MindLanguage::uncrystallize`, `sentence::from_element`, the `RMP1` section in
 `snapshot` and `crystallize`.
 
 **Failure.** A8's refusal line; the tape is dropped and its escrow released.
@@ -4155,7 +4155,7 @@ new.
 **Invariant.** A word the mind holds under any spelling is `Understood`;
 `genome.contains(address)` is never the test.
 
-**Binding.** `Epigenome::comprehend` and `learn_one`
+**Binding.** `MindLanguage::comprehend` and `learn_one`
 (`src/client/sdk/vocabulary/comprehend.rs`; `learn_one` keeps its address dedupe as a fast path after M1, never instead of it),
 `Court::reduce_excluding`.
 
@@ -4502,7 +4502,7 @@ pub fn extract_rule_with(family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Opti
 pub fn extract_rule(family: &[(Grid, Grid)]) -> Option<SentenceRule> // NoCrystal wrapper of extract_rule_with
 ```
 
-`Epigenome` implements `Crystal` over its working atlas (chapter 24.1), the
+`MindLanguage` implements `Crystal` over its working atlas (chapter 24.1), the
 standing of each returned form beside it; `Court` over the ruled cover
 (`word_at` with `ruled_contains`). The nerve extractor `agree_up_to_gauge`
 is deleted; correspondence is keyed transport class on pair
@@ -6549,7 +6549,7 @@ carrier; every stroke spends a `Budget`; a minted deflation closes a
 remainder, and a closed remainder is not minted again (idempotence by
 receipt, 23.8), so no chain of mints is infinite. No well-founded order on
 μ⃗ is invoked (12.6, ruled 2026-09-07). Code: `Physics::stroke`, `Budget`,
-`retire_on_t`, `Epigenome::shed`, `relocate_t_exhausted`,
+`retire_on_t`, `MindLanguage::shed`, `relocate_t_exhausted`,
 `reduce_excluding`. Proof: a test that `settle_recursive` pays by deflation,
 a test that a stroke terminates on a zero outcome; invariant: no `mint` without a
 closure in the same stroke.
@@ -7167,7 +7167,7 @@ Every duration a kernel reads is a count of its own K or of heights.
   voice reports nothing but its K. No admitted receipt, no extent: an idle
   voice accrues nothing, and a home that hears nothing advances nothing. Any
   witness re-derives a home's extents from the home's chain (T16).
-- **The mind.** `Epigenome::shed` (`src/client/sdk/vocabulary/shed.rs`) and `retire_on_t`
+- **The mind.** `MindLanguage::shed` (`src/client/sdk/vocabulary/shed.rs`) and `retire_on_t`
   (`src/transducer/field/shed.rs`) count the mind's own K; `moved_tu`, `last_used_tu`, `stroke_tu` are
   K values and are renamed `_k`.
 - **Carriers.** Every `_tu` field in the kernel (`provisional_tu`,
@@ -10091,7 +10091,7 @@ bound already ruled, and gives 37.7 work it has never had: a strain just
 outside the horizon is a DEMAND FOR A GENERATOR, not a dropped edge.
 
 AND SPELLABILITY IS PER MIND. `word_or_demand` and `derive_against` run
-against that voice's own crystal, and the five Epigenomes differ by what
+against that voice's own crystal, and the five `MindLanguage`s differ by what
 each has adjoined. So two ideas tether for a mind that holds the generator
 and refuse for one that does not — the same exact geometry condensing
 differently in each voice. The five will not agree on the 1-skeleton, and
@@ -10228,7 +10228,7 @@ LAYER, and every object it compares is an exact field:
     the court asks    does A's generator satisfy B's demand exactly in Q?
 ```
 
-Where it does, 37.7 adjoins the generator to B's Epigenome, B's topology
+Where it does, 37.7 adjoins the generator to B's `MindLanguage`, B's topology
 shifts, the tether condenses and the superposition collapses
 deterministically. Disagreement between the voices is therefore CONTENT the
 court consumes, not noise it averages.
@@ -11731,7 +11731,7 @@ a client's word (law 6). The register:
 
 Specialized nodes are strata of the library: a hypha serving one region
 of knowledge is a keyed fibre by chart or class, an A21 prefix — which
-the cover trie already is (MU-ENGINEERING §4, `nerve::home` by chart
+the home trie already is (MU-ENGINEERING §4, `nerve::home` by chart
 prefix). Row SN1 parks it until the language exists to be served.
 
 **Four constraints on the callus (MEM1), each a correction of a text
@@ -12107,7 +12107,7 @@ planet" is read as that.
 
 The servers keep the one keyed map — star, planet, orbit, each with its
 span on TUniversal — and each stratum is served by the node that homes it
-(the cover trie, MU-ENGINEERING §4; SN1). An orbit is placed by escrow:
+(the home trie, MU-ENGINEERING §4; SN1). An orbit is placed by escrow:
 μ⃗ paid per lane for the span ahead of the clock (25 as ruled, Z4d). A
 **collision** is two orbits on one lane with overlapping spans; the
 second claim is withheld and docketed, never evicted (23.8, rule 15). The
@@ -12118,7 +12118,7 @@ star is never assigned; it is re-derived at the read from the planet's
 own content: a mind's genome is the ruled language it holds, every ruled
 word carries its chart, a chart is an A21 prefix, and the strata of the
 library a genome lies in ARE its position in the star map (law 12). The
-cover trie already homes by chart prefix, so the map of star, planet and
+home trie already homes by chart prefix, so the map of star, planet and
 orbit is derived from the genomes' strata and kept as no assignment; a
 client that learns new strata moves without anyone moving it. An escrow
 keyed by that position is therefore re-keyed when the planet moves: the
@@ -13178,7 +13178,7 @@ frames stable at the same time.
 
 Code: `src/physics/equilibrium.rs`, the register
 `src/physics/axioms/equilibrium.rs` (a test per clause),
-`src/transducer/field/resonance.rs` (`Contemplation::gate`).
+`src/transducer/field/cross_scene.rs` (`Contemplation::gate`).
 
 ### 78.52 The conformal foam: five rows; Row 1, the hours wind on a Clifford torus, and a body's momentum is carried
 
@@ -13242,7 +13242,7 @@ built from spheres, circles and kissing foam, in five rows, in order:
 Code: `src/physics/equilibrium.rs`, `src/physics/sphere_pair.rs`,
 `src/transducer/cga/embedding.rs` (`translator_at`),
 `src/transducer/blade/body.rs` (`moment2`),
-`src/transducer/field/resonance.rs` (`note_ground`, `join_ground`),
+`src/transducer/field/cross_scene.rs` (`note_ground`, `join_ground`),
 `src/transducer/alphabet/factor.rs` (`factor_rotor`),
 `src/client/sdk/mind/think.rs` (`transcribe`, `hold_perceived`).
 
@@ -13353,7 +13353,7 @@ constellation locks, and the thought closes and factors into a word in one
 step without search; where it does not, each nonzero component is the
 missing blade itself, filed as its own exact demand. Code:
 `src/physics/equilibrium.rs` (`Defect`, `Defect::closes`, `coherence`,
-`metric_defect`), `src/transducer/field/resonance.rs` (`read_ground`,
+`metric_defect`), `src/transducer/field/cross_scene.rs` (`read_ground`,
 `note_refusal`; refusal `Refusal::Incoherent`).
 
 ### 78.58 The reservoir is the ancilla ray e_∅, and a merge rotates its distinction into it
@@ -14445,7 +14445,7 @@ Code: `src/chronometry/chain/mod.rs` (`ReceiptChain::fold_before`,
   dropped or following the rule is a harness, not cognition; a square's
   holonomy `H = (V′U)⁻¹ W V` is coherence where it is the identity and
   content where it is not, and the mind deduces from the H's (78.11, 78.47;
-  `src/transducer/field/resonance.rs` (`perceive_cells`)).
+  `src/transducer/field/cross_scene.rs` (`perceive_cells`)).
 - **The progenitor, not the steward.** The development builds the mind and
   the entity: it defines the dimensions (the algebra and its planes, the
   lanes, time as height, the L0 physics), the entity's body (senses,

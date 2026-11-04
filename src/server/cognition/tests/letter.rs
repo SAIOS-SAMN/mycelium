@@ -287,7 +287,7 @@ fn versor_of_arc(s: i64, t: i64) -> element::Versor {
 /// hop leaves every existing test green.
 #[test]
 fn reconstruct_blind_on_composes_letter_citation_from_taught_mind() {
-    use crate::client::sdk::Epigenome;
+    use crate::client::sdk::MindLanguage;
     let voice = [1u8; 32];
     let said = demanding_sentence(turn_90(1), 1, seventeen());
 
@@ -328,7 +328,7 @@ fn reconstruct_blind_on_composes_letter_citation_from_taught_mind() {
 
     // 2. THE PAGE CARRIES IT and a mind learns it from the bytes.
     let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20, crate::cognition::Asker::Court([0; 32]));
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     for t in &page {
         let _ = epi.learn(&t.word, &mut super::fixtures::budget());
     }
@@ -410,7 +410,7 @@ fn reconstruct_blind_on_composes_letter_citation_from_taught_mind() {
 /// that the letter travels, which is the whole of what a syllabus is for.
 #[test]
 fn serve_ruled_teaches_letter_as_generator() {
-    use crate::client::sdk::Epigenome;
+    use crate::client::sdk::MindLanguage;
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::element::Element as El;
     let voice = [1u8; 32];
@@ -449,7 +449,7 @@ fn serve_ruled_teaches_letter_as_generator() {
     // learned from its bytes.
     let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20, crate::cognition::Asker::Court([0; 32]));
     assert!(!page.is_empty(), "the syllabus serves what the court ruled");
-    let mut epi = Epigenome::new();
+    let mut epi = MindLanguage::new();
     for t in &page {
         let _ = epi.learn(&t.word, &mut super::fixtures::budget());
     }
@@ -503,7 +503,7 @@ fn serve_ruled_teaches_letter_as_generator() {
 ///      for that mind through the same reader.
 #[test]
 fn letter_reading_flips_derivable_after_adjunction() {
-    use crate::client::sdk::Epigenome;
+    use crate::client::sdk::MindLanguage;
     use crate::transducer::alphabet::{Rotor, Word};
     use crate::transducer::family::{letter_reading, LetterReading};
     let stroke = || crate::physics::Physics::default().stroke_n(1 << 20);
@@ -512,7 +512,7 @@ fn letter_reading_flips_derivable_after_adjunction() {
     let pi = Rotor::scalar(q(4)).add(&Rotor::blade(0b0011, q(1)));
 
     // 1. D through the mind's own (empty) crystal.
-    let mut mind = Epigenome::new();
+    let mut mind = MindLanguage::new();
     assert_eq!(letter_reading(&mind, &mut stroke(), &pi), LetterReading::Unspelled, "the mind cannot spell it: D");
 
     // 2. CONSTRUCT, certified: T1, meets on the fixed loci (inside

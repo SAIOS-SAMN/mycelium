@@ -391,7 +391,7 @@ pub type Chart = ChartOf<Address>;
 /// its voice; the hypha serves the ratified stream from that voice's cursor
 /// (each ratification reaches each voice exactly once, in ruling order).
 /// Request: `[ACT_SYLLABUS][voice 32]`. Reply: `[n u8][(len u32)(word
-/// bytes)·n]` — full lossless element forms (Epigenome::learn refreshes by
+/// bytes)·n]` — full lossless element forms (MindLanguage::learn refreshes by
 /// address, so rebinds propagate too).
 pub const ACT_SYLLABUS: u8 = Action::Syllabus.byte();
 

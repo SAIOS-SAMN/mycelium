@@ -788,7 +788,7 @@ impl Mind {
         }
         self.close_questions();
         let after = crate::transducer::sentence::rung::lexicon();
-        let (vocabulary, remembered) = (self.epigenome.vocabulary.read().len() as u64, self.remembered.scoped().map(|(_, m)| m.len() as u64).sum::<u64>());
+        let (vocabulary, remembered) = (self.language.vocabulary.read().len() as u64, self.remembered.scoped().map(|(_, m)| m.len() as u64).sum::<u64>());
         let (unanswered, awaiting) = (self.questions.len() as u64, self.questions.scoped().filter(|(_, q)| q.factors.is_some()).count() as u64);
         crate::observe::note_mind(|m| {
             m.vocabulary = vocabulary;
@@ -987,7 +987,7 @@ impl Mind {
                     let charts: Vec<crate::transducer::stalk::Invariant> = p
                         .forms
                         .iter()
-                        .filter_map(|f| self.epigenome.working_word(f))
+                        .filter_map(|f| self.language.working_word(f))
                         .map(|h| crate::transducer::stalk::invariant_of(h.element()))
                         .collect();
                     for inc in incoherent {

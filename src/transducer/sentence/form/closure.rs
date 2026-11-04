@@ -19,7 +19,7 @@ impl Form {
     /// `g_ij g_jk g_ki = 1` — but the strictly stronger claim that every
     /// 1-cycle has trivial holonomy. In one word: `H¹ = 0`. And
     /// `is_closed` calls this, only closed forms are stood
-    /// (`epigenome::crystal`) and only closed forms survive the court
+    /// (`vocabulary::crystal`) and only closed forms survive the court
     /// (`REFUSE_NOT_CLOSED`), so the genome was by construction the
     /// subspace where there is nothing to measure. Measured on the development deployment:
     /// 1 870 extracted forms carried one to nine orbits, filed torsion was

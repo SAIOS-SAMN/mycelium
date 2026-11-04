@@ -20,7 +20,7 @@
 use super::perceive::{frame_of, on_grid, Grid};
 use crate::network::nerve::Keyed;
 use crate::transducer::base::Site;
-use crate::transducer::layers::ShellKind;
+use crate::transducer::layers::LayerKind;
 
 /// A WAY THE SENSOR PLANE IS CUT (53.2). The roster is fixed and grows
 /// only by a court receipt on a probe — a reading whose first cover on the
@@ -58,7 +58,7 @@ pub struct Region {
 }
 
 /// THE REGIONS OF ONE READING, each keyed by its own coordinates.
-pub type Cover = Keyed<Region>;
+pub type Regions = Keyed<Region>;
 
 /// A REGION'S KEY: the reading's tag, then the region written out as the
 /// [`coord::Piece`] it is (A21, §4.4 E8), of which every prefix is a
@@ -66,15 +66,15 @@ pub type Cover = Keyed<Region>;
 ///
 /// [`coord::Piece`]: crate::network::nerve::coord::Piece
 ///
-/// `ShellKind::Frame` is the kind because a region is a part of the
-/// GRID'S OWN EXTENT and not a body shell — which is what that member of
+/// `LayerKind::Frame` is the kind because a region is a part of the
+/// GRID'S OWN EXTENT and not a body layer — which is what that member of
 /// the enum says. A reading that cut by something beyond the region would
 /// write it after its own tag, which leads the key, so its regions key apart
 /// from these without a second key family (rule 6).
 pub fn region_key(reading: PlaneCut, support: &[Site]) -> Vec<u8> {
     let mut k = vec![reading.byte()];
     use crate::network::nerve::Coordinate;
-    k.extend_from_slice(super::pieces::piece_at(ShellKind::Frame, support).encode().as_bytes());
+    k.extend_from_slice(super::pieces::piece_at(LayerKind::Frame, support).encode().as_bytes());
     k
 }
 
@@ -125,7 +125,7 @@ fn block(r0: i64, r1: i64, c0: i64, c1: i64) -> Vec<Site> {
 /// a second region lengthens the listing, and a single region cut smaller
 /// writes different coordinates. `len() == 1`, `<`, and any constant are
 /// refused here under rules 2 and 5.
-pub fn cover_key(cover: &Cover) -> Vec<u8> {
+pub fn cover_key(cover: &Regions) -> Vec<u8> {
     let mut k = Vec::new();
     for (ck, _) in cover.scoped() {
         crate::transducer::address::put_key_bytes(&mut k, &ck);
@@ -138,7 +138,7 @@ pub fn cover_key(cover: &Cover) -> Vec<u8> {
 /// A region is itself a scene and is covered again; this is where that
 /// stops. There is no floor and no count — `FRAGMENT_FLOOR = 9` is refused
 /// by rule 5 and is not replaced by a count of regions (rule 2).
-pub fn is_identity(cover: &Cover, scene: &[Grid], reading: PlaneCut) -> bool {
+pub fn is_identity(cover: &Regions, scene: &[Grid], reading: PlaneCut) -> bool {
     let Some(whole) = scene_region(scene) else {
         return false;
     };
@@ -150,7 +150,7 @@ pub fn is_identity(cover: &Cover, scene: &[Grid], reading: PlaneCut) -> bool {
 /// THE COVER A READING DEDUCES (53.1). `None` is "this reading deduces no
 /// cover on this scene", which is not a demand and not a refusal: the
 /// caller walks the rest of the roster.
-pub fn cover(scene: &[Grid], reading: PlaneCut) -> Option<Cover> {
+pub fn cover(scene: &[Grid], reading: PlaneCut) -> Option<Regions> {
     match reading {
         PlaneCut::Bands => bands(scene),
     }
@@ -207,14 +207,14 @@ fn runs(sep: &[bool]) -> Vec<(i64, i64)> {
 /// identity end reached in one pass and NOT a special case written here:
 /// `runs` over a boundary with no separator in it is the one run that
 /// spans it, and the block that names is the whole scene.
-fn bands(scene: &[Grid]) -> Option<Cover> {
+fn bands(scene: &[Grid]) -> Option<Regions> {
     let whole = scene_region(scene)?;
     let [first, ..] = scene else { return None };
     let (h, w) = frame_of(first);
     let rows: Vec<bool> = (0..h).map(|r| scene.iter().all(|g| row_uniform(g, r))).collect();
     let cols: Vec<bool> = (0..w).map(|c| scene.iter().all(|g| col_uniform(g, c))).collect();
     let (rr, cc) = (runs(&rows), runs(&cols));
-    let mut out: Cover = Keyed::new();
+    let mut out: Regions = Keyed::new();
     for &(r0, r1) in &rr {
         for &(c0, c1) in &cc {
             let region = Region { support: block(r0, r1, c0, c1) };

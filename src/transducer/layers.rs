@@ -1,33 +1,33 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 20 — THE PEEL: a nested manifold read outer shell to inner with the
+//! 20 — THE PEEL: a nested manifold read outer layer to inner with the
 //! residue riding inward, continuing while the governor reads `Shrinking`
 //! and routing the residue out whole — the standing arc — when it does not.
 
 /// What the governor reads off a residue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ShellMotion {
+pub enum LayerMotion {
     /// Nothing remains: the nest closed.
     Closed,
-    /// Strictly less remains than before this shell.
+    /// Strictly less remains than before this layer.
     Shrinking,
-    /// The shell did not shrink the residue: the arc rides out.
+    /// The layer did not shrink the residue: the arc rides out.
     Stalled,
 }
 
-/// One shell of a nest: from a residue, the core it takes and what it
-/// leaves. `None` when the shell cannot take anything whole.
-pub trait ShellStep {
+/// One layer of a nest: from a residue, the core it takes and what it
+/// leaves. `None` when the layer cannot take anything whole.
+pub trait LayerStep {
     type Residue;
     type Core;
-    fn shell(&self, residue: &Self::Residue) -> Option<(Self::Core, Self::Residue)>;
+    fn layer(&self, residue: &Self::Residue) -> Option<(Self::Core, Self::Residue)>;
 }
 
-/// The governor reads the residue between shells; it carries what it
+/// The governor reads the residue between layers; it carries what it
 /// needs to read strict shrinking.
 pub trait ShrinkGovernor {
     type Residue;
-    fn read(&mut self, residue: &Self::Residue) -> ShellMotion;
+    fn read(&mut self, residue: &Self::Residue) -> LayerMotion;
 }
 
 /// The verdict of a nested peel — the cores outer-to-inner and, when it
@@ -55,29 +55,29 @@ impl<R, C> PeelNest<R, C> {
 /// shrinking finite residue reaches empty or stalls.
 pub fn peel_nest<S, G>(target: S::Residue, step: &S, governor: &mut G) -> PeelNest<S::Residue, S::Core>
 where
-    S: ShellStep,
+    S: LayerStep,
     G: ShrinkGovernor<Residue = S::Residue>,
 {
     let mut cores: Vec<S::Core> = Vec::new();
-    if let ShellMotion::Closed = governor.read(&target) {
+    if let LayerMotion::Closed = governor.read(&target) {
         return PeelNest::Closed { cores };
     }
     let mut arc = target;
     loop {
-        let (core, residue) = match step.shell(&arc) {
-            Some(shell) => shell,
+        let (core, residue) = match step.layer(&arc) {
+            Some(layer) => layer,
             None => return PeelNest::Standing { cores, arc },
         };
         cores.push(core);
         match governor.read(&residue) {
-            ShellMotion::Closed => return PeelNest::Closed { cores },
-            ShellMotion::Shrinking => arc = residue,
-            ShellMotion::Stalled => return PeelNest::Standing { cores, arc: residue },
+            LayerMotion::Closed => return PeelNest::Closed { cores },
+            LayerMotion::Shrinking => arc = residue,
+            LayerMotion::Stalled => return PeelNest::Standing { cores, arc: residue },
         }
     }
 }
 
-/// Perception shells of one body. Not letters: the seventeen stay fixed.
+/// Perception layers of one body. Not letters: the seventeen stay fixed.
 ///
 /// ORDERED AND HASHABLE because it is a coordinate of [`coord::Piece`]
 /// (§4.4 E8): a piece's address opens with its kind, and a seam's two ends
@@ -86,7 +86,7 @@ where
 ///
 /// [`coord::Piece`]: crate::network::nerve::coord::Piece
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub enum ShellKind {
+pub enum LayerKind {
     #[default]
     Whole,
     Outline,
@@ -98,58 +98,58 @@ pub enum ShellKind {
     Reduced,
     Tiled,
     Bordered,
-    /// The grid's own extent, not a body shell.
+    /// The grid's own extent, not a body layer.
     Frame,
 }
 
-/// One shell of a body: its kind and its compartments on the three coordinates
+/// One layer of a body: its kind and its compartments on the three coordinates
 /// of the base, `(row, col, frame, hue)` (51.3).
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Shell {
-    pub kind: ShellKind,
+pub struct Layer {
+    pub kind: LayerKind,
     pub compartments: Vec<(i64, i64, i64, u8)>,
 }
 
-/// One shell of one SECTION: the planar reading a stack's shells are
+/// One layer of one SECTION: the planar reading a stack's layers are
 /// assembled from (16.5), each section peeled in its own frame, as
 /// painted sites.
-struct SectionShell {
-    kind: ShellKind,
+struct SectionLayer {
+    kind: LayerKind,
     painted: Vec<(i64, i64, u8)>,
 }
 
-impl ShellKind {
-    pub const FRAME: ShellKind = ShellKind::Frame;
+impl LayerKind {
+    pub const FRAME: LayerKind = LayerKind::Frame;
 
     pub fn byte(self) -> u8 {
         match self {
-            ShellKind::Whole => 0,
-            ShellKind::Outline => 1,
-            ShellKind::Core => 2,
-            ShellKind::Interior => 3,
-            ShellKind::Adjacent => 4,
-            ShellKind::Cut => 5,
-            ShellKind::Magnified => 6,
-            ShellKind::Reduced => 7,
-            ShellKind::Tiled => 8,
-            ShellKind::Bordered => 9,
-            ShellKind::Frame => 10,
+            LayerKind::Whole => 0,
+            LayerKind::Outline => 1,
+            LayerKind::Core => 2,
+            LayerKind::Interior => 3,
+            LayerKind::Adjacent => 4,
+            LayerKind::Cut => 5,
+            LayerKind::Magnified => 6,
+            LayerKind::Reduced => 7,
+            LayerKind::Tiled => 8,
+            LayerKind::Bordered => 9,
+            LayerKind::Frame => 10,
         }
     }
 
     pub fn of(v: u8) -> Option<Self> {
         Some(match v {
-            0 => ShellKind::Whole,
-            1 => ShellKind::Outline,
-            2 => ShellKind::Core,
-            3 => ShellKind::Interior,
-            4 => ShellKind::Adjacent,
-            5 => ShellKind::Cut,
-            6 => ShellKind::Magnified,
-            7 => ShellKind::Reduced,
-            8 => ShellKind::Tiled,
-            9 => ShellKind::Bordered,
-            10 => ShellKind::Frame,
+            0 => LayerKind::Whole,
+            1 => LayerKind::Outline,
+            2 => LayerKind::Core,
+            3 => LayerKind::Interior,
+            4 => LayerKind::Adjacent,
+            5 => LayerKind::Cut,
+            6 => LayerKind::Magnified,
+            7 => LayerKind::Reduced,
+            8 => LayerKind::Tiled,
+            9 => LayerKind::Bordered,
+            10 => LayerKind::Frame,
             _ => return None,
         })
     }
@@ -157,10 +157,10 @@ impl ShellKind {
 
 /// Residue of the outline peel: the content still riding inward.
 struct OutlineStep;
-impl ShellStep for OutlineStep {
+impl LayerStep for OutlineStep {
     type Residue = Vec<(i64, i64, u8)>;
-    type Core = SectionShell;
-    fn shell(&self, residue: &Vec<(i64, i64, u8)>) -> Option<(SectionShell, Vec<(i64, i64, u8)>)> {
+    type Core = SectionLayer;
+    fn layer(&self, residue: &Vec<(i64, i64, u8)>) -> Option<(SectionLayer, Vec<(i64, i64, u8)>)> {
         if residue.is_empty() {
             return None;
         }
@@ -169,58 +169,58 @@ impl ShellStep for OutlineStep {
         if outline.is_empty() {
             return None;
         }
-        Some((SectionShell { kind: ShellKind::Outline, painted: outline }, core))
+        Some((SectionLayer { kind: LayerKind::Outline, painted: outline }, core))
     }
 }
 
 struct CountGov(Option<usize>);
 impl ShrinkGovernor for CountGov {
     type Residue = Vec<(i64, i64, u8)>;
-    fn read(&mut self, residue: &Vec<(i64, i64, u8)>) -> ShellMotion {
+    fn read(&mut self, residue: &Vec<(i64, i64, u8)>) -> LayerMotion {
         let n = residue.len();
         let motion = match (n == 0, self.0) {
-            (true, _) => ShellMotion::Closed,
-            (false, Some(before)) if n < before => ShellMotion::Shrinking,
-            (false, None) => ShellMotion::Shrinking,
-            _ => ShellMotion::Stalled,
+            (true, _) => LayerMotion::Closed,
+            (false, Some(before)) if n < before => LayerMotion::Shrinking,
+            (false, None) => LayerMotion::Shrinking,
+            _ => LayerMotion::Stalled,
         };
         self.0 = Some(n);
         motion
     }
 }
 
-fn scale_factor(num: usize, den: usize) -> Option<(ShellKind, i64)> {
+fn scale_factor(num: usize, den: usize) -> Option<(LayerKind, i64)> {
     if den == 0 || num == den {
         return None;
     }
     if num > den && num % den == 0 {
         let k = (num / den) as i64;
-        (k > 1).then_some((ShellKind::Magnified, k))
+        (k > 1).then_some((LayerKind::Magnified, k))
     } else if den > num && den % num == 0 {
         let k = (den / num) as i64;
-        (k > 1).then_some((ShellKind::Reduced, k))
+        (k > 1).then_some((LayerKind::Reduced, k))
     } else {
         None
     }
 }
 
 /// Peel a body: whole, then outline with the core as residue, then the
-/// interior the outline encloses, then the adjacent ring. Each shell is
-/// taken from the residue the last shell left; the governor reads shrink.
-/// Scale shells only when a frame ratio is supplied and is not one.
+/// interior the outline encloses, then the adjacent ring. Each layer is
+/// taken from the residue the last layer left; the governor reads shrink.
+/// Scale layers only when a frame ratio is supplied and is not one.
 /// Cut is not produced here: it is taken only with sites a face names.
-pub fn peel_body(compartments: &[(i64, i64, i64, u8)]) -> Vec<Shell> {
+pub fn peel_body(compartments: &[(i64, i64, i64, u8)]) -> Vec<Layer> {
     peel_body_scaled(compartments, None)
 }
 
-/// THE SHELLS OF A STACK are the shells of its sections (16.5): each frame
-/// of the body is peeled in its own plane, and the shells of one kind are
-/// one shell of the body, lifted back to the shells' frames. `scale` is
+/// THE LAYERS OF A STACK are the layers of its sections (16.5): each frame
+/// of the body is peeled in its own plane, and the layers of one kind are
+/// one layer of the body, lifted back to the layers' frames. `scale` is
 /// ((h_out, h_in), (w_out, w_in)).
 pub fn peel_body_scaled(
     compartments: &[(i64, i64, i64, u8)],
     scale: Option<((usize, usize), (usize, usize))>,
-) -> Vec<Shell> {
+) -> Vec<Layer> {
     if compartments.is_empty() {
         return Vec::new();
     }
@@ -230,7 +230,7 @@ pub fn peel_body_scaled(
         reason = "rule 4 — canonical key order: frame first, then the site's own row and column"
     )]
     by_frame.sort_unstable_by_key(|&(r, c, k, _)| (k, r, c));
-    let mut out: Vec<Shell> = Vec::new();
+    let mut out: Vec<Layer> = Vec::new();
     // The walk is the body's own compartments, one frame at a time.
     let mut at = 0usize;
     while at < by_frame.len() {
@@ -240,11 +240,11 @@ pub fn peel_body_scaled(
             .position(|compartment| compartment.2 != k)
             .map_or(by_frame.len(), |n| at + n);
         let section: Vec<(i64, i64, u8)> = by_frame[at..end].iter().map(|&(r, c, _, h)| (r, c, h)).collect();
-        for shell in peel_section_scaled(&section, scale) {
-            let lifted = shell.painted.iter().map(|&(r, c, h)| (r, c, k, h));
-            match out.iter_mut().find(|s| s.kind == shell.kind) {
+        for layer in peel_section_scaled(&section, scale) {
+            let lifted = layer.painted.iter().map(|&(r, c, h)| (r, c, k, h));
+            match out.iter_mut().find(|s| s.kind == layer.kind) {
                 Some(s) => s.compartments.extend(lifted),
-                None => out.push(Shell { kind: shell.kind, compartments: lifted.collect() }),
+                None => out.push(Layer { kind: layer.kind, compartments: lifted.collect() }),
             }
         }
         at = end;
@@ -258,47 +258,47 @@ pub fn peel_body_scaled(
 fn peel_section_scaled(
     painted: &[(i64, i64, u8)],
     scale: Option<((usize, usize), (usize, usize))>,
-) -> Vec<SectionShell> {
+) -> Vec<SectionLayer> {
     if painted.is_empty() {
         return Vec::new();
     }
-    let mut out = vec![SectionShell { kind: ShellKind::Whole, painted: painted.to_vec() }];
+    let mut out = vec![SectionLayer { kind: LayerKind::Whole, painted: painted.to_vec() }];
     let mut residue = painted.to_vec();
     let mut gov = CountGov(Some(residue.len()));
-    if let Some((outline, core)) = OutlineStep.shell(&residue) {
+    if let Some((outline, core)) = OutlineStep.layer(&residue) {
         match gov.read(&core) {
-            ShellMotion::Closed => {
+            LayerMotion::Closed => {
                 if outline.painted != painted {
                     out.push(outline);
                 }
                 residue = core;
             }
-            ShellMotion::Shrinking => {
+            LayerMotion::Shrinking => {
                 if outline.painted != painted {
                     out.push(outline);
                 }
                 residue = core;
                 if !residue.is_empty() {
-                    out.push(SectionShell { kind: ShellKind::Core, painted: residue.clone() });
+                    out.push(SectionLayer { kind: LayerKind::Core, painted: residue.clone() });
                 }
             }
-            ShellMotion::Stalled => {}
+            LayerMotion::Stalled => {}
         }
     }
     let interior = crate::transducer::blade::enclosed_interior(&residue);
     if !interior.is_empty() {
         match gov.read(&interior) {
-            ShellMotion::Shrinking | ShellMotion::Closed => {
-                out.push(SectionShell { kind: ShellKind::Interior, painted: interior });
+            LayerMotion::Shrinking | LayerMotion::Closed => {
+                out.push(SectionLayer { kind: LayerKind::Interior, painted: interior });
             }
-            ShellMotion::Stalled => {}
+            LayerMotion::Stalled => {}
         }
     }
     let ring = crate::transducer::blade::adjacent_ring(&residue);
     if !ring.is_empty() {
         match gov.read(&ring) {
-            ShellMotion::Shrinking | ShellMotion::Closed | ShellMotion::Stalled => {
-                out.push(SectionShell { kind: ShellKind::Adjacent, painted: ring });
+            LayerMotion::Shrinking | LayerMotion::Closed | LayerMotion::Stalled => {
+                out.push(SectionLayer { kind: LayerKind::Adjacent, painted: ring });
             }
         }
     }
@@ -306,15 +306,15 @@ fn peel_section_scaled(
         if let Some((kind, k)) = scale_factor(hn, hd).or_else(|| scale_factor(wn, wd)) {
             // A body whose blocks do not condense to one hue REDUCES TO
             // NOTHING, and a kind that is neither scaling scales nothing:
-            // both are the absence of a scaled body, and no shell stands
+            // both are the absence of a scaled body, and no layer stands
             // for either.
             let scaled = match kind {
-                ShellKind::Magnified => Some(crate::transducer::blade::magnified(painted, k)),
-                ShellKind::Reduced => crate::transducer::blade::reduced(painted, k),
+                LayerKind::Magnified => Some(crate::transducer::blade::magnified(painted, k)),
+                LayerKind::Reduced => crate::transducer::blade::reduced(painted, k),
                 _ => None,
             };
             if let Some(painted) = scaled.filter(|s| !s.is_empty()) {
-                out.push(SectionShell { kind, painted });
+                out.push(SectionLayer { kind, painted });
             }
         }
     }

@@ -26,8 +26,8 @@ pub struct Session {
     pub(crate) strokes: std::cell::Cell<u64>,
     /// Keep-alive streams keyed by destination address.
     pub(crate) streams: RefCell<crate::network::nerve::Keyed<TcpStream>>,
-    /// Cover trie learned by page from `ACT_COVER`. Same read as the hypha.
-    pub(crate) cover: RefCell<crate::network::nerve::Cover>,
+    /// The home trie learned by page from `ACT_COVER`. Same read as the hypha.
+    pub(crate) cover: RefCell<crate::network::nerve::HomeTrie>,
     /// The four cover roots and the ruled root last read from each hypha:
     /// the cover is fetched when they MOVE, and not on every digest.
     pub(crate) last_roots: RefCell<crate::network::nerve::Keyed<crate::anastome::dialogue::Roots>>,
@@ -61,7 +61,7 @@ impl Session {
             },
             strokes: std::cell::Cell::new(0),
             streams: RefCell::new(crate::network::nerve::Keyed::new()),
-            cover: RefCell::new(crate::network::nerve::Cover::new()),
+            cover: RefCell::new(crate::network::nerve::HomeTrie::new()),
             last_roots: RefCell::new(crate::network::nerve::Keyed::new()),
             rooms: RefCell::new(crate::network::nerve::Keyed::new()),
             addrs: RefCell::new(crate::network::nerve::Keyed::new()),

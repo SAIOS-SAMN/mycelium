@@ -359,7 +359,7 @@ fn form_vertex_key_carries_ratio_and_sections() {
     // bytes. It stood at `form_address(7)`, two bytes that spell no stratum of
     // this system, and the carrier accepted them because it took bytes.
     let class = coord::SectionAt::Class(coord::Transport {
-        kind: crate::transducer::layers::ShellKind::Whole,
+        kind: crate::transducer::layers::LayerKind::Whole,
         class: w.rotor().holonomy_key().expect("the 90° turn has a class"),
     });
     // AT1 — A MEMBER HOLDS ITS FRAMES, and the sections are read off them:

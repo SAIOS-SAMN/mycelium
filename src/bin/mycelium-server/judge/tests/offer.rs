@@ -19,7 +19,7 @@ fn false_word() -> mycelium::transducer::element::Element {
 #[test]
 fn witness_vantage_reaches_offered_form_each_ask() {
     let court = std::sync::Mutex::new(mycelium::cognition::Court::new());
-    let mut cover = mycelium::network::nerve::Cover::new();
+    let mut cover = mycelium::network::nerve::HomeTrie::new();
     let (home, witness) = ([2u8; 32], [3u8; 32]);
     let w = word();
     for _ in 0..2 {
@@ -45,7 +45,7 @@ fn witness_vantage_reaches_offered_form_each_ask() {
 #[test]
 fn witness_vantage_refuses_false_form_each_ask() {
     let court = std::sync::Mutex::new(mycelium::cognition::Court::new());
-    let mut cover = mycelium::network::nerve::Cover::new();
+    let mut cover = mycelium::network::nerve::HomeTrie::new();
     let (home, witness) = ([2u8; 32], [3u8; 32]);
     let w = false_word();
     let first = crate::court_lock::held!(court).expect("the court").run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, witness, budget));

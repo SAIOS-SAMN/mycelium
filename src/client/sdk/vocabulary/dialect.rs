@@ -4,7 +4,7 @@
 use crate::client::sdk::*;
 use crate::transducer::element::Element;
 
-impl Epigenome {
+impl MindLanguage {
     pub fn dialect_len(&self) -> usize {
         self.dialect.len()
     }

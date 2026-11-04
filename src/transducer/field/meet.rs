@@ -138,7 +138,7 @@ pub struct MeetGraph {
     pub overflowed: u64,
     /// N4 — perception across scenes: the circuits read, the cells they
     /// cross and how they cohere, and the thoughts and demands filed.
-    pub resonance: super::resonance::ResonanceTally,
+    pub cross_scene: super::cross_scene::CrossSceneTally,
 }
 
 impl MeetGraph {
@@ -199,7 +199,7 @@ impl MeetGraph {
             "{core} | {} | overflowed {} | {}",
             self.remainders.line(),
             self.overflowed,
-            self.resonance.line()
+            self.cross_scene.line()
         );
         format!(
             "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} lapsed {} | {core} | owed: {owed}",
@@ -299,7 +299,7 @@ impl Contemplation {
             truncation: self.truncation,
             remainders: self.remainder_reading(),
             overflowed: self.overflowed,
-            resonance: self.resonance,
+            cross_scene: self.cross_scene,
             ..MeetGraph::default()
         };
         m.vertices = self.wells.len() as u64;

@@ -61,7 +61,7 @@ let residue = vec![(0i64, 0i64, 1u8, 2u8)];
 let next = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("cite-stood"));
 assert!(
-    entity.epigenome.express(&residue, 1, 1, &mut super::fixtures::budget()),
+    entity.language.express(&residue, 1, 1, &mut super::fixtures::budget()),
     "the residue stands in the dialect"
 );
 let mut b = entity.stroke();
@@ -122,9 +122,9 @@ assert_ne!(cites[0].addr, chain_word(&listing).address(), "never the listing cha
 assert_eq!(cites[0].body, listing[..2].to_vec(), "it carries the body the vertex's action reconstructed, in the listing's frame");
 assert_eq!(residue, vec![(9, 9, 3, 4)], "the residue is the body no word spoke");
 assert!(
-    entity.epigenome.working_word(chain_word(&listing).address().as_bytes()).is_none()
-        && entity.epigenome.working_word(chain_word(&scene).address().as_bytes()).is_none()
-        && entity.epigenome.working_word(vertex.as_bytes()).is_none(),
+    entity.language.working_word(chain_word(&listing).address().as_bytes()).is_none()
+        && entity.language.working_word(chain_word(&scene).address().as_bytes()).is_none()
+        && entity.language.working_word(vertex.as_bytes()).is_none(),
     "no element for a chain, and none for the vertex, exists on the working language"
 );
 }
@@ -188,6 +188,6 @@ assert!(entity.ideas_len() >= 1, "and is held as an idea");
 assert_eq!(entity.uttered_n(), 0, "nothing is uttered for a remainder, taught_up {}", entity.uttered_n());
 for r in rems.iter().filter(|r| !r.is_empty()) {
     let chain = chain_word(r);
-    assert!(entity.epigenome.working_word(chain.address().as_bytes()).is_none(), "a remainder never stands as a word");
+    assert!(entity.language.working_word(chain.address().as_bytes()).is_none(), "a remainder never stands as a word");
 }
 }

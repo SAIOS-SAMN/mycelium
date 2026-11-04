@@ -193,9 +193,9 @@ impl Mind {
                 })
                 .collect::<Vec<_>>()
         };
-        let located = self.epigenome.locate_on(chain, None, &held_at, budget);
+        let located = self.language.locate_on(chain, None, &held_at, budget);
         let word_of = |a: &[u8]| -> Option<&Element> {
-            self.epigenome.working_word(a).map(|h| h.element())
+            self.language.working_word(a).map(|h| h.element())
         };
         // STANDING IS A COORDINATE ON THE CITED WORD (Ruled, Stood, Held),
         // never a weight multiplied into μ⃗ — and never, as it was here, a
@@ -203,7 +203,7 @@ impl Mind {
         // is asked at the address, in the strata's own order (24.1); a word
         // the working language does not hold has no standing to report and
         // is not put on the wire.
-        let standing_of = |a: &[u8]| -> Option<Standing> { self.epigenome.standing_of(a) };
+        let standing_of = |a: &[u8]| -> Option<Standing> { self.language.standing_of(a) };
         let mut cites: Vec<dialogue::CiteWire> = located
             .cites
             .into_iter()
@@ -245,7 +245,7 @@ impl Mind {
         let k = self.own_k();
         for c in &cites {
             if c.standing == Standing::Stood.byte() {
-                self.epigenome.touch(&c.addr, k);
+                self.language.touch(&c.addr, k);
             }
         }
         (cites, located.residue)
@@ -275,7 +275,7 @@ impl Mind {
             return Concluded { cites, residue: chain.to_vec(), familiar: false };
         }
         let familiar = !self
-            .epigenome
+            .language
             .express(&residue, self.own_k(), self.now_tu(), &mut budget);
         Concluded { cites, residue, familiar }
     }
@@ -305,7 +305,7 @@ impl Mind {
                 true => self.own_k(),
                 false => self.act(),
             };
-            self.epigenome.stand_dialect_at(e.clone(), k, tu);
+            self.language.stand_dialect_at(e.clone(), k, tu);
             if !taught {
                 codes[i] = 0xff; // asked about on the wire below
                 // 78.161 — and said to the minds this one chatters with,
@@ -534,7 +534,7 @@ impl Mind {
     /// as the stroke reached.
     pub(crate) fn speak_colour_theorem(&mut self, budget: &mut crate::physics::Budget) {
         let held: Vec<Element> =
-            self.epigenome.genome_words().filter(|w| w.is_colour_word()).map(|w| (**w).clone()).collect();
+            self.language.genome_words().filter(|w| w.is_colour_word()).map(|w| (**w).clone()).collect();
         let mut theorem: Option<Element> = None;
         'pairs: for first in &held {
             for after in &held {
@@ -546,7 +546,7 @@ impl Mind {
                 // A theorem the court refused is sealed here and never
                 // proposed again (it would be counted and not sent).
                 if !self.already_taught_address(address.as_bytes())
-                    && !self.epigenome.holds(address.as_bytes())
+                    && !self.language.holds(address.as_bytes())
                     && self.sealed.get(&address).is_none()
                 {
                     theorem = Some(w);
@@ -575,17 +575,17 @@ impl Mind {
         // and nothing else, on each word as the language holds it. A sentence
         // is one vertex by its address, answered above.
         if word.is_sentence() {
-            return self.epigenome.same_vertex_in_genome(word).is_some() || self.touched_in_dialect(word);
+            return self.language.same_vertex_in_genome(word).is_some() || self.touched_in_dialect(word);
         }
         if let Some(fibre) = vertex_stratum(word).and_then(|at| self.taught_at.get(&at)) {
             let candidates: Vec<Vec<u8>> = fibre.scoped().map(|(k, _)| k).collect();
             for a in candidates {
-                if self.epigenome.working_word(&a).is_some_and(|h| h.element().same_vertex(word)) {
+                if self.language.working_word(&a).is_some_and(|h| h.element().same_vertex(word)) {
                     return true;
                 }
             }
         }
-        if self.epigenome.same_vertex_in_genome(word).is_some() {
+        if self.language.same_vertex_in_genome(word).is_some() {
             return true;
         }
         self.touched_in_dialect(word)
@@ -593,15 +593,15 @@ impl Mind {
 
     /// The same vertex standing in the dialect, touched as a use.
     fn touched_in_dialect(&mut self, word: &Element) -> bool {
-        let Some(a) = self.epigenome.same_vertex_in_dialect(word) else { return false };
-        self.epigenome.touch(&a, self.own_k());
+        let Some(a) = self.language.same_vertex_in_dialect(word) else { return false };
+        self.language.touch(&a, self.own_k());
         true
     }
 
     /// Stand the vertex in the dialect and mark it taught, without the wire.
     pub(crate) fn remember_spoken(&mut self, word: &Element) {
         let k = self.own_k();
-        self.epigenome.stand_dialect_at(word.clone(), k, self.now_tu());
+        self.language.stand_dialect_at(word.clone(), k, self.now_tu());
         self.file_taught(word);
     }
 

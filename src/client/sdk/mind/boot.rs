@@ -58,7 +58,7 @@ impl Mind {
             seat,
             held,
             hypha,
-            epigenome: Epigenome::new(),
+            language: MindLanguage::new(),
             solve_refused: crate::network::nerve::Keyed::new(),
             taught_up: crate::network::nerve::Keyed::new(),
             taught_at: crate::network::nerve::Keyed::new(),
@@ -186,35 +186,35 @@ impl Mind {
         if let Err(why) = e.restore_genome(&bytes) {
             return (e, GenomeReading::Refused(why));
         }
-        let words = e.epigenome.genome_len();
+        let words = e.language.genome_len();
         (e, GenomeReading::Restored { words, bytes: bytes.len() })
     }
 
     /// RESTORE A GENOME'S BYTES into this freshly opened mind: the words a
     /// court admitted, each at its citation. Whole or not at all: the words
-    /// are read into a separate epigenome and taken in only once they
+    /// are read into a separate `MindLanguage` and taken in only once they
     /// read whole, so a refusal leaves this mind as it was. `Err` names why
     /// the file was refused.
     pub(crate) fn restore_genome(&mut self, bytes: &[u8]) -> Result<(), String> {
         if let Some(named) = crate::client::sdk::vocabulary::genome_refused(bytes) {
             return Err(named.to_string());
         }
-        let mut epigenome = Epigenome::new();
-        epigenome
+        let mut language = MindLanguage::new();
+        language
             .uncrystallize(bytes)
             .filter(|end| *end == bytes.len())
             .ok_or_else(|| "the file is not a whole GEN7 tape".to_string())?;
         // A file holding what the genome leaves out (residue chains, rewrites)
         // is written again at the first stroke.
-        self.board.genome_unwritten = !epigenome.restored_residues.is_empty() || epigenome.restored_dropped > 0;
+        self.board.genome_unwritten = !language.restored_residues.is_empty() || language.restored_dropped > 0;
         // MU-CLIENT §7.1 — the residue chains the file held are open
         // questions, handed to the mind's carrier, never words.
-        for (addr, chain, stratum) in std::mem::take(&mut epigenome.restored_residues) {
+        for (addr, chain, stratum) in std::mem::take(&mut language.restored_residues) {
             self.place_question(&addr, &chain);
             self.board.open_residues.insert(&addr, chain);
             self.board.residue_strata.insert(&stratum, ());
         }
-        self.epigenome = epigenome;
+        self.language = language;
         Ok(())
     }
 
@@ -222,7 +222,7 @@ impl Mind {
     /// word the writer refused is named once with its count (LD0), and the
     /// counts are answered.
     pub(crate) fn genome_bytes(&self) -> (Vec<u8>, crate::client::sdk::vocabulary::GenomeWriteTally) {
-        let (bytes, refused) = self.epigenome.crystallize();
+        let (bytes, refused) = self.language.crystallize();
         refused.name();
         (bytes, refused)
     }

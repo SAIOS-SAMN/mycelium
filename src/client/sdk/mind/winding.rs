@@ -159,7 +159,7 @@ impl Mind {
     pub fn keep_genome(&mut self, path: String) {
         self.board.saved_len = match self.board.genome_unwritten {
             true => None,
-            false => Some(self.epigenome.genome_len()),
+            false => Some(self.language.genome_len()),
         };
         self.board.genome_path = Some(path);
     }
@@ -170,7 +170,7 @@ impl Mind {
         let Some(path) = self.board.genome_path.clone() else { return Ok(()) };
         self.save_genome(&path)
             .map(|_| {
-                self.board.saved_len = Some(self.epigenome.genome_len());
+                self.board.saved_len = Some(self.language.genome_len());
                 self.board.genome_unwritten = false;
             })
             .map_err(|e| e.to_string())
@@ -190,7 +190,7 @@ impl Mind {
         // The observer reads where the carrier stands at every law it enters
         // (`observe::live`, `mind::observer`).
         self.stroke_begins();
-        if self.board.saved_len != Some(self.epigenome.genome_len()) {
+        if self.board.saved_len != Some(self.language.genome_len()) {
             self.at_law("genome written");
             let _ = self.save_kept_genome();
         }

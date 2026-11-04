@@ -68,11 +68,11 @@ fn closeness_reproduces_selecting_universe_vector() {
 /// as it is.
 #[test]
 fn closeness_in_round_trips_through_frame() {
-    use crate::frame::{Frame, Move};
+    use crate::frame::{Move, Reference};
     let (a, b) = (Shares::of(&qs(&[(3, 5), (2, 5)])).expect("a"), Shares::of(&qs(&[(1, 4), (3, 4)])).expect("b"));
     let delta = qs(&[(1, 8), (1, 3)]);
-    assert_eq!(a.closeness_in(&b, &delta, &Frame::identity()), Ok(q(119, 240)), "the identity reads it as it is");
-    let frame = Frame::identity().then(Move::Stretch(vec![q(1, 3)])).then(Move::Expand(q(5, 2))).then(Move::Bend(vec![q(1, 7)]));
+    assert_eq!(a.closeness_in(&b, &delta, &Reference::identity()), Ok(q(119, 240)), "the identity reads it as it is");
+    let frame = Reference::identity().then(Move::Stretch(vec![q(1, 3)])).then(Move::Expand(q(5, 2))).then(Move::Bend(vec![q(1, 7)]));
     let there = a.closeness_in(&b, &delta, &frame).expect("carried");
     let back = frame.inverse().carry(&[there]).expect("carried back");
     assert_eq!(back, vec![q(119, 240)], "there and back, exactly");

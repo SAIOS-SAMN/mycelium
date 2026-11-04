@@ -102,7 +102,7 @@ pub struct ExpressedWord {
 pub(crate) type OpenResidue = (Vec<u8>, Vec<(i64, i64, u8, u8)>, Vec<u8>);
 
 #[derive(Default, Clone)]
-pub struct Epigenome {
+pub struct MindLanguage {
     /// THE CRYSTALLIZED LANGUAGE AS THIS MIND HOLDS IT (L16): each word
     /// with the form its tape decodes to, decoded once at the admission.
     /// Held as `Element`, every reader that wanted a form decoded the tape
@@ -151,7 +151,7 @@ pub struct Epigenome {
     pub(crate) waiting_on: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// CLOSED FORMS BY THE CHART OF A BODY THEY CARRY (21 step 3, 24.1):
     /// body chart → the addresses of held forms with a `Word` vertex on
-    /// that chart. It is the epigenome's `Form.by_class` (18.2) — "the
+    /// that chart. It is the mind's language's `Form.by_class` (18.2) — "the
     /// fibre a listing body's chart reads" — one level up, filled and
     /// emptied beside `axis_index`.
     ///

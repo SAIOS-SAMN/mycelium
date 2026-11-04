@@ -17,7 +17,7 @@ impl Mind {
         // through this mind's presentation: unmeasured, so nothing is held
         // rather than a form held with the presentation's reach asserted
         // unread.
-        let Some(p) = super::family::chain_percept(&self.epigenome, &chain) else { return };
+        let Some(p) = super::family::chain_percept(&self.language, &chain) else { return };
         self.hold_scene(p, &[]);
     }
 
@@ -93,7 +93,7 @@ impl Mind {
         let chart = crate::transducer::sentence::chart_of_form(&f);
         let open = match !ineffable.is_empty() {
             true => {
-                let (closed, _) = crate::transducer::family::form_deflation(&f, scene, &self.epigenome);
+                let (closed, _) = crate::transducer::family::form_deflation(&f, scene, &self.language);
                 let mag = match closed.iter().any(|&x| x > 0) {
                     true => closed,
                     false => draw,
@@ -452,7 +452,7 @@ impl Mind {
         let Some(chart) = chart else { return false };
         let Ok(factors) = crate::transducer::element::conformal_factors(residue) else { return false };
         let Ok(rotor) = crate::transducer::element::rotor_of_factors(&factors) else { return false };
-        let Some((form, vertex, g)) = self.epigenome.vocabulary.read().conjugate_of(&rotor, true) else { return false };
+        let Some((form, vertex, g)) = self.language.vocabulary.read().conjugate_of(&rotor, true) else { return false };
         let derivation = crate::transducer::alphabet::Derivation::factored(
             vec![(form, vertex, 1)],
             crate::transducer::alphabet::Word::identity(),
@@ -489,7 +489,7 @@ impl Mind {
         let Ok(factors) = crate::transducer::element::conformal_factors(residue) else { return false };
         let Ok(rotor) = crate::transducer::element::rotor_of_factors(&factors) else { return false };
         let carriage = factors.carriage();
-        let Some(derivation) = crate::transducer::family::heard_citation(&self.epigenome, &rotor, &carriage, &[]) else {
+        let Some(derivation) = crate::transducer::family::heard_citation(&self.language, &rotor, &carriage, &[]) else {
             return false;
         };
         let Some(e) = crate::transducer::sentence::composed_form(derivation, &carriage, chart) else { return false };
@@ -604,7 +604,7 @@ impl Mind {
             .ok()
             .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok().map(|r| (f, r)));
         let Some((f, rotor)) = factored else { return (Transcribed::Unread, None) };
-        match letter_reading(&self.epigenome, budget, &rotor) {
+        match letter_reading(&self.language, budget, &rotor) {
             LetterReading::Derivable => {
                 let spelled = match crate::transducer::alphabet::factor_rotor(&rotor) {
                     Some(Ok(word)) => period.checked_sub(1).and_then(|beyond| {
@@ -758,7 +758,7 @@ impl Mind {
         // mind keeping a copy to work on. Door 3 refuses the second when a
         // lane is spent, and never the first.
         if let Some(word) = crate::transducer::sentence::as_element_form(&f, mag) {
-            self.epigenome.stand_dialect_withheld(word, k, tu);
+            self.language.stand_dialect_withheld(word, k, tu);
         }
         // No room on a lane withholds the thought; the demand stands on the
         // docket either way. A perception is held with its bodies.
@@ -771,7 +771,7 @@ impl Mind {
     /// Expand dirty ideas once per syntropic phase (25.1): each dirty idea
     /// expands over the working atlas — genome and dialect, read as one
     /// atlas, the held word's rotor read by address — and runs the pivot
-    /// orbit with the epigenome as its crystal (the closed forms it holds,
+    /// orbit with the mind's language as its crystal (the closed forms it holds,
     /// ruled or stood; an idea is glued only once it has closed and stood,
     /// 13.6). An idea that closes crystallizes (25.2), stands in the
     /// dialect and is uttered once (24.3). Returns the lane measure of the
@@ -802,19 +802,19 @@ impl Mind {
             adjoined,
             ..
         } = {
-            let epigenome = &self.epigenome;
-            let atlas = epigenome.working_atlas();
+            let language = &self.language;
+            let atlas = language.working_atlas();
             // The held word's SECTION, both halves off the one element:
             // `rotor_of` stood here and the carriage never reached the
             // cover, so every transition classified as if the word sat at
             // the origin.
             let section_at = |a: &[u8]| {
-                epigenome
+                language
                     .working_word(a)
                     .and_then(|h| crate::transducer::cech::section_of(h.element()))
             };
             self.contemplation
-                .expand_all(&atlas, &section_at, epigenome, &mut budget)
+                .expand_all(&atlas, &section_at, language, &mut budget)
         };
         // 37.7 — ADJOIN WHAT THE ALPHABET CANNOT SPELL. A cover meet that
         // produced a rotor the seventeen have no letter for is the one place
@@ -870,7 +870,7 @@ impl Mind {
             use crate::transducer::family::{letter_reading, LetterReading};
             use crate::transducer::sentence::ObstructionRefusal;
             // The caller's stroke (65.5): the reading is part of its act.
-            let reading = letter_reading(&self.epigenome, budget, rotor);
+            let reading = letter_reading(&self.language, budget, rotor);
             if reading == LetterReading::Derivable {
                 self.contemplation.pivots.derivable += 1;
                 continue;
@@ -931,7 +931,7 @@ impl Mind {
             let sealed = entity.sealed.get(addr.as_bytes()).is_some();
             // Held where its dialect stands it, and only there: a word the
             // dialect no longer holds has nothing to be said again from.
-            let stands = entity.epigenome.working_word(addr.as_bytes()).is_some();
+            let stands = entity.language.working_word(addr.as_bytes()).is_some();
             match entity.already_taught(&word) || sealed || !stands {
                 true => {
                     entity.unheard.remove(addr.as_bytes());
@@ -955,7 +955,7 @@ impl Mind {
                 return;
             }
             self.unheard.remove(&a);
-            let Some(e) = self.epigenome.working_word(&a).map(|h| h.element().clone()) else { continue };
+            let Some(e) = self.language.working_word(&a).map(|h| h.element().clone()) else { continue };
             self.stand_crystallized(&e, &family);
         }
     }
@@ -968,7 +968,7 @@ impl Mind {
         let tu = self.now_tu();
         self.contemplation.set_now(tu);
         let (_fills, _formed, _classes, spoken, adjoined) =
-            self.contemplation.pivot_on(word, &self.epigenome, budget);
+            self.contemplation.pivot_on(word, &self.language, budget);
         // The other path a pivot runs on, minting through the same reader.
         self.adjoin_letters(&adjoined, budget);
         let mut n = 0usize;
@@ -998,7 +998,7 @@ impl Mind {
     /// question about arrival; the pivot's question is which obstructions
     /// are undischarged, and that is a set at coordinates.
     pub(crate) fn pivot_thoughts(&mut self) -> usize {
-        let added: Vec<Element> = self.epigenome.take_unpivoted();
+        let added: Vec<Element> = self.language.take_unpivoted();
         // The root of this act (called by the arm and the loop): one stroke
         // for every pivot it runs (65.5).
         let mut budget = self.physics.stroke();
@@ -1011,7 +1011,7 @@ impl Mind {
 
     /// MU-CLIENT §4.13 — THE SHED, BY REFERENCE: a dialect word stands while
     /// something live references it, and is dropped where nothing does
-    /// (`Epigenome::shed_unreferenced`). What references a word, each read
+    /// (`MindLanguage::shed_unreferenced`). What references a word, each read
     /// by its coordinates:
     /// - a thought standing AT it, or a thought CITING it (door 1's
     ///   fibration, `cited`);
@@ -1059,7 +1059,7 @@ impl Mind {
                 || unheard.contains(a)
                 || unratified(a)
         };
-        let dropped = self.epigenome.shed_unreferenced(&referenced);
+        let dropped = self.language.shed_unreferenced(&referenced);
         // 7.3, S12.6a: the utterance receipt of a word that shed leaves
         // with it: 24.3's "nothing is uttered twice" needs the receipt only
         // while the word stands.
@@ -1079,19 +1079,19 @@ impl Mind {
     }
 
     pub(crate) fn dialect_len(&self) -> usize {
-        self.epigenome.dialect_len()
+        self.language.dialect_len()
     }
 
     /// The mind's working atlas: genome ∪ dialect ∪ the held forms' words,
     /// each fibre member carrying its standing; the Held stratum is read
     /// from the contemplation at the chart asked (24.1).
     pub(crate) fn working_atlas(&self) -> WorkingAtlas<'_> {
-        self.epigenome.working_atlas_with(&self.contemplation)
+        self.language.working_atlas_with(&self.contemplation)
     }
 
     /// Empty when genome, dialect and ideas are all empty.
     pub(crate) fn atlas_is_empty(&self) -> bool {
-        self.epigenome.atlas_is_empty() && self.contemplation.is_empty()
+        self.language.atlas_is_empty() && self.contemplation.is_empty()
     }
 
     /// Word counts per stratum on the working atlas: ruled (genome words),
@@ -1099,7 +1099,7 @@ impl Mind {
     /// log line is these word counts, never chart counts.
     pub(crate) fn atlas_standing_counts(&self) -> (usize, usize, usize) {
         (
-            self.epigenome.genome_len(),
+            self.language.genome_len(),
             self.dialect_len(),
             self.ideas_len(),
         )
@@ -1122,7 +1122,7 @@ impl Mind {
     /// it cited a well that no longer stands here, and it lapses with it
     /// on the same stroke.
     pub(crate) fn take_promoted(&mut self) -> Vec<Vec<u8>> {
-        let promoted = self.epigenome.take_promoted();
+        let promoted = self.language.take_promoted();
         if !promoted.is_empty() {
             let _ = self.contemplation.lapse_with(&promoted);
         }
@@ -1144,11 +1144,11 @@ impl Mind {
     #[cfg(test)]
     pub(crate) fn meet_graph(&self) -> crate::transducer::field::MeetGraph {
         let mut m = self.contemplation.meet_graph();
-        // RM1 — the remainders the epigenome's index could not file over one
+        // RM1 — the remainders the mind's language's index could not file over one
         // standing, beside the contemplation's own.
-        m.remainders.coincident = self.epigenome.remainders_coincident;
+        m.remainders.coincident = self.language.remainders_coincident;
         // And the receptor's: nested, discordant, the calluses.
-        let (e, c) = (&self.epigenome, &self.epigenome.calluses);
+        let (e, c) = (&self.language, &self.language.calluses);
         (m.remainders.nested, m.remainders.discordant) = (e.remainders_nested, e.remainders_discordant);
         m.remainders.calluses = c.stood;
         m.remainders.unspelled = c.unspelled;
@@ -1171,9 +1171,9 @@ impl Mind {
             self.contracted.len(),
             self.sealed.len(),
             self.contractions.len(),
-            self.epigenome.expressed.len(),
-            self.epigenome.recollections.len(),
-            self.epigenome.waiting_on.len(),
+            self.language.expressed.len(),
+            self.language.recollections.len(),
+            self.language.waiting_on.len(),
             self.unheard.len(),
         ]
     }

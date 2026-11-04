@@ -4,7 +4,7 @@
 use crate::client::sdk::*;
 use crate::transducer::element::Element;
 
-impl Epigenome {
+impl MindLanguage {
     /// RETIRE a word whose meaning the rest of the genome already carries.
     ///
     /// It used to be a shift: remove at a slot, remove the same slot from
@@ -53,7 +53,7 @@ impl Epigenome {
 
     /// COMPREHEND a received utterance: decompose it over the genome (the shared
     /// projective mathematics, `cognition::decompose_over`) and fold the
-    /// understanding into the epigenome — expression weights rise on the cited
+    /// understanding into the mind's language —expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
     pub(crate) fn comprehend(&mut self, utterance: &Element, budget: &mut crate::physics::Budget) -> Comprehension {
         // A taught sentence is re-derived as a form: vertices, faces, orbits.

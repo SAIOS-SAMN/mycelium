@@ -30,7 +30,7 @@
 //! replays it (23.1 step 4).
 //!
 //! Nothing is keyed by position. A piece is addressed by its content —
-//! shell kind and its support written out, the hue being a gauge the
+//! layer kind and its support written out, the hue being a gauge the
 //! piece's compartments carry and not a coordinate of it (H1b) — so no arrival index
 //! survives into the nerve (rule 6, rule 15).
 
@@ -89,7 +89,7 @@ pub(crate) type CarriedPiece = (Vertex, Versor, Supports);
 /// same holds for the sets each pass builds as it goes — `occ_in`,
 /// `occ_out`, `named`, `versors`, `occ` — which are read back by the pass
 /// that filled them.
-pub(crate) struct Cover {
+pub(crate) struct PiecewiseCarriage {
     /// The word vertex of each carried piece, the versor that carried it,
     /// and the support it landed on — by the [`coord::CarriedPieces`] it is.
     /// The support rides along because the form needs it for the vertex's
@@ -132,7 +132,7 @@ pub(crate) struct Cover {
 /// of the stroke ended first. It is not a smaller cover (rule 11).
 ///
 /// This is a TYPE and not a flag on the cover, because the alternative
-/// leaves a half-built `Cover` in existence: `carried` partly populated,
+/// leaves a half-built `PiecewiseCarriage` in existence: `carried` partly populated,
 /// and `uncarried` sitting at `[0; 4]` — a zero that was never measured
 /// and that reads exactly like a cover which reached everything. A
 /// boolean guarding that zero protects only the readers that remember to
@@ -140,9 +140,9 @@ pub(crate) struct Cover {
 #[derive(Debug)]
 pub(crate) struct Unmeasured;
 
-impl Cover {
-    pub(crate) fn new() -> Cover {
-        Cover {
+impl PiecewiseCarriage {
+    pub(crate) fn new() -> PiecewiseCarriage {
+        PiecewiseCarriage {
             carried: crate::network::nerve::Keyed::new(),
             meets: crate::network::nerve::Keyed::new(),
             refused: crate::network::nerve::Keyed::new(),
@@ -180,7 +180,7 @@ pub(crate) fn cover_deformation(
     image: &Body,
     scale: Option<((usize, usize), (usize, usize))>,
     budget: &mut crate::physics::Budget,
-) -> Result<Cover, Unmeasured> {
+) -> Result<PiecewiseCarriage, Unmeasured> {
     use super::cursor;
     let ins = pieces_of(&input.compartments);
     let outs = pieces_of(&image.compartments);
@@ -192,7 +192,7 @@ pub(crate) fn cover_deformation(
         Some(p) => p,
         None => cursor::Pending::new(),
     };
-    let mut cover = std::mem::replace(&mut st.cover, Cover::new());
+    let mut cover = std::mem::replace(&mut st.cover, PiecewiseCarriage::new());
 
     // Site → the input piece holding it. This is Φ: the positional
     // correspondence over the two supports, which is what a

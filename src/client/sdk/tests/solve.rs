@@ -47,7 +47,7 @@ fn judge_on_keeps_home_solve_train_refutes() {
         rule: spoken,
         ground: crate::transducer::family::transduce::Ground::One(0),
     };
-    assert!(matches!(judge_on(&entity.epigenome, &judge), HomeCheck::Kept(crate::client::sdk::mind::perceive::Stop::Uncrossed)), "refuted at home: it cannot be re-minted without its own pairs");
+    assert!(matches!(judge_on(&entity.language, &judge), HomeCheck::Kept(crate::client::sdk::mind::perceive::Stop::Uncrossed)), "refuted at home: it cannot be re-minted without its own pairs");
 }
 
 /// 78.158a U4 — THE SEAT'S SOLVE IS THE MIND'S OWN CALL. Told it called fn

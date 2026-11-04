@@ -108,7 +108,7 @@ fn thread_new_winds_grounded_thought_past_return() {
             perceive(&mut c, input, output, b"the orbit", [0; 4]);
             vent(&mut c);
         }
-        assert_eq!(c.closed_thoughts, 1, "the fourth hour closed its return: {}", c.resonance.line());
+        assert_eq!(c.closed_thoughts, 1, "the fourth hour closed its return: {}", c.cross_scene.line());
         let grounded: Vec<Vec<u8>> = c.wells.scoped().filter(|(_, b)| b.ground.is_some()).map(|(k, _)| k).collect();
         assert_eq!(grounded.len(), 1, "the grounded thought stands past its return");
     });

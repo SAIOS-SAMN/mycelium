@@ -198,7 +198,7 @@ impl<V> Stratified<V> {
     /// says so there; the full depth is an exact read, which is
     /// [`Stratified::get`]. Both are refused here so that a site cannot ask
     /// for a projection and receive one of those by accident.
-    pub fn fibre_at_depth(&self, key: &[u8], depth: usize) -> Result<Fibre<'_, V>, StratumRefusal> {
+    pub fn fibre_at_depth(&self, key: &[u8], depth: usize) -> Result<Subtree<'_, V>, StratumRefusal> {
         if depth == 0 {
             return Err(StratumRefusal {
                 system: self.schema.system,
@@ -233,7 +233,7 @@ impl<V> Stratified<V> {
 
     /// THE WHOLE CARRIER, asserted as one stratum's reading exactly as
     /// [`Keyed::scoped`] is.
-    pub fn scoped(&self) -> Fibre<'_, V> {
+    pub fn scoped(&self) -> Subtree<'_, V> {
         self.trie.scoped()
     }
 

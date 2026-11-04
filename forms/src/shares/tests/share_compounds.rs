@@ -50,12 +50,12 @@ fn after_opens_new_run_on_changed_share() {
 /// back by the inverse frame returns bit for bit; no floor is taken.
 #[test]
 fn read_in_round_trips_through_frame() {
-    use crate::frame::{Frame, Move, ReadIn};
+    use crate::frame::{Move, ReadIn, Reference};
     let r = Remaining::whole().after(&q(1, 4), 3).and_then(|r| r.after(&q(2, 9), 5)).expect("shares");
-    let frame = Frame::identity().then(Move::Contract(q(3, 1))).then(Move::Twist(vec![q(1, 1)])).then(Move::Bend(vec![q(2, 5)]));
+    let frame = Reference::identity().then(Move::Contract(q(3, 1))).then(Move::Twist(vec![q(1, 1)])).then(Move::Bend(vec![q(2, 5)]));
     let there = r.read_in(&frame).expect("carried");
     assert_eq!(frame.inverse().carry(&there), Ok(vec![r.reading()]), "there and back, exactly");
-    assert_eq!(r.read_in(&Frame::identity()), Ok(vec![q(27, 64) * power(&q(7, 9), 5)]), "the identity reads it as it is");
+    assert_eq!(r.read_in(&Reference::identity()), Ok(vec![q(27, 64) * power(&q(7, 9), 5)]), "the identity reads it as it is");
 }
 
 /// REFUSED BY NAME: a negative share, a share that would take all that

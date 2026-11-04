@@ -41,7 +41,7 @@ fn sentence_of(w: Word, tag: u8) -> (Address, Form) {
 }
 
 /// A mind that holds one form, answering `generators_under` through the
-/// SAME index the epigenome uses — `admit_generators` filling it and the
+/// SAME index the mind's language uses — `admit_generators` filling it and the
 /// keyed subtree read draining it — so what this fixture proves about the
 /// read is what the live mind does (§3.4).
 struct Holds {

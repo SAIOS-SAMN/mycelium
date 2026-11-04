@@ -7,7 +7,7 @@ use crate::Mesh;
 use ed25519_dalek::SigningKey;
 use mycelium::anastome::dialogue::encode_tick;
 use mycelium::chronometry::tuniversal::{Admitted, Keepers, Origin, TPoint, Tick};
-use mycelium::network::nerve::{Cover, Keyed};
+use mycelium::network::nerve::{HomeTrie, Keyed};
 use std::sync::{Arc, Mutex};
 
 const GENESIS: [u8; 32] = [0x6b; 32];
@@ -15,7 +15,7 @@ const EPOCH: u32 = 152;
 
 fn mesh(sk: &SigningKey) -> Mesh {
     Mesh {
-        cover: Arc::new(Mutex::new(Cover::new())),
+        cover: Arc::new(Mutex::new(HomeTrie::new())),
         rooms: Arc::new(Mutex::new(Keyed::new())),
         addrs: Arc::new(Mutex::new(Keyed::new())),
         vk: sk.verifying_key().to_bytes(),

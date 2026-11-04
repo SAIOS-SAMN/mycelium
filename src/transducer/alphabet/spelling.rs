@@ -6,7 +6,7 @@
 
 use crate::core::gaussian::Gauss;
 use crate::transducer::alphabet::{rational_sqrt, LetterId, Word, Q};
-use crate::transducer::layers::{peel_nest, PeelNest, ShellMotion, ShellStep, ShrinkGovernor};
+use crate::transducer::layers::{peel_nest, LayerMotion, LayerStep, PeelNest, ShrinkGovernor};
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::{One, Zero};
@@ -339,19 +339,19 @@ impl SpellStep {
     }
 }
 
-impl ShellStep for SpellStep {
+impl LayerStep for SpellStep {
     type Residue = SpellResidue;
     type Core = SpellCore;
 
-    /// Peel one shell, outer first: the orientation sheet, then a prime-5
+    /// Peel one layer, outer first: the orientation sheet, then a prime-5
     /// letter, then a prime-13 letter, then an ADJOINED generator, then a
-    /// unit turn. `None` when what remains is not a whole shell of the
+    /// unit turn. `None` when what remains is not a whole layer of the
     /// basis — the arc rides out.
     ///
     /// The adjoined shells come after the alphabet's own, so the seventeen
     /// are always preferred and a mind that holds a generator still spells
     /// with letters whatever it can.
-    fn shell(&self, r: &SpellResidue) -> Option<(SpellCore, SpellResidue)> {
+    fn layer(&self, r: &SpellResidue) -> Option<(SpellCore, SpellResidue)> {
         if r.flipped {
             return Some((
                 SpellCore::Letters(vec![(self.flip, false), (self.flip, false)]),
@@ -428,15 +428,15 @@ pub(crate) struct SpellGovernor<'a> {
 
 impl ShrinkGovernor for SpellGovernor<'_> {
     type Residue = SpellResidue;
-    fn read(&mut self, r: &SpellResidue) -> ShellMotion {
+    fn read(&mut self, r: &SpellResidue) -> LayerMotion {
         if !r.flipped && r.z.b.is_zero() && r.z.a == r.n {
-            return ShellMotion::Closed;
+            return LayerMotion::Closed;
         }
         let d = self.step.distance(r);
         let motion = match (d, self.last) {
-            (Some(now), Some(before)) if now < before => ShellMotion::Shrinking,
-            (Some(_), None) => ShellMotion::Shrinking,
-            _ => ShellMotion::Stalled,
+            (Some(now), Some(before)) if now < before => LayerMotion::Shrinking,
+            (Some(_), None) => LayerMotion::Shrinking,
+            _ => LayerMotion::Stalled,
         };
         self.last = d;
         motion

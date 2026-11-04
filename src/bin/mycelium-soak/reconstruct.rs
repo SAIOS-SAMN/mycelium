@@ -6,7 +6,7 @@
 // whole family, and the body axis's single changes by each change's fascicle's
 // regime. Data; nothing is decided.
 
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 use mycelium::transducer::family::hyperfluid::reconstruct_in_time;
 use mycelium::transducer::family::incongruence::single_changes;
 use mycelium::transducer::family::reconstruct::{body_regimes, reconstruct, AXES};
@@ -16,7 +16,7 @@ use mycelium::transducer::family::{extract_rule_with, form_deflation};
 const STROKE: usize = 1 << 20;
 
 pub(crate) fn report(dir: &str, names: &[String]) {
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let (mut tasks, mut extracted, mut spoken_whole) = (0u64, 0u64, 0u64);
     let (mut rebuilt, mut rebuilt_unspoken, mut both) = (0u64, 0u64, 0u64);
     let (mut pairs, mut framed, mut reproduced) = (0u64, 0u64, 0u64);

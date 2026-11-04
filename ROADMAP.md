@@ -36,7 +36,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
-| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N5 built (N1 with #29, N2 with #53); N7 built with track 26 S5; N6 next, in v0.3.0's open break |
+| Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N7 built (N1 with #29, N2 with #53, N7 with track 26 S5, N6 inside v0.3.0's open break); `ListingField` still waits on a ruling |
 | rc.3 on a test mesh, operator authorization, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | After the items above (maintainers) |
 
 **2. Ready to start**
@@ -447,15 +447,15 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    `snapshot.rs` → `trie_tape.rs`, `cognition/snapshot/` →
    `persistence/`, the court's `germinate/` → `listings/`,
    `court/winding.rs` → `ring_carrier.rs`. The rule language's `Region`
-   becomes `RegionKind` so the sensor's `Region` names one thing. Waiting
-   on a ruling: which `Cover` is canonical (the mesh's cover trie
-   `nerve::Cover`, the Čech edge cochain `cech::Cover`, the scene's
-   `Cover` of regions and the extraction pass's `family::cover::Cover`);
-   whether the keyed trie's prefix `Fibre` is the bundle's fibre;
-   `forms::frame::Frame`, an observer's frame of reference in the `forms`
-   crate's public surface; `layers::Shell` against the GLOSSARY's
-   **Shell** (a universe's physics layer); the code's `Epigenome` and
-   `resonance.rs` against their GLOSSARY rows; `ListingField`.
+   becomes `RegionKind` so the sensor's `Region` names one thing. The
+   names this phase left waiting on a ruling are **resolved** in N6:
+   the canonical `Cover` is the Čech cover the senses form
+   (`cech::Cover`, MU-CLIENT 24.4), and the mesh's trie, the scene's
+   regions and the extraction pass's pieces are renamed by function; the
+   keyed trie's prefix `Fibre` is no bundle fibre and is `Subtree`;
+   `forms::frame::Frame` is `Reference`; `layers::Shell` is `Layer`; the
+   code's `Epigenome` is `MindLanguage`; `resonance.rs` is
+   `cross_scene.rs`. `ListingField` still waits on a ruling.
 4. **N4, retired terms and person words.**
    - `Unstated::OffLattice` → `OffSubstrate`; `lattice_step` →
      `substrate_step`.
@@ -469,8 +469,8 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    span follow), `merge_vortex` / `merge_keyed`, `FormCell` →
    `BodyContact`, and 18 test names. No identifier says "lamina"; the word
    stands only in refusal strings (`verdict/body.rs` `FAIL_*`), the keyed
-   `CoverSite`'s name `"lamina-cell"` and the oracle's `"lamina_a"` key,
-   which wait on a ruling with N7. The tests named for the court's
+   `CoverSite`'s name `"lamina-cell"` and the oracle's `"lamina_a"` key;
+   N7 renamed the refusal strings and N6 the name and the key. The tests named for the court's
    `own_section` keep the function's name.
 5. **N5, the GLOSSARY** (**Built**). A row for each term a name keeps:
    - contemplation
@@ -499,7 +499,44 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    names the other, which N3 renames.
 6. **N6, "residual" → "residue" or "remainder"** (retired by 0.7), about
    450 uses. `TAG_RESIDUAL` is wire-visible, so N6 lands in v0.3.0's open
-   break and is stated under *Network contract*.
+   break and is stated under *Network contract*. N6 also closes the names
+   N3 left waiting on a ruling, and the keyed names that kept retired or
+   duplicate words.
+
+   **Built** (N6, inside v0.3.0's break; every rename is listed in the
+   CHANGELOG).
+   - **Residue.** The code's "residual" is the residue of 0.7, the exact
+     versor or vector a reduction leaves; "remainder" stays only for the
+     record leaf that keeps it, and no identifier took it.
+     `element/residual.rs` → `element/residue.rs`, `ResidualGerm` →
+     `ResidueGerm`, `TAG_RESIDUAL` → `TAG_RESIDUE` (byte 19 unchanged),
+     `from_residual*` → `from_residue*`, `residual_of` → `residue_of`,
+     `SpellResidual*` → `SpellResidue*`, `ProbeClosure::Residual` →
+     `Residue`, `tuniversal::Residual` → `Residue`, and ten test names.
+   - **Cover.** `cech::Cover` is canonical. `nerve::Cover` →
+     `nerve::HomeTrie` (`nerve/cover.rs` → `nerve/home_trie.rs`), the
+     scene's `Cover` → `Regions`, `family::cover::Cover` →
+     `PiecewiseCarriage`.
+   - **Fibre.** The keyed trie's `Fibre` → `Subtree`.
+   - **Frame.** `forms::frame::Frame` → `Reference`, `FrameRefusal` →
+     `ReferenceRefusal`, `InFrame::Frame` → `InFrame::Reference`; the
+     module `frame` and the law id `FORMS-FRAME` are unchanged.
+   - **Shell.** `layers::Shell` → `Layer`, with `LayerKind`,
+     `LayerMotion`, `LayerStep` (the method `layer`) and `SectionLayer`.
+   - **Epigenome.** The code's `Epigenome` → `MindLanguage`, the field
+     `Mind::epigenome` → `Mind::language`; "epigenome" keeps the dialect.
+   - **Resonance.** `field/resonance.rs` → `field/cross_scene.rs`,
+     `ResonanceTally` → `CrossSceneTally`; the commensurate return keeps
+     "resonance" in the orbit algebra.
+   - **Keyed names.** `CoverSite` `"lamina-cell"` → `"cover-site"`,
+     `ChartCarriage` `"section"` → `"chart-carriage"`, `GluedBoundary`
+     `"cover-site"` → `"glued-boundary"`, `CarriedPieces`
+     `"cover-carriage"` → `"carried-pieces"`; the oracle's `"lamina_a"` →
+     `"compartment_a"`, the golden file written again through the
+     corpus's decoder.
+
+   Still open: `ListingField`, and the rule language's `Coord::Shell` (a
+   body's cell count, on the SDK's `rule` surface), each for a ruling.
 7. **N7, the two wire names, with track 26 S5:**
    - `ACT_ROWS` and its codecs → `ACT_ENTRIES` (ledger entries);
    - `REFUSE_RULE_OFF_LATTICE` → `REFUSE_RULE_OFF_SUBSTRATE`.
@@ -515,7 +552,7 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    SDK's `readings` module and `ACT_TABLE` follow, and the conformance
    statement names the act `entries`. Claim: `entries_act_round_trips`.
    The keyed `CoverSite`'s name `"lamina-cell"` and the oracle's
-   `"lamina_a"` key are not wire names and still wait on a ruling.
+   `"lamina_a"` key are not wire names; N6 renames them.
 
 **Exemptions:** "row" in its strict matrix sense (`rank_of_rows`,
 `OrbitRow`) and "arc" in its strict geometric sense (an arc of a

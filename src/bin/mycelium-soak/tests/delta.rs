@@ -1,5 +1,5 @@
 use crate::delta::*;
-use mycelium::client::sdk::Epigenome;
+use mycelium::client::sdk::MindLanguage;
 
 /// Y1 — THE INSTRUMENT MUST BE ABLE TO SEE A DIFFERENCE, or its zero
 /// on the corpus says nothing about the engine and everything about
@@ -31,11 +31,11 @@ fn walk_of_is_function_of_given_mind() {
     let b = vec![vec![2u8, 2], vec![2, 2]];
     let fam = vec![(a, b)];
 
-    let empty = Epigenome::new();
+    let empty = MindLanguage::new();
     let cold = TaskWalk::of(&fam, &empty);
     // TWO EMPTY MINDS READ ALIKE. Without this, a difference below
     // could be noise in the walk rather than the mind.
-    let cold_again = TaskWalk::of(&fam, &Epigenome::new());
+    let cold_again = TaskWalk::of(&fam, &MindLanguage::new());
     assert!(cold == cold_again, "one family, two identical minds, one reading");
 
     // A mind holding this family's own closed form — the same form a
@@ -48,7 +48,7 @@ fn walk_of_is_function_of_given_mind() {
             why.label()
         )
     };
-    let mut warm = Epigenome::new();
+    let mut warm = MindLanguage::new();
     assert!(
         warm.stand_dialect_at(e, 1, 1).is_some(),
         "the mind stands the form it is given, or this test proves nothing"
