@@ -32,7 +32,7 @@ is at `0.3.0-rc.2`. Remaining, in order:
 
 | Item | Issue | State |
 |---|---|---|
-| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 built (the ground deduced, a vortex read per candidate, the solve act stating its ground; task addresses changed inside the one break); S3 and S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
+| Track 26, S0–S5: the sensor for any source at any rank; rows and columns lifted into the field or taken apart ([MU-SENSING](docs/MU-SENSING.md) §3.6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | S0 and S4 built with T2 (S4's family-invariance reading for nesting still open); S1 built (the decoder in `sources/arc-agi`, `src/arc.rs` removed); S2 built (the ground deduced, a vortex read per candidate, the solve act stating its ground; task addresses changed inside the one break); S3 built (the symbol set `Σ` deduced, `e_∅` at `|Σ|`, no fixed palette; the tape's record byte waits on S5); S5 next, in v0.3.0's one break. S6 follows v0.3.0. |
 | Track 26, S4a and S7–S9: the sample lifted into the field (non-Euclidean, never scalar); the field's curvature and the well's body, the field's motions, forces, orbits and the vortex in the field's atlas ([MU-SENSING](docs/MU-SENSING.md) §3.7–§3.8) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Specified; the carrier is the standard LAW-FIELD v1 ([proposal](docs/proposals/78.171-law-field.md), [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36)), to be agreed with the peer kernels, then built |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Ready (T2 has merged) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved). Open: O3, the ratio's `8` on the frame axis, waits on track 26 S4; the need readings owed are listed in MU-DERIVATIONS D2.5 |
@@ -1376,6 +1376,31 @@ Each phase is one commit:
      `symbol_index_is_first_appearance_in_address_order`,
      `reservoir_follows_the_family_symbol_set`.
    - Reflective claim (MU-SENSING §0): `mind_states_a_symbol_meaning_as_a_relation_and_court_reconstructs_it`.
+   - **Built.** `transducer::symbols::SymbolSet` reads `Σ` from a
+     family's samples or rasters, with `index` (first appearance) and
+     `reservoir` (`|Σ|`); `element::fibre_on_symbols` reads a fibre
+     relation on `Σ`'s indices, each record at `|Σ|`. Both `PALETTE`s,
+     the 10-slot `HueTable`, the 256-slot `HueMap` and the `[u8; 10]`
+     images are gone: each table is keyed by the symbols it names, and
+     permutations, cycles and orbits are read over those symbols. The
+     erasure act maps the family's own `Σ` onto its ground; the rule
+     language composes hue maps over the painted symbols they name.
+     - `Σ` is over all of a family's posted samples, its test inputs
+       included (`SymbolSet::of_family`, `symbols::on_test_inputs`).
+     - Claims: the three above,
+       `family_with_eleven_symbols_is_read_whole` and
+       `symbol_seen_only_in_a_test_input_is_in_the_family_set`.
+     - The reflective claim is written against the existing colour-word
+       path: the mind states the fibre relation as a colour word, and the
+       court reconstructs it from its own copy of the family. No wire
+       field was added.
+     - Behaviour on symbols `0`–`9`: task addresses and the oracle's
+       1 901 golden readings are unchanged (MU-SENSING §8).
+     - Open: the tape's record byte. A word's tape and the law
+       register's wire write `e_∅` as the byte `RESERVOIR = 10` beside
+       one-byte symbols, so a family whose symbols hold the byte 10 has
+       no colour word. `RESERVOIR = 10` stays the tagged format byte
+       until S5.
 5. **S4, rank and roles deduced.**
    - `GRID_AXES`, `FRAME_AXIS`, `PLANE_ROW`/`PLANE_COL`, `GRID_N`, the
      3-tuple `Point`, `BASE_AXES` and the planar `(rows, cols)` carriers
@@ -1426,6 +1451,11 @@ Each phase is one commit:
      symbols at the source's width.
    - A link carries its site's coordinates of rank `n`.
    - The SDK's `task` module follows. This is a wire change.
+   - `e_∅` travels as a typed record tag outside the symbol bytes, in
+     words' descriptions and the law codec (wire change, v0.3.0's
+     break). Until then `RESERVOIR = 10` is the tagged format byte, and a
+     family whose symbols hold the byte 10 has no colour word
+     (MU-SENSING §8).
    - Speech acts and the seat's solve call state the ground their claim
      was spoken under, as the solve act does since S2 (MU-SENSING §6.2).
      Until then the court's speech path reads the family's deduced

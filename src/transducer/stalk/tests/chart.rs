@@ -158,15 +158,22 @@ fn invariant_of_charts_connection_on_fibres() {
     assert_eq!(congruent(&stalks, at, &c, &mut budget), None, "c has no other word on its chart");
 }
 
-/// A gauge read off a tape may name a hue past the palette; such a word has
-/// no conjugacy stratum, and the chart refuses it rather than index past the
-/// palette's slots.
+/// MU-SENSING §3.3 — A gauge read off a tape is read over the symbols it
+/// names, of any code: a 2-cycle through a symbol past ten is a stratum
+/// like any other. The tape's record byte (`RESERVOIR`) is no symbol of a
+/// permutation, so a word whose gauge names it has no conjugacy stratum.
 #[test]
-fn connection_chart_refuses_hue_past_palette() {
-    let past = u8::try_from(element::PALETTE + 2).expect("a hue byte");
-    let word = from_connection(&crate::transducer::alphabet::Word::identity(), &element::translator_versor(0, 2), &[(past, 3), (3, past)], &Vec::new(), [4, 2, 0, 0])
-        .expect("the tape carries any hue byte");
-    assert_eq!(connection_chart(&word), None, "a hue past the palette names no slot");
+fn connection_chart_reads_symbols_past_ten_and_refuses_record_byte() {
+    let identity = crate::transducer::alphabet::Word::identity();
+    let past = 12u8;
+    let word = from_connection(&identity, &element::translator_versor(0, 2), &[(past, 3), (3, past)], &Vec::new(), [4, 2, 0, 0])
+        .expect("the tape carries any symbol byte");
+    let chart = connection_chart(&word).expect("a symbol past ten is a symbol");
+    assert!(chart.0.ends_with(&[ChartAxis::Count(1), ChartAxis::Count(2)]), "one 2-cycle: {chart:?}");
+    let record = element::RESERVOIR;
+    let word = from_connection(&identity, &element::translator_versor(0, 2), &[(record, 3), (3, record)], &Vec::new(), [4, 2, 0, 0])
+        .expect("the tape carries any byte");
+    assert_eq!(connection_chart(&word), None, "the record byte names no symbol");
     assert!(!word.is_connection(), "and the word is no connection, so it charts at the root");
     assert_eq!(invariant_of(&word).0, Vec::new(), "unstratified");
 }

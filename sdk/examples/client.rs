@@ -32,7 +32,7 @@
 use mycelium_sdk::deferral::{deferral_of, read_deferral, Deferral};
 use mycelium_sdk::laws;
 use mycelium_sdk::prelude::*;
-use mycelium_sdk::rule::{extract_rule, mint_sentence_why, on_each_perspective_of, speak_rule, stated, Physics};
+use mycelium_sdk::rule::{extract_rule, mint_sentence_why, on_each_perspective_of, on_test_inputs, speak_rule, stated, Physics};
 use mycelium_sdk::task;
 use mycelium_sdk::voice::hex32;
 use std::process::ExitCode;
@@ -95,8 +95,9 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
     // §3.4, §3.8): read off the train pairs on a stroke of the SDK's own
     // metabolism, minted as an element the court replays, and spoken on
     // each test input, all under one perspective; under a vortex once per
-    // candidate, every claim kept.
-    let read = on_each_perspective_of(&envelope.train, || {
+    // candidate, every claim kept. The family's symbol set is read with
+    // its test inputs posted (§3.3).
+    let read = on_test_inputs(&envelope.tests, || on_each_perspective_of(&envelope.train, || {
         let mut budget = Physics::default().stroke_n(1 << 20);
         let Some(rule) = extract_rule(&envelope.train, &mut budget) else {
             return Err("the extractor states no rule for this family");
@@ -115,7 +116,7 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
             return Err("the rule's tape passes its carrier");
         };
         Ok((outputs, tape))
-    });
+    }));
     let mut outcomes = Vec::with_capacity(read.len());
     for (ground, said) in read {
         // Each claim names the ground it was spoken under.

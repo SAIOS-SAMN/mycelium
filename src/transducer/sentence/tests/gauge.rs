@@ -256,15 +256,17 @@ fn hue_of_refuses_two_images_for_one_hue() {
 }
 
 /// 18.2 — THE GAUGE READ AT ITS OWN COORDINATE. A gauge is a partial map on
-/// the ten hues and absence is the identity; held as a listing of
+/// the family's symbols and absence is the identity; held as a listing of
 /// `(from, to)` it is that map's graph written out as points, and every
-/// question about it becomes a scan. The hue is the coordinate.
+/// question about it becomes a scan. The symbol is the coordinate, and the
+/// table is keyed by the symbols it names (MU-SENSING §3.3).
 #[test]
 fn hue_table_maps_hues_and_reads_absence_as_identity() {
     let t = hue_table(&[(1, 4), (9, 9)]).expect("a listing that names each hue once is a map");
-    assert_eq!(t[1], Some(4), "a hue the listing moves");
-    assert_eq!(t[9], Some(9), "a hue it carries to itself is still named");
-    assert_eq!(t[3], None, "and a hue it is silent about is not");
+    assert_eq!(table_image(&t, 1), Some(4), "a hue the listing moves");
+    assert_eq!(table_image(&t, 9), Some(9), "a hue it carries to itself is still named");
+    assert_eq!(table_image(&t, 3), None, "and a hue it is silent about is not");
+    assert_eq!(t.len(), 2, "the table holds the symbols it names, no fixed slots");
 
     // The listing comes back in hue order and holds exactly what was named,
     // so two orderings of one map are one map.
@@ -275,8 +277,9 @@ fn hue_table_maps_hues_and_reads_absence_as_identity() {
     // comparison (rule 11).
     assert!(hue_table(&[(1, 4), (1, 5)]).is_none());
     assert!(!gauge_eq(&[(1, 4), (1, 5)], &[(1, 4), (1, 5)]));
-    // And a hue outside the ten the sensor has is no coordinate of one.
-    assert!(hue_table(&[(10, 1)]).is_none());
+    // A symbol of any code is a key like any other: no palette bounds it.
+    let wide = hue_table(&[(11, 1), (200, 11)]).expect("a map over symbols past ten");
+    assert_eq!(hue_listing(&wide), vec![(11, 1), (200, 11)]);
 }
 
 /// TWO GAUGES COMPOSE OR THEY ARE TWO SECTIONS — and which one it is has to

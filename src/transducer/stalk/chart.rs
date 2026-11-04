@@ -416,31 +416,30 @@ pub(crate) fn connection_chart(word: &element::Element) -> Option<Invariant> {
     // between (A21 §2).
     let mut axes = vec![ChartAxis::Count(0)];
     axes.extend(rotor_axes(&letters.spelling.word.rotor())?);
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the identity image of the hues, each below PALETTE (the array's slots)")]
-    let mut image: [u8; element::PALETTE] = std::array::from_fn(|i| i as u8);
-    // The gauge is read off the word's tape: a hue past the palette names
-    // no slot, and the word has no conjugacy stratum (refused, never an
-    // index past the array).
-    for &(f, t) in &letters.sigma {
-        if (f as usize) >= element::PALETTE || (t as usize) >= element::PALETTE {
-            return None;
-        }
-        image[f as usize] = t;
+    // The gauge is read off the word's tape, over the symbols it names and
+    // no fixed set (MU-SENSING §3.3): a symbol it never names stands still
+    // and closes no cycle. The tape's record byte is no symbol of a
+    // permutation, and such a word has no conjugacy stratum (refused).
+    use crate::transducer::sentence::transport::{gauge_image, gauge_keyed, hue_key};
+    if letters.sigma.iter().any(|&(f, t)| f == element::RESERVOIR || t == element::RESERVOIR) {
+        return None;
     }
-    let mut seen = [false; element::PALETTE];
+    let image = gauge_keyed(&letters.sigma);
+    let mut named: Keyed<()> = Keyed::new();
+    for &(f, t) in &letters.sigma {
+        named.insert(hue_key(f), ());
+        named.insert(hue_key(t), ());
+    }
+    // Each walk starts at the least symbol not yet seen, in the symbols'
+    // key order, as the walk over the slots did.
+    let mut seen: Keyed<()> = Keyed::new();
     let mut cycles: Vec<u64> = Vec::new();
-    for start in 0..element::PALETTE {
-        if seen[start] {
-            continue;
-        }
-        let (mut i, mut len) = (start, 0u64);
-        while !seen[i] {
-            seen[i] = true;
+    for (k, _) in named.scoped() {
+        let [start] = k.as_slice() else { continue };
+        let (mut i, mut len) = (*start, 0u64);
+        while seen.insert(hue_key(i), ()).is_none() {
             len += 1;
-            i = image[i] as usize;
-            if i >= element::PALETTE {
-                return None;
-            }
+            i = gauge_image(&image, i);
         }
         if len > 1 {
             cycles.push(len);

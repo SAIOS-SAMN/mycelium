@@ -6,7 +6,8 @@
 //! that vanished, cells created, a body moved, the frame resized — and the
 //! form's vertices say only the motions. This organ reads the ACT each effect
 //! is and writes it in the rule language of 78.143 as a clause the form
-//! carries: the motions as carriages, a vanished body as `Recolour(h → 0)`,
+//! carries: the motions as carriages, a vanished body as `Recolour(h → Ω)`
+//! over the family's symbols onto its ground,
 //! a recoloured one by its map, created cells as `Fill`, `Extend` or `Copy`,
 //! a resized frame as `Scale` or `Crop`.
 //!
@@ -284,6 +285,24 @@ fn file_class(classes: &mut Classes, map: &[(u8, u8)], k: usize, i: usize, pairs
 /// The map a class is keyed by.
 fn map_of_class(key: &[u8]) -> Vec<(u8, u8)> {
     key.chunks_exact(2).map(|p| (p[0], p[1])).collect()
+}
+
+/// A VANISHED BODY'S MAP: every symbol of the family's own set Σ sent to
+/// the ground `void` (MU-SENSING §3.3), never every slot of a fixed palette.
+/// Σ is the whole family's, its posted test inputs included
+/// (`SymbolSet::of_family`).
+/// Written as a gauge listing is, in the symbols' key order.
+fn onto_ground(family: &[(Grid, Grid)], void: u8) -> Vec<(u8, u8)> {
+    let symbols = crate::transducer::symbols::SymbolSet::of_family(family);
+    let mut map: Vec<(u8, u8)> = symbols
+        .symbols()
+        .filter_map(|s| match s {
+            [h] if *h != void => Some((*h, void)),
+            _ => None,
+        })
+        .collect();
+    map.sort_unstable();
+    map
 }
 
 /// 78.167 Phase A — THE RECOLOURS READ ON THE SCENE'S PARTS, where a body
@@ -653,8 +672,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
                     // Erased onto the scene's one ground; with none, the
                     // clearing is stated by no act (`Overwritten`).
                     let void = crate::transducer::raster::void().map_err(|_| Unread::Overwritten)?;
-                    let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
-                    reacted.push(Clause { select, act: Act::Recolour(ground) });
+                    reacted.push(Clause { select, act: Act::Recolour(onto_ground(family, void)) });
                     related
                 }
                 (None, _) => None,
@@ -690,15 +708,14 @@ pub(crate) fn read_acts(form: &Form, family: &[(Grid, Grid)], budget: &mut crate
     match on_parts {
         Some(clauses) => base.extend(clauses),
         None => {
-            // C1 — A VANISHED BODY: every hue of the palette sent to the
-            // ground, on the bodies the separating coordinate selects.
+            // C1 — A VANISHED BODY: every symbol of the family's set sent to
+            // the ground, on the bodies the separating coordinate selects.
             if erased.iter().any(|e| !e.is_empty()) {
                 let select = r.separate(&erased, &still).ok_or(Unread::Inseparable)?;
                 // Erased onto the scene's one ground; with none, the
                 // clearing is stated by no act (`Overwritten`).
                 let void = crate::transducer::raster::void().map_err(|_| Unread::Overwritten)?;
-                let ground = (0..crate::transducer::element::PALETTE).filter_map(|h| u8::try_from(h).ok()).filter(|&h| h != void).map(|h| (h, void)).collect();
-                base.push(Clause { select, act: Act::Recolour(ground) });
+                base.push(Clause { select, act: Act::Recolour(onto_ground(family, void)) });
             }
             for (key, at) in classes.scoped() {
                 let select = r.separate(at, &still).ok_or(Unread::Inseparable)?;

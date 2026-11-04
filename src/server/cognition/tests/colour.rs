@@ -205,3 +205,60 @@ fn fibre_relation_rotates_merge_into_reservoir() {
     assert_ne!(k.perceive_speech([1; 32], &tid, std::slice::from_ref(&lost)), vec![crate::anastome::dialogue::SPEECH_STOOD], "not what the scene showed");
     assert_eq!(k.perceive_speech([1; 32], &tid, std::slice::from_ref(&word)), vec![crate::anastome::dialogue::SPEECH_STOOD], "witnessed: it stands");
 }
+
+/// MU-SENSING §0, §3.3; ROADMAP track 26 S3 — A MIND STATES A SYMBOL'S
+/// MEANING AS A RELATION AND THE COURT RECONSTRUCTS IT. The meaning of a
+/// symbol is the fibre relation the family shows (78.53), never its code:
+/// the mind reads it off a family whose symbols are past ten (no palette
+/// bounds them) and states it as a colour word; the court reconstructs it
+/// from its own copy of the family and stands it, and refuses a relation
+/// the family does not show. The same family under another labelling reads
+/// one relation on its symbol set's indices: the meaning is the relation,
+/// and the codes are labels of it.
+#[test]
+fn mind_states_a_symbol_meaning_as_a_relation_and_court_reconstructs_it() {
+    use crate::transducer::element::{colour_word, fibre_on_symbols};
+    use crate::transducer::symbols::SymbolSet;
+    let framed = |row: &[u8], g: u8| -> Vec<Vec<u8>> {
+        let mut middle = vec![g];
+        middle.extend_from_slice(row);
+        middle.push(g);
+        vec![vec![g; row.len() + 2], middle, vec![g; row.len() + 2]]
+    };
+    // Each body of `a` takes `b`, and each body of `c` takes `a`.
+    let family = |a: u8, b: u8, c: u8, g: u8| {
+        vec![
+            (framed(&[a, a, g, c], g), framed(&[b, b, g, a], g)),
+            (framed(&[c, g, a, g, a], g), framed(&[a, g, b, g, b], g)),
+        ]
+    };
+    let wide = family(11, 12, 13, 20);
+    // THE MIND STATES IT: the relation read off the family, as a word.
+    let sigma = crate::transducer::family::fibre_relation(&wide).expect("the fibre moved");
+    assert_eq!(sigma, vec![(11, 12), (13, 11)], "11 takes 12; 13 takes 11");
+    let word = colour_word(&sigma).expect("a colour word over symbols past ten");
+    assert_eq!(word.letters().map(|l| l.sigma), Some(sigma.clone()), "the word states the relation");
+    // ONE MEANING UNDER ANOTHER LABELLING: on Σ's indices the relation of
+    // the family relabelled is the same relation.
+    let narrow = family(1, 2, 3, 0);
+    let on = |f: &crate::transducer::family::Family| {
+        let s = crate::transducer::family::fibre_relation(f)?;
+        let mut rows = fibre_on_symbols(&s, &SymbolSet::of_pairs(f))?;
+        rows.sort_unstable();
+        Some(rows)
+    };
+    assert_eq!(on(&wide), on(&narrow), "the relation, not the codes");
+    // THE COURT RECONSTRUCTS IT from its own copy of the family.
+    let mut k = Court::new();
+    let tid = [41u8; 32];
+    k.bind_task_family(tid, wide);
+    let unshown = colour_word(&[(11, 13)]).expect("a word");
+    assert_ne!(k.perceive_speech([1; 32], &tid, std::slice::from_ref(&unshown)), vec![crate::anastome::dialogue::SPEECH_STOOD], "a relation the family does not show");
+    let relabelled = colour_word(&[(1, 2), (3, 1)]).expect("a word");
+    assert_ne!(
+        k.perceive_speech([1; 32], &tid, std::slice::from_ref(&relabelled)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD],
+        "the codes of another labelling name no relation of this family"
+    );
+    assert_eq!(k.perceive_speech([1; 32], &tid, std::slice::from_ref(&word)), vec![crate::anastome::dialogue::SPEECH_STOOD], "reconstructed: it stands");
+}

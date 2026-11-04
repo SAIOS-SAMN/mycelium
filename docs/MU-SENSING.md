@@ -136,6 +136,23 @@ is a **gauge transformation**, and the percept is the same under it. So:
   - **A table over symbols** is keyed by `Σ` and sized `|Σ|`, never a
     fixed array of slots.
   - **Claim:** permuting `Σ` leaves every percept unchanged.
+  - **Built (track 26, S3).** `transducer::symbols::SymbolSet` reads `Σ`
+    from a family's samples (`of_samples`, refused by name for two
+    widths or no sample) or rasters at intake (`of_rasters`,
+    `of_pairs`). Over a family it is read across all of its posted
+    samples (`of_family`): the train pairs, then the test inputs the
+    task posts beside them (`symbols::on_test_inputs`, opened by the
+    mind's perception and solve, the SDK's example client and the
+    oracle), so a symbol seen only in a test input is in `Σ`. `index` is the rank of first appearance, `reservoir` is
+    `|Σ|`, and `element::fibre_on_symbols` reads a fibre relation on
+    `Σ`'s indices with each record at `|Σ|`. The fixed sets are gone:
+    `PALETTE` (10 and 256), the 10-slot `HueTable`, the 256-slot
+    `HueMap` and the `[u8; 10]` images are tables keyed by the symbols
+    they name. Permutations, cycles and orbits are read over the symbols
+    a map names. The erasure act maps the family's own `Σ` onto its
+    ground, and the rule language composes hue maps over the painted
+    symbols they name. The tape's record byte remains (§8), until track
+    26 S5 carries `e_∅` as a typed record tag.
 - **Order and magnitude** enter only where the source declares them, as a
   typed axis of the fibre. A brightness or a temperature is an example of
   each. Without a declaration, symbols are compared only for equality.
@@ -713,14 +730,16 @@ with samples of rank `n` together with the envelope.
 | **Defect:** the raster carrier is rank 2 by its own storage (`raster::AXES = 2`, `extents`, `painted_sites`, `value_at`) | **Built, refused** by §2 and §3.6; moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S4 |
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
 | A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
-| Speech and seat solves state no ground yet: the speech act and the seat's solve call carry no ground field, and the court's speech path still reads the family's deduced ground | **Open**; lands with track 26 S5's wire change | `court::verdict::replay` (`on_ground_of`); the seat call's arguments |
+| Speech and seat solves state no ground yet: the speech act and the seat's solve call carry no ground field, and the court's speech path still reads the family's deduced ground | **Open**; lands with track 26 S5's wire change | `court::verdict::reconstruct` (`on_ground_of`); the seat call's arguments |
 | **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
 | **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One` | `src/transducer/raster.rs`; track 26, S6 |
 | **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residual.rs`; track 26, S4 |
 | **Defect:** a family's magnitude is read on planar chains (`pair_magnitude`, `family_cover`, `cover_join` over `raster::painted_of`) | **Built, refused** by §2 (samples of rank `n`); moved unchanged in S1 | `src/transducer/family/magnitude.rs`; track 26, S4 |
 | An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on `main` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
 | Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
-| Symbol set, axes and gauges deduced | **Specified** | Track 26, S3–S4 |
+| The symbol set deduced (§3.3): `Σ` read from the family, an index the order of first appearance in canonical address order, `e_∅` at `|Σ|`, every table over symbols keyed by the symbols it names; no `PALETTE`, no 10- or 256-slot table | **Built** (track 26, S3) | `src/transducer/symbols.rs` (`SymbolSet`, `SymbolRefusal`); `element::fibre_on_symbols`; `sentence::HueTable` (`Keyed<u8>`); `element::gauge_is_perm`, `stalk::connection_chart`, `field::idea`, `family::acts` (`onto_ground`), `client::sdk::rule` (`named_into`) |
+| **Defect:** the tape's record byte. A word's tape and the law register's wire (`physics::laws::codec`, `Transition.hues`) write a reservoir record as the row `(RESERVOIR, c)` with `RESERVOIR = 10`, beside symbols written as single bytes. It is a byte of the two layouts, never an index into `Σ`, but a family whose own symbols hold the byte 10 has no fibre relation on the tape (`lift_fibre` refuses it), so its colour words are not written | **Built, refused** by §3.3; carrying `e_∅` outside the symbols' bytes changes both layouts, so it waits on track 26 S5: `e_∅` travels as a typed record tag outside the symbol bytes | `element::RESERVOIR`; `physics::laws::codec::put_transition` |
+| Axes and gauges deduced | **Specified** | Track 26, S4 |
 | A task on the wire as samples of rank `n` | **Specified** | Track 26, S5 |
 | Perspective as a sensor motion; perspectives as a cover | **Specified** | Track 26, S6 |
 
@@ -733,9 +752,11 @@ for one source:
   beside its caller, listed above as a defect. The raster carrier itself
   (`transducer::family::Grid = Vec<Vec<u8>>`) remains the transduction's
   intake until S4.
-- The palette is fixed at 10 (`PALETTE`, `RESERVOIR`, the 10-slot hue
-  tables), with a conflicting 256 elsewhere. (The ground that defaulted to
-  `0` at about 64 sites is deduced since S2.)
+- The palette was fixed at 10 (`PALETTE`, `RESERVOIR`, the 10-slot hue
+  tables), with a conflicting 256 elsewhere. S3 removed the fixed sets: the
+  symbol set is the family's own. The tape's record byte remains (the
+  table above). (The ground that defaulted to `0` at about 64 sites is
+  deduced since S2.)
 - Two space axes and one frame axis are fixed (`GRID_AXES`, `FRAME_AXIS`,
   `PLANE_ROW`/`PLANE_COL`, `GRID_N = 3`, a 3-tuple `Point`, and planar
   `(rows, cols)` carriers).
@@ -782,6 +803,21 @@ any site shows `0`, else the most frequent symbol, else `0` on a tie):
   ruled a membrane on 2026-11-04.
 - **The rule was not tuned to any task.** The counts are observations,
   never a criterion.
+
+**The S3 behaviour check** (2026-11-04). On samples whose symbols are
+`0`–`9` the change is a relabelling of no symbol, so no reading moves:
+- **Task addresses** are unchanged: the address reads the samples'
+  content, and S3 reads none of it differently.
+- **The oracle's golden reading** reproduces all 1 901 readings
+  unchanged, and the rule language's 15 corpus tasks solve as before.
+- **The erasure act** lists the family's own symbols, its test inputs
+  included, where it listed `0`–`9`: on the train pairs it reads the
+  same cells, and a test input's symbols are all in the map. The oracle's
+  harvest reads with the test inputs posted and reproduces the golden
+  readings unchanged.
+- **The rule language** composes hue maps over the painted symbols they
+  name, the ground excluded, where it composed over `1`–`9`: under a
+  ground of `0` it is the same composition.
 
 ## 9. Passages this document supersedes
 

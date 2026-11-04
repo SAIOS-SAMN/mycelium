@@ -58,6 +58,11 @@ pub use mycelium::transducer::family::TrainPair;
 pub use mycelium::transducer::family::transduce::Ground;
 pub use mycelium::transducer::raster::{ground_of, on_each_perspective_of, stated};
 
+/// THE SYMBOL SET (MU-SENSING §3.3): Σ is over all of a family's posted
+/// samples, its test inputs included. A rule read with the test inputs
+/// posted (`on_test_inputs`) maps every symbol of the whole family.
+pub use mycelium::transducer::symbols::{on_test_inputs, SymbolSet};
+
 /// The rule an extraction states, and the mint's named refusal.
 pub use mycelium::transducer::sentence::{ObstructionRefusal, SentenceRule};
 

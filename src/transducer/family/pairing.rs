@@ -1012,15 +1012,12 @@ pub(crate) fn named_incidence(
     (faces, cells)
 }
 
-/// Physical size of the hue carrier. Index by hue, never search.
-/// FORMAT: the range of a `u8` hue, `2⁸`.
-pub const PALETTE: usize = 256;
-pub type HueMap = [Option<u8>; PALETTE];
+/// A HUE MAP read by the symbol (MU-SENSING §3.3): keyed by the symbols the
+/// pairs name, at most `|Σ|` of them, never a fixed array over the byte's
+/// range. A symbol no pair names is absent, and the reader keeps it.
+pub type HueMap = crate::transducer::sentence::HueTable;
 
+/// The pairs read as the map, the last pair naming a symbol standing.
 pub(crate) fn hue_map_from_pairs(pairs: &[(u8, u8)]) -> HueMap {
-    let mut m = [None; PALETTE];
-    for &(f, t) in pairs {
-        m[f as usize] = Some(t);
-    }
-    m
+    crate::transducer::sentence::transport::gauge_keyed(pairs)
 }

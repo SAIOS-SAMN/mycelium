@@ -8,6 +8,9 @@
 pub mod base;
 /// MU-SENSING §2 — the sample: the sensor's only input, of any rank.
 pub mod sample;
+/// MU-SENSING §3.3 — the symbol set Σ: a family's distinct symbols, indexed
+/// by first appearance in canonical address order, `e_∅` at `|Σ|`.
+pub mod symbols;
 /// MU-SENSING §2 — the rank-2 raster at intake: its ground, its painted
 /// sites, its frame, and the bridge to the sample.
 pub mod raster;
