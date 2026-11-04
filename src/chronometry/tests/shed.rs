@@ -96,7 +96,7 @@ fn shed_folded_leaves_hole_backfill_cannot_cross() {
     let head = c.line_head(&[4; 32]).expect("the signer's head").stamp.place();
     assert!(head > e0.stamp.place(), "while the head stands past it: a hole below the head");
     assert_eq!(
-        crate::court::admission::admit_backfilled(&e0, &c),
+        crate::court::admission::admit_backfilled(&crate::court::admission::Reconstructed::receipt(&e0).expect("re-derives"), &c),
         crate::court::admission::Admitted::Stale,
         "fetched back, it is read stale: no back-fill crosses it"
     );

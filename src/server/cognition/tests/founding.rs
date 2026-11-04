@@ -79,7 +79,7 @@ fn hear(b: Court, a: &Court, key: &HyphaKey) -> (Court, Admitted) {
     let heard: Result<Admitted, ()> = crate::server::backfill::hear(
         &c,
         ORIGIN,
-        || Ok(c.lock().expect("b").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, key), &head)),
+        || Ok(c.lock().expect("b").admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, key), &super::fixtures::reconstructed(&head))),
         || c.lock().ok().map(|mut k| k.stroke()),
         fetch,
     );
@@ -138,7 +138,7 @@ fn admit_backfill_refuses_founding_not_on_signed_chain() {
     let page = a.chain.line_between(&key.verifying_bytes(), None, head.stamp.place(), 64);
     let (mut b, _) = hypha("b0-unsigned-b");
     let mut budget = b.stroke();
-    assert_eq!(b.admit_backfill(&page, &mut budget), (page.len(), None), "the page links and is held");
+    assert_eq!(b.admit_backfill(&super::fixtures::page(&page), &mut budget), (page.len(), None), "the page links and is held");
     assert_eq!(b.domains.get(&d), None, "no signature reaches it: the domain stays unfounded");
     assert_eq!(b.origin_of(&d), None, "and holds no origin");
     assert_eq!(b.admit_uplink(&trade().sign(&tier_key())), Uplinked::Unbound, "its tier's fold is unbound");
@@ -151,7 +151,7 @@ fn admit_backfill_refuses_founding_not_on_signed_chain() {
     let forged_page = forged.line_between(&key.verifying_bytes(), None, crate::chronometry::Place::GENESIS, 64);
     let (mut c, _) = hypha("b0-unsigned-c");
     let mut budget = c.stroke();
-    assert_eq!(c.admit_backfill(&forged_page, &mut budget), (1, None), "the forged genesis links from nothing");
+    assert_eq!(c.admit_backfill(&super::fixtures::page(&forged_page), &mut budget), (1, None), "the forged genesis links from nothing");
     let signed = super::fixtures::admit_line(&mut c, &key, &[head]);
     assert!(!matches!(signed.as_slice(), [Admitted::Parent(_)] | [Admitted::Stale]), "a's own head does not link to it: {signed:?}");
     assert_eq!(c.domains.get(&d), None, "the forged founding is never read");
@@ -161,7 +161,7 @@ fn admit_backfill_refuses_founding_not_on_signed_chain() {
     altered.cites = vec![Cite::Domain { domain: d, tiers: vec![thief] }];
     let (mut e, _) = hypha("b0-unsigned-e");
     let mut budget = e.stroke();
-    assert_eq!(e.admit_backfill(&[altered], &mut budget), (0, None), "an altered citation's hash does not re-derive");
+    assert_eq!(e.admit_backfill(&super::fixtures::page(&[altered]), &mut budget), (0, None), "an altered citation's hash does not re-derive");
     assert_eq!(e.domains.get(&d), None, "and nothing is founded");
 }
 
@@ -196,7 +196,7 @@ fn backfill_applies_founding_once_by_content() {
     let head = a.chain.head().expect("acted");
     let page = a.chain.line_between(&key.verifying_bytes(), None, head.stamp.place(), 64);
     let mut budget = b.stroke();
-    let _ = b.admit_backfill(&page, &mut budget);
+    let _ = b.admit_backfill(&super::fixtures::page(&page), &mut budget);
     let _ = super::fixtures::admit_line(&mut b, &key, &[head]);
     assert_eq!((b.domains.get(&d).cloned(), b.reserve_reading(&d), b.origin_of(&d)), first, "nothing changed");
     assert_eq!(b.reserve_reading(&d).pending, None, "the reserve was designated once");

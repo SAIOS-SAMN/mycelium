@@ -1,10 +1,12 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 47.2 — ADMISSION: the order of checks a signed frame passes before
-//! any carrier is touched, and the per-signer heads they read.
+//! any carrier is touched, and the per-signer heads they read. Each
+//! admission takes the receipt as `Reconstructed`, never as claimed
+//! (MU-HOSTING §5a.10).
 
 use super::{
-    SignedPrefix, REFUSE_EQUIVOCATION, REFUSE_NOT_EQUIVOCATION, REFUSE_ORIGIN, REFUSE_RECEIPT,
+    Reconstructed, SignedPrefix, REFUSE_EQUIVOCATION, REFUSE_NOT_EQUIVOCATION, REFUSE_ORIGIN, REFUSE_RECEIPT,
     REFUSE_RECEIPT_STALE, REFUSE_SIGNATURE,
 };
 use crate::chronometry::{KStepReceipt, Parent, Place, ReceiptChain};
@@ -153,7 +155,8 @@ pub struct Equivocated {
 /// verified (the two `Verified`, 47.2 step 2, the caller's), each receipt
 /// is one claim with its prefix and its signer — the key that verified is
 /// the key the receipt names, the prefix's place, height and predecessor are
-/// the receipt's, and the receipt re-derives its own chain hash — and the
+/// the receipt's, and the receipt is reconstructed (its chain hash
+/// re-derives, `Reconstructed::receipt`, the caller's) — and the
 /// two share key and place and differ in hash. Two keys, two places, or one hash (a
 /// duplicate frame) are not a proof and are `REFUSE_NOT_EQUIVOCATION`; a
 /// half that disagrees with itself is `REFUSE_RECEIPT`, as `admit` refuses
@@ -161,12 +164,12 @@ pub struct Equivocated {
 /// signatures decide (T17).
 pub fn admit_equivocation(
     a: Verified<'_>,
-    ra: &KStepReceipt,
+    ra: &Reconstructed<KStepReceipt>,
     b: Verified<'_>,
-    rb: &KStepReceipt,
+    rb: &Reconstructed<KStepReceipt>,
 ) -> Result<Equivocated, &'static str> {
     for (v, r) in [(&a, ra), (&b, rb)] {
-        if v.signer() != r.stamp.vk || !one_claim(v.prefix(), r) || !r.rederives() {
+        if v.signer() != r.stamp.vk || !one_claim(v.prefix(), r) {
             return Err(REFUSE_RECEIPT);
         }
     }
@@ -185,8 +188,14 @@ pub fn admit_equivocation(
 /// Step 2 (the signature) is the caller's: it holds the key and the bytes.
 /// This is steps 1, 3 and 4, and it is deliberately not given a signature
 /// to check so that no call site can satisfy admission by verifying bytes
-/// alone.
-pub fn admit(origin: ([u8; 32], u32), prefix: &SignedPrefix, r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
+/// alone. The receipt is taken reconstructed (MU-HOSTING §5a.10): a frame
+/// whose receipt does not re-derive its own chain hash never reaches here.
+pub fn admit(
+    origin: ([u8; 32], u32),
+    prefix: &SignedPrefix,
+    r: &Reconstructed<KStepReceipt>,
+    ledger: &ReceiptChain,
+) -> Admitted {
     // 1. Origin, before anything else.
     if prefix.genesis != origin.0 || prefix.epoch != origin.1 {
         return Admitted::Refused(REFUSE_ORIGIN);
@@ -201,17 +210,15 @@ pub fn admit(origin: ([u8; 32], u32), prefix: &SignedPrefix, r: &KStepReceipt, l
 
 /// 47.2 STEPS 3 AND 4 for a receipt fetched by place range (S13.10): it
 /// carries no signature of its own and is admitted by its chain — it
-/// re-derives its own hash, links to the head this node holds for the
-/// signer, and its height re-derives. Nothing admitted here is cited as a
-/// parent; the signed frame that closes the gap is.
-pub fn admit_backfilled(r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
-    if !r.rederives() {
-        return Admitted::Refused(REFUSE_RECEIPT);
-    }
+/// re-derives its own hash (it is taken `Reconstructed`), links to the head
+/// this node holds for the signer, and its height re-derives. Nothing
+/// admitted here is cited as a parent; the signed frame that closes the gap
+/// is.
+pub fn admit_backfilled(r: &Reconstructed<KStepReceipt>, ledger: &ReceiptChain) -> Admitted {
     admit_chain(r, ledger)
 }
 
-fn admit_chain(r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
+fn admit_chain(r: &Reconstructed<KStepReceipt>, ledger: &ReceiptChain) -> Admitted {
     let (vk, at) = (r.stamp.vk, r.stamp.place());
     // The line's continuity is the predecessor the receipt NAMES: its own
     // signer's, at a place this one follows — the next act of its orbit or

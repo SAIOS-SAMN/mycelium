@@ -195,11 +195,19 @@ pub fn chase(
         };
         // The page admitted on the chase's stroke, one read per receipt
         // (78.153b): a stroke spent mid-page keeps what it admitted, and the
-        // next pass asks on from the head that moved.
+        // next pass asks on from the head that moved. The page is
+        // reconstructed first (MU-HOSTING §5a.10), up to the first receipt
+        // whose chain hash does not re-derive: only that run is admitted,
+        // and where admission reaches the run's end the receipt that
+        // stopped it is counted refused, under its signer.
+        let (run, unreconstructed) = crate::court::admission::Reconstructed::receipts(&receipts);
         let (n, missing) = match held!(court) {
-            Ok(mut h) => h.run(|k, _| k.admit_backfill(&receipts, budget)),
+            Ok(mut h) => h.run(|k, _| k.admit_backfill(&run, budget)),
             Err(_) => return short(advanced),
         };
+        if let Some(at) = unreconstructed.filter(|_| missing.is_none() && n == run.len()) {
+            note_replication(Some(at.vk), replication::BACKFILL_REFUSED, 1);
+        }
         // CV5: the receipts of `who` this page admitted, on the observer —
         // the typed reading, and no per-page print beside it (RC2).
         note_replication(Some(who), replication::BACKFILL, n as u64);

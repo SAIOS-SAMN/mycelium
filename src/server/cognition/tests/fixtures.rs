@@ -142,9 +142,26 @@ pub fn admit_line(
                 chart: vec![],
                 payload: r.stamp.key(),
             };
-            k.admit_receipt(([7; 32], 2), verified(&pre, key), r)
+            k.admit_receipt(([7; 32], 2), verified(&pre, key), &reconstructed(r))
         })
         .collect()
+}
+
+/// A receipt as admission takes it: reconstructed from its own
+/// coordinates (MU-HOSTING §5a.10). A fixture's receipts are sealed, so
+/// each re-derives.
+pub fn reconstructed(
+    r: &crate::chronometry::KStepReceipt,
+) -> crate::court::admission::Reconstructed<crate::chronometry::KStepReceipt> {
+    crate::court::admission::Reconstructed::receipt(r).expect("a sealed receipt re-derives")
+}
+
+/// A fetched page as the back-fill reconstructs it: the run up to the
+/// first receipt whose chain hash does not re-derive.
+pub fn page(
+    rs: &[crate::chronometry::KStepReceipt],
+) -> Vec<crate::court::admission::Reconstructed<crate::chronometry::KStepReceipt>> {
+    crate::court::admission::Reconstructed::receipts(rs).0
 }
 
 pub fn digits(rows: &[&str]) -> Vec<Vec<u8>> {

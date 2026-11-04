@@ -28,6 +28,7 @@
 
 use super::Court;
 use crate::chronometry::{KStepReceipt, Place, Stamp};
+use crate::court::admission::Reconstructed;
 
 impl Court {
     /// A RECEIPT ADMITTED BY BACK-FILL, held by its place on its signer's
@@ -71,9 +72,10 @@ impl Court {
     /// every receipt of the line, from its top down, while it is held
     /// unreached. A receipt a signature reached ends the walk and stays, so
     /// the reached part of the line only ever moves forward. Answers how
-    /// many receipts left.
-    pub(crate) fn evict_contradicted(&mut self, r: &KStepReceipt) -> usize {
-        if !r.rederives() || self.contradicted(r).is_none() {
+    /// many receipts left. The frame is taken reconstructed: a receipt
+    /// whose chain hash does not re-derive evicts nothing (§5a.10).
+    pub(crate) fn evict_contradicted(&mut self, r: &Reconstructed<KStepReceipt>) -> usize {
+        if self.contradicted(r).is_none() {
             return 0;
         }
         let vk = r.stamp.vk;

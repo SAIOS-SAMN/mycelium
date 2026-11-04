@@ -53,12 +53,12 @@ fn admit_receipt_cites_and_climbs_above_peer_height() {
     assert!(local_h < peer_h, "the peer is ahead: {local_h} < {peer_h}");
     let head = peer[2].clone();
     assert!(
-        matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &head), Admitted::Gap { .. }),
+        matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &super::fixtures::reconstructed(&head)), Admitted::Gap { .. }),
         "a chain this mind has never held is a gap, not an admission"
     );
     for r in &peer {
         assert!(
-            matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(r), &key), r), Admitted::Parent(_)),
+            matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(r), &key), &super::fixtures::reconstructed(r)), Admitted::Parent(_)),
             "back-fill in order admits K {}",
             r.stamp.k
         );
@@ -92,7 +92,7 @@ fn bind_identity_seals_under_key_and_refuses_rebind() {
     let key = super::fixtures::court_key("peer");
     let r = peer_line(key.verifying_bytes(), 1).remove(0);
     assert!(matches!(
-        k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&r), &key), &r),
+        k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&r), &key), &super::fixtures::reconstructed(&r)),
         crate::court::admission::Admitted::Parent(_)
     ));
     assert_eq!(k.known_head(&key.verifying_bytes()).map(|h| h.0), Some(crate::chronometry::Place::GENESIS), "the peer's author stands");
@@ -107,7 +107,7 @@ fn admit_receipt_refuses_foreign_origin() {
     let mut k = Court::new();
     let mut foreign = pre(&r);
     foreign.genesis = [1; 32];
-    assert_eq!(k.admit_receipt(ORIGIN, super::fixtures::verified(&foreign, &key), &r), Admitted::Refused(REFUSE_ORIGIN));
+    assert_eq!(k.admit_receipt(ORIGIN, super::fixtures::verified(&foreign, &key), &super::fixtures::reconstructed(&r)), Admitted::Refused(REFUSE_ORIGIN));
     assert_eq!(k.pending_parents(), 0);
     assert!(k.known_head(&key.verifying_bytes()).is_none());
 }
@@ -123,12 +123,12 @@ fn admit_receipt_refuses_signature_by_other_key() {
     let r = peer_line(victim.verifying_bytes(), 1).remove(0);
     let mut k = Court::new();
     assert_eq!(
-        k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&r), &forger), &r),
+        k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&r), &forger), &super::fixtures::reconstructed(&r)),
         Admitted::Refused(REFUSE_RECEIPT),
         "the signature verified under the forger; the receipt names the victim"
     );
     assert!(k.known_head(&victim.verifying_bytes()).is_none(), "and the victim's head is untouched");
-    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&r), &victim), &r), Admitted::Parent(_)));
+    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&r), &victim), &super::fixtures::reconstructed(&r)), Admitted::Parent(_)));
 }
 
 /// Two roots under one key at one K, each measuring its own lane.
@@ -159,8 +159,8 @@ fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
     k.treasury_mut().enroll(liar, bond, before_genesis());
     assert_eq!(k.treasury().bond_of(&liar), Some(bond.into()), "the liar is bonded");
     let supply = k.treasury().supply().expect("measured");
-    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&ra), &key), &ra), Admitted::Parent(_)));
-    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&rb), &key), &rb), Admitted::Equivocation { .. }));
+    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&ra), &key), &super::fixtures::reconstructed(&ra)), Admitted::Parent(_)));
+    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&rb), &key), &super::fixtures::reconstructed(&rb)), Admitted::Equivocation { .. }));
     assert_eq!(k.treasury().bond_of(&liar), Some([0; 4].into()), "the bond is burned whole");
     assert_eq!(
         Ok(k.treasury().supply().expect("still measured")),
@@ -169,7 +169,7 @@ fn admit_receipt_burns_bond_on_two_roots_at_one_k() {
     );
     assert!(k.treasury().audit().is_ok(), "and §6 holds through the forfeiture");
     let after = k.treasury().supply();
-    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&rb), &key), &rb), Admitted::Equivocation { .. }));
+    assert!(matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&rb), &key), &super::fixtures::reconstructed(&rb)), Admitted::Equivocation { .. }));
     assert_eq!(k.treasury().supply(), after, "a second frame burns nothing");
 }
 
@@ -187,7 +187,7 @@ fn accept_equivocation_burns_bond_once() {
     k.treasury_mut().enroll(liar, bond, before_genesis());
     let supply = k.treasury().supply().expect("measured");
     assert!(k.known_head(&liar).is_none(), "this court heard neither truth itself");
-    let proof = admit_equivocation(super::fixtures::verified(&pre(&ra), &key), &ra, super::fixtures::verified(&pre(&rb), &key), &rb)
+    let proof = admit_equivocation(super::fixtures::verified(&pre(&ra), &key), &super::fixtures::reconstructed(&ra), super::fixtures::verified(&pre(&rb), &key), &super::fixtures::reconstructed(&rb))
         .expect("two signed roots at one K are the proof");
     assert_eq!(k.accept_equivocation(proof), Some(bond.into()), "the reply reports the bond that left");
     assert_eq!(k.treasury().bond_of(&liar), Some([0; 4].into()), "burned whole");
@@ -214,30 +214,30 @@ fn admit_backfill_closes_gap_as_receipts_arrive() {
     let head = peer[3].clone();
     let place = |n: usize| peer[n].stamp.place();
     let mut k = Court::new();
-    let first = k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &head);
+    let first = k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &super::fixtures::reconstructed(&head));
     assert_eq!(first, Admitted::Gap { vk, from: None, to: place(2) }, "from the line's start to the predecessor");
     assert_eq!(k.pending_parents(), 0, "nothing is cited while the chain is gapped");
     assert!(k.known_head(&vk).is_none());
     // The chase's own stroke, which every page it fetches is admitted on.
     let mut chase = k.stroke();
-    assert_eq!(k.admit_backfill(&peer[..2], &mut chase), (2, None), "a page of two admits by its chain, citing nothing unheld");
+    assert_eq!(k.admit_backfill(&super::fixtures::page(&peer[..2]), &mut chase), (2, None), "a page of two admits by its chain, citing nothing unheld");
     assert_eq!(k.known_head(&vk).map(|h| h.0), Some(place(1)), "the head this node holds moved to the second");
     assert_eq!(
-        k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &head),
+        k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &super::fixtures::reconstructed(&head)),
         Admitted::Gap { vk, from: Some(place(1)), to: place(2) },
         "the page stopped short: still a gap"
     );
     assert_eq!(k.pending_parents(), 0, "and still nothing cited");
-    assert_eq!(k.admit_backfill(&peer[2..3], &mut chase), (1, None), "the next page closes the chain");
+    assert_eq!(k.admit_backfill(&super::fixtures::page(&peer[2..3]), &mut chase), (1, None), "the next page closes the chain");
     assert!(
-        matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &head), Admitted::Parent(_)),
+        matches!(k.admit_receipt(ORIGIN, super::fixtures::verified(&pre(&head), &key), &super::fixtures::reconstructed(&head)), Admitted::Parent(_)),
         "the head admits once the chain reaches it"
     );
     assert_eq!(k.pending_parents(), 1, "only the closing frame is cited");
-    assert_eq!(k.admit_backfill(&peer[..1], &mut chase), (1, None), "a receipt already held is passed over");
+    assert_eq!(k.admit_backfill(&super::fixtures::page(&peer[..1]), &mut chase), (1, None), "a receipt already held is passed over");
     let mut forged = peer[3].clone();
     forged.mu = [0, 0, 0, 9];
-    assert_eq!(k.admit_backfill(&[forged], &mut chase), (0, None), "a receipt that does not re-derive admits nothing, and names no hole");
+    assert_eq!(k.admit_backfill(&super::fixtures::page(&[forged]), &mut chase), (0, None), "a receipt that does not re-derive admits nothing, and names no hole");
     let far = crate::chronometry::Place { k: 9, i: 0 };
     assert_eq!(k.receipts_range(&vk, None, far, 100), peer, "the place-range read: every admitted node in line order, never past a hole");
     assert_eq!(k.receipts_range(&vk, Some(place(1)), place(3), 1).len(), 1, "a page is bounded by its budget");

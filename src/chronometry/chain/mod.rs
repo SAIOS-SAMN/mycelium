@@ -752,10 +752,11 @@ impl ReceiptChain {
     /// its chain alone (a back-filled receipt): held, entered on its
     /// signer's line and placed as `admit` holds it, and a `Fold` files NO
     /// root. The root a fold names is filed once a signature reaches the
-    /// fold (`file_peer_root`, from the court's signed-reach gate).
-    pub fn admit_unreached(&mut self, r: KStepReceipt) {
+    /// fold (`file_peer_root`, from the court's signed-reach gate). Taken
+    /// reconstructed: its chain hash re-derives (MU-HOSTING §5a.10).
+    pub fn admit_unreached(&mut self, r: crate::court::admission::Reconstructed<KStepReceipt>) {
         if self.admits(&r) {
-            self.store(r);
+            self.store(r.into_object());
         }
     }
 

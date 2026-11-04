@@ -54,7 +54,7 @@ fn backfilled_ruling_waits_for_a_signature() {
     let (mut c, key, line, at, addr, _) = waiting_ruling("reach ruling", 0xc4);
     let upheld = Ruled::Upheld.index();
     let mut budget = c.stroke();
-    assert_eq!(c.admit_backfill(&line, &mut budget), (line.len(), None), "a's line links and is stored");
+    assert_eq!(c.admit_backfill(&super::fixtures::page(&line), &mut budget), (line.len(), None), "a's line links and is stored");
     assert_eq!(c.word_admitted_at(&at), None, "no alias is filed below no signature");
     assert_eq!(c.clock(None).rulings[upheld], [1, 0, 1, 0], "the ruling still waits");
     assert!(c.provisional.contains(addr.as_bytes()), "and the word stays on c's docket");
@@ -76,7 +76,7 @@ fn backfilled_ruling_waits_for_a_signature() {
 fn unsigned_backfilled_line_is_marked_unreached() {
     let (mut c, key, line, at, _, _) = waiting_ruling("reach unreached", 0xc5);
     let mut budget = c.stroke();
-    assert_eq!(c.admit_backfill(&line, &mut budget), (line.len(), None), "a's line links and is stored");
+    assert_eq!(c.admit_backfill(&super::fixtures::page(&line), &mut budget), (line.len(), None), "a's line links and is stored");
     let [.., head] = line.as_slice() else { panic!("a acted") };
     let head = head.clone();
     assert_eq!(c.known_head(&key.verifying_bytes()), Some((head.stamp.place(), head.chain_hash)), "the head held moves");
@@ -103,7 +103,7 @@ fn signature_reaching_a_held_receipt_releases_it_once() {
     let (mut c, key, line, at, addr, _) = waiting_ruling("reach once", 0xc6);
     let upheld = Ruled::Upheld.index();
     let mut budget = c.stroke();
-    c.admit_backfill(&line, &mut budget);
+    c.admit_backfill(&super::fixtures::page(&line), &mut budget);
     let admitting = line.iter().position(|r| r.stamp == at).expect("the admitting act is on a's line");
     super::fixtures::admit_line(&mut c, &key, &line[admitting..=admitting]);
     for r in &line {
@@ -119,7 +119,7 @@ fn signature_reaching_a_held_receipt_releases_it_once() {
     let read = (c.clock(None).rulings[upheld], c.word_admitted_at(&at).cloned(), c.aliases.get(addr.as_bytes()).cloned());
     super::fixtures::admit_line(&mut c, &key, &line);
     let mut budget = c.stroke();
-    c.admit_backfill(&line, &mut budget);
+    c.admit_backfill(&super::fixtures::page(&line), &mut budget);
     assert!(line.iter().all(|r| !c.unreached.contains(&line_key(r))), "nothing is held again");
     let again = (c.clock(None).rulings[upheld], c.word_admitted_at(&at).cloned(), c.aliases.get(addr.as_bytes()).cloned());
     assert_eq!(again, read, "nothing is read twice");
@@ -137,7 +137,7 @@ fn forged_genesis(c: &mut Court, a: [u8; 32], word: &Cite) -> (Vec<KStepReceipt>
         .expect("a line anyone can write");
     let page: Vec<KStepReceipt> = forged.own().collect();
     let mut budget = c.stroke();
-    assert_eq!(c.admit_backfill(&page, &mut budget), (1, None), "the forged genesis links from nothing");
+    assert_eq!(c.admit_backfill(&super::fixtures::page(&page), &mut budget), (1, None), "the forged genesis links from nothing");
     assert!(c.unreached.contains(&line_key(&page[0])), "and is held unreached");
     (page, fat)
 }
@@ -229,10 +229,10 @@ fn evict_contradicted_keeps_reached_receipts() {
         (0..2).map(|_| fork.append(ActKind::List, [0; 4], Vec::new(), [8; 32], Vec::new()).expect("a forged act").clone()).collect();
     let mut c = Court::new();
     let mut budget = super::fixtures::budget();
-    assert_eq!(c.admit_backfill(&real, &mut budget), (2, None), "r0, r1 link and are stored");
+    assert_eq!(c.admit_backfill(&super::fixtures::page(&real), &mut budget), (2, None), "r0, r1 link and are stored");
     super::fixtures::admit_line(&mut c, &key, &real[1..]);
     assert!(real.iter().all(|r| !c.unreached.contains(&line_key(r))), "a's signed r1 reaches r0 and r1");
-    assert_eq!(c.admit_backfill(&forged, &mut budget), (2, None), "the fork links on r1 and is stored");
+    assert_eq!(c.admit_backfill(&super::fixtures::page(&forged), &mut budget), (2, None), "the fork links on r1 and is stored");
     assert!(forged.iter().all(|r| c.unreached.contains(&line_key(r))), "held unreached");
     let bond = [3u64, 3, 3, 3];
     let anchor = (Stamp::default(), [0; 32]);
@@ -274,13 +274,13 @@ fn unreached_queue_refuses_past_process_memory() {
     let mut c = Court::new();
     c.physics = Physics::calibrated(&calibration);
     let mut budget = super::fixtures::budget();
-    assert_eq!(c.admit_backfill(&line, &mut budget), (8, None), "eight are held, the page stops at the ninth");
+    assert_eq!(c.admit_backfill(&super::fixtures::page(&line), &mut budget), (8, None), "eight are held, the page stops at the ninth");
     assert_eq!(c.unreached.len(), 8, "eight held unreached");
     assert_eq!(c.unreached_refusal(), Some(crate::court::verdict::REFUSE_UNREACHED_PAST_MEMORY), "a ninth is refused by name");
     assert!(c.chain().at(&key.verifying_bytes(), line[8].stamp.place()).is_none(), "and not stored");
     super::fixtures::admit_line(&mut c, &key, &line[7..8]);
     assert_eq!(c.unreached.len(), 0, "a's signed eighth reaches all eight");
-    assert_eq!(c.admit_backfill(&line[8..], &mut budget), (1, None), "and the ninth is held");
+    assert_eq!(c.admit_backfill(&super::fixtures::page(&line[8..]), &mut budget), (1, None), "and the ninth is held");
 }
 
 /// §5a.9 — A BACK-FILLED FOLD FILES ITS ROOT ONCE A SIGNATURE REACHES IT:
@@ -300,7 +300,7 @@ fn fold_root_waits_for_a_signature() {
     line.extend([shut.clone(), folded.clone()]);
     let mut c = Court::new();
     let mut budget = super::fixtures::budget();
-    assert_eq!(c.admit_backfill(&line, &mut budget), (line.len(), None), "e's line and its fold are stored");
+    assert_eq!(c.admit_backfill(&super::fixtures::page(&line), &mut budget), (line.len(), None), "e's line and its fold are stored");
     assert_eq!(c.chain().peer_root(&e), None, "the fold's root waits");
     let mut restored = Court::new();
     assert!(restored.restore(&c.snapshot()), "clean restore");

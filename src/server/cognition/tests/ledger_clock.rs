@@ -76,7 +76,7 @@ let pre = crate::court::admission::SignedPrefix {
     payload: pr.stamp.key(),
 };
 assert!(matches!(
-    k.admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &pr),
+    k.admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &super::fixtures::reconstructed(&pr)),
     crate::court::admission::Admitted::Parent(_)
 ));
 let chain_before = k.dialect_chain_len();
@@ -301,7 +301,7 @@ let pre = crate::court::admission::SignedPrefix {
     payload: pr.stamp.key(),
 };
 assert!(matches!(
-    k.admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &pr),
+    k.admit_receipt(([7; 32], 2), super::fixtures::verified(&pre, &key), &super::fixtures::reconstructed(&pr)),
     crate::court::admission::Admitted::Parent(_)
 ));
 let c = k.clock(None);

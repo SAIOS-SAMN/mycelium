@@ -53,7 +53,15 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
             return;
         }
     };
-    let proof = match mycelium::court::admission::admit_equivocation(va, &a.receipt, vb, &b.receipt) {
+    // MU-HOSTING §5a.10: each half's receipt reconstructed from its own
+    // coordinates; a half whose chain hash does not re-derive disagrees
+    // with itself, `REFUSE_RECEIPT`.
+    let reconstructed = mycelium::court::admission::Reconstructed::<mycelium::chronometry::KStepReceipt>::receipt;
+    let (Some(ra), Some(rb)) = (reconstructed(&a.receipt), reconstructed(&b.receipt)) else {
+        refuse(s, mycelium::court::admission::REFUSE_RECEIPT);
+        return;
+    };
+    let proof = match mycelium::court::admission::admit_equivocation(va, &ra, vb, &rb) {
         Ok(p) => p,
         Err(why) => {
             refuse(s, why);
