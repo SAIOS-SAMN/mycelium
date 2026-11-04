@@ -62,7 +62,7 @@ impl Court {
 
     /// Whether this court has marked `address` heard. A heard mark says the
     /// glue ran once for this address on this court; it is not a verdict,
-    /// and a reader that needs one replays (`court_replay`).
+    /// and a reader that needs one reconstructs (`court_reconstruct`).
     pub fn heard_contains(&self, address: &[u8]) -> bool {
         self.heard.contains(address)
     }
@@ -683,10 +683,10 @@ impl Court {
         // on (78.153).
         for w in words {
             loop {
-                let before = self.court_replay_progress(&w);
+                let before = self.court_reconstruction_progress(&w);
                 let mut budget = self.physics.stroke();
                 match self.glue_fetched_ruled(w.clone(), [2; 32], [1; 32], &mut cover, &mut budget) {
-                    None if self.court_replay_progress(&w) != before => {}
+                    None if self.court_reconstruction_progress(&w) != before => {}
                     _ => break,
                 }
             }

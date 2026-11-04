@@ -273,7 +273,7 @@ fn versor_of_arc(s: i64, t: i64) -> element::Versor {
 ///      refuses, factors against that mind's presentation and CITES the
 ///      letter at multiplicity two (50.2 step 2).
 ///   4. A COURT COMPOSES THE CITATION: the derived sentence is spoken to
-///      the court that ruled the letter, and `blind_replay`'s
+///      the court that ruled the letter, and `reconstruct_blind`'s
 ///      `derivations_compose` resolves the citation through its own ruled
 ///      cover and agrees. The sentence STANDS.
 ///
@@ -286,7 +286,7 @@ fn versor_of_arc(s: i64, t: i64) -> element::Versor {
 /// citation, and the court's resolution of that citation. A break at any
 /// hop leaves every existing test green.
 #[test]
-fn blind_replay_on_composes_letter_citation_from_taught_mind() {
+fn reconstruct_blind_on_composes_letter_citation_from_taught_mind() {
     use crate::client::sdk::Epigenome;
     let voice = [1u8; 32];
     let said = demanding_sentence(turn_90(1), 1, seventeen());
@@ -370,7 +370,7 @@ fn blind_replay_on_composes_letter_citation_from_taught_mind() {
     assert!(derived.residue.is_identity(), "nothing is left for the alphabet");
 
     // 4. THE COURT COMPOSES IT. Spoken to the court that ruled the letter:
-    //    `blind_replay` resolves the citation through its own ruled cover,
+    //    `reconstruct_blind` resolves the citation through its own ruled cover,
     //    re-derives the rotor, and agrees. A court that had not ruled the
     //    letter would refuse at this vertex, which is what makes standing
     //    here a fact about the LANGUAGE and not about the arithmetic.
@@ -379,12 +379,12 @@ fn blind_replay_on_composes_letter_citation_from_taught_mind() {
     // is the control: it is what standing below is measured against, and
     // it is why standing is a fact about this court's ruled language.
     assert_eq!(
-        crate::court::verdict::blind_replay(&speaks, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&speaks, &mut super::common::budget()),
         Some(crate::court::verdict::REFUSE_DERIVATION),
         "a court that resolves nothing cannot compose the citation"
     );
     assert_eq!(
-        crate::court::verdict::blind_replay_on(
+        crate::court::verdict::reconstruct_blind_on(
             &speaks,
             &|a| k.resolve_form(a),
             None,

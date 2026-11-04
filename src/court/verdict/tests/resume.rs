@@ -38,27 +38,27 @@ fn undeclared() -> (Vec<(Grid, Grid)>, Element) {
 }
 
 /// One attempt on a stroke of `n` reads from `cursor`.
-fn attempt(e: &Element, family: &[(Grid, Grid)], n: usize, cursor: &mut ReplayCursor) -> Replayed {
-    replay_resume(e, &|_| None, Some(family), &NoCrystal, &mut stroke(n), cursor, true)
+fn attempt(e: &Element, family: &[(Grid, Grid)], n: usize, cursor: &mut ReconstructionCursor) -> ReconstructionOutcome {
+    reconstruct_resume(e, &|_| None, Some(family), &NoCrystal, &mut stroke(n), cursor, true)
 }
 
 /// The verdict on a stroke that never runs out, and the reads it took.
-fn whole(e: &Element, family: &[(Grid, Grid)]) -> (Replayed, usize) {
+fn whole(e: &Element, family: &[(Grid, Grid)]) -> (ReconstructionOutcome, usize) {
     let mut b = stroke(1 << 20);
-    let out = replay_resume(e, &|_| None, Some(family), &NoCrystal, &mut b, &mut ReplayCursor::default(), true);
+    let out = reconstruct_resume(e, &|_| None, Some(family), &NoCrystal, &mut b, &mut ReconstructionCursor::default(), true);
     (out, (1 << 20) - b.remaining())
 }
 
 /// Strokes of `n` reads, each resuming the last, until the replay rules:
 /// the verdict and the strokes it took.
-fn resumed(e: &Element, family: &[(Grid, Grid)], n: usize) -> (Replayed, usize) {
-    let mut cursor = ReplayCursor::default();
+fn resumed(e: &Element, family: &[(Grid, Grid)], n: usize) -> (ReconstructionOutcome, usize) {
+    let mut cursor = ReconstructionCursor::default();
     let mut strokes = 0usize;
     loop {
         strokes += 1;
         assert!(strokes <= 4096, "a stroke of {n} reads moves the replay on");
         match attempt(e, family, n, &mut cursor) {
-            Replayed::Unread => continue,
+            ReconstructionOutcome::Unread => continue,
             out => return (out, strokes),
         }
     }
@@ -69,15 +69,15 @@ fn resumed(e: &Element, family: &[(Grid, Grid)], n: usize) -> (Replayed, usize) 
 /// it rules EXACTLY as a full-budget replay does: the same verdict, the
 /// same refusal at the same coordinate, on every stroke size that moves it.
 #[test]
-fn replay_resume_rules_as_whole_replay_across_strokes() {
+fn reconstruct_resume_rules_as_whole_reconstruction_across_strokes() {
     crate::transducer::raster::stand_on(0);
     for (family, e) in [good(), undeclared()] {
         let (full, need) = whole(&e, &family);
         assert!(need > 2, "the fixture needs more reads than a stroke of two: {need}");
         // One stroke too short: unread, and the cursor has moved.
-        let mut cursor = ReplayCursor::default();
-        assert_eq!(attempt(&e, &family, 2, &mut cursor), Replayed::Unread);
-        assert!(cursor.progress() != ReplayCursor::default().progress(), "the stroke moved the cursor");
+        let mut cursor = ReconstructionCursor::default();
+        assert_eq!(attempt(&e, &family, 2, &mut cursor), ReconstructionOutcome::Unread);
+        assert!(cursor.progress() != ReconstructionCursor::default().progress(), "the stroke moved the cursor");
         // Resumed, on every stroke size from two reads to the whole need.
         for n in 2..=need {
             let (out, strokes) = resumed(&e, &family, n);
@@ -85,9 +85,9 @@ fn replay_resume_rules_as_whole_replay_across_strokes() {
             assert!(n == need || strokes > 1, "a stroke of {n} < {need} reads is not the whole replay");
         }
     }
-    assert_eq!(whole(&good().1, &good().0).0, Replayed::Clean, "the good word replays clean");
+    assert_eq!(whole(&good().1, &good().0).0, ReconstructionOutcome::Clean, "the good word replays clean");
     assert!(
-        matches!(whole(&undeclared().1, &undeclared().0).0, Replayed::Refused(ref r) if r.reason == REFUSE_NOT_CLOSED),
+        matches!(whole(&undeclared().1, &undeclared().0).0, ReconstructionOutcome::Refused(ref r) if r.reason == REFUSE_NOT_CLOSED),
         "the undeclared word is refused, not closed"
     );
 }
@@ -96,19 +96,19 @@ fn replay_resume_rules_as_whole_replay_across_strokes() {
 /// stroke short of the whole need the good word's replay is `Unread` — never
 /// `Refused` — and on the whole need it is `Clean`.
 #[test]
-fn replay_resume_leaves_good_word_unread_on_short_stroke() {
+fn reconstruct_resume_leaves_good_word_unread_on_short_stroke() {
     crate::transducer::raster::stand_on(0);
     let (family, e) = good();
     let (full, need) = whole(&e, &family);
-    assert_eq!(full, Replayed::Clean);
+    assert_eq!(full, ReconstructionOutcome::Clean);
     for n in 0..need {
         assert_eq!(
-            attempt(&e, &family, n, &mut ReplayCursor::default()),
-            Replayed::Unread,
+            attempt(&e, &family, n, &mut ReconstructionCursor::default()),
+            ReconstructionOutcome::Unread,
             "a stroke of {n} of {need} reads rules nothing"
         );
     }
-    assert_eq!(attempt(&e, &family, need, &mut ReplayCursor::default()), Replayed::Clean);
+    assert_eq!(attempt(&e, &family, need, &mut ReconstructionCursor::default()), ReconstructionOutcome::Clean);
 }
 
 /// DEFECT 1 AT ITS SITE: the edge re-measure's `versor_between` draws from
@@ -171,13 +171,13 @@ fn to_completion_reads_unit_only_on_wider_stroke() {
     use crate::transducer::sentence::ObstructionKind;
     let (_, e) = good();
     let unit = usize::try_from(crate::physics::spend_unit()).expect("a stroke's reads fit a usize") + 1;
-    let mut run = |b: &mut crate::physics::Budget, _: &mut ReplayCursor| {
+    let mut run = |b: &mut crate::physics::Budget, _: &mut ReconstructionCursor| {
         for _ in 0..unit {
             if !b.spend() {
-                return Replayed::Unread;
+                return ReconstructionOutcome::Unread;
             }
         }
-        Replayed::Clean
+        ReconstructionOutcome::Clean
     };
     let unread = crate::verdict::blind::to_completion(&e, &mut stroke(1), &mut run);
     assert_eq!(unread.as_ref().map(|r| r.reason), Some(REFUSE_UNREAD), "no default stroke reads the unit");
@@ -188,14 +188,14 @@ fn to_completion_reads_unit_only_on_wider_stroke() {
 }
 
 /// THE OFF-LOCK READERS keep the same answer: run to the end over fresh
-/// strokes, `blind_replay_at` on the caller's stroke of one read is the
+/// strokes, `reconstruct_blind_at` on the caller's stroke of one read is the
 /// whole replay's verdict.
 #[test]
-fn blind_replay_at_answers_whole_replay_verdict() {
+fn reconstruct_blind_at_answers_whole_reconstruction_verdict() {
     crate::transducer::raster::stand_on(0);
     for (family, e) in [good(), undeclared()] {
         let (full, _) = whole(&e, &family);
-        let off = blind_replay_at(&e, &|_| None, Some(&family), &NoCrystal, &mut stroke(1));
+        let off = reconstruct_blind_at(&e, &|_| None, Some(&family), &NoCrystal, &mut stroke(1));
         assert_eq!(off.as_ref(), full.refusal(), "the off-lock reader answers the whole verdict");
     }
 }

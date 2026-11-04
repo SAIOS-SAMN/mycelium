@@ -81,8 +81,8 @@ fn apply_form_refuses_mutual_citation() {
     // speech passes or is read, and the speech refuses by the cycle's name.
     let word = crate::transducer::sentence::as_element_form(&top, [1, 0, 0, 0]).expect("tape");
     let resolve = |address: &[u8]| crystal.by_address(address).map(|(_, f)| f);
-    let mut cursor = crate::verdict::ReplayCursor::default();
-    let out = crate::verdict::replay_resume(
+    let mut cursor = crate::verdict::ReconstructionCursor::default();
+    let out = crate::verdict::reconstruct_resume(
         &word,
         &resolve,
         Some(&family),
@@ -92,7 +92,7 @@ fn apply_form_refuses_mutual_citation() {
         true,
     );
     assert!(
-        matches!(&out, crate::verdict::Replayed::Refused(r) if r.reason == crate::verdict::REFUSE_CITATION_CYCLE),
+        matches!(&out, crate::verdict::ReconstructionOutcome::Refused(r) if r.reason == crate::verdict::REFUSE_CITATION_CYCLE),
         "the court refuses the cycle by name: {out:?}"
     );
 }

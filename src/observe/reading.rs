@@ -631,7 +631,7 @@ pub mod replication {
     /// FORMAT: axis position in the replication counters array.
     pub const GLUE_HEARD: usize = 33;
     /// FORMAT: axis position in the replication counters array.
-    pub const GLUE_REPLAY_REFUSED: usize = 34;
+    pub const GLUE_RECONSTRUCTION_REFUSED: usize = 34;
     /// FORMAT: axis position in the replication counters array.
     pub const GLUE_COLOUR_UNPROVEN: usize = 35;
     /// FORMAT: axis position in the replication counters array.

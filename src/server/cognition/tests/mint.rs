@@ -84,7 +84,7 @@ assert_eq!(
 
 /// Binding a listing to a task does not mint: the form must speak the trains.
 #[test]
-fn bind_listing_task_mints_nothing_without_replay() {
+fn bind_listing_task_mints_nothing_without_reconstruction() {
 let mut k = Court::new();
 let family = vec![(
     digits(&["1100", "0000"]),
@@ -549,5 +549,5 @@ crate::transducer::raster::stand_on(0);
     // every residue is read on, so S, G and 𝒯 are over 16 sites and H stands.
     assert_eq!(read.mu, crate::economy::Mu::counts(read.pay).over([16, 16, 16, 1]).expect("non-zero wholes"), "the client's μ: the deflation over 4·4 sites");
     let tape = crate::transducer::sentence::as_element_form(&rule.form, read.pay).expect("the form has a tape");
-    assert_eq!(Court::new().measured_replay(&tape, &family), read.mu, "the court rebuilds the client's μ");
+    assert_eq!(Court::new().measured_discharge(&tape, &family), read.mu, "the court reconstructs the client's μ");
 }

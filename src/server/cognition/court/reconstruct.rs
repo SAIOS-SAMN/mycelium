@@ -1,7 +1,7 @@
 // 42, 23.7 — THE COURT'S STROKE: what a verdict does to the book, and the
 // stroke that rules the docket.
 //
-//! A verdict is applied by replaying the word it names, never by trusting
+//! A verdict is applied by reconstructing the word it names, never by trusting
 //! the signature that carried it. What one stroke fills, pays and files is
 //! `fills.rs`, on the same Budget.
 
@@ -15,13 +15,13 @@ use crate::transducer::element::{self, Element};
 /// certified by closing every pair, which no word does — so, as a colour
 /// word's, its replay is the word's integrity alone. Every other word replays
 /// on the family it is bound to, as before.
-pub(crate) fn replays_on_family(spoken: &Element) -> bool {
+pub(crate) fn reconstructs_on_family(spoken: &Element) -> bool {
     !spoken.receipts().derivations.iter().any(|d| d.conjugator.is_some())
 }
 
 /// 78.153 — WHERE A WORD'S REPLAY IS KEPT: its address and the task whose
 /// family it is replayed on, each length-delimited (A21).
-pub(crate) fn replay_key(spoken: &Element, task: Option<&[u8]>) -> Vec<u8> {
+pub(crate) fn reconstruction_key(spoken: &Element, task: Option<&[u8]>) -> Vec<u8> {
     let mut key = Vec::new();
     crate::transducer::address::put_key_bytes(&mut key, spoken.address().as_bytes());
     if let Some(t) = task {
@@ -174,7 +174,7 @@ impl Court {
 
     /// The family a spoken form is bound to on this court (23.8): the
     /// trains of the task it was spoken for, or of the listing it answers.
-    /// The court reads it through `court_replay_moved`, by the task.
+    /// The court reads it through `court_reconstruct_moved`, by the task.
     #[cfg(test)]
     pub(crate) fn family_of(&self, address: &[u8]) -> Option<&[crate::transducer::family::TrainPair]> {
         let task = self.speech_task.get(address).or_else(|| self.listing_task.get(address))?;
@@ -195,24 +195,24 @@ impl Court {
     ///
     /// 78.153 — ON THE STROKE, RESUMED: `Unread` where the stroke ran out
     /// before it ruled — never a refusal, never a pass. Where it stopped is
-    /// held on `replay_cursors` and the next replay of the same word on the
+    /// held on `reconstruction_cursors` and the next replay of the same word on the
     /// same family takes it up there, whichever path asks (the docket, the
     /// glue, the witness door): the verdict is a function of the word, its
     /// family and the content-addressed forms it cites, so every path's
     /// replay of it is one replay.
-    pub fn court_replay(&mut self, spoken: &Element, budget: &mut crate::physics::Budget) -> crate::verdict::Replayed {
-        self.court_replay_moved(spoken, budget).0
+    pub fn court_reconstruct(&mut self, spoken: &Element, budget: &mut crate::physics::Budget) -> crate::verdict::ReconstructionOutcome {
+        self.court_reconstruct_moved(spoken, budget).0
     }
 
-    /// [`Court::court_replay`] with whether the cursor moved: a stroke that
+    /// [`Court::court_reconstruct`] with whether the cursor moved: a stroke that
     /// moved nothing is a stalled replay (`court_stalled`).
-    pub(crate) fn court_replay_moved(
+    pub(crate) fn court_reconstruct_moved(
         &mut self,
         spoken: &Element,
         budget: &mut crate::physics::Budget,
-    ) -> (crate::verdict::Replayed, bool) {
-        let task = self.court_task_of(spoken).filter(|_| replays_on_family(spoken));
-        self.replay_on_cursor(spoken, task.as_ref().map(|t| t.as_bytes()), false, budget)
+    ) -> (crate::verdict::ReconstructionOutcome, bool) {
+        let task = self.court_task_of(spoken).filter(|_| reconstructs_on_family(spoken));
+        self.reconstruct_on_cursor(spoken, task.as_ref().map(|t| t.as_bytes()), false, budget)
     }
 
     /// The task whose family a spoken form is bound to on this court
@@ -222,39 +222,39 @@ impl Court {
         self.speech_task.get(address.as_bytes()).or_else(|| self.listing_task.get(address.as_bytes())).cloned()
     }
 
-    /// Where `court_replay` keeps this word's cursor, and how far it stands.
+    /// Where `court_reconstruct` keeps this word's cursor, and how far it stands.
     #[cfg(test)]
-    pub(crate) fn court_replay_progress(&self, spoken: &Element) -> Option<(crate::verdict::Phase, usize, usize)> {
-        let task = self.court_task_of(spoken).filter(|_| replays_on_family(spoken));
-        let key = replay_key(spoken, task.as_ref().map(|t| t.as_bytes()));
-        self.replay_cursors.get(&key).map(|c| c.progress())
+    pub(crate) fn court_reconstruction_progress(&self, spoken: &Element) -> Option<(crate::verdict::Phase, usize, usize)> {
+        let task = self.court_task_of(spoken).filter(|_| reconstructs_on_family(spoken));
+        let key = reconstruction_key(spoken, task.as_ref().map(|t| t.as_bytes()));
+        self.reconstruction_cursors.get(&key).map(|c| c.progress())
     }
 
     /// THE ONE RESUMABLE REPLAY of a word on the family of `task` (none:
     /// no family), its cursor keyed by the word's address and that task.
-    /// `at` is `blind_replay_at`'s reading. Answers whether the cursor moved.
-    pub(crate) fn replay_on_cursor(
+    /// `at` is `reconstruct_blind_at`'s reading. Answers whether the cursor moved.
+    pub(crate) fn reconstruct_on_cursor(
         &mut self,
         spoken: &Element,
         task: Option<&[u8]>,
         at: bool,
         budget: &mut crate::physics::Budget,
-    ) -> (crate::verdict::Replayed, bool) {
-        let key = replay_key(spoken, task);
-        let mut cursor = match self.replay_cursors.remove(&key) {
+    ) -> (crate::verdict::ReconstructionOutcome, bool) {
+        let key = reconstruction_key(spoken, task);
+        let mut cursor = match self.reconstruction_cursors.remove(&key) {
             Some(c) => c,
-            None => crate::verdict::ReplayCursor::default(),
+            None => crate::verdict::ReconstructionCursor::default(),
         };
         let before = cursor.progress();
         let out = {
             let court: &Court = self;
             let family = task.and_then(|t| court.task_family.get(t)).map(Vec::as_slice);
-            crate::verdict::replay_resume(spoken, &|a| court.resolve_form_ref(a), family, court, budget, &mut cursor, at)
+            crate::verdict::reconstruct_resume(spoken, &|a| court.resolve_form_ref(a), family, court, budget, &mut cursor, at)
         };
         let moved = cursor.progress() != before;
-        if out == crate::verdict::Replayed::Unread {
+        if out == crate::verdict::ReconstructionOutcome::Unread {
             self.court_unread += 1;
-            self.replay_cursors.insert(&key, cursor);
+            self.reconstruction_cursors.insert(&key, cursor);
         }
         (out, moved)
     }
@@ -285,7 +285,7 @@ impl Court {
         crate::observe::step("court stroke: contacts");
         self.physics.book_contacts(crate::transducer::family::pairing::contact_lanes());
         crate::observe::step("court stroke: docket replay");
-        let circuit = self.docket_replay(budget);
+        let circuit = self.docket_reconstruction(budget);
         if let Some((n, period)) = self.docket_circuits.stroke(u64::from(circuit)) {
             // ONCE PER APERTURE, NOT PER CIRCUIT. A docket that fits one
             // budget completes a circuit every stroke, so "written once
@@ -340,7 +340,7 @@ impl Court {
     /// - clean: ruled, a section of this court's own;
     /// - UNREAD: not ruled this stroke. The docket's cursor stays BEFORE the
     ///   word, so the next stroke takes it first and resumes its replay from
-    ///   its phase cursor (`replay_cursors`); a resumed replay is eventually
+    ///   its phase cursor (`reconstruction_cursors`); a resumed replay is eventually
     ///   ruled, since each stroke moves it on.
     ///
     /// A replay a whole stroke moved no further (the word began the stroke
@@ -348,7 +348,7 @@ impl Court {
     /// is counted (`court_stalled`) and passed over for this circuit, so one
     /// word cannot stand the whole docket still. Answers whether the walk
     /// completed a circuit.
-    fn docket_replay(&mut self, budget: &mut crate::physics::Budget) -> bool {
+    fn docket_reconstruction(&mut self, budget: &mut crate::physics::Budget) -> bool {
         let start = self.open_cursor.clone();
         let mut wrapped = false;
         loop {
@@ -395,8 +395,8 @@ impl Court {
                 continue;
             };
             let fresh = u64::try_from(budget.remaining()).is_ok_and(|r| r.checked_add(1).is_some_and(|r| r >= self.physics.unit_spend()));
-            match self.court_replay_moved(&spoken, budget) {
-                (crate::verdict::Replayed::Refused(_), _) => {
+            match self.court_reconstruct_moved(&spoken, budget) {
+                (crate::verdict::ReconstructionOutcome::Refused(_), _) => {
                     // EC1: A SLASH IS ALWAYS AN ACT. A provisional word is ruled
                     // through the verdict, which seals `Ruling(Slashed)`, revokes
                     // and re-dockets its citers; a listing of the book is ruled
@@ -418,7 +418,7 @@ impl Court {
                     self.forget_if_unheld(&address);
                     self.court_slashed += 1;
                 }
-                (crate::verdict::Replayed::Clean, _) => {
+                (crate::verdict::ReconstructionOutcome::Clean, _) => {
                     // The stroke ruled a word THIS court replayed from its own
                     // book: the line already calls it a section, and now it is one
                     // (13.9, 13.10) -- a vantage a peer's section can be compared
@@ -426,12 +426,12 @@ impl Court {
                     self.rule_own(&address, budget);
                 }
                 // A whole stroke moved it nowhere: passed over this circuit.
-                (crate::verdict::Replayed::Unread, false) if fresh => {
+                (crate::verdict::ReconstructionOutcome::Unread, false) if fresh => {
                     self.court_stalled += 1;
                 }
                 // NOT RULED THIS STROKE: the docket stays before the word, and
                 // the wrap this step made is not made.
-                (crate::verdict::Replayed::Unread, _) => {
+                (crate::verdict::ReconstructionOutcome::Unread, _) => {
                     if newly {
                         wrapped = false;
                     }
@@ -449,7 +449,7 @@ impl Court {
     #[cfg(test)]
     pub(crate) fn court_settle(&mut self) {
         let progress = |k: &Court| -> Vec<(Vec<u8>, (crate::verdict::Phase, usize, usize))> {
-            k.replay_cursors.scoped().map(|(key, c)| (key, c.progress())).collect()
+            k.reconstruction_cursors.scoped().map(|(key, c)| (key, c.progress())).collect()
         };
         loop {
             let before = progress(self);

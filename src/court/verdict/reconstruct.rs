@@ -1,4 +1,4 @@
-// 23, 42 — REPLAY: a spoken form is re-derived from its own tape, move by
+// 23, 42 — RECONSTRUCTION: a spoken form is re-derived from its own tape, move by
 // move, against the cover that resolves what it cites.
 //
 //! Every vertex re-derives from its tape, every face from its vertices,
@@ -22,27 +22,27 @@ use crate::transducer::torsion_witness::{self, HolonomicOrbitWitness};
 /// carries and whose class is filed on torsion; every orbit of the
 /// recomputed spanning forest is projectively identity or filed finite
 /// torsion. The trajectory is checked by the caller on the element.
-pub fn replay_form(
+pub fn reconstruct_form(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
-    replay_form_with(spoken, resolve, None, &crate::transducer::family::NoCrystal, budget)
+    reconstruct_form_with(spoken, resolve, None, &crate::transducer::family::NoCrystal, budget)
 }
 
 /// Chapter 23.1 with the bound family, so rebase/unfold/orbit execute on
 /// the trains when the kernel has them (step 6). The trajectory is measured
 /// through `crystal` (the court's genome). `NoCrystal` is only for a tape
-/// with no Glued vertex. The reason alone; `replay_form_at` carries the
+/// with no Glued vertex. The reason alone; `reconstruct_form_at` carries the
 /// coordinate.
-pub fn replay_form_with(
+pub fn reconstruct_form_with(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
-    replay_form_at(spoken, resolve, family, crystal, budget).map(|r| r.reason)
+    reconstruct_form_at(spoken, resolve, family, crystal, budget).map(|r| r.reason)
 }
 
 /// 50.2 step 2 at the court. Each cited `(form, vertex)` is TWO keyed
@@ -170,15 +170,15 @@ pub fn derivations_compose_at(
     }
 }
 
-/// [`replay_certificates`] with the chord index built from the form the
+/// [`reconstruct_certificates`] with the chord index built from the form the
 /// certificates are being replayed against — which is the coordinate the
 /// parity oracle is testing, since a chord is an index into `faces` and a
 /// decoder that reordered them would diverge here and nowhere else.
-pub fn replay_certificates_at(
+pub fn reconstruct_certificates_at(
     f: &Form,
     certificates: &[crate::transducer::sentence::PivotCertificate],
 ) -> Option<&'static str> {
-    replay_certificates(f, certificates, &chord_orbits(f))
+    reconstruct_certificates(f, certificates, &chord_orbits(f))
 }
 
 /// 78.153 — one read per cite, from the `from`-th of the envelope's order;
@@ -366,7 +366,7 @@ pub(crate) fn witnesses_carry_primes(f: &Form, meter: &mut Meter<'_>, from: usiz
 /// does not carry its body, the face whose edge does not re-derive, the
 /// chart with the links no demand declares; every other refusal is of the
 /// whole tape.
-pub fn replay_form_at(
+pub fn reconstruct_form_at(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
@@ -374,19 +374,19 @@ pub fn replay_form_at(
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
     let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
-    to_completion(spoken, budget, &mut |b, cursor| replay_form_resume(spoken, &owned, family, crystal, b, cursor))
+    to_completion(spoken, budget, &mut |b, cursor| reconstruct_form_resume(spoken, &owned, family, crystal, b, cursor))
 }
 
-/// 78.153 — [`replay_form_at`] on the stroke, from the cursor: the decode,
-/// then [`replay_form_on_resume`].
-pub fn replay_form_resume<'r>(
+/// 78.153 — [`reconstruct_form_at`] on the stroke, from the cursor: the decode,
+/// then [`reconstruct_form_on_resume`].
+pub fn reconstruct_form_resume<'r>(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
     family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
-    cursor: &mut ReplayCursor,
-) -> Replayed {
+    cursor: &mut ReconstructionCursor,
+) -> ReconstructionOutcome {
     // A SPOKEN word under replay: the court re-derives it from the tape it
     // was sent, which is the point of a replay, so the decode is named
     // (L16) — and it is named HERE, once, so the verdict below is a
@@ -395,18 +395,18 @@ pub fn replay_form_resume<'r>(
     // That seam is the pre-B6 parity guard's (54.5 Phase A). While both
     // decoders exist the tape is an oracle, and
     // `every_court_reader_agrees_on_both_decoders` feeds each of them into
-    // [`replay_form_on`] and asserts one verdict. Without the seam the
+    // [`reconstruct_form_on`] and asserts one verdict. Without the seam the
     // legacy path could not be reached at all, and the guard would be
     // asserting the decoupled reader against itself.
     let Some(f) = crate::transducer::sentence::from_element_form(spoken) else {
-        return Replayed::Refused(Refusal::of_tape(REFUSE_FORM_TAPE, spoken));
+        return ReconstructionOutcome::Refused(Refusal::of_tape(REFUSE_FORM_TAPE, spoken));
     };
-    replay_form_on_resume(&f, spoken, resolve, family, crystal, budget, cursor)
+    reconstruct_form_on_resume(&f, spoken, resolve, family, crystal, budget, cursor)
 }
 
-/// [`replay_form_at`] on a form already decoded — the whole verdict, with
+/// [`reconstruct_form_at`] on a form already decoded — the whole verdict, with
 /// the decode lifted out so it can be supplied.
-pub fn replay_form_on(
+pub fn reconstruct_form_on(
     f: &Form,
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
@@ -415,7 +415,7 @@ pub fn replay_form_on(
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
     let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
-    to_completion(spoken, budget, &mut |b, cursor| replay_form_on_resume(f, spoken, &owned, family, crystal, b, cursor))
+    to_completion(spoken, budget, &mut |b, cursor| reconstruct_form_on_resume(f, spoken, &owned, family, crystal, b, cursor))
 }
 
 /// 78.153 — THE WHOLE VERDICT, IN PHASES, ON THE STROKE. Every input-sized
@@ -432,30 +432,30 @@ pub fn replay_form_on(
 /// court replaying it on another ground reads the family's ground as a
 /// remainder the form never spoke ("form leaves a remainder on the
 /// family", read 2026-10-20 on a family with no void cell).
-pub fn replay_form_on_resume<'r>(
+pub fn reconstruct_form_on_resume<'r>(
     f: &Form,
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
     family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
-    cursor: &mut ReplayCursor,
-) -> Replayed {
+    cursor: &mut ReconstructionCursor,
+) -> ReconstructionOutcome {
     match family {
-        Some(fam) => crate::transducer::raster::on_ground_of(fam, || replay_on_ground(f, spoken, resolve, family, crystal, budget, cursor)),
-        None => replay_on_ground(f, spoken, resolve, family, crystal, budget, cursor),
+        Some(fam) => crate::transducer::raster::on_ground_of(fam, || reconstruct_on_ground(f, spoken, resolve, family, crystal, budget, cursor)),
+        None => reconstruct_on_ground(f, spoken, resolve, family, crystal, budget, cursor),
     }
 }
 
-fn replay_on_ground<'r>(
+fn reconstruct_on_ground<'r>(
     f: &Form,
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
     family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
-    cursor: &mut ReplayCursor,
-) -> Replayed {
+    cursor: &mut ReconstructionCursor,
+) -> ReconstructionOutcome {
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
     // One phase: skipped where the cursor is past it, entered at the item
     // the cursor names where it stopped in it, and settled — passed (the
@@ -477,7 +477,7 @@ fn replay_on_ground<'r>(
     // what catches a tape whose `depth` was moved under its vertices.
     // A depth that cannot be written (STD1) agrees with no tape's.
     if Some(f.depth) != f.depth_of() {
-        return Replayed::Refused(tape(REFUSE_GLUED_DEPTH));
+        return ReconstructionOutcome::Refused(tape(REFUSE_GLUED_DEPTH));
     }
     // EVERY BOUNDARY IS BONDED (54.7 B5a). A `Vertex::Glued` is a PORT —
     // "this chart exposes a boundary interface at this rank, depth,
@@ -672,21 +672,21 @@ fn replay_on_ground<'r>(
         });
     }
     let frames = std::mem::take(&mut cursor.frames);
-    let out = replay_after_perceiving(f, spoken, family, crystal, budget, cursor, &frames);
+    let out = reconstruct_after_perceiving(f, spoken, family, crystal, budget, cursor, &frames);
     cursor.frames = frames;
     out
 }
 
 /// The phases after the family is perceived, over the cursor's perceptions.
-fn replay_after_perceiving(
+fn reconstruct_after_perceiving(
     f: &Form,
     spoken: &Element,
     family: Option<&[(crate::transducer::family::Grid, crate::transducer::family::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
-    cursor: &mut ReplayCursor,
+    cursor: &mut ReconstructionCursor,
     frames: &[super::body::Perceived],
-) -> Replayed {
+) -> ReconstructionOutcome {
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
     macro_rules! phase {
         ($phase:expr, |$from:ident| $step:expr) => {
@@ -960,14 +960,14 @@ fn replay_after_perceiving(
             if !wrong.is_empty() {
                 let content = sentence::Content::Residue(&wrong);
                 let obstruction = sentence::read_obstruction(content);
-                return Replayed::Refused(Refusal {
+                return ReconstructionOutcome::Refused(Refusal {
                     reason: REFUSE_NOT_CLOSED,
                     at: sentence::At::Chart(stalk::invariant(&wrong), wrong),
                     obstruction,
                 });
             }
             let obstruction = sentence::read_obstruction(sentence::Content::Residue(&silent));
-            return Replayed::Refused(Refusal {
+            return ReconstructionOutcome::Refused(Refusal {
                 reason: REFUSE_NOT_CLOSED,
                 at: sentence::At::Chart(stalk::invariant(&silent), silent),
                 obstruction,
@@ -993,7 +993,7 @@ fn replay_after_perceiving(
         }
         out
     });
-    phase!(Phase::Certificates, |from| replay_certificates_from(
+    phase!(Phase::Certificates, |from| reconstruct_certificates_from(
         traversed,
         &spoken.receipts().certificates,
         &by_chord,
@@ -1004,7 +1004,7 @@ fn replay_after_perceiving(
         Cut::Refused(reason) => Halt::Refused(tape(reason)),
         Cut::Spent(at) => Halt::Spent(at),
     }));
-    Replayed::Clean
+    ReconstructionOutcome::Clean
 }
 
 /// `REFUSE_FACE` at the overlap's two vertices, by coordinates (50.9,
@@ -1191,7 +1191,7 @@ pub(crate) fn chord_orbits(f: &Form) -> Keyed<crate::transducer::sentence::Orbit
 ///
 /// THE CHORD IS A FACE LIKE ANY OTHER and carries its edge like any other.
 /// What the orbit then reads — flat, filed at its period, or not evaluated
-/// at all — is [`form_orbits_replay`]'s, on the orbit's EDGE holonomy (50.3).
+/// at all — is [`form_orbits_reconstruct`]'s, on the orbit's EDGE holonomy (50.3).
 /// Asking for the TRANSPORT composite here instead, matched against the
 /// chord's own word, would be a reading that telescopes over words that
 /// commute: it would certify an orbit the voice never evaluated and demand a
@@ -1237,7 +1237,7 @@ pub(crate) fn torsion_chord_carries(
 /// 78.153 — the court reads it one orbit per read (`Phase::Coherence`,
 /// `Form::orbit_coheres`); this whole reading stays for the tests.
 #[cfg(test)]
-pub(crate) fn form_orbits_replay(f: &Form) -> bool {
+pub(crate) fn form_orbits_reconstruct(f: &Form) -> bool {
     // ONE READER FOR ONE QUESTION (law 12, 54.5 as ruled 2026-09-20).
     //
     // This read the orbits itself and asked `orbit_reading_replays` of each

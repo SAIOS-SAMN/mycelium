@@ -499,11 +499,11 @@ pub fn hue_map(c: &Change) -> HueMap {
     map
 }
 
-/// A RECOLOUR ITS OWN HUE MAP REPLAYS: every compartment of each source hue
+/// A RECOLOUR ITS OWN HUE MAP HOLDS WHOLE: every compartment of each source hue
 /// goes to that one target. Where it does not, the change selects sites
 /// within its body — no body-level key can decide it, and the decision's
 /// ceiling is the count of these.
-pub fn replayable(c: &Change) -> bool {
+pub fn map_holds_whole(c: &Change) -> bool {
     recolours_to(&hue_map(c), &c.input, &c.output)
 }
 

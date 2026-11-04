@@ -389,7 +389,7 @@ holds).
     of readings; `until = T(h₀)` equals the closed form.
   - `window_stays_open_while_one_keeper_uncited`.
   - `window_never_closes_without_another_keeper`: `NoOtherKeeper`.
-  - `window_close_replays_from_sealed_citation`: boot from the leaf, same
+  - `window_close_reconstructs_from_sealed_citation`: boot from the leaf, same
     finality; T1.
   - `window_opened_under_v4_closes_at_fixed_end`.
   - `window_refuses_witness_with_forged_signature`.
@@ -1424,7 +1424,7 @@ one name, one meaning):
   capacity's spend, each a **need reading owed** (paths under `src/`):
   - `bin/mycelium-server/exchange.rs:323, 592, 627` (the court's intake,
     docket and organ strokes, `expansion_unit`);
-  - `server/cognition/court/replay.rs:50, 271, 397` (the docket's replay
+  - `server/cognition/court/reconstruct.rs:50, 271, 397` (the docket's reconstruction
     and its fresh-stroke reading);
   - `server/cognition/court/glue.rs:495, 593, 631`; `court/lapse.rs:74`;
     `court/phase.rs:237`; `court/syllabus.rs:369, 611`; `court/task.rs:155`;

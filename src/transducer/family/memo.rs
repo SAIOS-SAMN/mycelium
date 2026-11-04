@@ -182,7 +182,7 @@ fn deformation_answer(
 }
 
 /// Re-derive the family's rule and check it agrees with `rule`.
-pub fn rule_replays_family(
+pub fn rule_reconstructs_family(
     rule: &crate::transducer::sentence::SentenceRule,
     family: &[(Grid, Grid)],
     budget: &mut crate::physics::Budget,

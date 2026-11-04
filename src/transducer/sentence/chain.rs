@@ -123,7 +123,7 @@ impl Sentence {
     pub fn open_at<'a>(&self, word_at: &impl Fn(&[u8]) -> Option<&'a Element>, chain: &[Link]) -> Vec<Link> {
         match self.punctures.is_empty() {
             true => self.residual.clone(),
-            false => replay_operators(&self.operators_at(word_at), chain),
+            false => reconstruct_operators(&self.operators_at(word_at), chain),
         }
     }
 }
@@ -299,12 +299,12 @@ pub fn cited_pattern(word: &Element, asg: &[(u8, u8)]) -> Option<Vec<Link>> {
 /// residual is R = Q △ S: the target links no citation speaks, plus the
 /// over-explained links. An empty residual is closure; a citation naming
 /// nothing held speaks nothing.
-pub fn replay_at<'a>(word_at: &impl Fn(&[u8]) -> Option<&'a Element>, cites: &[Cite], target: &[Link]) -> Vec<Link> {
+pub fn reconstruct_at<'a>(word_at: &impl Fn(&[u8]) -> Option<&'a Element>, cites: &[Cite], target: &[Link]) -> Vec<Link> {
     let ops: Vec<(Versor, Vec<Link>)> = cites
         .iter()
         .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, &c.assignment)?)))
         .collect();
-    replay_operators(&ops, target)
+    reconstruct_operators(&ops, target)
 }
 
 /// The key of a section's site: a section's sites stand in frame `0`, the
@@ -319,7 +319,7 @@ pub(crate) fn section_site_key(r: i64, c: i64) -> Vec<u8> {
 /// utterance is verified as it was spoken. The target is one section, in
 /// its own frame: a word's compartment carried into another frame speaks
 /// nothing of it, and the section's site it was to cover stays unspoken.
-pub fn replay_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Link> {
+pub fn reconstruct_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Link> {
     let mut at: Keyed<Link> = Keyed::new();
     for &link in target {
         at.insert(section_site_key(link.0, link.1), link);
@@ -466,7 +466,7 @@ pub fn verify_at<'a>(
     cites: &[Cite],
     target: &[Link],
 ) -> Vec<Link> {
-    let mut out = replay_at(word_at, cites, target);
+    let mut out = reconstruct_at(word_at, cites, target);
     out.extend(seam_defect_at(word_at, cites, target));
     out.sort_unstable();
     out.dedup();
@@ -480,7 +480,7 @@ pub fn verify_at<'a>(
 pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[Link]) -> Vec<Link> {
     let ops: Vec<(Versor, Vec<Link>)> =
         cites.iter().map(|c| (c.transport.clone(), c.body.clone())).collect();
-    let mut out = replay_operators(&ops, target);
+    let mut out = reconstruct_operators(&ops, target);
     out.extend(seam_defect_operators(&ops, target));
     out.sort_unstable();
     out.dedup();

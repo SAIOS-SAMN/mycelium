@@ -43,9 +43,9 @@ fn refract_rebases_regauges_and_carries() {
     assert!(off.refract(&f).is_none(), "None off the plane");
 }
 
-/// Refraction replays as its three moves made by hand.
+/// Refraction reconstructs as its three moves made by hand.
 #[test]
-fn refract_replays_as_three_moves() {
+fn refract_reconstructs_as_three_moves() {
     let mut f = Form::default();
     stand_with_star(&mut f, &word_vertex(1, word_turn_90()));
     f.reindex();

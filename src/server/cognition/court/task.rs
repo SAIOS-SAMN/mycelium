@@ -8,7 +8,7 @@ use crate::transducer::element::Element;
 /// WHAT THE COURT READ OF A SOLVE (the actions' physics).
 #[derive(Clone, Debug)]
 pub enum SolveVerdict {
-    /// Replayed clean on every withheld pair; `pay` what it discharged there
+    /// Reconstructed clean on every withheld pair; `pay` what it discharged there
     /// as μ, each closed pair's share of its frame (78.170 O1, ruled
     /// 2026-11-01), and `modes` the modes the closing form moved on the pairs
     /// it closed (78.162), each exact: S boosts, G hue modes, T null fluxes,
@@ -20,14 +20,14 @@ pub enum SolveVerdict {
     NotARule,
     /// The task holds no withheld answer to replay against.
     Unverifiable,
-    /// Replayed clean but DISCHARGED NOTHING on the withheld pairs: no work,
+    /// Reconstructed clean but DISCHARGED NOTHING on the withheld pairs: no work,
     /// so no closure. Nothing is released, minted, docketed or offered, and
     /// the task's first closure is not spent (ruled 2026-10-08: μ is never
     /// paid out for the bare possibility of falsification).
     NoWork,
     /// 78.153 — NOT JUDGED YET: the act's one stroke ran out before the
     /// replay ruled. Nothing is refused, released or paid; where the replay
-    /// stopped is kept (`replay_cursors`, by the rule and the withheld
+    /// stopped is kept (`reconstruction_cursors`, by the rule and the withheld
     /// pairs), and the same solve asked again resumes it there. The wire
     /// carries it as `SOLVE_UNREAD` (3): a retry, never the final
     /// `SOLVE_NOTHING`.
@@ -74,7 +74,7 @@ impl Court {
         if !train.is_empty() {
             // 78.153 — a family that changes under a replay's cursor would
             // resume a replay on pairs it did not start on: THAT TASK'S cursors
-            // go (`replay_key` ends with the task). A first binding is a
+            // go (`reconstruction_key` ends with the task). A first binding is a
             // change too: a replay begun with no family passed the family's
             // phases unread. Every other cursor stands — a solve's is keyed by
             // its rule and the withheld pairs it was given, never by a task's
@@ -85,9 +85,9 @@ impl Court {
                 let mut tail = Vec::new();
                 crate::transducer::address::put_key_bytes(&mut tail, task.as_ref());
                 let stale: Vec<Vec<u8>> =
-                    self.replay_cursors.scoped().map(|(k, _)| k).filter(|k| k.ends_with(&tail)).collect();
+                    self.reconstruction_cursors.scoped().map(|(k, _)| k).filter(|k| k.ends_with(&tail)).collect();
                 for k in stale {
-                    self.replay_cursors.remove(&k);
+                    self.reconstruction_cursors.remove(&k);
                 }
             }
             self.task_family.insert(task, train);
@@ -96,11 +96,11 @@ impl Court {
 
     /// THE SOLVE'S VERDICT, BY ITS ACTION (the actions' physics, 2026-09-29).
     /// A solve is a RULE, and the court replays it on the task's withheld
-    /// pairs as it replays any sentence on its family (`blind_replay_at`
+    /// pairs as it replays any sentence on its family (`reconstruct_blind_at`
     /// with the family: its derivation re-derived, every pair closed — step
     /// 7, `REFUSE_NOT_CLOSED`); the rule's cited forms resolve through this
     /// court's ruled cover. Clean, the rule is priced by what it
-    /// discharges on those pairs, per lane (`measured_replay`, the deflation
+    /// discharges on those pairs, per lane (`measured_discharge`, the deflation
     /// paid only where a pair closes); refused, the refusal names its
     /// reason, coordinate and obstruction kind (78.9). Grids are never
     /// compared: a raster that matches is no proof of a motion.
@@ -113,9 +113,9 @@ impl Court {
     pub fn judge_solve(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
         let key = solve_key(rule, withheld);
         loop {
-            let before = self.replay_cursors.get(&key).map(|c| c.progress());
+            let before = self.reconstruction_cursors.get(&key).map(|c| c.progress());
             match self.judge_solve_on_stroke(rule, withheld) {
-                SolveVerdict::Unread if self.replay_cursors.get(&key).map(|c| c.progress()) != before => {}
+                SolveVerdict::Unread if self.reconstruction_cursors.get(&key).map(|c| c.progress()) != before => {}
                 verdict => return verdict,
             }
         }
@@ -156,13 +156,13 @@ impl Court {
         // 78.153 — the replay on the act's one stroke, resumed where the last
         // asking of this rule on these pairs stopped.
         let key = solve_key(rule, withheld);
-        let mut cursor = match self.replay_cursors.remove(&key) {
+        let mut cursor = match self.reconstruction_cursors.remove(&key) {
             Some(c) => c,
-            None => crate::verdict::ReplayCursor::default(),
+            None => crate::verdict::ReconstructionCursor::default(),
         };
         let out = {
             let court: &Court = self;
-            crate::verdict::replay_resume(
+            crate::verdict::reconstruct_resume(
                 rule,
                 &|a| court.resolve_form_ref(a),
                 Some(withheld),
@@ -173,19 +173,19 @@ impl Court {
             )
         };
         match out {
-            crate::verdict::Replayed::Refused(refusal) => return SolveVerdict::Refused(refusal),
-            crate::verdict::Replayed::Unread => {
+            crate::verdict::ReconstructionOutcome::Refused(refusal) => return SolveVerdict::Refused(refusal),
+            crate::verdict::ReconstructionOutcome::Unread => {
                 self.court_unread += 1;
-                self.replay_cursors.insert(&key, cursor);
+                self.reconstruction_cursors.insert(&key, cursor);
                 return SolveVerdict::Unread;
             }
-            crate::verdict::Replayed::Clean => {}
+            crate::verdict::ReconstructionOutcome::Clean => {}
         }
         // A CLEAN REPLAY THAT DISCHARGES NOTHING IS NO CLOSURE. It was
         // answered Solved with a zero pay, and the zero was checked only
         // after `pay_solve` had released every escrow bound to the task and
         // the door had spent the task's first closure on it.
-        let (pay, modes) = self.measured_replay_read(rule, withheld);
+        let (pay, modes) = self.measured_discharge_read(rule, withheld);
         if pay.is_zero() {
             return SolveVerdict::NoWork;
         }

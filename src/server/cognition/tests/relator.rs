@@ -270,7 +270,7 @@ fn court_torsion_files_relator_at_period() {
     // is not `face_of`, and the orbit's reading is the orbit's. The period-2
     // class above is what replays.
     assert_eq!(
-        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
+        crate::court::verdict::reconstruct_blind(&e, &mut super::common::budget()),
         None,
         "the filed relator replays on the orbit's own reading"
     );
@@ -473,7 +473,7 @@ fn retirement_line(
 /// speaker WAITS on its stamp. Per arm, admitted = applied + awaiting +
 /// refused.
 #[test]
-fn admit_line_replays_peer_retirement() {
+fn admit_line_reconstructs_peer_retirement() {
     use crate::chronometry::{ActKind, Cite, Ruled};
     let t = transport(&turn_90(1));
     let relator = transport(&turn_90(2));

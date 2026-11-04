@@ -459,7 +459,7 @@ not a fault campaign.
   | Fault | What it injects |
   |---|---|
   | `InvalidSignature` | An act whose Ed25519 signature does not verify. |
-  | `Replay` (a resend; the class follows the code rename to `Resend`) | A valid signed act sent twice. |
+  | `Resend` | A valid signed act sent twice. |
   | `DoubleClaimRace` | One work claimed at two courts across a partition. |
   | `EquivocatingLedger` | Two signed receipts from one key at one position. |
   | `SybilSwarm` | Many unbonded voices from one operator. |

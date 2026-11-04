@@ -102,7 +102,7 @@ fn source<'a>(
             a.push((*signer, after, ask));
         }
         let k = courts.iter().find(|k| k.chain().signer() == *signer)?;
-        Some(k.serve_receipts(signer, after, upto, ask == Ask::Replay, 8, usize::MAX))
+        Some(k.serve_receipts(signer, after, upto, ask == Ask::Era, 8, usize::MAX))
     }
 }
 
@@ -270,7 +270,7 @@ fn hear_proves_citation_into_held_era() {
     assert!(matches!(heard, Ok(Admitted::Parent(_))), "d's head is cited: {heard:?}");
     assert!(axes(bvk)[replication::FOLDED_PROVED] > proved, "the citation proved by its era");
     let asks = asked.into_inner().expect("asks");
-    assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Replay), "b's line asked only as the era's replay: {asks:?}");
+    assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Era), "b's line asked only as the era's replay: {asks:?}");
 }
 
 /// 47.3 — A ROOT ALREADY CO-SIGNED IS ANSWERED WITH THE CO-SIGNATURE HELD (the
@@ -343,9 +343,9 @@ fn hear_proves_long_era_page_by_page() {
     assert!(matches!(heard, Ok(Admitted::Parent(_))), "d's head is cited: {heard:?}");
     assert!(axes(bvk)[replication::FOLDED_PROVED] > proved, "the citation proved by its era");
     let asks = asked.into_inner().expect("asks");
-    let replays = asks.iter().filter(|(who, _, ask)| *who == bvk && *ask == Ask::Replay).count();
+    let replays = asks.iter().filter(|(who, _, ask)| *who == bvk && *ask == Ask::Era).count();
     assert!(replays > 1, "the era walked over more than one page: {asks:?}");
-    assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Replay), "b's line asked only as the era's replay");
+    assert!(asks.iter().all(|(who, _, ask)| *who != bvk || *ask == Ask::Era), "b's line asked only as the era's replay");
 }
 
 /// 78.147 (4) — CROSS-CITING LINES EACH ADVANCE FROM ITS ROOT. Courts a

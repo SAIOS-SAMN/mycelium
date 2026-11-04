@@ -335,9 +335,11 @@ definition; every other document points here.
 | **Replay** | Re-apply recorded inputs in order, to read history: to see events as they happened (MU-CONCORDANCE 1.4). | Verification; a restore (a restore reconstructs the held state and checks it against its receipts) |
 | **Resend** | The same message sent again: the security sense, met by repeat protection (MU-RECURSION 47.2, MU-XSEPTUM). | A recomputation |
 
-Some code identifiers still carry `replay` for the court's reconstruction
-(`blind_replay`, `replay_form`, `measured_replay`, `Replayed`); they name
-reconstruction and follow a code rename ([ROADMAP](../ROADMAP.md) track 11).
+The code identifiers that verify carry `reconstruct` (`reconstruct_blind`,
+`reconstruct_form`, `measured_discharge`, `ReconstructionOutcome`;
+[ROADMAP](../ROADMAP.md) track 11, N1). An identifier that reads history
+keeps the word, such as the era ask's `replay` flag on `ReceiptsRequest`
+(MU-CONCORDANCE 1.4).
 
 #### Grammar alignment
 
@@ -392,9 +394,9 @@ Every class follows the same protocol:
 ### V0 — Rules (exists)
 
 The court evaluates a submitted rule on withheld pairs from its own copy of
-the family, and the output must be the withheld answer (`src/court/verdict/`;
-the code still names this reconstruction `replay`, pending the rename in
-§5.0). This is the workload of the current release.
+the family, and the output must be the withheld answer (`src/court/verdict/`,
+`reconstruct_form` and `reconstruct_blind`). This is the workload of the
+current release.
 
 ### V1 — Certificate checking
 

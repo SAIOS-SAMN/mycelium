@@ -72,7 +72,7 @@ fn hear(k: &mut Court, frame: &[u8]) -> Vec<u8> {
 /// that receipt which is not the contraction is refused as a malformed
 /// complex at its tape, and the court's record of the refusal stands.
 #[test]
-fn hear_speech_verifies_contraction_before_replay() {
+fn hear_speech_verifies_contraction_before_reconstruction() {
     let f_v = voice_family();
     let f_1 = court_family();
     let s = sentence_over(&f_v);

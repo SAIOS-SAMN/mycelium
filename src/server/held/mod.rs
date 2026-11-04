@@ -168,7 +168,7 @@ pub struct Held<'a> {
 impl Held<'_> {
     /// THE ONLY WAY IN: the court and the hold's stroke, together. A read
     /// that walks what grows spends `reads`; a stroke spent ends it with its
-    /// unread named (`Replayed::Unread`, a deferral, a page cut short) —
+    /// unread named (`ReconstructionOutcome::Unread`, a deferral, a page cut short) —
     /// never a wrong answer.
     pub fn run<R>(&mut self, f: impl FnOnce(&mut Court, &mut Budget) -> R) -> R {
         f(&mut self.guard, &mut self.stroke)

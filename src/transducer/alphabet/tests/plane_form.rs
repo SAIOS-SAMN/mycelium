@@ -9,7 +9,7 @@ use crate::transducer::alphabet::*;
 /// wrong handedness, or an orientation counted twice, breaks exactly here
 /// and nowhere visible until a conjugation comes out inverted.
 #[test]
-fn to_word_rebuilds_rotor_of_form() {
+fn to_word_derives_rotor_of_form() {
     let q = |p| Word::from_letters(&[(LetterId::turn_90(p).expect("a pair plane"), false)]);
     let cases: Vec<(&str, Word)> = vec![
         ("sensor 90° turn", q((0, 1))),

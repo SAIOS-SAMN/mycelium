@@ -37,7 +37,7 @@ mod why;
 #[cfg(test)]
 mod tests;
 
-use crate::admission::{admit_peer_digest, rebuild_own_cover};
+use crate::admission::{admit_peer_digest, read_published_cover};
 use mycelium::anastome::dialogue;
 use crate::door::Door;
 use crate::exchange::{note_root, speak_root_locked, Exchange, Mesh, RootHear};
@@ -622,7 +622,7 @@ fn main() {
     // 78.153b — the own cover is admitted off a published reading; at boot,
     // before the door's shelf stands, one read of the court published here.
     if let Some(boot) = crate::held::held!(court).ok().and_then(|mut h| h.run(|k, _| k.publish(None))) {
-        rebuild_own_cover(&boot, &mesh);
+        read_published_cover(&boot, &mesh);
     }
     for p in &join_peers {
         if p == &addr {

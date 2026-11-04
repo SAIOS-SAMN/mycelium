@@ -125,7 +125,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                         // REPLAYING THE OFFER on its own cover — the tape
                         // re-derived vertex by vertex, face by face, its
                         // citations resolved from THIS court's ruled words
-                        // (`court_replay` inside `glue_fetched`) — and not
+                        // (`court_reconstruct` inside `glue_fetched`) — and not
                         // the word this court happened to hold on the chart.
                         // `own_section(&inv)` stood here and answered with
                         // this court's OWN word on the chart, an older and
@@ -192,7 +192,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
 /// own tapes, and nothing else decides the answer.
 ///
 /// THE REPLAY DECIDES, NOT THE GLUE. `glue_fetched` replays the form
-/// (`court_replay`) and then files it on this court's cover — a section at
+/// (`court_reconstruct`) and then files it on this court's cover — a section at
 /// the home's vantage, edges to the words this court holds, simplices filled —
 /// and its `Glue` says how the form RELATES TO THIS COURT'S OWN SECTION on
 /// the chart: `Dialect` is "a different section of the same chart", which
@@ -206,7 +206,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
 /// `Dialect` before the replay for any address this court marked heard,
 /// slashed or not. So the second offer of a form this court had SLASHED
 /// would have read as placed. Heard, the form is replayed here by name
-/// (`court_replay`, the same reader the glue runs) and the answer is that
+/// (`court_reconstruct`, the same reader the glue runs) and the answer is that
 /// replay's; unheard, the glue runs once and its slash is the replay's
 /// refusal. Either way the vantage is: this court re-derived the form, or
 /// it refused it by name. Unmeasured is left for a court that could not
@@ -233,10 +233,10 @@ pub(crate) fn witness_vantage(
     // nothing and refused nothing: the witness answers UNMEASURED, and the
     // home's next offer resumes the replay where this one stopped.
     if k.heard_contains(word.address().as_bytes()) {
-        return match k.court_replay(&word, budget) {
-            mycelium::verdict::Replayed::Refused(r) => refused(r.reason),
-            mycelium::verdict::Replayed::Clean => reached(&word),
-            mycelium::verdict::Replayed::Unread => dialogue::Witnessed::Unmeasured { vk: witness },
+        return match k.court_reconstruct(&word, budget) {
+            mycelium::verdict::ReconstructionOutcome::Refused(r) => refused(r.reason),
+            mycelium::verdict::ReconstructionOutcome::Clean => reached(&word),
+            mycelium::verdict::ReconstructionOutcome::Unread => dialogue::Witnessed::Unmeasured { vk: witness },
         };
     }
     match k.glue_fetched_ruled(word.clone(), home, witness, cover, budget) {

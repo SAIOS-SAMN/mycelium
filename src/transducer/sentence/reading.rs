@@ -8,7 +8,7 @@ use crate::network::nerve::Keyed;
 use crate::transducer::blade::{self, Shape};
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::chain::{
-    gauge_of, pieces, section_site_key, replay_at, replay_operators, Cite, HeldCite, Link, Located, Puncture, Sentence,
+    gauge_of, pieces, section_site_key, reconstruct_at, reconstruct_operators, Cite, HeldCite, Link, Located, Puncture, Sentence,
 };
 use crate::transducer::sentence::form::Vertex;
 use crate::transducer::stalk::{self, Stalks};
@@ -234,7 +234,7 @@ where
                 transport: v.clone(),
                 assignment,
             };
-            if replay_at(word_at, std::slice::from_ref(&cite), piece).is_empty() {
+            if reconstruct_at(word_at, std::slice::from_ref(&cite), piece).is_empty() {
                 return Located { cite: Some(cite), puncture: None, held: None, multiplicity: m };
             }
         } else {
@@ -245,7 +245,7 @@ where
     if let Some(asg) = element::pullback(&pos, piece, &v) {
         let mut body: Vec<Link> = pos.iter().zip(&asg).map(|(&(r, c), &(b, a))| (r, c, b, a)).collect();
         body.sort_unstable();
-        if replay_operators(&[(v.clone(), body.clone())], piece).is_empty() {
+        if reconstruct_operators(&[(v.clone(), body.clone())], piece).is_empty() {
             let puncture = Puncture {
                 word: crate::transducer::address::Address::new(addr.clone()),
                 transport: v,

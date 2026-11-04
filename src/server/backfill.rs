@@ -27,7 +27,7 @@ use std::sync::Mutex;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Ask {
     CatchUp,
-    Replay,
+    Era,
 }
 
 /// This node's own `(H_genesis, E_origin)`, which a fold root's home
@@ -90,7 +90,7 @@ fn prove_folded(
         let root = held!(court).ok()?.run(|k, _| k.chain().peer_root(&p.at.vk))?;
         // THE ONE ERA-REPLAY ASK (78.147): the era's own receipts, from where
         // the walk stands to the root; a root answer proves no citation.
-        let Some(ReceiptsAnswer::Page(page)) = fetch(&p.at.vk, place_before(from.at.place()), root, Ask::Replay) else {
+        let Some(ReceiptsAnswer::Page(page)) = fetch(&p.at.vk, place_before(from.at.place()), root, Ask::Era) else {
             return Some(false);
         };
         match held!(court).ok()?.run(|k, _| k.walk_folded(p, &page)) {

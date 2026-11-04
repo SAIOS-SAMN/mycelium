@@ -149,7 +149,7 @@ A court opens a new letter for a prime the seed does not reach:
 
 Code: `server/cognition/germinate/listing.rs` (`open_letter`);
 refusals for a witness that does not carry its prime in
-`court/verdict/replay.rs`.
+`court/verdict/reconstruct.rs`.
 
 ### 6.2 Rotations off every coordinate plane
 

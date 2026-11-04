@@ -402,8 +402,8 @@ pub fn mint(
     Some(Element::from_rewrite_tape(rw.to_tape()?, y))
 }
 
-/// Blind replay of a Rewrite: both directions, then the yield re-read.
-pub fn replay(e: &Element) -> Option<&'static str> {
+/// Blind reconstruction of a Rewrite: both directions, then the yield re-read.
+pub fn reconstruct(e: &Element) -> Option<&'static str> {
     // A TAPE THAT DOES NOT DECODE IS A REFUSAL, not an absence of one. This
     // read `Rewrite::from_element(e)?`, and `?` on a function whose `None`
     // MEANS "no refusal" turned an undecodable tape into a clean bill: the

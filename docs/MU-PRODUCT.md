@@ -28,7 +28,7 @@ to the minds as such.
 |---|---|---|---|
 | Solve | a family of samples, escrow | the rule, the outputs, a receipt | `ACT_TASK` / `ACT_SOLVE`, escrow |
 | Comprehension of a corpus | families through the uplink door | words minted on that data, taught to a mind the buyer runs | uplink, syllabus by incidence |
-| Certification | a rule or sentence claimed elsewhere, a fee | reconstructed and installed, or refused with the reason | `blind_replay`, the docket |
+| Certification | a rule or sentence claimed elsewhere, a fee | reconstructed and installed, or refused with the reason | `reconstruct_blind`, the docket |
 | Translation | two corpora whose dialects do not glue | the gauge word between them | translation Rewrite |
 | Cover | bond on a lane | room to home work; the pool share on it | stake, delegation |
 | Standing work | escrow on an open demand | accrual on T until someone closes it | listing with T accrual |

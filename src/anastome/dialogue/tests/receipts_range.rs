@@ -13,7 +13,7 @@ fn receipts_request_round_trips_with_reply_within_budget() {
     assert_eq!(decode_receipts_request(&req), Some(ReceiptsRequest { voice: [1; 32], signer: [2; 32], after, upto, replay: false }));
     assert!(decode_receipts_request(&req[..req.len() - 1]).is_none(), "a short request refuses");
     // 78.147 — an era replay is the same span with its tag.
-    let replay = encode_replay_request(&[1; 32], &[2; 32], after, upto);
+    let replay = encode_era_request(&[1; 32], &[2; 32], after, upto);
     assert_eq!(decode_receipts_request(&replay).map(|r| (r.after, r.upto, r.replay)), Some((after, upto, true)), "the replay ask");
     let mut wrong = replay.clone();
     wrong.push(1);

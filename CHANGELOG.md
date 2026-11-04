@@ -6,6 +6,41 @@ such change is named here.
 
 ## Unreleased
 
+### Identifiers that verify carry `reconstruct` (track 11, N1; #29, #55)
+- Names only: behaviour, wire bytes, reading labels and task addresses are
+  unchanged. Every citation in comments and documents follows.
+- Modules: `court/verdict/replay.rs` → `reconstruct.rs` (with its tests
+  module), `server/cognition/court/replay.rs` → `court/reconstruct.rs`.
+- The court's reconstruction: `blind_replay*` → `reconstruct_blind*`;
+  `replay_word`, `replay_resume`, `replay_form*`,
+  `replay_certificates*` → `reconstruct_*`; `certificate_replays` →
+  `certificate_reconstructs`; `court_replay` / `court_replay_moved` /
+  `court_replay_progress` → `court_reconstruct` /
+  `court_reconstruct_moved` / `court_reconstruction_progress`;
+  `replay_on_cursor`, `replay_on_ground`, `replay_after_perceiving`,
+  `replay_retirement` → `reconstruct_*`; `docket_replay` →
+  `docket_reconstruction`; `replays_on_family` →
+  `reconstructs_on_family`; `replay_key` → `reconstruction_key`;
+  `form_orbits_replay` → `form_orbits_reconstruct`; `rewrite::replay` →
+  `rewrite::reconstruct`; `factor::replays` → `factor::reconstructs`;
+  `chain::replay_at` / `replay_operators` → `reconstruct_at` /
+  `reconstruct_operators`; `rule_replays_family` →
+  `rule_reconstructs_family`.
+- Types and carriers: `Replayed` → `ReconstructionOutcome` (track 25's
+  `Reconstructed<T>` names the reconstructed object), `ReplayCursor` →
+  `ReconstructionCursor`, `replay_cursors` / `replay_memo` →
+  `reconstruction_cursors` / `reconstruction_memo`; the glue's
+  `Stop::Replay` → `Stop::Reconstruction`.
+- `measured_replay*` → `measured_discharge*`; `GLUE_REPLAY_REFUSED` →
+  `GLUE_RECONSTRUCTION_REFUSED` (axis 34 and its label unchanged).
+- The era ask: `Ask::Replay` → `Ask::Era`, `encode_replay_request` →
+  `encode_era_request`, the tag `REPLAY` → `ERA` (its byte, `1`,
+  unchanged).
+- `incongruence::replayable` → `map_holds_whole`; the server's
+  `rebuild_own_cover` → `read_published_cover`.
+- 41 test names that said "replay" for a reconstruction, and two that said
+  "rebuilds" for a construction, say `reconstruct` and `derives`.
+
 ### A claim states its ground; a vortex is read per candidate (track 26, S2)
 - **Network contract: the solve act gains an optional ground field**, a
   change inside v0.3.0's ruled break (wire 0x0200). After `RULE` the act
@@ -715,8 +750,8 @@ Holding the modes themselves (78.162) remains the next step.
   measured reconstruction, one function, so T1 holds on μ),
   `Local::mu` (`measure_sites` answers the count and μ),
   `transduce::share_of_frame`, `Transduction::lane_shares`, `Mu::over`.
-- `Court::discharge_on`, `discharge_of`, `measured_replay`,
-  `measured_replay_read`, `transport_on`, `gluing_of`, `cited_deflation`,
+- `Court::discharge_on`, `discharge_of`, `measured_discharge`,
+  `measured_discharge_read` (then named `measured_replay*`), `transport_on`, `gluing_of`, `cited_deflation`,
   `verified_install_deflation`, `pay_solve`, `release_verified`,
   `pay_lease`, `settle_solve` and `SolveVerdict::Solved { pay }` read and
   carry `Mu`; `Treasury::settle_recursive` takes `Mu` shares and premium;

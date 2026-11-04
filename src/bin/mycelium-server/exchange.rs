@@ -5,7 +5,7 @@
 //! the addresses, the apertures, the origin it adopted. `Exchange` is the
 //! cycle: a court stroke, the intake, then one digest round-trip per peer.
 
-use crate::admission::{admit_peer_digest, admit_peer_receipt, rebuild_own_cover, AdmissionTally};
+use crate::admission::{admit_peer_digest, admit_peer_receipt, read_published_cover, AdmissionTally};
 use crate::door::{intake_corpus, relocate_corpus, route_corpus};
 use crate::nerve::{Nerve, NerveRx};
 use crate::persist::persist_if_due;
@@ -591,7 +591,7 @@ impl Exchange {
             #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
             let budget = mycelium::physics::expansion_unit() as usize;
             // 78.153b — off the published reading, never the court.
-            rebuild_own_cover(&published.take(), &mesh);
+            read_published_cover(&published.take(), &mesh);
             let roots = mesh.cover.lock().ok().map(|mut c| c.roots());
             // 45.7, S13.1: this court's own roots moving is one of the two
             // readings that ask a peer again; the other is the peer's Λ.

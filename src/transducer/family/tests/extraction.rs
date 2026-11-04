@@ -289,7 +289,7 @@ fn extract_rule_reaches_one_address_on_two_courts() {
     for rule in [&first, &second] {
         let word = mint_sentence(rule, &family, &NoCrystal, 0).expect("the family mints");
         assert_eq!(
-            crate::verdict::blind_replay_on(&word, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
+            crate::verdict::reconstruct_blind_on(&word, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
             None,
             "and a court replays it on its own copy of the family"
         );

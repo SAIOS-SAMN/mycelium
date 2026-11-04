@@ -128,7 +128,7 @@ impl Epigenome {
                                 // Verified by re-derivation, never trusted
                                 // from the algebra that produced it (16.12
                                 // step 4).
-                                if crate::transducer::factor::replays(&tape, &basis, &g) {
+                                if crate::transducer::factor::reconstructs(&tape, &basis, &g) {
                                     return Comprehension::Held;
                                 }
                             }
@@ -372,7 +372,7 @@ impl Epigenome {
             // a citation resolved twice parses the tape once.
             self.working_word(a).and_then(|e| e.form().cloned())
         };
-        match crate::verdict::blind_replay_with(&e, &resolve, budget) {
+        match crate::verdict::reconstruct_blind_with(&e, &resolve, budget) {
             Some(crate::verdict::REFUSE_GLUED_UNRULED)
             | Some(crate::verdict::REFUSE_GLUED_DEPTH) => {}
             Some(_) => {
