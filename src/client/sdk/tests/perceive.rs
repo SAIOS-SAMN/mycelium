@@ -69,7 +69,7 @@ fn perceive_scene_stops_once_on_reading() {
 /// bodies do not stand on, so the slide is not read again; it moves when a
 /// word is filed on the slide's own chart.
 #[test]
-fn scene_language_moves_only_for_word_on_own_chart() {
+fn scene_language_moves_only_for_word_on_scene_chart() {
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let word_of = |x: &crate::transducer::family::Grid, y: &crate::transducer::family::Grid| {
         let mut b = budget();

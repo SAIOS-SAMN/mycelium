@@ -216,8 +216,8 @@ pub fn sphere_throat(m: &num_rational::BigRational, radius: &num_rational::BigRa
         return None;
     }
     let r = num_rational::BigRational::from_integer(2.into()) * m / radius;
-    let level = cos(&Encl::exact(r.clone()), THROAT_GRID).lo;
-    let ratio = Encl::exact(r).div(&pi(THROAT_GRID))?.hi;
+    let level = cos(&Encl::exact(r.clone()), THROAT_LEVEL_BITS).lo;
+    let ratio = Encl::exact(r).div(&pi(THROAT_LEVEL_BITS))?.hi;
     Some((level, ratio))
 }
 
@@ -225,14 +225,14 @@ pub fn sphere_throat(m: &num_rational::BigRational, radius: &num_rational::BigRa
 /// PHYSICS, NAMED (`physics::axioms::OPEN_PHYSICS`): an enclosure on a
 /// declared grid is an approximation; the throat is a `Cl(4,1)` round carried
 /// by its bank's modes, fit by meet, and this grid retires with it.
-/// REGISTERED: THROAT_GRID
-pub const THROAT_GRID: u32 = 64;
+/// REGISTERED: THROAT_LEVEL_BITS
+pub const THROAT_LEVEL_BITS: u32 = 64;
 
 /// 78.134 — A THROAT'S HORIZON LEVEL on curved space: the mouth's horizon
 /// is `{p : p·v = −c}` about its place `v` on `ℍ³`, at hyperbolic radius `r
 /// = 2m/R` — the mass `m` (G = c = 1) over the space's curvature radius `R`
 /// — so `c = cosh r`. Irrational for rational `r`, so it is the UPPER bound
-/// of the certified enclosure on the fixed grid `2^-THROAT_GRID`: a pure
+/// of the certified enclosure on the fixed grid `2^-THROAT_LEVEL_BITS`: a pure
 /// function of `(m, R)`, the same everywhere, the throat never undersized.
 /// `None` for a non-positive mass or radius.
 pub fn throat_level(m: &num_rational::BigRational, curvature: &num_rational::BigRational) -> Option<num_rational::BigRational> {
@@ -241,7 +241,7 @@ pub fn throat_level(m: &num_rational::BigRational, curvature: &num_rational::Big
         return None;
     }
     let r = num_rational::BigRational::from_integer(2.into()) * m / curvature;
-    Some(crate::core::certified::cosh(&crate::core::certified::Encl::exact(r), THROAT_GRID).hi)
+    Some(crate::core::certified::cosh(&crate::core::certified::Encl::exact(r), THROAT_LEVEL_BITS).hi)
 }
 
 /// 78.140 — A THROAT IN A FLAT TORUS FACE: the horizon is the sphere of

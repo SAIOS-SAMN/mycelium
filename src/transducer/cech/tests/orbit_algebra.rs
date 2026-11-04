@@ -242,7 +242,7 @@ fn read_chamber_names_unread_circuit_round_and_none() {
 /// action, and not the action of a turn in another plane; a cell whose
 /// capacity did not read contains nothing it can say.
 #[test]
-fn algebra_contains_own_products_not_other_plane() {
+fn algebra_contains_plane_products_not_other_plane() {
     let (m, nuclei) = round();
     // Both turns in the one algebra the wider of them stands in.
     let across = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);

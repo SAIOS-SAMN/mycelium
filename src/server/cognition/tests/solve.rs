@@ -27,7 +27,7 @@ fn halves() -> (Vec<TrainPair>, Vec<TrainPair>) {
 /// the withheld pair under it, solved. The court reads only the ground the
 /// claim states.
 #[test]
-fn claim_states_its_ground_and_court_reconstructs_under_it() {
+fn claim_states_ground_and_court_reconstructs_under_ground() {
     use crate::transducer::family::transduce::Ground;
     let (train, withheld) = halves();
     assert_eq!(crate::transducer::raster::ground_of(&train), Ground::Vortex(vec![0, 5]), "the task's ground is a vortex");

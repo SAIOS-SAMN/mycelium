@@ -269,8 +269,8 @@ pub const CATALOGUE: &[Mutant] = &[
     Mutant {
         law: "NO CONSTANT (MU-DERIVATIONS D1.4): a registered number keeps its class tag, or the numbers gate refuses the tree",
         file: "src/server/cognition/domain_passage.rs",
-        before: "/// REGISTERED: THROAT_GRID\npub const THROAT_GRID",
-        after: "pub const THROAT_GRID",
+        before: "/// REGISTERED: THROAT_LEVEL_BITS\npub const THROAT_LEVEL_BITS",
+        after: "pub const THROAT_LEVEL_BITS",
         target: &["--manifest-path", "xtask/Cargo.toml"],
         filter: "numbers_refuses_nothing_in_tree",
     },

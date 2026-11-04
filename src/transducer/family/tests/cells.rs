@@ -55,12 +55,12 @@ fn bodies(sites: &[Vec<i64>]) -> crate::network::nerve::Keyed<Vec<Site>> {
     k
 }
 
-fn by_grade(cells: &crate::network::nerve::Keyed<crate::transducer::sentence::FormCell>, g: usize) -> Vec<crate::transducer::sentence::FormCell> {
+fn by_grade(cells: &crate::network::nerve::Keyed<crate::transducer::sentence::BodyContact>, g: usize) -> Vec<crate::transducer::sentence::BodyContact> {
     cells.scoped().filter(|(_, c)| c.grade() == g).map(|(_, c)| c.clone()).collect()
 }
 
 /// The one cell of a grade, read by a slice pattern.
-fn one(cells: Vec<crate::transducer::sentence::FormCell>, what: &str) -> crate::transducer::sentence::FormCell {
+fn one(cells: Vec<crate::transducer::sentence::BodyContact>, what: &str) -> crate::transducer::sentence::BodyContact {
     match cells.as_slice() {
         [c] => c.clone(),
         _ => panic!("{what}: {cells:?}"),
@@ -118,7 +118,7 @@ fn cell_algebras_crosses_cell_by_face_body_pair() {
     let (p, r, s) = (vec![1u8], vec![2u8], vec![3u8]);
     let mut form = crate::transducer::sentence::Form::default();
     let nuclei = vec![Mv::blade(cga::E1, q(1)), Mv::blade(cga::E2, q(1))];
-    let cell = crate::transducer::sentence::FormCell { bodies: vec![p.clone(), r.clone()], witnesses: Vec::new(), nuclei: Some(nuclei) };
+    let cell = crate::transducer::sentence::BodyContact { bodies: vec![p.clone(), r.clone()], witnesses: Vec::new(), nuclei: Some(nuclei) };
     form.cells.insert([0u8], cell);
     form.face_bodies.put(&face(0), (p.clone(), r.clone()));
     form.face_bodies.put(&face(2), (p, s));

@@ -9,7 +9,7 @@ use crate::core::Q;
 use crate::transducer::cga::{rotator, translator_at, Mv};
 use crate::transducer::family::statement::{speak_clauses, speak_elements, Unstated};
 use crate::transducer::sentence::form::clause::{put_clauses, About, Act, Clause, Extent, Paint, Pred, RegionKind, Stop};
-use crate::transducer::sentence::form::rule_element::{gloss, lattice_step, lower, Carriage, Lowered, Reach, RuleElement, Trace};
+use crate::transducer::sentence::form::rule_element::{gloss, substrate_step, lower, Carriage, Lowered, Reach, RuleElement, Trace};
 
 fn grid(rows: &[&str]) -> Grid {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
@@ -110,10 +110,10 @@ fn speak_elements_speaks_unnamed_carriage_without_gloss() {
 /// ITERATION READS A LATTICE TRANSLATION: a translator by `(2, −1)` is that
 /// step; a turn is no step, and a carriage iterating one is refused by name.
 #[test]
-fn lattice_step_iterates_translation_and_refuses_turn() {
-    assert_eq!(lattice_step(&shift(2, -1)), Some((2, -1)));
+fn substrate_step_iterates_translation_and_refuses_turn() {
+    assert_eq!(substrate_step(&shift(2, -1)), Some((2, -1)));
     let turn = rotator(&q(0), &q(1));
-    assert_eq!(lattice_step(&turn), None, "a turn names no ray");
+    assert_eq!(substrate_step(&turn), None, "a turn names no ray");
     let x = grid(&["010", "000"]);
     let bodies = crate::transducer::family::perceive(&x);
     let spun = Lowered {

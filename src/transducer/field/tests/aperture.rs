@@ -392,7 +392,7 @@ fn pivot_on_collapses_vortex_and_adjoins_symmetry() {
 /// must not enter the cover, because nothing of this idea is a section over
 /// it.
 #[test]
-fn expand_with_covers_own_charts_not_siblings() {
+fn expand_with_covers_expanded_charts_not_siblings() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::family::NoCrystal;
     use crate::transducer::sentence::{Form, Vertex};

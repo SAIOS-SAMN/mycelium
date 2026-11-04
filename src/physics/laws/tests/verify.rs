@@ -6,7 +6,7 @@ use crate::transducer::cga::{point_at, sphere_at};
 /// The register holds every law, each at its own coordinate with a
 /// statement.
 #[test]
-fn laws_reads_each_law_at_own_coordinate() {
+fn laws_reads_each_law_at_law_coordinate() {
     let addresses: Vec<_> = LAWS.iter().map(|l| l.address()).collect();
     for (law, a) in LAWS.iter().zip(&addresses) {
         assert_eq!(a.as_bytes(), [crate::transducer::address::TAG_LAW, law.index(), LAW_VERSION].as_slice());

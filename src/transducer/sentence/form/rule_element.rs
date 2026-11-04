@@ -103,10 +103,10 @@ pub(crate) fn still() -> Mv {
     Mv::scalar(q(1))
 }
 
-/// THE LATTICE TRANSLATION A VERSOR IS, `(rows, columns)`: read where the
+/// THE SUBSTRATE TRANSLATION A VERSOR IS, `(rows, columns)`: read where the
 /// sensor reads a cell — its centre — on three cells, and only where it
 /// carries each by one integer vector. `None` for any other motion.
-pub(crate) fn lattice_step(motion: &Mv) -> Option<(i64, i64)> {
+pub(crate) fn substrate_step(motion: &Mv) -> Option<(i64, i64)> {
     let land = |r: i64, c: i64| -> Option<(Q, Q)> {
         let p = element::carry_site_centre(motion, &Site::of([r, c, 0]))?;
         let [pr, pc, pk] = p.as_slice() else { return None };
@@ -170,7 +170,7 @@ fn gloss_carriage(t: &Carriage) -> Option<Act> {
     let own = t.paint == Paint::Own;
     let fixed = t.motion.projective_eq(&still());
     let ray = || -> Option<(i8, i8)> {
-        let (dr, dc) = lattice_step(&t.motion)?;
+        let (dr, dc) = substrate_step(&t.motion)?;
         Some((i8::try_from(dr).ok()?, i8::try_from(dc).ok()?))
     };
     match (t.reach, t.trace) {

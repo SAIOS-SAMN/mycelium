@@ -333,7 +333,7 @@ fn classify_fills_turned_cycle_and_files_twisted_residue() {
 /// the identity and not flat. `π₁₇` as a rotor: its arc is `15 + 8i`,
 /// whose norm is `17²`, and no product of the alphabet's primes reaches it.
 #[test]
-fn classify_reads_unspellable_rotor_as_own_arm() {
+fn classify_reads_unspellable_rotor_as_separate_arm() {
     let pi17 = Rotor::scalar(q(4)).add(&Rotor::blade(0b0011, q(1)));
     assert!(
         crate::transducer::alphabet::word_of_rotor(&pi17).is_none(),

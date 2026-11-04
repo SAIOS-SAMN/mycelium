@@ -598,8 +598,8 @@ The integer translation a versor is, read on three cell centres; any other
 motion has no integer step.
 
 Sources: MU-CLIENT §5.4. Code:
-`src/transducer/sentence/form/rule_element.rs::lattice_step` (renamed
-`substrate_step` by ROADMAP track 11, N4).
+`src/transducer/sentence/form/rule_element.rs::substrate_step` (formerly
+`lattice_step`, renamed by ROADMAP track 11, N4).
 
 #### 2.26 The twist about an attractor and the orbit about a star
 
@@ -1962,8 +1962,8 @@ Sources: MU-SCIENCE §5, V1.
 #### 10.1 Named open physics
 
 ```text
-THROAT_GRID      = 64       the 2⁻⁶⁴ grid a throat's horizon level is enclosed on
-LAW_VERSION      = 5
+THROAT_LEVEL_BITS = 64    the 2⁻⁶⁴ grid a throat's horizon level is enclosed on
+LAW_VERSION       = 5
 ```
 
 The founding principles admit no constant: a number in the physics is read
@@ -1982,7 +1982,7 @@ Sources: MU-RECURSION §0.0, 78.125, 78.134. Code:
 `src/physics/axioms/founding.rs::OPEN_PHYSICS`;
 `src/physics/laws/mod.rs::CHALLENGE_WINDOW`, `PARAMETERS`;
 `src/server/cognition/window.rs::window_close`;
-`src/server/cognition/domain_passage.rs::THROAT_GRID`.
+`src/server/cognition/domain_passage.rs::THROAT_LEVEL_BITS`.
 
 #### 10.2 Throat size is mass
 

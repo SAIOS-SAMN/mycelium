@@ -765,7 +765,7 @@ impl Orbit {
 /// It carries no transport: that is deposited by the circuit that closes on
 /// it (`Complex::ascend`), in the circuit's own order (NB1 choice (b)).
 #[derive(Debug, Clone)]
-pub struct FormCell {
+pub struct BodyContact {
     pub bodies: Vec<Vec<u8>>,
     pub witnesses: Vec<crate::transducer::base::Site>,
     /// CS1 — THE CELL'S CONSTRUCTORS: its bodies' nuclei, in the bodies'
@@ -774,7 +774,7 @@ pub struct FormCell {
     pub nuclei: Option<Vec<crate::transducer::cga::Mv>>,
 }
 
-impl FormCell {
+impl BodyContact {
     /// `k + 1` bodies make a `k`-cell; a cell is minted over two or more.
     pub fn grade(&self) -> usize {
         self.bodies.len() - 1
@@ -948,8 +948,8 @@ pub struct Form {
     pub carriages: Keyed<Versor>,
     /// NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS, keyed by the cells' bodies'
     /// pieces written inline, each framed: one per standing set, read by
-    /// perception and held in memory only (see [`FormCell`]).
-    pub cells: Keyed<FormCell>,
+    /// perception and held in memory only (see [`BodyContact`]).
+    pub cells: Keyed<BodyContact>,
     /// BD2 — THE BODY PAIR EACH CONTACT FACE RUNS BETWEEN, by its overlap:
     /// the two bodies' pieces in the overlap's orientation, the body at its
     /// leaving end first. `FormFace` carries no body, so a circuit's step

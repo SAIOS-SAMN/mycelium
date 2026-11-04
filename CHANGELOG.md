@@ -6,6 +6,23 @@ such change is named here.
 
 ## Unreleased
 
+### Retired terms and person words (track 11, N4; #55)
+- Names only: behaviour, wire bytes, refusal strings, ledger layout and
+  task addresses are unchanged.
+- `Unstated::OffLattice` → `OffSubstrate` (SDK: `mycelium_sdk::rule::Unstated`);
+  `rule_element::lattice_step` → `substrate_step`.
+- `THROAT_GRID` → `THROAT_LEVEL_BITS`, with its `OPEN_PHYSICS` entry, its
+  `REGISTERED:` tag and the mutation catalogue's span.
+- `field::merge::absorb_vortex` / `absorb_keyed` → `merge_vortex` /
+  `merge_keyed`.
+- `sentence::FormCell` (retired by 0.7) → `BodyContact`: the bodies
+  standing together at one element of the base.
+- Test names without a person word, "its" or "own": 18 renamed, for
+  example `mu_counts_equal_their_rationals` → `mu_counts_equal_rationals`
+  and `pending_stands_through_its_own_beat` → `pending_stands_through_beat`.
+- No identifier says "lamina". The word stays only in refusal strings, a
+  coordinate's name string and the oracle's golden key.
+
 ### One name, one meaning (track 11, N3; #55)
 - Names only: behaviour, wire bytes, ledger layout, string literals and
   task addresses are unchanged. Every citation in comments and documents

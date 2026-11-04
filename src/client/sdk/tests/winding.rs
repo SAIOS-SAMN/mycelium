@@ -17,7 +17,7 @@ use crate::transducer::alphabet::{LetterId, Word};
 /// that return, K moves by exactly it, and the first scene's speech is posted —
 /// the second's, whose scene no thought of has returned, is still held.
 #[test]
-fn speak_with_posts_only_at_own_thought_return() {
+fn speak_with_posts_only_at_thought_return() {
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let e2 = two_body_sentence([&[(5, 6), (5, 6)], &[(7, 8), (7, 8)]]);
     let (one, two) = ([1u8; 32], [2u8; 32]);

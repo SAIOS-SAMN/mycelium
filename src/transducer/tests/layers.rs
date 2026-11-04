@@ -74,7 +74,7 @@ fn peel_body_yields_outline_and_core() {
 /// are one outline shell of sixteen compartments and one core of two, each
 /// compartment in the frame it came from.
 #[test]
-fn peel_body_peels_each_section_in_own_frame() {
+fn peel_body_peels_each_section_in_section_frame() {
     let mut compartments = Vec::new();
     for k in 0..2 {
         for r in 0..3 {
