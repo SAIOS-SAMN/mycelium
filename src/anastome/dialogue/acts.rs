@@ -75,6 +75,11 @@ pub const COC1: &[u8; 4] = b"COC1";
 pub const ACT_ADOPT: u8 = Action::Adopt.byte();
 /// One family's cohering sentences. `[ACT_SPEECH][voice 32][task address][tu u64][n u32][len u32|element]…`.
 pub const ACT_SPEECH: u8 = Action::Speech.byte();
+/// A CLAIM OF FACTORISATION (MU-SENSING §3.9, track 26 S4c): a train pair's
+/// motion and residue with the claim's stated ground, signed; the court
+/// reconstructs the motion on the posted samples and derives the residue.
+/// The layout and its codec are `dialogue::factorisation`'s.
+pub const ACT_FACTORISATION: u8 = Action::Factorisation.byte();
 
 /// Per-sentence: 0 Stood, 1 Dialect, 2 Refused, 3 Ratified. Since 50.9
 /// (ruled 2026-09-10) these survive only as the adjudication's kind byte

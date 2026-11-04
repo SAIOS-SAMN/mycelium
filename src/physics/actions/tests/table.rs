@@ -20,6 +20,8 @@ fn action_of_round_trips_each_byte() {
     assert_eq!(Action::of_wire(0x53), Some(Action::Seat), "the relay is asked on the wire");
     assert_eq!(Action::of_wire(0x23), Some(Action::Tick), "a keeper's ring is pushed on the wire (78.152b)");
     assert!(!Action::Tick.sealed(), "and seals nothing");
+    assert_eq!(Action::of_wire(0x18), Some(Action::Factorisation), "a claim of factorisation is asked on the wire (track 26 S4c)");
+    assert!(!Action::Factorisation.sealed(), "and seals nothing");
     for unassigned in [0x0Au8, 0x0F, 0x54, 0xFF] {
         assert_eq!(Action::of(unassigned), None);
     }
@@ -59,6 +61,7 @@ fn of_wire_reads_each_wire_spelling_as_table_action() {
     let spelled = [
         (d::ACT_SPEECH, Action::Speech, Kind::Transition),
         (d::ACT_PROBE, Action::Probe, Kind::Transition),
+        (d::ACT_FACTORISATION, Action::Factorisation, Kind::Transition),
         (d::ACT_SYLLABUS, Action::Syllabus, Kind::Transition),
         (d::ACT_FOLD, Action::Fold, Kind::Exchange),
         (d::ACT_EQUIVOCATION, Action::Equivocation, Kind::Exchange),

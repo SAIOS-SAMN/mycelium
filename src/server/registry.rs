@@ -66,6 +66,11 @@ pub struct TaskRegistry {
     /// Each task's routes by its citation (`route::routes_of`), read once
     /// off the court: a cover change re-homes by them (mycelium#14).
     routes: Keyed<crate::server::route::TaskRoutes>,
+    /// TRACK 26 S4c — EVERY ADMITTED CLAIM OF FACTORISATION, keyed by its
+    /// coordinates written out: the task's citation, the train pair, the
+    /// voice and the motion (`server::factorisation`). Recorded, never
+    /// paid; volatile, as the routes are.
+    factorisations: Keyed<()>,
 }
 
 /// A TASK'S IDENTITY IS ITS CONTENT (law 2; MU-SENSING §6; track 26 S2):
@@ -146,7 +151,31 @@ impl TaskRegistry {
             intake_cursor: 0,
             intake_done: false,
             routes: Keyed::new(),
+            factorisations: Keyed::new(),
         }
+    }
+
+    /// RECORD AN ADMITTED CLAIM OF FACTORISATION (track 26 S4c): under the
+    /// task's citation, the train pair, the voice and the motion, written
+    /// out. A claim admitted again records nothing new; a citation this
+    /// book does not hold records nothing, as does a motion that does not
+    /// write.
+    pub fn record_factorisation(&mut self, act: &crate::anastome::dialogue::FactorisationAct) {
+        if !self.by_id.contains(&act.task) {
+            return;
+        }
+        let mut key = act.task.to_vec();
+        crate::transducer::address::put_key_count(&mut key, act.pair);
+        key.extend_from_slice(&act.voice);
+        if crate::anastome::dialogue::put_motion(&mut key, &act.motion).is_some() {
+            self.factorisations.insert(key, ());
+        }
+    }
+
+    /// The admitted claims of factorisation recorded under a task's
+    /// citation.
+    pub fn factorisations_of(&self, id: &[u8]) -> usize {
+        self.factorisations.fibre_at(id).map_or(0, |f| f.count())
     }
 
     /// The routes kept for a task, by its citation.

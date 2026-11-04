@@ -1,3 +1,4 @@
+mod factorisation;
 pub(crate) mod fixtures;
 mod registry;
 mod route;

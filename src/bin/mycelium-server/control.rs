@@ -194,6 +194,26 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
         answer(s, reply);
         return true;
     }
+    if kind == dialogue::ACT_FACTORISATION {
+        // MU-SENSING §3.9; track 26 S4c — A CLAIM OF FACTORISATION, judged
+        // by reconstruction on the posted pair it names, at any rank, off
+        // the registry's lock; an admitted claim is recorded and pays
+        // nothing (`mycelium::server::factorisation`). A frame that does not
+        // read whole is not answered, as a solve's is not.
+        let Some(act) = dialogue::decode_factorisation(&frame.body) else { return true };
+        let task = {
+            let Ok(reg) = context.registry.lock() else { return true };
+            reg.task(&act.task).cloned()
+        };
+        let verdict = mycelium::server::factorisation::judge_factorisation(task.as_ref(), &act);
+        if verdict == dialogue::FactorVerdict::Admitted {
+            if let Ok(mut reg) = context.registry.lock() {
+                reg.record_factorisation(&act);
+            }
+        }
+        answer(s, WireFrame { lane: frame.lane, body: dialogue::encode_factor_verdict(&verdict) });
+        return true;
+    }
     if kind == dialogue::ACT_SOLVE {
         let Some(dialogue::SolveAct { voice: svoice, task: cite, rule: rule_bytes, ground: stated, signed, .. }) =
             dialogue::decode_solve(&frame.body)
