@@ -31,6 +31,7 @@
 //! 2026-10-21). Joint reads compare exact values.
 
 pub mod frame;
+pub mod passage;
 pub mod shares;
 #[cfg(test)]
 mod tests;
@@ -38,7 +39,8 @@ mod tests;
 /// EVERY SHELL THIS CRATE HOSTS, `(law id, version)`, each read off the
 /// shell's own `LAW_ID` and `LAW_VERSION`: the rows the shared-law table
 /// (MU-EQUATIONS, *Shared laws*) names the forms by.
-pub const LAW_IDS: &[(&str, u16)] = &[(frame::LAW_ID, frame::LAW_VERSION), (shares::LAW_ID, shares::LAW_VERSION)];
+pub const LAW_IDS: &[(&str, u16)] =
+    &[(frame::LAW_ID, frame::LAW_VERSION), (passage::LAW_ID, passage::LAW_VERSION), (shares::LAW_ID, shares::LAW_VERSION)];
 
 /// The exact rationals every form computes over (the same object as
 /// mycelium's own `core::Q`).
