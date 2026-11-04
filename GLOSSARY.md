@@ -173,7 +173,7 @@ senses that kernel builds for it.
 
 | Term | Meaning |
 |---|---|
-| **μ** | The four-lane currency, minted and burned only by court verdicts and never summed across lanes. |
+| **μ** | The four-lane currency, minted and burned only by court verdicts and never summed across lanes. It is the metabolic cost of traversal: what moving through the field costs, paid as the share of the frame a change covers, never as a measure of what a perception means (MU-SENSING §3.7). |
 | **Lanes S, G, T, H** | The four dimensions of value and of the clock: **S** spatial (boosts and dilations), **G** gauge (hue cycles and moves), **T** temporal (null flux), **H** holonomic (turns: a circuit's composite around a ring). In a ledger fold they read as matter, value, duration and information (MU-LEXICON §3.1). |
 | **Chronometric anchor** | A universe's signed statement of where it is in its own time against the one clock: its ledger entry (78.154), pairing its cycle `u` with a full final point and a commitment to its state, chained to the previous anchor. A universe's anchors are its **time book**, kept by the hypha (MU-CHRONOMETRY §3, **Built**). |
 | **Bridge keeper** | The one keeper of a universe's internal clocks whose time is paired with the network's: the keeper that writes its anchors (MU-CHRONOMETRY §2.1). |

@@ -475,10 +475,12 @@ bubble (a thought bubble), renamed 2026-11-02.
   holonomy, a winding, a precession) on the same field carrier its
   physics' shells use (§6; Concordance 2.10), which is why one carrier
   serves both.
-- **μ stays a share of the frame** in this release: the share of the
-  sample's sites a change covers (78.170 O1). Measuring μ by the
-  holonomy a change sweeps awaits a ruling of its own, because it changes
-  what is paid.
+- **μ is the metabolic cost of traversal** (ruled 2026-11-04). It is
+  what moving through the field costs, measured as the share of the
+  sample's sites a change covers (78.170 O1). μ never measures what a
+  perception means: holonomy is content, read and adjudicated, and is
+  never paid. Paying by holonomy would mix perception into the economy,
+  which is a scope leak (§6.1).
 - **One representation across projects.** The field and the physics'
   shells (MU-TOPOLOGY §6; MU-RECURSION D4) are one carrier, standardised
   as the law form LAW-FIELD v1 ([proposal](proposals/78.171-law-field.md);
@@ -789,7 +791,7 @@ exactly. `encode_posted_task` places a raster task's grids, and
 | One field carrier shared by perception and the physics' shells: LAW-FIELD v1 | **Proposed**; to be agreed with the peer kernels | [proposal](proposals/78.171-law-field.md); [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) |
 | **Defect:** spheres built Euclidean, from a squared radius with `e∞` | **Built, refused** by §3.7 and law 11 | `cga/embedding.rs` (`sphere_at`, `on_sphere`), `cga/at_three.rs` (`sphere`) |
 | **Defect:** the well's stage and state as flags, and its volume and potential as scalar counts | **Built, refused** by §3.7 (never scalar) and constraint I | `Well.percept: bool`, `Well.dirty: bool`, `Well.volume`/`potential: [u64; 4]` |
-| μ as the solid angle a change sweeps | **Awaits a ruling** | §3.7 |
+| μ as the metabolic cost of traversal, never a measure of meaning | **Ruled** (2026-11-04); built as the share of the frame | §3.7; 78.170 O1 |
 | The sample as the sensor's only input, of rank `n` | **Built** | `src/transducer/sample.rs` (`Sample`, `Symbol`, `Place`; Track 26, S0) |
 | A corpus's decoder outside `src/`; the core has no `arc` module (a `compile_fail` claim); the hypha, the soak and the client's feed read posted tasks; the SDK re-exports no `Grid` | **Built** (track 26, S1) | `sources/arc-agi/` (`mycelium-source-arc-agi`, binary `mycelium-arc-agi`); `src/anastome/dialogue/percept.rs` (`encode_posted_task`, `decode_posted_task`, `POSTED_TASK`) |
 | The rank-2 raster at intake, named by function: its extents, ground, painted sites, frame fixing and the bridge to the sample, moved from `arc.rs` unchanged | **Built** (track 26, S1) | `src/transducer/raster.rs`; `Task` in `src/transducer/family/train.rs` |

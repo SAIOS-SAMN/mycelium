@@ -6,6 +6,13 @@ such change is named here.
 
 ## Unreleased
 
+### μ is the metabolic cost of traversal (ruled 2026-11-04)
+- μ is what moving through the field costs, paid as the share of the
+  frame a change covers. It is never a measure of meaning: holonomy is
+  content, adjudicated and never paid. The open question of μ by
+  holonomy is withdrawn from MU-SENSING §3.7 and §8, ROADMAP › Now and
+  LAW-FIELD v1. GLOSSARY's μ row states it.
+
 ### Samples of any rank on the wire (track 26, S5; #32)
 - **Network contract**, inside v0.3.0's open break. `WIRE_VERSION` stays
   `0x0200`: no tag carries it yet (v0.3.0-rc.2 is `0x0104`), and every
