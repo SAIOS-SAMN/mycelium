@@ -277,8 +277,8 @@ fn mint_refusal_line_names_arm_proof_kind_demands() {
     assert_eq!(mint_refusal_line(why, &f), "mint refused (integrity): nothing in the form acts [N] demands [creation]");
     for (r, line) in [
         (
-            ObstructionRefusal::MintVertexNotCarried(ObstructionKind::Cover, "a lamina lands on the wrong hue"),
-            "mint refused (carry): a lamina lands on the wrong hue [C] demands [creation]",
+            ObstructionRefusal::MintVertexNotCarried(ObstructionKind::Cover, "a carried site lands on the wrong hue"),
+            "mint refused (carry): a carried site lands on the wrong hue [C] demands [creation]",
         ),
         (ObstructionRefusal::MintLinksWithoutDemand, "mint refused (demands): links remain and the form declares no demand [I] demands [creation]"),
         (ObstructionRefusal::MintLinksUndeclared, "mint refused (demands): links undeclared by the form's demands [I] demands [creation]"),

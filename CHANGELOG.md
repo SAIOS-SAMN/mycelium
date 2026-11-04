@@ -6,6 +6,96 @@ such change is named here.
 
 ## Unreleased
 
+### Samples of any rank on the wire (track 26, S5; #32)
+- **Network contract**, inside v0.3.0's open break. `WIRE_VERSION` stays
+  `0x0200`: no tag carries it yet (v0.3.0-rc.2 is `0x0104`), and every
+  layout change of the break rides that one version.
+  - **Samples.** One sample is `[rank u16][extent u16 · rank][width
+    u16][place count u16][coordinate i64 · count][symbols, w · ∏ eᵢ
+    bytes]`, at its position `[split, pair, member]`
+    (`dialogue::samples`: `push_sample`, `read_sample`, `position`).
+    A field passed or a count past the machine word is refused by name
+    (`SampleWire`), never widened.
+  - **The task envelope** carries samples: `encode_task_envelope(citation,
+    train, tests)` takes samples, and `TaskEnvelope` (moved to
+    `dialogue::samples`) holds them. `TaskEnvelope::of_rasters` places a
+    raster task; `TaskEnvelope::rasters` (`TaskRasters`) reads rank 2 at
+    width 1 and refuses any other sample by name (`NotRaster`).
+  - **The posted task file** holds samples (`PostedTask`,
+    `encode_posted_samples`, `decode_posted_samples`; a withheld output
+    marked present or absent). `encode_posted_task` and
+    `decode_posted_task` keep their raster signatures at the intake.
+    Re-decode a corpus directory.
+  - **The solve act's outputs** are samples (`SolveAct.outputs`), and the
+    act is signed as `mycelium solve v3`; a v2 signature no longer
+    verifies. `spoken_outputs` places a mind's rasters.
+  - **The speech act** states, per sentence, the ground its claim was
+    spoken under (`Spoken.ground`, `SpeechAct.grounds`; `carries` bit 2,
+    then `[len u32][symbol]`, never empty). The court hears each sentence
+    under it, refused by name where it is no candidate
+    (`REFUSE_GROUND_NO_CANDIDATE`, `REFUSE_GROUND_NOT_ONE_SYMBOL`), and no
+    longer deduces a ground on the speech path; a waiting sentence keeps
+    its ground for the re-hearing.
+  - **The seat's solve call** carries the outputs as samples
+    (`encode_samples`) and the stated ground as a `Bytes` argument
+    between them and the steps (`seat_mind::task::solve_args`).
+  - **`e_∅` is a typed record.** A fibre relation is
+    `element::FibreRelation` (rows on the symbols, records apart).
+    A colour word's description writes the records as a section after
+    its remainder, only where it has one, so every other word's address
+    is unchanged. The law register's wire writes `Transition.hues` as the
+    rows, then the records (`physics::laws::codec`). `RESERVOIR` is
+    retired; the byte 10 is a symbol like any other.
+  - `push_grid`, `read_grid`, `encode_grids` and `decode_grids` are
+    removed.
+- **Task identity** (`registry::task_address_of`) is the posted samples'
+  content at any rank and width. `task_address` wrote rank and width
+  since S2 (`Sample::put_content`), so no task address changes.
+  `Enclosed::put_content` now writes its rank and width.
+- **SDK:** `mycelium_sdk::task` re-exports `encode_task_envelope`,
+  `TaskRasters`, `NotRaster`, the sample codec (`push_sample`,
+  `read_sample`, `encode_samples`, `decode_samples`, `spoken_outputs`,
+  `SampleWire`, `position`, `Split`, `Member`), `Sample`, `Place`,
+  `SampleRefusal`, and the posted task (`PostedTask`,
+  `encode_posted_samples`, `decode_posted_samples`). `encode_grids` and
+  `decode_grids` leave the surface. The conformance codec rows read a
+  rank-3 envelope and a rank-3 solve output back exactly.
+- **Tests:** court fixtures that spoke under a ground that is no
+  candidate of their family now frame the family in it or state the
+  ground they read (`fixtures::speaker_ground`).
+- **Stopped:** a link of rank `n`. The three `Link` aliases are one type
+  (`sentence::Link`), but the link stays `(i64, i64, u8, u8)` until the
+  transducer's chain carriers move to rank `n` (S4).
+- Claims: `task_round_trips_samples_of_rank_n`,
+  `extent_past_its_field_is_refused_never_widened`,
+  `symbol_bytes_overflow_is_refused_by_name`,
+  `task_identity_writes_rank_and_width`,
+  `speech_states_its_ground_and_court_reconstructs_under_it`,
+  `family_using_symbol_ten_reads_its_colour_word`.
+
+### The two wire names (track 11, N7; #55)
+- **Network contract**, inside v0.3.0's open break (wire `0x0200`): the
+  act byte `0x38` is unchanged, and no layout moves. The names and two
+  strings change:
+  - `ACT_ROWS` → `ACT_ENTRIES` (ledger entries); `Action::Rows` →
+    `Action::Entries`, its name `"rows"` → `"entries"`, so the SDK's
+    `ACT_TABLE` and the served conformance statement name the act
+    `entries`.
+  - `RowsRequest` → `EntriesRequest`; `encode_rows_request` /
+    `decode_rows_request` → `encode_entries_request` /
+    `decode_entries_request`; `encode_rows_reply` / `decode_rows_reply` →
+    `encode_entries_reply` / `decode_entries_reply`; `ROWS_REPLY_HEADER`
+    → `ENTRIES_REPLY_HEADER`; the hypha's `judge/rows.rs` →
+    `judge/entries.rs`.
+  - `REFUSE_RULE_OFF_LATTICE` → `REFUSE_RULE_OFF_SUBSTRATE`, which reads
+    "a carried or copied site lands off the substrate".
+  - The vertex-body refusal strings (`verdict/body.rs` `FAIL_*`) name a
+    carried site where they said "lamina", for example "a carried site
+    lands on the wrong hue".
+- SDK: `mycelium_sdk::readings::{encode_entries_request,
+  decode_entries_reply}` replace the `rows` pair.
+- Claim: `entries_act_round_trips`.
+
 ### Retired terms and person words (track 11, N4; #55)
 - Names only: behaviour, wire bytes, refusal strings, ledger layout and
   task addresses are unchanged.

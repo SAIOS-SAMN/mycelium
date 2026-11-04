@@ -693,12 +693,23 @@ pub fn of_versor(v: Versor) -> Element {
 }
 
 /// THE LETTERS OF A CONNECTION as read off its description: the word,
-/// the A4 carriage, and the gauge map.
+/// the A4 carriage, the gauge map, and — a colour word's (track 26 S5) —
+/// the records its fibre relation keeps in e_∅, a typed section apart from
+/// the gauge map's symbols (`FibreRelation`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Letters {
     pub spelling: crate::transducer::alphabet::Spelling,
     pub carriage: Versor,
     pub sigma: Vec<(u8, u8)>,
+    pub records: Vec<u8>,
+}
+
+impl Letters {
+    /// The fibre relation the letters carry: the gauge map's rows and the
+    /// records in e_∅ (78.58).
+    pub fn fibre(&self) -> super::FibreRelation {
+        super::FibreRelation { rows: self.sigma.clone(), records: self.records.clone() }
+    }
 }
 
 impl Element {
@@ -738,7 +749,21 @@ impl Element {
             pos += 2;
         }
         take_key_bytes(b, &mut pos)?;
-        Some((Letters { spelling, carriage, sigma }, pos))
+        // TRACK 26 S5 — A CONNECTION'S RECORD SECTION (`colour_word`): the
+        // records in e_∅ follow the remainder where there are any, `[n][c·n]`
+        // with n ≥ 1, strictly ascending, ending the description. Absent,
+        // nothing follows. A translation's sections follow its head instead
+        // (`translation_sections`), so only a connection reads one.
+        let mut records = Vec::new();
+        if tag == CONNECTION_TAG && pos < b.len() {
+            let m = take_key_count(b, &mut pos)?;
+            records = b.get(pos..pos + m)?.to_vec();
+            pos += m;
+            if m == 0 || pos != b.len() || !records.windows(2).all(|w| w[0] < w[1]) {
+                return None;
+            }
+        }
+        Some((Letters { spelling, carriage, sigma, records }, pos))
     }
 
     /// Tape re-derives vertex: the geodesic of the stored word is the same

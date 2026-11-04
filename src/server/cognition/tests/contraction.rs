@@ -17,8 +17,9 @@ fn voice_family() -> Vec<TrainPair> {
     // H1, 70.4 — two bodies are two SEPARATED regions, not two touching
     // colours: `"11200"` is one body carrying two hues once hue moves to
     // the fibre. The gap restores the fixture's intent, two bodies both
-    // translating by `+2`.
-    vec![(digits(&["1100200"]), digits(&["0011002"]))]
+    // translating by `+2`. Framed in 0, so 0 is the family's ground
+    // (MU-SENSING §3.4) and the voice's claim states it (§6.2, track 26 S5).
+    vec![(digits(&["0000000", "1100200", "0000000"]), digits(&["0000000", "0011002", "0000000"]))]
 }
 
 /// The court's copy of the task: the lone site lands painted another hue,
@@ -26,8 +27,8 @@ fn voice_family() -> Vec<TrainPair> {
 fn court_family() -> Vec<TrainPair> {
     // The same scene as `voice_family` with the lone site landing painted
     // another hue, so the voice's word for it does not carry its body
-    // there. Separated for the same reason (H1, 70.4).
-    vec![(digits(&["1100200"]), digits(&["0011003"]))]
+    // there. Separated for the same reason (H1, 70.4), framed alike.
+    vec![(digits(&["0000000", "1100200", "0000000"]), digits(&["0000000", "0011003", "0000000"]))]
 }
 
 /// The voice's pair form for a one-pair family, measured over it and
@@ -82,7 +83,9 @@ fn hear_speech_verifies_contraction_before_reconstruction() {
     // Each speech frame is its own act: its root, one stroke.
     // 78.153: a stroke that holds the frame's replays.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
-    let first = k.hear_speech(voice, task.as_bytes(), &[(s.clone(), None)], &mut frame).expect("heard");
+    // The voice states the ground it read its family on (MU-SENSING §6.2).
+    let stated = [super::fixtures::speaker_ground(&f_v)];
+    let first = k.hear_speech(voice, task.as_bytes(), &[(s.clone(), None)], &stated, &mut frame).expect("heard");
     let [Adjudication::Refused { kind, at, receipt }] = first.as_slice() else {
         panic!("the second word does not carry its body on the court's family, got {first:?}");
     };
@@ -105,7 +108,7 @@ fn hear_speech_verifies_contraction_before_reconstruction() {
     // 78.153: a stroke that holds the frame's replays.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let forged = k
-        .hear_speech(voice, task.as_bytes(), &[(other.clone(), Some(certificate.clone()))], &mut frame)
+        .hear_speech(voice, task.as_bytes(), &[(other.clone(), Some(certificate.clone()))], &stated, &mut frame)
         .expect("heard");
     assert!(
         matches!(forged.as_slice(), [Adjudication::Refused { kind: RefusalKind::MalformedComplex, .. }]),
@@ -117,7 +120,7 @@ fn hear_speech_verifies_contraction_before_reconstruction() {
     // 78.153: a stroke that holds the frame's replays.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let second = k
-        .hear_speech(voice, task.as_bytes(), &[(contracted, Some(certificate))], &mut frame)
+        .hear_speech(voice, task.as_bytes(), &[(contracted, Some(certificate))], &stated, &mut frame)
         .expect("heard");
     assert!(
         !matches!(second.as_slice(), [Adjudication::Refused { kind: RefusalKind::MalformedComplex, .. }]),
@@ -151,7 +154,7 @@ fn hear_frame_on_reaches_one_standing_on_two_courts() {
             &vk,
             &task,
             0,
-            &[Spoken { tape: utter.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None }],
+            &[Spoken { tape: utter.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None, ground: super::fixtures::speaker_ground(&f_v) }],
         )
         .expect("the task frames");
         let reply = hear(&mut court1, &frame);
@@ -191,7 +194,7 @@ fn hear_frame_on_reaches_one_standing_on_two_courts() {
         &vk,
         &task,
         0,
-        &[Spoken { tape: utter.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None }],
+        &[Spoken { tape: utter.to_bytes().expect("the record writes"), standing: 0, contraction: cited.clone(), agreement: None, ground: super::fixtures::speaker_ground(&f_v) }],
     )
     .expect("the task frames");
     let reply = hear(&mut court2, &frame);

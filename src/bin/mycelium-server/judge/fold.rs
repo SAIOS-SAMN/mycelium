@@ -2,8 +2,8 @@
 // prefix, re-derives it, co-signs the root, and holds the era.
 //
 //! 47.2 steps 1 and 2 on the proposal's section before anything is
-//! fetched; then the receipts by `ACT_RECEIPTS` and the rows by `ACT_ROWS`
-//! from the home, paged by the frame budget; `Court::verify_fold` on both;
+//! fetched; then the receipts by `ACT_RECEIPTS` and the ledger entries by
+//! `ACT_ENTRIES` from the home, paged by the frame budget; `Court::verify_fold` on both;
 //! the witness's own signed position over the root hash in reply, and the
 //! era filed under the home's key.
 
@@ -239,11 +239,11 @@ fn fetch_rows(
     let mut out = Vec::new();
     let mut cursor = 0u64;
     loop {
-        let (reply, _) = tell_peer_measured(mesh, dest, dialogue::encode_rows_request(witness, home, from, upto, cursor))?;
+        let (reply, _) = tell_peer_measured(mesh, dest, dialogue::encode_entries_request(witness, home, from, upto, cursor))?;
         if crate::transport::is_deferred(&reply) {
             return None;
         }
-        let (total, page) = dialogue::decode_rows_reply(&reply)?;
+        let (total, page) = dialogue::decode_entries_reply(&reply)?;
         if page.is_empty() {
             return (cursor >= total).then_some(out);
         }

@@ -17,6 +17,14 @@ pub fn family_of_pair(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Vec<TrainPa
     vec![(grid_of_painted(a, 0), grid_of_painted(b, 0))]
 }
 
+/// THE GROUND A SPEAKER STATES FOR A FAMILY (MU-SENSING §6.2), as the mind
+/// states it (`Mind::speak_with`): the scope open on the speaker's thread,
+/// else its own reading of the family; one symbol under one ground, none
+/// otherwise.
+pub fn speaker_ground(family: &crate::transducer::family::Family) -> Option<Vec<u8>> {
+    crate::transducer::raster::stated(&crate::transducer::raster::on_ground_of(family, crate::transducer::raster::ground))
+}
+
 /// THE VOICE'S F, IN-PROCESS (50.2, law 8): the rule the form engine
 /// extracts over an empty genome and the sentence it mints for the pair —
 /// with its demand vertices, uttered whole (50.5). `None` where the eyes

@@ -16,7 +16,7 @@ fn digits(rows: &[&str]) -> Grid {
 /// disagree with each other, so no one gauge reproduces all three. The
 /// member formerly kept the first frame's gauge and claimed every frame, and
 /// the court's replay landed the second frame's compartment on hue 3 where 4
-/// stood: "a lamina lands on the wrong hue". Now each claimed frame is one
+/// stood: "a carried site lands on the wrong hue". Now each claimed frame is one
 /// its gauge reproduces, and the court's body check finds nothing to refuse.
 #[test]
 fn extract_rule_claims_only_frames_gauge_reproduces() {

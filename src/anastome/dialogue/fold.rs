@@ -1,5 +1,6 @@
-// 47.3, 45.8 — ACT_FOLD and ACT_ROWS: a home's fold proposal to a witness,
-// the witness's answer, and the ledger rows a witness re-derives over.
+// 47.3, 45.8 — ACT_FOLD and ACT_ENTRIES: a home's fold proposal to a
+// witness, the witness's answer, and the ledger entries a witness
+// re-derives over.
 //
 //! The proposal carries the place the prefix stands on, its root, the
 //! epoch rows the home will write and the home's signed position over the
@@ -115,22 +116,22 @@ pub fn decode_fold_reply(body: &[u8]) -> Option<FoldWitness> {
     }
 }
 
-/// `[ACT_ROWS][voice 32][signer 32][span][cursor u64]`: the rows standing
-/// at `from` (the root the prefix stands on; from the journal's start where
-/// `None`) or later and written before the act at `upto` — the span written
-/// as `put_span` writes a line's.
+/// `[ACT_ENTRIES][voice 32][signer 32][span][cursor u64]`: the ledger
+/// entries standing at `from` (the root the prefix stands on; from the
+/// journal's start where `None`) or later and written before the act at
+/// `upto` — the span written as `put_span` writes a line's.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RowsRequest {
+pub struct EntriesRequest {
     pub voice: [u8; 32],
     pub signer: [u8; 32],
     pub from: Option<Place>,
     pub upto: Place,
-    /// A position among the mesh's rows, so `u64` (STD1 3b's rule).
+    /// A position among the mesh's entries, so `u64` (STD1 3b's rule).
     pub cursor: u64,
 }
 
-pub fn encode_rows_request(voice: &[u8; 32], signer: &[u8; 32], from: Option<Place>, upto: Place, cursor: u64) -> Vec<u8> {
-    let mut out = vec![ACT_ROWS];
+pub fn encode_entries_request(voice: &[u8; 32], signer: &[u8; 32], from: Option<Place>, upto: Place, cursor: u64) -> Vec<u8> {
+    let mut out = vec![ACT_ENTRIES];
     out.extend_from_slice(voice);
     out.extend_from_slice(signer);
     put_span(&mut out, from, upto);
@@ -138,8 +139,8 @@ pub fn encode_rows_request(voice: &[u8; 32], signer: &[u8; 32], from: Option<Pla
     out
 }
 
-pub fn decode_rows_request(body: &[u8]) -> Option<RowsRequest> {
-    if !act_is(body, ACT_ROWS) {
+pub fn decode_entries_request(body: &[u8]) -> Option<EntriesRequest> {
+    if !act_is(body, ACT_ENTRIES) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
@@ -147,25 +148,25 @@ pub fn decode_rows_request(body: &[u8]) -> Option<RowsRequest> {
     let mut p = 65usize;
     let (from, upto) = take_span(body, &mut p)?;
     let cursor = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
-    (p + 8 == body.len()).then_some(RowsRequest { voice, signer, from, upto, cursor })
+    (p + 8 == body.len()).then_some(EntriesRequest { voice, signer, from, upto, cursor })
 }
 
-/// THE ROWS REPLY'S HEADER: `[total u64][m u32]` ahead of the rows.
-/// FORMAT: `encode_rows_reply`'s header, 8 + 4 bytes.
-pub const ROWS_REPLY_HEADER: usize = 8 + 4;
+/// THE ENTRIES REPLY'S HEADER: `[total u64][m u32]` ahead of the entries.
+/// FORMAT: `encode_entries_reply`'s header, 8 + 4 bytes.
+pub const ENTRIES_REPLY_HEADER: usize = 8 + 4;
 
-/// `[total u64][m u32][row…]`: as many of `rows` as fit `budget`. The total
-/// is the span's rows, the mesh's count; `m` is this page's, bounded by the
-/// frame's budget.
+/// `[total u64][m u32][entry…]`: as many of `entries` as fit `budget`. The
+/// total is the span's entries, the mesh's count; `m` is this page's,
+/// bounded by the frame's budget.
 /// `None` where the page's count passes its field — counted as
 /// `encode_cover_page` counts the same shape, checked (3b).
 #[must_use]
-pub fn encode_rows_reply(total: u64, rows: &[Entry], budget: usize) -> Option<Vec<u8>> {
+pub fn encode_entries_reply(total: u64, entries: &[Entry], budget: usize) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     out.extend_from_slice(&total.to_le_bytes());
     out.extend_from_slice(&0u32.to_le_bytes());
     let mut m = 0u32;
-    for r in rows {
+    for r in entries {
         let mut tape = Vec::new();
         r.write(&mut tape);
         if out.len() + tape.len() > budget {
@@ -178,16 +179,16 @@ pub fn encode_rows_reply(total: u64, rows: &[Entry], budget: usize) -> Option<Ve
     Some(out)
 }
 
-pub fn decode_rows_reply(body: &[u8]) -> Option<(u64, Vec<Entry>)> {
+pub fn decode_entries_reply(body: &[u8]) -> Option<(u64, Vec<Entry>)> {
     let total = u64::from_le_bytes(body.get(0..8)?.try_into().ok()?);
     let m = u32::from_le_bytes(body.get(8..12)?.try_into().ok()?) as usize;
     let mut p = 12usize;
     if m > body.len().checked_sub(p)? / Entry::MIN_TAPE {
         return None;
     }
-    let mut rows = Vec::with_capacity(m);
+    let mut entries = Vec::with_capacity(m);
     for _ in 0..m {
-        rows.push(Entry::read(body, &mut p)?);
+        entries.push(Entry::read(body, &mut p)?);
     }
-    (p == body.len()).then_some((total, rows))
+    (p == body.len()).then_some((total, entries))
 }

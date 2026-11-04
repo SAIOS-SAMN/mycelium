@@ -5540,7 +5540,7 @@ when it enters that file. The constants are:
 `REFUSE_PERIOD_UNDERIVED`, `REFUSE_PHANTOM_EDGE`, `REFUSE_PIVOT_INEXACT`,
 `REFUSE_RANK_LOST`, `REFUSE_REBASE_TRIVIAL`, `REFUSE_RECEIPT`,
 `REFUSE_RECEIPT_STALE`, `REFUSE_ROOM`, `REFUSE_RULE_INEXACT`,
-`REFUSE_RULE_NESTED`, `REFUSE_RULE_NOT_ONE`, `REFUSE_RULE_OFF_LATTICE`,
+`REFUSE_RULE_NESTED`, `REFUSE_RULE_NOT_ONE`, `REFUSE_RULE_OFF_SUBSTRATE`,
 `REFUSE_RULE_STILL`, `REFUSE_RULE_TIE`, `REFUSE_RULE_UNFRAMED`,
 `REFUSE_RULE_UNPARTNERED`, `REFUSE_SECTION_TURN_OPEN`,
 `REFUSE_SECTION_TURN_UNREAD`, `REFUSE_SHEET_REPEATED`, `REFUSE_SIGNATURE`,
@@ -7529,7 +7529,7 @@ On the wire: the home proposes with `ACT_FOLD` (0x37) —
 μ⃗ 4×u64)…][47.1 receipt section, payload the root hash]` — to the peers
 with room on some lane, in key order, one per spend of its stroke. The
 witness runs 47.2 steps 1 and 2 on the section, fetches the prefix's
-receipts by `ACT_RECEIPTS` and its ledger rows by `ACT_ROWS` (0x38,
+receipts by `ACT_RECEIPTS` and its ledger entries by `ACT_ENTRIES` (0x38,
 `[voice 32][signer 32][from u64][to u64][cursor u32]` → `[total u32][m
 u32][row…]`, a page of the signer's own rows anchored in the span from
 the cursor), re-derives the receipts as one chain ending at the root and
@@ -15542,7 +15542,7 @@ Specified: a unit larger than one stroke (`spend_unit` reads), such as one pair 
 4. The unbounded paths under the kernel are metered or resumed per item (the fetch, with `class_cursor`; the digest confirmation, with `confirm_cursor`; the rows page, `Treasury::rows_below_page`; the fold head, `ReceiptChain::first_between`; the census, the helicity and the back-fill), and every spent stroke ends as `Unread`, a deferral, a shorter page or a resumed cursor, never a wrong answer.
 5. The shelf carries the court's own reads (`Published::own`: its cover charts, room and bond, voice, ruled cover and head receipt), so the cover page, the digest's cover and ruled root, the syllabus seed, `homes_here` and the fold witness (`Published::verify_fold`) are read off it, lagging the kernel by at most one court stroke (78.151).
 
-The signed position, the keeper tick (78.152), the `ACT_ROWS` rows, the domain acts (78.154) and `why` stay on the kernel. Code: `src/server/court_lock/mod.rs`, `src/bin/mycelium-server/court_lock.rs`, `src/physics/budget.rs`, `src/server/cognition/published/`, `src/economy/fold.rs`, `src/chronometry/chain/mod.rs`; tests `src/server/court_lock/tests/meter.rs`, `src/server/cognition/tests/shelf_reads.rs`.
+The signed position, the keeper tick (78.152), the `ACT_ENTRIES` ledger entries, the domain acts (78.154) and `why` stay on the kernel. Code: `src/server/court_lock/mod.rs`, `src/bin/mycelium-server/court_lock.rs`, `src/physics/budget.rs`, `src/server/cognition/published/`, `src/economy/fold.rs`, `src/chronometry/chain/mod.rs`; tests `src/server/court_lock/tests/meter.rs`, `src/server/cognition/tests/shelf_reads.rs`.
 
 ### Seat wire v1.4
 

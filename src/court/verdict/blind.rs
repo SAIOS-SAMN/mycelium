@@ -154,7 +154,7 @@ fn word_prelude(spoken: &Element) -> Option<Option<&'static str>> {
     // evidence against a family is re-derived
     // where it is heard (`adjudicate_one`), never replayed as a chain.
     if spoken.is_colour_word() {
-        return Some(match spoken.letters().is_some_and(|l| crate::transducer::element::is_fibre_relation(&l.sigma)) {
+        return Some(match spoken.letters().is_some_and(|l| crate::transducer::element::is_fibre_relation(&l.fibre())) {
             true => None,
             false => Some("colour word's relation is not unitary on the fibre and its reservoir"),
         });

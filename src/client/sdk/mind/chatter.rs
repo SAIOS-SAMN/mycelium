@@ -42,9 +42,10 @@ enum Inflow {
     /// A thing said: what was stood, and its rings, each with the vantage
     /// the mind's field reads it from; and the scene it was spoken under —
     /// the family's citation, empty for none (MU-CLIENT §5.4, E1), so what
-    /// the union carries to the court is spoken there too.
-    Say(Element, Vec<Spoken>, Vec<u8>),
-    Wait(Element, Vec<Spoken>, Vec<u8>),
+    /// the union carries to the court is spoken there too; and the ground
+    /// it was spoken under, which that speech states (MU-SENSING §6.2).
+    Say(Element, Vec<Spoken>, Vec<u8>, Option<Vec<u8>>),
+    Wait(Element, Vec<Spoken>, Vec<u8>, Option<Vec<u8>>),
     Clock { k: u64, point: Option<TPoint> },
     Priced(Priced),
     /// What the field UNDERSTOOD of rings another mind said (MU-CLIENT §4.9):
@@ -164,7 +165,15 @@ struct Union {
     crossed: bool,
     /// The scene it was spoken under (E1): agreed, it is spoken there.
     family: Vec<u8>,
+    /// The ground it was spoken under, which the agreed speech states
+    /// (MU-SENSING §6.2, track 26 S5).
+    ground: Option<Vec<u8>>,
 }
+
+/// A LETTER WAITING FOR ITS UNION: the letter, whether it has waited across
+/// one of the mind's returns, the scene it was spoken under (E1) and the
+/// ground (MU-SENSING §6.2).
+type WaitingLetter = (Element, bool, Vec<u8>, Option<Vec<u8>>);
 
 /// ONE THING THIS MIND HEARD AND SAID AGAIN, waiting for the speaker's ACK,
 /// and whether it has waited across one of the mind's returns.
@@ -203,8 +212,9 @@ struct Carrier {
     thoughts: Keyed<Thought>,
     /// Letters stood and said, waiting for a union before the court hears
     /// them (78.161 item 3), with whether each has waited across one of the
-    /// mind's returns and the scene it was spoken under (E1).
-    waiting: Keyed<(Element, bool, Vec<u8>)>,
+    /// mind's returns, the scene it was spoken under (E1) and the ground
+    /// (MU-SENSING §6.2).
+    waiting: Keyed<WaitingLetter>,
     /// Where what the conversation transduced goes to the mind's field.
     field: FieldLink,
     /// THE ANSWERS THIS MIND GAVE (MU-CLIENT §5.3): keyed by the question's
@@ -1023,12 +1033,15 @@ impl Mind {
         if self.chat.is_none() {
             return;
         }
-        let said = (e.clone(), offered(e), family.to_vec());
+        // The ground open where it is said (MU-SENSING §6.2): the speech
+        // its union carries to the court states it.
+        let ground = crate::transducer::raster::stated(&crate::transducer::raster::ground());
+        let said = (e.clone(), offered(e), family.to_vec(), ground);
         let mut at = vec![1u8];
         at.extend_from_slice(e.address().as_bytes());
         self.hold_for_return(&at, family, move |entity| {
             if let Some(chat) = entity.chat.as_ref() {
-                let _ = chat.to.send(Inflow::Say(said.0, said.1, said.2));
+                let _ = chat.to.send(Inflow::Say(said.0, said.1, said.2, said.3));
             }
         });
     }
@@ -1046,8 +1059,9 @@ impl Mind {
         }
         let tu = self.now_tu();
         let _ = self.stand(std::slice::from_ref(e), tu, family);
+        let ground = crate::transducer::raster::stated(&crate::transducer::raster::ground());
         if let Some(chat) = self.chat.as_ref() {
-            let _ = chat.to.send(Inflow::Wait(e.clone(), offered(e), family.to_vec()));
+            let _ = chat.to.send(Inflow::Wait(e.clone(), offered(e), family.to_vec(), ground));
         }
         true
     }
@@ -1105,13 +1119,13 @@ impl Carrier {
     fn take(&mut self, inflow: Inflow) {
         match inflow {
             Inflow::Frame(f) => self.hear_frame(&f),
-            Inflow::Say(e, words, family) => self.say(&e, words, family),
-            Inflow::Wait(e, words, family) => {
+            Inflow::Say(e, words, family, ground) => self.say(&e, words, family, ground),
+            Inflow::Wait(e, words, family, ground) => {
                 let address = e.address();
                 if !self.waiting.contains(address.as_bytes()) {
-                    self.waiting.insert(&address, (e.clone(), false, family.clone()));
+                    self.waiting.insert(&address, (e.clone(), false, family.clone(), ground.clone()));
                 }
-                self.say(&e, words, family);
+                self.say(&e, words, family, ground);
             }
             Inflow::Clock { k, point } => {
                 // The mind's K moves only by its returns, and is told only as
@@ -1162,7 +1176,7 @@ impl Carrier {
                     return;
                 }
                 u.shared = true;
-                let (agreed, family) = (u.said.clone(), u.family.clone());
+                let (agreed, family, ground) = (u.said.clone(), u.family.clone(), u.ground.clone());
                 self.waiting.remove(&said);
                 #[cfg(test)]
                 if let Ok(mut a) = self.agreed.lock() {
@@ -1182,7 +1196,7 @@ impl Carrier {
                 }
                 // Posted on the conversation's court carrier (R6); counted
                 // agreed where the court's answer lands.
-                let _ = self.speak_agreed(&agreed, Some(&frame), &family);
+                let _ = self.speak_agreed(&agreed, Some(&frame), &family, ground.as_deref());
             }
         }
     }
@@ -1212,7 +1226,7 @@ impl Carrier {
     /// SAY WHAT THE MIND STOOD: its rings, each with the vantage the field
     /// offered it from, to every mind at the rendezvous. Said once; its union
     /// is then read.
-    fn say(&mut self, e: &Element, words: Vec<Spoken>, family: Vec<u8>) {
+    fn say(&mut self, e: &Element, words: Vec<Spoken>, family: Vec<u8>, ground: Option<Vec<u8>>) {
         let address = e.address();
         if self.union.contains(address.as_bytes()) {
             return;
@@ -1233,7 +1247,7 @@ impl Carrier {
             _ => None,
         };
         let Some(frame) = self.frame(Said::Say { said: address.as_bytes().to_vec(), words: words.clone(), evidence }) else { return };
-        self.union.insert(&address, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, crossed: false, family });
+        self.union.insert(&address, Union { said: e.clone(), spoken: words, acked: Keyed::new(), shared: false, crossed: false, family, ground });
         self.said.insert(&address, ());
         self.send(&frame, None);
     }
@@ -1428,7 +1442,7 @@ impl Carrier {
     /// never waited on: a court slow to answer holds that carrier and never
     /// the conversation. The court's reply is its own; the sentence's
     /// standing returns to the mind through the syllabus.
-    fn speak_agreed(&self, e: &Element, agreement: Option<&[u8]>, family: &[u8]) -> std::io::Result<()> {
+    fn speak_agreed(&self, e: &Element, agreement: Option<&[u8]>, family: &[u8], ground: Option<&[u8]>) -> std::io::Result<()> {
         let Some(tape) = e.to_bytes() else {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "the sentence's record does not write"));
         };
@@ -1437,6 +1451,8 @@ impl Carrier {
             standing: crate::transducer::stalk::Standing::Stood.byte(),
             contraction: None,
             agreement: agreement.map(<[u8]>::to_vec),
+            // MU-SENSING §6.2 — the ground it was said under.
+            ground: ground.map(<[u8]>::to_vec),
         }];
         let tu = self.point.as_ref().map_or(0, |p| p.h);
         // MU-CLIENT §5.4 (E1) — under the scene it was spoken under, so the
@@ -1468,10 +1484,10 @@ impl Carrier {
         for k in spent {
             self.union.remove(&k);
         }
-        let due: Vec<Vec<u8>> = self.waiting.scoped().filter(|(_, (_, crossed, _))| *crossed).map(|(k, _)| k).collect();
+        let due: Vec<Vec<u8>> = self.waiting.scoped().filter(|(_, (_, crossed, _, _))| *crossed).map(|(k, _)| k).collect();
         for k in due {
-            if let Some((letter, _, family)) = self.waiting.remove(&k) {
-                let _ = self.speak_agreed(&letter, None, &family);
+            if let Some((letter, _, family, ground)) = self.waiting.remove(&k) {
+                let _ = self.speak_agreed(&letter, None, &family, ground.as_deref());
             }
         }
         for k in self.thoughts.scoped().map(|(k, _)| k).collect::<Vec<_>>() {

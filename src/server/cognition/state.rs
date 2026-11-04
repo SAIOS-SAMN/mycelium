@@ -7,6 +7,12 @@
 
 use super::*;
 
+/// ONE SENTENCE WAITING ON A CITED FORM (`Court::awaiting`): the voice that
+/// spoke it, the task it was bound to, the tape, and the ground its claim
+/// was heard under (MU-SENSING §6.2, track 26 S5).
+pub(crate) type AwaitingSentence =
+    ([u8; 32], crate::transducer::address::Address, Element, crate::transducer::family::transduce::Ground<u8>);
+
 /// The court's evolving state: the installed generator basis + the germ
 /// admission ledger + the Čech peer table.
 #[derive(Default)]
@@ -573,9 +579,10 @@ pub struct Court {
     /// sentence is not refused: it waits here, and `rehear_awaiting`
     /// hears it again when that address is ruled. Without this the voice
     /// received a refusal and sealed the address, losing the sentence
-    /// permanently for being early.
-    pub(crate) awaiting:
-        crate::network::nerve::Keyed<Vec<([u8; 32], crate::transducer::address::Address, Element)>>,
+    /// permanently for being early. Each entry keeps the ground its claim
+    /// was heard under (MU-SENSING §6.2, track 26 S5), so the re-hearing
+    /// opens the same ground and deduces none.
+    pub(crate) awaiting: crate::network::nerve::Keyed<Vec<AwaitingSentence>>,
     /// E2, 26 — THE INVERSE OF `discoverers`: voice → the addresses that
     /// voice discovered. `use_credit` asks "which forms are this voice's",
     /// and `discoverers` answers the other question; without this carrier

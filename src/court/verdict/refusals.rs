@@ -119,16 +119,22 @@ pub const REFUSE_FIBRE_UNWITNESSED: &str = "colour word's fibre relation is not 
 /// meets a tie its order does not name (Concordance 1.10: held or refused,
 /// never broken silently); a predicate reads a coordinate that is not exact
 /// (a radius no rational, a μ lane); a crop or a copy's template selects no
-/// single body; a carried or copied cell lands between cells; a line names
+/// single body; a carried or copied site lands between sites; a line names
 /// no ray. Each is a claim the pair cannot re-derive: I.
 pub const REFUSE_RULE_TIE: &str = "a rank the rule names meets a tie its order does not name";
 pub const REFUSE_RULE_INEXACT: &str = "a predicate reads a coordinate that is not exact";
 pub const REFUSE_RULE_NOT_ONE: &str = "a crop or a copy's template selects no single body";
-pub const REFUSE_RULE_OFF_LATTICE: &str = "a carried or copied cell lands off the lattice";
+pub const REFUSE_RULE_OFF_SUBSTRATE: &str = "a carried or copied site lands off the substrate";
 pub const REFUSE_RULE_STILL: &str = "a created line names no ray";
 pub const REFUSE_RULE_NESTED: &str = "an act on parts names another act on parts";
 pub const REFUSE_RULE_UNFRAMED: &str = "the input has not the frame the act names";
 pub const REFUSE_RULE_UNPARTNERED: &str = "a hue read off a partner finds no one touched body of one hue";
+/// MU-SENSING §6.2 (track 26 S5) — A CLAIM'S STATED GROUND THE COURT DOES
+/// NOT RECONSTRUCT UNDER (`cognition::stated_ground`): not one symbol at
+/// the task's width, or no candidate of the task's ground by the three
+/// conditions of §3.4. No other ground is read in its place: I.
+pub const REFUSE_GROUND_NOT_ONE_SYMBOL: &str = "the stated ground is not one symbol of the task";
+pub const REFUSE_GROUND_NO_CANDIDATE: &str = "the stated ground is no candidate of the task's ground";
 /// 78.153, defect 4 of the lock audit — A CYCLE OF CITATIONS: a cited form
 /// reached again while it is still being spoken. The nerve admits mutual
 /// citation (a posetal height forbade every 2-simplex), and no speech of a
@@ -187,10 +193,10 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
         REFUSE_DERIVATION | REFUSE_FACE | REFUSE_RANK_LOST | REFUSE_PIVOT_INEXACT | REFUSE_INFLATED_YIELD
         | REFUSE_LETTER_WITNESS | REFUSE_NOT_CONTRACTION | REFUSE_PERIOD_UNDERIVED => O::Integrity,
         REFUSE_REBASE_TRIVIAL | REFUSE_UNFOLD_STILL | REFUSE_ORBIT_STILL => O::Integrity,
-        REFUSE_RULE_TIE | REFUSE_RULE_INEXACT | REFUSE_RULE_NOT_ONE | REFUSE_RULE_OFF_LATTICE | REFUSE_RULE_STILL | REFUSE_RULE_NESTED | REFUSE_RULE_UNFRAMED | REFUSE_RULE_UNPARTNERED => {
+        REFUSE_RULE_TIE | REFUSE_RULE_INEXACT | REFUSE_RULE_NOT_ONE | REFUSE_RULE_OFF_SUBSTRATE | REFUSE_RULE_STILL | REFUSE_RULE_NESTED | REFUSE_RULE_UNFRAMED | REFUSE_RULE_UNPARTNERED => {
             O::Integrity
         }
-        REFUSE_CITATION_CYCLE => O::Integrity,
+        REFUSE_CITATION_CYCLE | REFUSE_GROUND_NOT_ONE_SYMBOL | REFUSE_GROUND_NO_CANDIDATE => O::Integrity,
         REFUSE_UNREAD => O::NoQuestion,
         REFUSE_ROOM | REFUSE_WITNESS_ROOM | REFUSE_WITNESS_DEPENDENT | REFUSE_FOLD_OPEN | REFUSE_FOLD_INEXACT => {
             O::Integrity

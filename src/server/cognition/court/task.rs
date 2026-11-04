@@ -328,6 +328,17 @@ pub enum StatedGroundRefusal {
     NoCandidate,
 }
 
+impl StatedGroundRefusal {
+    /// The refusal's reason as the court names it, on the solve and the
+    /// speech alike (track 26 S5).
+    pub fn reason(self) -> &'static str {
+        match self {
+            StatedGroundRefusal::NotOneSymbol => crate::court::verdict::REFUSE_GROUND_NOT_ONE_SYMBOL,
+            StatedGroundRefusal::NoCandidate => crate::court::verdict::REFUSE_GROUND_NO_CANDIDATE,
+        }
+    }
+}
+
 /// THE GROUND A CLAIM IS RECONSTRUCTED UNDER: the ground the claim states,
 /// read against the task as a candidate (`Ground::candidacies`, the three
 /// conditions of MU-SENSING §3.4 on the task's train pairs), or refused by

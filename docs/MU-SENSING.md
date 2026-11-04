@@ -151,8 +151,17 @@ is a **gauge transformation**, and the percept is the same under it. So:
     they name. Permutations, cycles and orbits are read over the symbols
     a map names. The erasure act maps the family's own `Σ` onto its
     ground, and the rule language composes hue maps over the painted
-    symbols they name. The tape's record byte remains (§8), until track
-    26 S5 carries `e_∅` as a typed record tag.
+    symbols they name.
+  - **Built (track 26, S5).** `e_∅` travels as a typed record, outside
+    the symbols' bytes: a fibre relation is `element::FibreRelation`, its
+    rows on the symbols and its records (the merged symbols whose
+    distinction rotates into `e_∅`) a list of their own. A word's
+    description writes the records as a section after its remainder,
+    present only where there is one, and the law register's wire
+    (`physics::laws::codec`, `Transition.hues`) writes them after the
+    rows. `RESERVOIR = 10` is retired: every byte is a symbol, so a family
+    whose symbols include the byte 10 has its colour word (claim
+    `family_using_symbol_ten_reads_its_colour_word`).
 - **Order and magnitude** enter only where the source declares them, as a
   typed axis of the fibre. A brightness or a temperature is an example of
   each. Without a declaration, symbols are compared only for equality.
@@ -618,6 +627,43 @@ claims as exact content, and it admits a claim by reconstruction
     `s / eᵢ`), so it is bounded by that extent's field and needs no
     limit of its own.
 
+**Built (track 26, S5; `src/anastome/dialogue/samples.rs`).** One sample
+is written `[rank u16][extent u16 · rank][width u16][place count
+u16][coordinate i64 · count][symbols, w · ∏ eᵢ bytes]`
+(`push_sample`, `read_sample`):
+- A rank, an extent, a width or a place count past its field is refused
+  by name (`SampleWire::RankPastField`, `ExtentPastField`,
+  `WidthPastField`, `PlacePastField`), and nothing is written. Claim
+  `extent_past_its_field_is_refused_never_widened`.
+- The reader counts `∏ eᵢ` and `w · ∏ eᵢ` with checked arithmetic and
+  refuses a count past the machine word by the sample's own name
+  (`SampleRefusal::SitesOverflow`, `BytesOverflow`) before it reads or
+  allocates; a count the bytes do not carry is `Short`. Claim
+  `symbol_bytes_overflow_is_refused_by_name`.
+- A sample's place is its position in the family, `[split, pair,
+  member]` (`samples::position`). Every reader refuses a place other than
+  its position (`PlaceOffPosition`), so a family has one writing.
+- The task envelope (`encode_task_envelope`, `TaskEnvelope`), the posted
+  task (`encode_posted_samples`, `PostedTask`) and a solve's outputs
+  (`encode_solve_spoken`, `SolveAct.outputs`; `encode_samples` for the
+  seat's solve call) carry samples, read back exactly at ranks 1 to 4
+  and widths 1, 2 and 4 (claim `task_round_trips_samples_of_rank_n`).
+- The mind and the court read rasters until track 26 S4 retires the
+  raster carrier: `TaskEnvelope::rasters` and `PostedTask::rasters`
+  bridge rank 2 at width 1 and refuse any other sample by name
+  (`NotRaster`), carried exactly but not read.
+- **Task identity** (`registry::task_address_of`) writes each posted
+  sample's rank, extents, width, place and symbols, so it is lossless
+  across ranks and widths; a raster task's address is its samples'
+  (claim `task_identity_writes_rank_and_width`). Since S2 the address
+  already wrote rank and width (`Sample::put_content`), so no address
+  changes in S5. The frame's own content (`Enclosed::put_content`) now
+  writes its rank and width as well.
+- The solve act is signed as `mycelium solve v3` (its outputs moved
+  layout). `WIRE_VERSION` stays `0x0200`: no tag carries `0x0200` yet
+  (v0.3.0-rc.2 is `0x0104`), and every layout change of v0.3.0's break
+  rides that one version.
+
 ### 6.1 Scope separation (ruled 2026-11-03)
 
 Each of three scopes owns a set of readings, and no reading crosses into
@@ -647,7 +693,8 @@ another scope:
 A claim (the solve act) states the ground it was spoken under, as an
 optional field: one symbol at the source's width, or absent. The field
 was added in track 26 S2, inside wire 0x0200's ruled break, with the act
-signed as `mycelium solve v2` (`dialogue::encode_solve_spoken`,
+signed as `mycelium solve v2`, and `v3` since S5 carried its outputs as
+samples (`dialogue::encode_solve_spoken`,
 `SolveAct.ground`). The stated ground is part of the claim, never part of
 the task. A tape entry would make it part of the form's identity, which is
 why the act carries it instead.
@@ -663,6 +710,23 @@ or searches for a ground of its own (`cognition::stated_ground`):
   symbol of the task".
 - **None stated:** the claim is reconstructed under no ground
   (`Ground::None`).
+
+**Speech and the seat's solve call state theirs** (track 26 S5). Each
+sentence of a speech act carries an optional stated ground (`Spoken.ground`,
+`SpeechAct.grounds`; `carries` bit 2, then `[len u32][symbol]`, never
+empty). The court hears each sentence under it (`Court::hear_speech`): the
+stated ground is read against the court's copy of the task's family
+(`stated_ground`) and opened for the whole adjudication, or the sentence
+is refused by name (`REFUSE_GROUND_NO_CANDIDATE`,
+`REFUSE_GROUND_NOT_ONE_SYMBOL`). A sentence stating none is heard under no
+ground, and a sentence waiting on a cited form keeps the ground it was
+heard under for its re-hearing. The court-side deduction on the speech
+path is removed: every reader inside the adjudication sees the opened
+ground. The mind states the scope open on its thread, else its own
+reading of the family it speaks under (§6.1). The seat's solve call
+carries the stated ground as a `Bytes` argument between the outputs and
+the steps (`seat_mind::task::solve_args`). Claim
+`speech_states_its_ground_and_court_reconstructs_under_it`.
 
 ## 7. Who owns a source's code
 
@@ -700,11 +764,13 @@ core; the core never depends on it. It owns:
 
 The posted task (`<name>.task`, `dialogue::encode_posted_task`) is the
 source-neutral form a hypha's corpus directory, a client's feed and the
-soak read, so none of them parses a dataset's format. It is the work
-envelope's own codec with the withheld test outputs added:
-`[nt u8][(input, output)·nt][nx u8][(input, output)·nx]`, each raster as
-the envelope writes it. It holds decoded values, exactly; S5 replaces it
-with samples of rank `n` together with the envelope.
+soak read, so none of them parses a dataset's format. Since track 26 S5 it
+holds samples of rank `n` (`dialogue::PostedTask`,
+`encode_posted_samples`): `[nt u8][(input, output)·nt][nx u8][(input,
+[0|1] output?)·nx]`, each sample as the envelope writes it, a withheld
+test output absent where the source holds none. It holds decoded values,
+exactly. `encode_posted_task` places a raster task's grids, and
+`decode_posted_task` reads one back at the raster intake.
 
 ## 8. What is built today, and the defect
 
@@ -730,7 +796,7 @@ with samples of rank `n` together with the envelope.
 | **Defect:** the raster carrier is rank 2 by its own storage (`raster::AXES = 2`, `extents`, `painted_sites`, `value_at`) | **Built, refused** by §2 and §3.6; moved unchanged in S1 | `src/transducer/raster.rs`; track 26, S4 |
 | The ground deduced (§3.4): ambient, enclosing, never carried as a body; read as `Ground::One`, `Vortex` or `None`; no reader defaults to `0`, and a writer with no one ground is refused by name; a task's address reads no ground | **Built** (track 26, S2); the behaviour check is below | `src/transducer/family/transduce/ground.rs` (`Ground`, `Unground`); `src/transducer/raster.rs` (`ground_of`, `ground`, `is_ground`, `void`, `on_ground`, `on_ground_of`); `src/server/registry.rs` (`task_address`) |
 | A vortex ground read once per candidate perspective (§4); the mind speaks one claim per candidate, each stating its ground, and the court reconstructs under the stated ground (§6.2) | **Built** (track 26, S2); collapsing a vortex by a relation stays with S6 | `raster::on_each_perspective_of`, `Ground::perspectives`; `dialogue::encode_solve_spoken`; `cognition::stated_ground` |
-| Speech and seat solves state no ground yet: the speech act and the seat's solve call carry no ground field, and the court's speech path still reads the family's deduced ground | **Open**; lands with track 26 S5's wire change | `court::verdict::reconstruct` (`on_ground_of`); the seat call's arguments |
+| Speech and seat solves state their ground: each speech sentence and the seat's solve call carry an optional stated ground; the court hears each sentence under it, refused by name where it is no candidate, and deduces none on the speech path (§6.2) | **Built** (track 26 S5) | `dialogue::Spoken.ground`, `SpeechAct.grounds`; `Court::hear_speech`; `seat_mind::task::solve_args` |
 | **Defect:** the envelopes' dilation squares the extents (`r² = Σ eᵢ²/4`, an exact square root), law 11; read by the fibre map and the frame's momentum (`carried_site`, `momentum_vanishes`) | **Built, refused** by §3.1 and law 11; moved unchanged in S1 | `src/transducer/family/fibre_relation.rs` (`envelope_dilation`, `carried_site`, `exact_root`); `src/transducer/raster.rs` (`momentum_vanishes`, `frame_fixed`); the re-period of each phase replaces it (track 26, S4) |
 | **Defect:** the frame fixing orders and reverses two fixed axes by moments over the painted sites (`frame_fixed`) where §4 makes the frame a perspective | **Built, refused** by §4 (MU-RECURSION 78.54 read through §9); moved unchanged in S1. Since S2 no reader applies it at intake or before addressing, and it fixes only under `Ground::One` | `src/transducer/raster.rs`; track 26, S6 |
 | **Defect:** the measured frame is four planar counts (`Frame { h_in, w_in, h_out, w_out }`) | **Built, refused** by §3.1 (a re-period per phase); moved unchanged in S1 (`frame_ratio` had no caller and is deleted) | `src/transducer/element/residual.rs`; track 26, S4 |
@@ -738,9 +804,10 @@ with samples of rank `n` together with the envelope.
 | An axis taken apart (§3.6): the factorings of an extent held together, and the exact nested map `s ↦ (⌊s/b⌋/a, (s mod b)/b)` with its inverse | **Built** on `main` (carrier and map only) | `src/transducer/family/transduce/nest.rs` (`Factoring`, `Factorings`) |
 | Which factorings the family is invariant under (the reading that keeps or dissolves each candidate); the nesting recorded as a coordinate of the percept | **Open** (track 26, S4): no axis is taken apart until it is read | Claim `axis_taken_apart_only_where_family_invariant` |
 | The symbol set deduced (§3.3): `Σ` read from the family, an index the order of first appearance in canonical address order, `e_∅` at `|Σ|`, every table over symbols keyed by the symbols it names; no `PALETTE`, no 10- or 256-slot table | **Built** (track 26, S3) | `src/transducer/symbols.rs` (`SymbolSet`, `SymbolRefusal`); `element::fibre_on_symbols`; `sentence::HueTable` (`Keyed<u8>`); `element::gauge_is_perm`, `stalk::connection_chart`, `field::idea`, `family::acts` (`onto_ground`), `client::sdk::rule` (`named_into`) |
-| **Defect:** the tape's record byte. A word's tape and the law register's wire (`physics::laws::codec`, `Transition.hues`) write a reservoir record as the row `(RESERVOIR, c)` with `RESERVOIR = 10`, beside symbols written as single bytes. It is a byte of the two layouts, never an index into `Σ`, but a family whose own symbols hold the byte 10 has no fibre relation on the tape (`lift_fibre` refuses it), so its colour words are not written | **Built, refused** by §3.3; carrying `e_∅` outside the symbols' bytes changes both layouts, so it waits on track 26 S5: `e_∅` travels as a typed record tag outside the symbol bytes | `element::RESERVOIR`; `physics::laws::codec::put_transition` |
+| `e_∅` as a typed record outside the symbols' bytes: a fibre relation's rows and its records apart, on a word's description and the law register's wire; `RESERVOIR = 10` retired, so a family using the byte 10 has its colour word | **Built** (track 26 S5; the defect of the record byte is closed) | `element::FibreRelation`, `colour_word`, `Letters::fibre`; `physics::laws::codec::put_transition` |
 | Axes and gauges deduced | **Specified** | Track 26, S4 |
-| A task on the wire as samples of rank `n` | **Specified** | Track 26, S5 |
+| A task on the wire as samples of rank `n`: the envelope, the posted task and a solve's outputs; limits derived and refused by name; task identity lossless across ranks and widths | **Built** (track 26 S5); the mind and the court read rank 2 at width 1 until S4 retires the raster carrier | `src/anastome/dialogue/samples.rs`; `registry::task_address_of` |
+| **Defect:** a link is `(i64, i64, u8, u8)`, two axes and one-byte symbols. The three aliases are one type since S5 (`sentence::Link`), but the rank-`n` link waits: the transducer's chain, chart and field carriers read the two coordinates of every link | **Built, refused** by §2; stopped in S5 as more than a contained wire change | `transducer::sentence::chain::Link`; track 26 S4 |
 | Perspective as a sensor motion; perspectives as a cover | **Specified** | Track 26, S6 |
 
 **The defect** ([ROADMAP track 26](../ROADMAP.md#26-sensing-any-source-at-any-rank);
@@ -754,14 +821,15 @@ for one source:
   intake until S4.
 - The palette was fixed at 10 (`PALETTE`, `RESERVOIR`, the 10-slot hue
   tables), with a conflicting 256 elsewhere. S3 removed the fixed sets: the
-  symbol set is the family's own. The tape's record byte remains (the
-  table above). (The ground that defaulted to `0` at about 64 sites is
-  deduced since S2.)
+  symbol set is the family's own, and S5 carries the record in `e_∅` as a
+  typed entry, so `RESERVOIR` is gone. (The ground that defaulted to `0`
+  at about 64 sites is deduced since S2.)
 - Two space axes and one frame axis are fixed (`GRID_AXES`, `FRAME_AXIS`,
   `PLANE_ROW`/`PLANE_COL`, `GRID_N = 3`, a 3-tuple `Point`, and planar
   `(rows, cols)` carriers).
-- The wire carries a task as `u16 × u16` one-byte cells, and a link as
-  `(r, c, before, after)`.
+- The wire carried a task as `u16 × u16` one-byte cells; since S5 it
+  carries samples of rank `n`. A link is still `(r, c, before, after)`
+  (the table above).
 
 **The S2 behaviour check** (2026-11-03; the census
 `sources/arc-agi/tests/ground_census.rs`). Over the 1 000 training tasks of

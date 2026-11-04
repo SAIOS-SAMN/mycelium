@@ -13,7 +13,7 @@
 //! hypha to the values it meant, and every reply decodes to the fields named
 //! here.
 
-use super::{ACT_DOMAIN, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE, ACT_QUOTE, ACT_RECEIPTS, ACT_ROWS, ACT_SEAT};
+use super::{ACT_DOMAIN, ACT_ENTRIES, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE, ACT_QUOTE, ACT_RECEIPTS, ACT_SEAT};
 use super::{ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY, WIRE_VERSION};
 use crate::physics::laws::codec::{MODE_BATCH, MODE_CLOCK, MODE_CONCORDANCE, MODE_LEXICON, MODE_PARAMETERS, MODE_REGISTER};
 use crate::physics::laws::codec::{MODE_SIGNATURE, MODE_STATEMENT, MODE_VERIFY};
@@ -198,7 +198,7 @@ const MIND: &[ActRequirement] = &[
     may(ACT_LAWS, Some(MODE_SIGNATURE), "laws signature", "decode_signature_reply", SIGNATURE),
     may(ACT_QUOTE, None, "quote", "decode_quote_reply", &["height", "surface S:G:T:H", "k", "work items"]),
     may(ACT_RECEIPTS, None, "receipts", "decode_receipts_reply", &["receipts"]),
-    may(ACT_ROWS, None, "rows", "decode_rows_reply", &["height", "entries"]),
+    may(ACT_ENTRIES, None, "entries", "decode_entries_reply", &["height", "entries"]),
     may(ACT_OBSERVE, Some(crate::observe::MODE_QUERY), "observe query", "decode_reply", &["count", "held readings"]),
     may(ACT_WHY, None, "why", "decode_why_reply", &["stamp", "kind", "mu S:G:T:H", "named", "unheld", "refused"]),
     may(ACT_WALLET, None, "wallet", "decode_wallet_reply", WALLET),

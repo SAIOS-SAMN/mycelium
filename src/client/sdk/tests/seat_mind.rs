@@ -355,9 +355,15 @@ fn grid_steps_reads_task_before_seat() {
     let shape = |g: &crate::transducer::family::Grid| (g.len(), g[0].len());
     assert_eq!(grid_steps(&hue_only, shape(&x), shape(&x)), Ok(vec![0x100 + 16 * 2 + 5]));
     let outs = vec![x.clone(), vec![vec![4]]];
-    let args = solve_args(&hue_only, &outs, &[9]).expect("writes");
-    let [Arg::Bytes(tape), Arg::Bytes(grids), Arg::Count(9)] = args.as_slice() else { panic!("{args:?}") };
-    assert_eq!(crate::anastome::dialogue::decode_grids(grids), Some(outs), "the outputs read back as the solve act writes them");
+    let args = solve_args(&hue_only, &outs, None, &[9]).expect("writes");
+    let [Arg::Bytes(tape), Arg::Bytes(samples), Arg::Count(9)] = args.as_slice() else { panic!("{args:?}") };
+    let spoken = crate::anastome::dialogue::spoken_outputs(&outs).expect("samples");
+    assert_eq!(crate::anastome::dialogue::decode_samples(samples), Ok(spoken), "the outputs read back as the solve act writes them");
+    // MU-SENSING §6.2 — a stated ground rides between the outputs and the
+    // steps, a `Bytes` where each step is a `Count`.
+    let stated = solve_args(&hue_only, &outs, Some(&[0]), &[9]).expect("writes");
+    let [Arg::Bytes(_), Arg::Bytes(_), Arg::Bytes(ground), Arg::Count(9)] = stated.as_slice() else { panic!("{stated:?}") };
+    assert_eq!(ground.as_slice(), &[0u8]);
     let mut p = 0;
     assert_eq!(crate::transducer::element::Element::from_bytes(tape, &mut p).map(|e| e.address()), Some(hue_only.address()), "the tape is the rule");
 }

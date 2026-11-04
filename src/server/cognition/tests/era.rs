@@ -339,7 +339,7 @@ fn admit_backfill_admits_citation_of_folded_receipt() {
 /// A SECOND FOLD VERIFIES ON THE ROWS A WITNESS FETCHES. The proposer nets
 /// every row below its head — the first fold's epoch rows and all since —
 /// and a witness pages the rows it verifies with through `rows_range`
-/// (ACT_ROWS). The first fold's witness read the whole journal; from the
+/// (ACT_ENTRIES). The first fold's witness read the whole journal; from the
 /// second on, the span began at the prefix the fold stands on, and every
 /// court refused its peers' folds as not conserving (epoch 115, thousands
 /// an hour).

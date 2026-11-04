@@ -26,6 +26,7 @@ pub mod present;
 pub mod quote;
 pub mod receipts;
 pub mod root;
+pub mod samples;
 pub mod seat;
 pub mod speech;
 pub mod syllabus;
@@ -51,6 +52,10 @@ pub use present::*;
 pub use quote::*;
 pub use receipts::*;
 pub use root::*;
+pub use samples::{
+    decode_posted_samples, decode_samples, encode_posted_samples, encode_samples, push_sample, read_sample, spoken_outputs,
+    NotRaster, PostedTask, SampleWire, TaskEnvelope, TaskRasters,
+};
 pub use speech::*;
 pub use syllabus::*;
 

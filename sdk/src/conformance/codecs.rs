@@ -47,14 +47,30 @@ fn same<T: PartialEq + std::fmt::Debug>(what: &str, got: Option<T>, want: T) -> 
     }
 }
 
+/// TRACK 26 S5 — a sample of rank 3 at width 2, at `[test, 0, member]`:
+/// the envelope and the solve carry samples of any rank.
+fn deep(member: d::samples::Member) -> Result<mycelium::transducer::sample::Sample, String> {
+    let place = d::samples::position(d::samples::Split::Test, 0, member).map_err(|e| format!("{e:?}"))?;
+    let symbols: Vec<u8> = (0u8..24).collect();
+    mycelium::transducer::sample::Sample::new(vec![2, 3, 2], 2, symbols, place).map_err(|e| format!("{e:?}"))
+}
+
 fn task() -> Result<String, String> {
     same("the task request", d::decode_task_request(&d::encode_task_request(&voice())), voice())?;
-    let bytes = d::encode_task_envelope(&CITATION, &train(), &tests()).ok_or("the envelope does not encode")?;
+    let sent = d::TaskEnvelope::of_rasters(CITATION, &train(), &tests()).map_err(|e| format!("the rasters are no samples: {e:?}"))?;
+    let bytes = d::encode_task_envelope(&CITATION, &sent.train, &sent.tests).map_err(|e| format!("the envelope does not encode: {e:?}"))?;
     let envelope = d::decode_task_envelope(&bytes).ok_or("the envelope did not decode")?;
     same("the envelope's citation", Some(envelope.id), CITATION)?;
-    same("the envelope's train pairs", Some(envelope.train), train())?;
-    same("the envelope's tests", Some(envelope.tests), tests())?;
-    Ok("request and envelope decode to the values sent".to_string())
+    same("the envelope's train pairs", Some(envelope.train.clone()), sent.train.clone())?;
+    same("the envelope's tests", Some(envelope.tests.clone()), sent.tests)?;
+    let read = envelope.rasters().map_err(|e| format!("the envelope is no raster: {e:?}"))?;
+    same("the envelope's train pairs as rasters", Some(read.train), train())?;
+    same("the envelope's tests as rasters", Some(read.tests), tests())?;
+    let deep = vec![deep(d::samples::Member::Input)?];
+    let bytes = d::encode_task_envelope(&CITATION, &sent.train, &deep).map_err(|e| format!("the rank-3 envelope does not encode: {e:?}"))?;
+    let envelope = d::decode_task_envelope(&bytes).ok_or("the rank-3 envelope did not decode")?;
+    same("the rank-3 test input at width 2", Some(envelope.tests), deep)?;
+    Ok("request and envelope decode to the samples sent, of rank 2 and 3".to_string())
 }
 
 fn task_by_citation() -> Result<String, String> {
@@ -66,7 +82,7 @@ fn task_by_citation() -> Result<String, String> {
 
 fn solve() -> Result<String, String> {
     let tape = vec![1u8, 2, 3, 5, 8];
-    let outputs = tests();
+    let outputs = vec![deep(d::samples::Member::Output)?];
     let bytes = d::encode_solve_with_rule(&key(), &CITATION, &outputs, Some(&tape)).ok_or("the solve does not encode")?;
     let act = d::decode_solve(&bytes).ok_or("the solve did not decode")?;
     same("the solve's voice", Some(act.voice), voice())?;
@@ -90,7 +106,7 @@ fn solve() -> Result<String, String> {
     let refusal = d::SolveRefusal { reason: b"form leaves a remainder on the family".to_vec(), kind: 1 };
     let refused = d::encode_solve_verdict(d::SOLVE_NOTHING, &mycelium::economy::Mu::zero(), Some(&refusal), None).ok_or("the refusal does not encode")?;
     same("the refused verdict", d::decode_solve_verdict(&refused), (d::SOLVE_NOTHING, mycelium::economy::Mu::zero(), Some(refusal), None))?;
-    Ok("the signed solve, with and without its stated ground, and the three verdicts decode to the values sent, the paid μ exact".to_string())
+    Ok("the signed solve of a rank-3 output, with and without its stated ground, and the three verdicts decode to the values sent, the paid μ exact".to_string())
 }
 
 fn laws_register() -> Result<String, String> {
@@ -329,16 +345,16 @@ fn receipts() -> Result<String, String> {
     Ok("the span asked and a page of one receipt decode".to_string())
 }
 
-fn rows() -> Result<String, String> {
+fn entries() -> Result<String, String> {
     use mycelium::chronometry::Place;
     use mycelium::economy::{Arm, Entry, Kind};
     let upto = Place { k: 3, i: 4 };
-    let want = d::RowsRequest { voice: voice(), signer: CITATION, from: None, upto, cursor: 7 };
-    same("the rows request", d::decode_rows_request(&d::encode_rows_request(&voice(), &CITATION, None, upto, 7)), want)?;
-    let row = Entry { kind: Kind::Transfer, who: voice(), mu: share()?, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
-    let bytes = d::encode_rows_reply(12, std::slice::from_ref(&row), mycelium::network::wire::BODY_BUDGET).ok_or("the rows do not encode")?;
-    same("the rows", d::decode_rows_reply(&bytes), (12, vec![row]))?;
-    Ok("the span asked and a page of one row decode".to_string())
+    let want = d::EntriesRequest { voice: voice(), signer: CITATION, from: None, upto, cursor: 7 };
+    same("the entries request", d::decode_entries_request(&d::encode_entries_request(&voice(), &CITATION, None, upto, 7)), want)?;
+    let entry = Entry { kind: Kind::Transfer, who: voice(), mu: share()?, at: stamp(), receipt: CITATION, arm: Some(Arm::Pouw) };
+    let bytes = d::encode_entries_reply(12, std::slice::from_ref(&entry), mycelium::network::wire::BODY_BUDGET).ok_or("the entries do not encode")?;
+    same("the entries", d::decode_entries_reply(&bytes), (12, vec![entry]))?;
+    Ok("the span asked and a page of one entry decode".to_string())
 }
 
 fn why() -> Result<String, String> {
@@ -489,7 +505,7 @@ fn check(a: &ActRequirement) -> Option<Result<String, String>> {
         "seat mail" => seat_mail(),
         "quote" => quote(),
         "receipts" => receipts(),
-        "rows" => rows(),
+        "entries" => entries(),
         "why" => why(),
         "probe" => probe(),
         "peers" => peers(),

@@ -126,7 +126,7 @@ pub struct Published {
     pub(crate) ledgers: Keyed<Arc<Vec<crate::anastome::dialogue::atlas::HeldEntry>>>,
     pub(crate) atlas_mark: u64,
     /// 78.153b — the treasury's journal, shared with the last reading where
-    /// its mark stands: a witness's `ACT_ROWS` is answered off it, never
+    /// its mark stands: a witness's `ACT_ENTRIES` is answered off it, never
     /// under the court (a fold compacts the journal, so it stays small).
     pub(crate) journal: Arc<Vec<crate::economy::Entry>>,
     pub(crate) journal_mark: u64,

@@ -6,7 +6,7 @@
 //! each a per-lane amount `S:G:T:H`, exact, never summed across lanes. It is
 //! a projection of the record, never a second record: every row it folds
 //! stands at an act on that court's line (`economy::Entry::at`), and the rows
-//! are served to peers and re-derived at every fold (`ACT_ROWS`, `ACT_FOLD`).
+//! are served to peers and re-derived at every fold (`ACT_ENTRIES`, `ACT_FOLD`).
 //! So the reading carries where it stands — the court's head stamp when it
 //! was read — and a party's wallet across the universe is its account at
 //! every court, per lane, summed exactly. Every μ field is four exact

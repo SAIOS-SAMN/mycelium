@@ -47,13 +47,16 @@
 //! let (voice, key) = mycelium_sdk::voice::load_or_mint("home/voice.key");
 //! let session = Session::open("127.0.0.1:7500", voice);
 //! let reply = session.speak(task::encode_task_request(&key.verifying_key().to_bytes()));
-//! let Some(envelope) = reply.ok().and_then(|r| task::decode_task_envelope(&r)) else { return };
+//! let Some(samples) = reply.ok().and_then(|r| task::decode_task_envelope(&r)) else { return };
+//! // The envelope carries samples of any rank; the rule seam reads rasters.
+//! let Ok(envelope) = samples.rasters() else { return };
 //! let mut budget = rule::Physics::default().stroke_n(1 << 20);
 //! let Some(stated) = rule::extract_rule(&envelope.train, &mut budget) else { return };
 //! let Ok(element) = rule::mint_sentence_why(&stated, &envelope.train, &NoCrystal, 0) else { return };
 //! let outputs: Option<Vec<Vec<Vec<u8>>>> =
 //!     envelope.tests.iter().map(|x| rule::speak_rule(&stated, x, &NoCrystal).and_then(|s| s.grid())).collect();
 //! let (Some(outputs), Some(tape)) = (outputs, element.to_bytes()) else { return };
+//! let Ok(outputs) = task::spoken_outputs(&outputs) else { return };
 //! if let Some(solve) = task::encode_solve_with_rule(&key, &envelope.id, &outputs, Some(&tape)) {
 //!     let verdict = session.speak(solve).ok().and_then(|r| task::decode_solve_verdict(&r));
 //!     println!("{:?}", verdict.map(|(code, paid, _, _)| (code, paid)));

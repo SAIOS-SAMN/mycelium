@@ -292,3 +292,41 @@ fn next_intake_batch_walks_manifest_once() {
     assert!(reg.next_intake_batch(8).is_empty(), "the manifest is exhausted");
     assert_eq!(reg.next_cover_batch(1).len(), 1, "cover re-home still walks");
 }
+
+/// TRACK 26 S5 — A TASK'S IDENTITY WRITES RANK AND WIDTH: four posted tasks
+/// whose symbol bytes are the same four bytes, read as one axis of four
+/// sites, two axes of two, one axis of two sites at width two, and one of
+/// one site at width four, are four tasks; the raster task's address is its
+/// posted samples' address. The frame's own content (`Enclosed::put_content`)
+/// writes the rank and the width as well, so it is lossless across both.
+#[test]
+fn task_identity_writes_rank_and_width() {
+    use crate::anastome::dialogue::samples::{position, Member, Split};
+    use crate::anastome::dialogue::PostedTask;
+    use crate::transducer::sample::Sample;
+    let bytes = vec![1u8, 2, 3, 4];
+    let posted = |extents: Vec<usize>, width: usize| {
+        let place = |member| position(Split::Train, 0, member).expect("a position");
+        let x = Sample::new(extents.clone(), width, bytes.clone(), place(Member::Input)).expect("a sample");
+        let y = Sample::new(extents, width, bytes.clone(), place(Member::Output)).expect("a sample");
+        task_address_of(&PostedTask { train: vec![(x, y)], test: Vec::new() })
+    };
+    let addresses = [posted(vec![4], 1), posted(vec![2, 2], 1), posted(vec![2], 2), posted(vec![1], 4)];
+    for (i, a) in addresses.iter().enumerate() {
+        for b in &addresses[i + 1..] {
+            assert_ne!(a, b, "a rank or a width is part of the identity");
+        }
+    }
+    let raster = Task { train: vec![(vec![vec![1, 2], vec![3, 4]], vec![vec![1, 2], vec![3, 4]])], test: Vec::new() };
+    assert_eq!(task_address(&raster), Some(addresses[1].clone()), "a raster task is its samples");
+
+    use crate::transducer::family::transduce::Enclosed;
+    use crate::transducer::sample::Place;
+    let frame = |extents: Vec<usize>, width: usize| {
+        let mut out = Vec::new();
+        Enclosed::of(&Sample::new(extents, width, vec![5; 4], Place::new(Vec::new())).expect("a sample")).put_content(&mut out);
+        out
+    };
+    assert_ne!(frame(vec![4], 1), frame(vec![2, 2], 1), "the rank is written");
+    assert_ne!(frame(vec![2], 2), frame(vec![1], 4), "the width is written");
+}

@@ -41,8 +41,19 @@ impl Court {
     /// listed, `SPEECH_RATIFIED` for one already language, `SPEECH_REFUSED`
     /// for one the replay refused, and `SPEECH_DIALECT` on every sentence
     /// of an act the door deferred — stood there, unanswered here, spoken
-    /// again later. The adjudications themselves are `hear_speech`.
+    /// again later. The adjudications themselves are `hear_speech`. The
+    /// speaker is the caller: every sentence states the ground open on the
+    /// caller's thread (MU-SENSING §6.2; none where no family's reading is
+    /// open), and `perceive_speech_under` states each one.
     pub fn perceive_speech(&mut self, voice: [u8; 32], task: &[u8], sentences: &[Element]) -> Vec<u8> {
+        let stated = crate::transducer::raster::stated(&crate::transducer::raster::ground());
+        let grounds = vec![stated; sentences.len()];
+        self.perceive_speech_under(voice, task, sentences, &grounds)
+    }
+
+    /// [`Court::perceive_speech`] with the ground each sentence's claim was
+    /// spoken under (MU-SENSING §6.2), in the order sent.
+    pub fn perceive_speech_under(&mut self, voice: [u8; 32], task: &[u8], sentences: &[Element], grounds: &[Option<Vec<u8>>]) -> Vec<u8> {
         let spoken: Vec<(Element, Option<crate::transducer::sentence::Contraction>)> =
             sentences.iter().map(|s| (s.clone(), None)).collect();
         // THE ACT'S ROOT (65.5): one stroke of this court's own metabolism
@@ -61,7 +72,7 @@ impl Court {
         loop {
             let before = progress(self);
             let mut budget = self.physics.stroke();
-            match self.hear_speech(voice, task, &spoken, &mut budget) {
+            match self.hear_speech(voice, task, &spoken, grounds, &mut budget) {
                 Ok(adjudicated) => return adjudicated.iter().map(|a| a.code()).collect(),
                 Err(lanes) if lanes == [0; 4] && progress(self) != before => {}
                 Err(_) => return vec![crate::anastome::dialogue::SPEECH_DIALECT; sentences.len()],
@@ -92,15 +103,19 @@ impl Court {
         use crate::anastome::dialogue::Adjudication;
         use crate::transducer::sentence::{At, RefusalKind};
         let mut spoken = Vec::with_capacity(act.sentences.len());
+        let mut grounds = Vec::with_capacity(act.sentences.len());
         let mut unparsed: Vec<usize> = Vec::new();
         for (i, tape) in act.sentences.iter().enumerate() {
             let mut p = 0usize;
             match Element::from_bytes(tape, &mut p) {
-                Some(e) => spoken.push((e, act.contractions.get(i).cloned().flatten())),
+                Some(e) => {
+                    spoken.push((e, act.contractions.get(i).cloned().flatten()));
+                    grounds.push(act.grounds.get(i).cloned().flatten());
+                }
                 None => unparsed.push(i),
             }
         }
-        let heard = self.hear_speech(act.voice, &act.task, &spoken, budget)?;
+        let heard = self.hear_speech(act.voice, &act.task, &spoken, &grounds, budget)?;
         let receipt = self.chain.head_hash();
         let mut out = Vec::with_capacity(act.sentences.len());
         let mut next = heard.into_iter();
@@ -161,18 +176,32 @@ impl Court {
     /// names, for the whole act — nothing was heard — as it is for a
     /// sentence whose draw the voice's room does not cover (23.8): the
     /// voice dwells on those lanes and speaks again.
+    ///
+    /// MU-SENSING §6.2 (track 26 S5) — EACH SENTENCE IS HEARD UNDER THE
+    /// GROUND ITS CLAIM STATES (`grounds`, in the order sent; a missing
+    /// entry states none): read as a candidate of the task's ground on this
+    /// court's copy of the family (`cognition::stated_ground`) and opened
+    /// for the whole adjudication, or refused by name. A sentence stating
+    /// none is heard under no ground. The court never deduces a ground of
+    /// its own here: every reader inside sees the ground opened.
     pub fn hear_speech(
         &mut self,
         voice: [u8; 32],
         task: &[u8],
         spoken: &[(Element, Option<crate::transducer::sentence::Contraction>)],
+        grounds: &[Option<Vec<u8>>],
         budget: &mut crate::physics::Budget,
     ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
         let mut out = Vec::with_capacity(spoken.len());
-        for (s, cited) in spoken {
+        for (i, (s, cited)) in spoken.iter().enumerate() {
+            let stated = grounds.get(i).and_then(Option::as_deref);
+            let heard = match self.claim_ground(task, stated) {
+                Ok(g) => crate::transducer::raster::on_ground(g, || self.adjudicate_one(voice, task, s, cited.as_ref(), budget)),
+                Err(why) => Ok(self.refuse_sentence(voice, s, crate::court::verdict::Refusal::of_tape(why.reason(), s))),
+            };
             // CV5 — EVERY VERDICT COUNTED WHERE IT IS REACHED, by its kind,
             // for the observer's adjudication reading.
-            match self.adjudicate_one(voice, task, s, cited.as_ref(), budget) {
+            match heard {
                 Ok(a) => {
                     note_verdict_of(&a);
                     out.push(a);
@@ -184,6 +213,21 @@ impl Court {
             }
         }
         Ok(out)
+    }
+
+    /// THE GROUND A SPOKEN CLAIM IS HEARD UNDER (MU-SENSING §6.2): the
+    /// stated ground read against this court's copy of the task's family,
+    /// or no ground where none is stated or no family is held for the task
+    /// (nothing of the task is read on a ground then).
+    fn claim_ground(
+        &self,
+        task: &[u8],
+        stated: Option<&[u8]>,
+    ) -> Result<crate::transducer::family::transduce::Ground<u8>, crate::cognition::StatedGroundRefusal> {
+        match self.task_family.get(task) {
+            Some(family) => crate::cognition::stated_ground(family, stated),
+            None => Ok(crate::transducer::family::transduce::Ground::None),
+        }
     }
 
     /// ONE SENTENCE ADJUDICATED. A cited contraction is verified first
@@ -293,12 +337,12 @@ impl Court {
     /// whose composite it is (law 8: the court composes what is cited, never
     /// peels); or UNPROVEN.
     pub(crate) fn colour_proof(&self, s: &Element, task: Option<&[u8]>) -> ColourProof {
-        let Some(sigma) = s.letters().map(|l| l.sigma.clone()) else { return ColourProof::Unproven };
+        let Some(fibre) = s.letters().map(|l| l.fibre()) else { return ColourProof::Unproven };
         let witnesses = |t: &[u8]| {
             self.task_family
                 .get(t)
                 .and_then(|family| crate::transducer::family::fibre_relation(family))
-                .is_some_and(|seen| seen == sigma)
+                .is_some_and(|seen| seen == fibre)
         };
         if let Some(t) = task.filter(|t| witnesses(t)) {
             return ColourProof::Witnessed(Address::from_bytes(t));
@@ -310,7 +354,7 @@ impl Court {
             match (self.installed_word(first.as_bytes()), self.installed_word(after.as_bytes())) {
                 (Some(f), Some(a)) if f.is_colour_word() && a.is_colour_word() => match (f.letters(), a.letters()) {
                     (Some(fl), Some(al)) => {
-                        crate::transducer::element::compose_fibre(&al.sigma, &fl.sigma).as_ref() == Some(&sigma)
+                        crate::transducer::element::compose_fibre(&al.fibre(), &fl.fibre()).as_ref() == Some(&fibre)
                     }
                     _ => false,
                 },

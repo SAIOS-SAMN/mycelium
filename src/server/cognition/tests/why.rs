@@ -10,9 +10,10 @@ use crate::transducer::family::{cipher_form, sentence_measure, NoCrystal, TrainP
 use crate::transducer::sentence::{as_element_form, Reasons};
 
 /// Two separated bodies both translating by `+2`: one family the voice and
-/// the court hold alike, so the sentence stands.
+/// the court hold alike, so the sentence stands. Framed in 0, so 0 is the
+/// family's ground (MU-SENSING §3.4) and the claim states it (§6.2).
 fn family() -> Vec<TrainPair> {
-    vec![(digits(&["1100200"]), digits(&["0011002"]))]
+    vec![(digits(&["0000000", "1100200", "0000000"]), digits(&["0000000", "0011002", "0000000"]))]
 }
 
 /// A sentence the court stands is admitted by an act on its line; asked why
@@ -30,12 +31,14 @@ fn why_answers_act_with_speaker_reasons() {
     let s = as_element_form(&f, mag).expect("a sentence");
     let spoken = Reasons::of(&s).expect("the speaker's reasons");
     let task = crate::registry::task_address(&crate::transducer::family::Task { train: fam.clone(), test: Vec::new() }).expect("a task");
+    // The speaker states the ground it read its family on (MU-SENSING §6.2).
+    let stated = [super::fixtures::speaker_ground(&fam)];
     let mut k = Court::new();
     k.bind_identity([1; 32]);
     k.bind_task_family(&task, fam);
     // 78.153: a stroke that holds the frame's replays.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
-    let heard = k.hear_speech([5; 32], task.as_bytes(), &[(s.clone(), None)], &mut frame).expect("heard");
+    let heard = k.hear_speech([5; 32], task.as_bytes(), &[(s.clone(), None)], &stated, &mut frame).expect("heard");
     assert!(matches!(heard.as_slice(), [Adjudication::Stood { .. } | Adjudication::Ratified { .. }]), "{heard:?}");
     let at = k.admitted_at(s.address().as_bytes()).expect("an act admitted the sentence");
     // 78.93 B0 — the verdict itself says where the word stands.
@@ -70,7 +73,7 @@ fn why_answers_act_with_speaker_reasons() {
 fn why_answers_refusal_act_on_ledger() {
     use crate::chronometry::{ActKind, Cite};
     let voice_fam = family();
-    let court_fam: Vec<TrainPair> = vec![(digits(&["1100200"]), digits(&["0011003"]))];
+    let court_fam: Vec<TrainPair> = vec![(digits(&["0000000", "1100200", "0000000"]), digits(&["0000000", "0011003", "0000000"]))];
     let [(x, y)] = voice_fam.as_slice() else { panic!("one pair") };
     let f = cipher_form(x, y);
     let mag = sentence_measure(&f, &voice_fam, &NoCrystal, 0).expect("every body is spoken");
@@ -81,7 +84,8 @@ fn why_answers_refusal_act_on_ledger() {
     k.bind_task_family(&task, court_fam);
     // 78.153: a stroke that holds the frame's replays.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
-    let heard = k.hear_speech([6; 32], task.as_bytes(), &[(s.clone(), None)], &mut frame).expect("heard");
+    let stated = [super::fixtures::speaker_ground(&voice_fam)];
+    let heard = k.hear_speech([6; 32], task.as_bytes(), &[(s.clone(), None)], &stated, &mut frame).expect("heard");
     let [Adjudication::Refused { kind, receipt, .. }] = heard.as_slice() else { panic!("refused: {heard:?}") };
     let head = k.chain.head().expect("the refusal is an act");
     assert_eq!(head.kind, ActKind::Refused);

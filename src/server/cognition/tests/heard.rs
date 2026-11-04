@@ -31,7 +31,7 @@ fn hear_frame_on_reads_rings_of_unstood_sentence() {
         &[0x5b; 32],
         [9u8; 4],
         0,
-        &[Spoken { tape: e.to_bytes().expect("the record writes"), standing: 0, contraction: None, agreement: None }],
+        &[Spoken { tape: e.to_bytes().expect("the record writes"), standing: 0, contraction: None, agreement: None, ground: None }],
     )
     .expect("the task frames");
     let act = dialogue::decode_speech(&frame).expect("the frame decodes");

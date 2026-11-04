@@ -88,7 +88,7 @@ type Claim = (Option<Vec<u8>>, Vec<Vec<Vec<u8>>>, Option<Vec<u8>>);
 /// still exercises the act and its verdict. Read once per perspective of
 /// the family's ground (MU-SENSING §3.4, §3.8): each claim states the
 /// ground it was spoken under, and every perspective's claim is kept.
-fn claims(envelope: &d::TaskEnvelope) -> Vec<Claim> {
+fn claims(envelope: &d::TaskRasters) -> Vec<Claim> {
     let read = crate::rule::on_each_perspective_of(&envelope.train, || {
         let mut budget = Physics::default().stroke_n(1 << 20);
         extract_rule(&envelope.train, &mut budget).and_then(|rule| {
@@ -105,7 +105,7 @@ fn claims(envelope: &d::TaskEnvelope) -> Vec<Claim> {
         .collect()
 }
 
-fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskEnvelope) -> Result<String, String> {
+fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskRasters) -> Result<String, String> {
     let mut said = Vec::new();
     for (ground, outputs, tape) in claims(envelope) {
         said.push(solve_one(session, key, envelope, ground.as_deref(), &outputs, tape.as_deref())?);
@@ -113,8 +113,10 @@ fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskEnvelope) -> Res
     Ok(said.join("; "))
 }
 
-fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskEnvelope, ground: Option<&[u8]>, outputs: &[Vec<Vec<u8>>], tape: Option<&[u8]>) -> Result<String, String> {
-    let act = d::encode_solve_spoken(key, &envelope.id, outputs, tape, ground).ok_or("the outputs pass the solve act's fields")?;
+fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskRasters, ground: Option<&[u8]>, outputs: &[Vec<Vec<u8>>], tape: Option<&[u8]>) -> Result<String, String> {
+    // Track 26 S5: the spoken rasters go out as samples at their places.
+    let outputs = d::spoken_outputs(outputs).map_err(|e| format!("an output is no sample: {e:?}"))?;
+    let act = d::encode_solve_spoken(key, &envelope.id, &outputs, tape, ground).ok_or("the outputs pass the solve act's fields")?;
     let mut asked = 0u32;
     loop {
         asked += 1;
@@ -175,7 +177,12 @@ fn mind_loop(session: &Speaker, key: &SigningKey, report: &mut Report) {
     }
     let by_citation = task_by_citation(session, &voice, &envelope);
     session.record(report, "task by citation", by_citation);
-    let solved = solve(session, key, &envelope);
+    // Track 26 S5: this client reads rasters; a task of another rank or
+    // width is carried exactly and left unread here, never misread.
+    let Ok(rasters) = envelope.rasters() else {
+        return report.unread("solve", "the task's samples are no rasters this client reads");
+    };
+    let solved = solve(session, key, &rasters);
     session.record(report, "solve", solved);
 }
 

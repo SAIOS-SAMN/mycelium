@@ -115,7 +115,7 @@ fn hear_speech_adjudicates_stood_and_awaiting_apart() {
     let spoken = vec![(plain.clone(), None), (citer.clone(), None)];
     // 78.153: a stroke that holds the frame's replays.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
-    let heard = k.hear_speech([1; 32], &[0; 32], &spoken, &mut frame).expect("the frame is heard");
+    let heard = k.hear_speech([1; 32], &[0; 32], &spoken, &[], &mut frame).expect("the frame is heard");
 
     // The adjudications come back in the order the sentences were spoken,
     // so index zero is the first sentence's verdict — the frame's own

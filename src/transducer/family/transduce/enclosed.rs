@@ -218,16 +218,20 @@ impl Enclosed {
         Sample::new(to.periods().to_vec(), self.width, out, self.place.clone()).map_err(sample_refused)
     }
 
-    /// THE FRAME'S FULL CONTENT AS ITS BOUNDARY RECORDS (O3): the periods,
-    /// then every band's boundary indices, phase by phase, and its symbol's
-    /// bytes, in band order. Lossless within one rank and width: the bands
-    /// partition the frame, so the frame is read back from these bytes
-    /// alone.
+    /// THE FRAME'S FULL CONTENT AS ITS BOUNDARY RECORDS (O3): the rank,
+    /// the periods, the symbol width, then every band's boundary indices,
+    /// phase by phase, and its symbol's bytes, in band order. Lossless
+    /// across ranks and widths (track 26 S5): the rank says how many
+    /// periods and spans a band holds, the width how many bytes its symbol
+    /// is, and the bands partition the frame, so the frame is read back
+    /// from these bytes alone.
     pub fn put_content(&self, out: &mut Vec<u8>) {
         use crate::transducer::address::put_key_count;
+        put_key_count(out, self.enclosure.periods().len());
         for &p in self.enclosure.periods() {
             put_key_count(out, p);
         }
+        put_key_count(out, self.width);
         put_key_count(out, self.bands.len());
         for b in &self.bands {
             for &(lo, hi) in &b.spans {

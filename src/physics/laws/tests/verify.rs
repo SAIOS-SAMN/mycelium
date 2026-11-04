@@ -21,7 +21,7 @@ fn laws_reads_each_law_at_law_coordinate() {
 /// its modes and exchanging no torque.
 #[test]
 fn verify_admits_turn_carrying_bodies() {
-    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
+    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Default::default(), fluxes: Vec::new() };
     let v = verify(&t, &mut budget());
     assert!(v.admitted(), "{:?}", v.breaches);
     assert!(v.modes >= 1, "the turn split into its modes");
@@ -35,7 +35,7 @@ fn verify_admits_turn_carrying_bodies() {
 /// is admitted, as it is under any stroke that suffices.
 #[test]
 fn verify_sized_leaves_turn_unread_on_short_stroke() {
-    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
+    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Default::default(), fluxes: Vec::new() };
     let short = verify(&t, &mut crate::physics::Physics::default().stroke_n(7));
     // 78.121 — a short stroke leaves the law UNREAD, never broken: no
     // breach, the stroke it needs named, and no admission.
@@ -54,14 +54,14 @@ fn verify_sized_leaves_turn_unread_on_short_stroke() {
 fn verify_names_every_breach_by_law() {
     let laws_of = |v: &TransitionVerdict| v.breaches.iter().map(|(l, _)| *l).collect::<Vec<_>>();
     // TIME: the height stands still.
-    let still = Transition { motion: turn(), heights: (8, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
+    let still = Transition { motion: turn(), heights: (8, 8), bodies: carried(&turn()), hues: Default::default(), fluxes: Vec::new() };
     assert_eq!(laws_of(&verify(&still, &mut budget())), vec![Law::Time]);
     // CONFORMAL: a body's nucleus is not where the motion sends it.
     let mut moved = carried(&turn());
     if let [(_, after), ..] = moved.as_mut_slice() {
         after.nucleus = sphere_at(&[q(5), q(5), q(0)], &q(1));
     }
-    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: moved, hues: Vec::new(), fluxes: Vec::new() }, &mut budget());
+    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: moved, hues: Default::default(), fluxes: Vec::new() }, &mut budget());
     assert!(v.breaches.contains(&(Law::Conformal, Breach::NotCarried { body: 0 })), "{:?}", v.breaches);
     assert!(laws_of(&v).contains(&Law::Rigidity), "and the pair's distance moved: {:?}", v.breaches);
     // MOMENTUM: a body's inertia changed with no body to answer for it.
@@ -69,10 +69,10 @@ fn verify_names_every_breach_by_law() {
     if let [(_, after), ..] = spun.as_mut_slice() {
         after.body.moments[1][1] = q(3);
     }
-    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: spun, hues: Vec::new(), fluxes: Vec::new() }, &mut budget());
+    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: spun, hues: Default::default(), fluxes: Vec::new() }, &mut budget());
     assert!(matches!(v.breaches.as_slice(), [(Law::Momentum, Breach::MomentumNotConserved { .. })]), "{:?}", v.breaches);
     // RESERVOIR, beside TIME: a merge whose moved preimage is not recorded.
-    let lossy = Transition { motion: turn(), heights: (3, 3), bodies: carried(&turn()), hues: vec![(1, 2), (2, 2)], fluxes: Vec::new() };
+    let lossy = Transition { motion: turn(), heights: (3, 3), bodies: carried(&turn()), hues: crate::transducer::element::FibreRelation::of_rows(&[(1, 2), (2, 2)]), fluxes: Vec::new() };
     assert_eq!(laws_of(&verify(&lossy, &mut budget())), vec![Law::Time, Law::Reservoir], "every breach named, not the first");
 }
 
@@ -88,7 +88,7 @@ fn verify_admits_points_and_similarity_reads_dilation() {
         before.nucleus = point_at(&before.body.centre);
         after.nucleus = turn().sandwich(&before.nucleus);
     }
-    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: bodies.clone(), hues: Vec::new(), fluxes: Vec::new() }, &mut budget());
+    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: bodies.clone(), hues: Default::default(), fluxes: Vec::new() }, &mut budget());
     assert!(v.admitted(), "{:?}", v.breaches);
     assert_eq!(v.similarity, Some(q(1)), "an isometry");
     let pts = |cs: &[[i64; 3]]| cs.iter().map(|c| point_at(&c.iter().map(|&x| q(x)).collect::<Vec<_>>())).collect::<Vec<_>>();
@@ -121,7 +121,7 @@ fn verify_admits_dilation_momentum_up_to_one_ratio() {
     };
     let dilated = |s: &BodyState, mass: i64| BodyState { nucleus: d.sandwich(&s.nucleus), body: BodyMoments { mass: q(mass), ..s.body.clone() } };
     let one = at_origin(1, 1);
-    let t = Transition { motion: d.clone(), heights: (1, 2), bodies: vec![(one.clone(), dilated(&one, 4))], hues: Vec::new(), fluxes: Vec::new() };
+    let t = Transition { motion: d.clone(), heights: (1, 2), bodies: vec![(one.clone(), dilated(&one, 4))], hues: Default::default(), fluxes: Vec::new() };
     let v = verify(&t, &mut budget());
     assert!(v.admitted(), "{:?}", v.breaches);
     assert_eq!(v.expansion, Some(q(4)), "the momentum's ratio, docketed as the expansion lane");
@@ -130,7 +130,7 @@ fn verify_admits_dilation_momentum_up_to_one_ratio() {
         motion: d.clone(),
         heights: (1, 2),
         bodies: vec![(one.clone(), dilated(&one, 4)), (two.clone(), dilated(&two, 9))],
-        hues: Vec::new(),
+        hues: Default::default(),
         fluxes: Vec::new(),
     };
     let v = verify(&split, &mut budget());
@@ -162,7 +162,7 @@ fn verify_refuses_mass_change_without_source_or_sink() {
     };
     let source = |m: i64| Flux { flow: Flow::Source, at: at.clone(), mass: q(m) };
     let sink = |m: i64| Flux { flow: Flow::Sink, at: at.clone(), mass: q(m) };
-    let of = |bodies, fluxes| Transition { motion: turn(), heights: (1, 2), bodies, hues: Vec::new(), fluxes };
+    let of = |bodies, fluxes| Transition { motion: turn(), heights: (1, 2), bodies, hues: Default::default(), fluxes };
     // Unrecorded, the gain breaks both laws, each named: mass was made, and
     // the momentum it carries came from nowhere.
     let v = verify(&of(heavier(3), Vec::new()), &mut budget());

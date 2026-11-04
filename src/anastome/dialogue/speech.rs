@@ -20,6 +20,10 @@ pub struct Spoken {
     /// speaker on every word (78.161, 78.163). The court verifies the
     /// signature and seals the other mind's attestation (`Attest`).
     pub agreement: Option<Vec<u8>>,
+    /// MU-SENSING §6.2 (track 26 S5) — THE GROUND THE CLAIM WAS SPOKEN
+    /// UNDER: one symbol at the source's width, or none. The court
+    /// reconstructs the sentence under it and never deduces one.
+    pub ground: Option<Vec<u8>>,
     // 50.2 step 2 as ruled 2026-09-10: `paths` was here. The generators a
     // voice reached each word vertex through are ON the tape at v7, in
     // the vertex's own derivation, because they are what the vertex is.
@@ -54,17 +58,20 @@ pub fn encode_speech_standing(
             },
             contraction: None,
             agreement: None,
+            ground: None,
         })
         .collect();
     encode_speech_spoken(voice, task, tu, &spoken)
 }
 
 /// `[ACT_SPEECH][voice 32][task address][K u64][n u32]` then per sentence
-/// `[standing u8][carries u8][contraction?][agreement?][len u32][tape]`:
-/// `carries` bit 0 a contraction certificate follows, bit 1 an agreement
-/// (`[len u32][the other mind's signed HOLD frame]`); the derivation
-/// of every word vertex is inside the tape at v7 (50.2 step 2). `None`
-/// where the task's address cannot be framed (LD0): the speech is not
+/// `[standing u8][carries u8][contraction?][agreement?][ground?][len
+/// u32][tape]`: `carries` bit 0 a contraction certificate follows, bit 1 an
+/// agreement (`[len u32][the other mind's signed HOLD frame]`), bit 2 — track
+/// 26 S5, MU-SENSING §6.2 — the ground the claim was spoken under (`[len
+/// u32][symbol]`, never empty); the derivation of every word vertex is
+/// inside the tape at v7 (50.2 step 2). `None` where the task's address
+/// cannot be framed (LD0), or a stated ground is empty: the speech is not
 /// spoken, never sent with the task dropped.
 pub fn encode_speech_spoken(
     voice: &[u8; 32],
@@ -79,12 +86,18 @@ pub fn encode_speech_spoken(
     crate::transducer::address::put_u32_count(&mut out, sentences.len())?;
     for s in sentences {
         out.push(s.standing);
-        out.push(u8::from(s.contraction.is_some()) | (u8::from(s.agreement.is_some()) << 1));
+        if s.ground.as_deref() == Some(&[]) {
+            return None;
+        }
+        out.push(u8::from(s.contraction.is_some()) | (u8::from(s.agreement.is_some()) << 1) | (u8::from(s.ground.is_some()) << 2));
         if let Some(c) = &s.contraction {
             c.to_bytes(&mut out)?;
         }
         if let Some(a) = &s.agreement {
             crate::transducer::address::put_bytes(&mut out, a)?;
+        }
+        if let Some(g) = &s.ground {
+            crate::transducer::address::put_bytes(&mut out, g)?;
         }
         crate::transducer::address::put_bytes(&mut out, &s.tape)?;
     }
@@ -106,12 +119,13 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
     let mut standing = Vec::with_capacity(n.min(64));
     let mut contractions = Vec::with_capacity(n.min(64));
     let mut agreements = Vec::with_capacity(n.min(64));
+    let mut grounds = Vec::with_capacity(n.min(64));
     for _ in 0..n {
         let st = *body.get(pos)?;
         pos += 1;
         let carries = *body.get(pos)?;
         pos += 1;
-        if carries & !0b11 != 0 {
+        if carries & !0b111 != 0 {
             return None;
         }
         let cited = match carries & 1 {
@@ -122,13 +136,25 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
             0 => None,
             _ => Some(crate::transducer::address::take_bytes(body, &mut pos)?),
         };
+        // A stated ground is one symbol: never empty.
+        let ground = match carries & 0b100 {
+            0 => None,
+            _ => {
+                let g = crate::transducer::address::take_bytes(body, &mut pos)?;
+                if g.is_empty() {
+                    return None;
+                }
+                Some(g)
+            }
+        };
         let s = crate::transducer::address::take_bytes(body, &mut pos)?;
         standing.push(st);
         contractions.push(cited);
         agreements.push(agreed);
+        grounds.push(ground);
         sentences.push(s);
     }
-    Some(SpeechAct { voice, task, k: tu, sentences, standing, contractions, agreements })
+    Some(SpeechAct { voice, task, k: tu, sentences, standing, contractions, agreements, grounds })
 }
 
 /// `[ACT_SPEECH][n u8]` then per sentence `[code u8][receipt 32]` and, for
