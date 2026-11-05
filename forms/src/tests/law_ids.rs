@@ -10,6 +10,7 @@ fn law_ids_resolve_to_shells() {
         (crate::frame::LAW_ID, crate::frame::LAW_VERSION),
         (crate::passage::LAW_ID, crate::passage::LAW_VERSION),
         (crate::shares::LAW_ID, crate::shares::LAW_VERSION),
+        (crate::coordinate::LAW_ID, crate::coordinate::LAW_VERSION),
     ];
     assert_eq!(LAW_IDS, shells.as_slice());
     for (i, (id, version)) in LAW_IDS.iter().enumerate() {

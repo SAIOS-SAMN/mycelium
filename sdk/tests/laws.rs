@@ -30,5 +30,13 @@ fn register_reply_carries_every_law() {
 fn form_law_ids_equal_forms_shells() {
     assert_eq!(FORM_LAW_IDS, mycelium_sdk::forms::LAW_IDS);
     let ids: Vec<&str> = FORM_LAW_IDS.iter().map(|(id, _)| *id).collect();
-    assert_eq!(ids, [mycelium_sdk::forms::frame::LAW_ID, mycelium_sdk::forms::passage::LAW_ID, mycelium_sdk::forms::shares::LAW_ID]);
+    assert_eq!(
+        ids,
+        [
+            mycelium_sdk::forms::frame::LAW_ID,
+            mycelium_sdk::forms::passage::LAW_ID,
+            mycelium_sdk::forms::shares::LAW_ID,
+            mycelium_sdk::forms::coordinate::LAW_ID
+        ]
+    );
 }

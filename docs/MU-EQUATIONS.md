@@ -2084,12 +2084,14 @@ id is a hosted shell's own.
 | `FORMS-FRAME` | 1 | `forms/src/frame.rs` (module documentation); Concordance 2.10, A6 | `forms::frame` (core shell) |
 | `FORMS-PASSAGE` | 3 | `forms/src/passage.rs` (module documentation); LAW-PASSAGE v2, [proposal 78.172](proposals/78.172-law-passage.md) (the one-sided product `q ↦ v_k·q`; v1's `2H − R` struck 2026-11-05); ROADMAP track 24 B3. Version 3 holds the product in the shell; the law is unchanged | `forms::passage` (`pass`, the product, refusing `NotDirection`, `NotEven` and `Mismatched`; the refusal of a moved reach; the share read from a plane's other axis), over the exact algebra `algebra::Clifford`; the four fixtures in `forms/src/tests/crossing.rs`, agreed by mycelium, netstratum and xylarium (2026-11-05) |
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |
+| `FORMS-COORDINATE` | 1 | `forms/src/coordinate.rs` (module documentation); LAW-COORDINATE v1, [proposal 78.173](proposals/78.173-law-coordinate.md) (ruled by both operators 2026-11-05; netstratum docs/120); Concordance 1.11, 1.13 | `forms::coordinate` (`Coordinate`, `Origin`, `Local`, the canonical order and writing; `Sector`, the sexagesimal reading, base 60; `Coordinate::within`, refusing `OriginsDiffer`; `Bodies::range`, a neighbour range on one lane by bisection); the fixtures in `forms/src/tests/coordinate.rs`, not yet agreed. TPoint reads as its non-negative case; the rewiring is the next step |
 | `LAW-WAVEFRONT` | 1 | netstratum `docs/111` §2–§3 ([netstratum#9](https://github.com/SAIOS-SAMN/netstratum/issues/9)) | netstratum; no Mycelium code |
 
 The six L0 laws share one register version (`LAW_VERSION`, 5): an
 amendment to any of them raises it for all, and the register is served
 whole (`ACT_LAWS` mode 0, `decode_register_reply`), decoding only at the
 version the reader holds. The `forms` ids are versioned per shell
-(`frame::LAW_VERSION`, `passage::LAW_VERSION`, `shares::LAW_VERSION`). A peer law is recorded by id
+(`frame::LAW_VERSION`, `passage::LAW_VERSION`, `shares::LAW_VERSION`,
+`coordinate::LAW_VERSION`). A peer law is recorded by id
 and version only: its canonical text and its implementation stay with the
 kernel that states it, and Mycelium neither restates nor computes it.

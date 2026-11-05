@@ -1293,6 +1293,23 @@ Concordance hash served and signatures verified. Each phase is one commit:
    - Claims (admission, open): `crossing_is_one_sided_product`,
      `crossing_at_horizon_is_one_way`,
      `crossing_stating_moved_reach_is_refused_not_lawful`.
+   - The shared coordinate is **LAW-COORDINATE v1**, ruled by both
+     operators on 2026-11-05 from netstratum's docs/120
+     ([proposal 78.173](docs/proposals/78.173-law-coordinate.md),
+     **Proposed**, at §3a step 2). A body stands at
+     `origin / h : S:G:T:H : K` with signed exact lanes; the canonical
+     order is the index a kernel addresses its bodies by; neighbours are
+     a range on one lane; the sexagesimal reading decides on exact sector
+     bounds. **What `forms` holds** (no wire or layout change):
+     `forms/src/coordinate.rs`, shell id `FORMS-COORDINATE` v1, with
+     `Coordinate`, `Origin` (enclosures written out), the canonical order
+     and writing, `Sector` (base 60, registered `EXTERNAL`),
+     `Coordinate::within` refusing `OriginsDiffer`, and `Bodies::range`
+     by bisection. Its fixtures are in `forms/src/tests/coordinate.rs`.
+     Next: rewire `chronometry::tuniversal::TPoint` as the form's
+     non-negative case (claimed today by writing and order). Open: the
+     signed-to-issuance map at the vertex, xylarium's lane renaming, and
+     fixtures for the advance of the lanes, an event's bell and a merger.
 5. **B4, the boundary reading:** refusals at the universal core tube by
    name and domain under `ACT_OBSERVE`, and the reconstruction events
    (Collapse, Converse, Collision) at the boundary, with track 8.
