@@ -14,7 +14,7 @@ use crate::client::sdk::*;
 use crate::observe::live;
 
 /// The calls the mind answers, as `calls` lists them.
-const CALLS: [(&str, &str); 12] = [
+const CALLS: [(&str, &str); 13] = [
     ("tasks", "every court task that landed on this mind, by its whole citation: taken or waiting, how read, what its perspectives said (the undetermined guard it failed), where it stopped"),
     ("task HEX", "the court tasks whose citation begins with HEX, as `tasks` reads them"),
     ("convergence", "scenes this mind spoke words on, heard words' evidence read (true, refuted, unread), and each convergence: another mind's word and this mind's, different vertices, one section"),
@@ -26,6 +26,7 @@ const CALLS: [(&str, &str); 12] = [
     ("held", "what waits for the mind's next return"),
     ("scenes", "scenes waiting on comprehension, unread solves, unheard words, owed forms"),
     ("questions", "the questions this mind has open"),
+    ("refusals", "the mint's last refusal per task, named whole: arm, proof, kind, the demands' kinds, and the withheld form's arm, kind and askability"),
     ("calls", "this list"),
 ];
 
@@ -63,7 +64,7 @@ impl Mind {
         self.at_law("stroke");
     }
 
-    fn answer_call(&mut self, line: &str) -> Vec<String> {
+    pub(crate) fn answer_call(&mut self, line: &str) -> Vec<String> {
         let words: Vec<&str> = line.split_whitespace().collect();
         match words.as_slice() {
             [] | ["now"] => self.read_now(),
@@ -86,6 +87,7 @@ impl Mind {
             ["tasks"] => self.read_tasks(""),
             ["task", prefix] => self.read_tasks(prefix),
             ["questions"] => self.read_questions(),
+            ["refusals"] => self.read_refusals(),
             ["convergence"] => self.read_convergence(),
             ["calls"] => CALLS.iter().map(|(c, what)| format!("{c:<18} {what}")).collect(),
             _ => {
@@ -459,6 +461,13 @@ impl Mind {
     fn read_questions(&self) -> Vec<String> {
         let mut out = vec![format!("questions open {}", self.questions.len())];
         out.extend(self.questions.scoped().map(|(k, q)| format!("  {} · {}", tail(&k, 6), q.observed())));
+        out
+    }
+
+    /// 78.158a U1, U8 — the mint's last refusal per task, named whole.
+    fn read_refusals(&self) -> Vec<String> {
+        let mut out = vec![format!("tasks whose sentence the mint refused {}", self.mint_refused.len())];
+        out.extend(self.mint_refused.scoped().map(|(k, r)| format!("  task {} · {}", tail(&k, 6), r.reading())));
         out
     }
 }
