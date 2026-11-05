@@ -35,7 +35,7 @@
 //!
 //! ## The deferral
 //!
-//! Every profile MUST recognise the [deferral](crate::deferral): the one
+//! Every profile MUST recognise the [deferral](crate::session::read_deferral): the one
 //! reply a hypha whose worker pool is full gives every act. [`check_codecs`]
 //! checks it as the finding [`DEFERRAL`]: a deferral reads back with its
 //! exact deficit, and no MUST act's reply decoder of a declared profile

@@ -307,6 +307,7 @@ impl Court {
 
     /// Whether `tier` is the SITTING RESERVE — the house — of a founded
     /// domain.
+    #[cfg(test)]
     pub fn is_sitting_reserve(&self, tier: &[u8; 32]) -> bool {
         self.tier_domain.get(tier).is_some_and(|d| self.reserve_of(d) == Some(*tier))
     }

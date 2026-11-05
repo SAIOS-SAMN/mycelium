@@ -7,8 +7,8 @@
 // act's name.
 
 use mycelium_sdk::conformance::{check_codecs, ActRequirement, Finding, Need, Profile, DEFERRAL, STATEMENT};
-use mycelium_sdk::deferral::{deferral_of, encode_deferral, read_deferral, Deferral, PENDING_CODE};
-use mycelium_sdk::wire::ACT_TABLE;
+use mycelium_sdk::session::{deferral_of, read_deferral, Deferral};
+use mycelium_sdk::{encode_deferral, ACT_TABLE, PENDING_CODE};
 
 /// A client speaking exactly the named acts.
 fn speaking(names: &'static [&'static str]) -> impl Fn(&ActRequirement) -> bool {

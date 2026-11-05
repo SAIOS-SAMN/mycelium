@@ -442,12 +442,6 @@ impl ReceiptChain {
         self.head_stamp().map(|s| s.place())
     }
 
-    /// The head receipt's place as a line prints it, `K.i`, or `none`
-    /// before genesis.
-    pub fn head_label(&self) -> String {
-        self.head_place().map_or_else(|| "none".to_string(), Place::print)
-    }
-
     /// The head receipt's orbit `K`. Zero before genesis.
     pub fn head_k(&self) -> u64 {
         self.head_stamp().map_or(0, |s| s.k)
@@ -1173,6 +1167,7 @@ impl ReceiptChain {
 
     /// A chain rehydrated from its own line alone, in `K` order, on no
     /// root — a line whose receipts cite no peer.
+    #[cfg(test)]
     pub fn from_receipts(receipts: Vec<KStepReceipt>) -> Option<ReceiptChain> {
         let vk = receipts.iter().map(|r| r.stamp.vk).next().map_or([0u8; 32], |v| v);
         Self::from_nodes(None, vk, receipts)

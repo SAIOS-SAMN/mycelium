@@ -2,6 +2,7 @@ mod documents;
 mod drift;
 mod euclidean;
 mod independence;
+mod layers;
 mod length;
 mod numbers;
 mod surface;

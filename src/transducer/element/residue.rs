@@ -383,6 +383,7 @@ pub struct FibreRelation {
 impl FibreRelation {
     /// A relation of rows alone, recording nothing in e_∅ (an injection, or
     /// rows a law reads).
+    #[cfg(test)]
     pub fn of_rows(rows: &[(u8, u8)]) -> FibreRelation {
         FibreRelation { rows: rows.to_vec(), records: Vec::new() }
     }
@@ -518,6 +519,7 @@ impl Element {
 /// reservoir: each unmerged move sent back. A recorded hue returns only
 /// with its record, which no scene carries, so its row is not among them;
 /// a still target returns to itself and moves nothing.
+#[cfg(test)]
 pub fn invert_fibre(fibre: &FibreRelation) -> Vec<(u8, u8)> {
     let recorded = |c: u8| fibre.records.contains(&c);
     let mut out: Vec<(u8, u8)> = fibre
@@ -537,6 +539,7 @@ pub fn invert_fibre(fibre: &FibreRelation) -> Vec<(u8, u8)> {
 /// family's addressing order, so two families that differ by a relabelling
 /// of their symbols read one relation here. `None` where an entry names a
 /// symbol the family never showed.
+#[cfg(test)]
 pub fn fibre_on_symbols(fibre: &FibreRelation, symbols: &crate::transducer::symbols::SymbolSet) -> Option<Vec<(usize, usize)>> {
     let at = |h: u8| symbols.index(std::slice::from_ref(&h));
     let rows = fibre.rows.iter().map(|&(f, t)| Some((at(f)?, at(t)?)));

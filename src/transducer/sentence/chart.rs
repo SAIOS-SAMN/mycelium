@@ -104,20 +104,6 @@ impl SentenceRule {
         self.sections().scoped().map(|(_, v)| v.len()).sum()
     }
 
-    /// EVERY RECOLOURING SECTION THIS TRANSPORT CLASS HAS BEEN SPOKEN WITH:
-    /// the stratum of `hue_maps` the class opens, since the gauge is inside
-    /// the full key and a read keyed by the whole of it can only answer a
-    /// question whose answer the asker already holds.
-    pub fn hue_sections_of(&self, rotor: &crate::transducer::alphabet::Rotor) -> Vec<Vec<(u8, u8)>> {
-        let Some(prefix) = crate::transducer::sentence::hue_class_prefix_of(rotor) else {
-            return Vec::new();
-        };
-        let Some(at) = crate::network::nerve::Prefix::new(&prefix) else {
-            return Vec::new();
-        };
-        self.form.hue_maps.fibre(at).map(|(_, g)| g.clone()).collect()
-    }
-
     /// Carriage of a transport class, read from the form's carriages.
     pub fn carriage_of(&self, key: &[u8]) -> Option<Versor> {
         self.form.carriages.get(key).cloned()

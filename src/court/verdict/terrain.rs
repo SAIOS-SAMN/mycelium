@@ -129,20 +129,10 @@ fn terrain(
 /// The orbit's class key and rank before and after must match the tape.
 /// The orbit is reached by its chord's coordinates on each side (AT1), never
 /// by its position in either form's list.
-pub(crate) fn reconstruct_certificates(
-    f: &Form,
-    certificates: &[crate::transducer::sentence::PivotCertificate],
-    by_chord: &Keyed<crate::transducer::sentence::Orbit, crate::network::nerve::coord::Overlap>,
-) -> Option<&'static str> {
-    match reconstruct_certificates_from(f, certificates, by_chord, &mut Meter::Free, 0) {
-        Err(Cut::Refused(why)) => Some(why),
-        Err(Cut::Spent(_)) | Ok(()) => None,
-    }
-}
-
-/// 78.153 — [`reconstruct_certificates`] on a meter: one read per certificate
-/// (each one a whole-form clone, a forest, two class vectors and two
-/// ranks), from the `from`-th of the envelope's order.
+///
+/// 78.153 — on a meter: one read per certificate (each one a whole-form
+/// clone, a forest, two class vectors and two ranks), from the `from`-th of
+/// the envelope's order.
 pub(crate) fn reconstruct_certificates_from(
     f: &Form,
     certificates: &[crate::transducer::sentence::PivotCertificate],

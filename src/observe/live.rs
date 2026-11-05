@@ -94,12 +94,6 @@ impl Default for Live {
 /// The process's mind's observer.
 static PROCESS: LazyLock<Live> = LazyLock::new(Live::new);
 
-/// THE OBSERVER OF THE PROCESS'S MIND, the one every free function of this
-/// module reads and writes.
-pub fn process() -> &'static Live {
-    &PROCESS
-}
-
 impl Live {
     /// An observer no carrier has entered and no call has reached.
     pub fn new() -> Live {

@@ -370,38 +370,6 @@ pub fn gauge_fibres(chain: &[SectionLink]) -> Option<GaugeFibres> {
 }
 
 impl Element {
-    /// Every concrete rewrite chain this word can speak — the base chain plus
-    /// each section/orbit assignment materialized over the base geometry
-    /// (positions held, hue-transition classes substituted class-for-class).
-    /// The single source for application/projection (the gate and the SDK's
-    /// `Mind::project` both speak through this).
-    pub fn variant_chains(&self) -> Vec<Vec<SectionLink>> {
-        let base = self.sub.to_vec();
-        if base.is_empty() {
-            return Vec::new();
-        }
-        let base_pairs = assignment(&base);
-        let mut out = vec![base.clone()];
-        for asg in self.assignments() {
-            if asg.len() != base_pairs.len() || asg == base_pairs {
-                continue;
-            }
-            let variant: Vec<_> = base
-                .iter()
-                .filter_map(|l| {
-                    // `base_pairs` is built from these links, so every
-                    // pair is in it; a link whose pair is not is no
-                    // variant of this base and is not spelled (rule 11).
-                    let i = base_pairs.iter().position(|p| *p == l.transition())?;
-                    let (nb, na) = *asg.get(i)?;
-                    Some(SectionLink::new(l.site, nb, na))
-                })
-                .collect();
-            out.push(variant);
-        }
-        out
-    }
-
     /// Every transition assignment this thought speaks: base, free sections, and
     /// each torsion cycle's ORBIT expanded exactly to its period (bounded by ℓ —
     /// a closed cycle speaks members never individually witnessed).
@@ -464,6 +432,7 @@ impl Element {
     /// orbit is never generated to ask whether one assignment is on it.
     /// (`matching_assignment`, which answered a position in `assignments()`,
     /// retired with its last reader — 78.43(1).)
+    #[cfg(test)]
     pub fn matches_chain(&self, chain: &[SectionLink]) -> bool {
         if self.sub.is_empty() || positions(&self.sub) != positions(chain) {
             return false;

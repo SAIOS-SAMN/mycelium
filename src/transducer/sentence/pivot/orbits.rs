@@ -149,6 +149,7 @@ impl Form {
     /// AXIOM A, READ (ruled: never a field): the transport from the orbit's
     /// component root to where the cycle is based, composed along its stem.
     /// `None` where a step is unread.
+    #[cfg(test)]
     pub fn orbit_based_at(&self, lp: &Orbit) -> Option<element::Versor> {
         orbit_based_on(&self.faces, lp)
     }

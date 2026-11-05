@@ -30,7 +30,7 @@ pub enum Kind {
     /// A party's act a court adjudicates: it moves the book, the treasury or
     /// the ledger.
     Transition,
-    /// Court to court: covers, offers, installs, folds, burns.
+    /// Court to court: covers, offers, folds, burns, ticks.
     Exchange,
     /// What a court seals of itself.
     Court,
@@ -299,7 +299,10 @@ impl Action {
             // 2026-10-11 — a mind proposes an optimization as a Retire
             // rewrite it speaks (MU-CLIENT §5.4, S3); the two bids retire.
             | Action::Refine
-            | Action::RefineAlgebraic => Kind::Retired,
+            | Action::RefineAlgebraic
+            // 2026-11-05 — the install two organs signed had no sender and
+            // no handler.
+            | Action::Installed => Kind::Retired,
             Action::Quote
             | Action::Task
             | Action::Digests
@@ -324,7 +327,6 @@ impl Action {
             | Action::Root
             | Action::Cover
             | Action::Offer
-            | Action::Installed
             | Action::Equivocation
             | Action::Fold
             | Action::Tick => Kind::Exchange,

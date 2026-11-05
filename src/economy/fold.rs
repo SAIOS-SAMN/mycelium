@@ -135,6 +135,7 @@ impl Treasury {
     /// the rows below a head need not be a prefix of it, and a bisection
     /// would read short where one stands out of line. The walk stays a
     /// count over the journal; the page alone is copied.
+    #[cfg(test)]
     pub fn rows_below_page(&self, head: Place, skip: usize, n: usize) -> (u64, Vec<Entry>) {
         rows_below_page_of(&self.entries, head, skip, n)
     }
@@ -160,14 +161,6 @@ impl Treasury {
     fn nets(&self, head: Place) -> Result<(usize, Nets), &'static str> {
         let prefix = self.rows_below(head);
         Ok((prefix.len(), nets_of(&prefix)?))
-    }
-
-    /// What a fold at `head` would do, without writing it: the audit
-    /// must hold now and the nets must read exact.
-    pub fn fold_reading(&self, head: Place) -> Result<Folded, &'static str> {
-        self.audit().map_err(|_| crate::verdict::REFUSE_FOLD_INEXACT)?;
-        let (replaced, nets) = self.nets(head)?;
-        Ok(Folded { replaced, rows: nets.rows.len(), net: nets.total })
     }
 
     /// FOLD the rows written before the act at `head` into `epoch` rows

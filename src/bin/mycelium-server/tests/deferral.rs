@@ -46,7 +46,12 @@ fn deferral_lanes_carries_door_deficit_per_lane() {
     let read = dialogue::decode_outcome_reply(&deferral).expect("the codec reads its own layout");
     assert_eq!((read.code, read.height, read.pressure), (code, 0, deficit));
     assert!(read.taught.is_empty() && read.rest.is_empty());
-    let taught = dialogue::encode_outcome_reply(code, 0, &deficit, &[7]).expect("one taught byte fits");
+    // A frame teaching one byte: the deferral's taught count raised to 1,
+    // and the byte after it.
+    let mut taught = deferral.clone();
+    taught.truncate(taught.len() - 2);
+    taught.extend_from_slice(&1u16.to_le_bytes());
+    taught.push(7);
     assert_eq!(dialogue::deferral_lanes(&taught, code), None, "a frame that teaches is an answer");
     assert_eq!(
         dialogue::deferral_lanes(&deferral[..deferral.len() - 1], code),

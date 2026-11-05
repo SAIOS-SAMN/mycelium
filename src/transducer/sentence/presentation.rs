@@ -437,6 +437,7 @@ impl Presentation {
     }
 
     /// How many offered word vertices stand refused.
+    #[cfg(test)]
     pub fn refusals_len(&self) -> usize {
         self.refusals.len()
     }
@@ -637,14 +638,6 @@ impl Presentation {
         out.derived_gauge = composed_gauge;
         out.composes = out.residue.iter().all(|&r| r == 0) && !out.cites.is_empty() && motion_ok && gauge_ok;
         Some(out)
-    }
-
-    /// [`Presentation::deconstruct`] on the stroke the motion's own modes
-    /// need — what the mind reads a heard motion against.
-    pub fn deconstruct_sized(&self, motion: &Mv) -> Option<Deconstructed> {
-        let need = crate::transducer::cga::modes_need(motion)?;
-        let mut budget = crate::physics::Physics::default().stroke_n(need);
-        self.deconstruct(motion, &mut budget).ok()
     }
 
     /// The mirror of [`Presentation::file_form`] and

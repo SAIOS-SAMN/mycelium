@@ -144,6 +144,7 @@ fn links(remainders: &[Vec<crate::transducer::sentence::SectionLink>]) -> u64 {
 /// remainder's scene extracts, where speaking it leaves less unsaid on no pair
 /// more — or the form unchanged, with what was read. `None` where the form
 /// leaves nothing unsaid: there is nothing to invert.
+#[cfg(test)]
 pub fn invert_remainder(
     form: &Form,
     family: &[(SectionSample, SectionSample)],

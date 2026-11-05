@@ -94,6 +94,7 @@ impl Court {
     /// founding hypha's own name for why this court's registries kept other
     /// content. `None` where the receipt was applied, held the same content,
     /// or is not held here.
+    #[cfg(test)]
     pub fn founding_refusal(&self, at: &Stamp) -> Option<Founded> {
         self.founding_refusals.get(&at.key()).cloned()
     }

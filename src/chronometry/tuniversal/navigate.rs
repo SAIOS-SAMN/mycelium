@@ -92,6 +92,7 @@ impl Superposed {
     /// caller read it off `Keepers::final_point`), it stands past both ticks,
     /// and `cites` names exactly the two points' citations. `None` otherwise:
     /// the superposition stands.
+    #[cfg(test)]
     pub fn merged_by(&self, by: TPoint, cites: [[u8; 32]; 2]) -> Option<TPoint> {
         let both = [citation(&self.a), citation(&self.b)];
         let named = cites == both || cites == [both[1], both[0]];

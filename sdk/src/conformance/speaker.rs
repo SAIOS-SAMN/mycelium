@@ -5,7 +5,7 @@
 // reply that did not decode and reports it as deferred.
 
 use super::Report;
-use crate::deferral::{deferral_of, Deferral};
+use crate::session::{deferral_of, Deferral};
 use crate::session::Session;
 use crate::voice::{SigningKey, Voice};
 use std::cell::Cell;

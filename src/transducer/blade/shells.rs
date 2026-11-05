@@ -24,6 +24,7 @@ pub(crate) fn pos_key(r: i64, c: i64) -> [u8; 32] {
 }
 
 /// Painted sites that touch background or the horizon (the outline germ).
+#[cfg(test)]
 pub fn outline(painted: &[PaintedSite]) -> Vec<PaintedSite> {
     let have = occupy(painted);
     painted
@@ -75,6 +76,7 @@ pub fn adjacent_ring(painted: &[PaintedSite]) -> Vec<PaintedSite> {
 
 /// Background sites inside the body's EXTENT that cannot reach its border
 /// through background (enclosed interior / holes).
+#[cfg(test)]
 pub fn enclosed_interior(painted: &[PaintedSite]) -> Vec<PaintedSite> {
     if painted.is_empty() {
         return Vec::new();
@@ -169,6 +171,7 @@ pub fn cut(painted: &[PaintedSite]) -> Option<Vec<PaintedSite>> {
 }
 
 /// MAGNIFIED ×k — each compartment becomes a k×k block.
+#[cfg(test)]
 pub fn magnified(painted: &[PaintedSite], k: i64) -> Vec<PaintedSite> {
     if k <= 0 {
         return Vec::new();

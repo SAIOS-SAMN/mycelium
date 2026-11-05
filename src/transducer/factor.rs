@@ -154,6 +154,7 @@ pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
 /// metric to say which partial is nearer, so a failure returns the whole
 /// word as the demand (16.12) — and an exhausted budget returns neither, it
 /// refuses.
+#[cfg(test)]
 pub fn factor_off_plane(
     g: &Rotor,
     basis: &[Rotor],

@@ -205,6 +205,7 @@ fn rotor_of_versor(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
 /// of the target's lanes, as primes the peel may divide by. A generator
 /// that spells in letters is A12's and not the basis's; one whose rotor
 /// has no arc on the sensor plane divides nothing here.
+#[cfg(test)]
 pub fn adjoined_basis(
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,

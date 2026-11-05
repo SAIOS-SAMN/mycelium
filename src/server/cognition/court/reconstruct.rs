@@ -41,6 +41,7 @@ impl Court {
     ///
     /// A word the ruling leaves on no row takes its admitting stamp with it
     /// (78.24), after the Ruling node has cited it.
+    #[cfg(test)]
     pub fn apply_verdict(&mut self, address: &[u8], ruling: u8) -> bool {
         let ruler = match self.court_voice {
             Some(v) => v,
@@ -463,6 +464,7 @@ impl Court {
 
     /// The docket's circuit reading (45.7): circuits completed and the
     /// strokes the last one took, the court's local time beside K.
+    #[cfg(test)]
     pub fn docket_circuits(&self) -> crate::physics::Circuits {
         self.docket_circuits
     }

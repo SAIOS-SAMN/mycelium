@@ -25,13 +25,13 @@
 //! | Group | Items |
 //! |---|---|
 //! | The Concordance | [`ConcordanceClause`], [`Fixture`], [`Object`], [`sign_concordance`], [`reconstruct_fixture`], [`Signing`], [`SigningRefusal`], modes 7 and 8; the alignment reading, [`Alignment`], [`ClauseReading`], mode 9 |
-//! | The register and clock | [`encode_register_request`], [`decode_register_reply`], [`encode_clock_request`], [`decode_clock_reply`], [`CoreStamp`], [`TPoint`] |
-//! | Verification (L2) | [`Transition`], [`BodyState`], [`BodyMoments`], [`Flux`], [`verify_sized`], [`encode_verify_request`], [`decode_verify_reply`], [`TransitionVerdict`], [`Breach`], [`Law`] |
+//! | The clock | [`encode_clock_request`], [`decode_clock_reply`], [`CoreStamp`]; the register's read is [`crate::laws`], the final point [`crate::session::TPoint`] |
+//! | Verification (L2) | [`Transition`], [`BodyState`], [`BodyMoments`], [`Flux`], [`verify_sized`], [`encode_verify_request`], [`decode_verify_reply`], [`TransitionVerdict`], [`Breach`]; each law is [`crate::laws::Law`] |
 //! | Domain founding | [`DomainGenesis`], [`encode_domain`], [`decode_domain_reply`], [`Founded`]; the reserve, the bond, the origin |
 //! | The universe | [`BigBangRecord`], [`Genesis`], [`Geometry`], [`encode_universe_read`], [`decode_universe_reading`], [`UniverseReading`], the statements |
 //! | The endowment | [`Manifest`], [`encode_manifest`], [`decode_grant_reply`], [`Granted`], [`encode_endowment_read`], [`decode_endowment_reading`] |
 //! | Seats | [`Post`], [`Seats`], [`Taken`], [`Percept`], [`Outcome`], [`HouseMail`], [`encode_post`], [`decode_seat_request`], the listing and the mail |
-//! | Framing and identity | [`WireFrame`], [`Lane`], [`read_lane`], [`split_point`], [`BODY_BUDGET`], [`HyphaKey`], [`payload_hash`] |
+//! | Framing and identity | [`WireFrame`], [`Lane`], [`read_lane`], [`split_point`], [`BODY_BUDGET`], [`payload_hash`]; the identity is [`crate::voice::VoiceKey`] |
 //! | Whole modules | [`domain`], [`universe`], [`endowment`], [`seat`], [`atlas`], [`uplink`], [`challenge`], [`commitment`], [`tuniversal`] |
 
 /// The Concordance's clause register (`ACT_LAWS` mode 7) and a kernel's
@@ -40,31 +40,26 @@
 /// signing helper, its own reconstruction of each fixture.
 pub use crate::signing::{
     decode_concordance_reply, decode_signature_reply, encode_concordance_request, encode_signature_request, reconstruct_fixture, sign_concordance,
-    Admitted, Assent, Choice, ConcordanceClause, ConcordanceClauseId, Fixture, Object, SignedClause, Signing, SigningRefusal, Standing, MODE_CONCORDANCE, MODE_SIGNATURE,
+    Admitted, Assent, Choice, ConcordanceClause, ConcordanceClauseId, Fixture, Object, SignedClause, Signing, SigningRefusal, Standing,
 };
 /// The alignment reading (mode 9), derived from the signings the hypha's
 /// ledger records: per clause version, converses, vetoed, collides with the
 /// residue, or unread; and the signings of the past as history.
-pub use crate::signing::{decode_alignment_reply, encode_alignment_request, Alignment, AlignmentRefusal, ClauseReading, KernelAlignment, MODE_ALIGNMENT};
+pub use crate::signing::{decode_alignment_reply, encode_alignment_request, Alignment, AlignmentRefusal, ClauseReading, KernelAlignment};
 
-/// The law register's read (mode 0): the request, the reply at this
-/// register's version, and one law as served.
-pub use mycelium::physics::laws::codec::{decode_register_reply, encode_register_request, Served, MODE_REGISTER};
-/// The core clock (mode 4): the request, the reply (`Some(None)`: a court
-/// with no head yet), and the head's stamp.
-pub use mycelium::physics::laws::codec::{decode_clock_reply, encode_clock_request, MODE_CLOCK};
+/// The core clock (mode 4): the request and the reply (`Some(None)`: a
+/// court with no head yet). The register's read and every mode stand in
+/// [`crate::laws`]; the final point in [`crate::session`].
+pub use mycelium::physics::laws::codec::{decode_clock_reply, encode_clock_request};
 /// The core clock's stamp, and a court act's stamp.
 pub use mycelium::chronometry::{CoreStamp, Stamp};
-/// A final point of TUniversal, `origin/h:S:G:T:H:K`: LAW-COORDINATE v3's
-/// one-component, non-negative case.
-pub use mycelium::chronometry::tuniversal::TPoint;
 
 /// THE VERIFIER (L2): a transition the kernel composed, every body before
 /// and after it, the sources and sinks it records, and the law register's
 /// verdict on it — every breach named with its law. `verify_sized` rules
 /// under the stroke the motion needs, as the court does, so a kernel that
 /// verifies with it agrees with the court exactly.
-pub use mycelium::physics::laws::{verify, verify_sized, BodyState, Breach, Flow, Flux, Law, Transition, TransitionVerdict, Unmeasured};
+pub use mycelium::physics::laws::{verify, verify_sized, BodyState, Breach, Flow, Flux, Transition, TransitionVerdict, Unmeasured};
 /// THE CONFORMAL LAW ON A MOTION STATED PHASE BY PHASE (MU-HOSTING
 /// §5a.10): per bell, each phase of a frame advances on its own named plane
 /// by the fraction `r/h` of its period, the degrees `360°·r/h` on that
@@ -74,13 +69,10 @@ pub use mycelium::physics::laws::{verify, verify_sized, BodyState, Breach, Flow,
 /// (track 25, X1).
 pub use mycelium::physics::laws::{verify_turns, TurnBreach, TurnMotion, TurnTransition, TurnVerdict};
 /// A phase's advance in ℚ/ℤ (`Turn::of(r, h)`, the degrees `360°·r/h` on
-/// its plane) and a frame's periods.
-pub use mycelium::transducer::family::transduce::{Enclosure, Turn};
+/// its plane); a frame's periods are [`crate::task::Enclosure`].
+pub use mycelium::transducer::family::transduce::Turn;
 /// A body as A.13 reads it (centre, mass, second moments).
 pub use mycelium::physics::equilibrium::BodyMoments;
-/// The multivector a motion and a nucleus are written in: a value of
-/// `Cl(p, q)` over ℚ, the signature as data, `Mv` its conformal case.
-pub use mycelium::transducer::cga::Mv;
 /// The verify act (mode 1) and its verdict; the batch (mode 2) and its
 /// verdicts in order; a transition's and a verdict's bytes.
 pub use mycelium::physics::laws::codec::{
@@ -94,9 +86,10 @@ pub use mycelium::physics::laws::codec::{
 pub use mycelium::anastome::dialogue::domain::{
     decode_domain, decode_domain_reply, decode_domain_request, encode_domain, DomainGenesis, DomainRequest, Founded, SignedDomain,
 };
-/// The domain's reserve tier designated, and the reserve read.
+/// The domain's reserve tier designated, and the reserve read (its
+/// reading is [`crate::readings::ReserveReading`]).
 pub use mycelium::anastome::dialogue::domain::{
-    decode_reserve_reading, encode_reservation, encode_reserve_read, Reservation, ReserveReading, SignedReservation,
+    decode_reserve_reading, encode_reservation, encode_reserve_read, Reservation, SignedReservation,
 };
 /// A tier's bond posted or withdrawn by the reserve, and the bond read.
 pub use mycelium::anastome::dialogue::domain::{decode_bond_reading, encode_bond, encode_bond_read, Bond, SignedBond};
@@ -165,8 +158,6 @@ pub use mycelium::transducer::address::{put_key_bytes, put_key_count, take_key_b
 /// The citation hash of exact bytes (BLAKE3): what a receipt, a manifest's
 /// grant and a call's reference cite.
 pub use mycelium::chronometry::payload_hash;
-/// A hypha's (or a house's) ed25519 identity, loaded or minted at a path.
-pub use mycelium::court::identity::HyphaKey;
 
 /// THE HOUSE'S WIRE MODULES WHOLE, each with every public encoder, decoder
 /// and type: the domain (founding, reserve, bond, origin), the universe's

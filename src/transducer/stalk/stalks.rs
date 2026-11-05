@@ -68,22 +68,10 @@ impl Stalks {
 
     /// Members at prefix depth `d` of `inv`. A read on the trie; chart-space
     /// neighbourhood is prefix depth, never a norm.
+    #[cfg(test)]
     pub fn fibre_at_depth(&self, inv: &Invariant, d: usize) -> Vec<Vec<u8>> {
         let n = d.min(inv.0.len());
         self.root.fibre(&inv.0[..n])
-    }
-
-    /// One-step outward charts from `inv`: the child axes of this node.
-    pub fn child_charts(&self, inv: &Invariant) -> Vec<Invariant> {
-        self.root
-            .child_axes(&inv.0)
-            .into_iter()
-            .map(|a| {
-                let mut axes = inv.0.clone();
-                axes.push(a);
-                Invariant(axes)
-            })
-            .collect()
     }
 
     // `each_child(inv, after, budget, f)` stood here: a budgeted page of one

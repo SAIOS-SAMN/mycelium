@@ -207,12 +207,9 @@ impl Court {
         self.measure_ruled_root()
     }
 
-    pub fn court_federation_len(&self) -> usize {
-        self.court_federation.len()
-    }
-
     /// The demand vertices listed so far (50.5, L7): a counter read at the
     /// wire and by the tests, derived from the listings, never a gate.
+    #[cfg(test)]
     pub fn demands_listed(&self) -> u64 {
         self.court_demands_listed
     }
@@ -225,26 +222,22 @@ impl Court {
         self.cocycle_at.len()
     }
 
+    #[cfg(test)]
     pub fn dialect_chain_len(&self) -> usize {
         self.dialect_chain.len()
     }
 
+    #[cfg(test)]
     pub fn heard_len(&self) -> usize {
         self.heard.len()
     }
 
+    #[cfg(test)]
     pub fn field_hot_len(&self) -> usize {
         self.field.len()
     }
 
-    pub fn field_cold_len(&self) -> usize {
-        self.field_cold.len()
-    }
-
-    pub fn settlements_hot_len(&self) -> usize {
-        self.settlements.len()
-    }
-
+    #[cfg(test)]
     pub fn settlements_cold_len(&self) -> usize {
         self.settlements_cold.len()
     }

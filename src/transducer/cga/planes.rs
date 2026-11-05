@@ -106,19 +106,6 @@ pub fn blade_name(blade: usize) -> String {
     }
 }
 
-/// A RAY'S OWN NAME, blade by blade with its exact coefficient: `e12 3/5,
-/// e1p -1`. The one namer of a ray a reading carries ([`Mv::ray`]); a mask
-/// this target's word cannot hold is named `?`, never truncated into another.
-pub fn ray_name(ray: &[(u64, num_rational::BigRational)]) -> String {
-    ray.iter()
-        .map(|(b, q)| match usize::try_from(*b) {
-            Ok(m) => format!("{} {q}", blade_name(m)),
-            Err(_) => format!("? {q}"),
-        })
-        .collect::<Vec<_>>()
-        .join(", ")
-}
-
 /// THE TWO NULL DIRECTIONS OF THE CONFORMAL PAIR: `e_∞ = e₋ + e₊` and
 /// `e_o = ½(e₋ − e₊)`. A bivector `eᵢ ∧ e_∞` is a translation's, `eᵢ ∧ e_o`
 /// a transversion's; both square to zero.
@@ -134,26 +121,6 @@ impl Pole {
             Pole::Infinity => 0,
             Pole::Origin => 1,
         }
-    }
-
-    pub fn of(b: u8) -> Option<Pole> {
-        match b {
-            0 => Some(Pole::Infinity),
-            1 => Some(Pole::Origin),
-            _ => None,
-        }
-    }
-}
-
-/// A parabolic plane's name: its base axis and its pole, `e1∞`, `e2o`.
-pub fn parabolic_name(axis: usize, pole: Pole) -> String {
-    let p = match pole {
-        Pole::Infinity => "∞",
-        Pole::Origin => "o",
-    };
-    match axis > 9 {
-        true => format!("e{axis}_{p}"),
-        false => format!("e{axis}{p}"),
     }
 }
 

@@ -59,7 +59,7 @@ fn place_before(at: Place) -> Option<Place> {
 /// era's own chain: where `p` stands at or below the root this court holds
 /// for its signer's fold, the signer's line is asked from `p` up to that
 /// root — one page, a fold cuts within one — and the ledger walks it
-/// (`Court::prove_folded`). `None` where `p` is no citation into a closed
+/// (`Court::walk_folded`). `None` where `p` is no citation into a closed
 /// era (no fold of its signer held, or `p` past the root): the caller reads
 /// it as it always did. `Some(false)` where the stroke, the page or the
 /// proof did not stand: the receipt waits for the next hearing, which asks

@@ -330,13 +330,8 @@ impl Contemplation {
         Contemplation::default()
     }
 
-    /// CS2 — the pivots' outcomes by content: reached, derivable, demanded
-    /// (the adjunction apart), starved, unread by fibre or by algebra.
-    pub fn pivot_reading(&self) -> sentence::PivotTally {
-        self.pivots
-    }
-
     /// 13.12 — the merges' outcomes by name: merged, stayed two, unnamed.
+    #[cfg(test)]
     pub fn merge_reading(&self) -> super::merge::MergeTally {
         self.merges
     }
@@ -417,6 +412,7 @@ impl Contemplation {
         self.cited.get(&Self::cited_at(address)).is_some_and(|m| !m.is_empty())
     }
 
+    #[cfg(test)]
     pub fn glues_word(&self, address: &[u8]) -> bool {
         self.wells
             .scoped()
@@ -452,6 +448,7 @@ impl Contemplation {
     // between two candidates is `Vⱼ⁻¹Vₖ` and flatness is that quotient
     // being the identity, which `candidates` holds the operands for.
 
+    #[cfg(test)]
     pub fn cavity_len(&self) -> usize {
         self.cavity.len()
     }
@@ -460,6 +457,7 @@ impl Contemplation {
     /// remainder, so the entry count says how many retirements happened and
     /// this says what they kept — and a thousand entries of one link and ten
     /// of a thousand are the same count and not the same carrier.
+    #[cfg(test)]
     pub fn cavity_links(&self) -> usize {
         self.cavity.scoped().map(|(_, r)| r.len()).sum()
     }
@@ -503,6 +501,7 @@ impl Contemplation {
     /// `None` for a chart with no key — an empty prefix names no coordinate,
     /// and a caller whose chart turned out empty must say which reading it
     /// wanted (rule 11, `Prefix::new`).
+    #[cfg(test)]
     pub fn cavity_keys_under(
         &self,
         inv: &crate::transducer::stalk::Invariant,
@@ -521,6 +520,7 @@ impl Contemplation {
     /// engine's coherence functional, the scalar the doctrine refuses. An
     /// unmeasured space is an open thought (∂g ≠ 0), not infinite
     /// discordance; no thought is `[0; 4]`.
+    #[cfg(test)]
     pub fn boundary_measure(&self) -> [u64; 4] {
         let mut acc: Vec<SectionLink> = Vec::new();
         for r in self.remainders() {
@@ -1232,13 +1232,7 @@ impl Contemplation {
         Some((e, family))
     }
 
-    /// Classes on the contemplation, any degree.
-    pub fn classes_held(
-        &self,
-    ) -> Vec<(crate::transducer::sentence::ClassVector, Rotor, usize)> {
-        self.complex.classes()
-    }
-
+    #[cfg(test)]
     pub fn component_count(&self) -> usize {
         let mut seen = Keyed::new();
         let mut n = 0usize;
@@ -1255,6 +1249,7 @@ impl Contemplation {
         n
     }
 
+    #[cfg(test)]
     pub fn horizon_len(&self) -> usize {
         let mut n = 0usize;
         for (_, b) in self.wells.scoped() {

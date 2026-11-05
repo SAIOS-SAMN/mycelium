@@ -59,6 +59,7 @@ impl Court {
     }
 
     /// The fold root held for a signer with its two signatures, if any.
+    #[cfg(test)]
     pub fn root_proof(&self, signer: &[u8; 32]) -> Option<&RootProof> {
         self.root_proofs.get(signer)
     }

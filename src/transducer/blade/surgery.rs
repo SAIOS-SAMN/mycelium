@@ -42,6 +42,7 @@ pub struct Surgery {
 
 impl Surgery {
     /// Construct a hole-filling surgery from the sites of the hole.
+    #[cfg(test)]
     pub fn fill_hole(hole: Vec<Site>) -> Self {
         let mut delta = hole;
         delta.sort_unstable();
@@ -61,30 +62,6 @@ impl Surgery {
         Surgery {
             kind: SurgeryKind::Puncture,
             delta_betti: (0, 1),
-            support_delta: delta,
-        }
-    }
-
-    /// Construct a bridge-merge surgery from the sites of the bridge.
-    pub fn bridge_merge(bridge: Vec<Site>) -> Self {
-        let mut delta = bridge;
-        delta.sort_unstable();
-        delta.dedup();
-        Surgery {
-            kind: SurgeryKind::BridgeMerge,
-            delta_betti: (-1, 0),
-            support_delta: delta,
-        }
-    }
-
-    /// Construct a split-cut surgery from the sites of the cut.
-    pub fn split_cut(cut: Vec<Site>) -> Self {
-        let mut delta = cut;
-        delta.sort_unstable();
-        delta.dedup();
-        Surgery {
-            kind: SurgeryKind::SplitCut,
-            delta_betti: (1, 0),
             support_delta: delta,
         }
     }

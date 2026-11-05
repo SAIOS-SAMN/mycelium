@@ -81,16 +81,10 @@ impl Withheld {
         matches!(self, Withheld::CoboundaryResidue { .. })
     }
 
-    /// Was the coboundary question ASKABLE at all? `false` means the form
-    /// carries no cycle and `δ¹` is silent — a reading that reports the
-    /// arms without this cannot tell an empty arm from an unreachable one.
-    pub fn is_askable(&self) -> bool {
-        !matches!(self, Withheld::Acyclic { .. })
-    }
-
     /// CV1 — THE KIND OF WHAT THE MINT WITHHELD (78.9): a class in `H¹` and
     /// a coboundary residue are cover-relative, C; an acyclic form and one
     /// with no trajectory asked no question, N.
+    #[cfg(test)]
     pub fn obstruction_kind(&self) -> crate::transducer::sentence::ObstructionKind {
         use crate::transducer::sentence::ObstructionKind;
         match self {
@@ -551,6 +545,7 @@ pub fn mint_sentence_why(
 /// with nothing acting, no tape or an address that does not decode is
 /// `integrity`. Exhaustive over the refusals the mint returns; any other is
 /// named `other` rather than folded into one of these.
+#[cfg(test)]
 pub fn mint_arm(why: crate::transducer::sentence::ObstructionRefusal) -> &'static str {
     use crate::transducer::sentence::ObstructionRefusal;
     match why {
@@ -569,6 +564,7 @@ pub fn mint_arm(why: crate::transducer::sentence::ObstructionRefusal) -> &'stati
 /// read "unmeasured span, or the mint refused" and the speech path named
 /// the arm alone, so 456 refusals of "nothing in the form acts" could not
 /// say that every vertex was a demand, nor which.
+#[cfg(test)]
 pub fn mint_refusal_line(why: crate::transducer::sentence::ObstructionRefusal, form: &crate::transducer::sentence::Form) -> String {
     let kinds: Vec<&'static str> = form.demand_vertices().map(|(_, kind, _, _)| kind.label()).collect();
     format!("mint refused ({}): {} [{}] demands [{}]", mint_arm(why), why.proof(), why.kind().label(), kinds.join(", "))
@@ -752,6 +748,7 @@ pub fn sentence_measure(
 /// form against the same remainders (law 12) — a demand vertex acts on
 /// nothing, so the deflation is the same form's. `_stood` is not minted
 /// (78.149 (a)).
+#[cfg(test)]
 pub fn sentence_measure_from(
     form: &Form,
     family: &[(SectionSample, SectionSample)],

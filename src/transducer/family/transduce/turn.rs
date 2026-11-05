@@ -98,6 +98,7 @@ impl Turn {
     }
 
     /// Is this turn one of the seam's two sides (`0` or the whole turn)?
+    #[cfg(test)]
     pub fn is_seam(&self) -> bool {
         self.index == 0 || self.index == self.period
     }

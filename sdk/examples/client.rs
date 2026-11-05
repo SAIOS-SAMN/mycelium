@@ -22,14 +22,14 @@
 //!    did not finish answers `SOLVE_UNREAD`; the same solve sent again
 //!    resumes it.
 //! 6. Deferral — a hypha whose worker pool is full answers any act with the
-//!    deferral (`deferral::deferral_of` on the session's refusal,
-//!    `deferral::read_deferral` on raw bytes): nothing was ruled, the door's
+//!    deferral (`session::deferral_of` on the session's refusal,
+//!    `session::read_deferral` on raw bytes): nothing was ruled, the door's
 //!    per-lane deficit is printed, and the client asks again later.
 //!
 //! Exit 0 where every task asked was answered by the court (solved or
 //! refused by name) or deferred; 1 where the court could not be reached.
 
-use mycelium_sdk::deferral::{deferral_of, read_deferral, Deferral};
+use mycelium_sdk::session::{deferral_of, read_deferral, Deferral};
 use mycelium_sdk::laws;
 use mycelium_sdk::prelude::*;
 use mycelium_sdk::rule::{extract_rule, mint_sentence_why, on_each_perspective_of, on_test_inputs, speak_rule, stated, Physics, SectionSample};

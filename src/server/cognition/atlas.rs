@@ -429,11 +429,13 @@ impl Court {
     /// 78.156 §2 — A UNIVERSE'S DILATION per entry segment, `Δu/Δh` exact,
     /// in chain order (`None` where `h` did not move or the clock
     /// re-originated). A reading; the hypha records, never steers.
+    #[cfg(test)]
     pub fn dilations(&self, domain: &[u8; 32]) -> Vec<(u64, Option<(u64, u64)>)> {
         self.atlas.ledgers.get(domain).map_or(Vec::new(), |c| c.iter().map(|e| (e.entry.u, e.dilation)).collect())
     }
 
     /// 78.154 — the reconciliation edge of a crossing, as held.
+    #[cfg(test)]
     pub fn crossing_edge(&self, crossing: &[u8; 32]) -> Option<Edge> {
         self.atlas.edges.get(crossing).cloned()
     }

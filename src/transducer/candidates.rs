@@ -6,6 +6,7 @@
 //! per axis, in structural order and never summed; two selections of equal
 //! size are not equal readings (law 5).
 
+#[cfg(test)]
 use crate::transducer::anchor::Selection;
 use crate::transducer::spelled::{PaintedSite, SectionSite};
 
@@ -132,6 +133,7 @@ pub fn mismatch(a: &Signature, b: &Signature) -> [u64; 4] {
 /// another and nothing summed. One survivor is a discharge; several are a
 /// vortex and are all returned. Empty input → empty (no candidate, no
 /// invention).
+#[cfg(test)]
 pub fn beam_minima(
     candidates: &[Selection],
     witnesses: &[crate::transducer::anchor::Evidence],

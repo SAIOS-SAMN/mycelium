@@ -141,10 +141,6 @@ impl<V> Stratified<V> {
         Stratified { schema, trie: Keyed::new() }
     }
 
-    pub fn schema(&self) -> &'static Schema {
-        self.schema
-    }
-
     pub fn len(&self) -> usize {
         self.trie.len()
     }
@@ -198,6 +194,7 @@ impl<V> Stratified<V> {
     /// says so there; the full depth is an exact read, which is
     /// [`Stratified::get`]. Both are refused here so that a site cannot ask
     /// for a projection and receive one of those by accident.
+    #[cfg(test)]
     pub fn fibre_at_depth(&self, key: &[u8], depth: usize) -> Result<Subtree<'_, V>, StratumRefusal> {
         if depth == 0 {
             return Err(StratumRefusal {
@@ -235,13 +232,6 @@ impl<V> Stratified<V> {
     /// [`Keyed::scoped`] is.
     pub fn scoped(&self) -> Subtree<'_, V> {
         self.trie.scoped()
-    }
-
-    /// The trie underneath, for the persist walk and for readers that hold
-    /// a whole key already. Every keyed read through here bypasses the
-    /// schema, so a site that uses it is saying it has the whole path.
-    pub fn keyed(&self) -> &Keyed<V> {
-        &self.trie
     }
 }
 

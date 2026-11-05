@@ -226,8 +226,9 @@ impl Court {
         measured
     }
 
-    /// The rank in force, measured now under the lock (tests and local use;
-    /// the server measures off the lock through the market view).
+    /// The rank in force, measured now under the lock (tests; the server
+    /// measures off the lock through the market view).
+    #[cfg(test)]
     pub(crate) fn closure_now(&mut self) -> std::sync::Arc<Rank> {
         let gens = (self.basis_gen, self.book_gen);
         if (self.closure.0, self.closure.1) != gens {

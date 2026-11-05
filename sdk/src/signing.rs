@@ -47,10 +47,10 @@ pub use mycelium::physics::laws::clauses::{ConcordanceClause, ConcordanceClauseI
 pub use mycelium::physics::laws::clauses::{Admitted, Assent, Choice, SignedClause, Signing, SigningRefusal};
 /// The register's read (`ACT_LAWS` mode 7), the signing act presented,
 /// judged and recorded on the hypha's ledger (mode 8), and the alignment
-/// reading derived from the recorded signings (mode 9).
+/// reading derived from the recorded signings (mode 9). Each mode is in
+/// [`crate::laws`].
 pub use mycelium::physics::laws::codec::{
-    decode_alignment_reply, decode_concordance_reply, decode_signature_reply, encode_alignment_request, encode_concordance_request, encode_signature_request, MODE_ALIGNMENT,
-    MODE_CONCORDANCE, MODE_SIGNATURE,
+    decode_alignment_reply, decode_concordance_reply, decode_signature_reply, encode_alignment_request, encode_concordance_request, encode_signature_request,
 };
 /// The alignment reading: per kernel and per clause version, converses,
 /// vetoed, collides (with the residue) or unread, derived from the signing

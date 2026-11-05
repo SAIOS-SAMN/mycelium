@@ -1397,17 +1397,17 @@ ruled 2026-09-10), 50.5 (Y3). Code: `src/economy/settle.rs::settle_recursive`.
 
 ```text
 consilience (n ≥ 2 voices):  share_l = μ_l / n                     exact; n · share = μ
-assembly:                     μ⃗_composite = Σ μ⃗(Wᵢ) + μ⃗_assembly(overlaps),  share_l = μ_l / n
 rewrite release (POWR):       share_l = μ_l / n
 ```
 
 Every voice takes the same exact part, so the parts are the award: nothing
 is invented and nothing is left unminted. (Until v0.3.0 each share was
-`⌊μ_l / n⌋` and the remainder was never issued.)
+`⌊μ_l / n⌋` and the remainder was never issued.) The assembly premium of
+MU-RECURSION 7d is retired: its producer was cut on 2026-09-10, and its
+settlement arm went with it.
 
-Sources: MU-RECURSION 7d; MU-ECONOMY §0, §9. Code:
-`src/economy/settle.rs::settle_consilience`, `::settle_assembly`,
-`::release_rewrite`.
+Sources: MU-ECONOMY §0, §9. Code:
+`src/economy/settle.rs::settle_consilience`, `::release_rewrite`.
 
 #### 6.8 POWR: retirement and the compression yield
 
@@ -1420,8 +1420,8 @@ A word retired by geodesic or condensation burns the description the
 language no longer carries and pays the retirer the yield.
 
 Sources: MU-ECONOMY §3.2; MU-RECURSION 3.8, 27, 78.33. Code:
-`src/economy/settle.rs::release_rewrite`, `::settle_rewrite`,
-`::settle_refine`, `::settle_condense`.
+`src/economy/settle.rs::release_rewrite`, `::settle_rewrite`. (The
+refine and condense arms, which no act reached, are retired.)
 
 #### 6.9 Burn and slash
 

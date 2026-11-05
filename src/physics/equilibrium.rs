@@ -621,6 +621,7 @@ pub fn orbit_about(star: &Star, before: &[Q], after: &[Q]) -> Option<Mv> {
 /// `before`. The same step read against a star at another place splits into
 /// another orbit and another spin: the star's distance sets the spin, read,
 /// never assumed. `None` where no orbit of the star carries the body.
+#[cfg(test)]
 pub fn spin_of(step: &Mv, star: &Star, before: &[Q], after: &[Q]) -> Option<Mv> {
     Some(orbit_about(star, before, after)?.reverse().geo(step))
 }

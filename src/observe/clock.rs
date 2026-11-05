@@ -123,13 +123,6 @@ impl Clock {
         }
     }
 
-    /// The node's own `K`.
-    pub fn k(&self) -> u64 {
-        match self {
-            Clock::Court(c) => c.k,
-        }
-    }
-
     /// `None` where the peers' count passes its four bytes (STD1 3c).
     #[must_use]
     pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {

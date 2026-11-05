@@ -61,24 +61,6 @@ impl Court {
         &self.complexes
     }
 
-    /// Ideology boundary on a chart: classes at every degree the mesh holds
-    /// there, including coarser prefixes, so a mind can be taught the frame
-    /// its well sits on.
-    pub fn classes_on(
-        &self,
-        inv: &crate::transducer::stalk::Invariant,
-    ) -> Vec<(crate::transducer::alphabet::Rotor, usize)> {
-        let mut out = Vec::new();
-        for p in inv.prefixes() {
-            if let Some(cx) = self.complexes.get(&p.key()) {
-                for (_kappa, r, d) in cx.classes() {
-                    out.push((r, d));
-                }
-            }
-        }
-        out
-    }
-
     /// 78.153b — THE CLASS RECORDS ON THE HOLD'S STROKE: on `inv` and its
     /// prefixes, one read per complex read; where `inv` names no axes, the
     /// whole nerve, one read per chart's complex, from past the chart the
@@ -504,10 +486,12 @@ impl Court {
         out
     }
 
+    #[cfg(test)]
     pub fn ruled_digests(&self) -> Vec<crate::transducer::sheaf::StratumDigest> {
         crate::transducer::sheaf::digests(&self.ruled)
     }
 
+    #[cfg(test)]
     pub fn ruled_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
         self.ruled.fibre(inv).to_vec()
     }
@@ -538,15 +522,6 @@ impl Court {
         self.chain.at_place(before).map(|r| r.stamp)
     }
 
-    /// A HELD WORD AS A PAGE CARRIES IT: its tape and the stamp that
-    /// admitted it, for a page that seals no act of its own (a genesis
-    /// page, a chart fetch). `None` where the word is not held or no act
-    /// has admitted it, or its record does not write (STD1 3c).
-    pub fn taught(&self, address: &[u8]) -> Option<crate::anastome::dialogue::Taught> {
-        let at = self.admitted_at(address)?;
-        Some(crate::anastome::dialogue::Taught { at, word: self.word_at(address)?.to_bytes()? })
-    }
-
     /// What this court already holds in the stratum over `inv`, sent with a
     /// fetch so only the lacking words travel.
     ///
@@ -561,6 +536,7 @@ impl Court {
     /// `heard` grows with peers × corpus — so the mesh paid O(P² · S · C)
     /// for addresses that could not be used. Read from the chart's own
     /// fibre, the cost is the stratum.
+    #[cfg(test)]
     pub fn fetch_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
         let mut h: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for a in self.ruled.fibre(inv) {

@@ -22,8 +22,8 @@ impl Court {
     /// condensation metric: cardinality falls while this rises, and cycles
     /// carry span in O(1)).
     ///
-    /// IT READS THE CARRIER THAT HOLDS THE FIBRE, which is what `torsion_total`
-    /// below already did and this did not. A sentence's cycles are on its FORM;
+    /// IT READS THE CARRIER THAT HOLDS THE FIBRE, which is what the basis's torsion
+    /// count already did and this did not. A sentence's cycles are on its FORM;
     /// `Element::fibre_volume` sums the element's own two fields, which a
     /// minted sentence leaves empty. So every sentence in the basis contributed
     /// 0 to the volume however many orbits its form had filed — the ruling at
@@ -72,22 +72,6 @@ impl Court {
         Some(total)
     }
 
-    /// The torsion cycles held across the basis — how much of the language has
-    /// condensed from enumeration into group presentation.
-    pub fn torsion_total(&self) -> usize {
-        self.basis
-            .scoped()
-            .map(|(_, t)| {
-                let n = crate::transducer::sentence::form_torsion(t).len();
-                if n > 0 {
-                    n
-                } else {
-                    t.torsion().len()
-                }
-            })
-            .sum()
-    }
-
     /// The next line position `i` on this court's receipt chain (chronometry
     /// import); `K` counts closed orbits and is never this index.
     pub fn k_step(&self) -> u64 {
@@ -112,15 +96,9 @@ impl Court {
     }
 
     /// A CITATION INTO A PEER'S CLOSED ERA, PROVED BY THE ERA'S OWN CHAIN
-    /// (78.65, 78.87 R2): the page of the signer's line from `p` up to its
-    /// fold root, walked by the ledger (`ReceiptChain::prove_from_era`).
-    pub fn prove_folded(&mut self, p: &crate::chronometry::Parent, page: &[crate::chronometry::KStepReceipt]) -> bool {
-        self.chain.prove_from_era(p, page)
-    }
-
-    /// The same proof one page at a time, resumed where the last page ended
-    /// (`ReceiptChain::walk_era`): a proof longer than one frame closes page
-    /// by page.
+    /// (78.65, 78.87 R2), one page at a time, resumed where the last page
+    /// ended (`ReceiptChain::walk_era`): a proof longer than one frame closes
+    /// page by page.
     pub fn walk_folded(&mut self, p: &crate::chronometry::Parent, page: &[crate::chronometry::KStepReceipt]) -> crate::chronometry::EraWalk {
         self.chain.walk_era(p, page)
     }
@@ -129,14 +107,4 @@ impl Court {
     pub fn era_walk_from(&self, p: &crate::chronometry::Parent) -> crate::chronometry::Parent {
         self.chain.era_walk_from(p)
     }
-
-    /// THE COHESION READING — the joint (C, I) state, both
-    /// axes exact and never traded: C counts open demands sitting on KNOWN
-    /// geometry (closure failing — collapse-side work); I counts open demands on
-    /// geometry NO thought speaks (coverage failing — expansion-side work).
-    pub fn cohesion(&mut self) -> (u64, u64) {
-        let rank = self.closure_now();
-        cohesion_over(&rank)
-    }
-
 }

@@ -280,6 +280,7 @@ impl Rank {
         (self.closed, self.open)
     }
 
+    #[cfg(test)]
     pub fn closure_len(&self) -> usize {
         self.closure.len()
     }

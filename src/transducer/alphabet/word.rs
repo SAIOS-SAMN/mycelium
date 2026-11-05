@@ -144,6 +144,7 @@ impl Word {
 
     /// Same conjugacy class: rotor invariants first (15.3). The plane form
     /// is a sensor section, not the identity of the class.
+    #[cfg(test)]
     pub fn same_class(&self, other: &Word) -> bool {
         match (self.rotor().class_invariants(), other.rotor().class_invariants()) {
             (Some(a), Some(b)) => a == b,
@@ -298,6 +299,7 @@ impl Word {
 
     /// Two words are the same vertex: rotor first. A missing plane form is
     /// not an exception when the rotors agree.
+    #[cfg(test)]
     pub fn same_form(&self, other: &Word) -> bool {
         if !self.rotor().projective_eq(&other.rotor()) {
             return false;
@@ -306,11 +308,6 @@ impl Word {
             (Some(a), Some(b)) => a == b,
             _ => true,
         }
-    }
-
-    /// The plane element is the identity: even sheet, trivial rotation.
-    pub fn abelian_identity(&self) -> bool {
-        self.form().is_some_and(|f| f.is_identity())
     }
 
     /// THE ORDER OF THE WORD'S ROTATION, read on the rotor (15.3, ruled
@@ -578,14 +575,6 @@ impl Ord for Order {
 }
 
 impl Order {
-    /// Wire encoding: 0 = infinite, else the finite period.
-    pub fn to_u32(self) -> u32 {
-        match self {
-            Order::Finite(ell) => ell,
-            Order::Infinite => 0,
-        }
-    }
-
     pub fn from_u32(v: u32) -> Self {
         if v == 0 {
             Order::Infinite

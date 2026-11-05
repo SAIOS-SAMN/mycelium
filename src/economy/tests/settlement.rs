@@ -156,10 +156,6 @@ fn settle_consilience_split_never_invents_units() {
         assert_eq!(t.balance_mu(v), quarter, "a quarter each");
     }
     assert_eq!(t.minted(), [0, 0, 1, 0], "the parts are the unit");
-
-    // Same exact law for settle_assembly
-    t.settle_assembly(&voices, [0, 0, 1, 0], anchor);
-    assert_eq!(t.balance_mu(&[1; 32]), quarter.add(&quarter));
     assert!(t.audit().is_ok(), "and both equations hold over ℚ");
 }
 

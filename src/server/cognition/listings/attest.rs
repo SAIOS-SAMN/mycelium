@@ -46,6 +46,7 @@ impl Court {
 
     /// The voices that uttered this object — the settle receipt's parties.
     /// A use, credited (24.1); never a vantage.
+    #[cfg(test)]
     pub fn voices_of(&self, germ: &[u8]) -> Vec<[u8; 32]> {
         self.convergence.parties(germ)
     }

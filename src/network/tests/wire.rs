@@ -17,18 +17,6 @@ fn encode_refuses_body_over_budget() {
     assert!(f.encode().is_none(), "over MTU — refused, never truncated");
 }
 
-/// WireFrames on distinct lanes multiplex and demultiplex back in order.
-#[test]
-fn multiplex_demultiplexes_lanes_in_order() {
-    let fs = vec![
-        WireFrame { lane: Lane::Spatial, body: vec![10] },
-        WireFrame { lane: Lane::Temporal, body: vec![20, 21] },
-        WireFrame { lane: Lane::Harmonic, body: vec![] },
-    ];
-    let round = demultiplex(&multiplex(&fs).unwrap()).unwrap();
-    assert_eq!(fs, round, "all four lanes remain distinct and ordered");
-}
-
 /// 78.152 TU-7 — a frame carries its speaker's last final point behind
 /// its body, its lanes holding shares of a unit, read back exactly by the
 /// trailer's count; an older decoder's lane read refuses it.

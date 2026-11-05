@@ -247,7 +247,6 @@ fn from_element_form_round_trips_every_vertex_kind() {
         e_contact.address(),
         "contact is on the form key"
     );
-    assert_eq!(w, w, "M1 is the rotor; contact is not a letter");
 }
 
 /// 50.5 — a demand is named by its kind and the coordinates it carries: two

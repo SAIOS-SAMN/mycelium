@@ -112,8 +112,8 @@ pub trait Coordinate: Eq + Clone + std::fmt::Debug + Send + Sync + 'static {
 /// A fibre read follows the prefix of a coarse coordinate — every section over one
 /// chart, every member of one class — and that is only meaningful where
 /// the coarse system's bytes are genuinely an opening segment of the fine
-/// system's. Declaring it is what makes `fibre_over` a stratum read rather
-/// than a byte-prefix coincidence.
+/// system's. Declaring it is what makes a fibre read at its opening a stratum
+/// read rather than a byte-prefix coincidence.
 pub trait Stratum<Fine: Coordinate>: Coordinate {
     /// THE OPENING BYTES OF A FINE KEY THAT THIS COARSE COORDINATE FIXES.
     ///
@@ -154,14 +154,6 @@ pub mod coord {
     /// cannot be handed one of these, because `put` takes `&Chart`.
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
     pub struct Any(pub Vec<u8>);
-
-    impl Any {
-        /// Bytes a site has not yet given a coordinate. Greppable on
-        /// purpose: each one is a place the declaration is still missing.
-        pub fn undeclared(bytes: impl AsRef<[u8]>) -> Any {
-            Any(bytes.as_ref().to_vec())
-        }
-    }
 
     impl Coordinate for Any {
         const NAME: &'static str = "undeclared";

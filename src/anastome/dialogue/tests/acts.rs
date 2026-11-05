@@ -21,16 +21,7 @@ fn encode_refuses_count_past_field() {
         "256 do not, and the ask is refused rather than sent naming 255"
     );
 
-    // The same at a settlement's parties and a syllabus page.
-    let voices: Vec<[u8; 32]> = (0..=255u16).map(|i| [u8::try_from(i).expect("the range is 0..=255, one voice per byte value"); 32]).collect();
-    let listing = crate::transducer::element::listing_key(
-        &[crate::transducer::sentence::tests::fixtures::link(0, 0, 1, 4)],
-        &crate::transducer::element::IDENTITY_FRAME,
-    )
-    .expect("a one-link chain is A5's");
-    assert!(encode_settle(&listing, &voices[..255], &[0; 4]).is_some());
-    assert!(encode_settle(&listing, &voices, &[0; 4]).is_none());
-
+    // The same at a syllabus page.
     let words: Vec<Taught> = (0..256).map(|_| Taught { at: crate::chronometry::Stamp::default(), word: vec![0u8] }).collect();
     assert!(encode_syllabus_reply(&words[..255]).is_some());
     assert!(encode_syllabus_reply(&words).is_none());
@@ -48,12 +39,6 @@ fn acts_round_trips() {
         &crate::transducer::element::IDENTITY_FRAME,
     )
     .expect("one entry per position is A5's chain");
-    let cites = vec![CiteWire {
-        addr: listing.clone(),
-        standing: 0,
-        transport: crate::transducer::element::translator_versor(1, -1),
-        body: chain.clone(),
-    }];
     let ask = encode_quote_request(&voice).expect("the ask fits its lengths");
     assert_eq!(decode_quote_request(&ask).unwrap(), (voice, Vec::new()));
     // L8q: the listing rides WHOLE. The field carries an element's own
@@ -83,42 +68,6 @@ fn acts_round_trips() {
     assert_eq!(s, [5, 0, 9, 0]);
     assert_eq!(k, 4208, "receipt-chain head K rides the quote, not TUniversal");
     assert_eq!(it, items);
-    // A settlement rides the docket after the dockets, with its utterance.
-    let docket = Docket {
-        addr: listing.clone(),
-        elem: vec![1, 2, 3],
-        voices: vec![voice],
-        escrowed: crate::economy::Mu::counts([1, 2, 3, 4]).part(5).expect("fifths"),
-        deflation: [0, 0, 7, 0],
-        at: crate::chronometry::Place { k: 41, i: 1 },
-    };
-    let settlement = Settlement {
-        listing: listing.clone(),
-        chain: chain.clone(),
-        voice,
-        cites: cites.clone(),
-        before: [2, 0, 2, 0],
-        after: [0, 0, 1, 0],
-        at: crate::chronometry::Stamp::new(7, [3; 32], crate::chronometry::Place { k: 42, i: 0 }),
-    };
-    let body = encode_docket_reply_with(std::slice::from_ref(&docket), std::slice::from_ref(&settlement))
-        .expect("the docket writes");
-    assert_eq!(decode_docket_reply(&body).unwrap(), vec![docket.clone()]);
-    assert_eq!(decode_settlements(&body), vec![settlement.clone()]);
-    let cavity = vec![0xCAu8, 0xFE, 0xBA, 0xBE];
-    let (paged, w, s, n) = encode_docket_reply_paged(
-        std::slice::from_ref(&docket),
-        std::slice::from_ref(&settlement),
-        std::slice::from_ref(&cavity),
-        usize::MAX,
-    )
-    .expect("the page writes");
-    assert_eq!((w, s, n), (1, 1, 1));
-    assert_eq!(decode_cavities(&paged), vec![cavity]);
-    assert_eq!(decode_teach(&encode_teach(&[0xAB, 0xCD]).expect("it fits")).unwrap(), vec![0xAB, 0xCD]);
-    let settle = encode_settle(&listing, &[voice, solver], &[0, 0, 12, 0]).expect("it fits");
-    let (g2, vs, mu) = decode_settle(&settle).unwrap();
-    assert_eq!((g2, vs, mu), (listing, vec![voice, solver], [0, 0, 12, 0]));
     let (held, at) = decode_root_reply(&encode_root_reply(Some(solver), 9)).unwrap();
     assert_eq!((held, at), (Some(solver), 9));
     let (none, at0) = decode_root_reply(&encode_root_reply(None, 3)).unwrap();
@@ -127,6 +76,41 @@ fn acts_round_trips() {
         decode_root_reply(&[1u8]).is_none(),
         "a truncated solver is refused, never a zero voice"
     );
+}
+
+/// 26, law 8 — THE RETIRED ACTS' BYTES ARE REFUSED BY KIND. One fixture per
+/// retired act, in the layout its retired codec wrote: a docket pull, a
+/// teach and a settle receipt. Each names an action of the retired kind and
+/// is long enough to reach the door's refusal (a body of five bytes or
+/// more is answered `REFUSE_NOT_A_SENTENCE`, never decoded).
+#[test]
+fn retired_act_fixtures_name_retired_kind() {
+    use crate::physics::actions::{Action, Kind};
+    let voice = [9u8; 32];
+    // `[ACT_DOCKET][voice 32][since K u64][ticks u64]`
+    let mut docket = vec![ACT_DOCKET];
+    docket.extend_from_slice(&voice);
+    docket.extend_from_slice(&41u64.to_le_bytes());
+    docket.extend_from_slice(&7u64.to_le_bytes());
+    // `[ACT_TEACH][len u32][element bytes]`
+    let teach = vec![ACT_TEACH, 2, 0, 0, 0, 0xAB, 0xCD];
+    // `[ACT_SETTLE][germ address][nvoices u8][voices 32×n][μ⃗ 4×u64]`
+    let listing = crate::transducer::element::listing_key(
+        &[crate::transducer::sentence::tests::fixtures::link(0, 0, 1, 4)],
+        &crate::transducer::element::IDENTITY_FRAME,
+    )
+    .expect("a one-link chain is A5's");
+    let mut settle = vec![ACT_SETTLE];
+    crate::transducer::address::put_address(&mut settle, &listing).expect("the listing frames");
+    settle.push(1);
+    settle.extend_from_slice(&voice);
+    push_mu(&mut settle, &[0, 0, 12, 0]);
+    for (body, action) in [(docket, Action::Docket), (teach, Action::Teach), (settle, Action::Settle)] {
+        assert!(body.len() >= 5, "{action:?} reaches the door's refusal");
+        let read = act_tag(&body).and_then(Action::of_wire);
+        assert_eq!(read, Some(action));
+        assert_eq!(read.map(Action::kind), Some(Kind::Retired), "{action:?} is refused by its kind");
+    }
 }
 
 /// LD0 step 5 — A CLASS PAGE CARRIES ITS REPRESENTATIVE AS A RAY: the rotor

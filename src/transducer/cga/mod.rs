@@ -64,8 +64,8 @@ pub use perturbation::{lift_drag, Alignment, LiftDrag};
 pub use twist::twist_about;
 pub use commutator::{breath, breathe, Breath, Unbreathed};
 pub use planes::{
-    bivector_planes, blade_name, harmonic_planes, is_transvection_plane, occupancy, parabolic_name,
-    plane_is_harmonic, plane_name, ray_name, transvection_planes, Occupancy, Pole,
+    bivector_planes, blade_name, harmonic_planes, is_transvection_plane, occupancy,
+    plane_is_harmonic, plane_name, transvection_planes, Occupancy, Pole,
 };
 pub use spin::{
     bivector_is_simple, bivector_split, cayley, cayley_inverse, inverse_even, reflector_vector, transvection,
