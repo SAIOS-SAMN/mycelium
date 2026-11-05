@@ -283,7 +283,12 @@ impl Session {
             }
             let read = cover.charts.len();
             for (lane, inv) in &cover.charts {
-                self.cover.borrow_mut().admit(*lane, inv, cover.vk);
+                // A chart on a lane past the four is the hypha's broken
+                // page: refused, never masked onto a lane it did not name,
+                // and the walk stops there.
+                if self.cover.borrow_mut().admit(*lane, inv, cover.vk).is_err() {
+                    return;
+                }
                 from = crate::anastome::dialogue::cover_cursor(*lane, inv);
             }
             if !more || read == 0 {

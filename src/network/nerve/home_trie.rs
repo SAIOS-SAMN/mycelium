@@ -15,6 +15,30 @@ use crate::transducer::stalk::ChartAxis;
 // `ChartAxis::key_bytes`, which is the one construction the chart key, this
 // home trie and the stalk's stratum all branch on (law 12).
 
+/// A LANE PAST THE FOUR, REFUSED BY NAME. The base lanes are S, G, T and H,
+/// indexed 0 to 3. A lane byte of 4 or more names no lane: masking it onto
+/// one (`lane & 3`) filed lane 5 under lane 1, so a peer's cover page could
+/// stand a hypha on a lane it never named. Rule 11: exact or refused.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LaneRefused {
+    /// The lane byte as it was asked for.
+    pub lane: u8,
+}
+
+impl std::fmt::Display for LaneRefused {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "lane {} refused: the base lanes are S, G, T, H (0 to 3)", self.lane)
+    }
+}
+
+/// The index of `lane` among the four, or its refusal.
+fn lane_index(lane: u8) -> Result<usize, LaneRefused> {
+    match lane {
+        0..=3 => Ok(usize::from(lane)),
+        _ => Err(LaneRefused { lane }),
+    }
+}
+
 /// The home trie: per lane, nested Keyed by invariant axes. The fibre at a
 /// node is the hyphas covering that plane (this prefix and every finer
 /// chart beneath it). Own charts and peer charts share the trie.
@@ -179,10 +203,16 @@ impl HomeTrie {
         lanes + self.held.scoped().map(|(_, charts)| charts.len()).sum::<usize>()
     }
 
-    pub fn admit(&mut self, lane: u8, inv: &crate::transducer::stalk::Invariant, hypha: impl AsRef<[u8]>) {
+    /// File `hypha` under `inv` on `lane`; a lane past the four is refused.
+    pub fn admit(
+        &mut self,
+        lane: u8,
+        inv: &crate::transducer::stalk::Invariant,
+        hypha: impl AsRef<[u8]>,
+    ) -> Result<(), LaneRefused> {
         let hypha = hypha.as_ref();
-        let lane = lane & 3;
-        self.lanes[lane as usize].admit(&inv.0, hypha);
+        let at = lane_index(lane)?;
+        self.lanes[at].admit(&inv.0, hypha);
         match self.held.get_mut(hypha) {
             Some(charts) => {
                 if !charts.iter().any(|(l, i)| *l == lane && i == inv) {
@@ -193,7 +223,8 @@ impl HomeTrie {
                 self.held.insert(hypha, vec![(lane, inv.clone())]);
             }
         }
-        self.refresh_root(lane);
+        self.refresh_root(at);
+        Ok(())
     }
 
     /// Drop every chart of this hypha. Retract along the hypha's own chart
@@ -202,19 +233,13 @@ impl HomeTrie {
         let Some(charts) = self.held.remove(hypha) else {
             return;
         };
-        let mut touched = [false; 4];
+        // Every chart `held` names was filed by `admit`, which refused any
+        // lane past the four; a lane that reads out of range is skipped,
+        // never masked onto another.
         for (lane, inv) in charts {
-            self.lanes[lane as usize].retract_path(&inv.0, hypha);
-            touched[lane as usize] = true;
-        }
-        for (l, t) in touched.iter().enumerate() {
-            if *t {
-                #[expect(
-                    clippy::cast_possible_truncation,
-                    reason = "STD1 C1 — the algebra's range: a lane, one of four (the [bool; 4] it enumerates)"
-                )]
-                self.refresh_root(l as u8);
-            }
+            let Ok(at) = lane_index(lane) else { continue };
+            self.lanes[at].retract_path(&inv.0, hypha);
+            self.refresh_root(at);
         }
     }
 
@@ -229,8 +254,10 @@ impl HomeTrie {
     ///
     /// A root is a reading of the lane, taken where it is asked for
     /// (law 12): `roots()`, once per digest.
-    fn refresh_root(&mut self, lane: u8) {
-        self.due[(lane as usize) & 3] = true;
+    fn refresh_root(&mut self, at: usize) {
+        if let Some(d) = self.due.get_mut(at) {
+            *d = true;
+        }
     }
 
     /// The four lane roots, hashed for any lane that has moved since the
@@ -254,14 +281,23 @@ impl HomeTrie {
     /// Fibre at the deepest matching prefix on `lane`. Empty at every
     /// prefix means the chart is novel to the mesh. Ordered by the trie's
     /// walk: these identities are the vertices simplex keys are built from.
-    pub fn fibre(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
-        self.lanes[(lane as usize) & 3].lcp(&inv.0, false)
+    /// A lane past the four is refused.
+    pub fn fibre(
+        &self,
+        lane: u8,
+        inv: &crate::transducer::stalk::Invariant,
+    ) -> Result<Vec<Vec<u8>>, LaneRefused> {
+        Ok(self.lanes[lane_index(lane)?].lcp(&inv.0, false))
     }
 
     /// Cover multiplicity of a chart: the vertex count of the Čech nerve,
     /// not the word count. Read, never chosen; the room vector is untouched.
-    pub fn multiplicity(&self, lane: u8, inv: &crate::transducer::stalk::Invariant) -> usize {
-        self.fibre(lane, inv).len()
+    pub fn multiplicity(
+        &self,
+        lane: u8,
+        inv: &crate::transducer::stalk::Invariant,
+    ) -> Result<usize, LaneRefused> {
+        Ok(self.fibre(lane, inv)?.len())
     }
 
     /// 47.3, 42.6: THE HYPHAE THAT MAY WITNESS A FORM — those covering its
@@ -287,7 +323,9 @@ impl HomeTrie {
     ) -> crate::network::nerve::Keyed<()> {
         let mut out: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for lane in crate::network::nerve::occupied_lanes(mag) {
-            for v in self.fibre(lane, inv) {
+            // `occupied_lanes` reads the four lanes of `mag` only.
+            let Ok(fibre) = self.fibre(lane, inv) else { continue };
+            for v in fibre {
                 if v.as_slice() != home.as_slice() {
                     out.insert(&v, ());
                 }
@@ -296,31 +334,32 @@ impl HomeTrie {
         out
     }
 
-    /// Retract one hypha from one chart path.
+    /// Retract one hypha from one chart path; a lane past the four is refused.
     pub fn retract(
         &mut self,
         lane: u8,
         inv: &crate::transducer::stalk::Invariant,
         hypha: &[u8],
-    ) {
-        let lane = lane & 3;
-        self.lanes[lane as usize].retract_path(&inv.0, hypha);
-        self.refresh_root(lane);
+    ) -> Result<(), LaneRefused> {
+        let at = lane_index(lane)?;
+        self.lanes[at].retract_path(&inv.0, hypha);
+        self.refresh_root(at);
+        Ok(())
     }
 
     /// Prefix split: one hypha leaves `old` and is admitted under `new`.
-    /// Only the refined path is touched.
+    /// Only the refined path is touched. A lane past the four is refused.
     pub fn rehome(
         &mut self,
         lane: u8,
         old: &crate::transducer::stalk::Invariant,
         new: &crate::transducer::stalk::Invariant,
         hypha: impl AsRef<[u8]>,
-    ) {
+    ) -> Result<(), LaneRefused> {
         let hypha = hypha.as_ref();
-        let lane = lane & 3;
-        self.lanes[lane as usize].retract_path(&old.0, hypha);
-        self.lanes[lane as usize].admit(&new.0, hypha);
+        let at = lane_index(lane)?;
+        self.lanes[at].retract_path(&old.0, hypha);
+        self.lanes[at].admit(&new.0, hypha);
         if let Some(charts) = self.held.get_mut(hypha) {
             for slot in charts.iter_mut() {
                 if slot.0 == lane && slot.1 == *old {
@@ -328,19 +367,23 @@ impl HomeTrie {
                 }
             }
         }
-        self.refresh_root(lane);
+        self.refresh_root(at);
+        Ok(())
     }
 
-    pub fn charts(&self, lane: u8) -> Vec<crate::transducer::stalk::Invariant> {
+    /// The charts filed on `lane`; a lane past the four is refused.
+    pub fn charts(&self, lane: u8) -> Result<Vec<crate::transducer::stalk::Invariant>, LaneRefused> {
         let mut out = Vec::new();
-        self.lanes[(lane as usize) & 3].walk(&mut Vec::new(), &mut out);
-        out
+        self.lanes[lane_index(lane)?].walk(&mut Vec::new(), &mut out);
+        Ok(out)
     }
 
     pub fn all_charts(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {
         let mut out = Vec::new();
-        for lane in 0..4u8 {
-            for inv in self.charts(lane) {
+        for (lane, node) in (0..4u8).zip(self.lanes.iter()) {
+            let mut charts = Vec::new();
+            node.walk(&mut Vec::new(), &mut charts);
+            for inv in charts {
                 out.push((lane, inv));
             }
         }
@@ -348,8 +391,10 @@ impl HomeTrie {
     }
 
     /// One lane's root, hashed if that lane has moved since the last read.
-    pub fn root(&mut self, lane: u8) -> [u8; 32] {
-        self.roots()[(lane as usize) & 3]
+    /// A lane past the four is refused.
+    pub fn root(&mut self, lane: u8) -> Result<[u8; 32], LaneRefused> {
+        let at = lane_index(lane)?;
+        Ok(self.roots()[at])
     }
 }
 
@@ -449,7 +494,8 @@ pub fn home(
     // Intersection of fibres across occupied lanes, as a trie union/meet.
     let mut fibre: Option<Keyed<()>> = None;
     for l in &lanes {
-        let f = cover.fibre(*l, inv);
+        // `occupied_lanes` reads the four lanes of `mag` only.
+        let Ok(f) = cover.fibre(*l, inv) else { continue };
         let mut next = Keyed::new();
         for id in f {
             if fibre.as_ref().is_none_or(|acc| acc.contains(&id)) {

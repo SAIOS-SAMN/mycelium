@@ -16,17 +16,47 @@ fn fibre_reads_first_axis_miss_as_novel() {
     let mut c = HomeTrie::new();
     let a = [1u8; 32];
     let b = [2u8; 32];
-    c.admit(0, &inv(&[1, 2, 3]), a);
-    c.admit(0, &inv(&[1, 2, 9]), b);
-    let plane = c.fibre(0, &inv(&[1, 2]));
+    c.admit(0, &inv(&[1, 2, 3]), a).unwrap();
+    c.admit(0, &inv(&[1, 2, 9]), b).unwrap();
+    let plane = c.fibre(0, &inv(&[1, 2])).unwrap();
     assert!(plane.iter().any(|x| x.as_slice() == a.as_slice()) && plane.iter().any(|x| x.as_slice() == b.as_slice()), "prefix 1,2 is the plane both cover");
-    assert_eq!(c.fibre(0, &inv(&[1, 2, 3])), vec![a.to_vec()], "exact chart is one hypha");
-    assert_eq!(c.multiplicity(0, &inv(&[1, 2])), 2, "multiplicity is the vertex count");
-    assert!(c.fibre(0, &inv(&[7, 8])).is_empty(), "a first-axis miss is novel");
+    assert_eq!(c.fibre(0, &inv(&[1, 2, 3])), Ok(vec![a.to_vec()]), "exact chart is one hypha");
+    assert_eq!(c.multiplicity(0, &inv(&[1, 2])), Ok(2), "multiplicity is the vertex count");
+    assert_eq!(c.fibre(0, &inv(&[7, 8])), Ok(Vec::new()), "a first-axis miss is novel");
     let refined = inv(&[1, 2, 3, 7]);
-    c.rehome(0, &inv(&[1, 2, 3]), &refined, a);
-    assert_eq!(c.fibre(0, &refined), vec![a.to_vec()], "the hypha re-homes under the refined prefix");
-    assert_eq!(c.multiplicity(0, &inv(&[1, 2])), 2, "the plane still has both covering vertices");
+    c.rehome(0, &inv(&[1, 2, 3]), &refined, a).unwrap();
+    assert_eq!(c.fibre(0, &refined), Ok(vec![a.to_vec()]), "the hypha re-homes under the refined prefix");
+    assert_eq!(c.multiplicity(0, &inv(&[1, 2])), Ok(2), "the plane still has both covering vertices");
+}
+
+/// A lane is one of the four base lanes S, G, T, H (0 to 3). A lane byte of
+/// 4 or more names no lane and is refused by name on every act of the trie,
+/// never masked onto lane `l & 3`: lane 5 does not stand a hypha on lane 1.
+#[test]
+fn lane_past_the_four_refused_never_wrapped() {
+    let mut c = HomeTrie::new();
+    let a = [1u8; 32];
+    let chart = inv(&[1, 2]);
+    for lane in [4u8, 5, 7, 255] {
+        let refused = Err(LaneRefused { lane });
+        assert_eq!(c.admit(lane, &chart, a), refused, "admit refuses lane {lane}");
+        assert_eq!(c.fibre(lane, &chart), Err(LaneRefused { lane }), "fibre refuses lane {lane}");
+        assert_eq!(c.multiplicity(lane, &chart), Err(LaneRefused { lane }));
+        assert_eq!(c.charts(lane), Err(LaneRefused { lane }));
+        assert_eq!(c.root(lane), Err(LaneRefused { lane }));
+        assert_eq!(c.retract(lane, &chart, &a), Err(LaneRefused { lane }));
+        assert_eq!(c.rehome(lane, &chart, &inv(&[1, 2, 3]), a), Err(LaneRefused { lane }));
+    }
+    // Nothing a refused lane asked for was filed on any of the four.
+    for lane in 0..4u8 {
+        assert_eq!(c.fibre(lane, &chart), Ok(Vec::new()), "lane {lane} holds nothing");
+    }
+    assert!(c.all_charts().is_empty(), "no chart stands on any lane");
+    // Lane 5 masked was lane 1: a hypha on lane 1 is not answered for lane 5.
+    c.admit(1, &chart, a).unwrap();
+    assert_eq!(c.fibre(1, &chart), Ok(vec![a.to_vec()]));
+    assert_eq!(c.fibre(5, &chart), Err(LaneRefused { lane: 5 }), "lane 5 is not lane 1");
+    assert!(LaneRefused { lane: 5 }.to_string().contains("lane 5 refused"));
 }
 
 /// The hypha XOR-nearest the hash of `chart`'s key, of `a` and `b`: the
@@ -50,8 +80,8 @@ fn home_ranks_room_then_chart_nearness() {
     let mut addrs = Keyed::new();
     let lo = [1u8; 32];
     let hi = [9u8; 32];
-    c.admit(0, &inv(&[4]), lo);
-    c.admit(0, &inv(&[4]), hi);
+    c.admit(0, &inv(&[4]), lo).unwrap();
+    c.admit(0, &inv(&[4]), hi).unwrap();
     addrs.insert(lo, "127.0.0.1:7500".into());
     addrs.insert(hi, "127.0.0.1:7501".into());
     rooms.insert(lo, [8, 8, 8, 8]);
@@ -103,7 +133,7 @@ fn home_shares_charts_among_equal_rooms() {
     let corpus: Vec<Invariant> = (0..24u64).map(|i| inv(&[1, i])).collect();
     for (n, id) in ids.iter().enumerate() {
         for chart in &corpus {
-            c.admit(0, chart, *id);
+            c.admit(0, chart, *id).unwrap();
         }
         addrs.insert(*id, format!("127.0.0.1:750{n}"));
         rooms.insert(*id, [8, 8, 8, 8]);
@@ -123,9 +153,9 @@ fn home_shares_charts_among_equal_rooms() {
 fn retract_hypha_leaves_no_stale_charts() {
     let mut c = HomeTrie::new();
     let a = [1u8; 32];
-    c.admit(0, &inv(&[1]), a);
+    c.admit(0, &inv(&[1]), a).unwrap();
     c.retract_hypha(&a);
-    assert!(c.fibre(0, &inv(&[1])).is_empty());
+    assert_eq!(c.fibre(0, &inv(&[1])), Ok(Vec::new()));
 }
 
 /// Three covers over one corpus: each listing homes at one hypha, and
@@ -138,9 +168,9 @@ fn home_counts_over_three_covers_sum_to_corpus() {
     let ha = [1u8; 32];
     let hb = [2u8; 32];
     let hc = [3u8; 32];
-    c.admit(0, &inv(&[10]), ha);
-    c.admit(0, &inv(&[20]), hb);
-    c.admit(0, &inv(&[30]), hc);
+    c.admit(0, &inv(&[10]), ha).unwrap();
+    c.admit(0, &inv(&[20]), hb).unwrap();
+    c.admit(0, &inv(&[30]), hc).unwrap();
     addrs.insert(ha, "127.0.0.1:7500".into());
     addrs.insert(hb, "127.0.0.1:7501".into());
     addrs.insert(hc, "127.0.0.1:7502".into());
@@ -204,11 +234,11 @@ fn witnesses_names_covering_hyphae_not_every_peer() {
     // Three hyphae on the form's lane: the home, one on its exact chart,
     // one on the plane above it. A fourth covers a different chart, and a
     // fifth covers this chart on a lane the form does not occupy.
-    c.admit(0, &chart, home);
-    c.admit(0, &chart, near);
-    c.admit(0, &inv(&[1, 2]), far);
-    c.admit(0, &inv(&[7, 7]), elsewhere);
-    c.admit(2, &chart, [5u8; 32]);
+    c.admit(0, &chart, home).unwrap();
+    c.admit(0, &chart, near).unwrap();
+    c.admit(0, &inv(&[1, 2]), far).unwrap();
+    c.admit(0, &inv(&[7, 7]), elsewhere).unwrap();
+    c.admit(2, &chart, [5u8; 32]).unwrap();
 
     // A form occupying lane 0 only.
     let w = c.witnesses(&chart, &[3, 0, 0, 0], &home);

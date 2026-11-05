@@ -717,7 +717,8 @@ impl Court {
         self.listing_atlas.split_stratum(inv, coord_of);
         if let Some(cover) = cover.as_mut() {
             for lane in 0..4u8 {
-                let hyphas = cover.fibre(lane, inv);
+                // The four lanes only: none is refused.
+                let Ok(hyphas) = cover.fibre(lane, inv) else { continue };
                 for h in hyphas {
                     // A hypha the complex holds no section for sits on the
                     // leading axis, as one whose gamma is the identity does.
@@ -726,7 +727,9 @@ impl Court {
                         Some(_) | None => vec![crate::transducer::stalk::ChartAxis::Count(0)],
                     };
                     let new = crate::transducer::stalk::Stalks::refine_axes(inv, &side);
-                    cover.rehome(lane, inv, &new, h);
+                    if let Err(refused) = cover.rehome(lane, inv, &new, h) {
+                        eprintln!("[cover] chart not re-homed: {refused}");
+                    }
                 }
             }
         }

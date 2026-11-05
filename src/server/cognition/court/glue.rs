@@ -772,7 +772,9 @@ fn cover_vertices(
     verts.insert(self_id, ());
     verts.insert(peer, ());
     for lane in crate::network::nerve::occupied_lanes(&spoken.magnitude()) {
-        for v in cover.fibre(lane, inv) {
+        // `occupied_lanes` reads the four lanes only: none is refused.
+        let Ok(fibre) = cover.fibre(lane, inv) else { continue };
+        for v in fibre {
             verts.insert(v, ());
         }
     }
