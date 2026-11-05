@@ -38,5 +38,10 @@
   §4 cites 46.2. Concordance 5.4 pays the H lane the exact degrees the
   motion traversed, per named plane, with no floor, holonomy never priced
   (ruled 2026-11-05); 78.133 and MU-EQUATIONS §6.12 are annotated.
+- **POWC is widened:** lineages that share a cause but disagree before
+  meeting count as convergence, and MU-RECURSION 74 (CV4) stands as an
+  instance. GLOSSARY, MU-RECURSION (the proofs paragraph, 78.33, the
+  POW++ row, now four proofs), MU-HOSTING §2.4, MU-ECONOMY §0 (§12 item 6
+  closed), MU-SCIENCE §6.2 and the README say one thing.
 - **Network contract:** none. No wire, layout, law version or clause text
   changes.

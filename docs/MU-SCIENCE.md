@@ -485,8 +485,9 @@ measure.
 
 ### 6.2 POWC — convergence: agreement across perspectives and universes
 
-**The act.** Two independent constructions reach one conclusion. There
-are three forms:
+**The act.** Two independent constructions reach one conclusion. As
+widened on 2026-11-05, two lineages that share a cause but disagree before
+they meet count as convergence too (MU-ECONOMY §0). There are three forms:
 
 - **Within a universe:** two different proofs or derivations (different
   vertices) of the same statement, as MU-CLIENT §5.5 defines convergence

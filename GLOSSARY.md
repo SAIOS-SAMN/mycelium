@@ -207,7 +207,7 @@ senses that kernel builds for it.
 | **Quantum state (of the clock)** | The four lane coordinates `{S, G, T, H}` captured at one tick, read at `K` (MU-RECURSION 78.124). Never a probability or a weighting. |
 | **POW++** | Multi-axial convergence settlement: proof of reduction, "not a single linear difficulty ladder". The work is a reduction a court reconstructs, settled when the readings agree on every axis. It is the family of proofs of work (POUW, POWV, POWC, POWR), each a relation between motions and settled apart (MU-ECONOMY §0; MU-RECURSION 78.33). |
 | **POUW** | Proof of useful work: a listed demand closed. The measured deflation is minted to the closer. |
-| **POWC** | Proof of work convergence: a refusal closed at another perspective, citing the first mind's receipt; a word paid by its use. |
+| **POWC** | Proof of work convergence: lineages that fall into one well, from independent origins or sharing a cause but disagreeing before they meet (widened, ruled 2026-11-05). A refusal closed at another perspective, citing the first mind's receipt, is its instance (MU-RECURSION 74, CV4); a word paid by its use is another (MU-ECONOMY §0). |
 | **POWR** | Proof of work retirement: a re-expression over fewer letters; the freed description is burned and the retirer paid. |
 | **POWV** | Proof of work verification: the courts that verified a closure are paid a share of its release, per lane, read off each court's strain against its reserve. It is taken out of the release, never added to it. |
 | **Strain** | A court's yield surface on a lane: its reserve deficit plus entropic excess. It paces admission and sets the POWV share. |

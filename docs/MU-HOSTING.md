@@ -121,7 +121,7 @@ a word, a sentence, a rewrite, an attestation (MU-CLIENT §5).
 | The agent... | Paid as | Status |
 |---|---|---|
 | closes a task or demand it did not set | **POUW**: the measured discharge, minted | **Built** |
-| closes a question at another perspective, citing the first mind's receipt | **POWC** | **Built** (citation paid); union attestations **Specified** (MU-RECURSION 78.168 E3) |
+| closes a question at another perspective, citing the first mind's receipt; or, more widely, reaches one well with another lineage, independent of it or sharing a cause and disagreeing before they meet (MU-ECONOMY §0) | **POWC** | **Built** (citation paid); union attestations **Specified** (MU-RECURSION 78.168 E3) |
 | re-expresses installed knowledge in less | **POWR**: the compression yield | **Built** |
 | runs a court or verifier kernel that verified the work | **POWV** | **Built** for courts; verifier kernels **Specified** (MU-SCIENCE §7.2) |
 | provides capacity reserved in advance | **compute lease** payment, per verified job | **Built** |

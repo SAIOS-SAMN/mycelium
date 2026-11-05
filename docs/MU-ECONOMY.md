@@ -53,16 +53,17 @@ of entry:
 |---|---|---|---|
 | proof of useful work | **POUW** | An orbit carries a deformation and leaves less residue (motion ∘ residue). It is paid when it closes a listed demand (MU-RECURSION 12.6, 23.9) | The closure's advance, minted to the closer (§3) |
 | proof of work verification | **POWV** | Another observer re-traverses the motion and reaches the same point: the holonomy across observers is trivial. A disagreement is a named residue (MU-HOSTING §5a.10), never a flag | A share of the release, taken out of it and never added to it (§5.1) |
-| proof of work convergence | **POWC** | Orbits from independent origins, with disjoint past cones, fall into one well. It is read over the cones and never counted | Nothing beyond the one closure the well is (§3.4); a cited origin is paid as a generator (§7.3) |
+| proof of work convergence | **POWC** | Lineages fall into one well: from independent origins with disjoint past cones, or sharing a cause but disagreeing before they meet (widened, ruled 2026-11-05). A refusal closed at another perspective, citing the refusing mind's receipt, is an instance (MU-RECURSION 74, CV4). It is read over the cones and never counted | Nothing beyond the one closure the well is (§3.4); a cited origin is paid as a generator (§7.3) |
 | proof of work retirement | **POWR** | One orbit absorbs a family: one generator carries many motions, and the absorbed retire | The absorbed description burns; the absorber is paid the compression yield (§3.2) |
 
 The acts ruled before stand as instances of these relations: a closure
 ruled and its deflation measured (POUW); the home court's reconstruction
 and a witness's or peer court's re-derivation of the same vertex (POWV);
 a retirement by geodesic or by citation, or a refinement bid reconstructed
-with the word excluded (POWR; MU-RECURSION 3.8, T10, 27). The convergence
-instance of 74 (CV4), a refusal closed by another mind citing the
-refusing mind's receipt, is read under §12 item 6. A text that says
+with the word excluded (POWR; MU-RECURSION 3.8, T10, 27); and the
+convergence instance of 74 (CV4), a refusal closed by another mind citing
+the refusing mind's receipt (POWC: the two lineages share a cause and
+disagree before they meet; §12 item 6). A text that says
 "POW++" names the family, never one payment.
 
 ## 1. The unit
@@ -840,10 +841,11 @@ for its lessee for one window.
    mode's amount is not ruled.
 5. **Room over modes.** Room reads a bond's whole part on each lane; read
    over modes, that is a projection to one count per lane.
-6. **POWC's earlier instance.** In 74 (CV4) the closer cites the refusing
-   mind's receipt, so the two orbits' cones are not disjoint at the well.
-   Whether that instance is a convergence, or a POUW with a cited
-   generator, is not ruled.
+6. **POWC's earlier instance.** *Closed (ruled 2026-11-05: POWC is
+   widened).* In 74 (CV4) the closer cites the refusing mind's receipt, so
+   the two orbits' cones are not disjoint at the well. Lineages that share
+   a cause but disagree before meeting count as convergence, so the
+   instance is a POWC, and 74 (CV4) stands.
 7. **Concurrent claims of one point.** *Closed (ruled 2026-11-05: one
    closure, one point).* A concurrent second claim is burned as an
    equivocation, as F2b and MU-RECURSION 47.4 burn a second mint; claims
