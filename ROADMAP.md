@@ -25,10 +25,9 @@ pieces come first. Each item is a GitHub issue with its specification,
 its claims and its files. Claim one by commenting on it before starting
 ([CONTRIBUTING › How to contribute](CONTRIBUTING.md#how-to-contribute)).
 
-**1. Release in progress: v0.3.0**
-([milestone](https://github.com/SAIOS-SAMN/mycelium/milestone/1)). This is
-the shared contract that Mycelium and the peer kernels pin by git tag. It
-is at `0.3.0-rc.3`, signed with a prototype key. Remaining, in order:
+**Released: v0.3.0** (tag `v0.3.0` on 53429794, 2026-11-04, signed with
+the prototype key; [docs/release-keys/](docs/release-keys/)). Netstratum and
+xylarium pin it. The table below is kept as the record of what it closed.
 
 | Item | Issue | State |
 |---|---|---|
@@ -37,44 +36,49 @@ is at `0.3.0-rc.3`, signed with a prototype key. Remaining, in order:
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Moved to v0.4.0 with track 26 S4b (decided 2026-11-04) |
 | D2.5, one boot calibration stroke measures bytes per read | [#27](https://github.com/SAIOS-SAMN/mycelium/issues/27) | Done (built 2026-11-04; O1 ruled into four readings, O4 resolved; O3 derived in track 26 S4b as `2ⁿ` at the alphabet's base). The need readings owed are listed in MU-DERIVATIONS D2.5 |
 | Naming alignment, phases N1–N7 (track 11) | [#55](https://github.com/SAIOS-SAMN/mycelium/issues/55) | N1 to N7 built (N1 with #29, N2 with #53, N7 with track 26 S5, N6 inside v0.3.0's open break, N4's `ListingField`→`ListingCoherence` and `Coord::Shell`→`Coord::Cells` ruled and built); #55 done |
-| rc.3 on a test mesh, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | `v0.3.0-rc.3` tagged 2026-11-04, signed with the prototype key ([docs/release-keys/](docs/release-keys/)). `v0.3.0` is tagged from it once the peer kernels' conformance read passes at rc.3. Track 26 S4a, S4b and S7–S9 open v0.4.0 |
+| rc.3 on a test mesh, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | Done: `v0.3.0` tagged on rc.3's commit; both peers' KERNEL conformance reads passed; netstratum and xylarium pinned |
 
-**1a. In progress: v0.4.0.** It opens a new break, in which word and
-chart addresses may change (CHANGELOG › Unreleased, held in `changes/`).
+**1a. In progress: v0.4.0.** A new break, in which word, chart and task
+addresses, act layouts and signing domains may change (CHANGELOG ›
+Unreleased, held in `changes/`). Merged so far, each with its PR:
+- Track 26 S4b–S4d: rank-`n` perception, transduction as factorisation,
+  the hypha serving any rank and the claim of factorisation (#80); the
+  word machinery on `SectionSample`/`SectionSite`, `family::Grid` retired,
+  coordinates by plane axis (#84, #86, #92, #96, #101).
+- T3: the chart read as turns, turn-valued Conformal motion (#105, closes
+  #26).
+- Track 24: back-fill eviction by signature, the held queue's bound, fold
+  roots signed over place, height and hash (#82, #90, #95).
+- Track 25 X0: typed digests, `Reconstructed<T>`, the drift register
+  (#83, #97).
+- LAW-PASSAGE v2: the one-sided passage, fixtures agreed by all three
+  kernels (#81, #93, #94); the algebra `Cl(p, q)` with the signature as
+  data in its own crate `algebra/` (#93, #102).
+- LAW-COORDINATE v1: `forms::coordinate`, proposal 78.173 (#106).
+- Naming: track 11 closed (#89), prose and identifiers say reconstruct and
+  sample (#104, #107).
 
 | Item | Issue | State |
 |---|---|---|
-| Track 26 S4b: rank-`n` perception and transduction as factorisation ([MU-SENSING](docs/MU-SENSING.md) §3.6, §3.9) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress on branch `s4b-rank-n`. Built: the fixed axis constants replaced by a perspective's roles; the alphabet kept at `n = 3`, derived, and a higher rank refused by name; D2.5 O3 derived; the rank-`n` link; connection by grade; every pair factored as motion ∘ residue, held as a vortex, with the court's admission on a derived residue; every task perceived by the mind at its own rank. Open: the rank-2 carrier of the word machinery (`family::Grid`) and the alphabet past `n = 3` |
-| Track 26 S4c: the hypha serves tasks of any rank; a claim of factorisation on the wire ([MU-SENSING](docs/MU-SENSING.md) §3.9, §6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Built on branch `s4c-rank-n-hypha`: the registry posts, serves and addresses tasks of any rank, the word machinery's readers on the section; the claim of factorisation as the solve's claim kind 1 (78.126), admitted by reconstruction, recorded and never paid (ruled); the mind speaks one claim per held factorisation of a task beyond the alphabet |
-| Track 26 S4d: the word machinery reads a sample; `family::Grid` retired ([MU-SENSING](docs/MU-SENSING.md) §3.9, §5) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Stage 1 merged (PR #84, `spelled::SectionSample`); stage 2's readers merged (PR #86, `spelled::SectionSite`); stage 2b's planar tuples merged (PR #92, `SectionLink` and `PaintedSite`); stages 2c and 3 merged (PR #96, the chart's pairs, the anchor algebra and the clause tables held as section sites; the rule language's coordinates by plane axis); stage 2d on branch `s4d2d-act-cells` (the act reading's cells, the frame acts and the spoken frame by plane axis; the act reading's planar carriers closed); a rank-3 task stays `BeyondAlphabet` (Law VIII, MU-SENSING §5) |
-| T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Built on branch `t3-turns` (no wire, chart or task address change): a section's chart read as turns of its own periods (`blade::SectionTurns`; the conformal lift retired from `section_moduli`, every chart reading unchanged); the Conformal law reading a motion stated as turns in ℚ/ℤ (`physics::laws::verify_turns`, composed by addition mod 1, a turn off the frame's periods refused `LeavesPeriods`); MU-ANTI-FLATTENING 12's guard registered (`Turn::of(r, h)`, `turn_has_one_constructor`). Open: the motion as turns on the wire, with the crossing record (track 25, X1); routing a pair of unequal enclosures (MU-DERIVATIONS D3.2, O8) |
-| Track 26, S4a and S7–S9 | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 is agreed with the peer kernels |
+| B2: signing the Concordance clause by clause by reconstructing fixtures; `CONCORDANCE_HASH` retired | track 24 | Built on branch `b2-signing`, merging |
+| Development standard: done is `cargo clippy` and `cargo test`; the gate as workspace tests; CHANGELOG fragments; documents name what exists | — | Built on branch `workflow-standard`, merging |
+| B2, next stage: each kernel's reading and signature recorded on the ledger; v0.3.0's agreed clauses carried forward; alignment read from the hypha | track 24 | Next |
+| LAW-COORDINATE fixtures 7–10 (advance, an event's bell, merger with offsets, fission) | 78.173 | Next; exact statements agreed with netstratum |
+| LAW-FIELD v1, agreed with the peer kernels | [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) | Asked of netstratum (2026-11-05); amend 78.171 to the pole basis and `Cl(p, q)` |
+| Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
+| Track 10: the sovereign mind, thinking about adjudicated perception | — | After S7–S9 |
+| The alphabet past `n = 3`; the `Frame` defect; `Act::Slide`/`Extend`'s planar ray | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Open |
+| Turn-valued motion on the wire, with the crossing record (X1); routing unequal enclosures (D3.2, O8) | track 25 | Open |
+| Documentation audit: bounded documents, status out of prose | — | After the development standard |
 
-**2. Ready to start**
-([milestone `next`](https://github.com/SAIOS-SAMN/mycelium/milestone/2)).
-None of these waits on a ruling:
-
-| Item | Issue | Track | Notes |
-|---|---|---|---|
-| X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | First stage built on branch `x0-drift-guards` (no wire or layout change): the admission sites typed, the receipt path's admissions taking `Reconstructed<T>`, the register in the gate. Second stage: the record fields typed by sense (`Parent`, `KStepReceipt`, `SignedPrefix`, `Root` and `Admitted` have no `==`). The rest of track 25 stands on it |
-| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Eviction by signature, the held queue's bound and the waiting fold root are built ([#79](https://github.com/SAIOS-SAMN/mycelium/issues/79)). A gap longer than the capacity closes through a fold root ([#88](https://github.com/SAIOS-SAMN/mycelium/issues/88), built). A fold root's signatures cover its place and height ([#91](https://github.com/SAIOS-SAMN/mycelium/issues/91), built; a signing-domain change inside v0.4.0's break). Open: foundings inside a folded era, a version-2 origin's geometry (MU-HOSTING §5a.9) |
-| `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
-| Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Built with N1 |
-| Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Built with N2 |
-
-**3. Waiting on an operator ruling.** Do not start these until the ruling
+**2. Waiting on an operator ruling.** Do not start these until the ruling
 is recorded:
-- Concordance draft 4 (the shared laws, and the amendment proposed in
-  MU-CONCORDANCE §11). Track 24's B2 and B3 wait on it.
+- Concordance draft 5 (MU-CONCORDANCE §12, held for netstratum's
+  pole-basis wording of 2.11).
 - B1: carrying line mouth offers and tier handoff offers in the reserve's
   act, which amends rulings 78.126 and 78.136.
-- B2: per-clause signatures, a wire change to `ACT_LAWS` mode 8.
-- Proposed names: `NotSignatory`, `AddressOnly`.
+- The proposed name `AddressOnly`.
 - The open questions of MU-DERIVATIONS §7 and MU-RELEASE §10.
-
-**4. Under investigation:**
-[#14](https://github.com/SAIOS-SAMN/mycelium/issues/14) (an originate act
-unanswered on a long-running mesh). It needs a reproduction.
 
 ## 1. Settlement: the xSEPTUM Note
 
@@ -1161,8 +1165,8 @@ computation, and μ minted on a branch.
 **Specified** in
 [`docs/MU-HOSTING.md` §5a](docs/MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law)
 (the operator's ruling of 2026-11-02; MU-RECURSION 78.169), with the
-Concordance amendments (4.1, 6.2a, §0, 0.1) proposed in
-[MU-CONCORDANCE §11](docs/MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02).
+Concordance amendments (4.1, 6.2a, §0, 0.1), approved 2026-11-05 as
+version 5 ([MU-CONCORDANCE §11](docs/MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02)).
 
 The security model is topological and the hypha enforces it: each act is
 an event on the TUniversal ledger with a past cone (what it cites) and a
@@ -1176,7 +1180,8 @@ signs the Concordance clause by clause, the network clauses never vetoed.
 Built today: the reserve-only fold, anchor, map, conversion out, manifest
 and statement (each refused `NotReserve`), lines carried inline, holonomy
 read on the rings of inner routes, L0 verify as a reading, and the
-Concordance hash served and signatures verified. Each phase is one commit:
+Concordance's clause register served and signatures admitted by
+adjudicated reading (B2). Each phase is one commit:
 
 1. **B0, replication by reconstruction** ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13),
    ruled 2026-11-02; **Built**): every hypha reconstructs each domain's
@@ -1232,20 +1237,40 @@ Concordance hash served and signatures verified. Each phase is one commit:
    its universe's vertex is not an event of that universe's cone at the
    hypha), never from a ruling on routes.
 3. **B2, signatories, clause by clause, by adjudicated reading**
-   (Concordance §0, ruled 2026-11-04):
+   (Concordance §0, ruled 2026-11-04; **Built**, v0.4.0, a network-contract
+   change: `ACT_LAWS` modes 6, 7 and 8):
    - Each clause is identified by its content (its law form and
-     joint-read fixtures), never by a hash of the text's bytes.
+     joint-read fixtures), never by a hash of the text's bytes. The
+     register (`src/physics/laws/clauses/`) holds `FORMS-PASSAGE` v3 (the
+     four fixtures of LAW-PASSAGE v2) and `FORMS-COORDINATE` v2 (the
+     order, eight sexagesimal sectors, seven `within` readings and two
+     ranges of LAW-COORDINATE v1), with the hypha's own reconstruction of
+     each fixture through `forms` (`ConcordanceClause`,
+     `ConcordanceClauseId`, named apart from the rule language's clause).
+     The passage is a network clause; the coordinate stands at kernel
+     standing, signable and vetoable, until 78.173's fixtures are
+     joint-read agreed and its clause is drafted. Mode 7 serves it.
    - A kernel signs a clause by presenting its reconstruction of the
-     clause's fixtures. The hypha admits the signature only on the same
-     exact objects, and a kernel that cannot read the clause is refused
-     `NotSignatory`, naming the clause and the fixture.
+     clause's fixtures (mode 8, `clauses::signing::Signing`). The hypha
+     admits the signature only on the same exact objects, and a kernel
+     that cannot read the clause is refused `NotSignatory`, naming the
+     clause and the fixture; a vetoed network clause is refused
+     `NetworkVetoed`.
    - `CONCORDANCE_HASH` (BLAKE3 over the file's bytes, computed in
-     `build.rs`) and the whole-text signature on mode 8 are retired.
-   - Claims: `signature_admitted_only_on_reconstructed_fixtures`,
-     `kernel_that_cannot_read_a_clause_is_not_signatory`,
-     `wording_change_changes_no_clause`.
+     `build.rs`), the whole-text signature on mode 8, `build.rs` itself and
+     the statement's hash are retired.
+   - The SDK's kernel helper: `mycelium_sdk::signing` (`reconstruct_fixture`
+     through `forms`, `sign_concordance`); the KERNEL profile's
+     `laws concordance` and `laws signature` rows read the register and
+     sign it by reconstruction, with a fixture presented wrong refused
+     `NotSignatory`.
+   - Claims (`physics::laws::clauses::tests`):
+     `admit_admits_only_reconstructed_fixtures`,
+     `admit_refuses_unreached_fixture_as_not_signatory`,
+     `register_equals_forms_law_versions` (a wording change changes no
+     clause), `admit_refuses_network_veto_and_names_kernel_veto`.
 
-   Then a kernel's signed clause set (each clause enabled or vetoed; the
+   Then (open) a kernel's signed clause set (each clause enabled or vetoed; the
    network clauses never vetoed) is recorded per domain; a domain's crossings refused `NotSignatory`
    until its reserve has signed every network clause of the version served
    (Concordance §0's next release); a tube between two universes carrying
@@ -1288,10 +1313,11 @@ Concordance hash served and signatures verified. Each phase is one commit:
      `transducer::cga::Clifford`, composed only through `product`, `sum`
      and `difference`, which refuse two signatures disagreeing on a
      generator both algebras hold `SignatureRefusal::Mismatched`. The
-     wire carries `Cl(n+1, 1)` values only; a `Clifford` has no writing
-     until the court reads one. A kernel does not yet sign by reconstructing
-     them: no clause is registered for reading until B2 lands. Open: the
-     admission at the vertex, below.
+     wire carries `Cl(n+1, 1)` values as acts; a `Clifford` is written only
+     as a clause fixture's input or object on `ACT_LAWS` modes 7 and 8
+     (`clauses::writing::put_clifford`), where a kernel signs the passage
+     by reconstructing them (B2). Open: the admission at the vertex,
+     below.
    - Claims (admission, open): `crossing_is_one_sided_product`,
      `crossing_at_horizon_is_one_way`,
      `crossing_stating_moved_reach_is_refused_not_lawful`.
@@ -1318,8 +1344,9 @@ Concordance hash served and signatures verified. Each phase is one commit:
 6. **B5, nested universes:** a sub-universe's acts only at its parent's
    vertex, with 78.155 R-3.
 
-Depends on: **draft 4** (the amendment's approval and signing; B3's
-shared laws, and B2's clause sets under its §0 SIGNING text). Issue #13
+Draft 4 was approved 2026-11-05 and is written into the Concordance as
+version 5; B3's shared laws and B2's clause sets under its §0 SIGNING
+text proceed as engineering, no longer a ruling dependency. Issue #13
 is no longer an outside dependency: its ruling, **replication by
 reconstruction**, is phase B0. Serves tracks 13, 14 and 15.
 

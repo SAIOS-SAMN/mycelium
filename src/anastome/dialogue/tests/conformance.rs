@@ -1,8 +1,8 @@
 // MU-PRECURSORS §4 P5 — THE CLIENT CONFORMANCE STATEMENT, by decoded exact
 // values (Concordance 1.4): the statement a hypha serves reads back as the
-// statement this tree holds, both profiles; a damaged one reads as none; the
-// single-profile form of v0.3.0-rc.1 reads as the mind profile; and the
-// request for it is the register's sixth mode.
+// statement this tree holds, both profiles and the clauses it pins; a
+// damaged one reads as none; and the request for it is the register's sixth
+// mode.
 
 use crate::anastome::dialogue::conformance::*;
 use crate::physics::laws::codec::{decode_laws_request, encode_statement_request, LawsRequest};
@@ -27,18 +27,14 @@ fn statement_round_trips_with_both_profiles() {
     }
 }
 
-/// The single-profile form v0.3.0-rc.1 served reads as the mind profile
-/// alone, its acts exact.
+/// The statement pins the Concordance's clauses by law id and version, the
+/// register's own, never a hash of the text.
 #[test]
-fn statement_reads_single_profile_form() {
-    let mut bytes = STATEMENT.wire_version.to_le_bytes().to_vec();
-    bytes.push(STATEMENT.law_version);
-    bytes.extend_from_slice(&STATEMENT.concordance_hash);
-    put_acts(&mut bytes, STATEMENT.acts(Profile::Mind));
-    let Some(read) = decode_statement_reply(&bytes) else { panic!("the single-profile form did not decode") };
-    let held = StatementRead::of(&STATEMENT);
-    assert_eq!(read.profiles, held.profiles[..1]);
-    assert_eq!(read.acts(Profile::Kernel), []);
+fn statement_names_register_clauses() {
+    let Some(read) = decode_statement_reply(&encode_statement_reply()) else { panic!("the statement did not decode") };
+    let held = crate::physics::laws::clauses::register().expect("the register stands");
+    let ids: Vec<(String, u16)> = held.iter().map(|r| (r.clause.id.law.clone(), r.clause.id.version)).collect();
+    assert_eq!(read.clauses, ids);
 }
 
 /// A statement short of a byte, with one left over, or with a form mark no
@@ -50,8 +46,14 @@ fn statement_refuses_truncated_trailing_and_unknown_form() {
     let mut longer = bytes.clone();
     longer.push(0);
     assert_eq!(decode_statement_reply(&longer), None);
+    let mut clauses = Vec::new();
+    crate::transducer::address::put_key_count(&mut clauses, STATEMENT.clauses.len());
+    for (law, version) in STATEMENT.clauses {
+        crate::transducer::address::put_key_bytes(&mut clauses, law.as_bytes());
+        clauses.extend_from_slice(&version.to_le_bytes());
+    }
     let mut other = bytes.clone();
-    other[2 + 1 + 32 + 1] = FORM_PROFILES + 1;
+    other[2 + 1 + clauses.len() + 1] = FORM_PROFILES + 1;
     assert_eq!(decode_statement_reply(&other), None);
 }
 

@@ -56,22 +56,37 @@
 //! not yet law; nothing here states it. Rewiring `TPoint` onto this form is
 //! the next step.
 //!
-//! OPEN (not in this form until the law is stated with exact objects):
-//! motion as the closed-form advance of the lanes in the bell, an event's
-//! bell solved in first degree, and a merger as the holding-weighted
-//! coordinate (78.173 §7).
+//! MOTION, EVENTS AND MERGERS (78.173 §1, fixtures 7–10; netstratum docs/120
+//! §2 and §5). A body ADVANCES in the bell by the closed form
+//! `Lᵢ(t) = Lᵢ(h) + rᵢ·(t − h)` under its lanes' [`Rates`], with `K`
+//! re-read as the whole turns of H in both senses, `⌊|L_H(t)|⌋`; an advance
+//! composes, and a backward one is refused ([`Coordinate::advance`]). AN
+//! EVENT'S BELL is the exact first-degree solution `h + (v − L)/r`, which may
+//! fall between whole bells, and there is none on an unmoving lane or
+//! behind the body's bell ([`Coordinate::bell_of`], [`EventBell`]). A
+//! MERGER of two bodies at one origin and one bell is the holding-weighted
+//! coordinate, and it keeps each body's offset per lane, whose
+//! holding-weighted sum is zero: no residual is discarded ([`merge`],
+//! [`Merger`]). FISSION is its inverse: the merged point, the holdings and
+//! the offsets give back both bodies ([`fission`]). Re-origin across a
+//! throat and gaps are not in this form; they wait on the passage flux on T
+//! (78.173 §7).
 
 use crate::Q;
 use num_bigint::BigInt;
-use num_traits::One;
+use num_traits::{One, Signed, ToPrimitive, Zero};
 use std::cmp::Ordering;
 
 /// THE SHELL'S LAW ID, as the shared-law table names it (MU-EQUATIONS,
 /// *Shared laws*): the form of LAW-COORDINATE.
 pub const LAW_ID: &str = "FORMS-COORDINATE";
 
-/// The law's version: an amendment raises it.
-pub const LAW_VERSION: u16 = 1;
+/// The form's version: an amendment, or an operation added to the form,
+/// raises it.
+/// FORMAT: the shell's version, the form of LAW-COORDINATE v1 (proposal
+/// 78.173) with the advance, an event's bell, the merger and fission
+/// (fixtures 7–10) held here.
+pub const LAW_VERSION: u16 = 2;
 
 /// THE READING'S BASE: the places of the sexagesimal reading.
 /// EXTERNAL: LAW-COORDINATE v1 §3 (proposal 78.173, ruled 2026-11-05), the sexagesimal place value of xylarium's coordinate reading and netstratum's READING.
@@ -385,4 +400,154 @@ impl Bodies {
         };
         Neighbours { bodies, probes: p + q }
     }
+}
+
+/// THE LANES' RATES: each lane's change per bell, in the order S, G, T, H,
+/// each a signed exact rational (78.173 fixture 7).
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct Rates {
+    pub lanes: [Q; 4],
+}
+
+impl Rates {
+    /// The rate on `lane`.
+    pub fn lane(&self, lane: Lane) -> &Q {
+        &self.lanes[lane.place()]
+    }
+}
+
+/// WHY AN ADVANCE, A MERGER OR A FISSION IS REFUSED, by name and with what
+/// was read.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MotionRefusal {
+    /// An advance to a bell before the body's: there is no backward
+    /// advance. The bell held and the bell asked.
+    Backward { held: u64, asked: u64 },
+    /// A merger of bodies at two origins: origins are never compared. The
+    /// origin held and the origin asked, as written.
+    OriginsDiffer { held: Box<Origin>, asked: Box<Origin> },
+    /// A merger of bodies at two bells. The bell held and the bell asked.
+    BellsDiffer { held: u64, asked: u64 },
+    /// Holdings whose sum is zero: no holding-weighted coordinate. The two
+    /// holdings.
+    NoHolding { a: Box<Q>, b: Box<Q> },
+    /// Offsets whose holding-weighted sum is not zero on every lane: no
+    /// merger left them. The sum on each lane, S, G, T, H.
+    Unbalanced { residual: Box<[Q; 4]> },
+    /// Whole turns of H past `K`'s carrier, a `u64`. The whole turns read.
+    OrbitsPastCarrier { turns: BigInt },
+}
+
+/// `K` READ FROM H: the whole turns of H in both senses, `⌊|H|⌋`, refused
+/// `OrbitsPastCarrier` where they pass `K`'s carrier.
+fn orbits(lanes: &[Q; 4]) -> Result<u64, MotionRefusal> {
+    let turns = lanes[Lane::H.place()].abs().floor().to_integer();
+    match turns.to_u64() {
+        Some(k) => Ok(k),
+        None => Err(MotionRefusal::OrbitsPastCarrier { turns }),
+    }
+}
+
+/// THE BELL AT WHICH A LANE REACHES A VALUE (78.173 fixture 8), a named
+/// reading: reached at an exact bell, or none, and why.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum EventBell {
+    /// Reached at this exact bell, at or after the body's: `h + (v − L)/r`.
+    /// It may fall between whole bells.
+    At(Q),
+    /// None: the lane's rate is 0, so the lane never moves to the value.
+    Unmoving,
+    /// None: `(v − L)/r < 0`, the lane stood at the value only before the
+    /// body's bell, at `bell`, which no advance reaches.
+    Behind { bell: Q },
+}
+
+impl Coordinate {
+    /// THE ADVANCE TO BELL `t` (78.173 fixture 7): each lane
+    /// `Lᵢ(t) = Lᵢ(h) + rᵢ·(t − h)` under `rates`, exactly, at the same
+    /// origin, with `K` re-read as `⌊|L_H(t)|⌋`. It composes: advancing to
+    /// `a` and then to `t` is advancing to `t`, for `h ≤ a ≤ t`. Refused
+    /// `Backward` for `t < h`, and `OrbitsPastCarrier` where `K` passes its
+    /// carrier.
+    pub fn advance(&self, rates: &Rates, t: u64) -> Result<Coordinate, MotionRefusal> {
+        let span = t.checked_sub(self.local.h).ok_or(MotionRefusal::Backward { held: self.local.h, asked: t })?;
+        let span = Q::from_integer(BigInt::from(span));
+        let lanes: [Q; 4] = std::array::from_fn(|i| &self.local.lanes[i] + &rates.lanes[i] * &span);
+        let k = orbits(&lanes)?;
+        Ok(Coordinate { origin: self.origin.clone(), local: Local { h: t, lanes, k } })
+    }
+
+    /// THE BELL AT WHICH `lane` REACHES `value` under `rates` (78.173
+    /// fixture 8): `h + (v − L)/r`, exact, solved in first degree with no
+    /// period assumed. None, by name, where the rate is 0 or the value lies
+    /// behind the body's bell.
+    pub fn bell_of(&self, lane: Lane, value: &Q, rates: &Rates) -> EventBell {
+        let rate = rates.lane(lane);
+        match rate.cmp(&Q::zero()) {
+            Ordering::Equal => EventBell::Unmoving,
+            _ => {
+                let interval = (value - self.lane(lane)) / rate;
+                let bell = Q::from_integer(BigInt::from(self.local.h)) + &interval;
+                match interval.cmp(&Q::zero()) {
+                    Ordering::Less => EventBell::Behind { bell },
+                    _ => EventBell::At(bell),
+                }
+            }
+        }
+    }
+}
+
+/// A MERGER (78.173 fixture 9): the merged point, and each body's offset
+/// from it per lane, `L_a − L` and `L_b − L`, in the order S, G, T, H. The
+/// holding-weighted sum of the offsets is zero on every lane; with the
+/// holdings they give both bodies back ([`fission`]).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Merger {
+    pub point: Coordinate,
+    pub offset_a: [Q; 4],
+    pub offset_b: [Q; 4],
+}
+
+/// THE MERGER OF `a` HOLDING `w_a` AND `b` HOLDING `w_b` (78.173 fixture 9):
+/// at their one origin and one bell, each lane
+/// `Lᵢ = (w_a·L_a,ᵢ + w_b·L_b,ᵢ)/(w_a + w_b)`, `K` re-read from the merged
+/// H, and each body's offset kept: no residual is discarded. Refused
+/// `OriginsDiffer`, `BellsDiffer`, or `NoHolding` where `w_a + w_b = 0`.
+pub fn merge(a: &Coordinate, w_a: &Q, b: &Coordinate, w_b: &Q) -> Result<Merger, MotionRefusal> {
+    if a.origin != b.origin {
+        return Err(MotionRefusal::OriginsDiffer { held: Box::new(a.origin.clone()), asked: Box::new(b.origin.clone()) });
+    }
+    if a.local.h != b.local.h {
+        return Err(MotionRefusal::BellsDiffer { held: a.local.h, asked: b.local.h });
+    }
+    let total = w_a + w_b;
+    if total.is_zero() {
+        return Err(MotionRefusal::NoHolding { a: Box::new(w_a.clone()), b: Box::new(w_b.clone()) });
+    }
+    let lanes: [Q; 4] = std::array::from_fn(|i| (w_a * &a.local.lanes[i] + w_b * &b.local.lanes[i]) / &total);
+    let offset_a: [Q; 4] = std::array::from_fn(|i| &a.local.lanes[i] - &lanes[i]);
+    let offset_b: [Q; 4] = std::array::from_fn(|i| &b.local.lanes[i] - &lanes[i]);
+    let k = orbits(&lanes)?;
+    Ok(Merger { point: Coordinate { origin: a.origin.clone(), local: Local { h: a.local.h, lanes, k } }, offset_a, offset_b })
+}
+
+/// FISSION, THE INVERSE OF MERGER (78.173 fixture 10): the merged point
+/// and each offset give back the bodies, `L + offset`, at the point's
+/// origin and bell, each `K` re-read from its H. Refused `NoHolding` where
+/// `w_a + w_b = 0`, and `Unbalanced` where the holding-weighted sum of the
+/// offsets is not zero, since no merger at these holdings left them.
+pub fn fission(merger: &Merger, w_a: &Q, w_b: &Q) -> Result<(Coordinate, Coordinate), MotionRefusal> {
+    if (w_a + w_b).is_zero() {
+        return Err(MotionRefusal::NoHolding { a: Box::new(w_a.clone()), b: Box::new(w_b.clone()) });
+    }
+    let residual: [Q; 4] = std::array::from_fn(|i| w_a * &merger.offset_a[i] + w_b * &merger.offset_b[i]);
+    if residual.iter().any(|r| !r.is_zero()) {
+        return Err(MotionRefusal::Unbalanced { residual: Box::new(residual) });
+    }
+    let body = |offset: &[Q; 4]| -> Result<Coordinate, MotionRefusal> {
+        let lanes: [Q; 4] = std::array::from_fn(|i| &merger.point.local.lanes[i] + &offset[i]);
+        let k = orbits(&lanes)?;
+        Ok(Coordinate { origin: merger.point.origin.clone(), local: Local { h: merger.point.local.h, lanes, k } })
+    };
+    Ok((body(&merger.offset_a)?, body(&merger.offset_b)?))
 }

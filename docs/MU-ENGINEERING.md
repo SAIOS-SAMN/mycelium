@@ -119,11 +119,13 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   `ACT_LAWS` reads by mode (`physics::laws::codec::MODE_*`): 0 the
   register, 1 and 2 verification, 3 the lexicon, 4 the core clock, 5 the
   parameters, and, from v0.3.0, 6 the client conformance statement
-  ([MU-CONFORMANCE](MU-CONFORMANCE.md)), 7 the Concordance's hash and 8 a
-  kernel's signature over it, answered accepted or refused by name
-  (Concordance §0 SIGNING). Modes 6–8 are an additive wire change: no
-  layout of an existing mode moves; a hypha that predates them answers
-  nothing to them, as it answers any `ACT_LAWS` request it does not read.
+  ([MU-CONFORMANCE](MU-CONFORMANCE.md)), 7 the Concordance's clause
+  register and 8 a kernel's signing act by reconstruction of each
+  clause's fixtures, admitted or refused by name (`NotSignatory` naming
+  the clause and the fixture; Concordance §0, from v0.4.0, where modes 7
+  and 8 replaced v0.3.0's hash and whole-text signature). A hypha that
+  predates modes 6–8 answers nothing to them, as it answers any
+  `ACT_LAWS` request it does not read.
 
   **The wire version rule.** `WIRE_VERSION` is `major << 8 | minor`. An
   additive change (a new act, mode or trailing field an older reader

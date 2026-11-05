@@ -9,8 +9,9 @@
 //!
 //! 1. Identity — the house's Ed25519 key, read from `<house home>/voice.key`
 //!    or minted there.
-//! 2. The Concordance — its hash (`house::CONCORDANCE_HASH`) signed by the
-//!    key, verified here, then presented to the hypha (`ACT_LAWS` mode 8).
+//! 2. The Concordance — its clause register read (`ACT_LAWS` mode 7), each
+//!    clause's fixtures reconstructed here (`house::sign_concordance`) and
+//!    the readings signed by the key, presented to the hypha (mode 8).
 //! 3. The clock — the court's head stamp (`ACT_LAWS` mode 4).
 //! 4. The domain — founded on the house's key, its one tier the same key
 //!    (`ACT_DOMAIN`): sealed, or founded already on a run before.
@@ -28,8 +29,8 @@
 use mycelium_sdk::conformance::{run, Profile};
 use mycelium_sdk::deferral::{deferral_of, read_deferral, Deferral};
 use mycelium_sdk::house::{
-    decode_clock_reply, decode_signature_reply, encode_clock_request, encode_signature_request, verify_concordance_signature, ConcordanceSignature,
-    DomainGenesis, Founded, CONCORDANCE_HASH,
+    decode_clock_reply, decode_concordance_reply, decode_signature_reply, encode_clock_request, encode_concordance_request, encode_signature_request,
+    sign_concordance, Assent, DomainGenesis, Founded,
 };
 use mycelium_sdk::prelude::*;
 use mycelium_sdk::voice::hex32;
@@ -56,17 +57,39 @@ fn main() -> ExitCode {
     println!("house {}", hex32(&domain));
     let session = Session::open(endpoint, voice);
 
-    let signed = ConcordanceSignature::sign(&key, CONCORDANCE_HASH);
-    println!("concordance {}: signed, verified here: {:?}", hex32(&CONCORDANCE_HASH), verify_concordance_signature(&signed));
-    match session.speak(encode_signature_request(&signed)) {
-        Ok(reply) => println!("  the hypha's verdict: {:?}", decode_signature_reply(&reply)),
+    let served = match session.speak(encode_concordance_request()) {
+        Ok(reply) => decode_concordance_reply(&reply),
         Err(e) => match deferral_of(&e) {
-            Some(d) => println!("  {}", said(d)),
+            Some(d) => {
+                println!("concordance: {}", said(d));
+                None
+            }
             None => {
                 eprintln!("{endpoint}: {e}");
                 return ExitCode::from(1);
             }
         },
+    };
+    match served {
+        Some(Ok(clauses)) => {
+            let named: Vec<String> = clauses.iter().map(|c| format!("{} v{} ({} fixtures)", c.id.law, c.id.version, c.fixtures.len())).collect();
+            println!("concordance: {}", named.join(", "));
+            match sign_concordance(&key, &clauses, |_| Assent::Enabled) {
+                Some(signed) => match session.speak(encode_signature_request(&signed)) {
+                    Ok(reply) => println!("  signed by reconstruction; the hypha's verdict: {:?}", decode_signature_reply(&reply)),
+                    Err(e) => match deferral_of(&e) {
+                        Some(d) => println!("  {}", said(d)),
+                        None => {
+                            eprintln!("{endpoint}: {e}");
+                            return ExitCode::from(1);
+                        }
+                    },
+                },
+                None => println!("  a served fixture this house does not reconstruct"),
+            }
+        }
+        Some(Err(r)) => println!("concordance: the hypha cannot read clause {:?} of its register", r.id),
+        None => println!("concordance: a reply this build does not read"),
     }
 
     match session.speak(encode_clock_request()) {

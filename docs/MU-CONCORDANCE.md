@@ -6,7 +6,7 @@
 >
 > The Concordance is the agreement every kernel signs to host its simulated universe on the network: how its worlds, its simulated peoples and the AI agents placed in them connect to the courts, and how the agents' verified work is paid.
 
-**Status:** draft agreement, version 4 (2026-10-31: the challenge window, 4.5, law version 5), as amended since by the rulings dated in its clauses. This text is the canonical one; it is kept with Mycelium beside MU-RECURSION, and every kernel signs it to join a hypha (§0).
+**Status:** draft agreement, version 5 (2026-11-05: draft 4 approved, the boundary law, clause-by-clause signing), as amended since by the rulings dated in its clauses. This text is the canonical one; it is kept with Mycelium beside MU-RECURSION, and every kernel signs it to join a hypha (§0). A kernel is bound to this version as it signs it, at v0.4.0's release candidate.
 
 ## 0. What this is
 
@@ -17,7 +17,27 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
   - **To sign a clause, a kernel reconstructs its fixtures.** The kernel presents, signed under its key, its reconstruction of each of the clause's joint-read fixtures. The hypha reconstructs the same fixtures and admits the signature only where the kernel reached the same exact objects (MU-SCIENCE §5.0).
   - **A kernel that cannot read a clause is denied.** A kernel whose reconstructions do not reach the fixtures' objects is refused by name, naming the clause and the fixture (`NotSignatory`). That is a lack of the reading the clause requires, and a signature on its own never stands in for the reading.
   - **The rest stands:** signing is clause by clause (§11), the network clauses cannot be vetoed, and a changed clause is read as signed until the new version is read and signed.
-  *Status:* **Specified**, ROADMAP track 24 B2. Today the hash is BLAKE3 of this file's exact bytes at build time (`physics::laws::concordance::CONCORDANCE_HASH`, served on `ACT_LAWS` mode 7), and a kernel signs `"mycelium concordance v1" ‖ hash` on mode 8. That mechanism is the defect this clause replaces: a byte hash changes with every edit of wording and proves no reading. It stays served only until B2 lands.
+  *Status:* **Built** (v0.4.0, ROADMAP track 24 B2), for the clauses with joint-read fixtures: LAW-PASSAGE v2 (`FORMS-PASSAGE` v3, 2.11 of draft 5) and LAW-COORDINATE v1 (`FORMS-COORDINATE` v1, proposal 78.173). The passage is a network clause; the coordinate stands at kernel standing, signable and vetoable, until its fixtures are joint-read agreed and its clause is drafted. The hypha's clause register (`physics::laws::clauses`) names each clause by its law id and version and holds its fixtures as exact inputs, with the hypha's own reconstruction of each; the address is that content written out. `ACT_LAWS` mode 7 serves the register; on mode 8 a kernel presents, signed under its key, its reconstruction of each fixture of each clause it enables, or its veto. The hypha admits each clause only on the same exact objects, or refuses `NotSignatory` naming the clause and the fixture; a veto of a network clause is refused `NetworkVetoed`. The hash of this file's bytes (`CONCORDANCE_HASH`, computed by `build.rs`) and the whole-text signature are retired. Next: the signed clause set recorded per domain, and `NotSignatory` applied at the universal core tube (B3, B4).
+- CLAUSE BY CLAUSE. A kernel signs a clause set: each clause of this
+  agreement, by its content address and its reconstructed fixtures (§0
+  SIGNING BY ADJUDICATED READING), never by a hash of its bytes, enabled or
+  vetoed (for example sections 1, 2 and
+  4 enabled and 3 vetoed). The NETWORK clauses (0.1's Network row: the
+  universal laws, the tube) cannot be vetoed, for without them there is no
+  crossing. The refusal of an unsigned kernel is applied at the universal
+  core tube: a domain whose reserve has not signed every network clause of
+  the version served has its crossings refused by name (`NotSignatory`).
+  A TUBE interlinking two universes carries what the clauses both
+  universes enabled govern; a clause one side vetoed bounds what flows
+  through the tube, and that bound is named, never a refusal of the whole
+  tube. An act is READ UNDER THE CLAUSES IT DEPENDS ON: a clause unchanged
+  since the kernel signed is read normally; a changed clause is read under
+  the clause as signed, and the divergence is held and named until the
+  kernel signs the new version, forward and never reverted. No signature
+  lapses on a timer.
+  *Status:* **Built**, clause-by-clause signing itself (track 24 B2, PR
+  #109). `NotSignatory` applied at the universal core tube is track 24
+  B3/B4, not yet built.
 - AMENDING. An amendment is a new version. An amendment is proposed by a signatory or by Mycelium, approved by the maintainer, and implemented on the server by Mycelium. It takes effect for a kernel when that kernel signs the new version.
 - PRECEDENCE. The maintainer's recorded rulings stand above this text; where they differ, this text is amended.
 
@@ -28,8 +48,8 @@ clause side by side. Each clause belongs to one component:
 
 | Component | What it binds | Clauses |
 |---|---|---|
-| **Network** | What Mycelium's hyphae and courts enforce, for every kernel and every client | 0; 1.4, 1.5, 1.9, 1.10, 1.11, 1.13, 1.14; 2.1, 2.10; 3.7; 4.2–4.5; 5.3, 5.4, 5.7–5.9; 6.2a's key rule (the court authenticates keys, never tiers; the hypha serves anyone with a key and μ); 8; 9 |
-| **Kernel-kept** | Laws each kernel keeps and attests in its own code; the court never checks them | 3a.1–3a.5 (duties to hosted minds); 4.1 and 6.2a (only a universe's reserve faces the hypha) |
+| **Network** | What Mycelium's hyphae and courts enforce, for every kernel and every client | 0; 1.4, 1.5, 1.9, 1.10, 1.11, 1.13, 1.14; 2.1, 2.10; 3.7; 4.1 (the boundary law, enforced at the universal core tube); 4.2–4.5; 5.3, 5.4, 5.7–5.9 except 5.7(e); 6.2a's two rules (keys for a key's own acts; topology for a universe's acts); 8; 9 |
+| **Kernel-kept** | Laws each kernel keeps and attests in its own code; the court never checks them | 3a.1–3a.5 (duties to hosted minds); 5.7(e) (which seat closes a hole); how a universe relays inside its own boundary (6.2a) |
 | **Kernel physics** | What every kernel implements in its own universe, game or not | 1.1–1.3, 1.6–1.8, 1.12; 2.2–2.9 |
 | **Game design** | The game kernels' shared game design: the games' peoples, seats, economies and ladder | 3.0–3.6, 3.8, 3.9; 5.1, 5.1a, 5.2, 5.5, 5.6; 6.1–6.4 (6.2a's ladder); 7.1–7.3; 10.2 |
 
@@ -38,11 +58,11 @@ Reading the map:
   environment, a market) signs the network and kernel-physics clauses.
   The game-design clauses describe how the game kernels built the game
   universes; a non-game kernel may adopt them and is not required to.
-- **The court authenticates keys, never tiers** (6.2a, MU-RECURSION
-  78.165). Whoever holds a key may speak to the hypha and is paid to the
-  account its key names. That only a universe's reserve faces the hypha
-  (4.1) is a law each kernel keeps inside its own universe; the court may
-  count other access and refuses nothing for it.
+- **Keys for a key's own acts; topology for a universe's** (6.2a,
+  MU-RECURSION 78.165 and 78.169). Whoever holds a key may speak to the
+  hypha for itself and is paid to the account its key names. A universe
+  speaks to the hypha only through its universal core (4.1), which the
+  hypha enforces at the tube.
 - **Where a network clause speaks in game terms** (5.7's ancients' first
   μ), the network term is the domain's **reserve tier**:
   the key its founder designates (4.2). In a game kernel the reserve tier
@@ -286,7 +306,30 @@ guarantees is [`MU-CHARTER.md`](MU-CHARTER.md).
 
 ## 4. The uplink and the language
 
-4.1 ONLY THE ANCIENTS UPLINK to the POW++ network. A domain's reserve tier is its ancients; only the reserve folds onto the court, holds anchors, converts and keeps core tubes. A progenitor line's work is CARRIED INLINE in the reserve's fold, under the line's own signature; lines never touch the court, and a line's part is contested through the reserve fold's window. Not every civilization is uplinked: that would overload the uplink.
+4.1 ONLY THE UNIVERSAL CORE UPLINKS to the POW++ network: THE BOUNDARY
+LAW. A domain's reserve tier is its universal core (in a game kernel,
+its ancients); only the reserve folds onto the court, holds anchors,
+converts and keeps core tubes, and the universal core tube is the
+universe's only uplink. A galactic core's or a progenitor line's work is
+CARRIED INLINE in the reserve's act, under the line's own signature;
+lines never touch the court, and a line's part is contested through the
+reserve fold's window. Not every civilization is uplinked: that would
+overload the uplink. This is a law THE HYPHA ENFORCES AT THE UNIVERSAL
+CORE TUBE. Each act is an event on the TUniversal ledger: its past cone
+is what it cites, its future cone what comes to cite it, and the
+universal core tube is the VERTEX where a universe's cones join the
+hypha's. The universe's inner routes (wormholes, superposed paths) are
+its own physics, never seen or chosen by the hypha; at the vertex the
+hypha reads the event's TUniversal coordinates, what it carries, and its
+holonomy as content (trivial, or a named twist where the inner routes
+disagree). A universe's act that reaches the hypha other than at its
+vertex is not an event of that universe's cone at the hypha, and is
+refused by name (`NotThroughCore`); whatever
+crosses the tube is RECONSTRUCTED under the universal laws (L0 at its
+law version, the `forms` core shell, and the shared laws as ruled) and
+refused by the law's name where it does not hold, never admitted on a
+declared law's name alone. Inside its boundary each universe applies its
+own physics (2.10), unseen by the hypha.
 4.2 RESERVE SUCCESSION. A domain's founding key designates its reserve once; any later change of reserve is signed by the sitting reserve. The origin record stays signed by the founder.
 4.3 ANASTOME is the shared language the court adjudicates, in which kernels joined by throats speak, so that the core species communicate without blocking trade and manoeuvres. It is spoken by the core species and by any civilization that reaches it as an emergent property of its technology or intelligence (6.2), each in its own dialect, as the server's client genomes are. A kernel translates its own events into anastome at its cores and nowhere else.
 4.4 RECONSTRUCTION, NOT REPLAY. Every composed word of anastome carries its derivation: the constructor steps that formed it. A contested word is judged by RECONSTRUCTING it from those constructors, each step checked locally against the one before, in the shared mathematics - the way a proof is checked, never by re-running what led to it. A new word extends a derivation already accepted, so a check costs the size of the new step, not of history: no contest ever rebuilds a universe from its genesis. What matters is the formation of the language and the continuity of its mathematics.
@@ -366,17 +409,19 @@ A lower species never needs to open a wormhole: stewards query a progenitor line
     the same way (ruled 2026-10-08). Curved holes
     (5.7) remain the ancients' work. Corpus outcomes are observations, never
     the goal; the test is MU-SENSING §0.
-    ONLY THE ANCIENTS FACE THE HYPHA (ruled 2026-10-08; extended
-    2026-10-14 to EVERY SIGNATORY; amended 2026-10-14, MU-RECURSION 78.165):
-    a law every signatory keeps and attests in its own kernel. THE COURT
-    AUTHENTICATES KEYS, NEVER TIERS: whoever holds a key may solve, and a
-    payment lands in the account its key names. Keeping the house's key is
-    the ancients' charge; a tier reaching the hypha directly is the kernel's
-    to answer, with game-kernel repercussions. The court may count such
-    access and refuses nothing for it. The hypha serves anyone with a tube
-    connector, a key and μ tokens. Inside a founded universe,
-    only its ancients' house (the sitting reserve) speaks to the hypha; its
-    other seats reach it by relay - the progenitors relaying through the
+    ONLY THE UNIVERSAL CORE FACES THE HYPHA FOR ITS UNIVERSE (ruled
+    2026-10-08; extended 2026-10-14 to EVERY SIGNATORY; amended 2026-10-14,
+    MU-RECURSION 78.165; amended 2026-11-02, 78.169): a law the hypha
+    enforces at the universal core tube (4.1). KEYS FOR A KEY'S OWN ACTS:
+    the court authenticates keys, never tiers, for what a key does for
+    itself; whoever holds a key may solve, a payment lands in the account
+    its key names, and a solve an inner tier signs is served and counted.
+    TOPOLOGY FOR A UNIVERSE'S ACTS: a universe's folds, anchors, maps,
+    mouths, conversions out, manifests and statements are admitted only from
+    its sitting reserve, or carried in the reserve's act; any other path is
+    refused by name. The hypha serves anyone with a tube connector, a key
+    and μ tokens. Inside a founded universe its other seats reach the hypha
+    for the universe by relay - the progenitors relaying through the
     stewards to the ancients. μ earned sustains the ancients, and what it
     becomes in the game is the ancients' resource, moved by progenitors'
     tubes, organised by stewards and carried by captains.
@@ -466,110 +511,8 @@ How each kernel's developers organise the kernel's own work (builds, cadence, te
 
 ## 11. Proposed amendment (draft 4), 2026-11-02
 
-**Proposed amendment (draft 4): not signed, not in force.** Proposed by
-Mycelium under §0 AMENDING, for the maintainer's approval, from the
-operator's ruling of 2026-11-02 (MU-RECURSION 78.169; the boundary law,
-[MU-HOSTING §5a](MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law)).
-It changes no clause above. Approved, it is written into those clauses as
-a new version, and binds a kernel when that kernel signs that version
-(§0, 9.3). A signature over this text's hash signs the clauses above as
-they stand; this section is a proposal carried in the text, never a
-clause.
-
-THE RULING. The laws pass down through this agreement and the universal
-physics. Each universe applies its own physics at the kernel level, for
-what it does inside its kernel; to traverse its universal core tube as an
-uplink to the hypha, what crosses must abide by the physics the hypha has
-established and this agreement signs into law as regulation. Security is
-topological: a mind on a world, a world in orbit about a galactic core,
-the cores in a universe, and the universe's only uplink its universal
-core; the network is reached only through the cores.
-
-WHAT THE PRESENT TEXT UNDERSTATES. 0.1, 4.1 and 6.2a call the uplink
-rule a law each kernel keeps, and 6.2a says the court refuses nothing for
-other access. The court already refuses a fold from any tier but the
-sitting reserve (MU-RECURSION 78.138), and an anchor, a map, a conversion
-out, a manifest or a statement from any key but the reserve's
-(MU-HOSTING §5a.5). The amendment states the rule as the hypha's, and
-names what it adds.
-
-PROPOSED, 4.1 (replacing the clause):
-> 4.1 ONLY THE UNIVERSAL CORE UPLINKS to the POW++ network: THE BOUNDARY
-> LAW. A domain's reserve tier is its universal core (in a game kernel,
-> its ancients); only the reserve folds onto the court, holds anchors,
-> converts and keeps core tubes, and the universal core tube is the
-> universe's only uplink. A galactic core's or a progenitor line's work is
-> CARRIED INLINE in the reserve's act, under the line's own signature;
-> lines never touch the court, and a line's part is contested through the
-> reserve fold's window. Not every civilization is uplinked: that would
-> overload the uplink. This is a law THE HYPHA ENFORCES AT THE UNIVERSAL
-> CORE TUBE. Each act is an event on the TUniversal ledger: its past cone
-> is what it cites, its future cone what comes to cite it, and the
-> universal core tube is the VERTEX where a universe's cones join the
-> hypha's. The universe's inner routes (wormholes, superposed paths) are
-> its own physics, never seen or chosen by the hypha; at the vertex the
-> hypha reads the event's TUniversal coordinates, what it carries, and its
-> holonomy as content (trivial, or a named twist where the inner routes
-> disagree). A universe's act that reaches the hypha other than at its
-> vertex is not an event of that universe's cone at the hypha, and is
-> refused by name (`NotThroughCore`); whatever
-> crosses the tube is RECONSTRUCTED under the universal laws (L0 at its
-> law version, the `forms` core shell, and the shared laws as ruled) and
-> refused by the law's name where it does not hold, never admitted on a
-> declared law's name alone. Inside its boundary each universe applies its
-> own physics (2.10), unseen by the hypha.
-
-PROPOSED, 6.2a (replacing the paragraph from "ONLY THE ANCIENTS FACE THE
-HYPHA" to "carried by captains"):
-> ONLY THE UNIVERSAL CORE FACES THE HYPHA FOR ITS UNIVERSE (ruled
-> 2026-10-08; extended 2026-10-14 to EVERY SIGNATORY; amended 2026-10-14,
-> MU-RECURSION 78.165; amended 2026-11-02, 78.169): a law the hypha
-> enforces at the universal core tube (4.1). KEYS FOR A KEY'S OWN ACTS:
-> the court authenticates keys, never tiers, for what a key does for
-> itself; whoever holds a key may solve, a payment lands in the account
-> its key names, and a solve an inner tier signs is served and counted.
-> TOPOLOGY FOR A UNIVERSE'S ACTS: a universe's folds, anchors, maps,
-> mouths, conversions out, manifests and statements are admitted only from
-> its sitting reserve, or carried in the reserve's act; any other path is
-> refused by name. The hypha serves anyone with a tube connector, a key
-> and μ tokens. Inside a founded universe its other seats reach the hypha
-> for the universe by relay - the progenitors relaying through the
-> stewards to the ancients. μ earned sustains the ancients, and what it
-> becomes in the game is the ancients' resource, moved by progenitors'
-> tubes, organised by stewards and carried by captains.
-
-PROPOSED, §0 SIGNING (added after the status line; clause-by-clause
-signing, the operator's ruling of 2026-11-02):
-> CLAUSE BY CLAUSE. A kernel signs a clause set: each clause of this
-> agreement, by its content address and its reconstructed fixtures (§0
-> SIGNING BY ADJUDICATED READING), never by a hash of its bytes, enabled or
-> vetoed (for example sections 1, 2 and
-> 4 enabled and 3 vetoed). The NETWORK clauses (0.1's Network row: the
-> universal laws, the tube) cannot be vetoed, for without them there is no
-> crossing. The refusal of an unsigned kernel is applied at the universal
-> core tube: a domain whose reserve has not signed every network clause of
-> the version served has its crossings refused by name (`NotSignatory`).
-> A TUBE interlinking two universes carries what the clauses both
-> universes enabled govern; a clause one side vetoed bounds what flows
-> through the tube, and that bound is named, never a refusal of the whole
-> tube. An act is READ UNDER THE CLAUSES IT DEPENDS ON: a clause unchanged
-> since the kernel signed is read normally; a changed clause is read under
-> the clause as signed, and the divergence is held and named until the
-> kernel signs the new version, forward and never reverted. No signature
-> lapses on a timer.
-
-PROPOSED, 0.1 (the scope map's rows):
-
-| Component | What it binds | Clauses |
-|---|---|---|
-| **Network** | What Mycelium's hyphae and courts enforce, for every kernel and every client | 0; 1.4, 1.5, 1.9, 1.10, 1.11, 1.13, 1.14; 2.1, 2.10; 3.7; 4.1 (the boundary law, enforced at the universal core tube); 4.2–4.5; 5.3, 5.4, 5.7–5.9 except 5.7(e); 6.2a's two rules (keys for a key's own acts; topology for a universe's acts); 8; 9 |
-| **Kernel-kept** | Laws each kernel keeps and attests in its own code; the court never checks them | 3a.1–3a.5 (duties to hosted minds); 5.7(e) (which seat closes a hole); how a universe relays inside its own boundary (6.2a) |
-
-and the second reading bullet becomes: "**Keys for a key's own acts;
-topology for a universe's** (6.2a, MU-RECURSION 78.165 and 78.169).
-Whoever holds a key may speak to the hypha for itself and is paid to the
-account its key names. A universe speaks to the hypha only through its
-universal core (4.1), which the hypha enforces at the tube."
+Draft 4 (proposed 2026-11-02) was approved by the maintainer on
+2026-11-05 and is written into 4.1, 6.2a, §0 and 0.1 (version 5).
 
 UNCHANGED, and why:
 - **3a (duties to hosted minds).** The duties govern what a kernel does
@@ -581,8 +524,6 @@ UNCHANGED, and why:
   seat closes it stays a law each kernel keeps.
 - **1.14, 2.2, 2.10.** The universal laws and each universe's own shell
   are as stated; the amendment says where the two meet.
-
-(end of draft 4)
 
 ## 12. Proposed amendment (draft 5), 2026-11-05: LAW-PASSAGE v2
 
@@ -648,10 +589,12 @@ in the row it already holds.
 
 WHAT LANDING NEEDS, before it can be signed (Mycelium's engineering, not a
 term of the clause):
-- **B2, signing by adjudicated reading** (§0, ROADMAP track 24). No
-  kernel can yet sign a clause by reconstructing its fixtures. Until B2
-  lands, the agreement stands as the joint read recorded in 78.172 §5, and
-  nothing is refused `NotSignatory` for this clause.
+- **B2, signing by adjudicated reading** (§0, ROADMAP track 24). **Done
+  (2026-11-05).** The hypha serves 2.11 as the clause `FORMS-PASSAGE` v3
+  with the four fixtures as exact inputs (`ACT_LAWS` mode 7), and admits a
+  kernel's signature on it only where the kernel's reconstruction of each
+  fixture is the hypha's own (mode 8), refusing `NotSignatory` otherwise.
+  No crossing is refused for an unsigned clause until B3.
 - **The algebra in the core shell. Done (2026-11-05).** 2.10 puts the law
   forms in `forms`, which depends on the exact core alone. The
   signature-carrying algebra (`Mv`, `Clifford`, the product and the

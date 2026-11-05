@@ -197,14 +197,9 @@ use mycelium_sdk::laws::decode_register_reply as _;
 use mycelium_sdk::laws::decode_signature_reply as _;
 use mycelium_sdk::laws::encode_concordance_request as _;
 use mycelium_sdk::laws::encode_signature_request as _;
-use mycelium_sdk::laws::verify_concordance_signature as _;
-use mycelium_sdk::laws::ConcordanceRefusal as _;
-use mycelium_sdk::laws::ConcordanceSignature as _;
-use mycelium_sdk::laws::CONCORDANCE as _;
-use mycelium_sdk::laws::CONCORDANCE_HASH as _;
+use mycelium_sdk::laws::CLAUSES as _;
 use mycelium_sdk::laws::MODE_CONCORDANCE as _;
 use mycelium_sdk::laws::MODE_SIGNATURE as _;
-use mycelium_sdk::laws::SIGNATURE_LEN as _;
 use mycelium_sdk::laws::encode_register_request as _;
 use mycelium_sdk::laws::law_at as _;
 use mycelium_sdk::laws::Law as _;
@@ -244,13 +239,26 @@ use mycelium_sdk::house::decode_concordance_reply as _;
 use mycelium_sdk::house::decode_signature_reply as _;
 use mycelium_sdk::house::encode_concordance_request as _;
 use mycelium_sdk::house::encode_signature_request as _;
-use mycelium_sdk::house::verify_concordance_signature as _;
-use mycelium_sdk::house::ConcordanceRefusal as _;
-use mycelium_sdk::house::ConcordanceSignature as _;
-use mycelium_sdk::house::CONCORDANCE_HASH as _;
+use mycelium_sdk::house::reconstruct_fixture as _;
+use mycelium_sdk::house::sign_concordance as _;
+use mycelium_sdk::house::Admitted as _;
+use mycelium_sdk::house::Assent as _;
+use mycelium_sdk::house::Choice as _;
+use mycelium_sdk::house::ConcordanceClause as _;
+use mycelium_sdk::house::ConcordanceClauseId as _;
+use mycelium_sdk::house::Fixture as _;
+use mycelium_sdk::house::Object as _;
+use mycelium_sdk::house::SignedClause as _;
+use mycelium_sdk::house::Signing as _;
+use mycelium_sdk::house::SigningRefusal as _;
+use mycelium_sdk::house::Standing as _;
 use mycelium_sdk::house::MODE_CONCORDANCE as _;
 use mycelium_sdk::house::MODE_SIGNATURE as _;
-use mycelium_sdk::house::SIGNATURE_LEN as _;
+
+// signing: the kernel's helper
+use mycelium_sdk::signing::reconstruct_fixture as _;
+use mycelium_sdk::signing::sign_concordance as _;
+use mycelium_sdk::signing::RegisterRefusal as _;
 
 // house: the register and the clock
 use mycelium_sdk::house::decode_clock_reply as _;

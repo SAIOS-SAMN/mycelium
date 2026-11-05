@@ -6,11 +6,13 @@
 >
 > **Components:** the statement (`src/anastome/dialogue/conformance.rs`), served by every hypha on `ACT_LAWS` mode 6; the SDK's `mycelium_sdk::conformance` (the in-process check and the suite on a network) and `mycelium_sdk::house` (a kernel's uplink surface); the runnables `sdk/examples/conformance.rs` and `sdk/examples/house.rs`.
 
-**Status:** specification, version 3 (2026-10-31). This is the published
+**Status:** specification, version 4 (2026-11-05). This is the published
 client conformance read of [MU-HOSTING](MU-HOSTING.md) §2.5 item 4 and
 phase P5 of [MU-PRECURSORS](MU-PRECURSORS.md) §4.3. Each item is marked
 **Built** (in the tree, covered by its suites) or **Specified**. Version 2
-adds the kernel profile; version 3 adds the deferral (§5).
+adds the kernel profile; version 3 adds the deferral (§5); version 4
+replaces the Concordance's hash with its clause register and signing by
+adjudicated reading (Concordance §0; §2.2, §3).
 
 ---
 
@@ -45,10 +47,11 @@ an act is MUST where either declared profile makes it MUST.
 ## 2. The statement (**Built**)
 
 `mycelium_sdk::conformance::STATEMENT` is a typed, machine-readable
-`Statement { wire_version, law_version, concordance_hash, profiles }`: the
-`concordance_hash` is BLAKE3 of the exact bytes of
-[MU-CONCORDANCE](MU-CONCORDANCE.md) at build time (Concordance §0
-SIGNING), and each `ProfileStatement { profile, acts }` names a profile's
+`Statement { wire_version, law_version, clauses, profiles }`: `clauses`
+names each clause of the Concordance the hypha adjudicates by its law id
+and version (`physics::laws::clauses::CLAUSES`; the fixtures are served on
+mode 7, [MU-CONCORDANCE](MU-CONCORDANCE.md) §0), never a hash of the
+text, and each `ProfileStatement { profile, acts }` names a profile's
 acts, each once. Each `ActRequirement` names:
 
 - `act`: the act's code on the wire, one of the SDK's `ACT_TABLE`;
@@ -86,7 +89,7 @@ closure answers `SOLVE_AGAIN` (code 1) and pays nothing.
 | MUST | `laws register` (`ACT_LAWS` mode 0) | `decode_register_reply` | law version, laws |
 | MAY | `task by citation` | `decode_task_envelope` | citation, train, tests |
 | MAY | `laws lexicon` (mode 3), `laws clock` (4), `laws parameters` (5), `laws statement` (6) | `decode_lexicon_reply`, `decode_clock_reply`, `decode_parameters_reply`, `decode_statement_reply` | as each decoder reads |
-| MAY | `laws concordance` (mode 7), `laws signature` (mode 8) | `decode_concordance_reply`, `decode_signature_reply` | the Concordance's hash; a signature's verdict (accepted, or `Mismatched`, `Unsigned`, `Malformed`) |
+| MAY | `laws concordance` (mode 7), `laws signature` (mode 8) | `decode_concordance_reply`, `decode_signature_reply` | as the kernel profile's |
 | MAY | `quote`, `receipts`, `entries` (the ledger entries, formerly `rows`), `observe query`, `why`, `wallet` | the readings' decoders | as each decoder reads |
 | MAY | `probe`, `peers`, `syllabus`, `speech` (each sentence with, optionally, the ground its claim was spoken under; MU-SENSING §6.2), `domain reserve`, `seat mail` | as the statement names | as each decoder reads |
 | MAY | `solve factorisation` (`ACT_SOLVE`, claim kind 1, `SOLVE_KIND_FACTORISATION`; signed as `mycelium factorisation v1`: a train pair's motion and residue at any rank, with, optionally, the ground the claim was spoken under; MU-SENSING §3.9) | `decode_factorisation`, `decode_factor_verdict` | the act: voice, task, pair, motion (sources, senses, periods), residue (links), stated ground (or none), signature; the verdict: admitted, the residue of the residues (unclaimed, uncarried), or the refusal by name |
@@ -123,9 +126,9 @@ read.
 | Need | Act | Reply decoder | Fields read back |
 |---|---|---|---|
 | MUST | `laws register` (mode 0) | `decode_register_reply` | law version, laws |
-| MUST | `laws statement` (mode 6) | `decode_statement_reply` | wire version, law version, concordance hash, profiles, acts |
-| MUST | `laws concordance` (mode 7) | `decode_concordance_reply` | the Concordance's hash |
-| MUST | `laws signature` (mode 8) | `decode_signature_reply` | accepted, or the refusal by name |
+| MUST | `laws statement` (mode 6) | `decode_statement_reply` | wire version, law version, clauses, profiles, acts |
+| MUST | `laws concordance` (mode 7) | `decode_concordance_reply` | clauses: law id, version, standing, fixtures (each an exact input); or the clause the hypha cannot read |
+| MUST | `laws signature` (mode 8, a signing act by reconstruction) | `decode_signature_reply` | each clause admitted, enabled or vetoed; or the refusal by name: `Malformed`, `Unsigned`, `UnknownClause`, `Repeated`, `NetworkVetoed`, `NotSignatory` (the clause, the fixture, the object presented and the hypha's), `Unregistered` |
 | MUST | `laws clock` (mode 4) | `decode_clock_reply` | the core stamp, or no head yet |
 | MUST | `laws verify` (mode 1, one transition) | `decode_verify_reply` | breaches by law, exchanged torques, modes, similarity, expansion, unmeasured laws |
 | MUST | `domain founding` (`ACT_DOMAIN` genesis) | `decode_domain_reply` | sealed stamp and receipt, or the refusal by name |
@@ -138,30 +141,44 @@ read.
 | MAY | `wallet` | `decode_wallet_reply` | court, balance, bond, held, stamp |
 
 The MUST acts are what a house does first on the network: it reads the
-register and the statement at its version, signs the Concordance's hash,
-reads the core clock, has a transition verified, founds its domain, asks
+register and the statement at its version, reads the Concordance's
+clause register and signs it clause by clause by reconstructing each
+clause's fixtures, reads the core clock, has a transition verified, founds its domain, asks
 its endowment by a manifest, and reads its universe back.
 
 ## 3. The statement served (**Built**)
 
 Every hypha answers `[ACT_LAWS][6]` with the statement's bytes:
-`[wire version u16 LE][law version][concordance hash 32][0][2][profile
-count]`, then per profile `[profile][act count]` and per act `[act][0 | 1
-mode][need][name][reply][field count][field …]`, each count and each text
-length by its own coordinate (LEB128, minimal). The two bytes `[0][2]` mark
-the profiled form (`FORM_PROFILES`): v0.3.0-rc.1 served a single act list
-with its count in that place, and wrote a zero count only as its last byte,
-so the two forms never read alike. `decode_statement_reply` reads either:
-the rc.1 form reads as the mind profile alone, and an rc.1 reader refuses a
-profiled statement whole rather than misreading it. A client in any
-language reads the statement whole and compares it with the statement it
-was built against.
+`[wire version u16 LE][law version][clause count][(law id, version u16
+LE) …][0][2][profile count]`, then per profile `[profile][act count]` and
+per act `[act][0 | 1 mode][need][name][reply][field count][field …]`,
+each count and each text length by its own coordinate (LEB128, minimal).
+The two bytes `[0][2]` mark the profiled form (`FORM_PROFILES`). From
+v0.4.0 the clauses stand where v0.3.0 wrote the Concordance's 32-byte
+hash, and the single-profile form of v0.3.0-rc.1 is no longer read. A
+client in any language reads the statement whole and compares it with the
+statement it was built against.
 
-Modes 6, 7 and 8 are additive: the wire version is unchanged, and a hypha
-that predates them answers nothing to them, as it answers any `ACT_LAWS`
-request it does not read. From v0.3.0 the Concordance's hash is served
-(mode 7) and a kernel's signature over it is accepted and verified (mode
-8); refusal of an unsigned kernel takes effect in the following release.
+**The Concordance (modes 7 and 8; v0.4.0, Concordance §0).** Mode 7
+answers the clause register: `[0][clause count]`, then per clause `[law
+id][version u16 LE][standing: 0 network, 1 kernel][fixture count][fixture
+…]`, or `[1][law id][version]` naming a clause the hypha cannot read of
+its own register. Each fixture is its operation's tag and its exact
+inputs (`physics::laws::clauses::writing`): a value of `Cl(p, q)` written
+`[negatives][term count][(mask, coefficient) …]`, masks strictly
+ascending and coefficients non-zero; a coordinate written as its origin
+(genesis, epoch, enclosures) and its place (`h`, the four lanes, `K`).
+Mode 8 carries a signing act, `[kernel key 32][clause count][clause …][sig
+64]`: each clause its law id, version and fixtures as served, then `[0]`
+and the kernel's reconstruction of each fixture's object (enabled), or
+`[1]` (vetoed); Ed25519 over `"mycelium concordance v2" ‖ kernel key ‖
+the clauses`. The hypha answers `[0][count][(law id, version, assent)
+…]` where every clause is admitted, or `[1][refusal]`. A clause is
+admitted only where each presented object is the hypha's own
+reconstruction, exactly; the first that is not is refused `NotSignatory`
+with the clause, the fixture, and both objects. A network clause vetoed
+is refused `NetworkVetoed`. Nothing is recorded per domain yet, and no
+crossing is refused for an unsigned clause until ROADMAP track 24 B3.
 
 ## 4. The two reads (**Built**)
 
@@ -182,8 +199,13 @@ fails by that act's name and no other.
 **On a network**, `conformance::run(endpoint, key, profiles)`: against a
 running hypha, as the voice `key` seats. For every profile, the law
 register is read and each law checked at its coordinate with its
-statement, and the served statement, the Concordance's hash and a
-signature over it are read. For a mind, a task is taken and its envelope
+statement, and the served statement is read. The Concordance's clause
+register is read and must equal the SDK's, clause for clause and fixture
+for fixture; it is signed by the SDK's own reconstructions
+(`mycelium_sdk::signing::sign_concordance`), every clause enabled, and
+must be admitted on each; and the same act with one fixture's object
+presented wrong must be refused `NotSignatory`, naming that clause and
+fixture. For a mind, a task is taken and its envelope
 decoded, asked again by its citation, and solved once per perspective of
 its ground (MU-SENSING §3.4, §6.2): each solve signed by the voice and
 stating the ground it was spoken under, and each verdict checked (a code of the four the statement names, a
@@ -260,8 +282,9 @@ target/release/examples/house /tmp/house-voice 127.0.0.1:7700
 `conformance` takes `--profile mind` (the default), `kernel` or `both`,
 prints the declared profiles' MUST and MAY lists, the in-process report and
 the network report, and exits 0 where both conform. `house` is a minimal
-kernel uplink on `mycelium-sdk` alone: it signs the Concordance's hash and
-presents it, reads the clock, founds its domain, and runs the kernel
+kernel uplink on `mycelium-sdk` alone: it reads the Concordance's clause
+register, signs it by reconstructing each fixture and presents the act,
+reads the clock, founds its domain, and runs the kernel
 profile. `scripts/quickstart` runs both profiles and the house against a
 fresh three-hypha network.
 
@@ -269,7 +292,8 @@ A kernel built on the SDK speaks through `mycelium_sdk::house`, which
 re-exports the house-side encoders, decoders and types: domain founding
 and the reserve, bond and origin; the universe and its statements; the
 endowment's manifest and grant; the house side of seats; laws verify and
-the batch; the clock; the Concordance signature; framing and `HyphaKey`;
+the batch; the clock; the Concordance's clause register, the signing act
+and the kernel's signing helper (`signing`); framing and `HyphaKey`;
 and the wire modules `domain`, `universe`, `endowment`, `seat`, `atlas`,
 `uplink` and `challenge` whole.
 

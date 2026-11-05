@@ -16293,8 +16293,8 @@ the Concordance amendments (4.1, 6.2a, §0, 0.1) are proposed in
 unsigned; ROADMAP track 24. Code today: `src/server/cognition/cite.rs`
 (`Court::admit_uplink`, the reserve check), `src/server/cognition/convert.rs`
 (`Court::reserve_of`, `Court::inner_seat`), `src/server/cognition/ledger.rs`
-(`Court::admit_chained`), `src/physics/laws/concordance.rs`
-(`verify_concordance_signature`).
+(`Court::admit_chained`), `src/physics/laws/clauses/signing.rs`
+(`admit`, signing by adjudicated reading, Concordance §0).
 
 ### 78.170 The transduction: no lattice past the sensor
 

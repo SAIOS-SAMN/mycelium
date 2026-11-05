@@ -329,10 +329,9 @@ other test ([AGENTS › Definition of done](../AGENTS.md#definition-of-done)).
 Each check reads the repository's source tree as a test of its own
 (`gate/src/tests/tree.rs`), so a red check never hides another, and each
 check's refusals are proved on fixture trees beside it
-(`gate/src/tests/`). The library's `build.rs` only computes the
-Concordance's byte hash (`CONCORDANCE_HASH`), a defect retired by ROADMAP
-track 24 B2 (Concordance §0, signing by adjudicated reading). The gate
-holds two readings:
+(`gate/src/tests/`). The library has no `build.rs` (the Concordance's
+byte hash it computed is retired by ROADMAP track 24 B2, signing by
+adjudicated reading). The gate holds two readings:
 
 1. **The source checks** (`gate/src/`), over `src/`, `algebra/src/`,
    `forms/src/`, `sdk/src/` and `gate/` (the numbers gate over the four
