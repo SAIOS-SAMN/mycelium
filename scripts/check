@@ -13,7 +13,7 @@
 #   tests) is kept at $CHECK_LOG (default: a temporary file, named in the
 #   summary).
 #
-# KNOWN EXCEPTIONS. Twenty tests read tasks of the ARC-AGI-2 corpus,
+# KNOWN EXCEPTIONS. Twenty-one tests read tasks of the ARC-AGI-2 corpus,
 # read at data/arc-agi-2 or under $MYCELIUM_CORPUS. They are the tests of
 # the corpus's decoder (the workspace crate sources/arc-agi); the core
 # library reads no corpus. Without the corpus they fail; the summary says
@@ -80,7 +80,7 @@ if [ -n "${MYCELIUM_CORPUS:-}" ] && [ -d "$MYCELIUM_CORPUS" ]; then
 elif [ -d "$REPO/data/arc-agi-2" ]; then
   corpus="found at data/arc-agi-2"
 else
-  corpus="absent (data/arc-agi-2 missing, MYCELIUM_CORPUS unset): the 20 corpus-dependent tests of sources/arc-agi are expected to fail"
+  corpus="absent (data/arc-agi-2 missing, MYCELIUM_CORPUS unset): the 21 corpus-dependent tests of sources/arc-agi are expected to fail"
 fi
 
 echo
