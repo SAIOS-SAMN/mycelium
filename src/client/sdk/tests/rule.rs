@@ -226,7 +226,7 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     assert!(
         crate::verdict::reconstruct_blind_at(&spoken, &|_| None, Some(&train), &NoCrystal, &mut budget).is_none(),
-        "the client's own replay on its training pairs passes"
+        "the client's own reconstruction on its training pairs passes"
     );
     let withheld = vec![(digits(&["1100", "0000"]), digits(&["0022", "0000"]))];
     // THE DEFECT: the extracted word, judged as it stands, is refused I.
@@ -242,7 +242,7 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     assert!(
         crate::verdict::reconstruct_blind_at(&crossed, &|_| None, Some(&train), &NoCrystal, &mut budget).is_none(),
-        "the crossed word still replays on its training pairs"
+        "the crossed word still reconstructs on its training pairs"
     );
     assert_solved(&crossed, &withheld, "the crossed rule");
 }

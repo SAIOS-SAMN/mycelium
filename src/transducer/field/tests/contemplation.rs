@@ -387,7 +387,7 @@ fn expand_all_crystallizes_closed_idea_and_releases_it() {
     assert_eq!(
         crate::court::verdict::reconstruct_form_with(e, &|_| None, Some(&family), &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)),
         None,
-        "the court replays it closed on its bundle"
+        "the court reconstructs it closed on its bundle"
     );
     assert!(c.wells.is_empty(), "the idea left the contemplation");
     assert_eq!(c.formed, 1, "one thought formed");

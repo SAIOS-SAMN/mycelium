@@ -261,7 +261,7 @@ impl Court {
         c.count("axis_index", axis_index.scoped().map(|(_, a)| nested(a)).sum());
         c.count("generators", nested(generators));
         c.count("presentation", presentation.len());
-        c.count("replay_memo", nested(reconstruction_memo));
+        c.count("reconstruction_memo", nested(reconstruction_memo));
         c.count("cited_by", nested(cited_by));
         c.count("book", book.1.len());
         c.count("language", language.len());

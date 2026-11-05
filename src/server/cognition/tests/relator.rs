@@ -272,7 +272,7 @@ fn court_torsion_files_relator_at_period() {
     assert_eq!(
         crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
-        "the filed relator replays on the orbit's own reading"
+        "the filed relator reconstructs on the orbit's own reading"
     );
 
     // TWO COURTS, NEVER INTRODUCED. Each files on its first hearing and is
@@ -492,7 +492,7 @@ fn admit_line_reconstructs_peer_retirement() {
     let t_at = b.admitted_at(t_addr.as_bytes()).expect("the transport's stamp");
     let line = retirement_line(&key, vec![Cite::word(&relator, r_at), Cite::word(&t, t_at)]);
     super::fixtures::admit_line(&mut b, &key, &line);
-    assert_eq!(b.clock(None).rulings[retired], [1, 1, 0, 0], "replayed and applied");
+    assert_eq!(b.clock(None).rulings[retired], [1, 1, 0, 0], "reconstructed and applied");
     assert!(!b.basis.contains(r_addr.as_bytes()), "the relator retired here");
     assert!(b.cavity_book.contains(r_addr.as_bytes()), "onto the cavity book, keeping its address");
     let own_head = b.chain().head().expect("b sealed").clone();

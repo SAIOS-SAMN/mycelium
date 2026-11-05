@@ -367,7 +367,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
                             dialogue::SOLVE_UNREAD,
                             Mu::zero(),
                             Some(refused(
-                                "not judged yet: the court's stroke ran out before the replay ruled; ask again and it resumes",
+                                "not judged yet: the court's stroke ran out before the reconstruction ruled; ask again and it resumes",
                                 mycelium::transducer::sentence::ObstructionKind::NoQuestion,
                             )),
                             None,
@@ -375,7 +375,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
                         mycelium::cognition::SolveVerdict::Unverifiable => (
                             dialogue::SOLVE_NOTHING,
                             Mu::zero(),
-                            Some(refused("the task withholds no answer to replay against", mycelium::transducer::sentence::ObstructionKind::NoQuestion)),
+                            Some(refused("the task withholds no answer to reconstruct against", mycelium::transducer::sentence::ObstructionKind::NoQuestion)),
                             None,
                         ),
                     };

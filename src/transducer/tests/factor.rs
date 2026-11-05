@@ -127,7 +127,7 @@ fn reconstructs_refuses_tape_that_does_not_rederive() {
     let held = [w(&[(q01, false)]), w(&[(p5, false)])];
     let rotors: Vec<Rotor> = held.iter().map(|x| x.rotor()).collect();
     let g = w(&[(q01, false)]);
-    assert!(reconstructs(&[(0, 1)], &rotors, &g.rotor()), "the true tape replays");
+    assert!(reconstructs(&[(0, 1)], &rotors, &g.rotor()), "the true tape reconstructs");
     assert!(!reconstructs(&[(1, 1)], &rotors, &g.rotor()), "a wrong tape does not");
     assert!(!reconstructs(&[(9, 1)], &rotors, &g.rotor()), "an index off the basis does not");
 }

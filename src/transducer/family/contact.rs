@@ -49,7 +49,7 @@ fn one_ring(family: &[(SectionSample, SectionSample)]) -> Option<u8> {
             .chain((0..fy.0 as i64).map(|r| on(r, 0)))
             .chain((0..fy.0 as i64).map(|r| on(r, last_col as i64)))
             .collect();
-        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a resident grid's frame dimensions cannot sum past a 64-bit usize")]
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a resident sample's frame dimensions cannot sum past a 64-bit usize")]
         let bound = fy.0.saturating_add(fy.1);
         // The ring is read in the plane's count; the contact word spells it
         // in a byte, so a ring past it is no contact word — refused, never

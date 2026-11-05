@@ -68,7 +68,7 @@ pub fn extraction_spend(family: &[(SectionSample, SectionSample)], frames: &supe
     for (a, b) in family {
         for g in [a, b] {
             let (h, w) = frame_of(g);
-            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the cell counts of resident grids cannot sum past a 64-bit usize")]
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the cell counts of resident samples cannot sum past a 64-bit usize")]
             let next = n.saturating_add(h * w);
             n = next;
         }

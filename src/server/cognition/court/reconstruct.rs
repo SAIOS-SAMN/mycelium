@@ -284,7 +284,7 @@ impl Court {
         // condensed, pressure where they were refused.
         crate::observe::step("court stroke: contacts");
         self.physics.book_contacts(crate::transducer::family::pairing::contact_lanes());
-        crate::observe::step("court stroke: docket replay");
+        crate::observe::step("court stroke: docket reconstruction");
         let circuit = self.docket_reconstruction(budget);
         if let Some((n, period)) = self.docket_circuits.stroke(u64::from(circuit)) {
             // ONCE PER APERTURE, NOT PER CIRCUIT. A docket that fits one

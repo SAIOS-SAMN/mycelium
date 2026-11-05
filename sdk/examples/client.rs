@@ -66,7 +66,7 @@ fn verdict_name(code: u8) -> &'static str {
         SOLVE_BOUNTY => "solved: first verified closure (bounty)",
         SOLVE_AGAIN => "solved again: a repeat closure, verified, paid nothing",
         SOLVE_NOTHING => "not solved (final)",
-        SOLVE_UNREAD => "not judged yet (retry resumes the replay)",
+        SOLVE_UNREAD => "not judged yet (retry resumes the reconstruction)",
         _ => "other",
     }
 }

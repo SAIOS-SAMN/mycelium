@@ -125,8 +125,8 @@ fn bodies_of(compartments: &[Compartment]) -> Vec<Body> {
 /// the edge transport of 50.3, so sliding and relative rotation are
 /// measured on the edge. The court reads the percept as one sentence with
 /// its body vertices and the vertices' edges, never as detached listings (50.1).
-pub fn perceive(grid: &SectionSample) -> Vec<Body> {
-    perceive_frames(std::slice::from_ref(grid))
+pub fn perceive(sample: &SectionSample) -> Vec<Body> {
+    perceive_frames(std::slice::from_ref(sample))
 }
 
 /// Perceive one frame of a family as the sections of its bodies (51.4,
@@ -136,15 +136,15 @@ pub fn perceive(grid: &SectionSample) -> Vec<Body> {
 /// when they read a frame alone; a body stacked along `e₃` has a chart
 /// that depends on its extent there, and a vertex keyed by it would find
 /// nothing on a frame perceived by itself.
-pub fn perceive_at(grid: &SectionSample, k: i64) -> Vec<Body> {
-    bodies_of(&compartments_at(grid, k))
+pub fn perceive_at(sample: &SectionSample, k: i64) -> Vec<Body> {
+    bodies_of(&compartments_at(sample, k))
 }
 
 /// THE COMPARTMENTS OF ONE FRAME: each painted site of the section on the
 /// family's base, the frame's place `k` on the place axis
 /// (`SectionSite::on_family`), with its symbol.
-fn compartments_at(grid: &SectionSample, k: i64) -> Vec<Compartment> {
-    crate::transducer::raster::painted_sites(grid)
+fn compartments_at(sample: &SectionSample, k: i64) -> Vec<Compartment> {
+    crate::transducer::raster::painted_sites(sample)
         .into_iter()
         .filter_map(|p| Some(Compartment { site: p.site.on_family(k)?, hue: p.symbol }))
         .collect()
@@ -155,9 +155,9 @@ fn compartments_at(grid: &SectionSample, k: i64) -> Vec<Compartment> {
 /// several hues is several parts; a body of one hue is one part). What a
 /// clause on parts selects among (`Act::Parts`): a body recoloured in part is
 /// parts recoloured whole. Read in the lattice's order, hue by hue.
-pub fn perceive_parts(grid: &SectionSample) -> Vec<Body> {
+pub fn perceive_parts(sample: &SectionSample) -> Vec<Body> {
     let mut by_hue: crate::network::nerve::Keyed<Vec<Compartment>> = crate::network::nerve::Keyed::new();
-    for l in compartments_at(grid, 0) {
+    for l in compartments_at(sample, 0) {
         let h = l.hue;
         match by_hue.get_mut(&[h]) {
             Some(ls) => ls.push(l),
@@ -190,10 +190,10 @@ pub fn perceive_family(family: &[(SectionSample, SectionSample)]) -> Frames {
 /// Perceive a family's frames as bodies on `(r, c, k)`: hue-blind
 /// 6-connected components across the frames (51.3, 51.4, 70.4), the frame of each
 /// sample its place in the family.
-pub fn perceive_frames(grids: &[SectionSample]) -> Vec<Body> {
+pub fn perceive_frames(samples: &[SectionSample]) -> Vec<Body> {
     let mut compartments: Vec<Compartment> = Vec::new();
-    for (k, grid) in grids.iter().enumerate() {
-        compartments.extend(compartments_at(grid, k as i64));
+    for (k, sample) in samples.iter().enumerate() {
+        compartments.extend(compartments_at(sample, k as i64));
     }
     bodies_of(&compartments)
 }

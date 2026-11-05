@@ -468,7 +468,7 @@ fn deconstruct_at_cites_words_and_leaves_residue() {
     assert_eq!(s.cites.len(), 1);
     assert_eq!(s.cites[0].word, words[0].address(), "the bar, not the other-hued bar");
     assert!(s.is_closed());
-    assert!(reconstruct_at(&word_at, &s.cites, &target).is_empty(), "the citation replays to closure");
+    assert!(reconstruct_at(&word_at, &s.cites, &target).is_empty(), "the citation reconstructs to closure");
     assert!(
         !s.multiplicity.is_empty(),
         "stratum width is recorded per body"

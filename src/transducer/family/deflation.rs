@@ -430,8 +430,8 @@ fn pair_measure_read(
     let before_chain = before_chain_of(x, y)?;
     // A speech that does not fit its own frame lays down no sample, so the
     // residue is measured against what the form actually said: nothing.
-    let grid = spoken.and_then(|s| s.sample());
-    let after_chain = residue_of(grid.as_ref(), y)?;
+    let sample = spoken.and_then(|s| s.sample());
+    let after_chain = residue_of(sample.as_ref(), y)?;
     let before_mu = element::measure_lanes(&before_chain);
     let after_mu = element::measure_lanes(&after_chain);
     // S9.5 — THE PAY GATE IS CLOSURE. A pair pays when the form CLOSES
@@ -491,8 +491,8 @@ pub(crate) fn deflation_pair_metered(
     // The remainder alone: the speech against the observed output. What
     // the pair demanded before any form spoke prices the pay, which the
     // court's reconstruction does not read here.
-    let grid = spoken.as_ref().and_then(|s| s.sample());
-    let Ok(remainder) = residue_of(grid.as_ref(), y) else { return PairRead::Ungrounded };
+    let sample = spoken.as_ref().and_then(|s| s.sample());
+    let Ok(remainder) = residue_of(sample.as_ref(), y) else { return PairRead::Ungrounded };
     PairRead::Read { remainder, unresolved, cycled }
 }
 
@@ -847,10 +847,10 @@ pub fn bundle_pressure(
 
         // A speech that does not fit its own frame lays down no sample, so the
         // residue is measured against what the form actually said: nothing.
-        let grid = spoken.as_ref().and_then(|s| s.sample());
+        let sample = spoken.as_ref().and_then(|s| s.sample());
         // A residue with no one ground to write it on leaves no pressure
         // read for the bundle.
-        let residue = residue_of(grid.as_ref(), y).ok()?;
+        let residue = residue_of(sample.as_ref(), y).ok()?;
         let m = element::measure_lanes(&residue);
         for l in 0..4 {
             #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]

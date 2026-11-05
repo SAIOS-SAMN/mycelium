@@ -346,7 +346,7 @@ fn pivot_orbit_discharges_held_word_and_vortices_pair() {
     assert_eq!(
         crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
-        "a certified discharge replays: every after-face is face_of, then the certificate"
+        "a certified discharge reconstructs: every after-face is face_of, then the certificate"
     );
     let mut tampered =
         crate::transducer::sentence::from_element_form(&e).expect("the address decodes");
