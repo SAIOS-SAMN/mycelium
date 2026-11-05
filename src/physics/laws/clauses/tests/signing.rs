@@ -139,10 +139,11 @@ fn concordance_modes_round_trip() {
         Err(SigningRefusal::NetworkVetoed { id: id.clone() }),
         Err(not_signatory),
         Err(SigningRefusal::Unregistered { id }),
+        Err(SigningRefusal::Unrecorded),
     ];
     for v in verdicts {
         assert_eq!(decode_signature_reply(&encode_signature_reply(&v)), Some(v));
     }
-    assert_eq!(decode_signature_reply(&[1, 7]), None, "a refusal tag no refusal names");
+    assert_eq!(decode_signature_reply(&[1, 8]), None, "a refusal tag no refusal names");
     assert_eq!(decode_concordance_reply(&[2]), None);
 }

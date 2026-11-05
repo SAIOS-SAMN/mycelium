@@ -7,6 +7,12 @@
 //! reading the kernel acts on. The verifier runs under a stroke of its own,
 //! as the observer's census does: the court's metabolism is the acts it
 //! admits, and this admits none.
+//!
+//! Track 24 B2 — two modes take the court: a signing act (mode 8) is
+//! recorded on the court's line, as a stake act on `ACT_WALLET` is a write
+//! (`Court::hear_signing`), answered once durable; and the alignment reading
+//! (mode 9) is derived from the signing events the court's ledger holds,
+//! under the hold's stroke (`Court::alignment`).
 
 use crate::context::Context;
 use crate::transport::answer;
@@ -32,14 +38,28 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context
         // MU-PRECURSORS §4 P5 — the client conformance statement this tree
         // publishes, the same object the SDK holds.
         LawsRequest::Statement => mycelium::anastome::dialogue::conformance::encode_statement_reply(),
-        // Concordance §0 — the clause register, and a kernel's signing act
-        // admitted only on its reconstruction of each clause's fixtures:
-        // admitted or refused by name (`NotSignatory` naming the clause and
-        // the fixture), recorded nowhere yet.
+        // Concordance §0 — the clause register.
         LawsRequest::Concordance => mycelium::physics::laws::codec::encode_concordance_reply(&mycelium::physics::laws::clauses::register()),
+        // Concordance §0, track 24 B2 — a kernel's signing act admitted only
+        // on its reconstruction of each clause's fixtures, admitted or
+        // refused by name, and the verdict sealed on the court's line; the
+        // reply waits until it is durable (78.137).
         LawsRequest::Signature(b) => {
-            mycelium::physics::laws::codec::encode_signature_reply(&mycelium::physics::laws::clauses::admit_bytes(&b))
+            let verdict = match crate::court_lock::held!(context.court) {
+                Ok(mut h) => h.run(|k, _| k.hear_signing(&b)),
+                Err(_) => return,
+            };
+            if !crate::persist::durable(&context.court, &context.state_path) {
+                return;
+            }
+            mycelium::physics::laws::codec::encode_signature_reply(&verdict)
         }
+        // Track 24 B2 — the alignment reading, from the signing events the
+        // court's ledger holds.
+        LawsRequest::Alignment(only) => match crate::court_lock::held!(context.court) {
+            Ok(mut h) => mycelium::physics::laws::codec::encode_alignment_reply(&h.run(|k, reads| k.alignment(only, reads))),
+            Err(_) => return,
+        },
         LawsRequest::Verify(t) => {
             // 78.116 — under the stroke the motion's modes need, never the
             // court's default: a verdict of the transition alone.

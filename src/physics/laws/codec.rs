@@ -285,8 +285,11 @@ pub enum LawsRequest {
     Concordance,
     /// Concordance §0 — a kernel's signing act presented, as carried: read
     /// and admitted at the court against its own reconstructions, each
-    /// refusal by name.
+    /// refusal by name, and the verdict recorded on the court's ledger.
     Signature(Vec<u8>),
+    /// Track 24 B2 — the alignment reading derived from the signing events
+    /// the court's ledger records: every kernel's, or one kernel's by key.
+    Alignment(Option<[u8; 32]>),
 }
 
 /// `[ACT_LAWS][7]`: the Concordance's clause register.
@@ -356,6 +359,32 @@ pub fn encode_signature_reply(verdict: &Result<Vec<super::clauses::Admitted>, su
 /// The verdict a reply carries, read whole.
 pub fn decode_signature_reply(b: &[u8]) -> Option<Result<Vec<super::clauses::Admitted>, super::clauses::SigningRefusal>> {
     super::clauses::signing::take_verdict(b)
+}
+
+/// `[ACT_LAWS][9]` every kernel's alignment, `[ACT_LAWS][9][kernel 32]` one
+/// kernel's: read from the signing events on the court's ledger.
+/// FORMAT: ACT_LAWS sub-kind byte.
+pub const MODE_ALIGNMENT: u8 = 9;
+
+/// `[ACT_LAWS][9]`, with the kernel's key where one kernel is asked.
+pub fn encode_alignment_request(kernel: Option<&[u8; 32]>) -> Vec<u8> {
+    let mut out = vec![crate::anastome::dialogue::ACT_LAWS, MODE_ALIGNMENT];
+    if let Some(k) = kernel {
+        out.extend_from_slice(k);
+    }
+    out
+}
+
+/// The alignment reading's reply (`clauses::alignment::put_alignment`).
+pub fn encode_alignment_reply(read: &Result<super::clauses::Alignment, super::clauses::AlignmentRefusal>) -> Vec<u8> {
+    let mut out = Vec::new();
+    super::clauses::alignment::put_alignment(&mut out, read);
+    out
+}
+
+/// The reading a reply carries, read whole.
+pub fn decode_alignment_reply(b: &[u8]) -> Option<Result<super::clauses::Alignment, super::clauses::AlignmentRefusal>> {
+    super::clauses::alignment::take_alignment(b)
 }
 
 /// `[ACT_LAWS][3]`: the shared lexicon.
@@ -564,6 +593,8 @@ pub fn decode_laws_request(body: &[u8]) -> Option<LawsRequest> {
         [act, MODE_STATEMENT] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Statement),
         [act, MODE_CONCORDANCE] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Concordance),
         [act, MODE_SIGNATURE, rest @ ..] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Signature(rest.to_vec())),
+        [act, MODE_ALIGNMENT] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Alignment(None)),
+        [act, MODE_ALIGNMENT, rest @ ..] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Alignment(Some(rest.try_into().ok()?))),
         [act, MODE_VERIFY, rest @ ..] if *act == crate::anastome::dialogue::ACT_LAWS => {
             let mut p = 0;
             let t = take_transition(rest, &mut p)?;

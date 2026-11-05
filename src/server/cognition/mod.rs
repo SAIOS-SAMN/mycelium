@@ -35,6 +35,7 @@ mod persistence;
 mod reduce;
 mod room;
 pub mod seat;
+mod signatory;
 mod state;
 mod universe;
 mod wallet;

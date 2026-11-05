@@ -139,6 +139,14 @@ impl PartialEq for Fixture {
     }
 }
 
+/// The fixture's equality is exact on every input (the same values, the
+/// same coordinates), so it is an equivalence: a fixture named in a
+/// refusal on the ledger compares as the ledger's citations do.
+impl Eq for Fixture {}
+
+/// The object's equality is exact, as the fixture's.
+impl Eq for Object {}
+
 impl PartialEq for Object {
     fn eq(&self, o: &Object) -> bool {
         match (self, o) {
