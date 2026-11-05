@@ -57,6 +57,40 @@ impl Turn {
         Turn { index: self.period - self.index, period: self.period }
     }
 
+    /// THE SUM IN ℚ/ℤ (MU-SENSING §3.1): `r/h + r′/h′` mod 1, held on the
+    /// least common multiple of the two periods, the period of the composed
+    /// orbit (MU-ANTI-FLATTENING 12: an `lcm` of the periods of turns, never
+    /// of two frames' extents). As a motion the seam's two sides are one
+    /// point of ℚ/ℤ, so the sum's index lies below its period. `None` where
+    /// a period is 0 (no circle to turn on) or the composed period passes
+    /// the machine word.
+    pub fn plus(&self, other: &Turn) -> Option<Turn> {
+        let (p, q) = (self.period, other.period);
+        if p == 0 || q == 0 {
+            return None;
+        }
+        let period = (p / num_integer::gcd(p, q)).checked_mul(q)?;
+        let a = (self.index as u128).checked_mul((period / p) as u128)?;
+        let b = (other.index as u128).checked_mul((period / q) as u128)?;
+        let index = usize::try_from(a.checked_add(b)? % period as u128).ok()?;
+        Some(Turn { index, period })
+    }
+
+    /// THE DIFFERENCE IN ℚ/ℤ, `self − other` mod 1: the sum with `other`'s
+    /// inverse, `(h − (r mod h))/h`. The residue of a claimed turn against
+    /// a reconstructed one (MU-HOSTING §5a.10). `None` as [`Turn::plus`].
+    pub fn less(&self, other: &Turn) -> Option<Turn> {
+        let h = other.period;
+        let r = other.index.checked_rem(h)?;
+        self.plus(&Turn { index: h - r, period: h })
+    }
+
+    /// Is the turn whole, the zero of ℚ/ℤ (`h` divides `r`)? A period of
+    /// 0 holds no turn, so none of it is whole.
+    pub fn is_whole(&self) -> bool {
+        self.index.checked_rem(self.period) == Some(0)
+    }
+
     /// `index · period′` against `index′ · period`, in a carrier both
     /// products fit: two `usize` multiply inside `u128`.
     fn cross(&self, other: &Turn) -> (u128, u128) {
