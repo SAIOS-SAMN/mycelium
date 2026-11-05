@@ -6,3 +6,12 @@
   teach and settle codecs, and `encode_outcome_reply`. The bytes stand in
   `Action` and the door still refuses them by kind; one byte fixture per
   retired act keeps that refusal tested.
+- The retired settlement arms and duplicates are removed:
+  `Treasury::settle_refine`, `settle_condense` and `settle_assembly` (the
+  assembly premium retired with its producer, cut 2026-09-10; MU-EQUATIONS
+  6.7 and 6.8 and the MU-ECONOMY table no longer list them),
+  `Treasury::release_filled`, `Court::prove_folded` (the live era proof is
+  `server/backfill.rs::prove_folded` through `Court::walk_folded`),
+  `network::wire::{multiplex, demultiplex}`, and
+  `verdict::{reconstruct_certificates_at, reconstruct_form_on}` with the
+  `reconstruct_certificates` wrapper only they called.

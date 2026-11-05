@@ -133,7 +133,7 @@ between them is a coordinate, a refusal of a kind, never a vote.
 | its K: its own closed orbits | TUniversal: the final point, kept by its keepers |
 | its algebra per class, its tubes, its windings | `lie_basis` per chart, `flux_field`, `windings` |
 | coins letters in its dialect (U14) | opens a letter on checked constructor steps (law 6, S2) |
-| reconstructs a peer's discharge | reconstructs certificates (`reconstruct_certificates_at`) |
+| reconstructs a peer's discharge | reconstructs certificates (`reconstruct_certificates_from`) |
 | speaks at its returns | writes acts and pays at its returns |
 
 ### 2.2 How the hypha moves, and so how the mind moves

@@ -170,17 +170,6 @@ pub fn derivations_compose_at(
     }
 }
 
-/// [`reconstruct_certificates`] with the chord index built from the form the
-/// certificates are being reconstructed against — which is the coordinate the
-/// parity oracle is testing, since a chord is an index into `faces` and a
-/// decoder that reordered them would diverge here and nowhere else.
-pub fn reconstruct_certificates_at(
-    f: &Form,
-    certificates: &[crate::transducer::sentence::PivotCertificate],
-) -> Option<&'static str> {
-    reconstruct_certificates(f, certificates, &chord_orbits(f))
-}
-
 /// 78.153 — one read per cite, from the `from`-th of the envelope's order;
 /// the cited form is BORROWED from the court where it holds it, never cloned
 /// per citation.
@@ -391,31 +380,10 @@ pub fn reconstruct_form_resume<'r>(
     // was sent, which is the point of a reconstruction, so the decode is named
     // (L16) — and it is named HERE, once, so the verdict below is a
     // function of the FORM and not of which decoder produced it.
-    //
-    // That seam is the pre-B6 parity guard's (54.5 Phase A). While both
-    // decoders exist the tape is an oracle, and
-    // `every_court_reader_agrees_on_both_decoders` feeds each of them into
-    // [`reconstruct_form_on`] and asserts one verdict. Without the seam the
-    // legacy path could not be reached at all, and the guard would be
-    // asserting the decoupled reader against itself.
     let Some(f) = crate::transducer::sentence::from_element_form(spoken) else {
         return ReconstructionOutcome::Refused(Refusal::of_tape(REFUSE_FORM_TAPE, spoken));
     };
     reconstruct_form_on_resume(&f, spoken, resolve, family, crystal, budget, cursor)
-}
-
-/// [`reconstruct_form_at`] on a form already decoded — the whole verdict, with
-/// the decode lifted out so it can be supplied.
-pub fn reconstruct_form_on(
-    f: &Form,
-    spoken: &Element,
-    resolve: &dyn Fn(&[u8]) -> Option<Form>,
-    family: Option<&[(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)]>,
-    crystal: &dyn crate::transducer::family::Crystal,
-    budget: &mut crate::physics::Budget,
-) -> Option<Refusal> {
-    let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
-    to_completion(spoken, budget, &mut |b, cursor| reconstruct_form_on_resume(f, spoken, &owned, family, crystal, b, cursor))
 }
 
 /// 78.153 — THE WHOLE VERDICT, IN PHASES, ON THE STROKE. Every input-sized

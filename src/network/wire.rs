@@ -177,22 +177,3 @@ impl WireFrame {
     }
 }
 
-/// Multiplex a stream of lane-tagged frames onto one buffer; demultiplex reads
-/// them back in order (transport, no reordering).
-pub fn multiplex(frames: &[WireFrame]) -> Option<Vec<u8>> {
-    let mut out = Vec::new();
-    for f in frames {
-        out.extend_from_slice(&f.encode()?);
-    }
-    Some(out)
-}
-
-pub fn demultiplex(mut bytes: &[u8]) -> Option<Vec<WireFrame>> {
-    let mut out = Vec::new();
-    while !bytes.is_empty() {
-        let (f, n) = WireFrame::decode(bytes)?;
-        out.push(f);
-        bytes = &bytes[n..];
-    }
-    Some(out)
-}

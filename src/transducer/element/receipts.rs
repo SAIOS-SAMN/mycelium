@@ -10,7 +10,7 @@
 //!   so the presentation cannot be in the key. `derivations_compose`,
 //!   `generator_pay` and `unruled_citation` all read it.
 //!
-//!   **The pivots a crystallization rests on** (A20). `reconstruct_certificates`
+//!   **The pivots a crystallization rests on** (A20). `reconstruct_certificates_from`
 //!   un-pivots each against the axis it names.
 //!
 //!   **The filing**, which moved to `Element.filing` at `df1eeaa` and is

@@ -100,22 +100,6 @@ impl Treasury {
             .collect()
     }
 
-    /// A filled triangle releases the escrow of the listings its dialects
-    /// settled, each at its own measured discharge (78.149 (b),
-    /// [`Treasury::release_discharged`]), minted AT `at`, the act that
-    /// released them (EC1), never at the acts that escrowed them. The
-    /// released total is a reading, exact: every release minted by its own
-    /// row.
-    pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[(A, [u64; 4])], at: Anchor) -> Mu {
-        let mut released = Mu::zero();
-        for (address, discharge) in listings {
-            if let Some(paid) = self.release_discharged(address.as_ref(), *discharge, at) {
-                released.step(&paid);
-            }
-        }
-        released
-    }
-
     /// 78.149 (b) — A CLAIM IS PAID THE CLOSER'S MEASURED DISCHARGE, NEVER
     /// MORE. The escrow is released and its voices are minted, lane by lane,
     /// what the escrow held less what it held above `discharge`: the escrow
