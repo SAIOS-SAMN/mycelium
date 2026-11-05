@@ -72,3 +72,10 @@
   module doc and the court's head docs; `K` means closed orbits. The
   identifiers `YieldQuote::k`, `k_step`, `head_k` and
   `KStepReceipt::step_index` keep their names for a later rename.
+- **A gate guards the client surface** (`gate::surface`,
+  `client_surface_holds_no_retired_phrase`): every line of the SDK crate,
+  `src/client/`, `src/bin/mycelium-client/` and the README, comments
+  included, is read for "quarter turn", "half turn" (either spelling),
+  "clockwise", "Concordance hash", "a wallet is flat" and "ledger row",
+  each refused with its ruling. The CHANGELOG and `changes/` are history
+  and are not read.
