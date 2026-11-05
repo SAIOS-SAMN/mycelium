@@ -25,9 +25,17 @@
 //! by name (`unreached_refusal`). A signed frame that contradicts what is
 //! held unreached on its line evicts the line's unreached top
 //! (`evict_contradicted`): nothing a signature reached is evicted.
+//!
+//! A gap longer than `C` receipts closes through a fold root (78.147,
+//! #88), carried instead of the receipts it covers: a root reconstructed
+//! from its two signatures reaches the receipt held unreached at its place
+//! where that receipt is the one it names, and every receipt held below it
+//! (`reach_by_root`); the receipts a root's shed takes off the chain leave
+//! the gate with it (`unhold_shed`).
 
 use super::Court;
-use crate::chronometry::{KStepReceipt, Place, Stamp};
+use crate::anastome::dialogue::RootProof;
+use crate::chronometry::{KStepReceipt, Parent, Place, Stamp};
 use crate::court::admission::{Predecessor, Reconstructed};
 
 impl Court {
@@ -122,6 +130,65 @@ impl Court {
                 self.read_reached(&r, budget);
             }
         }
+    }
+
+    /// 78.147, MU-HOSTING §5a.9 (#88) — WHAT A FOLD ROOT COVERS, REACHED BY
+    /// ITS SIGNATURES: where the receipt held unreached at the root's place
+    /// is the one the root names (its stamp and its chain hash, the link
+    /// sense), the root's two signatures reach it, and through its
+    /// predecessors every receipt of the line held below it: all are
+    /// released and read in line order (`sign_through`). Answers how many
+    /// left the gate. A root that names another receipt there, or none held
+    /// there, reaches nothing.
+    pub(crate) fn reach_by_root(&mut self, root: &Reconstructed<RootProof>, budget: &mut crate::physics::Budget) -> usize {
+        let named = root.parent();
+        let (vk, at) = (named.at.vk, named.at.place());
+        let covered = self
+            .unreached_at(&vk, at)
+            .is_some_and(|held| Predecessor::cites(&named, &Parent { at: held.stamp, hash: held.chain_hash }));
+        if !covered {
+            return 0;
+        }
+        let held = self.unreached.len();
+        self.sign_through(&vk, at, budget);
+        held - self.unreached.len()
+    }
+
+    /// 78.147, MU-HOSTING §5a.9 (#88) — THE GATE FOLLOWS A ROOT'S SHED: a
+    /// receipt held unreached at or below its signer's fold root, whose node
+    /// the shed took off the chain (`shed_folded_lines`), leaves the gate
+    /// unread. The root stands for it, and it was reached by no signature,
+    /// so nothing reached leaves here. Answers how many left.
+    pub(crate) fn unhold_shed(&mut self) -> usize {
+        let mut gone: Vec<Vec<u8>> = Vec::new();
+        for vk in self.chain.rooted_signers() {
+            let (Some(root), Some(line)) = (self.chain.peer_root(&vk), self.unreached.fibre_at(&vk)) else { continue };
+            for (key, _) in line {
+                let mut p = vk.len();
+                let shed = Place::take_canonical(&key, &mut p).is_some_and(|at| at <= root && !self.chain.holds_place(&vk, at));
+                if shed {
+                    gone.push(key);
+                }
+            }
+        }
+        for key in &gone {
+            self.unreached.remove(key);
+        }
+        gone.len()
+    }
+
+    /// THE LOWEST PLACE HELD UNREACHED on a signer's line: where the
+    /// signer's line stops being reached by a signature. `None` where
+    /// nothing of the line is held unreached.
+    pub(crate) fn unreached_floor(&self, signer: &[u8; 32]) -> Option<Place> {
+        let (key, _) = self.unreached.fibre_at(signer)?.next()?;
+        let mut p = signer.len();
+        Place::take_canonical(&key, &mut p)
+    }
+
+    /// How many receipts are held unreached, every signer's.
+    pub(crate) fn unreached_held(&self) -> usize {
+        self.unreached.len()
     }
 
     /// EVERY READER OF A BACK-FILLED RECEIPT, once a signature reaches it:

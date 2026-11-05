@@ -31,21 +31,11 @@ impl RootProof {
         Parent { at: Stamp::new(self.root.height, self.signer, self.root.at), hash: self.root.hash }
     }
 
-    /// THE TWO SIGNATURES VERIFIED, as the fold was: the home's under the
-    /// signer's key at `origin` (47.2 steps 1 and 2), the witness's under
-    /// another key (`REFUSE_WITNESS_DEPENDENT` otherwise), each over exactly
-    /// the root's hash (`REFUSE_RECEIPT` otherwise).
+    /// THE TWO SIGNATURES VERIFIED, as the fold was: the root reconstructed
+    /// from the signatures over it (`Reconstructed::root`), or the refusal
+    /// that names why it does not stand.
     pub fn verify(&self, origin: ([u8; 32], u32)) -> Result<(), &'static str> {
-        crate::court::admission::admit_signature(origin, &self.home.prefix, &self.signer, &self.home.sig)?;
-        let wk = self.witness.receipt.stamp.vk;
-        if wk == self.signer {
-            return Err(crate::verdict::REFUSE_WITNESS_DEPENDENT);
-        }
-        crate::court::admission::verify_signature(&self.witness.prefix, &wk, &self.witness.sig)?;
-        if self.home.prefix.payload != self.root.hash || self.witness.prefix.payload != self.root.hash {
-            return Err(crate::verdict::REFUSE_RECEIPT);
-        }
-        Ok(())
+        crate::court::admission::Reconstructed::root(self, origin).map(|_| ())
     }
 
     /// The proof's tape; `None` where a section does not frame (LD0).

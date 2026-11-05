@@ -57,7 +57,7 @@ None of these waits on a ruling:
 | Item | Issue | Track | Notes |
 |---|---|---|---|
 | X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | First stage built on branch `x0-drift-guards` (no wire or layout change): the admission sites typed, the receipt path's admissions taking `Reconstructed<T>`, the register in the gate. Open: the record fields typed by sense. The rest of track 25 stands on it |
-| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Eviction by signature, the held queue's bound and the waiting fold root are built ([#79](https://github.com/SAIOS-SAMN/mycelium/issues/79)). Open: foundings inside a folded era, a version-2 origin's geometry, a gap longer than the capacity (MU-HOSTING §5a.9) |
+| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Eviction by signature, the held queue's bound and the waiting fold root are built ([#79](https://github.com/SAIOS-SAMN/mycelium/issues/79)). A gap longer than the capacity closes through a fold root ([#88](https://github.com/SAIOS-SAMN/mycelium/issues/88), built). Open: foundings inside a folded era, a version-2 origin's geometry (MU-HOSTING §5a.9) |
 | `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
 | Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Built with N1 |
 | Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Built with N2 |
@@ -1205,7 +1205,14 @@ Concordance hash served and signatures verified. Each phase is one commit:
    unreached top and never a reached receipt; the held queue is bounded
    by the process's capacity `C = ⌊M_proc / b⌋` and refuses past it by
    name; and a back-filled `Fold` files its root once a signature reaches
-   it. Open: a gap longer than `C` closes only through a fold root
+   it. A gap longer than `C` closes through a fold root
+   ([issue #88](https://github.com/SAIOS-SAMN/mycelium/issues/88);
+   **Built**): a page stopped at the bound asks the range from below the
+   signer's unreached floor, the root is admitted only as a
+   `Reconstructed<RootProof>`, its signatures reach the receipt held at
+   its place and every one below it, and receipts its shed takes off the
+   chain leave the gate. No more than `C` receipts are held unreached
+   while the gap closes. Claims in `server/cognition/tests/catchup.rs`
    (MU-HOSTING §5a.9).
 2. **B1, the act audit and the boundary's name:** every act kind that
    names a domain classed as a key's own or a universe's; the `NotReserve`

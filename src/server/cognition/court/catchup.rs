@@ -102,25 +102,37 @@ impl Court {
         (0..n).map(|_| RootProof::take(b, p)).collect()
     }
 
-    /// ADOPT A PEER'S FOLD ROOT (78.147): its two signatures verified as the
-    /// fold's were (`RootProof::verify`), the signer's line stands on it here
-    /// where it stood below — its next receipt names the root and admits hot,
-    /// and nothing below it is asked again; what this court held of the line
-    /// below it leaves (`shed_folded_lines`). Counted under the signer either
-    /// way, never silent.
+    /// ADOPT A PEER'S FOLD ROOT (78.147): reconstructed from its two
+    /// signatures as the fold was sealed (`Reconstructed::root`), the
+    /// signer's line stands on it here where it stood below — its next
+    /// receipt names the root and admits hot, and nothing below it is asked
+    /// again; what this court held of the line below it leaves
+    /// (`shed_folded_lines`). A root that does not reconstruct is refused by
+    /// name and touches nothing. Counted under the signer either way, never
+    /// silent.
+    ///
+    /// MU-HOSTING §5a.9 (#88): where the receipt held unreached at the
+    /// root's place is the one the root names, the root's signatures reach
+    /// it and every receipt held below it (`reach_by_root`), whether or not
+    /// the line already stood past the root.
     pub fn adopt_root(&mut self, origin: ([u8; 32], u32), proof: &RootProof) -> RootAdoption {
         let verdict = match proof.signer == self.identity {
             true => Err(crate::verdict::REFUSE_RECEIPT),
-            false => proof.verify(origin),
+            false => crate::court::admission::Reconstructed::root(proof, origin),
         };
-        if let Err(why) = verdict {
-            note_replication(Some(proof.signer), replication::ROOT_REFUSED, 1);
-            return RootAdoption::Refused(why);
-        }
+        let root = match verdict {
+            Ok(root) => root,
+            Err(why) => {
+                note_replication(Some(proof.signer), replication::ROOT_REFUSED, 1);
+                return RootAdoption::Refused(why);
+            }
+        };
         // A proof that stands is held whether or not the line needed it, so
         // this court answers a catch-up below the root with it too.
         self.file_root_proof(proof.clone());
-        if !self.chain.adopt_root(proof.parent()) {
+        let mut budget = self.physics.stroke();
+        self.reach_by_root(&root, &mut budget);
+        if !self.chain.adopt_root(&root) {
             return RootAdoption::Held;
         }
         note_replication(Some(proof.signer), replication::ROOT_ADOPTED, 1);

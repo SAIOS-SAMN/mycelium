@@ -834,9 +834,16 @@ Open after B0:
   A frame admitted under its signature but not yet cited by the court's
   own line reads as unreached after a restart until that next frame. The
   `unfounded` queue and the refusals are still not derived again.
-- A held queue bounded by the process's capacity cannot hold a gap
-  longer than `C` receipts: such a gap closes only through a fold root
-  (78.147) or as the signer's line is folded below it.
+- A gap longer than `C` receipts closes through a fold root (built, #88;
+  see "A gap past the capacity" below). Where no court the chase asks
+  holds a proof of a root below the held floor, the gap waits for the
+  signer's next fold that one holds. A receipt held unreached below an
+  adopted root that the root does not name leaves unread, as a catch-up
+  from a root delivers no receipt below it.
+- A root proof's signatures bind the root's chain hash. Its place and
+  height are read off the proof, and they are reconstructed only where
+  the court holds the receipt at that place (`reach_by_root`) or the hot
+  line past it links to the root.
 
 **Eviction, the bound and the fold root** (**Built**,
 [issue #79](https://github.com/SAIOS-SAMN/mycelium/issues/79)):
@@ -870,6 +877,45 @@ Claims in `server/cognition/tests/reach.rs`:
 `unreached_queue_refuses_past_process_memory`,
 `fold_root_waits_for_a_signature`; and in `chronometry/tests/line.rs`,
 `line_write_round_trips_evicted_stamp_refiled`.
+
+**A gap past the capacity** (**Built**,
+[issue #88](https://github.com/SAIOS-SAMN/mycelium/issues/88)). A peer
+behind a signer by more than `C` receipts reaches the signer's head
+through the signer's fold root (78.147), carried instead of the receipts
+it covers. It never holds more than `C` receipts unreached:
+1. **The page stops at the bound.** A back-fill page that stops because
+   the held receipts fill `C` asks the range again from below the
+   signer's unreached floor (`chase`'s `close_through_root`, over the
+   existing `ACT_RECEIPTS` catch-up ask). A court holding the signer's
+   root proof answers below the root with the root. A source with no root
+   there answers a page, and the gap waits.
+2. **The root is reconstructed, never claimed.** It is admitted only as a
+   `Reconstructed<RootProof>` (`Reconstructed::root`): the home's signed
+   position verifies under the signer's key at this node's origin, the
+   witness's under another key, and each position's commitment binds the
+   root (`Commitment::binds`). Otherwise it is refused by name
+   (`REFUSE_SIGNATURE`, `REFUSE_RECEIPT`, `REFUSE_ORIGIN`,
+   `REFUSE_WITNESS_DEPENDENT`), counted `root_refused`, and nothing is
+   adopted, shed or evicted.
+3. **What the root covers is reached by its signatures**
+   (`Court::reach_by_root`). Where the receipt held unreached at the
+   root's place is the one the root names (its stamp and chain hash), the
+   root's two signatures reach it and, through its predecessors, every
+   receipt held below it. They are released and read in line order
+   (`sign_through`), whether or not the line already stood past the root.
+4. **The gate follows the root's shed** (`Court::unhold_shed`, from
+   `shed_folded_lines`). Where the held line stood below the root, the
+   root is adopted and its shed takes the receipts below it off the
+   chain. Those held unreached leave the gate with them, unread. They
+   were reached by no signature, so nothing reached is evicted.
+
+The rest of the gap is then held within the bound and reached by the
+head's signature. A gap of any length is read in about `C` receipts past
+the root, not one read per receipt below it. No wire act, encoding or
+ledger layout changes. Claims in `server/cognition/tests/catchup.rs`:
+`gap_past_capacity_closes_through_a_fold_root`,
+`capacity_bound_holds_while_a_long_gap_closes`,
+`adopt_root_refuses_forged_root_keeping_reached`.
 
 ### 5a.10 What crosses: the exact object, never its digest
 
@@ -953,7 +999,7 @@ proposed with the boundary reading (B4).
 | The Concordance text's digest served and signatures verified over it | **Built** | `build.rs`, `ACT_LAWS` modes 6–8 |
 | Digests typed by sense (`Locator`, `Predecessor`, `Commitment`), with no bare equality, at the admission sites converted first: the receipt line's checks, the signed prefix's claim, the equivocation proof, the signed-reach gate, the ledger's `holds`, `height_of` and era walk, the back-fill chase, a folded citation's recall, and the endowment's manifests | **Built** | `src/court/admission/digest.rs`; track 25, X0 |
 | The record fields typed by sense (`Parent::hash`, `KStepReceipt::chain_hash`, `SignedPrefix::prev_receipt_hash`, `Admitted::Equivocation`), so no bare comparison of them can be written | **Specified** | Track 25, X0 (later stage) |
-| Admission taking only a reconstructed object (`Reconstructed<T>`): `admission::admit`, `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`, `Court::admit_backfill`, `ReceiptChain::admit_unreached` | **Built** | `src/court/admission/reconstructed.rs`; track 25, X0 |
+| Admission taking only a reconstructed object (`Reconstructed<T>`): `admission::admit`, `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`, `Court::admit_backfill`, `ReceiptChain::admit_unreached`; a fold root as `Reconstructed<RootProof>` (`Reconstructed::root`), taken by `ReceiptChain::adopt_root` and `Court::reach_by_root` (#88) | **Built** | `src/court/admission/reconstructed.rs`; track 25, X0 |
 | The vertex's admissions (`admit_uplink`, `admit_chained`, `admit_domain`) and `ReceiptChain::admit` taking `Reconstructed<T>` | **Specified** | Track 25, X2 |
 | The crossing record (place, content, holonomy, clauses) in the SDK and on the wire | **Specified** | Track 25, X1 (with B3) |
 | `AddressOnly`; the residue held with a refused or collided crossing | **Specified** | Track 25, X2–X3 |
