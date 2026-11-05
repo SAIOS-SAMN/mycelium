@@ -1248,27 +1248,41 @@ Concordance hash served and signatures verified. Each phase is one commit:
    states verified under L0 at `LAW_VERSION` 5 and the `forms` core shell,
    refused `NotLawful` naming each breach, never admitted on a declared
    law's name; the draft-4 shared laws as each is ruled.
-   - The first shared crossing law is **LAW-PASSAGE v1**, the linear
-     passage `R ↦ 2H − R` (first degree, an involution; the throat
-     sphere's `H²/R` is refused for squaring). It is held as
-     `forms::passage`, with joint fixtures
-     ([proposal 78.172](docs/proposals/78.172-law-passage.md); requested
-     by netstratum PR #40).
-   - **The form is built** (v0.4.0; no wire or layout change):
-     `forms/src/passage.rs`, shell id `FORMS-PASSAGE` v1. `Throat::pass`
-     gives `2H − R` exact over ℚ and signed, `pass_share` gives `1 − δ`,
-     and `Throat::verify` reconstructs the passage and refuses any other
-     stated reach `PassageRefusal::NotLawful`, carrying the `Breach`
-     (`claimed`, `reconstructed`).
-     The six joint-read fixtures and the algebra's claims (involution,
-     the fixed throat, the squaring candidate refused off the throat)
-     stand in `forms/src/tests/passage.rs`. A kernel does not yet sign
-     by reconstructing them: no clause is registered for reading until
-     B2 lands, so the fixtures are claims of the form only. Open: the
+   - The first shared crossing law is **LAW-PASSAGE v2**: a body's state
+     is an even multivector `q`, plane `k`'s direction is
+     `v_k = H_k·e_Zk + R_k·e_Qk` (`e_Zk² = +1`, `e_Qk² = −1`), and one
+     crossing is the one-sided product `q ↦ v_k·q`, never a sandwich;
+     null at the horizon, so one-way there; passages in different planes
+     anticommute ([proposal 78.172](docs/proposals/78.172-law-passage.md);
+     requested by netstratum PR #40, derived in netstratum docs/114
+     §9–§10). Version 1's linear passage `R ↦ 2H − R` was struck on
+     2026-11-05.
+   - **What `forms` holds** (v0.4.0; no wire or layout change):
+     `forms/src/passage.rs`, shell id `FORMS-PASSAGE` v2.
+     `Throat::verify` refuses a crossing that states a moved reach (the
+     throat sphere's `H²/R` among them) `PassageRefusal::NotLawful`,
+     carrying the `Breach` (`claimed`, `reconstructed`, the reach carried
+     in); `pass_share` reads a share from a plane's other axis,
+     `1 − δ`. The product needs the multivector algebra, which `forms`
+     cannot reach without a dependency cycle, so its four fixtures stand
+     with the algebra: claims on `transducer::cga::Clifford::product` in
+     `src/transducer/cga/tests/passage.rs`, with the horizon one-way and
+     two planes anticommuting over every frame plane the algebra holds.
+   - **The signature is data** (v0.4.0; no wire or layout change): the
+     multivector carries the mask of its negative generators beside its
+     `n` (`Mv::negatives`), and the product reads each square from it.
+     Every value of `Cl(n+1, 1)` carries `e₋` alone, its products
+     unchanged (the oracle golden reproduces). A value of `Cl(p, q)` is a
+     `transducer::cga::Clifford`, composed only through `product`, `sum`
+     and `difference`, which refuse two signatures disagreeing on a
+     generator both algebras hold `SignatureRefusal::Mismatched`. The
+     wire carries `Cl(n+1, 1)` values only; a `Clifford` has no writing
+     until the court reads one. A kernel does not yet sign by reconstructing
+     them: no clause is registered for reading until B2 lands. Open: the
      admission at the vertex, below.
-   - Claims (admission, open): `linear_passage_is_reflection_about_the_throat`,
-     `linear_passage_is_an_involution`,
-     `crossing_stating_inversion_is_refused_not_lawful`.
+   - Claims (admission, open): `crossing_is_one_sided_product`,
+     `crossing_at_horizon_is_one_way`,
+     `crossing_stating_moved_reach_is_refused_not_lawful`.
 5. **B4, the boundary reading:** refusals at the universal core tube by
    name and domain under `ACT_OBSERVE`, and the reconstruction events
    (Collapse, Converse, Collision) at the boundary, with track 8.

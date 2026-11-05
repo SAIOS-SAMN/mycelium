@@ -1,6 +1,7 @@
-//! A4, BQ3, 71.2(3), (4) — THE MULTIVECTOR OF `Cl(n+1, 1)` OVER ℚ: the
-//! conformal model of ℚⁿ, with `n` carried by the value and the geometric
-//! product written once for every `n`.
+//! A4, BQ3, 71.2(3), (4) — THE MULTIVECTOR OF `Cl(p, q)` OVER ℚ, its
+//! signature read from the value: the conformal model of ℚⁿ, `Cl(n+1, 1)`,
+//! with `n` carried by the value and the geometric product written once for
+//! every `n` and every signature.
 //!
 //! EACH GENERATOR KEEPS ITS BIT AS `n` GROWS. `e₊` is bit 3 and `e₋` is
 //! bit 4 at every `n`; the first three base axes are bits 0, 1, 2, and a
@@ -26,8 +27,15 @@
 //! masks — machine words — at [`MAX_N`], and a generator past it is refused
 //! where it would be made ([`base_axis`]), never shifted into a wrong mask.
 //!
-//! THE METRIC IS THE SIGNATURE'S, NOT A LIST: `e₋` squares to −1 and every
-//! other generator to +1, which is `Cl(n+1, 1)` for every `n`.
+//! THE METRIC IS THE SIGNATURE'S, READ FROM THE VALUE, NOT A LIST: a value
+//! carries the mask of its negative generators beside its `n`, and a
+//! generator squares to −1 exactly where that mask names it (MU-SENSING
+//! §3.7). Every value made here — every constructor, every product of two of
+//! them, every value read off the wire — carries `e₋` alone, so it is in
+//! `Cl(n+1, 1)` exactly as before. A value of another signature is made and
+//! composed only as a [`super::Clifford`], whose compositions refuse two
+//! signatures that disagree on a generator both algebras hold; so the
+//! product here never meets two signatures that disagree.
 
 use super::group::{projective_ratio, weight_of};
 use num_bigint::BigInt;
@@ -100,7 +108,7 @@ pub fn pseudo(n: u8) -> Option<usize> {
 /// The smallest `n` whose algebra holds every generator of `mask`: the
 /// highest base axis it names.
 #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: an axis of a machine-word blade mask, below usize::BITS ≤ 64")]
-fn n_of_mask(mask: usize) -> u8 {
+pub(super) fn n_of_mask(mask: usize) -> u8 {
     // The highest set bit is the highest generator; e₊, e₋ name no axis.
     let mut rest = mask & !(EP | EM);
     let mut n = 0usize;
@@ -120,13 +128,16 @@ fn n_of_mask(mask: usize) -> u8 {
     n as u8
 }
 
-/// An exact multivector of `Cl(n+1, 1)`: its `n` and its non-zero terms, each
-/// a blade mask and a coefficient over ℚ, strictly ascending by mask.
-/// Equality is projective (`λ ∈ ℚ×`); coefficient identity is
+/// An exact multivector of `Cl(p, q)`: its `n`, the mask of its negative
+/// generators (`e₋` alone for every value of `Cl(n+1, 1)`), and its non-zero
+/// terms, each a blade mask and a coefficient over ℚ, strictly ascending by
+/// mask. Its `n` holds every generator its terms and its negative mask
+/// name. Equality is projective (`λ ∈ ℚ×`); coefficient identity is
 /// [`Mv::canonical`].
 #[derive(Debug, Clone)]
 pub struct Mv {
     n: u8,
+    neg: usize,
     c: Vec<(usize, BigRational)>,
 }
 
@@ -166,15 +177,17 @@ fn reorder_sign(a: usize, b: usize) -> i64 {
     }
 }
 
-/// The signature's sign on the generators two blades share: only `e₋`
-/// squares to −1. No generator of the orthonormal basis is null — the null
-/// cone is derived — so a blade product never vanishes by metric, only by
-/// sign.
-fn metric_sign(shared: usize) -> i64 {
-    if (shared & EM) != 0 {
-        -1
-    } else {
-        1
+/// The signature's sign on the generators two blades share: each shared
+/// generator the negative mask `neg` names squares to −1, every other to
+/// +1, so the sign is −1 exactly when an odd number of the shared
+/// generators are negative. With `neg = e₋` it is `Cl(n+1, 1)`'s: −1 exactly
+/// where the two blades share `e₋`. No generator of the orthonormal basis is
+/// null — the null cone is derived — so a blade product never vanishes by
+/// metric, only by sign.
+fn metric_sign(shared: usize, neg: usize) -> i64 {
+    match (shared & neg).count_ones() & 1 {
+        0 => 1,
+        _ => -1,
     }
 }
 
@@ -184,9 +197,9 @@ fn grade_of(mask: usize) -> u32 {
 }
 
 impl Mv {
-    /// A value from terms in any order, at `n`: like masks summed, zeros
-    /// dropped, the rest in mask order.
-    fn of_terms(n: u8, mut terms: Vec<(usize, BigRational)>) -> Self {
+    /// A value from terms in any order, at `n` under the negative mask
+    /// `neg`: like masks summed, zeros dropped, the rest in mask order.
+    fn of_terms(n: u8, neg: usize, mut terms: Vec<(usize, BigRational)>) -> Self {
         #[expect(
             clippy::disallowed_methods,
             reason = "rule 4 — a sort by a canonical coordinate: the blade mask, so like blades sum and a value has one writing"
@@ -200,13 +213,13 @@ impl Mv {
             }
         }
         c.retain(|(_, v)| !v.is_zero());
-        Self { n, c }
+        Self { n, neg, c }
     }
 
     /// The same blades with each coefficient mapped; zeros dropped.
     fn map_terms(&self, f: impl Fn(usize, &BigRational) -> BigRational) -> Self {
         let c = self.c.iter().map(|(m, v)| (*m, f(*m, v))).filter(|(_, v)| !v.is_zero()).collect();
-        Self { n: self.n, c }
+        Self { n: self.n, neg: self.neg, c }
     }
 
     /// The zero: `n = 0`, an element of every algebra.
@@ -216,22 +229,35 @@ impl Mv {
 
     /// The zero of `Cl(n+1, 1)`.
     pub fn zero_at(n: u8) -> Self {
-        Self { n, c: Vec::new() }
+        Self { n, neg: EM, c: Vec::new() }
     }
 
     pub fn scalar(v: BigRational) -> Self {
-        Self::of_terms(0, vec![(0, v)])
+        Self::of_terms(0, EM, vec![(0, v)])
     }
 
     /// A single basis blade with coefficient `v`, in the smallest algebra
     /// holding its generators.
     pub fn blade(mask: usize, v: BigRational) -> Self {
-        Self::of_terms(n_of_mask(mask), vec![(mask, v)])
+        Self::of_terms(n_of_mask(mask), EM, vec![(mask, v)])
+    }
+
+    /// A SINGLE BLADE UNDER THE NEGATIVE MASK `neg`, in the smallest algebra
+    /// holding its generators and every generator `neg` names. Made only for
+    /// [`super::Clifford`], which bounds both masks by [`MAX_N`] first.
+    pub(super) fn blade_under(neg: usize, mask: usize, v: BigRational) -> Self {
+        Self::of_terms(n_of_mask(mask).max(n_of_mask(neg)), neg, vec![(mask, v)])
     }
 
     /// The `n` this value belongs to: the smallest algebra holding it.
     pub fn n(&self) -> u8 {
         self.n
+    }
+
+    /// THE SIGNATURE, READ FROM THE VALUE: the mask of the generators that
+    /// square to −1. `e₋` alone for every value of `Cl(n+1, 1)`.
+    pub fn negatives(&self) -> usize {
+        self.neg
     }
 
     /// THE TERMS THE VALUE HOLDS: each blade mask and its non-zero
@@ -258,7 +284,7 @@ impl Mv {
     /// The same value in the algebra at `m ≥ n`: the inclusion ℚⁿ ⊂ ℚᵐ. A
     /// value is never narrowed here.
     pub fn widened(&self, m: u8) -> Self {
-        Self { n: self.n.max(m), c: self.c.clone() }
+        Self { n: self.n.max(m), neg: self.neg, c: self.c.clone() }
     }
 
     pub fn coeff(&self, mask: usize) -> &BigRational {
@@ -324,34 +350,41 @@ impl Mv {
         Mv::from_bytes(k, &mut p)
     }
 
+    /// The sum, under the two values' joint signature: their negative masks
+    /// together, which is each one's own on the generators both hold
+    /// (module documentation).
     pub fn add(&self, o: &Self) -> Self {
         let n = self.n.max(o.n);
-        Self::of_terms(n, self.c.iter().chain(&o.c).cloned().collect())
+        Self::of_terms(n, self.neg | o.neg, self.c.iter().chain(&o.c).cloned().collect())
     }
 
+    /// The difference, under the two values' joint signature.
     pub fn sub(&self, o: &Self) -> Self {
         let n = self.n.max(o.n);
         let negated = o.c.iter().map(|(m, v)| (*m, -v.clone()));
-        Self::of_terms(n, self.c.iter().cloned().chain(negated).collect())
+        Self::of_terms(n, self.neg | o.neg, self.c.iter().cloned().chain(negated).collect())
     }
 
     pub fn scale(&self, s: &BigRational) -> Self {
         self.map_terms(|_, v| v * s)
     }
 
-    /// THE GEOMETRIC PRODUCT — the whole algebra, for every `n`. `result[i⊕j]
-    /// += sign · metric · a_i · b_j` over every pair of terms the two hold.
+    /// THE GEOMETRIC PRODUCT — the whole algebra, for every `n` and every
+    /// signature. `result[i⊕j] += sign · metric · a_i · b_j` over every pair
+    /// of terms the two hold, the metric read from the two values' joint
+    /// negative mask.
     pub fn geo(&self, o: &Self) -> Self {
         let n = self.n.max(o.n);
+        let neg = self.neg | o.neg;
         let mut terms = Vec::with_capacity(self.c.len() * o.c.len());
         for (i, x) in &self.c {
             for (j, y) in &o.c {
                 let term = x * y;
-                let sign = reorder_sign(*i, *j) * metric_sign(i & j);
+                let sign = reorder_sign(*i, *j) * metric_sign(i & j, neg);
                 terms.push((i ^ j, if sign >= 0 { term } else { -term }));
             }
         }
-        Self::of_terms(n, terms)
+        Self::of_terms(n, neg, terms)
     }
 
     /// The reverse `~M`: blade of grade g gets sign `(−1)^{g(g−1)/2}`.
@@ -525,7 +558,7 @@ impl Mv {
     /// The grade-`g` part.
     pub fn grade(&self, g: u32) -> Self {
         let c = self.c.iter().filter(|(m, _)| grade_of(*m) == g).cloned().collect();
-        Self { n: self.n, c }
+        Self { n: self.n, neg: self.neg, c }
     }
 
     /// The scalar `⟨A B̃⟩₀`-style inner-square. For a grade-1 vector this is the
@@ -551,20 +584,24 @@ impl Mv {
 }
 
 impl Mv {
-    /// The same value in the smallest algebra holding its terms: the inverse
-    /// of [`Mv::widened`], exact. The zero narrows to `n = 0`.
+    /// The same value in the smallest algebra holding its terms and its
+    /// negative generators: the inverse of [`Mv::widened`], exact. The zero
+    /// of `Cl(n+1, 1)` narrows to `n = 0`.
     #[expect(
         clippy::disallowed_methods,
         reason = "rule 4 — the smallest algebra holding the terms reaches the highest generator any term names: the bound is that reading, nothing chosen among terms"
     )]
     pub fn narrowed(&self) -> Self {
         let n = self.c.iter().map(|(m, _)| n_of_mask(*m)).max().map_or(0, |n| n);
-        Self { n, c: self.c.clone() }
+        Self { n: n.max(n_of_mask(self.neg)), neg: self.neg, c: self.c.clone() }
     }
 
     /// THE VALUE ON THE WIRE, ITS `n` FIRST (71.2(1), BQ1): the `n` of the
     /// smallest algebra holding it, one byte, then [`Mv::put_coefficients`]
-    /// at that `n`. It carries the value; it never identifies it.
+    /// at that `n`. It carries the value; it never identifies it. The wire
+    /// carries no signature: every `Mv` is in `Cl(n+1, 1)` (module
+    /// documentation), and [`Mv::from_bytes`] reads every value back there.
+    /// A [`super::Clifford`] of another signature has no writing.
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
         let m = self.narrowed();
         out.push(m.n);
@@ -646,6 +683,6 @@ impl Mv {
                 c.push((mask, v));
             }
         }
-        Some(Mv { n, c })
+        Some(Mv { n, neg: EM, c })
     }
 }
