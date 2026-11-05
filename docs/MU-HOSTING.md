@@ -163,10 +163,11 @@ Concordance is the joining instrument.
 
 ### 3.1 Joining, step by step
 
-1. **Sign the Concordance.** Present a signature over the current
-   version's hash when connecting; the server refuses a kernel that has not
-   signed it (Concordance §0, **Specified**: the version-hash check is not
-   yet in the server's admission path).
+1. **Sign the Concordance.** Sign it clause by clause by reconstructing
+   each clause's fixtures (`ACT_LAWS` mode 8, **Built**); the hypha records
+   each signing on its ledger and serves the kernel's alignment as a
+   reading of it (mode 9, §5a.4). Refusing an unsigned domain's crossings
+   at the universal core tube is **Specified** (B3).
 2. **Found a domain** (`ACT_DOMAIN`, **Built**). The domain is the world
    model's namespace on the network; its founding key designates its
    reserve (Concordance 4.2).
@@ -595,15 +596,65 @@ clause** (the operator's ruling of 2026-11-02):
 | The clause register served (`ACT_LAWS` mode 7): each clause by its law form's id and version and its fixtures' inputs; the hash of the text's bytes retired | **Built** (v0.4.0) | `physics::laws::clauses::register` |
 | Signing by adjudicated reading: each clause identified by its content (law form and fixtures), signed by the kernel's reconstruction of its fixtures, admitted only on reaching the same objects; a kernel that cannot read a clause is refused `NotSignatory`, naming the clause and fixture | **Built** (v0.4.0; mode 8) | `physics::laws::clauses::admit`; the SDK's `signing::sign_concordance` |
 | A signature over a clause set, each clause enabled or vetoed, a vetoed network clause refused `NetworkVetoed` | **Built** (v0.4.0) | `clauses::signing::Choice`, `Assent` |
-| The signed clause set recorded per domain (founding key and sitting reserve) | **Specified** | §5a.9, B2 |
+| Each signing act recorded on the hypha's ledger, admitted or refused: the kernel's key, the domain it is the sitting reserve of, each clause's id, version and assent, or the refusal by name, at the TUniversal point it was read | **Built** (v0.4.0; mode 8) | `Court::hear_signing` (`server/cognition/signatory.rs`), `Cite::Signing` |
+| The alignment reading per kernel and clause version (converses, vetoed, collides with the residue, unread), derived from the recorded events; v0.3.0's signings served beside it as history | **Built** (v0.4.0; mode 9) | `Court::alignment`, `clauses::read_alignment`, `clauses::history` |
 | A domain's crossings refused until its reserve has signed every network clause of the version served (proposed `NotSignatory`) | **Specified**: the release after v0.3.0 (Concordance §0) | §5a.9, B2 |
 | A tube between two universes bounded by the clauses both enabled, each stopped act naming the vetoed clause | **Specified** | §5a.9, B2 |
 | An act read under its clauses as signed; a changed clause's divergence held and named until the new version is signed | **Specified** | §5a.9, B2 |
 
-Today a signature is over the whole text's byte hash, verified,
-recorded nowhere and required of no kernel. A byte hash changes with
-every edit of wording and proves no reading, so B2 replaces it with
-signing by adjudicated reading.
+**The signing events on the ledger (Built, v0.4.0).** A signing act on
+`ACT_LAWS` mode 8 whose signature reconstructs
+(`Reconstructed::signing`: the signed bytes written out again from the
+act's coordinates, the signature verified under the kernel's key) is
+judged clause by clause (`clauses::judge`), and its verdict is sealed on
+the hypha's line as a `Domain` act (the act table's bytes are spent, so
+it rides an existing kind) citing:
+
+```text
+Cite::Signing, tag 16:
+  kernel key 32
+  reserve: [0] none | [1][domain 32]     the domain whose sitting reserve the kernel is
+  verdict: [0][count][(law id, version u16 LE, assent) …]   admitted
+         | [1][refusal tag][what it names]                    refused by name
+```
+
+The receipt's height is the TUniversal point the act was read at. A
+refused act is recorded as an admitted one is: a `NotSignatory` carries
+the clause, the fixture, the kernel's object and the hypha's, both sides
+of the collision held as a residue (Concordance A7), never discarded. An
+act whose signature does not verify (`Malformed`, `Unsigned`) is no
+kernel's act and is recorded nowhere; a verdict the line cannot seal is
+answered `Unrecorded`, never as admitted. The reply waits until the
+receipt is durable (78.137). History is never rewritten: a re-signing is
+a new event.
+
+**The alignment reading (Built, v0.4.0; `ACT_LAWS` mode 9).** Alignment
+is a reading of the ledger, never prose and never a table kept beside
+it. `Court::alignment` reads every signing event the hypha holds, its own
+line hot and in its eras and every peer receipt a signature reached
+(§5a.9; a peer's signing receipt stays hot past its signer's fold), in
+the ledger's stamp order, and answers per kernel and per clause version
+the latest event's reading: **converses** (enabled, every fixture
+reached), **vetoed**, **collides** (the refusal by name as the residue),
+or **unread** (no event names it). The walk spends the hold's stroke one
+read per receipt, and a stroke spent answers `StrokeSpent`, never a
+reading cut short. An act judged at one hypha reads the same at every
+hypha that holds its receipt.
+
+**v0.3.0 carried forward as history.** At v0.3.0 netstratum and xylarium
+signed Concordance version 4 by a signature over the hash of its text
+(`CONCORDANCE_HASH`, retired). A hash proves no reading, so those
+signatures are never admitted and no clause reading is derived from
+them; the register states them as history (`clauses::history`: the
+kernel, the version, the release and the mechanism), served beside the
+alignment reading. Each kernel signs the v0.4.0 register at its release
+candidate.
+
+**Next (B3, B4):** refusing a domain's crossings at the universal core
+tube until its sitting reserve's latest reading converses on every
+network clause of the version served (`NotSignatory` at the vertex), the
+tube bounded by the clauses both universes enabled, and the boundary
+reading under `ACT_OBSERVE`.
 
 ### 5a.5 The vertex: where a universe's cones join the hypha's
 
@@ -721,7 +772,7 @@ logs:
 |---|---|---|---|
 | **B0** (**Built**) | Replication by reconstruction ([issue #13](https://github.com/SAIOS-SAMN/mycelium/issues/13)): every hypha reconstructs each domain's state (founding, tiers, reserve, origin) from the founding receipts back-fill delivers (`Cite::Domain`, `Cite::Reserve`, `Cite::Origin`), checked against the signed chain, once by content, with the same refusals as at the founding hypha (a tier held, already founded, already originated) | `src/server/cognition/founding.rs` (`reconstruct_founding`, `founding_refusal`) behind the signed-reach gate of `src/server/cognition/reach.rs` (`Court::hold_unreached`, `sign_through`), called from `Court::admit_backfill` and `Court::admit_receipt` in `state.rs`; the rules of `admit_domain`, `designate_reserve`, `record_origin` and `hold_domain` | None on the wire or the ledger layout; each court's registries become a reconstruction of the chain it holds |
 | **B1** | The act audit (every act kind that names a domain, classed as a key's own or a universe's); `NotReserve` renamed `NotThroughCore` on each object; line mouth offers and tier handoff offers carried in the reserve's act (after the ruling on 78.126 and 78.136) | `src/anastome/dialogue/{uplink,atlas,handoff,endowment,domain}.rs`; `src/server/cognition/{cite,atlas,convert,endowment,mouth,handoff,universe}.rs` | The rename: none (names only). Carried offers: a wire change to `ACT_HANDOFF` |
-| **B2** | Clause-by-clause signatures by adjudicated reading (each clause by its content, enabled or vetoed; the network clauses never vetoed; **Built**: the register, modes 7 and 8, `NotSignatory` at mode 8) recorded per domain; `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/clauses/`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/persistence/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
+| **B2** | Clause-by-clause signatures by adjudicated reading (each clause by its content, enabled or vetoed; the network clauses never vetoed; **Built**: the register, modes 7 and 8, `NotSignatory` at mode 8; each signing recorded on the ledger as `Cite::Signing` and the alignment reading on mode 9, §5a.4); `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/clauses/`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/persistence/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
 | **B3** | The transitions a crossing states, verified under L0 and the core-shell forms at admission; `NotLawful` carrying the breaches; draft-4 laws as ruled | `src/anastome/dialogue/uplink.rs` (`TierFold`), `src/server/cognition/cite.rs`, `src/physics/laws/mod.rs` | A wire and layout change: a fold carries its transitions section |
 | **B4** | The boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | `src/observe/`, `src/bin/mycelium-server/control.rs` | A wire addition (a reading) |
 | **B5** | A sub-universe's acts through its parent's core, with 78.155 R-3 | `src/server/cognition/`, `chronometry::tuniversal` | With 78.155 R-3 |

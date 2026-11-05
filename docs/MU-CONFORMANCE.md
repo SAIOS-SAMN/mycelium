@@ -89,7 +89,7 @@ closure answers `SOLVE_AGAIN` (code 1) and pays nothing.
 | MUST | `laws register` (`ACT_LAWS` mode 0) | `decode_register_reply` | law version, laws |
 | MAY | `task by citation` | `decode_task_envelope` | citation, train, tests |
 | MAY | `laws lexicon` (mode 3), `laws clock` (4), `laws parameters` (5), `laws statement` (6) | `decode_lexicon_reply`, `decode_clock_reply`, `decode_parameters_reply`, `decode_statement_reply` | as each decoder reads |
-| MAY | `laws concordance` (mode 7), `laws signature` (mode 8) | `decode_concordance_reply`, `decode_signature_reply` | as the kernel profile's |
+| MAY | `laws concordance` (mode 7), `laws signature` (mode 8), `laws alignment` (mode 9) | `decode_concordance_reply`, `decode_signature_reply`, `decode_alignment_reply` | as the kernel profile's |
 | MAY | `quote`, `receipts`, `entries` (the ledger entries, formerly `rows`), `observe query`, `why`, `wallet` | the readings' decoders | as each decoder reads |
 | MAY | `probe`, `peers`, `syllabus`, `speech` (each sentence with, optionally, the ground its claim was spoken under; MU-SENSING §6.2), `domain reserve`, `seat mail` | as the statement names | as each decoder reads |
 | MAY | `solve factorisation` (`ACT_SOLVE`, claim kind 1, `SOLVE_KIND_FACTORISATION`; signed as `mycelium factorisation v1`: a train pair's motion and residue at any rank, with, optionally, the ground the claim was spoken under; MU-SENSING §3.9) | `decode_factorisation`, `decode_factor_verdict` | the act: voice, task, pair, motion (sources, senses, periods), residue (links), stated ground (or none), signature; the verdict: admitted, the residue of the residues (unclaimed, uncarried), or the refusal by name |
@@ -128,7 +128,8 @@ read.
 | MUST | `laws register` (mode 0) | `decode_register_reply` | law version, laws |
 | MUST | `laws statement` (mode 6) | `decode_statement_reply` | wire version, law version, clauses, profiles, acts |
 | MUST | `laws concordance` (mode 7) | `decode_concordance_reply` | clauses: law id, version, standing, fixtures (each an exact input); or the clause the hypha cannot read |
-| MUST | `laws signature` (mode 8, a signing act by reconstruction) | `decode_signature_reply` | each clause admitted, enabled or vetoed; or the refusal by name: `Malformed`, `Unsigned`, `UnknownClause`, `Repeated`, `NetworkVetoed`, `NotSignatory` (the clause, the fixture, the object presented and the hypha's), `Unregistered` |
+| MUST | `laws signature` (mode 8, a signing act by reconstruction) | `decode_signature_reply` | each clause admitted, enabled or vetoed; or the refusal by name: `Malformed`, `Unsigned`, `UnknownClause`, `Repeated`, `NetworkVetoed`, `NotSignatory` (the clause, the fixture, the object presented and the hypha's), `Unregistered`, `Unrecorded` (the verdict could not be sealed on the hypha's ledger) |
+| MUST | `laws alignment` (mode 9, `[ACT_LAWS][9]` every kernel's or `[ACT_LAWS][9][kernel 32]` one kernel's) | `decode_alignment_reply` | per kernel: its key, the domain it is the sitting reserve of (or none), and per clause version: converses, vetoed, or collides with the residue (the refusal by name), each at the stamp of the signing event that set it, or unread; the signings of the past as history (kernel, Concordance version, release, mechanism); or `StrokeSpent`, `Unregistered` |
 | MUST | `laws clock` (mode 4) | `decode_clock_reply` | the core stamp, or no head yet |
 | MUST | `laws verify` (mode 1, one transition) | `decode_verify_reply` | breaches by law, exchanged torques, modes, similarity, expansion, unmeasured laws |
 | MUST | `domain founding` (`ACT_DOMAIN` genesis) | `decode_domain_reply` | sealed stamp and receipt, or the refusal by name |
@@ -143,7 +144,11 @@ read.
 The MUST acts are what a house does first on the network: it reads the
 register and the statement at its version, reads the Concordance's
 clause register and signs it clause by clause by reconstructing each
-clause's fixtures, reads the core clock, has a transition verified, founds its domain, asks
+clause's fixtures, reads its alignment back from the hypha's ledger (the
+network read signs once with every fixture reached and once with one
+fixture presented wrong, then checks that the clause presented wrong
+collides with its `NotSignatory` residue and every other clause
+converses), reads the core clock, has a transition verified, founds its domain, asks
 its endowment by a manifest, and reads its universe back.
 
 ## 3. The statement served (**Built**)
