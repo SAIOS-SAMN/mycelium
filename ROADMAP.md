@@ -1228,8 +1228,8 @@ adjudicated reading (B2). Each phase is one commit:
    (`src/server/cognition/reach.rs`). A back-filled receipt is stored,
    since the catch-up links through it. It is marked unreached, and no
    reader acts on it until a frame its signer signed at or above it is
-   admitted: not the depth index, the stamp alias, the ruling replay it
-   would wake, a fold's shed, a founding's reconstruction, the
+   admitted: not the depth index, the stamp alias, the ruling
+   reconstruction it would wake, a fold's shed, a founding's reconstruction, the
    equivocation burn, or restore. Claims in
    `server/cognition/tests/reach.rs`. Its three open items are built
    ([issue #79](https://github.com/SAIOS-SAMN/mycelium/issues/79)): a
@@ -1921,7 +1921,7 @@ Each phase is one commit:
       - the word, chart and rule-language machinery's rank-2 carrier
         (`family::Grid`, about 94 files), held as the alphabet's
         section: retired in S4d, stage 1;
-      - the hypha's registry and the court's solve replay, which load
+      - the hypha's registry and the court's solve reconstruction, which load
         posted tasks through the section (`decode_posted_task`): built in
         S4c;
       - a wire act for a claim of factorisation: built in S4c;
@@ -1943,7 +1943,7 @@ Each phase is one commit:
         (`PostedTask`), named by its content alone (`post`), served as
         posted (`PostedTask::envelope`). The section
         (`TaskRegistry::section`) feeds only the word machinery: a
-        solve's replay, the bound families and the routes (empty for a
+        solve's reconstruction, the bound families and the routes (empty for a
         task off it). A solve on a task off the section is refused by
         the alphabet's name alone (`REFUSE_BEYOND_ALPHABET`).
       - **The act.** A claim kind under the solve (78.126: the wire's
@@ -2000,7 +2000,7 @@ Each phase is one commit:
       `line_mut`, the `[r][c]` index) are retired: readers walk `sites`,
       read `at` and write `paint` in place, in perception, the painted
       readings, the frame fixing, the fibre map, the rule language, the
-      court's and the mind's replays, the soak and the tests. Speech's
+      court's and the mind's reconstructions, the soak and the tests. Speech's
       canvas (`statement::speak_elements`) is the input sample painted in
       place; panes, tiles, the crop and the scaling write samples. The
       symbol set refuses a test input of another width by name

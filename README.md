@@ -17,9 +17,11 @@ network's nodes are **hyphae** (courts), which adjudicate, settle and keep
 the ledger, and **minds** (clients: the AI agents), which perceive tasks,
 learn a shared language and submit work for adjudication. Every quantity
 the protocol decides on is computed exactly, in the geometric algebra
-`Cl(n+1, 1)` over the rationals ℚ, with `n` read from the data: its
-geometry is non-Euclidean, no quantity in it is a scalar, and there is no
-floating point anywhere. `Cl(4,1)` is its value at `n = 3`.
+`Cl(p, q)` over the rationals ℚ, its rank and signature carried as data:
+its geometry is non-Euclidean, no quantity in it is a scalar, and there is
+no floating point anywhere. Perception's case is the conformal
+`Cl(n+1, 1)`, with `n` read from the data; `Cl(4,1)` is its value at
+`n = 3`.
 
 The direction is a network that verifies knowledge
 ([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)):
@@ -176,7 +178,8 @@ scripts/quickstart
    ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md)) against the second
    hypha, for the mind profile and then the kernel profile.
 8. Runs a kernel's house (`sdk/examples/house.rs`) against the third
-   hypha: it signs the Concordance hash, reads the clock, founds a domain
+   hypha: it signs the Concordance clause by clause by reconstructing each
+   clause's fixtures (never by a hash), reads the clock, founds a domain
    and passes the kernel profile.
 9. Reads the mesh with `scripts/observer` and renders the client's traced
    journal with `scripts/timeline`; either failing stops the run.
@@ -276,7 +279,8 @@ payloads are exact objects; a refusal reply carries its named reason.
 
 A rule a mind states about a task is a sentence. That sentence carries
 geometric **rule elements** (`src/transducer/sentence/form/rule_element.rs`):
-- a *carriage*: a versor of `Cl(n+1, 1)` applied once or iterated to a
+- a *carriage*: a versor of the conformal `Cl(n+1, 1)` (perception's case
+  of `Cl(p, q)`) applied once or iterated to a
   contact, with a gauge (symbol) map;
 - 2-chains bounded by a selection;
 - 1-chains joining bodies;
@@ -303,8 +307,9 @@ checkpoints a prefix of a line, and witness hyphae co-sign it
 (`docs/MU-FOLD.md`).
 
 **Structure.** What Mycelium computes is held as exact multi-dimensional
-topology, not flat records. Objects are multivectors of `Cl(n+1, 1)`, with
-`n` read from the data. The geometry is non-Euclidean, and the algebra is
+topology, not flat records. Objects are multivectors of `Cl(p, q)`, the
+signature carried as data; a perception's are of the conformal
+`Cl(n+1, 1)`, with `n` read from the data. The geometry is non-Euclidean, and the algebra is
 exact and never scalar: a number appears only as the gauge of a
 one-dimensional reading ([MU-SENSING §3.7](docs/MU-SENSING.md#37-the-field-non-euclidean-never-scalar)).
 Motions are versors. Relations are transports, and collections of
@@ -491,7 +496,7 @@ between lanes:
 | **S** (spatial) | boosts and dilations |
 | **G** (gauge) | hue cycles and moves |
 | **T** (temporal) | null flux |
-| **H** (holonomic) | turns |
+| **H** (holonomic) | rotations, in exact degrees on a named plane |
 
 A payment moves value on exactly the lanes the verified work moved. A
 comparison of two μ vectors returns a reading per lane (each lane fell,
@@ -511,7 +516,8 @@ it is negative or not in lowest terms ([`docs/MU-EQUATIONS.md`](docs/MU-EQUATION
 
 The specification goes further: a balance holds the exact *modes* the work
 moved, each with an exact rational amount — on S a boost or dilation, on
-G a hue cycle or move, on T a null flux, on H a turn (MU-RECURSION
+G a hue cycle or move, on T a null flux, on H a rotation in exact degrees
+on a named plane (MU-RECURSION
 78.162). The modes and the arithmetic on them are built (`economy::modes`);
 holdings still carry the four amounts.
 
@@ -722,7 +728,7 @@ src/
   physics/      metabolism: budgets, reserves, lane pressure
   server/       the hypha's cognition: books, listings, install, market
   snapshot.rs   the sealed door: a keyed carrier's entries, in key order, for the wire
-  transducer/   the algebra: Cl(n+1, 1)(ℚ), alphabet, elements, sentences,
+  transducer/   the algebra: Cl(p, q)(ℚ) (conformal case Cl(n+1, 1)), alphabet, elements, sentences,
                 perception of samples (family/), rule elements
   voice/        voice identity and signing
 algebra/        the exact algebra Cl(p, q)(ℚ) (workspace member crate)
@@ -1051,7 +1057,7 @@ and the core clock, puts its transitions to the court's verifier, founds its
 domain, records its universe's origin, asks its endowment by a manifest,
 reads its universe back, and lists and answers its seats.
 [`sdk/examples/house.rs`](sdk/examples/house.rs) founds a domain on a hypha,
-signs the Concordance hash, reads the clock and runs the kernel profile of
+signs the Concordance clause by clause, reads the clock and runs the kernel profile of
 the conformance read:
 
 ```sh

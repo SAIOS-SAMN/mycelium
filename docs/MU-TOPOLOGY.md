@@ -43,11 +43,14 @@ What that buys:
 
 ---
 
-## 1. The ambient algebra: Cl(n+1, 1) over ℚ
+## 1. The ambient algebra: Cl(p, q) over ℚ, and its conformal case Cl(n+1, 1)
 
-The algebra is `Cl(n+1, 1)` with `n` read from the data (MU-RECURSION
-71): non-Euclidean, and never scalar (MU-SENSING §3.7). Its value at
-`n = 3`, `Cl(4,1)`, is what the code builds today.
+The algebra is `Cl(p, q)` over ℚ with the signature carried as data
+(`algebra/`): each value holds the mask of its negative generators.
+Perception's case is the conformal `Cl(n+1, 1)` with `n` read from the
+data (MU-RECURSION 71): non-Euclidean, and never scalar (MU-SENSING
+§3.7). Its value at `n = 3`, `Cl(4,1)`, is the case this section writes
+out.
 
 **Built** at `n = 3` (`src/core/`, `src/transducer/cga/`; MU-EQUATIONS §2).
 

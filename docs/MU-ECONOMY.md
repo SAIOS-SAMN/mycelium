@@ -77,7 +77,8 @@ on the lane its kind names, each with an exact rational amount:
   side);
 - on G, a hue cycle or move;
 - on T, a null flux (its ray and its count in its tube's quantum);
-- on H, a turn (its plane's ray and its turn `t/ℓ`).
+- on H, a rotation on a named plane (its generator's ray), its angle the
+  exact degrees `360°·t/ℓ` the motion traversed (MU-EQUATIONS §6.11).
 
 A holding holds its modes, each keyed by its canonical coordinates (A21).
 A payment adds modes; a draw removes modes or is refused naming the mode

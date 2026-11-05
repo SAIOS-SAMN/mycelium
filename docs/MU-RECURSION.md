@@ -3796,8 +3796,9 @@ a refusal.
    log `torsion filed {idea} (σ,ℓ)`. `Open` or another period: the chord
    stays open; `F` cannot crystallize; log `torsion open {idea} chord {i}`.
 4. The court reconstructs every filed cycle by the same walk (`reconstruct_blind`,
-   `replay_nerve`): `"torsion cycle does not close"`, `"torsion period does
-   not re-derive"` are the refusals.
+   `witness_torsion` in `src/court/verdict/reconstruct.rs`; the
+   `replay_nerve` this line named was removed): `"torsion cycle does not
+   close"`, `"torsion period does not re-derive"` are the refusals.
 
 A filed cycle is a memory: it records exactly the twist the language holds
 on that orbit without forcing it to identity. An infinite-order class is
@@ -6540,7 +6541,7 @@ coordinates of its first class vectors in that stroke.
 A torsion cycle `(σ, ℓ)` is witnessed iff the fibre walk returns at step
 `ℓ` and not before (A17). Code: `Element::record_torsion`,
 `toroid::witness_stored`, `HolonomicOrbitWitness`, in `reconstruct_blind` and
-`replay_nerve`. Proof: `record_cycle_refuses_unwitnessed_period`;
+`witness_torsion` (the reconstruction; `replay_nerve` was removed). Proof: `record_cycle_refuses_unwitnessed_period`;
 refusal strings `"torsion cycle does not close"`, `"torsion period does not
 re-derive"`.
 

@@ -47,6 +47,23 @@
   held pending LAW-PASSAGE v3 (netstratum's pole-swap proposal,
   2026-11-05), and the coordinate clause cites `FORMS-COORDINATE` v2. §12
   says the same, and ROADMAP's coordinate item names v2.
+- **The rulings audit's wording.** Angles are stated in degrees on a
+  named plane (no "quarter turn"; the H lane as rotations in exact
+  degrees). `Cl(p, q)` with the signature as data is the algebra and the
+  conformal `Cl(n+1, 1)` perception's case, in the README, GLOSSARY,
+  MU-EQUATIONS §1.2, MU-SCIENCE, MU-TOPOLOGY, MU-ALPHABET,
+  MU-ANTI-FLATTENING, MU-CLIENT, MU-COGNITION and MU-PRECURSORS, with a
+  note on Concordance 2.10 that the amendment is in draft 5. Signing is
+  never by hash (README, MU-CHARTER, MU-DERIVATIONS), and MU-EQUATIONS
+  §11 gives the Concordance as version 5. The completion test is
+  MU-SENSING §0: ARC-AGI-2 closures are observations, never the goal or
+  criterion (MU-PRODUCT §4, Concordance 6.2a marked as conforming to the
+  ruled test of 2026-11-04, MU-COGNITION, GLOSSARY, MU-PRECURSORS).
+  "Replay" for a reconstruction is renamed in ROADMAP, MU-DERIVATIONS and
+  MU-HOSTING, and MU-RECURSION's `replay_nerve` (removed) is rebound to
+  `witness_torsion`. MU-COGNITION §2.2 names samples and sites, not grids
+  and cells.
 - **Network contract:** Concordance text only, by operator ruling: 5.4's
-  H toll (ruled 2026-11-05) and §0's status line. No wire, layout or law
+  H toll (ruled 2026-11-05), 6.2a's viability test (the ruled completion
+  test of 2026-11-04), a note on 2.10 and §0's status line. No wire, layout or law
   version changes; the code follows in later changes.

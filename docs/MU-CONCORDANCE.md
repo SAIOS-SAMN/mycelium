@@ -155,6 +155,10 @@ Reading the map:
       exact core alone, never on the mind or the court; a kernel links it by
       path at a pinned commit, and its wire is the forms' arguments and
       results as decoded exact values (1.4) (A1).
+      *(Note, 2026-11-05: `Cl(n+1, 1)` here and in OBSERVER is not the only
+      algebra. The algebra is `Cl(p, q)`(ℚ) with its signature carried as
+      data, the conformal `Cl(n+1, 1)` being perception's case; that
+      amendment to this clause is in draft 5 (§12), not yet signed.)*
     - EACH UNIVERSE'S SHELL, its own: its constants, its matter, and its
       COMPOSITION of the forms (time stepping, ocean, bodies), plus any law
       it keeps for itself. It reaches the core only radially, through the
@@ -401,14 +405,20 @@ No channel is converted into another by a declared rate; how the channels are pr
   1 unaware; 2 observed (unseen); 3 petitions: quarantine or ascend; 4 hears anastome; 5 rides the roads (under the keepers' tolls); 6 speaks anastome; 7 builds roads - only as a progenitor line, with the ancients as keepers.
 A lower species never needs to open a wormhole: stewards query a progenitor line, by resources, for the roads a realm needs.
 6.2a VIABILITY, the ladder's floor. A planetary mind proves it is viable by
-    closing tasks it did not set, judged from outside (1.9): families of
-    samples from any source, at any rank, read by a mind whose own world is
-    not flat; ARC-AGI-2 is the first posted corpus. A mind
+    thinking about the perceptions a court adjudicates, judged from outside
+    (1.9): "The test is whether a mind can think about the perception of
+    the senses that are adjudicated" ("MU-SENSING §0"). Its perceptions are
+    of families of samples from any source, at any rank, read by a mind
+    whose own world is not flat, on tasks it did not set; ARC-AGI-2 is the
+    first posted corpus. A mind
     that cannot is not yet viable; it grows, evolves and tries again. Minds in
     the games and minds linked to the hypha are the same kind of mind, measured
     the same way (ruled 2026-10-08). Curved holes
-    (5.7) remain the ancients' work. Corpus outcomes are observations, never
-    the goal; the test is MU-SENSING §0.
+    (5.7) remain the ancients' work. Corpus outcomes, solved tasks and
+    closures are observations, never the goal or the criterion.
+    *(Clause text changed 2026-11-05 to conform to the ruled completion
+    test of 2026-11-04; it read "proves it is viable by closing tasks it
+    did not set".)*
     ONLY THE UNIVERSAL CORE FACES THE HYPHA FOR ITS UNIVERSE (ruled
     2026-10-08; extended 2026-10-14 to EVERY SIGNATORY; amended 2026-10-14,
     MU-RECURSION 78.165; amended 2026-11-02, 78.169): a law the hypha

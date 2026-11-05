@@ -60,7 +60,13 @@ Sources: MU-RECURSION, "The laws this document is written under", laws 1
 and 4; MU-RECURSION 78.45. Code: `src/transducer/alphabet/rotor.rs::rational_sqrt`,
 `src/transducer/family/fibre_relation.rs::exact_root`.
 
-#### 1.2 The algebra Cl(n+1, 1) over ℚ
+#### 1.2 The algebra Cl(p, q) over ℚ, and its conformal case Cl(n+1, 1)
+
+The algebra is `Cl(p, q)` over ℚ with the signature carried as data: each
+value holds the mask of its negative generators, and a product of two
+values whose signatures disagree on a generator both hold is refused by
+name (`algebra/`; GLOSSARY, *Cl(p, q)*). Perception's case, written out
+below, is the conformal `Cl(n+1, 1)`, `e₋` its one negative generator.
 
 ```text
 generators   e₁, e₂, e₃ (mask bits 0, 1, 2), base axis i ≥ 4 at bit i + 1
@@ -2084,7 +2090,7 @@ id is a hosted shell's own.
 | L0 conservative flow into e_∅ (`TAG_LAW‖4‖5`) | 5 | MU-RECURSION 78.59, 78.58 | `src/physics/laws/mod.rs` (`verify`); `ACT_LAWS` mode 0 |
 | L0 continuity (`TAG_LAW‖5‖5`) | 5 | MU-RECURSION 78.89 | `src/physics/laws/mod.rs` (`verify`, `verify_flux`); `ACT_LAWS` mode 0 |
 | L0 parameters (the frame budget, an open protocol parameter; the challenge window is a sealed reach and return, no parameter) | 5 | MU-RECURSION 78.125 as amended; MU-DERIVATIONS D1.3; §10 | `src/physics/laws/mod.rs` (`PARAMETERS`); `ACT_LAWS` mode 5 |
-| Concordance (the clause register, `CLAUSES`) | 4 (the agreement's version); each clause by its law form's id and version (`FORMS-PASSAGE` 3, `FORMS-COORDINATE` 2), identified by its content and signed by adjudicated reading, never by a hash of the text (Concordance §0, ROADMAP track 24 B2) | `docs/MU-CONCORDANCE.md` §0; the fixtures of proposals 78.172 §5 and 78.173 §5 | `src/physics/laws/clauses/`; served on `ACT_LAWS` mode 7, signing acts on mode 8 |
+| Concordance (the clause register, `CLAUSES`) | 5 (the agreement's version, draft 4 approved 2026-11-05; version 4 was signed at v0.3.0 by its text's hash, retired); each clause by its law form's id and version (`FORMS-PASSAGE` 3, `FORMS-COORDINATE` 2), identified by its content and signed by adjudicated reading, never by a hash of the text (Concordance §0, ROADMAP track 24 B2) | `docs/MU-CONCORDANCE.md` §0; the fixtures of proposals 78.172 §5 and 78.173 §5 | `src/physics/laws/clauses/`; served on `ACT_LAWS` mode 7, signing acts on mode 8 |
 | `FORMS-FRAME` | 1 | `forms/src/frame.rs` (module documentation); Concordance 2.10, A6 | `forms::frame` (core shell) |
 | `FORMS-PASSAGE` | 3 | `forms/src/passage.rs` (module documentation); LAW-PASSAGE v2, [proposal 78.172](proposals/78.172-law-passage.md) (the one-sided product `q ↦ v_k·q`; v1's `2H − R` struck 2026-11-05); ROADMAP track 24 B3. Version 3 holds the product in the shell; the law is unchanged | `forms::passage` (`pass`, the product, refusing `NotDirection`, `NotEven` and `Mismatched`; the refusal of a moved reach; the share read from a plane's other axis), over the exact algebra `algebra::Clifford`; the four fixtures in `forms/src/tests/crossing.rs`, agreed by mycelium, netstratum and xylarium (2026-11-05) |
 | `FORMS-SHARES` | 1 | `forms/src/shares/mod.rs`; Concordance 2.10, A7a; §10.4 | `forms::shares::closeness`, `forms::shares::share_compounds` (outer shell) |

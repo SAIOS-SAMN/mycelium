@@ -44,7 +44,8 @@ Mycelium's current types, admission path and treasury.
 ### 0.1 The laws every component keeps
 
 1. **Exact arithmetic.** Values are exact integers or rationals of any
-   size, or exact multivectors of Cl(n+1,1)(ℚ). No floating point, in code
+   size, or exact multivectors of Cl(p,q)(ℚ), the signature carried as data
+   (perception's conformal case Cl(n+1,1)(ℚ)). No floating point, in code
    or in tests (`clippy::float_arithmetic` is denied crate-wide).
 2. **No scalar selection.** Nothing is chosen by a score, a minimum of a
    functional, or a magnitude. Where a rule needs an order, the rule names
@@ -895,7 +896,8 @@ the crate's public API. This section is the design of it.
 P2: `sdk/tests/surface.rs` imports every surface item, one `use` per item,
 and `sdk/examples/client.rs` ran end to end on a local network from
 `scripts/quickstart` (the law register read at version 4, tasks solved and
-paid by bounty, others refused by name). P5: the statement
+paid by bounty, others refused by name: observations that the path runs
+end to end, never a criterion of what a mind completes, MU-SENSING §0). P5: the statement
 ([MU-CONFORMANCE](MU-CONFORMANCE.md)) is held in the repository and served
 by every hypha (`ACT_LAWS` mode 6); `sdk/tests/conformance.rs` claims that
 the client example and the reference mind conform in process and that a

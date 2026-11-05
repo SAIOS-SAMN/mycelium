@@ -860,7 +860,7 @@ holds back:
 | Reader | What it acted on before #73 | Now |
 |---|---|---|
 | The depth index (`Court::note_attestor`, `settle_own_attestation`) | Each back-filled receipt as it arrived | Read when a signature reaches the receipt |
-| The stamp alias (`Court::alias_admitting`) and the ruling replay it wakes (`Court::rehear_rulings`) | A waiting ruling heard through an unsigned receipt's alias | The alias filed, and the ruling heard, when a signature reaches the receipt |
+| The stamp alias (`Court::alias_admitting`) and the ruling reconstruction it wakes (`Court::rehear_rulings`) | A waiting ruling heard through an unsigned receipt's alias | The alias filed, and the ruling heard, when a signature reaches the receipt |
 | The peers' folded lines (`Court::shed_folded_lines`, on a `Fold`) | Shed on an unsigned fold | Shed when a signature reaches the fold |
 | The domain registries (`Court::reconstruct_founding`) | Held already by B0 | The same gate |
 | The equivocation burn (`Admitted::Equivocation` in `Court::admit_receipt`) | A bond burned against an unsigned receipt held at the place | Burns only against a reached receipt (47.4 asks two verified signatures) |
@@ -1078,7 +1078,7 @@ proposed with the boundary reading (B4).
 |---|---|---|
 | Receipt chain links compared by digest, each record reconstructed (`rederives`) | **Built** | `src/chronometry/chain/mod.rs` |
 | A domain's stratum root recomputed from its members before comparison, and compared in the address sense (`Locator::locates`, `locates_stratum`); a mind's rest on a stratum fetched for nothing held at the court's root as a `Locator` (`CourtPace::starved`) | **Built** | `src/server/cognition/court/glue.rs`, `src/client/sdk/mind/learn.rs` |
-| A back-filled receipt, admitted by its chain's links, read by no reader (depth, alias, ruling replay, fold shed, founding, equivocation burn, restore) until a frame its signer signed at or above it is admitted (§5a.9, #73) | **Built** | `src/server/cognition/reach.rs` |
+| A back-filled receipt, admitted by its chain's links, read by no reader (depth, alias, ruling reconstruction, fold shed, founding, equivocation burn, restore) until a frame its signer signed at or above it is admitted (§5a.9, #73) | **Built** | `src/server/cognition/reach.rs` |
 | The Concordance's clauses served by content and signatures admitted by reconstruction of their fixtures; the text's digest retired | **Built** (v0.4.0) | `src/physics/laws/clauses/`, `ACT_LAWS` modes 6–8 |
 | Digests typed by sense (`Locator`, `Predecessor`, `Commitment`), with no bare equality, at the admission sites converted first: the receipt line's checks, the signed prefix's claim, the equivocation proof, the signed-reach gate, the ledger's `holds`, `height_of` and era walk, the back-fill chase, a folded citation's recall, and the endowment's manifests | **Built** | `src/court/admission/digest.rs`; track 25, X0 |
 | The record fields typed by sense, so no bare comparison of them can be written: `Parent::hash`, `KStepReceipt::chain_hash`, a fold `Root::hash` and the arms of `Admitted::Equivocation` are `Predecessor`; `SignedPrefix::prev_receipt_hash` and `KStepReceipt::prev_hash` are `Commitment`. `Parent`, `KStepReceipt`, `SignedPrefix`, `Root`, `Era` and `Admitted` have no `==`: a receipt is compared by `Predecessor::cites` over `Parent::of`, a root by `Root::restates`, and an era in the archive by its locator | **Built** | `src/chronometry/receipt.rs`, `src/chronometry/era.rs`; track 25, X0 |

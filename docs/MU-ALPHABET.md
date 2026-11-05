@@ -215,7 +215,8 @@ The governing specification has ruled what a letter is to become
 With `∇B = ΔB = ∅`, a letter is a `Cl(4,1)` versor. The seed letters of §2
 are Euclidean rotors on the chart `e0..e3`; carrying them into the triad
 is open work, and with ROADMAP track 19 (the conformal algebra
-`Cl(n+1,1)(ℚ)` for any `n`) the letters are restated in that algebra. The
+`Cl(n+1,1)(ℚ)` for any `n`, perception's case of `Cl(p, q)`, whose
+signature is carried as data) the letters are restated in that algebra. The
 seed's meaning (the same seventeen rotations on the same planes) does not
 change; the carrier of those rotations does.
 

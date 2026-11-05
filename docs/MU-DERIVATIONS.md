@@ -1492,8 +1492,8 @@ Choices the entry left open, as built:
   whose one spend is the minimal stroke, `8 · minimal_stroke`, derived from
   the least work there is and the same on every host; no fixed floor.
 - **O4, resolved.** The `#[cfg(test)]` branch in `reserve_max` is deleted.
-  The unit suite runs on the unsealed capacity; the one claim whose replay
-  needs more than one minimal stroke and has no closed-form need yet
+  The unit suite runs on the unsealed capacity; the one claim whose
+  reconstruction needs more than one minimal stroke and has no closed-form need yet
   (`server::cognition::tests::awaiting::ruled_admit_absent_word_rehears_nothing`)
   builds its court on an explicit calibration, `Physics::calibrated` of
   `Calibration::of(40 bytes, 1 byte per read, minimal)`, in the test.
@@ -2014,8 +2014,8 @@ sensor and where a raster is spoken.
   eight at rank 2), read from an integer matrix (`of_matrix`) or off an
   alphabet word's images of the sensor plane's two generators (`of_word`);
   anything else (a shear, a `(3, 4, 5)` letter) is `Oblique`. A turn
-  carries no period, so a quarter turn followed by any re-period is exact
-  on turns.
+  carries no period, so a 90° rotation on the plane of the sample's two
+  plane axes followed by any re-period is exact on turns.
 - **PROJECT**. `Turn::lands(period)` is the exact floor's question: the turn
   lands on a boundary of the output phase, or `OffSite { turn, period }`.
   `Enclosed::spoken_onto` and `SignedPermutation::spoken_onto` speak a
@@ -2133,8 +2133,10 @@ deflation_closure_pays_before_on_one_record}`;
 
 **Ledger, wire, Concordance.** Every task address changes (full content):
 a ledger break, recut from genesis. Wire: none (the 32-byte citation is
-unchanged in form). Concordance: a note in 2.3 (O11), which changes the
-Concordance hash.
+unchanged in form). Concordance: a note in 2.3 (O11), which changed the
+Concordance hash at the time; the hash was retired with signing by
+adjudicated reading (Concordance §0), and a change of wording now
+changes no clause.
 
 The text below is the derivation of the metered refinement, superseded by
 the transduction above; the code it names is deleted.
