@@ -23,25 +23,24 @@
 use crate::core::Q;
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 use crate::transducer::cga::Mv;
+pub use crate::transducer::perspective::PlaneAxis;
 use crate::transducer::stalk;
 
-/// AN EXACT COORDINATE OF A PERCEIVED BODY that a predicate may read.
+/// AN EXACT COORDINATE OF A PERCEIVED BODY that a predicate may read. The
+/// coordinates along the plane name an axis of the perspective's plane by
+/// its role ([`PlaneAxis`], MU-SENSING §3.6), never a row or a column.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Coord {
     /// Its cell count.
     Cells,
-    /// The rows its support spans.
-    Height,
-    /// The columns its support spans.
-    Width,
-    /// Its frame position: the least row it stands on.
-    Top,
-    /// The least column.
-    Left,
-    /// The greatest row.
-    Bottom,
-    /// The greatest column.
-    Right,
+    /// The sites its support spans along the plane's axis, both ends
+    /// included.
+    Extent(PlaneAxis),
+    /// Its frame position along the plane's axis: the least coordinate it
+    /// stands on.
+    Least(PlaneAxis),
+    /// The greatest coordinate it stands on along the plane's axis.
+    Greatest(PlaneAxis),
     /// How many distinct hues its gauge carries.
     Hues,
     /// How many other bodies it touches (two bodies meet at a corner, never
@@ -278,15 +277,18 @@ pub struct Clause {
 /// EXACT: take_pred_refuses_past_language_depth
 pub(crate) const PRED_HEIGHT: usize = 3 + 1;
 
+/// The clause codec's byte for each coordinate along the plane: one byte per
+/// coordinate and axis, the bytes the planar names were written with, so no
+/// clause or word address moves.
 fn put_coord(buf: &mut Vec<u8>, c: Coord) {
     let tag = match c {
         Coord::Cells => 0,
-        Coord::Height => 1,
-        Coord::Width => 2,
-        Coord::Top => 3,
-        Coord::Left => 4,
-        Coord::Bottom => 5,
-        Coord::Right => 6,
+        Coord::Extent(PlaneAxis::First) => 1,
+        Coord::Extent(PlaneAxis::Second) => 2,
+        Coord::Least(PlaneAxis::First) => 3,
+        Coord::Least(PlaneAxis::Second) => 4,
+        Coord::Greatest(PlaneAxis::First) => 5,
+        Coord::Greatest(PlaneAxis::Second) => 6,
         Coord::Hues => 7,
         Coord::Contacts => 8,
         Coord::Enclosed => 9,
@@ -307,12 +309,12 @@ fn take_coord(k: &[u8], p: &mut usize) -> Option<Coord> {
     *p += 1;
     Some(match tag {
         0 => Coord::Cells,
-        1 => Coord::Height,
-        2 => Coord::Width,
-        3 => Coord::Top,
-        4 => Coord::Left,
-        5 => Coord::Bottom,
-        6 => Coord::Right,
+        1 => Coord::Extent(PlaneAxis::First),
+        2 => Coord::Extent(PlaneAxis::Second),
+        3 => Coord::Least(PlaneAxis::First),
+        4 => Coord::Least(PlaneAxis::Second),
+        5 => Coord::Greatest(PlaneAxis::First),
+        6 => Coord::Greatest(PlaneAxis::Second),
         7 => Coord::Hues,
         8 => Coord::Contacts,
         9 => Coord::Enclosed,

@@ -21,7 +21,7 @@
 //! perspective's own test — and otherwise it is refused by name ([`Unread`]).
 
 use super::*;
-use crate::transducer::sentence::form::clause::{About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, RegionKind, Stop, Tie, Value};
+use crate::transducer::sentence::form::clause::{About, Act, Clause, Comparison, Coord, Extent, Order, Paint, PlaneAxis, Pred, RegionKind, Stop, Tie, Value};
 use crate::transducer::spelled::{PaintedSite, SectionSite};
 
 /// WHY NO ACT WAS READ, by name (rule 11).
@@ -80,12 +80,12 @@ struct PredicateTable<'f, 'b> {
 /// The coordinates a rank or a count is read at, in the list's fixed order.
 const RANKED: [Coord; 12] = [
     Coord::Cells,
-    Coord::Height,
-    Coord::Width,
-    Coord::Top,
-    Coord::Left,
-    Coord::Bottom,
-    Coord::Right,
+    Coord::Extent(PlaneAxis::First),
+    Coord::Extent(PlaneAxis::Second),
+    Coord::Least(PlaneAxis::First),
+    Coord::Least(PlaneAxis::Second),
+    Coord::Greatest(PlaneAxis::First),
+    Coord::Greatest(PlaneAxis::Second),
     Coord::Hues,
     Coord::Contacts,
     Coord::Enclosed,
@@ -188,7 +188,7 @@ fn predicates(pairs: &[Pair<'_>]) -> Vec<Pred> {
             out.push(Pred::extremum(coord, order, Tie::Hold));
         }
     }
-    for (coord, list) in [Coord::Cells, Coord::Height, Coord::Width, Coord::Hues].into_iter().zip(&counts) {
+    for (coord, list) in [Coord::Cells, Coord::Extent(PlaneAxis::First), Coord::Extent(PlaneAxis::Second), Coord::Hues].into_iter().zip(&counts) {
         for &n in list {
             out.push(Pred::Cmp { coord, cmp: Comparison::Eq, to: Value::Integer(n) });
         }

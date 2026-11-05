@@ -1915,18 +1915,20 @@ Each phase is one commit:
         read extents through `statement::corners_of`; the frame acts
         (panes, tiles, scaling) stay planar by their acts.
     - **Stage 3:** the rule-language's `About::Grid` and the remaining
-      planar names renamed by function (track 11). Among them, the
-      rule language's `Coord::Height`, `Width`, `Top`, `Left`, `Bottom`
-      and `Right` (and the SDK's `mycelium_sdk::rule::Coord`) name the
-      plane's two axes as a raster's. Proposed, awaiting a ruling: name
-      each by its perspective role and plane axis, never by a row or a
-      column: `Extent(PlaneAxis)` for `Height`/`Width`,
-      `Least(PlaneAxis)` for `Top`/`Left` and `Greatest(PlaneAxis)` for
-      `Bottom`/`Right`, where `PlaneAxis` is the first or second space
-      axis of the perspective's plane (`Perspective::plane`). The clause
-      codec keeps each byte (`Extent` 1 and 2, `Least` 3 and 4,
-      `Greatest` 5 and 6), so no clause or word address moves; the SDK
-      names change with the core's.
+      planar names renamed by function (track 11).
+      - **Built** (coordinator decision; branch `s4d3-chart-roles`): the
+        rule language's `Coord::Height`, `Width`, `Top`, `Left`, `Bottom`
+        and `Right` (and the SDK's `mycelium_sdk::rule::Coord`) are named
+        by the plane axis they are read along, never by a row or a
+        column: `Extent(PlaneAxis)` for `Height`/`Width`,
+        `Least(PlaneAxis)` for `Top`/`Left` and `Greatest(PlaneAxis)`
+        for `Bottom`/`Right`, where `perspective::PlaneAxis` is the first
+        or second space axis of the perspective's plane
+        (`Perspective::plane`). The clause codec keeps each byte
+        (`Extent` 1 and 2, `Least` 3 and 4, `Greatest` 5 and 6), so no
+        clause or word address moves; the SDK names change with the
+        core's, inside v0.4.0's break. Claim
+        `coord_round_trips_and_reads_its_planar_byte_by_role`.
     - **Decided from existing rulings** (Law VIII; MU-SENSING §5): the
       letters never spell a rank-3 sample plane by plane, since planes
       are peeled, never iterated. A rank-3 task stays `BeyondAlphabet`

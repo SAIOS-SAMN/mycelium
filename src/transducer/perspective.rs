@@ -30,6 +30,30 @@ pub enum Role {
     Value,
 }
 
+/// AN AXIS OF A PERSPECTIVE'S PLANE (MU-SENSING §3.6, §4): the first or the
+/// second of the two space axes [`Perspective::plane`] names, in the plane's
+/// order. It is named by its place in the plane, never as a row or a column:
+/// which axis of the sample it is, is the perspective's.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PlaneAxis {
+    /// The plane's first space axis.
+    First,
+    /// The plane's second space axis.
+    Second,
+}
+
+impl PlaneAxis {
+    /// THE AXIS'S PLACE IN THE PLANE: the index of its coordinate in a site
+    /// of the section, which is written in the order [`Perspective::plane`]
+    /// names the plane's axes.
+    pub fn index(self) -> usize {
+        match self {
+            PlaneAxis::First => 0,
+            PlaneAxis::Second => 1,
+        }
+    }
+}
+
 /// AN ASSIGNMENT OF ROLES, one per axis of the sites it reads, in canonical
 /// axis order. The order writes addresses alone and is never a role.
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -6,6 +6,23 @@ such change is named here.
 
 ## Unreleased
 
+### The rule language's coordinates named by the plane axis they are read along (track 26 S4d, stage 3)
+- **Network contract:** no wire byte, act, encoding or ledger layout
+  changes, and no clause or word address moves: the clause codec writes
+  each coordinate in the byte its planar name was written with
+  (`Extent` 1 and 2, `Least` 3 and 4, `Greatest` 5 and 6).
+- **SDK surface change, inside v0.4.0's break** (coordinator decision).
+  `mycelium_sdk::rule::Coord::Height` and `Width` are
+  `Coord::Extent(PlaneAxis)`, `Top` and `Left` are `Coord::Least(PlaneAxis)`,
+  and `Bottom` and `Right` are `Coord::Greatest(PlaneAxis)`, with
+  `PlaneAxis::First` for `Height`, `Top` and `Bottom` and
+  `PlaneAxis::Second` for `Width`, `Left` and `Right`. A client writes
+  `Coord::Extent(PlaneAxis::First)` where it wrote `Coord::Height`.
+- `PlaneAxis` (`transducer::perspective`, re-exported by
+  `mycelium_sdk::rule`) names the first or the second space axis of
+  `Perspective::plane` by its place in the plane, never as a row or a
+  column. Claim `coord_round_trips_and_reads_its_planar_byte_by_role`.
+
 ### The chart's pairs, the anchor and the clause tables held as section sites (track 26 S4d, stage 2c)
 - **Network contract:** no wire byte, act, encoding or ledger layout
   changes, and no task, word, chart or clause address moves. Every codec

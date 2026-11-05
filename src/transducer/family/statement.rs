@@ -287,12 +287,9 @@ impl<'a> Seen<'a> {
         hues.dedup();
         Ok(match coord {
             Coord::Cells => qu(cells.len()),
-            Coord::Height => span(0),
-            Coord::Width => span(1),
-            Coord::Top => least(0),
-            Coord::Left => least(1),
-            Coord::Bottom => greatest(0),
-            Coord::Right => greatest(1),
+            Coord::Extent(axis) => span(axis.index()),
+            Coord::Least(axis) => least(axis.index()),
+            Coord::Greatest(axis) => greatest(axis.index()),
             Coord::Hues => qu(hues.len()),
             Coord::Contacts => qu(self.touching(b).len()),
             Coord::Enclosed => qu(self.enclosed(&[b]).len()),

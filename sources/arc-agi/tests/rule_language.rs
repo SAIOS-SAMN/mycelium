@@ -9,7 +9,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use mycelium::client::sdk::rule::{
-    sentence, would_judge, Coord, Create, Extent, NoRule, Order, Paint, Pred, RegionKind, Step, Stop, Tie, Unstated,
+    sentence, would_judge, Coord, Create, Extent, NoRule, Order, Paint, PlaneAxis, Pred, RegionKind, Step, Stop, Tie, Unstated,
 };
 use mycelium::cognition::{Court, SolveVerdict};
 use mycelium::transducer::element::Element;
@@ -212,22 +212,24 @@ fn sentence_recolours_by_count_and_complement() {
     );
 }
 
-/// 08ed6ac7 — the bars recoloured by height rank, tallest first.
+/// 08ed6ac7 — the bars recoloured by their extent along the plane's first
+/// axis, the greatest first.
 #[test]
 fn sentence_recolours_by_rank() {
     let mut steps = Vec::new();
     for (place, hue) in [(0u32, 1u8), (1, 2), (2, 3), (3, 4)] {
-        steps.push(Step::Select(Pred::Rank { coord: Coord::Height, order: Order::Greatest, place, tie: Tie::Refuse }));
+        steps.push(Step::Select(Pred::Rank { coord: Coord::Extent(PlaneAxis::First), order: Order::Greatest, place, tie: Tie::Refuse }));
         steps.push(Step::Hue(vec![(5, hue)]));
     }
     solves("08ed6ac7", &steps);
 }
 
-/// a61f2674 — the tallest bar blue, the shortest red, every other erased.
+/// a61f2674 — the bar of greatest extent along the plane's first axis blue,
+/// the least red, every other erased.
 #[test]
 fn sentence_keeps_extremes() {
-    let tallest = Pred::extremum(Coord::Height, Order::Greatest, Tie::Refuse);
-    let shortest = Pred::extremum(Coord::Height, Order::Least, Tie::Refuse);
+    let tallest = Pred::extremum(Coord::Extent(PlaneAxis::First), Order::Greatest, Tie::Refuse);
+    let shortest = Pred::extremum(Coord::Extent(PlaneAxis::First), Order::Least, Tie::Refuse);
     solves(
         "a61f2674",
         &[
@@ -241,7 +243,8 @@ fn sentence_keeps_extremes() {
     );
 }
 
-/// 00dbd492 — each square frame's interior filled by its width: 5 cyan,
+/// 00dbd492 — each square frame's interior filled by its extent along the
+/// plane's second axis: 5 cyan,
 /// 7 yellow, 9 green; the dot inside each stays inside it. The task reads
 /// a vortex of 0 and 2 (the frames meet the seam in every sample): a claim
 /// is spoken under each, and the court solves the one under 0.
@@ -249,7 +252,7 @@ fn sentence_keeps_extremes() {
 fn sentence_fills_interior_by_frame_width() {
     let mut steps = Vec::new();
     for (w, hue) in [(5i64, 8u8), (7, 4), (9, 3)] {
-        steps.push(Step::Select(Pred::count(Coord::Width, w)));
+        steps.push(Step::Select(Pred::count(Coord::Extent(PlaneAxis::Second), w)));
         steps.push(Step::Region(RegionKind::Interior));
         steps.push(Step::Hue(vec![(0, hue)]));
     }
