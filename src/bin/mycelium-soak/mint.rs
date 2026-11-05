@@ -374,7 +374,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 spoken.as_ref().map(|s| s.unspoken.len()),
                 spoken.as_ref().map_or(0, |s| s.painted.len()),
                 spoken.as_ref().map_or(0, |s| {
-                    let g = s.grid();
+                    let g = s.sample();
                     let mut n = 0usize;
                     for (site, h) in y.sites() {
                         // A site the speech does not reach is the ground,

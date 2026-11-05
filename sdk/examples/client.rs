@@ -115,7 +115,7 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
         };
         let mut outputs = Vec::with_capacity(envelope.tests.len());
         for x in &envelope.tests {
-            match speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid()) {
+            match speak_rule(&rule, x, &NoCrystal).and_then(|s| s.sample()) {
                 Some(g) => outputs.push(g),
                 None => return Err("the rule does not speak a test input"),
             }

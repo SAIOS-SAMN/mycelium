@@ -33,8 +33,8 @@ use crate::transducer::family::*;
 #[test]
 fn extract_rule_with_keeps_partial_when_budget_cuts_off() {
     let family = vec![
-        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
-        (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+        (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
     ];
     let mut ph = crate::physics::Physics::default();
     // One spend reaches the first pair form and no further.
@@ -76,8 +76,8 @@ fn extract_rule_with_keeps_partial_when_budget_cuts_off() {
 #[test]
 fn extraction_spend_reads_family_end_to_end() {
     let family = vec![
-        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
-        (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+        (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
     ];
     let mut ph = crate::physics::Physics::default();
     let frames = perceive_family(&family);
@@ -107,8 +107,8 @@ fn extraction_spend_reads_family_end_to_end() {
 #[test]
 fn extract_rule_cached_keeps_partial_until_language_moves() {
     let family = vec![
-        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
-        (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+        (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
     ];
     let mut ph = crate::physics::Physics::default();
     let mut cache = crate::transducer::family::ExtractMemo::new();
@@ -161,8 +161,8 @@ fn extract_rule_cached_never_keeps_none() {
     crate::transducer::raster::stand_on(0);
     let root = crate::transducer::address::Address::new(vec![3u8]);
     let ph = &mut crate::physics::Physics::default();
-    let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
-    let ratioless = vec![(grid(&["1"]), grid(&["2"])), (grid(&["1"]), grid(&["22", "22"]))];
+    let one = vec![(digits(&["1100", "0000"]), digits(&["2200", "0000"]))];
+    let ratioless = vec![(digits(&["1"]), digits(&["2"])), (digits(&["1"]), digits(&["22", "22"]))];
     let mut cache = ExtractMemo::new();
     assert!(extract_rule_cached(&mut cache, b"one", &one, root.clone(), &mut ph.stroke_n(1 << 20), &NoCrystal, None).is_some());
     assert!(cache.holds(b"one", &root), "the rule is held");
@@ -185,7 +185,7 @@ fn extraction_spend_includes_transduction_need() {
     let contacts = |frames: &Frames| -> usize {
         frames.iter().map(|(i, o)| (i.len() + o.len()) * 3 * crate::transducer::blade::CANDIDATES_PER_PAIR).sum()
     };
-    let scaled = vec![(grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"]))];
+    let scaled = vec![(digits(&["10", "00"]), digits(&["1100", "1100", "0000", "0000"]))];
     let frames = perceive_family(&scaled);
     use crate::transducer::family::transduce::{need, Enclosure};
     let periods = |p: Vec<usize>| Enclosure::new(p).expect("periods stand");
@@ -193,7 +193,7 @@ fn extraction_spend_includes_transduction_need() {
     assert_eq!(need, 4 * 4, "R(2, 4) = 2 + 4 − 2 = 4 arcs per circle");
     assert_eq!(extraction_spend(&scaled, &frames), 2 * 2 + 4 * 4 + contacts(&frames) + need);
 
-    let square = vec![(grid(&["10", "00"]), grid(&["01", "00"]))];
+    let square = vec![(digits(&["10", "00"]), digits(&["01", "00"]))];
     let frames = perceive_family(&square);
     assert_eq!(extraction_spend(&square, &frames), 2 * 2 + 2 * 2 + contacts(&frames));
 }

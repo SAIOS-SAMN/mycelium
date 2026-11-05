@@ -3,7 +3,7 @@
 // mass among the bodies of its pair decides where its own volume, density and
 // direction cannot — judged by replay, leave one out.
 
-use super::fixtures::grid;
+use super::fixtures::digits;
 use crate::transducer::family::incongruence::{decide, single_changes};
 use crate::transducer::family::interpret::interpret;
 
@@ -17,8 +17,8 @@ use crate::transducer::family::interpret::interpret;
 fn decide_ranks_by_pair_where_body_alone_cannot() {
     crate::transducer::raster::stand_on(0);
     let family = vec![
-        (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
-        (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),
+        (digits(&["11100", "00000", "00001"]), digits(&["22200", "00000", "00005"])),
+        (digits(&["11110", "00000", "00011"]), digits(&["22220", "00000", "00055"])),
     ];
     // The form spoke every site its input held, in the input's hue: what
     // changed is unsaid.
@@ -52,8 +52,8 @@ fn decide_ranks_by_pair_where_body_alone_cannot() {
 fn interpret_reads_speech_remainder() {
     crate::transducer::raster::stand_on(0);
     let family = vec![
-        (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
-        (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),
+        (digits(&["11100", "00000", "00001"]), digits(&["22200", "00000", "00005"])),
+        (digits(&["11110", "00000", "00011"]), digits(&["22220", "00000", "00055"])),
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("a rule");

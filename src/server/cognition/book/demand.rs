@@ -107,7 +107,7 @@ impl Court {
             let Some(word) = self.basis.get(&cite.addr) else { continue };
             let Some(f) = word.form().cloned() else { continue };
             let Some(sp) = apply_form(&f, &scene, &placement, self) else { continue };
-            let Some(spoken) = sp.grid() else { continue };
+            let Some(spoken) = sp.sample() else { continue };
             // `scene_at_of_chain` gives the corner the framing subtracted,
             // so the spoken link goes back where the chain had it and
             // nothing re-derives that corner here (law 12).

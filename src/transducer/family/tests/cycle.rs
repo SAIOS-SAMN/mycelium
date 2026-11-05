@@ -47,7 +47,7 @@ impl Crystal for Mutual {
 /// its key leaves out (the envelope is evidence), so the mutual incidence the
 /// nerve admits is constructible exactly as it stands on a court.
 fn mutual() -> (SectionSample, SectionSample, Mutual, Form) {
-    let (x, y) = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
+    let (x, y) = (digits(&["1100", "0000"]), digits(&["0011", "0000"]));
     let s = cipher_form(&x, &y);
     let e = crate::transducer::sentence::as_element_form(&s, [1, 0, 0, 0]).expect("tape");
     let a = crate::transducer::address::Address::new(b"the form at a".to_vec());
@@ -73,7 +73,7 @@ fn apply_form_refuses_mutual_citation() {
     let identity = crate::transducer::alphabet::Word::identity();
     let spoken = apply_form(&top, &x, &identity, &crystal).expect("the speech ends");
     assert_eq!(spoken.cycled, vec![crystal.b.0.clone()], "the form reached again is named by its address");
-    assert_eq!(spoken.grid(), None, "a speech that cycles lays down no grid");
+    assert_eq!(spoken.sample(), None, "a speech that cycles lays down no grid");
     let family = vec![(x, y)];
     let read = form_deflation_read(&top, &family, &crystal, &identity);
     assert_eq!(read.cycled, vec![crystal.b.0.clone()], "the deflation reads the cycle");

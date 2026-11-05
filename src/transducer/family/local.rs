@@ -218,7 +218,7 @@ pub fn form_local(
     let mut out = Local { pay: [0; 4], mu: crate::economy::Mu::zero(), sites: Vec::with_capacity(family.len()) };
     for (pi, (x, y)) in family.iter().enumerate() {
         let mut closed = Keyed::new();
-        let spoken = apply_form_on(form, x, placement, crystal, Some(pi)).and_then(|s| s.grid());
+        let spoken = apply_form_on(form, x, placement, crystal, Some(pi)).and_then(|s| s.sample());
         if let Some(g) = spoken {
             let mut false_site = false;
             for (site, s) in g.sites() {

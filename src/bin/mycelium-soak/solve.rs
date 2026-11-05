@@ -48,7 +48,7 @@ pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
         let mut right = 0u64;
         for (x, y) in &task.test {
             let Some(sp) = speak_rule(&rule, x, &epi) else { continue };
-            let Some(g) = sp.grid() else { continue };
+            let Some(g) = sp.sample() else { continue };
             said += 1;
             if Some(&g) == y.as_ref() {
                 right += 1;

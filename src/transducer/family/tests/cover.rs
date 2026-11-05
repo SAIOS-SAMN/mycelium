@@ -19,8 +19,8 @@ use crate::transducer::sentence::{Demand, Vertex};
 /// demand. It is kept for exactly that reading.
 fn notched() -> (SectionSample, SectionSample) {
     (
-        grid(&["11111", "11111", "11111", "11111", "11111"]),
-        grid(&["11111", "11111", "11111", "11111", "11110"]),
+        digits(&["11111", "11111", "11111", "11111", "11111"]),
+        digits(&["11111", "11111", "11111", "11111", "11110"]),
     )
 }
 
@@ -39,8 +39,8 @@ fn notched() -> (SectionSample, SectionSample) {
 /// slide still overlaps its own source, so the pullback places all four.
 fn four_bodies() -> (SectionSample, SectionSample) {
     (
-        grid(&["1100110", "1100110", "0000000", "1100110", "1100110"]),
-        grid(&["1100110", "1100110", "0000000", "1101100", "1101100"]),
+        digits(&["1100110", "1100110", "0000000", "1100110", "1100110"]),
+        digits(&["1100110", "1100110", "0000000", "1101100", "1101100"]),
     )
 }
 
@@ -50,8 +50,8 @@ fn four_bodies() -> (SectionSample, SectionSample) {
 /// fixture for propagation, which the sliding one does not reach.
 fn four_bodies_one_left() -> (SectionSample, SectionSample) {
     (
-        grid(&["1100110", "1100110", "0000000", "1100110", "1100110"]),
-        grid(&["1100110", "1100110", "0000000", "1100110", "1101100"]),
+        digits(&["1100110", "1100110", "0000000", "1100110", "1100110"]),
+        digits(&["1100110", "1100110", "0000000", "1100110", "1101100"]),
     )
 }
 
@@ -81,7 +81,7 @@ fn hold_form_reads_demand_candidates_from_bodies() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::field::contemplation::Contemplation;
     let held = |ga: &[&str], gb: &[&str]| -> (usize, usize) {
-        let f = measured(&grid(ga), &grid(gb));
+        let f = measured(&digits(ga), &digits(gb));
         let chart = f
             .vertices
             .scoped()
@@ -595,8 +595,8 @@ fn cover_deformation_propagates_only_from_placed_pieces() {
     // compartment of the image, so the pullback names no preimage and places
     // nothing; with nothing placed there is nothing to propagate.
     let apart = (
-        grid(&["111", "111", "000", "000", "000", "000"]),
-        grid(&["000", "000", "000", "000", "111", "111"]),
+        digits(&["111", "111", "000", "000", "000", "000"]),
+        digits(&["000", "000", "000", "000", "111", "111"]),
     );
     let cover = measured_cover(&apart.0, &apart.1);
     assert_eq!(cover.carried.scoped().count(), 0, "the pullback places nothing across a gap");

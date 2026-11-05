@@ -3,7 +3,7 @@
 // one lit site is no waveform; an enclosure captures what the output fills
 // inside it, read as a standing wave, its rectangle's billiard a translation.
 
-use super::fixtures::grid;
+use super::fixtures::digits;
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::family::luminal::{read_pair, Beyond, Stop};
 use crate::transducer::sentence::tests::fixtures::link;
@@ -18,8 +18,8 @@ fn budget() -> crate::physics::Budget {
 #[test]
 fn read_pair_explains_ray_light_and_names_stop() {
     crate::transducer::raster::stand_on(0);
-    let x = grid(&["100002"]);
-    let y = grid(&["111112"]);
+    let x = digits(&["100002"]);
+    let y = digits(&["111112"]);
     let rem = vec![link(0, 1, 0, 1), link(0, 2, 0, 1), link(0, 3, 0, 1), link(0, 4, 0, 1)];
     let p = read_pair(&x, &y, &rem, &mut budget());
     assert_eq!((p.unsaid, p.on_ray, p.neither), (4, 4, 0), "every unsaid site on the ray: {p:?}");
@@ -27,7 +27,7 @@ fn read_pair_explains_ray_light_and_names_stop() {
     assert_eq!((ray.lit, ray.period, ray.wave.clone()), (4, 1, vec![1]), "a waveform of period 1 in the source's hue");
     assert_eq!(ray.stop, Stop::Body { hue: 2, beyond: Beyond::Absorbed }, "met and absorbed");
     // One lit site is no waveform: nothing explained.
-    let p = read_pair(&grid(&["100"]), &grid(&["110"]), &[link(0, 1, 0, 1)], &mut budget());
+    let p = read_pair(&digits(&["100"]), &digits(&["110"]), &[link(0, 1, 0, 1)], &mut budget());
     assert_eq!((p.on_ray, p.neither), (0, 1), "a single site repeats nothing");
 }
 
@@ -38,8 +38,8 @@ fn read_pair_explains_ray_light_and_names_stop() {
 #[test]
 fn read_pair_captures_standing_wave_in_enclosure() {
     crate::transducer::raster::stand_on(0);
-    let x = grid(&["3333", "3003", "3003", "3333"]);
-    let y = grid(&["3333", "3443", "3443", "3333"]);
+    let x = digits(&["3333", "3003", "3003", "3333"]);
+    let y = digits(&["3333", "3443", "3443", "3333"]);
     let rem = vec![link(1, 1, 0, 4), link(1, 2, 0, 4), link(2, 1, 0, 4), link(2, 2, 0, 4)];
     let p = read_pair(&x, &y, &rem, &mut budget());
     assert_eq!(p.captured + p.both, 4, "the cavity holds every unsaid site: {p:?}");

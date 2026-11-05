@@ -329,16 +329,16 @@ assert!(home.provisional.is_empty(), "the docket clears on install");
 fn court_settle_slashes_form_leaving_remainder() {
     crate::transducer::raster::stand_on(0);
 use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
-let grid = |rows: &[&str]| -> crate::transducer::family::SectionSample {
+let digits = |rows: &[&str]| -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 };
-let (x, y) = (grid(&["1"]), grid(&["2"]));
+let (x, y) = (digits(&["1"]), digits(&["2"]));
 let one_pair = vec![(x.clone(), y.clone())];
 let rule = extract_rule(&one_pair, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour is a rule");
 let word = mint_sentence(&rule, &one_pair, &NoCrystal, 0).expect("it closes its own pair");
 let addr = word.address();
 // H1, 70.4 — separated: `"23"` is ONE two-hue body once hue is a fibre.
-let wider = vec![(x, y), (grid(&["100"]), grid(&["203"]))];
+let wider = vec![(x, y), (digits(&["100"]), digits(&["203"]))];
 
 let mut refusing = Court::new();
 let task = [7u8; 32];
@@ -403,14 +403,14 @@ fn perceive_sentence_binds_none_without_task() {
 fn perceive_sentence_lists_declared_remainder_demand() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
-    let grid = |rows: &[&str]| -> crate::transducer::family::SectionSample {
+    let digits = |rows: &[&str]| -> crate::transducer::family::SectionSample {
         rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
     };
-    let learned = vec![(grid(&["1"]), grid(&["2"]))];
+    let learned = vec![(digits(&["1"]), digits(&["2"]))];
     let rule = extract_rule(&learned, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("a recolour extracts");
     // H1, 70.4 — separated, as above.
-    let family = vec![(grid(&["1"]), grid(&["2"])), (grid(&["100"]), grid(&["203"]))];
+    let family = vec![(digits(&["1"]), digits(&["2"])), (digits(&["100"]), digits(&["203"]))];
     let s = mint_sentence(&rule, &family, &NoCrystal, 0).expect("spoken with its demand");
     let mut k = Court::new();
     let task = [7u8; 32];

@@ -984,7 +984,7 @@ let mut budget = Physics::default().stroke_n(1 << 20);
 let rule = extract_rule(&envelope.train, &mut budget).ok_or("no rule")?;
 let element = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0)?;
 let outputs: Vec<_> = envelope.tests.iter()
-    .map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid()))
+    .map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.sample()))
     .collect::<Option<_>>().ok_or("rule does not speak a test")?;
 // 5. Solve: the outputs, as samples at their places, and the rule's tape,
 //    signed by the voice the court pays.

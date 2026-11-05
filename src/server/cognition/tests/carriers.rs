@@ -5,7 +5,7 @@
 use crate::cognition::*;
 use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
 
-fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
+fn digits(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect()).collect()
 }
 
@@ -31,7 +31,7 @@ fn table(c: &crate::observe::Carriers) -> crate::network::nerve::Keyed<u64> {
 fn lapse_word_leaves_no_carrier_grown() {
     crate::transducer::raster::stand_on(0);
     let mut k = Court::new();
-    let family = vec![(grid(&["11"]), grid(&["22"]))];
+    let family = vec![(digits(&["11"]), digits(&["22"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
     let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");
     let task = crate::registry::task_address(&crate::transducer::family::Task { train: family.clone(), test: Vec::new() })

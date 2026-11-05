@@ -27,10 +27,10 @@ fn on_canvas(family: &[(SectionSample, SectionSample)], to: u8) -> Vec<(SectionS
 /// and the family reads no ground.
 #[test]
 fn ground_of_reads_family_canvas() {
-    let bar = vec![(grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"]))];
+    let bar = vec![(digits(&["1100", "0000", "0000"]), digits(&["0011", "0000", "0000"]))];
     assert_eq!(crate::transducer::raster::ground_of(&bar), Ground::One(0), "drawn on 0");
     assert_eq!(crate::transducer::raster::ground_of(&on_canvas(&bar, 7)), Ground::One(7), "drawn on 7");
-    let traded = vec![(grid(&["12", "12"]), grid(&["21", "21"]))];
+    let traded = vec![(digits(&["12", "12"]), digits(&["21", "21"]))];
     assert_eq!(crate::transducer::raster::ground_of(&traded), Ground::None, "each column is a body");
 }
 
@@ -39,7 +39,7 @@ fn ground_of_reads_family_canvas() {
 /// vortex's order and none picked; `One` and `None` are read once.
 #[test]
 fn vortex_ground_read_once_per_candidate() {
-    let halves = vec![(grid(&["0055", "0055"]), grid(&["0055", "0055"]))];
+    let halves = vec![(digits(&["0055", "0055"]), digits(&["0055", "0055"]))];
     assert_eq!(crate::transducer::raster::ground_of(&halves), Ground::Vortex(vec![0, 5]), "a vortex of 0 and 5");
     let mut runs = 0usize;
     let read = crate::transducer::raster::on_each_perspective_of(&halves, || {
@@ -48,7 +48,7 @@ fn vortex_ground_read_once_per_candidate() {
     });
     assert_eq!(runs, 2, "one run per candidate");
     assert_eq!(read, vec![(Ground::One(0), Ground::One(0)), (Ground::One(5), Ground::One(5))], "each run on its own candidate, both kept");
-    let bar = vec![(grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"]))];
+    let bar = vec![(digits(&["1100", "0000", "0000"]), digits(&["0011", "0000", "0000"]))];
     let once = crate::transducer::raster::on_each_perspective_of(&bar, crate::transducer::raster::ground);
     assert_eq!(once, vec![(Ground::One(0), Ground::One(0))], "one ground, one run");
 }
@@ -62,8 +62,8 @@ fn vortex_ground_read_once_per_candidate() {
 #[test]
 fn membrane_is_held_and_membrane_change_is_read() {
     use crate::transducer::family::transduce::Transduction;
-    let x = grid(&["888888", "800008", "801008", "800008", "800008", "888888"]);
-    let y = grid(&["777777", "700007", "701007", "700007", "700007", "777777"]);
+    let x = digits(&["888888", "800008", "801008", "800008", "800008", "888888"]);
+    let y = digits(&["777777", "700007", "701007", "700007", "700007", "777777"]);
     let family = vec![(x.clone(), y.clone())];
     assert!(crate::transducer::raster::ground_of(&family).holds(&0), "the framed interior is a candidate");
     let bodies = crate::transducer::raster::on_ground(Ground::One(0), || perceive(&x));
@@ -89,7 +89,7 @@ fn unscoped_reader_never_defaults_to_zero() {
     assert_eq!(crate::transducer::raster::ground(), Ground::None);
     assert!(!crate::transducer::raster::is_ground(0), "0 is no ground by default");
     assert_eq!(crate::transducer::raster::void(), Err(Unground::Unscoped));
-    let g = grid(&["00", "01"]);
+    let g = digits(&["00", "01"]);
     assert_eq!(crate::transducer::raster::painted_sites(&g).len(), 4, "every site is painted");
     let inside = crate::transducer::raster::on_ground(Ground::One(0), || crate::transducer::raster::painted_sites(&g).len());
     assert_eq!(inside, 1, "on a ground of 0, the one painted site");
@@ -104,9 +104,9 @@ fn unscoped_reader_never_defaults_to_zero() {
 #[test]
 fn on_ground_of_reads_bodies_and_speaks_on_canvas() {
     let family = vec![
-        (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
-        (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
-        (grid(&["0000", "0000", "1100"]), grid(&["0000", "0000", "0011"])),
+        (digits(&["1100", "0000", "0000"]), digits(&["0011", "0000", "0000"])),
+        (digits(&["0000", "1100", "0000"]), digits(&["0000", "0011", "0000"])),
+        (digits(&["0000", "0000", "1100"]), digits(&["0000", "0000", "0011"])),
     ];
     let canvas = on_canvas(&family, 7);
     let (x, _) = &canvas[0];
@@ -117,8 +117,8 @@ fn on_ground_of_reads_bodies_and_speaks_on_canvas() {
     let plain = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the plain family extracts");
     let drawn = extract_rule(&canvas, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family on its canvas extracts");
     assert_eq!(drawn.form.vertices.len(), plain.form.vertices.len(), "one rule, whatever the canvas");
-    let fourth = on_canvas(&[(grid(&["0000", "0000", "0000", "1100"]), grid(&["0000", "0000", "0000", "0011"]))], 7);
+    let fourth = on_canvas(&[(digits(&["0000", "0000", "0000", "1100"]), digits(&["0000", "0000", "0000", "0011"]))], 7);
     let (tx, ty) = &fourth[0];
-    let spoken = crate::transducer::raster::on_ground_of(&canvas, || speak_rule(&drawn, tx, &NoCrystal).and_then(|s| s.grid()));
+    let spoken = crate::transducer::raster::on_ground_of(&canvas, || speak_rule(&drawn, tx, &NoCrystal).and_then(|s| s.sample()));
     assert_eq!(spoken.as_ref(), Some(ty), "spoken onto its own canvas");
 }

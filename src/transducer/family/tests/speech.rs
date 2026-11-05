@@ -14,7 +14,7 @@ use crate::transducer::stalk::Standing;
 #[test]
 fn apply_form_speaks_glued_citation_on_one_perception() {
     crate::transducer::raster::stand_on(0);
-    let (x, y) = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
+    let (x, y) = (digits(&["1100", "0000"]), digits(&["0011", "0000"]));
     let held_form = cipher_form(&x, &y);
     assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
     let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
@@ -61,14 +61,14 @@ fn apply_form_speaks_glued_citation_on_one_perception() {
     assert_eq!(glued, 1, "two statements of one citation are one boundary");
     assert_eq!(citing.cover.len(), 1, "and one incidence");
     let spoken = apply_form(&citing, &x, &identity, &crystal).expect("the citing form speaks");
-    assert_eq!(spoken.grid(), Some(y), "and both citations speak the bar's shift onto it");
+    assert_eq!(spoken.sample(), Some(y), "and both citations speak the bar's shift onto it");
 }
 
 /// An unspellable vertex is unspoken: conformal_of None is not replaced
 /// by an invented identity versor.
 #[test]
 fn apply_form_leaves_unspellable_vertex_unspoken() {
-let x = grid(&["1100", "0000"]);
+let x = digits(&["1100", "0000"]);
 let bodies = perceive(&x);
 // The fixture is one body.
 let [body] = bodies.as_slice() else { panic!("a body") };
@@ -111,8 +111,8 @@ assert!(
 /// An empty class fibre speaks nothing for that vertex and lists it unspoken.
 #[test]
 fn apply_form_leaves_empty_fibre_unspoken() {
-let x = grid(&["1100", "0000"]);
-let y = grid(&["0011", "0000"]);
+let x = digits(&["1100", "0000"]);
+let y = digits(&["0011", "0000"]);
 let mut f = cipher_form(&x, &y);
 // MOVING A VERTEX TO ANOTHER CHART IS REBUILDING ITS MEMBER, because the
 // chart is the key the member is filed under: the vertex keeps its address,
@@ -168,8 +168,8 @@ assert!(
 fn extract_rule_with_unfolds_grow_to_frame() {
     crate::transducer::raster::stand_on(0);
 let family = vec![
-    (grid(&["10", "00"]), grid(&["11", "11"])),
-    (grid(&["100", "000", "000"]), grid(&["111", "111", "111"])),
+    (digits(&["10", "00"]), digits(&["11", "11"])),
+    (digits(&["100", "000", "000"]), digits(&["111", "111", "111"])),
 ];
 let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("unfolds");
 assert!(
@@ -197,8 +197,8 @@ assert!(
 fn extract_rule_comprehends_shift_mirror_dilation() {
     crate::transducer::raster::stand_on(0);
 let family = vec![
-    (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
-    (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
+    (digits(&["1100", "0000", "0000"]), digits(&["0011", "0000", "0000"])),
+    (digits(&["0000", "1100", "0000"]), digits(&["0000", "0011", "0000"])),
 ];
 let family: Vec<(SectionSample, SectionSample)> = family
     .into_iter()
@@ -207,12 +207,12 @@ let family: Vec<(SectionSample, SectionSample)> = family
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the shift family extracts");
 let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
 assert!(rems.iter().all(|r| r.is_empty()), "the family closes: {:?}", rems);
-let spoken = speak_rule(&rule, &grid(&["0000", "0000", "1100"]), &NoCrystal).expect("spoken");
+let spoken = speak_rule(&rule, &digits(&["0000", "0000", "1100"]), &NoCrystal).expect("spoken");
 assert!(spoken.remainder.is_empty(), "the test is reached: {:?}", spoken.remainder);
-assert_eq!(spoken.grid(), Some(grid(&["0000", "0000", "0022"])));
+assert_eq!(spoken.sample(), Some(digits(&["0000", "0000", "0022"])));
 let family = vec![
-    (grid(&["100", "110", "000"]), grid(&["010", "110", "000"])),
-    (grid(&["000", "010", "011"]), grid(&["000", "001", "011"])),
+    (digits(&["100", "110", "000"]), digits(&["010", "110", "000"])),
+    (digits(&["000", "010", "011"]), digits(&["000", "001", "011"])),
 ];
 match extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
     None => {}
@@ -225,15 +225,15 @@ match extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 <
     }
 }
 let family = vec![
-    (grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"])),
-    (grid(&["00", "03"]), grid(&["0000", "0000", "0033", "0033"])),
+    (digits(&["10", "00"]), digits(&["1100", "1100", "0000", "0000"])),
+    (digits(&["00", "03"]), digits(&["0000", "0000", "0033", "0033"])),
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the dilation family extracts");
 assert_eq!(rule.form.ratio, ((2, 1), (2, 1)));
 let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
 assert!(rems.iter().all(|r| r.is_empty()), "the dilation family closes: {:?}", rems);
 let spoken = speak_rule(&rule, &family[0].0, &NoCrystal).expect("dilation spoken");
-assert_eq!(spoken.grid(), Some(family[0].1.clone()));
+assert_eq!(spoken.sample(), Some(family[0].1.clone()));
 }
 
 /// A family whose rule depends on something the form does not carry
@@ -242,8 +242,8 @@ assert_eq!(spoken.grid(), Some(family[0].1.clone()));
 #[test]
 fn extract_rule_withholds_uncomprehended_family() {
 let family = vec![
-    (grid(&["100", "000"]), grid(&["001", "000"])),
-    (grid(&["100", "000"]), grid(&["000", "001"])),
+    (digits(&["100", "000"]), digits(&["001", "000"])),
+    (digits(&["100", "000"]), digits(&["000", "001"])),
 ];
 match extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
     None => {}
@@ -257,8 +257,8 @@ match extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 <
     }
 }
 let disagree = vec![
-    (grid(&["10", "00"]), grid(&["1100", "1100", "0000", "0000"])),
-    (grid(&["10", "00"]), grid(&["110", "110", "000"])),
+    (digits(&["10", "00"]), digits(&["1100", "1100", "0000", "0000"])),
+    (digits(&["10", "00"]), digits(&["110", "110", "000"])),
 ];
 assert!(family_ratio(&disagree).is_none(), "frames that disagree are not one form");
 assert!(extract_rule(&disagree, &mut crate::physics::Physics::default().stroke_n(1 << 20)).is_none(), "the form engine withholds a family it does not extract");
@@ -269,8 +269,8 @@ assert!(extract_rule(&disagree, &mut crate::physics::Physics::default().stroke_n
 fn speak_rule_speaks_shift_family() {
     crate::transducer::raster::stand_on(0);
 let family = vec![
-    (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
-    (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+    (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
+    (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
 ];
 let family: Vec<(SectionSample, SectionSample)> = family
     .into_iter()
@@ -312,12 +312,12 @@ assert!(
     rule.form.faces.len(),
     rule.form.orbits.len()
 );
-let spoken = speak_rule(&rule, &grid(&["1100", "0000"]), &NoCrystal).expect("the test is spoken");
+let spoken = speak_rule(&rule, &digits(&["1100", "0000"]), &NoCrystal).expect("the test is spoken");
 assert!(spoken.remainder.is_empty(), "the test is reached in full: {:?}", spoken.remainder);
-assert_eq!(spoken.grid(), Some(grid(&["0022", "0000"])));
+assert_eq!(spoken.sample(), Some(digits(&["0022", "0000"])));
 }
 
-/// A SPEECH THAT DOES NOT FIT ITS OWN FRAME LAYS DOWN NO GRID.
+/// A SPEECH THAT DOES NOT FIT ITS OWN FRAME LAYS DOWN NO SAMPLE.
 ///
 /// A transported site outside the output rectangle is the condition the
 /// court names `FAIL_PAST_FRAME` — a site landing past the image frame's
@@ -325,9 +325,9 @@ assert_eq!(spoken.grid(), Some(grid(&["0022", "0000"])));
 /// the court refuses.
 ///
 /// Refused, not dropped: laying the rest of the sites down would produce a
-/// grid that silently is not what the form said.
+/// sample that silently is not what the form said.
 #[test]
-fn speech_grid_refuses_site_outside_frame() {
+fn speech_sample_refuses_site_outside_frame() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::family::Speech;
     let fits = Speech {
@@ -341,22 +341,22 @@ fn speech_grid_refuses_site_outside_frame() {
         demanded: [0; 6],
     };
     assert_eq!(
-        fits.grid(),
-        Some(grid(&["000", "000", "005"])),
+        fits.sample(),
+        Some(digits(&["000", "000", "005"])),
         "a site inside the frame is laid down"
     );
     // Row 9 on a 3-row frame.
     let past = Speech { painted: painted(&[(9, 0, 5)]), ..fits.clone() };
-    assert_eq!(past.grid(), None, "a row past the frame's extent refuses");
+    assert_eq!(past.sample(), None, "a row past the frame's extent refuses");
     let wide = Speech { painted: painted(&[(0, 9, 5)]), ..fits.clone() };
-    assert_eq!(wide.grid(), None, "and so does a column past it");
+    assert_eq!(wide.sample(), None, "and so does a column past it");
     // Before the origin is the other half of the same fault.
     let before = Speech { painted: painted(&[(-1, 0, 5)]), ..fits.clone() };
-    assert_eq!(before.grid(), None, "a negative coordinate is not a site of the frame");
+    assert_eq!(before.sample(), None, "a negative coordinate is not a site of the frame");
     // One bad site refuses the whole grid; the good ones are not laid down
     // to stand in for what the form actually said.
     let mixed = Speech { painted: painted(&[(0, 0, 5), (9, 0, 5)]), ..fits };
-    assert_eq!(mixed.grid(), None, "one site outside refuses the speech, not just that site");
+    assert_eq!(mixed.sample(), None, "one site outside refuses the speech, not just that site");
 }
 
 /// Three identical squares in one family are a section: the test
@@ -364,7 +364,7 @@ fn speech_grid_refuses_site_outside_frame() {
 #[test]
 fn speak_rule_recolours_three_identical_squares() {
     crate::transducer::raster::stand_on(0);
-let train_in = grid(&[
+let train_in = digits(&[
     "11011",
     "11011",
     "00000",
@@ -376,7 +376,7 @@ let family = vec![(train_in.clone(), train_out.clone())];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("three squares extract as a section");
 let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("the test is spoken");
 assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
-assert_eq!(spoken.grid(), Some(train_out));
+assert_eq!(spoken.sample(), Some(train_out));
 assert!(
     rule.form.vertices.scoped().any(|(_, v)| matches!(v, Vertex::Word { .. })),
     "the recolour class is one vertex; the chart fibre names the three squares"

@@ -5,15 +5,15 @@
 
 use crate::client::sdk::*;
 
-fn grid(rows: &[&str]) -> crate::transducer::spelled::SectionSample {
+fn digits(rows: &[&str]) -> crate::transducer::spelled::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
 /// The domino painted 2 and carried two columns right, on two rows.
 fn family() -> Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> {
     vec![
-        (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
-        (grid(&["0000", "1100"]), grid(&["0000", "0022"])),
+        (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
     ]
 }
 
@@ -29,7 +29,7 @@ fn judge_on_keeps_home_solve_train_refutes() {
         .expect("and mints");
     use crate::client::sdk::mind::perceive::{judge_on, Judge, SceneKind, Scene, HomeCheck};
     let entity = Mind::open("127.0.0.1:1", Voice::named("solver"));
-    let outs = vec![grid(&["0000", "0000"])];
+    let outs = vec![digits(&["0000", "0000"])];
     // NO RULE: nothing is read, nothing sent — the home check reads a minted
     // rule or nothing (`Judge` carries the rule; a raster is no proof of a
     // motion). Wire v1.2: a task is named by its 32-byte citation.
@@ -37,8 +37,8 @@ fn judge_on_keeps_home_solve_train_refutes() {
     // A TRAIN THE RULE DOES NOT SPEAK: the pairs left unchanged. The voice's
     // own replay refuses it, as the court's would; nothing is sent.
     let other = vec![
-        (grid(&["1100", "0000"]), grid(&["1100", "0000"])),
-        (grid(&["0000", "1100"]), grid(&["0000", "1100"])),
+        (digits(&["1100", "0000"]), digits(&["1100", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "1100"])),
     ];
     // Spoken under the fixture's ground, 0, which the claim states.
     let judge = Judge {

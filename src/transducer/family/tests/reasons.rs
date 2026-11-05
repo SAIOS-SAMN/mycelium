@@ -2,7 +2,7 @@
 // are read off the sentence itself, so the speaker and the court that holds
 // the bytes it was sent read the same reasons.
 
-use super::fixtures::grid;
+use super::fixtures::digits;
 use crate::transducer::element::Element;
 use crate::transducer::sentence::{as_element_form, Reasons, Vertex};
 
@@ -16,8 +16,8 @@ use crate::transducer::sentence::{as_element_form, Reasons, Vertex};
 fn reasons_of_round_trips() {
     crate::transducer::raster::stand_on(0);
     let family = vec![
-        (grid(&["11100", "00000", "00001"]), grid(&["22200", "00000", "00005"])),
-        (grid(&["11110", "00000", "00011"]), grid(&["22220", "00000", "00055"])),
+        (digits(&["11100", "00000", "00001"]), digits(&["22200", "00000", "00005"])),
+        (digits(&["11110", "00000", "00011"]), digits(&["22220", "00000", "00055"])),
     ];
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = crate::transducer::family::extract_rule(&family, &mut budget).expect("a rule");

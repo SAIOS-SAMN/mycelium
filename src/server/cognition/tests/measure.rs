@@ -12,7 +12,7 @@ use crate::transducer::element::{from_connection, translator_versor};
 use crate::transducer::family::local::{form_local, measure_sites};
 use crate::transducer::family::{extract_rule, mint_sentence, site_key, NoCrystal};
 
-fn grid(rows: &[&str]) -> SectionSample {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -40,8 +40,8 @@ fn discharge_on_pays_changed_sites_not_false_pair() {
     crate::transducer::raster::stand_on(0);
     let court = Court::new();
     let family = vec![
-        (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
-        (grid(&["1100", "0000", "0200"]), grid(&["0011", "0000", "0200"])),
+        (digits(&["0000", "1100", "0000"]), digits(&["0000", "0011", "0000"])),
+        (digits(&["1100", "0000", "0200"]), digits(&["0011", "0000", "0200"])),
     ];
     let w = slide();
     let addr = w.address();
@@ -63,7 +63,7 @@ fn discharge_on_pays_changed_sites_not_false_pair() {
 fn transport_on_pays_identity_conjugate_nothing() {
     crate::transducer::raster::stand_on(0);
     let mut court = Court::new();
-    let family = vec![(grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"]))];
+    let family = vec![(digits(&["0000", "1100", "0000"]), digits(&["0000", "0011", "0000"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the slide extracts");
     let held = mint_sentence(&rule, &family, &NoCrystal, 0).expect("the rule mints");
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
@@ -106,8 +106,8 @@ fn gluing_of_reads_closure_beyond_words() {
     crate::transducer::raster::stand_on(0);
     let mut court = Court::new();
     let family = vec![
-        (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
-        (grid(&["0000", "1100"]), grid(&["0000", "0022"])),
+        (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
     ];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a rule extracts");
     let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");

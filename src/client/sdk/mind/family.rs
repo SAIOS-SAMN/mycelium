@@ -321,7 +321,7 @@ pub(crate) fn ascertain_on(epi: &MindLanguage, train: &Family, rule: &SentenceRu
 pub(crate) fn disagreement_on(epi: &MindLanguage, rule: &SentenceRule, x: &crate::transducer::family::SectionSample, y: &crate::transducer::family::SectionSample) -> Result<(), Disagreed> {
     let refused = |kind: usize, said: Option<crate::transducer::family::SectionSample>, demanded: [u64; 6]| Disagreed { kinds: vec![kind], said: said.map(Box::new), demanded };
     let Some(speech) = crate::transducer::family::speak::speak_rule(rule, x, epi) else { return Err(refused(1, None, [0; 6])) };
-    let said = speech.grid();
+    let said = speech.sample();
     if !speech.remainder.is_empty() {
         return Err(refused(2, said, speech.demanded));
     }
@@ -381,7 +381,7 @@ pub(crate) fn tests_spoken(epi: &MindLanguage, rule: &SentenceRule, tests: &[cra
             if occupancy_unspoken {
                 crate::observe::note_mind(|m| m.withheld_tests[1] += 1);
             }
-            spoken.filter(|s| s.remainder.is_empty() && s.unreached.is_empty() && !occupancy_unspoken).and_then(|s| s.grid())
+            spoken.filter(|s| s.remainder.is_empty() && s.unreached.is_empty() && !occupancy_unspoken).and_then(|s| s.sample())
         })
         .collect();
     (outputs, chains)

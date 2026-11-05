@@ -10,7 +10,7 @@ fn stroke(n: usize) -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(n)
 }
 
-fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
+fn digits(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -18,11 +18,11 @@ fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
 /// `wider` it leaves a remainder it does not declare.
 fn fixture() -> (Element, Vec<crate::transducer::family::TrainPair>, Vec<crate::transducer::family::TrainPair>) {
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
-    let (x, y) = (grid(&["1"]), grid(&["2"]));
+    let (x, y) = (digits(&["1"]), digits(&["2"]));
     let one = vec![(x.clone(), y.clone())];
     let rule = extract_rule(&one, &mut stroke(1 << 20)).expect("a recolour is a rule");
     let word = mint_sentence(&rule, &one, &NoCrystal, 0).expect("it closes its own pair");
-    let wider = vec![(x, y), (grid(&["100"]), grid(&["203"]))];
+    let wider = vec![(x, y), (digits(&["100"]), digits(&["203"]))];
     (word, one, wider)
 }
 
