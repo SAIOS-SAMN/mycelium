@@ -1,36 +1,32 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! THE LINEAR PASSAGE AT A CROSSING (LAW-PASSAGE v1, proposal 78.172;
-//! ROADMAP track 24 B3). A crossing moves a reach `R` through a throat of
-//! reach `H` by
+//! THE PASSAGE AT A CROSSING (LAW-PASSAGE v2, proposal 78.172; ROADMAP
+//! track 24 B3): what this shell keeps of it, over the exact rationals.
 //!
-//! ```text
-//!     R  ↦  2H − R
-//! ```
+//! THE LAW IS A PRODUCT IN THE ALGEBRA, NOT A NUMBER. A body's state is an
+//! even multivector `q`; plane `k`'s direction is `v_k = H_k·e_Zk + R_k·e_Qk`
+//! with `e_Zk² = +1` and `e_Qk² = −1`; one crossing in plane `k` is the
+//! one-sided product `q ↦ v_k·q`, never a sandwich, taking even degrees to
+//! odd ones. That product needs the multivector algebra, which this crate
+//! does not reach (it depends on the exact rationals alone), so the product
+//! and its fixtures stand with the multivector algebra, the library's
+//! `transducer::cga` (78.172 §5).
 //!
-//! the reflection of the reach about `H` on one line: first degree and exact
-//! over ℚ, never a square (MU-RECURSION law 11). It is an involution, so the
-//! reverse crossing is the same law, and `H` is its one fixed point. On a
-//! share the same passage is the reflection about ½, `δ ↦ 1 − δ`.
-//!
-//! THE READING. The reach is the gauge of a one-dimensional reading, the
-//! reach along one line (MU-SENSING §3.7), never a scalar standing for a
-//! multivector. It is SIGNED and never clamped: past `2H` the passage is
-//! negative, and the involution returns `R` only because the sign survives.
-//!
-//! WHAT IT REFUSES. A crossing that states a motion other than the passage it
-//! claims is refused [`PassageRefusal::NotLawful`], naming the claimed reach
-//! against the reconstructed `2H − R`, never admitted on the law's name. The
-//! throat sphere's inversion `H²/R` is such a motion: it squares `H`, and it
-//! agrees with the passage only at the throat itself, where both fix `H`.
-//! A reach held as anything but an exact rational (LAW-FIELD's `NotExact`)
-//! has no entry here: every reach and throat is a [`Q`], so a float is
-//! unwritable.
+//! WHAT STANDS HERE. A crossing moves no reach: the reach it carries in and
+//! the throat's reach both stand in `v_k·q`, in exchanged places, and
+//! nothing is squared. So a crossing that states a moved reach is refused
+//! [`PassageRefusal::NotLawful`], naming the claimed reach against the reach
+//! carried in. The throat sphere's inversion `H²/R` is such a claim: it
+//! squares `H` (MU-RECURSION law 11), and it names the carried reach only at
+//! the throat, where `R = ±H`. A share's reading from a plane's other
+//! axis, `δ ↦ 1 − δ`, is [`pass_share`]. A reach held as anything but an
+//! exact rational (LAW-FIELD's `NotExact`) has no entry here: every reach
+//! and throat is a [`Q`], so a float is unwritable.
 //!
 //! ```compile_fail
-//! // A float reach is not a reach: the passage takes exact rationals only.
+//! // A float reach is not a reach: the crossing reads exact rationals only.
 //! let throat = forms::passage::Throat::at(forms::Q::from_integer(1.into()));
-//! let _ = throat.pass(&0.5_f64);
+//! let _ = throat.verify(&0.5_f64, &0.5_f64);
 //! ```
 
 use crate::Q;
@@ -41,21 +37,22 @@ use num_traits::{One, Signed};
 pub const LAW_ID: &str = "FORMS-PASSAGE";
 
 /// The law's version: an amendment raises it.
-pub const LAW_VERSION: u16 = 1;
+/// FORMAT: the law version of LAW-PASSAGE v2 (proposal 78.172).
+pub const LAW_VERSION: u16 = 2;
 
-/// WHY A CROSSING'S PASSAGE, OR A SHARE, IS REFUSED, by name and with the
-/// reading that caused it.
+/// WHY A CROSSING'S STATED REACH, OR A SHARE, IS REFUSED, by name and with
+/// the reading that caused it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PassageRefusal {
-    /// The crossing's stated reach is not the linear passage: the breach,
-    /// the claim against the reconstruction.
+    /// The crossing states a moved reach: the breach, the claim against the
+    /// reach carried in.
     NotLawful(Box<Breach>),
     /// A share outside `[0, 1]`: the value as presented.
     NotShare(Box<Q>),
 }
 
-/// A BREACH OF THE PASSAGE: the reach a crossing states, and the reach
-/// `2H − R` reconstructed under the law from what it carried in.
+/// A BREACH OF THE PASSAGE: the reach a crossing states, and the reach it
+/// carried in, which the passage leaves unmoved.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Breach {
     pub claimed: Q,
@@ -80,33 +77,28 @@ impl Throat {
         &self.reach
     }
 
-    /// THE LINEAR PASSAGE of reach `r` through this throat: `2H − r`, exact
-    /// and signed.
-    pub fn pass(&self, r: &Q) -> Q {
-        let two = Q::from_integer(2.into());
-        two * &self.reach - r
-    }
-
     /// A CROSSING READ UNDER THE LAW: the reach `r` it carries in and the
-    /// reach `claimed` it states on the far side. The passage is
-    /// reconstructed from `r` and the throat, and the claim is admitted only
-    /// on that exact object; any other motion is refused `NotLawful`, naming
-    /// the claim against the reconstruction.
+    /// reach `claimed` it states on the far side. The passage moves no
+    /// reach, so the claim is admitted only where it is `r`; a moved reach
+    /// (the inversion `H²/R` among them) is refused `NotLawful`, naming the
+    /// claim against `r`.
     pub fn verify(&self, r: &Q, claimed: &Q) -> Result<Q, PassageRefusal> {
-        let reconstructed = self.pass(r);
-        match claimed == &reconstructed {
-            true => Ok(reconstructed),
-            false => Err(PassageRefusal::NotLawful(Box::new(Breach { claimed: claimed.clone(), reconstructed }))),
+        match claimed == r {
+            true => Ok(r.clone()),
+            false => Err(PassageRefusal::NotLawful(Box::new(Breach { claimed: claimed.clone(), reconstructed: r.clone() }))),
         }
     }
 }
 
-/// THE PASSAGE OF A SHARE `δ ∈ [0, 1]`: the linear passage about the throat
-/// at ½, `1 − δ`. A value outside `[0, 1]` is no share, and is refused
-/// `NotShare` with the value.
+/// A SHARE READ FROM A PLANE'S OTHER AXIS (netstratum docs/117 §8.2): a
+/// plane's share `δ ∈ [0, 1]` read from its open axis is `1 − δ` read from
+/// its closed axis, and the reverse. This is a reading of one state from two
+/// faces, never the passage, which is the product `v_k·q` (78.172 §1). A
+/// value outside `[0, 1]` is no share, and is refused `NotShare` with the
+/// value.
 pub fn pass_share(delta: &Q) -> Result<Q, PassageRefusal> {
     match delta.is_negative() || delta > &Q::one() {
         true => Err(PassageRefusal::NotShare(Box::new(delta.clone()))),
-        false => Ok(Throat::at(Q::one() / Q::from_integer(2.into())).pass(delta)),
+        false => Ok(Q::one() - delta),
     }
 }
