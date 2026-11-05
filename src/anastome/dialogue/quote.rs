@@ -71,16 +71,9 @@ pub fn encode_quote_reply(
     encode_quote_reply_within(height, surface, k, items, usize::MAX)
 }
 
-/// Demand/percept reply: `[code][height u64][pressure 4×u64][taught_len u16][taught…]`.
-/// `None` where the taught bytes pass the two-byte length (STD1 3c).
-pub fn encode_outcome_reply(code: u8, height: u64, pressure: &[u64; 4], taught: &[u8]) -> Option<Vec<u8>> {
-    let mut body = outcome_head(code, height, pressure);
-    crate::transducer::address::put_u16_count(&mut body, taught.len())?;
-    body.extend_from_slice(taught);
-    Some(body)
-}
-
-/// The same reply with nothing taught: total, since an empty field fits.
+/// The outcome reply: `[code][height u64][pressure 4×u64][taught_len u16]`,
+/// nothing taught (the demand and percept replies that taught retired with
+/// their acts).
 pub fn encode_outcome(code: u8, height: u64, pressure: &[u64; 4]) -> Vec<u8> {
     let mut body = outcome_head(code, height, pressure);
     body.extend_from_slice(&0u16.to_le_bytes());
@@ -112,7 +105,7 @@ pub fn encode_deferral(code: u8, deficit: &[u64; 4]) -> Vec<u8> {
 }
 
 /// THE OUTCOME REPLY READ BACK — the one reader of the layout
-/// `encode_outcome_reply` writes: the code, the height, the four lanes,
+/// `encode_outcome` writes: the code, the height, the four lanes,
 /// what was taught, and whatever the sender appended after it (a settle
 /// receipt). A frame shorter than it names refuses; nothing is defaulted.
 pub struct OutcomeReply<'a> {

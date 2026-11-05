@@ -711,32 +711,6 @@ pub struct WorkItem {
 /// FORMAT: offset of the served-count field in a quote reply.
 pub const QUOTE_COUNT_AT: usize = 1 + 8 + 32 + 8;
 
-/// docket reply: `[n u32] ( [addr 32][elen u32][element][nv u32][voices 32·nv][μ⃗][Δμ⃗ 32] )…`,
-/// the escrowed μ⃗ four exact rational lanes (`Mu::put`)
-/// — Δμ⃗ is the deflation the word's install measured on a listed demand
-/// (zero when the germ settled nothing on the book): the court's proof of
-/// convergence rides with the word.
-/// The last field is the hypha's k-step at which the word was installed:
-/// the coordinate a court's "since" is read against.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Docket {
-    /// The word's address.
-    pub addr: crate::transducer::address::Address,
-    /// The element itself, as a full tape — the court reconstructs it blind.
-    pub elem: Vec<u8>,
-    /// The voices attesting it.
-    pub voices: Vec<[u8; 32]>,
-    /// The μ⃗ ESCROWED against it: a claim on issuance.
-    pub escrowed: crate::economy::Mu,
-    /// The DEFLATION its install measured on a listed demand — zero when
-    /// the germ settled nothing. The proof of convergence rides with the
-    /// word, and this is not the escrow.
-    pub deflation: [u64; 4],
-    /// The hypha's place on its line at install — the orbit and the act's
-    /// place in it: the coordinate a court's "since" is read against.
-    pub at: crate::chronometry::Place,
-}
-
 /// A SETTLEMENT on the docket: the listing, its chain, the voice, the
 /// utterance that settled it, and the magnitudes before and after as the
 /// hypha measured them. The court reconstructs the utterance and measures for
