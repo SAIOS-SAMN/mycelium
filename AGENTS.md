@@ -115,7 +115,8 @@ What the two commands hold:
   repository's source tree for what the compiler cannot (the reading
   bound, the Euclidean vocabulary, the numbers gate and its register, the
   drift register, the shared-law table against `forms::LAW_IDS`, the
-  repository paths the documents cite; MU-STANDARDS 4.1). They include the durable-admission drill
+  repository paths the documents cite, the changelog fragments;
+  MU-STANDARDS 4.1). They include the durable-admission drill
   (`tests/durable.rs`), which runs under `--release` only. A scoped run
   while working is `cargo test --release` with a filter; it does not
   replace the whole run.
@@ -133,6 +134,13 @@ How the work is held:
 - **One item per commit.** A commit holds one claim, its tests and its
   documents (MU-STANDARDS 5.1); its first line states the claim, its body
   what changed, why, and the results of the two commands.
+- **The changelog is fragments.** A change adds its CHANGELOG entry as a
+  file of its own, `changes/<branch or topic>.md`, holding exactly the
+  entry's markdown, opened by its `### ` heading (a gate test refuses
+  anything else under `changes/`). Nothing is written under
+  `CHANGELOG.md`'s Unreleased; at release time the fragments are
+  assembled into the release's section there, newest first by the commit
+  that added each, and removed.
 - **Merge main before the pull request**, then run the two commands again
   on the merged tree.
 - **The memory cap.** A build runs inside a systemd scope that caps its

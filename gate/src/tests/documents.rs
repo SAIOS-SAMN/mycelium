@@ -1,7 +1,7 @@
 // MU-STANDARDS 7.1 — THE DOCUMENTS NAME WHAT EXISTS, read as tests over the
 // repository's documents beside its code.
 
-use super::super::documents::{cited, lint_documents, Cited};
+use super::super::documents::{cited, lint_documents, lint_fragments, Cited};
 use std::path::{Path, PathBuf};
 
 /// The repository root: the gate's manifest sits one level under it.
@@ -47,6 +47,30 @@ fn lint_documents_refuses_missing_path() {
     assert_eq!(read, 4, "four paths cited");
     assert_eq!(hits.len(), 1, "{hits:?}");
     assert!(hits[0].contains("DOC.md:2") && hits[0].contains("`src/gone.rs`"), "{hits:?}");
+}
+
+/// A changelog fragment is a non-empty markdown file opened by its `### `
+/// heading; an empty file, a file opened otherwise, a heading with no
+/// title and a file of another kind are each refused by name.
+#[test]
+fn lint_fragments_refuses_fragment_without_heading() {
+    let dir = tempfile::tempdir().expect("a directory to write into");
+    let files = [
+        ("entry.md", "### A change\n- what it does\n"),
+        ("empty.md", ""),
+        ("prose.md", "A change without its heading\n"),
+        ("level.md", "## A release, not an entry\n"),
+        ("untitled.md", "### \n- what\n"),
+        ("entry.txt", "### A change\n"),
+    ];
+    for (name, text) in files {
+        std::fs::write(dir.path().join(name), text).expect("written");
+    }
+    let mut hits = Vec::new();
+    let read = lint_fragments(dir.path(), &mut hits).expect("the fragments read");
+    assert_eq!(read, 6);
+    assert_eq!(hits.len(), 5, "{hits:?}");
+    assert!(!hits.iter().any(|h| h.contains("entry.md")), "the entry stands: {hits:?}");
 }
 
 /// The rows of a markdown table's section: the lines of `text` from the

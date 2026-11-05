@@ -40,7 +40,7 @@ is at `0.3.0-rc.3`, signed with a prototype key. Remaining, in order:
 | rc.3 on a test mesh, the signed tag, the peers' re-pins | [#24](https://github.com/SAIOS-SAMN/mycelium/issues/24) | `v0.3.0-rc.3` tagged 2026-11-04, signed with the prototype key ([docs/release-keys/](docs/release-keys/)). `v0.3.0` is tagged from it once the peer kernels' conformance read passes at rc.3. Track 26 S4a, S4b and S7–S9 open v0.4.0 |
 
 **1a. In progress: v0.4.0.** It opens a new break, in which word and
-chart addresses may change (CHANGELOG › Unreleased).
+chart addresses may change (CHANGELOG › Unreleased, held in `changes/`).
 
 | Item | Issue | State |
 |---|---|---|

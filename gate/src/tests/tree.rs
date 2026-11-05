@@ -2,7 +2,7 @@
 // read against the tree it sits in. Each is a test of its own, so a red
 // check never hides another (I4).
 
-use super::super::documents::{documents, lint_documents};
+use super::super::documents::{documents, lint_documents, lint_fragments};
 use super::super::drift::{lint_drift, REGISTER};
 use super::super::euclidean::lint_euclidean;
 use super::super::length::lint_file_length;
@@ -68,6 +68,16 @@ fn documents_cite_only_paths_of_tree() {
     let read = lint_documents(repo(), &files, &mut hits).expect("the documents read");
     eprintln!("documents: {} files, {read} cited paths, {} missing", files.len(), hits.len());
     assert!(hits.is_empty(), "the documents cite what is not in the tree:\n{}", hits.join("\n"));
+}
+
+/// THE UNRELEASED CHANGELOG: every fragment under `changes/` is a non-empty
+/// markdown entry opened by its `### ` heading.
+#[test]
+fn changes_hold_only_titled_fragments() {
+    let mut hits = Vec::new();
+    let read = lint_fragments(&repo().join("changes"), &mut hits).expect("changes/ reads");
+    eprintln!("changes: {read} fragments");
+    assert!(hits.is_empty(), "changes/ holds what is no fragment:\n{}", hits.join("\n"));
 }
 
 /// THE DRIFT REGISTER: each registered guard's type is declared and its

@@ -12,7 +12,7 @@
 - [ ] Definition of done (AGENTS.md) green with main merged in: `cargo clippy --release --workspace --all-targets -- -D warnings` and `cargo test --release --workspace` (quote the results)
 - [ ] A change to the wire or the mesh: `scripts/quickstart` ran green, observer and timeline included
 - [ ] Documentation in step with the code; every citation of a renamed name follows
-- [ ] CHANGELOG entry under Unreleased
+- [ ] CHANGELOG fragment: `changes/<branch or topic>.md`, opened by its `### ` heading
 - [ ] No `cargo fmt` run; files changed by hand only
 
 ## Drift (docs/MU-ANTI-FLATTENING.md clauses 12–14; AGENTS.md)

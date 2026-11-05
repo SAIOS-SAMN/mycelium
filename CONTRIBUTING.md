@@ -53,8 +53,9 @@ Part I.
    Concordance, the wire, the ledger layout, a law version) needs the
    operator's approval.
 3. **Branch and pull request.** One phase of work per pull request: the
-   code, its tests and its documentation together, a CHANGELOG entry under
-   Unreleased, and the template's checklist filled in. The
+   code, its tests and its documentation together, a CHANGELOG fragment
+   under `changes/` ([AGENTS › Definition of done](AGENTS.md#definition-of-done)),
+   and the template's checklist filled in. The
    [Definition of done](AGENTS.md#definition-of-done) holds.
 4. **Review and merge.** A review reads the code against the
    specification and cites the section it holds the code to; a maintainer
@@ -68,7 +69,9 @@ CHANGELOG section ([`docs/MU-RELEASE.md`](docs/MU-RELEASE.md) Part II). The
 release checklist:
 - the [Definition of done](AGENTS.md#definition-of-done) green on the
   tagged tree;
-- the CHANGELOG section final, every API, wire and ledger change named;
+- the CHANGELOG section final, assembled from the fragments under
+  `changes/` (which are then removed), every API, wire and ledger change
+  named;
 - the release candidate `vX.Y.Z-rc.N` run on a test mesh of its own
   genesis, and the run recorded in the release pull request;
 - where the release changes the network contract, its activation point

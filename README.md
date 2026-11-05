@@ -726,6 +726,7 @@ gate/           the gate, as workspace tests over the source tree: reading
 ops/            example systemd unit templates (edit the paths before use)
 scripts/        quickstart, observer, timeline
 tests/          integration tests, the durable-admission drill among them
+changes/        the unreleased CHANGELOG entries, one file per change
 docs/           design specifications
 ```
 

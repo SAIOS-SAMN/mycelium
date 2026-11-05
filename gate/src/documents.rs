@@ -99,6 +99,30 @@ pub fn cited(text: &str) -> Vec<Cited> {
     out
 }
 
+/// THE CHANGELOG FRAGMENTS (AGENTS.md, *Definition of done*): every file
+/// under `dir` is a markdown file (`.md`) holding one entry, opened by its
+/// `### ` heading with a title. A hit per file that is not. Returns the
+/// count of fragments read.
+pub fn lint_fragments(dir: &Path, hits: &mut Vec<String>) -> Result<usize, String> {
+    let entries = std::fs::read_dir(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    let mut read = 0;
+    for e in entries {
+        let p = e.map_err(|e| format!("{}: {e}", dir.display()))?.path();
+        read += 1;
+        let name = p.display();
+        if p.extension().is_none_or(|x| x != "md") || !p.is_file() {
+            hits.push(format!("  {name}: a fragment is a markdown file, `<branch or topic>.md`"));
+            continue;
+        }
+        let text = std::fs::read_to_string(&p).map_err(|e| format!("{name}: {e}"))?;
+        let titled = text.strip_prefix("### ").is_some_and(|rest| rest.lines().next().is_some_and(|t| !t.trim().is_empty()));
+        if !titled {
+            hits.push(format!("  {name}: a fragment opens with its entry's `### ` heading and title"));
+        }
+    }
+    Ok(read)
+}
+
 /// THE DOCUMENTS' PATHS: a hit per cited path of `files` (read relative to
 /// `repo`) that does not exist and whose line does not say it is gone.
 /// Returns the count of cited paths read.

@@ -368,7 +368,10 @@ holds two readings:
    - *the documents' paths* (`documents.rs`, §7.1): every repository path
      cited in backticks in `docs/`, README, AGENTS, CONTRIBUTING, ROADMAP
      and GLOSSARY exists, or its line says it is gone (`retired`,
-     `removed`, `was`). The CHANGELOG is history and is not read.
+     `removed`, `was`). The CHANGELOG is history and is not read;
+   - *the changelog fragments* (`documents.rs`): every file under
+     `changes/` is a non-empty markdown entry opened by its `### `
+     heading ([AGENTS › Definition of done](../AGENTS.md#definition-of-done)).
 2. **The warning reading**: `cargo clippy --release --workspace
    --all-targets -- -D warnings`, the first command of the definition of
    done, over every workspace member (`mycelium`, `algebra`, `forms`,

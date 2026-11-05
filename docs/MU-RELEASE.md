@@ -44,7 +44,7 @@ and convergence or collision brings the branches back into alignment
 
 - One phase per pull request where practical, each leaving the tree green:
   the [Definition of done](../AGENTS.md#definition-of-done) holds,
-  documentation in step, a CHANGELOG entry under Unreleased.
+  documentation in step, a CHANGELOG fragment under `changes/`.
 - Commit form: an imperative subject of at most 72 characters; a body
   saying what changed and why, naming its ROADMAP track or issue; a
   verification line (the two commands' results); the Co-Authored-By trailer
@@ -115,7 +115,8 @@ from them.
 - A **production release** is a tag the operator has authorized after its
   candidate ran on the test mesh. Releases are scheduled: each names its
   candidate period and its activation point (§5) in advance.
-- Each release has a GitHub Release whose notes are its CHANGELOG section.
+- Each release has a GitHub Release whose notes are its CHANGELOG section,
+  assembled from the fragments under `changes/` when the release is cut.
 
 ## 5. Activation at a point of the clock
 
