@@ -39,3 +39,10 @@
   `condense_stroke` stands, and the condensation and torse tests now run
   on it. `physics::equilibrium::consolidate` is unchanged. Proposal 78.157
   marks S3 retired.
+- Retired constants and acts: the constant `ACT_DEMAND_ROUTED` is removed
+  (its byte 0x14 stays in `Action::DemandRouted`, refused at the door);
+  ruling byte 5 (`RULING_ROOT`, no producer, no reader) is retired as 3
+  and 4 are; `ACT_INSTALLED` (no sender, no handler) is of the retired
+  kind, so the door refuses byte 0x22 by name, and `decode_installed` and
+  its `Installed` record are removed; `TransductionRefusal::Unenclosed`,
+  never produced, gives way to the produced `PairRelation::Unenclosed`.

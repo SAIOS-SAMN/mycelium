@@ -2025,7 +2025,8 @@ sensor and where a raster is spoken.
 - **Refusals** (`TransductionRefusal`): `Empty`, `Rank { from, to }`,
   `Spent { need }` (`None` where the bound passes `usize`), `Seam`,
   `Oblique`, `OffSite { turn, period }`, `Mixed { body }`, `Unfactored`,
-  `Sample`, `Unenclosed`; there is no `Ragged`. No constant enters: the
+  `Sample`; there is no `Ragged`, and a pair no signed permutation
+  carries is the relation `PairRelation::Unenclosed`, never a refusal. No constant enters: the
   compartment centre's ½, the envelope radius `r² = Σ eᵢ²/4` and the
   conformal `½‖x‖²` are not used.
 

@@ -270,7 +270,7 @@ A claim that fails is refused by name (`Malformed`, `UnknownPhysics`,
 
 A verified claim is installed under its physics identity and relayed by
 the network's existing exchanges:
-- offers and installs between courts (`ACT_OFFER`, `ACT_INSTALLED`);
+- offers between courts (`ACT_OFFER`);
 - the syllabus streams to enrolled voices;
 - citations by later claims.
 

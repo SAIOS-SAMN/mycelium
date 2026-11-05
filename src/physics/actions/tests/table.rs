@@ -73,6 +73,7 @@ fn of_wire_reads_each_wire_spelling_as_table_action() {
         (d::ACT_PERCEPT, Action::Percept, Kind::Retired),
         (d::ACT_TEACH, Action::Teach, Kind::Retired),
         (d::ACT_DOCKET, Action::Docket, Kind::Retired),
+        (d::ACT_INSTALLED, Action::Installed, Kind::Retired),
     ];
     for (tag, action, kind) in spelled {
         assert_eq!(Action::of_wire(tag), Some(action));
