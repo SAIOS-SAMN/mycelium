@@ -96,8 +96,11 @@ blake3 = "1.8"
 [lints]
 workspace = true
 
-# The lints every crate of the workspace written to these standards takes
-# (`[lints] workspace = true`): the library and the SDK.
+# THE LINT POLICY, ONE TABLE (MU-STANDARDS 4.2): every member takes it
+# with `[lints] workspace = true` (the library, `algebra`, `forms`, `gate`,
+# the SDK and the ARC-AGI-2 decoder), and a deliberate site carries an
+# `#[expect(…, reason = "…")]` (4.3). The definition of done (AGENTS.md)
+# runs clippy over every member and target with `-D warnings`.
 [workspace.lints.rust]
 unsafe_code = "deny"
 
