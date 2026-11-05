@@ -1929,6 +1929,8 @@ Each phase is one commit:
         clause or word address moves; the SDK names change with the
         core's, inside v0.4.0's break. Claim
         `coord_round_trips_and_reads_its_planar_byte_by_role`.
+      - **Built:** `About::Grid` is `About::Sample`, a motion read about
+        the sample's own frame; the codecs keep their bytes.
     - **Decided from existing rulings** (Law VIII; MU-SENSING §5): the
       letters never spell a rank-3 sample plane by plane, since planes
       are peeled, never iterated. A rank-3 task stays `BeyondAlphabet`

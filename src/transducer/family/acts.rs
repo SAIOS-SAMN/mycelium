@@ -477,7 +477,7 @@ fn carriages(form: &Form) -> Result<Vec<Clause>, Unread> {
         if v.projective_eq(&one) {
             return;
         }
-        out.push(Clause { select: Pred::Chart(chart.clone()), act: Act::Carry { motion: v, about: About::Grid, gauge: gauge.to_vec() } });
+        out.push(Clause { select: Pred::Chart(chart.clone()), act: Act::Carry { motion: v, about: About::Sample, gauge: gauge.to_vec() } });
     };
     for (_, v) in form.vertices.entries() {
         match v {
@@ -509,7 +509,7 @@ fn carriages(form: &Form) -> Result<Vec<Clause>, Unread> {
 /// read off the meet, not fixed, so a pair whose distance differs is said
 /// too. A fixed carriage fits each pair and fails the held-out one.
 fn slide_of(c: &Clause, pairs: &[Pair<'_>]) -> Option<Clause> {
-    let Act::Carry { motion, about: About::Grid, gauge } = &c.act else { return None };
+    let Act::Carry { motion, about: About::Sample, gauge } = &c.act else { return None };
     if !gauge.is_empty() {
         return None;
     }
@@ -1354,7 +1354,7 @@ fn read_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], 
     };
     let q = |v: i64| crate::core::Q::from_integer(v.into());
     let motion = crate::transducer::cga::translator_at(&[q(dr), q(dc)]);
-    (vec![Clause { select, act: Act::Echo { motion, about: About::Grid, gauge } }], rest)
+    (vec![Clause { select, act: Act::Echo { motion, about: About::Sample, gauge } }], rest)
 }
 
 /// The square's symmetry `t` (`Act::Tile`'s codes) on a cell `(a, b)` of an
@@ -1403,7 +1403,7 @@ fn shape_bytes(rel: &[(usize, usize)]) -> Vec<u8> {
 }
 
 /// The echo an offer's bytes name: its symmetry, the displacement of the
-/// centres (doubled), and its map. Itself is an echo about the grid; a
+/// centres (doubled), and its map. Itself is an echo about the sample; a
 /// mirror or a turn is carried about each body's own centre.
 fn echo_of(key: &[u8]) -> Option<Act> {
     let (&t, rest) = key.split_first()?;
@@ -1413,7 +1413,7 @@ fn echo_of(key: &[u8]) -> Option<Act> {
     let half = |v: i64| crate::core::Q::new(v.into(), 2.into());
     let slide = crate::transducer::cga::translator_at(&[half(dr), half(dc)]);
     Some(match t {
-        0 => Act::Echo { motion: slide, about: About::Grid, gauge },
+        0 => Act::Echo { motion: slide, about: About::Sample, gauge },
         _ => Act::Echo { motion: slide.geo(&symmetry(t)?), about: About::Body, gauge },
     })
 }

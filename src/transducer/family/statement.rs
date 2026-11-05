@@ -495,7 +495,7 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut SectionSample
             for &b in sel {
                 let v = match (fixed, t.about) {
                     (true, _) => None,
-                    (false, About::Grid) => Some(t.motion.clone()),
+                    (false, About::Sample) => Some(t.motion.clone()),
                     (false, About::Body) => {
                         let centre = seen.centre(b).ok_or(Unstated::OffSubstrate)?;
                         let to = crate::transducer::cga::translator_at(&centre);

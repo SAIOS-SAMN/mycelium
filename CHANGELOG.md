@@ -22,6 +22,11 @@ such change is named here.
   `mycelium_sdk::rule`) names the first or the second space axis of
   `Perspective::plane` by its place in the plane, never as a row or a
   column. Claim `coord_round_trips_and_reads_its_planar_byte_by_role`.
+- **`About::Grid` is `About::Sample`** (SDK surface, `mycelium_sdk::rule::About`):
+  a carriage or an echo read about the sample's own frame, beside
+  `About::Body`. The clause and element codecs keep their bytes (a
+  carriage's `about` 0, an echo's tag 9), so no clause or word address
+  moves.
 
 ### The chart's pairs, the anchor and the clause tables held as section sites (track 26 S4d, stage 2c)
 - **Network contract:** no wire byte, act, encoding or ledger layout

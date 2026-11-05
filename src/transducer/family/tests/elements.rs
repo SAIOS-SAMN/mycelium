@@ -48,7 +48,7 @@ fn gloss_inverts_lower_on_every_act() {
         Act::Repaint { paint: Paint::Of(Pred::Hue(3)) },
         Act::Repaint { paint: Paint::Hue(4) },
         Act::Carry { motion: rotator(&q(0), &q(1)), about: About::Body, gauge: vec![(1, 5)] },
-        Act::Echo { motion: shift(0, 2), about: About::Grid, gauge: Vec::new() },
+        Act::Echo { motion: shift(0, 2), about: About::Sample, gauge: Vec::new() },
         Act::Slide { ray: (1, -1), stop: Stop::Contact },
         Act::Extend { ray: (0, 2), paint: Paint::Hue(7), stop: Stop::Border },
         Act::Fill { region: RegionKind::Interior, hue: 4 },
@@ -72,7 +72,7 @@ fn gloss_inverts_lower_on_every_act() {
 }
 
 /// THE IDENTITY CARRIAGE IS THE HUE MAP: a carry by the identity versor —
-/// about the grid or about each body — speaks what the recolour speaks, and
+/// about the sample or about each body — speaks what the recolour speaks, and
 /// its element glosses as the recolour.
 #[test]
 fn speak_clauses_reads_identity_carriage_as_hue_map() {
@@ -83,7 +83,7 @@ fn speak_clauses_reads_identity_carriage_as_hue_map() {
     let recolour = Clause { select: Pred::All, act: Act::Recolour(map.clone()) };
     let want = drawn(speak_clauses(std::slice::from_ref(&recolour), &x, &bodies));
     assert_eq!(want, Ok(grid(&["220", "000", "000"])));
-    for about in [About::Grid, About::Body] {
+    for about in [About::Sample, About::Body] {
         let carry = Clause { select: Pred::All, act: Act::Carry { motion: Mv::scalar(q(1)), about, gauge: map.clone() } };
         assert_eq!(drawn(speak_clauses(std::slice::from_ref(&carry), &x, &bodies)), want, "the identity carried {about:?}");
         let glossed = gloss(&lower(&carry).expect("lowers")).expect("named");
@@ -102,7 +102,7 @@ fn speak_elements_speaks_unnamed_carriage_without_gloss() {
     let echo_to_meet = Lowered {
         select: Pred::Hue(1),
         parts: false,
-        element: RuleElement::Carriage(Carriage { motion: shift(1, 0), about: About::Grid, reach: Reach::Meet(Stop::Contact), trace: Trace::Keeps, paint: Paint::Own, gauge: Vec::new() }),
+        element: RuleElement::Carriage(Carriage { motion: shift(1, 0), about: About::Sample, reach: Reach::Meet(Stop::Contact), trace: Trace::Keeps, paint: Paint::Own, gauge: Vec::new() }),
     };
     assert_eq!(drawn(speak_elements(std::slice::from_ref(&echo_to_meet), &x, &bodies)), Ok(grid(&["0100", "0000", "0100", "2222"])));
     assert!(gloss(&echo_to_meet).is_none(), "no act names it");
@@ -120,7 +120,7 @@ fn substrate_step_iterates_translation_and_refuses_turn() {
     let spun = Lowered {
         select: Pred::All,
         parts: false,
-        element: RuleElement::Carriage(Carriage { motion: turn, about: About::Grid, reach: Reach::Meet(Stop::Border), trace: Trace::Clears, paint: Paint::Own, gauge: Vec::new() }),
+        element: RuleElement::Carriage(Carriage { motion: turn, about: About::Sample, reach: Reach::Meet(Stop::Border), trace: Trace::Clears, paint: Paint::Own, gauge: Vec::new() }),
     };
     assert_eq!(drawn(speak_elements(&[spun], &x, &bodies)), Err(Unstated::Still));
 }
@@ -144,7 +144,7 @@ fn kept_slide() -> Lowered {
     Lowered {
         select: Pred::Hue(1),
         parts: false,
-        element: RuleElement::Carriage(Carriage { motion: shift(1, 0), about: About::Grid, reach: Reach::Meet(Stop::Contact), trace: Trace::Keeps, paint: Paint::Own, gauge: Vec::new() }),
+        element: RuleElement::Carriage(Carriage { motion: shift(1, 0), about: About::Sample, reach: Reach::Meet(Stop::Contact), trace: Trace::Keeps, paint: Paint::Own, gauge: Vec::new() }),
     }
 }
 
@@ -202,10 +202,10 @@ fn take_elements_refuses_named_or_uncanonical_carriage() {
     slide[trace_at] = 0; // Trace::Clears — the slide's own element
     assert!(read(&slide).is_none(), "a slide is written as a slide");
     let about_at = trace_at - 3;
-    assert_eq!(base[about_at], 0, "About::Grid where the tail puts it");
+    assert_eq!(base[about_at], 0, "About::Sample where the tail puts it");
     let mut body = base.clone();
     body[about_at] = 1; // About::Body
-    assert!(read(&body).is_none(), "an iterated translation is read about the grid");
+    assert!(read(&body).is_none(), "an iterated translation is read about the sample");
     assert!(read(&base).is_some(), "the canonical tape reads");
 }
 

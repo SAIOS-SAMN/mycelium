@@ -309,7 +309,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
                 if !cga::is_versor(m) {
                     return Err(NoRule::NotAVersor);
                 }
-                let about = if matches!(s, Step::InPlace(_)) { About::Body } else { About::Grid };
+                let about = if matches!(s, Step::InPlace(_)) { About::Body } else { About::Sample };
                 if pending.as_ref().is_some_and(|p| p.about != about && !p.v.sub(&element::identity_versor()).is_zero()) {
                     flush(&mut pending, &mut out, &select);
                 }
@@ -329,7 +329,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
                     out.push(Clause { select: select.clone(), act: Act::Fill { region: r, hue } });
                 }
                 None => {
-                    let p = pending.get_or_insert_with(|| Pending::new(About::Grid));
+                    let p = pending.get_or_insert_with(|| Pending::new(About::Sample));
                     named_into(&mut p.sigma, map);
                     for (_, to) in p.sigma.iter_mut() {
                         *to = hue_under(map, *to).ok_or(NoRule::NotAHueMap)?;

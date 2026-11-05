@@ -5,7 +5,7 @@
 //!
 //! A clause's act names in English what is done to its selection; the
 //! element is what is done, as geometry. Six of the acts are one element, a
-//! CARRIAGE: a versor of `Cl(4,1)(ℚ)` read about the grid or about each
+//! CARRIAGE: a versor of `Cl(4,1)(ℚ)` read about the sample or about each
 //! body, applied once or iterated to its meet, the source cleared or kept or
 //! the path swept, the landed cells each painted its own hue, a named one, or a
 //! partner's, then mapped by a gauge. `Recolour` and `Repaint` are the
@@ -51,7 +51,7 @@ pub enum Trace {
     Sweeps,
 }
 
-/// A CARRIAGE: the selected bodies carried by `motion`, about the grid or
+/// A CARRIAGE: the selected bodies carried by `motion`, about the sample or
 /// about each body's own centre, as far as `reach`, leaving `trace`; each
 /// landed cell painted `paint` (its own hue, a named one, or its partner's)
 /// and mapped by `gauge`.
@@ -132,12 +132,12 @@ fn carriage(motion: Mv, about: About, reach: Reach, trace: Trace, paint: Paint, 
 
 fn lower_act(act: &Act) -> Option<RuleElement> {
     Some(match act {
-        Act::Recolour(map) => carriage(still(), About::Grid, Reach::Once, Trace::Clears, Paint::Own, map.clone()),
-        Act::Repaint { paint } => carriage(still(), About::Grid, Reach::Once, Trace::Clears, paint.clone(), Vec::new()),
+        Act::Recolour(map) => carriage(still(), About::Sample, Reach::Once, Trace::Clears, Paint::Own, map.clone()),
+        Act::Repaint { paint } => carriage(still(), About::Sample, Reach::Once, Trace::Clears, paint.clone(), Vec::new()),
         Act::Carry { motion, about, gauge } => carriage(motion.clone(), *about, Reach::Once, Trace::Clears, Paint::Own, gauge.clone()),
         Act::Echo { motion, about, gauge } => carriage(motion.clone(), *about, Reach::Once, Trace::Keeps, Paint::Own, gauge.clone()),
-        Act::Slide { ray, stop } => carriage(translation(*ray), About::Grid, Reach::Meet(*stop), Trace::Clears, Paint::Own, Vec::new()),
-        Act::Extend { ray, paint, stop } => carriage(translation(*ray), About::Grid, Reach::Meet(*stop), Trace::Sweeps, paint.clone(), Vec::new()),
+        Act::Slide { ray, stop } => carriage(translation(*ray), About::Sample, Reach::Meet(*stop), Trace::Clears, Paint::Own, Vec::new()),
+        Act::Extend { ray, paint, stop } => carriage(translation(*ray), About::Sample, Reach::Meet(*stop), Trace::Sweeps, paint.clone(), Vec::new()),
         Act::Fill { region, hue } => RuleElement::Chain { region: *region, hue: *hue },
         Act::Connect { paint } => RuleElement::Join { corner: None, paint: paint.clone() },
         Act::Bend { to, paint } => RuleElement::Join { corner: Some(to.clone()), paint: paint.clone() },
@@ -186,12 +186,12 @@ fn gloss_carriage(t: &Carriage) -> Option<Act> {
 
 /// THE CARRIAGE AS ONE TAPE WRITES IT: where the frame it is read about does
 /// not move what it says — the identity, or a translation iterated, which
-/// every body's centre conjugates to itself — it is read about the grid;
+/// every body's centre conjugates to itself — it is read about the sample;
 /// and one application sweeps as it keeps.
 fn canonical(t: &Carriage) -> Carriage {
     let mut t = t.clone();
     if matches!(t.reach, Reach::Meet(_)) || t.motion.projective_eq(&still()) {
-        t.about = About::Grid;
+        t.about = About::Sample;
     }
     if t.reach == Reach::Once && t.trace == Trace::Sweeps {
         t.trace = Trace::Keeps;
@@ -211,7 +211,7 @@ fn put_unglossed(buf: &mut Vec<u8>, l: &Lowered, t: &Carriage) {
     let t = canonical(t);
     t.motion.put_canonical(buf);
     buf.push(match t.about {
-        About::Grid => 0,
+        About::Sample => 0,
         About::Body => 1,
     });
     match t.reach {
@@ -238,7 +238,7 @@ fn take_unglossed(k: &[u8], p: &mut usize, select: Pred) -> Option<Lowered> {
     };
     let motion = Mv::from_bytes(k, p)?;
     let about = match take_byte(k, p)? {
-        0 => About::Grid,
+        0 => About::Sample,
         1 => About::Body,
         _ => return None,
     };
