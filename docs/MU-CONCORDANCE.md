@@ -583,3 +583,91 @@ UNCHANGED, and why:
   are as stated; the amendment says where the two meet.
 
 (end of draft 4)
+
+## 12. Proposed amendment (draft 5), 2026-11-05: LAW-PASSAGE v2
+
+**Proposed amendment (draft 5): not signed, not in force.** Mycelium
+proposes it under §0 AMENDING, for the maintainer's approval, from:
+- the operators' rulings of 2026-11-05: the passage law, and the
+  algebra's signature as data;
+- the joint read of proposal
+  [78.172](proposals/78.172-law-passage.md), whose four fixtures were
+  agreed by mycelium, netstratum and xylarium on 2026-11-05 (MU-RELEASE §3a,
+  step 4).
+
+It is independent of draft 4. If approved, it is written into §2 as a new
+clause and an amended 2.10, and binds a kernel when that kernel signs
+them (§0, 9.3).
+
+PROPOSED, 2.10 (the innermost shell's algebra; two phrases amended):
+> - In THE INNERMOST SHELL: "exact over ℚ in `Cl(n+1, 1)`(ℚ), `n` read
+>   from the data" becomes "exact over ℚ in `Cl(p, q)`(ℚ), the rank and
+>   the signature read from the data (the conformal `Cl(n+1, 1)` for a
+>   perception; a value's own negative generators otherwise)".
+> - In OBSERVER: "a versor of `Cl(n+1, 1)`(ℚ)" becomes "a versor of the
+>   algebra the reading lives in". Two readings of different signatures
+>   are never composed: the product of two values whose signatures
+>   disagree on a generator both hold is refused by name.
+
+PROPOSED, 2.11 (a new clause):
+> 2.11 THE PASSAGE AT A CROSSING, LAW-PASSAGE v2 (ruled 2026-11-05;
+> fixtures agreed 2026-11-05).
+> - THE STATE AND THE PLANE. A body's state is an even multivector `q`.
+>   Plane `k`'s direction is the degree-1 element
+>   `v_k = H_k·e_Zk + R_k·e_Qk`, with `e_Zk² = +1` and `e_Qk² = −1`. The
+>   metric is fixed per plane; which generator is `Z` is a labelling the
+>   state carries.
+> - ONE CROSSING is the one-sided product `q ↦ v_k·q`, never a sandwich.
+>   It takes even degrees to odd ones, so the crossing's two sheets are the
+>   state's two parities. Where `v_k` is null, `v_k·v_k·q = 0`, and the
+>   crossing is one-way. Passages in different planes anticommute, so
+>   their order is held in the state's sign.
+> - NO REACH MOVES. A crossing's reach out is its reach in. A crossing
+>   stating any other reach (`2H − R`, `H²/R`, or any other) is refused
+>   `NotLawful`, naming the claim and the reach carried in. Nothing in the
+>   law squares a reach.
+> - THE SHARE is read, never passed: `δ ↦ 1 − δ` is a plane's share read
+>   from its other axis.
+> - FIXTURES (every kernel reconstructs these exact objects to sign this
+>   clause):
+>   1. `v = e_Z1 + e_Q1` gives `v·v·q = 0` for the `q` of fixture 2.
+>   2. `v = e_Z1 + 2·e_Q1` and `q = 3 + 2·e_Z2Z3 + e_Z1Q2`: `v·q` lies on
+>      degrees 1 and 3 only.
+>   3. `[e_Z1Q1, e_Z1Q2] = −2·e_Q1Q2`, the commutator unhalved
+>      (`AB − BA`).
+>   4. `(e_Z1Z2 + e_Q1Z2)² = 0`.
+> - NOT YET LAW: the size of a double pass off the horizon
+>   (`v_k·v_k = H_k² − R_k²`, which squares) and the rule for ties of two
+>   planes at their horizons. Each enters as a new version of this clause,
+>   with its own fixtures.
+
+PROPOSED, 0.1 (the scope map): 2.11 is a **Network** clause, enforced at
+the universal core tube: a crossing that depends on it is reconstructed
+under it, or refused by name (MU-HOSTING §5a.10). The amended 2.10 stays
+in the row it already holds.
+
+WHAT LANDING NEEDS, before it can be signed (Mycelium's engineering, not a
+term of the clause):
+- **B2, signing by adjudicated reading** (§0, ROADMAP track 24). No
+  kernel can yet sign a clause by reconstructing its fixtures. Until B2
+  lands, the agreement stands as the joint read recorded in 78.172 §5, and
+  nothing is refused `NotSignatory` for this clause.
+- **The algebra in the core shell.** 2.10 puts the law forms in `forms`,
+  which depends on the exact core alone. The product lives today in
+  `transducer::cga` (`Clifford::product`), which `forms` cannot reach
+  without a dependency cycle. The signature-carrying algebra moves into
+  the exact core, so that `forms` holds the passage whole.
+- **B3, enforcement at the vertex.** The hypha reconstructs a crossing
+  under 2.11 at the universal core tube.
+- **Release.** The clause activates at a TUniversal point in a signed
+  release (MU-RELEASE §3a step 10). The target is v0.4.0, and the peers
+  re-pin by tag.
+
+UNCHANGED, and why:
+- **1.2, 1.5, 2.6.** No flattening, exactness, and throat size as mass all
+  stand. The passage moves a state, never a throat or a mass.
+- **A7 (divergent paths).** Every signatory read the four fixtures alike,
+  so there is no ruled divergence. LAW-PASSAGE v2 is L0's single law, in
+  the core shell.
+
+(end of draft 5)
