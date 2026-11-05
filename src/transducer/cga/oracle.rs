@@ -15,7 +15,7 @@
 //! (`sources/arc-agi/tests/oracle.rs`, ROADMAP track 26 S1), reads it and
 //! takes the readings again (§6.4: verification never writes).
 
-use super::{self as cga, Mv};
+use super::{self as cga, Conjugacy, Mv};
 use num_rational::BigRational;
 
 /// The golden file, from the repository's root.

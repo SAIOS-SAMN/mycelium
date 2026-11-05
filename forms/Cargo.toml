@@ -3,7 +3,8 @@
 #
 # THE LAW FORMS (CONCORDANCE 2.10): the innermost shell, hosted by mycelium,
 # linked by each kernel by path at a pinned commit. It depends on the exact
-# rationals alone — never on the mind or the court.
+# rationals and the exact algebra over them (`algebra/`, the multivectors of
+# `Cl(p, q)`) alone — never on the mind or the court.
 [package]
 name = "forms"
 version = "0.3.0-rc.3"
@@ -13,6 +14,7 @@ license = "Apache-2.0"
 rust-version = "1.82"
 
 [dependencies]
+algebra = { path = "../algebra" }
 num-rational = "0.4"
 num-bigint = "0.4"
 num-traits = "0.2"

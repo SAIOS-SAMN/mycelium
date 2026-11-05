@@ -1,5 +1,5 @@
 // MU-STANDARDS 4.1 — THE GATES THE COMPILER CANNOT READ, over `src/`,
-// `forms/src/`, `sdk/src/` and `xtask/`: the reading bound (§4.1), the Euclidean grid vocabulary
+// `algebra/src/`, `forms/src/`, `sdk/src/` and `xtask/`: the reading bound (§4.1), the Euclidean grid vocabulary
 // (law 2, rule 15, the Anti-Flattening Law), the numbers gate (MU-STANDARDS
 // 2.12, MU-DERIVATIONS D1.4) and the drift register (MU-ANTI-FLATTENING
 // *Drift guards*). Every other rule is a clippy lint (§4.2) or a type
@@ -29,7 +29,7 @@ pub fn run() -> Result<(), String> {
     // The bound is about reading, so it covers the gate binary and every
     // workspace member's source too.
     let bounded: Vec<PathBuf> = match root.parent() {
-        Some(up) => vec![root.clone(), up.join("forms/src"), up.join("sdk/src"), up.join("xtask")],
+        Some(up) => vec![root.clone(), up.join("algebra/src"), up.join("forms/src"), up.join("sdk/src"), up.join("xtask")],
         None => vec![root.clone()],
     };
     let mut hits = Vec::new();

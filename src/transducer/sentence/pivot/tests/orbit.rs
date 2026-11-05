@@ -4,6 +4,7 @@
 use super::fixtures::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Word;
+use crate::transducer::cga::Conjugacy;
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self, Standing};

@@ -3,7 +3,7 @@
 //! DATA: the mask of its negative generators carried beside its `n`, every
 //! composition refusing two signatures that disagree, never coercing one.
 
-use super::multivector::{axes, n_of_mask, Mv, EM, EP, MAX_N};
+use crate::multivector::{axes, n_of_mask, Mv, EM, EP, MAX_N};
 use num_rational::BigRational;
 
 /// WHY A VALUE OF `Cl(p, q)` IS REFUSED, by name, with the generators that
@@ -27,7 +27,7 @@ pub enum SignatureRefusal {
 /// [`Clifford::of_conformal`], the inclusion.
 ///
 /// ```compile_fail,E0599
-/// use mycelium::transducer::cga::{Clifford, Mv, E1};
+/// use algebra::{Clifford, Mv, E1};
 /// let one = num_rational::BigRational::from_integer(1.into());
 /// let a = Clifford::of_conformal(&Mv::blade(E1, one));
 /// // An unchecked product of a value of `Cl(p, q)` is unwritable.

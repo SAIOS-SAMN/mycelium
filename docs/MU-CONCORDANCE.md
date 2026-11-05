@@ -652,11 +652,14 @@ term of the clause):
   kernel can yet sign a clause by reconstructing its fixtures. Until B2
   lands, the agreement stands as the joint read recorded in 78.172 §5, and
   nothing is refused `NotSignatory` for this clause.
-- **The algebra in the core shell.** 2.10 puts the law forms in `forms`,
-  which depends on the exact core alone. The product lives today in
-  `transducer::cga` (`Clifford::product`), which `forms` cannot reach
-  without a dependency cycle. The signature-carrying algebra moves into
-  the exact core, so that `forms` holds the passage whole.
+- **The algebra in the core shell. Done (2026-11-05).** 2.10 puts the law
+  forms in `forms`, which depends on the exact core alone. The
+  signature-carrying algebra (`Mv`, `Clifford`, the product and the
+  codec) now stands in the workspace crate `algebra`, below both `forms`
+  and the library and depending on the exact rationals alone; the
+  library re-exports it at `transducer::cga`. `forms::passage` holds the
+  passage whole: `pass(v, q)`, the one-sided product, with the four
+  fixtures as its claims (`FORMS-PASSAGE` v3; 78.172 §5).
 - **B3, enforcement at the vertex.** The hypha reconstructs a crossing
   under 2.11 at the universal core tube.
 - **Release.** The clause activates at a TUniversal point in a signed

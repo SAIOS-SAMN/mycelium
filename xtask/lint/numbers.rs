@@ -6,7 +6,7 @@
 //! rules N1–N5 of MU-DERIVATIONS D1.4:
 //!
 //! - **N1, scope.** Every `const`, `static`, impl `const` and trait `const`
-//!   with a default under `src/`, `forms/src/` and `xtask/`, except items
+//!   with a default under `src/`, `algebra/src/`, `forms/src/` and `xtask/`, except items
 //!   under `#[cfg(test)]` (on the item or an enclosing module) and files
 //!   under a `tests/` directory or named `tests.rs`.
 //! - **N2, numeric type.** The item's type (references stripped, array,
@@ -43,10 +43,10 @@ const NUMERIC: [&str; 17] = [
 ];
 
 /// The roots N1 reads.
-const SCOPE: [&str; 3] = ["src", "forms/src", "xtask"];
+const SCOPE: [&str; 4] = ["src", "algebra/src", "forms/src", "xtask"];
 
 /// The roots whose `#[test]` fns an `EXACT:` tag may name.
-const TEST_ROOTS: [&str; 6] = ["src", "forms", "sdk", "xtask", "tests", "examples"];
+const TEST_ROOTS: [&str; 7] = ["src", "algebra", "forms", "sdk", "xtask", "tests", "examples"];
 
 /// The instruments, where a `MEASURED:` item may stand.
 const INSTRUMENTS: [&str; 3] = ["src/bin/", "src/observe/", "xtask/"];

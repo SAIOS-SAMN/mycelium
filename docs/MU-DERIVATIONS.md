@@ -4,7 +4,7 @@
 
 > **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *universes* are hosted simulations. Physical terms name the simulations' exact geometry. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
-> **Components:** every numeric item and literal site under `src/`, `forms/src/` and `xtask/`; the register of open physics (`src/physics/axioms/founding.rs`) and its gate (`xtask/lint/`).
+> **Components:** every numeric item and literal site under `src/`, `algebra/src/`, `forms/src/` and `xtask/`; the register of open physics (`src/physics/axioms/founding.rs`) and its gate (`xtask/lint/`).
 
 **Status:** specification, version 1 (2026-10-31). Every entry is
 **Specified** but those marked **Built** in §1 (D2.1–D2.4, D3.1, D3.2, and
@@ -848,7 +848,7 @@ specifies its carrier and its gate.
   2.0.117.
   - **N1, scope.** Every `ItemConst`, `ItemStatic`, `ImplItemConst` and
     `TraitItemConst` with a default, in every `.rs` under `src/`,
-    `forms/src/` and `xtask/`. Excluded: items under `#[cfg(test)]` on the
+    `algebra/src/`, `forms/src/` and `xtask/`. Excluded: items under `#[cfg(test)]` on the
     item or on any enclosing `mod`; files under a `tests/` directory or
     named `tests.rs`; the lint's own fixture strings.
   - **N2, numeric type.** The item's type, with references stripped and

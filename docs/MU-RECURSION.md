@@ -979,7 +979,7 @@ read at the cited function. "Stands" has the same sense in 0.3–0.5.
 
 | master | as stated | site in the tree | physics over it | stands |
 |---|---|---|---|---|
-| **M1 Vertex identity** (17.1) | a word, rotor or versor reduces to one canonical form and one key; equality is key equality or projective equality of rays `a_i b_k = a_k b_i`, never a digest; a versor is known by its action `m eᵢ m̃ ∈ grade 1`, never by `Φ Φ̃` as a sum of squares (78.28); the ray's inverse is its reverse | `transducer/alphabet/{word,rotor,plane,factor}.rs` (A1–A3), `cga/multivector.rs` (A4, `projective_eq`), `cga/group.rs` (`is_versor`), `element/vertex.rs` (`same_vertex`) | law 1 (ℚ only), law 2 (a key is coordinates), law 11 (no squaring), EQ1 (rays equal by proportion, 78.12), A21 | landed; governs. EQ1 landed. VA1's reader landed: `is_versor` reads by action — the twisted adjoint carries every generator to an independent vector and `I` to its own line (`cga/group.rs`; `Rotor::is_versor` the same on the rotor); what may stay open is only the sweep of the sites that divide by the weight (VA1-inverse) |
+| **M1 Vertex identity** (17.1) | a word, rotor or versor reduces to one canonical form and one key; equality is key equality or projective equality of rays `a_i b_k = a_k b_i`, never a digest; a versor is known by its action `m eᵢ m̃ ∈ grade 1`, never by `Φ Φ̃` as a sum of squares (78.28); the ray's inverse is its reverse | `transducer/alphabet/{word,rotor,plane,factor}.rs` (A1–A3), `algebra/src/multivector.rs` (A4, `projective_eq`), `cga/group.rs` (`is_versor`), `element/vertex.rs` (`same_vertex`) | law 1 (ℚ only), law 2 (a key is coordinates), law 11 (no squaring), EQ1 (rays equal by proportion, 78.12), A21 | landed; governs. EQ1 landed. VA1's reader landed: `is_versor` reads by action — the twisted adjoint carries every generator to an independent vector and `I` to its own line (`cga/group.rs`; `Rotor::is_versor` the same on the rotor); what may stay open is only the sweep of the sites that divide by the weight (VA1-inverse) |
 | **M2 Address derivation** (17.2) | the address IS the form written out, field by field, length-prefixed; the form is read back from its address; a citation is coordinates, never a copy | `transducer/address.rs`, `sentence/chart.rs` (`form_vertex_key`), `element/{vertex,receipts,residue}.rs` | law 2, law 12, K6 (54: the complete key and its inverse; the tape retired), LD0 (78.22: coordinate / address held once / citation) | landed; governs as amended by 54 and 78.22. The snapshot's positional tape is the last carrier off it (78.25, LD3 open) |
 | **M3 Cold-boot migration** (17.3) | bring old stores onto M2 addresses once | `element/record.rs` (`RECORD_MAGIC`; an older record refused by name) | §10: a layout change is a clean break, never a migration | HISTORICAL: RMP1 retired; the tree migrates nothing and refuses the old by one equality |
 | **M4 Chart coordinates** (17.4) | the invariant that places a body, connection, sentence or class on the atlas, exact and identical on every node; refinement appends an axis | `transducer/stalk/` (`Invariant`, `Stalks::refine_axis` and `Stalks::refine_axes`, `stalks.rs`), `blade/` (harmonics, A.11), `sentence/chart.rs` (`chart_of`) | A.11 harmonic completeness, A6 exact axis packing, 71 (n is data) | landed; governs. HL1 open: the harmonic lift as a pencil (78.14) |
@@ -1027,7 +1027,7 @@ two is filed where its test is.
 |---|---|---|---|
 | **Law 1** ℚ only, no roots, no rounding | every carrier and every reading | the whole tree; `rational_sqrt` refuses | governs |
 | **Law 11** no squaring; a square looked for inside a circle is the flattening | every reading of a versor's class | SQ1 census; the sandwich divides the weight out (TR1) | governs; SQ1's residue sites ruled one by one |
-| **Axiom C** (59.8, 72.1) | every invariant a ratio of homogeneous forms of equal degree, carried as numerator and denominator, read only where a classification is asked | `cga/multivector.rs` (`class_invariants`), Study's condition on a ray | governs; T7 open: stated in the register with a test per refusal (REG1) |
+| **Axiom C** (59.8, 72.1) | every invariant a ratio of homogeneous forms of equal degree, carried as numerator and denominator, read only where a classification is asked | `cga/conjugacy.rs` (`class_invariants`), Study's condition on a ray | governs; T7 open: stated in the register with a test per refusal (REG1) |
 | **Precision is the resolution** (78.45, law 4 as amended) | no blob, no approximation, no forward guess: a reading serves the value, the fraction, the rational point, or the sector between two exact marks (the ℚ-protractor, Niven's set; finer marks in `ℚ(ζ_ℓ)`), never a decimal; every master reads the inverse exactly — from the effect to the object — or refuses; the fourth audit question | the whole tree: `Cargo.toml` (`float_arithmetic`, `cast_precision_loss` denied), `core/gaussian.rs` (`rational_sqrt`), `alphabet/rotor.rs` (`half_angle`), Part VI `cyclo` | governs; the tree is float-free (`float_arithmetic` denied); DG1 carries the turn's point-and-sector reading, its decimal retracted |
 | **No constant** (§0.0; was "provenance of a constant", 78.8, checklist (s)) | physics → axiom → theorem → component; a number is read off the field or the geometry, or it is named undefined physics | `physics/axioms/founding.rs` (`NO_CONSTANT`, `OPEN_PHYSICS`), `physics/calibration.rs` | the aperture derived (`2ⁿ` of the sensor base), the floor's `2` the double cover, the challenge window a sealed reach and return (law version 5); named open: the throat grid `2⁻⁶⁴` and the register's other entries |
 
@@ -1463,7 +1463,7 @@ given where the site still exists):
 | `src/transducer/alphabet/word.rs` (`same_form`) | tape-equality arm `(None, None) => self.0 == other.0` | `projective_eq` |
 | `src/transducer/alphabet/plane.rs` (`PlaneForm`) | structural equality on unreduced unit exponents; `form()` did not reduce; `sentence::chart_of` read raw exponents | A3 |
 | `src/transducer/alphabet/rotor.rs` (`Rotor::key`, `coordinate`) | hash of unnormalised coefficients used in the cognition kernel as class key and refinement axis; `PlaneForm::key/coordinate` likewise | A1, A7 |
-| `src/transducer/cga/multivector.rs` (`Mv`, `Versor`) | derived structural equality; `push_cocycle` (`src/server/cognition/cocycle.rs`) compared `old == g` | A4 |
+| `algebra/src/multivector.rs` (`Mv`, `Versor`) | derived structural equality; `push_cocycle` (`src/server/cognition/cocycle.rs`) compared `old == g` | A4 |
 | `src/transducer/element/vertex.rs` (`Element::eq`) | tape bytes plus structural fields; inherited by `Germ`, `Face`, `Nerve` in the sentence module | M1 `same_vertex` |
 | sentence module (`vertex_address`) | wrote raw versor bytes beside geodesic keys | A4 canonical versors |
 | cognition kernel (`composite_parent_id`, `section_address`) | hash links in given order, uncentred; assignment unsorted | A5, M2 |
@@ -1481,7 +1481,7 @@ in one landing (chapter 41, 0.11):
 | site | what it did | replaced by |
 |---|---|---|
 | `src/transducer/alphabet/rotor.rs` (`Rotor::key`), `src/transducer/alphabet/word.rs` (`Word::class_key`), `src/transducer/alphabet/plane.rs` (`PlaneForm::key`) | blake3 over canonical coefficients or conjugacy invariants | the coefficients and invariants written out (A21) |
-| `src/transducer/cga/multivector.rs` (`Mv::key`) | blake3 over canonical versor coefficients | the coefficients written out |
+| `algebra/src/multivector.rs` (`Mv::key`) | blake3 over canonical versor coefficients | the coefficients written out |
 | `src/transducer/element/vertex.rs` (`Element::address`, `form_key_bytes`); `src/transducer/element/residue.rs` (`listing_key`) | blake3 over the M2 composite | the M2 composite itself (17.2) |
 | `src/transducer/stalk/chart.rs` (`Invariant::key`) | blake3 over the exact axes before the trie sees them | the axes' bytes, so `fibre_under` is a prefix read |
 | `src/transducer/sentence/class.rs` (`ClassVector::class_key`, `CLOSED_KEY`) | blake3 over the class vector | the class vector's coordinates; closed is the zero vector |
@@ -3334,7 +3334,7 @@ never a single `(plane, exponent)` pair.
 
 ### 16.4 A4 — Canonical conformal versor
 
-Input: `V: Mv` (cga/multivector.rs; `Versor = Mv`, element/letters.rs). The conformal
+Input: `V: Mv` (algebra/src/multivector.rs; `Versor = Mv`, element/letters.rs). The conformal
 algebra in this tree is `Cl(4,1)` over `{e1, e2, e3, e+, e−}` with squares
 `(+,+,+,+,−)`, `e_o = ½(e− − e+)`, `e_∞ = e− + e+`, masks `E1 = 1, E2 = 2,
 E3 = 4, EP = 8, EM = 16`, thirty-two blades: the conformal model of the
@@ -3362,7 +3362,7 @@ lamina of the sensor, and the sensor refuses to carry it (law 11).
 1. All coefficients zero: refuse.
 2. `i` = least mask with nonzero coefficient; divide by `|c[i]|`; negate if
    `c[i] < 0`. Output `V'` with `c'[i] = +1`.
-3. Equality `Mv::projective_eq(a, b)`: `projective_ratio(a, b)` (`src/transducer/cga/group.rs`) is
+3. Equality `Mv::projective_eq(a, b)`: `projective_ratio(a, b)` (`algebra/src/ray.rs`) is
    `Some(λ)`, `λ ≠ 0`, either sign. The ratio is `λ = ⟨a b̃⟩₀ / ⟨b b̃⟩₀`,
    accepted only when `a b̃` has no component outside grade 0 (the purity
    check the function performs); for a null `b` the test is exact
@@ -6240,7 +6240,7 @@ as it carries `k` (38.1); `blade/`,
 `blade/harmonics.rs`: `d`-dimensional moments and Betti numbers, axes
 prefixed by `d`; `layers.rs`:
 `d`-cube shells; `family/perceive.rs`: `perceive` over frames writes `t`;
-`stalk/chart.rs`: `invariant` on `d`-sites; `cga/multivector.rs`: dimension-generic `Mv`.
+`stalk/chart.rs`: `invariant` on `d`-sites; `algebra/src/multivector.rs`: dimension-generic `Mv`.
 Tests and traces: chapters 39–40.
 
 What does not change under either upgrade: the 17 letters and the
@@ -8599,7 +8599,7 @@ further clauses that the rotor chart `Cl(4,0)` does not move and that a
 boost is never a letter are superseded by U14 and U15 (78.68 as amended):
 a letter is the triad `(g_core, ∇B, ΔB)` and reaches the null cone.
 
-Code: `src/transducer/cga/multivector.rs` (`E1`, `E2`, `E3`, `EP`, `EM`,
+Code: `algebra/src/multivector.rs` (`E1`, `E2`, `E3`, `EP`, `EM`,
 `base_axis`); `src/transducer/cga/embedding.rs` (`e_o`, `e_inf`,
 `point_at`, `base_at`, `sphere_at`, `translator_at`, `rotator`,
 `rotator_on_blade`); `src/transducer/cga/spin.rs` (`transvection`,
@@ -12722,7 +12722,7 @@ Four rules, restating links 2 to 4 of 78.11 on the group side:
 - **(3) The constructors are the foundation (CS1).** A constructor is a reflection, a rational vector `v` with `v² ∈ ℚ*` (a nucleus, a section's sphere, a mirror); a generator is a product of constructors (the tether `V = s_b s_a`, a mode ray, a circuit's holonomy in the circuit's order; Cartan–Dieudonné, 54.7 R4). Generators build new constructors, `Ω v Ω̃` being a reflection again, and the orbit of the constructors under the generators they build is the round's trajectory of 78.11(7); the full orbit closes where the constructors form a finite reflection group and stays open by name where a parabolic or hyperbolic mode carries a constructor off. The modes are a reading of a generator; the generator is built from constructors, never parameterised.
 - **(4) The plumbing is a reading.** Every circuit's reading is taken step by step and kept (PL1): per step the constructors composed, the step's ray and modes, the round carried, the class after the step and the lane drawn, a typed reading served on demand and never printed. OR3: one reader of a circuit's composite, `None` where an edge half is refused; a circuit with no composite is not classed but reads unread at step k with the edge's refusal reason, counted apart from the trivial.
 
-RP1: `s B s⁻¹ = −B` for every non-null `s` in a hyperbolic mode's own plane (the whole pencil through its poles) and `+B` for `s` orthogonal to it, so the relator is reflection within the mode's plane. EQ1: `Mv`'s `==` is projective equality, two rays equal iff the rays' coefficient vectors are proportional, read by cross multiplication. Code: `src/transducer/cga/modes.rs` (`modes`, `rational_roots`, `mode_order`), `src/transducer/cga/motion.rs` (`action_of`, `motion_modes`, `action_det`), `src/transducer/cga/linear.rs` (`LinearFunction::characteristic`), `src/transducer/cga/constructors.rs` (`is_constructor`, `carry`, `constructor_orbit`), `src/transducer/cga/spin.rs` (`versor_of_reflections`), `src/transducer/sentence/pivot/trajectory.rs` (`TraversedCircuit`), `src/transducer/sentence/pivot/refracted.rs` (`PathCarried::composite`), `src/transducer/cech/orbit_algebra.rs` (`CircuitUnread`), `src/transducer/cga/multivector.rs` (`Mv::projective_eq`).
+RP1: `s B s⁻¹ = −B` for every non-null `s` in a hyperbolic mode's own plane (the whole pencil through its poles) and `+B` for `s` orthogonal to it, so the relator is reflection within the mode's plane. EQ1: `Mv`'s `==` is projective equality, two rays equal iff the rays' coefficient vectors are proportional, read by cross multiplication. Code: `src/transducer/cga/modes.rs` (`modes`, `rational_roots`, `mode_order`), `src/transducer/cga/motion.rs` (`action_of`, `motion_modes`, `action_det`), `src/transducer/cga/linear.rs` (`LinearFunction::characteristic`), `src/transducer/cga/constructors.rs` (`is_constructor`, `carry`, `constructor_orbit`), `src/transducer/cga/spin.rs` (`versor_of_reflections`), `src/transducer/sentence/pivot/trajectory.rs` (`TraversedCircuit`), `src/transducer/sentence/pivot/refracted.rs` (`PathCarried::composite`), `src/transducer/cech/orbit_algebra.rs` (`CircuitUnread`), `algebra/src/multivector.rs` (`Mv::projective_eq`).
 
 ### 78.13 A refusal is a coordinate to reconnect from
 
@@ -12882,7 +12882,7 @@ Also: `basis_seq` is a reading of the basis, re-derived at restore and not persi
 3. A weight is never carried as a quantity of a word, rotor or face; the one scalar of `m m̃` read is the Cayley chart's rational root (`cayley_inverse`, 52 as amended by MR1), which refuses by name where the root is not rational.
 4. `v·v` on a vector is the metric and stays (a nucleus's `s² = r²` is the sphere's content, Axiom C); a norm is never formed above grade one.
 
-Row VA1 is the census of every site forming `m m̃`, a weight or a norm, and the sweep to the one action reader. Code: `src/transducer/cga/group.rs` (`is_versor`, `weight_of`), `src/transducer/alphabet/rotor.rs` (`Rotor::is_versor`), `src/transducer/cga/spin.rs` (`cayley_inverse`), `src/transducer/cga/multivector.rs` (`Mv::norm2`).
+Row VA1 is the census of every site forming `m m̃`, a weight or a norm, and the sweep to the one action reader. Code: `src/transducer/cga/group.rs` (`is_versor`, `weight_of`), `src/transducer/alphabet/rotor.rs` (`Rotor::is_versor`), `src/transducer/cga/spin.rs` (`cayley_inverse`), `algebra/src/multivector.rs` (`Mv::norm2`).
 
 ### 78.29 Beyond the planar era: the peel on the modes, hyperbolic reflection systems, the kernel over the stabilizer; five refusals
 
@@ -13947,7 +13947,7 @@ return stands in it (extended by 78.69 and 78.72), else
 `REFUSE_FOLD_NO_TRANSITION`. Lexicon (§0.7): *luminal* means on the null cone,
 `B² = 0` as a multivector; *harmonic* means the versor-invariant spectrum `h`.
 Code: `src/transducer/blade/harmonics.rs` (`Harmonics`),
-`src/transducer/cga/multivector.rs` (`Mv::class_invariants`),
+`src/transducer/cga/conjugacy.rs` (`Conjugacy::class_invariants`),
 `src/transducer/sentence/form/carrier.rs` (`ToralPeriod`),
 `src/transducer/family/pairing.rs` (`carriage_lanes`, `mark_face_carriage`),
 `src/server/cognition/court/ring_carrier.rs` (`RingCarrier`, `step_rank`),
@@ -14333,7 +14333,7 @@ L0 needs a law of accretion and extinction (growth, carving, site-selective
 recolour, creation), or these are a world's own mathematics (78.59 Ruling 4), is
 open. Code: `src/transducer/family/bridge.rs` (`bridge_pair`),
 `src/physics/equilibrium.rs` (`body_of_shape`), `src/physics/laws/mod.rs` (`verify`),
-`src/transducer/cga/group.rs` (`projective_ratio`).
+`algebra/src/ray.rs` (`projective_ratio`).
 
 ### 78.85 The register on the wire: the contract's first slice
 

@@ -1265,16 +1265,19 @@ Concordance hash served and signatures verified. Each phase is one commit:
      §9–§10). Version 1's linear passage `R ↦ 2H − R` was struck on
      2026-11-05.
    - **What `forms` holds** (v0.4.0; no wire or layout change):
-     `forms/src/passage.rs`, shell id `FORMS-PASSAGE` v2.
+     `forms/src/passage.rs`, shell id `FORMS-PASSAGE` v3, the law whole.
+     `pass(v, q)` is the one-sided product over the exact algebra
+     (`algebra::Clifford`, a crate below both `forms` and the library),
+     refusing a `v` that is not degree 1 `PassageRefusal::NotDirection`,
+     a `q` that is not even `NotEven`, and two values whose signatures
+     disagree `Mismatched`, each with the reading that caused it.
      `Throat::verify` refuses a crossing that states a moved reach (the
      throat sphere's `H²/R` among them) `PassageRefusal::NotLawful`,
      carrying the `Breach` (`claimed`, `reconstructed`, the reach carried
      in); `pass_share` reads a share from a plane's other axis,
-     `1 − δ`. The product needs the multivector algebra, which `forms`
-     cannot reach without a dependency cycle, so its four fixtures stand
-     with the algebra: claims on `transducer::cga::Clifford::product` in
-     `src/transducer/cga/tests/passage.rs`, with the horizon one-way and
-     two planes anticommuting over every frame plane the algebra holds.
+     `1 − δ`. The four fixtures are claims on `pass` in
+     `forms/src/tests/crossing.rs`, with the horizon one-way and two
+     planes anticommuting over every frame plane the algebra holds.
    - **The signature is data** (v0.4.0; no wire or layout change): the
      multivector carries the mask of its negative generators beside its
      `n` (`Mv::negatives`), and the product reads each square from it.

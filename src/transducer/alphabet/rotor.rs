@@ -6,6 +6,7 @@
 //! keyed by its coordinates written out, never by a digest of them.
 
 use crate::transducer::alphabet::{Word, Q};
+use crate::transducer::cga::Conjugacy;
 use num_bigint::BigInt;
 use num_traits::{One, Signed, Zero};
 

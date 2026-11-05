@@ -1,10 +1,15 @@
-// LAW-PASSAGE v2 (proposal 78.172 §5): the passage `q ↦ v_k·q` as a
-// one-sided product in `Cl(p, q)`, each frame plane hyperbolic, its four
-// joint-read fixtures and the law's claims over every plane the algebra holds.
+// LAW-PASSAGE v2 (proposal 78.172 §5): the passage `q ↦ v_k·q`, `pass`, a
+// one-sided product in `Cl(p, q)`; its four joint-read fixtures, written in
+// the generators they are agreed in, the law's claims over every plane the
+// algebra holds, and the passage's refusals.
 
-use super::fixtures::q;
-use crate::transducer::cga::{base_axis, Clifford, EM};
+use crate::algebra::{base_axis, Clifford, SignatureRefusal, EM};
+use crate::passage::{pass, PassageRefusal};
 use num_rational::BigRational;
+
+fn q(n: i64, d: i64) -> BigRational {
+    BigRational::new(n.into(), d.into())
+}
 
 /// Plane `k`'s closed pole `e_Zk`, squaring to +1: base axis `2k − 1`.
 fn closed(k: usize) -> Option<usize> {
@@ -74,11 +79,12 @@ fn degrees(v: &Clifford) -> Vec<u32> {
 }
 
 /// FIXTURE 1: at the horizon the passage is one-way. With the null
-/// direction `v = e_Z1 + e_Q1`, `v·v·q = 0` for fixture 2's state.
+/// direction `v = e_Z1 + e_Q1`, `v·v·q = 0` for fixture 2's state: the
+/// product `v·(v·q)` of the state carried once.
 #[test]
-fn product_of_null_direction_twice_annuls_state() {
+fn pass_of_null_direction_twice_annuls_state() {
     let v = direction(3, 1, q(1, 1), q(1, 1));
-    let once = v.product(&state()).expect("one signature");
+    let once = pass(&v, &state()).expect("a direction on an even state");
     assert!(!once.is_zero(), "one passage carries the state");
     assert!(v.product(&once).expect("one signature").is_zero(), "v·v·q = 0");
 }
@@ -87,11 +93,55 @@ fn product_of_null_direction_twice_annuls_state() {
 /// `v = e_Z1 + 2·e_Q1` and `q = 3 + 2·e_Z2Z3 + e_Z1Q2`, `v·q` has terms on
 /// degrees 1 and 3 only.
 #[test]
-fn product_carries_even_state_to_odd_degrees() {
+fn pass_carries_even_state_to_odd_degrees() {
     let s = state();
     assert_eq!(degrees(&s), [0, 2], "the state is even");
     let v = direction(3, 1, q(1, 1), q(2, 1));
-    assert_eq!(degrees(&v.product(&s).expect("one signature")), [1, 3]);
+    assert_eq!(degrees(&pass(&v, &s).expect("a direction on an even state")), [1, 3]);
+}
+
+/// The passage is the one-sided product and no other: `pass(v, q)` is
+/// `v·q` exactly, for fixture 2's direction and state.
+#[test]
+fn pass_equals_one_sided_product() {
+    let (v, s) = (direction(3, 1, q(1, 1), q(2, 1)), state());
+    let crossed = pass(&v, &s).expect("a direction on an even state");
+    assert!(crossed.difference(&v.product(&s).expect("one signature")).expect("one signature").is_zero());
+}
+
+/// A direction that is not degree 1 is refused `NotDirection` with the
+/// degrees it holds: a bivector, a scalar beside a vector, and the zero.
+#[test]
+fn pass_refuses_non_vector_direction() {
+    let s = state();
+    let bivector = word(3, q(1, 1), &[pole(closed(1)), pole(open(1))]);
+    assert_eq!(pass(&bivector, &s).err(), Some(PassageRefusal::NotDirection { degrees: vec![2] }));
+    let mixed = sum(vec![word(3, q(1, 1), &[]), direction(3, 1, q(1, 1), q(2, 1))]);
+    assert_eq!(pass(&mixed, &s).err(), Some(PassageRefusal::NotDirection { degrees: vec![0, 1] }));
+    let zero = direction(3, 1, q(1, 1), q(1, 1)).difference(&direction(3, 1, q(1, 1), q(1, 1))).expect("one signature");
+    assert_eq!(pass(&zero, &s).err(), Some(PassageRefusal::NotDirection { degrees: vec![] }));
+}
+
+/// A state holding an odd degree is refused `NotEven` with the degrees it
+/// holds: the state already carried once.
+#[test]
+fn pass_refuses_odd_state() {
+    let v = direction(3, 1, q(1, 1), q(2, 1));
+    let carried = pass(&v, &state()).expect("a direction on an even state");
+    assert_eq!(pass(&v, &carried).err(), Some(PassageRefusal::NotEven { degrees: vec![1, 3] }));
+}
+
+/// A direction and a state whose signatures disagree on a generator both
+/// hold are refused `Mismatched`, naming that generator: plane 1's open
+/// pole negative under one and positive under the other.
+#[test]
+fn pass_refuses_mismatched_signatures() {
+    let v = direction(1, 1, q(1, 1), q(2, 1));
+    let s = Clifford::blade(EM, pole(closed(1)) | pole(open(1)), q(1, 1)).expect("a blade the algebra holds");
+    assert_eq!(
+        pass(&v, &s).err(),
+        Some(PassageRefusal::Mismatched(SignatureRefusal::Mismatched { generators: pole(open(1)) }))
+    );
 }
 
 /// FIXTURE 3: two boosts sharing an axis leave a turning on their two other

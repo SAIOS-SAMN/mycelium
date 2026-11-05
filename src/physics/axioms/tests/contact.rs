@@ -2,6 +2,7 @@
 // tether's reading of adjacency, recorded.
 
 use crate::transducer::blade;
+use crate::transducer::cga::Conjugacy;
 
 /// THE TETHER'S CLASS: its conjugacy class as coordinates (72.1), the
 /// scale-free reading of `V` — a similarity conjugates the tether, so its

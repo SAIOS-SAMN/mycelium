@@ -1,20 +1,24 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! THE PASSAGE AT A CROSSING (LAW-PASSAGE v2, proposal 78.172; ROADMAP
-//! track 24 B3): what this shell keeps of it, over the exact rationals.
+//! track 24 B3), whole: the product, exact in the algebra over ℚ, and the
+//! refusals beside it.
 //!
 //! THE LAW IS A PRODUCT IN THE ALGEBRA, NOT A NUMBER. A body's state is an
-//! even multivector `q`; plane `k`'s direction is `v_k = H_k·e_Zk + R_k·e_Qk`
-//! with `e_Zk² = +1` and `e_Qk² = −1`; one crossing in plane `k` is the
-//! one-sided product `q ↦ v_k·q`, never a sandwich, taking even degrees to
-//! odd ones. That product needs the multivector algebra, which this crate
-//! does not reach (it depends on the exact rationals alone), so the product
-//! and its fixtures stand with the multivector algebra: the product is the
-//! library's `transducer::cga::Clifford::product`, and the four fixtures
-//! are claims in `src/transducer/cga/tests/passage.rs` (78.172 §5).
+//! even multivector `q`; plane `k`'s direction `v_k` is a degree-1 element
+//! of the same algebra; one crossing in plane `k` is the one-sided product
+//! `q ↦ v_k·q`, never a sandwich, taking even degrees to odd ones. The
+//! form states no basis for the plane: the generators `v_k` holds, and the
+//! square of each, are carried by the value (`algebra::Clifford`, its
+//! signature read from the data). [`pass`] is that product. It refuses, by
+//! name and with the degrees it read, a direction that is not degree 1
+//! ([`PassageRefusal::NotDirection`]) and a state that is not even
+//! ([`PassageRefusal::NotEven`]), and refuses two values whose signatures
+//! disagree ([`PassageRefusal::Mismatched`]). The four joint-read fixtures
+//! of 78.172 §5 are claims in this crate's `tests/crossing.rs`.
 //!
-//! WHAT STANDS HERE. A crossing moves no reach: the reach it carries in and
-//! the throat's reach both stand in `v_k·q`, in exchanged places, and
+//! WHAT ELSE STANDS HERE. A crossing moves no reach: the reaches stand in
+//! `v_k` as the coefficients they are, `v_k·q` moves none of them, and
 //! nothing is squared. So a crossing that states a moved reach is refused
 //! [`PassageRefusal::NotLawful`], naming the claimed reach against the reach
 //! carried in. The throat sphere's inversion `H²/R` is such a claim: it
@@ -31,6 +35,7 @@
 //! ```
 
 use crate::Q;
+use algebra::{Clifford, SignatureRefusal};
 use num_traits::{One, Signed};
 
 /// THE SHELL'S LAW ID, as the shared-law table names it (MU-EQUATIONS,
@@ -38,11 +43,12 @@ use num_traits::{One, Signed};
 pub const LAW_ID: &str = "FORMS-PASSAGE";
 
 /// The law's version: an amendment raises it.
-/// FORMAT: the law version of LAW-PASSAGE v2 (proposal 78.172).
-pub const LAW_VERSION: u16 = 2;
+/// FORMAT: the shell's version, the form of LAW-PASSAGE v2 (proposal
+/// 78.172) with the product `q ↦ v_k·q` held here.
+pub const LAW_VERSION: u16 = 3;
 
-/// WHY A CROSSING'S STATED REACH, OR A SHARE, IS REFUSED, by name and with
-/// the reading that caused it.
+/// WHY A CROSSING, ITS STATED REACH, OR A SHARE IS REFUSED, by name and
+/// with the reading that caused it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PassageRefusal {
     /// The crossing states a moved reach: the breach, the claim against the
@@ -50,6 +56,41 @@ pub enum PassageRefusal {
     NotLawful(Box<Breach>),
     /// A share outside `[0, 1]`: the value as presented.
     NotShare(Box<Q>),
+    /// A direction that is not degree 1: the degrees it holds, ascending,
+    /// each once (none for the zero, which holds no degree).
+    NotDirection { degrees: Vec<u32> },
+    /// A state that is not even: the degrees it holds, ascending, each once.
+    NotEven { degrees: Vec<u32> },
+    /// A direction and a state whose signatures disagree on a generator
+    /// both hold: the algebra's refusal, naming those generators.
+    Mismatched(SignatureRefusal),
+}
+
+/// THE DEGREES A VALUE HOLDS TERMS ON, ascending, each once: read over the
+/// degrees its algebra spans, `0` to the count of its generators.
+fn degrees_of(x: &Clifford) -> Vec<u32> {
+    (0..=u32::from(x.n()) + 2).filter(|g| x.terms().any(|(m, _)| m.count_ones() == *g)).collect()
+}
+
+/// ONE CROSSING, `q ↦ v·q` (LAW-PASSAGE v2, 78.172 §1): the one-sided
+/// geometric product of the direction `v` on the state `q`, exact, under
+/// the one signature the two values carry. Never the sandwich: the even
+/// state is carried to odd degrees, its other sheet.
+///
+/// Refused by name, in this order: `v` not degree 1, `NotDirection` with
+/// the degrees it holds; `q` holding an odd degree, `NotEven` with the
+/// degrees it holds; the two signatures disagreeing on a generator both
+/// hold, `Mismatched` with the algebra's refusal.
+pub fn pass(v: &Clifford, q: &Clifford) -> Result<Clifford, PassageRefusal> {
+    let direction = degrees_of(v);
+    if direction != [1] {
+        return Err(PassageRefusal::NotDirection { degrees: direction });
+    }
+    let state = degrees_of(q);
+    if state.iter().any(|g| g % 2 == 1) {
+        return Err(PassageRefusal::NotEven { degrees: state });
+    }
+    v.product(q).map_err(PassageRefusal::Mismatched)
 }
 
 /// A BREACH OF THE PASSAGE: the reach a crossing states, and the reach it

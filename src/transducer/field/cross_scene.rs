@@ -38,7 +38,7 @@
 use super::*;
 use crate::transducer::blade::{self, NotReciprocal, Shape, Transition};
 use crate::transducer::cech::{ChamberCircuit, Coherence};
-use crate::transducer::cga::Mv;
+use crate::transducer::cga::{Conjugacy, Mv};
 
 /// A perception's bodies by the chart each stands on (the bodies' moduli), in the
 /// order its input frames hold them.
