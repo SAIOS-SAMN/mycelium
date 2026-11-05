@@ -34,6 +34,9 @@ exclude = ["xtask"]
 # The exact algebra `Cl(p, q)` over ℚ (`algebra/`), re-exported at
 # `transducer::cga`.
 algebra = { path = "algebra" }
+# The law forms (`forms/`): the hypha reconstructs each Concordance clause's
+# joint-read fixtures through them (Concordance §0, `physics::laws::clauses`).
+forms = { path = "forms" }
 # Current kernel.rs dependency graph
 # Core arithmetic — exact rational over Q
 num-rational = { version = "0.4", features = ["serde"] }

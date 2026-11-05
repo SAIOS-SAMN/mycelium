@@ -508,6 +508,7 @@ fn expansion_of(t: &Transition) -> Option<Q> {
     }
 }
 
+pub mod clauses;
 pub mod codec;
 pub mod concordance;
 pub mod lexicon;
