@@ -717,7 +717,7 @@ impl Mind {
             });
         };
         let _ = self.speak_form(&rule, &train, &frames, id, &mut budget);
-        let outs: Option<Vec<crate::transducer::family::SectionSample>> = tests.iter().map(|x| crate::transducer::family::speak_rule(&rule, x, &self.language).filter(|s| s.remainder.is_empty()).and_then(|s| s.grid())).collect();
+        let outs: Option<Vec<crate::transducer::family::SectionSample>> = tests.iter().map(|x| crate::transducer::family::speak_rule(&rule, x, &self.language).filter(|s| s.remainder.is_empty()).and_then(|s| s.sample())).collect();
         let Some(outs) = outs else { return Some(Stop::TestsUnspoken) };
         let Some(minted) = self.construct_solve(&rule, &train) else { return Some(Stop::Unminted) };
         let Ok(crossed) = crate::client::sdk::rule::crossing(&minted, &train, &self.language) else { return Some(Stop::Uncrossed) };

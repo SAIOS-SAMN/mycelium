@@ -352,12 +352,12 @@ fn hold_form_carries_bundle_and_remainder() {
 fn expand_all_crystallizes_closed_idea_and_releases_it() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::family::{extract_rule, mint_sentence, SectionSample, NoCrystal};
-    let grid = |rows: &[&str]| -> SectionSample {
+    let digits = |rows: &[&str]| -> SectionSample {
         rows.iter()
             .map(|r| r.bytes().map(|b| b - b'0').collect())
             .collect()
     };
-    let train_in = grid(&["11011", "11011", "00000", "11000", "11000"]);
+    let train_in = digits(&["11011", "11011", "00000", "11000", "11000"]);
     let mut train_out: SectionSample = train_in.clone();
     for (site, h) in train_in.sites() {
         if h == 1 {

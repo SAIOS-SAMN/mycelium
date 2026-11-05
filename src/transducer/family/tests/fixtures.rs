@@ -1,10 +1,10 @@
-// Fixture constructors for the family's tests (MU-STANDARDS 3.3): a grid
-// from rows of digits, and a row of coloured squares.
+// Fixture constructors for the family's tests (MU-STANDARDS 3.3): a section
+// sample from rows of digits (`digits`), and a row of coloured squares.
 
 use crate::transducer::family::*;
 use crate::transducer::sentence::Form;
 
-pub fn grid(rows: &[&str]) -> SectionSample {
+pub fn digits(rows: &[&str]) -> SectionSample {
 rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 

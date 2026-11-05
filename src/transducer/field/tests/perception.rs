@@ -11,7 +11,7 @@ use crate::transducer::cech::Fill;
 use crate::transducer::family::{perceive_family, scene_form_on, SectionSample, NoCrystal};
 use crate::transducer::rewrite::{Rewrite, RewritePayload};
 
-fn grid(rows: &[&str]) -> SectionSample {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -24,7 +24,7 @@ fn perceive(c: &mut Contemplation, input: &[&str], output: &[&str]) -> Vec<u8> {
 
 /// The same, seen in the family `family` (78.56 III).
 fn perceive_in(c: &mut Contemplation, input: &[&str], output: &[&str], family: &[u8]) -> Vec<u8> {
-    let (a, b) = (grid(input), grid(output));
+    let (a, b) = (digits(input), digits(output));
     let frames = perceive_family(&[(a.clone(), b.clone())]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let f = scene_form_on(&NoCrystal, &mut budget, &a, &b, &frames).expect("the scene reads");

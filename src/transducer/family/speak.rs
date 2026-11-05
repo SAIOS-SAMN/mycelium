@@ -665,18 +665,18 @@ impl Speech {
     /// names `FAIL_PAST_FRAME` — a site landing past the image frame's
     /// extent — and a speech that cannot be laid on its own frame is not a
     /// speech, so it is refused here and every caller decides (rule 11).
-    /// Dropping the site instead would lay down a grid that silently is
+    /// Dropping the site instead would lay down a sample that silently is
     /// not what the form said, and indexing on it would kill the process
     /// where the court refuses.
-    pub fn grid(&self) -> Option<SectionSample> {
+    pub fn sample(&self) -> Option<SectionSample> {
         // A speech missing a citation is not the form's whole speech, and no
-        // grid stands for it; the measure reads the citation by name.
+        // sample stands for it; the measure reads the citation by name.
         if !self.unresolved.is_empty() || !self.cycled.is_empty() {
             return None;
         }
         // A site the speech does not paint holds the family's one ground;
         // where one is left and the scope has none (a vortex, no ground, no
-        // family open), no grid stands for the speech. A speech that paints
+        // family open), no sample stands for the speech. A speech that paints
         // every site needs no ground.
         let mut out: Vec<Vec<Option<u8>>> = vec![vec![None; self.frame.1]; self.frame.0];
         for p in &self.painted {

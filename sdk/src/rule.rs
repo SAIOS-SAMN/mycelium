@@ -41,7 +41,7 @@ pub use mycelium::transducer::family::extraction_spend;
 /// Mint a rule as the element the court replays; the refusal named.
 pub use mycelium::transducer::family::mint_sentence_why;
 
-/// Speak a rule on one input; the speech's `grid()` is the output.
+/// Speak a rule on one input; the speech's `sample()` is the output.
 pub use mycelium::transducer::family::speak::{speak_rule, Speech};
 
 /// The resolver of cited words a rule is minted and spoken against, and the

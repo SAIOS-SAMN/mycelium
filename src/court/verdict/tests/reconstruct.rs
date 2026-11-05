@@ -725,10 +725,10 @@ fn reconstruct_form_refuses_free_orbit_and_wrong_period() {
 fn reconstruct_blind_on_refuses_remainder_as_not_closed() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
-    let grid = |rows: &[&str]| -> crate::transducer::family::SectionSample {
+    let digits = |rows: &[&str]| -> crate::transducer::family::SectionSample {
         rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
     };
-    let (x, y) = (grid(&["1"]), grid(&["2"]));
+    let (x, y) = (digits(&["1"]), digits(&["2"]));
     let one_pair = vec![(x.clone(), y.clone())];
     let rule = extract_rule(&one_pair, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour is a rule");
     let word = mint_sentence(&rule, &one_pair, &NoCrystal, 0).expect("it closes its own pair");
@@ -740,7 +740,7 @@ fn reconstruct_blind_on_refuses_remainder_as_not_closed() {
 
     // A second pair the same rule does not speak: the remainder is not empty.
     // H1, 70.4 — separated, because `"23"` is ONE two-hue body now.
-    let wider = vec![(x, y), (grid(&["100"]), grid(&["203"]))];
+    let wider = vec![(x, y), (digits(&["100"]), digits(&["203"]))];
     assert_eq!(
         reconstruct_blind_on(&word, &|_| None, Some(&wider), &NoCrystal, &mut super::fixtures::budget()),
         Some(REFUSE_NOT_CLOSED),

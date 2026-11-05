@@ -13,14 +13,14 @@ fn key(b: u8) -> ed25519_dalek::SigningKey {
     ed25519_dalek::SigningKey::from_bytes(&[b; 32])
 }
 
-fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
+fn digits(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
 /// The scene: one row's two bodies carried two columns on.
 const SCENE: [u8; 32] = [5; 32];
 fn family() -> Vec<crate::transducer::family::TrainPair> {
-    vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))]
+    vec![(digits(&["1100", "0000"]), digits(&["0011", "0000"]))]
 }
 
 /// The slide by `(r, c)`, spelled as a connection.

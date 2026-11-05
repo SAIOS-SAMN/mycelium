@@ -279,7 +279,7 @@ fn reproduces(epi: &MindLanguage, f: &crate::transducer::sentence::Form, links: 
     let Some((corner, scene, _)) = crate::transducer::family::scene_at_of_chain(links) else { return false };
     let placement = crate::transducer::alphabet::Word::identity();
     let Some(sp) = crate::transducer::family::Crystal::speak_form(epi, f, &scene, &placement) else { return false };
-    let Some(spoken) = sp.grid() else { return false };
+    let Some(spoken) = sp.sample() else { return false };
     // An offset below the corner, or past `i64`, is off the spoken sample.
     links.iter().all(|l| {
         let at = l.site.offset_from(corner).and_then(|site| spoken.at(site));

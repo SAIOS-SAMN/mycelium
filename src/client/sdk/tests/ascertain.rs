@@ -7,7 +7,7 @@
 use crate::client::sdk::mind::family::{ascertain_on, Ascertained, Unexempt};
 use crate::client::sdk::*;
 
-fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
+fn digits(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -16,9 +16,9 @@ fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
 /// pairs and cannot state over one.
 fn mirrored(pairs: usize) -> Vec<(crate::transducer::family::SectionSample, crate::transducer::family::SectionSample)> {
     let all = [
-        (grid(&["1100000", "1000000", "0000000"]), grid(&["1101100", "1000100", "0000000"])),
-        (grid(&["0000000", "0022000", "0020000"]), grid(&["0000000", "0022022", "0020002"])),
-        (grid(&["000000", "110000", "100000", "000000"]), grid(&["000000", "110110", "100010", "000000"])),
+        (digits(&["1100000", "1000000", "0000000"]), digits(&["1101100", "1000100", "0000000"])),
+        (digits(&["0000000", "0022000", "0020000"]), digits(&["0000000", "0022022", "0020002"])),
+        (digits(&["000000", "110000", "100000", "000000"]), digits(&["000000", "110110", "100010", "000000"])),
     ];
     all.into_iter().take(pairs).collect()
 }
@@ -60,8 +60,8 @@ fn ascertain_on_leaves_vertex_fit_unknown() {
 fn ascertain_on_leaves_unclosing_rule_unproven() {
     let train = mirrored(2);
     let other = rule_of(&[
-        (grid(&["0000", "3000", "0000", "0000"]), grid(&["0000", "3333", "0000", "0000"])),
-        (grid(&["0000", "0000", "0030", "0000"]), grid(&["0000", "0000", "0033", "0000"])),
+        (digits(&["0000", "3000", "0000", "0000"]), digits(&["0000", "3333", "0000", "0000"])),
+        (digits(&["0000", "0000", "0030", "0000"]), digits(&["0000", "0000", "0033", "0000"])),
     ]);
     assert!(!other.form.elements.is_empty(), "the other family's rule is clauses too");
     let (outcome, _) = ascertain_on(&MindLanguage::new(), &train, &other);

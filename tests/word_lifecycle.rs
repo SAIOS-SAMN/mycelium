@@ -25,7 +25,7 @@ fn on_zero<T>(f: impl FnOnce() -> T) -> T {
     mycelium::transducer::raster::on_ground(mycelium::transducer::family::transduce::Ground::One(0), f)
 }
 
-fn grid(rows: &[&str]) -> SectionSample {
+fn digits(rows: &[&str]) -> SectionSample {
     // A byte below '0' is not a hue; the row is the fixture and says so.
     let lines: Vec<Vec<u8>> = rows.iter()
         .map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect())
@@ -91,7 +91,7 @@ fn element_record_round_trips_and_refuses_old_magic() {
 /// Faces by constancy: three squares carried by one recolour are one vertex joined to the frame, and the rule speaks them all.
 #[test]
 fn extract_rule_joins_three_squares_in_one_vertex() {
-    let train_in = grid(&["11011", "11011", "00000", "11000", "11000"]);
+    let train_in = digits(&["11011", "11011", "00000", "11000", "11000"]);
     let mut train_out: SectionSample = train_in.clone();
     for (site, h) in train_in.sites() {
         if h == 1 {
@@ -146,7 +146,7 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
     );
     let (spoken, grid) = on_zero(|| {
         let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
-        let grid = spoken.grid();
+        let grid = spoken.sample();
         (spoken, grid)
     });
     assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
@@ -157,14 +157,14 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
 /// A spoken rule recolours the square it was extracted on, leaving no remainder.
 #[test]
 fn speak_rule_recolours_single_square() {
-    let train_in = grid(&["1100", "0000"]);
-    let train_out = grid(&["2200", "0000"]);
+    let train_in = digits(&["1100", "0000"]);
+    let train_out = digits(&["2200", "0000"]);
     let family = vec![(train_in.clone(), train_out.clone())];
     on_zero(|| {
         let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("one square extracts");
         let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
         assert!(spoken.remainder.is_empty(), "the square is reached: {:?}", spoken.remainder);
-        assert_eq!(spoken.grid(), Some(train_out));
+        assert_eq!(spoken.sample(), Some(train_out));
     });
 }
 
@@ -210,8 +210,8 @@ fn perceive_speech_refuses_unframed_chain() {
 /// A single recolour is a one-morphism sentence: one word vertex carrying the gauge, and the form closed.
 #[test]
 fn extract_rule_closes_single_recolour_as_one_word() {
-    let train_in = grid(&["1100", "0000"]);
-    let train_out = grid(&["2200", "0000"]);
+    let train_in = digits(&["1100", "0000"]);
+    let train_out = digits(&["2200", "0000"]);
     let family = vec![(train_in, train_out)];
     let rule = on_zero(|| extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20))).expect("one body extracts");
     let words: Vec<_> = rule
@@ -248,7 +248,7 @@ fn snapshot_writes_myt3_and_refuses_older_layouts() {
     // The whole frame recoloured: read with no ground, the frame is the one
     // body (its old symbol reads as the ground by the rule, which leaves no
     // body to recolour).
-    let family = vec![(grid(&["11"]), grid(&["22"]))];
+    let family = vec![(digits(&["11"]), digits(&["22"]))];
     let codes = mycelium::transducer::raster::on_ground(mycelium::transducer::family::transduce::Ground::None, || {
         let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
         let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");

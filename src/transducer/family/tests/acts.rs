@@ -7,7 +7,7 @@
 use crate::transducer::family::SectionSample;
 use crate::transducer::family::{extract_rule, speak::speak_rule, NoCrystal};
 
-fn grid(rows: &[&str]) -> SectionSample {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -18,7 +18,7 @@ type Case<'a> = (&'a str, Vec<(&'a [&'a str], &'a [&'a str])>, (&'a [&'a str], &
 /// held-out input: exactly the held-out output, nothing unreached. The
 /// clauses it was read as.
 fn knows(family: &[(&[&str], &[&str])], held: (&[&str], &[&str])) -> Vec<crate::transducer::sentence::form::clause::Clause> {
-    let family: Vec<(SectionSample, SectionSample)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+    let family: Vec<(SectionSample, SectionSample)> = family.iter().map(|(x, y)| (digits(x), digits(y))).collect();
     // The fixtures are written on 0: the act reader is claimed on that
     // declared ground (track 26 S2 deduces the ground of a family; these
     // claims are about the act, not the deduction).
@@ -26,9 +26,9 @@ fn knows(family: &[(&[&str], &[&str])], held: (&[&str], &[&str])) -> Vec<crate::
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
     assert!(!rule.form.elements.is_empty(), "the act is stated as clauses");
-    let s = speak_rule(&rule, &grid(held.0), &NoCrystal).expect("it speaks the held-out input");
+    let s = speak_rule(&rule, &digits(held.0), &NoCrystal).expect("it speaks the held-out input");
     assert!(s.unreached.is_empty(), "every body spoken for: {:?}", s.unreached);
-    assert_eq!(s.grid(), Some(grid(held.1)), "the held-out pair re-derived; elements {:?}", rule.form.elements);
+    assert_eq!(s.sample(), Some(digits(held.1)), "the held-out pair re-derived; elements {:?}", rule.form.elements);
     glosses(&rule.form.elements)
 }
 
@@ -198,11 +198,11 @@ fn extract_rule_reads_bend_round_corner() {
 fn from_element_form_round_trips_echoes_and_bends() {
     crate::transducer::raster::stand_on(0);
     for family in [
-        vec![(grid(&["1100000", "1000000", "0000000"]), grid(&["1101100", "1000100", "0000000"])), (grid(&["0000000", "0022000", "0020000"]), grid(&["0000000", "0022022", "0020002"]))],
-        vec![(grid(&["1000", "0000", "0000", "0000"]), grid(&["1010", "0000", "1000", "0000"])), (grid(&["0000", "0200", "0000", "0000"]), grid(&["0000", "0202", "0000", "0200"]))],
+        vec![(digits(&["1100000", "1000000", "0000000"]), digits(&["1101100", "1000100", "0000000"])), (digits(&["0000000", "0022000", "0020000"]), digits(&["0000000", "0022022", "0020002"]))],
+        vec![(digits(&["1000", "0000", "0000", "0000"]), digits(&["1010", "0000", "1000", "0000"])), (digits(&["0000", "0200", "0000", "0000"]), digits(&["0000", "0202", "0000", "0200"]))],
         vec![
-            (grid(&["000030", "000000", "000000", "000000", "200000", "000000"]), grid(&["000030", "000080", "000080", "000080", "288880", "000000"])),
-            (grid(&["020000", "000000", "000000", "000000", "000030"]), grid(&["028880", "000080", "000080", "000080", "000030"])),
+            (digits(&["000030", "000000", "000000", "000000", "200000", "000000"]), digits(&["000030", "000080", "000080", "000080", "288880", "000000"])),
+            (digits(&["020000", "000000", "000000", "000000", "000030"]), digits(&["028880", "000080", "000080", "000080", "000030"])),
         ],
     ] {
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
@@ -223,8 +223,8 @@ fn from_element_form_round_trips_echoes_and_bends() {
 fn from_element_form_round_trips_join_and_echo() {
     crate::transducer::raster::stand_on(0);
     for family in [
-        vec![(grid(&["10010", "00000", "00100"]), grid(&["13310", "00000", "00100"])), (grid(&["00000", "10001", "00000", "01000"]), grid(&["00000", "13331", "00000", "01000"]))],
-        vec![(grid(&["120", "000", "000", "000"]), grid(&["120", "000", "120", "000"])), (grid(&["000", "033", "000", "000", "000"]), grid(&["000", "033", "000", "033", "000"]))],
+        vec![(digits(&["10010", "00000", "00100"]), digits(&["13310", "00000", "00100"])), (digits(&["00000", "10001", "00000", "01000"]), digits(&["00000", "13331", "00000", "01000"]))],
+        vec![(digits(&["120", "000", "000", "000"]), digits(&["120", "000", "120", "000"])), (digits(&["000", "033", "000", "000", "000"]), digits(&["000", "033", "000", "033", "000"]))],
     ] {
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
@@ -291,8 +291,8 @@ fn extract_rule_reads_tiles_by_symmetries() {
 fn from_element_form_round_trips_panes_and_tiles() {
     crate::transducer::raster::stand_on(0);
     for family in [
-        vec![(grid(&["10501", "01500"]), grid(&["22", "02"])), (grid(&["11500", "00501"]), grid(&["22", "02"])), (grid(&["00511", "10510"]), grid(&["22", "00"]))],
-        vec![(grid(&["12", "30"]), grid(&["1221", "3003", "3003", "1221"])), (grid(&["40", "05"]), grid(&["4004", "0550", "0550", "4004"]))],
+        vec![(digits(&["10501", "01500"]), digits(&["22", "02"])), (digits(&["11500", "00501"]), digits(&["22", "02"])), (digits(&["00511", "10510"]), digits(&["22", "00"]))],
+        vec![(digits(&["12", "30"]), digits(&["1221", "3003", "3003", "1221"])), (digits(&["40", "05"]), digits(&["4004", "0550", "0550", "4004"]))],
     ] {
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
@@ -485,7 +485,7 @@ fn judge_solve_solves_act_reader_clauses() {
         ),
     ];
     for (name, fam, held) in cases {
-        let family: Vec<(SectionSample, SectionSample)> = fam.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+        let family: Vec<(SectionSample, SectionSample)> = fam.iter().map(|(x, y)| (digits(x), digits(y))).collect();
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
         assert!(!rule.form.elements.is_empty(), "{name}: stated as clauses");
@@ -494,7 +494,7 @@ fn judge_solve_solves_act_reader_clauses() {
             Err(why) => panic!("{name}: the rule mints over its family: {why:?}"),
         };
         let mut court = crate::cognition::Court::new();
-        let verdict = court.judge_solve(&minted, &[(grid(held.0), grid(held.1))]);
+        let verdict = court.judge_solve(&minted, &[(digits(held.0), digits(held.1))]);
         assert!(matches!(verdict, crate::cognition::SolveVerdict::Solved { .. }), "{name}: the court solves it on a pair it never saw: {verdict:?}");
     }
 }
@@ -530,19 +530,19 @@ fn judge_solve_solves_reaction_on_unseen_pair() {
         ),
     ];
     for (name, fam, held) in cases {
-        let family: Vec<(SectionSample, SectionSample)> = fam.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+        let family: Vec<(SectionSample, SectionSample)> = fam.iter().map(|(x, y)| (digits(x), digits(y))).collect();
         let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
         let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
         let reacted = glosses(&rule.form.elements).iter().any(|c| matches!(c.act, Act::Slide { .. } | Act::Repaint { paint: Paint::Of(_) }));
         assert!(reacted, "{name}: stated as a reaction: {:?}", rule.form.elements);
-        let s = speak_rule(&rule, &grid(held.0), &NoCrystal).expect("it speaks the held-out input");
-        assert_eq!(s.grid(), Some(grid(held.1)), "{name}: the held-out pair re-derived; elements {:?}", rule.form.elements);
+        let s = speak_rule(&rule, &digits(held.0), &NoCrystal).expect("it speaks the held-out input");
+        assert_eq!(s.sample(), Some(digits(held.1)), "{name}: the held-out pair re-derived; elements {:?}", rule.form.elements);
         let minted = match crate::transducer::family::mint_sentence_why(&rule, &family, &NoCrystal, 0) {
             Ok(word) => word,
             Err(why) => panic!("{name}: the rule mints over its family: {why:?}"),
         };
         let mut court = crate::cognition::Court::new();
-        let verdict = court.judge_solve(&minted, &[(grid(held.0), grid(held.1))]);
+        let verdict = court.judge_solve(&minted, &[(digits(held.0), digits(held.1))]);
         assert!(matches!(verdict, crate::cognition::SolveVerdict::Solved { .. }), "{name}: the court solves it on a pair it never saw: {verdict:?}");
     }
 }
@@ -564,12 +564,12 @@ fn extract_rule_fills_hole_closed_jointly() {
     let clauses = knows(&family, held);
     use crate::transducer::sentence::form::clause::{Act, RegionKind};
     assert!(clauses.iter().any(|c| matches!(c.act, Act::Fill { region: RegionKind::Interior, .. })), "read as the joint interior: {clauses:?}");
-    let family: Vec<(SectionSample, SectionSample)> = family.iter().map(|(x, y)| (grid(x), grid(y))).collect();
+    let family: Vec<(SectionSample, SectionSample)> = family.iter().map(|(x, y)| (digits(x), digits(y))).collect();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let rule = extract_rule(&family, &mut budget).expect("the family has a rule");
     let minted = crate::transducer::family::mint_sentence_why(&rule, &family, &NoCrystal, 0).expect("the rule mints over its family");
     let mut court = crate::cognition::Court::new();
-    let verdict = court.judge_solve(&minted, &[(grid(held.0), grid(held.1))]);
+    let verdict = court.judge_solve(&minted, &[(digits(held.0), digits(held.1))]);
     assert!(matches!(verdict, crate::cognition::SolveVerdict::Solved { .. }), "the court solves it on a pair it never saw: {verdict:?}");
 }
 
@@ -583,7 +583,7 @@ fn speak_clauses_settles_stack_and_stops_at_border() {
     use crate::transducer::family::statement::{speak_clauses, Unstated};
     use crate::transducer::sentence::form::clause::{Act, Clause, Pred, Stop};
     let say = |clause: &Clause, x: &[&str]| -> Result<SectionSample, Unstated> {
-        let x = grid(x);
+        let x = digits(x);
         let spoken = speak_clauses(std::slice::from_ref(clause), &x, &crate::transducer::family::perceive(&x))?;
         let mut g = SectionSample::filled(spoken.frame, 0).expect("a frame");
         for p in spoken.painted {
@@ -592,8 +592,8 @@ fn speak_clauses_settles_stack_and_stops_at_border() {
         Ok(g)
     };
     let fall = Clause { select: Pred::Hue(1), act: Act::Slide { ray: (1, 0), stop: Stop::Contact } };
-    assert_eq!(say(&fall, &["0100", "0000", "0100", "0000", "2222"]), Ok(grid(&["0000", "0000", "0100", "0100", "2222"])), "the lower lands on the floor, the upper on it");
-    assert_eq!(say(&fall, &["0100", "0000", "0000"]), Ok(grid(&["0000", "0000", "0100"])), "nothing met: the border");
+    assert_eq!(say(&fall, &["0100", "0000", "0100", "0000", "2222"]), Ok(digits(&["0000", "0000", "0100", "0100", "2222"])), "the lower lands on the floor, the upper on it");
+    assert_eq!(say(&fall, &["0100", "0000", "0000"]), Ok(digits(&["0000", "0000", "0100"])), "nothing met: the border");
     let still = Clause { select: Pred::Hue(1), act: Act::Slide { ray: (0, 0), stop: Stop::Contact } };
     assert_eq!(say(&still, &["0100"]), Err(Unstated::Still), "no step: refused by name");
 }
@@ -605,7 +605,7 @@ fn speak_clauses_refuses_partner_hue_without_one_partner() {
     use crate::transducer::family::statement::{speak_clauses, Unstated};
     use crate::transducer::sentence::form::clause::{Act, Clause, Paint, Pred};
     let take = Clause { select: Pred::Hue(5), act: Act::Repaint { paint: Paint::Of(Pred::All) } };
-    for x in [grid(&["300", "050", "004"]), grid(&["000", "050", "000"])] {
+    for x in [digits(&["300", "050", "004"]), digits(&["000", "050", "000"])] {
         let spoken = speak_clauses(std::slice::from_ref(&take), &x, &crate::transducer::family::perceive(&x));
         assert_eq!(spoken.err(), Some(Unstated::Unpartnered), "refused by name on {x:?}");
     }

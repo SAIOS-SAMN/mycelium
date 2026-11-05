@@ -11,7 +11,7 @@ use crate::transducer::family::statement::{speak_clauses, speak_elements, Unstat
 use crate::transducer::sentence::form::clause::{put_clauses, About, Act, Clause, Extent, Paint, PlaneAxis, Pred, RegionKind, Stop};
 use crate::transducer::sentence::form::rule_element::{gloss, substrate_step, lower, Carriage, Lowered, Reach, RuleElement, Trace};
 
-fn grid(rows: &[&str]) -> SectionSample {
+fn digits(rows: &[&str]) -> SectionSample {
     let lines: Vec<Vec<u8>> = rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect();
     SectionSample::of_lines(&lines).expect("a sample")
 }
@@ -78,12 +78,12 @@ fn gloss_inverts_lower_on_every_act() {
 #[test]
 fn speak_clauses_reads_identity_carriage_as_hue_map() {
     crate::transducer::raster::stand_on(0);
-    let x = grid(&["110", "000", "033"]);
+    let x = digits(&["110", "000", "033"]);
     let bodies = crate::transducer::family::perceive(&x);
     let map = vec![(1, 2), (3, 0)];
     let recolour = Clause { select: Pred::All, act: Act::Recolour(map.clone()) };
     let want = drawn(speak_clauses(std::slice::from_ref(&recolour), &x, &bodies));
-    assert_eq!(want, Ok(grid(&["220", "000", "000"])));
+    assert_eq!(want, Ok(digits(&["220", "000", "000"])));
     for about in [About::Sample, About::Body] {
         let carry = Clause { select: Pred::All, act: Act::Carry { motion: Mv::scalar(q(1)), about, gauge: map.clone() } };
         assert_eq!(drawn(speak_clauses(std::slice::from_ref(&carry), &x, &bodies)), want, "the identity carried {about:?}");
@@ -100,12 +100,12 @@ fn speak_clauses_reads_identity_carriage_as_hue_map() {
 #[test]
 fn speak_clauses_frames_output_by_plane_axis() {
     crate::transducer::raster::stand_on(0);
-    let tiled = grid(&["123", "456"]);
+    let tiled = digits(&["123", "456"]);
     let tile = Clause { select: Pred::All, act: Act::Tile { blocks: [1, 2], turns: vec![0, 1] } };
     let spoken = speak_clauses(std::slice::from_ref(&tile), &tiled, &crate::transducer::family::perceive(&tiled)).expect("the tiling is spoken");
     assert_eq!(spoken.frame, [2, 6], "one block along the first axis, two along the second");
-    assert_eq!(drawn(Ok(spoken)), Ok(grid(&["123321", "456654"])), "the second block reversed along the second axis");
-    let split = grid(&["10501", "01500"]);
+    assert_eq!(drawn(Ok(spoken)), Ok(digits(&["123321", "456654"])), "the second block reversed along the second axis");
+    let split = digits(&["10501", "01500"]);
     let panes = Clause { select: Pred::All, act: Act::Panes { along: PlaneAxis::Second, gap: true, table: 0b0110, paint: 2 } };
     let spoken = speak_clauses(std::slice::from_ref(&panes), &split, &crate::transducer::family::perceive(&split)).expect("the panes are spoken");
     assert_eq!(spoken.frame, [2, 2], "the pane keeps the first axis and halves the second past the separator");
@@ -117,14 +117,14 @@ fn speak_clauses_frames_output_by_plane_axis() {
 #[test]
 fn speak_elements_speaks_unnamed_carriage_without_gloss() {
     crate::transducer::raster::stand_on(0);
-    let x = grid(&["0100", "0000", "0000", "2222"]);
+    let x = digits(&["0100", "0000", "0000", "2222"]);
     let bodies = crate::transducer::family::perceive(&x);
     let echo_to_meet = Lowered {
         select: Pred::Hue(1),
         parts: false,
         element: RuleElement::Carriage(Carriage { motion: shift(1, 0), about: About::Sample, reach: Reach::Meet(Stop::Contact), trace: Trace::Keeps, paint: Paint::Own, gauge: Vec::new() }),
     };
-    assert_eq!(drawn(speak_elements(std::slice::from_ref(&echo_to_meet), &x, &bodies)), Ok(grid(&["0100", "0000", "0100", "2222"])));
+    assert_eq!(drawn(speak_elements(std::slice::from_ref(&echo_to_meet), &x, &bodies)), Ok(digits(&["0100", "0000", "0100", "2222"])));
     assert!(gloss(&echo_to_meet).is_none(), "no act names it");
 }
 
@@ -135,7 +135,7 @@ fn substrate_step_iterates_translation_and_refuses_turn() {
     assert_eq!(substrate_step(&shift(2, -1)), Some((2, -1)));
     let turn = rotator(&q(0), &q(1));
     assert_eq!(substrate_step(&turn), None, "a turn names no ray");
-    let x = grid(&["010", "000"]);
+    let x = digits(&["010", "000"]);
     let bodies = crate::transducer::family::perceive(&x);
     let spun = Lowered {
         select: Pred::All,
@@ -199,7 +199,7 @@ fn take_elements_carries_unnamed_element_on_address() {
     let form = crate::transducer::sentence::Form { elements: vec![kept_slide()], ..Default::default() };
     let address = crate::transducer::sentence::form_vertex_key(&form);
     let decoded = crate::transducer::sentence::from_address(&address).expect("the court decodes the form");
-    let x = grid(&["0100", "0000", "0000", "2222"]);
+    let x = digits(&["0100", "0000", "0000", "2222"]);
     let bodies = crate::transducer::family::perceive(&x);
     assert_eq!(drawn(speak_elements(&decoded.elements, &x, &bodies)), drawn(speak_elements(&[kept_slide()], &x, &bodies)), "spoken as it was said");
     assert_eq!(crate::transducer::sentence::form_vertex_key(&decoded), address, "and written again, one address");

@@ -55,7 +55,7 @@
 //! let Some(stated) = rule::extract_rule(&envelope.train, &mut budget) else { return };
 //! let Ok(element) = rule::mint_sentence_why(&stated, &envelope.train, &NoCrystal, 0) else { return };
 //! let outputs: Option<Vec<rule::SectionSample>> =
-//!     envelope.tests.iter().map(|x| rule::speak_rule(&stated, x, &NoCrystal).and_then(|s| s.grid())).collect();
+//!     envelope.tests.iter().map(|x| rule::speak_rule(&stated, x, &NoCrystal).and_then(|s| s.sample())).collect();
 //! let (Some(outputs), Some(tape)) = (outputs, element.to_bytes()) else { return };
 //! let Ok(outputs) = task::spoken_outputs(&outputs) else { return };
 //! if let Some(solve) = task::encode_solve_with_rule(&key, &envelope.id, &outputs, Some(&tape)) {

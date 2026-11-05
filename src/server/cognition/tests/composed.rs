@@ -6,7 +6,7 @@ use crate::cognition::book::speech::words_of_sentence;
 use crate::cognition::*;
 use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
 
-fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
+fn digits(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect()).collect()
 }
 
@@ -19,7 +19,7 @@ fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
 fn decompose_held_sentences_adds_words_once() {
     let mut k = Court::new();
     let speaker = [3u8; 32];
-    let family = vec![(grid(&["10", "11"]), grid(&["11", "10"]))];
+    let family = vec![(digits(&["10", "11"]), digits(&["11", "10"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a rule extracts");
     let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
@@ -44,7 +44,7 @@ fn decompose_held_sentences_adds_words_once() {
 fn home_install_holds_sentence_words_in_language() {
     let mut k = Court::new();
     let speaker = [1u8; 32];
-    for family in [vec![(grid(&["11"]), grid(&["22"]))], vec![(grid(&["10", "11"]), grid(&["11", "10"]))]] {
+    for family in [vec![(digits(&["11"]), digits(&["22"]))], vec![(digits(&["10", "11"]), digits(&["11", "10"]))]] {
         let Some(rule) = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)) else { continue };
         let Some(spoken) = mint_sentence(&rule, &family, &NoCrystal, 0) else { continue };
         let task = crate::registry::task_address(&crate::transducer::family::Task { train: family.clone(), test: Vec::new() }).expect("a task identity");
