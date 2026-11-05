@@ -86,23 +86,37 @@ impl Reconstructed<crate::anastome::dialogue::RootProof> {
     /// 78.147, 47.3 — A FOLD ROOT RECONSTRUCTED FROM THE SIGNATURES OVER
     /// IT, as the fold was sealed: the home's signed position verifies
     /// under the signer's key at `origin` (47.2 steps 1 and 2), the
-    /// witness's under another key (`REFUSE_WITNESS_DEPENDENT` otherwise),
-    /// and each position's commitment binds the root (`Commitment::binds`;
-    /// `REFUSE_RECEIPT` otherwise). A root claimed without both is refused
-    /// by name and nothing adopts it.
+    /// witness's under another key (`REFUSE_WITNESS_DEPENDENT` otherwise).
+    ///
+    /// #91: each position signs the root written out (`Root::signed`), so
+    /// all three of its coordinates are reconstructed from the signatures.
+    /// The place and the height each position states are the proof's,
+    /// compared as coordinates, and each position's hash binds the root
+    /// (`Commitment::binds`). A payload that is no root, or a root restated
+    /// at another place or height or with another hash than the one
+    /// signed, is refused `REFUSE_RECEIPT` (a prefix and the receipt it
+    /// travels with disagree). A root claimed without both is refused by
+    /// name and nothing adopts it.
     pub fn root(
         proof: &crate::anastome::dialogue::RootProof,
         origin: ([u8; 32], u32),
     ) -> Result<Reconstructed<crate::anastome::dialogue::RootProof>, &'static str> {
+        use crate::chronometry::Root;
         super::admit_signature(origin, &proof.home.prefix, &proof.signer, &proof.home.sig)?;
         let wk = proof.witness.receipt.stamp.vk;
         if wk == proof.signer {
             return Err(crate::verdict::REFUSE_WITNESS_DEPENDENT);
         }
         super::verify_signature(&proof.witness.prefix, &wk, &proof.witness.sig)?;
+        let home = Root::of_signed(&proof.home.prefix.payload).ok_or(crate::verdict::REFUSE_RECEIPT)?;
+        let witness = Root::of_signed(&proof.witness.prefix.payload).ok_or(crate::verdict::REFUSE_RECEIPT)?;
+        let stated = (proof.root.at, proof.root.height);
+        if (home.at, home.height) != stated || (witness.at, witness.height) != stated {
+            return Err(crate::verdict::REFUSE_RECEIPT);
+        }
         let signed = Reconstructed { object: proof.clone() };
-        let binds = |payload: &[u8]| <[u8; 32]>::try_from(payload).is_ok_and(|d| super::Commitment::of_bytes(d).binds(&signed));
-        match binds(&proof.home.prefix.payload) && binds(&proof.witness.prefix.payload) {
+        let binds = |r: &Root| super::Commitment::of_bytes(r.hash).binds(&signed);
+        match binds(&home) && binds(&witness) {
             true => Ok(signed),
             false => Err(crate::verdict::REFUSE_RECEIPT),
         }

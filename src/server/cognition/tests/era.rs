@@ -3,7 +3,7 @@
 // over its root, and the K-range read across the archive.
 
 use crate::anastome::dialogue::ReceiptSection;
-use crate::chronometry::{ActKind, Place, ReceiptChain};
+use crate::chronometry::{ActKind, Place, ReceiptChain, Root};
 use crate::cognition::*;
 use crate::court::admission::SignedPrefix;
 use crate::verdict::{
@@ -11,10 +11,10 @@ use crate::verdict::{
     REFUSE_WITNESS_ROOM,
 };
 
-/// A witness's signed position over a root hash, as a fixture: its own
-/// chain of one receipt and a 47.1 prefix whose payload is the hash,
-/// signed by the key its name derives.
-fn co_sign(name: &str, root_hash: [u8; 32]) -> ReceiptSection {
+/// A witness's signed position over a root, as a fixture: its own chain
+/// of one receipt and a 47.1 prefix whose payload is the root written out
+/// (`Root::signed`), signed by the key its name derives.
+fn co_sign(name: &str, root: Root) -> ReceiptSection {
     let key = super::fixtures::court_key(name);
     let mut c = ReceiptChain::with_signer(key.verifying_bytes());
     let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
@@ -25,7 +25,7 @@ fn co_sign(name: &str, root_hash: [u8; 32]) -> ReceiptSection {
         at: head.stamp.place(),
         height: head.stamp.h,
         chart: vec![],
-        payload: root_hash.to_vec(),
+        payload: root.signed(),
     };
     let sig = key.sign(&prefix.bytes().expect("the prefix frames"));
     ReceiptSection { prefix, sig, receipt: head }
@@ -79,15 +79,16 @@ assert_eq!(Court::boot().verify_fold(home, &p, &receipts, &rows), Err(REFUSE_WIT
 
 // THE HOME seals only on a signature that verifies, from another key, over this root.
 let home_sig = [3u8; 64];
-let mut dependent = co_sign("w", p.root.hash);
+let mut dependent = co_sign("w", p.root);
 dependent.receipt.stamp.vk = home;
 assert_eq!(k.commit_fold(home_sig, &dependent), Err(REFUSE_WITNESS_DEPENDENT), "a court is not its own witness");
-let mut forged = co_sign("w", p.root.hash);
+let mut forged = co_sign("w", p.root);
 forged.sig[0] ^= 1;
 assert_eq!(k.commit_fold(home_sig, &forged), Err(REFUSE_SIGNATURE));
-assert_eq!(k.commit_fold(home_sig, &co_sign("w", [9; 32])), Err(REFUSE_RECEIPT), "a position over another root");
+assert_eq!(k.commit_fold(home_sig, &co_sign("w", Root { hash: [9; 32], ..p.root })), Err(REFUSE_RECEIPT), "a position over another root");
+assert_eq!(k.commit_fold(home_sig, &co_sign("w", Root { height: p.root.height + 1, ..p.root })), Err(REFUSE_RECEIPT), "a position over the root at another height");
 assert!(k.fold_proposal().is_some(), "the proposal stands through a witness's refusals");
-let w = co_sign("w", p.root.hash);
+let w = co_sign("w", p.root);
 let done = k.commit_fold(home_sig, &w).expect("two signatures seal the fold");
 assert_eq!((done.first, done.last, done.at, done.witness), (act(0), close(2), Some(act(3)), w.receipt.stamp.vk));
 assert_eq!(done.h, head_height + 1, "height continues over the fold");
@@ -148,7 +149,7 @@ assert!(k.propose_fold_at_close().is_err(), "a fold's own orbit proposes nothing
 assert!(k.fold_proposal().is_none(), "the close proposed nothing");
 let p2 = k.propose_fold().expect("the fold receipt's orbit closed, and is itself final");
 assert_eq!((p2.after, p2.root.at), (Some(close(2)), close(3)));
-assert!(k.commit_fold(home_sig, &co_sign("w", p2.root.hash)).is_ok());
+assert!(k.commit_fold(home_sig, &co_sign("w", p2.root)).is_ok());
 assert_eq!(k.archive().len(), 2);
 assert_eq!(k.chain().root().map(|r| r.at), Some(close(3)));
 
@@ -187,10 +188,10 @@ fn bind_eras_reads_range_of_each_era() {
         k.orbit();
     }
     let p = k.propose_fold().expect("a final prefix");
-    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    k.commit_fold([3; 64], &co_sign("w", p.root)).expect("sealed");
     k.orbit();
     let p2 = k.propose_fold().expect("the second fold");
-    k.commit_fold([3; 64], &co_sign("w", p2.root.hash)).expect("sealed");
+    k.commit_fold([3; 64], &co_sign("w", p2.root)).expect("sealed");
     let [first, second] = k.archive() else { panic!("two eras") };
     assert!(first.at.is_some() && second.at.is_some() && first.at != second.at, "each at its own offset");
     let read = |k: &Court, after, upto| k.receipts_range(&home, after, upto, 100).iter().map(|r| r.stamp.place()).collect::<Vec<_>>();
@@ -227,7 +228,7 @@ fn receipts_page_pages_no_era_before_root() {
     }
     for _ in 0..3 {
         let p = k.propose_fold().expect("a final prefix");
-        k.commit_fold([3; 64], &co_sign("w-fold-root", p.root.hash)).expect("sealed");
+        k.commit_fold([3; 64], &co_sign("w-fold-root", p.root)).expect("sealed");
         k.append_step(ActKind::List, [1; 32], [2; 32]);
         k.orbit();
     }
@@ -280,7 +281,7 @@ fn restore_agrees_with_bound_line() {
     }
     let early = persist(&mut k);
     let p = k.propose_fold().expect("a final prefix");
-    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    k.commit_fold([3; 64], &co_sign("w", p.root)).expect("sealed");
     k.append_step(ActKind::List, [1; 32], [2; 32]);
     k.orbit();
     let snap = persist(&mut k);
@@ -323,7 +324,7 @@ fn admit_backfill_admits_citation_of_folded_receipt() {
     // The peer hears the court's receipt at (1, 0) before the fold.
     let cited = k.receipts_range(&home, Some(Place { k: 0, i: 1 }), Place { k: 1, i: 0 }, 1).remove(0);
     let p = k.propose_fold().expect("a final prefix");
-    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    k.commit_fold([3; 64], &co_sign("w", p.root)).expect("sealed");
     assert!(k.chain().at(&home, cited.stamp.place()).is_none(), "the cited receipt left the nodes for the archive");
     let dvk = super::fixtures::court_key("folded-cite-d").verifying_bytes();
     let mut d = ReceiptChain::with_signer(dvk);
@@ -357,7 +358,7 @@ fn verify_fold_verifies_second_fold_on_fetched_rows() {
     let fetched = |k: &Court, p: &Proposal| k.rows_range(&home, p.after, p.root.at, 0, usize::MAX).1;
     let first = k.receipts_range(&home, p.after, p.root.at, 100);
     assert_eq!(witness.verify_fold(home, &p, &first, &fetched(&k, &p)), Ok(()), "the first fold verifies");
-    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    k.commit_fold([3; 64], &co_sign("w", p.root)).expect("sealed");
     k.orbit();
     let p2 = k.propose_fold().expect("the second fold");
     let second = k.receipts_range(&home, p2.after, p2.root.at, 100);
@@ -385,7 +386,7 @@ fn commit_fold_stands_epoch_rows_at_root() {
     let paid_at = k.anchor();
     let _ = k.treasury.settle_use(home, [0x22; 32], [1, 0, 0, 0], paid_at);
     k.orbit();
-    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    k.commit_fold([3; 64], &co_sign("w", p.root)).expect("sealed");
     let root = k.chain().root().expect("folded");
     assert!(
         k.treasury().entries().iter().filter(|e| e.kind == crate::economy::Kind::Epoch).all(|e| e.stands_at() == Some(root.at)),
@@ -426,7 +427,7 @@ fn propose_fold_passes_open_listing_and_escrow() {
 
     let p = k.propose_fold().expect("nothing open pins the line");
     assert!(p.root.at >= admitted.place(), "the fold passes the word's admitting act");
-    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    k.commit_fold([3; 64], &co_sign("w", p.root)).expect("sealed");
     assert!(k.chain().node(&admitted).is_none(), "the admitting act is in the era now");
     assert!(k.pending.contains(&word) && k.provisional.contains(&word), "and the word is still open");
 
@@ -454,7 +455,7 @@ fn propose_fold_passes_open_listing_and_escrow() {
     let receipts = k.receipts_range(&line, p2.after, p2.root.at, 100);
     assert!(!receipts.is_empty(), "the witness is served the prefix");
     assert_eq!(Court::new().verify_fold(line, &p2, &receipts, &fetched), Ok(()), "and its witness re-derives it");
-    k.commit_fold([3; 64], &co_sign("w", p2.root.hash)).expect("sealed");
+    k.commit_fold([3; 64], &co_sign("w", p2.root)).expect("sealed");
     assert!(k.treasury().audit().is_ok());
 }
 
@@ -475,7 +476,7 @@ fn propose_fold_at_close_cuts_long_orbit_at_close() {
         k.orbit();
     }
     let p = k.propose_fold().expect("a final prefix proposes");
-    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("two signatures seal the fold");
+    k.commit_fold([3; 64], &co_sign("w", p.root)).expect("two signatures seal the fold");
     k.orbit();
     let (at_most, _) = Court::receipts_frame().expect("a frame");
     // The long orbit changes the algorithm, as b's did (15 670 installs): a

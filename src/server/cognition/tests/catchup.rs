@@ -49,15 +49,15 @@ fn strokes(k: &mut Court, n: u64) {
 }
 
 /// THE FOLD ON TWO SIGNATURES, the proof kept: the home's position over the
-/// root hash and a witness's, the witness another key.
+/// root written out and a witness's, the witness another key.
 fn fold(k: &mut Court, key: &HyphaKey) -> RootProof {
     let p = k.propose_fold().expect("a final prefix");
     let head = k.chain().head().expect("the court acted");
-    let home = position(key, &head, p.root.hash.to_vec());
+    let home = position(key, &head, p.root.signed());
     let wkey = super::fixtures::court_key("catchup-witness");
     let mut wc = ReceiptChain::with_signer(wkey.verifying_bytes());
     let wh = wc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
-    let witness = position(&wkey, &wh, p.root.hash.to_vec());
+    let witness = position(&wkey, &wh, p.root.signed());
     k.commit_fold_proved(&home, &witness).expect("two signatures seal the fold");
     k.root_proof(&key.verifying_bytes()).expect("the root is held with its proof").clone()
 }
@@ -202,7 +202,7 @@ fn serve_receipts_answers_below_root_with_root() {
     let wkey = super::fixtures::court_key("catchup-witness");
     let mut wc = ReceiptChain::with_signer(wkey.verifying_bytes());
     let wh = wc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
-    u.commit_fold([3; 64], &position(&wkey, &wh, p.root.hash.to_vec())).expect("sealed");
+    u.commit_fold([3; 64], &position(&wkey, &wh, p.root.signed())).expect("sealed");
     strokes(&mut u, 1);
     let unproved = serves()[ServeAxis::UnprovedRoot as usize];
     let ReceiptsAnswer::Page(page) = u.serve_receipts(&uvk, None, far, false, 8, usize::MAX) else { panic!("no proof: a page") };
@@ -590,4 +590,76 @@ fn adopt_root_refuses_forged_root_keeping_reached() {
         let unreached = c.unreached_at(&bvk, r.stamp.place()).is_some();
         assert_eq!(unreached, r.stamp.place() > reached, "{:?}: reached below the signed stroke, held unreached above it", r.stamp.place());
     }
+}
+
+/// A court holding none of `name`'s line, and the fold root that signer
+/// sealed on two signatures after three strokes: the signer's key, the
+/// court and the proof.
+fn root_unheld(name: &str) -> ([u8; 32], Court, RootProof) {
+    let (bkey, mut b) = court(name);
+    strokes(&mut b, 3);
+    let proof = fold(&mut b, &bkey);
+    let bvk = bkey.verifying_bytes();
+    let mut w = Court::new();
+    w.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
+    assert!(w.known_head(&bvk).is_none(), "w holds nothing of b's line");
+    (bvk, w, proof)
+}
+
+/// What a refused root leaves at `w`: no root of `bvk` stands, no proof of
+/// it is filed, and the refusal is counted under it.
+fn nothing_adopted(w: &Court, bvk: &[u8; 32]) {
+    assert_eq!(w.chain().peer_root(bvk), None, "no root of b stands at w");
+    assert!(w.root_proof(bvk).is_none(), "no proof of b is filed");
+    assert!(axes(*bvk)[replication::ROOT_REFUSED] > 0, "the refusal counted under b");
+}
+
+/// MU-HOSTING §5a.9, §5a.10 (#91) — A ROOT RESTATED AT ANOTHER PLACE IS
+/// REFUSED WITH NO RECEIPT HELD TO CHECK IT AGAINST. b folds on two
+/// signatures, each over its root written out (`Root::signed`). w holds
+/// nothing of b's line, so neither the receipt at the root's place
+/// (`reach_by_root`) nor a hot line past it reads the place. The proof
+/// restated with the signed hash and height at another `K` or another `i`
+/// is refused `REFUSE_RECEIPT` by the signatures alone, and nothing is
+/// adopted. The proof as signed is then adopted at the place its
+/// signatures state.
+#[test]
+fn root_at_another_place_refuses_without_held_receipt() {
+    let (bvk, mut w, proof) = root_unheld("catchup-root-place-b");
+    let at = proof.root.at;
+    for moved_at in [Place { k: at.k + 1, ..at }, Place { i: at.i + 1, ..at }] {
+        let mut moved = proof.clone();
+        moved.root.at = moved_at;
+        assert_eq!(w.adopt_root(AT, &moved), RootAdoption::Refused(crate::verdict::REFUSE_RECEIPT), "{moved_at:?}: a place the signatures do not state");
+    }
+    nothing_adopted(&w, &bvk);
+    let signed = crate::chronometry::Root::of_signed(&proof.home.prefix.payload);
+    assert_eq!(signed, Some(proof.root), "the home's signature states the root's place, height and hash");
+    assert_eq!(w.adopt_root(AT, &proof), RootAdoption::Adopted, "the root as signed");
+    assert_eq!(w.chain().peer_root(&bvk), Some(at), "b's root stands at the place signed");
+}
+
+/// MU-HOSTING §5a.9, §5a.10 (#91) — A ROOT RESTATED AT ANOTHER HEIGHT IS
+/// REFUSED. As above, with the signed place and hash kept and the height
+/// one above or one below the one signed: `REFUSE_RECEIPT`, and nothing is
+/// adopted. A position whose payload is the bare hash, as version 1 signed
+/// it, states no root and is refused the same way.
+#[test]
+fn root_at_another_height_refuses() {
+    let (bvk, mut w, proof) = root_unheld("catchup-root-height-b");
+    let h = proof.root.height;
+    let below = h.checked_sub(1).expect("the root stands above genesis");
+    for height in [h + 1, below] {
+        let mut moved = proof.clone();
+        moved.root.height = height;
+        assert_eq!(w.adopt_root(AT, &moved), RootAdoption::Refused(crate::verdict::REFUSE_RECEIPT), "height {height}: a height the signatures do not state");
+    }
+    nothing_adopted(&w, &bvk);
+    let mut bare = proof.clone();
+    bare.home.prefix.payload = proof.root.hash.to_vec();
+    let rekey = super::fixtures::court_key("catchup-root-height-b");
+    bare.home.sig = rekey.sign(&bare.home.prefix.bytes().expect("the prefix frames"));
+    assert_eq!(w.adopt_root(AT, &bare), RootAdoption::Refused(crate::verdict::REFUSE_RECEIPT), "a bare hash states no root");
+    nothing_adopted(&w, &bvk);
+    assert_eq!(w.adopt_root(AT, &proof), RootAdoption::Adopted, "the root as signed");
 }

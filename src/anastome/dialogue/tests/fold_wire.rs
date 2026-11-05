@@ -21,7 +21,7 @@ fn fold_witness_round_trips_with_rows() {
             at: head.stamp.place(),
             height: head.stamp.h,
             chart: vec![],
-            payload: root.hash.to_vec(),
+            payload: root.signed(),
         },
         sig: [9u8; 64],
         receipt: head.clone(),

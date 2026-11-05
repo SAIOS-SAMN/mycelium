@@ -840,10 +840,10 @@ Open after B0:
   signer's next fold that one holds. A receipt held unreached below an
   adopted root that the root does not name leaves unread, as a catch-up
   from a root delivers no receipt below it.
-- A root proof's signatures bind the root's chain hash. Its place and
-  height are read off the proof, and they are reconstructed only where
-  the court holds the receipt at that place (`reach_by_root`) or the hot
-  line past it links to the root.
+- Closed ([issue #91](https://github.com/SAIOS-SAMN/mycelium/issues/91)):
+  a root proof's signatures bound the root's chain hash only, and its
+  place and height were read off the proof unsigned. Each signed position
+  now signs the root written out (see "The root's signed domain" below).
 
 **Eviction, the bound and the fold root** (**Built**,
 [issue #79](https://github.com/SAIOS-SAMN/mycelium/issues/79)):
@@ -893,7 +893,8 @@ it covers. It never holds more than `C` receipts unreached:
    `Reconstructed<RootProof>` (`Reconstructed::root`): the home's signed
    position verifies under the signer's key at this node's origin, the
    witness's under another key, and each position's commitment binds the
-   root (`Commitment::binds`). Otherwise it is refused by name
+   root (`Commitment::binds`) at the place and height it signs (#91,
+   below). Otherwise it is refused by name
    (`REFUSE_SIGNATURE`, `REFUSE_RECEIPT`, `REFUSE_ORIGIN`,
    `REFUSE_WITNESS_DEPENDENT`), counted `root_refused`, and nothing is
    adopted, shed or evicted.
@@ -916,6 +917,33 @@ ledger layout changes. Claims in `server/cognition/tests/catchup.rs`:
 `gap_past_capacity_closes_through_a_fold_root`,
 `capacity_bound_holds_while_a_long_gap_closes`,
 `adopt_root_refuses_forged_root_keeping_reached`.
+
+**The root's signed domain** (**Built**,
+[issue #91](https://github.com/SAIOS-SAMN/mycelium/issues/91), inside
+v0.4.0's break). The home's and the witness's signed positions over a
+fold root (47.3) carry the root written out as coordinates (A21) as the
+payload of their 47.1 prefix (`Root::signed`):
+
+```text
+"mycelium root v2" ‖ K u64 ‖ i u64 ‖ height u64 ‖ chain hash 32
+```
+
+`K ‖ i` and the height are big-endian, as a stamp's key writes them.
+Version 1, unnamed, signed the bare chain hash. `Reconstructed::root`
+reads the root back from each position (`Root::of_signed`), compares the
+place and the height the proof states with the signed ones as
+coordinates, and binds the hash (`Commitment::binds`). A payload that is
+no root, or a root restated at another place, height or hash, is refused
+`REFUSE_RECEIPT` (a prefix and the receipt it travels with disagree),
+counted `root_refused`, and adopts nothing, whether or not the court
+holds a receipt at that place. The home checks the witness's position
+(`Court::commit_fold`) and the witness the home's (`ACT_FOLD`) against
+the proposed root the same way. The root proof's wire shape, the fold
+proposal's and the `LEAF_ROOTS` layout are unchanged: each section's
+payload is length-prefixed, and only its content changes (32 bytes to
+72). Claims in `server/cognition/tests/catchup.rs`:
+`root_at_another_place_refuses_without_held_receipt`,
+`root_at_another_height_refuses`.
 
 ### 5a.10 What crosses: the exact object, never its digest
 

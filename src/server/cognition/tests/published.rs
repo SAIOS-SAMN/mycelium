@@ -46,11 +46,11 @@ fn position(key: &HyphaKey, head: &KStepReceipt, payload: Vec<u8>) -> ReceiptSec
 fn fold(k: &mut Court, key: &HyphaKey) {
     let p = k.propose_fold().expect("a final prefix");
     let head = k.chain().head().expect("the court acted");
-    let home = position(key, &head, p.root.hash.to_vec());
+    let home = position(key, &head, p.root.signed());
     let wkey = super::fixtures::court_key("published-witness");
     let mut wc = ReceiptChain::with_signer(wkey.verifying_bytes());
     let wh = wc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
-    let witness = position(&wkey, &wh, p.root.hash.to_vec());
+    let witness = position(&wkey, &wh, p.root.signed());
     k.commit_fold_proved(&home, &witness).expect("two signatures seal the fold");
 }
 

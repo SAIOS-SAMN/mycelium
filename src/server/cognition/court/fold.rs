@@ -203,7 +203,8 @@ impl Court {
 
     /// COMMIT ON TWO SIGNATURES (47.3): the witness is another key than
     /// this court's, its signed position over the root verifies under its
-    /// key (47.2 step 2) with the root hash as payload, the proposal still
+    /// key (47.2 step 2) with the root written out as payload
+    /// (`Root::signed`: place, height and hash, #91), the proposal still
     /// reads exact and its prefix still final — then the prefix leaves the
     /// hot chain, the `Fold` receipt is sealed citing the root, the epoch
     /// rows are written anchored to it, and the era is filed with the
@@ -221,7 +222,7 @@ impl Court {
             return Err(REFUSE_WITNESS_DEPENDENT);
         }
         crate::court::admission::verify_signature(&witness.prefix, &wk, &witness.sig)?;
-        if witness.prefix.payload != p.root.hash {
+        if Root::of_signed(&witness.prefix.payload) != Some(p.root) {
             return Err(REFUSE_RECEIPT);
         }
         let epochs = nets_of(&self.treasury.rows_below(p.root.at))?.rows;

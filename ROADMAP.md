@@ -57,7 +57,7 @@ None of these waits on a ruling:
 | Item | Issue | Track | Notes |
 |---|---|---|---|
 | X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | First stage built on branch `x0-drift-guards` (no wire or layout change): the admission sites typed, the receipt path's admissions taking `Reconstructed<T>`, the register in the gate. Open: the record fields typed by sense. The rest of track 25 stands on it |
-| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Eviction by signature, the held queue's bound and the waiting fold root are built ([#79](https://github.com/SAIOS-SAMN/mycelium/issues/79)). A gap longer than the capacity closes through a fold root ([#88](https://github.com/SAIOS-SAMN/mycelium/issues/88), built). Open: foundings inside a folded era, a version-2 origin's geometry (MU-HOSTING §5a.9) |
+| B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Eviction by signature, the held queue's bound and the waiting fold root are built ([#79](https://github.com/SAIOS-SAMN/mycelium/issues/79)). A gap longer than the capacity closes through a fold root ([#88](https://github.com/SAIOS-SAMN/mycelium/issues/88), built). A fold root's signatures cover its place and height ([#91](https://github.com/SAIOS-SAMN/mycelium/issues/91), built; a signing-domain change inside v0.4.0's break). Open: foundings inside a folded era, a version-2 origin's geometry (MU-HOSTING §5a.9) |
 | `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
 | Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Built with N1 |
 | Split `door.rs` by function into `control.rs` and `context.rs` (names only) | [#53](https://github.com/SAIOS-SAMN/mycelium/issues/53) | 11 | Built with N2 |
@@ -1213,7 +1213,14 @@ Concordance hash served and signatures verified. Each phase is one commit:
    its place and every one below it, and receipts its shed takes off the
    chain leave the gate. No more than `C` receipts are held unreached
    while the gap closes. Claims in `server/cognition/tests/catchup.rs`
-   (MU-HOSTING §5a.9).
+   (MU-HOSTING §5a.9). A fold root's signatures cover its place, height
+   and hash ([issue #91](https://github.com/SAIOS-SAMN/mycelium/issues/91);
+   **Built**, inside v0.4.0's break): each signed position signs the root
+   written out, `"mycelium root v2" ‖ K ‖ i ‖ height ‖ hash`, and a root
+   restated at another place or height is refused `REFUSE_RECEIPT` with
+   no receipt held at that place. Claims
+   `root_at_another_place_refuses_without_held_receipt`,
+   `root_at_another_height_refuses`.
 2. **B1, the act audit and the boundary's name:** every act kind that
    names a domain classed as a key's own or a universe's; the `NotReserve`
    variants renamed `NotThroughCore` (names only); a line's mouth offer

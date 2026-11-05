@@ -184,4 +184,46 @@ impl Root {
         *pos += 8;
         Some(Root { at, hash, height })
     }
+
+    /// 47.3 (#91) — WHAT THE HOME AND THE WITNESS SIGN OF A FOLD ROOT: the
+    /// payload of each one's signed position (47.1), the domain then the
+    /// root written out as its coordinates (A21), in this order and no
+    /// other:
+    ///
+    /// ```text
+    /// "mycelium root v2" ‖ K u64 ‖ i u64 ‖ height u64 ‖ chain hash 32
+    /// ```
+    ///
+    /// `K ‖ i` and the height are big-endian, as a stamp's key writes them.
+    /// So the signatures cover where the root stands and how high, not
+    /// only its hash, and a root restated at another place or height is
+    /// not the one signed.
+    pub fn signed(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(SIGNED_ROOT.len() + Place::LEN + 8 + 32);
+        out.extend_from_slice(SIGNED_ROOT);
+        self.at.put_canonical(&mut out);
+        out.extend_from_slice(&self.height.to_be_bytes());
+        out.extend_from_slice(&self.hash);
+        out
+    }
+
+    /// The root a signed position's payload states, read back from
+    /// [`Root::signed`]'s bytes whole, or `None` where the payload is not a
+    /// root under this domain.
+    pub fn of_signed(payload: &[u8]) -> Option<Root> {
+        let mut p = SIGNED_ROOT.len();
+        if payload.get(..p) != Some(SIGNED_ROOT) {
+            return None;
+        }
+        let at = Place::take_canonical(payload, &mut p)?;
+        let height = u64::from_be_bytes(payload.get(p..p + 8)?.try_into().ok()?);
+        p += 8;
+        let hash: [u8; 32] = payload.get(p..p + 32)?.try_into().ok()?;
+        (p + 32 == payload.len()).then_some(Root { at, hash, height })
+    }
 }
+
+/// 47.3 (#91) — THE DOMAIN A FOLD ROOT IS SIGNED UNDER. Version 2 (inside
+/// v0.4.0's break): the root's place and height, written out, beside its
+/// chain hash. Version 1, unnamed, signed the bare chain hash.
+const SIGNED_ROOT: &[u8] = b"mycelium root v2";

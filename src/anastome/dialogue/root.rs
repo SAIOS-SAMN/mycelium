@@ -6,7 +6,10 @@
 //! the root hash and the witness's, each a receipt section. It is verified
 //! exactly as `commit_fold` verifies the witness and the witness verifies the
 //! home (`judge/fold.rs`): the home's signature under the signer's key at this
-//! node's origin, the witness's under another key, both over the root's hash.
+//! node's origin, the witness's under another key, both over the root
+//! written out (`Root::signed`: `"mycelium root v2" ‖ K ‖ i ‖ height ‖
+//! hash`, #91), so the place and height the proof states are the ones
+//! signed.
 //!
 //! `[signer 32][root K‖i ‖ hash 32 ‖ height u64][home section][witness section]`
 
@@ -19,9 +22,9 @@ pub struct RootProof {
     /// Whose line the fold archived.
     pub signer: [u8; 32],
     pub root: Root,
-    /// The home's signed position over the root hash.
+    /// The home's signed position over the root written out.
     pub home: ReceiptSection,
-    /// The witness's signed position over the root hash.
+    /// The witness's signed position over the root written out.
     pub witness: ReceiptSection,
 }
 

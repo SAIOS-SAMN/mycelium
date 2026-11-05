@@ -81,6 +81,32 @@ such change is named here.
   indices inside the act reading; the frame acts (panes, tiles, the
   square's symmetries, the scaling) stay planar by their acts.
 
+### A fold root's signatures cover its place and height (track 24, #91)
+- **Network contract**, inside v0.4.0's break:
+  - **The root's signing domain changes.** The home's and the witness's
+    signed positions over a fold root (47.3) carry, as the payload of
+    their 47.1 prefix, the root written out as coordinates (A21):
+    `"mycelium root v2" ‖ K u64 ‖ i u64 ‖ height u64 ‖ chain hash 32`,
+    `K ‖ i` and the height big-endian (`Root::signed`). Version 1,
+    unnamed, signed the bare 32-byte chain hash, and no longer verifies:
+    a v1 root proof is refused `REFUSE_RECEIPT`, and a v1 co-signature
+    seals no fold.
+  - **No wire shape changes.** `ACT_FOLD`'s proposal, the witness's
+    co-signature, the root answer of `ACT_RECEIPTS` and the `LEAF_ROOTS`
+    leaf keep their layouts: each section's payload is length-prefixed,
+    and only its content changes, from 32 bytes to 72. Root proofs
+    persisted under v1 do not verify; a recut wipes them.
+- `Reconstructed::root` reads the root back from each signed position
+  (`Root::of_signed`), compares the place and the height the proof
+  states with the signed ones as coordinates, and binds the hash. A root
+  restated at another place, height or hash is refused `REFUSE_RECEIPT`,
+  counted `root_refused`, and adopts nothing, whether or not the court
+  holds a receipt at that place. The home (`Court::commit_fold`) and the
+  witness (`ACT_FOLD`) check each other's position against the proposed
+  root the same way.
+- Claims `root_at_another_place_refuses_without_held_receipt`,
+  `root_at_another_height_refuses`; the #88 claims stand.
+
 ### LAW-PASSAGE v2's fixtures are claims in the algebra (2026-11-05)
 - **Network contract:** no wire byte, act, encoding or ledger layout
   changes, and no law version moves.
@@ -124,8 +150,9 @@ such change is named here.
   78.172 is amended to the passage law accepted by both operators: a
   body's state is an even multivector `q`, and one crossing in plane `k`
   is the one-sided product `q ↦ v_k·q` with `v_k = H_k·e_Zk + R_k·e_Qk`,
-  `e_Zk² = +1`, `e_Qk² = −1`. The proposal stays Proposed: netstratum has
-  read its four fixtures, xylarium has not.
+  `e_Zk² = +1`, `e_Qk² = −1`. Its four fixtures were agreed on
+  2026-11-05 by mycelium, netstratum and xylarium (status: Fixtures
+  agreed, MU-RELEASE §3a step 4).
 - `Throat::pass` and version 1's fixtures 1, 2, 3 and 6 are removed with
   their tests. `Throat::verify` refuses a stated moved reach (`H²/R`
   among them) `NotLawful`, naming the claim against the reach carried

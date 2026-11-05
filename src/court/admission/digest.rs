@@ -143,8 +143,10 @@ impl Committed for KStepReceipt {
 }
 
 /// 47.3, 78.147: a fold root is committed to by the home's and the
-/// witness's signed positions, each carrying the root's chain hash as the
-/// payload it signs.
+/// witness's signed positions, each carrying the root written out as the
+/// payload it signs (`Root::signed`, #91). Its chain hash is the digest
+/// bound here; its place and height are coordinates, compared as
+/// coordinates (`Reconstructed::root`).
 impl Committed for crate::anastome::dialogue::RootProof {
     fn committed(&self) -> [u8; 32] {
         self.root.hash
