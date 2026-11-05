@@ -58,6 +58,9 @@ fn mind_round_trips_with_agreements() {
         sealed: 2,
         viscous: [1, 0, 0, 3],
         flux: [4, -2, 0, i128::from(u64::MAX)],
+        fed: [3, 1, 0, 2],
+        fed_share: q(7, 9),
+        fed_unshared: 1,
     };
     let agreements = Agreements {
         pairs: vec![Agreed { speaker: party(1), hearer: party(2), agreed: 3, whole: 2, deviation: [q(1, 2), q(0, 1), q(0, 1), q(0, 1)] }],
@@ -67,6 +70,7 @@ fn mind_round_trips_with_agreements() {
     assert_eq!(Source::of_key(&key), Some((Source::Mind(party(3)), TAG_MIND)), "a mind's reading stands under the mind");
     assert!(mind.lines().iter().any(|l| l.contains("deviation closed 1/2:0:0:3/7")), "the deviation is printed exact");
     assert!(mind.lines().iter().any(|l| l.contains("viscous 1:0:0:3 · flux 4:-2:0:")), "the ledger is printed per lane");
+    assert!(mind.lines().iter().any(|l| l.contains("fed: count 3:1:0:2 · share of the frames 7/9 (unread 1)")), "the share is printed exact beside the count");
     // A court task travels by its whole citation and is named on the console:
     // taken, read as a task, undetermined by its perspectives, sent.
     let named = mind.tasks[0].line();

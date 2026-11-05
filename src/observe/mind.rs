@@ -329,6 +329,14 @@ pub struct MindReading {
     pub sealed: u64,
     pub viscous: [u64; 4],
     pub flux: [i128; 4],
+    /// MU-DERIVATIONS (the readers) — THE FAMILIES IT TOOK IN, two readings
+    /// side by side: their count per lane (`family_magnitude`, the mind's
+    /// metabolism, never μ), the exact share of the frames their pairs
+    /// change (`transduce::family_share`), and the families whose share did
+    /// not read whole, so a zero says where the reading stopped.
+    pub fed: [u64; 4],
+    pub fed_share: Q,
+    pub fed_unshared: u64,
 }
 
 impl Default for MindReading {
@@ -384,6 +392,9 @@ impl Default for MindReading {
             sealed: 0,
             viscous: [0; 4],
             flux: [0; 4],
+            fed: [0; 4],
+            fed_share: Q::from_integer(0.into()),
+            fed_unshared: 0,
         }
     }
 }
@@ -411,6 +422,21 @@ impl MindReading {
         for (slot, f) in self.flux.iter_mut().zip(m.flux()) {
             if let Some(v) = slot.checked_add(f) {
                 *slot = v;
+            }
+        }
+    }
+
+    /// ONE FAMILY TAKEN IN: its count per lane, and its exact share of the
+    /// frames, or the share unread.
+    pub fn fed(&mut self, mag: &[u64; 4], share: Option<Q>) {
+        use crate::physics::metabolism::step_or_refuse;
+        for (slot, v) in self.fed.iter_mut().zip(mag) {
+            let _ = step_or_refuse(slot, *v);
+        }
+        match share {
+            Some(s) => self.fed_share += s,
+            None => {
+                let _ = step_or_refuse(&mut self.fed_unshared, 1);
             }
         }
     }
@@ -473,6 +499,10 @@ impl MindReading {
         for f in self.flux {
             out.extend_from_slice(&f.to_le_bytes());
         }
+        for v in self.fed.into_iter().chain([self.fed_unshared]) {
+            put_u64(out, v);
+        }
+        crate::transducer::alphabet::put_q(out, &self.fed_share);
         Some(())
     }
 
@@ -554,6 +584,9 @@ impl MindReading {
             *f = i128::from_le_bytes(b.get(*p..*p + 16)?.try_into().ok()?);
             *p += 16;
         }
+        let fed = [take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?];
+        let fed_unshared = take_u64(b, p)?;
+        let fed_share = crate::transducer::alphabet::take_q(b, p)?;
         Some(MindReading {
             k,
             heard,
@@ -605,6 +638,9 @@ impl MindReading {
             sealed,
             viscous,
             flux,
+            fed,
+            fed_share,
+            fed_unshared,
         })
     }
 
@@ -673,6 +709,12 @@ impl MindReading {
                 self.sealed,
                 self.viscous.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(":"),
                 self.flux.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(":")
+            ),
+            format!(
+                "  fed: count {} · share of the frames {} (unread {})",
+                self.fed.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(":"),
+                self.fed_share,
+                self.fed_unshared
             ),
             format!("  carrier holds thoughts {} · unions {} · waiting {}", self.thoughts, self.unions, self.waiting),
             format!("  court tasks landed {}", self.tasks.len()),

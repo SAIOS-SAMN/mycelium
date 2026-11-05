@@ -26,3 +26,10 @@
   equivocation, uplink and challenge. No wire change: every codec is the
   library's own. The reference mind sees no signed receipt sections, so
   sending a proof from it is left as the next step.
+- **Readings.** A family the mind takes in (the court's task, the corpus
+  feed) is read twice side by side on its observe reading: its count
+  (`family_magnitude`) and the exact share of the frames its pairs change
+  (`transduce::family_share`, now taking the pairs by reference), with the
+  families whose share did not read counted. `Court::demands_listed` leaves
+  `cfg(test)` and stands on the carriers census the observer serves, as
+  `demands_listed`.

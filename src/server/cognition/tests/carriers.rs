@@ -11,8 +11,9 @@ fn digits(rows: &[&str]) -> crate::transducer::family::SectionSample {
 
 /// THE HISTORY A PASSAGE LEAVES: the acts it sealed on the ledger and the
 /// rows they wrote, which the fold compacts, and the family its task was
-/// bound to, which is the corpus.
-const HISTORY: [&str; 3] = ["chain.", "treasury.", "task_family"];
+/// bound to, which is the corpus; and the count of demands listed, which
+/// only grows.
+const HISTORY: [&str; 4] = ["chain.", "treasury.", "task_family", "demands_listed"];
 
 /// The census as a table by name.
 fn table(c: &crate::observe::Carriers) -> crate::network::nerve::Keyed<u64> {
@@ -60,4 +61,26 @@ fn lapse_word_leaves_no_carrier_grown() {
         .map(|(name, n)| format!("{name} {:?} → {n}", before.get(name.as_bytes()).copied()))
         .collect();
     assert!(grown.is_empty(), "carriers the word left grown: {grown:?}");
+}
+
+/// 50.5 (L7) — THE DEMANDS LISTED ARE READ AT THE WIRE. A sentence whose
+/// second pair asks for a site its word never reaches is heard with that
+/// site declared as a demand, the demand listed for the market; the court's
+/// carriers census, which the observer serves, carries `demands_listed` at
+/// exactly the court's count, and it grew by the listing.
+#[test]
+fn census_reads_demands_listed() {
+    crate::transducer::raster::stand_on(0);
+    let learned = vec![(digits(&["1"]), digits(&["2"]))];
+    let rule = extract_rule(&learned, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
+    let family = vec![(digits(&["1"]), digits(&["2"])), (digits(&["100"]), digits(&["203"]))];
+    let s = mint_sentence(&rule, &family, &NoCrystal, 0).expect("spoken with its demand");
+    let mut k = Court::new();
+    let read = |k: &Court| table(&k.carriers()).get(b"demands_listed").copied();
+    assert_eq!(read(&k), Some(0), "nothing listed yet, read by name");
+    let task = [7u8; 32];
+    k.bind_task_family(task, family);
+    let _ = k.perceive_sentence([1; 32], &task, &s);
+    assert!(k.demands_listed() >= 1, "the declared demand is listed");
+    assert_eq!(read(&k), Some(k.demands_listed()), "the census carries the court's count");
 }

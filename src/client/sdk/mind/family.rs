@@ -41,6 +41,16 @@ pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
     mag
 }
 
+/// MU-DERIVATIONS (the readers), 78.170 O1 — A FAMILY TAKEN IN, READ TWICE
+/// BESIDE ITSELF on the mind's observe reading: its count (`mag`, what
+/// `family_magnitude` draws on the mind's metabolism, never μ) and the
+/// exact share of each frame its pairs change (`transduce::family_share`),
+/// or unread by name where a pair's record does not read whole.
+pub(crate) fn note_fed(train: &Family, mag: &[u64; 4]) {
+    let share = crate::transducer::family::transduce::family_share(train.iter().map(|(x, y)| (x.sample(), y.sample())));
+    crate::observe::note_mind(|m| m.fed(mag, share));
+}
+
 /// WHAT ONE PERSPECTIVE DISAGREED ABOUT, read whole: every kind present (in
 /// [`crate::observe::DISAGREE`]'s order), the sample the rule said, and the
 /// demands its form spoke nothing for, by kind.

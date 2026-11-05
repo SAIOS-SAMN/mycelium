@@ -344,6 +344,9 @@ impl Court {
         c.count("evidence_at", evidence_at.len());
         c.count("anchor_mismatches", anchor_mismatches.len());
         c.count("anchor_evidence", anchor_evidence.len());
+        // 50.5 (L7) — the demand vertices listed so far: a count, history
+        // that only grows, read at the wire beside the carriers.
+        c.held.push(("demands_listed".to_string(), self.demands_listed()));
         c
     }
 }
