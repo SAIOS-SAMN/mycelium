@@ -32,7 +32,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      # The toolchain is pinned in rust-toolchain.toml, so CI reads the
+      # same compiler and clippy as every local check.
+      - uses: dtolnay/rust-toolchain@1.95.0
         with:
           components: clippy
 
