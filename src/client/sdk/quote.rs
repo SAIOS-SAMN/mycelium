@@ -7,7 +7,7 @@
 /// multi-dimensional ledger, read and never stored (MU-ECONOMY §2.2).
 #[derive(Clone, Debug)]
 pub struct YieldQuote {
-    /// Book generation at this quote.
+    /// The generation of the court's open listings at this quote.
     pub height: u64,
     /// The yield surface read per lane S, G, T, H.
     pub surface: [u64; 4],

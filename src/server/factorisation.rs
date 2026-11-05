@@ -24,7 +24,7 @@ use crate::court::verdict::factorisation::{admit_factorisation, FactorClaim, Fac
 use crate::court::verdict::{REFUSE_FACTOR_MOTION, REFUSE_FACTOR_NO_PAIR, REFUSE_FACTOR_UNSIGNED};
 
 /// THE VERDICT ON A CLAIM OF FACTORISATION, read on `task`, the posted task
-/// the claim's citation names on this book (`None` where it names none).
+/// the claim's citation names at this court (`None` where it names none).
 /// Refused by name where the claim is unsigned, names no task or no train
 /// pair, or states a ground the court does not read; otherwise the court's
 /// reconstruction decides: admitted, or the residue of the residues.
@@ -33,7 +33,7 @@ pub fn judge_factorisation(task: Option<&PostedTask>, act: &FactorisationAct) ->
     if !act.signed {
         return refused(REFUSE_FACTOR_UNSIGNED);
     }
-    let Some(task) = task else { return refused("no such task on this book") };
+    let Some(task) = task else { return refused("no such task at this court") };
     let Some((x, y)) = task.train.get(act.pair) else { return refused(REFUSE_FACTOR_NO_PAIR) };
     if let Err(why) = crate::cognition::stated_ground_of(&task.train, act.ground.as_deref()) {
         return refused(why.reason());

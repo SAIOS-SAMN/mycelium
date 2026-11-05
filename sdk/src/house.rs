@@ -169,9 +169,10 @@ pub use mycelium::court::identity::HyphaKey;
 
 /// THE HOUSE'S WIRE MODULES WHOLE, each with every public encoder, decoder
 /// and type: the domain (founding, reserve, bond, origin), the universe's
-/// statements, the endowment, the seat wire, the atlas (a universe's ledger
-/// and map), a tier's fold (`uplink`), a fold's challenges and demands
-/// (`challenge`), and a rows commitment (`commitment`).
+/// statements, the endowment, the seat wire, the atlas (a universe's
+/// anchor chain, `KIND_LEDGER`, and map), a tier's fold (`uplink`), a fold's challenges and
+/// demands (`challenge`), and a universe's state commitment and events
+/// digest (`commitment`).
 pub use mycelium::anastome::dialogue::{atlas, challenge, commitment, domain, endowment, seat, universe, uplink};
 /// TUniversal: the final point and its origin.
 pub use mycelium::chronometry::tuniversal;

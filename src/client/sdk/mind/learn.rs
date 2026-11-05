@@ -9,7 +9,7 @@ impl Mind {
     /// the client never arbitrates raw corpus; the server decides what is
     /// useful work. One pull is in flight at a time; the envelope lands on
     /// the board as an offer, read to its charts (`offer`), to be taken in
-    /// where it couples (`task_inflow`), none where the book is settled.
+    /// where it couples (`task_inflow`), none where the court's listings are settled.
     /// MU-CLIENT §4.12, §7.1 — WHEN THE MIND ASKS: nothing waits to be taken
     /// in or is being perceived, the reserve stands regenerated on every
     /// lane, and either the field holds strain (`strained`) or the corpus
@@ -364,7 +364,7 @@ impl Mind {
                     // THE OBSTRUCTION IS KEPT AS MEASURED: two views of one
                     // object whose transition does not vanish. It rode up as
                     // a percept pair (held view → fetched view), a demand on
-                    // the book for the word that carries one onto the other —
+                    // the court's listings for the word that carries one onto the other —
                     // a voice's painted sites at a court, which law 8 refuses
                     // (ruled 2026-09-10). It is held here as the dialect
                     // measured; the contraction protocol (50.9, L8) carries

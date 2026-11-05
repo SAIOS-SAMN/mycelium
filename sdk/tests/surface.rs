@@ -507,6 +507,7 @@ use mycelium_sdk::prelude::VoiceKey as _;
 use mycelium_sdk::prelude::SOLVE_BOUNTY as _;
 use mycelium_sdk::prelude::SOLVE_AGAIN as _;
 use mycelium_sdk::prelude::Mu as _;
+use mycelium_sdk::prelude::Modes as _;
 use mycelium_sdk::wallet::Mu as _;
 use mycelium_sdk::wallet::MuRefusal as _;
 use mycelium_sdk::prelude::SOLVE_NOTHING as _;

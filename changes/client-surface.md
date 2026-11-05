@@ -1,7 +1,13 @@
 ### The client surface speaks the 2026-11-04/05 rulings: angles as degrees on a named plane, the multi-dimensional ledger, holonomy unpriced, the Concordance signed by reconstruction
-- **Network contract: no byte changes.** The codec and wire bytes are
-  unchanged. The seat's kind codes 1–6 for the plane symmetries are
-  unchanged.
+- **Network contract: wire strings changed; no codec bytes.** The codec
+  and wire bytes are unchanged, and the seat's kind codes 1–6 for the
+  plane symmetries are unchanged. Refusal reasons carried on the wire
+  change wording:
+  - a claim of factorisation naming no task held: "no such task on this
+    book" becomes "no such task at this court" (`judge_factorisation`);
+  - a solve on a task held with no content: "no such task on this book:
+    its ground is not read" becomes "no such task at this court: its
+    ground is not read".
 - **SDK surface: `Symmetry`'s rotations are named by plane and degrees.**
   `Symmetry::Rotate90`, `Rotate180` and `Rotate270` are renamed
   `RotateE2E1By90`, `RotateE2E1By180` and `RotateE2E1By270`: the rotation
@@ -24,3 +30,13 @@
   `Display` labels each lane (`deficit S 1, G 0, T 2, H 0`).
   `mycelium-client --init` prints `genesis line: voice <vk> <μ on S> <μ
   on G> <μ on T> <μ on H>`; the fields a genesis file reads are unchanged.
+- **SDK surface: `Modes` in the prelude.** `mycelium_sdk::prelude` adds
+  `Modes` (the carrier of μ, from `mycelium_sdk::task`) beside `Mu`, and
+  `Mu` is documented as retiring in v0.5.0 (MU-ECONOMY §9). No type is
+  removed. The wallet is documented as a reading of the holding's
+  coordinate on the one multi-dimensional ledger, never "flat"; the
+  readings' entries as events of that ledger. The client example and the
+  conformance solve line print the verdict's modes beside the μ paid.
+  The mind's comments say "the court's open listings" and "recorded" for
+  "the open book" and "booked"; the mind's trace label reads "admission:
+  the open listings".

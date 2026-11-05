@@ -1,7 +1,8 @@
 // 78.125 — ACT_CHALLENGE: a sealed fold challenged within its window (2(c),
 // ruled 2026-10-07), and its finality read.
 //
-//! A fold's rows stay with its tier (LD0); its receipt commits to them. A
+//! A fold's nets (per identity, per lane; the field `rows`) stay with its
+//! tier (LD0); its receipt commits to them. A
 //! challenge makes the commitment answerable, in four kinds:
 //!
 //! - DEMAND (availability): a challenger asks the tier to publish the prefix
@@ -15,8 +16,9 @@
 //!   less what it nets of its children, translated, and to its declared.
 //!   Upheld, the prefix's content hash is sealed; else the fold is falsified.
 //! - DEFAULT: a demand's deadline passed unanswered, claimed.
-//! - CORRECTION: the tier whose fold closed an arbitrage cycle books the
-//!   gain, naming its holder and amount on G, within its fold's window.
+//! - CORRECTION: the tier whose fold closed an arbitrage cycle records the
+//!   gain as an event, naming its holder and amount on G, within its fold's
+//!   window.
 //!
 //! A TIER LINE (canonical, so reconstruction is possible): entries `{rows,
 //! declared}`, `head₀` the zero hash, `headₙ = H("mycelium tier line v1" ‖
@@ -88,7 +90,7 @@ pub enum Challenge {
     Evidence { fold: FoldAt, rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>, entries: Vec<Entry> },
     /// A demand's deadline passed unanswered: the fold falsified by default.
     Default { fold: FoldAt },
-    /// The arbitrage the fold's edge from `child` closed, booked: its gain
+    /// The arbitrage the fold's edge from `child` closed, recorded: its gain
     /// on G, `amount`, a declared source to the named `holder`.
     Correction { fold: FoldAt, child: Vec<u8>, holder: [u8; 32], amount: i128 },
     /// A STREAMED PUBLICATION opened: the fold's own rows, declared and
@@ -473,7 +475,7 @@ pub enum Challenged {
     /// The fold falsified — by reconstruction or by default — and reversed, with
     /// `unwound` ancestors that netted it returned to provisional.
     Falsified { at: Stamp, receipt: [u8; 32], unwound: u32 },
-    /// The arbitrage booked: the obstruction discharged.
+    /// The arbitrage recorded: the obstruction discharged.
     Discharged { at: Stamp, receipt: [u8; 32] },
     Refused(ChallengeRefusal),
 }

@@ -24,7 +24,7 @@ impl Mind {
     /// reserve — the one the voice's arms gate on, its strokes draw from, its
     /// held thoughts escrow in and its syntropy regenerates. A second
     /// physics beside it in the binary held a second reserve the thoughts
-    /// never drew on and a syntropic count nothing booked.
+    /// never drew on and a syntropic count nothing recorded.
     pub(crate) fn physics(&self) -> &crate::physics::Physics {
         &self.physics
     }
@@ -98,7 +98,7 @@ impl Mind {
         self.height = h;
     }
 
-    /// THE HEIGHT THE MIND READS (23.8, S13.5; V2): the book's height off
+    /// THE HEIGHT THE MIND READS (23.8, S13.5; V2): the court's height off
     /// a quote or attest reply, and it only advances — a lower or absent
     /// reading moves nothing. It is this mind's TUniversal: its own chain
     /// cites no peer, so its own height is its K (45.2), and what it stamps
@@ -113,7 +113,7 @@ impl Mind {
 
     /// 78.152 TU-7 — THE MIND KEEPS TIME BY TUNIVERSAL: the height of the
     /// last final point its door replies carried (`Session::tuniversal`).
-    /// Before the first, the height it was set at boot — never a book's
+    /// Before the first, the height it was set at boot — never a court's
     /// height read off a quote, which is another coordinate.
     pub(crate) fn now_tu(&self) -> u64 {
         match self.hypha.tuniversal() {

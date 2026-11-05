@@ -248,7 +248,7 @@ impl Mind {
     /// rotation is adjoined as the mind's own letter on its chart
     /// (`adjoin_letters`, the pivot's path); a residue whose motion rotates
     /// on no plane is counted apart — it constructs, and no letter type holds it yet
-    /// (the ledger's row 8 reads this).
+    /// (the `MotionLetter` count of the mind's observations reads this).
     pub(crate) fn construct_and_adjoin(
         &mut self,
         residue: &crate::transducer::cga::Mv,
@@ -627,7 +627,7 @@ impl Mind {
     /// lane by lane, or `None` where a lane cannot fund it (rule 11).
     fn draw_for(&mut self, f: &crate::transducer::sentence::Form) -> Option<[u64; 4]> {
         let draw = crate::transducer::element::measure_lanes(&f.remainder.placed());
-        // All or nothing, through the metabolic ledger (65.5): a lane that
+        // All or nothing, through the metabolism's reserve per lane (65.5): a lane that
         // cannot fund it refuses the whole draw by name, and the attention it
         // blocked presses that lane (78.73 (1)).
         self.physics.draw(draw).ok()?;

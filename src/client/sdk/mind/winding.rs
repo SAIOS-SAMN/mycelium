@@ -10,7 +10,8 @@
 //
 //! ONE WINDING:
 //! 1. ADMISSION — what each carrier landed is taken where it landed, briefly:
-//!    the court's answers, the conversation's hearings, the open book, a
+//!    the court's answers, the conversation's hearings, the court's open
+//!    listings, a
 //!    scene the metabolism can carry handed to the perception carrier, what
 //!    that carrier read admitted, the seat's mail.
 //! 2. THE FIELD MOVES — where a lane runs short, or nothing moved, the
@@ -228,7 +229,7 @@ impl Mind {
             self.discover();
         }
         if !occluded && !stopping() {
-            self.at_law("admission: the open book");
+            self.at_law("admission: the open listings");
             self.quote_inflow(&mut outcome);
         }
         if !occluded && !stopping() {

@@ -39,9 +39,11 @@ use std::process::ExitCode;
 
 /// What one task came to.
 enum Outcome {
-    /// The court answered the solve: its verdict code, the μ paid, and the
-    /// refusal it named where it refused.
-    Judged { code: u8, paid: Mu, refused: Option<String> },
+    /// The court answered the solve: its verdict code, the μ paid read per
+    /// lane (`Mu`, retiring in v0.5.0), the modes the closure moved
+    /// (`Modes`, the carrier of μ), and the refusal it named where it
+    /// refused.
+    Judged { code: u8, paid: Mu, modes: Option<Modes>, refused: Option<String> },
     /// The client could not state a rule for the task; nothing was sent.
     NoRule(&'static str),
     /// The court had no task to give.
@@ -162,14 +164,14 @@ fn claim(session: &Session, key: &SigningKey, id: &[u8; 32], outputs: &[SectionS
             Ok(r) => r,
             Err(e) => return Ok(Err(deferred("solve", e)?)),
         };
-        let Some((code, paid, refusal, _modes)) = task::decode_solve_verdict(&reply) else {
+        let Some((code, paid, refusal, modes)) = task::decode_solve_verdict(&reply) else {
             return Err(format!("the court answered the solve with {} bytes that are no verdict", reply.len()));
         };
         if code == SOLVE_UNREAD && asked < RESUMES {
             continue;
         }
         let refused = refusal.map(|r| String::from_utf8_lossy(&r.reason).into_owned());
-        return Ok(Ok(Outcome::Judged { code, paid, refused }));
+        return Ok(Ok(Outcome::Judged { code, paid, modes, refused }));
     }
 }
 
@@ -233,9 +235,12 @@ fn main() -> ExitCode {
                     println!("a deferral: the hypha's pool is full, deficit S:G:T:H {:?}; retry later", d.deficit);
                     return ExitCode::SUCCESS;
                 }
-                Outcome::Judged { code, paid, refused } => match refused {
+                Outcome::Judged { code, paid, modes, refused } => match refused {
                     Some(why) => println!("task {cite} {} — refused: {why}", verdict_name(code)),
-                    None => println!("task {cite} {} — paid μ {paid}", verdict_name(code)),
+                    None => {
+                        let modes = modes.as_ref().map_or_else(|| "none carried".to_string(), Modes::print);
+                        println!("task {cite} {} — paid μ {paid}; modes {modes}", verdict_name(code))
+                    }
                 },
             }
         }

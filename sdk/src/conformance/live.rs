@@ -199,7 +199,7 @@ fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskSection, gro
     loop {
         asked += 1;
         let reply = session.speak(act.clone())?;
-        let (code, paid, refusal, _modes) =
+        let (code, paid, refusal, modes) =
             d::decode_solve_verdict(&reply).ok_or_else(|| format!("{} bytes that do not decode as a verdict", reply.len()))?;
         match code {
             d::SOLVE_UNREAD if asked < RESUMES => continue,
@@ -214,7 +214,10 @@ fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskSection, gro
             }
             d::SOLVE_BOUNTY | d::SOLVE_AGAIN if refusal.is_some() => return Err(format!("code {code} pays and refuses at once")),
             d::SOLVE_AGAIN if !paid.is_zero() => return Err(format!("a repeat closure paid μ {paid}")),
-            d::SOLVE_BOUNTY => return Ok(format!("solved (bounty), paid μ {paid}")),
+            d::SOLVE_BOUNTY => {
+                let modes = modes.as_ref().map_or_else(|| "none carried".to_string(), mycelium::economy::modes::Modes::print);
+                return Ok(format!("solved (bounty), paid μ {paid}; modes {modes}"));
+            }
             d::SOLVE_AGAIN => return Ok("solved again (a repeat closure, verified, paid nothing)".to_string()),
             other => return Err(format!("verdict code {other} is none of the four the statement names")),
         }

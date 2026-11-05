@@ -446,7 +446,7 @@ impl Mind {
     /// 50.5 — THE SENTENCE WITH ITS DEMANDS, uttered whole: minted at its
     /// span, spoken, and — refused by the mint, by the court or by the wire —
     /// held as the open work it is, never let go. A sentence the court took
-    /// is order built, booked by its own magnitude (78.69 fix 3).
+    /// is order built, recorded at its own magnitude (78.69 fix 3).
     fn speak_with_demands(
         &mut self,
         rule: &SentenceRule,
@@ -466,7 +466,7 @@ impl Mind {
             return Some(word.magnitude());
         }
         // Where the court's answer lands: a sentence it took is order built,
-        // booked by its own magnitude (78.69 fix 3); one refused, or the court
+        // recorded at its own magnitude (78.69 fix 3); one refused, or the court
         // unreached, is held as the open work it is.
         let mag = word.magnitude();
         let held = (form.clone(), frames.clone(), train.to_vec(), remainders.to_vec(), family.to_vec());

@@ -19,7 +19,7 @@ impl Mind {
             let mut charts = Vec::new();
             // THE WELLS THIS MIND HOLDS, all of them: the charts it asks
             // a quote on are the charts it is thinking about, and one left
-            // out is a thought the book is never asked about.
+            // out is a thought the court is never asked about.
             for (_, b) in self.contemplation.wells.scoped() {
                 let inv = crate::transducer::stalk::invariant(&b.remainder);
                 let mut cur = inv;
@@ -37,7 +37,7 @@ impl Mind {
         };
         // Each chart the ask may carry, with the standing this mind holds on
         // it: the charts it thinks about, the root (an empty atlas is
-        // incident to the root prefix — the first quote reads the book at
+        // incident to the root prefix — the first quote reads the listings at
         // depth zero, so a mind need not already hold a word to learn one),
         // and each held well's chart with the volume it routes by.
         let standing = |inv: &crate::transducer::stalk::Invariant| (inv.clone(), self.working_atlas().standing_on(inv).byte());

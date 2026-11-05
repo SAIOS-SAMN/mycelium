@@ -1,14 +1,20 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! MU-ECONOMY §1 — μ AS EXACT LANE AMOUNTS: one non-negative rational per
-//! lane, S, G, T, H, and nothing else.
+//! MU-ECONOMY §1, §9 — μ AS EXACT LANE AMOUNTS: one non-negative rational
+//! per lane, S, G, T, H. Built today and retired in v0.5.0, when every
+//! amount is `economy::modes::Modes` (MU-ECONOMY §9): `Mu` is the
+//! projection of the modes onto one number per lane, a reading and never
+//! the holding.
 //!
 //! μ is measured as a share of a frame, and a share is a rational: a
-//! holding that could carry only whole counts would floor every share it
-//! was paid. Every amount of μ — a balance, a bond, an escrow, held value,
-//! a ledger row, a wire field — is a [`Mu`]. A count `n` read off a measure
-//! is the rational `n/1` ([`Mu::counts`]), so a measurement keeps its value
-//! exactly.
+//! reading that could carry only whole counts would floor every share it
+//! was paid. Until v0.5.0, every amount of μ the built economy carries — a
+//! balance, a bond, an escrow or held value read at one court, an event's
+//! amount, a wire field — is a [`Mu`]. The ledger these amounts are events
+//! of is one multi-dimensional ledger (lane × layer × grade, MU-ECONOMY
+//! §2.1); a holding is a coordinate on it (§2.2), and a balance or supply
+//! is a reading. A count `n` read off a measure is the rational `n/1`
+//! ([`Mu::counts`]), so a measurement keeps its value exactly.
 //!
 //! The four lanes are never summed, never converted and never ordered
 //! against each other: equality is lane by lane, and the one comparison is
@@ -18,8 +24,9 @@
 //! never saturated and never floored. Every lane of a `Mu` is at least zero;
 //! a negative amount is refused where it would be made or read.
 //!
-//! The held modes of MU-RECURSION 78.162 (`economy::modes`) remain the next
-//! step: a holding here is four exact amounts, not the modes that moved.
+//! The held modes of MU-RECURSION 78.162 (`economy::modes::Modes`) are the
+//! carrier v0.5.0 moves every amount to: an amount here is four exact
+//! readings, not the modes that moved.
 
 use crate::core::q::Q;
 use crate::economy::LaneMove;
@@ -28,8 +35,8 @@ use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
 
 /// μ ON THE FOUR LANES: an exact non-negative rational per lane, in lane
-/// order S, G, T, H. No order is defined between two of them; equality is
-/// lane by lane. The lanes are held behind one box, so an amount is one
+/// order S, G, T, H, retiring in v0.5.0 for `Modes` (MU-ECONOMY §9). No
+/// order is defined between two of them; equality is lane by lane. The lanes are held behind one box, so an amount is one
 /// pointer wherever it is carried.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Mu(Box<[Q; 4]>);

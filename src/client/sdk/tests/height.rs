@@ -1,4 +1,4 @@
-// 23.8, 45.2 — THE HEIGHT THE MIND READS: the book's height off a reply,
+// 23.8, 45.2 — THE HEIGHT THE MIND READS: the court's height off a reply,
 // advancing only, is the mind's TUniversal and what it stamps its dialect
 // with.
 
