@@ -134,16 +134,6 @@ fn numbers_ignores_cfg_test_items() {
     assert!(hits(dir.path()).is_empty());
 }
 
-/// NO CONSTANT over the tree itself: every literal-bearing numeric item of
-/// the repository this gate sits in is classified, and the register agrees
-/// with its sites.
-#[test]
-fn numbers_refuses_nothing_in_tree() {
-    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).parent().expect("the xtask manifest sits in the repository");
-    let reading = lint_numbers(repo).expect("the tree reads");
-    assert!(reading.hits.is_empty(), "the numbers gate refuses:\n{}", reading.hits.join("\n"));
-}
-
 /// N6: an inline literal in a law path is read into the inventory, outside a
 /// codec and a byte index, and refuses nothing.
 #[test]

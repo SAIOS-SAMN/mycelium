@@ -5,9 +5,10 @@
 //
 //! A word list cannot guard these regressions: the same word names a
 //! defect at one site and a law at another. So each guard is a type, and
-//! this register names it. The gate refuses an entry whose guarding type
-//! or claim is missing, named empty or absent from the tree, as the
-//! numbers gate refuses a register entry with no site.
+//! this register names it. One test, `drift_register_holds_in_this_tree`,
+//! refuses an entry whose guarding type or claim is missing, named empty or
+//! absent from the tree, as the numbers gate refuses a register entry with
+//! no site.
 //!
 //! A claim is proved one of two ways:
 //! - [`Proof::Test`]: a `#[test]` fn of that name under `src/`,
@@ -17,7 +18,7 @@
 //!
 //! The report of changed document sentences that put a typed term beside an
 //! admission verb is not built: reading which documents changed needs a
-//! base commit the gate does not have, so it is listed open (ROADMAP track
+//! base commit a test does not have, so it is listed open (ROADMAP track
 //! 25, X0).
 
 use std::path::{Path, PathBuf};
@@ -186,7 +187,7 @@ fn compile_fails(text: &str, claim: &str) -> bool {
 pub fn lint_drift(repo: &Path, register: &[Guard], hits: &mut Vec<String>) -> Result<(), String> {
     let texts = sources(repo)?;
     for g in register {
-        let entry = format!("  xtask/lint/drift.rs: the guard of `{}` ({})", g.regression, g.ruling);
+        let entry = format!("  gate/src/drift.rs: the guard of `{}` ({})", g.regression, g.ruling);
         match g.guard.trim() {
             "" => hits.push(format!("{entry} names no guarding type")),
             name if !texts.iter().any(|t| declares(t, name)) => {

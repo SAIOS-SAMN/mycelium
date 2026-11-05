@@ -99,7 +99,7 @@ fn geo_carries_k_generators_to_grade_k_blade() {
 /// NO CONSTANT: every number the tree still declares where a reading belongs
 /// is named at one site of the tree, with its value, its governing sections
 /// and what derives it; no two entries name one site. The numbers gate
-/// (`xtask lint::numbers`, N5) reads each site's item and its initializer.
+/// (`gate::numbers`, N5) reads each site's item and its initializer.
 #[test]
 fn open_physics_entries_resolve_to_sites() {
     let register = crate::physics::axioms::OPEN_PHYSICS;

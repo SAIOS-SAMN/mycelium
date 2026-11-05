@@ -6,7 +6,7 @@
 //! rules N1–N5 of MU-DERIVATIONS D1.4:
 //!
 //! - **N1, scope.** Every `const`, `static`, impl `const` and trait `const`
-//!   with a default under `src/`, `algebra/src/`, `forms/src/` and `xtask/`, except items
+//!   with a default under `src/`, `algebra/src/`, `forms/src/` and `gate/`, except items
 //!   under `#[cfg(test)]` (on the item or an enclosing module) and files
 //!   under a `tests/` directory or named `tests.rs`.
 //! - **N2, numeric type.** The item's type (references stripped, array,
@@ -18,7 +18,7 @@
 //! - **N4, classification.** A literal-bearing numeric item carries exactly
 //!   one class tag as the first token of a doc line: `EXACT:` (naming a
 //!   `#[test]` fn that exists), `FORMAT:`, `EXTERNAL:`, `MEASURED:` (only
-//!   under the instruments: `src/bin/`, `src/observe/`, `xtask/`) or
+//!   under the instruments: `src/bin/`, `src/observe/`, `gate/`) or
 //!   `REGISTERED:` (naming its register entry).
 //! - **N5, bijection and value.** Every register entry's `site` is an item
 //!   tagged `REGISTERED` with its name, every such item has an entry, and the
@@ -43,13 +43,13 @@ const NUMERIC: [&str; 17] = [
 ];
 
 /// The roots N1 reads.
-const SCOPE: [&str; 4] = ["src", "algebra/src", "forms/src", "xtask"];
+const SCOPE: [&str; 4] = ["src", "algebra/src", "forms/src", "gate"];
 
 /// The roots whose `#[test]` fns an `EXACT:` tag may name.
-const TEST_ROOTS: [&str; 7] = ["src", "algebra", "forms", "sdk", "xtask", "tests", "examples"];
+const TEST_ROOTS: [&str; 7] = ["src", "algebra", "forms", "sdk", "gate", "tests", "examples"];
 
 /// The instruments, where a `MEASURED:` item may stand.
-const INSTRUMENTS: [&str; 3] = ["src/bin/", "src/observe/", "xtask/"];
+const INSTRUMENTS: [&str; 3] = ["src/bin/", "src/observe/", "gate/"];
 
 /// The paths N6 reads.
 const LAW_PATHS: [&str; 6] =
@@ -131,7 +131,11 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
 }
 
 fn relative(repo: &Path, file: &Path) -> String {
-    let rel = file.strip_prefix(repo).unwrap_or(file);
+    // A file outside the repository is named whole.
+    let rel = match file.strip_prefix(repo) {
+        Ok(rel) => rel,
+        Err(_) => file,
+    };
     rel.components().map(|c| c.as_os_str().to_string_lossy().into_owned()).collect::<Vec<_>>().join("/")
 }
 
@@ -208,11 +212,7 @@ struct Literals {
 impl<'ast> Visit<'ast> for Literals {
     fn visit_lit(&mut self, lit: &'ast syn::Lit) {
         match lit {
-            syn::Lit::Int(i) => {
-                if !is_unit(i) {
-                    self.ints.push(i.to_string());
-                }
-            }
+            syn::Lit::Int(i) if !is_unit(i) => self.ints.push(i.to_string()),
             syn::Lit::Float(_) => self.float = true,
             _ => {}
         }
@@ -250,6 +250,7 @@ impl Collector {
             lits.visit_expr(e);
         }
         let name = ident.to_string();
+        #[expect(clippy::disallowed_methods, reason = "rule 15 — the innermost owner is the one pushed last: the order is the nesting, content")]
         let site = match self.owner.last() {
             Some(o) => format!("{}::{o}::{name}", self.file),
             None => format!("{}::{name}", self.file),
@@ -292,7 +293,11 @@ impl<'ast> Visit<'ast> for Collector {
             _ => None,
         };
         self.cfg_test += usize::from(test);
-        self.owner.push(owner.unwrap_or_else(|| "impl".to_string()));
+        // An impl of no named path type is owned by `impl`.
+        self.owner.push(match owner {
+            Some(o) => o,
+            None => "impl".to_string(),
+        });
         syn::visit::visit_item_impl(self, i);
         self.owner.pop();
         self.cfg_test -= usize::from(test);
@@ -409,8 +414,21 @@ fn read_file(repo: &Path, path: &Path, scope: bool) -> Result<Collector, String>
     Ok(c)
 }
 
+/// The tree as N1 reads it.
+#[derive(Debug, Default)]
+pub struct Tree {
+    /// The numeric items of the scope.
+    pub items: Vec<NumericItem>,
+    /// The `#[test]` fns of the test roots, by name.
+    pub tests: Vec<String>,
+    /// The register's entries.
+    pub register: Vec<Entry>,
+    /// The N6 inline literals of the law paths.
+    pub inventory: Vec<Inline>,
+}
+
 /// The tree's numeric items, test fns, register and N6 inventory.
-pub fn read_tree(repo: &Path) -> Result<(Vec<NumericItem>, Vec<String>, Vec<Entry>, Vec<Inline>), String> {
+pub fn read_tree(repo: &Path) -> Result<Tree, String> {
     let mut items = Vec::new();
     let mut tests = Vec::new();
     let mut register = Vec::new();
@@ -435,7 +453,16 @@ pub fn read_tree(repo: &Path) -> Result<(Vec<NumericItem>, Vec<String>, Vec<Entr
             seen.push(f);
         }
     }
-    Ok((items, tests, register, inventory))
+    Ok(Tree { items, tests, register, inventory })
+}
+
+/// The first word of a class tag's text, the name it cites; a tag with no
+/// word cites the empty name, which no test fn and no item carries.
+fn first_word(text: &str) -> &str {
+    match text.split_whitespace().next() {
+        Some(word) => word,
+        None => "",
+    }
 }
 
 fn hit(item: &NumericItem, rule: &str, why: &str) -> String {
@@ -445,7 +472,7 @@ fn hit(item: &NumericItem, rule: &str, why: &str) -> String {
 /// The numbers gate over the tree at `repo`: the hits of N2–N5, and the N6
 /// inventory as a reading.
 pub fn lint_numbers(repo: &Path) -> Result<NumbersReading, String> {
-    let (items, tests, register, inventory) = read_tree(repo)?;
+    let Tree { items, tests, register, inventory } = read_tree(repo)?;
     let mut hits = Vec::new();
     let mut counted = 0;
     for item in &items {
@@ -476,23 +503,24 @@ pub fn lint_numbers(repo: &Path) -> Result<NumbersReading, String> {
                 }
                 match *tag {
                     "EXACT:" => {
-                        let named = text.split_whitespace().next().unwrap_or_default().trim_matches(|c| c == '`' || c == ',' || c == '.' || c == ';');
-                        let leaf = named.rsplit("::").next().unwrap_or(named);
+                        let named = first_word(text).trim_matches(|c| c == '`' || c == ',' || c == '.' || c == ';');
+                        let leaf = match named.rsplit("::").next() {
+                            Some(leaf) => leaf,
+                            None => named,
+                        };
                         if !tests.iter().any(|t| t == leaf) {
                             hits.push(hit(item, "N4", &format!("`EXACT:` names `{named}`, which is no #[test] fn of the tree")));
                         }
                     }
-                    "MEASURED:" => {
-                        if !INSTRUMENTS.iter().any(|p| item.file.starts_with(p)) {
-                            hits.push(hit(
-                                item,
-                                "N4",
-                                "`MEASURED:` outside the instruments (src/bin/, src/observe/, xtask/): a measured number at a law site is read at run time there",
-                            ));
-                        }
+                    "MEASURED:" if !INSTRUMENTS.iter().any(|p| item.file.starts_with(p)) => {
+                        hits.push(hit(
+                            item,
+                            "N4",
+                            "`MEASURED:` outside the instruments (src/bin/, src/observe/, gate/): a measured number at a law site is read at run time there",
+                        ));
                     }
                     "REGISTERED:" => {
-                        let named = text.split_whitespace().next().unwrap_or_default().trim_matches('`');
+                        let named = first_word(text).trim_matches('`');
                         if named != item.name {
                             hits.push(hit(item, "N5", &format!("`REGISTERED:` names `{named}`, not the item")));
                         }
@@ -508,7 +536,10 @@ pub fn lint_numbers(repo: &Path) -> Result<NumbersReading, String> {
                                         "N5",
                                         &format!(
                                             "value `{}` differs from the register's `{}` ({REGISTER}:{})",
-                                            item.value.as_deref().unwrap_or_default(),
+                                            match item.value.as_deref() {
+                                                Some(value) => value,
+                                                None => "",
+                                            },
                                             e.value,
                                             e.line
                                         ),

@@ -13,10 +13,13 @@ rust-version = "1.82"
 
 # MU-PRECURSORS §4 P1 — ONE WORKSPACE, ONE LOCK: the library and its
 # binaries, the law forms and the client SDK build together, so the server
-# and the SDK cannot drift. The gate (`xtask/`) stays a crate of its own: it
-# reads this tree from outside it. The root package is a member by being
-# the root; naming it "." would also claim every directory under it, and
-# `exclude` could not keep `xtask` out.
+# and the SDK cannot drift. The root package is a member by being the root;
+# naming it "." would also claim every directory under it.
+#
+# MU-STANDARDS 4.1 — THE GATE IS WORKSPACE TESTS: `gate/` is a member read
+# by its tests alone, which scan this tree (the reading bound, the
+# Euclidean vocabulary, the numbers gate, the drift register), so
+# `cargo test --release --workspace` runs it.
 #
 # MU-SENSING §7 — A SOURCE'S DECODER LIVES WITH ITS OWNER, OUTSIDE `src/`:
 # `sources/arc-agi` reads the ARC-AGI-2 corpus into the core's carriers. It
@@ -27,8 +30,7 @@ rust-version = "1.82"
 # product without a cycle (Concordance §12, draft 5). The library
 # re-exports it at `transducer::cga`.
 [workspace]
-members = ["algebra", "forms", "sdk", "sources/arc-agi"]
-exclude = ["xtask"]
+members = ["algebra", "forms", "gate", "sdk", "sources/arc-agi"]
 
 [dependencies]
 # The exact algebra `Cl(p, q)` over ℚ (`algebra/`), re-exported at

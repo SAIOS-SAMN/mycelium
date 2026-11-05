@@ -1,4 +1,4 @@
-use super::super::drift::{lint_drift, Guard, Proof, REGISTER};
+use super::super::drift::{lint_drift, Guard, Proof};
 use std::path::Path;
 
 /// A fixture tree: each `(path, text)` written under a fresh directory.
@@ -67,12 +67,4 @@ fn drift_refuses_entry_missing_its_type() {
     assert!(empty[0].contains("names no guarding type"), "{empty:?}");
     let absent = hits(dir.path(), &[entry("Locat", "address_has_no_equality", Proof::CompileFail)]);
     assert_eq!(absent.len(), 1, "a prefix of a declared name is not the type: {absent:?}");
-}
-
-/// The register as it stands holds in this tree.
-#[test]
-fn drift_register_holds_in_this_tree() {
-    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).parent().expect("xtask has a parent");
-    let h = hits(repo, REGISTER);
-    assert!(h.is_empty(), "{h:?}");
 }
