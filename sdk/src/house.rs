@@ -7,8 +7,8 @@
 //! A kernel's house.
 //!
 //! A kernel runs a governed world under the Concordance and speaks to the
-//! network through its uplink, its house: it signs the Concordance's hash,
-//! reads the law register and the core clock, puts the transitions it
+//! network through its uplink, its house: it signs the Concordance clause by
+//! clause, by reconstructing each clause's fixtures, reads the law register and the core clock, puts the transitions it
 //! composed to the court's verifier (L2), founds its domain, designates its
 //! reserve, records its universe's origin, asks its endowment by a manifest,
 //! reads its universe back, lists its seats and answers the minds seated in
@@ -24,7 +24,7 @@
 //!
 //! | Group | Items |
 //! |---|---|
-//! | The Concordance | [`CONCORDANCE_HASH`], [`ConcordanceSignature`], [`verify_concordance_signature`], modes 7 and 8 |
+//! | The Concordance | [`Clause`], [`Fixture`], [`Object`], [`sign_concordance`], [`reconstruct_fixture`], [`Signing`], [`SigningRefusal`], modes 7 and 8 |
 //! | The register and clock | [`encode_register_request`], [`decode_register_reply`], [`encode_clock_request`], [`decode_clock_reply`], [`CoreStamp`], [`TPoint`] |
 //! | Verification (L2) | [`Transition`], [`BodyState`], [`BodyMoments`], [`Flux`], [`verify_sized`], [`encode_verify_request`], [`decode_verify_reply`], [`TransitionVerdict`], [`Breach`], [`Law`] |
 //! | Domain founding | [`DomainGenesis`], [`encode_domain`], [`decode_domain_reply`], [`Founded`]; the reserve, the bond, the origin |
@@ -34,15 +34,13 @@
 //! | Framing and identity | [`WireFrame`], [`Lane`], [`read_lane`], [`split_point`], [`BODY_BUDGET`], [`HyphaKey`], [`payload_hash`] |
 //! | Whole modules | [`domain`], [`universe`], [`endowment`], [`seat`], [`atlas`], [`uplink`], [`challenge`], [`commitment`], [`tuniversal`] |
 
-/// The Concordance's hash (BLAKE3 of its exact bytes at build time), a
-/// kernel's signature over it, its verifier and its refusal by name.
-pub use mycelium::physics::laws::concordance::{
-    verify_concordance_signature, ConcordanceRefusal, ConcordanceSignature, CONCORDANCE_HASH, SIGNATURE_LEN,
-};
-/// The hash read (`ACT_LAWS` mode 7) and the signature presented and judged
-/// (mode 8).
-pub use mycelium::physics::laws::codec::{
-    decode_concordance_reply, decode_signature_reply, encode_concordance_request, encode_signature_request, MODE_CONCORDANCE, MODE_SIGNATURE,
+/// The Concordance's clause register (`ACT_LAWS` mode 7) and a kernel's
+/// signing act (mode 8): the clause, its fixtures and the objects they
+/// reach, the act and its verdict, each refusal by name; and the kernel's
+/// signing helper, its own reconstruction of each fixture.
+pub use crate::signing::{
+    decode_concordance_reply, decode_signature_reply, encode_concordance_request, encode_signature_request, reconstruct_fixture, sign_concordance,
+    Admitted, Assent, Choice, Clause, ClauseId, Fixture, Object, SignedClause, Signing, SigningRefusal, Standing, MODE_CONCORDANCE, MODE_SIGNATURE,
 };
 
 /// The law register's read (mode 0): the request, the reply at this

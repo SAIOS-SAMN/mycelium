@@ -280,58 +280,82 @@ pub enum LawsRequest {
     /// MU-PRECURSORS §4 P5 — the client conformance statement
     /// (`anastome::dialogue::conformance`).
     Statement,
-    /// Concordance §0 — the agreement's hash, at this build.
+    /// Concordance §0 — the clause register: each clause's name, standing
+    /// and fixtures' inputs.
     Concordance,
-    /// Concordance §0 — a kernel's signature presented, as carried: read and
-    /// verified at the court, a malformed one refused by name.
+    /// Concordance §0 — a kernel's signing act presented, as carried: read
+    /// and admitted at the court against its own reconstructions, each
+    /// refusal by name.
     Signature(Vec<u8>),
 }
 
-/// `[ACT_LAWS][7]`: the Concordance's hash.
+/// `[ACT_LAWS][7]`: the Concordance's clause register.
 /// FORMAT: ACT_LAWS sub-kind byte.
 pub const MODE_CONCORDANCE: u8 = 7;
-/// `[ACT_LAWS][8][kernel key 32][hash 32][sig 64]`: a kernel's signature
-/// over the Concordance, presented.
+/// `[ACT_LAWS][8][kernel key 32][clause count][clause …][sig 64]`: a
+/// kernel's signing act, clause by clause, presented.
 /// FORMAT: ACT_LAWS sub-kind byte.
 pub const MODE_SIGNATURE: u8 = 8;
 
-/// `[ACT_LAWS][7]`: the Concordance's hash, asked by address.
+/// `[ACT_LAWS][7]`: the clause register, asked by address.
 pub fn encode_concordance_request() -> Vec<u8> {
     vec![crate::anastome::dialogue::ACT_LAWS, MODE_CONCORDANCE]
 }
 
-/// The hash's reply: the 32 bytes.
-pub fn encode_concordance_reply() -> Vec<u8> {
-    super::concordance::CONCORDANCE_HASH.to_vec()
+/// The register's reply: `[0][clause count][clause …]`, each clause as
+/// `clauses::writing::put_clause` writes it; or `[1][clause name]`, the
+/// clause this hypha cannot read of its own register.
+pub fn encode_concordance_reply(held: &Result<Vec<super::clauses::Registered>, super::clauses::RegisterRefusal>) -> Vec<u8> {
+    match held {
+        Ok(held) => {
+            let mut out = vec![0];
+            put_key_count(&mut out, held.len());
+            held.iter().for_each(|r| super::clauses::writing::put_clause(&mut out, &r.clause));
+            out
+        }
+        Err(r) => {
+            let mut out = vec![1];
+            super::clauses::writing::put_clause_id(&mut out, &r.id);
+            out
+        }
+    }
 }
 
-/// The hash a reply carries, read whole.
-pub fn decode_concordance_reply(b: &[u8]) -> Option<[u8; 32]> {
-    b.try_into().ok()
+/// The register a reply carries, read whole: the clauses served, or the
+/// clause the hypha refused.
+pub fn decode_concordance_reply(b: &[u8]) -> Option<Result<Vec<super::clauses::Clause>, super::clauses::RegisterRefusal>> {
+    let mut p = 1;
+    let (head, _) = b.split_first()?;
+    let read = match head {
+        0 => {
+            let n = take_key_count(b, &mut p)?;
+            Ok((0..n).map(|_| super::clauses::writing::take_clause(b, &mut p)).collect::<Option<Vec<_>>>()?)
+        }
+        1 => Err(super::clauses::RegisterRefusal { id: super::clauses::writing::take_clause_id(b, &mut p)? }),
+        _ => return None,
+    };
+    (p == b.len()).then_some(read)
 }
 
-/// `[ACT_LAWS][8][signature]`: a kernel's signature presented.
-pub fn encode_signature_request(s: &super::concordance::ConcordanceSignature) -> Vec<u8> {
+/// `[ACT_LAWS][8][signing act]`: a kernel's signing act presented.
+pub fn encode_signature_request(s: &super::clauses::Signing) -> Vec<u8> {
     let mut out = vec![crate::anastome::dialogue::ACT_LAWS, MODE_SIGNATURE];
     out.extend_from_slice(&s.to_bytes());
     out
 }
 
-/// The court's verdict on a signature: `[0]` accepted, `[1][refusal]`.
-pub fn encode_signature_reply(verdict: Result<(), super::concordance::ConcordanceRefusal>) -> Vec<u8> {
-    match verdict {
-        Ok(()) => vec![0],
-        Err(r) => vec![1, r.byte()],
-    }
+/// The court's verdict on a signing act: `[0][count][(clause name,
+/// assent) …]` admitted, or `[1][refusal]`
+/// (`clauses::signing::put_verdict`).
+pub fn encode_signature_reply(verdict: &Result<Vec<super::clauses::Admitted>, super::clauses::SigningRefusal>) -> Vec<u8> {
+    let mut out = Vec::new();
+    super::clauses::signing::put_verdict(&mut out, verdict);
+    out
 }
 
 /// The verdict a reply carries, read whole.
-pub fn decode_signature_reply(b: &[u8]) -> Option<Result<(), super::concordance::ConcordanceRefusal>> {
-    match b {
-        [0] => Some(Ok(())),
-        [1, r] => Some(Err(super::concordance::ConcordanceRefusal::of(*r)?)),
-        _ => None,
-    }
+pub fn decode_signature_reply(b: &[u8]) -> Option<Result<Vec<super::clauses::Admitted>, super::clauses::SigningRefusal>> {
+    super::clauses::signing::take_verdict(b)
 }
 
 /// `[ACT_LAWS][3]`: the shared lexicon.

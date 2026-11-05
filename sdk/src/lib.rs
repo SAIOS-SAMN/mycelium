@@ -30,7 +30,8 @@
 //! | [`mind`] | The reference mind, opened on a session |
 //! | [`wire`] | [`WIRE_VERSION`] and the [`ACT_TABLE`] the SDK may send |
 //! | [`laws`] | The L0 law register at its `LAW_VERSION`, its read, and the `forms` law ids |
-//! | [`house`] | A kernel's uplink (its house): domain founding, the universe, the endowment's manifest and grant, the house side of seats, laws verify, the clock, the Concordance signature, framing |
+//! | [`house`] | A kernel's uplink (its house): domain founding, the universe, the endowment's manifest and grant, the house side of seats, laws verify, the clock, the Concordance's clause register and signing act, framing |
+//! | [`signing`] | A kernel's signing helper: the Concordance's clauses read, each fixture reconstructed through `forms`, and the readings signed clause by clause |
 //! | [`conformance`] | The client conformance statement (two profiles, mind and kernel, each with MUST and MAY acts), its in-process check and its suite on a network |
 //! | [`forms`] | The law forms of the Concordance's nested shells |
 //! | [`prelude`] | The items a client uses first |
@@ -83,6 +84,7 @@ pub mod readings;
 pub mod rule;
 pub mod seat;
 pub mod session;
+pub mod signing;
 pub mod task;
 pub mod voice;
 pub mod wallet;

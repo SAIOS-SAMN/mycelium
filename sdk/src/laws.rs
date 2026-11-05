@@ -32,22 +32,14 @@ pub use mycelium::physics::laws::codec::{
     MODE_CLOCK, MODE_CONCORDANCE, MODE_LEXICON, MODE_PARAMETERS, MODE_REGISTER, MODE_SIGNATURE, MODE_STATEMENT,
 };
 
-/// The Concordance's hash (BLAKE3 of its exact bytes at build time), the
-/// bytes themselves, and the read of the hash a hypha serves
-/// (`ACT_LAWS` mode 7).
-pub use mycelium::physics::laws::concordance::{CONCORDANCE, CONCORDANCE_HASH};
-/// The hash's read on the wire.
-pub use mycelium::physics::laws::codec::{decode_concordance_reply, encode_concordance_request};
-
-/// A kernel's signature over the Concordance, its verifier and its refusal
-/// by name; presented to a hypha on `ACT_LAWS` mode 8. From v0.3.0 the
-/// signature is accepted and verified; no kernel is refused for lacking one
-/// until the following release.
-pub use mycelium::physics::laws::concordance::{
-    verify_concordance_signature, ConcordanceRefusal, ConcordanceSignature, SIGNATURE_LEN,
-};
-/// The presentation on the wire, and the verdict read.
-pub use mycelium::physics::laws::codec::{decode_signature_reply, encode_signature_request};
+/// The Concordance's clauses, each by its law id and version
+/// (Concordance §0): the register a hypha serves on `ACT_LAWS` mode 7, read
+/// on the wire, and a kernel's signing act on mode 8 with its verdict. A
+/// kernel signs by reconstructing each clause's fixtures
+/// ([`crate::signing`]).
+pub use mycelium::physics::laws::clauses::CLAUSES;
+/// The register's read and the signing act on the wire.
+pub use mycelium::physics::laws::codec::{decode_concordance_reply, decode_signature_reply, encode_concordance_request, encode_signature_request};
 
 /// Every shell the `forms` crate hosts, `(law id, version)`.
 pub use forms::LAW_IDS as FORM_LAW_IDS;

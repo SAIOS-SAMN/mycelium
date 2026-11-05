@@ -6,9 +6,11 @@
 
 pub mod fixtures;
 pub mod register;
+pub mod signing;
 pub mod writing;
 
 pub use register::{reconstruct, register, Clause, ClauseId, Fixture, Object, RegisterRefusal, Registered, Standing, CLAUSES};
+pub use signing::{admit, admit_bytes, Admitted, Assent, Choice, SignedClause, Signing, SigningRefusal};
 
 #[cfg(test)]
 mod tests;

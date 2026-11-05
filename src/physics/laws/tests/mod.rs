@@ -3,7 +3,6 @@
 // transition that breaks it, by name, with every other breach beside it.
 
 mod codec;
-mod concordance;
 mod fixtures;
 mod lexicon;
 mod turns;
