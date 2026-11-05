@@ -90,7 +90,7 @@ fn vertex_cites_by(
     let rotor = derivation.rotor();
     let mut before: Vec<crate::transducer::spelled::PaintedSite> = Vec::new();
     let mut after: Keyed<u8> = Keyed::new();
-    let mut out_support: Vec<(i64, i64)> = Vec::new();
+    let mut out_support: Vec<crate::transducer::spelled::SectionSite> = Vec::new();
     let ground = crate::transducer::raster::ground();
     for l in piece {
         if !ground.holds(&l.before) {
@@ -98,8 +98,7 @@ fn vertex_cites_by(
         }
         if !ground.holds(&l.after) {
             after.insert(section_site_key(l.site), l.after);
-            let [r, c] = l.site.coordinates();
-            out_support.push((r, c));
+            out_support.push(l.site);
         }
     }
     if before.is_empty() || out_support.is_empty() {
@@ -109,13 +108,7 @@ fn vertex_cites_by(
     before.dedup();
     out_support.sort_unstable();
     out_support.dedup();
-    let in_support: Vec<(i64, i64)> = before
-        .iter()
-        .map(|p| {
-            let [r, c] = p.site.coordinates();
-            (r, c)
-        })
-        .collect();
+    let in_support: Vec<crate::transducer::spelled::SectionSite> = before.iter().map(|p| p.site).collect();
     let shape_in = blade::shape_of_section(&in_support);
     let shape_out = blade::shape_of_section(&out_support);
     let linear = element::conformal_of_rotor(&rotor, &element::dilator_of(carriage)?)?;
@@ -251,7 +244,7 @@ where
     }
     let pos = element::positions(word.sub());
     if let Some(asg) = element::pullback(&pos, piece, &v) {
-        let mut body: Vec<SectionLink> = pos.iter().zip(&asg).map(|(&(r, c), &(b, a))| SectionLink::on_plane([r, c], b, a)).collect();
+        let mut body: Vec<SectionLink> = pos.iter().zip(&asg).map(|(&site, &(b, a))| SectionLink::new(site, b, a)).collect();
         body.sort_unstable();
         if reconstruct_operators(&[(v.clone(), body.clone())], piece).is_empty() {
             let puncture = Puncture {

@@ -3,7 +3,7 @@
 // whose word orbits, is a contact word; its placement leaves the form.
 
 use super::orbit::positions_of;
-use super::perceive::{frame_of, PaintedSite, SectionSample};
+use super::perceive::{frame_of, PaintedSite, SectionSample, SectionSite};
 use super::*;
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
@@ -42,11 +42,12 @@ fn one_ring(family: &[(SectionSample, SectionSample)]) -> Option<u8> {
         let (Some(last_row), Some(last_col)) = (fy.0.checked_sub(1), fy.1.checked_sub(1)) else {
             return None;
         };
-        let frame_anchor: Vec<(i64, i64)> = (0..fy.1 as i64)
-            .map(|c| (0, c))
-            .chain((0..fy.1 as i64).map(|c| (last_row as i64, c)))
-            .chain((0..fy.0 as i64).map(|r| (r, 0)))
-            .chain((0..fy.0 as i64).map(|r| (r, last_col as i64)))
+        let on = |r: i64, c: i64| SectionSite::on_plane([r, c]);
+        let frame_anchor: Vec<SectionSite> = (0..fy.1 as i64)
+            .map(|c| on(0, c))
+            .chain((0..fy.1 as i64).map(|c| on(last_row as i64, c)))
+            .chain((0..fy.0 as i64).map(|r| on(r, 0)))
+            .chain((0..fy.0 as i64).map(|r| on(r, last_col as i64)))
             .collect();
         #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a resident grid's frame dimensions cannot sum past a 64-bit usize")]
         let bound = fy.0.saturating_add(fy.1);

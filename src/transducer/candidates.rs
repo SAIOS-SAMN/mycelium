@@ -45,7 +45,8 @@ pub fn signature(region: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Signature {
     // The region's 1-skeleton, read off the ordered support: β₀ is its
     // component count and the boundary cochain is every site's side not
     // shared along an edge (4 sides per site, 2 closed per edge).
-    let edges = super::sentence::incidence_of(&sites);
+    let on_plane: Vec<super::spelled::SectionSite> = sites.iter().map(|&(r, c)| super::spelled::SectionSite::on_plane([r, c])).collect();
+    let edges = super::sentence::incidence_of(&on_plane);
     let mut roots = super::sentence::components(sites.len(), &edges);
     roots.sort_unstable();
     roots.dedup();

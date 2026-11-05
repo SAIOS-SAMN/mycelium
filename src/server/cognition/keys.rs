@@ -66,11 +66,18 @@ pub(crate) fn chart_footprint_key(_inv: &crate::transducer::stalk::Invariant, ch
     pos.sort_unstable();
     let mut buf = Vec::new();
     crate::transducer::address::put_key_count(&mut buf, pos.len());
-    for (r, c) in pos {
-        buf.extend_from_slice(&r.to_le_bytes());
-        buf.extend_from_slice(&c.to_le_bytes());
+    for site in pos {
+        put_section_site(&mut buf, site);
     }
     buf
+}
+
+/// A SECTION SITE WRITTEN ON A KEY: each coordinate along the perspective's
+/// plane, in the plane's order, eight bytes each.
+pub(crate) fn put_section_site(buf: &mut Vec<u8>, site: crate::transducer::spelled::SectionSite) {
+    for x in site.coordinates() {
+        buf.extend_from_slice(&x.to_le_bytes());
+    }
 }
 
 /// A 1-simplex is exactly two vertices. Any other fibre is not an edge.
