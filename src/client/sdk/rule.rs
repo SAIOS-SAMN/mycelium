@@ -70,19 +70,25 @@ pub enum Create {
 }
 
 /// THE SIX PLANE SYMMETRIES beside the identity (the dihedral group of the
-/// square, read on a rectangle where the shapes fit). Turns are clockwise
-/// as a plane is read: `Rotate90` sends row `r`, column `c` of an `R × C`
-/// plane to row `c`, column `R − 1 − r`.
+/// square, read on a rectangle where the shapes fit), on the plane of the
+/// perspective's two plane axes, `e₁` the first and `e₂` the second
+/// (`PlaneAxis`). A rotation is named by its generator, written in its
+/// orientation, and its degrees, as a motion: `RotateE2E1By90` carries `e₂`
+/// onto `e₁` and `e₁` onto `−e₂`, so the site at coordinates `(a, b)` of an
+/// `A × B` sample lands at `(b, A − 1 − a)`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Symmetry {
-    Rotate90,
-    Rotate180,
-    Rotate270,
-    /// Mirror left to right: column `c` → `C − 1 − c`.
+    /// 90° in the `e₂e₁` plane.
+    RotateE2E1By90,
+    /// 180° in the `e₂e₁` plane.
+    RotateE2E1By180,
+    /// 270° in the `e₂e₁` plane.
+    RotateE2E1By270,
+    /// The mirror along `e₂`: the second plane coordinate `b` → `B − 1 − b`.
     FlipH,
-    /// Mirror top to bottom: row `r` → `R − 1 − r`.
+    /// The mirror along `e₁`: the first plane coordinate `a` → `A − 1 − a`.
     FlipV,
-    /// Row and column exchanged.
+    /// The two plane axes exchanged.
     Transpose,
 }
 
@@ -146,16 +152,17 @@ fn centre((rows, cols): (usize, usize)) -> Option<[Q; 2]> {
 }
 
 impl Symmetry {
-    /// THE LINEAR PART, about the origin, on the base's `e1` (row) and `e2`
-    /// (column): a rotor in the `e1e2` plane for a turn — `1 ∓ e1e2` up to
-    /// scale, a ray, exact — and a vector for a mirror. What
-    /// [`Step::InPlace`] reads about each selected body's own centre.
+    /// THE LINEAR PART, about the origin, on the base's `e1` (the first plane
+    /// axis) and `e2` (the second): a rotor in the `e1e2` plane for a
+    /// rotation — `1 ∓ e1e2` up to scale, a ray, exact — and a vector for a
+    /// mirror. What [`Step::InPlace`] reads about each selected body's own
+    /// centre.
     pub(crate) fn linear(self) -> Mv {
         use crate::transducer::cga::{E1, E2};
         match self {
-            Symmetry::Rotate90 => cga::rotator(&q(1), &q(1)),
-            Symmetry::Rotate180 => cga::rotator(&q(0), &q(1)),
-            Symmetry::Rotate270 => cga::rotator(&q(1), &q(-1)),
+            Symmetry::RotateE2E1By90 => cga::rotator(&q(1), &q(1)),
+            Symmetry::RotateE2E1By180 => cga::rotator(&q(0), &q(1)),
+            Symmetry::RotateE2E1By270 => cga::rotator(&q(1), &q(-1)),
             Symmetry::FlipH => Mv::blade(E2, q(1)),
             Symmetry::FlipV => Mv::blade(E1, q(1)),
             Symmetry::Transpose => Mv::blade(E1, q(1)).sub(&Mv::blade(E2, q(1))),
@@ -164,19 +171,20 @@ impl Symmetry {
 
     /// Does the symmetry exchange the plane's two extents?
     fn exchanges(self) -> bool {
-        matches!(self, Symmetry::Rotate90 | Symmetry::Rotate270 | Symmetry::Transpose)
+        matches!(self, Symmetry::RotateE2E1By90 | Symmetry::RotateE2E1By270 | Symmetry::Transpose)
     }
 }
 
 impl Step {
     /// THE CENTRED RIGID MOTION `T(c′) · L · T(−c)`: the input's centre
-    /// `c = ((R−1)/2, (C−1)/2)` taken to the origin, the symmetry's linear
+    /// `c = ((A−1)/2, (B−1)/2)` taken to the origin, the symmetry's linear
     /// part `L` applied there, and the origin taken to the output's centre
     /// `c′` — half-integers, exact, read in the sensor's compartment-centre
     /// coordinates (each index plus ½, [`centre`]), which is the one frame
     /// the court carries a site in. `None` where the shapes do not fit the
-    /// symmetry: a turn by 90° or 270° and the transpose take `R × C` to
-    /// `C × R`; the 180° turn and the mirrors keep `R × C`. Public for a
+    /// symmetry: a rotation by 90° or 270° in `e₂e₁` and the transpose take
+    /// `A × B` to `B × A`; the rotation by 180° in `e₂e₁` and the mirrors
+    /// keep `A × B`. Public for a
     /// client stating its programs through [`sentence`] (2026-10-22).
     pub fn symmetry_motion(kind: Symmetry, in_shape: (usize, usize), out_shape: (usize, usize)) -> Option<Step> {
         let fits = match kind.exchanges() {

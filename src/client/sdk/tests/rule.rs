@@ -19,9 +19,9 @@ fn apply(kind: Symmetry, g: &SectionSample) -> SectionSample {
     // Written as a source writes its lines, then read at intake.
     let ([h, w], g) = (g.extents(), g.raster());
     match kind {
-        Symmetry::Rotate90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
-        Symmetry::Rotate180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
-        Symmetry::Rotate270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
+        Symmetry::RotateE2E1By90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
+        Symmetry::RotateE2E1By180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
+        Symmetry::RotateE2E1By270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
         Symmetry::FlipH => g.iter().map(|row| row.iter().rev().copied().collect()).collect(),
         Symmetry::FlipV => g.iter().rev().cloned().collect(),
         Symmetry::Transpose => (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
@@ -69,9 +69,9 @@ fn square_withheld() -> SectionSample {
 #[test]
 fn symmetry_motion_carries_every_site_to_index_image() {
     for kind in [
-        Symmetry::Rotate90,
-        Symmetry::Rotate180,
-        Symmetry::Rotate270,
+        Symmetry::RotateE2E1By90,
+        Symmetry::RotateE2E1By180,
+        Symmetry::RotateE2E1By270,
         Symmetry::FlipH,
         Symmetry::FlipV,
         Symmetry::Transpose,
@@ -94,9 +94,9 @@ fn symmetry_motion_carries_every_site_to_index_image() {
 fn sentence_of_solves_unseen_pair_by_square_symmetry() {
     crate::transducer::raster::stand_on(0);
     for kind in [
-        Symmetry::Rotate90,
-        Symmetry::Rotate180,
-        Symmetry::Rotate270,
+        Symmetry::RotateE2E1By90,
+        Symmetry::RotateE2E1By180,
+        Symmetry::RotateE2E1By270,
         Symmetry::FlipH,
         Symmetry::FlipV,
         Symmetry::Transpose,
@@ -113,15 +113,15 @@ fn sentence_of_solves_unseen_pair_by_square_symmetry() {
     }
 }
 
-/// A turn and the transpose take a non-square sample to its exchange, and a
-/// shape the symmetry does not fit is no motion.
+/// A rotation by 90° in `e₂e₁` and the transpose take a non-square sample to
+/// its exchange, and a shape the symmetry does not fit is no motion.
 #[test]
 fn symmetry_motion_exchanges_non_square_shape() {
     crate::transducer::raster::stand_on(0);
-    for kind in [Symmetry::Rotate90, Symmetry::Transpose] {
+    for kind in [Symmetry::RotateE2E1By90, Symmetry::Transpose] {
         let x = digits(&["120", "100"]);
         let y = apply(kind, &x);
-        assert_eq!(shape(&y), (3, 2), "R × C goes to C × R");
+        assert_eq!(shape(&y), (3, 2), "A × B goes to B × A");
         let step = Step::symmetry_motion(kind, (2, 3), (3, 2)).expect("the exchange fits");
         let rule = match sentence(&[step], &[(x, y)], &NoCrystal) {
             Ok(rule) => rule,
@@ -131,9 +131,9 @@ fn symmetry_motion_exchanges_non_square_shape() {
         assert_solved(&rule, &[(w.clone(), apply(kind, &w))], &format!("{kind:?} on 2 × 3"));
     }
     // A SHAPE THE SYMMETRY DOES NOT FIT is no motion at all.
-    assert!(Step::symmetry_motion(Symmetry::Rotate90, (2, 3), (2, 3)).is_none());
+    assert!(Step::symmetry_motion(Symmetry::RotateE2E1By90, (2, 3), (2, 3)).is_none());
     assert!(Step::symmetry_motion(Symmetry::Transpose, (2, 3), (2, 3)).is_none());
-    assert!(Step::symmetry_motion(Symmetry::Rotate180, (2, 3), (3, 2)).is_none());
+    assert!(Step::symmetry_motion(Symmetry::RotateE2E1By180, (2, 3), (3, 2)).is_none());
     assert!(Step::symmetry_motion(Symmetry::FlipH, (2, 3), (3, 2)).is_none());
 }
 
@@ -154,8 +154,8 @@ fn sentence_of_solves_unseen_pair_by_hue_permutation() {
 fn sentence_of_solves_motion_then_recolour_as_one() {
     crate::transducer::raster::stand_on(0);
     let map = [(1u8, 5u8)];
-    let steps = [Step::symmetry_motion(Symmetry::Rotate180, (3, 3), (3, 3)).expect("fits"), Step::Hue(map.to_vec())];
-    let then = |g: &SectionSample| recolour(&map, &apply(Symmetry::Rotate180, g));
+    let steps = [Step::symmetry_motion(Symmetry::RotateE2E1By180, (3, 3), (3, 3)).expect("fits"), Step::Hue(map.to_vec())];
+    let then = |g: &SectionSample| recolour(&map, &apply(Symmetry::RotateE2E1By180, g));
     let x = square_train();
     let rule = sentence(&steps, &[(x.clone(), then(&x))], &NoCrystal).expect("mints");
     let w = digits(&["000", "014", "010"]);
@@ -183,8 +183,8 @@ fn sentence_refuses_step_with_no_inverse() {
 fn judge_solve_refuses_dilated_motion_and_solves_plain() {
     crate::transducer::raster::stand_on(0);
     let x = square_train();
-    let y = apply(Symmetry::Rotate180, &x);
-    let Some(Step::Motion(m)) = Step::symmetry_motion(Symmetry::Rotate180, (3, 3), (3, 3)) else { panic!("fits") };
+    let y = apply(Symmetry::RotateE2E1By180, &x);
+    let Some(Step::Motion(m)) = Step::symmetry_motion(Symmetry::RotateE2E1By180, (3, 3), (3, 3)) else { panic!("fits") };
     let two = num_rational::BigRational::from_integer(num_bigint::BigInt::from(2));
     let dilated = cga::dilator(&two).geo(&m);
     assert!(cga::is_versor(&dilated), "a dilation is a versor");
@@ -192,7 +192,7 @@ fn judge_solve_refuses_dilated_motion_and_solves_plain() {
     let family = vec![(x.clone(), y.clone())];
     let plain = sentence(&[Step::Motion(m)], &family, &NoCrystal).expect("the motion mints");
     let w = square_withheld();
-    let withheld = vec![(w.clone(), apply(Symmetry::Rotate180, &w))];
+    let withheld = vec![(w.clone(), apply(Symmetry::RotateE2E1By180, &w))];
     assert_solved(&plain, &withheld, "the plain motion");
     match sentence(&[Step::Motion(dilated)], &family, &NoCrystal) {
         Err(NoRule::Mint(_)) => {}

@@ -328,9 +328,9 @@ fn symmetry_steps_reads_task_before_seat() {
         // Written as a source writes its lines, then read at intake.
         let ([h, w], g) = (g.extents(), g.raster());
         match kind {
-            Symmetry::Rotate90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
-            Symmetry::Rotate180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
-            Symmetry::Rotate270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
+            Symmetry::RotateE2E1By90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
+            Symmetry::RotateE2E1By180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
+            Symmetry::RotateE2E1By270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
             Symmetry::FlipH => g.iter().map(|row| row.iter().rev().copied().collect()).collect(),
             Symmetry::FlipV => g.iter().rev().cloned().collect(),
             Symmetry::Transpose => (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
