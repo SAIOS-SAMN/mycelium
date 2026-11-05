@@ -193,7 +193,7 @@ fn handoff_returns_refused_or_expired_offer_to_sender() {
 /// A REVERSED FOLD UN-CONSUMES ITS SIDE, AND FINAL FOLDS LET THE HANDOFF GO:
 /// X's fold consuming OUT lies on its line — falsified, the side is open
 /// again and X refiles it honestly (its line declaring the crossing, which
-/// a replay reads); once both consuming folds read final and are pruned,
+/// a reconstruction reads); once both consuming folds read final and are pruned,
 /// the handoff is let go at the orbit's close.
 #[test]
 fn challenge_unconsumes_side_and_orbit_releases_handoff() {
@@ -216,7 +216,7 @@ fn challenge_unconsumes_side_and_orbit_releases_handoff() {
     let honest_line = vec![Entry { rows: leaving.clone(), declared: leaving.clone() }];
     let honest = TierFold { prefix: line_head(lie.prefix, &honest_line), ..fold(&x(), 0, leaving, vec![(id, Side::Out)]) };
     let Uplinked::Admitted { at: x_at, .. } = k.hear_uplink(&honest.clone().sign(&x())) else { panic!("refiled") };
-    assert!(matches!(k.challenge(&evidence(&honest, x_at, honest_line).sign(&key(40))), Challenged::Upheld { .. }), "the crossing replays");
+    assert!(matches!(k.challenge(&evidence(&honest, x_at, honest_line).sign(&key(40))), Challenged::Upheld { .. }), "the crossing reconstructs");
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&y())), Handed::Sealed { .. }));
     let Uplinked::Admitted { at: y_at, .. } = k.hear_uplink(&fold(&y(), 1, vec![(who(8), [5, 0, 0, 1])], vec![(id, Side::In)]).sign(&y())) else {
         panic!("consumed")

@@ -30,7 +30,7 @@ verification of knowledge in `docs/MU-SCIENCE.md`.
 1. [Conventions](#1-conventions)
 2. [The algebra](#2-the-algebra)
 3. [The alphabet, words and sentences](#3-the-alphabet-words-and-sentences)
-4. [Perception and the geometry of grids](#4-perception-and-the-geometry-of-grids)
+4. [Perception and the geometry of planes](#4-perception-and-the-geometry-of-planes)
 5. [Holonomy, cohomology and the orbit physics](#5-holonomy-cohomology-and-the-orbit-physics)
 6. [The economy](#6-the-economy)
 7. [The metabolism](#7-the-metabolism)
@@ -561,7 +561,7 @@ centred rigid motion (SDK):  T(c′) · L · T(−c),   c = ((R − 1)/2, (C −
 ```
 
 A carriage acting about a body is conjugated by the translator to the
-body's centre. The SDK's grid motion takes the input's centre to the
+body's centre. The SDK's plane motion takes the input's centre to the
 origin, applies the symmetry's linear part `L`, and takes the origin to the
 output's centre `c′`, in compartment-centre coordinates.
 
@@ -573,12 +573,12 @@ Sources: MU-RECURSION 78.51(3); MU-CLIENT 78.142. Code:
 #### 2.24 Carrying a compartment's centre
 
 ```text
-xᵢ = aᵢ + ½  on a grid axis,   xᵢ = aᵢ  otherwise      (a the site)
+xᵢ = aᵢ + ½  on a plane axis,   xᵢ = aᵢ  otherwise      (a the site)
 carried centre = base_at( V X(x) Ṽ )
 site containing a rational point:  ⌊xᵢ⌋ on every axis
 ```
 
-A compartment's centre stands half a unit inside its site on each grid
+A compartment's centre stands half a unit inside its site on each plane
 axis, so a dilator about a frame point fixes the frame.
 
 Sources: MU-RECURSION 16.4. Code:
@@ -854,7 +854,7 @@ Sources: MU-RECURSION law 2, A21, 15.1, 13.4. Code:
 
 ---
 
-## 4. Perception and the geometry of grids
+## 4. Perception and the geometry of planes
 
 #### 4.1 Centred coordinates
 
@@ -862,7 +862,7 @@ Sources: MU-RECURSION law 2, A21, 15.1, 13.4. Code:
 X = 2x − (n − 1)
 ```
 
-A grid coordinate centred on its extent `n` and doubled, so every centre is
+A plane coordinate centred on its extent `n` and doubled, so every centre is
 an integer.
 
 Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::centred`.
@@ -876,7 +876,7 @@ replaces it (MU-SENSING §3.1; track 26 S4). The formula records the code
 that still holds it.
 
 ```text
-r² = Σᵢ eᵢ² / 4                    (circumscribed sphere of a grid of extents eᵢ)
+r² = Σᵢ eᵢ² / 4                    (circumscribed sphere of a sample of extents eᵢ)
 s  = r_to / r_from = p/q           exact only where r²_to / r²_from is a rational square
 
 carried site:  X_to = X_from · p/q,   x_to = (X_to + (e_to − 1)) / 2   (an integer site, or none)
@@ -908,7 +908,7 @@ Sources: MU-RECURSION 78.56. Code: `src/transducer/raster.rs::momentum_vanishes`
 #### 4.4 Frame fixing by moments
 
 ```text
-moment_{axis, k} = Σ_{painted sites} X_axis^k,      k = 1, 2, 3, 4   (visible grids only)
+moment_{axis, k} = Σ_{painted sites} X_axis^k,      k = 1, 2, 3, 4   (visible samples only)
 axis reversed  ⇔  the first non-zero odd moment (k = 1, else k = 3) is negative
 axes ordered by (moment_2, moment_4)
 ```
@@ -944,7 +944,7 @@ radial (scalar):     tr(M₂) = I_xx + I_yy             (scale; no orientation)
 2nd harmonic:        u = ((I_xx − I_yy)/2) e₁ + I_xy e₂   (turns at 2φ)
 4th harmonic:        h₄                                   (turns at 4φ)
 
-r² = Tr(I) / M₀ ≥ 1/6 > 0          (each compartment lifted with 1/12 per grid axis)
+r² = Tr(I) / M₀ ≥ 1/6 > 0          (each compartment lifted with 1/12 per plane axis)
 ‖M̃_b^(m)‖² · (r_a²)^m = ‖M̃_a^(m)‖² · (r_b²)^m     (order m carries degree m)
 ```
 

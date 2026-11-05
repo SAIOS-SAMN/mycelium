@@ -203,7 +203,7 @@ fn compose_or_construct_speaks_remainder_ruled_words_compose() {
 /// The court ruled a letter for the 90° turn of the (0,1) plane. A mind
 /// holding it meets a demand for the 90° turn of the (0,3) plane — the same
 /// turn in another orientation, one class. It speaks one word citing the held
-/// letter with the conjugator that carries it, `g · W · g̃`; the court's replay
+/// letter with the conjugator that carries it, `g · W · g̃`; the court's reconstruction
 /// composes it, and the same cite with the identity for its conjugator — a
 /// claim the citation does not make good — is refused.
 #[test]
@@ -254,7 +254,7 @@ fn compose_or_construct_speaks_conjugate_as_transported_word() {
 /// for the slide carried twice as far. The ruled words compose it — the slide
 /// squared, exact on the whole motion — so nothing is constructed: the mind
 /// speaks ONE word whose derivation cites the slide at exponent 2, with no
-/// peer to agree it (it mints no dimension). The court's replay composes the
+/// peer to agree it (it mints no dimension). The court's reconstruction composes the
 /// citation against the slide it holds and admits it; the same word citing
 /// the slide once is refused.
 #[test]

@@ -74,7 +74,7 @@ impl Court {
     }
 
     /// EC1 — A RETIREMENT IS A RULING, sealed as `Ruling(Retired)` citing
-    /// what a court admitting its receipt needs to replay it (78.33, as
+    /// what a court admitting its receipt needs to reconstruct it (78.33, as
     /// ruled): the retired word as it stood, then the rewrite it rests on
     /// and every word that speaks for it, each by its fibre and admitting
     /// stamp. A cite this court cannot write — a word no act admitted — is
@@ -97,10 +97,10 @@ impl Court {
     /// GENOME SYNCHRONIZATION, commit step (ruled: servers hold no
     /// dialects — one universal genome on the server plane, authored only
     /// by the court's finality). The caller (the deliberation worker) has
-    /// already verified the blind replay and derivability OFF the lock on a
+    /// already verified the blind reconstruction and derivability OFF the lock on a
     /// basis snapshot; this brief step re-checks presence and installs. The
     /// ratifying voice is the discoverer of record — real provenance, no
-    /// sentinel identity. On the stroke the adoption was replayed under
+    /// sentinel identity. On the stroke the adoption was reconstructed under
     /// (65.5): the deliberation worker's `adopt` is the act's root.
     /// The other install: the vantage install in `court/vantage_install.rs`.
     pub fn install_adopted(&mut self, word: &Element, ratifier: [u8; 32], budget: &mut crate::physics::Budget) -> Adoption {
@@ -144,7 +144,7 @@ impl Court {
         // the court rules it (inversion, remainder, torsion) and the mesh
         // pays it as a word, never as a copied pair. A residue word taught
         // up is installed as before. A sentence is the same: Offered on the
-        // docket so a second organ's replay installs it as language.
+        // docket so a second organ's reconstruction installs it as language.
         if word.is_connection() || word.is_sentence() || word.is_rewrite() {
             self.docket_connection(word, ratifier);
         }

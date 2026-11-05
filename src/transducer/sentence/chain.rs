@@ -2,7 +2,7 @@
 //
 //! 18.2, 6 — THE CHAIN: its links and the links' incidence, the citations and
 //! punctures a deconstruction produces, the residue no word speaks, and the
-//! replay that measures what a proof leaves.
+//! reconstruction that measures what a proof leaves.
 
 use crate::network::nerve::Keyed;
 use crate::transducer::element::{self, Element, Versor};
@@ -58,7 +58,7 @@ impl SectionLink {
 /// A CITATION: the coordinates a sentence speaks for one word — its
 /// address, the transport carrying the word's chain into the utterance's
 /// frame, and the assignment along the punctured axis the body carries. A
-/// proof is a sequence of citations; a replay applies them and measures
+/// proof is a sequence of citations; a reconstruction applies them and measures
 /// what remains.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cite {
@@ -156,7 +156,7 @@ impl Sentence {
 
     /// What the language does not yet hold: the residue, together with the
     /// bodies spoken only as punctures — novelty in the fibre is novelty.
-    /// Measured as the replay of the citations alone over the chain.
+    /// Measured as the reconstruction of the citations alone over the chain.
     pub fn open_at<'a>(&self, word_at: &impl Fn(&[u8]) -> Option<&'a Element>, chain: &[SectionLink]) -> Vec<SectionLink> {
         match self.punctures.is_empty() {
             true => self.residue.clone(),
@@ -329,7 +329,7 @@ pub fn cited_pattern(word: &Element, asg: &[(u8, u8)]) -> Option<Vec<SectionLink
     Some(pat)
 }
 
-/// THE REPLAY — in the algebra and linear in the proof. For every citation
+/// THE RECONSTRUCTION — in the algebra and linear in the proof. For every citation
 /// the word's own compartments are carried forward by V, each as its unit
 /// square (exact, or refused: a compartment the versor carries onto no block of
 /// compartments — a tilt, a shrink — speaks nothing, law 11), and every image
@@ -355,7 +355,7 @@ pub(crate) fn section_site_key(site: crate::transducer::spelled::SectionSite) ->
     crate::transducer::base::Site::from((r, c, 0)).key()
 }
 
-/// THE REPLAY OF OPERATORS: each operator is a body (the word's links in
+/// THE RECONSTRUCTION OF OPERATORS: each operator is a body (the word's links in
 /// its own frame) with the versor that carries it; nothing is fetched. The
 /// utterance is verified as it was spoken. The target is one section, in
 /// its own frame: a word's compartment carried into another frame speaks
@@ -505,7 +505,7 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<SectionLink>)], target: &[Secti
 }
 
 /// VERIFY a received sentence — the receiving direction of the algebra:
-/// the replay's residue together with the seam defect. Empty is closure
+/// the reconstruction's residue together with the seam defect. Empty is closure
 /// with a coherent cover.
 pub fn verify_at<'a>(
     word_at: &impl Fn(&[u8]) -> Option<&'a Element>,
@@ -520,7 +520,7 @@ pub fn verify_at<'a>(
 }
 
 /// VERIFY AN UTTERANCE as spoken: the operators the citations carry are
-/// replayed against the target and checked on the seams, with no copy
+/// reconstructed against the target and checked on the seams, with no copy
 /// of any word fetched. The hearer's lexicon is consulted only afterward,
 /// to name what was verified.
 pub fn verify_utterance(cites: &[crate::anastome::dialogue::CiteWire], target: &[SectionLink]) -> Vec<SectionLink> {

@@ -112,7 +112,7 @@ pub fn measure_sites(family: &[(SectionSample, SectionSample)], sites: &[Keyed<(
 /// where the before side held another hue, vacated where it held one). It
 /// pays on a pair only where it says nothing false there: every changed site
 /// holds, in the pair's answer, what the speech says — a site carried off
-/// the grid, or two sites carried onto one with two hues, is false, and the
+/// the sample, or two sites carried onto one with two hues, is false, and the
 /// pair pays nothing. Never a choice of the bodies it happens to fit. Empty
 /// for anything that is not a connection: a letter standing at no frame names
 /// no body (78.149(c)).

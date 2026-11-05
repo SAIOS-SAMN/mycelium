@@ -417,7 +417,7 @@ pub fn by_base(sections: &[(Word, Section)]) -> crate::network::nerve::Keyed<Vec
 ///
 /// The answer carries the conjugator, because "it is redundant" without the
 /// γ that shows it is an assertion; with γ it is a re-derivation anyone can
-/// replay.
+/// reconstruct.
 pub fn section_of(held: &[Word], w: &Word) -> Option<(Word, Word)> {
     // NOT GATED ON EQUAL BASES, for the reason `solve_conjugator` states: a
     // sheet carries a rotation to its inverse, and the two stand in

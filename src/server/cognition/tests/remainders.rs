@@ -29,12 +29,12 @@ fn remainders_reads_congruent_fills_over_complexes() {
     assert_eq!(torsion_words, 0);
 }
 
-/// RM1 (c) — THE COURT RE-FILLS ONLY BY REPLAYING A VOICE'S ACT: its complex
+/// RM1 (c) — THE COURT RE-FILLS ONLY BY RECONSTRUCTING A VOICE'S ACT: its complex
 /// holds a Congruent simplex and the Torse rewrite minted over it; a voice's
 /// Settled act cites the rewrite, the class with its ray and chain, and a
-/// word spelling the ray. Replayed, the simplex reads Filled through the
+/// word spelling the ray. Reconstructed, the simplex reads Filled through the
 /// named door (refilled 1), the rewrite's remainder is answered at the act's
-/// stamp and its pressure reads zero. A second replay finds nothing open.
+/// stamp and its pressure reads zero. A second reconstruction finds nothing open.
 #[test]
 fn hear_refill_fills_congruent_simplex_once() {
     use crate::chronometry::{Cite, KStepReceipt, Place, Stamp};
@@ -101,7 +101,7 @@ fn hear_refill_fills_congruent_simplex_once() {
     assert_eq!((k.refills.applied, k.refills.unopen), (1, 1), "nothing open the second time");
 
     // R2 — a rewrite whose `after` is no court simplex (the complex of its
-    // chart holds none): the act replays whole, the record is answered, and
+    // chart holds none): the act reconstructs whole, the record is answered, and
     // only the write is skipped, counted `unsited`.
     let inv2 = crate::transducer::stalk::Invariant::counts(&[3, 4]);
     let rw2 = k.construct_torse_at(&inv2, b"no simplex here", (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words).expect("minted");

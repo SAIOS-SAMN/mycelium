@@ -113,7 +113,7 @@ fn hear_speech_adjudicates_stood_and_awaiting_apart() {
     let plain = sentence_with(Derivation::spelled(turn_90(3)), 5);
 
     let spoken = vec![(plain.clone(), None), (citer.clone(), None)];
-    // 78.153: a stroke that holds the frame's replays.
+    // 78.153: a stroke that holds the frame's reconstructions.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let heard = k.hear_speech([1; 32], &[0; 32], &spoken, &[], &mut frame).expect("the frame is heard");
 
@@ -165,7 +165,7 @@ fn hear_speech_adjudicates_stood_and_awaiting_apart() {
 #[test]
 fn ruled_admit_absent_word_rehears_nothing() {
     let mut k = Court::new();
-    // D2.5 O4 — the re-hearing below replays a sentence whose replay has no
+    // D2.5 O4 — the re-hearing below reconstructs a sentence whose reconstruction has no
     // closed-form need yet, so the court runs on an explicit calibration: a
     // process of 40 bytes at one byte per read, `C = 40`.
     let nz = |n| std::num::NonZeroU64::new(n).expect("a fixture size is positive");
@@ -210,7 +210,7 @@ fn ruled_admit_absent_word_rehears_nothing() {
     assert_eq!(k.awaiting_len(held.as_bytes()), 1, "docketed under an address it holds");
     let mut ruling = k.stroke();
     k.ruled_admit(held.as_bytes(), &mut ruling);
-    // 78.153: a re-hearing the ruling's stroke could not replay waits again
+    // 78.153: a re-hearing the ruling's stroke could not reconstruct waits again
     // and the court's strokes hear it.
     k.court_settle();
     assert_eq!(
@@ -337,7 +337,7 @@ fn witness_rederived_fresh_rules_pressured_word_and_citer() {
     let witness = [2u8; 32];
     k.enroll(witness, [12, 3, 0, 20]);
     k.witness_rederived_fresh(&w, witness, word.clone());
-    // 78.153: a re-hearing its ruling's stroke could not replay is heard
+    // 78.153: a re-hearing its ruling's stroke could not reconstruct is heard
     // again on the court's strokes.
     k.court_settle();
     assert!(k.ruled_contains(w.as_bytes()), "the word is ruled");

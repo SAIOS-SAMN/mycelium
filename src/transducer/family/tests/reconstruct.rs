@@ -1,7 +1,7 @@
 // 78.82 — RECONSTRUCTION BY HOLONOMY (`family/reconstruct.rs`, HR1–HR4): a
 // site read by its coordinates on every axis, its transport in the pair's
 // output, the loops across pairs closed on the axis that carries the rule,
-// and each pair rebuilt from the others by replay.
+// and each pair rebuilt from the others by reconstruction.
 
 use super::fixtures::digits;
 use crate::transducer::family::reconstruct::{field, holonomy, reconstruct, transports};

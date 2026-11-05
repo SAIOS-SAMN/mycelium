@@ -108,8 +108,8 @@ pub const PAYS: [&str; 9] = [
 ];
 /// What a court's solves came to: by verdict, refusals by kind (P D C I N ?),
 /// and (78.153c) the verdicts 78.149 and 78.153 added — NO WORK (a clean
-/// replay that discharged nothing) and UNREAD (a stroke that ran out before
-/// the replay ruled) — and the door's refusals before any judging: unsigned,
+/// reconstruction that discharged nothing) and UNREAD (a stroke that ran out before
+/// the reconstruction ruled) — and the door's refusals before any judging: unsigned,
 /// no such task, no rule carried; and, BESIDE them and refusing nothing, the
 /// solves an inner seat of a founded domain signed and was served (ruled
 /// 2026-10-14: the court authenticates keys, never tiers).

@@ -116,7 +116,7 @@ fn relative_rotor_carries_pythagorean_site_map() {
 /// CARRIED WITH ITS RESIDUE. Each compartment of the L blown up by 2 becomes a 2×2
 /// block of rounds: the rounds carry the pair exactly through order three,
 /// and at order four the image differs by the block's own harmonic, `S₄(2)/2²
-/// = −1/4` on the grid plane, which the transition carries beside its versor
+/// = −1/4` on the plane, which the transition carries beside its versor
 /// and never absorbs. No lattice turn, no landing: the certificate's fit and
 /// the covariance above it.
 #[test]

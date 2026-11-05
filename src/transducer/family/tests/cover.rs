@@ -55,7 +55,7 @@ fn four_bodies_one_left() -> (SectionSample, SectionSample) {
     )
 }
 
-/// The composite of every body a grid perceives, as `extract_rule_with`
+/// The composite of every body a sample perceives, as `extract_rule_with`
 /// forms it for one chart (extract.rs:281). The cover is given a composite
 /// and reads its bodies back out with `pieces_of`; a fixture of one body
 /// has nothing for it to cover (51.3).
@@ -448,7 +448,7 @@ fn scene_form_evaluates_every_orbit() {
             "a filed orbit's class is a motion, never the identity"
         );
         // The filed class is re-derivable from the orbit the chord names,
-        // which is what the court replays (23.1 step 4).
+        // which is what the court reconstructs (23.1 step 4).
         assert!(
             crate::transducer::sentence::torsion_orbit_rotor(&f, &class).is_some(),
             "the chord face carries the holonomy it was filed under"

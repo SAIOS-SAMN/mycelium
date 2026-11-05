@@ -12,13 +12,13 @@
 //! 3. Work — `ACT_TASK` asks the court for a task; the envelope carries the
 //!    train pairs and the test inputs, never the test outputs.
 //! 4. Rule — the task's family read by the SDK's extractor
-//!    (`rule::extract_rule`), minted as an element the court can replay
+//!    (`rule::extract_rule`), minted as an element the court can reconstruct
 //!    (`rule::mint_sentence_why`), and spoken on each test input.
 //! 5. Solve — once per perspective of the family's ground
 //!    (`rule::on_each_perspective_of`), the outputs, the rule's tape and the
 //!    ground the claim was spoken under, signed by the voice
-//!    (`task::encode_solve_spoken`); the court replays the rule on pairs
-//!    the client never saw and answers a verdict. A replay the court's stroke
+//!    (`task::encode_solve_spoken`); the court reconstructs the rule on pairs
+//!    the client never saw and answers a verdict. A reconstruction the court's stroke
 //!    did not finish answers `SOLVE_UNREAD`; the same solve sent again
 //!    resumes it.
 //! 6. Deferral — a hypha whose worker pool is full answers any act with the
@@ -101,7 +101,7 @@ fn one_task(session: &Session, key: &SigningKey) -> Result<Vec<(String, Outcome)
     let cite = hex32(&envelope.id);
     // THE RULE, ONCE PER PERSPECTIVE OF THE FAMILY'S GROUND (MU-SENSING
     // §3.4, §3.8): read off the train pairs on a stroke of the SDK's own
-    // metabolism, minted as an element the court replays, and spoken on
+    // metabolism, minted as an element the court reconstructs, and spoken on
     // each test input, all under one perspective; under a vortex once per
     // candidate, every claim kept. The family's symbol set is read with
     // its test inputs posted (§3.3).
@@ -153,7 +153,7 @@ fn claim(session: &Session, key: &SigningKey, id: &[u8; 32], outputs: &[SectionS
     let Some(solve) = task::encode_solve_spoken(key, id, &outputs, Some(tape), ground) else {
         return Ok(Ok(Outcome::NoRule("the outputs pass the solve act's fields")));
     };
-    // A replay the court's stroke did not finish answers UNREAD and resumes
+    // A reconstruction the court's stroke did not finish answers UNREAD and resumes
     // where it stopped when the same solve is sent again.
     let mut asked = 0u32;
     loop {

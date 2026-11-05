@@ -189,7 +189,7 @@ fn closest_agrees_with_brute_force_xor_argmin() {
 
 /// 47.3, 42.6: A FORM IS OFFERED TO THE HYPHAE COVERING ITS STRATUM, never
 /// to every peer. The witness "holds ruled sections over the chart, since
-/// replay needs them, so it is at nerve distance one from the home" (47.3),
+/// reconstruction needs them, so it is at nerve distance one from the home" (47.3),
 /// and 42.6 bounds the mesh cover by "the number of covering hyphae" — a
 /// destination set indexed by the size of the mesh is the one shape that
 /// section forbids, and it is what the exchange did.

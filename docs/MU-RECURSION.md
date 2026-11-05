@@ -215,7 +215,7 @@ These are not restated in each chapter; every chapter assumes them.
     support's laminae `(r, c, k, hue)` are read once at intake (`perceive`,
     `germinate`, A5's centring), computed on only where a sentence is
     reconstructed against what the sensor read (`chain::reconstruct_operators`, the
-    court's `vertices_carry_frames`) and where a grid is written
+    court's `vertices_carry_frames`) and where a raster is written
     (`speak_rule`, `orbit`), and between those places they are carried as
     content: the mind acts on the POSE — A5's translator, the carriage,
     the transport — and compares bodies by the versor between the bodies' shapes
@@ -465,7 +465,7 @@ key's position, a nerve's simplex and a vortex's candidate at once, and
 wherever it stood the plane's quantised bin read as the primary carrier —
 checklist (m) written into the vocabulary. Its senses are named apart, and
 each name says what the object is in the algebra rather than where it sits
-on a grid:
+on a plane:
 
 - (SUPERSEDED 2026-09-26 by the **compartment**, 0.7.) A **lamina** is the sensor's atom: the unit square standing in a frame at
   a site of the base, carrying the hue the sensor read there, its centre at
@@ -514,7 +514,7 @@ re-expression over fewer letters, the freed description burned and the
 compression yield paid); and the **POWV** share, proof of work
 verification (MU-ECONOMY §5.1). No two share a name; "POW++" is the family.
 
-**Compartment (ruled 2026-09-26: the cell needs a more defined object, named within the mycelial family).** A septate hypha's cell is its COMPARTMENT, the segment between two septa; here it is the sensor's unit, what the tree called a lamina or a cell: a SPORE WITH EXTENT. Its centre is the spore `P(c)`, the null point of the site's centre at its frame (A4, 78.30(1)); its extent is the unit cube's inversive extent, `1/12` on each axis of the base (A.12), so the compartment is the ROUND `κ = P(c) − ½·(n/12)·e_∞`, a real sphere, `κ² = n/12`; its content is its hue, the fibre's value (70); it holds nothing of its own above order two, its harmonic at order `m` on a plane being `zᵐ + C(m,2)·z^(m−2)·ε` (`ε = eᵢ − eⱼ`, zero on the grid plane). A body is a colony of compartments — septal neighbours (sharing a face) one body, the neighbours' hue seams its own gauge section (70.4; *"septal neighbours one body" SUPERSEDED 2026-10-09 by U13: one body only where the holonomy around the shared face is the identity, 70 as amended*); a contact is where two bodies' compartments touch across a corner, WHETHER read once by the lattice at the retina, WHAT read by the meet of the compartments' rounds. The compartment lives only at the sensor (70.7, law 11): it is integrated into the one lift, and above intake a body is carried by its lifted shape — nucleus, tower, harmonics — never by its compartments. "Lamina" and "cell" retire as names of it (NM1).
+**Compartment (ruled 2026-09-26: the cell needs a more defined object, named within the mycelial family).** A septate hypha's cell is its COMPARTMENT, the segment between two septa; here it is the sensor's unit, what the tree called a lamina or a cell: a SPORE WITH EXTENT. Its centre is the spore `P(c)`, the null point of the site's centre at its frame (A4, 78.30(1)); its extent is the unit cube's inversive extent, `1/12` on each axis of the base (A.12), so the compartment is the ROUND `κ = P(c) − ½·(n/12)·e_∞`, a real sphere, `κ² = n/12`; its content is its hue, the fibre's value (70); it holds nothing of its own above order two, its harmonic at order `m` on a plane being `zᵐ + C(m,2)·z^(m−2)·ε` (`ε = eᵢ − eⱼ`, zero on the plane). A body is a colony of compartments — septal neighbours (sharing a face) one body, the neighbours' hue seams its own gauge section (70.4; *"septal neighbours one body" SUPERSEDED 2026-10-09 by U13: one body only where the holonomy around the shared face is the identity, 70 as amended*); a contact is where two bodies' compartments touch across a corner, WHETHER read once by the lattice at the retina, WHAT read by the meet of the compartments' rounds. The compartment lives only at the sensor (70.7, law 11): it is integrated into the one lift, and above intake a body is carried by its lifted shape — nucleus, tower, harmonics — never by its compartments. "Lamina" and "cell" retire as names of it (NM1).
 
 **The plexus (ruled 2026-09-24, 78.31).** The graded network the five
 nouns form — a **spore** (a ray, the null point of perception), a
@@ -579,7 +579,7 @@ A21), by a fibre (everything under the coordinates) and by a trajectory,
 in EITHER direction — from a class to every chart it stands on and back —
 and never a door that unlocks one value; a `Keyed` of ordinals standing
 in for coordinates the object has is refused (rule 15). The
-**substrate** is the sensor's ℤ² (or ℤⁿ) grid of laminae, the thing a
+**substrate** is the sensor's ℤ² (or ℤⁿ) raster of laminae, the thing a
 hypha reads laminae from and never a space cognition lives in (law 11);
 "lattice" is retired from this document and the tree — the module that
 was `core::lattice` is split by what it holds: `core::span`, the span of
@@ -1166,12 +1166,12 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 
 | word | the one object | lives | relates by | not to be confused with |
 |---|---|---|---|---|
-| **substrate** | the corpus's ℤⁿ grid, read by the sensor | the sensor | sites are read off it; nothing computes on it | "lattice" (retired) |
+| **substrate** | the corpus's ℤⁿ raster, read by the sensor | the sensor | sites are read off it; nothing computes on it | "lattice" (retired) |
 | **site** | a position of the base, `(r, c, k)` | the sensor | a compartment's centre; the key of an occupancy | a coordinate of the mind |
-| **frame** | one grid of a family along `e₃`, by its own coordinate | the sensor, and the member's frames | the frame axis joins a body's charts across consecutive frames | a tick (the ledger's) |
+| **frame** | one sample of a family along `e₃`, by its own coordinate | the sensor, and the member's frames | the frame axis joins a body's charts across consecutive frames | a tick (the ledger's) |
 | **compartment** | a spore with extent: the round `κ = P(c) − ½·(n/12)·e_∞`, its hue as content | the sensor only | septal neighbours (a shared face) are one body; its round integrates into the lift | "lamina", "cell" (retired) |
 | **body** | a colony of compartments: a maximal hue-blind face-connected region (70.4) *(as a pre-decision SUPERSEDED 2026-10-09 by U13: touching bodies are one only where the holonomy around the bodies' contact face is the identity, 70 as amended)* | intake; above it, its lifted shape | contact with other bodies; its hue seams its own gauge | "support" (its compartments), "shape" (its lift) |
-| **contact** | where two bodies' compartments touch across a lower-dimensional element: its dimension, face `n − 1` to corner `0` | read once at the retina | WHETHER by the grid; WHAT by the meet of the rounds and the tether | the anastomosis (what fuses there) |
+| **contact** | where two bodies' compartments touch across a lower-dimensional element: its dimension, face `n − 1` to corner `0` | read once at the retina | WHETHER by the sample; WHAT by the meet of the rounds and the tether | the anastomosis (what fuses there) |
 
 **A body's shape — the mind's object for a body.**
 
@@ -1254,7 +1254,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 
 | layer | what it is | the carriers today | what it is not |
 |---|---|---|---|
-| **perception** | ONE layer with THREE modalities (ruled 2026-09-26: hearing is a perception of space and time; touch is also perception, and the reorganization of objects is placed within it): SIGHT, space at one frame — compartments, bodies and each body's shape; HEARING, space and time — a signal carried over transports arriving across height and `K`, deciphered from noise by the perceiver's own charts (what they re-derive is signal, 78.44(5); what they do not is noise); TOUCH, the relations between bodies — WHETHER they touch, read once by the grid at the retina, and HOW, the meet of the bodies' rounds and the bodies' tether with its regime off the nuclei's Gram form (`δ²`: 1 tangent, > 1 a boost, in (0, 1) a rosette; inside, on, apart). REORGANIZATION OF OBJECTS is touch across frames, perceived as ONE relation: the ring of two bodies' transitions from frame `k` to `k′` and the bodies' contacts at both frames; its holonomy reads the contact HELD (identity), STRAINED (non-trivial), or MADE or BROKEN (a contact at one frame only: the ring open, its missing edge the residue) — never as separate motions. All three feed the thought layers alike | sight: `family/perceive`, the percept, `blade`; hearing: `perceive_speech`, a quote or syllabus page, the wire; touch: the contact faces and the faces' tethers, the frame-axis overlaps (AT1), `pairing::contact_edge` | a thought |
+| **perception** | ONE layer with THREE modalities (ruled 2026-09-26: hearing is a perception of space and time; touch is also perception, and the reorganization of objects is placed within it): SIGHT, space at one frame — compartments, bodies and each body's shape; HEARING, space and time — a signal carried over transports arriving across height and `K`, deciphered from noise by the perceiver's own charts (what they re-derive is signal, 78.44(5); what they do not is noise); TOUCH, the relations between bodies — WHETHER they touch, read once by the sample at the retina, and HOW, the meet of the bodies' rounds and the bodies' tether with its regime off the nuclei's Gram form (`δ²`: 1 tangent, > 1 a boost, in (0, 1) a rosette; inside, on, apart). REORGANIZATION OF OBJECTS is touch across frames, perceived as ONE relation: the ring of two bodies' transitions from frame `k` to `k′` and the bodies' contacts at both frames; its holonomy reads the contact HELD (identity), STRAINED (non-trivial), or MADE or BROKEN (a contact at one frame only: the ring open, its missing edge the residue) — never as separate motions. All three feed the thought layers alike | sight: `family/perceive`, the percept, `blade`; hearing: `perceive_speech`, a quote or syllabus page, the wire; touch: the contact faces and the faces' tethers, the frame-axis overlaps (AT1), `pairing::contact_edge` | a thought |
 | **thought — congruent** | two or more perceptions related by a transition, each up to its residue | `transitions_between`, the pose, the meet graph's edges | a perception held alone |
 | **thought — coherent** | congruent thoughts held at once whose transitions close around rings | `cech::classify`, Ȟ¹, the 2-core | an edge without a ring |
 | **thought — cohesive** | coherent thoughts that close a demand and are paid | the demand closed, the remainder home, the ruling, adjunction | an unpaid closure |
@@ -1262,7 +1262,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | **knowledge** | what is held: the language (genome), the dialect (epigenome), the atlas, the stalks, minerals and crystals | genome, epigenome, atlas, stalks | its use |
 | **understanding** | a class read through the mind's own crystal — derivable, or D where it is not (recognition, 80.2) | `letter_reading` through the crystal | holding a word |
 | **comprehension** | on top: a chamber's circuits' orbit algebra (78.11) and the local re-projection of a received signal (78.44(5)) | `comprehend`, the orbit algebra | understanding one class |
-| **speech** | the signal's shortcut sent: the class key and windings (78.44(4)); spoken onto a grid at the sensor | the utterance, `speak_rule`, `emit_carried` | the holonomy, which never travels |
+| **speech** | the signal's shortcut sent: the class key and windings (78.44(4)); spoken onto a raster at the sensor | the utterance, `speak_rule`, `emit_carried` | the holonomy, which never travels |
 
 A perception persists at the perception layer under the physics — while something relates to it or cites it, lapsing by ZeroFlux over an orbit where nothing does (FX1) — and is never shed as a thought; a thought exists only where a transition relates perceptions, stays while its rings close, and is paid where it closes a demand.
 
@@ -4270,7 +4270,7 @@ cocycle, reduce, keys, wire, identity, market, book/, court/,
 germinate/, snapshot/}`, `client/sdk/{kernel, session, types, aperture,
 mind/, vocabulary/}`, `transducer/family/{perceive, pair, orbit, extract,
 speak}`, `transducer/sentence/{chain, form/, transport, class,
-pivot/, chart}`, `court/verdict/{replay, blind, ruling, selection}`,
+pivot/, chart}`, `court/verdict/{reconstruct, blind, ruling, selection}`,
 `economy/{lanes, treasury, escrow, settle, persist}`. A split moves code
 and changes nothing else, so every binding below still names the function
 it always named:
@@ -5635,7 +5635,7 @@ Checked by tests, greppable by the reviewer:
 - The number of `form spoken` lines across the minds equals the number
   of `ACT_SPEECH` frames across the servers.
 - No function outside `family::extract_rule_with`, `family::speak_rule`, and
-  `family::orbit` reads a site coordinate of a grid.
+  `family::orbit` reads a site coordinate of a raster.
 - No digest, hash, or fingerprint of any mathematical structure exists in
   cognition: every key is the canonical coordinates of an exact object
   written out (A21) and `decode(key)` returns the object; `blake3` appears
@@ -8413,7 +8413,7 @@ read and wrong where it is held. What is corrected:
 
 **The lattice is the retina; nothing above the sensor holds it.** Reading
 the twenty shared-boundary adjacencies off the occupancy is a sensor
-reading under law 11: it is exact, it is the only place the pixel grid is
+reading under law 11: it is exact, it is the only place the pixel sample is
 allowed to decide anything, and it decides one thing — WHICH bodies meet,
 and WHERE on the base. That reading ends at the sensor boundary. What
 crosses the boundary into the form is not the site list: a face that
@@ -8890,7 +8890,7 @@ and names what replaces the search, so that nothing in extraction is a
 correspondence, a candidate list or a nearest match (50.2).
 
 1. **Perceive once, on the stack.** The train inputs at frames `0..n−1`
-   are one grid of three coordinates and so are the train outputs; the
+   are one sample of three coordinates and so are the train outputs; the
    test input is the open section at frame `n`, perceived with the inputs
    so that its bodies are keyed on the same charts. Bodies of one hue
    connect by 6-adjacency (51.3); every axis of a body's moduli is
@@ -11370,7 +11370,7 @@ axes were declared rather than read.
 ### 71.2 The ruling
 
 1. **`n` is read at intake.** The corpus presents its base coordinates —
-   two grid axes and the frame axis today, `n = 3` — and the intake writes
+   two plane axes and the frame axis today, `n = 3` — and the intake writes
    `n` into every carrier that holds a site. Nothing downstream names an
    axis by position; a reader asks the point its length and the set of
    axes on which two points differ. Chapter 51.2's choice of `Cl(4,1)` over
@@ -12053,7 +12053,7 @@ form from the work. Under the laws:
    identical opinions).
 6. **Mass is a reading before it is a force** (§8.1). What mass DOES —
    the pull of 73.3, orbital speed, a body's spin — waits on the pull's
-   ruling and on FR1, since a spin or a speed read on the grid plane
+   ruling and on FR1, since a spin or a speed read on the plane
    alone would be a flattened reading recorded as fact. CL2 closes as
    ruled here; its test — a body added changes a measured orbit with no
    constant — rides FT1.
@@ -12213,7 +12213,7 @@ returns the same opinion.
 spoke it (`receive_adjudication`, 50.9); no other mind is offered the
 problem. The refusal kinds do not say whether the obstruction is
 intrinsic or relative to the speaker's dialect. Every production tower
-reader reads the grid plane (FR1), so every mind shares one angle.
+reader reads the plane (FR1), so every mind shares one angle.
 
 **The three kinds of obstruction.** `Ω` the holonomy, `D_A` mind A's
 dialect, `⟨D_A⟩` the subgroup its words generate:
@@ -13295,11 +13295,11 @@ into the reservoir (78.58). Code: `src/transducer/family/fibre_relation.rs`
 
 ### 78.54 The lattice's frame is a gauge too
 
-A task turned or mirrored as a whole, every grid of it, is the same task:
+A task turned or mirrored as a whole, every sample of it, is the same task:
 the frame the sensor read it in is a coordinate choice. The frame is fixed at
-the sensor and nowhere after, over the visible grids only (train pairs and
+the sensor and nowhere after, over the visible samples only (train pairs and
 test inputs; a withheld output never moves the frame), so a task in every
-frame reads the identical grids, mints the identical word and receives the
+frame reads the identical samples, mints the identical word and receives the
 identical verdict and price. As amended by 78.56, the frame is fixed only
 for a task whose centre-of-mass displacement vanishes; where it does not,
 the orientation is physical and kept. Code: `src/transducer/raster.rs`
@@ -13330,10 +13330,10 @@ Code: `src/transducer/element/residue.rs` (`compose_fibre`,
 
 ### 78.56 Three questions the physics already answers, and four closures
 
-- **Extent.** Aligning grids of different extent at a corner is an
+- **Extent.** Aligning samples of different extent at a corner is an
   arbitrary origin (rule 15). A change of extent is an inversive dilation
   carried by the fascicle of concentric spheres, `V = s_out s_in`, anchored
-  at the envelope's own centre (a grid's circumscribed sphere, centre the
+  at the envelope's own centre (a sample's circumscribed sphere, centre the
   extent's midpoint, `r² = (h² + w²)/4`); where `r²_out / r²_in` is not a
   rational square no site corresponds (78.45) and the pair witnesses
   nothing. *Superseded by 78.170 (O4): a change of extent is a re-period of
@@ -13391,7 +13391,7 @@ missing blade itself, filed as its own exact demand. Code:
 The colour fibre is the detector's channels extended by one ancilla ray,
 `E = span_ℚ{e_0 … e_9} ⊕ ℚe_∅`, which the sensor's projection never sees. A
 merge `c₁, c₂ ↦ c₃` is the unitary `(c₁ ∧ c₂) ⊗ e_∅ ↦ c₃ ⊗ (Δc ∧ e_∅)`: the
-grid shows `c₃` for both, and the distinction lives on in the reservoir, so
+sample shows `c₃` for both, and the distinction lives on in the reservoir, so
 the automorphism inverts. In the sensor's discrete coordinates `RESERVOIR`
 is the channel index after the last; a colour word's relation carries MOVE
 rows `(f, t)`, STILL rows `(t, t)` for a merge's target that stood still,
@@ -14463,9 +14463,9 @@ Code: `src/chronometry/chain/mod.rs` (`ReceiptChain::fold_before`,
 
 ### 78.88 The frame at the sensor, the plexus read upward and across the family, and the progenitor's role
 
-- **The frame stops at the sensor.** A frame (0.7: one grid of a family
+- **The frame stops at the sensor.** A frame (0.7: one sample of a family
   along `e₃`) is what sight reads, and nothing past the sensor indexes it;
-  a lattice reader or a fixed hyperboloid chart of the grid's sites is a
+  a lattice reader or a fixed hyperboloid chart of the raster's sites is a
   rigid box and is not built. The scene's frame role passes to its
   SPOROPHORE (0.7), one body among bodies; space is relational, the bodies'
   own relations and the transitions on the bodies' overlaps.
@@ -16304,13 +16304,13 @@ lattice rather than the transduction of state space." Two frames of unequal
 extent are related by transduction in turns, never by a common lattice;
 the common refinement `K_lcm` is deleted, and no reader forms an lcm.
 
-1. **LIFT → ACT → PROJECT.** The grid is an embedded section of the state
+1. **LIFT → ACT → PROJECT.** The raster is an embedded section of the state
    space, not the space. Each axis of a frame is a circle of turns held as
    fractions in `ℚ/ℤ`, `r/h`: never `(cos, sin)`, never `e_∞`, never a
    squared norm, no normalisation constant. The frame's own extents are the
    only numbers; the seams are held, never wrapped. Per-site values are
    legitimate only at the two ends: the sensor's read and the speech of an
-   output grid; in between the state is bodies and motions.
+   output raster; in between the state is bodies and motions.
 2. **A body is held by its boundary, never its interior**: its bands, the
    maximal runs of one hue whose boundary turns stand on both circles, at a
    cost of its perimeter. Two frames relate body to body: the incidences of

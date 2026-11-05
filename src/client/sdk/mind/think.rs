@@ -77,7 +77,7 @@ impl Mind {
         // whose ring taught it goes to the court as an open sentence, where
         // its rings are re-derived and the letter they need offered
         // (`hear_open`, the speaking voice its discoverer). Never the bare
-        // rotor: the court replays, it never takes a voice's word for it.
+        // rotor: the court reconstructs, it never takes a voice's word for it.
         //
         // SIZED AS THE VOICE'S SPEECH SIZES A FORM: what it closes over the
         // scene it was perceived from (`form_deflation`), and where that is
@@ -389,7 +389,7 @@ impl Mind {
     ///
     /// A residue the RULED words compose is spoken to the court as that
     /// composition (`speak_composition`) before the mind's own lexicon is
-    /// asked: what a court can replay goes to the court.
+    /// asked: what a court can reconstruct goes to the court.
     pub(crate) fn compose_or_construct(
         &mut self,
         residue: &crate::transducer::cga::Mv,
@@ -474,7 +474,7 @@ impl Mind {
     /// (`heard_citation` — the cited powers multiply to the motion, the cited
     /// rotors to its rotor, exact, or nothing), and where they compose it,
     /// spoken as one word whose derivation cites them (`composed_form`), at
-    /// the residue's carriage on `chart`. The court replays the citations
+    /// the residue's carriage on `chart`. The court reconstructs the citations
     /// against what it holds and credits each cited word's discoverer with
     /// the use (26). It mints no dimension, so it waits on no union. Said
     /// once: a composition a court already taught is a use, not a second
@@ -901,7 +901,7 @@ impl Mind {
     /// MU-CLIENT §5.4 (E1) — UNDER THE SCENE ITS EVIDENCE NAMES: `family` is
     /// the citation of the family it closed (`Contemplation::crystallize`),
     /// empty for a word no family evidences (a letter, a composition, an
-    /// hour's thought). The court replays and pays it there, and the union
+    /// hour's thought). The court reconstructs and pays it there, and the union
     /// carries it there too.
     fn stand_crystallized(&mut self, e: &Element, family: &[u8]) {
         let addr = e.address();
@@ -913,7 +913,7 @@ impl Mind {
         // 78.161 item 3 — a letter goes to the court once another mind
         // agreed to it; until then it stands in the dialect and is said. A
         // WORD (no face) whose derivation cites ruled words mints no
-        // dimension: the court replays it from what it holds (D4), and it
+        // dimension: the court reconstructs it from what it holds (D4), and it
         // goes now. A sentence is never one: it is shared, not carried.
         let cites = e.receipts().derivations.iter().any(|d| !d.generators.is_empty());
         let composed = cites && crate::transducer::sentence::from_element_form(e).is_some_and(|f| f.faces.is_empty());

@@ -2,7 +2,7 @@
 // it claims it on.
 //
 //! A certificate re-derives or it is refused (REFUSE_PIVOT_INEXACT): the
-//! claim is the move, and the move is replayed.
+//! claim is the move, and the move is reconstructed.
 
 use super::*;
 use crate::transducer::sentence::class::{RankAxis, RankMove};
@@ -326,7 +326,7 @@ pub enum RefusalKind {
     /// "the language has no word for this cell" — and a false projection is
     /// not silence. Mounting `Demand::Source` over a cell the form asserted
     /// incorrectly would be an apology, not a coordinate, and the next
-    /// replay refuses it again by construction.
+    /// reconstruction refuses it again by construction.
     ///
     /// Both kinds arrived as `RemainderUndeclared`, so a speaker could not
     /// tell which it had and contracted over the union. Under a contraction
@@ -513,7 +513,7 @@ pub struct Contraction {
     pub before: crate::transducer::address::Address,
     /// The contracted form's vertex key.
     pub after: crate::transducer::address::Address,
-    /// The court's replay receipt: its chain hash (47.1), never a digest of content.
+    /// The court's reconstruction receipt: its chain hash (47.1), never a digest of content.
     pub receipt: [u8; 32],
 }
 
@@ -545,7 +545,7 @@ impl Contraction {
 /// The rank move on a tape: one tag byte, and for a discharge the
 /// coordinate the unit left. `Inadmissible` carries its four deltas so a
 /// refused move can still be written down; no trial produces one, and a
-/// tape carrying one replays as the refusal it names.
+/// tape carrying one reconstructs as the refusal it names.
 fn put_rank_move(m: &RankMove, out: &mut Vec<u8>) {
     match m {
         RankMove::Equal => out.push(0),

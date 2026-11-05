@@ -1468,7 +1468,7 @@ impl Carrier {
     /// MU-CLIENT §4.13 — AT THE MIND'S RETURN, WHAT WAITED ACROSS THE LAST ONE
     /// IS LET GO: a thought no ACK reached, an answer given, a thing said no
     /// HOLD met; and a letter no mind agreed goes to the court on its own —
-    /// the union decides what is worth the court's replay first, and never
+    /// the union decides what is worth the court's reconstruction first, and never
     /// silences a mind that has none. What waits now crosses this return, to
     /// stand until the next. The return is the event; no count is read.
     fn release_unmet(&mut self) {

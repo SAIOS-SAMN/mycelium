@@ -1,4 +1,4 @@
-// 21 — extraction: what a spoken pair becomes when the court replays it,
+// 21 — extraction: what a spoken pair becomes when the court reconstructs it,
 // and what a family does to an axis instead of minting a second card.
 
 use super::fixtures::{painted, speak_pair};

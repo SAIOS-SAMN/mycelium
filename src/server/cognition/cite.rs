@@ -609,7 +609,7 @@ impl Court {
                 // lapses by `ZeroFlux` (78.37 (3)).
                 self.lapse_silent();
                 // 78.125 — and the challenge windows settle: final records
-                // pruned to stubs, spent stubs and stale replays let go.
+                // pruned to stubs, spent stubs and stale reconstructions let go.
                 self.settle_windows();
                 // AND THE RESERVE REGENERATES within its capacity (78.56 IV):
                 // Σ active bonds plus the work this court verified since the

@@ -17,7 +17,7 @@
 //! The clauses are a coordinate of the FORM: written on its address after
 //! the remainder's coordinates, and only where there are any, so every form
 //! with none keeps the address it had. The court decodes them with the rest
-//! of the form, speaks them on every pair it replays (`family::statement`),
+//! of the form, speaks them on every pair it reconstructs (`family::statement`),
 //! and judges the speech by closure as it judges any sentence.
 
 use crate::core::Q;

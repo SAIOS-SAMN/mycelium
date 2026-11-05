@@ -1191,7 +1191,7 @@ impl Contemplation {
     ///
     /// MU-CLIENT §5.4 (E1) — WITH THE SCENE ITS EVIDENCE NAMES: the family
     /// it was perceived in where it closed that family's whole bundle, so the
-    /// court replays and pays it there; empty where it closed no bundle (an
+    /// court reconstructs and pays it there; empty where it closed no bundle (an
     /// hour, a remainder), whose evidence is no family a court binds.
     pub fn crystallize(&mut self, key: &[u8], crystal: &dyn Crystal) -> Option<(Element, Vec<u8>)> {
         let b = self.wells.get(key)?;

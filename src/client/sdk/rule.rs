@@ -19,7 +19,7 @@
 //! to the border, a template stamped on a seed), and crop the output to one
 //! of them. Such a rule is spoken as the form's CLAUSES
 //! (`sentence::form::clause`), which the court decodes, speaks and judges
-//! on every pair it replays; a rule of motions and hue maps alone is the
+//! on every pair it reconstructs; a rule of motions and hue maps alone is the
 //! one word vertex it always was.
 
 use crate::transducer::family::SectionSample;
@@ -69,10 +69,10 @@ pub enum Create {
     Copy { template: Pred },
 }
 
-/// THE SIX GRID SYMMETRIES beside the identity (the dihedral group of the
+/// THE SIX PLANE SYMMETRIES beside the identity (the dihedral group of the
 /// square, read on a rectangle where the shapes fit). Turns are clockwise
-/// as a grid is read: `Rotate90` sends row `r`, column `c` of an `R × C`
-/// grid to row `c`, column `R − 1 − r`.
+/// as a plane is read: `Rotate90` sends row `r`, column `c` of an `R × C`
+/// plane to row `c`, column `R − 1 − r`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Symmetry {
     Rotate90,
@@ -106,11 +106,11 @@ pub enum NoRule {
     /// The word is not a sentence the decoder reads, or there is nothing to
     /// judge it against.
     NotASentence,
-    /// The judge's replay refused it, with its reason, coordinate and kind.
+    /// The judge's reconstruction refused it, with its reason, coordinate and kind.
     Refused(crate::verdict::Refusal),
-    /// 78.158a U2 — UNJUDGED, NEVER REFUTED: the replay at home holds a unit
+    /// 78.158a U2 — UNJUDGED, NEVER REFUTED: the reconstruction at home holds a unit
     /// no stroke it ran on could read (`verdict::REFUSE_UNREAD`, kind N).
-    /// Nothing was ruled: the solve goes to the court, whose replay resumes
+    /// Nothing was ruled: the solve goes to the court, whose reconstruction resumes
     /// on its cursor and answers `SOLVE_UNREAD` until it rules.
     Unread,
     /// 78.158a, 78.157 §3a — CITES UNHELD: the rule cites a word the
@@ -134,9 +134,9 @@ fn q(n: i64) -> Q {
     Q::from_integer(num_bigint::BigInt::from(n))
 }
 
-/// THE CENTRE OF AN `R × C` GRID WHERE THE SENSOR READS IT. In site indices
+/// THE CENTRE OF AN `R × C` PLANE WHERE THE SENSOR READS IT. In site indices
 /// the centre is `((R − 1)/2, (C − 1)/2)`; the sensor carries a
-/// compartment by its CENTRE, the site plus ½ on each grid axis
+/// compartment by its CENTRE, the site plus ½ on each plane axis
 /// (`element::carry_site_centre`), so the index centre stands at
 /// `(R − 1)/2 + ½ = R/2` in the coordinates the versor acts on. Exact.
 fn centre((rows, cols): (usize, usize)) -> Option<[Q; 2]> {
@@ -162,7 +162,7 @@ impl Symmetry {
         }
     }
 
-    /// Does the symmetry exchange the grid's two extents?
+    /// Does the symmetry exchange the plane's two extents?
     fn exchanges(self) -> bool {
         matches!(self, Symmetry::Rotate90 | Symmetry::Rotate270 | Symmetry::Transpose)
     }
@@ -518,11 +518,11 @@ pub(crate) fn crossing(rule: &Element, train: &[(SectionSample, SectionSample)],
 }
 
 /// WHAT THE JUDGE WOULD SAY, by the judge's own steps (`judge_solve`): no
-/// pair to replay against is no verdict; the decoder reads the word's form
+/// pair to reconstruct against is no verdict; the decoder reads the word's form
 /// from its address (`Held::of`, which runs `from_element_form`) or it is
 /// not a rule; every word it cites resolves by `resolve` or it CITES
 /// UNHELD; then `verdict::reconstruct_blind_at` on the pairs, its cited forms
-/// resolved by `resolve`, spoken through `crystal`. A replay no stroke
+/// resolved by `resolve`, spoken through `crystal`. A reconstruction no stroke
 /// could read is `Unread` — unjudged, never refuted (78.158a U2). Public so
 /// the corpus decoder's tests (`sources/arc-agi`, ROADMAP track 26 S1) ask
 /// it as the core's own tests do.
@@ -535,14 +535,14 @@ pub fn would_judge(
     would_judge_with(rule, family, resolve, crystal, &mut crate::physics::Physics::default().stroke())
 }
 
-/// [`would_judge`] on the caller's stroke: the replay's rounds are as wide
+/// [`would_judge`] on the caller's stroke: the reconstruction's rounds are as wide
 /// as the caller's stroke where it grants more than a default one
 /// (`verdict::blind`'s `to_completion`), and the caller's stroke is left as
 /// it stood.
 ///
 /// 78.157 §3a — THE HOME CHECK ON COURT WORDS. Every citation the rule
 /// carries (`receipts().cited_addresses()`: the cover's and the
-/// derivations') is asked of `resolve` before the replay. The replay itself
+/// derivations') is asked of `resolve` before the reconstruction. The reconstruction itself
 /// defers a derivation citation its cover does not hold (the syllabus
 /// serves it), so a rule citing a word only this mind holds read clean at
 /// home and was refused or deferred at the court; asked here, it is
@@ -571,7 +571,7 @@ pub(crate) fn would_judge_with(
 }
 
 impl NoRule {
-    /// A HOME REPLAY'S REFUSAL, read: `REFUSE_UNREAD` is no reading of the
+    /// A HOME RECONSTRUCTION'S REFUSAL, read: `REFUSE_UNREAD` is no reading of the
     /// word (kind N) and is `Unread`, which a client submits; every other
     /// refusal is the judge's, `Refused` with its reason, coordinate and
     /// kind.

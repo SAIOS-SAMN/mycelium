@@ -14,12 +14,12 @@ use crate::transducer::stalk::{self, Standing};
 /// cover grew an axis along which it is a section. The orbit then reads
 /// zero, the rank moves one unit from `free` into `axes`, the form coheres
 /// on the refined cover, and it is never filed as torsion (T3). The
-/// certificate replays on the court, which re-derives the seed from the
+/// certificate reconstructs on the court, which re-derives the seed from the
 /// orbit; a tape whose axis was struck out is refused on that orbit.
 #[test]
 fn pivot_orbit_opens_axis_for_undischarged_free_class() {
     // AT1: measured torsion rides the overlap's EDGE — a pivot factor
-    // written without a certificate is refused at replay (REFUSE_PIVOT_INEXACT).
+    // written without a certificate is refused at reconstruction (REFUSE_PIVOT_INEXACT).
     let mut f = edge_chord_form(&[infinite()]);
     let before = f.rank().expect("rank");
     assert_eq!((before.free, before.axes), (1, 0), "one free orbit, no axis yet");
@@ -62,7 +62,7 @@ fn pivot_orbit_opens_axis_for_undischarged_free_class() {
         "and it reads as the zero vector"
     );
 
-    // The court replays the opened axis from the tape and the orbit.
+    // The court reconstructs the opened axis from the tape and the orbit.
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("crystallizes");
     let back = crate::transducer::sentence::from_element_form(&e).expect("tape");
     assert_eq!(back.axes.len(), 1, "the axis rides the tape");
@@ -155,13 +155,13 @@ fn rank_counts_offplane_as_separate_lane() {
     assert_ne!(r.offplane, 2, "no component equals the old sum");
 }
 
-/// Chapter 23.1 step 4: a filed torsion chord replays; a chord that is
+/// Chapter 23.1 step 4: a filed torsion chord reconstructs; a chord that is
 /// not the holonomy refuses the face; a missing torsion entry refuses
 /// the orbit.
 #[test]
 fn reconstruct_blind_reconstructs_filed_torsion_chord() {
     // AT1: the measured torsion rides the chord's EDGE; an uncertified
-    // pivot factor is refused at replay (REFUSE_PIVOT_INEXACT).
+    // pivot factor is refused at reconstruction (REFUSE_PIVOT_INEXACT).
     let mut f0 = edge_chord_form(&[word_turn_90()]);
     let _ = f0.pivot_orbit(
         [0xca; 32],
@@ -333,7 +333,7 @@ fn word_closes_offplane_turn_90_at_fourth_power() {
     let a = stand_with_star(&mut f, &empty(1));
     let b = stand_with_star(&mut f, &empty(2));
     // The measured word rides the chord's EDGE (an uncertified factor is
-    // refused at replay).
+    // refused at reconstruction).
     edge_chord(&mut f, &a, &b, Transport::from_word(w));
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();

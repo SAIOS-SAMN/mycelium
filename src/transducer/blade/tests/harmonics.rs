@@ -76,7 +76,7 @@ fn harmonics_of_separates_stack_from_shadow() {
 fn harmonics_axes_lead_with_n_and_betti() {
     use crate::transducer::base::Site;
     use crate::transducer::stalk::ChartAxis;
-    // A small body in ℤ⁴: an L on the grid plane standing in two cells
+    // A small body in ℤ⁴: an L on the plane standing in two cells
     // of the fourth axis.
     let body: Vec<Site> = [
         [0i64, 0, 0, 0],
@@ -113,7 +113,7 @@ fn harmonics_axes_lead_with_n_and_betti() {
         }
     }
     assert_eq!(blade::topology(&hollow), Some(vec![1, 0, 0, 1]), "a hollow 4-cube encloses one 3-cavity");
-    // A ring in the grid plane, lifted into ℤ⁴ by the inclusion: one
+    // A ring in the plane, lifted into ℤ⁴ by the inclusion: one
     // tunnel at every n.
     let ring: Vec<Site> = [(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]
         .into_iter()

@@ -320,7 +320,7 @@ impl Court {
 
     /// What a cited form closes on the CITER's bound family. The citer's
     /// task names the family (`verified_install_deflation` reads the same
-    /// binding for the citer itself), and the cited form is replayed over
+    /// binding for the citer itself), and the cited form is reconstructed over
     /// it: a generator that closes nothing there is used for nothing
     /// there, whatever it closes elsewhere. As μ, each pair's share of its
     /// frame (78.170 O1, ruled 2026-11-01).

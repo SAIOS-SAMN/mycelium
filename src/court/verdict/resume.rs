@@ -1,12 +1,12 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 78.153 — A REPLAY ON THE STROKE: what a court's replay answers when its
+//! 78.153 — A RECONSTRUCTION ON THE STROKE: what a court's reconstruction answers when its
 //! one stroke runs out, and where the next stroke takes it up.
 //!
-//! The lock audit (MU-RECURSION 78.153) found the replay unmetered — only
+//! The lock audit (MU-RECURSION 78.153) found the reconstruction unmetered — only
 //! `versor_between` spent — and found that the one place that did spend
 //! slashed on it: `NoPose::Unbounded` became `REFUSE_EDGE`. A spent stroke
-//! is not a refusal. Every input-sized loop of the replay now spends one
+//! is not a refusal. Every input-sized loop of the reconstruction now spends one
 //! read per item, and where the stroke runs out the answer is
 //! [`ReconstructionOutcome::Unread`]: not ruled this stroke, never a pass, never a slash.
 //! The [`ReconstructionCursor`] keeps the stage and the item it stopped at, with the
@@ -15,7 +15,7 @@
 use super::*;
 use crate::transducer::sentence;
 
-/// WHAT A REPLAY ON ONE STROKE CAME TO. `#[must_use]`: a caller that drops
+/// WHAT A RECONSTRUCTION ON ONE STROKE CAME TO. `#[must_use]`: a caller that drops
 /// it has neither ruled nor deferred the word.
 #[must_use]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -24,13 +24,13 @@ pub enum ReconstructionOutcome {
     Clean,
     /// Refused, with its reason, coordinate and kind (34.1, 50.9, 78.9).
     Refused(Refusal),
-    /// The stroke was spent before the replay ruled. The cursor holds where
+    /// The stroke was spent before the reconstruction ruled. The cursor holds where
     /// it stopped; nothing is ruled, refused or slashed on it.
     Unread,
 }
 
 impl ReconstructionOutcome {
-    /// The refusal, where the replay refused.
+    /// The refusal, where the reconstruction refused.
     pub fn refusal(&self) -> Option<&Refusal> {
         match self {
             ReconstructionOutcome::Refused(r) => Some(r),
@@ -39,7 +39,7 @@ impl ReconstructionOutcome {
     }
 }
 
-/// THE STAGES OF A FORM'S REPLAY, in the order `reconstruct_form_on_resume`
+/// THE STAGES OF A FORM'S RECONSTRUCTION, in the order `reconstruct_form_on_resume`
 /// reads them. The order is the verdict's: a stage is entered only when
 /// every one before it passed.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
@@ -57,7 +57,7 @@ pub enum Stage {
     Witnesses,
     /// Every vertex's tape and moves (23.1 steps 3 and 6).
     Moves,
-    /// Every pair of the family perceived, once per replay (law 12).
+    /// Every pair of the family perceived, once per reconstruction (law 12).
     Perceive,
     /// Every clause stated on every pair (78.143).
     Clauses,
@@ -107,14 +107,14 @@ impl Stage {
     }
 }
 
-/// WHERE A REPLAY STOPPED (78.153, option (A) as ruled): the stage,
+/// WHERE A RECONSTRUCTION STOPPED (78.153, option (A) as ruled): the stage,
 /// the item inside it (which glued vertex, which edge, which pair, which
 /// certificate — the item's position in the form's own order), and the
 /// exact partials a later stage is built from — the pairs as the sensor read
 /// them, the undeclared links of the pairs already spoken, and the terrain's
 /// class rows already derived.
 ///
-/// VOLATILE. Held on the docket in memory; a restart starts the replay over.
+/// VOLATILE. Held on the docket in memory; a restart starts the reconstruction over.
 /// It holds no copy of the word and no cited form: those are content and
 /// are read again, by address, at the next stroke.
 #[derive(Clone, Debug, Default)]
@@ -127,15 +127,15 @@ pub struct ReconstructionCursor {
 }
 
 impl ReconstructionCursor {
-    /// HOW FAR THE REPLAY HAS COME: the stage and the item, and the pairs
+    /// HOW FAR THE RECONSTRUCTION HAS COME: the stage and the item, and the pairs
     /// perceived. Two cursors at one progress hold the same partials, since
     /// every partial is a function of the items read; a stroke that leaves
-    /// the progress where it found it moved the replay nowhere.
+    /// the progress where it found it moved the reconstruction nowhere.
     pub fn progress(&self) -> (Stage, usize, usize) {
         (self.stage, self.at, self.frames.len())
     }
 
-    /// The stage the replay stands in.
+    /// The stage the reconstruction stands in.
     pub fn stage(&self) -> Stage {
         self.stage
     }
@@ -156,7 +156,7 @@ impl ReconstructionCursor {
     }
 
     /// A stage settled: passed (the cursor moves past it), refused, or spent
-    /// (the cursor keeps the item and the replay is unread).
+    /// (the cursor keeps the item and the reconstruction is unread).
     pub(crate) fn settle(&mut self, stage: Stage, step: Step) -> Option<ReconstructionOutcome> {
         match step {
             Ok(()) => {

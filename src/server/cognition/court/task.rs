@@ -14,11 +14,11 @@ pub enum SolveVerdict {
     /// it closed (78.162), each exact: S boosts, G hue modes, T null fluxes,
     /// H turns.
     Solved { pay: crate::economy::Mu, modes: crate::economy::modes::Modes },
-    /// Refused by the replay, with its reason, coordinate and kind (78.9).
+    /// Refused by the reconstruction, with its reason, coordinate and kind (78.9).
     Refused(crate::verdict::Refusal),
     /// The solve carried no rule: a raster is no proof of a motion.
     NotARule,
-    /// The task holds no withheld answer to replay against.
+    /// The task holds no withheld answer to reconstruct against.
     Unverifiable,
     /// Reconstructed clean but DISCHARGED NOTHING on the withheld pairs: no work,
     /// so no closure. Nothing is released, minted, docketed or offered, and
@@ -26,7 +26,7 @@ pub enum SolveVerdict {
     /// paid out for the bare possibility of falsification).
     NoWork,
     /// 78.153 — NOT JUDGED YET: the act's one stroke ran out before the
-    /// replay ruled. Nothing is refused, released or paid; where the replay
+    /// reconstruction ruled. Nothing is refused, released or paid; where the reconstruction
     /// stopped is kept (`reconstruction_cursors`, by the rule and the withheld
     /// pairs), and the same solve asked again resumes it there. The wire
     /// carries it as `SOLVE_UNREAD` (3): a retry, never the final
@@ -72,10 +72,10 @@ impl Court {
     /// The trains a rule must speak to mint at install. Empty trains are ignored.
     pub fn bind_task_family(&mut self, task: impl AsRef<[u8]>, train: Vec<crate::transducer::family::TrainPair>) {
         if !train.is_empty() {
-            // 78.153 — a family that changes under a replay's cursor would
-            // resume a replay on pairs it did not start on: THAT TASK'S cursors
+            // 78.153 — a family that changes under a reconstruction's cursor would
+            // resume a reconstruction on pairs it did not start on: THAT TASK'S cursors
             // go (`reconstruction_key` ends with the task). A first binding is a
-            // change too: a replay begun with no family passed the family's
+            // change too: a reconstruction begun with no family passed the family's
             // phases unread. Every other cursor stands — a solve's is keyed by
             // its rule and the withheld pairs it was given, never by a task's
             // binding. Dropping them all on each task listed restarted every
@@ -95,20 +95,20 @@ impl Court {
     }
 
     /// THE SOLVE'S VERDICT, BY ITS ACTION (the actions' physics, 2026-09-29).
-    /// A solve is a RULE, and the court replays it on the task's withheld
-    /// pairs as it replays any sentence on its family (`reconstruct_blind_at`
+    /// A solve is a RULE, and the court reconstructs it on the task's withheld
+    /// pairs as it reconstructs any sentence on its family (`reconstruct_blind_at`
     /// with the family: its derivation re-derived, every pair closed — step
     /// 7, `REFUSE_NOT_CLOSED`); the rule's cited forms resolve through this
     /// court's ruled cover. Clean, the rule is priced by what it
     /// discharges on those pairs, per lane (`measured_discharge`, the deflation
     /// paid only where a pair closes); refused, the refusal names its
-    /// reason, coordinate and obstruction kind (78.9). Grids are never
+    /// reason, coordinate and obstruction kind (78.9). Samples are never
     /// compared: a raster that matches is no proof of a motion.
     ///
     /// 78.153 — RUN TO ITS END, for a reader off the door's one stroke (the
     /// client's seam, the tests): the act asked again while each asking
-    /// moves its replay, exactly as a client asking again would see it. A
-    /// replay no stroke moves stays `Unread`. The door judges on its one
+    /// moves its reconstruction, exactly as a client asking again would see it. A
+    /// reconstruction no stroke moves stays `Unread`. The door judges on its one
     /// stroke, [`Court::judge_solve_on_stroke`].
     pub fn judge_solve(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
         let key = solve_key(rule, withheld);
@@ -122,7 +122,7 @@ impl Court {
     }
 
     /// 78.153 — THE SOLVE ON THE ACT'S ONE STROKE, the door's: `Unread`
-    /// where the stroke ran out before the replay ruled, its cursor kept by
+    /// where the stroke ran out before the reconstruction ruled, its cursor kept by
     /// the rule and the withheld pairs, so the same solve asked again
     /// resumes.
     pub fn judge_solve_on_stroke(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
@@ -153,7 +153,7 @@ impl Court {
             return SolveVerdict::NotARule;
         }
         let mut budget = self.physics.stroke();
-        // 78.153 — the replay on the act's one stroke, resumed where the last
+        // 78.153 — the reconstruction on the act's one stroke, resumed where the last
         // asking of this rule on these pairs stopped.
         let key = solve_key(rule, withheld);
         let mut cursor = match self.reconstruction_cursors.remove(&key) {
@@ -181,7 +181,7 @@ impl Court {
             }
             crate::verdict::ReconstructionOutcome::Clean => {}
         }
-        // A CLEAN REPLAY THAT DISCHARGES NOTHING IS NO CLOSURE. It was
+        // A CLEAN RECONSTRUCTION THAT DISCHARGES NOTHING IS NO CLOSURE. It was
         // answered Solved with a zero pay, and the zero was checked only
         // after `pay_solve` had released every escrow bound to the task and
         // the door had spent the task's first closure on it.
@@ -226,7 +226,7 @@ impl Court {
             // 78.149 (b): the claim is paid the CLOSER'S measured discharge
             // on the withheld pairs, `pay`, lane-wise capped by what its
             // escrow held; nothing above the discharge is minted.
-            // POWV: this court's replay on the withheld pairs verified it.
+            // POWV: this court's reconstruction on the withheld pairs verified it.
             let organs = [self.identity];
             let _ = self.release_verified(addr.as_bytes(), pay.clone(), &organs, settled);
         }
@@ -298,10 +298,10 @@ impl Court {
 
 }
 
-/// 78.153 — WHERE A SOLVE'S REPLAY IS KEPT: the rule's address and the
+/// 78.153 — WHERE A SOLVE'S RECONSTRUCTION IS KEPT: the rule's address and the
 /// withheld pairs written out, each sample's content written whole (A21:
 /// its extents, place and symbols, `Sample::put_content`), so one rule
-/// asked on other pairs is another replay.
+/// asked on other pairs is another reconstruction.
 fn solve_key(rule: &Element, withheld: &crate::transducer::family::Family) -> Vec<u8> {
     let mut key = Vec::new();
     crate::transducer::address::put_key_bytes(&mut key, rule.address().as_bytes());

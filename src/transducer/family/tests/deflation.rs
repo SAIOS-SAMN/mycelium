@@ -79,7 +79,7 @@ assert_ne!(spoken.magnitude(), [0; 4], "the sentence measures what it closed and
 /// its form left unspoken and measures the form the court will hold — read
 /// from the address and receipts it mints, by the court's one decoder —
 /// never the form in its hand. So on the family it minted over, the form the
-/// court decodes leaves nothing undeclared, and the court's own replay
+/// court decodes leaves nothing undeclared, and the court's own reconstruction
 /// admits what the mint admitted.
 #[test]
 fn mint_sentence_admits_what_court_reconstructs() {
@@ -105,7 +105,7 @@ crate::transducer::raster::stand_on(0);
 /// already holds the speaker's side of `REFUSE_NOT_A_SENTENCE` — a form
 /// nothing in which acts is withheld rather than spoken and refused — and
 /// this is the speaker's side of `REFUSE_VERTEX_BODY` by the same argument:
-/// the court replays against the family the voice already holds, so a rule
+/// the court reconstructs against the family the voice already holds, so a rule
 /// that fails there fails here, and uttering it spends a round trip to have
 /// the refusal SEAL the address (50.9) against a rule the voice could have
 /// withheld.
@@ -308,7 +308,7 @@ fn mint_refusal_line_names_arm_proof_kind_demands() {
 /// lands, and one changed output site is one link — where `K_lcm` wrote its
 /// `29 × 29` block of 841. A `2 × 2` doubled to `4 × 4` with one input body
 /// recoloured demands the body's four output sites. A shrink whose input
-/// boundary falls inside an output compartment lays down no grid, and the
+/// boundary falls inside an output compartment lays down no plane, and the
 /// pair demands its whole output against nothing, never a corner reading.
 #[test]
 fn unspoken_residue_is_read_on_output_sites() {

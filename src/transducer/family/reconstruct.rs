@@ -24,7 +24,7 @@
 //! HR4 — RECONSTRUCTION. Each pair left out, the axes closing on the others
 //!   and covering its keys; the most compact (fewest keys) carries the
 //!   pair's input field, and the output is read by where the transported
-//!   hues and light land — judged by replay against the observed output.
+//!   hues and light land — judged by reconstruction against the observed output.
 
 use super::incongruence::{moments, Change, Moments};
 use super::luminal::DIRECTIONS;

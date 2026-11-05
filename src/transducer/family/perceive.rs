@@ -1,4 +1,4 @@
-// 20, 51.3 — PERCEPTION: a grid becomes bodies, and two bodies become a
+// 20, 51.3 — PERCEPTION: a sample becomes bodies, and two bodies become a
 // vertex.
 //
 //! A body is a maximal hue-blind connected region on the three coordinates
@@ -14,7 +14,7 @@ pub use crate::transducer::spelled::{PaintedSite, SectionSample, SectionSite};
 /// A compartment of a body's support: a site of the base and its hue (51.3, 71).
 pub type Compartment = crate::transducer::blade::Compartment;
 
-/// A scene of painted sites as a grid on `void`, origin at the scene's
+/// A scene of painted sites as a sample on `void`, origin at the scene's
 /// min-corner. The sensor embedding of one scene; not a ranking over
 /// candidates. The symbol the unpainted sites hold is the caller's, named:
 /// never a ground this reader defaults to. `None` where the box's sites
@@ -32,7 +32,7 @@ pub fn sample_of_painted(painted: &[PaintedSite], void: u8) -> Option<SectionSam
     Some(g)
 }
 
-/// THE SCENE A CHAIN DESCRIBES, as the two grids of one frame (50.6 seam
+/// THE SCENE A CHAIN DESCRIBES, as the two samples of one frame (50.6 seam
 /// 1): the sites before and the sites after, both at the chain's own
 /// min-corner, so the motion between them is the chain's and never an
 /// artefact of two origins. `None` for an empty chain, which describes
@@ -189,7 +189,7 @@ pub fn perceive_family(family: &[(SectionSample, SectionSample)]) -> Frames {
 
 /// Perceive a family's frames as bodies on `(r, c, k)`: hue-blind
 /// 6-connected components across the frames (51.3, 51.4, 70.4), the frame of each
-/// grid its place in the family.
+/// sample its place in the family.
 pub fn perceive_frames(grids: &[SectionSample]) -> Vec<Body> {
     let mut compartments: Vec<Compartment> = Vec::new();
     for (k, grid) in grids.iter().enumerate() {

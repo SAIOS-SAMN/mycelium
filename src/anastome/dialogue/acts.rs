@@ -39,7 +39,7 @@ pub const ACT_TEACH: u8 = Action::Teach.byte();
 /// 78.94: retired — encoded, never handled; the table refuses it at the door.
 pub const ACT_SETTLE: u8 = Action::Settle.byte();
 /// Step 5 court act: the docket pull ("what awaits finality?"). The court
-/// speaks the same wire as everyone — its authority is the replay, not the
+/// speaks the same wire as everyone — its authority is the reconstruction, not the
 /// socket. 0x07 is unassigned: a ruling reaches a node as a receipt through
 /// the exchange and its back-fill (45.2, 47.2), never as a message.
 /// 78.94: retired — encoded, never handled; the table refuses it at the door.
@@ -113,7 +113,7 @@ pub const SPEECH_RATIFIED: u8 = 3;
 /// sent, never an opaque byte. `Stood` is the docket's receipt; `Ratified`
 /// the language's — a use of a ruled word here, the second organ's
 /// co-signature on the syllabus page; `Refused` names the kind (34.1) and
-/// the coordinate as content. The receipt is the court's replay receipt,
+/// the coordinate as content. The receipt is the court's reconstruction receipt,
 /// its chain hash (47.1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Adjudication {
@@ -264,7 +264,7 @@ pub const ACT_UPLINK: u8 = Action::Uplink.byte();
 /// and its codec are `dialogue::domain`'s.
 pub const ACT_DOMAIN: u8 = Action::Domain.byte();
 /// A FOLD CHALLENGED (78.125, 2(c)): within its window, a demand that its tier
-/// publish the prefix it nets, the prefix itself put to replay, a default
+/// publish the prefix it nets, the prefix itself put to reconstruction, a default
 /// claimed past a demand's deadline, or a correction booking an arbitrage;
 /// and, sealing nothing, the fold's finality read. The layout and its codec
 /// are `dialogue::challenge`'s.
@@ -282,7 +282,7 @@ pub const ACT_SEAT: u8 = Action::Seat.byte();
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)
-/// the hypha replays linearly. Yield settles on the graded trajectory of
+/// the hypha reconstructs linearly. Yield settles on the graded trajectory of
 /// the residue without germination; closure clears the listing.
 /// Request: `[ACT_PROBE][voice 32][target 32][n u32][(addr 32)(g 17)(asg u32)]·n`.
 /// Reply: the probe's READING (PR1) — `[settled μ⃗ 4×u64][closure][remaining
@@ -371,7 +371,7 @@ pub const ACT_PEERS: u8 = Action::Peers.byte();
 pub const ACT_DEMAND_ROUTED: u8 = Action::DemandRouted.byte();
 
 /// A CITATION ON THE WIRE. The versor and the body ARE the operator: the
-/// hearer verifies them by replay and never fetches a copy of the word to
+/// hearer verifies them by reconstruction and never fetches a copy of the word to
 /// verify against.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CiteWire {
@@ -453,7 +453,7 @@ pub struct SpeechAct {
     // 50.2 step 2 as ruled 2026-09-10: `paths` was here. The derivation
     // of every word vertex travels inside the tape at v7, so two voices
     // sending one address are told apart by the tapes themselves and the
-    // court pays each one's generators from what it replayed (26).
+    // court pays each one's generators from what it reconstructed (26).
 }
 /// THE FOUR STRATUM ROOTS a court signs, with the ruled root over them —
 /// the whole of what a cover digest says about what that court holds (A4).
@@ -484,7 +484,7 @@ pub struct Offer {
     /// offered can only glue the form as itself, and then it compares the
     /// form with itself and agrees every time.
     pub home: [u8; 32],
-    /// The element as a full tape. The witness replays THIS on its own
+    /// The element as a full tape. The witness reconstructs THIS on its own
     /// tapes; it never fetches the home's copy to compare bytes.
     pub elem: Vec<u8>,
     /// The voices that attested it at home.
@@ -527,15 +527,15 @@ pub struct Offer {
 /// second vantage off that and never off the address it happened to dial.
 /// An address is where a hypha answers; a vantage is a key.
 pub enum Witnessed {
-    /// The witness replayed the offer and holds a form of its own on the
+    /// The witness reconstructed the offer and holds a form of its own on the
     /// class: the second vantage, as a tape. Never the offered form handed
     /// back, which is the byte exactness of 1.7.
     Reached { vk: [u8; 32], form: Vec<u8> },
-    /// The replay slashed the offer, naming the 34.1 constant it refused
+    /// The reconstruction slashed the offer, naming the 34.1 constant it refused
     /// with, so the home logs and acts on the reason rather than on the
     /// fact that there was one.
     Refused { vk: [u8; 32], why: Vec<u8> },
-    /// The offer survived the replay and this court has re-derived nothing
+    /// The offer survived the reconstruction and this court has re-derived nothing
     /// of its own on the class: unmeasured, which is neither agreement nor
     /// refusal, and the object keeps waiting.
     Unmeasured { vk: [u8; 32] },
@@ -666,8 +666,8 @@ pub struct CoverDigest {
 pub const SOLVE_BOUNTY: u8 = 2;
 pub const SOLVE_AGAIN: u8 = 1;
 pub const SOLVE_NOTHING: u8 = 0;
-/// 78.153 — NOT JUDGED YET: the court's stroke ran out before the replay
-/// ruled; asked again, the replay resumes where it stopped. A RETRY, never a
+/// 78.153 — NOT JUDGED YET: the court's stroke ran out before the reconstruction
+/// ruled; asked again, the reconstruction resumes where it stopped. A RETRY, never a
 /// refusal — distinct from SOLVE_NOTHING, which since 78.149 is final ("no
 /// work"): a house re-files on this code and drops on that one (ruled
 /// 2026-10-09).
@@ -721,7 +721,7 @@ pub const QUOTE_COUNT_AT: usize = 1 + 8 + 32 + 8;
 pub struct Docket {
     /// The word's address.
     pub addr: crate::transducer::address::Address,
-    /// The element itself, as a full tape — the court replays it blind.
+    /// The element itself, as a full tape — the court reconstructs it blind.
     pub elem: Vec<u8>,
     /// The voices attesting it.
     pub voices: Vec<[u8; 32]>,
@@ -738,7 +738,7 @@ pub struct Docket {
 
 /// A SETTLEMENT on the docket: the listing, its chain, the voice, the
 /// utterance that settled it, and the magnitudes before and after as the
-/// hypha measured them. The court replays the utterance and measures for
+/// hypha measured them. The court reconstructs the utterance and measures for
 /// itself: two measurements of one deflation are the proof of convergence.
 /// The last field is the stamp of the act the settlement follows on the
 /// hypha's own line (78.27 (6)): its place orders it inside one court and
@@ -751,7 +751,7 @@ pub struct Settlement {
     pub chain: Vec<SectionLink>,
     /// The voice that settled it.
     pub voice: [u8; 32],
-    /// The utterance: the citations the voice spoke. The court replays
+    /// The utterance: the citations the voice spoke. The court reconstructs
     /// these and measures for itself — two measurements of one deflation
     /// are the proof of convergence.
     pub cites: Vec<CiteWire>,

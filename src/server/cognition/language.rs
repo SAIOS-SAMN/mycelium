@@ -12,7 +12,7 @@ pub enum Outcome {
     /// The demand's substance DECOMPOSED into a sentence of installed
     /// generators: its normal form on one stratum, reached by reduction
     /// against the generators the language holds (A12, 1.8), unique because
-    /// replay closes it and never because an order on tapes says so. The
+    /// reconstruction closes it and never because an order on tapes says so. The
     /// algebra spans it, nothing minted. An empty word is a pure
     /// transposition (no substance). One reduction, not two search kinds.
     /// The words the speech decomposed through, EACH BY ITS OWN COORDINATES.
@@ -167,7 +167,7 @@ impl Language {
 }
 
 /// WHAT AN OFFER STANDS AT, per witness (47.3, 47.5; S12.4d): pending
-/// since the K it was offered at, or answered — the witness replayed and
+/// since the K it was offered at, or answered — the witness reconstructed and
 /// sent its section, or named its refusal. An offer is asked again only
 /// once the witness has answered nothing for that peer's Λ; a pending offer
 /// is never re-sent on the next cycle, and an answered one never again.
@@ -336,10 +336,10 @@ pub enum Adoption {
     /// The current language already derives it — adoption would add
     /// redundancy, not vocabulary.
     Derivable,
-    /// The word does not replay from its own evidence — not ratifiable
+    /// The word does not reconstruct from its own evidence — not ratifiable
     /// speech; the reason names the failed axis.
     Refused(&'static str),
-    /// 78.153 — the stroke ran out before the replay ruled: not adopted now,
+    /// 78.153 — the stroke ran out before the reconstruction ruled: not adopted now,
     /// not refused.
     Unread,
 }

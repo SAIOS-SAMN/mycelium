@@ -207,7 +207,7 @@ fn from_bytes_refuses_zero_period_and_clashing_chain() {
     // attestation about its form's cycles, which moved off `Form.torsion`
     // because a filing does not factor through the geometry. And the
     // RECEIPTS ENVELOPE (Road (d)): the nerve incidence and the evidence a
-    // court replays with, which moved off the tape for the same reason.
+    // court reconstructs with, which moved off the tape for the same reason.
     //
     // The address is a u32 length and its bytes; the filing is a u32 count;
     // the envelope is a u32 block length and its body. This word is a

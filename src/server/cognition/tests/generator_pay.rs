@@ -322,7 +322,7 @@ fn hear_frame_on_credits_each_teacher_of_two_derivations() {
         let spoken = [dialogue::Spoken { tape, standing: crate::transducer::stalk::Standing::Stood.byte(), contraction: None, agreement: None, ground }];
         let frame = dialogue::encode_speech_spoken(&voice, c_task, 1, &spoken).expect("the task frames");
         let act = dialogue::decode_speech(&frame).expect("the frame decodes");
-        // 78.153: a stroke that holds the frame's replays.
+        // 78.153: a stroke that holds the frame's reconstructions.
         let heard = k
             .hear_frame_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20))
             .expect("the court hears it");

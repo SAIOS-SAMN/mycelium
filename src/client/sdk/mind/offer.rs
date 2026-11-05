@@ -8,7 +8,7 @@
 //! THE RESONANCE FILTER. An offer is read once where it lands, to the charts
 //! its bodies stand on (`Offer::of`: the family's frames, every body's
 //! moduli — the coordinates a perception's thoughts are filed under), and
-//! nothing deeper: no extraction, no rotor, no replay. It COUPLES where the
+//! nothing deeper: no extraction, no rotor, no reconstruction. It COUPLES where the
 //! mind holds a thought of its scene (a thought perceived in it, or the scene
 //! waiting on its comprehension), or where one of its charts is a chart a
 //! held thought stands on, a question on the plan covers, or the mind's

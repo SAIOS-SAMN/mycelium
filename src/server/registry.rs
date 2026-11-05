@@ -8,7 +8,7 @@
 //! TRACK 26 S4c — THE BOOK HOLDS TASKS OF ANY RANK: each task as the source
 //! posted it (`PostedTask`, samples of any rank and width), addressed by
 //! that content alone and served as it was posted. The word machinery's
-//! readers (the routes, the bound families, a solve's replay) take the
+//! readers (the routes, the bound families, a solve's reconstruction) take the
 //! alphabet's section of a task (`TaskRegistry::section`), refused by name
 //! where the alphabet does not spell the samples; nothing else in the book
 //! reads a rank.
@@ -287,7 +287,7 @@ impl TaskRegistry {
 
     /// Withheld test pairs (input, held output) the home speaks a rule onto,
     /// on the alphabet's section. A task this book does not hold, or one off
-    /// the section, withholds nothing a rule is replayed on: a claim on it
+    /// the section, withholds nothing a rule is reconstructed on: a claim on it
     /// is a factorisation's, reconstructed on its samples.
     pub fn withheld(&self, id: &[u8]) -> Vec<(SectionSample, SectionSample)> {
         match self.section(id) {
@@ -515,7 +515,7 @@ impl TaskRegistry {
     }
 
     /// RECORD A CLOSURE THE COURT RULED (the actions' physics, 2026-09-29).
-    /// The registry never judges: the court replayed the solve's rule on the
+    /// The registry never judges: the court reconstructed the solve's rule on the
     /// withheld pairs (`Court::judge_solve`) and paid it before this is
     /// asked, so a closure is recorded only after its payment and none is
     /// lost between the two. The first closes the task; later ones are

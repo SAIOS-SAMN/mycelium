@@ -14,7 +14,7 @@ use super::TrainPair;
 /// the same colours for every mind.
 ///
 /// The ONE reader of it: the mind mints its colour word from it and the
-/// court re-derives it from the grids it holds (`element::colour_word`),
+/// court re-derives it from the samples it holds (`element::colour_word`),
 /// so the word stands by evidence and never by a count of who said it.
 pub fn fibre_relation(family: &[TrainPair]) -> Option<crate::transducer::element::FibreRelation> {
     // 78.58 — the function the scenes showed, a hue standing still

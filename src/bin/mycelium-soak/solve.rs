@@ -2,8 +2,8 @@
 // engine actually solve.
 //
 //! Extract the rule from a task's train pairs, speak it on each test
-//! input, and compare the spoken grid with the corpus's own answer, site
-//! for site. No partial credit and no similarity: a solve is the grid or
+//! input, and compare the spoken raster with the corpus's own answer, site
+//! for site. No partial credit and no similarity: a solve is the raster or
 //! it is not (rule 11).
 //!
 //! The mind is stood on the slice first, as a voice's is, because what it

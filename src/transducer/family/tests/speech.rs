@@ -7,9 +7,9 @@ use crate::transducer::sentence::tests::fixtures::painted;
 use crate::transducer::stalk::Standing;
 
 /// LAW 12 — A GLUED VERTEX SPEAKS ITS CITED FORM ONTO THE SCENE THE SPEECH
-/// ALREADY PERCEIVED. A form citing the bar's shift twice speaks the grid
+/// ALREADY PERCEIVED. A form citing the bar's shift twice speaks the sample
 /// with the sensor read once — its own perception — and not once more per
-/// citation: the bodies are one fact of the grid, and the cited form is
+/// citation: the bodies are one fact of the sample, and the cited form is
 /// spoken onto them at its composed placement.
 #[test]
 fn apply_form_speaks_glued_citation_on_one_perception() {
@@ -353,7 +353,7 @@ fn speech_sample_refuses_site_outside_frame() {
     // Before the origin is the other half of the same fault.
     let before = Speech { painted: painted(&[(-1, 0, 5)]), ..fits.clone() };
     assert_eq!(before.sample(), None, "a negative coordinate is not a site of the frame");
-    // One bad site refuses the whole grid; the good ones are not laid down
+    // One bad site refuses the whole sample; the good ones are not laid down
     // to stand in for what the form actually said.
     let mixed = Speech { painted: painted(&[(0, 0, 5), (9, 0, 5)]), ..fits };
     assert_eq!(mixed.sample(), None, "one site outside refuses the speech, not just that site");

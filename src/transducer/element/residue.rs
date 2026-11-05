@@ -599,7 +599,7 @@ pub fn from_demand(rotor_word: &crate::transducer::alphabet::Word) -> Option<Ele
 }
 
 /// A gauge between two sections, spelled as a connection with identity
-/// gauge map and tagged so the court replays it as a translation.
+/// gauge map and tagged so the court reconstructs it as a translation.
 pub fn from_translation(
     rotor: &crate::transducer::alphabet::Rotor,
     a: impl AsRef<[u8]>,

@@ -567,7 +567,7 @@ impl DerivationCite {
 }
 
 /// THE ENVELOPE: the graded nerve incidence this word stands in, and the
-/// evidence a court replays it with.
+/// evidence a court reconstructs it with.
 ///
 /// It rides the element — `Element.receipts` — because an element is a word
 /// AS ONE MIND MINTED IT, which is the smallest carrier that has both

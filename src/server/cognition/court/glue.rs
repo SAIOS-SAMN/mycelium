@@ -1,7 +1,7 @@
 // 23.7, 47.3 — GLUE: what a word fetched from a peer becomes here, and how
 // two organs converge on one object.
 //
-//! A fetched word is replayed against this court's own tapes before it is
+//! A fetched word is reconstructed against this court's own tapes before it is
 //! admitted to anything. A witness that RE-DERIVED the object converges by
 //! `same_vertex` (M1), never by comparing the bytes it is spelled with.
 //! The install that convergence rests on is `vantage_install.rs`.
@@ -67,7 +67,7 @@ impl Court {
     /// own; the edges to every section of the cover; the fills of its link;
     /// the gate and torsion; the verdict; the word held or heard.
     ///
-    /// 78.153 — a replay this stroke could not finish glues nothing and
+    /// 78.153 — a reconstruction this stroke could not finish glues nothing and
     /// marks nothing heard: it waits as dialect (`Glue::Dialect`), as an
     /// unproven colour word does, and the next fetch resumes it. A caller
     /// that must tell that wait from a dialect reading asks
@@ -86,7 +86,7 @@ impl Court {
         }
     }
 
-    /// [`Court::glue_fetched`], `None` where this court's replay of the word
+    /// [`Court::glue_fetched`], `None` where this court's reconstruction of the word
     /// was unread on the stroke (78.153): nothing was glued, refused or heard.
     pub fn glue_fetched_ruled(
         &mut self,
@@ -181,7 +181,7 @@ impl Court {
         Some(outcome)
     }
 
-    /// THE STOPS, in order: heard, the replay's refusal, an unproven colour
+    /// THE STOPS, in order: heard, the reconstruction's refusal, an unproven colour
     /// word, a missing citation. `None` where the word goes on to the cover.
     fn glue_stop(&mut self, spoken: &Element, address: &Address, budget: &mut crate::physics::Budget) -> Option<Stop> {
         if self.heard.contains(address) {
@@ -202,7 +202,7 @@ impl Court {
     }
 
     /// A STOP'S VERDICT, counted on its path: a heard word and an unproven
-    /// colour word wait as dialect; a refused replay and a missing citation
+    /// colour word wait as dialect; a refused reconstruction and a missing citation
     /// are marked heard.
     fn stopped(&mut self, stop: Stop, spoken: &Element, address: Address, peer: [u8; 32]) -> Glue {
         let inv = crate::transducer::stalk::invariant_of(spoken);
@@ -584,7 +584,7 @@ impl Court {
         self.complexes.insert(inv.key(), cx);
     }
 
-    /// A WITNESS HYPHA replayed an offered form on its own tapes and sent
+    /// A WITNESS HYPHA reconstructed an offered form on its own tapes and sent
     /// back the form it reached: 47.3's second vantage. On convergence to the
     /// same vertex (M1) the home installs; on a genuine difference the offer
     /// stands answered and uninstalled (`REFUSE_MV_INEXACT`, 13.9 step 8).

@@ -18,7 +18,7 @@ fn at(x: i64, y: i64) -> Mv {
 }
 
 /// The mirror across the line through the origin along (3, 4): an odd
-/// versor, the grid's flip.
+/// versor, the plane's flip.
 fn mirror() -> Mv {
     Mv::blade(E1, q(4, 1)).sub(&Mv::blade(E2, q(3, 1)))
 }

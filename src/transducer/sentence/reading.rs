@@ -133,7 +133,7 @@ fn vertex_cites_by(
 
 /// LOCATE one body: read its moduli, take the stratum, and for the word
 /// there whose gauge charge is the body's, solve the transport from the
-/// moments and verify it by replay. Returns the citation and the stratum's
+/// moments and verify it by reconstruction. Returns the citation and the stratum's
 /// multiplicity (the measurement, not a search width).
 pub fn locate<'a>(
     word_at: &impl Fn(&[u8]) -> Option<&'a Element>,
@@ -149,7 +149,7 @@ pub fn locate<'a>(
 
 /// LOCATE, and when a word carries the body by shape under a gauge it does
 /// not yet hold, the PUNCTURE: the word's links under the body's own
-/// transitions pulled back through the transport, verified by replay. A
+/// transitions pulled back through the transport, verified by reconstruction. A
 /// citation is preferred; a puncture is returned only when no word speaks
 /// the body as held.
 pub fn locate_or_puncture_at<'a>(

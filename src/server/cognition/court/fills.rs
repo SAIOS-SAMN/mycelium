@@ -2,7 +2,7 @@
 // unfilled simplices and the pending refinements, the volume a fill is
 // paid by, the torsion a congruent simplex files.
 //
-//! Split from `replay.rs` (MU-STANDARDS 1.1, one organ per file): the
+//! Split from `reconstruct.rs` (MU-STANDARDS 1.1, one organ per file): the
 //! court's stroke rules the docket there and fills here, on the same
 //! stroke Budget.
 
@@ -10,7 +10,7 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::element;
 
-/// RM1 (c) — VOICES' RE-FILLS REPLAYED: applied (the record answered); and
+/// RM1 (c) — VOICES' RE-FILLS RECONSTRUCTED: applied (the record answered); and
 /// refused — not the re-fill's cites, a word not located here, a spelling
 /// word that does not spell the ray, a rewrite with no open remainder of the
 /// class there. Of the applied: no Congruent simplex at the rewrite's `after`
@@ -259,7 +259,7 @@ impl Court {
         }
     }
 
-    /// RM1 (c) — A VOICE'S RE-FILL, REPLAYED: its Settled act cites the
+    /// RM1 (c) — A VOICE'S RE-FILL, RECONSTRUCTED: its Settled act cites the
     /// rewrite word, `Cite::Class {κ, g, cover: the chain}` and the word
     /// that spells the twist. The court locates both words, re-reads the
     /// spelling word's rotor against `g` and the rewrite's open remainder of
@@ -312,7 +312,7 @@ impl Court {
             self.refills.unopen += 1;
             return;
         };
-        // The act replays whole: the rewrite's record is answered on
+        // The act reconstructs whole: the rewrite's record is answered on
         // whichever row holds it — the basis, the provisional row it was
         // offered on, or the listing book — whether or not a simplex stands
         // here to write, so the court's record and the mind's never diverge.
@@ -380,7 +380,7 @@ impl Court {
         let (kappa, g, ell) = remainder;
         // A HOLONOMY cycle: its generator is the deficit ray `g`, whose order
         // the fill read as ℓ; the period is re-read off `g` wherever the cycle
-        // is filed or replayed (PD1).
+        // is filed or reconstructed (PD1).
         let cycle = element::TorsionCycle {
             generator: element::Generator::Holonomy(g.clone()),
             period: u64::from(ell),

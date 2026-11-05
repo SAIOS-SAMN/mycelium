@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 3.9, M2 — A REWRITE: an optimisation spoken as a word so the court can
-//! replay it both ways. The tape names the move, the input addresses, the
+//! reconstruct it both ways. The tape names the move, the input addresses, the
 //! output address, and the move's own content.
 
 use super::alphabet::{Rotor, Word};
@@ -50,7 +50,7 @@ impl RewriteKind {
 pub enum RewritePayload {
     Condense { sections: Vec<Vec<(u8, u8)>>, gauge: Versor },
     /// The cycle's GENERATOR — a hue σ or a holonomy's ray — and the period
-    /// it claims, in its own carrier, `u64`; replay re-reads the period off
+    /// it claims, in its own carrier, `u64`; reconstruction re-reads the period off
     /// the generator (PD1, 78.43(2)).
     Torse { generator: crate::transducer::element::Generator, period: u64 },
     Refine { chart: Invariant, axis: u64 },
@@ -367,7 +367,7 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
             // carries. The retired words are disjoint carriers, so the words'
             // measures accumulate lane-wise (12.6) and never meet. An
             // overflow yields the zero vector, which `settle_rewrite` and
-            // `replay` both refuse -- a compression too large to measure is
+            // `reconstruct` both refuse -- a compression too large to measure is
             // not paid, it is refused (rule 11).
             for e in before {
                 match crate::core::lanes::lanes_add(mu, e.magnitude()) {
@@ -407,7 +407,7 @@ pub fn reconstruct(e: &Element) -> Option<&'static str> {
     // A TAPE THAT DOES NOT DECODE IS A REFUSAL, not an absence of one. This
     // read `Rewrite::from_element(e)?`, and `?` on a function whose `None`
     // MEANS "no refusal" turned an undecodable tape into a clean bill: the
-    // court replayed a rewrite it could not read and reported nothing
+    // court reconstructed a rewrite it could not read and reported nothing
     // against it. Every other arm below refuses on a property of the decoded
     // rewrite, so the one input none of them could examine was the one input
     // that passed.

@@ -1,5 +1,5 @@
 // 45.2, 45.3 — THE LEDGER IS THE CLOCK: causal order is partial, and an
-// extent is replayed from the chain that holds it.
+// extent is reconstructed from the chain that holds it.
 
 use super::fixtures::speak_pair;
 use crate::cognition::*;

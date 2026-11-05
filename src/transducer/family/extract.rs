@@ -222,7 +222,7 @@ fn stated(
     if !rule.form.elements.is_empty() || family.len() < 2 {
         return rule;
     }
-    // SAID HONESTLY: the grid, every body reached, and no creation, merge or
+    // SAID HONESTLY: the sample, every body reached, and no creation, merge or
     // reshape left unspoken — a pair right only by a body silently dropped
     // is not said (78.167 B), and its erasure is read as the act it is.
     let says = family.iter().all(|(x, y)| {

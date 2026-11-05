@@ -235,7 +235,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
         // reconstructed under no ground. The court never deduces or picks a
         // ground of its own. A citation this book holds no task for has no
         // ground read at all, and is refused by name below.
-        // A solve's rule is replayed on the alphabet's section (track 26
+        // A solve's rule is reconstructed on the alphabet's section (track 26
         // S4c): a task off it is refused by the alphabet's name alone, never
         // for its rank, and a claim on it is a factorisation
         // (the solve's claim kind `SOLVE_KIND_FACTORISATION`).
@@ -248,7 +248,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
             (cite, reg.withheld(&cite), reg.open(&cite), g)
         };
         // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
-        // court replays the rule on the withheld pairs and prices what it
+        // court reconstructs the rule on the withheld pairs and prices what it
         // discharges; the registry records the closure only after payment.
         // The kind as its place in the reader's own order (78.9,
         // `ObstructionKind::ALL`): every kind has one, a byte.
@@ -336,7 +336,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
             (None, Some(first), Some(rule), Some(Ok(ground))) => {
                 let (verdict, offers) = {
                     let Ok(mut h) = crate::court_lock::held!(context.court) else { return true };
-                    // OWED (78.153b): the solve's replay mints its own stroke
+                    // OWED (78.153b): the solve's reconstruction mints its own stroke
                     // inside `judge_solve_on_stroke` (78.153, resumable).
                     h.run(|k, _| {
                     let verdict = match mycelium::transducer::raster::on_ground(ground.clone(), || k.judge_solve_on_stroke(rule, &withheld)) {
@@ -362,7 +362,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
                             None,
                         ),
                         // 78.153 — not judged yet: the court's stroke ran out
-                        // before the replay ruled; asked again, it resumes.
+                        // before the reconstruction ruled; asked again, it resumes.
                         mycelium::cognition::SolveVerdict::Unread => (
                             dialogue::SOLVE_UNREAD,
                             Mu::zero(),

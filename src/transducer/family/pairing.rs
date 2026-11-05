@@ -223,7 +223,7 @@ pub struct FluxReading {
 /// 78.71 — THE ORDER A PERCEPT'S TRANSPORTS BUILD, PER LANE, read as a field
 /// (a pure reading; [`mark_flux`] books it):
 /// - THE FIELD LINES — each body's own transport through the rule, input to
-///   output, with the mass it carried. On a scene of one frame per grid
+///   output, with the mass it carried. On a scene of one frame per sample
 ///   these are the only transports there are (no circuit, no measured face),
 ///   so without them a scene whose bodies all moved reads no flux at all.
 ///   Its modes and its hue map are each held on a separate orbit (78.73).
@@ -828,7 +828,7 @@ pub(crate) fn named_incidence(
     // two addresses in canonical order (rule 6, law 11). It was keyed by the
     // two bodies' ROOT SITES, a position of the base standing for an
     // identity: the root is whichever site the union-find left on top, so
-    // the key named a place in the pixel grid rather than the body.
+    // the key named a place in the pixel plane rather than the body.
     let mut support_of: Vec<Vec<Site>> = vec![Vec::new(); positions.len()];
     for (at, &root) in body.iter().enumerate() {
         if let (Some(s), Some(sup)) = (positions.get(at), support_of.get_mut(root)) {

@@ -96,7 +96,7 @@ fn eval_arg_ext_selects_unique_extremum() {
 /// and the derived term transfers to a different ring.
 #[test]
 fn derive_transfers_enclosure_to_wider_ring() {
-    // A 3×3 ring of hue 5 with a hue-0 hole, on a 5×5 full grid.
+    // A 3×3 ring of hue 5 with a hue-0 hole, on a 5×5 full sample.
     let mut scene: Vec<PaintedSite> = Vec::new();
     for r in 0..5 {
         for c in 0..5 {

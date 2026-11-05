@@ -9,18 +9,18 @@ use crate::cognition::*;
 use crate::network::nerve::Coordinate;
 use crate::transducer::element::{self, Element};
 
-/// MU-CLIENT §5.6 (C) — WHETHER A WORD'S REPLAY RUNS ON ITS BOUND FAMILY.
+/// MU-CLIENT §5.6 (C) — WHETHER A WORD'S RECONSTRUCTION RUNS ON ITS BOUND FAMILY.
 /// A conjugate (`g · W · g̃`, its derivation carrying a conjugator) is a
 /// word: its section on the family is MEASURED (`transport_on`), never
 /// certified by closing every pair, which no word does — so, as a colour
-/// word's, its replay is the word's integrity alone. Every other word replays
+/// word's, its reconstruction is the word's integrity alone. Every other word reconstructs
 /// on the family it is bound to, as before.
 pub(crate) fn reconstructs_on_family(spoken: &Element) -> bool {
     !spoken.receipts().derivations.iter().any(|d| d.conjugator.is_some())
 }
 
-/// 78.153 — WHERE A WORD'S REPLAY IS KEPT: its address and the task whose
-/// family it is replayed on, each length-delimited (A21).
+/// 78.153 — WHERE A WORD'S RECONSTRUCTION IS KEPT: its address and the task whose
+/// family it is reconstructed on, each length-delimited (A21).
 pub(crate) fn reconstruction_key(spoken: &Element, task: Option<&[u8]>) -> Vec<u8> {
     let mut key = Vec::new();
     crate::transducer::address::put_key_bytes(&mut key, spoken.address().as_bytes());
@@ -133,7 +133,7 @@ impl Court {
             // EC1: the claim is minted AT the Ruling act sealed above
             // (POUW), never at the act that escrowed it.
             let ruled = self.anchor();
-            // POWV: this court's replay ruled it.
+            // POWV: this court's reconstruction ruled it.
             let organs = [self.identity];
             let _ = self.release_verified(address, discharge, &organs, ruled);
             self.unlist(address, false);
@@ -181,31 +181,31 @@ impl Court {
         self.task_family.get(task).map(Vec::as_slice)
     }
 
-    /// THE COURT'S REPLAY of a word it holds (23.1, 23.8): through its own
+    /// THE COURT'S RECONSTRUCTION of a word it holds (23.1, 23.8): through its own
     /// genome as the `Crystal` that resolves what the word cites, and
     /// against the family the word is bound to, so step 7 — closure on
     /// every pair, `REFUSE_NOT_CLOSED` — is checked on the court path and
     /// not only when the word was first spoken. A word bound to no family
-    /// replays without that clause: it can still be ruled, and it mints
+    /// reconstructs without that clause: it can still be ruled, and it mints
     /// only what it measures on a family, which is then nothing.
     ///
-    /// `pub`: the witness door (`judge::offer`) replays an offered form it
+    /// `pub`: the witness door (`judge::offer`) reconstructs an offered form it
     /// has already heard through this same reader, so the answer it gives a
-    /// home is the replay's and never the heard mark's.
+    /// home is the reconstruction's and never the heard mark's.
     ///
     /// 78.153 — ON THE STROKE, RESUMED: `Unread` where the stroke ran out
     /// before it ruled — never a refusal, never a pass. Where it stopped is
-    /// held on `reconstruction_cursors` and the next replay of the same word on the
+    /// held on `reconstruction_cursors` and the next reconstruction of the same word on the
     /// same family takes it up there, whichever path asks (the docket, the
     /// glue, the witness door): the verdict is a function of the word, its
     /// family and the content-addressed forms it cites, so every path's
-    /// replay of it is one replay.
+    /// reconstruction of it is one reconstruction.
     pub fn court_reconstruct(&mut self, spoken: &Element, budget: &mut crate::physics::Budget) -> crate::verdict::ReconstructionOutcome {
         self.court_reconstruct_moved(spoken, budget).0
     }
 
     /// [`Court::court_reconstruct`] with whether the cursor moved: a stroke that
-    /// moved nothing is a stalled replay (`court_stalled`).
+    /// moved nothing is a stalled reconstruction (`court_stalled`).
     pub(crate) fn court_reconstruct_moved(
         &mut self,
         spoken: &Element,
@@ -230,7 +230,7 @@ impl Court {
         self.reconstruction_cursors.get(&key).map(|c| c.progress())
     }
 
-    /// THE ONE RESUMABLE REPLAY of a word on the family of `task` (none:
+    /// THE ONE RESUMABLE RECONSTRUCTION of a word on the family of `task` (none:
     /// no family), its cursor keyed by the word's address and that task.
     /// `at` is `reconstruct_blind_at`'s reading. Answers whether the cursor moved.
     pub(crate) fn reconstruct_on_cursor(
@@ -261,7 +261,7 @@ impl Court {
 
     /// Court organ: the docket is the field's projection — listings whose
     /// closure is not Flat and whose deflation is nonzero — plus unfilled
-    /// triangles and tetrahedron classes. Fail → slash with a replay reason
+    /// triangles and tetrahedron classes. Fail → slash with a reconstruction reason
     /// and relocate to the cavity atlas. Pass → a section on the ruled
     /// cover, escrow held. Fills and refinements share the stroke Budget.
     /// The lapse sweep runs on every stroke, on its own budget
@@ -318,7 +318,7 @@ impl Court {
             }
         }
         // 78.153 — a citer whose re-hearing its ruling's stroke could not
-        // replay is heard again here, its replay resumed.
+        // reconstruct is heard again here, its reconstruction resumed.
         crate::observe::step("court stroke: rehear due");
         self.rehear_one_due(budget);
         crate::observe::step("court stroke: lapse silent");
@@ -330,20 +330,20 @@ impl Court {
     }
 
     /// 78.153 — THE DOCKET, ONE KEY AT A TIME ON THE STROKE. The cursor
-    /// walked every key the stroke could pay for BEFORE any replay, one read
-    /// each, so a docket as long as the stroke left the replays nothing — and
-    /// metered, every replay would have been unread on every stroke. Now each
-    /// key is taken by the budgeted circuit (45.7, S13.3) and replayed before
+    /// walked every key the stroke could pay for BEFORE any reconstruction, one read
+    /// each, so a docket as long as the stroke left the reconstructions nothing — and
+    /// metered, every reconstruction would have been unread on every stroke. Now each
+    /// key is taken by the budgeted circuit (45.7, S13.3) and reconstructed before
     /// the next is taken:
     ///
     /// - refused: slashed, as it always was (EC1);
     /// - clean: ruled, a section of this court's own;
     /// - UNREAD: not ruled this stroke. The docket's cursor stays BEFORE the
-    ///   word, so the next stroke takes it first and resumes its replay from
-    ///   its phase cursor (`reconstruction_cursors`); a resumed replay is eventually
+    ///   word, so the next stroke takes it first and resumes its reconstruction from
+    ///   its phase cursor (`reconstruction_cursors`); a resumed reconstruction is eventually
     ///   ruled, since each stroke moves it on.
     ///
-    /// A replay a whole stroke moved no further (the word began the stroke
+    /// A reconstruction a whole stroke moved no further (the word began the stroke
     /// with every read but the cursor's) holds a unit no stroke can read: it
     /// is counted (`court_stalled`) and passed over for this circuit, so one
     /// word cannot stand the whole docket still. Answers whether the walk
@@ -379,7 +379,7 @@ impl Court {
             wrapped = wrapped || stepped;
             // R1 (45.7): the circuit rules what is not yet ruled. A listing on
             // the ruled cover or in the cavity is passed over — its standing
-            // moves by a verdict or a lapse, never by the circuit. Replayed
+            // moves by a verdict or a lapse, never by the circuit. Reconstructed
             // on every circuit, one word was sectioned 20,800 times and
             // another slashed 2,227 times (2026-09-09).
             if self.ruled_contains(&address) || self.cavity_book.contains(&address) {
@@ -419,7 +419,7 @@ impl Court {
                     self.court_slashed += 1;
                 }
                 (crate::verdict::ReconstructionOutcome::Clean, _) => {
-                    // The stroke ruled a word THIS court replayed from its own
+                    // The stroke ruled a word THIS court reconstructed from its own
                     // book: the line already calls it a section, and now it is one
                     // (13.9, 13.10) -- a vantage a peer's section can be compared
                     // against, which is what makes a glue a Mayer-Vietoris step.
@@ -442,9 +442,9 @@ impl Court {
         }
     }
 
-    /// 78.153 — THE COURT STROKED UNTIL ITS DOCKET'S REPLAYS ARE RULED: a
+    /// 78.153 — THE COURT STROKED UNTIL ITS DOCKET'S RECONSTRUCTIONS ARE RULED: a
     /// fixture that asks what "the stroke" rules asks it of every stroke a
-    /// replay longer than one takes. Ends where no replay stands, or where
+    /// reconstruction longer than one takes. Ends where no reconstruction stands, or where
     /// a stroke moved none.
     #[cfg(test)]
     pub(crate) fn court_settle(&mut self) {
@@ -469,7 +469,7 @@ impl Court {
 
     /// A gauge from Extended between two hyphas is a translation: minted
     /// through from_connection with the identity gauge map, tagged, entered
-    /// on the docket, and admitted to the ruled cover on second replay.
+    /// on the docket, and admitted to the ruled cover on second reconstruction.
     pub(crate) fn mint_or_admit_translation(
         &mut self,
         gamma: &crate::transducer::alphabet::Rotor,
@@ -486,7 +486,7 @@ impl Court {
             return;
         }
         if self.provisional.contains(&address) {
-            // 78.27 (3): the second replay RULES the translation, and a
+            // 78.27 (3): the second reconstruction RULES the translation, and a
             // ruling is an act — sealed first, so the federation files the
             // word at it.
             let own_vk = self.identity;

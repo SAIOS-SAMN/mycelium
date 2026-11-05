@@ -29,7 +29,7 @@
 //!
 //!    Each new reading is counted by what it moved: refined, closed,
 //!    sharpened an edge, or recognized.
-//! 4. JUDGED BY THE PLANE: the core difference replayed on every reading's
+//! 4. JUDGED BY THE PLANE: the core difference reconstructed on every reading's
 //!    input body — reproduces its output, or does not.
 //! 5. 78.80 — A BODY BY ITS MOMENTS, NOT ITS BOUNDARY. The confluence sphere
 //!    C = ΣPₛ of a body's compartments carries its MASS M = −C·e∞ (volume:
@@ -42,7 +42,7 @@
 //!    it: a key — volume, density, hue-mass, shape, direction, or RELATIONAL,
 //!    the body's rank by mass or density among the bodies of its pair —
 //!    decides a reading when the other readings of its family under the same
-//!    key agree on one hue map, and the prediction is judged by replay on the
+//!    key agree on one hue map, and the prediction is judged by reconstruction on the
 //!    input body.
 //! 6. The single changes of a family's remainder, with these keys, are one
 //!    reading ([`single_changes`], [`decide`]) shared by the instrument and
@@ -269,7 +269,7 @@ pub fn manifold(readings: &[(Relative, Vec<(u64, bool)>)]) -> Manifold {
     m
 }
 
-/// 4 — JUDGED BY THE PLANE: the manifold's core replayed on one reading's
+/// 4 — JUDGED BY THE PLANE: the manifold's core reconstructed on one reading's
 /// input body — its core accretion laid down, its core extinction removed,
 /// its core recolours applied — against the output body. Exact.
 pub fn reproduces(m: &Manifold, input: &[PaintedSite], output: &[PaintedSite]) -> Option<bool> {
@@ -388,7 +388,7 @@ pub fn decided<K: PartialEq>(readings: &[(K, HueMap)]) -> Vec<Option<Option<HueM
         .collect()
 }
 
-/// A HUE MAP REPLAYED on an input body against the output body: exact.
+/// A HUE MAP RECONSTRUCTED on an input body against the output body: exact.
 pub fn recolours_to(map: &[(u8, u8)], input: &[PaintedSite], output: &[PaintedSite]) -> bool {
     let mut a: Vec<PaintedSite> =
         input.iter().map(|p| PaintedSite::new(p.site, map.iter().find(|(f, _)| *f == p.symbol).map_or(p.symbol, |(_, t)| *t))).collect();
@@ -475,7 +475,7 @@ pub fn single_changes(family: &[(SectionSample, SectionSample)], remainders: &[V
 pub const KEYS: [&str; 8] = ["none", "volume", "density", "hue-mass", "shape", "direction", "mass rank", "density rank"];
 
 /// WHAT ONE KEY DECIDED over a family's recolours in place, leave one out,
-/// judged by replay: predicted and reproduced, refused (its others disagree),
+/// judged by reconstruction: predicted and reproduced, refused (its others disagree),
 /// alone (no other shares it), and whether every recolour reproduced.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Decision {

@@ -208,7 +208,7 @@ fn take_elements_carries_unnamed_element_on_address() {
 /// ONE TAPE PER ELEMENT: the element tag carrying a carriage an act names (a
 /// slide, whose tape is the slide's), or a carriage not written canonically
 /// (an iterated translation read about each body, which conjugates to the
-/// grid's), is no element's tape.
+/// sample's), is no element's tape.
 #[test]
 fn take_elements_refuses_named_or_uncanonical_carriage() {
     let base = written(&[kept_slide()]);

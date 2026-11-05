@@ -367,7 +367,7 @@ pub enum Cite {
     Refusal { chart: Invariant, kind: u8 },
     /// 78.119 — A TIER'S FOLD, BY ITS COORDINATES (LD0: never a copy of its
     /// rows): the folding tier's key, the hash of the prefix head it nets
-    /// (the tier's own line, replayed by whoever disputes it), and the hash
+    /// (the tier's own line, reconstructed by whoever disputes it), and the hash
     /// of the exact rows the court checked for continuity — so a party
     /// holding the rows proves them against this receipt.
     Uplink { tier: [u8; 32], prefix: [u8; 32], rows: [u8; 32] },

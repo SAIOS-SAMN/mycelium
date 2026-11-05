@@ -100,7 +100,7 @@ fn unscoped_reader_never_defaults_to_zero() {
 /// scene is one body; read on its family's ground, it is the bar alone.
 /// The twin families — one on 0, one on 7 — extract one translation each,
 /// and the rule spoken on a fourth frame of the 7 canvas paints the bar
-/// onto the 7 canvas: 7 stays 7 on every grid.
+/// onto the 7 canvas: 7 stays 7 on every sample.
 #[test]
 fn on_ground_of_reads_bodies_and_speaks_on_canvas() {
     let family = vec![

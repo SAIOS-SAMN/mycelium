@@ -15,9 +15,9 @@ fn toy_task() -> Task {
 #[test]
 fn close_records_first_then_again() {
     let mut reg = TaskRegistry::new();
-    let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
+    let id = reg.register(toy_task()).expect("a sample pair's chain is A5's");
     assert_eq!(
-        reg.register(toy_task()).expect("a grid pair's chain is A5's"),
+        reg.register(toy_task()).expect("a sample pair's chain is A5's"),
         id,
         "content is identity — no re-feeding"
     );
@@ -31,12 +31,12 @@ fn close_records_first_then_again() {
 }
 
 /// A restart must not resurrect settled bounties: snapshot → fresh
-/// registry (corpus re-registered) → overlay → the replay still
+/// registry (corpus re-registered) → overlay → the reconstruction still
 /// collapses to the floor.
 #[test]
 fn overlay_restores_settled_states_after_restart() {
     let mut reg = TaskRegistry::new();
-    let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
+    let id = reg.register(toy_task()).expect("a sample pair's chain is A5's");
     assert_eq!(reg.close(&id), Some(ClosureOrder::First));
     let snap = reg.snapshot().expect("the snapshot writes");
 
@@ -80,7 +80,7 @@ fn overlay_restores_task_wider_than_u16_wall() {
     assert_eq!(reborn.close(&id), Some(ClosureOrder::Again), "and the restart does not re-open it");
 }
 
-/// LAW 2 — AN IDENTITY IS NEVER FORMED WITH A MEMBER SKIPPED: a ragged grid
+/// LAW 2 — AN IDENTITY IS NEVER FORMED WITH A MEMBER SKIPPED: a ragged raster
 /// is no sample, refused by name at intake (track 26 S4d), so no task holds
 /// a member that could be passed over and the task named by its other pairs
 /// alone.
@@ -89,7 +89,7 @@ fn task_address_refuses_ragged_pair() {
     use crate::transducer::sample::SampleRefusal;
     use crate::transducer::spelled::Unspelled;
     assert!(task_address(&toy_task()).is_some(), "every member has an enclosure");
-    assert_eq!(SectionSample::of_lines(&[vec![1, 1], vec![1]]), Err(Unspelled::Sample(SampleRefusal::Length { expected: 4, found: 3 })), "a ragged grid is no sample");
+    assert_eq!(SectionSample::of_lines(&[vec![1, 1], vec![1]]), Err(Unspelled::Sample(SampleRefusal::Length { expected: 4, found: 3 })), "a ragged raster is no sample");
 }
 
 /// MU-DERIVATIONS D3.2, O3 — A PAIR'S MEMBER IS BOTH FRAMES' FULL CONTENT
@@ -220,7 +220,7 @@ fn citation_of_task_is_stable_across_registry_round_trip() {
 #[test]
 fn dispatch_rotates_and_dries_up() {
     let mut reg = TaskRegistry::new();
-    let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
+    let id = reg.register(toy_task()).expect("a sample pair's chain is A5's");
     let (d1, _) = reg.dispatch().expect("work exists");
     assert_eq!(d1, id);
     assert_eq!(reg.close(&id), Some(ClosureOrder::First));
@@ -246,7 +246,7 @@ fn restore_cursor_resumes_dispatch_after_restart() {
         let mut reg = TaskRegistry::new();
         let ids: Vec<TaskCitation> = [toy_task(), other.clone(), third.clone()]
             .into_iter()
-            .map(|t| reg.register(t).expect("a grid pair's chain is A5's"))
+            .map(|t| reg.register(t).expect("a sample pair's chain is A5's"))
             .collect();
         (reg, ids)
     };
@@ -285,7 +285,7 @@ fn restore_cursor_resumes_dispatch_after_restart() {
 #[test]
 fn next_intake_batch_walks_manifest_once() {
     let mut reg = TaskRegistry::new();
-    let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
+    let id = reg.register(toy_task()).expect("a sample pair's chain is A5's");
     let first = reg.next_intake_batch(8);
     assert_eq!(first.len(), 1);
     assert_eq!(first[0].0, id);
@@ -336,7 +336,7 @@ fn task_identity_writes_rank_and_width() {
 /// it is named by their content alone, dispatched, and its envelope served
 /// as posted at rank 3, the withheld output never riding. Only the
 /// alphabet limits it, by name: the word machinery's readers (the section,
-/// the withheld rasters a rule is replayed on, the bound families, the
+/// the withheld rasters a rule is reconstructed on, the bound families, the
 /// routes) take nothing of it, and the walks pass it once routed to none.
 #[test]
 fn hypha_serves_a_rank_three_task() {
@@ -361,7 +361,7 @@ fn hypha_serves_a_rank_three_task() {
         matches!(reg.section(&id), Some(Err(SectionRefusal::Rank(AlphabetRank { rank: 3 })))),
         "the alphabet's section refuses it by the alphabet's name"
     );
-    assert!(reg.withheld(&id).is_empty(), "no rule is replayed on it");
+    assert!(reg.withheld(&id).is_empty(), "no rule is reconstructed on it");
     assert_eq!(reg.families().count(), 0, "it binds no word family");
     let registry = std::sync::Mutex::new(reg);
     assert!(crate::server::route::intake_walk(&registry, 8).is_empty(), "nothing is listed for it");

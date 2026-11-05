@@ -5,7 +5,7 @@
 //! A medium under stress deforms ELASTICALLY (it returns), PLASTICALLY (it
 //! keeps the new shape — a generator admitted) or FRACTURES (a draw refused).
 //! The elastic part is read here, on each mode's own orbit and never on the
-//! sensor's grid:
+//! sensor's plane:
 //!
 //! - **A turn (𝒽) or a boost (𝒮)** is a mode of a motion (MR1) on its plane,
 //!   and the orbit is the plane's FLOW (78.75): it holds the point the flow

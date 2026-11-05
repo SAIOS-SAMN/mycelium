@@ -27,7 +27,7 @@ pub fn assignment_key(a: &crate::transducer::sentence::Acting) -> Vec<u8> {
 /// the output frame (`deflation::unspoken_residue`, the pair's transduction
 /// projected under the extraction's stroke) — the same reading the
 /// deflation prices the pair by, so the demand and the measure cannot
-/// disagree. Where the identity lays down no grid the residue is the whole
+/// disagree. Where the identity lays down no plane the residue is the whole
 /// output against nothing: still a remainder (rule 7), never dropped and
 /// never read off a shared corner of two frames. `None` for a pair with no
 /// scene, or whose residue cannot be written on the family's one ground

@@ -1,5 +1,5 @@
 // POWV — PROOF OF WORK VERIFICATION (MU-ECONOMY §5.1): the courts whose
-// replay verified a closure each take a share of the release, per lane, read
+// reconstruction verified a closure each take a share of the release, per lane, read
 // off the verifying court's strain against its reserve; the closer the
 // rest; total issuance exactly the release.
 

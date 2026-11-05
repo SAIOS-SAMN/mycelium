@@ -32,7 +32,7 @@ use crate::transducer::base::Site;
 /// lattice positions as though a hue were a length.
 ///
 /// Worse, the compartment was fed ABSOLUTE `(r, c, k)`. The same form drawn
-/// at the origin and at the far corner of a grid then lands on different
+/// at the origin and at the far corner of a plane then lands on different
 /// sheet points and reads as different geometry — position standing in
 /// for coordinate (rule 15), inside the connection itself.
 ///
@@ -63,7 +63,7 @@ use crate::transducer::base::Site;
 /// compartments a second time — a SHADOW PRODUCER of moments `blade::lift`
 /// already computes exactly, and a lossy one: it took each compartment as a
 /// POINT MASS at integer coordinates, where `lift` reads each compartment as
-/// its round and carries the rounds' extent `N/12` on each grid axis. Two producers of one quantity, and the
+/// its round and carries the rounds' extent `N/12` on each plane axis. Two producers of one quantity, and the
 /// second disagreed with the first (law 12).
 ///
 /// The form's chart is one body — the union of every compartment its chords
@@ -103,7 +103,7 @@ pub(super) fn form_chart(
             // THE TRACE ON EVERY AXIS THE BODY HAS (audit N-4). The bound
             // above is `|c − P|² ≤ S` for a centre read on every axis, and
             // `S` must be the second moment on every axis for it to hold: it
-            // read `inertia[0] + inertia[1]`, the grid plane by layout
+            // read `inertia[0] + inertia[1]`, the plane by layout
             // index, so two footprints apart along the frame could leave the
             // sheet and be counted `tau_refused` for the quantum's defect.
             let trace = (0..b.n())
@@ -226,7 +226,7 @@ fn basepoint_transvection(
         return None;
     }
     // Read from the form's own origin, so the transport does not depend
-    // on where in the grid the scene happened to be drawn (rule 15).
+    // on where in the plane the scene happened to be drawn (rule 15).
     // The origin is read by inclusion: an axis it does not name is zero.
     let compartment = |p: &[num_rational::BigRational]| {
         let offset: Vec<num_rational::BigRational> = p

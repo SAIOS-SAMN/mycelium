@@ -27,7 +27,7 @@
 //!
 //! Nothing is added to the tape. `Form.torsion` already carries a filled
 //! simplex as `FiledOrbit { sigma, period, chord }` and the court already
-//! replays it (23.1 step 4).
+//! reconstructs it (23.1 step 4).
 //!
 //! Nothing is keyed by position. A piece is addressed by its content —
 //! layer kind and its support written out, the hue being a gauge the
@@ -449,7 +449,7 @@ pub(crate) fn cover_deformation(
     // pieces IS a meet, and the meet is addressed by its two ends; a site
     // holding k of them is k−1 meets. The two sides are filed under
     // DISTINCT keys — a side byte ahead of the position — so a domain site
-    // and a codomain site that happen to sit at one grid position are not
+    // and a codomain site that happen to sit at one plane position are not
     // read as a meet. They are sites of two different spaces that the
     // correspondence relates; only the versor relates them, and a shared
     // coordinate is a coincidence of the embedding, not an overlap.
@@ -470,7 +470,7 @@ pub(crate) fn cover_deformation(
     // different topologies.
     //
     // EXTENDING THE RING UPWARD WOULD HAVE BEEN WORSE. `ring_of_support` is
-    // an extrinsic Manhattan 4-neighbourhood dilation on ℤ², an ad-hoc grid
+    // an extrinsic Manhattan 4-neighbourhood dilation on ℤ², an ad-hoc plane
     // stencil simulating a systole the physics never performed — the same
     // stand-in defect already purged from `extract.rs`. It also resurrects
     // the pore case this nerve exists to refuse: three mutual neighbours

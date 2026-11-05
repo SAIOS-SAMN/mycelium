@@ -1967,7 +1967,7 @@ R_h·R_w + 2·L_h·L_w`, `Unrefined`) are deleted; no reader forms an lcm. The
 organ is `src/transducer/family/transduce/`.
 
 **What was wrong.** `K_lcm = lcm(h_in, h_out) × lcm(w_in, w_out)` is the
-uniform subdivision both grids embed in. It turned an incidence question
+uniform subdivision both samples embed in. It turned an incidence question
 into an equality question by writing unit cells, so its size was the lcm,
 not the frames: on `18 × 19 → 7 × 9` (task `0b148d64`, pair 0) `K_lcm` is
 `126 × 171 = 21 546` cells, the change set 14 045 links, and charting it
@@ -1982,7 +1982,7 @@ neither writing its frame) gave two tasks one address (law 2); μ counted
 
 **The transduction, as built.** LIFT → ACT → PROJECT; past the sensor the
 state is bodies and motions, and per-site values are written only at the
-sensor and where a grid is spoken.
+sensor and where a raster is spoken.
 
 - **LIFT** (`turn.rs`, `enclosed.rs`), at rank `n`. A sample of extents
   `e₁, …, eₙ` is `n` phases of turns, `ℚ/ℤ`, each of its own period
@@ -2198,7 +2198,7 @@ discarded).
 
 - The quantities. Per axis with extents `a = h_in`, `b = h_out`:
   `L = lcm(a, b)`, scales `s_in = L/a`, `s_out = L/b`, and the RUN COUNT
-  (the subdivision boundaries of both grids, `CommonRefinement::runs`):
+  (the subdivision boundaries of both samples, `CommonRefinement::runs`):
   ```text
   R(a, b) = a + b − gcd(a, b)
   ```

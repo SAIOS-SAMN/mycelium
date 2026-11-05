@@ -3,7 +3,7 @@
 // input body read as a constructor difference; the readings of one subject
 // (the input body's chart, across the family's pairs) held together as a
 // coherence manifold — core, edges, resolution, phase, what each reading
-// moved — and the core judged by the plane: replayed on every reading's input
+// moved — and the core judged by the plane: reconstructed on every reading's input
 // body, it reproduces the output or it does not. Data; nothing is decided.
 
 use mycelium::client::sdk::MindLanguage;

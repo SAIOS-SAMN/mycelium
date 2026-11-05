@@ -64,7 +64,7 @@ fn bonded_exactly(f: Founded) -> Option<crate::economy::Mu> {
 }
 
 /// The tier's fold whose rows its line does not sum to: `w1` 5, `w2` −5 on
-/// S folded, but the line moved 4 and −4 — a lie a replay catches.
+/// S folded, but the line moved 4 and −4 — a lie a reconstruction catches.
 fn lying_fold() -> (TierFold, Vec<Entry>) {
     let line = vec![Entry { rows: vec![([1; 32], [4, 0, 0, 0]), ([2; 32], [-4, 0, 0, 0])], declared: Vec::new() }];
     let f = TierFold {

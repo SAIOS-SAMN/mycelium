@@ -36,7 +36,7 @@ pub struct Blade {
     /// order is prefix-stable, so at `n = 3` it is `(Ixx, Iyy, Ixy, Izz,
     /// Ixz, Iyz)` and a reader of the first six reads the same moments at
     /// every `n`. A compartment (16.4) is its round: its extent `1/12` on each of
-    /// the two grid axes and none along any other.
+    /// the two plane axes and none along any other.
     pub inertia: Vec<BigRational>,
     /// 𝒮 refinement — the exact fourth body moments about the centroid, ONE
     /// TRIPLE PER PLANE generated from `n` ([`crate::transducer::base::planes`]
@@ -277,7 +277,7 @@ fn times(z: &[BigRational; 2], w: &[BigRational; 2]) -> [BigRational; 2] {
 /// ```
 ///
 /// with `ε` the extent's own second harmonic on the plane (the round's odd
-/// moments vanish, and it holds none above two). On the grid plane the round
+/// moments vanish, and it holds none above two). On the plane the round
 /// is isotropic, `ε = 0`, and the round's harmonic is its centre's. The ONE
 /// producer of a round's harmonics, read by the lift and by the tower (law
 /// 12).
@@ -318,7 +318,7 @@ fn round_isotropic4(u: &BigRational, v: &BigRational, (n, plane): (usize, (usize
 /// throughout, on the base's `n` axes (71.2(3)). The centroid is in ℚⁿ and
 /// the moments are the full upper triangle of the second-moment tensor.
 /// Each element is a compartment lifted to its ROUND ([`round_extent`]): its
-/// centre with the extent `1/12` on each grid axis, so it contributes its
+/// centre with the extent `1/12` on each plane axis, so it contributes its
 /// offset and its extent at order two and its centre's offset alone at every
 /// higher order. The component's compartments need not be sorted.
 ///
@@ -351,7 +351,7 @@ pub fn lift(comp: &[Compartment]) -> Blade {
 
     // Moments about the centroid (exact ℚ) — of the BODY: the union of its
     // rounds, so each compartment contributes its centre's offset and, at order
-    // two, its round's extent on the grid axes.
+    // two, its round's extent on the plane axes.
     let pairs = inertia_pairs(dim);
     let mut inertia: Vec<BigRational> = vec![q(0); pairs.len()];
     let planes = crate::transducer::base::planes(dim);

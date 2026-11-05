@@ -86,7 +86,7 @@ fn pay_solve_pays_discharge_capped_by_escrow() {
     let rule = rule_over(&family);
     let pay = match k.judge_solve(&rule, &family) {
         SolveVerdict::Solved { pay, .. } => pay,
-        other => panic!("the replay closes every pair: {other:?}"),
+        other => panic!("the reconstruction closes every pair: {other:?}"),
     };
     assert!(!pay.is_zero(), "the solve discharges something: {pay}");
 

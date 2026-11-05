@@ -14,7 +14,7 @@
 //! hue map: each member's motion is the word's rotor acting through its
 //! carriage (`element::conformal_of_rotor`), and that motion is the D4 kind
 //! whose `Step::symmetry_motion` on the train pair's shapes it EQUALS as an
-//! action on the grid's plane (`same_action`, exact), tried in the house's
+//! action on the plane (`same_action`, exact), tried in the house's
 //! order: 1 Rotate90, 2 Rotate180, 3 Rotate270, 4 FlipH, 5 FlipV, 6
 //! Transpose. A motion that is no D4 kind is not pure. Each hue move `from →
 //! to` is the count `0x100 + 16·from + to`.
@@ -82,7 +82,7 @@ pub enum NotSteps {
     NotD4,
 }
 
-/// TWO MOTIONS ARE ONE ON THE GRID'S PLANE where each carries the plane's
+/// TWO MOTIONS ARE ONE ON THE PLANE where each carries the plane's
 /// points to the same points, exactly: the conformal points of `(0,0)`,
 /// `(1,0)`, `(0,1)` and `(1,1)` at frame 0 — three non-collinear points fix
 /// a similarity of the plane, the fourth checks it. Compared as actions, so

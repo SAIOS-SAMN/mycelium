@@ -1,5 +1,5 @@
 // 26, the actions' physics — A VOICE SENDS ONLY A SOLVE IT CAN STAND BEHIND:
-// the rule replayed on its own train exactly as the court will replay it on
+// the rule reconstructed on its own train exactly as the court will reconstruct it on
 // the withheld pairs; no rule, a rule its train refutes, or a rule the court
 // already refused is kept home, each counted by name.
 
@@ -17,7 +17,7 @@ fn family() -> Vec<(crate::transducer::family::SectionSample, crate::transducer:
     ]
 }
 
-/// A voice keeps home a solve its own train refutes: the rule replayed on a
+/// A voice keeps home a solve its own train refutes: the rule reconstructed on a
 /// train it does not speak is refused at home, as the court would refuse it.
 #[test]
 fn judge_on_keeps_home_solve_train_refutes() {
@@ -35,7 +35,7 @@ fn judge_on_keeps_home_solve_train_refutes() {
     // motion). Wire v1.2: a task is named by its 32-byte citation.
     let task = [7u8; 32];
     // A TRAIN THE RULE DOES NOT SPEAK: the pairs left unchanged. The voice's
-    // own replay refuses it, as the court's would; nothing is sent.
+    // own reconstruction refuses it, as the court's would; nothing is sent.
     let other = vec![
         (digits(&["1100", "0000"]), digits(&["1100", "0000"])),
         (digits(&["0000", "1100"]), digits(&["0000", "1100"])),

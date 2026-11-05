@@ -22,7 +22,7 @@ fn modes(m: &Mv) -> Vec<cga::MotionMode> {
 }
 
 /// HARMONIC — A TURN RETURNS AT ITS READ ORDER, OR NEVER. The 90° turn of
-/// the grid plane is one elliptic mode of order four, and its fourth power is
+/// the plane is one elliptic mode of order four, and its fourth power is
 /// the identity ray. The (3, 4, 5) turn is elliptic with no order: no power
 /// up to twice Niven's largest order returns it, and its winding is content.
 #[test]

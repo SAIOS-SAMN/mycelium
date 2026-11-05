@@ -12,15 +12,15 @@ use super::*;
 pub const CONNECTION_TAG: u8 = 0x11;
 /// A sentence: a nerve of germs. The tape after this tag is the base
 /// connection, then the germ addresses, faces and cycles. Distinct from
-/// CONNECTION_TAG so an opened-axis connection is not replayed as a sentence.
+/// CONNECTION_TAG so an opened-axis connection is not reconstructed as a sentence.
 /// FORMAT: tape tag byte.
 pub const SENTENCE_TAG: u8 = 0x12;
 /// A translation: the gauge between two sections, not a motion of a body.
-/// The court replays it by inversion of the gauge; the syllabus teaches it
+/// The court reconstructs it by inversion of the gauge; the syllabus teaches it
 /// by incidence. Same payload as a connection, then the two section addresses.
 /// FORMAT: tape tag byte.
 pub const TRANSLATION_TAG: u8 = 0x13;
-/// An optimisation: a Rewrite the court replays both ways.
+/// An optimisation: a Rewrite the court reconstructs both ways.
 /// FORMAT: tape tag byte.
 pub const REWRITE_TAG: u8 = 0x14;
 

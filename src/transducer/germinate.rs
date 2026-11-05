@@ -11,11 +11,11 @@ use crate::transducer::spelled::{PaintedSite, SectionSite};
 /// sites. The scene's ground means the site is unpainted on that side.
 pub type ResidueGerm = Vec<crate::transducer::sentence::SectionLink>;
 
-/// Mint A5's chain from two grids' painted sites — the exact coboundary.
+/// Mint A5's chain from two samples' painted sites — the exact coboundary.
 ///
-/// THE GRID IS THE THEOREM: one position holds one before and one after, so
-/// the chain read from a grid pair cannot put two transitions on one site
-/// and A5 has nothing to refuse here. The `None` answers the GRIDS — the
+/// THE SAMPLE IS THE THEOREM: one position holds one before and one after, so
+/// the chain read from a sample pair cannot put two transitions on one site
+/// and A5 has nothing to refuse here. The `None` answers the SAMPLES — the
 /// two are equal and there is no coboundary to mint — and never A5.
 pub fn germinate(a: &[PaintedSite], b: &[PaintedSite]) -> Option<crate::transducer::element::PlacedChain> {
     // Collect the union of sites with the sites' before/after symbols; a

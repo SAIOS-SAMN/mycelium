@@ -32,8 +32,8 @@
 //! space.
 //!
 //! THE MOMENTS ARE THE SITES' AS POINTS on every axis alike. The sensor's
-//! compartment is a square on the grid plane and a point along `e₃`; a turn out of
-//! the grid plane carries the square's floor onto an axis that has none, so
+//! compartment is a square on the sensor's plane and a point along `e₃`; a turn out of
+//! the sensor's plane carries the square's floor onto an axis that has none, so
 //! the floor would refuse every such turn at the sensor boundary (checklist
 //! (q)). The pose reads the sites as the points they stand at.
 
@@ -276,7 +276,7 @@ fn versor_of(r: &[Mv], n: usize) -> Result<Mv, NoPose> {
 /// Cartan–Dieudonné, even or odd, dilated and placed between the two bodies'
 /// centres, and verified by the transition's covariance on the point tower
 /// (`carried_on`, 78.38(C)) — the tower the pose reads, whose floor-free
-/// moments turn out of the grid plane. The versor where it carries, `None`
+/// moments turn out of the sensor's plane. The versor where it carries, `None`
 /// where it does not. Each candidate draws one read from the stroke (65.5):
 /// a spent stroke is the typed cut [`NoPose::Unbounded`], never "not carried".
 fn carried(

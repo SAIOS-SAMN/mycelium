@@ -679,7 +679,7 @@ impl Court {
         let words: Vec<Element> = self.provisional.scoped().map(|(_, e)| e.clone()).collect();
         let mut cover = crate::network::nerve::HomeTrie::new();
         // The fixture's act: its root, one stroke a word — fetched again, as
-        // the exchange fetches it again, while its replay is unread and moved
+        // the exchange fetches it again, while its reconstruction is unread and moved
         // on (78.153).
         for w in words {
             loop {
@@ -829,7 +829,7 @@ impl Court {
     }
 
     /// THE OFFERS THE TRANSITION JUST TAKEN EMITTED, each with its records —
-    /// what a second organ needs in order to replay them. The caller that
+    /// what a second organ needs in order to reconstruct them. The caller that
     /// ran the transition sends them when it returns. A word that left the
     /// docket within the same transition is not offered, and a word whose
     /// record does not write is not offered (STD1 3c).

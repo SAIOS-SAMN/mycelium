@@ -58,8 +58,8 @@ impl crate::transducer::family::Crystal for Court {
         crate::transducer::family::apply_form(f, x, placement, self)
     }
 
-    /// THE ONE READER OF THE WORDS THIS COURT REPLAYS AGAINST: a ruled
-    /// address, installed, or a cavity address, which resolves for replay
+    /// THE ONE READER OF THE WORDS THIS COURT RECONSTRUCTS AGAINST: a ruled
+    /// address, installed, or a cavity address, which resolves for reconstruction
     /// and is never taught (3.8, ch. 8). It read the basis alone while the
     /// citation check (`resolve_form`) admitted the cavity too, so a
     /// sentence citing a cavity word passed the check and then spoke nothing
@@ -131,7 +131,7 @@ impl Court {
     /// escrow and every release reads it, never the word's magnitude:
     ///
     /// - the μ a word can be escrowed or paid is its DISCHARGE — the lanes
-    ///   it closed, the deflation this court measures by replaying it on
+    ///   it closed, the deflation this court measures by reconstructing it on
     ///   the family it is bound to (`measured_discharge`), or a rewrite's yield
     ///   read on its carriers before less after (`settle_rewrite`);
     /// - (a) never the span it stood: `t_extent` is not μ, waiting is not
@@ -218,7 +218,7 @@ impl Court {
     /// S — A SENTENCE'S GLUING on the family it is bound to (MU-CLIENT §5.6 S,
     /// as ruled 2026-10-15). A sentence glues its words' local sections along
     /// its faces, the overlaps, and its alignment is CLOSURE ON ITS SCENE —
-    /// what the court's replay certifies before it is listed — never the
+    /// what the court's reconstruction certifies before it is listed — never the
     /// holonomy of its rings returning to the identity: a ring's holonomy is
     /// the orbit of the motion it carries (a turn closes at its period, a
     /// slide never returns, `Unbound`), and demanding that every ring return
