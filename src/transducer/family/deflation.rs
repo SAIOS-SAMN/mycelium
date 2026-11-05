@@ -296,7 +296,7 @@ fn form_deflation_read_on_ground(
     }
     // 𝒯 — THE GROUND THE CLOSURE COVERED: a chain carries no clock, so 𝒯 is
     // read off the rule's own motions — every word vertex's whole motion at
-    // each member, admitted to the tubes (78.71, `transport_order`), its null
+    // each member and every carriage its clauses state, admitted to the tubes (78.71, `transport_order`), its null
     // flux in quanta — once for each pair the form closed. Measured by whoever
     // reconstructs the form; never the span anything stood (78.149 (a)).
     // Weighed by the mass the closed pairs carried: a pair with nothing to
@@ -321,8 +321,15 @@ fn form_deflation_read_on_ground(
     DeflationRead { pay, mu, modes, remainders, unresolved, cycled, ungrounded }
 }
 
-/// EVERY WORD VERTEX'S WHOLE MOTION AND HUE MAP, member by member: its
-/// carriage composed with its rotor's base action, and the member's gauge.
+/// EVERY MOTION AND HUE MAP THE FORM SPEAKS: each word vertex's whole
+/// motion, member by member (its carriage composed with its rotor's base
+/// action, and the member's gauge), and each carriage its clauses state
+/// (78.143: the clause's versor and gauge, `RuleElement::Carriage`). A form
+/// that speaks by clauses moves what its carriages move; reading the word
+/// vertices alone read such a form as moving nothing, and a solve it closed
+/// was paid with no modes. A clause element that is no carriage (a fill, a
+/// join, a stamp or a frame act) states no versor and no hue map, so it
+/// moves no mode this reader can name.
 fn form_motions(form: &Form) -> Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)> {
     let mut out = Vec::new();
     for (_, v) in form.vertices.scoped() {
@@ -330,6 +337,11 @@ fn form_motions(form: &Form) -> Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)>
         for (_, a) in acts.scoped() {
             let Some(motion) = element::conformal_of_rotor(&derivation.rotor(), &a.carriage) else { continue };
             out.push((motion, a.gauge.clone()));
+        }
+    }
+    for lowered in &form.elements {
+        if let crate::transducer::sentence::form::rule_element::RuleElement::Carriage(c) = &lowered.element {
+            out.push((c.motion.clone(), c.gauge.clone()));
         }
     }
     out
@@ -388,23 +400,21 @@ fn pair_mass(x: &SectionSample, y: &SectionSample) -> Result<Option<u64>, crate:
 }
 
 /// THE NULL FLUX A FORM'S MOTIONS CARRY, in quanta, at the mass `mass` its
-/// closed pairs carried: each word vertex's whole motion at each member (its
-/// carriage composed with its rotor's base action) and its hue map, one field
-/// line each, admitted to fresh tubes; the transport they moved on 𝒯. `None`
-/// where no motion reads; nothing where nothing was carried.
+/// closed pairs carried: each motion the form speaks (`form_motions`: each
+/// word vertex's whole motion at each member, its carriage composed with its
+/// rotor's base action, and each carriage its clauses state) and its hue
+/// map, one field line each, admitted to fresh tubes; the transport they
+/// moved on 𝒯. The modes and the flux read one set of motions. `None` where
+/// no motion reads; nothing where nothing was carried.
 fn rule_flux(form: &Form, mass: u64) -> Option<u64> {
     use super::pairing::FieldLine;
     if mass == 0 {
         return Some(0);
     }
-    let mut lines = Vec::new();
-    for (_, v) in form.vertices.scoped() {
-        let crate::transducer::sentence::Vertex::Word { derivation, acts, .. } = v else { continue };
-        for (_, a) in acts.scoped() {
-            let Some(carriage) = element::conformal_of_rotor(&derivation.rotor(), &a.carriage) else { continue };
-            lines.push(FieldLine { carriage, gauge: a.gauge.clone(), mass, free: false, line: crate::transducer::cech::orbit::Thread::Free });
-        }
-    }
+    let lines: Vec<FieldLine> = form_motions(form)
+        .into_iter()
+        .map(|(carriage, gauge)| FieldLine { carriage, gauge, mass, free: false, line: crate::transducer::cech::orbit::Thread::Free })
+        .collect();
     if lines.is_empty() {
         return None;
     }

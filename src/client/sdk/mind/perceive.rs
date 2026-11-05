@@ -674,7 +674,7 @@ impl Mind {
                 let before = crate::transducer::sentence::rung::lexicon();
                 if let Some(a) = admission {
                     let mut budget = entity.physics.stroke();
-                    let _ = crate::transducer::mind::admit(a, &mut budget);
+                    entity.land_admission(a, &mut budget);
                 }
                 entity.understand_read(speaker, said, reads, before, evident);
                 entity.hear_next();
@@ -747,10 +747,28 @@ impl Mind {
         crate::transducer::raster::on_ground(ground, || self.admit_scene_on_ground(p))
     }
 
+    /// A LONG LAW'S ADMISSION LANDED ON THIS MIND'S FIELD (R1), its refusal
+    /// handled by name. Inside the mind's tick the field stands in the
+    /// thread's slots and the admission lands there. Outside it (a guard
+    /// settling perception between ticks) no field stands in the slots: the
+    /// refusal hands the admission back whole, and it lands by thinking in
+    /// the mind's own field. A lane past its carrier lands nothing and is
+    /// reported (rule 11).
+    fn land_admission(&mut self, a: crate::transducer::mind::Admission, budget: &mut crate::physics::Budget) {
+        use crate::transducer::mind::{admit, AdmissionRefused};
+        let landed = match admit(a, budget) {
+            Err(AdmissionRefused::NoMindThinking(a)) => self.field.think(|| admit(*a, budget)),
+            read => read,
+        };
+        if let Err(refused) = landed {
+            eprintln!("  {refused}");
+        }
+    }
+
     fn admit_scene_on_ground(&mut self, p: Perceived) {
         let mut budget = self.physics.stroke();
         if let Some(a) = p.admission {
-            let _ = crate::transducer::mind::admit(a, &mut budget);
+            self.land_admission(a, &mut budget);
         }
         let Scene { id, train, tests, reading } = p.scene;
         // 78.53 — WHAT THE COLOUR FIBRE DID, minted as a colour word on the
