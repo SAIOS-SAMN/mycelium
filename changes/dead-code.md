@@ -15,3 +15,8 @@
   `network::wire::{multiplex, demultiplex}`, and
   `verdict::{reconstruct_certificates_at, reconstruct_form_on}` with the
   `reconstruct_certificates` wrapper only they called.
+- The replaced keyed-schema API is removed: `Keyed::{read_fibre,
+  truncate_key, fibre_over, for_system}`, `coord::Any::undeclared`,
+  `Stratified::{schema, keyed}`, and the never-constructed
+  `SchemaRefusal::InvalidDepth` and `SchemaRefusal::Stratum`. The foreign-key
+  refusal of `Keyed::read_exact` is tested on a typed carrier.
