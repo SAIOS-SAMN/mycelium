@@ -27,7 +27,7 @@ fn register_reply_carries_every_law() {
 
 /// The forms rows are the `forms` crate's shells, by id, each at the
 /// version MU-EQUATIONS §11 tables: `FORMS-FRAME` 1, `FORMS-PASSAGE` 4,
-/// `FORMS-SHARES` 1, `FORMS-COORDINATE` 2.
+/// `FORMS-SHARES` 1, `FORMS-COORDINATE` 3.
 #[test]
 fn form_law_ids_equal_forms_shells() {
     assert_eq!(FORM_LAW_IDS, mycelium_sdk::forms::LAW_IDS);
@@ -37,7 +37,7 @@ fn form_law_ids_equal_forms_shells() {
             (mycelium_sdk::forms::frame::LAW_ID, 1),
             (mycelium_sdk::forms::passage::LAW_ID, 4),
             (mycelium_sdk::forms::shares::LAW_ID, 1),
-            (mycelium_sdk::forms::coordinate::LAW_ID, 2)
+            (mycelium_sdk::forms::coordinate::LAW_ID, 3)
         ]
     );
 }

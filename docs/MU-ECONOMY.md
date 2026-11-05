@@ -202,9 +202,10 @@ origin / h : S:G:T:H : K
   2026-11-05): for a holding it is LAW-COORDINATE's reading, the whole
   turns of H, and a line's receipt index is `i` (§12 item 3).
 
-`FORMS-COORDINATE` v2 holds one rational per lane. Lanes as vectors of
-exact components are the coordinate's v3, which is still to be stated
-(§12 item 1).
+`FORMS-COORDINATE` v3 holds each lane as a vector of exact signed
+components keyed by axis, H's by generator in degrees with `K` per
+component (78.173 §1). How a holding's modes read as those components is
+still to be stated (§12 item 1).
 
 ### 2.3 Roles
 
@@ -821,10 +822,10 @@ for its lessee for one window.
 
 ## 12. Open: what the model leaves to a ruling
 
-1. **Lanes as vectors in the coordinate.** `FORMS-COORDINATE` v2 holds one
-   rational per lane (78.173 §3). The coordinate whose lanes are vectors
-   of exact components (v3) is not yet stated, nor how its advance,
-   merger and fission read on modes.
+1. **Lanes as vectors in the coordinate.** `FORMS-COORDINATE` v3 holds
+   each lane as a vector of exact components keyed by axis, with the
+   advance, merger and fission per component (78.173 §1, §3). How a
+   holding's modes are keyed as those components is not yet stated.
 2. **Where a role is written.** *Closed (ruled 2026-11-05: a holding is a
    point).* A holding is one point, its coordinate. Estates nest as
    origins: a holder's estate, and a role within it (balance, bond, held

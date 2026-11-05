@@ -61,8 +61,9 @@ pub use mycelium::physics::laws::clauses::{
 
 /// THE KERNEL'S RECONSTRUCTION OF ONE FIXTURE, through the law forms: the
 /// passage's crossing (the pole swap, the span and the flux) and the riding
-/// state's pass in the exact algebra, the coordinate's order, sector, side
-/// and range. `None` where the passage refuses the input.
+/// state's pass in the exact algebra, the coordinate's order, sector
+/// (display), sides on stated bounds and range on one component. `None`
+/// where the passage refuses the input.
 pub fn reconstruct_fixture(fixture: &Fixture) -> Option<Object> {
     Some(match fixture {
         Fixture::Crossed { positive, negative, frame, flux } => {
@@ -76,16 +77,19 @@ pub fn reconstruct_fixture(fixture: &Fixture) -> Option<Object> {
             Object::Bodies(ordered)
         }
         Fixture::Sector { value, depth } => Object::Sector(Sector::holding(value, *depth)),
-        Fixture::Within { at, other, lane, depth } => match at.within(other, *lane, *depth) {
-            Ok(side) => Object::Side(side),
+        Fixture::Within { at, bounds } => match at.within(bounds) {
+            Ok(sides) => Object::Sides(sides),
             Err(refusal) => Object::Refused(refusal),
         },
-        Fixture::Range { held, at, lane, lo, hi } => {
+        Fixture::Range { held, at, lane, key, interval } => {
             let mut bodies = Bodies::new();
             for c in held {
                 bodies.hold(c.clone());
             }
-            Object::Bodies(bodies.range(at, *lane, lo, hi).bodies.to_vec())
+            match bodies.range(at, lane, key, interval) {
+                Ok(found) => Object::Bodies(found.bodies.to_vec()),
+                Err(refusal) => Object::Refused(refusal),
+            }
         }
     })
 }

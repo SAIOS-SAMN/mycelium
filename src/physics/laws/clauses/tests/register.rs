@@ -4,7 +4,7 @@
 
 use crate::physics::laws::clauses::*;
 use algebra::{base_axis, Clifford, EM};
-use forms::coordinate::Side;
+use forms::coordinate::{CoordinateRefusal, Lane, Side};
 use forms::Q;
 use num_bigint::BigInt;
 
@@ -108,34 +108,55 @@ fn register_reaches_stated_passage_objects() {
     assert_eq!((span, flux), (q(7, 3), q(1, 1)));
 }
 
-/// LAW-COORDINATE's FIXTURES REACHED: the bodies in canonical order, the
-/// eight sector indices, the six sides and the refusal of two origins,
-/// and the two ranges' bodies.
+/// The one-component value of `lane` on `c`.
+fn one(c: &forms::coordinate::Coordinate, lane: &Lane) -> Q {
+    match c.lane(lane).map(|v| v.components()) {
+        Some([(_, x)]) => x.clone(),
+        other => panic!("one component, not {other:?}"),
+    }
+}
+
+/// LAW-COORDINATE v3's FIXTURES REACHED: the bodies of 1a and 11 in
+/// canonical order, the eight sector indices (display), the six sides and
+/// the refusal of two origins, and the three ranges' bodies.
 #[test]
 fn register_reaches_stated_coordinate_objects() {
     let held = clause(forms::coordinate::LAW_ID);
     let pairs: Vec<(&Fixture, &Object)> = held.clause.fixtures.iter().zip(&held.reached).collect();
-    let Some((Fixture::Ordered { bodies }, Object::Bodies(ordered))) = pairs.iter().copied().find(|(f, _)| matches!(f, Fixture::Ordered { .. })) else {
-        panic!("the order")
-    };
-    let mut written = bodies.clone();
-    written.reverse();
-    assert_eq!(ordered, &written, "the seven bodies of 1a, in canonical order");
+    let orders: Vec<(&Vec<forms::coordinate::Coordinate>, &Vec<forms::coordinate::Coordinate>)> = pairs
+        .iter()
+        .filter_map(|(f, o)| match (f, o) {
+            (Fixture::Ordered { bodies }, Object::Bodies(ordered)) => Some((bodies, ordered)),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(orders.len(), 2, "1a and 11");
+    for (bodies, ordered) in orders {
+        let mut written = bodies.clone();
+        written.reverse();
+        assert_eq!(ordered, &written, "given in reverse, read into canonical order");
+    }
     let indices: Vec<BigInt> = pairs.iter().filter_map(|(_, o)| match o {
         Object::Sector(s) => Some(s.index.clone()),
         _ => None,
     }).collect();
     let stated: Vec<BigInt> = [2i64, 140, 8_400, 30_857, 185_142, -20, -9, 15_551_999_999].into_iter().map(BigInt::from).collect();
     assert_eq!(indices, stated);
-    let sides: Vec<Side> = pairs.iter().filter_map(|(_, o)| match o {
-        Object::Side(s) => Some(*s),
+    let sides: Vec<Vec<Side>> = pairs.iter().filter_map(|(_, o)| match o {
+        Object::Sides(s) => Some(s.sides.iter().map(|(_, side)| *side).collect()),
         _ => None,
     }).collect();
-    assert_eq!(sides, [Side::Within, Side::Above, Side::Below, Side::Within, Side::Within, Side::Above]);
-    assert!(pairs.iter().any(|(_, o)| matches!(o, Object::Refused(_))), "two origins refused");
+    let one_each = |s: Side| vec![s];
+    assert_eq!(sides, [Side::Within, Side::Above, Side::Below, Side::Within, Side::Within, Side::Above].map(one_each));
+    assert!(pairs.iter().any(|(_, o)| matches!(o, Object::Refused(CoordinateRefusal::OriginsDiffer { .. }))), "two origins refused");
     let ranges: Vec<Vec<Q>> = pairs.iter().filter_map(|(f, o)| match (f, o) {
-        (Fixture::Range { lane, .. }, Object::Bodies(b)) => Some(b.iter().map(|c| c.lane(*lane).clone()).collect()),
+        (Fixture::Range { lane: Lane::H, .. }, Object::Bodies(b)) => Some(b.iter().map(|c| c.lane(&Lane::H).and_then(|v| v.components().get(1)).map(|(_, x)| x.clone()).expect("two planes")).collect()),
+        (Fixture::Range { lane, .. }, Object::Bodies(b)) => Some(b.iter().map(|c| one(c, lane)).collect()),
         _ => None,
     }).collect();
-    assert_eq!(ranges, [vec![q(1, 2), q(1, 2), q(1, 2), q(1, 2), q(3, 5), q(7, 10), q(4, 5)], vec![q(0, 1), q(1, 4)]]);
+    assert_eq!(
+        ranges,
+        [vec![q(1, 2), q(1, 2), q(1, 2), q(1, 2), q(3, 5), q(7, 10), q(4, 5)], vec![q(0, 1), q(1, 4)], vec![q(-1, 2), q(7, 4), q(7, 4)]],
+        "S over [1/2, 9/10), G over [0, 1), and H's e_Z1Q1 over [1/3, 1/2) by e_Z2Q2: b, a, d"
+    );
 }
