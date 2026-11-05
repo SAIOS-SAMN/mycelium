@@ -9,8 +9,9 @@
 //! one-sided product `q ↦ v_k·q`, never a sandwich, taking even degrees to
 //! odd ones. That product needs the multivector algebra, which this crate
 //! does not reach (it depends on the exact rationals alone), so the product
-//! and its fixtures stand with the multivector algebra, the library's
-//! `transducer::cga` (78.172 §5).
+//! and its fixtures stand with the multivector algebra: the product is the
+//! library's `transducer::cga::Clifford::product`, and the four fixtures
+//! are claims in `src/transducer/cga/tests/passage.rs` (78.172 §5).
 //!
 //! WHAT STANDS HERE. A crossing moves no reach: the reach it carries in and
 //! the throat's reach both stand in `v_k·q`, in exchanged places, and

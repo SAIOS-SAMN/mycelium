@@ -1265,8 +1265,9 @@ Concordance hash served and signatures verified. Each phase is one commit:
      in); `pass_share` reads a share from a plane's other axis,
      `1 − δ`. The product needs the multivector algebra, which `forms`
      cannot reach without a dependency cycle, so its four fixtures stand
-     with the algebra (`transducer::cga`), once the algebra reads its
-     signature from data.
+     with the algebra: claims on `transducer::cga::Clifford::product` in
+     `src/transducer/cga/tests/passage.rs`, with the horizon one-way and
+     two planes anticommuting over every frame plane the algebra holds.
    - **The signature is data** (v0.4.0; no wire or layout change): the
      multivector carries the mask of its negative generators beside its
      `n` (`Mv::negatives`), and the product reads each square from it.
