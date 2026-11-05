@@ -68,7 +68,7 @@ fn incidences_of_0b148d64_pair_count() {
     assert!(need - budget.remaining() <= need, "the spend stays inside the need");
     // A shrink whose boundaries fall inside output compartments projects
     // onto no sample: the turn `1/18` lands on no boundary of period 7.
-    assert_eq!(t.projected(), Err(TransductionRefusal::OffSite { turn: Turn::new(1, 18), period: 7 }));
+    assert_eq!(t.projected(), Err(TransductionRefusal::OffSite { turn: Turn::of(1, 18), period: 7 }));
 }
 
 /// Equal-extent fixtures of every shape the bands distinguish: one body,
@@ -208,7 +208,7 @@ fn transduction_carries_bodies_or_names_mixed() {
 #[test]
 fn projection_refuses_off_site() {
     let t = record(&sample(&["1", "2"]), &sample(&["1", "1", "2"]));
-    assert_eq!(t.projected(), Err(TransductionRefusal::OffSite { turn: Turn::new(1, 2), period: 3 }));
+    assert_eq!(t.projected(), Err(TransductionRefusal::OffSite { turn: Turn::of(1, 2), period: 3 }));
     let mono = record(&sample(&["11", "11"]), &sample(&["111", "121", "111"]));
     assert_eq!(changes(&mono.projected().expect("seams land")), vec![(vec![1, 1], vec![1], vec![2])]);
 }

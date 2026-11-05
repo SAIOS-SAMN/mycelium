@@ -19,16 +19,16 @@ fn factoring_maps_site_exactly() {
         let mut seen = Vec::new();
         for s in 0..12 {
             let (coarse, fine) = f.nested(s).expect("a site of the phase");
-            assert_eq!((coarse, fine), (Turn::new(s / b, a), Turn::new(s % b, b)));
+            assert_eq!((coarse, fine), (Turn::of(s / b, a), Turn::of(s % b, b)));
             assert!(!seen.contains(&(coarse, fine)), "one pair per site");
             seen.push((coarse, fine));
-            assert_eq!(f.joined(coarse, fine), Some(Turn::new(s, 12)), "read back exactly");
+            assert_eq!(f.joined(coarse, fine), Some(Turn::of(s, 12)), "read back exactly");
             let a_q = crate::core::Q::from_integer(a.into());
-            assert_eq!(Turn::new(s, 12).value(), coarse.value() + fine.value() / a_q);
+            assert_eq!(Turn::of(s, 12).value(), coarse.value() + fine.value() / a_q);
         }
         assert_eq!(seen.len(), a * b);
         assert_eq!(f.nested(12), None, "no site past the extent");
-        assert_eq!(f.joined(Turn::new(a, a), Turn::new(0, b)), None, "the seam's far side is no site");
+        assert_eq!(f.joined(Turn::of(a, a), Turn::of(0, b)), None, "the seam's far side is no site");
     }
     assert!(Factorings::of(7).candidates().is_empty(), "a prime extent stays one phase");
     assert!(Factorings::of(1).candidates().is_empty());

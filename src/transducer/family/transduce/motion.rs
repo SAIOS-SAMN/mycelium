@@ -221,7 +221,7 @@ impl SignedPermutation {
             let &t = turns.get(k).ok_or(TransductionRefusal::Oblique)?;
             out.push(match s {
                 Sense::Kept => t,
-                Sense::Reversed => Turn::new(t.period - t.index, t.period),
+                Sense::Reversed => t.reversed(),
             });
         }
         Ok(out)

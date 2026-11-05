@@ -1398,17 +1398,18 @@ Each phase lands on its own branch, one item per commit:
      (`locates_stratum`) and the starved root in
      `client/sdk/mind/learn.rs` (`CourtPace::starved` holds a `Locator`)
      are compared in the address sense.
-   - Not registered: the guards of MU-ANTI-FLATTENING clauses 12 and 14,
-     since neither has a guarding type and a claim in the tree. Clause
-     12's `Turn` has public fields and `Turn::new`, the specified
-     `Turn::of(r, h)` and its `compile_fail` claim are not written, and
-     the refinement it would refuse is deleted. Clause 14's
-     `Court::restore` returns `bool`, not a `Reconstructed<State>`, and
+   - Registered with T3 (v0.4.0, #26): the guard of MU-ANTI-FLATTENING
+     clause 12. `Turn` has private fields and one constructor,
+     `Turn::of(r, h)`, proved by the `compile_fail` claim
+     `turn_has_one_constructor`.
+   - Not registered: the guard of clause 14, which has no guarding type
+     and no claim in the tree. `Court::restore` returns `bool`, not a
+     `Reconstructed<State>`, and
      `restore_reconstructs_and_checks_receipts` is not written.
    - Open (the next stage): `Cite::Root`'s hash, still bare, which would
      drop `PartialEq` from `Cite`; the stratum root itself
      (`transducer::sheaf::StratumDigest::root`, a `Vec<u8>`) typed at its
-     source; the clause 12 and 14 guard types and claims; the report of
+     source; the clause 14 guard type and claim; the report of
      changed document sentences. The report of changed document sentences that put a typed
      term beside an admission verb is not built: it needs a base commit
      the gate does not hold.
