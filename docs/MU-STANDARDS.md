@@ -145,7 +145,9 @@ cannot allow anything. What a line used to do is in git. A contributor who
 touches a function removes such comments from it in the same commit.
 
 2.9 **Exact arithmetic.** Every quantity is exact: ℚ, or the multivectors
-of `Cl(n+1, 1)`(ℚ), with `n` read from the data (`Cl(4,1)` at `n = 3`). `float_arithmetic`, `cast_precision_loss` and
+of `Cl(p, q)`(ℚ), with the rank and the signature read from the data:
+`Cl(n+1, 1)` for the conformal model of a perception (`Cl(4,1)` at
+`n = 3`), and a value's own negative generators otherwise (78.172). `float_arithmetic`, `cast_precision_loss` and
 `cast_possible_truncation` are denied in `Cargo.toml`; a narrowing `as`
 stands only under an `#[expect]` naming where its bound comes from. A
 decimal approximation of an irrational is not served anywhere: in a value,
@@ -305,7 +307,8 @@ deleted in the commit that meets it, and the commit message names the
 claim it dropped. A test whose claim still holds on a new carrier is
 rewritten, never deleted.
 
-3.8 **The geometry is the engine's, `Cl(n+1,1)(ℚ)`.** No test and no code
+3.8 **The geometry is the engine's, `Cl(p,q)(ℚ)`** (conformal `Cl(n+1,1)`
+for perception, the signature read from the data). No test and no code
 decides by a Euclidean oracle: no orthogonal matrix, no `Σx²`, no dot
 product and no `RMRᵀ` standing for an action or for the equality of two
 shapes (rule 16: an action is an algebra element, never a matrix). Two

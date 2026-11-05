@@ -21,7 +21,7 @@ specifications could be read as more than one, this table settles it.
 | **Client (mycelium-client)** | The reference mind: one AI agent process | `src/client/`, `src/bin/mycelium-client/` | mind, voice, entity, genome, dialect, winding, orbit, carrier |
 | **SDK** | The client surface any third-party agent is built on: the `mycelium-sdk` crate | `sdk/` (re-exporting `src/client/sdk/` and `src/anastome/dialogue/`) | session, seat, rule element |
 | **Wire (Anastome)** | The signed acts between every party | `src/anastome/` | act, ACT_*, canonical encoding |
-| **Shared algebra** | `Cl(n+1, 1)` (non-Euclidean, never scalar), the alphabet, words, sentences, used by client and court alike | `src/core/`, `src/transducer/` | versor, letter, word, sentence, chart, holonomy |
+| **Shared algebra** | `Cl(n+1, 1)` within `Cl(p, q)` (non-Euclidean, never scalar), the alphabet, words, sentences, used by client and court alike | `src/core/`, `src/transducer/` | versor, letter, word, sentence, chart, holonomy |
 | **Law forms** | L0's forms over a universe's constants, linked by every kernel | `forms/`, `src/physics/` | L0, law form, shell |
 | **Kernel** | Any program that signs the Concordance and runs a universe on the network | Outside this repository | domain, reserve tier, house, physics profile |
 | **Game kernel** | A kernel whose universe is a game: xylarium, netstratum, barren-realms | Separate repositories | planetary mind, people, civilization, ancient, progenitor, steward, sovereign, captain, realm, virtue book, ascension ladder |
@@ -211,7 +211,9 @@ senses that kernel builds for it.
 
 | Term | Meaning |
 |---|---|
-| **Cl(n+1, 1)** | The algebra of Mycelium, with `n` read from the data (MU-RECURSION 71). `Cl(4,1)` is its value at `n = 3`. It is the algebra of the isometries of hyperbolic space `Hⁿ⁺¹`, so the geometry is non-Euclidean. Every quantity is one of its multivectors, exact and never scalar; a number appears only as the gauge of a one-dimensional reading (MU-SENSING §3.7). |
+| **Cl(n+1, 1)** | The algebra of Mycelium, with `n` read from the data (MU-RECURSION 71). `Cl(4,1)` is its value at `n = 3`. It is the algebra of the isometries of hyperbolic space `Hⁿ⁺¹`, so the geometry is non-Euclidean. Every quantity is one of its multivectors, exact and never scalar; a number appears only as the gauge of a one-dimensional reading (MU-SENSING §3.7). It is `Cl(p, q)` with `e₋` the one negative generator. |
+| **Cl(p, q)** | The algebra with its signature read from data: each value carries the mask of its negative generators beside its `n`, and the product reads each generator's square from it (MU-SENSING §3.7; `transducer::cga::Mv::negatives`). Every value of `Cl(n+1, 1)` carries `e₋` alone. |
+| **Clifford** | A value of `Cl(p, q)` whose negative mask is other than `e₋` alone (`transducer::cga::Clifford`). It composes only through products that refuse two signatures disagreeing on a generator both algebras hold (`SignatureRefusal::Mismatched`), and it has no wire writing. |
 | **Versor** | A product of vectors of `Cl(n+1, 1)`. It acts on geometry by the sandwich `V x Ṽ`, giving rotations, translations, dilations and reflections exactly. |
 | **Letter** | An exact rotation from which words are built. The seventeen **seed** letters never change; a court may **admit** a letter for a prime the seed does not reach, and a mind may construct **dialect** letters of its own, which reach the shared language only by a court ruling (`docs/MU-ALPHABET.md`). |
 | **Word** | A product of letters. A word is a vertex whose meaning is its versor. |

@@ -32,6 +32,58 @@ such change is named here.
 - Claims `root_at_another_place_refuses_without_held_receipt`,
   `root_at_another_height_refuses`; the #88 claims stand.
 
+### LAW-PASSAGE v2's fixtures are claims in the algebra (2026-11-05)
+- **Network contract:** no wire byte, act, encoding or ledger layout
+  changes, and no law version moves.
+- The four joint-read fixtures of proposal 78.172 §5 are claims on
+  `Clifford::product` in `src/transducer/cga/tests/passage.rs`, each
+  frame plane's closed pole squaring to +1 and its open pole to −1: the
+  null direction annuls twice (`v·v·q = 0`); one crossing takes an even
+  state to degrees 1 and 3 only; `[e_Z1Q1, e_Z1Q2] = −2·e_Q1Q2`;
+  `(e_Z1Z2 + e_Q1Z2)² = 0`.
+- Beside them, over every frame plane the algebra holds: every horizon
+  is one-way, and passages in different planes anticommute.
+- `forms::passage` does not hold the product: `forms` cannot reach the
+  algebra without a dependency cycle, and 78.172 says where the
+  fixtures stand.
+
+### The algebra's signature is data: `Cl(n+1, 1)` within `Cl(p, q)` (2026-11-05)
+- **Network contract:** no wire byte, act, encoding or ledger layout
+  changes, and no law version moves. Every value the wire carries is in
+  `Cl(n+1, 1)`, and `Mv::from_bytes` reads it there; the encoding carries
+  no signature. A value of another signature has no wire writing until
+  the court reads one, which will be a v0.4.0 break of its own.
+- Operator ruling: the court's multivector is generalised from
+  `Cl(n+1, 1)` to `Cl(p, q)`. `Mv` carries the mask of its negative
+  generators beside its `n` (`Mv::negatives`), and the product's metric
+  sign is read from it: −1 for each shared generator the mask names.
+- Every value made by a constructor, a product or the wire carries `e₋`
+  alone, so `Cl(n+1, 1)` is unchanged: the product over every blade pair
+  at `n ≤ 4` equals the conformal metric's, and the oracle golden
+  (`tests/oracle.golden`) reproduces line for line.
+- `transducer::cga::Clifford` holds a value of any other signature. It
+  composes only through `product`, `sum` and `difference`, each of which
+  refuses two signatures that disagree on a generator both algebras hold
+  `SignatureRefusal::Mismatched`, naming those generators; a mask past
+  `MAX_N` is refused `Malformed`. It has no unchecked product (a
+  `compile_fail` doc test).
+
+### LAW-PASSAGE v2: the linear passage struck (2026-11-05)
+- **Network contract:** no wire byte, act, encoding or ledger layout
+  changes. The shell `FORMS-PASSAGE` steps from version 1 to 2.
+- Operator ruling: the reach passage `R ↦ 2H − R` is struck. Proposal
+  78.172 is amended to the passage law accepted by both operators: a
+  body's state is an even multivector `q`, and one crossing in plane `k`
+  is the one-sided product `q ↦ v_k·q` with `v_k = H_k·e_Zk + R_k·e_Qk`,
+  `e_Zk² = +1`, `e_Qk² = −1`. Its four fixtures were agreed on
+  2026-11-05 by mycelium, netstratum and xylarium (status: Fixtures
+  agreed, MU-RELEASE §3a step 4).
+- `Throat::pass` and version 1's fixtures 1, 2, 3 and 6 are removed with
+  their tests. `Throat::verify` refuses a stated moved reach (`H²/R`
+  among them) `NotLawful`, naming the claim against the reach carried
+  in. `pass_share` stays as a share read from a plane's other axis, not
+  the passage.
+
 ### A gap past the capacity closes through a fold root (track 24, #88)
 - **Network contract:** no wire byte, act, encoding or ledger layout
   changes. The catch-up ask and the root answer of 78.147 carry it.
