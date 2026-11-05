@@ -175,8 +175,8 @@ it (ROADMAP track 25, phase X0):
 
 | Regression | Guard | How it is proved | Status |
 |---|---|---|---|
-| A digest compared to admit an object (clause 13) | The bare `[u8; 32]` compared at admission is typed by its sense (`court::admission::digest`): `Locator` (address), `Predecessor` (link: the digest a record names the record before it by) and `Commitment`. None implements `PartialEq`. The comparisons are named methods: `Locator::locates`, `Predecessor::continues` (with `forks` for two records at one place and `cites` for a citation), and `Commitment::binds(&Reconstructed<T>)`. The last takes the reconstructed object, so a commitment cannot be compared before reconstruction. | A `compile_fail` doc test per type for `==` (`address_has_no_equality`, `predecessor_has_no_equality`, `commitment_has_no_equality`); the claim `commitment_binds_only_a_reconstructed_object` | **Built** at the receipt path's admission sites; the record fields themselves are still bare (ROADMAP track 25, X0) |
-| Admission without reconstruction (clause 13) | `Reconstructed<T>` has a private field, and only the law's reconstruction builds it (`Reconstructed::receipt`, `Reconstructed::receipts`). Each `admit_*` of the receipt path takes a `Reconstructed<T>` and never the claimed `T`. | A `compile_fail` doc test that builds one outside the laws (`reconstructed_is_built_only_by_the_laws`) | **Built** for the receipt path; the vertex's admissions take it with X2 |
+| A digest compared to admit an object (clause 13) | The bare `[u8; 32]` compared at admission is typed by its sense (`court::admission::digest`): `Locator` (address), `Predecessor` (link: the digest a record names the record before it by) and `Commitment`. None implements `PartialEq`. The comparisons are named methods: `Locator::locates`, `Predecessor::continues` (with `forks` for two records at one place and `cites` for a citation), and `Commitment::binds(&Reconstructed<T>)`. The last takes the reconstructed object, so a commitment cannot be compared before reconstruction. | A `compile_fail` doc test per type for `==` (`address_has_no_equality`, `predecessor_has_no_equality`, `commitment_has_no_equality`); the claim `commitment_binds_only_a_reconstructed_object` | **Built** at the receipt path's admission sites and on the record fields (`Parent::hash`, `KStepReceipt::chain_hash`, `Root::hash`, `Admitted::Equivocation` as `Predecessor`; `SignedPrefix::prev_receipt_hash` as `Commitment`), so the records themselves have no `==`; `Cite::Root`'s hash is still bare (ROADMAP track 25, X0) |
+| Admission without reconstruction (clause 13) | `Reconstructed<T>` has a private field, and only the law's reconstruction builds it (`Reconstructed::receipt`, `Reconstructed::receipts`). Each `admit_*` of the receipt path takes a `Reconstructed<T>` and never the claimed `T`. | A `compile_fail` doc test that builds one outside the laws (`reconstructed_is_built_only_by_the_laws`); one that admits a claimed fold at the vertex (`vertex_admits_only_a_reconstructed_fold`) | **Built** for the receipt path, `ReceiptChain::admit`, and the vertex's `admit_uplink`, `admit_chained` and `admit_domain` (`Reconstructed::fold`, `Reconstructed::domain`); the crossing's content is reconstructed with X2 |
 | A common grid past the sensor (clause 12) | The refinement onto a common grid is removed (the transduction replaced it in v0.3.0 T2); the guard keeps any such refinement from being reached past the sensor's intake. A site's lift has one constructor, `Turn::of(r, h)`, held in ℚ/ℤ. | A `compile_fail` doc test that calls the refinement from cognition; the transduction's claims (track 25, X5) | **Specified** |
 | Replay or rebuild used to verify (clause 14) | Identifiers that verify carry `reconstruct` (track 11). A restore returns a `Reconstructed<State>` checked against its receipts, never a replayed one. | The restore claim `restore_reconstructs_and_checks_receipts` | **Specified** |
 
@@ -185,7 +185,18 @@ regression, its ruling, the guarding type, and the claim that proves it
 (a `#[test]` fn, or a `compile_fail` doc test whose comment names the
 claim). The gate refuses a register entry whose guard type or claim is
 named empty or missing from the tree, as `numbers.rs` does for the open
-numbers. A report of changed document sentences that put a typed
+numbers. The guards of clauses 12 and 14 are not in the register, since
+neither has both a guarding type and a claim in the tree. For clause 12,
+`Turn` (`transducer::family::transduce::turn`) has public fields and a
+public `Turn::new`, so it does not make a common grid unwritable. The
+specified constructor `Turn::of(r, h)` and the claim that calls the
+refinement from cognition do not exist. The refinement itself
+(`CommonRefinement`) is deleted, so a `compile_fail` test naming it
+would only prove a deletion. For clause 14, `Court::restore` returns
+`bool` and not a `Reconstructed<State>`, and the claim
+`restore_reconstructs_and_checks_receipts` is not written. Each guard
+enters the register with the phase that builds its type and claim
+(clause 12's with ROADMAP track 25, X5). A report of changed document sentences that put a typed
 term (reconstruction, rebuild, replay, resend, digest, hash, lattice,
 grid) beside an admission verb (admit, verify, accept, check) is **open**:
 it would only report and never refuse, and reading which documents

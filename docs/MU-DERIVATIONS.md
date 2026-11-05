@@ -2050,6 +2050,12 @@ sensor and where a grid is spoken.
   (14 045) and on four more pairs before the common refinement was deleted. The input's
   boundary `1/18` lands inside an output compartment of period 7, so its
   projection refuses `OffSite` and its route waits for the turn-native chart.
+- `0b148d64` re-measured (mycelium#87, main 5815d4e4, release,
+  `mycelium-soak --chart`): `route::routes_of` routes none of its three
+  pairs, so the intake charts nothing for the task. Per pair, the demand's
+  `invariant_of` takes 7–15 ms and its widest coordinate is 36 bits; the
+  `≥ 19 s` above was the `K_lcm` chain's. Claim
+  `chart_of_0b148d64_pairs_read_on_metabolic_budget`, an observation.
 - **O9** (the demand payload), read: the readers of a demand's links read
   metric — `memo::ring_answer` and `memo::deformation_answer` take a
   carriage between the demand's two sides, `field::hold` a transport over

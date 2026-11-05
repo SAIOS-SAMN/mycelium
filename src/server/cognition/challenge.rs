@@ -191,7 +191,7 @@ impl Court {
                 }
                 self.ledgers.demands.remove(&key);
                 self.ledgers.withdrawn.insert(&key, r.stamp.h);
-                Challenged::Reopened { at: r.stamp, receipt: r.chain_hash, closes: self.window_close(r.stamp.h).ok() }
+                Challenged::Reopened { at: r.stamp, receipt: r.chain_hash.bytes(), closes: self.window_close(r.stamp.h).ok() }
             }
             Challenge::Demand { .. } => {
                 if rec.upheld.is_some() {
@@ -207,7 +207,7 @@ impl Court {
                         .get(&key)
                         .filter(|(_, filer)| *filer == c.who)
                         .and_then(|(at, _)| Stamp::from_key(at))
-                        .and_then(|at| Some((at, self.chain.node(&at)?.chain_hash)));
+                        .and_then(|at| Some((at, self.chain.node(&at)?.chain_hash.bytes())));
                     return match original {
                         Some((at, receipt)) => Challenged::Demanded { at, receipt, deadline: self.window_close(at.h).ok() },
                         None => refuse(R::Demanded),
@@ -221,7 +221,7 @@ impl Court {
                     held.demanded = Some(r.stamp.h);
                 }
                 self.ledgers.demands.insert(&key, (r.stamp.key(), c.who));
-                Challenged::Demanded { at: r.stamp, receipt: r.chain_hash, deadline: self.window_close(r.stamp.h).ok() }
+                Challenged::Demanded { at: r.stamp, receipt: r.chain_hash.bytes(), deadline: self.window_close(r.stamp.h).ok() }
             }
             Challenge::Evidence { .. } | Challenge::Open { .. } | Challenge::Part { .. } => {
                 if rec.upheld.is_some() {
@@ -298,7 +298,7 @@ impl Court {
                         held.upheld = Some(rec.prefix);
                     }
                     self.mark_persist();
-                    return Challenged::Upheld { at: r.stamp, receipt: r.chain_hash, prefix: rec.prefix };
+                    return Challenged::Upheld { at: r.stamp, receipt: r.chain_hash.bytes(), prefix: rec.prefix };
                 }
                 // The exposure is read before reversal moves it; a defect that
                 // cannot be measured stands as the whole exposure.
@@ -308,11 +308,11 @@ impl Court {
                     None => exposure.clone(),
                 };
                 let Some(r) = self.seal_challenge(c, FALSIFIED, rec.prefix) else { return refuse(R::LineRefused) };
-                let unwound = self.reverse(&key, (r.stamp, r.chain_hash));
+                let unwound = self.reverse(&key, (r.stamp, r.chain_hash.bytes()));
                 // 78.129, D2.1–D2.2 — the slash: the bond against the
                 // exposure, its bounty the defect against the exposure.
-                self.slash(&rec.tier, c.who, &exposure, &lie, (r.stamp, r.chain_hash));
-                Challenged::Falsified { at: r.stamp, receipt: r.chain_hash, unwound: count(unwound) }
+                self.slash(&rec.tier, c.who, &exposure, &lie, (r.stamp, r.chain_hash.bytes()));
+                Challenged::Falsified { at: r.stamp, receipt: r.chain_hash.bytes(), unwound: count(unwound) }
             }
             Challenge::Default { .. } => {
                 if rec.upheld.is_some() {
@@ -326,9 +326,9 @@ impl Court {
                 // stands unproved, so its defect is its whole exposure.
                 let exposure = self.exposure_of(&key);
                 let Some(r) = self.seal_challenge(c, FALSIFIED, [0; 32]) else { return refuse(R::LineRefused) };
-                let unwound = self.reverse(&key, (r.stamp, r.chain_hash));
-                self.slash(&rec.tier, c.who, &exposure, &exposure, (r.stamp, r.chain_hash));
-                Challenged::Falsified { at: r.stamp, receipt: r.chain_hash, unwound: count(unwound) }
+                let unwound = self.reverse(&key, (r.stamp, r.chain_hash.bytes()));
+                self.slash(&rec.tier, c.who, &exposure, &exposure, (r.stamp, r.chain_hash.bytes()));
+                Challenged::Falsified { at: r.stamp, receipt: r.chain_hash.bytes(), unwound: count(unwound) }
             }
             Challenge::Correction { child, holder, amount, .. } => {
                 if c.who != rec.tier {
@@ -351,7 +351,7 @@ impl Court {
                 };
                 self.ledgers.discharged.insert(&k, (*holder, *amount));
                 self.mark_persist();
-                Challenged::Discharged { at: r.stamp, receipt: r.chain_hash }
+                Challenged::Discharged { at: r.stamp, receipt: r.chain_hash.bytes() }
             }
         }
     }

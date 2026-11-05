@@ -26,7 +26,7 @@ fn head_height_equals_one_plus_max_of_parents() {
     step(&mut b, Vec::new());
     let bh = step(&mut b, Vec::new());
     assert_eq!(b.head_height(), 2);
-    a.admit(bh.clone());
+    a.admit(super::fixtures::reconstructed(&bh));
     step(&mut a, vec![cite(&bh)]);
     assert_eq!(a.head_height(), 1 + 2, "h = 1 + max(h(prev)=1, h(parent)=2)");
 }
@@ -45,12 +45,12 @@ fn append_stands_act_above_cited_parent() {
     let parent = b.head().expect("b has acted").clone();
     assert_eq!(parent.stamp.h, 3);
     let mut c = ReceiptChain::with_signer([3; 32]);
-    c.admit(parent.clone());
+    c.admit(super::fixtures::reconstructed(&parent));
     let first = step(&mut c, vec![cite(&parent)]);
     assert_eq!((first.stamp.k, first.stamp.h), (0, 3 + 1), "K 0, and one above the parent it cites");
     assert!(c.verify_chain_integrity(), "the ledger re-derives it");
     let mut d = ReceiptChain::with_signer([4; 32]);
-    d.admit(parent);
+    d.admit(super::fixtures::reconstructed(&parent));
     assert!(
         matches!(
             crate::court::admission::admit_backfilled(&crate::court::admission::Reconstructed::receipt(&first).expect("re-derives"), &d),
@@ -75,7 +75,7 @@ fn from_nodes_rehydrates_only_with_cited_peer_nodes() {
 
     let mut c = ReceiptChain::with_signer([1; 32]);
     step(&mut c, Vec::new());
-    c.admit(head.clone());
+    c.admit(super::fixtures::reconstructed(&head));
     let citing = step(&mut c, vec![cite(&head)]);
     assert_eq!(c.head_height(), 1 + 1, "h = 1 + max(h(prev)=0, h(parent)=1)");
     let line: Vec<KStepReceipt> = c.own().collect();
@@ -113,12 +113,12 @@ fn from_line_round_trips() {
     let p0 = step(&mut peer, Vec::new());
     let mut c = ReceiptChain::with_signer([1; 32]);
     step(&mut c, Vec::new());
-    c.admit(p0.clone());
+    c.admit(super::fixtures::reconstructed(&p0));
     step(&mut c, vec![cite(&p0)]);
     let tape = c.line_image().expect("the line writes");
     let (back, torn) = ReceiptChain::from_line(&tape).expect("and reads back");
     assert!(!torn, "whole");
-    assert_eq!(back.nodes().collect::<Vec<_>>(), c.nodes().collect::<Vec<_>>());
+    assert!(super::fixtures::one_run(&back.nodes().collect::<Vec<_>>(), &c.nodes().collect::<Vec<_>>()));
     assert_eq!((back.head_k(), back.head_height(), back.head_hash()), (c.head_k(), c.head_height(), c.head_hash()));
     assert_eq!(back.line_head(&[2; 32]).map(|r| r.stamp), Some(p0.stamp), "the peer's line is read off the same file");
 }
@@ -133,11 +133,12 @@ fn height_of_finds_held_nodes_at_stamps() {
     let mut c = ReceiptChain::with_signer([1; 32]);
     step(&mut c, Vec::new());
     step(&mut c, Vec::new());
-    c.admit(p0.clone());
+    c.admit(super::fixtures::reconstructed(&p0));
     for r in c.own() {
         assert_eq!(c.height_of(&cite(&r)), Some(r.stamp.h), "its own, at its stamp");
     }
     assert_eq!(c.height_of(&cite(&p0)), Some(0), "and one it admitted");
-    assert_eq!(c.height_of(&Parent { at: p0.stamp, hash: [0xab; 32] }), None, "a stamp held under another hash is unmeasured");
+    let elsewhere = Parent { at: p0.stamp, hash: crate::court::admission::Predecessor::of_bytes([0xab; 32]) };
+    assert_eq!(c.height_of(&elsewhere), None, "a stamp held under another hash is unmeasured");
     assert_eq!(c.at_tick(0).len(), 2, "tick 0 holds this chain's genesis and the peer's: the mesh's width there");
 }

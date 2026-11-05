@@ -27,8 +27,14 @@ fn land(file: &mut Vec<u8>, w: LineWrite) {
 fn same(file: &[u8], c: &ReceiptChain) {
     let (back, torn) = ReceiptChain::from_line(file).expect("the line reads");
     assert!(!torn);
-    assert_eq!(back.nodes().collect::<Vec<_>>(), c.nodes().collect::<Vec<_>>(), "the same nodes");
-    assert_eq!((back.head_stamp(), back.root()), (c.head_stamp(), c.root()), "on the same head and root");
+    assert!(super::fixtures::one_run(&back.nodes().collect::<Vec<_>>(), &c.nodes().collect::<Vec<_>>()), "the same nodes");
+    assert_eq!(back.head_stamp(), c.head_stamp(), "on the same head");
+    let roots = match (back.root(), c.root()) {
+        (None, None) => true,
+        (Some(a), Some(b)) => a.restates(&b),
+        _ => false,
+    };
+    assert!(roots, "and the same root");
 }
 
 /// WHAT WAS FILED SINCE THE LAST WRITE IS APPENDED, a fold is its root and
@@ -53,8 +59,8 @@ fn line_write_appends_in_order_and_round_trips() {
     for _ in 0..4 {
         step(&mut c, Vec::new());
     }
-    c.admit(e0.clone());
-    c.admit(e1.clone());
+    c.admit(super::fixtures::reconstructed(&e0));
+    c.admit(super::fixtures::reconstructed(&e1));
     let grown = c.line_write().expect("writes").expect("what was filed");
     assert!(!grown.whole, "what was filed is appended");
     land(&mut file, grown);
@@ -70,13 +76,13 @@ fn line_write_appends_in_order_and_round_trips() {
     // The peer's fold sheds its line here: what left is named.
     let eshut = close(&mut e);
     let (_, root) = e.fold_before(eshut.stamp.place()).expect("the peer folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.signer(), root.at), hash: root.hash }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.signer(), root.at), hash: root.hash.bytes() }];
     let efold = e.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node").clone();
     for _ in 0..4 {
         step(&mut c, Vec::new());
     }
-    c.admit(eshut.clone());
-    c.admit(efold);
+    c.admit(super::fixtures::reconstructed(&eshut));
+    c.admit(super::fixtures::reconstructed(&efold));
     assert_eq!(c.shed_folded(|_| false), 3, "the peer's two acts and its close leave");
     let shed = c.line_write().expect("writes").expect("what left");
     assert!(!shed.whole, "two that the file carries left, against six that stand: named, appended");
@@ -127,23 +133,25 @@ fn line_write_round_trips_evicted_stamp_refiled() {
     land(&mut file, c.line_write().expect("writes").expect("the first write"));
     same(&file, &c);
 
-    assert_eq!(c.evict(&f1.stamp).map(|r| r.chain_hash), Some(f1.chain_hash), "the top leaves");
+    use crate::court::admission::Predecessor;
+    let named = |r: &KStepReceipt, held: &KStepReceipt| Predecessor::cites(&Parent::of(r), &Parent::of(held));
+    assert!(c.evict(&f1.stamp).is_some_and(|r| named(&r, &f1)), "the top leaves");
     assert_eq!(c.line_head(&[4; 32]).map(|r| r.stamp), Some(f0.stamp), "the line's top follows it down");
-    assert_eq!(c.evict(&f0.stamp).map(|r| r.chain_hash), Some(f0.chain_hash), "then the genesis");
-    assert_eq!(c.line_head(&[4; 32]), None, "the line holds nothing");
-    assert_eq!(c.evict(&c.head_stamp().expect("own head")), None, "an own node is never evicted");
+    assert!(c.evict(&f0.stamp).is_some_and(|r| named(&r, &f0)), "then the genesis");
+    assert!(c.line_head(&[4; 32]).is_none(), "the line holds nothing");
+    assert!(c.evict(&c.head_stamp().expect("own head")).is_none(), "an own node is never evicted");
 
     let mut e = ReceiptChain::with_signer([4; 32]);
     let e0 = step(&mut e, Vec::new());
     assert_eq!(e0.stamp, f0.stamp, "the signer's genesis stands at the forged genesis's stamp");
-    assert_ne!(e0.chain_hash, f0.chain_hash, "with another hash");
-    c.admit(e0.clone());
+    assert!(Predecessor::of(&e0).forks(&Predecessor::of(&f0)), "with another hash");
+    c.admit(super::fixtures::reconstructed(&e0));
     let w = c.line_write().expect("writes").expect("what left and what was filed");
     assert!(!w.whole, "two that left against four that stand: appended");
     land(&mut file, w);
     same(&file, &c);
     let (back, _) = ReceiptChain::from_line(&file).expect("the line reads");
-    assert_eq!(back.line_head(&[4; 32]).map(|r| r.chain_hash), Some(e0.chain_hash), "read back, the signer's genesis stands");
+    assert!(back.line_head(&[4; 32]).is_some_and(|r| named(&r, &e0)), "read back, the signer's genesis stands");
 }
 
 /// A FRAME THAT RUNS PAST THE END DID NOT LAND: the line stands on the
@@ -160,6 +168,6 @@ fn from_line_keeps_frames_before_torn_frame() {
     file.extend_from_slice(&next.bytes[..next.bytes.len() - 1]);
     let (mut back, torn) = ReceiptChain::from_line(&file).expect("the line reads");
     assert!(torn, "the torn frame is named");
-    assert_eq!(back.nodes().collect::<Vec<_>>(), before.nodes().collect::<Vec<_>>(), "on the frames before it");
+    assert!(super::fixtures::one_run(&back.nodes().collect::<Vec<_>>(), &before.nodes().collect::<Vec<_>>()), "on the frames before it");
     assert!(back.line_write().expect("writes").expect("a write").whole, "the next write is the whole");
 }

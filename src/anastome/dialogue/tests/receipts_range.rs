@@ -31,7 +31,7 @@ fn receipts_request_round_trips_with_reply_within_budget() {
     }
     let line: Vec<_> = c.own().collect();
     let all = encode_receipts_reply(&line, 1 << 16);
-    assert_eq!(decode_receipts_reply(&all), Some(line.clone()), "the page reads back whole");
+    assert!(decode_receipts_reply(&all).is_some_and(|back| super::fixtures::one_run(&back, &line)), "the page reads back whole");
     // The first two nodes' own widths: genesis names no predecessor, so it
     // is the narrower of the two.
     let (mut one, mut two) = (Vec::new(), Vec::new());
@@ -58,10 +58,10 @@ fn encode_receipts_reply_refuses_head_over_budget() {
     line[0].write(&mut tape).expect("writes");
     let whole = RECEIPTS_REPLY_HEADER + tape.len();
     let short = encode_receipts_reply(&line, whole - 1);
-    assert_eq!(decode_receipts_reply(&short), Some(Vec::new()), "refused: nothing rides");
+    assert_eq!(decode_receipts_reply(&short).map(|v| v.len()), Some(0), "refused: nothing rides");
     assert_eq!(short.len(), RECEIPTS_REPLY_HEADER, "the header alone");
     let page = encode_receipts_reply(&line, whole);
-    assert_eq!(decode_receipts_reply(&page), Some(line), "at the budget exactly, it rides");
+    assert!(decode_receipts_reply(&page).is_some_and(|back| super::fixtures::one_run(&back, &line)), "at the budget exactly, it rides");
 }
 
 /// D4.6 — THE RECEIPTS PAGE FILLS THE FRAME LESS ITS ENVELOPES: the tapes'

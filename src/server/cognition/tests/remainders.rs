@@ -80,7 +80,7 @@ fn hear_refill_fills_congruent_simplex_once() {
             Cite::word(&spelling, sp_at),
         ],
         operator_hash: [0; 32],
-        chain_hash: [0; 32],
+        chain_hash: crate::court::admission::Predecessor::of_bytes([0; 32]),
     };
     k.hear_refill(&receipt);
     assert_eq!(k.refills.applied, 1, "{:?}", k.refills);

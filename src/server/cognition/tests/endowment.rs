@@ -27,7 +27,7 @@ fn universe(origin: bool) -> Court {
     let mut tiers = vec![verifying(&key(RESERVE)), verifying(&key(47))];
     tiers.sort_unstable();
     let g = DomainGenesis { domain: verifying(&key(DOMAIN)), tiers };
-    assert!(matches!(k.admit_domain(&g.sign(&key(DOMAIN))), Founded::Sealed { .. }));
+    assert!(matches!(k.hear_domain(&g.sign(&key(DOMAIN))), Founded::Sealed { .. }));
     let r = Reservation { domain: verifying(&key(DOMAIN)), tier: verifying(&key(RESERVE)), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&key(DOMAIN))), Founded::Reserved { .. }));
     if origin {

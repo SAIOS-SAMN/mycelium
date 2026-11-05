@@ -381,7 +381,7 @@ impl Court {
         let addr = &s.address();
         let kind = refusal.kind();
         let receipt = match self.seal_refusal(s, kind, voice) {
-            Some(r) => r.chain_hash,
+            Some(r) => r.chain_hash.bytes(),
             None => self.chain.head_hash(),
         };
         self.refusals.insert(

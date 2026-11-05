@@ -230,7 +230,7 @@ fn founded() -> Court {
     let mut tiers = vec![verifying(&house()), verifying(&tier())];
     tiers.sort_unstable();
     let g = DomainGenesis { domain: verifying(&domain()), tiers };
-    assert!(matches!(k.admit_domain(&g.sign(&domain())), Founded::Sealed { .. }));
+    assert!(matches!(k.hear_domain(&g.sign(&domain())), Founded::Sealed { .. }));
     let r = Reservation { domain: verifying(&domain()), tier: verifying(&house()), nonce: [1; 32] }.sign(&domain());
     assert!(matches!(k.designate_reserve(&r), Founded::Reserved { now: true, .. }));
     k

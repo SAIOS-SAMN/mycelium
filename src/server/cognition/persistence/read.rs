@@ -10,6 +10,7 @@
 use super::*;
 use crate::chronometry::{Cite, KStepReceipt, Stamp};
 use crate::cognition::*;
+use crate::court::admission::Predecessor;
 use crate::network::nerve::Keyed;
 use crate::trie_tape::{leaf, take_trie};
 use crate::transducer::address::Address;
@@ -225,7 +226,7 @@ impl Court {
                             *p += 32;
                             Some((at, hash))
                         })?;
-                        let held = court.chain.node(&stood).map(|r| r.chain_hash) == Some(hash);
+                        let held = court.chain.node(&stood).is_some_and(|r| r.chain_hash.continues(&Predecessor::of_bytes(hash)));
                         let folded = court.chain.root().is_some_and(|r| stood.place() <= r.at);
                         if !held && !folded {
                             eprintln!("  ledger refused: the line does not hold the stamp the snapshot stood at");
@@ -276,8 +277,8 @@ impl Court {
                 let row_stands = |e: &crate::economy::Entry| -> bool {
                     e.at == stamp
                         && match (hash, at_root) {
-                            (Some(h), _) => e.receipt == h || (stamp == origin && e.receipt == [0; 32]),
-                            (None, true) => root.is_some_and(|r| r.hash == e.receipt),
+                            (Some(h), _) => h.continues(&Predecessor::of_bytes(e.receipt)) || (stamp == origin && e.receipt == [0; 32]),
+                            (None, true) => root.is_some_and(|r| r.hash.continues(&Predecessor::of_bytes(e.receipt))),
                             (None, false) => stamp != origin || e.receipt == [0; 32],
                         }
                 };
@@ -520,7 +521,7 @@ impl Court {
                 let root_at = Stamp::from_key(&key)?;
                 let root = crate::chronometry::Root {
                     at: root_at.place(),
-                    hash: leaf(leaves, LEAF_ROOT_HASH)?.try_into().ok()?,
+                    hash: Predecessor::of_bytes(leaf(leaves, LEAF_ROOT_HASH)?.try_into().ok()?),
                     height: root_at.h,
                 };
                 let era = crate::chronometry::Era {

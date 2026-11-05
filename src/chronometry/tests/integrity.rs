@@ -48,7 +48,8 @@ fn act_kind_rides_tape_and_chain_hash() {
     r.write(&mut tape).expect("writes");
     let mut p = 0usize;
     let back = KStepReceipt::read(&tape, &mut p).expect("reads back");
-    assert_eq!(back, r, "the kind rides the tape");
+    assert!(super::fixtures::one_run(std::slice::from_ref(&back), std::slice::from_ref(&r)), "the kind rides the tape");
+    assert_eq!(back.kind, r.kind, "and reads back as written");
     assert_eq!(p, tape.len(), "and the read ends where the tape does");
     let mut other = r.clone();
     other.kind = ActKind::Ruling(Ruled::Upheld);

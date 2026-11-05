@@ -35,6 +35,79 @@ such change is named here.
   `perceive::frame_of` (read with the measured `Frame`, a defect), and the
   ray of `Act::Slide` and `Act::Extend`, a clause field written as a pair.
 
+### The chart of task `0b148d64` re-measured: the intake charts none of its pairs (#87)
+- **Network contract:** none. No engine code changes; no wire, address
+  or reading moves.
+- **Measured on main (5815d4e4), release build,** with the instrument
+  `mycelium-soak --chart DIR NAME`, which times the intake's calls on
+  each train pair by stage. `route::routes_of` routes none of the three
+  pairs (`18 × 19 → 7 × 9`, `21 × 21 → 10 × 10`, `19 × 17 → 9 × 6`):
+  their enclosures differ, so they wait for the turn-native chart
+  (MU-DERIVATIONS D3.2, O8), and the intake charts nothing for the task.
+  The `≥ 19 s` a pair was the chart of the common refinement `K_lcm`
+  (14 045 links on pair 0), which no reader forms since D3.2.
+- **Each pair's demand** (the output against nothing on the family's
+  ground, 37, 72 and 33 links) charts in 8, 15 and 7 ms, most of it the
+  lift. Its pieces chart in 6, 15 and 5 ms. The widest exact coordinate
+  is 36 bits (the anisotropy's denominator on pair 0). No bignum grows,
+  so the algebra is unchanged.
+- **Claim** `chart_of_0b148d64_pairs_read_on_metabolic_budget`
+  (`sources/arc-agi/tests/intake_chart.rs`), an observation and never a
+  gate. It asserts relations only: no pair is routed, each pair's
+  projection refuses `OffSite`, and each pair's transduction spends within
+  the stroke its closed-form need sizes. The need, the spend, the demand's
+  links and its chart are printed, never asserted (read on main: 240 of
+  648, 315 of 900 and 239 of 594 reads).
+
+### The receipt records typed by sense (track 25, X0 stage 2; #28)
+- **Network contract:** no wire byte, act, ledger layout or signed byte
+  changes. Each typed field is the same 32 bytes, read in and written out
+  by `of_bytes` and `bytes`.
+- **The record fields carry the digest types.** `Parent::hash`,
+  `KStepReceipt::chain_hash`, the fold `Root::hash` and the two hashes of
+  `Admitted::Equivocation` are `Predecessor` (link).
+  `SignedPrefix::prev_receipt_hash` and `KStepReceipt::prev_hash` are
+  `Commitment`. None has `==`, so no bare comparison of a record's digest
+  can be written.
+- **`PartialEq` removed** from `Parent`, `KStepReceipt`, `SignedPrefix`,
+  `Root`, `Era`, `Admitted` and the fold `Proposal`. New named readings:
+  `Parent::of` (the citation naming a held receipt) and `Root::restates`
+  (one place, one height, a chain continuing across the two hashes).
+  Moved with the fields: the packed line's anchors and predecessors
+  (`chronometry::pack`), the archive's era comparisons (`era_locates`,
+  address sense), `verify_chain_integrity`, the fold's witness check,
+  and the snapshot's ledger rows read against their receipt.
+- **Tests:** whole-record comparisons are rewritten to the named
+  methods (`one_receipt`, `one_run`, `one_root`, `one_era`,
+  `one_archive`, `one_proposal` and `one_prefix` in the test fixtures),
+  or to the coordinates written out. The SDK's receipts conformance
+  sample seals its receipt and checks that the decoded one re-derives.
+  No claim was dropped.
+- **Open:** `Cite::Root`'s hash is still bare.
+- **The vertex admits reconstructed acts.** `ReceiptChain::admit` takes
+  a `Reconstructed<KStepReceipt>`. `Court::admit_uplink` and
+  `admit_chained` take a `Reconstructed<SignedFold>`, and
+  `Court::admit_domain` a `Reconstructed<SignedDomain>`. The new
+  reconstructions `Reconstructed::fold` and `Reconstructed::domain`
+  re-write the signed bytes from the act's own coordinates and verify the
+  signature over them. `Court::hear_uplink` and `Court::hear_domain`
+  reconstruct the act as heard, answering `Unsigned` where it does not
+  reconstruct; the `ACT_UPLINK` and `ACT_DOMAIN` judges call them. The
+  answers are unchanged. Claim `vertex_admits_only_a_reconstructed_fold`
+  (`compile_fail`), registered in the drift register.
+- **Stratum roots compared as locators.** The court's confirmation of a
+  peer's ruled digest (`confirm_peer_holds_on`) compares the stratum root
+  it recomputes from its members, and the root it recorded for a heard
+  word, with the peer's by `Locator::locates` (`locates_stratum`). A mind's
+  rest on a stratum fetched for nothing (`CourtPace::starved`) holds the
+  court's root as a `Locator`. A root that is not 32 bytes locates
+  nothing, where before two such byte strings compared equal.
+- **Not registered:** the drift guards of MU-ANTI-FLATTENING clauses 12
+  and 14. Neither has both a guarding type and a claim in the tree:
+  clause 12's `Turn` has public fields and the refinement it would refuse
+  is deleted, and clause 14's `Court::restore` returns `bool`, not a
+  `Reconstructed<State>`. MU-ANTI-FLATTENING *Drift guards* says why.
+
 ### The rule language's coordinates named by the plane axis they are read along (track 26 S4d, stage 3)
 - **Network contract:** no wire byte, act, encoding or ledger layout
   changes, and no clause or word address moves: the clause codec writes

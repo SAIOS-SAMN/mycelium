@@ -158,7 +158,7 @@ impl Court {
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], reserve, |_| vec![cite.clone()]) else { return Founded::LineRefused };
         self.universes.insert(st.domain, u);
         self.mark_persist();
-        Founded::Stated { at: r.stamp, receipt: r.chain_hash }
+        Founded::Stated { at: r.stamp, receipt: r.chain_hash.bytes() }
     }
 
     /// 78.139 — WHAT A UNIVERSE HAS STATED, as read. Sealing nothing.

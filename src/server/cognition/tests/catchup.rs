@@ -7,7 +7,7 @@ use crate::anastome::dialogue::{
 };
 use crate::chronometry::{ActKind, KStepReceipt, Parent, Place, ReceiptChain};
 use crate::cognition::*;
-use crate::court::admission::{Admitted, SignedPrefix};
+use crate::court::admission::{Admitted, Predecessor, SignedPrefix};
 use crate::court::identity::HyphaKey;
 use crate::observe::{replication, serves, ServeAxis};
 use crate::server::backfill::{AdoptedOrigin, Ask};
@@ -29,6 +29,13 @@ fn position(key: &HyphaKey, head: &KStepReceipt, payload: Vec<u8>) -> ReceiptSec
     };
     let sig = key.sign(&prefix.bytes().expect("the prefix frames"));
     ReceiptSection { prefix, sig, receipt: head.clone() }
+}
+
+/// Another chain hash than `h`: its first byte moved.
+fn another(h: Predecessor) -> Predecessor {
+    let mut b = h.bytes();
+    b[0] ^= 1;
+    Predecessor::of_bytes(b)
 }
 
 /// A court signing as the key `name` derives.
@@ -126,7 +133,8 @@ fn hear_adopts_root_and_cites_head_behind_fold() {
     let mut c0 = Court::new();
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut budget = c0.stroke();
-    assert_eq!(c0.admit_backfill(&super::fixtures::page(&early), &mut budget), (early.len(), None), "c holds b's first stroke");
+    let (n, missing) = c0.admit_backfill(&super::fixtures::page(&early), &mut budget);
+    assert!(n == early.len() && missing.is_none(), "c holds b's first stroke");
     let held = c0.known_head(&bvk).map(|(at, _)| at).expect("held");
     assert!(held < proof.root.at, "c's head of b stands below b's root");
     let c = Mutex::new(c0);
@@ -176,11 +184,12 @@ fn serve_receipts_answers_below_root_with_root() {
     let answer = b.serve_receipts(&bvk, None, far, false, 8, usize::MAX);
     let mid = serves();
     let ReceiptsAnswer::Root(root) = answer else { panic!("a catch-up below the root is answered with the root") };
-    assert_eq!(root.parent(), proof.parent(), "b's own root");
+    assert!(Predecessor::cites(&root.parent(), &proof.parent()), "b's own root");
     assert!(mid[ServeAxis::ServedRoot as usize] > before[ServeAxis::ServedRoot as usize], "counted as a served root");
     let body = encode_fold_root_reply(&root).expect("the proof frames");
     let Some(ReceiptsAnswer::Root(back)) = decode_receipts_answer(&body) else { panic!("the root answer reads back") };
-    assert_eq!((back.parent(), back.verify(AT)), (proof.parent(), Ok(())), "whole, and it verifies at the origin");
+    assert!(Predecessor::cites(&back.parent(), &proof.parent()), "whole");
+    assert_eq!(back.verify(AT), Ok(()), "and it verifies at the origin");
     assert!(crate::anastome::dialogue::decode_receipts_reply(&body).is_none(), "a reader of pages alone reads no page in it");
     // From the root: the hot line.
     let ReceiptsAnswer::Page(hot) = b.serve_receipts(&bvk, Some(proof.root.at), far, false, 8, usize::MAX) else {
@@ -214,7 +223,7 @@ fn serve_receipts_answers_below_root_with_root() {
     assert!(forged.verify(AT).is_err(), "a broken witness signature");
     assert!(proof.verify(([8; 32], 2)).is_err(), "another origin");
     let mut moved = proof.clone();
-    moved.root.hash[0] ^= 1;
+    moved.root.hash = another(moved.root.hash);
     assert!(moved.verify(AT).is_err(), "another root");
     let mut own = proof.clone();
     own.witness = own.home.clone();
@@ -243,7 +252,7 @@ fn hear_proves_citation_into_held_era() {
     let dkey = super::fixtures::court_key("catchup-era-d");
     let dvk = dkey.verifying_bytes();
     let mut dc = ReceiptChain::with_signer(dvk);
-    dc.admit(b0.clone());
+    dc.admit(super::fixtures::reconstructed(&b0));
     dc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: b0.stamp, hash: b0.chain_hash }]).expect("d cites b0");
     let (head, pre) = {
         let r = dc.head().expect("d acted");
@@ -291,10 +300,11 @@ fn cosigned_root_answers_with_held_cosignature() {
     w.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     assert_eq!(w.adopt_root(AT, &proof), RootAdoption::Adopted, "the root held with both signed positions");
     let said = w.cosigned_root(&bvk, &proof.root, &wvk).expect("its own co-signature, said again");
-    assert_eq!((said.sig, said.receipt.chain_hash, said.prefix.payload), (proof.witness.sig, proof.witness.receipt.chain_hash, proof.witness.prefix.payload.clone()), "the very position it signed over the root");
+    assert_eq!((said.sig, &said.prefix.payload), (proof.witness.sig, &proof.witness.prefix.payload), "the very position it signed over the root");
+    assert!(super::fixtures::one_receipt(&said.receipt, &proof.witness.receipt), "and the receipt it signed it with");
     assert!(w.cosigned_root(&bvk, &proof.root, &[0x77; 32]).is_none(), "another key co-signed nothing here");
     let mut moved = proof.root;
-    moved.hash[0] ^= 1;
+    moved.hash = another(moved.hash);
     assert!(w.cosigned_root(&bvk, &moved, &wvk).is_none(), "another root is re-derived");
     assert!(w.cosigned_root(&[0x55; 32], &proof.root, &wvk).is_none(), "another home's root is not this one");
 }
@@ -319,7 +329,7 @@ fn hear_proves_long_era_page_by_page() {
     let c = Mutex::new(c0);
     let dkey = super::fixtures::court_key("catchup-long-era-d");
     let mut dc = ReceiptChain::with_signer(dkey.verifying_bytes());
-    dc.admit(b0.clone());
+    dc.admit(super::fixtures::reconstructed(&b0));
     dc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: b0.stamp, hash: b0.chain_hash }]).expect("d cites b0");
     let r = dc.head().expect("d acted");
     let pre = SignedPrefix {
@@ -567,7 +577,7 @@ fn adopt_root_refuses_forged_root_keeping_reached() {
     let mut forged = proof.clone();
     forged.witness.sig[0] ^= 1;
     let mut moved = proof.clone();
-    moved.root.hash[0] ^= 1;
+    moved.root.hash = another(moved.root.hash);
     {
         let mut k = c.lock().expect("c");
         assert_eq!(k.adopt_root(AT, &forged), RootAdoption::Refused(crate::verdict::REFUSE_SIGNATURE), "a broken witness signature");
@@ -586,7 +596,7 @@ fn adopt_root_refuses_forged_root_keeping_reached() {
     let c = c.into_inner().expect("c");
     assert_eq!(c.chain().peer_root(&bvk), None, "no root of b stands at c");
     for r in &held_before {
-        assert_eq!(c.chain().at(&bvk, r.stamp.place()).map(|h| h.chain_hash), Some(r.chain_hash), "{:?} stands", r.stamp.place());
+        assert!(c.chain().at(&bvk, r.stamp.place()).is_some_and(|h| super::fixtures::one_receipt(&h, r)), "{:?} stands", r.stamp.place());
         let unreached = c.unreached_at(&bvk, r.stamp.place()).is_some();
         assert_eq!(unreached, r.stamp.place() > reached, "{:?}: reached below the signed stroke, held unreached above it", r.stamp.place());
     }
@@ -634,7 +644,7 @@ fn root_at_another_place_refuses_without_held_receipt() {
     }
     nothing_adopted(&w, &bvk);
     let signed = crate::chronometry::Root::of_signed(&proof.home.prefix.payload);
-    assert_eq!(signed, Some(proof.root), "the home's signature states the root's place, height and hash");
+    assert!(signed.is_some_and(|r| r.restates(&proof.root)), "the home's signature states the root's place, height and hash");
     assert_eq!(w.adopt_root(AT, &proof), RootAdoption::Adopted, "the root as signed");
     assert_eq!(w.chain().peer_root(&bvk), Some(at), "b's root stands at the place signed");
 }
@@ -656,7 +666,7 @@ fn root_at_another_height_refuses() {
     }
     nothing_adopted(&w, &bvk);
     let mut bare = proof.clone();
-    bare.home.prefix.payload = proof.root.hash.to_vec();
+    bare.home.prefix.payload = proof.root.hash.bytes().to_vec();
     let rekey = super::fixtures::court_key("catchup-root-height-b");
     bare.home.sig = rekey.sign(&bare.home.prefix.bytes().expect("the prefix frames"));
     assert_eq!(w.adopt_root(AT, &bare), RootAdoption::Refused(crate::verdict::REFUSE_RECEIPT), "a bare hash states no root");

@@ -21,7 +21,7 @@ fn close(c: &mut ReceiptChain) -> KStepReceipt {
 /// Fold `c` at its last close and seal the `Fold` node citing the root.
 fn fold(c: &mut ReceiptChain, at: Place) -> KStepReceipt {
     let (_, root) = c.fold_before(at).expect("the orbit folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, c.signer(), root.at), hash: root.hash }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, c.signer(), root.at), hash: root.hash.bytes() }];
     c.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node").clone()
 }
 
@@ -39,12 +39,12 @@ fn shed_folded_keeps_peer_nodes_hot_line_cites() {
 
     let mut c = ReceiptChain::with_signer([1; 32]);
     for r in [&e0, &e1, &shut] {
-        c.admit(r.clone());
+        c.admit(super::fixtures::reconstructed(r));
     }
     let citing = step(&mut c, vec![cite(&e1)]);
     assert_eq!(c.shed_folded(|_| false), 0, "no fold of the peer is held: nothing leaves");
 
-    c.admit(folded.clone());
+    c.admit(super::fixtures::reconstructed(&folded));
     assert_eq!(c.shed_folded(|_| false), 2, "the peer's act and close below its root leave");
     assert!(c.node(&e0.stamp).is_none() && c.node(&shut.stamp).is_none());
     assert!(c.node(&e1.stamp).is_some(), "the chain's own hot line cites it, so it stays");
@@ -85,19 +85,21 @@ fn shed_folded_leaves_hole_backfill_cannot_cross() {
     let folded = fold(&mut e, shut.stamp.place());
     let mut c = ReceiptChain::with_signer([1; 32]);
     for r in e.line_between(&[4; 32], None, folded.stamp.place(), 64) {
-        c.admit(r);
+        c.admit(super::fixtures::reconstructed(&r));
     }
     for r in [&e0, &shut, &folded] {
-        c.admit(r.clone());
+        c.admit(super::fixtures::reconstructed(r));
     }
     assert!(c.shed_folded(|_| false) > 0);
     assert_eq!(c.peer_root(&[4; 32]), Some(shut.stamp.place()), "the peer's fold root, held");
     assert!(c.at(&[4; 32], e0.stamp.place()).is_none(), "the cited receipt is gone");
     let head = c.line_head(&[4; 32]).expect("the signer's head").stamp.place();
     assert!(head > e0.stamp.place(), "while the head stands past it: a hole below the head");
-    assert_eq!(
-        crate::court::admission::admit_backfilled(&crate::court::admission::Reconstructed::receipt(&e0).expect("re-derives"), &c),
-        crate::court::admission::Admitted::Stale,
+    assert!(
+        matches!(
+            crate::court::admission::admit_backfilled(&crate::court::admission::Reconstructed::receipt(&e0).expect("re-derives"), &c),
+            crate::court::admission::Admitted::Stale
+        ),
         "fetched back, it is read stale: no back-fill crosses it"
     );
 }

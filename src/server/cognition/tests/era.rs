@@ -50,9 +50,9 @@ let close = |k: u64| Place { k, i: 1 };
 let home = [0x5c; 32];
 let mut k = Court::new();
 k.bind_identity(home);
-assert_eq!(k.propose_fold(), Err(REFUSE_FOLD_OPEN), "no receipt, nothing to fold");
+assert_eq!(k.propose_fold().err(), Some(REFUSE_FOLD_OPEN), "no receipt, nothing to fold");
 k.append_step(ActKind::List, [1; 32], [2; 32]);
-assert_eq!(k.propose_fold(), Err(REFUSE_FOLD_OPEN), "an orbit not yet closed is no cut");
+assert_eq!(k.propose_fold().err(), Some(REFUSE_FOLD_OPEN), "an orbit not yet closed is no cut");
 k.orbit();
 for _ in 0..2 {
     k.append_step(ActKind::List, [1; 32], [2; 32]);
@@ -62,9 +62,9 @@ let head_hash = k.chain().head_hash();
 let head_height = k.chain().head_height();
 let before = k.treasury().audit().expect("conserves before");
 let p = k.propose_fold().expect("a final prefix proposes");
-assert_eq!((p.after, p.root.at, p.root.hash, p.root.height), (None, close(2), head_hash, head_height));
+assert_eq!((p.after, p.root.at, p.root.hash.bytes(), p.root.height), (None, close(2), head_hash, head_height));
 assert!(p.epochs.iter().any(|(who, _)| *who == [0x11; 32]), "the fixture hypha's genesis nets");
-assert_eq!(k.fold_proposal(), Some(&p), "held for the exchange to carry");
+assert!(k.fold_proposal().is_some_and(|q| super::fixtures::one_proposal(q, &p)), "held for the exchange to carry");
 
 // THE WITNESS re-derives the prefix it fetched.
 let receipts = k.receipts_range(&home, p.after, p.root.at, 10);
@@ -85,7 +85,8 @@ assert_eq!(k.commit_fold(home_sig, &dependent), Err(REFUSE_WITNESS_DEPENDENT), "
 let mut forged = co_sign("w", p.root);
 forged.sig[0] ^= 1;
 assert_eq!(k.commit_fold(home_sig, &forged), Err(REFUSE_SIGNATURE));
-assert_eq!(k.commit_fold(home_sig, &co_sign("w", Root { hash: [9; 32], ..p.root })), Err(REFUSE_RECEIPT), "a position over another root");
+let another = Root { hash: crate::court::admission::Predecessor::of_bytes([9; 32]), ..p.root };
+assert_eq!(k.commit_fold(home_sig, &co_sign("w", another)), Err(REFUSE_RECEIPT), "a position over another root");
 assert_eq!(k.commit_fold(home_sig, &co_sign("w", Root { height: p.root.height + 1, ..p.root })), Err(REFUSE_RECEIPT), "a position over the root at another height");
 assert!(k.fold_proposal().is_some(), "the proposal stands through a witness's refusals");
 let w = co_sign("w", p.root);
@@ -94,14 +95,14 @@ assert_eq!((done.first, done.last, done.at, done.witness), (act(0), close(2), So
 assert_eq!(done.h, head_height + 1, "height continues over the fold");
 assert!(k.fold_proposal().is_none(), "sealed, nothing pends");
 let root = k.chain().root().expect("the chain stands on its root");
-assert_eq!(root, p.root);
+assert!(root.restates(&p.root));
 // 78.92, 78.94 — WHY STILL ANSWERS WHAT A FOLD ARCHIVED: the act is gone
 // from the hot chain and stands in the era, where it is read by its place.
 assert!(k.chain().at_place(act(1)).is_none(), "the fold took it off the hot chain");
 let archived = k.why(crate::anastome::dialogue::why::WhyAsk::Own(act(1))).expect("an archived act is still asked about");
 assert_eq!((archived.kind, archived.at.place()), (ActKind::List, act(1)));
 let fold = k.chain().opening().expect("the hot line opens at the fold").clone();
-assert_eq!((fold.kind, fold.stamp.k, fold.prev_hash()), (ActKind::Fold, 3, head_hash));
+assert_eq!((fold.kind, fold.stamp.k, fold.prev_hash().bytes()), (ActKind::Fold, 3, head_hash));
 assert_eq!(
     fold.cites,
     vec![crate::chronometry::Cite::Root {
@@ -113,9 +114,10 @@ assert_eq!(
 assert!(k.chain().verify_chain_integrity(), "the hot chain re-verifies from its root");
 assert_eq!(k.k_step(), 3, "K continues past the fold: the fold receipt opens orbit 3");
 let era = &k.archive()[0];
+assert!(era.root.restates(&root), "the era stands on the root");
 assert_eq!(
-    (era.root, era.signer, era.witness, era.sig_home, era.sig_witness),
-    (root, home, w.receipt.stamp.vk, home_sig, w.sig),
+    (era.signer, era.witness, era.sig_home, era.sig_witness),
+    (home, w.receipt.stamp.vk, home_sig, w.sig),
     "the era carries the witness and both signatures"
 );
 assert_eq!((era.receipts.len(), era.first_place()), (6, act(0)));
@@ -130,17 +132,20 @@ assert_eq!(
 let snap = k.snapshot();
 let mut back = Court::new();
 assert!(back.restore(&snap), "the snapshot carries the root and the era");
-assert_eq!(back.chain().root(), Some(root));
-assert_eq!(back.archive(), k.archive());
+assert!(super::fixtures::one_root(back.chain().root(), Some(root)));
+assert!(super::fixtures::one_archive(back.archive(), k.archive()));
 assert!(back.chain().verify_chain_integrity());
 
 // THE WITNESS holds the same era under the home's key and serves it.
 let mut held = Court::new();
 held.hold_era(era.clone());
-assert_eq!(held.receipts_range(&home, None, close(2), 10), era.receipts, "a witnessed era is read under its signer's key");
+assert!(
+    super::fixtures::one_run(&held.receipts_range(&home, None, close(2), 10), &era.receipts),
+    "a witnessed era is read under its signer's key"
+);
 assert_eq!(held.rows_range(&home, None, act(9), 0, 10).0, 0, "another signer's rows are not this court's to serve");
 
-assert_eq!(k.propose_fold(), Err(REFUSE_FOLD_OPEN), "the fold receipt's orbit is open: no cut yet");
+assert_eq!(k.propose_fold().err(), Some(REFUSE_FOLD_OPEN), "the fold receipt's orbit is open: no cut yet");
 k.orbit();
 // 78.67 (A), 78.166 2a: the close asks, and a prefix of the fold and its
 // close alone moves no work — its cut falls past it, where no close stands
@@ -158,7 +163,7 @@ let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
 assert_eq!(super::fixtures::speak_pair(&mut open, &a, &b, [7; 32]), Outcome::GermPending);
 assert_eq!(open.final_prefix_head(), None, "no orbit has closed: no cut yet");
-assert_eq!(open.propose_fold(), Err(REFUSE_FOLD_OPEN));
+assert_eq!(open.propose_fold().err(), Some(REFUSE_FOLD_OPEN));
 assert!(open.chain().root().is_none() && open.archive().is_empty(), "nothing was archived");
 
 let mut broken = Court::new();
@@ -166,7 +171,7 @@ broken.append_step(ActKind::List, [1; 32], [2; 32]);
 broken.orbit();
 // A credit with no row: the carriers pass what the journal issued.
 broken.treasury.credit([9; 32], &[1, 0, 0, 0].into());
-assert_eq!(broken.propose_fold(), Err(REFUSE_FOLD_INEXACT), "a ledger that does not conserve proposes nothing");
+assert_eq!(broken.propose_fold().err(), Some(REFUSE_FOLD_INEXACT), "a ledger that does not conserve proposes nothing");
 assert!(broken.chain().root().is_none() && broken.fold_proposal().is_none());
 }
 
@@ -204,7 +209,7 @@ fn bind_eras_reads_range_of_each_era() {
     assert!(back.restore(&k.snapshot()));
     assert!(back.archive().is_empty(), "no filed era in the snapshot");
     back.bind_eras(path.clone()).expect("the segment binds");
-    assert_eq!(back.archive(), k.archive(), "the eras held from the eras' descriptors");
+    assert!(super::fixtures::one_archive(back.archive(), k.archive()), "the eras held from the eras' descriptors");
     assert_eq!((read(&back, None, close(2)), read(&back, Some(close(2)), close(3))), (one, two), "each era answers its own range");
     let _ = std::fs::remove_file(&path);
 }
@@ -289,9 +294,10 @@ fn restore_agrees_with_bound_line() {
     let mut back = Court::new();
     bound(&mut back, &line);
     assert!(back.restore(&snap), "the snapshot restores on its line");
-    assert_eq!((back.chain().head_stamp(), back.chain().root()), (k.chain().head_stamp(), k.chain().root()));
-    assert_eq!(back.chain().nodes().collect::<Vec<_>>(), k.chain().nodes().collect::<Vec<_>>());
-    assert_eq!(back.archive(), k.archive(), "and the eras from the segment");
+    assert_eq!(back.chain().head_stamp(), k.chain().head_stamp());
+    assert!(super::fixtures::one_root(back.chain().root(), k.chain().root()));
+    assert!(super::fixtures::one_run(&back.chain().nodes().collect::<Vec<_>>(), &k.chain().nodes().collect::<Vec<_>>()));
+    assert!(super::fixtures::one_archive(back.archive(), k.archive()), "and the eras from the segment");
 
     let mut ahead = Court::new();
     bound(&mut ahead, &line);
@@ -328,12 +334,13 @@ fn admit_backfill_admits_citation_of_folded_receipt() {
     assert!(k.chain().at(&home, cited.stamp.place()).is_none(), "the cited receipt left the nodes for the archive");
     let dvk = super::fixtures::court_key("folded-cite-d").verifying_bytes();
     let mut d = ReceiptChain::with_signer(dvk);
-    d.admit(cited.clone());
-    d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![crate::chronometry::Parent { at: cited.stamp, hash: cited.chain_hash }])
+    d.admit(super::fixtures::reconstructed(&cited));
+    d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![crate::chronometry::Parent::of(&cited)])
         .expect("d cites the court's receipt");
     let line: Vec<_> = d.line_between(&dvk, None, d.head().expect("d acted").stamp.place(), 16);
     let mut budget = k.stroke();
-    assert_eq!(k.admit_backfill(&super::fixtures::page(&line), &mut budget), (line.len(), None), "the folded citation is read back and d's line admitted");
+    let (n, missing) = k.admit_backfill(&super::fixtures::page(&line), &mut budget);
+    assert!(n == line.len() && missing.is_none(), "the folded citation is read back and d's line admitted");
     let _ = std::fs::remove_file(&path);
 }
 
@@ -485,7 +492,7 @@ fn propose_fold_at_close_cuts_long_orbit_at_close() {
     for _ in 0..=at_most {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
     }
-    assert_eq!(k.propose_fold_at_close(), Err(REFUSE_FOLD_OPEN), "the long orbit is open: nothing to cut, nothing proposed");
+    assert_eq!(k.propose_fold_at_close().err(), Some(REFUSE_FOLD_OPEN), "the long orbit is open: nothing to cut, nothing proposed");
     let closed = match k.orbit() {
         crate::chronometry::Close::Sealed(at) => at.place(),
         other => panic!("the long orbit closes: {other:?}"),

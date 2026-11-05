@@ -82,6 +82,51 @@ impl Reconstructed<KStepReceipt> {
     }
 }
 
+impl Reconstructed<crate::anastome::dialogue::uplink::SignedFold> {
+    /// 78.119, ROADMAP track 25 X2 — A TIER'S FOLD RECONSTRUCTED AT THE
+    /// VERTEX: the bytes the tier signs are written out again from the
+    /// fold's own coordinates (its tier, prefix head, and the commitments
+    /// to its rows, children and handoffs, each re-derived from what the
+    /// fold carries; `TierFold::signed_bytes`), and the tier's signature
+    /// verifies over them. `None` where it does not: no carried commitment
+    /// stands in for the fold, and nothing admits it
+    /// (`Court::hear_uplink` answers `Uplinked::Unsigned`).
+    ///
+    /// The vertex admits only the reconstructed fold; a claimed one does
+    /// not compile (`vertex_admits_only_a_reconstructed_fold`):
+    ///
+    /// ```compile_fail,E0308
+    /// fn admitted(k: &mut mycelium::cognition::Court, f: &mycelium::anastome::dialogue::uplink::SignedFold) {
+    ///     let _ = k.admit_uplink(f);
+    /// }
+    /// ```
+    ///
+    /// The lawful path, which compiles:
+    ///
+    /// ```
+    /// fn admitted(k: &mut mycelium::cognition::Court, f: &mycelium::anastome::dialogue::uplink::SignedFold) {
+    ///     if let Some(r) = mycelium::court::admission::Reconstructed::fold(f) {
+    ///         let _ = k.admit_uplink(&r);
+    ///     }
+    /// }
+    /// ```
+    pub fn fold(f: &crate::anastome::dialogue::uplink::SignedFold) -> Option<Reconstructed<crate::anastome::dialogue::uplink::SignedFold>> {
+        crate::court::identity::verify(&f.fold.tier, &f.fold.signed_bytes(), &f.sig).then(|| Reconstructed { object: f.clone() })
+    }
+}
+
+impl Reconstructed<crate::anastome::dialogue::domain::SignedDomain> {
+    /// 78.120, ROADMAP track 25 X2 — A DOMAIN'S GENESIS RECONSTRUCTED AT
+    /// THE VERTEX: the bytes the domain signs are written out again from
+    /// the genesis's own coordinates (the domain and its tier keys;
+    /// `DomainGenesis::signed_bytes`), and the domain's signature verifies
+    /// over them. `None` where it does not (`Court::hear_domain` answers
+    /// `Founded::Unsigned`).
+    pub fn domain(w: &crate::anastome::dialogue::domain::SignedDomain) -> Option<Reconstructed<crate::anastome::dialogue::domain::SignedDomain>> {
+        crate::court::identity::verify(&w.genesis.domain, &w.genesis.signed_bytes(), &w.sig).then(|| Reconstructed { object: w.clone() })
+    }
+}
+
 impl Reconstructed<crate::anastome::dialogue::RootProof> {
     /// 78.147, 47.3 — A FOLD ROOT RECONSTRUCTED FROM THE SIGNATURES OVER
     /// IT, as the fold was sealed: the home's signed position verifies
@@ -115,7 +160,7 @@ impl Reconstructed<crate::anastome::dialogue::RootProof> {
             return Err(crate::verdict::REFUSE_RECEIPT);
         }
         let signed = Reconstructed { object: proof.clone() };
-        let binds = |r: &Root| super::Commitment::of_bytes(r.hash).binds(&signed);
+        let binds = |r: &Root| super::Commitment::of_bytes(r.hash.bytes()).binds(&signed);
         match binds(&home) && binds(&witness) {
             true => Ok(signed),
             false => Err(crate::verdict::REFUSE_RECEIPT),

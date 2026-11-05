@@ -53,8 +53,10 @@ pub(crate) struct CourtPace {
     /// defers it unpaid; it is fetched again only once the court's root moves
     /// or the mind is paid (2026-10-22: 439 156 and 806 768 deferrals on
     /// courts a and c, the same strata asked at every sync). One entry per
-    /// chart, the atlas its bound.
-    pub(crate) starved: crate::network::nerve::Keyed<(Vec<u8>, u64)>,
+    /// chart, the atlas its bound. The root is held in the address sense
+    /// (`Locator`, MU-HOSTING §5a.10): it says where the court's stratum
+    /// stood, and is compared only by `Locator::locates`.
+    pub(crate) starved: crate::network::nerve::Keyed<(crate::court::admission::Locator, u64)>,
 }
 
 impl CourtPace {

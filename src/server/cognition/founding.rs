@@ -179,7 +179,7 @@ impl Court {
             Some(_) => return FoundingEvent::Refused(Founded::AlreadyOriginated),
             None => {}
         }
-        self.origins.insert(domain, OriginReading { kind, version, commitment, at: r.stamp, receipt: r.chain_hash });
+        self.origins.insert(domain, OriginReading { kind, version, commitment, at: r.stamp, receipt: r.chain_hash.bytes() });
         FoundingEvent::Applied
     }
 }

@@ -24,7 +24,7 @@ fn founded() -> Court {
     use crate::anastome::dialogue::domain::{Founded, DomainGenesis};
     let mut k = Court::new();
     let g = DomainGenesis { domain: domain_key().verifying_key().to_bytes(), tiers: vec![tier_key().verifying_key().to_bytes()] };
-    assert!(matches!(k.admit_domain(&g.sign(&domain_key())), Founded::Sealed { .. }), "the domain founded");
+    assert!(matches!(k.hear_domain(&g.sign(&domain_key())), Founded::Sealed { .. }), "the domain founded");
     k
 }
 
@@ -43,8 +43,8 @@ fn reserved() -> Court {
 #[test]
 fn admit_uplink_refuses_tier_not_reserve() {
     let key = tier_key();
-    assert_eq!(founded().admit_uplink(&trade(&key).sign(&key)), Uplinked::NotReserve);
-    assert!(matches!(reserved().admit_uplink(&trade(&key).sign(&key)), Uplinked::Admitted { .. }));
+    assert_eq!(founded().hear_uplink(&trade(&key).sign(&key)), Uplinked::NotReserve);
+    assert!(matches!(reserved().hear_uplink(&trade(&key).sign(&key)), Uplinked::Admitted { .. }));
 }
 
 /// A trade between two identities, nothing made: `A` +5, `B` −5 on `S`.
@@ -69,18 +69,18 @@ fn admit_uplink_seals_fold_coordinates_and_restores() {
     let fold = trade(&key);
     let rows = fold.rows_hash();
     let mut k = reserved();
-    let Uplinked::Admitted { at, receipt } = k.admit_uplink(&fold.clone().sign(&key)) else { panic!("admitted") };
+    let Uplinked::Admitted { at, receipt } = k.hear_uplink(&fold.clone().sign(&key)) else { panic!("admitted") };
     let head = k.chain.head().expect("sealed on the line");
-    assert_eq!((head.stamp, head.chain_hash), (at, receipt), "the answer is the receipt's id");
+    assert_eq!((head.stamp, head.chain_hash.bytes()), (at, receipt), "the answer is the receipt's id");
     assert_eq!(head.kind, ActKind::Uplink);
     assert_eq!(head.cites, vec![Cite::Uplink { tier: fold.tier, prefix: fold.prefix, rows }]);
     let snap = k.snapshot();
     let mut booted = Court::new();
     assert!(booted.restore(&snap), "the line with an uplink restores");
-    assert_eq!(booted.chain.head().map(|h| h.chain_hash), Some(receipt), "the same head");
+    assert_eq!(booted.chain.head().map(|h| h.chain_hash.bytes()), Some(receipt), "the same head");
     // 78.120 — and the domain restores with it: its tier's next fold admitted.
     let next = TierFold { prefix: [8u8; 32], ..trade(&key) };
-    assert!(matches!(booted.admit_uplink(&next.sign(&key)), Uplinked::Admitted { .. }), "the domain held across the restart");
+    assert!(matches!(booted.hear_uplink(&next.sign(&key)), Uplinked::Admitted { .. }), "the domain held across the restart");
 }
 
 /// A FOLD THE TIER DID NOT SIGN IS REFUSED: a row changed after signing, or
@@ -91,10 +91,10 @@ fn admit_uplink_refuses_unsigned_fold() {
     let mut signed = trade(&key).sign(&key);
     signed.fold.rows[0].1[0] = 6;
     let mut k = founded();
-    assert_eq!(k.admit_uplink(&signed), Uplinked::Unsigned, "a row changed after signing");
+    assert_eq!(k.hear_uplink(&signed), Uplinked::Unsigned, "a row changed after signing");
     let other = SigningKey::from_bytes(&[3u8; 32]);
     let forged = trade(&key).sign(&other);
-    assert_eq!(k.admit_uplink(&forged), Uplinked::Unsigned, "another key in the tier's name");
+    assert_eq!(k.hear_uplink(&forged), Uplinked::Unsigned, "another key in the tier's name");
     assert_eq!(k.chain.head().map(|h| h.kind), Some(ActKind::Domain), "nothing sealed after the genesis");
 }
 
@@ -121,7 +121,7 @@ fn core_stamp_equals_head_stamp_written_wide() {
 fn admit_uplink_refuses_unbound_tier() {
     let key = tier_key();
     let mut k = Court::new();
-    assert_eq!(k.admit_uplink(&trade(&key).sign(&key)), Uplinked::Unbound);
+    assert_eq!(k.hear_uplink(&trade(&key).sign(&key)), Uplinked::Unbound);
     assert!(k.chain.head().is_none(), "nothing sealed");
 }
 
@@ -137,14 +137,14 @@ fn admit_domain_founds_once_by_domain_key() {
     assert_eq!(head.cites, vec![Cite::Domain { domain, tiers: vec![tier] }]);
     let mut k = k;
     let again = DomainGenesis { domain, tiers: vec![tier] };
-    assert_eq!(k.admit_domain(&again.clone().sign(&domain_key())), Founded::AlreadyFounded);
+    assert_eq!(k.hear_domain(&again.clone().sign(&domain_key())), Founded::AlreadyFounded);
     let impostor = SigningKey::from_bytes(&[6u8; 32]);
-    assert_eq!(k.admit_domain(&again.sign(&impostor)), Founded::Unsigned, "signed by another key");
+    assert_eq!(k.hear_domain(&again.sign(&impostor)), Founded::Unsigned, "signed by another key");
     let other_domain = SigningKey::from_bytes(&[5u8; 32]);
     let claims = DomainGenesis { domain: other_domain.verifying_key().to_bytes(), tiers: vec![tier] };
-    assert_eq!(k.admit_domain(&claims.sign(&other_domain)), Founded::TierHeld, "a tier settles for one domain");
+    assert_eq!(k.hear_domain(&claims.sign(&other_domain)), Founded::TierHeld, "a tier settles for one domain");
     let unordered = DomainGenesis { domain: other_domain.verifying_key().to_bytes(), tiers: vec![who(9), who(2)] };
-    assert_eq!(k.admit_domain(&unordered.sign(&other_domain)), Founded::Unordered);
+    assert_eq!(k.hear_domain(&unordered.sign(&other_domain)), Founded::Unordered);
 }
 
 /// 78.125 — A RESEND IS ANSWERED, NEVER SEALED TWICE: the same signed fold
@@ -157,16 +157,16 @@ fn admit_uplink_answers_resend_and_refuses_repeat() {
     let key = tier_key();
     let mut k = reserved();
     let fold = trade(&key);
-    let first = k.admit_uplink(&fold.clone().sign(&key));
+    let first = k.hear_uplink(&fold.clone().sign(&key));
     let Uplinked::Admitted { at, .. } = first else { panic!("admitted") };
     let height = k.chain.head_height();
-    assert_eq!(k.admit_uplink(&fold.clone().sign(&key)), first, "the original receipt");
+    assert_eq!(k.hear_uplink(&fold.clone().sign(&key)), first, "the original receipt");
     assert_eq!(k.chain.head_height(), height, "nothing sealed twice");
     let mut other = fold.clone();
     other.rows = vec![(who(1), [6, 0, 0, 0]), (who(2), [-6, 0, 0, 0])];
-    assert_eq!(k.admit_uplink(&other.sign(&key)), Uplinked::Repeated, "another fold over the same head");
+    assert_eq!(k.hear_uplink(&other.sign(&key)), Uplinked::Repeated, "another fold over the same head");
     let next = TierFold { prefix: [8u8; 32], ..fold };
-    assert!(matches!(k.admit_uplink(&next.sign(&key)), Uplinked::Admitted { at: n, .. } if n != at));
+    assert!(matches!(k.hear_uplink(&next.sign(&key)), Uplinked::Admitted { at: n, .. } if n != at));
 }
 
 /// CONTINUITY: value made inside the fold is refused unless declared — a
@@ -178,9 +178,9 @@ fn admit_uplink_refuses_undeclared_value() {
     let mut made = trade(&key);
     made.rows[1].1[0] = -4;
     let mut k = reserved();
-    assert_eq!(k.admit_uplink(&made.clone().sign(&key)), Uplinked::Discontinuous(Discontinuous::Unbalanced { lane: 0 }));
+    assert_eq!(k.hear_uplink(&made.clone().sign(&key)), Uplinked::Discontinuous(Discontinuous::Unbalanced { lane: 0 }));
     made.declared = vec![(who(9), [1, 0, 0, 0])];
-    assert!(matches!(k.admit_uplink(&made.sign(&key)), Uplinked::Admitted { .. }), "a declared source accounts for it");
+    assert!(matches!(k.hear_uplink(&made.sign(&key)), Uplinked::Admitted { .. }), "a declared source accounts for it");
     let mut unordered = trade(&key);
     unordered.rows.reverse();
     assert_eq!(unordered.continuity(), Err(Discontinuous::Unordered));

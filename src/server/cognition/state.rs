@@ -860,8 +860,8 @@ impl Court {
             clippy::disallowed_methods,
             reason = "rule 4 — canonical key order: the archive's own order, root place first (`hold_filed`, `eras_over`'s bisection), then signer and hash to bring an era held twice together"
         )]
-        all.sort_by_key(|e| (e.root.at, e.signer, e.root.hash));
-        all.dedup_by(|a, b| a.root.at == b.root.at && a.root.hash == b.root.hash && a.signer == b.signer);
+        all.sort_by_key(|e| (e.root.at, e.signer, e.root.hash.bytes()));
+        all.dedup_by(|a, b| era_locates(a, b));
         self.archive = all;
         self.era_tallies = crate::network::nerve::Keyed::new();
         for e in &self.archive {
@@ -939,7 +939,7 @@ impl Court {
     fn holds_era(&self, era: &crate::chronometry::Era) -> bool {
         let seat = self.archive.partition_point(|e| e.root.at < era.root.at);
         let run = self.archive.get(seat..).into_iter().flatten();
-        run.take_while(|e| e.root.at == era.root.at).any(|e| e.root.hash == era.root.hash && e.signer == era.signer)
+        run.take_while(|e| e.root.at == era.root.at).any(|e| era_locates(e, era))
     }
 
     /// ONE ERA'S FRAME APPENDED after the last whole era, at `end` — what
@@ -1066,7 +1066,7 @@ impl Court {
         self.forget_recalled(&recalled);
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
-                self.chain.admit(r.object().clone());
+                self.chain.admit(r.clone());
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
                 // THE ACT'S ROOT (65.5): the wire hands this receipt here, and
@@ -1110,7 +1110,7 @@ impl Court {
             // B0: a signed frame this court holds already, the same receipt
             // at its stamp, signs the line below it as a new frame does.
             crate::court::admission::Admitted::Stale
-                if self.chain.holds(&crate::chronometry::Parent { at: r.stamp, hash: r.chain_hash }) =>
+                if self.chain.holds(&crate::chronometry::Parent::of(r)) =>
             {
                 let mut budget = self.physics.stroke();
                 self.sign_through(&r.stamp.vk, r.stamp.place(), &mut budget);
@@ -1288,7 +1288,7 @@ impl Court {
     /// the node at the top of that signer's line in the ledger.
     /// 78.147: the line's tip — a fold root adopted past every node held is
     /// where the line stands, and nothing below it is asked again.
-    pub fn known_head(&self, signer: &[u8; 32]) -> Option<(crate::chronometry::Place, [u8; 32])> {
+    pub fn known_head(&self, signer: &[u8; 32]) -> Option<(crate::chronometry::Place, crate::court::admission::Predecessor)> {
         self.chain.line_tip(signer).map(|p| (p.at.place(), p.hash))
     }
 
@@ -1325,4 +1325,14 @@ pub(crate) fn read_era(path: &std::path::Path, at: crate::chronometry::Filed) ->
     let mut p = 0usize;
     let page = crate::chronometry::Era::read_payload(&bytes, &mut p)?;
     (p == bytes.len()).then_some(page)
+}
+
+/// ADDRESS SENSE ON THE ARCHIVE (MU-HOSTING §5a.10): `held` is the era
+/// `sought` names, filed under one signer at one root place with one root
+/// hash. It locates an era held already, and admits nothing: an era is
+/// admitted by its two signatures over the root (`Reconstructed::root`).
+fn era_locates(held: &crate::chronometry::Era, sought: &crate::chronometry::Era) -> bool {
+    use crate::court::admission::Locator;
+    let locator = |e: &crate::chronometry::Era| Locator::of_bytes(e.root.hash.bytes());
+    held.signer == sought.signer && held.root.at == sought.root.at && locator(held).locates(&locator(sought))
 }

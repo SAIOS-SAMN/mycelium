@@ -677,7 +677,7 @@ impl Court {
                 return None;
             }
             let at = FoldAt::from_key(key)?.stamp;
-            let receipt = self.chain.node(&at)?.chain_hash;
+            let receipt = self.chain.node(&at)?.chain_hash.bytes();
             Some(match rec.children {
                 None => Uplinked::Admitted { at, receipt },
                 Some(_) => {
@@ -718,8 +718,9 @@ impl Court {
     /// rates edges read on the domain's gauge, ONE receipt sealed — the
     /// reserve's, `Cite::Chained`, whose children's commitment holds every
     /// carried fold — and every fold held: each line under the receipt's
-    /// stamp and its path, children before parents.
-    pub(crate) fn admit_chained(&mut self, f: &SignedFold, domain: [u8; 32]) -> Uplinked {
+    /// stamp and its path, children before parents. The reserve's fold is
+    /// taken reconstructed (`Reconstructed::fold`, MU-HOSTING §5a.10).
+    pub(crate) fn admit_chained(&mut self, f: &crate::court::admission::Reconstructed<SignedFold>, domain: [u8; 32]) -> Uplinked {
         let mut plan = Plan::default();
         let mut gauge = match self.ledgers.gauges.get(&domain) {
             Some(g) => g.clone(),
@@ -773,7 +774,7 @@ impl Court {
         let open = self.ledgers.open_in(&domain).len();
         Uplinked::Chained {
             at: stamp,
-            receipt: r.chain_hash,
+            receipt: r.chain_hash.bytes(),
             provisional: open > 0,
             obstructions: count(open),
             open_remainders: count(open_remainders),

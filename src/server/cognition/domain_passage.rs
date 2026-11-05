@@ -423,7 +423,7 @@ impl Court {
         let kind = if feeding { 14 } else { 15 };
         let cite = Cite::Handoff { id: mouth, kind };
         let Some(r) = self.seal_step(ActKind::Handoff, [0; 4], h.who, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
-        let anchor = (r.stamp, r.chain_hash);
+        let anchor = (r.stamp, r.chain_hash.bytes());
         let mut th = match self.handoffs.throats.get(&mouth) {
             Some(t) => t.clone(),
             None => Throat::default(),
@@ -446,7 +446,7 @@ impl Court {
         th.acts += 1;
         self.handoffs.throats.insert(mouth, th);
         self.mark_persist();
-        Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id: mouth, state: State::Accepted }
+        Handed::Sealed { at: r.stamp, receipt: r.chain_hash.bytes(), id: mouth, state: State::Accepted }
     }
 
     /// 78.133 — A TARIFF'S RECIPIENTS: the keeper, and the tier keys its own
@@ -581,7 +581,7 @@ impl Court {
             return;
         };
         let charge = self.treasury.held_of(&key).map(|h| h.mu.clone());
-        let traverse = self.handoffs.offered_at.get(id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash)));
+        let traverse = self.handoffs.offered_at.get(id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash.bytes())));
         match (charge.and_then(|c| tariff.parts(&m.keeper, &c)), traverse) {
             (Some(parts), Some((at, receipt))) => {
                 let held = TollHeld { parts, opened: anchor.0.h, traverse: at, receipt };
@@ -606,7 +606,7 @@ impl Court {
             Handoff::Mouth(m) => {
                 if let Some(held) = self.handoffs.mouths.get(&id) {
                     // A resend: its original receipt, nothing sealed twice.
-                    return match Stamp::from_key(&held.at).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash))) {
+                    return match Stamp::from_key(&held.at).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash.bytes()))) {
                         Some((at, receipt)) => Handed::Sealed { at, receipt, id, state: held.state },
                         None => refuse(R::Offered),
                     };
@@ -741,7 +741,7 @@ impl Court {
         };
         let cite = Cite::Handoff { id, kind };
         let Some(r) = self.seal_step(ActKind::Handoff, [0; 4], h.who, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
-        let anchor = (r.stamp, r.chain_hash);
+        let anchor = (r.stamp, r.chain_hash.bytes());
         let state = match (&h.handoff, kind) {
             (Handoff::Mouth(m), _) => {
                 let offered = r.stamp.h;
@@ -784,7 +784,7 @@ impl Court {
             }
         };
         self.mark_persist();
-        Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state }
+        Handed::Sealed { at: r.stamp, receipt: r.chain_hash.bytes(), id, state }
     }
 
     /// A mouth pair CLOSED: returned, the traversals in flight through it

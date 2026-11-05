@@ -220,17 +220,17 @@ impl Court {
         }
         let cite = Cite::Stated { domain: m.domain, kind: KIND_MANIFEST, body: hash };
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], reserve, |_| vec![cite.clone()]) else { return refuse(GrantRefusal::LineRefused) };
-        if self.treasury.pay(self.identity, reserve, mu.clone(), (r.stamp, r.chain_hash)).is_err() {
+        if self.treasury.pay(self.identity, reserve, mu.clone(), (r.stamp, r.chain_hash.bytes())).is_err() {
             return refuse(GrantRefusal::Short);
         }
         let mut now = held;
-        now.push(HeldGrant { manifest: s.clone(), hash, mu: mu.clone(), founding, at: r.stamp, receipt: r.chain_hash });
+        now.push(HeldGrant { manifest: s.clone(), hash, mu: mu.clone(), founding, at: r.stamp, receipt: r.chain_hash.bytes() });
         self.grants.insert(m.domain, now);
         // The closures a grant answered are its own: the next growth grant
         // counts only those judged after it.
         self.closed_since_grant.remove(&m.domain);
         self.mark_persist();
-        Granted::Sealed { mu, founding, at: r.stamp, receipt: r.chain_hash }
+        Granted::Sealed { mu, founding, at: r.stamp, receipt: r.chain_hash.bytes() }
     }
 
     /// 78.155c — WHAT `domain`'S NEXT GROWTH GRANT MOVES: the measured

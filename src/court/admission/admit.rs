@@ -12,8 +12,10 @@ use super::{
 use crate::chronometry::{KStepReceipt, Parent, Place, ReceiptChain};
 
 /// What 47.2 answers for one signed frame. Every arm is an instruction to
-/// the caller, and only `Parent` permits a carrier to be touched.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// the caller, and only `Parent` permits a carrier to be touched. No `==`:
+/// an arm is read by `match`, and the digests it carries by their named
+/// comparisons.
+#[derive(Debug, Clone)]
 pub enum Admitted {
     /// The receipt names the signer's head this node holds as its
     /// predecessor: admit, and cite this receipt as a parent of the node's
@@ -29,7 +31,7 @@ pub enum Admitted {
     /// A duplicate frame at a place already held with the same hash.
     Stale,
     /// Two hashes at one place on one line (47.4).
-    Equivocation { at: Place, held: [u8; 32], claimed: [u8; 32] },
+    Equivocation { at: Place, held: Predecessor, claimed: Predecessor },
     /// A CAUSAL HOLE ACROSS SIGNERS: the receipt re-derives its height
     /// from the predecessor and every parent it cites, and one of those
     /// citations names a receipt of ANOTHER signer this node does not
@@ -296,5 +298,5 @@ fn admit_chain(r: &Reconstructed<KStepReceipt>, ledger: &ReceiptChain) -> Admitt
     if r.stamp.h != want {
         return Admitted::Refused(REFUSE_RECEIPT);
     }
-    Admitted::Parent(Parent { at: r.stamp, hash: r.chain_hash })
+    Admitted::Parent(Parent::of(r))
 }

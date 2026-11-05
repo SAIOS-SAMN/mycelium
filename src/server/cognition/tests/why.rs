@@ -89,7 +89,7 @@ fn why_answers_refusal_act_on_ledger() {
     let [Adjudication::Refused { kind, receipt, .. }] = heard.as_slice() else { panic!("refused: {heard:?}") };
     let head = k.chain.head().expect("the refusal is an act");
     assert_eq!(head.kind, ActKind::Refused);
-    assert_eq!(head.chain_hash, *receipt, "the voice is answered the refusal's own receipt");
+    assert_eq!(head.chain_hash.bytes(), *receipt, "the voice is answered the refusal's own receipt");
     let chart = crate::transducer::stalk::invariant_of(&s);
     let cite = Cite::Refusal { chart: chart.clone(), kind: kind.byte() };
     assert_eq!(head.cites, vec![cite.clone()]);

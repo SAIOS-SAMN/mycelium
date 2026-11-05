@@ -77,8 +77,8 @@ impl Court {
         }
         let mut at = staker.to_vec();
         at.extend_from_slice(id);
-        self.treasury.claim_stake(staker, &claim_key(&at), fee.clone(), (r.stamp, r.chain_hash)).ok()?;
-        let claim = super::atlas::Claim { parts: vec![(self.identity, fee)], opened: r.stamp.h, at: r.stamp, receipt: r.chain_hash };
+        self.treasury.claim_stake(staker, &claim_key(&at), fee.clone(), (r.stamp, r.chain_hash.bytes())).ok()?;
+        let claim = super::atlas::Claim { parts: vec![(self.identity, fee)], opened: r.stamp.h, at: r.stamp, receipt: r.chain_hash.bytes() };
         self.atlas.claims.insert(at, claim);
         Some(())
     }
