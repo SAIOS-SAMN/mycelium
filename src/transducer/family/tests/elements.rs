@@ -8,7 +8,7 @@ use crate::transducer::family::SectionSample;
 use crate::core::Q;
 use crate::transducer::cga::{rotator, translator_at, Mv};
 use crate::transducer::family::statement::{speak_clauses, speak_elements, Unstated};
-use crate::transducer::sentence::form::clause::{put_clauses, About, Act, Clause, Extent, Paint, Pred, RegionKind, Stop};
+use crate::transducer::sentence::form::clause::{put_clauses, About, Act, Clause, Extent, Paint, PlaneAxis, Pred, RegionKind, Stop};
 use crate::transducer::sentence::form::rule_element::{gloss, substrate_step, lower, Carriage, Lowered, Reach, RuleElement, Trace};
 
 fn grid(rows: &[&str]) -> SectionSample {
@@ -57,8 +57,9 @@ fn gloss_inverts_lower_on_every_act() {
         Act::Copy { template: Pred::Hue(8) },
         Act::Crop(Extent::Interior),
         Act::Scale { up: 1, down: 3 },
-        Act::Panes { along_rows: true, gap: true, table: 0b0110, paint: 2 },
-        Act::Tile { rows: 1, cols: 2, turns: vec![0, 1] },
+        Act::Panes { along: PlaneAxis::First, gap: true, table: 0b0110, paint: 2 },
+        Act::Panes { along: PlaneAxis::Second, gap: false, table: 0b1000, paint: 3 },
+        Act::Tile { blocks: [1, 2], turns: vec![0, 1] },
         Act::Parts(Box::new(Act::Recolour(vec![(2, 6)]))),
     ];
     for act in acts {

@@ -1372,34 +1372,6 @@ fn read_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<PaintedSite>], every: 
     (vec![Clause { select, act: Act::Echo { motion, about: About::Sample, gauge } }], rest)
 }
 
-/// The square's symmetry `t` (`Act::Tile`'s codes) on a site read from the
-/// least corner of a span of `extents` along the plane: the site it lands on
-/// in the turned span, read from that span's least corner. The square's
-/// symmetries are the plane's by their mathematics: the coordinates are read
-/// along the plane's first and second axes (`PlaneAxis`), never as rows and
-/// columns. `None` for a code past 7, or a site off the span.
-fn turned(t: u8, site: SectionSite, extents: [usize; ALPHABET_SAMPLE_RANK]) -> Option<SectionSite> {
-    let [a, b] = site.coordinates();
-    let [first, second] = extents;
-    // The coordinate `i` read from the far end of an axis of extent `n`.
-    let last = |n: usize, i: i64| -> Option<i64> { i64::try_from(n).ok()?.checked_sub(1)?.checked_sub(i).filter(|v| *v >= 0) };
-    if a < 0 || b < 0 {
-        return None;
-    }
-    let landed = match t {
-        0 => [a, b],
-        1 => [a, last(second, b)?],
-        2 => [last(first, a)?, b],
-        3 => [last(first, a)?, last(second, b)?],
-        4 => [b, last(first, a)?],
-        5 => [last(second, b)?, a],
-        6 => [b, a],
-        7 => [last(second, b)?, last(first, a)?],
-        _ => return None,
-    };
-    Some(SectionSite::on_plane(landed))
-}
-
 /// THE SQUARE'S SYMMETRY `t` AS A VERSOR of `Cl(4,1)(ℚ)` about the origin of
 /// the sensor's plane (`e1` along the plane's first axis, `e2` along its
 /// second): a mirror is one reflector, a turn the product of two — `e1 − e2`
@@ -1480,7 +1452,7 @@ fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<PaintedSite>], 
         for (b, cells) in bodies.iter().enumerate() {
             let Some((least, extents)) = SectionSite::span_of(cells.iter().map(|c| c.site)) else { continue };
             for t in 0u8..8 {
-                let mut rel: Vec<SectionSite> = cells.iter().filter_map(|c| turned(t, c.site.offset_from(least)?, extents)).collect();
+                let mut rel: Vec<SectionSite> = cells.iter().filter_map(|c| statement::turned(t, c.site.offset_from(least)?, extents)).collect();
                 if rel.len() != cells.len() {
                     continue;
                 }
@@ -1514,7 +1486,7 @@ fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<PaintedSite>], 
                 let mut map: Vec<(u8, u8)> = Vec::new();
                 let mut whole = true;
                 for c in cells {
-                    let landed = c.site.offset_from(least).and_then(|s| turned(t, s, extents)).and_then(|s| s.moved(piece_corner.coordinates()));
+                    let landed = c.site.offset_from(least).and_then(|s| statement::turned(t, s, extents)).and_then(|s| s.moved(piece_corner.coordinates()));
                     let Some(to) = piece.iter().find(|q| Some(q.site) == landed).map(|q| q.symbol) else {
                         whole = false;
                         break;
@@ -1773,26 +1745,30 @@ fn read_copy(r: &PredicateTable<'_, '_>, touched: &[Vec<usize>], every: &[Vec<us
 }
 
 /// C6 — THE PANES READ OFF THE FRAMES AND THE CELLS (78.167 Phase B, Step 4):
-/// where every pair's input is two equal panes along its rows (or its
-/// columns) — a separator line of one cell between them or none, the same on
-/// every pair — and the output is one pane's frame, the truth table is read
-/// cell by cell: for each pair of pane cells painted or not, whether the
-/// output cell is painted. `None` where an entry is unseen on every pair (no
-/// table is read past what the pairs show), two pairs disagree on one, or
-/// the output is painted in more than one hue.
+/// where every pair's input is two equal panes along one axis of the
+/// perspective's plane (`PlaneAxis`) — a separator line of one cell between
+/// them or none, the same on every pair — and the output is one pane's
+/// frame, the truth table is read cell by cell: for each pair of pane cells
+/// painted or not, whether the output cell is painted. `None` where the
+/// panes split along no one axis, an entry is unseen on every pair (no table
+/// is read past what the pairs show), two pairs disagree on one, or the
+/// output is painted in more than one hue.
 fn read_panes(r: &PredicateTable<'_, '_>) -> Option<Clause> {
     let ground = crate::transducer::raster::ground();
-    let split = |along_rows: bool| -> Option<bool> {
+    // The split along `along`: on every pair the input's extent along it is
+    // two of the output's (and the gap), and every other axis of the plane
+    // keeps its extent.
+    let split = |along: PlaneAxis| -> Option<bool> {
+        let axis = along.index();
         let gaps: Vec<Option<bool>> = r
             .pairs
             .iter()
             .map(|p| {
-                let ((hx, wx), (hy, wy)) = (frame_of(p.x), frame_of(p.y));
-                let (n, m, ok) = match along_rows {
-                    true => (hx, hy, wx == wy),
-                    false => (wx, wy, hx == hy),
-                };
-                match (ok, n == 2 * m, n == 2 * m + 1) {
+                let (ex, ey) = (p.x.extents(), p.y.extents());
+                let kept = ex.iter().zip(&ey).enumerate().all(|(k, (a, b))| k == axis || a == b);
+                let (n, m) = (*ex.get(axis)?, *ey.get(axis)?);
+                let two = m.checked_mul(2)?;
+                match (kept, n == two, two.checked_add(1) == Some(n)) {
                     (true, true, _) => Some(false),
                     (true, _, true) => Some(true),
                     _ => None,
@@ -1804,25 +1780,18 @@ fn read_panes(r: &PredicateTable<'_, '_>) -> Option<Clause> {
             _ => None,
         }
     };
-    let (along_rows, gap) = match (split(true), split(false)) {
-        (Some(g), None) => (true, g),
-        (None, Some(g)) => (false, g),
+    let (along, gap) = match (split(PlaneAxis::First), split(PlaneAxis::Second)) {
+        (Some(g), None) => (PlaneAxis::First, g),
+        (None, Some(g)) => (PlaneAxis::Second, g),
         _ => return None,
     };
     let mut table: [Option<bool>; 4] = [None; 4];
     let mut hue: Option<u8> = None;
     for p in &r.pairs {
-        let (hy, wy) = frame_of(p.y);
         // The second pane stands one pane and the gap further along the split.
-        let pane = match along_rows {
-            true => hy,
-            false => wy,
-        };
+        let pane = *p.y.extents().get(along.index())?;
         let further = i64::try_from(pane).ok()?.checked_add(i64::from(gap))?;
-        let across = match along_rows {
-            true => [further, 0],
-            false => [0, further],
-        };
+        let across = unit_along(along.index())?.map(|u| u * further);
         for (site, y) in p.y.sites() {
             let a = p.x.at(site)?;
             let b = p.x.at(site.moved(across)?)?;
@@ -1847,49 +1816,75 @@ fn read_panes(r: &PredicateTable<'_, '_>) -> Option<Clause> {
             bits |= 1 << i;
         }
     }
-    Some(Clause { select: Pred::All, act: Act::Panes { along_rows, gap, table: bits, paint: hue? } })
+    Some(Clause { select: Pred::All, act: Act::Panes { along, gap, table: bits, paint: hue? } })
 }
 
 /// C7 — THE TILES READ OFF THE FRAMES AND THE BLOCKS (78.167 Phase B, Step 4):
 /// where every pair's output is the same whole number of the input's frames
-/// along each axis, each block is read as the symmetries of the square that
-/// carry the input onto it — the group's elements tested against the block,
-/// never a tiling tried — and the block's symmetry is the one every pair's
-/// block admits; where a symmetric input admits several on every pair, the
-/// group's first in its code order (itself before any turn), which is every
-/// pair's block alike. `None` where a block admits none on some pair, or the
-/// pairs share none.
+/// along each axis of the perspective's plane, each block is read as the
+/// symmetries of the square that carry the input onto it — the group's
+/// elements tested against the block, never a tiling tried — and the block's
+/// symmetry is the one every pair's block admits; where a symmetric input
+/// admits several on every pair, the group's first in its code order (itself
+/// before any turn), which is every pair's block alike. `None` where a block
+/// admits none on some pair, or the pairs share none.
 fn read_tiles(r: &PredicateTable<'_, '_>) -> Option<Clause> {
-    let factors: Vec<Option<(usize, usize)>> = r
+    // On each pair, the count of the input's frames along each axis of the
+    // plane: a whole number on every axis, the output not the input's frame.
+    let factors: Vec<Option<[usize; ALPHABET_SAMPLE_RANK]>> = r
         .pairs
         .iter()
         .map(|p| {
-            let ((hx, wx), (hy, wy)) = (frame_of(p.x), frame_of(p.y));
-            (hx > 0 && wx > 0 && hy % hx == 0 && wy % wx == 0 && (hy, wy) != (hx, wx)).then(|| (hy / hx, wy / wx))
+            let (ex, ey) = (p.x.extents(), p.y.extents());
+            let mut blocks = [0usize; ALPHABET_SAMPLE_RANK];
+            for (b, (x, y)) in blocks.iter_mut().zip(ex.iter().zip(&ey)) {
+                *b = y.checked_rem(*x).filter(|&rem| rem == 0).map(|_| y / x)?;
+            }
+            (ey != ex).then_some(blocks)
         })
         .collect();
-    let (rows, cols) = match factors.as_slice() {
+    let blocks = match factors.as_slice() {
         [Some(f), rest @ ..] if rest.iter().all(|x| *x == Some(*f)) => *f,
         _ => return None,
     };
-    let mut turns = Vec::with_capacity(rows * cols);
-    for i in 0..rows * cols {
-        let (bi, bj) = (i / cols, i % cols);
+    let mut count = 1usize;
+    for &b in &blocks {
+        count = count.checked_mul(b)?;
+    }
+    let mut turns = Vec::with_capacity(count);
+    for i in 0..count {
         let fits = |t: u8| -> bool {
             r.pairs.iter().all(|p| {
-                let (hx, wx) = frame_of(p.x);
-                // The block of the output at `(bi, bj)`, read in place.
-                let corner = [bi * hx, bj * wx];
-                let block = |site: SectionSite| -> Option<u8> { p.y.at(site.moved([i64::try_from(corner[0]).ok()?, i64::try_from(corner[1]).ok()?])?) };
-                statement::turn_of(p.x, t).is_some_and(|g| g.extents() == [hx, wx] && g.sites().all(|(site, h)| block(site) == Some(h)))
+                let ex = p.x.extents();
+                // The block of the output at `i`, read in place from its
+                // corner.
+                let Some(corner) = statement::block_corner(i, blocks, ex) else { return false };
+                let block = |site: SectionSite| -> Option<u8> { p.y.at(site.moved(corner)?) };
+                statement::turn_of(p.x, t).is_some_and(|g| g.extents() == ex && g.sites().all(|(site, h)| block(site) == Some(h)))
             })
         };
         turns.push((0u8..8).find(|&t| fits(t))?);
     }
-    Some(Clause {
-        select: Pred::All,
-        act: Act::Tile { rows: u8::try_from(rows).ok()?, cols: u8::try_from(cols).ok()?, turns },
-    })
+    let mut counts = [0u8; ALPHABET_SAMPLE_RANK];
+    for (c, b) in counts.iter_mut().zip(blocks) {
+        *c = u8::try_from(b).ok()?;
+    }
+    Some(Clause { select: Pred::All, act: Act::Tile { blocks: counts, turns } })
+}
+
+/// THE ONE WHOLE RATIO `to / from` ALONG EVERY AXIS of the plane: `from`
+/// divides `to` on each axis by one quotient. `None` where an extent of
+/// `from` is zero, one does not divide, or the quotients differ.
+fn whole_ratio(from: [usize; ALPHABET_SAMPLE_RANK], to: [usize; ALPHABET_SAMPLE_RANK]) -> Option<usize> {
+    let mut ratio: Option<usize> = None;
+    for (f, t) in from.iter().zip(&to) {
+        let q = t.checked_rem(*f).filter(|&rem| rem == 0).map(|_| t / f)?;
+        match ratio {
+            Some(was) if was != q => return None,
+            _ => ratio = Some(q),
+        }
+    }
+    ratio
 }
 
 /// C5 — THE FRAME RESIZED: every cell scaled by the one exact ratio the
@@ -1897,15 +1892,15 @@ fn read_tiles(r: &PredicateTable<'_, '_>) -> Option<Clause> {
 /// the one enclosure) whose extent is the output's frame.
 fn sized(r: &mut PredicateTable<'_, '_>, carried: Vec<Clause>, every: &[Vec<usize>]) -> Result<Vec<Clause>, Unread> {
     let ratio = |p: &Pair<'_>| -> Option<(u8, u8)> {
-        let ((xr, xc), (yr, yc)) = (frame_of(p.x), frame_of(p.y));
-        if xr == 0 || xc == 0 || yr == 0 || yc == 0 {
+        let (ex, ey) = (p.x.extents(), p.y.extents());
+        if ex.contains(&0) || ey.contains(&0) {
             return None;
         }
-        if yr % xr == 0 && yc % xc == 0 && yr / xr == yc / xc {
-            return Some((u8::try_from(yr / xr).ok()?, 1));
+        if let Some(up) = whole_ratio(ex, ey) {
+            return Some((u8::try_from(up).ok()?, 1));
         }
-        if xr % yr == 0 && xc % yc == 0 && xr / yr == xc / yc {
-            return Some((1, u8::try_from(xr / yr).ok()?));
+        if let Some(down) = whole_ratio(ey, ex) {
+            return Some((1, u8::try_from(down).ok()?));
         }
         None
     };
@@ -1927,7 +1922,7 @@ fn sized(r: &mut PredicateTable<'_, '_>, carried: Vec<Clause>, every: &[Vec<usiz
             .pairs
             .iter()
             .map(|p| {
-                let (yr, yc) = frame_of(p.y);
+                let frame = p.y.extents();
                 let spans: Vec<Vec<SectionSite>> = match extent {
                     Extent::Body => p.bodies.iter().map(|b| painted_of(b).into_iter().map(|q| q.site).collect()).collect(),
                     Extent::Interior => statement::regions_each(RegionKind::Interior, p.x, &p.bodies),
@@ -1935,7 +1930,7 @@ fn sized(r: &mut PredicateTable<'_, '_>, carried: Vec<Clause>, every: &[Vec<usiz
                 spans
                     .iter()
                     .enumerate()
-                    .filter(|(_, sites)| SectionSite::span_of(sites.iter().copied()).is_some_and(|(_, e)| e == [yr, yc]))
+                    .filter(|(_, sites)| SectionSite::span_of(sites.iter().copied()).is_some_and(|(_, e)| e == frame))
                     .map(|(b, _)| b)
                     .collect()
             })

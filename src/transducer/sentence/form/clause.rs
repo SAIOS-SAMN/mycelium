@@ -22,6 +22,7 @@
 
 use crate::core::Q;
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
+use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
 use crate::transducer::cga::Mv;
 pub use crate::transducer::perspective::PlaneAxis;
 use crate::transducer::stalk;
@@ -225,21 +226,25 @@ pub enum Act {
     /// centre, a mirror or a turn of the body's own frame carried along
     /// (ruled 2026-10-20: rotated or mirrored echoes).
     Echo { motion: Mv, about: About, gauge: Vec<(u8, u8)> },
-    /// FRAME, THE PANES (78.167 Phase B, Step 4): the input split along its
-    /// rows (`along_rows`) or its columns into two equal panes — a separator
-    /// line of one cell between them where `gap` — and the output the pane's
-    /// frame: a cell painted `paint` where `table` holds of whether each pane
-    /// is painted there (bit `2a + b` for panes painted `a`, `b`), the ground
-    /// otherwise. The truth table is the act; AND, OR, XOR and NOR are names
-    /// for four of them.
-    Panes { along_rows: bool, gap: bool, table: u8, paint: u8 },
-    /// FRAME, THE TILES (78.167 Phase B, Step 4): the output `rows × cols`
-    /// blocks of the input's frame, block `i` (in the lattice's order) the
-    /// input under the square's symmetry `turns[i]`: 0 itself, 1 mirrored
-    /// across its columns, 2 across its rows, 3 a turn of 180°, 4 a turn of
-    /// 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose. A 90° turn,
-    /// a transpose of an input that is not square is no block of its frame.
-    Tile { rows: u8, cols: u8, turns: Vec<u8> },
+    /// FRAME, THE PANES (78.167 Phase B, Step 4): the input split along the
+    /// perspective's plane axis `along` (MU-SENSING §3.6) into two equal
+    /// panes — a separator line of one cell between them where `gap` — and
+    /// the output the pane's frame: a cell painted `paint` where `table`
+    /// holds of whether each pane is painted there (bit `2a + b` for panes
+    /// painted `a`, `b`), the ground otherwise. The truth table is the act;
+    /// AND, OR, XOR and NOR are names for four of them.
+    Panes { along: PlaneAxis, gap: bool, table: u8, paint: u8 },
+    /// FRAME, THE TILES (78.167 Phase B, Step 4): the output a lattice of
+    /// blocks of the input's frame, `blocks` of them along each axis of the
+    /// perspective's plane (one count per plane axis, in the plane's order,
+    /// [`PlaneAxis::index`]): block `i` (in the lattice's canonical order,
+    /// the plane's last axis fastest) the input under the square's symmetry
+    /// `turns[i]`: 0 itself, 1 reversed along the plane's second axis, 2
+    /// along its first, 3 a turn of 180°, 4 a turn of 90°, 5 of 270°, 6 the
+    /// transpose, 7 the anti-transpose. A 90° turn, a transpose of an input
+    /// that is not square is no block of its frame. The square's symmetries
+    /// are the plane's by their mathematics, read through the perspective.
+    Tile { blocks: [u8; ALPHABET_SAMPLE_RANK], turns: Vec<u8> },
     /// CREATE, BETWEEN, ROUND A CORNER (ruled 2026-10-20:
     /// Manhattan bent connectors): from each selected body standing on one
     /// row to each body `to` selects standing on one column, the path along
@@ -329,6 +334,25 @@ fn take_coord(k: &[u8], p: &mut usize) -> Option<Coord> {
         }
         _ => return None,
     })
+}
+
+/// The panes' codec byte for the plane axis they split along: the byte the
+/// split's planar flag was written with (1 along the plane's first axis, 0
+/// along its second), so no clause or word address moves.
+pub(super) fn panes_byte(along: PlaneAxis) -> u8 {
+    match along {
+        PlaneAxis::First => 1,
+        PlaneAxis::Second => 0,
+    }
+}
+
+/// The plane axis a panes byte names; `None` for any other byte.
+pub(super) fn panes_of_byte(byte: u8) -> Option<PlaneAxis> {
+    match byte {
+        1 => Some(PlaneAxis::First),
+        0 => Some(PlaneAxis::Second),
+        _ => None,
+    }
 }
 
 fn put_order(buf: &mut Vec<u8>, o: Order) {
@@ -570,17 +594,18 @@ pub(super) fn put_act(buf: &mut Vec<u8>, act: &Act) {
             motion.put_canonical(buf);
             put_gauge(buf, gauge);
         }
-        Act::Panes { along_rows, gap, table, paint } => {
+        Act::Panes { along, gap, table, paint } => {
             buf.push(10);
-            buf.push(u8::from(*along_rows));
+            buf.push(panes_byte(*along));
             buf.push(u8::from(*gap));
             buf.push(*table);
             buf.push(*paint);
         }
-        Act::Tile { rows, cols, turns } => {
+        // The counts along the plane in the plane's order, one byte each:
+        // the bytes the planar pair of counts was written with.
+        Act::Tile { blocks, turns } => {
             buf.push(11);
-            buf.push(*rows);
-            buf.push(*cols);
+            buf.extend_from_slice(blocks);
             buf.extend_from_slice(turns);
         }
         Act::Bend { to, paint } => {
@@ -688,11 +713,7 @@ pub(super) fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
             Act::Echo { motion, about, gauge: take_gauge(k, p)? }
         }
         10 => {
-            let along_rows = match take_byte(k, p)? {
-                0 => false,
-                1 => true,
-                _ => return None,
-            };
+            let along = panes_of_byte(take_byte(k, p)?)?;
             let gap = match take_byte(k, p)? {
                 0 => false,
                 1 => true,
@@ -702,11 +723,15 @@ pub(super) fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
             if table > 0b1111 {
                 return None;
             }
-            Act::Panes { along_rows, gap, table, paint: take_byte(k, p)? }
+            Act::Panes { along, gap, table, paint: take_byte(k, p)? }
         }
         11 => {
-            let (rows, cols) = (take_byte(k, p)?, take_byte(k, p)?);
-            let n = usize::from(rows).checked_mul(usize::from(cols))?;
+            let mut blocks = [0u8; ALPHABET_SAMPLE_RANK];
+            let mut n = 1usize;
+            for b in blocks.iter_mut() {
+                *b = take_byte(k, p)?;
+                n = n.checked_mul(usize::from(*b))?;
+            }
             let mut turns = Vec::with_capacity(n);
             for _ in 0..n {
                 let t = take_byte(k, p)?;
@@ -715,7 +740,7 @@ pub(super) fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
                 }
                 turns.push(t);
             }
-            Act::Tile { rows, cols, turns }
+            Act::Tile { blocks, turns }
         }
         13 => Act::Bend { to: take_pred(k, p, 0)?, paint: take_paint(k, p)? },
         14 => {

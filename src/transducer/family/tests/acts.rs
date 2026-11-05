@@ -253,6 +253,22 @@ fn extract_rule_reads_two_panes_by_truth_table() {
     );
 }
 
+/// THE PANES SPLIT ALONG EITHER AXIS OF THE PLANE: the family above with
+/// its axes exchanged, the panes across a separator line of 5 along the
+/// plane's first axis, is read and re-derives the held-out pair as well; no
+/// axis is the panes' by a row or a column.
+#[test]
+fn extract_rule_reads_panes_along_first_plane_axis() {
+    knows(
+        &[
+            (&["10", "01", "55", "00", "10"], &["20", "22"]),
+            (&["10", "10", "55", "00", "01"], &["20", "22"]),
+            (&["01", "00", "55", "11", "10"], &["20", "20"]),
+        ],
+        (&["01", "10", "55", "10", "00"], &["22", "20"]),
+    );
+}
+
 /// 78.167 Phase B, Step 4 — TILES BY THE SQUARE'S SYMMETRIES: the output two
 /// by two blocks of the input — itself, mirrored across its columns, across
 /// its rows, and turned 180°. Each block's symmetry is read by testing the
