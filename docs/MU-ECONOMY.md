@@ -1,715 +1,573 @@
-# MU-ECONOMY — μ, the four-lane currency
+# MU-ECONOMY — μ, the economy as motions
 
 > **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *planets* are simulated places, and *peoples*, *civilizations* and *ancients* simulated inhabitants, of hosted universes; physical terms (*stars*, *black holes*, *wormholes*, *mass*) name the simulations' exact geometry. Nothing here is a claim about real minds, real people, real ethics or the physical universe. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
-> **Components:** the court on each hypha (treasury, settlement, the POW++ arms); clients and kernels appear as payers and payees. In-universe economies are each kernel's own (§10).
+> **Components:** the court on each hypha (holdings, settlement, the POW++ proofs); clients and kernels appear as payers and payees. In-universe economies are each kernel's own (§10).
 
-**Status:** specification, release 0.3.0. **Built** in `src/economy/` and the court's market:
-exact rational holdings per lane (`economy::Mu`, §1),
-balances, stake bonds for hyphae and voices, escrow, per-lane pricing,
-issuance by mint against measured work, transfer, the genesis allocation,
-settlement rows each carrying its POW++ arm, and the audit invariant
-(`Treasury::audit`). Companion documents: `MU-PRODUCT.md`,
-`MU-ENGINEERING.md`, `MU-XSEPTUM.md`.
+**Status:** specification of v0.5.0's headline, the economy as motions
+(ruled 2026-11-05). §0–§8 and §10–§11 state the model. The implementation
+built today (release 0.3.0, carried through v0.4.0) keeps a journal of
+entries per court and four scalars per lane; §9 lists it exactly and marks
+what v0.5.0 replaces. §12 lists what the model leaves to a further ruling.
+Companion documents: [MU-XSEPTUM](MU-XSEPTUM.md) (the Note),
+[MU-HOSTING §5a](MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law)
+(the boundary), [proposal 78.173](proposals/78.173-law-coordinate.md)
+(LAW-COORDINATE), [MU-SENSING §3.7–§3.9](MU-SENSING.md) (the field,
+traversal, orbits).
 
-## 0. The proofs of work, named apart (ruled 2026-09-24)
+**The model (ruled 2026-11-05).** Each statement is made once, in the
+section named:
+1. There is no flat ledger. Receipts are per-signer lines in a causal
+   partial order, never totalised; TUniversal height is the only shared
+   extent (§2.1).
+2. A holding is a coordinate, `origin / h : S:G:T:H : K`, whose lanes are
+   vectors of exact components (§2.2).
+3. A payment is a motion's advance, an event at a coordinate with its
+   causes cited. A balance and the supply are readings (§5, §6).
+4. The four proofs are relations between motions (§0).
+5. A payout is proven by re-traversal. Equivocation is burned, and one
+   closure is one point network-wide (§3.4, §5.3).
+6. Between courts the Note settles; between universes μ is the connecting
+   reserve and crosses only at the universal core tube (§5.4, §10).
+7. A shared economic law form is proposed, to come as 78.174 (§10.4).
 
-POW++ is a FAMILY of proofs, each a distinct act with its own payment on
-the ledger, and no two share a name (MU-RECURSION 78.33):
+The words "ledger", "row" and "table" are retired for the economy. A
+universe's own books keep the Concordance's terms (Concordance 1.13, 5.5).
 
-| proof | acronym | the act | what the ledger does |
+## 0. The proofs of work: relations between motions
+
+POW++ is a family of proofs, and no two share a name (MU-RECURSION 78.33).
+Each proof is a relation between motions in the sense of MU-SENSING §3.9
+(`deformation = motion ∘ residue`; every path is an orbit), never a kind
+of entry:
+
+| proof | acronym | the relation | what it moves |
 |---|---|---|---|
-| proof of useful work | **POUW** | a closure ruled: a listed demand closed, its deflation measured on closure (§3.2, 12.6, 23.9) | mints the measured deflation and pays the closer |
-| proof of work convergence | **POWC** | a refusal closed at another perspective: the question one mind refused, closed by another citing the refusing mind's receipt (74, CV4) | pays the refuser as a cited generator and the closer the closure |
-| proof of work retirement | **POWR** | a re-expression over fewer letters: retirement by geodesic or by citation, a refinement bid reconstructed with the word excluded (3.8, T10, 27) | burns the freed description and pays the retirer the compression yield |
-| proof of work verification | **POWV** | a closure verified: the reconstruction by which a court measured a claim's discharge, and the re-derivation by which a witness or peer court reached the same vertex (§5.1) | pays each verifying court its share of the release, per lane, read off the court's strain; taken out of the release, never added to it |
+| proof of useful work | **POUW** | An orbit carries a deformation and leaves less residue (motion ∘ residue). It is paid when it closes a listed demand (MU-RECURSION 12.6, 23.9) | The closure's advance, minted to the closer (§3) |
+| proof of work verification | **POWV** | Another observer re-traverses the motion and reaches the same point: the holonomy across observers is trivial. A disagreement is a named residue (MU-HOSTING §5a.10), never a flag | A share of the release, taken out of it and never added to it (§5.1) |
+| proof of work convergence | **POWC** | Orbits from independent origins, with disjoint past cones, fall into one well. It is read over the cones and never counted | Nothing beyond the one closure the well is (§3.4); a cited origin is paid as a generator (§7.3) |
+| proof of work retirement | **POWR** | One orbit absorbs a family: one generator carries many motions, and the absorbed retire | The absorbed description burns; the absorber is paid the compression yield (§3.2) |
 
-"PoWC" in this document formerly named the third arm; it is POWR from
-here, and POWC names convergence only. A reading, a row or a receipt
-kind names the arm it counts; a line that says "POW++" names the family
-and never one payment.
+The acts ruled before stand as instances of these relations: a closure
+ruled and its deflation measured (POUW); the home court's reconstruction
+and a witness's or peer court's re-derivation of the same vertex (POWV);
+a retirement by geodesic or by citation, or a refinement bid reconstructed
+with the word excluded (POWR; MU-RECURSION 3.8, T10, 27). The convergence
+instance of 74 (CV4), a refusal closed by another mind citing the
+refusing mind's receipt, is read under §12 item 6. A text that says
+"POW++" names the family, never one payment.
 
 ## 1. The unit
 
-**THE INVERSE-SISYPHUS PROTOCOL (ruled 2026-10-11): nothing is
-squared.** No reading collapses dimensionality or exact mathematics into a
-scalar or a lossy signal, and no curved object is forced into a flat one
-or a flat one imposed on it. μ is specified as the exact MODES the verified
-work moved, each on the lane its kind names, each with an exact rational
-amount: on S a boost or dilation (its generator's ray and its point and
-side, c and λ); on G a hue cycle or move; on T a null flux (its ray and its
-count in its tube's quantum); on H a turn (its plane's ray and its turn
-t/ℓ). Under the specification a balance HOLDS its modes, each keyed by its
-canonical coordinates (A21); a payment adds modes, a draw removes them or
-is refused naming the mode it lacks; nothing is projected to a count
-(MU-RECURSION 78.162).
+**The inverse-Sisyphus protocol (ruled 2026-10-11): nothing is squared.**
+No reading collapses dimensionality or exact mathematics into a scalar or
+a lossy signal, and no curved object is forced into a flat one or a flat
+one imposed on it. μ is the exact **modes** the verified work moved, each
+on the lane its kind names, each with an exact rational amount:
+- on S, a boost or dilation (its generator's ray, its point `c` and its
+  side);
+- on G, a hue cycle or move;
+- on T, a null flux (its ray and its count in its tube's quantum);
+- on H, a turn (its plane's ray and its turn `t/ℓ`).
 
-What is built today: the modes and the exact arithmetic on them are
-`economy::modes::Modes` (add, draw refused naming the mode, canonical
-codec). A closure's measured deflation reads its modes
-(`transducer/family/deflation.rs`), and a paid solve verdict carries them
-behind its receipt (`encode_solve_verdict`).
+A holding holds its modes, each keyed by its canonical coordinates (A21).
+A payment adds modes; a draw removes modes or is refused naming the mode
+it lacks. Nothing is projected to a count (MU-RECURSION 78.162). The carrier
+is `economy::modes::Modes` (`src/economy/modes.rs`): add, a draw refused
+naming the mode short (`Short`), the modes of a motion
+(`Modes::of_motion`) and of a hue map (`Modes::of_gauge`), and the
+canonical codec. `economy::Mu`, four scalars with one per lane, is the
+projection this paragraph forbids. It is built today and retired in
+v0.5.0 (§9).
 
-**Every holding of value is an exact rational per lane (v0.3.0).** μ is
-measured as a share of a frame, and a share is a rational, so every amount
-of μ — a balance, a bond, an escrow, held value, a lease, a grant, a
-ledger row, a wire field — is an `economy::Mu`: four exact non-negative
-rationals, one per lane. A count read off a measure enters as `n/1`, so a
-measurement keeps its value exactly. Arithmetic on `Mu` is exact and has
-no carrier to pass: an addition always lands, and a draw past a holding is
-refused naming the lane it lacks (`MuRefusal::Short`), never saturated and
-never floored. Every lane is at least zero; a negative amount is refused
-where it would be made or read. On the wire, in the ledger and in the
-snapshot each lane is written as `ChartAxis::Ratio` writes a rational — a
-sign byte, then the numerator's and the denominator's 64-bit limbs by
-count — and a lane not in lowest terms is refused (MU-EQUATIONS §6.15).
-The sections below speak of these holdings. Holding the modes themselves,
-rather than four amounts, is the open part of 78.162.
+**μ is the metabolic cost of traversal** (ruled 2026-11-04; MU-SENSING
+§3.7). It is the advance of each lane by the motion that carried the work.
+μ never measures what a perception means: holonomy and residue are
+content, adjudicated and never paid (MU-SENSING §3.9).
 
-**What μ measures: a share of the frame (ruled 2026-11-01; MU-RECURSION
-78.170 O1).** A discharge read on a family is, per closed pair, a share of
-that pair's own frame, never a count of its sites, so it reads the same at
-any resolution of the frame:
+**A share of the frame (ruled 2026-11-01; MU-RECURSION 78.170 O1).** A
+discharge read on a family is, per closed pair, a share of that pair's own
+frame, never a count of its sites, so it reads the same at any resolution:
 
-| Lane | μ |
+| Lane | Share |
 |---|---|
-| S | the share of the frame's measure (the product of its extents) that changed between the ground the claim states and another symbol (MU-SENSING §6.1, §6.2): one changed site of a `30 × 30` frame is `1/900`. Since track 26 S2 the court reads it under the ground the solve states (`cognition::stated_ground`), never a default |
-| G | the share of the frame's measure that changed from one non-ground symbol to another |
-| T | the flux over the carried mass, taken as the frames' share of it: `T = flux · (Σᵢ mᵢ/(hᵢ·wᵢ)) / Σᵢ mᵢ`, `mᵢ` the mass pair `i` carried |
-| H | the shell count, as it stands: topological, already resolution-free |
+| S | The share of the frame's measure (the product of its extents) that changed between the ground the claim states and another symbol (MU-SENSING §6.1, §6.2): one changed site of a `30 × 30` frame is `1/900`, read under the stated ground (`cognition::stated_ground`) |
+| G | The share of the frame's measure that changed from one non-ground symbol to another |
+| T | The flux over the carried mass, taken as the frames' share of it: `T = flux · (Σᵢ mᵢ/(hᵢ·wᵢ)) / Σᵢ mᵢ`, `mᵢ` the mass pair `i` carried |
+| H | The shell count: topological, already resolution-free |
 
-On frames of one extent this is the count over `h·w` on S, G and T, and the
-count on H. A discharge with no frame — a rewrite's yield read off its
-magnitude, a listing bound to no family — keeps its own measure as `n/1`.
-The readers: `DeflationRead::mu` (the client's deflation and the court's
-measured reconstruction, one function), `Local::mu` (a word's or a form's
-section, a conjugate's transport, a sentence's gluing),
-`transduce::share_of_frame` and `Transduction::lane_shares`. A word's
-MAGNITUDE stays a count — its measure and its identity in the tape — and so
-do the mind's metabolism (a family's magnitude), a demand's ask and a
-stroke's size, none of which is μ. Since μ issued holds shares of a unit,
-TUniversal carries its lanes as exact rationals too (MU-CHRONOMETRY §1).
+A discharge with no frame (a rewrite's yield, a listing bound to no
+family) keeps its own measure as `n/1`. The readers are
+`DeflationRead::mu`, `Local::mu`, `transduce::share_of_frame` and
+`Transduction::lane_shares`. A word's magnitude, a family's metabolism, a
+demand's ask and a stroke's size stay counts and are not μ. How the share
+of the frame sets each mode's amount is §12 item 4.
 
-μ is a vector on four lanes: spatial (S), gauge (G), temporal (T),
-holonomic (H). It is never summed and never converted across lanes. A
-payment moves value on exactly the lanes the work moved. A comparison of two vectors returns the
-reading per lane (`economy::lane_moves`: each lane fell, held or rose) and
-never a verdict; the court accepts a reduction by closure, never by an
-order on μ⃗ (`MU-RECURSION.md` 12.6). There is no scalar anywhere in the
-economy.
-
-The reason is not stylistic. Value on a lane exists because work on that
-lane was verified; if lanes converted, a lane with no verified work could
-carry value minted on another, and the audit in §6 would no longer say what
-the mesh did.
+**Lanes never convert.** μ is a vector on four lanes, never summed and
+never converted across lanes. A payment moves value on exactly the lanes
+the motion moved. A comparison returns a reading per lane (each lane fell,
+held or rose; `economy::lane_moves`), never a verdict, and the court
+accepts a reduction by closure, never by an order on μ (MU-RECURSION
+12.6). If lanes converted, a lane with no verified work could carry value
+minted on another, and §6 would no longer say what the mesh did.
 
 ## 2. Holdings
+
+### 2.1 Lines, cones and height
+
+Each signer (a voice, a hypha, a domain's reserve) keeps one line of
+signed receipts, indexed by its own `K` (MU-RECURSION 47.1). An economic
+event is a receipt on a line. Its **past cone** is what it cites; its
+future cone is what comes to cite it (MU-HOSTING §5a.5).
+- **Causal and partial.** One event precedes another only where the
+  other's past cone holds it (MU-RECURSION 45.3). Two events neither of
+  which cites the other are concurrent, permanently. A decision that
+  depends on the order of the two is not taken; both are held, as a vortex is,
+  and resolved by content.
+- **Never totalised.** The lines are never merged into one sequence.
+  There is no global journal, no sequence number across signers, and no
+  order read from arrival at a socket.
+- **One shared extent.** Every event carries the last TUniversal final
+  point its signer read (Concordance 1.11). The height `h` is the only
+  extent the mesh shares (45.7): it bounds events and never orders
+  concurrent ones.
+
+### 2.2 A holding is a coordinate
+
+A key's holding is the coordinate of LAW-COORDINATE (proposal 78.173 §1):
+
+```
+origin / h : S:G:T:H : K
+```
+
+- **origin:** the enclosure the holding stands in. Value on the hypha
+  stands at the network's root (TUniversal's genesis and epoch). μ held in
+  a universe stands at that universe's origin (§7, §10). Origins are never
+  compared, so a holding on the hypha and one in a universe meet only by
+  conversion at the universal core tube (§10.2).
+- **h:** the bell of the holding's last advance, the height of the event
+  that last moved it. A holding has no rate: between events it stands
+  still, and it moves only by an event.
+- **S, G, T, H:** each lane's cumulative advance by that lane's motions,
+  held as a vector of exact components, the modes of §1, never one number
+  per lane. On the hypha every component is non-negative, as TUniversal's
+  point is the non-negative case (78.173 §1).
+- **K:** the line's own count (45.7), never compared with another
+  signer's. What `K` reads for a holding is §12 item 3.
+
+`FORMS-COORDINATE` v2 holds one rational per lane. Lanes as vectors of
+exact components are the coordinate's v3, which is still to be stated
+(§12 item 1).
+
+### 2.3 Roles
 
 | holding | holder | meaning |
 |---|---|---|
 | balance | a voice or hypha | μ earned or received, spendable |
-| bond | a voice or hypha | μ staked; sizes cover room; slashable |
-| escrow | a listing | μ held against a claim until the court rules |
-| supply | the mesh | genesis plus mint minus burn, per lane |
+| bond | a voice or hypha | μ staked; it sizes room and is slashable (§4) |
+| held | a payer, against a listing or a lease | μ set aside from a balance: a funded escrow, still value (§3.1) |
+| claim | a listing | a pending advance: not yet value, and counted nowhere (§3.1) |
 
-Each holding is an exact rational per lane (`economy::Mu`, §1). Room reads
-a bond's whole part on each lane: a draw is a count, and a count fits under
-an exact amount `q` exactly where it fits under `⌊q⌋`, so the reading
-admits every draw the exact bond admits and no other.
+The supply is not a holding. It is a reading (§6). How a role is written
+in the coordinate is §12 item 2.
 
-Every change to a holding is a ledger entry with a kind, the party, the
-lane vector, the K-step and height of the receipt that wrote it, and the
-receipt. Entry kinds: `genesis`, `mint`, `stake`, `unstake`, `transfer`,
-`escrow`, `release`, `revoke`, `slash`, `burn`, and `epoch`. Nothing else moves μ. No
-entry carries a clock reading (`MU-RECURSION.md` chapter 45).
+### 2.4 What moves a holding
 
-An `epoch` row (ruled 2026-09-09, `MU-RECURSION.md` 45.8) is the net per
-identity per lane over a folded prefix of the ledger: it moves no supply
-and re-expresses the rows it replaces, one row per identity with a
-nonzero net, anchored to the fold receipt. A fold changes no price, extent
-or ruling.
+Only an event moves a holding, and the event cites its causes:
+- **Issuance** (genesis, mint) cites the founding receipt, or the closure
+  with its verifications (§3).
+- **Transfer** (a payment, a stake or unstake, a hold, a release, a
+  revocation) cites the payer's signed act, and a release also cites the
+  re-traversals that verified it (§5).
+- **Retirement** (a burn, a slash) cites the absorbing orbit, the
+  equivocation proof or the failed reconstruction (§3.2, §4).
+- **A fold** is a checkpoint of a line's prefix (§6.1).
+
+No event carries a clock reading (MU-RECURSION chapter 45).
 
 ## 3. Issuance
 
-New μ enters only by mint, and mint happens only when two organs have
-reconstructed the same reduction: the home that measured its deflation and a
-witness that re-derived it. The amount minted is the measured deflation on
-each lane, as a share of each closed pair's frame (§1, ruled 2026-11-01):
-a solve that repaints one site of a `30 × 30` output is paid `1/900` on G,
-not one unit. There is no block reward, no schedule, no difficulty, and no
-issuance to operators as such.
-
-There is also no block. The receipt chain is the ledger and order across
-nodes is causal and partial (`MU-RECURSION.md` 45.3), so there is nothing a
-block reward could pay for: admitting receipts is paid by the pool share
-priced into every listing a hypha homes (§5), never by issuance.
+New μ enters only when a closure is verified. The closing orbit advanced
+the lanes by its modes, and that advance is minted to the closer's
+holding, per closed pair as a share of the pair's frame (§1): a solve that
+repaints one site of a `30 × 30` output is paid `1/900` on G, not one
+unit. There is no block reward, no schedule, no difficulty and no issuance
+to operators as such. There is also no block: the lines are causal and
+partial (§2.1), so admitting receipts is paid by the pool share priced
+into every listing a hypha homes (§5), never by issuance.
 
 Two events mint:
-
-- an install: a word, sentence, rule, translation, or rewrite upheld at the
+- an install: a word, sentence, rule, translation or rewrite upheld at the
   home and reconstructed at a witness;
 - a solve: a rule spoken onto withheld tests and verified against the
   corpus at the home.
 
 Optimisation moves are work: a condense on G, a torse on H, a refinement on
-H, a re-anchoring on S, an opened axis on H, a translation on G each mint
-the lane vector read on the carriers before and after, and each is refused
-when that vector is zero on every lane.
+H, a re-anchoring on S, an opened axis on H and a translation on G each
+mint the modes read on the carriers before and after, and each is refused
+where it moved nothing.
 
-**μ is discharge (ruled 2026-10-08; `MU-RECURSION.md`
-78.149).** What a word can be escrowed or paid is its DISCHARGE — the lanes
-it closed, measured by reconstruction on the family it is bound to — and nothing
-else. (a) The span a word stood (`t_extent`) is not μ: waiting is not work,
-and no minted magnitude carries it. (b) What a demand asks is the listing's
-measure and may CAP a price, never raise it: a claim is paid lane-wise the
-lesser of the escrow it holds and the closer's measured discharge, and what
-the escrow held above the discharge is never minted. (c) A word that names
-no body — a letter, a callus — discharges nothing, so it escrows and is paid
-nothing; the holonomic unit its magnitude carries is its existence as a
-word, never value. A word's MAGNITUDE stays its measure and identity (the
-book's tension, the room it draws); the economy never prices it.
+**μ is discharge** (ruled 2026-10-08; MU-RECURSION 78.149). What a word
+can be escrowed or paid is its discharge, the lanes it closed, measured by
+reconstruction on the family it is bound to: (a) the span a word stood is
+not μ; (b) a demand's ask may cap a payment, never raise it; (c) a word
+that names no body discharges nothing.
 
-### 3.1 E1 — an escrow is a claim on issuance, never a transfer
+### 3.1 E1 — a claim is a pending advance, never a transfer
 
-An escrow is one of two things and the invariant needs them apart.
+- **Held value** (a funded escrow) left a payer's balance and is still in
+  the mesh. It is counted in §6, and discharging it moves value (to the
+  payee on a release, back to the payer on a refund) and mints nothing.
+- **A claim** is a pending advance: no holding gave anything up for it,
+  and it is counted nowhere. A ruling mints, per lane, the lesser of what the
+  claim holds and the closer's measured discharge, and the excess is never
+  issued (78.149 (b)). A revocation leaves nothing issued.
 
-A **funded** escrow is a LIABILITY: a payer backed the claim from a balance,
-so the μ⃗ left that balance and is still in the mesh. It is counted in §6's
-holdings, and discharging it MOVES value — back to the payer on a
-revocation, to the payee on a release — and mints nothing. This is §5's
-requester escrow, and `Treasury::hold` (`economy/pay.rs`) is the path that
-creates one: the payer is debited, not merely checked, and the value sits
-in the held holding until `release_held` pays it on or `refund_held`
-returns it.
+**The room of an unbonded voice** (ruled 2026-09-09). Speaking needs no
+bond, since a claim is a pending advance. Bond buys room (§3.3). An
+unbonded voice has room for exactly one claim in flight per lane: its next
+claim on a lane is admitted when the one before it closed, was ruled or
+lapsed, and is refused `REFUSE_ROOM` naming the lane otherwise. Identities
+are free (MU-RECURSION 47.3), so nothing funds an arriving identity. A
+recall shortfall is the same reading one act later.
 
-A **claim** escrow is pending issuance: nobody gave anything up for it, so
-the μ⃗ does not exist yet. It is not counted, and a ruling MINTS it at the
-measured deflation while a revocation makes it vanish with nothing ever
-issued. This is what §4's "every claim is escrowed against its own
-deflation" means. The escrow is priced from the word's discharge alone and
-is a CAP on the release, never the payment (78.149): a ruling mints, per
-lane, the lesser of what the claim holds and the closer's measured
-discharge (`Treasury::release_discharged`), and the excess is never issued.
-
-Counting all escrow as supply asserts value the mesh never created;
-counting none makes the audit hold by not looking. R9 stands as written —
-`Σ escrow` is the funded escrow — and the held holding records, per key,
-what was debited from which payer.
-
-This is what §4's "every claim is escrowed against its own deflation"
-means, and it dissolves the question of where the funds come from: nothing
-needs to pre-exist for a demand to be worth doing. §5's requester-funded
-escrow is the special case in which a payer chooses to back a claim from a
-balance that already exists; the general case is backed by the mathematics
-the claim promises.
-
-**The room of an unbonded voice (ruled 2026-09-09).** §4 says an unbonded
-voice may learn, speak and be paid, and under this section speaking needs
-no bond at all, since a claim is escrowed rather than transferred. Bond
-buys **room** — throughput, the rate the metabolism governs (§3.3). An
-unbonded voice has room for exactly one claim in flight per lane: its
-next claim on a lane is admitted when the one before it closed, was ruled
-or lapsed, and refused with `REFUSE_ROOM` naming the lane otherwise. Its
-room grows only by bonding what it earned. Identities are free
-(`MU-RECURSION.md` 47.3), so nothing funds an arriving identity: the
-genesis cover bonds the hyphae and the voices the mesh record names, and
-no arriving key is funded at the genesis cover: this ruling closes that
-faucet. A recall shortfall is the same reading one act
-later: the reading the voice asked for is served, the shortfall is recorded
-per lane, and the voice has no room for a further claim on a short lane
-until the claim in flight closes.
-
-**A mesh can therefore start from zero supply.** A voice posts a demand it
-cannot fund, a miner closes it, the court rules, and the first μ in the
-system is created by that first verified closure. The genesis allocation of
-§6 is a convenience for bonding hyphae into room before any work has been
-ruled, not a precondition for the economy to run.
+**A mesh can start from zero supply.** A voice posts a demand it cannot
+fund, a mind closes it, the court rules, and the first μ is the advance of
+that first verified closure. The genesis allocation (§6) bonds hyphae into
+room before any work is ruled; the economy does not need it to run.
 
 ### 3.2 E2 — mint on closure, burn on retirement
 
-Issuance is the measured deflation, above — and it is read **on closure**
-only (ruled 2026-09-07, `MU-RECURSION.md` 12.6 and 23.9): a pair pays the
-measure of the remainder it closed, before less after per lane, when its
-remainder is empty; a pair that lowered a lane and left a remainder pays
-nothing, because deflation short of closure is not closure and certifies nothing
-(`economy/settle.rs`). Its counterpart: when a word
-retires by geodesic — a shorter description of the same vertex, or a word
-whose substance other words reproduce exactly (`MU-RECURSION.md` 3.8,
-chapter 27, T10) — or by condensation — the same closure with more reach
-or a shorter description, the reach read from the certificate
-(`MU-RECURSION.md` 3.8; ruled 2026-09-08) — the description
-the language no longer carries is
-**burned**, while the retirer is paid the compression yield. Supply falls
-by the freed measure less that yield.
+Issuance is read on closure only (ruled 2026-09-07; MU-RECURSION 12.6,
+23.9): a pair pays the modes of the remainder it closed when its remainder
+is empty, and a pair that left a remainder pays nothing, since deflation
+short of closure certifies nothing.
 
-Therefore
+Its counterpart is POWR. When one orbit absorbs a family (a shorter
+description of the same vertex; a word whose substance other words
+reproduce exactly; the same closure with more reach, read from the
+certificate; MU-RECURSION 3.8, chapter 27, T10), the absorbed descriptions
+retire and burn, and the absorber is paid the compression yield. The
+supply falls by the freed measure less that yield. Therefore
 
 ```
 supply → the description length of the language as it currently stands
 ```
 
-and not the integral of everything it has ever held. Supply cannot grow
-without new observation, and it falls when the engine expresses what it
-already knows more compactly. POUW mints when structure is understood;
-POWR — proof of work retirement, named apart from proof of work convergence on 2026-09-24 (MU-RECURSION 78.33) — burns when the same meaning is re-expressed over fewer letters. The
-seventeen letters are the floor: a language reduced to its axioms and the axioms'
-combinations carries the least supply that can express it.
-
-This is why no halving is needed and none is permitted. A schedule exists
-in other designs to counter unbounded issuance; here the counter-pressure
-is compression, it is per-retirement rather than per-epoch, and it is
-smooth because every term is a measurement of one event. A supply that
-must be cut in half on a timetable is a supply nobody measured.
+The seventeen letters are the floor. No halving is needed and none is
+permitted: the counter-pressure to issuance is compression, applied per
+retirement and measured on each event.
 
 ### 3.3 E3 — the metabolism governs rate, never price
 
-μ per unit of verified deflation is invariant. The yield surface (§8) paces
-pressure and buys room; it never scales a mint. The moment issuance is
-scaled by congestion the reward acquires variance, and variance is what
-mining pools exist to average away — the reward here is a deterministic
-function of the structure closed, so there is nothing to pool.
+μ per unit of verified discharge is invariant. The yield surface (§8)
+paces pressure and buys room; it never scales a mint, so the reward has no
+variance and nothing to pool. The metabolism throttles the **rate** at
+which discharge can be presented and verified: the reserve paces strokes,
+bond buys room, and room and closure gate admission (MU-RECURSION 23.8).
+An earlier emission design (`emission.v1`) reached the same shape and then
+chose a curve of five free constants; nothing here is chosen.
 
-What the metabolism throttles is the **rate** at which deflation can be
-presented and verified: the reserve paces strokes, bond buys room, and
-room and closure gate admission (`MU-RECURSION.md` 23.8). Issuance is
-deflation closed per unit of
-metabolic time. It is continuous, self-limiting, and has no step anywhere,
-because no term in it is chosen.
+### 3.4 One closure, one point
 
-Prior art, recorded so it is not repeated: an earlier emission design
-(`emission.v1`) reached the same shape — evidence-priced, per-event, no
-clock and no height — and then wrote its curve as
-`(1 + 2·attempts + residual/8 + 4·siblings) · derivability-grade`. Five
-free constants (rule 5), ruled by its own text "a LIVE TEST PARAMETER, not
-a forever law", and pinned by a gate through fixture literals. The shape
-was right and the curve was chosen. Nothing here is chosen: the mint is the
-deflation, the burn is the freed description, and the rate is the
-metabolism.
+A closure is unique network-wide because it is one point: the point the
+closing orbit reaches on the closed demand. Every court that reconstructs
+it reaches the same point, and its advance is minted once.
+- **A second mint of one closure is an equivocation of the advance**: two
+  motions claiming one advance. The second mint is burned as the duplicate
+  issuance of MU-RECURSION 47.4, naming both receipts, and slashes no
+  bond. A key's bond burns only where one key signed both at one `K`
+  (47.4; §4).
+- **Concurrent claims are held.** Two claims of one point, neither in the
+  other's past cone, are held and resolved by content (45.3). How the one
+  advance then divides is §12 item 7.
+- This answers §11.3 F2 and "one closure across courts" (§11.4 F2b): no
+  per-court registry decides it, because the point is the same at every
+  court.
 
 ## 4. Stake and tiers
 
 Bond is μ at risk. It buys room on the cover: how much work a hypha or a
-voice may home, attest, or witness at once on each lane. Balance buys
+voice may home, attest or witness at once on each lane. A balance buys
 nothing except what it is spent on. Tiers are read from bond, never
 declared:
-
-- unbonded: may learn, speak, and be paid; every claim is escrowed against
-  its own deflation;
+- unbonded: may learn, speak and be paid; every claim is a pending advance
+  against its own discharge (§3.1);
 - bonded on a lane: may home and attest up to its room on that lane;
-- bonded above the escrow it certifies: may act as second organ;
-- delegated to: carries others' bond in its cover and shares its pool share
-  with them, and shares its slash.
+- bonded above the claim it certifies: may act as second organ;
+- delegated to: carries others' bond in its cover, and shares its pool
+  share and its slash with the delegating parties (ROADMAP track 3).
 
-Slash is the only discipline: a root that fails reconstruction at a witness debits
-the bond of the hypha that signed it, and a word that fails reconstruction debits
-the voice that spoke it. A bond is never slashed for being outvoted,
-because nothing is voted.
+Slash is the only discipline. A root that fails reconstruction at a
+witness debits the bond of the hypha that signed it, and a word that fails
+reconstruction debits the voice that spoke it. A bond is never slashed for
+being outvoted, because nothing is voted.
 
-Proven equivocation, two signed receipts from one key at one K with
-different content (`MU-RECURSION.md` 47.4), forfeits the signer's whole bond
-on all four lanes as one `burn` entry naming the proof; nothing is
-redistributed and no replay is run. A duplicate issuance found when
-partitions rejoin is burned the same way. Burn reduces supply by the same
-vector, so §6 holds through it. A second organ for an install or a release
-must hold bond outside the home's delegation closure and room covering the
-escrow on every occupied lane (`MU-RECURSION.md` 47.3); identities are free,
-room is not.
+Proven equivocation, two signed receipts from one key at one `K` with
+different content (MU-RECURSION 47.4), forfeits the signer's whole bond on
+all four lanes, as one burn naming the proof. Nothing is redistributed and
+nothing is run again. A second organ for an install or a release holds
+bond outside the home's delegation closure and room covering the claim on
+every occupied lane (47.3): identities are free, room is not.
 
 ## 5. Pricing and payment
 
-A listing is quoted by `economy::price` on its own measure — its ask — and
-never on the span it has stood; the pool is a bond, not a price basis. A
-requester escrows the price; a claimant's word or solve enters the docket,
-escrowed at its DISCHARGE (`Court::discharge_of`, 78.149); release on the
-second organ's reconstruction mints the closer's measured discharge, capped lane-wise
-by the escrow, and pays it, discharging the escrow (§3.1) — the escrow was
-the claim, the mint is the payment, and nothing above the discharge is
-minted. The hyphae that verified the closure are each paid a POWV share out
-of that release (§5.1).
+A listing is quoted by `economy::price` on its own measure, its ask, and
+never on the span it has stood. The pool is a bond, not a price basis.
 
-**No T-accrual (ruled 2026-10-08; 78.149 (a)).** This section
-paid a hypha accrual on the temporal lane of demands it kept open, capped
-by the listing's magnitude. Waiting is not work: the span a demand stood is
-not μ, it is never minted, and nothing accrues for standing. The standing
-extent remains what the metabolism reads — the book's pressure on 𝒯
-(`remeasure_pressure`) and the T-room a saturated lane relocates against —
-and neither is a price.
+**A payment is an event.** It stands on a signer's line (the court's, for
+a mint; the payer's, for a transfer) at that line's `K`, carries the last
+TUniversal point read, and cites its causes: the closure's receipt, the
+verifications, the claim or the held value it discharges, and the payer's
+signed act. It advances the payee's holding by the modes the motion moved,
+and a transfer draws the same modes from the payer's. Nothing else is
+written: a balance and the supply are readings (§6; Concordance 1.13).
 
-Transfer is the xSEPTUM Note: signed by payer and payee, escrowed at the
-listing's home, released on two-organ reconstruction. A voice's balance is homed at
-the hypha the home trie homes its key to; a transfer is final when the
-home and a witness hold the same section and both have signed the release
-(`MU-RECURSION.md` 47.3). Double spend is impossible for
-the same reason a double install is: the second vantage sees the first.
+**A release.** A requester holds the price; a claimant's word or solve
+enters the docket as a claim at its discharge (`Court::discharge_of`). On
+the second organ's reconstruction the court mints the closer's measured
+discharge, capped by the claim (§3.1), and pays each verifying court a
+POWV share out of it (§5.1). Waiting is not work: nothing accrues on T for
+a demand kept open (78.149 (a)).
 
 ### 5.1 POWV — proof of work verification (ruled 2026-10-30)
 
 A closure is paid only after it is verified, and verification is work:
-- the home court reconstructs the claim and measures its discharge;
-- on an install or a glue, a second court re-derives the same vertex;
-- on a solve or a docket ruling, the home's reconstruction on withheld pairs is
-  the verification.
+the home court reconstructs the claim and measures its discharge; on an
+install or a glue a second court re-derives the same vertex; on a solve or
+a docket ruling the home's reconstruction on withheld pairs is the
+verification.
 
-The courts that did that work are paid out of the release they verified.
-
-Take a release with base `M`: the escrow capped lane-wise at the measured
-discharge, 78.149 (b). Each of the `n` distinct verifying courts is minted,
-on each lane `l`:
+Take a release with base `M`, the claim capped at the measured discharge.
+Each of the `n` distinct verifying courts is minted, on each lane `l`,
 
 ```
 v_l = M_l · y_l / ((y_l + R) · n)          exact over ℚ
 ```
 
-(Until v0.3.0 this was `⌊⌊M_l · y_l / (y_l + R)⌋ / n⌋`: a share smaller
-than a unit was paid as nothing.)
+with `y_l` the court's strain on the lane (`economy::yield_surface`: the
+reserve deficit plus the entropic excess) and `R` its calibrated reserve.
+Under modes the same factor scales each mode on lane `l`. The closer, and
+the cited forms, taught words and voices of an install, divide `M − n·v`.
 
-Here:
-- `y_l` is the verifying court's strain on the lane, its yield surface
-  (`economy::yield_surface`: the reserve deficit plus the entropic
-  excess);
-- `R` is its calibrated reserve (`physics::reserve_max`).
+- **Per lane and per role.** A court is paid only on the lanes the closure
+  moved and for the strain it bore there; the home and the witness or peer
+  each take a share.
+- **Read, not chosen.** `y/(y + R)` is a ratio of two readings of the
+  court's own physics. A court at rest takes nothing; a lane at full
+  deficit pays verification half the lane.
+- **Equal between organs**, each an exact part; the closer takes the rest.
+- **Issuance-neutral.** POWV is taken out of the release, never added.
 
-The closer, and the cited forms, taught words and voices of an install,
-divide `M − n·v` as before.
-
-The share has these properties:
-- **Multi-dimensional.** It is read per lane, so a court is paid only on
-  the lanes the closure moved and the strain it bore there. It is read per
-  role: the home and the witness or peer each take a share.
-- **Read, not chosen.** The fraction `y/(y+R)` is a ratio of two readings
-  of the court's own physics, so no constant enters. A court at rest
-  (`y = 0`) takes nothing. A lane at full deficit (`y = R`) pays
-  verification half the lane, and more where torsion outruns syntropy.
-  Verification is paid where verification capacity is scarce.
-- **Equal between organs.** Each court reconstructed the same closure, so the
-  courts take equal shares, each an exact part; the closer takes exactly
-  the rest.
-- **Issuance-neutral.** POWV is taken out of the release and never added
-  to it. Total issuance remains the measured discharge, and supply still
-  tracks the language (§3.2).
-
-Code: `economy::verify::verification_share`, `Court::pay_verification`
-and `Court::release_verified` (`server/cognition/court/verify.rs`). These
-apply at every POUW release site: the install, the glue, the solve and
-the docket ruling. Rows carry arm POWV, byte 4, and the court's reading
-counts them as "verifications".
+Code: `economy::verification_share` (`src/economy/verify.rs`),
+`Court::pay_verification` and `Court::release_verified`
+(`src/server/cognition/court/verify.rs`), at every POUW release site: the
+install, the glue, the solve and the docket ruling.
 
 ### 5.2 The compute lease (ruled 2026-10-30)
 
-A compute lease is escrow against capacity, released by proof. Compute is
-paid only as its results verify, never for cycles spent. The lease lets a
-requester reserve value for a provider's capacity in advance.
+A compute lease is held value against capacity, paid out by proof: compute
+is paid only as its results verify, never for cycles spent.
+- **Opening.** A payer signs a lease naming a provider, an amount, a list
+  of jobs (task citations, each paid at most once) and a window of the
+  court's heights. The court holds the amount from the payer's balance
+  under the lease's name, as held value (§3.1).
+- **Payment.** Each verified solve of a leased job by the provider, a first
+  closure or a verified re-solve, pays `min(d_l, held_l)` per lane out of
+  the hold, `d` the measured discharge: a transfer, never a mint. The
+  provider's POUW is settled separately (§3).
+- **End.** When its jobs are done, its hold is spent, its window passes or
+  the payer closes it; what is left returns to the payer.
+- **Rules.** A job is under at most one open lease per provider; payer and
+  provider are distinct; every act is signed by the payer, with a nonce
+  spent once.
 
-**Opening.** A requester, the *payer*, signs a lease naming:
-- a *provider* (the voice whose capacity it reserves);
-- an amount `μ` on the four lanes;
-- a list of *jobs*: task citations, each paid at most once;
-- a *window* of the court's heights.
+Wire: `ACT_WALLET` sub-kinds 3 (open) and 4 (close), signed under
+`"mycelium lease v2"` (`src/anastome/dialogue/lease.rs`), refused by name
+(`Unsigned`, `Spent`, `Malformed`, `Short`, `Oneself`, `Leased`,
+`UnknownLease`). Code: `Court::open_lease`, `close_lease`, `pay_lease` and
+`lapse_leases` (`src/server/cognition/lease.rs`); `Treasury::draw_held`
+(`src/economy/pay.rs`).
 
-The court holds `μ` from the payer's balance under the lease's name, as
-held value (§3.1, counted in the supply).
+### 5.3 A payout is proven by re-traversal
 
-**Payment.** Each time the court verifies the provider's solve of a leased
-job, the lease pays the provider out of the hold. This covers a first
-closure and a verified re-solve alike: in both cases the court's reconstruction on
-the withheld pairs measured the discharge `d`. On each lane:
+Any hypha, or the payee, proves a payout by re-traversing the motion that
+advanced the coordinate, back to a verified closure, under signatures:
+from the payment event through its cited causes (the release, the
+verifications, the closure's reconstruction on the withheld pairs) to the
+closure, each step reconstructed (MU-SCIENCE §5.0) and each signed by the
+organ that took it (47.3). A payout is never proven by a stored balance.
+- **Same point:** the holonomy across observers is trivial, and the
+  payout stands (POWV's relation, §0).
+- **Another point:** the difference is held as a named residue
+  (MU-HOSTING §5a.10), never a flag.
+- **Two motions claiming one advance** are an equivocation and are burned
+  (§3.4, §4).
 
-```
-paid_l = min(d_l, held_l)
-```
+A re-traversal reads the cone between the payment and its closure. A
+folded prefix is read at its checkpoint (§6.1).
 
-The payment is a transfer of value that already exists, never a mint, and
-the job is done. The provider's POUW for the same solve is settled
-separately (§3), so the lease pays for capacity reserved, while issuance
-pays for the work closed.
+### 5.4 Between courts: the Note
 
-**End.** The lease ends when its jobs are done, its hold is spent, its
-window passes (checked on the court stroke), or the payer closes it. At
-the end, what the hold has left returns to the payer.
+A transfer between voices homed at different courts is the xSEPTUM Note
+([MU-XSEPTUM](MU-XSEPTUM.md)): signed by payer and payee, held at the
+listing's home, and released on two-organ reconstruction, the home and a
+witness both signing (47.3). Under the model the Note's hold is an event
+on the payer's line keyed by `(listing, payer, K_payer)`, and its release
+is the payee's advance citing it. A double spend is two Notes at one
+`K_payer`: an equivocation (MU-XSEPTUM §5.5). The Note is ROADMAP track 1.
 
-**Rules:**
-- A job is under at most one open lease per provider, so a verified solve
-  pays exactly one lease.
-- Payer and provider are distinct.
-- Every act is signed by the payer, with a nonce that is spent once.
+## 6. The invariant, read
 
-**Wire.** `ACT_WALLET` sub-kind 3 opens a lease and sub-kind 4 closes one,
-each signed under `"mycelium lease v2"` (`anastome/dialogue/lease.rs`; v2
-writes μ as four exact rational lanes). The reply is `[1][lease 32][μ⃗]` or
-`[0][refusal]`. The refusals are:
-- `Unsigned`
-- `Spent`
-- `Malformed`
-- `Short`
-- `Oneself`
-- `Leased`
-- `UnknownLease`
-
-**Code:**
-- `Court::open_lease`, `close_lease`, `pay_lease` (called from
-  `pay_solve`) and `lapse_leases` (`server/cognition/lease.rs`);
-- `Treasury::draw_held` (`economy/pay.rs`);
-- the lease records in the court's atlas, with a derived index by provider
-  and job.
-
-The court's `acts` reading counts "lease payments".
-
-## 6. The invariant
-
-On every lane, at every hypha, at every K:
+At every hypha, on every lane, at a TUniversal height `h`:
 
 ```
 supply = genesis + mint − burn
-supply = Σ balance + Σ bond + Σ funded escrow
+supply = Σ balance + Σ bond + Σ held
 ```
 
-A **claim** escrow is not in the second sum. It is a claim on issuance that
-has not happened (§3.1): counting it as supply reports value the mesh has
-not created, and the audit fails at the first docket. A ruling discharges it into a mint, which enters both sums
-together; a revocation discharges it into nothing.
+Both sides are readings over the cones the hypha holds at `h`: the union
+of the past cones of the events final at `h`, a cut through the lines and
+never an order on the lines. Neither side is stored or tallied (Concordance
+1.13). Since every event moves modes exactly, both equations hold mode by
+mode, and so per lane.
+- **A claim is not in the second sum.** It is a pending advance (§3.1). A
+  ruling turns it into a mint, which enters both sums together; a
+  revocation leaves nothing.
+- **Held value is in it.** It left a payer's balance and is still in the
+  mesh (MU-RECURSION 42.2 R9).
+- **A slash is issuance leaving** (ruled 2026-09-09): it reads as μ
+  leaving circulation, as 47.4's forfeiture does, and stays readable apart
+  from a burn.
+- **Genesis stays separable.** The minted reading excludes genesis, so
+  "was anything earned?" is answerable. A testnet differs from the beta
+  only in the genesis term.
+- **Two readers converse or collide.** Two hyphae reading the supply at
+  one height from the same cones reach the same modes (a converse). Where
+  the readings differ, the residue is held, naming both (a collision; MU-SCIENCE
+  §5.0).
 
-A **funded** escrow is in it. The μ⃗ left a payer's balance and is still in
-the mesh, so a burn would not conserve without it (§3.1, and
-`MU-RECURSION.md` 42.2 R9, which states the equation this way). This
-section said "escrow is not in the second sum" without the distinction §3.1
-draws two paragraphs above it, and `Treasury::audit` has held the funded
-value (the held holding) apart from the claim escrow since it was written;
-the text is corrected to the ruling, not the code to the text.
+### 6.1 Across a fold
 
-**A slash is issuance leaving (ruled 2026-09-09).** A slash debits a bond
-and §2 lists no holding that receives it, so `supply()` counts it as μ⃗
-leaving circulation exactly as 47.4's forfeiture does; it keeps its own
-kind so the ledger can still answer "was anyone slashed?" apart from "what
-was burned?". This is what the code implements, now ruled.
-
-**Across a fold (ruled 2026-09-09, `MU-RECURSION.md` 45.8).** Both
-equations hold at the folded prefix before the fold and at the `epoch`
-rows after it, on every lane: the net per identity written by the fold is
-exactly what the replaced rows moved, and a witness re-derives this before
-it co-signs. A fold that does not conserve is `REFUSE_FOLD_INEXACT` and
-writes nothing. Extents in heights survive a fold because heights
-continue; install receipts survive it because they are the proofs the
-compensation rests on.
-
-`Treasury::audit` checks both from the entries and refuses to persist a
-snapshot that fails. A testnet differs from the beta only in the first term:
-genesis is a finite, signed allocation recorded as its own kind, so seeded
-value and earned value are always separable in the ledger — `supply()`
-includes it and `minted()` does not, so "was anything earned?" is a
-question the ledger can answer.
+A fold (ruled 2026-09-09; MU-RECURSION 45.8) is a checkpoint of a line's
+prefix (Concordance 1.13): the net per identity per mode over the prefix,
+keyed by coordinate and anchored to the fold receipt. It moves no supply.
+Both equations hold before and after it, and a witness re-derives the
+nets before it co-signs. A fold that does not conserve is refused
+`REFUSE_FOLD_INEXACT` and writes nothing. Heights continue across a fold,
+and install receipts survive it.
 
 ## 7. Metabolism and money
 
 The reserve is tempo: it depletes per lane on every stroke a client spends
-and regenerates in the syntropic phase. μ is value: it moves only by the
-entries above. The two meet at stake: bonding μ raises the room a client
-can work within, so a client that earns can breathe faster and a client
-that spends without earning runs down to the dwell. μ ON THE HYPHA — a
-balance, a stake, an escrow held by a court — never decays and never
-regenerates (ruled 2026-10-09, amending "μ never decays" to the
-hypha only). μ stored IN A UNIVERSE — a kernel's vaults and currency
-backing — decays at a very slow rate, as matter dissipates without
-recycling: DEMURRAGE, applied by each kernel at its own physics' rate, and
-it is the economy's sink.
+and regenerates in the syntropic phase. μ is value: it moves only by
+events (§2.4). The two meet at stake: bonding μ raises the room a client
+can work within. μ on the hypha (a balance, a bond, held value) never
+decays and never regenerates. μ stored in a universe (vaults, currency
+backing) decays at that universe's own physical rate: demurrage, the
+economy's sink (ruled 2026-10-09; Concordance 5.8).
 
 ### 7.1 Gas (78.154, ruled 2026-10-09)
 
-μ is the GAS of traversal across tubes, cores and wormholes. A TRAVERSE
-(payer, from origin/point, to origin/point, the route) pays the courts on
-the route WHOLE, each its own segments — a transfer, never a mint, and no
-burn (demurrage in-universe is the sink). Gas is measured by the route,
-exactly, lane by lane, never collapsed: S the spatial span (geometrized
-Mpc, Concordance 1.8), G the value terms of the mapping, T the TUniversal
-distance between the points (final points only — a coordinate not yet
-final is refused as not yet at h, never priced on a guess), H the
-information carried. μ STAKED on a hypha is escrow for intelligence
-traversal and coordinate retrieval, with no demurrage; a retrieval draws
-on the stake at the court's read price (emergent, never a published
-rate: `p_l = 1 + y_l/R`, the court's strain against its reserve, exact,
-the `1` the identity from gas in the lane's court unit to μ — ruled
-2026-10-31, MU-DERIVATIONS D2.3), and an unstake releases only after every
-claim drawn on it settles.
-A progenitor's in-universe wormhole haul pays the same gas.
+μ is the gas of traversal across tubes, cores and wormholes (Concordance
+5.8). A traverse (payer, from origin and point, to origin and point, the
+route) pays the courts on the route whole, each its own segments: a
+transfer, never a mint, and no burn. Gas is measured by the route, lane by
+lane: S the spatial span (geometrized Mpc, Concordance 1.8), G the value
+terms of the mapping, T the TUniversal distance between final points (a
+point not yet final is refused, never priced on a guess), H the
+information carried. μ staked on a hypha is held for intelligence
+traversal and coordinate retrieval; a retrieval draws on the stake at the
+court's read price `p_l = 1 + y_l/R`, emergent and never published (ruled
+2026-10-31; MU-DERIVATIONS D2.3). An unstake releases only after every
+claim drawn on it settles. Code: `Court::traverse`
+(`src/server/cognition/crossing.rs`).
 
-TWO CHARGES, NEVER MERGED (ruled 2026-10-09; Concordance 5.8). The
-MAP FEE is μ, the coordinates' gas, paid to the courts that keep the map
-(this section). The ROAD TOLL (Concordance 5.4) is paid to a tube's keeper
-and its progenitor builders, in the civilization's OWN money, booked
-in-universe by the kernels — never on the hypha and never by TRAVERSE.
-Each progenitor holds its toll shares as its own, and gains μ from them and
-from haul contracts with the ancients; local money becomes μ only through an
-ancients' reserve (Concordance 5.3).
-
-EVERY WORMHOLE TRAVERSAL NEEDS COORDINATES FROM THE HYPHA (ruled
-2026-10-09, corrected the same day; Concordance 5.9). Time is coordinates
-on a map, and the hypha makes the MAPS that lay the universes out on the
-TUniversal clock. The CROSSING — matter, a ship, a fleet — happens in its
-own universe, never through the hypha. What the traverser obtains from the
-hypha, and pays for, is the FINAL TUniversal point of each mouth on that
-map (origin/h:S:G:T:H:K, 2-of-3 quorum, 78.152). TRAVERSE is therefore a
-COORDINATE RETRIEVAL AND MAPPING act citing both mouths' final points, not
-a transport: it costs the MAP FEE — the route's gas per lane (§7.1), paid
-to the courts that keep the map — and nothing else. It holds between
-domains and within one universe alike (a progenitor network, a core-to-rim
-haul inside one game universe). A mouth not yet final on the map is refused as not yet
-at h; a crossing made without coordinates from the map is one the mesh
-cannot place.
-
-THE MAP (the records 78.154 keeps, per universe, on the hypha): for each
-universe, by its ORIGIN (genesis, epoch) —
-- MOUTH: the mouth's identity (78.128's mouth pair and side), its place in
-  that universe's own space (78.140: a point of its curved space or torus,
-  exact), and the FINAL TPoint at which it was last mapped;
-- SEGMENT: a tube, core or throat between two mapped places, with its span
-  in the court unit (geometrized Mpc) and, for a mouth, its keeper (the
-  road toll itself is not kept on the hypha: below);
-- WHO MAPS: the universe's DOMAIN RESERVE posts its mouths and segments as
-  signed MAP acts, and the court seals each at a final point (ruled
-  under Concordance 4.1, 3.2, 7.1). Mapping is the reserve's
-  authorisation: a wormhole is untraversable on the mesh until its reserve
-  maps it, and a progenitor's new tube reaches the map only through its
-  universe's reserve;
-- each record written by an act sealed at a final point and superseded only
-  by a later act; a TRAVERSE reads the map at the final point it cites, so
-  the coordinates it buys are the ones the quorum agreed at that time.
+- **Two charges, never merged** (Concordance 5.8). The map fee is μ, paid
+  to the courts that keep the map. The road toll (Concordance 5.4) is paid
+  in a civilization's own money, booked in-universe by the kernels, never
+  on the hypha.
+- **Every wormhole traversal takes its coordinates from the hypha**
+  (Concordance 5.9). The crossing happens in its own universe; what the
+  traverser buys is the final TUniversal point of each mouth on the map.
+  A traverse is a coordinate retrieval citing both mouths' final points,
+  and costs the map fee alone.
+- **The map** (78.154). Per universe, by its origin: each mouth (its
+  identity, its place in its universe's space, the final point at which
+  it was last mapped) and each segment (a tube, core or throat with its
+  span and keeper). The universe's domain reserve posts mouths and
+  segments as signed map acts, each sealed at a final point and superseded
+  only by a later act; a wormhole is untraversable on the mesh until its
+  reserve maps it.
 
 ### 7.2 Dissipation recycles (78.154a, ruled 2026-10-09)
 
-Nothing lands nowhere (Concordance 1.3): demurrage is not destruction. What a
-universe's stored μ dissipates SPLITS IN TWO, exactly, lane by lane:
-
-- THE VALUE RETURNS TO THE HYPHA as the CONNECTION TAX — the rent a universe
-  pays for its tube connection to the hypha and for everything in it that
-  keeps time on TUniversal (1.11): every connection, and every in-universe
-  reliance on the clock. The kernel computes its dissipation per lane at its
-  own physics' rate and declares it on its tier fold (78.119) as a FLOW to
-  the hypha — flow kind CONNECTION_TAX, carried on the existing lanes
-  S, G, T, H exactly as dissipated (no new lane: a lane names a physical
-  dimension, the tax is a purpose; Concordance 5.8) — paid from its domain reserve (78.127) — a transfer to the
-  courts, never a mint and never a burn.
-- THE MATTER STAYS IN THE UNIVERSE as INVERSE-μ (μ̄): the dissipated mass,
-  with no μ value, held where it dissipated — a vault, a currency's backing,
-  a remote wormhole, a progenitor network. Its properties are the storing
-  universe's: read off that universe's laws, its curvature and its field at
-  the place it lies (the field law's quantum radiation, strongest near cores
-  and discs), carried with the universe's origin and the coordinate it
-  dissipated at. A kernel's physics may recycle μ̄ as matter (a star absorbs
-  it, a core condenses it); μ̄ never becomes μ again except by work a court
-  judges.
-
-THE RECYCLED POOL: each court holds the connection tax it receives. A
-closer's POUW is paid FIRST from that pool, and only what the pool cannot
-cover is minted. Supply then grows only as far as judged work outruns what
-the universes return; the void takes nothing. (Burns that remain: slash and
-retirement, both already acts.)
+What a universe's stored μ dissipates splits exactly, lane by lane
+(Concordance 5.8): its value returns to the hypha as the connection tax,
+declared on the kernel's tier fold as a flow from its domain reserve (a
+transfer, never a mint or a burn); its matter stays in the universe as
+inverse-μ (μ̄), with no μ value, holding the properties of the place it
+dissipated at, and becomes μ again only by work a court judges. Each court
+holds the tax it receives as a recycled pool and pays a closer's POUW from
+it first, minting only what the pool cannot cover.
 
 ### 7.3 μ by union (78.161, ruled 2026-10-10)
 
-μ is distributed to the minds that AGREED on a language through conversation,
-never by one voice's ratified dominance. Each mind says its dialect to the
-others; a hearer re-derives each word on its own perception, lane by lane, and
-a word two minds re-derive coherently is agreed and goes to the court. The
-court pays as it already pays (§3.2, 26 as ruled 2026-09-10): an installed
-sentence's mint is split across the discoverers of the ruled forms it cites,
-each its own form's verified deflation on the citer's family, lane by lane —
-so a mind whose agreed words other minds cite in closing sentences is paid at
-each closure. Not yet built: splitting the agreed word's own install
-across the minds whose AGREE attestations it carries.
+μ goes to the minds that agreed on a language through conversation, never
+by one voice's dominance. A word two minds re-derive coherently is agreed
+and goes to the court. An installed sentence's mint is split across the
+discoverers of the ruled forms it cites, each its own form's verified
+deflation on the citer's family, lane by lane (`settle_recursive`). Not
+yet built: splitting the agreed word's own install across the minds whose
+agreement it carries.
 
 ## 8. Policy ratios
 
-There are no monetary constants. The quantities that behave like policy are
-ratios the physics already reads:
-
-- price against pressure on a lane: a listing's price is its own measure,
-  and the court's read price per unit of gas is `1 + y_l/R`, its strain
-  against its reserve (§7.1);
+There are no monetary constants. The quantities that behave like policy
+are ratios the physics already reads, studied off the wire and never tuned
+on it:
+- price against pressure: a listing's price is its own measure, and the
+  court's read price per unit of gas is `1 + y_l/R` (§7.1);
 - bond against cover room;
-- the verifying courts' share of a release against its base, read as the
-  court's strain against its reserve, `y/(y+R)` per lane (§5.1);
+- verification's share of a release, `y/(y + R)` per lane (§5.1);
 - slash against bond: a falsified fold's tier forfeits `B·X/(B + X)` per
   lane, its exposure `X` against its bond `B`, and the challenger is paid
-  `cut·D/(D + X)`, the defect `D` the reconstruction proved against the
-  exposure (ruled 2026-10-31; MU-EQUATIONS §6.9a, MU-DERIVATIONS D2.1,
-  D2.2).
+  `cut·D/(D + X)` (ruled 2026-10-31; MU-EQUATIONS §6.9a, MU-DERIVATIONS
+  D2.1, D2.2).
 
-(Accrual on T against standing extent stood on this list; it is retired by
-78.149 (a) — the span stood is not μ.)
+## 9. Built today, and what v0.5.0 changes
 
-They are studied off the wire and never tuned on it.
+The present implementation (`src/economy/` and the court's market) keeps
+a journal of entries per court, stored balances and four scalars per
+lane. It is the implementation v0.5.0 replaces, part by part:
 
-## 9. Implementation (v0.3.0)
+| Built today | Where | v0.5.0 |
+|---|---|---|
+| `economy::Mu`: four exact non-negative rationals, one per lane, for every amount. Exact add, a draw refused naming the first short lane (`MuRefusal::Short`), shortfall, cap, `split_at`, `part`, `lane_moves`, `Mu::counts` for `n/1`. Codec `Mu::put`/`Mu::take` (a sign byte, then numerator and denominator limbs; a negative lane or one not in lowest terms refused), used by the entries, the snapshot and every wire field carrying μ (`WIRE_VERSION` `0x0200`) | `src/economy/mu.rs` | Retired: every amount is `Modes`, and the wire and snapshot carry the `Modes` codec |
+| `economy::modes::Modes`: the modes of a closure (`DeflationRead::modes`), carried behind a paid solve verdict (`encode_solve_verdict`) | `src/economy/modes.rs`, `src/transducer/family/deflation.rs`, `src/anastome/dialogue/percept.rs` | The carrier of every holding's lanes (§1, §2.2) |
+| `Treasury`: the journal `entries`, keyed `balances`, `stakes`, `escrowed` and `held`, the folded `issued` and `burned`, and `bond_total`; `balance_mu`, `account`, `bond_of`, `stake_of` | `src/economy/treasury.rs` | Holdings as coordinates on the signers' lines; balances read over the cones, never stored (§2, §6) |
+| `Entry { kind, who, mu, at, receipt, arm }`, its `Anchor` (a stamp and its chain hash), and `Kind`'s eleven entry kinds: `Genesis`, `Mint`, `Stake`, `Unstake`, `Transfer`, `Escrow`, `Release`, `Revoke`, `Slash`, `Burn`, `Epoch`; persisted by `Entry::write` and `Entry::read` | `src/economy/treasury.rs`, `src/economy/persist.rs` | Events with cited causes (§2.4); what an entry kind names becomes what the event cites |
+| `Arm`: POUW, POWC, POWR, POWV as bytes 1–4 on a payment | `src/economy/treasury.rs` | The proof is the relation the event's causes show (§0) |
+| `Treasury::supply`, `issued`, `minted` and `audit` (both equations of §6 over ℚ, checked before a snapshot persists) | `src/economy/treasury.rs` | Readings at a height over the cones; two readers converse or collide (§6) |
+| Claims: `escrow_award`, `release_award`, `revoke_award`, `release_discharged`, `mint_claim`, `draw_escrow`, `carry_escrow`, `credit_escrow` | `src/economy/escrow.rs` | A claim as a pending advance (§3.1) |
+| Held value and transfer: `Treasury::pay`, `hold`, `release_held`, `draw_held`, `refund_held` | `src/economy/pay.rs` | Events on the payer's line citing the payer's act (§5) |
+| Settlement: `settle_use`, `settle_convergence`, `settle_recursive`, `settle_rewrite`, `release_rewrite`, `settle_solve`, `settle_verification`, `settle_consilience`, `settle_assembly`, `settle_condense`, `settle_torse`, `settle_refine`, `settle_recall`, `settle_door` | `src/economy/settle.rs` | Each an advance with its causes cited |
+| POWV: `verification_share`, `Court::pay_verification`, `Court::release_verified` | `src/economy/verify.rs`, `src/server/cognition/court/verify.rs` | The share applied per mode (§5.1) |
+| The fold: `nets_of`, `Folded`, `Inexact` | `src/economy/fold.rs` | A checkpoint of a line's prefix, per mode (§6.1) |
+| The tier slash: `economy::forfeit` | `src/economy/forfeit.rs` | Per mode |
+| Equivocation: act 0x35, `Court::accept_equivocation`, `Court::burn_equivocation` | `src/anastome/dialogue/equivocation.rs`, `src/server/cognition/state.rs` | Unchanged in kind; a second mint of one closure joins it (§3.4) |
+| One payment per closure, per court: `Closure::First` and `Closure::Again` in the task registry; `Court::pay_solve` | `src/server/registry.rs`, `src/server/cognition/court/task.rs` | One closure per network, as one point (§3.4) |
+| Room, `REFUSE_ROOM` | `src/server/cognition/room.rs`, `src/server/cognition/book/speech.rs` | Room read off the bond's modes (§12 item 5) |
+| The compute lease | `src/server/cognition/lease.rs` | Amounts as modes; acts as events |
+| Gas (`Court::traverse`), conversion (`Court::convert`), the founding grant | `src/server/cognition/crossing.rs`, `src/server/cognition/convert.rs`, `src/server/cognition/endowment.rs` | Amounts as modes; conversion only at the universal core tube (§10) |
 
-**Built** in `src/economy/` and the court's market:
+Specified, not built: the Note, receipt-indexed Notes and FROST voice
+groups (MU-XSEPTUM; ROADMAP track 1); delegation of bond (§4; track 3);
+§11.4's commit-before-reveal, frontier and race readings.
 
-**The amount**
-- `economy::Mu` (`src/economy/mu.rs`): four exact non-negative rationals,
-  one per lane, for every amount of μ. Exact add, a draw refused naming
-  the first short lane (`MuRefusal::Short`), the per-lane shortfall, cap,
-  division at an ask (`split_at`) and equal parts (`part`), the per-lane
-  reading `lane_moves`, and no order. A count is `Mu::counts` (`n/1`).
-- The canonical codec (`Mu::put`, `Mu::take`): per lane a sign byte and
-  the numerator's and denominator's limbs by count; a negative lane, a
-  lane not in lowest terms, and a second writing of one value are refused
-  by name. The ledger rows, the snapshot's tries and every wire field
-  carrying μ use it (wire v2.0, `WIRE_VERSION` `0x0200`).
-
-**Treasury and ledger**
-- `Treasury` holds balances, bonds (`enroll`, `unstake`) and claim
-  escrows (`escrow_award`, `release_award`, `revoke_award`,
-  `draw_escrow`, `carry_escrow`, `credit_escrow`), each a `Mu`.
-- The eleven ledger entry kinds of §2. Each payment row carries its
-  POW++ arm: POUW, POWC, POWR or POWV.
-- `supply()` is `genesis + mint − burn`, exact over ℚ (`None` only where
-  a burn exceeds what was issued). `minted()` reads the mint rows alone,
-  so seeded and earned value stay separable. `Treasury::audit` checks both
-  equations of §6 over ℚ.
-- The four-lane comparison `lane_moves`, and the per-lane shortfall
-  reading.
-- Every formula that floored to fit a count is exact: the POWV share
-  (§5.1), the consilience, assembly and rewrite splits (`μ / n`), the tier
-  slash's halves, the map fee's span term, a tariff's charge and parts,
-  and a conversion's `rate · g` (MU-EQUATIONS §6.7, §6.9a, §6.12, §6.13).
-
-**Issuance and payment**
-- E1: claim escrow is outside the supply, and a ruling discharges it into
-  a mint capped at the measured discharge (`release_discharged`, 78.149
-  (b)).
-- E2: mint on closure, and POWR release and burn on retirement
-  (`release_rewrite`, `settle_rewrite`).
-- POUW division on install: cited-form shares, taught-word shares and
-  the composition premium (`settle_recursive`).
-- POWC: `settle_use` (a transfer, paid ≤ held, no self-pay) and
-  `settle_convergence` (a mint for a demand closed by another mind).
-- POWV, the verifying courts' share of every POUW release (§5.1).
-- E3: held value (`economy/pay.rs`), counted in the supply.
-- The compute lease: escrow against a provider's capacity, paid per
-  verified job and refunded at its end (§5.2).
-
-**Discipline and room**
-- Slash on a failed reconstruction, and the equivocation burn of the signer's
-  whole bond (`Court::burn_equivocation`).
-- Room per lane; an unbonded voice holds one claim in flight per lane,
-  enforced with `REFUSE_ROOM`.
-
-**Other flows**
-- The reading fee and the door's congestion fee, both as burns.
-- §7.1 gas: `Court::traverse`, whose map fee is drawn from stake as a
-  claim and paid to the courts keeping the map.
-- §7.2 connection tax: received into the recycled pool, from which a
-  closer's POUW is paid first.
-- Ledger folds into `epoch` rows that conserve both equations
-  (`economy::fold`).
-
-Specified and scheduled on the roadmap:
-- in [`MU-XSEPTUM.md`](MU-XSEPTUM.md): the Note (signed by payer and payee,
-  escrowed at the home, released on two-court reconstruction with two
-  signatures), receipt-indexed Notes, and FROST voice groups;
-- in §4: delegation of bond;
-- in §11.4: commit-before-reveal solves, one closure across courts, the
-  frontier reading and the race reading.
-
-[`ROADMAP.md`](../ROADMAP.md) carries the order of each.
+v0.5.0 changes the wire (μ as modes) and the persisted layout (no
+journal), so it is a network-contract change adopted by a recut (ROADMAP
+track 6). [`ROADMAP.md`](../ROADMAP.md) carries its order.
 
 ## 10. The case for μ
 
@@ -717,220 +575,196 @@ Specified and scheduled on the roadmap:
 
 ### 10.1 Every universe keeps its own economy
 
-Any economy can be started, run or shared inside a kernel. A kernel's
-universe may digitize any economy it likes: currencies, banks, markets,
-wages, tolls, credit. These economies are sovereign:
-- the courts never see inside them, and never price or regulate them;
+Any economy can be started, run or shared inside a kernel: currencies,
+banks, markets, wages, tolls, credit. These economies are sovereign:
+- the courts never see inside these economies, and never price or
+  regulate any of them;
 - tolls and payments made inside a universe stay in that universe's own
-  ledgers (Concordance 5.5);
-- a universe's money is backed however that universe decides, by its reserve
-  (Concordance 5.1).
+  books (Concordance 5.5);
+- a universe's money is backed however that universe decides, by its
+  reserve (Concordance 5.1).
 
-Two universes may share an economy by agreement between the two universes' kernels, and
+Two universes may share an economy by agreement between the two kernels, and
 a new universe may start one from nothing.
 
-### 10.2 μ is the reserve that connects them
+### 10.2 μ is the reserve that connects the universes
 
-μ is not minted or distributed inside a universe. It is the network's
-currency, and it reaches a universe only as that universe's reserve:
-- **Only the courts mint μ, and only for verified work** (§3). It moves
-  key to key, and every movement nets to zero (`Treasury::pay`, `hold`,
-  `release_held`).
-- **μ enters a universe through its reserve** (Concordance 5.1a, 4.2). The
-  reserve is the key the domain's founder designates: in a game kernel,
-  its ancients' house; in any other kernel, its designated reserve key.
-  The universe's own currencies are issued against that reserve.
-- **Value crosses only by conversion, and conversion never mints**
-  (Concordance 5.3; MU-RECURSION 78.127, **Built**, `Court::convert`).
-  Convert-out pays μ from the reserve against value leaving the universe;
-  convert-in holds μ until the reserve accepts it against value arriving,
-  or refunds it.
-- **What μ is worth against a universe's money is never declared.** It
-  emerges from trade and from each reserve's own decisions (Concordance
-  5.1a).
-- **μ held inside a universe dissipates** at the storing world's own physical
-  rate (Concordance 5.8). The dissipated value returns to the courts as
-  the connection tax, a transfer and never a burn; μ held on the hypha
-  (balance, bond, escrow) does not decay.
-- **A new universe receives a founding grant** answering its manifest of
-  nuclei, and growth grants sized by the closures judged in it, each a
-  transfer from what the court has earned and never a mint (Concordance
-  5.7; `server/cognition/endowment.rs`; MU-HOSTING §3a).
+μ is the network's currency, and it reaches a universe only as that
+universe's reserve:
+- **Only the courts mint μ, and only for verified work** (§3). Every
+  transfer moves the same modes out of one holding and into another.
+- **μ enters a universe through its reserve** (Concordance 5.1a, 4.2): the
+  key the domain's founder designates.
+- **Value crosses only by conversion, at the universal core tube, and
+  conversion never mints** (Concordance 4.1 version 5, 5.3; MU-RECURSION
+  78.127; `Court::convert`). Convert-out pays μ from the reserve against
+  value leaving the universe; convert-in holds μ until the reserve accepts
+  it, or refunds it. A holding's origin changes only here (§2.2).
+- **What μ is worth against a universe's money is never declared**
+  (Concordance 5.1a).
+- **μ held inside a universe dissipates** (§7.2); μ held on the hypha does
+  not.
+- **A new universe receives a founding grant** answering its manifest, and
+  growth grants sized by the closures judged in it, each a transfer and
+  never a mint (Concordance 5.7; MU-HOSTING §3a).
 
 ### 10.3 Why one connecting reserve
 
-- **Incompatible economies can trade.** Two universes whose monies share
-  nothing can exchange through μ, each converting at its own reserve,
-  without either adopting the other's money or rules.
-- **μ is backed by verified work, not by any one universe.** Every unit of μ
-  was minted for work two courts reconstructed, so no universe's inflation,
-  collapse or policy changes what μ is.
-- **Supply is auditable at every moment.** `supply = genesis + mint −
-  burn = Σbalance + Σbond + Σheld` holds on every court (§6), whatever
-  the universes do inside.
-- **Every universe keeps its sovereignty.** A universe decides its own economy and
-  touches μ only at its reserve. A universe that stops trading with the
-  network keeps its own economy whole, and its μ stays its reserve's
-  balance on the courts.
+- **Incompatible economies can trade**, each converting at its own
+  reserve.
+- **μ is backed by verified work, not by any one universe**, so no
+  universe's inflation, collapse or policy changes what μ is.
+- **Supply is readable at every height** on every court (§6), whatever the
+  universes do inside.
+- **Every universe keeps its sovereignty.** A universe that stops trading
+  keeps its own economy whole, and its μ stays its reserve's holding.
+
+### 10.4 A shared economic law form (proposal 78.174, to come)
+
+The economy at the boundary is to become a law form taken through
+[MU-RELEASE §3a](MU-RELEASE.md#3a-how-a-hypha-standard-becomes-a-kernel-standard),
+as LAW-COORDINATE is: μ's modes, the reserve, and conversion at the
+universal core tube, with joint-read fixtures that the peer kernels
+reconstruct. It will be proposed as 78.174. It is not drafted here.
 
 ## 11. Fairness across capacity
 
-**Components:** the court (judge, registry, treasury), the door, the SDK.
+**Components:** the court (judge, registry, holdings), the door, the SDK.
 
 A mind on one laptop and a solver with many accelerators attach under the
-same Charter and are paid by the same rules. The rules make capacity buy
-speed, never a larger share of the same work. This section states what
-holds that line, where it is open, and the implementation scope of each
-open part.
+same Charter and are paid by the same rules. Capacity buys speed, never a
+larger share of the same work.
 
 ### 11.1 What holds today (Built)
 
 1. **Payment is structure closed, not effort spent.** A closure mints its
-   measured discharge on each lane (§3, 78.149), a deterministic function
-   of the structure closed. There is no block, lottery, hash puzzle or
-   difficulty schedule, so there is no variance to pool and no advantage in
-   raw throughput per closure: two solvers that close the same structure
-   are paid the same vector, to the unit (E3).
+   measured discharge (§3, 78.149), a deterministic function of the
+   structure closed. There is no lottery, hash puzzle or difficulty, so
+   there is nothing to pool: two solvers that close the same structure are
+   paid the same modes.
 2. **A closure pays once.** The task registry records `Closure::First` and
-   every later verified solve as `Closure::Again`
-   (`src/server/registry.rs`); `Court::pay_solve` mints the solver's
-   discharge on the first closure only, and a repeat is verified and pays
-   nothing (`src/server/cognition/court/task.rs`). Escrowed listings bound
-   to the task release to the voices each escrow names, never to a solver
-   for another voice's claim. Capacity cannot farm a closed task.
-3. **Discovery is paid at every use.** An installed sentence's mint is
-   split across the discoverers of the ruled forms it cites, each its own
-   form's verified deflation on the citer's family (§7.3, `settle_recursive`).
-   A word found by a small mind and cited by a large solver pays its finder
-   at each closure that cites it. Re-deriving a held word closes nothing.
-4. **Admission is paced by the network's metabolism, not the solver's.**
-   The court's reserve paces verification strokes; bond buys room per lane;
-   room and closure gate admission (§4, E3). Identities are free and room
-   is not, so splitting one solver into many voices buys no room. Capacity
+   every later verified solve as `Closure::Again` (`src/server/registry.rs`);
+   `Court::pay_solve` mints on the first closure only
+   (`src/server/cognition/court/task.rs`). Today this holds per court;
+   under the model it holds network-wide (§3.4).
+3. **Discovery is paid at every use** (§7.3, `settle_recursive`). A word
+   found by a small mind and cited by a large solver pays its finder at
+   each closure that cites it.
+4. **Admission is paced by the network's metabolism, not the solver's**
+   (§3.3, §4). Splitting one solver into many voices buys no room; capacity
    beyond room is bought in the open as a compute lease (§5.2).
 
 ### 11.2 Useful work grows; issuance does not
 
-The set of statements a solver can produce grows combinatorially: words
-compose, and each composite is a candidate. The set that pays does not grow
-with it:
-
 - **Supply tracks the description length of the language** (§3.2). A
-  composite of held words compresses nothing the genome does not already
-  express, so it mints nothing; a shorter description of held meaning burns
-  the redundant one and pays its finder the compression yield.
-- **Difficulty is the residue, read per lane.** What remains payable is
-  what the genome does not yet explain: the open demands and the
-  obstructions of each kind (permanent, dialect-relative, cover-relative;
-  MU-RECURSION OB1–OB5), measured separately on S, G, T and H. No
-  difficulty parameter exists or may be set (MU-DERIVATIONS). As the
-  genome grows, the residue each new word must reduce is what is left, so
-  the work per unit of μ rises by the structure of the problem itself.
-- **Growth in candidates is growth in cost.** A combinatorial explosion of
-  candidates raises a solver's search cost, never the supply. The supply of
-  payable work is the supply of unexplained structure: for a fixed corpus
-  it is finite and is exhausted, and lasting supply comes from hosted
+  composite of held words compresses nothing and mints nothing.
+- **Difficulty is the residue, read per lane**: the open demands and the
+  obstructions of each kind (MU-RECURSION OB1–OB5). No difficulty
+  parameter exists or may be set (MU-DERIVATIONS).
+- **Growth in candidates is growth in cost**, never in supply. For a fixed
+  corpus the payable residue is finite; lasting supply comes from hosted
   universes generating new demands (MU-HOSTING).
 
-### 11.3 Open: four gaps
+### 11.3 Four gaps, read under the model
 
-**F1. Closures race on latency.** The first verified closure takes the
-discharge, so on residue every solver can reach, the fastest wins every
-time. Nothing reserves a part of the frontier for a slower mind. Whether
-latency in fact concentrates first closures is a reading, not yet taken;
-F4 builds it, and no mechanism is designed before it reads.
+**F1. Closures race on latency.** The first closure takes the advance.
+Under the model "first" is causal precedence (§2.1): a closure takes the
+advance only over claims in its future cone, and concurrent claims are
+held, never ordered by arrival (§3.4). Latency still wins where one
+closure reaches a court's cones before another is made. Whether it
+concentrates first closures is a reading not yet taken (F4).
 
 **F2. A visible rule can be copied and resubmitted.** A solve carries its
-rule in the clear (`encode_solve_with_rule`: `[ACT_SOLVE][voice][task
-citation][outputs][RULE][element][SIGN][sig]`), and a paid rule is docketed
-and offered (`enter_offered`). The registry is a hypha's own record, so a
-task closed at one court can still read open at another. An observer can
-take a rule another voice closed with and present it under its own voice
-at a court where the task is open. The duplicate-issuance burn of
-MU-RECURSION 47.4 (two mints of one deflation, the second burned) is
-specified but not built for solves.
+rule in the clear (`encode_solve_with_rule`), and a paid rule is docketed
+and offered (`enter_offered`). Today the registry is each court's own, so
+a copy can be paid at a court where the task reads open. The model answers
+the cross-court part: one closure is one point, and a second mint of it is
+burned (§3.4). A copy made concurrent with the first closure is still
+held as a concurrent claim (§12 item 7); F2a orders such claims by the
+commitments made before them.
 
 **F3. The frontier is not served.** The residue per lane exists inside the
-court but no typed reading publishes it, so a mind cannot ask which open
-work it can close and must guess where larger solvers have already been.
+court, but no typed reading publishes it.
 
 **F4. No reading measures concentration.** The court counts first and
-repeat closures (`observe::Judged::{FirstClosure, ClosureAgain}`) but not
-who closes first relative to who offered a rule first, or how closures
+repeat closures (`observe::Judged::{FirstClosure, ClosureAgain}`), but not
+who closes first against who offered a rule first, or how closures
 distribute across voices per lane.
 
 ### 11.4 Implementation scope
 
-**F2a. Commit before reveal** (High; wire and ledger; ROADMAP track 14).
-
-- New act `ACT_SOLVE_COMMIT`: `[act][voice 32][task citation 32][commitment
-  32][SIGN][sig 64]`, `commitment = payload_hash(rule_tape ‖ voice ‖ task
-  citation ‖ nonce 32)`. The court seals it as a receipt
-  (`ActKind::Committed`) and answers with the receipt's stamp. The
-  commitment reveals nothing of the rule.
-- `ACT_SOLVE` gains an optional `[COMMIT][stamp][nonce 32]` field. The
-  court recomputes the commitment from the revealed rule and refuses a
-  mismatch by name (`SolveRefusal::CommitmentMismatched`).
-- Priority: among verified solves of one task, the discharge is paid to the
-  voice whose commitment receipt is causally earliest (MU-RECURSION 45.3).
-  A reveal without a commitment is judged as today and ranks after every
-  committed reveal of the same task. Concurrent commitments are held as a
-  vortex (law 15) and resolve by content: two commitments to one rule are
-  one closure, paid to both voices in equal lane-wise shares, each exactly
-  half.
-- A commitment lapses unrevealed at the end of its challenge window
-  (MU-DERIVATIONS D1.1); a lapsed commitment holds no priority. A
-  commitment draws room on the lane its task is listed on, so commitments
-  cannot be spammed past room.
+**F2a. Commit before reveal** (High; wire; ROADMAP track 14).
+- A new act `ACT_SOLVE_COMMIT`: `[act][voice 32][task citation
+  32][commitment 32][SIGN][sig 64]`, with `commitment =
+  payload_hash(rule_tape ‖ voice ‖ task citation ‖ nonce 32)`, sealed as a
+  receipt (`ActKind::Committed`). It reveals nothing of the rule.
+- `ACT_SOLVE` gains an optional `[COMMIT][stamp][nonce 32]`; a mismatch is
+  refused `SolveRefusal::CommitmentMismatched`.
+- Among verified solves of one task, the advance goes to the voice whose
+  commitment is causally earliest (45.3); a reveal without a commitment
+  ranks after every committed one. Concurrent commitments to one rule are
+  one closure, paid in equal lane-wise shares.
+- A commitment lapses at the end of its challenge window (MU-DERIVATIONS
+  D1.1) and draws room on its task's lane.
 - Tests: `solve_commit_reveal_pays_earliest_commitment`,
   `solve_reveal_refuses_mismatched_commitment`,
   `solve_without_commitment_ranks_after_committed`,
-  `solve_commit_lapses_after_window`,
-  `solve_commit_draws_room`.
+  `solve_commit_lapses_after_window`, `solve_commit_draws_room`.
 
-**F2b. One closure across courts** (High; ledger; tracks 4 and 14).
-
-- A first closure is sealed with the task citation and the rule's address,
-  and travels with the receipts every court back-fills. A court that admits
-  a solve checks the receipts it holds for an earlier first closure of the
-  same task and judges a later one as `Closure::Again`.
-- Two first closures concurrent across a partition are the duplicate
-  issuance of 47.4: on rejoin, the causally later mint is burned, or, where
-  neither is earlier, both are held and the second by content is burned,
-  leaving the first closure's voice paid once.
-- Tests: `pay_solve_judges_again_after_peer_first_closure`,
-  `pay_solve_burns_duplicate_issuance_on_rejoin`.
+**F2b. One closure across courts** (High; tracks 4 and 14). A closure is
+sealed as its point: the task citation and the rule's address, carried by
+the receipts every court back-fills. A court that admits a solve whose
+point it already holds in its cones judges it `Closure::Again`; a second
+mint found when partitions rejoin is burned (§3.4). Tests:
+`pay_solve_judges_again_after_peer_first_closure`,
+`pay_solve_burns_duplicate_issuance_on_rejoin`.
 
 **F3. The frontier reading** (Medium; reading only; track 9).
+`ACT_OBSERVE` reading `frontier`: per open task, its citation, its ask
+per lane and its obstruction kind if a refusal stands on it, paged to the
+frame budget; served by the SDK as `Session::frontier()`. No μ and no
+admission effect. Tests: `frontier_lists_open_tasks_by_lane`,
+`frontier_omits_closed_tasks`, `frontier_pages_to_frame_budget`.
 
-- `ACT_OBSERVE` reading `frontier`: per task listed open on this court, its
-  citation, its demand's measure per lane (the ask), and its obstruction
-  kind if a refusal stands on it; paged to the frame budget. The SDK serves
-  it as `Session::frontier()`.
-- Read-only, no μ, no admission effect. It lets a mind choose work by what
-  remains rather than by what it guesses.
-- Tests: `frontier_lists_open_tasks_by_lane`,
-  `frontier_omits_closed_tasks`, `frontier_pages_to_frame_budget`.
+**F4. The race reading** (Medium; instrument; track 14). Per closure: the
+task citation, the first-closing voice, the stamp of the earliest offer or
+commitment of the closing rule by any voice, and the lanes paid; per
+voice, first closures per lane. Tests:
+`race_reading_names_first_offer_and_first_closer`,
+`race_reading_counts_first_closures_per_voice`.
 
-**F4. The race reading** (Medium; instrument; track 14).
+**F1.** No mechanism until F4 reads. Candidates recorded so none is chosen
+silently: the frontier served in a per-voice order derived from the
+voice key and the task citation, and a lease (§5.2) that reserves a task
+for its lessee for one window.
 
-- Per closure, a typed reading: task citation, first-closing voice, the
-  stamp of the earliest offer or commitment of the closing rule by any
-  voice, and the lanes paid. Per voice, first closures per lane. Served
-  under `ACT_OBSERVE`; the soak reads it to decide whether F1 needs a
-  mechanism (concentration measured, never inferred).
-- Tests: `race_reading_names_first_offer_and_first_closer`,
-  `race_reading_counts_first_closures_per_voice`.
+## 12. Open: what the model leaves to a ruling
 
-**F1. Racing.** No mechanism until F4 reads. Candidates for later ruling,
-recorded so they are not chosen silently: the frontier served in a
-per-voice order derived from the voice key and the task citation (so two
-solvers start on different residue without any reservation), and a lease
-(§5.2) that reserves a task for its lessee for one window.
-
-**Defect fixed with this section (v0.3.0).** The solve receipt's code `1`
-was named `SOLVE_FLOOR` and documented as "verification floor (replay)",
-and the registry's header said "every replay the floor"; a repeat pays
-nothing (78.149). The wire byte stays; the constant is renamed
-`SOLVE_AGAIN`, and both comments state that a repeat is verified and paid
-nothing.
+1. **Lanes as vectors in the coordinate.** `FORMS-COORDINATE` v2 holds one
+   rational per lane (78.173 §3). The coordinate whose lanes are vectors
+   of exact components (v3) is not yet stated, nor how its advance,
+   merger and fission read on modes.
+2. **Where a role is written.** Whether balance, bond, held value and a
+   claim are enclosures in the holding's origin, or a field beside the
+   coordinate.
+3. **What `K` reads for a holding.** LAW-COORDINATE reads `K` as the whole
+   turns of H (`⌊|L_H|⌋`); a line's `K` is its receipt index (47.1). A
+   holding needs one of the two, or both named apart.
+4. **A mode's amount and the share of the frame.** Today each mode is read
+   at its closed pair's carried mass (`DeflationRead::modes`), while the
+   per-lane payment is the share of the frame (§1). Which gauge sets a
+   mode's amount is not ruled.
+5. **Room over modes.** Room reads a bond's whole part on each lane; read
+   over modes, that is a projection to one count per lane.
+6. **POWC's earlier instance.** In 74 (CV4) the closer cites the refusing
+   mind's receipt, so the two orbits' cones are not disjoint at the well.
+   Whether that instance is a convergence, or a POUW with a cited
+   generator, is not ruled.
+7. **Concurrent claims of one point.** F2a pays concurrent commitments to
+   one rule in equal shares; F2b and MU-RECURSION 47.4 burn the second
+   mint. Under one point and one advance, one rule is needed.
+8. **The ask under modes.** A demand is a residue, which has no motion yet,
+   so its ask has no modes; 78.149 (b)'s lane-wise cap of a payment by the
+   ask needs a stated form.
+9. **The Note's amounts.** MU-XSEPTUM §5 writes μ as `4×u64`, which
+   predates both `Mu` and `Modes`; it is restated with track 1.
