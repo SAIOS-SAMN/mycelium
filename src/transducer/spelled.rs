@@ -331,7 +331,7 @@ impl SectionSample {
     /// THE OFFSET OF A SITE OF THE SECTION in canonical address order, or
     /// `None` where a coordinate leaves its axis: each coordinate of the
     /// plane is written onto the sample axis the plane reads it on.
-    fn offset_of(&self, site: SectionSite) -> Option<usize> {
+    pub(crate) fn offset_of(&self, site: SectionSite) -> Option<usize> {
         let mut canonical = [0i64; ALPHABET_SAMPLE_RANK];
         for (&axis, &c) in self.plane.iter().zip(&site.0) {
             *canonical.get_mut(axis)? = c;

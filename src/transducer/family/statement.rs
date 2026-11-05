@@ -15,6 +15,7 @@
 
 use super::*;
 use crate::core::Q;
+use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
 use crate::transducer::sentence::form::clause::{exact_root, About, Clause, Comparison, Coord, Extent, Order, Paint, Pred, RegionKind, Stop, Tie, Value};
 use crate::transducer::sentence::form::rule_element::{self, Carriage, Lowered, Reach, RuleElement, Trace};
 
@@ -90,28 +91,35 @@ pub struct Spoken {
     pub painted: Vec<PaintedSite>,
 }
 
-/// THE SCENE AS THE CLAUSES READ IT, perceived once: each body's cells and
-/// the body each cell belongs to.
+/// THE SCENE AS THE CLAUSES READ IT, perceived once: each body's painted
+/// sites of the section, and the body each site of the sample belongs to.
 struct Seen<'a> {
     x: &'a SectionSample,
     bodies: &'a [Body],
-    rows: usize,
-    cols: usize,
-    cells: Vec<Vec<(usize, usize, u8)>>,
-    owner: Vec<Vec<Option<usize>>>,
+    /// Each body's painted sites, in its compartments' order.
+    cells: Vec<Vec<PaintedSite>>,
+    /// The body owning each site of the sample, at the site's offset in
+    /// canonical address order (`SectionSample::offset_of`).
+    owner: Vec<Option<usize>>,
+}
+
+/// The steps of the section's rank `directions` names, each a step along the
+/// plane; a direction of another rank names none.
+fn on_plane(directions: Vec<Vec<i64>>) -> Vec<[i64; ALPHABET_SAMPLE_RANK]> {
+    directions.into_iter().filter_map(|d| <[i64; ALPHABET_SAMPLE_RANK]>::try_from(d).ok()).collect()
 }
 
 /// THE FACE NEIGHBOURS of a site of the alphabet's section, both senses:
 /// the contact of grade `n − 1`, generated at the section's rank
 /// (`sentence::faces_of`), never a list of offsets.
-fn edges() -> Vec<(i64, i64)> {
-    crate::transducer::sentence::on_section(crate::transducer::sentence::faces_of(crate::transducer::alphabet::ALPHABET_SAMPLE_RANK))
+fn edges() -> Vec<[i64; ALPHABET_SAMPLE_RANK]> {
+    on_plane(crate::transducer::sentence::faces_of(ALPHABET_SAMPLE_RANK))
 }
 
 /// EVERY NEIGHBOUR of a site of the alphabet's section, corners included,
 /// in lexicographic order (`sentence::surrounding`), generated.
-fn around() -> Vec<(i64, i64)> {
-    crate::transducer::sentence::on_section(crate::transducer::sentence::surrounding(crate::transducer::alphabet::ALPHABET_SAMPLE_RANK))
+fn around() -> Vec<[i64; ALPHABET_SAMPLE_RANK]> {
+    on_plane(crate::transducer::sentence::surrounding(ALPHABET_SAMPLE_RANK))
 }
 
 fn q(n: i64) -> Q {
@@ -122,111 +130,112 @@ fn qu(n: usize) -> Option<Q> {
     Some(q(i64::try_from(n).ok()?))
 }
 
-/// A body's extent `(top, left, bottom, right)`, read over every cell.
-pub(crate) fn extent_of(cells: &[(usize, usize, u8)]) -> Option<(usize, usize, usize, usize)> {
-    let [(r0, c0, _), ..] = cells else { return None };
-    let (mut t, mut l, mut b, mut r) = (*r0, *c0, *r0, *c0);
-    for &(rr, cc, _) in cells {
-        if rr < t {
-            t = rr;
-        }
-        if rr > b {
-            b = rr;
-        }
-        if cc < l {
-            l = cc;
-        }
-        if cc > r {
-            r = cc;
-        }
+/// THE CORNERS OF PAINTED SITES along the plane: the least coordinate and
+/// the greatest on each axis, read over every site (`SectionSite::span_of`).
+/// `None` for no site.
+pub(crate) fn corners_of(cells: &[PaintedSite]) -> Option<(SectionSite, SectionSite)> {
+    let (least, extents) = SectionSite::span_of(cells.iter().map(|p| p.site))?;
+    let mut by = [0i64; ALPHABET_SAMPLE_RANK];
+    for (d, e) in by.iter_mut().zip(extents) {
+        *d = i64::try_from(e.checked_sub(1)?).ok()?;
     }
-    Some((t, l, b, r))
+    Some((least, least.moved(by)?))
+}
+
+/// The coordinate of a site along one axis of the plane.
+fn along(s: SectionSite, axis: usize) -> Option<i64> {
+    s.coordinates().get(axis).copied()
+}
+
+/// Whether a site stands on the sample's outer seam: some coordinate at `0`
+/// or at its extent's last site (MU-SENSING §3.4).
+fn on_seam(site: SectionSite, extents: [usize; ALPHABET_SAMPLE_RANK]) -> bool {
+    site.coordinates().iter().zip(extents).any(|(&c, e)| c == 0 || usize::try_from(c).ok().and_then(|c| c.checked_add(1)) == Some(e))
 }
 
 impl<'a> Seen<'a> {
     fn of(x: &'a SectionSample, bodies: &'a [Body]) -> Seen<'a> {
-        let [rows, cols] = x.extents();
-        let mut owner = vec![vec![None; cols]; rows];
+        let mut owner = vec![None; x.symbols().len()];
         let mut cells = Vec::with_capacity(bodies.len());
         for (i, b) in bodies.iter().enumerate() {
             let mut owned = Vec::with_capacity(b.compartments.len());
             for l in &b.compartments {
-                let Some([r, c]) = SectionSite::of_family(&l.site).and_then(|s| s.indices()) else { continue };
-                if let Some(o) = owner.get_mut(r).and_then(|row| row.get_mut(c)) {
+                let Some(site) = SectionSite::of_family(&l.site) else { continue };
+                if let Some(o) = x.offset_of(site).and_then(|k| owner.get_mut(k)) {
                     *o = Some(i);
-                    owned.push((r, c, l.hue));
+                    owned.push(PaintedSite::new(site, l.hue));
                 }
             }
             cells.push(owned);
         }
-        Seen { x, bodies, rows, cols, cells, owner }
+        Seen { x, bodies, cells, owner }
     }
 
-    fn at(&self, r: usize, c: usize, dr: i64, dc: i64) -> Option<(usize, usize)> {
-        let rr = usize::try_from(i64::try_from(r).ok()? + dr).ok()?;
-        let cc = usize::try_from(i64::try_from(c).ok()? + dc).ok()?;
-        (rr < self.rows && cc < self.cols).then_some((rr, cc))
+    /// The site `site` stepped `by` along the plane, where it lands on the
+    /// sample; `None` off it.
+    fn step(&self, site: SectionSite, by: [i64; ALPHABET_SAMPLE_RANK]) -> Option<SectionSite> {
+        let s = site.moved(by)?;
+        self.x.at(s).map(|_| s)
     }
 
-    /// The symbol at a cell; `None` off the grid, which holds none.
-    fn hue(&self, r: usize, c: usize) -> Option<u8> {
-        read(self.x, r, c)
+    /// The symbol at a site; `None` off the sample, which holds none.
+    fn hue(&self, site: SectionSite) -> Option<u8> {
+        self.x.at(site)
     }
 
-    /// Is the cell on the grid and read as ground?
-    fn grounded(&self, r: usize, c: usize) -> bool {
-        self.hue(r, c).is_some_and(crate::transducer::raster::is_ground)
+    /// Is the site on the sample and read as ground?
+    fn grounded(&self, site: SectionSite) -> bool {
+        self.hue(site).is_some_and(crate::transducer::raster::is_ground)
     }
 
-    fn owner_at(&self, r: usize, c: usize) -> Option<usize> {
-        self.owner.get(r).and_then(|row| row.get(c)).copied().flatten()
+    fn owner_at(&self, site: SectionSite) -> Option<usize> {
+        self.x.offset_of(site).and_then(|k| self.owner.get(k)).copied().flatten()
     }
 
-    /// THE BACKGROUND CELLS THE BODIES OF `set` ENCLOSE between them: every
-    /// background cell no edge-connected path reaches from the grid's border
-    /// without crossing a cell of a body of `set`. A body standing inside the
-    /// enclosure is inside it, not a breach of it.
-    fn enclosed(&self, set: &[usize]) -> Vec<(usize, usize)> {
-        let wall = |r: usize, c: usize| self.owner_at(r, c).is_some_and(|o| set.contains(&o));
-        let mut reached = vec![vec![false; self.cols]; self.rows];
-        let mut stack: Vec<(usize, usize)> = Vec::new();
-        for (r, row) in reached.iter_mut().enumerate() {
-            for (c, cell) in row.iter_mut().enumerate() {
-                let edge = r == 0 || c == 0 || r + 1 == self.rows || c + 1 == self.cols;
-                if edge && !wall(r, c) {
-                    *cell = true;
-                    stack.push((r, c));
+    /// THE BACKGROUND SITES THE BODIES OF `set` ENCLOSE between them: every
+    /// background site no face-connected path reaches from the sample's
+    /// outer seam without crossing a site of a body of `set`, in canonical
+    /// address order. A body standing inside the enclosure is inside it, not
+    /// a breach of it.
+    fn enclosed(&self, set: &[usize]) -> Vec<SectionSite> {
+        let wall = |s: SectionSite| self.owner_at(s).is_some_and(|o| set.contains(&o));
+        let extents = self.x.extents();
+        let mut reached = vec![false; self.owner.len()];
+        let mut stack: Vec<SectionSite> = Vec::new();
+        for (site, _) in self.x.sites() {
+            if on_seam(site, extents) && !wall(site) {
+                if let Some(slot) = self.x.offset_of(site).and_then(|k| reached.get_mut(k)) {
+                    *slot = true;
+                    stack.push(site);
                 }
             }
         }
         let edges = edges();
-        while let Some((a, b)) = stack.pop() {
-            for &(dr, dc) in &edges {
-                let Some((na, nb)) = self.at(a, b, dr, dc) else { continue };
-                if !reached[na][nb] && !wall(na, nb) {
-                    reached[na][nb] = true;
-                    stack.push((na, nb));
+        while let Some(s) = stack.pop() {
+            for &d in &edges {
+                let Some(n) = self.step(s, d) else { continue };
+                let Some(slot) = self.x.offset_of(n).and_then(|k| reached.get_mut(k)) else { continue };
+                if !*slot && !wall(n) {
+                    *slot = true;
+                    stack.push(n);
                 }
             }
         }
-        let mut out = Vec::new();
-        for (r, row) in reached.iter().enumerate() {
-            for (c, &got) in row.iter().enumerate() {
-                if !got && self.grounded(r, c) {
-                    out.push((r, c));
-                }
-            }
-        }
-        out
+        self.x
+            .sites()
+            .zip(&reached)
+            .filter(|((site, _), &got)| !got && self.grounded(*site))
+            .map(|((site, _), _)| site)
+            .collect()
     }
 
     /// The other bodies `b` touches.
     fn touching(&self, b: usize) -> Vec<usize> {
         let mut out = Vec::new();
         let around = around();
-        for &(r, c, _) in &self.cells[b] {
-            for &(dr, dc) in &around {
-                if let Some(o) = self.at(r, c, dr, dc).and_then(|(a, d)| self.owner_at(a, d)) {
+        for p in &self.cells[b] {
+            for &d in &around {
+                if let Some(o) = self.step(p.site, d).and_then(|s| self.owner_at(s)) {
                     if o != b && !out.contains(&o) {
                         out.push(o);
                     }
@@ -243,10 +252,10 @@ impl<'a> Seen<'a> {
         let partners = self.select(pred, &self.touching(b))?;
         let mut hue: Option<u8> = None;
         for &o in &partners {
-            for &(_, _, h) in &self.cells[o] {
+            for p in &self.cells[o] {
                 match hue {
-                    Some(k) if k != h => return Err(Unstated::Unpartnered),
-                    _ => hue = Some(h),
+                    Some(k) if k != p.symbol => return Err(Unstated::Unpartnered),
+                    _ => hue = Some(p.symbol),
                 }
             }
         }
@@ -267,19 +276,23 @@ impl<'a> Seen<'a> {
     /// exact.
     fn read(&self, coord: Coord, b: usize) -> Result<Option<Q>, Unstated> {
         let cells = &self.cells[b];
-        let ext = extent_of(cells);
-        let span = |lo: usize, hi: usize| hi.checked_sub(lo).and_then(|d| d.checked_add(1)).and_then(qu);
-        let mut hues: Vec<u8> = cells.iter().map(|&(_, _, h)| h).collect();
+        let corners = corners_of(cells);
+        // The least and the greatest coordinate along one axis of the plane,
+        // and the span between them, both ends included.
+        let least = |axis: usize| corners.and_then(|(lo, _)| along(lo, axis)).map(q);
+        let greatest = |axis: usize| corners.and_then(|(_, hi)| along(hi, axis)).map(q);
+        let span = |axis: usize| corners.and_then(|(lo, hi)| along(hi, axis)?.checked_sub(along(lo, axis)?)?.checked_add(1)).map(q);
+        let mut hues: Vec<u8> = cells.iter().map(|p| p.symbol).collect();
         hues.sort_unstable();
         hues.dedup();
         Ok(match coord {
             Coord::Cells => qu(cells.len()),
-            Coord::Height => ext.and_then(|(t, _, bt, _)| span(t, bt)),
-            Coord::Width => ext.and_then(|(_, l, _, r)| span(l, r)),
-            Coord::Top => ext.and_then(|(t, ..)| qu(t)),
-            Coord::Left => ext.and_then(|(_, l, ..)| qu(l)),
-            Coord::Bottom => ext.and_then(|(_, _, bt, _)| qu(bt)),
-            Coord::Right => ext.and_then(|(.., r)| qu(r)),
+            Coord::Height => span(0),
+            Coord::Width => span(1),
+            Coord::Top => least(0),
+            Coord::Left => least(1),
+            Coord::Bottom => greatest(0),
+            Coord::Right => greatest(1),
             Coord::Hues => qu(hues.len()),
             Coord::Contacts => qu(self.touching(b).len()),
             Coord::Enclosed => qu(self.enclosed(&[b]).len()),
@@ -301,7 +314,7 @@ impl<'a> Seen<'a> {
     fn select(&self, pred: &Pred, domain: &[usize]) -> Result<Vec<usize>, Unstated> {
         Ok(match pred {
             Pred::All => domain.to_vec(),
-            Pred::Hue(h) => domain.iter().copied().filter(|&b| self.cells[b].iter().any(|c| c.2 == *h)).collect(),
+            Pred::Hue(h) => domain.iter().copied().filter(|&b| self.cells[b].iter().any(|p| p.symbol == *h)).collect(),
             Pred::Chart(inv) => domain.iter().copied().filter(|&b| self.bodies[b].moduli == *inv).collect(),
             Pred::Cmp { coord, cmp, to } => {
                 let to = match to {
@@ -379,20 +392,20 @@ impl<'a> Seen<'a> {
         }
     }
 
-    /// THE BACKGROUND CELLS A REGION NAMES about the selection, each once
+    /// THE BACKGROUND SITES A REGION NAMES about the selection, each once
     /// per body that names it (a fill paints them all one hue).
-    fn region(&self, region: RegionKind, sel: &[usize]) -> Vec<(usize, usize)> {
+    fn region(&self, region: RegionKind, sel: &[usize]) -> Vec<SectionSite> {
         match region {
             RegionKind::Interior => self.enclosed(sel),
             RegionKind::Halo => {
                 let mut out = Vec::new();
                 let around = around();
                 for &b in sel {
-                    for &(r, c, _) in &self.cells[b] {
-                        for &(dr, dc) in &around {
-                            if let Some((a, d)) = self.at(r, c, dr, dc) {
-                                if self.grounded(a, d) {
-                                    out.push((a, d));
+                    for p in &self.cells[b] {
+                        for &d in &around {
+                            if let Some(s) = self.step(p.site, d) {
+                                if self.grounded(s) {
+                                    out.push(s);
                                 }
                             }
                         }
@@ -401,16 +414,13 @@ impl<'a> Seen<'a> {
                 out
             }
             RegionKind::Extent => {
+                // The sites between a body's corners on every axis, in
+                // canonical address order.
                 let mut out = Vec::new();
                 for &b in sel {
-                    let Some((t, l, bt, r)) = extent_of(&self.cells[b]) else { continue };
-                    for a in t..=bt {
-                        for d in l..=r {
-                            if self.grounded(a, d) {
-                                out.push((a, d));
-                            }
-                        }
-                    }
+                    let Some((lo, hi)) = corners_of(&self.cells[b]) else { continue };
+                    let inside = |s: SectionSite| s.coordinates().iter().zip(lo.coordinates().iter().zip(hi.coordinates())).all(|(c, (l, h))| (*l..=h).contains(c));
+                    out.extend(self.x.sites().map(|(s, _)| s).filter(|&s| inside(s) && self.grounded(s)));
                 }
                 out
             }
@@ -418,24 +428,21 @@ impl<'a> Seen<'a> {
     }
 
     /// A body's centre in the sensor's coordinates (each index plus ½):
-    /// the centre of its extent, exact.
-    fn centre(&self, b: usize) -> Option<[Q; 2]> {
-        let (t, l, bt, r) = extent_of(&self.cells[b])?;
+    /// the centre between its corners on every axis of the plane, exact.
+    fn centre(&self, b: usize) -> Option<[Q; ALPHABET_SAMPLE_RANK]> {
+        let (lo, hi) = corners_of(&self.cells[b])?;
         let two = q(2);
-        Some([(qu(t)? + qu(bt)? + q(1)) / &two, (qu(l)? + qu(r)? + q(1)) / &two])
+        Some(std::array::from_fn(|k| (q(lo.coordinates()[k]) + q(hi.coordinates()[k]) + q(1)) / &two))
     }
 }
 
-/// THE CELL A VERSOR CARRIES `(r, c)` ONTO, read where the sensor reads it —
-/// the compartment's centre — and only where it lands on a cell's centre
-/// in the frame it left: a centre between cells is off the lattice.
-pub(crate) fn carried(v: &Versor, r: usize, c: usize) -> Result<(i64, i64), Unstated> {
-    let site = Site::of([
-        i64::try_from(r).map_err(|_| Unstated::OffSubstrate)?,
-        i64::try_from(c).map_err(|_| Unstated::OffSubstrate)?,
-        0,
-    ]);
-    let p = element::carry_site_centre(v, &site).ok_or(Unstated::OffSubstrate)?;
+/// THE SITE A VERSOR CARRIES `site` ONTO, read where the sensor reads it —
+/// the compartment's centre on the family's base, in the frame the scene
+/// stands in — and only where it lands on a compartment's centre in that
+/// frame: a centre between sites is off the lattice.
+pub(crate) fn carried(v: &Versor, site: SectionSite) -> Result<SectionSite, Unstated> {
+    let base = site.on_family(0).ok_or(Unstated::OffSubstrate)?;
+    let p = element::carry_site_centre(v, &base).ok_or(Unstated::OffSubstrate)?;
     let half = Q::new(1.into(), 2.into());
     let [pr, pc, pk] = p.as_slice() else { return Err(Unstated::OffSubstrate) };
     let (ir, ic) = (pr - &half, pc - &half);
@@ -443,18 +450,18 @@ pub(crate) fn carried(v: &Versor, r: usize, c: usize) -> Result<(i64, i64), Unst
         return Err(Unstated::OffSubstrate);
     }
     let whole = |x: &Q| i64::try_from(x.to_integer()).map_err(|_| Unstated::OffSubstrate);
-    Ok((whole(&ir)?, whole(&ic)?))
+    Ok(SectionSite::on_plane([whole(&ir)?, whole(&ic)?]))
 }
 
 fn mapped(map: &[(u8, u8)], h: u8) -> u8 {
     map.iter().find(|(f, _)| *f == h).map_or(h, |(_, t)| *t)
 }
 
-/// A landed cell past the frame is no cell of this grid and is not spoken on
-/// it, as a carried compartment past the frame is not.
-fn lay(canvas: &mut SectionSample, r: i64, c: i64, h: u8) {
+/// A landed site past the frame is no site of this sample and is not spoken
+/// on it, as a carried compartment past the frame is not.
+fn lay(canvas: &mut SectionSample, p: PaintedSite) {
     // A site off the canvas is not written.
-    let _ = canvas.paint(SectionSite::on_plane([r, c]), h);
+    let _ = canvas.paint(p.site, p.symbol);
 }
 
 /// THE SYMBOL AT INDICES `(r, c)` ALONG THE PERSPECTIVE'S PLANE of a
@@ -463,18 +470,16 @@ fn read(g: &SectionSample, r: usize, c: usize) -> Option<u8> {
     g.at(SectionSite::of_indices([r, c])?)
 }
 
-/// WRITE `h` AT INDICES `(r, c)` of the canvas, in place: the sample is
-/// painted where it stands, never copied into a raster. A cell off the
-/// canvas is not written.
-fn write(canvas: &mut SectionSample, r: usize, c: usize, h: u8) {
-    if let Some(site) = SectionSite::of_indices([r, c]) {
-        let _ = canvas.paint(site, h);
-    }
+/// Is the canvas's site read as ground? Never off the canvas.
+fn grounded_on(canvas: &SectionSample, ground: &crate::transducer::family::transduce::Ground<u8>, site: SectionSite) -> bool {
+    canvas.at(site).is_some_and(|h| ground.holds(&h))
 }
 
-/// Is the canvas's cell at `(r, c)` read as ground? Never off the canvas.
-fn grounded_on(canvas: &SectionSample, ground: &crate::transducer::family::transduce::Ground<u8>, r: usize, c: usize) -> bool {
-    read(canvas, r, c).is_some_and(|h| ground.holds(&h))
+/// WRITE `h` AT `site` of the canvas, in place: the sample is painted where
+/// it stands, never copied into a raster. A site off the canvas is not
+/// written.
+fn paint(canvas: &mut SectionSample, site: SectionSite, h: u8) {
+    let _ = canvas.paint(site, h);
 }
 
 /// SPEAK A CARRIAGE on the selection `sel` of `seen`, onto `canvas`.
@@ -489,39 +494,48 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut SectionSample
             // The identity carries every cell onto itself: no versor is
             // applied to a cell it cannot move.
             let fixed = t.motion.projective_eq(&rule_element::still());
-            let mut landed: Vec<(i64, i64, u8)> = Vec::new();
+            let mut landed: Vec<PaintedSite> = Vec::new();
             for &b in sel {
                 let v = match (fixed, t.about) {
                     (true, _) => None,
                     (false, About::Grid) => Some(t.motion.clone()),
                     (false, About::Body) => {
-                        let [cr, cc] = seen.centre(b).ok_or(Unstated::OffSubstrate)?;
-                        let to = crate::transducer::cga::translator_at(&[cr.clone(), cc.clone()]);
-                        let from = crate::transducer::cga::translator_at(&[-cr, -cc]);
+                        let centre = seen.centre(b).ok_or(Unstated::OffSubstrate)?;
+                        let to = crate::transducer::cga::translator_at(&centre);
+                        let from = crate::transducer::cga::translator_at(&centre.map(|x| -x));
                         Some(to.geo(&t.motion).geo(&from))
                     }
                 };
-                for &(r, c, h) in &seen.cells[b] {
-                    let (tr, tc) = match &v {
-                        Some(v) => carried(v, r, c)?,
-                        None => (i64::try_from(r).map_err(|_| Unstated::OffSubstrate)?, i64::try_from(c).map_err(|_| Unstated::OffSubstrate)?),
+                for p in &seen.cells[b] {
+                    let site = match &v {
+                        Some(v) => carried(v, p.site)?,
+                        None => p.site,
                     };
-                    landed.push((tr, tc, colour(b, h)?));
+                    landed.push(PaintedSite::new(site, colour(b, p.symbol)?));
                 }
             }
             if t.trace == Trace::Clears {
                 for &b in sel {
-                    for &(r, c, _) in &seen.cells[b] {
-                        write(canvas, r, c, void()?);
+                    for p in &seen.cells[b] {
+                        paint(canvas, p.site, void()?);
                     }
                 }
             }
-            for (r, c, h) in landed {
-                lay(canvas, r, c, h);
+            for p in landed {
+                lay(canvas, p);
             }
         }
         Reach::Meet(stop) => {
             let (dr, dc) = rule_element::substrate_step(&t.motion).filter(|&s| s != (0, 0)).ok_or(Unstated::Still)?;
+            let ray = [dr, dc];
+            // The ray taken `k` steps along the plane.
+            let steps = |k: i64| -> Option<[i64; ALPHABET_SAMPLE_RANK]> {
+                let mut out = ray;
+                for x in out.iter_mut() {
+                    *x = x.checked_mul(k)?;
+                }
+                Some(out)
+            };
             match t.trace {
                 Trace::Sweeps => {
                     // A line stops at what was painted BEFORE this clause, so
@@ -529,15 +543,15 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut SectionSample
                     // bodies are read in is no part of what it says.
                     let before = canvas.clone();
                     for &b in sel {
-                        for &(r, c, h) in &seen.cells[b] {
-                            let colour = colour(b, h)?;
-                            let (mut a, mut d) = (r, c);
-                            while let Some((na, nd)) = seen.at(a, d, dr, dc) {
-                                if stop == Stop::Contact && !grounded_on(&before, &ground, na, nd) {
+                        for p in &seen.cells[b] {
+                            let colour = colour(b, p.symbol)?;
+                            let mut at = p.site;
+                            while let Some(next) = seen.step(at, ray) {
+                                if stop == Stop::Contact && !grounded_on(&before, &ground, next) {
                                     break;
                                 }
-                                write(canvas, na, nd, colour);
-                                (a, d) = (na, nd);
+                                paint(canvas, next, colour);
+                                at = next;
                             }
                         }
                     }
@@ -551,8 +565,13 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut SectionSample
                     // them is chosen — and two of them landing on one cell is
                     // a tie, refused by name.
                     let reach = |b: usize| -> Option<i64> {
-                        seen.cells[b].iter().try_fold(None, |most: Option<i64>, &(r, c, _)| {
-                            let at = i64::try_from(r).ok()?.checked_mul(dr)?.checked_add(i64::try_from(c).ok()?.checked_mul(dc)?)?;
+                        seen.cells[b].iter().try_fold(None, |most: Option<i64>, p| {
+                            // The site's coordinate along the ray: each
+                            // coordinate times the ray's step on that axis.
+                            let mut at = 0i64;
+                            for (c, d) in p.site.coordinates().into_iter().zip(ray) {
+                                at = at.checked_add(c.checked_mul(d)?)?;
+                            }
                             Some(Some(match most {
                                 Some(m) if m >= at => m,
                                 _ => at,
@@ -570,19 +589,19 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut SectionSample
                         let group: Vec<usize> = order[at..].iter().take_while(|(r, _)| *r == reach_here).map(|&(_, b)| b).collect();
                         at += group.len();
                         for &b in &group {
-                            for &(r, c, _) in &seen.cells[b] {
-                                write(canvas, r, c, void()?);
+                            for p in &seen.cells[b] {
+                                paint(canvas, p.site, void()?);
                             }
                         }
-                        let mut landed: Vec<(usize, usize, u8)> = Vec::new();
+                        let mut landed: Vec<PaintedSite> = Vec::new();
                         for &b in &group {
                             let cells = &seen.cells[b];
-                            // The furthest step every cell takes onto the
-                            // grid — and, at a contact stop, onto ground: the
-                            // meet ends it.
+                            // The furthest step every site takes onto the
+                            // sample — and, at a contact stop, onto ground:
+                            // the meet ends it.
                             let lands = |k: i64| -> bool {
-                                cells.iter().all(|&(r, c, _)| match seen.at(r, c, k * dr, k * dc) {
-                                    Some((a, d)) => stop == Stop::Border || grounded_on(canvas, &ground, a, d),
+                                cells.iter().all(|p| match steps(k).and_then(|by| seen.step(p.site, by)) {
+                                    Some(s) => stop == Stop::Border || grounded_on(canvas, &ground, s),
                                     None => false,
                                 })
                             };
@@ -590,24 +609,24 @@ fn carriage(seen: &Seen, t: &Carriage, sel: &[usize], canvas: &mut SectionSample
                             while lands(k + 1) {
                                 k += 1;
                             }
-                            for &(r, c, h) in cells {
-                                let (a, d) = seen.at(r, c, k * dr, k * dc).ok_or(Unstated::OffSubstrate)?;
-                                if landed.iter().any(|&(la, ld, _)| (la, ld) == (a, d)) {
+                            for p in cells {
+                                let s = steps(k).and_then(|by| seen.step(p.site, by)).ok_or(Unstated::OffSubstrate)?;
+                                if landed.iter().any(|l| l.site == s) {
                                     return Err(Unstated::Tie);
                                 }
-                                landed.push((a, d, colour(b, h)?));
+                                landed.push(PaintedSite::new(s, colour(b, p.symbol)?));
                             }
                         }
-                        for (a, d, h) in landed {
-                            write(canvas, a, d, h);
+                        for l in landed {
+                            paint(canvas, l.site, l.symbol);
                         }
                         // A carriage that keeps its source leaves it where
                         // nothing landed on it.
                         if t.trace == Trace::Keeps {
                             for &b in &group {
-                                for &(r, c, h) in &seen.cells[b] {
-                                    if grounded_on(canvas, &ground, r, c) {
-                                        write(canvas, r, c, h);
+                                for p in &seen.cells[b] {
+                                    if grounded_on(canvas, &ground, p.site) {
+                                        paint(canvas, p.site, p.symbol);
                                     }
                                 }
                             }
@@ -643,7 +662,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
     // site through the perspective's plane, into the output the clauses
     // write; no raster is laid (MU-SENSING §2).
     let mut canvas: SectionSample = x.clone();
-    let mut window: Option<(usize, usize, usize, usize)> = None;
+    let mut window: Option<(SectionSite, SectionSite)> = None;
     let mut scale: Option<(u8, u8)> = None;
     // A frame element's output stands in place of the canvas (`Panes`, `Tile`).
     let mut framed: Option<SectionSample> = None;
@@ -657,41 +676,41 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
         match &l.element {
             RuleElement::Carriage(t) => carriage(seen, t, &sel, &mut canvas)?,
             RuleElement::Chain { region, hue } => {
-                for (r, c) in seen.region(*region, &sel) {
-                    write(&mut canvas, r, c, *hue);
+                for site in seen.region(*region, &sel) {
+                    paint(&mut canvas, site, *hue);
                 }
             }
             RuleElement::Stamp { template } => {
                 let chosen = seen.select(template, &all)?;
                 let [t] = chosen.as_slice() else { return Err(Unstated::NotOne) };
                 let t = *t;
-                let [tr, tc] = seen.centre(t).ok_or(Unstated::NotOne)?;
-                let mut landed: Vec<(i64, i64, u8)> = Vec::new();
+                let at = seen.centre(t).ok_or(Unstated::NotOne)?;
+                let mut landed: Vec<PaintedSite> = Vec::new();
                 let seeds: Vec<usize> = sel.iter().copied().filter(|&b| b != t).collect();
                 for &b in &seeds {
-                    let [sr, sc] = seen.centre(b).ok_or(Unstated::OffSubstrate)?;
-                    let v = crate::transducer::cga::translator_at(&[sr - &tr, sc - &tc]);
-                    for &(r, c, h) in &seen.cells[t] {
-                        let (lr, lc) = carried(&v, r, c)?;
-                        landed.push((lr, lc, h));
+                    let seed = seen.centre(b).ok_or(Unstated::OffSubstrate)?;
+                    let by: Vec<Q> = seed.iter().zip(&at).map(|(s, a)| s - a).collect();
+                    let v = crate::transducer::cga::translator_at(&by);
+                    for p in &seen.cells[t] {
+                        landed.push(PaintedSite::new(carried(&v, p.site)?, p.symbol));
                     }
                 }
                 for &b in &seeds {
-                    for &(r, c, _) in &seen.cells[b] {
-                        write(&mut canvas, r, c, crate::transducer::raster::void().map_err(|_| Unstated::Unframed)?);
+                    for p in &seen.cells[b] {
+                        paint(&mut canvas, p.site, crate::transducer::raster::void().map_err(|_| Unstated::Unframed)?);
                     }
                 }
-                for (r, c, h) in landed {
-                    lay(&mut canvas, r, c, h);
+                for p in landed {
+                    lay(&mut canvas, p);
                 }
             }
             RuleElement::Window(extent) => {
                 let [b] = sel.as_slice() else { return Err(Unstated::NotOne) };
-                let cells: Vec<(usize, usize, u8)> = match extent {
+                let cells: Vec<PaintedSite> = match extent {
                     Extent::Body => seen.cells[*b].clone(),
-                    Extent::Interior => seen.enclosed(&[*b]).into_iter().map(|(r, c)| (r, c, 0)).collect(),
+                    Extent::Interior => seen.enclosed(&[*b]).into_iter().map(|s| PaintedSite::new(s, 0)).collect(),
                 };
-                window = Some(extent_of(&cells).ok_or(Unstated::NotOne)?);
+                window = Some(corners_of(&cells).ok_or(Unstated::NotOne)?);
             }
             RuleElement::Dilate { up, down } => scale = Some((*up, *down)),
             RuleElement::Panes { along_rows, gap, table, paint: hue } => {
@@ -699,9 +718,10 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 // ground; with none, no pane is spoken.
                 let ground = crate::transducer::raster::ground();
                 let void = crate::transducer::raster::void().map_err(|_| Unstated::Unframed)?;
+                let [rows, cols] = x.extents();
                 let (n, other) = match along_rows {
-                    true => (whole.rows, whole.cols),
-                    false => (whole.cols, whole.rows),
+                    true => (rows, cols),
+                    false => (cols, rows),
                 };
                 let k = n.checked_sub(usize::from(*gap)).filter(|m| m % 2 == 0).map(|m| m / 2).ok_or(Unstated::Unframed)?;
                 if k == 0 {
@@ -740,7 +760,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 framed = Some(out);
             }
             RuleElement::Tile { rows, cols, turns } => {
-                let (h, w) = (whole.rows, whole.cols);
+                let [h, w] = x.extents();
                 let (rows, cols) = (usize::from(*rows), usize::from(*cols));
                 if turns.len() != rows * cols || rows == 0 || cols == 0 {
                     return Err(Unstated::Unframed);
@@ -775,20 +795,32 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 // join of the clause blocks another.
                 let before = canvas.clone();
                 let ground = crate::transducer::raster::ground();
-                let chosen = |r: usize, c: usize| -> Option<(usize, u8)> {
-                    let o = seen.owner_at(r, c)?;
-                    sel.contains(&o).then(|| seen.hue(r, c).map(|h| (o, h))).flatten()
+                let chosen = |site: SectionSite| -> Option<(usize, u8)> {
+                    let o = seen.owner_at(site)?;
+                    sel.contains(&o).then(|| seen.hue(site).map(|h| (o, h))).flatten()
                 };
-                let mut joins: Vec<(usize, usize, u8)> = Vec::new();
-                // Each row read along its columns, each column along its rows.
-                for (along_rows, outer, inner) in [(true, seen.rows, seen.cols), (false, seen.cols, seen.rows)] {
-                    for a in 0..outer {
-                        let cell = |i: usize| if along_rows { (a, i) } else { (i, a) };
+                let mut joins: Vec<PaintedSite> = Vec::new();
+                // Each line of the plane read along its axis, the plane's last
+                // axis first: a line is every site that shares the other
+                // coordinates, walked from the outer seam where the axis
+                // starts, the lines in canonical address order.
+                let extents = x.extents();
+                for axis in (0..ALPHABET_SAMPLE_RANK).rev() {
+                    let mut unit = [0i64; ALPHABET_SAMPLE_RANK];
+                    let (Some(d), Some(&inner)) = (unit.get_mut(axis), extents.get(axis)) else { continue };
+                    *d = 1;
+                    let starts = x.sites().map(|(s, _)| s).filter(|&s| along(s, axis) == Some(0));
+                    for start in starts {
+                        // The site `i` steps along the line.
+                        let cell = |i: usize| -> Option<SectionSite> {
+                            let i = i64::try_from(i).ok()?;
+                            start.moved(unit.map(|u| u * i))
+                        };
                         let mut last: Option<(usize, usize, u8)> = None;
                         for i in 0..inner {
-                            let (r, c) = cell(i);
-                            let Some((o, h)) = chosen(r, c) else {
-                                if !grounded_on(&before, &ground, r, c) {
+                            let Some(site) = cell(i) else { continue };
+                            let Some((o, h)) = chosen(site) else {
+                                if !grounded_on(&before, &ground, site) {
                                     last = None;
                                 }
                                 continue;
@@ -801,8 +833,9 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                                 };
                                 if let (true, Some(hue)) = (lo != o && i > li + 1, hue) {
                                     for m in li + 1..i {
-                                        let (mr, mc) = cell(m);
-                                        joins.push((mr, mc, hue));
+                                        if let Some(between) = cell(m) {
+                                            joins.push(PaintedSite::new(between, hue));
+                                        }
                                     }
                                 }
                             }
@@ -810,8 +843,8 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                         }
                     }
                 }
-                for (r, c, h) in joins {
-                    write(&mut canvas, r, c, h);
+                for p in joins {
+                    paint(&mut canvas, p.site, p.symbol);
                 }
             }
             RuleElement::Join { corner: Some(to), paint: with } => {
@@ -825,15 +858,19 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 let ground = crate::transducer::raster::ground();
                 let targets = seen.select(to, &all)?;
                 let one_hue = |b: usize| -> Option<u8> {
-                    let [(_, _, h), rest @ ..] = seen.cells[b].as_slice() else { return None };
-                    rest.iter().all(|c| c.2 == *h).then_some(*h)
+                    let [first, rest @ ..] = seen.cells[b].as_slice() else { return None };
+                    rest.iter().all(|c| c.symbol == first.symbol).then_some(first.symbol)
                 };
-                let mut joins: Vec<(usize, usize, u8)> = Vec::new();
+                let mut joins: Vec<PaintedSite> = Vec::new();
                 for &f in &sel {
                     for &t in targets.iter().filter(|&&t| t != f) {
-                        let (Some((ft, fl, fb, fr)), Some((tt, tl, tb, tr))) = (extent_of(&seen.cells[f]), extent_of(&seen.cells[t])) else {
+                        // The bend runs along the plane's second axis from the
+                        // source, then along its first axis to the target: each
+                        // body's corners, read as the planar act names them.
+                        let (Some((f_lo, f_hi)), Some((t_lo, t_hi))) = (corners_of(&seen.cells[f]), corners_of(&seen.cells[t])) else {
                             continue;
                         };
+                        let ([ft, fl], [fb, fr], [tt, tl], [tb, tr]) = (f_lo.coordinates(), f_hi.coordinates(), t_lo.coordinates(), t_hi.coordinates());
                         // The source stands on one row, the target on one
                         // column: otherwise no one corner is named.
                         if ft != fb || tl != tr {
@@ -852,22 +889,26 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                             },
                             Paint::Of(_) => return Err(Unstated::Unpartnered),
                         };
-                        let across: Vec<usize> = match col > fr {
+                        let across: Vec<i64> = match col > fr {
                             true => (fr + 1..=col).collect(),
                             false => (col..fl).collect(),
                         };
-                        let along: Vec<usize> = match tt > row {
+                        let down: Vec<i64> = match tt > row {
                             true => (row + 1..tt).collect(),
                             false => (tb + 1..row).collect(),
                         };
-                        let path: Vec<(usize, usize)> = across.into_iter().map(|c| (row, c)).chain(along.into_iter().map(|r| (r, col))).collect();
-                        if path.iter().all(|&(r, c)| grounded_on(&before, &ground, r, c)) {
-                            joins.extend(path.into_iter().map(|(r, c)| (r, c, hue)));
+                        let path: Vec<SectionSite> = across
+                            .into_iter()
+                            .map(|c| SectionSite::on_plane([row, c]))
+                            .chain(down.into_iter().map(|r| SectionSite::on_plane([r, col])))
+                            .collect();
+                        if path.iter().all(|&s| grounded_on(&before, &ground, s)) {
+                            joins.extend(path.into_iter().map(|s| PaintedSite::new(s, hue)));
                         }
                     }
                 }
-                for (r, c, h) in joins {
-                    write(&mut canvas, r, c, h);
+                for p in joins {
+                    paint(&mut canvas, p.site, p.symbol);
                 }
             }
         }
@@ -877,7 +918,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
         // does not cut it.
         (Some(g), _) => g,
         (None, None) => canvas,
-        (None, Some((t, l, b, r))) => cropped(&canvas, (t, l), (b, r))?,
+        (None, Some((low, high))) => cropped(&canvas, low, high)?,
     };
     let out = match scale {
         None => out,
@@ -891,13 +932,18 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
 /// THE CANVAS CROPPED to the window from `low` to `high`, both corners
 /// included, read in place. A window that reaches past the canvas keeps the
 /// part on it; one that holds no site is refused by name.
-fn cropped(canvas: &SectionSample, (t, l): (usize, usize), (b, r): (usize, usize)) -> Result<SectionSample, Unstated> {
-    let [rows, cols] = canvas.extents();
-    let (b, r) = (b.min(rows.checked_sub(1).ok_or(Unstated::NotOne)?), r.min(cols.checked_sub(1).ok_or(Unstated::NotOne)?));
-    let extent = |lo: usize, hi: usize| hi.checked_sub(lo).map(|d| d + 1).ok_or(Unstated::NotOne);
-    let origin = read(canvas, t, l).ok_or(Unstated::NotOne)?;
-    let mut out = SectionSample::filled([extent(t, b)?, extent(l, r)?], origin).map_err(|_| Unstated::NotOne)?;
-    let corner = [i64::try_from(t).map_err(|_| Unstated::OffSubstrate)?, i64::try_from(l).map_err(|_| Unstated::OffSubstrate)?];
+fn cropped(canvas: &SectionSample, low: SectionSite, high: SectionSite) -> Result<SectionSample, Unstated> {
+    // Each axis's extent from the low corner to the high one, the high one
+    // held on the canvas's last site along that axis.
+    let mut extents = [0usize; ALPHABET_SAMPLE_RANK];
+    for (((e, lo), hi), whole) in extents.iter_mut().zip(low.coordinates()).zip(high.coordinates()).zip(canvas.extents()) {
+        let last = i64::try_from(whole.checked_sub(1).ok_or(Unstated::NotOne)?).map_err(|_| Unstated::NotOne)?;
+        let hi = if hi > last { last } else { hi };
+        *e = hi.checked_sub(lo).and_then(|d| usize::try_from(d).ok()).and_then(|d| d.checked_add(1)).ok_or(Unstated::NotOne)?;
+    }
+    let origin = canvas.at(low).ok_or(Unstated::NotOne)?;
+    let mut out = SectionSample::filled(extents, origin).map_err(|_| Unstated::NotOne)?;
+    let corner = low.coordinates();
     let mut writes = Vec::with_capacity(out.symbols().len());
     for (site, _) in out.sites() {
         let from = site.moved(corner).ok_or(Unstated::OffSubstrate)?;
@@ -921,19 +967,19 @@ pub(crate) fn select_each(preds: &[Pred], x: &SectionSample, bodies: &[Body]) ->
 /// THE REGION SEVERAL BODIES NAME TOGETHER, as a fill selecting them speaks
 /// it (`Seen::region` over the set): the set's joint interior is every ground
 /// cell the set walls in, which no one of them may.
-pub(crate) fn region_of_set(region: RegionKind, x: &SectionSample, bodies: &[Body], set: &[usize]) -> Vec<(usize, usize)> {
+pub(crate) fn region_of_set(region: RegionKind, x: &SectionSample, bodies: &[Body], set: &[usize]) -> Vec<SectionSite> {
     Seen::of(x, bodies).region(region, set)
 }
 
-/// The bodies of the scene owning a cell beside one of `cells`, corners
+/// The bodies of the scene owning a site beside one of `sites`, corners
 /// included, each once, in the scene's order.
-pub(crate) fn bodies_around(x: &SectionSample, bodies: &[Body], cells: &[(usize, usize, u8)]) -> Vec<usize> {
+pub(crate) fn bodies_around(x: &SectionSample, bodies: &[Body], sites: &[SectionSite]) -> Vec<usize> {
     let seen = Seen::of(x, bodies);
     let mut out: Vec<usize> = Vec::new();
     let around = around();
-    for &(r, c, _) in cells {
-        for &(dr, dc) in &around {
-            if let Some(o) = seen.at(r, c, dr, dc).and_then(|(a, d)| seen.owner_at(a, d)) {
+    for &site in sites {
+        for &d in &around {
+            if let Some(o) = seen.step(site, d).and_then(|s| seen.owner_at(s)) {
                 if !out.contains(&o) {
                     out.push(o);
                 }
@@ -956,7 +1002,7 @@ pub(crate) fn partner_hues(x: &SectionSample, bodies: &[Body]) -> Vec<Option<u8>
 /// 78.167 C — the cells a region names about each ONE body of the scene, as
 /// a fill would paint them: the act reading asks which bodies' regions the
 /// created cells lie in.
-pub(crate) fn regions_each(region: RegionKind, x: &SectionSample, bodies: &[Body]) -> Vec<Vec<(usize, usize)>> {
+pub(crate) fn regions_each(region: RegionKind, x: &SectionSample, bodies: &[Body]) -> Vec<Vec<SectionSite>> {
     let seen = Seen::of(x, bodies);
     (0..bodies.len()).map(|b| seen.region(region, &[b])).collect()
 }

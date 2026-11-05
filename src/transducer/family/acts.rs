@@ -22,7 +22,7 @@
 
 use super::*;
 use crate::transducer::sentence::form::clause::{About, Act, Clause, Comparison, Coord, Extent, Order, Paint, Pred, RegionKind, Stop, Tie, Value};
-use crate::transducer::spelled::SectionSite;
+use crate::transducer::spelled::{PaintedSite, SectionSite};
 
 /// WHY NO ACT WAS READ, by name (rule 11).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -104,14 +104,31 @@ fn rays() -> Vec<(i8, i8)> {
         .collect()
 }
 
+/// A BODY'S PAINTED SITES OF THE SECTION, in its compartments' order.
+fn painted_of(b: &Body) -> Vec<PaintedSite> {
+    b.compartments.iter().filter_map(|l| Some(PaintedSite::new(SectionSite::of_family(&l.site)?, l.hue))).collect()
+}
+
+/// A body's painted sites as the indices of the sample's sites the act
+/// reading walks, each with its symbol.
 fn cells_of(b: &Body) -> Vec<(usize, usize, u8)> {
-    b.compartments
-        .iter()
-        .filter_map(|l| {
-            let [r, c] = SectionSite::of_family(&l.site)?.indices()?;
-            Some((r, c, l.hue))
+    painted_of(b)
+        .into_iter()
+        .filter_map(|p| {
+            let [r, c] = p.site.indices()?;
+            Some((r, c, p.symbol))
         })
         .collect()
+}
+
+/// THE EXTENT OF INDEXED CELLS `(top, left, bottom, right)`, read by the
+/// clause reader's one corner reading (`statement::corners_of`) on their
+/// sites of the section.
+fn extent(cells: &[(usize, usize, u8)]) -> Option<(usize, usize, usize, usize)> {
+    let painted: Vec<PaintedSite> = cells.iter().map(|&(i, j, h)| Some(PaintedSite::new(SectionSite::of_indices([i, j])?, h))).collect::<Option<_>>()?;
+    let (least, greatest) = statement::corners_of(&painted)?;
+    let ([t, l], [b, r]) = (least.indices()?, greatest.indices()?);
+    Some((t, l, b, r))
 }
 
 /// The symbol at indices `(r, c)` along the perspective's plane; `None` off
@@ -145,7 +162,7 @@ fn predicates(pairs: &[Pair<'_>]) -> Vec<Pred> {
             if !charts.contains(&b.moduli) {
                 charts.push(b.moduli.clone());
             }
-            let ext = statement::extent_of(&cells);
+            let ext = extent(&cells);
             let span = |lo: usize, hi: usize| -> Option<i64> { i64::try_from(hi.checked_sub(lo)?.checked_add(1)?).ok() };
             let read = [
                 i64::try_from(cells.len()).ok(),
@@ -497,9 +514,10 @@ fn slide_of(c: &Clause, pairs: &[Pair<'_>]) -> Option<Clause> {
         return None;
     }
     // The translation, read off three cells it carries: one offset for all.
-    let off = |r: usize, cc: usize| -> Option<(i64, i64)> {
-        let (a, b) = statement::carried(motion, r, cc).ok()?;
-        Some((a.checked_sub(i64::try_from(r).ok()?)?, b.checked_sub(i64::try_from(cc).ok()?)?))
+    let off = |r: i64, cc: i64| -> Option<(i64, i64)> {
+        let from = SectionSite::on_plane([r, cc]);
+        let [a, b] = statement::carried(motion, from).ok()?.offset_from(from)?.coordinates();
+        Some((a, b))
     };
     let o = off(0, 0)?;
     if off(0, 1)? != o || off(1, 0)? != o {
@@ -922,14 +940,17 @@ fn read_fills(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], e
     let mut rest: PairCells = vec![Vec::new(); n];
     let regions = [(0u8, RegionKind::Interior), (1, RegionKind::Halo), (2, RegionKind::Extent)];
     for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
-        let mut all_cells: Vec<(usize, usize)> = res.iter().map(|&(i, j, _)| (i, j)).collect();
+        // The residue's sites of the section.
+        let sites_of = |cells: &[(usize, usize, u8)]| -> Vec<SectionSite> { cells.iter().filter_map(|&(i, j, _)| SectionSite::of_indices([i, j])).collect() };
+        let mut all_cells: Vec<SectionSite> = sites_of(res);
         all_cells.sort_unstable();
-        let by_region: Vec<Vec<Vec<(usize, usize)>>> = regions.iter().map(|&(_, region)| statement::regions_each(region, p.x, &p.bodies)).collect();
+        let by_region: Vec<Vec<Vec<SectionSite>>> = regions.iter().map(|&(_, region)| statement::regions_each(region, p.x, &p.bodies)).collect();
         for piece in pieces_of(res) {
             let mut hues: Vec<u8> = Vec::new();
             for &(_, _, h) in &piece {
                 insert_sorted(&mut hues, h);
             }
+            let piece_sites = sites_of(&piece);
             let read = match hues.as_slice() {
                 [hue] => regions
                     .iter()
@@ -938,11 +959,11 @@ fn read_fills(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], e
                         let holders: Vec<usize> = bodies_regions
                             .iter()
                             .enumerate()
-                            .filter(|(_, rc)| rc.iter().any(|c| piece.iter().any(|&(i, j, _)| (i, j) == *c)))
+                            .filter(|(_, rc)| rc.iter().any(|c| piece_sites.contains(c)))
                             .map(|(b, _)| b)
                             .collect();
-                        let union: Vec<(usize, usize)> = holders.iter().flat_map(|&b| bodies_regions[b].iter().copied()).collect();
-                        let covers = piece.iter().all(|&(i, j, _)| union.contains(&(i, j)));
+                        let union: Vec<SectionSite> = holders.iter().flat_map(|&b| bodies_regions[b].iter().copied()).collect();
+                        let covers = piece_sites.iter().all(|s| union.contains(s));
                         let within = union.iter().all(|c| all_cells.binary_search(c).is_ok());
                         (!holders.is_empty() && covers && within).then_some(([tag, *hue], holders))
                     })
@@ -953,12 +974,12 @@ fn read_fills(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], e
                     // bodies around the piece, together, where the bodies' joint
                     // interior covers it and lies within the created cells.
                     .or_else(|| {
-                        let holders = statement::bodies_around(p.x, &p.bodies, &piece);
+                        let holders = statement::bodies_around(p.x, &p.bodies, &piece_sites);
                         if holders.len() < 2 {
                             return None;
                         }
                         let union = statement::region_of_set(RegionKind::Interior, p.x, &p.bodies, &holders);
-                        let covers = piece.iter().all(|&(i, j, _)| union.contains(&(i, j)));
+                        let covers = piece_sites.iter().all(|s| union.contains(s));
                         let within = union.iter().all(|c| all_cells.binary_search(c).is_ok());
                         (covers && within).then_some(([0, *hue], holders))
                     }),
@@ -1163,7 +1184,7 @@ fn read_connects(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>]
             for &(_, _, h) in &piece {
                 insert_sorted(&mut hues, h);
             }
-            let ends = match statement::extent_of(&piece) {
+            let ends = match extent(&piece) {
                 Some((r0, c0, r1, c1)) if r0 == r1 && c1 - c0 + 1 == piece.len() => {
                     Some((body_at(Some(r0), c0.checked_sub(1)), body_at(Some(r0), Some(c1 + 1))))
                 }
@@ -1226,7 +1247,7 @@ type EchoRead = (i64, i64, Vec<(u8, u8)>);
 
 /// A shape read off its cells, the corner its extent's own.
 fn shape_of(cells: &[(usize, usize, u8)]) -> Option<Shape> {
-    let (r0, c0, _, _) = statement::extent_of(cells)?;
+    let (r0, c0, _, _) = extent(cells)?;
     let mut s: Vec<(usize, usize)> = cells.iter().map(|&(i, j, _)| (i - r0, j - c0)).collect();
     s.sort_unstable();
     Some((r0, c0, s))
@@ -1415,7 +1436,7 @@ fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, 
         let bodies: Vec<Vec<(usize, usize, u8)>> = p.bodies.iter().map(cells_of).collect();
         let mut by_shape: crate::network::nerve::Keyed<Vec<(usize, u8)>> = crate::network::nerve::Keyed::new();
         for (b, cells) in bodies.iter().enumerate() {
-            let Some((t0, l0, b0, r0)) = statement::extent_of(cells) else { continue };
+            let Some((t0, l0, b0, r0)) = extent(cells) else { continue };
             let hw = (b0 - t0 + 1, r0 - l0 + 1);
             for t in 0u8..8 {
                 let mut rel: Vec<(usize, usize)> = cells.iter().filter_map(|&(i, j, _)| turned(t, (i - t0, j - l0), hw)).collect();
@@ -1439,7 +1460,7 @@ fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, 
             }
         }
         for piece in pieces_of(res) {
-            let (Some((pr, pc, ps)), Some((pt, pl, pb, pright))) = (shape_of(&piece), statement::extent_of(&piece)) else { continue };
+            let (Some((pr, pc, ps)), Some((pt, pl, pb, pright))) = (shape_of(&piece), extent(&piece)) else { continue };
             let mut offers = Vec::new();
             let filed = match by_shape.get(&shape_bytes(&ps)) {
                 Some(at) => at.clone(),
@@ -1447,7 +1468,7 @@ fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, 
             };
             for (b, t) in filed {
                 let cells = &bodies[b];
-                let Some((t0, l0, b0, r0)) = statement::extent_of(cells) else { continue };
+                let Some((t0, l0, b0, r0)) = extent(cells) else { continue };
                 let hw = (b0 - t0 + 1, r0 - l0 + 1);
                 // The map, cell for cell; one hue going two ways is no echo.
                 let mut map: Vec<(u8, u8)> = Vec::new();
@@ -1630,34 +1651,43 @@ fn read_bends(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], e
     (clauses, rest)
 }
 
-/// A body's cells relative to its centre, doubled so every centre is a whole
-/// number: the pattern a copy stamps, as bytes.
-fn pattern_key(cells: &[(usize, usize, u8)]) -> Option<Vec<u8>> {
-    let (t, l, b, r) = statement::extent_of(cells)?;
-    let (cr, cc) = (i64::try_from(t + b).ok()?, i64::try_from(l + r).ok()?);
-    let mut rel: Vec<(i64, i64, u8)> = Vec::with_capacity(cells.len());
-    for &(i, j, h) in cells {
-        rel.push((2 * i64::try_from(i).ok()? - cr, 2 * i64::try_from(j).ok()? - cc, h));
+/// `cells` READ FROM THE CENTRE OF `around`'s corners, doubled so every
+/// centre is a whole number, sorted, as bytes: each site written along the
+/// plane (`SectionSite::put_canonical`), then its symbol.
+fn centred_key(cells: &[PaintedSite], around: &[PaintedSite]) -> Option<Vec<u8>> {
+    let (least, greatest) = statement::corners_of(around)?;
+    let mut centre = least.coordinates();
+    for (c, g) in centre.iter_mut().zip(greatest.coordinates()) {
+        *c = c.checked_add(g)?;
+    }
+    let mut rel: Vec<PaintedSite> = Vec::with_capacity(cells.len());
+    for p in cells {
+        let mut doubled = p.site.coordinates();
+        for (x, c) in doubled.iter_mut().zip(centre) {
+            *x = x.checked_mul(2)?.checked_sub(c)?;
+        }
+        rel.push(PaintedSite::new(SectionSite::on_plane(doubled), p.symbol));
     }
     rel.sort_unstable();
-    Some(rel.iter().flat_map(|&(a, c, h)| a.to_le_bytes().into_iter().chain(c.to_le_bytes()).chain([h])).collect())
+    let mut out = Vec::new();
+    for p in rel {
+        p.site.put_canonical(&mut out);
+        out.push(p.symbol);
+    }
+    Some(out)
+}
+
+/// A body's painted sites relative to its centre: the pattern a copy
+/// stamps, as bytes.
+fn pattern_key(cells: &[PaintedSite]) -> Option<Vec<u8>> {
+    centred_key(cells, cells)
 }
 
 /// The pattern the output stamped on a seed: the output's body standing on
-/// the seed's cells, relative to the SEED's centre.
-fn stamped_key(seed: &[(usize, usize, u8)], out_bodies: &[Body]) -> Option<Vec<u8>> {
-    let (t, l, b, r) = statement::extent_of(seed)?;
-    let over = out_bodies
-        .iter()
-        .map(cells_of)
-        .find(|cells| cells.iter().any(|&(i, j, _)| seed.iter().any(|&(si, sj, _)| (i, j) == (si, sj))))?;
-    let (cr, cc) = (i64::try_from(t + b).ok()?, i64::try_from(l + r).ok()?);
-    let mut rel: Vec<(i64, i64, u8)> = Vec::with_capacity(over.len());
-    for &(i, j, h) in &over {
-        rel.push((2 * i64::try_from(i).ok()? - cr, 2 * i64::try_from(j).ok()? - cc, h));
-    }
-    rel.sort_unstable();
-    Some(rel.iter().flat_map(|&(a, c, h)| a.to_le_bytes().into_iter().chain(c.to_le_bytes()).chain([h])).collect())
+/// the seed's sites, relative to the SEED's centre.
+fn stamped_key(seed: &[PaintedSite], out_bodies: &[Body]) -> Option<Vec<u8>> {
+    let over = out_bodies.iter().map(painted_of).find(|cells| cells.iter().any(|p| seed.iter().any(|s| s.site == p.site)))?;
+    centred_key(&over, seed)
 }
 
 /// C2 — A COPY READ OFF ITS EFFECT: the bodies the effect touched are the
@@ -1676,7 +1706,7 @@ fn read_copy(r: &PredicateTable<'_, '_>, touched: &[Vec<usize>], every: &[Vec<us
             if seeds.contains(&b) {
                 continue;
             }
-            if let Some(key) = pattern_key(&cells_of(body)) {
+            if let Some(key) = pattern_key(&painted_of(body)) {
                 if by_pattern.get(&key).is_none() {
                     by_pattern.insert(key, b);
                 }
@@ -1684,7 +1714,7 @@ fn read_copy(r: &PredicateTable<'_, '_>, touched: &[Vec<usize>], every: &[Vec<us
         }
         let mut template: Option<usize> = None;
         for &s in seeds {
-            let key = stamped_key(&cells_of(&p.bodies[s]), &out_bodies)?;
+            let key = stamped_key(&painted_of(&p.bodies[s]), &out_bodies)?;
             let &t = by_pattern.get(&key)?;
             match template {
                 Some(was) if was != t => return None,
@@ -1857,17 +1887,14 @@ fn sized(r: &mut PredicateTable<'_, '_>, carried: Vec<Clause>, every: &[Vec<usiz
             .iter()
             .map(|p| {
                 let (yr, yc) = frame_of(p.y);
-                let spans: Vec<Vec<(usize, usize)>> = match extent {
-                    Extent::Body => p.bodies.iter().map(|b| cells_of(b).into_iter().map(|(i, j, _)| (i, j)).collect()).collect(),
+                let spans: Vec<Vec<SectionSite>> = match extent {
+                    Extent::Body => p.bodies.iter().map(|b| painted_of(b).into_iter().map(|q| q.site).collect()).collect(),
                     Extent::Interior => statement::regions_each(RegionKind::Interior, p.x, &p.bodies),
                 };
                 spans
                     .iter()
                     .enumerate()
-                    .filter(|(_, cells)| {
-                        let marked: Vec<(usize, usize, u8)> = cells.iter().map(|&(i, j)| (i, j, 0)).collect();
-                        statement::extent_of(&marked).is_some_and(|(t, l, b, rr)| (b - t + 1, rr - l + 1) == (yr, yc))
-                    })
+                    .filter(|(_, sites)| SectionSite::span_of(sites.iter().copied()).is_some_and(|(_, e)| e == [yr, yc]))
                     .map(|(b, _)| b)
                     .collect()
             })

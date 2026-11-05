@@ -208,3 +208,19 @@ fn take_elements_refuses_named_or_uncanonical_carriage() {
     assert!(read(&body).is_none(), "an iterated translation is read about the grid");
     assert!(read(&base).is_some(), "the canonical tape reads");
 }
+
+/// TRACK 26 S4d, stage 2c — THE CLAUSE READER'S CORNERS ARE READ ON SECTION
+/// SITES: the least and the greatest coordinate on each axis of the plane,
+/// over every painted site whatever its order or symbol, are the span's least
+/// corner and that corner moved one short of the span's extents; no site
+/// has no corners.
+#[test]
+fn corners_of_reads_least_and_greatest_on_each_axis() {
+    use crate::transducer::family::statement::corners_of;
+    use crate::transducer::spelled::SectionSite;
+    let cells = crate::transducer::sentence::tests::fixtures::painted(&[(2, 5, 1), (0, 7, 1), (3, 6, 2)]);
+    assert_eq!(corners_of(&cells), Some((SectionSite::on_plane([0, 5]), SectionSite::on_plane([3, 7]))));
+    let (corner, extents) = SectionSite::span_of(cells.iter().map(|p| p.site)).expect("a span");
+    assert_eq!((corner, extents), (SectionSite::on_plane([0, 5]), [4, 3]), "the span the corners bound");
+    assert_eq!(corners_of(&[]), None, "no site, no corners");
+}
