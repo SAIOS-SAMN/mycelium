@@ -29,7 +29,7 @@ pub use mycelium::physics::laws::PARAMETERS;
 
 /// The `ACT_LAWS` sub-modes a client asks by.
 pub use mycelium::physics::laws::codec::{
-    MODE_CLOCK, MODE_CONCORDANCE, MODE_LEXICON, MODE_PARAMETERS, MODE_REGISTER, MODE_SIGNATURE, MODE_STATEMENT,
+    MODE_ALIGNMENT, MODE_CLOCK, MODE_CONCORDANCE, MODE_LEXICON, MODE_PARAMETERS, MODE_REGISTER, MODE_SIGNATURE, MODE_STATEMENT,
 };
 
 /// The Concordance's clauses, each by its law id and version
@@ -38,8 +38,11 @@ pub use mycelium::physics::laws::codec::{
 /// kernel signs by reconstructing each clause's fixtures
 /// ([`crate::signing`]).
 pub use mycelium::physics::laws::clauses::CLAUSES;
-/// The register's read and the signing act on the wire.
-pub use mycelium::physics::laws::codec::{decode_concordance_reply, decode_signature_reply, encode_concordance_request, encode_signature_request};
+/// The register's read, the signing act and the alignment reading
+/// (mode 9) on the wire.
+pub use mycelium::physics::laws::codec::{
+    decode_alignment_reply, decode_concordance_reply, decode_signature_reply, encode_alignment_request, encode_concordance_request, encode_signature_request,
+};
 
 /// Every shell the `forms` crate hosts, `(law id, version)`.
 pub use forms::LAW_IDS as FORM_LAW_IDS;

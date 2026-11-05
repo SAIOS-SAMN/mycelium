@@ -11,7 +11,9 @@
 //!    or minted there.
 //! 2. The Concordance — its clause register read (`ACT_LAWS` mode 7), each
 //!    clause's fixtures reconstructed here (`house::sign_concordance`) and
-//!    the readings signed by the key, presented to the hypha (mode 8).
+//!    the readings signed by the key, presented to the hypha (mode 8), which
+//!    records the verdict on its ledger; the house's alignment then read
+//!    from that ledger (mode 9).
 //! 3. The clock — the court's head stamp (`ACT_LAWS` mode 4).
 //! 4. The domain — founded on the house's key, its one tier the same key
 //!    (`ACT_DOMAIN`): sealed, or founded already on a run before.
@@ -29,8 +31,8 @@
 use mycelium_sdk::conformance::{run, Profile};
 use mycelium_sdk::deferral::{deferral_of, read_deferral, Deferral};
 use mycelium_sdk::house::{
-    decode_clock_reply, decode_concordance_reply, decode_signature_reply, encode_clock_request, encode_concordance_request, encode_signature_request,
-    sign_concordance, Assent, DomainGenesis, Founded,
+    decode_alignment_reply, decode_clock_reply, decode_concordance_reply, decode_signature_reply, encode_alignment_request, encode_clock_request,
+    encode_concordance_request, encode_signature_request, sign_concordance, Assent, ClauseReading, DomainGenesis, Founded,
 };
 use mycelium_sdk::prelude::*;
 use mycelium_sdk::voice::hex32;
@@ -40,6 +42,39 @@ use std::process::ExitCode;
 /// act is spoken again later.
 fn said(d: Deferral) -> String {
     format!("a deferral: the hypha's pool is full, deficit S:G:T:H {:?}; retry later", d.deficit)
+}
+
+/// The house's alignment as the hypha's ledger reads it (`ACT_LAWS` mode
+/// 9): each clause version converses, vetoed, collides or unread, at the
+/// stamp of the signing that set it; the signings of the past beside it.
+fn aligned(session: &Session, kernel: &[u8; 32]) {
+    let read = match session.speak(encode_alignment_request(Some(kernel))) {
+        Ok(reply) => decode_alignment_reply(&reply),
+        Err(e) => {
+            println!("  alignment: {e}");
+            return;
+        }
+    };
+    match read {
+        Some(Ok(a)) => {
+            for k in &a.kernels {
+                for c in &k.clauses {
+                    let reading = match &c.reading {
+                        ClauseReading::Converses { at } => format!("converses at height {}", at.h),
+                        ClauseReading::Vetoed { at } => format!("vetoed at height {}", at.h),
+                        ClauseReading::Collides { at, residue } => format!("collides at height {}: {residue:?}", at.h),
+                        ClauseReading::Unread => "unread".to_string(),
+                    };
+                    println!("  alignment: {} v{} {reading}", c.id.law, c.id.version);
+                }
+            }
+            for h in &a.history {
+                println!("  history: {} signed Concordance version {} at {} ({:?}, retired)", h.kernel, h.concordance, h.release, h.mechanism);
+            }
+        }
+        Some(Err(r)) => println!("  alignment: refused, {r:?}"),
+        None => println!("  alignment: a reply this build does not read"),
+    }
 }
 
 fn main() -> ExitCode {
@@ -76,7 +111,10 @@ fn main() -> ExitCode {
             println!("concordance: {}", named.join(", "));
             match sign_concordance(&key, &clauses, |_| Assent::Enabled) {
                 Some(signed) => match session.speak(encode_signature_request(&signed)) {
-                    Ok(reply) => println!("  signed by reconstruction; the hypha's verdict: {:?}", decode_signature_reply(&reply)),
+                    Ok(reply) => {
+                        println!("  signed by reconstruction; the hypha's verdict: {:?}", decode_signature_reply(&reply));
+                        aligned(&session, &domain);
+                    }
                     Err(e) => match deferral_of(&e) {
                         Some(d) => println!("  {}", said(d)),
                         None => {

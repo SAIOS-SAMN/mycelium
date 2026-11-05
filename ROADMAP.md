@@ -62,7 +62,8 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 |---|---|---|
 | B2: signing the Concordance clause by clause by reconstructing fixtures; `CONCORDANCE_HASH` retired | track 24 | Built on branch `b2-signing`, merging |
 | Development standard: done is `cargo clippy` and `cargo test`; the gate as workspace tests; CHANGELOG fragments; documents name what exists | — | Built on branch `workflow-standard`, merging |
-| B2, next stage: each kernel's reading and signature recorded on the ledger; v0.3.0's agreed clauses carried forward; alignment read from the hypha | track 24 | Next |
+| B2, next stage: each kernel's reading and signature recorded on the ledger; v0.3.0's agreed clauses carried forward; alignment read from the hypha | track 24 | Built on branch `b2-ledger` (`Cite::Signing`, `ACT_LAWS` mode 9, `clauses::history`) |
+| B3, B4: a domain's crossings refused `NotSignatory` at the universal core tube until its sitting reserve's alignment converses on every network clause of the version served; the boundary reading | track 24 | Next, after B2's ledger stage; draft 4 approved 2026-11-05 |
 | LAW-COORDINATE fixtures 7–10 (advance, an event's bell, merger with offsets, fission) | 78.173 | Next; exact statements agreed with netstratum |
 | LAW-FIELD v1, agreed with the peer kernels | [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) | Asked of netstratum (2026-11-05); amend 78.171 to the pole basis and `Cl(p, q)` |
 | Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
@@ -1293,9 +1294,32 @@ adjudicated reading (B2). Each phase is one commit:
      `admit_refuses_unreached_fixture_as_not_signatory`,
      `register_equals_forms_law_versions` (a wording change changes no
      clause), `admit_refuses_network_veto_and_names_kernel_veto`.
+   - **The signings on the ledger** (**Built**, v0.4.0, a network-contract
+     change: a new receipt citation and `ACT_LAWS` mode 9). Each signing
+     act whose signature reconstructs is judged and sealed on the hypha's
+     line as a `Domain` act citing `Cite::Signing` (tag 16: the kernel's
+     key, the domain it is the sitting reserve of, the verdict), admitted
+     or refused; a `NotSignatory` is held as the residue naming both
+     sides; a verdict the line cannot seal answers `Unrecorded`
+     (`Court::hear_signing`, MU-HOSTING §5a.4). The alignment reading
+     (mode 9, `Court::alignment`, `clauses::read_alignment`) answers per
+     kernel and clause version converses, vetoed, collides (with the
+     residue) or unread, the latest event per clause, derived from the
+     events at every hypha that holds them and never stored. v0.3.0's
+     signings (netstratum and xylarium, Concordance version 4, by the
+     retired text hash) are served beside it as history
+     (`clauses::history`), never admitted. The KERNEL profile gains
+     `laws alignment` (MUST). Claims: `server/cognition/tests/signatory.rs`
+     (`signing_is_recorded_on_the_ledger_and_reads_converses`,
+     `refused_signing_is_recorded_as_collision_with_residue`,
+     `resigning_is_a_new_event_and_the_latest_reads`,
+     `unverified_signing_is_recorded_nowhere`,
+     `alignment_refuses_when_the_stroke_is_spent`,
+     `signing_replicates_to_a_second_hypha`) and
+     `physics::laws::clauses::tests::alignment`; the doc test
+     `judge_takes_only_a_reconstructed_signing`.
 
-   Then (open) a kernel's signed clause set (each clause enabled or vetoed; the
-   network clauses never vetoed) is recorded per domain; a domain's crossings refused `NotSignatory`
+   Then (open) a domain's crossings refused `NotSignatory`
    until its reserve has signed every network clause of the version served
    (Concordance §0's next release); a tube between two universes carrying
    what both enabled, a vetoed clause's bound named, never a refusal of

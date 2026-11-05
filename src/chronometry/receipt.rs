@@ -416,6 +416,16 @@ pub enum Cite {
     /// return per keeper). The close is read off this receipt, so it
     /// reconstructs on every boot and every court.
     Window { through: u64, witnesses: Vec<crate::chronometry::tuniversal::Cited> },
+    /// CONCORDANCE §0, ROADMAP track 24 B2 — A KERNEL'S SIGNING ACT AS THE
+    /// HYPHA READ IT, by its content written out (A21, never a digest): the
+    /// kernel's key, the domain it stood as sitting reserve of (none where
+    /// none), and the verdict — each clause by its law id and version with
+    /// its assent, or the refusal by name; a `NotSignatory` names the
+    /// fixture, the kernel's object and the hypha's, both sides of the
+    /// collision held as a residue (A7). The receipt's height is the
+    /// TUniversal point the act was read at. The alignment reading is
+    /// derived from these events (`clauses::read_alignment`).
+    Signing { kernel: [u8; 32], reserve: Option<[u8; 32]>, verdict: Box<crate::physics::laws::clauses::Verdict> },
 }
 
 impl Cite {
@@ -436,7 +446,8 @@ impl Cite {
             | Cite::Domain { .. }
             | Cite::Origin { .. }
             | Cite::Stated { .. }
-            | Cite::Window { .. } => None,
+            | Cite::Window { .. }
+            | Cite::Signing { .. } => None,
         }
     }
 
@@ -456,7 +467,8 @@ impl Cite {
             | Cite::Domain { .. }
             | Cite::Origin { .. }
             | Cite::Stated { .. }
-            | Cite::Window { .. } => None,
+            | Cite::Window { .. }
+            | Cite::Signing { .. } => None,
         }
     }
 
@@ -560,6 +572,10 @@ impl Cite {
                     rec.extend_from_slice(&c.h.to_le_bytes());
                 }
             }
+            Cite::Signing { kernel, reserve, verdict } => {
+                rec.push(16);
+                crate::physics::laws::clauses::alignment::put_signing(&mut rec, kernel, reserve, verdict);
+            }
             Cite::Class { class, cover, .. } | Cite::Demand { class, cover, .. } => {
                 rec.push(match self {
                     Cite::Class { .. } => 2,
@@ -585,7 +601,8 @@ impl Cite {
                     | Cite::Domain { .. }
                     | Cite::Origin { .. }
                     | Cite::Stated { .. }
-                    | Cite::Window { .. } => {}
+                    | Cite::Window { .. }
+                    | Cite::Signing { .. } => {}
                 }
                 match cover {
                     None => rec.push(0),
@@ -716,6 +733,10 @@ impl Cite {
                     })
                     .collect::<Option<Vec<_>>>()?;
                 Some(Cite::Window { through, witnesses })
+            }
+            16 => {
+                let (kernel, reserve, verdict) = crate::physics::laws::clauses::alignment::take_signing(b, p)?;
+                Some(Cite::Signing { kernel, reserve, verdict: Box::new(verdict) })
             }
             2 | 3 => {
                 let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);

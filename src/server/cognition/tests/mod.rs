@@ -52,6 +52,7 @@ mod domain_passage;
 mod bond;
 mod origin;
 mod founding;
+mod signatory;
 mod reach;
 mod sphere;
 mod universe;

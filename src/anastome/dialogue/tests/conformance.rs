@@ -90,6 +90,7 @@ fn statement_names_each_act_once() {
         "laws statement",
         "laws concordance",
         "laws signature",
+        "laws alignment",
         "laws clock",
         "laws verify",
         "domain founding",

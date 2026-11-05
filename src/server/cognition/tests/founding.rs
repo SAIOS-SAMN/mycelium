@@ -27,7 +27,7 @@ fn vk(k: &SigningKey) -> [u8; 32] {
 }
 
 /// A hypha's court, bound to the hypha's key before its first act.
-fn hypha(name: &str) -> (Court, HyphaKey) {
+pub(super) fn hypha(name: &str) -> (Court, HyphaKey) {
     let key = super::fixtures::court_key(name);
     let mut k = Court::new();
     k.bind_identity(key.verifying_bytes());
@@ -69,7 +69,7 @@ fn prefix_of(r: &KStepReceipt) -> SignedPrefix {
 /// THE EXCHANGE'S LOOP IN PROCESS (`backfill::hear`): `a`'s signed head
 /// heard on `b`, every gap it names back-filled page by page from `a`'s
 /// line, and the head admitted again. Answers `b` and what the head came to.
-fn hear(b: Court, a: &Court, key: &HyphaKey) -> (Court, Admitted) {
+pub(super) fn hear(b: Court, a: &Court, key: &HyphaKey) -> (Court, Admitted) {
     let head = a.chain.head().expect("the founding hypha has acted");
     let pre = prefix_of(&head);
     let c = std::sync::Mutex::new(b);

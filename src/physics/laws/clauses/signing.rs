@@ -12,14 +12,19 @@
 //! content, and compares each presented object with its own reconstruction
 //! (MU-SCIENCE §5.0). A kernel that did not reach a fixture's object is
 //! refused [`SigningRefusal::NotSignatory`], naming the clause, the fixture,
-//! and both objects; a veto of a network clause is refused by name. Nothing
-//! is recorded yet: the signed clause set per domain, and `NotSignatory` at
-//! the universal core tube, are B2's next stage and B3/B4.
+//! and both objects; a veto of a network clause is refused by name.
+//!
+//! The signature is verified first, as a reconstruction of the bytes the
+//! kernel signed from the act's own coordinates
+//! (`Reconstructed::signing`); only a reconstructed act is judged clause by
+//! clause ([`judge`]), so only a verified kernel's verdict is recorded on
+//! the hypha's ledger (`Court::hear_signing`, `Cite::Signing`).
+//! `NotSignatory` at the universal core tube is B3 and B4.
 
 use super::register::{register, ConcordanceClauseId, Fixture, Object, Registered, Standing};
 use super::writing::{put_clause_id, put_content, put_object, take_clause_id, take_content, take_object};
+use crate::court::admission::Reconstructed;
 use crate::transducer::address::{put_key_count, take_key_count};
-use ed25519_dalek::Verifier;
 
 /// The domain a kernel's signature is taken over, ahead of its key and the
 /// clauses written out.
@@ -84,7 +89,7 @@ pub struct Signing {
 }
 
 /// WHY A SIGNING ACT IS REFUSED, by name and with what caused it.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SigningRefusal {
     /// The bytes carry no signing act, or the key is no Ed25519 point.
     Malformed,
@@ -102,7 +107,14 @@ pub enum SigningRefusal {
     NotSignatory { id: ConcordanceClauseId, fixture: Box<Fixture>, presented: Box<Object>, reconstructed: Box<Object> },
     /// This hypha cannot read the clause of its own register.
     Unregistered { id: ConcordanceClauseId },
+    /// The hypha read the act but could not seal its verdict on its line:
+    /// a verdict that is not on the ledger is given as none.
+    Unrecorded,
 }
+
+/// THE HYPHA'S VERDICT ON A SIGNING ACT: each clause admitted with its
+/// assent, in the act's order, or the refusal by name.
+pub type Verdict = Result<Vec<Admitted>, SigningRefusal>;
 
 /// The clauses written out, as signed and carried.
 fn put_clauses(out: &mut Vec<u8>, clauses: &[SignedClause]) {
@@ -157,6 +169,12 @@ impl Signing {
         Signing { kernel_key, clauses, sig }
     }
 
+    /// THE BYTES THE KERNEL SIGNED, written out again from the act's own
+    /// coordinates: the domain, the key, the clauses.
+    pub fn signed_bytes(&self) -> Vec<u8> {
+        signed_bytes(&self.kernel_key, &self.clauses)
+    }
+
     /// The act's bytes: `[kernel key 32][clause count][clause …][sig 64]`,
     /// each clause its content address, its assent byte, and, enabled, one
     /// object per fixture.
@@ -181,14 +199,36 @@ impl Signing {
 }
 
 /// ADMIT A SIGNING ACT against `register`: the key an Ed25519 point and the
-/// signature verifying under it; each clause found by its content, signed
-/// once; a network clause never vetoed; and each enabled clause's presented
-/// objects the hypha's own reconstructions, exactly. Returns each clause
-/// admitted with its assent, in the act's order; each refusal named.
-pub fn admit(register: &[Registered], s: &Signing) -> Result<Vec<Admitted>, SigningRefusal> {
-    let key = ed25519_dalek::VerifyingKey::from_bytes(&s.kernel_key).map_err(|_| SigningRefusal::Malformed)?;
-    let sig = ed25519_dalek::Signature::from_bytes(&s.sig);
-    key.verify(&signed_bytes(&s.kernel_key, &s.clauses), &sig).map_err(|_| SigningRefusal::Unsigned)?;
+/// signature verifying under it (`Reconstructed::signing`), then the act
+/// judged clause by clause ([`judge`]). Returns each clause admitted with
+/// its assent, in the act's order; each refusal named.
+pub fn admit(register: &[Registered], s: &Signing) -> Verdict {
+    judge(register, &Reconstructed::signing(s)?)
+}
+
+/// JUDGE A RECONSTRUCTED SIGNING ACT against `register`: each clause found
+/// by its content, signed once; a network clause never vetoed; and each
+/// enabled clause's presented objects the hypha's own reconstructions,
+/// exactly. Only an act whose signature verified is judged, so a verdict
+/// recorded on the ledger is a verified kernel's; a claimed act does not
+/// compile (`judge_takes_only_a_reconstructed_signing`):
+///
+/// ```compile_fail,E0308
+/// fn judged(r: &[mycelium::physics::laws::clauses::Registered], s: &mycelium::physics::laws::clauses::Signing) {
+///     let _ = mycelium::physics::laws::clauses::judge(r, s);
+/// }
+/// ```
+///
+/// The lawful path, which compiles:
+///
+/// ```
+/// fn judged(r: &[mycelium::physics::laws::clauses::Registered], s: &mycelium::physics::laws::clauses::Signing) {
+///     if let Ok(signed) = mycelium::court::admission::Reconstructed::signing(s) {
+///         let _ = mycelium::physics::laws::clauses::judge(r, &signed);
+///     }
+/// }
+/// ```
+pub fn judge(register: &[Registered], s: &Reconstructed<Signing>) -> Verdict {
     let mut admitted: Vec<Admitted> = Vec::with_capacity(s.clauses.len());
     for c in &s.clauses {
         let unknown = || SigningRefusal::UnknownClause { id: c.id.clone() };
@@ -223,14 +263,14 @@ pub fn admit(register: &[Registered], s: &Signing) -> Result<Vec<Admitted>, Sign
 /// The verdict on a carried act's bytes, read and admitted against this
 /// hypha's register; a register this hypha cannot read refuses
 /// `Unregistered`, naming the clause.
-pub fn admit_bytes(b: &[u8]) -> Result<Vec<Admitted>, SigningRefusal> {
+pub fn admit_bytes(b: &[u8]) -> Verdict {
     let held = register().map_err(|r| SigningRefusal::Unregistered { id: r.id })?;
     admit(&held, &Signing::from_bytes(b)?)
 }
 
 /// THE VERDICT'S BYTES: `[0][count][(clause name, assent) …]` admitted, or
 /// `[1][refusal]`: its tag, then what it names.
-pub fn put_verdict(out: &mut Vec<u8>, verdict: &Result<Vec<Admitted>, SigningRefusal>) {
+pub fn put_verdict(out: &mut Vec<u8>, verdict: &Verdict) {
     match verdict {
         Ok(admitted) => {
             out.push(0);
@@ -260,49 +300,58 @@ pub fn put_verdict(out: &mut Vec<u8>, verdict: &Result<Vec<Admitted>, SigningRef
                     put_object(out, presented);
                     put_object(out, reconstructed);
                 }
+                SigningRefusal::Unrecorded => out.push(7),
             }
         }
     }
 }
 
 /// The verdict a reply carries, read whole.
-pub fn take_verdict(b: &[u8]) -> Option<Result<Vec<Admitted>, SigningRefusal>> {
-    let mut p = 1;
-    let (head, _) = b.split_first()?;
-    let verdict = match head {
+pub fn take_verdict(b: &[u8]) -> Option<Verdict> {
+    let mut p = 0;
+    let verdict = take_verdict_at(b, &mut p)?;
+    (p == b.len()).then_some(verdict)
+}
+
+/// One verdict read from `p` on, as [`put_verdict`] writes it: what a
+/// receipt's signing citation carries among its other coordinates.
+pub fn take_verdict_at(b: &[u8], p: &mut usize) -> Option<Verdict> {
+    let head = *b.get(*p)?;
+    *p += 1;
+    Some(match head {
         0 => {
-            let n = take_key_count(b, &mut p)?;
+            let n = take_key_count(b, p)?;
             let admitted = (0..n)
                 .map(|_| {
-                    let id = take_clause_id(b, &mut p)?;
-                    let assent = Assent::of(*b.get(p)?)?;
-                    p += 1;
+                    let id = take_clause_id(b, p)?;
+                    let assent = Assent::of(*b.get(*p)?)?;
+                    *p += 1;
                     Some(Admitted { id, assent })
                 })
                 .collect::<Option<Vec<_>>>()?;
             Ok(admitted)
         }
         1 => {
-            let tag = *b.get(p)?;
-            p += 1;
+            let tag = *b.get(*p)?;
+            *p += 1;
             Err(match tag {
                 0 => SigningRefusal::Malformed,
                 1 => SigningRefusal::Unsigned,
-                2 => SigningRefusal::UnknownClause { id: take_clause_id(b, &mut p)? },
-                3 => SigningRefusal::Repeated { id: take_clause_id(b, &mut p)? },
-                4 => SigningRefusal::NetworkVetoed { id: take_clause_id(b, &mut p)? },
+                2 => SigningRefusal::UnknownClause { id: take_clause_id(b, p)? },
+                3 => SigningRefusal::Repeated { id: take_clause_id(b, p)? },
+                4 => SigningRefusal::NetworkVetoed { id: take_clause_id(b, p)? },
                 5 => {
-                    let (id, mut fixtures) = take_content(b, &mut p)?;
+                    let (id, mut fixtures) = take_content(b, p)?;
                     let fixture = fixtures.pop().filter(|_| fixtures.is_empty())?;
-                    let presented = take_object(b, &mut p)?;
-                    let reconstructed = take_object(b, &mut p)?;
+                    let presented = take_object(b, p)?;
+                    let reconstructed = take_object(b, p)?;
                     SigningRefusal::NotSignatory { id, fixture: Box::new(fixture), presented: Box::new(presented), reconstructed: Box::new(reconstructed) }
                 }
-                6 => SigningRefusal::Unregistered { id: take_clause_id(b, &mut p)? },
+                6 => SigningRefusal::Unregistered { id: take_clause_id(b, p)? },
+                7 => SigningRefusal::Unrecorded,
                 _ => return None,
             })
         }
         _ => return None,
-    };
-    (p == b.len()).then_some(verdict)
+    })
 }

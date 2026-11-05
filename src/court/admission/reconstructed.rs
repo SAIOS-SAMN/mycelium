@@ -127,6 +127,24 @@ impl Reconstructed<crate::anastome::dialogue::domain::SignedDomain> {
     }
 }
 
+impl Reconstructed<crate::physics::laws::clauses::Signing> {
+    /// CONCORDANCE §0, ROADMAP track 24 B2 — A KERNEL'S SIGNING ACT
+    /// RECONSTRUCTED: the bytes the kernel signs are written out again from
+    /// the act's own coordinates (the domain, its key and the clauses;
+    /// `Signing::signed_bytes`), and the signature verifies over them under
+    /// the kernel's key. Refused `Malformed` where the key is no Ed25519
+    /// point, `Unsigned` where the signature does not verify; only a
+    /// reconstructed act is judged and recorded (`clauses::judge`).
+    pub fn signing(s: &crate::physics::laws::clauses::Signing) -> Result<Reconstructed<crate::physics::laws::clauses::Signing>, crate::physics::laws::clauses::SigningRefusal> {
+        use crate::physics::laws::clauses::SigningRefusal;
+        use ed25519_dalek::Verifier;
+        let key = ed25519_dalek::VerifyingKey::from_bytes(&s.kernel_key).map_err(|_| SigningRefusal::Malformed)?;
+        let sig = ed25519_dalek::Signature::from_bytes(&s.sig);
+        key.verify(&s.signed_bytes(), &sig).map_err(|_| SigningRefusal::Unsigned)?;
+        Ok(Reconstructed { object: s.clone() })
+    }
+}
+
 impl Reconstructed<crate::anastome::dialogue::RootProof> {
     /// 78.147, 47.3 — A FOLD ROOT RECONSTRUCTED FROM THE SIGNATURES OVER
     /// IT, as the fold was sealed: the home's signed position verifies

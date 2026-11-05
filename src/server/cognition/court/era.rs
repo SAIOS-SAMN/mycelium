@@ -118,7 +118,9 @@ impl Court {
     /// word it holds, which is that word's depth, and the receipt a dialect
     /// transition learned from a peer stands at, which the ledger files it
     /// on. A receipt held unreached whose node leaves leaves the signed-reach
-    /// gate with it (`unhold_shed`, MU-HOSTING §5a.9).
+    /// gate with it (`unhold_shed`, MU-HOSTING §5a.9). A kernel's signing
+    /// event (`Cite::Signing`) stays: the alignment reading is derived from
+    /// it (track 24 B2).
     pub(crate) fn shed_folded_lines(&mut self) -> u64 {
         let mut stood: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for at in self.dialect_chain.iter().filter_map(|(_, _, at)| *at) {
@@ -134,6 +136,7 @@ impl Court {
             pending.contains(&key)
                 || held.contains(&key)
                 || stood.contains(&key)
+                || r.cites.iter().any(|c| matches!(c, crate::chronometry::Cite::Signing { .. }))
                 || r.cites.iter().filter_map(crate::chronometry::Cite::at).any(|at| held.contains(&at.key()))
         });
         self.unhold_shed();
