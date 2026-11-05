@@ -11,7 +11,11 @@
 //! `forms/src/tests/crossing.rs`). The coordinate's fixtures stand at the
 //! root `R` (genesis `6a` × 32, epoch `0x92`). Fixture 1b's writings and
 //! fixture 3's nesting (a claim over every depth, not an input and an
-//! object) are read in `forms` alone.
+//! object) are read in `forms` alone, as are fixtures 7–10 (the advance,
+//! an event's bell, the merger and fission): `Fixture` has no operation
+//! for them and `Object` no reading of a merger or an event's bell, so
+//! serving them is a new fixture and object tag on `ACT_LAWS` mode 7, a
+//! wire change left to the clause's drafting (78.173 §6).
 
 use super::register::Fixture;
 use algebra::{base_axis, Clifford, EM};
