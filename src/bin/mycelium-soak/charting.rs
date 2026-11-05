@@ -8,8 +8,10 @@
 //! (`cognition::prepare_intake`), each charted. This walks the same calls
 //! on every train pair of the named task, whether or not the pair's two
 //! enclosures share periods (`routes_of` routes only those that do), and
-//! times them apart: the lift of the support, its topology and its
-//! harmonics, so the stage that costs is read rather than named.
+//! times them apart: the support read as turns of its own periods
+//! (`blade::SectionTurns`), the topology of the support the turns land on,
+//! and the chart read from the turns, so the stage that costs is read
+//! rather than named.
 //!
 //! THE CLOCK IS THIS BINARY'S, NEVER A KERNEL'S (as `regime.rs`): no engine
 //! branch reads these numbers, and the process prints them and exits.
@@ -106,25 +108,29 @@ fn pairs(name: &str, train: &mycelium::transducer::family::Family) {
             continue;
         };
         let t_word = t.elapsed();
-        // THE STAGES OF `section_moduli`, apart: the lift, the topology, the
-        // harmonics (which reads the topology again).
+        // THE STAGES OF `section_moduli`, apart: the turns, the topology of
+        // the support they land on, the chart (which reads the topology
+        // again).
         let mut sites = mycelium::transducer::element::positions(&chain);
         sites.sort_unstable();
         sites.dedup();
         let t = Instant::now();
-        let shape = mycelium::transducer::blade::shape_of_section(&sites);
+        let Some(read) = mycelium::transducer::blade::SectionTurns::of(&sites) else {
+            println!("  chart {name} pair {pair}: {} sites, no turns", sites.len());
+            continue;
+        };
         let t_lift = t.elapsed();
         let t = Instant::now();
-        let betti = mycelium::transducer::blade::topology(&shape.blade.support);
+        let betti = read.support().and_then(|s| mycelium::transducer::blade::topology(&s));
         let t_topology = t.elapsed();
         let t = Instant::now();
-        let heard = mycelium::transducer::blade::harmonics::Harmonics::of(&shape.blade);
+        let heard = read.chart();
         let t_harmonics = t.elapsed();
         let t = Instant::now();
         let chart = mycelium::transducer::stalk::invariant_of(&residue);
         let t_chart = t.elapsed();
         println!(
-            "  chart {name} pair {pair}: {h}x{w} -> {h2}x{w2} {reading}, {} links {} sites; residue {} word {} | lift {} topology {} ({:?}) harmonics {} ({}) | invariant_of {}",
+            "  chart {name} pair {pair}: {h}x{w} -> {h2}x{w2} {reading}, {} links {} sites; residue {} word {} | turns {} topology {} ({:?}) chart {} ({}) | invariant_of {}",
             chain.len(),
             sites.len(),
             secs(t_residue),
@@ -137,7 +143,15 @@ fn pairs(name: &str, train: &mycelium::transducer::family::Family) {
             secs(t_chart)
         );
         println!("  chart {name} pair {pair}: axes [{}]", widths(&chart.0));
-        let inertia: Vec<String> = shape.blade.inertia.iter().map(|q| format!("{}/{}b", q.numer().bits(), q.denom().bits())).collect();
+        let base = read.support().and_then(|s| {
+            let n = s.iter().map(|x| x.n()).fold(0, usize::max);
+            Some((n, mycelium::transducer::perspective::family_plane(n)?))
+        });
+        let moments = match base {
+            Some((n, plane)) => read.moments(n, plane).concat(),
+            None => Vec::new(),
+        };
+        let inertia: Vec<String> = moments.iter().map(|q| format!("{}/{}b", q.numer().bits(), q.denom().bits())).collect();
         println!("  chart {name} pair {pair}: inertia [{}]", inertia.join(" "));
         let t = Instant::now();
         let pieces = mycelium::cognition::prepare_intake(&chain, &frame);

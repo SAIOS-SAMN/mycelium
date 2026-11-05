@@ -62,6 +62,14 @@ pub use mycelium::chronometry::tuniversal::TPoint;
 /// under the stroke the motion needs, as the court does, so a kernel that
 /// verifies with it agrees with the court exactly.
 pub use mycelium::physics::laws::{verify, verify_sized, BodyState, Breach, Flow, Flux, Law, Transition, TransitionVerdict, Unmeasured};
+/// THE CONFORMAL LAW ON A MOTION STATED AS TURNS (MU-HOSTING §5a.10): a
+/// turn per phase of a frame, checked by turn arithmetic in ℚ/ℤ where no
+/// exact versor exists (Niven), and refused `LeavesPeriods` where a turn
+/// leaves the frame's periods. In process: the wire carries it with the
+/// crossing record (track 25, X1).
+pub use mycelium::physics::laws::{verify_turns, TurnBreach, TurnMotion, TurnTransition, TurnVerdict};
+/// A turn in ℚ/ℤ (`Turn::of(r, h)`) and a frame's periods.
+pub use mycelium::transducer::family::transduce::{Enclosure, Turn};
 /// A body as A.13 reads it (centre, mass, second moments).
 pub use mycelium::physics::equilibrium::BodyMoments;
 /// The multivector of Cl(4,1) over ℚ a motion and a nucleus are written in.

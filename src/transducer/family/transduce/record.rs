@@ -87,7 +87,7 @@ pub fn need_of(x: &Sample, y: &Sample) -> Option<usize> {
 
 /// The overlap of two arcs, as its two boundary turns.
 fn overlap(a: (usize, usize), p: usize, b: (usize, usize), q: usize) -> (Turn, Turn) {
-    let (a0, a1, b0, b1) = (Turn::new(a.0, p), Turn::new(a.1, p), Turn::new(b.0, q), Turn::new(b.1, q));
+    let (a0, a1, b0, b1) = (Turn::of(a.0, p), Turn::of(a.1, p), Turn::of(b.0, q), Turn::of(b.1, q));
     (if a0 < b0 { b0 } else { a0 }, if a1 < b1 { a1 } else { b1 })
 }
 
@@ -97,7 +97,7 @@ type Located = (Vec<(usize, usize)>, usize);
 
 /// Do two arcs of periods `p` and `q` overlap with positive length?
 fn meets(a: (usize, usize), p: usize, b: (usize, usize), q: usize) -> bool {
-    Turn::new(a.0, p) < Turn::new(b.1, q) && Turn::new(b.0, q) < Turn::new(a.1, p)
+    Turn::of(a.0, p) < Turn::of(b.1, q) && Turn::of(b.0, q) < Turn::of(a.1, p)
 }
 
 /// O1 — THE SHARE A FAMILY CHANGES: the sum over its pairs of the share of
@@ -186,7 +186,7 @@ impl Transduction {
                     if let (Some(&(c0, _)), Some(&(_, d1)), Some(&w2), Some(&w)) =
                         (out.spans.get(1), band.spans.get(1), q.get(1), p.get(1))
                     {
-                        if Turn::new(c0, w2) >= Turn::new(d1, w) {
+                        if Turn::of(c0, w2) >= Turn::of(d1, w) {
                             break;
                         }
                     }

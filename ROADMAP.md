@@ -47,7 +47,7 @@ chart addresses may change (CHANGELOG › Unreleased).
 | Track 26 S4b: rank-`n` perception and transduction as factorisation ([MU-SENSING](docs/MU-SENSING.md) §3.6, §3.9) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress on branch `s4b-rank-n`. Built: the fixed axis constants replaced by a perspective's roles; the alphabet kept at `n = 3`, derived, and a higher rank refused by name; D2.5 O3 derived; the rank-`n` link; connection by grade; every pair factored as motion ∘ residue, held as a vortex, with the court's admission on a derived residue; every task perceived by the mind at its own rank. Open: the rank-2 carrier of the word machinery (`family::Grid`) and the alphabet past `n = 3` |
 | Track 26 S4c: the hypha serves tasks of any rank; a claim of factorisation on the wire ([MU-SENSING](docs/MU-SENSING.md) §3.9, §6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Built on branch `s4c-rank-n-hypha`: the registry posts, serves and addresses tasks of any rank, the word machinery's readers on the section; the claim of factorisation as the solve's claim kind 1 (78.126), admitted by reconstruction, recorded and never paid (ruled); the mind speaks one claim per held factorisation of a task beyond the alphabet |
 | Track 26 S4d: the word machinery reads a sample; `family::Grid` retired ([MU-SENSING](docs/MU-SENSING.md) §3.9, §5) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Stage 1 merged (PR #84, `spelled::SectionSample`); stage 2's readers merged (PR #86, `spelled::SectionSite`); stage 2b's planar tuples merged (PR #92, `SectionLink` and `PaintedSite`); stages 2c and 3 merged (PR #96, the chart's pairs, the anchor algebra and the clause tables held as section sites; the rule language's coordinates by plane axis); stage 2d on branch `s4d2d-act-cells` (the act reading's cells, the frame acts and the spoken frame by plane axis; the act reading's planar carriers closed); a rank-3 task stays `BeyondAlphabet` (Law VIII, MU-SENSING §5) |
-| T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | With track 26 S4b's remainder |
+| T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | Built on branch `t3-turns` (no wire, chart or task address change): a section's chart read as turns of its own periods (`blade::SectionTurns`; the conformal lift retired from `section_moduli`, every chart reading unchanged); the Conformal law reading a motion stated as turns in ℚ/ℤ (`physics::laws::verify_turns`, composed by addition mod 1, a turn off the frame's periods refused `LeavesPeriods`); MU-ANTI-FLATTENING 12's guard registered (`Turn::of(r, h)`, `turn_has_one_constructor`). Open: the motion as turns on the wire, with the crossing record (track 25, X1); routing a pair of unequal enclosures (MU-DERIVATIONS D3.2, O8) |
 | Track 26, S4a and S7–S9 | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 is agreed with the peer kernels |
 
 **2. Ready to start**
@@ -1398,17 +1398,18 @@ Each phase lands on its own branch, one item per commit:
      (`locates_stratum`) and the starved root in
      `client/sdk/mind/learn.rs` (`CourtPace::starved` holds a `Locator`)
      are compared in the address sense.
-   - Not registered: the guards of MU-ANTI-FLATTENING clauses 12 and 14,
-     since neither has a guarding type and a claim in the tree. Clause
-     12's `Turn` has public fields and `Turn::new`, the specified
-     `Turn::of(r, h)` and its `compile_fail` claim are not written, and
-     the refinement it would refuse is deleted. Clause 14's
-     `Court::restore` returns `bool`, not a `Reconstructed<State>`, and
+   - Registered with T3 (v0.4.0, #26): the guard of MU-ANTI-FLATTENING
+     clause 12. `Turn` has private fields and one constructor,
+     `Turn::of(r, h)`, proved by the `compile_fail` claim
+     `turn_has_one_constructor`.
+   - Not registered: the guard of clause 14, which has no guarding type
+     and no claim in the tree. `Court::restore` returns `bool`, not a
+     `Reconstructed<State>`, and
      `restore_reconstructs_and_checks_receipts` is not written.
    - Open (the next stage): `Cite::Root`'s hash, still bare, which would
      drop `PartialEq` from `Cite`; the stratum root itself
      (`transducer::sheaf::StratumDigest::root`, a `Vec<u8>`) typed at its
-     source; the clause 12 and 14 guard types and claims; the report of
+     source; the clause 14 guard type and claim; the report of
      changed document sentences. The report of changed document sentences that put a typed
      term beside an admission verb is not built: it needs a base commit
      the gate does not hold.

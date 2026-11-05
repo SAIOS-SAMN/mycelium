@@ -13,15 +13,82 @@ use std::cmp::Ordering;
 /// apart because nothing wraps. Two turns are compared by cross-multiplying
 /// the indices and periods, never by reducing either; `1/2` and `2/4` are
 /// one turn.
+///
+/// THE GUARD OF MU-ANTI-FLATTENING 12 (`turn_has_one_constructor`): a
+/// site's lift has one constructor, [`Turn::of`], and the index and the
+/// period are private, so no reader takes a turn apart into a grid index.
+/// A turn is read back on a period only by landing it there
+/// ([`Turn::lands`]), exact or refused `OffSite`. Neither a turn written
+/// by its fields nor a field read compiles:
+///
+/// ```compile_fail,E0451
+/// use mycelium::transducer::family::transduce::Turn;
+/// let _ = Turn { index: 1, period: 2 };
+/// ```
+///
+/// ```compile_fail,E0616
+/// use mycelium::transducer::family::transduce::Turn;
+/// let _ = Turn::of(1, 2).index;
+/// ```
+///
+/// The constructor, which compiles:
+///
+/// ```
+/// use mycelium::transducer::family::transduce::Turn;
+/// assert_eq!(Turn::of(1, 2), Turn::of(2, 4));
+/// ```
 #[derive(Clone, Copy, Debug)]
 pub struct Turn {
-    pub index: usize,
-    pub period: usize,
+    index: usize,
+    period: usize,
 }
 
 impl Turn {
-    pub const fn new(index: usize, period: usize) -> Turn {
-        Turn { index, period }
+    /// THE TURN `r / h` (MU-ANTI-FLATTENING 12): index `r` read on a phase
+    /// of period `h`, an element of ℚ/ℤ held as the pair, never reduced.
+    pub const fn of(r: usize, h: usize) -> Turn {
+        Turn { index: r, period: h }
+    }
+
+    /// THE PHASE REVERSED: the turn `(h − r) / h` of the same period, the
+    /// reflection that keeps the seam (`0 ↔ h`), for a boundary turn
+    /// (`0 ≤ r ≤ h`).
+    pub const fn reversed(&self) -> Turn {
+        Turn { index: self.period - self.index, period: self.period }
+    }
+
+    /// THE SUM IN ℚ/ℤ (MU-SENSING §3.1): `r/h + r′/h′` mod 1, held on the
+    /// least common multiple of the two periods, the period of the composed
+    /// orbit (MU-ANTI-FLATTENING 12: an `lcm` of the periods of turns, never
+    /// of two frames' extents). As a motion the seam's two sides are one
+    /// point of ℚ/ℤ, so the sum's index lies below its period. `None` where
+    /// a period is 0 (no circle to turn on) or the composed period passes
+    /// the machine word.
+    pub fn plus(&self, other: &Turn) -> Option<Turn> {
+        let (p, q) = (self.period, other.period);
+        if p == 0 || q == 0 {
+            return None;
+        }
+        let period = (p / num_integer::gcd(p, q)).checked_mul(q)?;
+        let a = (self.index as u128).checked_mul((period / p) as u128)?;
+        let b = (other.index as u128).checked_mul((period / q) as u128)?;
+        let index = usize::try_from(a.checked_add(b)? % period as u128).ok()?;
+        Some(Turn { index, period })
+    }
+
+    /// THE DIFFERENCE IN ℚ/ℤ, `self − other` mod 1: the sum with `other`'s
+    /// inverse, `(h − (r mod h))/h`. The residue of a claimed turn against
+    /// a reconstructed one (MU-HOSTING §5a.10). `None` as [`Turn::plus`].
+    pub fn less(&self, other: &Turn) -> Option<Turn> {
+        let h = other.period;
+        let r = other.index.checked_rem(h)?;
+        self.plus(&Turn { index: h - r, period: h })
+    }
+
+    /// Is the turn whole, the zero of ℚ/ℤ (`h` divides `r`)? A period of
+    /// 0 holds no turn, so none of it is whole.
+    pub fn is_whole(&self) -> bool {
+        self.index.checked_rem(self.period) == Some(0)
     }
 
     /// `index · period′` against `index′ · period`, in a carrier both

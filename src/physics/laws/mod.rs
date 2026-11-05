@@ -511,6 +511,9 @@ fn expansion_of(t: &Transition) -> Option<Q> {
 pub mod codec;
 pub mod concordance;
 pub mod lexicon;
+pub mod turns;
+
+pub use turns::{verify_turns, TurnBreach, TurnMotion, TurnTransition, TurnVerdict};
 
 #[cfg(test)]
 mod tests;
