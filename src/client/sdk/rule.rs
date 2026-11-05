@@ -16,7 +16,7 @@
 //! act on by a typed predicate over each body's own exact coordinates (its
 //! class, hues, shell, extent, position, contact), COUNT and COMPARE them in
 //! an order it names, ties included (Concordance 1.10), address a REGION
-//! the bodies' boundary encloses or touches, CREATE cells relative to them (a line
+//! the bodies' boundary encloses or touches, CREATE sites relative to them (a line
 //! to the border, a template stamped on a seed), and crop the output to one
 //! of them. Such a rule is spoken as the form's CLAUSES
 //! (`sentence::form::clause`), which the court decodes, speaks and judges
@@ -53,7 +53,7 @@ pub enum Step {
     Region(RegionKind),
     /// A motion read about each selected body's own centre.
     InPlace(Mv),
-    /// CREATE: cells placed relative to each selected body.
+    /// CREATE: sites placed relative to each selected body.
     Create(Create),
     /// SIZE: the output is the extent of the one selected body.
     Crop(Extent),
@@ -64,7 +64,7 @@ pub enum Step {
 /// WHAT A RULE CREATES relative to a selected body.
 #[derive(Clone, Debug)]
 pub enum Create {
-    /// A line from every cell of the body along `ray`, to its stop.
+    /// A line from every site of the body along `ray`, to its stop.
     Extend { ray: (i8, i8), paint: Paint, stop: Stop },
     /// The one body `template` selects, stamped centre on centre onto the
     /// body, which it replaces.
@@ -129,7 +129,7 @@ pub enum NoRule {
     CitesUnheld(Vec<u8>),
     /// 78.143 — a clause is not stated on a pair of the family, by name: a
     /// tie its order does not name, a coordinate that is not exact, no
-    /// single body where one is asked, a cell landing between cells.
+    /// single body where one is asked, a site landing between sites.
     Unstated(Unstated),
     /// A motion asked of a region: a region is a target of hues, not a body.
     NotOnRegion,
@@ -380,7 +380,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
 /// THE SENTENCE OF A RULE THAT STATES CLAUSES (78.143): a form of its Frame
 /// and the clauses, stated on every pair of the family by name, closing
 /// every pair, minted through the one mint. No vertex names a training
-/// frame or a training cell: the clauses select on whatever scene they are
+/// frame or a training site: the clauses select on whatever scene they are
 /// spoken onto, so the word crosses to pairs it never saw.
 fn clause_sentence(clauses: Vec<Clause>, family: &[(SectionSample, SectionSample)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if clauses.is_empty() || family.is_empty() {

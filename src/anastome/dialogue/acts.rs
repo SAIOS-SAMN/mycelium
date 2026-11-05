@@ -703,10 +703,11 @@ pub struct WorkItem {
     pub open: Vec<crate::transducer::stalk::Invariant>,
 }
 
-/// `[ACT_QUOTE][height u64][surface 4×u64][K u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
-/// — height is the book generation; the u64 K is receipt-chain head
-/// (verified consensus depth). TUniversal is not this field.
-/// The offset of the served count in a quote reply (act, height, surface, K).
+/// `[ACT_QUOTE][height u64][surface 4×u64][i u64][n u8][item: addr 32 | μ⃗ 4×u64 | chain]…`
+/// — height is the generation of the court's open listings; the u64 `i` is
+/// the receipt chain's head line position (verified consensus depth), never
+/// `K`, which counts closed orbits. TUniversal is not this field.
+/// The offset of the served count in a quote reply (act, height, surface, i).
 /// FORMAT: offset of the served-count field in a quote reply.
 pub const QUOTE_COUNT_AT: usize = 1 + 8 + 32 + 8;
 

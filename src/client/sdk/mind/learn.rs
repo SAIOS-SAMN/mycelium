@@ -128,7 +128,7 @@ impl Mind {
             io::Error::new(io::ErrorKind::InvalidInput, "the rule's record passes a length its field writes")
         })?;
         // A solve that does not fit the lengths the frame writes is not
-        // sent short: it is not sent (47.1). The spoken rasters go out as
+        // sent short: it is not sent (47.1). The spoken outputs go out as
         // samples, each at its place (track 26 S5).
         let spoken = dialogue::spoken_outputs(outputs).ok();
         let Some(act) = spoken.and_then(|s| dialogue::encode_solve_spoken(&key, id, &s, Some(&bytes), stated.as_deref())) else {

@@ -11,8 +11,10 @@ pub struct YieldQuote {
     pub height: u64,
     /// The yield surface read per lane S, G, T, H.
     pub surface: [u64; 4],
-    /// The judge's k-step at the quote — the temporal coordinate of the
-    /// book this quote reads.
+    /// The judge's receipt chain's head line position `i` at the quote —
+    /// the place on the court's line this quote reads (the field keeps its
+    /// name `k` until its rename; `K` counts closed orbits and is never this
+    /// index).
     pub k: u64,
     pub clusters: Vec<Cluster>,
     /// MU-CLIENT §4.13 — WHERE THE COURT DEFERRED: its door's deficit read

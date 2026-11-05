@@ -101,7 +101,7 @@ impl Mind {
     /// THE HEIGHT THE MIND READS (23.8, S13.5; V2): the court's height off
     /// a quote or attest reply, and it only advances — a lower or absent
     /// reading moves nothing. It is this mind's TUniversal: its own chain
-    /// cites no peer, so its own height is its K (45.2), and what it stamps
+    /// cites no peer (45.2), so the height read is its extent, and what it stamps
     /// its dialect and its held forms with is this. Set once to zero at
     /// boot and never again, every voice's temporal lane was a point.
     #[cfg(test)]
@@ -128,8 +128,8 @@ impl Mind {
     ///
     /// It is the clock the dialect ages by (`shed_at`) and the only
     /// denominator a per-voice rate may use. [`Self::now_tu`] beside it is
-    /// the MESH's height, and the book's k-step carried on a quote reply is
-    /// a third quantity belonging to a hypha's chain; none of the three is
+    /// the MESH's height, and the court's receipt line position `i` carried
+    /// on a quote reply is a third quantity belonging to a hypha's chain; none of the three is
     /// interchangeable with another, and the stroke line prints this one
     /// and the height, each under its own name.
     pub(crate) fn own_k(&self) -> u64 {

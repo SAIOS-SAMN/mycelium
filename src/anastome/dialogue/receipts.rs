@@ -178,9 +178,11 @@ pub(crate) fn take_span(b: &[u8], p: &mut usize) -> Option<(Option<Place>, Place
 
 /// 47.2's PLACE-RANGE REQUEST (S13.10): which signer, and which span of
 /// its line — strictly after `after` up to `upto`. `replay` (78.147) is an
-/// explicit ask for an era's own receipts — a citation proved by its era, a
-/// ledger read — the one ask the cold archive answers; a catch-up opening
-/// below the signer's fold root is answered with the root.
+/// explicit ask for an era's own receipts, read as history (a citation
+/// looked up in its era, a ledger read), never as verification: each
+/// receipt read is reconstructed apart. It is the one ask the cold archive
+/// answers; a catch-up opening below the signer's fold root is answered
+/// with the root.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReceiptsRequest {
     pub voice: [u8; 32],
@@ -201,8 +203,8 @@ pub fn encode_receipts_request(voice: &[u8; 32], signer: &[u8; 32], after: Optio
     out
 }
 
-/// The same span asked as an ERA REPLAY (78.147): the catch-up ask and the
-/// era tag after it.
+/// The same span asked as an ERA REPLAY (78.147), history read: the
+/// catch-up ask and the era tag after it.
 pub fn encode_era_request(voice: &[u8; 32], signer: &[u8; 32], after: Option<Place>, upto: Place) -> Vec<u8> {
     let mut out = encode_receipts_request(voice, signer, after, upto);
     out.push(ERA);

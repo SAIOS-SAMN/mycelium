@@ -14,7 +14,8 @@
 //! refused by name ([`SectionRefusal`]) for a sample of another rank or
 //! width (track 26 S4b).
 //! [`encode_solve_with_rule`] writes the outputs, as samples
-//! ([`spoken_outputs`] places rasters), and the rule's tape, signed by the
+//! ([`spoken_outputs`] places each spoken output at its position), and the
+//! rule's tape, signed by the
 //! voice; the court reconstructs the rule and answers a verdict
 //! ([`decode_solve_verdict`]) coded by the `SOLVE_*` constants. A verdict of
 //! [`SOLVE_UNREAD`] is a reconstruction the court's stroke did not finish: the same
@@ -39,7 +40,8 @@ pub use mycelium::anastome::dialogue::{encode_solve, encode_solve_spoken, encode
 /// THE SAMPLE (MU-SENSING §2): rank, extents, symbols at the source's width
 /// and a place; how a sample is written on the wire and read back, refused
 /// by name ([`SampleWire`]); the outputs as the solve act writes them; and
-/// rasters placed as spoken outputs.
+/// the spoken outputs placed as samples, each at its position. A raster
+/// stands only at intake.
 pub use mycelium::anastome::dialogue::{
     decode_samples, encode_samples, push_sample, read_sample, spoken_outputs, SampleWire,
 };

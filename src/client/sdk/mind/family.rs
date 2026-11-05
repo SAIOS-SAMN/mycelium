@@ -50,13 +50,13 @@ pub(crate) struct Disagreed {
     pub(crate) demanded: [u64; 6],
 }
 
-/// 78.167 A1 — WHY A SPEECH PUT CELLS IN THE WRONG PLACES, cell by cell,
-/// each cause present once, in [`crate::observe::DISAGREE`]'s slots: a cell
+/// 78.167 A1 — WHY A SPEECH PAINTED THE WRONG SITES, site by site,
+/// each cause present once, in [`crate::observe::DISAGREE`]'s slots: a site
 /// the truth holds and the speech left ground is ERASED (4) where an input
 /// body no vertex reached stood there, DISPLACED (6) where the input held a
 /// body the speech did reach, UNCREATED (5) where the input was ground; a
-/// cell the speech painted and the truth holds as ground is UNCLEARED (7).
-/// Empty where every cell agrees on occupancy (the hues alone differ).
+/// site the speech painted and the truth holds as ground is UNCLEARED (7).
+/// Empty where every site agrees on occupancy (the hues alone differ).
 pub(crate) fn occupancy_causes(said: &crate::transducer::family::SectionSample, x: &crate::transducer::family::SectionSample, y: &crate::transducer::family::SectionSample, unreached: &[usize]) -> Vec<usize> {
     let bodies = crate::transducer::family::perceive(x);
     let mut erased: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -315,8 +315,8 @@ pub(crate) fn ascertain_on(epi: &MindLanguage, train: &Family, rule: &SentenceRu
 /// WHAT ONE PERSPECTIVE DISAGREED ABOUT, on the language given: the rule
 /// spoken on its input against its output. `Ok` where it closes; otherwise
 /// the kinds, in [`crate::observe::DISAGREE`]'s order — it spoke nothing,
-/// spoke with a remainder, laid down another frame, put cells in the wrong
-/// places (by cause, 78.167 A1), or coloured the right cells otherwise — with
+/// spoke with a remainder, laid down another frame, painted the wrong sites
+/// (by cause, 78.167 A1), or coloured the right sites otherwise — with
 /// the sample it said, where it said one, and the demands it spoke nothing for.
 pub(crate) fn disagreement_on(epi: &MindLanguage, rule: &SentenceRule, x: &crate::transducer::family::SectionSample, y: &crate::transducer::family::SectionSample) -> Result<(), Disagreed> {
     let refused = |kind: usize, said: Option<crate::transducer::family::SectionSample>, demanded: [u64; 6]| Disagreed { kinds: vec![kind], said: said.map(Box::new), demanded };

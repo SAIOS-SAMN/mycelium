@@ -7,7 +7,13 @@
     book" becomes "no such task at this court" (`judge_factorisation`);
   - a solve on a task held with no content: "no such task on this book:
     its ground is not read" becomes "no such task at this court: its
-    ground is not read".
+    ground is not read";
+  - `REFUSE_EQUIVOCATION`: "two receipts at one K with different chain
+    hashes" becomes "two receipts at one line position i with different
+    chain hashes";
+  - `REFUSE_NOT_EQUIVOCATION`: "two receipts that do not share key and K,
+    or do not differ" becomes "two receipts that do not share key and line
+    position i, or do not differ".
 - **SDK surface: `Symmetry`'s rotations are named by plane and degrees.**
   `Symmetry::Rotate90`, `Rotate180` and `Rotate270` are renamed
   `RotateE2E1By90`, `RotateE2E1By180` and `RotateE2E1By270`: the rotation
@@ -56,3 +62,13 @@
   never `Cl(4,1)`. The mind's count of paid solves is documented as an
   observation, never a goal. The README's kernel sections already state
   the Concordance signed clause by clause by reconstructing its fixtures.
+- **Replay, grid and K.** `ReceiptsRequest.replay` is documented as an
+  era's receipts read as history, each reconstructed apart, never as
+  verification. The README's client loop reads `TaskEnvelope::section()`
+  (the removed `rasters()` no longer appears), and "raster" stands only at
+  intake in the SDK's task docs. Cognition comments say "site" where a
+  sample's place was a "cell". The receipt index is the line position `i`
+  in the quote act's layout doc, `YieldQuote::k`'s doc, the chronometry
+  module doc and the court's head docs; `K` means closed orbits. The
+  identifiers `YieldQuote::k`, `k_step`, `head_k` and
+  `KStepReceipt::step_index` keep their names for a later rename.

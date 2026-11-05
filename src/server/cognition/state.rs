@@ -93,8 +93,8 @@ pub struct Court {
     /// per-lane metabolic tension); eviction is by ACTION POTENTIAL, never
     /// FIFO. No static cap exists.
     pub(crate) pending: crate::network::nerve::Keyed<Element>,
-    /// THE CHRONOMETRIC RECEIPT CHAIN — the K-step index is the mesh's temporal
-    /// authority (algebraic time, no wall clocks); every install seals a
+    /// THE CHRONOMETRIC RECEIPT CHAIN — the line position `i` of each receipt
+    /// orders this court's line (algebraic time, no wall clocks); every install seals a
     /// parent-linked receipt (LAW-5 continuity). The Step-4 ledger's spine.
     pub(crate) chain: crate::chronometry::ReceiptChain,
     /// `ARC1` (28, 45.8): the eras this court folded, in K order — each

@@ -261,10 +261,10 @@ fn mind_loop(session: &Speaker, key: &SigningKey, report: &mut Report) {
     // Track 26 S4b: this client's rule seam spells the alphabet's section;
     // a task of another rank or width is carried exactly and left unread
     // here, never misread.
-    let Ok(rasters) = envelope.section() else {
+    let Ok(section) = envelope.section() else {
         return report.unread("solve", "the task's samples are off the alphabet's section this client spells");
     };
-    let solved = solve(session, key, &rasters);
+    let solved = solve(session, key, &section);
     session.record(report, "solve", solved);
 }
 

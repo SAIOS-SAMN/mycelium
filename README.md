@@ -954,7 +954,7 @@ while the network is a prototype ([`docs/release-keys/`](docs/release-keys/)).
 | `voice` | `Voice`, the voice key (`VoiceKey`, `load_or_mint`), `SigningKey`, the mesh record of a voice home (`load_or_migrate_voice`) |
 | `session` | `Session` (`open`, `speak`, `speak_keyed`, `tuniversal`), `TransportAperture`, `TPoint` |
 | `deferral` | The deferral a hypha with a full worker pool answers every act with, which every client MUST recognise and retry: `read_deferral` (`Deferral { deficit }`), `deferral_of` on a `speak` refusal, `PENDING_CODE` ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) §5) |
-| `task` | Task request and envelope, whose train pairs and test inputs are samples of any rank (`Sample`, `TaskEnvelope`; `TaskEnvelope::rasters` for rank 2 at width 1); the sample codec (`push_sample`, `read_sample`, `SampleWire`) and the posted task (`PostedTask`); `encode_solve_with_rule` over sample outputs (`spoken_outputs` places rasters); `decode_solve_verdict` and the `SOLVE_*` codes |
+| `task` | Task request and envelope, whose train pairs and test inputs are samples of any rank (`Sample`, `TaskEnvelope`; `TaskEnvelope::section` for the alphabet's section, `TaskSection`); the sample codec (`push_sample`, `read_sample`, `SampleWire`) and the posted task (`PostedTask`); `encode_solve_with_rule` over sample outputs (`spoken_outputs` places each at its position); `decode_solve_verdict` and the `SOLVE_*` codes |
 | `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element` |
 | `seat` | `SeatName`, `MindMail`, `MindRead`, the seat posts; `Session::{list_seats, take, call, mail, read_mail, seat_post}` |
 | `wallet` | The wallet read, a reading of the holding's coordinate on the one multi-dimensional ledger: `Mu`, an amount of μ read exactly per lane (retiring in v0.5.0 for `Modes`), and `MuRefusal`; stake and unstake; lease open, reply and close |
@@ -983,8 +983,9 @@ let session = Session::open("127.0.0.1:7610", voice);
 //    outputs stay with the court. An empty reply means no work is available.
 let reply = session.speak(task::encode_task_request(&key.verifying_key().to_bytes()))?;
 let samples = task::decode_task_envelope(&reply).ok_or("no task")?;
-//    The envelope's samples may be of any rank; the rule seam reads rasters.
-let envelope = samples.rasters().map_err(|_| "not a raster task")?;
+//    The envelope's samples may be of any rank; the rule seam reads the
+//    alphabet's section, and a task off it is refused by name.
+let envelope = samples.section().map_err(|_| "off the alphabet's section")?;
 // 4. Rule: extracted from the train pairs, minted as an element the court
 //    can reconstruct, and spoken on each test input.
 let mut budget = Physics::default().stroke_n(1 << 20);

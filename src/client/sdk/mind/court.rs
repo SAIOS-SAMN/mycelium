@@ -38,7 +38,7 @@ pub(crate) struct CourtPace {
     pub(crate) quoted: Option<YieldQuote>,
     pub(crate) pulling: bool,
     /// MU-CLIENT §7.1 — the task the court sent, with its offer (`offer`),
-    /// at the raster intake (`TaskEnvelope::rasters`, track 26 S5).
+    /// on the alphabet's section (`TaskEnvelope::section`, track 26 S5).
     pub(crate) task: Option<(crate::anastome::dialogue::TaskSection, super::offer::Offer)>,
     pub(crate) syncing: bool,
     pub(crate) schooling: bool,
