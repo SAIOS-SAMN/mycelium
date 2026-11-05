@@ -54,8 +54,8 @@ pub struct Court {
     /// Held words keyed by (chart, axis). Filled at `ruled.admit`, emptied
     /// at cavity relocation and basis remove.
     pub(crate) axis_index: crate::transducer::sentence::AxisIndex,
-    /// Court replay of A20 certificates: citer → (certificate key → (ok,
-    /// the head's place when it was replayed, none before genesis)).
+    /// Court reconstruction of A20 certificates: citer → (certificate key → (ok,
+    /// the head's place when it was reconstructed, none before genesis)).
     pub(crate) reconstruction_memo:
         crate::network::nerve::Keyed<crate::network::nerve::Keyed<(bool, Option<crate::chronometry::Place>)>>,
     /// Cited form → citers. Slash of a cited form redockets each citer.
@@ -204,17 +204,17 @@ pub struct Court {
     pub(crate) court_fed_index: crate::network::nerve::Keyed<usize>,
     pub(crate) court_upheld: u64,
     pub(crate) court_slashed: u64,
-    /// 78.153 — replays the court's stroke ran out on (`ReconstructionOutcome::Unread`):
+    /// 78.153 — reconstructions the court's stroke ran out on (`ReconstructionOutcome::Unread`):
     /// not ruled that stroke, resumed the next. Since boot.
     pub(crate) court_unread: u64,
-    /// 78.153 — replays a whole stroke moved no further: one unit of them
+    /// 78.153 — reconstructions a whole stroke moved no further: one unit of them
     /// costs more reads than a stroke grants. The docket passes over such a
     /// word for the circuit rather than stand on it. Since boot.
     pub(crate) court_stalled: u64,
-    /// 78.153 — WHERE EACH REPLAY STOPPED (option (A), resumable replays):
-    /// by the word's address and the task whose family it is replayed on,
+    /// 78.153 — WHERE EACH RECONSTRUCTION STOPPED (option (A), resumable reconstructions):
+    /// by the word's address and the task whose family it is reconstructed on,
     /// the phase cursor the next stroke resumes from. VOLATILE: never
-    /// persisted, so a restart starts every replay over; a binding that
+    /// persisted, so a restart starts every reconstruction over; a binding that
     /// changes a family drops the cursors it could invalidate.
     pub(crate) reconstruction_cursors: crate::network::nerve::Keyed<crate::verdict::ReconstructionCursor>,
     /// 78.153 — forms ruled whose waiting citers' re-hearing was unread on
@@ -239,7 +239,7 @@ pub struct Court {
     /// a wire read of the `court demand listed` lines, never branched on.
     pub(crate) court_demands_listed: u64,
     /// L8q — WHAT ANSWERED EACH DEMAND: per listing, per demand key, the
-    /// address of the form the court replayed onto that demand's own links
+    /// address of the form the court reconstructed onto that demand's own links
     /// and the transport it was carried by. This is the ONLY demand
     /// carrier at the court: the demand vertices themselves live on the
     /// sentence, which the book already holds, and a second copy of them
@@ -330,7 +330,7 @@ pub struct Court {
     pub(crate) task_listings: crate::network::nerve::Keyed<Vec<Address>>,
     /// Train pairs of a bound task. Install mints only what a rule speaks.
     pub(crate) task_family: crate::network::nerve::Keyed<Vec<crate::transducer::family::TrainPair>>,
-    /// Sentence address → task, from perceive_speech. Replay reads the family.
+    /// Sentence address → task, from perceive_speech. Reconstruction reads the family.
     pub(crate) speech_task: crate::network::nerve::Keyed<Address>,
     /// THE SENTENCES THIS COURT REFUSED (50.9): the kind, the coordinate
     /// and the receipt it answered with, keyed by the refused address, so
@@ -339,7 +339,7 @@ pub struct Court {
     /// verified. In-memory, never persisted: a restart refuses afresh.
     pub(crate) refusals: crate::network::nerve::Keyed<crate::court::verdict::ReceiptedRefusal>,
     /// THE SETTLEMENTS awaiting the court: (listing, its chain, the voice,
-    /// the utterance, magnitude before, magnitude after). The court replays
+    /// the utterance, magnitude before, magnitude after). The court reconstructs
     /// the utterance and measures the deflation itself — proof of
     /// convergence on the work that actually happens. Bounded by the
     /// reserve ceiling; drained as the court pulls the docket.
@@ -395,7 +395,7 @@ pub struct Court {
     /// readings' carrier: an occupy (its listing refused), a recall owed, the book's
     /// T pressure, a relocation's total, a solve's paid sum. Volatile.
     pub(crate) overflowed: u64,
-    /// RM1 (c) — voices' re-fill acts replayed here: applied (the Congruent
+    /// RM1 (c) — voices' re-fill acts reconstructed here: applied (the Congruent
     /// simplex written Filled, the rewrite's remainder answered, the pressure
     /// minted under POUW), and refused by why.
     pub(crate) refills: super::court::fills::RefillTally,
@@ -417,7 +417,7 @@ pub struct Court {
     /// admitted = applied + awaiting + refused. Admitted counts a peer's
     /// Ruling receipt on a word this court can rule; awaiting is a level,
     /// the rulings held on an unheld citation; refused counts rulings whose
-    /// replay did not re-derive (78.9). Per node, since boot.
+    /// reconstruction did not re-derive (78.9). Per node, since boot.
     pub(crate) rulings: [[u64; 4]; 4],
     /// F5 — THE REFUSED RULINGS BY REASON, per arm (`Ruled::index`) and per
     /// reason (`RulingRefusal::index`); each arm's row sums to its refused.
@@ -1089,7 +1089,7 @@ impl Court {
                 if let crate::chronometry::ActKind::Ruling(arm) = r.kind {
                     self.hear_ruling(r, arm, &mut budget);
                 }
-                // RM1 (c): a voice's re-fill, replayed here — the court's one
+                // RM1 (c): a voice's re-fill, reconstructed here — the court's one
                 // door to its Congruent simplex.
                 if r.kind == crate::chronometry::ActKind::Settled {
                     self.hear_refill(r);
@@ -1243,7 +1243,7 @@ impl Court {
     /// CHAIN HASHES IS AN EQUIVOCATION PROOF, and the court burns the
     /// signer's bond on all four lanes — one `burn` entry, supply reduced
     /// by the same vector, so §6's equation holds through the forfeiture
-    /// (R9). Nothing is replayed and nothing is redistributed.
+    /// (R9). Nothing is reconstructed and nothing is redistributed.
     ///
     /// `Admissions::admit` has held exactly that proof since it was
     /// written: the hash it holds at that K, and the one claimed. Both

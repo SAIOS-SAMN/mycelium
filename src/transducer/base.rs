@@ -19,7 +19,7 @@
 /// `C(n, 2)` of them, generated and never listed. Ordered by the larger axis
 /// and then the smaller, so the order is PREFIX-STABLE in `n`: the planes of
 /// `n` are the first planes of `n + 1`, as the inertia's pairs are, and the
-/// grid plane is always first.
+/// sensor plane is always first.
 pub fn planes(n: usize) -> Vec<(usize, usize)> {
     (0..n).flat_map(|j| (0..j).map(move |i| (i, j))).collect()
 }

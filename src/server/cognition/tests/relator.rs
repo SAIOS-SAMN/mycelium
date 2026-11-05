@@ -268,7 +268,7 @@ fn court_torsion_files_relator_at_period() {
     // transport composite — a clause about the chord and no other face. It
     // asks only what 23.1 step 4 asks now: the chord is the one face that
     // is not `face_of`, and the orbit's reading is the orbit's. The period-2
-    // class above is what replays.
+    // class above is what reconstructs.
     assert_eq!(
         crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
@@ -460,12 +460,12 @@ fn retirement_line(
     line.own().collect()
 }
 
-/// EC1 AS RULED — A PEER'S RETIREMENT IS REPLAYED HERE, never trusted and
+/// EC1 AS RULED — A PEER'S RETIREMENT IS RECONSTRUCTED HERE, never trusted and
 /// never dropped. The ruled cover is federated, so a word one court
 /// retires and another keeps would leave two supplies. A court holding the
 /// relator RULED, and the transport that speaks for it, admits a peer's
 /// `Ruling(Retired)` citing both at the stamps it holds them by: its own
-/// replay — the relator decomposes over its basis without itself — re-
+/// reconstruction — the relator decomposes over its basis without itself — re-
 /// derives, the relator retires here onto the cavity book, and the court
 /// seals its own `Ruling(Retired)` with the peer's receipt among its
 /// parents. A court holding the relator alone cannot re-derive it and the

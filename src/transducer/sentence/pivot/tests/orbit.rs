@@ -296,7 +296,7 @@ impl crate::transducer::family::Crystal for Hold {
 }
 
 /// The pivot orbit discharges on a held word with a certificate that
-/// replays, holds a word and its inverse as a vortex, and files a
+/// reconstructs, holds a word and its inverse as a vortex, and files a
 /// court-ruled class silently.
 #[test]
 fn pivot_orbit_discharges_held_word_and_vortices_pair() {

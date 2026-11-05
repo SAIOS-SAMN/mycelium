@@ -173,7 +173,7 @@ fn read_speech_reply_admits_only_codes_sent() {
 }
 
 /// 78.52, MU-CLIENT §4.4(4) — A MIND SPEAKS WHAT IT THOUGHT, IN ITS OWN
-/// DIALECT, AT ITS RETURN. An L seen at its four hours about the grid point
+/// DIALECT, AT ITS RETURN. An L seen at its four hours about the plane's point
 /// (2, 2), held by one mind with no hypha to hear it: the fourth perception
 /// brings the thought round, and the winding reads that return
 /// (`act_on_returns`) — K moves by it, and the mind speaks the WORD the
@@ -216,7 +216,7 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
     assert_eq!(entity.contemplation.closed_thoughts, 1, "one thought closed its return");
     assert!(entity.dialect_len() >= 1, "the dialect holds it");
     // What the court hears is the word: its letters re-derive its motion,
-    // and its blind replay — speech, never a thought — is clean. The thought's
+    // and its blind reconstruction — speech, never a thought — is clean. The thought's
     // word is the one carrying its return (`ℓ − 1 = 3` on the shell); the
     // words its sentences taught stand beside it in the dialect (78.100 D1).
     let words: Vec<_> = entity
@@ -228,5 +228,5 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
         .collect();
     let [word] = words.as_slice() else { panic!("one word carrying the thought's return: {}", words.len()) };
     let mut budget = entity.stroke_n(1 << 16);
-    assert_eq!(crate::court::verdict::reconstruct_blind(word, &mut budget), None, "the court's replay of the word is clean");
+    assert_eq!(crate::court::verdict::reconstruct_blind(word, &mut budget), None, "the court's reconstruction of the word is clean");
 }

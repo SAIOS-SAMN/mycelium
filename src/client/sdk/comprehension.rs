@@ -20,7 +20,7 @@ pub enum Comprehension {
     /// A count of residue links is not what M6 step 5 asks for: "No mind
     /// emits `unknown`; it emits the element it lacks." A count cannot be
     /// docketed by a hypha, cannot be reduced by another mind, and cannot
-    /// be replayed — and the remainder A12 computes exactly would be
+    /// be reconstructed — and the remainder A12 computes exactly would be
     /// discarded to produce it.
     Novel { demand: Box<Element>, understood: Vec<(Vec<u8>, Standing)> },
     /// A CONNECTION heard by holding it: the transition to the held word on

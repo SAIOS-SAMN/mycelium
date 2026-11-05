@@ -114,7 +114,7 @@ fn verify_with_names_unheld_citation_unresolved() {
 }
 
 /// 1.5: two derivations reaching one vertex are one word. The citation
-/// list is content the court replays and is deliberately not identity.
+/// list is content the court reconstructs and is deliberately not identity.
 #[test]
 fn rotor_agrees_across_two_presentations() {
     let a = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());

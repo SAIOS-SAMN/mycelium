@@ -16,7 +16,7 @@ pub fn germ_address(g: &Element) -> crate::transducer::address::Address {
 }
 
 /// The frame measured from two painted scenes (the scenes' site extents) — the
-/// identity frame when both share dims; used where no grid is at hand.
+/// identity frame when both share dims; used where no sample is at hand.
 #[expect(
     clippy::disallowed_methods,
     reason = "rule 4 — a scene's extent is the largest coordinate its painted sites occupy, content"

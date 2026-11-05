@@ -1,4 +1,4 @@
-/// The key of a site of one section — a grid's or a chain's, the sensor's
+/// The key of a site of one section — a sample's or a chain's, the sensor's
 /// planar token (16.5). One producer with `sentence::section_site_key` (law
 /// 12): the section's site at frame `0`, keyed by `Site::key`; a site of
 /// the base is keyed by `Site::key` directly.

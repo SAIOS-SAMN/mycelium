@@ -87,7 +87,7 @@ fn offer_reply_round_trips_three_arms_with_key() {
         _ => panic!("the arm it was encoded as"),
     }
 
-    // UNMEASURED: it replayed and has re-derived nothing of its own.
+    // UNMEASURED: it reconstructed and has re-derived nothing of its own.
     let none = decode_offer_reply(&encode_offer_reply(&Witnessed::Unmeasured { vk }).expect("frames"))
         .expect("an answer with no form still parses");
     assert!(

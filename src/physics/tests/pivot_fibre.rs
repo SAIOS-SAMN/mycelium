@@ -211,7 +211,7 @@ fn shape_of_survives_every_switch() {
     more.push(fifth);
     assert_eq!(shape_of(&more, 3), Shape::Emergent, "a fifth off it: emergent");
     assert_eq!(shape_of(&pts[..3], 3), Shape::Open, "three cannot fix a sphere");
-    // On the grid's plane (n = 2): three points determine a circle, a fourth
+    // On the plane (n = 2): three points determine a circle, a fourth
     // on it stands, a fourth off it does not.
     let on = |x: i64, y: i64| cga::point_at(&[q(x, 1), q(y, 1)]);
     assert!(matches!(shape_of(&[on(5, 0), on(0, 5), on(-5, 0)], 2), Shape::Determined(_)), "three: determined");

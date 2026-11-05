@@ -163,7 +163,7 @@ pub struct Equivocated {
 /// two share key and place and differ in hash. Two keys, two places, or one hash (a
 /// duplicate frame) are not a proof and are `REFUSE_NOT_EQUIVOCATION`; a
 /// half that disagrees with itself is `REFUSE_RECEIPT`, as `admit` refuses
-/// the same disagreement on a single frame. The court replays nothing: the
+/// the same disagreement on a single frame. The court reconstructs nothing: the
 /// signatures decide (T17).
 pub fn admit_equivocation(
     a: Verified<'_>,

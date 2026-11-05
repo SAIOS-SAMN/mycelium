@@ -54,7 +54,7 @@ pub const C1_RESOLUTION: &str =
 /// C2 · n→1, CONVERGENCE. (a) Conjugation preserves `I₁`, `I₂` and the kind,
 /// so minds basing one circuit each at its own point agree on its class;
 /// (b) many constructor chains compose to one versor — synonyms; (c) the
-/// convergence of replays on the factorization is open.
+/// convergence of reconstructions on the factorization is open.
 pub const C2_CONVERGENCE: &str =
     "conjugation preserves the class, so based readings converge on it; many constructor chains compose to one versor";
 

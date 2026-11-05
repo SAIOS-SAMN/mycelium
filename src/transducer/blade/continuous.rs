@@ -167,7 +167,7 @@ impl<'a> ContinuousSupport<'a> {
     /// second gate.
     ///
     /// A plane the action turns off every base plane — the frame planes under
-    /// an oblique turn of the grid plane — has no held harmonic to compare its
+    /// an oblique turn of the plane — has no held harmonic to compare its
     /// image with: its order two is the tensor's above, and its orders three
     /// and four are not held by the tower, which reads them on the base's
     /// planes only (A.11 on `n` axes carries no rank-3 or rank-4 tensor).

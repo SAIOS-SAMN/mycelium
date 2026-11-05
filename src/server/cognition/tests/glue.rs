@@ -1,5 +1,5 @@
 // 21 step 3, 13.6 — THE GLUE AT THE COURT: a form that cites a held form
-// replays its trajectory through the genome that holds the citation.
+// reconstructs its trajectory through the genome that holds the citation.
 
 use super::fixtures::*;
 use crate::cognition::*;
@@ -115,7 +115,7 @@ let codes = k.perceive_speech([1; 32], &task, std::slice::from_ref(&spoken));
 assert_eq!(
     codes,
     vec![crate::anastome::dialogue::SPEECH_STOOD],
-    "the glued trajectory replays through the court genome, not NoCrystal"
+    "the glued trajectory reconstructs through the court genome, not NoCrystal"
 );
 }
 
@@ -172,7 +172,7 @@ let outer = spoken.address();
 assert_eq!(
     k.perceive_speech([1; 32], &task, std::slice::from_ref(&spoken)),
     vec![crate::anastome::dialogue::SPEECH_STOOD],
-    "the citer replays through the genome that holds the citation"
+    "the citer reconstructs through the genome that holds the citation"
 );
 k.rule_all_provisionals();
 k.confirm_peer_holds_addrs(std::slice::from_ref(&outer), [2; 32]);
@@ -292,7 +292,7 @@ fn glue_fetched_records_true_section_geometry() {
     let inv = crate::transducer::stalk::invariant_of(&spoken);
 
     // Ruling own provisional creates own_section with spoken's geometry
-    // (78.153: on every stroke the replay takes).
+    // (78.153: on every stroke the reconstruction takes).
     own.court_settle();
     let cx = own.complexes().get(&inv.key()).expect("complex exists");
     let own_sec = cx.sections.get(own_vk.as_slice()).expect("own section exists");
@@ -338,13 +338,13 @@ fn glue_fetched_reads_peer_sentence_against_own_section() {
     assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
     let spoken = own.provisional.scoped().next().unwrap().1.clone();
-    // 78.153: every stroke the docket's replay takes.
+    // 78.153: every stroke the docket's reconstruction takes.
     own.court_settle();
     let axes = |peer: [u8; 32]| {
         crate::observe::replication().signers.into_iter().find(|(k, _)| *k == peer).map(|(_, a)| a)
     };
     let mut cover = crate::network::nerve::HomeTrie::new();
-    // 78.153: a stroke that holds the glue's replay.
+    // 78.153: a stroke that holds the glue's reconstruction.
     let mut glue = crate::physics::Physics::default().stroke_n(1 << 20);
     let _ = own.glue_fetched(spoken.clone(), same_peer, own_vk, &mut cover, &mut glue);
     assert_eq!(axes(same_peer).map(|a| a[replication::RELATION_SAME]), Some(1), "its own word is the same word: {:?}", axes(same_peer));

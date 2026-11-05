@@ -108,7 +108,7 @@ pub(crate) fn offer(court: &Mutex<Court>, mesh: &Mesh, offers: Vec<(Address, Vec
                 h.run(|k, _| k.note_provisional("offers sent to witnesses"));
             }
             // 23.8, I36 — A DEFERRAL IS IMPEDANCE, NEVER A VANTAGE: the
-            // witness replayed nothing, and the word is carried again only
+            // witness reconstructed nothing, and the word is carried again only
             // by a transition that concerns it. Nothing is printed per
             // deferral (C3).
             if crate::transport::is_deferred(&reply) {

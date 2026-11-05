@@ -37,7 +37,7 @@ impl Court {
         self.offer_rewrite(rw, voice).then_some(addr)
     }
 
-    /// The inputs a rewrite retires, replayed inside the act that ruled or
+    /// The inputs a rewrite retires, reconstructed inside the act that ruled or
     /// installed the rewrite, on that act's stroke (65.5); it mints none.
     pub(crate) fn retire_rewrite_inputs(&mut self, rw: &Element, budget: &mut crate::physics::Budget) {
         let Some(r) = crate::transducer::rewrite::Rewrite::from_element(rw) else {

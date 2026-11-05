@@ -5,7 +5,7 @@
 //
 //! THE LONG LAWS. Extraction, each hour of a family as its form, the rule's
 //! perspectives (`ascertain_on`), the tests spoken through it, a solve's
-//! home replay: each reads the mind's LANGUAGE as it stood when the scene
+//! home reconstruction: each reads the mind's LANGUAGE as it stood when the scene
 //! was taken (a snapshot of the mind's language) and moves a SCRATCH of the mind's
 //! field (`mind::scratch_here`), so the winding carrier and every other
 //! carrier go on while it runs. The carrier is the mind's one carrier type
@@ -14,7 +14,7 @@
 //! flux, lanes, taught words, lexicon and covers land on the field
 //! (`mind::admit`), the hours and withheld pairs are held under the scene's
 //! citation, the rule's speech is spoken, and a rule its perspectives know
-//! emits its solve once its replay is read here too.
+//! emits its solve once its reconstruction is read here too.
 //!
 //! THE PACE IS THE MIND'S METABOLISM (ruled 2026-10-15: the mind has an
 //! internal metabolism), AND ITS ATTENTION ITS OWN (2026-10-17):
@@ -329,7 +329,7 @@ pub(crate) struct Judge {
 }
 
 /// WHAT THE HOME CHECK READ: the crossed rule to send (judged, or unjudged —
-/// the court's replay resumes it, 78.158a U2); a residue no held letter
+/// the court's reconstruction resumes it, 78.158a U2); a residue no held letter
 /// spells, with the chart it acts on, to construct; or nothing to send.
 pub(crate) enum HomeCheck {
     Send(Box<Element>),
@@ -481,8 +481,8 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &M
 }
 
 /// A SOLVE THIS VOICE CAN STAND BEHIND, OR NONE SENT — THE HOME CHECK, read
-/// on the carrier, off the field. A solve is a rule, and the court replays
-/// it on the task's withheld pairs; so the voice first replays it on the
+/// on the carrier, off the field. A solve is a rule, and the court reconstructs
+/// it on the task's withheld pairs; so the voice first reconstructs it on the
 /// pairs it holds exactly as the court will:
 /// - 78.142 — the word that CROSSES to the withheld pairs carries no overlap
 ///   between two of its training frames (`rule::crossing`); a rule that
@@ -491,7 +491,7 @@ fn perceive_on_ground(memo: &mut crate::transducer::family::ExtractMemo, epi: &M
 /// - a rule citing a word no court admitted is kept home, by name (CITES
 ///   UNHELD, 78.157 §3a), its citations resolved through the court-stamped
 ///   words alone;
-/// - a replay no stroke here could read is SENT: unjudged at home is not
+/// - a reconstruction no stroke here could read is SENT: unjudged at home is not
 ///   refuted, and the court resumes it (78.158a U2);
 /// - a refusal is RESIDUE, never an exit (MU-CLIENT §4.4): a D names the
 ///   versor no held letter spells and the chart it acts on, constructed
@@ -513,7 +513,7 @@ fn judge_on_ground(epi: &MindLanguage, j: &Judge) -> HomeCheck {
     let mut budget = crate::physics::Physics::default().stroke_n(crate::transducer::family::extraction_spend(&j.scene.train, &frames));
     let resolve = |a: &[u8]| epi.court_word(a).and_then(|e| e.form().cloned());
     match would_judge_with(&crossed, &j.scene.train, &resolve, epi, &mut budget) {
-        // Judged, or unjudged — the court's replay resumes it (U2).
+        // Judged, or unjudged — the court's reconstruction resumes it (U2).
         Ok(()) | Err(NoRule::Unread) => HomeCheck::Send(Box::new(crossed)),
         Err(NoRule::CitesUnheld(a)) => {
             eprintln!("  solve kept home: the rule cites {} no court admitted (cites unheld)", super::learn::hex_prefix(&a));

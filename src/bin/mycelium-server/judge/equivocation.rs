@@ -1,7 +1,7 @@
 // 47.4 — ACT_EQUIVOCATION: a third party presents two receipts under one
 // key at one K, and this court burns the signer's bond.
 //
-//! Nothing is replayed. Both prefixes name this node's origin, both
+//! Nothing is reconstructed. Both prefixes name this node's origin, both
 //! signatures verify under the key each receipt names, each receipt is one
 //! claim with its prefix and re-derives its hash, and the two differ
 //! (`admit_equivocation`); then the burn, once. The reply is `Ruled`.

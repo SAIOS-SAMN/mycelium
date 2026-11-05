@@ -7,7 +7,7 @@ pub const REFUSE_NOT_NATURAL: &str = "class key changes under restriction";
 /// re-derive against the mesh's class (23.7) is a claim that does not
 /// re-derive, integrity (I), and is its own code.
 pub const REFUSE_PERIOD_UNDERIVED: &str = "spoken torsion period does not re-derive against the held class";
-/// Refusals of a crystallized form's replay (chapter 34.1).
+/// Refusals of a crystallized form's reconstruction (chapter 34.1).
 pub const REFUSE_FORM_TAPE: &str = "form does not parse from its tape";
 pub const REFUSE_GLUED_DEPTH: &str = "glued form depth not below sentence depth";
 pub const REFUSE_GLUED_UNRULED: &str = "glued form not ruled";
@@ -29,7 +29,7 @@ pub const REFUSE_ORPHAN_PORT: &str = "glued boundary stands at a site no citatio
 /// tape writer refuses, `speak_on_scene` reports unspoken. A phantom edge is
 /// an UNANCHORED CLAIM OF CONNECTIVITY — a citation in the envelope that the
 /// complex never constructed — and it does not fail safe: it would be
-/// resolved, replayed and PAID FOR against a boundary the form does not hold.
+/// resolved, reconstructed and PAID FOR against a boundary the form does not hold.
 ///
 /// It is never silently erased. Erasure masks perjury and corrupts the
 /// economic attestation that reads the cover for use credit.
@@ -115,7 +115,7 @@ pub const REFUSE_NOT_CONTRACTION: &str = "sentence is not the contraction of the
 /// re-derives from the family's base — or a family bound to no scene. It is
 /// C, relative to this cover: another family may witness the relation.
 pub const REFUSE_FIBRE_UNWITNESSED: &str = "colour word's fibre relation is not the one the family's base carries";
-/// 78.143 — A CLAUSE UNSTATED ON A PAIR THE COURT REPLAYS, by name: a rank
+/// 78.143 — A CLAUSE UNSTATED ON A PAIR THE COURT RECONSTRUCTS, by name: a rank
 /// meets a tie its order does not name (Concordance 1.10: held or refused,
 /// never broken silently); a predicate reads a coordinate that is not exact
 /// (a radius no rational, a μ lane); a crop or a copy's template selects no
@@ -136,7 +136,7 @@ pub const REFUSE_RULE_UNPARTNERED: &str = "a hue read off a partner finds no one
 pub const REFUSE_GROUND_NOT_ONE_SYMBOL: &str = "the stated ground is not one symbol of the task";
 pub const REFUSE_GROUND_NO_CANDIDATE: &str = "the stated ground is no candidate of the task's ground";
 /// MU-SENSING §3.9 (track 26 S4c) — A RULE CLAIMED ON A TASK THE ALPHABET
-/// DOES NOT SPELL: a solve's rule is replayed on the alphabet's section, and
+/// DOES NOT SPELL: a solve's rule is reconstructed on the alphabet's section, and
 /// a task whose samples are off it (another rank, a wider symbol) is
 /// refused by the alphabet's name alone, never for its rank; its claims are
 /// factorisations (the solve's claim kind `SOLVE_KIND_FACTORISATION`),
@@ -156,7 +156,7 @@ pub const REFUSE_FACTOR_MOTION: &str = "the stated motion is no motion of the po
 /// citation (a posetal height forbade every 2-simplex), and no speech of a
 /// cycle ends, so the form says nothing the court can close on a pair: I.
 pub const REFUSE_CITATION_CYCLE: &str = "a cited form cites back into its own speech";
-/// 78.153 — A REPLAY NO STROKE HOLDS: an off-lock reader ran the replay
+/// 78.153 — A RECONSTRUCTION NO STROKE HOLDS: an off-lock reader ran the reconstruction
 /// over fresh strokes and one moved its cursor nowhere — a single unit of it
 /// costs more reads than a stroke grants. Not a reading of the word: N.
 /// A court under its lock never answers this; it answers `ReconstructionOutcome::Unread`.

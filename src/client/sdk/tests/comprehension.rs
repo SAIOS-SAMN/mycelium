@@ -135,7 +135,7 @@ assert!(
 // SERVED AGAIN, IT STILL WAITS AND IS NOT LEARNED AGAIN: a sync fetches the
 // stratum it stands in while its citation is missing, and the mind reads it
 // as the dialect holds it — withheld on the same address — measuring
-// nothing, with no second replay.
+// nothing, with no second reconstruction.
 let bytes = e.to_bytes().expect("the record writes");
 let mut mind = crate::client::sdk::Mind::open("127.0.0.1:1", crate::client::sdk::Voice::named("withheld"));
 assert!(matches!(mind.absorb_taught(&bytes), Some(Comprehension::Withheld { .. })), "learned once: withheld");
@@ -303,7 +303,7 @@ let other = {
     // The chord carries the 180° turn on its EDGE, which is measured content
     // (50.3): a word on an overlap's factors is PRODUCED content, written
     // only by the pivot's Word move under a certificate naming the overlap
-    // (AT1, ruled), and a fixture has none to hand the replay.
+    // (AT1, ruled), and a fixture has none to hand the reconstruction.
     f.place_overlap(
         charts[0].clone(),
         charts[1].clone(),
@@ -312,7 +312,7 @@ let other = {
     .expect("a chord between two bodies");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     // A17: the orbit is believed at the period it closes at, and a court
-    // replays it only where the form files it under its own class.
+    // reconstructs it only where the form files it under its own class.
     let [lp, ..] = f.orbits.as_slice() else { panic!("the chord closes an orbit") };
     let chord = crate::transducer::sentence::Closes::On(lp.chord.clone());
     f.torsion.put(
@@ -522,7 +522,7 @@ assert!(
 );
 }
 
-/// A taught record that fails replay is refused, not learned — the
+/// A taught record that fails reconstruction is refused, not learned — the
 /// language's own reader (`MindLanguage::learn`). And at the mind's boundary
 /// (MU-CLIENT §7.1, ruled 2026-10-18) a residue chain, fat or honest,
 /// is never learned at all: it is an open question.
@@ -536,7 +536,7 @@ let honest = from_canonical(
 let mut fat = honest.clone();
 assert!(fat.set_magnitude([999, 0, 0, 0]), "a residue holds no section, so any lane fits");
 let mut epi = MindLanguage::new();
-assert!(epi.learn(&fat.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_none(), "a record that fails replay is not learned");
+assert!(epi.learn(&fat.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_none(), "a record that fails reconstruction is not learned");
 assert_eq!(epi.genome_len(), 0, "genome stays empty");
 assert!(epi.learn(&honest.to_bytes().expect("the record writes"), &mut super::fixtures::budget()).is_some(), "an honest derivation reads");
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("syllabus-refuse"));

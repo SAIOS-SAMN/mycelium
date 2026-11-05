@@ -429,7 +429,7 @@ fn form_vertex_key_keeps_carrier_invariants() {
 
         // 2 — DUAL INTEGRITY. Ports and bonds in exact bijection, and the
         // sheets at one site distinct. An orphan port fails safe at every
-        // reader; a phantom edge does not — it would resolve, replay and be
+        // reader; a phantom edge does not — it would resolve, reconstruct and be
         // paid for against a boundary the complex never constructed.
         for x in &env.nerve {
             let host = x.host();

@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 23.8, 26 — THE JUDGE OFF THE LOCK: probe, quote, consolidate and adopt.
-//! Each replays the voice's own proof over the language snapshot with no
+//! Each reconstructs the voice's own proof over the language snapshot with no
 //! lock held and settles under a brief one. The percept and the demand
 //! that were judged here carried a voice's painted sites to the court (law 8,
 //! ruled 2026-09-10); a voice speaks sentences, heard by `perceive_speech`.
@@ -24,7 +24,7 @@ pub enum Deliberation {
     Adopt([u8; 32], crate::transducer::element::Element),
 }
 
-/// THE PROBE, off the lock: the sentence replays over the language snapshot
+/// THE PROBE, off the lock: the sentence reconstructs over the language snapshot
 /// against the listing's chain; the settlement (closure or graded residue)
 /// runs under a brief lock. Returns the probe's reading (PR1).
 pub fn probe(
@@ -62,14 +62,14 @@ pub fn probe(
                 !crate::transducer::sentence::holds_assignment(w, &crate::transducer::sentence::body_assignment(&c.body))
             })
         });
-        // The court replays the settlement on the chains it is handed, so the
+        // The court reconstructs the settlement on the chains it is handed, so the
         // measure spoken here is the chain's own, not the listing's fibre.
         let before = crate::transducer::element::measure_lanes(listing.sub());
         let settled = g.settle_probe(voice, target, residue, cites, section);
         if settled.moved() {
             g.puncture_from(cites); // the fibre deepens on what was verified
             // The settlement goes to the court with the utterance that made it,
-            // for the court to replay and measure itself.
+            // for the court to reconstruct and measure itself.
             g.record_settlement(crate::transducer::address::Address::from(target), listing.sub().to_vec(), voice, cites, before, settled.remaining);
         }
         settled
@@ -170,7 +170,7 @@ pub fn consolidate(k: &std::sync::Mutex<crate::cognition::Court>) -> usize {
     0
 }
 
-/// Adoption, orchestrated off the request path: the blind replay is pure
+/// Adoption, orchestrated off the request path: the blind reconstruction is pure
 /// (no lock), derivability probes a basis snapshot (no lock), and only the
 /// brief install re-locks. Returns the deterministic [`Adoption`] status.
 pub fn adopt(
@@ -180,17 +180,17 @@ pub fn adopt(
 ) -> crate::cognition::Adoption {
     use crate::cognition::Adoption;
     // One stroke of this court's own metabolism — the first hold's, handed on
-    // whole (78.153b) — reads the replay and the derivability below.
+    // whole (78.153b) — reads the reconstruction and the derivability below.
     let Ok(mut g) = held!(k) else {
         return Adoption::Refused(crate::verdict::REFUSE_COURT_UNAVAILABLE);
     };
-    // A form cites ruled forms and is bound to a family: its replay reads
+    // A form cites ruled forms and is bound to a family: its reconstruction reads
     // the cover and the trains, so it takes the lock (23.8); every other
-    // word replays pure, off the lock.
+    // word reconstructs pure, off the lock.
     //
-    // 78.153 — the replay on the one stroke: unread is not adopted now and
+    // 78.153 — the reconstruction on the one stroke: unread is not adopted now and
     // not refused; the next adoption resumes it (the court's cursor) where
-    // the word replays under the lock, or starts it over where it is pure.
+    // the word reconstructs under the lock, or starts it over where it is pure.
     let (reconstructed, mut budget) = match word.is_sentence() {
         true => {
             let reconstructed = g.run(|k, reads| k.court_reconstruct(word, reads));

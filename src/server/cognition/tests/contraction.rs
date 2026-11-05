@@ -1,5 +1,5 @@
 // 50.9 — the contraction protocol at the court: a cited contraction is
-// verified before the sentence is replayed, and two courts of distinct
+// verified before the sentence is reconstructed, and two courts of distinct
 // identity reach one standing through the codec with no shared memory.
 
 use super::fixtures::*;
@@ -44,7 +44,7 @@ fn sentence_over(family: &[TrainPair]) -> Element {
 
 fn task_of(family: &[TrainPair]) -> Address {
     crate::registry::task_address(&crate::transducer::family::Task { train: family.to_vec(), test: Vec::new() })
-        .expect("a grid pair's chain is A5's, so the task has an identity")
+        .expect("a sample pair's chain is A5's, so the task has an identity")
 }
 
 fn court(id: u8, task: &Address, family: Vec<TrainPair>) -> Court {
@@ -58,7 +58,7 @@ fn court(id: u8, task: &Address, family: Vec<TrainPair>) -> Court {
 /// frame out.
 fn hear(k: &mut Court, frame: &[u8]) -> Vec<u8> {
     let act = dialogue::decode_speech(frame).expect("the frame decodes");
-    // 78.153: a stroke that holds the frame's replays.
+    // 78.153: a stroke that holds the frame's reconstructions.
     match k.hear_frame_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20)) {
         Ok(adjudicated) => {
             dialogue::encode_speech_reply(&adjudicated).expect("the reply fits its count")
@@ -69,7 +69,7 @@ fn hear(k: &mut Court, frame: &[u8]) -> Vec<u8> {
 
 /// The court refuses the voice's sentence at the vertex that does not
 /// carry its body on the court's family; the honest contraction, citing
-/// the receipt, is verified and replayed as a sentence; a sentence citing
+/// the receipt, is verified and reconstructed as a sentence; a sentence citing
 /// that receipt which is not the contraction is refused as a malformed
 /// complex at its tape, and the court's record of the refusal stands.
 #[test]
@@ -81,7 +81,7 @@ fn hear_speech_verifies_contraction_before_reconstruction() {
     let mut k = court(1, &task, f_1);
     let voice = [5u8; 32];
     // Each speech frame is its own act: its root, one stroke.
-    // 78.153: a stroke that holds the frame's replays.
+    // 78.153: a stroke that holds the frame's reconstructions.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     // The voice states the ground it read its family on (MU-SENSING §6.2).
     let stated = [super::fixtures::speaker_ground(&f_v)];
@@ -105,7 +105,7 @@ fn hear_speech_verifies_contraction_before_reconstruction() {
     // A FORGED CITATION: another sentence citing the receipt is not the
     // contraction at the coordinate.
     let other = sentence_over(&[(digits(&["11"]), digits(&["22"]))]);
-    // 78.153: a stroke that holds the frame's replays.
+    // 78.153: a stroke that holds the frame's reconstructions.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let forged = k
         .hear_speech(voice, task.as_bytes(), &[(other.clone(), Some(certificate.clone()))], &stated, &mut frame)
@@ -114,26 +114,26 @@ fn hear_speech_verifies_contraction_before_reconstruction() {
         matches!(forged.as_slice(), [Adjudication::Refused { kind: RefusalKind::MalformedComplex, .. }]),
         "a sentence that is not the contraction is refused at its tape, got {forged:?}"
     );
-    // THE HONEST ONE is verified and then replayed as a sentence: what the
+    // THE HONEST ONE is verified and then reconstructed as a sentence: what the
     // court finds next is the sentence's own business, never the
     // contraction's.
-    // 78.153: a stroke that holds the frame's replays.
+    // 78.153: a stroke that holds the frame's reconstructions.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let second = k
         .hear_speech(voice, task.as_bytes(), &[(contracted, Some(certificate))], &stated, &mut frame)
         .expect("heard");
     assert!(
         !matches!(second.as_slice(), [Adjudication::Refused { kind: RefusalKind::MalformedComplex, .. }]),
-        "the verified contraction is replayed as a sentence, got {second:?}"
+        "the verified contraction is reconstructed as a sentence, got {second:?}"
     );
 }
 
-/// THE INTELLIGIBILITY ASSERTION (50.9). Voice A utters S; Court 1 replays
+/// THE INTELLIGIBILITY ASSERTION (50.9). Voice A utters S; Court 1 reconstructs
 /// on its copy of the family and answers a typed adjudication through the
 /// codec; Voice A receives it, contracts, and utters S' citing the
 /// receipt; the loop is well founded and closes on a standing within a few
 /// rounds. Court 2 — a second court with its own identity and no shared
-/// runtime memory — replays the same serialized frame and reaches the same
+/// runtime memory — reconstructs the same serialized frame and reaches the same
 /// address and the same standing.
 #[test]
 fn hear_frame_on_reaches_one_standing_on_two_courts() {

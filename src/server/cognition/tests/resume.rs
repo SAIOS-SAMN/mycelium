@@ -1,4 +1,4 @@
-// 78.153 — THE COURT'S REPLAYS ON ITS STROKE: a replay the stroke cannot
+// 78.153 — THE COURT'S RECONSTRUCTIONS ON ITS STROKE: a reconstruction the stroke cannot
 // finish is unread and resumed, never slashed; the docket stands before the
 // word until it is ruled.
 
@@ -36,9 +36,9 @@ fn docketed(word: &Element, family: Vec<crate::transducer::family::TrainPair>) -
     k
 }
 
-/// THE COURT'S REPLAY ON STROKES OF TWO READS: unread, unread, … and then
-/// exactly the whole replay's verdict. Every unread stroke kept the cursor;
-/// none slashed; the ruled replay leaves no cursor behind.
+/// THE COURT'S RECONSTRUCTION ON STROKES OF TWO READS: unread, unread, … and then
+/// exactly the whole reconstruction's verdict. Every unread stroke kept the cursor;
+/// none slashed; the ruled reconstruction leaves no cursor behind.
 #[test]
 fn court_reconstruct_resumes_unread_to_whole_verdict() {
     crate::transducer::raster::stand_on(0);
@@ -49,26 +49,26 @@ fn court_reconstruct_resumes_unread_to_whole_verdict() {
         let mut strokes = 0u64;
         let out = loop {
             strokes += 1;
-            assert!(strokes <= 4096, "a stroke of two reads moves the replay on");
+            assert!(strokes <= 4096, "a stroke of two reads moves the reconstruction on");
             match k.court_reconstruct(&word, &mut stroke(2)) {
                 ReconstructionOutcome::Unread => {
-                    assert_eq!(k.reconstruction_cursors.len(), 1, "the unread replay keeps its cursor");
-                    assert_eq!(k.court_slashed, 0, "an unread replay slashes nothing");
+                    assert_eq!(k.reconstruction_cursors.len(), 1, "the unread reconstruction keeps its cursor");
+                    assert_eq!(k.court_slashed, 0, "an unread reconstruction slashes nothing");
                 }
                 out => break out,
             }
         };
-        assert!(strokes > 1, "the replay needs more than one stroke of two reads");
-        assert_eq!(out, whole, "resumed, it rules as the whole replay does");
+        assert!(strokes > 1, "the reconstruction needs more than one stroke of two reads");
+        assert_eq!(out, whole, "resumed, it rules as the whole reconstruction does");
         assert_eq!(k.court_unread, strokes - 1, "every stroke before the ruling was unread");
-        assert!(k.reconstruction_cursors.is_empty(), "a ruled replay keeps no cursor");
+        assert!(k.reconstruction_cursors.is_empty(), "a ruled reconstruction keeps no cursor");
     }
 }
 
-/// DEFECT 1 (lock audit) ON THE DOCKET: a good word whose replay does not
+/// DEFECT 1 (lock audit) ON THE DOCKET: a good word whose reconstruction does not
 /// fit the court's stroke is never slashed — the docket stands before it,
 /// resumes it, and rules it; a word that leaves a remainder on its family is
-/// still slashed, once its replay is read.
+/// still slashed, once its reconstruction is read.
 #[test]
 fn court_stroke_rules_word_across_unfinished_strokes() {
     crate::transducer::raster::stand_on(0);
@@ -82,7 +82,7 @@ fn court_stroke_rules_word_across_unfinished_strokes() {
         ruling.court_stroke();
         assert_eq!(ruling.court_slashed, 0, "a good word is never slashed, on any stroke");
     }
-    assert!(ruling.reconstruction_cursors.is_empty(), "its replay is ruled and keeps no cursor");
+    assert!(ruling.reconstruction_cursors.is_empty(), "its reconstruction is ruled and keeps no cursor");
 
     let mut refusing = docketed(&word, wider);
     let mut strokes = 0;
@@ -97,7 +97,7 @@ fn court_stroke_rules_word_across_unfinished_strokes() {
 
 /// THE WITNESS DOOR AND THE GLUE SHARE THE CURSOR: a solve judged on the
 /// act's one stroke is `Unread` — not refused, not paid — and asked again it
-/// resumes, to the verdict the whole replay gives.
+/// resumes, to the verdict the whole reconstruction gives.
 #[test]
 fn judge_solve_on_stroke_resumes_unread_solve() {
     crate::transducer::raster::stand_on(0);

@@ -335,7 +335,7 @@ closure.
 
 ### 2.3 The refusal kinds (`transducer/sentence/obstruction.rs`)
 
-| kind | meaning | in a grid rule reconstructed on withheld pairs | produced by |
+| kind | meaning | in a sample rule reconstructed on withheld pairs | produced by |
 |---|---|---|---|
 | **P** | no versor relates what the closure asks | — | — |
 | **D** dialect-relative | a versor exists, this dialect does not spell it | the motion exists but this mind's alphabet or cover cannot say it | `REFUSE_GLUED_UNRULED`, unspellable vertex/edge versors |
@@ -354,7 +354,7 @@ the training pairs passes. Specified: a test that reproduces it, then the fix
 
 - **Identity:** a voice key, and a session to one or more hyphae. Every
   solve it is paid for is signed with its key.
-- **What it perceives:** task grids, and words the courts have taught it.
+- **What it perceives:** task samples, and words the courts have taught it.
 - **What it keeps:** its genome, the words the courts admitted to it, saved
   to disk and restored whole or not at all; and its own dialect of words
   not yet admitted.

@@ -677,7 +677,7 @@ pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
 }
 
 /// The ACTION at a form's vertex, by the address that names it (L14).
-/// What a court composes when it replays a citation: rotors compose by
+/// What a court composes when it reconstructs a citation: rotors compose by
 /// the geometric product whether or not the alphabet spells them.
 pub fn rotor_at_vertex(f: &Form, vertex: &[u8]) -> Option<crate::transducer::alphabet::Rotor> {
     match vertex_cited(f, vertex)? {

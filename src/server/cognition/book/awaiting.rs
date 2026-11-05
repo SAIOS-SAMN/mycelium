@@ -114,9 +114,9 @@ impl Court {
         let Some(waiting) = self.awaiting.remove(form) else {
             return;
         };
-        // 78.153 — A RE-HEARING ITS STROKE COULD NOT REPLAY is deferred on
+        // 78.153 — A RE-HEARING ITS STROKE COULD NOT RECONSTRUCT is deferred on
         // no lane: it was not heard, so it waits again under the same form
-        // and the court stroke hears it again (`rehear_due`), its replay
+        // and the court stroke hears it again (`rehear_due`), its reconstruction
         // resumed where it stopped. Dropped, the citer was lost for good:
         // the form it waited on is ruled and nothing would wake it.
         let mut unread = Vec::new();

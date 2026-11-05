@@ -42,7 +42,7 @@ pub(crate) fn family_magnitude(train: &Family) -> [u64; 4] {
 }
 
 /// WHAT ONE PERSPECTIVE DISAGREED ABOUT, read whole: every kind present (in
-/// [`crate::observe::DISAGREE`]'s order), the grid the rule said, and the
+/// [`crate::observe::DISAGREE`]'s order), the sample the rule said, and the
 /// demands its form spoke nothing for, by kind.
 pub(crate) struct Disagreed {
     pub(crate) kinds: Vec<usize>,
@@ -225,7 +225,7 @@ pub(crate) fn speech_of(epi: &MindLanguage, rule: &SentenceRule, train: &Family,
 /// the language given: each training pair held out in turn, the rule the
 /// OTHER pairs derive (the form engine on them alone, uncached, on its own
 /// stroke) spoken on the held-out input and asked to close it — no
-/// remainder, its grid the held-out output. Known where every perspective
+/// remainder, its sample the held-out output. Known where every perspective
 /// re-derives it. Answers the reading and the pairs a held-out perspective
 /// left uncovered — what the siblings' rule said against the truth — which
 /// the mind LIFTS into its sensorium where the reading lands, never drops.
@@ -293,7 +293,7 @@ pub(crate) fn ascertain_on(epi: &MindLanguage, train: &Family, rule: &SentenceRu
     // 2026-10-22, its three guards): exactly two pairs, so each sibling set
     // is one pair (guard 3); the family's rule is the act reader's clauses
     // (guard 1 — a vertex fit stays unknown); and it closes both pairs
-    // exactly, no remainder, the grid each output (guard 2).
+    // exactly, no remainder, the sample each output (guard 2).
     let unexempt = match (train.len() == 2, rule.form.elements.is_empty()) {
         _ if failed.is_empty() => None,
         (false, _) => Some(Unexempt::Pairs),
@@ -317,7 +317,7 @@ pub(crate) fn ascertain_on(epi: &MindLanguage, train: &Family, rule: &SentenceRu
 /// the kinds, in [`crate::observe::DISAGREE`]'s order — it spoke nothing,
 /// spoke with a remainder, laid down another frame, put cells in the wrong
 /// places (by cause, 78.167 A1), or coloured the right cells otherwise — with
-/// the grid it said, where it said one, and the demands it spoke nothing for.
+/// the sample it said, where it said one, and the demands it spoke nothing for.
 pub(crate) fn disagreement_on(epi: &MindLanguage, rule: &SentenceRule, x: &crate::transducer::family::SectionSample, y: &crate::transducer::family::SectionSample) -> Result<(), Disagreed> {
     let refused = |kind: usize, said: Option<crate::transducer::family::SectionSample>, demanded: [u64; 6]| Disagreed { kinds: vec![kind], said: said.map(Box::new), demanded };
     let Some(speech) = crate::transducer::family::speak::speak_rule(rule, x, epi) else { return Err(refused(1, None, [0; 6])) };

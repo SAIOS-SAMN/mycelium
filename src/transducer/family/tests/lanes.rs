@@ -234,7 +234,7 @@ fn generators_at_meet_gives_no_basis_on_no_lane() {
 }
 
 /// A PLACEMENT IS NOT A LANE OF A DERIVATION. A derivation claims a ROTOR:
-/// `factor_versor` replays its citations against the versor's sensor rotor
+/// `factor_versor` reconstructs its citations against the versor's sensor rotor
 /// and against nothing else, and the placement rides on the vertex beside
 /// the derivation (18.2 quotients the body's absolute position). So a
 /// target that translates while it turns still derives through a purely

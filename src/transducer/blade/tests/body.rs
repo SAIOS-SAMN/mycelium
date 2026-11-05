@@ -113,7 +113,7 @@ fn lift_across_frames_computes_six_moments() {
     // centroid.
     assert_eq!(b.inertia[3], q(4), "Izz is the offsets alone");
 
-    // Deviatoric harmonic on the grid plane (0, 1) and on the row–frame
+    // Deviatoric harmonic on the plane (0, 1) and on the row–frame
     // plane (0, 2), both generated from n (BQ4).
     let h01 = b.harmonic_on_plane((0, 1), false).expect("plane 0,1");
     let h03 = b.harmonic_on_plane((0, 2), false).expect("plane 0,2");

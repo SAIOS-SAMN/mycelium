@@ -6,7 +6,7 @@
 //! sphere it is a rotation about the point at infinity and it has NO length
 //! of its own: no conjugation-invariant size, only a direction — the ray it
 //! lies on — and ratios to the other generators on that ray. Measuring it by
-//! steps on the sensor's grid laid a lattice over the hypersphere (§76.1).
+//! steps on the sensor's plane laid a lattice over the hypersphere (§76.1).
 //!
 //! So 𝒯 is read the way magnetohydrodynamics reads a field:
 //!

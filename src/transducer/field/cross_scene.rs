@@ -539,7 +539,7 @@ fn same_carried(a: &Line, b: &Line) -> bool {
 /// chain whose before-support is the carried body's sites and whose
 /// after-support is its image's — 𝒮 the sites that appear or vanish, 𝒽 the
 /// shell's change; 𝒢 reads nothing, for a body is read hue-blind, and 𝒯
-/// nothing, for a chain holds no clock. `None` where a site is off the grid's
+/// nothing, for a chain holds no clock. `None` where a site is off the plane's
 /// two axes.
 fn lanes_of(x: &Shape, y: &Shape) -> Option<[u64; 4]> {
     use crate::transducer::sentence::SectionLink;

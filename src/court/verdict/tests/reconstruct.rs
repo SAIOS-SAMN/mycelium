@@ -1,4 +1,4 @@
-// 23, 42 — replay: a clean word replays, a false speech is named, and a
+// 23, 42 — reconstruction: a clean word reconstructs, a false speech is named, and a
 // form whose rank or certificate does not re-derive is refused.
 
 use crate::anastome::dialogue;
@@ -44,11 +44,11 @@ fn star_of(f: &Form, v: &coord::VertexAt) -> coord::Overlap {
     o.clone()
 }
 
-/// A clean word replays; an unparseable body is a named Slashed state.
+/// A clean word reconstructs; an unparseable body is a named Slashed state.
 #[test]
 fn reconstruct_blind_accepts_clean_rule_slashes_unparseable() {
     let w = clean_word();
-    assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "a clean derivation replays");
+    assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "a clean derivation reconstructs");
     let ruling = rule(&[], &Keyed::new(), &Stalks::default(),&w.address(), None, None, &mut super::fixtures::budget());
     assert!(
         matches!(rule(&[], &Keyed::new(), &Stalks::default(),&w.address(), Some(&w), Some(&[0; 4]), &mut super::fixtures::budget()), Ruling::Slashed(_)),
@@ -59,7 +59,7 @@ fn reconstruct_blind_accepts_clean_rule_slashes_unparseable() {
 }
 
 /// A ruled word deepened by a section (`attach`/`merge_fibre` on a
-/// hypha) still replays on every peer: the chain lanes are compared
+/// hypha) still reconstructs on every peer: the chain lanes are compared
 /// against the word's base magnitude, and the section is counted on the
 /// word, never re-derived from the chain.
 #[test]
@@ -70,12 +70,12 @@ fn reconstruct_blind_accepts_deepened_word_on_peer() {
     assert!(w.puncture(vec![(1, 3), (1, 3)]), "a fresh section punctures");
     assert_eq!(w.base_magnitude(), base, "the chain's lanes do not move");
     assert_eq!(w.magnitude()[3], base[3] + 1, "the section is counted on the word");
-    assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "the deepened word replays at home");
+    assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "the deepened word reconstructs at home");
     let bytes = w.to_bytes().expect("the record writes");
     let mut pos = 0usize;
     let served = Element::from_bytes(&bytes, &mut pos).expect("wire round trip");
     assert_eq!(pos, bytes.len());
-    assert!(reconstruct_blind(&served, &mut super::fixtures::budget()).is_none(), "the served copy replays on the peer");
+    assert!(reconstruct_blind(&served, &mut super::fixtures::budget()).is_none(), "the served copy reconstructs on the peer");
 }
 
 /// A closed depth-0 form: Frame, one 90°-turn word, the star face.
@@ -138,7 +138,7 @@ fn triangle_with_edges(
     f
 }
 
-/// Chapter 23.1: a citer replays only when its cited form resolves on
+/// Chapter 23.1: a citer reconstructs only when its cited form resolves on
 /// the cover; without a cover the citation refuses; a tampered face and
 /// a zero trajectory refuse by name; a v2 tape is never accepted unparsed.
 #[test]
@@ -159,7 +159,7 @@ fn reconstruct_form_refuses_unruled_glue_and_reconstructs_resolved() {
         "with no cover behind it the citation refuses"
     );
     let resolve = |a: &[u8]| (a == inner_addr.as_bytes()).then(|| inner.clone());
-    assert_eq!(reconstruct_blind_with(&outer_e, &resolve, &mut super::fixtures::budget()), None, "a resolved citation replays");
+    assert_eq!(reconstruct_blind_with(&outer_e, &resolve, &mut super::fixtures::budget()), None, "a resolved citation reconstructs");
     let mut bad = outer.clone();
     let glued_star = star_of(&outer, &gi);
     {
@@ -189,7 +189,7 @@ fn reconstruct_form_refuses_unruled_glue_and_reconstructs_resolved() {
         "a star face names the Frame's coordinate and the vertex it reaches: {:?}",
         face_refusal.at
     );
-    // S9.4 — A ZERO MAGNITUDE IS NOT A REFUSAL. This tape replays: its
+    // S9.4 — A ZERO MAGNITUDE IS NOT A REFUSAL. This tape reconstructs: its
     // orbits return, its faces re-derive, its citation resolves. It was
     // refused for measuring nothing, which made the court an economist —
     // μ⃗ is a cost, not a score, and a word that costs nothing to say has
@@ -256,7 +256,7 @@ fn reconstruct_form_refuses_unruled_glue_and_reconstructs_resolved() {
     // A derived coordinate cannot be lied about. The word this tamper
     // names is a DIFFERENT word — asserted above, decoder-independently,
     // because the citation's own depth is in the key — and that word
-    // replays honestly as itself.
+    // reconstructs honestly as itself.
     assert_eq!(
         reconstruct_blind_with(&deeper_e, &resolve, &mut super::fixtures::budget()),
         None,
@@ -276,7 +276,7 @@ fn reconstruct_form_refuses_unruled_glue_and_reconstructs_resolved() {
 fn reconstruct_form_refuses_unparsed_tape() {
     use crate::transducer::sentence::as_element_form;
     let e = as_element_form(&closed_turn_form(), [1, 0, 0, 0]).expect("tape");
-    assert_eq!(reconstruct_form(&e, &|_| None, &mut super::fixtures::budget()), None, "the whole tape replays");
+    assert_eq!(reconstruct_form(&e, &|_| None, &mut super::fixtures::budget()), None, "the whole tape reconstructs");
     let mut short = e.description().to_vec();
     short.pop();
     let mut cut = e.clone();
@@ -291,7 +291,7 @@ fn reconstruct_form_refuses_unparsed_tape() {
 /// 15.3, 16.17, rule 11 (I5): an orbit whose holonomy is not a versor has
 /// no class. It is never keyed by its rotor's bytes in place of the class
 /// it lacks: the rank audit is unmeasured, the form is not cauterized, and
-/// the orbit does not replay. The fallback this refuses survived 0.12b under
+/// the orbit does not reconstruct. The fallback this refuses survived 0.12b under
 /// the name `class_or_rotor_key`.
 #[test]
 fn form_orbits_reconstruct_refuses_non_versor_holonomy_unkeyed() {
@@ -329,11 +329,11 @@ fn form_orbits_reconstruct_refuses_non_versor_holonomy_unkeyed() {
     );
     assert!(f.rank().is_none(), "the audit is unmeasured, not counted under a rotor key");
     assert!(!f.is_cauterized(), "nothing files what has no class");
-    assert!(!form_orbits_reconstruct(&f), "and the orbit does not replay");
+    assert!(!form_orbits_reconstruct(&f), "and the orbit does not reconstruct");
 }
 
 /// A20: a certificate that does not un-pivot to the tape's before/after
-/// refuses the form whole; a form with no certificates still replays.
+/// refuses the form whole; a form with no certificates still reconstructs.
 #[test]
 fn pivot_certificate_reconstructs_or_refuses() {
     use crate::transducer::alphabet::Word;
@@ -345,7 +345,7 @@ fn pivot_certificate_reconstructs_or_refuses() {
     assert_eq!(
         reconstruct_form(&e, &|_| None, &mut super::fixtures::budget()),
         None,
-        "a closed form with no certificates replays"
+        "a closed form with no certificates reconstructs"
     );
     let mut bad = f.clone();
     let star = star_of(&f, &only_word(&f));
@@ -423,7 +423,7 @@ fn reconstruct_form_reconstructs_filed_torsion_without_taped_forest() {
         "finite holonomy files when no word discharges"
     );
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("filed tape");
-    assert_eq!(reconstruct_form(&e, &|_| None, &mut super::fixtures::budget()), None, "filed torsion replays");
+    assert_eq!(reconstruct_form(&e, &|_| None, &mut super::fixtures::budget()), None, "filed torsion reconstructs");
     // S9.2'S FORGERY CANNOT BE BUILT ANY MORE (54.5, as ruled 2026-09-20).
     //
     // This went on to strip the tape's orbits, then to add an orbit of a class
@@ -454,7 +454,7 @@ fn reconstruct_form_reconstructs_filed_torsion_without_taped_forest() {
         f.orbits.len(),
         "clearing the orbits changes no byte of the tape: they were never on it"
     );
-    assert_eq!(reconstruct_form(&bad, &|_| None, &mut super::fixtures::budget()), None, "so the same form replays");
+    assert_eq!(reconstruct_form(&bad, &|_| None, &mut super::fixtures::budget()), None, "so the same form reconstructs");
 
     // WHAT `REFUSE_RANK_LOST` STILL MEANS, and it is the reading that was
     // always underneath: the rank is UNMEASURABLE. An orbit whose holonomy is
@@ -614,12 +614,12 @@ fn reconstruct_form_refuses_vertex_tape_and_still_moves() {
         ))
         .expect("a demand has a coordinate");
     let typed_e = as_element_form(&typed, [1, 0, 0, 0]).expect("typed demand tape");
-    assert_eq!(reconstruct_form(&typed_e, &|_| None, &mut super::fixtures::budget()), None, "a typed demand vertex replays beside its words");
+    assert_eq!(reconstruct_form(&typed_e, &|_| None, &mut super::fixtures::budget()), None, "a typed demand vertex reconstructs beside its words");
 }
 
 /// 50.3, 52.3 — AN EDGE TRANSPORT OF ANY ORDER IS A FACE. A (3,4,5) rotor
 /// on an edge has no period and is not refused for that: with no family to
-/// re-derive its transport against, the tape replays exactly as it does
+/// re-derive its transport against, the tape reconstructs exactly as it does
 /// with a 90° turn there. What an edge carries is judged on the family
 /// (`edges_rederive_frames`), never by its order.
 #[test]
@@ -643,14 +643,14 @@ fn reconstruct_form_accepts_edge_of_infinite_order() {
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     set_edge(&mut edged, &fi, Word::from_letters(&[(q, false)]));
     let fine_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
-    assert_eq!(reconstruct_form(&fine_e, &|_| None, &mut super::fixtures::budget()), None, "a 90° turn on an edge is a stabilizer element and replays");
+    assert_eq!(reconstruct_form(&fine_e, &|_| None, &mut super::fixtures::budget()), None, "a 90° turn on an edge is a stabilizer element and reconstructs");
 }
 
-/// 52.3 — AN ORBIT OF INFINITE ORDER REPLAYS ON ITS FILING. The transports
+/// 52.3 — AN ORBIT OF INFINITE ORDER RECONSTRUCTS ON ITS FILING. The transports
 /// are coboundaries and compose to the identity while the body face carries
-/// a (3,4,5) rotor as its edge: unfiled, the orbit does not replay; filed
+/// a (3,4,5) rotor as its edge: unfiled, the orbit does not reconstruct; filed
 /// under the edge holonomy's class at period 0, A19's spelling of infinite
-/// order, it replays — through the tape, where the court reads the zero —
+/// order, it reconstructs — through the tape, where the court reads the zero —
 /// and at a period the orbit does not have it is refused by name.
 #[test]
 fn reconstruct_form_refuses_free_orbit_and_wrong_period() {
@@ -674,14 +674,14 @@ fn reconstruct_form_refuses_free_orbit_and_wrong_period() {
     let es = f.edge_holonomies(lp).expect("the orbit names live faces");
     let [(_, e)] = es.scoped().collect::<Vec<_>>()[..] else { panic!("one member path") };
     assert_eq!(e.word.order(), Order::Infinite, "and its edge holonomy has no period");
-    // A FREE PART DOES NOT REPLAY, AND A FILING DOES NOT CHANGE THAT
+    // A FREE PART DOES NOT RECONSTRUCT, AND A FILING DOES NOT CHANGE THAT
     // (54.5, as ruled 2026-09-20). The edge holonomy has NO period: `g^ℓ`
     // is never the identity, so the circuit runs on. It read that filing the
-    // class at 0 made the orbit replay, which is a permit deciding a
+    // class at 0 made the orbit reconstruct, which is a permit deciding a
     // geometric question — every field of a `FiledOrbit` is derivable
     // (`orbit_classes`), so by law 12 the annotation carries no fact the
     // complex does not already determine.
-    assert!(!form_orbits_reconstruct(&f), "a free part does not replay");
+    assert!(!form_orbits_reconstruct(&f), "a free part does not reconstruct");
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
     let mut filed = f.clone();
@@ -713,7 +713,7 @@ fn reconstruct_form_refuses_free_orbit_and_wrong_period() {
 }
 
 /// S9.4 — CLOSURE IS WHAT THE COURT CHECKS. A form minted over one train
-/// pair replays clean against that pair, and refuses against a family whose
+/// pair reconstructs clean against that pair, and refuses against a family whose
 /// second pair it does not close. The refusal names the remainder, not the
 /// magnitude: a form that closes every pair while measuring nothing has
 /// still closed them, and what it measured is the economy's reading.
@@ -786,10 +786,10 @@ fn citing_form(
 }
 
 /// 50.2 step 2 at the court — G COMPOSES THE DERIVATION. A cited
-/// generator the cover resolves composes and the sentence replays.
+/// generator the cover resolves composes and the sentence reconstructs.
 ///
 /// A cited FORM the court has not ruled never reaches here: the door
-/// decides that before any replay runs and the sentence WAITS
+/// decides that before any reconstruction runs and the sentence WAITS
 /// (`hear_sentence`, `unruled_citation`), because a refusal would be
 /// sealed by the voice and the sentence lost for being one syllabus step
 /// early. What reaches here is the other case — the form resolved and
@@ -923,18 +923,18 @@ fn form_orbits_reconstruct_reads_edge_holonomy_on_flat_transport() {
     };
     assert!(!e.word.is_identity(), "and its edge holonomy is the 180° turn");
 
-    // A COMPACT EDGE HOLONOMY REPLAYS ON ITS OWN ALGEBRA (54.5, as ruled
+    // A COMPACT EDGE HOLONOMY RECONSTRUCTS ON ITS OWN ALGEBRA (54.5, as ruled
     // 2026-09-20). The 180° turn returns after two circuits about a fixed
     // point: `ℤ/2ℤ`, which is torsion, and torsion is content (law 7).
     //
-    // This asserted the orbit did NOT replay until a class was filed, which
+    // This asserted the orbit did NOT reconstruct until a class was filed, which
     // made an annotation's presence a geometric property. What the
     // transport reading still cannot say is the interesting half, and it
     // stands: on the transport composite this orbit is FLAT, and only the
     // edge holonomy sees the 180° turn (50.3, `edge_class_vector`).
     assert!(
         form_orbits_reconstruct(&f),
-        "a compact edge holonomy replays unfiled: ℤ/2ℤ is a resonance, not a debt"
+        "a compact edge holonomy reconstructs unfiled: ℤ/2ℤ is a resonance, not a debt"
     );
     // One member path here, so one class — said by the slice pattern.
     let classes: Vec<_> = f.edge_classes(lp).scoped().map(|(_, c)| c.clone()).collect();
@@ -969,7 +969,7 @@ fn form_orbits_reconstruct_reads_edge_holonomy_on_flat_transport() {
     );
     // THE TWO HALVES SEPARATE HERE, and this is the whole point of the
     // split. At the wrong period the GEOMETRY is unchanged — the orbit is
-    // still a compact ℤ/2ℤ and still replays — while the RECEIPT is now a
+    // still a compact ℤ/2ℤ and still reconstructs — while the RECEIPT is now a
     // claim about the terrain that the terrain contradicts. The period is
     // the orbit's order, not the filer's opinion of it (A17), and it is the
     // one lie in an envelope the court can catch.

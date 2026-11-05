@@ -33,7 +33,7 @@ use crate::transducer::cga::Mv;
 use crate::transducer::element;
 
 /// HOW FAR A CARRIAGE'S VERSOR IS APPLIED: once, or iterated until its next
-/// application would leave the grid or, at `Stop::Contact`, meet a painted
+/// application would leave the sample or, at `Stop::Contact`, meet a painted
 /// cell. Iteration reads a lattice translation; any other versor iterated
 /// is refused by name (it names no ray).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

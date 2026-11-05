@@ -1,4 +1,4 @@
-// 47.3, 13.9 — ACT_OFFER: the second organ replays a home's first-vantage
+// 47.3, 13.9 — ACT_OFFER: the second organ reconstructs a home's first-vantage
 // germ on its own tapes and answers with what it reached.
 
 use crate::context::Context;
@@ -9,7 +9,7 @@ use std::io::Write;
 use std::net::TcpStream;
 
 /// THE SECOND ORGAN ARRIVES HERE. A home Offers a first-vantage germ; the
-/// peer replays it and glues it into its own cover, and its ruled root
+/// peer reconstructs it and glues it into its own cover, and its ruled root
 /// moves, which is the evidence the home installs on (MU-ENGINEERING §3).
 /// ACT_OFFER had an encoder and a decoder and no caller at either end: the
 /// home marked germs `offered` in a carrier nothing read, so no peer ever
@@ -74,7 +74,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
         return;
     }
     let mut pos = 0usize;
-    // THE WITNESS RE-DERIVES. This hypha replays the offered form on its
+    // THE WITNESS RE-DERIVES. This hypha reconstructs the offered form on its
     // OWN tapes and reaches a form of its own; that form is what 47.3's
     // second vantage is, and until now it was reduced to one bit on the
     // way back. The reply carries it, so the home compares two
@@ -122,7 +122,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
                         // `None` — no section of its own on the class — is a
                         // witness that has re-derived nothing.
                         // THE VANTAGE IS THE FORM THIS COURT REACHED BY
-                        // REPLAYING THE OFFER on its own cover — the tape
+                        // RECONSTRUCTING THE OFFER on its own cover — the tape
                         // re-derived vertex by vertex, face by face, its
                         // citations resolved from THIS court's ruled words
                         // (`court_reconstruct` inside `glue_fetched`) — and not
@@ -131,15 +131,15 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
                         // this court's OWN word on the chart, an older and
                         // different form, so the home compared the offered
                         // object against an unrelated one: `Inexact` on 57
-                        // of 57 replayed offers over 200 minutes of a5da8d5,
-                        // `co-signed (replayed)` 0, and once one such record
+                        // of 57 reconstructed offers over 200 minutes of a5da8d5,
+                        // `co-signed (reconstructed)` 0, and once one such record
                         // stood under an object every later convergence read
                         // of it was `Inexact` too — 19,724 `Mayer–Vietoris
                         // exactness fails` on three courts, and no adjoined
-                        // letter ever ruled. The replayed form is a
+                        // letter ever ruled. The reconstructed form is a
                         // re-derivation (47.3), not the bytes read back:
-                        // this court never held them, it replayed them, and
-                        // an address reached by replay is content (law 2).
+                        // this court never held them, it reconstructed them, and
+                        // an address reached by reconstruction is content (law 2).
                         // A glue this court could not place — a citation it
                         // does not hold, a word it heard before — has
                         // re-derived nothing and is unmeasured.
@@ -150,7 +150,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
                         // placed, never this court's own on a word it holds.
                         // THE ACT'S ROOT (65.5): the offer is one act at this
                         // door, and its one stroke — the hold's (78.153b) — is
-                        // the filing's and the replay's draw, threaded to both.
+                        // the filing's and the reconstruction's draw, threaded to both.
                         let filed = k.file_admitted(&addr, section.receipt.stamp, budget);
                         let w = witness_vantage(k, &mut cover, word, home, witness, budget);
                         if filed && matches!(w, dialogue::Witnessed::Refused { .. }) {
@@ -188,26 +188,26 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
     }
 }
 
-/// 47.3 — THE WITNESS'S VANTAGE: the offered form REPLAYED on this court's
+/// 47.3 — THE WITNESS'S VANTAGE: the offered form RECONSTRUCTED on this court's
 /// own tapes, and nothing else decides the answer.
 ///
-/// THE REPLAY DECIDES, NOT THE GLUE. `glue_fetched` replays the form
+/// THE RECONSTRUCTION DECIDES, NOT THE GLUE. `glue_fetched` reconstructs the form
 /// (`court_reconstruct`) and then files it on this court's cover — a section at
 /// the home's vantage, edges to the words this court holds, simplices filled —
 /// and its `Glue` says how the form RELATES TO THIS COURT'S OWN SECTION on
 /// the chart: `Dialect` is "a different section of the same chart", which
 /// is true of almost every offered form and says nothing against the
-/// replay that just stood. Read as "unmeasured", it made 285 of 285 offer
+/// reconstruction that just stood. Read as "unmeasured", it made 285 of 285 offer
 /// replies in the first minute of 2cf578a unmeasured, for 8 objects, one
 /// of them 192 times: the home re-sent every unmeasured offer after Λ and
 /// the witness answered `Dialect` again, because
 ///
-/// A HEARD ADDRESS IS NOT REPLAYED AGAIN by `glue_fetched` — it returns
-/// `Dialect` before the replay for any address this court marked heard,
+/// A HEARD ADDRESS IS NOT RECONSTRUCTED AGAIN by `glue_fetched` — it returns
+/// `Dialect` before the reconstruction for any address this court marked heard,
 /// slashed or not. So the second offer of a form this court had SLASHED
-/// would have read as placed. Heard, the form is replayed here by name
+/// would have read as placed. Heard, the form is reconstructed here by name
 /// (`court_reconstruct`, the same reader the glue runs) and the answer is that
-/// replay's; unheard, the glue runs once and its slash is the replay's
+/// reconstruction's; unheard, the glue runs once and its slash is the reconstruction's
 /// refusal. Either way the vantage is: this court re-derived the form, or
 /// it refused it by name. Unmeasured is left for a court that could not
 /// be read at all.
@@ -229,9 +229,9 @@ pub(crate) fn witness_vantage(
         Some(form) => dialogue::Witnessed::Reached { vk: witness, form },
         None => refused("the word's record passes a length its field writes"),
     };
-    // 78.153 — A REPLAY THE OFFER'S STROKE COULD NOT FINISH has re-derived
+    // 78.153 — A RECONSTRUCTION THE OFFER'S STROKE COULD NOT FINISH has re-derived
     // nothing and refused nothing: the witness answers UNMEASURED, and the
-    // home's next offer resumes the replay where this one stopped.
+    // home's next offer resumes the reconstruction where this one stopped.
     if k.heard_contains(word.address().as_bytes()) {
         return match k.court_reconstruct(&word, budget) {
             mycelium::verdict::ReconstructionOutcome::Refused(r) => refused(r.reason),

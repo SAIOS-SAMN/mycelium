@@ -165,7 +165,7 @@ fn heard_against(m: &Mv, heard: &Mv) -> crate::transducer::sentence::hearing::Ec
 }
 
 /// 78.112 H5 — A WORD HEARD ACROSS MINDS IS SEATED IN THE HEARER'S RINGS.
-/// The hearer heard the 90° turn of the grid plane (ℓ 4). The speaker's 180°
+/// The hearer heard the 90° turn of the plane (ℓ 4). The speaker's 180°
 /// turn of that plane (ℓ 2, dividing 4) seats in it WHOLE: understood whole,
 /// carried as it is, the loop still. The 180° turn of a crossing plane seats
 /// with a TILT: carried round the ring, the loop said → heard is exactly the

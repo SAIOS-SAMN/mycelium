@@ -13,7 +13,7 @@ use crate::transducer::sentence::{self, Form, Vertex};
 use crate::transducer::stalk;
 use crate::transducer::torsion_witness::{self, HolonomicOrbitWitness};
 
-/// Chapter 23.1: replay a crystallized form from its tape and the forms it
+/// Chapter 23.1: reconstruct a crystallized form from its tape and the forms it
 /// cites. `resolve` is the hypha's ruled cover (a caller without one
 /// resolves nothing, and every citation refuses): each cited form must be
 /// ruled, closed, at the depth the tape claims and strictly below the
@@ -171,7 +171,7 @@ pub fn derivations_compose_at(
 }
 
 /// [`reconstruct_certificates`] with the chord index built from the form the
-/// certificates are being replayed against — which is the coordinate the
+/// certificates are being reconstructed against — which is the coordinate the
 /// parity oracle is testing, since a chord is an index into `faces` and a
 /// decoder that reordered them would diverge here and nowhere else.
 pub fn reconstruct_certificates_at(
@@ -250,7 +250,7 @@ pub(crate) fn derivations_compose<'r>(
                 )))
             }
             // The door (`hear_sentence`) decides the WAIT before any
-            // replay runs, so an unruled cited FORM never reaches here.
+            // reconstruction runs, so an unruled cited FORM never reaches here.
             // What reaches here is a citation naming a vertex the ruled
             // form does not carry — the form resolved and the vertex was
             // not in it — which is a claim about the tape and a refusal
@@ -271,7 +271,7 @@ pub(crate) fn derivations_compose<'r>(
 /// letter's rotor is the identity (78.68 row 8): its whole action is the
 /// slide or dilation on its vertex, so a citation of it at any exponent
 /// composed — a check that checked nothing. Where a derivation cites such a
-/// letter it claims the whole motion, and the claim is replayed whole: the
+/// letter it claims the whole motion, and the claim is reconstructed whole: the
 /// cited vertices' motions at the cited exponents, times the residue's letters at
 /// the identity carriage, against the citing vertex's motion, exact (1.5).
 /// A derivation citing only letters that turn claims its rotor, as before.
@@ -362,7 +362,7 @@ pub(crate) fn witnesses_carry_primes(f: &Form, meter: &mut Meter<'_>, from: usiz
     Ok(())
 }
 
-/// The same replay, refusing WITH THE COORDINATE (50.9): the vertex that
+/// The same reconstruction, refusing WITH THE COORDINATE (50.9): the vertex that
 /// does not carry its body, the face whose edge does not re-derive, the
 /// chart with the links no demand declares; every other refusal is of the
 /// whole tape.
@@ -387,8 +387,8 @@ pub fn reconstruct_form_resume<'r>(
     budget: &mut crate::physics::Budget,
     cursor: &mut ReconstructionCursor,
 ) -> ReconstructionOutcome {
-    // A SPOKEN word under replay: the court re-derives it from the tape it
-    // was sent, which is the point of a replay, so the decode is named
+    // A SPOKEN word under reconstruction: the court re-derives it from the tape it
+    // was sent, which is the point of a reconstruction, so the decode is named
     // (L16) — and it is named HERE, once, so the verdict below is a
     // function of the FORM and not of which decoder produced it.
     //
@@ -422,14 +422,14 @@ pub fn reconstruct_form_on(
 /// loop spends one read per item; where the stroke runs out the cursor
 /// keeps the stage and the item it stopped at (and the exact partials the
 /// later stages need) and the answer is `Unread` — not ruled this stroke,
-/// never a refusal. Resumed from the cursor, a replay rules exactly as one
+/// never a refusal. Resumed from the cursor, a reconstruction rules exactly as one
 /// run on a stroke that never ran out: every stage before the cursor
 /// passed, and passing is a function of the word's content and of cited
 /// forms that are content-addressed, so it does not change between strokes.
 ///
 /// ON THE FAMILY'S OWN GROUND (ruled 2026-10-18), whatever
 /// the caller opened: the voice extracts and mints a family there, and a
-/// court replaying it on another ground reads the family's ground as a
+/// court reconstructing it on another ground reads the family's ground as a
 /// remainder the form never spoke ("form leaves a remainder on the
 /// family", read 2026-10-20 on a family with no void cell).
 pub fn reconstruct_form_on_resume<'r>(
@@ -460,7 +460,7 @@ fn reconstruct_on_ground<'r>(
     // One stage: skipped where the cursor is past it, entered at the item
     // the cursor names where it stopped in it, and settled — passed (the
     // cursor moves to the next stage), refused, or spent (the cursor keeps
-    // the item and the replay is unread).
+    // the item and the reconstruction is unread).
     macro_rules! stage {
         ($stage:expr, |$from:ident| $step:expr) => {
             if let Some($from) = cursor.enter($stage) {
@@ -545,7 +545,7 @@ fn reconstruct_on_ground<'r>(
     // check, and the direction that does not fail safe: an orphan port is an
     // incomplete attachment and every reader of it refuses or reports
     // unspoken, while a phantom edge is a claim of connectivity the complex
-    // never constructed — it WOULD resolve, replay and be paid for against a
+    // never constructed — it WOULD resolve, reconstruct and be paid for against a
     // boundary the form does not hold. Never erased, because erasure masks
     // perjury and corrupts the attestation that reads the cover for credit.
     stage!(Stage::Phantoms, |from| {
@@ -655,9 +655,9 @@ fn reconstruct_on_ground<'r>(
         (0, false) => Err(Halt::Refused(tape(REFUSE_NOT_A_SENTENCE))),
         _ => vertex_tape_and_moves_from(f, family, spoken, &mut Meter::Stroke(&mut *budget), from),
     });
-    // 78.153 — THE FAMILY PERCEIVED ONCE PER REPLAY, one read a pair, the
+    // 78.153 — THE FAMILY PERCEIVED ONCE PER RECONSTRUCTION, one read a pair, the
     // perceptions held on the cursor: every later stage of every stroke
-    // reads them and the sensor reads each grid once (law 12).
+    // reads them and the sensor reads each sample once (law 12).
     if let Some(fam) = family {
         stage!(Stage::Perceive, |from| {
             let mut out: Step = Ok(());
@@ -978,7 +978,7 @@ fn reconstruct_after_perceiving(
     // `left`/`right` are produced content, written only by the pivot's Word
     // move, and the certificate whose chord names the overlap is the
     // producer of both. A factor with none was written by nothing the court can
-    // replay.
+    // reconstruct.
     stage!(Stage::Pivots, |from| {
         let mut out: Step = Ok(());
         for (i, (o, face)) in traversed.faces.entries().enumerate().skip(from) {
@@ -1175,7 +1175,7 @@ pub(crate) fn clauses_stated_from(
 }
 
 /// Each orbit by the chord it closes on (AT1: the chord an overlap, its key
-/// the overlap's coordinates), to the orbit the replay reads.
+/// the overlap's coordinates), to the orbit the reconstruction reads.
 pub(crate) fn chord_orbits(f: &Form) -> Keyed<crate::transducer::sentence::Orbit, crate::network::nerve::coord::Overlap> {
     let mut by_chord = Keyed::new();
     for lp in &f.orbits {
@@ -1229,7 +1229,7 @@ pub(crate) fn torsion_chord_carries(
 /// voice actually files — under the edge holonomy's key — is never looked
 /// for.
 ///
-/// AN ORBIT THE FORM DID NOT EVALUATE IS NOT REPLAYED. `edge_holonomy`
+/// AN ORBIT THE FORM DID NOT EVALUATE IS NOT RECONSTRUCTED. `edge_holonomy`
 /// answers `None` where a remainder edge lies anywhere on the cycle (13.9
 /// step 7), and an orbit with no transition to read carries no obligation
 /// (rule 11: that is a refusal to read, not a flat reading).
@@ -1264,7 +1264,7 @@ pub(crate) fn form_orbits_reconstruct(f: &Form) -> bool {
 /// Every torsion cycle the word speaks is run round from its base assignment.
 /// A period is believed only as a witnessed closed orbit; an open circuit names
 /// the anholonomity the label was filing over, and a closure at another
-/// period is a winding the word misspoke. Replay was Δ = 0 on the chain;
+/// period is a winding the word misspoke. Reconstruction was Δ = 0 on the chain;
 /// this is ∮ dX = 0 on the fibre.
 pub(crate) fn witness_torsion(spoken: &Element) -> Option<&'static str> {
     for (stored, witness) in torsion_witness::witness_stored(spoken) {

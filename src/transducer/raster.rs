@@ -88,7 +88,7 @@ pub fn void() -> Result<u8, Unground> {
 }
 
 /// READ `f` ON THE GROUND OF `family`: the family's ground opened for every
-/// perception, speech and replay inside it, UNLESS a family is already open
+/// perception, speech and reconstruction inside it, UNLESS a family is already open
 /// on this thread, whose ground stands (the siblings a perspective derives
 /// from, a test spoken through the family's rule, are read on the family's
 /// own ground, never on one a subset of the siblings would name). The scope

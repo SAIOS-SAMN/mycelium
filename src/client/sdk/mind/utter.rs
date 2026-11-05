@@ -325,7 +325,7 @@ impl Mind {
     }
 
     /// SPEAK a family's cohering sentences as one act, naming the task so
-    /// the court replays them on its copy of the family (23.8, 50.2 G).
+    /// the court reconstructs them on its copy of the family (23.8, 50.2 G).
     /// Each word STANDS in the dialect before it is uttered (24.3:
     /// perceive, think, stand, utter); the genome is frozen. A vertex
     /// already on `taught_up` stands in the dialect and does not go on the

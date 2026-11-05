@@ -87,7 +87,7 @@ fn letter_form(
 /// whose derivation CITES the ruled words whose powers multiply to its whole
 /// motion (`heard_citation`, exact on the motion, the rotor and the hue map),
 /// its carriage on the vertex as a letter's is. It mints no dimension — every
-/// mode it moves is a ruled word's — so a court replays it from what it
+/// mode it moves is a ruled word's — so a court reconstructs it from what it
 /// already holds (`verify_with`) and needs no second mind to agree it. Its
 /// magnitude is a letter's, its existence as a word, never μ (78.149 (c)).
 /// `None` where the derivation cites nothing: that is a letter, not a
@@ -315,7 +315,7 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // executes today, and they are what refused.
     //
     // All three now ride `Element.receipts` — the graded nerve incidence and
-    // the evidence a court replays with — and the six readers that wanted
+    // the evidence a court reconstructs with — and the six readers that wanted
     // them take them from there. So the decoder asks the ADDRESS, which is
     // what the form IS (law 2), and the tape it used to parse is now written
     // and read by nothing but itself. B5 has evicted the citation targets
@@ -376,7 +376,7 @@ pub(crate) fn held_form(
 /// them, because none of them is geometry: a decoded vertex is `spelled`, a
 /// decoded form files nothing and certifies nothing. So a caller that
 /// decodes a held word, moves it, and mints the result got an element
-/// attesting NOTHING, and its next replay refused.
+/// attesting NOTHING, and its next reconstruction refused.
 ///
 /// The tape hid this completely. A taped form carried its own filing, so
 /// `decode → regauge → as_element_form` round-tripped the attestation by

@@ -215,7 +215,7 @@ fn face_place_of_is_none_for_missing_vertex() {
 }
 
 /// Glue and retract remap the faces, and a tampered placement refuses at
-/// replay.
+/// reconstruction.
 #[test]
 fn glue_retract_remaps_faces_and_refuses_placement() {
     let w = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)]);
@@ -290,7 +290,7 @@ fn glue_retract_remaps_faces_and_refuses_placement() {
     // THE WORD TAMPER: the placement overlap's derived word made the
     // identity. The word is derived (AT1 Q2), so the only way to write it
     // is a left factor — and a factor no certificate produced is refused at
-    // replay (AT1 step 2, ruled: the factor's producer is the certificate
+    // reconstruction (AT1 step 2, ruled: the factor's producer is the certificate
     // whose chord names the overlap).
     let was = taped.face_word(placement).expect("the placement overlap's word");
     assert!(!was.is_identity(), "the placement carries the glue's word");
@@ -533,7 +533,7 @@ fn deconstruct_at_records_multiplicity_per_body() {
 }
 
 /// The receiving direction: two citations carrying different words
-/// onto the same sites are a seam defect the replay alone would miss;
+/// onto the same sites are a seam defect the reconstruction alone would miss;
 /// a transport and its inverse are a flat orbit, two translations are
 /// not.
 #[test]

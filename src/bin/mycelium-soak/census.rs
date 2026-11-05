@@ -1,7 +1,7 @@
 // 53.2's probe — THE CENSUS OF A FAMILY BY READING, not by its size.
 //
 //! WHICH FAMILIES ARE LARGE IS NOT WHAT DECIDES THE ORDER. A family is
-//! large or small by how much of the grid it paints, and that number says
+//! large or small by how much of the sample it paints, and that number says
 //! nothing about which move will read it. What decides K5's order is what
 //! the family IS: whether the scene is cut by a separator, whether the
 //! frames stand in integer ratio, whether the paint is one body or many.
@@ -51,7 +51,7 @@ struct FamilyCensus {
 
 /// A FULL EXTENT OF ONE HUE. A separator row is a row whose every cell is
 /// the same non-zero hue; a separator column is the same read the other
-/// way. A grid too short to be cut carries none.
+/// way. A sample too short to be cut carries none.
 fn has_separator(g: &SectionSample) -> bool {
     // Instrumentation reads the sample's lines as written out.
     let g = g.raster();
@@ -115,12 +115,12 @@ fn site_key(r: usize, c: usize) -> Vec<u8> {
 }
 
 /// ONE BODY, WALKED. The painted sites are 4-connected from the first site
-/// the grid paints in READING ORDER — the grid's own coordinate order, not
+/// the sample paints in READING ORDER — the sample's own coordinate order, not
 /// a member elected by a measurement (rule 15) — and the reading is whether
 /// the walk reaches all of them. Connectivity is symmetric, so every seed
 /// inside one body gives one answer.
 ///
-/// An empty grid paints nothing and is not one body: there is no body, and
+/// An empty sample paints nothing and is not one body: there is no body, and
 /// the `paint` column beside this one says which case a `false` is.
 fn one_body(g: &SectionSample) -> bool {
     let mut painted: Keyed<()> = Keyed::new();
@@ -251,7 +251,7 @@ pub(crate) fn report(dir: &str, names: &[String], want: &[String]) {
             if r.separator { "yes" } else { "no" },
             // A family that paints nothing has no body to be one or many
             // of, and saying "many" of it would be a reading of the label
-            // rather than of the grid.
+            // rather than of the sample.
             match (r.paint, r.one_body) {
                 (0, _) => "none",
                 (_, true) => "one",

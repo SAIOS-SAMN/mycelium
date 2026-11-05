@@ -6,7 +6,7 @@ fn word() -> mycelium::transducer::element::Element {
         .expect("one link is A5's chain")
 }
 
-/// A word whose magnitude does not re-derive from its chain: the replay
+/// A word whose magnitude does not re-derive from its chain: the reconstruction
 /// refuses it by name, every time it is asked.
 fn false_word() -> mycelium::transducer::element::Element {
     let mut w = word();
@@ -14,7 +14,7 @@ fn false_word() -> mycelium::transducer::element::Element {
     w
 }
 
-/// The vantage is the form the witness replayed, reaching the offered
+/// The vantage is the form the witness reconstructed, reaching the offered
 /// address — asked once and asked again.
 #[test]
 fn witness_vantage_reaches_offered_form_each_ask() {
@@ -39,9 +39,9 @@ fn witness_vantage_reaches_offered_form_each_ask() {
     }
 }
 
-/// A form the replay refuses is refused by name — and refused AGAIN when
+/// A form the reconstruction refuses is refused by name — and refused AGAIN when
 /// it is offered again, though this court has marked it heard: the
-/// heard mark is not a verdict, the replay is.
+/// heard mark is not a verdict, the reconstruction is.
 #[test]
 fn witness_vantage_refuses_false_form_each_ask() {
     let court = std::sync::Mutex::new(mycelium::cognition::Court::new());

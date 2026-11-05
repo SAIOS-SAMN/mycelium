@@ -11,7 +11,7 @@
 //! discharges of the same orbit on the same scenes, and a move rewrites the
 //! form's faces, which a form's speech does not read; so speaking them again
 //! on the thought's own scenes tells none apart. What decides a vortex is a
-//! fill by a NEW perception or a court replay — designed, not yet built:
+//! fill by a NEW perception or a court reconstruction — designed, not yet built:
 //! MU-CLIENT §7.1.)
 
 use super::*;

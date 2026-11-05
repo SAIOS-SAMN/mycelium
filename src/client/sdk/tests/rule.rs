@@ -13,7 +13,7 @@ fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
-/// The symmetry read off by index, as a grid is read — the fixture's
+/// The symmetry read off by index, as a sample is read — the fixture's
 /// expectation, never the seam's construction.
 fn apply(kind: Symmetry, g: &SectionSample) -> SectionSample {
     // Written as a source writes its lines, then read at intake.
@@ -52,7 +52,7 @@ fn assert_solved(rule: &Element, withheld: &[(SectionSample, SectionSample)], wh
     assert!(seam.is_ok(), "{what}: the seam agrees: {seam:?}");
 }
 
-/// An L-shaped tromino on a 3 × 3 grid in two hues, and the same L placed
+/// An L-shaped tromino on a 3 × 3 sample in two hues, and the same L placed
 /// elsewhere and painted otherwise for the withheld pair: one chart, a
 /// scene the rule never saw.
 fn square_train() -> SectionSample {
@@ -62,8 +62,8 @@ fn square_withheld() -> SectionSample {
     digits(&["000", "034", "030"])
 }
 
-/// THE MOTION CARRIES EVERY SITE WHERE THE GRID READS IT: each symmetry's
-/// versor, applied by the sensor's own carrier to every site of a 2 × 3 grid
+/// THE MOTION CARRIES EVERY SITE WHERE THE SAMPLE READS IT: each symmetry's
+/// versor, applied by the sensor's own carrier to every site of a 2 × 3 sample
 /// (a 3 × 3 for the shape-keeping ones), lands exactly on the site the
 /// index map names.
 #[test]
@@ -88,7 +88,7 @@ fn symmetry_motion_carries_every_site_to_index_image() {
     }
 }
 
-/// Every grid symmetry of a square, minted as a rule, is solved by the court
+/// Every sample symmetry of a square, minted as a rule, is solved by the court
 /// on a pair the rule never saw.
 #[test]
 fn sentence_of_solves_unseen_pair_by_square_symmetry() {
@@ -113,7 +113,7 @@ fn sentence_of_solves_unseen_pair_by_square_symmetry() {
     }
 }
 
-/// A turn and the transpose take a non-square grid to its exchange, and a
+/// A turn and the transpose take a non-square sample to its exchange, and a
 /// shape the symmetry does not fit is no motion.
 #[test]
 fn symmetry_motion_exchanges_non_square_shape() {
@@ -207,11 +207,11 @@ fn judge_solve_refuses_dilated_motion_and_solves_plain() {
 
 /// THE I-DEFECT, reproduced and crossed: a rule EXTRACTED from a family of
 /// two pairs carries the frame-axis motor faces between its training
-/// frames; the client's own replay on the training pairs passes, and the
+/// frames; the client's own reconstruction on the training pairs passes, and the
 /// court, judging it on one withheld pair, refuses it with kind I — a
 /// training frame the withheld family does not hold. The word that crosses
 /// (`rule::crossing`) carries no overlap between two training frames, still
-/// replays on its training pairs, and is solved on the withheld pair.
+/// reconstructs on its training pairs, and is solved on the withheld pair.
 #[test]
 fn crossing_drops_training_frames_so_withheld_pair_solves() {
     crate::transducer::raster::stand_on(0);
@@ -247,10 +247,10 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
     assert_solved(&crossed, &withheld, "the crossed rule");
 }
 
-/// 78.158a U2 — UNREAD AT HOME IS UNJUDGED, NEVER REFUTED. A home replay's
+/// 78.158a U2 — UNREAD AT HOME IS UNJUDGED, NEVER REFUTED. A home reconstruction's
 /// `REFUSE_UNREAD` (a unit no stroke it ran on reads) is `NoRule::Unread`,
 /// told apart from every refusal of the judge's; the solve it stands for is
-/// the court's to rule, and the court's `judge_solve` — resuming its replay
+/// the court's to rule, and the court's `judge_solve` — resuming its reconstruction
 /// on its own strokes by its cursor — rules the same word.
 #[test]
 fn of_refusal_reads_unread_as_unjudged() {
@@ -276,7 +276,7 @@ fn of_refusal_reads_unread_as_unjudged() {
 /// that cites a word this mind stood in its dialect (no court admitted it)
 /// is CITES UNHELD at home, by the cited address — never a pass; once a
 /// court's stamp files the same word, the citation resolves and the home
-/// check goes on to the replay.
+/// check goes on to the reconstruction.
 #[test]
 fn would_judge_refuses_citation_no_court_admitted() {
     use crate::client::sdk::MindLanguage;

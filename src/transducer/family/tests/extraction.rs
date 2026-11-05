@@ -271,7 +271,7 @@ fn extract_rule_reads_translation_as_one_vertex() {
 
 /// 51.10 PROOF 2, 50.9 — THE SAME ADDRESS ON TWO COURTS. Two extractions
 /// of one family with no shared runtime memory — an extraction holds
-/// nothing after it returns — reach one form address, and a court replays
+/// nothing after it returns — reach one form address, and a court reconstructs
 /// each minted sentence on its own copy of the family.
 #[test]
 fn extract_rule_reaches_one_address_on_two_courts() {
@@ -291,7 +291,7 @@ fn extract_rule_reaches_one_address_on_two_courts() {
         assert_eq!(
             crate::verdict::reconstruct_blind_on(&word, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
             None,
-            "and a court replays it on its own copy of the family"
+            "and a court reconstructs it on its own copy of the family"
         );
     }
 }
@@ -449,7 +449,7 @@ let spoken = apply_form(
     &NoCrystal,
 )
 .expect("rebased speaks");
-assert!(spoken.unspoken.is_empty(), "both classes have a body on this grid");
+assert!(spoken.unspoken.is_empty(), "both classes have a body on this sample");
 assert_eq!(
     spoken.painted, reference.painted,
     "the rebased form speaks B's body with B's colours at B's placement"

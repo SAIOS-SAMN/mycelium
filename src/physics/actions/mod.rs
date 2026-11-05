@@ -86,7 +86,7 @@ pub enum Action {
     /// keys that settle for it, sealed under its own coordinate.
     Domain,
     /// 78.125 — A FOLD CHALLENGED within its window (2(c)): an availability
-    /// demand, the tier line's prefix put to replay, a default claimed, a
+    /// demand, the tier line's prefix put to reconstruction, a default claimed, a
     /// correction booking an arbitrage — sealed under its own coordinate.
     Challenge,
     /// 78.126 — MATTER OR A WORD CROSSING DOMAINS (2(b)): offered, accepted,

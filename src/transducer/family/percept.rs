@@ -131,7 +131,7 @@ fn read_frame_axis(claimed: &mut [&Quotient], budget: &mut crate::physics::Budge
 /// WHETHER A GAUGE REPRODUCES A FRAME'S OWN HUE MAP on its bodies: every hue
 /// the frame's input union holds is sent by `gauge` where the frame's map
 /// sends it (a hue a map does not name is fixed by it, `hue_of`). Exact, one
-/// read per compartment: what the court replays the member's frame by.
+/// read per compartment: what the court reconstructs the member's frame by.
 fn gauge_reproduces(gauge: &[(u8, u8)], q: &Quotient) -> bool {
     use crate::transducer::sentence::hue_of;
     q.a0.compartments.iter().all(|l| matches!((hue_of(gauge, l.hue), hue_of(&q.car.sigma, l.hue)), (Some(a), Some(b)) if a == b))
@@ -438,7 +438,7 @@ pub(super) fn family_percept(
             // least frame's map was the test; the gauge the member holds is
             // the merged one, or — where two claimed frames disagree — the
             // least frame's alone, and a frame that moved a hue that gauge
-            // leaves fixed was claimed under it: the court replays the frame
+            // leaves fixed was claimed under it: the court reconstructs the frame
             // and the compartment lands on the wrong hue (5 of 7 vertex-body
             // refusals across the courts, 2026-10-18). A frame whose map the
             // gauge does not reproduce is ANOTHER HUE SECTION, not claimed.

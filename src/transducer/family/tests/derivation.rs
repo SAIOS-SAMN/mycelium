@@ -164,7 +164,7 @@ fn factor_versor_reads_two_presentations_as_one_vertex() {
 
 /// Rule 6 on the memo, asserted where it belongs — on the OUTPUT, not on
 /// a key. The percept is memoised on sensor bytes and the derivation is
-/// re-run per mind, so the same two grids read by two minds give two
+/// re-run per mind, so the same two samples read by two minds give two
 /// derivations with no cache root anywhere in it. A memo that keyed the
 /// presentation would let a digest decide whether F re-derives.
 #[test]

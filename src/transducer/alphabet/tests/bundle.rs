@@ -146,7 +146,7 @@ fn by_base_groups_sections_of_one_base() {
 
 /// A WORD THE LANGUAGE ALREADY HOLDS AS A SECTION is redundant — and the
 /// answer carries the γ that shows it, because "redundant" without the
-/// transition is an assertion and with it is a re-derivation anyone replays.
+/// transition is an assertion and with it is a re-derivation anyone reconstructs.
 #[test]
 fn section_of_names_transition_of_conjugate() {
     let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);

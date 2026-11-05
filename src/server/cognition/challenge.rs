@@ -143,7 +143,7 @@ pub(crate) fn defect(rows: &[Net], declared: &[Net], children: &[ChildNet], own_
 
 impl Court {
     /// 78.125 — A CHALLENGE TAKEN: the filer's signature, the fold's record,
-    /// its window — then the demand, the replay, the default or the
+    /// its window — then the demand, the reconstruction, the default or the
     /// correction, each sealed by `Cite::Challenge`.
     pub fn challenge(&mut self, c: &SignedChallenge) -> Challenged {
         use ChallengeRefusal as R;
@@ -522,7 +522,7 @@ impl Court {
     /// 78.125 — THE WINDOWS SETTLED, at an orbit's close (the court's own
     /// cycle; never a height interval). What the court keeps of the ledger
     /// trees is bounded by what is still live:
-    /// - a streamed replay whose fold can take no more evidence leaves;
+    /// - a streamed reconstruction whose fold can take no more evidence leaves;
     /// - a record read FINAL is pruned to its stub (coordinates, upheld) —
     ///   a final fold is never reversed, so nothing else is read again;
     /// - a stub leaves once the fold has no value in flight and no recorded
@@ -677,7 +677,7 @@ impl Court {
                 return Finality::Final { upheld: *upheld };
             }
             // A fold sealed before the tier-line law has no record and no
-            // line to replay: grandfathered (as ruled).
+            // line to reconstruct: grandfathered (as ruled).
             return match FoldAt::from_key(key).and_then(|at| self.sealed_fold(&at)) {
                 Some(_) => Finality::PreLine,
                 None => Finality::Unrecorded,

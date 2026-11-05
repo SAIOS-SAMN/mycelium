@@ -36,7 +36,7 @@ fn why_answers_act_with_speaker_reasons() {
     let mut k = Court::new();
     k.bind_identity([1; 32]);
     k.bind_task_family(&task, fam);
-    // 78.153: a stroke that holds the frame's replays.
+    // 78.153: a stroke that holds the frame's reconstructions.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let heard = k.hear_speech([5; 32], task.as_bytes(), &[(s.clone(), None)], &stated, &mut frame).expect("heard");
     assert!(matches!(heard.as_slice(), [Adjudication::Stood { .. } | Adjudication::Ratified { .. }]), "{heard:?}");
@@ -82,7 +82,7 @@ fn why_answers_refusal_act_on_ledger() {
     let mut k = Court::new();
     k.bind_identity([2; 32]);
     k.bind_task_family(&task, court_fam);
-    // 78.153: a stroke that holds the frame's replays.
+    // 78.153: a stroke that holds the frame's reconstructions.
     let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let stated = [super::fixtures::speaker_ground(&voice_fam)];
     let heard = k.hear_speech([6; 32], task.as_bytes(), &[(s.clone(), None)], &stated, &mut frame).expect("heard");

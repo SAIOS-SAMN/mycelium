@@ -15,9 +15,9 @@
 //! width (track 26 S4b).
 //! [`encode_solve_with_rule`] writes the outputs, as samples
 //! ([`spoken_outputs`] places rasters), and the rule's tape, signed by the
-//! voice; the court replays the rule and answers a verdict
+//! voice; the court reconstructs the rule and answers a verdict
 //! ([`decode_solve_verdict`]) coded by the `SOLVE_*` constants. A verdict of
-//! [`SOLVE_UNREAD`] is a replay the court's stroke did not finish: the same
+//! [`SOLVE_UNREAD`] is a reconstruction the court's stroke did not finish: the same
 //! solve sent again resumes it.
 
 /// Ask for a task (`[ACT_TASK][voice 32]`), or for one task by its 32-byte
@@ -77,5 +77,5 @@ pub use mycelium::anastome::dialogue::SOLVE_AGAIN;
 /// Verdict code: not solved; final.
 pub use mycelium::anastome::dialogue::SOLVE_NOTHING;
 /// Verdict code: not judged yet; the same solve sent again resumes the
-/// replay.
+/// reconstruction.
 pub use mycelium::anastome::dialogue::SOLVE_UNREAD;

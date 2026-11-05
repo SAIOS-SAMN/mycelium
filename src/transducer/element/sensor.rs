@@ -5,14 +5,14 @@
 //! the site whose compartment holds it, a compartment's centre and a whole
 //! compartment carried by a versor, and a sibling's assignment pulled back
 //! onto a base's sites. A compartment (16.4) is the unit square standing on
-//! the grid axes at a site, with its centre carried at the site plus ½ on each grid axis and
+//! the raster axes at a site, with its centre carried at the site plus ½ on each raster axis and
 //! the site's own coordinate on every other axis.
 //!
 //! THIS IS THE BOUNDARY WHERE THE CORPUS'S COORDINATES BECOME SITES (71.2(1)).
-//! The grid reads three of them — row, column, frame — and they enter the
+//! The raster reads three of them — row, column, frame — and they enter the
 //! base here, as a [`Site`] carrying its `n`; above this file no tuple of
 //! coordinates is carried. The readers below take and return sites; the
-//! tuple forms are kept for the sensor's own callers that read a grid.
+//! tuple forms are kept for the sensor's own callers that read a raster.
 
 use num_bigint::BigInt;
 use super::*;
@@ -31,7 +31,7 @@ use crate::transducer::perspective::{family_role, Role};
 pub const BASE_N: u8 = crate::transducer::alphabet::ALPHABET_BASE_N as u8;
 
 /// A point of the base, `(r, c, k)` in ℚ³ (51.1): the corpus's three
-/// coordinates as the grid presents them.
+/// coordinates as the raster presents them.
 pub type Point = (num_rational::BigRational, num_rational::BigRational, num_rational::BigRational);
 
 /// THE CORPUS'S THREE COORDINATES AS A SITE: row, column, frame, read at the
@@ -42,7 +42,7 @@ impl From<(i64, i64, i64)> for Site {
     }
 }
 
-/// A COMPARTMENT AS THE GRID PRESENTS IT: row, column, frame and the hue it
+/// A COMPARTMENT AS THE RASTER PRESENTS IT: row, column, frame and the hue it
 /// carries, read at the sensor.
 impl From<(i64, i64, i64, u8)> for crate::transducer::blade::Compartment {
     fn from((r, c, k, hue): (i64, i64, i64, u8)) -> Self {

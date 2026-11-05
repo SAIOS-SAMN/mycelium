@@ -297,7 +297,7 @@ fn form_deflation_read_on_ground(
     // read off the rule's own motions — every word vertex's whole motion at
     // each member, admitted to the tubes (78.71, `transport_order`), its null
     // flux in quanta — once for each pair the form closed. Measured by whoever
-    // replays the form; never the span anything stood (78.149 (a)).
+    // reconstructs the form; never the span anything stood (78.149 (a)).
     // Weighed by the mass the closed pairs carried: a pair with nothing to
     // carry covers no ground, whatever the rule would move.
     if closed_count > 0 {
@@ -345,8 +345,8 @@ fn form_motions(form: &Form) -> Vec<(crate::transducer::cga::Mv, Vec<(u8, u8)>)>
 /// stroke.
 ///
 /// A projection is taken here because this reader compares a speech with
-/// the observed grid, which is where a grid is written. Where the identity
-/// lays down no grid — a boundary turn of the input lands inside an
+/// the observed sample, which is where a sample is written. Where the identity
+/// lays down no sample — a boundary turn of the input lands inside an
 /// output compartment (`OffSite`), the input has no enclosure, or the
 /// stroke ends first — the residue is read against what it said: nothing,
 /// as for any speech that does not fit its frame. The record is drawn
@@ -428,7 +428,7 @@ fn pair_measure_read(
 ) -> Result<PairMeasure, crate::transducer::family::transduce::Unground> {
     // The identity's residue and the form's, both on the output's sites.
     let before_chain = before_chain_of(x, y)?;
-    // A speech that does not fit its own frame lays down no grid, so the
+    // A speech that does not fit its own frame lays down no sample, so the
     // residue is measured against what the form actually said: nothing.
     let grid = spoken.and_then(|s| s.sample());
     let after_chain = residue_of(grid.as_ref(), y)?;
@@ -446,7 +446,7 @@ fn pair_measure_read(
     })
 }
 
-/// 78.153 — ONE PAIR OF THE DEFLATION ON A STROKE: what the court's replay
+/// 78.153 — ONE PAIR OF THE DEFLATION ON A STROKE: what the court's reconstruction
 /// reads of pair `pi` (its remainder, and the citations unresolved or
 /// cycled there), or `Spent` where the stroke ran out inside the speech.
 /// One read for the pair, and one per cited form its speech speaks afresh
@@ -685,7 +685,7 @@ pub fn declare_unspoken(
             })
             .map(|l| {
                 // The hue the input's speech holds at the site. Where it
-                // lays down no grid there is none, and absence is the
+                // lays down no sample there is none, and absence is the
                 // scene's ground in this encoding — `residue_of`'s own
                 // reading, not a floor. A scope with no one ground has no
                 // symbol for that absence, and nothing is declared.
@@ -845,7 +845,7 @@ pub fn bundle_pressure(
     for (pi, (x, y)) in bundle.iter().enumerate() {
         let spoken = apply_form_on(form, x, &crate::transducer::alphabet::Word::identity(), crystal, Some(pi));
 
-        // A speech that does not fit its own frame lays down no grid, so the
+        // A speech that does not fit its own frame lays down no sample, so the
         // residue is measured against what the form actually said: nothing.
         let grid = spoken.as_ref().and_then(|s| s.sample());
         // A residue with no one ground to write it on leaves no pressure

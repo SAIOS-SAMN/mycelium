@@ -13,7 +13,7 @@ fn key(b: u8) -> ed25519_dalek::SigningKey {
     ed25519_dalek::SigningKey::from_bytes(&[b; 32])
 }
 
-/// A rule element for `pay_solve` to settle (the replay that measured its
+/// A rule element for `pay_solve` to settle (the reconstruction that measured its
 /// discharge is the caller's).
 fn a_rule() -> crate::transducer::element::Element {
     let family: Vec<TrainPair> = vec![(digits(&["1100200"]), digits(&["0011002"]))];

@@ -181,7 +181,7 @@ pub struct Mind {
     pub(crate) speaking: crate::network::nerve::Keyed<()>,
     /// 78.153 — THE SOLVES THE COURT HAS NOT JUDGED YET (`SOLVE_UNREAD`), by
     /// task: the rule and the outputs, asked again each stroke until the
-    /// court rules, its replay resuming where its stroke ran out. Without it
+    /// court rules, its reconstruction resuming where its stroke ran out. Without it
     /// the task arm moved to the next task and the solve was never asked
     /// again: 38 of 41 verdicts on the development deployment were "unread" (2026-10-10).
     /// MU-CLIENT §4.13 — one per task, released by the court's verdict:

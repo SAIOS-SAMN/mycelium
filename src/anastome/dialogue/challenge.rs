@@ -7,7 +7,7 @@
 //! - DEMAND (availability): a challenger asks the tier to publish the prefix
 //!   its fold nets. The tier has `W` heights from the demand; unanswered,
 //!   the fold is falsified by default.
-//! - EVIDENCE (replay): the prefix itself — the tier line's entries from the
+//! - EVIDENCE (reconstruction): the prefix itself — the tier line's entries from the
 //!   tier's previous admitted fold to this one's prefix head — with the
 //!   fold's own rows, declared and children, put to the court by anyone. The
 //!   court checks the entries chain to the cited head and the fold to its
@@ -18,7 +18,7 @@
 //! - CORRECTION: the tier whose fold closed an arbitrage cycle books the
 //!   gain, naming its holder and amount on G, within its fold's window.
 //!
-//! A TIER LINE (canonical, so replay is possible): entries `{rows,
+//! A TIER LINE (canonical, so reconstruction is possible): entries `{rows,
 //! declared}`, `head₀` the zero hash, `headₙ = H("mycelium tier line v1" ‖
 //! headₙ₋₁ ‖ entry)`.
 //!
@@ -461,7 +461,7 @@ pub enum Challenged {
     /// opened closes: `deadline`, the height it closed at, where it has
     /// (law version 5: a sealed reach and return of every other keeper).
     Demanded { at: Stamp, receipt: [u8; 32], deadline: Option<u64> },
-    /// The replay upheld the fold; the line's head it reached — the
+    /// The reconstruction upheld the fold; the line's head it reached — the
     /// prefix's content address, the chain of every entry — sealed.
     Upheld { at: Stamp, receipt: [u8; 32], prefix: [u8; 32] },
     /// A streamed publication taken so far, nothing sealed: its line stands
@@ -470,7 +470,7 @@ pub enum Challenged {
     /// A self-demand withdrawn, sealed: the evidence window reopened at the
     /// withdrawal, closing at `closes` where it has closed.
     Reopened { at: Stamp, receipt: [u8; 32], closes: Option<u64> },
-    /// The fold falsified — by replay or by default — and reversed, with
+    /// The fold falsified — by reconstruction or by default — and reversed, with
     /// `unwound` ancestors that netted it returned to provisional.
     Falsified { at: Stamp, receipt: [u8; 32], unwound: u32 },
     /// The arbitrage booked: the obstruction discharged.
@@ -482,7 +482,7 @@ pub enum Challenged {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Finality {
     /// Its window passed with nothing open, and every fold it nets is final:
-    /// `upheld` where its prefix was replayed and upheld, else unchallenged.
+    /// `upheld` where its prefix was reconstructed and upheld, else unchallenged.
     Final { upheld: bool },
     /// Its window, or a demand's, opened at `opened` and is not yet passed:
     /// `closed` the height it closes at where its close is sealed (law
@@ -491,13 +491,13 @@ pub enum Finality {
     /// Its time passed, but an obstruction, a fold it nets, or an unclaimed
     /// default keeps it open.
     Blocked,
-    /// Falsified by replay or default, and reversed.
+    /// Falsified by reconstruction or default, and reversed.
     Falsified,
     /// A fold it netted was reversed: it must refile.
     Unwound,
     /// No record of it on this court's ledger trees.
     Unrecorded,
-    /// Sealed before the tier-line law (78.125): no line to replay, so
+    /// Sealed before the tier-line law (78.125): no line to reconstruct, so
     /// GRANDFATHERED — final, unchallenged, pre-line; demands refused.
     PreLine,
 }

@@ -2,7 +2,7 @@ use super::perceive::SectionSample;
 
 /// ONE TRAIN PAIR — the scene a rule is shown and the scene it must speak
 /// (38). Each is a sample on the alphabet's section (track 26 S4d); the
-/// pair is what a rule is extracted from and replayed against.
+/// pair is what a rule is extracted from and reconstructed against.
 pub type TrainPair = (SectionSample, SectionSample);
 
 /// THE FAMILY a rule is extracted from: every train pair of one task. A

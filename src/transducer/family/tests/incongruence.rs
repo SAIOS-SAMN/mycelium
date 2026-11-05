@@ -1,7 +1,7 @@
 // 78.79 — THE INTERPRETER FOR INCONGRUENCE (`family/incongruence.rs`): a change
 // read by its constructors — shared, accreted, extinguished, recoloured — its
 // accretion read as light and its extinction as carving; readings held
-// together as a manifold, contrasted, and its core judged by replay.
+// together as a manifold, contrasted, and its core judged by reconstruction.
 
 use crate::transducer::family::incongruence::{contrast, decided, difference, manifold, moments, recolours_to, relative, reproduces};
 use crate::transducer::sentence::tests::fixtures::painted;
@@ -26,7 +26,7 @@ fn difference_reads_constructors_and_light() {
 
 /// THE MANIFOLD HOLDS ITS READINGS AND IS JUDGED BY THE PLANE. Two bodies,
 /// each growing one cell to its right: the bodies' relative differences are one,
-/// the core is that cell, nothing is an edge, and the core replayed on each
+/// the core is that cell, nothing is an edge, and the core reconstructed on each
 /// input reproduces its output. A third reading growing left instead narrows
 /// the core and sharpens an edge — the contrast held, not dissolved.
 #[test]
@@ -60,7 +60,7 @@ fn manifold_keeps_readings_core_judged_by_reconstruction() {
 /// boundary. A lone compartment's density is refused. Recolours decided by
 /// volume: two bodies of mass 3 go to hue 2, one of mass 1 to hue 5 — leave
 /// one out, the second mass-3 reading is predicted by the first and the
-/// replay reproduces it; the lone mass-1 reading has no other to decide by.
+/// reconstruction reproduces it; the lone mass-1 reading has no other to decide by.
 #[test]
 fn moments_reads_density_and_decided_reconstructs() {
     let bar = painted(&[(0, 0, 1), (0, 1, 1), (0, 2, 1)]);

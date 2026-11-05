@@ -321,7 +321,7 @@ pub(crate) fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
         Vertex::Frame => buf.push(0),
         // 1.5: the key is the COMPOSED product's canonical rotor, so two
         // minds whose derivations differ reach one address. The citations
-        // are content the court replays (50.2 step 2) and are not keyed.
+        // are content the court reconstructs (50.2 step 2) and are not keyed.
         Vertex::Word { derivation, acts, contact, .. } => {
             buf.push(1);
             put_word_vertex(buf, derivation, acts, *contact, true);

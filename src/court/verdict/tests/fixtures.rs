@@ -1,5 +1,5 @@
 // Fixture constructors for the verdict's tests (MU-STANDARDS 3.3): a clean
-// word, the stalks it indexes into, and the resolver a replay reads through.
+// word, the stalks it indexes into, and the resolver a reconstruction reads through.
 
 use crate::transducer::element::{from_canonical, Element};
 use crate::transducer::germinate::germinate;

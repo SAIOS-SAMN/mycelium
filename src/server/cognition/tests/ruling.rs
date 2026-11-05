@@ -216,8 +216,8 @@ fn file_admitted_keeps_court_stamp() {
     assert_eq!(c.admitted_at(stranger.as_bytes()), Some(peer));
 }
 
-/// ONE READER OF THE WORDS A COURT REPLAYS AGAINST (3.8, ch. 8): a cavity
-/// address resolves for replay and is never taught. The citation check
+/// ONE READER OF THE WORDS A COURT RECONSTRUCTS AGAINST (3.8, ch. 8): a cavity
+/// address resolves for reconstruction and is never taught. The citation check
 /// (`resolve_form`) admitted the cavity while the speech's crystal
 /// (`by_address`) read the basis alone, so a sentence citing a cavity word
 /// passed the check and spoke nothing at the citation. The two are one

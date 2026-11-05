@@ -122,7 +122,7 @@ pub(crate) fn relate_sections(first: &Piece, second: &Piece, budget: &mut crate:
 }
 
 /// THE CENTROID OF SITES IN VERTEX COORDINATES, as a conformal point: each
-/// axis's mean, and one half on each grid axis (a compartment's square spans
+/// axis's mean, and one half on each plane axis (a compartment's square spans
 /// it; a frame coordinate is the offset alone) — `carry::vertex_centroid`'s
 /// reading of a lifted body, read off the sites themselves. `None` for no
 /// sites or sites of two bases.
