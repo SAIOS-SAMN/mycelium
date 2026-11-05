@@ -27,6 +27,19 @@ such change is named here.
   `About::Body`. The clause and element codecs keep their bytes (a
   carriage's `about` 0, an echo's tag 9), so no clause or word address
   moves.
+- **The section's planar names renamed by function** (SDK surface):
+  `mycelium_sdk::task::TaskRasters` is `TaskSection`;
+  `TaskEnvelope::of_rasters` and `PostedTask::of_rasters` are
+  `of_section`; `mycelium_sdk::rule::Step::grid_motion` is
+  `Step::symmetry_motion`; `seat_mind::task::grid_steps` is
+  `symmetry_steps`; `family::grid_of_painted` is `sample_of_painted`;
+  `painted_within_grid` is `painted_within_sample`. Tests renamed with
+  their units: `symmetry_motion_carries_every_site_to_index_image`,
+  `symmetry_motion_exchanges_non_square_shape`,
+  `symmetry_steps_reads_task_before_seat`.
+- **Open:** the frame acts' planar fields (`Act::Panes`'s `along_rows`,
+  `Act::Tile`'s `rows` and `cols`), `statement::Spoken.frame`, and test
+  names and comments that still say "grid".
 
 ### The chart's pairs, the anchor and the clause tables held as section sites (track 26 S4d, stage 2c)
 - **Network contract:** no wire byte, act, encoding or ledger layout

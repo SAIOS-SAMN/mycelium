@@ -1931,6 +1931,19 @@ Each phase is one commit:
         `coord_round_trips_and_reads_its_planar_byte_by_role`.
       - **Built:** `About::Grid` is `About::Sample`, a motion read about
         the sample's own frame; the codecs keep their bytes.
+      - **Built:** the section's planar names by function:
+        `dialogue::TaskRasters` is `TaskSection`,
+        `TaskEnvelope::of_rasters` and `PostedTask::of_rasters` are
+        `of_section`, `family::grid_of_painted` is `sample_of_painted`,
+        `painted_within_grid` is `painted_within_sample`, the SDK's
+        `Step::grid_motion` is `Step::symmetry_motion` and
+        `seat_mind::task::grid_steps` is `symmetry_steps`.
+      - **Open:** the frame acts' planar fields (`Act::Panes`'s
+        `along_rows`, `Act::Tile`'s `rows` and `cols`, which name the
+        lattice of blocks), the statement's output frame
+        (`Spoken.frame`, a pair of counts), the remaining test names and
+        comments that say "grid", and the measured `Frame` (MU-SENSING §8,
+        a defect).
     - **Decided from existing rulings** (Law VIII; MU-SENSING §5): the
       letters never spell a rank-3 sample plane by plane, since planes
       are peeled, never iterated. A rank-3 task stays `BeyondAlphabet`

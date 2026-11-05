@@ -490,7 +490,7 @@ fn price_hearings_defers_while_task_waits() {
     field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     let train = crate::transducer::spelled::pairs_of(vec![(vec![vec![1u8, 0], vec![0, 0]], vec![vec![0u8, 1], vec![0, 0]])]);
     let offer = Offer::of(&train);
-    mind.board.court.task = Some((crate::anastome::dialogue::TaskRasters { id: [2; 32], train, tests: Vec::new() }, offer));
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [2; 32], train, tests: Vec::new() }, offer));
     assert_eq!(mind.price_hearings(), 0, "a task on the board: no hearing priced");
     assert!(mind.board.hearings_wait && mind.owes_strokes(), "the hearing waits, and strokes are owed");
     mind.board.court.task = None;

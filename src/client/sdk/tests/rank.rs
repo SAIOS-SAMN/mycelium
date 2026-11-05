@@ -16,7 +16,7 @@ fn sample(extents: &[usize], digits: &str) -> Sample {
 
 /// A mind that has perceived `env`, and the section it offered the word
 /// path.
-fn perceived(env: &TaskEnvelope) -> (Option<crate::anastome::dialogue::TaskRasters>, Mind) {
+fn perceived(env: &TaskEnvelope) -> (Option<crate::anastome::dialogue::TaskSection>, Mind) {
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("perceiving at rank n"));
     let section = mind.perceive_envelope(env, SceneKind::Task);
     (section, mind)

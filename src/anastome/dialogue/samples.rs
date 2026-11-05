@@ -300,7 +300,7 @@ pub struct TaskEnvelope {
 /// A TASK ENVELOPE ON THE ALPHABET'S SECTION (MU-SENSING §2): the
 /// envelope's samples as the section's carrier the word machinery spells.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TaskRasters {
+pub struct TaskSection {
     pub id: [u8; 32],
     pub train: Vec<TrainPair>,
     pub tests: Vec<SectionSample>,
@@ -310,7 +310,7 @@ impl TaskEnvelope {
     /// THE ENVELOPE OF A TASK HELD ON THE SECTION: its train pairs and test
     /// inputs, each a sample at its position. The registry serves posted
     /// samples (`PostedTask::envelope`).
-    pub fn of_rasters(id: [u8; 32], train: &[TrainPair], tests: &[SectionSample]) -> Result<TaskEnvelope, SampleWire> {
+    pub fn of_section(id: [u8; 32], train: &[TrainPair], tests: &[SectionSample]) -> Result<TaskEnvelope, SampleWire> {
         let mut pairs = Vec::with_capacity(train.len());
         for (i, (x, y)) in train.iter().enumerate() {
             pairs.push((placed(x, Split::Train, i, Member::Input)?, placed(y, Split::Train, i, Member::Output)?));
@@ -321,10 +321,10 @@ impl TaskEnvelope {
 
     /// THE ENVELOPE ON THE ALPHABET'S SECTION, or the refusal naming the
     /// first sample off it ([`section_of`]).
-    pub fn section(&self) -> Result<TaskRasters, SectionRefusal> {
+    pub fn section(&self) -> Result<TaskSection, SectionRefusal> {
         let train = self.train.iter().map(|(x, y)| Ok((section_of(x)?, section_of(y)?))).collect::<Result<_, SectionRefusal>>()?;
         let tests = self.tests.iter().map(section_of).collect::<Result<_, SectionRefusal>>()?;
-        Ok(TaskRasters { id: self.id, train, tests })
+        Ok(TaskSection { id: self.id, train, tests })
     }
 }
 
@@ -340,7 +340,7 @@ pub struct PostedTask {
 impl PostedTask {
     /// A section task's samples, each at its position; an absent test
     /// output stays absent.
-    pub fn of_rasters(task: &Task) -> Result<PostedTask, SampleWire> {
+    pub fn of_section(task: &Task) -> Result<PostedTask, SampleWire> {
         let mut train = Vec::with_capacity(task.train.len());
         for (i, (x, y)) in task.train.iter().enumerate() {
             train.push((placed(x, Split::Train, i, Member::Input)?, placed(y, Split::Train, i, Member::Output)?));

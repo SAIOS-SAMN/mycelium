@@ -19,7 +19,7 @@ pub type Compartment = crate::transducer::blade::Compartment;
 /// candidates. The symbol the unpainted sites hold is the caller's, named:
 /// never a ground this reader defaults to. `None` where the box's sites
 /// pass the machine word.
-pub fn grid_of_painted(painted: &[PaintedSite], void: u8) -> Option<SectionSample> {
+pub fn sample_of_painted(painted: &[PaintedSite], void: u8) -> Option<SectionSample> {
     // The span is read over every site, so no member is chosen here; no
     // site at all is the one-site canvas.
     let Some((corner, extents)) = SectionSite::span_of(painted.iter().map(|p| p.site)) else {
@@ -770,10 +770,10 @@ pub(crate) fn frame_of(g: &SectionSample) -> (usize, usize) {
     (lines, width)
 }
 
-/// Does everything a form spoke lie inside the grid it was spoken against?
-/// The test extraction's step 3 decides a glue by, and the same test a
-/// voice answers a demand by (L8q), so the two organs read one thing.
-pub fn painted_within_grid(painted: &[PaintedSite], g: &SectionSample) -> bool {
+/// Does everything a form spoke lie inside the sample it was spoken
+/// against? The test extraction's step 3 decides a glue by, and the same
+/// test a voice answers a demand by (L8q), so the two organs read one thing.
+pub fn painted_within_sample(painted: &[PaintedSite], g: &SectionSample) -> bool {
     // A site off the sample carries no symbol, so it lies outside.
     painted.iter().all(|p| g.at(p.site) == Some(p.symbol))
 }

@@ -178,7 +178,7 @@ impl Step {
     /// symmetry: a turn by 90° or 270° and the transpose take `R × C` to
     /// `C × R`; the 180° turn and the mirrors keep `R × C`. Public for a
     /// client stating its programs through [`sentence`] (2026-10-22).
-    pub fn grid_motion(kind: Symmetry, in_shape: (usize, usize), out_shape: (usize, usize)) -> Option<Step> {
+    pub fn symmetry_motion(kind: Symmetry, in_shape: (usize, usize), out_shape: (usize, usize)) -> Option<Step> {
         let fits = match kind.exchanges() {
             true => out_shape == (in_shape.1, in_shape.0),
             false => out_shape == in_shape,

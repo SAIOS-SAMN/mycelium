@@ -13,7 +13,7 @@
 //! states no clause and holds one word vertex whose members all carry one
 //! hue map: each member's motion is the word's rotor acting through its
 //! carriage (`element::conformal_of_rotor`), and that motion is the D4 kind
-//! whose `Step::grid_motion` on the train pair's shapes it EQUALS as an
+//! whose `Step::symmetry_motion` on the train pair's shapes it EQUALS as an
 //! action on the grid's plane (`same_action`, exact), tried in the house's
 //! order: 1 Rotate90, 2 Rotate180, 3 Rotate270, 4 FlipH, 5 FlipV, 6
 //! Transpose. A motion that is no D4 kind is not pure. Each hue move `from →
@@ -104,7 +104,7 @@ pub fn hue_step(from: u8, to: u8) -> u64 {
 }
 
 /// THE STEPS A PURE RULE IS, on a pair of these shapes (the module's rule).
-pub fn grid_steps(rule: &Element, in_shape: (usize, usize), out_shape: (usize, usize)) -> Result<Vec<u64>, NotSteps> {
+pub fn symmetry_steps(rule: &Element, in_shape: (usize, usize), out_shape: (usize, usize)) -> Result<Vec<u64>, NotSteps> {
     let held = element::Held::of(rule.clone());
     let form = held.form().ok_or(NotSteps::NotASentence)?;
     if !form.elements.is_empty() {
@@ -132,7 +132,7 @@ pub fn grid_steps(rule: &Element, in_shape: (usize, usize), out_shape: (usize, u
     if !motions.iter().all(|v| same_action(v, &identity)) {
         let kind = D4
             .iter()
-            .position(|k| match Step::grid_motion(*k, in_shape, out_shape) {
+            .position(|k| match Step::symmetry_motion(*k, in_shape, out_shape) {
                 Some(Step::Motion(c)) => motions.iter().all(|v| same_action(v, &c)),
                 _ => false,
             })

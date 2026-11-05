@@ -98,7 +98,7 @@ fn posted_task_round_trips_exact_samples() {
 
 /// TRACK 26 S4d, stage 2b — A PAINTED SITE IS A SITE OF THE SECTION AND ITS
 /// SYMBOL: a sample's painted sites, laid back on their span
-/// (`SectionSite::span_of`, `grid_of_painted`) at the scene's ground, are the
+/// (`SectionSite::span_of`, `sample_of_painted`) at the scene's ground, are the
 /// sample's painted part read from the span's least corner; sites order by
 /// the site, then the symbol; and no site has no span.
 #[test]
@@ -109,7 +109,7 @@ fn painted_sites_round_trip_through_their_span() {
     assert!(painted.windows(2).all(|w| w[0] < w[1]), "canonical address order is the sites' order");
     let span = SectionSite::span_of(painted.iter().map(|p| p.site));
     assert_eq!(span, Some((SectionSite::on_plane([1, 1]), [2, 2])), "the least corner and the extents from it");
-    let laid = crate::transducer::family::grid_of_painted(&painted, 0).expect("a scene on the ground");
+    let laid = crate::transducer::family::sample_of_painted(&painted, 0).expect("a scene on the ground");
     assert_eq!(laid, vec![vec![7, 8], vec![9, 0]], "the painted part, read from the corner");
     assert_eq!(SectionSite::span_of(std::iter::empty()), None, "no site, no span");
 }

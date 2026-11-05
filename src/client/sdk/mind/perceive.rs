@@ -813,7 +813,7 @@ impl Mind {
     /// (`speak_factorisations`; track 26 S4c). A family the transduction
     /// refuses (samples of two ranks, a stroke spent) holds no percept and
     /// is still offered to the section.
-    pub(crate) fn perceive_envelope(&mut self, env: &crate::anastome::dialogue::TaskEnvelope, reading: SceneKind) -> Option<crate::anastome::dialogue::TaskRasters> {
+    pub(crate) fn perceive_envelope(&mut self, env: &crate::anastome::dialogue::TaskEnvelope, reading: SceneKind) -> Option<crate::anastome::dialogue::TaskSection> {
         use crate::transducer::family::transduce::{factorisations_need, TaskPercept};
         // The stroke is the work's need (D2.5 O1): one read per motion of
         // each pair, at the samples' own rank.
@@ -919,7 +919,7 @@ impl Mind {
         }
         let Ok(id) = <[u8; 32]>::try_from(scene.id.as_slice()) else { return };
         let root = self.scene_language(&scene.train);
-        let envelope = crate::anastome::dialogue::TaskRasters { id, train: scene.train, tests: scene.tests };
+        let envelope = crate::anastome::dialogue::TaskSection { id, train: scene.train, tests: scene.tests };
         self.comprehending.insert(id, (envelope, root));
     }
 

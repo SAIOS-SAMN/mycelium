@@ -81,7 +81,7 @@ fn citation_names_task_past_u16_wall() {
 fn task_envelope_refuses_trailing_bytes_and_deferral() {
     let cite = [3u8; 32];
     let tests = vec![toy().test[0].0.clone()];
-    let sent = TaskEnvelope::of_rasters(cite, &toy().train, &tests).expect("samples");
+    let sent = TaskEnvelope::of_section(cite, &toy().train, &tests).expect("samples");
     let mut longer = encode_task_envelope(&cite, &sent.train, &sent.tests).expect("writes");
     longer.push(0);
     assert!(decode_task_envelope(&longer).is_none(), "a byte left over is no envelope");

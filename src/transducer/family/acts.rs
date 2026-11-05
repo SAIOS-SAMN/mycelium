@@ -390,7 +390,7 @@ fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::I
 /// WHETHER A CLAUSE AGREES WITH A PAIR'S EFFECT: spoken alone on the input,
 /// every cell it changes is the output's there.
 fn agrees(clause: &Clause, p: &Pair<'_>) -> bool {
-    let Some(said) = statement::speak_clauses(std::slice::from_ref(clause), p.x, &p.bodies).ok().as_ref().and_then(grid_of) else { return false };
+    let Some(said) = statement::speak_clauses(std::slice::from_ref(clause), p.x, &p.bodies).ok().as_ref().and_then(canvas_of) else { return false };
     if frame_of(&said) != frame_of(p.y) {
         return false;
     }
@@ -401,7 +401,7 @@ fn agrees(clause: &Clause, p: &Pair<'_>) -> bool {
 /// The spoken clauses laid on the clauses' frame, an unpainted site on the
 /// scene's one ground; `None` where such a site is left and the scope reads
 /// none.
-fn grid_of(s: &statement::Spoken) -> Option<SectionSample> {
+fn canvas_of(s: &statement::Spoken) -> Option<SectionSample> {
     // An unpainted site holds the scene's one ground; with none, every site
     // must be painted, and the canvas's opening symbol is overwritten at
     // every site before it is read.
@@ -435,7 +435,7 @@ impl PredicateTable<'_, '_> {
             if !self.budget.spend() {
                 return Err(Unread::Spent);
             }
-            match statement::speak_clauses(clauses, p.x, &p.bodies).ok().as_ref().and_then(grid_of) {
+            match statement::speak_clauses(clauses, p.x, &p.bodies).ok().as_ref().and_then(canvas_of) {
                 Some(g) => out.push(g),
                 None => return Ok(None),
             }

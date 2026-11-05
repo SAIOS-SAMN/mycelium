@@ -61,7 +61,7 @@ use mycelium_sdk::task::Sample as _;
 use mycelium_sdk::task::SampleRefusal as _;
 use mycelium_sdk::task::SampleWire as _;
 use mycelium_sdk::task::Split as _;
-use mycelium_sdk::task::TaskRasters as _;
+use mycelium_sdk::task::TaskSection as _;
 use mycelium_sdk::task::encode_solve_with_rule as _;
 use mycelium_sdk::task::encode_task_by_citation as _;
 use mycelium_sdk::task::encode_task_request as _;

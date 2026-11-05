@@ -100,7 +100,7 @@ fn task_inflow_takes_offer_in_restored_language() {
     let cell = Offer::of(&one_cell_steps());
     assert!(mind.couples(&[7; 32], &cell.charts), "an offer on a chart its language speaks on couples");
     assert!(!mind.couples(&[8; 32], &Offer::of(&two_hours_of_a_slide()).charts), "one on charts it does not speak on couples to nothing");
-    mind.board.court.task = Some((crate::anastome::dialogue::TaskRasters { id: [7; 32], train: one_cell_steps(), tests: Vec::new() }, cell));
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [7; 32], train: one_cell_steps(), tests: Vec::new() }, cell));
     let mut outcome = crate::physics::StrokeOutcome::default();
     let mut field = std::mem::take(&mut mind.field);
     field.think(|| mind.task_inflow(&mut outcome));
@@ -311,7 +311,7 @@ fn task_inflow_leaves_uncoupled_task_to_lapse() {
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("passing"));
     let train = one_cell_steps();
     let offer = Offer::of(&train);
-    mind.board.court.task = Some((crate::anastome::dialogue::TaskRasters { id: [7; 32], train, tests: Vec::new() }, offer));
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [7; 32], train, tests: Vec::new() }, offer));
     let mut outcome = crate::physics::StrokeOutcome::default();
     mind.task_inflow(&mut outcome);
     assert!(mind.board.court.task.is_some() && !mind.perceiving(), "uncoupled: left where it landed, nothing perceived");
@@ -358,7 +358,7 @@ fn lapses_at_the_next_final(mind: &mut Mind) {
     let id = [6u8; 32];
     let train = one_cell_steps();
     let offer = Offer { landed: Some(10), ..Offer::of(&train) };
-    mind.board.court.task = Some((crate::anastome::dialogue::TaskRasters { id, train, tests: Vec::new() }, offer));
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id, train, tests: Vec::new() }, offer));
     mind.note_task(&id, SceneKind::Task, |_| {});
     // A final heard on the hypha's carrier, read back off its view once the
     // carrier has published it.
@@ -413,7 +413,7 @@ fn pull_task_asks_only_on_empty_corpus() {
     let mut offered = Mind::open("127.0.0.1:1", Voice::named("offered"));
     let train = one_cell_steps();
     let offer = Offer::of(&train);
-    offered.board.court.task = Some((crate::anastome::dialogue::TaskRasters { id: [3; 32], train, tests: Vec::new() }, offer));
+    offered.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [3; 32], train, tests: Vec::new() }, offer));
     let mut field = std::mem::take(&mut offered.field);
     field.think(|| offered.pull_task());
     offered.field = field;
@@ -428,6 +428,6 @@ fn owes_strokes_is_true_only_with_task_on_board() {
     assert!(!mind.owes_strokes(), "nothing held: quiescent");
     let train = one_cell_steps();
     let offer = Offer::of(&train);
-    mind.board.court.task = Some((crate::anastome::dialogue::TaskRasters { id: [4; 32], train, tests: Vec::new() }, offer));
+    mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [4; 32], train, tests: Vec::new() }, offer));
     assert!(mind.owes_strokes(), "a task waiting: owed strokes");
 }

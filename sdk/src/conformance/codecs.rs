@@ -65,7 +65,7 @@ fn deep(member: d::samples::Member) -> Result<mycelium::transducer::sample::Samp
 
 fn task() -> Result<String, String> {
     same("the task request", d::decode_task_request(&d::encode_task_request(&voice())), voice())?;
-    let sent = d::TaskEnvelope::of_rasters(CITATION, &train()?, &tests()?).map_err(|e| format!("the rasters are no samples: {e:?}"))?;
+    let sent = d::TaskEnvelope::of_section(CITATION, &train()?, &tests()?).map_err(|e| format!("the section samples are no samples at their places: {e:?}"))?;
     let bytes = d::encode_task_envelope(&CITATION, &sent.train, &sent.tests).map_err(|e| format!("the envelope does not encode: {e:?}"))?;
     let envelope = d::decode_task_envelope(&bytes).ok_or("the envelope did not decode")?;
     same("the envelope's citation", Some(envelope.id), CITATION)?;
