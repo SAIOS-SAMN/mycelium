@@ -56,6 +56,7 @@ lawful at one site and a defect at another.
 | A reading used outside its scope: identity (an address) computed from a ground, a symbol's meaning or a frame fixing; a perspective applied before addressing | Identity from the posted samples' content alone (hypha); the ground and meanings deduced in the mind (client); perspectives taken after intake (sensor) | MU-SENSING §6.1 |
 | Code written for one data source (a module or type named for a dataset, a fixed palette, a ground of `0`, two axes or three coordinates fixed, a fixed cell size) | A generic sensor over samples of any rank: symbols compared by equality, the ground, the periods and every gauge deduced, perspective as a sensor motion; a source contributes only a decoder kept outside `src/` | MU-SENSING; MU-RECURSION 71 |
 | A constant chosen for a governing quantity | A live reading derived from the state, or an entry in the open-physics register | MU-DERIVATIONS; `gate/src/numbers.rs` |
+| Meaning in the transport (a lane byte, a rank, a coordinate or a carrier type in the envelope) | The transport moves bytes (a length, a channel, deferral); carriers stand in the utterance at full dimension, at coordinates that route and never identify | [MU-ENGINEERING §9](docs/MU-ENGINEERING.md#9-transport-carrier-and-coordinate); `gate/src/layers.rs` |
 | A network of routes, a tree or a graph of crossings | Events with past and future cones on the TUniversal ledger; the universal core tube is the vertex | MU-HOSTING §5a.5 |
 
 ## Before writing
