@@ -32,12 +32,13 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context
         // MU-PRECURSORS §4 P5 — the client conformance statement this tree
         // publishes, the same object the SDK holds.
         LawsRequest::Statement => mycelium::anastome::dialogue::conformance::encode_statement_reply(),
-        // Concordance §0 — the agreement's hash, and a kernel's signature over
-        // it verified: accepted or refused by name, recorded nowhere and
-        // required of no kernel in this release.
-        LawsRequest::Concordance => mycelium::physics::laws::codec::encode_concordance_reply(),
+        // Concordance §0 — the clause register, and a kernel's signing act
+        // admitted only on its reconstruction of each clause's fixtures:
+        // admitted or refused by name (`NotSignatory` naming the clause and
+        // the fixture), recorded nowhere yet.
+        LawsRequest::Concordance => mycelium::physics::laws::codec::encode_concordance_reply(&mycelium::physics::laws::clauses::register()),
         LawsRequest::Signature(b) => {
-            mycelium::physics::laws::codec::encode_signature_reply(mycelium::physics::laws::concordance::verify_concordance_bytes(&b))
+            mycelium::physics::laws::codec::encode_signature_reply(&mycelium::physics::laws::clauses::admit_bytes(&b))
         }
         LawsRequest::Verify(t) => {
             // 78.116 — under the stroke the motion's modes need, never the

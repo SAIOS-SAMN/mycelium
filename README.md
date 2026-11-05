@@ -956,7 +956,8 @@ while the network is a prototype ([`docs/release-keys/`](docs/release-keys/)).
 | `mind` | The reference mind, `Mind::open` and `Mind::open_persistent` |
 | `wire` | `WIRE_VERSION` (`0x0200`, wire v2.0: every μ field four exact rational lanes) and `ACT_TABLE`, every act the SDK may send |
 | `laws` | The L0 law register (`Law`, `LAWS`, `LAW_VERSION` 5, `PARAMETERS`), its read (`encode_register_request`, `decode_register_reply`), and the `forms` law ids (`FORM_LAW_IDS`); every law shared is tabled in [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) §11 |
-| `house` | A kernel's uplink (its house): domain founding (`DomainGenesis`, `Founded`), the reserve and origin, the universe (`Genesis`, `Geometry`, `UniverseReading`), the endowment (`Manifest`, `Granted`, `EndowmentReading`), the house side of seats (`Post`, `Seats`, `HouseMail`, the listing and mail codecs), laws verify (`Transition`, `TransitionVerdict`, `verify_sized`, `encode_verify_request`, `decode_verify_reply`), the clock (`CoreStamp`, `TPoint`), the Concordance signature (`ConcordanceSignature`, `CONCORDANCE_HASH`), framing (`WireFrame`, `Lane`) and `HyphaKey`; the wire modules `domain`, `universe`, `endowment`, `seat`, `atlas`, `uplink`, `challenge` whole |
+| `signing` | A kernel's signing helper: the Concordance's clause register read (`ACT_LAWS` mode 7), each fixture reconstructed through `forms` (`reconstruct_fixture`), and the readings signed clause by clause (`sign_concordance`, mode 8) |
+| `house` | A kernel's uplink (its house): domain founding (`DomainGenesis`, `Founded`), the reserve and origin, the universe (`Genesis`, `Geometry`, `UniverseReading`), the endowment (`Manifest`, `Granted`, `EndowmentReading`), the house side of seats (`Post`, `Seats`, `HouseMail`, the listing and mail codecs), laws verify (`Transition`, `TransitionVerdict`, `verify_sized`, `encode_verify_request`, `decode_verify_reply`), the clock (`CoreStamp`, `TPoint`), the Concordance's clause register and signing act (`ConcordanceClause`, `Fixture`, `Signing`, `sign_concordance`, `SigningRefusal`), framing (`WireFrame`, `Lane`) and `HyphaKey`; the wire modules `domain`, `universe`, `endowment`, `seat`, `atlas`, `uplink`, `challenge` whole |
 | `conformance` | The client conformance statement (`STATEMENT`: two profiles, `Profile::Mind` and `Profile::Kernel`, each with MUST and MAY acts, each reply's decoder and fields), `check_codecs` in process and `run` against a hypha, each for the profiles a client declares ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md)) |
 | `forms` | The law forms (the `forms` crate) |
 | `prelude` | The items a client uses first |
@@ -1046,7 +1047,8 @@ pairs:
 ### A kernel's house
 
 A kernel's uplink (its house) pins `mycelium-sdk` alone and speaks through
-`mycelium_sdk::house`: it signs the Concordance's hash, reads the register
+`mycelium_sdk::house`: it signs the Concordance clause by clause by
+reconstructing each clause's fixtures (`sign_concordance`), reads the register
 and the core clock, puts its transitions to the court's verifier, founds its
 domain, records its universe's origin, asks its endowment by a manifest,
 reads its universe back, and lists and answers its seats.
@@ -1128,8 +1130,9 @@ follow semantic versioning. In the 0.x series, a minor version may change
 the wire and ledger layouts, and the changelog names each such change.
 v0.3.0 changes the wire and the ledger layout. `ACT_LAWS` gains mode 6
 (the client conformance statement), mode 7 (the Concordance's hash) and
-mode 8 (a kernel's signature over it, accepted and verified; an unsigned
-kernel is refused only from the following release), each additive. Every
+mode 8 (a kernel's signature over it), each additive; v0.4.0 replaces
+modes 7 and 8 with the clause register and a signing act by reconstruction
+of each clause's fixtures (MU-CONCORDANCE §0, MU-CONFORMANCE). Every
 act and reply carrying μ moves to the exact rational lane codec, which
 moves existing layouts: `WIRE_VERSION` is `0x0200` (wire v2.0), the
 snapshot's layout is `MYT3` and the line's `MYL3`, and a home written by

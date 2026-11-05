@@ -52,31 +52,71 @@ fn laws_statement(session: &Speaker, report: &mut Report) {
     report.record(act, outcome);
 }
 
-/// The hypha's Concordance hash against the SDK's, and a signature over it
-/// presented and accepted (MAY for a mind, MUST for a kernel: a hypha before
-/// v0.3.0 answers neither, and they are unread there).
+/// The hypha's clause register against the SDK's: the same clauses, each
+/// with the same fixtures' inputs.
+fn read_clauses(session: &Speaker) -> Result<Vec<crate::signing::ConcordanceClause>, String> {
+    let reply = session.speak(laws::encode_concordance_request())?;
+    let served = match laws::decode_concordance_reply(&reply) {
+        Some(Ok(served)) => served,
+        Some(Err(r)) => return Err(format!("the hypha cannot read clause {:?} of its own register", r.id)),
+        None => return Err(format!("{} bytes that are no clause register", reply.len())),
+    };
+    let held = mycelium::physics::laws::clauses::register().map_err(|r| format!("the SDK cannot read clause {:?}", r.id))?;
+    let held: Vec<_> = held.into_iter().map(|r| r.clause).collect();
+    match served == held {
+        true => Ok(served),
+        false => Err(format!("the served register ({} clauses) differs from the SDK's ({})", served.len(), held.len())),
+    }
+}
+
+/// The signing act on the served clauses: the SDK's own reconstructions,
+/// every clause enabled, admitted on each clause; and one fixture's object
+/// presented wrong, refused `NotSignatory` naming that clause and fixture.
+fn sign_clauses(session: &Speaker, key: &SigningKey, served: &[crate::signing::ConcordanceClause]) -> Result<String, String> {
+    use crate::signing::{sign_concordance, Admitted, Assent, Choice, Signing, SigningRefusal};
+    let signed = sign_concordance(key, served, |_| Assent::Enabled).ok_or("a served fixture the SDK does not reconstruct")?;
+    let reply = session.speak(laws::encode_signature_request(&signed))?;
+    let admitted: Vec<Admitted> = served.iter().map(|c| Admitted { id: c.id.clone(), assent: Assent::Enabled }).collect();
+    match laws::decode_signature_reply(&reply) {
+        Some(Ok(a)) if a == admitted => {}
+        Some(Ok(a)) => return Err(format!("admitted as {a:?}, not every clause enabled")),
+        Some(Err(refusal)) => return Err(format!("the SDK's reconstructions refused as {refusal:?}")),
+        None => return Err(format!("{} bytes that are no verdict", reply.len())),
+    }
+    // One clause's reading moved: its first object presented for its last
+    // fixture, where the two objects differ.
+    let mut wrong = signed.clauses.clone();
+    let moved = wrong.iter_mut().find_map(|c| match &mut c.choice {
+        Choice::Enabled { reached } if reached.len() > 1 && reached.iter().any(|o| *o != reached[0]) => {
+            let at = reached.iter().rposition(|o| *o != reached[0])?;
+            reached[at] = reached[0].clone();
+            Some((c.id.clone(), c.fixtures.get(at).cloned()?))
+        }
+        _ => None,
+    });
+    let Some((id, fixture)) = moved else { return Ok(format!("{} clauses signed by reconstruction and admitted", served.len())) };
+    let reply = session.speak(laws::encode_signature_request(&Signing::sign(key, wrong)))?;
+    match laws::decode_signature_reply(&reply) {
+        Some(Err(SigningRefusal::NotSignatory { id: i, fixture: f, .. })) if i == id && *f == fixture => {
+            Ok(format!("{} clauses signed by reconstruction and admitted; a fixture not reached refused NotSignatory, naming {} v{}", served.len(), id.law, id.version))
+        }
+        other => Err(format!("a fixture not reached answered {other:?}, not NotSignatory naming {} v{}", id.law, id.version)),
+    }
+}
+
+/// The hypha's clause register against the SDK's, and a signing act over it
+/// by the SDK's own reconstructions (MAY for a mind, MUST for a kernel).
 fn laws_concordance(session: &Speaker, key: &SigningKey, report: &mut Report) {
-    use mycelium::physics::laws::concordance::{ConcordanceSignature, CONCORDANCE_HASH};
-    let hash = match session.speak(laws::encode_concordance_request()) {
-        Ok(r) => r,
-        Err(e) => return session.unread(report, "laws concordance", e),
-    };
-    let outcome = match laws::decode_concordance_reply(&hash) {
-        Some(h) if h == CONCORDANCE_HASH => Ok("the served hash equals the SDK's".to_string()),
-        Some(_) => Err("the served hash is another version of the Concordance".to_string()),
-        None => Err(format!("{} bytes that are no hash", hash.len())),
-    };
-    report.record("laws concordance", outcome);
-    let signed = ConcordanceSignature::sign(key, CONCORDANCE_HASH);
-    let outcome = match session.speak(laws::encode_signature_request(&signed)) {
-        Err(e) => return session.unread(report, "laws signature", e),
-        Ok(r) => match laws::decode_signature_reply(&r) {
-            Some(Ok(())) => Ok("a signature over the hash, accepted".to_string()),
-            Some(Err(refusal)) => Err(format!("a good signature refused as {refusal:?}")),
-            None => Err(format!("{} bytes that are no verdict", r.len())),
-        },
-    };
-    report.record("laws signature", outcome);
+    let served = read_clauses(session);
+    let clauses = served.as_ref().ok().cloned();
+    session.record(report, "laws concordance", served.map(|s| format!("the served register equals the SDK's: {} clauses", s.len())));
+    match clauses {
+        Some(served) => {
+            let signed = sign_clauses(session, key, &served);
+            session.record(report, "laws signature", signed);
+        }
+        None => report.unread("laws signature", "no clause register read to sign"),
+    }
 }
 
 /// One claim: the ground it states, its outputs and its rule's tape.
@@ -189,8 +229,9 @@ fn mind_loop(session: &Speaker, key: &SigningKey, report: &mut Report) {
 
 /// THE CONFORMANCE SUITE against the hypha at `endpoint`, spoken as the voice
 /// `key` seats, for a client declaring `profiles`: the law register read and
-/// checked, the served statement, the Concordance's hash and a signature over
-/// it; for a mind, a task taken, asked by its citation and solved; for a
+/// checked, the served statement, the Concordance's clause register and a
+/// signing act over it by the SDK's own reconstructions (and a fixture not
+/// reached, refused `NotSignatory`); for a mind, a task taken, asked by its citation and solved; for a
 /// kernel, the acts of its uplink (`Profile::Kernel`: the clock, transitions
 /// verified, a domain founded on the voice's key and its universe endowed
 /// and read, its seats posted). A kernel is never asked task or solve unless

@@ -341,10 +341,9 @@ are known exceptions, and the summary says so.
 
 Setting `CARGO_TARGET_DIR` (for example `CARGO_TARGET_DIR=target/gate`) is
 optional and keeps the gate's build apart from a release build. The
-library's `build.rs` only computes the Concordance's byte hash
-(`CONCORDANCE_HASH`), a defect retired by ROADMAP track 24 B2 (Concordance
-§0, signing by adjudicated reading); the gate runs only from
-`xtask`. It takes two readings,
+library has no `build.rs` (the Concordance's byte hash it computed is
+retired by ROADMAP track 24 B2, signing by adjudicated reading); the gate
+runs only from `xtask`. It takes two readings,
 reports both whatever the first said, and exits non-zero if either
 refuses:
 

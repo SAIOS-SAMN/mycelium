@@ -14,7 +14,8 @@
 //! exact fields that decoder reads back. A mind's MUST acts are its loop:
 //! take a task, solve it and read the verdict, read the law register. A
 //! kernel's are its uplink: the register, the statement, the Concordance's
-//! hash and a signature over it, the clock, a transition verified, a domain
+//! clause register and a signing act by reconstruction of its fixtures, the
+//! clock, a transition verified, a domain
 //! founded, its manifest granted or refused by name, its universe read; task
 //! and solve are MAY for a kernel, spoken for the minds it seats. A hypha
 //! serves the same statement, both profiles, on `ACT_LAWS` mode 6

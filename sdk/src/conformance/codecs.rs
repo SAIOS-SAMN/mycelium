@@ -187,21 +187,33 @@ fn laws_statement() -> Result<String, String> {
     Ok(format!("acts by profile: {}", acts.join(", ")))
 }
 
+/// The hypha's clause register, as it is served.
+fn served() -> Result<Vec<crate::signing::ConcordanceClause>, String> {
+    let held = mycelium::physics::laws::clauses::register().map_err(|r| format!("the register refuses clause {:?}", r.id))?;
+    Ok(held.into_iter().map(|r| r.clause).collect())
+}
+
 fn laws_concordance() -> Result<String, String> {
-    use mycelium::physics::laws::concordance::CONCORDANCE_HASH;
+    use mycelium::physics::laws::clauses::register;
     same("the concordance request", laws::decode_laws_request(&laws::encode_concordance_request()), laws::LawsRequest::Concordance)?;
-    same("the concordance hash", laws::decode_concordance_reply(&laws::encode_concordance_reply()), CONCORDANCE_HASH)?;
-    same("the statement's concordance hash", Some(STATEMENT.concordance_hash), CONCORDANCE_HASH)?;
-    Ok("the hash decodes, and the statement carries it".to_string())
+    let clauses = served()?;
+    same("the clause register", laws::decode_concordance_reply(&laws::encode_concordance_reply(&register())), Ok(clauses.clone()))?;
+    let named: Vec<(String, u16)> = clauses.iter().map(|c| (c.id.law.clone(), c.id.version)).collect();
+    same("the statement's clauses", Some(StatementRead::of(&STATEMENT).clauses), named)?;
+    let fixtures: usize = clauses.iter().map(|c| c.fixtures.len()).sum();
+    Ok(format!("{} clauses, {fixtures} fixtures, decode; the statement names them", clauses.len()))
 }
 
 fn laws_signature() -> Result<String, String> {
-    use mycelium::physics::laws::concordance::{verify_concordance_signature, ConcordanceSignature, CONCORDANCE_HASH};
-    let s = ConcordanceSignature::sign(&key(), CONCORDANCE_HASH);
-    same("the presented signature", laws::decode_laws_request(&laws::encode_signature_request(&s)), laws::LawsRequest::Signature(s.to_bytes()))?;
-    same("the signature's verdict", Some(verify_concordance_signature(&s)), Ok(()))?;
-    same("the accepted reply", laws::decode_signature_reply(&laws::encode_signature_reply(Ok(()))), Ok(()))?;
-    Ok("the signature decodes and verifies; the reply reads back".to_string())
+    use crate::signing::{sign_concordance, Admitted, Assent};
+    let clauses = served()?;
+    let s = sign_concordance(&key(), &clauses, |_| Assent::Enabled).ok_or("a fixture the SDK does not reconstruct")?;
+    same("the presented signing act", laws::decode_laws_request(&laws::encode_signature_request(&s)), laws::LawsRequest::Signature(s.to_bytes()))?;
+    let admitted: Vec<Admitted> = clauses.iter().map(|c| Admitted { id: c.id.clone(), assent: Assent::Enabled }).collect();
+    let verdict = mycelium::physics::laws::clauses::admit_bytes(&s.to_bytes());
+    same("the hypha's verdict on the SDK's reconstructions", Some(verdict.clone()), Ok(admitted))?;
+    same("the admitted reply", laws::decode_signature_reply(&laws::encode_signature_reply(&verdict)), verdict)?;
+    Ok(format!("{} clauses signed by reconstruction and admitted; the reply reads back", clauses.len()))
 }
 
 fn laws_verify() -> Result<String, String> {

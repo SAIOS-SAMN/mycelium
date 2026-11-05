@@ -17,7 +17,7 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
   - **To sign a clause, a kernel reconstructs its fixtures.** The kernel presents, signed under its key, its reconstruction of each of the clause's joint-read fixtures. The hypha reconstructs the same fixtures and admits the signature only where the kernel reached the same exact objects (MU-SCIENCE §5.0).
   - **A kernel that cannot read a clause is denied.** A kernel whose reconstructions do not reach the fixtures' objects is refused by name, naming the clause and the fixture (`NotSignatory`). That is a lack of the reading the clause requires, and a signature on its own never stands in for the reading.
   - **The rest stands:** signing is clause by clause (§11), the network clauses cannot be vetoed, and a changed clause is read as signed until the new version is read and signed.
-  *Status:* **Specified**, ROADMAP track 24 B2. Today the hash is BLAKE3 of this file's exact bytes at build time (`physics::laws::concordance::CONCORDANCE_HASH`, served on `ACT_LAWS` mode 7), and a kernel signs `"mycelium concordance v1" ‖ hash` on mode 8. That mechanism is the defect this clause replaces: a byte hash changes with every edit of wording and proves no reading. It stays served only until B2 lands.
+  *Status:* **Built** (v0.4.0, ROADMAP track 24 B2), for the clauses with joint-read fixtures: LAW-PASSAGE v2 (`FORMS-PASSAGE` v3, 2.11 of draft 5) and LAW-COORDINATE v1 (`FORMS-COORDINATE` v1, proposal 78.173). The passage is a network clause; the coordinate stands at kernel standing, signable and vetoable, until its fixtures are joint-read agreed and its clause is drafted. The hypha's clause register (`physics::laws::clauses`) names each clause by its law id and version and holds its fixtures as exact inputs, with the hypha's own reconstruction of each; the address is that content written out. `ACT_LAWS` mode 7 serves the register; on mode 8 a kernel presents, signed under its key, its reconstruction of each fixture of each clause it enables, or its veto. The hypha admits each clause only on the same exact objects, or refuses `NotSignatory` naming the clause and the fixture; a veto of a network clause is refused `NetworkVetoed`. The hash of this file's bytes (`CONCORDANCE_HASH`, computed by `build.rs`) and the whole-text signature are retired. Next: the signed clause set recorded per domain, and `NotSignatory` applied at the universal core tube (B3, B4).
 - AMENDING. An amendment is a new version. An amendment is proposed by a signatory or by Mycelium, approved by the maintainer, and implemented on the server by Mycelium. It takes effect for a kernel when that kernel signs the new version.
 - PRECEDENCE. The maintainer's recorded rulings stand above this text; where they differ, this text is amended.
 
@@ -472,8 +472,8 @@ operator's ruling of 2026-11-02 (MU-RECURSION 78.169; the boundary law,
 [MU-HOSTING §5a](MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law)).
 It changes no clause above. Approved, it is written into those clauses as
 a new version, and binds a kernel when that kernel signs that version
-(§0, 9.3). A signature over this text's hash signs the clauses above as
-they stand; this section is a proposal carried in the text, never a
+(§0, 9.3). A kernel signs the clauses the hypha registers, each by its
+content (§0); this section is a proposal carried in the text, never a
 clause.
 
 THE RULING. The laws pass down through this agreement and the universal
@@ -648,10 +648,12 @@ in the row it already holds.
 
 WHAT LANDING NEEDS, before it can be signed (Mycelium's engineering, not a
 term of the clause):
-- **B2, signing by adjudicated reading** (§0, ROADMAP track 24). No
-  kernel can yet sign a clause by reconstructing its fixtures. Until B2
-  lands, the agreement stands as the joint read recorded in 78.172 §5, and
-  nothing is refused `NotSignatory` for this clause.
+- **B2, signing by adjudicated reading** (§0, ROADMAP track 24). **Done
+  (2026-11-05).** The hypha serves 2.11 as the clause `FORMS-PASSAGE` v3
+  with the four fixtures as exact inputs (`ACT_LAWS` mode 7), and admits a
+  kernel's signature on it only where the kernel's reconstruction of each
+  fixture is the hypha's own (mode 8), refusing `NotSignatory` otherwise.
+  No crossing is refused for an unsigned clause until B3.
 - **The algebra in the core shell. Done (2026-11-05).** 2.10 puts the law
   forms in `forms`, which depends on the exact core alone. The
   signature-carrying algebra (`Mv`, `Clifford`, the product and the

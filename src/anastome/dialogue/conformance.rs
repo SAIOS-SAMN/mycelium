@@ -18,7 +18,7 @@ use super::{ACT_DOMAIN, ACT_ENTRIES, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE
 use super::{ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY, WIRE_VERSION};
 use crate::physics::laws::codec::{MODE_BATCH, MODE_CLOCK, MODE_CONCORDANCE, MODE_LEXICON, MODE_PARAMETERS, MODE_REGISTER};
 use crate::physics::laws::codec::{MODE_SIGNATURE, MODE_STATEMENT, MODE_VERIFY};
-use crate::physics::laws::concordance::CONCORDANCE_HASH;
+use crate::physics::laws::clauses::CLAUSES;
 use crate::physics::laws::LAW_VERSION;
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 
@@ -116,12 +116,13 @@ pub struct ProfileStatement {
 }
 
 /// THE STATEMENT: the wire version, the law version and the Concordance's
-/// hash a client pins to, and each profile's acts.
+/// clauses a client pins to (each by its law id and version; the fixtures
+/// are served on `ACT_LAWS` mode 7), and each profile's acts.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Statement {
     pub wire_version: u16,
     pub law_version: u8,
-    pub concordance_hash: [u8; 32],
+    pub clauses: &'static [(&'static str, u16)],
     pub profiles: &'static [ProfileStatement],
 }
 
@@ -175,9 +176,9 @@ const REGISTER: &[&str] = &["law version", "laws"];
 const LEXICON: &[&str] = &["lexicon version", "terms"];
 const CLOCK: &[&str] = &["core stamp"];
 const PARAMETERS: &[&str] = &["law version", "parameters"];
-const STATED: &[&str] = &["wire version", "law version", "concordance hash", "profiles", "acts"];
-const HASH: &[&str] = &["concordance hash"];
-const SIGNATURE: &[&str] = &["accepted, or the refusal by name"];
+const STATED: &[&str] = &["wire version", "law version", "clauses", "profiles", "acts"];
+const CLAUSE_REGISTER: &[&str] = &["clauses: law id, version, standing, fixtures"];
+const SIGNATURE: &[&str] = &["each clause admitted, enabled or vetoed; or the refusal by name, NotSignatory naming the clause and the fixture"];
 const RESERVE: &[&str] = &["current tier", "pending tier", "balance S:G:T:H"];
 const MAIL: &[&str] = &["epoch", "sequence", "mail"];
 const WALLET: &[&str] = &["court", "balance S:G:T:H", "bond S:G:T:H", "held S:G:T:H", "stamp"];
@@ -197,7 +198,7 @@ const MIND: &[ActRequirement] = &[
     may(ACT_LAWS, Some(MODE_CLOCK), "laws clock", "decode_clock_reply", CLOCK),
     may(ACT_LAWS, Some(MODE_PARAMETERS), "laws parameters", "decode_parameters_reply", PARAMETERS),
     may(ACT_LAWS, Some(MODE_STATEMENT), "laws statement", "decode_statement_reply", STATED),
-    may(ACT_LAWS, Some(MODE_CONCORDANCE), "laws concordance", "decode_concordance_reply", HASH),
+    may(ACT_LAWS, Some(MODE_CONCORDANCE), "laws concordance", "decode_concordance_reply", CLAUSE_REGISTER),
     may(ACT_LAWS, Some(MODE_SIGNATURE), "laws signature", "decode_signature_reply", SIGNATURE),
     may(ACT_QUOTE, None, "quote", "decode_quote_reply", &["height", "surface S:G:T:H", "k", "work items"]),
     may(ACT_RECEIPTS, None, "receipts", "decode_receipts_reply", &["receipts"]),
@@ -221,7 +222,7 @@ const MIND: &[ActRequirement] = &[
 const KERNEL: &[ActRequirement] = &[
     must(ACT_LAWS, Some(MODE_REGISTER), "laws register", "decode_register_reply", REGISTER),
     must(ACT_LAWS, Some(MODE_STATEMENT), "laws statement", "decode_statement_reply", STATED),
-    must(ACT_LAWS, Some(MODE_CONCORDANCE), "laws concordance", "decode_concordance_reply", HASH),
+    must(ACT_LAWS, Some(MODE_CONCORDANCE), "laws concordance", "decode_concordance_reply", CLAUSE_REGISTER),
     must(ACT_LAWS, Some(MODE_SIGNATURE), "laws signature", "decode_signature_reply", SIGNATURE),
     must(ACT_LAWS, Some(MODE_CLOCK), "laws clock", "decode_clock_reply", CLOCK),
     must(ACT_LAWS, Some(MODE_VERIFY), "laws verify", "decode_verify_reply", VERDICT),
@@ -252,7 +253,7 @@ const KERNEL: &[ActRequirement] = &[
 pub const STATEMENT: Statement = Statement {
     wire_version: WIRE_VERSION,
     law_version: LAW_VERSION,
-    concordance_hash: CONCORDANCE_HASH,
+    clauses: CLAUSES,
     profiles: &[ProfileStatement { profile: Profile::Mind, acts: MIND }, ProfileStatement { profile: Profile::Kernel, acts: KERNEL }],
 };
 
@@ -279,7 +280,7 @@ pub struct ProfileRead {
 pub struct StatementRead {
     pub wire_version: u16,
     pub law_version: u8,
-    pub concordance_hash: [u8; 32],
+    pub clauses: Vec<(String, u16)>,
     pub profiles: Vec<ProfileRead>,
 }
 
@@ -296,7 +297,8 @@ impl StatementRead {
             fields: a.fields.iter().map(|f| f.to_string()).collect(),
         };
         let profiles = s.profiles.iter().map(|p| ProfileRead { profile: p.profile, acts: p.acts.iter().map(read).collect() }).collect();
-        StatementRead { wire_version: s.wire_version, law_version: s.law_version, concordance_hash: s.concordance_hash, profiles }
+        let clauses = s.clauses.iter().map(|(law, version)| (law.to_string(), *version)).collect();
+        StatementRead { wire_version: s.wire_version, law_version: s.law_version, clauses, profiles }
     }
 
     /// The acts of one profile as read (none where the read carries no such
@@ -309,10 +311,7 @@ impl StatementRead {
     }
 }
 
-/// THE PROFILED FORM'S MARK, where the single-profile form of v0.3.0-rc.1
-/// wrote its act count: a zero count, then this byte. That form wrote a zero
-/// count only as its last byte (a statement of no acts), so the two forms
-/// never read alike, and an rc.1 reader refuses a profiled statement whole.
+/// THE PROFILED FORM'S MARK: a zero, then this byte, after the clauses.
 /// FORMAT: magic mark for the profiled statement form.
 pub const FORM_PROFILES: u8 = 2;
 
@@ -334,14 +333,18 @@ pub(crate) fn put_acts(out: &mut Vec<u8>, acts: &[ActRequirement]) {
     }
 }
 
-/// THE STATEMENT'S BYTES: `[wire version u16 LE][law version][concordance
-/// hash 32][0][FORM_PROFILES][profile count]` then per profile `[profile]
-/// [act count]` and its acts as [`put_acts`] writes them, every text
-/// length-prefixed by its own coordinate.
+/// THE STATEMENT'S BYTES: `[wire version u16 LE][law version][clause
+/// count][(law id, version u16 LE) …][0][FORM_PROFILES][profile count]` then
+/// per profile `[profile][act count]` and its acts as [`put_acts`] writes
+/// them, every text length-prefixed by its own coordinate.
 pub fn encode_statement(s: &Statement) -> Vec<u8> {
     let mut out = s.wire_version.to_le_bytes().to_vec();
     out.push(s.law_version);
-    out.extend_from_slice(&s.concordance_hash);
+    put_key_count(&mut out, s.clauses.len());
+    for (law, version) in s.clauses {
+        put_key_bytes(&mut out, law.as_bytes());
+        out.extend_from_slice(&version.to_le_bytes());
+    }
     out.extend_from_slice(&[0, FORM_PROFILES]);
     put_key_count(&mut out, s.profiles.len());
     for p in s.profiles {
@@ -387,30 +390,30 @@ fn take_acts(b: &[u8], p: &mut usize) -> Option<Vec<ActRead>> {
 }
 
 /// A statement read whole: a byte left over, a profile or need no byte
-/// names, a form mark other than [`FORM_PROFILES`], or a text that is not
-/// UTF-8 is no statement. The single-profile form v0.3.0-rc.1 served (its act
-/// count where the mark stands) reads as the mind profile alone.
+/// names, a form mark other than `[0][FORM_PROFILES]`, or a text that is not
+/// UTF-8 is no statement.
 pub fn decode_statement_reply(b: &[u8]) -> Option<StatementRead> {
     let wire_version = u16::from_le_bytes(b.get(0..2)?.try_into().ok()?);
     let mut p = 2;
     let law_version = take_u8(b, &mut p)?;
-    let concordance_hash: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
-    p += 32;
-    let profiles = match b.get(p..) {
-        Some([0, form, ..]) => {
-            if *form != FORM_PROFILES {
-                return None;
-            }
+    let c = take_key_count(b, &mut p)?;
+    let clauses = (0..c)
+        .map(|_| {
+            let law = take_text(b, &mut p)?;
+            let version = u16::from_le_bytes(b.get(p..p + 2)?.try_into().ok()?);
             p += 2;
-            let n = take_key_count(b, &mut p)?;
-            (0..n)
-                .map(|_| {
-                    let profile = Profile::of(take_u8(b, &mut p)?)?;
-                    Some(ProfileRead { profile, acts: take_acts(b, &mut p)? })
-                })
-                .collect::<Option<Vec<_>>>()?
-        }
-        _ => vec![ProfileRead { profile: Profile::Mind, acts: take_acts(b, &mut p)? }],
-    };
-    (p == b.len()).then_some(StatementRead { wire_version, law_version, concordance_hash, profiles })
+            Some((law, version))
+        })
+        .collect::<Option<Vec<_>>>()?;
+    if (take_u8(b, &mut p)?, take_u8(b, &mut p)?) != (0, FORM_PROFILES) {
+        return None;
+    }
+    let n = take_key_count(b, &mut p)?;
+    let profiles = (0..n)
+        .map(|_| {
+            let profile = Profile::of(take_u8(b, &mut p)?)?;
+            Some(ProfileRead { profile, acts: take_acts(b, &mut p)? })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    (p == b.len()).then_some(StatementRead { wire_version, law_version, clauses, profiles })
 }
