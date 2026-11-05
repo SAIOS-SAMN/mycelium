@@ -85,17 +85,18 @@ pub(crate) struct Board {
     /// MU-CLIENT §7.1 — a feed family that couples waits on the reserve: the
     /// mind's strokes regenerate it, so the mind does not block meanwhile.
     pub(crate) feed_waits: bool,
-    /// Hearings left unpriced (`price_hearings`): the next stroke may price
+    /// Hearings left unread (`read_hearings`): the next stroke may read
     /// them, so the mind does not block meanwhile.
     pub(crate) hearings_wait: bool,
     /// MU-CLIENT §4.13 AT THE CONVERSATION'S DOOR (ruled 2026-10-26): the
-    /// field's work the conversation handed over and no stroke priced yet —
-    /// `unpriced` what arrived in the traversal now running, `unpriced_crossed`
-    /// what waited across its last return, which lapses unread at the next
-    /// (`Mind::lapse_unpriced`). The sensory buffer, never a ledger: a peer
-    /// that needs agreement says its word again.
-    pub(crate) unpriced: std::collections::VecDeque<super::chatter::FieldWork>,
-    pub(crate) unpriced_crossed: std::collections::VecDeque<super::chatter::FieldWork>,
+    /// field's work the conversation handed over and no stroke read yet —
+    /// `field_waiting` what arrived in the traversal now running,
+    /// `field_waiting_crossed` what waited across its last return, which
+    /// lapses unread at the next (`Mind::lapse_field_waiting`). The sensory
+    /// buffer, never a ledger: a peer that needs agreement says its word
+    /// again.
+    pub(crate) field_waiting: std::collections::VecDeque<super::chatter::FieldWork>,
+    pub(crate) field_waiting_crossed: std::collections::VecDeque<super::chatter::FieldWork>,
     /// The scenes taken in off the feed, by citation: the speech on them leaves at
     /// the mind's own return, not the scenes' (`speak_with`). Bounded by the
     /// families the feed held.
@@ -211,15 +212,15 @@ impl Mind {
         // 1. ADMISSION — what the carriers landed.
         self.at_law("admission: the court's answers");
         self.court_inflow(&mut outcome);
-        // THE TASK ASKED FOR BEFORE ANY HEARING IS PRICED (ruled 2026-10-26):
+        // THE TASK ASKED FOR BEFORE ANY HEARING IS READ (ruled 2026-10-26):
         // a board left empty by the last stroke asks now, so the ask is in
         // flight — and the hearings wait — rather than the stroke spending
         // itself on peer dialogue before the ask at its foot.
         if !stopping() {
             self.pull_task();
         }
-        self.at_law("admission: hearings priced");
-        self.price_hearings();
+        self.at_law("admission: hearings read");
+        self.read_hearings();
         let occluded = matches!(self.transport(), TransportAperture::Occluded { .. });
         // AN OCCLUDED WIRE IS READ AGAIN, NEVER ABANDONED: the impedance
         // decays only on an exchange, so with nothing in flight one discovery
@@ -328,10 +329,10 @@ impl Mind {
         // MU-CLIENT §4.13 — the hearings left unread across a return lapse,
         // and §7.1 the offers left uncoupled across one.
         if returns > 0 {
-            // Both buffers: the hearings priced and unread, and the ones the
-            // conversation handed over and no stroke priced (ruled
-            // 2026-10-26).
-            let lapsed = self.lapse_hearings().checked_add(self.lapse_unpriced()).and_then(|n| u64::try_from(n).ok());
+            // Both buffers: the hearings whose loops were read and left
+            // unread on, and the ones the conversation handed over and no
+            // stroke read (ruled 2026-10-26).
+            let lapsed = self.lapse_hearings().checked_add(self.lapse_field_waiting()).and_then(|n| u64::try_from(n).ok());
             if let Some(lapsed) = lapsed {
                 let _ = crate::physics::metabolism::step_or_refuse(&mut self.board.hearings_lapsed, lapsed);
             }

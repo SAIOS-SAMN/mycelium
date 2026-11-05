@@ -40,3 +40,13 @@
   The mind's comments say "the court's open listings" and "recorded" for
   "the open book" and "booked"; the mind's trace label reads "admission:
   the open listings".
+- **Holonomy is read, never priced** (the reference mind, crate-private).
+  `Mind::price_hearings` is renamed `read_hearings`, `Mind::price`
+  `read_loops`, `Carrier::priced` `loops_read`, `Mind::lapse_unpriced`
+  `lapse_field_waiting`, the board's `unpriced`/`unpriced_crossed`
+  `field_waiting`/`field_waiting_crossed`, and the types `Pricing`,
+  `Priced`, `FieldWork::Price` and `Inflow::Priced` `HeardLoops`,
+  `LoopsRead`, `FieldWork::ReadLoops` and `Inflow::LoopsRead`. Their docs
+  state the loops' holonomy as meaning read; a price attaches only to
+  traversal. The mind's trace labels read "admission: hearings read" and
+  "admission: a hearing (loops read)".

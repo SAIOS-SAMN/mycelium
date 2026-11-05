@@ -36,7 +36,7 @@ use std::sync::mpsc::{channel, Sender};
 
 /// WHAT REACHES THE CARRIER, in one channel: a frame its post heard, a thing
 /// the field stood and says, a letter the field holds for its union, the
-/// mind's clock as it moves, and what the field priced a thought at.
+/// mind's clock as it moves, and what the field read of a thought's loops.
 enum Inflow {
     Frame(Vec<u8>),
     /// A thing said: what was stood, and its rings, each with the vantage
@@ -47,7 +47,7 @@ enum Inflow {
     Say(Element, Vec<Spoken>, Vec<u8>, Option<Vec<u8>>),
     Wait(Element, Vec<Spoken>, Vec<u8>, Option<Vec<u8>>),
     Clock { k: u64, point: Option<TPoint> },
-    Priced(Priced),
+    LoopsRead(LoopsRead),
     /// What the field UNDERSTOOD of rings another mind said (MU-CLIENT §4.9):
     /// each said ring beside the hearer's reading of it, for the carrier to
     /// carry back; and what its evidence read on its scene (MU-CLIENT §5.5).
@@ -57,10 +57,11 @@ enum Inflow {
 /// WHAT THE CONVERSATION HANDS THE FIELD (MU-CLIENT §4.9): the nerve
 /// transduces and the field understands — rings another mind said (an
 /// answer to a question among them), to be understood; a thought both minds
-/// read, to be priced.
+/// read, its loops to be read in this mind's field. Holonomy is meaning,
+/// read and never priced.
 pub(crate) enum FieldWork {
     Hear { speaker: [u8; 32], said: Vec<u8>, words: Vec<Spoken>, evidence: Option<chatter::Evidence> },
-    Price(Pricing),
+    ReadLoops(HeardLoops),
     /// MU-CLIENT §5.1, §7.1 R6 — what the conversation carries to the court
     /// (agreed language with the hearer's HOLD, or a letter unmet), framed:
     /// the field posts it on the mind's own hypha carrier, never waited on.
@@ -94,10 +95,11 @@ impl Question {
     }
 }
 
-/// 78.112 H5 — A THOUGHT UNDERSTOOD, TO BE PRICED IN THE MIND'S OWN FIELD:
-/// the loops both minds read, and what its price decides — the hearer's HOLD,
-/// or the speaker's speech of agreed language.
-pub(crate) struct Pricing {
+/// 78.112 H5 — A THOUGHT UNDERSTOOD, ITS LOOPS TO BE READ IN THE MIND'S OWN
+/// FIELD: the loops both minds read, and what their reading decides — the
+/// hearer's HOLD, or the speaker's speech of agreed language. The loops'
+/// holonomy is meaning: read, never priced.
+pub(crate) struct HeardLoops {
     loops: Vec<AckWord>,
     answer: Answer,
     /// WHERE THE HEARING STOOD IN THIS MIND: the forms of its own rings the
@@ -107,7 +109,7 @@ pub(crate) struct Pricing {
     forms: Vec<Vec<u8>>,
     /// MUTUAL BALANCE (MU-CLIENT §4.9): the hearer's own rings its
     /// understanding seated in — its re-derivation — which the speaker's
-    /// field nests in its own rings; empty for the hearer's pricing.
+    /// field nests in its own rings; empty for the hearer's reading.
     mutual: Vec<crate::transducer::cga::Mv>,
     /// TWO VANTAGES (MU-CLIENT §5.3): at the speaker, whether the hearer read
     /// every word from a vantage of its own, distinct from the one offered —
@@ -115,7 +117,7 @@ pub(crate) struct Pricing {
     distinct: bool,
 }
 
-/// What a priced thought decides.
+/// What a thought's loops, read, decide.
 #[derive(Clone)]
 enum Answer {
     /// The hearer HOLDs the speaker's reading where it converged.
@@ -124,10 +126,11 @@ enum Answer {
     Agree { said: Vec<u8>, frame: Vec<u8> },
 }
 
-/// WHAT THE FIELD PRICED A THOUGHT AT: the exact strain its echoes carried,
-/// per lane, and whether its admission CONVERGED — closed, relieved or still
-/// on every lane, opening no strain the field did not already hold.
-struct Priced {
+/// WHAT THE FIELD READ OF A THOUGHT'S LOOPS: the exact strain its echoes
+/// carried, per lane, and whether its admission CONVERGED — closed,
+/// relieved or still on every lane, opening no strain the field did not
+/// already hold. A reading of meaning; nothing here is a price.
+struct LoopsRead {
     loops: Vec<AckWord>,
     answer: Answer,
     deviation: [num_rational::BigRational; 4],
@@ -135,11 +138,11 @@ struct Priced {
 }
 
 /// THE FIELD'S HANDLE ON ITS CONVERSATION: where to hand what it says, where
-/// the thoughts it is to price arrive, and the rendezvous its peers are found
-/// at.
+/// the thoughts whose loops it is to read arrive, and the rendezvous its
+/// peers are found at.
 pub struct Chat {
     to: Sender<Inflow>,
-    pricing: std::sync::mpsc::Receiver<FieldWork>,
+    field_work: std::sync::mpsc::Receiver<FieldWork>,
     dir: std::path::PathBuf,
     /// The clock last handed to the carrier, so it is handed only as it moves.
     told: Option<u64>,
@@ -445,7 +448,7 @@ impl Mind {
         chatter::publish(dir, &voice, &endpoint)?;
         #[cfg(test)]
         let agreed = std::sync::Arc::new(std::sync::Mutex::new(Keyed::new()));
-        let (field, pricing) = channel::<FieldWork>();
+        let (field, field_work) = channel::<FieldWork>();
         let mut carrier = Carrier {
             voice,
             key,
@@ -469,7 +472,7 @@ impl Mind {
         })?;
         self.chat = Some(Chat {
             to,
-            pricing,
+            field_work,
             dir: dir.to_path_buf(),
             told: None,
             #[cfg(test)]
@@ -478,10 +481,10 @@ impl Mind {
         Ok(endpoint)
     }
 
-    /// 78.112 H5 — THE FIELD PRICES WHAT ITS CONVERSATION UNDERSTOOD: each
+    /// 78.112 H5 — THE FIELD READS WHAT ITS CONVERSATION UNDERSTOOD: each
     /// thought's echoes, each read for its exact strain, per lane (`strain` on the
     /// motion, `hue_strain` on 𝒢), and admitted into this mind's own field
-    /// as field lines (`mark_flux`, the one reader, its lanes booked as every
+    /// as field lines (`mark_flux`, the one reader, its lanes read as every
     /// flux is: the DRAG, the rate it moved at). Its echoes are closed loops —
     /// each a commutator, a holonomy — and together they are ONE CELL of this
     /// mind's orbit algebra (78.46, 78.26(5)): read by the one cell reader,
@@ -492,32 +495,33 @@ impl Mind {
     /// and that echo is a DEMAND on the charts where the hearing stood, its
     /// holonomy the residue (78.114): deviation feeds construction, and the
     /// mind's constructors (`drain_demands`) expand its thought there until a
-    /// later hearing closes. The price goes back to the conversation, which
-    /// acts on it (`Carrier::priced`). Same word, two minds, two prices: each
-    /// field is its own.
-    pub(crate) fn price_hearings(&mut self) -> usize {
+    /// later hearing closes. The holonomy is meaning, read and never priced:
+    /// a price attaches only to traversal. The reading goes back to the
+    /// conversation, which acts on it (`Carrier::loops_read`). Same word, two
+    /// minds, two readings: each field is its own.
+    pub(crate) fn read_hearings(&mut self) -> usize {
         // THE CONVERSATION'S DOOR, emptied: the mind's own speech for the
         // court leaves at once — it is no hearing — and what it heard enters
         // the sensory buffer, where it waits at most across one return
-        // (`lapse_unpriced`, MU-CLIENT §4.13).
+        // (`lapse_field_waiting`, MU-CLIENT §4.13).
         loop {
             let next = match self.chat.as_ref() {
-                Some(chat) => chat.pricing.try_recv().ok(),
+                Some(chat) => chat.field_work.try_recv().ok(),
                 None => None,
             };
             match next {
                 Some(FieldWork::Speak { body, agreed }) => self.speak_agreed(body, agreed),
-                Some(w) => self.board.unpriced.push_back(w),
+                Some(w) => self.board.field_waiting.push_back(w),
                 None => break,
             }
         }
         // THE TASK FIRST (ruled 2026-10-26): while a court's task waits on the
         // board, the task is asked for, or the perception carrier works a
-        // scene, no hearing is priced — it waits in the buffer, the mind
+        // scene, no hearing is read — it waits in the buffer, the mind
         // owing strokes for it (`hearings_wait`), and lapses unread at its
         // second return. Peer dialogue fills the strokes the task pipeline
         // leaves clear; it never stands in front of perception.
-        let waiting = !self.board.unpriced.is_empty() || !self.board.unpriced_crossed.is_empty();
+        let waiting = !self.board.field_waiting.is_empty() || !self.board.field_waiting_crossed.is_empty();
         if self.board.court.task.is_some() || self.board.court.pulling || self.perceiving() {
             self.board.hearings_wait = waiting;
             return 0;
@@ -527,20 +531,20 @@ impl Mind {
         // rest wait in the buffer for the next stroke (`hearings_wait`). Each
         // work is a boundary of the winding carrier (ruled 2026-10-24).
         let mut budget = self.physics.stroke();
-        let mut priced = 0usize;
+        let mut read = 0usize;
         loop {
-            if self.board.unpriced_crossed.is_empty() && self.board.unpriced.is_empty() {
+            if self.board.field_waiting_crossed.is_empty() && self.board.field_waiting.is_empty() {
                 break;
             }
             if !budget.spend() {
                 break;
             }
-            let next = match self.board.unpriced_crossed.pop_front() {
+            let next = match self.board.field_waiting_crossed.pop_front() {
                 Some(w) => Some(w),
-                None => self.board.unpriced.pop_front(),
+                None => self.board.field_waiting.pop_front(),
             };
             let Some(w) = next else { break };
-            priced += 1;
+            read += 1;
             match w {
                 // MU-CLIENT §7.1 R1 — the rings are read off the field, on
                 // the perception carrier; what they read is understood where
@@ -550,16 +554,16 @@ impl Mind {
                     self.at_law("admission: a hearing (hear)");
                     self.hear_with_evidence(speaker, said, words, evidence);
                 }
-                FieldWork::Price(p) => {
-                    self.at_law("admission: a hearing (price)");
-                    self.price(p);
+                FieldWork::ReadLoops(p) => {
+                    self.at_law("admission: a hearing (loops read)");
+                    self.read_loops(p);
                 }
                 // The buffer holds no speech (the door posts it at once).
                 FieldWork::Speak { body, agreed } => self.speak_agreed(body, agreed),
             }
         }
-        self.board.hearings_wait = !self.board.unpriced.is_empty() || !self.board.unpriced_crossed.is_empty();
-        priced
+        self.board.hearings_wait = !self.board.field_waiting.is_empty() || !self.board.field_waiting_crossed.is_empty();
+        read
     }
 
     /// THE MIND'S OWN SPEECH FOR THE COURT, posted on its hypha carrier and
@@ -578,12 +582,12 @@ impl Mind {
     }
 
     /// MU-CLIENT §4.13 AT THE CONVERSATION'S DOOR (ruled 2026-10-26): at the
-    /// mind's return, the unpriced hearings that already waited across the
-    /// last return lapse unread, and those that arrived in the traversal the
-    /// return closes cross it. Answers how many lapsed.
-    pub(crate) fn lapse_unpriced(&mut self) -> usize {
-        let crossed = std::mem::take(&mut self.board.unpriced);
-        let lapsed = std::mem::replace(&mut self.board.unpriced_crossed, crossed);
+    /// mind's return, the hearings still waiting on the field that already
+    /// waited across the last return lapse unread, and those that arrived in
+    /// the traversal the return closes cross it. Answers how many lapsed.
+    pub(crate) fn lapse_field_waiting(&mut self) -> usize {
+        let crossed = std::mem::take(&mut self.board.field_waiting);
+        let lapsed = std::mem::replace(&mut self.board.field_waiting_crossed, crossed);
         lapsed.len()
     }
 
@@ -757,7 +761,7 @@ impl Mind {
                 (Some((e, through)), true) if e.seat == Seat::Whole => (e.carried.clone(), None, through.clone(), 0),
                 // A known word sounding TILTED in a heard ring: understood
                 // SHIFTED — carried round that ring, its echo the shift, the
-                // holonomy interpreted and priced by its strain.
+                // holonomy interpreted and read by its strain, never priced.
                 (Some((e, through)), true) if matches!(e.seat, Seat::Tilted(_)) => (e.carried.clone(), None, through.clone(), 2),
                 // A known word in a sound nothing heard holds: understood as
                 // itself.
@@ -926,12 +930,13 @@ pub(crate) fn remember_in(remembered: &mut Remembered, ring: &crate::transducer:
 }
 
 impl Mind {
-    /// ONE THOUGHT PRICED in this mind's field (78.112 H5): its echoes'
+    /// ONE THOUGHT'S LOOPS READ in this mind's field (78.112 H5): its echoes'
     /// strain, its chamber's coherence, and — at the speaker — MUTUAL
     /// balance: the hearer's own rings its understanding seated in, each
     /// seated among this mind's rings; any left over is a hearing this mind
-    /// does not resonate with, and no agreement (MU-CLIENT §4.9).
-    fn price(&mut self, p: Pricing) {
+    /// does not resonate with, and no agreement (MU-CLIENT §4.9). The
+    /// holonomy read is meaning, never priced.
+    fn read_loops(&mut self, p: HeardLoops) {
         use crate::transducer::cech::{ChamberCircuit, Coherence};
         use crate::transducer::family::pairing::{mark_flux, FieldLine, FluxReading};
         use crate::transducer::sentence::hearing::{hue_strain, strain, Seat};
@@ -980,7 +985,7 @@ impl Mind {
             let (mut demanded, mut answered) = (0u64, 0u64);
             let converged = match &cell.coherence {
                 // A held hearing comes round precessing: understood, its
-                // torsion its content, the deviation it carries the price.
+                // torsion its content, the deviation it carries its reading.
                 Coherence::Closes(_) | Coherence::Held { .. } => true,
                 Coherence::Unread => false,
                 Coherence::Open { escapes: incoherent, .. } => {
@@ -1019,7 +1024,7 @@ impl Mind {
             });
             let converged = converged && mutual && p.distinct;
             if let Some(chat) = self.chat.as_ref() {
-                let _ = chat.to.send(Inflow::Priced(Priced { loops: p.loops, answer: p.answer, deviation, converged }));
+                let _ = chat.to.send(Inflow::LoopsRead(LoopsRead { loops: p.loops, answer: p.answer, deviation, converged }));
             }
         }
     }
@@ -1082,12 +1087,12 @@ impl Mind {
 
 #[cfg(test)]
 impl Mind {
-    /// A conversation with no carrier behind it: the sender of its pricing
+    /// A conversation with no carrier behind it: the sender of its field-work
     /// channel, for a claim to queue the field's work on.
-    pub(crate) fn pricing_for_test(&mut self) -> Sender<FieldWork> {
+    pub(crate) fn field_work_for_test(&mut self) -> Sender<FieldWork> {
         let (to, _inflow) = channel::<Inflow>();
-        let (field, pricing) = channel::<FieldWork>();
-        self.chat = Some(Chat { to, pricing, dir: std::path::PathBuf::new(), told: None, agreed: std::sync::Arc::new(std::sync::Mutex::new(Keyed::new())) });
+        let (field, field_work) = channel::<FieldWork>();
+        self.chat = Some(Chat { to, field_work, dir: std::path::PathBuf::new(), told: None, agreed: std::sync::Arc::new(std::sync::Mutex::new(Keyed::new())) });
         field
     }
 
@@ -1097,7 +1102,7 @@ impl Mind {
     pub(crate) fn take_in_conversation(&mut self) {
         let mut field = std::mem::take(&mut self.field);
         field.think(|| {
-            self.price_hearings();
+            self.read_hearings();
             // The rings were read on the perception carrier (R1): what it
             // read is understood where it lands, here.
             self.settle_perception();
@@ -1139,7 +1144,7 @@ impl Carrier {
                     self.release_unmet();
                 }
             }
-            Inflow::Priced(p) => self.priced(p),
+            Inflow::LoopsRead(p) => self.loops_read(p),
             Inflow::Understood { speaker, said, words, evident } => self.understood(&speaker, said, words, evident),
         }
         let (thoughts, unions, waiting) = (self.thoughts.len() as u64, self.union.len() as u64, self.waiting.len() as u64);
@@ -1151,14 +1156,14 @@ impl Carrier {
         });
     }
 
-    /// WHAT THE FIELD PRICED A THOUGHT AT, acted on. Where its admission
+    /// WHAT THE FIELD READ OF A THOUGHT'S LOOPS, acted on. Where its admission
     /// converged in this mind's field, the hearer HOLDs — carrying the exact
     /// deviation, so the speaker and the court read how far it moved — and
     /// the speaker speaks the thing said as agreed language, once. Where it
     /// opened strain, the thought stays understood and unagreed: its echoes
     /// held as transports, its strain the field's open debt until later
     /// hearing closes it.
-    fn priced(&mut self, p: Priced) {
+    fn loops_read(&mut self, p: LoopsRead) {
         if !p.converged {
             return;
         }
@@ -1393,7 +1398,7 @@ impl Carrier {
 
     /// THE SPEAKER READ THIS MIND'S THOUGHT (its ACK): every loop read again
     /// here by the one reader. Where the two minds hold one loop on every
-    /// word the thought is SHARED: this mind's field prices it and HOLDs it
+    /// word the thought is SHARED: this mind's field reads it and HOLDs it
     /// back, signed. Loops read differently hold nothing.
     fn acknowledged(&mut self, speaker: &[u8; 32], said: &[u8], acks: &[AckWord]) {
         let mut key = speaker.to_vec();
@@ -1406,17 +1411,17 @@ impl Carrier {
             return;
         }
         crate::observe::note_mind(|m| m.understood += 1);
-        // Its price is the field's: the HOLD waits on it (`priced`). What the
-        // two minds' resonance leaves is held in the field and the lexicon,
-        // never filed by the carrier (S6).
-        let pricing = Pricing { loops: own_loops, answer: Answer::Hold { speaker: *speaker, said: said.to_vec() }, forms: Vec::new(), mutual: Vec::new(), distinct: true };
-        let _ = self.field.send(FieldWork::Price(pricing));
+        // Its reading is the field's: the HOLD waits on it (`loops_read`).
+        // What the two minds' resonance leaves is held in the field and the
+        // lexicon, never filed by the carrier (S6).
+        let heard = HeardLoops { loops: own_loops, answer: Answer::Hold { speaker: *speaker, said: said.to_vec() }, forms: Vec::new(), mutual: Vec::new(), distinct: true };
+        let _ = self.field.send(FieldWork::ReadLoops(heard));
     }
 
     /// THE HEARER HOLDS THE LOOPS THIS MIND READ (its HOLD, `frame`):
     /// verified against the ACK sent it. Where the two readings are one, the
     /// thought is shared on this side too. Whether it is AGREED LANGUAGE is
-    /// this mind's field's to price, as the hearer's priced it (`priced`),
+    /// this mind's field's to read, as the hearer's read it (`loops_read`),
     /// with the hearer's rings for MUTUAL balance: where the echoes
     /// converge here too, it is spoken to the court carrying the hearer's
     /// signed HOLD, once.
@@ -1431,8 +1436,8 @@ impl Carrier {
         // whether it read from vantages of its own.
         let forms = vec![said.to_vec()];
         crate::observe::note_mind(|m| m.returned += 1);
-        let pricing = Pricing { loops: sent, answer: Answer::Agree { said: said.to_vec(), frame: frame.to_vec() }, forms, mutual, distinct };
-        let _ = self.field.send(FieldWork::Price(pricing));
+        let heard = HeardLoops { loops: sent, answer: Answer::Agree { said: said.to_vec(), frame: frame.to_vec() }, forms, mutual, distinct };
+        let _ = self.field.send(FieldWork::ReadLoops(heard));
     }
 
     /// SPEAK TO THE COURT what the conversation carries there: an agreed

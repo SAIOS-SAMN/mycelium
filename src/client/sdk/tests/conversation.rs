@@ -368,7 +368,7 @@ fn say_carries_shared_word_to_court_with_hold() {
     a.say(&said, &[]);
     // MU-CLIENT §4.4(4) — what A says leaves when A's own field comes round.
     assert!(super::fixtures::bind_a_thought(&mut a, &[]) > 0, "A's orbit returned");
-    // Each mind's field prices what its conversation understood, as its tick
+    // Each mind's field reads what its conversation understood, as its tick
     // does at admission; the court hears once both fields converged.
     let mut act = None;
     for _ in 0..4_000_000u32 {
@@ -459,65 +459,65 @@ fn factors_of_answers_question_by_word_factors() {
     assert!(matches!(atom.as_slice(), [a] if a.motion.projective_eq(&one) && a.gauge == vec![(1, 2)]), "an atom comes back whole: {atom:?}");
 }
 
-/// ONE STROKE PRICES WHAT ITS BUDGET HOLDS (ruled 2026-10-25). One more of
-/// the field's work queued than a stroke's budget reads: the stroke prices
+/// ONE STROKE READS WHAT ITS BUDGET HOLDS (ruled 2026-10-25). One more of
+/// the field's work queued than a stroke's budget reads: the stroke reads
 /// its budget's worth and leaves the rest waiting, and the mind owes strokes
-/// meanwhile; the next stroke prices what is left and owes none for it.
+/// meanwhile; the next stroke reads what is left and owes none for it.
 #[test]
-fn price_hearings_prices_one_budget_rest_wait() {
+fn read_hearings_reads_one_budget_rest_wait() {
     use crate::client::sdk::mind::chatter::FieldWork;
-    let mut mind = Mind::open("127.0.0.1:1", Voice::named("pricing"));
-    let field = mind.pricing_for_test();
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("reading"));
+    let field = mind.field_work_for_test();
     let reads = crate::physics::Physics::default().stroke().remaining();
     assert!(reads > 0, "a stroke reads something");
     for _ in 0..=reads {
         field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     }
-    assert_eq!(mind.price_hearings(), reads, "its budget's worth priced");
+    assert_eq!(mind.read_hearings(), reads, "its budget's worth read");
     assert!(mind.board.hearings_wait && mind.owes_strokes(), "one left: it waits, and strokes are owed");
-    assert_eq!(mind.price_hearings(), 1, "the one left priced");
+    assert_eq!(mind.read_hearings(), 1, "the one left read");
     assert!(!mind.board.hearings_wait && !mind.owes_strokes(), "nothing waits");
 }
 
 /// THE TASK FIRST (ruled 2026-10-26): while a court's task waits on the
-/// board, or is asked for, no hearing is priced — the work waits, and
-/// strokes are owed; with the pipeline clear, it is priced.
+/// board, or is asked for, no hearing is read — the work waits, and
+/// strokes are owed; with the pipeline clear, it is read.
 #[test]
-fn price_hearings_defers_while_task_waits() {
+fn read_hearings_defers_while_task_waits() {
     use crate::client::sdk::mind::chatter::FieldWork;
     use crate::client::sdk::mind::offer::Offer;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("task first"));
-    let field = mind.pricing_for_test();
+    let field = mind.field_work_for_test();
     field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     let train = crate::transducer::spelled::pairs_of(vec![(vec![vec![1u8, 0], vec![0, 0]], vec![vec![0u8, 1], vec![0, 0]])]);
     let offer = Offer::of(&train);
     mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [2; 32], train, tests: Vec::new() }, offer));
-    assert_eq!(mind.price_hearings(), 0, "a task on the board: no hearing priced");
+    assert_eq!(mind.read_hearings(), 0, "a task on the board: no hearing read");
     assert!(mind.board.hearings_wait && mind.owes_strokes(), "the hearing waits, and strokes are owed");
     mind.board.court.task = None;
     mind.board.court.pulling = true;
-    assert_eq!(mind.price_hearings(), 0, "a task asked for: no hearing priced");
+    assert_eq!(mind.read_hearings(), 0, "a task asked for: no hearing read");
     mind.board.court.pulling = false;
-    assert_eq!(mind.price_hearings(), 1, "the pipeline clear: the hearing is priced");
+    assert_eq!(mind.read_hearings(), 1, "the pipeline clear: the hearing is read");
     assert!(!mind.board.hearings_wait, "nothing waits");
 }
 
 /// A HEARING WAITS AT MOST ACROSS ONE RETURN AT THE DOOR TOO (MU-CLIENT §4.13,
-/// ruled 2026-10-26): one the task pipeline held unpriced crosses the first
+/// ruled 2026-10-26): one the task pipeline held unread crosses the first
 /// return and lapses unread at the second — the buffer is empty, and nothing
 /// is owed for it.
 #[test]
-fn lapse_unpriced_lapses_hearing_at_second_return() {
+fn lapse_field_waiting_lapses_hearing_at_second_return() {
     use crate::client::sdk::mind::chatter::FieldWork;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("lapsing hearing"));
-    let field = mind.pricing_for_test();
+    let field = mind.field_work_for_test();
     field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     mind.board.court.pulling = true;
-    assert_eq!(mind.price_hearings(), 0, "held: the task is asked for");
-    assert_eq!(mind.lapse_unpriced(), 0, "the first return: it crosses");
-    assert_eq!(mind.board.unpriced_crossed.len(), 1, "waiting across one return");
-    assert_eq!(mind.lapse_unpriced(), 1, "the second return: it lapses unread");
-    assert!(mind.board.unpriced.is_empty() && mind.board.unpriced_crossed.is_empty(), "the buffer is empty");
-    assert_eq!(mind.price_hearings(), 0, "nothing left to price");
+    assert_eq!(mind.read_hearings(), 0, "held: the task is asked for");
+    assert_eq!(mind.lapse_field_waiting(), 0, "the first return: it crosses");
+    assert_eq!(mind.board.field_waiting_crossed.len(), 1, "waiting across one return");
+    assert_eq!(mind.lapse_field_waiting(), 1, "the second return: it lapses unread");
+    assert!(mind.board.field_waiting.is_empty() && mind.board.field_waiting_crossed.is_empty(), "the buffer is empty");
+    assert_eq!(mind.read_hearings(), 0, "nothing left to read");
     assert!(!mind.board.hearings_wait, "nothing owed for it");
 }
