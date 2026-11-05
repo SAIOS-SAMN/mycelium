@@ -14,3 +14,15 @@
   (`Withheld::arm`, `obstruction_kind`, and the new `is_askable`, read off
   the kind). The observer's `refusals` call reads them. `mint_arm`,
   `mint_refusal_line` and `Withheld::obstruction_kind` leave `cfg(test)`.
+- **The SDK speaks every act the server judges.** `mycelium_sdk::house`
+  re-exports the handoff family (handoff, its read, the loops and tube
+  reads), traverse, the universe's ledger and map, the challenge window's
+  reads (finality, line head, obstructions), the fold sent up, and the
+  equivocation proof (`encode_equivocation`, `decode_ruled`, with
+  `equivocation_proof`, which frames two receipt sections only where they
+  fork at one place of one signer's line). `mycelium_sdk::session`
+  re-exports the mind's own acts (quote, speech, syllabus, digests, fetch,
+  peers, probe, evidence). `ACT_TABLE` gains handoff, evidence,
+  equivocation, uplink and challenge. No wire change: every codec is the
+  library's own. The reference mind sees no signed receipt sections, so
+  sending a proof from it is left as the next step.

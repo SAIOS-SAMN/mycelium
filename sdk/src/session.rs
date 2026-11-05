@@ -65,6 +65,16 @@ pub use mycelium::sdk::read_deferral;
 /// deferral as a `WouldBlock` refusal holding it.
 pub use mycelium::sdk::deferral_of;
 
+/// THE MIND'S OWN ACTS, each encoded as the reference mind writes it and
+/// spoken with [`Session::speak`]: the quote, a speech of sentences under a
+/// task, the syllabus, the sheaf sync (digests, then a fetch by chart), the
+/// peers, a probe of a target, and the evidence a court holds for the
+/// voice.
+pub use mycelium::anastome::dialogue::{
+    encode_digests_request, encode_evidence_request, encode_fetch, encode_peers_request, encode_probe, encode_quote_request, encode_speech,
+    encode_syllabus_request, ChartOf,
+};
+
 /// The reference mind: a voice with its genome and epigenome.
 pub use mycelium::sdk::Mind;
 
