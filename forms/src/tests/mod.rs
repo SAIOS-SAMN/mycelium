@@ -1,3 +1,4 @@
+mod coordinate;
 mod crossing;
 mod frame;
 mod law_ids;
