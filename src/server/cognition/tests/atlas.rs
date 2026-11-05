@@ -15,6 +15,7 @@ use crate::anastome::dialogue::universe::{Geometry, Metric, Stated, Statement};
 use crate::transducer::cga::Mv;
 use crate::anastome::dialogue::wallet::{StakeAct, StakeRefusal};
 use crate::chronometry::tuniversal::{Origin, TPoint};
+use crate::court::admission::{Boundary, UniverseAct};
 use super::fixtures::close_through;
 use crate::server::cognition::Court;
 use ed25519_dalek::{Signer, SigningKey};
@@ -49,6 +50,7 @@ fn founded() -> (Court, [u8; 32], [u8; 32]) {
         assert!(matches!(k.hear_domain(&g.sign(&key(d))), Founded::Sealed { .. }));
         let r = Reservation { domain: domain(d), tier: verifying(&reserve(d)), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&key(d))), Founded::Reserved { .. }));
+        super::boundary::signs(&mut k, &reserve(d));
     }
     let one = crate::transducer::element::identity_versor();
     let tube = Tube { mass: (1, 1), from_space: Geometry::Curved((1, 1)), to_space: Geometry::Curved((1, 1)), supersedes: None, core: false };
@@ -308,7 +310,7 @@ fn ledger_chains_refuses_forks_and_reads_dilation() {
     let other_lanes = TPoint { lanes: [1, 1, 1, 1].into(), ..fp(10) };
     let forged = LedgerEntry { point: other_lanes, ..entry(12, 10, first) };
     assert_eq!(k.ledger(&forged.sign(&reserve(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotFinal), "a point at a held tick that is not the point held");
-    assert_eq!(k.ledger(&entry(12, 12, first).sign(&key(4)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::NotReserve), "the founder is not the reserve");
+    assert_eq!(k.ledger(&entry(12, 12, first).sign(&key(4)), Some(fp(12))), Ledgered::Boundary(Boundary::NotThroughCore { act: UniverseAct::Anchor, domain: domain(4) }), "the founder is not the reserve");
     assert_eq!(k.ledger(&entry(12, 12, first).sign(&key(77)), Some(fp(12))), Ledgered::Refused(LedgerRefusal::Unsigned));
     let stranger = LedgerEntry { domain: [77; 32], ..entry(1, 10, [0; 32]) };
     assert_eq!(k.ledger(&stranger.sign(&reserve(4)), Some(fp(10))), Ledgered::Refused(LedgerRefusal::UnknownDomain));
@@ -341,6 +343,7 @@ fn settle_solve_pays_from_recycled_pool_before_mint() {
         declared: vec![(CONNECTION_TAX, lanes)],
         children: Vec::new(),
         handoffs: Vec::new(),
+        transitions: Vec::new(),
     };
     assert_eq!(k.hear_uplink(&tax([-3, 1, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Source { lane: 1 }), "the tax only leaves");
     assert_eq!(k.hear_uplink(&tax([-4, 0, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Short));
@@ -441,7 +444,7 @@ fn map_local_throat_reads_ends_exactly() {
         assert_eq!(map(&mut k, 4, 10, record), Mapped::Refused(MapRefusal::Unplaced), "no motion of the torus");
     }
     let founder = MapAct { domain: domain(4), point: fp(10), record: local(line, 3), nonce: [1; 32] }.sign(&key(4));
-    assert_eq!(k.map(&founder, Some(fp(10))), Mapped::Refused(MapRefusal::NotReserve));
+    assert_eq!(k.map(&founder, Some(fp(10))), Mapped::Boundary(Boundary::NotThroughCore { act: UniverseAct::Map, domain: domain(4) }));
     let Mapped::Sealed { record, .. } = map(&mut k, 4, 10, local(line, 3)) else { panic!("mapped") };
     let mut material = domain(4).to_vec();
     material.extend_from_slice(&[42; 32]);

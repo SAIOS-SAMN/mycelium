@@ -616,6 +616,13 @@ impl Court {
                 }
                 let (dx, dy) = (self.tier_domain.get(&m.from_tier).copied(), self.tier_domain.get(&m.to_tier).copied());
                 let (Some(dx), Some(dy)) = (dx, dy) else { return refuse(R::Unbound) };
+                // Track 24 B4 — a mouth is its offering universe's act: it
+                // crosses only while that domain's sitting reserve
+                // converses on every network clause (`NotSignatory`); a
+                // domain with no sitting reserve has no vertex.
+                if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Mouth, dx) {
+                    return Handed::Boundary(why);
+                }
                 // 78.136 — THE LINES BUILD, THE RESERVE KEEPS (as ruled):
                 // the offerer is any tier of its
                 // domain — a builder LINE building a road, or the reserve;
@@ -676,8 +683,13 @@ impl Court {
                     if dx == dy {
                         return refuse(R::Unbound);
                     }
+                    // Track 24 B4 — a core tube is the universe's act: only
+                    // its sitting reserve offers one, through its vertex.
                     if self.reserve_of(&dx) != Some(m.from_tier) {
-                        return refuse(R::NotReserve);
+                        return Handed::Boundary(crate::court::admission::Boundary::NotThroughCore {
+                            act: crate::court::admission::UniverseAct::Mouth,
+                            domain: dx,
+                        });
                     }
                     if m.keeper != m.from_tier {
                         return refuse(R::NotKeeper);

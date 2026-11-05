@@ -47,6 +47,7 @@ fn founded() -> Court {
         assert!(matches!(k.hear_domain(&g.sign(&domain(d))), Founded::Sealed { .. }));
         let r = Reservation { domain: verifying(&domain(d)), tier: verifying(&reserve(d)), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&domain(d))), Founded::Reserved { .. }));
+        super::boundary::signs(&mut k, &reserve(d));
         let anchor = k.anchor();
         k.treasury.genesis(verifying(&reserve(d)), [10, 0, 0, 0], anchor);
     }
@@ -113,8 +114,10 @@ fn root() -> Genesis {
 fn state_records_geometry_and_basket_once() {
     let mut k = founded();
     let space = curved((3, 2));
-    assert_eq!(state(&mut k, 4, Stated::Geometry(space.clone()), &domain(4)), Founded::Unsigned, "the founder's key no longer speaks");
-    assert_eq!(state(&mut k, 4, Stated::Geometry(space.clone()), &line(4)), Founded::Unsigned);
+    let off_core = || Founded::Boundary(crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Statement, domain: verifying(&domain(4)) });
+    assert_eq!(state(&mut k, 4, Stated::Geometry(space.clone()), &domain(4)), off_core(), "the founder's key no longer speaks");
+    assert_eq!(state(&mut k, 4, Stated::Geometry(space.clone()), &line(4)), off_core());
+    assert_eq!(state(&mut k, 4, Stated::Geometry(space.clone()), &key(77)), Founded::Unsigned, "no key of the domain");
     assert_eq!(k.state(&Statement { domain: [9; 32], stated: Stated::Geometry(space.clone()) }.sign(&reserve(4))), Founded::NotFounded);
     for bad in [curved((0, 1)), Geometry::Torus { periods: Vec::new(), metric: Metric::L2 }, Geometry::Torus { periods: vec![(1, 1); 4], metric: Metric::L1 }] {
         assert_eq!(state(&mut k, 4, Stated::Geometry(bad), &reserve(4)), Founded::Malformed);
@@ -155,7 +158,8 @@ fn record_origin_child_through_core_tube() {
     assert_eq!(k.record_origin(&BigBangRecord { version: 1, ..origin(4, Some(root())) }.sign(&domain(4))), Founded::Malformed, "version and fields agree");
     assert!(matches!(k.record_origin(&origin(4, Some(root())).sign(&domain(4))), Founded::Originated { .. }));
     let by_line = Mouth { from_tier: verifying(&line(4)), ..core_tube((2, 1)) };
-    assert_eq!(k.handoff(&Handoff::Mouth(Box::new(by_line)).sign(&line(4))), Handed::Refused(HandoffRefusal::NotReserve), "only the reserve offers a core");
+    let off_core = crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Mouth, domain: verifying(&domain(4)) };
+    assert_eq!(k.handoff(&Handoff::Mouth(Box::new(by_line)).sign(&line(4))), Handed::Boundary(off_core), "only the reserve offers a core");
     let bent = Mouth { tube: Some(Tube { from_space: curved((3, 1)), ..core_tube((2, 1)).tube.expect("a tube") }), ..core_tube((2, 1)) };
     assert_eq!(k.handoff(&Handoff::Mouth(Box::new(bent)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NoGeometry));
     let tube = open(&mut k, core_tube((2, 1)));

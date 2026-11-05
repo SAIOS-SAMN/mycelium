@@ -150,10 +150,35 @@ fn laws_concordance(session: &Speaker, key: &SigningKey, report: &mut Report) {
     session.record(report, "laws signature", signed.map(|(said, _)| said));
     match collided {
         Some(collided) => {
-            let aligned = read_alignment(session, key, &served, collided.as_ref());
+            let aligned = read_alignment(session, key, &served, collided.as_ref()).and_then(|read| match collided {
+                Some(_) => resign(session, key, &served).map(|again| format!("{read}; {again}")),
+                None => Ok(read),
+            });
             session.record(report, "laws alignment", aligned);
         }
         None => report.unread("laws alignment", "no signing admitted to read"),
+    }
+}
+
+/// Track 24 B4 — THE KEY SIGNS AGAIN, every fixture reached, after the
+/// signing that collided: a re-signing is a new event and the latest reads,
+/// so every clause converses again and the key's universe crosses its
+/// universal core tube (a domain whose reserve does not converse on every
+/// network clause has its crossings refused `NotSignatory`).
+fn resign(session: &Speaker, key: &SigningKey, served: &[crate::signing::ConcordanceClause]) -> Result<String, String> {
+    use crate::signing::{sign_concordance, Assent, ClauseReading};
+    let signed = sign_concordance(key, served, |_| Assent::Enabled).ok_or("a served fixture the SDK does not reconstruct")?;
+    match laws::decode_signature_reply(&session.speak(laws::encode_signature_request(&signed))?) {
+        Some(Ok(_)) => {}
+        other => return Err(format!("the signing again answered {other:?}")),
+    }
+    let kernel = key.verifying_key().to_bytes();
+    let reply = session.speak(laws::encode_alignment_request(Some(&kernel)))?;
+    let Some(Ok(read)) = laws::decode_alignment_reply(&reply) else { return Err("the alignment after signing again is unread".to_string()) };
+    let [k] = read.kernels.as_slice() else { return Err(format!("{} kernels read for one key", read.kernels.len())) };
+    match served.iter().find(|c| !k.clauses.iter().any(|r| r.id == c.id && matches!(r.reading, ClauseReading::Converses { .. }))) {
+        Some(c) => Err(format!("{} v{} does not converse after signing again", c.id.law, c.id.version)),
+        None => Ok("signed again, every clause converses".to_string()),
     }
 }
 

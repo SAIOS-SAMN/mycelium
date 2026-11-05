@@ -17,7 +17,7 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
   - **To sign a clause, a kernel reconstructs its fixtures.** The kernel presents, signed under its key, its reconstruction of each of the clause's joint-read fixtures. The hypha reconstructs the same fixtures and admits the signature only where the kernel reached the same exact objects (MU-SCIENCE §5.0).
   - **A kernel that cannot read a clause is denied.** A kernel whose reconstructions do not reach the fixtures' objects is refused by name, naming the clause and the fixture (`NotSignatory`). That is a lack of the reading the clause requires, and a signature on its own never stands in for the reading.
   - **The rest stands:** signing is clause by clause (§11), the network clauses cannot be vetoed, and a changed clause is read as signed until the new version is read and signed.
-  *Status:* **Built** (v0.4.0, ROADMAP track 24 B2), the signing, for the clauses with joint-read fixtures: LAW-PASSAGE v3 (`FORMS-PASSAGE` v4, proposal 78.172's five fixtures, adopted by both operators 2026-11-05 and posted for the joint read) and LAW-COORDINATE v3 (`FORMS-COORDINATE` v3, proposal 78.173). The clause text of draft 5's 2.11, restated on LAW-PASSAGE v3, is not built into this agreement and is not in force (§12): it is held until xylarium reads 78.172's fixtures. The passage is a network clause; the coordinate stands at kernel standing, signable and vetoable, until its fixtures are joint-read agreed and its clause is drafted. The hypha's clause register (`physics::laws::clauses`) names each clause by its law id and version and holds its fixtures as exact inputs, with the hypha's own reconstruction of each; the address is that content written out. `ACT_LAWS` mode 7 serves the register; on mode 8 a kernel presents, signed under its key, its reconstruction of each fixture of each clause it enables, or its veto. The hypha admits each clause only on the same exact objects, or refuses `NotSignatory` naming the clause and the fixture; a veto of a network clause is refused `NetworkVetoed`. The hash of this file's bytes (`CONCORDANCE_HASH`, computed by `build.rs`) and the whole-text signature are retired. Next: the signed clause set recorded per domain, and `NotSignatory` applied at the universal core tube (B3, B4).
+  *Status:* **Built** (v0.4.0, ROADMAP track 24 B2), the signing, for the clauses with joint-read fixtures: LAW-PASSAGE v3 (`FORMS-PASSAGE` v4, proposal 78.172's five fixtures, adopted by both operators 2026-11-05 and posted for the joint read) and LAW-COORDINATE v3 (`FORMS-COORDINATE` v3, proposal 78.173). The clause text of draft 5's 2.11, restated on LAW-PASSAGE v3, is not built into this agreement and is not in force (§12): it is held until xylarium reads 78.172's fixtures. The passage is a network clause; the coordinate stands at kernel standing, signable and vetoable, until its fixtures are joint-read agreed and its clause is drafted. The hypha's clause register (`physics::laws::clauses`) names each clause by its law id and version and holds its fixtures as exact inputs, with the hypha's own reconstruction of each; the address is that content written out. `ACT_LAWS` mode 7 serves the register; on mode 8 a kernel presents, signed under its key, its reconstruction of each fixture of each clause it enables, or its veto. The hypha admits each clause only on the same exact objects, or refuses `NotSignatory` naming the clause and the fixture; a veto of a network clause is refused `NetworkVetoed`. The hash of this file's bytes (`CONCORDANCE_HASH`, computed by `build.rs`) and the whole-text signature are retired. `NotSignatory` is applied at the universal core tube (B4, **Built**; see CLAUSE BY CLAUSE below).
 - CLAUSE BY CLAUSE. A kernel signs a clause set: each clause of this
   agreement, by its content address and its reconstructed fixtures (§0
   SIGNING BY ADJUDICATED READING), never by a hash of its bytes, enabled or
@@ -36,8 +36,17 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
   kernel signs the new version, forward and never reverted. No signature
   lapses on a timer.
   *Status:* **Built**, clause-by-clause signing itself (track 24 B2, PR
-  #109). `NotSignatory` applied at the universal core tube is track 24
-  B3/B4, not yet built.
+  #109), and `NotSignatory` applied at the universal core tube (track 24
+  B4, v0.4.0): a universe's act (6.2a's list) crosses only while its
+  domain's sitting reserve converses on every network clause of the
+  register served, read from the signing events on the ledger
+  (`Court::alignment`), never a stored flag; otherwise it is refused
+  `NotSignatory`, naming the clause and the reading. A kernel clause the
+  reserve vetoed bounds only the acts it governs (`Bounded`, named: the
+  coordinate clause governs anchors and maps); kernel clauses never
+  refuse otherwise. A key's own acts are not read. Open: a tube between
+  two universes bounded by the clauses both enabled, and an act read under
+  a changed clause as signed.
 - AMENDING. An amendment is a new version. An amendment is proposed by a signatory or by Mycelium, approved by the maintainer, and implemented on the server by Mycelium. It takes effect for a kernel when that kernel signs the new version.
 - PRECEDENCE. The maintainer's recorded rulings stand above this text; where they differ, this text is amended.
 

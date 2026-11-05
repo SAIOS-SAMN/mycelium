@@ -191,12 +191,12 @@ pub fn encode_ledger_read(domain: [u8; 32], after: u64) -> Vec<u8> {
     out
 }
 
-/// WHY A LEDGER ENTRY WAS NOT SEALED (the ruled codes 1–6; 7–9 added).
+/// WHY A LEDGER ENTRY WAS NOT SEALED (the ruled codes 2–6; 7–9 added). Code
+/// 1, an entry signed by a key of the domain other than its sitting
+/// reserve, is the boundary's refusal now (`Ledgered::Boundary`,
+/// `NotThroughCore`, track 24 B4).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LedgerRefusal {
-    /// 1 — signed by a key of the domain, but not its sitting reserve; or
-    /// the domain has no reserve.
-    NotReserve,
     /// 2 — no such domain founded on this court.
     UnknownDomain,
     /// 3 — the parent is not the chain's head: a fork, or a first entry
@@ -218,8 +218,7 @@ pub enum LedgerRefusal {
 }
 
 impl LedgerRefusal {
-    const ALL: [LedgerRefusal; 9] = [
-        LedgerRefusal::NotReserve,
+    const ALL: [LedgerRefusal; 8] = [
         LedgerRefusal::UnknownDomain,
         LedgerRefusal::Parent,
         LedgerRefusal::NotAbove,
@@ -232,7 +231,6 @@ impl LedgerRefusal {
 
     pub fn byte(self) -> u8 {
         match self {
-            LedgerRefusal::NotReserve => 1,
             LedgerRefusal::UnknownDomain => 2,
             LedgerRefusal::Parent => 3,
             LedgerRefusal::NotAbove => 4,
@@ -255,10 +253,12 @@ impl LedgerRefusal {
 pub enum Ledgered {
     Sealed { entry: [u8; 32], h: u64, point: TPoint },
     Refused(LedgerRefusal),
+    /// Track 24 B4 — refused at the universal core tube, by name.
+    Boundary(crate::court::admission::Boundary),
 }
 
-/// `[1][entry hash 32][sealed h u64 LE][court's final TPoint 84]` or
-/// `[0][reason u8]`.
+/// `[1][entry hash 32][sealed h u64 LE][court's final TPoint 84]`,
+/// `[0][reason u8]`, or `[2][boundary]` (`Boundary::put`).
 pub fn encode_ledger_reply(r: &Ledgered) -> Vec<u8> {
     match r {
         Ledgered::Sealed { entry, h, point } => {
@@ -269,12 +269,29 @@ pub fn encode_ledger_reply(r: &Ledgered) -> Vec<u8> {
             out
         }
         Ledgered::Refused(why) => vec![0, why.byte()],
+        Ledgered::Boundary(why) => boundary_reply(why),
     }
+}
+
+/// `[2][boundary]`: the tube's refusal, as a ledger or a map reply carries
+/// it.
+fn boundary_reply(why: &crate::court::admission::Boundary) -> Vec<u8> {
+    let mut out = vec![2];
+    why.put(&mut out);
+    out
+}
+
+/// The tube's refusal after its tag, read whole.
+fn take_boundary(rest: &[u8]) -> Option<crate::court::admission::Boundary> {
+    let mut p = 0;
+    let why = crate::court::admission::Boundary::take(rest, &mut p)?;
+    (p == rest.len()).then_some(why)
 }
 
 pub fn decode_ledger_reply(b: &[u8]) -> Option<Ledgered> {
     match b {
         [0, code] => Some(Ledgered::Refused(LedgerRefusal::of(*code)?)),
+        [2, rest @ ..] => Some(Ledgered::Boundary(take_boundary(rest)?)),
         [1, rest @ ..] => {
             let mut p = 0;
             let entry = key32(rest, &mut p)?;
@@ -607,10 +624,11 @@ pub fn encode_map_read(domain: [u8; 32]) -> Vec<u8> {
     head(&domain, KIND_READ_MAP)
 }
 
-/// WHY A MAP ACT WAS NOT SEALED (1, 2, 5, 6 as the ledger's).
+/// WHY A MAP ACT WAS NOT SEALED (2, 5, 6 as the ledger's; 1, a key of the
+/// domain other than its sitting reserve, is the boundary's refusal now,
+/// `Mapped::Boundary`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MapRefusal {
-    NotReserve,
     UnknownDomain,
     NotFinal,
     Unsigned,
@@ -642,8 +660,7 @@ pub enum MapRefusal {
 }
 
 impl MapRefusal {
-    const ALL: [MapRefusal; 14] = [
-        MapRefusal::NotReserve,
+    const ALL: [MapRefusal; 13] = [
         MapRefusal::UnknownDomain,
         MapRefusal::NotFinal,
         MapRefusal::Unsigned,
@@ -661,7 +678,6 @@ impl MapRefusal {
 
     pub fn byte(self) -> u8 {
         match self {
-            MapRefusal::NotReserve => 1,
             MapRefusal::UnknownDomain => 2,
             MapRefusal::NotFinal => 5,
             MapRefusal::Unsigned => 6,
@@ -688,9 +704,12 @@ impl MapRefusal {
 pub enum Mapped {
     Sealed { record: [u8; 32], h: u64, point: TPoint },
     Refused(MapRefusal),
+    /// Track 24 B4 — refused at the universal core tube, by name.
+    Boundary(crate::court::admission::Boundary),
 }
 
-/// `[1][record id 32][sealed h u64 LE][court's final TPoint 84]` or `[0][reason]`.
+/// `[1][record id 32][sealed h u64 LE][court's final TPoint 84]`,
+/// `[0][reason]`, or `[2][boundary]`.
 pub fn encode_map_reply(r: &Mapped) -> Vec<u8> {
     match r {
         Mapped::Sealed { record, h, point } => {
@@ -701,12 +720,14 @@ pub fn encode_map_reply(r: &Mapped) -> Vec<u8> {
             out
         }
         Mapped::Refused(why) => vec![0, why.byte()],
+        Mapped::Boundary(why) => boundary_reply(why),
     }
 }
 
 pub fn decode_map_reply(b: &[u8]) -> Option<Mapped> {
     match b {
         [0, code] => Some(Mapped::Refused(MapRefusal::of(*code)?)),
+        [2, rest @ ..] => Some(Mapped::Boundary(take_boundary(rest)?)),
         [1, rest @ ..] => {
             let mut p = 0;
             let record = key32(rest, &mut p)?;

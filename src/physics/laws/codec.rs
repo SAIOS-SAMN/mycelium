@@ -139,7 +139,9 @@ pub fn take_transition(b: &[u8], p: &mut usize) -> Option<Transition> {
     Some(Transition { motion, heights, bodies, hues, fluxes })
 }
 
-fn put_breach(out: &mut Vec<u8>, breach: &Breach) {
+/// ONE BREACH, as a verdict and a refused crossing (`Uplinked::NotLawful`)
+/// carry it: its tag, then what it was breached by.
+pub fn put_breach(out: &mut Vec<u8>, breach: &Breach) {
     match breach {
         Breach::NotAVersor => out.push(0),
         Breach::Undecomposed(why) => {
@@ -196,7 +198,8 @@ fn put_breach(out: &mut Vec<u8>, breach: &Breach) {
     }
 }
 
-fn take_breach(b: &[u8], p: &mut usize) -> Option<Breach> {
+/// The breach read back from `p` on.
+pub fn take_breach(b: &[u8], p: &mut usize) -> Option<Breach> {
     Some(match take_u8(b, p)? {
         0 => Breach::NotAVersor,
         1 => Breach::Undecomposed(match take_u8(b, p)? {

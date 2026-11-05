@@ -35,6 +35,7 @@ fn reserved() -> Court {
     let mut k = founded();
     let r = Reservation { domain: domain_key().verifying_key().to_bytes(), tier: tier_key().verifying_key().to_bytes(), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&domain_key())), Founded::Reserved { .. }));
+    super::boundary::signs(&mut k, &tier_key());
     k
 }
 
@@ -43,7 +44,8 @@ fn reserved() -> Court {
 #[test]
 fn admit_uplink_refuses_tier_not_reserve() {
     let key = tier_key();
-    assert_eq!(founded().hear_uplink(&trade(&key).sign(&key)), Uplinked::NotReserve);
+    let off_core = crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Fold, domain: domain_key().verifying_key().to_bytes() };
+    assert_eq!(founded().hear_uplink(&trade(&key).sign(&key)), Uplinked::Boundary(off_core));
     assert!(matches!(reserved().hear_uplink(&trade(&key).sign(&key)), Uplinked::Admitted { .. }));
 }
 
@@ -56,6 +58,7 @@ fn trade(key: &SigningKey) -> TierFold {
         declared: Vec::new(),
         children: Vec::new(),
         handoffs: Vec::new(),
+        transitions: Vec::new(),
     }
 }
 

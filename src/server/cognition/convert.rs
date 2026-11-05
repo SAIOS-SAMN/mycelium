@@ -369,8 +369,17 @@ impl Court {
         }
         match &h.handoff {
             Handoff::ConvertOut(c) => {
+                // Track 24 B4 — a conversion out is the universe's act: only
+                // its sitting reserve converts, through its vertex.
+                let Some(domain) = self.tier_domain.get(&c.tier).copied() else { return refuse(R::Unbound) };
                 if h.who != c.tier || !self.is_reserve(&c.tier) {
-                    return refuse(R::NotReserve);
+                    return Handed::Boundary(crate::court::admission::Boundary::NotThroughCore {
+                        act: crate::court::admission::UniverseAct::ConversionOut,
+                        domain,
+                    });
+                }
+                if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::ConversionOut, domain) {
+                    return Handed::Boundary(why);
                 }
                 // 78.139 — the reserve unit is the reserve's basket: none
                 // converted until it is stated.

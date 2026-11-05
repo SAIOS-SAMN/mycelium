@@ -30,6 +30,7 @@ fn universe(origin: bool) -> Court {
     assert!(matches!(k.hear_domain(&g.sign(&key(DOMAIN))), Founded::Sealed { .. }));
     let r = Reservation { domain: verifying(&key(DOMAIN)), tier: verifying(&key(RESERVE)), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&key(DOMAIN))), Founded::Reserved { .. }));
+    super::boundary::signs(&mut k, &key(RESERVE));
     if origin {
         let o = BigBangRecord { domain: verifying(&key(DOMAIN)), kind: 1, version: 1, commitment: [DOMAIN; 32], universe: None };
         assert!(matches!(k.record_origin(&o.sign(&key(DOMAIN))), Founded::Originated { .. }));
@@ -113,7 +114,9 @@ fn manifest_refuses_unsigned_malformed_or_short_grant() {
     let mut unoriginated = universe(false);
     assert_eq!(unoriginated.manifest(&signed(manifest(1), RESERVE)), Granted::Refused(GrantRefusal::NotAUniverse));
     let mut k = universe(true);
-    assert_eq!(k.manifest(&signed(manifest(1), DOMAIN)), Granted::Refused(GrantRefusal::Unsigned), "the domain key is not the sitting reserve");
+    let off_core = crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Manifest, domain: verifying(&key(DOMAIN)) };
+    assert_eq!(k.manifest(&signed(manifest(1), DOMAIN)), Granted::Boundary(off_core), "the domain key is not the sitting reserve");
+    assert_eq!(k.manifest(&signed(manifest(1), 77)), Granted::Refused(GrantRefusal::Unsigned), "no key of the domain");
     let mut unordered = manifest(1);
     unordered.nuclei.reverse();
     assert_eq!(k.manifest(&signed(unordered, RESERVE)), Granted::Refused(GrantRefusal::Malformed));

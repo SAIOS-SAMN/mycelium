@@ -167,10 +167,22 @@ impl Court {
         if self.origins.get(&m.domain).is_none() {
             return refuse(GrantRefusal::NotAUniverse);
         }
-        let Some(reserve) = self.reserve_of(&m.domain) else { return refuse(GrantRefusal::NotReserve) };
         let Some(bytes) = m.signed_bytes() else { return refuse(GrantRefusal::Malformed) };
-        if !crate::court::identity::verify(&reserve, &bytes, &s.sig) {
-            return refuse(GrantRefusal::Unsigned);
+        // Track 24 B4 — a universe's act, admitted only from its sitting
+        // reserve: another key of the domain, or a domain with no reserve,
+        // is no event through its vertex.
+        let reserve = match self.reserve_signed(&m.domain, &bytes, &s.sig) {
+            Ok(r) => r,
+            Err(true) => {
+                return Granted::Boundary(crate::court::admission::Boundary::NotThroughCore {
+                    act: crate::court::admission::UniverseAct::Manifest,
+                    domain: m.domain,
+                })
+            }
+            Err(false) => return refuse(GrantRefusal::Unsigned),
+        };
+        if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Manifest, m.domain) {
+            return Granted::Boundary(why);
         }
         if !nuclei_hold(&m.nuclei) {
             return refuse(GrantRefusal::Malformed);

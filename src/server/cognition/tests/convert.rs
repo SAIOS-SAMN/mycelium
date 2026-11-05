@@ -43,6 +43,9 @@ fn founded() -> Court {
     tiers.sort_unstable();
     let g = DomainGenesis { domain: verifying(&domain()), tiers };
     assert!(matches!(k.hear_domain(&g.sign(&domain())), Founded::Sealed { .. }));
+    for tier in [x(), x2()] {
+        super::boundary::signs(&mut k, &tier);
+    }
     k
 }
 
@@ -64,7 +67,7 @@ fn fund(k: &mut Court, party: [u8; 32], mu: [u64; 4]) {
 }
 
 fn fold(prefix: u8, rows: Vec<Net>, handoffs: Vec<([u8; 32], Side)>) -> TierFold {
-    TierFold { tier: verifying(&x()), prefix: [prefix; 32], rows, declared: Vec::new(), children: Vec::new(), handoffs }
+    TierFold { tier: verifying(&x()), prefix: [prefix; 32], rows, declared: Vec::new(), children: Vec::new(), handoffs, transitions: Vec::new() }
 }
 
 fn out(g: i128, rate: (u64, u64), nonce: u8) -> ConvertOut {
@@ -96,6 +99,7 @@ fn designate_reserve_redesignates_at_reserve_fold() {
     assert_eq!(k.reserve_reading(&verifying(&domain())).pending, Some(verifying(&x2())), "the pending redesignation, read");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
+    super::boundary::calibrate(&mut booted);
     assert_eq!(booted.reserve_of(&verifying(&domain())), Some(verifying(&x())));
     assert!(matches!(booted.hear_uplink(&fold(1, Vec::new(), Vec::new()).sign(&x())), Uplinked::Admitted { .. }), "the reserve's anchor");
     assert_eq!(booted.reserve_of(&verifying(&domain())), Some(verifying(&x2())), "the redesignation holds from the anchor");
@@ -118,7 +122,9 @@ fn convert_out_pays_from_reserve_never_mints() {
     assert_eq!(refused(&mut k, out(10, (1, 2), 1), &x()), HandoffRefusal::NoBasket, "78.139: no conversion before the reserve's basket");
     basket(&mut k);
     assert_eq!(refused(&mut k, out(10, (1, 0), 1), &x()), HandoffRefusal::Inexact, "a rate over zero is no rate");
-    assert_eq!(refused(&mut k, ConvertOut { tier: verifying(&x2()), ..out(10, (1, 2), 1) }, &x2()), HandoffRefusal::NotReserve);
+    let by_line = k.handoff(&Handoff::ConvertOut(Box::new(ConvertOut { tier: verifying(&x2()), ..out(10, (1, 2), 1) })).sign(&x2()));
+    let off_core = crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::ConversionOut, domain: verifying(&domain()) };
+    assert_eq!(by_line, Handed::Boundary(off_core), "only the sitting reserve converts out");
     assert_eq!(refused(&mut k, out(20, (1, 1), 1), &x()), HandoffRefusal::ReserveShort, "a rate never mints μ");
     let supply = k.treasury.balance_mu(&verifying(&x())).n()[0] + k.treasury.balance_mu(&verifying(&holder())).n()[0];
     let first = k.handoff(&Handoff::ConvertOut(Box::new(out(10, (1, 2), 1))).sign(&x()));
