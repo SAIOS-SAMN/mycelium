@@ -74,7 +74,10 @@ fn former_address(task: &Task) -> Option<Address> {
 #[test]
 fn ground_census_over_training() {
     let dir = corpus("training");
-    let Ok(names) = task_names(&dir) else { return };
+    let names = match task_names(&dir) {
+        Ok(names) => names,
+        Err(e) => panic!("{dir} does not read ({e}): no corpus, no census; set MYCELIUM_CORPUS to the ARC-AGI-2 data directory or place it at data/arc-agi-2"),
+    };
     let (mut same, mut other, mut vortex, mut none) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
     let (mut turned, mut moved, mut unaddressed) = (0usize, 0usize, 0usize);
     for name in names {

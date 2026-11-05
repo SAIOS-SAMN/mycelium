@@ -1,0 +1,60 @@
+# AI-GENERATED CONTENT — see DISCLAIMER.md.
+#
+# The definition of done (AGENTS.md), run on every pull request and on
+# every push to main: clippy over every member and target with warnings
+# denied, then the workspace's tests, with the ARC-AGI-2 corpus present so
+# the corpus tests read it rather than refuse.
+
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # The standard hosted Linux runner has 4 cores.
+      CARGO_BUILD_JOBS: 4
+      CARGO_TERM_COLOR: always
+      MYCELIUM_CORPUS: ${{ github.workspace }}/../ARC-AGI-2/data
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-
+
+      - name: Fetch the ARC-AGI-2 corpus
+        run: |
+          git clone --depth 1 https://github.com/arcprize/ARC-AGI-2 "${{ github.workspace }}/../ARC-AGI-2"
+          test -d "$MYCELIUM_CORPUS/training"
+          test -d "$MYCELIUM_CORPUS/evaluation"
+
+      - name: Clippy
+        run: cargo clippy --release --workspace --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --release --workspace

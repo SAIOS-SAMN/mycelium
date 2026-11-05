@@ -97,6 +97,8 @@ cargo clippy --release --workspace --all-targets -- -D warnings
 cargo test --release --workspace
 ```
 
+CI (`.github/workflows/check.yml`, the `check` status) runs both commands on every pull request, with the corpus present; workers still run them locally before pushing, under the machine's memory cap.
+
 Nothing else is required, with one addition: a change to the wire or the
 mesh also runs `scripts/quickstart DIR BASE_PORT`. It brings up a
 three-hypha network from nothing, works the SDK client, the conformance
@@ -153,7 +155,7 @@ How the work is held:
 
 - The [Definition of done](#definition-of-done) holds on the branch with
   main merged in.
-- Tick the drift checklist in the pull request template.
+- Read the change against [The regressions that recur](#the-regressions-that-recur).
 - If the change touches the wire, the ledger layout, a law version or the
-  Concordance, mark it under *Network contract*. It then needs operator
+  Concordance, state it under *Network contract* in the pull request. It then needs operator
   approval.
