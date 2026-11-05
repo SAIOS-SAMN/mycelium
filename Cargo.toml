@@ -80,8 +80,9 @@ inotify = { version = "0.11", default-features = false }
 
 [features]
 # 78.137 — THE DRILL'S NEGATIVE CONTROL, never for a node: a court act is
-# answered without its pre-reply sync, so `scripts/durable-drill` run on this
-# build must lose acts — the proof that the green drill can fail.
+# answered without its pre-reply sync, so the drill (`tests/durable.rs`,
+# `cargo test --release --features drill-undurable --test durable`) must
+# lose acts on this build — the proof that the green drill can fail.
 drill-undurable = []
 
 [dev-dependencies]
