@@ -2,7 +2,7 @@
 //
 // MU-RELEASE §3a step 3 — THE JOINT-READ FIXTURES' INPUTS, as the proposals
 // state them: LAW-PASSAGE v3's five (78.172 §5, adopted 2026-11-05, for the
-// joint read) and LAW-COORDINATE v1's (78.173 §5), each an exact input.
+// joint read) and LAW-COORDINATE v3's (78.173 §5), each an exact input.
 //
 //! The generators of the passage's fixtures are named by role, as the
 //! fixtures write them: plane `k`'s positive unit `e₊ₖ` (squaring to +1,
@@ -13,18 +13,21 @@
 //! object, so each pass is read on its own. The face `δ = H/(H + R)` of
 //! 78.172 §5's fixture 6 is a reading of fixture 1's frame states and has
 //! no operation in `Fixture` or reading in `Object`: it is read in `forms`
-//! alone. The coordinate's fixtures stand at the
-//! root `R` (genesis `6a` × 32, epoch `0x92`). Fixture 1b's writings and
-//! fixture 3's nesting (a claim over every depth, not an input and an
-//! object) are read in `forms` alone, as are fixtures 7–10 (the advance,
-//! an event's bell, the merger and fission): `Fixture` has no operation
-//! for them and `Object` no reading of a merger or an event's bell, so
-//! serving them is a new fixture and object tag on `ACT_LAWS` mode 7, a
-//! wire change left to the clause's drafting (78.173 §6).
+//! alone. The coordinate's fixtures stand at the root `R` (genesis `6a` ×
+//! 32, epoch `0x92`), its one-component lanes keyed `e_S1`, `e_G1`, `e_T1`
+//! and H's frame plane `e_Z1Q1`, H's two-plane bodies on `e_Z1Q1` and
+//! `e_Z2Q2`, in degrees. Fixture 1b's writings and fixture 3's nesting (a
+//! claim over every depth, not an input and an object) are read in `forms`
+//! alone, as are fixtures 7–10 and 13–16 (the advance, an event's bell,
+//! the merger and fission, the re-origin, dilation, the lane set):
+//! `Fixture` has no operation for them and `Object` no reading of a merger,
+//! an event's bell or a passage, so serving them is a new fixture and
+//! object tag on `ACT_LAWS` mode 7, a wire change left to the clause's
+//! drafting (78.173 §6).
 
 use super::register::Fixture;
 use algebra::{base_axis, Clifford, EM};
-use forms::coordinate::{Coordinate, Lane, Local, Origin};
+use forms::coordinate::{Axis, Bounds, Coordinate, Interval, Key, Lane, Lanes, Local, Origin, Vector};
 use forms::Q;
 use num_bigint::BigInt;
 
@@ -108,67 +111,115 @@ fn root() -> Origin {
     Origin { genesis: [0x6a; 32], epoch: 0x92, enclosures: vec![] }
 }
 
-/// The root enclosed once, in the branch cut at `3:2:0:0:0:0`.
-fn enclosed() -> Origin {
-    Origin { enclosures: vec![Local { h: 3, lanes: on_s(q(2, 1)), k: 0 }], ..root() }
+/// The key of the one axis `letter` `index`.
+fn on(letter: char, index: u32) -> Option<Key> {
+    Some(Key::axis(Axis::of(letter, index).ok()?))
 }
 
-/// The lanes `S:G:T:H` with `s` on S and `g` on G.
-fn lanes(s: Q, g: Q) -> [Q; 4] {
-    [s, g, q(0, 1), q(0, 1)]
+/// The generator of the plane of the axes `a` and `b`.
+fn plane(a: (char, u32), b: (char, u32)) -> Option<Key> {
+    Key::generator(Axis::of(a.0, a.1).ok()?, Axis::of(b.0, b.1).ok()?).ok()
+}
+
+/// The one-component lanes `S:G:T:H`, keyed `e_S1`, `e_G1`, `e_T1` and
+/// `e_Z1Q1`, with `s` on S, `g` on G, and T and H at 0.
+fn lanes(s: Q, g: Q) -> Option<Lanes> {
+    let one = |k: Option<Key>, v: Q| Some(Vector::one(k?, v));
+    Lanes::base(one(on('S', 1), s)?, one(on('G', 1), g)?, one(on('T', 1), q(0, 1))?, one(plane(('Z', 1), ('Q', 1)), q(0, 1))?).ok()
 }
 
 /// The lanes with `s` on S alone.
-fn on_s(s: Q) -> [Q; 4] {
+fn on_s(s: Q) -> Option<Lanes> {
     lanes(s, q(0, 1))
 }
 
 /// The body at `origin`, bell `h`, lanes, `K`.
-fn body(origin: &Origin, h: u64, lanes: [Q; 4], k: u64) -> Coordinate {
-    Coordinate { origin: origin.clone(), local: Local { h, lanes, k } }
+fn body(origin: &Origin, h: u64, lanes: Option<Lanes>, k: u64) -> Option<Coordinate> {
+    Some(Coordinate { origin: origin.clone(), local: Local { h, lanes: lanes?, k: vec![k] } })
 }
 
-/// `1/3 − 10⁻¹⁵`, the value just below a sector bound.
+/// The root enclosed once, in the branch cut at `3:2:0:0:0:0`.
+fn enclosed() -> Option<Origin> {
+    Some(Origin { enclosures: vec![Local { h: 3, lanes: on_s(q(2, 1))?, k: vec![0] }], ..root() })
+}
+
+/// The body at `R`, bell 5, S = G = T = 0 and H on the frame planes
+/// `e_Z1Q1` and `e_Z2Q2`, in degrees (fixtures 11 and 12).
+fn planar(h1: Q, h2: Q) -> Option<Coordinate> {
+    let h = Vector::of(vec![(plane(('Z', 1), ('Q', 1))?, h1), (plane(('Z', 2), ('Q', 2))?, h2)]).ok()?;
+    let zero = |k: Option<Key>| Some(Vector::one(k?, q(0, 1)));
+    let lanes = Lanes::base(zero(on('S', 1))?, zero(on('G', 1))?, zero(on('T', 1))?, h).ok()?;
+    Some(Coordinate { origin: root(), local: Local { h: 5, lanes, k: vec![0, 0] } })
+}
+
+/// `1/3 − 10⁻¹⁵`, the value just below a bound.
 fn below_third() -> Q {
     q(1, 3) - Q::new(BigInt::from(1), BigInt::from(10).pow(15))
 }
 
 /// Fixture 6's held bodies: `R/5:i/10` for `i = 0..19`, `R/6:1/2`, the same
 /// body at epoch `0x93`, and `R/5:1/2:g` for `g = −1, 1/4, 2`.
-fn held() -> Vec<Coordinate> {
+fn held() -> Option<Vec<Coordinate>> {
     let r = root();
-    let mut held: Vec<Coordinate> = (0..20).map(|i| body(&r, 5, on_s(q(i, 10)), 0)).collect();
+    let mut held: Vec<Option<Coordinate>> = (0..20).map(|i| body(&r, 5, on_s(q(i, 10)), 0)).collect();
     held.push(body(&r, 6, on_s(q(1, 2)), 0));
     held.push(body(&Origin { epoch: 0x93, ..root() }, 5, on_s(q(1, 2)), 0));
     held.extend([q(-1, 1), q(1, 4), q(2, 1)].into_iter().map(|g| body(&r, 5, lanes(q(1, 2), g), 0)));
-    held
+    held.into_iter().collect()
 }
 
-/// LAW-COORDINATE v1's fixtures (78.173 §5) with an input and an object:
+/// The bounds `[lo, hi)` on S's one component, at `origin`.
+fn on_s_within(origin: &Origin, lo: Q, hi: Q) -> Option<Bounds> {
+    Bounds::of(origin.clone(), Lane::S, vec![(on('S', 1)?, Interval { lo, hi })]).ok()
+}
+
+/// LAW-COORDINATE v3's fixtures (78.173 §5) with an input and an object:
 /// the order (1a, its seven bodies given in reverse), the sexagesimal
-/// reading at the eight stated depths (2), `within` on and off a bound (4),
-/// origins never compared (5), and the two ranges on one lane (6).
-pub fn coordinate_fixtures() -> Vec<Fixture> {
+/// reading at the eight stated depths (2, display), `within` on the
+/// caller's intervals (4), origins never compared (5), the two ranges on one
+/// component (6), the order of a two-plane H (11, given in reverse), and a
+/// range on one of its components (12). `None` where the form refuses an
+/// input it builds.
+pub fn coordinate_fixtures() -> Option<Vec<Fixture>> {
     let r = root();
     let mut ordered = vec![
-        body(&r, 5, on_s(q(-1, 2)), 1),
-        body(&r, 5, lanes(q(1, 3), q(-1, 1)), 9),
-        body(&r, 5, on_s(q(1, 3)), 1),
-        body(&r, 5, on_s(q(1, 3)), 2),
-        body(&r, 5, on_s(q(1, 2)), 1),
-        body(&r, 6, on_s(q(-7, 1)), 0),
-        body(&enclosed(), 0, on_s(q(0, 1)), 0),
+        body(&r, 5, on_s(q(-1, 2)), 1)?,
+        body(&r, 5, lanes(q(1, 3), q(-1, 1)), 9)?,
+        body(&r, 5, on_s(q(1, 3)), 1)?,
+        body(&r, 5, on_s(q(1, 3)), 2)?,
+        body(&r, 5, on_s(q(1, 2)), 1)?,
+        body(&r, 6, on_s(q(-7, 1)), 0)?,
+        body(&enclosed()?, 0, on_s(q(0, 1)), 0)?,
     ];
     ordered.reverse();
     let mut fixtures = vec![Fixture::Ordered { bodies: ordered }];
     let sectors = [(q(7, 3), 0), (q(7, 3), 1), (q(7, 3), 2), (q(1, 7), 3), (q(360, 7), 2), (q(-1, 3), 1), (q(-1, 7), 1), (below_third(), 6)];
     fixtures.extend(sectors.into_iter().map(|(value, depth)| Fixture::Sector { value, depth }));
-    let other = body(&r, 5, on_s(q(1, 3)), 0);
-    let sixth = Q::new(BigInt::from(1), BigInt::from(3) * BigInt::from(forms::coordinate::BASE).pow(6));
-    let within = [(q(1, 3), 1), (q(7, 20), 1), (below_third(), 1), (q(1, 3) + sixth, 6), (q(2, 5), 0), (q(2, 5), 1)];
-    fixtures.extend(within.into_iter().map(|(s, depth)| Fixture::Within { at: body(&r, 7, on_s(s), 4), other: other.clone(), lane: Lane::S, depth }));
-    fixtures.push(Fixture::Within { at: other.clone(), other: body(&enclosed(), 5, on_s(q(1, 3)), 0), lane: Lane::S, depth: 1 });
-    fixtures.push(Fixture::Range { held: held(), at: body(&r, 5, on_s(q(0, 1)), 0), lane: Lane::S, lo: q(1, 2), hi: q(9, 10) });
-    fixtures.push(Fixture::Range { held: held(), at: body(&r, 5, on_s(q(1, 2)), 0), lane: Lane::G, lo: q(0, 1), hi: q(1, 1) });
-    fixtures
+    // `1/(3·60⁶)` past `1/3`, inside `[1/3, 1/3 + 60⁻⁶)`.
+    let (past, width) = (q(1, 139_968_000_000), q(1, 46_656_000_000));
+    let within = [
+        (q(1, 3), q(1, 3), q(7, 20)),
+        (q(7, 20), q(1, 3), q(7, 20)),
+        (below_third(), q(1, 3), q(7, 20)),
+        (q(1, 3) + past, q(1, 3), q(1, 3) + width),
+        (q(2, 5), q(0, 1), q(1, 1)),
+        (q(2, 5), q(1, 3), q(7, 20)),
+    ];
+    for (s, lo, hi) in within {
+        fixtures.push(Fixture::Within { at: body(&r, 7, on_s(s), 4)?, bounds: on_s_within(&r, lo, hi)? });
+    }
+    fixtures.push(Fixture::Within { at: body(&r, 5, on_s(q(1, 3)), 0)?, bounds: on_s_within(&enclosed()?, q(1, 3), q(7, 20))? });
+    let span = |lo: Q, hi: Q| Interval { lo, hi };
+    fixtures.push(Fixture::Range { held: held()?, at: body(&r, 5, on_s(q(0, 1)), 0)?, lane: Lane::S, key: on('S', 1)?, interval: span(q(1, 2), q(9, 10)) });
+    fixtures.push(Fixture::Range { held: held()?, at: body(&r, 5, on_s(q(1, 2)), 0)?, lane: Lane::G, key: on('G', 1)?, interval: span(q(0, 1), q(1, 1)) });
+    let (a, b, c, d) = (planar(q(1, 3), q(7, 4))?, planar(q(1, 3), q(-1, 2))?, planar(q(1, 2), q(0, 1))?, planar(q(2, 5), q(7, 4))?);
+    fixtures.push(Fixture::Ordered { bodies: vec![c.clone(), a.clone(), b.clone()] });
+    fixtures.push(Fixture::Range {
+        held: vec![a, b, c, d],
+        at: planar(q(0, 1), q(0, 1))?,
+        lane: Lane::H,
+        key: plane(('Z', 1), ('Q', 1))?,
+        interval: span(q(1, 3), q(1, 2)),
+    });
+    Some(fixtures)
 }

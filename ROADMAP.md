@@ -1268,9 +1268,10 @@ adjudicated reading (B2). Each phase is one commit:
    - Each clause is identified by its content (its law form and
      joint-read fixtures), never by a hash of the text's bytes. The
      register (`src/physics/laws/clauses/`) holds `FORMS-PASSAGE` v4 (the
-     five fixtures of LAW-PASSAGE v3, eight passes) and `FORMS-COORDINATE` v2 (the
-     order, eight sexagesimal sectors, seven `within` readings and two
-     ranges of LAW-COORDINATE v1), with the hypha's own reconstruction of
+     five fixtures of LAW-PASSAGE v3, eight passes) and `FORMS-COORDINATE` v3 (the
+     orders of fixtures 1a and 11, eight sexagesimal sectors for display,
+     seven `within` readings on stated bounds and three ranges on one
+     component, of LAW-COORDINATE v3), with the hypha's own reconstruction of
      each fixture through `forms` (`ConcordanceClause`,
      `ConcordanceClauseId`, named apart from the rule language's clause).
      The passage is a network clause; the coordinate stands at kernel
@@ -1379,22 +1380,24 @@ adjudicated reading (B2). Each phase is one commit:
      operators on 2026-11-05 from netstratum's docs/120
      ([proposal 78.173](docs/proposals/78.173-law-coordinate.md),
      **Proposed**, at §3a step 2). A body stands at
-     `origin / h : S:G:T:H : K` with signed exact lanes; the canonical
-     order is the index a kernel addresses its bodies by; neighbours are
-     a range on one lane; the sexagesimal reading decides on exact sector
-     bounds (ruled 2026-11-05: base 60 is display only, and v3 decides on
-     exact intervals the caller states). **What `forms` holds** (no wire
-     or layout change): `forms/src/coordinate.rs`, shell id
-     `FORMS-COORDINATE` v1 (now v2, adding the advance, an event's bell,
-     the merger and fission), with
-     `Coordinate`, `Origin` (enclosures written out), the canonical order
-     and writing, `Sector` (base 60, registered `EXTERNAL`),
-     `Coordinate::within` refusing `OriginsDiffer`, and `Bodies::range`
-     by bisection. Its fixtures are in `forms/src/tests/coordinate.rs`.
+     `origin / h : S:G:T:H : K`, each lane a vector of exact signed
+     components keyed by axis (H's by generator, in degrees, `K` per
+     component); the canonical order is the index a kernel addresses its
+     bodies by; neighbours are a range on one component; `within` and the
+     ranges decide on exact intervals the caller states, and base 60 is
+     display only (ruled 2026-11-05). **What `forms` holds**:
+     `forms/src/coordinate.rs` and its organs, shell id
+     `FORMS-COORDINATE` v3 (v1 the order, writing and reading; v2 the
+     advance, an event's bell, the merger and fission; v3 the keyed vector
+     lanes, open lanes by ruled opening, the caller's intervals, the
+     re-origin across a throat and dilation invariance), with fixtures
+     1–16 in `forms/src/tests/`. The clause register serves v3 (a wire
+     change to the coordinate's writing, `changes/coordinate-v3.md`).
      Next: rewire `chronometry::tuniversal::TPoint` as the form's
-     non-negative case (claimed today by writing and order). Open: the
+     one-component non-negative case (claimed today by writing and
+     order), and the ruled act that opens a lane. Open: the
      signed-to-issuance map at the vertex, xylarium's lane renaming, and
-     fixtures for the advance of the lanes, an event's bell and a merger.
+     netstratum's composition law (fixture 11b).
 5. **B4, the boundary reading:** refusals at the universal core tube by
    name and domain under `ACT_OBSERVE`, and the reconstruction events
    (Collapse, Converse, Collision) at the boundary, with track 8.
