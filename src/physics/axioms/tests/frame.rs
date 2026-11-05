@@ -137,9 +137,9 @@ fn transitions_between_carries_blow_up_with_order_four_residue() {
     let members = transitions_between(&l.blade, &l2.blade, plane, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("carried");
     let [t] = members.as_slice() else { panic!("one member: h₃ settles the 180° turn, got {}", members.len()) };
     assert!(t.residue.iter().all(|r| r.order == Harmonic::Four), "nothing below order four is left: {:?}", t.residue);
-    let grid: Vec<_> = t.residue.iter().filter(|r| r.plane == plane).collect();
+    let on_plane: Vec<_> = t.residue.iter().filter(|r| r.plane == plane).collect();
     assert_eq!(
-        grid.iter().map(|r| r.vector.clone()).collect::<Vec<_>>(),
+        on_plane.iter().map(|r| r.vector.clone()).collect::<Vec<_>>(),
         vec![[q(-1, 4), q(0, 1)]],
         "the 2×2 block's own fourth harmonic, S₄(2)/2² = −1/4"
     );

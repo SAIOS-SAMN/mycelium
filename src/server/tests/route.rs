@@ -31,7 +31,7 @@ fn relocate_corpus_recomputes_nothing_for_unchanged_registry() {
         .lock()
         .expect("a fresh lock")
         .register(pair_task())
-        .expect("a grid pair's chain is A5's");
+        .expect("a sample pair's chain is A5's");
     let before = charts_read();
     assert!(cover_walk(&registry, 8).is_empty(), "an unrouted task is left to the intake");
     assert_eq!(charts_read(), before, "the cover's walk read no chart");

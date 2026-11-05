@@ -163,7 +163,7 @@ let task = crate::registry::task_address(&crate::transducer::family::Task {
     train: family.clone(),
     test: Vec::new(),
 })
-.expect("a grid pair's chain is A5's, so the task has an identity");
+.expect("a sample pair's chain is A5's, so the task has an identity");
 k.bind_task_family(&task, family);
 let addr = spoken.address();
 let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
