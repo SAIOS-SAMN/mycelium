@@ -141,8 +141,10 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   `Budget` (`physics/budget.rs`) is a linear token minted only by
   `Physics::stroke` and consumed by every cursor and expansion; no
   duration is derived from a reserve count.
-- K is a court's own receipt index and orders events inside that court.
-  TUniversal is the height of the mesh receipt ledger, read from receipts;
+- A court's own receipt index `i` orders events inside that court, and
+  `K` counts the orbits the court closed (ruled 2026-11-05: `K` means
+  closed orbits everywhere). TUniversal is the height of the
+  multi-dimensional ledger, read from receipts;
   it measures how long a carrier has stood at one home and never orders two
   events across nodes. No court and no mind reads a wall clock, a unix clock, or a
   timer; every duration is a count of strokes or heights (`MU-RECURSION.md`

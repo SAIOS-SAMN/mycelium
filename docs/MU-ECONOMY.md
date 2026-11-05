@@ -111,7 +111,14 @@ family) keeps its own measure as `n/1`. The readers are
 demand's ask and a stroke's size stay counts and are not μ. How the share
 of the frame sets each mode's amount is §12 item 4.
 
-**Lanes never convert.** μ is a vector on four lanes, never summed and
+**Lanes are open-dimensional** (ruled 2026-11-05). S, G, T and H are the
+network's base lanes. μ, the coordinate and the Concordance are
+open-dimensional: a further lane opens only by a ruled act agreed between
+kernels, with its motion type and its modes stated, never by one kernel or
+one court alone. The mechanism is to be drafted with the coordinate's v3
+(78.173 §1); until a lane is opened, μ has the four.
+
+**Lanes never convert.** μ is a vector on its lanes, never summed and
 never converted across lanes. A payment moves value on exactly the lanes
 the motion moved. A comparison returns a reading per lane (each lane fell,
 held or rose; `economy::lane_moves`), never a verdict, and the court
@@ -142,7 +149,8 @@ cognition. This keeps an earlier guard of the Künneth proposal: "The
 economic ledger is not an axis and never becomes a factor."
 
 Each signer (a voice, a hypha, a domain's reserve) keeps one line of
-signed receipts, indexed by its own `K` (MU-RECURSION 47.1). An economic
+signed receipts, indexed by its own receipt index `i` (MU-RECURSION 47.1;
+the receipt's place is `K.i`, `K` the orbits the signer closed). An economic
 event is a receipt on a line. Its **past cone** is what it cites; its
 future cone is what comes to cite it (MU-HOSTING §5a.5).
 - **Causal and partial.** One event precedes another only where the
@@ -176,10 +184,13 @@ origin / h : S:G:T:H : K
   still, and it moves only by an event.
 - **S, G, T, H:** each lane's cumulative advance by that lane's motions,
   held as a vector of exact components, the modes of §1, never one number
-  per lane. On the hypha every component is non-negative, as TUniversal's
+  per lane. These are the base lanes; a lane opened by a ruled act between
+  kernels (§1) joins them, and is never folded into one of them. On the hypha every component is non-negative, as TUniversal's
   point is the non-negative case (78.173 §1).
-- **K:** the line's own count (45.7), never compared with another
-  signer's. What `K` reads for a holding is §12 item 3.
+- **K:** the orbits closed (45.7), never compared with another signer's
+  and never a receipt index. `K` means closed orbits everywhere (ruled
+  2026-11-05): for a holding it is LAW-COORDINATE's reading, the whole
+  turns of H, and a line's receipt index is `i` (§12 item 3).
 
 `FORMS-COORDINATE` v2 holds one rational per lane. Lanes as vectors of
 exact components are the coordinate's v3, which is still to be stated
@@ -302,8 +313,8 @@ it reaches the same point, and its advance is minted once.
 - **A second mint of one closure is an equivocation of the advance**: two
   motions claiming one advance. The second mint is burned as the duplicate
   issuance of MU-RECURSION 47.4, naming both receipts, and slashes no
-  bond. A key's bond burns only where one key signed both at one `K`
-  (47.4; §4).
+  bond. A key's bond burns only where one key signed both at one place
+  `K.i` (47.4; §4).
 - **Concurrent claims are held.** Two claims of one point, neither in the
   other's past cone, are held and resolved by content (45.3). How the one
   advance then divides is §12 item 7.
@@ -329,7 +340,7 @@ witness debits the bond of the hypha that signed it, and a word that fails
 reconstruction debits the voice that spoke it. A bond is never slashed for
 being outvoted, because nothing is voted.
 
-Proven equivocation, two signed receipts from one key at one `K` with
+Proven equivocation, two signed receipts from one key at one place `K.i` with
 different content (MU-RECURSION 47.4), forfeits the signer's whole bond on
 all four lanes, as one burn naming the proof. Nothing is redistributed and
 nothing is run again. A second organ for an install or a release holds
@@ -342,7 +353,7 @@ A listing is quoted by `economy::price` on its own measure, its ask, and
 never on the span it has stood. The pool is a bond, not a price basis.
 
 **A payment is an event.** It stands on a signer's line (the court's, for
-a mint; the payer's, for a transfer) at that line's `K`, carries the last
+a mint; the payer's, for a transfer) at that line's receipt index `i`, carries the last
 TUniversal point read, and cites its causes: the closure's receipt, the
 verifications, the claim or the held value it discharges, and the payer's
 signed act. It advances the payee's holding by the modes the motion moved,
@@ -439,9 +450,10 @@ A transfer between voices homed at different courts is the xSEPTUM Note
 ([MU-XSEPTUM](MU-XSEPTUM.md)): signed by payer and payee, held at the
 listing's home, and released on two-organ reconstruction, the home and a
 witness both signing (47.3). Under the model the Note's hold is an event
-on the payer's line keyed by `(listing, payer, K_payer)`, and its release
-is the payee's advance citing it. A double spend is two Notes at one
-`K_payer`: an equivocation (MU-XSEPTUM §5.5). The Note is ROADMAP track 1.
+on the payer's line keyed by `(listing, payer, K_payer)`, `K_payer` the
+payer's receipt place `K.i`, and its release is the payee's advance
+citing it. A double spend is two Notes at one `K_payer`: an equivocation
+(MU-XSEPTUM §5.5). The Note is ROADMAP track 1.
 
 ## 6. The invariant, read
 
@@ -783,9 +795,10 @@ for its lessee for one window.
 2. **Where a role is written.** Whether balance, bond, held value and a
    claim are enclosures in the holding's origin, or a field beside the
    coordinate.
-3. **What `K` reads for a holding.** LAW-COORDINATE reads `K` as the whole
-   turns of H (`⌊|L_H|⌋`); a line's `K` is its receipt index (47.1). A
-   holding needs one of the two, or both named apart.
+3. **What `K` reads for a holding.** *Closed (ruled 2026-11-05: `K`
+   means closed orbits everywhere).* A holding's `K` is LAW-COORDINATE's,
+   the whole turns of H (`⌊|L_H|⌋`); a line's receipt index, which this
+   item called its `K` (47.1), is `i` in prose.
 4. **A mode's amount and the share of the frame.** Today each mode is read
    at its closed pair's carried mass (`DeflationRead::modes`), while the
    per-lane payment is the share of the frame (§1). Which gauge sets a

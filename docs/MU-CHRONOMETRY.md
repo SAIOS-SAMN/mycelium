@@ -59,7 +59,7 @@ its book.
   | `G` | Gauge lane: cumulative verified issuance of hue cycles and moves |
   | `T` | Temporal lane: cumulative verified issuance of null flux |
   | `H` | Holonomic lane: cumulative verified issuance of turns (a circuit's composite around a ring) |
-  | `K` | A ledger coordinate: the keeper's cycles closed by name (OK1), never an orbit |
+  | `K` | The orbits the keeper's court closed, each a cycle closed by name (OK1): a count, never an orbit itself and never a receipt index (the receipt index is `i`; ruled 2026-11-05) |
 
   The four lanes advance only when work on that lane is verified, so the
   clock measures distance travelled, not seconds (MU-RECURSION 78.43). The

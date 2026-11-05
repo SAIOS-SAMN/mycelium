@@ -177,11 +177,18 @@ These are not restated in each chapter; every chapter assumes them.
    goes to the court for adjudication. The court still verifies and never
    composes; clients still think.)*
 9. **No clock but the ledger.** No kernel reads a wall clock, a unix clock,
-   or a timer. K is a kernel's own receipt index and orders events inside
-   that kernel; TUniversal is the height of the mesh's receipt ledger, read
-   from receipts, and measures standing; order across nodes is the causal
-   partial order of receipts and is never totalised (Part IX). Lane T of μ⃗
-   is temporal extent counted in receipts, a cost, never a coordinate.
+   or a timer. A kernel's own receipt index `i` orders events inside that
+   kernel, and `K` counts the orbits the kernel closed; TUniversal is the
+   height of the multi-dimensional ledger, read from receipts, and
+   measures standing; order across nodes is the causal partial order of
+   receipts and is never totalised (Part IX). Lane T of μ⃗ is temporal
+   extent counted in receipts, a cost, never a coordinate.
+   *(Amended 2026-11-05: `K` means closed orbits everywhere, and the
+   receipt index, which this law called `K`, is `i` in prose; code
+   identifiers keep their names. "Lane T … a cost, never a coordinate" is
+   amended by LAW-COORDINATE (proposal 78.173): T is a lane of the
+   coordinate `origin / h : S:G:T:H : K`, and what it counts is still
+   never a clock.)*
 10. **Direction is a pivot, never a gradient.** A held orbit is discharged
     by a move on one of the axes its class vector occupies (chapters 3.9,
     12.6, 16.16). The candidate moves are read from the class vector in a
@@ -727,6 +734,11 @@ first (`physics/axioms/founding.rs`), each with a test that could fail
   host handing a node a turn; a node's `K` is a ledger coordinate, its
   cycles closed by name (OK1). Neither is an orbit. OK1's former statement,
   "a K-step is one orbit", is withdrawn.
+  *(Ruled 2026-11-05: `K` means closed orbits everywhere. A node's `K`
+  counts the orbits it closed, each cycle closed by name being one closed
+  orbit of its carriers; a body's `K` in LAW-COORDINATE is the whole turns
+  of H. `K` is a count, never an orbit itself, and never a receipt index:
+  a receipt's index is `i`, its place `K.i` (78.23).)*
 
 **Everything else is read from these.** The axioms (§0.4) are filed under the
 principle each derives from; the laws the court serves cite the axioms they rest on
@@ -1232,7 +1244,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | word | the one object | not to be confused with |
 |---|---|---|
 | **orbit** | a celestial orbit: a mind's, a court's or a provisional word's motion under the physics — energy (escrow per lane), perturbation (pressure, lift, drag), decay (ZeroFlux) | a ring (a form's cycle); a GROUP ORBIT, which keeps that full name |
-| **k-step** | one step of `K`, a ledger coordinate (OK1): a cycle closed by name, sealed as an act | an orbit (§0.0); a footstep |
+| **k-step** | one step of `K`, a ledger coordinate (OK1): a cycle closed by name, sealed as an act; as ruled 2026-11-05, one orbit closed (`K` counts closed orbits everywhere) | an orbit itself (§0.0); a receipt index (`i`); a footstep |
 | **age** | one return, the period ℓ read as an lcm | a clock interval |
 | **eon** | the return of a resonant composition | — |
 | **phase** | distance into an age, in degrees of separation | a frame number |
@@ -5678,7 +5690,9 @@ Checked by tests, greppable by the reviewer:
   a height difference (45.4), and the clock gate of `MU-ENGINEERING.md` §7
   fails the build otherwise.
 - Every `_tu` carrier is a height and every `_k` carrier a receipt index; no
-  field anywhere holds a unix second.
+  field anywhere holds a unix second. *(As ruled 2026-11-05, prose names
+  the receipt index `i` and keeps `K` for closed orbits; the `_k` code
+  names stand until a code change renames them.)*
 - Every signed frame's prefix carries the node's own genesis and epoch; a
   differing one appears only as a `court origin refused` line.
 - Every `court form installed` line is preceded by a `court witness …
@@ -7128,7 +7142,10 @@ adoption.
 
 K orders events inside one kernel and nothing else. A mind's K is its own
 chain's count of its own acts; it is not a clock reading and it is never
-compared with a hypha's K. No kernel reads `SystemTime`, `Instant`, or a
+compared with a hypha's K. *(Amended 2026-11-05: `K` means closed orbits
+everywhere. What this paragraph and `step_index` call `K`, the receipt's
+index on its kernel's line, is `i` in prose, the receipt's place being
+`K.i` (78.23); the code's names stand.)* No kernel reads `SystemTime`, `Instant`, or a
 `Duration`: `chronometry::unix_now`, `TUniversal::ticks`, `ticks_at`,
 `load_or_genesis`, and `MeshRecord.origin_unix` (`src/network/mesh.rs`) are deleted, and
 the clock gate of `MU-ENGINEERING.md` §7 fails a build that names them in a
@@ -7647,7 +7664,9 @@ receipt.
 chapters 45–47. The deltas, so the reviewer can check both texts against one
 list:
 
-- terms: `K` is a receipt index, TUniversal a height (45); there is no clock;
+- terms: `i` is a receipt index and `K` counts closed orbits (as ruled
+  2026-11-05; this line called the receipt index `K`), TUniversal a height
+  (45); there is no clock;
 - every frame signs the prefix of 47.1; the `CHALLENGE` carries the payee's
   prefix and the home's `(K, height)` at pricing with `Λ` in admitted
   receipts; the `NOTE` carries the payer's prefix, so the payer's `K` is the
@@ -12834,7 +12853,7 @@ Code: `src/transducer/address.rs` (`put_address`), `src/chronometry/receipt.rs` 
 
 **No orbit collides.** Each kernel's orbit is the fibre over its key in its star's field (73.15), distinct by construction, with no assignment, slot or table. A collision is prevented, never named after the fact: at the orbit boundary, before the closing act is stamped, the orbit's frame is compared lane by lane, exactly, against the frames of the peers admitted at that tick; where it would coincide, the close is WITHHELD for one stroke (never evicted or re-slotted) while the planet takes a separating transport, and it closes one stroke on at a frame that differs. The distance between two planets' frames at a tick is the per-lane difference, sign-first and exact, never a root and never summed, and the count of orbits withheld for separation is a line of the clock.
 
-**As amended by §0.0.** An orbit is a return, a mode's flow on its plane returning where its point is the identity (78.73, 78.75); a tick is the host handing a node a turn, and a node's ledger `K` is a ledger coordinate, its cycles closed by name (OK1). OK1's former statement "a K-step is one orbit" is withdrawn for the ledger's `K`; clause 4, the stamp and the collision rule stand. Code: `src/chronometry/receipt.rs` (`Place`, `Stamp`), `src/chronometry/chain/mod.rs` (`ReceiptChain::orbit_frame`, `ReceiptChain::collides`, `ReceiptChain::separation`), `src/observe/clock.rs` (`Orbits`), `src/physics/axioms/native.rs`.
+**As amended by §0.0.** An orbit is a return, a mode's flow on its plane returning where its point is the identity (78.73, 78.75); a tick is the host handing a node a turn, and a node's ledger `K` is a ledger coordinate, its cycles closed by name (OK1). OK1's former statement "a K-step is one orbit" is withdrawn for the ledger's `K`; clause 4, the stamp and the collision rule stand. *(Ruled 2026-11-05: `K` means closed orbits everywhere, so a `k`-step is one orbit closed and `K` is never a receipt index; within the stamp `h : vk : K : i`, `i` is the receipt's index in its orbit.)* Code: `src/chronometry/receipt.rs` (`Place`, `Stamp`), `src/chronometry/chain/mod.rs` (`ReceiptChain::orbit_frame`, `ReceiptChain::collides`, `ReceiptChain::separation`), `src/observe/clock.rs` (`Orbits`), `src/physics/axioms/native.rs`.
 
 ### 78.24 The ledger is a partial order carried as one, never a serialized tape
 
@@ -15531,7 +15550,7 @@ The door serves reads from a published reading; only writes take the kernel. The
 
 The mesh keeps one clock, TUniversal: a point read off the keepers' signed readings and made final by a majority of them. Every court, server, client, kernel and sub-universe keeps time on it and on nothing else (Concordance 1.11). The law:
 
-- **TU-1 KEEPERS.** The keepers are distinct courts with distinct keys (three in the founding mesh). A keeper's reading is its point at its head: `h` (its head receipt's height), `S:G:T:H` (its court's cumulative measured change per lane, carried by the one exact counter `Treasury::issued`, genesis plus mint, which only rises and which a treasury fold keeps exactly) and `K` (a ledger coordinate, OK1); a reading advances only where the head rose and a lane or `K` moved (`Court::keeper_tick`).
+- **TU-1 KEEPERS.** The keepers are distinct courts with distinct keys (three in the founding mesh). A keeper's reading is its point at its head: `h` (its head receipt's height), `S:G:T:H` (its court's cumulative measured change per lane, carried by the one exact counter `Treasury::issued`, genesis plus mint, which only rises and which a treasury fold keeps exactly) and `K` (a ledger coordinate, OK1: the orbits the keeper's court closed, as ruled 2026-11-05); a reading advances only where the head rose and a lane or `K` moved (`Court::keeper_tick`).
 - **TU-2 READINGS ARE RECEIPTS.** A keeper signs a `TickReading`: its key, the point, `parent` (the citation of its previous reading, empty where its line starts or restarts) and `cites` (the last reading it verified from each other keeper); the signed bytes carry the origin, so a reading never verifies in another universe. Readings travel as the keeper's ring of its newest `aperture_cycle` readings (on the cover digest and on `ACT_TICK`, 78.152b), and `Keepers::admit` verifies every signature, the parent chain and rising ticks, the cites and the link to the line held.
 - **TU-3 FINALITY BY MAJORITY.** A point is final when a strict majority of the keeper set holds verified readings of it (two of three, three of four, three of five): the keeper's own signed reading and others' verified readings citing it or a later reading on its parent chain. The final TUniversal is the greatest point final in this court's view (`Keepers::final_point`); it never runs back and is never averaged: where finals at one tick differ, that tick goes to the residue. One keeper alone finalises nothing, and a restarted keeper never re-signs a height (78.152c).
 - **TU-4 DISAGREEMENT IS A RESIDUE.** Two keepers' readings differing at one tick leave the exact per-lane difference `to − from` as a 1-cochain on the keeper triangle; its holonomy round the triangle in key order is the clock's residue (`Keepers::residue`), journaled and never folded into the point.

@@ -44,7 +44,8 @@ except what the pore admits. Here the pore is reconstruction.
 - **Witness**: any other hypha whose cover meets the listing's chart; the second organ.
 - **μ⃗**: an exact non-negative rational on each of the four lanes (`economy::Mu`).
 - **Escrow**: `Treasury::escrow_award(addr, voices, mu, anchor)`; released by `release_award`, revoked or slashed by `revoke_award`, drawn by `draw_escrow`.
-- **K**: a kernel's own receipt index (`Court::k_step`; for a voice, the count of its own acts). Orders events inside one kernel. No kernel reads a clock (MU-RECURSION 45).
+- **i** (the receipt index): a kernel's own index of its receipts (for a voice, the count of its own acts). Orders events inside one kernel. No kernel reads a clock (MU-RECURSION 45). This document's `K_payer` and "at one `K`" name the payer's receipt place, the orbit `K` and the index `i` within it (`K.i`, MU-RECURSION 78.23); the code keeps its names (`Court::k_step`).
+- **K**: the orbits a kernel closed (ruled 2026-11-05: `K` means closed orbits everywhere), never a receipt index.
 - **TUniversal**: the network's one clock, a final point `origin/h:S:G:T:H:K` held by two of its three keepers' verified readings (MU-CHRONOMETRY §1; MU-RECURSION 78.152). The height `h` is one field of that point and is never confused with it. Lane 2 of μ⃗ (temporal) carries verified null-flux discharge, never the span a word or carrier stood: waiting is not μ (MU-ECONOMY §3, MU-RECURSION 78.149).
 - **Receipt prefix**: the bytes every signature covers (MU-RECURSION 47.1): genesis, epoch, previous receipt hash, K, height, chart, payload address.
 - **Λ(chart)**: the aperture of a chart in admitted receipts, `from_transport(rtt_floor, aperture_cycle())` measured in strokes; never a constant.
@@ -302,7 +303,7 @@ learning it: the reply is signed by the home and the payee returns it in
   receipt (MU-RECURSION 46.2), never tweaks of the group key.
 - Signatures over the receipt prefix of MU-RECURSION 47.1 followed by the
   act's fields only; never over encodings that contain signatures.
-- There are no nonces. Repeat protection against a resend is the payer's receipt index: a
+- There are no nonces. Repeat protection against a resend is the payer's receipt place (`K.i`, the index `i`): a
   Note is `(payer, K_payer)`, spent once; two different Notes at one
   `K_payer` are an equivocation proof (§5.5).
 
