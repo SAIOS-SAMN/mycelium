@@ -22,6 +22,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 mod bridge;
 mod calibrate;
 mod census;
+mod charting;
 mod cover;
 mod confluence;
 mod delta;
@@ -439,6 +440,16 @@ fn main() {
             std::process::exit(1);
         };
         calibrate::report(dir, name);
+        return;
+    }
+    // mycelium#87 — `--chart DIR NAME`: the chart's intake cost on one task,
+    // pair by pair, by stage, with the bit lengths its coordinates carry.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--chart") {
+        let (Some(dir), Some(name)) = (argv.get(1), argv.get(2)) else {
+            eprintln!("  chart refused: name the corpus directory and the task");
+            std::process::exit(1);
+        };
+        charting::report(dir, name);
         return;
     }
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--cover") {
