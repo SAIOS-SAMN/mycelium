@@ -147,7 +147,7 @@ impl Mind {
     /// complexes' outflow, so at the voice the released torsion was dropped.
     /// It enters the voice's field now by the door the court's outflow takes
     /// (`mark_flux`, the voices' one field reader, law 12): null flux into the
-    /// tubes, turns and boosts, each onto its orbit, each motion weighing one.
+    /// tubes, rotations on their planes and boosts, each onto its orbit, each motion weighing one.
     /// Returns how many motions vented. The complex listens from here on —
     /// armed where it is taken, so a complex read back from disk listens too.
     ///
@@ -246,8 +246,8 @@ impl Mind {
     /// certified on its fixed locus, the whole composing back, T1): a
     /// congruent thought, or a refusal counted by why. Constructed, its
     /// rotation is adjoined as the mind's own letter on its chart
-    /// (`adjoin_letters`, the pivot's path); a residue whose motion holds no
-    /// turn is counted apart — it constructs, and no letter type holds it yet
+    /// (`adjoin_letters`, the pivot's path); a residue whose motion rotates
+    /// on no plane is counted apart — it constructs, and no letter type holds it yet
     /// (the ledger's row 8 reads this).
     pub(crate) fn construct_and_adjoin(
         &mut self,
@@ -283,7 +283,7 @@ impl Mind {
                 made(Constructed::Letter);
                 true
             }
-            // 78.68 ROW 8 — A RESIDUE THAT TURNS NOTHING IS STILL A LETTER: its
+            // 78.68 ROW 8 — A RESIDUE THAT ROTATES ON NO PLANE IS STILL A LETTER: its
             // whole motion on the letter's carriage (a slide, a dilation about
             // a point), stood in the mind's dialect and spoken — the court
             // verifies and hardens it or refuses by name (C4) — and kept, so
@@ -435,13 +435,14 @@ impl Mind {
     }
 
     /// 78.166 1c — A CONJUGATE SPOKEN AS THE HELD WORD TRANSPORTED: where the
-    /// residue's turn is in the class of a word the court ruled, it is that
+    /// residue's rotation (its degrees on its plane, the generator named by
+    /// its two axes) is in the class of a word the court ruled, it is that
     /// word conjugated — `g · W · g̃` — and the mind speaks ONE word citing
     /// W with its conjugator `g` (solved exactly, `Presentation::conjugate_of`),
     /// at the residue's carriage on `chart`. The court composes the cite with
     /// its conjugator against the vertex's rotor and refuses a wrong one. No
-    /// letter is minted for a turn the language already holds in another
-    /// orientation. Said once, as a composition is. Answers whether it was a
+    /// letter is minted for a rotation the language already holds on another
+    /// plane. Said once, as a composition is. Answers whether it was a
     /// conjugate.
     pub(crate) fn speak_conjugate(
         &mut self,

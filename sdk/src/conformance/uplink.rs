@@ -36,7 +36,7 @@ fn laws_clock(session: &Speaker) -> Result<String, String> {
 /// (`verify_sized`): the court and the kernel agree exactly, or the
 /// difference is named.
 fn laws_verify(session: &Speaker) -> Result<String, String> {
-    let ts = super::probes::transitions().ok_or("the turn carries no body")?;
+    let ts = super::probes::transitions().ok_or("the rotor in e₁e₂ carries no body")?;
     let mut read = Vec::new();
     for t in &ts {
         let reply = spoken(session, laws::encode_verify_request(t))?;
@@ -54,7 +54,7 @@ fn laws_verify(session: &Speaker) -> Result<String, String> {
 }
 
 fn laws_batch(session: &Speaker) -> Result<String, String> {
-    let ts = super::probes::transitions().ok_or("the turn carries no body")?.to_vec();
+    let ts = super::probes::transitions().ok_or("the rotor in e₁e₂ carries no body")?.to_vec();
     let reply = spoken(session, laws::encode_batch_request(&ts))?;
     let served = laws::decode_batch_reply(&reply).ok_or_else(|| undecoded(&reply, "verdicts"))?;
     let held: Vec<_> = ts.iter().map(mycelium::physics::laws::verify_sized).collect();

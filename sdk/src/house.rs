@@ -64,13 +64,16 @@ pub use mycelium::chronometry::tuniversal::TPoint;
 /// under the stroke the motion needs, as the court does, so a kernel that
 /// verifies with it agrees with the court exactly.
 pub use mycelium::physics::laws::{verify, verify_sized, BodyState, Breach, Flow, Flux, Law, Transition, TransitionVerdict, Unmeasured};
-/// THE CONFORMAL LAW ON A MOTION STATED AS TURNS (MU-HOSTING §5a.10): a
-/// turn per phase of a frame, checked by turn arithmetic in ℚ/ℤ where no
-/// exact versor exists (Niven), and refused `LeavesPeriods` where a turn
-/// leaves the frame's periods. In process: the wire carries it with the
-/// crossing record (track 25, X1).
+/// THE CONFORMAL LAW ON A MOTION STATED PHASE BY PHASE (MU-HOSTING
+/// §5a.10): per bell, each phase of a frame advances on its own named plane
+/// by the fraction `r/h` of its period, the degrees `360°·r/h` on that
+/// plane, held exactly in ℚ/ℤ where no exact versor exists (Niven), and
+/// refused `LeavesPeriods` where a phase's advance leaves the frame's
+/// periods. In process: the wire carries it with the crossing record
+/// (track 25, X1).
 pub use mycelium::physics::laws::{verify_turns, TurnBreach, TurnMotion, TurnTransition, TurnVerdict};
-/// A turn in ℚ/ℤ (`Turn::of(r, h)`) and a frame's periods.
+/// A phase's advance in ℚ/ℤ (`Turn::of(r, h)`, the degrees `360°·r/h` on
+/// its plane) and a frame's periods.
 pub use mycelium::transducer::family::transduce::{Enclosure, Turn};
 /// A body as A.13 reads it (centre, mass, second moments).
 pub use mycelium::physics::equilibrium::BodyMoments;

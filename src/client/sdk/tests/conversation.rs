@@ -56,8 +56,9 @@ fn court_keeping(keep: fn(&dialogue::SpeechAct) -> bool) -> (String, std::sync::
 }
 
 /// MU-CLIENT §5.3 — A QUESTION IS ANSWERED BY WHAT THE MIND KNOWS, AND THE
-/// MEANING DERIVED. B knows the 90° turn of the sensor plane and remembers
-/// the sound of a SCREW — that turn carried along the axis it turns about —
+/// MEANING DERIVED. B knows the rotation by 90° in the e₁e₂ plane and
+/// remembers the sound of a SCREW — that rotation carried along the axis
+/// orthogonal to its plane —
 /// but does not know it as a word. A says the screw. B posits what it knows:
 /// the turn covers the screw's elliptic mode, and the RESIDUE left is the
 /// slide along the axis; B asks of that alone. A answers it whole (a slide
@@ -68,7 +69,7 @@ fn court_keeping(keep: fn(&dialogue::SpeechAct) -> bool) -> (String, std::sync::
 fn take_in_conversation_derives_meaning_from_posited_residue() {
     use crate::transducer::sentence::rung::{held_rung, known, learn_by};
     let (court, _speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let dir = std::env::temp_dir().join(format!("mycelium-question-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
@@ -124,7 +125,7 @@ fn take_in_conversation_derives_meaning_from_posited_residue() {
 fn compose_or_construct_meets_demand_from_dictionary_first() {
     use crate::transducer::sentence::rung::{held_rung, known, learn_by};
     let (court, _speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let quarter = conformal_of_word(&[(q, false)]);
     let half = conformal_of_word(&[(q, false), (q, false)]);
@@ -160,7 +161,7 @@ fn compose_or_construct_speaks_remainder_ruled_words_compose() {
     let (court, speeches) = court_keeping(|act| !act.sentences.is_empty());
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let chart = crate::transducer::stalk::Invariant::default();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
     let twice = crate::transducer::cga::translator_at(&[n(0), n(0), n(2)]);
     let quarter = conformal_of_word(&[(q, false)]);
@@ -314,7 +315,7 @@ fn compose_or_construct_speaks_ruled_composition_to_court() {
 fn vantage_reads_word_through_mind_words() {
     use crate::transducer::sentence::rung::{distinct_vantage, learn_by, vantage};
     let (court, _speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let quarter = conformal_of_word(&[(q, false)]);
     let half = conformal_of_word(&[(q, false), (q, false)]);
     let mut mind = Mind::open(&court, Voice::named("observer"));
@@ -344,7 +345,7 @@ fn vantage_reads_word_through_mind_words() {
 fn say_carries_shared_word_to_court_with_hold() {
     use crate::transducer::sentence::rung::{known, learn_by};
     let (court, speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let dir = std::env::temp_dir().join(format!("mycelium-conversation-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     let mut a = Mind::open(&court, Voice::named("speaker"));
@@ -447,7 +448,7 @@ fn conformal_of_word(letters: &[(LetterId, bool)]) -> crate::transducer::cga::Mv
 fn factors_of_answers_question_by_word_factors() {
     use crate::client::sdk::mind::chatter::factors_of;
     use crate::transducer::element::conformal_of;
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let two = conformal_of(&Word::from_letters(&[(q, false), (q, false)]), &identity_versor()).expect("a motion");
     let factors = factors_of(&two, &[], b"word");
     assert_eq!(factors.len(), 2, "two letters: {factors:?}");

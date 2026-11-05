@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-// THE OBJECTS THE CONFORMANCE READ SPEAKS: two transitions (a lawful turn
-// and a still height), a universe's genesis and origin, a manifest, and the
+// THE OBJECTS THE CONFORMANCE READ SPEAKS: two transitions (a lawful
+// rotation in e₁e₂ and a still height), a universe's genesis and origin, a manifest, and the
 // seats a house lists — each exact, the same at both ends of every codec.
 
 use mycelium::anastome::dialogue::domain::BigBangRecord;
@@ -17,12 +17,14 @@ fn q(n: i64) -> Q {
     Q::from_integer(n.into())
 }
 
-/// The (3,4,5) turn in (e₁, e₂): `2 + e₁₂`, a rational rotor.
-fn turn() -> Mv {
+/// The rotor in the e₁e₂ plane at the rational point (3/5, 4/5): `2 + e₁₂`,
+/// whose sandwich carries `e₁` to `(3/5)·e₁ − (4/5)·e₂`, the angle whose
+/// cosine is 3/5 and sine 4/5 in the plane's `e₂e₁` orientation, exact.
+fn rotor() -> Mv {
     rotator(&q(2), &q(1))
 }
 
-/// Two bodies carried by the turn exactly: each nucleus a unit sphere moved
+/// Two bodies carried by the rotor exactly: each nucleus a unit sphere moved
 /// by the sandwich, each body by its rigid carriage.
 fn carried() -> Option<Vec<(BodyState, BodyState)>> {
     [[1, 0, 0], [0, 2, 0]]
@@ -34,17 +36,17 @@ fn carried() -> Option<Vec<(BodyState, BodyState)>> {
                 moments: vec![vec![q(1), q(0), q(0)], vec![q(0), q(0), q(0)], vec![q(0), q(0), q(0)]],
             };
             let nucleus = sphere_at(&body.centre, &q(1));
-            let after = BodyState { nucleus: turn().sandwich(&nucleus), body: carried_body(&body, &turn())? };
+            let after = BodyState { nucleus: rotor().sandwich(&nucleus), body: carried_body(&body, &rotor())? };
             Some((BodyState { nucleus, body }, after))
         })
         .collect()
 }
 
-/// A LAWFUL TRANSITION (the turn carrying two bodies, heights 7 → 8) and a
-/// STILL one (the same at 8 → 8, refused on time alone). `None` where the
-/// turn carries no body rigidly, which it does.
+/// A LAWFUL TRANSITION (the rotor in e₁e₂ carrying two bodies, heights
+/// 7 → 8) and a STILL one (the same at 8 → 8, refused on time alone). `None`
+/// where the rotor carries no body rigidly, which it does.
 pub(crate) fn transitions() -> Option<[Transition; 2]> {
-    let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried()?, hues: Default::default(), fluxes: Vec::new() };
+    let lawful = Transition { motion: rotor(), heights: (7, 8), bodies: carried()?, hues: Default::default(), fluxes: Vec::new() };
     let still = Transition { heights: (8, 8), ..lawful.clone() };
     Some([lawful, still])
 }
