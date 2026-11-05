@@ -9,8 +9,9 @@ use crate::transducer::anchor::*;
 /// `SELECTION_HEIGHT` levels, and none passes it.
 #[test]
 fn derive_closure_height_equals_selection_height() {
-    let scene: Vec<(i64, i64, u8)> = (0..4).flat_map(|r| (0..4).map(move |c| (r, c, if c < 2 { 1 } else { 2 }))).collect();
-    let fp = vec![(0, 1), (0, 2)];
+    let scene: Vec<crate::transducer::spelled::PaintedSite> =
+        (0..4).flat_map(|r| (0..4).map(move |c| crate::transducer::spelled::PaintedSite::on_plane([r, c], if c < 2 { 1 } else { 2 }))).collect();
+    let fp = crate::transducer::sentence::tests::fixtures::sites(&[(0, 1), (0, 2)]);
     let terms = candidates(&fp, &scene);
     assert!(terms.iter().all(|t| t.height() <= SELECTION_HEIGHT), "no candidate passes the language's height");
     assert!(terms.iter().any(|t| t.height() == SELECTION_HEIGHT), "and the enclosure over an ordered base reaches it");

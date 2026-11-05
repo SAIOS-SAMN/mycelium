@@ -2,10 +2,11 @@
 // that its key is stable under a change of representation.
 
 use crate::transducer::anchor::*;
+use crate::transducer::sentence::tests::fixtures::{painted, sites};
+use crate::transducer::spelled::{PaintedSite, SectionSite};
 
-
-fn block() -> Vec<(i64, i64, u8)> {
-    (0..3).flat_map(|r| (0..3).map(move |c| (r, c, 5u8))).collect()
+fn block() -> Vec<PaintedSite> {
+    (0..3).flat_map(|r| (0..3).map(move |c| PaintedSite::on_plane([r, c], 5))).collect()
 }
 
 /// Interior and coboundary are DERIVED terms (K ∖ δK and δK), never tags:
@@ -14,24 +15,22 @@ fn block() -> Vec<(i64, i64, u8)> {
 #[test]
 fn derive_transfers_interior_to_larger_scene() {
     let scene = block();
-    let t = derive(&[(1, 1)], &scene).expect("derivable");
-    assert_eq!(t.eval(&scene), vec![(1, 1)], "exact on its own evidence");
+    let t = derive(&sites(&[(1, 1)]), &scene).expect("derivable");
+    assert_eq!(t.eval(&scene), sites(&[(1, 1)]), "exact on its own evidence");
     assert!(matches!(t, Selection::Minus(_, _)), "the interior DERIVES as K ∖ δK: {t:?}");
     // Transfer: a 5×5 block of the same hue — the SAME TERM selects the
     // new interior with no re-derivation (selection is language).
-    let big: Vec<(i64, i64, u8)> =
-        (0..5).flat_map(|r| (0..5).map(move |c| (r, c, 5u8))).collect();
+    let big: Vec<PaintedSite> = (0..5).flat_map(|r| (0..5).map(move |c| PaintedSite::on_plane([r, c], 5))).collect();
     let inner = t.eval(&big);
     assert_eq!(inner.len(), 9, "the 3×3 interior of the 5×5 block");
-    assert!(inner.contains(&(2, 2)));
+    assert!(inner.contains(&SectionSite::on_plane([2, 2])));
 }
 
 /// The boundary ring derives as δ of the hue support.
 #[test]
 fn derive_reads_coboundary_as_delta() {
     let scene = block();
-    let ring: Vec<(i64, i64)> =
-        scene.iter().map(|(r, c, _)| (*r, *c)).filter(|&(r, c)| !(r == 1 && c == 1)).collect();
+    let ring: Vec<SectionSite> = scene.iter().map(|p| p.site).filter(|s| s.coordinates() != [1, 1]).collect();
     let t = derive(&ring, &scene).expect("derivable");
     assert_eq!(t.eval(&scene).len(), 8);
     assert!(matches!(t, Selection::Delta(_)), "δK, derived: {t:?}");
@@ -45,13 +44,13 @@ fn derive_reads_coboundary_as_delta() {
 #[test]
 fn eval_transfers_hue_interface() {
     let t = Selection::Inter(Box::new(Selection::Hue(1)), Box::new(Selection::Star(Box::new(Selection::Hue(2)))));
-    let scene = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 2), (0, 3, 2)];
-    assert_eq!(t.eval(&scene), vec![(0, 1)], "the hue-1 site touching hue 2");
-    let moved = vec![(5, 5, 1u8), (6, 5, 1), (7, 5, 2)];
-    assert_eq!(t.eval(&moved), vec![(6, 5)], "the same term finds the new frontier");
+    let scene = painted(&[(0, 0, 1), (0, 1, 1), (0, 2, 2), (0, 3, 2)]);
+    assert_eq!(t.eval(&scene), sites(&[(0, 1)]), "the hue-1 site touching hue 2");
+    let moved = painted(&[(5, 5, 1), (6, 5, 1), (7, 5, 2)]);
+    assert_eq!(t.eval(&moved), sites(&[(6, 5)]), "the same term finds the new frontier");
     // And derive() does produce SOME exact term from the one pair.
-    let d = derive(&[(0, 1)], &scene).expect("derivable");
-    assert_eq!(d.eval(&scene), vec![(0, 1)], "exact on the evidence");
+    let d = derive(&sites(&[(0, 1)]), &scene).expect("derivable");
+    assert_eq!(d.eval(&scene), sites(&[(0, 1)]), "exact on the evidence");
 }
 
 /// Serde round-trips every operator exactly; hostile bytes refuse cleanly.
@@ -80,15 +79,15 @@ fn from_bytes_round_trips_and_refuses_hostile_bytes() {
 /// selecting nothing — and the same term transfers to a rearranged scene.
 #[test]
 fn eval_arg_ext_selects_unique_extremum() {
-    let scene = vec![(0, 0, 3u8), (0, 1, 3), (0, 2, 3), (5, 5, 3)];
+    let scene = painted(&[(0, 0, 3), (0, 1, 3), (0, 2, 3), (5, 5, 3)]);
     let t = Selection::ArgExt(Box::new(Selection::Hue(3)), 0);
-    assert_eq!(t.eval(&scene), vec![(0, 0), (0, 1), (0, 2)], "the three-site body wins");
+    assert_eq!(t.eval(&scene), sites(&[(0, 0), (0, 1), (0, 2)]), "the three-site body wins");
     let small = Selection::ArgExt(Box::new(Selection::Hue(3)), 1);
-    assert_eq!(small.eval(&scene), vec![(5, 5)], "the isolated site is the argmin");
-    let moved = vec![(9, 9, 3u8), (2, 0, 3), (2, 1, 3)];
-    assert_eq!(t.eval(&moved), vec![(2, 0), (2, 1)], "the same term, the new largest");
+    assert_eq!(small.eval(&scene), sites(&[(5, 5)]), "the isolated site is the argmin");
+    let moved = painted(&[(9, 9, 3), (2, 0, 3), (2, 1, 3)]);
+    assert_eq!(t.eval(&moved), sites(&[(2, 0), (2, 1)]), "the same term, the new largest");
     // A TIE selects nothing: two equal bodies have no unique extremum.
-    let tie = vec![(0, 0, 3u8), (0, 1, 3), (5, 5, 3), (5, 6, 3)];
+    let tie = painted(&[(0, 0, 3), (0, 1, 3), (5, 5, 3), (5, 6, 3)]);
     assert!(t.eval(&tie).is_empty(), "no coin flips");
 }
 
@@ -98,34 +97,35 @@ fn eval_arg_ext_selects_unique_extremum() {
 #[test]
 fn derive_transfers_enclosure_to_wider_ring() {
     // A 3×3 ring of hue 5 with a hue-0 hole, on a 5×5 full grid.
-    let mut scene: Vec<(i64, i64, u8)> = Vec::new();
+    let mut scene: Vec<PaintedSite> = Vec::new();
     for r in 0..5 {
         for c in 0..5 {
             let on_ring = (1..=3).contains(&r) && (1..=3).contains(&c) && !(r == 2 && c == 2);
-            scene.push((r, c, if on_ring { 5 } else { 0 }));
+            scene.push(PaintedSite::on_plane([r, c], if on_ring { 5 } else { 0 }));
         }
     }
-    let t = derive(&[(2, 2)], &scene).expect("the hole is derivable");
-    assert_eq!(t.eval(&scene), vec![(2, 2)], "exactly the enclosed site");
-    // Transfer: a wider ring elsewhere on a 7×7 grid — same term, new hole.
-    let mut big: Vec<(i64, i64, u8)> = Vec::new();
+    let t = derive(&sites(&[(2, 2)]), &scene).expect("the hole is derivable");
+    assert_eq!(t.eval(&scene), sites(&[(2, 2)]), "exactly the enclosed site");
+    // Transfer: a wider ring elsewhere on a 7×7 sample — same term, new hole.
+    let mut big: Vec<PaintedSite> = Vec::new();
     for r in 0..7 {
         for c in 0..7 {
             let on_ring = (2..=5).contains(&r) && (2..=5).contains(&c)
                 && !((3..=4).contains(&r) && (3..=4).contains(&c));
-            big.push((r, c, if on_ring { 5 } else { 0 }));
+            big.push(PaintedSite::on_plane([r, c], if on_ring { 5 } else { 0 }));
         }
     }
     let hole = t.eval(&big);
     assert_eq!(hole.len(), 4, "the 2×2 hole of the big ring: {hole:?}");
-    assert!(hole.contains(&(3, 3)));
+    assert!(hole.contains(&SectionSite::on_plane([3, 3])));
 }
 
-/// Extremal projection: the top row of a component derives via Ext.
+/// Extremal projection: the least line along the plane's first axis of a
+/// component derives via Ext.
 #[test]
 fn derive_reads_top_row_via_ext() {
     let scene = block();
-    let top: Vec<(i64, i64)> = vec![(0, 0), (0, 1), (0, 2)];
+    let top = sites(&[(0, 0), (0, 1), (0, 2)]);
     let t = derive(&top, &scene).expect("derivable");
     assert_eq!(t.eval(&scene), top);
 }

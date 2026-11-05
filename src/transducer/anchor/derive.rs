@@ -8,7 +8,7 @@ use super::*;
 /// never a blind sweep. Preference: exact evaluation (eval == footprint),
 /// then the smallest strict carrier (footprint ⊂ eval, minimal support then
 /// minimal term). None only when the footprint is empty.
-pub fn derive(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Option<Selection> {
+pub fn derive(footprint: &[SectionSite], scene: &[PaintedSite]) -> Option<Selection> {
     if footprint.is_empty() {
         return None;
     }
@@ -39,20 +39,16 @@ pub fn derive(footprint: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Option<Sele
 /// The DIRECTED candidate closure for a footprint: Level-1 bases measured from
 /// the footprint's own hues, then the recursive Level-2/3 composition (δ, ∖,
 /// component projection, extremal projection, hue interfaces).
-pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Selection> {
+pub(crate) fn candidates(fp: &[SectionSite], scene: &[PaintedSite]) -> Vec<Selection> {
     // Level-1 bases, DIRECTED: the whole support plus exactly the hues the
     // footprint touches (measured from the data, not enumerated blindly).
-    let mut hues: Vec<u8> = scene
-        .iter()
-        .filter(|(r, c, _)| has(fp, (*r, *c)))
-        .map(|(_, _, h)| *h)
-        .collect();
+    let mut hues: Vec<u8> = scene.iter().filter(|p| has(fp, p.site)).map(|p| p.symbol).collect();
     hues.sort_unstable();
     hues.dedup();
     let mut terms: Vec<Selection> = vec![Selection::Hue(255)];
     terms.extend(hues.iter().map(|&h| Selection::Hue(h)));
     // Interfaces the footprint's hues form with the other hues present.
-    let mut others: Vec<u8> = scene.iter().map(|(_, _, h)| *h).collect();
+    let mut others: Vec<u8> = scene.iter().map(|p| p.symbol).collect();
     others.sort_unstable();
     others.dedup();
     for &h in &hues {
@@ -104,8 +100,8 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
             }
             grown.push(Selection::Delta(Box::new(t.clone())));
             grown.push(Selection::Minus(Box::new(t.clone()), Box::new(Selection::Delta(Box::new(t.clone())))));
-            for axis in 0..4 {
-                grown.push(Selection::Ext(Box::new(t.clone()), axis));
+            for code in super::selection::extremal_codes() {
+                grown.push(Selection::Ext(Box::new(t.clone()), code));
             }
             // The star and the HALO (star ∖ support): "the sites around".
             grown.push(Selection::Star(Box::new(t.clone())));
@@ -129,8 +125,8 @@ pub(crate) fn candidates(fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<Sel
     for t in grown.iter().filter(|t| matches!(t, Selection::Comp(_, _))) {
         deeper.push(Selection::Delta(Box::new(t.clone())));
         deeper.push(Selection::Minus(Box::new(t.clone()), Box::new(Selection::Delta(Box::new(t.clone())))));
-        for axis in 0..4 {
-            deeper.push(Selection::Ext(Box::new(t.clone()), axis));
+        for code in super::selection::extremal_codes() {
+            deeper.push(Selection::Ext(Box::new(t.clone()), code));
         }
     }
     terms.extend(grown);
@@ -150,7 +146,7 @@ pub enum CarryingRefusal {
 /// Whether `t` carries the footprint `fp` (sorted) on `scene`, its read
 /// metered: one read per node of the term, each node reading its support of
 /// the scene once. `None` where the token is spent.
-pub(crate) fn carries(t: &Selection, fp: &[(i64, i64)], scene: &[(i64, i64, u8)], budget: &mut crate::physics::Budget) -> Option<bool> {
+pub(crate) fn carries(t: &Selection, fp: &[SectionSite], scene: &[PaintedSite], budget: &mut crate::physics::Budget) -> Option<bool> {
     for _ in 0..t.size() {
         if !budget.spend() {
             return None;
@@ -162,7 +158,7 @@ pub(crate) fn carries(t: &Selection, fp: &[(i64, i64)], scene: &[(i64, i64, u8)]
 
 /// Whether `t` carries `footprint` on `scene` — the reconstruction a court
 /// judges a held term by on a withheld pair — metered as [`carries`].
-pub fn carries_footprint(t: &Selection, footprint: &[(i64, i64)], scene: &[(i64, i64, u8)], budget: &mut crate::physics::Budget) -> Option<bool> {
+pub fn carries_footprint(t: &Selection, footprint: &[SectionSite], scene: &[PaintedSite], budget: &mut crate::physics::Budget) -> Option<bool> {
     carries(t, &sorted(footprint.to_vec()), scene, budget)
 }
 
@@ -173,8 +169,8 @@ pub fn carries_footprint(t: &Selection, footprint: &[(i64, i64)], scene: &[(i64,
 /// common to every pair's set, read by key. The walk is the closure's
 /// boundary, each evaluation metered; a spent token refuses the whole set.
 pub fn derive_carrying_all(
-    footprint: &[(i64, i64)],
-    scene: &[(i64, i64, u8)],
+    footprint: &[SectionSite],
+    scene: &[PaintedSite],
     budget: &mut crate::physics::Budget,
 ) -> Result<crate::network::nerve::Keyed<Selection>, CarryingRefusal> {
     let mut out = crate::network::nerve::Keyed::new();

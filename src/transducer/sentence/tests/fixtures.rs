@@ -20,6 +20,12 @@ pub fn painted(sites: &[(i64, i64, u8)]) -> Vec<crate::transducer::spelled::Pain
     sites.iter().map(|&(a, b, symbol)| crate::transducer::spelled::PaintedSite::on_plane([a, b], symbol)).collect()
 }
 
+/// A FIXTURE'S SITES OF THE SECTION, each `(a, b)` read once here as the
+/// site at `a` and `b` along the plane.
+pub fn sites(at: &[(i64, i64)]) -> Vec<crate::transducer::spelled::SectionSite> {
+    at.iter().map(|&(a, b)| crate::transducer::spelled::SectionSite::on_plane([a, b])).collect()
+}
+
 pub fn q0() -> num_rational::BigRational {
     num_rational::BigRational::from_integer(num_bigint::BigInt::from(0))
 }

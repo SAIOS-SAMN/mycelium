@@ -6,6 +6,8 @@
 //! at; where it selects nothing it says so.
 
 use super::*;
+use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
+use crate::transducer::sentence::form::clause::Order;
 
 /// A term of the selection algebra. Constructors = operators, arguments =
 /// measured coordinates (hue byte, substrate axis index, component ordinal).
@@ -22,8 +24,9 @@ pub enum Selection {
     /// The star (the edge dilation): every site adjacent to the support,
     /// support included.
     Star(Box<Selection>),
-    /// Extremal projection onto a substrate axis: sites achieving the
-    /// extremum. axis 0..4 = min-row, max-row, min-col, max-col.
+    /// Extremal projection onto an axis of the plane: sites achieving the
+    /// extremum. Code `2a` the least along the plane's axis `a`, `2a + 1`
+    /// the greatest.
     Ext(Box<Selection>, u8),
     /// ∩ — algebraic intersection of supports.
     Inter(Box<Selection>, Box<Selection>),
@@ -46,31 +49,63 @@ pub enum Selection {
     Transport(Box<Selection>, Box<Selection>),
 }
 
-pub(crate) fn sorted(mut v: Vec<(i64, i64)>) -> Vec<(i64, i64)> {
+pub(crate) fn sorted(mut v: Vec<SectionSite>) -> Vec<SectionSite> {
     v.sort_unstable();
     v.dedup();
     v
 }
 
-pub(crate) fn has(s: &[(i64, i64)], p: (i64, i64)) -> bool {
+pub(crate) fn has(s: &[SectionSite], p: SectionSite) -> bool {
     s.binary_search(&p).is_ok()
 }
 
-/// The connected components of a planar support, each sorted: the scene is
-/// one grid's, so its sites stand in frame 0 and are handed to the base as
-/// compartments there.
-pub(crate) fn planar_components(sup: &[(i64, i64)]) -> Vec<Vec<(i64, i64)>> {
+/// The connected components of a support of the section, each sorted: the
+/// scene is one sample's, so its sites stand in frame 0 and are handed to
+/// the base as compartments there.
+pub(crate) fn planar_components(sup: &[SectionSite]) -> Vec<Vec<SectionSite>> {
     use crate::transducer::blade::Compartment;
-    let compartments: Vec<Compartment> =
-        sup.iter().map(|&(r, c)| Compartment::from((r, c, 0, 0u8))).collect();
+    let compartments: Vec<Compartment> = sup.iter().map(|&s| Compartment::from(PaintedSite::new(s, 0))).collect();
     components(&compartments)
         .into_iter()
-        .map(|c| sorted(c.iter().filter_map(|l| crate::transducer::family::on_grid(&l.site)).collect()))
+        .map(|c| sorted(c.iter().filter_map(|l| SectionSite::of_family(&l.site)).collect()))
         .collect()
 }
 
-pub(crate) fn neighbours((r, c): (i64, i64)) -> [(i64, i64); 4] {
-    [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
+/// THE FACE NEIGHBOURS OF A SITE OF THE SECTION (MU-SENSING §3.2): one step
+/// back and one forward along each axis of the plane, axis by axis, the
+/// contact of grade `n − 1`. A step that leaves `i64` names no site.
+pub(crate) fn neighbours(p: SectionSite) -> impl Iterator<Item = SectionSite> {
+    (0..ALPHABET_SAMPLE_RANK).flat_map(move |axis| {
+        [-1i64, 1].into_iter().filter_map(move |step| {
+            let mut d = [0i64; ALPHABET_SAMPLE_RANK];
+            *d.get_mut(axis)? = step;
+            p.moved(d)
+        })
+    })
+}
+
+/// THE AXIS OF THE PLANE AND THE ORDER AN EXTREMAL PROJECTION'S CODE NAMES:
+/// code `2a` the least coordinate along the plane's axis `a`, `2a + 1` the
+/// greatest; a code past the plane's axes names the greatest along its
+/// last axis, as the code's byte has always read.
+fn extremal(code: u8) -> (usize, Order) {
+    let axis = usize::from(code / 2);
+    match (axis < ALPHABET_SAMPLE_RANK, code % 2) {
+        (true, 0) => (axis, Order::Least),
+        (true, _) => (axis, Order::Greatest),
+        (false, _) => (ALPHABET_SAMPLE_RANK - 1, Order::Greatest),
+    }
+}
+
+/// EVERY EXTREMAL CODE THE PLANE HOLDS: the least and the greatest along
+/// each of its axes ([`extremal`]), generated from the plane's rank.
+pub(crate) fn extremal_codes() -> impl Iterator<Item = u8> {
+    (0..=u8::MAX).take_while(|&code| usize::from(code / 2) < ALPHABET_SAMPLE_RANK)
+}
+
+/// The coordinate of a site along one axis of the plane.
+fn along(s: &SectionSite, axis: usize) -> Option<i64> {
+    s.coordinates().get(axis).copied()
 }
 
 impl Selection {
@@ -86,19 +121,13 @@ impl Selection {
         clippy::disallowed_methods,
         reason = "rule 4 — an extremum on an axis is this algebra's operator, and a tie selects nothing"
     )]
-    pub fn eval(&self, scene: &[(i64, i64, u8)]) -> Vec<(i64, i64)> {
+    pub fn eval(&self, scene: &[PaintedSite]) -> Vec<SectionSite> {
         match self {
-            Selection::Hue(h) => sorted(
-                scene
-                    .iter()
-                    .filter(|(_, _, x)| *h == 255 || *x == *h)
-                    .map(|(r, c, _)| (*r, *c))
-                    .collect(),
-            ),
+            Selection::Hue(h) => sorted(scene.iter().filter(|p| *h == 255 || p.symbol == *h).map(|p| p.site).collect()),
             Selection::Comp(e, k) => {
                 let sup = e.eval(scene);
-                // The scene is one grid's: its sites stand in frame 0.
-                let mut comps: Vec<Vec<(i64, i64)>> = planar_components(&sup);
+                // The scene is one sample's: its sites stand in frame 0.
+                let mut comps: Vec<Vec<SectionSite>> = planar_components(&sup);
                 // A component IS its least site, in the coordinate order the
                 // support is already written in; a component with no site
                 // has no least one and sorts after those that do.
@@ -124,7 +153,7 @@ impl Selection {
             }
             Selection::Delta(e) => {
                 let sup = e.eval(scene);
-                sup.iter().copied().filter(|&p| neighbours(p).iter().any(|q| !has(&sup, *q))).collect()
+                sup.iter().copied().filter(|&p| neighbours(p).any(|q| !has(&sup, q))).collect()
             }
             Selection::Star(e) => {
                 let sup = e.eval(scene);
@@ -134,26 +163,21 @@ impl Selection {
                 }
                 sorted(out)
             }
-            Selection::Ext(e, axis) => {
+            Selection::Ext(e, code) => {
                 let sup = e.eval(scene);
                 if sup.is_empty() {
                     return sup;
                 }
                 // The extremum of a non-empty support exists; an empty one
                 // was returned above, and selects nothing here (§2.4).
-                let rows = || sup.iter().map(|(r, _)| *r);
-                let cols = || sup.iter().map(|(_, c)| *c);
-                let extremum = match axis {
-                    0 => rows().min(),
-                    1 => rows().max(),
-                    2 => cols().min(),
-                    _ => cols().max(),
+                let (axis, order) = extremal(*code);
+                let values = sup.iter().filter_map(|s| along(s, axis));
+                let extremum = match order {
+                    Order::Least => values.min(),
+                    Order::Greatest => values.max(),
                 };
                 let Some(m) = extremum else { return Vec::new() };
-                match axis {
-                    0 | 1 => sup.into_iter().filter(|(r, _)| *r == m).collect(),
-                    _ => sup.into_iter().filter(|(_, c)| *c == m).collect(),
-                }
+                sup.into_iter().filter(|s| along(s, axis) == Some(m)).collect()
             }
             Selection::Inter(a, b) => {
                 let (sa, sb) = (a.eval(scene), b.eval(scene));
@@ -165,23 +189,26 @@ impl Selection {
             }
             Selection::ArgExt(e, code) => {
                 let sup = e.eval(scene);
-                let comps: Vec<Vec<(i64, i64)>> = planar_components(&sup);
+                let comps: Vec<Vec<SectionSite>> = planar_components(&sup);
                 if comps.is_empty() {
                     return Vec::new();
                 }
                 // A component with no sites has no diameter to measure, so
                 // the measure refuses rather than reading zero for it
                 // (rule 11); `components` returns none such, and a term
-                // whose measure refuses selects nothing below.
-                let measure = |k: &Vec<(i64, i64)>| -> Option<i64> {
+                // whose measure refuses selects nothing below. The diameter
+                // is the L1 extent: the span along each axis of the plane,
+                // added axis by axis.
+                let measure = |k: &Vec<SectionSite>| -> Option<i64> {
                     match code {
                         0 | 1 => Some(k.len() as i64),
                         _ => {
-                            let rows = || k.iter().map(|(r, _)| *r);
-                            let cols = || k.iter().map(|(_, c)| *c);
-                            let (r0, r1) = (rows().min()?, rows().max()?);
-                            let (c0, c1) = (cols().min()?, cols().max()?);
-                            Some((r1 - r0) + (c1 - c0))
+                            let mut diameter = 0i64;
+                            for axis in 0..ALPHABET_SAMPLE_RANK {
+                                let on = || k.iter().filter_map(|s| along(s, axis));
+                                diameter += on().max()? - on().min()?;
+                            }
+                            Some(diameter)
                         }
                     }
                 };
@@ -193,7 +220,7 @@ impl Selection {
                     _ => vals.iter().min(),
                 };
                 let Some(target) = target.copied() else { return Vec::new() };
-                let winners: Vec<&Vec<(i64, i64)>> = comps
+                let winners: Vec<&Vec<SectionSite>> = comps
                     .iter()
                     .zip(&vals)
                     .filter(|(_, v)| **v == target)
@@ -209,21 +236,19 @@ impl Selection {
                 if sa.is_empty() || sb.is_empty() {
                     return Vec::new();
                 }
-                let corner = |s: &[(i64, i64)]| {
-                    Some((s.iter().map(|(r, _)| *r).min()?, s.iter().map(|(_, c)| *c).min()?))
-                };
-                let (Some((ar, ac)), Some((br, bc))) = (corner(&sa), corner(&sb)) else {
+                // Each support's least corner: the least coordinate along
+                // each axis of the plane.
+                let corner = |s: &[SectionSite]| SectionSite::span_of(s.iter().copied()).map(|(c, _)| c);
+                let (Some(a), Some(b)) = (corner(&sa), corner(&sb)) else {
                     return Vec::new();
                 };
-                let (dr, dc) = (ar - br, ac - bc);
-                let shifted: Vec<(i64, i64)> =
-                    sorted(sb.iter().map(|(r, c)| (r + dr, c + dc)).collect());
+                let Some(d) = a.offset_from(b) else { return Vec::new() };
+                let shifted: Vec<SectionSite> = sorted(sb.iter().filter_map(|s| s.moved(d.coordinates())).collect());
                 sa.into_iter().filter(|p| has(&shifted, *p)).collect()
             }
             Selection::Flood(seed, within) => {
                 let (sd, w) = (seed.eval(scene), within.eval(scene));
-                let mut reached: Vec<(i64, i64)> =
-                    sd.into_iter().filter(|p| has(&w, *p)).collect();
+                let mut reached: Vec<SectionSite> = sd.into_iter().filter(|p| has(&w, *p)).collect();
                 reached.sort_unstable();
                 let mut frontier = reached.clone();
                 while let Some(p) = frontier.pop() {

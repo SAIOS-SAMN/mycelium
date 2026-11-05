@@ -7,7 +7,7 @@ use crate::transducer::anchor::Selection;
 
 /// A 4×4 scene of four 2×2 blocks, hues `a, b` on the top row of blocks and
 /// `c, d` below.
-fn quilt(a: u8, b: u8, c: u8, d: u8) -> Vec<(i64, i64, u8)> {
+fn quilt(a: u8, b: u8, c: u8, d: u8) -> Vec<crate::transducer::spelled::PaintedSite> {
     (0..4)
         .flat_map(|r| {
             (0..4).map(move |col| {
@@ -17,7 +17,7 @@ fn quilt(a: u8, b: u8, c: u8, d: u8) -> Vec<(i64, i64, u8)> {
                     (_, 0) => c,
                     _ => d,
                 };
-                (r, col, hue)
+                crate::transducer::spelled::PaintedSite::on_plane([r, col], hue)
             })
         })
         .collect()
@@ -34,7 +34,8 @@ fn stroke() -> crate::physics::Budget {
 /// from the withheld corner) is let go; no term is chosen by its key.
 #[test]
 fn derive_pi_keeps_every_term_reconstructing_withheld() {
-    let fp = vec![(0, 0)];
+    let origin = crate::transducer::spelled::SectionSite::on_plane([0, 0]);
+    let fp = vec![origin];
     let train = vec![(fp.clone(), quilt(1, 2, 3, 4)), (fp.clone(), quilt(1, 5, 6, 7))];
     let common = derive_pi(&train, &[], &mut stroke()).expect("read");
     assert!(common.contains(&Selection::Hue(1)) && common.contains(&Selection::Hue(255)), "{common:?}");
@@ -49,7 +50,7 @@ fn derive_pi_keeps_every_term_reconstructing_withheld() {
     assert!(judged.len() > 1, "a superposition, every standing term kept: {judged:?}");
     for t in &judged {
         assert!(common.contains(t), "judged within the common set");
-        assert!(t.eval(&withheld[0].1).contains(&(0, 0)), "{t:?} reconstructs the withheld footprint");
+        assert!(t.eval(&withheld[0].1).contains(&origin), "{t:?} reconstructs the withheld footprint");
     }
 }
 
@@ -57,7 +58,7 @@ fn derive_pi_keeps_every_term_reconstructing_withheld() {
 /// REFUSES THE WHOLE DERIVATION, never a part of it.
 #[test]
 fn derive_pi_refuses_spent_token_whole() {
-    let fp = vec![(0, 0)];
+    let fp = vec![crate::transducer::spelled::SectionSite::on_plane([0, 0])];
     let train = vec![(fp.clone(), quilt(1, 2, 3, 4)), (fp, quilt(1, 3, 2, 4))];
     assert_eq!(derive_pi(&[], &[], &mut stroke()), Ok(Vec::new()));
     let reply = derive_pi(&train, &[], &mut crate::physics::Physics::default().stroke_n(5));

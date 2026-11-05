@@ -142,3 +142,19 @@ fn section_site_is_the_sample_coordinate_restricted_by_the_perspective() {
     assert_eq!(on_base.axes(), &[1, 2, 4], "the plane's coordinates, then the place");
     assert_eq!(SectionSite::of_family(&on_base), Some(SectionSite::on_plane([1, 2])), "and read back off the base");
 }
+
+/// TRACK 26 S4d, stage 2c — A SECTION SITE ROUND-TRIPS THROUGH ITS CANONICAL
+/// BYTES: what `put_canonical` writes `take_canonical` reads back, the cursor
+/// at the end, for coordinates of either sign; bytes that end inside a
+/// coordinate read no site.
+#[test]
+fn section_site_round_trips() {
+    for site in [SectionSite::on_plane([0, 0]), SectionSite::on_plane([-3, 7]), SectionSite::on_plane([i64::MAX, i64::MIN])] {
+        let mut buf = Vec::new();
+        site.put_canonical(&mut buf);
+        let mut p = 0;
+        assert_eq!((SectionSite::take_canonical(&buf, &mut p), p), (Some(site), buf.len()));
+        let short = buf.get(..buf.len() - 1).expect("bytes");
+        assert_eq!(SectionSite::take_canonical(short, &mut 0), None, "a coordinate cut short is no site");
+    }
+}

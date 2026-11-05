@@ -7,6 +7,7 @@
 //! size are not equal readings (law 5).
 
 use crate::transducer::anchor::Selection;
+use crate::transducer::spelled::{PaintedSite, SectionSite};
 
 /// The exact spectral signature of a selected region within a scene.
 /// Vec-of-relations for the hue tally (Law II — never a keyed map).
@@ -38,15 +39,14 @@ pub(crate) fn find(parent: &mut [usize], i: usize) -> usize {
 }
 
 /// Measure the signature of `region` as it stands in `scene`.
-pub fn signature(region: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Signature {
-    let mut sites: Vec<(i64, i64)> = region.to_vec();
+pub fn signature(region: &[SectionSite], scene: &[PaintedSite]) -> Signature {
+    let mut sites: Vec<SectionSite> = region.to_vec();
     sites.sort_unstable();
     sites.dedup();
     // The region's 1-skeleton, read off the ordered support: β₀ is its
     // component count and the boundary cochain is every site's side not
     // shared along an edge (4 sides per site, 2 closed per edge).
-    let on_plane: Vec<super::spelled::SectionSite> = sites.iter().map(|&(r, c)| super::spelled::SectionSite::on_plane([r, c])).collect();
-    let edges = super::sentence::incidence_of(&on_plane);
+    let edges = super::sentence::incidence_of(&sites);
     let mut roots = super::sentence::components(sites.len(), &edges);
     roots.sort_unstable();
     roots.dedup();
@@ -57,13 +57,13 @@ pub fn signature(region: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Signature {
     let boundary = 4 * sites.len() as u64 - 2 * edges.len() as u64;
     // Hue tally of the scene's painted sites inside the region: one merge
     // walk over the two ordered supports, never a lookup per site.
-    let mut ordered: Vec<(i64, i64, u8)> = scene.to_vec();
+    let mut ordered: Vec<PaintedSite> = scene.to_vec();
     ordered.sort_unstable();
     let mut hues: Vec<(u8, u64)> = Vec::new();
     let (mut i, mut j) = (0usize, 0usize);
     while i < sites.len() && j < ordered.len() {
-        let (r, c, h) = ordered[j];
-        match sites[i].cmp(&(r, c)) {
+        let PaintedSite { site, symbol: h } = ordered[j];
+        match sites[i].cmp(&site) {
             std::cmp::Ordering::Less => i += 1,
             std::cmp::Ordering::Greater => j += 1,
             std::cmp::Ordering::Equal => {
