@@ -185,7 +185,18 @@ regression, its ruling, the guarding type, and the claim that proves it
 (a `#[test]` fn, or a `compile_fail` doc test whose comment names the
 claim). The gate refuses a register entry whose guard type or claim is
 named empty or missing from the tree, as `numbers.rs` does for the open
-numbers. A report of changed document sentences that put a typed
+numbers. The guards of clauses 12 and 14 are not in the register, since
+neither has both a guarding type and a claim in the tree. For clause 12,
+`Turn` (`transducer::family::transduce::turn`) has public fields and a
+public `Turn::new`, so it does not make a common grid unwritable. The
+specified constructor `Turn::of(r, h)` and the claim that calls the
+refinement from cognition do not exist. The refinement itself
+(`CommonRefinement`) is deleted, so a `compile_fail` test naming it
+would only prove a deletion. For clause 14, `Court::restore` returns
+`bool` and not a `Reconstructed<State>`, and the claim
+`restore_reconstructs_and_checks_receipts` is not written. Each guard
+enters the register with the phase that builds its type and claim
+(clause 12's with ROADMAP track 25, X5). A report of changed document sentences that put a typed
 term (reconstruction, rebuild, replay, resend, digest, hash, lattice,
 grid) beside an admission verb (admit, verify, accept, check) is **open**:
 it would only report and never refuse, and reading which documents

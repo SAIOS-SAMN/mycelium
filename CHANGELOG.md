@@ -49,6 +49,11 @@ such change is named here.
   rest on a stratum fetched for nothing (`CourtPace::starved`) holds the
   court's root as a `Locator`. A root that is not 32 bytes locates
   nothing, where before two such byte strings compared equal.
+- **Not registered:** the drift guards of MU-ANTI-FLATTENING clauses 12
+  and 14. Neither has both a guarding type and a claim in the tree:
+  clause 12's `Turn` has public fields and the refinement it would refuse
+  is deleted, and clause 14's `Court::restore` returns `bool`, not a
+  `Reconstructed<State>`. MU-ANTI-FLATTENING *Drift guards* says why.
 
 ### A fold root's signatures cover its place and height (track 24, #91)
 - **Network contract**, inside v0.4.0's break:
