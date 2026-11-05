@@ -1,39 +1,39 @@
-// LAW-PASSAGE v2 (proposal 78.172 §5): the passage `q ↦ v_k·q`, `pass`, a
-// one-sided product in `Cl(p, q)`; its four joint-read fixtures, written in
-// the generators they are agreed in, the law's claims over every plane the
-// algebra holds, and the passage's refusals.
+// LAW-PASSAGE v3 (proposal 78.172 §5; netstratum docs/117 §12): the
+// passage is the pole swap, the reflection in the throat's unit `e₊`. Its
+// joint-read fixtures, written on plane 1's units, the law's claims over
+// every plane the algebra holds, and the passage's refusals.
 
 use crate::algebra::{base_axis, Clifford, SignatureRefusal, EM};
-use crate::passage::{pass, PassageRefusal};
+use crate::passage::{pass_share, Frame, PassageRefusal, Place, Pole, Poles};
 use num_rational::BigRational;
 
 fn q(n: i64, d: i64) -> BigRational {
     BigRational::new(n.into(), d.into())
 }
 
-/// Plane `k`'s closed pole `e_Zk`, squaring to +1: base axis `2k − 1`.
-fn closed(k: usize) -> Option<usize> {
+/// Plane `k`'s positive unit `e₊ₖ`, squaring to +1: base axis `2k − 1`.
+fn positive(k: usize) -> Option<usize> {
     base_axis(2 * k - 1)
 }
 
-/// Plane `k`'s open pole `e_Qk`, squaring to −1: base axis `2k`.
-fn open(k: usize) -> Option<usize> {
+/// Plane `k`'s negative unit `e₋ₖ`, squaring to −1: base axis `2k`.
+fn negative(k: usize) -> Option<usize> {
     base_axis(2 * k)
 }
 
-/// Every frame plane the algebra's masks hold, in order.
+/// Every plane the algebra's masks hold, in order.
 fn planes() -> impl Iterator<Item = usize> {
-    (1..).map_while(|k| open(k).map(|_| k))
+    (1..).map_while(|k| negative(k).map(|_| k))
 }
 
-/// The signature of the frame planes `1..=m`: each plane's open pole
+/// The signature of the planes `1..=m`: each plane's negative unit
 /// negative, beside the conformal pair's `e₋`.
 fn signature(m: usize) -> usize {
-    (1..=m).filter_map(open).fold(EM, |s, g| s | g)
+    (1..=m).filter_map(negative).fold(EM, |s, g| s | g)
 }
 
-/// A pole of a plane the fixture names.
-fn pole(g: Option<usize>) -> usize {
+/// A generator of a plane the fixture names.
+fn unit(g: Option<usize>) -> usize {
     g.expect("a plane the algebra holds")
 }
 
@@ -55,19 +55,19 @@ fn sum(words: Vec<Clifford>) -> Clifford {
     it.fold(first, |s, w| s.sum(&w).expect("one signature"))
 }
 
-/// The direction `h·e_Zk + r·e_Qk` of plane `k`, under the planes `1..=m`.
-fn direction(m: usize, k: usize, h: BigRational, r: BigRational) -> Clifford {
-    sum(vec![word(m, h, &[pole(closed(k))]), word(m, r, &[pole(open(k))])])
+/// Plane `k`'s poles, under the planes `1..=m`.
+fn poles(m: usize, k: usize) -> Poles {
+    Poles::of(&word(m, q(1, 1), &[unit(positive(k))]), &word(m, q(1, 1), &[unit(negative(k))])).expect("two units of opposite sign")
 }
 
-/// FIXTURE 2's state: `q = 3 + 2·e_Z2Z3 + e_Z1Q2`, an even multivector over
-/// three planes.
-fn state() -> Clifford {
-    sum(vec![
-        word(3, q(3, 1), &[]),
-        word(3, q(2, 1), &[pole(closed(2)), pole(closed(3))]),
-        word(3, q(1, 1), &[pole(closed(1)), pole(open(2))]),
-    ])
+/// The frame state at hold `h` and reach `r` on plane `k`.
+fn frame(p: &Poles, h: BigRational, r: BigRational) -> Clifford {
+    p.state(&Frame { hold: h, reach: r }).expect("a frame state")
+}
+
+/// The same value: one signature, the same terms.
+fn same(a: &Clifford, b: &Clifford) -> bool {
+    a.negatives() == b.negatives() && a.terms().eq(b.terms())
 }
 
 /// The degrees the value holds terms on, ascending, each once.
@@ -78,127 +78,190 @@ fn degrees(v: &Clifford) -> Vec<u32> {
     d
 }
 
-/// FIXTURE 1: at the horizon the passage is one-way. With the null
-/// direction `v = e_Z1 + e_Q1`, `v·v·q = 0` for fixture 2's state: the
-/// product `v·(v·q)` of the state carried once.
-#[test]
-fn pass_of_null_direction_twice_annuls_state() {
-    let v = direction(3, 1, q(1, 1), q(1, 1));
-    let once = pass(&v, &state()).expect("a direction on an even state");
-    assert!(!once.is_zero(), "one passage carries the state");
-    assert!(v.product(&once).expect("one signature").is_zero(), "v·v·q = 0");
+/// THE RIDING STATE of fixture 4: `q = 3 + 2·e₊₂e₊₃ + e₊₁e₋₂`, even, over
+/// three planes.
+fn riding() -> Clifford {
+    sum(vec![
+        word(3, q(3, 1), &[]),
+        word(3, q(2, 1), &[unit(positive(2)), unit(positive(3))]),
+        word(3, q(1, 1), &[unit(positive(1)), unit(negative(2))]),
+    ])
 }
 
-/// FIXTURE 2: one crossing takes even degrees to odd ones. With
-/// `v = e_Z1 + 2·e_Q1` and `q = 3 + 2·e_Z2Z3 + e_Z1Q2`, `v·q` has terms on
-/// degrees 1 and 3 only.
+/// THE POLES ARE THE PLANE'S NULL DIRECTIONS, the frame state on them is
+/// the whole on `e₊` and the span on `e₋`: `H·n_Z + R·n_Q =
+/// (H + R)·e₊ + (H − R)·e₋`, and the state reads back as its hold and
+/// reach.
 #[test]
-fn pass_carries_even_state_to_odd_degrees() {
-    let s = state();
+fn state_equals_whole_on_positive_and_span_on_negative() {
+    let p = poles(1, 1);
+    let x = frame(&p, q(4, 5), q(1, 5));
+    let written = sum(vec![word(1, q(1, 1), &[unit(positive(1))]), word(1, q(3, 5), &[unit(negative(1))])]);
+    assert!(same(&x, &written), "{x:?}");
+    assert_eq!(p.read(&x), Ok(Frame { hold: q(4, 5), reach: q(1, 5) }));
+    let closed = frame(&p, q(1, 1), q(0, 1));
+    let open = frame(&p, q(0, 1), q(1, 1));
+    assert!(closed.product(&closed).expect("one signature").is_zero(), "n_Z is null");
+    assert!(open.product(&open).expect("one signature").is_zero(), "n_Q is null");
+}
+
+/// FIXTURE 1: span `3/5` (`H = 4/5`, `R = 1/5`) crossing from `T = 0`
+/// gives `S = −3/5` and `T = −6/5`; crossing back gives `S = 3/5` and
+/// `T = 0`, and the frame state it started from.
+#[test]
+fn cross_writes_span_change_on_flux_and_return_cancels() {
+    let p = poles(1, 1);
+    let x = frame(&p, q(4, 5), q(1, 5));
+    let there = p.cross(&x, &q(0, 1)).expect("a frame state");
+    assert_eq!((there.span.clone(), there.flux.clone()), (q(-3, 5), q(-6, 5)));
+    let back = p.cross(&there.frame, &there.flux).expect("a frame state");
+    assert_eq!((back.span, back.flux), (q(3, 5), q(0, 1)));
+    assert!(same(&back.frame, &x), "the pass and its return are the identity");
+}
+
+/// FIXTURE 2: at the throat (`H = R`, span 0) a crossing changes nothing:
+/// the frame state, `S = 0`, and nothing written on `T`.
+#[test]
+fn cross_at_throat_changes_nothing() {
+    let p = poles(1, 1);
+    let x = frame(&p, q(1, 2), q(1, 2));
+    assert_eq!(p.read(&x).map(|f| f.place()), Ok(Place::Throat));
+    let crossed = p.cross(&x, &q(7, 3)).expect("a frame state");
+    assert!(same(&crossed.frame, &x));
+    assert_eq!((crossed.span, crossed.flux), (q(0, 1), q(7, 3)));
+}
+
+/// FIXTURE 3: a pole, `H > 0` and `R = 0` (null), swaps to the other pole,
+/// `H·n_Q`; and the passage is one-way there: every further crossing lands
+/// at a pole, never in the interior.
+#[test]
+fn swap_carries_pole_to_other_pole_and_never_into_interior() {
+    let p = poles(1, 1);
+    let x = frame(&p, q(4, 5), q(0, 1));
+    assert_eq!(p.read(&x).map(|f| f.place()), Ok(Place::Pole(Pole::Closed)));
+    let swapped = p.swap(&x).expect("a frame state");
+    assert!(same(&swapped, &frame(&p, q(0, 1), q(4, 5))), "H·n_Z ↦ H·n_Q");
+    let mut at = x;
+    for _ in 0..4 {
+        at = p.swap(&at).expect("a frame state");
+        assert!(matches!(p.read(&at).map(|f| f.place()), Ok(Place::Pole(_))), "no return to the interior");
+    }
+}
+
+/// FIXTURE 4: the riding state's parity. An even `q` gives `e₊·q` odd, and
+/// `e₊·e₊·q = q`.
+#[test]
+fn ride_flips_parity_and_twice_is_identity() {
+    let p = poles(3, 1);
+    let s = riding();
     assert_eq!(degrees(&s), [0, 2], "the state is even");
-    let v = direction(3, 1, q(1, 1), q(2, 1));
-    assert_eq!(degrees(&pass(&v, &s).expect("a direction on an even state")), [1, 3]);
+    let once = p.ride(&s).expect("a state of one parity");
+    assert_eq!(degrees(&once), [1, 3], "e₊·q is odd");
+    let e = word(3, q(1, 1), &[unit(positive(1))]);
+    assert!(same(&once, &e.product(&s).expect("one signature")), "one-sided, e₊·q");
+    assert!(same(&p.ride(&once).expect("a state of one parity"), &s), "e₊·e₊·q = q");
 }
 
-/// The passage is the one-sided product and no other: `pass(v, q)` is
-/// `v·q` exactly, for fixture 2's direction and state.
+/// FIXTURE 5: the sandwich applied twice is the identity on a general frame
+/// state, in every plane the algebra holds, the span reversed once.
 #[test]
-fn pass_equals_one_sided_product() {
-    let (v, s) = (direction(3, 1, q(1, 1), q(2, 1)), state());
-    let crossed = pass(&v, &s).expect("a direction on an even state");
-    assert!(crossed.difference(&v.product(&s).expect("one signature")).expect("one signature").is_zero());
-}
-
-/// A direction that is not degree 1 is refused `NotDirection` with the
-/// degrees it holds: a bivector, a scalar beside a vector, and the zero.
-#[test]
-fn pass_refuses_non_vector_direction() {
-    let s = state();
-    let bivector = word(3, q(1, 1), &[pole(closed(1)), pole(open(1))]);
-    assert_eq!(pass(&bivector, &s).err(), Some(PassageRefusal::NotDirection { degrees: vec![2] }));
-    let mixed = sum(vec![word(3, q(1, 1), &[]), direction(3, 1, q(1, 1), q(2, 1))]);
-    assert_eq!(pass(&mixed, &s).err(), Some(PassageRefusal::NotDirection { degrees: vec![0, 1] }));
-    let zero = direction(3, 1, q(1, 1), q(1, 1)).difference(&direction(3, 1, q(1, 1), q(1, 1))).expect("one signature");
-    assert_eq!(pass(&zero, &s).err(), Some(PassageRefusal::NotDirection { degrees: vec![] }));
-}
-
-/// A state holding an odd degree is refused `NotEven` with the degrees it
-/// holds: the state already carried once.
-#[test]
-fn pass_refuses_odd_state() {
-    let v = direction(3, 1, q(1, 1), q(2, 1));
-    let carried = pass(&v, &state()).expect("a direction on an even state");
-    assert_eq!(pass(&v, &carried).err(), Some(PassageRefusal::NotEven { degrees: vec![1, 3] }));
-}
-
-/// A direction and a state whose signatures disagree on a generator both
-/// hold are refused `Mismatched`, naming that generator: plane 1's open
-/// pole negative under one and positive under the other.
-#[test]
-fn pass_refuses_mismatched_signatures() {
-    let v = direction(1, 1, q(1, 1), q(2, 1));
-    let s = Clifford::blade(EM, pole(closed(1)) | pole(open(1)), q(1, 1)).expect("a blade the algebra holds");
-    assert_eq!(
-        pass(&v, &s).err(),
-        Some(PassageRefusal::Mismatched(SignatureRefusal::Mismatched { generators: pole(open(1)) }))
-    );
-}
-
-/// FIXTURE 3: two boosts sharing an axis leave a turning on their two other
-/// axes: `[e_Z1Q1, e_Z1Q2] = e_Z1Q1·e_Z1Q2 − e_Z1Q2·e_Z1Q1 = −2·e_Q1Q2`, the
-/// commutator unhalved.
-#[test]
-fn product_commutator_of_boosts_equals_open_turning() {
-    let a = word(2, q(1, 1), &[pole(closed(1)), pole(open(1))]);
-    let b = word(2, q(1, 1), &[pole(closed(1)), pole(open(2))]);
-    let commutator = a.product(&b).expect("one signature").difference(&b.product(&a).expect("one signature")).expect("one signature");
-    let turning = word(2, q(-2, 1), &[pole(open(1)), pole(open(2))]);
-    assert!(commutator.difference(&turning).expect("one signature").is_zero(), "[e_Z1Q1, e_Z1Q2] = −2·e_Q1Q2");
-    assert!(!commutator.is_zero());
-}
-
-/// FIXTURE 4: a turning and a boost sharing `Z₂` at equal sizes are a null
-/// pair: `(e_Z1Z2 + e_Q1Z2)² = 0`.
-#[test]
-fn product_squares_null_pair_to_zero() {
-    let pair = sum(vec![
-        word(2, q(1, 1), &[pole(closed(1)), pole(closed(2))]),
-        word(2, q(1, 1), &[pole(open(1)), pole(closed(2))]),
-    ]);
-    assert!(!pair.is_zero());
-    assert!(pair.product(&pair).expect("one signature").is_zero());
-}
-
-/// EVERY PLANE'S HORIZON IS ONE-WAY: in every frame plane the algebra
-/// holds, a direction with `H = ±R` annuls twice, `v_k·v_k·q = 0`, for
-/// exact rational sizes on either sheet.
-#[test]
-fn product_annuls_twice_at_every_horizon() {
+fn swap_twice_is_identity_on_every_frame() {
     let m = planes().count();
-    let s = sum(vec![word(m, q(3, 1), &[]), word(m, q(2, 1), &[pole(closed(1)), pole(open(m))])]);
     for k in planes() {
-        for (h, r) in [(q(5, 3), q(5, 3)), (q(-2, 7), q(2, 7))] {
-            let v = direction(m, k, h, r);
-            let twice = v.product(&v.product(&s).expect("one signature")).expect("one signature");
-            assert!(twice.is_zero(), "plane {k}");
+        let p = poles(m, k);
+        for (h, r) in [(q(7, 3), q(-2, 5)), (q(-5, 2), q(1, 9)), (q(0, 1), q(3, 1)), (q(11, 4), q(11, 4))] {
+            let x = frame(&p, h.clone(), r.clone());
+            let once = p.swap(&x).expect("a frame state");
+            assert_eq!(p.read(&once), Ok(Frame { hold: r.clone(), reach: h.clone() }), "plane {k}: the roles exchange");
+            assert!(same(&p.swap(&once).expect("a frame state"), &x), "plane {k}");
         }
     }
 }
 
-/// PASSAGES IN DIFFERENT PLANES ANTICOMMUTE: over every pair of frame
-/// planes the algebra holds, `v_k·v_l = −v_l·v_k`, so their order is held
-/// in the state's sign.
+/// THE ROLES EXCHANGE AND THE FACE INVERTS (netstratum docs/117 §12.6):
+/// `(H, R) = (4/5, 1/5)` crossing stands at reach `4/5` about hold `1/5`;
+/// the whole `H + R = 1` is kept, and `δ` goes `4/5 ↦ 1/5`.
 #[test]
-fn product_anticommutes_across_planes() {
-    let m = planes().count();
-    for k in planes() {
-        for l in planes().filter(|l| *l != k) {
-            let vk = direction(m, k, q(3, 2), q(-1, 4));
-            let vl = direction(m, l, q(2, 1), q(7, 5));
-            let kl = vk.product(&vl).expect("one signature");
-            let lk = vl.product(&vk).expect("one signature");
-            assert!(!kl.is_zero());
-            assert!(kl.sum(&lk).expect("one signature").is_zero(), "planes {k}, {l}");
-        }
+fn cross_exchanges_hold_and_reach_and_inverts_face() {
+    let p = poles(1, 1);
+    let before = Frame { hold: q(4, 5), reach: q(1, 5) };
+    let crossed = p.cross(&p.state(&before).expect("a frame state"), &q(0, 1)).expect("a frame state");
+    let after = p.read(&crossed.frame).expect("a frame state");
+    assert_eq!(after, Frame { hold: q(1, 5), reach: q(4, 5) });
+    assert_eq!((before.whole(), after.whole()), (q(1, 1), q(1, 1)));
+    assert_eq!((before.share(), after.share()), (Ok(q(4, 5)), Ok(q(1, 5))));
+    assert_eq!(pass_share(&q(4, 5)), after.share(), "the face read from the other pole");
+}
+
+/// NO REACH MOVES: the swap keeps `|H − R|` and reverses its sign, and the
+/// flux of a pass and its immediate return cancel, over exact frames.
+#[test]
+fn cross_keeps_span_size_and_cancels_flux_on_return() {
+    let p = poles(1, 1);
+    for (h, r, t) in [(q(3, 2), q(1, 7), q(0, 1)), (q(-1, 3), q(5, 6), q(9, 4)), (q(2, 1), q(2, 1), q(-1, 2))] {
+        let x = frame(&p, h.clone(), r.clone());
+        let there = p.cross(&x, &t).expect("a frame state");
+        assert_eq!(there.span, &r - &h, "H − R ↦ R − H");
+        let back = p.cross(&there.frame, &there.flux).expect("a frame state");
+        assert_eq!(back.flux, t, "the return cancels on T");
     }
+}
+
+/// A frame state off the plane is refused `NotFrame` with the blades it
+/// holds there: another plane's unit, a scalar, a bivector of the plane,
+/// and the zero, which holds none.
+#[test]
+fn read_refuses_state_off_plane() {
+    let p = poles(2, 1);
+    let x = frame(&p, q(1, 1), q(2, 1));
+    let other = unit(positive(2));
+    let off = x.sum(&word(2, q(1, 1), &[other])).expect("one signature");
+    assert_eq!(p.swap(&off).err(), Some(PassageRefusal::NotFrame { blades: vec![other] }));
+    let scalar = word(2, q(3, 1), &[]);
+    assert_eq!(p.cross(&scalar, &q(0, 1)).err(), Some(PassageRefusal::NotFrame { blades: vec![0] }));
+    let plane = unit(positive(1)) | unit(negative(1));
+    let bivector = word(2, q(1, 1), &[unit(positive(1)), unit(negative(1))]);
+    assert_eq!(p.read(&bivector).err(), Some(PassageRefusal::NotFrame { blades: vec![plane] }));
+    let zero = x.difference(&x).expect("one signature");
+    assert_eq!(p.read(&zero).err(), Some(PassageRefusal::NotFrame { blades: vec![] }));
+}
+
+/// A riding state holding both parities is refused `MixedParity` with the
+/// degrees it holds.
+#[test]
+fn ride_refuses_mixed_parity() {
+    let p = poles(3, 1);
+    let mixed = riding().sum(&word(3, q(1, 1), &[unit(positive(3))])).expect("one signature");
+    assert_eq!(p.ride(&mixed).err(), Some(PassageRefusal::MixedParity { degrees: vec![0, 1, 2] }));
+}
+
+/// A pole that is not one generator at coefficient one is refused
+/// `NotUnit` with its terms; units of the wrong sign `WrongSign` with the
+/// generator; and a state of another signature `Mismatched`.
+#[test]
+fn poles_refuse_non_unit_wrong_sign_and_mismatch() {
+    let (e_plus, e_minus) = (unit(positive(1)), unit(negative(1)));
+    let plus = word(1, q(1, 1), &[e_plus]);
+    let minus = word(1, q(1, 1), &[e_minus]);
+    let twice = word(1, q(2, 1), &[e_plus]);
+    assert_eq!(Poles::of(&twice, &minus).err(), Some(PassageRefusal::NotUnit { terms: vec![(e_plus, q(2, 1))] }));
+    let pair = word(1, q(1, 1), &[e_plus, e_minus]);
+    assert_eq!(Poles::of(&plus, &pair).err(), Some(PassageRefusal::NotUnit { terms: vec![(e_plus | e_minus, q(1, 1))] }));
+    assert_eq!(Poles::of(&minus, &minus).err(), Some(PassageRefusal::WrongSign { generator: e_minus }));
+    assert_eq!(Poles::of(&plus, &plus).err(), Some(PassageRefusal::WrongSign { generator: e_plus }));
+    let flat = Clifford::blade(EM, e_plus, q(1, 1)).expect("a blade the algebra holds");
+    let x = Clifford::blade(EM, e_minus, q(1, 1)).expect("a blade the algebra holds");
+    assert_eq!(Poles::of(&flat, &x).err(), Some(PassageRefusal::WrongSign { generator: e_minus }));
+    assert_eq!(poles(1, 1).read(&x).err(), Some(PassageRefusal::Mismatched(SignatureRefusal::Mismatched { generators: e_minus })));
+}
+
+/// A frame state of no whole holds no share, refused `NoWhole` with its
+/// span; one whose hold lies outside the whole, `NotShare` with the value.
+#[test]
+fn share_refuses_no_whole_and_outside_unit_interval() {
+    assert_eq!(Frame { hold: q(1, 2), reach: q(-1, 2) }.share(), Err(PassageRefusal::NoWhole { span: q(1, 1) }));
+    assert_eq!(Frame { hold: q(3, 2), reach: q(-1, 2) }.share(), Err(PassageRefusal::NotShare(Box::new(q(3, 2)))));
+    assert_eq!(Frame { hold: q(0, 1), reach: q(0, 1) }.place(), Place::Throat, "the zero frame reads at the throat");
+    assert_eq!(Frame { hold: q(0, 1), reach: q(2, 1) }.place(), Place::Pole(Pole::Open));
+    assert_eq!(Frame { hold: q(2, 1), reach: q(1, 1) }.place(), Place::Interior);
 }

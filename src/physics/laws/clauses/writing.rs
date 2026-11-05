@@ -134,26 +134,25 @@ fn take_depth(b: &[u8], p: &mut usize) -> Option<u32> {
     Some(u32::from_le_bytes(take_array(b, p)?))
 }
 
-/// ONE FIXTURE'S INPUT: its tag (the fixture's operation, in [`Fixture`]'s
-/// order), then its objects.
+/// ONE FIXTURE'S INPUT: its tag (the fixture's operation), then its
+/// objects. Tags 0–3 named LAW-PASSAGE v2's operations (the product `v·q`
+/// passed twice and once, the commutator, the square); they are retired
+/// with `FORMS-PASSAGE` v3 and read as none. The pole swap's crossing is
+/// tag 8 and the riding state's pass tag 9.
 pub fn put_fixture(out: &mut Vec<u8>, f: &Fixture) {
     match f {
-        Fixture::PassedTwice { v, q } | Fixture::Passed { v, q } => {
-            out.push(match f {
-                Fixture::PassedTwice { .. } => 0,
-                _ => 1,
-            });
-            put_clifford(out, v);
-            put_clifford(out, q);
+        Fixture::Crossed { positive, negative, frame, flux } => {
+            out.push(8);
+            put_clifford(out, positive);
+            put_clifford(out, negative);
+            put_clifford(out, frame);
+            put_q(out, flux);
         }
-        Fixture::Commutator { a, b } => {
-            out.push(2);
-            put_clifford(out, a);
-            put_clifford(out, b);
-        }
-        Fixture::Square { x } => {
-            out.push(3);
-            put_clifford(out, x);
+        Fixture::Ridden { positive, negative, state } => {
+            out.push(9);
+            put_clifford(out, positive);
+            put_clifford(out, negative);
+            put_clifford(out, state);
         }
         Fixture::Ordered { bodies } => {
             out.push(4);
@@ -184,14 +183,12 @@ pub fn put_fixture(out: &mut Vec<u8>, f: &Fixture) {
 
 pub fn take_fixture(b: &[u8], p: &mut usize) -> Option<Fixture> {
     Some(match take_u8(b, p)? {
-        0 => Fixture::PassedTwice { v: take_clifford(b, p)?, q: take_clifford(b, p)? },
-        1 => Fixture::Passed { v: take_clifford(b, p)?, q: take_clifford(b, p)? },
-        2 => Fixture::Commutator { a: take_clifford(b, p)?, b: take_clifford(b, p)? },
-        3 => Fixture::Square { x: take_clifford(b, p)? },
         4 => Fixture::Ordered { bodies: take_bodies(b, p)? },
         5 => Fixture::Sector { value: take_q(b, p)?, depth: take_depth(b, p)? },
         6 => Fixture::Within { at: take_coordinate(b, p)?, other: take_coordinate(b, p)?, lane: take_lane(b, p)?, depth: take_depth(b, p)? },
         7 => Fixture::Range { held: take_bodies(b, p)?, at: take_coordinate(b, p)?, lane: take_lane(b, p)?, lo: take_q(b, p)?, hi: take_q(b, p)? },
+        8 => Fixture::Crossed { positive: take_clifford(b, p)?, negative: take_clifford(b, p)?, frame: take_clifford(b, p)?, flux: take_q(b, p)? },
+        9 => Fixture::Ridden { positive: take_clifford(b, p)?, negative: take_clifford(b, p)?, state: take_clifford(b, p)? },
         _ => return None,
     })
 }
@@ -219,6 +216,12 @@ pub fn put_object(out: &mut Vec<u8>, o: &Object) {
         Object::Multivector(x) => {
             out.push(0);
             put_clifford(out, x);
+        }
+        Object::Crossing { frame, span, flux } => {
+            out.push(5);
+            put_clifford(out, frame);
+            put_q(out, span);
+            put_q(out, flux);
         }
         Object::Bodies(bodies) => {
             out.push(1);
@@ -249,6 +252,7 @@ pub fn take_object(b: &[u8], p: &mut usize) -> Option<Object> {
         }
         3 => Object::Side(side_of(take_u8(b, p)?)?),
         4 => Object::Refused(CoordinateRefusal::OriginsDiffer { held: Box::new(take_origin(b, p)?), asked: Box::new(take_origin(b, p)?) }),
+        5 => Object::Crossing { frame: take_clifford(b, p)?, span: take_q(b, p)?, flux: take_q(b, p)? },
         _ => return None,
     })
 }

@@ -1,6 +1,6 @@
-// LAW-PASSAGE v2 (proposal 78.172): the refusal of a moved reach and the
-// share's two faces. The product and its fixtures are `crossing.rs`
-// (78.172 §5).
+// LAW-PASSAGE v3 (proposal 78.172): the refusal of a reach moved in the
+// old frame and the share's two faces. The pole swap and its fixtures are
+// `crossing.rs` (78.172 §5).
 
 use crate::passage::*;
 use crate::Q;

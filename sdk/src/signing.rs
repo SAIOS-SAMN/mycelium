@@ -35,8 +35,8 @@
 //! }
 //! ```
 
-use forms::algebra::Clifford;
 use forms::coordinate::{Bodies, Sector};
+use forms::passage::Poles;
 
 /// The Concordance clause register's types: a Concordance clause as
 /// served (never the rule language's clause, `crate::rule`), its name and
@@ -60,16 +60,16 @@ pub use mycelium::physics::laws::clauses::{
 };
 
 /// THE KERNEL'S RECONSTRUCTION OF ONE FIXTURE, through the law forms: the
-/// passage's product, commutator and square in the exact algebra, the
-/// coordinate's order, sector, side and range. `None` where the algebra
-/// refuses a product of the input.
+/// passage's crossing (the pole swap, the span and the flux) and the riding
+/// state's pass in the exact algebra, the coordinate's order, sector, side
+/// and range. `None` where the passage refuses the input.
 pub fn reconstruct_fixture(fixture: &Fixture) -> Option<Object> {
-    let product = |a: &Clifford, b: &Clifford| a.product(b).ok();
     Some(match fixture {
-        Fixture::PassedTwice { v, q } => Object::Multivector(product(v, &forms::passage::pass(v, q).ok()?)?),
-        Fixture::Passed { v, q } => Object::Multivector(forms::passage::pass(v, q).ok()?),
-        Fixture::Commutator { a, b } => Object::Multivector(product(a, b)?.difference(&product(b, a)?).ok()?),
-        Fixture::Square { x } => Object::Multivector(product(x, x)?),
+        Fixture::Crossed { positive, negative, frame, flux } => {
+            let crossed = Poles::of(positive, negative).ok()?.cross(frame, flux).ok()?;
+            Object::Crossing { frame: crossed.frame, span: crossed.span, flux: crossed.flux }
+        }
+        Fixture::Ridden { positive, negative, state } => Object::Multivector(Poles::of(positive, negative).ok()?.ride(state).ok()?),
         Fixture::Ordered { bodies } => {
             let mut ordered = bodies.clone();
             ordered.sort();

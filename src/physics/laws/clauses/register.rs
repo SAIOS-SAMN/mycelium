@@ -17,12 +17,13 @@
 use super::fixtures::{coordinate_fixtures, passage_fixtures};
 use algebra::Clifford;
 use forms::coordinate::{Bodies, Coordinate, CoordinateRefusal, Lane, Sector, Side};
+use forms::passage::Poles;
 use forms::Q;
 
 /// THE CLAUSES THIS HYPHA ADJUDICATES, `(law id, version)`, in the
 /// register's order: each a law form of the innermost shell with joint-read
-/// fixtures (LAW-PASSAGE v2 as `FORMS-PASSAGE`, LAW-COORDINATE v1 as
-/// `FORMS-COORDINATE`, the form's version 2).
+/// fixtures (LAW-PASSAGE v3 as `FORMS-PASSAGE`, the form's version 4;
+/// LAW-COORDINATE v1 as `FORMS-COORDINATE`, the form's version 2).
 pub const CLAUSES: &[(&str, u16)] = &[
     (forms::passage::LAW_ID, forms::passage::LAW_VERSION),
     (forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION),
@@ -77,15 +78,14 @@ impl Standing {
 /// the objects it is read on.
 #[derive(Clone, Debug)]
 pub enum Fixture {
-    /// LAW-PASSAGE fixture 1: `v·(v·q)`, the state carried once and the
-    /// product with the direction again.
-    PassedTwice { v: Clifford, q: Clifford },
-    /// LAW-PASSAGE fixture 2: one crossing, `pass(v, q) = v·q`.
-    Passed { v: Clifford, q: Clifford },
-    /// LAW-PASSAGE fixture 3: the commutator unhalved, `a·b − b·a`.
-    Commutator { a: Clifford, b: Clifford },
-    /// LAW-PASSAGE fixture 4: the square `x·x`.
-    Square { x: Clifford },
+    /// LAW-PASSAGE fixtures 1, 2, 3 and 5: one crossing of the frame state
+    /// `frame` on the plane of the units `positive` (`e₊`) and `negative`
+    /// (`e₋`), with `flux` on `T` (`forms::passage::Poles::cross`).
+    Crossed { positive: Clifford, negative: Clifford, frame: Clifford, flux: Q },
+    /// LAW-PASSAGE fixture 4: the riding state's pass, `e₊·state`, on the
+    /// plane of the units `positive` and `negative`
+    /// (`forms::passage::Poles::ride`).
+    Ridden { positive: Clifford, negative: Clifford, state: Clifford },
     /// LAW-COORDINATE fixture 1a: the bodies, read into the canonical order.
     Ordered { bodies: Vec<Coordinate> },
     /// LAW-COORDINATE fixture 2: the sector at `depth` holding `value`.
@@ -103,6 +103,9 @@ pub enum Fixture {
 pub enum Object {
     /// A value of `Cl(p, q)`, its signature carried.
     Multivector(Clifford),
+    /// One crossing's result: the frame state past the swap, its span
+    /// (`S`) and the flux written on `T`.
+    Crossing { frame: Clifford, span: Q, flux: Q },
     /// Bodies, in the order the reading gives them.
     Bodies(Vec<Coordinate>),
     /// A sector of the sexagesimal reading.
@@ -122,10 +125,12 @@ fn same_value(a: &Clifford, b: &Clifford) -> bool {
 impl PartialEq for Fixture {
     fn eq(&self, o: &Fixture) -> bool {
         match (self, o) {
-            (Fixture::PassedTwice { v, q }, Fixture::PassedTwice { v: w, q: r }) => same_value(v, w) && same_value(q, r),
-            (Fixture::Passed { v, q }, Fixture::Passed { v: w, q: r }) => same_value(v, w) && same_value(q, r),
-            (Fixture::Commutator { a, b }, Fixture::Commutator { a: c, b: d }) => same_value(a, c) && same_value(b, d),
-            (Fixture::Square { x }, Fixture::Square { x: y }) => same_value(x, y),
+            (Fixture::Crossed { positive, negative, frame, flux }, Fixture::Crossed { positive: p, negative: n, frame: f, flux: t }) => {
+                same_value(positive, p) && same_value(negative, n) && same_value(frame, f) && flux == t
+            }
+            (Fixture::Ridden { positive, negative, state }, Fixture::Ridden { positive: p, negative: n, state: s }) => {
+                same_value(positive, p) && same_value(negative, n) && same_value(state, s)
+            }
             (Fixture::Ordered { bodies }, Fixture::Ordered { bodies: other }) => bodies == other,
             (Fixture::Sector { value, depth }, Fixture::Sector { value: v, depth: d }) => value == v && depth == d,
             (Fixture::Within { at, other, lane, depth }, Fixture::Within { at: a, other: b, lane: l, depth: d }) => {
@@ -151,6 +156,7 @@ impl PartialEq for Object {
     fn eq(&self, o: &Object) -> bool {
         match (self, o) {
             (Object::Multivector(a), Object::Multivector(b)) => same_value(a, b),
+            (Object::Crossing { frame, span, flux }, Object::Crossing { frame: f, span: s, flux: t }) => same_value(frame, f) && span == s && flux == t,
             (Object::Bodies(a), Object::Bodies(b)) => a == b,
             (Object::Sector(a), Object::Sector(b)) => a == b,
             (Object::Side(a), Object::Side(b)) => a == b,
@@ -187,16 +193,17 @@ pub struct RegisterRefusal {
 }
 
 /// THE HYPHA'S RECONSTRUCTION OF ONE FIXTURE, through the law forms: the
-/// object the law reaches on the fixture's input. `None` where the algebra
-/// refuses a product of the input (two signatures that disagree, a
-/// direction that is not degree 1, a state that is not even).
+/// object the law reaches on the fixture's input. `None` where the passage
+/// refuses the input (a unit that is not one, two signatures that
+/// disagree, a frame state off the plane, a riding state of both
+/// parities).
 pub fn reconstruct(fixture: &Fixture) -> Option<Object> {
-    let value = |r: Result<Clifford, algebra::SignatureRefusal>| r.ok().map(Object::Multivector);
     match fixture {
-        Fixture::PassedTwice { v, q } => value(v.product(&forms::passage::pass(v, q).ok()?)),
-        Fixture::Passed { v, q } => forms::passage::pass(v, q).ok().map(Object::Multivector),
-        Fixture::Commutator { a, b } => value(a.product(b).and_then(|ab| ab.difference(&b.product(a)?))),
-        Fixture::Square { x } => value(x.product(x)),
+        Fixture::Crossed { positive, negative, frame, flux } => {
+            let crossed = Poles::of(positive, negative).ok()?.cross(frame, flux).ok()?;
+            Some(Object::Crossing { frame: crossed.frame, span: crossed.span, flux: crossed.flux })
+        }
+        Fixture::Ridden { positive, negative, state } => Poles::of(positive, negative).ok()?.ride(state).ok().map(Object::Multivector),
         Fixture::Ordered { bodies } => {
             let mut ordered = bodies.clone();
             ordered.sort();
@@ -229,8 +236,9 @@ fn registered(id: ConcordanceClauseId, standing: Standing, fixtures: Option<Vec<
 /// THE REGISTER: every Concordance clause of [`CLAUSES`], in order, its
 /// fixtures built and reconstructed by this hypha; refused by the clause
 /// whose fixtures the hypha cannot read. `FORMS-PASSAGE` is a network
-/// clause (draft 5 names 2.11 one; its fixtures were joint-read by every
-/// kernel). `FORMS-COORDINATE` stands at kernel standing, signable and
+/// clause (held draft 2.11 names it one; LAW-PASSAGE v3 was adopted by
+/// both operators on 2026-11-05, its fixtures served for the joint read).
+/// `FORMS-COORDINATE` stands at kernel standing, signable and
 /// vetoable, until 78.173's fixtures are joint-read agreed and its clause
 /// is drafted: a clause whose fixtures no other kernel has read is never
 /// made unvetoable (coordinator's decision, 2026-11-05).

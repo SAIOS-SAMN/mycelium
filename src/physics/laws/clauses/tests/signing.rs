@@ -48,7 +48,7 @@ fn admit_refuses_unreached_fixture_as_not_signatory() {
     let held = held();
     let mut clauses = enabled(&held, reconstruct);
     let passage = held.iter().find(|r| r.clause.id.law == forms::passage::LAW_ID).expect("the passage clause");
-    let [one, two, ..] = passage.reached.as_slice() else { panic!("four fixtures") };
+    let [one, two, ..] = passage.reached.as_slice() else { panic!("two fixtures at least") };
     let Some(Choice::Enabled { reached }) = clauses.iter_mut().find(|c| c.id == passage.clause.id).map(|c| &mut c.choice) else { panic!("enabled") };
     reached[1] = one.clone();
     let s = Signing::sign(&kernel(), clauses);
