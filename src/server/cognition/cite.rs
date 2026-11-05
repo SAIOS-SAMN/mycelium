@@ -450,11 +450,13 @@ impl Court {
 
     /// ACT_UPLINK's fold AS HEARD: reconstructed at the vertex
     /// (`Reconstructed::fold`), then admitted; a fold whose tier signature
-    /// does not verify over its own coordinates is `Uplinked::Unsigned`.
+    /// does not verify over its own coordinates is `Uplinked::Unsigned`, and
+    /// one stating a transition that does not hold under the universal laws
+    /// is refused by the law's name (`Uplinked::NotLawful`, track 24 B3).
     pub fn hear_uplink(&mut self, f: &crate::anastome::dialogue::uplink::SignedFold) -> crate::anastome::dialogue::uplink::Uplinked {
         match crate::court::admission::Reconstructed::fold(f) {
-            Some(r) => self.admit_uplink(&r),
-            None => crate::anastome::dialogue::uplink::Uplinked::Unsigned,
+            Ok(r) => self.admit_uplink(&r),
+            Err(refused) => refused,
         }
     }
 

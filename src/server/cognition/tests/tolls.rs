@@ -246,7 +246,7 @@ fn challenge_default_refunds_toll_parts_together() {
     let Handed::Sealed { id, .. } = traverse(&mut k, m, passage(7, 3, 1)) else { panic!() };
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { .. }), "accepted");
     let leaving = vec![([1; 32], [-7, 0, 0, -3])];
-    let fold = TierFold { tier: traveller, prefix: [1; 32], rows: leaving, declared: Vec::new(), children: Vec::new(), handoffs: vec![(id, Side::Out)] };
+    let fold = TierFold { tier: traveller, prefix: [1; 32], rows: leaving, declared: Vec::new(), children: Vec::new(), handoffs: vec![(id, Side::Out)], transitions: Vec::new() };
     let Uplinked::Admitted { at, .. } = k.hear_uplink(&fold.sign(&reserve(5))) else { panic!("the OUT side consumed") };
     let at = crate::anastome::dialogue::uplink::FoldAt::sealed(at);
     assert!(k.fold_holds_toll(&at), "the toll rides on the fold");

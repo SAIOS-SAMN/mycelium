@@ -1330,6 +1330,24 @@ adjudicated reading (B2). Each phase is one commit:
    states verified under L0 at `LAW_VERSION` 5 and the `forms` core shell,
    refused `NotLawful` naming each breach, never admitted on a declared
    law's name; the draft-4 shared laws as each is ruled.
+   - **Built** (v0.4.0, a network-contract change on the wire): a tier's
+     fold carries the transitions it states (`TierFold::transitions`,
+     written out in its signed bytes, never a digest of them), and
+     `Reconstructed::fold` rebuilds each, and each of every carried
+     line's, under L0 at `LAW_VERSION` (`verify_sized`) before the vertex
+     admits it. A breach is refused `Uplinked::NotLawful` (the path of
+     carried lines, the transition's index, every breach with its law); a
+     law unread is answered `Uplinked::Unread`, neither admitted nor
+     refused. Claims `crossing_refused_by_the_law_it_breaks`,
+     `lawful_crossing_admitted` (`server/cognition/tests/boundary.rs`)
+     and `fold_with_transitions_round_trips_with_lawful_answers`.
+   - Crossing kinds with no law reconstruction yet, each listed, none
+     invented: an anchor, a map, a mouth, a conversion out, a manifest and
+     a statement state no transition; their existing checks stand
+     (MU-HOSTING §5a.5). A motion stated as turns (`verify_turns`) has no
+     wire writing yet and rides the crossing record (track 25, X1). No
+     crossing states a core form's object, and LAW-PASSAGE waits on its
+     v3.
    - The first shared crossing law is **LAW-PASSAGE v2**: a body's state
      is an even multivector `q`, plane `k`'s direction is
      `v_k = H_k·e_Zk + R_k·e_Qk` (`e_Zk² = +1`, `e_Qk² = −1`), and one

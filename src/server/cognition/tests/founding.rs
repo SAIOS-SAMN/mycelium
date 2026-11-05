@@ -100,6 +100,7 @@ fn trade() -> TierFold {
         declared: Vec::new(),
         children: Vec::new(),
         handoffs: Vec::new(),
+        transitions: Vec::new(),
     }
 }
 

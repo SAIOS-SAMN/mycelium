@@ -65,7 +65,7 @@ fn found(k: &mut Court) {
 }
 
 fn fold(tier: &SigningKey, prefix: u8, rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>) -> TierFold {
-    TierFold { tier: verifying(tier), prefix: [prefix; 32], rows, declared, children, handoffs: Vec::new() }
+    TierFold { tier: verifying(tier), prefix: [prefix; 32], rows, declared, children, handoffs: Vec::new(), transitions: Vec::new() }
 }
 
 /// `A`'s fold: `w1` +10, `w2` −4 on G, and the 6 it made declared by `w9`.
@@ -86,7 +86,7 @@ fn carry(k: &mut Court, f: TierFold, by: &SigningKey) -> Uplinked {
     };
     let mut prefix = [7u8; 32];
     prefix[..8].copy_from_slice(&k.chain.head_height().to_be_bytes());
-    let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+    let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
     k.hear_uplink(&carrier.sign(&reserve()))
 }
 
@@ -287,7 +287,7 @@ fn admit_uplink_carries_nested_line_in_one_receipt() {
     let unbonded = key(31);
     let forged = fold(&q, 9, Vec::new(), Vec::new(), Vec::new()).sign(&unbonded);
     let carried = ChildNet { rows: Vec::new(), declared: Vec::new(), child: Child::Carried(Box::new(forged)), included_rows: Vec::new(), included_declared: Vec::new(), rate: [(1, 1); 4] };
-    let carrier = TierFold { tier: verifying(&reserve()), prefix: [8; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+    let carrier = TierFold { tier: verifying(&reserve()), prefix: [8; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
     assert_eq!(k.hear_uplink(&carrier.sign(&reserve())), Uplinked::ChildRefused { index: 0, why: ChildRefusal::Unsigned });
 }
 

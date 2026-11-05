@@ -64,7 +64,7 @@ fn fund(k: &mut Court, party: [u8; 32], mu: [u64; 4]) {
 }
 
 fn fold(prefix: u8, rows: Vec<Net>, handoffs: Vec<([u8; 32], Side)>) -> TierFold {
-    TierFold { tier: verifying(&x()), prefix: [prefix; 32], rows, declared: Vec::new(), children: Vec::new(), handoffs }
+    TierFold { tier: verifying(&x()), prefix: [prefix; 32], rows, declared: Vec::new(), children: Vec::new(), handoffs, transitions: Vec::new() }
 }
 
 fn out(g: i128, rate: (u64, u64), nonce: u8) -> ConvertOut {

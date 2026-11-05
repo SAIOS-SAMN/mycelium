@@ -73,7 +73,7 @@ fn founded() -> Court {
 /// A fold whose prefix is the head its tier line's `entries` reach from the
 /// zero head (the tier's first fold).
 fn fold(tier: &SigningKey, entries: &[Entry], rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>) -> TierFold {
-    TierFold { tier: verifying(tier), prefix: line_head([0; 32], entries), rows, declared, children, handoffs: Vec::new() }
+    TierFold { tier: verifying(tier), prefix: line_head([0; 32], entries), rows, declared, children, handoffs: Vec::new(), transitions: Vec::new() }
 }
 
 /// `A`'s line: one entry — `w1` +10, `w2` −4 on G, the 6 made declared by `w9`.
@@ -101,7 +101,7 @@ fn sealed(k: &mut Court, f: TierFold, by: &SigningKey) -> FoldAt {
     };
     let mut prefix = [5u8; 32];
     prefix[..8].copy_from_slice(&k.chain.head_height().to_be_bytes());
-    let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+    let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
     match k.hear_uplink(&carrier.sign(&reserve())) {
         Uplinked::Chained { at, .. } => FoldAt { stamp: at, path: vec![0] },
         other => panic!("carried: {other:?}"),
@@ -309,7 +309,7 @@ fn challenge_returns_child_netting_of_falsified_parent() {
         };
         let mut prefix = [6u8; 32];
         prefix[0] = nonce;
-        let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+        let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
         k.hear_uplink(&carrier.sign(&reserve()))
     };
     assert!(matches!(refile(&mut k, 1), Uplinked::ChildRefused { .. }), "consumed by P");
@@ -360,7 +360,7 @@ fn arbitrage(k: &mut Court) -> (FoldAt, Vec<u8>) {
         rate: [(1, 1), (n, 1), (1, 1), (1, 1)],
     };
     let p_fold =
-        TierFold { tier: verifying(&p), prefix: [2; 32], rows: vec![(who(1), g(6))], declared: Vec::new(), children: vec![half(2)], handoffs: Vec::new() };
+        TierFold { tier: verifying(&p), prefix: [2; 32], rows: vec![(who(1), g(6))], declared: Vec::new(), children: vec![half(2)], handoffs: Vec::new(), transitions: Vec::new() };
     let p_at = sealed(k, p_fold.clone(), &p);
     let q_fold = TierFold {
         tier: verifying(&q),
@@ -369,6 +369,7 @@ fn arbitrage(k: &mut Court) -> (FoldAt, Vec<u8>) {
         declared: Vec::new(),
         children: vec![whole(&p_fold, &p_at, 1), half(1)],
         handoffs: Vec::new(),
+        transitions: Vec::new(),
     };
     let q_at = sealed(k, q_fold, &q);
     let open = k.open_obstructions(&domain());

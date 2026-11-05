@@ -52,6 +52,7 @@ fn handoff_round_trips_with_answers() {
         declared: Vec::new(),
         children: Vec::new(),
         handoffs: Vec::new(),
+        transitions: Vec::new(),
     };
     let crossing = TierFold { handoffs: vec![(id, Side::Out)], ..plain.clone() };
     assert_ne!(plain.signed_bytes(), crossing.signed_bytes(), "the sides are signed");

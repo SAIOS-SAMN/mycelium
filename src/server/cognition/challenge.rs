@@ -240,6 +240,7 @@ impl Court {
                         declared: declared.to_vec(),
                         children: children.to_vec(),
                         handoffs: Vec::new(),
+                        transitions: Vec::new(),
                     };
                     shown.rows_hash() == rec.rows && shown.children_hash() == rec.children
                 };

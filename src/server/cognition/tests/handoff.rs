@@ -89,7 +89,7 @@ fn offered(k: &mut Court, o: Offer) -> [u8; 32] {
 }
 
 fn fold(tier: &SigningKey, prefix: u8, rows: Vec<Net>, handoffs: Vec<([u8; 32], Side)>) -> TierFold {
-    TierFold { tier: verifying(tier), prefix: [prefix; 32], rows, declared: Vec::new(), children: Vec::new(), handoffs }
+    TierFold { tier: verifying(tier), prefix: [prefix; 32], rows, declared: Vec::new(), children: Vec::new(), handoffs, transitions: Vec::new() }
 }
 
 

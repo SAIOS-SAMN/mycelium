@@ -20,6 +20,7 @@ fn uplink_fold_round_trips_with_answers() {
         declared: vec![([8u8; 32], [0, 0, 0, 0])],
         children: Vec::new(),
         handoffs: Vec::new(),
+        transitions: Vec::new(),
     };
     // 78.123 B — a fold with no children writes exactly as 78.119's: its
     // bytes end at the signature, and it signs no children's commitment.
@@ -87,6 +88,54 @@ fn uplink_fold_round_trips_with_answers() {
         Uplinked::ChildRefused { index: 0, why: ChildRefusal::Repeated },
         Uplinked::Repeated,
         Uplinked::NotReserve,
+    ] {
+        assert_eq!(decode_uplink_reply(&encode_uplink_reply(&u)), Some(u.clone()), "{u:?}");
+    }
+}
+
+/// Track 24 B3 — A FOLD STATING TRANSITIONS, and a line it carries stating
+/// its own, reads back whole with them; a fold stating none writes exactly
+/// as before; and the refusal by the law's name and the unread answer read
+/// back with where the transition stands and each breach or law unread.
+#[test]
+fn fold_with_transitions_round_trips_with_lawful_answers() {
+    use crate::physics::laws::{Breach, Law, Transition, Unmeasured};
+    use crate::transducer::cga::{rotator, Mv};
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
+    let t = Transition { motion: rotator(&q(2), &q(1)), heights: (1, 2), bodies: Vec::new(), hues: Default::default(), fluxes: Vec::new() };
+    let fold = TierFold {
+        tier: key.verifying_key().to_bytes(),
+        prefix: [2u8; 32],
+        rows: Vec::new(),
+        declared: Vec::new(),
+        children: Vec::new(),
+        handoffs: Vec::new(),
+        transitions: Vec::new(),
+    };
+    let plain = fold.clone().sign(&key);
+    let stating = TierFold { transitions: vec![t.clone(), Transition { motion: Mv::scalar(q(1)), ..t.clone() }], ..fold.clone() };
+    assert_ne!(stating.signed_bytes(), fold.signed_bytes(), "the transitions are signed");
+    let stating = stating.sign(&key);
+    assert_eq!(decode_uplink(&encode_uplink(&stating)), Some(stating.clone()));
+    assert_eq!(encode_uplink(&plain).len(), 1 + 32 + 32 + fold.rows_bytes().len() + 64, "a fold stating none writes as before");
+    let part = ChildNet {
+        child: Child::Carried(Box::new(stating.clone())),
+        rows: Vec::new(),
+        declared: Vec::new(),
+        included_rows: Vec::new(),
+        included_declared: Vec::new(),
+        rate: [(1, 1); 4],
+    };
+    let carrying = TierFold { children: vec![part], transitions: vec![t], ..fold }.sign(&key);
+    assert_eq!(decode_uplink(&encode_uplink(&carrying)), Some(carrying.clone()), "a carried line's transitions read back with it");
+    let mut long = encode_uplink(&carrying);
+    long.push(0);
+    assert_eq!(decode_uplink(&long), None, "a byte left over is no fold");
+    for u in [
+        Uplinked::NotLawful { path: Vec::new(), index: 1, breaches: vec![(Law::Time, Breach::HeightNotAdvanced { before: 8, after: 8 })] },
+        Uplinked::NotLawful { path: vec![0, 2], index: 0, breaches: vec![(Law::Conformal, Breach::NotAVersor), (Law::Continuity, Breach::MassNotConserved { made: q(-3) })] },
+        Uplinked::Unread { path: vec![1], index: 4, unmeasured: vec![Unmeasured { law: Law::Conformal, needed_stroke: Some(14) }, Unmeasured { law: Law::Conformal, needed_stroke: None }] },
     ] {
         assert_eq!(decode_uplink_reply(&encode_uplink_reply(&u)), Some(u.clone()), "{u:?}");
     }

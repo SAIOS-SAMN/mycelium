@@ -341,6 +341,7 @@ fn settle_solve_pays_from_recycled_pool_before_mint() {
         declared: vec![(CONNECTION_TAX, lanes)],
         children: Vec::new(),
         handoffs: Vec::new(),
+        transitions: Vec::new(),
     };
     assert_eq!(k.hear_uplink(&tax([-3, 1, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Source { lane: 1 }), "the tax only leaves");
     assert_eq!(k.hear_uplink(&tax([-4, 0, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Short));

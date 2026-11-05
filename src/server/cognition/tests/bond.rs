@@ -74,6 +74,7 @@ fn lying_fold() -> (TierFold, Vec<Entry>) {
         declared: Vec::new(),
         children: Vec::new(),
         handoffs: Vec::new(),
+        transitions: Vec::new(),
     };
     (f, line)
 }
@@ -90,7 +91,7 @@ fn carry(k: &mut Court, f: TierFold, nonce: u8) -> Result<FoldAt, Uplinked> {
         included_declared: Vec::new(),
         rate: [(1, 1); 4],
     };
-    let carrier = TierFold { tier: verifying(&reserve()), prefix: [nonce; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+    let carrier = TierFold { tier: verifying(&reserve()), prefix: [nonce; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new(), transitions: Vec::new() };
     match k.hear_uplink(&carrier.sign(&reserve())) {
         Uplinked::Chained { at, .. } => Ok(FoldAt { stamp: at, path: vec![0] }),
         other => Err(other),
