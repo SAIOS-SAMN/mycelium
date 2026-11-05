@@ -4,9 +4,10 @@
 //
 //! The proposal carries the place the prefix stands on, its root, the
 //! epoch rows the home will write and the home's signed position over the
-//! root hash; the witness fetches the prefix — the line strictly after the
-//! one place up to the root — and answers with its own signed position
-//! over the same hash, or a refusal naming a 34.1 constant.
+//! root written out (`Root::signed`: place, height and hash, #91); the
+//! witness fetches the prefix — the line strictly after the one place up
+//! to the root — and answers with its own signed position over the same
+//! root, or a refusal naming a 34.1 constant.
 
 use super::*;
 use crate::chronometry::{Place, Root};

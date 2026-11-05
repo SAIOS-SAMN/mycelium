@@ -4,7 +4,8 @@
 //! 47.2 steps 1 and 2 on the proposal's section before anything is
 //! fetched; then the receipts by `ACT_RECEIPTS` and the ledger entries by
 //! `ACT_ENTRIES` from the home, paged by the frame budget; `Court::verify_fold` on both;
-//! the witness's own signed position over the root hash in reply, and the
+//! the witness's own signed position over the root written out (place,
+//! height and hash, `Root::signed`) in reply, and the
 //! era filed under the home's key.
 
 use crate::context::Context;
@@ -56,7 +57,9 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
         refuse(s, why);
         return;
     }
-    if p.section.prefix.payload != p.root.hash {
+    // The home signed the root written out (`Root::signed`, #91): the
+    // root it states is the one proposed, place, height and hash.
+    if mycelium::chronometry::Root::of_signed(&p.section.prefix.payload) != Some(p.root) {
         refuse(s, mycelium::verdict::REFUSE_RECEIPT);
         return;
     }
@@ -130,8 +133,9 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
         refuse(s, why);
         return;
     }
-    // The witness's own signed position over the root hash (47.1).
-    let Some(section) = crate::admission::sign_position(&context.court, &context.mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else {
+    // The witness's own signed position over the root written out (47.1,
+    // `Root::signed`, #91).
+    let Some(section) = crate::admission::sign_position(&context.court, &context.mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.signed()) else {
         say(s, dialogue::FoldWitness::Unmeasured { vk: witness });
         return;
     };

@@ -291,8 +291,9 @@ fn admit_uplink_carries_nested_line_in_one_receipt() {
     assert_eq!(k.admit_uplink(&carrier.sign(&reserve())), Uplinked::ChildRefused { index: 0, why: ChildRefusal::Unsigned });
 }
 
-/// A witness's signed position over a root hash (as the era tests make one).
-fn co_sign(name: &str, root_hash: [u8; 32]) -> crate::anastome::dialogue::ReceiptSection {
+/// A witness's signed position over a root written out (as the era tests
+/// make one).
+fn co_sign(name: &str, root: crate::chronometry::Root) -> crate::anastome::dialogue::ReceiptSection {
     use crate::chronometry::{ActKind, ReceiptChain};
     let key = super::fixtures::court_key(name);
     let mut c = ReceiptChain::with_signer(key.verifying_bytes());
@@ -304,7 +305,7 @@ fn co_sign(name: &str, root_hash: [u8; 32]) -> crate::anastome::dialogue::Receip
         at: head.stamp.place(),
         height: head.stamp.h,
         chart: vec![],
-        payload: root_hash.to_vec(),
+        payload: root.signed(),
     };
     let sig = key.sign(&prefix.bytes().expect("the prefix frames"));
     crate::anastome::dialogue::ReceiptSection { prefix, sig, receipt: head }
@@ -327,7 +328,7 @@ fn admit_uplink_proves_cold_child_by_sealed_coordinates() {
         Some(pending) => pending.clone(),
         None => k.propose_fold().expect("a closed orbit proposes"),
     };
-    k.commit_fold([3u8; 64], &co_sign("w", proposal.root.hash)).expect("the fold sealed");
+    k.commit_fold([3u8; 64], &co_sign("w", proposal.root)).expect("the fold sealed");
     assert!(k.chain.node(&at.stamp).is_none(), "the carrying receipt is off the hot line");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");

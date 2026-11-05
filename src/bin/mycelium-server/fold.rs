@@ -20,7 +20,9 @@ pub(crate) fn fold_round(court: &Mutex<Court>, mesh: &Mesh) {
     let Some(p) = crate::court_lock::held!(court).ok().and_then(|mut h| h.run(|k, _| k.pending_fold_stands().then(|| k.fold_proposal().cloned()).flatten())) else {
         return;
     };
-    let Some(section) = crate::admission::sign_position(court, mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else { return };
+    // The home's signed position over the root written out: its place,
+    // height and hash (`Root::signed`, #91).
+    let Some(section) = crate::admission::sign_position(court, mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.signed()) else { return };
     let proposal = dialogue::FoldProposal { after: p.after, root: p.root, epochs: p.epochs.clone(), section: section.clone() };
     let Some(body) = dialogue::encode_fold(&proposal) else { return };
     // 47.3: a witness holds bond — room on some lane — and is not this
