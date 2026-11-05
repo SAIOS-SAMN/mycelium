@@ -1305,8 +1305,8 @@ derivation below re-admits it.
   - `read_price_is_scale_free` (two `R`s, the same `y/R`, equal price).
   - `map_fee_floors_once_per_lane`.
   - `founding_grant_is_kinds_at_read_price`.
-  - The existing `tests/atlas.rs:165` and `tests/endowment.rs:85` read the
-    new form.
+  - The existing `src/server/cognition/tests/atlas.rs` and
+    `src/server/cognition/tests/endowment.rs` read the new form.
 - Depends on D2.5 and D2.6 only through `R`. Size: S (formula), plus a
   ruling on `κ`.
 
@@ -2157,7 +2157,7 @@ lookup. Tests: `server::cognition::tests::market`
 itself takes no stroke (rule 10), so a long one is not ended by a stroke;
 it runs off the court.
 
-**Site.** `src/transducer/family/refine.rs:40–41`, used at `:57`:
+**Site.** `src/transducer/family/refine.rs:40–41` (since removed by the transduction), used at `:57`:
 
 ```rust
 pub const MAX_LCM_AXIS: usize = 60;
@@ -2259,9 +2259,9 @@ discarded).
 
 **Implementation scope.**
 
-- `src/transducer/family/refine.rs` (drop both constants; `need`; `Budget`
+- `src/transducer/family/refine.rs`, since removed (drop both constants; `need`; `Budget`
   on `bipartite_cochain`/`refined`; `Unrefined { Empty, Ragged, Spent { need } }`
-  replacing the bare `None`), `src/arc.rs::refine_delta`,
+  replacing the bare `None`), `src/arc.rs::refine_delta` (removed with it),
   `src/server/registry.rs::task_address` (refuse, never skip),
   `src/client/sdk/mind/family.rs::family_magnitude`,
   `src/transducer/family/finish.rs` (`extraction_spend` adds `need`;

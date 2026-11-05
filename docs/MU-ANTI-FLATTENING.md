@@ -169,7 +169,7 @@ names a defect at one site and a law at another. In the tree today,
 `lcm` composes the periods of turns in
 `src/transducer/sentence/coordinates.rs`, which is lawful. Until the
 transduction landed (v0.3.0 T2), `lcm` also re-sampled two frames onto a
-common grid in `src/transducer/family/refine.rs` (`CommonRefinement`),
+common grid in `src/transducer/family/refine.rs` (`CommonRefinement`, removed),
 which was the defect; that file and type are deleted. So the guards are types, which make the wrong structure
 unwritable, and a register that names each guard and the ruling behind
 it (ROADMAP track 25, phase X0):

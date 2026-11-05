@@ -30,6 +30,10 @@ such change is named here.
   the timeline reads the trace line as written today (no wall-clock
   field), costing each reader by its spend.
 - A gate test holds MU-EQUATIONS §11's forms rows to `forms::LAW_IDS`.
+- A gate test holds the documents to MU-STANDARDS 7.1: every repository
+  path cited in backticks in `docs/`, README, AGENTS, CONTRIBUTING,
+  ROADMAP and GLOSSARY exists, or its line says it was removed. The 26
+  stale citations found are rebound.
 
 ### "Grid" (cognition) renamed to "sample" — names and strings left by the prose cleanup (#103)
 - Names only, no behaviour change. The cognition-sense `grid`/`grids`

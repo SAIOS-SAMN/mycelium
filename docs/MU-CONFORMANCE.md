@@ -172,7 +172,7 @@ reads it, and each reply encoded as the hypha writes it and decoded as the
 client reads it, the same exact values at both ends; every act of both
 profiles has such a check. A MUST act of a declared profile the client does
 not speak fails by its name (`Finding::Failed { act, reason }`); an act no
-declared profile names is never asked. The SDK's `tests/conformance.rs`
+declared profile names is never asked. The SDK's `sdk/tests/conformance.rs`
 claims that the client example and the reference mind conform as minds,
 that a house speaking only its uplink conforms as a kernel and is never
 held to task or solve, that a kernel omitting its domain founding fails by

@@ -242,7 +242,7 @@ The two sides stay comparable through what they share:
 | `MAINTAINERS.md`, PR template, release checklist in CONTRIBUTING | the repository | **Built** with this document |
 | Signed release tags, GitHub Releases from the CHANGELOG | the release process | Specified |
 | Test mesh: a genesis of its own for release candidates | `scripts/quickstart`, genesis | Specified |
-| `activates_at` per release: the law, wire and ledger version applied by final point | `src/physics/laws.rs` (`LAW_VERSION`), the door, `chronometry::tuniversal` | Specified |
+| `activates_at` per release: the law, wire and ledger version applied by final point | `src/physics/laws/mod.rs` (`LAW_VERSION`), the door, `chronometry::tuniversal` | Specified |
 | Versions advertised in the cover | `src/anastome/dialogue` cover codec | Specified |
 | BRANCH as an act: a branch origin citing the fork point (78.155 R-1) | `chronometry::tuniversal::navigate`, the court | Specified |
 | A sub-court bound to a branch origin, folding up by the tier fold (78.155 R-3) | `server/cognition` | Specified |

@@ -114,8 +114,8 @@ What the two commands hold:
 - **The tests** include the gate: the crate `gate/`, whose tests read the
   repository's source tree for what the compiler cannot (the reading
   bound, the Euclidean vocabulary, the numbers gate and its register, the
-  drift register, the shared-law table against `forms::LAW_IDS`;
-  MU-STANDARDS 4.1). They include the durable-admission drill
+  drift register, the shared-law table against `forms::LAW_IDS`, the
+  repository paths the documents cite; MU-STANDARDS 4.1). They include the durable-admission drill
   (`tests/durable.rs`), which runs under `--release` only. A scoped run
   while working is `cargo test --release` with a filter; it does not
   replace the whole run.

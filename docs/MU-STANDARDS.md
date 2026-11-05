@@ -31,7 +31,7 @@ impls, one stratum of the mind. A file is named for what it holds in the
 specification's vocabulary (`refract.rs`, `carriage.rs`, `admission.rs`,
 `lapse.rs`), never for its shape (`util`, `helpers`, `misc`, `common`,
 `types`, `part2`, `extra`). A module's test fixtures stand in its
-`tests/fixtures.rs` (§3.3).
+`<module>/tests/fixtures.rs` (§3.3).
 
 1.3 **`mod.rs` holds declarations.** A `mod.rs` contains `mod`, `pub mod`,
 `pub use` and `#[cfg(test)] mod tests;`, and nothing else. A binary's
@@ -278,7 +278,7 @@ nothing and prints is not a test.
 the owning module's `#[cfg(test)] mod tests;`, one file per organ they
 prove, named for what its tests claim (`sentence/pivot/tests/orbit.rs`,
 `cognition/tests/ledger.rs`), never for a chapter number. A module's
-`tests/fixtures.rs` holds fixture constructors only, named for what they
+`<module>/tests/fixtures.rs` holds fixture constructors only, named for what they
 build. Integration tests live in the crate's `tests/` directory.
 
 3.4 **Fixtures are the engine's constructs.** Addresses come from
@@ -364,7 +364,11 @@ holds two readings:
      proved in the tree;
    - *the shared-law table* (`gate/src/tests/documents.rs`): the forms
      rows of MU-EQUATIONS §11 name exactly the ids and versions of
-     `forms::LAW_IDS`.
+     `forms::LAW_IDS`;
+   - *the documents' paths* (`documents.rs`, §7.1): every repository path
+     cited in backticks in `docs/`, README, AGENTS, CONTRIBUTING, ROADMAP
+     and GLOSSARY exists, or its line says it is gone (`retired`,
+     `removed`, `was`). The CHANGELOG is history and is not read.
 2. **The warning reading**: `cargo clippy --release --workspace
    --all-targets -- -D warnings`, the first command of the definition of
    done, over every workspace member (`mycelium`, `algebra`, `forms`,
@@ -468,7 +472,8 @@ being committed.
 ## 7. Documentation binding
 
 7.1 **The documents name what exists.** Every function, path and log line
-a document names exists at the commit that names it.
+a document names exists at the commit that names it. The paths are read
+by the gate (§4.1).
 
 7.2 A new refusal string enters MU-RECURSION 34.1, a new log line 34.2 or
 34.3, and a test that proves a theorem chapter 39 or 42, in the commit

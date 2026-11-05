@@ -2,6 +2,7 @@
 // read against the tree it sits in. Each is a test of its own, so a red
 // check never hides another (I4).
 
+use super::super::documents::{documents, lint_documents};
 use super::super::drift::{lint_drift, REGISTER};
 use super::super::euclidean::lint_euclidean;
 use super::super::length::lint_file_length;
@@ -55,6 +56,18 @@ fn numbers_refuses_nothing_in_tree() {
         reading.hits.len()
     );
     assert!(reading.hits.is_empty(), "the numbers gate refuses:\n{}", reading.hits.join("\n"));
+}
+
+/// MU-STANDARDS 7.1 — every repository path the documents cite (`docs/`,
+/// README, AGENTS, CONTRIBUTING, ROADMAP and GLOSSARY; the CHANGELOG is
+/// history) stands in the tree, or its line says it is gone.
+#[test]
+fn documents_cite_only_paths_of_tree() {
+    let files = documents(repo()).expect("the documents list");
+    let mut hits = Vec::new();
+    let read = lint_documents(repo(), &files, &mut hits).expect("the documents read");
+    eprintln!("documents: {} files, {read} cited paths, {} missing", files.len(), hits.len());
+    assert!(hits.is_empty(), "the documents cite what is not in the tree:\n{}", hits.join("\n"));
 }
 
 /// THE DRIFT REGISTER: each registered guard's type is declared and its

@@ -1,11 +1,52 @@
 // MU-STANDARDS 7.1 — THE DOCUMENTS NAME WHAT EXISTS, read as tests over the
 // repository's documents beside its code.
 
-use std::path::Path;
+use super::super::documents::{cited, lint_documents, Cited};
+use std::path::{Path, PathBuf};
 
 /// The repository root: the gate's manifest sits one level under it.
 fn repo() -> &'static Path {
     Path::new(env!("CARGO_MANIFEST_DIR")).parent().expect("the gate's manifest sits in the repository")
+}
+
+/// A cited path is an inline code span in path characters under a
+/// top-level directory, its line or item suffix read off; a pattern, a
+/// relative path, a fenced block and a span in no directory of the tree
+/// are not read.
+#[test]
+fn cited_reads_paths_of_code_spans() {
+    let text = "see `src/a.rs:12` and `gate/src/numbers.rs::Tree`, `docs/`\n\
+                not `src/bin/{a,b}.rs`, `<module>/tests/fixtures.rs`, `proposals/x.md`, `cargo test`\n\
+                ```sh\n`src/fenced.rs`\n```\n\
+                `xtask/main.rs` was the gate\n";
+    let read = cited(text);
+    let paths: Vec<(usize, &str, bool)> = read.iter().map(|c| (c.line, c.path.as_str(), c.gone)).collect();
+    assert_eq!(
+        paths,
+        [(1, "src/a.rs", false), (1, "gate/src/numbers.rs", false), (1, "docs/", false), (6, "xtask/main.rs", true)]
+    );
+    assert_eq!(cited("`src/x.rs`"), [Cited { line: 1, path: "src/x.rs".to_string(), gone: false }]);
+}
+
+/// A cited path that names nothing of the tree is refused with its document
+/// and line; one that exists, or one whose line says it was removed or
+/// retired, stands.
+#[test]
+fn lint_documents_refuses_missing_path() {
+    let dir = tempfile::tempdir().expect("a directory to write into");
+    std::fs::create_dir_all(dir.path().join("src")).expect("created");
+    std::fs::write(dir.path().join("src/held.rs"), "").expect("written");
+    let doc = dir.path().join("DOC.md");
+    std::fs::write(
+        &doc,
+        "`src/held.rs` stands\n`src/gone.rs` is cited\n`src/old.rs` was removed\n`src/older.rs`, retired\n",
+    )
+    .expect("written");
+    let mut hits = Vec::new();
+    let read = lint_documents(dir.path(), &[PathBuf::from(&doc)], &mut hits).expect("the documents read");
+    assert_eq!(read, 4, "four paths cited");
+    assert_eq!(hits.len(), 1, "{hits:?}");
+    assert!(hits[0].contains("DOC.md:2") && hits[0].contains("`src/gone.rs`"), "{hits:?}");
 }
 
 /// The rows of a markdown table's section: the lines of `text` from the

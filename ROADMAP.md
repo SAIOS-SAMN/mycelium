@@ -399,10 +399,10 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - `observe/fleet.rs` → `observe/phase.rs`.
    - Vague names:
      - `tuniversal/ops.rs` → `navigate.rs`;
-     - the 13 `tests/common.rs` → `tests/fixtures.rs`;
+     - the 13 module test files `common.rs` → `fixtures.rs`;
      - `cga/tests/generic.rs` → `rank_n.rs`;
-     - `tests/g_cga.rs` → `conformal_algebra.rs`;
-     - `tests/alpha_plan.rs` → `word_lifecycle.rs`.
+     - `g_cga.rs` → `tests/conformal_algebra.rs`;
+     - `alpha_plan.rs` → `tests/word_lifecycle.rs`.
    - **Metaphor module names become function names.** A doctrine term
      may stay as a type's name with its GLOSSARY row, never as a file's
      name. For example:
@@ -1481,8 +1481,8 @@ Each phase lands on its own branch, one item per commit:
    each body is held by its boundary; incidences are read between boundary arcs; a site
    lifts as turns in ℚ/ℤ. The transduction is **Built** (the v0.3.0
    transduction work, [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25),
-   closed): `CommonRefinement` and `src/transducer/family/refine.rs` are
-   deleted. X5's guard remains to land, so that no common refinement
+   closed): `src/transducer/family/refine.rs` was removed with
+   `CommonRefinement`. X5's guard remains to land, so that no common refinement
    re-enters past the sensor.
    - Claims: `common_refinement_unreachable_from_cognition`
      (`compile_fail`), `site_lifts_to_turns_of_its_own_periods`,
