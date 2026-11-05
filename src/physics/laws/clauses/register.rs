@@ -16,14 +16,14 @@
 
 use super::fixtures::{coordinate_fixtures, passage_fixtures};
 use algebra::Clifford;
-use forms::coordinate::{Bodies, Coordinate, CoordinateRefusal, Lane, Sector, Side};
+use forms::coordinate::{Bodies, Bounds, Coordinate, CoordinateRefusal, Interval, Key, Lane, Sector, Sides};
 use forms::passage::Poles;
 use forms::Q;
 
 /// THE CLAUSES THIS HYPHA ADJUDICATES, `(law id, version)`, in the
 /// register's order: each a law form of the innermost shell with joint-read
 /// fixtures (LAW-PASSAGE v3 as `FORMS-PASSAGE`, the form's version 4;
-/// LAW-COORDINATE v1 as `FORMS-COORDINATE`, the form's version 2).
+/// LAW-COORDINATE v3 as `FORMS-COORDINATE`, the form's version 3).
 pub const CLAUSES: &[(&str, u16)] = &[
     (forms::passage::LAW_ID, forms::passage::LAW_VERSION),
     (forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION),
@@ -86,16 +86,18 @@ pub enum Fixture {
     /// plane of the units `positive` and `negative`
     /// (`forms::passage::Poles::ride`).
     Ridden { positive: Clifford, negative: Clifford, state: Clifford },
-    /// LAW-COORDINATE fixture 1a: the bodies, read into the canonical order.
+    /// LAW-COORDINATE fixtures 1a and 11: the bodies, read into the
+    /// canonical order.
     Ordered { bodies: Vec<Coordinate> },
-    /// LAW-COORDINATE fixture 2: the sector at `depth` holding `value`.
+    /// LAW-COORDINATE fixture 2: the sector at `depth` holding `value`, the
+    /// display reading.
     Sector { value: Q, depth: u32 },
-    /// LAW-COORDINATE fixtures 4 and 5: where `at` stands on `lane` against
-    /// the sector at `depth` holding `other`'s value.
-    Within { at: Coordinate, other: Coordinate, lane: Lane, depth: u32 },
-    /// LAW-COORDINATE fixture 6: the bodies of `held` in the range
-    /// `[lo, hi)` on `lane` at `at`.
-    Range { held: Vec<Coordinate>, at: Coordinate, lane: Lane, lo: Q, hi: Q },
+    /// LAW-COORDINATE fixtures 4 and 5: where `at` stands against the
+    /// bounds the caller states, a side per component.
+    Within { at: Coordinate, bounds: Bounds },
+    /// LAW-COORDINATE fixtures 6 and 12: the bodies of `held` in the range
+    /// `interval` on component `key` of `lane` at `at`.
+    Range { held: Vec<Coordinate>, at: Coordinate, lane: Lane, key: Key, interval: Interval },
 }
 
 /// THE EXACT OBJECT A FIXTURE REACHES.
@@ -108,11 +110,12 @@ pub enum Object {
     Crossing { frame: Clifford, span: Q, flux: Q },
     /// Bodies, in the order the reading gives them.
     Bodies(Vec<Coordinate>),
-    /// A sector of the sexagesimal reading.
+    /// A sector of the sexagesimal reading, display only.
     Sector(Sector),
-    /// Where a body stands against a sector.
-    Side(Side),
-    /// A reading refused because the two origins differ, naming both.
+    /// Where a body stands against stated bounds, a side per component.
+    Sides(Sides),
+    /// A reading refused by name: two origins, two shapes, or a component
+    /// not held.
     Refused(CoordinateRefusal),
 }
 
@@ -133,11 +136,9 @@ impl PartialEq for Fixture {
             }
             (Fixture::Ordered { bodies }, Fixture::Ordered { bodies: other }) => bodies == other,
             (Fixture::Sector { value, depth }, Fixture::Sector { value: v, depth: d }) => value == v && depth == d,
-            (Fixture::Within { at, other, lane, depth }, Fixture::Within { at: a, other: b, lane: l, depth: d }) => {
-                at == a && other == b && lane == l && depth == d
-            }
-            (Fixture::Range { held, at, lane, lo, hi }, Fixture::Range { held: h, at: a, lane: l, lo: x, hi: y }) => {
-                held == h && at == a && lane == l && lo == x && hi == y
+            (Fixture::Within { at, bounds }, Fixture::Within { at: a, bounds: b }) => at == a && bounds == b,
+            (Fixture::Range { held, at, lane, key, interval }, Fixture::Range { held: h, at: a, lane: l, key: k, interval: i }) => {
+                held == h && at == a && lane == l && key == k && interval == i
             }
             _ => false,
         }
@@ -159,7 +160,7 @@ impl PartialEq for Object {
             (Object::Crossing { frame, span, flux }, Object::Crossing { frame: f, span: s, flux: t }) => same_value(frame, f) && span == s && flux == t,
             (Object::Bodies(a), Object::Bodies(b)) => a == b,
             (Object::Sector(a), Object::Sector(b)) => a == b,
-            (Object::Side(a), Object::Side(b)) => a == b,
+            (Object::Sides(a), Object::Sides(b)) => a == b,
             (Object::Refused(a), Object::Refused(b)) => a == b,
             _ => false,
         }
@@ -185,8 +186,8 @@ pub struct Registered {
 }
 
 /// WHY THE REGISTER STANDS UNREAD: the Concordance clause whose fixtures this hypha
-/// cannot build or reconstruct (a generator the algebra does not hold, or a
-/// product the algebra refuses).
+/// cannot build or reconstruct (a generator the algebra does not hold, a
+/// product the algebra refuses, or a lane set the coordinate refuses).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RegisterRefusal {
     pub id: ConcordanceClauseId,
@@ -210,16 +211,19 @@ pub fn reconstruct(fixture: &Fixture) -> Option<Object> {
             Some(Object::Bodies(ordered))
         }
         Fixture::Sector { value, depth } => Some(Object::Sector(Sector::holding(value, *depth))),
-        Fixture::Within { at, other, lane, depth } => Some(match at.within(other, *lane, *depth) {
-            Ok(side) => Object::Side(side),
+        Fixture::Within { at, bounds } => Some(match at.within(bounds) {
+            Ok(sides) => Object::Sides(sides),
             Err(refusal) => Object::Refused(refusal),
         }),
-        Fixture::Range { held, at, lane, lo, hi } => {
+        Fixture::Range { held, at, lane, key, interval } => {
             let mut bodies = Bodies::new();
             held.iter().for_each(|c| {
                 bodies.hold(c.clone());
             });
-            Some(Object::Bodies(bodies.range(at, *lane, lo, hi).bodies.to_vec()))
+            Some(match bodies.range(at, lane, key, interval) {
+                Ok(found) => Object::Bodies(found.bodies.to_vec()),
+                Err(refusal) => Object::Refused(refusal),
+            })
         }
     }
 }
@@ -248,7 +252,7 @@ pub fn register() -> Result<Vec<Registered>, RegisterRefusal> {
         registered(
             ConcordanceClauseId::of(forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION),
             Standing::Kernel,
-            Some(coordinate_fixtures()),
+            coordinate_fixtures(),
         )?,
     ])
 }
