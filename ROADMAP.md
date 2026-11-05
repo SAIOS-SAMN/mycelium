@@ -1266,7 +1266,17 @@ Concordance hash served and signatures verified. Each phase is one commit:
      `1 − δ`. The product needs the multivector algebra, which `forms`
      cannot reach without a dependency cycle, so its four fixtures stand
      with the algebra (`transducer::cga`), once the algebra reads its
-     signature from data. A kernel does not yet sign by reconstructing
+     signature from data.
+   - **The signature is data** (v0.4.0; no wire or layout change): the
+     multivector carries the mask of its negative generators beside its
+     `n` (`Mv::negatives`), and the product reads each square from it.
+     Every value of `Cl(n+1, 1)` carries `e₋` alone, its products
+     unchanged (the oracle golden reproduces). A value of `Cl(p, q)` is a
+     `transducer::cga::Clifford`, composed only through `product`, `sum`
+     and `difference`, which refuse two signatures disagreeing on a
+     generator both algebras hold `SignatureRefusal::Mismatched`. The
+     wire carries `Cl(n+1, 1)` values only; a `Clifford` has no writing
+     until the court reads one. A kernel does not yet sign by reconstructing
      them: no clause is registered for reading until B2 lands. Open: the
      admission at the vertex, below.
    - Claims (admission, open): `crossing_is_one_sided_product`,

@@ -3,7 +3,9 @@
 //! `n = 3`, `Cl(4,1)` on `(r, c, k)` (51.2) — where a body is an invertible
 //! dual sphere and a rigid motion is one versor sandwich, so the quotient
 //! between two scene states exists. The product is written once for every
-//! `n`, and a value carries the `n` it belongs to.
+//! `n` and every signature `Cl(p, q)`, and a value carries the `n` it
+//! belongs to and the mask of its negative generators (`e₋` alone in
+//! `Cl(n+1, 1)`; any other set in a [`Clifford`]).
 
 mod commutator;
 mod constructors;
@@ -26,6 +28,7 @@ mod multivector;
 mod period;
 mod perturbation;
 mod planes;
+mod signature;
 mod spin;
 mod twist;
 
@@ -50,6 +53,7 @@ pub use motion::{action_det, action_of, charged, modes_need, motion_modes, perio
 pub use motor::{Motor, MotorAction, VectorReading};
 pub use multivector::{axes, base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP, MAX_N};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
+pub use signature::{Clifford, SignatureRefusal};
 pub use encounter::{encounter, Encounter, Unencountered};
 pub use perturbation::{lift_drag, Alignment, LiftDrag};
 pub use twist::twist_about;

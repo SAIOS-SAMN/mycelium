@@ -390,6 +390,19 @@ bubble (a thought bubble), renamed 2026-11-02.
   never a constant. Where the field encloses, its membrane encloses the
   infinity, so there is no `e∞` outside any enclosure. No Euclidean
   metric, distance or squared norm enters.
+- **The algebra is `Cl(p, q)`, its signature read from data** (ruled
+  2026-11-05). Each value carries the mask of its negative generators
+  beside its `n`, and the product reads each generator's square from that
+  mask (`transducer::cga::Mv::negatives`). The field's transitions are
+  values of `Cl(n+1, 1)`: `e₋` is their one negative generator, and every
+  reading of them is unchanged. A value of another signature (a hyperbolic
+  frame plane with one negative pole, as LAW-PASSAGE's planes are,
+  [proposal 78.172](proposals/78.172-law-passage.md)) is a
+  `transducer::cga::Clifford`: it composes only with values whose
+  signature agrees on every generator both algebras hold, and two that
+  disagree are refused `SignatureRefusal::Mismatched`, naming those
+  generators, never coerced. The wire carries `Cl(n+1, 1)` values only, and
+  no signature.
 - **The algebra is never scalar.** Every quantity is a multivector: a
   blade, a versor, an orbit, a well, a field. A number enters only as the
   gauge of a one-dimensional reading on the base algebra:
