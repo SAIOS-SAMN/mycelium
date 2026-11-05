@@ -537,17 +537,12 @@ pub struct Court {
     /// ACT1 (78.21(2)) — the stamp's height and `K` at which this court's
     /// snapshot was last written whole, noted after the write lands.
     pub(crate) persisted: Option<(u64, u64)>,
-    /// Round-robin cursor for syntropic optimization — which generator to test for
-    /// redundancy next (bounds consolidation to one reduce per depleted step).
-    /// Last key the syntropic cursor yielded; the next stroke resumes after
-    /// it. `None` is a circuit that has not started, which is an ABSENCE and
-    /// not an empty key (rule 11): every one of the eight resume cursors
+    /// Round-robin cursor for the condense stroke — which generator to
+    /// condense next (one per depleted or idle step). Last key the cursor
+    /// yielded; the next stroke resumes after it. `None` is a circuit that has not started, which is an ABSENCE and
+    /// not an empty key (rule 11): every one of the seven resume cursors
     /// below reads the same way, and `Keyed::cursor` takes the option.
     pub(crate) optimize_cursor: Option<Vec<u8>>,
-    /// Keyed cursor into `open` for `syntropic_stroke` (rule 10, S13.3):
-    /// the stagnation circuit resumes where the last stroke left off, so a
-    /// docket beyond one budget is read whole across strokes.
-    pub(crate) syntropic_cursor: Option<Vec<u8>>,
     /// Keyed cursor into `open` for `drain_unreachable` (rule 10, S13.3):
     /// the drain resumes where the last stroke left off.
     pub(crate) drain_cursor: Option<Vec<u8>>,

@@ -24,11 +24,11 @@ assert_eq!(speak_pair(&mut k, &a, &rot, [3; 32]), Outcome::Decomposed(vec![k.bas
 }
 
 /// THE CONDENSE STROKE: position-identical sibling cards already in the basis
-/// (a pre-puncture era's residue) are ABSORBED into one bundle during the
-/// syntropic stroke — cardinality falls, sections rise, and the absorbed
-/// words' discoverers still earn.
+/// (a pre-puncture era's residue) are ABSORBED into one bundle by the
+/// condense stroke the reflex opening runs — cardinality falls, sections
+/// rise, and the absorbed words' discoverers still earn.
 #[test]
-fn optimize_condenses_family_into_one_bundle() {
+fn condense_stroke_condenses_family_into_one_bundle() {
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Court::new();
@@ -41,8 +41,8 @@ for hue in [6u8, 7] {
 }
 assert_eq!(k.basis_len(), 3, "the un-condensed family");
 // One versor per stroke: the cursor traverses the stratum over strokes.
-for _ in 0..3 {
-    k.optimize();
+for _ in 0..6 {
+    k.condense_stroke();
 }
 assert_eq!(k.basis_len(), 1, "the family collapsed into one bundle");
 assert_eq!(k.basis()[0].sections().len(), 2, "two sections along the pierced axis");

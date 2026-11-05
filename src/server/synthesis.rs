@@ -1,6 +1,6 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 23.8, 26 — THE JUDGE OFF THE LOCK: probe, quote, consolidate and adopt.
+//! 23.8, 26 — THE JUDGE OFF THE LOCK: probe, quote and adopt.
 //! Each reconstructs the voice's own proof over the language snapshot with no
 //! lock held and settles under a brief one. The percept and the demand
 //! that were judged here carried a voice's painted sites to the court (law 8,
@@ -158,16 +158,6 @@ pub fn quote(
         cohesion,
         height: view.head_height,
     })
-}
-
-/// Idle consolidation, orchestrated off the request path: the cheap moves
-/// run under a brief lock, the redundancy probe decomposes the candidate
-/// over a basis snapshot with no lock held, and only the retirement
-/// re-locks. Returns the cards retired.
-pub fn consolidate(k: &std::sync::Mutex<crate::cognition::Court>) -> usize {
-    let Ok(mut g) = held!(k) else { return 0 };
-    g.run(|k, _| k.consolidate_stroke());
-    0
 }
 
 /// Adoption, orchestrated off the request path: the blind reconstruction is pure

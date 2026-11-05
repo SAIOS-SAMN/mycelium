@@ -32,3 +32,10 @@
   `Pole::of` and `SpanTally` with its `of`; and the helpers and types only
   they used (`EscrowedAward`, `LaneMembers`, `chart_span`, `orbit_span`,
   `Stratum::child_axes`).
+- The idle consolidation worker is retired (clients think, hyphas verify):
+  `synthesis::consolidate`, `Court::consolidate`, `syntropic_stroke`,
+  `optimize`, `consolidate_stroke`, `retire_redundant` and the
+  `syntropic_cursor` they kept are removed. The reflex opening's
+  `condense_stroke` stands, and the condensation and torse tests now run
+  on it. `physics::equilibrium::consolidate` is unchanged. Proposal 78.157
+  marks S3 retired.
