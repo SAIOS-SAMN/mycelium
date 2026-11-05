@@ -20,7 +20,7 @@
 //!   plane, `t = (ρ − 1)/(ρ + 1)`, so two scales compose by product).
 //!
 //! A multivector argument is held as the geometric object it is — a full
-//! Cl(4,1) versor, odd ones (reflections) included; a flag as itself. Two
+//! versor of the conformal case of Cl(p, q) (`Mv`), odd ones (reflections) included; a flag as itself. Two
 //! values are one where they write one run of bytes (`Arg ==`), so a
 //! multivector is compared coefficient for coefficient and never only
 //! projectively.

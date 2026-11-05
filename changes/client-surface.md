@@ -50,3 +50,9 @@
   state the loops' holonomy as meaning read; a price attaches only to
   traversal. The mind's trace labels read "admission: hearings read" and
   "admission: a hearing (loops read)".
+- **The algebra and the completion test.** The SDK's crate description
+  and the rule seam's, the house's and the seat mind's docs name the
+  algebra `Cl(p, q)` with the signature as data, `Mv` its conformal case,
+  never `Cl(4,1)`. The mind's count of paid solves is documented as an
+  observation, never a goal. The README's kernel sections already state
+  the Concordance signed clause by clause by reconstructing its fixtures.

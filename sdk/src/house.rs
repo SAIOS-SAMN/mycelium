@@ -78,7 +78,8 @@ pub use mycelium::physics::laws::{verify_turns, TurnBreach, TurnMotion, TurnTran
 pub use mycelium::transducer::family::transduce::{Enclosure, Turn};
 /// A body as A.13 reads it (centre, mass, second moments).
 pub use mycelium::physics::equilibrium::BodyMoments;
-/// The multivector of Cl(4,1) over ℚ a motion and a nucleus are written in.
+/// The multivector a motion and a nucleus are written in: a value of
+/// `Cl(p, q)` over ℚ, the signature as data, `Mv` its conformal case.
 pub use mycelium::transducer::cga::Mv;
 /// The verify act (mode 1) and its verdict; the batch (mode 2) and its
 /// verdicts in order; a transition's and a verdict's bytes.

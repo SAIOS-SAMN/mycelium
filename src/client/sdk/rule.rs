@@ -1,7 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 78.142 — THE SDK RULE SEAM: a client states a rule as STEPS — rigid
-//! motions in `Cl(4,1)(ℚ)` and hue maps on the fibre — and the seam speaks
+//! motions in `Cl(p, q)(ℚ)`, the signature as data, written as `Mv`, its
+//! conformal case, and hue maps on the fibre — and the seam speaks
 //! them as the sentence the court judges. The sentence is built from the
 //! family's own perception (its bodies' charts), carried by the derivation
 //! the motion peels to, and minted through the one mint
@@ -38,7 +39,8 @@ pub use crate::transducer::sentence::form::clause::{
 /// and since 78.143 the selection, region, creation or crop they act under.
 #[derive(Clone, Debug)]
 pub enum Step {
-    /// A versor of `Cl(4,1)(ℚ)` acting on the sites by its sandwich.
+    /// A versor (`Mv`, the conformal case of `Cl(p, q)(ℚ)`) acting on the
+    /// sites by its sandwich.
     Motion(Mv),
     /// A hue map, `(from, to)`; a hue it does not name stands still. Under
     /// a selection a hue sent to 0 is erased; on a region, the hue `0` is

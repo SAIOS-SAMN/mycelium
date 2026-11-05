@@ -45,7 +45,10 @@ pub(crate) struct CourtPace {
     pub(crate) solving: crate::network::nerve::Keyed<()>,
     probed: StrokeOutcome,
     /// The solves this mind was paid for since it began (a bounty or a floor
-    /// filed): the one event that raises its balance at a court.
+    /// filed), the events that raise the reading of its holding at a court.
+    /// An observation of the mind's work, never a goal the mind steers by
+    /// (MU-SENSING §0): it is read only as an event marker (a rested stratum
+    /// is fetched again once it moves, `starved`) and by the observer.
     pub(crate) earned: u64,
     /// THE STRATA FETCHED FOR NOTHING, by chart key: the court's root for the
     /// stratum when its fetch brought no word, and `earned` then. Every word

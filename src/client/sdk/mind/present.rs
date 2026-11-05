@@ -3,7 +3,7 @@
 // residue — pressure on its language — and the court is asked to
 // deconstruct that motion over the presentation it holds.
 //
-//! The ask carries the motion itself (Cl(4,1), `Mv`), never a chart or a
+//! The ask carries the motion itself (`Mv`, the conformal case of Cl(p, q)), never a chart or a
 //! cursor; the answer carries the words the mind lacked and the citations,
 //! and the mind absorbs the words as it absorbs a syllabus page, at the words'
 //! admitting stamps. A citation whose powers the court read composing to the
