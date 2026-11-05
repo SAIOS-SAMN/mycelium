@@ -137,38 +137,117 @@ impl MindField {
     }
 }
 
+/// WHAT AN ADMISSION LANDED on the thinking mind's field: the reading of
+/// each recorded flux as it landed again, in the order recorded; the words
+/// taught handed on; and the covers parked that joined the mind's (a cover
+/// the mind already held stays the mind's and is not counted).
+#[derive(Debug)]
+pub(crate) struct Landed {
+    pub(crate) flux: Vec<crate::transducer::family::pairing::FluxReading>,
+    pub(crate) taught: usize,
+    pub(crate) parked: usize,
+}
+
+impl std::fmt::Display for Landed {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "admission landed: {} flux readings, {} words taught, {} covers joined",
+            self.flux.len(),
+            self.taught,
+            self.parked
+        )
+    }
+}
+
+/// WHY AN ADMISSION DID NOT LAND, BY NAME. Nothing of it landed.
+pub(crate) enum AdmissionRefused {
+    /// No mind is thinking on this thread: there is no field to land on.
+    /// The admission is handed back whole, to land where a mind thinks.
+    NoMindThinking(Box<Admission>),
+    /// A lane of one of the mind's four ledgers (`pairing::Ledger`) would
+    /// pass its carrier: `held + add` exceeds a `u64` (rule 11). No exact
+    /// landing exists, so none is handed back.
+    LanePastItsCarrier { ledger: usize, lane: usize, held: u64, add: u64 },
+}
+
+impl std::fmt::Display for AdmissionRefused {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AdmissionRefused::NoMindThinking(_) => write!(f, "admission refused: no mind is thinking on this thread"),
+            AdmissionRefused::LanePastItsCarrier { ledger, lane, held, add } => write!(
+                f,
+                "admission refused: ledger {ledger} lane {lane} holds {held}, and {add} more passes its carrier"
+            ),
+        }
+    }
+}
+
+impl std::fmt::Debug for AdmissionRefused {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self, f)
+    }
+}
+
 /// THE ADMISSION OF A LONG LAW, LANDED ON THE THINKING MIND'S FIELD (R1):
-/// its flux admitted again on the field as it stands now (`mark_flux`, which
-/// books what it moved), its other lanes added, its taught words handed on,
-/// the lexicon's words it learned and the covers it parked joined to the
-/// mind's — a word or a cover the mind already holds is the mind's. Answers
-/// `false` where no mind is thinking on this thread, and nothing landed.
-pub(crate) fn admit(a: Admission, budget: &mut crate::physics::Budget) -> bool {
-    if with(&FIELD, |_| ()).is_err() {
-        return false;
-    }
-    for (circuits, lines) in &a.recorded.flux {
-        let _ = crate::transducer::family::pairing::mark_flux(circuits, lines, budget);
-    }
-    let _ = with(&LANES, |held| {
-        for (row, add) in held.iter_mut().zip(&a.lanes) {
-            for (slot, x) in row.iter_mut().zip(add) {
-                let _ = crate::physics::metabolism::step_or_refuse(slot, *x);
+/// its lanes added to the mind's ledgers, its flux admitted again on the
+/// field as it stands now (`mark_flux`, which books what it moved), its
+/// taught words handed on, the lexicon's words it learned and the covers it
+/// parked joined to the mind's — a word or a cover the mind already holds is
+/// the mind's. The reading of what landed, or the refusal by name where
+/// nothing landed: no mind thinking on this thread (the admission handed
+/// back), or a lane that would pass its carrier (checked before anything
+/// lands, so the lanes land whole or not at all).
+pub(crate) fn admit(a: Admission, budget: &mut crate::physics::Budget) -> Result<Landed, AdmissionRefused> {
+    // The lanes, summed exactly against the mind's before anything lands.
+    let summed = with(&LANES, |held| -> Result<Lanes, (usize, usize, u64, u64)> {
+        let mut out: Lanes = [[0; 4]; 4];
+        for (l, (row, add)) in held.iter().zip(&a.lanes).enumerate() {
+            for (lane, (slot, x)) in row.iter().zip(add).enumerate() {
+                out[l][lane] = slot.checked_add(*x).ok_or((l, lane, *slot, *x))?;
             }
         }
+        Ok(out)
     });
-    let _ = with(&TAUGHT, |held| held.extend(a.taught));
-    let _ = with(&LEXICON, |held| held.absorb(a.lexicon));
+    let summed = match summed {
+        Err(_) => return Err(AdmissionRefused::NoMindThinking(Box::new(a))),
+        Ok(Err((ledger, lane, held, add))) => {
+            return Err(AdmissionRefused::LanePastItsCarrier { ledger, lane, held, add })
+        }
+        Ok(Ok(s)) => s,
+    };
+    if with(&FIELD, |_| ()).is_err() {
+        return Err(AdmissionRefused::NoMindThinking(Box::new(a)));
+    }
+    // From here every slot stands: the mind is thinking, its tick fills all
+    // six together (`MindField::think`) and only its leave empties them.
+    let _held_lanes = with(&LANES, |held| *held = summed);
+    let flux: Vec<_> = a
+        .recorded
+        .flux
+        .iter()
+        .map(|(circuits, lines)| crate::transducer::family::pairing::mark_flux(circuits, lines, budget))
+        .collect();
+    let taught = a.taught.len();
+    let _held_taught = with(&TAUGHT, |held| held.extend(a.taught));
+    let _held_lexicon = with(&LEXICON, |held| held.absorb(a.lexicon));
     let mut parked = a.pending;
     let keys: Vec<Vec<u8>> = parked.scoped().map(|(k, _)| k).collect();
-    let _ = with(&PENDING, |held| {
+    let joined = with(&PENDING, |held| {
+        let mut joined = 0usize;
         for k in keys {
             if let (false, Some(p)) = (held.contains(&k), parked.remove(&k)) {
                 held.insert(&k, p);
+                joined += 1;
             }
         }
+        joined
     });
-    true
+    let parked = match joined {
+        Ok(n) => n,
+        Err(_) => 0,
+    };
+    Ok(Landed { flux, taught, parked })
 }
 
 /// A SCRATCH OF THE FIELD THINKING ON THIS THREAD (R1): its tubes and
