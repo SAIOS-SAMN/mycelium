@@ -11,15 +11,15 @@ use crate::transducer::sentence::Form;
 
 /// `reconstruct_blind` with no cover behind it: a crystallized form that cites
 /// another refuses as unruled, because nothing here can resolve the
-/// citation. Hyphae replay through `reconstruct_blind_with` and each hypha's ruled
+/// citation. Hyphae reconstruct through `reconstruct_blind_with` and each hypha's ruled
 /// cover.
 ///
 /// 78.153 — THE OFF-LOCK READERS. `reconstruct_blind`, `reconstruct_blind_with`,
 /// `reconstruct_blind_on` and `reconstruct_blind_at` keep the same answer (`None` clean,
 /// a refusal otherwise) for the voice and every reader outside a court's
-/// lock: the replay is metered and resumable, and these run it to the end
+/// lock: the reconstruction is metered and resumable, and these run it to the end
 /// over as many strokes as it takes ([`to_completion`]). A court under its
-/// lock replays through [`reconstruct_resume`], which answers `Unread` where its
+/// lock reconstructs through [`reconstruct_resume`], which answers `Unread` where its
 /// one stroke ran out and never refuses for it.
 pub fn reconstruct_blind(spoken: &Element, budget: &mut crate::physics::Budget) -> Option<&'static str> {
     reconstruct_blind_with(spoken, &|_| None, budget)
@@ -38,8 +38,8 @@ pub fn reconstruct_blind_on(
         .map(|r| r.reason)
 }
 
-/// The same replay, refusing WITH THE COORDINATE (50.9): a sentence is
-/// replayed by `reconstruct_form_at`, which names the vertex, the face or the
+/// The same reconstruction, refusing WITH THE COORDINATE (50.9): a sentence is
+/// reconstructed by `reconstruct_form_at`, which names the vertex, the face or the
 /// chart it refused at; every other word is refused at its tape.
 pub fn reconstruct_blind_at(
     spoken: &Element,
@@ -52,10 +52,10 @@ pub fn reconstruct_blind_at(
     to_completion(spoken, budget, &mut |b, cursor| reconstruct_word(spoken, &owned, family, crystal, b, cursor, true))
 }
 
-/// 78.153 — THE COURT'S REPLAY ON ITS ONE STROKE, resumed from `cursor`:
+/// 78.153 — THE COURT'S RECONSTRUCTION ON ITS ONE STROKE, resumed from `cursor`:
 /// `Clean`, `Refused` with its coordinate, or `Unread` — the stroke ran out
 /// first, the cursor holds where, and nothing was ruled. `at` selects
-/// [`reconstruct_blind_at`]'s reading (a sentence straight to its form replay)
+/// [`reconstruct_blind_at`]'s reading (a sentence straight to its form reconstruction)
 /// over [`reconstruct_blind_on`]'s (the word's own checks first).
 pub fn reconstruct_resume<'r>(
     spoken: &Element,
@@ -89,8 +89,8 @@ fn reconstruct_word<'r>(
         return tape(decided);
     }
     if spoken.is_sentence() {
-        // The version byte selects the replayer: a v3 tape is a form and
-        // is replayed through the cover; a v2 tape is refused.
+        // The version byte selects the reconstructor: a v3 tape is a form and
+        // is reconstructed through the cover; a v2 tape is refused.
         //
         // S9.4 — WHAT CERTIFIES IS CLOSURE. `reconstruct_form_resume` is the
         // certificate: the orbits return, every face re-derives, the
@@ -104,9 +104,9 @@ fn reconstruct_word<'r>(
     tape(word_rest(spoken))
 }
 
-/// 78.153 — A REPLAY RUN TO ITS END off a court's lock, on strokes of its
+/// 78.153 — A RECONSTRUCTION RUN TO ITS END off a court's lock, on strokes of its
 /// own while each one moves the cursor. The caller's stroke is left as it
-/// stood: the replay drew from it only inside `versor_between` before it was
+/// stood: the reconstruction drew from it only inside `versor_between` before it was
 /// metered, and draining it now would starve the reads the caller makes
 /// after. A stroke that moves nothing is a unit no stroke holds — or a
 /// process asked to stop (`physics::halt`) — refused by name
@@ -114,7 +114,7 @@ fn reconstruct_word<'r>(
 ///
 /// 78.158a U2 — THE CALLER'S STROKE IS HONOURED, NOT DRAINED. It was read
 /// nowhere (`let _ = budget;`), each round a default stroke: a caller that
-/// granted a family-sized stroke (`extraction_spend`) had its replay
+/// granted a family-sized stroke (`extraction_spend`) had its reconstruction
 /// refused UNREAD on a unit its own stroke would have read. Each round is
 /// now as wide as the caller's stroke where it grants more than a default
 /// one, and a default stroke otherwise; the caller's token is still left
@@ -144,7 +144,7 @@ pub(crate) fn to_completion(
     }
 }
 
-/// The word's own checks before a sentence is replayed: `Some(answer)` where
+/// The word's own checks before a sentence is reconstructed: `Some(answer)` where
 /// they decide it, `None` where the word goes on.
 fn word_prelude(spoken: &Element) -> Option<Option<&'static str>> {
     // 78.53 — A COLOUR WORD moves no body and carries no chain: its action
@@ -152,7 +152,7 @@ fn word_prelude(spoken: &Element) -> Option<Option<&'static str>> {
     // fibre and its reservoir — a partial injection, or a merge whose
     // distinctions it records in e_∅ (`is_fibre_relation`, 78.58). Its
     // evidence against a family is re-derived
-    // where it is heard (`adjudicate_one`), never replayed as a chain.
+    // where it is heard (`adjudicate_one`), never reconstructed as a chain.
     if spoken.is_colour_word() {
         return Some(match spoken.letters().is_some_and(|l| crate::transducer::element::is_fibre_relation(&l.fibre())) {
             true => None,
@@ -189,7 +189,7 @@ fn word_rest(spoken: &Element) -> Option<&'static str> {
 }
 
 /// Deterministic re-derivation of a spoken word from its own evidence
-/// (the contradiction docket). Returns None when the word replays clean;
+/// (the contradiction docket). Returns None when the word reconstructs clean;
 /// Some(reason) when the speech was false. A residue word re-derives from
 /// its chain (from_residue is deterministic, the chain canonically
 /// framed); a CONNECTION re-derives by inversion of its group component,
@@ -225,7 +225,7 @@ fn word_rest_checks(spoken: &Element, chain: &[crate::transducer::sentence::Sect
         }
         // Apply the gauge to the first section (the identity frame of the
         // tape): the letters' affine is the second section. letters_rederive
-        // is that replay.
+        // is that reconstruction.
         return None;
     }
     match (chain.is_empty(), connection) {

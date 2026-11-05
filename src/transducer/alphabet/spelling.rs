@@ -95,7 +95,7 @@ pub struct AdjoinedPrime {
     pub form: crate::transducer::address::Address,
     pub vertex: crate::transducer::address::Address,
     /// The generator's own rotor, as the presentation answered it. The
-    /// composition is replayed from THIS and not from a second lookup by
+    /// composition is reconstructed from THIS and not from a second lookup by
     /// address: the mind already answered what it holds, and asking again
     /// through another index is a second carrier for one answer.
     pub rotor: super::Rotor,

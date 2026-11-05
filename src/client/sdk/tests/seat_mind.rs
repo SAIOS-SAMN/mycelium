@@ -308,7 +308,7 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
 /// counsel it does not); a rule the seam speaks as each D4 motion (and a hue
 /// move) reads back as that kind's count in the house's order and the hue
 /// count `0x100 + 16·from + to`; a hue map alone is its hue counts; the
-/// outputs cross as the solve act writes grids.
+/// outputs cross as the solve act writes rasters.
 #[test]
 fn symmetry_steps_reads_task_before_seat() {
     crate::transducer::raster::stand_on(0);
@@ -322,7 +322,7 @@ fn symmetry_steps_reads_task_before_seat() {
     let counsel = Record::Counsel { fn_id: 2, args: vec![], worth: Arg::Q { num: 1, den: 1 }, cost: Arg::Q { num: 0, den: 1 } };
     assert!(tasks_before(&percept(2, Arg::Count(2), vec![task, counsel])).is_empty(), "a counselled percept is the house's own mind");
     use crate::client::sdk::rule::Symmetry;
-    // The symmetry read off by index, as a grid is read (the fixture's
+    // The symmetry read off by index, as a sample is read (the fixture's
     // expectation, never the seam's construction), and a hue map.
     let apply = |kind: Symmetry, g: &crate::transducer::family::SectionSample| -> crate::transducer::family::SectionSample {
         // Written as a source writes its lines, then read at intake.

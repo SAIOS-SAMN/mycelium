@@ -31,8 +31,8 @@ pub fn carry(v: &Mv, p: &[i64]) -> Option<Vec<BigRational>> {
 }
 
 /// A body's centroid in the sensor's VERTEX coordinates: the compartments'
-/// centres' centroid plus one half on each grid axis (a compartment's square
-/// spans the grid axes), and the offset alone on every other axis — a
+/// centres' centroid plus one half on each plane axis (a compartment's square
+/// spans the plane axes), and the offset alone on every other axis — a
 /// compartment stands AT its frame (16.4).
 pub(super) fn vertex_centroid(b: &Blade) -> Option<Vec<BigRational>> {
     Some(
@@ -373,7 +373,7 @@ fn coset_geodesic(coset: &[Transition]) -> Option<usize> {
 /// caller that needs a reading — not a name — had no way to reach the
 /// rest, so a pair whose geodesic the seventeen could not spell was filed
 /// as carrying no transport at all while a turning member of the same
-/// coset spelled fine. The geodesic stays first, so naming and replay are
+/// coset spelled fine. The geodesic stays first, so naming and reconstruction are
 /// unchanged.
 pub fn versor_coset_ordered(
     a: &Shape,

@@ -1,6 +1,6 @@
 // 78.153, defect 4 of the lock audit — A CYCLE OF CITATIONS IS REFUSED BY
 // NAME, never a stack overflow: the speech names the cited form it reached
-// again while still speaking it, the mint refuses it, and the court's replay
+// again while still speaking it, the mint refuses it, and the court's reconstruction
 // refuses it as `REFUSE_CITATION_CYCLE`.
 
 use super::fixtures::*;
@@ -65,7 +65,7 @@ fn mutual() -> (SectionSample, SectionSample, Mutual, Form) {
 
 /// THE SPEECH ENDS, AND NAMES THE CYCLE: speaking the form at `a` speaks
 /// `b`, which speaks `a`, which reaches `b` while it is still being spoken.
-/// It recursed without end; the speech now names `b`, lays down no grid, and
+/// It recursed without end; the speech now names `b`, lays down no sample, and
 /// the deflation and the mint read the cycle by name.
 #[test]
 fn apply_form_refuses_mutual_citation() {
@@ -73,11 +73,11 @@ fn apply_form_refuses_mutual_citation() {
     let identity = crate::transducer::alphabet::Word::identity();
     let spoken = apply_form(&top, &x, &identity, &crystal).expect("the speech ends");
     assert_eq!(spoken.cycled, vec![crystal.b.0.clone()], "the form reached again is named by its address");
-    assert_eq!(spoken.sample(), None, "a speech that cycles lays down no grid");
+    assert_eq!(spoken.sample(), None, "a speech that cycles lays down no sample");
     let family = vec![(x, y)];
     let read = form_deflation_read(&top, &family, &crystal, &identity);
     assert_eq!(read.cycled, vec![crystal.b.0.clone()], "the deflation reads the cycle");
-    // The court's replay on the same crystal: every phase before the
+    // The court's reconstruction on the same crystal: every phase before the
     // speech passes or is read, and the speech refuses by the cycle's name.
     let word = crate::transducer::sentence::as_element_form(&top, [1, 0, 0, 0]).expect("tape");
     let resolve = |address: &[u8]| crystal.by_address(address).map(|(_, f)| f);

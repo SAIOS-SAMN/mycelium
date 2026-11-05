@@ -13,7 +13,7 @@ use crate::transducer::stalk::{self, Stalks};
 /// exhaustively rather than branching on booleans or out-parameters.
 #[derive(Debug, Clone)]
 pub enum Ruling {
-    /// The word does not replay from its own evidence (or does not parse):
+    /// The word does not reconstruct from its own evidence (or does not parse):
     /// false speech, the failed axis named.
     Slashed(&'static str),
     /// The federated view and the spoken view are one sheaf: the Čech

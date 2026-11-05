@@ -49,7 +49,7 @@ fn hold_perceived_never_meets_across_families() {
     assert!(together.cross_scene.circuits > 0, "within one family they meet: {}", together.cross_scene.line());
 }
 
-/// A scene built from its cells: the input a `rows × cols` grid holding the
+/// A scene built from its cells: the input a `rows × cols` sample holding the
 /// cells, its output the same carried one column along.
 fn scene(c: &mut Contemplation, cells: &[(usize, usize)], rows: usize, cols: usize) -> Vec<u8> {
     let draw = |shift: usize| -> Vec<String> {
@@ -63,7 +63,7 @@ fn scene(c: &mut Contemplation, cells: &[(usize, usize)], rows: usize, cols: usi
     perceive(c, &i, &o)
 }
 
-/// The cells turned 90° about the grid point (3, 3): `(r, c) ↦ (c, 6 − r)`.
+/// The cells turned 90° about the plane's point (3, 3): `(r, c) ↦ (c, 6 − r)`.
 fn turned(cells: &[(usize, usize)]) -> Vec<(usize, usize)> {
     cells.iter().map(|&(r, c)| (c, 6 - r)).collect()
 }
@@ -240,7 +240,7 @@ fn docket_fold_lapses_question_nothing_carries() {
     assert!(fresh.docket_cites().is_empty(), "and the close cites nothing for it");
 }
 
-/// ONE ORBIT: the L turned 90° at a time about the grid's point (2, 2) —
+/// ONE ORBIT: the L turned 90° at a time about the plane's point (2, 2) —
 /// `(r, c) ↦ (c, 4 − r)` — each carried one column in its output.
 const O0: [&str; 5] = ["010000", "010000", "011000", "000000", "000000"];
 const O0_OUT: [&str; 5] = ["001000", "001000", "001100", "000000", "000000"];

@@ -2,7 +2,7 @@
 // book it enters, its demand vertices by kind, and the docket it waits on.
 //
 //! The one path from a heard sentence to the book (law 8, ruled
-//! 2026-09-10). `perceive_sentence` replays the tape by G and hands what
+//! 2026-09-10). `perceive_sentence` reconstructs the tape by G and hands what
 //! stood to `list_sentence`; nothing here reads a painted site of the
 //! voice's scene, and the commit of a reduced germ that did is deleted with
 //! the percept act.
@@ -53,7 +53,7 @@ impl Court {
         // carries the residue block the shells left; the factor is read
         // off it by Euclid over ℤ[i] and docketed as a provisional
         // generator, on the same path a sentence takes. The witness was
-        // already checked at replay (`REFUSE_LETTER_WITNESS`), so what
+        // already checked at reconstruction (`REFUSE_LETTER_WITNESS`), so what
         // arrives here carries its prime.
         //
         // The kind byte routes this line and nothing else: the docket
@@ -195,7 +195,7 @@ impl Court {
         self.append_step(crate::chronometry::ActKind::Attest, &addr_owned, *voice);
     }
 
-    /// LIST A SENTENCE THE REPLAY STOOD (23.8, 26). A sentence the language
+    /// LIST A SENTENCE THE RECONSTRUCTION STOOD (23.8, 26). A sentence the language
     /// holds is a USE of it: the reader's fee and the discoverer's settle,
     /// nothing listed. One already on the docket is a second voice on the
     /// same address — a party to the settlement, never a second listing
@@ -286,7 +286,7 @@ impl Court {
         Outcome::Decomposed(vec![at.clone()])
     }
 
-    /// ONE VANTAGE DOCKETS (47.3): this court replayed the sentence to get
+    /// ONE VANTAGE DOCKETS (47.3): this court reconstructed the sentence to get
     /// here, which is its own re-derivation recorded; the second is a
     /// witness hypha's, and it arrives through the Offer. The sentence is
     /// docketed AS A LISTING — one thing, not two: quotable on the open book

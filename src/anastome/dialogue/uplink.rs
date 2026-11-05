@@ -9,7 +9,7 @@
 //! it checks the tier's signature and the fold's CONTINUITY — on every lane,
 //! the identities' nets sum exactly to the declared net emission — and seals
 //! the fold's coordinates on its line (`Cite::Uplink`, never a copy of its
-//! rows, LD0). A dispute replays the cited prefix against the rows, which
+//! rows, LD0). A dispute reconstructs the cited prefix against the rows, which
 //! the tier holds and this receipt commits to by hash.
 //!
 //! First slice: a single-level fold. Multi-tier chaining, matter handoffs

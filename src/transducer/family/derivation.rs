@@ -14,7 +14,7 @@
 //!
 //! Split from `perceive.rs` at the §1.1 600-line reading bound; the items
 //! are moved, not rewritten (§1.6). `perceive.rs` keeps perception — a
-//! grid becoming bodies and two bodies becoming a vertex — and calls in
+//! sample becoming bodies and two bodies becoming a vertex — and calls in
 //! here for what a mind makes of the carriage it measured.
 
 use super::*;
@@ -167,7 +167,7 @@ fn factor_core(
 ///
 /// `𝒮` IS NOT A COORDINATE OF A DERIVATION, and the carriage is therefore
 /// the IDENTITY here and not the target's own. A derivation claims a
-/// ROTOR: `factor_versor` replays the citations against
+/// ROTOR: `factor_versor` reconstructs the citations against
 /// `rotor_of_versor(v)` and against nothing else, and `word_vertex_with`
 /// puts the placement and dilation on `Vertex::Word.carriage`, beside the
 /// derivation rather than inside it. 18.2 quotients the body's absolute
@@ -535,7 +535,7 @@ fn derivation_of(
     use crate::transducer::alphabet::{Derivation, Word};
     use crate::transducer::factor::Factored;
     // EVERY RESIDUE LEAVES HERE AS ITS GEODESIC (Expansion 1). The word a
-    // vertex carries on the tape is the one the court replays by rotor
+    // vertex carries on the tape is the one the court reconstructs by rotor
     // and the one every other mind reads; two minds deriving one rotor
     // write one tape when both reduce under the same completed
     // presentation. A12's plane remainder is already canonical on its
@@ -595,7 +595,7 @@ fn derivation_of(
         Factored::Novel { remainder, understood } => one(&understood, remainder.to_word()),
         Factored::Unmeasured => return None,
     };
-    // ROTOR REPLAY VERIFICATION: ensure the plane factorisation projectively
+    // ROTOR RECONSTRUCTION VERIFICATION: ensure the plane factorisation projectively
     // reproduces the target word's 4D Clifford rotor action. A non-abelian
     // product or twist that diverges from the true rotor is refused and
     // falls back to the geodesic spelling.

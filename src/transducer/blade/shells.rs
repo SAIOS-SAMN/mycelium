@@ -226,7 +226,7 @@ pub fn reduced(painted: &[PaintedSite], k: i64) -> Option<Vec<PaintedSite>> {
     Some(out)
 }
 
-/// TILED down×across — the cut body repeated as a grid of itself.
+/// TILED down×across — the cut body repeated as a plane of itself.
 pub fn tiled(painted: &[PaintedSite], down: i64, across: i64) -> Vec<PaintedSite> {
     let Some(cut) = cut(painted) else { return Vec::new() };
     let Some((_, r1, _, c1)) = extent(&cut) else { return Vec::new() };

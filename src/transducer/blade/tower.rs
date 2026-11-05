@@ -9,7 +9,7 @@
 //! - the REGION tower (`moment2`, `quartic_on`, [`super::body::round_harmonic`],
 //!   `radius2`): each compartment lifted at the sensor to its ROUND, its centre
 //!   with the unit cube's extent (ruled 2026-09-26). A round is isotropic and
-//!   holds nothing above order two, so on the grid plane the region's
+//!   holds nothing above order two, so on the sensor's plane the region's
 //!   harmonics are its centres', and its extent carries the rounds' own
 //!   `2/12` (A.12). No square enters: a square's own higher moments were the
 //!   lattice's rigidity, and a filled `k×k` blow-up, which only a square

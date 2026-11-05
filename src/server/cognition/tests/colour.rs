@@ -106,7 +106,7 @@ fn glue_fetched_admits_colour_word_by_rederived_witness() {
     peer.bind_task_family(tid, family);
     let mut cover = crate::network::nerve::HomeTrie::new();
     assert!(!matches!(super::fixtures::fetched(&mut peer, &sent, [1; 32], [2; 32], &mut cover), Glue::Dialect), "proven here");
-    // A COURT WITHOUT IT holds it as dialect — ruled so, never a replay the
+    // A COURT WITHOUT IT holds it as dialect — ruled so, never a reconstruction the
     // stroke left unread.
     let mut stranger = Court::new();
     assert!(matches!(super::fixtures::fetched(&mut stranger, &sent, [1; 32], [3; 32], &mut cover), Glue::Dialect), "unproven here");

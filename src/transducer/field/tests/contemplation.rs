@@ -347,7 +347,7 @@ fn hold_form_carries_bundle_and_remainder() {
 /// crystallizes on the stroke: the drive returns the minted sentence, its
 /// magnitude is the trajectory the form measures over the bundle (26, the
 /// same word `mint_sentence` mints), the tape reads back closed, the court
-/// replays it against the bundle, and the idea leaves the contemplation.
+/// reconstructs it against the bundle, and the idea leaves the contemplation.
 #[test]
 fn expand_all_crystallizes_closed_idea_and_releases_it() {
     crate::transducer::raster::stand_on(0);

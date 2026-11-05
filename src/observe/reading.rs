@@ -547,7 +547,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("root_adopted", "fold roots of this signer adopted on each root's two signatures, its line continued hot from them"),
     ("root_refused", "fold roots of this signer answered and refused: a signature or the root's hash did not verify"),
     // 2026-10-14 — THE ONE GLUE PATH THAT WROTE NOTHING AND SAID NOTHING: a
-    // fetched word whose replay the stroke could not finish (78.153) glues
+    // fetched word whose reconstruction the stroke could not finish (78.153) glues
     // nothing, marks nothing heard, and leaves no trace in the have-list, so
     // the next fetch is served it again.
     ("glue_unread", "fetched words of this signer whose replay the stroke could not finish: nothing glued, nothing marked"),

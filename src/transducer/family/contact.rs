@@ -51,7 +51,7 @@ fn one_ring(family: &[(SectionSample, SectionSample)]) -> Option<u8> {
             .collect();
         #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a resident grid's frame dimensions cannot sum past a 64-bit usize")]
         let bound = fy.0.saturating_add(fy.1);
-        // The ring is read in the grid's count; the contact word spells it
+        // The ring is read in the plane's count; the contact word spells it
         // in a byte, so a ring past it is no contact word — refused, never
         // wrapped onto a nearer ring.
         let r = u8::try_from(ring_dist_peel(&positions_of(&outs), &frame_anchor, bound)?).ok()?;

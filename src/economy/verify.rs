@@ -3,8 +3,8 @@
 //! POWV — PROOF OF WORK VERIFICATION: what the hyphae that verified a
 //! closure take of the mint it releases (MU-ECONOMY §5.1).
 //!
-//! A closure is paid only after replay: the home measures its discharge, and
-//! on an install a witness re-derives the same vertex. That replay is work
+//! A closure is paid only after reconstruction: the home measures its discharge, and
+//! on an install a witness re-derives the same vertex. That reconstruction is work
 //! the closure cannot be paid without. Its share is read per lane off the
 //! verifying court's own metabolism — the strain `y_l` its yield surface
 //! reads on the lane (reserve deficit plus entropic excess) against its

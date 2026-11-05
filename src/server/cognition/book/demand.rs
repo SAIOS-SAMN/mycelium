@@ -22,7 +22,7 @@ impl Court {
     /// against the after side, link by link, in the demand's own
     /// coordinates.
     ///
-    /// THE COURT REPLAYS; IT DOES NOT TAKE THE VOICE'S WORD. The cited
+    /// THE COURT RECONSTRUCTS; IT DOES NOT TAKE THE VOICE'S WORD. The cited
     /// address must be one this court holds, and the form spoken is the
     /// one the court holds under it, so a voice cannot answer a demand by
     /// asserting that it did.
@@ -86,7 +86,7 @@ impl Court {
         // (rule 2), and it would throw away what the other cites did say.
         //
         // A cite naming an address this court does not hold is not a
-        // refusal of the probe; it is a citation this court cannot replay,
+        // refusal of the probe; it is a citation this court cannot reconstruct,
         // and the probe stands on the ones it can.
         let mut open: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for l in &bodies {
@@ -94,7 +94,7 @@ impl Court {
         }
         let mut spoke: Option<(Address, element::Versor)> = None;
         // ONE SPEND PER FORM THE COURT SPEAKS. `apply_form` perceives a
-        // whole grid, and how many citations a probe carries is the
+        // whole sample, and how many citations a probe carries is the
         // voice's to choose, not this court's — a settlement that speaks
         // every one of them has no boundary of its own (rule 10). The
         // citations beyond the stroke are not refused: what they would

@@ -36,7 +36,7 @@ fn hear_frame_on_reads_rings_of_unstood_sentence() {
     .expect("the task frames");
     let act = dialogue::decode_speech(&frame).expect("the frame decodes");
     let before = court.winding_tally();
-    // 78.153: a stroke that holds the frame's replays.
+    // 78.153: a stroke that holds the frame's reconstructions.
     let heard = court.hear_frame_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let after = court.winding_tally();
     let read = |t: &crate::server::cognition::court::ring_carrier::RingTally| t.heard_spelled + t.heard_offered + t.heard_peel_unread + t.heard_rotor_unread;

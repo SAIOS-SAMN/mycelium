@@ -396,7 +396,7 @@ pub struct GroundBody {
 
 /// A THOUGHT'S GROUND (78.52): the constellation a thought holds — PRIVATE to
 /// the mind, never on the wire (ruled 2026-09-28: a court
-/// replays transcribed speech, not a mind's thinking). The CLASS of its
+/// reconstructs transcribed speech, not a mind's thinking). The CLASS of its
 /// generator, the PERIOD of its return, its BODIES at hour 0 in the order
 /// they arrived (one body or a scene's several), the generator `g`, and the
 /// coupling `V₀₁` (the hour rotor at the bodies' barycentre). Every other
@@ -438,7 +438,7 @@ pub fn ground_centre(g: &Ground) -> Option<Vec<Q>> {
     barycentre(&bodies).map(|s| s.centre)
 }
 
-/// A BODY CARRIED BY A RIGID STEP `g` (78.52, the word's replay): its centroid
+/// A BODY CARRIED BY A RIGID STEP `g` (78.52, the word's reconstruction): its centroid
 /// by the sandwich, its second moments turned by the step's rotation factor,
 /// `C′ = R C Rᵀ`, `R`'s columns the images of the base axes read at unit
 /// weight; the mass unchanged. `None` where the step does not factor, scales

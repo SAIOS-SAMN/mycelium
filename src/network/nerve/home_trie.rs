@@ -268,7 +268,7 @@ impl HomeTrie {
     /// chart on a lane the form occupies, and never the home itself.
     ///
     /// 47.3 fixes the set: a witness "holds ruled sections over the chart,
-    /// since replay needs them, so it is at nerve distance one from the
+    /// since reconstruction needs them, so it is at nerve distance one from the
     /// home". 42.6 bounds the mesh cover's cost by "the number of covering
     /// hyphae", never by the number of nodes: "a demand goes to the hyphae
     /// covering its stratum; adding hyphae adds coverage and never

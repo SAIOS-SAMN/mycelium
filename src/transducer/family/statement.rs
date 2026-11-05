@@ -11,7 +11,7 @@
 //! relative to it, or the output cropped to it. Nothing is chosen silently:
 //! a rank ties only where the rule says what a tie does, a coordinate is read
 //! exactly or the clause is refused by name ([`Unstated`]), and the court
-//! refuses a form whose clause is unstated on a pair it replays.
+//! refuses a form whose clause is unstated on a pair it reconstructs.
 
 use super::*;
 use crate::core::Q;

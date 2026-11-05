@@ -39,7 +39,7 @@ impl Court {
     /// PERCEIVE A FAMILY'S SPEECH — the one door an utterance has (law 8,
     /// ruled 2026-09-10) — read as codes: `SPEECH_STOOD` for a sentence
     /// listed, `SPEECH_RATIFIED` for one already language, `SPEECH_REFUSED`
-    /// for one the replay refused, and `SPEECH_DIALECT` on every sentence
+    /// for one the reconstruction refused, and `SPEECH_DIALECT` on every sentence
     /// of an act the door deferred — stood there, unanswered here, spoken
     /// again later. The adjudications themselves are `hear_speech`. The
     /// speaker is the caller: every sentence states the ground open on the
@@ -59,9 +59,9 @@ impl Court {
         // THE ACT'S ROOT (65.5): one stroke of this court's own metabolism
         // for the whole speech, threaded to every sentence it hears.
         //
-        // 78.153 — a frame deferred on no lane is a replay its stroke could
+        // 78.153 — a frame deferred on no lane is a reconstruction its stroke could
         // not finish: the voice speaks it again, and this reading does, while
-        // the frame's replays move on.
+        // the frame's reconstructions move on.
         let keys: Vec<Vec<u8>> = sentences
             .iter()
             .map(|s| crate::cognition::court::reconstruct::reconstruction_key(s, (!s.is_colour_word() && crate::cognition::court::reconstruct::reconstructs_on_family(s)).then_some(task)))
@@ -163,7 +163,7 @@ impl Court {
                 continue;
             }
             // The citations a stood sentence carries are paid at its
-            // install, from the derivations the court replayed (26, 50.2
+            // install, from the derivations the court reconstructed (26, 50.2
             // step 2); nothing is read from beside the tape here. L9 (4/5)
             // wires the payment at `home_install`.
             let _ = &e;
@@ -395,7 +395,7 @@ impl Court {
     /// refused — the kind, the coordinate and the receipt it answered with
     /// — and the sentence is the contraction at that coordinate. A court
     /// that never refused the cited address holds no receipt to verify and
-    /// replays the sentence as a sentence: the certificate is a claim on
+    /// reconstructs the sentence as a sentence: the certificate is a claim on
     /// another court's chain.
     pub(crate) fn verify_contraction(&self, c: &crate::transducer::sentence::Contraction, s: &Element) -> bool {
         let Some(held) = self.refusals.get(&c.before) else {
@@ -415,7 +415,7 @@ impl Court {
     pub(crate) fn perceive_sentence(&mut self, voice: [u8; 32], task: &[u8], s: &Element) -> Outcome {
         // The test's own act: its root, one stroke — spoken again, as the
         // voice speaks again, while the court defers it on no lane with its
-        // replay moved on (78.153: a replay longer than one stroke resumes).
+        // reconstruction moved on (78.153: a reconstruction longer than one stroke resumes).
         let key = crate::cognition::court::reconstruct::reconstruction_key(s, (!s.is_colour_word() && crate::cognition::court::reconstruct::reconstructs_on_family(s)).then_some(task));
         loop {
             let before = self.reconstruction_cursors.get(&key).map(|c| c.progress());
@@ -431,12 +431,12 @@ impl Court {
 
     /// ONE SENTENCE HEARD. The door is read first (`reflex_open`):
     /// deferred, the lanes are written and nothing is heard. The tape is
-    /// then replayed against the family of the task it was spoken for —
+    /// then reconstructed against the family of the task it was spoken for —
     /// every word vertex carried onto the court's own copy of each pair,
     /// every edge re-derived, the remainder what its demands name — and
     /// refused with the reason and its coordinate in the journal (`court
     /// refuse speech {addr}: {reason}`); what stands is listed
-    /// (`list_sentence`) and bound to the task, so the stroke replays it on
+    /// (`list_sentence`) and bound to the task, so the stroke reconstructs it on
     /// the same family and the install mints what it closes there. The
     /// court composes nothing here.
     pub(crate) fn hear_sentence(
@@ -450,7 +450,7 @@ impl Court {
             return Ok(Outcome::Deferred(deficit));
         }
         // 21 step 3, 50.2 step 2 — A CITATION THIS COURT HAS NOT RULED IS
-        // A WAIT, NOT A REFUSAL, and it is decided BEFORE the replay so
+        // A WAIT, NOT A REFUSAL, and it is decided BEFORE the reconstruction so
         // no refusal is ever formed for it. The voice spoke one syllabus
         // step ahead of this court's cover, which is what a syllabus is
         // for; a refusal here would be sealed by the voice
@@ -463,10 +463,10 @@ impl Court {
         }
         // 78.53 — A COLOUR WORD'S EVIDENCE IS ITS FIBRE RELATION, re-derived
         // from this family at adjudication (`adjudicate_one`); it carries no
-        // chain by construction, so its replay against the family is that
-        // evidence, and here it is replayed for integrity alone.
+        // chain by construction, so its reconstruction against the family is that
+        // evidence, and here it is reconstructed for integrity alone.
         // MU-CLIENT §5.6 (C) — and a conjugate's evidence is its section,
-        // measured below: replayed for integrity, never for closing every
+        // measured below: reconstructed for integrity, never for closing every
         // pair (`reconstructs_on_family`).
         let family_task = match s.is_colour_word() || !crate::cognition::court::reconstruct::reconstructs_on_family(s) {
             true => None,
@@ -475,9 +475,9 @@ impl Court {
         // The caller's stroke (65.5): a sentence is heard inside the act that
         // hears it — a speech frame, or a ruling re-hearing what waited.
         //
-        // 78.153 — ON THAT ONE STROKE, RESUMED: a replay the stroke could not
+        // 78.153 — ON THAT ONE STROKE, RESUMED: a reconstruction the stroke could not
         // finish is NOT HEARD — deferred on no lane, the voice speaks again,
-        // and the replay resumes where it stopped. Never a refusal.
+        // and the reconstruction resumes where it stopped. Never a refusal.
         match self.reconstruct_on_cursor(s, family_task, true, budget).0 {
             crate::verdict::ReconstructionOutcome::Refused(refusal) => {
                 // CV1 — every refusal carries its kind (78.9), and the observer
@@ -585,7 +585,7 @@ impl Court {
         self.court_voice = Some(voice);
     }
 
-    /// SETTLE A PROBE: the replayed residue of an open listing against the
+    /// SETTLE A PROBE: the reconstructed residue of an open listing against the
     /// speaker's sentence. Closure (empty residue) of a fibre section or a
     /// connection listing pays morphism deflation; a tape covering pays
     /// nothing. A partial residue updates tension and relieves the physics
@@ -604,7 +604,7 @@ impl Court {
         use crate::transducer::stalk::Closure;
         // A PROBE MAY NAME ONE DEMAND VERTEX of the listing (L8q), and
         // then it is not a deflation of the listing's links at all: the
-        // court replays the cited form onto THAT demand's own scene and
+        // court reconstructs the cited form onto THAT demand's own scene and
         // settles on what it reproduces.
         if let Some((at, demand)) = crate::transducer::sentence::read_demand_at(target) {
             return self.settle_demand(voice, &at, &demand, cites);
@@ -642,7 +642,7 @@ impl Court {
         // the cites that flattened it, by the geometric product, not the
         // first cite's versor with the identity invented when there are
         // none. A versor invented where no transport exists is a claim the
-        // court cannot replay (rule 11); `None` records no orbit at all.
+        // court cannot reconstruct (rule 11); `None` records no orbit at all.
         let cite_g: Option<element::Versor> = cites
             .iter()
             .map(|c| c.transport.clone())
@@ -742,7 +742,7 @@ impl Court {
         // boundary topology and the rotor's own coordinates (16.16, 42.6),
         // never a tally of links; the field already holds the residue, and
         // a second carrier for it drifts (law 12); and a word's magnitude is
-        // a function of its chain, which is the one property the replay
+        // a function of its chain, which is the one property the reconstruction
         // checks.
         //
         // The dislocation stays: a versor relating the base shape to the

@@ -259,7 +259,7 @@ fn list_sentence_charges_orbit_orders_on_depleted_lane() {
     assert!(steps > 0, "the orbits name a charge");
 
     let mut k = Court::new();
-    // Admission is room (23.8, S9.6): this fixture bypasses the replay to
+    // Admission is room (23.8, S9.6): this fixture bypasses the reconstruction to
     // reach `list_sentence` directly with an unbonded voice, which has
     // room for one claim in flight per lane (§3.1 as ruled, S13.15) —
     // nothing enrols it, and this first claim is admitted on that room.

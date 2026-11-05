@@ -850,7 +850,7 @@ pub struct Form {
     // ([`Form::sections`]) and nothing beside them has to agree with them
     // (law 12).
     /// The certified pivots this form's crystallization rests on (A20).
-    /// Evidence, replayed by the court; never part of the address.
+    /// Evidence, reconstructed by the court; never part of the address.
     pub certificates: Keyed<PivotCertificate>,
     /// 78.112 H7b — THE TORSION HEARING THIS PERCEPTION'S RINGS WOUND, carried
     /// from the percept to the hold, where it is wound on the perception's

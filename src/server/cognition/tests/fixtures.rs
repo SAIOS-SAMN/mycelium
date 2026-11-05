@@ -8,7 +8,7 @@ use crate::transducer::family::TrainPair;
 pub use crate::transducer::sentence::tests::fixtures::painted;
 
 /// A pair of painted scenes as the one-pair family a voice reads it as:
-/// each scene on its own grid, exactly as the eyes of the voice would (20),
+/// each scene on its own plane, exactly as the eyes of the voice would (20),
 /// the fixtures' unpainted sites written `0`.
 pub fn family_of_pair(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Vec<TrainPair> {
     use crate::transducer::family::sample_of_painted;
@@ -56,14 +56,14 @@ pub fn speak_pair(k: &mut Court, a: &[(i64, i64, u8)], b: &[(i64, i64, u8)], voi
     };
     let family = family_of_pair(a, b);
     let task = crate::registry::task_address(&crate::transducer::family::Task { train: family.clone(), test: Vec::new() })
-        .expect("a grid pair's chain is A5's, so the task has an identity");
+        .expect("a sample pair's chain is A5's, so the task has an identity");
     k.bind_task_family(&task, family);
     k.perceive_sentence(voice, task.as_bytes(), &e)
 }
 
 /// A sentence with its word vertices STRUCK OUT: a tape of the Frame and
 /// its demands alone, which is a chain and not a sentence (50.6), refused
-/// by the blind replay as `REFUSE_NOT_A_SENTENCE`. The tamper a forged word
+/// by the blind reconstruction as `REFUSE_NOT_A_SENTENCE`. The tamper a forged word
 /// carries where a chain-era fixture inflated a magnitude.
 pub fn strip_words(spoken: &Element) -> Element {
     use crate::transducer::sentence::{as_element_form, Vertex};
@@ -218,10 +218,10 @@ pub fn budget() -> crate::physics::Budget {
 
 /// 78.153 — A FETCHED WORD GLUED AS THE EXCHANGE GLUES IT: each fetch on one
 /// stroke of the court's own metabolism, its size the host's (`spend_unit`,
-/// read off the host's free memory); a replay that stroke could not finish
+/// read off the host's free memory); a reconstruction that stroke could not finish
 /// waits as dialect and the next fetch resumes it where it stopped — so a
-/// fetch that rules nothing must have moved the replay, or the glue stalls
-/// and the claim fails. Answers the verdict the replay reached: what a claim
+/// fetch that rules nothing must have moved the reconstruction, or the glue stalls
+/// and the claim fails. Answers the verdict the reconstruction reached: what a claim
 /// about a glue's verdict asserts on, on any host.
 pub fn fetched(k: &mut Court, spoken: &Element, peer: [u8; 32], own_vk: [u8; 32], cover: &mut crate::network::nerve::HomeTrie) -> Glue {
     loop {

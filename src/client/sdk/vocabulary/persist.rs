@@ -136,7 +136,7 @@ impl MindLanguage {
     /// 78.158a, 78.157 §3a — A COURT-STAMPED WORD: the held word at `address`
     /// where a court admitted it (its stamp filed, `admitted_at`), and none
     /// otherwise — never a dialect word, never a word learned with no stamp.
-    /// The resolver a home check replays through, so a rule passes at home
+    /// The resolver a home check reconstructs through, so a rule passes at home
     /// only on citations the court holds (`rule::would_judge_with`).
     pub(crate) fn court_word(&self, address: &[u8]) -> Option<&crate::transducer::element::Held> {
         match self.admitted_at.contains(address) {

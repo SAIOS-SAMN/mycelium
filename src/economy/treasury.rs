@@ -103,7 +103,7 @@ impl Entry {
 /// summed across: POUW, a closure ruled and its deflation minted to the
 /// closer; POWC, a cited generator paid by the use that cited it; POWR, a
 /// retirement's compression yield paid to the retirer; POWV, the share of
-/// a closure's mint paid to the hyphae whose replay verified it
+/// a closure's mint paid to the hyphae whose reconstruction verified it
 /// (`economy::verify`). A row that moves no proof of work — genesis, a
 /// stake, an escrow, a revoke or slash, a burn, a fee, a subsidy — carries
 /// none.

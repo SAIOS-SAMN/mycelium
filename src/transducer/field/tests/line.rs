@@ -85,7 +85,7 @@ fn release_drops_slide_perception_where_motion_lets_go() {
     });
 }
 
-/// ONE ORBIT: the L turned 90° at a time about the grid's point (2, 2), each
+/// ONE ORBIT: the L turned 90° at a time about the plane's point (2, 2), each
 /// carried one column in its output.
 const HOURS: [([&str; 5], [&str; 5]); 4] = [
     (["010000", "010000", "011000", "000000", "000000"], ["001000", "001000", "001100", "000000", "000000"]),

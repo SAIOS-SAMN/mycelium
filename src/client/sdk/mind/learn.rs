@@ -57,7 +57,7 @@ impl Mind {
 
     /// The verdict filed: a closure clears the task, a refusal is remembered
     /// against its rule, and an UNREAD solve is kept to be asked again (78.153:
-    /// the court's replay resumes where its stroke ran out).
+    /// the court's reconstruction resumes where its stroke ran out).
     fn file_verdict(&mut self, id: &[u8; 32], rule: &Element, outputs: &[SectionSample], ground: &Ground<u8>, code: u8) {
         match code {
             dialogue::SOLVE_BOUNTY | dialogue::SOLVE_AGAIN => {
@@ -105,7 +105,7 @@ impl Mind {
     }
 
     /// SUBMIT A SOLVE: the sentence that spoke the outputs, with them. The
-    /// court replays the RULE on its withheld pairs and pays what it
+    /// court reconstructs the RULE on its withheld pairs and pays what it
     /// discharges (the actions' physics): (SOLVE_BOUNTY, μ⃗) on the task's
     /// first closure, (SOLVE_AGAIN, 0⃗) on a closure again, (SOLVE_NOTHING,
     /// 0⃗) with the refusal otherwise. The verdict is filed where it lands
@@ -163,7 +163,7 @@ impl Mind {
             let Ok(body) = body else { return };
             // THE VOICE HEARS ITS VERDICT (the actions' physics): what the
             // court read of its rule — closed first, closed again, or refused
-            // with the replay's reason and kind. A receipt that does not
+            // with the reconstruction's reason and kind. A receipt that does not
             // decode says nothing was solved and nothing was paid, which is
             // what the solve earned. 78.153c — the verdict SAID, one typed
             // line: the task, the code by name, the refusal's kind and reason.
@@ -511,7 +511,7 @@ impl Mind {
         // it might cite (rule 11, checklist (i)). A tape that does not
         // parse has no depth; it is learned last, where it can cite
         // everything already in hand, and `learn_one` refuses it there on
-        // its own replay.
+        // its own reconstruction.
         #[expect(
             clippy::disallowed_methods,
             reason = "rule 4 — canonical key order: depth order is chapter 6's own (24.2), the order a syllabus is served in, and a tape that does not parse has no depth and is learned last"
@@ -599,7 +599,7 @@ impl Mind {
             // A WORD THE GENOME HOLDS AT ITS ADDRESS IS ALREADY LEARNED (law
             // 6: the address is the word's content). Served again — a court
             // that restarted serves its syllabus from the start — it brings
-            // only the court's stamp, filed below; replayed, comprehended and
+            // only the court's stamp, filed below; reconstructed, comprehended and
             // pivoted again, every restart re-learned the mind's whole
             // language, a page per landing, and held the winding for minutes
             // (observed on the development deployment, 2026-10-16 07:38:
@@ -615,7 +615,7 @@ impl Mind {
             // comprehended again when one arrives (`resolve_withheld`). Served
             // again — every sync fetches the stratum it stands in while its
             // citations are missing — it is the same Withheld reading, and
-            // replayed and comprehended again it held the winding in the
+            // reconstructed and comprehended again it held the winding in the
             // fetch's landing for minutes (observed on the development deployment,
             // 2026-10-16 08:21:
             // genome still, refused 0, the dialect up 294 in a minute).
@@ -663,7 +663,7 @@ impl Mind {
         // The caller's stroke (65.5): the page is learned inside its act.
         let heard = self.language.learn_at(&fresh, k, self.now_tu(), budget);
         // 24.3: a page learned is a mode of the stroke's outcome, measured
-        // by what the page brought; a page refused on replay measures
+        // by what the page brought; a page refused on reconstruction measures
         // nothing. The stroke takes the measure once.
         if heard.is_some() {
             crate::physics::StrokeOutcome::add(&mut self.learned_mu, &mu);

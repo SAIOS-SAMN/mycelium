@@ -1,7 +1,7 @@
 // THE SOLVE, JUDGED BY ITS ACTION AND PAID BY ITS DISCHARGE (the actions'
-// physics, 2026-09-29): the court replays a solve's rule on the withheld
+// physics, 2026-09-29): the court reconstructs a solve's rule on the withheld
 // pairs, prices what it discharges per lane, mints it on the task's first
-// closure only, and refuses by the replay's reason and kind.
+// closure only, and refuses by the reconstruction's reason and kind.
 
 use super::fixtures::*;
 use crate::cognition::*;
@@ -117,8 +117,8 @@ fn rule_over(family: &[TrainPair]) -> Element {
 }
 
 /// A rule that carries the withheld pair closes it: the verdict is the
-/// replay's, clean, and the price is what the rule discharges there — not
-/// zero, and not a grid compared.
+/// reconstruction's, clean, and the price is what the rule discharges there — not
+/// zero, and not a sample compared.
 #[test]
 fn judge_solve_prices_closing_rule_by_discharge() {
     let mut k = Court::new();
@@ -137,11 +137,11 @@ fn judge_solve_prices_closing_rule_by_discharge() {
             // lanes.
             assert!(modes.on_lane(crate::economy::modes::T).next().is_some(), "the slide is a T mode: {}", modes.print());
         }
-        other => panic!("the replay closes every pair: {other:?}"),
+        other => panic!("the reconstruction closes every pair: {other:?}"),
     }
 }
 
-/// A rule that does not carry a withheld pair is REFUSED by the replay,
+/// A rule that does not carry a withheld pair is REFUSED by the reconstruction,
 /// with its reason and kind — the coordinate the voice learns from.
 #[test]
 fn judge_solve_refuses_rule_leaving_pair_open() {
@@ -156,7 +156,7 @@ fn judge_solve_refuses_rule_leaving_pair_open() {
 
 /// 78.56 II — THE DETECTOR IS A DIRICHLET BOUNDARY. The sensor's channels
 /// are the laboratory's anchor: one task and the same task with its palette
-/// permuted (1→7, 2→4, 3→9) are different colours, read as different grids,
+/// permuted (1→7, 2→4, 3→9) are different colours, read as different samples,
 /// and the rule over each is its own word — so every mind that sees channel
 /// 1 names channel 1 the same. (78.53 relabelled the palette at the sensor;
 /// 78.56 II supersedes it.) Read through the frame-fixing perspective
@@ -186,7 +186,7 @@ fn frame_fixed_on_ground_reads_permuted_palette_as_other_scene() {
 /// 78.54, 78.56 — THE FRAME IS A GAUGE WHERE THE TASK CARRIES NO POLAR
 /// VECTOR. A task that recolours in place (its momentum vanishes), turned by
 /// 90°, 180° and 270°, and mirrored, is one task: through the sensor every
-/// reading is the same grids, so the rule mints one word and the court rules
+/// reading is the same samples, so the rule mints one word and the court rules
 /// one verdict at one price. A task whose bodies move one way carries
 /// momentum, and its orientation is physical: turned, it reads differently.
 /// Repainted, any task is other colours at the detector (78.56 II).
@@ -204,7 +204,7 @@ fn judge_solve_reads_reframed_task_as_one_verdict() {
         vec![(digits(&["1100", "0020", "0000"]), digits(&["0011", "0200", "0000"]))],
         vec![(digits(&["0110", "2000", "0000"]), digits(&["1100", "0002", "0000"]))],
     );
-    // Every grid of the task turned by 90°, clockwise, and mirrored across
+    // Every sample of the task turned by 90°, clockwise, and mirrored across
     // its diagonal; and the palette permuted (1→6, 2→7, 3→8, 4→9).
     // The fixture's expectations are written as a source writes its lines
     // (the speech end, `SectionSample::raster`), then read at intake.
@@ -264,7 +264,7 @@ fn pay_solve_mints_first_closure_only() {
     assert_eq!(k.treasury.balance_mu(&voice), pay, "and the balance stands");
 }
 
-/// 78.153c — A NO-WORK VERDICT IS COUNTED, under "no work": a rule replayed
+/// 78.153c — A NO-WORK VERDICT IS COUNTED, under "no work": a rule reconstructed
 /// clean on a withheld pair it has nothing to do on discharges nothing, and
 /// the court's acts say so — the slot the table lacked, where every 78.149
 /// no-work verdict was dropped. A refusal and an unverifiable solve each
@@ -285,7 +285,7 @@ fn judge_solve_counts_no_work_verdict() {
     assert_eq!(judged[Judged::NoWork.slot()], 1);
     assert_eq!(judged[at("unverifiable")], 1);
     // `judge_solve` asks again while the host's stroke runs out before the
-    // replay rules; each such asking is counted "unread", the rest exactly.
+    // reconstruction rules; each such asking is counted "unread", the rest exactly.
     let unread = judged[Judged::Unread.slot()];
     assert_eq!(judged.iter().sum::<u64>() - unread, 3, "three verdicts, three counts: none dropped");
     assert!(k.acts_reading().lines()[3].contains("no work 1"), "and the console's line names it");

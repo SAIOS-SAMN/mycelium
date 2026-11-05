@@ -87,7 +87,7 @@ pub(crate) fn discharge_key(by: &[u8], child: &[u8]) -> Vec<u8> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Standing {
     Open,
-    /// Falsified — by replay or by default — and reversed.
+    /// Falsified — by reconstruction or by default — and reversed.
     Falsified,
     /// A fold it netted was reversed; its own netting returned. It must refile.
     Unwound,
@@ -697,7 +697,7 @@ impl Court {
         })
     }
 
-    /// 78.125 — A TIER'S LINE HEAD: where the court will replay its next
+    /// 78.125 — A TIER'S LINE HEAD: where the court will reconstruct its next
     /// fold's span from — its last recorded fold's prefix, or the zero head —
     /// and the stamp of the fold that set it. A client that lost its own head
     /// resyncs by it before it folds.

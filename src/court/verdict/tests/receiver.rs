@@ -33,7 +33,7 @@ fn a_recolour_with_a_creation() -> (Vec<(SectionSample, SectionSample)>, Element
 }
 
 /// 50.5: valid, not closed. The created compartment is the remainder the demand
-/// vertex names, and the court replays the sentence on its pair without
+/// vertex names, and the court reconstructs the sentence on its pair without
 /// refusing it for that remainder.
 #[test]
 fn reconstruct_form_with_accepts_remainder_demand_names() {
@@ -147,11 +147,11 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
     let e = as_element_form(&f, mag).expect("a tape");
     // THE TAPE IS STILL A SENTENCE. A form whose bodies are unrelated is
     // not a broken form — the relation is absent and the absence is the
-    // reading (rule 11) — so the court replays it clean.
+    // reading (rule 11) — so the court reconstructs it clean.
     assert_eq!(
         reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
         None,
-        "a form with no edge to re-derive replays clean"
+        "a form with no edge to re-derive reconstructs clean"
     );
 
     // THE SECTION HALF OF THIS TEST IS GONE WITH THE EDGE (T1). What stood
@@ -163,7 +163,7 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
     //
     // WHAT IS NOW UNTESTED, named so a green suite cannot hide it:
     // `edges_rederive_frames`' section restriction, and `REFUSE_EDGE` in
-    // both its whole-replay and its per-move form. The organs are intact
+    // both its whole-reconstruction and its per-move form. The organs are intact
     // and unchanged; they have no input. Restoring them needs a fixture
     // whose bodies genuinely share support — a replication or a merge,
     // which is T2's ground — and the owed ledger carries the row.
@@ -186,7 +186,7 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
     // The tampered edge above is the case in one line, and the READING IS
     // TAKEN AT THE MOVE, not at the verdict: a tampered edge is a real
     // defect and the form is refused for it by the orbit-holonomy check too,
-    // so asserting a whole replay here would pass with the section ignored.
+    // so asserting a whole reconstruction here would pass with the section ignored.
     // `edges_rederive_frames` is the organ that changed, and it is what was
     // asked (§3.2).
     //
@@ -207,9 +207,9 @@ fn cipher_form_carries_no_edge_across_hue_seam() {
 /// 51.8, LAW 12 — THE COURT PERCEIVES EACH FRAME ONCE. A turned L, a
 /// shifted bar and a shifted dot are two word vertices — the 90° turn,
 /// and the translation acting on two charts — with two faces between them
-/// where the bar and the dot land beside the L. The replay reads each frame
-/// from one perception of it: the vertex replay reads the sensor once per
-/// grid of the family, and so does the edge replay, whatever the number of
+/// where the bar and the dot land beside the L. The reconstruction reads each frame
+/// from one perception of it: the vertex reconstruction reads the sensor once per
+/// sample of the family, and so does the edge reconstruction, whatever the number of
 /// vertices, faces and member pairs asked about that frame.
 #[test]
 fn vertices_carry_frames_perceives_each_frame_once() {
@@ -258,14 +258,14 @@ fn vertices_carry_frames_perceives_each_frame_once() {
     let _ = crate::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::fixtures::budget());
 }
 
-/// MEMBER REPLAY IS SCOPED TO ACTIVE CHART SECTIONS.
+/// MEMBER RECONSTRUCTION IS SCOPED TO ACTIVE CHART SECTIONS.
 ///
 /// A rule vertex carrying member charts from different pairs (Chart A from
-/// pair 0, Chart B from pair 1) is replayed per member on the pairs that
+/// pair 0, Chart B from pair 1) is reconstructed per member on the pairs that
 /// member's section names: Member B is active only on pair 1, so pair 0
-/// replays Member A alone, and a body of Chart B present in pair 0's input
+/// reconstructs Member A alone, and a body of Chart B present in pair 0's input
 /// is not a body this vertex claims. A section that defaulted an unmeasured
-/// chart to every pair would replay Member B on pair 0 against that body
+/// chart to every pair would reconstruct Member B on pair 0 against that body
 /// and refuse the sentence at a claim it never made.
 #[test]
 fn reconstruct_form_with_scopes_members_to_active_sections() {
@@ -280,7 +280,7 @@ fn reconstruct_form_with_scopes_members_to_active_sections() {
     assert_eq!(
         reconstruct_form_with(&e, &|_| None, Some(&family), &NoCrystal, &mut super::fixtures::budget()),
         None,
-        "court replays multi-member rule when input scene has bodies of the other chart"
+        "court reconstructs multi-member rule when input scene has bodies of the other chart"
     );
 }
 

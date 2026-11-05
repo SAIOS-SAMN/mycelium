@@ -80,7 +80,7 @@ fn class_key_agrees_for_negated_rotor() {
 }
 
 /// Two tapes of one vertex have one key; a tape and its geodesic
-/// replay to the same affine.
+/// reconstruct to the same affine.
 #[test]
 fn key_agrees_for_two_tapes_of_one_vertex() {
     let q = LetterId::turn_90((0, 1)).unwrap();

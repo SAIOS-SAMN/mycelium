@@ -62,7 +62,7 @@ fn read_word_cites_slide_on_null_lane() {
     assert!(r.composes, "the held slide cubed re-derives the longer one: different mathematics, one word");
     assert_eq!(r.residue, [0; 4]);
     assert!(r.cites.iter().all(|c| c.2 == LANE_T && c.3 == 3), "cited on the null lane at the count ratio, read {:?}", r.cites);
-    // A court replays only what it ruled: the dialect's slide is not cited
+    // A court reconstructs only what it ruled: the dialect's slide is not cited
     // where only ruled words may be, and the slide's hole is then residue on T.
     let ruled = p.read_word(m, &[], true).expect("the slide reads");
     assert!(!ruled.composes && ruled.cites.is_empty());

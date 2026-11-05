@@ -98,7 +98,7 @@ pub enum LayerKind {
     Reduced,
     Tiled,
     Bordered,
-    /// The grid's own extent, not a body layer.
+    /// The sample's own extent, not a body layer.
     Frame,
 }
 

@@ -1,5 +1,5 @@
-// 78.153 — REPLAYS METERED AND RESUMABLE: a stroke that runs out is
-// unread, never a refusal; a replay resumed across strokes rules exactly as
+// 78.153 — RECONSTRUCTIONS METERED AND RESUMABLE: a stroke that runs out is
+// unread, never a refusal; a reconstruction resumed across strokes rules exactly as
 // one that never ran out.
 
 use crate::transducer::element::Element;
@@ -49,14 +49,14 @@ fn whole(e: &Element, family: &[(SectionSample, SectionSample)]) -> (Reconstruct
     (out, (1 << 20) - b.remaining())
 }
 
-/// Strokes of `n` reads, each resuming the last, until the replay rules:
+/// Strokes of `n` reads, each resuming the last, until the reconstruction rules:
 /// the verdict and the strokes it took.
 fn resumed(e: &Element, family: &[(SectionSample, SectionSample)], n: usize) -> (ReconstructionOutcome, usize) {
     let mut cursor = ReconstructionCursor::default();
     let mut strokes = 0usize;
     loop {
         strokes += 1;
-        assert!(strokes <= 4096, "a stroke of {n} reads moves the replay on");
+        assert!(strokes <= 4096, "a stroke of {n} reads moves the reconstruction on");
         match attempt(e, family, n, &mut cursor) {
             ReconstructionOutcome::Unread => continue,
             out => return (out, strokes),
@@ -64,9 +64,9 @@ fn resumed(e: &Element, family: &[(SectionSample, SectionSample)], n: usize) -> 
     }
 }
 
-/// THE INVARIANT (78.153): a replay that needs more reads than one stroke
+/// THE INVARIANT (78.153): a reconstruction that needs more reads than one stroke
 /// is `Unread` — not ruled, not refused — and resumed on the next strokes
-/// it rules EXACTLY as a full-budget replay does: the same verdict, the
+/// it rules EXACTLY as a full-budget reconstruction does: the same verdict, the
 /// same refusal at the same coordinate, on every stroke size that moves it.
 #[test]
 fn reconstruct_resume_rules_as_whole_reconstruction_across_strokes() {
@@ -81,11 +81,11 @@ fn reconstruct_resume_rules_as_whole_reconstruction_across_strokes() {
         // Resumed, on every stroke size from two reads to the whole need.
         for n in 2..=need {
             let (out, strokes) = resumed(&e, &family, n);
-            assert_eq!(out, full, "a replay resumed on strokes of {n} rules as the whole one");
-            assert!(n == need || strokes > 1, "a stroke of {n} < {need} reads is not the whole replay");
+            assert_eq!(out, full, "a reconstruction resumed on strokes of {n} rules as the whole one");
+            assert!(n == need || strokes > 1, "a stroke of {n} < {need} reads is not the whole reconstruction");
         }
     }
-    assert_eq!(whole(&good().1, &good().0).0, ReconstructionOutcome::Clean, "the good word replays clean");
+    assert_eq!(whole(&good().1, &good().0).0, ReconstructionOutcome::Clean, "the good word reconstructs clean");
     assert!(
         matches!(whole(&undeclared().1, &undeclared().0).0, ReconstructionOutcome::Refused(ref r) if r.reason == REFUSE_NOT_CLOSED),
         "the undeclared word is refused, not closed"
@@ -93,7 +93,7 @@ fn reconstruct_resume_rules_as_whole_reconstruction_across_strokes() {
 }
 
 /// DEFECT 1 (lock audit): A SPENT STROKE NEVER REFUSES A GOOD WORD. On every
-/// stroke short of the whole need the good word's replay is `Unread` — never
+/// stroke short of the whole need the good word's reconstruction is `Unread` — never
 /// `Refused` — and on the whole need it is `Clean`.
 #[test]
 fn reconstruct_resume_leaves_good_word_unread_on_short_stroke() {
@@ -156,11 +156,11 @@ fn edges_rederive_frames_from_spends_short_stroke_never_refuses() {
             (forged, other) => panic!("forged {forged}: {other:?}"),
         }
     }
-    // The good rule's form carries the word vertex the replay needs.
+    // The good rule's form carries the word vertex the reconstruction needs.
     assert!(rule.form.vertices.entries().any(|(_, v)| matches!(v, Vertex::Word { .. })));
 }
 
-/// 78.158a U2 — THE CALLER'S STROKE IS HONOURED, NEVER DRAINED. A replay
+/// 78.158a U2 — THE CALLER'S STROKE IS HONOURED, NEVER DRAINED. A reconstruction
 /// whose one unit costs one read more than a default stroke grants is
 /// UNREAD on a caller's stroke no wider than a default one — refused by
 /// name, kind N, no reading of the word — and read whole on a caller's
@@ -189,7 +189,7 @@ fn to_completion_reads_unit_only_on_wider_stroke() {
 
 /// THE OFF-LOCK READERS keep the same answer: run to the end over fresh
 /// strokes, `reconstruct_blind_at` on the caller's stroke of one read is the
-/// whole replay's verdict.
+/// whole reconstruction's verdict.
 #[test]
 fn reconstruct_blind_at_answers_whole_reconstruction_verdict() {
     crate::transducer::raster::stand_on(0);

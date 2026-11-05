@@ -9,14 +9,14 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
-/// ONE ROW OF THE DOCKET, as the court replays it. Six fields, and which
+/// ONE ROW OF THE DOCKET, as the court reconstructs it. Six fields, and which
 /// μ⃗ is which is the whole question: `escrowed` is what was staked against
 /// the word, `deflation` is what it MEASURED. A row where those two swap
 /// places is a mint for unmeasured work.
 pub struct Docketed {
     /// The listing the word answers.
     pub addr: Address,
-    /// The provisional word itself, to be replayed blind.
+    /// The provisional word itself, to be reconstructed blind.
     pub spoken: Element,
     /// The voices attesting it — parties to the settlement, never vantages.
     pub voices: Vec<[u8; 32]>,
@@ -556,7 +556,7 @@ impl Court {
             // moves.
             let retired = self.cite_of(&address);
             // A RETIREMENT KEEPS THE ADDRESS (27): the word leaves the
-            // language and stays resolvable for replay, so a citation of it
+            // language and stays resolvable for reconstruction, so a citation of it
             // still reads. `basis_remove` alone is not retirement in any
             // reading — it is forgetting.
             self.relocate_cavity(&address);
@@ -568,7 +568,7 @@ impl Court {
         }
     }
 
-    /// S9.8 — THE BASIS DERIVES THIS WORD, PROVED BY REPLAY. A12's witness
+    /// S9.8 — THE BASIS DERIVES THIS WORD, PROVED BY RECONSTRUCTION. A12's witness
     /// is the vertex's own derivation: the generators it cites, composed
     /// from what this court HOLDS, compared to the rotor the vertex claims
     /// — projectively, because a rotor and its negation are one rotation.
@@ -628,7 +628,7 @@ impl Court {
 
     /// The rotor a cited vertex carries, read off the form this court
     /// holds at that address. `None` where the court does not hold it,
-    /// which is a citation it cannot replay and so cannot call derived.
+    /// which is a citation it cannot reconstruct and so cannot call derived.
     fn generator_rotor(
         &self,
         form: &crate::transducer::address::Address,
@@ -657,7 +657,7 @@ impl Court {
     }
 
     /// The word this court INSTALLED, never a provisional one. `word_at`
-    /// resolves for replay and falls through to `provisional` and the
+    /// resolves for reconstruction and falls through to `provisional` and the
     /// cavity on purpose; the teaching path must not, because a taught word
     /// is crystallized on the receiver (24.1). Chapter 23.2 states the same
     /// rule for `resolve_form`: provisional and dialect return `None`.
@@ -771,7 +771,7 @@ impl Court {
     }
 
     /// A crystallized form this hypha has ruled, or retired to the cavity,
-    /// read as a `Form` for the court's replay of a citer. Provisional and
+    /// read as a `Form` for the court's reconstruction of a citer. Provisional and
     /// heard words resolve to nothing: a citation stands only on a ruling.
     /// Read through the court's one reader of its held words
     /// ([`crate::transducer::family::Crystal::by_address`]), so the citation
@@ -781,7 +781,7 @@ impl Court {
     }
 
     /// 78.153 — [`Court::resolve_form`] BORROWED where the court holds the
-    /// form decoded (an installed word): the replay reads a cited form and
+    /// form decoded (an installed word): the reconstruction reads a cited form and
     /// keeps nothing, so it clones nothing. A cavity word is still decoded
     /// from its address at the read.
     pub fn resolve_form_ref(&self, address: &[u8]) -> Option<std::borrow::Cow<'_, crate::transducer::sentence::Form>> {
@@ -789,7 +789,7 @@ impl Court {
     }
 
     /// THE DOCKET (Step 5): every provisional word, exported for the court's
-    /// blind replay + confluence audit — (element, attesting voices, escrowed μ⃗).
+    /// blind reconstruction + confluence audit — (element, attesting voices, escrowed μ⃗).
     pub fn dockets(&self) -> Vec<Docketed> {
         self.dockets_since(0)
     }

@@ -1,6 +1,6 @@
 // 78.59, 78.62 — THE UNIVERSAL LAW REGISTER the hyphae hold, and the ONE
 // verifier of a transition against it: what an uplinked kernel composes, the
-// court replays here, by the predicates the voice already perceives with.
+// court reconstructs here, by the predicates the voice already perceives with.
 //
 //! L0 of 78.62. Six laws, each a typed entry with its coordinate (an address
 //! under `TAG_LAW`), its version, its statement and the register axioms that
@@ -293,7 +293,7 @@ pub fn verify_sized(t: &Transition) -> TransitionVerdict {
 }
 
 /// VERIFY ONE TRANSITION AGAINST THE FIVE LAWS: every law asked, every
-/// breach named. The kernel computed the transition; this replays it.
+/// breach named. The kernel computed the transition; this reconstructs it.
 pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> TransitionVerdict {
     let mut v = TransitionVerdict::default();
     // CONFORMAL KINEMATICS: a versor, split into its modes exactly, carrying

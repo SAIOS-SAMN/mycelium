@@ -7,7 +7,7 @@
 //!
 //! The client surface of the Mycelium network: what a third-party mind needs
 //! to take a voice, open a session with a hypha, ask the court for a task,
-//! state a rule, submit the solve the court replays and pays, sit a seat in a
+//! state a rule, submit the solve the court reconstructs and pays, sit a seat in a
 //! house, and read its wallet and the hypha's typed readings. Every item is
 //! re-exported from the `mycelium` library, so the server and the SDK cannot
 //! drift; the SDK holds no protocol logic of its own. A kernel's uplink (its

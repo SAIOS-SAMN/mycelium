@@ -2,7 +2,7 @@
 //
 //! `apply_form` carries the rule's vertices onto the scene's bodies and
 //! emits the painted sites they name. A hue no neighbour supplies is
-//! refused; a spoken grid that does not grow to the frame is not a speech.
+//! refused; a spoken sample that does not grow to the frame is not a speech.
 
 use super::*;
 use crate::transducer::sentence::frame_key;
@@ -85,7 +85,7 @@ pub(crate) fn emit_carried(
         let place = crate::transducer::perspective::family_place_axis(l.site.n());
         let frame = place.and_then(|p| l.site.axis(p));
         match element::carry_compartment_site(v, &l.site) {
-            // The grid spoken onto is the body's own frame: a compartment
+            // The sample spoken onto is the body's own frame: a compartment
             // carried into another frame is not spoken on it, and is
             // remainder.
             Some(image) if image.iter().all(|s| place.and_then(|p| s.axis(p)) == frame) => {
@@ -119,7 +119,7 @@ pub(crate) fn hue_from_neighbours(site: SectionSite, occ: &crate::network::nerve
     held
 }
 
-/// Speak a form onto a grid: each vertex kind emits; the class fibre
+/// Speak a form onto a sample: each vertex kind emits; the class fibre
 /// names the bodies. An empty fibre is unspoken, never every body.
 pub fn apply_form(
     f: &Form,
@@ -130,7 +130,7 @@ pub fn apply_form(
     apply_form_on(f, x, placement, crystal, None)
 }
 
-/// Speak a form onto a grid of a specific pair of a family: only members
+/// Speak a form onto a sample of a specific pair of a family: only members
 /// active on that pair are spoken.
 pub fn apply_form_on(
     f: &Form,
@@ -147,7 +147,7 @@ pub fn apply_form_on(
 /// nothing more). `Spoken::Spent` where the stroke ran out first: nothing
 /// was said, and a caller reads that as unread, never as a speech.
 /// `bodies` is `x` as the sensor already read it, where the caller holds
-/// that perception (the court's replay cursor); `None` perceives `x` here.
+/// that perception (the court's reconstruction cursor); `None` perceives `x` here.
 pub(crate) fn apply_form_metered(
     f: &Form,
     x: &SectionSample,
@@ -222,23 +222,23 @@ impl<'b> Speaking<'b> {
     }
 }
 
-/// THE SCENE A FORM IS SPOKEN ONTO, PERCEIVED ONCE (law 12): the grid's
+/// THE SCENE A FORM IS SPOKEN ONTO, PERCEIVED ONCE (law 12): the sample's
 /// bodies and the atlas that files them by chart. A cited form spoken
 /// inside this speech speaks onto the same scene and perceives nothing
-/// itself: the bodies are one fact of the grid, not of the vertex citing
+/// itself: the bodies are one fact of the sample, not of the vertex citing
 /// them.
 pub(crate) struct Scene {
     bodies: Vec<Body>,
     atlas: crate::transducer::stalk::Stalks,
-    /// WHAT A CITED FORM SPEAKS ON THIS GRID, by the citation's own
+    /// WHAT A CITED FORM SPEAKS ON THIS SAMPLE, by the citation's own
     /// coordinate (Z2 item 3): the cited form's address and the COMPOSED
     /// placement, written out (rule 6). What a citation emits is a function
-    /// of the cited form, the placement it is spoken at, and the grid — and
+    /// of the cited form, the placement it is spoken at, and the sample — and
     /// of nothing else, so a rule citing one form 578 times at one
     /// placement speaks it once and reads the painted set back 577 times.
     ///
-    /// It is on the SCENE because the scene is the grid: a memo held
-    /// anywhere wider would answer for a grid it was not measured on, and
+    /// It is on the SCENE because the scene is the sample: a memo held
+    /// anywhere wider would answer for a sample it was not measured on, and
     /// one held narrower could not outlive the citation that filled it.
     /// `RefCell` because `speak_on_scene` recurses through `&Scene` and the
     /// memo is written by the recursion, never read by the engine as a
@@ -264,7 +264,7 @@ impl Scene {
     }
 
     /// The scene over bodies already perceived (78.153): the same scene
-    /// `of` builds, without the sensor reading the grid again.
+    /// `of` builds, without the sensor reading the sample again.
     pub(crate) fn of_bodies(bodies: Vec<Body>) -> Scene {
         let mut atlas = crate::transducer::stalk::Stalks::default();
         for (i, body) in bodies.iter().enumerate() {
@@ -380,7 +380,7 @@ fn speak_on_scene(
             // A CITED FORM SPEAKS ONTO THE SCENE THIS SPEECH ALREADY
             // PERCEIVED, at the composed placement: the crystal resolves the
             // citation by address, and the cited form's bodies are this
-            // grid's bodies (law 12).
+            // sample's bodies (law 12).
             v @ Vertex::Glued { placement: q, .. } => {
                 let composed = placement.compose(q);
                 // 54.7 B5a — EVERY FORM THIS BOUNDARY MATES WITH, off the
@@ -403,7 +403,7 @@ fn speak_on_scene(
                     let key = Scene::citation_key(edge.target.as_bytes(), &composed);
                     // READ THE CITATION AT ITS OWN COORDINATE. This rule
                     // cites one form 578 times at one placement and spoke it
-                    // 578 times onto the same grid; what comes back is the
+                    // 578 times onto the same sample; what comes back is the
                     // same painted set every time, because nothing in the
                     // citation varies.
                     if let Some((p, r, u, c, left, d)) = scene.spoken.borrow().get(&key) {
@@ -538,7 +538,7 @@ fn speak_on_scene(
             }
             Vertex::Unfolded { .. } => {}
             // 50.5: a demand speaks nothing — 78.167 A2: and the speech says
-            // which, by kind, so a wrong grid is read for what it could not
+            // which, by kind, so a wrong sample is read for what it could not
             // say.
             Vertex::Demand { kind, .. } => {
                 if let Some(n) = demanded.get_mut(usize::from(kind.kind_byte())) {
@@ -640,7 +640,7 @@ pub struct Speech {
     pub painted: Vec<PaintedSite>,
     pub remainder: Vec<PaintedSite>,
     /// The vertices, by coordinates, whose class fibre was empty on
-    /// this grid.
+    /// this sample.
     pub unspoken: Vec<crate::network::nerve::coord::VertexAt>,
     /// The cited forms, by address, the speaking crystal does not hold: the
     /// sites they would have spoken are not the form's silence.

@@ -5,7 +5,7 @@
 // density; where it gains, is the gain all light; where it loses, all
 // carving. DECISION: of the recolours in place, which key — none, volume,
 // density, hue-mass, shape, direction, mass rank or density rank in the pair —
-// decides the new hues, leave one out, judged by replay (`incongruence::
+// decides the new hues, leave one out, judged by reconstruction (`incongruence::
 // decide`, the voice's own reading). Data; nothing is decided.
 
 use mycelium::client::sdk::MindLanguage;
@@ -72,7 +72,7 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     );
     let n = total[0].predicted + total[0].refused + total[0].alone;
     println!(
-        "volume decision over {n} recolours in place on {tasks_recoloured} tasks (leave one out, judged by replay); replayed by each task's own hue map {own} — the ceiling of any body-level key:"
+        "volume decision over {n} recolours in place on {tasks_recoloured} tasks (leave one out, judged by reconstruction); reconstructed by each task's own hue map {own} — the ceiling of any body-level key:"
     );
     for ((k, j), w) in KEYS.iter().zip(total).zip(whole) {
         println!(

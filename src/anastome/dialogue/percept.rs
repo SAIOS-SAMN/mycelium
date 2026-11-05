@@ -223,7 +223,7 @@ pub fn decode_solve_receipt(body: &[u8]) -> Option<(u8, crate::economy::Mu)> {
 }
 
 /// WHY A SOLVE WAS REFUSED, as the court read it (the actions' physics): the
-/// replay's reason and its obstruction kind (78.9), carried behind the
+/// reconstruction's reason and its obstruction kind (78.9), carried behind the
 /// receipt so the voice learns where its rule broke. A receipt reader that
 /// knows only `[code][μ]` reads the prefix and is unchanged.
 #[derive(Clone, Debug, PartialEq, Eq)]

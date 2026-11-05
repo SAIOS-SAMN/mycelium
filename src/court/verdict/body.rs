@@ -28,7 +28,7 @@ pub(crate) enum Carried {
     /// different faults, and a `REFUSE_VERTEX_BODY` that said only that one
     /// of them happened would leave the journal unable to distinguish a
     /// voice whose rotor is wrong from a voice reading a different frame
-    /// than the court replays against (rule 11).
+    /// than the court reconstructs against (rule 11).
     ///
     /// AND WHICH MEMBER FAILED. `At::Vertex` carries a chart under 50.9's
     /// grammar, and it is the chart of the member that failed — never the
@@ -60,7 +60,7 @@ pub(crate) const FAIL_GAUGE_AMBIGUOUS: &str = "the gauge names two images for on
 
 /// ONE PAIR OF THE FAMILY, PERCEIVED ONCE (law 12): the bodies of `x`
 /// filed by chart, the images of `y`, and the image each base site
-/// belongs to. Every reader of a frame — a vertex's replay, an edge's
+/// belongs to. Every reader of a frame — a vertex's reconstruction, an edge's
 /// re-measurement, the coverage of a part-reached image — reads this and
 /// perceives nothing itself: the frame's bodies are one fact of the frame,
 /// not of the vertex or the face asking about them.
@@ -75,10 +75,10 @@ pub(crate) struct PerceivedPair<'a> {
 }
 
 /// 78.153 — ONE PAIR AS THE SENSOR READ IT: the bodies of `x` and the
-/// images of `y`. Perceived ONCE PER REPLAY, one read each, and held on the
-/// replay's cursor across strokes (`ReconstructionCursor::frames`): the clauses, the
+/// images of `y`. Perceived ONCE PER RECONSTRUCTION, one read each, and held on the
+/// reconstruction's cursor across strokes (`ReconstructionCursor::frames`): the clauses, the
 /// bodies and the edges of every resumed stroke read these, and the sensor
-/// reads each grid once whatever the strokes the replay takes.
+/// reads each sample once whatever the strokes the reconstruction takes.
 #[derive(Clone, Debug)]
 pub struct Perceived {
     pub(crate) bodies: Vec<Body>,
@@ -158,14 +158,14 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, fr
 
     let rotor = derivation.rotor();
     // A contact vertex is placed by its orbit, not its carriage; the
-    // orbit's own replay (`REFUSE_ORBIT_STILL`) is its reconstruction.
+    // orbit's own reconstruction (`REFUSE_ORBIT_STILL`) is its reconstruction.
     if contact.is_some() {
         return Carried::Silent;
     }
     let y = here.y;
     let mut landed: Keyed<()> = Keyed::new();
-    // THE COURT REPLAYS EVERY MEMBER, each against the bodies on its OWN
-    // chart, by the carriage and the gauge it acts by there. Replaying one
+    // THE COURT RECONSTRUCTS EVERY MEMBER, each against the bodies on its OWN
+    // chart, by the carriage and the gauge it acts by there. Reconstructing one
     // member for a vertex that carries several would pass a sentence on the
     // strength of the part of it the court happened to read first.
     //
@@ -199,7 +199,7 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &PerceivedPair<'_>, fr
                 // A centre the sensor cannot convert is not a compartment at all
                 // (W6) — the transport left the sensor's own geometry — and
                 // a centre carried into another frame is no compartment of the
-                // grid this frame is replayed against.
+                // sample this frame is reconstructed against.
                 let Some(t) = element::site_at(&p) else {
                     return Carried::Refused(FAIL_NO_COMPARTMENT, at());
                 };
@@ -296,7 +296,7 @@ fn form_covers_compartments(
 /// Do two sites stand in one frame — every coordinate off the space axes
 /// (the axes the default perspective reads as space) equal? A compartment
 /// carried into another frame is no compartment of the sample this frame is
-/// replayed against.
+/// reconstructed against.
 fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Site) -> bool {
     use crate::transducer::perspective::{family_role, Role};
     a.n() == b.n()
@@ -354,7 +354,7 @@ fn r_proof_unread() -> &'static str {
 }
 
 /// [`vertices_carry_frames_from`], writing the fault a refused vertex failed
-/// by into `why` — the one reader both the replay and the mint read.
+/// by into `why` — the one reader both the reconstruction and the mint read.
 fn carry_frames_from(
     f: &Form,
     family: &[(SectionSample, SectionSample)],
@@ -659,7 +659,7 @@ pub(crate) fn edges_rederive_frames_from(
             return Err(Halt::Refused(refused(none("a vertex's rotor and carriage lift to no versor"))));
         };
         // THE OVERLAP'S OWN FRAME, by its coordinate: a frame of the family
-        // the court replays against, or none it can ask.
+        // the court reconstructs against, or none it can ask.
         if let Some(at) = usize::try_from(x.frame).ok().and_then(|k| frames.get(k)) {
             let fibre_i = at.on_chart(class_i);
             let fibre_j = at.on_chart(class_j);

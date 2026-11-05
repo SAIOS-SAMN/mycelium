@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 // 78.142, 78.143 — THE RULE SEAM: a rule stated as typed steps and clauses,
-// or read off a family, minted as the element the court replays.
+// or read off a family, minted as the element the court reconstructs.
 
 //! The rule seam.
 //!
@@ -14,7 +14,7 @@
 //! on each test input with [`speak_rule`]. Extraction runs on a [`Budget`]
 //! drawn from a [`Physics`] stroke.
 
-/// One step of a rule, what a creation places, the six grid symmetries,
+/// One step of a rule, what a creation places, the six plane symmetries,
 /// and why no rule stands.
 pub use mycelium::sdk::rule::{Create, NoRule, Step, Symmetry};
 
@@ -38,7 +38,7 @@ pub use mycelium::transducer::family::{perceive_family, Frames};
 /// budget is sized by the object, never by a chosen number; 78.111).
 pub use mycelium::transducer::family::extraction_spend;
 
-/// Mint a rule as the element the court replays; the refusal named.
+/// Mint a rule as the element the court reconstructs; the refusal named.
 pub use mycelium::transducer::family::mint_sentence_why;
 
 /// Speak a rule on one input; the speech's `sample()` is the output.

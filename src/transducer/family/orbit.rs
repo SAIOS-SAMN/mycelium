@@ -1,6 +1,6 @@
 // 22 — THE ORBIT: whether a vertex's motion moves a body, read by one exact
 // application (78.62). The march that carried a body ring by ring — a walk
-// with a hop-distance shell, a set of seen states and a cap from the grid's
+// with a hop-distance shell, a set of seen states and a cap from the plane's
 // extent — is retired: the court and the mint asked only whether the body
 // moves, which the first application decides (measured: 680 of 680 cases
 // agreed before the march was removed).
@@ -26,7 +26,7 @@ pub(crate) fn occupy_keys(painted: &[PaintedSite]) -> crate::network::nerve::Key
 /// Smallest peel-shell index at which every image site sits in the
 /// `adjacent_ring` expansion of the anchor. Not a metric.
 ///
-/// In the grid's own count: the shell reaches the grid's height plus width,
+/// In the plane's own count: the shell reaches the plane's height plus width,
 /// and `k as u8` wrapped a far shell onto a near one, which could read a
 /// contact at a ring the body never stood on.
 pub(crate) fn ring_dist_peel(image: &[SectionSite], anchor: &[SectionSite], bound: usize) -> Option<usize> {
@@ -48,11 +48,11 @@ pub(crate) fn ring_dist_peel(image: &[SectionSite], anchor: &[SectionSite], boun
     None
 }
 
-/// Carry every painted site of a grid's scene by `v`. The image is NOT
-/// bounded by the grid's extent: a site carried off it is still the image
+/// Carry every painted site of a plane's scene by `v`. The image is NOT
+/// bounded by the plane's extent: a site carried off it is still the image
 /// of that site — clipping here would hide that the motion moved it. `None`
-/// where a site is carried out of the grid's own frame along `e₃`: the
-/// motion is read within one grid, and a body carried off it has moved.
+/// where a site is carried out of the plane's own frame along `e₃`: the
+/// motion is read within one plane, and a body carried off it has moved.
 pub(crate) fn carry_painted(v: &Versor, painted: &[PaintedSite]) -> Option<Vec<PaintedSite>> {
     let mut out = Vec::new();
     for p in painted {
@@ -92,7 +92,7 @@ pub(crate) fn vertex_versor_at(
 /// motion a member acts by carries it once, and the body STANDS STILL where
 /// its image is non-empty and every image site is a site of the body — the
 /// motion fixes it as a set. A member with no conformal versor moves nothing;
-/// one that carries a site off the grid along `e₃` moves it. Asked of every
+/// one that carries a site off the plane along `e₃` moves it. Asked of every
 /// member: the vertex moves the body where any member does. An empty body
 /// has nothing to move.
 pub fn moves(v: &Vertex, painted: &[PaintedSite]) -> bool {

@@ -156,12 +156,12 @@ fn line(
 /// The court refuses a sentence whose word vertex does not carry its body
 /// onto its image, and at epoch 11 that was 83% of its refusals on PAIR 0
 /// — the pair the rule was read from. A vertex that satisfied pair 0 when
-/// it was measured and fails it when the court replays was altered in
+/// it was measured and fails it when the court reconstructs was altered in
 /// between, and the steps that alter one are the glue, the rebase and the
 /// contact.
 ///
 /// WHAT IS COMPARED IS THE COORDINATE, NOT THE KINEMATICS. Re-running
-/// `vertex_carries_pair` after each step would be the court's grid replay
+/// `vertex_carries_pair` after each step would be the court's sample reconstruction
 /// done again in the voice, per family, on the hot path (law 12, rule 10)
 /// — and keyed by ordinal it would report every reindexed vertex as lost,
 /// which is a fault of the probe and not of the manifold. Both carriages

@@ -32,8 +32,8 @@ fn mint_refuses_address_too_long_to_cite() {
 
 /// PD1's return — A TORSE CLOSES AT ITS PERIOD, its generator's order
 /// exactly: a Torse at twice the order would be paid twice over, and is
-/// refused on replay by name; at the order, for either kind, it mints and
-/// replays green (the court's Congruent fill mints the holonomy kind).
+/// refused on reconstruction by name; at the order, for either kind, it mints and
+/// reconstructs green (the court's Congruent fill mints the holonomy kind).
 #[test]
 fn reconstruct_refuses_torse_at_twice_generator_order() {
     use crate::transducer::address::Address;
@@ -49,7 +49,7 @@ fn reconstruct_refuses_torse_at_twice_generator_order() {
             mint(RewriteKind::Torse, &[Address::from_bytes([1u8])], Address::from_bytes([2u8]), payload, mu)
                 .expect("a Torse that yields is minted")
         };
-        assert!(reconstruct(&torse(order)).is_none(), "{generator:?} at its order replays green");
+        assert!(reconstruct(&torse(order)).is_none(), "{generator:?} at its order reconstructs green");
         assert_eq!(
             reconstruct(&torse(2 * order)),
             Some("torse period is not its generator's order"),
@@ -58,7 +58,7 @@ fn reconstruct_refuses_torse_at_twice_generator_order() {
     }
 }
 
-/// A condense rewrite round-trips through its tape and replays both ways.
+/// A condense rewrite round-trips through its tape and reconstructs both ways.
 #[test]
 fn mint_condense_round_trips_and_reconstructs() {
     let after = crate::transducer::address::Address::from_bytes([7u8]);

@@ -11,7 +11,7 @@ fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
-/// A named case: its family's pairs and the held-out pair, each grid as rows.
+/// A named case: its family's pairs and the held-out pair, each sample as rows.
 type Case<'a> = (&'a str, Vec<(&'a [&'a str], &'a [&'a str])>, (&'a [&'a str], &'a [&'a str]));
 
 /// The rule the family extracts, its clauses read, and its speech on the
@@ -218,7 +218,7 @@ fn from_element_form_round_trips_echoes_and_bends() {
 
 /// THE NEW ACTS CROSS THE WIRE: a rule stating a join and one stating an
 /// echo, minted as the elements the court reads and decoded back, carry the
-/// clauses they were read with — the court replays what the voice read.
+/// clauses they were read with — the court reconstructs what the voice read.
 #[test]
 fn from_element_form_round_trips_join_and_echo() {
     crate::transducer::raster::stand_on(0);

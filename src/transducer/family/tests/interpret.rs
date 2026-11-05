@@ -1,7 +1,7 @@
 // 78.80, 78.81 — THE REMAINDER INTERPRETED (`family/interpret.rs`) and the
 // recolour decided RELATIONALLY (`incongruence::decide`): a body's rank by
 // mass among the bodies of its pair decides where its own volume, density and
-// direction cannot — judged by replay, leave one out.
+// direction cannot — judged by reconstruction, leave one out.
 
 use super::fixtures::digits;
 use crate::transducer::family::incongruence::{decide, single_changes};
@@ -12,7 +12,7 @@ use crate::transducer::family::interpret::interpret;
 /// the volume key has nothing to decide by; every bar lies along the rows, so
 /// direction sends one key two ways and is refused. The rank in the pair —
 /// none heavier, or none lighter — is shared across the pairs, predicts every
-/// recolour from the other pair, and the replay reproduces all four.
+/// recolour from the other pair, and the reconstruction reproduces all four.
 #[test]
 fn decide_ranks_by_pair_where_body_alone_cannot() {
     crate::transducer::raster::stand_on(0);

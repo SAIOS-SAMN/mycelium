@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 23.2, 47.3 — COGNITION, the court loop: a voice's sentence enters by
-//! `perceive_speech`, is replayed by G on the court's copy of its family,
+//! `perceive_speech`, is reconstructed by G on the court's copy of its family,
 //! is listed with its demands, and installs only on two-organ CONVERGENCE.
 //! No painted site of a voice's scene reaches the court (law 8, ruled 2026-09-10).
 

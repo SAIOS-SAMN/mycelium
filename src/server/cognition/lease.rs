@@ -15,7 +15,7 @@
 //! (sub-kind 4, signed), what the hold has left returns to the payer.
 //!
 //! Compute is paid as its results verify and never for cycles spent: the
-//! lease reserves value against capacity, and the court's replay releases
+//! lease reserves value against capacity, and the court's reconstruction releases
 //! it. A job is under at most one open lease per provider, so a verified
 //! solve pays exactly one lease.
 

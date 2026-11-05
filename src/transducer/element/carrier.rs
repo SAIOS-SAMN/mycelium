@@ -18,7 +18,7 @@ pub const FIBRE_SHELL: u16 = 3;
 pub const FIBRE_GERMINATED: u16 = 4;
 
 /// WHAT A TORSION CYCLE TURNS BY — its generator, which the period is READ
-/// from at every writer, reader and replay (PD1, 78.43(2)): a stored period
+/// from at every writer, reader and reconstruction (PD1, 78.43(2)): a stored period
 /// is a claim, never a bound, and a derivable quantity re-derives at every
 /// reader (law 12).
 #[derive(Debug, Clone)]
@@ -457,7 +457,7 @@ pub struct Element {
         crate::network::nerve::coord::Holonomy,
     >,
     /// THE RECEIPTS ENVELOPE (54.5 Road (d)): the graded nerve incidence
-    /// this word stands in, and the evidence a court replays it with —
+    /// this word stands in, and the evidence a court reconstructs it with —
     /// citations with the citations' affine transitions, derivations, and pivot
     /// certificates.
     ///
@@ -710,7 +710,7 @@ impl Element {
     }
 
     /// THE RECEIPTS ENVELOPE this word carries (54.5 Road (d)): its nerve
-    /// incidence and the evidence a court replays it with.
+    /// incidence and the evidence a court reconstructs it with.
     pub fn receipts(&self) -> &crate::transducer::element::ReceiptsEnvelope {
         &self.receipts
     }
@@ -979,7 +979,7 @@ impl Element {
 /// counts of supports of at most that many sites, at most one plus four per
 /// site; 𝒯 is 0. So every lane is at most five times the chain's links. A
 /// link is 18 bytes and an address space is below 2⁴⁸, so a sum of measures
-/// over RESIDENT chains stays below 2⁵⁰ — as do a resident grid's frame
+/// over RESIDENT chains stays below 2⁵⁰ — as do a resident sample's frame
 /// dimensions, the dimensions' sum and its cell count — and none can pass a `u64`, or
 /// a 64-bit `usize`. A sum whose summands can arrive from outside a resident
 /// carrier (a wire magnitude, an escrow, a price) is not covered: it is

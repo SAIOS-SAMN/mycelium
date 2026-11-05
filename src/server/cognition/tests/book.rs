@@ -181,7 +181,7 @@ assert_eq!(
 /// Dialect/Slashed addresses are heard once; a cocycle row is unique
 /// on (chart, pair, versor). The forged word is a spoken sentence with its
 /// word vertices struck out — a tape of the Frame and a demand, which the
-/// blind replay refuses as a chain (50.6, `REFUSE_NOT_A_SENTENCE`).
+/// blind reconstruction refuses as a chain (50.6, `REFUSE_NOT_A_SENTENCE`).
 #[test]
 fn glue_fetched_never_rerows_heard_slash() {
 let mut k = Court::new();
@@ -321,7 +321,7 @@ assert_eq!(k.listings_on(&crate::transducer::stalk::Invariant::counts(&[8])).len
 /// The genome boundary. A taught word is CRYSTALLIZED on the receiver — it
 /// enters the genome, the persisted stratum (24.1, chapter 6) — while the
 /// epigenome's dialect is the transmutable one. `word_at` resolves for
-/// replay and falls through basis → cavity → provisional on purpose; the
+/// reconstruction and falls through basis → cavity → provisional on purpose; the
 /// teaching path must not, or a voice is handed its own unratified dialect
 /// back as language and files it as crystallized intelligence.
 #[test]
@@ -340,7 +340,7 @@ let inv = crate::transducer::stalk::invariant_of(&w);
 // syllabus serving.
 k.provisional.insert(&addr, w.clone());
 k.ruled.admit(&inv, addr.clone());
-assert!(k.word_at(&addr).is_some(), "replay still resolves it");
+assert!(k.word_at(&addr).is_some(), "reconstruction still resolves it");
 assert!(k.installed_word(&addr).is_none(), "but nothing installed it");
 
 let served = k.serve_ruled(&inv, &[], 1 << 20, crate::cognition::Asker::Court([0; 32]));

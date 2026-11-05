@@ -16,7 +16,7 @@
 //! **The composed ROTOR is a coordinate; the composed word is not**
 //! (L14, 1.9). A spelling of the composite beside the citations is two
 //! carriers for one meaning, and the one that goes stale is the one a
-//! court replays. The rotor is not a spelling: 1.5 says the vertex key
+//! court reconstructs. The rotor is not a spelling: 1.5 says the vertex key
 //! IS the canonical rotor coordinates, and `Word::key()` reduces to
 //! `rotor().key()`, so what the vertex carries is its own identity
 //! written out once.
@@ -28,7 +28,7 @@
 //! 13.10), so the key must be the composite and not the citations. And
 //! the deferral of 21 step 3 — a sentence citing an unruled generator is
 //! docketed while the syllabus serves it — needs the sentence's own
-//! address BEFORE the citation resolves. The court's replay
+//! address BEFORE the citation resolves. The court's reconstruction
 //! (`verify_with`) is what keeps the carried rotor honest: citations
 //! that do not compose to it are a refusal at that vertex.
 //!
@@ -321,7 +321,7 @@ impl Derivation {
     }
 }
 
-/// How a derivation replayed.
+/// How a derivation reconstructed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Verified {
     /// The citations compose to the product carried.

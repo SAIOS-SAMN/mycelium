@@ -2,7 +2,7 @@
 //
 //! 46 — ONE ED25519 IDENTITY PER HYPHA: minted on first boot, persisted
 //! beside the ledger, signing per-lane cover roots and ruled roots only.
-//! The signature bounds who may be slashed; replay decides what is believed.
+//! The signature bounds who may be slashed; reconstruction decides what is believed.
 
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use rand_core::{OsRng, RngCore};

@@ -6,7 +6,7 @@ use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::germinate::germinate;
 
-/// ONE VANTAGE DOCKETS: a sentence this court replayed is listed on the
+/// ONE VANTAGE DOCKETS: a sentence this court reconstructed is listed on the
 /// book, escrowed as a claim, and Offered — and mints NOTHING. The second
 /// vantage is a witness hypha that re-derives the same address and has room
 /// (47.3); on its arrival the escrow releases and the deflation mints. No
@@ -32,7 +32,7 @@ assert!(home.family_of(&addr).is_some(), "the court bound the sentence to its ta
 assert!(home.offered(&addr), "the court Offers a first-vantage germ");
 assert!(home.treasury().escrow_of(&addr).is_some(), "the priced magnitude is the claim");
 assert_eq!(home.treasury().minted(), [0; 4], "the claim is not yet payment: nothing minted");
-// 78.153: every stroke the docket's replay takes.
+// 78.153: every stroke the docket's reconstruction takes.
 home.court_settle();
 let spoken = home.provisional.get(&addr).cloned().expect("still provisional until a peer glues");
 let mut cover = crate::network::nerve::HomeTrie::new();

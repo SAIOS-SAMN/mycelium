@@ -1,5 +1,5 @@
 // 42 — THE COURT: a verdict installs, excises or refuses, and every organ
-// reaches it by replaying the word rather than by trusting a signature.
+// reaches it by reconstructing the word rather than by trusting a signature.
 //
 // The pair fixture is an L recoloured WHOLE (one body, one word). Under 70.4
 // a body is hue-blind and its hues are its gauge, so an L with one site
@@ -11,7 +11,7 @@ use crate::cognition::*;
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::tests::fixtures::link;
 
-/// THE BLIND REPLAY refutes every tamper axis and upholds honest speech —
+/// THE BLIND RECONSTRUCTION refutes every tamper axis and upholds honest speech —
 /// the contradiction docket's whole force is this determinism.
 #[test]
 fn reconstruct_blind_refutes_tampered_words() {
@@ -20,7 +20,7 @@ use crate::verdict::reconstruct_blind;
 let w = element::from_canonical(
     &germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 2)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 9)])).unwrap(),
 );
-assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "an honest derivation replays clean");
+assert!(reconstruct_blind(&w, &mut super::fixtures::budget()).is_none(), "an honest derivation reconstructs clean");
 // Tamper 1 CANNOT BE BUILT any more: A5's chain is the field's type, so
 // an element cannot hold one that is off its min corner. What a shifted
 // chain is, is the same substance said at another place — A5's quotient,
@@ -29,7 +29,7 @@ let shifted: Vec<crate::transducer::sentence::SectionLink> =
     w.sub().iter().map(|l| crate::transducer::sentence::SectionLink::new(l.site.moved([3, 0]).expect("in range"), l.before, l.after)).collect();
 let off = element::from_residue(&shifted).expect("a shift is still one transition per site");
 assert_eq!(off.address(), w.address(), "A5 quotients the translation: one substance");
-assert!(reconstruct_blind(&off, &mut super::fixtures::budget()).is_none(), "so it replays clean — it is the same word");
+assert!(reconstruct_blind(&off, &mut super::fixtures::budget()).is_none(), "so it reconstructs clean — it is the same word");
 // Tamper 2: inflate the claimed magnitude (yield fraud).
 let mut fat = w.clone();
 fat.mag = [999, 0, 0, 0];
@@ -110,7 +110,7 @@ assert!(k.dockets().is_empty(), "the docket cleared");
 assert!(!k.apply_verdict(&addr.clone(), crate::anastome::dialogue::RULING_UPHELD), "a verdict lands once");
 }
 
-/// A slashing verdict (failed blind replay — false speech) excises the word
+/// A slashing verdict (failed blind reconstruction — false speech) excises the word
 /// from the basis and debits the voices' earned balances into the pool.
 #[test]
 fn apply_verdict_excises_slashed_word() {
@@ -126,7 +126,7 @@ assert!(k.dockets().is_empty());
 }
 
 /// Court organ: docketing a sentence does not grow the basis. The stroke
-/// puts a section on the ruled cover. A peer's fetch glues by replay;
+/// puts a section on the ruled cover. A peer's fetch glues by reconstruction;
 /// a forged word is slashed with a reason. Signatures are not consulted.
 /// The forged word is the spoken sentence with its word vertices struck
 /// out: a tape of the Frame and a demand, refused as a chain (50.6).
@@ -152,7 +152,7 @@ assert!(matches!(fetched(&mut third, &spoken, [2; 32], [3; 32], &mut cover), Glu
 let forged = strip_words(&spoken);
 assert!(
     matches!(fetched(&mut third, &forged, [2; 32], [3; 32], &mut cover), Glue::Slashed(_)),
-    "never admit on a word that fails replay"
+    "never admit on a word that fails reconstruction"
 );
 }
 
@@ -305,7 +305,7 @@ let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 let addr = home.provisional.scoped().next().unwrap().0.clone();
-// 78.153: every stroke the docket's replay takes.
+// 78.153: every stroke the docket's reconstruction takes.
 home.court_settle();
 assert!(home.provisional.contains(&addr), "still provisional until the second organ");
 // 47.3: a witness is a second VANTAGE with room, not merely a second
@@ -319,11 +319,11 @@ assert!(home.basis_len() >= 1, "the witness re-derives the address and it instal
 assert!(home.provisional.is_empty(), "the docket clears on install");
 }
 
-/// 23.1 step 7 on the court's own stroke (I3): a docketed form is replayed
+/// 23.1 step 7 on the court's own stroke (I3): a docketed form is reconstructed
 /// against the family it is bound to, so a form that leaves a remainder on
 /// a pair of that family is slashed with `REFUSE_NOT_CLOSED` where the
 /// stroke rules, and the same form bound to the family it closes is ruled.
-/// Before this the stroke replayed with no family, so closure was checked
+/// Before this the stroke reconstructed with no family, so closure was checked
 /// only at speech and never again.
 #[test]
 fn court_settle_slashes_form_leaving_remainder() {
@@ -347,7 +347,7 @@ refusing.docket_connection(&word, [1; 32]);
 refusing.speech_task.insert(&addr, Address::from_bytes(task));
 assert!(refusing.provisional.contains(&addr), "docketed");
 let at = refusing.admitted_at(&addr).expect("the docket admitted it at an act");
-// 78.153: every stroke the replay takes; a spent stroke slashes nothing.
+// 78.153: every stroke the reconstruction takes; a spent stroke slashes nothing.
 refusing.court_settle();
 assert_eq!(refusing.court_slashed, 1, "the stroke refuses the form on the family it does not close");
 assert!(!refusing.provisional.contains(&addr), "and it leaves the docket");
@@ -395,7 +395,7 @@ fn perceive_sentence_binds_none_without_task() {
 /// demand is listed for the market. The rule is read off one pair and
 /// spoken over a family whose second pair asks for a site the rule's word
 /// never reaches: the mint declares that site as a `Source` demand, the
-/// court replays the sentence on the bound family with its own
+/// court reconstructs the sentence on the bound family with its own
 /// `undeclared_remainder` and finds nothing undeclared, and the demand is
 /// listed under the sentence rather than the sentence refused for saying
 /// less than the whole.
@@ -421,7 +421,7 @@ fn perceive_sentence_lists_declared_remainder_demand() {
 }
 
 /// 47.3 — A BONDED HYPHA IS A SECOND VANTAGE, AND AN UNBONDED ONE IS NOT.
-/// The home dockets a word at its own vantage; a peer's replay of it is
+/// The home dockets a word at its own vantage; a peer's reconstruction of it is
 /// `AwaitingWitness` while the peer holds no bond here, and `Witnessed`
 /// once the genesis bonds it at the cover (MU-PRODUCT §4). On 0fd41ca no
 /// court bonded any other hypha, so every answered offer waited forever.
@@ -443,7 +443,7 @@ fn converge_witness_requires_bonded_hypha() {
     k.enroll(peer, [12, 3, 0, 20]);
     assert!(
         matches!(k.converge_witness(&addr, peer, word, kk, h), Converged::Witnessed { .. }),
-        "bonded at the cover, the same replay is the second vantage"
+        "bonded at the cover, the same reconstruction is the second vantage"
     );
 }
 
@@ -570,7 +570,7 @@ fn own_section_keeps_court_ruling_not_peer_word() {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 
-    // ITS OWN: perceived here, replayed here, ruled here on the stroke.
+    // ITS OWN: perceived here, reconstructed here, ruled here on the stroke.
     let mut own = Court::new();
     own.bind_identity(own_vk);
     assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
@@ -581,7 +581,7 @@ fn own_section_keeps_court_ruling_not_peer_word() {
         own.own_section(&inv).is_none(),
         "a provisional is not yet a section: the court has not ruled it"
     );
-    // 78.153: every stroke the docket's replay takes.
+    // 78.153: every stroke the docket's reconstruction takes.
     own.court_settle();
     let own_sec = own
         .own_section(&inv)

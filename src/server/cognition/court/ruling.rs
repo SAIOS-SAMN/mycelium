@@ -4,12 +4,12 @@
 //
 //! Upheld, demoted and slashed rule a word on this court's provisional
 //! row, through `apply_verdict`. Retired rules a word of this court's
-//! ruled language away: the court replays the retirement on its own basis
+//! ruled language away: the court reconstructs the retirement on its own basis
 //! and, where it re-derives, retires the word here too — the ruled cover
 //! is federated, and two courts whose languages differ by a word the one
 //! retired and the other kept describe two supplies (MU-ECONOMY §3.2, §6).
 //! A citation this court does not hold WAITS, keyed by its stamp, and is
-//! heard again when a word is filed there; a replay that does not
+//! heard again when a word is filed there; a reconstruction that does not
 //! re-derive is REFUSED (I, 78.9), named and counted, never applied and
 //! never dropped. Each is counted on the clock by arm:
 //! admitted = applied + awaiting + refused.
@@ -25,7 +25,7 @@ enum Heard {
     /// A citation this court does not hold, by its stamp.
     Waits(Stamp),
     Applied,
-    /// The replay did not re-derive, by its typed reason (F5).
+    /// The reconstruction did not re-derive, by its typed reason (F5).
     Refused(RulingRefusal),
 }
 
@@ -114,12 +114,12 @@ impl Court {
     /// A PEER RETIRED A WORD THIS COURT HOLDS RULED. Every other citation —
     /// the rewrite the retirement rests on and every word that speaks for
     /// it — must be held here, or the ruling waits on the first that is not.
-    /// The replay is this court's own: the word decomposes over its basis
-    /// with the word excluded (the replay `retire_rewrite_inputs` runs),
+    /// The reconstruction is this court's own: the word decomposes over its basis
+    /// with the word excluded (the reconstruction `retire_rewrite_inputs` runs),
     /// and every speaker is ruled here. Where it re-derives, the word
     /// retires here as at the home, its freed measure goes to the reserve,
     /// and this court seals its own `Ruling(Retired)` with the peer's
-    /// receipt among its parents. The replay draws on the stroke of the act
+    /// receipt among its parents. The reconstruction draws on the stroke of the act
     /// that heard the ruling (65.5), never one of its own.
     fn reconstruct_retirement(
         &mut self,
@@ -137,7 +137,7 @@ impl Court {
         let mut cited = Vec::with_capacity(rest.len());
         for c in rest {
             // Every citation of a retirement is a word by its stamp; one that
-            // is not names nothing this court can replay the retirement on.
+            // is not names nothing this court can reconstruct the retirement on.
             let Some(at) = c.at() else { return Heard::Inert };
             match self.word_admitted_at(&at) {
                 Some(a) => cited.push(a.clone()),

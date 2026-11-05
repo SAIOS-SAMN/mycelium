@@ -37,7 +37,7 @@ mod tests;
 
 /// THE BLADE READ ON THE SENSOR'S PLANE, named once for the tests (BQ4).
 /// Every tower reader takes the plane it reads; the fixtures that read the
-/// corpus's grid plane read through here, and everything else of the blade
+/// corpus's plane read through here, and everything else of the blade
 /// is re-exported as it is.
 #[cfg(test)]
 pub mod sensor_plane {

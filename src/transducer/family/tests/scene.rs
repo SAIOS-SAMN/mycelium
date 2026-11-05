@@ -47,10 +47,10 @@ fn is_identity_ends_cut_at_scene_key() {
 /// The three readings here are the whole of what the cut claims. The
 /// separator's own row and column are in NO region — nothing of the scene's
 /// content crosses there, which is what the reading deduced. Every region's
-/// sites are the scene's sites, so the restriction reads a grid of the
+/// sites are the scene's sites, so the restriction reads a sample of the
 /// region's own extent at the region's origin. And a row uniform in one
 /// input but not the other is not a separator: the cut is a fact of the
-/// FAMILY, not of one grid.
+/// FAMILY, not of one sample.
 #[test]
 fn cover_bands_scene_into_restricted_regions() {
     crate::transducer::raster::stand_on(0);

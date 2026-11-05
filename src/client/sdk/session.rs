@@ -438,7 +438,7 @@ impl Session {
         }
     }
 
-    /// PROBE an open listing with a tentative sentence; the hypha replays and
+    /// PROBE an open listing with a tentative sentence; the hypha reconstructs and
     /// settles a graded trajectory or closure. Returns its reading (PR1).
     pub(crate) fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<dialogue::ProbeReading> {
         // LD0: a probe whose address cannot be framed is not spoken.

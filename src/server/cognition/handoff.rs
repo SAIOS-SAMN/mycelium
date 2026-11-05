@@ -3,7 +3,7 @@
 // 2026-10-07).
 //
 //! The court holds an offer whole — its nets are what a consuming fold's
-//! continuity and a replay read — from its seal until both sides are
+//! continuity and a reconstruction read — from its seal until both sides are
 //! consumed by folds read final (`settle_windows` lets it go then: a final
 //! fold is never reversed, so no side can be un-consumed). The answer window
 //! is the one finality clock: the window the offer opened, closed by a sealed
@@ -33,7 +33,7 @@ pub(crate) struct Handoffs {
     /// Each handoff by its id.
     pub(crate) held: Keyed<HandoffRecord>,
     /// Each fold that consumed sides, by its stamp key: the sides — what a
-    /// replay reads and a reversal un-consumes.
+    /// reconstruction reads and a reversal un-consumes.
     pub(crate) consumed_by: Keyed<Vec<([u8; 32], Side)>>,
     /// Each held offer's receipt, by the handoff's id — so a resent offer is
     /// answered with its original receipt and nothing is sealed twice.
@@ -551,7 +551,7 @@ impl Court {
     }
 
     /// The sides a sealed fold consumed, marked — each by the fold's stamp
-    /// key, recorded for its replay and its reversal.
+    /// key, recorded for its reconstruction and its reversal.
     pub(crate) fn consume_sides(&mut self, fold: &[u8], refs: &[([u8; 32], Side)]) {
         if refs.is_empty() {
             return;

@@ -5,7 +5,7 @@
 //! A sentence already IS its reasons: its address is its form (law 2) and its
 //! receipts envelope carries the evidence the address excludes — the
 //! generators each word vertex factored through, the demands' bodies, the
-//! remainder's chain. A court replays all of it blind against its own copy
+//! remainder's chain. A court reconstructs all of it blind against its own copy
 //! of the scene. What no reader did was say it: what the sentence was said
 //! with, what its loops mean, what it could not explain, and what it left
 //! unsaid.

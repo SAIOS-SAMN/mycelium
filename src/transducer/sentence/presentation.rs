@@ -459,7 +459,7 @@ impl Presentation {
     /// read), and the rotor `g` with `g · W · g̃ = rotor`, solved exactly
     /// (`simultaneous_conjugators`, one elimination over ℚ) and checked by
     /// composing it. Only the ruled where `ruled_only` (what a court can
-    /// replay). `None` where no held word of the class is a conjugate of it.
+    /// reconstruct). `None` where no held word of the class is a conjugate of it.
     pub fn conjugate_of(
         &self,
         rotor: &crate::transducer::alphabet::Rotor,
@@ -568,7 +568,7 @@ impl Presentation {
     /// 78.161 — READ A WORD OVER WHAT IS HELD, LANE BY LANE ([`WordCitations`]): its
     /// whole motion hole by hole (each hole on the lane its kind names), its
     /// hue map mode by mode (on `G`), over every generator held, or only the
-    /// ruled ones where `ruled_only` (what a court can replay). The motion's
+    /// ruled ones where `ruled_only` (what a court can reconstruct). The motion's
     /// modes are read on the stroke they need. `None` where the motion's modes
     /// do not read, or its hue listing is no map (rule 11).
     pub fn read_word(&self, motion: &Mv, gauge: &[(u8, u8)], ruled_only: bool) -> Option<WordCitations> {

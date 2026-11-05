@@ -67,7 +67,7 @@ pub type Regions = Keyed<Region>;
 /// [`coord::Piece`]: crate::network::nerve::coord::Piece
 ///
 /// `LayerKind::Frame` is the kind because a region is a part of the
-/// GRID'S OWN EXTENT and not a body layer — which is what that member of
+/// SAMPLE'S OWN EXTENT and not a body layer — which is what that member of
 /// the enum says. A reading that cut by something beyond the region would
 /// write it after its own tag, which leads the key, so its regions key apart
 /// from these without a second key family (rule 6).
@@ -165,12 +165,12 @@ fn uniform_at(g: &SectionSample, axis: usize, coordinate: usize) -> bool {
     run.all(|h| h == want)
 }
 
-/// Is this row of this grid one hue throughout?
+/// Is this row of this sample one hue throughout?
 fn row_uniform(g: &SectionSample, r: usize) -> bool {
     uniform_at(g, 0, r)
 }
 
-/// Is this column of this grid one hue throughout?
+/// Is this column of this sample one hue throughout?
 fn col_uniform(g: &SectionSample, c: usize) -> bool {
     uniform_at(g, 1, c)
 }
@@ -202,8 +202,8 @@ fn runs(sep: &[bool]) -> Vec<(i64, i64)> {
 /// 53.2 BANDS: the rows and columns uniform across EVERY input of the
 /// family bound the regions.
 ///
-/// A row is a separator where it is one hue throughout in every grid of
-/// the scene — the hue may differ from grid to grid, because what the
+/// A row is a separator where it is one hue throughout in every sample of
+/// the scene — the hue may differ from sample to sample, because what the
 /// reading deduces is that nothing of the scene's content crosses there.
 /// The regions are the maximal runs of non-separator rows crossed with the
 /// maximal runs of non-separator columns.

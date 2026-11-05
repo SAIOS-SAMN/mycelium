@@ -189,7 +189,7 @@ assert!(
 /// THE CONVERSATION: a listing is probed with a cited sentence. A graded
 /// residue settles the reduction and the residue replaces the listing
 /// under its frame; closure clears it and advances the lineage; a
-/// sentence that names nothing settles nothing. The replay is linear in
+/// sentence that names nothing settles nothing. The reconstruction is linear in
 /// the proof and the hypha runs no search.
 #[test]
 fn settle_probe_settles_residue_then_closure() {
@@ -229,7 +229,7 @@ let basis = k.basis();
 assert_eq!(
     reconstruct_at(&|a| basis.iter().find(|w| w.address().as_bytes() == a).map(|w| w.element()), &cites, &chain),
     void,
-    "the replay reproduces the residue"
+    "the reconstruction reproduces the residue"
 );
 let before = match k.tension.get(&target) {
     Some(t) => *t,
