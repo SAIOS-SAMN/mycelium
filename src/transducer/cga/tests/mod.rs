@@ -17,7 +17,6 @@ mod modes;
 mod motion;
 mod motor;
 mod roots;
-mod passage;
 mod period;
 mod perturbation;
 mod rank_n;

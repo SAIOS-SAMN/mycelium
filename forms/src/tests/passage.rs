@@ -1,6 +1,6 @@
-// LAW-PASSAGE v2 (proposal 78.172): what the forms shell keeps of the
-// passage, the refusal of a moved reach and the share's two faces. The
-// passage's own fixtures stand with the algebra (78.172 §5).
+// LAW-PASSAGE v2 (proposal 78.172): the refusal of a moved reach and the
+// share's two faces. The product and its fixtures are `crossing.rs`
+// (78.172 §5).
 
 use crate::passage::*;
 use crate::Q;
