@@ -108,8 +108,8 @@ fn cells_of(b: &Body) -> Vec<(usize, usize, u8)> {
     b.compartments
         .iter()
         .filter_map(|l| {
-            let (r, c) = on_grid(&l.site)?;
-            Some((usize::try_from(r).ok()?, usize::try_from(c).ok()?, l.hue))
+            let [r, c] = SectionSite::of_family(&l.site)?.indices()?;
+            Some((r, c, l.hue))
         })
         .collect()
 }

@@ -248,15 +248,6 @@ pub(crate) fn landed_hue(v: &Versor, site: &Site, dst: &Body) -> Option<u8> {
     dst.compartments.binary_search_by(|x| x.site.cmp(&t)).ok().map(|i| dst.compartments[i].hue)
 }
 
-/// A site's coordinates on the sensor's plane, the plane the default
-/// perspective assigns (`perspective::family_plane`) — the section's planar
-/// token (16.5); every other axis rides on the pose. `None` for a site of a
-/// base whose perspective holds no plane, which has no section.
-pub(crate) fn on_grid(s: &Site) -> Option<(i64, i64)> {
-    let (ga, gb) = crate::transducer::perspective::family_plane(s.n())?;
-    Some((s.axis(ga)?, s.axis(gb)?))
-}
-
 pub(crate) fn hue_map_of_chain(chain: &[SectionLink]) -> Vec<(u8, u8)> {
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     for l in chain {

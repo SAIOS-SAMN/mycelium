@@ -25,7 +25,7 @@ fn occupancy_causes_reads_wrong_speech_by_cause() {
     let bodies = crate::transducer::family::perceive(&x);
     let br = bodies
         .iter()
-        .position(|b| b.compartments.iter().any(|l| crate::transducer::family::on_grid(&l.site) == Some((2, 2))))
+        .position(|b| b.compartments.iter().any(|l| crate::transducer::spelled::SectionSite::of_family(&l.site) == Some(crate::transducer::spelled::SectionSite::on_plane([2, 2]))))
         .expect("the bottom-right body is perceived");
     let said = grid(&["100", "000", "000"]);
     let causes = occupancy_causes(&said, &x, &y, &[br]);

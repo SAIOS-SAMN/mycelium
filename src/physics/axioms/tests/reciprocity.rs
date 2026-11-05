@@ -80,14 +80,14 @@ fn certify_fit_is_symmetric_in_order() {
     let [t] = coset(&a, &b).try_into().expect("one member");
     let ba = coset(&b, &a);
     let back = reciprocal(&t, &ba, 3).expect("reciprocal");
-    let on_grid = |x: &Transition| -> Vec<[num_rational::BigRational; 2]> {
+    let on_plane = |x: &Transition| -> Vec<[num_rational::BigRational; 2]> {
         x.residue
             .iter()
             .filter(|r| r.order == Harmonic::Four && r.plane == plane())
             .map(|r| r.vector.clone())
             .collect()
     };
-    assert_eq!(on_grid(&t), vec![[q(-1, 4), q(0, 1)]], "the blow-up's order-four residue, S₄(2)/2² = −1/4");
+    assert_eq!(on_plane(&t), vec![[q(-1, 4), q(0, 1)]], "the blow-up's order-four residue, S₄(2)/2² = −1/4");
     // Read back at the scale 1/2: −Ad⁽⁴⁾(r) = −(1/2)⁴ · (−1/4) = 1/64.
-    assert_eq!(on_grid(back), vec![[q(1, 64), q(0, 1)]], "transposed onto the L's side");
+    assert_eq!(on_plane(back), vec![[q(1, 64), q(0, 1)]], "transposed onto the L's side");
 }

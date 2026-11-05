@@ -17,7 +17,7 @@
 //! order, every cover that closes is kept, and the caller holds
 //! incomparable ones rather than taking the first that answers.
 
-use super::perceive::{frame_of, on_grid, SectionSample, SectionSite};
+use super::perceive::{frame_of, SectionSample, SectionSite};
 use crate::network::nerve::Keyed;
 use crate::transducer::base::Site;
 use crate::transducer::layers::LayerKind;
@@ -236,45 +236,26 @@ fn bands(scene: &[SectionSample]) -> Option<Regions> {
     Some(out)
 }
 
-/// A GRID RESTRICTED TO A REGION: the region's own sites, read at the
+/// A SAMPLE RESTRICTED TO A REGION: the region's own sites, read at the
 /// region's origin, so a region's family is an ordinary family of its own
 /// extent and the moves below it are 52.5's unchanged.
 ///
-/// `None` where the region names a site the grid does not have — a region of
+/// `None` where the region names a site the sample does not have — a region of
 /// one scene restricted against another's extent, which is not a reading
 /// of anything (rule 11).
 pub fn restrict(g: &SectionSample, region: &Region) -> Option<SectionSample> {
-    // The region's sites on the grid axes: a region is a part of the
-    // sensor plane (16.5).
-    let plane: Vec<(i64, i64)> = region.support.iter().map(on_grid).collect::<Option<_>>()?;
-    // THE REGION'S EXTENT, both corners read off every site. The low corner
-    // was the FIRST site's (rule 15's first-found), so a site above or left
-    // of it gave a negative offset that wrapped to a huge index and dropped
-    // the whole restriction silently, and the extent came out short.
-    let [(first_r, first_c), ..] = plane.as_slice() else { return None };
-    let (mut r0, mut c0, mut r1, mut c1) = (*first_r, *first_c, *first_r, *first_c);
-    for &(r, c) in &plane {
-        if r < r0 {
-            r0 = r;
-        }
-        if c < c0 {
-            c0 = c;
-        }
-        if r > r1 {
-            r1 = r;
-        }
-        if c > c1 {
-            c1 = c;
-        }
-    }
-    // Every offset below is from the true low corner, so it is exact in
-    // `usize` or the restriction is refused (rule 11), never wrapped.
-    let span = |lo: i64, hi: i64| usize::try_from(hi.checked_sub(lo)?.checked_add(1)?).ok();
-    let (h, w) = (span(r0, r1)?, span(c0, c1)?);
-    let mut out = SectionSample::filled([h, w], crate::transducer::raster::void().ok()?).ok()?;
-    for &(r, c) in &plane {
-        let hue = g.at(SectionSite::on_plane([r, c]))?;
-        out.paint(SectionSite::on_plane([r.checked_sub(r0)?, c.checked_sub(c0)?]), hue)?;
+    // The region's section sites: a region is a part of the sensor plane
+    // (16.5).
+    let plane: Vec<SectionSite> = region.support.iter().map(SectionSite::of_family).collect::<Option<_>>()?;
+    // THE REGION'S EXTENT, its least corner and the extents from it, read
+    // off every site (`SectionSite::span_of`): every offset below is from the
+    // true least corner, so it is exact in `usize` or the restriction is
+    // refused (rule 11), never wrapped; no site is no region.
+    let (corner, extents) = SectionSite::span_of(plane.iter().copied())?;
+    let mut out = SectionSample::filled(extents, crate::transducer::raster::void().ok()?).ok()?;
+    for &site in &plane {
+        let hue = g.at(site)?;
+        out.paint(site.offset_from(corner)?, hue)?;
     }
     Some(out)
 }

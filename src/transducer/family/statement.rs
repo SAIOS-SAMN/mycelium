@@ -151,8 +151,7 @@ impl<'a> Seen<'a> {
         for (i, b) in bodies.iter().enumerate() {
             let mut owned = Vec::with_capacity(b.compartments.len());
             for l in &b.compartments {
-                let Some((r, c)) = on_grid(&l.site) else { continue };
-                let (Ok(r), Ok(c)) = (usize::try_from(r), usize::try_from(c)) else { continue };
+                let Some([r, c]) = SectionSite::of_family(&l.site).and_then(|s| s.indices()) else { continue };
                 if let Some(o) = owner.get_mut(r).and_then(|row| row.get_mut(c)) {
                     *o = Some(i);
                     owned.push((r, c, l.hue));
