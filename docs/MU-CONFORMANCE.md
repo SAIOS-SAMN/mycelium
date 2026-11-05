@@ -148,8 +148,31 @@ clause's fixtures, reads its alignment back from the hypha's ledger (the
 network read signs once with every fixture reached and once with one
 fixture presented wrong, then checks that the clause presented wrong
 collides with its `NotSignatory` residue and every other clause
-converses), reads the core clock, has a transition verified, founds its domain, asks
+converses, then signs again with every fixture reached and reads every
+clause conversing, so its universe's acts cross the tube), reads the core clock, has a transition verified, founds its domain, asks
 its endowment by a manifest, and reads its universe back.
+
+**The refusals at the universal core tube (track 24 B3, B4; v0.4.0).** A
+universe's act (6.2a: a fold, an anchor, a map, a mouth, a conversion
+out, a manifest, a statement) is answered by its own reply, which carries
+the tube's refusal as a `Boundary` written `[tag][act][domain 32]…`
+(`court::admission::Boundary::put`; the act `0` fold, `1` anchor, `2`
+map, `3` mouth, `4` conversion out, `5` manifest, `6` statement):
+
+| Reply | Code | Refusal | Fields read back |
+|---|---|---|---|
+| `Uplinked` | 13 | `Boundary` | as below |
+| `Ledgered`, `Mapped`, `Granted`, `Handed` | `[2]` | `Boundary` | as below |
+| `Founded` | 21 | `Boundary` | as below |
+| `Boundary` | tag 0 | `NotThroughCore` | the act and the domain: the act reached the hypha other than from its universe's sitting reserve |
+| `Boundary` | tag 1 | `NotSignatory` | the act, the domain, the network clause (law id, version) and the reserve's reading of it: `1` vetoed, `2` collides (stamp and the signing refusal as residue), `3` unread |
+| `Boundary` | tag 2 | `Bounded` | the act, the domain, and the kernel clause the reserve vetoed that governs the act |
+| `Boundary` | tag 3 | `Unaligned` | the act, the domain, and `[0]` the stroke spent or `[1][clause]` a register unread: the crossing waits |
+| `Uplinked` | 11 | `NotLawful` | the path of carried lines to the fold, the transition's index, each breach with its law's register index |
+| `Uplinked` | 12 | `Unread` | the same place, each law unread with the stroke it needs (or none) |
+
+The codes `Uplinked` 9, `LedgerRefusal` 1, `MapRefusal` 1 and
+`GrantRefusal` 3 (`NotReserve`) are retired.
 
 ## 3. The statement served (**Built**)
 
@@ -227,7 +250,8 @@ the house's domain is the voice's own key, its one tier the same key:
 - a manifest signed by the sitting reserve is sent: granted, or refused by
   a name that is the court's standing (`Short`, `Granted`, `InFlight`,
   `NoNewClosures`); a refusal that names the house's own act (`Unsigned`,
-  `NotReserve`, `NotAUniverse`, `NotFounded`, `Malformed`) fails;
+  `NotAUniverse`, `NotFounded`, `Malformed`) fails, as does a refusal at
+  the universal core tube (`Granted::Boundary`, below);
 - the universe is read back, and must read as originated, in the geometry
   and parent face its origin stated; the endowment is read;
 - the house posts its seats, reads the listing back equal to the post, and

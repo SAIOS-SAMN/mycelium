@@ -632,6 +632,9 @@ pub enum Founded {
     /// a basket empty, unordered or with a mass not positive, or an origin
     /// whose version and fields disagree.
     Malformed,
+    /// Track 24 B4 — a universe's act (a statement) refused at the
+    /// universal core tube, by name.
+    Boundary(crate::court::admission::Boundary),
 }
 
 /// `[0][stamp][hash]` sealed; `[1]` unsigned; `[2]` unordered; `[3]` already
@@ -682,6 +685,10 @@ pub fn encode_domain_reply(f: &Founded) -> Vec<u8> {
         Founded::NotACore => out.push(18),
         Founded::NotAUniverse => out.push(19),
         Founded::Malformed => out.push(20),
+        Founded::Boundary(why) => {
+            out.push(21);
+            why.put(&mut out);
+        }
     }
     out
 }
@@ -743,6 +750,7 @@ pub fn decode_domain_reply(b: &[u8]) -> Option<Founded> {
         18 => Founded::NotACore,
         19 => Founded::NotAUniverse,
         20 => Founded::Malformed,
+        21 => Founded::Boundary(crate::court::admission::Boundary::take(b, &mut p)?),
         _ => return None,
     };
     (p == b.len()).then_some(f)

@@ -874,6 +874,9 @@ pub enum Handed {
     /// Sealed: the receipt, the handoff's id and its state now.
     Sealed { at: Stamp, receipt: [u8; 32], id: [u8; 32], state: State },
     Refused(HandoffRefusal),
+    /// Track 24 B4 — a universe's act (a conversion out, a mouth) refused
+    /// at the universal core tube, by name.
+    Boundary(crate::court::admission::Boundary),
 }
 
 fn put_state(out: &mut Vec<u8>, s: &State) {
@@ -1021,6 +1024,10 @@ pub fn encode_handoff_reply(h: &Handed) -> Vec<u8> {
             out.push(1);
             out.extend_from_slice(&refusal_bytes(r));
         }
+        Handed::Boundary(why) => {
+            out.push(2);
+            why.put(&mut out);
+        }
     }
     out
 }
@@ -1041,6 +1048,7 @@ pub fn decode_handoff_reply(b: &[u8]) -> Option<Handed> {
             p = 3;
             Handed::Refused(refusal_of(code, lane)?)
         }
+        [2] => Handed::Boundary(crate::court::admission::Boundary::take(b, &mut p)?),
         _ => return None,
     };
     (p == b.len()).then_some(h)

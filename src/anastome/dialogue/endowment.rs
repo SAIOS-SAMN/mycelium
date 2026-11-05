@@ -142,9 +142,9 @@ pub enum GrantRefusal {
     NotFounded,
     /// The domain has no origin: no universe to sponsor.
     NotAUniverse,
-    /// The domain has no sitting reserve to sign and receive.
-    NotReserve,
-    /// The signature is not the sitting reserve's.
+    /// The signature is no key's of the domain. (A domain with no sitting
+    /// reserve, or a manifest another key of the domain signed, is the
+    /// boundary's refusal, `Granted::Boundary`, track 24 B4.)
     Unsigned,
     /// The nuclei are empty, unordered, or a count is not a positive integer.
     Malformed,
@@ -168,7 +168,6 @@ impl GrantRefusal {
         match self {
             GrantRefusal::NotFounded => 1,
             GrantRefusal::NotAUniverse => 2,
-            GrantRefusal::NotReserve => 3,
             GrantRefusal::Unsigned => 4,
             GrantRefusal::Malformed => 5,
             GrantRefusal::Granted => 6,
@@ -184,7 +183,6 @@ impl GrantRefusal {
         [
             GrantRefusal::NotFounded,
             GrantRefusal::NotAUniverse,
-            GrantRefusal::NotReserve,
             GrantRefusal::Unsigned,
             GrantRefusal::Malformed,
             GrantRefusal::Granted,
@@ -206,10 +204,12 @@ impl GrantRefusal {
 pub enum Granted {
     Sealed { mu: Mu, founding: bool, at: Stamp, receipt: [u8; 32] },
     Refused(GrantRefusal),
+    /// Track 24 B4 — refused at the universal core tube, by name.
+    Boundary(crate::court::admission::Boundary),
 }
 
-/// `[0][μ⃗][founding u8][stamp][receipt 32]` or `[1][refusal u8]`, the μ⃗
-/// four exact rational lanes (`Mu::put`).
+/// `[0][μ⃗][founding u8][stamp][receipt 32]`, `[1][refusal u8]` or
+/// `[2][boundary]`, the μ⃗ four exact rational lanes (`Mu::put`).
 pub fn encode_grant_reply(g: &Granted) -> Vec<u8> {
     match g {
         Granted::Sealed { mu, founding, at, receipt } => {
@@ -221,6 +221,11 @@ pub fn encode_grant_reply(g: &Granted) -> Vec<u8> {
             out
         }
         Granted::Refused(r) => vec![1, r.byte()],
+        Granted::Boundary(why) => {
+            let mut out = vec![2];
+            why.put(&mut out);
+            out
+        }
     }
 }
 
@@ -241,6 +246,10 @@ pub fn decode_grant_reply(b: &[u8]) -> Option<Granted> {
         1 => {
             let r = GrantRefusal::of(byte(b, &mut p)?)?;
             (p == b.len()).then_some(Granted::Refused(r))
+        }
+        2 => {
+            let why = crate::court::admission::Boundary::take(b, &mut p)?;
+            (p == b.len()).then_some(Granted::Boundary(why))
         }
         _ => None,
     }

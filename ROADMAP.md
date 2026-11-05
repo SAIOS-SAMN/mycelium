@@ -63,7 +63,7 @@ Unreleased, held in `changes/`). Merged so far, each with its PR:
 | B2: signing the Concordance clause by clause by reconstructing fixtures; `CONCORDANCE_HASH` retired | track 24 | Built on branch `b2-signing`, merging |
 | Development standard: done is `cargo clippy` and `cargo test`; the gate as workspace tests; CHANGELOG fragments; documents name what exists | — | Built on branch `workflow-standard`, merging |
 | B2, next stage: each kernel's reading and signature recorded on the ledger; v0.3.0's agreed clauses carried forward; alignment read from the hypha | track 24 | Built on branch `b2-ledger` (`Cite::Signing`, `ACT_LAWS` mode 9, `clauses::history`) |
-| B3, B4: a domain's crossings refused `NotSignatory` at the universal core tube until its sitting reserve's alignment converses on every network clause of the version served; the boundary reading | track 24 | Next, after B2's ledger stage; draft 4 approved 2026-11-05 |
+| B3, B4: a domain's crossings refused `NotSignatory` at the universal core tube until its sitting reserve's alignment converses on every network clause of the version served; the boundary reading | track 24 | Built on branch `b3-vertex` (the fold's transitions under L0, `NotThroughCore`, `NotSignatory` at the tube); the boundary reading open |
 | LAW-COORDINATE fixtures 7–10 (advance, an event's bell, merger with offsets, fission) | 78.173 | Next; exact statements agreed with netstratum |
 | LAW-FIELD v1, agreed with the peer kernels | [#36](https://github.com/SAIOS-SAMN/mycelium/issues/36) | Asked of netstratum (2026-11-05); amend 78.171 to the pole basis and `Cl(p, q)` |
 | Track 26 S4a and S7–S9: the field, its wells, orbits and vortex | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 |
@@ -1261,7 +1261,12 @@ adjudicated reading (B2). Each phase is one commit:
    reserve's act, after the operator rules on amending those two forward;
    `NotThroughCore` derived from the cones (an act arriving other than at
    its universe's vertex is not an event of that universe's cone at the
-   hypha), never from a ruling on routes.
+   hypha), never from a ruling on routes. **Built with B4** (v0.4.0): the
+   reserve checks of the fold, anchor, map, core tube, conversion out,
+   manifest and statement refuse `Boundary::NotThroughCore { act, domain }`
+   on each act's reply, and their `NotReserve` codes are retired (claim
+   `universe_act_off_the_core_refused_not_through_core`). Open: a line's
+   mouth offer and a tier's handoff offer carried in the reserve's act.
 3. **B2, signatories, clause by clause, by adjudicated reading**
    (Concordance §0, ruled 2026-11-04; **Built**, v0.4.0, a network-contract
    change: `ACT_LAWS` modes 6, 7 and 8):
@@ -1321,9 +1326,9 @@ adjudicated reading (B2). Each phase is one commit:
      `physics::laws::clauses::tests::alignment`; the doc test
      `judge_takes_only_a_reconstructed_signing`.
 
-   Then (open) a domain's crossings refused `NotSignatory`
+   Then a domain's crossings refused `NotSignatory`
    until its reserve has signed every network clause of the version served
-   (Concordance §0's next release); a tube between two universes carrying
+   (**Built** with B4, below); open: a tube between two universes carrying
    what both enabled, a vetoed clause's bound named, never a refusal of
    the whole tube; an act read under its clauses as signed, a changed
    clause's divergence held and named until the new version is signed;
@@ -1332,6 +1337,27 @@ adjudicated reading (B2). Each phase is one commit:
    states verified under L0 at `LAW_VERSION` 5 and the `forms` core shell,
    refused `NotLawful` naming each breach, never admitted on a declared
    law's name; the draft-4 shared laws as each is ruled.
+   - **Built** (v0.4.0, a network-contract change on the wire): a tier's
+     fold carries the transitions it states (`TierFold::transitions`,
+     written out in its signed bytes, never a digest of them), and
+     `Reconstructed::fold` rebuilds each, and each of every carried
+     line's, under L0 at `LAW_VERSION` (`verify_sized`) before the vertex
+     admits it. A breach is refused `Uplinked::NotLawful` (the path of
+     carried lines, the transition's index, every breach with its law); a
+     law unread is answered `Uplinked::Unread`, neither admitted nor
+     refused. Claims `crossing_refused_by_the_law_it_breaks`,
+     `lawful_crossing_admitted` (`server/cognition/tests/boundary.rs`)
+     and `fold_with_transitions_round_trips_with_lawful_answers`.
+   - Crossing kinds with no law reconstruction yet, each listed, none
+     invented: an anchor, a map, a mouth, a conversion out, a manifest and
+     a statement state no transition; their existing checks stand
+     (MU-HOSTING §5a.5). A motion stated as turns (`verify_turns`) has no
+     wire writing yet and rides the crossing record (track 25, X1). No
+     crossing states a core form's object. No crossing kind states a
+     passage yet (a mouth's frames are read as versors of its spaces, not
+     as a frame state `H·n_Z + R·n_Q`), so none is reconstructed under
+     LAW-PASSAGE v3's `Poles::cross`; a crossing that states one is the
+     admission claims below.
    - The first shared crossing law is **LAW-PASSAGE v3** (adopted by
      both operators 2026-11-05): the passage is the pole swap, the
      reflection in the throat's unit `e₊`. A frame state
@@ -1373,8 +1399,9 @@ adjudicated reading (B2). Each phase is one commit:
      (`clauses::writing::put_clifford`), where a kernel signs the passage
      by reconstructing them (B2). Open: the admission at the vertex,
      below.
-   - Claims (admission, open): `crossing_is_one_sided_product`,
-     `crossing_at_horizon_is_one_way`,
+   - Claims (admission, open, once a crossing states a passage):
+     `crossing_is_the_pole_swap_with_its_flux_on_t`,
+     `crossing_at_a_pole_is_one_way`,
      `crossing_stating_moved_reach_is_refused_not_lawful`.
    - The shared coordinate is **LAW-COORDINATE v1**, ruled by both
      operators on 2026-11-05 from netstratum's docs/120
@@ -1398,9 +1425,33 @@ adjudicated reading (B2). Each phase is one commit:
      order), and the ruled act that opens a lane. Open: the
      signed-to-issuance map at the vertex, xylarium's lane renaming, and
      netstratum's composition law (fixture 11b).
-5. **B4, the boundary reading:** refusals at the universal core tube by
-   name and domain under `ACT_OBSERVE`, and the reconstruction events
-   (Collapse, Converse, Collision) at the boundary, with track 8.
+5. **B4, the boundary:** `NotThroughCore` and `NotSignatory` at the
+   universal core tube; refusals at the tube by name and domain under
+   `ACT_OBSERVE`, and the reconstruction events (Collapse, Converse,
+   Collision) at the boundary, with track 8.
+   - **Built** (v0.4.0, a network-contract change on the wire):
+     `court::admission::Boundary` names the act (`UniverseAct`) and the
+     domain on each universe act's reply. `NotThroughCore`: an act off its
+     universe's sitting reserve (B1's rename, above). `NotSignatory`
+     (`Court::signatory`, `server/cognition/boundary.rs`): a fold, anchor,
+     map, mouth, conversion out, manifest or statement crosses only while
+     the domain's sitting reserve converses on every network clause of the
+     register served, read from `Court::alignment` on the act's stroke;
+     it names the clause and the reading (unread, or colliding with the
+     residue). Kernel clauses never refuse; a vetoed one bounds only the
+     acts it governs (`Bounded`; the coordinate clause governs anchors and
+     maps). An alignment cut short answers `Unaligned`. A key's own acts
+     are never read. The SDK's KERNEL read signs again after its colliding
+     signing; the house example designates its reserve and crosses with a
+     lawful fold. Claims (`server/cognition/tests/boundary.rs`):
+     `unsigned_reserve_crossing_refused_not_signatory`,
+     `key_own_act_unbound_by_the_tube`,
+     `kernel_clause_veto_bounds_only_its_clause`,
+     `signed_reserve_lawful_crossing_admitted`.
+   - Open: the boundary reading under `ACT_OBSERVE`; a tube between two
+     universes bounded by both sides' clauses (a mouth's far-end
+     acceptance is not read); the cost of the per-crossing alignment walk
+     on a long ledger, unmeasured.
 6. **B5, nested universes:** a sub-universe's acts only at its parent's
    vertex, with 78.155 R-3.
 

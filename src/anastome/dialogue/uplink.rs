@@ -39,6 +39,13 @@ pub struct TierFold {
     /// 78.126 — the handoff sides this fold consumes, each by the handoff's
     /// id and its side (empty: the fold writes and signs as before).
     pub handoffs: Vec<([u8; 32], super::handoff::Side)>,
+    /// MU-HOSTING §5a.3, ROADMAP track 24 B3 — THE TRANSITIONS THE CROSSING
+    /// STATES: each step the universe took across its universal core tube,
+    /// the bodies before and after, the motion as a versor and the fluxes,
+    /// exactly. The hypha reconstructs each under L0 at `LAW_VERSION` before
+    /// anything seals (`Reconstructed::fold`); empty, the fold writes and
+    /// signs as before.
+    pub transitions: Vec<crate::physics::laws::Transition>,
 }
 
 /// 78.138 — WHERE A FOLD STANDS ON THE COURT: the receipt that sealed it and
@@ -240,6 +247,7 @@ fn put_fold(out: &mut Vec<u8>, f: &SignedFold) {
     out.extend_from_slice(&f.sig);
     put_children(out, &f.fold.children);
     put_handoffs(out, &f.fold.handoffs);
+    put_transitions(out, &f.fold.transitions);
 }
 
 fn take_fold(b: &[u8], p: &mut usize) -> Option<SignedFold> {
@@ -251,7 +259,20 @@ fn take_fold(b: &[u8], p: &mut usize) -> Option<SignedFold> {
     *p += 64;
     let children = take_children(b, p)?;
     let handoffs = take_handoffs(b, p)?;
-    Some(SignedFold { fold: TierFold { tier, prefix, rows, declared, children, handoffs }, sig })
+    let transitions = take_transitions(b, p)?;
+    Some(SignedFold { fold: TierFold { tier, prefix, rows, declared, children, handoffs, transitions }, sig })
+}
+
+/// B3 — THE TRANSITIONS WRITTEN OUT: their count, then each as the law
+/// register's codec writes it (`codec::put_transition`), exact.
+fn put_transitions(out: &mut Vec<u8>, transitions: &[crate::physics::laws::Transition]) {
+    crate::transducer::address::put_key_count(out, transitions.len());
+    transitions.iter().for_each(|t| crate::physics::laws::codec::put_transition(out, t));
+}
+
+fn take_transitions(b: &[u8], p: &mut usize) -> Option<Vec<crate::physics::laws::Transition>> {
+    let n = crate::transducer::address::take_key_count(b, p)?;
+    (0..n).map(|_| crate::physics::laws::codec::take_transition(b, p)).collect()
 }
 
 /// The fold and the tier's signature over [`TierFold::signed_bytes`].
@@ -345,6 +366,13 @@ impl TierFold {
         }
         if let Some(h) = self.handoffs_hash() {
             out.extend_from_slice(&h);
+        }
+        // B3 — the transitions the crossing states, written out whole under
+        // their own domain, never a digest of them: the signature holds the
+        // exact objects the hypha reconstructs.
+        if !self.transitions.is_empty() {
+            out.extend_from_slice(b"transitions");
+            put_transitions(&mut out, &self.transitions);
         }
         out
     }
@@ -451,21 +479,27 @@ fn take_handoffs(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], super::handof
 }
 
 /// `[ACT_UPLINK][tier 32][prefix 32][rows][sig 64]`, and — 78.123 B, only
-/// where the fold nets children or consumes handoffs — `[count][child …]`
-/// after the signature, then — 78.126, only where it consumes handoffs —
-/// `[count][(id, side) …]`; so a single-level fold's bytes are 78.119's
-/// exactly and a chained one's 78.123's.
+/// where the fold nets children, consumes handoffs or states transitions —
+/// `[count][child …]` after the signature, then — 78.126, only where it
+/// consumes handoffs or states transitions — `[count][(id, side) …]`, then —
+/// B3, only where it states transitions — `[count][transition …]`; so a
+/// single-level fold's bytes are 78.119's exactly and a chained one's
+/// 78.123's.
 pub fn encode_uplink(f: &SignedFold) -> Vec<u8> {
     let mut out = vec![super::ACT_UPLINK];
     out.extend_from_slice(&f.fold.tier);
     out.extend_from_slice(&f.fold.prefix);
     out.extend_from_slice(&f.fold.rows_bytes());
     out.extend_from_slice(&f.sig);
-    if !f.fold.children.is_empty() || !f.fold.handoffs.is_empty() {
+    let states = !f.fold.transitions.is_empty();
+    if !f.fold.children.is_empty() || !f.fold.handoffs.is_empty() || states {
         put_children(&mut out, &f.fold.children);
     }
-    if !f.fold.handoffs.is_empty() {
+    if !f.fold.handoffs.is_empty() || states {
         put_handoffs(&mut out, &f.fold.handoffs);
+    }
+    if states {
+        put_transitions(&mut out, &f.fold.transitions);
     }
     out
 }
@@ -490,10 +524,15 @@ pub fn decode_uplink(b: &[u8]) -> Option<SignedFold> {
         true => Vec::new(),
         false => take_handoffs(rest, &mut p)?,
     };
-    // ONE WRITING: an empty children block stands only before handoffs, and
-    // an empty handoffs block never — what does not re-encode to these very
+    let transitions = match p == rest.len() {
+        true => Vec::new(),
+        false => take_transitions(rest, &mut p)?,
+    };
+    // ONE WRITING: an empty children block stands only before handoffs or
+    // transitions, an empty handoffs block only before transitions, and an
+    // empty transitions block never — what does not re-encode to these very
     // bytes is no fold.
-    let fold = TierFold { tier, prefix, rows, declared, children, handoffs };
+    let fold = TierFold { tier, prefix, rows, declared, children, handoffs, transitions };
     let signed = SignedFold { fold, sig };
     (p == rest.len() && encode_uplink(&signed) == b).then_some(signed)
 }
@@ -551,11 +590,23 @@ pub enum Uplinked {
     /// span claiming nets. (A fold byte-identical to it is answered with
     /// its original receipt, sealing nothing.)
     Repeated,
-    /// 78.138 — only the reserve uplinks: the folding tier is not its
-    /// domain's reserve. A line's fold is carried in its reserve's.
-    NotReserve,
+    /// 78.138, track 24 B4 — THE BOUNDARY REFUSED IT at the universal core
+    /// tube: the folding tier is not its domain's sitting reserve (a line's
+    /// fold is carried in its reserve's), `NotThroughCore`; or the reserve
+    /// is no signatory of the register served, by the clause.
+    Boundary(crate::court::admission::Boundary),
     /// 78.154a — the fold's CONNECTION_TAX flow cannot be paid, and why.
     Tax(TaxRefusal),
+    /// MU-HOSTING §5a.3, track 24 B3 — A STATED TRANSITION DOES NOT HOLD
+    /// under the universal laws: the fold at `path` (empty for the fold
+    /// itself, `[i]` for the line it carried at `i`, never flattened), its
+    /// transition at `index`, and every breach with the law it breaks, as
+    /// the hypha reconstructed it. Nothing sealed.
+    NotLawful { path: Vec<usize>, index: usize, breaches: Vec<(crate::physics::laws::Law, crate::physics::laws::Breach)> },
+    /// 78.121, track 24 B3 — A LAW THE RECONSTRUCTION COULD NOT READ on the
+    /// transition at `path` and `index`, with the stroke each needs: never a
+    /// breach and never an admission. The crossing waits; nothing sealed.
+    Unread { path: Vec<usize>, index: usize, unmeasured: Vec<crate::physics::laws::Unmeasured> },
 }
 
 /// 78.154a — THE CONNECTION TAX'S FLOW KIND on a tier fold: a DECLARED row
@@ -662,7 +713,10 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
             out.push(why.byte());
         }
         Uplinked::Repeated => out.push(8),
-        Uplinked::NotReserve => out.push(9),
+        Uplinked::Boundary(why) => {
+            out.push(13);
+            why.put(&mut out);
+        }
         Uplinked::Tax(why) => {
             out.push(10);
             let (code, lane) = match why {
@@ -673,8 +727,56 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
             out.push(code);
             out.extend_from_slice(&lane.to_le_bytes()[..1]);
         }
+        Uplinked::NotLawful { path, index, breaches } => {
+            out.push(11);
+            put_place(&mut out, path, *index);
+            crate::transducer::address::put_key_count(&mut out, breaches.len());
+            for (law, breach) in breaches {
+                out.push(law.index());
+                crate::physics::laws::codec::put_breach(&mut out, breach);
+            }
+        }
+        Uplinked::Unread { path, index, unmeasured } => {
+            out.push(12);
+            put_place(&mut out, path, *index);
+            crate::transducer::address::put_key_count(&mut out, unmeasured.len());
+            for u in unmeasured {
+                out.push(u.law.index());
+                match u.needed_stroke {
+                    None => out.push(0),
+                    Some(n) => {
+                        out.push(1);
+                        out.extend_from_slice(&n.to_le_bytes());
+                    }
+                }
+            }
+        }
     }
     out
+}
+
+/// B3 — WHERE A STATED TRANSITION STANDS: the path of carried lines to its
+/// fold, then its index among that fold's transitions, each count by its
+/// own coordinate.
+fn put_place(out: &mut Vec<u8>, path: &[usize], index: usize) {
+    use crate::transducer::address::put_key_count;
+    put_key_count(out, path.len());
+    path.iter().for_each(|i| put_key_count(out, *i));
+    put_key_count(out, index);
+}
+
+fn take_place(b: &[u8], p: &mut usize) -> Option<(Vec<usize>, usize)> {
+    use crate::transducer::address::take_key_count;
+    let n = take_key_count(b, p)?;
+    let path = (0..n).map(|_| take_key_count(b, p)).collect::<Option<Vec<_>>>()?;
+    Some((path, take_key_count(b, p)?))
+}
+
+/// The law at a register index, read back.
+fn take_law(b: &[u8], p: &mut usize) -> Option<crate::physics::laws::Law> {
+    let i = *b.get(*p)?;
+    *p += 1;
+    crate::physics::laws::LAWS.get(usize::from(i)).copied()
 }
 
 /// The reply read whole, or none.
@@ -742,7 +844,7 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
             Uplinked::HandoffRefused { index, why: SideRefusal::ALL.into_iter().find(|r| r.byte() == code)? }
         }
         8 => Uplinked::Repeated,
-        9 => Uplinked::NotReserve,
+        13 => Uplinked::Boundary(crate::court::admission::Boundary::take(b, &mut p)?),
         10 => {
             let (code, lane) = (*b.get(1)?, usize::from(*b.get(2)?));
             p = 3;
@@ -752,6 +854,36 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
                 2 => TaxRefusal::Carried,
                 _ => return None,
             })
+        }
+        11 => {
+            let (path, index) = take_place(b, &mut p)?;
+            let n = crate::transducer::address::take_key_count(b, &mut p)?;
+            let breaches = (0..n)
+                .map(|_| Some((take_law(b, &mut p)?, crate::physics::laws::codec::take_breach(b, &mut p)?)))
+                .collect::<Option<Vec<_>>>()?;
+            Uplinked::NotLawful { path, index, breaches }
+        }
+        12 => {
+            let (path, index) = take_place(b, &mut p)?;
+            let n = crate::transducer::address::take_key_count(b, &mut p)?;
+            let unmeasured = (0..n)
+                .map(|_| {
+                    let law = take_law(b, &mut p)?;
+                    let flag = *b.get(p)?;
+                    p += 1;
+                    let needed_stroke = match flag {
+                        0 => None,
+                        1 => {
+                            let n = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
+                            p += 8;
+                            Some(n)
+                        }
+                        _ => return None,
+                    };
+                    Some(crate::physics::laws::Unmeasured { law, needed_stroke })
+                })
+                .collect::<Option<Vec<_>>>()?;
+            Uplinked::Unread { path, index, unmeasured }
         }
         _ => return None,
     };

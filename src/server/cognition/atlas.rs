@@ -21,6 +21,7 @@ use crate::anastome::dialogue::atlas::{
 use crate::anastome::dialogue::crossing::Edge;
 use crate::chronometry::tuniversal::TPoint;
 use crate::chronometry::{ActKind, Cite, Stamp};
+use crate::court::admission::{Boundary, UniverseAct};
 use crate::network::nerve::Keyed;
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 use std::sync::Arc;
@@ -331,9 +332,10 @@ impl Court {
     }
 
     /// The signer of a domain's act: its SITTING RESERVE, or the refusal —
-    /// `NotReserve` where another key of the domain (its founder, a tier)
-    /// signed it or it has no reserve, `Unsigned` where no key of it did.
-    fn reserve_signed(&self, domain: &[u8; 32], bytes: &[u8], sig: &[u8; 64]) -> Result<[u8; 32], bool> {
+    /// `Err(true)` where another key of the domain (its founder, a tier)
+    /// signed it or it has no reserve (the boundary's `NotThroughCore`),
+    /// `Err(false)` where no key of it did (`Unsigned`).
+    pub(crate) fn reserve_signed(&self, domain: &[u8; 32], bytes: &[u8], sig: &[u8; 64]) -> Result<[u8; 32], bool> {
         let reserve = self.reserve_of(domain);
         if let Some(r) = reserve.filter(|r| crate::court::identity::verify(r, bytes, sig)) {
             return Ok(r);
@@ -366,9 +368,12 @@ impl Court {
         }
         let reserve = match self.reserve_signed(&e.domain, &e.signed_bytes(), &s.sig) {
             Ok(r) => r,
-            Err(true) => return refuse(R::NotReserve),
+            Err(true) => return Ledgered::Boundary(Boundary::NotThroughCore { act: UniverseAct::Anchor, domain: e.domain }),
             Err(false) => return refuse(R::Unsigned),
         };
+        if let Err(why) = self.signatory(UniverseAct::Anchor, e.domain, reads) {
+            return Ledgered::Boundary(why);
+        }
         if !self.final_in_view(&e.point, fin.as_ref()) {
             return refuse(R::NotFinal);
         }
@@ -512,9 +517,12 @@ impl Court {
         }
         let reserve = match self.reserve_signed(&a.domain, &a.signed_bytes(), &s.sig) {
             Ok(r) => r,
-            Err(true) => return refuse(R::NotReserve),
+            Err(true) => return Mapped::Boundary(Boundary::NotThroughCore { act: UniverseAct::Map, domain: a.domain }),
             Err(false) => return refuse(R::Unsigned),
         };
+        if let Err(why) = self.signatory_now(UniverseAct::Map, a.domain) {
+            return Mapped::Boundary(why);
+        }
         if !self.final_in_view(&a.point, fin.as_ref()) {
             return refuse(R::NotFinal);
         }

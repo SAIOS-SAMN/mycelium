@@ -88,9 +88,18 @@ impl Reconstructed<crate::anastome::dialogue::uplink::SignedFold> {
     /// fold's own coordinates (its tier, prefix head, and the commitments
     /// to its rows, children and handoffs, each re-derived from what the
     /// fold carries; `TierFold::signed_bytes`), and the tier's signature
-    /// verifies over them. `None` where it does not: no carried commitment
-    /// stands in for the fold, and nothing admits it
-    /// (`Court::hear_uplink` answers `Uplinked::Unsigned`).
+    /// verifies over them. Refused `Uplinked::Unsigned` where it does not:
+    /// no carried commitment stands in for the fold, and nothing admits it.
+    ///
+    /// MU-HOSTING §5a.3, ROADMAP track 24 B3 — and REBUILT UNDER THE
+    /// UNIVERSAL LAWS: every transition the fold states, and every one a
+    /// line it carries states (at any depth), is verified under L0 at
+    /// `LAW_VERSION` on its own coordinates (`laws::verify_sized`, the
+    /// verifier a kernel asks on `ACT_LAWS` mode 1). A transition that
+    /// breaks a law is refused `Uplinked::NotLawful`, naming where it stands
+    /// and each breach with its law; one with a law unread is answered
+    /// `Uplinked::Unread`, neither admitted nor refused. A fold names no law
+    /// it was computed under, so none is admitted on a declared name.
     ///
     /// The vertex admits only the reconstructed fold; a claimed one does
     /// not compile (`vertex_admits_only_a_reconstructed_fold`):
@@ -105,14 +114,45 @@ impl Reconstructed<crate::anastome::dialogue::uplink::SignedFold> {
     ///
     /// ```
     /// fn admitted(k: &mut mycelium::cognition::Court, f: &mycelium::anastome::dialogue::uplink::SignedFold) {
-    ///     if let Some(r) = mycelium::court::admission::Reconstructed::fold(f) {
+    ///     if let Ok(r) = mycelium::court::admission::Reconstructed::fold(f) {
     ///         let _ = k.admit_uplink(&r);
     ///     }
     /// }
     /// ```
-    pub fn fold(f: &crate::anastome::dialogue::uplink::SignedFold) -> Option<Reconstructed<crate::anastome::dialogue::uplink::SignedFold>> {
-        crate::court::identity::verify(&f.fold.tier, &f.fold.signed_bytes(), &f.sig).then(|| Reconstructed { object: f.clone() })
+    pub fn fold(
+        f: &crate::anastome::dialogue::uplink::SignedFold,
+    ) -> Result<Reconstructed<crate::anastome::dialogue::uplink::SignedFold>, crate::anastome::dialogue::uplink::Uplinked> {
+        if !crate::court::identity::verify(&f.fold.tier, &f.fold.signed_bytes(), &f.sig) {
+            return Err(crate::anastome::dialogue::uplink::Uplinked::Unsigned);
+        }
+        lawful(&f.fold, &mut Vec::new())?;
+        Ok(Reconstructed { object: f.clone() })
     }
+}
+
+/// B3 — EVERY TRANSITION A FOLD STATES, AND ITS CARRIED LINES', reconstructed
+/// under L0: the first that breaks a law refused `NotLawful` with every
+/// breach it carries, the first with a law unread answered `Unread`; the
+/// fold's own before its lines', each line in its order.
+fn lawful(fold: &crate::anastome::dialogue::uplink::TierFold, path: &mut Vec<usize>) -> Result<(), crate::anastome::dialogue::uplink::Uplinked> {
+    use crate::anastome::dialogue::uplink::{Child, Uplinked};
+    for (index, t) in fold.transitions.iter().enumerate() {
+        let v = crate::physics::laws::verify_sized(t);
+        if !v.breaches.is_empty() {
+            return Err(Uplinked::NotLawful { path: path.clone(), index, breaches: v.breaches });
+        }
+        if !v.unmeasured.is_empty() {
+            return Err(Uplinked::Unread { path: path.clone(), index, unmeasured: v.unmeasured });
+        }
+    }
+    for (i, c) in fold.children.iter().enumerate() {
+        if let Child::Carried(line) = &c.child {
+            path.push(i);
+            lawful(&line.fold, path)?;
+            path.pop();
+        }
+    }
+    Ok(())
 }
 
 impl Reconstructed<crate::anastome::dialogue::domain::SignedDomain> {
