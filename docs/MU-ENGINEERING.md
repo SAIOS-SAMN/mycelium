@@ -178,7 +178,8 @@ The gate is held by the two commands of
    reading bound (no `.rs` file over 2500 lines), the Euclidean
    vocabulary (no code line naming a grid-indexing shape such as a Morton
    curve, a bounding box or a subdivision tree), the numbers gate and the
-   drift register;
+   drift register, and the transport's carrier names (§9,
+   [`gate/src/layers.rs`](../gate/src/layers.rs));
 2. clippy over every workspace member with warnings denied, under the one
    lint table of `Cargo.toml` and the disallowed types and methods of
    `clippy.toml`: maps and sets, digests (`blake3::hash`), wall-clock
@@ -225,3 +226,82 @@ are rewritten atomically; a restore rebuilds the basis (a derived index)
 from the lettered federation, and `prune_basis_to_ruled` drops the words
 the court has not ruled. Within one layout, residues,
 thoughts, and dialects are never deleted (`MU-STANDARDS.md` §10).
+
+## 9. Transport, carrier and coordinate
+
+Three layers, each with one job (coordinator ruling, 2026-11-05). The
+gate holds the first boundary: no transport source names a carrier type
+([`gate/src/layers.rs`](../gate/src/layers.rs)).
+
+### 9.1 The model
+
+- **Transport** moves bytes between two endpoints: the connection, the
+  channel's security (Noise), delimitation (a length) and flow (deferral).
+  It never holds meaning.
+- **Carrier** is the exact object that holds meaning at full dimension.
+  It describes itself (its rank, its signature, its keys), is written
+  canonically, and never projects to fewer dimensions.
+- **Coordinate** is where something stands. It routes and never
+  identifies. TUniversal stamps and never drives.
+
+| Layer | What it is | What it may know | What it must never hold |
+|---|---|---|---|
+| Transport | The connection; channel security (Noise); delimitation by a length; flow by deferral. Sources: `src/network/wire.rs`, `src/network/noise.rs`, `src/bin/mycelium-server/transport.rs` (listed once, as `TRANSPORT` in the gate) | Byte counts, the body budget, rtt in strokes, peer keys, capacity | Meaning: a lane, a rank, a coordinate, the identity of content, any carrier type |
+| Carrier | `Mv` (`Cl(p, q)`, carrying its `n` and signature; `algebra/src/multivector.rs`), `Sample` (rank `n`; `src/transducer/sample.rs`), `Modes` (μ per lane as vectors; `src/economy/modes.rs`), `Coordinate` (lanes as keyed vectors; `forms/src/coordinate.rs`), `SectionSite`, `Turn`, and the passage's hold and reach (`forms/src/passage.rs`) | Its own description: rank, signature, lane keys; its canonical writing | A projection to fewer dimensions: a scalar per lane, a fixed four, a floor, `==` on a digest as identity |
+| Coordinate | A body at `origin / h : S:G:T:H : K` (proposal 78.173); an event at a TUniversal height on a signer's line, at its position `i`; a site within a sample | Where a thing stands; the route to it | Identity: a coordinate locates and routes, and never names what stands there. TUniversal stamps an event and never drives an advance |
+
+**Composition.** The transport carries utterances: anastome acts, each
+its tag, its content, its signature and the TUniversal point its speaker
+read. An utterance's identity is its content written out
+(`MU-RECURSION.md` A21), never a digest of its bytes. Its carriers stand
+at coordinates. An admitted utterance is an event of the
+multi-dimensional ledger (lane × layer × grade).
+
+### 9.2 Known violations
+
+Each is a place where a layer holds what belongs to another. The gate
+lists the transport's ones as exceptions (`EXCEPTIONS` in
+[`gate/src/layers.rs`](../gate/src/layers.rs)), each with the release
+that removes it; an exception whose carrier no longer stands in its file
+is refused as stale.
+
+| Violation | Where | Fix | When |
+|---|---|---|---|
+| The frame's lane byte: the transport labels meaning. Every act is written on `Lane::Spatial` and every reply echoes the request's lane; no reader decides on it | `src/network/wire.rs` (`Lane`, `WireFrame::lane`), `src/bin/mycelium-server/transport.rs`; about 77 `WireFrame` writes, among them `src/client/sdk/session.rs`; the SDK re-exports `Lane`, `read_lane` and `POINTED` (`sdk/src/house.rs`) | The envelope becomes a length and a body; the lane byte is removed | v0.5.0, a breaking wire release |
+| The TUniversal point rides the envelope: the pointed frame's flag bit and trailer (78.152 TU-7) | `src/network/wire.rs` (`POINTED`, `encode_at`, `split_point`), `src/network/noise.rs`, `src/bin/mycelium-server/transport.rs` | The point read moves into the utterance, beside its tag, content and signature; MU-CONCORDANCE 1.11 says "behind its body on the frame" and changes with it (*Network contract*) | v0.5.0, with the lane byte (proposed) |
+| The transport reads and writes content: the frame's encoder reads the act tag for the observer (`act_tag`), and the door writes a refusal body (`encode_outcome`) | `src/network/wire.rs`, `src/bin/mycelium-server/transport.rs` | The observer counts bytes by act above the transport; the refusal is spoken by the judge layer | Open (found by this audit) |
+| `Mu` as four scalar lanes | `src/economy/mu.rs` | `Modes` replaces `Mu` (ROADMAP 1b) | v0.5.0 |
+| `[u64; 4]` in quotes and deferrals | `src/anastome/dialogue/quote.rs` (`encode_outcome`, `encode_deferral`) | `Modes` on the wire | v0.5.0 |
+| `payload_hash` and `==` on digests as identity | `src/chronometry/receipt.rs`, and the sites track 25 X0 lists | Identity is the content written out (A21); a digest only locates, links or commits | Track 25 (X0 drift guards, #28) |
+| Noise built and not wired: the mesh runs in plaintext | `src/network/noise.rs` | The door and the session open the channel | Open |
+| `home_trie`'s `lane & 3`: a lane folded onto the base four | `src/network/nerve/home_trie.rs` | Lanes read as keys, never masked | In progress |
+
+### 9.3 Names to settle
+
+"Frame" names ten distinct things. By MU-STANDARDS one name has one
+meaning, so each is to be renamed by its function. No code identifier is
+renamed here; the renames follow the dead-code cleanup of
+`src/network/wire.rs`. Counts are of the distinctive identifiers in Rust
+sources (`src/`, `algebra/`, `forms/`, `sdk/`, `sources/`, `tests/`,
+`gate/`) and of matching phrases in the documents (`docs/`, README,
+AGENTS, ROADMAP, GLOSSARY), read 2026-11-05; the bare words `frame`,
+`frames` and `Frame` (about 3,550 in code and 1,000 in documents) are
+counted under the meaning of their area, not apiece.
+
+| Meaning | Where (examples) | Code identifiers | Document phrases | Proposed name |
+|---|---|---|---|---|
+| The wire envelope: one act's bytes with their lane byte and length | `WireFrame`, `frame_budget`, `read_frame`, `write_frame`, `hear_frame`, `FrameOverBudget`, `PageEnd::Frame`, `Inflow::Frame`, `receipts_frame`, the era file's `append_frame` | about 254 | about 57 | An utterance delimited by its length: `Delimited` for the envelope, `BODY_BUDGET` alone for the budget, `read_delimited`, `PageEnd::Budget`; the era file's record is a `record` |
+| One sample of a family along `e₃` (78.75; the GLOSSARY's *Frame* today) | `Frames`, `frame_key`, `frame_spelling`, `put_frame`, `member_frames`, `section_of_frames`, `at_frame_zero`, `perceive_frames`, `edges_rederive_frames`, `HeldPose::OneFrame` | about 254 | about 44, and most of MU-RECURSION's 538 | The family's sample `k`: `sample_key`, `sample_spelling`, `samples_of_section`, `HeldPose::OneSample` |
+| The sample's own extent, read as a whole | `Layer::Frame`, `Vertex::Frame`, `VertexAt::Frame`, `frame_fixed_on_ground`, `frame_faces`, `frame_boundary`, `share_of_frame`, `ShapePeriods::InFrame`; "frame fixing" (MU-SENSING §6.1) | about 130 | about 44 | The enclosure, after `transduce::Enclosure`: `Layer::Enclosure`, `Vertex::Enclosure`, `enclosure_faces`, `share_of_enclosure`, "enclosure fixing" |
+| Perception's measured `Frame` defect: four counts of a pair, two planar axes fixed | `src/transducer/element/residue.rs` (`Frame { h_in, w_in, h_out, w_out }`), `from_canonical_framed`, `from_residue_framed`, `frame_ratio`, the "frame fibre" ρ | about 40 | about 24 | The re-period, per phase at rank `n`: `Reperiod`, after `Enclosure::reperiod` (track 26 S4 replaces the four counts) |
+| The frame acts: panes and tiles | `Act::Panes`, `Act::Tile`, `statement::Spoken.frame`, `Unstated::Unframed` (`src/transducer/family/statement.rs`) | about 23 | about 20 | Enclosure acts: `Spoken.extents`, `Unstated::NoEnclosure` |
+| The μ an act or an orbit measured | `frame_of` in `src/server/cognition/cite.rs`, `orbit_frame`, the clock's `unframed` count | about 43 | about 21 | The measure: `measure_of`, `orbit_measure`, `unmeasured` (and `Modes`, not `[u64; 4]`) |
+| The passage's `Frame` (hold, reach) and "frame state" | `forms/src/passage.rs` (`Frame`, `PassageRefusal::NotFrame`) | about 38 | about 19 | The passage state: `PassageState { hold, reach }`, `NotOnPolePlane` |
+| A frame of reference: an observer's perspective and the conformal map between two | `forms/src/frame.rs` (`Reference`), `InFrame` in closeness, a constellation's `frames` (posed nuclei), a mouth's `from_frame` and `to_frame`, `frame_base_point` | about 65 | about 14 | The reference: module `reference`, a "reference map"; a constellation's `poses`; a mouth's `from_chart` and `to_chart`; `pose_point` |
+| A basis of vectors | `src/transducer/cga/dual.rs` (`DualFrame`), `on_frame` in the pose reader | about 26 | about 6 | The reciprocal basis: `ReciprocalBasis`, `on_basis` |
+| An external name | "Noise Protocol Framework" | 2 | — | Kept |
+
+"Carrier" is a second name to settle: §9's carrier (the object holding
+meaning) stands beside the client's carrier thread and the network's
+keyed carrier (GLOSSARY *Carrier*), and `src/anastome/dialogue/carrier.rs`
+reads the act tag. The first is the meaning this section fixes.
