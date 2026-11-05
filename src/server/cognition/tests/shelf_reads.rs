@@ -42,12 +42,12 @@ fn publish_agrees_with_court_on_reads() {
     assert_eq!(p.ruled_digests_for(&[0x7c; 32]), None, "another asker is not the court's voice");
     assert_eq!(p.syllabus_seed(), k.syllabus_seed().as_slice());
     assert!(!p.syllabus_seed().is_empty(), "the court holds ruled words");
-    assert_eq!(p.head_receipt(), k.chain().head().as_ref());
+    assert!(p.head_receipt().zip(k.chain().head()).is_some_and(|(a, b)| super::fixtures::one_receipt(a, &b)));
     // An act moves the head, nothing else: the next reading's head receipt
     // is the new one, its ruled cover and own cover the same pointers.
     k.append_step(ActKind::List, [1; 32], [2; 32]);
     let q = k.publish(Some(&p)).expect("the head moved");
-    assert_eq!(q.head_receipt(), k.chain().head().as_ref());
+    assert!(q.head_receipt().zip(k.chain().head()).is_some_and(|(a, b)| super::fixtures::one_receipt(a, &b)));
     assert!(std::sync::Arc::ptr_eq(&p.own.ruled, &q.own.ruled), "the ruled cover did not move: shared");
     assert!(std::sync::Arc::ptr_eq(&p.own.cover, &q.own.cover), "the own cover did not move: shared");
 }
@@ -88,7 +88,7 @@ fn rows_below_page_pages_whole_prefix() {
     let own_vk = k.chain().signer();
     let line = k.chain().line_between(&own_vk, None, Place { k: u64::MAX, i: u64::MAX }, usize::MAX);
     for r in &line {
-        let anchor = (r.stamp, r.chain_hash);
+        let anchor = (r.stamp, r.chain_hash.bytes());
         let who = u8::try_from(r.stamp.i + 1).expect("an orbit holds a few acts");
         let _ = k.treasury.genesis([who; 32], [1, 0, 0, 0], anchor);
     }

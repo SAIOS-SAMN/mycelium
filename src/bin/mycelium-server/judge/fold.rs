@@ -59,7 +59,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
     }
     // The home signed the root written out (`Root::signed`, #91): the
     // root it states is the one proposed, place, height and hash.
-    if mycelium::chronometry::Root::of_signed(&p.section.prefix.payload) != Some(p.root) {
+    if !mycelium::chronometry::Root::of_signed(&p.section.prefix.payload).is_some_and(|r| r.restates(&p.root)) {
         refuse(s, mycelium::verdict::REFUSE_RECEIPT);
         return;
     }
@@ -169,9 +169,10 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &WireFrame, context: &Context) {
             receipts,
         }, &p.section, &section));
     }
+    let root = p.root.hash.bytes();
     eprintln!(
         "  court fold witnessed {:02x}{:02x}… co-signed {:02x}{:02x}…",
-        home[0], home[1], p.root.hash[0], p.root.hash[1]
+        home[0], home[1], root[0], root[1]
     );
     say(s, dialogue::FoldWitness::CoSigned { section: Box::new(section) });
 }

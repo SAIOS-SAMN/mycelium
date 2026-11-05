@@ -677,7 +677,7 @@ impl Court {
                 return None;
             }
             let at = FoldAt::from_key(key)?.stamp;
-            let receipt = self.chain.node(&at)?.chain_hash;
+            let receipt = self.chain.node(&at)?.chain_hash.bytes();
             Some(match rec.children {
                 None => Uplinked::Admitted { at, receipt },
                 Some(_) => {
@@ -773,7 +773,7 @@ impl Court {
         let open = self.ledgers.open_in(&domain).len();
         Uplinked::Chained {
             at: stamp,
-            receipt: r.chain_hash,
+            receipt: r.chain_hash.bytes(),
             provisional: open > 0,
             obstructions: count(open),
             open_remainders: count(open_remainders),

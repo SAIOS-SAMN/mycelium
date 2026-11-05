@@ -241,7 +241,7 @@ impl Court {
         }
         self.reserves.insert(r.domain, held);
         self.mark_persist();
-        Founded::Reserved { at: sealed.stamp, receipt: sealed.chain_hash, now }
+        Founded::Reserved { at: sealed.stamp, receipt: sealed.chain_hash.bytes(), now }
     }
 
     /// 78.127 — A DOMAIN'S RESERVE AS READ: its tier now, a redesignation
@@ -288,11 +288,11 @@ impl Court {
             version: o.version,
             commitment: o.commitment,
             at: sealed.stamp,
-            receipt: sealed.chain_hash,
+            receipt: sealed.chain_hash.bytes(),
         };
         self.origins.insert(o.domain, held);
         self.mark_persist();
-        Founded::Originated { at: sealed.stamp, receipt: sealed.chain_hash }
+        Founded::Originated { at: sealed.stamp, receipt: sealed.chain_hash.bytes() }
     }
 
     /// 78.132 — A DOMAIN'S ORIGIN AS HELD, or none. Sealing nothing.
@@ -361,7 +361,7 @@ impl Court {
         // A RESEND is answered with its original receipt: nothing twice.
         if matches!(h.handoff, Handoff::ConvertOut(_) | Handoff::ConvertIn(_)) {
             if let Some(c) = self.handoffs.conversions.get(&id) {
-                return match Stamp::from_key(&c.at).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash))) {
+                return match Stamp::from_key(&c.at).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash.bytes()))) {
                     Some((at, receipt)) => Handed::Sealed { at, receipt, id, state: c.state },
                     None => refuse(R::Offered),
                 };
@@ -386,12 +386,12 @@ impl Court {
                     return refuse(R::ReserveShort);
                 }
                 let Some(r) = self.seal_handoff(h, id, 5) else { return refuse(R::LineRefused) };
-                if self.treasury.pay(c.tier, c.holder, mu.clone(), (r.stamp, r.chain_hash)).is_err() {
+                if self.treasury.pay(c.tier, c.holder, mu.clone(), (r.stamp, r.chain_hash.bytes())).is_err() {
                     return refuse(R::ReserveShort);
                 }
                 let held = Conversion { dir: Direction::Out, tier: c.tier, holder: c.holder, identity: c.identity, g: c.g, mu, state: State::Accepted, side: None, at: r.stamp.key() };
                 self.hold_conversion(id, held);
-                Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state: State::Accepted }
+                Handed::Sealed { at: r.stamp, receipt: r.chain_hash.bytes(), id, state: State::Accepted }
             }
             Handoff::ConvertIn(c) => {
                 if h.who != c.holder {
@@ -410,7 +410,7 @@ impl Court {
                     return refuse(R::HolderShort);
                 }
                 let Some(r) = self.seal_handoff(h, id, 6) else { return refuse(R::LineRefused) };
-                if self.treasury.hold(c.holder, &id, c.mu.clone(), (r.stamp, r.chain_hash)).is_err() {
+                if self.treasury.hold(c.holder, &id, c.mu.clone(), (r.stamp, r.chain_hash.bytes())).is_err() {
                     return refuse(R::HolderShort);
                 }
                 let opened = r.stamp.h;
@@ -426,7 +426,7 @@ impl Court {
                     at: r.stamp.key(),
                 };
                 self.hold_conversion(id, held);
-                Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state: State::Offered { opened } }
+                Handed::Sealed { at: r.stamp, receipt: r.chain_hash.bytes(), id, state: State::Offered { opened } }
             }
             Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. } => {
                 let Some(held) = self.handoffs.conversions.get(&id).cloned() else { return refuse(R::UnknownId) };
@@ -445,7 +445,7 @@ impl Court {
                     _ => 3,
                 };
                 let Some(r) = self.seal_handoff(h, id, kind) else { return refuse(R::LineRefused) };
-                let anchor = (r.stamp, r.chain_hash);
+                let anchor = (r.stamp, r.chain_hash.bytes());
                 let state = match kind {
                     1 => match self.treasury.release_held(&id, held.tier, anchor) {
                         Ok(_) => State::Accepted,
@@ -460,7 +460,7 @@ impl Court {
                     c.state = state;
                 }
                 self.mark_persist();
-                Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state }
+                Handed::Sealed { at: r.stamp, receipt: r.chain_hash.bytes(), id, state }
             }
             Handoff::Offer(_)
             | Handoff::Mouth(_)
@@ -546,7 +546,7 @@ impl Court {
         };
         let cite = Cite::Bond { domain: b.domain, tier: b.tier, mu: after.clone() };
         let Some(r) = self.seal_step(ActKind::Domain, [0; 4], b.reserve, |_| vec![cite.clone()]) else { return Founded::LineRefused };
-        let anchor = (r.stamp, r.chain_hash);
+        let anchor = (r.stamp, r.chain_hash.bytes());
         if held.is_some() {
             let _ = self.treasury.refund_held(&key, anchor);
         }
@@ -554,7 +554,7 @@ impl Court {
             return Founded::Short;
         }
         self.mark_persist();
-        Founded::Bonded { at: r.stamp, receipt: r.chain_hash, bond: after }
+        Founded::Bonded { at: r.stamp, receipt: r.chain_hash.bytes(), bond: after }
     }
 
     /// Whether a fold of the tier is not yet final — one its bond still backs.

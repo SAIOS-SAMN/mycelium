@@ -28,12 +28,16 @@ pub use crate::court::verdict::{
 /// and never a digest of frame bytes, so two spellings of one word share
 /// one receipt lineage and a receiver reads coordinates off the address
 /// (law 2). `prev_receipt_hash` is a digest of receipt bytes because the
-/// receipt bytes are the object there (Part IX).
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// receipt bytes are the object there (Part IX). It is typed in the
+/// commitment sense (`Commitment`, MU-HOSTING §5a.10): the prefix binds its
+/// receipt to the predecessor, decided only over the reconstructed receipt
+/// (`Commitment::binds`). So the prefix has no `==`; two prefixes are
+/// compared by their coordinates written out.
+#[derive(Debug, Clone)]
 pub struct SignedPrefix {
     pub genesis: [u8; 32],
     pub epoch: u32,
-    pub prev_receipt_hash: [u8; 32],
+    pub prev_receipt_hash: super::Commitment,
     pub at: crate::chronometry::Place,
     pub height: u64,
     /// THE CHART'S AXES, WRITTEN OUT — its own key (law 2): each coordinate
@@ -78,7 +82,7 @@ impl SignedPrefix {
         let mut out = Vec::with_capacity(Self::FIXED + 4 + self.chart.len() + self.payload.len());
         out.extend_from_slice(&self.genesis);
         out.extend_from_slice(&self.epoch.to_le_bytes());
-        out.extend_from_slice(&self.prev_receipt_hash);
+        out.extend_from_slice(&self.prev_receipt_hash.bytes());
         out.extend_from_slice(&self.at.k.to_le_bytes());
         out.extend_from_slice(&self.at.i.to_le_bytes());
         out.extend_from_slice(&self.height.to_le_bytes());
@@ -112,6 +116,7 @@ impl SignedPrefix {
         if p != b.len() {
             return None;
         }
+        let prev_receipt_hash = super::Commitment::of_bytes(prev_receipt_hash);
         Some(SignedPrefix { genesis, epoch, prev_receipt_hash, at, height, chart, payload })
     }
 }

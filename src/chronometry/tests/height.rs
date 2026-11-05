@@ -118,7 +118,7 @@ fn from_line_round_trips() {
     let tape = c.line_image().expect("the line writes");
     let (back, torn) = ReceiptChain::from_line(&tape).expect("and reads back");
     assert!(!torn, "whole");
-    assert_eq!(back.nodes().collect::<Vec<_>>(), c.nodes().collect::<Vec<_>>());
+    assert!(super::fixtures::one_run(&back.nodes().collect::<Vec<_>>(), &c.nodes().collect::<Vec<_>>()));
     assert_eq!((back.head_k(), back.head_height(), back.head_hash()), (c.head_k(), c.head_height(), c.head_hash()));
     assert_eq!(back.line_head(&[2; 32]).map(|r| r.stamp), Some(p0.stamp), "the peer's line is read off the same file");
 }
@@ -138,6 +138,7 @@ fn height_of_finds_held_nodes_at_stamps() {
         assert_eq!(c.height_of(&cite(&r)), Some(r.stamp.h), "its own, at its stamp");
     }
     assert_eq!(c.height_of(&cite(&p0)), Some(0), "and one it admitted");
-    assert_eq!(c.height_of(&Parent { at: p0.stamp, hash: [0xab; 32] }), None, "a stamp held under another hash is unmeasured");
+    let elsewhere = Parent { at: p0.stamp, hash: crate::court::admission::Predecessor::of_bytes([0xab; 32]) };
+    assert_eq!(c.height_of(&elsewhere), None, "a stamp held under another hash is unmeasured");
     assert_eq!(c.at_tick(0).len(), 2, "tick 0 holds this chain's genesis and the peer's: the mesh's width there");
 }

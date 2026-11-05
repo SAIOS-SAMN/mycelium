@@ -6,6 +6,32 @@ such change is named here.
 
 ## Unreleased
 
+### The receipt records typed by sense (track 25, X0 stage 2; #28)
+- **Network contract:** no wire byte, act, ledger layout or signed byte
+  changes. Each typed field is the same 32 bytes, read in and written out
+  by `of_bytes` and `bytes`.
+- **The record fields carry the digest types.** `Parent::hash`,
+  `KStepReceipt::chain_hash`, the fold `Root::hash` and the two hashes of
+  `Admitted::Equivocation` are `Predecessor` (link).
+  `SignedPrefix::prev_receipt_hash` and `KStepReceipt::prev_hash` are
+  `Commitment`. None has `==`, so no bare comparison of a record's digest
+  can be written.
+- **`PartialEq` removed** from `Parent`, `KStepReceipt`, `SignedPrefix`,
+  `Root`, `Era`, `Admitted` and the fold `Proposal`. New named readings:
+  `Parent::of` (the citation naming a held receipt) and `Root::restates`
+  (one place, one height, a chain continuing across the two hashes).
+  Moved with the fields: the packed line's anchors and predecessors
+  (`chronometry::pack`), the archive's era comparisons (`era_locates`,
+  address sense), `verify_chain_integrity`, the fold's witness check,
+  and the snapshot's ledger rows read against their receipt.
+- **Tests:** whole-record comparisons are rewritten to the named
+  methods (`one_receipt`, `one_run`, `one_root`, `one_era`,
+  `one_archive`, `one_proposal` and `one_prefix` in the test fixtures),
+  or to the coordinates written out. The SDK's receipts conformance
+  sample seals its receipt and checks that the decoded one re-derives.
+  No claim was dropped.
+- **Open:** `Cite::Root`'s hash is still bare.
+
 ### A fold root's signatures cover its place and height (track 24, #91)
 - **Network contract**, inside v0.4.0's break:
   - **The root's signing domain changes.** The home's and the witness's

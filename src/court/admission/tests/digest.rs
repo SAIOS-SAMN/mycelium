@@ -43,7 +43,7 @@ fn commitment_binds_only_a_reconstructed_object() {
     assert!(!signed.binds(&r2), "and binds no other receipt");
     let mut forged = rs[1].clone();
     forged.mu = [0, 0, 0, 9];
-    assert_eq!(forged.prev_hash(), signed.bytes(), "the forged receipt carries the committed predecessor");
+    assert_eq!(forged.prev_hash().bytes(), signed.bytes(), "the forged receipt carries the committed predecessor");
     assert!(Reconstructed::receipt(&forged).is_none(), "and is never reconstructed, so no commitment binds it");
 }
 
@@ -71,7 +71,7 @@ fn predecessor_continues_held_record_and_reads_fork() {
 #[test]
 fn locator_locates_by_its_bytes_alone() {
     let rs = line([1; 32], 2);
-    let (a, b) = (Locator::of_bytes(rs[0].chain_hash), Locator::of_bytes(rs[1].chain_hash));
+    let (a, b) = (Locator::of_bytes(rs[0].chain_hash.bytes()), Locator::of_bytes(rs[1].chain_hash.bytes()));
     assert!(a.locates(&Locator::of_bytes(a.bytes())), "a locator finds the place it names");
     assert!(!a.locates(&b), "and not another");
 }

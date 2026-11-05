@@ -71,13 +71,13 @@ fn admit_uplink_seals_fold_coordinates_and_restores() {
     let mut k = reserved();
     let Uplinked::Admitted { at, receipt } = k.admit_uplink(&fold.clone().sign(&key)) else { panic!("admitted") };
     let head = k.chain.head().expect("sealed on the line");
-    assert_eq!((head.stamp, head.chain_hash), (at, receipt), "the answer is the receipt's id");
+    assert_eq!((head.stamp, head.chain_hash.bytes()), (at, receipt), "the answer is the receipt's id");
     assert_eq!(head.kind, ActKind::Uplink);
     assert_eq!(head.cites, vec![Cite::Uplink { tier: fold.tier, prefix: fold.prefix, rows }]);
     let snap = k.snapshot();
     let mut booted = Court::new();
     assert!(booted.restore(&snap), "the line with an uplink restores");
-    assert_eq!(booted.chain.head().map(|h| h.chain_hash), Some(receipt), "the same head");
+    assert_eq!(booted.chain.head().map(|h| h.chain_hash.bytes()), Some(receipt), "the same head");
     // 78.120 — and the domain restores with it: its tier's next fold admitted.
     let next = TierFold { prefix: [8u8; 32], ..trade(&key) };
     assert!(matches!(booted.admit_uplink(&next.sign(&key)), Uplinked::Admitted { .. }), "the domain held across the restart");

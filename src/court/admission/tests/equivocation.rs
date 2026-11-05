@@ -53,7 +53,7 @@ fn admit_equivocation_proves_two_hashes_at_one_place() {
     let vk = key.verifying_bytes();
     let (ra, rb) = (first_receipt(vk, 1), first_receipt(vk, 2));
     assert_eq!(ra.stamp.place(), rb.stamp.place(), "one place");
-    assert_ne!(ra.chain_hash, rb.chain_hash, "two roots");
+    assert!(Predecessor::of(&ra).forks(&Predecessor::of(&rb)), "two roots");
     let (pa, pb) = (prefix_for(&ra), prefix_for(&rb));
     let proof = admit_equivocation(signed(&pa, &key), &ra, signed(&pb, &key), &rb).expect("a proof");
     assert_eq!(proof, Equivocated { vk, at: crate::chronometry::Place::GENESIS }, "the signer and the place it lied at");
@@ -106,7 +106,9 @@ fn admit_equivocation_refuses_self_disagreeing_half() {
     let (ra, rb) = (first_receipt(vk, 1), first_receipt(vk, 2));
     let (pa, pb) = (prefix_for(&ra), prefix_for(&rb));
     let mut forged = rb.object().clone();
-    forged.chain_hash[0] ^= 1;
+    let mut hash = forged.chain_hash.bytes();
+    hash[0] ^= 1;
+    forged.chain_hash = Predecessor::of_bytes(hash);
     assert!(Reconstructed::receipt(&forged).is_none(), "a hash nobody wrote is not reconstructed");
     let mut at_another_k = pb.clone();
     at_another_k.at.k += 1;

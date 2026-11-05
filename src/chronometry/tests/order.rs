@@ -34,7 +34,8 @@ fn precedes_implies_lower_height_and_keeps_concurrency() {
     let d0 = step(&mut d, Vec::new());
     let mut e = ReceiptChain::with_signer([4; 32]);
     let e0 = step(&mut e, Vec::new());
-    assert_ne!(d0.chain_hash, e0.chain_hash, "two signers, two nodes");
+    let hash = |r: &KStepReceipt| crate::court::admission::Locator::of_bytes(r.chain_hash.bytes());
+    assert!(!hash(&d0).locates(&hash(&e0)), "two signers, two nodes");
     let mut mix = ReceiptChain::with_signer([1; 32]);
     step(&mut mix, Vec::new());
     mix.admit(d0.clone());

@@ -17,6 +17,7 @@
 use super::chain::height_over;
 use super::era::Root;
 use super::receipt::{ActKind, Cite, KStepReceipt, Parent, Place, Stamp};
+use crate::court::admission::Predecessor;
 use crate::network::nerve::Keyed;
 
 const SIGNER: u8 = 1;
@@ -73,11 +74,18 @@ fn take_count(b: &[u8], p: &mut usize) -> Option<usize> {
 
 /// THE LAST NODE OF A LINE the stream carries: what the next node of that
 /// line re-derives its place, height and predecessor from.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 struct Top {
     at: Stamp,
     kind: ActKind,
-    hash: [u8; 32],
+    hash: Predecessor,
+}
+
+impl Top {
+    /// The last node as the next node of its line names it.
+    fn parent(&self) -> Parent {
+        Parent { at: self.at, hash: self.hash }
+    }
 }
 
 /// WHAT A STREAM HAS ALREADY WRITTEN: its signers and operators by index,
@@ -128,7 +136,7 @@ impl Packer {
         match (r.prev, top) {
             (None, _) if r.stamp.place() == Place::GENESIS => rec.push(PREV_NONE),
             (None, _) => return None,
-            (Some(p), Some(t)) if p == (Parent { at: t.at, hash: t.hash }) && t.at.place().after(t.kind) == r.stamp.place() => {
+            (Some(p), Some(t)) if Predecessor::cites(&p, &t.parent()) && t.at.place().after(t.kind) == r.stamp.place() => {
                 rec.push(PREV_LINE);
             }
             (Some(p), _) => {
@@ -161,7 +169,7 @@ impl Packer {
             put_var(out, signer);
             put_var(out, t.at.k);
             put_var(out, t.at.i);
-            out.extend_from_slice(&t.hash);
+            out.extend_from_slice(&t.hash.bytes());
         }
     }
 
@@ -253,7 +261,7 @@ impl Unpacker {
                 let hash: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                 *p += 32;
                 let top = self.tops.get(&vk)?;
-                (top.at.place() == at && top.hash == hash).then_some(Record::Read)
+                (top.at.place() == at && top.hash.continues(&Predecessor::of_bytes(hash))).then_some(Record::Read)
             }
             ROOT => Some(Record::Root(Root::read(b, p)?)),
             GONE => Some(Record::Gone(Stamp::take_canonical(b, p)?)),
@@ -275,7 +283,7 @@ impl Unpacker {
             PREV_NONE => (None, Place::GENESIS),
             PREV_LINE => {
                 let t = self.tops.get(&vk)?;
-                (Some(Parent { at: t.at, hash: t.hash }), t.at.place().after(t.kind))
+                (Some(t.parent()), t.at.place().after(t.kind))
             }
             PREV_NAMED => {
                 let prev = Parent::take(b, p)?;

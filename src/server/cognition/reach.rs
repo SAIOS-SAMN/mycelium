@@ -145,7 +145,7 @@ impl Court {
         let (vk, at) = (named.at.vk, named.at.place());
         let covered = self
             .unreached_at(&vk, at)
-            .is_some_and(|held| Predecessor::cites(&named, &Parent { at: held.stamp, hash: held.chain_hash }));
+            .is_some_and(|held| Predecessor::cites(&named, &Parent::of(held)));
         if !covered {
             return 0;
         }

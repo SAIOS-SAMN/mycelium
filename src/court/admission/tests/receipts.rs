@@ -63,13 +63,21 @@ fn take(ledger: &mut ReceiptChain, r: &KStepReceipt) -> Admitted {
     got
 }
 
+/// ONE PREFIX, by its coordinates written out: a prefix has no `==`, and
+/// the predecessor it commits to is read as its 32 bytes (MU-HOSTING
+/// §5a.10).
+fn one_prefix(a: &SignedPrefix, b: &SignedPrefix) -> bool {
+    (a.genesis, a.epoch, a.prev_receipt_hash.bytes(), a.at, a.height) == (b.genesis, b.epoch, b.prev_receipt_hash.bytes(), b.at, b.height)
+        && (&a.chart, &a.payload) == (&b.chart, &b.payload)
+}
+
 /// The prefix is 47.1's bytes in 47.1's order, and it reads back whole.
 #[test]
 fn signed_prefix_round_trips_and_refuses_extra_bytes() {
     let p = SignedPrefix {
         genesis: G,
         epoch: E,
-        prev_receipt_hash: [9; 32],
+        prev_receipt_hash: Commitment::of_bytes([9; 32]),
         at: Place { k: 41, i: 3 },
         height: 77,
         chart: vec![5, 0, 12],
@@ -82,7 +90,7 @@ fn signed_prefix_round_trips_and_refuses_extra_bytes() {
     assert_eq!(&b[68..76], &41u64.to_le_bytes(), "then K");
     assert_eq!(&b[76..84], &3u64.to_le_bytes(), "then the act's place in its orbit");
     assert_eq!(&b[84..92], &77u64.to_le_bytes(), "then height");
-    assert_eq!(SignedPrefix::read(&b).as_ref(), Some(&p), "and it reads back");
+    assert!(SignedPrefix::read(&b).is_some_and(|back| one_prefix(&back, &p)), "and it reads back");
     assert!(SignedPrefix::read(&b[..b.len() - 1]).is_none(), "a short prefix refuses whole");
     let mut long = b.clone();
     long.push(0);
@@ -98,10 +106,10 @@ fn admit_refuses_foreign_genesis_or_epoch_first() {
     let mut ledger = ReceiptChain::with_signer([9; 32]);
     let mut foreign = prefix_for(&r);
     foreign.genesis = [8; 32];
-    assert_eq!(admit_sealed(&foreign, &r, &ledger), Admitted::Refused(REFUSE_ORIGIN));
+    assert!(matches!(admit_sealed(&foreign, &r, &ledger), Admitted::Refused(REFUSE_ORIGIN)));
     let mut old_epoch = prefix_for(&r);
     old_epoch.epoch = E - 1;
-    assert_eq!(admit_sealed(&old_epoch, &r, &ledger), Admitted::Refused(REFUSE_ORIGIN));
+    assert!(matches!(admit_sealed(&old_epoch, &r, &ledger), Admitted::Refused(REFUSE_ORIGIN)));
     assert!(ledger.line_head(&[1; 32]).is_none(), "no carrier was touched");
     assert!(matches!(take(&mut ledger, &r), Admitted::Parent(_)), "the same receipt on this node's own origin admits");
 }
@@ -115,9 +123,8 @@ fn admit_dockets_gap_until_backfilled() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![]), (3, vec![])]);
     let mut ledger = ReceiptChain::with_signer([9; 32]);
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
-    assert_eq!(
-        take(&mut ledger, &rs[2]),
-        Admitted::Gap { vk: [1; 32], from: Some(at(0)), to: at(1) },
+    assert!(
+        matches!(take(&mut ledger, &rs[2]), Admitted::Gap { vk, from, to } if vk == [1; 32] && from == Some(at(0)) && to == at(1)),
         "the predecessor stands past the head: docket and back-fill, act on nothing"
     );
     assert_eq!(ledger.line_head(&[1; 32]).map(|r| r.stamp), Some(rs[0].stamp), "the gapped frame moved no head");
@@ -131,7 +138,10 @@ fn admit_dockets_gap_until_backfilled() {
 fn admit_gaps_unseen_signer_to_genesis() {
     let rs = line([2; 32], &[(1, vec![]), (2, vec![])]);
     let ledger = ReceiptChain::with_signer([9; 32]);
-    assert_eq!(admit_sealed(&prefix_for(&rs[1]), &rs[1], &ledger), Admitted::Gap { vk: [2; 32], from: None, to: at(0) });
+    assert!(matches!(
+        admit_sealed(&prefix_for(&rs[1]), &rs[1], &ledger),
+        Admitted::Gap { vk, from: None, to } if vk == [2; 32] && to == at(0)
+    ));
 }
 
 /// THE LINE'S CONTINUITY IS THE PREDECESSOR A RECEIPT NAMES (78.23 as
@@ -146,18 +156,18 @@ fn admit_refuses_predecessor_receipt_does_not_follow() {
     let refused = |r: &KStepReceipt| admit_sealed(&prefix_for(r), r, &ledger);
     let mut leap = rs[1].clone();
     leap.stamp.k += 1;
-    assert_eq!(refused(&leap), Admitted::Refused(REFUSE_RECEIPT), "two orbits past its predecessor");
+    assert!(matches!(refused(&leap), Admitted::Refused(REFUSE_RECEIPT)), "two orbits past its predecessor");
     let mut inner = rs[1].clone();
     inner.stamp.i = 2;
-    assert_eq!(refused(&inner), Admitted::Refused(REFUSE_RECEIPT), "two acts past it in the orbit");
+    assert!(matches!(refused(&inner), Admitted::Refused(REFUSE_RECEIPT)), "two acts past it in the orbit");
     let mut orphan = rs[1].clone();
     orphan.prev = None;
-    assert_eq!(refused(&orphan), Admitted::Refused(REFUSE_RECEIPT), "no predecessor past genesis");
+    assert!(matches!(refused(&orphan), Admitted::Refused(REFUSE_RECEIPT)), "no predecessor past genesis");
     let mut borrowed = rs[1].clone();
     if let Some(p) = borrowed.prev.as_mut() {
         p.at.vk = [2; 32];
     }
-    assert_eq!(refused(&borrowed), Admitted::Refused(REFUSE_RECEIPT), "another signer's predecessor");
+    assert!(matches!(refused(&borrowed), Admitted::Refused(REFUSE_RECEIPT)), "another signer's predecessor");
 }
 
 /// 47.2 step 4. The height on the frame is a CLAIM, re-derived from the
@@ -171,24 +181,29 @@ fn admit_refuses_height_that_does_not_rederive() {
     let r0 = signer.append(crate::chronometry::ActKind::List, [1, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     signer.admit(peer.clone());
     let r1 = signer
-        .append(crate::chronometry::ActKind::List, [2, 0, 0, 0], Vec::new(), [0; 32], vec![Parent { at: peer.stamp, hash: peer.chain_hash }])
+        .append(crate::chronometry::ActKind::List, [2, 0, 0, 0], Vec::new(), [0; 32], vec![Parent::of(&peer)])
         .expect("appends")
         .clone();
     let rs = [r0, r1];
     let mut ledger = ReceiptChain::with_signer([9; 32]);
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
-    assert_eq!(
-        admit_sealed(&prefix_for(&rs[1]), &rs[1], &ledger),
-        Admitted::MissingParent(Parent { at: peer.stamp, hash: peer.chain_hash }),
+    assert!(
+        matches!(admit_sealed(&prefix_for(&rs[1]), &rs[1], &ledger), Admitted::MissingParent(p) if Predecessor::cites(&p, &Parent::of(&peer))),
         "an unheld citation is the hole it names, not a refusal of the frame"
     );
     assert!(matches!(take(&mut ledger, &peer), Admitted::Parent(_)), "the hole fetched");
     let mut lying = rs[1].clone();
     lying.stamp.h += 5;
-    assert_eq!(admit_sealed(&prefix_for(&lying), &lying, &ledger), Admitted::Refused(REFUSE_RECEIPT), "a height that does not re-derive is refused");
+    assert!(
+        matches!(admit_sealed(&prefix_for(&lying), &lying, &ledger), Admitted::Refused(REFUSE_RECEIPT)),
+        "a height that does not re-derive is refused"
+    );
     let mut split = prefix_for(&rs[1]);
     split.height += 1;
-    assert_eq!(admit_sealed(&split, &rs[1], &ledger), Admitted::Refused(REFUSE_RECEIPT), "a prefix that disagrees with the receipt it travels with");
+    assert!(
+        matches!(admit_sealed(&split, &rs[1], &ledger), Admitted::Refused(REFUSE_RECEIPT)),
+        "a prefix that disagrees with the receipt it travels with"
+    );
     assert!(matches!(take(&mut ledger, &rs[1]), Admitted::Parent(_)));
 }
 
@@ -203,11 +218,15 @@ fn admit_reads_duplicate_stale_second_hash_equivocation() {
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
     assert!(matches!(take(&mut ledger, &rs[1]), Admitted::Parent(_)));
     let stale = take(&mut ledger, &rs[0]);
-    assert_eq!(stale, Admitted::Stale);
+    assert!(matches!(stale, Admitted::Stale));
     assert_eq!(stale.reason(), Some(REFUSE_RECEIPT_STALE), "the reply names 34.1's constant for a duplicate frame");
-    assert_ne!(fork.chain_hash, rs[0].chain_hash, "one place, two hashes");
+    assert!(Predecessor::of(&fork).forks(&Predecessor::of(&rs[0])), "one place, two hashes");
     let proof = take(&mut ledger, &fork);
-    assert_eq!(proof, Admitted::Equivocation { at: at(0), held: rs[0].chain_hash, claimed: fork.chain_hash });
+    assert!(matches!(
+        proof,
+        Admitted::Equivocation { at: place, held, claimed }
+            if place == at(0) && held.continues(&Predecessor::of(&rs[0])) && claimed.continues(&Predecessor::of(&fork))
+    ));
     assert_eq!(proof.reason(), Some(REFUSE_EQUIVOCATION), "and for the proof of 47.4");
     assert!(take(&mut ledger, &rs[1]).reason().is_some(), "a second hearing of the head is stale too");
 }
@@ -223,9 +242,8 @@ fn admit_reads_restored_ledger() {
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
     let tape = ledger.line_image().expect("writes");
     let (mut back, _) = ReceiptChain::from_line(&tape).expect("reads");
-    assert_eq!(
-        take(&mut back, &rs[2]),
-        Admitted::Gap { vk: [1; 32], from: Some(at(0)), to: at(1) },
+    assert!(
+        matches!(take(&mut back, &rs[2]), Admitted::Gap { vk, from, to } if vk == [1; 32] && from == Some(at(0)) && to == at(1)),
         "the signer's head came back with the ledger"
     );
     assert!(matches!(take(&mut back, &rs[1]), Admitted::Parent(_)), "and its next node admits, not a gap from zero");
@@ -253,7 +271,7 @@ fn admit_signature_verifies_only_signed_prefix() {
     let sig = court.sign(&p.bytes().expect("the prefix frames"));
     let verified = admit_signature((G, E), &p, &vk, &sig).expect("the court's own signature over its own prefix");
     assert_eq!(verified.signer(), vk, "verified under the key the frame claims");
-    assert_eq!(verified.prefix(), &p, "over exactly these prefix bytes");
+    assert!(one_prefix(verified.prefix(), &p), "over exactly this prefix");
     assert_eq!(admit_signature(([8; 32], E), &p, &vk, &sig).err(), Some(REFUSE_ORIGIN), "another genesis is refused before any bytes are verified");
     assert_eq!(admit_signature((G, E + 1), &p, &vk, &sig).err(), Some(REFUSE_ORIGIN), "and so is another epoch of this genesis");
     assert_eq!(admit_signature((G, E), &p, &stranger, &sig).err(), Some(REFUSE_SIGNATURE), "the stranger did not sign this prefix");

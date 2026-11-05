@@ -58,7 +58,7 @@ fn offer_round_trips_home_and_signed_position() {
     );
     assert_eq!(o.section.receipt.stamp.vk, home, "and the receipt names the home");
     assert_eq!(o.section.sig, section.sig, "the signature survives whole");
-    assert_eq!(o.section.prefix, section.prefix);
+    assert!(super::fixtures::one_prefix(&o.section.prefix, &section.prefix));
 
     // A frame truncated inside its section is refused, never half-read.
     let whole = encode_offer(&offer).expect("frames");

@@ -115,7 +115,7 @@ impl Reconstructed<crate::anastome::dialogue::RootProof> {
             return Err(crate::verdict::REFUSE_RECEIPT);
         }
         let signed = Reconstructed { object: proof.clone() };
-        let binds = |r: &Root| super::Commitment::of_bytes(r.hash).binds(&signed);
+        let binds = |r: &Root| super::Commitment::of_bytes(r.hash.bytes()).binds(&signed);
         match binds(&home) && binds(&witness) {
             true => Ok(signed),
             false => Err(crate::verdict::REFUSE_RECEIPT),

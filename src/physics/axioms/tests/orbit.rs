@@ -84,7 +84,7 @@ fn from_receipts_refuses_close_with_forged_frame() {
     );
     let mut peer = ReceiptChain::with_signer([3; 32]);
     peer.admit(a0);
-    assert_eq!(admit_backfilled(&forged, &peer), Admitted::Refused(REFUSE_RECEIPT), "and admission refuses it");
+    assert!(matches!(admit_backfilled(&forged, &peer), Admitted::Refused(REFUSE_RECEIPT)), "and admission refuses it");
     let mut honest = ReceiptChain::with_signer([2; 32]);
     act(&mut honest, [1, 1, 0, 0]);
     let shut = close(&mut honest);
@@ -100,9 +100,8 @@ fn from_receipts_refuses_close_with_forged_frame() {
     )
     .expect("seals");
     peer.admit(shut);
-    assert_eq!(
-        admit_backfilled(&early, &peer),
-        Admitted::Refused(REFUSE_RECEIPT),
+    assert!(
+        matches!(admit_backfilled(&early, &peer), Admitted::Refused(REFUSE_RECEIPT)),
         "an act after a close that does not open the next orbit is refused"
     );
 }

@@ -21,7 +21,7 @@ fn close(c: &mut ReceiptChain) -> KStepReceipt {
 /// Fold `c` at its last close and seal the `Fold` node citing the root.
 fn fold(c: &mut ReceiptChain, at: Place) -> KStepReceipt {
     let (_, root) = c.fold_before(at).expect("the orbit folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, c.signer(), root.at), hash: root.hash }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, c.signer(), root.at), hash: root.hash.bytes() }];
     c.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node").clone()
 }
 
@@ -95,9 +95,11 @@ fn shed_folded_leaves_hole_backfill_cannot_cross() {
     assert!(c.at(&[4; 32], e0.stamp.place()).is_none(), "the cited receipt is gone");
     let head = c.line_head(&[4; 32]).expect("the signer's head").stamp.place();
     assert!(head > e0.stamp.place(), "while the head stands past it: a hole below the head");
-    assert_eq!(
-        crate::court::admission::admit_backfilled(&crate::court::admission::Reconstructed::receipt(&e0).expect("re-derives"), &c),
-        crate::court::admission::Admitted::Stale,
+    assert!(
+        matches!(
+            crate::court::admission::admit_backfilled(&crate::court::admission::Reconstructed::receipt(&e0).expect("re-derives"), &c),
+            crate::court::admission::Admitted::Stale
+        ),
         "fetched back, it is read stale: no back-fill crosses it"
     );
 }

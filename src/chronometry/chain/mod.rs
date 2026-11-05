@@ -40,7 +40,7 @@ pub struct ReceiptChain {
     /// read back out of an archived era and proved there by its stamp and
     /// hash (`recall_folded`), held while the admission that asked reads
     /// it.
-    folded: Keyed<[u8; 32]>,
+    folded: Keyed<Predecessor>,
     /// `vk → root`: THE ROOT EACH PEER'S OWN FOLD ARCHIVED ITS LINE TO, as
     /// its `Fold` node cites it — its stamp and hash — where `shed_folded`
     /// cuts that line and against which a citation into the closed era is
@@ -52,7 +52,7 @@ pub struct ReceiptChain {
     /// walked from it up to the peer's fold root (`prove_from_era`). A
     /// closed era returns nothing new, so a proof stands; it is not
     /// persisted, and is proved again where a citation asks after restore.
-    proved: Keyed<[u8; 32]>,
+    proved: Keyed<Predecessor>,
     /// AN ERA PROOF IN PROGRESS: `p`'s key and hash → the last receipt of
     /// the signer's line the walk from `p` has re-derived, where the page
     /// that carried it ended short of the root (`walk_era`). The next page
@@ -146,7 +146,7 @@ pub enum EraWalk {
 /// An era proof's key: the cited receipt's place key, then its hash.
 fn era_walk_key(p: &Parent) -> Vec<u8> {
     let mut k = p.at.key();
-    k.extend_from_slice(&p.hash);
+    k.extend_from_slice(&p.hash.bytes());
     k
 }
 
@@ -296,7 +296,7 @@ impl ReceiptChain {
     /// Whether a node stands at this stamp with this hash: the citation
     /// continues the chain held there (a link, MU-HOSTING §5a.10).
     pub fn holds(&self, p: &Parent) -> bool {
-        self.node_at(&p.at).is_some_and(|n| Predecessor::named(p).continues(&Predecessor::of_bytes(n.hash)))
+        self.node_at(&p.at).is_some_and(|n| Predecessor::named(p).continues(&n.hash))
     }
 
     /// Whether a signer's line holds a node at one place: the line relation
@@ -429,7 +429,7 @@ impl ReceiptChain {
         self.head_node()
             .map(|(_, n)| n.hash)
             .or_else(|| self.root.map(|r| r.hash))
-            .map_or([0u8; 32], |h| h)
+            .map_or([0u8; 32], |h| h.bytes())
     }
 
     /// The head's stamp, or the root's before the first hot receipt.
@@ -529,7 +529,7 @@ impl ReceiptChain {
             if !r.rederives() || !r.prev.is_some_and(|prev| Predecessor::cites(&prev, &last)) {
                 return broken(self);
             }
-            last = Parent { at: r.stamp, hash: r.chain_hash };
+            last = Parent::of(r);
             reached = Predecessor::cites(&last, &root);
         }
         if reached {
@@ -550,7 +550,7 @@ impl ReceiptChain {
     /// stands past every node held and its height reads (an adopted root,
     /// `adopt_root`). `None` where neither is held.
     pub fn line_tip(&self, signer: &[u8; 32]) -> Option<Parent> {
-        let head = self.line_head(signer).map(|r| Parent { at: r.stamp, hash: r.chain_hash });
+        let head = self.line_head(signer).map(|r| Parent::of(&r));
         let root = self.peer_roots.get(signer).copied().filter(|r| self.height_of(r).is_some());
         match (head, root) {
             (Some(h), Some(r)) if r.at.place() > h.at.place() => Some(r),
@@ -712,7 +712,7 @@ impl ReceiptChain {
                 None => *self.proved.get(&p.at.key())?,
             },
         };
-        Predecessor::named(p).continues(&Predecessor::of_bytes(hash)).then_some(p.at.h)
+        Predecessor::named(p).continues(&hash).then_some(p.at.h)
     }
 
     /// A folded receipt, read back from its era and proved there, held by
@@ -830,7 +830,7 @@ impl ReceiptChain {
             // The later root stands: a fold archives everything below it.
             let later = self.peer_roots.get(&at.vk).is_none_or(|held| held.at.place() < at.place());
             if later {
-                self.peer_roots.insert(at.vk, Parent { at: *at, hash: *hash });
+                self.peer_roots.insert(at.vk, Parent { at: *at, hash: Predecessor::of_bytes(*hash) });
             }
         }
     }
@@ -1068,7 +1068,12 @@ impl ReceiptChain {
                 Some(p) => p.at.place().after(prev_kind) == r.stamp.place(),
                 None => r.stamp.place() == Place::GENESIS,
             };
-            if !follows || r.prev != prev || !self.close_rederives(&r) {
+            let names_prev = match (r.prev, prev) {
+                (None, None) => true,
+                (Some(named), Some(held)) => Predecessor::cites(&named, &held),
+                _ => false,
+            };
+            if !follows || !names_prev || !self.close_rederives(&r) {
                 return false;
             }
             prev_kind = r.kind;
@@ -1081,7 +1086,7 @@ impl ReceiptChain {
             if r.stamp.h != want_h || !r.rederives() {
                 return false;
             }
-            prev = Some(Parent { at: r.stamp, hash: r.chain_hash });
+            prev = Some(Parent::of(&r));
             last = Some(r.stamp);
         }
         self.head == last

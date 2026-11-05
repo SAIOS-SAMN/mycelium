@@ -402,7 +402,7 @@ impl Court {
                     // receipt and its state now; nothing sealed twice.
                     let original = self.handoffs.offered_at.get(&id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?)));
                     return match original {
-                        Some((at, node)) => Handed::Sealed { at, receipt: node.chain_hash, id, state: held.state },
+                        Some((at, node)) => Handed::Sealed { at, receipt: node.chain_hash.bytes(), id, state: held.state },
                         None => refuse(R::Offered),
                     };
                 }
@@ -463,7 +463,7 @@ impl Court {
         };
         let cite = Cite::Handoff { id, kind };
         let Some(r) = self.seal_step(ActKind::Handoff, [0; 4], h.who, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
-        let anchor = (r.stamp, r.chain_hash);
+        let anchor = (r.stamp, r.chain_hash.bytes());
         let now = match (state, &h.handoff) {
             (None, Handoff::Offer(o) | Handoff::Traverse { offer: o, .. }) => {
                 let opened = r.stamp.h;
@@ -490,7 +490,7 @@ impl Court {
             (None, _) => return refuse(R::UnknownId),
         };
         self.mark_persist();
-        Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state: now }
+        Handed::Sealed { at: r.stamp, receipt: r.chain_hash.bytes(), id, state: now }
     }
 
     /// 78.126 — A HANDOFF'S STANDING: its state and whether each side is

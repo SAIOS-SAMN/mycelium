@@ -70,7 +70,7 @@ impl Court {
     /// `None` for another root, or a root whose witness was another court.
     pub fn cosigned_root(&self, home: &[u8; 32], root: &crate::chronometry::Root, own_vk: &[u8; 32]) -> Option<ReceiptSection> {
         let proof = self.root_proofs.get(home)?;
-        (proof.root == *root && proof.witness.receipt.stamp.vk == *own_vk).then(|| proof.witness.clone())
+        (proof.root.restates(root) && proof.witness.receipt.stamp.vk == *own_vk).then(|| proof.witness.clone())
     }
 
     /// THE ROOTS' LEAF (`LEAF_ROOTS`): the proofs' count, then each proof; `None`

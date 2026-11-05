@@ -463,7 +463,7 @@ impl Court {
             Some(r) => {
                 self.hold_domain(g.domain, g.tiers.clone());
                 self.mark_persist();
-                Founded::Sealed { at: r.stamp, receipt: r.chain_hash }
+                Founded::Sealed { at: r.stamp, receipt: r.chain_hash.bytes() }
             }
             None => Founded::LineRefused,
         }
@@ -533,7 +533,7 @@ impl Court {
                         // challenge window.
                         self.hold_admitted(r.stamp, &f.fold, domain, Vec::new());
                         self.mark_persist();
-                        Uplinked::Admitted { at: r.stamp, receipt: r.chain_hash }
+                        Uplinked::Admitted { at: r.stamp, receipt: r.chain_hash.bytes() }
                     }
                     None => Uplinked::LineRefused,
                 }

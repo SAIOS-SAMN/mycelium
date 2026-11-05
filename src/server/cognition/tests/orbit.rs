@@ -61,7 +61,7 @@ fn orbit_proposes_fold_only_after_transition() {
             k.append_step(ActKind::List, [1; 32], [2; 32]);
             assert!(matches!(k.orbit(), Close::Sealed(_)), "the close seals");
             assert!(k.fold_proposal().is_none(), "work without a transition proposes nothing");
-            assert_eq!(k.propose_fold_at_close(), Err(crate::verdict::REFUSE_FOLD_NO_TRANSITION));
+            assert_eq!(k.propose_fold_at_close().err(), Some(crate::verdict::REFUSE_FOLD_NO_TRANSITION));
         }
         k.append_step(transition, [3; 32], [0x5c; 32]);
         assert!(matches!(k.orbit(), Close::Sealed(_)));

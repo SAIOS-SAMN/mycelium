@@ -362,22 +362,21 @@ fn quote() -> Result<String, String> {
 }
 
 fn receipts() -> Result<String, String> {
-    use mycelium::chronometry::{ActKind, KStepReceipt, Place};
+    use mycelium::chronometry::{ActKind, KStepReceipt, Parent, Place};
+    use mycelium::court::admission::Predecessor;
     let (after, upto) = (Place { k: 1, i: 2 }, Place { k: 3, i: 4 });
     let want = d::ReceiptsRequest { voice: voice(), signer: CITATION, after: Some(after), upto, replay: false };
     same("the receipts request", d::decode_receipts_request(&d::encode_receipts_request(&voice(), &CITATION, Some(after), upto)), want)?;
-    let receipt = KStepReceipt {
-        stamp: stamp(),
-        kind: ActKind::Domain,
-        mu: [1, 0, 2, 3],
-        prev: None,
-        parents: Vec::new(),
-        cites: Vec::new(),
-        operator_hash: CITATION,
-        chain_hash: [6; 32],
-    };
+    let receipt = KStepReceipt::seal(stamp(), ActKind::Domain, [1, 0, 2, 3], None, Vec::new(), Vec::new(), CITATION)
+        .ok_or("the receipt does not seal")?;
     let bytes = d::encode_receipts_reply(std::slice::from_ref(&receipt), mycelium::network::wire::BODY_BUDGET);
-    same("the receipts", d::decode_receipts_reply(&bytes), vec![receipt])?;
+    // A receipt has no `==` (MU-HOSTING §5a.10): the one decoded is
+    // reconstructed from its own coordinates and names the one sent.
+    let got = d::decode_receipts_reply(&bytes).ok_or("the receipts did not decode")?;
+    let one = matches!(got.as_slice(), [r] if r.rederives() && Predecessor::cites(&Parent::of(r), &Parent::of(&receipt)));
+    if !one {
+        return Err(format!("the receipts decoded to {got:?}, not [{receipt:?}]"));
+    }
     Ok("the span asked and a page of one receipt decode".to_string())
 }
 

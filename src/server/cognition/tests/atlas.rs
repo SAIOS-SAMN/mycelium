@@ -384,7 +384,7 @@ fn stake_unstakes_only_after_claims_settle() {
     let read = k.retrieve(verifying(&payer), &fp(10), Some(fp(12)), [1; 32]).expect("served");
     let units = read.len() as u64;
     assert_eq!(k.claims_on(&verifying(&payer)), [0, 0, 2, 1 + units], "one unit of information per receipt read");
-    assert_eq!(k.retrieve(verifying(&payer), &fp(13), Some(fp(12)), [2; 32]), Err(crate::server::cognition::crossing::Unretrieved::NotFinal));
+    assert_eq!(k.retrieve(verifying(&payer), &fp(13), Some(fp(12)), [2; 32]).err(), Some(crate::server::cognition::crossing::Unretrieved::NotFinal));
     assert!(h <= k.chain.head_height());
     pass(&mut k);
     k.settle_windows();
