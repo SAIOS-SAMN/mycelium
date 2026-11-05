@@ -9,11 +9,13 @@
 // and the documents read against the tree (MU-STANDARDS 7.1: the paths they
 // cite, `documents.rs`; the shared-law table, `src/tests/documents.rs`),
 // and the client surface's words against the rulings of 2026-11-04/05
-// (`surface.rs`). Every other rule is a clippy lint (§4.2) or a type (§4.4).
+// (`surface.rs`), and the transport kept free of meaning (MU-ENGINEERING §9,
+// `layers.rs`). Every other rule is a clippy lint (§4.2) or a type (§4.4).
 
 pub mod documents;
 pub mod drift;
 pub mod euclidean;
+pub mod layers;
 pub mod length;
 pub mod numbers;
 pub mod surface;

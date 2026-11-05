@@ -1500,7 +1500,8 @@ for each phase:
 5. Register each guard the phase builds in `gate/src/drift.rs`
    (regression, ruling, guarding type, claim); the gate refuses an entry
    whose type or claim is missing.
-6. Open the pull request with the template's drift checklist ticked. A
+6. Open the pull request from the template; CI's `check` runs the
+   definition of done on it. A
    phase that changes the wire or the ledger layout says so under
    *Network contract*.
 

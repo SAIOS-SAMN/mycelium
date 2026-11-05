@@ -56,6 +56,7 @@ lawful at one site and a defect at another.
 | A reading used outside its scope: identity (an address) computed from a ground, a symbol's meaning or a frame fixing; a perspective applied before addressing | Identity from the posted samples' content alone (hypha); the ground and meanings deduced in the mind (client); perspectives taken after intake (sensor) | MU-SENSING §6.1 |
 | Code written for one data source (a module or type named for a dataset, a fixed palette, a ground of `0`, two axes or three coordinates fixed, a fixed cell size) | A generic sensor over samples of any rank: symbols compared by equality, the ground, the periods and every gauge deduced, perspective as a sensor motion; a source contributes only a decoder kept outside `src/` | MU-SENSING; MU-RECURSION 71 |
 | A constant chosen for a governing quantity | A live reading derived from the state, or an entry in the open-physics register | MU-DERIVATIONS; `gate/src/numbers.rs` |
+| Meaning in the transport (a lane byte, a rank, a coordinate or a carrier type in the envelope) | The transport moves bytes (a length, a channel, deferral); carriers stand in the utterance at full dimension, at coordinates that route and never identify | [MU-ENGINEERING §9](docs/MU-ENGINEERING.md#9-transport-carrier-and-coordinate); `gate/src/layers.rs` |
 | A network of routes, a tree or a graph of crossings | Events with past and future cones on the TUniversal ledger; the universal core tube is the vertex | MU-HOSTING §5a.5 |
 
 ## Before writing
@@ -96,6 +97,8 @@ branch, run in its own worktree:
 cargo clippy --release --workspace --all-targets -- -D warnings
 cargo test --release --workspace
 ```
+
+CI (`.github/workflows/check.yml`, the `check` status) runs both commands on every pull request, with the corpus present; workers still run them locally before pushing, under the machine's memory cap.
 
 Nothing else is required, with one addition: a change to the wire or the
 mesh also runs `scripts/quickstart DIR BASE_PORT`. It brings up a
@@ -153,7 +156,7 @@ How the work is held:
 
 - The [Definition of done](#definition-of-done) holds on the branch with
   main merged in.
-- Tick the drift checklist in the pull request template.
+- Read the change against [The regressions that recur](#the-regressions-that-recur).
 - If the change touches the wire, the ledger layout, a law version or the
-  Concordance, mark it under *Network contract*. It then needs operator
+  Concordance, state it under *Network contract* in the pull request. It then needs operator
   approval.
