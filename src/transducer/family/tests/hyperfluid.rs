@@ -3,7 +3,7 @@
 // transports are one flow at two times where they differ only there; and a
 // free ray's time is read from what every observation of it agreed on.
 
-use super::fixtures::grid;
+use super::fixtures::digits;
 use crate::transducer::family::hyperfluid::{congruence, flows, reconstruct_in_time, Congruence};
 use crate::transducer::family::reconstruct::reconstruct;
 
@@ -15,12 +15,12 @@ use crate::transducer::family::reconstruct::reconstruct;
 #[test]
 fn congruence_reads_two_lengths_as_one_flow() {
     crate::transducer::raster::stand_on(0);
-    let short = flows(&grid(&["300000"]), &grid(&["344000"])).expect("one frame");
-    let long = flows(&grid(&["300000"]), &grid(&["344400"])).expect("one frame");
+    let short = flows(&digits(&["300000"]), &digits(&["344000"])).expect("one frame");
+    let long = flows(&digits(&["300000"]), &digits(&["344400"])).expect("one frame");
     assert_eq!(congruence(&short[0], &long[0]), Congruence::InTime);
-    let other = flows(&grid(&["300000"]), &grid(&["355000"])).expect("one frame");
+    let other = flows(&digits(&["300000"]), &digits(&["355000"])).expect("one frame");
     assert_eq!(congruence(&short[0], &other[0]), Congruence::Light, "another hue: the light lifts");
-    let recoloured = flows(&grid(&["300000"]), &grid(&["744000"])).expect("one frame");
+    let recoloured = flows(&digits(&["300000"]), &digits(&["744000"])).expect("one frame");
     assert_eq!(congruence(&short[0], &recoloured[0]), Congruence::Gauge, "the dot recoloured: the gauge lifts");
     assert_eq!(short[1].to, 0, "a site the light reaches moves nothing of its own: the light carries its colour");
 }
@@ -34,9 +34,9 @@ fn congruence_reads_two_lengths_as_one_flow() {
 fn reconstruct_in_time_runs_free_ray_agreed_time() {
     crate::transducer::raster::stand_on(0);
     let family = vec![
-        (grid(&["0300000", "0000000"]), grid(&["0344000", "0000000"])),
-        (grid(&["0000000", "3000000"]), grid(&["0000000", "3440000"])),
-        (grid(&["0003000", "0000000"]), grid(&["0003440", "0000000"])),
+        (digits(&["0300000", "0000000"]), digits(&["0344000", "0000000"])),
+        (digits(&["0000000", "3000000"]), digits(&["0000000", "3440000"])),
+        (digits(&["0003000", "0000000"]), digits(&["0003440", "0000000"])),
     ];
     let frozen = reconstruct(&family);
     assert!(!frozen.whole, "frozen in time, a free ray is no transport");

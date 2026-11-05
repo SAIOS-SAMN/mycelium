@@ -184,7 +184,7 @@ fn read_speech_reply_admits_only_codes_sent() {
 fn act_on_returns_speaks_closed_thought_into_dialect() {
     use crate::client::sdk::*;
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
-    let grid = |rows: &[&str]| -> crate::transducer::spelled::SectionSample { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
+    let digits = |rows: &[&str]| -> crate::transducer::spelled::SectionSample { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let hours: [([&str; 5], [&str; 5]); 4] = [
         (["010000", "010000", "011000", "000000", "000000"], ["001000", "001000", "001100", "000000", "000000"]),
         (["000000", "001110", "001000", "000000", "000000"], ["000000", "000111", "000100", "000000", "000000"]),
@@ -201,7 +201,7 @@ fn act_on_returns_speaks_closed_thought_into_dialect() {
             .count()
     };
     for (i, (input, output)) in hours.iter().enumerate() {
-        let (a, b) = (grid(input), grid(output));
+        let (a, b) = (digits(input), digits(output));
         let frames = perceive_family(&[(a.clone(), b.clone())]);
         let mut budget = entity.stroke_n(1 << 20);
         let f = scene_form_on(&NoCrystal, &mut budget, &a, &b, &frames).expect("the scene reads");

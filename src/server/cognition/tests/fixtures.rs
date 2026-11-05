@@ -1,5 +1,5 @@
 // Fixture constructors for the mind's tests (MU-STANDARDS 3.3): a voice's
-// sentence for a pair, a glued pair, and a grid of digits, each built
+// sentence for a pair, a glued pair, and a sample of digits, each built
 // through the constructors the production code exports.
 
 use crate::cognition::*;

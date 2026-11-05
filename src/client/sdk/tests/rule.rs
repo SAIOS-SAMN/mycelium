@@ -9,7 +9,7 @@ use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::Element;
 use crate::transducer::family::NoCrystal;
 
-fn grid(rows: &[&str]) -> SectionSample {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -56,10 +56,10 @@ fn assert_solved(rule: &Element, withheld: &[(SectionSample, SectionSample)], wh
 /// elsewhere and painted otherwise for the withheld pair: one chart, a
 /// scene the rule never saw.
 fn square_train() -> SectionSample {
-    grid(&["120", "100", "000"])
+    digits(&["120", "100", "000"])
 }
 fn square_withheld() -> SectionSample {
-    grid(&["000", "034", "030"])
+    digits(&["000", "034", "030"])
 }
 
 /// THE MOTION CARRIES EVERY SITE WHERE THE GRID READS IT: each symmetry's
@@ -76,7 +76,7 @@ fn symmetry_motion_carries_every_site_to_index_image() {
         Symmetry::FlipV,
         Symmetry::Transpose,
     ] {
-        let x = grid(&["123", "456"]);
+        let x = digits(&["123", "456"]);
         let y = apply(kind, &x);
         let Some(Step::Motion(v)) = Step::symmetry_motion(kind, shape(&x), shape(&y)) else { panic!("{kind:?} fits") };
         for (at, h) in x.sites() {
@@ -119,7 +119,7 @@ fn sentence_of_solves_unseen_pair_by_square_symmetry() {
 fn symmetry_motion_exchanges_non_square_shape() {
     crate::transducer::raster::stand_on(0);
     for kind in [Symmetry::Rotate90, Symmetry::Transpose] {
-        let x = grid(&["120", "100"]);
+        let x = digits(&["120", "100"]);
         let y = apply(kind, &x);
         assert_eq!(shape(&y), (3, 2), "R × C goes to C × R");
         let step = Step::symmetry_motion(kind, (2, 3), (3, 2)).expect("the exchange fits");
@@ -127,7 +127,7 @@ fn symmetry_motion_exchanges_non_square_shape() {
             Ok(rule) => rule,
             Err(e) => panic!("{kind:?} mints: {e:?}"),
         };
-        let w = grid(&["034", "030"]);
+        let w = digits(&["034", "030"]);
         assert_solved(&rule, &[(w.clone(), apply(kind, &w))], &format!("{kind:?} on 2 × 3"));
     }
     // A SHAPE THE SYMMETRY DOES NOT FIT is no motion at all.
@@ -145,7 +145,7 @@ fn sentence_of_solves_unseen_pair_by_hue_permutation() {
     let map = [(1u8, 2u8), (2, 1)];
     let x = square_train();
     let rule = sentence(&[Step::Hue(map.to_vec())], &[(x.clone(), recolour(&map, &x))], &NoCrystal).expect("mints");
-    let w = grid(&["000", "012", "010"]);
+    let w = digits(&["000", "012", "010"]);
     assert_solved(&rule, &[(w.clone(), recolour(&map, &w))], "hue permutation");
 }
 
@@ -158,7 +158,7 @@ fn sentence_of_solves_motion_then_recolour_as_one() {
     let then = |g: &SectionSample| recolour(&map, &apply(Symmetry::Rotate180, g));
     let x = square_train();
     let rule = sentence(&steps, &[(x.clone(), then(&x))], &NoCrystal).expect("mints");
-    let w = grid(&["000", "014", "010"]);
+    let w = digits(&["000", "014", "010"]);
     assert_solved(&rule, &[(w.clone(), then(&w))], "motion then recolour");
 }
 
@@ -217,8 +217,8 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::sentence::ObstructionKind;
     let train = vec![
-        (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
-        (grid(&["0000", "1100"]), grid(&["0000", "0022"])),
+        (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
     ];
     let rule = crate::transducer::family::extract_rule(&train, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
@@ -228,7 +228,7 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
         crate::verdict::reconstruct_blind_at(&spoken, &|_| None, Some(&train), &NoCrystal, &mut budget).is_none(),
         "the client's own replay on its training pairs passes"
     );
-    let withheld = vec![(grid(&["1100", "0000"]), grid(&["0022", "0000"]))];
+    let withheld = vec![(digits(&["1100", "0000"]), digits(&["0022", "0000"]))];
     // THE DEFECT: the extracted word, judged as it stands, is refused I.
     let (verdict, seam) = judged(&spoken, &withheld);
     match &verdict {
@@ -256,8 +256,8 @@ fn crossing_drops_training_frames_so_withheld_pair_solves() {
 fn of_refusal_reads_unread_as_unjudged() {
     crate::transducer::raster::stand_on(0);
     let train = vec![
-        (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
-        (grid(&["0000", "1100"]), grid(&["0000", "0022"])),
+        (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
     ];
     let rule = crate::transducer::family::extract_rule(&train, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
@@ -267,7 +267,7 @@ fn of_refusal_reads_unread_as_unjudged() {
     assert!(matches!(NoRule::of_refusal(unread), NoRule::Unread), "unread is unjudged");
     let refused = crate::verdict::Refusal::of_tape(crate::verdict::REFUSE_NOT_A_SENTENCE, &crossed);
     assert!(matches!(NoRule::of_refusal(refused), NoRule::Refused(r) if r.reason == crate::verdict::REFUSE_NOT_A_SENTENCE));
-    let withheld = vec![(grid(&["1100", "0000"]), grid(&["0022", "0000"]))];
+    let withheld = vec![(digits(&["1100", "0000"]), digits(&["0022", "0000"]))];
     let mut k = Court::new();
     assert!(matches!(k.judge_solve(&crossed, &withheld), SolveVerdict::Solved { .. }), "the court rules the word");
 }
@@ -282,8 +282,8 @@ fn would_judge_refuses_citation_no_court_admitted() {
     use crate::client::sdk::MindLanguage;
     use crate::transducer::family::{cipher_form, sentence_measure};
     let family = vec![
-        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
-        (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+        (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
     ];
     let held = cipher_form(&family[0].0, &family[0].1);
     let mag = sentence_measure(&held, &family[..1], &NoCrystal, 0).expect("the body is spoken");

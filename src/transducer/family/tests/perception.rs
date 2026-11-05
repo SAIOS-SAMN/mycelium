@@ -10,8 +10,8 @@ use crate::transducer::sentence::tests::fixtures::link;
 /// held between readings: a second reading reads the same form.
 #[test]
 fn cipher_form_keeps_nothing_between_readings() {
-let a = grid(&["1100", "0000"]);
-let b = grid(&["0011", "0000"]);
+let a = digits(&["1100", "0000"]);
+let b = digits(&["0011", "0000"]);
 let f1 = cipher_form(&a, &b);
 assert!(
     f1.vertices.scoped().any(|(_, v)| matches!(v, Vertex::Frame)),
@@ -42,7 +42,7 @@ assert_eq!(f1.faces.len(), f2.faces.len());
 fn edge_transport_reads_rigid_identity_or_relative_motion() {
     crate::transducer::raster::stand_on(0);
 use crate::transducer::family::perceive::Carried;
-let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
+let body = |rows: &[&str]| perceive(&digits(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
 let (b1, b2) = (body(&["0110", "0000"]), body(&["0000", "0220"]));
 let mut budget = super::fixtures::budget();
@@ -77,7 +77,7 @@ assert!(
 #[test]
 fn edge_transport_refuses_tear_as_not_rigid() {
     crate::transducer::raster::stand_on(0);
-let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
+let body = |rows: &[&str]| perceive(&digits(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
 let (b1, b2) = (body(&["0110", "0000"]), body(&["0000", "2200"]));
 let mut budget = super::fixtures::budget();
@@ -117,7 +117,7 @@ assert!(matches!(relative_edge(&v1, &torn).err().as_deref(), Some([EdgeRefusal::
 #[test]
 fn edge_transport_reads_exchange_with_identity_word() {
     crate::transducer::raster::stand_on(0);
-let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
+let body = |rows: &[&str]| perceive(&digits(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["100"]), body(&["002"]));
 let (b1, b2) = (body(&["001"]), body(&["200"]));
 let mut budget = super::fixtures::budget();
@@ -141,7 +141,7 @@ assert!(matches!(edge.word.order(), crate::transducer::alphabet::Order::Finite(_
 fn cipher_form_demands_source_or_creation_for_created_body() {
     crate::transducer::raster::stand_on(0);
 use crate::transducer::sentence::Demand;
-let f = cipher_form(&grid(&["1100", "0000", "0000"]), &grid(&["1100", "0000", "0220"]));
+let f = cipher_form(&digits(&["1100", "0000", "0000"]), &digits(&["1100", "0000", "0220"]));
 let demands: Vec<_> = f.demand_vertices().collect();
 assert_eq!(demands.len(), 1, "one demand: {:?}", f.vertices);
 let (_, kind, _, links) = demands[0];
@@ -155,7 +155,7 @@ assert_eq!(
     f.vertices
 );
 
-let f = cipher_form(&grid(&["1100", "0000", "0000"]), &grid(&["1100", "0000", "0222"]));
+let f = cipher_form(&digits(&["1100", "0000", "0000"]), &digits(&["1100", "0000", "0222"]));
 let demands: Vec<_> = f.demand_vertices().collect();
 assert_eq!(demands.len(), 1);
 assert_eq!(*demands[0].1, Demand::Creation, "no input chart carries onto a bar of three");
@@ -170,14 +170,14 @@ assert_eq!(*demands[0].1, Demand::Creation, "no input chart carries onto a bar o
 fn cipher_form_demands_deformation_for_deformed_body() {
     crate::transducer::raster::stand_on(0);
 use crate::transducer::sentence::Demand;
-let f = cipher_form(&grid(&["1100"]), &grid(&["1000"]));
+let f = cipher_form(&digits(&["1100"]), &digits(&["1000"]));
 let kinds: Vec<&Demand> = f.demand_vertices().map(|(_, k, _, _)| k).collect();
 assert_eq!(kinds.len(), 1, "one demand: the deformation, its image consumed: {kinds:?}");
 assert!(matches!(kinds[0], Demand::TopologicalDeformation { image, axes } if !image.0.is_empty() && !axes.is_empty()), "{kinds:?}");
 let (_, _, _, links) = f.demand_vertices().next().expect("the demand");
 assert_eq!(links, &[link(0, 0, 1, 1), link(0, 1, 1, 0)], "the deformation stands for the union of both bodies, hue before and after");
 
-let f = cipher_form(&grid(&["1100", "0000", "0220"]), &grid(&["1100", "0000", "0000"]));
+let f = cipher_form(&digits(&["1100", "0000", "0220"]), &digits(&["1100", "0000", "0000"]));
 let kinds: Vec<&Demand> = f.demand_vertices().map(|(_, k, _, _)| k).collect();
 assert_eq!(kinds.len(), 1, "{kinds:?}");
 assert!(matches!(kinds[0], Demand::TopologicalDeformation { image, axes } if image.0.is_empty() && !axes.is_empty()), "a vanished body deforms to the empty chart on every axis: {kinds:?}");
@@ -192,7 +192,7 @@ for (_, kind, _, _) in f.demand_vertices() {
 fn cipher_form_keys_one_demand_per_kind_and_chart() {
     crate::transducer::raster::stand_on(0);
 use crate::transducer::sentence::Demand;
-let f = cipher_form(&grid(&["1100000", "0000000", "0000000"]), &grid(&["1100000", "0000000", "0220022"]));
+let f = cipher_form(&digits(&["1100000", "0000000", "0000000"]), &digits(&["1100000", "0000000", "0220022"]));
 let demands: Vec<_> = f.demand_vertices().collect();
 assert_eq!(demands.len(), 1, "one vertex for one (kind, chart): {:?}", f.vertices);
 let (idx, kind, chart, links) = demands[0].clone();
@@ -223,8 +223,8 @@ use crate::transducer::sentence::Demand;
 // The bars land at two different offsets from the 1-bars, so no one echo
 // says them (78.167 Phase B, Step 3): they stay the demand's to declare.
 let family = vec![
-    (grid(&["1100", "0000", "0000", "0000"]), grid(&["1100", "0000", "0220", "0000"])),
-    (grid(&["0000", "1100", "0000", "0000"]), grid(&["0000", "1100", "0000", "2200"])),
+    (digits(&["1100", "0000", "0000", "0000"]), digits(&["1100", "0000", "0220", "0000"])),
+    (digits(&["0000", "1100", "0000", "0000"]), digits(&["0000", "1100", "0000", "2200"])),
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the bundle extracts");
 let demands: Vec<_> = rule.form.demand_vertices().collect();
@@ -754,8 +754,8 @@ named_pairs(Some(&root_member(0)), &supports_at(&supports))
 #[test]
 fn extract_rule_with_joins_shapes_of_one_carriage() {
 let family = vec![
-    (grid(&["1100"]), grid(&["0011"])),
-    (grid(&["111000"]), grid(&["000111"])),
+    (digits(&["1100"]), digits(&["0011"])),
+    (digits(&["111000"]), digits(&["000111"])),
 ];
 let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts");
 let words = rule
@@ -778,7 +778,7 @@ assert!(
 #[test]
 fn extract_rule_pairs_by_carriage_not_moduli() {
     crate::transducer::raster::stand_on(0);
-let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
+let family = vec![(digits(&["1100", "0000"]), digits(&["0011", "0000"]))];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a translated bar extracts");
 let bodies = rule
     .form
@@ -799,7 +799,7 @@ assert!(carriage(&a[0], &b[0], &mut super::fixtures::budget()).is_some(), "a ver
 #[test]
 fn chart_holding_one_finds_singleton_fibre() {
     crate::transducer::raster::stand_on(0);
-    let g = grid(&[
+    let g = digits(&[
         "110333",
         "000000",
         "220444",
@@ -825,13 +825,13 @@ fn extract_rule_states_selection_without_demand() {
     crate::transducer::raster::stand_on(0);
     let family = vec![
         (
-            grid(&[
+            digits(&[
                 "110304",
                 "000304",
                 "220000",
                 "000005",
             ]),
-            grid(&[
+            digits(&[
                 "000000",
                 "000000",
                 "000000",
@@ -839,13 +839,13 @@ fn extract_rule_states_selection_without_demand() {
             ]),
         ),
         (
-            grid(&[
+            digits(&[
                 "110304",
                 "000304",
                 "220000",
                 "000006",
             ]),
-            grid(&[
+            digits(&[
                 "000000",
                 "000000",
                 "000000",
@@ -889,8 +889,8 @@ fn body_of_keeps_frame_on_support() {
 #[test]
 fn perceive_frames_joins_bodies_across_frames() {
     crate::transducer::raster::stand_on(0);
-    let frame0 = grid(&["10", "00"]);
-    let frame1 = grid(&["10", "00"]);
+    let frame0 = digits(&["10", "00"]);
+    let frame1 = digits(&["10", "00"]);
     let bodies = perceive_frames(&[frame0, frame1]);
     assert_eq!(bodies.len(), 1, "two adjacent compartments across k form one 3D body streamline");
     assert_eq!(

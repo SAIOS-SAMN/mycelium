@@ -12,7 +12,7 @@ use crate::transducer::family::*;
 fn is_identity_ends_cut_at_scene_key() {
     // No row and no column of this scene is one hue throughout, so Bands
     // deduces no separator and the cover is the whole.
-    let solid = vec![grid(&["120", "201", "012"])];
+    let solid = vec![digits(&["120", "201", "012"])];
     let whole_cover = cover(&solid, PlaneCut::Bands).expect("Bands deduces a cover");
     assert!(
         is_identity(&whole_cover, &solid, PlaneCut::Bands),
@@ -28,7 +28,7 @@ fn is_identity_ends_cut_at_scene_key() {
     // A scene a uniform row and a uniform column cut into four bands is
     // NOT at the identity end: the cover's key is four region keys written
     // out and the scene's is one.
-    let banded = vec![grid(&["1201", "0000", "2102", "1021"])];
+    let banded = vec![digits(&["1201", "0000", "2102", "1021"])];
     let cut = cover(&banded, PlaneCut::Bands).expect("Bands deduces a cover");
     assert!(
         !is_identity(&cut, &banded, PlaneCut::Bands),
@@ -54,7 +54,7 @@ fn is_identity_ends_cut_at_scene_key() {
 #[test]
 fn cover_bands_scene_into_restricted_regions() {
     crate::transducer::raster::stand_on(0);
-    let banded = vec![grid(&["12", "00", "21"])];
+    let banded = vec![digits(&["12", "00", "21"])];
     let banded_cover = cover(&banded, PlaneCut::Bands).expect("Bands deduces a cover");
     let keys: Vec<Vec<u8>> = banded_cover.scoped().map(|(k, _)| k).collect();
     assert_eq!(keys.len(), 2, "one uniform row cuts this scene into two bands");
@@ -74,12 +74,12 @@ fn cover_bands_scene_into_restricted_regions() {
         .filter_map(|(_, region)| restrict(&banded[0], region).map(|g| g.raster()))
         .collect();
     read.sort();
-    assert_eq!(read, vec![grid(&["12"]).raster(), grid(&["21"]).raster()], "each region is a scene of its own");
+    assert_eq!(read, vec![digits(&["12"]).raster(), digits(&["21"]).raster()], "each region is a scene of its own");
 
     // THE CUT IS A FACT OF THE FAMILY. Row 1 is uniform in the first input
     // and not in the second, so it is no separator and the scene is its
     // own single region.
-    let disagreeing = vec![grid(&["12", "00", "21"]), grid(&["12", "01", "21"])];
+    let disagreeing = vec![digits(&["12", "00", "21"]), digits(&["12", "01", "21"])];
     let one = cover(&disagreeing, PlaneCut::Bands).expect("Bands deduces a cover");
     assert!(
         is_identity(&one, &disagreeing, PlaneCut::Bands),

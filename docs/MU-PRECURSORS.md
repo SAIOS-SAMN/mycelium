@@ -533,7 +533,7 @@ Repaint}`; hues `Paint::{Own, Hue, Of}`. The gaps below are read against
 it.
 
 **(a) Act parameters measured per pair.**
-- *Gap:* `Act::Scale { up, down }` and `Act::Tile { rows, cols, turns }`
+- *Gap:* `Act::Scale { up, down }` and `Act::Tile { blocks, turns }`
   carry constants; `Act::Carry` and `Act::Echo` carry one fixed motion. A
   family whose scale, tiling or translation differs pair to pair is not
   stated by one clause.

@@ -7,7 +7,7 @@ use crate::client::sdk::mind::converge::{Evident, Scenes};
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::element::{from_connection, translator_versor, Element};
 
-fn grid(rows: &[&str]) -> crate::transducer::family::SectionSample {
+fn digits(rows: &[&str]) -> crate::transducer::family::SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -35,7 +35,7 @@ fn turn_180(r: i64, c: i64) -> Element {
 fn scenes_read_converges_two_words_on_one_section() {
     crate::transducer::raster::stand_on(0);
     let scene = [7u8; 32];
-    let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
+    let family = vec![(digits(&["1100", "0000"]), digits(&["0011", "0000"]))];
     let (held, heard) = (slide(0, 2), turn_180(1, 4));
     assert!(!held.same_vertex(&heard), "two constructions, not one");
     let mut s = Scenes::default();
@@ -54,7 +54,7 @@ fn scenes_read_converges_two_words_on_one_section() {
 fn scenes_read_refutes_word_false_on_scene() {
     crate::transducer::raster::stand_on(0);
     let scene = [7u8; 32];
-    let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
+    let family = vec![(digits(&["1100", "0000"]), digits(&["0011", "0000"]))];
     let mut s = Scenes::default();
     s.hold(&scene, &family, &slide(0, 2));
     assert_eq!(s.read(&scene, &slide(1, 0), &family, [9; 32]), Evident::Refuted);
@@ -67,7 +67,7 @@ fn scenes_read_refutes_word_false_on_scene() {
 #[test]
 fn scenes_forget_drops_scene_with_last_word() {
     let scene = [7u8; 32];
-    let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
+    let family = vec![(digits(&["1100", "0000"]), digits(&["0011", "0000"]))];
     let word = slide(0, 2);
     let mut s = Scenes::default();
     s.hold(&scene, &family, &word);
@@ -83,7 +83,7 @@ fn scenes_forget_drops_scene_with_last_word() {
 #[test]
 fn scenes_evidence_carries_body_charts() {
     let scene = [8u8; 32];
-    let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
+    let family = vec![(digits(&["1100", "0000"]), digits(&["0011", "0000"]))];
     let mut s = Scenes::default();
     s.hold(&scene, &family, &slide(0, 2));
     let (held, charts) = s.evidence(&scene).expect("held");

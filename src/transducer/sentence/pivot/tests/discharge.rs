@@ -129,7 +129,7 @@ fn select_discharge_never_selects_by_mu() {
         &Word::identity(),
         &crate::transducer::family::NoCrystal,
     )
-    .and_then(|s| s.grid())
+    .and_then(|s| s.sample())
     .expect("q speaks the bar and it fits the frame");
     assert!(
         y.symbols().iter().any(|&h| h != 0),

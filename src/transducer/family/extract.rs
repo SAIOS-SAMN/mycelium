@@ -227,7 +227,7 @@ fn stated(
     // is not said (78.167 B), and its erasure is read as the act it is.
     let says = family.iter().all(|(x, y)| {
         speak::apply_form(&rule.form, x, &crate::transducer::alphabet::Word::identity(), crystal).is_some_and(|s| {
-            s.unreached.is_empty() && s.demanded[2] + s.demanded[3] + s.demanded[4] == 0 && s.grid().is_some_and(|g| g == *y)
+            s.unreached.is_empty() && s.demanded[2] + s.demanded[3] + s.demanded[4] == 0 && s.sample().is_some_and(|g| g == *y)
         })
     });
     if says {

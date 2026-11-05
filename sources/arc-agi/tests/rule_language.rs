@@ -129,12 +129,11 @@ fn sentence_of_mints_no_word_for_scale_alone() {
     for (x, y) in train.iter().chain(&test) {
         let spoken = mycelium::transducer::family::statement::speak_clauses(&clauses, x, &mycelium::transducer::family::perceive(x))
             .expect("stated");
-        let mut out = vec![vec![0u8; spoken.frame.1]; spoken.frame.0];
+        let mut out = mycelium::transducer::spelled::SectionSample::filled(spoken.frame, 0).expect("the spoken frame is a sample");
         for p in &spoken.painted {
-            let [r, c] = p.site.indices().expect("a site of the sample");
-            out[r][c] = p.symbol;
+            out.paint(p.site, p.symbol).expect("a site of the sample");
         }
-        assert_eq!(out, y.raster(), "the scaled grid is the output");
+        assert_eq!(out.raster(), y.raster(), "the scaled sample is the output");
     }
     let got = sentence(&[Step::Scale { up: 2, down: 1 }], &train, &NoCrystal);
     assert!(

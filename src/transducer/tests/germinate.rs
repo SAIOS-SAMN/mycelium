@@ -41,7 +41,7 @@ fn germinate_carries_creation_as_residue() {
 
 /// No net change → no germ owed.
 #[test]
-fn germinate_refuses_unchanged_grids() {
+fn germinate_refuses_unchanged_scenes() {
     let a = painted(&[(0, 0, 1), (0, 1, 2)]);
     assert!(germinate(&a, &a).is_none());
 }

@@ -93,7 +93,7 @@ fn claims(envelope: &d::TaskSection) -> Vec<Claim> {
         let mut budget = Physics::default().stroke_n(1 << 20);
         extract_rule(&envelope.train, &mut budget).and_then(|rule| {
             let element = mint_sentence_why(&rule, &envelope.train, &NoCrystal, 0).ok()?;
-            let outputs = envelope.tests.iter().map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.grid())).collect::<Option<Vec<_>>>()?;
+            let outputs = envelope.tests.iter().map(|x| speak_rule(&rule, x, &NoCrystal).and_then(|s| s.sample())).collect::<Option<Vec<_>>>()?;
             Some((outputs, Some(element.to_bytes()?)))
         })
     });

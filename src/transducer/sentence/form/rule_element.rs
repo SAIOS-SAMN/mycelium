@@ -23,8 +23,9 @@
 
 use super::clause::{
     put_act, put_gauge, put_paint, put_pred, put_stop, take_act, take_byte, take_gauge, take_paint, take_pred, take_stop, About, Act, Clause, Extent, Paint,
-    Pred, RegionKind, Stop,
+    PlaneAxis, Pred, RegionKind, Stop,
 };
+use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
 use crate::core::Q;
 use crate::transducer::address::{put_key_count, take_key_count};
 use crate::transducer::base::Site;
@@ -81,8 +82,10 @@ pub enum RuleElement {
     Window(Extent),
     /// The output dilated by `up / down`, one of them 1.
     Dilate { up: u8, down: u8 },
-    Panes { along_rows: bool, gap: bool, table: u8, paint: u8 },
-    Tile { rows: u8, cols: u8, turns: Vec<u8> },
+    /// The input split along a plane axis into two panes, read by a table.
+    Panes { along: PlaneAxis, gap: bool, table: u8, paint: u8 },
+    /// A lattice of blocks of the input, one count per plane axis.
+    Tile { blocks: [u8; ALPHABET_SAMPLE_RANK], turns: Vec<u8> },
 }
 
 /// A CLAUSE LOWERED: its selection, read among the scene's bodies or its
@@ -144,8 +147,8 @@ fn lower_act(act: &Act) -> Option<RuleElement> {
         Act::Copy { template } => RuleElement::Stamp { template: template.clone() },
         Act::Crop(extent) => RuleElement::Window(*extent),
         Act::Scale { up, down } => RuleElement::Dilate { up: *up, down: *down },
-        Act::Panes { along_rows, gap, table, paint } => RuleElement::Panes { along_rows: *along_rows, gap: *gap, table: *table, paint: *paint },
-        Act::Tile { rows, cols, turns } => RuleElement::Tile { rows: *rows, cols: *cols, turns: turns.clone() },
+        Act::Panes { along, gap, table, paint } => RuleElement::Panes { along: *along, gap: *gap, table: *table, paint: *paint },
+        Act::Tile { blocks, turns } => RuleElement::Tile { blocks: *blocks, turns: turns.clone() },
         Act::Parts(_) => return None,
     })
 }
@@ -328,8 +331,8 @@ fn named(l: &Lowered) -> Result<Clause, &Carriage> {
         RuleElement::Stamp { template } => Act::Copy { template: template.clone() },
         RuleElement::Window(extent) => Act::Crop(*extent),
         RuleElement::Dilate { up, down } => Act::Scale { up: *up, down: *down },
-        RuleElement::Panes { along_rows, gap, table, paint } => Act::Panes { along_rows: *along_rows, gap: *gap, table: *table, paint: *paint },
-        RuleElement::Tile { rows, cols, turns } => Act::Tile { rows: *rows, cols: *cols, turns: turns.clone() },
+        RuleElement::Panes { along, gap, table, paint } => Act::Panes { along: *along, gap: *gap, table: *table, paint: *paint },
+        RuleElement::Tile { blocks, turns } => Act::Tile { blocks: *blocks, turns: turns.clone() },
     };
     let act = match l.parts {
         true => Act::Parts(Box::new(act)),

@@ -41,8 +41,8 @@ assert_eq!(words, 1, "presence, not min count; got {words} Word vertices");
 // recolour that appears in the second: the reflection is a some-pair
 // section. Hue is not a matching key, so a recolour-only split is not.
 let mixed = vec![
-    (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
-    (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
+    (digits(&["1100", "1000", "0000"]), digits(&["0011", "0001", "0000"])),
+    (digits(&["1100", "0000", "0000"]), digits(&["2200", "0000", "0000"])),
 ];
 let some = extract_rule_with(&mixed, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("sectioned");
 assert!(
@@ -70,7 +70,7 @@ fn edges_rederive_frames_refuses_forged_frame_axis_motor() {
     let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
     let a = ["111000", "100000", "000000", "000000", "000550", "000000"];
     let b = ["001000", "111000", "000000", "000000", "000550", "000000"];
-    let family = vec![(grid(&l_in), grid(&a)), (grid(&l_in), grid(&b))];
+    let family = vec![(digits(&l_in), digits(&a)), (digits(&l_in), digits(&b))];
     let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("extracts");
     let motors: Vec<crate::network::nerve::coord::Overlap> = rule
@@ -118,7 +118,7 @@ fn edges_rederive_frames_applies_motor_to_whole_fibre() {
     let a_out = ["220000", "000000", "220000", "000000"];
     let b_in = ["011000", "000000", "011000", "000000"];
     let b_out = ["022000", "000000", "022000", "000000"];
-    let family = vec![(grid(&a_in), grid(&a_out)), (grid(&b_in), grid(&b_out))];
+    let family = vec![(digits(&a_in), digits(&a_out)), (digits(&b_in), digits(&b_out))];
     let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("extracts");
     let motors: Vec<crate::network::nerve::coord::Overlap> = rule
@@ -154,7 +154,7 @@ fn extract_rule_with_keeps_varying_face_as_sections() {
 let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
 let turned_minus_90 = ["111000", "100000", "000000", "000000", "000550", "000000"];
 let turned_90 = ["001000", "111000", "000000", "000000", "000550", "000000"];
-let family = vec![(grid(&l_in), grid(&turned_minus_90)), (grid(&l_in), grid(&turned_90))];
+let family = vec![(digits(&l_in), digits(&turned_minus_90)), (digits(&l_in), digits(&turned_90))];
 let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts");
 let words = rule
     .form
@@ -244,9 +244,9 @@ assert!(!snaps.is_empty(), "the pivot orbit reads the held orbit and answers");
 fn extract_rule_reads_translation_as_one_vertex() {
     crate::transducer::raster::stand_on(0);
     let family = vec![
-        (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
-        (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
-        (grid(&["0000", "0000", "1100"]), grid(&["0000", "0000", "0011"])),
+        (digits(&["1100", "0000", "0000"]), digits(&["0011", "0000", "0000"])),
+        (digits(&["0000", "1100", "0000"]), digits(&["0000", "0011", "0000"])),
+        (digits(&["0000", "0000", "1100"]), digits(&["0000", "0000", "0011"])),
     ];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
@@ -265,8 +265,8 @@ fn extract_rule_reads_translation_as_one_vertex() {
     assert_eq!(rule.form.demand_vertices().count(), 0, "and asks for nothing");
     let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
     assert!(rems.iter().all(|r| r.is_empty()), "it closes every frame: {rems:?}");
-    let spoken = speak_rule(&rule, &grid(&["0000", "0000", "0000", "1100"]), &NoCrystal).expect("spoken");
-    assert_eq!(spoken.grid(), Some(grid(&["0000", "0000", "0000", "0011"])), "and speaks a fourth frame");
+    let spoken = speak_rule(&rule, &digits(&["0000", "0000", "0000", "1100"]), &NoCrystal).expect("spoken");
+    assert_eq!(spoken.sample(), Some(digits(&["0000", "0000", "0000", "0011"])), "and speaks a fourth frame");
 }
 
 /// 51.10 PROOF 2, 50.9 — THE SAME ADDRESS ON TWO COURTS. Two extractions
@@ -276,8 +276,8 @@ fn extract_rule_reads_translation_as_one_vertex() {
 #[test]
 fn extract_rule_reaches_one_address_on_two_courts() {
     let family = vec![
-        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
-        (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+        (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
     ];
     let first = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts");
     let second = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts again");
@@ -300,8 +300,8 @@ fn extract_rule_reaches_one_address_on_two_courts() {
 #[test]
 fn extract_rule_refuses_unmeasured_scale() {
 let family = vec![
-    (grid(&["11"]), grid(&["11"])),
-    (grid(&["11"]), grid(&["1111"])),
+    (digits(&["11"]), digits(&["11"])),
+    (digits(&["11"]), digits(&["1111"])),
 ];
 assert!(
     family_ratio(&family).is_none(),
@@ -326,7 +326,7 @@ let rot = crate::transducer::alphabet::Word::from_letters(&[(letter, false)]);
 // A placement of (3, 3) keeps both images inside the frame for
 // either orientation of the 90° turn (compartments map to
 // (c, −r−1) + p or (−c−1, r) + p).
-let x = grid(&["330000", "000000", "001000", "000000", "000000", "000000"]);
+let x = digits(&["330000", "000000", "001000", "000000", "000000", "000000"]);
 let bodies = perceive(&x);
 let a = bodies
     .iter()
@@ -480,8 +480,8 @@ fn acts_at(f: &Form, act: &[u8]) -> bool {
 fn extract_rule_with_glues_held_form() {
     crate::transducer::raster::stand_on(0);
 let family = vec![
-    (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
-    (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
+    (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
+    (digits(&["0000", "1100"]), digits(&["0000", "0011"])),
 ];
 let flat = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("flat");
 let flat_words = flat
@@ -579,7 +579,7 @@ let spoken = apply_form(
 )
 .expect("glued form speaks");
 assert_eq!(
-    spoken.grid(),
+    spoken.sample(),
     Some(family[0].1.clone()),
     "the spoken sites equal the target, and they fit the frame"
 );
@@ -608,12 +608,12 @@ fn glue_speaks_once_per_placement_and_chart() {
     use std::cell::Cell;
     let family = vec![
         (
-            grid(&["1100000", "0000000", "3000000", "0000000", "5550000", "0000000"]),
-            grid(&["0011000", "0000000", "0030000", "0000000", "0055500", "0000000"]),
+            digits(&["1100000", "0000000", "3000000", "0000000", "5550000", "0000000"]),
+            digits(&["0011000", "0000000", "0030000", "0000000", "0055500", "0000000"]),
         ),
         (
-            grid(&["0000000", "1100000", "0000000", "3000000", "0000000", "5550000"]),
-            grid(&["0000000", "0011000", "0000000", "0030000", "0000000", "0055500"]),
+            digits(&["0000000", "1100000", "0000000", "3000000", "0000000", "5550000"]),
+            digits(&["0000000", "0011000", "0000000", "0030000", "0000000", "0055500"]),
         ),
     ];
     let flat = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
@@ -625,7 +625,7 @@ fn glue_speaks_once_per_placement_and_chart() {
     };
     let charts = word.acts().map_or(0, |a| a.len());
     assert_eq!(charts, 3, "acting on the three shapes' charts");
-    let bar = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
+    let bar = (digits(&["1100", "0000"]), digits(&["0011", "0000"]));
     let held_form = cipher_form(&bar.0, &bar.1);
     assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
     let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
@@ -701,10 +701,10 @@ fn glue_speaks_once_per_placement_and_chart() {
 #[test]
 fn by_address_returns_citation_without_cloning() {
     let family = vec![
-        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
-        (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
+        (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
+        (digits(&["1100", "0000"]), digits(&["0011", "0000"])),
     ];
-    let bar = (grid(&["1100", "0000"]), grid(&["0011", "0000"]));
+    let bar = (digits(&["1100", "0000"]), digits(&["0011", "0000"]));
     let held_form = cipher_form(&bar.0, &bar.1);
     assert!(held_form.is_closed(), "the bar's shift is a closed form to cite");
     let held_e = crate::transducer::sentence::as_element_form(&held_form, [1, 0, 0, 0]).expect("tape");
@@ -771,10 +771,10 @@ fn by_address_returns_citation_without_cloning() {
 fn form_deflation_leaves_listing_shaped_remainders() {
     crate::transducer::raster::stand_on(0);
 let family = vec![
-    (grid(&["1"]), grid(&["2"])),
-    (grid(&["10"]), grid(&["23"])),
+    (digits(&["1"]), digits(&["2"])),
+    (digits(&["10"]), digits(&["23"])),
 ];
-let rule = extract_rule(&[(grid(&["1"]), grid(&["2"]))], &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
+let rule = extract_rule(&[(digits(&["1"]), digits(&["2"]))], &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
 let (_pay, rems) = form_deflation(&rule.form, &family, &NoCrystal);
 let listings: Vec<&Vec<crate::transducer::sentence::SectionLink>> =
     rems.iter().filter(|r| !r.is_empty()).collect();
@@ -797,7 +797,7 @@ for r in listings {
 #[test]
 fn extract_rule_cached_spends_once_per_generation() {
     crate::transducer::raster::stand_on(0);
-let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
+let family = vec![(digits(&["1100", "0000"]), digits(&["2200", "0000"]))];
 let fam = b"fam";
 let mut cache = ExtractMemo::new();
 // Sized the physics' way, by the family's frames, for the two extractions
@@ -836,8 +836,8 @@ assert!(budget.remaining() < left, "a new atlas generation re-extracts");
 #[test]
 fn extract_memo_replaces_rule_on_second_family() {
     crate::transducer::raster::stand_on(0);
-    let one = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
-    let two = vec![(grid(&["0011", "0000"]), grid(&["0033", "0000"]))];
+    let one = vec![(digits(&["1100", "0000"]), digits(&["2200", "0000"]))];
+    let two = vec![(digits(&["0011", "0000"]), digits(&["0033", "0000"]))];
     let atlas = crate::transducer::address::Address::from(vec![1]);
     let mut cache = ExtractMemo::new();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
@@ -868,8 +868,8 @@ fn extract_memo_replaces_rule_on_second_family() {
 fn extract_rule_keeps_star_face_of_some_pair_class() {
     crate::transducer::raster::stand_on(0);
 let family = vec![
-    (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
-    (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
+    (digits(&["1100", "1000", "0000"]), digits(&["0011", "0001", "0000"])),
+    (digits(&["1100", "0000", "0000"]), digits(&["2200", "0000", "0000"])),
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("section class");
 assert!(
@@ -917,8 +917,8 @@ assert!(
 fn extract_rule_reads_some_pair_class_as_section() {
     crate::transducer::raster::stand_on(0);
 let family = vec![
-    (grid(&["1100", "1000", "0000"]), grid(&["0011", "0001", "0000"])),
-    (grid(&["1100", "0000", "0000"]), grid(&["2200", "0000", "0000"])),
+    (digits(&["1100", "1000", "0000"]), digits(&["0011", "0001", "0000"])),
+    (digits(&["1100", "0000", "0000"]), digits(&["2200", "0000", "0000"])),
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("frame plus a some-pair class");
 assert!(
@@ -936,8 +936,8 @@ assert!(
 fn extract_rule_corresponds_by_transport_class_not_shape() {
     crate::transducer::raster::stand_on(0);
 let family = vec![
-    (grid(&["1100", "1100"]), grid(&["2200", "2200"])),
-    (grid(&["1110", "0000"]), grid(&["2220", "0000"])),
+    (digits(&["1100", "1100"]), digits(&["2200", "2200"])),
+    (digits(&["1110", "0000"]), digits(&["2220", "0000"])),
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("different shapes, same recolour");
 let bodies = rule
@@ -965,8 +965,8 @@ assert!(
 fn extract_rule_shares_one_vertex_across_recolours() {
     crate::transducer::raster::stand_on(0);
 let family = vec![
-    (grid(&["1100", "0000"]), grid(&["2200", "0000"])),
-    (grid(&["1100", "0000"]), grid(&["3300", "0000"])),
+    (digits(&["1100", "0000"]), digits(&["2200", "0000"])),
+    (digits(&["1100", "0000"]), digits(&["3300", "0000"])),
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("one recolour class");
 let words: Vec<&Vertex> = rule
@@ -1043,8 +1043,8 @@ assert_eq!(
 fn cipher_form_reads_meeting_hues_as_one_body() {
     crate::transducer::raster::stand_on(0);
 let family = vec![
-    (grid(&["110022", "000000"]), grid(&["001122", "000000"])),
-    (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
+    (digits(&["110022", "000000"]), digits(&["001122", "000000"])),
+    (digits(&["000000", "110022"]), digits(&["000000", "001122"])),
 ];
 let pf = cipher_form(&family[0].0, &family[0].1);
 let words: Vec<&Vertex> = pf.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).map(|(_, v)| v).collect();
@@ -1246,8 +1246,8 @@ fn union_quotient_reads_one_motion_or_refuses() {
 /// reflection is read, never demanded or adjoined.
 #[test]
 fn mint_sentence_why_mints_mirrored_pair_as_derivable() {
-    let l = grid(&["1000", "1000", "1100", "0000"]);
-    let j = grid(&["0100", "0100", "1100", "0000"]);
+    let l = digits(&["1000", "1000", "1100", "0000"]);
+    let j = digits(&["0100", "0100", "1100", "0000"]);
     let family = vec![(l, j)];
     let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the mirrored pair extracts");

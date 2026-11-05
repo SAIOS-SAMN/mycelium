@@ -7,14 +7,14 @@ use crate::chronometry::Cite;
 use crate::transducer::field::Contemplation;
 use crate::transducer::family::{perceive_family, scene_form_on, SectionSample, NoCrystal};
 
-fn grid(rows: &[&str]) -> SectionSample {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
 /// Perceive `input → output` in `family`, held on `escrow`, as a voice holds
 /// it, in the field thinking on this thread.
 fn perceive(c: &mut Contemplation, input: &[&str], output: &[&str], family: &[u8], escrow: [u64; 4]) -> Vec<u8> {
-    let (a, b) = (grid(input), grid(output));
+    let (a, b) = (digits(input), digits(output));
     let frames = perceive_family(&[(a.clone(), b.clone())]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let f = scene_form_on(&NoCrystal, &mut budget, &a, &b, &frames).expect("the scene reads");

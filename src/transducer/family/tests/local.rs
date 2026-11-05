@@ -10,7 +10,7 @@ use crate::transducer::element::{from_connection, translator_versor};
 use crate::transducer::family::local::{form_local, measure_sites, word_local, Local};
 use crate::transducer::family::{extract_rule, site_key, NoCrystal};
 
-fn grid(rows: &[&str]) -> SectionSample {
+fn digits(rows: &[&str]) -> SectionSample {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
@@ -35,8 +35,8 @@ fn slide(r: i64, c: i64) -> crate::transducer::element::Element {
 fn word_local_covers_every_changed_site() {
     crate::transducer::raster::stand_on(0);
     let family = vec![(
-        grid(&["000000", "110000", "000000", "020000"]),
-        grid(&["000000", "001100", "000000", "000200"]),
+        digits(&["000000", "110000", "000000", "020000"]),
+        digits(&["000000", "001100", "000000", "000200"]),
     )];
     let read = word_local(&slide(0, 2), &family);
     let changed = sites(&[(1, 0), (1, 1), (1, 2), (1, 3), (3, 1), (3, 3)]);
@@ -59,8 +59,8 @@ fn word_local_covers_every_changed_site() {
 #[test]
 fn word_local_pays_nothing_on_false_pair() {
     let family = vec![(
-        grid(&["000000", "110000", "000000", "020000"]),
-        grid(&["000000", "001100", "000000", "020000"]),
+        digits(&["000000", "110000", "000000", "020000"]),
+        digits(&["000000", "001100", "000000", "020000"]),
     )];
     let read = word_local(&slide(0, 2), &family);
     assert!(read.sites.iter().all(|s| s.is_empty()), "no site of a pair it spoke falsely on");
@@ -72,7 +72,7 @@ fn word_local_pays_nothing_on_false_pair() {
 /// closes nothing.
 #[test]
 fn word_local_closes_nothing_for_wrong_carriage() {
-    let family = vec![(grid(&["1100", "0000"]), grid(&["0110", "0000"]))];
+    let family = vec![(digits(&["1100", "0000"]), digits(&["0110", "0000"]))];
     let read = word_local(&slide(0, 2), &family);
     assert!(read.sites.iter().all(|s| s.is_empty()), "no site of a body carried wrong");
     assert_eq!(read.pay, [0; 4], "and nothing paid");
@@ -83,7 +83,7 @@ fn word_local_closes_nothing_for_wrong_carriage() {
 /// form's, never this reader's.
 #[test]
 fn word_local_pays_letter_nothing() {
-    let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
+    let family = vec![(digits(&["1100", "0000"]), digits(&["0011", "0000"]))];
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
     let chart = crate::transducer::stalk::invariant(&[crate::transducer::sentence::tests::fixtures::link(0, 0, 1, 1)]);
     let letter = crate::transducer::sentence::generator_form(&crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor(), &chart, &[]).expect("a letter");
@@ -101,8 +101,8 @@ fn word_local_pays_letter_nothing() {
 fn form_local_agrees_with_word_local_section() {
     crate::transducer::raster::stand_on(0);
     let family = vec![
-        (grid(&["0000", "1100", "0000"]), grid(&["0000", "0011", "0000"])),
-        (grid(&["1100", "0000", "0000"]), grid(&["0011", "0000", "0000"])),
+        (digits(&["0000", "1100", "0000"]), digits(&["0000", "0011", "0000"])),
+        (digits(&["1100", "0000", "0000"]), digits(&["0011", "0000", "0000"])),
     ];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the slide extracts");
     let whole = form_local(&rule.form, &family, &NoCrystal, &Word::identity());
@@ -118,7 +118,7 @@ fn form_local_agrees_with_word_local_section() {
 /// demand over the sites left.
 #[test]
 fn beyond_equals_difference_of_sites() {
-    let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
+    let family = vec![(digits(&["1100", "0000"]), digits(&["0011", "0000"]))];
     let all = sites(&[(0, 0), (0, 1), (0, 2), (0, 3)]);
     let half = sites(&[(0, 2), (0, 3)]);
     let local = |at: Keyed<()>| {

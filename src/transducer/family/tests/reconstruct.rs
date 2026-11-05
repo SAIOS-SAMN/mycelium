@@ -3,7 +3,7 @@
 // output, the loops across pairs closed on the axis that carries the rule,
 // and each pair rebuilt from the others by replay.
 
-use super::fixtures::grid;
+use super::fixtures::digits;
 use crate::transducer::family::reconstruct::{field, holonomy, reconstruct, transports};
 use num_rational::BigRational;
 
@@ -12,7 +12,7 @@ use num_rational::BigRational;
 /// ½ at the barycentre and 5/4 at either end — read off the sums, never a root.
 #[test]
 fn field_reads_centrality_against_body_sphere() {
-    let f = field(&grid(&["111"]));
+    let f = field(&digits(&["111"]));
     let half = BigRational::new(1.into(), 2.into());
     let end = BigRational::new(5.into(), 4.into());
     assert_eq!(f[1].centrality, Some(half), "the barycentre");
@@ -32,16 +32,16 @@ fn reconstruct_derives_each_pair_on_closing_axis() {
     crate::transducer::raster::stand_on(0);
     let family = vec![
         (
-            grid(&["500000050", "050000500", "005005000", "000000000", "000000000"]),
-            grid(&["200000080", "020000800", "002008000", "000000000", "000000000"]),
+            digits(&["500000050", "050000500", "005005000", "000000000", "000000000"]),
+            digits(&["200000080", "020000800", "002008000", "000000000", "000000000"]),
         ),
         (
-            grid(&["000000000", "500000050", "050000500", "005005000", "000000000"]),
-            grid(&["000000000", "200000080", "020000800", "002008000", "000000000"]),
+            digits(&["000000000", "500000050", "050000500", "005005000", "000000000"]),
+            digits(&["000000000", "200000080", "020000800", "002008000", "000000000"]),
         ),
         (
-            grid(&["000000000", "000000000", "050000005", "005000050", "000500500"]),
-            grid(&["000000000", "000000000", "020000008", "002000080", "000200800"]),
+            digits(&["000000000", "000000000", "050000005", "005000050", "000500500"]),
+            digits(&["000000000", "000000000", "020000008", "002000080", "000200800"]),
         ),
     ];
     let fields: Vec<_> = family.iter().map(|(x, y)| (field(x), transports(x, y).expect("one frame"))).collect();

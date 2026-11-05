@@ -2,7 +2,7 @@
 // percept's rings composed and named, the rung recursing on closed sentences,
 // and a sentence heard again recognized — comprehension, live.
 
-use super::fixtures::grid;
+use super::fixtures::digits;
 use crate::transducer::cga::{self, Mv, E1, E2, E3};
 use crate::transducer::sentence::compose::{compose, terms_of, RingClosure, Term};
 use crate::transducer::sentence::rung::{hear, lexicon};
@@ -31,8 +31,8 @@ fn turn(a: usize, b: usize) -> Mv {
 #[test]
 fn compose_names_each_percept_ring_unbound() {
     let slides = vec![
-        (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
-        (grid(&["0000110", "0000000", "0200000", "0220000"]), grid(&["0000110", "0000000", "0002000", "0002200"])),
+        (digits(&["1100000", "0000000", "0002000", "0002200"]), digits(&["1100000", "0000000", "0000020", "0000022"])),
+        (digits(&["0000110", "0000000", "0200000", "0220000"]), digits(&["0000110", "0000000", "0002000", "0002200"])),
     ];
     let rule = crate::transducer::family::extract_rule(&slides, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a rule");
     let form = rule.form;
@@ -66,8 +66,8 @@ fn compose_names_each_percept_ring_unbound() {
 fn sentences_of_hears_chord_rings_composes_rays() {
     use crate::transducer::sentence::compose::{is_chord, sentences_of, RingUnread};
     let slides = vec![
-        (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
-        (grid(&["0000110", "0000000", "0200000", "0220000"]), grid(&["0000110", "0000000", "0002000", "0002200"])),
+        (digits(&["1100000", "0000000", "0002000", "0002200"]), digits(&["1100000", "0000000", "0000020", "0000022"])),
+        (digits(&["0000110", "0000000", "0200000", "0220000"]), digits(&["0000110", "0000000", "0002000", "0002200"])),
     ];
     let rule = crate::transducer::family::extract_rule(&slides, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a rule");
     let form = rule.form;
@@ -99,8 +99,8 @@ fn theorem_of_is_nilpotent_on_ray_ring() {
     use crate::transducer::sentence::compose::sentences_of;
     use crate::transducer::sentence::theorem::{Certificate, Theorem};
     let slides = vec![
-        (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
-        (grid(&["0000110", "0000000", "0200000", "0220000"]), grid(&["0000110", "0000000", "0002000", "0002200"])),
+        (digits(&["1100000", "0000000", "0002000", "0002200"]), digits(&["1100000", "0000000", "0000020", "0000022"])),
+        (digits(&["0000110", "0000000", "0200000", "0220000"]), digits(&["0000110", "0000000", "0002000", "0002200"])),
     ];
     let rule = crate::transducer::family::extract_rule(&slides, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a rule");
     let form = rule.form;

@@ -144,13 +144,13 @@ fn occupancy_reads_translation_as_one_parabolic_plane() {
     assert!(o.planes.is_empty(), "{o:?}");
 }
 
-/// 51.2 — EVERY GRID AXIS HAS ITS SLOT IN THE LETTERS' CHART, and the
+/// 51.2 — EVERY BASE AXIS HAS ITS SLOT IN THE LETTERS' CHART, and the
 /// orientation character `e2` stands for no base axis.
 #[test]
-fn slot_of_axis_stands_for_each_grid_axis() {
+fn slot_of_axis_stands_for_each_base_axis() {
     use crate::transducer::alphabet::{axis_of_slot, slot_of_axis};
     for axis in 0..3 {
-        let slot = slot_of_axis(axis).expect("the grid's three axes have slots");
+        let slot = slot_of_axis(axis).expect("the base's three axes have slots");
         assert_eq!(axis_of_slot(slot), Some(axis), "a slot stands for its own axis");
     }
     assert_eq!(axis_of_slot(2), None, "e2 is the orientation character, no base axis");

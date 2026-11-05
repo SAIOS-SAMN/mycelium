@@ -46,48 +46,88 @@ pub enum Unstated {
     Unpartnered,
 }
 
-/// THE SQUARE'S SYMMETRY `t` ON A SECTION SAMPLE (`Act::Tile`'s codes): 0
-/// itself, 1 mirrored across its columns, 2 across its rows, 3 a turn of
-/// 180°, 4 a turn of 90°, 5 of 270°, 6 the transpose, 7 the anti-transpose.
-/// `None` for a code past 7, or a 90° turn or transpose of a sample that is
-/// not square.
-pub(crate) fn turn_of(g: &SectionSample, t: u8) -> Option<SectionSample> {
-    let [h, w] = g.extents();
-    let at = |i: usize, j: usize| read(g, i, j);
-    // The turned sample opens as the symbol at the origin and is written at
-    // every one of its sites before it is read.
-    let grid = |rows: usize, cols: usize, f: &dyn Fn(usize, usize) -> Option<u8>| -> Option<SectionSample> {
-        let mut out = SectionSample::filled([rows, cols], at(0, 0)?).ok()?;
-        let mut writes = Vec::with_capacity(rows * cols);
-        for (site, _) in out.sites() {
-            let [i, j] = site.indices()?;
-            writes.push((site, f(i, j)?));
-        }
-        for (site, h) in writes {
-            out.paint(site, h)?;
-        }
-        Some(out)
-    };
-    let last = |n: usize, i: usize| n.checked_sub(1).and_then(|m| m.checked_sub(i));
-    match t {
-        0 => Some(g.clone()),
-        1 => grid(h, w, &|i, j| at(i, last(w, j)?)),
-        2 => grid(h, w, &|i, j| at(last(h, i)?, j)),
-        3 => grid(h, w, &|i, j| at(last(h, i)?, last(w, j)?)),
-        4..=7 if h == w => match t {
-            4 => grid(h, w, &|i, j| at(last(h, j)?, i)),
-            5 => grid(h, w, &|i, j| at(j, last(w, i)?)),
-            6 => grid(h, w, &|i, j| at(j, i)),
-            _ => grid(h, w, &|i, j| at(last(h, j)?, last(w, i)?)),
-        },
-        _ => None,
+/// THE SQUARE'S SYMMETRY `t` (`Act::Tile`'s codes) ON A SITE read from the
+/// least corner of a span of `extents` along the plane: the site it lands on
+/// in the turned span, read from that span's least corner. The square's
+/// symmetries are the plane's by their mathematics: a site's coordinates are
+/// read along the plane's first and second axes (`PlaneAxis`), never as rows
+/// and columns. `None` for a code past 7, or a site off the span.
+pub(crate) fn turned(t: u8, site: SectionSite, extents: [usize; ALPHABET_SAMPLE_RANK]) -> Option<SectionSite> {
+    let [a, b] = site.coordinates();
+    let [first, second] = extents;
+    // The coordinate `i` read from the far end of an axis of extent `n`.
+    let last = |n: usize, i: i64| -> Option<i64> { i64::try_from(n).ok()?.checked_sub(1)?.checked_sub(i).filter(|v| *v >= 0) };
+    if a < 0 || b < 0 {
+        return None;
     }
+    let landed = match t {
+        0 => [a, b],
+        1 => [a, last(second, b)?],
+        2 => [last(first, a)?, b],
+        3 => [last(first, a)?, last(second, b)?],
+        4 => [b, last(first, a)?],
+        5 => [last(second, b)?, a],
+        6 => [b, a],
+        7 => [last(second, b)?, last(first, a)?],
+        _ => return None,
+    };
+    Some(SectionSite::on_plane(landed))
+}
+
+/// THE ORIGIN OF THE SECTION: the site at coordinate 0 on every axis of the
+/// plane.
+fn origin() -> SectionSite {
+    SectionSite::on_plane([0; ALPHABET_SAMPLE_RANK])
+}
+
+/// THE SQUARE'S SYMMETRY `t` ON A SECTION SAMPLE (`Act::Tile`'s codes): 0
+/// itself, 1 reversed along the plane's second axis, 2 along its first, 3 a
+/// turn of 180°, 4 a turn of 90°, 5 of 270°, 6 the transpose, 7 the
+/// anti-transpose, each site carried by [`turned`]. `None` for a code past
+/// 7, or a 90° turn or transpose of a sample that is not square.
+pub(crate) fn turn_of(g: &SectionSample, t: u8) -> Option<SectionSample> {
+    let extents = g.extents();
+    let [first, second] = extents;
+    match t {
+        0 => return Some(g.clone()),
+        1..=3 => {}
+        4..=7 if first == second => {}
+        _ => return None,
+    }
+    // The turned sample opens as the symbol at the origin and is written at
+    // every one of its sites, each the image of one site of `g`, before it is
+    // read.
+    let mut out = SectionSample::filled(extents, g.at(origin())?).ok()?;
+    for (site, h) in g.sites() {
+        out.paint(turned(t, site, extents)?, h)?;
+    }
+    Some(out)
+}
+
+/// THE CORNER OF BLOCK `i` of a lattice of `blocks` blocks along each axis
+/// of the plane, each block of `extents`: the block's place in the lattice in
+/// canonical order (the plane's last axis fastest), each coordinate times the
+/// block's extent along its axis. `None` where a count is zero or a
+/// coordinate leaves `i64`.
+pub(crate) fn block_corner(i: usize, blocks: [usize; ALPHABET_SAMPLE_RANK], extents: [usize; ALPHABET_SAMPLE_RANK]) -> Option<[i64; ALPHABET_SAMPLE_RANK]> {
+    let mut corner = [0i64; ALPHABET_SAMPLE_RANK];
+    let mut rest = i;
+    for ((c, &b), &e) in corner.iter_mut().zip(&blocks).zip(&extents).rev() {
+        let place = rest.checked_rem(b)?;
+        rest /= b;
+        *c = i64::try_from(place.checked_mul(e)?).ok()?;
+    }
+    Some(corner)
 }
 
 /// WHAT THE CLAUSES SPOKE: the output frame and its painted cells.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Spoken {
-    pub frame: (usize, usize),
+    /// The output frame's extents along the perspective's plane, one per
+    /// plane axis in the plane's order (`PlaneAxis::index`), as
+    /// `SectionSample::extents` reads them.
+    pub frame: [usize; ALPHABET_SAMPLE_RANK],
+    /// The sites the clauses painted on that frame.
     pub painted: Vec<PaintedSite>,
 }
 
@@ -461,12 +501,6 @@ fn lay(canvas: &mut SectionSample, p: PaintedSite) {
     let _ = canvas.paint(p.site, p.symbol);
 }
 
-/// THE SYMBOL AT INDICES `(r, c)` ALONG THE PERSPECTIVE'S PLANE of a
-/// section sample; `None` off it.
-fn read(g: &SectionSample, r: usize, c: usize) -> Option<u8> {
-    g.at(SectionSite::of_indices([r, c])?)
-}
-
 /// Is the canvas's site read as ground? Never off the canvas.
 fn grounded_on(canvas: &SectionSample, ground: &crate::transducer::family::transduce::Ground<u8>, site: SectionSite) -> bool {
     canvas.at(site).is_some_and(|h| ground.holds(&h))
@@ -710,57 +744,58 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 window = Some(corners_of(&cells).ok_or(Unstated::NotOne)?);
             }
             RuleElement::Dilate { up, down } => scale = Some((*up, *down)),
-            RuleElement::Panes { along_rows, gap, table, paint: hue } => {
+            RuleElement::Panes { along, gap, table, paint: hue } => {
                 // The panes' unpainted cells are laid on the scene's one
                 // ground; with none, no pane is spoken.
                 let ground = crate::transducer::raster::ground();
                 let void = crate::transducer::raster::void().map_err(|_| Unstated::Unframed)?;
-                let [rows, cols] = x.extents();
-                let (n, other) = match along_rows {
-                    true => (rows, cols),
-                    false => (cols, rows),
-                };
+                // The split runs along the plane axis `along`: the pane keeps
+                // the input's extent along every other axis of the plane.
+                let axis = along.index();
+                let mut extents = x.extents();
+                let n = extents.get_mut(axis).ok_or(Unstated::Unframed)?;
                 let k = n.checked_sub(usize::from(*gap)).filter(|m| m % 2 == 0).map(|m| m / 2).ok_or(Unstated::Unframed)?;
                 if k == 0 {
                     return Err(Unstated::Unframed);
                 }
-                let cell = |a: usize, b: usize| -> Option<u8> {
-                    match *along_rows {
-                        true => read(&canvas, a, b),
-                        false => read(&canvas, b, a),
-                    }
-                };
-                // The pane's cell at `a` along the split, `b` across it.
-                let at = |a: usize, b: usize| -> Option<u8> {
-                    let first = !ground.holds(&cell(a, b)?);
-                    let second = !ground.holds(&cell(a + k + usize::from(*gap), b)?);
+                *n = k;
+                // The second pane stands one pane and the gap further along
+                // the split.
+                let mut across = [0i64; ALPHABET_SAMPLE_RANK];
+                *across.get_mut(axis).ok_or(Unstated::Unframed)? = k.checked_add(usize::from(*gap)).and_then(|f| i64::try_from(f).ok()).ok_or(Unstated::Unframed)?;
+                // The pane's cell at `site`: the table read on whether each
+                // pane is painted there.
+                let at = |site: SectionSite| -> Option<u8> {
+                    let first = !ground.holds(&canvas.at(site)?);
+                    let second = !ground.holds(&canvas.at(site.moved(across)?)?);
                     let bit = 2 * usize::from(first) + usize::from(second);
                     Some(if (table >> bit) & 1 == 1 { *hue } else { void })
-                };
-                let extents = match along_rows {
-                    true => [k, other],
-                    false => [other, k],
                 };
                 let mut out = SectionSample::filled(extents, void).map_err(|_| Unstated::Unframed)?;
                 let mut writes = Vec::with_capacity(out.symbols().len());
                 for (site, _) in out.sites() {
-                    let [i, j] = site.indices().ok_or(Unstated::Unframed)?;
-                    let (a, b) = match along_rows {
-                        true => (i, j),
-                        false => (j, i),
-                    };
-                    writes.push((site, at(a, b).ok_or(Unstated::Unframed)?));
+                    writes.push((site, at(site).ok_or(Unstated::Unframed)?));
                 }
                 for (site, h) in writes {
                     out.paint(site, h).ok_or(Unstated::Unframed)?;
                 }
                 framed = Some(out);
             }
-            RuleElement::Tile { rows, cols, turns } => {
-                let [h, w] = x.extents();
-                let (rows, cols) = (usize::from(*rows), usize::from(*cols));
-                if turns.len() != rows * cols || rows == 0 || cols == 0 {
+            RuleElement::Tile { blocks, turns } => {
+                let extents = x.extents();
+                let blocks = blocks.map(usize::from);
+                // One turn per block of the lattice, and no axis of the
+                // plane without a block.
+                let mut count = 1usize;
+                for &b in &blocks {
+                    count = count.checked_mul(b).ok_or(Unstated::Unframed)?;
+                }
+                if turns.len() != count || blocks.contains(&0) {
                     return Err(Unstated::Unframed);
+                }
+                let mut tiled = extents;
+                for (e, b) in tiled.iter_mut().zip(blocks) {
+                    *e = e.checked_mul(b).ok_or(Unstated::Unframed)?;
                 }
                 // Every cell is a block's: each block holds the canvas's
                 // extents, so the blocks lay every cell of the tiling once,
@@ -768,17 +803,16 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
                 // written in for a cell it leaves. The tiling opens as the
                 // canvas's symbol at the origin, written over at every cell.
                 let laid = canvas.clone();
-                let origin = read(&laid, 0, 0).ok_or(Unstated::Unframed)?;
-                let mut out = SectionSample::filled([h * rows, w * cols], origin).map_err(|_| Unstated::Unframed)?;
+                let opening = laid.at(origin()).ok_or(Unstated::Unframed)?;
+                let mut out = SectionSample::filled(tiled, opening).map_err(|_| Unstated::Unframed)?;
                 for (i, &t) in turns.iter().enumerate() {
                     let block = turn_of(&laid, t).ok_or(Unstated::Unframed)?;
-                    if block.extents() != [h, w] {
+                    if block.extents() != extents {
                         return Err(Unstated::Unframed);
                     }
-                    let corner = [i64::try_from((i / cols) * h), i64::try_from((i % cols) * w)];
-                    let [Ok(br), Ok(bc)] = corner else { return Err(Unstated::Unframed) };
+                    let corner = block_corner(i, blocks, extents).ok_or(Unstated::Unframed)?;
                     for (site, v) in block.sites() {
-                        out.paint(site.moved([br, bc]).ok_or(Unstated::Unframed)?, v).ok_or(Unstated::Unframed)?;
+                        out.paint(site.moved(corner).ok_or(Unstated::Unframed)?, v).ok_or(Unstated::Unframed)?;
                     }
                 }
                 framed = Some(out);
@@ -922,8 +956,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
         Some((up, down)) => scaled(&out, up, down)?,
     };
     let painted = crate::transducer::raster::painted_sites(&out);
-    let [rows, cols] = out.extents();
-    Ok(Spoken { frame: (rows, cols), painted })
+    Ok(Spoken { frame: out.extents(), painted })
 }
 
 /// THE CANVAS CROPPED to the window from `low` to `high`, both corners
@@ -1004,37 +1037,60 @@ pub(crate) fn regions_each(region: RegionKind, x: &SectionSample, bodies: &[Body
     (0..bodies.len()).map(|b| seen.region(region, &[b])).collect()
 }
 
-/// THE GRID SCALED BY `up / down`, one of them 1: each cell an `up × up`
-/// block, or each `down × down` block, uniform, one cell. A block that is
-/// not uniform, an extent `down` does not divide, a zero or a ratio of two
-/// factors is no scaling of cells, refused by name.
+/// THE SAMPLE SCALED BY `up / down`, one of them 1, alike along every axis
+/// of the plane: each site a block of `up` sites along each axis, or each
+/// block of `down`, uniform, one site. A block that is not uniform, an
+/// extent `down` does not divide, a zero or a ratio of two factors is no
+/// scaling of sites, refused by name.
 fn scaled(g: &SectionSample, up: u8, down: u8) -> Result<SectionSample, Unstated> {
     let (up, down) = (usize::from(up), usize::from(down));
-    let [rows, cols] = g.extents();
-    // Each site of the scaled sample reads the site of `g` it stands in (a
-    // block of `up`), or each block of `down` reads one uniform symbol.
-    let extents = match (up, down) {
+    let mut extents = g.extents();
+    match (up, down) {
         (1, 1) => return Ok(g.clone()),
-        (u, 1) if u > 1 => [rows * u, cols * u],
-        (1, d) if d > 1 && rows % d == 0 && cols % d == 0 => [rows / d, cols / d],
-        _ => return Err(Unstated::OffSubstrate),
-    };
-    let from = |bi: usize, bj: usize| -> Option<u8> {
-        match down {
-            1 => read(g, bi / up, bj / up),
-            d => {
-                let h = read(g, bi * d, bj * d)?;
-                let uniform = (0..d).all(|i| (0..d).all(|j| read(g, bi * d + i, bj * d + j) == Some(h)));
-                uniform.then_some(h)
+        (u, 1) if u > 1 => {
+            for e in extents.iter_mut() {
+                *e = e.checked_mul(u).ok_or(Unstated::OffSubstrate)?;
             }
         }
+        (1, d) if d > 1 && extents.iter().all(|e| e % d == 0) => {
+            for e in extents.iter_mut() {
+                *e /= d;
+            }
+        }
+        _ => return Err(Unstated::OffSubstrate),
+    }
+    // The site of a block of `by` along each axis that `site` stands in.
+    let block_of = |site: SectionSite, by: usize| -> Option<SectionSite> {
+        let by = i64::try_from(by).ok()?;
+        Some(SectionSite::on_plane(site.coordinates().map(|c| c.div_euclid(by))))
     };
-    let origin = read(g, 0, 0).ok_or(Unstated::OffSubstrate)?;
-    let mut out = SectionSample::filled(extents, origin).map_err(|_| Unstated::OffSubstrate)?;
+    let opening = g.at(origin()).ok_or(Unstated::OffSubstrate)?;
+    let mut out = SectionSample::filled(extents, opening).map_err(|_| Unstated::OffSubstrate)?;
     let mut writes = Vec::with_capacity(out.symbols().len());
-    for (site, _) in out.sites() {
-        let [i, j] = site.indices().ok_or(Unstated::OffSubstrate)?;
-        writes.push((site, from(i, j).ok_or(Unstated::OffSubstrate)?));
+    match down {
+        // Each site of the scaled sample reads the site of `g` it stands in.
+        1 => {
+            for (site, _) in out.sites() {
+                let from = block_of(site, up).and_then(|s| g.at(s)).ok_or(Unstated::OffSubstrate)?;
+                writes.push((site, from));
+            }
+        }
+        // Each block of `down` reads one uniform symbol: every site of `g`
+        // lands on its block's site, and a block holding two symbols is no
+        // scaling.
+        d => {
+            let mut held: Vec<Option<u8>> = vec![None; out.symbols().len()];
+            for (site, h) in g.sites() {
+                let slot = block_of(site, d).and_then(|s| out.offset_of(s)).and_then(|k| held.get_mut(k)).ok_or(Unstated::OffSubstrate)?;
+                match *slot {
+                    Some(was) if was != h => return Err(Unstated::OffSubstrate),
+                    _ => *slot = Some(h),
+                }
+            }
+            for ((site, _), h) in out.sites().zip(held) {
+                writes.push((site, h.ok_or(Unstated::OffSubstrate)?));
+            }
+        }
     }
     for (site, h) in writes {
         out.paint(site, h).ok_or(Unstated::OffSubstrate)?;
