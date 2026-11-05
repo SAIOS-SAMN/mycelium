@@ -78,7 +78,9 @@ fn decode_receipt_section_reads_past_cover_digest() {
         "the section begins one past the digest's signature"
     );
     let sec = decode_receipt_section(&body, bare).expect("section");
-    assert_eq!((sec.prefix, sec.sig, sec.receipt), (prefix.clone(), rsig, head.clone()));
+    use super::fixtures::{one_prefix, one_receipt};
+    assert!(one_prefix(&sec.prefix, &prefix) && sec.sig == rsig);
+    assert!(one_receipt(&sec.receipt, &head), "and the receipt it binds to");
 
     // A peer that sends no section still decodes, and reads as absent.
     let short = &body[..bare];
@@ -218,7 +220,7 @@ fn encode_receipt_section_refuses_prefix_past_wire() {
     assert!(one.fits(), "one chart fits");
     let framed = encode_receipt_section(&one, &[9u8; 64], &head).expect("frames");
     let back = decode_receipt_section(&framed, 0).expect("and reads back whole");
-    assert_eq!(back.prefix, one);
+    assert!(super::fixtures::one_prefix(&back.prefix, &one));
     assert_eq!(receipt_section_end(&framed, 0), Some(framed.len()));
 }
 

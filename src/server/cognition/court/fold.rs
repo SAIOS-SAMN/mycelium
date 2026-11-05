@@ -22,7 +22,7 @@ use crate::verdict::{
 /// rows the home will write. The prefix is the line strictly after the
 /// one up to the other. Held as `fold_pending` until a witness co-signs
 /// the root or the reading changes.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct Proposal {
     pub after: Option<Place>,
     pub root: Root,
@@ -222,7 +222,7 @@ impl Court {
             return Err(REFUSE_WITNESS_DEPENDENT);
         }
         crate::court::admission::verify_signature(&witness.prefix, &wk, &witness.sig)?;
-        if Root::of_signed(&witness.prefix.payload) != Some(p.root) {
+        if !Root::of_signed(&witness.prefix.payload).is_some_and(|r| r.restates(&p.root)) {
             return Err(REFUSE_RECEIPT);
         }
         let epochs = nets_of(&self.treasury.rows_below(p.root.at))?.rows;
@@ -243,13 +243,13 @@ impl Court {
         // The Fold node cites the root it leaves the line on, by stamp and
         // hash (78.24): a fold names no word and measured nothing.
         let at = Stamp::new(root.height, own_vk, root.at);
-        self.append_cited(ActKind::Fold, vec![Cite::Root { at, hash: root.hash }], [0; 4], own_vk);
+        self.append_cited(ActKind::Fold, vec![Cite::Root { at, hash: root.hash.bytes() }], [0; 4], own_vk);
         // THE EPOCH ROWS STAND AT THE ROOT they net to (78.65): the balance
         // the folded prefix leaves is the root's, so the journal stays in
         // line order and the next fold's nets below its cut count them. At
         // the fold node, which stands at the line's head, they stood above
         // rows they summarized.
-        let folded = match self.treasury.fold(p.root.at, (at, root.hash)) {
+        let folded = match self.treasury.fold(p.root.at, (at, root.hash.bytes())) {
             Ok(f) => f,
             Err(reason) => {
                 self.fold_pending = None;
@@ -389,7 +389,7 @@ pub(crate) fn verify_prefix(bonded: bool, home: [u8; 32], p: &Proposal, receipts
         // predecessor; each after it names the one before.
         let links = match prev {
             None => r.prev.map(|q| q.at.place()) == p.after,
-            Some(q) => r.prev == Some(crate::chronometry::Parent { at: q.stamp, hash: q.chain_hash }),
+            Some(q) => r.prev.is_some_and(|named| crate::court::admission::Predecessor::cites(&named, &crate::chronometry::Parent::of(q))),
         };
         if !links {
             return Err(REFUSE_RECEIPT);
@@ -397,7 +397,8 @@ pub(crate) fn verify_prefix(bonded: bool, home: [u8; 32], p: &Proposal, receipts
         prev = Some(r);
     }
     let last = prev.ok_or(REFUSE_FOLD_OPEN)?;
-    if (last.stamp.place(), last.chain_hash, last.stamp.h) != (p.root.at, p.root.hash, p.root.height) {
+    let reached = Root { at: last.stamp.place(), hash: last.chain_hash, height: last.stamp.h };
+    if !reached.restates(&p.root) {
         return Err(REFUSE_RECEIPT);
     }
     if nets_of(rows)?.rows != p.epochs {

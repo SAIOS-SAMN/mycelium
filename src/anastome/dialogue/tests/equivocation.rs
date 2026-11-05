@@ -35,13 +35,15 @@ fn equivocation_round_trips_sections_in_order() {
     assert_eq!(body[0], ACT_EQUIVOCATION, "the act byte");
     assert_eq!(body[1], EQUIVOCATION_VERSION, "then the layout version");
     let (ga, gb) = decode_equivocation(&body).expect("two sections parse whole");
-    assert_eq!(ga.prefix, a.prefix, "the first prefix, whole");
+    use super::fixtures::{one_prefix, one_receipt};
+    assert!(one_prefix(&ga.prefix, &a.prefix), "the first prefix, whole");
     assert_eq!(ga.sig, a.sig, "its signature");
-    assert_eq!(ga.receipt, a.receipt, "and the receipt it binds to");
-    assert_eq!(gb.prefix, b.prefix);
+    assert!(one_receipt(&ga.receipt, &a.receipt), "and the receipt it binds to");
+    assert!(one_prefix(&gb.prefix, &b.prefix));
     assert_eq!(gb.sig, b.sig);
-    assert_eq!(gb.receipt, b.receipt);
-    assert_ne!(ga.receipt.chain_hash, gb.receipt.chain_hash, "two roots at one K, as presented");
+    assert!(one_receipt(&gb.receipt, &b.receipt));
+    let hash = |r: &crate::chronometry::KStepReceipt| crate::court::admission::Predecessor::of(r);
+    assert!(hash(&ga.receipt).forks(&hash(&gb.receipt)), "two roots at one K, as presented");
 }
 
 /// A frame that is not exactly two whole sections is not a proof: a

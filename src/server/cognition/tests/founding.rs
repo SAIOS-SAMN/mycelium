@@ -47,7 +47,7 @@ fn origin(commitment: u8) -> crate::anastome::dialogue::domain::SignedOrigin {
 /// THE FOUNDING HYPHA'S ACTS: the domain founded naming its one tier, the
 /// tier designated its reserve, and its origin recorded.
 fn found(k: &mut Court) {
-    assert!(matches!(k.admit_domain(&genesis(vec![vk(&tier_key())])), Founded::Sealed { .. }), "founded");
+    assert!(matches!(k.hear_domain(&genesis(vec![vk(&tier_key())])), Founded::Sealed { .. }), "founded");
     let r = Reservation { domain: vk(&domain_key()), tier: vk(&tier_key()), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&domain_key())), Founded::Reserved { .. }), "reserved");
     assert!(matches!(k.record_origin(&origin(9)), Founded::Originated { .. }), "originated");
@@ -138,10 +138,11 @@ fn admit_backfill_refuses_founding_not_on_signed_chain() {
     let page = a.chain.line_between(&key.verifying_bytes(), None, head.stamp.place(), 64);
     let (mut b, _) = hypha("b0-unsigned-b");
     let mut budget = b.stroke();
-    assert_eq!(b.admit_backfill(&super::fixtures::page(&page), &mut budget), (page.len(), None), "the page links and is held");
+    let (n, missing) = b.admit_backfill(&super::fixtures::page(&page), &mut budget);
+    assert!(n == page.len() && missing.is_none(), "the page links and is held");
     assert_eq!(b.domains.get(&d), None, "no signature reaches it: the domain stays unfounded");
     assert_eq!(b.origin_of(&d), None, "and holds no origin");
-    assert_eq!(b.admit_uplink(&trade().sign(&tier_key())), Uplinked::Unbound, "its tier's fold is unbound");
+    assert_eq!(b.hear_uplink(&trade().sign(&tier_key())), Uplinked::Unbound, "its tier's fold is unbound");
 
     let mut forged = ReceiptChain::with_signer(key.verifying_bytes());
     let thief = vk(&SigningKey::from_bytes(&[66; 32]));
@@ -151,7 +152,7 @@ fn admit_backfill_refuses_founding_not_on_signed_chain() {
     let forged_page = forged.line_between(&key.verifying_bytes(), None, crate::chronometry::Place::GENESIS, 64);
     let (mut c, _) = hypha("b0-unsigned-c");
     let mut budget = c.stroke();
-    assert_eq!(c.admit_backfill(&super::fixtures::page(&forged_page), &mut budget), (1, None), "the forged genesis links from nothing");
+    assert!(matches!(c.admit_backfill(&super::fixtures::page(&forged_page), &mut budget), (1, None)), "the forged genesis links from nothing");
     let signed = super::fixtures::admit_line(&mut c, &key, &[head]);
     assert!(!matches!(signed.as_slice(), [Admitted::Parent(_)] | [Admitted::Stale]), "a's own head does not link to it: {signed:?}");
     assert_eq!(c.domains.get(&d), None, "the forged founding is never read");
@@ -161,7 +162,7 @@ fn admit_backfill_refuses_founding_not_on_signed_chain() {
     altered.cites = vec![Cite::Domain { domain: d, tiers: vec![thief] }];
     let (mut e, _) = hypha("b0-unsigned-e");
     let mut budget = e.stroke();
-    assert_eq!(e.admit_backfill(&super::fixtures::page(&[altered]), &mut budget), (0, None), "an altered citation's hash does not re-derive");
+    assert!(matches!(e.admit_backfill(&super::fixtures::page(&[altered]), &mut budget), (0, None)), "an altered citation's hash does not re-derive");
     assert_eq!(e.domains.get(&d), None, "and nothing is founded");
 }
 
@@ -173,10 +174,10 @@ fn backfilled_domain_accepts_reserve_fold_on_second_hypha() {
     let (mut a, key) = hypha("b0-fold-a");
     found(&mut a);
     let (mut b, _) = hypha("b0-fold-b");
-    assert_eq!(b.admit_uplink(&trade().sign(&tier_key())), Uplinked::Unbound, "unknown on b before the back-fill");
+    assert_eq!(b.hear_uplink(&trade().sign(&tier_key())), Uplinked::Unbound, "unknown on b before the back-fill");
     let (mut b, _) = hear(b, &a, &key);
-    assert!(matches!(a.admit_uplink(&trade().sign(&tier_key())), Uplinked::Admitted { .. }), "admitted on a");
-    assert!(matches!(b.admit_uplink(&trade().sign(&tier_key())), Uplinked::Admitted { .. }), "and on b");
+    assert!(matches!(a.hear_uplink(&trade().sign(&tier_key())), Uplinked::Admitted { .. }), "admitted on a");
+    assert!(matches!(b.hear_uplink(&trade().sign(&tier_key())), Uplinked::Admitted { .. }), "and on b");
 }
 
 /// B0 — ONCE BY CONTENT: the founding line heard and back-filled twice
@@ -192,7 +193,7 @@ fn backfill_applies_founding_once_by_content() {
     let (b, _) = hear(b, &a, &key);
     let first = (b.domains.get(&d).cloned(), b.reserve_reading(&d), b.origin_of(&d));
     let (mut b, again) = hear(b, &a, &key);
-    assert_eq!(again, Admitted::Stale, "the head is held already");
+    assert!(matches!(again, Admitted::Stale), "the head is held already");
     let head = a.chain.head().expect("acted");
     let page = a.chain.line_between(&key.verifying_bytes(), None, head.stamp.place(), 64);
     let mut budget = b.stroke();
@@ -202,7 +203,7 @@ fn backfill_applies_founding_once_by_content() {
     assert_eq!(b.reserve_reading(&d).pending, None, "the reserve was designated once");
 
     let (mut c, _) = hypha("b0-once-c");
-    assert!(matches!(c.admit_domain(&genesis(vec![vk(&tier_key())])), Founded::Sealed { .. }), "c founds the same genesis");
+    assert!(matches!(c.hear_domain(&genesis(vec![vk(&tier_key())])), Founded::Sealed { .. }), "c founds the same genesis");
     let (c, _) = hear(c, &a, &key);
     let founding = sealed(&a, |c| matches!(c, Cite::Domain { .. }));
     assert_eq!(c.domains.get(&d), a.domains.get(&d), "the same genesis held");
@@ -225,7 +226,7 @@ fn backfill_refuses_with_founding_hyphas_refusals() {
 
     let other = vk(&SigningKey::from_bytes(&[21; 32]));
     let (mut b, _) = hypha("b0-refuse-b");
-    assert!(matches!(b.admit_domain(&genesis(vec![other])), Founded::Sealed { .. }), "b founds the domain on another tier");
+    assert!(matches!(b.hear_domain(&genesis(vec![other])), Founded::Sealed { .. }), "b founds the domain on another tier");
     let (b, _) = hear(b, &a, &key);
     assert_eq!(b.founding_refusal(&founding.stamp), Some(Founded::AlreadyFounded));
     assert_eq!(b.domains.get(&d), Some(&vec![other]), "b keeps its own genesis");
@@ -233,14 +234,14 @@ fn backfill_refuses_with_founding_hyphas_refusals() {
     let neighbour = SigningKey::from_bytes(&[5; 32]);
     let (mut c, _) = hypha("b0-refuse-c");
     let g = DomainGenesis { domain: vk(&neighbour), tiers: vec![vk(&tier_key())] }.sign(&neighbour);
-    assert!(matches!(c.admit_domain(&g), Founded::Sealed { .. }), "c founds another domain on the tier");
+    assert!(matches!(c.hear_domain(&g), Founded::Sealed { .. }), "c founds another domain on the tier");
     let (c, _) = hear(c, &a, &key);
     assert_eq!(c.founding_refusal(&founding.stamp), Some(Founded::TierHeld));
     assert_eq!(c.domains.get(&d), None, "the peer's domain is not founded on c");
     assert_eq!(c.tier_domain.get(&vk(&tier_key())), Some(&vk(&neighbour)), "the tier stays c's neighbour's");
 
     let (mut e, _) = hypha("b0-refuse-e");
-    assert!(matches!(e.admit_domain(&genesis(vec![vk(&tier_key())])), Founded::Sealed { .. }), "e founds the same genesis");
+    assert!(matches!(e.hear_domain(&genesis(vec![vk(&tier_key())])), Founded::Sealed { .. }), "e founds the same genesis");
     assert!(matches!(e.record_origin(&origin(8)), Founded::Originated { .. }), "and records another origin");
     let held = e.origin_of(&d);
     let (e, _) = hear(e, &a, &key);

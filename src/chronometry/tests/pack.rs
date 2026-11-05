@@ -48,8 +48,8 @@ fn packer_round_trips_two_cross_citing_lines() {
     let mut b = ReceiptChain::with_signer([2; 32]);
     let a0 = step(&mut a, Vec::new());
     let b0 = step(&mut b, Vec::new());
-    a.admit(b0.clone());
-    b.admit(a0.clone());
+    a.admit(super::fixtures::reconstructed(&b0));
+    b.admit(super::fixtures::reconstructed(&a0));
     let a1 = step(&mut a, vec![cite(&b0)]);
     let b1 = step(&mut b, vec![cite(&a0)]);
     let (_, frame) = a.open_orbit().expect("open");
@@ -62,7 +62,7 @@ fn packer_round_trips_two_cross_citing_lines() {
         packer.node(&mut stream, r).expect("packs");
     }
     packer.anchors(&mut stream);
-    assert_eq!(read(&stream), Some(all), "the same receipts, re-derived");
+    assert!(read(&stream).is_some_and(|back| super::fixtures::one_run(&back, &all)), "the same receipts, re-derived");
 }
 
 /// A STREAM THAT STARTS MID-LINE names its first predecessor whole, and
@@ -77,7 +77,7 @@ fn packer_names_first_predecessor_of_mid_line_run() {
         packer.node(&mut stream, r).expect("packs");
     }
     packer.anchors(&mut stream);
-    assert_eq!(read(&stream).as_deref(), Some(&line[2..]));
+    assert!(read(&stream).is_some_and(|back| super::fixtures::one_run(&back, &line[2..])));
 }
 
 /// A NODE WHOSE PREDECESSOR LEFT the ledger still reads as the receipt it
@@ -92,13 +92,16 @@ fn node_reads_as_sealed_once_predecessor_left() {
         e.append(ActKind::Orbit, frame, Vec::new(), [9; 32], Vec::new()).expect("the close")
     };
     let (_, root) = e.fold_before(shut.stamp.place()).expect("folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.signer(), root.at), hash: root.hash }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, e.signer(), root.at), hash: root.hash.bytes() }];
     let fold = e.append(ActKind::Fold, [0; 4], cites, [9; 32], Vec::new()).expect("the fold node");
     let mut c = ReceiptChain::with_signer([1; 32]);
     step(&mut c, Vec::new());
     for r in [&e0, &shut, &fold] {
-        c.admit(r.clone());
+        c.admit(super::fixtures::reconstructed(r));
     }
     assert_eq!(c.shed_folded(|_| false), 2);
-    assert_eq!(c.node(&fold.stamp), Some(fold), "the fold node, its predecessor gone, reads as it was sealed");
+    assert!(
+        c.node(&fold.stamp).is_some_and(|back| super::fixtures::one_run(std::slice::from_ref(&back), std::slice::from_ref(&fold))),
+        "the fold node, its predecessor gone, reads as it was sealed"
+    );
 }

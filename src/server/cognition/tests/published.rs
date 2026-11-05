@@ -62,12 +62,24 @@ fn read(a: ReceiptsAnswer) -> Result<Vec<KStepReceipt>, Place> {
     }
 }
 
+/// Two answers alike: one run of receipts (`one_run`, a receipt has no
+/// `==`), or one root place.
+fn one_answer(a: &Result<Vec<KStepReceipt>, Place>, b: &Result<Vec<KStepReceipt>, Place>) -> bool {
+    match (a, b) {
+        (Ok(a), Ok(b)) => super::fixtures::one_run(a, b),
+        (Err(a), Err(b)) => a == b,
+        _ => false,
+    }
+}
+
 /// The court and its published reading answer every ask alike.
 fn alike(k: &Court, p: &Published, signer: &[u8; 32], asks: &[(Option<Place>, Place, bool)]) {
     for &(after, upto, replay) in asks {
-        assert_eq!(
-            read(p.serve_receipts(signer, after, upto, replay, 8, usize::MAX)),
-            read(k.serve_receipts(signer, after, upto, replay, 8, usize::MAX)),
+        assert!(
+            one_answer(
+                &read(p.serve_receipts(signer, after, upto, replay, 8, usize::MAX)),
+                &read(k.serve_receipts(signer, after, upto, replay, 8, usize::MAX))
+            ),
             "after {after:?} upto {upto:?} replay {replay}"
         );
     }
@@ -85,7 +97,7 @@ fn publish_agrees_with_court_on_receipts() {
     strokes(&mut b, 3);
     let p = b.publish(None).expect("a first reading always publishes");
     let root = b.chain().root().expect("folded").at;
-    assert_eq!(read(p.serve_receipts(&vk, None, FAR, false, 8, usize::MAX)), Err(root), "below the root: the root");
+    assert_eq!(read(p.serve_receipts(&vk, None, FAR, false, 8, usize::MAX)).err(), Some(root), "below the root: the root");
     alike(&b, &p, &vk, &[(None, FAR, false), (Some(root), FAR, false), (None, root, true), (Some(Place::GENESIS), root, true)]);
     assert_eq!(p.height(), b.chain().head_height(), "the reading stands at the court's head");
     assert_eq!(p.head(), b.chain().head_stamp());
@@ -106,10 +118,16 @@ fn publish_lags_until_next_and_copies_growth() {
     strokes(&mut b, 1);
     let grew = b.chain().line_between(&vk, Some(head1), FAR, usize::MAX);
     assert_eq!(grew.len(), 2, "one stroke: an act and its close");
-    assert_eq!(read(p1.serve_receipts(&vk, Some(head1), FAR, false, 8, usize::MAX)), Ok(Vec::new()), "not yet at the new head");
+    assert!(
+        read(p1.serve_receipts(&vk, Some(head1), FAR, false, 8, usize::MAX)).is_ok_and(|page| page.is_empty()),
+        "not yet at the new head"
+    );
     assert!(p1.height() < b.chain().head_height(), "the reading says how far it reaches");
     let p2 = b.publish(Some(&p1)).expect("the line moved");
-    assert_eq!(read(p2.serve_receipts(&vk, Some(head1), FAR, false, 8, usize::MAX)), Ok(grew.clone()), "the next reading reaches the head");
+    assert!(
+        one_answer(&read(p2.serve_receipts(&vk, Some(head1), FAR, false, 8, usize::MAX)), &Ok(grew.clone())),
+        "the next reading reaches the head"
+    );
     alike(&b, &p2, &vk, &[(None, FAR, false), (Some(Place::GENESIS), FAR, false)]);
     let tapes: u64 = grew
         .iter()
@@ -178,7 +196,8 @@ fn decode_receipts_answer_at_reads_trailing_height() {
     let mut body = bare.clone();
     put_reading_height(&mut body, 41);
     let Some((ReceiptsAnswer::Page(page), Some(h))) = decode_receipts_answer_at(&body) else { panic!("the page reads back with its height") };
-    assert_eq!((page, h), (line.clone(), 41));
+    assert_eq!(h, 41);
+    assert!(super::fixtures::one_run(&page, &line));
     assert!(matches!(decode_receipts_answer_at(&bare), Some((ReceiptsAnswer::Page(_), None))), "no height written, none read");
     assert!(decode_receipts_answer(&body[..body.len() - 1]).is_none(), "a tail that is no height refuses");
 }

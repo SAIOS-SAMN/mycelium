@@ -157,6 +157,47 @@ pub fn reconstructed(
     crate::court::admission::Reconstructed::receipt(r).expect("a sealed receipt re-derives")
 }
 
+/// ONE RECEIPT, read by the link sense (MU-HOSTING §5a.10): each
+/// re-derives its own hash, and `a` stands at the stamp of `b` with a chain
+/// continuing across the two. A receipt has no `==`.
+pub fn one_receipt(a: &crate::chronometry::KStepReceipt, b: &crate::chronometry::KStepReceipt) -> bool {
+    use crate::chronometry::Parent;
+    a.rederives() && b.rederives() && crate::court::admission::Predecessor::cites(&Parent::of(a), &Parent::of(b))
+}
+
+/// ONE RUN OF RECEIPTS: the same count, each pair `one_receipt`.
+pub fn one_run(a: &[crate::chronometry::KStepReceipt], b: &[crate::chronometry::KStepReceipt]) -> bool {
+    a.len() == b.len() && a.iter().zip(b).all(|(x, y)| one_receipt(x, y))
+}
+
+/// ONE ROOT, by `Root::restates`, either side absent alike.
+pub fn one_root(a: Option<crate::chronometry::Root>, b: Option<crate::chronometry::Root>) -> bool {
+    match (a, b) {
+        (None, None) => true,
+        (Some(a), Some(b)) => a.restates(&b),
+        _ => false,
+    }
+}
+
+/// ONE ERA: one root (`Root::restates`), its signer, witness and both
+/// signatures, its identities and range, and one run of receipts.
+pub fn one_era(a: &crate::chronometry::Era, b: &crate::chronometry::Era) -> bool {
+    a.root.restates(&b.root)
+        && (a.signer, a.witness, a.sig_home, a.sig_witness) == (b.signer, b.witness, b.sig_home, b.sig_witness)
+        && (a.identities, a.first, a.count, a.at) == (b.identities, b.first, b.count, b.at)
+        && one_run(&a.receipts, &b.receipts)
+}
+
+/// ONE ARCHIVE: the same count, each pair `one_era`.
+pub fn one_archive(a: &[crate::chronometry::Era], b: &[crate::chronometry::Era]) -> bool {
+    a.len() == b.len() && a.iter().zip(b).all(|(x, y)| one_era(x, y))
+}
+
+/// ONE FOLD PROPOSAL: one place after, one root, one set of epoch rows.
+pub fn one_proposal(a: &crate::server::cognition::Proposal, b: &crate::server::cognition::Proposal) -> bool {
+    a.after == b.after && a.root.restates(&b.root) && a.epochs == b.epochs
+}
+
 /// A fetched page as the back-fill reconstructs it: the run up to the
 /// first receipt whose chain hash does not re-derive.
 pub fn page(

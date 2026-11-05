@@ -10,6 +10,7 @@ mod conformance;
 mod equivocation;
 mod evidence;
 mod factorisation;
+mod fixtures;
 mod fold_wire;
 mod offer;
 mod probe_reply;

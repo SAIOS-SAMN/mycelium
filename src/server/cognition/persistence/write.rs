@@ -550,7 +550,7 @@ impl Court {
             nodes.insert(
                 key,
                 vec![
-                    (LEAF_ROOT_HASH, era.root.hash.to_vec()),
+                    (LEAF_ROOT_HASH, era.root.hash.bytes().to_vec()),
                     (LEAF_WITNESS, era.witness.to_vec()),
                     (LEAF_SIG_HOME, era.sig_home.to_vec()),
                     (LEAF_SIG_WITNESS, era.sig_witness.to_vec()),

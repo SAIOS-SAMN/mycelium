@@ -8,9 +8,10 @@
 //! one is asked for.
 
 use super::{ActKind, Cite, KStepReceipt, Parent, Place, ReceiptChain, Stamp};
+use crate::court::admission::Predecessor;
 
 /// THE PREDECESSOR a node names.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub(super) enum Prev {
     /// None: the line's first act.
     Genesis,
@@ -29,7 +30,7 @@ pub(super) struct Node {
     pub(super) parents: Box<[Parent]>,
     pub(super) cites: Box<[Cite]>,
     pub(super) operator: usize,
-    pub(super) hash: [u8; 32],
+    pub(super) hash: Predecessor,
 }
 
 impl ReceiptChain {
@@ -116,7 +117,7 @@ impl ReceiptChain {
         let next = at.place().after(r.kind);
         if let Some(after) = self.stamp_at(&at.vk, next) {
             if let Some(n) = self.nodes.get_mut(&after.key()) {
-                if n.prev == Prev::Line(at.place()) {
+                if matches!(n.prev, Prev::Line(p) if p == at.place()) {
                     n.prev = Prev::Named(Box::new(Parent { at: *at, hash: r.chain_hash }));
                 }
             }

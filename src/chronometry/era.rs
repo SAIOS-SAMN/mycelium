@@ -3,15 +3,19 @@
 // prefix it archived.
 
 use super::receipt::{KStepReceipt, Place};
+use crate::court::admission::Predecessor;
 
 /// THE FOLD ROOT: the archived prefix's head — its place, chain hash and
 /// height. The hot chain continues from it: the next receipt's place
 /// follows it and its `prev_receipt_hash` is this hash, so the chain never
-/// breaks and heights continue.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// breaks and heights continue. The hash is the archived head's chain
+/// hash, in the link sense (`Predecessor`, MU-HOSTING §5a.10), so the root
+/// has no `==`: its place and height are compared as coordinates and its
+/// hash by `Predecessor::continues`.
+#[derive(Debug, Clone, Copy)]
 pub struct Root {
     pub at: Place,
-    pub hash: [u8; 32],
+    pub hash: Predecessor,
     pub height: u64,
 }
 
@@ -34,7 +38,7 @@ pub struct Root {
 /// single boot, `ARC1` 3561 MiB of a 3567 MiB ledger, and two courts at
 /// 4146 MiB and 2343 MiB of resident memory within 106 seconds of restore.
 /// That is what crashed the machine.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct Era {
     pub root: Root,
     pub signer: [u8; 32],
@@ -170,9 +174,17 @@ impl Root {
     /// FORMAT: root tape length.
     pub const TAPE: usize = Place::LEN + 32 + 8;
 
+    /// LINK SENSE ON A ROOT: `self` restates the root `held` names, at one
+    /// place and one height with a chain continuing across the two hashes
+    /// (`Predecessor::continues`). Two roots are compared by this, never by
+    /// `==`.
+    pub fn restates(&self, held: &Root) -> bool {
+        self.at == held.at && self.height == held.height && self.hash.continues(&held.hash)
+    }
+
     pub fn write(&self, out: &mut Vec<u8>) {
         self.at.put_canonical(out);
-        out.extend_from_slice(&self.hash);
+        out.extend_from_slice(&self.hash.bytes());
         out.extend_from_slice(&self.height.to_le_bytes());
     }
 
@@ -182,7 +194,7 @@ impl Root {
         *pos += 32;
         let height = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
         *pos += 8;
-        Some(Root { at, hash, height })
+        Some(Root { at, hash: Predecessor::of_bytes(hash), height })
     }
 
     /// 47.3 (#91) — WHAT THE HOME AND THE WITNESS SIGN OF A FOLD ROOT: the
@@ -203,7 +215,7 @@ impl Root {
         out.extend_from_slice(SIGNED_ROOT);
         self.at.put_canonical(&mut out);
         out.extend_from_slice(&self.height.to_be_bytes());
-        out.extend_from_slice(&self.hash);
+        out.extend_from_slice(&self.hash.bytes());
         out
     }
 
@@ -219,7 +231,7 @@ impl Root {
         let height = u64::from_be_bytes(payload.get(p..p + 8)?.try_into().ok()?);
         p += 8;
         let hash: [u8; 32] = payload.get(p..p + 32)?.try_into().ok()?;
-        (p + 32 == payload.len()).then_some(Root { at, hash, height })
+        (p + 32 == payload.len()).then_some(Root { at, hash: Predecessor::of_bytes(hash), height })
     }
 }
 

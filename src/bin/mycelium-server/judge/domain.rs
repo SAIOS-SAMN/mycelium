@@ -36,7 +36,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &WireFrame, context: &Context
         // spends it; MAP and TRAVERSE read what the frame carries; READ-MAP
         // walks one universe's records (a fibre), owed to the shelf.
         Ok(mut h) => h.run(|k, reads| match request {
-            DomainRequest::Genesis(domain) => encode_domain_reply(&k.admit_domain(&domain)),
+            DomainRequest::Genesis(domain) => encode_domain_reply(&k.hear_domain(&domain)),
             DomainRequest::Reserve(r) => encode_domain_reply(&k.designate_reserve(&r)),
             DomainRequest::ReadReserve(domain) => mycelium::anastome::dialogue::domain::encode_reserve_reading(&k.reserve_reading(&domain)),
             DomainRequest::Bond(b) => encode_domain_reply(&k.bond(&b)),

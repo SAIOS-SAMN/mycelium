@@ -1013,7 +1013,7 @@ impl Exchange {
                     // 78.153b — counted, as every take of the court is.
                     crate::court_lock::held!(court)
                         .ok()
-                        .and_then(|mut h| h.run(|k, _| k.chain().opening().map(|r| r.chain_hash)))
+                        .and_then(|mut h| h.run(|k, _| k.chain().opening().map(|r| r.chain_hash.bytes())))
                         .map(|h| (h, epoch))
                 } else {
                     None

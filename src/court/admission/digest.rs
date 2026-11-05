@@ -16,8 +16,12 @@
 //! | [`Predecessor`] | link: a record names the record before it on its chain | [`Predecessor::continues`], [`Predecessor::forks`] |
 //! | [`Commitment`] | commitment: bytes a party signs | [`Commitment::binds`], over a [`Reconstructed`] object only |
 //!
-//! The bytes on the wire and the ledger are unchanged: each type is the
-//! same 32 bytes, read in and written out by `of_bytes` and `bytes`.
+//! The record fields carry these types: `Parent::hash`,
+//! `KStepReceipt::chain_hash`, `Root::hash` and the hashes of
+//! `Admitted::Equivocation` are [`Predecessor`], and
+//! `SignedPrefix::prev_receipt_hash` is a [`Commitment`]. The bytes on the
+//! wire and the ledger are unchanged: each type is the same 32 bytes, read
+//! in and written out by `of_bytes` and `bytes`.
 
 use super::{Reconstructed, SignedPrefix};
 use crate::chronometry::{KStepReceipt, Parent};
@@ -86,12 +90,12 @@ pub struct Predecessor([u8; 32]);
 impl Predecessor {
     /// The digest a successor names this held record by: its chain hash.
     pub fn of(r: &KStepReceipt) -> Predecessor {
-        Predecessor(r.chain_hash)
+        r.chain_hash
     }
 
     /// The predecessor a citation names.
     pub fn named(p: &Parent) -> Predecessor {
-        Predecessor(p.hash)
+        p.hash
     }
 
     /// The digest a wire or a ledger carries, as its 32 bytes.
@@ -138,7 +142,7 @@ pub trait Committed {
 /// coordinates.
 impl Committed for KStepReceipt {
     fn committed(&self) -> [u8; 32] {
-        self.prev_hash()
+        self.prev_hash().bytes()
     }
 }
 
@@ -149,7 +153,7 @@ impl Committed for KStepReceipt {
 /// coordinates (`Reconstructed::root`).
 impl Committed for crate::anastome::dialogue::RootProof {
     fn committed(&self) -> [u8; 32] {
-        self.root.hash
+        self.root.hash.bytes()
     }
 }
 
@@ -196,7 +200,7 @@ impl Commitment {
     /// 47.1: what a signed prefix commits its receipt to, its
     /// predecessor's chain hash.
     pub fn signed(prefix: &SignedPrefix) -> Commitment {
-        Commitment(prefix.prev_receipt_hash)
+        prefix.prev_receipt_hash
     }
 
     /// The 32 bytes, for writing out.

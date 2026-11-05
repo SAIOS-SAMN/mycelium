@@ -12,7 +12,7 @@ use crate::economy::{Entry, Kind};
 fn fold_witness_round_trips_with_rows() {
     let mut c = ReceiptChain::with_signer([6; 32]);
     let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
-    let root = Root { at: Place { k: 4, i: 2 }, hash: [5; 32], height: 9 };
+    let root = Root { at: Place { k: 4, i: 2 }, hash: crate::court::admission::Predecessor::of_bytes([5; 32]), height: 9 };
     let section = ReceiptSection {
         prefix: SignedPrefix {
             genesis: [8; 32],
@@ -35,13 +35,14 @@ fn fold_witness_round_trips_with_rows() {
     };
     let body = encode_fold(&p).expect("frames");
     let back = decode_fold(&body).expect("reads");
-    assert_eq!((back.after, back.root, back.epochs), (after, root, p.epochs.clone()));
+    use super::fixtures::{one_prefix, one_receipt};
+    assert_eq!((back.after, &back.epochs), (after, &p.epochs));
+    assert!(back.root.restates(&root), "the root, at its place and height with its hash");
     let first = FoldProposal { after: None, ..p.clone() };
     assert_eq!(decode_fold(&encode_fold(&first).expect("frames")).map(|b| b.after), Some(None), "a prefix from genesis");
-    assert_eq!(
-        (back.section.prefix, back.section.sig, back.section.receipt),
-        (section.prefix.clone(), section.sig, head.clone())
-    );
+    assert!(one_prefix(&back.section.prefix, &section.prefix));
+    assert_eq!(back.section.sig, section.sig);
+    assert!(one_receipt(&back.section.receipt, &head));
     assert!(decode_fold(&body[..body.len() - 1]).is_none(), "a short proposal refuses");
 
     for w in [
@@ -56,7 +57,7 @@ fn fold_witness_round_trips_with_rows() {
             }
             (FoldWitness::Unmeasured { vk }, FoldWitness::Unmeasured { vk: v2 }) => assert_eq!(vk, v2),
             (FoldWitness::CoSigned { section: s }, FoldWitness::CoSigned { section: s2 }) => {
-                assert_eq!((s.prefix, s.sig), (s2.prefix, s2.sig))
+                assert!(one_prefix(&s.prefix, &s2.prefix) && s.sig == s2.sig)
             }
             _ => panic!("the arm changed on the wire"),
         }

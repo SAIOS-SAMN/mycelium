@@ -438,17 +438,41 @@ impl Court {
         self.seal_step(ActKind::Refused, [0; 4], voice, |_| vec![cite.clone()])
     }
 
+    /// ACT_DOMAIN's genesis AS HEARD: reconstructed at the vertex
+    /// (`Reconstructed::domain`), then admitted; a genesis whose signature
+    /// does not verify over its own coordinates is `Founded::Unsigned`.
+    pub fn hear_domain(&mut self, w: &crate::anastome::dialogue::domain::SignedDomain) -> crate::anastome::dialogue::domain::Founded {
+        match crate::court::admission::Reconstructed::domain(w) {
+            Some(r) => self.admit_domain(&r),
+            None => crate::anastome::dialogue::domain::Founded::Unsigned,
+        }
+    }
+
+    /// ACT_UPLINK's fold AS HEARD: reconstructed at the vertex
+    /// (`Reconstructed::fold`), then admitted; a fold whose tier signature
+    /// does not verify over its own coordinates is `Uplinked::Unsigned`.
+    pub fn hear_uplink(&mut self, f: &crate::anastome::dialogue::uplink::SignedFold) -> crate::anastome::dialogue::uplink::Uplinked {
+        match crate::court::admission::Reconstructed::fold(f) {
+            Some(r) => self.admit_uplink(&r),
+            None => crate::anastome::dialogue::uplink::Uplinked::Unsigned,
+        }
+    }
+
     /// 78.120 — A DOMAIN FOUNDED (78.62's GENESIS act): the domain's signature
     /// over its genesis, its tier keys in the keys' one writing, a domain not
     /// founded here already and no tier key another domain names — then the
     /// genesis sealed on this court's line by its keys (`Cite::Domain`), and
     /// the domain held: from here its tiers' folds are admitted.
-    pub fn admit_domain(&mut self, w: &crate::anastome::dialogue::domain::SignedDomain) -> crate::anastome::dialogue::domain::Founded {
+    ///
+    /// MU-HOSTING §5a.10 — taken reconstructed (`Reconstructed::domain`:
+    /// the signature verifies over the genesis written out); a genesis as
+    /// claimed is heard by `hear_domain`.
+    pub fn admit_domain(
+        &mut self,
+        w: &crate::court::admission::Reconstructed<crate::anastome::dialogue::domain::SignedDomain>,
+    ) -> crate::anastome::dialogue::domain::Founded {
         use crate::anastome::dialogue::domain::Founded;
         let g = &w.genesis;
-        if !crate::court::identity::verify(&g.domain, &g.signed_bytes(), &w.sig) {
-            return Founded::Unsigned;
-        }
         if !g.ordered() {
             return Founded::Unordered;
         }
@@ -463,7 +487,7 @@ impl Court {
             Some(r) => {
                 self.hold_domain(g.domain, g.tiers.clone());
                 self.mark_persist();
-                Founded::Sealed { at: r.stamp, receipt: r.chain_hash }
+                Founded::Sealed { at: r.stamp, receipt: r.chain_hash.bytes() }
             }
             None => Founded::LineRefused,
         }
@@ -486,11 +510,15 @@ impl Court {
     /// the prefix head it nets, its rows' commitment — are sealed on this
     /// court's line and its receipt id returned. Its frame is the zero
     /// reading: a tier's settlement moves nothing in this court's book.
-    pub fn admit_uplink(&mut self, f: &crate::anastome::dialogue::uplink::SignedFold) -> crate::anastome::dialogue::uplink::Uplinked {
+    ///
+    /// MU-HOSTING §5a.10 — taken reconstructed (`Reconstructed::fold`: the
+    /// tier's signature verifies over the fold's coordinates written out);
+    /// a fold as claimed is heard by `hear_uplink`.
+    pub fn admit_uplink(
+        &mut self,
+        f: &crate::court::admission::Reconstructed<crate::anastome::dialogue::uplink::SignedFold>,
+    ) -> crate::anastome::dialogue::uplink::Uplinked {
         use crate::anastome::dialogue::uplink::Uplinked;
-        if !crate::court::identity::verify(&f.fold.tier, &f.fold.signed_bytes(), &f.sig) {
-            return Uplinked::Unsigned;
-        }
         // 78.120 — the tier must be named by a domain's genesis on this court.
         let Some(domain) = self.tier_domain.get(&f.fold.tier).copied() else {
             return Uplinked::Unbound;
@@ -533,7 +561,7 @@ impl Court {
                         // challenge window.
                         self.hold_admitted(r.stamp, &f.fold, domain, Vec::new());
                         self.mark_persist();
-                        Uplinked::Admitted { at: r.stamp, receipt: r.chain_hash }
+                        Uplinked::Admitted { at: r.stamp, receipt: r.chain_hash.bytes() }
                     }
                     None => Uplinked::LineRefused,
                 }

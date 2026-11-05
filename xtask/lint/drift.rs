@@ -82,6 +82,13 @@ pub const REGISTER: &[Guard] = &[
         claim: "reconstructed_is_built_only_by_the_laws",
         proof: Proof::CompileFail,
     },
+    Guard {
+        regression: "a crossing admitted at the vertex as claimed, without reconstruction (MU-ANTI-FLATTENING 13)",
+        ruling: "operator ruling of 2026-11-02; MU-HOSTING 5a.10; ROADMAP track 25 X2",
+        guard: "Reconstructed",
+        claim: "vertex_admits_only_a_reconstructed_fold",
+        proof: Proof::CompileFail,
+    },
 ];
 
 /// Every `.rs` file under `dir`.

@@ -26,7 +26,7 @@ fn domain() -> SigningKey {
 fn founded() -> Court {
     let mut k = Court::new();
     let g = DomainGenesis { domain: verifying(&domain()), tiers: vec![verifying(&key(21))] };
-    assert!(matches!(k.admit_domain(&g.sign(&domain())), Founded::Sealed { .. }));
+    assert!(matches!(k.hear_domain(&g.sign(&domain())), Founded::Sealed { .. }));
     k
 }
 

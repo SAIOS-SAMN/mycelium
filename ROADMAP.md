@@ -56,7 +56,7 @@ None of these waits on a ruling:
 
 | Item | Issue | Track | Notes |
 |---|---|---|---|
-| X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | First stage built on branch `x0-drift-guards` (no wire or layout change): the admission sites typed, the receipt path's admissions taking `Reconstructed<T>`, the register in the gate. Open: the record fields typed by sense. The rest of track 25 stands on it |
+| X0, the drift guards: typed digests, `Reconstructed<T>`, the drift register | [#28](https://github.com/SAIOS-SAMN/mycelium/issues/28) | 25 | First stage built on branch `x0-drift-guards` (no wire or layout change): the admission sites typed, the receipt path's admissions taking `Reconstructed<T>`, the register in the gate. Second stage: the record fields typed by sense (`Parent`, `KStepReceipt`, `SignedPrefix`, `Root` and `Admitted` have no `==`). The rest of track 25 stands on it |
 | B0, replication by reconstruction: every hypha reconstructs each domain from its founding receipts | [#13](https://github.com/SAIOS-SAMN/mycelium/issues/13) | 24 | Built (v0.4.0; no wire or layout change). The rest of track 24 stands on it. Every reader of a back-filled receipt now waits for a signature ([#73](https://github.com/SAIOS-SAMN/mycelium/issues/73), built). Eviction by signature, the held queue's bound and the waiting fold root are built ([#79](https://github.com/SAIOS-SAMN/mycelium/issues/79)). A gap longer than the capacity closes through a fold root ([#88](https://github.com/SAIOS-SAMN/mycelium/issues/88), built). A fold root's signatures cover its place and height ([#91](https://github.com/SAIOS-SAMN/mycelium/issues/91), built; a signing-domain change inside v0.4.0's break). Open: foundings inside a folded era, a version-2 origin's geometry (MU-HOSTING §5a.9) |
 | `decode_peers_reply` refuses a deferral | [#16](https://github.com/SAIOS-SAMN/mycelium/issues/16) | 14 | In progress ([PR #31](https://github.com/SAIOS-SAMN/mycelium/pull/31)) |
 | Identifiers that name reconstruction carry `reconstruct` | [#29](https://github.com/SAIOS-SAMN/mycelium/issues/29) | 11 | Built with N1 |
@@ -1371,14 +1371,42 @@ Each phase lands on its own branch, one item per commit:
      `commitment_has_no_equality`, `reconstructed_is_built_only_by_the_laws`
      (`compile_fail`); `commitment_binds_only_a_reconstructed_object`;
      the gate's `drift_refuses_entry_missing_its_claim`.
-   - Open (the next stage): the record fields typed by sense
-     (`Parent::hash`, `KStepReceipt::chain_hash`,
-     `SignedPrefix::prev_receipt_hash`, `Admitted::Equivocation`), which
-     drops `PartialEq` from `Parent`, `KStepReceipt` and `Admitted`;
-     `ReceiptChain::admit` taking `Reconstructed<T>`; the X4 sites not
-     yet typed (`chronometry/pack.rs`, `cognition/state.rs` eras,
-     `court/glue.rs` stratum root, `client/sdk/mind/learn.rs` starved
-     root). The report of changed document sentences that put a typed
+   - **Built**, second stage: the record fields typed by sense.
+     `Parent::hash`, `KStepReceipt::chain_hash`, a fold `Root::hash` and
+     `Admitted::Equivocation`'s two hashes are `Predecessor`;
+     `SignedPrefix::prev_receipt_hash` (and `KStepReceipt::prev_hash`)
+     is `Commitment`. `Parent`, `KStepReceipt`, `SignedPrefix`, `Root`,
+     `Era`, `Admitted` and the fold `Proposal` lose `PartialEq`; a
+     receipt is compared by `Predecessor::cites` over `Parent::of`, a
+     root by `Root::restates`. The packed line's anchors and
+     predecessors (`chronometry/pack.rs`) and the archive's era
+     comparisons (`cognition/state.rs`, `Locator`) moved with it.
+   - **Built**, second stage: `ReceiptChain::admit` takes a
+     `Reconstructed<KStepReceipt>`, and the vertex's admissions take a
+     reconstructed act: `Court::admit_uplink` and `admit_chained` a
+     `Reconstructed<SignedFold>`, `Court::admit_domain` a
+     `Reconstructed<SignedDomain>` (`Reconstructed::fold`,
+     `Reconstructed::domain`: the signed bytes re-written from the act's
+     own coordinates, the signature verified over them).
+     `Court::hear_uplink` and `Court::hear_domain` reconstruct the act as
+     heard. Claim: `vertex_admits_only_a_reconstructed_fold`
+     (`compile_fail`), in the drift register.
+   - **Built**, second stage: the stratum root in `court/glue.rs`
+     (`locates_stratum`) and the starved root in
+     `client/sdk/mind/learn.rs` (`CourtPace::starved` holds a `Locator`)
+     are compared in the address sense.
+   - Not registered: the guards of MU-ANTI-FLATTENING clauses 12 and 14,
+     since neither has a guarding type and a claim in the tree. Clause
+     12's `Turn` has public fields and `Turn::new`, the specified
+     `Turn::of(r, h)` and its `compile_fail` claim are not written, and
+     the refinement it would refuse is deleted. Clause 14's
+     `Court::restore` returns `bool`, not a `Reconstructed<State>`, and
+     `restore_reconstructs_and_checks_receipts` is not written.
+   - Open (the next stage): `Cite::Root`'s hash, still bare, which would
+     drop `PartialEq` from `Cite`; the stratum root itself
+     (`transducer::sheaf::StratumDigest::root`, a `Vec<u8>`) typed at its
+     source; the clause 12 and 14 guard types and claims; the report of
+     changed document sentences. The report of changed document sentences that put a typed
      term beside an admission verb is not built: it needs a base commit
      the gate does not hold.
 2. **X1, the crossing record.** `Crossing { place, content, holonomy,

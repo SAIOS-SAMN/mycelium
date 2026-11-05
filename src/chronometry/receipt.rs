@@ -1,6 +1,7 @@
 // 45, 78.24 — THE RECEIPT: one act at its stamp, the parents it cites by
 // stamp, the frame it measured, and the words it names by coordinates.
 
+use crate::court::admission::{Commitment, Predecessor};
 use crate::transducer::address::Address;
 use crate::transducer::stalk::Invariant;
 
@@ -141,24 +142,31 @@ impl Stamp {
 }
 
 /// A RECEIPT THIS ACT CITES: its stamp and its chain hash. The stamp says
-/// where it stands; the hash is what the citing receipt commits to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// where it stands; the hash is what the citing receipt commits to, in
+/// the link sense (`Predecessor`, MU-HOSTING §5a.10). No `==`: a citation
+/// is compared by `Predecessor::cites`, or by its stamp and hash read out.
+#[derive(Debug, Clone, Copy)]
 pub struct Parent {
     pub at: Stamp,
-    pub hash: [u8; 32],
+    pub hash: Predecessor,
 }
 
 impl Parent {
+    /// The citation that names a held receipt: its stamp and chain hash.
+    pub fn of(r: &KStepReceipt) -> Parent {
+        Parent { at: r.stamp, hash: r.chain_hash }
+    }
+
     pub(crate) fn put(&self, out: &mut Vec<u8>) {
         self.at.put_canonical(out);
-        out.extend_from_slice(&self.hash);
+        out.extend_from_slice(&self.hash.bytes());
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Parent> {
         let at = Stamp::take_canonical(b, p)?;
         let hash: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
         *p += 32;
-        Some(Parent { at, hash })
+        Some(Parent { at, hash: Predecessor::of_bytes(hash) })
     }
 }
 
@@ -763,8 +771,11 @@ impl Cite {
 /// ONE NODE OF THE LEDGER (78.24): the act at its stamp. What it measured
 /// on the four lanes, the signer's previous receipt and the peers it
 /// cites, each by stamp and hash — the DAG's edges — and the words it
-/// names, by coordinates.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// names, by coordinates. No `==`: two receipts are compared by their
+/// stamps and chain hashes read out (`Predecessor::continues`,
+/// `Predecessor::forks`), and a claimed one is reconstructed
+/// (`Reconstructed::receipt`).
+#[derive(Debug, Clone)]
 pub struct KStepReceipt {
     pub stamp: Stamp,
     /// The act admitted (45.1).
@@ -781,8 +792,9 @@ pub struct KStepReceipt {
     pub cites: Vec<Cite>,
     /// Which operation was applied (an act digest — never reasoned on).
     pub operator_hash: [u8; 32],
-    /// This receipt's chain hash.
-    pub chain_hash: [u8; 32],
+    /// This receipt's chain hash: the digest a successor names it by
+    /// (link sense, `Predecessor`).
+    pub chain_hash: Predecessor,
 }
 
 /// Receipt payload identity of admitted content bytes (Part IX: the
@@ -824,15 +836,25 @@ impl KStepReceipt {
         cites: Vec<Cite>,
         operator_hash: [u8; 32],
     ) -> Option<KStepReceipt> {
-        let mut r = KStepReceipt { stamp, kind, mu, prev, parents, cites, operator_hash, chain_hash: [0; 32] };
-        r.chain_hash = r.hash()?;
+        let mut r = KStepReceipt {
+            stamp,
+            kind,
+            mu,
+            prev,
+            parents,
+            cites,
+            operator_hash,
+            chain_hash: Predecessor::of_bytes([0; 32]),
+        };
+        r.chain_hash = Predecessor::of_bytes(r.hash()?);
         Some(r)
     }
 
     /// The predecessor's hash, or the empty hash at genesis — the reading
-    /// of absence a signed prefix carries (47.1).
-    pub fn prev_hash(&self) -> [u8; 32] {
-        self.prev.map_or([0u8; 32], |p| p.hash)
+    /// of absence a signed prefix carries (47.1), in the commitment sense:
+    /// what the prefix signs the receipt to.
+    pub fn prev_hash(&self) -> Commitment {
+        Commitment::of_bytes(self.prev.map_or([0u8; 32], |p| p.hash.bytes()))
     }
 
     /// THE NODE'S CANONICAL COORDINATES (78.24 (c)): its stamp, kind,
@@ -876,7 +898,7 @@ impl KStepReceipt {
     /// receipt presented by a third party (47.4) is believed only through
     /// this.
     pub fn rederives(&self) -> bool {
-        self.hash() == Some(self.chain_hash)
+        self.hash() == Some(self.chain_hash.bytes())
     }
 
     /// The node written out: its coordinates, then its hash. `None` where
@@ -885,7 +907,7 @@ impl KStepReceipt {
     pub fn write(&self, out: &mut Vec<u8>) -> Option<()> {
         let mut rec = Vec::new();
         self.put_body(&mut rec)?;
-        rec.extend_from_slice(&self.chain_hash);
+        rec.extend_from_slice(&self.chain_hash.bytes());
         out.append(&mut rec);
         Some(())
     }
@@ -925,7 +947,7 @@ impl KStepReceipt {
         *pos += 32;
         let chain_hash: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
-        Some(KStepReceipt { stamp, kind, mu, prev, parents, cites, operator_hash, chain_hash })
+        Some(KStepReceipt { stamp, kind, mu, prev, parents, cites, operator_hash, chain_hash: Predecessor::of_bytes(chain_hash) })
     }
 
     /// CK1 — THE STAMP AS IT PRINTS, `h:S:G:T:H:K.i`: the tick, the frame

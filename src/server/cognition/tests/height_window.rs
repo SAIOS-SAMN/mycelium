@@ -42,7 +42,7 @@ fn window_over_reads_kinds_and_cover_at_window_ends() {
     }
     let mut peer = ReceiptChain::with_signer([2; 32]);
     let cited = peer.append(ActKind::List, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("appends").clone();
-    c.admit(cited.clone());
+    c.admit(super::fixtures::reconstructed(&cited));
     c.append(
         ActKind::Install,
         [0; 4],

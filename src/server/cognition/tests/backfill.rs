@@ -137,7 +137,7 @@ fn hear_fetches_cited_signer_then_cites_head() {
     act(&mut b, 1);
     // b holds d's line, as a court holds what it heard, and cites its head.
     for r in d.line_between(&dvk, None, dh.stamp.place(), 64) {
-        b.admit(r.clone());
+        b.admit(super::fixtures::reconstructed(&r));
     }
     b.append(
         crate::chronometry::ActKind::List,
@@ -189,7 +189,7 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
     let mut b = ReceiptChain::with_signer(vk);
     act(&mut b, 1);
     for r in d.line_between(&dvk, None, dh.stamp.place(), 64) {
-        b.admit(r.clone());
+        b.admit(super::fixtures::reconstructed(&r));
     }
     b.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: dh.stamp, hash: dh.chain_hash }]).expect("b cites d");
     let page = b.line_between(&vk, None, b.head().expect("b").stamp.place(), 64);
@@ -228,7 +228,7 @@ fn hear_proves_citation_into_closed_era() {
     let era = e.line_between(&evk, None, shut.stamp.place(), 64);
     let e0 = e.at_place(crate::chronometry::Place::GENESIS).expect("e's first act, by its place");
     let (_, root) = e.fold_before(shut.stamp.place()).expect("the orbit folds");
-    let cites = vec![Cite::Root { at: Stamp::new(root.height, evk, root.at), hash: root.hash }];
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, evk, root.at), hash: root.hash.bytes() }];
     let folded = e.append(ActKind::Fold, [0; 4], cites, [0; 32], Vec::new()).expect("the fold node");
     // c back-fills e's line, and e's signed fold sheds what lies below the
     // root.
@@ -236,7 +236,7 @@ fn hear_proves_citation_into_closed_era() {
     c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let mut budget = c0.stroke();
     let (n, missing) = c0.admit_backfill(&super::fixtures::page(&era), &mut budget);
-    assert_eq!((n, missing), (era.len(), None), "e's line admitted whole");
+    assert!(n == era.len() && missing.is_none(), "e's line admitted whole");
     let signed = super::fixtures::admit_line(&mut c0, &ekey, &[folded]);
     assert!(matches!(signed.as_slice(), [crate::court::admission::Admitted::Parent(_)]), "e's fold under its signature: {signed:?}");
     assert!(c0.chain().node(&e0.stamp).is_none(), "e's first receipt was shed with its era");
@@ -245,7 +245,7 @@ fn hear_proves_citation_into_closed_era() {
     let dkey = super::fixtures::court_key("closed-era-d");
     let dvk = dkey.verifying_bytes();
     let mut d = ReceiptChain::with_signer(dvk);
-    d.admit(e0.clone());
+    d.admit(super::fixtures::reconstructed(&e0));
     d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: e0.stamp, hash: e0.chain_hash }]).expect("d cites e0");
     let (head, pre) = head_of(&d);
     let fetch = |signer: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place, _| {
