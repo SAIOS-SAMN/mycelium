@@ -758,19 +758,22 @@ pub fn moduli(b: &Blade) -> Option<Vec<crate::transducer::stalk::ChartAxis>> {
 }
 
 /// THE MODULI OF ONE SECTION — a chain's section sites, the frame
-/// on the pose (16.5): the same reading [`moduli`] gives the section's
-/// shape.
+/// on the pose (16.5): read as turns of the section's own periods
+/// ([`super::SectionTurns`], MU-SENSING §3.1), never through the conformal
+/// lift. The axes are the ones [`moduli`] reads on the section's shape.
 ///
 /// A CHART ONLY LOCATES (71.2(6)), so where the section's topology is
 /// refused the section is filed at the coarsest stratum it honestly has —
 /// its base's `n`, the chart's first axis — and nothing below it is
-/// invented. The physics decides what the section is; the chart only finds
-/// the candidates.
+/// invented. A section of no site stands on no base, `n = 0`. The physics
+/// decides what the section is; the chart only finds the candidates.
 pub fn section_moduli(sites: &[SectionSite]) -> Vec<crate::transducer::stalk::ChartAxis> {
-    let shape = shape_of_section(sites);
-    match moduli(&shape.blade) {
+    match super::SectionTurns::of(sites).as_ref().and_then(super::SectionTurns::chart) {
         Some(axes) => axes,
-        None => vec![crate::transducer::stalk::ChartAxis::Count(shape.blade.n() as u64)],
+        None => {
+            let n = sites.iter().map(|&s| Compartment::from(PaintedSite::new(s, 0)).site.n()).fold(0, usize::max);
+            vec![crate::transducer::stalk::ChartAxis::Count(n as u64)]
+        }
     }
 }
 
