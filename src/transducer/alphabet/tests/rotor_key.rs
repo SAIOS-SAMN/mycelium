@@ -94,7 +94,7 @@ fn key_agrees_for_two_tapes_of_one_vertex() {
     assert_eq!(geo.len(), 1, "five 90° turns geodesic to one");
     let ma = long.matrix().expect("affine");
     let mb = geo.matrix().expect("affine");
-    assert_eq!(ma, mb, "tape and geodesic replay the same affine");
+    assert_eq!(ma, mb, "tape and geodesic reconstruct the same affine");
     let g = relators();
     assert_eq!(g.len(), RELATOR_N);
     assert!(g.iter().any(|r| r.kind == RelatorKind::Turn90OrderFour));

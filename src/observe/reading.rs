@@ -550,7 +550,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // fetched word whose reconstruction the stroke could not finish (78.153) glues
     // nothing, marks nothing heard, and leaves no trace in the have-list, so
     // the next fetch is served it again.
-    ("glue_unread", "fetched words of this signer whose replay the stroke could not finish: nothing glued, nothing marked"),
+    ("glue_unread", "fetched words of this signer whose reconstruction the stroke could not finish: nothing glued, nothing marked"),
     // 2026-10-14 — THE FETCH'S TWO ENDS, so a word served is accounted for
     // at the court that took it: served under the signer that asked,
     // received under the signer that served. A word served and never

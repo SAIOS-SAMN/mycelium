@@ -77,7 +77,7 @@ fn pivot_orbit_opens_axis_for_undischarged_free_class() {
     assert_eq!(
         crate::court::verdict::reconstruct_blind(&bad, &mut super::fixtures::budget()),
         Some(crate::court::verdict::REFUSE_ORBIT),
-        "without the axis the orbit is a free class again, and it does not replay"
+        "without the axis the orbit is a free class again, and it does not reconstruct"
     );
 }
 
@@ -208,7 +208,7 @@ fn reconstruct_blind_reconstructs_filed_torsion_chord() {
     assert_eq!(
         crate::court::verdict::reconstruct_blind(&e, &mut super::fixtures::budget()),
         None,
-        "a filed torsion chord replays: the chord carries the holonomy"
+        "a filed torsion chord reconstructs: the chord carries the holonomy"
     );
     let mut f = crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
     let mag = e.magnitude();
@@ -258,7 +258,7 @@ fn reconstruct_blind_reconstructs_filed_torsion_chord() {
     assert_eq!(
         crate::court::verdict::reconstruct_blind(&missing, &mut super::fixtures::budget()),
         None,
-        "and the geometry replays as it did, because that is what replay reads"
+        "and the geometry reconstructs as it did, because that is what reconstruction reads"
     );
 }
 

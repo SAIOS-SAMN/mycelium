@@ -271,7 +271,7 @@ fn form_vertex_key_ignores_citations_and_certificates() {
     assert_eq!(
         form_vertex_key(&a),
         form_vertex_key(&b),
-        "a citation is evidence the court replays, not a coordinate of the vertex"
+        "a citation is evidence the court reconstructs, not a coordinate of the vertex"
     );
 
     // AND THE CERTIFICATES: a form resting on pivots reaches the address a

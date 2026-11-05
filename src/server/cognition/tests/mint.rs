@@ -120,7 +120,7 @@ k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
 assert_eq!(
     k.treasury().minted(),
     [0; 4],
-    "a bound listing is not a mint without replay"
+    "a bound listing is not a mint without reconstruction"
 );
 }
 
