@@ -4,7 +4,7 @@
 
 > **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels. In this document, *minds* are those software agents; *worlds* and *universes* are hosted simulations. Physical terms name the simulations' exact geometry. See [README › What Mycelium hosts](../README.md#what-mycelium-hosts).
 >
-> **Components:** every numeric item and literal site under `src/`, `algebra/src/`, `forms/src/` and `xtask/`; the register of open physics (`src/physics/axioms/founding.rs`) and its gate (`xtask/lint/`).
+> **Components:** every numeric item and literal site under `src/`, `algebra/src/`, `forms/src/` and `gate/`; the register of open physics (`src/physics/axioms/founding.rs`) and its gate (`gate/src/numbers.rs`).
 
 **Status:** specification, version 1 (2026-10-31). Every entry is
 **Specified** but those marked **Built** in §1 (D2.1–D2.4, D3.1, D3.2, and
@@ -771,9 +771,10 @@ carrying 293 bytes. PH1 (MU-RECURSION) names it "the protocol carrier
 **Status.** **Built** (2026-10-31, the live-readings ruling, §0.5).
 `physics::axioms::{OpenNumber, Governs, OpenKind}` carry the register;
 `OPEN_PHYSICS` is `[OpenNumber; N]`. The numbers gate is
-`xtask/lint/numbers.rs` (N1–N5 enforced by the gate; N6 reported as an
-inventory by `gate inventory`), with the fixture tests of the scope below in
-`xtask/lint/tests/numbers.rs` (and `numbers_inventories_inline_literal_in_law_path`);
+`gate/src/numbers.rs` (N1–N5 enforced by the gate test
+`numbers_refuses_nothing_in_tree`, which writes the N6 inventory to its
+output), with the fixture tests of the scope below in
+`gate/src/tests/numbers.rs` (and `numbers_inventories_inline_literal_in_law_path`);
 `open_physics_entries_resolve_to_sites` replaces the `=`-only check. Every
 literal-bearing numeric item carries its class. Registered at the build
 beyond the two named before: `BODY_BUDGET` (D1.3 O1), `ACCOUNT_SHARDS`
@@ -790,9 +791,9 @@ pub const OPEN_PHYSICS: [(&str, &str); 2] = [("CHALLENGE_WINDOW = 1024", "…"),
 
 It is checked by `open_physics_names_value_and_derivation`
 (`src/physics/axioms/tests/founding.rs:101`), which asserts only that each
-name contains `=` and each derivation is non-empty. The gate
-(`xtask/lint/mod.rs`) runs the reading bound (`length.rs`) and the
-Euclidean vocabulary (`euclidean.rs`). No gate reads numbers.
+name contains `=` and each derivation is non-empty. The gate then ran
+the reading bound and the Euclidean vocabulary only. No gate read
+numbers.
 
 **Governs.** The NO CONSTANT corollary (MU-RECURSION §0.0) across the
 tree. Two numbers are named today. A survey of non-test `const` items
@@ -806,7 +807,7 @@ belongs and are not registered:
   named axes' count, `REPLICATION_AXES`)
 - `STROKE = 1 << 20` (`src/bin/mycelium-soak/{volume,reconstruct,interpret}.rs`)
 - `N = 1000` (`src/bin/mycelium-soak/calibrate.rs:78`)
-- `BOUND = 2500` (`xtask/lint/length.rs:20`; EXTERNAL: MU-STANDARDS 1.1)
+- `BOUND = 2500` (`gate/src/length.rs`; EXTERNAL: MU-STANDARDS 1.1)
 - `BODY_BUDGET` (D1.3)
 
 Inline literals also stand where a reading belongs:
@@ -842,13 +843,12 @@ specifies its carrier and its gate.
   `LAW_VERSION` stays the register's version. A `Physics` entry leaving
   the register is a law amendment. `Protocol` and `Engineering` entries
   leave by the wire contract's or MU-STANDARDS' own process.
-- *The gate's rule (xtask `lint::numbers`, NUMBERS).* It reads items with
-  `syn` (full, visit), never raw lines (no string scraping). `syn` is
-  added to `xtask/Cargo.toml`; it is already in the root `Cargo.lock` at
-  2.0.117.
+- *The gate's rule (`gate::numbers`, NUMBERS).* It reads items with
+  `syn` (full, visit), never raw lines (no string scraping). `syn` is a
+  dependency of `gate/Cargo.toml`, in the root `Cargo.lock`.
   - **N1, scope.** Every `ItemConst`, `ItemStatic`, `ImplItemConst` and
     `TraitItemConst` with a default, in every `.rs` under `src/`,
-    `algebra/src/`, `forms/src/` and `xtask/`. Excluded: items under `#[cfg(test)]` on the
+    `algebra/src/`, `forms/src/` and `gate/`. Excluded: items under `#[cfg(test)]` on the
     item or on any enclosing `mod`; files under a `tests/` directory or
     named `tests.rs`; the lint's own fixture strings.
   - **N2, numeric type.** The item's type, with references stripped and
@@ -873,7 +873,7 @@ specifies its carrier and its gate.
       length, magic, version, enum position, escape code, file name).
     - `EXTERNAL: <spec and clause>`: Noise, RFC 8032, a MU-STANDARDS rule.
     - `MEASURED: <typed reading>`: allowed only under `src/bin/`,
-      `src/observe/` and `xtask/` (instruments). It is refused under
+      `src/observe/` and `gate/` (instruments). It is refused under
       `src/physics`, `src/court`, `src/server`, `src/chronometry`,
       `src/economy`, `src/network`, `src/anastome` and `src/transducer`,
       because a measured number standing at a law site is a constant and
@@ -926,8 +926,9 @@ specifies its carrier and its gate.
 - Files: `src/physics/axioms/founding.rs` (`OpenNumber`, `Governs`,
   `OpenKind`; entries for `CHALLENGE_WINDOW`, `THROAT_LEVEL_BITS`,
   `BODY_BUDGET`, and the others the first run finds);
-  `src/physics/axioms/mod.rs` (re-exports); `xtask/lint/numbers.rs` (new,
-  N1–N5); `xtask/lint/mod.rs` (calls `lint_numbers`); `xtask/Cargo.toml`
+  `src/physics/axioms/mod.rs` (re-exports); `gate/src/numbers.rs`
+  (N1–N5); `gate/src/tests/tree.rs` (calls `lint_numbers` on the tree);
+  `gate/Cargo.toml`
   (`syn = { version = "2", features = ["full", "visit"] }`, `quote`); class
   tags on every literal-bearing numeric item. The tagging is one phase,
   its own commit, non-substantive (no release).
@@ -936,7 +937,7 @@ specifies its carrier and its gate.
   (`PARAMETERS` reads from the `OPEN_PHYSICS` entries of kind `Physics`,
   one source).
 - Tests:
-  - xtask fixtures via `tempfile`:
+  - gate fixtures via `tempfile`:
     `numbers_refuses_unclassified_literal_const`,
     `numbers_admits_derived_const_without_literal`,
     `numbers_refuses_float_const`,
@@ -3729,6 +3730,6 @@ reads; the Ed25519 public key of 32 octets and signature of 64 octets
 (RFC 8032 §5.1.6), where a signature actually rides a body (D4.6);
 `CONFIG_HZ`, the scheduler tick the operating system publishes in
 `/boot/config-<release>` (read, not chosen, D2.6); and the 2500-line
-reading bound `BOUND = 2500` (`xtask/lint/length.rs:20`; MU-STANDARDS
+reading bound `BOUND = 2500` (`gate/src/length.rs`; MU-STANDARDS
 1.1), a standard binding developers, never a limit on what a mind may
 count (Concordance 1.10).

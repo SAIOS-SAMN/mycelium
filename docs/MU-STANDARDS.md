@@ -19,7 +19,7 @@ corrected.
 ## 1. Files and modules
 
 1.1 **The reading bound.** No source file under `src/`, `algebra/src/`,
-`forms/src/`, `sdk/src/` or `xtask/` exceeds 2500 lines. The gate checks it (§4.1) and names each file over the
+`forms/src/`, `sdk/src/` or `gate/` exceeds 2500 lines. The gate checks it (§4.1) and names each file over the
 bound with its line count. There is no list of exceptions: a file over
 the bound is split before anything else lands in it. The bound exists so
 that a reviewer reads a file whole; it never decides where an organ is
@@ -291,7 +291,7 @@ is a wire identifier, where the identity is routing and not content.
 
 3.5 **Refusals have tests.** Every `REFUSE_*` string has a test that
 produces it. The reading bound has a test of its own
-(`xtask/lint/length.rs`). A new clippy lint entry is proved once, at the
+(`gate/src/tests/length.rs`). A new clippy lint entry is proved once, at the
 commit that adds it, by a scratch line the lint refuses, built and then
 removed.
 
@@ -315,72 +315,66 @@ shapes (rule 16: an action is an algebra element, never a matrix). Two
 bodies are related by the conformal versor between them, known by its
 action.
 
-3.9 **Scoped suites.** A change runs the suites of the modules it
-touches, by filter, not the whole suite:
-
-```sh
-cargo test --release --lib -- <module path filter>...
-```
-
-A run is green only when its saved output contains no `FAILED`,
-`panicked` or `error` line. `scripts/ship-scoped <filter>...` runs clippy
-and the scoped tests in sequence. Before a pull request, `scripts/check`
-runs the gate (§4.1), the gate's own unit tests (`cargo test --release`
-in `xtask`) and the workspace tests with `--no-fail-fast`, and summarises
-all three; a failing gate test fails the check; without the ARC-AGI-2 corpus at `data/arc-agi-2`, its
-21 corpus-dependent tests (all in the decoder's crate, `sources/arc-agi`)
-are known exceptions, and the summary says so.
+3.9 **Running the tests.** While working, a change runs the suites of
+the modules it touches by filter (`cargo test --release -- <module path
+filter>`). A change is done only under the two commands of
+[AGENTS › Definition of done](../AGENTS.md#definition-of-done), which
+also names the corpus the decoder's tests read.
 
 ## 4. The gate
 
-4.1 **Running it.** The gate is the `gate` binary of `xtask/`:
+4.1 **The gate is tests.** The gate is the workspace crate `gate/`, read
+by its tests alone, run by `cargo test --release --workspace` with every
+other test ([AGENTS › Definition of done](../AGENTS.md#definition-of-done)).
+Each check reads the repository's source tree as a test of its own
+(`gate/src/tests/tree.rs`), so a red check never hides another, and each
+check's refusals are proved on fixture trees beside it
+(`gate/src/tests/`). The library's `build.rs` only computes the
+Concordance's byte hash (`CONCORDANCE_HASH`), a defect retired by ROADMAP
+track 24 B2 (Concordance §0, signing by adjudicated reading). The gate
+holds two readings:
 
-```sh
-(cd xtask && cargo run)
-```
-
-Setting `CARGO_TARGET_DIR` (for example `CARGO_TARGET_DIR=target/gate`) is
-optional and keeps the gate's build apart from a release build. The
-library's `build.rs` only computes the Concordance's byte hash
-(`CONCORDANCE_HASH`), a defect retired by ROADMAP track 24 B2 (Concordance
-§0, signing by adjudicated reading); the gate runs only from
-`xtask`. It takes two readings,
-reports both whatever the first said, and exits non-zero if either
-refuses:
-
-1. **The source checks** (`xtask/lint/`), over `src/`, `algebra/src/`,
-   `forms/src/`, `sdk/src/` and `xtask/` (the numbers gate over the four
+1. **The source checks** (`gate/src/`), over `src/`, `algebra/src/`,
+   `forms/src/`, `sdk/src/` and `gate/` (the numbers gate over the four
    it names):
-   - *the reading bound* (`lint/length.rs`): every `.rs` file over 2500
+   - *the reading bound* (`length.rs`): every `.rs` file over 2500
      lines is named with its count;
-   - *the Euclidean vocabulary* (`lint/euclidean.rs`): a code line (not a
+   - *the Euclidean vocabulary* (`euclidean.rs`): a code line (not a
      comment or attribute line) naming a grid-indexing shape is refused
      with its reason: Morton and Z-order curves, Hilbert curves, bit
      interleaving, bounding boxes (`bbox`, `bounding_box`, `aabb`),
      subdivision trees (`quadtree`, `octree`, k-d trees, R-trees),
      spatial hashes, grid cells and voxels. It reads names, not structure;
-   - *the numbers gate* (`lint/numbers.rs`, rule 2.12, MU-DERIVATIONS
+   - *the numbers gate* (`numbers.rs`, rule 2.12, MU-DERIVATIONS
      D1.4): it reads items with `syn`, never lines. Every numeric `const`
-     or `static` under `src/`, `algebra/src/`, `forms/src/` and `xtask/` (outside
+     or `static` under `src/`, `algebra/src/`, `forms/src/` and `gate/` (outside
      `#[cfg(test)]` and `tests/`) whose initializer carries an integer
      literal outside `{0, 1}` carries one class tag as the first token of
      a doc line: `EXACT: <test fn>`, `FORMAT: <layout>`,
      `EXTERNAL: <standard and clause>`, `MEASURED: <reading>` (instruments
-     only: `src/bin/`, `src/observe/`, `xtask/`) or `REGISTERED: <NAME>`,
+     only: `src/bin/`, `src/observe/`, `gate/`) or `REGISTERED: <NAME>`,
      whose entry in `physics::axioms::OPEN_PHYSICS` names the item's site
      and its value as written (N1–N5). A float item is refused outright.
-     The inline literals of the law paths (N6) are reported as an
-     inventory, `(cd xtask && cargo run -- inventory)`, and refuse nothing
-     until it is empty.
-2. **The warning gate** (`lint/warnings.rs`):
-   `cargo clippy --release --workspace --all-targets -- -D warnings`,
-   every workspace member (`mycelium`, `algebra`, `forms`, `mycelium-sdk`,
-   `mycelium-source-arc-agi`) and every
-   target, tests included, rustc's warnings denied. A warning is a defect with a
+     The inline literals of the law paths (N6) are written as an
+     inventory to the output of `numbers_refuses_nothing_in_tree`
+     (`cargo test --release -p gate numbers_refuses_nothing_in_tree --
+     --nocapture`), and refuse nothing until it is empty;
+   - *the drift register* (`drift.rs`, MU-ANTI-FLATTENING *Drift
+     guards*): each registered guard's type is declared and its claim
+     proved in the tree;
+   - *the shared-law table* (`gate/src/tests/documents.rs`): the forms
+     rows of MU-EQUATIONS §11 name exactly the ids and versions of
+     `forms::LAW_IDS`.
+2. **The warning reading**: `cargo clippy --release --workspace
+   --all-targets -- -D warnings`, the first command of the definition of
+   done, over every workspace member (`mycelium`, `algebra`, `forms`,
+   `gate`, `mycelium-sdk`, `mycelium-source-arc-agi`) and every target,
+   tests included, rustc's warnings denied. A warning is a defect with a
    line number.
 
-4.2 **The pattern rules are clippy configuration.** The crate-wide
-denials are in `Cargo.toml` under `[lints.rust]` and `[lints.clippy]`;
+4.2 **The pattern rules are clippy configuration.** The denials are one
+table, `[workspace.lints.rust]` and `[workspace.lints.clippy]` in the root
+`Cargo.toml`, taken by every member with `[lints] workspace = true`;
 `clippy.toml` lists the disallowed types and methods, each entry carrying
 as its `reason` the rule it enforces:
 
@@ -424,7 +418,8 @@ touches, in the style of the surrounding code.
 
 4.6 **No new gate by other means.** A new check is a lint entry under 4.2
 with its proof, a type under 4.4, or a proposed change to this document.
-A walker over source text beyond the three of 4.1 is not added. Where
+A walker over source text or documents beyond the checks of 4.1 is not
+added. Where
 `MU-RECURSION.md` or `MU-ENGINEERING.md` names "the enumeration gate",
 "the clock gate", "the blake3 gate", "the squaring gate", "the order
 gate" or "the panics gate", the name means the row of 4.2 or the type or
@@ -444,7 +439,7 @@ rewritten or deleted (with the claim of each deleted one), how it was
 verified (§6.1), the document paths rebound, and every `#[expect]` or
 `#[allow]` added.
 
-5.3 **Never committed.** Build artifacts (`target/`, `xtask/target/`),
+5.3 **Never committed.** Build artifacts (`target/`),
 runtime state, keys and other secrets, and editor files. `.gitignore`
 covers them.
 
@@ -453,9 +448,10 @@ commit that says what was wrong. Published history is not rewritten.
 
 ## 6. Verification
 
-6.1 **Before a commit.** Run the scoped suites of the modules touched
-(§3.9), then the gate (§4.1). Quote the suites' `test result` lines and
-the gate's exit in the message. "Lint clean" alone is not green.
+6.1 **Before a commit.** Run the two commands of
+[AGENTS › Definition of done](../AGENTS.md#definition-of-done). Quote
+clippy's result and the `test result` lines in the message. "Lint clean"
+alone is not green.
 
 6.2 **A review reads the code.** A reviewer reads every changed file
 whole and checks the wiring (every new reader has a production caller and

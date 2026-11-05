@@ -256,7 +256,8 @@ Apache-2.0, a client conformance read, and bindings for other languages
 after it.
 
 1. **P1, workspace (Built):** `mycelium`, `forms` and `mycelium-sdk` as
-   members of one workspace, `xtask` outside it. *Accepted when* the gate
+   members of one workspace (the gate was then `xtask`, outside it; it is
+   now the member `gate`). *Accepted when* the gate
    passes on the workspace and the members share one lock file.
 2. **P2, the surface (Built):** `mycelium-sdk` re-exporting the surface, and
    the client example (`sdk/examples/client.rs`) depending on it alone. *Accepted when* the
@@ -742,7 +743,8 @@ is open.
 **Test assurance**
 
 9. ~~Mutation audit~~ (**Retired** 2026-11-04, ruled theatre; the
-   catalogue and `gate mutate` are removed from `xtask`).
+   catalogue and `gate mutate` were removed from `xtask`, itself since
+   removed).
 10. **Fault-injection campaign and invariant auditor** (**Specified**;
     [MU-PRECURSORS §3.6](docs/MU-PRECURSORS.md#36-fault-injection-campaign-and-invariant-auditor)).
     Ten named fault classes (`InvalidSignature`, `Resend` (a valid act
@@ -1087,7 +1089,7 @@ Each phase is one commit:
    grid predicate and `push_grid`'s refusal (D4.3), each reply's own
    header length (D4.6), and `UNIT_BOND` deleted (D2.4).
 2. **NC2, the register and its gate** (D1.4): the `OpenNumber` carrier,
-   the NUMBERS lint in `xtask`, the class-tagging pass, then the
+   the NUMBERS lint in the gate (`gate/src/numbers.rs`), the class-tagging pass, then the
    inline-literal phase. From here no new constant lands.
 3. **NC3, entries with no open question blocking them**, among them the
    exact throat fit (D1.2 Phase A), the task address refusing an
@@ -1354,10 +1356,10 @@ for each phase:
 3. Write the claims named below first, as statements of the algebra
    (MU-STANDARDS 3.1). Include the `compile_fail` doc tests that prove a
    wrong structure does not compile.
-4. Build the phase. Run the gate (`cd xtask && cargo run`), the scoped
-   tests of the touched modules (`cargo test --release -p <crate>
-   <module>`), and `scripts/check` before the pull request.
-5. Register each guard the phase builds in `xtask/lint/drift.rs`
+4. Build the phase, and hold it to
+   [AGENTS › Definition of done](AGENTS.md#definition-of-done) before the
+   pull request.
+5. Register each guard the phase builds in `gate/src/drift.rs`
    (regression, ruling, guarding type, claim); the gate refuses an entry
    whose type or claim is missing.
 6. Open the pull request with the template's drift checklist ticked. A
@@ -1384,7 +1386,7 @@ Each phase lands on its own branch, one item per commit:
      `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`,
      `Court::admit_backfill`, `ReceiptChain::admit_unreached`. The
      founding outcome once named `Reconstructed` is `FoundingEvent`.
-   - The register `xtask/lint/drift.rs` lists each guard (regression,
+   - The register `gate/src/drift.rs` lists each guard (regression,
      ruling, guarding type, claim). The gate refuses an entry whose type
      or claim is missing.
    - Claims: `address_has_no_equality`, `predecessor_has_no_equality`,
@@ -1507,8 +1509,9 @@ so no file or identifier of the core library is named for a dataset. The
 hypha holds tasks as families of samples and knows no source.
 
 **How to build a phase:** as in track 25 (a branch; the specification read
-whole; the claims first; the gate; the scoped tests; one commit; a pull
-request that names #32). Run heavy builds one at a time.
+whole; the claims first; the
+[Definition of done](AGENTS.md#definition-of-done); one commit; a pull
+request that names #32).
 
 Each phase is one commit:
 

@@ -166,20 +166,20 @@ leaves by relocation to a cold carrier, never by deletion (`MU-ECONOMY.md`
 
 ## 7. The gate and the `Keyed` carrier
 
-The gate is the `gate` binary of `xtask/`, run with
-`(cd xtask && cargo run)`; there is no `build.rs`. It takes two readings
-and reports both:
+The gate is held by the two commands of
+[AGENTS › Definition of done](../AGENTS.md#definition-of-done):
 
-1. the source checks of `xtask/lint/`, over `src/`, `algebra/src/`,
-   `forms/src/`, `sdk/src/` and `xtask/`: the
-   reading bound (no `.rs` file over 2500 lines) and the Euclidean
+1. the source checks, the tests of the workspace crate `gate/`, over
+   `src/`, `algebra/src/`, `forms/src/`, `sdk/src/` and `gate/`: the
+   reading bound (no `.rs` file over 2500 lines), the Euclidean
    vocabulary (no code line naming a grid-indexing shape such as a Morton
-   curve, a bounding box or a subdivision tree);
-2. the warning gate, `cargo clippy --release --workspace --all-targets --
-   -D warnings`, over every workspace member, with the crate-wide denials of `Cargo.toml` and the disallowed types and
-   methods of `clippy.toml`: maps and sets, digests (`blake3::hash`),
-   wall-clock types (`Instant`, `SystemTime`, `Duration`), silent scalar
-   choice, invented defaults, and members by position.
+   curve, a bounding box or a subdivision tree), the numbers gate and the
+   drift register;
+2. clippy over every workspace member with warnings denied, under the one
+   lint table of `Cargo.toml` and the disallowed types and methods of
+   `clippy.toml`: maps and sets, digests (`blake3::hash`), wall-clock
+   types (`Instant`, `SystemTime`, `Duration`), silent scalar choice,
+   invented defaults, and members by position.
 
 Where older text names "the clock gate", "the blake3 gate" or "the
 enumeration gate", it means the `clippy.toml` entry or the type that now

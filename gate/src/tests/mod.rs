@@ -1,3 +1,4 @@
+mod documents;
 mod drift;
 mod euclidean;
 mod independence;

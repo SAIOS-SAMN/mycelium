@@ -130,7 +130,8 @@ in persistence and transport as in cognition.
 
 ## How the law is enforced
 
-- **By lint, in the gate** (`(cd xtask && cargo run)`; see
+- **By lint, in the gate** (the two commands of
+  [AGENTS › Definition of done](../AGENTS.md#definition-of-done); see
   [MU-STANDARDS.md](MU-STANDARDS.md) §4):
   - `clippy.toml` denies `HashMap`, `BTreeMap`, `HashSet` and `BTreeSet`
     crate-wide (clauses 1–3), and `blake3::hash` and `blake3::Hasher::new`
@@ -138,7 +139,7 @@ in persistence and transport as in cognition.
     `#[expect(clippy::disallowed_methods, reason = "…")]` naming why.
   - `Cargo.toml` denies `float_arithmetic`, `cast_precision_loss` and
     `cast_possible_truncation`, so no quantity is approximated.
-  - `xtask/lint/euclidean.rs` refuses grid-indexing vocabulary in code
+  - `gate/src/euclidean.rs` refuses grid-indexing vocabulary in code
     lines (Morton and Z-order curves, Hilbert curves, bit interleaving,
     bounding boxes, quadtrees, octrees, k-d trees, R-trees, spatial hashes,
     grid cells, voxels), the flat-box shapes of clauses 3 and 5. It reads
@@ -149,7 +150,7 @@ in persistence and transport as in cognition.
   compared at admission are typed by sense (`Locator`, `Predecessor`,
   `Commitment`, none with `==`), and the receipt path's admissions take
   a `Reconstructed<T>` (clause 13; *Drift guards* below).
-- **By register, in the gate:** `xtask/lint/drift.rs` refuses a drift
+- **By register, in the gate:** `gate/src/drift.rs` refuses a drift
   guard whose type or claim is missing from the tree (*Drift guards*
   below).
 - **By review:** everything else — a `bool` deciding a branch in
@@ -180,10 +181,10 @@ it (ROADMAP track 25, phase X0):
 | A common grid past the sensor (clause 12) | The refinement onto a common grid is removed (the transduction replaced it in v0.3.0 T2). A site's lift has one constructor, `Turn::of(r, h)`, held in ℚ/ℤ: `Turn` (`transducer::family::transduce`) has private fields, so no reader writes a turn by its index and period or takes one apart into a grid index. A turn is read back on a period only by landing it there (`Turn::lands`, exact or `OffSite`), and as a motion it composes by addition mod 1 (`Turn::plus`). | The `compile_fail` doc tests `turn_has_one_constructor` (a turn written by its fields; a field read); the transduction's claims (track 25, X5) | **Built** (v0.4.0 T3, [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26)) |
 | Replay or rebuild used to verify (clause 14) | Identifiers that verify carry `reconstruct` (track 11). A restore returns a `Reconstructed<State>` checked against its receipts, never a replayed one. | The restore claim `restore_reconstructs_and_checks_receipts` | **Specified** |
 
-The register `xtask/lint/drift.rs` lists each guard that is built: the
+The register `gate/src/drift.rs` lists each guard that is built: the
 regression, its ruling, the guarding type, and the claim that proves it
 (a `#[test]` fn, or a `compile_fail` doc test whose comment names the
-claim). The gate refuses a register entry whose guard type or claim is
+claim). One gate test (`drift_register_holds_in_this_tree`) refuses a register entry whose guard type or claim is
 named empty or missing from the tree, as `numbers.rs` does for the open
 numbers. Clause 12's guard is in the register (v0.4.0 T3): `Turn`
 (`transducer::family::transduce::turn`) has private fields and one

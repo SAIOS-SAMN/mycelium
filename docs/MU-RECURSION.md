@@ -15432,7 +15432,7 @@ Code: `src/server/cognition/domain_passage.rs`, `src/server/cognition/handoff.rs
 
 Every write lands DURABLY: the line's append is synced, and a whole line or the snapshot is written to a synced sibling, renamed, and the directory synced. The court acts (`ACT_UPLINK`, `ACT_HANDOFF`, `ACT_CHALLENGE`, `ACT_DOMAIN`) are answered only after the line and snapshot they changed are on the disk; a write that does not land is not answered, the act stays due, and its resend is answered with its original receipt (nothing is sealed twice). Boot restores the last snapshot read whole, with no log re-executed (that would be replay, Concordance 1.4). Speech keeps its orbit-cadence persist, since words are re-heard by back-fill: a crash may lose unpersisted words, never an acknowledged court act. Should the measured cost approach the court's real act rate, the next form is an fsynced log of the sealed state deltas, read back at boot as a recovery read; the trigger is measured, never a declared size.
 
-Code: `src/chronometry/chain/line.rs` (`replace_durably`), `src/bin/mycelium-server/persist.rs` (`durable`); the drill `scripts/durable-drill` with `examples/durable_drill.rs`, and its negative control, the `drill-undurable` feature, which answers without the pre-reply sync and loses rounds.
+Code: `src/chronometry/chain/line.rs` (`replace_durably`), `src/bin/mycelium-server/persist.rs` (`durable`); the drill, the release-only test `tests/durable.rs`, and its negative control, the `drill-undurable` feature, which answers without the pre-reply sync and loses rounds.
 
 ### 78.138 Only the ancients uplink; a line is carried inline
 

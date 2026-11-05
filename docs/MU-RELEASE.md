@@ -43,11 +43,11 @@ and convergence or collision brings the branches back into alignment
 ## 2. What a change is
 
 - One phase per pull request where practical, each leaving the tree green:
-  gate and scoped tests pass, documentation in step, a CHANGELOG entry
-  under Unreleased.
+  the [Definition of done](../AGENTS.md#definition-of-done) holds,
+  documentation in step, a CHANGELOG entry under Unreleased.
 - Commit form: an imperative subject of at most 72 characters; a body
   saying what changed and why, naming its ROADMAP track or issue; a
-  verification line ("Gate green; tests: …"); the Co-Authored-By trailer
+  verification line (the two commands' results); the Co-Authored-By trailer
   where an agent co-authored it.
 - External contributions arrive the same way and are reviewed by a
   maintainer.
@@ -141,9 +141,8 @@ network's own clock:
 - Release tags are signed. The release states the build's hash, re-derivable
   by anyone from the tagged source and `Cargo.lock` (ROADMAP track 14, item
   5); a hypha's build attestation names it.
-- The release checklist lives in CONTRIBUTING: gate green on the tagged
-  tree, the full test set run once with its known exceptions named, the
-  CHANGELOG section final, the test-mesh run recorded, the operator's
+- The release checklist lives in CONTRIBUTING: the Definition of done
+  green on the tagged tree, the CHANGELOG section final, the test-mesh run recorded, the operator's
   authorization recorded in the release pull request.
 
 ---
