@@ -35,8 +35,8 @@ fn link_carries_rank_n_coordinates() {
     assert_eq!(link.site.axes(), &[1, 1, 1], "every coordinate kept, none privileged");
     assert_eq!(link.section(), Err(SectionRefusal::Rank(AlphabetRank { rank: 3 })), "refused by name, never truncated");
     let planar = Link::new(Site::of([4, 5]), vec![2], vec![3]);
-    assert_eq!(planar.section(), Ok((4, 5, 2, 3)));
-    assert_eq!(Link::of_section(&(4, 5, 2, 3)), planar, "the section's link round-trips");
+    assert_eq!(planar.section(), Ok(super::fixtures::link(4, 5, 2, 3)));
+    assert_eq!(Link::of_section(&super::fixtures::link(4, 5, 2, 3)), planar, "the section's link round-trips");
     let wide = Link::new(Site::of([4, 5]), vec![2, 0], vec![3, 0]);
     assert_eq!(wide.section(), Err(SectionRefusal::Width { width: 2 }));
     let mut a = Vec::new();
@@ -94,6 +94,30 @@ fn bodies_connect_by_shared_cell_of_grade_n_minus_one() {
     // At rank 2 the planar reading is the face incidence: an L of three.
     assert_eq!(incidence_of(&[(0, 0), (0, 1), (1, 0)]), vec![(0, 1), (0, 2)]);
     assert_eq!(incidence_of(&[(0, 0), (1, 1)]), Vec::<(usize, usize)>::new(), "a corner joins nothing");
+}
+
+/// A LINK OF THE SECTION IS A SITE OF THE SECTION AND ITS TRANSITION
+/// (MU-SENSING §3.6): its site is the sample's coordinate vector restricted
+/// to the perspective's plane, read back through `Link::of_section` as the
+/// same coordinates; links order by the site first, then the symbol before
+/// and after, so a sorted chain and its wire writing are unchanged; and the
+/// wire carries the coordinates in the plane's order, then the two symbols.
+#[test]
+fn section_link_holds_section_site_and_transition() {
+    use crate::transducer::sentence::tests::fixtures::link;
+    use crate::transducer::spelled::SectionSite;
+    let l = link(4, 5, 2, 3);
+    assert_eq!(l.site, SectionSite::on_plane([4, 5]), "the site of the section");
+    assert_eq!(l.transition(), (2, 3), "the symbol before, then after");
+    assert_eq!(Link::of_section(&l).site.axes(), &[4, 5], "the coordinates the plane reads, in its order");
+    let mut chain = vec![link(1, 0, 0, 1), link(0, 9, 5, 5), link(0, 9, 1, 2), link(0, 2, 7, 7)];
+    chain.sort_unstable();
+    assert_eq!(chain, vec![link(0, 2, 7, 7), link(0, 9, 1, 2), link(0, 9, 5, 5), link(1, 0, 0, 1)], "site first, then transition");
+    let mut wire = Vec::new();
+    crate::anastome::dialogue::push_chain(&mut wire, &[l]).expect("one link writes");
+    let mut p = 0;
+    assert_eq!(crate::anastome::dialogue::read_chain(&wire, &mut p), Some(vec![l]), "the wire reads the link back");
+    assert_eq!(wire.len(), 4 + crate::anastome::dialogue::link_wire_width(), "a count, then one link's width");
 }
 
 /// The generated orders reproduce the offsets the rule language read at

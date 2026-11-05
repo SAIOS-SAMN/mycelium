@@ -596,7 +596,7 @@ impl Court {
         &mut self,
         voice: [u8; 32],
         target: &[u8],
-        residue: Vec<(i64, i64, u8, u8)>,
+        residue: Vec<crate::transducer::sentence::SectionLink>,
         cites: &[crate::anastome::dialogue::CiteWire],
         section: bool,
     ) -> crate::anastome::dialogue::ProbeReading {
@@ -836,10 +836,19 @@ pub(crate) fn spelled_word(motion: &crate::transducer::cga::Mv, period: u64) -> 
 /// the listing's body and the residue's, `V = s_b s_a` over the two nuclei
 /// (`blade::tether`, the one producer). `None` — the residue's versor unread
 /// by name — where either body does not lift or its nucleus does not read.
-pub(crate) fn residue_versor(listing: &[(i64, i64, u8, u8)], residue: &[(i64, i64, u8, u8)]) -> Option<crate::transducer::cga::Mv> {
-    let lift = |links: &[(i64, i64, u8, u8)]| {
+pub(crate) fn residue_versor(
+    listing: &[crate::transducer::sentence::SectionLink],
+    residue: &[crate::transducer::sentence::SectionLink],
+) -> Option<crate::transducer::cga::Mv> {
+    let lift = |links: &[crate::transducer::sentence::SectionLink]| {
         crate::transducer::blade::lift(
-            &links.iter().map(|&(r, c, _, h)| crate::transducer::blade::Compartment::from((r, c, 0i64, h))).collect::<Vec<_>>(),
+            &links
+                .iter()
+                .map(|l| {
+                    let [r, c] = l.site.coordinates();
+                    crate::transducer::blade::Compartment::from((r, c, 0i64, l.after))
+                })
+                .collect::<Vec<_>>(),
         )
     };
     crate::transducer::blade::tether(&lift(listing), &lift(residue))

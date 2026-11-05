@@ -21,7 +21,7 @@ fn advance_height_only_advances_and_stamps_dialect() {
     e.advance_height(9);
     assert_eq!(e.now_tu(), 9, "and it only advances");
     // What the mind stands is stamped with the height it read.
-    let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    let word = from_canonical(&germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 1)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 2), (0, 1, 2)])).unwrap());
     let tu = e.now_tu();
     e.language.stand_dialect_at(word.clone(), 1, tu);
     assert_eq!(

@@ -3,6 +3,7 @@
 
 use super::fixtures::*;
 use crate::transducer::family::*;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// Deflation is `deflation_of(lane_moves(after, before))` per pair, taken
 /// where the form closes the pair. A raise or a miss on one pair does not
@@ -64,8 +65,8 @@ let [(_, kind, links)] = demanded.as_slice() else {
     panic!("one demand declares the one unspoken remainder, got {}", demanded.len())
 };
 assert!(matches!(kind, crate::transducer::sentence::Demand::Source { .. }), "unspoken links are a Source demand");
-let unspoken: Vec<(i64, i64)> = rems2[1].iter().filter(|c| c.2 == 0).map(|c| (c.0, c.1)).collect();
-let declared: Vec<(i64, i64)> = links.iter().map(|c| (c.0, c.1)).collect();
+let unspoken: Vec<SectionSite> = rems2[1].iter().filter(|c| c.before == 0).map(|c| c.site).collect();
+let declared: Vec<SectionSite> = links.iter().map(|c| c.site).collect();
 assert_eq!(declared, unspoken, "the demand names exactly the sites the form spoke nothing at");
 assert!(
     crate::court::verdict::body::undeclared_remainder(&rems2, &f).is_empty(),
@@ -189,7 +190,7 @@ fn sentence_measure_from_refuses_undeclared_remainder() {
 fn sentence_measure_from_refuses_uncovered_remainder() {
     let (x, y) = (grid(&["12"]), grid(&["34"]));
     let rems = vec![residue_of(Some(&x), &y).expect("one enclosure needs no ground")];
-    let elsewhere: Vec<crate::transducer::sentence::SectionLink> = vec![(5, 5, 0, 9)];
+    let elsewhere: Vec<crate::transducer::sentence::SectionLink> = vec![link(5, 5, 0, 9)];
     let chart = crate::transducer::stalk::invariant(&elsewhere);
     let mut f = Form::default();
     f.put_vertex(demand_vertex(crate::transducer::sentence::Demand::Creation, &chart, elsewhere))
@@ -266,7 +267,7 @@ fn mint_sentence_why_refuses_form_where_nothing_acts() {
 #[test]
 fn mint_refusal_line_names_arm_proof_kind_demands() {
     use crate::transducer::sentence::{Demand, ObstructionKind, ObstructionRefusal};
-    let elsewhere: Vec<crate::transducer::sentence::SectionLink> = vec![(5, 5, 0, 9)];
+    let elsewhere: Vec<crate::transducer::sentence::SectionLink> = vec![link(5, 5, 0, 9)];
     let chart = crate::transducer::stalk::invariant(&elsewhere);
     let mut f = Form::default();
     f.put_vertex(demand_vertex(Demand::Creation, &chart, elsewhere)).expect("a demand vertex has a coordinate");
@@ -321,10 +322,10 @@ fn unspoken_residue_is_read_on_output_sites() {
     let x = crate::transducer::family::SectionSample::from(vec![vec![1; 29]; 29]);
     let mut y = crate::transducer::family::SectionSample::from(vec![vec![1; 30]; 30]);
     y.paint(crate::transducer::spelled::SectionSite::on_plane([1, 2]), 5).expect("a site of the sample");
-    assert_eq!(residue(&x, &y), vec![(1, 2, 1, 5)]);
+    assert_eq!(residue(&x, &y), vec![link(1, 2, 1, 5)]);
     assert_eq!(
         residue(&grid(&["10", "00"]), &grid(&["2200", "2200", "0000", "0000"])),
-        vec![(0, 0, 1, 2), (0, 1, 1, 2), (1, 0, 1, 2), (1, 1, 1, 2)]
+        vec![link(0, 0, 1, 2), link(0, 1, 1, 2), link(1, 0, 1, 2), link(1, 1, 1, 2)]
     );
     let shrink = grid(&["12"]);
     let out = grid(&["3"]);
@@ -335,7 +336,7 @@ fn unspoken_residue_is_read_on_output_sites() {
         })
         .expect("on a ground of 0 the residue is written")
     );
-    assert_eq!(residue(&shrink, &out), vec![(0, 0, 0, 3)]);
+    assert_eq!(residue(&shrink, &out), vec![link(0, 0, 0, 3)]);
 }
 
 /// MU-DERIVATIONS D3.2 — A CLOSED PAIR PAYS WHAT IT DEMANDED, ON ONE RECORD:

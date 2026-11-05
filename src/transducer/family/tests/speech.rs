@@ -3,6 +3,7 @@
 
 use super::fixtures::*;
 use crate::transducer::family::*;
+use crate::transducer::sentence::tests::fixtures::painted;
 use crate::transducer::stalk::Standing;
 
 /// LAW 12 — A GLUED VERTEX SPEAKS ITS CITED FORM ONTO THE SCENE THE SPEECH
@@ -252,7 +253,7 @@ match extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 <
             rems.iter().any(|r| !r.is_empty()),
             "a family the form does not close leaves remainder"
         );
-        assert!(rems.iter().flatten().all(|&(_, _, s, h)| s != h));
+        assert!(rems.iter().flatten().all(|l| l.before != l.after));
     }
 }
 let disagree = vec![
@@ -333,7 +334,7 @@ fn speech_grid_refuses_site_outside_frame() {
         unresolved: Vec::new(),
         cycled: Vec::new(),
         frame: (3, 3),
-        painted: vec![(2, 2, 5)],
+        painted: painted(&[(2, 2, 5)]),
         remainder: Vec::new(),
         unspoken: Vec::new(),
         unreached: Vec::new(),
@@ -345,16 +346,16 @@ fn speech_grid_refuses_site_outside_frame() {
         "a site inside the frame is laid down"
     );
     // Row 9 on a 3-row frame.
-    let past = Speech { painted: vec![(9, 0, 5)], ..fits.clone() };
+    let past = Speech { painted: painted(&[(9, 0, 5)]), ..fits.clone() };
     assert_eq!(past.grid(), None, "a row past the frame's extent refuses");
-    let wide = Speech { painted: vec![(0, 9, 5)], ..fits.clone() };
+    let wide = Speech { painted: painted(&[(0, 9, 5)]), ..fits.clone() };
     assert_eq!(wide.grid(), None, "and so does a column past it");
     // Before the origin is the other half of the same fault.
-    let before = Speech { painted: vec![(-1, 0, 5)], ..fits.clone() };
+    let before = Speech { painted: painted(&[(-1, 0, 5)]), ..fits.clone() };
     assert_eq!(before.grid(), None, "a negative coordinate is not a site of the frame");
     // One bad site refuses the whole grid; the good ones are not laid down
     // to stand in for what the form actually said.
-    let mixed = Speech { painted: vec![(0, 0, 5), (9, 0, 5)], ..fits };
+    let mixed = Speech { painted: painted(&[(0, 0, 5), (9, 0, 5)]), ..fits };
     assert_eq!(mixed.grid(), None, "one site outside refuses the speech, not just that site");
 }
 
@@ -444,7 +445,7 @@ fn emit_carried_keeps_frame_and_refuses_tilt() {
     let mut at_three = Vec::new();
     let mut rem_three = Vec::new();
     emit_carried(&bar(3), &shift, &[(1, 1)], (6, 6), &mut at_three, &mut rem_three);
-    assert_eq!(at_zero, vec![(2, 0, 1), (2, 1, 1)], "the bar is carried two rows down");
+    assert_eq!(at_zero, painted(&[(2, 0, 1), (2, 1, 1)]), "the bar is carried two rows down");
     assert_eq!(
         at_three, at_zero,
         "an open section at frame 3 speaks what the same body at frame 0 speaks"

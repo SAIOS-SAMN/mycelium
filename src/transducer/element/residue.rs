@@ -9,11 +9,13 @@ use crate::transducer::germinate::{germ_bytes, ResidueGerm};
 use crate::core::Q;
 use num_bigint::BigInt;
 use num_traits::One;
+use crate::transducer::sentence::SectionLink;
+use crate::transducer::spelled::SectionSite;
 use super::*;
 
 /// The positions skeleton of a centred chain (its base geometry).
-pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
-    chain.iter().map(|(r, c, _, _)| (*r, *c)).collect()
+pub fn positions(chain: &[SectionLink]) -> Vec<(i64, i64)> {
+    chain.iter().map(|l| { let [r, c] = l.site.coordinates(); (r, c) }).collect()
 }
 
 /// The DESCRIPTION of a perceived residue as a germ — post-excision, the ONLY way
@@ -34,18 +36,18 @@ pub fn positions(chain: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64)> {
 /// so a value of this type IS the proof A5 accepted the chain, and every
 /// reading that needs one takes it by type rather than re-deriving it.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct CanonicalChain(Vec<(i64, i64, u8, u8)>);
+pub struct CanonicalChain(Vec<SectionLink>);
 
 impl CanonicalChain {
     /// The links left when the named sites are dropped, re-centred. Total:
     /// a subset of a conflict-free set is conflict-free, and centring and
     /// sorting are total.
     pub fn without(&self, drop: &[(i64, i64)]) -> CanonicalChain {
-        let kept: Vec<(i64, i64, u8, u8)> = self
+        let kept: Vec<SectionLink> = self
             .0
             .iter()
             .copied()
-            .filter(|(r, c, _, _)| !drop.contains(&(*r, *c)))
+            .filter(|l| { let [r, c] = l.site.coordinates(); !drop.contains(&(r, c)) })
             .collect();
         CanonicalChain(centre(&kept))
     }
@@ -63,17 +65,17 @@ impl CanonicalChain {
         canonical_chain(&both)
     }
 
-    pub fn as_slice(&self) -> &[(i64, i64, u8, u8)] {
+    pub fn as_slice(&self) -> &[SectionLink] {
         &self.0
     }
 
-    pub fn to_vec(&self) -> Vec<(i64, i64, u8, u8)> {
+    pub fn to_vec(&self) -> Vec<SectionLink> {
         self.0.clone()
     }
 }
 
 impl std::ops::Deref for CanonicalChain {
-    type Target = [(i64, i64, u8, u8)];
+    type Target = [SectionLink];
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -115,14 +117,15 @@ impl PlacedChain {
     /// carried through the translator, its transition unchanged, in the
     /// frame the pose names (16.5). `carry_compartment` is the sensor's, and
     /// this is the one place the pair reappears.
-    pub fn placed(&self) -> Vec<(i64, i64, u8, u8)> {
+    pub fn placed(&self) -> Vec<SectionLink> {
         let mut out = Vec::new();
-        for &(r, c, hb, ha) in self.chain.as_slice() {
+        for l in self.chain.as_slice() {
+            let [r, c] = l.site.coordinates();
             let Some(sites) = crate::transducer::element::sensor::carry_compartment(&self.at, r, c, 0) else {
                 continue;
             };
             for (pr, pc, _) in sites {
-                out.push((pr, pc, hb, ha));
+                out.push(SectionLink::on_plane([pr, pc], l.before, l.after));
             }
         }
         out.sort_unstable();
@@ -140,53 +143,59 @@ impl std::ops::Deref for PlacedChain {
 
 /// A5's chain and the translator that places it, measured from raw scene
 /// links. `None` where two transitions occupy one site.
-pub fn place_chain(links: &[(i64, i64, u8, u8)]) -> Option<PlacedChain> {
+pub fn place_chain(links: &[SectionLink]) -> Option<PlacedChain> {
     let chain = canonical_chain(links)?;
     Some(PlacedChain { chain, at: corner_translator(links) })
 }
 
 /// The translator from the origin to the chain's min corner. The corner is
 /// read here, at the sensor boundary, and leaves as a versor.
-#[expect(
-    clippy::disallowed_methods,
-    reason = "rule 4 — the min corner is the chain's extent, content; §1.4, this is the sensor boundary where a site's coordinates are read"
-)]
-fn corner_translator(links: &[(i64, i64, u8, u8)]) -> Versor {
-    let (Some(min_r), Some(min_c)) = (
-        links.iter().map(|(r, _, _, _)| *r).min(),
-        links.iter().map(|(_, c, _, _)| *c).min(),
-    ) else {
+fn corner_translator(links: &[SectionLink]) -> Versor {
+    let Some([min_r, min_c]) = corner_of(links) else {
         return identity_versor();
     };
     translator_versor(min_r, min_c)
 }
 
-/// Translate to the min corner and sort. Total, and conflict-blind: only
-/// [`canonical_chain`] decides whether a chain has one transition per site.
+/// THE CHAIN'S LEAST CORNER along the section's plane: the least coordinate
+/// on each axis of the plane, in the plane's order. `None` for an empty
+/// chain.
 #[expect(
     clippy::disallowed_methods,
-    reason = "rule 4 — the min corner is the chain's extent, content: A5 translates it to the origin so two nodes address one chain alike"
+    reason = "rule 4 — the min corner is the chain's extent, content; §1.4, this is the sensor boundary where a site's coordinates are read"
 )]
-fn centre(links: &[(i64, i64, u8, u8)]) -> Vec<(i64, i64, u8, u8)> {
-    let (Some(min_r), Some(min_c)) = (
-        links.iter().map(|(r, _, _, _)| *r).min(),
-        links.iter().map(|(_, c, _, _)| *c).min(),
-    ) else {
+pub fn corner_of(links: &[SectionLink]) -> Option<[i64; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK]> {
+    let mut out = [0i64; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK];
+    for (axis, slot) in out.iter_mut().enumerate() {
+        *slot = links.iter().filter_map(|l| l.site.coordinates().get(axis).copied()).min()?;
+    }
+    Some(out)
+}
+
+/// Translate to the min corner and sort. Total, and conflict-blind: only
+/// [`canonical_chain`] decides whether a chain has one transition per site.
+/// The min corner is the chain's extent, content: A5 translates it to the
+/// origin so two nodes address one chain alike.
+fn centre(links: &[SectionLink]) -> Vec<SectionLink> {
+    let Some([min_r, min_c]) = corner_of(links) else {
         return Vec::new();
     };
-    let mut out: Vec<(i64, i64, u8, u8)> = links
+    let mut out: Vec<SectionLink> = links
         .iter()
-        .map(|(r, c, b, a)| (r - min_r, c - min_c, *b, *a))
+        .map(|l| {
+            let [r, c] = l.site.coordinates();
+            SectionLink::new(SectionSite::on_plane([r - min_r, c - min_c]), l.before, l.after)
+        })
         .collect();
     out.sort_unstable();
     out.dedup();
     out
 }
 
-pub fn canonical_chain(links: &[(i64, i64, u8, u8)]) -> Option<CanonicalChain> {
+pub fn canonical_chain(links: &[SectionLink]) -> Option<CanonicalChain> {
     let out = centre(links);
     for w in out.windows(2) {
-        if w[0].0 == w[1].0 && w[0].1 == w[1].1 && (w[0].2, w[0].3) != (w[1].2, w[1].3) {
+        if w[0].site == w[1].site && w[0].transition() != w[1].transition() {
             return None;
         }
     }
@@ -261,7 +270,7 @@ impl Frame {
 /// addressed is a refusal that travels, never listed and never counted
 /// (U14).
 pub fn listing_key(
-    chain: &[(i64, i64, u8, u8)],
+    chain: &[SectionLink],
     frame: &Frame,
 ) -> Option<crate::transducer::address::Address> {
     Some(from_residue_framed(&chain.to_vec(), frame)?.address())

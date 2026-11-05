@@ -15,7 +15,8 @@ fn class() -> Transport {
 }
 
 fn chart() -> crate::transducer::stalk::Invariant {
-    crate::transducer::stalk::invariant(&[(0, 0, 1, 1), (0, 1, 1, 1)])
+    use crate::transducer::sentence::tests::fixtures::link;
+    crate::transducer::stalk::invariant(&[link(0, 0, 1, 1), link(0, 1, 1, 1)])
 }
 
 /// EVERY KIND OF VERTEX, every chart and an overlap between two, read

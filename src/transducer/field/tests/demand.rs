@@ -4,7 +4,7 @@
 
 use crate::transducer::alphabet::{Rotor, Word, Q};
 use crate::transducer::field::*;
-use crate::transducer::sentence::tests::fixtures::edge_chord_form;
+use crate::transducer::sentence::tests::fixtures::{edge_chord_form, link};
 use crate::transducer::sentence::Demand;
 use crate::transducer::stalk::{Invariant, Stalks};
 
@@ -94,7 +94,7 @@ fn expand_with_stands_orbit_demand_on_held_form() {
 fn pivot_on_stands_orbit_demand_on_held_form() {
     use crate::transducer::element::{canonical_chain, from_canonical};
     let form = edge_chord_form(&[Word::formed(eleven())]);
-    let rem = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];
+    let rem = vec![link(0, 0, 1, 2), link(0, 1, 1, 2)];
     let mut c = Contemplation::new();
     c.set_now(10);
     c.hold_form(form.clone(), &[], std::slice::from_ref(&rem), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));

@@ -794,18 +794,17 @@ impl BodyContact {
 pub struct ChainAt {
     pub measure: [u64; 4],
     pub pieces: u64,
-    pub corner: (i64, i64),
+    /// The chain's least corner, a site of the section.
+    pub corner: crate::transducer::spelled::SectionSite,
 }
 
 impl ChainAt {
     /// The coordinates of a chain, read off it; `None` for the empty chain,
     /// which has no corner and is written as the absence it is.
-    #[expect(clippy::disallowed_methods, reason = "rule 4 — the min corner is the chain's extent, content; §1.4, the sensor boundary where a site's coordinates are read")]
     pub fn of(chain: &[SectionLink]) -> Option<ChainAt> {
-        let r = chain.iter().map(|(r, _, _, _)| *r).min()?;
-        let c = chain.iter().map(|(_, c, _, _)| *c).min()?;
+        let corner = crate::transducer::spelled::SectionSite::on_plane(crate::transducer::element::corner_of(chain)?);
         let (measure, pieces) = demand_coordinates(chain);
-        Some(ChainAt { measure, pieces, corner: (r, c) })
+        Some(ChainAt { measure, pieces, corner })
     }
 }
 

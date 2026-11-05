@@ -43,8 +43,9 @@ fn fibre_map_on_ground(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
         // carries it to, never aligned at a corner. A pair whose dilation
         // is irrational has no site that corresponds, and witnesses nothing.
         let Some(s) = envelope_dilation(x.sample(), y.sample()) else { continue };
-        for (site, h) in crate::transducer::raster::painted_sites(x) {
-            let Some(there) = carried_site(x, y, s, site) else { continue };
+        for p in crate::transducer::raster::painted_sites(x) {
+            let h = p.symbol;
+            let Some(there) = carried_site(x, y, s, p.site) else { continue };
             let Some(t) = y.at(there) else { continue };
             if crate::transducer::raster::is_ground(t) {
                 continue;

@@ -27,8 +27,8 @@ fn shift(dr: i64, dc: i64) -> Mv {
 fn drawn(spoken: Result<crate::transducer::family::statement::Spoken, Unstated>) -> Result<SectionSample, Unstated> {
     let spoken = spoken?;
     let mut g = SectionSample::filled([spoken.frame.0, spoken.frame.1], 0).expect("a frame");
-    for (r, c, h) in spoken.painted {
-        g.paint(crate::transducer::spelled::SectionSite::on_plane([r, c]), h).expect("on the sample");
+    for p in spoken.painted {
+        g.paint(p.site, p.symbol).expect("on the sample");
     }
     Ok(g)
 }

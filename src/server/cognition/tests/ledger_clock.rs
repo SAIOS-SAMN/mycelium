@@ -278,7 +278,7 @@ k.append_step(crate::chronometry::ActKind::Attest, [0xEE; 40], [1; 32]);
 assert_eq!(k.clock(None).unframed, 1, "sealed without a frame, counted at seal");
 
 // A word placed on the basis with no act is held without a stamp.
-k.basis_insert(from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap()), [7; 32]);
+k.basis_insert(from_canonical(&germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 2)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 9)])).unwrap()), [7; 32]);
 assert_eq!(k.clock(None).unstamped, [1, 0, 0, 0, 0], "named by its row");
 
 // A snapshot noted where it was taken, once it landed.

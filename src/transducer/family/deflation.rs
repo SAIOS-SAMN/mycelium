@@ -356,7 +356,7 @@ pub(crate) fn unspoken_residue(
     x: &SectionSample,
     y: &SectionSample,
     budget: &mut crate::physics::Budget,
-) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
+) -> Result<Vec<crate::transducer::sentence::SectionLink>, crate::transducer::family::transduce::Unground> {
     use crate::transducer::family::transduce::{Enclosure, Transduction};
     let (a, b) = (x.sample(), y.sample());
     if Enclosure::of(a).is_same_periods(&Enclosure::of(b)) {
@@ -369,7 +369,7 @@ pub(crate) fn unspoken_residue(
 }
 
 /// [`unspoken_residue`] under the stroke the pair's own periods need.
-fn before_chain_of(x: &SectionSample, y: &SectionSample) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
+fn before_chain_of(x: &SectionSample, y: &SectionSample) -> Result<Vec<crate::transducer::sentence::SectionLink>, crate::transducer::family::transduce::Unground> {
     let need = match crate::transducer::family::transduce::need_of(x.sample(), y.sample()) {
         Some(n) => n,
         None => 0,
@@ -678,20 +678,22 @@ pub fn declare_unspoken(
         let image = Enclosed::of(x.sample()).spoken_onto(&Enclosure::of(y.sample())).ok().and_then(|s| SectionSample::of(s).ok());
         let links: Vec<SectionLink> = rem
             .iter()
-            .filter(|&&(r, c, spoken, observed)| {
-                ground.holds(&spoken) && undeclared.binary_search(&(r, c, spoken, observed)).is_ok()
+            .filter(|l| {
+                // The link's symbol before is the one spoken, after the
+                // one observed.
+                ground.holds(&l.before) && undeclared.binary_search(l).is_ok()
             })
-            .map(|&(r, c, _, observed)| {
+            .map(|l| {
                 // The hue the input's speech holds at the site. Where it
                 // lays down no grid there is none, and absence is the
                 // scene's ground in this encoding — `residue_of`'s own
                 // reading, not a floor. A scope with no one ground has no
                 // symbol for that absence, and nothing is declared.
-                let before = match image.as_ref().and_then(|g| g.at(SectionSite::on_plane([r, c]))) {
+                let before = match image.as_ref().and_then(|g| g.at(l.site)) {
                     Some(h) => Some(h),
                     None => void.ok(),
                 };
-                before.map(|before| (r, c, before, observed))
+                before.map(|before| SectionLink::new(l.site, before, l.after))
             })
             .collect::<Option<Vec<SectionLink>>>()?;
         if links.is_empty() {
@@ -812,7 +814,7 @@ pub fn sentence_measure_why(
     // a closer is paid; it is never escrowed and never minted.
     let mut demanded: Vec<SectionLink> = Vec::new();
     for (_, _, _, links) in form.demand_vertices() {
-        demanded.extend(links.iter().copied().filter(|c| c.2 != c.3));
+        demanded.extend(links.iter().copied().filter(|l| l.before != l.after));
     }
     let asked = element::measure_lanes(&demanded);
     for (m, a) in mag.iter_mut().zip(&asked) {

@@ -87,7 +87,7 @@ pub(crate) fn turn_of(g: &SectionSample, t: u8) -> Option<SectionSample> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Spoken {
     pub frame: (usize, usize),
-    pub painted: Vec<(i64, i64, u8)>,
+    pub painted: Vec<PaintedSite>,
 }
 
 /// THE SCENE AS THE CLAUSES READ IT, perceived once: each body's cells and
@@ -884,15 +884,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
         None => out,
         Some((up, down)) => scaled(&out, up, down)?,
     };
-    let ground = crate::transducer::raster::ground();
-    let painted = out
-        .sites()
-        .filter(|(_, h)| !ground.holds(h))
-        .map(|(site, h)| {
-            let [pi, pj] = site.coordinates();
-            (pi, pj, h)
-        })
-        .collect();
+    let painted = crate::transducer::raster::painted_sites(&out);
     let [rows, cols] = out.extents();
     Ok(Spoken { frame: (rows, cols), painted })
 }

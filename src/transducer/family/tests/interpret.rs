@@ -22,14 +22,13 @@ fn decide_ranks_by_pair_where_body_alone_cannot() {
     ];
     // The form spoke every site its input held, in the input's hue: what
     // changed is unsaid.
-    let remainders: Vec<Vec<(i64, i64, u8, u8)>> = family
+    let remainders: Vec<Vec<crate::transducer::sentence::SectionLink>> = family
         .iter()
         .map(|(x, y)| {
             let mut rem = Vec::new();
             for (site, h) in y.sites() {
                 if h != 0 {
-                    let [r, c] = site.coordinates();
-                    rem.push((r, c, x.at(site).expect("one frame"), h));
+                    rem.push(crate::transducer::sentence::SectionLink::new(site, x.at(site).expect("one frame"), h));
                 }
             }
             rem

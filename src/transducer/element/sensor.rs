@@ -221,13 +221,13 @@ pub fn carry_compartment(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64,
 /// sibling's shared site); None when a base site lands outside the sibling.
 pub fn pullback(
     base: &[(i64, i64)],
-    sibling: &[(i64, i64, u8, u8)],
+    sibling: &[crate::transducer::sentence::SectionLink],
     v: &Versor,
 ) -> Option<Vec<(u8, u8)>> {
     // Back by `ṽ`: a centre is read off its point by proportion (78.32(1)).
     crate::transducer::cga::is_versor(v).then_some(())?;
     let inv = v.reverse();
-    let mut sorted: Vec<(i64, i64, u8, u8)> = sibling.to_vec();
+    let mut sorted: Vec<crate::transducer::sentence::SectionLink> = sibling.to_vec();
     sorted.sort_unstable();
     base.iter()
         .map(|&(r, c)| {
@@ -235,10 +235,12 @@ pub fn pullback(
             if sk != 0 {
                 return None;
             }
+            let landed = crate::transducer::spelled::SectionSite::on_plane([sr, sc]);
             sorted
-                .binary_search_by(|x| (x.0, x.1).cmp(&(sr, sc)))
+                .binary_search_by(|x| x.site.cmp(&landed))
                 .ok()
-                .map(|i| (sorted[i].2, sorted[i].3))
+                .and_then(|i| sorted.get(i))
+                .map(crate::transducer::sentence::SectionLink::transition)
         })
         .collect()
 }

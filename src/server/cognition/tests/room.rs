@@ -1,7 +1,7 @@
 // 23.8, 12.6 — ROOM: what a voice's draw takes, what the corpus takes, and
 // what the book does before it refuses.
 
-use super::fixtures::{sentence_of, speak_pair};
+use super::fixtures::{painted, sentence_of, speak_pair};
 use crate::cognition::*;
 use crate::transducer::germinate::germinate;
 
@@ -92,7 +92,7 @@ use crate::anastome::dialogue::ProbeClosure;
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
-let chain = germinate(&a, &b).unwrap();
+let chain = germinate(&painted(&a), &painted(&b)).unwrap();
 k.book_list(crate::transducer::element::from_canonical(&chain), [1; 32]);
 let target = k.quote().1[0].0.address();
 let listed = k.quote().1[0].0.sub().to_vec();
@@ -111,7 +111,7 @@ assert_eq!(
 );
 // One residue opens a face on the listing, then a full aperture of probes
 // that move nothing: the listing is unreachable.
-let rem = vec![(0, 1, 1u8, 0u8)];
+let rem = vec![crate::transducer::sentence::tests::fixtures::link(0, 1, 1, 0)];
 assert!(matches!(k.settle_probe([3; 32], &target, rem, &[], false).closure, ProbeClosure::Residue(_)));
 let mut listed_sorted = listed.clone();
 listed_sorted.sort_unstable();
@@ -149,11 +149,11 @@ let b = vec![(0, 0, 2u8)];
 let c = vec![(1, 0, 3u8)];
 let d = vec![(1, 0, 4u8)];
 assert!(
-    k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b).expect("the extent fits")),
+    k.intake(&germinate(&painted(&a), &painted(&b)).unwrap(), &frame_of(&painted(&a), &painted(&b)).expect("the extent fits")),
     "the first corpus task lists"
 );
 assert!(
-    k.intake(&germinate(&c, &d).unwrap(), &frame_of(&c, &d).expect("the extent fits")),
+    k.intake(&germinate(&painted(&c), &painted(&d)).unwrap(), &frame_of(&painted(&c), &painted(&d)).expect("the extent fits")),
     "a second task of the same μ⃗ lists too: the corpus drew no room"
 );
 assert_eq!(k.pending.len(), 2, "both are on the book");
@@ -173,14 +173,14 @@ fn intake_lists_each_body_as_demand() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (5, 5, 3u8)];
 let b = vec![(0, 0, 2u8), (5, 5, 4u8)];
-assert!(k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b).expect("the extent fits")), "the first task lists");
+assert!(k.intake(&germinate(&painted(&a), &painted(&b)).unwrap(), &frame_of(&painted(&a), &painted(&b)).expect("the extent fits")), "the first task lists");
 assert_eq!(k.pending.len(), 2, "two bodies, two demands");
 let c = vec![(0, 0, 1u8), (5, 5, 6u8)];
 let d = vec![(0, 0, 2u8), (5, 5, 8u8)];
-assert!(k.intake(&germinate(&c, &d).unwrap(), &frame_of(&c, &d).expect("the extent fits")), "the second task adds a body");
+assert!(k.intake(&germinate(&painted(&c), &painted(&d)).unwrap(), &frame_of(&painted(&c), &painted(&d)).expect("the extent fits")), "the second task adds a body");
 assert_eq!(k.pending.len(), 3, "the shared body is one listing; the new body lists");
 assert!(
-    !k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b).expect("the extent fits")),
+    !k.intake(&germinate(&painted(&a), &painted(&b)).unwrap(), &frame_of(&painted(&a), &painted(&b)).expect("the extent fits")),
     "a task whose bodies are all listed adds nothing"
 );
 }
@@ -280,21 +280,21 @@ fn court_keeps_discovered_by_synchronized() {
     let leak_a = vec![(0, 0, 1u8)];
     let leak_b = vec![(0, 0, 2u8)];
     let elem1 = crate::transducer::element::from_canonical(
-        &germinate(&leak_a, &leak_b).unwrap(),
+        &germinate(&painted(&leak_a), &painted(&leak_b)).unwrap(),
     );
     let addr1 = elem1.address();
 
     let leak_c = vec![(0, 0, 1u8), (0, 1, 1u8)];
     let leak_d = vec![(0, 0, 2u8), (0, 1, 2u8)];
     let elem2 = crate::transducer::element::from_canonical(
-        &germinate(&leak_c, &leak_d).unwrap(),
+        &germinate(&painted(&leak_c), &painted(&leak_d)).unwrap(),
     );
     let addr2 = elem2.address();
 
     let leak_e = vec![(0, 0, 1u8), (1, 0, 1u8), (0, 1, 1u8)];
     let leak_f = vec![(0, 0, 2u8), (1, 0, 2u8), (0, 1, 2u8)];
     let elem3 = crate::transducer::element::from_canonical(
-        &germinate(&leak_e, &leak_f).unwrap(),
+        &germinate(&painted(&leak_e), &painted(&leak_f)).unwrap(),
     );
     let addr3 = elem3.address();
 
@@ -347,7 +347,7 @@ fn prune_basis_to_ruled_synchronizes_discovered_by() {
     let leak_a = vec![(9, 0, 2), (9, 1, 2)];
     let leak_b = vec![(9, 0, 3), (9, 1, 3)];
     let leaked = crate::transducer::element::from_canonical(
-        &germinate(&leak_a, &leak_b).unwrap(),
+        &germinate(&painted(&leak_a), &painted(&leak_b)).unwrap(),
     );
     let leak_addr = leaked.address();
     let leak_who = [0x55; 32];

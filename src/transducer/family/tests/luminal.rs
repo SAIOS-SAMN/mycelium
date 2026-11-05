@@ -6,6 +6,7 @@
 use super::fixtures::grid;
 use crate::network::nerve::coord::BivectorKind;
 use crate::transducer::family::luminal::{read_pair, Beyond, Stop};
+use crate::transducer::sentence::tests::fixtures::link;
 
 fn budget() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(1 << 16)
@@ -19,14 +20,14 @@ fn read_pair_explains_ray_light_and_names_stop() {
     crate::transducer::raster::stand_on(0);
     let x = grid(&["100002"]);
     let y = grid(&["111112"]);
-    let rem = vec![(0, 1, 0, 1), (0, 2, 0, 1), (0, 3, 0, 1), (0, 4, 0, 1)];
+    let rem = vec![link(0, 1, 0, 1), link(0, 2, 0, 1), link(0, 3, 0, 1), link(0, 4, 0, 1)];
     let p = read_pair(&x, &y, &rem, &mut budget());
     assert_eq!((p.unsaid, p.on_ray, p.neither), (4, 4, 0), "every unsaid site on the ray: {p:?}");
     let ray = p.rays.iter().find(|r| r.dir == (0, 1) && r.source == 1).expect("the rightward ray");
     assert_eq!((ray.lit, ray.period, ray.wave.clone()), (4, 1, vec![1]), "a waveform of period 1 in the source's hue");
     assert_eq!(ray.stop, Stop::Body { hue: 2, beyond: Beyond::Absorbed }, "met and absorbed");
     // One lit site is no waveform: nothing explained.
-    let p = read_pair(&grid(&["100"]), &grid(&["110"]), &[(0, 1, 0, 1)], &mut budget());
+    let p = read_pair(&grid(&["100"]), &grid(&["110"]), &[link(0, 1, 0, 1)], &mut budget());
     assert_eq!((p.on_ray, p.neither), (0, 1), "a single site repeats nothing");
 }
 
@@ -39,7 +40,7 @@ fn read_pair_captures_standing_wave_in_enclosure() {
     crate::transducer::raster::stand_on(0);
     let x = grid(&["3333", "3003", "3003", "3333"]);
     let y = grid(&["3333", "3443", "3443", "3333"]);
-    let rem = vec![(1, 1, 0, 4), (1, 2, 0, 4), (2, 1, 0, 4), (2, 2, 0, 4)];
+    let rem = vec![link(1, 1, 0, 4), link(1, 2, 0, 4), link(2, 1, 0, 4), link(2, 2, 0, 4)];
     let p = read_pair(&x, &y, &rem, &mut budget());
     assert_eq!(p.captured + p.both, 4, "the cavity holds every unsaid site: {p:?}");
     let [c] = p.cavities.as_slice() else { panic!("one enclosure: {:?}", p.cavities) };

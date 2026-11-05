@@ -29,7 +29,7 @@ fn read_obstruction_reads_kind_off_content() {
     let c = read_obstruction(Content::Holonomy { versor: Some(&spelled), chart: None, proof: "unused" });
     assert_eq!(c.kind(), ObstructionKind::Cover, "a spelled versor whose closure refused is cover-relative");
 
-    let links = [(1, 2, 0, 3)];
+    let links = [crate::transducer::sentence::tests::fixtures::link(1, 2, 0, 3)];
     assert_eq!(read_obstruction(Content::Residue(&links)), ClosureObstruction::Cover { cocycle: links.to_vec() });
 }
 

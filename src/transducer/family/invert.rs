@@ -73,7 +73,7 @@ pub enum Painted {
 /// name, never written as 0.
 pub fn remainder_scene(
     family: &[(SectionSample, SectionSample)],
-    remainders: &[Vec<(i64, i64, u8, u8)>],
+    remainders: &[Vec<crate::transducer::sentence::SectionLink>],
     painted: Painted,
 ) -> Result<(Vec<(SectionSample, SectionSample)>, u64), crate::transducer::family::transduce::Unground> {
     let void = crate::transducer::raster::void()?;
@@ -88,23 +88,29 @@ pub fn remainder_scene(
             let mut paint = |r: i64, c: i64, h: u8| {
                 let _ = m.paint(SectionSite::on_plane([r, c]), h);
             };
+            // A link's symbol before is the one spoken, after the one
+            // observed.
             let unsaid: Vec<(i64, i64)> = rem
                 .iter()
-                .filter_map(|&(r, c, spoken, observed)| match ground.holds(&observed) {
+                .filter_map(|l| match ground.holds(&l.after) {
                     true => {
-                        if !ground.holds(&spoken) {
+                        if !ground.holds(&l.before) {
                             erasures += 1;
                         }
                         None
                     }
-                    false => Some((r, c)),
+                    false => {
+                        let [r, c] = l.site.coordinates();
+                        Some((r, c))
+                    }
                 })
                 .collect();
             match painted {
                 Painted::Sites => {
-                    for &(r, c, _, observed) in rem {
-                        if !ground.holds(&observed) {
-                            paint(r, c, observed);
+                    for l in rem {
+                        if !ground.holds(&l.after) {
+                            let [r, c] = l.site.coordinates();
+                            paint(r, c, l.after);
                         }
                     }
                 }
@@ -130,7 +136,7 @@ pub fn remainder_scene(
     Ok((scene, erasures))
 }
 
-fn links(remainders: &[Vec<(i64, i64, u8, u8)>]) -> u64 {
+fn links(remainders: &[Vec<crate::transducer::sentence::SectionLink>]) -> u64 {
     remainders.iter().map(|r| r.len() as u64).sum()
 }
 
@@ -169,7 +175,7 @@ pub fn invert_remainder_as(
 pub fn invert_measured(
     form: &Form,
     family: &[(SectionSample, SectionSample)],
-    remainders: &[Vec<(i64, i64, u8, u8)>],
+    remainders: &[Vec<crate::transducer::sentence::SectionLink>],
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
     painted: Painted,
@@ -247,4 +253,4 @@ pub fn invert_measured(
 
 /// What an inversion read, and the joined form with its remainders where the
 /// speech accepted it.
-pub type Joined = (Inversion, Option<(Form, Vec<Vec<(i64, i64, u8, u8)>>)>);
+pub type Joined = (Inversion, Option<(Form, Vec<Vec<crate::transducer::sentence::SectionLink>>)>);

@@ -4,7 +4,8 @@ use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 
 fn word(painted_a: &[(i64, i64, u8)], painted_b: &[(i64, i64, u8)]) -> Element {
-    from_canonical(&germinate(painted_a, painted_b).unwrap())
+    use crate::transducer::sentence::tests::fixtures::painted;
+    from_canonical(&germinate(&painted(painted_a), &painted(painted_b)).unwrap())
 }
 
 /// A ROOT IS NOT ITS POPULATION. This returned the stratum's sorted

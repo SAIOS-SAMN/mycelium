@@ -7,6 +7,19 @@ use crate::transducer::element::{self};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self};
 
+/// A LINK OF THE SECTION at the site whose coordinates along the plane are
+/// `a` and `b`, carrying `before` to `after`.
+pub fn link(a: i64, b: i64, before: u8, after: u8) -> SectionLink {
+    SectionLink::on_plane([a, b], before, after)
+}
+
+/// A FIXTURE'S PAINTED SITES, as the fixture writes them before intake:
+/// each `(a, b, symbol)` read once here as the site of the section at `a`
+/// and `b` along the plane, painted `symbol`.
+pub fn painted(sites: &[(i64, i64, u8)]) -> Vec<crate::transducer::spelled::PaintedSite> {
+    sites.iter().map(|&(a, b, symbol)| crate::transducer::spelled::PaintedSite::on_plane([a, b], symbol)).collect()
+}
+
 pub fn q0() -> num_rational::BigRational {
     num_rational::BigRational::from_integer(num_bigint::BigInt::from(0))
 }

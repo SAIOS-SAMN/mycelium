@@ -268,7 +268,7 @@ pub struct InTime {
 fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: usize) -> Result<Option<SectionSample>, ()> {
     let Ok(void) = crate::transducer::raster::void() else { return Ok(None) };
     let mut out = x.cleared(void);
-    let mut emitted: Vec<(i64, i64, u8)> = Vec::new();
+    let mut emitted: Vec<PaintedSite> = Vec::new();
     for s in sites {
         let Some(held) = t.get(&key(s, axis)) else { return Ok(None) };
         if s.r < 0 || s.c < 0 {
@@ -294,13 +294,13 @@ fn carried(x: &SectionSample, sites: &[SiteAxes], t: &Keyed<AxisRecord>, axis: u
                 }
             };
             for step in 1..=time {
-                emitted.push((s.r + step * dr, s.c + step * dc, l.hue));
+                emitted.push(PaintedSite::on_plane([s.r + step * dr, s.c + step * dc], l.hue));
             }
         }
     }
-    for (r, c, h) in emitted {
+    for p in emitted {
         // A site off the canvas is not written.
-        let _ = out.paint(SectionSite::on_plane([r, c]), h);
+        let _ = out.paint(p.site, p.symbol);
     }
     Ok(Some(out))
 }

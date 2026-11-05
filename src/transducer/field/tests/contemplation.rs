@@ -2,6 +2,7 @@
 // what one thought costs whatever the mind already holds.
 
 use crate::transducer::field::*;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// Law 5, L7a: the boundary of the open thoughts is read on four lanes
 /// and is the measure of the held remainders themselves — never the remainders' sum,
@@ -11,7 +12,7 @@ use crate::transducer::field::*;
 fn boundary_measure_reads_four_lanes_never_sum() {
     let mut c = Contemplation::new();
     assert_eq!(c.boundary_measure(), [0; 4], "no thought is zero on every lane, not MAX");
-    let link = (0, 0, 1, 2);
+    let link = link(0, 0, 1, 2);
     c.hold(vec![link]);
     let m = c.boundary_measure();
     assert_eq!(
@@ -32,7 +33,7 @@ fn boundary_measure_reads_four_lanes_never_sum() {
 #[test]
 fn hold_form_stands_demand_on_chart() {
     use crate::transducer::sentence::{Demand, Form, Vertex};
-    let bodies = vec![(0i64, 0i64, 1u8, 0u8), (0, 1, 1, 0)];
+    let bodies = vec![link(0, 0, 1, 0), link(0, 1, 1, 0)];
     let chart = crate::transducer::stalk::invariant(&bodies);
     // `Form::default()` holds the Frame.
     let mut f = Form::default();
@@ -117,7 +118,7 @@ fn rotor_key_merges_candidate_and_negation() {
 fn pivot_on_glues_crystallized_form() {
     use crate::transducer::element::FIBRE_SPATIAL;
     let mut c = Contemplation::new();
-    let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
+    let rem = vec![link(0, 0, 1, 2), link(0, 1, 1, 2)];
     c.hold(rem);
     // A chain-free word carrying an honest torsion cycle: a HOLONOMY, the
     // 90° turn, at its READ period 4 (PD1). The fixture filed σ = {1↦2}
@@ -319,7 +320,7 @@ fn hold_form_carries_bundle_and_remainder() {
     );
     crate::transducer::sentence::tests::fixtures::stand_with_star(&mut f, &v);
     let train = crate::transducer::spelled::pairs_of(vec![(vec![vec![1u8]], vec![vec![2u8]])]);
-    let rem = vec![vec![(0i64, 0i64, 1u8, 2u8)]];
+    let rem = vec![vec![link(0, 0, 1, 2)]];
     let mut c = Contemplation::new();
     c.hold_form(f.clone(), &train, &rem, [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     assert_eq!(c.wells.len(), 1);
@@ -402,14 +403,16 @@ fn expand_all_ignores_atlas_size() {
     let run = |n: usize| -> (u64, u64, u64) {
         let mut atlas = crate::transducer::stalk::Stalks::default();
         for i in 2..n + 2 {
-            let before: Vec<(i64, i64, u8)> = (0..i as i64).map(|c| (0, c, 1u8)).collect();
-            let after: Vec<(i64, i64, u8)> = (0..i as i64).map(|c| (0, c, 2u8)).collect();
+            let before: Vec<crate::transducer::spelled::PaintedSite> =
+                (0..i as i64).map(|c| crate::transducer::spelled::PaintedSite::on_plane([0, c], 1)).collect();
+            let after: Vec<crate::transducer::spelled::PaintedSite> =
+                (0..i as i64).map(|c| crate::transducer::spelled::PaintedSite::on_plane([0, c], 2)).collect();
             let w = from_canonical(&germinate(&before, &after).unwrap());
             atlas.admit(&stalk::invariant_of(&w), w.address());
         }
         let mut c = Contemplation::new();
         work::reset();
-        c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+        c.hold(vec![link(0, 0, 1, 2), link(0, 1, 1, 2)]);
         let hold = work::total();
         work::reset();
         let mut budget = crate::physics::Physics::default().stroke_n(4);
@@ -450,9 +453,9 @@ fn expand_all_circuits_dirty_ring_and_reports_period() {
     use crate::transducer::family::NoCrystal;
     let mut c = Contemplation::new();
     // Three shapes on three rows: disjoint, so no two merge into one thought.
-    c.hold(vec![(0, 0, 1, 2)]);
-    c.hold(vec![(3, 0, 1, 2), (3, 1, 1, 2)]);
-    c.hold(vec![(6, 0, 1, 2), (6, 1, 1, 2), (6, 2, 1, 2)]);
+    c.hold(vec![link(0, 0, 1, 2)]);
+    c.hold(vec![link(3, 0, 1, 2), link(3, 1, 1, 2)]);
+    c.hold(vec![link(6, 0, 1, 2), link(6, 1, 1, 2), link(6, 2, 1, 2)]);
     assert_eq!(c.wells.len(), 3, "three thoughts held apart");
     assert_eq!(c.dirty.len(), 3, "three thoughts on the ring");
     let atlas = crate::transducer::stalk::Stalks::default();
@@ -564,7 +567,7 @@ fn standing_form(hue: u8) -> crate::transducer::sentence::Form {
     // its bodies, and the chart is the shape's — so two rows of one length
     // in two hues are ONE demand and one form. Each fixture's row is `hue`
     // bodies long, so the forms differ on a coordinate the key carries.
-    let bodies: Vec<(i64, i64, u8, u8)> = (0..i64::from(hue)).map(|c| (0, c, hue, 0)).collect();
+    let bodies: Vec<crate::transducer::sentence::SectionLink> = (0..i64::from(hue)).map(|c| link(0, c, hue, 0)).collect();
     let chart = crate::transducer::stalk::invariant(&bodies);
     let mut f = Form::default();
     f.put_vertex(Vertex::demand(
@@ -585,7 +588,7 @@ fn standing_form(hue: u8) -> crate::transducer::sentence::Form {
 fn citing_form(hue: u8, cited: &crate::transducer::address::Address) -> crate::transducer::sentence::Form {
     use crate::transducer::sentence::Vertex;
     let mut f = standing_form(hue);
-    let chart = crate::transducer::stalk::invariant(&[(0i64, 0i64, hue, 0u8)]);
+    let chart = crate::transducer::stalk::invariant(&[link(0, 0, hue, 0)]);
     f.put_vertex(Vertex::Glued {
         chart: chart.clone(),
         magnitude: [1, 0, 0, 0],

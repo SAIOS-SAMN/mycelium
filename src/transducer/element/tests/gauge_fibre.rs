@@ -3,6 +3,7 @@
 
 use crate::transducer::element::*;
 use crate::transducer::germinate::germinate;
+use crate::transducer::sentence::tests::fixtures::{link, painted};
 
 /// THE TORSE CAPACITY THEOREM: a 3-cycle hue rotation derived from ONE
 /// witnessed section closes (σ³ = id), so the cycle speaks the THIRD orbit
@@ -11,8 +12,8 @@ use crate::transducer::germinate::germinate;
 #[test]
 fn torse_speaks_unwitnessed_orbit_members() {
     // base: transitions 1→2, 2→3, 3→1 over three sites.
-    let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
-    let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+    let a = painted(&[(0, 0, 1), (0, 1, 2), (0, 2, 3)]);
+    let b = painted(&[(0, 0, 2), (0, 1, 3), (0, 2, 1)]);
     let mut t = from_canonical(&germinate(&a, &b).unwrap());
     // One witnessed sibling: σ·base where σ = {1↦2, 2↦3, 3↦1}.
     assert!(t.puncture(vec![(2, 3), (3, 1), (1, 2)]));
@@ -22,9 +23,9 @@ fn torse_speaks_unwitnessed_orbit_members() {
     assert!(t.sections().is_empty(), "the free list drained into the cycle");
     // THE UNWITNESSED MEMBER: σ²·base = transitions 3→1, 1→2, 2→3 — never
     // punctured, never seen — yet the cycle speaks it.
-    let unwitnessed = vec![(0, 0, 3, 1), (0, 1, 1, 2), (0, 2, 2, 3)];
+    let unwitnessed = vec![link(0, 0, 3, 1), link(0, 1, 1, 2), link(0, 2, 2, 3)];
     assert!(t.matches_chain(&unwitnessed), "capacity beyond the evidence, exactly");
-    assert!(!t.matches_chain(&[(0, 0, 5, 6), (0, 1, 1, 2), (0, 2, 2, 3)]), "no hallucination");
+    assert!(!t.matches_chain(&[link(0, 0, 5, 6), link(0, 1, 1, 2), link(0, 2, 2, 3)]), "no hallucination");
     assert_eq!(t.fibre_span(), Some(3), "the volume counts the full orbit");
 }
 
@@ -33,13 +34,13 @@ fn torse_speaks_unwitnessed_orbit_members() {
 /// sections extracts NOTHING — no false structure from thin evidence.
 #[test]
 fn torse_closes_swap_and_refuses_thin_evidence() {
-    let mut swap = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 9)], &[(0, 0, 2u8), (0, 1, 9)]).unwrap());
+    let mut swap = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 9)]), &painted(&[(0, 0, 2), (0, 1, 9)])).unwrap());
     assert!(swap.puncture(vec![(2, 1)]));
     assert_eq!(swap.torse(), 1, "sigma 1↦2, 2↦1 closes at period 2");
     assert_eq!(swap.torsion()[0].period, 2);
     // Thin evidence: sections whose hues never recur — no orbit spans two,
     // nothing closes — the free part stays free.
-    let mut open = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 9)], &[(0, 0, 2u8), (0, 1, 9)]).unwrap());
+    let mut open = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 9)]), &painted(&[(0, 0, 2), (0, 1, 9)])).unwrap());
     assert!(open.puncture(vec![(3, 4)]));
     assert!(open.puncture(vec![(5, 6)]));
     assert_eq!(open.torse(), 0, "no torsion invented from unrelated sections");
@@ -170,8 +171,8 @@ fn orbit_period_reads_every_byte_and_symbols_past_ten() {
 /// walks and the cycle never stands for a reader that would.
 #[test]
 fn record_cycle_refuses_hue_at_twice_read_period() {
-    let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
-    let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+    let a = painted(&[(0, 0, 1), (0, 1, 2), (0, 2, 3)]);
+    let b = painted(&[(0, 0, 2), (0, 1, 3), (0, 2, 1)]);
     let mut t = from_canonical(&germinate(&a, &b).unwrap());
     let sigma = vec![(1, 2), (2, 3), (3, 1)];
     assert_eq!(orbit_period(&sigma, &assignment(t.sub())), Ok(3), "the period read");
@@ -215,8 +216,8 @@ fn record_cycle_refuses_holonomy_at_twice_order() {
 /// held under its charge, and `holds_assignment` reads it there.
 #[test]
 fn assignments_by_profile_answers_each_assignment_by_charge() {
-    let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
-    let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+    let a = painted(&[(0, 0, 1), (0, 1, 2), (0, 2, 3)]);
+    let b = painted(&[(0, 0, 2), (0, 1, 3), (0, 2, 1)]);
     let mut t = from_canonical(&germinate(&a, &b).unwrap());
     assert!(t.puncture(vec![(2, 3), (3, 1), (1, 2)]));
     assert_eq!(t.torse(), 1, "the section condenses into the cycle");

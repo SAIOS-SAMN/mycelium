@@ -16,16 +16,17 @@ fn withhold_form_stands_no_remainder_as_word() {
     use super::fixtures::closed_turn;
     use crate::client::sdk::*;
     use crate::transducer::element::{canonical_chain, from_canonical};
-    let chain_word = |links: &[(i64, i64, u8, u8)]| {
+    use crate::transducer::sentence::tests::fixtures::link;
+    let chain_word = |links: &[crate::transducer::sentence::SectionLink]| {
         from_canonical(&canonical_chain(links).expect("one entry per position is A5's chain"))
     };
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("bodies"));
     let form = closed_turn(None);
-    let remainder = vec![(0i64, 0i64, 1u8, 2u8), (5, 5, 3u8, 4u8)];
+    let remainder = vec![link(0, 0, 1, 2), link(5, 5, 3, 4)];
     let mut b = entity.stroke();
     entity.withhold_form(form.clone(), &[], std::slice::from_ref(&remainder), [2, 0, 0, 0], &mut b);
-    let first = chain_word(&[(0, 0, 1u8, 2u8)]);
-    let second = chain_word(&[(5, 5, 3u8, 4u8)]);
+    let first = chain_word(&[link(0, 0, 1, 2)]);
+    let second = chain_word(&[link(5, 5, 3, 4)]);
     let whole = chain_word(&remainder);
     for (name, w) in [("first body", &first), ("second body", &second), ("chain of both", &whole)] {
         assert!(entity.language.working_word(w.address().as_bytes()).is_none(), "the {name} never stands as a word");
@@ -104,7 +105,10 @@ fn vertex_stratum_is_one_per_vertex_however_spelled() {
     // one site has no canonical form, so there is no word to ask a stratum
     // of. This read the word A5 refused and then asked whether it had one.
     assert!(
-        crate::transducer::element::from_residue(&vec![(0, 0, 1, 2), (0, 0, 3, 4)]).is_none(),
+        crate::transducer::element::from_residue(&vec![
+            crate::transducer::sentence::tests::fixtures::link(0, 0, 1, 2),
+            crate::transducer::sentence::tests::fixtures::link(0, 0, 3, 4),
+        ]).is_none(),
         "a chain A5 refuses mints no word"
     );
     let _ = identity_versor();

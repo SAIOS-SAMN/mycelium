@@ -9,11 +9,7 @@
 use super::*;
 use crate::transducer::base::Site;
 
-pub use crate::transducer::spelled::{SectionSample, SectionSite};
-
-/// A painted site of one frame's grid, the sensor's planar token:
-/// `(row, col, hue)`.
-pub(crate) type Painted = (i64, i64, u8);
+pub use crate::transducer::spelled::{PaintedSite, SectionSample, SectionSite};
 
 /// A compartment of a body's support: a site of the base and its hue (51.3, 71).
 pub type Compartment = crate::transducer::blade::Compartment;
@@ -23,35 +19,15 @@ pub type Compartment = crate::transducer::blade::Compartment;
 /// candidates. The symbol the unpainted sites hold is the caller's, named:
 /// never a ground this reader defaults to. `None` where the box's sites
 /// pass the machine word.
-pub fn grid_of_painted(painted: &[(i64, i64, u8)], void: u8) -> Option<SectionSample> {
-    // The head only SEEDS the bounding box; the box is folded over every
-    // site below, so no member is chosen here.
-    let [(r0, c0, _), ..] = painted else {
-        return SectionSample::filled([1, 1], void).ok();
+pub fn grid_of_painted(painted: &[PaintedSite], void: u8) -> Option<SectionSample> {
+    // The span is read over every site, so no member is chosen here; no
+    // site at all is the one-site canvas.
+    let Some((corner, extents)) = SectionSite::span_of(painted.iter().map(|p| p.site)) else {
+        return SectionSample::filled([1; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK], void).ok();
     };
-    let (r0, c0) = (*r0, *c0);
-    let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
-    for &(r, c, _) in painted {
-        if r < min_r {
-            min_r = r;
-        }
-        if c < min_c {
-            min_c = c;
-        }
-        if r > max_r {
-            max_r = r;
-        }
-        if c > max_c {
-            max_c = c;
-        }
-    }
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the painted sites' bounding-box height, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
-    let h = (max_r - min_r + 1) as usize;
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the painted sites' bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
-    let w = (max_c - min_c + 1) as usize;
-    let mut g = SectionSample::filled([h, w], void).ok()?;
-    for &(r, c, hue) in painted {
-        g.paint(SectionSite::on_plane([r - min_r, c - min_c]), hue)?;
+    let mut g = SectionSample::filled(extents, void).ok()?;
+    for p in painted {
+        g.paint(p.site.offset_from(corner)?, p.symbol)?;
     }
     Some(g)
 }
@@ -62,7 +38,7 @@ pub fn grid_of_painted(painted: &[(i64, i64, u8)], void: u8) -> Option<SectionSa
 /// artefact of two origins. `None` for an empty chain, which describes
 /// no scene, and where the open scope reads no one ground to lay the
 /// unnamed sites on.
-pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(SectionSample, SectionSample)> {
+pub fn scene_of_chain(chain: &[SectionLink]) -> Option<(SectionSample, SectionSample)> {
     scene_at_of_chain(chain).map(|(_, before, after)| (before, after))
 }
 
@@ -71,40 +47,30 @@ pub fn scene_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<(SectionSample, Se
 /// framing subtracted, and re-deriving that corner beside this reader is
 /// the second carrier for one fact (law 12) — one of them would be the
 /// one that drifts.
-pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), SectionSample, SectionSample)> {
-    // As above: the head seeds the box the fold below measures.
-    let [(r0, c0, _, _), ..] = chain else { return None };
-    let (r0, c0) = (*r0, *c0);
-    let (mut min_r, mut min_c, mut max_r, mut max_c) = (r0, c0, r0, c0);
-    for &(r, c, _, _) in chain {
-        if r < min_r {
-            min_r = r;
-        }
-        if c < min_c {
-            min_c = c;
-        }
-        if r > max_r {
-            max_r = r;
-        }
-        if c > max_c {
-            max_c = c;
+pub fn scene_at_of_chain(chain: &[SectionLink]) -> Option<(SectionSite, SectionSample, SectionSample)> {
+    // The chain's least corner along the plane is the scene's origin; each
+    // extent is one past the farthest offset from it along its axis.
+    let corner = SectionSite::on_plane(element::corner_of(chain)?);
+    let mut extents = [0usize; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK];
+    for l in chain {
+        for (e, o) in extents.iter_mut().zip(l.site.offset_from(corner)?.indices()?) {
+            let past = o.checked_add(1)?;
+            if past > *e {
+                *e = past;
+            }
         }
     }
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the chain's bounding-box height, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
-    let h = (max_r - min_r + 1) as usize;
-    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the chain's bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
-    let w = (max_c - min_c + 1) as usize;
     // Sites the chain does not name hold the scene's one ground; with none
     // (a vortex, no ground, no family open) no scene is framed.
     let void = crate::transducer::raster::void().ok()?;
-    let mut before = SectionSample::filled([h, w], void).ok()?;
+    let mut before = SectionSample::filled(extents, void).ok()?;
     let mut after = before.clone();
-    for &(r, c, b, a) in chain {
-        let site = SectionSite::on_plane([r - min_r, c - min_c]);
-        before.paint(site, b)?;
-        after.paint(site, a)?;
+    for l in chain {
+        let site = l.site.offset_from(corner)?;
+        before.paint(site, l.before)?;
+        after.paint(site, l.after)?;
     }
-    Some(((min_r, min_c), before, after))
+    Some((corner, before, after))
 }
 
 #[cfg(test)]
@@ -180,7 +146,7 @@ pub fn perceive_at(grid: &SectionSample, k: i64) -> Vec<Body> {
 fn compartments_at(grid: &SectionSample, k: i64) -> Vec<Compartment> {
     crate::transducer::raster::painted_sites(grid)
         .into_iter()
-        .filter_map(|(s, hue)| Some(Compartment { site: s.on_family(k)?, hue }))
+        .filter_map(|p| Some(Compartment { site: p.site.on_family(k)?, hue: p.symbol }))
         .collect()
 }
 
@@ -239,7 +205,7 @@ pub fn perceive_frames(grids: &[SectionSample]) -> Vec<Body> {
 /// of the section, which A5 refuses downstream — its chain is its sections,
 /// one per frame (51.4). A side with no body writes its sites as the
 /// scene's one ground (`raster::void`); where the scope has none, `None`.
-pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Option<Vec<(i64, i64, u8, u8)>> {
+pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Option<Vec<SectionLink>> {
     let mut chain = Vec::new();
     match (a, b) {
         (Some(src), Some(dst)) => {
@@ -247,24 +213,24 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Option
                 // A compartment the carriage lands nowhere in the image keeps
                 // its own hue: nothing moved it.
                 let h2 = landed_hue(v, &l.site, dst).map_or(l.hue, |found| found);
-                if let Some((r, c)) = on_grid(&l.site) {
-                    chain.push((r, c, l.hue, h2));
+                if let Some(site) = SectionSite::of_family(&l.site) {
+                    chain.push(SectionLink::new(site, l.hue, h2));
                 }
             }
         }
         (None, Some(dst)) => {
             let void = crate::transducer::raster::void().ok()?;
             for l in &dst.compartments {
-                if let Some((r, c)) = on_grid(&l.site) {
-                    chain.push((r, c, void, l.hue));
+                if let Some(site) = SectionSite::of_family(&l.site) {
+                    chain.push(SectionLink::new(site, void, l.hue));
                 }
             }
         }
         (Some(src), None) => {
             let void = crate::transducer::raster::void().ok()?;
             for l in &src.compartments {
-                if let Some((r, c)) = on_grid(&l.site) {
-                    chain.push((r, c, l.hue, void));
+                if let Some(site) = SectionSite::of_family(&l.site) {
+                    chain.push(SectionLink::new(site, l.hue, void));
                 }
             }
         }
@@ -291,10 +257,10 @@ pub(crate) fn on_grid(s: &Site) -> Option<(i64, i64)> {
     Some((s.axis(ga)?, s.axis(gb)?))
 }
 
-pub(crate) fn hue_map_of_chain(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
+pub(crate) fn hue_map_of_chain(chain: &[SectionLink]) -> Vec<(u8, u8)> {
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    for &(_, _, b, a) in chain {
-        seen.insert(crate::transducer::element::hue_pair_key(b, a), ());
+    for l in chain {
+        seen.insert(crate::transducer::element::hue_pair_key(l.before, l.after), ());
     }
     let mut m: Vec<(u8, u8)> = seen
         .scoped()
@@ -816,9 +782,9 @@ pub(crate) fn frame_of(g: &SectionSample) -> (usize, usize) {
 /// Does everything a form spoke lie inside the grid it was spoken against?
 /// The test extraction's step 3 decides a glue by, and the same test a
 /// voice answers a demand by (L8q), so the two organs read one thing.
-pub fn painted_within_grid(painted: &[Painted], g: &SectionSample) -> bool {
+pub fn painted_within_grid(painted: &[PaintedSite], g: &SectionSample) -> bool {
     // A site off the sample carries no symbol, so it lies outside.
-    painted.iter().all(|&(r, c, h)| g.at(SectionSite::on_plane([r, c])) == Some(h))
+    painted.iter().all(|p| g.at(p.site) == Some(p.symbol))
 }
 
 /// The scene's bodies, each indexed by its own chart (Y4, 24.4, 20).

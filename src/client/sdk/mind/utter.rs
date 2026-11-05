@@ -75,11 +75,12 @@ pub(crate) fn vertex_stratum(word: &Element) -> Option<Vec<u8>> {
         None => {
             let chain = crate::transducer::element::canonical_chain(word.sub())?;
             let mut out = Vec::with_capacity(chain.len() * 18);
-            for (r, c, b, a) in chain.as_slice() {
-                out.extend_from_slice(&r.to_le_bytes());
-                out.extend_from_slice(&c.to_le_bytes());
-                out.push(*b);
-                out.push(*a);
+            for l in chain.as_slice() {
+                for c in l.site.coordinates() {
+                    out.extend_from_slice(&c.to_le_bytes());
+                }
+                out.push(l.before);
+                out.push(l.after);
             }
             Some(out)
         }
@@ -147,7 +148,7 @@ impl Mind {
     /// reads other words, never the chain under locate. A citation is a use
     /// (45.4): a stood word cited here is touched at the mind's own K.
     #[cfg(test)]
-    pub(crate) fn cite(&mut self, chain: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> Cited {
+    pub(crate) fn cite(&mut self, chain: &[crate::transducer::sentence::SectionLink], budget: &mut crate::physics::Budget) -> Cited {
         // The chain's own key, a listing key (17.2): the one address the
         // held stratum does not answer with.
         // A chain with no A5 form cites nothing and stands whole as the
@@ -168,7 +169,7 @@ impl Mind {
         // The caller's stroke reads the citation (65.5).
         let contemplation = &self.contemplation;
         let held_at = |inv: &crate::transducer::stalk::Invariant,
-                       piece: &[(i64, i64, u8, u8)],
+                       piece: &[crate::transducer::sentence::SectionLink],
                        budget: &mut crate::physics::Budget| {
             contemplation
                 .held_at(inv)
@@ -259,7 +260,7 @@ impl Mind {
     #[cfg(test)]
     pub(crate) fn conclude_listing(
         &mut self,
-        chain: &[(i64, i64, u8, u8)],
+        chain: &[crate::transducer::sentence::SectionLink],
     ) -> crate::client::sdk::Concluded {
         // The root of this act (no caller holds a stroke): one stroke for
         // the citation and the expression both (65.5).

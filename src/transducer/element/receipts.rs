@@ -76,7 +76,7 @@
 use crate::transducer::address::Address;
 use crate::transducer::alphabet::{Cited, Derivation, Rotor, Word, Q};
 use crate::transducer::element::{Screw, Versor};
-use crate::transducer::sentence::PivotCertificate;
+use crate::transducer::sentence::{PivotCertificate, SectionLink};
 use crate::transducer::stalk::Invariant;
 
 /// A 1-SIMPLEX OF THE NERVE: one chart citing another, with the affine
@@ -588,7 +588,7 @@ pub struct ReceiptsEnvelope {
     /// and pieces.
     pub demands: Vec<DemandEvidence>,
     /// The remainder's chain, which the key carries as its coordinates.
-    pub remainder: Vec<(i64, i64, u8, u8)>,
+    pub remainder: Vec<SectionLink>,
     /// 78.55 — THE TASKS WHOSE SCENES WITNESSED THIS WORD, by the tasks'
     /// coordinates: where a colour word stood by evidence, the court that
     /// admitted it writes the task, so a peer court fetching it re-derives
@@ -851,22 +851,23 @@ impl ReceiptsEnvelope {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DemandEvidence {
     pub at: crate::network::nerve::coord::VertexAt,
-    pub bodies: Vec<(i64, i64, u8, u8)>,
+    pub bodies: Vec<SectionLink>,
 }
 
-/// A run of links on the record: the count, then each link's two
-/// coordinates and two hues.
-fn put_links(out: &mut Vec<u8>, links: &[(i64, i64, u8, u8)]) {
+/// A run of links on the record: the count, then each link's coordinates
+/// along the section's plane and its two hues.
+fn put_links(out: &mut Vec<u8>, links: &[SectionLink]) {
     out.extend_from_slice(&(links.len() as u64).to_le_bytes());
-    for &(r, c, a, b) in links {
-        out.extend_from_slice(&r.to_le_bytes());
-        out.extend_from_slice(&c.to_le_bytes());
-        out.push(a);
-        out.push(b);
+    for l in links {
+        for c in l.site.coordinates() {
+            out.extend_from_slice(&c.to_le_bytes());
+        }
+        out.push(l.before);
+        out.push(l.after);
     }
 }
 
-fn take_links(b: &[u8], p: &mut usize) -> Option<Vec<(i64, i64, u8, u8)>> {
+fn take_links(b: &[u8], p: &mut usize) -> Option<Vec<SectionLink>> {
     let n = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
     *p += 8;
     // A count the body cannot hold is refused before anything is reserved.
@@ -876,7 +877,7 @@ fn take_links(b: &[u8], p: &mut usize) -> Option<Vec<(i64, i64, u8, u8)>> {
     for _ in 0..n {
         let r = i64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
         let c = i64::from_le_bytes(b.get(*p + 8..*p + 16)?.try_into().ok()?);
-        out.push((r, c, *b.get(*p + 16)?, *b.get(*p + 17)?));
+        out.push(SectionLink::on_plane([r, c], *b.get(*p + 16)?, *b.get(*p + 17)?));
         *p += 18;
     }
     Some(out)

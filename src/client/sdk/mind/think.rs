@@ -10,7 +10,7 @@ impl Mind {
     /// never as a bare chain minted into a word. An idea is a form; its
     /// words are the vertices the eyes could pair and the alphabet could
     /// spell, and what they could not is its demand vertices (50.5).
-    pub(crate) fn hold_chain(&mut self, chain: Vec<(i64, i64, u8, u8)>) {
+    pub(crate) fn hold_chain(&mut self, chain: Vec<crate::transducer::sentence::SectionLink>) {
         // 50.2 step 2: this mind's own presentation is what its word
         // vertices derive against, under a stroke sized by the scene it is
         // handed (L8w). `None` is a vertex the stroke could not factor
@@ -40,7 +40,7 @@ impl Mind {
         f: crate::transducer::sentence::Form,
         frames: &crate::transducer::family::Frames,
         train: &crate::transducer::family::Family,
-        remainders: &[Vec<(i64, i64, u8, u8)>],
+        remainders: &[Vec<crate::transducer::sentence::SectionLink>],
         family: &[u8],
         budget: &mut crate::physics::Budget,
     ) -> bool {
@@ -56,7 +56,7 @@ impl Mind {
         f: crate::transducer::sentence::Form,
         frames: &crate::transducer::family::Frames,
         (train, scene): (&crate::transducer::family::Family, &crate::transducer::family::Family),
-        remainders: &[Vec<(i64, i64, u8, u8)>],
+        remainders: &[Vec<crate::transducer::sentence::SectionLink>],
         family: &[u8],
         budget: &mut crate::physics::Budget,
     ) -> bool {
@@ -645,7 +645,7 @@ impl Mind {
         &mut self,
         f: crate::transducer::sentence::Form,
         train: &crate::transducer::family::Family,
-        remainders: &[Vec<(i64, i64, u8, u8)>],
+        remainders: &[Vec<crate::transducer::sentence::SectionLink>],
         budget: &mut crate::physics::Budget,
     ) -> bool {
         // Z4d — THE DRAW IS THE ROOM (door 3), AND IT IS PER LANE. The
@@ -713,7 +713,7 @@ impl Mind {
         &mut self,
         f: crate::transducer::sentence::Form,
         train: &crate::transducer::family::Family,
-        remainders: &[Vec<(i64, i64, u8, u8)>],
+        remainders: &[Vec<crate::transducer::sentence::SectionLink>],
         mag: [u64; 4],
         budget: &mut crate::physics::Budget,
     ) {
@@ -730,7 +730,7 @@ impl Mind {
         f: crate::transducer::sentence::Form,
         frames: &crate::transducer::family::Frames,
         train: &crate::transducer::family::Family,
-        remainders: &[Vec<(i64, i64, u8, u8)>],
+        remainders: &[Vec<crate::transducer::sentence::SectionLink>],
         mag: [u64; 4],
         family: &[u8],
         budget: &mut crate::physics::Budget,
@@ -744,7 +744,7 @@ impl Mind {
         f: crate::transducer::sentence::Form,
         frames: Option<&crate::transducer::family::Frames>,
         train: &crate::transducer::family::Family,
-        remainders: &[Vec<(i64, i64, u8, u8)>],
+        remainders: &[Vec<crate::transducer::sentence::SectionLink>],
         mag: [u64; 4],
         family: &[u8],
         budget: &mut crate::physics::Budget,

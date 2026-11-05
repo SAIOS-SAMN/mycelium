@@ -2,8 +2,8 @@
 /// planar token (16.5). One producer with `sentence::section_site_key` (law
 /// 12): the section's site at frame `0`, keyed by `Site::key`; a site of
 /// the base is keyed by `Site::key` directly.
-pub(crate) fn site_key(r: i64, c: i64) -> Vec<u8> {
-    crate::transducer::sentence::section_site_key(r, c)
+pub(crate) fn site_key(site: crate::transducer::spelled::SectionSite) -> Vec<u8> {
+    crate::transducer::sentence::section_site_key(site)
 }
 
 /// A MEMBER OF THE SCENE'S COMPLEX: a vertex and the chart it stands at

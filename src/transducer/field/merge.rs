@@ -91,10 +91,10 @@ pub(crate) fn merge_vortex(
 
 pub(crate) fn intersect(a: &[SectionLink], b: &[SectionLink]) -> Vec<SectionLink> {
     let mut kb = Keyed::new();
-    for &(r, c, _, _) in b {
-        kb.insert(remainder_site_key(r, c), ());
+    for l in b {
+        kb.insert(remainder_site_key(l.site), ());
     }
-    a.iter().copied().filter(|&(r, c, _, _)| kb.contains(&remainder_site_key(r, c))).collect()
+    a.iter().copied().filter(|l| kb.contains(&remainder_site_key(l.site))).collect()
 }
 
 impl Contemplation {

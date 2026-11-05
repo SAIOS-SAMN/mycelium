@@ -3,6 +3,7 @@
 
 use super::fixtures::*;
 use crate::client::sdk::*;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// MU-CLIENT §4.13 — A DIALECT WORD STANDS WHILE A THOUGHT GLUES IT, and one
 /// nothing references is shed at once — no window, no clock; the genome
@@ -16,7 +17,7 @@ fn shed_keeps_glued_dialect_word_and_genome() {
     let _ = entity.stand(&[e1.clone(), e2.clone()], 0, &[]);
     assert_eq!(entity.dialect_len(), 2);
     let addr = e1.address();
-    entity.hold_chain(vec![(9, 0, 1, 2)]);
+    entity.hold_chain(vec![link(9, 0, 1, 2)]);
     let idea = entity.contemplation.wells.scoped().next().map(|(k, _)| k).expect("idea");
     entity.contemplation.mark_glue(&idea, addr.clone());
     let _ = entity.shed();
@@ -109,7 +110,7 @@ fn expand_ideas_stamps_contemplation_with_tuniversal() {
     assert_eq!(entity.now_tu(), 500, "TUniversal is the height read off the mesh");
 
     // The contemplation takes TUniversal.
-    entity.hold_chain(vec![(9, 0, 1, 2)]);
+    entity.hold_chain(vec![link(9, 0, 1, 2)]);
     let _ = entity.expand_ideas();
     assert_eq!(
         entity.contemplation.now_k(),
@@ -142,13 +143,13 @@ fn expand_ideas_stamps_contemplation_with_tuniversal() {
 fn hold_form_withholds_without_room_never_evicts() {
     crate::transducer::raster::stand_on(0);
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("room"));
-    entity.hold_chain(vec![(9, 0, 1, 2)]);
+    entity.hold_chain(vec![link(9, 0, 1, 2)]);
     let held_now = entity.contemplation.len();
     assert!(held_now > 0, "a mind with room holds the thought");
     // Spend every lane: a reserve of zero is no room on any lane.
     entity.physics.reserve = crate::physics::Reserve::of([0; 4]);
     let second = crate::transducer::sentence::Form {
-        remainder: crate::transducer::element::place_chain(&[(4i64, 4i64, 7u8, 8u8)])
+        remainder: crate::transducer::element::place_chain(&[link(4, 4, 7, 8)])
             .expect("a one-link chain places"),
         ..crate::transducer::sentence::Form::default()
     };
@@ -188,8 +189,8 @@ fn hold_form_draws_lanes_that_release_returns() {
     let before = entity.physics.reserve.lanes();
     assert_eq!(before[0], before[3], "the reserve begins as four copies of one number");
 
-    entity.hold_chain(vec![(9, 0, 1, 2)]);
-    let thought = crate::transducer::element::measure_lanes(&[(9i64, 0i64, 1u8, 2u8)]);
+    entity.hold_chain(vec![link(9, 0, 1, 2)]);
+    let thought = crate::transducer::element::measure_lanes(&[link(9, 0, 1, 2)]);
     assert!(
         thought.iter().any(|&x| x > 0) && thought.contains(&0),
         "the thought occupies some lanes and not others, or this proves nothing: {thought:?}"
@@ -198,7 +199,7 @@ fn hold_form_draws_lanes_that_release_returns() {
     // `hold_chain` does not draw; `hold_form` does. Draw against a form
     // carrying the same chain and read the reserve lane by lane.
     let f = crate::transducer::sentence::Form {
-        remainder: crate::transducer::element::place_chain(&[(9i64, 0i64, 1u8, 2u8)])
+        remainder: crate::transducer::element::place_chain(&[link(9, 0, 1, 2)])
             .expect("a one-link chain places"),
         ..crate::transducer::sentence::Form::default()
     };
@@ -241,7 +242,7 @@ fn release_thought_returns_only_what_hold_drew() {
     crate::transducer::raster::stand_on(0);
     let mut entity = Mind::open("127.0.0.1:1", Voice::named("drew"));
     let before = entity.physics.reserve.clone();
-    entity.hold_chain(vec![(9, 0, 1, 2)]);
+    entity.hold_chain(vec![link(9, 0, 1, 2)]);
     assert_eq!(entity.physics.reserve, before, "a hold that drew nothing takes nothing");
     let held: Vec<Vec<u8>> = entity.contemplation.wells.scoped().map(|(k, _)| k).collect();
     let [key] = held.as_slice() else { panic!("one thought held: {}", held.len()) };

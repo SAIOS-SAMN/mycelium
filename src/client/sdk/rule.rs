@@ -127,7 +127,7 @@ pub enum NoRule {
     NotOnRegion,
     /// The clauses do not close the family they were stated over: the links
     /// they leave on the first pair that has any.
-    NotClosed(Vec<(i64, i64, u8, u8)>),
+    NotClosed(Vec<crate::transducer::sentence::SectionLink>),
 }
 
 fn q(n: i64) -> Q {

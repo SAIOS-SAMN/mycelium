@@ -58,8 +58,8 @@ impl Link {
 
     /// A LINK OF THE ALPHABET'S SECTION READ AS A LINK: its two coordinates
     /// as a site of rank 2, its two bytes as symbols of width 1.
-    pub fn of_section(&(a, b, before, after): &SectionLink) -> Link {
-        Link { site: Site::of([a, b]), before: vec![before], after: vec![after] }
+    pub fn of_section(link: &SectionLink) -> Link {
+        Link { site: Site::of(link.site.coordinates()), before: vec![link.before], after: vec![link.after] }
     }
 
     /// THE LINK ON THE ALPHABET'S SECTION, or the refusal that names why it
@@ -72,7 +72,7 @@ impl Link {
             _ => Err(SectionRefusal::Width { width: s.len() }),
         };
         match self.site.axes() {
-            &[a, b] => Ok((a, b, byte(&self.before)?, byte(&self.after)?)),
+            &[a, b] => Ok(SectionLink::on_plane([a, b], byte(&self.before)?, byte(&self.after)?)),
             _ => Err(SectionRefusal::Rank(AlphabetRank { rank: self.rank() })),
         }
     }

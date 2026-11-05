@@ -117,8 +117,9 @@ fn is_proper_prefix_is_false_for_sibling_keys() {
     for w in sample_words() {
         keys.push(w.rotor().class_key().expect("class"));
     }
-    let a = from_canonical(&germinate(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).unwrap());
-    let b = from_canonical(&germinate(&[(0, 0, 1), (1, 0, 1)], &[(0, 0, 3), (1, 0, 3)]).unwrap());
+    use crate::transducer::sentence::tests::fixtures::painted;
+    let a = from_canonical(&germinate(&painted(&[(0, 0, 1), (0, 1, 1)]), &painted(&[(0, 0, 2), (0, 1, 2)])).unwrap());
+    let b = from_canonical(&germinate(&painted(&[(0, 0, 1), (1, 0, 1)]), &painted(&[(0, 0, 3), (1, 0, 3)])).unwrap());
     keys.push(a.address());
     keys.push(b.address());
     keys.push(listing_key(a.sub(), &IDENTITY_FRAME).expect("a held word's chain is A5's"));

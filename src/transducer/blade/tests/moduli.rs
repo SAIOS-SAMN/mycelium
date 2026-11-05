@@ -3,6 +3,7 @@
 
 use super::fixtures::*;
 use crate::transducer::blade::*;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// 24.4, A21 §2, Stage 12 S12.1a — A CHART'S PREFIX IS THE TOPOLOGICAL
 /// STRATUM. Two rectangles of different proportions have the same
@@ -30,8 +31,8 @@ fn moduli_prefix_is_topological_stratum() {
         "the base of three, one component, no hole, no cavity, four turns"
     );
     let word_of = |support: &[crate::transducer::base::Site]| {
-        let raw: Vec<(i64, i64, u8, u8)> =
-            support.iter().map(|s| (s.axes()[0], s.axes()[1], 1u8, 2u8)).collect();
+        let raw: Vec<crate::transducer::sentence::SectionLink> =
+            support.iter().map(|s| link(s.axes()[0], s.axes()[1], 1, 2)).collect();
         let chain = crate::transducer::element::canonical_chain(&raw)
             .expect("one entry per site is A5's chain");
         crate::transducer::element::from_canonical(&chain).address()
@@ -98,7 +99,7 @@ fn chart_axis_ratio_is_one_coordinate_at_any_width() {
 #[test]
 fn invariant_charts_wide_moduli_off_root() {
     use crate::transducer::stalk::invariant;
-    let l: Vec<(i64, i64, u8, u8)> = vec![(0, 0, 1, 2), (1, 0, 1, 2), (2, 0, 1, 2), (2, 1, 1, 2)];
+    let l = vec![link(0, 0, 1, 2), link(1, 0, 1, 2), link(2, 0, 1, 2), link(2, 1, 1, 2)];
     let inv = invariant(&l);
     assert!(!inv.0.is_empty(), "a body with support is charted by its moduli");
     // The root belongs to genuine absence alone (`invariant_of`'s no-support

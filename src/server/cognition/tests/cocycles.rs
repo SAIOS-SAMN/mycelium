@@ -1,7 +1,7 @@
 // 13 — the Čech cocycles a mind files, and the torsion it condenses: a
 // cycle is consilient, filed, or refused, and never invented.
 
-use super::fixtures::speak_pair;
+use super::fixtures::{painted, speak_pair};
 use crate::cognition::*;
 use crate::transducer::element::{self, Element};
 
@@ -12,7 +12,7 @@ use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
 let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
-let mut spoken = from_canonical(&germinate(&a, &b).unwrap());
+let mut spoken = from_canonical(&germinate(&painted(&a), &painted(&b)).unwrap());
 spoken.puncture(vec![(2, 3), (3, 1), (1, 2)]);
 assert_eq!(spoken.torse(), 1);
 let inv = crate::transducer::stalk::invariant_of(&spoken);

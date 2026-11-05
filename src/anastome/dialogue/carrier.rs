@@ -98,18 +98,19 @@ pub fn push_chain(out: &mut Vec<u8>, chain: &[SectionLink]) -> Option<()> {
 }
 
 /// ONE LINK on the wire: the one writer `push_chain` and the width share.
-fn push_link(out: &mut Vec<u8>, &(r, c, before, after): &SectionLink) {
-    out.extend_from_slice(&r.to_le_bytes());
-    out.extend_from_slice(&c.to_le_bytes());
-    out.push(before);
-    out.push(after);
+fn push_link(out: &mut Vec<u8>, link: &SectionLink) {
+    for c in link.site.coordinates() {
+        out.extend_from_slice(&c.to_le_bytes());
+    }
+    out.push(link.before);
+    out.push(link.after);
 }
 
 /// The wire width of one chain link, measured from the encoder itself (the
 /// carrier's own coordinate, never a number chosen elsewhere).
 pub fn link_wire_width() -> usize {
     let mut probe = Vec::new();
-    push_link(&mut probe, &(0, 0, 0, 0));
+    push_link(&mut probe, &SectionLink::on_plane([0; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK], 0, 0));
     probe.len()
 }
 
@@ -126,7 +127,7 @@ pub fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<SectionLink>> {
         let before = *b.get(*p + 16)?;
         let after = *b.get(*p + 17)?;
         *p += 18;
-        out.push((r, c, before, after));
+        out.push(SectionLink::on_plane([r, c], before, after));
     }
     Some(out)
 }

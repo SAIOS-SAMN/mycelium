@@ -8,7 +8,8 @@ use crate::transducer::germinate::germinate;
 fn witness_thought_closes_on_cycle_and_names_open() {
     let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
     let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
-    let mut t = from_canonical(&germinate(&a, &b).unwrap());
+    use crate::transducer::sentence::tests::fixtures::painted;
+    let mut t = from_canonical(&germinate(&painted(&a), &painted(&b)).unwrap());
     t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
     assert_eq!(t.torse(), 1);
     let ws = witness_thought(&t);

@@ -24,7 +24,7 @@ use super::family::transduce::{Ground, Unground};
 use super::family::{Family, Task};
 use super::alphabet::ALPHABET_SAMPLE_RANK;
 use super::sample::{Place, Sample, SampleRefusal};
-use super::spelled::{SectionSample, SectionSite};
+use super::spelled::{PaintedSite, SectionSample, SectionSite};
 
 /// THE WIDTH OF A RASTER. A raster is rectangular (every reader that takes
 /// one refuses a ragged one), so line zero is a COORDINATE of the raster
@@ -208,8 +208,8 @@ pub fn frame_fixed(task: Task) -> Task {
     let visible = task.train.iter().flat_map(|(a, b)| [a, b]).chain(task.test.iter().map(|(a, _)| a));
     for g in visible {
         let e = g.extents();
-        for (site, _) in painted_sites(g) {
-            let site = site.coordinates();
+        for p in painted_sites(g) {
+            let site = p.site.coordinates();
             for (axis, m) in moment.iter_mut().enumerate() {
                 let x = centred(site[axis], e[axis]);
                 let mut power = 1i128;
@@ -254,8 +254,8 @@ pub fn momentum_vanishes(train: &Family) -> bool {
         let moment = |g: &SectionSample| -> [i128; ALPHABET_SAMPLE_RANK] {
             let e = g.extents();
             let mut m = [0i128; ALPHABET_SAMPLE_RANK];
-            for (site, _) in painted_sites(g) {
-                let site = site.coordinates();
+            for p in painted_sites(g) {
+                let site = p.site.coordinates();
                 for (axis, at) in m.iter_mut().enumerate() {
                     *at += centred(site[axis], e[axis]);
                 }
@@ -276,9 +276,12 @@ pub fn momentum_vanishes(train: &Family) -> bool {
 /// sites (law 11's sensor clause); every reader here takes it. Every
 /// geometric reader here is written once per axis of the plane, never an
 /// axis by hand.
-pub fn painted_sites(g: &SectionSample) -> Vec<(SectionSite, u8)> {
+///
+/// The PERCEPTUAL convention: the scene's ground is omitted (the eye sees
+/// only novelty).
+pub fn painted_sites(g: &SectionSample) -> Vec<PaintedSite> {
     let ground = ground();
-    g.sites().filter(|(_, h)| !ground.holds(h)).collect()
+    g.sites().filter(|(_, h)| !ground.holds(h)).map(|(site, h)| PaintedSite::new(site, h)).collect()
 }
 
 /// A coordinate centred on its extent and doubled, so every centre is an
@@ -326,19 +329,6 @@ fn reoriented_of(g: &SectionSample, order: [usize; ALPHABET_SAMPLE_RANK], revers
     Some(out)
 }
 
-/// A section sample → its painted sites, the PERCEPTUAL convention: the
-/// scene's ground is omitted (the eye sees only novelty). The walk is the
-/// sample's own sites (a scene boundary), not a product of carriers.
-pub fn painted_of(g: &SectionSample) -> Vec<(i64, i64, u8)> {
-    painted_sites(g)
-        .into_iter()
-        .map(|(site, h)| {
-            let [a, b] = site.coordinates();
-            (a, b, h)
-        })
-        .collect()
-}
-
 // ── THE SAMPLE BRIDGE (ROADMAP track 26, S4; MU-SENSING §2) ────────────────
 //
 // A source's lines reach the sensor only as a `Sample` read here; past
@@ -358,17 +348,15 @@ pub fn sample_of(g: &[Vec<u8>], place: Place) -> Result<Sample, SampleRefusal> {
     Sample::new(vec![g.len(), width], 1, g.concat(), place)
 }
 
-/// A PROJECTED RECORD AS THE PLANAR CHAIN `(axis 0, axis 1, before,
-/// after)`: the speech end of the bridge for a residue. A change off rank 2
-/// or width 1 has no planar link and is left out, which no raster pair
+/// A PROJECTED RECORD AS THE SECTION'S CHAIN: the speech end of the bridge
+/// for a residue, each change read as a link of the section
+/// (`sentence::Link::section`). A change off the section's rank or wider
+/// than one byte has no link there and is left out, which no raster pair
 /// produces.
-pub fn links_of(changes: &[super::family::transduce::SiteChange]) -> Vec<(i64, i64, u8, u8)> {
+pub fn links_of(changes: &[super::family::transduce::SiteChange]) -> Vec<crate::transducer::sentence::SectionLink> {
     changes
         .iter()
-        .filter_map(|c| match (c.site().axes(), c.before().bytes(), c.after().bytes()) {
-            (&[i, j], &[before], &[after]) => Some((i, j, before, after)),
-            _ => None,
-        })
+        .filter_map(|c| crate::transducer::sentence::Link::of_change(c).section().ok())
         .collect()
 }
 

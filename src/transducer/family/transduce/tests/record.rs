@@ -122,9 +122,10 @@ fn share_of_one_changed_site_is_lcm_free() {
     assert_eq!(changes(&t.projected().expect("seams land")), vec![(vec![1, 2], vec![1], vec![5])]);
 }
 
-/// A rank-2, width-1 difference as the planar chain the lane measure reads.
-fn chain(d: &[(Vec<i64>, Vec<u8>, Vec<u8>)]) -> Vec<(i64, i64, u8, u8)> {
-    d.iter().map(|(s, a, b)| (s[0], s[1], a[0], b[0])).collect()
+/// A rank-2, width-1 difference as the section's chain the lane measure
+/// reads.
+fn chain(d: &[(Vec<i64>, Vec<u8>, Vec<u8>)]) -> Vec<crate::transducer::sentence::SectionLink> {
+    d.iter().map(|(s, a, b)| crate::transducer::sentence::tests::fixtures::link(s[0], s[1], a[0], b[0])).collect()
 }
 
 /// O1 (ruled 2026-11-01) — THE SHARE BY LANE: on one enclosure S is the

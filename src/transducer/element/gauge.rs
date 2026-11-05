@@ -5,6 +5,7 @@
 //! permutation composition and inversion, the hue map between two
 //! assignments, the transition versor, and the reads that cross a word's fibre.
 
+use crate::transducer::sentence::SectionLink;
 use super::*;
 
 /// THE GAUGE PROFILE of an assignment: its transition classes with the classes'
@@ -124,8 +125,8 @@ pub(crate) fn invert_perm(a: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
 /// exact congruence test on the conformal orbit, returning the transport
 /// operator rather than a verdict.
 pub fn transition(
-    from: &[(i64, i64, u8, u8)],
-    to: &[(i64, i64, u8, u8)],
+    from: &[SectionLink],
+    to: &[SectionLink],
     budget: &mut crate::physics::Budget,
 ) -> Option<Versor> {
     let from_shape = shape_of_chain(from)?;
@@ -134,7 +135,7 @@ pub fn transition(
 
 /// The shape of a chain's support (None for an empty chain) — lifted once
 /// and reused across the candidates a lookup compares it with.
-pub fn shape_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<crate::transducer::blade::Shape> {
+pub fn shape_of_chain(chain: &[SectionLink]) -> Option<crate::transducer::blade::Shape> {
     let mut a = positions(chain);
     a.sort_unstable();
     a.dedup();
@@ -147,7 +148,7 @@ pub fn shape_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<crate::transducer:
 /// The versor carrying an already-lifted shape onto `to`'s support.
 pub fn transition_from_shape(
     from: &crate::transducer::blade::Shape,
-    to: &[(i64, i64, u8, u8)],
+    to: &[SectionLink],
     budget: &mut crate::physics::Budget,
 ) -> Option<Versor> {
     let to_shape = shape_of_chain(to)?;
@@ -296,8 +297,8 @@ pub fn derive_hue_map(a: &[(u8, u8)], b: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
 
 /// The transition assignment of a centred chain (its fibre coordinate),
 /// index-aligned with [`positions`] (chains sort by position first).
-pub fn assignment(chain: &[(i64, i64, u8, u8)]) -> Vec<(u8, u8)> {
-    chain.iter().map(|(_, _, b, a)| (*b, *a)).collect()
+pub fn assignment(chain: &[SectionLink]) -> Vec<(u8, u8)> {
+    chain.iter().map(SectionLink::transition).collect()
 }
 
 /// Canonical key of one hue pair.
@@ -326,21 +327,21 @@ pub fn assignment_key(asg: &[(u8, u8)]) -> Vec<u8> {
 
 /// One transition class, or several keyed by the pair.
 pub enum GaugeFibres {
-    One((u8, u8), Vec<(i64, i64, u8, u8)>),
-    Many(crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>>),
+    One((u8, u8), Vec<SectionLink>),
+    Many(crate::network::nerve::Keyed<Vec<SectionLink>>),
 }
 
 /// THE GAUGE FIBRES of a chain: the chain opened along its fibre
 /// coordinate, one sub-chain per transition class. Indexed by the pair
 /// key. One class is `One`; two or more is `Many`. Empty is `None`.
-pub fn gauge_fibres(chain: &[(i64, i64, u8, u8)]) -> Option<GaugeFibres> {
+pub fn gauge_fibres(chain: &[SectionLink]) -> Option<GaugeFibres> {
     if chain.is_empty() {
         return None;
     }
-    let mut idx: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>> =
+    let mut idx: crate::network::nerve::Keyed<Vec<SectionLink>> =
         crate::network::nerve::Keyed::new();
     for &link in chain {
-        let k = hue_pair_key(link.2, link.3);
+        let k = hue_pair_key(link.before, link.after);
         match idx.get_mut(&k) {
             Some(fibre) => fibre.push(link),
             None => {
@@ -374,7 +375,7 @@ impl Element {
     /// (positions held, hue-transition classes substituted class-for-class).
     /// The single source for application/projection (the gate and the SDK's
     /// `Mind::project` both speak through this).
-    pub fn variant_chains(&self) -> Vec<Vec<(i64, i64, u8, u8)>> {
+    pub fn variant_chains(&self) -> Vec<Vec<SectionLink>> {
         let base = self.sub.to_vec();
         if base.is_empty() {
             return Vec::new();
@@ -387,13 +388,13 @@ impl Element {
             }
             let variant: Vec<_> = base
                 .iter()
-                .filter_map(|(r, c, b, a)| {
+                .filter_map(|l| {
                     // `base_pairs` is built from these links, so every
                     // pair is in it; a link whose pair is not is no
                     // variant of this base and is not spelled (rule 11).
-                    let i = base_pairs.iter().position(|p| *p == (*b, *a))?;
+                    let i = base_pairs.iter().position(|p| *p == l.transition())?;
                     let (nb, na) = *asg.get(i)?;
-                    Some((*r, *c, nb, na))
+                    Some(SectionLink::new(l.site, nb, na))
                 })
                 .collect();
             out.push(variant);
@@ -463,7 +464,7 @@ impl Element {
     /// orbit is never generated to ask whether one assignment is on it.
     /// (`matching_assignment`, which answered a position in `assignments()`,
     /// retired with its last reader — 78.43(1).)
-    pub fn matches_chain(&self, chain: &[(i64, i64, u8, u8)]) -> bool {
+    pub fn matches_chain(&self, chain: &[SectionLink]) -> bool {
         if self.sub.is_empty() || positions(&self.sub) != positions(chain) {
             return false;
         }

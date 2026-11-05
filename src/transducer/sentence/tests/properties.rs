@@ -98,13 +98,13 @@ fn generated() -> Vec<(&'static str, Form)> {
         .put_vertex(Vertex::demand(
             Demand::Source { multiplicity: 2 },
             stalk::Invariant::counts(&[3]),
-            vec![(1, 1, 1, 2), (1, 2, 1, 2)],
+            vec![link(1, 1, 1, 2), link(1, 2, 1, 2)],
         ))
         .expect("a demand has a coordinate");
 
     let mut residue = closed_word_form(w, None);
     residue.remainder =
-        crate::transducer::element::place_chain(&[(7, 7, 3, 4), (7, 8, 3, 4)]).expect("places");
+        crate::transducer::element::place_chain(&[link(7, 7, 3, 4), link(7, 8, 3, 4)]).expect("places");
 
     vec![
         ("a word form", inner),
@@ -469,7 +469,7 @@ fn from_residue_round_trips_and_refuses_form_address() {
     use crate::transducer::element::from_residue as mint_residue;
     use crate::transducer::sentence::from_residue;
 
-    let chain: Vec<(i64, i64, u8, u8)> = vec![(2, 2, 1, 2), (2, 3, 1, 2)];
+    let chain: Vec<SectionLink> = vec![link(2, 2, 1, 2), link(2, 3, 1, 2)];
     let residue = mint_residue(&chain).expect("a chain mints a residue");
     let r_addr = residue.address();
     assert!(

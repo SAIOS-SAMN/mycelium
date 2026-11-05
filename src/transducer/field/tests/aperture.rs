@@ -2,7 +2,7 @@
 // and the oldest well is the one that moves.
 
 use crate::transducer::field::*;
-use crate::transducer::sentence::tests::fixtures::{stand_with_star, FRAME};
+use crate::transducer::sentence::tests::fixtures::{link, stand_with_star, FRAME};
 
 /// Every well the contemplation holds, by address — what a door is
 /// handed. `retire_on_t` picked ONE by age against a count; the doors are
@@ -28,9 +28,9 @@ fn all_keys(c: &Contemplation) -> Vec<Vec<u8>> {
 fn lapse_with_retires_handed_set_never_by_age() {
     let mut c = Contemplation::new();
     c.set_now(10);
-    c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+    c.hold(vec![link(0, 0, 1, 2), link(0, 1, 1, 2)]);
     c.set_now(50);
-    c.hold(vec![(5, 5, 3, 4), (5, 6, 3, 4)]);
+    c.hold(vec![link(5, 5, 3, 4), link(5, 6, 3, 4)]);
     assert_eq!(c.len(), 2, "two thoughts stand");
     // Time passes and nothing lapses: age is not a door.
     c.set_now(5_000);
@@ -60,9 +60,9 @@ fn lapse_with_retires_handed_set_never_by_age() {
 fn cavity_keys_under_reads_entries_at_chart() {
     let mut c = Contemplation::new();
     c.set_now(10);
-    c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+    c.hold(vec![link(0, 0, 1, 2), link(0, 1, 1, 2)]);
     c.set_now(20);
-    c.hold(vec![(9, 9, 5, 6), (9, 10, 5, 6)]);
+    c.hold(vec![link(9, 9, 5, 6), link(9, 10, 5, 6)]);
     assert_eq!(c.len(), 2, "two wells held");
 
     // Both retire, and both are kept: law 7 loses no remainder, and two
@@ -86,7 +86,7 @@ fn cavity_keys_under_reads_entries_at_chart() {
     // Both remainders are two adjacent links, so they are the SAME SHAPE and
     // share a chart: the fibre answers both, and the well suffix is what
     // keeps them two entries rather than one overwriting the other.
-    let two_link = crate::transducer::stalk::invariant(&[(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)]);
+    let two_link = crate::transducer::stalk::invariant(&[link(0, 0, 1, 2), link(0, 1, 1, 2)]);
     let under = c
         .cavity_keys_under(&two_link)
         .expect("a chart names a fibre of the cavity");
@@ -100,12 +100,12 @@ fn cavity_keys_under_reads_entries_at_chart() {
     // separates them. Without this the read above would pass on a cavity
     // that answered everything to everything.
     c.set_now(30);
-    c.hold(vec![(2, 2, 7, 8), (2, 3, 7, 8), (3, 2, 7, 8)]);
+    c.hold(vec![link(2, 2, 7, 8), link(2, 3, 7, 8), link(3, 2, 7, 8)]);
     let keys = all_keys(&c);
     c.lapse_with(&keys);
     assert_eq!(c.cavity_len(), 3, "three remainders kept");
     let three_link =
-        crate::transducer::stalk::invariant(&[(2i64, 2i64, 7u8, 8u8), (2, 3, 7, 8), (3, 2, 7, 8)]);
+        crate::transducer::stalk::invariant(&[link(2, 2, 7, 8), link(2, 3, 7, 8), link(3, 2, 7, 8)]);
     assert_ne!(
         three_link.key(),
         two_link.key(),
@@ -135,7 +135,7 @@ fn cavity_keys_under_reads_entries_at_chart() {
 fn lapse_with_keeps_remainder_as_cavity_chart() {
     let mut c = Contemplation::new();
     c.set_now(10);
-    c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+    c.hold(vec![link(0, 0, 1, 2), link(0, 1, 1, 2)]);
     assert_eq!(c.len(), 1);
     let keys = all_keys(&c);
     c.lapse_with(&keys);
@@ -153,7 +153,7 @@ fn expand_with_reads_zero_t_potential_at_hold_stroke() {
     use crate::transducer::family::NoCrystal;
     let mut c = Contemplation::new();
     c.set_now(7);
-    c.hold(vec![(0, 0, 1, 2)]);
+    c.hold(vec![link(0, 0, 1, 2)]);
     let k = c.wells.scoped().next().map(|(k, _)| k).expect("held");
     let atlas = crate::transducer::stalk::Stalks::default();
     let mut budget = crate::physics::Physics::default().stroke_n(4);
@@ -167,7 +167,7 @@ fn expand_with_reads_zero_t_potential_at_hold_stroke() {
     assert_eq!(b.potential[2], 0, "moved at K 7, read at K 7: zero receipts, zero on T");
     assert_eq!(
         b.potential,
-        element::measure_lanes(&[(0, 0, 1, 2)]),
+        element::measure_lanes(&[link(0, 0, 1, 2)]),
         "the other lanes are the remainder's own measure"
     );
     let _ = spent;
@@ -467,13 +467,13 @@ fn hold_form_keeps_moved_k_and_ages_when_unchanged() {
 
     let mut c = Contemplation::new();
     c.set_now(10);
-    c.hold_form(form.clone(), &[], std::slice::from_ref(&vec![(0i64, 0i64, 1u8, 2u8)]), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
+    c.hold_form(form.clone(), &[], std::slice::from_ref(&vec![link(0, 0, 1, 2)]), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let key = c.wells.scoped().next().map(|(k, _)| k).expect("held");
     assert_eq!(c.wells.get(&key).expect("held").moved_k, 10, "born at the stamp it entered on");
     // The same form re-held unchanged at a later TUniversal, as D8 re-holds
     // a withheld form every stroke.
     c.set_now(64);
-    c.hold_form(form.clone(), &[], std::slice::from_ref(&vec![(0i64, 0i64, 1u8, 2u8)]), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
+    c.hold_form(form.clone(), &[], std::slice::from_ref(&vec![link(0, 0, 1, 2)]), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let again = c.wells.get(&key).expect("still held");
     assert_eq!(again.moved_k, 10, "retention is not motion: the stamp is preserved");
     assert_eq!(
@@ -550,7 +550,7 @@ fn rekey_keeps_inception_stamp_across_mutation() {
     };
     let before = build(vec![3, 5]);
     let after = build(vec![7, 11]);
-    let rem = vec![(0i64, 0i64, 1u8, 2u8)];
+    let rem = vec![link(0, 0, 1, 2)];
 
     let mut c = Contemplation::new();
     c.set_now(10);

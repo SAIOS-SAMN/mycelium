@@ -7,17 +7,23 @@
 
 use super::*;
 
-pub(crate) fn positions_of(painted: &[Painted]) -> Vec<(i64, i64)> {
-    let mut p: Vec<(i64, i64)> = painted.iter().map(|&(r, c, _)| (r, c)).collect();
+pub(crate) fn positions_of(painted: &[PaintedSite]) -> Vec<(i64, i64)> {
+    let mut p: Vec<(i64, i64)> = painted
+        .iter()
+        .map(|s| {
+            let [r, c] = s.site.coordinates();
+            (r, c)
+        })
+        .collect();
     p.sort_unstable();
     p.dedup();
     p
 }
 
-pub(crate) fn occupy_keys(painted: &[(i64, i64, u8)]) -> crate::network::nerve::Keyed<()> {
+pub(crate) fn occupy_keys(painted: &[PaintedSite]) -> crate::network::nerve::Keyed<()> {
     let mut occ = crate::network::nerve::Keyed::new();
-    for &(r, c, _) in painted {
-        occ.insert(site_key(r, c), ());
+    for p in painted {
+        occ.insert(site_key(p.site), ());
     }
     occ
 }
@@ -32,10 +38,10 @@ pub(crate) fn ring_dist_peel(image: &[(i64, i64)], anchor: &[(i64, i64)], bound:
     if image.is_empty() || anchor.is_empty() {
         return None;
     }
-    let mut have: Vec<(i64, i64, u8)> = anchor.iter().map(|&(r, c)| (r, c, 0)).collect();
+    let mut have: Vec<PaintedSite> = anchor.iter().map(|&(r, c)| PaintedSite::on_plane([r, c], 0)).collect();
     for k in 0..=bound {
         let occ = occupy_keys(&have);
-        if image.iter().all(|&(r, c)| occ.contains(&site_key(r, c))) {
+        if image.iter().all(|&(r, c)| occ.contains(&site_key(SectionSite::on_plane([r, c])))) {
             return Some(k);
         }
         let ring = crate::transducer::blade::adjacent_ring(&have);
@@ -52,15 +58,16 @@ pub(crate) fn ring_dist_peel(image: &[(i64, i64)], anchor: &[(i64, i64)], bound:
 /// of that site — clipping here would hide that the motion moved it. `None`
 /// where a site is carried out of the grid's own frame along `e₃`: the
 /// motion is read within one grid, and a body carried off it has moved.
-pub(crate) fn carry_painted(v: &Versor, painted: &[Painted]) -> Option<Vec<Painted>> {
+pub(crate) fn carry_painted(v: &Versor, painted: &[PaintedSite]) -> Option<Vec<PaintedSite>> {
     let mut out = Vec::new();
-    for &(r, c, h) in painted {
+    for p in painted {
+        let [r, c] = p.site.coordinates();
         if let Some(image) = element::carry_compartment(v, r, c, 0) {
             for (ir, ic, ik) in image {
                 if ik != 0 {
                     return None;
                 }
-                out.push((ir, ic, h));
+                out.push(PaintedSite::on_plane([ir, ic], p.symbol));
             }
         }
     }
@@ -93,7 +100,7 @@ pub(crate) fn vertex_versor_at(
 /// one that carries a site off the grid along `e₃` moves it. Asked of every
 /// member: the vertex moves the body where any member does. An empty body
 /// has nothing to move.
-pub fn moves(v: &Vertex, painted: &[Painted]) -> bool {
+pub fn moves(v: &Vertex, painted: &[PaintedSite]) -> bool {
     if painted.is_empty() {
         return false;
     }
@@ -102,7 +109,7 @@ pub fn moves(v: &Vertex, painted: &[Painted]) -> bool {
         let Some(versor) = vertex_versor_at(v, chart) else { return false };
         match carry_painted(&versor, painted) {
             None => true,
-            Some(image) => image.is_empty() || !image.iter().all(|&(r, c, _)| body.contains(&site_key(r, c))),
+            Some(image) => image.is_empty() || !image.iter().all(|p| body.contains(&site_key(p.site))),
         }
     })
 }

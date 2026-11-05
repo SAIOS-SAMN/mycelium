@@ -2,6 +2,7 @@
 // fill closes, and what a vortex collapses to.
 
 use crate::transducer::field::*;
+use crate::transducer::sentence::tests::fixtures::link;
 use crate::transducer::sentence::{RankAxis, RankMove};
 
 /// Two wells on one chart held from disjoint remainders share an edge,
@@ -9,8 +10,8 @@ use crate::transducer::sentence::{RankAxis, RankMove};
 #[test]
 fn hold_shares_no_triangle_between_disjoint_remainders() {
     let mut c = Contemplation::new();
-    c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
-    c.hold(vec![(5, 5, 3, 4), (5, 6, 3, 4)]);
+    c.hold(vec![link(0, 0, 1, 2), link(0, 1, 1, 2)]);
+    c.hold(vec![link(5, 5, 3, 4), link(5, 6, 3, 4)]);
     assert_eq!(c.len(), 2, "disjoint remainders are two wells");
     let keys: Vec<Vec<u8>> = c.wells.scoped().map(|(k, _)| k).collect();
     let edges = c.complex.link(&keys[0], 1);
@@ -30,8 +31,8 @@ fn hold_shares_no_triangle_between_disjoint_remainders() {
 #[test]
 fn hold_merges_overlapping_remainders_by_fill() {
     let mut c = Contemplation::new();
-    c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
-    c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
+    c.hold(vec![link(0, 0, 1, 2), link(0, 1, 1, 2)]);
+    c.hold(vec![link(0, 1, 3, 4), link(0, 2, 3, 4)]);
     assert_eq!(c.len(), 1, "a shared site is Extended: the wells merge");
     let keys: Vec<Vec<u8>> = c.wells.scoped().map(|(k, _)| k).collect();
     assert_eq!(keys.len(), 1);
@@ -231,7 +232,7 @@ fn take_docket_answers_held_class_by_class_key() {
     )
     .expect("a class reads");
     let mut c = Contemplation::new();
-    c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+    c.hold(vec![link(0, 0, 1, 2), link(0, 1, 1, 2)]);
     let (thought, cover): (Vec<u8>, Vec<Vec<u8>>) = {
         let (k, b) = c.wells.scoped().next().expect("one thought held");
         (k, b.cover.scoped().map(|(ck, _)| ck).collect())
@@ -316,9 +317,9 @@ fn release_thought_loses_rank_for_corner_not_leaf() {
 fn pivot_on_leaves_fills_when_repeated_without_word() {
     use crate::transducer::element::{canonical_chain, from_canonical};
     let mut c = Contemplation::new();
-    let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
+    let rem = vec![link(0, 0, 1, 2), link(0, 1, 1, 2)];
     c.hold(rem.clone());
-    c.hold(vec![(0, 1, 3, 4), (0, 2, 3, 4)]);
+    c.hold(vec![link(0, 1, 3, 4), link(0, 2, 3, 4)]);
     let word = from_canonical(&canonical_chain(&rem).expect("one entry per position is A5's chain"));
     let snap = |c: &Contemplation| {
         let mut out = Vec::new();
@@ -355,7 +356,7 @@ fn seed_horizon_collapses_vortex_by_matching_certificate() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::sentence::{Axis, ClassVector, PivotBy, PivotCertificate, Side};
     let mut c = Contemplation::new();
-    c.hold(vec![(0, 0, 1, 2)]);
+    c.hold(vec![link(0, 0, 1, 2)]);
     let q = LetterId::turn_90((0, 1)).unwrap();
     let w = Word::from_letters(&[(q, false)]);
     let r = w.rotor();

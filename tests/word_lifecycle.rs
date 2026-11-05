@@ -12,7 +12,7 @@ use mycelium::cognition::Court;
 use mycelium::transducer::alphabet::{relators, RelatorKind, Word, LetterId};
 use mycelium::transducer::element::{from_connection, identity_versor, Element};
 use mycelium::transducer::family::{extract_rule, perceive, speak_rule, mint_sentence, NoCrystal};
-use mycelium::transducer::sentence::Vertex;
+use mycelium::transducer::sentence::{SectionLink, Vertex};
 use mycelium::transducer::stalk::Stalks;
 
 use mycelium::transducer::spelled::SectionSample;
@@ -33,7 +33,7 @@ fn grid(rows: &[&str]) -> SectionSample {
     SectionSample::of_lines(&lines).expect("the fixture's lines are a sample")
 }
 
-fn conn(sigma: &[(u8, u8)], rem: Vec<(i64, i64, u8, u8)>, mag: [u64; 4]) -> Element {
+fn conn(sigma: &[(u8, u8)], rem: Vec<SectionLink>, mag: [u64; 4]) -> Element {
     from_connection(&Word::identity(), &identity_versor(), sigma, &rem, mag).unwrap()
 }
 
@@ -60,7 +60,7 @@ fn word_key_is_one_for_two_spellings() {
 /// The element record round-trips within its size bound, and a record under an old magic is refused.
 #[test]
 fn element_record_round_trips_and_refuses_old_magic() {
-    let w = conn(&[(1, 2)], vec![(0, 0, 1u8, 2)], [1, 1, 0, 0]);
+    let w = conn(&[(1, 2)], vec![SectionLink::on_plane([0, 0], 1, 2)], [1, 1, 0, 0]);
     let b = w.to_bytes().expect("the record writes");
     assert_eq!(b[0], Element::RECORD_MAGIC);
     let mut p = 0;
@@ -192,7 +192,7 @@ fn encode_speech_round_trips_in_one_frame() {
 fn perceive_speech_refuses_unframed_chain() {
     let mut k = Court::new();
     let mut bad = mycelium::transducer::element::from_canonical(
-        &mycelium::transducer::element::canonical_chain(&[(0, 0, 1u8, 2)])
+        &mycelium::transducer::element::canonical_chain(&[SectionLink::on_plane([0, 0], 1, 2)])
             .expect("one cell is A5's chain"),
     );
     assert!(bad.set_magnitude([99, 99, 99, 99]), "a fresh word holds any lane");

@@ -4,10 +4,12 @@
 
 use super::fixtures::*;
 use crate::client::sdk::*;
+use crate::transducer::sentence::tests::fixtures::link;
+use crate::transducer::sentence::SectionLink;
 
 /// The word of a chain a fixture wrote out: one entry per position, so A5
 /// accepts it and the fixture reads the word it names.
-fn chain_word(links: &[(i64, i64, u8, u8)]) -> crate::transducer::element::Element {
+fn chain_word(links: &[SectionLink]) -> crate::transducer::element::Element {
     crate::transducer::element::from_canonical(
         &crate::transducer::element::canonical_chain(links)
             .expect("one entry per position is A5's chain"),
@@ -37,7 +39,7 @@ assert!(
     !entity.incident_chart(&crate::transducer::stalk::Invariant::counts(&[99])),
     "an unseen chart is not incident"
 );
-let idea_chain = vec![(3, 0, 5, 6), (3, 1, 5, 6)];
+let idea_chain = vec![link(3, 0, 5, 6), link(3, 1, 5, 6)];
 entity.hold_chain(idea_chain.clone());
 let idea = crate::transducer::stalk::invariant(&idea_chain);
 assert!(entity.ideas_len() > 0, "the idea is held");
@@ -57,8 +59,8 @@ assert!(held >= 1, "an idea is held");
 #[test]
 fn cite_reads_stood_and_held_words() {
     crate::transducer::raster::stand_on(0);
-let residue = vec![(0i64, 0i64, 1u8, 2u8)];
-let next = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
+let residue = vec![link(0, 0, 1, 2)];
+let next = vec![link(0, 0, 1, 2), link(0, 1, 3, 4)];
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("cite-stood"));
 assert!(
     entity.language.express(&residue, 1, 1, &mut super::fixtures::budget()),
@@ -103,8 +105,8 @@ assert!(
 fn cite_names_held_word_vertex_not_listing_chain() {
     crate::transducer::raster::stand_on(0);
 use crate::transducer::sentence::Vertex;
-let scene = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2)];
-let listing = vec![(4i64, 4i64, 1u8, 2u8), (4, 5, 1, 2), (9, 9, 3u8, 4u8)];
+let scene = vec![link(0, 0, 1, 2), link(0, 1, 1, 2)];
+let listing = vec![link(4, 4, 1, 2), link(4, 5, 1, 2), link(9, 9, 3, 4)];
 let mut entity = Mind::open("127.0.0.1:1", Voice::named("held-word"));
 entity.hold_chain(scene.clone());
 let body_chart = crate::transducer::stalk::invariant(&listing[..2]);
@@ -120,7 +122,7 @@ assert_eq!(cites[0].standing, Standing::Held.byte(), "with standing Held");
 assert_eq!(cites[0].addr, vertex, "and it is the vertex's address: the word");
 assert_ne!(cites[0].addr, chain_word(&listing).address(), "never the listing chain's key");
 assert_eq!(cites[0].body, listing[..2].to_vec(), "it carries the body the vertex's action reconstructed, in the listing's frame");
-assert_eq!(residue, vec![(9, 9, 3, 4)], "the residue is the body no word spoke");
+assert_eq!(residue, vec![link(9, 9, 3, 4)], "the residue is the body no word spoke");
 assert!(
     entity.language.working_word(chain_word(&listing).address().as_bytes()).is_none()
         && entity.language.working_word(chain_word(&scene).address().as_bytes()).is_none()
@@ -133,8 +135,8 @@ assert!(
 #[test]
 fn conclude_listing_expresses_only_when_held_word_deflates() {
     crate::transducer::raster::stand_on(0);
-let prefix = vec![(0i64, 0i64, 1u8, 2u8)];
-let listing = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
+let prefix = vec![link(0, 0, 1, 2)];
+let listing = vec![link(0, 0, 1, 2), link(0, 1, 3, 4)];
 
 let mut bare = Mind::open("127.0.0.1:1", Voice::named("listing-bare"));
 let Concluded { cites, residue, .. } = bare.conclude_listing(&listing);

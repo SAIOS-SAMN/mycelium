@@ -4,17 +4,17 @@
 //! coboundary's lane measure), joined lane by lane over the family, which
 //! is the genesis bond a court stakes against a corpus (46, E1). Moved from
 //! the former `arc` module unchanged (ROADMAP track 26, S1). The pairs are
-//! read as planar chains (`raster::painted_of`), a defect named in
+//! read as planar chains (`raster::painted_sites`), a defect named in
 //! MU-SENSING §8 for samples of rank `n` to replace (track 26, S4).
 
 use super::Family;
-use crate::transducer::raster::painted_of;
+use crate::transducer::raster::painted_sites;
 
 /// The μ⃗ of one train pair: the coboundary's lane measure. T is not on the chain.
 /// None when the coboundary is unmeasured.
 pub fn pair_magnitude(a: &super::SectionSample, b: &super::SectionSample) -> Option<[u64; 4]> {
-    let ca = painted_of(a);
-    let cb = painted_of(b);
+    let ca = painted_sites(a);
+    let cb = painted_sites(b);
     crate::transducer::germinate::germinate(&ca, &cb)
         .map(|g| crate::transducer::element::measure_lanes(&g))
 }
@@ -52,7 +52,7 @@ pub fn family_cover(train: &Family) -> Option<[u64; 4]> {
         cover_join(&mut cover, &mag)?;
         // H carries the pair's own coboundary extent, accumulated with the
         // rest: the same disjoint-scene rule as every other lane.
-        let chain = crate::transducer::germinate::germinate(&painted_of(a), &painted_of(b))?;
+        let chain = crate::transducer::germinate::germinate(&painted_sites(a), &painted_sites(b))?;
         cover[3] = cover[3].checked_add(chain.len() as u64)?;
     }
     any.then_some(cover)

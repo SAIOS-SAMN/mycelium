@@ -118,7 +118,7 @@ impl Harmonics {
 
 /// HEAR a voice's carried body — one section's chain — lift it through
 /// the eye and read its harmonics. None for an empty body.
-pub fn hear(body: &[(i64, i64, u8, u8)]) -> Option<Harmonics> {
+pub fn hear(body: &[crate::transducer::sentence::SectionLink]) -> Option<Harmonics> {
     let shape = crate::transducer::element::shape_of_chain(body)?;
     Harmonics::of(&shape.blade)
 }

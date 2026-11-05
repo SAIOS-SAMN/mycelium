@@ -8,7 +8,7 @@ use crate::transducer::germinate::germinate;
 
 fn germ() -> Element {
     // A germinated pattern (post-excision, the only species of germ).
-    from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap())
+    from_canonical(&germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 2)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 9)])).unwrap())
 }
 
 /// Novelty pays on use and not on existence: an install pays nothing, and
