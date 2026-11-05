@@ -26,7 +26,7 @@ fn shift(dr: i64, dc: i64) -> Mv {
 
 fn drawn(spoken: Result<crate::transducer::family::statement::Spoken, Unstated>) -> Result<SectionSample, Unstated> {
     let spoken = spoken?;
-    let mut g = SectionSample::filled([spoken.frame.0, spoken.frame.1], 0).expect("a frame");
+    let mut g = SectionSample::filled(spoken.frame, 0).expect("a frame");
     for p in spoken.painted {
         g.paint(p.site, p.symbol).expect("on the sample");
     }
@@ -90,6 +90,25 @@ fn speak_clauses_reads_identity_carriage_as_hue_map() {
         let glossed = gloss(&lower(&carry).expect("lowers")).expect("named");
         assert_eq!(tape(&[glossed]), tape(std::slice::from_ref(&recolour)), "its gloss is the recolour");
     }
+}
+
+/// THE SPOKEN FRAME IS THE OUTPUT'S EXTENTS PER PLANE AXIS: a tiling of one
+/// block along the plane's first axis and two along its second frames a
+/// `2 × 3` input as `[2, 6]`; the panes split along the second axis frame a
+/// `2 × 5` input with a separator as `[2, 2]`; each frame is the extents of
+/// the sample the clauses wrote, in the plane's order.
+#[test]
+fn speak_clauses_frames_output_by_plane_axis() {
+    crate::transducer::raster::stand_on(0);
+    let tiled = grid(&["123", "456"]);
+    let tile = Clause { select: Pred::All, act: Act::Tile { blocks: [1, 2], turns: vec![0, 1] } };
+    let spoken = speak_clauses(std::slice::from_ref(&tile), &tiled, &crate::transducer::family::perceive(&tiled)).expect("the tiling is spoken");
+    assert_eq!(spoken.frame, [2, 6], "one block along the first axis, two along the second");
+    assert_eq!(drawn(Ok(spoken)), Ok(grid(&["123321", "456654"])), "the second block reversed along the second axis");
+    let split = grid(&["10501", "01500"]);
+    let panes = Clause { select: Pred::All, act: Act::Panes { along: PlaneAxis::Second, gap: true, table: 0b0110, paint: 2 } };
+    let spoken = speak_clauses(std::slice::from_ref(&panes), &split, &crate::transducer::family::perceive(&split)).expect("the panes are spoken");
+    assert_eq!(spoken.frame, [2, 2], "the pane keeps the first axis and halves the second past the separator");
 }
 
 /// AN ELEMENT NO ACT NAMES IS SAID: a body carried to its meet keeping its

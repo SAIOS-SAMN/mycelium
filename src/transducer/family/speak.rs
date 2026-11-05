@@ -595,7 +595,11 @@ fn speak_on_scene(
     // lays down no speech; the court refuses it by name before it reads one.
     if !f.elements.is_empty() {
         let spoken = super::statement::speak_elements(&f.elements, x, bodies).ok()?;
-        fy = spoken.frame;
+        // The speech's frame is a planar pair read with the measured frame
+        // (`element::Frame`, a defect MU-SENSING §8 names): the clauses'
+        // extents along the plane are written onto it in the plane's order.
+        let [first, second] = spoken.frame;
+        fy = (first, second);
         painted = spoken.painted;
         // 78.167 C — the clauses are the whole speech: what the vertices left
         // as remainder is not what was said, and a demand is stated by the

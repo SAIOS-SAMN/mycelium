@@ -439,7 +439,7 @@ fn canvas_of(s: &statement::Spoken) -> Option<SectionSample> {
         Some(v) => v,
         None => s.painted.iter().map(|p| p.symbol).next()?,
     };
-    let mut g = SectionSample::filled([s.frame.0, s.frame.1], opening).ok()?;
+    let mut g = SectionSample::filled(s.frame, opening).ok()?;
     let mut written: Vec<SectionSite> = Vec::with_capacity(s.painted.len());
     for p in &s.painted {
         g.paint(p.site, p.symbol)?;

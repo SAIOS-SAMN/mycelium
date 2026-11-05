@@ -123,7 +123,11 @@ pub(crate) fn block_corner(i: usize, blocks: [usize; ALPHABET_SAMPLE_RANK], exte
 /// WHAT THE CLAUSES SPOKE: the output frame and its painted cells.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Spoken {
-    pub frame: (usize, usize),
+    /// The output frame's extents along the perspective's plane, one per
+    /// plane axis in the plane's order (`PlaneAxis::index`), as
+    /// `SectionSample::extents` reads them.
+    pub frame: [usize; ALPHABET_SAMPLE_RANK],
+    /// The sites the clauses painted on that frame.
     pub painted: Vec<PaintedSite>,
 }
 
@@ -952,8 +956,7 @@ pub fn speak_elements(said: &[Lowered], x: &SectionSample, bodies: &[Body]) -> R
         Some((up, down)) => scaled(&out, up, down)?,
     };
     let painted = crate::transducer::raster::painted_sites(&out);
-    let [rows, cols] = out.extents();
-    Ok(Spoken { frame: (rows, cols), painted })
+    Ok(Spoken { frame: out.extents(), painted })
 }
 
 /// THE CANVAS CROPPED to the window from `low` to `high`, both corners
