@@ -30,6 +30,7 @@ fn universe(origin: bool) -> Court {
     assert!(matches!(k.hear_domain(&g.sign(&key(DOMAIN))), Founded::Sealed { .. }));
     let r = Reservation { domain: verifying(&key(DOMAIN)), tier: verifying(&key(RESERVE)), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&key(DOMAIN))), Founded::Reserved { .. }));
+    super::boundary::signs(&mut k, &key(RESERVE));
     if origin {
         let o = BigBangRecord { domain: verifying(&key(DOMAIN)), kind: 1, version: 1, commitment: [DOMAIN; 32], universe: None };
         assert!(matches!(k.record_origin(&o.sign(&key(DOMAIN))), Founded::Originated { .. }));

@@ -47,6 +47,7 @@ fn founded() -> Court {
         assert!(matches!(k.hear_domain(&g.sign(&d)), Founded::Sealed { .. }));
         let r = Reservation { domain: verifying(&d), tier: verifying(&reserve), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&d)), Founded::Reserved { now: true, .. }));
+        super::boundary::signs(&mut k, &reserve);
     }
     // The throat's bank (78.135), funded first.
     let anchor = k.anchor();

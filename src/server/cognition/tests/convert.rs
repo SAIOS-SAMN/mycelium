@@ -43,6 +43,9 @@ fn founded() -> Court {
     tiers.sort_unstable();
     let g = DomainGenesis { domain: verifying(&domain()), tiers };
     assert!(matches!(k.hear_domain(&g.sign(&domain())), Founded::Sealed { .. }));
+    for tier in [x(), x2()] {
+        super::boundary::signs(&mut k, &tier);
+    }
     k
 }
 
@@ -96,6 +99,7 @@ fn designate_reserve_redesignates_at_reserve_fold() {
     assert_eq!(k.reserve_reading(&verifying(&domain())).pending, Some(verifying(&x2())), "the pending redesignation, read");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
+    super::boundary::calibrate(&mut booted);
     assert_eq!(booted.reserve_of(&verifying(&domain())), Some(verifying(&x())));
     assert!(matches!(booted.hear_uplink(&fold(1, Vec::new(), Vec::new()).sign(&x())), Uplinked::Admitted { .. }), "the reserve's anchor");
     assert_eq!(booted.reserve_of(&verifying(&domain())), Some(verifying(&x2())), "the redesignation holds from the anchor");

@@ -371,6 +371,9 @@ impl Court {
             Err(true) => return Ledgered::Boundary(Boundary::NotThroughCore { act: UniverseAct::Anchor, domain: e.domain }),
             Err(false) => return refuse(R::Unsigned),
         };
+        if let Err(why) = self.signatory(UniverseAct::Anchor, e.domain, reads) {
+            return Ledgered::Boundary(why);
+        }
         if !self.final_in_view(&e.point, fin.as_ref()) {
             return refuse(R::NotFinal);
         }
@@ -517,6 +520,9 @@ impl Court {
             Err(true) => return Mapped::Boundary(Boundary::NotThroughCore { act: UniverseAct::Map, domain: a.domain }),
             Err(false) => return refuse(R::Unsigned),
         };
+        if let Err(why) = self.signatory_now(UniverseAct::Map, a.domain) {
+            return Mapped::Boundary(why);
+        }
         if !self.final_in_view(&a.point, fin.as_ref()) {
             return refuse(R::NotFinal);
         }

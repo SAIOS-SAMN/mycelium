@@ -56,6 +56,7 @@ fn found(k: &mut Court) {
     assert!(matches!(k.hear_domain(&genesis.sign(&domain)), Founded::Sealed { .. }));
     let reservation = Reservation { domain: verifying(&domain), tier: verifying(&r), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&reservation.sign(&domain)), Founded::Reserved { .. }));
+    super::boundary::signs(k, &r);
     let anchor = k.anchor();
     k.treasury.genesis(verifying(&r), [3, 0, 0, 0], anchor);
     for (i, line) in [(0u8, &a), (1, &p), (2, &q)] {
@@ -131,6 +132,7 @@ fn admit_uplink_nets_child_whole_and_restores_consumption() {
     assert_eq!(k.ledgers.records.get(&p_at.key()).and_then(|r| r.children), Some(commitment), "P held by its children's commitment");
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "the ledger tree restores with the line");
+    super::boundary::calibrate(&mut booted);
     let again = fold(&q, 3, vec![(who(1), g(1))], Vec::new(), vec![part(&child, &at, vec![(who(1), g(1))], Vec::new(), 1, 1)]);
     assert_eq!(
         carry(&mut booted, again, &q),
@@ -182,6 +184,7 @@ fn admit_uplink_refuses_unproved_child() {
     assert!(matches!(k.hear_domain(&genesis.sign(&other)), Founded::Sealed { .. }));
     let reservation = Reservation { domain: verifying(&other), tier: verifying(&x), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&reservation.sign(&other)), Founded::Reserved { .. }));
+    super::boundary::signs(&mut k, &x);
     let foreign = fold(&x, 1, child.rows.clone(), child.declared.clone(), Vec::new());
     let Uplinked::Admitted { at: there, .. } = k.hear_uplink(&foreign.clone().sign(&x)) else { panic!("its own reserve's") };
     let netted = part(&foreign, &FoldAt::sealed(there), foreign.rows.clone(), foreign.declared.clone(), 1, 1);
@@ -331,7 +334,9 @@ fn admit_uplink_proves_cold_child_by_sealed_coordinates() {
     k.commit_fold([3u8; 64], &co_sign("w", proposal.root)).expect("the fold sealed");
     assert!(k.chain.node(&at.stamp).is_none(), "the carrying receipt is off the hot line");
     let mut booted = Court::new();
+    booted.bind_identity([0x5c; 32]);
     assert!(booted.restore(&k.snapshot()), "restores");
+    super::boundary::calibrate(&mut booted);
     assert!(booted.ledgers.folds.contains(&at.key()), "held by its coordinates across the restart");
     let whole = part(&child, &at, child.rows.clone(), child.declared.clone(), 1, 1);
     let parent = fold(&p, 2, vec![(who(1), g(6))], Vec::new(), vec![whole]);

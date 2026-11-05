@@ -41,6 +41,7 @@ fn founded() -> Court {
     assert!(matches!(k.hear_domain(&g.sign(&domain())), Founded::Sealed { .. }));
     let r = Reservation { domain: verifying(&domain()), tier: verifying(&reserve()), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&domain())), Founded::Reserved { .. }));
+    super::boundary::signs(&mut k, &reserve());
     let anchor = k.anchor();
     k.treasury.genesis(verifying(&reserve()), [10, 0, 0, 0], anchor);
     k

@@ -378,6 +378,9 @@ impl Court {
                         domain,
                     });
                 }
+                if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::ConversionOut, domain) {
+                    return Handed::Boundary(why);
+                }
                 // 78.139 — the reserve unit is the reserve's basket: none
                 // converted until it is stated.
                 if !self.basket_stated_for(&c.tier) {

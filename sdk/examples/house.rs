@@ -17,7 +17,12 @@
 //! 3. The clock — the court's head stamp (`ACT_LAWS` mode 4).
 //! 4. The domain — founded on the house's key, its one tier the same key
 //!    (`ACT_DOMAIN`): sealed, or founded already on a run before.
-//! 5. Conformance — `conformance::run(endpoint, key, &[Profile::Kernel])`:
+//! 5. The crossing — the tier designated the domain's sitting reserve, then
+//!    the reserve's fold stating a lawful transition sent through the
+//!    universal core tube (`ACT_UPLINK`): the hypha rebuilds it under the
+//!    universal laws and admits it, the reserve having signed every network
+//!    clause in step 2 (track 24 B3, B4).
+//! 6. Conformance — `conformance::run(endpoint, key, &[Profile::Kernel])`:
 //!    every MUST act of the kernel profile, checked by decoded exact values;
 //!    an act the hypha deferred is reported deferred, with its deficit.
 //!
@@ -25,14 +30,15 @@
 //! house reads it (`deferral::deferral_of`, `deferral::read_deferral`) and
 //! says so; the act is spoken again on a later run.
 //!
-//! Exit 0 where the house conforms; 1 where it does not or the hypha could
-//! not be reached; 2 on a usage refusal.
+//! Exit 0 where the house crossed and conforms; 1 where it does not or the
+//! hypha could not be reached; 2 on a usage refusal.
 
 use mycelium_sdk::conformance::{run, Profile};
 use mycelium_sdk::deferral::{deferral_of, read_deferral, Deferral};
 use mycelium_sdk::house::{
     decode_alignment_reply, decode_clock_reply, decode_concordance_reply, decode_signature_reply, encode_alignment_request, encode_clock_request,
-    encode_concordance_request, encode_signature_request, sign_concordance, Assent, ClauseReading, DomainGenesis, Founded,
+    encode_concordance_request, encode_signature_request, payload_hash, rotator, sign_concordance, sphere_at, carried_body, Assent, BodyMoments, BodyState,
+    ClauseReading, DomainGenesis, Founded, Reservation, Transition,
 };
 use mycelium_sdk::prelude::*;
 use mycelium_sdk::voice::hex32;
@@ -153,12 +159,86 @@ fn main() -> ExitCode {
             None => println!("domain: {e}"),
         },
     }
+    let crossed = reserve_and_cross(&session, &key);
 
     println!("\nconformance, kernel profile ({endpoint}):");
     let report = run(endpoint, &key, &[Profile::Kernel]);
     print!("{report}");
-    match report.conforms() {
+    match report.conforms() && crossed {
         true => ExitCode::SUCCESS,
         false => ExitCode::from(1),
+    }
+}
+
+/// The (3,4,5) turn carrying a unit sphere at `(1, 0, 0)`, heights 7 → 8:
+/// a transition lawful under every law of the register.
+fn lawful() -> Option<Transition> {
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let turn = rotator(&q(2), &q(1));
+    let body = BodyMoments { centre: vec![q(1), q(0), q(0)], mass: q(1), moments: vec![vec![q(1), q(0), q(0)], vec![q(0), q(0), q(0)], vec![q(0), q(0), q(0)]] };
+    let nucleus = sphere_at(&body.centre, &q(1));
+    let after = BodyState { nucleus: turn.sandwich(&nucleus), body: carried_body(&body, &turn)? };
+    Some(Transition { motion: turn, heights: (7, 8), bodies: vec![(BodyState { nucleus, body }, after)], hues: Default::default(), fluxes: Vec::new() })
+}
+
+/// TRACK 24 B3, B4 — THE HOUSE CROSSES ITS UNIVERSAL CORE TUBE: its one
+/// tier designated its sitting reserve where it is none yet, then a fold of
+/// the reserve stating a lawful transition, which the hypha rebuilds under
+/// the universal laws and admits only while the reserve converses on every
+/// network clause it signed above. Whether it crossed.
+fn reserve_and_cross(session: &Session, key: &mycelium_sdk::prelude::SigningKey) -> bool {
+    use mycelium_sdk::house::uplink::{decode_uplink_reply, encode_uplink, TierFold, Uplinked};
+    let domain = key.verifying_key().to_bytes();
+    if !matches!(session.reserve_reading(domain), Ok(r) if r.current == Some(domain)) {
+        let reservation = Reservation { domain, tier: domain, nonce: payload_hash(&domain) }.sign(key);
+        match session.reserve(&reservation) {
+            Ok(f) => println!("reserve: {f:?}"),
+            Err(e) => println!("reserve: {e}"),
+        }
+    }
+    let Some(transition) = lawful() else {
+        println!("crossing: the turn carries no body rigidly");
+        return false;
+    };
+    let fold = TierFold {
+        tier: domain,
+        prefix: payload_hash(b"mycelium house crossing"),
+        rows: Vec::new(),
+        declared: Vec::new(),
+        children: Vec::new(),
+        handoffs: Vec::new(),
+        transitions: vec![transition],
+    };
+    match session.speak(encode_uplink(&fold.sign(key))) {
+        Ok(reply) => match decode_uplink_reply(&reply) {
+            Some(Uplinked::Admitted { at, receipt }) => {
+                println!("crossing: a lawful transition through the universal core tube, admitted at height {}, receipt {}", at.h, hex32(&receipt));
+                true
+            }
+            Some(refused) => {
+                println!("crossing: refused, {refused:?}");
+                false
+            }
+            None => match read_deferral(&reply) {
+                Some(d) => {
+                    println!("crossing: {}", said(d));
+                    true
+                }
+                None => {
+                    println!("crossing: a reply this build does not read");
+                    false
+                }
+            },
+        },
+        Err(e) => match deferral_of(&e) {
+            Some(d) => {
+                println!("crossing: {}", said(d));
+                true
+            }
+            None => {
+                println!("crossing: {e}");
+                false
+            }
+        },
     }
 }

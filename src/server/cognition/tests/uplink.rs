@@ -35,6 +35,7 @@ fn reserved() -> Court {
     let mut k = founded();
     let r = Reservation { domain: domain_key().verifying_key().to_bytes(), tier: tier_key().verifying_key().to_bytes(), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&domain_key())), Founded::Reserved { .. }));
+    super::boundary::signs(&mut k, &tier_key());
     k
 }
 

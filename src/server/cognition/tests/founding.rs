@@ -51,6 +51,7 @@ fn found(k: &mut Court) {
     let r = Reservation { domain: vk(&domain_key()), tier: vk(&tier_key()), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&domain_key())), Founded::Reserved { .. }), "reserved");
     assert!(matches!(k.record_origin(&origin(9)), Founded::Originated { .. }), "originated");
+    super::boundary::signs(k, &tier_key());
 }
 
 /// The prefix a digest signs for one receipt at the fixture origin.

@@ -449,8 +449,10 @@ MU-CLIENT §4.13 (C1–C3).
 
 ## 5a. The containment topology and the boundary law
 
-**Status: Specified** (the operator's ruling of 2026-11-02; MU-RECURSION
-78.169; ROADMAP track 24). The parts already in the tree are marked
+**Status: Specified, partly Built** (the operator's ruling of 2026-11-02;
+MU-RECURSION 78.169; ROADMAP track 24: B0, B2, B3's fold transitions and
+B4's `NotThroughCore` and `NotSignatory` at the tube are built). The
+parts already in the tree are marked
 **Built** in each part's table. The Concordance amendments this section
 needs were proposed as draft 4 ([MU-CONCORDANCE §11](MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02))
 and approved by the maintainer on 2026-11-05, written into 4.1, 6.2a, §0
@@ -601,7 +603,7 @@ clause** (the operator's ruling of 2026-11-02):
 | A signature over a clause set, each clause enabled or vetoed, a vetoed network clause refused `NetworkVetoed` | **Built** (v0.4.0) | `clauses::signing::Choice`, `Assent` |
 | Each signing act recorded on the hypha's ledger, admitted or refused: the kernel's key, the domain it is the sitting reserve of, each clause's id, version and assent, or the refusal by name, at the TUniversal point it was read | **Built** (v0.4.0; mode 8) | `Court::hear_signing` (`server/cognition/signatory.rs`), `Cite::Signing` |
 | The alignment reading per kernel and clause version (converses, vetoed, collides with the residue, unread), derived from the recorded events; v0.3.0's signings served beside it as history | **Built** (v0.4.0; mode 9) | `Court::alignment`, `clauses::read_alignment`, `clauses::history` |
-| A domain's crossings refused until its reserve has signed every network clause of the version served (proposed `NotSignatory`) | **Specified**: the release after v0.3.0 (Concordance §0) | §5a.9, B2 |
+| A domain's crossings refused until its sitting reserve converses on every network clause of the register served, read from `Court::alignment` on each crossing: `Boundary::NotSignatory { act, domain, clause, reading }` (the reading unread, or colliding with its residue); a kernel clause the reserve vetoed bounds only the acts it governs, `Boundary::Bounded { act, domain, clause }` (`UniverseAct::governed_by`: the coordinate clause governs anchors and maps); an alignment not read whole answers `Boundary::Unaligned` (the crossing waits) | **Built** (v0.4.0, B4) | `server/cognition/boundary.rs` (`Court::signatory`), at `admit_uplink`, `ledger_on`, `map`, `mouth_act`, `convert`, `manifest`, `state`; claims `unsigned_reserve_crossing_refused_not_signatory`, `kernel_clause_veto_bounds_only_its_clause`, `key_own_act_unbound_by_the_tube`, `signed_reserve_lawful_crossing_admitted` |
 | A tube between two universes bounded by the clauses both enabled, each stopped act naming the vetoed clause | **Specified** | §5a.9, B2 |
 | An act read under its clauses as signed; a changed clause's divergence held and named until the new version is signed | **Specified** | §5a.9, B2 |
 
@@ -653,11 +655,12 @@ kernel, the version, the release and the mechanism), served beside the
 alignment reading. Each kernel signs the v0.4.0 register at its release
 candidate.
 
-**Next (B3, B4):** refusing a domain's crossings at the universal core
-tube until its sitting reserve's latest reading converses on every
-network clause of the version served (`NotSignatory` at the vertex), the
-tube bounded by the clauses both universes enabled, and the boundary
-reading under `ACT_OBSERVE`.
+**`NotSignatory` at the vertex (Built, B4).** Each universe act reads its
+domain's sitting reserve's alignment (one read per receipt held, on the
+act's stroke) before it seals; a key's own acts are never read. **Next:**
+the tube between two universes bounded by the clauses both enabled (a
+mouth's far-end acceptance is not yet read), an act read under a changed
+clause as signed, and the boundary reading under `ACT_OBSERVE`.
 
 ### 5a.5 The vertex: where a universe's cones join the hypha's
 
@@ -754,9 +757,9 @@ logs:
 1. **Sign the Concordance** (`ACT_LAWS` mode 8) clause by clause: read the
    clause register (mode 7), reconstruct each clause's fixtures, and
    present the readings signed: every network clause enabled, the others
-   enabled or vetoed (§5a.4); sign each new version forward. Once B3
-   applies `NotSignatory` at the tube, an unsigned kernel's crossings are
-   refused.
+   enabled or vetoed (§5a.4); sign each new version forward. An unsigned
+   kernel's crossings are refused `NotSignatory` at the tube (B4,
+   **Built**).
 2. **Found a domain and designate its reserve** (`ACT_DOMAIN`): the reserve
    is the universal core, the one key that faces the hypha. Any hypha of
    the mesh will do, and the domain's later acts may reach any hypha: with
@@ -767,7 +770,8 @@ logs:
 4. **State each step as a transition under the universal laws**: the bodies
    before and after, the motion as a versor, the fluxes, exactly. Ask
    `ACT_LAWS` mode 1 or 2 for the verdict before sending; the boundary
-   applies the same check at admission when B3 lands. Example: the peer
+   applies the same check at admission (B3, **Built** for a fold's
+   transitions, `TierFold::transitions`). Example: the peer
    kernel netstratum states its era-1 steps as such transitions
    (netstratum docs/113).
 5. **Keep its own physics inside.** Its shell, constants and compositions
@@ -784,7 +788,7 @@ logs:
 | **B1** | The act audit (every act kind that names a domain, classed as a key's own or a universe's); `NotReserve` renamed `NotThroughCore` on each object; line mouth offers and tier handoff offers carried in the reserve's act (after the ruling on 78.126 and 78.136) | `src/anastome/dialogue/{uplink,atlas,handoff,endowment,domain}.rs`; `src/server/cognition/{cite,atlas,convert,endowment,mouth,handoff,universe}.rs` | The rename: none (names only). Carried offers: a wire change to `ACT_HANDOFF` |
 | **B2** | Clause-by-clause signatures by adjudicated reading (each clause by its content, enabled or vetoed; the network clauses never vetoed; **Built**: the register, modes 7 and 8, `NotSignatory` at mode 8; each signing recorded on the ledger as `Cite::Signing` and the alignment reading on mode 9, §5a.4); `NotSignatory` at the boundary; a tube between two universes bounded by the clauses both enabled; an act read under its clauses as signed, each divergence held and named; the signatory and shared-clause readings | `src/physics/laws/clauses/`, `src/bin/mycelium-server/judge/laws.rs`, `src/server/cognition/{state,cite,handoff,mouth}.rs`, `src/server/cognition/persistence/layout.rs` | A wire change to `ACT_LAWS` mode 8 (a clause set); a layout change (a leaf of signed clause sets); `Uplinked` and the other refusal enums gain `NotSignatory`, and the tube's refusals name the vetoed clause |
 | **B3** (**Built**, the fold's transitions under L0) | The transitions a crossing states, verified under L0 and the core-shell forms at admission; `NotLawful` carrying the breaches; draft-4 laws as ruled | `src/anastome/dialogue/uplink.rs` (`TierFold`), `src/court/admission/reconstructed.rs`, `src/server/cognition/cite.rs` | A wire change: a fold carries its transitions section, and `Uplinked` gains `NotLawful` (tag 11) and `Unread` (tag 12). No layout change: the receipt cites the fold's coordinates as before |
-| **B4** | The boundary reading under `ACT_OBSERVE`; reconstruction events at the boundary with track 8 | `src/observe/`, `src/bin/mycelium-server/control.rs` | A wire addition (a reading) |
+| **B4** (**Built**: `NotThroughCore` and `NotSignatory` at the tube) | `NotThroughCore` naming the act and the domain; `NotSignatory` at the tube read from the alignment, a vetoed kernel clause bounding only what it governs; the boundary reading under `ACT_OBSERVE` and reconstruction events at the boundary with track 8 (open) | `src/court/admission/boundary.rs`, `src/server/cognition/boundary.rs`; `src/observe/`, `src/bin/mycelium-server/control.rs` for the reading | A wire change: each universe act's reply carries `Boundary` (§5a.5; MU-CONFORMANCE §2.2) |
 | **B5** | A sub-universe's acts through its parent's core, with 78.155 R-3 | `src/server/cognition/`, `chronometry::tuniversal` | With 78.155 R-3 |
 
 Claims each phase proves, by the algebra (MU-STANDARDS 3.1):

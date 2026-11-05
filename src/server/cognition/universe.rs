@@ -125,6 +125,9 @@ impl Court {
             }
             Err(false) => return Founded::Unsigned,
         };
+        if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Statement, st.domain) {
+            return Founded::Boundary(why);
+        }
         let mut u = self.universe_of(&st.domain);
         let body = match &st.stated {
             Stated::Geometry(g) => {

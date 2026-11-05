@@ -181,6 +181,9 @@ impl Court {
             }
             Err(false) => return refuse(GrantRefusal::Unsigned),
         };
+        if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Manifest, m.domain) {
+            return Granted::Boundary(why);
+        }
         if !nuclei_hold(&m.nuclei) {
             return refuse(GrantRefusal::Malformed);
         }

@@ -30,6 +30,21 @@
   (`NotReserve`) are retired. `HandoffRefusal::NotReserve` stays for a
   counterparty that is not a reserve, and `Founded::NotReserve` for a
   bond.
+- **`NotSignatory` at the tube (track 24 B4; Concordance §0):** each of
+  those acts crosses only while the domain's sitting reserve converses on
+  every network clause of the register served, read from the signing
+  events (`Court::alignment`) on the act's stroke, never a stored flag
+  (`Court::signatory`). Refused `Boundary::NotSignatory` (tag 1: the
+  clause and the reading, unread or colliding with the residue). A kernel
+  clause the reserve vetoed bounds only the acts it governs,
+  `Boundary::Bounded` (tag 2; the coordinate clause governs anchors and
+  maps); an alignment not read whole answers `Boundary::Unaligned` (tag
+  3). A key's own acts (a solve, a stake, a conversion in) are not read.
+  **A kernel must sign the register before its universe crosses.**
+- **SDK:** the KERNEL read signs again after its colliding signing and
+  checks every clause converses; the house example designates its reserve
+  and crosses with a fold stating a lawful transition, and exits 1 where
+  the crossing is refused.
 - **Not yet reconstructed under a law, listed:** anchors, maps, mouths,
   conversions out, manifests and statements state no transition; a motion
   stated as turns has no wire writing (track 25, X1); no crossing states a

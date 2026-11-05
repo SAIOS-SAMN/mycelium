@@ -50,6 +50,7 @@ fn founded() -> (Court, [u8; 32], [u8; 32]) {
         assert!(matches!(k.hear_domain(&g.sign(&key(d))), Founded::Sealed { .. }));
         let r = Reservation { domain: domain(d), tier: verifying(&reserve(d)), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&key(d))), Founded::Reserved { .. }));
+        super::boundary::signs(&mut k, &reserve(d));
     }
     let one = crate::transducer::element::identity_versor();
     let tube = Tube { mass: (1, 1), from_space: Geometry::Curved((1, 1)), to_space: Geometry::Curved((1, 1)), supersedes: None, core: false };

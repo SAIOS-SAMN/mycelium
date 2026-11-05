@@ -11,6 +11,7 @@
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::uplink::{Child, ChildNet, TierFold, Uplinked};
 use crate::physics::equilibrium::{carried_body, BodyMoments};
+use crate::physics::laws::clauses::{register, Choice, SignedClause, Signing};
 use crate::physics::laws::{BodyState, Breach, Law, Transition};
 use crate::server::cognition::Court;
 use crate::transducer::cga::{rotator, sphere_at, Mv};
@@ -39,9 +40,56 @@ fn line_key() -> SigningKey {
     SigningKey::from_bytes(&[11; 32])
 }
 
-/// The domain founded naming its reserve and a line, and the reserve
-/// designated.
+/// Every registered clause, each `vetoed` law vetoed and every other
+/// enabled with each fixture reached as the hypha reaches it.
+fn clauses(vetoed: &[&str]) -> Vec<SignedClause> {
+    register()
+        .expect("the register stands")
+        .into_iter()
+        .map(|r| {
+            let choice = match vetoed.contains(&r.clause.id.law.as_str()) {
+                true => Choice::Vetoed,
+                false => Choice::Enabled { reached: r.reached },
+            };
+            SignedClause { id: r.clause.id, fixtures: r.clause.fixtures, choice }
+        })
+        .collect()
+}
+
+/// THE CONCORDANCE SIGNED BY `key` (`ACT_LAWS` mode 8), every clause
+/// enabled and every fixture reached: the key converses on each clause of
+/// the register served. The fixture for every test whose universe crosses
+/// its universal core tube.
+///
+/// The court calibrated too ([`calibrate`]).
+pub(super) fn signs(k: &mut Court, key: &SigningKey) {
+    calibrate(k);
+    assert!(k.hear_signing(&Signing::sign(key, clauses(&[])).to_bytes()).is_ok(), "signed by reconstruction");
+}
+
+/// THE COURT CALIBRATED AS A HYPHA SEALS ITS OWN (`Physics::calibrated`):
+/// the tube reads the alignment one read per receipt the court holds, on
+/// one stroke of the court's metabolism, and a harness that never seals a
+/// calibration strokes only the minimal stroke. Calibrated, the reading is
+/// never cut short by the harness.
+pub(super) fn calibrate(k: &mut Court) {
+    use crate::physics::{Calibration, Memory, MemorySource, Physics};
+    let one = std::num::NonZeroU64::MIN;
+    let memory = std::num::NonZeroU64::new(1 << 24).expect("sixteen mebibytes");
+    k.physics = Physics::calibrated(&Calibration::of(Memory::of(memory, MemorySource::CgroupMax), one, one).expect("a hypha's calibration"));
+}
+
+/// The domain founded naming its reserve and a line, the reserve
+/// designated, and the Concordance signed by it.
 fn founded() -> Court {
+    let mut k = unsigned();
+    signs(&mut k, &reserve_key());
+    k
+}
+
+/// The domain founded and its reserve designated, the Concordance not
+/// signed.
+fn unsigned() -> Court {
     let mut k = Court::new();
     let mut tiers = vec![vk(&reserve_key()), vk(&line_key())];
     tiers.sort();
@@ -49,6 +97,7 @@ fn founded() -> Court {
     assert!(matches!(k.hear_domain(&genesis), Founded::Sealed { .. }), "founded");
     let r = Reservation { domain: vk(&domain_key()), tier: vk(&reserve_key()), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&domain_key())), Founded::Reserved { now: true, .. }), "reserved");
+    calibrate(&mut k);
     k
 }
 
@@ -184,4 +233,102 @@ fn lawful_crossing_admitted() {
     moved.fold.transitions = vec![Transition { heights: (7, 9), ..lawful() }];
     assert_eq!(k.hear_uplink(&moved), Uplinked::Unsigned, "the transitions are signed, written out");
     assert!(matches!(k.hear_uplink(&signed), Uplinked::Admitted { .. }), "lawful, admitted");
+}
+
+/// The register's network clause, by its content's name.
+fn network_clause() -> crate::physics::laws::clauses::ConcordanceClauseId {
+    use crate::physics::laws::clauses::Standing;
+    let held = register().expect("the register stands");
+    held.into_iter().find(|r| r.clause.standing == Standing::Network).expect("a network clause").clause.id
+}
+
+/// B4 — AN UNSIGNED RESERVE'S CROSSING IS REFUSED `NotSignatory`, naming
+/// the network clause and where the reserve stands on it, read from the
+/// ledger: unread before any signing; colliding, with the residue, after a
+/// signing that did not reach a fixture; and admitted once a signing reaches
+/// every fixture, the latest event read. Nothing seals while it is refused.
+#[test]
+fn unsigned_reserve_crossing_refused_not_signatory() {
+    use crate::court::admission::{Boundary, UniverseAct};
+    use crate::physics::laws::clauses::ClauseReading;
+    let mut k = unsigned();
+    let domain = vk(&domain_key());
+    let crossing = fold(&reserve_key(), 7, vec![lawful()]).sign(&reserve_key());
+    let head = k.chain.head_height();
+    let Uplinked::Boundary(Boundary::NotSignatory { act, domain: named, clause, reading }) = k.hear_uplink(&crossing) else { panic!("not signatory") };
+    assert_eq!((act, named, clause, *reading), (UniverseAct::Fold, domain, network_clause(), ClauseReading::Unread), "unread, named");
+    assert_eq!(k.chain.head_height(), head, "nothing sealed");
+    let mut wrong = clauses(&[]);
+    let Some(Choice::Enabled { reached }) = wrong.iter_mut().find(|c| c.id == network_clause()).map(|c| &mut c.choice) else { panic!("enabled") };
+    let first = reached[0].clone();
+    if let Some(last) = reached.iter_mut().rev().find(|o| **o != first) {
+        *last = first;
+    }
+    assert!(k.hear_signing(&Signing::sign(&reserve_key(), wrong).to_bytes()).is_err(), "a fixture not reached");
+    let refused = k.hear_uplink(&crossing);
+    assert!(
+        matches!(&refused, Uplinked::Boundary(Boundary::NotSignatory { reading, .. }) if matches!(**reading, ClauseReading::Collides { .. })),
+        "colliding, with its residue: {refused:?}"
+    );
+    signs(&mut k, &reserve_key());
+    assert!(matches!(k.hear_uplink(&crossing), Uplinked::Admitted { .. }), "the latest signing converses");
+}
+
+/// B4 — A KEY'S OWN ACT IS UNBOUND BY THE TUBE (6.2a, keys for a key's own
+/// acts): the unsigned domain's reserve key stakes μ of its own and is
+/// served, while the same key's fold, the universe's act, is refused
+/// `NotSignatory`. The test is whose act it is, never who signs it.
+#[test]
+fn key_own_act_unbound_by_the_tube() {
+    use crate::anastome::dialogue::wallet::StakeAct;
+    use crate::court::admission::Boundary;
+    let mut k = unsigned();
+    let anchor = k.anchor();
+    k.treasury.genesis(vk(&reserve_key()), [4, 0, 0, 0], anchor);
+    let stake = StakeAct { who: vk(&reserve_key()), unstake: false, mu: [2, 0, 0, 0].into(), nonce: [1; 32] }.sign(&reserve_key());
+    assert!(k.stake(&stake).is_ok(), "the key's own stake, served");
+    let refused = k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful()]).sign(&reserve_key()));
+    assert!(matches!(refused, Uplinked::Boundary(Boundary::NotSignatory { .. })), "the universe's fold, refused: {refused:?}");
+}
+
+/// B4 — A VETOED KERNEL CLAUSE BOUNDS ONLY ITS CLAUSE: the reserve enables
+/// every network clause and vetoes the kernel-standing coordinate clause.
+/// Its fold and its statement cross, governed by no vetoed clause; its
+/// anchor and its map, which state TUniversal coordinates, are refused
+/// `Bounded`, naming the clause. The tube itself stands.
+#[test]
+fn kernel_clause_veto_bounds_only_its_clause() {
+    use crate::anastome::dialogue::atlas::{LedgerEntry, Ledgered, MapAct, MapRecord, Mapped};
+    use crate::anastome::dialogue::universe::{Geometry, Stated, Statement};
+    use crate::court::admission::{Boundary, UniverseAct};
+    use crate::physics::laws::clauses::ConcordanceClauseId;
+    let mut k = unsigned();
+    let domain = vk(&domain_key());
+    assert!(k.hear_signing(&Signing::sign(&reserve_key(), clauses(&[forms::coordinate::LAW_ID])).to_bytes()).is_ok(), "a kernel clause vetoed");
+    assert!(matches!(k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful()]).sign(&reserve_key())), Uplinked::Admitted { .. }), "the fold crosses");
+    let statement = Statement { domain, stated: Stated::Geometry(Geometry::Curved((1, 1))) };
+    assert!(matches!(k.state(&statement.sign(&reserve_key())), Founded::Stated { .. }), "the statement crosses");
+    let coordinate = ConcordanceClauseId::of(forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION);
+    let bound = |act| Boundary::Bounded { act, domain, clause: coordinate.clone() };
+    let entry = LedgerEntry { domain, u: 1, commitment: [1; 32], events: [0; 32], point: fp(10), parent: [0; 32], applied: Vec::new(), nonce: [0; 32] };
+    assert_eq!(k.ledger(&entry.sign(&reserve_key()), Some(fp(10))), Ledgered::Boundary(bound(UniverseAct::Anchor)));
+    let map = MapAct { domain, point: fp(10), record: MapRecord::Mouth { place: ([3; 32], 0), freshness: 1 }, nonce: [1; 32] };
+    assert_eq!(k.map(&map.sign(&reserve_key()), Some(fp(10))), Mapped::Boundary(bound(UniverseAct::Map)));
+}
+
+/// B4 — A SIGNED RESERVE'S LAWFUL CROSSING IS ADMITTED: the reserve signs
+/// the register by reconstruction, then its fold stating a lawful
+/// transition, its statement and its anchor each cross the tube.
+#[test]
+fn signed_reserve_lawful_crossing_admitted() {
+    use crate::anastome::dialogue::atlas::{LedgerEntry, Ledgered};
+    use crate::anastome::dialogue::universe::{Geometry, Stated, Statement};
+    let mut k = founded();
+    let domain = vk(&domain_key());
+    assert!(matches!(k.hear_uplink(&fold(&reserve_key(), 7, vec![lawful()]).sign(&reserve_key())), Uplinked::Admitted { .. }), "the fold");
+    let statement = Statement { domain, stated: Stated::Geometry(Geometry::Curved((1, 1))) };
+    assert!(matches!(k.state(&statement.sign(&reserve_key())), Founded::Stated { .. }), "the statement");
+    let entry = LedgerEntry { domain, u: 1, commitment: [1; 32], events: [0; 32], point: fp(10), parent: [0; 32], applied: Vec::new(), nonce: [0; 32] };
+    let anchored = k.ledger(&entry.sign(&reserve_key()), Some(fp(10)));
+    assert!(!matches!(anchored, Ledgered::Boundary(_)), "the anchor reaches the court's own checks: {anchored:?}");
 }

@@ -532,6 +532,11 @@ impl Court {
         if self.reserve_of(&domain) != Some(f.fold.tier) {
             return Uplinked::Boundary(crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Fold, domain });
         }
+        // Concordance §0 — and only while its reserve converses on every
+        // network clause of the register served (`NotSignatory`).
+        if let Err(why) = self.signatory_now(crate::court::admission::UniverseAct::Fold, domain) {
+            return Uplinked::Boundary(why);
+        }
         // 78.125 — a fold over its tier's current head: a resend answered with
         // its original receipt, or a repeat refused; nothing sealed twice.
         if let Some(answer) = self.repeat_of(&f.fold, &domain) {

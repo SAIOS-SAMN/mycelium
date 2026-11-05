@@ -45,6 +45,7 @@ fn founded() -> Court {
         assert!(matches!(k.hear_domain(&g.sign(&domain(d))), Founded::Sealed { .. }));
         let r = Reservation { domain: verifying(&domain(d)), tier: verifying(&reserve(d)), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&domain(d))), Founded::Reserved { .. }));
+        super::boundary::signs(&mut k, &reserve(d));
     }
     k
 }
