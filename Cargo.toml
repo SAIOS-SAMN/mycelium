@@ -21,11 +21,19 @@ rust-version = "1.82"
 # MU-SENSING §7 — A SOURCE'S DECODER LIVES WITH ITS OWNER, OUTSIDE `src/`:
 # `sources/arc-agi` reads the ARC-AGI-2 corpus into the core's carriers. It
 # depends on the core, never the reverse (ROADMAP track 26, S1).
+#
+# THE EXACT ALGEBRA STANDS BELOW BOTH THE FORMS AND THE LIBRARY: `algebra/`
+# holds the multivectors of `Cl(p, q)` over ℚ, so a law form states its
+# product without a cycle (Concordance §12, draft 5). The library
+# re-exports it at `transducer::cga`.
 [workspace]
-members = ["forms", "sdk", "sources/arc-agi"]
+members = ["algebra", "forms", "sdk", "sources/arc-agi"]
 exclude = ["xtask"]
 
 [dependencies]
+# The exact algebra `Cl(p, q)` over ℚ (`algebra/`), re-exported at
+# `transducer::cga`.
+algebra = { path = "algebra" }
 # Current kernel.rs dependency graph
 # Core arithmetic — exact rational over Q
 num-rational = { version = "0.4", features = ["serde"] }

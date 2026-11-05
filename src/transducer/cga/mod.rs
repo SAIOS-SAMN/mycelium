@@ -5,9 +5,15 @@
 //! between two scene states exists. The product is written once for every
 //! `n` and every signature `Cl(p, q)`, and a value carries the `n` it
 //! belongs to and the mask of its negative generators (`e₋` alone in
-//! `Cl(n+1, 1)`; any other set in a [`Clifford`]).
+//! `Cl(n+1, 1)`; any other set in a [`Clifford`]). The value, its product
+//! and its writing are the exact algebra's (the `algebra` crate), re-exported
+//! here; a value's conjugacy class, filed under the library's coordinates,
+//! is [`Conjugacy`].
+
+pub(crate) use algebra::multivector;
 
 mod commutator;
+mod conjugacy;
 mod constructors;
 mod dual;
 mod embedding;
@@ -24,11 +30,9 @@ mod mirrors;
 mod modes;
 mod motion;
 mod motor;
-mod multivector;
 mod period;
 mod perturbation;
 mod planes;
-mod signature;
 mod spin;
 mod twist;
 
@@ -45,6 +49,7 @@ pub use flow::{FlowKind, FlowPoint};
 pub use gram::{gram_form, pair_regime, read_gram, signature, vector_rank, GramReading, PairRegime};
 pub use group::{dilator, is_versor, projective_ratio, reflector, weight_of};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_compartment, hyperboloid_pole};
+pub use conjugacy::Conjugacy;
 pub use sphere::{sphere_base_point, sphere_pole};
 pub use linear::{ray_of, LinearFunction};
 pub use mirrors::{base_mirror, mirrors_between, sphere_centre, MirrorReading};
@@ -53,7 +58,7 @@ pub use motion::{action_det, action_of, charged, modes_need, motion_modes, perio
 pub use motor::{Motor, MotorAction, VectorReading};
 pub use multivector::{axes, base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP, MAX_N};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
-pub use signature::{Clifford, SignatureRefusal};
+pub use algebra::{Clifford, SignatureRefusal};
 pub use encounter::{encounter, Encounter, Unencountered};
 pub use perturbation::{lift_drag, Alignment, LiftDrag};
 pub use twist::twist_about;

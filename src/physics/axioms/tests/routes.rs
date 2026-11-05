@@ -2,7 +2,7 @@
 // conjectures refused, never asserted.
 
 use crate::network::nerve::coord::BivectorKind;
-use crate::transducer::cga::{self, Mv, E1, E2, E3, EM};
+use crate::transducer::cga::{self, Conjugacy, Mv, E1, E2, E3, EM};
 use num_rational::BigRational;
 
 fn q(n: i64, d: i64) -> BigRational {

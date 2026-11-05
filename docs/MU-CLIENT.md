@@ -297,7 +297,7 @@ never the place two nodes meet.
 The mind's field is built of one exact mathematics, the same the hypha runs:
 
 - **The algebra.** `Cl(n+1,1)(ℚ)`, `n` read at intake (71, A.15), exact over
-  ℚ (law 1), carried sparse up to `MAX_N` (`cga/multivector.rs`). A
+  ℚ (law 1), carried sparse up to `MAX_N` (`algebra/src/multivector.rs`). A
   dimension is paid for by a closure (A.6) and read as the grade of a span
   (`core::span`, A18) or a bracket-closed basis (`cech::lie_close`, 78.11).
 - **The register — the star.** The axioms the physics states, each with its
@@ -326,7 +326,7 @@ The mind's field is built of one exact mathematics, the same the hypha runs:
 
 | master | the operation | site |
 |---|---|---|
-| M1 vertex identity | a word, rotor or versor reduced to one canonical form; equality projective, by action | `alphabet/{word,rotor}`, `cga/multivector.rs`, `cga/group.rs` |
+| M1 vertex identity | a word, rotor or versor reduced to one canonical form; equality projective, by action | `alphabet/{word,rotor}`, `algebra/src/{multivector,ray}.rs`, `cga/group.rs` |
 | M2 address | the address IS the form written out; read back from it | `transducer/address.rs`, `sentence/chart.rs` |
 | M4 chart coordinates | the invariant that places a body, connection, sentence or class | `transducer/stalk/` |
 | M6 comprehension | does the mind already speak an incoming word: factor it through what it holds (A12), else emit exactly what is new | `vocabulary/comprehend.rs`, `transducer/factor.rs`, `cech/orbit_algebra.rs` |

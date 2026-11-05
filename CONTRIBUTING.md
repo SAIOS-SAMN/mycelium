@@ -147,7 +147,8 @@ essentials:
 failure in one does not hide the others:
 
 1. **The reading bound** (`xtask/lint/length.rs`): no source file under
-   `src/`, `forms/src/`, `sdk/src/` or `xtask/` longer than 2500 lines.
+   `src/`, `algebra/src/`, `forms/src/`, `sdk/src/` or `xtask/` longer
+   than 2500 lines.
 2. **The Euclidean check** (`xtask/lint/euclidean.rs`): refuses grid
    indexing shapes named in code (Morton and space-filling curves, bit
    interleaving, bounding boxes, subdivision trees, spatial hashes,
