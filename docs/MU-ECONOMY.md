@@ -126,6 +126,12 @@ accepts a reduction by closure, never by an order on μ (MU-RECURSION
 12.6). If lanes converted, a lane with no verified work could carry value
 minted on another, and §6 would no longer say what the mesh did.
 
+**Deliberate losses.** The earlier magnitude tuple ‖Δ‖ = (Vol_TOUCH,
+|supp|, μ⃗), ordered by dominance, was retired by MU-RECURSION 12.6 as
+amended (closure certifies, never descent on an order), and 78.93(2)'s
+flat per-lane accounts are superseded: an account is a reading of the
+coordinate (§2.2, §6), never a stored balance per lane.
+
 ## 2. Holdings
 
 ### 2.1 Lines, cones and height
@@ -181,7 +187,9 @@ origin / h : S:G:T:H : K
   conversion at the universal core tube (§10.2).
 - **h:** the bell of the holding's last advance, the height of the event
   that last moved it. A holding has no rate: between events it stands
-  still, and it moves only by an event.
+  still, and it moves only by an event. A rate belongs to a motion (its
+  advance per bell on each lane, 78.173's `Rates`), never to a holding
+  (§3.3).
 - **S, G, T, H:** each lane's cumulative advance by that lane's motions,
   held as a vector of exact components, the modes of §1, never one number
   per lane. These are the base lanes; a lane opened by a ruled act between
@@ -205,8 +213,9 @@ exact components are the coordinate's v3, which is still to be stated
 | held | a payer, against a listing or a lease | μ set aside from a balance: a funded escrow, still value (§3.1) |
 | claim | a listing | a pending advance: not yet value, and counted nowhere (§3.1) |
 
-The supply is not a holding. It is a reading (§6). How a role is written
-in the coordinate is §12 item 2.
+The supply is not a holding. It is a reading (§6). A holding is a point,
+estates nest as origins and a region is a reading (ruled 2026-11-05): a
+role is an enclosure in the holding's origin (§12 item 2).
 
 ### 2.4 What moves a holding
 
@@ -302,6 +311,14 @@ paces pressure and buys room; it never scales a mint, so the reward has no
 variance and nothing to pool. The metabolism throttles the **rate** at
 which discharge can be presented and verified: the reserve paces strokes,
 bond buys room, and room and closure gate admission (MU-RECURSION 23.8).
+
+**The rate is per lane.** Each lane is paced by its own reading (its
+reserve, its strain `y_l`, its pressure), never by one scalar rate across
+lanes: a lane under pressure slows its own presentations and leaves the
+others' pace unchanged. A rate belongs to the motions presented and
+verified, each advancing its lanes per bell; a holding has no rate (§2.2)
+and changes only by the events those motions cause.
+
 An earlier emission design (`emission.v1`) reached the same shape and then
 chose a curve of five free constants; nothing here is chosen.
 
@@ -315,9 +332,13 @@ it reaches the same point, and its advance is minted once.
   issuance of MU-RECURSION 47.4, naming both receipts, and slashes no
   bond. A key's bond burns only where one key signed both at one place
   `K.i` (47.4; §4).
-- **Concurrent claims are held.** Two claims of one point, neither in the
-  other's past cone, are held and resolved by content (45.3). How the one
-  advance then divides is §12 item 7.
+- **Concurrent claims** (ruled 2026-11-05: one closure, one point). A
+  concurrent second claim of one point is burned as an equivocation of
+  the advance, as a second mint is. Claims of one point that the cones
+  leave unordered, neither in the other's past cone, are held as a
+  residue naming both and resolved by content (45.3), never divided. The
+  advance is never split into equal shares; F2a's equal shares are
+  retired (§11.4).
 - This answers §11.3 F2 and "one closure across courts" (§11.4 F2b): no
   per-court registry decides it, because the point is the same at every
   court.
@@ -343,7 +364,10 @@ being outvoted, because nothing is voted.
 Proven equivocation, two signed receipts from one key at one place `K.i` with
 different content (MU-RECURSION 47.4), forfeits the signer's whole bond on
 all four lanes, as one burn naming the proof. Nothing is redistributed and
-nothing is run again. A second organ for an install or a release holds
+nothing is run again. A key here is the signer's group key or a key its
+manifest scopes to a chart or a lane (MU-RECURSION 46.2), read against
+the manifest active at the receipt; a compromise of a scoped key is
+confined to the chart or lane the manifest names. A second organ for an install or a release holds
 bond outside the home's delegation closure and room covering the claim on
 every occupied lane (47.3): identities are free, room is not.
 
@@ -468,7 +492,10 @@ Both sides are readings over the cones the hypha holds at `h`: the union
 of the past cones of the events final at `h`, a cut through the lines and
 never an order on the lines. Neither side is stored or tallied (Concordance
 1.13). Since every event moves modes exactly, both equations hold mode by
-mode, and so per lane.
+mode, and so per lane. They are the economy's reading of the kinetic
+ledger's conservation (MU-RECURSION 78.42): value starts only at a
+closure, moves only by transfer, exists resident only as held value or
+bond, and stops only at named doors, each lane balancing exactly.
 - **A claim is not in the second sum.** It is a pending advance (§3.1). A
   ruling turns it into a mint, which enters both sums together; a
   revocation leaves nothing.
@@ -727,9 +754,10 @@ rule in the clear (`encode_solve_with_rule`), and a paid rule is docketed
 and offered (`enter_offered`). Today the registry is each court's own, so
 a copy can be paid at a court where the task reads open. The model answers
 the cross-court part: one closure is one point, and a second mint of it is
-burned (§3.4). A copy made concurrent with the first closure is still
-held as a concurrent claim (§12 item 7); F2a orders such claims by the
-commitments made before them.
+burned (§3.4). A copy made concurrent with the first closure is burned
+as an equivocation of the advance, or held as a residue while the cones
+leave the two unordered (§3.4); F2a orders claims by the commitments made
+before them.
 
 **F3. The frontier is not served.** The residue per lane exists inside the
 court, but no typed reading publishes it.
@@ -751,7 +779,10 @@ distribute across voices per lane.
 - Among verified solves of one task, the advance goes to the voice whose
   commitment is causally earliest (45.3); a reveal without a commitment
   ranks after every committed one. Concurrent commitments to one rule are
-  one closure, paid in equal lane-wise shares.
+  one closure and one point: a concurrent second claim is burned as an
+  equivocation and unordered ones are held as a residue (§3.4). The
+  equal lane-wise shares this item first stated are retired (ruled
+  2026-11-05).
 - A commitment lapses at the end of its challenge window (MU-DERIVATIONS
   D1.1) and draws room on its task's lane.
 - Tests: `solve_commit_reveal_pays_earliest_commitment`,
@@ -792,9 +823,13 @@ for its lessee for one window.
    rational per lane (78.173 §3). The coordinate whose lanes are vectors
    of exact components (v3) is not yet stated, nor how its advance,
    merger and fission read on modes.
-2. **Where a role is written.** Whether balance, bond, held value and a
-   claim are enclosures in the holding's origin, or a field beside the
-   coordinate.
+2. **Where a role is written.** *Closed (ruled 2026-11-05: a holding is a
+   point).* A holding is one point, its coordinate. Estates nest as
+   origins: a holder's estate, and a role within it (balance, bond, held
+   value), is an enclosure written in the holding's origin, never a field
+   beside the coordinate. A region (all of one holder's bonds, the supply)
+   is a reading over points, never a holding. A claim is no holding at all
+   (§3.1).
 3. **What `K` reads for a holding.** *Closed (ruled 2026-11-05: `K`
    means closed orbits everywhere).* A holding's `K` is LAW-COORDINATE's,
    the whole turns of H (`⌊|L_H|⌋`); a line's receipt index, which this
@@ -809,9 +844,11 @@ for its lessee for one window.
    mind's receipt, so the two orbits' cones are not disjoint at the well.
    Whether that instance is a convergence, or a POUW with a cited
    generator, is not ruled.
-7. **Concurrent claims of one point.** F2a pays concurrent commitments to
-   one rule in equal shares; F2b and MU-RECURSION 47.4 burn the second
-   mint. Under one point and one advance, one rule is needed.
+7. **Concurrent claims of one point.** *Closed (ruled 2026-11-05: one
+   closure, one point).* A concurrent second claim is burned as an
+   equivocation, as F2b and MU-RECURSION 47.4 burn a second mint; claims
+   the cones leave unordered are held as a residue; F2a's equal shares are
+   retired (§3.4).
 8. **The ask under modes.** A demand is a residue, which has no motion yet,
    so its ask has no modes; 78.149 (b)'s lane-wise cap of a payment by the
    ask needs a stated form.

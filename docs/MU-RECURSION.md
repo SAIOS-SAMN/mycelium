@@ -14611,6 +14611,10 @@ the intelligence is placed where it can be held to account.
    that cites each verdict it derives from by its stamp. Its flatness is
    a PROJECTION of the curved record, never a replacement (checklist (m)):
    every entry carries the coordinates of the verdict it projects.
+   *(Superseded 2026-11-05 by MU-ECONOMY's model: there are no flat
+   per-lane accounts; an account is a reading of the holding's coordinate
+   on the multi-dimensional ledger, never a stored balance (MU-ECONOMY
+   §1, §2.2, §6).)*
 3. **The financial mind bridges.** It is an entity of its own (one client,
    one mind, one voice, never cognition in a server) whose faculty is
    economic comprehension: it reads verdicts and composes SETTLEMENTS onto
@@ -15426,6 +15430,8 @@ Code: `src/anastome/dialogue/domain.rs`, `src/server/cognition/convert.rs`; prov
 ### 78.133 Per-unit and split tolls on a wormhole
 
 The ancients tax passage, and a share may go to the ancients' progenitor lines. A mouth offered as kind 11 carries `Tariff { rate_s, rate_h, split }` (kind 7's flat toll stands as it was); a wormhole carries S and H only, so each pays on its own lane: `⌊rate_s · Σ|out S|⌋` μ-S for mass and `⌊rate_h · Σ|out H|⌋` μ-H for information, G and T never charged, the remainder never rounded up against the traveller. The split (recipients ascending, each once, shares summing to exactly one) gives every recipient but the keeper its `⌊share · charge⌋` and the keeper the rest, so each lane's parts sum to its charge exactly; recipients are the keeper and the tier keys its own domain's genesis names (`NotALine` otherwise), and the tariff is in the mouth's id (a new split is a new mouth; a flat toll beside it is `Untariffed::Flat`). The charge is escrowed from the traveller at the traverse act (`HolderShort` refuses, never debits), split and HELD for `W` from acceptance (`TollHeld`); if the traversal's OUT-side fold is reversed every part returns to the traveller (`unwind_tolls`), otherwise once the window closes and that fold reads final every part is paid together (`release_split`) at the traverse act's stamp and receipt. The line-head read carries the μ held toward a tier and the finality read whether a toll is held on the fold.
+
+*(Amended 2026-11-05, Concordance 5.4: on H the toll is the exact degrees the motion traversed, per named plane (its generator), with no floor, and holonomy is never priced. The `⌊rate_h · Σ|out H|⌋` charge above is the built code's, to be changed with it.)*
 
 Code: `src/anastome/dialogue/handoff.rs` (`Tariff`), `src/server/cognition/domain_passage.rs` (`unwind_tolls`), `src/economy/pay.rs` (`release_split`), `src/anastome/dialogue/challenge.rs` (`LineHead`, `FinalityReading`).
 

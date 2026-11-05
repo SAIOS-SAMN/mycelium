@@ -1504,6 +1504,10 @@ connection tax: a universe's dissipation, per lane, paid from its reserve to the
 POUW is paid first from the recycled pool; only what the pool cannot cover is minted
 ```
 
+The tariff line is the built code's. As ruled 2026-11-05 (Concordance
+5.4), the H part is the exact degrees the motion traversed, per named
+plane (its generator), never floored, and holonomy is never priced.
+
 Gas is measured by the route, lane by lane: S the spatial span (geometrized
 Mpc), G the value terms of the mapping, T the TUniversal distance between
 final points, H the information carried. The fee is a transfer to the

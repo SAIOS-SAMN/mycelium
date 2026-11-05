@@ -26,5 +26,17 @@
   coordinate v3 change), and lanes open beyond S, G, T and H by a ruled
   act agreed between kernels (v3's direction). MU-ECONOMY §1, §2.2 and
   the GLOSSARY carry the same.
+- **Economy rulings.** MU-ECONOMY records its deliberate losses (the
+  magnitude tuple ‖Δ‖ retired by MU-RECURSION 12.6; 78.93(2)'s flat
+  per-lane accounts superseded, an account being a reading of the
+  coordinate, and 78.93(2) is marked superseded). A holding is a point,
+  estates nest as origins and a region is a reading (§12 item 2 closed).
+  One closure, one point: a concurrent second claim is burned as
+  equivocation, unordered claims are held as a residue, F2a's equal
+  shares are retired (§12 item 7 closed). The rate is per lane and
+  belongs to motions, never to a holding (§3.3, §2.2). §6 cites 78.42 and
+  §4 cites 46.2. Concordance 5.4 pays the H lane the exact degrees the
+  motion traversed, per named plane, with no floor, holonomy never priced
+  (ruled 2026-11-05); 78.133 and MU-EQUATIONS §6.12 are annotated.
 - **Network contract:** none. No wire, layout, law version or clause text
   changes.
