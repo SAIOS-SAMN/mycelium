@@ -130,7 +130,9 @@ impl SectionTurns {
         let plane = crate::transducer::perspective::family_plane(n)?;
         let count = q(self.sites.len());
         let m = self.moments(n, plane);
-        let (ixx, iyy, ixy) = (m.first()?.first()?, m.get(1)?.get(1)?, m.first()?.get(1)?);
+        // The plane's two phases, in the plane's order.
+        let [along, across] = m.as_slice() else { return None };
+        let ([ixx, ixy], [_, iyy]) = (along.as_slice(), across.as_slice()) else { return None };
         let tr = ixx + iyy;
         let det = ixx * iyy - ixy * ixy;
         // The trace on every axis of the base: the plane's two, and each
@@ -151,7 +153,8 @@ impl SectionTurns {
                 false => &det / (&tr * &tr),
             },
             spread: trace / (&count * &count),
-            gauge: vec![&count / &count],
+            // One hue covers the whole section: its fraction is the whole.
+            gauge: vec![<Q as num_traits::One>::one()],
         };
         Some(heard.axes())
     }
