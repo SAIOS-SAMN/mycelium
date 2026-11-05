@@ -1,4 +1,4 @@
-### What crosses the universal core tube is rebuilt under the universal laws, and refused by the law it breaks (track 24 B3; Concordance 4.1)
+### What crosses the universal core tube is rebuilt under the universal laws and reaches the hypha only through its core (track 24 B3, B4; Concordance 4.1, 6.2a)
 - **Network contract (v0.4.0's break):**
   - **Wire:** `ACT_UPLINK`'s fold gains a transitions section after its
     handoff sides, `[count][transition …]`, each as `ACT_LAWS` mode 1
@@ -17,6 +17,19 @@
   line it carries, under L0 at `LAW_VERSION` (`verify_sized`, the verifier
   of mode 1). The fold names no law, so none is admitted on a declared
   name.
+- **`NotThroughCore` (track 24 B4):** a universe's act reaching the hypha
+  other than from its sitting reserve (a fold, an anchor, a map, a core
+  tube offered, a conversion out, a manifest, a statement) is refused
+  `court::admission::Boundary::NotThroughCore`, naming the act
+  (`UniverseAct`) and the domain. A manifest or a statement another key
+  of the domain signed reads `NotThroughCore` where it read `Unsigned`; a
+  signature by no key of the domain stays `Unsigned`. Wire: `Uplinked`
+  code 13, `Ledgered`, `Mapped`, `Granted` and `Handed` `[2]`, `Founded`
+  21 carry the boundary's refusal (`[tag][act][domain 32]…`); the codes
+  `Uplinked` 9, `LedgerRefusal` 1, `MapRefusal` 1 and `GrantRefusal` 3
+  (`NotReserve`) are retired. `HandoffRefusal::NotReserve` stays for a
+  counterparty that is not a reserve, and `Founded::NotReserve` for a
+  bond.
 - **Not yet reconstructed under a law, listed:** anchors, maps, mouths,
   conversions out, manifests and statements state no transition; a motion
   stated as turns has no wire writing (track 25, X1); no crossing states a

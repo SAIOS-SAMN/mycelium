@@ -113,10 +113,18 @@ impl Court {
         if self.domains.get(&st.domain).is_none() {
             return Founded::NotFounded;
         }
-        let Some(reserve) = self.reserve_of(&st.domain) else { return Founded::NotReserve };
-        if !crate::court::identity::verify(&reserve, &st.signed_bytes(), &s.sig) {
-            return Founded::Unsigned;
-        }
+        // Track 24 B4 — only from the sitting reserve: another key of the
+        // domain, or a domain with no reserve, is `NotThroughCore`.
+        let reserve = match self.reserve_signed(&st.domain, &st.signed_bytes(), &s.sig) {
+            Ok(r) => r,
+            Err(true) => {
+                return Founded::Boundary(crate::court::admission::Boundary::NotThroughCore {
+                    act: crate::court::admission::UniverseAct::Statement,
+                    domain: st.domain,
+                })
+            }
+            Err(false) => return Founded::Unsigned,
+        };
         let mut u = self.universe_of(&st.domain);
         let body = match &st.stated {
             Stated::Geometry(g) => {

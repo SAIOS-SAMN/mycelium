@@ -87,7 +87,7 @@ fn uplink_fold_round_trips_with_answers() {
         Uplinked::ChildRefused { index: 0, why: ChildRefusal::Broken },
         Uplinked::ChildRefused { index: 0, why: ChildRefusal::Repeated },
         Uplinked::Repeated,
-        Uplinked::NotReserve,
+        Uplinked::Boundary(crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Fold, domain: [3u8; 32] }),
     ] {
         assert_eq!(decode_uplink_reply(&encode_uplink_reply(&u)), Some(u.clone()), "{u:?}");
     }

@@ -674,22 +674,27 @@ or act from a galactic core or a world, signed by a key that is not the
 reserve's and not carried in the reserve's act) is not an event of that
 universe's cone at the hypha: no past cone through the vertex places it
 there. It is refused by name, and the boundary's one name for that
-refusal is **`NotThroughCore`** (proposed). The refusal is derived from
-the cone structure, not from a ruling on which route the act took.
+refusal is **`NotThroughCore`** (**Built**, v0.4.0, track 24 B4). The
+refusal is derived from the cone structure, not from a ruling on which
+route the act took.
 
-Much of this is in the code today, under each object's own `NotReserve`:
+Each refusal names the act and the domain
+(`court::admission::Boundary::NotThroughCore { act, domain }`, the act a
+`UniverseAct`), carried by each act's reply as its `Boundary` answer; the
+per-object `NotReserve` it replaced at these sites is retired:
 
-| A universe's act | Admitted from | Refusal today | Status |
+| A universe's act | Admitted from | Refusal | Status |
 |---|---|---|---|
-| A tier's fold (78.119, 78.138) | The sitting reserve | `Uplinked::NotReserve`; `Unbound` for a key no genesis names | **Built** |
+| A tier's fold (78.119, 78.138) | The sitting reserve | `Uplinked::Boundary(NotThroughCore { Fold, domain })`; `Unbound` for a key no genesis names | **Built** |
 | A line's fold | Carried inline in the reserve's fold, under the line's own signature | `ChildRefusal` (`Unsigned`, `ForeignDomain`, `Unbonded`, `Mismatched`, `Repeated`) | **Built** |
-| A chronometric anchor (78.154) | The sitting reserve | `LedgerRefusal::NotReserve` | **Built** |
-| A map of mouth coordinates (78.154) | The sitting reserve | `MapRefusal::NotReserve` | **Built** |
-| A conversion out (78.127) | The reserve tier | `HandoffRefusal::NotReserve` | **Built** |
-| A manifest (78.155b) | The sitting reserve | `GrantRefusal::NotReserve` | **Built** |
-| A statement of the universe (78.139) | The sitting reserve | `Founded::NotReserve` | **Built** |
+| A chronometric anchor (78.154) | The sitting reserve | `Ledgered::Boundary(NotThroughCore { Anchor, domain })` where another key of the domain signed or it has no reserve | **Built** |
+| A map of mouth coordinates (78.154) | The sitting reserve | `Mapped::Boundary(NotThroughCore { Map, domain })` | **Built** |
+| A conversion out (78.127) | The sitting reserve | `Handed::Boundary(NotThroughCore { ConversionOut, domain })` | **Built** |
+| A manifest (78.155b) | The sitting reserve | `Granted::Boundary(NotThroughCore { Manifest, domain })` where another key of the domain signed or it has no reserve | **Built** |
+| A statement of the universe (78.139) | The sitting reserve | `Founded::Boundary(NotThroughCore { Statement, domain })` where another key of the domain signed or it has no reserve | **Built** |
+| A core tube offered (78.139) | The sitting reserve | `Handed::Boundary(NotThroughCore { Mouth, domain })` | **Built** |
 | A house's seat posts (78.145) | The sitting reserve | `NotTheHouse` | **Built** |
-| A mouth's far end accepted (78.136) | That domain's reserve | `HandoffRefusal::NotReserve` | **Built** |
+| A mouth's far end accepted (78.136) | That domain's reserve | `HandoffRefusal::NotReserve` (a counterparty that is not a reserve, kept) | **Built** |
 | A mouth offered by a builder line (78.136) | Any tier of the domain, today | none: the line reaches the hypha directly | **Specified**: carried in the reserve's act |
 | A handoff offer or traversal (78.126) | Any tier of the domain, today (`NotTheTier` checks only the signer) | none at the offer; its sides are consumed through the reserve's fold | **Specified**: carried in the reserve's act |
 | A sub-universe's act (78.155) | Its parent's universal core | none: no sub-court yet | **Specified** with 78.155 R-3 |
@@ -700,9 +705,11 @@ are reconstructed at each hypha from the founding receipts it holds, so
 `Unbound` names a key that no genesis on the signed chain names. It never
 names a domain founded at another hypha.
 
-Under the boundary law the `NotReserve` variants are instances of one
-refusal and take its name, `NotThroughCore` (names only, byte values
-unchanged), so the boundary reads one name on every object. A line's
+Under the boundary law the `NotReserve` variants were instances of one
+refusal and took its name, `NotThroughCore`, so the boundary reads one
+name on every object (**Built**: the replies carry it under new codes
+inside v0.4.0's break, naming the act and the domain; claim
+`universe_act_off_the_core_refused_not_through_core`). A line's
 mouth offer and a tier's handoff offer or traversal become acts carried in
 the reserve's signed act, under the line's own signature, as a line's fold
 already is; that amends 78.126 and 78.136 forward and is put to the

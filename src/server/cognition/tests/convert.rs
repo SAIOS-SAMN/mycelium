@@ -118,7 +118,9 @@ fn convert_out_pays_from_reserve_never_mints() {
     assert_eq!(refused(&mut k, out(10, (1, 2), 1), &x()), HandoffRefusal::NoBasket, "78.139: no conversion before the reserve's basket");
     basket(&mut k);
     assert_eq!(refused(&mut k, out(10, (1, 0), 1), &x()), HandoffRefusal::Inexact, "a rate over zero is no rate");
-    assert_eq!(refused(&mut k, ConvertOut { tier: verifying(&x2()), ..out(10, (1, 2), 1) }, &x2()), HandoffRefusal::NotReserve);
+    let by_line = k.handoff(&Handoff::ConvertOut(Box::new(ConvertOut { tier: verifying(&x2()), ..out(10, (1, 2), 1) })).sign(&x2()));
+    let off_core = crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::ConversionOut, domain: verifying(&domain()) };
+    assert_eq!(by_line, Handed::Boundary(off_core), "only the sitting reserve converts out");
     assert_eq!(refused(&mut k, out(20, (1, 1), 1), &x()), HandoffRefusal::ReserveShort, "a rate never mints μ");
     let supply = k.treasury.balance_mu(&verifying(&x())).n()[0] + k.treasury.balance_mu(&verifying(&holder())).n()[0];
     let first = k.handoff(&Handoff::ConvertOut(Box::new(out(10, (1, 2), 1))).sign(&x()));

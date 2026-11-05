@@ -43,7 +43,8 @@ fn reserved() -> Court {
 #[test]
 fn admit_uplink_refuses_tier_not_reserve() {
     let key = tier_key();
-    assert_eq!(founded().hear_uplink(&trade(&key).sign(&key)), Uplinked::NotReserve);
+    let off_core = crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Fold, domain: domain_key().verifying_key().to_bytes() };
+    assert_eq!(founded().hear_uplink(&trade(&key).sign(&key)), Uplinked::Boundary(off_core));
     assert!(matches!(reserved().hear_uplink(&trade(&key).sign(&key)), Uplinked::Admitted { .. }));
 }
 

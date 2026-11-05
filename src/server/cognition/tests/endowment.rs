@@ -113,7 +113,9 @@ fn manifest_refuses_unsigned_malformed_or_short_grant() {
     let mut unoriginated = universe(false);
     assert_eq!(unoriginated.manifest(&signed(manifest(1), RESERVE)), Granted::Refused(GrantRefusal::NotAUniverse));
     let mut k = universe(true);
-    assert_eq!(k.manifest(&signed(manifest(1), DOMAIN)), Granted::Refused(GrantRefusal::Unsigned), "the domain key is not the sitting reserve");
+    let off_core = crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Manifest, domain: verifying(&key(DOMAIN)) };
+    assert_eq!(k.manifest(&signed(manifest(1), DOMAIN)), Granted::Boundary(off_core), "the domain key is not the sitting reserve");
+    assert_eq!(k.manifest(&signed(manifest(1), 77)), Granted::Refused(GrantRefusal::Unsigned), "no key of the domain");
     let mut unordered = manifest(1);
     unordered.nuclei.reverse();
     assert_eq!(k.manifest(&signed(unordered, RESERVE)), Granted::Refused(GrantRefusal::Malformed));

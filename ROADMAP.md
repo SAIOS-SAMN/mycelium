@@ -1260,7 +1260,12 @@ adjudicated reading (B2). Each phase is one commit:
    reserve's act, after the operator rules on amending those two forward;
    `NotThroughCore` derived from the cones (an act arriving other than at
    its universe's vertex is not an event of that universe's cone at the
-   hypha), never from a ruling on routes.
+   hypha), never from a ruling on routes. **Built with B4** (v0.4.0): the
+   reserve checks of the fold, anchor, map, core tube, conversion out,
+   manifest and statement refuse `Boundary::NotThroughCore { act, domain }`
+   on each act's reply, and their `NotReserve` codes are retired (claim
+   `universe_act_off_the_core_refused_not_through_core`). Open: a line's
+   mouth offer and a tier's handoff offer carried in the reserve's act.
 3. **B2, signatories, clause by clause, by adjudicated reading**
    (Concordance §0, ruled 2026-11-04; **Built**, v0.4.0, a network-contract
    change: `ACT_LAWS` modes 6, 7 and 8):

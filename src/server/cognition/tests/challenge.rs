@@ -130,7 +130,8 @@ fn evidence(f: &TierFold, at: &FoldAt, entries: Vec<Entry>) -> Challenge {
 fn admit_uplink_refuses_line_not_carried_by_reserve() {
     let (a, ..) = tiers();
     let mut k = founded();
-    assert_eq!(k.hear_uplink(&a_fold().sign(&a)), Uplinked::NotReserve);
+    let off_core = crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Fold, domain: domain() };
+    assert_eq!(k.hear_uplink(&a_fold().sign(&a)), Uplinked::Boundary(off_core));
     let at = sealed(&mut k, a_fold(), &a);
     assert_eq!(at.path, vec![0]);
     assert!(k.ledgers.records.contains(&at.key()), "the line recorded inside its reserve's receipt");

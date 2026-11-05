@@ -590,9 +590,11 @@ pub enum Uplinked {
     /// span claiming nets. (A fold byte-identical to it is answered with
     /// its original receipt, sealing nothing.)
     Repeated,
-    /// 78.138 — only the reserve uplinks: the folding tier is not its
-    /// domain's reserve. A line's fold is carried in its reserve's.
-    NotReserve,
+    /// 78.138, track 24 B4 — THE BOUNDARY REFUSED IT at the universal core
+    /// tube: the folding tier is not its domain's sitting reserve (a line's
+    /// fold is carried in its reserve's), `NotThroughCore`; or the reserve
+    /// is no signatory of the register served, by the clause.
+    Boundary(crate::court::admission::Boundary),
     /// 78.154a — the fold's CONNECTION_TAX flow cannot be paid, and why.
     Tax(TaxRefusal),
     /// MU-HOSTING §5a.3, track 24 B3 — A STATED TRANSITION DOES NOT HOLD
@@ -711,7 +713,10 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
             out.push(why.byte());
         }
         Uplinked::Repeated => out.push(8),
-        Uplinked::NotReserve => out.push(9),
+        Uplinked::Boundary(why) => {
+            out.push(13);
+            why.put(&mut out);
+        }
         Uplinked::Tax(why) => {
             out.push(10);
             let (code, lane) = match why {
@@ -839,7 +844,7 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
             Uplinked::HandoffRefused { index, why: SideRefusal::ALL.into_iter().find(|r| r.byte() == code)? }
         }
         8 => Uplinked::Repeated,
-        9 => Uplinked::NotReserve,
+        13 => Uplinked::Boundary(crate::court::admission::Boundary::take(b, &mut p)?),
         10 => {
             let (code, lane) = (*b.get(1)?, usize::from(*b.get(2)?));
             p = 3;

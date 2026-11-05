@@ -676,8 +676,13 @@ impl Court {
                     if dx == dy {
                         return refuse(R::Unbound);
                     }
+                    // Track 24 B4 — a core tube is the universe's act: only
+                    // its sitting reserve offers one, through its vertex.
                     if self.reserve_of(&dx) != Some(m.from_tier) {
-                        return refuse(R::NotReserve);
+                        return Handed::Boundary(crate::court::admission::Boundary::NotThroughCore {
+                            act: crate::court::admission::UniverseAct::Mouth,
+                            domain: dx,
+                        });
                     }
                     if m.keeper != m.from_tier {
                         return refuse(R::NotKeeper);

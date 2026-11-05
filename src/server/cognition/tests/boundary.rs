@@ -131,6 +131,48 @@ fn crossing_refused_by_the_law_it_breaks() {
     assert_eq!(k.chain.head_height(), head, "nothing sealed");
 }
 
+/// A final point of the mesh at tick `h`.
+fn fp(h: u64) -> crate::chronometry::tuniversal::TPoint {
+    use crate::chronometry::tuniversal::{Origin, TPoint};
+    TPoint { origin: Origin { genesis: [9; 32], epoch: 0 }, h, lanes: [h, 0, 0, 0].into(), k: h }
+}
+
+/// B4 — A UNIVERSE'S ACT OFF ITS CORE IS REFUSED `NotThroughCore`, naming
+/// the act and the domain: a fold, an anchor, a map, a statement, a
+/// manifest and a conversion out, each signed by a line of the domain (and
+/// the anchor by its founder) rather than its sitting reserve, reach the
+/// hypha other than at the universe's vertex. Nothing seals.
+#[test]
+fn universe_act_off_the_core_refused_not_through_core() {
+    use crate::anastome::dialogue::atlas::{LedgerEntry, Ledgered, MapAct, MapRecord, Mapped};
+    use crate::anastome::dialogue::domain::BigBangRecord;
+    use crate::anastome::dialogue::endowment::{Granted, Manifest};
+    use crate::anastome::dialogue::handoff::{ConvertOut, Handed, Handoff};
+    use crate::anastome::dialogue::universe::{Geometry, Stated, Statement};
+    use crate::court::admission::{Boundary, UniverseAct};
+    let mut k = founded();
+    let domain = vk(&domain_key());
+    let off = |act| Boundary::NotThroughCore { act, domain };
+    let origin = BigBangRecord { domain, kind: 1, version: 3, commitment: [1; 32], universe: None };
+    assert!(matches!(k.record_origin(&origin.sign(&domain_key())), Founded::Originated { .. }), "a universe");
+    let head = k.chain.head_height();
+    let line = line_key();
+    assert_eq!(k.hear_uplink(&fold(&line, 7, vec![lawful()]).sign(&line)), Uplinked::Boundary(off(UniverseAct::Fold)));
+    let entry = LedgerEntry { domain, u: 1, commitment: [1; 32], events: [0; 32], point: fp(10), parent: [0; 32], applied: Vec::new(), nonce: [0; 32] };
+    for by in [&line, &domain_key()] {
+        assert_eq!(k.ledger(&entry.clone().sign(by), Some(fp(10))), Ledgered::Boundary(off(UniverseAct::Anchor)), "an anchor off the core");
+    }
+    let map = MapAct { domain, point: fp(10), record: MapRecord::Mouth { place: ([3; 32], 0), freshness: 1 }, nonce: [1; 32] };
+    assert_eq!(k.map(&map.sign(&line), Some(fp(10))), Mapped::Boundary(off(UniverseAct::Map)));
+    let statement = Statement { domain, stated: Stated::Geometry(Geometry::Curved((1, 1))) };
+    assert_eq!(k.state(&statement.sign(&line)), Founded::Boundary(off(UniverseAct::Statement)));
+    let manifest = Manifest { domain, nuclei: vec![(1, num_bigint::BigUint::from(1u8))], nonce: [2; 32] };
+    assert_eq!(k.manifest(&manifest.sign(&line).expect("signs")), Granted::Boundary(off(UniverseAct::Manifest)));
+    let out = ConvertOut { tier: vk(&line), holder: [50; 32], identity: [7; 32], g: 10, rate: [(1, 2), (0, 1), (0, 1), (0, 1)], nonce: [3; 32] };
+    assert_eq!(k.handoff(&Handoff::ConvertOut(Box::new(out)).sign(&line)), Handed::Boundary(off(UniverseAct::ConversionOut)));
+    assert_eq!(k.chain.head_height(), head, "nothing sealed");
+}
+
 /// B3 — A LAWFUL CROSSING IS ADMITTED: the reserve's fold stating the turn
 /// that carries its bodies is rebuilt under every law of the register and
 /// sealed; a transition changed after signing no longer reconstructs.

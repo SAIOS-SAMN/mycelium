@@ -52,7 +52,7 @@ fn ledger_entry_round_trips_and_verifies() {
     assert_eq!(decode_domain_request(&encode_ledger_read([6; 32], 9)), Some(DomainRequest::ReadLedger { domain: [6; 32], after: 9 }));
     for r in [
         Ledgered::Sealed { entry: [7; 32], h: 12, point: at(9) },
-        Ledgered::Refused(LedgerRefusal::NotReserve),
+        Ledgered::Boundary(crate::court::admission::Boundary::NotThroughCore { act: crate::court::admission::UniverseAct::Anchor, domain: [6; 32] }),
         Ledgered::Refused(LedgerRefusal::Parent),
         Ledgered::Refused(LedgerRefusal::LineRefused),
     ] {
