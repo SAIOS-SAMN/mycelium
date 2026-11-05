@@ -806,6 +806,10 @@ perception readers are offered to the court as (70, amended 2026-10-09).
 >
 > U12 dictates that the differential operator δ_causal must not stall the reduction by waiting for these chains to close. Instead, it must project the unclosed boundary directly onto the new active Cauchy surface as a topological puncture. This formally implements §78.65: the past reduces symmetrically to zero, while asymmetric structural debts are mapped forward as living defects on the active board.
 
+*(Annotated 2026-11-05: the quoted "settled ledger rows" read as settled
+events of the multi-dimensional ledger, its axes lane × register layer ×
+grade; only a flat ledger of rows is retired, MU-ECONOMY §2.1.)*
+
 **Open points, put to review.** (i) U14's "its lexicon": whether a
 Rank-Step adjunction stands in the mind's DIALECT (the epigenome, as
 78.115's own letters do) with law 6's court admission of the language

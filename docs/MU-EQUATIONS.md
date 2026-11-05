@@ -1300,7 +1300,7 @@ draw(held, asked) = held − asked  where asked_l ≤ held_l on every lane, else
 ```
 
 A comparison of two lane vectors is a reading per lane and never a verdict.
-Every amount of μ — a holding, a ledger row, a wire field — is four exact
+Every amount of μ — a holding, a treasury entry, a wire field — is four exact
 non-negative rationals; an addition always lands, and a draw past a
 holding is refused by lane, never saturated.
 

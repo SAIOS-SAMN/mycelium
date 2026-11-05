@@ -464,7 +464,7 @@ basis of cross-universe convergence (§7).
 ## 6. The proofs of work for knowledge
 
 Every verified claim is paid through the POW++ arm that best represents
-the work. The arms and the ledger rows of each are those of MU-ECONOMY §0.
+the work. The arms and the settlement events of each are those of MU-ECONOMY §0.
 
 ### 6.1 POUW — useful work: knowledge added
 

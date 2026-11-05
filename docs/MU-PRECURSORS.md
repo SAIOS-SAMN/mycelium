@@ -424,7 +424,7 @@ not a fault campaign.
   split, rolling isolation, and an asymmetric partition.
 - **Exact invariants,** audited after every campaign:
   1. **Conservation by ledger audit:** every node's balances, bonds and
-     holds re-derive from its own ledger rows, and
+     holds re-derive from the ledger events it holds, and
      `supply = genesis + mint − burn = Σbalance + Σbond + Σheld` holds per
      lane (`Treasury::audit`).
   2. **Once per work across the mesh:** each work is paid once; a node
@@ -439,8 +439,8 @@ not a fault campaign.
   through the accused lets a lie cancel out of the check.
 - **Concurrent faults target separate nodes.** Faults in one campaign are
   scheduled on disjoint nodes, so no fault breaks another's precondition.
-- **Typed readings, never log text.** The auditor reads ledger rows and
-  receipts as decoded values through the treasury and the receipt chain.
+- **Typed readings, never log text.** The auditor reads ledger events and
+  receipts as decoded values through the treasury and the signers' lines.
 - **Soak to dry.** The campaign runner enumerates every (topology, fault
   subset) up to a size and reports a violation with its seed; each
   violation becomes a regression claim.
@@ -918,7 +918,7 @@ and the kernel profile passed every MUST act against a local network.
 | **Golden-byte tests:** stored encodings compared byte for byte | Conformance is by decoded value (Concordance 1.4) | Decoded claims and round-trip identities |
 | **Enumeration sieves:** candidate positions, rules or parameters listed and filtered | Search over what the algebra can read directly | Hermite and Smith forms, reduction, measured holes |
 | **Quorum constants:** a fixed count of agreeing parties as a threshold | A constant where the law names a vantage | Two independent bonded vantages, by rule |
-| **Log scraping:** invariants read from text output | Text is not a typed value | Typed readings (`observe`), decoded ledger rows |
+| **Log scraping:** invariants read from text output | Text is not a typed value | Typed readings (`observe`), decoded ledger events |
 
 ---
 

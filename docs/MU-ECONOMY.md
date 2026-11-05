@@ -17,9 +17,11 @@ traversal, orbits).
 
 **The model (ruled 2026-11-05).** Each statement is made once, in the
 section named:
-1. There is no flat ledger. Receipts are per-signer lines in a causal
-   partial order, never totalised; TUniversal height is the only shared
-   extent (§2.1).
+1. The ledger is one multi-dimensional ledger. Its events stand at
+   coordinates on per-signer lines of receipts, in a causal partial order
+   never totalised; its axes are lane × register layer × grade, with the
+   modes held within each lane, never summed; TUniversal height is the
+   only shared extent (§2.1).
 2. A holding is a coordinate, `origin / h : S:G:T:H : K`, whose lanes are
    vectors of exact components (§2.2).
 3. A payment is a motion's advance, an event at a coordinate with its
@@ -31,13 +33,19 @@ section named:
    reserve and crosses only at the universal core tube (§5.4, §10).
 7. A shared economic law form is proposed, to come as 78.174 (§10.4).
 
-The words "ledger", "row" and "table" are retired for the economy. A
-universe's own books keep the Concordance's terms (Concordance 1.13, 5.5).
+Only the flat ledger is retired: one sequence of rows, one balance per
+party, one number per lane. "Ledger" names the multi-dimensional ledger of
+item 1; "row" and "table" stay retired for the economy. A universe's own
+books keep the Concordance's terms (Concordance 1.13, 5.5).
 
 ## 0. The proofs of work: relations between motions
 
-POW++ is a family of proofs, and no two share a name (MU-RECURSION 78.33).
-Each proof is a relation between motions in the sense of MU-SENSING §3.9
+**POW++ is multi-axial convergence settlement**: proof of reduction, in
+which the work is a reduction a court reconstructs and the settlement
+holds when the readings agree on every axis, "not a single linear
+difficulty ladder" (the POW++ alignment ruled with the peer kernels). It
+is a family of proofs, and no two share a name (MU-RECURSION 78.33). Each
+proof is a relation between motions in the sense of MU-SENSING §3.9
 (`deformation = motion ∘ residue`; every path is an orbit), never a kind
 of entry:
 
@@ -114,6 +122,24 @@ minted on another, and §6 would no longer say what the mesh did.
 ## 2. Holdings
 
 ### 2.1 Lines, cones and height
+
+**The multi-dimensional ledger.** The network keeps one ledger, and it is
+multi-dimensional: its axes are lane × register layer × grade, with the
+modes of §1 held within each lane, and no axis is ever summed into
+another. This is MU-RECURSION's ledger as ruled, "a multi-dimensional
+ledger: mass per lane, per register layer, per grade, never summed (73.9,
+law 5)" (the earlier MU-RECURSION's chapter 78 statement, ruled
+2026-09-23; carried today by 73.9 and 78.1), with the
+four-dimensional amendment of 2026-09-24 (78.21: a tick is a frame of
+`{S, G, T, H}`). Its events stand at coordinates (§2.2) on the signers'
+lines below. What is retired is a flat ledger: one sequence of rows, one
+balance per party, one number per lane.
+
+**The ledger's dimensions are never cognition axes.** No economic reading
+enters a mind's perception, a court's reconstruction or a factor of a
+cognitive complex; a differential coupling proof to payment is price inside
+cognition. This keeps an earlier guard of the Künneth proposal: "The
+economic ledger is not an axis and never becomes a factor."
 
 Each signer (a voice, a hypha, a domain's reserve) keeps one line of
 signed receipts, indexed by its own `K` (MU-RECURSION 47.1). An economic
@@ -446,6 +472,16 @@ mode, and so per lane.
   one height from the same cones reach the same modes (a converse). Where
   the readings differ, the residue is held, naming both (a collision; MU-SCIENCE
   §5.0).
+
+**The merge is a grow-only union (a law of readings).** Two hyphae's
+holdings of the ledger merge by the union of the events each holds, and a
+merge never removes an event. The union is commutative (`a ∪ b = b ∪ a`),
+associative (`(a ∪ b) ∪ c = a ∪ (b ∪ c)`) and idempotent (`a ∪ a = a`).
+So a reading at a height depends on the union alone: never on the order in
+which events or peers were heard, nor on an event heard twice. A reading
+that would differ under a reordering or a repetition of the same events is
+not a reading of the ledger. A fold (§6.1) checkpoints a prefix of the
+union and removes nothing from it.
 
 ### 6.1 Across a fold
 
