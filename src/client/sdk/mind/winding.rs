@@ -450,7 +450,9 @@ impl Mind {
     /// PHY1, 78.71 — THE STROKE'S PHYSICS BOOKED: one expansion on each lane
     /// its outcome moved, drawn from the one reserve (𝒯 never by a unit: it
     /// is withheld by the flux the field holds open, `lock_reservoirs`); the
-    /// tubes' relief, and the contacts' order.
+    /// tubes' relief, and the contacts' order. 68.5 — and the stroke's
+    /// thermodynamic ledger TAKEN, once, into the mind's observe reading,
+    /// after the spend so the stroke's own draws stand in it.
     fn book_tick(&mut self, outcome: &StrokeOutcome) {
         let seen = crate::transducer::family::pairing::contact_lanes();
         let mut moved = outcome.moved();
@@ -459,5 +461,7 @@ impl Mind {
         let (relieved, _) = crate::transducer::family::pairing::flux_lanes();
         self.physics_mut().book_flux(relieved);
         self.physics_mut().book_contacts(seen);
+        let ledger = crate::physics::metabolism::take_metabolism();
+        crate::observe::note_mind(|m| m.ledger(&ledger));
     }
 }

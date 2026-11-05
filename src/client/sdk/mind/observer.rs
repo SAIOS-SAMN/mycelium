@@ -120,6 +120,13 @@ impl Mind {
                 lanes(&pace.pressure()),
                 lanes(&pace.dwell_remaining)
             ),
+            // 68.5 — THE LEDGER THIS STROKE SO FAR, read without taking it
+            // (the stroke's booking is its one taker).
+            {
+                let m = crate::physics::metabolism::metabolism();
+                let f = m.flux();
+                format!("ledger this stroke: {} · entropy {} · flux {}:{}:{}:{}", m.line(), m.entropy(), f[0], f[1], f[2], f[3])
+            },
             format!(
                 "answers not yet taken, by the path that takes them: {}",
                 self.hypha.waiting_by_path().iter().map(|(n, k)| format!("{k} {n}")).collect::<Vec<_>>().join(" · ")
