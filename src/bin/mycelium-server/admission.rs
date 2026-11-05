@@ -23,7 +23,11 @@ pub(crate) fn read_published_cover(read: &Published, mesh: &Mesh) -> [u64; 4] {
     if let Ok(mut c) = mesh.cover.lock() {
         c.retract_hypha(&mesh.vk);
         for (lane, inv) in read.own_cover_charts() {
-            c.admit(*lane, inv, mesh.vk);
+            // The court's own charts were filed by the trie, which refused
+            // every lane past the four: a refusal here files nothing.
+            if let Err(refused) = c.admit(*lane, inv, mesh.vk) {
+                eprintln!("[cover] own chart not filed: {refused}");
+            }
         }
     }
     if let Ok(mut r) = mesh.rooms.lock() {

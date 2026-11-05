@@ -855,11 +855,23 @@ impl Exchange {
                                     c.retract_hypha(&cover.vk);
                                 }
                                 let read = cover.charts.len();
+                                // A chart on a lane past the four is the
+                                // peer's broken page, refused by name and
+                                // never masked onto a lane it did not name:
+                                // the page's walk stops there.
+                                let mut refused = None;
                                 for (lane, inv) in &cover.charts {
-                                    c.admit(*lane, inv, cover.vk);
+                                    if let Err(r) = c.admit(*lane, inv, cover.vk) {
+                                        refused = Some(r);
+                                        break;
+                                    }
                                     from = dialogue::cover_cursor(*lane, inv);
                                 }
                                 drop(c);
+                                if let Some(r) = refused {
+                                    eprintln!("[cover] peer page refused: {r}");
+                                    break;
+                                }
                                 // A PEER ARRIVING ON A CHART is a transition for
                                 // every word in flight under it: each is carried
                                 // to the peer that now covers it, and the

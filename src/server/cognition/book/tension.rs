@@ -142,11 +142,16 @@ impl Court {
         };
         let lanes = crate::network::nerve::occupied_lanes(&mag);
         // index: the four lanes
+        // `occupied_lanes` reads the four lanes of `mag` only, so no lane
+        // here is refused; a refusal would file nothing, never another lane.
         for lane in &lanes {
-            if now_flat {
-                self.own_cover.retract(*lane, &chart, address);
+            let filed = if now_flat {
+                self.own_cover.retract(*lane, &chart, address)
             } else {
-                self.own_cover.admit(*lane, &chart, address);
+                self.own_cover.admit(*lane, &chart, address)
+            };
+            if let Err(refused) = filed {
+                eprintln!("[cover] own chart not filed: {refused}");
             }
         }
         // 78.153b: the shelf copies the charts again only where they moved.

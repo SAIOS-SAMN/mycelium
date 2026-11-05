@@ -28,7 +28,13 @@ use crate::transducer::sentence::Vertex;
 /// The record kind that puts a task before the seat.
 /// FORMAT: percept record kind.
 pub const KIND_TASK: u16 = 4;
-/// The function a seat solves a task by.
+/// The function a seat solves a task by, IN THE HOUSE'S GAME: the seat's
+/// answer told to the house, for houses that want it. It is no court solve.
+/// The court pays the key that signs a solve (78.141; Concordance 6.2a,
+/// keys for a key's own acts): a seated mind files its court solve under its
+/// own key and is paid itself (`Mind::file_seat_solve`), and a house that
+/// relays an FN_SOLVE to the court under the house's key is paid to the
+/// house's key, never the seat's.
 pub const FN_SOLVE: u16 = 1;
 
 /// THE FUNCTION A SEAT DECLINES A TASK BY (ruled 2026-10-23):

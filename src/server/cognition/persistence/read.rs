@@ -596,8 +596,11 @@ impl Court {
                 for e in &listing.entries {
                     if !e.state.is_flat() {
                         court.listing_atlas.admit_also(&e.chart, &addr);
+                        // `occupied_lanes` reads the four lanes only.
                         for lane in &lanes {
-                            court.own_cover.admit(*lane, &e.chart, &addr);
+                            if let Err(refused) = court.own_cover.admit(*lane, &e.chart, &addr) {
+                                eprintln!("[cover] restored chart not filed: {refused}");
+                            }
                         }
                         let ck = e.chart.key();
                         match court.chart_listings.get_mut(&ck) {

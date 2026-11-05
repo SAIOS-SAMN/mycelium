@@ -141,6 +141,48 @@ fn judge_solve_prices_closing_rule_by_discharge() {
     }
 }
 
+/// A body of 1 on a ground of 0, carried two columns along.
+fn carried_on_ground() -> Vec<TrainPair> {
+    vec![(digits(&["000000", "011000", "000000"]), digits(&["000000", "000110", "000000"]))]
+}
+
+/// A RULE STATED BY CLAUSES (78.143): every body carried two columns along,
+/// about the sample, once, its source cleared — the carriage
+/// `carried_on_ground()` asks for, stated as a clause element and no word
+/// vertex.
+fn carried_by_clause() -> crate::transducer::sentence::Form {
+    use crate::transducer::sentence::form::clause::{About, Paint, Pred};
+    use crate::transducer::sentence::form::rule_element::{Carriage, Lowered, Reach, RuleElement, Trace};
+    let two = crate::core::Q::from_integer(2.into());
+    let motion = crate::transducer::cga::translator_at(&[crate::core::Q::from_integer(0.into()), two]);
+    let carry = Carriage { motion, about: About::Sample, reach: Reach::Once, trace: Trace::Clears, paint: Paint::Own, gauge: Vec::new() };
+    crate::transducer::sentence::Form { elements: vec![Lowered { select: Pred::All, parts: false, element: RuleElement::Carriage(carry) }], ..Default::default() }
+}
+
+/// 78.162; MU-ECONOMY §1 — A PAID VERDICT CARRIES THE MODES ITS CLOSURE
+/// MOVED. A form that speaks by clauses moves what its carriages move: the
+/// court's modes reader read word vertices alone, so a clause-stated rule
+/// that closed the withheld pair was paid μ with no modes. The verdict now
+/// carries the carriage's slide as a T mode, beside the μ paid.
+#[test]
+fn paid_verdict_carries_the_modes_paid() {
+    let mut k = Court::new();
+    let form = carried_by_clause();
+    let mag = sentence_measure(&form, &carried_on_ground(), &NoCrystal, 0).expect("every body is spoken");
+    let rule = as_element_form(&form, mag).expect("a tape");
+    match k.judge_solve(&rule, &carried_on_ground()) {
+        SolveVerdict::Solved { pay, modes } => {
+            assert!(!pay.is_zero(), "the closure is paid: {pay}");
+            assert!(!modes.is_empty(), "a paid verdict carries modes: paid {pay}; modes {}", modes.print());
+            assert!(modes.on_lane(crate::economy::modes::T).next().is_some(), "the clause's slide is a T mode: {}", modes.print());
+            // The flux and the modes read one set of motions: the T mode the
+            // verdict carries is the T lane the μ paid.
+            assert!(*pay.lane(2) > crate::core::Q::from_integer(0.into()), "the slide's flux is paid on T: {pay}");
+        }
+        other => panic!("the clause's carriage closes the pair: {other:?}"),
+    }
+}
+
 /// A rule that does not carry a withheld pair is REFUSED by the reconstruction,
 /// with its reason and kind — the coordinate the voice learns from.
 #[test]
