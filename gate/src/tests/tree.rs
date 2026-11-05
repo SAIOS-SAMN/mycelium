@@ -5,6 +5,7 @@
 use super::super::documents::{documents, lint_documents, lint_fragments};
 use super::super::drift::{lint_drift, REGISTER};
 use super::super::euclidean::lint_euclidean;
+use super::super::layers::{lint_layers, CARRIERS, EXCEPTIONS, TRANSPORT};
 use super::super::length::lint_file_length;
 use super::super::numbers::lint_numbers;
 use super::super::surface::{client_surface, lint_surface};
@@ -92,6 +93,17 @@ fn client_surface_holds_no_retired_phrase() {
     eprintln!("client surface: {read} files");
     assert!(read > 0, "the client surface holds files");
     assert!(hits.is_empty(), "the client surface says what a ruling retired:\n{}", hits.join("\n"));
+}
+
+/// MU-ENGINEERING §9 — THE TRANSPORT HOLDS NO MEANING: no transport source
+/// names a carrier type but the listed exceptions, and no exception is stale.
+#[test]
+fn transport_names_no_carrier() {
+    let mut hits = Vec::new();
+    let read = lint_layers(repo(), TRANSPORT, CARRIERS, EXCEPTIONS, &mut hits).expect("the transport reads");
+    eprintln!("transport: {} files, {read} identifiers, {} exceptions", TRANSPORT.len(), EXCEPTIONS.len());
+    assert!(read > 0, "the transport holds identifiers");
+    assert!(hits.is_empty(), "the transport names what a carrier holds:\n{}", hits.join("\n"));
 }
 
 /// THE DRIFT REGISTER: each registered guard's type is declared and its
