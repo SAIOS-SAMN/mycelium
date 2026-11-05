@@ -517,7 +517,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // 78.63 — WHICH PATH OF THE GLUE EACH FETCHED WORD LEFT BY, one per
     // word: the refusals held to the test (does it name a law?).
     ("glue_heard", "fetched words already heard on the words' chart, held as dialect"),
-    ("glue_replay_refused", "fetched words this court's replay refused"),
+    ("glue_reconstruction_refused", "fetched words this court's reconstruction refused"),
     ("glue_colour_unproven", "fetched colour words whose proof does not stand here yet"),
     ("glue_citation_missing", "fetched words citing a word this court does not hold"),
     ("glue_gate_refused", "fetched sections the gate refused (no exact rotation of finite order)"),

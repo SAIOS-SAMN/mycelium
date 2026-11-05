@@ -82,7 +82,7 @@ pub const REFUSE_ORBIT_STILL: &str = "orbit does not move";
 /// verdict here.
 pub const REFUSE_NOT_CLOSED: &str = "form leaves a remainder on the family";
 pub const REFUSE_RANK_LOST: &str = "form rank below what its tape re-derives";
-pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not replay";
+pub const REFUSE_PIVOT_INEXACT: &str = "pivot certificate does not reconstruct";
 /// 23.8: a lane of the voice's room did not cover the draw. Nothing is
 /// docketed; the refusal travels to the voice.
 pub const REFUSE_ROOM: &str = "voice room does not cover the utterance on an occupied lane";
@@ -160,7 +160,7 @@ pub const REFUSE_CITATION_CYCLE: &str = "a cited form cites back into its own sp
 /// over fresh strokes and one moved its cursor nowhere — a single unit of it
 /// costs more reads than a stroke grants. Not a reading of the word: N.
 /// A court under its lock never answers this; it answers `ReconstructionOutcome::Unread`.
-pub const REFUSE_UNREAD: &str = "the replay holds a unit no stroke can read";
+pub const REFUSE_UNREAD: &str = "the reconstruction holds a unit no stroke can read";
 /// A ruling's slashed axis: the word does not parse.
 pub const REFUSE_UNPARSEABLE_WORD: &str = "unparseable word";
 /// A ruling's slashed axis: a listed demand carries no deflation.
