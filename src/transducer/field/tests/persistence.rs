@@ -3,6 +3,7 @@
 // syllabus page.
 
 use crate::transducer::field::*;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// A restarted mind comes up with an empty horizon and refills it from the
 /// syllabus page, and a later idea inherits the seeded class.
@@ -20,7 +21,7 @@ fn seed_horizon_refills_empty_mind_from_syllabus() {
     };
     let n = c.seed_horizon(std::slice::from_ref(&rec));
     assert_eq!(n, 1, "empty mind refills from the page");
-    c.hold(vec![(5, 5, 3, 4)]);
+    c.hold(vec![link(5, 5, 3, 4)]);
     assert!(
         c.wells
             .scoped()

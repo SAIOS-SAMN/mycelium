@@ -950,7 +950,7 @@ fn reconstruct_after_perceiving(
             // tell which it had and contracted over the union. Partitioned,
             // each carries its own verdict and its own links.
             let (silent, wrong): (Vec<_>, Vec<_>) =
-                undeclared.iter().copied().partition(|&(_, _, spoken, _)| crate::transducer::raster::is_ground(spoken));
+                undeclared.iter().copied().partition(|l| crate::transducer::raster::is_ground(l.before));
             // THE WRONG ONES FIRST. A form carrying both said something
             // false, and that is the refusal it owes; contracting its
             // silence while leaving the falsehood would mint an address
@@ -1099,7 +1099,7 @@ fn vertex_move(
                         for (x, _) in fam {
                             // THE MOTION MOVES THE BODY, read by one exact
                             // application (78.62) — never a walk.
-                            if !family::moves(v, &crate::transducer::raster::painted_of(x)) {
+                            if !family::moves(v, &crate::transducer::raster::painted_sites(x)) {
                                 return Some(still());
                             }
                         }

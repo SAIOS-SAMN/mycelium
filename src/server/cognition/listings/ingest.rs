@@ -202,7 +202,7 @@ impl Court {
     /// doctrine refuses; whether `normal_form` still makes one is row I29.
     pub(crate) fn reduce_chain(
         &self,
-        first: Vec<(i64, i64, u8, u8)>,
+        first: Vec<crate::transducer::sentence::SectionLink>,
         exclude: Option<&[u8]>,
         budget: &mut crate::physics::Budget,
     ) -> NormalForm {

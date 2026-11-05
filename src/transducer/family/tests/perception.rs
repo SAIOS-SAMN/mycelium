@@ -4,6 +4,7 @@
 use super::fixtures::*;
 use crate::transducer::base::Site;
 use crate::transducer::family::*;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// A pair form has its frame and a word for the carried body, and nothing is
 /// held between readings: a second reading reads the same form.
@@ -145,7 +146,7 @@ let demands: Vec<_> = f.demand_vertices().collect();
 assert_eq!(demands.len(), 1, "one demand: {:?}", f.vertices);
 let (_, kind, _, links) = demands[0];
 assert_eq!(*kind, Demand::Source { multiplicity: 1 }, "the input bar's chart carries onto the new bar");
-assert_eq!(links, &[(2, 1, 0, 2), (2, 2, 0, 2)], "the created links, hue 0 before");
+assert_eq!(links, &[link(2, 1, 0, 2), link(2, 2, 0, 2)], "the created links, hue 0 before");
 assert!(!f.is_closed(), "a sentence with a demand is not closed");
 assert_eq!(
     f.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count(),
@@ -174,7 +175,7 @@ let kinds: Vec<&Demand> = f.demand_vertices().map(|(_, k, _, _)| k).collect();
 assert_eq!(kinds.len(), 1, "one demand: the deformation, its image consumed: {kinds:?}");
 assert!(matches!(kinds[0], Demand::TopologicalDeformation { image, axes } if !image.0.is_empty() && !axes.is_empty()), "{kinds:?}");
 let (_, _, _, links) = f.demand_vertices().next().expect("the demand");
-assert_eq!(links, &[(0, 0, 1, 1), (0, 1, 1, 0)], "the deformation stands for the union of both bodies, hue before and after");
+assert_eq!(links, &[link(0, 0, 1, 1), link(0, 1, 1, 0)], "the deformation stands for the union of both bodies, hue before and after");
 
 let f = cipher_form(&grid(&["1100", "0000", "0220"]), &grid(&["1100", "0000", "0000"]));
 let kinds: Vec<&Demand> = f.demand_vertices().map(|(_, k, _, _)| k).collect();

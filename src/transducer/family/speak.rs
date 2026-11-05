@@ -12,8 +12,8 @@ pub(crate) fn grows_to_frame(a: &SectionSample, b: &SectionSample) -> bool {
     if fa != fb || fa.0 == 0 || fa.1 == 0 {
         return false;
     }
-    let ins: Vec<Painted> = crate::transducer::raster::painted_of(a);
-    let outs: Vec<Painted> = crate::transducer::raster::painted_of(b);
+    let ins: Vec<PaintedSite> = crate::transducer::raster::painted_sites(a);
+    let outs: Vec<PaintedSite> = crate::transducer::raster::painted_sites(b);
     if ins.is_empty() || outs.len() <= ins.len() {
         return false;
     }
@@ -26,7 +26,7 @@ pub(crate) fn grows_to_frame(a: &SectionSample, b: &SectionSample) -> bool {
     if target.len() != frame_n {
         return false;
     }
-    let mut occ: Vec<(i64, i64, u8)> = ins.clone();
+    let mut occ: Vec<PaintedSite> = ins.clone();
     // The guard in the frame's own count: a ring can grow at most once per
     // site, so `frame_n` passes bound the fill.
     let mut guard = 0usize;
@@ -35,15 +35,16 @@ pub(crate) fn grows_to_frame(a: &SectionSample, b: &SectionSample) -> bool {
         let ring = crate::transducer::blade::adjacent_ring(&occ);
         let keyed = occupy_keys(&occ);
         let mut grew = false;
-        for (r, c, _) in ring {
-            #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a site one ring out from sites painted_of_grid delivered or this check admitted, so within the sensor's grid plus one, checked non-negative first")]
-            if r < 0 || c < 0 || (r as usize) >= fa.0 || (c as usize) >= fa.1 {
+        for p in ring {
+            // A site off the frame has no index below its extent.
+            let inside = p.site.indices().is_some_and(|[r, c]| r < fa.0 && c < fa.1);
+            if !inside {
                 continue;
             }
-            if keyed.contains(&site_key(r, c)) {
+            if keyed.contains(&site_key(p.site)) {
                 continue;
             }
-            occ.push((r, c, 0));
+            occ.push(PaintedSite::new(p.site, 0));
             grew = true;
         }
         if !grew {
@@ -71,13 +72,13 @@ pub(crate) fn emit_carried(
     v: &Versor,
     map: &[(u8, u8)],
     fy: (usize, usize),
-    painted: &mut Vec<Painted>,
-    remainder: &mut Vec<Painted>,
+    painted: &mut Vec<PaintedSite>,
+    remainder: &mut Vec<PaintedSite>,
 ) {
     let hue = hue_map_from_pairs(map);
     for l in &body.compartments {
         let h = l.hue;
-        let Some((r, c)) = on_grid(&l.site) else { continue };
+        let Some(at) = SectionSite::of_family(&l.site) else { continue };
         // A hue the map does not move keeps its own colour: that is what
         // the map says about it (rule 11).
         let spoken = crate::transducer::sentence::transport::gauge_image(&hue, h);
@@ -88,25 +89,25 @@ pub(crate) fn emit_carried(
             // carried into another frame is not spoken on it, and is
             // remainder.
             Some(image) if image.iter().all(|s| place.and_then(|p| s.axis(p)) == frame) => {
-                // A carried site can be any i64: inside the frame by
-                // `try_from` and a comparison, exact at every width — a cast
+                // A carried site can be any i64: inside the frame by its
+                // indices and a comparison, exact at every width — a cast
                 // could wrap a far site into the frame.
-                let within = |x: i64, n: usize| usize::try_from(x).is_ok_and(|x| x < n);
-                for (i, j) in image.iter().filter_map(on_grid) {
-                    if within(i, fy.0) && within(j, fy.1) {
-                        painted.push((i, j, spoken));
+                for s in image.iter().filter_map(SectionSite::of_family) {
+                    if s.indices().is_some_and(|[i, j]| i < fy.0 && j < fy.1) {
+                        painted.push(PaintedSite::new(s, spoken));
                     }
                 }
             }
-            _ => remainder.push((r, c, h)),
+            _ => remainder.push(PaintedSite::new(at, h)),
         }
     }
 }
 
-pub(crate) fn hue_from_neighbours(r: i64, c: i64, occ: &crate::network::nerve::Keyed<u8>) -> Option<u8> {
+pub(crate) fn hue_from_neighbours(site: SectionSite, occ: &crate::network::nerve::Keyed<u8>) -> Option<u8> {
     let mut held: Option<u8> = None;
+    let [r, c] = site.coordinates();
     for (nr, nc) in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)] {
-        let Some(&h) = occ.get(&site_key(nr, nc)) else {
+        let Some(&h) = occ.get(&site_key(SectionSite::on_plane([nr, nc]))) else {
             continue;
         };
         match held {
@@ -249,8 +250,8 @@ pub(crate) struct Scene {
 /// the citations inside it this crystal could not resolve, and those it
 /// reached back onto its own speaking stack (78.153).
 type Cited = (
-    Vec<Painted>,
-    Vec<Painted>,
+    Vec<PaintedSite>,
+    Vec<PaintedSite>,
     Vec<crate::transducer::address::Address>,
     Vec<crate::transducer::address::Address>,
     Vec<usize>,
@@ -298,8 +299,8 @@ fn speak_on_scene(
     let fx = frame_of(x);
     let mut fy = output_frame(fx, f.ratio);
     let Scene { bodies, atlas, .. } = scene;
-    let mut painted: Vec<Painted> = Vec::new();
-    let mut remainder: Vec<Painted> = Vec::new();
+    let mut painted: Vec<PaintedSite> = Vec::new();
+    let mut remainder: Vec<PaintedSite> = Vec::new();
     let mut unspoken: Vec<crate::network::nerve::coord::VertexAt> = Vec::new();
     let mut unresolved: Vec<crate::transducer::address::Address> = Vec::new();
     let mut cycled: Vec<crate::transducer::address::Address> = Vec::new();
@@ -550,7 +551,7 @@ fn speak_on_scene(
         if painted.is_empty() {
             painted = bodies
                 .iter()
-                .flat_map(|b| b.compartments.iter().filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, l.hue))))
+                .flat_map(|b| b.compartments.iter().filter_map(|l| SectionSite::of_family(&l.site).map(|s| PaintedSite::new(s, l.hue))))
                 .collect();
         }
         // A frame whose site count does not fit the carrier is wider than
@@ -561,24 +562,25 @@ fn speak_on_scene(
             guard += 1;
             let ring = crate::transducer::blade::adjacent_ring(&painted);
             let mut hues: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-            for &(r, c, h) in &painted {
-                hues.insert(site_key(r, c), h);
+            for p in &painted {
+                hues.insert(site_key(p.site), p.symbol);
             }
             let mut grew = false;
-            for (r, c, _) in ring {
-                #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a site one ring out from painted sites already inside the frame fy or on the sensor's grid, checked non-negative first")]
-                if r < 0 || c < 0 || (r as usize) >= fy.0 || (c as usize) >= fy.1 {
+            for p in ring {
+                // A site off the frame has no index below its extent.
+                let inside = p.site.indices().is_some_and(|[r, c]| r < fy.0 && c < fy.1);
+                if !inside {
                     continue;
                 }
-                if hues.contains(&site_key(r, c)) {
+                if hues.contains(&site_key(p.site)) {
                     continue;
                 }
-                match hue_from_neighbours(r, c, &hues) {
+                match hue_from_neighbours(p.site, &hues) {
                     Some(h) => {
-                        painted.push((r, c, h));
+                        painted.push(PaintedSite::new(p.site, h));
                         grew = true;
                     }
-                    None => remainder.push((r, c, 0)),
+                    None => remainder.push(PaintedSite::new(p.site, 0)),
                 }
             }
             if !grew {
@@ -631,8 +633,8 @@ fn speak_on_scene(
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Speech {
     pub frame: (usize, usize),
-    pub painted: Vec<Painted>,
-    pub remainder: Vec<Painted>,
+    pub painted: Vec<PaintedSite>,
+    pub remainder: Vec<PaintedSite>,
     /// The vertices, by coordinates, whose class fibre was empty on
     /// this grid.
     pub unspoken: Vec<crate::network::nerve::coord::VertexAt>,
@@ -673,11 +675,9 @@ impl Speech {
         // family open), no grid stands for the speech. A speech that paints
         // every site needs no ground.
         let mut out: Vec<Vec<Option<u8>>> = vec![vec![None; self.frame.1]; self.frame.0];
-        for &(r, c, h) in &self.painted {
-            let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {
-                return None;
-            };
-            *out.get_mut(ur).and_then(|row| row.get_mut(uc))? = Some(h);
+        for p in &self.painted {
+            let [ur, uc] = p.site.indices()?;
+            *out.get_mut(ur).and_then(|row| row.get_mut(uc))? = Some(p.symbol);
         }
         let void = crate::transducer::raster::void().ok();
         let lines: Vec<Vec<u8>> = out.into_iter().map(|row| row.into_iter().map(|h| h.or(void)).collect::<Option<Vec<u8>>>()).collect::<Option<_>>()?;
@@ -709,7 +709,8 @@ pub fn speak_rule(rule: &crate::transducer::sentence::SentenceRule, x: &SectionS
 pub fn residue_of(
     spoken: Option<&SectionSample>,
     observed: &SectionSample,
-) -> Result<Vec<(i64, i64, u8, u8)>, crate::transducer::family::transduce::Unground> {
+) -> Result<Vec<crate::transducer::sentence::SectionLink>, crate::transducer::family::transduce::Unground> {
+    use crate::transducer::sentence::SectionLink;
     let void = crate::transducer::raster::void();
     let ground = crate::transducer::raster::ground();
     let mut out = Vec::new();
@@ -721,16 +722,14 @@ pub fn residue_of(
             None => void?,
         };
         if s != h {
-            let [r, c] = site.coordinates();
-            out.push((r, c, s, h));
+            out.push(SectionLink::new(site, s, h));
         }
     }
     if let Some(g) = spoken {
         for (site, s) in g.sites() {
             let inside = observed.at(site).is_some();
             if !inside && !ground.holds(&s) {
-                let [r, c] = site.coordinates();
-                out.push((r, c, s, void?));
+                out.push(SectionLink::new(site, s, void?));
             }
         }
     }

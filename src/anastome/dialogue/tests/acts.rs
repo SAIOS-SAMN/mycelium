@@ -24,7 +24,7 @@ fn encode_refuses_count_past_field() {
     // The same at a settlement's parties and a syllabus page.
     let voices: Vec<[u8; 32]> = (0..=255u16).map(|i| [u8::try_from(i).expect("the range is 0..=255, one voice per byte value"); 32]).collect();
     let listing = crate::transducer::element::listing_key(
-        &[(0i64, 0i64, 1u8, 4u8)],
+        &[crate::transducer::sentence::tests::fixtures::link(0, 0, 1, 4)],
         &crate::transducer::element::IDENTITY_FRAME,
     )
     .expect("a one-link chain is A5's");
@@ -39,7 +39,8 @@ fn encode_refuses_count_past_field() {
 /// Every act round-trips exactly — the calculus is closed and lossless.
 #[test]
 fn acts_round_trips() {
-    let chain = vec![(0i64, 0i64, 1u8, 4u8), (2, 3, 0, 7)];
+    use crate::transducer::sentence::tests::fixtures::link;
+    let chain = vec![link(0, 0, 1, 4), link(2, 3, 0, 7)];
     let voice = [9u8; 32];
     let solver = [7u8; 32];
     let listing = crate::transducer::element::listing_key(

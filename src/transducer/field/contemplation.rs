@@ -303,8 +303,8 @@ pub(crate) fn rotor_of_transport(v: &crate::transducer::cga::Mv) -> Option<Rotor
 /// THE TRANSPORT A DEMAND'S BODIES RE-DERIVE (`carriage_with_core`), whole:
 /// the versor between its two sides, never stored beside them (law 12).
 pub(crate) fn transport_over(bodies: &[SectionLink], budget: &mut crate::physics::Budget) -> Option<crate::transducer::cga::Mv> {
-    let before: Vec<SectionLink> = bodies.iter().copied().filter(|c| c.2 != 0).collect();
-    let after: Vec<SectionLink> = bodies.iter().copied().filter(|c| c.3 != 0).collect();
+    let before: Vec<SectionLink> = bodies.iter().copied().filter(|l| l.before != 0).collect();
+    let after: Vec<SectionLink> = bodies.iter().copied().filter(|l| l.after != 0).collect();
     if before.is_empty() || after.is_empty() {
         return None;
     }
@@ -312,7 +312,10 @@ pub(crate) fn transport_over(bodies: &[SectionLink], budget: &mut crate::physics
         crate::transducer::family::body_of(
             links
                 .iter()
-                .map(|&(r, c, _, h)| crate::transducer::blade::Compartment::from((r, c, 0i64, h)))
+                .map(|l| {
+                    let [r, c] = l.site.coordinates();
+                    crate::transducer::blade::Compartment::from((r, c, 0i64, l.after))
+                })
                 .collect::<Vec<_>>(),
         )
     };

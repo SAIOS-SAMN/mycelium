@@ -105,7 +105,7 @@ pub(crate) struct Board {
     /// them again after a restart. Each is placed on the corpus and taken
     /// into thought where the focus meets it (`focus`); while any stands, the
     /// mind holds tension.
-    pub(crate) open_residues: crate::network::nerve::Keyed<Vec<(i64, i64, u8, u8)>>,
+    pub(crate) open_residues: crate::network::nerve::Keyed<Vec<crate::transducer::sentence::SectionLink>>,
     /// The strata residue chains and rewrites stand on, by the chart
     /// invariant's key: the sheaf sync never fetches them, the mind holding
     /// residue chains as open questions and rewrites as the court's acts,

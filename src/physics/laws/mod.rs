@@ -428,12 +428,16 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Transition
 /// that were gained; mass lost a SINK at the barycentre of the sites lost;
 /// exact over ℚ. `None` where the mass is kept (a reshaping at constant mass
 /// is no flux) or nothing changed.
-pub fn flux_of_links(links: &[(i64, i64, u8, u8)]) -> Option<Flux> {
-    let before = links.iter().filter(|l| l.2 != 0).count();
-    let after = links.iter().filter(|l| l.3 != 0).count();
+pub fn flux_of_links(links: &[crate::transducer::sentence::SectionLink]) -> Option<Flux> {
+    let before = links.iter().filter(|l| l.before != 0).count();
+    let after = links.iter().filter(|l| l.after != 0).count();
+    let coordinates = |l: &crate::transducer::sentence::SectionLink| {
+        let [r, c] = l.site.coordinates();
+        (r, c)
+    };
     let (flow, sites): (Flow, Vec<(i64, i64)>) = match after.cmp(&before) {
-        std::cmp::Ordering::Greater => (Flow::Source, links.iter().filter(|l| l.2 == 0 && l.3 != 0).map(|l| (l.0, l.1)).collect()),
-        std::cmp::Ordering::Less => (Flow::Sink, links.iter().filter(|l| l.2 != 0 && l.3 == 0).map(|l| (l.0, l.1)).collect()),
+        std::cmp::Ordering::Greater => (Flow::Source, links.iter().filter(|l| l.before == 0 && l.after != 0).map(coordinates).collect()),
+        std::cmp::Ordering::Less => (Flow::Sink, links.iter().filter(|l| l.before != 0 && l.after == 0).map(coordinates).collect()),
         std::cmp::Ordering::Equal => return None,
     };
     let n = Q::from_integer(i64::try_from(sites.len()).ok()?.into());

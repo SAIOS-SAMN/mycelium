@@ -64,7 +64,7 @@ fn lanes_of_reads_germinated_recolour_as_gauge() {
     // A two-site recolour: hue transitions on a standing support are
     // GAUGE content, carried alongside the residue defect — the lane
     // projection is measured from the chain, never funneled to one axis.
-    let g = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    let g = from_canonical(&germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 1)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 2), (0, 1, 2)])).unwrap());
     assert_eq!(g.lanes(), [false, true, false, false], "a recolour is gauge content; temporal is empty until the listing stands");
 }
 

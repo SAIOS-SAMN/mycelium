@@ -632,7 +632,7 @@ pub(super) fn family_percept(
                 }
                 let void = crate::transducer::raster::void()?;
                 let links: Vec<SectionLink> =
-                    body.compartments.iter().filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, void, l.hue))).collect();
+                    body.compartments.iter().filter_map(|l| SectionSite::of_family(&l.site).map(|site| SectionLink::new(site, void, l.hue))).collect();
                 demanded.push((Demand::Creation, body.moduli.clone(), links));
             }
         }
@@ -732,7 +732,7 @@ pub(super) fn family_percept(
                     if relation == super::torsion_quotient::Sections::Standing {
                         let links: Vec<SectionLink> = support
                             .iter()
-                            .filter_map(|s| on_grid(s).map(|(r, cc)| (r, cc, 0u8, 0u8)))
+                            .filter_map(|s| SectionSite::of_family(s).map(|site| SectionLink::new(site, 0u8, 0u8)))
                             .collect();
                         demanded.push((Demand::Source { multiplicity: 2 }, chart.clone(), links));
                     }

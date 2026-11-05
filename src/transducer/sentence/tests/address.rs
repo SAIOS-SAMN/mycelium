@@ -96,7 +96,7 @@ fn from_element_form_round_trips_every_vertex_kind() {
         .put_vertex(Vertex::demand(
             Demand::Source { multiplicity: 2 },
             stalk::Invariant::counts(&[1, 4, 4]),
-            vec![(9, 9, 0, 1), (9, 10, 0, 1)],
+            vec![link(9, 9, 0, 1), link(9, 10, 0, 1)],
         ))
         .expect("a demand has a coordinate");
     // AN OVERLAP CARRYING AN EDGE, from the word's chart to the citation's
@@ -111,7 +111,7 @@ fn from_element_form_round_trips_every_vertex_kind() {
     let star = coord::Overlap { from: coord::ChartAt::Frame, to: word_chart };
     assert!(f.faces.holds(&star), "the fixture's star overlap");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
-    f.remainder = crate::transducer::element::place_chain(&[(9, 9, 1, 0)])
+    f.remainder = crate::transducer::element::place_chain(&[link(9, 9, 1, 0)])
         .expect("one link is A5's chain");
     f.reindex();
     assert!(matches!(f.vertices.at(&glued), Some(Vertex::Glued { .. })));
@@ -348,9 +348,9 @@ fn stand_demand_gathers_bodies_per_kind_and_chart() {
     let chart = stalk::Invariant::counts(&[1, 4, 4]);
     let other = stalk::Invariant::counts(&[1, 6, 2]);
     let mut f = Form::default();
-    f.stand_demand(Demand::Creation, &chart, vec![(0, 0, 0, 3)]);
-    f.stand_demand(Demand::Creation, &chart, vec![(0, 1, 0, 3), (0, 0, 0, 3)]);
-    f.stand_demand(Demand::Creation, &other, vec![(5, 5, 0, 1)]);
+    f.stand_demand(Demand::Creation, &chart, vec![link(0, 0, 0, 3)]);
+    f.stand_demand(Demand::Creation, &chart, vec![link(0, 1, 0, 3), link(0, 0, 0, 3)]);
+    f.stand_demand(Demand::Creation, &other, vec![link(5, 5, 0, 1)]);
     let demanded: Vec<(Demand, Vec<SectionLink>)> =
         f.demand_vertices().map(|(_, k, _, links)| (k.clone(), links.to_vec())).collect();
     assert_eq!(demanded.len(), 2, "one vertex per (kind, chart), got {demanded:?}");
@@ -365,7 +365,7 @@ fn stand_demand_gathers_bodies_per_kind_and_chart() {
     let Some(Vertex::Demand { bodies, .. }) = f.vertices.at(on_chart) else {
         panic!("the index names the demand vertex")
     };
-    assert_eq!(bodies, &vec![(0, 0, 0, 3), (0, 1, 0, 3)], "the bodies are gathered, sorted, once each");
+    assert_eq!(bodies, &vec![link(0, 0, 0, 3), link(0, 1, 0, 3)], "the bodies are gathered, sorted, once each");
 }
 
 /// 54.7 B6 — A TRUNCATED KEY REFUSES, and that is where the reading now

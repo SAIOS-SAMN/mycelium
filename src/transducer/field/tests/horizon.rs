@@ -2,6 +2,7 @@
 // and it is keyed by the class key.
 
 use crate::transducer::field::*;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// A class seeded into the horizon is recognised in a held well under the
 /// Ruled standing, never re-derived.
@@ -17,7 +18,7 @@ fn seed_horizon_keeps_class_ruled_not_rederived() {
         representative: r.clone(),
     };
     assert_eq!(c.seed_horizon(std::slice::from_ref(&rec)), 1);
-    c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+    c.hold(vec![link(0, 0, 1, 2), link(0, 1, 1, 2)]);
     let b = c.wells.scoped().next().map(|(_, b)| b).expect("well");
     let (_, _, st) = b.horizon.get(&rec.key).expect("seeded");
     // RULED, not Held. The syllabus is another mind's court-ratified class
@@ -35,7 +36,7 @@ fn seed_horizon_keeps_class_ruled_not_rederived() {
 fn horizon_put_keys_entry_by_class_key() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut c = Contemplation::new();
-    c.hold(vec![(0, 0, 1, 2), (1, 0, 1, 2)]);
+    c.hold(vec![link(0, 0, 1, 2), link(1, 0, 1, 2)]);
     let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).rotor();
     let ck = r.class_key().expect("90° turn class");

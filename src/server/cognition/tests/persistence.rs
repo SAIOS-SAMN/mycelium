@@ -288,7 +288,7 @@ let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listing = k.pending.scoped().next().expect("listed").1.address();
-k.record_settlement(listing, vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+k.record_settlement(listing, vec![crate::transducer::sentence::tests::fixtures::link(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
 let head = k.chain().head_stamp().expect("the court has acted");
 let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("a 90° turn");
 let g = rotor_versor(&crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor()).expect("a versor");
@@ -356,7 +356,7 @@ let scaled = t.scale(&num_rational::BigRational::new(num_bigint::BigInt::from(-7
 let entry = ProbedChart {
     chart: chart.clone(),
     state: crate::transducer::stalk::Closure::Twisted(Box::new(scaled)),
-    remainder: vec![(1, 2, 3, 4)],
+    remainder: vec![crate::transducer::sentence::tests::fixtures::link(1, 2, 3, 4)],
     stagnant: [0, 1, 0, 2],
 };
 k.field.insert(&listed, ListingCoherence { entries: vec![entry.clone()], nonflat: 1 });
@@ -370,7 +370,7 @@ assert!(booted.restore(&snap), "clean restore");
 assert!(booted.field_cold.get(&orphan).is_none(), "and restores as nothing");
 let got = booted.field.get(listed.as_bytes()).expect("the listing's field survived on its row");
 let [e] = got.entries.as_slice() else { panic!("one entry: {got:?}") };
-assert_eq!((&e.chart, &e.remainder, e.stagnant), (&chart, &vec![(1, 2, 3, 4)], [0, 1, 0, 2]));
+assert_eq!((&e.chart, &e.remainder, e.stagnant), (&chart, &vec![crate::transducer::sentence::tests::fixtures::link(1, 2, 3, 4)], [0, 1, 0, 2]));
 let crate::transducer::stalk::Closure::Twisted(v) = &e.state else { panic!("twisted: {:?}", e.state) };
 assert!(crate::transducer::element::same_versor(v, &t), "the closure is the ray it was");
 assert_eq!(got.nonflat, 1);
@@ -387,12 +387,12 @@ crate::transducer::raster::stand_on(0);
 use crate::transducer::element::from_canonical;
 use crate::transducer::germinate::germinate;
 let mut k = Court::new();
-let adopted = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
+let adopted = from_canonical(&germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 2)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 9)])).unwrap());
 let mut adopt = k.stroke();
 assert!(matches!(k.install_adopted(&adopted, [1; 32], &mut adopt), Adoption::Installed));
 let at = k.admitted_at(adopted.address().as_bytes()).expect("the adoption is an act, and it admits");
 assert_eq!(k.chain().node(&at).map(|r| r.kind), Some(crate::chronometry::ActKind::Adopted));
-let bare = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
+let bare = from_canonical(&germinate(&crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)]), &crate::transducer::sentence::tests::fixtures::painted(&[(0, 0, 1), (0, 1, 1), (0, 2, 1)])).unwrap());
 k.basis_insert(bare.clone(), [7; 32]);
 assert_eq!(k.unstamped(), [1, 0, 0, 0, 0], "held on the basis with no act: the reading names it by row");
 let mut booted = Court::new();

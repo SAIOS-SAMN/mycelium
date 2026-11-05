@@ -61,13 +61,10 @@ fn former_address(task: &Task) -> Option<Address> {
         put_key_bytes(&mut buf, &pair);
     }
     for (x, _) in &task.test {
-        let chain: Vec<(i64, i64, u8, u8)> = x
+        let chain: Vec<mycelium::transducer::sentence::SectionLink> = x
             .sites()
             .filter(|&(_, h)| h != 0)
-            .map(|(site, h)| {
-                let [r, c] = site.coordinates();
-                (r, c, h, h)
-            })
+            .map(|(site, h)| mycelium::transducer::sentence::SectionLink::new(site, h, h))
             .collect();
         put_key_bytes(&mut buf, &mycelium::transducer::element::from_residue(&chain)?.address());
     }

@@ -15,14 +15,15 @@ fn adopt_maps_every_state_deterministically() {
     let court = [0xAB; 32];
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let rot = vec![(0, 1, 1), (1, 0, 1), (1, 1, 1)];
-    let word = from_canonical(&germinate(&a, &rot).unwrap());
+    use crate::transducer::sentence::tests::fixtures::painted;
+    let word = from_canonical(&germinate(&painted(&a), &painted(&rot)).unwrap());
     assert_eq!(adopt(&k, court, &word), Adoption::Installed, "clean foreign word installs");
     assert_eq!(adopt(&k, court, &word), Adoption::Known, "the genome had converged");
     // The identical deformation germinated far away: same substance —
     // the language already derives it.
     let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
     let rot_far: Vec<_> = rot.iter().map(|(r, c, h)| (r + 9, c + 9, *h)).collect();
-    let dup = from_canonical(&germinate(&a_far, &rot_far).unwrap());
+    let dup = from_canonical(&germinate(&painted(&a_far), &painted(&rot_far)).unwrap());
     assert!(
         matches!(adopt(&k, court, &dup), Adoption::Derivable | Adoption::Known),
         "adoption never adds redundancy"

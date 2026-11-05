@@ -542,19 +542,20 @@ fn same_carried(a: &Line, b: &Line) -> bool {
 /// nothing, for a chain holds no clock. `None` where a site is off the grid's
 /// two axes.
 fn lanes_of(x: &Shape, y: &Shape) -> Option<[u64; 4]> {
-    let mut at: Keyed<(i64, i64, u8, u8)> = Keyed::new();
+    use crate::transducer::sentence::SectionLink;
+    let mut at: Keyed<SectionLink> = Keyed::new();
     for (s, before) in x.blade.support.iter().map(|s| (s, true)).chain(y.blade.support.iter().map(|s| (s, false))) {
-        let (r, c) = (s.axis(0)?, s.axis(1)?);
-        let k = super::remainder_site_key(r, c);
+        let site = crate::transducer::spelled::SectionSite::on_plane([s.axis(0)?, s.axis(1)?]);
+        let k = super::remainder_site_key(site);
         let link = match (at.get(&k).copied(), before) {
-            (Some((_, _, b, _)), false) => (r, c, b, 1),
-            (Some((_, _, _, a)), true) => (r, c, 1, a),
-            (None, true) => (r, c, 1, 0),
-            (None, false) => (r, c, 0, 1),
+            (Some(held), false) => SectionLink::new(site, held.before, 1),
+            (Some(held), true) => SectionLink::new(site, 1, held.after),
+            (None, true) => SectionLink::new(site, 1, 0),
+            (None, false) => SectionLink::new(site, 0, 1),
         };
         at.insert(&k, link);
     }
-    let links: Vec<(i64, i64, u8, u8)> = at.scoped().map(|(_, l)| *l).collect();
+    let links: Vec<SectionLink> = at.scoped().map(|(_, l)| *l).collect();
     Some(crate::transducer::element::measure_lanes(&links))
 }
 

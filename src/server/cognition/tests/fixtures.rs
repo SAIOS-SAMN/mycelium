@@ -5,6 +5,7 @@
 use crate::cognition::*;
 use crate::transducer::element::Element;
 use crate::transducer::family::TrainPair;
+pub use crate::transducer::sentence::tests::fixtures::painted;
 
 /// A pair of painted scenes as the one-pair family a voice reads it as:
 /// each scene on its own grid, exactly as the eyes of the voice would (20),
@@ -14,7 +15,7 @@ pub fn family_of_pair(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Vec<TrainPa
     // The fixtures stand on that 0 (track 26 S2: declared, never deduced
     // from one pair).
     crate::transducer::raster::stand_on(0);
-    vec![(grid_of_painted(a, 0).expect("a scene"), grid_of_painted(b, 0).expect("a scene"))]
+    vec![(grid_of_painted(&painted(a), 0).expect("a scene"), grid_of_painted(&painted(b), 0).expect("a scene"))]
 }
 
 /// THE GROUND A SPEAKER STATES FOR A FAMILY (MU-SENSING §6.2), as the mind

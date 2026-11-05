@@ -97,9 +97,9 @@ pub struct ExpressedWord {
 }
 
 /// AN OPEN QUESTION AS A GENOME FILE HELD IT: the residue chain's address,
-/// its links (row, column, hue before, hue after), and the stratum it stands
-/// on (its chart invariant's key, the sheaf sync's coordinate).
-pub(crate) type OpenResidue = (Vec<u8>, Vec<(i64, i64, u8, u8)>, Vec<u8>);
+/// its links of the section, and the stratum it stands on (its chart
+/// invariant's key, the sheaf sync's coordinate).
+pub(crate) type OpenResidue = (Vec<u8>, Vec<crate::transducer::sentence::SectionLink>, Vec<u8>);
 
 #[derive(Default, Clone)]
 pub struct MindLanguage {

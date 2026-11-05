@@ -300,7 +300,7 @@ impl Rank {
 pub struct ProbedChart {
     pub chart: crate::transducer::stalk::Invariant,
     pub state: crate::transducer::stalk::Closure,
-    pub remainder: Vec<(i64, i64, u8, u8)>,
+    pub remainder: Vec<crate::transducer::sentence::SectionLink>,
     pub stagnant: [u64; 4],
 }
 

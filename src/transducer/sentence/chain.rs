@@ -7,6 +7,7 @@
 use crate::network::nerve::Keyed;
 use crate::transducer::element::{self, Element, Versor};
 use crate::transducer::candidates;
+use crate::transducer::spelled::SectionSite;
 
 fn index_key(i: usize) -> [u8; 32] {
     let mut k = [0u8; 32];
@@ -14,14 +15,45 @@ fn index_key(i: usize) -> [u8; 32] {
     k
 }
 
-/// A LINK OF THE ALPHABET'S SECTION: `(axis 0, axis 1, symbol before,
-/// symbol after)` at a site of one section (16.5), the sample of the rank
-/// the seventeen letters spell (`alphabet::ALPHABET_SAMPLE_RANK`) at one
-/// byte per symbol. The word, chart and field carriers that spell a chain
-/// read this projection; a link of any other rank or width reaches them
-/// only through [`Link::section`], refused by name ([`SectionRefusal`]),
-/// never truncated.
-pub type SectionLink = (i64, i64, u8, u8);
+/// A LINK OF THE ALPHABET'S SECTION (16.5; MU-SENSING §3.6, §4): a site
+/// of the section ([`SectionSite`], the sample's coordinate vector
+/// restricted by its perspective to the letters' plane) and the symbols
+/// before and after the change there, one byte each, on the sample of the
+/// rank the seventeen letters spell (`alphabet::ALPHABET_SAMPLE_RANK`).
+/// The word, chart and field carriers that spell a chain read this
+/// projection; a link of any other rank or width reaches them only through
+/// [`Link::section`], refused by name ([`SectionRefusal`]), never
+/// truncated. The order is the site's, then the two symbols.
+///
+/// [`Link::section`]: super::Link::section
+/// [`SectionRefusal`]: super::SectionRefusal
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SectionLink {
+    /// Where the change stands on the section.
+    pub site: SectionSite,
+    /// The symbol before the change.
+    pub before: u8,
+    /// The symbol after the change.
+    pub after: u8,
+}
+
+impl SectionLink {
+    /// The link at `site` carrying `before` to `after`.
+    pub fn new(site: SectionSite, before: u8, after: u8) -> SectionLink {
+        SectionLink { site, before, after }
+    }
+
+    /// The link at the site of the section whose coordinates along the
+    /// perspective's plane are `coordinates`, in the plane's order.
+    pub fn on_plane(coordinates: [i64; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK], before: u8, after: u8) -> SectionLink {
+        SectionLink { site: SectionSite::on_plane(coordinates), before, after }
+    }
+
+    /// The transition the link carries: the symbol before, then after.
+    pub fn transition(&self) -> (u8, u8) {
+        (self.before, self.after)
+    }
+}
 
 /// A CITATION: the coordinates a sentence speaks for one word — its
 /// address, the transport carrying the word's chain into the utterance's
@@ -196,7 +228,7 @@ pub fn pieces(chain: &[SectionLink]) -> Vec<Vec<SectionLink>> {
 /// and never by looking a coordinate up ([`incidence_of_sites`]). `links`
 /// must be sorted and deduplicated; the pairs are indices into it.
 pub fn incidence(links: &[SectionLink]) -> Vec<(usize, usize)> {
-    let positions: Vec<(i64, i64)> = links.iter().map(|c| (c.0, c.1)).collect();
+    let positions: Vec<(i64, i64)> = links.iter().map(|l| { let [a, b] = l.site.coordinates(); (a, b) }).collect();
     incidence_of(&positions)
 }
 
@@ -293,7 +325,7 @@ pub fn cited_pattern(word: &Element, asg: &[(u8, u8)]) -> Option<Vec<SectionLink
     // One transition per site: an assignment of another length is not this
     // word's, whatever its charge.
     (pos.len() == asg.len()).then_some(())?;
-    let mut pat: Vec<SectionLink> = pos.iter().zip(asg).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
+    let mut pat: Vec<SectionLink> = pos.iter().zip(asg).map(|(&(r, c), &(b, a))| SectionLink::on_plane([r, c], b, a)).collect();
     pat.sort_unstable();
     Some(pat)
 }
@@ -319,7 +351,8 @@ pub fn reconstruct_at<'a>(word_at: &impl Fn(&[u8]) -> Option<&'a Element>, cites
 /// The key of a section's site: a section's sites stand in frame `0`, the
 /// sites' own (16.5), and the key is that site's own ([`Site::key`], `n` first). A
 /// site of any other base is keyed by `Site::key` directly.
-pub(crate) fn section_site_key(r: i64, c: i64) -> Vec<u8> {
+pub(crate) fn section_site_key(site: crate::transducer::spelled::SectionSite) -> Vec<u8> {
+    let [r, c] = site.coordinates();
     crate::transducer::base::Site::from((r, c, 0)).key()
 }
 
@@ -331,24 +364,26 @@ pub(crate) fn section_site_key(r: i64, c: i64) -> Vec<u8> {
 pub fn reconstruct_operators(ops: &[(Versor, Vec<SectionLink>)], target: &[SectionLink]) -> Vec<SectionLink> {
     let mut at: Keyed<SectionLink> = Keyed::new();
     for &link in target {
-        at.insert(section_site_key(link.0, link.1), link);
+        at.insert(section_site_key(link.site), link);
     }
     let mut spoken: Keyed<()> = Keyed::new();
     let mut over: Vec<SectionLink> = Vec::new();
     for (v, pat) in ops {
-        for &(wr, wc, wb, wa) in pat {
+        for w in pat {
+            let [wr, wc] = w.site.coordinates();
             let Some(image) = element::carry_compartment(v, wr, wc, 0) else { continue };
             for (tr, tc, tk) in image {
                 if tk != 0 {
                     continue;
                 }
-                let k = section_site_key(tr, tc);
+                let landed = SectionSite::on_plane([tr, tc]);
+                let k = section_site_key(landed);
                 match at.get(&k) {
-                    Some(t) if (t.2, t.3) == (wb, wa) => {
+                    Some(t) if t.transition() == w.transition() => {
                         spoken.insert(k, ());
                     }
                     Some(_) => {}
-                    None => over.push((tr, tc, wb, wa)),
+                    None => over.push(SectionLink::new(landed, w.before, w.after)),
                 }
             }
         }
@@ -375,7 +410,7 @@ pub fn reconstruct_operators(ops: &[(Versor, Vec<SectionLink>)], target: &[Secti
 pub fn gauge_of(word: &Element, v: &Versor, target: &[SectionLink]) -> Keyed<Vec<(u8, u8)>> {
     let mut at: Keyed<SectionLink> = Keyed::new();
     for &link in target {
-        at.insert(section_site_key(link.0, link.1), link);
+        at.insert(section_site_key(link.site), link);
     }
     let pos = element::positions(word.sub());
     let landed: Vec<(u8, u8)> = pos
@@ -386,8 +421,8 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[SectionLink]) -> Keyed<Vec
             if tk != 0 {
                 return None;
             }
-            let t = at.get(&section_site_key(tr, tc))?;
-            Some((t.2, t.3))
+            let t = at.get(&section_site_key(SectionSite::on_plane([tr, tc])))?;
+            Some(t.transition())
         })
         .collect();
     let mut agreeing = Keyed::new();
@@ -403,8 +438,8 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[SectionLink]) -> Keyed<Vec
             if tk != 0 {
                 return true;
             }
-            match at.get(&section_site_key(tr, tc)) {
-                Some(t) => (t.2, t.3) == (wb, wa),
+            match at.get(&section_site_key(SectionSite::on_plane([tr, tc]))) {
+                Some(t) => t.transition() == (wb, wa),
                 None => true,
             }
         });
@@ -436,16 +471,17 @@ pub fn seam_defect_operators(ops: &[(Versor, Vec<SectionLink>)], target: &[Secti
     let mut conflict: Keyed<()> = Keyed::new();
     let mut at: Keyed<SectionLink> = Keyed::new();
     for &link in target {
-        at.insert(section_site_key(link.0, link.1), link);
+        at.insert(section_site_key(link.site), link);
     }
     for (v, pat) in ops {
-        for &(wr, wc, wb, wa) in pat {
+        for w in pat {
+            let ([wr, wc], (wb, wa)) = (w.site.coordinates(), w.transition());
             let Some(p) = element::carry_centre(v, wr, wc, 0) else { continue };
             let Some((tr, tc, tk)) = element::site_of(&p) else { continue };
             if tk != 0 {
                 continue;
             }
-            let k = section_site_key(tr, tc);
+            let k = section_site_key(SectionSite::on_plane([tr, tc]));
             if at.get(&k).is_none() {
                 continue;
             }

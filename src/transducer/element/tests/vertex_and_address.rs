@@ -115,20 +115,22 @@ fn address_ignores_position_keeps_geometry() {
     // The same deformation transposed +7 rows, +5 cols.
     let a_far: Vec<_> = a.iter().map(|(r, c, h)| (r + 7, c + 5, *h)).collect();
     let b_far: Vec<_> = b.iter().map(|(r, c, h)| (r + 7, c + 5, *h)).collect();
-    let here = from_canonical(&germinate(&a, &b).unwrap());
-    let far = from_canonical(&germinate(&a_far, &b_far).unwrap());
+    use crate::transducer::sentence::tests::fixtures::painted;
+    let here = from_canonical(&germinate(&painted(&a), &painted(&b)).unwrap());
+    let far = from_canonical(&germinate(&painted(&a_far), &painted(&b_far)).unwrap());
     assert_eq!(here.address(), far.address(), "same deformation, any position — ONE word");
     assert!(here.carriage(&far, &mut super::fixtures::budget()).is_some(), "one thought: a versor carries one onto the other");
     // Equal tally, different geometry — the cured conflation: {1→0 here, 0→4
     // there} at two different relative offsets must stay DISTINCT.
-    let chain = |links: &[(i64, i64, u8, u8)]| {
+    use crate::transducer::sentence::tests::fixtures::link;
+    let chain = |links: &[crate::transducer::sentence::SectionLink]| {
         from_canonical(
             &crate::transducer::element::canonical_chain(links)
                 .expect("one entry per position is A5's chain"),
         )
     };
-    let g1 = chain(&[(0, 0, 1, 0), (1, 1, 0, 4)]);
-    let g2 = chain(&[(1, 0, 1, 0), (0, 2, 0, 4)]);
+    let g1 = chain(&[link(0, 0, 1, 0), link(1, 1, 0, 4)]);
+    let g2 = chain(&[link(1, 0, 1, 0), link(0, 2, 0, 4)]);
     assert!(g1.carriage(&g2, &mut super::fixtures::budget()).is_none(), "equal tally, different geometry — no versor relates them");
     assert_ne!(g1.address(), g2.address(), "and distinct identity");
 }

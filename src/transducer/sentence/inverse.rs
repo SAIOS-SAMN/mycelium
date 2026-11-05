@@ -33,7 +33,7 @@ fn take_chain_at(k: &[u8], p: &mut usize) -> Option<Option<ChainAt>> {
             let r = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
             let c = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
             *p += 16;
-            Some(Some(ChainAt { measure, pieces, corner: (r, c) }))
+            Some(Some(ChainAt { measure, pieces, corner: crate::transducer::spelled::SectionSite::on_plane([r, c]) }))
         }
         _ => None,
     }
@@ -485,7 +485,7 @@ pub fn from_residue(address: &[u8]) -> Option<Vec<SectionLink>> {
     for _ in 0..n {
         let r = i64::from_le_bytes(block.get(q..q + 8)?.try_into().ok()?);
         let c = i64::from_le_bytes(block.get(q + 8..q + 16)?.try_into().ok()?);
-        out.push((r, c, *block.get(q + 16)?, *block.get(q + 17)?));
+        out.push(SectionLink::on_plane([r, c], *block.get(q + 16)?, *block.get(q + 17)?));
         q += 18;
     }
     Some(out)

@@ -119,7 +119,7 @@ fn coords_of(train: &crate::transducer::family::Family, fibre: Option<Vec<(u8, u
 impl Mind {
     /// AN OPEN QUESTION PLACED on the corpus: its residue chain's scene read
     /// to its bodies' charts, and its hue map's 𝒢 orbit.
-    pub(crate) fn place_question(&mut self, address: &[u8], chain: &[(i64, i64, u8, u8)]) {
+    pub(crate) fn place_question(&mut self, address: &[u8], chain: &[crate::transducer::sentence::SectionLink]) {
         let Some((x, y)) = crate::transducer::family::scene_of_chain(chain) else { return };
         let fibre = crate::transducer::family::hue_map_of_chain(chain);
         let coords = coords_of(&[(x, y)], (!fibre.is_empty()).then_some(fibre));

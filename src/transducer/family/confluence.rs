@@ -158,14 +158,21 @@ fn sites_of(b: &Body) -> Vec<(i64, i64)> {
 
 /// READ ONE PAIR'S UNSAID OUTPUT BODIES as creations, single carriages and
 /// confluences.
-pub fn read_pair(x: &SectionSample, y: &SectionSample, remainder: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> PairConfluence {
+pub fn read_pair(x: &SectionSample, y: &SectionSample, remainder: &[crate::transducer::sentence::SectionLink], budget: &mut crate::physics::Budget) -> PairConfluence {
     let mut read = PairConfluence::default();
     let same_frame = x.extents() == y.extents();
     if !same_frame {
         read.unframed = true;
         return read;
     }
-    let unsaid: Vec<(i64, i64)> = remainder.iter().filter(|l| l.3 != 0).map(|l| (l.0, l.1)).collect();
+    let unsaid: Vec<(i64, i64)> = remainder
+        .iter()
+        .filter(|l| l.after != 0)
+        .map(|l| {
+            let [r, c] = l.site.coordinates();
+            (r, c)
+        })
+        .collect();
     let ins: Vec<Vec<(i64, i64)>> = perceive(x).iter().map(sites_of).collect();
     for out in perceive(y) {
         let out_sites = sites_of(&out);

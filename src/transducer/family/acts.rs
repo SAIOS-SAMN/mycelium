@@ -391,14 +391,13 @@ fn grid_of(s: &statement::Spoken) -> Option<SectionSample> {
     let void = crate::transducer::raster::void().ok();
     let opening = match void {
         Some(v) => v,
-        None => s.painted.iter().map(|&(_, _, h)| h).next()?,
+        None => s.painted.iter().map(|p| p.symbol).next()?,
     };
     let mut g = SectionSample::filled([s.frame.0, s.frame.1], opening).ok()?;
     let mut written: Vec<SectionSite> = Vec::with_capacity(s.painted.len());
-    for &(r, c, h) in &s.painted {
-        let site = SectionSite::on_plane([r, c]);
-        g.paint(site, h)?;
-        written.push(site);
+    for p in &s.painted {
+        g.paint(p.site, p.symbol)?;
+        written.push(p.site);
     }
     if void.is_none() {
         written.sort_unstable();

@@ -76,11 +76,6 @@ impl Local {
     }
 }
 
-/// The hue at `(r, c)` of `g`, or `None` off the grid.
-fn hue_at(g: &SectionSample, r: i64, c: i64) -> Option<u8> {
-    g.at(crate::transducer::spelled::SectionSite::on_plane([r, c]))
-}
-
 /// THE DEMAND OF EACH PAIR OVER ITS SITES, priced: the pair's residue links
 /// (`residue_of`, the sites where before and after differ) standing at the
 /// section's sites, closed to nothing — `deflation_of` of the move from
@@ -98,7 +93,7 @@ pub fn measure_sites(family: &[(SectionSample, SectionSample)], sites: &[Keyed<(
         // A pair whose residue cannot be written on the family's one ground
         // measures nothing it could pay (track 26 S2).
         let Ok(residue) = residue_of(Some(x), y) else { continue };
-        let links: Vec<(i64, i64, u8, u8)> = residue.into_iter().filter(|&(r, c, _, _)| at.contains(&site_key(r, c))).collect();
+        let links: Vec<crate::transducer::sentence::SectionLink> = residue.into_iter().filter(|l| at.contains(&site_key(l.site))).collect();
         let closed = crate::economy::deflation_of(&crate::economy::lane_moves(&[0; 4], &element::measure_lanes(&links)));
         mu.step(&crate::transducer::family::transduce::share_of_frame(closed, Some(y.sample())));
         if let Some(next) = crate::core::lanes::lanes_add(pay, closed) {
@@ -156,35 +151,34 @@ fn spoken_section(x: &SectionSample, y: &SectionSample, v: &element::Versor, rec
     // A vacated site is written as the scene's one ground; with none (a
     // vortex, no ground, no family open) nothing is spoken.
     let void = crate::transducer::raster::void().ok()?;
-    let mut painted: Vec<Painted> = Vec::new();
+    let mut painted: Vec<PaintedSite> = Vec::new();
     for (site, h) in x.sites() {
         if h != void {
-            let [r, c] = site.coordinates();
-            painted.push((r, c, h));
+            painted.push(PaintedSite::new(site, h));
         }
     }
     let image = carry_painted(v, &painted)?;
     // THE SPEECH: every painted site vacated, every image site painted.
     let mut said: Keyed<u8> = Keyed::new();
-    for &(r, c, _) in &painted {
-        said.insert(site_key(r, c), void);
+    for p in &painted {
+        said.insert(site_key(p.site), void);
     }
     let mut landed: Keyed<u8> = Keyed::new();
-    for &(r, c, h) in &image {
-        let hue = recolour(h);
-        match landed.get(&site_key(r, c)) {
+    for p in &image {
+        let hue = recolour(p.symbol);
+        match landed.get(&site_key(p.site)) {
             Some(&held) if held != hue => return None,
             _ => {
-                landed.insert(site_key(r, c), hue);
+                landed.insert(site_key(p.site), hue);
             }
         }
     }
-    let mut sites: Vec<(i64, i64)> = painted.iter().map(|&(r, c, _)| (r, c)).chain(image.iter().map(|&(r, c, _)| (r, c))).collect();
+    let mut sites: Vec<SectionSite> = painted.iter().chain(&image).map(|p| p.site).collect();
     sites.sort_unstable();
     sites.dedup();
     let mut changed = Keyed::new();
-    for (r, c) in sites {
-        let key = site_key(r, c);
+    for site in sites {
+        let key = site_key(site);
         let spoken = match landed.get(&key) {
             Some(&h) => h,
             None => match said.get(&key) {
@@ -193,14 +187,14 @@ fn spoken_section(x: &SectionSample, y: &SectionSample, v: &element::Versor, rec
             },
         };
         // A site the before side does not reach holds absence there.
-        let before = match hue_at(x, r, c) {
+        let before = match x.at(site) {
             Some(h) => h,
             None => void,
         };
         if spoken == before {
             continue;
         }
-        if hue_at(y, r, c) != Some(spoken) {
+        if y.at(site) != Some(spoken) {
             return None;
         }
         changed.insert(key, ());
@@ -228,18 +222,15 @@ pub fn form_local(
         if let Some(g) = spoken {
             let mut false_site = false;
             for (site, s) in g.sites() {
-                {
-                    let [r, c] = site.coordinates();
-                    let answer = hue_at(y, r, c);
-                    if s != 0 && answer != Some(s) {
-                        false_site = true;
-                    }
-                    // Said right where the before side did not hold it: a
-                    // hue painted, or an erasure (absence said where the
-                    // answer is absence and the before side was not).
-                    if answer == Some(s) && hue_at(x, r, c) != Some(s) {
-                        closed.insert(site_key(r, c), ());
-                    }
+                let answer = y.at(site);
+                if s != 0 && answer != Some(s) {
+                    false_site = true;
+                }
+                // Said right where the before side did not hold it: a
+                // hue painted, or an erasure (absence said where the
+                // answer is absence and the before side was not).
+                if answer == Some(s) && x.at(site) != Some(s) {
+                    closed.insert(site_key(site), ());
                 }
             }
             if false_site {

@@ -16,7 +16,7 @@ fn remainder_scene_paints_sites_or_bodies() {
     let x = grid(&["000", "000"]);
     let y = grid(&["220", "000"]);
     // The form spoke (0, 0) right, missed (0, 1), and painted (1, 2) wrongly.
-    let rem = vec![(0, 1, 0, 2), (1, 2, 5, 0)];
+    let rem = vec![crate::transducer::sentence::tests::fixtures::link(0, 1, 0, 2), crate::transducer::sentence::tests::fixtures::link(1, 2, 5, 0)];
     let family = vec![(x.clone(), y.clone()), (x.clone(), y.clone())];
     let rems = vec![rem, Vec::new()];
     let on_zero = |painted: Painted| {

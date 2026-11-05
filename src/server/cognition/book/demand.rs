@@ -69,7 +69,7 @@ impl Court {
             return ProbeReading::nothing();
         };
         let (chart, bodies) = (chart.clone(), bodies.clone());
-        let Some(((r0, c0), scene, image)) = scene_at_of_chain(&bodies) else {
+        let Some((corner, scene, image)) = scene_at_of_chain(&bodies) else {
             return ProbeReading::nothing();
         };
         let _ = &image;
@@ -89,8 +89,8 @@ impl Court {
         // refusal of the probe; it is a citation this court cannot replay,
         // and the probe stands on the ones it can.
         let mut open: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for &(r, c, _, _) in &bodies {
-            open.insert(crate::transducer::family::site_key(r, c), ());
+        for l in &bodies {
+            open.insert(crate::transducer::family::site_key(l.site), ());
         }
         let mut spoke: Option<(Address, element::Versor)> = None;
         // ONE SPEND PER FORM THE COURT SPEAKS. `apply_form` perceives a
@@ -111,12 +111,12 @@ impl Court {
             // `scene_at_of_chain` gives the corner the framing subtracted,
             // so the spoken link goes back where the chain had it and
             // nothing re-derives that corner here (law 12).
-            for &(r, c, _, a) in &bodies {
+            for l in &bodies {
                 // An offset below the corner is off the spoken sample and
                 // carries no symbol.
-                let said = spoken.at(crate::transducer::spelled::SectionSite::on_plane([r - r0, c - c0]));
-                if said == Some(a) {
-                    open.remove(&crate::transducer::family::site_key(r, c));
+                let said = l.site.offset_from(corner).and_then(|site| spoken.at(site));
+                if said == Some(l.after) {
+                    open.remove(&crate::transducer::family::site_key(l.site));
                 }
             }
             if spoke.is_none() {
@@ -126,10 +126,10 @@ impl Court {
         let Some((cited, transport)) = spoke else {
             return ProbeReading::nothing();
         };
-        let residue: Vec<(i64, i64, u8, u8)> = bodies
+        let residue: Vec<crate::transducer::sentence::SectionLink> = bodies
             .iter()
             .copied()
-            .filter(|&(r, c, _, _)| open.contains(&crate::transducer::family::site_key(r, c)))
+            .filter(|l| open.contains(&crate::transducer::family::site_key(l.site)))
             .collect();
         let after = element::measure_lanes(&residue);
         if residue.is_empty() {
@@ -162,10 +162,10 @@ impl Court {
         // Subtracting `after` from `before` assumes the residue's measure
         // is below the demand's on every lane, which is a claim about
         // `measure_lanes` and not something this settlement knows.
-        let reached: Vec<(i64, i64, u8, u8)> = bodies
+        let reached: Vec<crate::transducer::sentence::SectionLink> = bodies
             .iter()
             .copied()
-            .filter(|&(r, c, _, _)| !open.contains(&crate::transducer::family::site_key(r, c)))
+            .filter(|l| !open.contains(&crate::transducer::family::site_key(l.site)))
             .collect();
         let v = super::speech::residue_versor(&bodies, &residue);
         self.write_field(at, chart, Closure::Cavity, residue, &before, &after);

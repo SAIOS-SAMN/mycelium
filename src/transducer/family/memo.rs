@@ -109,6 +109,20 @@ pub(crate) fn derive_against(
 
 /// 37.7 — ASK THE RING WHETHER THIS MIND CLOSES A DEMAND THE PEEL LEFT.
 ///
+/// ONE SIDE OF A DEMAND'S BODIES as compartments: each link whose symbol on
+/// that side (`side`) is painted, at its site of the section in the
+/// section's own frame (16.5), holding that symbol.
+fn side_of(bodies: &[SectionLink], side: impl Fn(&SectionLink) -> u8) -> Vec<Compartment> {
+    bodies
+        .iter()
+        .filter(|l| side(l) != 0)
+        .map(|l| {
+            let [r, c] = l.site.coordinates();
+            Compartment::from((r, c, 0, side(l)))
+        })
+        .collect()
+}
+
 /// The demand carries the bodies it stands for (50.5), so the carriage is
 /// RE-DERIVED from them rather than stored beside them (law 12) — the two
 /// bodies are the chain's links split by which side of the transition they
@@ -129,10 +143,8 @@ fn ring_answer(
     };
     // The demand's bodies are one section's links (16.5), read in the
     // section's own frame.
-    let before: Vec<Compartment> =
-        bodies.iter().filter(|c| c.2 != 0).map(|c| Compartment::from((c.0, c.1, 0, c.2))).collect();
-    let after: Vec<Compartment> =
-        bodies.iter().filter(|c| c.3 != 0).map(|c| Compartment::from((c.0, c.1, 0, c.3))).collect();
+    let before = side_of(bodies, |l| l.before);
+    let after = side_of(bodies, |l| l.after);
     if before.is_empty() || after.is_empty() {
         return None;
     }
@@ -159,10 +171,8 @@ fn deformation_answer(
     let Vertex::Demand { bodies, .. } = v else {
         return None;
     };
-    let before: Vec<Compartment> =
-        bodies.iter().filter(|c| c.2 != 0).map(|c| Compartment::from((c.0, c.1, 0, c.2))).collect();
-    let after: Vec<Compartment> =
-        bodies.iter().filter(|c| c.3 != 0).map(|c| Compartment::from((c.0, c.1, 0, c.3))).collect();
+    let before = side_of(bodies, |l| l.before);
+    let after = side_of(bodies, |l| l.after);
     if before.is_empty() || after.is_empty() {
         return None;
     }

@@ -5,6 +5,7 @@ use super::fixtures::*;
 use crate::cognition::*;
 use crate::transducer::element;
 use crate::transducer::germinate::germinate;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// STEP 3's ECONOMIC CONVERSATION CLOSES: A speaks a novel SENTENCE and the
 /// court lists it with its demands (20 as ruled, 50.5); the listing is
@@ -201,14 +202,14 @@ let mut k = Court::new();
 // lists it as the book does.
 let c = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 1), (0, 3, 3)];
 let d = vec![(0, 0, 2u8), (0, 1, 2), (0, 2, 1), (0, 3, 4)];
-let chain = germinate(&c, &d).unwrap();
+let chain = germinate(&painted(&c), &painted(&d)).unwrap();
 k.book_list(element::from_canonical(&chain), [1; 32]);
 let target = k.quote().1[0].0.address();
 let chain = k.quote().1[0].0.sub().to_vec();
 assert_eq!(chain.len(), 3);
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
-k.basis_insert(element::from_canonical(&germinate(&a, &b).unwrap()), [2; 32]);
+k.basis_insert(element::from_canonical(&germinate(&painted(&a), &painted(&b)).unwrap()), [2; 32]);
 let _word = k.basis()[0].address();
 // The entity's reduction over the language: the word cited at the
 // origin, the far link left as the residue.
@@ -222,7 +223,7 @@ let sentence = crate::transducer::sentence::deconstruct_at(
     &mut super::fixtures::budget(),
 );
 let (void, cites) = (sentence.residue.clone(), sentence.cites.clone());
-assert_eq!(void, vec![(0, 3, 3, 4)]);
+assert_eq!(void, vec![link(0, 3, 3, 4)]);
 assert_eq!(cites.len(), 1);
 let basis = k.basis();
 assert_eq!(
@@ -276,11 +277,11 @@ use crate::anastome::dialogue::ProbeClosure;
 let mut k = Court::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
-let chain = germinate(&a, &b).unwrap();
-assert!(k.intake(&chain, &frame_of(&a, &b).expect("the extent fits")), "the corpus intake lists the body");
+let chain = germinate(&painted(&a), &painted(&b)).unwrap();
+assert!(k.intake(&chain, &frame_of(&painted(&a), &painted(&b)).expect("the extent fits")), "the corpus intake lists the body");
 let target = k.quote().1[0].0.address();
 let listed = k.quote().1[0].0.sub().to_vec();
-let rem = vec![(0, 1, 1u8, 0u8)];
+let rem = vec![link(0, 1, 1, 0)];
 let before = match k.tension.get(&target) {
     Some(t) => *t,
     None => k.quote().1[0].0.magnitude(),
@@ -468,9 +469,9 @@ fn intake_prepared_computes_no_chart_under_hold() {
     let mut k = Court::new();
     let a = vec![(0, 0, 1u8), (0, 1, 1), (1, 0, 3)];
     let b = vec![(0, 0, 2u8)];
-    let chain = germinate(&a, &b).expect("the pair has a chain");
+    let chain = germinate(&painted(&a), &painted(&b)).expect("the pair has a chain");
     let before = charts_read();
-    let prepared = prepare_intake(&chain, &frame_of(&a, &b).expect("the extent fits"));
+    let prepared = prepare_intake(&chain, &frame_of(&painted(&a), &painted(&b)).expect("the extent fits"));
     assert!(!prepared.is_empty(), "the chain has a piece to list");
     assert_eq!(charts_read() - before, prepared.len() as u64, "each piece charted once, off the court");
     let before = charts_read();
@@ -498,11 +499,11 @@ fn record_settlement_cools_after_window_closes() {
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     let listing = k.pending.scoped().next().expect("listed").1.address();
-    k.record_settlement(listing.clone(), vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+    k.record_settlement(listing.clone(), vec![link(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
     let opened = k.chain().head_height();
-    k.record_settlement(listing.clone(), vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+    k.record_settlement(listing.clone(), vec![link(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
     assert_eq!(k.settlements_cold_len(), 0, "an open window keeps the settlement on the docket");
     close_through(&mut k, opened).expect("the window opened at its height closes");
-    k.record_settlement(listing, vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+    k.record_settlement(listing, vec![link(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
     assert!(k.settlements_cold_len() >= 1, "a settlement past its closed window goes cold");
 }

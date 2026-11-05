@@ -46,7 +46,7 @@ chart addresses may change (CHANGELOG › Unreleased).
 |---|---|---|
 | Track 26 S4b: rank-`n` perception and transduction as factorisation ([MU-SENSING](docs/MU-SENSING.md) §3.6, §3.9) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | In progress on branch `s4b-rank-n`. Built: the fixed axis constants replaced by a perspective's roles; the alphabet kept at `n = 3`, derived, and a higher rank refused by name; D2.5 O3 derived; the rank-`n` link; connection by grade; every pair factored as motion ∘ residue, held as a vortex, with the court's admission on a derived residue; every task perceived by the mind at its own rank. Open: the rank-2 carrier of the word machinery (`family::Grid`) and the alphabet past `n = 3` |
 | Track 26 S4c: the hypha serves tasks of any rank; a claim of factorisation on the wire ([MU-SENSING](docs/MU-SENSING.md) §3.9, §6) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Built on branch `s4c-rank-n-hypha`: the registry posts, serves and addresses tasks of any rank, the word machinery's readers on the section; the claim of factorisation as the solve's claim kind 1 (78.126), admitted by reconstruction, recorded and never paid (ruled); the mind speaks one claim per held factorisation of a task beyond the alphabet |
-| Track 26 S4d: the word machinery reads a sample; `family::Grid` retired ([MU-SENSING](docs/MU-SENSING.md) §3.9, §5) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Stage 1 merged (PR #84, `spelled::SectionSample`); stage 2's readers built on branch `s4d2-section-readers` (`spelled::SectionSite`), its planar tuples and stage 3 open; a rank-3 task stays `BeyondAlphabet` (Law VIII, MU-SENSING §5) |
+| Track 26 S4d: the word machinery reads a sample; `family::Grid` retired ([MU-SENSING](docs/MU-SENSING.md) §3.9, §5) | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | Stage 1 merged (PR #84, `spelled::SectionSample`); stage 2's readers merged (PR #86, `spelled::SectionSite`); stage 2b's planar tuples on branch `s4d2b-section-tuples` (`SectionLink` and `PaintedSite` built; the chart's pairs, the anchor algebra and the clause tables open); stage 3 open; a rank-3 task stays `BeyondAlphabet` (Law VIII, MU-SENSING §5) |
 | T3, the turn-native chart reader and the turn-valued Conformal motion | [#26](https://github.com/SAIOS-SAMN/mycelium/issues/26) | With track 26 S4b's remainder |
 | Track 26, S4a and S7–S9 | [#32](https://github.com/SAIOS-SAMN/mycelium/issues/32) | After LAW-FIELD v1 is agreed with the peer kernels |
 
@@ -1857,14 +1857,43 @@ Each phase is one commit:
       `section_site_is_the_sample_coordinate_restricted_by_the_perspective`,
       `test_input_of_another_width_refuses_the_family_set_by_name`. No
       wire, task, word or chart address change.
-    - **Stage 2, remainder (open):** the planar tuples held as
-      `SectionSite`: `SectionLink = (i64, i64, u8, u8)` (about 138 uses),
-      the painted triple `(i64, i64, u8)` and `Painted` (about 110), the
-      chart's coordinate pairs (`perceive::on_grid`, `orbit::positions_of`,
-      the anchor's footprints, `confluence`, `Spoken.painted`), and the
-      clause reader's planar tables (`Seen`'s owner rows, `extent_of`).
+    - **Stage 2b, the planar tuples held as `SectionSite`** (branch
+      `s4d2b-section-tuples`):
+      - **Built:** `SectionLink` is a named type, a section site and the
+        two symbols (`sentence::SectionLink { site, before, after }`),
+        ordered as the tuple was; every carrier, key and codec of a chain
+        reads it, and a chain's least corner is `element::corner_of`.
+        Claim `section_link_holds_section_site_and_transition`. No wire,
+        tape, task, word or chart address change.
+      - **Built:** the painted triple is a named type, a section site and
+        its symbol (`spelled::PaintedSite { site, symbol }`); `Painted`
+        and the incongruence reader's `Cell` are retired, and the sensor's
+        one reading is `raster::painted_sites` (`painted_of` retired). The
+        shells, layers, orbit, speech (`Speech`, `statement::Spoken`), the
+        germ, the local section and the incongruence reader read it; a
+        scene's span is `SectionSite::span_of`. Claim
+        `painted_sites_round_trip_through_their_span`. No wire, tape,
+        task, word or chart address change.
+      - **Open:** the chart's coordinate pairs (`perceive::on_grid`,
+        `orbit::positions_of`, `element::positions`, `incidence_of`,
+        `confluence`); the anchor's selection algebra, footprints and
+        scene together (`anchor::Evidence`, `Selection::eval`,
+        `candidates::signature`, `keys::footprint_key`); and the clause
+        reader's planar tables (`Seen`'s cells and owner rows,
+        `extent_of`, `acts::pattern_key`).
     - **Stage 3:** the rule-language's `About::Grid` and the remaining
-      planar names renamed by function (track 11).
+      planar names renamed by function (track 11). Among them, the
+      rule language's `Coord::Height`, `Width`, `Top`, `Left`, `Bottom`
+      and `Right` (and the SDK's `mycelium_sdk::rule::Coord`) name the
+      plane's two axes as a raster's. Proposed, awaiting a ruling: name
+      each by its perspective role and plane axis, never by a row or a
+      column: `Extent(PlaneAxis)` for `Height`/`Width`,
+      `Least(PlaneAxis)` for `Top`/`Left` and `Greatest(PlaneAxis)` for
+      `Bottom`/`Right`, where `PlaneAxis` is the first or second space
+      axis of the perspective's plane (`Perspective::plane`). The clause
+      codec keeps each byte (`Extent` 1 and 2, `Least` 3 and 4,
+      `Greatest` 5 and 6), so no clause or word address moves; the SDK
+      names change with the core's.
     - **Decided from existing rulings** (Law VIII; MU-SENSING §5): the
       letters never spell a rank-3 sample plane by plane, since planes
       are peeled, never iterated. A rank-3 task stays `BeyondAlphabet`

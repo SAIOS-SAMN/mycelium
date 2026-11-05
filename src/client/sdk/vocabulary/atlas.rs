@@ -355,7 +355,7 @@ impl MindLanguage {
     /// without waiting for the court.
     pub(crate) fn locate(
         &mut self,
-        chain: &[(i64, i64, u8, u8)],
+        chain: &[crate::transducer::sentence::SectionLink],
         exclude: Option<&[u8]>,
         budget: &mut crate::physics::Budget,
     ) -> crate::transducer::sentence::Sentence {
@@ -376,7 +376,7 @@ impl MindLanguage {
     /// at the coordinate and there is nothing to number.
     pub(crate) fn locate_on<H>(
         &mut self,
-        chain: &[(i64, i64, u8, u8)],
+        chain: &[crate::transducer::sentence::SectionLink],
         exclude: Option<&[u8]>,
         held_at: &H,
         budget: &mut crate::physics::Budget,
@@ -384,7 +384,7 @@ impl MindLanguage {
     where
         H: Fn(
             &crate::transducer::stalk::Invariant,
-            &[(i64, i64, u8, u8)],
+            &[crate::transducer::sentence::SectionLink],
             &mut crate::physics::Budget,
         ) -> Vec<crate::transducer::sentence::HeldCite>,
     {

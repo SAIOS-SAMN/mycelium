@@ -6,6 +6,7 @@ use super::fixtures::*;
 use crate::client::sdk::mind::offer::{Offer, PASSED_TASK};
 use crate::client::sdk::mind::perceive::{SceneKind, Scene};
 use crate::client::sdk::*;
+use crate::transducer::sentence::tests::fixtures::link;
 
 /// A family of one cell stepping one column: a body of no chart the slide's
 /// bodies stand on.
@@ -24,7 +25,7 @@ fn one_cell_steps() -> Vec<(crate::transducer::family::SectionSample, crate::tra
 fn pull_task_asks_nothing_settled_and_strained_holds_tension() {
     crate::transducer::raster::stand_on(0);
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("settled"));
-    mind.place_question(b"a question placed", &[(0, 0, 1, 2)]);
+    mind.place_question(b"a question placed", &[link(0, 0, 1, 2)]);
     let [first, second] = two_hours_of_a_slide();
     let mut field = std::mem::take(&mut mind.field);
     let (settled, asked, strained) = field.think(|| {
@@ -80,7 +81,7 @@ fn task_inflow_takes_offer_in_restored_language() {
     crate::transducer::raster::stand_on(0);
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("restored"));
-    mind.place_question(b"a question placed", &[(0, 0, 1, 2)]);
+    mind.place_question(b"a question placed", &[link(0, 0, 1, 2)]);
     let [(x, y)] = <[_; 1]>::try_from(one_cell_steps()).expect("one pair");
     let mut field = std::mem::take(&mut mind.field);
     let (settled, asked) = field.think(|| {
@@ -254,7 +255,7 @@ fn curiosity_couples_to_nearest_stratum() {
 fn absorb_taught_holds_residue_as_open_question() {
     crate::transducer::raster::stand_on(0);
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("questioning"));
-    let chain = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (1, 0, 1, 2), (2, 2, 3, 4)];
+    let chain = vec![link(0, 0, 1, 2), link(0, 1, 1, 2), link(1, 0, 1, 2), link(2, 2, 3, 4)];
     let residue = crate::transducer::element::from_residue(&chain).expect("a residue chain");
     let tape = residue.to_bytes().expect("the record writes");
     let mut field = std::mem::take(&mut mind.field);
@@ -295,7 +296,7 @@ fn is_residue_is_true_only_for_chain_under_tag() {
         "the chain-free word stands under the residue's tag"
     );
     assert!(!is_residue(&bare), "a word with no chain is no open question");
-    let chain = vec![(0i64, 0i64, 1u8, 2u8), (2, 2, 3, 4)];
+    let chain = vec![link(0, 0, 1, 2), link(2, 2, 3, 4)];
     let residue = crate::transducer::element::from_residue(&chain).expect("a residue chain");
     assert!(is_residue(&residue), "a chain under the tag is one");
 }
@@ -404,7 +405,7 @@ fn pull_task_asks_only_on_empty_corpus() {
     assert!(!settled && vacuum.board.corpus.size().0 == 0, "settled, the corpus empty");
     assert!(asked, "the corpus empty: it asks");
     let mut held = Mind::open("127.0.0.1:1", Voice::named("holding"));
-    held.place_question(b"a question placed", &[(0, 0, 1, 2)]);
+    held.place_question(b"a question placed", &[link(0, 0, 1, 2)]);
     let mut field = std::mem::take(&mut held.field);
     field.think(|| held.pull_task());
     held.field = field;

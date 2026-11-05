@@ -8,6 +8,7 @@ use crate::transducer::element;
 use crate::transducer::element::from_canonical;
 use crate::transducer::stalk::Stalks;
 use crate::transducer::germinate::germinate;
+use crate::transducer::sentence::tests::fixtures::painted;
 use crate::verdict::*;
 use super::fixtures::*;
 
@@ -58,7 +59,7 @@ fn rule_maps_federation_to_admit_consilient_attach() {
     // transport; a genuinely different geometry finds an empty stratum
     // and admits.
     let rotated = from_canonical(
-        &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
+        &germinate(&painted(&[(0, 0, 3), (1, 0, 3)]), &painted(&[(0, 0, 4), (1, 0, 4)])).unwrap(),
     );
     match rule(&fed, &index_of(&fed), &stalks,&rotated.address(), Some(&rotated), None, &mut super::fixtures::budget()) {
         Ruling::Attached { base: 0, g } => {
@@ -67,7 +68,7 @@ fn rule_maps_federation_to_admit_consilient_attach() {
         other => panic!("a rotated placement attaches, got {other:?}"),
     }
     let bent = from_canonical(
-        &germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 2u8), (0, 1, 2), (1, 0, 2)])
+        &germinate(&painted(&[(0, 0, 1), (0, 1, 1), (1, 0, 1)]), &painted(&[(0, 0, 2), (0, 1, 2), (1, 0, 2)]))
             .unwrap(),
     );
     assert!(matches!(rule(&fed, &index_of(&fed), &stalks,&bent.address(), Some(&bent), None, &mut super::fixtures::budget()), Ruling::Admitted(_)));

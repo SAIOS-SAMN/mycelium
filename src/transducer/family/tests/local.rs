@@ -17,7 +17,7 @@ fn grid(rows: &[&str]) -> SectionSample {
 fn sites(at: &[(i64, i64)]) -> Keyed<()> {
     let mut k = Keyed::new();
     for &(r, c) in at {
-        k.insert(site_key(r, c), ());
+        k.insert(site_key(crate::transducer::spelled::SectionSite::on_plane([r, c])), ());
     }
     k
 }
@@ -85,7 +85,7 @@ fn word_local_closes_nothing_for_wrong_carriage() {
 fn word_local_pays_letter_nothing() {
     let family = vec![(grid(&["1100", "0000"]), grid(&["0011", "0000"]))];
     let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
-    let chart = crate::transducer::stalk::invariant(&[(0, 0, 1, 1)]);
+    let chart = crate::transducer::stalk::invariant(&[crate::transducer::sentence::tests::fixtures::link(0, 0, 1, 1)]);
     let letter = crate::transducer::sentence::generator_form(&crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor(), &chart, &[]).expect("a letter");
     let read = word_local(&letter, &family);
     assert_eq!(read.pay, [0; 4], "a letter is paid nothing on its own");

@@ -196,18 +196,19 @@ fn verify_refuses_mass_change_without_source_or_sink() {
 fn flux_of_links_reads_creation_and_vanishing() {
     let half = Q::new(1.into(), 2.into());
     // Two sites gained on row 1, at columns 0 and 1; a site held throughout.
-    let made = [(1, 0, 0, 3), (1, 1, 0, 3), (0, 0, 2, 2)];
+    use crate::transducer::sentence::tests::fixtures::link;
+    let made = [link(1, 0, 0, 3), link(1, 1, 0, 3), link(0, 0, 2, 2)];
     let f = flux_of_links(&made).expect("mass was made");
     assert_eq!(f.flow, Flow::Source);
     assert_eq!(f.mass, q(2));
     assert_eq!(f.at, point_at(&[q(1), half.clone()]), "at the gained sites' barycentre");
     assert!(verify_flux(&f, &mut budget()).admitted(), "{:?}", verify_flux(&f, &mut budget()).breaches);
     // One site lost at (2, 3): a sink there, of one.
-    let lost = [(2, 3, 4, 0), (0, 0, 2, 2)];
+    let lost = [link(2, 3, 4, 0), link(0, 0, 2, 2)];
     let f = flux_of_links(&lost).expect("mass was lost");
     assert_eq!((f.flow, f.mass.clone(), f.at.clone()), (Flow::Sink, q(1), point_at(&[q(2), q(3)])));
     assert!(verify_flux(&f, &mut budget()).admitted());
     // A site moved and one recoloured: the mass kept, no flux.
-    assert_eq!(flux_of_links(&[(0, 0, 1, 0), (0, 1, 0, 1), (1, 1, 2, 5)]), None);
+    assert_eq!(flux_of_links(&[link(0, 0, 1, 0), link(0, 1, 0, 1), link(1, 1, 2, 5)]), None);
     assert_eq!(flux_of_links(&[]), None);
 }

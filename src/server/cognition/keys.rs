@@ -61,7 +61,7 @@ pub(crate) fn action_index_key(e: &Element) -> Option<Vec<u8>> {
 }
 
 /// Positions of a chain — same_base and the condense family are a get.
-pub(crate) fn chart_footprint_key(_inv: &crate::transducer::stalk::Invariant, chain: &[(i64, i64, u8, u8)]) -> Vec<u8> {
+pub(crate) fn chart_footprint_key(_inv: &crate::transducer::stalk::Invariant, chain: &[crate::transducer::sentence::SectionLink]) -> Vec<u8> {
     let mut pos = element::positions(chain);
     pos.sort_unstable();
     let mut buf = Vec::new();
