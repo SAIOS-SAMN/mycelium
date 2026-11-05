@@ -22,6 +22,7 @@
 
 use super::*;
 use crate::transducer::sentence::form::clause::{About, Act, Clause, Comparison, Coord, Extent, Order, Paint, PlaneAxis, Pred, RegionKind, Stop, Tie, Value};
+use crate::transducer::alphabet::ALPHABET_SAMPLE_RANK;
 use crate::transducer::spelled::{PaintedSite, SectionSite};
 
 /// WHY NO ACT WAS READ, by name (rule 11).
@@ -109,32 +110,59 @@ fn painted_of(b: &Body) -> Vec<PaintedSite> {
     b.compartments.iter().filter_map(|l| Some(PaintedSite::new(SectionSite::of_family(&l.site)?, l.hue))).collect()
 }
 
-/// A body's painted sites as the indices of the sample's sites the act
-/// reading walks, each with its symbol.
-fn cells_of(b: &Body) -> Vec<(usize, usize, u8)> {
-    painted_of(b)
-        .into_iter()
-        .filter_map(|p| {
-            let [r, c] = p.site.indices()?;
-            Some((r, c, p.symbol))
-        })
-        .collect()
+/// `site` STEPPED `by` along the plane, where it lands on `g`; `None` off
+/// the sample, which holds no site there.
+fn step(g: &SectionSample, site: SectionSite, by: [i64; ALPHABET_SAMPLE_RANK]) -> Option<SectionSite> {
+    let s = site.moved(by)?;
+    g.at(s).map(|_| s)
 }
 
-/// THE EXTENT OF INDEXED CELLS `(top, left, bottom, right)`, read by the
-/// clause reader's one corner reading (`statement::corners_of`) on their
-/// sites of the section.
-fn extent(cells: &[(usize, usize, u8)]) -> Option<(usize, usize, usize, usize)> {
-    let painted: Vec<PaintedSite> = cells.iter().map(|&(i, j, h)| Some(PaintedSite::new(SectionSite::of_indices([i, j])?, h))).collect::<Option<_>>()?;
-    let (least, greatest) = statement::corners_of(&painted)?;
-    let ([t, l], [b, r]) = (least.indices()?, greatest.indices()?);
-    Some((t, l, b, r))
+/// THE UNIT STEP along one axis of the plane, in the plane's order; `None`
+/// for an axis the plane does not have.
+fn unit_along(axis: usize) -> Option<[i64; ALPHABET_SAMPLE_RANK]> {
+    let mut unit = [0i64; ALPHABET_SAMPLE_RANK];
+    *unit.get_mut(axis)? = 1;
+    Some(unit)
 }
 
-/// The symbol at indices `(r, c)` along the perspective's plane; `None` off
-/// the sample.
-fn at(g: &SectionSample, r: usize, c: usize) -> Option<u8> {
-    g.at(SectionSite::of_indices([r, c])?)
+/// `site` WITH ITS COORDINATE along `axis` of the plane replaced by `value`.
+fn with_along(site: SectionSite, axis: usize, value: i64) -> Option<SectionSite> {
+    let mut c = site.coordinates();
+    *c.get_mut(axis)? = value;
+    Some(SectionSite::on_plane(c))
+}
+
+/// Whether two sites agree on every axis of the plane but `axis`: both
+/// stand on one line along `axis`.
+fn on_line(a: SectionSite, b: SectionSite, axis: usize) -> bool {
+    a.coordinates().iter().zip(b.coordinates()).enumerate().all(|(k, (x, y))| k == axis || *x == y)
+}
+
+/// THE BODY OWNING EACH SITE of a pair's input, at the site's offset in
+/// canonical address order (`SectionSample::offset_of`); a later body's
+/// site is its own where two bodies name one.
+struct Owners<'a> {
+    x: &'a SectionSample,
+    at: Vec<Option<usize>>,
+}
+
+impl<'a> Owners<'a> {
+    fn of(p: &Pair<'a>) -> Owners<'a> {
+        let mut at = vec![None; p.x.symbols().len()];
+        for (b, body) in p.bodies.iter().enumerate() {
+            for c in painted_of(body) {
+                if let Some(o) = p.x.offset_of(c.site).and_then(|k| at.get_mut(k)) {
+                    *o = Some(b);
+                }
+            }
+        }
+        Owners { x: p.x, at }
+    }
+
+    /// The body owning `site`; `None` off the sample or on no body.
+    fn at(&self, site: SectionSite) -> Option<usize> {
+        self.x.offset_of(site).and_then(|k| self.at.get(k)).copied().flatten()
+    }
 }
 
 fn insert_sorted<T: Ord>(v: &mut Vec<T>, x: T) {
@@ -153,23 +181,24 @@ fn predicates(pairs: &[Pair<'_>]) -> Vec<Pred> {
     let mut counts: [Vec<i64>; 4] = [Vec::new(), Vec::new(), Vec::new(), Vec::new()];
     for p in pairs {
         for b in &p.bodies {
-            let cells = cells_of(b);
+            let cells = painted_of(b);
             let mut own: Vec<u8> = Vec::new();
-            for &(_, _, h) in &cells {
-                insert_sorted(&mut hues, h);
-                insert_sorted(&mut own, h);
+            for c in &cells {
+                insert_sorted(&mut hues, c.symbol);
+                insert_sorted(&mut own, c.symbol);
             }
             if !charts.contains(&b.moduli) {
                 charts.push(b.moduli.clone());
             }
-            let ext = extent(&cells);
-            let span = |lo: usize, hi: usize| -> Option<i64> { i64::try_from(hi.checked_sub(lo)?.checked_add(1)?).ok() };
-            let read = [
-                i64::try_from(cells.len()).ok(),
-                ext.and_then(|(t, _, b, _)| span(t, b)),
-                ext.and_then(|(_, l, _, r)| span(l, r)),
-                i64::try_from(own.len()).ok(),
-            ];
+            // The body's span along one axis of the plane, both corners
+            // included.
+            let corners = statement::corners_of(&cells);
+            let span = |axis: PlaneAxis| -> Option<i64> {
+                let (lo, hi) = corners?;
+                let i = axis.index();
+                hi.coordinates().get(i)?.checked_sub(*lo.coordinates().get(i)?)?.checked_add(1)
+            };
+            let read = [i64::try_from(cells.len()).ok(), span(PlaneAxis::First), span(PlaneAxis::Second), i64::try_from(own.len()).ok()];
             for (list, v) in counts.iter_mut().zip(read) {
                 if let Some(v) = v {
                     insert_sorted(list, v);
@@ -353,16 +382,16 @@ fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::I
     let mut classes: Classes = crate::network::nerve::Keyed::new();
     for (k, (p, whole)) in parted.iter().zip(pairs).enumerate() {
         // A part of a body a carriage moves is the carriage's.
-        let moved: Vec<(usize, usize)> = whole
+        let moved: Vec<SectionSite> = whole
             .bodies
             .iter()
             .filter(|b| moved_charts.contains(&&b.moduli))
-            .flat_map(|b| cells_of(b).into_iter().map(|(r, c, _)| (r, c)))
+            .flat_map(|b| painted_of(b).into_iter().map(|c| c.site))
             .collect();
         let mut s = Vec::new();
         for (i, part) in p.bodies.iter().enumerate() {
-            let cells = cells_of(part);
-            if cells.iter().any(|&(r, c, _)| moved.contains(&(r, c))) {
+            let cells = painted_of(part);
+            if cells.iter().any(|c| moved.contains(&c.site)) {
                 continue;
             }
             s.push(i);
@@ -370,7 +399,7 @@ fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::I
                 Fate::Kept => continue,
                 Fate::Erased => {
                     let void = void.ok()?;
-                    cells.iter().map(|&(_, _, h)| h).filter(|&h| h != void).map(|h| (h, void)).take(1).collect()
+                    cells.iter().map(|c| c.symbol).filter(|&h| h != void).map(|h| (h, void)).take(1).collect()
                 }
                 Fate::Recoloured(map) => map,
                 Fate::Changed => return None,
@@ -391,7 +420,7 @@ fn part_clauses(pairs: &[Pair<'_>], moved_charts: &[&crate::transducer::stalk::I
 /// every cell it changes is the output's there.
 fn agrees(clause: &Clause, p: &Pair<'_>) -> bool {
     let Some(said) = statement::speak_clauses(std::slice::from_ref(clause), p.x, &p.bodies).ok().as_ref().and_then(canvas_of) else { return false };
-    if frame_of(&said) != frame_of(p.y) {
+    if said.extents() != p.y.extents() {
         return false;
     }
     let agrees = said.sites().all(|(site, s)| Some(s) == p.x.at(site) || Some(s) == p.y.at(site));
@@ -513,25 +542,29 @@ fn slide_of(c: &Clause, pairs: &[Pair<'_>]) -> Option<Clause> {
     if !gauge.is_empty() {
         return None;
     }
-    // The translation, read off three cells it carries: one offset for all.
-    let off = |r: i64, cc: i64| -> Option<(i64, i64)> {
-        let from = SectionSite::on_plane([r, cc]);
-        let [a, b] = statement::carried(motion, from).ok()?.offset_from(from)?.coordinates();
-        Some((a, b))
-    };
-    let o = off(0, 0)?;
-    if off(0, 1)? != o || off(1, 0)? != o {
-        return None;
+    // The translation, read off the cells it carries at the origin and one
+    // step from it along each axis of the plane: one offset for all.
+    let off = |from: SectionSite| -> Option<[i64; ALPHABET_SAMPLE_RANK]> { Some(statement::carried(motion, from).ok()?.offset_from(from)?.coordinates()) };
+    let origin = SectionSite::on_plane([0; ALPHABET_SAMPLE_RANK]);
+    let o = off(origin)?;
+    for axis in 0..ALPHABET_SAMPLE_RANK {
+        if off(origin.moved(unit_along(axis)?)?)? != o {
+            return None;
+        }
     }
-    // Along a row, a column or a diagonal: the unit ray and its length.
-    let n = match (o.0.abs(), o.1.abs()) {
-        (0, 0) => return None,
-        (a, 0) => a,
-        (0, b) => b,
-        (a, b) if a == b => a,
-        _ => return None,
-    };
-    let ray = (i8::try_from(o.0 / n).ok()?, i8::try_from(o.1 / n).ok()?);
+    // Along one axis of the plane or a diagonal: every coordinate that
+    // moves moves one length, the unit ray's.
+    let mut n: Option<i64> = None;
+    for c in o.iter().map(|c| c.abs()).filter(|&c| c != 0) {
+        match n {
+            None => n = Some(c),
+            Some(m) if m == c => {}
+            Some(_) => return None,
+        }
+    }
+    let n = n?;
+    let [first, second] = o.map(|c| i8::try_from(c / n).ok());
+    let ray = (first?, second?);
     let slide = Clause { select: c.select.clone(), act: Act::Slide { ray, stop: Stop::Contact } };
     let same = pairs.iter().all(|p| {
         let carried = statement::speak_clauses(std::slice::from_ref(c), p.x, &p.bodies).ok();
@@ -547,14 +580,21 @@ fn slide_of(c: &Clause, pairs: &[Pair<'_>]) -> Option<Clause> {
 fn slide_ray(r: &PredicateTable<'_, '_>, gone: &[Vec<usize>]) -> Option<(i8, i8)> {
     let mut shared: Vec<(i8, i8)> = rays();
     for (p, g) in r.pairs.iter().zip(gone) {
-        let [rows, cols] = p.y.extents();
-        let reach = i64::try_from(if rows > cols { rows } else { cols }).ok()?;
+        // The farthest a body can be found: the output's greatest extent
+        // along the plane.
+        let mut reach = 0usize;
+        for e in p.y.extents() {
+            if e > reach {
+                reach = e;
+            }
+        }
+        let reach = i64::try_from(reach).ok()?;
         for &b in g {
-            let cells = cells_of(&p.bodies[b]);
+            let cells = painted_of(&p.bodies[b]);
             shared.retain(|&(dr, dc)| {
                 (1..=reach).any(|k| {
-                    let by = (k * i64::from(dr), k * i64::from(dc));
-                    cells.iter().all(|&(i, j, h)| step(i, j, by, rows, cols).is_some_and(|(a, d)| at(p.y, a, d) == Some(h)))
+                    let by = [k * i64::from(dr), k * i64::from(dc)];
+                    cells.iter().all(|c| c.site.moved(by).and_then(|s| p.y.at(s)) == Some(c.symbol))
                 })
             });
         }
@@ -575,7 +615,7 @@ fn takes_partners_hue(r: &PredicateTable<'_, '_>, recoloured: &[Vec<usize>]) -> 
         let partners = statement::partner_hues(p.x, &p.bodies);
         for &b in rc {
             let Some(want) = partners.get(b).copied().flatten() else { return false };
-            if !cells_of(&p.bodies[b]).iter().all(|&(i, j, _)| at(p.y, i, j) == Some(want)) {
+            if !painted_of(&p.bodies[b]).iter().all(|c| p.y.at(c.site) == Some(want)) {
                 return false;
             }
         }
@@ -595,16 +635,16 @@ enum Fate {
 
 fn fate(b: &Body, y: &SectionSample) -> Fate {
     let ground = crate::transducer::raster::ground();
-    let cells = cells_of(b);
-    let said: Vec<Option<u8>> = cells.iter().map(|&(r, c, _)| at(y, r, c)).collect();
-    if cells.iter().zip(&said).all(|(c, s)| *s == Some(c.2)) {
+    let cells = painted_of(b);
+    let said: Vec<Option<u8>> = cells.iter().map(|c| y.at(c.site)).collect();
+    if cells.iter().zip(&said).all(|(c, s)| *s == Some(c.symbol)) {
         return Fate::Kept;
     }
     if said.iter().all(|s| s.is_some_and(|t| ground.holds(&t))) {
         return Fate::Erased;
     }
     let mut map: Vec<(u8, u8)> = Vec::new();
-    for (&(_, _, h), s) in cells.iter().zip(&said) {
+    for (h, s) in cells.iter().map(|c| c.symbol).zip(&said) {
         let Some(t) = *s else { return Fate::Changed };
         if ground.holds(&t) {
             return Fate::Changed;
@@ -640,7 +680,7 @@ pub(crate) fn read_acts(form: &Form, family: &[(SectionSample, SectionSample)], 
     let sels = pairs.iter().map(|p| statement::select_each(&preds, p.x, &p.bodies)).collect();
     let mut r = PredicateTable { pairs, preds, sels, budget };
     let every = r.every();
-    if r.pairs.iter().any(|p| frame_of(p.x) != frame_of(p.y)) {
+    if r.pairs.iter().any(|p| p.x.extents() != p.y.extents()) {
         // 78.167 Phase B, Step 4 — A NEW FRAME read off the frames: the panes
         // the input splits into, or the tiles the output is made of.
         if let Some(clause) = read_panes(&r).or_else(|| read_tiles(&r)) {
@@ -803,8 +843,8 @@ pub(crate) fn read_acts(form: &Form, family: &[(SectionSample, SectionSample)], 
 /// - then FILLS, piece by piece: a piece of one hue that a region of the
 ///   bodies holding it covers (`read_fills`);
 /// - then JOINS: straight pieces between two bodies (`read_connects`), and
-///   pieces round one corner from a body on its row to one on its column
-///   (`read_bends`);
+///   pieces round one corner from a body on a line along the plane's second
+///   axis to one on a line along its first (`read_bends`);
 /// - then LINES on what remains, every cell on runs the effect drew from
 ///   bodies, each run's ray the displacement measured from the body cell it
 ///   leaves (`read_lines`).
@@ -849,8 +889,8 @@ fn created(r: &mut PredicateTable<'_, '_>, base: Vec<Clause>, touched: &[Vec<usi
     // CONNECTORS: straight pieces whose two ends abut two bodies.
     let (connects, rest) = read_connects(r, &rest, every);
     all.extend(connects);
-    // BENDS: pieces round one corner from a body on its row to a body on
-    // its column.
+    // BENDS: pieces round one corner from a body on a line along the
+    // plane's second axis to a body on a line along its first.
     let (bends, rest) = read_bends(r, &rest, every);
     all.extend(bends);
     // LINES on what no fill or connector read, on the canvas they left (a
@@ -872,8 +912,8 @@ fn created(r: &mut PredicateTable<'_, '_>, base: Vec<Clause>, touched: &[Vec<usi
 /// clears a cell — no creation says that.
 type Residue = (Vec<SectionSample>, PairCells);
 
-/// On each pair, a set of cells, each with its hue.
-type PairCells = Vec<Vec<(usize, usize, u8)>>;
+/// On each pair, a set of painted sites of the section.
+type PairCells = Vec<Vec<PaintedSite>>;
 
 /// One fill class: on each pair its holders, and the cells the holders'
 /// fill explains.
@@ -882,39 +922,31 @@ type FillClass = (Vec<Vec<usize>>, PairCells);
 fn residue_of(r: &mut PredicateTable<'_, '_>, clauses: &[Clause]) -> Result<Option<Residue>, Unread> {
     let Some(canvas) = r.speak(clauses)? else { return Ok(None) };
     let ground = crate::transducer::raster::ground();
-    let residue: Vec<Vec<(usize, usize, u8)>> = canvas
+    let residue: PairCells = canvas
         .iter()
         .zip(&r.pairs)
-        .map(|(g, p)| {
-            let mut out = Vec::new();
-            for (site, h) in p.y.sites() {
-                if g.at(site) != Some(h) {
-                    if let Some([i, j]) = site.indices() {
-                        out.push((i, j, h));
-                    }
-                }
-            }
-            out
-        })
+        .map(|(g, p)| p.y.sites().filter(|&(site, h)| g.at(site) != Some(h)).map(|(site, h)| PaintedSite::new(site, h)).collect())
         .collect();
-    if residue.iter().flatten().any(|&(_, _, h)| ground.holds(&h)) {
+    if residue.iter().flatten().any(|c| ground.holds(&c.symbol)) {
         return Ok(None);
     }
     Ok(Some((canvas, residue)))
 }
 
-/// The residue's pieces: its hue-blind 4-connected components.
-fn pieces_of(res: &[(usize, usize, u8)]) -> Vec<Vec<(usize, usize, u8)>> {
-    let mut left: Vec<(usize, usize, u8)> = res.to_vec();
+/// THE RESIDUE'S PIECES: its symbol-blind components connected through a
+/// shared face, the contact of grade `n − 1` generated at the section's
+/// rank (`sentence::faces_of`), never a list of offsets.
+fn pieces_of(res: &[PaintedSite]) -> Vec<Vec<PaintedSite>> {
+    let faces: Vec<Vec<i64>> = crate::transducer::sentence::faces_of(ALPHABET_SAMPLE_RANK);
+    let touch = |a: SectionSite, b: SectionSite| b.offset_from(a).is_some_and(|d| faces.iter().any(|f| f.as_slice() == d.coordinates().as_slice()));
+    let mut left: Vec<PaintedSite> = res.to_vec();
     let mut out = Vec::new();
     while let Some(seed) = left.pop() {
         let mut piece = vec![seed];
         let mut grew = true;
         while grew {
             grew = false;
-            let (near, far): (Vec<_>, Vec<_>) = left.iter().partition(|&&(i, j, _)| {
-                piece.iter().any(|&(a, b, _)| (a == i && b.abs_diff(j) == 1) || (b == j && a.abs_diff(i) == 1))
-            });
+            let (near, far): (Vec<_>, Vec<_>) = left.iter().partition(|c| piece.iter().any(|q| touch(q.site, c.site)));
             if !near.is_empty() {
                 piece.extend(near);
                 left = far;
@@ -933,7 +965,7 @@ fn pieces_of(res: &[(usize, usize, u8)]) -> Vec<Vec<(usize, usize, u8)>> {
 /// region and hue are one clause, the pieces' bodies separated by the list. What
 /// no fill reads is left for the lines. A class whose bodies do not separate
 /// is left for them too.
-fn read_fills(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+fn read_fills(r: &PredicateTable<'_, '_>, residue: &[Vec<PaintedSite>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
     let n = r.pairs.len();
     // (region, hue) → its class.
     let mut classes: crate::network::nerve::Keyed<FillClass> = crate::network::nerve::Keyed::new();
@@ -941,14 +973,14 @@ fn read_fills(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], e
     let regions = [(0u8, RegionKind::Interior), (1, RegionKind::Halo), (2, RegionKind::Extent)];
     for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
         // The residue's sites of the section.
-        let sites_of = |cells: &[(usize, usize, u8)]| -> Vec<SectionSite> { cells.iter().filter_map(|&(i, j, _)| SectionSite::of_indices([i, j])).collect() };
+        let sites_of = |cells: &[PaintedSite]| -> Vec<SectionSite> { cells.iter().map(|c| c.site).collect() };
         let mut all_cells: Vec<SectionSite> = sites_of(res);
         all_cells.sort_unstable();
         let by_region: Vec<Vec<Vec<SectionSite>>> = regions.iter().map(|&(_, region)| statement::regions_each(region, p.x, &p.bodies)).collect();
         for piece in pieces_of(res) {
             let mut hues: Vec<u8> = Vec::new();
-            for &(_, _, h) in &piece {
-                insert_sorted(&mut hues, h);
+            for c in &piece {
+                insert_sorted(&mut hues, c.symbol);
             }
             let piece_sites = sites_of(&piece);
             let read = match hues.as_slice() {
@@ -1019,27 +1051,6 @@ fn read_fills(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], e
     (clauses, rest)
 }
 
-/// Each body's cell owner on a pair's input grid.
-fn owners(p: &Pair<'_>) -> Vec<Vec<Option<usize>>> {
-    let [rows, cols] = p.x.extents();
-    let mut owner = vec![vec![None; cols]; rows];
-    for (b, body) in p.bodies.iter().enumerate() {
-        for (i, j, _) in cells_of(body) {
-            if let Some(o) = owner.get_mut(i).and_then(|row| row.get_mut(j)) {
-                *o = Some(b);
-            }
-        }
-    }
-    owner
-}
-
-/// One cell `(i, j)` stepped by `(dr, dc)`, inside a grid of `rows × cols`.
-fn step(i: usize, j: usize, (dr, dc): (i64, i64), rows: usize, cols: usize) -> Option<(usize, usize)> {
-    let ni = usize::try_from(i64::try_from(i).ok()?.checked_add(dr)?).ok()?;
-    let nj = usize::try_from(i64::try_from(j).ok()?.checked_add(dc)?).ok()?;
-    (ni < rows && nj < cols).then_some((ni, nj))
-}
-
 /// WHAT THE RUNS ALONG ONE RAY SHOWED: on each pair the bodies they leave;
 /// whether every run carried its body's own hue; the one hue every run
 /// carried, where they all carried one; whether a run stopped at a painted
@@ -1053,38 +1064,37 @@ struct Rays {
 
 /// C3 — LINES READ OFF THE EFFECT. Every residue cell beside a body cell
 /// measures a ray — its displacement from that cell — and the walk from the
-/// body cell along it must run through residue cells to a stop: the grid's
+/// body cell along it must run through residue cells to a stop: the sample's
 /// border, or a cell painted before (contact). Each ray so measured is one
 /// clause: the bodies its runs leave (separated), each painted its own hue or
 /// the one hue every run carried, stopping at contact where any run did.
 /// `None` where the runs do not cover the residue, or a ray's bodies do not
 /// separate, or its runs carry no one paint.
-fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
+fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[Vec<PaintedSite>], every: &[Vec<usize>]) -> Option<Vec<Clause>> {
     let ground = crate::transducer::raster::ground();
     let n = r.pairs.len();
-    let unit_rays: Vec<(i64, i64)> = rays().into_iter().map(|(a, b)| (i64::from(a), i64::from(b))).collect();
+    let unit_rays: Vec<[i64; ALPHABET_SAMPLE_RANK]> = rays().into_iter().map(|(a, b)| [i64::from(a), i64::from(b)]).collect();
     let mut rays: crate::network::nerve::Keyed<Rays> = crate::network::nerve::Keyed::new();
     for (k, ((p, res), before)) in r.pairs.iter().zip(residue).zip(canvas).enumerate() {
-        let (rows, cols) = frame_of(p.x);
-        let owner = owners(p);
-        let created = |i: usize, j: usize| res.iter().find(|&&(a, b, _)| (a, b) == (i, j)).map(|&(_, _, h)| h);
-        let mut covered: Vec<(usize, usize)> = Vec::new();
-        for &(i, j, _) in res {
-            for &(dr, dc) in &unit_rays {
+        let owner = Owners::of(p);
+        let created = |s: SectionSite| res.iter().find(|c| c.site == s).map(|c| c.symbol);
+        let mut covered: Vec<SectionSite> = Vec::new();
+        for cell in res {
+            for &ray in &unit_rays {
                 // The body cell this residue cell stands beside, and the
                 // displacement from it: the ray, measured.
-                let Some((bi, bj)) = step(i, j, (-dr, -dc), rows, cols) else { continue };
-                let Some(b) = owner[bi][bj] else { continue };
-                let Some(own) = at(p.x, bi, bj) else { continue };
-                let (mut run, mut at_cell, mut stop) = (Vec::new(), (bi, bj), None);
-                while let Some((ni, nj)) = step(at_cell.0, at_cell.1, (dr, dc), rows, cols) {
-                    match created(ni, nj) {
+                let Some(from) = step(p.x, cell.site, ray.map(|d| -d)) else { continue };
+                let Some(b) = owner.at(from) else { continue };
+                let Some(own) = p.x.at(from) else { continue };
+                let (mut run, mut at_cell, mut stop): (Vec<PaintedSite>, SectionSite, Option<bool>) = (Vec::new(), from, None);
+                while let Some(next) = step(p.x, at_cell, ray) {
+                    match created(next) {
                         Some(h) => {
-                            run.push((ni, nj, h));
-                            at_cell = (ni, nj);
+                            run.push(PaintedSite::new(next, h));
+                            at_cell = next;
                         }
                         None => {
-                            stop = at(before, ni, nj).map(|h| !ground.holds(&h));
+                            stop = before.at(next).map(|h| !ground.holds(&h));
                             break;
                         }
                     }
@@ -1101,41 +1111,42 @@ fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[V
                 // the ray to what was painted before, lands on created cells
                 // alone — a ray read off one run that the rest of the body
                 // would paint onto ground the effect left is no line.
-                let whole = cells_of(&p.bodies[b]).into_iter().all(|(ci, cj, _)| {
-                    let mut at_cell = (ci, cj);
-                    while let Some((ni, nj)) = step(at_cell.0, at_cell.1, (dr, dc), rows, cols) {
-                        if at(before, ni, nj).is_none_or(|h| !ground.holds(&h)) {
+                let whole = painted_of(&p.bodies[b]).into_iter().all(|c| {
+                    let mut at_cell = c.site;
+                    while let Some(next) = step(p.x, at_cell, ray) {
+                        if before.at(next).is_none_or(|h| !ground.holds(&h)) {
                             break;
                         }
-                        if created(ni, nj).is_none() {
+                        if created(next).is_none() {
                             return false;
                         }
-                        at_cell = (ni, nj);
+                        at_cell = next;
                     }
                     true
                 });
                 if !whole {
                     continue;
                 }
-                let key = [dr.to_le_bytes()[0], dc.to_le_bytes()[0]];
+                // The ray's key: each step along the plane, one byte.
+                let key = ray.map(|d| d.to_le_bytes()[0]);
                 if rays.get(&key).is_none() {
                     rays.insert(key, Rays { starts: vec![Vec::new(); n], own: true, hue: None, contact: false });
                 }
                 let entry = rays.get_mut(&key)?;
                 insert_sorted(&mut entry.starts[k], b);
                 entry.contact |= contact;
-                for &(a, c, h) in &run {
-                    entry.own &= h == own;
+                for c in &run {
+                    entry.own &= c.symbol == own;
                     entry.hue = match entry.hue {
-                        None => Some(Some(h)),
-                        Some(Some(was)) if was == h => Some(Some(h)),
+                        None => Some(Some(c.symbol)),
+                        Some(Some(was)) if was == c.symbol => Some(Some(c.symbol)),
                         _ => Some(None),
                     };
-                    insert_sorted(&mut covered, (a, c));
+                    insert_sorted(&mut covered, c.site);
                 }
             }
         }
-        if res.iter().any(|&(i, j, _)| !covered.contains(&(i, j))) {
+        if res.iter().any(|c| !covered.contains(&c.site)) {
             return None;
         }
     }
@@ -1144,8 +1155,8 @@ fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[V
     }
     rays.scoped()
         .map(|(key, rr)| {
-            let [dr, dc] = <[u8; 2]>::try_from(key.as_slice()).ok()?;
-            let ray = (i8::from_le_bytes([dr]), i8::from_le_bytes([dc]));
+            let [first, second] = <[u8; ALPHABET_SAMPLE_RANK]>::try_from(key.as_slice()).ok()?.map(|d| i8::from_le_bytes([d]));
+            let ray = (first, second);
             let paint = match (rr.own, rr.hue) {
                 (true, _) => Paint::Own,
                 (false, Some(Some(h))) => Paint::Hue(h),
@@ -1158,13 +1169,29 @@ fn read_lines(r: &PredicateTable<'_, '_>, canvas: &[SectionSample], residue: &[V
         .collect()
 }
 
+/// THE ENDS OF A STRAIGHT PIECE between its corners `lo` and `hi`: where they
+/// agree on every axis of the plane but one and the piece spans `len` sites
+/// along that one, the site before `lo` and the site past `hi` along it, the
+/// plane's last axis read first; `None` for a piece that is no segment. An
+/// end off `i64` is `None` within the pair.
+fn ends_of(lo: SectionSite, hi: SectionSite, len: usize) -> Option<(Option<SectionSite>, Option<SectionSite>)> {
+    for axis in (0..ALPHABET_SAMPLE_RANK).rev() {
+        let span = hi.coordinates().get(axis)?.checked_sub(*lo.coordinates().get(axis)?)?.checked_add(1)?;
+        if on_line(lo, hi, axis) && usize::try_from(span).ok() == Some(len) {
+            let unit = unit_along(axis)?;
+            return Some((lo.moved(unit.map(|u| -u)), hi.moved(unit)));
+        }
+    }
+    None
+}
+
 /// C3′ — CONNECTORS READ OFF THE EFFECT (78.167 Phase B, Step 2): a piece
-/// that is a straight segment along a row or a column, of one hue, whose two
+/// that is a straight segment along one axis of the plane, of one hue, whose two
 /// ends abut — along its axis — cells of two different bodies, joins those
 /// bodies. The pieces of one hue are one clause, `Connect` painted that hue,
 /// on the bodies they join (separated by the list). What is no connector, or
 /// whose class does not separate, is left for the lines.
-fn read_connects(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+fn read_connects(r: &PredicateTable<'_, '_>, residue: &[Vec<PaintedSite>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
     let n = r.pairs.len();
     let mut classes: crate::network::nerve::Keyed<FillClass> = crate::network::nerve::Keyed::new();
     let mut rest: PairCells = vec![Vec::new(); n];
@@ -1173,26 +1200,15 @@ fn read_connects(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>]
     // lines'.
     let mut unjoined: Vec<u8> = Vec::new();
     for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
-        let (rows, cols) = frame_of(p.x);
-        let owner = owners(p);
-        let body_at = |i: Option<usize>, j: Option<usize>| -> Option<usize> {
-            let (i, j) = (i?, j?);
-            (i < rows && j < cols).then(|| owner[i][j]).flatten()
-        };
+        let owner = Owners::of(p);
         for piece in pieces_of(res) {
             let mut hues: Vec<u8> = Vec::new();
-            for &(_, _, h) in &piece {
-                insert_sorted(&mut hues, h);
+            for c in &piece {
+                insert_sorted(&mut hues, c.symbol);
             }
-            let ends = match extent(&piece) {
-                Some((r0, c0, r1, c1)) if r0 == r1 && c1 - c0 + 1 == piece.len() => {
-                    Some((body_at(Some(r0), c0.checked_sub(1)), body_at(Some(r0), Some(c1 + 1))))
-                }
-                Some((r0, c0, r1, c1)) if c0 == c1 && r1 - r0 + 1 == piece.len() => {
-                    Some((body_at(r0.checked_sub(1), Some(c0)), body_at(Some(r1 + 1), Some(c0))))
-                }
-                _ => None,
-            };
+            let ends = statement::corners_of(&piece)
+                .and_then(|(lo, hi)| ends_of(lo, hi, piece.len()))
+                .map(|(before, past)| (before.and_then(|s| owner.at(s)), past.and_then(|s| owner.at(s))));
             if let [hue] = hues.as_slice() {
                 if !matches!(ends, Some((Some(a), Some(b))) if a != b) {
                     insert_sorted(&mut unjoined, *hue);
@@ -1233,24 +1249,21 @@ fn read_connects(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>]
     (clauses, rest)
 }
 
-/// A shape: its least corner, and its cells relative to it, hue-blind.
-type Shape = (usize, usize, Vec<(usize, usize)>);
+/// A shape: its least corner, and its sites read from it, symbol-blind.
+type Shape = (SectionSite, Vec<SectionSite>);
 
 /// An echo offered: its offset and map as bytes, and the body offering it.
 type Offer = (Vec<u8>, usize);
 
 /// A piece the echo reader weighs: its pair, its cells, and its offers.
-type Weighed = (usize, Vec<(usize, usize, u8)>, Vec<Offer>);
+type Weighed = (usize, Vec<PaintedSite>, Vec<Offer>);
 
-/// An echo read: its offset, and its map.
-type EchoRead = (i64, i64, Vec<(u8, u8)>);
-
-/// A shape read off its cells, the corner its extent's own.
-fn shape_of(cells: &[(usize, usize, u8)]) -> Option<Shape> {
-    let (r0, c0, _, _) = extent(cells)?;
-    let mut s: Vec<(usize, usize)> = cells.iter().map(|&(i, j, _)| (i - r0, j - c0)).collect();
+/// A shape read off its painted sites, the corner their least one.
+fn shape_of(cells: &[PaintedSite]) -> Option<Shape> {
+    let (least, _) = statement::corners_of(cells)?;
+    let mut s: Vec<SectionSite> = cells.iter().map(|c| c.site.offset_from(least)).collect::<Option<_>>()?;
     s.sort_unstable();
-    Some((r0, c0, s))
+    Some((least, s))
 }
 
 /// C2′ — ECHOES READ OFF THE EFFECT (78.167 Phase B, Step 3): a piece that
@@ -1261,33 +1274,36 @@ fn shape_of(cells: &[(usize, usize, u8)]) -> Option<Shape> {
 /// offset swept. Its sources are the bodies landing on a piece there,
 /// separated by the list. `None` read (no clauses) where no one offset is
 /// offered by every echo-shaped piece.
-fn read_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+fn read_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<PaintedSite>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
     let n = r.pairs.len();
     // Per piece: (pair, cells, the offers it makes) — an offer is the offset
     // and map as bytes, and the body making it.
     let mut pieces: Vec<Weighed> = Vec::new();
     for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
         for piece in pieces_of(res) {
-            let Some((pr, pc, ps)) = shape_of(&piece) else { continue };
+            let Some((piece_corner, ps)) = shape_of(&piece) else { continue };
             let mut offers = Vec::new();
             for (b, body) in p.bodies.iter().enumerate() {
-                let cells = cells_of(body);
-                let Some((br, bc, bs)) = shape_of(&cells) else { continue };
+                let cells = painted_of(body);
+                let Some((body_corner, bs)) = shape_of(&cells) else { continue };
                 if bs != ps {
                     continue;
                 }
+                // The offset from the body's corner to the piece's.
+                let Some(offset) = piece_corner.offset_from(body_corner) else { continue };
                 // The map, cell for cell; one hue going two ways is no echo.
                 let mut map: Vec<(u8, u8)> = Vec::new();
                 let mut whole = true;
-                for &(i, j, h) in &cells {
-                    let Some(&(_, _, t)) = piece.iter().find(|&&(a, c, _)| a + br == i + pr && c + bc == j + pc) else {
+                for c in &cells {
+                    let landed = c.site.moved(offset.coordinates());
+                    let Some(t) = piece.iter().find(|q| Some(q.site) == landed).map(|q| q.symbol) else {
                         whole = false;
                         break;
                     };
-                    match map.iter().find(|(f, _)| *f == h) {
+                    match map.iter().find(|(f, _)| *f == c.symbol) {
                         Some(&(_, was)) if was != t => whole = false,
                         Some(_) => {}
-                        None => map.push((h, t)),
+                        None => map.push((c.symbol, t)),
                     }
                 }
                 if !whole {
@@ -1296,11 +1312,10 @@ fn read_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], 
                 // A hue kept is no part of the map.
                 map.retain(|(f, t)| f != t);
                 map.sort_unstable();
-                let (dr, dc) = (i64::try_from(pr).ok().zip(i64::try_from(br).ok()), i64::try_from(pc).ok().zip(i64::try_from(bc).ok()));
-                let (Some((a, b0)), Some((c, d0))) = (dr, dc) else { continue };
+                // The offer's key: the offset along the plane
+                // (`SectionSite::put_canonical`), then the map.
                 let mut key: Vec<u8> = Vec::new();
-                key.extend_from_slice(&(a - b0).to_le_bytes());
-                key.extend_from_slice(&(c - d0).to_le_bytes());
+                offset.put_canonical(&mut key);
                 for (f, t) in &map {
                     key.extend_from_slice(&[*f, *t]);
                 }
@@ -1343,42 +1358,52 @@ fn read_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], 
             rest[k].extend(piece);
         }
     }
-    let decoded = || -> Option<EchoRead> {
-        let dr = i64::from_le_bytes(key.get(0..8)?.try_into().ok()?);
-        let dc = i64::from_le_bytes(key.get(8..16)?.try_into().ok()?);
-        let gauge = key.get(16..)?.chunks_exact(2).map(|p| (p[0], p[1])).collect();
-        Some((dr, dc, gauge))
+    let decoded = || -> Option<(SectionSite, Vec<(u8, u8)>)> {
+        let mut at = 0usize;
+        let offset = SectionSite::take_canonical(&key, &mut at)?;
+        let gauge = key.get(at..)?.chunks_exact(2).map(|p| (p[0], p[1])).collect();
+        Some((offset, gauge))
     };
-    let (Some((dr, dc, gauge)), Some(select)) = (decoded(), r.separate(&sources, every)) else {
+    let (Some((offset, gauge)), Some(select)) = (decoded(), r.separate(&sources, every)) else {
         return (Vec::new(), rest);
     };
     let q = |v: i64| crate::core::Q::from_integer(v.into());
-    let motion = crate::transducer::cga::translator_at(&[q(dr), q(dc)]);
+    let motion = crate::transducer::cga::translator_at(&offset.coordinates().map(q));
     (vec![Clause { select, act: Act::Echo { motion, about: About::Sample, gauge } }], rest)
 }
 
-/// The square's symmetry `t` (`Act::Tile`'s codes) on a cell `(a, b)` of an
-/// extent of `h` rows and `w` columns, read from its least corner: the cell
-/// it lands on in the turned extent, read from that extent's least corner.
-fn turned(t: u8, (a, b): (usize, usize), (h, w): (usize, usize)) -> Option<(usize, usize)> {
-    let last = |n: usize, i: usize| -> Option<usize> { n.checked_sub(1)?.checked_sub(i) };
-    Some(match t {
-        0 => (a, b),
-        1 => (a, last(w, b)?),
-        2 => (last(h, a)?, b),
-        3 => (last(h, a)?, last(w, b)?),
-        4 => (b, last(h, a)?),
-        5 => (last(w, b)?, a),
-        6 => (b, a),
-        7 => (last(w, b)?, last(h, a)?),
+/// The square's symmetry `t` (`Act::Tile`'s codes) on a site read from the
+/// least corner of a span of `extents` along the plane: the site it lands on
+/// in the turned span, read from that span's least corner. The square's
+/// symmetries are the plane's by their mathematics: the coordinates are read
+/// along the plane's first and second axes (`PlaneAxis`), never as rows and
+/// columns. `None` for a code past 7, or a site off the span.
+fn turned(t: u8, site: SectionSite, extents: [usize; ALPHABET_SAMPLE_RANK]) -> Option<SectionSite> {
+    let [a, b] = site.coordinates();
+    let [first, second] = extents;
+    // The coordinate `i` read from the far end of an axis of extent `n`.
+    let last = |n: usize, i: i64| -> Option<i64> { i64::try_from(n).ok()?.checked_sub(1)?.checked_sub(i).filter(|v| *v >= 0) };
+    if a < 0 || b < 0 {
+        return None;
+    }
+    let landed = match t {
+        0 => [a, b],
+        1 => [a, last(second, b)?],
+        2 => [last(first, a)?, b],
+        3 => [last(first, a)?, last(second, b)?],
+        4 => [b, last(first, a)?],
+        5 => [last(second, b)?, a],
+        6 => [b, a],
+        7 => [last(second, b)?, last(first, a)?],
         _ => return None,
-    })
+    };
+    Some(SectionSite::on_plane(landed))
 }
 
 /// THE SQUARE'S SYMMETRY `t` AS A VERSOR of `Cl(4,1)(ℚ)` about the origin of
-/// the sensor's plane (`e1` the rows, `e2` the columns): a mirror is one
-/// reflector, a turn the product of two — `e1 − e2` swaps the axes, and a
-/// 90° turn is that swap followed by one axis reversed.
+/// the sensor's plane (`e1` along the plane's first axis, `e2` along its
+/// second): a mirror is one reflector, a turn the product of two — `e1 − e2`
+/// swaps the axes, and a 90° turn is that swap followed by one axis reversed.
 fn symmetry(t: u8) -> Option<crate::transducer::cga::Mv> {
     use crate::transducer::cga::{Mv, E1, E2};
     let one = || crate::core::Q::from_integer(1.into());
@@ -1397,9 +1422,14 @@ fn symmetry(t: u8) -> Option<crate::transducer::cga::Mv> {
     })
 }
 
-/// A shape's cells, relative to its least corner and sorted, as bytes.
-fn shape_bytes(rel: &[(usize, usize)]) -> Vec<u8> {
-    rel.iter().flat_map(|&(a, b)| a.to_le_bytes().into_iter().chain(b.to_le_bytes())).collect()
+/// A shape's sites, read from its least corner and sorted, as bytes: each
+/// site written along the plane (`SectionSite::put_canonical`).
+fn shape_bytes(rel: &[SectionSite]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(rel.len() * ALPHABET_SAMPLE_RANK * std::mem::size_of::<i64>());
+    for s in rel {
+        s.put_canonical(&mut out);
+    }
+    out
 }
 
 /// The echo an offer's bytes name: its symmetry, the displacement of the
@@ -1407,15 +1437,27 @@ fn shape_bytes(rel: &[(usize, usize)]) -> Vec<u8> {
 /// mirror or a turn is carried about each body's own centre.
 fn echo_of(key: &[u8]) -> Option<Act> {
     let (&t, rest) = key.split_first()?;
-    let dr = i64::from_le_bytes(rest.get(0..8)?.try_into().ok()?);
-    let dc = i64::from_le_bytes(rest.get(8..16)?.try_into().ok()?);
-    let gauge = rest.get(16..)?.chunks_exact(2).map(|p| (p[0], p[1])).collect();
+    let mut at = 0usize;
+    let doubled = SectionSite::take_canonical(rest, &mut at)?;
+    let gauge = rest.get(at..)?.chunks_exact(2).map(|p| (p[0], p[1])).collect();
     let half = |v: i64| crate::core::Q::new(v.into(), 2.into());
-    let slide = crate::transducer::cga::translator_at(&[half(dr), half(dc)]);
+    let slide = crate::transducer::cga::translator_at(&doubled.coordinates().map(half));
     Some(match t {
         0 => Act::Echo { motion: slide, about: About::Sample, gauge },
         _ => Act::Echo { motion: slide.geo(&symmetry(t)?), about: About::Body, gauge },
     })
+}
+
+/// THE CENTRES' DISPLACEMENT, DOUBLED to whole numbers: along each axis of
+/// the plane, the sum of `to`'s corners less the sum of `from`'s; `None`
+/// where a coordinate leaves `i64`.
+fn doubled_displacement(to: (SectionSite, SectionSite), from: (SectionSite, SectionSite)) -> Option<SectionSite> {
+    let sum = |(lo, hi): (SectionSite, SectionSite), k: usize| -> Option<i64> { lo.coordinates().get(k)?.checked_add(*hi.coordinates().get(k)?) };
+    let mut out = [0i64; ALPHABET_SAMPLE_RANK];
+    for (k, d) in out.iter_mut().enumerate() {
+        *d = sum(to, k)?.checked_sub(sum(from, k)?)?;
+    }
+    Some(SectionSite::on_plane(out))
 }
 
 /// C2″ — ECHOES TURNED, AND AT SEVERAL OFFSETS (ruled
@@ -1429,17 +1471,16 @@ fn echo_of(key: &[u8]) -> Option<Act> {
 /// it (separated by the list), and each standing only where, spoken alone,
 /// it paints nothing the output does not hold. What no echo stated covers
 /// is left for the fills, the joins and the lines.
-fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<PaintedSite>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
     let n = r.pairs.len();
     let mut pieces: Vec<Weighed> = Vec::new();
     for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
-        let bodies: Vec<Vec<(usize, usize, u8)>> = p.bodies.iter().map(cells_of).collect();
+        let bodies: Vec<Vec<PaintedSite>> = p.bodies.iter().map(painted_of).collect();
         let mut by_shape: crate::network::nerve::Keyed<Vec<(usize, u8)>> = crate::network::nerve::Keyed::new();
         for (b, cells) in bodies.iter().enumerate() {
-            let Some((t0, l0, b0, r0)) = extent(cells) else { continue };
-            let hw = (b0 - t0 + 1, r0 - l0 + 1);
+            let Some((least, extents)) = SectionSite::span_of(cells.iter().map(|c| c.site)) else { continue };
             for t in 0u8..8 {
-                let mut rel: Vec<(usize, usize)> = cells.iter().filter_map(|&(i, j, _)| turned(t, (i - t0, j - l0), hw)).collect();
+                let mut rel: Vec<SectionSite> = cells.iter().filter_map(|c| turned(t, c.site.offset_from(least)?, extents)).collect();
                 if rel.len() != cells.len() {
                     continue;
                 }
@@ -1460,7 +1501,7 @@ fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, 
             }
         }
         for piece in pieces_of(res) {
-            let (Some((pr, pc, ps)), Some((pt, pl, pb, pright))) = (shape_of(&piece), extent(&piece)) else { continue };
+            let (Some((piece_corner, ps)), Some((piece_lo, piece_hi))) = (shape_of(&piece), statement::corners_of(&piece)) else { continue };
             let mut offers = Vec::new();
             let filed = match by_shape.get(&shape_bytes(&ps)) {
                 Some(at) => at.clone(),
@@ -1468,24 +1509,23 @@ fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, 
             };
             for (b, t) in filed {
                 let cells = &bodies[b];
-                let Some((t0, l0, b0, r0)) = extent(cells) else { continue };
-                let hw = (b0 - t0 + 1, r0 - l0 + 1);
+                let (Some((least, extents)), Some((body_lo, body_hi))) = (SectionSite::span_of(cells.iter().map(|c| c.site)), statement::corners_of(cells)) else { continue };
                 // The map, cell for cell; one hue going two ways is no echo.
                 let mut map: Vec<(u8, u8)> = Vec::new();
                 let mut whole = true;
-                for &(i, j, h) in cells {
-                    let landed = turned(t, (i - t0, j - l0), hw).map(|(a, c)| (pr + a, pc + c));
-                    let Some(&(_, _, to)) = landed.and_then(|at| piece.iter().find(|&&(a, c, _)| (a, c) == at)) else {
+                for c in cells {
+                    let landed = c.site.offset_from(least).and_then(|s| turned(t, s, extents)).and_then(|s| s.moved(piece_corner.coordinates()));
+                    let Some(to) = piece.iter().find(|q| Some(q.site) == landed).map(|q| q.symbol) else {
                         whole = false;
                         break;
                     };
-                    match map.iter().find(|(f, _)| *f == h) {
+                    match map.iter().find(|(f, _)| *f == c.symbol) {
                         Some(&(_, was)) if was != to => {
                             whole = false;
                             break;
                         }
                         Some(_) => {}
-                        None => map.push((h, to)),
+                        None => map.push((c.symbol, to)),
                     }
                 }
                 if !whole {
@@ -1493,12 +1533,9 @@ fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, 
                 }
                 map.retain(|(f, to)| f != to);
                 map.sort_unstable();
-                // The centres' displacement, doubled to whole numbers.
-                let twice = |a: usize, b: usize, c: usize, d: usize| -> Option<i64> { i64::try_from(a + b).ok()?.checked_sub(i64::try_from(c + d).ok()?) };
-                let (Some(dr), Some(dc)) = (twice(pt, pb, t0, b0), twice(pl, pright, l0, r0)) else { continue };
+                let Some(doubled) = doubled_displacement((piece_lo, piece_hi), (body_lo, body_hi)) else { continue };
                 let mut key = vec![t];
-                key.extend_from_slice(&dr.to_le_bytes());
-                key.extend_from_slice(&dc.to_le_bytes());
+                doubled.put_canonical(&mut key);
                 for (f, to) in &map {
                     key.extend_from_slice(&[*f, *to]);
                 }
@@ -1567,43 +1604,50 @@ fn read_turned_echoes(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, 
 /// they reach, and the cells they explain.
 type BendClass = (Vec<Vec<usize>>, Vec<Vec<usize>>, PairCells);
 
-/// THE BEND A PIECE IS, where it is one: of one hue, a run along a row and a
-/// run along a column meeting at a corner at an end of each; beyond the row
-/// run's far end, along the row, a body standing on that row alone — the
-/// source — and beyond the column run's far end, along the column, another
-/// body standing on that column alone — the target. Its hue, source and
+/// THE BEND A PIECE IS, where it is one (the act's plane: the bend leaves its
+/// source along the plane's second axis and reaches its target along the
+/// first, `PlaneAxis`): of one hue, a run along the second axis and a run
+/// along the first meeting at a corner at an end of each; beyond the first
+/// run's far end, along the second axis, a body standing on that line alone
+/// — the source — and beyond the second run's far end, along the first axis,
+/// another body standing on that line alone — the target. Its hue, source and
 /// target.
-fn bend_of(piece: &[(usize, usize, u8)], p: &Pair<'_>, owner: &[Vec<Option<usize>>]) -> Option<(u8, usize, usize)> {
-    let [(_, _, hue), more @ ..] = piece else { return None };
-    if more.iter().any(|c| c.2 != *hue) {
+fn bend_of(piece: &[PaintedSite], p: &Pair<'_>, owner: &Owners<'_>) -> Option<(u8, usize, usize)> {
+    let [first_cell, more @ ..] = piece else { return None };
+    let hue = first_cell.symbol;
+    if more.iter().any(|c| c.symbol != hue) {
         return None;
     }
-    let (rows, cols) = frame_of(p.x);
-    let at = |cell: Option<(usize, usize)>| cell.filter(|&(a, b)| a < rows && b < cols).and_then(|(a, b)| owner[a][b]);
-    let run = |v: &[usize]| v.windows(2).all(|w| w[1] == w[0] + 1);
-    for &(cr, cc, _) in piece {
-        // The piece is sorted, so each run reads in order.
-        let row: Vec<usize> = piece.iter().filter(|c| c.0 == cr).map(|c| c.1).collect();
-        let col: Vec<usize> = piece.iter().filter(|c| c.1 == cc).map(|c| c.0).collect();
-        let ([c0, .., c1], [r0, .., r1]) = (row.as_slice(), col.as_slice()) else { continue };
-        if row.len() + col.len() != piece.len() + 1 || !run(&row) || !run(&col) {
+    let (leave, reach) = (PlaneAxis::Second.index(), PlaneAxis::First.index());
+    let run = |v: &[i64]| v.windows(2).all(|w| w[0].checked_add(1) == Some(w[1]));
+    // The coordinates along `axis` of the piece's sites on the line along
+    // `axis` through `corner`: the piece is sorted, so each run reads in
+    // order.
+    let line = |corner: SectionSite, axis: usize| -> Vec<i64> {
+        piece.iter().filter(|c| on_line(c.site, corner, axis)).filter_map(|c| c.site.coordinates().get(axis).copied()).collect()
+    };
+    // The end of a run past its far end from the corner's coordinate `at`:
+    // the site before the run where the corner stands at its last, the site
+    // past it where the corner stands at its first.
+    let beyond = |corner: SectionSite, axis: usize, v: &[i64]| -> Option<Option<SectionSite>> {
+        let ([low, .., high], Some(&at)) = (v, corner.coordinates().get(axis)) else { return None };
+        match (at == *high, at == *low) {
+            (true, _) => Some(low.checked_sub(1).and_then(|c| with_along(corner, axis, c))),
+            (_, true) => Some(high.checked_add(1).and_then(|c| with_along(corner, axis, c))),
+            _ => None,
+        }
+    };
+    for corner in piece.iter().map(|c| c.site) {
+        let (leaving, reaching) = (line(corner, leave), line(corner, reach));
+        if leaving.len() < 2 || reaching.len() < 2 || leaving.len() + reaching.len() != piece.len() + 1 || !run(&leaving) || !run(&reaching) {
             continue;
         }
-        let source = match (cc == *c1, cc == *c0) {
-            (true, _) => c0.checked_sub(1).map(|c| (cr, c)),
-            (_, true) => Some((cr, c1 + 1)),
-            _ => continue,
-        };
-        let target = match (cr == *r1, cr == *r0) {
-            (true, _) => r0.checked_sub(1).map(|r| (r, cc)),
-            (_, true) => Some((r1 + 1, cc)),
-            _ => continue,
-        };
-        let (Some(f), Some(t)) = (at(source), at(target)) else { continue };
-        let on_row = cells_of(&p.bodies[f]).iter().all(|c| c.0 == cr);
-        let on_col = cells_of(&p.bodies[t]).iter().all(|c| c.1 == cc);
-        if f != t && on_row && on_col {
-            return Some((*hue, f, t));
+        let (Some(source), Some(target)) = (beyond(corner, leave, &leaving), beyond(corner, reach, &reaching)) else { continue };
+        let (Some(f), Some(t)) = (source.and_then(|s| owner.at(s)), target.and_then(|s| owner.at(s))) else { continue };
+        let on_leaving = painted_of(&p.bodies[f]).iter().all(|c| on_line(c.site, corner, leave));
+        let on_reaching = painted_of(&p.bodies[t]).iter().all(|c| on_line(c.site, corner, reach));
+        if f != t && on_leaving && on_reaching {
+            return Some((hue, f, t));
         }
     }
     None
@@ -1615,12 +1659,12 @@ fn bend_of(piece: &[(usize, usize, u8)], p: &Pair<'_>, owner: &[Vec<Option<usize
 /// hue are one clause, `Bend` painted that hue, on the sources they leave,
 /// `to` the targets they reach — each separated by the list. What is no
 /// bend, or whose class does not separate, is left for the lines.
-fn read_bends(r: &PredicateTable<'_, '_>, residue: &[Vec<(usize, usize, u8)>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
+fn read_bends(r: &PredicateTable<'_, '_>, residue: &[Vec<PaintedSite>], every: &[Vec<usize>]) -> (Vec<Clause>, PairCells) {
     let n = r.pairs.len();
     let mut classes: crate::network::nerve::Keyed<BendClass> = crate::network::nerve::Keyed::new();
     let mut rest: PairCells = vec![Vec::new(); n];
     for (k, (p, res)) in r.pairs.iter().zip(residue).enumerate() {
-        let owner = owners(p);
+        let owner = Owners::of(p);
         for piece in pieces_of(res) {
             let Some((hue, f, t)) = bend_of(&piece, p, &owner) else {
                 rest[k].extend(piece);
@@ -1836,10 +1880,7 @@ fn read_tiles(r: &PredicateTable<'_, '_>) -> Option<Clause> {
                 let (hx, wx) = frame_of(p.x);
                 // The block of the output at `(bi, bj)`, read in place.
                 let corner = [bi * hx, bj * wx];
-                let block = |site: SectionSite| -> Option<u8> {
-                    let [a, b] = site.indices()?;
-                    at(p.y, corner[0] + a, corner[1] + b)
-                };
+                let block = |site: SectionSite| -> Option<u8> { p.y.at(site.moved([i64::try_from(corner[0]).ok()?, i64::try_from(corner[1]).ok()?])?) };
                 statement::turn_of(p.x, t).is_some_and(|g| g.extents() == [hx, wx] && g.sites().all(|(site, h)| block(site) == Some(h)))
             })
         };
