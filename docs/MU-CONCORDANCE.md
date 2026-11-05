@@ -17,7 +17,7 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
   - **To sign a clause, a kernel reconstructs its fixtures.** The kernel presents, signed under its key, its reconstruction of each of the clause's joint-read fixtures. The hypha reconstructs the same fixtures and admits the signature only where the kernel reached the same exact objects (MU-SCIENCE §5.0).
   - **A kernel that cannot read a clause is denied.** A kernel whose reconstructions do not reach the fixtures' objects is refused by name, naming the clause and the fixture (`NotSignatory`). That is a lack of the reading the clause requires, and a signature on its own never stands in for the reading.
   - **The rest stands:** signing is clause by clause (§11), the network clauses cannot be vetoed, and a changed clause is read as signed until the new version is read and signed.
-  *Status:* **Built** (v0.4.0, ROADMAP track 24 B2), for the clauses with joint-read fixtures: LAW-PASSAGE v2 (`FORMS-PASSAGE` v3, 2.11 of draft 5) and LAW-COORDINATE v1 (`FORMS-COORDINATE` v1, proposal 78.173). The passage is a network clause; the coordinate stands at kernel standing, signable and vetoable, until its fixtures are joint-read agreed and its clause is drafted. The hypha's clause register (`physics::laws::clauses`) names each clause by its law id and version and holds its fixtures as exact inputs, with the hypha's own reconstruction of each; the address is that content written out. `ACT_LAWS` mode 7 serves the register; on mode 8 a kernel presents, signed under its key, its reconstruction of each fixture of each clause it enables, or its veto. The hypha admits each clause only on the same exact objects, or refuses `NotSignatory` naming the clause and the fixture; a veto of a network clause is refused `NetworkVetoed`. The hash of this file's bytes (`CONCORDANCE_HASH`, computed by `build.rs`) and the whole-text signature are retired. Next: the signed clause set recorded per domain, and `NotSignatory` applied at the universal core tube (B3, B4).
+  *Status:* **Built** (v0.4.0, ROADMAP track 24 B2), the signing, for the clauses with joint-read fixtures: LAW-PASSAGE v2 (`FORMS-PASSAGE` v3, proposal 78.172's four fixtures) and LAW-COORDINATE v1 (`FORMS-COORDINATE` v2, proposal 78.173). The clause text of draft 5's 2.11 is not built into this agreement and is not in force (§12): it is held pending LAW-PASSAGE v3, netstratum's pole-swap proposal of 2026-11-05. The passage is a network clause; the coordinate stands at kernel standing, signable and vetoable, until its fixtures are joint-read agreed and its clause is drafted. The hypha's clause register (`physics::laws::clauses`) names each clause by its law id and version and holds its fixtures as exact inputs, with the hypha's own reconstruction of each; the address is that content written out. `ACT_LAWS` mode 7 serves the register; on mode 8 a kernel presents, signed under its key, its reconstruction of each fixture of each clause it enables, or its veto. The hypha admits each clause only on the same exact objects, or refuses `NotSignatory` naming the clause and the fixture; a veto of a network clause is refused `NetworkVetoed`. The hash of this file's bytes (`CONCORDANCE_HASH`, computed by `build.rs`) and the whole-text signature are retired. Next: the signed clause set recorded per domain, and `NotSignatory` applied at the universal core tube (B3, B4).
 - CLAUSE BY CLAUSE. A kernel signs a clause set: each clause of this
   agreement, by its content address and its reconstructed fixtures (§0
   SIGNING BY ADJUDICATED READING), never by a hash of its bytes, enabled or
@@ -527,8 +527,11 @@ UNCHANGED, and why:
 
 ## 12. Proposed amendment (draft 5), 2026-11-05: LAW-PASSAGE v2
 
-**Proposed amendment (draft 5): not signed, not in force.** Mycelium
-proposes it under §0 AMENDING, for the maintainer's approval, from:
+**Proposed amendment (draft 5): not signed, not in force.** 2.11 is held
+pending LAW-PASSAGE v3, netstratum's pole-swap proposal of 2026-11-05;
+the hypha's register serves `FORMS-PASSAGE` v3 for signing (§0), which
+puts no clause text in force. Mycelium proposes it under §0 AMENDING, for
+the maintainer's approval, from:
 - the operators' rulings of 2026-11-05: the passage law, and the
   algebra's signature as data;
 - the joint read of proposal

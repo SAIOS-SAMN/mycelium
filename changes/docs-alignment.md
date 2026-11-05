@@ -43,5 +43,10 @@
   instance. GLOSSARY, MU-RECURSION (the proofs paragraph, 78.33, the
   POW++ row, now four proofs), MU-HOSTING §2.4, MU-ECONOMY §0 (§12 item 6
   closed), MU-SCIENCE §6.2 and the README say one thing.
-- **Network contract:** none. No wire, layout, law version or clause text
-  changes.
+- **Concordance §0** no longer reads draft 5's 2.11 as built: 2.11 is
+  held pending LAW-PASSAGE v3 (netstratum's pole-swap proposal,
+  2026-11-05), and the coordinate clause cites `FORMS-COORDINATE` v2. §12
+  says the same, and ROADMAP's coordinate item names v2.
+- **Network contract:** Concordance text only, by operator ruling: 5.4's
+  H toll (ruled 2026-11-05) and §0's status line. No wire, layout or law
+  version changes; the code follows in later changes.

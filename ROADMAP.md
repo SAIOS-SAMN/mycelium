@@ -1376,8 +1376,11 @@ adjudicated reading (B2). Each phase is one commit:
      `origin / h : S:G:T:H : K` with signed exact lanes; the canonical
      order is the index a kernel addresses its bodies by; neighbours are
      a range on one lane; the sexagesimal reading decides on exact sector
-     bounds. **What `forms` holds** (no wire or layout change):
-     `forms/src/coordinate.rs`, shell id `FORMS-COORDINATE` v1, with
+     bounds (ruled 2026-11-05: base 60 is display only, and v3 decides on
+     exact intervals the caller states). **What `forms` holds** (no wire
+     or layout change): `forms/src/coordinate.rs`, shell id
+     `FORMS-COORDINATE` v1 (now v2, adding the advance, an event's bell,
+     the merger and fission), with
      `Coordinate`, `Origin` (enclosures written out), the canonical order
      and writing, `Sector` (base 60, registered `EXTERNAL`),
      `Coordinate::within` refusing `OriginsDiffer`, and `Bodies::range`
