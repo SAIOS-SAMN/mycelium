@@ -1240,7 +1240,7 @@ adjudicated reading (B2). Each phase is one commit:
    - Each clause is identified by its content (its law form and
      joint-read fixtures), never by a hash of the text's bytes. The
      register (`src/physics/laws/clauses/`) holds `FORMS-PASSAGE` v3 (the
-     four fixtures of LAW-PASSAGE v2) and `FORMS-COORDINATE` v1 (the
+     four fixtures of LAW-PASSAGE v2) and `FORMS-COORDINATE` v2 (the
      order, eight sexagesimal sectors, seven `within` readings and two
      ranges of LAW-COORDINATE v1), with the hypha's own reconstruction of
      each fixture through `forms` (`ConcordanceClause`,

@@ -22,7 +22,7 @@ use forms::Q;
 /// THE CLAUSES THIS HYPHA ADJUDICATES, `(law id, version)`, in the
 /// register's order: each a law form of the innermost shell with joint-read
 /// fixtures (LAW-PASSAGE v2 as `FORMS-PASSAGE`, LAW-COORDINATE v1 as
-/// `FORMS-COORDINATE`).
+/// `FORMS-COORDINATE`, the form's version 2).
 pub const CLAUSES: &[(&str, u16)] = &[
     (forms::passage::LAW_ID, forms::passage::LAW_VERSION),
     (forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION),
