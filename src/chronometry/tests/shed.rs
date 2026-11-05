@@ -39,12 +39,12 @@ fn shed_folded_keeps_peer_nodes_hot_line_cites() {
 
     let mut c = ReceiptChain::with_signer([1; 32]);
     for r in [&e0, &e1, &shut] {
-        c.admit(r.clone());
+        c.admit(super::fixtures::reconstructed(r));
     }
     let citing = step(&mut c, vec![cite(&e1)]);
     assert_eq!(c.shed_folded(|_| false), 0, "no fold of the peer is held: nothing leaves");
 
-    c.admit(folded.clone());
+    c.admit(super::fixtures::reconstructed(&folded));
     assert_eq!(c.shed_folded(|_| false), 2, "the peer's act and close below its root leave");
     assert!(c.node(&e0.stamp).is_none() && c.node(&shut.stamp).is_none());
     assert!(c.node(&e1.stamp).is_some(), "the chain's own hot line cites it, so it stays");
@@ -85,10 +85,10 @@ fn shed_folded_leaves_hole_backfill_cannot_cross() {
     let folded = fold(&mut e, shut.stamp.place());
     let mut c = ReceiptChain::with_signer([1; 32]);
     for r in e.line_between(&[4; 32], None, folded.stamp.place(), 64) {
-        c.admit(r);
+        c.admit(super::fixtures::reconstructed(&r));
     }
     for r in [&e0, &shut, &folded] {
-        c.admit(r.clone());
+        c.admit(super::fixtures::reconstructed(r));
     }
     assert!(c.shed_folded(|_| false) > 0);
     assert_eq!(c.peer_root(&[4; 32]), Some(shut.stamp.place()), "the peer's fold root, held");

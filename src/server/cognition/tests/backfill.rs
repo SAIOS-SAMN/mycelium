@@ -137,7 +137,7 @@ fn hear_fetches_cited_signer_then_cites_head() {
     act(&mut b, 1);
     // b holds d's line, as a court holds what it heard, and cites its head.
     for r in d.line_between(&dvk, None, dh.stamp.place(), 64) {
-        b.admit(r.clone());
+        b.admit(super::fixtures::reconstructed(&r));
     }
     b.append(
         crate::chronometry::ActKind::List,
@@ -189,7 +189,7 @@ fn admit_backfill_counts_missing_parent_under_cited_signer() {
     let mut b = ReceiptChain::with_signer(vk);
     act(&mut b, 1);
     for r in d.line_between(&dvk, None, dh.stamp.place(), 64) {
-        b.admit(r.clone());
+        b.admit(super::fixtures::reconstructed(&r));
     }
     b.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: dh.stamp, hash: dh.chain_hash }]).expect("b cites d");
     let page = b.line_between(&vk, None, b.head().expect("b").stamp.place(), 64);
@@ -245,7 +245,7 @@ fn hear_proves_citation_into_closed_era() {
     let dkey = super::fixtures::court_key("closed-era-d");
     let dvk = dkey.verifying_bytes();
     let mut d = ReceiptChain::with_signer(dvk);
-    d.admit(e0.clone());
+    d.admit(super::fixtures::reconstructed(&e0));
     d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: e0.stamp, hash: e0.chain_hash }]).expect("d cites e0");
     let (head, pre) = head_of(&d);
     let fetch = |signer: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place, _| {

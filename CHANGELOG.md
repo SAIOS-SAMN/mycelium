@@ -31,6 +31,17 @@ such change is named here.
   sample seals its receipt and checks that the decoded one re-derives.
   No claim was dropped.
 - **Open:** `Cite::Root`'s hash is still bare.
+- **The vertex admits reconstructed acts.** `ReceiptChain::admit` takes
+  a `Reconstructed<KStepReceipt>`. `Court::admit_uplink` and
+  `admit_chained` take a `Reconstructed<SignedFold>`, and
+  `Court::admit_domain` a `Reconstructed<SignedDomain>`. The new
+  reconstructions `Reconstructed::fold` and `Reconstructed::domain`
+  re-write the signed bytes from the act's own coordinates and verify the
+  signature over them. `Court::hear_uplink` and `Court::hear_domain`
+  reconstruct the act as heard, answering `Unsigned` where it does not
+  reconstruct; the `ACT_UPLINK` and `ACT_DOMAIN` judges call them. The
+  answers are unchanged. Claim `vertex_admits_only_a_reconstructed_fold`
+  (`compile_fail`), registered in the drift register.
 
 ### A fold root's signatures cover its place and height (track 24, #91)
 - **Network contract**, inside v0.4.0's break:

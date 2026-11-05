@@ -46,7 +46,7 @@ fn founded() -> (Court, [u8; 32], [u8; 32]) {
     let mut k = Court::new();
     for d in [4u8, 5] {
         let g = DomainGenesis { domain: domain(d), tiers: vec![verifying(&reserve(d))] };
-        assert!(matches!(k.admit_domain(&g.sign(&key(d))), Founded::Sealed { .. }));
+        assert!(matches!(k.hear_domain(&g.sign(&key(d))), Founded::Sealed { .. }));
         let r = Reservation { domain: domain(d), tier: verifying(&reserve(d)), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&key(d))), Founded::Reserved { .. }));
     }
@@ -342,10 +342,10 @@ fn settle_solve_pays_from_recycled_pool_before_mint() {
         children: Vec::new(),
         handoffs: Vec::new(),
     };
-    assert_eq!(k.admit_uplink(&tax([-3, 1, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Source { lane: 1 }), "the tax only leaves");
-    assert_eq!(k.admit_uplink(&tax([-4, 0, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Short));
+    assert_eq!(k.hear_uplink(&tax([-3, 1, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Source { lane: 1 }), "the tax only leaves");
+    assert_eq!(k.hear_uplink(&tax([-4, 0, -2, 0], 1).sign(&reserve(4))), Uplinked::Tax(TaxRefusal::Short));
     let minted_before = k.treasury.minted();
-    assert!(matches!(k.admit_uplink(&tax([-3, 0, -2, 0], 1).sign(&reserve(4))), Uplinked::Admitted { .. }));
+    assert!(matches!(k.hear_uplink(&tax([-3, 0, -2, 0], 1).sign(&reserve(4))), Uplinked::Admitted { .. }));
     assert_eq!(k.treasury.recycled(), [3, 0, 2, 0], "the dissipation returned to the hypha");
     assert_eq!(k.treasury.balance_mu(&tier), [0; 4], "paid from the reserve");
     assert_eq!(k.treasury.minted(), minted_before, "a transfer, never a mint");

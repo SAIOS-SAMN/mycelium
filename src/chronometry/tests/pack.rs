@@ -48,8 +48,8 @@ fn packer_round_trips_two_cross_citing_lines() {
     let mut b = ReceiptChain::with_signer([2; 32]);
     let a0 = step(&mut a, Vec::new());
     let b0 = step(&mut b, Vec::new());
-    a.admit(b0.clone());
-    b.admit(a0.clone());
+    a.admit(super::fixtures::reconstructed(&b0));
+    b.admit(super::fixtures::reconstructed(&a0));
     let a1 = step(&mut a, vec![cite(&b0)]);
     let b1 = step(&mut b, vec![cite(&a0)]);
     let (_, frame) = a.open_orbit().expect("open");
@@ -97,7 +97,7 @@ fn node_reads_as_sealed_once_predecessor_left() {
     let mut c = ReceiptChain::with_signer([1; 32]);
     step(&mut c, Vec::new());
     for r in [&e0, &shut, &fold] {
-        c.admit(r.clone());
+        c.admit(super::fixtures::reconstructed(r));
     }
     assert_eq!(c.shed_folded(|_| false), 2);
     assert!(

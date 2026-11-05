@@ -1066,7 +1066,7 @@ impl Court {
         self.forget_recalled(&recalled);
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
-                self.chain.admit(r.object().clone());
+                self.chain.admit(r.clone());
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
                 // THE ACT'S ROOT (65.5): the wire hands this receipt here, and

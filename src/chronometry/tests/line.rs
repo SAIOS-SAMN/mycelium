@@ -59,8 +59,8 @@ fn line_write_appends_in_order_and_round_trips() {
     for _ in 0..4 {
         step(&mut c, Vec::new());
     }
-    c.admit(e0.clone());
-    c.admit(e1.clone());
+    c.admit(super::fixtures::reconstructed(&e0));
+    c.admit(super::fixtures::reconstructed(&e1));
     let grown = c.line_write().expect("writes").expect("what was filed");
     assert!(!grown.whole, "what was filed is appended");
     land(&mut file, grown);
@@ -81,8 +81,8 @@ fn line_write_appends_in_order_and_round_trips() {
     for _ in 0..4 {
         step(&mut c, Vec::new());
     }
-    c.admit(eshut.clone());
-    c.admit(efold);
+    c.admit(super::fixtures::reconstructed(&eshut));
+    c.admit(super::fixtures::reconstructed(&efold));
     assert_eq!(c.shed_folded(|_| false), 3, "the peer's two acts and its close leave");
     let shed = c.line_write().expect("writes").expect("what left");
     assert!(!shed.whole, "two that the file carries left, against six that stand: named, appended");
@@ -145,7 +145,7 @@ fn line_write_round_trips_evicted_stamp_refiled() {
     let e0 = step(&mut e, Vec::new());
     assert_eq!(e0.stamp, f0.stamp, "the signer's genesis stands at the forged genesis's stamp");
     assert!(Predecessor::of(&e0).forks(&Predecessor::of(&f0)), "with another hash");
-    c.admit(e0.clone());
+    c.admit(super::fixtures::reconstructed(&e0));
     let w = c.line_write().expect("writes").expect("what left and what was filed");
     assert!(!w.whole, "two that left against four that stand: appended");
     land(&mut file, w);

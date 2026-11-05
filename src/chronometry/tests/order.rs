@@ -38,8 +38,8 @@ fn precedes_implies_lower_height_and_keeps_concurrency() {
     assert!(!hash(&d0).locates(&hash(&e0)), "two signers, two nodes");
     let mut mix = ReceiptChain::with_signer([1; 32]);
     step(&mut mix, Vec::new());
-    mix.admit(d0.clone());
-    mix.admit(e0.clone());
+    mix.admit(super::fixtures::reconstructed(&d0));
+    mix.admit(super::fixtures::reconstructed(&e0));
     step(&mut mix, vec![cite(&d0), cite(&e0)]);
     let mut b = budget(8);
     assert_eq!(mix.precedes(&d0.stamp, &e0.stamp, &mut b), Some(false), "two geneses are concurrent");
@@ -78,9 +78,9 @@ fn precedes_places_peer_node_by_cut_of_line() {
     // A PEER THAT REACHES THE CHAIN'S FIRST NODE: it cites it as a parent.
     let mut d = ReceiptChain::with_signer([3; 32]);
     step(&mut d, Vec::new());
-    d.admit(own0.clone());
+    d.admit(super::fixtures::reconstructed(&own0));
     let over = step(&mut d, vec![cite(&own0)]);
-    c.admit(over.clone());
+    c.admit(super::fixtures::reconstructed(&over));
     let mut b = budget(4);
     assert_eq!(c.precedes(&own0.stamp, &over.stamp, &mut b), Some(true), "the chain's own node is below a peer node that cites it");
     let mut b = budget(4);
@@ -89,7 +89,7 @@ fn precedes_places_peer_node_by_cut_of_line() {
     // UNTIL THE CHAIN CITES IT, a peer node is above nothing of the chain's own.
     let mut e = ReceiptChain::with_signer([4; 32]);
     let apart = step(&mut e, Vec::new());
-    c.admit(apart.clone());
+    c.admit(super::fixtures::reconstructed(&apart));
     let mut b = budget(4);
     assert_eq!(c.precedes(&apart.stamp, &own0.stamp, &mut b), Some(false), "an uncited peer node precedes nothing of the chain's own");
     let mut b = budget(4);
@@ -114,7 +114,7 @@ fn fold_before_keeps_peer_placements() {
     let mut e = ReceiptChain::with_signer([4; 32]);
     let peer = step(&mut e, Vec::new());
     step(&mut c, Vec::new());
-    c.admit(peer.clone());
+    c.admit(super::fixtures::reconstructed(&peer));
     step(&mut c, vec![cite(&peer)]);
     // A fold cuts only at an orbit's close (OK1): the two acts close the
     // orbit they share, and the survivor opens the next.

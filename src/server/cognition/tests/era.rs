@@ -334,7 +334,7 @@ fn admit_backfill_admits_citation_of_folded_receipt() {
     assert!(k.chain().at(&home, cited.stamp.place()).is_none(), "the cited receipt left the nodes for the archive");
     let dvk = super::fixtures::court_key("folded-cite-d").verifying_bytes();
     let mut d = ReceiptChain::with_signer(dvk);
-    d.admit(cited.clone());
+    d.admit(super::fixtures::reconstructed(&cited));
     d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![crate::chronometry::Parent::of(&cited)])
         .expect("d cites the court's receipt");
     let line: Vec<_> = d.line_between(&dvk, None, d.head().expect("d acted").stamp.place(), 16);

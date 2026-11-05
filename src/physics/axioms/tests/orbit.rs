@@ -83,7 +83,7 @@ fn from_receipts_refuses_close_with_forged_frame() {
         "the integrity check re-derives the frame and refuses the line"
     );
     let mut peer = ReceiptChain::with_signer([3; 32]);
-    peer.admit(a0);
+    peer.admit(Reconstructed::receipt(&a0).expect("a sealed receipt re-derives"));
     assert!(matches!(admit_backfilled(&forged, &peer), Admitted::Refused(REFUSE_RECEIPT)), "and admission refuses it");
     let mut honest = ReceiptChain::with_signer([2; 32]);
     act(&mut honest, [1, 1, 0, 0]);
@@ -99,7 +99,7 @@ fn from_receipts_refuses_close_with_forged_frame() {
         [0; 32],
     )
     .expect("seals");
-    peer.admit(shut);
+    peer.admit(Reconstructed::receipt(&shut).expect("a sealed receipt re-derives"));
     assert!(
         matches!(admit_backfilled(&early, &peer), Admitted::Refused(REFUSE_RECEIPT)),
         "an act after a close that does not open the next orbit is refused"
@@ -117,7 +117,7 @@ fn collides_compares_exact_frames_at_one_tick() {
     let mut local = ReceiptChain::with_signer([5; 32]);
     act(&mut local, [2, 0, 0, 0]);
     for r in other.own().collect::<Vec<_>>() {
-        local.admit(r);
+        local.admit(Reconstructed::receipt(&r).expect("a sealed receipt re-derives"));
     }
     let (_, frame) = local.open_orbit().expect("open");
     let tick = local.next_stamp(&[]).expect("a stamp").h;

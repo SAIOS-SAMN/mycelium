@@ -252,7 +252,7 @@ fn hear_proves_citation_into_held_era() {
     let dkey = super::fixtures::court_key("catchup-era-d");
     let dvk = dkey.verifying_bytes();
     let mut dc = ReceiptChain::with_signer(dvk);
-    dc.admit(b0.clone());
+    dc.admit(super::fixtures::reconstructed(&b0));
     dc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: b0.stamp, hash: b0.chain_hash }]).expect("d cites b0");
     let (head, pre) = {
         let r = dc.head().expect("d acted");
@@ -329,7 +329,7 @@ fn hear_proves_long_era_page_by_page() {
     let c = Mutex::new(c0);
     let dkey = super::fixtures::court_key("catchup-long-era-d");
     let mut dc = ReceiptChain::with_signer(dkey.verifying_bytes());
-    dc.admit(b0.clone());
+    dc.admit(super::fixtures::reconstructed(&b0));
     dc.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: b0.stamp, hash: b0.chain_hash }]).expect("d cites b0");
     let r = dc.head().expect("d acted");
     let pre = SignedPrefix {

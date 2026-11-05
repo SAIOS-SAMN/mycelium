@@ -58,7 +58,7 @@ fn founded() -> Court {
     ts.sort_unstable();
     let mut k = Court::new();
     let genesis = DomainGenesis { domain: domain(), tiers: ts };
-    assert!(matches!(k.admit_domain(&genesis.sign(&key(4))), Founded::Sealed { .. }));
+    assert!(matches!(k.hear_domain(&genesis.sign(&key(4))), Founded::Sealed { .. }));
     let reservation = Reservation { domain: domain(), tier: verifying(&r), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&reservation.sign(&key(4))), Founded::Reserved { .. }));
     let anchor = k.anchor();
@@ -102,7 +102,7 @@ fn sealed(k: &mut Court, f: TierFold, by: &SigningKey) -> FoldAt {
     let mut prefix = [5u8; 32];
     prefix[..8].copy_from_slice(&k.chain.head_height().to_be_bytes());
     let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
-    match k.admit_uplink(&carrier.sign(&reserve())) {
+    match k.hear_uplink(&carrier.sign(&reserve())) {
         Uplinked::Chained { at, .. } => FoldAt { stamp: at, path: vec![0] },
         other => panic!("carried: {other:?}"),
     }
@@ -130,7 +130,7 @@ fn evidence(f: &TierFold, at: &FoldAt, entries: Vec<Entry>) -> Challenge {
 fn admit_uplink_refuses_line_not_carried_by_reserve() {
     let (a, ..) = tiers();
     let mut k = founded();
-    assert_eq!(k.admit_uplink(&a_fold().sign(&a)), Uplinked::NotReserve);
+    assert_eq!(k.hear_uplink(&a_fold().sign(&a)), Uplinked::NotReserve);
     let at = sealed(&mut k, a_fold(), &a);
     assert_eq!(at.path, vec![0]);
     assert!(k.ledgers.records.contains(&at.key()), "the line recorded inside its reserve's receipt");
@@ -310,7 +310,7 @@ fn challenge_returns_child_netting_of_falsified_parent() {
         let mut prefix = [6u8; 32];
         prefix[0] = nonce;
         let carrier = TierFold { tier: verifying(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
-        k.admit_uplink(&carrier.sign(&reserve()))
+        k.hear_uplink(&carrier.sign(&reserve()))
     };
     assert!(matches!(refile(&mut k, 1), Uplinked::ChildRefused { .. }), "consumed by P");
     let reply = k.challenge(&evidence(&lie, &lie_at, lying_line).sign(&challenger()));
@@ -546,7 +546,7 @@ fn finality_grandfathers_pre_line_fold() {
     let (_, p, _) = tiers();
     let mut k = founded();
     let rf = TierFold { tier: verifying(&reserve()), ..a_fold() };
-    let Uplinked::Admitted { at, .. } = k.admit_uplink(&rf.clone().sign(&reserve())) else { panic!("the reserve's own") };
+    let Uplinked::Admitted { at, .. } = k.hear_uplink(&rf.clone().sign(&reserve())) else { panic!("the reserve's own") };
     let r_at = FoldAt::sealed(at);
     // As sealed before 2(c): admitted, held by its coordinates, never recorded.
     k.ledgers.records.remove(&r_at.key());

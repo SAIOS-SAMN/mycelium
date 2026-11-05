@@ -58,7 +58,7 @@ fn admit_sealed(prefix: &SignedPrefix, r: &KStepReceipt, ledger: &ReceiptChain) 
 fn take(ledger: &mut ReceiptChain, r: &KStepReceipt) -> Admitted {
     let got = admit_sealed(&prefix_for(r), r, ledger);
     if let Admitted::Parent(_) = got {
-        ledger.admit(r.clone());
+        ledger.admit(sealed(r));
     }
     got
 }
@@ -179,7 +179,7 @@ fn admit_refuses_height_that_does_not_rederive() {
     // The signer held the peer when it cited it.
     let mut signer = ReceiptChain::with_signer([1; 32]);
     let r0 = signer.append(crate::chronometry::ActKind::List, [1, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
-    signer.admit(peer.clone());
+    signer.admit(sealed(&peer));
     let r1 = signer
         .append(crate::chronometry::ActKind::List, [2, 0, 0, 0], Vec::new(), [0; 32], vec![Parent::of(&peer)])
         .expect("appends")

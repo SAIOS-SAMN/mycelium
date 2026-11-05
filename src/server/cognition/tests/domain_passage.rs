@@ -37,7 +37,7 @@ fn founded() -> Court {
             tiers.sort_unstable();
         }
         let g = DomainGenesis { domain: verifying(&domain(d)), tiers };
-        assert!(matches!(k.admit_domain(&g.sign(&domain(d))), Founded::Sealed { .. }));
+        assert!(matches!(k.hear_domain(&g.sign(&domain(d))), Founded::Sealed { .. }));
         let r = Reservation { domain: verifying(&domain(d)), tier: verifying(&reserve(d)), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&domain(d))), Founded::Reserved { .. }));
     }

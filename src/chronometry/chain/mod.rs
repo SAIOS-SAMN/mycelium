@@ -752,11 +752,12 @@ impl ReceiptChain {
 
     /// ADMIT a verified peer node: held once at its stamp, entered on its
     /// signer's line, and PLACED against this chain's own line. A `Fold`
-    /// files the root it names (`file_peer_root`).
-    pub fn admit(&mut self, r: KStepReceipt) {
+    /// files the root it names (`file_peer_root`). Taken reconstructed: its
+    /// chain hash re-derives (MU-HOSTING §5a.10).
+    pub fn admit(&mut self, r: crate::court::admission::Reconstructed<KStepReceipt>) {
         if self.admits(&r) {
             self.file_peer_root(&r);
-            self.store(r);
+            self.store(r.into_object());
         }
     }
 

@@ -1381,10 +1381,20 @@ Each phase lands on its own branch, one item per commit:
      root by `Root::restates`. The packed line's anchors and
      predecessors (`chronometry/pack.rs`) and the archive's era
      comparisons (`cognition/state.rs`, `Locator`) moved with it.
+   - **Built**, second stage: `ReceiptChain::admit` takes a
+     `Reconstructed<KStepReceipt>`, and the vertex's admissions take a
+     reconstructed act: `Court::admit_uplink` and `admit_chained` a
+     `Reconstructed<SignedFold>`, `Court::admit_domain` a
+     `Reconstructed<SignedDomain>` (`Reconstructed::fold`,
+     `Reconstructed::domain`: the signed bytes re-written from the act's
+     own coordinates, the signature verified over them).
+     `Court::hear_uplink` and `Court::hear_domain` reconstruct the act as
+     heard. Claim: `vertex_admits_only_a_reconstructed_fold`
+     (`compile_fail`), in the drift register.
    - Open (the next stage): `Cite::Root`'s hash, still bare, which would
-     drop `PartialEq` from `Cite`; `ReceiptChain::admit` taking
-     `Reconstructed<T>`; the X4 sites not yet typed (`court/glue.rs`
-     stratum root, `client/sdk/mind/learn.rs` starved root). The report of changed document sentences that put a typed
+     drop `PartialEq` from `Cite`; the X4 sites not yet typed
+     (`court/glue.rs` stratum root, `client/sdk/mind/learn.rs` starved
+     root). The report of changed document sentences that put a typed
      term beside an admission verb is not built: it needs a base commit
      the gate does not hold.
 2. **X1, the crossing record.** `Crossing { place, content, holonomy,

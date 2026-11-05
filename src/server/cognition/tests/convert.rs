@@ -42,7 +42,7 @@ fn founded() -> Court {
     let mut tiers = vec![verifying(&x()), verifying(&x2())];
     tiers.sort_unstable();
     let g = DomainGenesis { domain: verifying(&domain()), tiers };
-    assert!(matches!(k.admit_domain(&g.sign(&domain())), Founded::Sealed { .. }));
+    assert!(matches!(k.hear_domain(&g.sign(&domain())), Founded::Sealed { .. }));
     k
 }
 
@@ -97,7 +97,7 @@ fn designate_reserve_redesignates_at_reserve_fold() {
     let mut booted = Court::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.reserve_of(&verifying(&domain())), Some(verifying(&x())));
-    assert!(matches!(booted.admit_uplink(&fold(1, Vec::new(), Vec::new()).sign(&x())), Uplinked::Admitted { .. }), "the reserve's anchor");
+    assert!(matches!(booted.hear_uplink(&fold(1, Vec::new(), Vec::new()).sign(&x())), Uplinked::Admitted { .. }), "the reserve's anchor");
     assert_eq!(booted.reserve_of(&verifying(&domain())), Some(verifying(&x2())), "the redesignation holds from the anchor");
 }
 
@@ -128,10 +128,10 @@ fn convert_out_pays_from_reserve_never_mints() {
     assert_eq!(k.handoff(&Handoff::ConvertOut(Box::new(out(10, (1, 2), 1))).sign(&x())), first, "a resend");
     assert_eq!(k.treasury.balance_mu(&verifying(&holder())).n()[0], 5, "paid once");
     let leaving = vec![(PLAYER, [0, -10, 0, 0])];
-    assert!(matches!(k.admit_uplink(&fold(1, leaving.clone(), Vec::new()).sign(&x())), Uplinked::Discontinuous(Discontinuous::Unbalanced { lane: 1 })));
-    assert!(matches!(k.admit_uplink(&fold(1, leaving.clone(), vec![(id, Side::Out)]).sign(&x())), Uplinked::Admitted { .. }));
+    assert!(matches!(k.hear_uplink(&fold(1, leaving.clone(), Vec::new()).sign(&x())), Uplinked::Discontinuous(Discontinuous::Unbalanced { lane: 1 })));
+    assert!(matches!(k.hear_uplink(&fold(1, leaving.clone(), vec![(id, Side::Out)]).sign(&x())), Uplinked::Admitted { .. }));
     assert_eq!(
-        k.admit_uplink(&fold(2, leaving, vec![(id, Side::Out)]).sign(&x())),
+        k.hear_uplink(&fold(2, leaving, vec![(id, Side::Out)]).sign(&x())),
         Uplinked::HandoffRefused { index: 0, why: SideRefusal::Consumed }
     );
 }
@@ -153,13 +153,13 @@ fn convert_in_holds_escrow_until_reserve_answers() {
     assert_eq!(k.treasury.balance_mu(&verifying(&holder())).n()[0], 3, "held from the holder");
     let arriving = vec![(PLAYER, [0, 7, 0, 0])];
     assert_eq!(
-        k.admit_uplink(&fold(1, arriving.clone(), vec![(id, Side::In)]).sign(&x())),
+        k.hear_uplink(&fold(1, arriving.clone(), vec![(id, Side::In)]).sign(&x())),
         Uplinked::HandoffRefused { index: 0, why: SideRefusal::NotYet }
     );
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&holder())), Handed::Refused(HandoffRefusal::NotTheTier)));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&x())), Handed::Sealed { state: State::Accepted, .. }));
     assert_eq!(k.treasury.balance_mu(&verifying(&x())).n()[0], 3, "into the reserve");
-    assert!(matches!(k.admit_uplink(&fold(1, arriving, vec![(id, Side::In)]).sign(&x())), Uplinked::Admitted { .. }));
+    assert!(matches!(k.hear_uplink(&fold(1, arriving, vec![(id, Side::In)]).sign(&x())), Uplinked::Admitted { .. }));
     // Refused: refunded whole.
     let Handed::Sealed { id, .. } = k.handoff(&Handoff::ConvertIn(Box::new(offer(2))).sign(&holder())) else { panic!() };
     assert!(matches!(k.handoff(&Handoff::Refuse { id }.sign(&x())), Handed::Sealed { state: State::Returned, .. }));

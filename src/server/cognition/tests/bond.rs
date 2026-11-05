@@ -38,7 +38,7 @@ fn founded() -> Court {
     let mut tiers = vec![verifying(&reserve()), verifying(&tier())];
     tiers.sort_unstable();
     let g = DomainGenesis { domain: verifying(&domain()), tiers };
-    assert!(matches!(k.admit_domain(&g.sign(&domain())), Founded::Sealed { .. }));
+    assert!(matches!(k.hear_domain(&g.sign(&domain())), Founded::Sealed { .. }));
     let r = Reservation { domain: verifying(&domain()), tier: verifying(&reserve()), nonce: [0; 32] };
     assert!(matches!(k.designate_reserve(&r.sign(&domain())), Founded::Reserved { .. }));
     let anchor = k.anchor();
@@ -91,7 +91,7 @@ fn carry(k: &mut Court, f: TierFold, nonce: u8) -> Result<FoldAt, Uplinked> {
         rate: [(1, 1); 4],
     };
     let carrier = TierFold { tier: verifying(&reserve()), prefix: [nonce; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
-    match k.admit_uplink(&carrier.sign(&reserve())) {
+    match k.hear_uplink(&carrier.sign(&reserve())) {
         Uplinked::Chained { at, .. } => Ok(FoldAt { stamp: at, path: vec![0] }),
         other => Err(other),
     }
@@ -117,7 +117,7 @@ fn bond_posts_from_reserve_and_fold_reads_bonded() {
     let (f, _) = lying_fold();
     let at = carry(&mut k, f, 9).expect("carried, the line bonded");
     assert!(k.fold_bonded(&at), "a fold of a bonded tier");
-    let Uplinked::Admitted { at: bare, .. } = k.admit_uplink(&TierFold { prefix: [3; 32], rows: Vec::new(), tier: verifying(&reserve()), ..lying_fold().0 }.sign(&reserve())) else {
+    let Uplinked::Admitted { at: bare, .. } = k.hear_uplink(&TierFold { prefix: [3; 32], rows: Vec::new(), tier: verifying(&reserve()), ..lying_fold().0 }.sign(&reserve())) else {
         panic!("admitted")
     };
     assert!(!k.fold_bonded(&FoldAt::sealed(bare)), "an unbacked fold reads unbonded");

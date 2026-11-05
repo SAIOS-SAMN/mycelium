@@ -27,7 +27,7 @@ fn orbit_withholds_colliding_close_then_seals() {
     k.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
     let (_, own_frame) = k.chain.open_orbit().expect("the court's orbit is open");
     for r in peer_orbit([9; 32], own_frame) {
-        k.chain.admit(r);
+        k.chain.admit(super::fixtures::reconstructed(&r));
     }
     assert_eq!(k.orbit(), Close::Withheld, "its frame met the peer's at one tick");
     assert_eq!(k.k_step(), 0, "K stands");
@@ -81,7 +81,7 @@ fn clock_names_per_lane_distance_at_close() {
     let (_, own_frame) = k.chain.open_orbit().expect("open");
     let peer_frame = [own_frame[0] + 3, own_frame[1], own_frame[2], own_frame[3] + 1];
     for r in peer_orbit([9; 32], peer_frame) {
-        k.chain.admit(r);
+        k.chain.admit(super::fixtures::reconstructed(&r));
     }
     assert!(matches!(k.orbit(), Close::Sealed(_)), "frames apart: the close seals");
     assert_eq!(k.clock(None).orbits.distance, vec![([9; 32], [-3, 0, 0, -1])], "the court's own frame less the peer's, lane by lane");
