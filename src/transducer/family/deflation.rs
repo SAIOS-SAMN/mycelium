@@ -81,13 +81,6 @@ impl Withheld {
         matches!(self, Withheld::CoboundaryResidue { .. })
     }
 
-    /// Was the coboundary question ASKABLE at all? `false` means the form
-    /// carries no cycle and `δ¹` is silent — a reading that reports the
-    /// arms without this cannot tell an empty arm from an unreachable one.
-    pub fn is_askable(&self) -> bool {
-        !matches!(self, Withheld::Acyclic { .. })
-    }
-
     /// CV1 — THE KIND OF WHAT THE MINT WITHHELD (78.9): a class in `H¹` and
     /// a coboundary residue are cover-relative, C; an acyclic form and one
     /// with no trajectory asked no question, N.

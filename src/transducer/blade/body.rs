@@ -201,13 +201,6 @@ impl Blade {
         let cross = x * q(2);
         Some([di - dj, if mirrored { -cross } else { cross }])
     }
-
-    /// THE FOURTH HARMONIC ON A PLANE, turning at four times the body's
-    /// angle there. `None` for a plane the body's base does not have.
-    pub fn harmonic4_on(&self, plane: (usize, usize), mirrored: bool) -> Option<[BigRational; 2]> {
-        let [_, hx, hy] = self.quartic_on(plane)?;
-        Some([hx.clone(), if mirrored { -hy } else { hy.clone() }])
-    }
 }
 
 /// The rigid-motion invariant signature of a body (see [`Blade::invariant`]).

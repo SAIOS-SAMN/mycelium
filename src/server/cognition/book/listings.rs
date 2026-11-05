@@ -258,18 +258,6 @@ impl Court {
         self.height()
     }
 
-    /// Open (non-flat) charts of a listing, or its base chart if unprobed.
-    pub fn open_charts(&self, address: &[u8]) -> Vec<crate::transducer::stalk::Invariant> {
-        let listing = self
-            .pending
-            .get(address)
-            .or_else(|| self.cavity_book.get(address));
-        match listing {
-            Some(p) => open_charts_of(address, p, &self.field, &self.listing_atlas),
-            None => Vec::new(),
-        }
-    }
-
     /// The cavity's words, read off the cavity book in key order.
     pub fn cavities(&self) -> Vec<&Element> {
         self.cavity_book.scoped().map(|(_, e)| e).collect()

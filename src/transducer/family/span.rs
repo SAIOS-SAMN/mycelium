@@ -20,8 +20,7 @@
 //! span whole, or says the cell is ABSENT there by name; it never truncates
 //! the cell to the part the stratum names.
 
-use crate::network::nerve::{coord, Keyed};
-use crate::transducer::sentence::{section_of_frames, Form, Orbit};
+use crate::network::nerve::Keyed;
 
 /// WHERE A CELL STANDS ALONG `e₃`.
 #[derive(Clone, Debug)]
@@ -71,71 +70,9 @@ impl Span {
     }
 }
 
-/// THE SECTIONS THE MEMBER UNDER ONE CHART STANDS ON: the frames it holds
-/// (AT1, ruled — a member holds its frames, and its class's section is the
-/// union over its members, so the meet of the two is the member's own). The
-/// Frame's chart and a member holding no frames are claimed whole, as the
-/// court reads them (51.8). `None` where the chart names no vertex of the
-/// form (rule 11: an unread span is not a whole one).
-pub(crate) fn chart_span(form: &Form, chart: &coord::ChartAt) -> Option<Span> {
-    let coord::ChartAt::At(m) = chart else { return Some(Span::Whole) };
-    form.vertices.at(&m.vertex)?;
-    let frames = form.member_frames(&m.vertex, &m.chart);
-    Some(match frames.is_empty() {
-        true => Span::Whole,
-        false => Span::Sections(section_of_frames(frames)),
-    })
-}
-
-/// A CYCLE'S SPAN: the meet of its charts' spans. `None` where a chart is
-/// unread.
-pub(crate) fn orbit_span(form: &Form, orbit: &Orbit) -> Option<Span> {
-    span_of_members(orbit.charts().into_iter(), |c| chart_span(form, &c))
-}
-
-/// THE MEET OVER A CELL'S MEMBERS, by whatever reads a member's span — the
-/// form's charts in production, a fixture's in the tests.
+/// THE MEET OVER A CELL'S MEMBERS, by whatever reads a member's span (a
+/// fixture's in the tests).
+#[cfg(test)]
 pub(crate) fn span_of_members<T>(members: impl Iterator<Item = T>, read: impl Fn(T) -> Option<Span>) -> Option<Span> {
     members.map(read).try_fold(Span::Whole, |acc, s| Some(acc.meet(&s?)))
-}
-
-/// FR2 — THE SPANS OF A FORM'S CYCLES, per form (§8.1): how many are whole,
-/// how many stand on sections — by how many — how many on none, and how many
-/// are unread. A reading only.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct SpanTally {
-    pub whole: u64,
-    /// `(sections in the span, cycles)`, in the count's own order.
-    pub sections: Vec<(usize, u64)>,
-    pub none: u64,
-    pub unread: u64,
-}
-
-impl SpanTally {
-    pub fn of(form: &Form) -> SpanTally {
-        let mut t = SpanTally::default();
-        for o in &form.orbits {
-            match orbit_span(form, o) {
-                None => t.unread += 1,
-                Some(Span::Whole) => t.whole += 1,
-                Some(Span::Sections(s)) if s.is_empty() => t.none += 1,
-                Some(Span::Sections(s)) => match t.sections.binary_search_by_key(&s.len(), |&(k, _)| k) {
-                    Ok(at) => t.sections[at].1 += 1,
-                    Err(at) => t.sections.insert(at, (s.len(), 1)),
-                },
-            }
-        }
-        t
-    }
-
-    pub fn line(&self) -> String {
-        let over: Vec<String> = self.sections.iter().map(|(k, c)| format!("{c} over {k}")).collect();
-        format!(
-            "spans: whole {} | on sections [{}] | on none {} | unread {}",
-            self.whole,
-            over.join(", "),
-            self.none,
-            self.unread
-        )
-    }
 }

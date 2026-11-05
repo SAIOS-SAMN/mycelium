@@ -438,28 +438,6 @@ pub fn section_of(held: &[Word], w: &Word) -> Option<(Word, Word)> {
     None
 }
 
-/// THE UNSPELLABLE GAUGE TRANSITIONS between a word and what the language
-/// holds — 37.7's candidates, from the bundle's side.
-///
-/// A word conjugate to a held word is a section of its bundle. Where the
-/// seventeen can spell the transition the language writes it down and the
-/// second monolith retires; where they CANNOT, the engine has proved a gauge
-/// exists that it has no letter for, and that rotor is exactly what an
-/// adjoined generator is made of.
-///
-/// Returning nothing there — which `solve_conjugator` does, because `None`
-/// covers both "no γ" and "γ nobody can say" — drops the one measurement
-/// that grows the alphabet.
-pub fn unspellable_gauges(held: &[Word], w: &Word) -> Vec<(Word, Rotor)> {
-    let mut out = Vec::new();
-    for h in held {
-        if let Some(Conjugation::Unspellable(g)) = conjugation(h, w) {
-            out.push((h.clone(), g));
-        }
-    }
-    out
-}
-
 /// The identity fibre: no conjugator, identity carriage, no recolour. The
 /// coordinate a base stands at over itself.
 pub fn trivial_fibre() -> Fibre {

@@ -1,4 +1,4 @@
-// 26 — the mind's own codec: a germ's bytes and address, the frame two
+// 26 — the mind's own codec: the frame two
 // scenes measure, and the byte an outcome rides the wire as.
 //
 //! The percept and the demand that were spelled here carried a voice's
@@ -7,13 +7,6 @@
 //! guesses at a shape.
 
 use super::*;
-
-/// The germ's canonical ADDRESS — a digest of its ANASTOME form. Used to match
-/// consilience receipts across voices; a wire/cache identity, never a reasoning
-/// operand (the court reasons on the element, addresses by this).
-pub fn germ_address(g: &Element) -> crate::transducer::address::Address {
-    g.address()
-}
 
 /// The frame measured from two painted scenes (the scenes' site extents) — the
 /// identity frame when both share dims; used where no sample is at hand.

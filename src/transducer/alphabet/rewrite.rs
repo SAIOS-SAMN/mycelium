@@ -26,7 +26,7 @@
 //! well-founded order on a finite alphabet, so no reduction can loop. The
 //! orientation is not a choice made here — it is read off the order.
 
-use super::{plane_of, LetterId, Rotor, Word};
+use super::{plane_of, LetterId, Word};
 use crate::network::nerve::Keyed;
 
 /// A rewrite rule `lhs → rhs`, oriented so the right side is strictly
@@ -427,18 +427,3 @@ pub fn presentation() -> &'static (Vec<Rule>, bool) {
     })
 }
 
-/// A rotor's canonical spelling where the seventeen can spell it: the
-/// alphabet's own factorisation, which is a CONSTRUCTION from the algebra
-/// and not a search over tapes. Where they cannot, the rotor is an adjoined
-/// generator and has no spelling (37.7) — which is a refusal, not a failure.
-pub fn spelled_geodesic(
-    r: &Rotor,
-    rules: &[Rule],
-    budget: &mut crate::physics::Budget,
-) -> Option<Word> {
-    let w = match super::factor_rotor(r)? {
-        Ok(w) => w,
-        Err(_) => return None,
-    };
-    w.geodesic_under(rules, budget)
-}

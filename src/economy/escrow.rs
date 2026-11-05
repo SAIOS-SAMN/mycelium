@@ -47,14 +47,6 @@ pub struct Escrowed {
     pub anchor: Anchor,
 }
 
-/// An escrow read off the book, carrying the address it is filed under.
-pub struct EscrowedAward {
-    /// The listing the claim is against.
-    pub addr: Vec<u8>,
-    /// What that listing holds.
-    pub held: Escrowed,
-}
-
 impl Treasury {
     /// HOLD a consilience award in escrow pending the court's finality verdict
     /// (Step 5: two-voice consilience is provisional, not final). Nothing books
@@ -89,15 +81,6 @@ impl Treasury {
 
     pub fn escrow_of(&self, address: &[u8]) -> Option<&Escrowed> {
         self.escrowed.get(address)
-    }
-
-    pub fn escrowed_awards(&self) -> Vec<EscrowedAward> {
-        // WHAT IS HELD IN ESCROW, all of it: this is the carrier's own
-        // reading, the one a persist and a treasury line are taken from.
-        self.escrowed
-            .scoped()
-            .map(|(address, held)| EscrowedAward { addr: address, held: held.clone() })
-            .collect()
     }
 
     /// 78.149 (b) — A CLAIM IS PAID THE CLOSER'S MEASURED DISCHARGE, NEVER

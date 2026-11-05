@@ -7,11 +7,6 @@
 use super::*;
 
 impl Court {
-    pub fn is_home_listing(&self, address: &[u8], closest_is_self: bool) -> bool {
-        let _ = address;
-        closest_is_self
-    }
-
     /// Bind this mind to the key that signs for it -- both the identity it
     /// draws room against and the ledger that seals its receipts. The key
     /// is a coordinate of every stamp and in every hash (78.24), so a
@@ -39,13 +34,6 @@ impl Court {
                 key[1]
             );
         }
-    }
-
-    /// The SELECTION-FIBRE critical pairs awaiting the court's anchor
-    /// refinement (7c) — (word address, Q_anchor, scene). Draining is the
-    /// court's move; the queue is bounded and in-memory.
-    pub fn anchor_mismatch_dockets(&self) -> &[crate::transducer::anchor::AddressedEvidence] {
-        &self.anchor_mismatches
     }
 
     /// The selection fibre's birth evidence (word address, footprint, scene) —
@@ -173,10 +161,6 @@ impl Court {
         &self.spoken
     }
 
-    pub fn quote_frontier(&self) -> &crate::network::nerve::Keyed<()> {
-        &self.quote_frontier
-    }
-
     /// PUNCTURE held words from a verified utterance's carried bodies: the
     /// fibre deepens on what the hypha verified. A deepened basis moves the
     /// basis generation so the language snapshot refreshes.
@@ -241,26 +225,6 @@ impl Court {
         }
     }
 
-    /// The settlements past a court's "since": the relation is in line
-    /// order, so the walk is over the delta only, from the newest back.
-    pub fn settlements_since(&self, since: crate::chronometry::Place) -> &[crate::anastome::dialogue::Settlement] {
-        let mut start = self.settlements.len();
-        while start > 0 && self.settlements[start - 1].at.place() > since {
-            start -= 1;
-        }
-        &self.settlements[start..]
-    }
-
-    /// The court stands at `since`: everything at or before it is heard
-    /// and leaves the docket.
-    pub fn settlements_heard_to(&mut self, since: crate::chronometry::Place) {
-        let mut n = 0usize;
-        while n < self.settlements.len() && self.settlements[n].at.place() <= since {
-            n += 1;
-        }
-        self.settlements_cold.extend(self.settlements.drain(..n));
-    }
-
     /// PRESSURE IS THE OPEN BOOK: the per-lane magnitude of every listing,
     /// measured whenever the book moved — never an accumulator. A demand
     /// the language already speaks adds nothing; a settlement removes
@@ -310,15 +274,6 @@ impl Court {
             return;
         };
         self.deflations.insert(word, deflation);
-    }
-
-    /// The court's chain head as ruled to this hypha.
-    pub fn set_court_head(&mut self, head: [u8; 32]) {
-        self.court_head = head;
-    }
-
-    pub fn court_head(&self) -> [u8; 32] {
-        self.court_head
     }
 
     /// THE CORPUS INTAKE DOOR (server-side ingestion authority): an

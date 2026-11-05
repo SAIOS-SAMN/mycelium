@@ -207,10 +207,6 @@ impl Court {
         self.measure_ruled_root()
     }
 
-    pub fn court_federation_len(&self) -> usize {
-        self.court_federation.len()
-    }
-
     /// The demand vertices listed so far (50.5, L7): a counter read at the
     /// wire and by the tests, derived from the listings, never a gate.
     pub fn demands_listed(&self) -> u64 {
@@ -235,14 +231,6 @@ impl Court {
 
     pub fn field_hot_len(&self) -> usize {
         self.field.len()
-    }
-
-    pub fn field_cold_len(&self) -> usize {
-        self.field_cold.len()
-    }
-
-    pub fn settlements_hot_len(&self) -> usize {
-        self.settlements.len()
     }
 
     pub fn settlements_cold_len(&self) -> usize {

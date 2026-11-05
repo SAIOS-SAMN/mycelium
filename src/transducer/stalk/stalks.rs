@@ -73,19 +73,6 @@ impl Stalks {
         self.root.fibre(&inv.0[..n])
     }
 
-    /// One-step outward charts from `inv`: the child axes of this node.
-    pub fn child_charts(&self, inv: &Invariant) -> Vec<Invariant> {
-        self.root
-            .child_axes(&inv.0)
-            .into_iter()
-            .map(|a| {
-                let mut axes = inv.0.clone();
-                axes.push(a);
-                Invariant(axes)
-            })
-            .collect()
-    }
-
     // `each_child(inv, after, budget, f)` stood here: a budgeted page of one
     // stratum's child branches, resumed from a cursor, returning the last key
     // visited. It existed for `AtlasRead::children`, whose only caller was

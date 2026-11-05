@@ -154,25 +154,6 @@ impl ChartNode {
         true
     }
 
-    pub(crate) fn child_axes(&self, axes: &[ChartAxis]) -> Vec<ChartAxis> {
-        match axes.split_first() {
-            None => {
-                let mut out = Vec::new();
-                for (k, _) in self.branches.scoped() {
-                    if let Some(a) = axis_of(&k) {
-                        out.push(a);
-                    }
-                }
-                out
-            }
-            // No branch on this axis, no axes under it.
-            Some((a, rest)) => match self.branches.get(&axis_key(a)) {
-                Some(s) => s.child_axes(rest),
-                None => Vec::new(),
-            },
-        }
-    }
-
     // `branches_at(axes)` stood here and handed out a stratum's whole branch
     // carrier so `each_child` could page it. Both are gone with the outward
     // read they existed for: an idea meets the charts its own vertices stand

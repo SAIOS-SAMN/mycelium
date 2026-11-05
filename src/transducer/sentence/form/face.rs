@@ -92,53 +92,6 @@ impl Form {
         frames_of_section(&all)
     }
 
-    /// THE OVERLAPS TWO VERTICES MAKE AT THE MEMBER PAIRS THE INCIDENCE
-    /// NAMES, one per frame both members stand on.
-    ///
-    /// `pairs` is the incidence: which member of `a` relates to which member
-    /// of `b`. It comes from the site occupancy that created the face or from
-    /// the overlaps already held; it is never the product of the two fibres
-    /// (21 step 2). A member pair whose place does not derive is left out
-    /// rather than given a versor it does not have (rule 11).
-    pub fn overlaps_between(
-        &self,
-        a: &coord::VertexAt,
-        b: &coord::VertexAt,
-        pairs: &[(stalk::Invariant, stalk::Invariant)],
-    ) -> Vec<(coord::Overlap, FormFace)> {
-        let mut out = Vec::new();
-        for (ci, cj) in pairs {
-            let there: Keyed<()> = section_of_frames(self.member_frames(b, cj));
-            for k in self.member_frames(a, ci) {
-                if !there.contains(&frame_key(k)) {
-                    continue;
-                }
-                let o = coord::Overlap {
-                    from: coord::ChartAt::at(a.clone(), ci.clone(), k),
-                    to: coord::ChartAt::at(b.clone(), cj.clone(), k),
-                };
-                if let Some(p) = self.face_place(&o.from, &o.to, None) {
-                    out.push((o, FormFace::placed(p, Producer::Place)));
-                }
-            }
-        }
-        out
-    }
-
-    /// THE MEMBER PAIRS TWO VERTICES HAVE where one of them stands at a
-    /// single chart — the star case, and every face this tree makes outside
-    /// a cover's meets. `None` where both carry several: the pairing is the
-    /// scene's fact and this does not have it.
-    pub fn face_pairs(&self, a: &coord::VertexAt, b: &coord::VertexAt) -> Option<Vec<(stalk::Invariant, stalk::Invariant)>> {
-        let ci = self.vertices.at(a)?.charts();
-        let cj = self.vertices.at(b)?.charts();
-        match (ci.as_slice(), cj.as_slice()) {
-            ([one], many) => Some(many.iter().map(|c| (one.clone(), c.clone())).collect()),
-            (many, [one]) => Some(many.iter().map(|c| (c.clone(), one.clone())).collect()),
-            _ => None,
-        }
-    }
-
     /// THE STAR OF A VERTEX: an overlap from the Frame's chart — its tag
     /// alone (Q-B1) — to every member of the vertex at every frame it stands
     /// on, oriented Frame-first.

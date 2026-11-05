@@ -673,11 +673,6 @@ impl ReceiptsEnvelope {
             && self.witness.is_empty()
     }
 
-    /// The edge at a citation site, by the site's own coordinates.
-    pub fn edge_at(&self, host: &Address) -> Option<&NerveEdge> {
-        self.nerve.iter().find(|e| &e.host() == host)
-    }
-
     /// The derivation cite for a vertex address.
     pub fn cite_for(&self, vertex: &[u8]) -> Option<&DerivationCite> {
         self.derivations.iter().find(|d| d.vertex.as_bytes() == vertex)

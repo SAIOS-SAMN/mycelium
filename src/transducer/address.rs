@@ -133,12 +133,6 @@ impl<Head: CanonicalCoordinate, Tail: CanonicalCoordinate> CoordinatePath<Head, 
     pub fn new(head: Head, tail: Tail) -> Self {
         CoordinatePath { head, tail }
     }
-
-    pub fn to_address(&self) -> Address {
-        let mut out = Vec::new();
-        self.write_canonical(&mut out);
-        Address::new(out)
-    }
 }
 
 impl<Head: CanonicalCoordinate, Tail: CanonicalCoordinate> CanonicalCoordinate for CoordinatePath<Head, Tail> {

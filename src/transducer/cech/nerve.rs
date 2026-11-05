@@ -235,18 +235,6 @@ impl NerveTotals {
     pub fn by_grade(&self) -> Vec<(usize, u64, u64)> {
         cells_by_grade(self.certified.iter().map(|(_, c)| (c.grade(), c.meet.clone())))
     }
-
-    /// The nerve line's cells segment: the certified cells by grade, then
-    /// what did not key — compartment keys refused and members unkeyed (KB1).
-    pub fn cells_line(&self) -> String {
-        format!(
-            "certified cells (grade cells meet≠0) {:?}, {} refused, {} unkeyed, {} singular",
-            self.by_grade(),
-            self.refused.len(),
-            self.unkeyed,
-            self.singular
-        )
-    }
 }
 
 /// CERTIFIED CELLS BY GRADE: `(grade, cells, cells whose meet is not the

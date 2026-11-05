@@ -20,3 +20,15 @@
   `Stratified::{schema, keyed}`, and the never-constructed
   `SchemaRefusal::InvalidDepth` and `SchemaRefusal::Stratum`. The foreign-key
   refusal of `Keyed::read_exact` is tested on a typed carrier.
+- Sixty functions with no caller and no document are removed, each
+  confirmed by its path and type, among them `Clock::k`,
+  `observe::live::process`, `cognition::germ_address`, the court's
+  `active_cover`, `unlist_foreign`, `open_charts`, `taught`, `classes_on`,
+  `cohesion`, `torsion_total`, `is_home_listing`, `quote_frontier`,
+  `settlements_since`, `settlements_heard_to`, `set_court_head`,
+  `court_head`, `court_federation_len`, `field_cold_len`,
+  `settlements_hot_len` and `dynamic_lane_capacity`,
+  `Surgery::{bridge_merge, split_cut}`, `cga::{ray_name, parabolic_name}`,
+  `Pole::of` and `SpanTally` with its `of`; and the helpers and types only
+  they used (`EscrowedAward`, `LaneMembers`, `chart_span`, `orbit_span`,
+  `Stratum::child_axes`).

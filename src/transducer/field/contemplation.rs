@@ -330,12 +330,6 @@ impl Contemplation {
         Contemplation::default()
     }
 
-    /// CS2 — the pivots' outcomes by content: reached, derivable, demanded
-    /// (the adjunction apart), starved, unread by fibre or by algebra.
-    pub fn pivot_reading(&self) -> sentence::PivotTally {
-        self.pivots
-    }
-
     /// 13.12 — the merges' outcomes by name: merged, stayed two, unnamed.
     pub fn merge_reading(&self) -> super::merge::MergeTally {
         self.merges
@@ -1230,13 +1224,6 @@ impl Contemplation {
         }
         self.formed += 1;
         Some((e, family))
-    }
-
-    /// Classes on the contemplation, any degree.
-    pub fn classes_held(
-        &self,
-    ) -> Vec<(crate::transducer::sentence::ClassVector, Rotor, usize)> {
-        self.complex.classes()
     }
 
     pub fn component_count(&self) -> usize {

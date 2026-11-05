@@ -58,7 +58,7 @@ impl Court {
     /// The proposal at `head`, read as [`Court::propose_fold`] reads it.
     fn propose_fold_at(&mut self, head: Place) -> Result<Proposal, &'static str> {
         // 78.153b — the rows below the head read ONCE: the audit and the nets
-        // `fold_reading` asks, the epochs, and the diagnostic below each read
+        // a fold's reading asks, the epochs, and the diagnostic below each read
         // them again, three clones of the journal's prefix under the court
         // at every close (the lock audit, row 8).
         let below = self.treasury.rows_below(head);

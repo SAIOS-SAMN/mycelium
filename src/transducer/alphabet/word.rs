@@ -308,11 +308,6 @@ impl Word {
         }
     }
 
-    /// The plane element is the identity: even sheet, trivial rotation.
-    pub fn abelian_identity(&self) -> bool {
-        self.form().is_some_and(|f| f.is_identity())
-    }
-
     /// THE ORDER OF THE WORD'S ROTATION, read on the rotor (15.3, ruled
     /// 2026-09-09) and never on the sensor plane's shadow: the period of
     /// the rotor's two commuting quaternion factors (`Rotor::order`). Read
@@ -578,14 +573,6 @@ impl Ord for Order {
 }
 
 impl Order {
-    /// Wire encoding: 0 = infinite, else the finite period.
-    pub fn to_u32(self) -> u32 {
-        match self {
-            Order::Finite(ell) => ell,
-            Order::Infinite => 0,
-        }
-    }
-
     pub fn from_u32(v: u32) -> Self {
         if v == 0 {
             Order::Infinite

@@ -109,16 +109,6 @@ impl FibreTransition {
         crate::transducer::element::derive_hue_map(&self.gauge_from, &self.gauge_to)
     }
 
-    /// The two charts recolour the body the same way: the fibre carries no
-    /// gauge symmetry. An absent map is the identity permutation, which is
-    /// what "this chart moves no hue" means.
-    pub fn is_ungauged(&self) -> bool {
-        matches!(
-            self.gauge().map(|g| crate::transducer::sentence::CycleType::of(&g)),
-            Some(crate::transducer::sentence::CycleType::Identity)
-        )
-    }
-
     /// 12.6 AT A 0-CELL, through the SAME classifier grade 1 and grade 2
     /// use (law 12): flat, a compact `ℤ/ℓℤ` symmetry about a fixed point, a
     /// standing class, or a rotation the alphabet cannot name.

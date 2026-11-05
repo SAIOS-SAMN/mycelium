@@ -153,16 +153,6 @@ pub fn note_sealed() {
     note(|m| m.sealed += 1);
 }
 
-/// VS1 — a viscous bend on lane `lane` (𝒮 0, 𝒢 1, 𝒯 2, 𝒽 3): the lane's
-/// entropy.
-pub fn note_viscous(lane: usize) {
-    note(|m| {
-        if let Some(slot) = m.viscous.get_mut(lane) {
-            step(slot, 1, &mut m.overflowed);
-        }
-    });
-}
-
 /// One draw against the reserve that was afforded, per lane.
 pub fn note_draw(cost: &[u64; 4]) {
     note(|m| {

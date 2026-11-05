@@ -320,21 +320,6 @@ impl Court {
         self.physics.reserve.lanes()
     }
 
-    /// Test helper: remaining listing room, from each lane's own bond.
-    /// `None` where a lane's room plus its occupancy passes its carrier,
-    /// counted as a room read past its carrier (STD1).
-    pub fn dynamic_lane_capacity(&self) -> Option<[u64; 4]> {
-        let room = self.lane_room()?;
-        let mut cap = [0u64; 4];
-        for (l, c) in cap.iter_mut().enumerate() {
-            match room[l].checked_add(self.occupancy[l]) {
-                Some(v) => *c = v,
-                None => return self.room_answer(Err(RoomRefusal::PastCarrier)),
-            }
-        }
-        Some(cap)
-    }
-
     /// THE SHORTFALL of a draw against the uttering voice's room, per lane:
     /// what the draw needs beyond the room, zero where the lane fits (S9.6,
     /// §2.3). A reading, never a verdict. The bit this replaced threw the

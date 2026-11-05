@@ -442,12 +442,6 @@ impl ReceiptChain {
         self.head_stamp().map(|s| s.place())
     }
 
-    /// The head receipt's place as a line prints it, `K.i`, or `none`
-    /// before genesis.
-    pub fn head_label(&self) -> String {
-        self.head_place().map_or_else(|| "none".to_string(), Place::print)
-    }
-
     /// The head receipt's orbit `K`. Zero before genesis.
     pub fn head_k(&self) -> u64 {
         self.head_stamp().map_or(0, |s| s.k)

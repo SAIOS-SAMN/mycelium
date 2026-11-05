@@ -89,8 +89,7 @@ pub struct Court {
     /// ledger is its row's admitting stamp (`admitted_at`, the List act,
     /// 78.24), never a `K` carried beside it. Dwell is measured in ALGEBRAIC
     /// time (K-steps, court-replayable), never a wall clock. Capacity is
-    /// thermodynamic (dynamic_lane_capacity — live memory headroom ×
-    /// per-lane metabolic tension); eviction is by ACTION POTENTIAL, never
+    /// thermodynamic (each lane's room, read off its own bond); eviction is by ACTION POTENTIAL, never
     /// FIFO. No static cap exists.
     pub(crate) pending: crate::network::nerve::Keyed<Element>,
     /// THE CHRONOMETRIC RECEIPT CHAIN — the line position `i` of each receipt
@@ -319,7 +318,7 @@ pub struct Court {
     /// appended there.
     pub(crate) eras_end: u64,
     /// C6: a TEST knob, `None` on any live mesh. Production reads
-    /// `dynamic_lane_capacity`, which is measured; a cap that can be set is
+    /// `lane_room`, which is measured; a cap that can be set is
     /// a free constant (rule 5), so the SETTER is behind `cfg(test)`.
     pub(crate) lane_cap: Option<[u64; 4]>,
     /// Height at first vantage of a standing carrier (listing or docket).

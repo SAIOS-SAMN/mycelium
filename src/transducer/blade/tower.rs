@@ -304,11 +304,6 @@ pub fn third_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRation
     harmonic(blade, plane, Tower::Region, Harmonic::Three)
 }
 
-/// 78.38 — THE SITES' SPREAD on a plane, the site tower's extent.
-pub fn spread_on(blade: &Blade, plane: (usize, usize)) -> Option<BigRational> {
-    extent(blade, plane, Tower::Sites)
-}
-
 /// AT WHICH ORDER ONE TOWER REFUSES THE PAIR AS DILATES, or `None` where it
 /// certifies them. A moment of order `m` carries degree `m`, so
 ///

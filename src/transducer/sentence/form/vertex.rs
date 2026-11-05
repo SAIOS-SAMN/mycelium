@@ -182,7 +182,7 @@ impl Vertex {
                 // the vertex stands at — a question about the BASE — and it
                 // read the fibre whole, which since R1 holds one entry per
                 // SECTION. A vertex with two carriages on one chart reported
-                // that chart twice, and `face_pairs` then read `(many,
+                // that chart twice, and the member pairing then read `(many,
                 // many)` where the incidence is `([one], many)` and answered
                 // `None`: the face lost every member pair, so every orbit
                 // through it lost its carriage.

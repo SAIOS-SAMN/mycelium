@@ -162,14 +162,6 @@ impl Treasury {
         Ok((prefix.len(), nets_of(&prefix)?))
     }
 
-    /// What a fold at `head` would do, without writing it: the audit
-    /// must hold now and the nets must read exact.
-    pub fn fold_reading(&self, head: Place) -> Result<Folded, &'static str> {
-        self.audit().map_err(|_| crate::verdict::REFUSE_FOLD_INEXACT)?;
-        let (replaced, nets) = self.nets(head)?;
-        Ok(Folded { replaced, rows: nets.rows.len(), net: nets.total })
-    }
-
     /// FOLD the rows written before the act at `head` into `epoch` rows
     /// anchored to the fold receipt. The audit failing before or after, a
     /// net below zero on a lane, or an unpaired transfer half is

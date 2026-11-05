@@ -227,9 +227,4 @@ impl<C: Coefficient> Gauge<C> {
     pub fn steps(&self) -> Vec<(Vec<u8>, Vec<u8>, C)> {
         self.up.scoped().map(|(v, (p, g))| (v, p.clone(), g.clone())).collect()
     }
-
-    /// One step written back (a restore).
-    pub fn hold_step(&mut self, v: &[u8], parent: Vec<u8>, g: C) {
-        self.up.insert(v, (parent, g));
-    }
 }

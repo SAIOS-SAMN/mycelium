@@ -65,30 +65,6 @@ impl Surgery {
         }
     }
 
-    /// Construct a bridge-merge surgery from the sites of the bridge.
-    pub fn bridge_merge(bridge: Vec<Site>) -> Self {
-        let mut delta = bridge;
-        delta.sort_unstable();
-        delta.dedup();
-        Surgery {
-            kind: SurgeryKind::BridgeMerge,
-            delta_betti: (-1, 0),
-            support_delta: delta,
-        }
-    }
-
-    /// Construct a split-cut surgery from the sites of the cut.
-    pub fn split_cut(cut: Vec<Site>) -> Self {
-        let mut delta = cut;
-        delta.sort_unstable();
-        delta.dedup();
-        Surgery {
-            kind: SurgeryKind::SplitCut,
-            delta_betti: (1, 0),
-            support_delta: delta,
-        }
-    }
-
     /// Apply the surgery to a support, producing the modified support.
     pub fn apply(&self, support: &[Site]) -> Vec<Site> {
         match self.kind {
