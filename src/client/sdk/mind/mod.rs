@@ -56,6 +56,10 @@ pub struct Mind {
     /// The rule the court last refused for each task, by task id — so the
     /// same rule is not sent again (`Mind::solve_task`). One per task.
     pub(crate) solve_refused: crate::network::nerve::Keyed<Vec<u8>>,
+    /// 78.158a U1, U8 — THE MINT'S LAST REFUSAL PER TASK, named and its
+    /// withheld form classified (`Mind::hold_mint_refusal`): a reading the
+    /// observer serves, bounded by the tasks the mind has spoken for.
+    pub(crate) mint_refused: crate::network::nerve::Keyed<self::family::MintRefused>,
     /// Words this voice has spoken up for adoption: said once, the judge
     /// decided (installed, derivable, or refused). Membership is vertex
     /// equality, never the digest alone. MU-CLIENT §4.13 — KEYED BY THE

@@ -208,8 +208,8 @@ impl Court {
     }
 
     /// The demand vertices listed so far (50.5, L7): a counter read at the
-    /// wire and by the tests, derived from the listings, never a gate.
-    #[cfg(test)]
+    /// wire and by the tests, derived from the listings, never a gate. Read
+    /// at the wire on the carriers census (`Court::carriers`, `demands_listed`).
     pub fn demands_listed(&self) -> u64 {
         self.court_demands_listed
     }

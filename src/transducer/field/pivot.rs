@@ -52,6 +52,21 @@ fn note_flex(carried: Option<crate::physics::pivot_fibre::Carried>, pinned: bool
     });
 }
 
+/// 78.7 VS1 — THE FIBRE'S VISCOSITY, THE LEDGER'S: a tether the field let go
+/// because its strain DISSIPATED (a stretch's boost that never returns, so
+/// the bend broke the fibre) drained, an irreversible event of the ledger,
+/// booked as entropy on every lane the tether occupied (its volume), never
+/// summed. A release by any other cause (a return, a cancelled tube, a seal
+/// at its period, rest) gave its strain back to the field and is not viscous.
+fn note_viscous(why: crate::transducer::cech::orbit::Released, lanes: Option<[u64; 4]>) {
+    let (crate::transducer::cech::orbit::Released::Dissipated, Some(lanes)) = (why, lanes) else { return };
+    for (lane, v) in lanes.iter().enumerate() {
+        if *v > 0 {
+            crate::physics::metabolism::note_viscous(lane);
+        }
+    }
+}
+
 impl Contemplation {
     /// 78.74 — A THOUGHT AS A PIVOT: the barycentre of its bodies' vertex
     /// centroids, each weighed by its compartments, as a conformal point, and
@@ -240,10 +255,12 @@ impl Contemplation {
                     for (_, k) in cells {
                         let _ = self.complex.apply(&Pivot::Descend(k), |_| [0; 4], [0; 4]);
                     }
+                    let lanes = self.complex.simplex(line).map(|s| s.volume);
                     if let Applied::Drained(crate::transducer::cech::Drained::Vacuum | crate::transducer::cech::Drained::Cauterized(_)) =
                         self.complex.apply(&Pivot::Drain(line.clone()), |_| [0; 4], [0; 4])
                     {
                         crate::observe::note_mind(|m| m.flex[6] += 1);
+                        note_viscous(*why, lanes);
                     }
                 }
                 Some(d) if d >= 2 => {

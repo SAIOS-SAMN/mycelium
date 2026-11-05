@@ -84,13 +84,20 @@ impl Withheld {
     /// CV1 — THE KIND OF WHAT THE MINT WITHHELD (78.9): a class in `H¹` and
     /// a coboundary residue are cover-relative, C; an acyclic form and one
     /// with no trajectory asked no question, N.
-    #[cfg(test)]
     pub fn obstruction_kind(&self) -> crate::transducer::sentence::ObstructionKind {
         use crate::transducer::sentence::ObstructionKind;
         match self {
             Withheld::OrbitObstruction { .. } | Withheld::CoboundaryResidue { .. } => ObstructionKind::Cover,
             Withheld::Acyclic { .. } | Withheld::NoTrajectory => ObstructionKind::NoQuestion,
         }
+    }
+
+    /// 68, 69 — THE ASKABILITY BIT beside the reading: was `δ¹` asked over
+    /// orbits that stood? Read off [`Self::obstruction_kind`], never held
+    /// beside it (law 12): an acyclic form and one with no trajectory asked
+    /// nothing, so their zero says where the question stopped.
+    pub fn is_askable(&self) -> bool {
+        self.obstruction_kind() != crate::transducer::sentence::ObstructionKind::NoQuestion
     }
 
     /// A stable token for the journal, so a reading counts arms rather
@@ -545,7 +552,6 @@ pub fn mint_sentence_why(
 /// with nothing acting, no tape or an address that does not decode is
 /// `integrity`. Exhaustive over the refusals the mint returns; any other is
 /// named `other` rather than folded into one of these.
-#[cfg(test)]
 pub fn mint_arm(why: crate::transducer::sentence::ObstructionRefusal) -> &'static str {
     use crate::transducer::sentence::ObstructionRefusal;
     match why {
@@ -564,7 +570,6 @@ pub fn mint_arm(why: crate::transducer::sentence::ObstructionRefusal) -> &'stati
 /// read "unmeasured span, or the mint refused" and the speech path named
 /// the arm alone, so 456 refusals of "nothing in the form acts" could not
 /// say that every vertex was a demand, nor which.
-#[cfg(test)]
 pub fn mint_refusal_line(why: crate::transducer::sentence::ObstructionRefusal, form: &crate::transducer::sentence::Form) -> String {
     let kinds: Vec<&'static str> = form.demand_vertices().map(|(_, kind, _, _)| kind.label()).collect();
     format!("mint refused ({}): {} [{}] demands [{}]", mint_arm(why), why.proof(), why.kind().label(), kinds.join(", "))

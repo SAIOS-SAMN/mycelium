@@ -153,6 +153,17 @@ pub fn note_sealed() {
     note(|m| m.sealed += 1);
 }
 
+/// VS1 (78.7) — a viscous bend on lane `lane` (𝒮 0, 𝒢 1, 𝒯 2, 𝒽 3): the
+/// lane's entropy. Written by the pivot where a fibre's bend ended in an
+/// irreversible event of this ledger (`Contemplation::release`).
+pub fn note_viscous(lane: usize) {
+    note(|m| {
+        if let Some(slot) = m.viscous.get_mut(lane) {
+            step(slot, 1, &mut m.overflowed);
+        }
+    });
+}
+
 /// One draw against the reserve that was afforded, per lane.
 pub fn note_draw(cost: &[u64; 4]) {
     note(|m| {
@@ -196,8 +207,8 @@ pub fn note_orbit(period: Option<crate::transducer::cga::Period>) {
     });
 }
 
-/// Read the ledger and clear it.
-#[cfg(test)]
+/// Read the ledger and clear it: the one taker, once per stroke of the
+/// client's winding (`Mind::book_tick`), into the mind's observe reading.
 pub fn take_metabolism() -> Metabolism {
     METABOLISM.with(|c| c.replace(Metabolism::default()))
 }

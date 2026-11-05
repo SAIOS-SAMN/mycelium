@@ -104,8 +104,9 @@ fn meets(a: (usize, usize), p: usize, b: (usize, usize), q: usize) -> bool {
 /// each frame its transduction changes ([`Transduction::share`]), exact.
 /// `None` where a pair's frames differ in rank or its record does not read
 /// whole under the stroke its periods need. Per lane it is
-/// [`Transduction::lane_shares`].
-pub fn family_share(family: &[(Sample, Sample)]) -> Option<crate::core::Q> {
+/// [`Transduction::lane_shares`]. Read beside the mind's count of a family it
+/// takes in (`family_magnitude`), on the mind's observe reading.
+pub fn family_share<'a>(family: impl IntoIterator<Item = (&'a Sample, &'a Sample)>) -> Option<crate::core::Q> {
     let mut share = crate::core::Q::from_integer(0.into());
     for (x, y) in family {
         let mut stroke = crate::physics::Physics::default().stroke_n(need_of(x, y)?);

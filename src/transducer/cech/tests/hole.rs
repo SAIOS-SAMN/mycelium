@@ -329,6 +329,34 @@ fn release_drains_returned_tethers_unless_pinned() {
     assert_eq!(mind.complex.board().tethers.len(), 3, "the question's hole pins its boundary: the tether stands");
 }
 
+/// 78.7 VS1 — A BROKEN FIBRE IS THE LEDGER'S VISCOSITY. A tether on 𝒮 and 𝒽
+/// whose strain the field let go by DISSIPATION drains: an irreversible event,
+/// booked as entropy on exactly the lanes the tether occupied. One let go by
+/// its RETURN drains too, and gave its strain back: no lane is viscous.
+#[test]
+fn dissipated_tether_drain_books_viscous() {
+    use crate::physics::metabolism::metabolism;
+    use crate::transducer::cech::orbit::Released;
+    let fibre = |c: &mut Complex, n: u8| {
+        let vs: Vec<Vec<u8>> = [v(n), v(n + 1)].iter().map(|a| a.as_bytes().to_vec()).collect();
+        for x in &vs {
+            c.set_section(x, Section::at(crate::transducer::address::Address::from(x.clone()), Rotor::identity()), vol());
+        }
+        c.set_edge(&vs[0], &vs[1], turn_90(), ident(), [2, 0, 0, 1]);
+        edge_key(&vs[0], &vs[1])
+    };
+    let mut mind = crate::transducer::field::contemplation::Contemplation::new();
+    let broken = fibre(&mut mind.complex, 51);
+    let returned = fibre(&mut mind.complex, 61);
+    let before = metabolism().viscous;
+    mind.release(&[(returned, Released::Returned)]);
+    assert_eq!(metabolism().viscous, before, "a return gave its strain back: not viscous");
+    mind.release(&[(broken, Released::Dissipated)]);
+    assert!(mind.complex.board().tethers.is_empty(), "both tethers drained");
+    let after = metabolism().viscous;
+    assert_eq!([after[0] - before[0], after[1] - before[1], after[2] - before[2], after[3] - before[3]], [1, 0, 0, 1], "viscous on 𝒮 and 𝒽, the lanes it occupied");
+}
+
 /// MU-CLIENT §4.5 — FROZEN-IN FLUX: A FIBRE MOVES WITH THE FIELD. Two
 /// tethers carrying the same 90° turn wind onto one plane's orbit; the
 /// second admission moves the orbit by 90°, and the first fibre — wound

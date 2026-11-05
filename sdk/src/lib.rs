@@ -98,8 +98,9 @@ pub use ::forms;
 // it.
 
 use mycelium::anastome::dialogue::{
-    ACT_ADOPT, ACT_COVER, ACT_DIGESTS, ACT_DOMAIN, ACT_FETCH, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE, ACT_QUOTE,
-    ACT_RECEIPTS, ACT_ENTRIES, ACT_SEAT, ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY,
+    ACT_ADOPT, ACT_CHALLENGE, ACT_COVER, ACT_DIGESTS, ACT_DOMAIN, ACT_EQUIVOCATION, ACT_EVIDENCE, ACT_FETCH, ACT_HANDOFF, ACT_LAWS, ACT_OBSERVE,
+    ACT_PEERS, ACT_PROBE, ACT_QUOTE, ACT_RECEIPTS, ACT_ENTRIES, ACT_SEAT, ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_UPLINK, ACT_WALLET,
+    ACT_WHY,
 };
 
 /// THE SOLVE'S CLAIM KINDS, the byte after its tag (78.126; track 26 S4c):
@@ -114,6 +115,8 @@ pub use mycelium::anastome::dialogue::WIRE_VERSION;
 /// EVERY ACT THE SDK MAY SEND, `(code, name)`, in code order.
 pub const ACT_TABLE: &[(u8, &str)] = &[
     (ACT_QUOTE, "quote"),
+    (ACT_HANDOFF, "handoff"),
+    (ACT_EVIDENCE, "evidence"),
     (ACT_TASK, "task"),
     (ACT_SOLVE, "solve"),
     (ACT_SYLLABUS, "syllabus"),
@@ -124,13 +127,16 @@ pub const ACT_TABLE: &[(u8, &str)] = &[
     (ACT_PEERS, "peers"),
     (ACT_SPEECH, "speech"),
     (ACT_COVER, "cover"),
+    (ACT_EQUIVOCATION, "equivocation"),
     (ACT_RECEIPTS, "receipts"),
     (ACT_ENTRIES, "entries"),
     (ACT_OBSERVE, "observe"),
     (ACT_LAWS, "laws"),
     (ACT_WHY, "why"),
     (ACT_WALLET, "wallet"),
+    (ACT_UPLINK, "uplink"),
     (ACT_DOMAIN, "domain"),
+    (ACT_CHALLENGE, "challenge"),
     (ACT_SEAT, "seat"),
 ];
 

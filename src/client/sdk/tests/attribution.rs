@@ -45,3 +45,31 @@ fn lapse_offers_keeps_uncoupled_task_as_lapsed() {
     assert!(!t.taken, "never taken in");
     assert_eq!(t.stop, Some(Stop::Lapsed), "let go uncoupled");
 }
+
+/// MU-DERIVATIONS (the readers), 78.170 O1 — A TASK TAKEN IN IS READ TWICE,
+/// SIDE BY SIDE: its count, what `family_magnitude` draws on the mind's
+/// metabolism, and the exact share of the frames its pairs change
+/// (`family_share`), both on the mind's observe reading. The slide's two
+/// hours couple (the scene waits on comprehension) and are taken in on the
+/// live intake (`task_inflow`); the share reads whole and is no count.
+#[test]
+fn intake_reads_family_share_beside_magnitude() {
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("fed"));
+    let id = [8u8; 32];
+    let train = two_hours_of_a_slide().to_vec();
+    let share = crate::transducer::family::transduce::family_share(train.iter().map(|(x, y)| (x.sample(), y.sample()))).expect("every pair's record reads whole");
+    assert!(share > num_rational::BigRational::from_integer(0.into()), "the slide changes a share of each frame");
+    let offer = Offer::of(&train);
+    let section = crate::anastome::dialogue::TaskSection { id, train, tests: Vec::new() };
+    mind.comprehending.insert(id, (section.clone(), crate::transducer::address::Address::from(Vec::new())));
+    mind.board.court.task = Some((section, offer));
+    let before = crate::observe::mind();
+    let mut outcome = crate::physics::StrokeOutcome::default();
+    let mut field = std::mem::take(&mut mind.field);
+    field.think(|| mind.task_inflow(&mut outcome));
+    mind.field = field;
+    assert!(mind.board.court.task.is_none(), "taken in");
+    let after = crate::observe::mind();
+    assert!(after.fed.iter().zip(&before.fed).zip(&outcome.fed).all(|((a, b), m)| *a >= b + m), "the count reached the reading, lane by lane");
+    assert!(after.fed_share >= before.fed_share + share, "the exact share reached the reading beside it");
+}

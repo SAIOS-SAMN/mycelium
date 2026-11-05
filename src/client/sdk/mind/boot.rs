@@ -60,6 +60,7 @@ impl Mind {
             hypha,
             language: MindLanguage::new(),
             solve_refused: crate::network::nerve::Keyed::new(),
+            mint_refused: crate::network::nerve::Keyed::new(),
             taught_up: crate::network::nerve::Keyed::new(),
             taught_at: crate::network::nerve::Keyed::new(),
             discordance: 0,
