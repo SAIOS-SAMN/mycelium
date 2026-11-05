@@ -16,3 +16,11 @@
   conformance report's lines name it so. The mind's docs and the SDK's
   tests name the plane by its axes (`e₁e₂`), never "the sensor plane" or
   a turn without a plane.
+- **Lanes as the coordinate's components.** `TPoint` is documented as
+  LAW-COORDINATE v3's one-component, non-negative case (each base lane a
+  vector of one exact non-negative component). The wire version's μ
+  fields, the deferral's deficit and the quote's `[u64; 4]` fields are
+  documented as readings per lane, never a holding. `Deferral`'s
+  `Display` labels each lane (`deficit S 1, G 0, T 2, H 0`).
+  `mycelium-client --init` prints `genesis line: voice <vk> <μ on S> <μ
+  on G> <μ on T> <μ on H>`; the fields a genesis file reads are unchanged.

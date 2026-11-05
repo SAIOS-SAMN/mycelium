@@ -8,8 +8,9 @@
 //!
 //! A hypha whose worker pool is full answers every act with one 43-byte
 //! reply, the DEFERRAL: the pending outcome code ([`PENDING_CODE`]), a
-//! height of zero, the door's per-lane reserve deficit on S, G, T and H,
-//! and nothing taught. Nothing was ruled; the act was not read; the client
+//! height of zero, a reading of the door's reserve deficit on each base
+//! lane S, G, T and H (a reading per lane, never a holding), and nothing
+//! taught. Nothing was ruled; the act was not read; the client
 //! speaks it again later. Every client, of either conformance profile,
 //! recognises a deferral before it decodes a reply, and never reads one as
 //! a reply that did not decode.
@@ -31,8 +32,8 @@
 //! assert_eq!(read_deferral(&reply), Some(Deferral { deficit: [1, 0, 2, 0] }));
 //! ```
 
-/// The deferral as read: the door's reserve deficit on the lanes S, G, T,
-/// H, as the hypha stated it.
+/// The deferral as read: the door's reserve deficit read on each lane S,
+/// G, T, H, as the hypha stated it; a reading per lane, never a holding.
 pub use mycelium::sdk::Deferral;
 
 /// The deferral read off a reply's bytes, or none where the reply is any
@@ -46,6 +47,6 @@ pub use mycelium::sdk::deferral_of;
 /// The pending outcome code a deferral leads with.
 pub use mycelium::anastome::dialogue::PENDING_CODE;
 
-/// The deferral's codec: its writer (a hypha's), the reader of its four
-/// lanes and the predicate, each given the pending code.
+/// The deferral's codec: its writer (a hypha's), the reader of its
+/// per-lane readings and the predicate, each given the pending code.
 pub use mycelium::anastome::dialogue::{deferral_lanes, encode_deferral, is_deferral};

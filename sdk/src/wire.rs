@@ -21,7 +21,8 @@ use mycelium::anastome::dialogue::{
 pub use mycelium::anastome::dialogue::{solve_kind, SOLVE_KIND_FACTORISATION, SOLVE_KIND_OUTPUTS};
 
 /// The wire's version, `major << 8 | minor`: `0x0200` is v2.0, every μ field
-/// four exact rational lanes.
+/// a reading of the base lanes S, G, T and H, one exact non-negative
+/// component each (the `Mu` codec, retiring in v0.5.0 for `Modes`).
 pub use mycelium::anastome::dialogue::WIRE_VERSION;
 
 /// EVERY ACT THE SDK MAY SEND, `(code, name)`, in code order.

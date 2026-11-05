@@ -162,11 +162,13 @@ fn main() {
     let Some(key_name) = key_path.to_str() else { refuse("--home path is not UTF-8 and names no key file".to_string()) };
     let voice_key = HyphaKey::load_or_mint(key_name);
     // A NEW MIND'S IDENTITY, minted and printed as the line the mesh's
-    // `genesis` allocation names it by; nothing is started.
+    // `genesis` allocation names it by; nothing is started. The four
+    // placeholders are the funding read on each base lane, each labelled
+    // by its lane, never one amount.
     if args.iter().any(|a| a == "--init") {
         let vk = mycelium::court::identity::hex32(&voice_key.verifying_bytes());
         println!("{}: voice key {}… vk {vk}", home.display(), voice_key.prefix());
-        println!("genesis line: voice {vk} <S> <G> <T> <H>");
+        println!("genesis line: voice {vk} <μ on S> <μ on G> <μ on T> <μ on H>");
         std::process::exit(0)
     }
     let mesh_rec = match mesh::load_or_migrate_voice(&home, &voice_key) {

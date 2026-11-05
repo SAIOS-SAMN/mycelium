@@ -1,7 +1,10 @@
 // 78.152 TU-5 — THE POINT: a final TUniversal coordinate, `h:S:G:T:H:K`
 // exact, distinct across universes by its ORIGIN (the genesis hash and the
-// epoch), written whole as `origin/h:S:G:T:H:K`. The four lanes are exact
-// rationals, μ issued on each lane (ruled 2026-11-01).
+// epoch), written whole as `origin/h:S:G:T:H:K`. It is the one-component,
+// non-negative case of LAW-COORDINATE v3 (proposal 78.173 §1;
+// `forms::coordinate`): a coordinate with no enclosure, each base lane a
+// vector of one non-negative exact component, μ issued on that lane (ruled
+// 2026-11-01).
 
 use crate::core::Q;
 use crate::economy::Mu;
@@ -15,9 +18,11 @@ pub struct Origin {
 }
 
 /// THE POINT (TU-5): a keeper's reading as it stands final — the tick `h`
-/// (the keeper court's head height), the court's cumulative issuance per
-/// lane `S:G:T:H` (exact non-negative rationals, `economy::Mu`), and `K`, the
-/// orbits it closed — at its origin. No rounding, no average (TU-3).
+/// (the keeper court's head height), the court's cumulative issuance on the
+/// base lanes `S:G:T:H`, and `K`, the orbits it closed — at its origin. It
+/// is LAW-COORDINATE v3's one-component, non-negative case (78.173 §1): each
+/// lane a vector of one exact non-negative component, carried today in
+/// `economy::Mu`, never summed across lanes. No rounding, no average (TU-3).
 /// Ordered as its coordinates are written — origin, tick, each lane by its
 /// exact value in lane order, `K` — a canonical key, never a measure.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

@@ -55,7 +55,8 @@ pub use mycelium::physics::laws::codec::{decode_register_reply, encode_register_
 pub use mycelium::physics::laws::codec::{decode_clock_reply, encode_clock_request, MODE_CLOCK};
 /// The core clock's stamp, and a court act's stamp.
 pub use mycelium::chronometry::{CoreStamp, Stamp};
-/// A final point of TUniversal: `origin/h:S:G:T:H:K`.
+/// A final point of TUniversal, `origin/h:S:G:T:H:K`: LAW-COORDINATE v3's
+/// one-component, non-negative case.
 pub use mycelium::chronometry::tuniversal::TPoint;
 
 /// THE VERIFIER (L2): a transition the kernel composed, every body before

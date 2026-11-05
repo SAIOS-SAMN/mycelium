@@ -815,14 +815,16 @@ network.
 mycelium-server --home /srv/myc/a --init     # prints:  genesis line: hypha <vk hex>
 mycelium-server --home /srv/myc/b --init
 mycelium-server --home /srv/myc/c --init
-mycelium-client --home /srv/myc/v1 --init    # prints:  genesis line: voice <vk hex> <S> <G> <T> <H>
+mycelium-client --home /srv/myc/v1 --init    # prints:  genesis line: voice <vk hex> <μ on S> <μ on G> <μ on T> <μ on H>
 ```
 
 **2. Write the genesis allocation.** Collect the printed lines into one
 `genesis` file:
 - one `hypha <vk>` line for each court of the network;
 - one `voice <vk> S G T H` line for each client funded at genesis. The four
-  numbers are its μ allocation on the S, G, T and H lanes.
+  numbers are its μ allocation read on the S, G, T and H lanes, one per
+  lane and never summed: the genesis events that set its holding's
+  coordinate.
 
 Place the same file in every hypha's home. Every court bonds the hyphae
 named here, and each of them is an independent witness
