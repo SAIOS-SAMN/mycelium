@@ -7526,7 +7526,9 @@ witnessed {vk} co-signed {root}`.
 
 On the wire: the home proposes with `ACT_FOLD` (0x37) —
 `[ACT_FOLD][k0 u64][root k u64 ‖ hash 32 ‖ height u64][n u32][(who 32 ‖
-μ⃗ 4×u64)…][47.1 receipt section, payload the root hash]` — to the peers
+μ⃗ 4×u64)…][47.1 receipt section, payload the root written out]` (as
+amended by #91: `"mycelium root v2" ‖ K ‖ i ‖ height ‖ hash`,
+`Root::signed`; 78.147 (6)) — to the peers
 with room on some lane, in key order, one per spend of its stroke. The
 witness runs 47.2 steps 1 and 2 on the section, fetches the prefix's
 receipts by `ACT_RECEIPTS` and its ledger entries by `ACT_ENTRIES` (0x38,
@@ -7535,7 +7537,7 @@ u32][row…]`, a page of the signer's own rows anchored in the span from
 the cursor), re-derives the receipts as one chain ending at the root and
 the rows' nets as the epochs proposed (`MU-ECONOMY.md` §6), and answers
 refused with the 34.1 constant, unmeasured when the prefix could not be
-fetched, or co-signed with its own signed position over the root hash. A
+fetched, or co-signed with its own signed position over the same root. A
 witness without bond is `REFUSE_WITNESS_ROOM`; the home itself is
 `REFUSE_WITNESS_DEPENDENT`. On the co-signature the home checks the
 witness's signature under its key, that the proposal still reads exact
@@ -15471,8 +15473,9 @@ A fold is final on two signatures (47.3), so to anyone catching up the line belo
 3. The asker adopts (`Court::adopt_root`): both signatures verified exactly as the fold's were, the signer's line stands on the root (`ReceiptChain::line_tip`), its next receipt names the root as predecessor and admits hot, nothing below the root is asked again, and what was held below it is shed.
 4. A citation at or below a held root is proved by an era proof walked to the root (`prove_folded`). As amended (cited in code as 78.147 (3′)), the walk goes page by page: `ReceiptChain::walk_era` keeps its place where a page ends (Proved, Continues, Stalled, Broken) and the next page opens there, across hearings, one spend per page.
 5. A gap longer than the held bound `C` closes through the root (MU-HOSTING §5a.9, #88): the root is adopted only as a `Reconstructed<RootProof>` (`Reconstructed::root`); a page stopped at the bound asks the range from below the signer's unreached floor (`close_through_root`); the root's signatures reach the receipt held unreached at its place where the root names it, and every one below it (`Court::reach_by_root`); and receipts the root's shed takes off the chain leave the signed-reach gate (`Court::unhold_shed`).
+6. The root's signed domain covers its place, height and hash (MU-HOSTING §5a.9, #91, inside v0.4.0's break): each signed position's payload is the root written out as coordinates (A21), `"mycelium root v2" ‖ K ‖ i ‖ height ‖ hash` (`Root::signed`); version 1, unnamed, signed the bare hash. `Reconstructed::root` reads all three back from both positions (`Root::of_signed`), compares the stated place and height as coordinates, binds the hash, and refuses any other `REFUSE_RECEIPT`, whether or not the court holds a receipt at that place. The proof's wire shape is unchanged; only the signed payload's content changes.
 
-Code: `src/server/cognition/court/catchup.rs`, `src/chronometry/chain/mod.rs`, `src/anastome/dialogue/root.rs`, `src/anastome/dialogue/receipts.rs`, `src/server/backfill.rs` (`prove_folded`); tests `src/server/cognition/tests/catchup.rs`.
+Code: `src/server/cognition/court/catchup.rs`, `src/chronometry/chain/mod.rs`, `src/chronometry/era.rs` (`Root::signed`), `src/court/admission/reconstructed.rs`, `src/anastome/dialogue/root.rs`, `src/anastome/dialogue/receipts.rs`, `src/server/backfill.rs` (`prove_folded`); tests `src/server/cognition/tests/catchup.rs`.
 
 ### 78.148 The mind's own call
 
