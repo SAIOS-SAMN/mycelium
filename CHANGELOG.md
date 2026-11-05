@@ -55,6 +55,81 @@ such change is named here.
   is deleted, and clause 14's `Court::restore` returns `bool`, not a
   `Reconstructed<State>`. MU-ANTI-FLATTENING *Drift guards* says why.
 
+### The rule language's coordinates named by the plane axis they are read along (track 26 S4d, stage 3)
+- **Network contract:** no wire byte, act, encoding or ledger layout
+  changes, and no clause or word address moves: the clause codec writes
+  each coordinate in the byte its planar name was written with
+  (`Extent` 1 and 2, `Least` 3 and 4, `Greatest` 5 and 6).
+- **SDK surface change, inside v0.4.0's break** (coordinator decision).
+  `mycelium_sdk::rule::Coord::Height` and `Width` are
+  `Coord::Extent(PlaneAxis)`, `Top` and `Left` are `Coord::Least(PlaneAxis)`,
+  and `Bottom` and `Right` are `Coord::Greatest(PlaneAxis)`, with
+  `PlaneAxis::First` for `Height`, `Top` and `Bottom` and
+  `PlaneAxis::Second` for `Width`, `Left` and `Right`. A client writes
+  `Coord::Extent(PlaneAxis::First)` where it wrote `Coord::Height`.
+- `PlaneAxis` (`transducer::perspective`, re-exported by
+  `mycelium_sdk::rule`) names the first or the second space axis of
+  `Perspective::plane` by its place in the plane, never as a row or a
+  column. Claim `coord_round_trips_and_reads_its_planar_byte_by_role`.
+- **`About::Grid` is `About::Sample`** (SDK surface, `mycelium_sdk::rule::About`):
+  a carriage or an echo read about the sample's own frame, beside
+  `About::Body`. The clause and element codecs keep their bytes (a
+  carriage's `about` 0, an echo's tag 9), so no clause or word address
+  moves.
+- **The section's planar names renamed by function** (SDK surface):
+  `mycelium_sdk::task::TaskRasters` is `TaskSection`;
+  `TaskEnvelope::of_rasters` and `PostedTask::of_rasters` are
+  `of_section`; `mycelium_sdk::rule::Step::grid_motion` is
+  `Step::symmetry_motion`; `seat_mind::task::grid_steps` is
+  `symmetry_steps`; `family::grid_of_painted` is `sample_of_painted`;
+  `painted_within_grid` is `painted_within_sample`. Tests renamed with
+  their units: `symmetry_motion_carries_every_site_to_index_image`,
+  `symmetry_motion_exchanges_non_square_shape`,
+  `symmetry_steps_reads_task_before_seat`.
+- **Open:** the frame acts' planar fields (`Act::Panes`'s `along_rows`,
+  `Act::Tile`'s `rows` and `cols`), `statement::Spoken.frame`, and test
+  names and comments that still say "grid".
+
+### The chart's pairs, the anchor and the clause tables held as section sites (track 26 S4d, stage 2c)
+- **Network contract:** no wire byte, act, encoding or ledger layout
+  changes, and no task, word, chart or clause address moves. Every codec
+  and key writes a section site's coordinates in the plane's order,
+  `i64` each (`SectionSite::put_canonical`, `take_canonical`): the bytes
+  a planar pair was written in.
+- **The chart's supports.** `element::positions` returns section sites,
+  and `pullback`, `blade::shape_of_section`, `section_moduli`,
+  `sentence::incidence_of`, `orbit::positions_of`, `ring_dist_peel` and
+  the confluence reader (`gathered`, `carried_onto`, `read_pair`) take
+  them. The blade's sections hold section sites; its plane readers are
+  `on_plane` and `off_plane`.
+- **`on_grid` retired.** A site of the family's base is read onto the
+  section by `SectionSite::of_family`; `scene::restrict` lays a region
+  from its least corner by `SectionSite::span_of`. The test
+  `on_grid_refuses_site_without_grid_plane` is
+  `of_family_refuses_site_without_plane`.
+- **The anchor's selection algebra, together.** `anchor::Evidence` and
+  `EvidenceOf` hold the footprint as section sites and the scene as
+  painted sites; `Selection::eval`, the derive, the carrying set,
+  `candidates::signature`, `beam_minima`, `element::measure_lanes`,
+  `measure_supports`, `keys::footprint_key` and the evidence reply read
+  them. The face neighbours and the extremal codes are generated from
+  the plane's rank; `Ext`'s code names an axis of the plane and an order,
+  as its byte always read. Claim `section_site_round_trips`.
+- **The clause reader's tables.** `statement::Seen` holds each body's
+  painted sites and the owner of each site of the sample at its offset in
+  canonical address order (`SectionSample::offset_of`), never a table of
+  rows. `extent_of` is retired for `statement::corners_of`, the least and
+  the greatest corner over `SectionSite::span_of`; the landed lists, the
+  regions, the joins and the crop read section sites, and a line of the
+  plane is read along each axis, the last first. `acts::pattern_key` and
+  `stamped_key` write a centred pattern of painted sites. Claim
+  `corners_of_reads_least_and_greatest_on_each_axis`.
+- **Open:** the act reading's own index cells (`acts::cells_of`, the
+  residue's pieces, `owners`, `step`, the echoes and the bends) read
+  extents through `statement::corners_of` and keep `(row, column)`
+  indices inside the act reading; the frame acts (panes, tiles, the
+  square's symmetries, the scaling) stay planar by their acts.
+
 ### A fold root's signatures cover its place and height (track 24, #91)
 - **Network contract**, inside v0.4.0's break:
   - **The root's signing domain changes.** The home's and the witness's

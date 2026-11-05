@@ -23,25 +23,24 @@
 use crate::core::Q;
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 use crate::transducer::cga::Mv;
+pub use crate::transducer::perspective::PlaneAxis;
 use crate::transducer::stalk;
 
-/// AN EXACT COORDINATE OF A PERCEIVED BODY that a predicate may read.
+/// AN EXACT COORDINATE OF A PERCEIVED BODY that a predicate may read. The
+/// coordinates along the plane name an axis of the perspective's plane by
+/// its role ([`PlaneAxis`], MU-SENSING §3.6), never a row or a column.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Coord {
     /// Its cell count.
     Cells,
-    /// The rows its support spans.
-    Height,
-    /// The columns its support spans.
-    Width,
-    /// Its frame position: the least row it stands on.
-    Top,
-    /// The least column.
-    Left,
-    /// The greatest row.
-    Bottom,
-    /// The greatest column.
-    Right,
+    /// The sites its support spans along the plane's axis, both ends
+    /// included.
+    Extent(PlaneAxis),
+    /// Its frame position along the plane's axis: the least coordinate it
+    /// stands on.
+    Least(PlaneAxis),
+    /// The greatest coordinate it stands on along the plane's axis.
+    Greatest(PlaneAxis),
     /// How many distinct hues its gauge carries.
     Hues,
     /// How many other bodies it touches (two bodies meet at a corner, never
@@ -148,7 +147,7 @@ pub enum RegionKind {
 /// WHERE A CREATED LINE STOPS.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Stop {
-    /// At the grid's border, painting every cell it crosses.
+    /// At the sample's outer seam, painting every cell it crosses.
     Border,
     /// At the first painted cell it meets.
     Contact,
@@ -166,11 +165,12 @@ pub enum Paint {
     Of(Pred),
 }
 
-/// WHERE A CARRIAGE'S MOTION IS READ: about the grid's frame, or about each
-/// selected body's own centre.
+/// WHERE A CARRIAGE'S MOTION IS READ: about the sample's own frame, its
+/// sites as the sample writes them, or about each selected body's own
+/// centre.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum About {
-    Grid,
+    Sample,
     Body,
 }
 
@@ -221,7 +221,7 @@ pub enum Act {
     /// CREATE, AGAIN (78.167 Phase B, Step 3): the selected bodies carried by
     /// a versor of `Cl(4,1)(ℚ)` onto the canvas with a hue map on what lands,
     /// the bodies KEPT where they stood — a carriage that leaves its source.
-    /// About the grid, one motion for every body; about each body's own
+    /// About the sample, one motion for every body; about each body's own
     /// centre, a mirror or a turn of the body's own frame carried along
     /// (ruled 2026-10-20: rotated or mirrored echoes).
     Echo { motion: Mv, about: About, gauge: Vec<(u8, u8)> },
@@ -250,7 +250,7 @@ pub enum Act {
     Bend { to: Pred, paint: Paint },
     /// A REACTION — THE IMPULSE (ruled 2026-10-25): each selected body
     /// carried along the unit ray `ray` until its next step would leave the
-    /// grid or, at `Stop::Contact`, meet a painted cell; the bodies nearest
+    /// sample or, at `Stop::Contact`, meet a painted cell; the bodies nearest
     /// the stop first, so a stack settles as it lands. Its extent is read
     /// off the meet, so it holds where the distance differs pair to pair —
     /// a fixed carriage fits each pair and fails the held-out one.
@@ -278,15 +278,18 @@ pub struct Clause {
 /// EXACT: take_pred_refuses_past_language_depth
 pub(crate) const PRED_HEIGHT: usize = 3 + 1;
 
+/// The clause codec's byte for each coordinate along the plane: one byte per
+/// coordinate and axis, the bytes the planar names were written with, so no
+/// clause or word address moves.
 fn put_coord(buf: &mut Vec<u8>, c: Coord) {
     let tag = match c {
         Coord::Cells => 0,
-        Coord::Height => 1,
-        Coord::Width => 2,
-        Coord::Top => 3,
-        Coord::Left => 4,
-        Coord::Bottom => 5,
-        Coord::Right => 6,
+        Coord::Extent(PlaneAxis::First) => 1,
+        Coord::Extent(PlaneAxis::Second) => 2,
+        Coord::Least(PlaneAxis::First) => 3,
+        Coord::Least(PlaneAxis::Second) => 4,
+        Coord::Greatest(PlaneAxis::First) => 5,
+        Coord::Greatest(PlaneAxis::Second) => 6,
         Coord::Hues => 7,
         Coord::Contacts => 8,
         Coord::Enclosed => 9,
@@ -307,12 +310,12 @@ fn take_coord(k: &[u8], p: &mut usize) -> Option<Coord> {
     *p += 1;
     Some(match tag {
         0 => Coord::Cells,
-        1 => Coord::Height,
-        2 => Coord::Width,
-        3 => Coord::Top,
-        4 => Coord::Left,
-        5 => Coord::Bottom,
-        6 => Coord::Right,
+        1 => Coord::Extent(PlaneAxis::First),
+        2 => Coord::Extent(PlaneAxis::Second),
+        3 => Coord::Least(PlaneAxis::First),
+        4 => Coord::Least(PlaneAxis::Second),
+        5 => Coord::Greatest(PlaneAxis::First),
+        6 => Coord::Greatest(PlaneAxis::Second),
         7 => Coord::Hues,
         8 => Coord::Contacts,
         9 => Coord::Enclosed,
@@ -509,7 +512,7 @@ pub(super) fn put_act(buf: &mut Vec<u8>, act: &Act) {
             buf.push(1);
             motion.put_canonical(buf);
             buf.push(match about {
-                About::Grid => 0,
+                About::Sample => 0,
                 About::Body => 1,
             });
             put_gauge(buf, gauge);
@@ -556,12 +559,12 @@ pub(super) fn put_act(buf: &mut Vec<u8>, act: &Act) {
             buf.push(8);
             put_paint(buf, paint);
         }
-        // An echo about the grid keeps the tag and bytes it was first
+        // An echo about the sample keeps the tag and bytes it was first
         // written with, so no form already minted moves its address; one
         // about each body is its own tag.
         Act::Echo { motion, about, gauge } => {
             buf.push(match about {
-                About::Grid => 9,
+                About::Sample => 9,
                 About::Body => 12,
             });
             motion.put_canonical(buf);
@@ -642,7 +645,7 @@ pub(super) fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
         1 => {
             let motion = Mv::from_bytes(k, p)?;
             let about = match take_byte(k, p)? {
-                0 => About::Grid,
+                0 => About::Sample,
                 1 => About::Body,
                 _ => return None,
             };
@@ -679,7 +682,7 @@ pub(super) fn take_act(k: &[u8], p: &mut usize) -> Option<Act> {
         tag @ (9 | 12) => {
             let motion = Mv::from_bytes(k, p)?;
             let about = match tag {
-                9 => About::Grid,
+                9 => About::Sample,
                 _ => About::Body,
             };
             Act::Echo { motion, about, gauge: take_gauge(k, p)? }

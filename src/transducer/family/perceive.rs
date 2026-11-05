@@ -19,7 +19,7 @@ pub type Compartment = crate::transducer::blade::Compartment;
 /// candidates. The symbol the unpainted sites hold is the caller's, named:
 /// never a ground this reader defaults to. `None` where the box's sites
 /// pass the machine word.
-pub fn grid_of_painted(painted: &[PaintedSite], void: u8) -> Option<SectionSample> {
+pub fn sample_of_painted(painted: &[PaintedSite], void: u8) -> Option<SectionSample> {
     // The span is read over every site, so no member is chosen here; no
     // site at all is the one-site canvas.
     let Some((corner, extents)) = SectionSite::span_of(painted.iter().map(|p| p.site)) else {
@@ -246,15 +246,6 @@ pub(crate) fn chain_of(a: Option<&Body>, b: Option<&Body>, v: &Versor) -> Option
 pub(crate) fn landed_hue(v: &Versor, site: &Site, dst: &Body) -> Option<u8> {
     let t = element::carry_site(v, site)?;
     dst.compartments.binary_search_by(|x| x.site.cmp(&t)).ok().map(|i| dst.compartments[i].hue)
-}
-
-/// A site's coordinates on the sensor's plane, the plane the default
-/// perspective assigns (`perspective::family_plane`) — the section's planar
-/// token (16.5); every other axis rides on the pose. `None` for a site of a
-/// base whose perspective holds no plane, which has no section.
-pub(crate) fn on_grid(s: &Site) -> Option<(i64, i64)> {
-    let (ga, gb) = crate::transducer::perspective::family_plane(s.n())?;
-    Some((s.axis(ga)?, s.axis(gb)?))
 }
 
 pub(crate) fn hue_map_of_chain(chain: &[SectionLink]) -> Vec<(u8, u8)> {
@@ -779,10 +770,10 @@ pub(crate) fn frame_of(g: &SectionSample) -> (usize, usize) {
     (lines, width)
 }
 
-/// Does everything a form spoke lie inside the grid it was spoken against?
-/// The test extraction's step 3 decides a glue by, and the same test a
-/// voice answers a demand by (L8q), so the two organs read one thing.
-pub fn painted_within_grid(painted: &[PaintedSite], g: &SectionSample) -> bool {
+/// Does everything a form spoke lie inside the sample it was spoken
+/// against? The test extraction's step 3 decides a glue by, and the same
+/// test a voice answers a demand by (L8q), so the two organs read one thing.
+pub fn painted_within_sample(painted: &[PaintedSite], g: &SectionSample) -> bool {
     // A site off the sample carries no symbol, so it lies outside.
     painted.iter().all(|p| g.at(p.site) == Some(p.symbol))
 }

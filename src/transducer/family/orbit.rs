@@ -7,14 +7,9 @@
 
 use super::*;
 
-pub(crate) fn positions_of(painted: &[PaintedSite]) -> Vec<(i64, i64)> {
-    let mut p: Vec<(i64, i64)> = painted
-        .iter()
-        .map(|s| {
-            let [r, c] = s.site.coordinates();
-            (r, c)
-        })
-        .collect();
+/// THE SITES A SCENE PAINTS, each once, in canonical order.
+pub(crate) fn positions_of(painted: &[PaintedSite]) -> Vec<SectionSite> {
+    let mut p: Vec<SectionSite> = painted.iter().map(|s| s.site).collect();
     p.sort_unstable();
     p.dedup();
     p
@@ -34,14 +29,14 @@ pub(crate) fn occupy_keys(painted: &[PaintedSite]) -> crate::network::nerve::Key
 /// In the grid's own count: the shell reaches the grid's height plus width,
 /// and `k as u8` wrapped a far shell onto a near one, which could read a
 /// contact at a ring the body never stood on.
-pub(crate) fn ring_dist_peel(image: &[(i64, i64)], anchor: &[(i64, i64)], bound: usize) -> Option<usize> {
+pub(crate) fn ring_dist_peel(image: &[SectionSite], anchor: &[SectionSite], bound: usize) -> Option<usize> {
     if image.is_empty() || anchor.is_empty() {
         return None;
     }
-    let mut have: Vec<PaintedSite> = anchor.iter().map(|&(r, c)| PaintedSite::on_plane([r, c], 0)).collect();
+    let mut have: Vec<PaintedSite> = anchor.iter().map(|&s| PaintedSite::new(s, 0)).collect();
     for k in 0..=bound {
         let occ = occupy_keys(&have);
-        if image.iter().all(|&(r, c)| occ.contains(&site_key(SectionSite::on_plane([r, c])))) {
+        if image.iter().all(|&s| occ.contains(&site_key(s))) {
             return Some(k);
         }
         let ring = crate::transducer::blade::adjacent_ring(&have);

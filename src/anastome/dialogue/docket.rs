@@ -315,9 +315,11 @@ pub fn evidence_page<A: AsRef<[u8]>>(store: &[EvidenceOf<A>], budget: usize, rea
     (store.len(), EvidencePageEnd::Store)
 }
 
-/// evidence reply: `[n u32] ( [addr][nf u32][fp (r i64,c i64)·nf]
-/// [ns u32][scene (r i64,c i64,h u8)·ns] )…` — the selection fibre's birth
-/// evidence, count-guarded at every level.
+/// evidence reply: `[n u32] ( [addr][nf u32][fp (site)·nf]
+/// [ns u32][scene (site, h u8)·ns] )…`, each site a section site written
+/// along the plane in the plane's order, `i64` per coordinate
+/// (`SectionSite::put_canonical`) — the selection fibre's birth evidence,
+/// count-guarded at every level.
 /// `None` where an address cannot be framed: the whole reply is refused,
 /// never a partial one (LD0, rule 11).
 pub fn encode_evidence_reply<A: AsRef<[u8]>>(
@@ -329,15 +331,13 @@ pub fn encode_evidence_reply<A: AsRef<[u8]>>(
     for EvidenceOf { addr, footprint, scene } in items {
         put_address(&mut out, addr)?;
         put_u32_count(&mut out, footprint.len())?;
-        for (r, c) in footprint {
-            out.extend_from_slice(&r.to_le_bytes());
-            out.extend_from_slice(&c.to_le_bytes());
+        for site in footprint {
+            site.put_canonical(&mut out);
         }
         put_u32_count(&mut out, scene.len())?;
-        for (r, c, h) in scene {
-            out.extend_from_slice(&r.to_le_bytes());
-            out.extend_from_slice(&c.to_le_bytes());
-            out.push(*h);
+        for p in scene {
+            p.site.put_canonical(&mut out);
+            out.push(p.symbol);
         }
     }
     Some(out)
@@ -360,10 +360,7 @@ pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
         }
         let mut fp = Vec::with_capacity(nf);
         for _ in 0..nf {
-            let r = i64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
-            let c = i64::from_le_bytes(body.get(p + 8..p + 16)?.try_into().ok()?);
-            p += 16;
-            fp.push((r, c));
+            fp.push(crate::transducer::spelled::SectionSite::take_canonical(body, &mut p)?);
         }
         let ns = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
@@ -372,11 +369,10 @@ pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
         }
         let mut scene = Vec::with_capacity(ns);
         for _ in 0..ns {
-            let r = i64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
-            let c = i64::from_le_bytes(body.get(p + 8..p + 16)?.try_into().ok()?);
-            let h = *body.get(p + 16)?;
-            p += 17;
-            scene.push((r, c, h));
+            let site = crate::transducer::spelled::SectionSite::take_canonical(body, &mut p)?;
+            let h = *body.get(p)?;
+            p += 1;
+            scene.push(crate::transducer::spelled::PaintedSite::new(site, h));
         }
         out.push(EvidenceOf { addr, footprint: fp, scene });
     }

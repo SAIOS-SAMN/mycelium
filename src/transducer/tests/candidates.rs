@@ -1,13 +1,14 @@
 use crate::transducer::anchor::Selection;
 use crate::transducer::candidates::*;
+use crate::transducer::sentence::tests::fixtures::{painted, sites};
 
 /// One coherent domino vs. the same volume scattered: topology tells
 /// them apart (β₀, boundary), volume cannot.
 #[test]
 fn signature_separates_equal_volumes_by_topology() {
-    let scene = vec![(0, 0, 1), (0, 1, 1), (5, 5, 1), (7, 7, 2)];
-    let coherent = signature(&[(0, 0), (0, 1)], &scene);
-    let scattered = signature(&[(0, 0), (5, 5)], &scene);
+    let scene = painted(&[(0, 0, 1), (0, 1, 1), (5, 5, 1), (7, 7, 2)]);
+    let coherent = signature(&sites(&[(0, 0), (0, 1)]), &scene);
+    let scattered = signature(&sites(&[(0, 0), (5, 5)]), &scene);
     assert_eq!(coherent.sites, scattered.sites, "equal volume");
     assert_eq!(coherent.components, 1);
     assert_eq!(scattered.components, 2);
@@ -22,8 +23,8 @@ fn signature_separates_equal_volumes_by_topology() {
 #[test]
 fn beam_minima_drops_candidate_beaten_on_every_lane() {
     // Scene: a hue-1 domino and a lone hue-2 site.
-    let scene = vec![(0, 0, 1), (0, 1, 1), (4, 4, 2)];
-    let footprint = vec![(0i64, 0i64), (0, 1)];
+    let scene = painted(&[(0, 0, 1), (0, 1, 1), (4, 4, 2)]);
+    let footprint = sites(&[(0, 0), (0, 1)]);
     // Candidate A selects EVERYTHING painted (carries fp, but drags the
     // alien site); candidate B selects exactly the hue-1 support, so B
     // is no worse on any lane and better on some.
@@ -52,12 +53,9 @@ fn beam_minima_holds_incomparable_candidates() {
     // misses; on the second the footprint is hue 2 and hue 1 misses. The
     // worst pair governs each candidate, so each carries a mismatch the
     // other does not, on different content.
-    let s1 = vec![(0, 0, 1), (0, 1, 1), (4, 4, 2)];
-    let s2 = vec![(0, 0, 2), (0, 1, 2), (7, 7, 1)];
-    let witnesses = vec![
-        (vec![(0i64, 0i64), (0, 1)], s1),
-        (vec![(0i64, 0i64), (0, 1)], s2),
-    ];
+    let s1 = painted(&[(0, 0, 1), (0, 1, 1), (4, 4, 2)]);
+    let s2 = painted(&[(0, 0, 2), (0, 1, 2), (7, 7, 1)]);
+    let witnesses = vec![(sites(&[(0, 0), (0, 1)]), s1), (sites(&[(0, 0), (0, 1)]), s2)];
     let one = Selection::Hue(1);
     let two = Selection::Hue(2);
     let held = beam_minima(&[one.clone(), two.clone()], &witnesses);

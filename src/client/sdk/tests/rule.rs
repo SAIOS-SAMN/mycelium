@@ -67,7 +67,7 @@ fn square_withheld() -> SectionSample {
 /// (a 3 × 3 for the shape-keeping ones), lands exactly on the site the
 /// index map names.
 #[test]
-fn grid_motion_carries_every_site_to_index_image() {
+fn symmetry_motion_carries_every_site_to_index_image() {
     for kind in [
         Symmetry::Rotate90,
         Symmetry::Rotate180,
@@ -78,7 +78,7 @@ fn grid_motion_carries_every_site_to_index_image() {
     ] {
         let x = grid(&["123", "456"]);
         let y = apply(kind, &x);
-        let Some(Step::Motion(v)) = Step::grid_motion(kind, shape(&x), shape(&y)) else { panic!("{kind:?} fits") };
+        let Some(Step::Motion(v)) = Step::symmetry_motion(kind, shape(&x), shape(&y)) else { panic!("{kind:?} fits") };
         for (at, h) in x.sites() {
             let site = at.on_family(0).expect("a site of the base");
             let to = crate::transducer::element::carry_site(&v, &site).expect("a site lands");
@@ -103,7 +103,7 @@ fn sentence_of_solves_unseen_pair_by_square_symmetry() {
     ] {
         let x = square_train();
         let family = vec![(x.clone(), apply(kind, &x))];
-        let step = Step::grid_motion(kind, (3, 3), (3, 3)).expect("a square fits every symmetry");
+        let step = Step::symmetry_motion(kind, (3, 3), (3, 3)).expect("a square fits every symmetry");
         let rule = match sentence(&[step], &family, &NoCrystal) {
             Ok(rule) => rule,
             Err(e) => panic!("{kind:?} mints: {e:?}"),
@@ -116,13 +116,13 @@ fn sentence_of_solves_unseen_pair_by_square_symmetry() {
 /// A turn and the transpose take a non-square grid to its exchange, and a
 /// shape the symmetry does not fit is no motion.
 #[test]
-fn grid_motion_exchanges_non_square_shape() {
+fn symmetry_motion_exchanges_non_square_shape() {
     crate::transducer::raster::stand_on(0);
     for kind in [Symmetry::Rotate90, Symmetry::Transpose] {
         let x = grid(&["120", "100"]);
         let y = apply(kind, &x);
         assert_eq!(shape(&y), (3, 2), "R × C goes to C × R");
-        let step = Step::grid_motion(kind, (2, 3), (3, 2)).expect("the exchange fits");
+        let step = Step::symmetry_motion(kind, (2, 3), (3, 2)).expect("the exchange fits");
         let rule = match sentence(&[step], &[(x, y)], &NoCrystal) {
             Ok(rule) => rule,
             Err(e) => panic!("{kind:?} mints: {e:?}"),
@@ -131,10 +131,10 @@ fn grid_motion_exchanges_non_square_shape() {
         assert_solved(&rule, &[(w.clone(), apply(kind, &w))], &format!("{kind:?} on 2 × 3"));
     }
     // A SHAPE THE SYMMETRY DOES NOT FIT is no motion at all.
-    assert!(Step::grid_motion(Symmetry::Rotate90, (2, 3), (2, 3)).is_none());
-    assert!(Step::grid_motion(Symmetry::Transpose, (2, 3), (2, 3)).is_none());
-    assert!(Step::grid_motion(Symmetry::Rotate180, (2, 3), (3, 2)).is_none());
-    assert!(Step::grid_motion(Symmetry::FlipH, (2, 3), (3, 2)).is_none());
+    assert!(Step::symmetry_motion(Symmetry::Rotate90, (2, 3), (2, 3)).is_none());
+    assert!(Step::symmetry_motion(Symmetry::Transpose, (2, 3), (2, 3)).is_none());
+    assert!(Step::symmetry_motion(Symmetry::Rotate180, (2, 3), (3, 2)).is_none());
+    assert!(Step::symmetry_motion(Symmetry::FlipH, (2, 3), (3, 2)).is_none());
 }
 
 /// A hue permutation, minted as a rule, is solved by the court on a pair the
@@ -154,7 +154,7 @@ fn sentence_of_solves_unseen_pair_by_hue_permutation() {
 fn sentence_of_solves_motion_then_recolour_as_one() {
     crate::transducer::raster::stand_on(0);
     let map = [(1u8, 5u8)];
-    let steps = [Step::grid_motion(Symmetry::Rotate180, (3, 3), (3, 3)).expect("fits"), Step::Hue(map.to_vec())];
+    let steps = [Step::symmetry_motion(Symmetry::Rotate180, (3, 3), (3, 3)).expect("fits"), Step::Hue(map.to_vec())];
     let then = |g: &SectionSample| recolour(&map, &apply(Symmetry::Rotate180, g));
     let x = square_train();
     let rule = sentence(&steps, &[(x.clone(), then(&x))], &NoCrystal).expect("mints");
@@ -184,7 +184,7 @@ fn judge_solve_refuses_dilated_motion_and_solves_plain() {
     crate::transducer::raster::stand_on(0);
     let x = square_train();
     let y = apply(Symmetry::Rotate180, &x);
-    let Some(Step::Motion(m)) = Step::grid_motion(Symmetry::Rotate180, (3, 3), (3, 3)) else { panic!("fits") };
+    let Some(Step::Motion(m)) = Step::symmetry_motion(Symmetry::Rotate180, (3, 3), (3, 3)) else { panic!("fits") };
     let two = num_rational::BigRational::from_integer(num_bigint::BigInt::from(2));
     let dilated = cga::dilator(&two).geo(&m);
     assert!(cga::is_versor(&dilated), "a dilation is a versor");

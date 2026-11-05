@@ -13,9 +13,10 @@ use crate::transducer::sentence::SectionLink;
 use crate::transducer::spelled::SectionSite;
 use super::*;
 
-/// The positions skeleton of a centred chain (its base geometry).
-pub fn positions(chain: &[SectionLink]) -> Vec<(i64, i64)> {
-    chain.iter().map(|l| { let [r, c] = l.site.coordinates(); (r, c) }).collect()
+/// The positions skeleton of a centred chain (its base geometry): each
+/// link's site of the section, in the chain's order.
+pub fn positions(chain: &[SectionLink]) -> Vec<SectionSite> {
+    chain.iter().map(|l| l.site).collect()
 }
 
 /// The DESCRIPTION of a perceived residue as a germ — post-excision, the ONLY way
@@ -42,13 +43,8 @@ impl CanonicalChain {
     /// The links left when the named sites are dropped, re-centred. Total:
     /// a subset of a conflict-free set is conflict-free, and centring and
     /// sorting are total.
-    pub fn without(&self, drop: &[(i64, i64)]) -> CanonicalChain {
-        let kept: Vec<SectionLink> = self
-            .0
-            .iter()
-            .copied()
-            .filter(|l| { let [r, c] = l.site.coordinates(); !drop.contains(&(r, c)) })
-            .collect();
+    pub fn without(&self, drop: &[SectionSite]) -> CanonicalChain {
+        let kept: Vec<SectionLink> = self.0.iter().copied().filter(|l| !drop.contains(&l.site)).collect();
         CanonicalChain(centre(&kept))
     }
 

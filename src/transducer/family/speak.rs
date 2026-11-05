@@ -17,7 +17,7 @@ pub(crate) fn grows_to_frame(a: &SectionSample, b: &SectionSample) -> bool {
     if ins.is_empty() || outs.len() <= ins.len() {
         return false;
     }
-    let target: Vec<(i64, i64)> = {
+    let target: Vec<SectionSite> = {
         let mut t = positions_of(&outs);
         t.sort_unstable();
         t

@@ -18,8 +18,13 @@ pub(crate) fn orbit_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8
     buf
 }
 
-/// Canonical key of one evidence row: address, sorted footprint, sorted scene.
-pub(crate) fn footprint_key(address: &[u8], fp: &[(i64, i64)], scene: &[(i64, i64, u8)]) -> Vec<u8> {
+/// Canonical key of one evidence row: address, sorted footprint, sorted
+/// scene, each site written along the plane in the plane's order.
+pub(crate) fn footprint_key(
+    address: &[u8],
+    fp: &[crate::transducer::spelled::SectionSite],
+    scene: &[crate::transducer::spelled::PaintedSite],
+) -> Vec<u8> {
     let mut points = fp.to_vec();
     points.sort_unstable();
     let mut painted = scene.to_vec();
@@ -27,15 +32,13 @@ pub(crate) fn footprint_key(address: &[u8], fp: &[(i64, i64)], scene: &[(i64, i6
     let mut buf = Vec::new();
     crate::transducer::address::put_key_bytes(&mut buf, address);
     crate::transducer::address::put_key_count(&mut buf, points.len());
-    for &(r, c) in &points {
-        buf.extend_from_slice(&r.to_le_bytes());
-        buf.extend_from_slice(&c.to_le_bytes());
+    for site in &points {
+        site.put_canonical(&mut buf);
     }
     crate::transducer::address::put_key_count(&mut buf, painted.len());
-    for &(r, c, h) in &painted {
-        buf.extend_from_slice(&r.to_le_bytes());
-        buf.extend_from_slice(&c.to_le_bytes());
-        buf.push(h);
+    for p in &painted {
+        p.site.put_canonical(&mut buf);
+        buf.push(p.symbol);
     }
     buf
 }
@@ -66,9 +69,8 @@ pub(crate) fn chart_footprint_key(_inv: &crate::transducer::stalk::Invariant, ch
     pos.sort_unstable();
     let mut buf = Vec::new();
     crate::transducer::address::put_key_count(&mut buf, pos.len());
-    for (r, c) in pos {
-        buf.extend_from_slice(&r.to_le_bytes());
-        buf.extend_from_slice(&c.to_le_bytes());
+    for site in pos {
+        site.put_canonical(&mut buf);
     }
     buf
 }

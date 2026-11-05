@@ -134,7 +134,7 @@ pub struct Mind {
     /// MU-CLIENT §3.1, §4.9 — THE SCENES NOT YET COMPREHENDED, by the task's
     /// citation, each with the language root it was last read at: read again
     /// at the mind's returns, gone with the last thought of each.
-    pub(crate) comprehending: crate::network::nerve::Keyed<(crate::anastome::dialogue::TaskRasters, crate::transducer::address::Address)>,
+    pub(crate) comprehending: crate::network::nerve::Keyed<(crate::anastome::dialogue::TaskSection, crate::transducer::address::Address)>,
     /// The citation last read again (`comprehend_waiting`): each waiting
     /// scene is read in turn.
     pub(crate) comprehended_after: Vec<u8>,

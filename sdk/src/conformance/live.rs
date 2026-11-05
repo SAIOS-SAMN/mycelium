@@ -88,7 +88,7 @@ type Claim = (Option<Vec<u8>>, Vec<crate::rule::SectionSample>, Option<Vec<u8>>)
 /// still exercises the act and its verdict. Read once per perspective of
 /// the family's ground (MU-SENSING §3.4, §3.8): each claim states the
 /// ground it was spoken under, and every perspective's claim is kept.
-fn claims(envelope: &d::TaskRasters) -> Vec<Claim> {
+fn claims(envelope: &d::TaskSection) -> Vec<Claim> {
     let read = crate::rule::on_each_perspective_of(&envelope.train, || {
         let mut budget = Physics::default().stroke_n(1 << 20);
         extract_rule(&envelope.train, &mut budget).and_then(|rule| {
@@ -105,7 +105,7 @@ fn claims(envelope: &d::TaskRasters) -> Vec<Claim> {
         .collect()
 }
 
-fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskRasters) -> Result<String, String> {
+fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskSection) -> Result<String, String> {
     let mut said = Vec::new();
     for (ground, outputs, tape) in claims(envelope) {
         said.push(solve_one(session, key, envelope, ground.as_deref(), &outputs, tape.as_deref())?);
@@ -113,7 +113,7 @@ fn solve(session: &Speaker, key: &SigningKey, envelope: &d::TaskRasters) -> Resu
     Ok(said.join("; "))
 }
 
-fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskRasters, ground: Option<&[u8]>, outputs: &[crate::rule::SectionSample], tape: Option<&[u8]>) -> Result<String, String> {
+fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskSection, ground: Option<&[u8]>, outputs: &[crate::rule::SectionSample], tape: Option<&[u8]>) -> Result<String, String> {
     // Track 26 S5: the spoken outputs go out as samples, each at its place.
     let outputs = d::spoken_outputs(outputs).map_err(|e| format!("an output is no sample: {e:?}"))?;
     let act = d::encode_solve_spoken(key, &envelope.id, &outputs, tape, ground).ok_or("the outputs pass the solve act's fields")?;

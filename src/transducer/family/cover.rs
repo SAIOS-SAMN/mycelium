@@ -429,15 +429,15 @@ pub(crate) fn cover_deformation(
     // reached.
     // Each is a body against nothing, read without a symbol written for the
     // nothing (`measure_supports`), so no ground is needed.
-    let mut vanished: Vec<(i64, i64)> = Vec::new();
-    let mut appeared: Vec<(i64, i64)> = Vec::new();
+    let mut vanished: Vec<SectionSite> = Vec::new();
+    let mut appeared: Vec<SectionSite> = Vec::new();
     for l in &input.compartments {
-        if let (false, Some(at)) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
+        if let (false, Some(at)) = (reached.contains(&l.site.key()), SectionSite::of_family(&l.site)) {
             vanished.push(at);
         }
     }
     for l in &image.compartments {
-        if let (false, Some(at)) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
+        if let (false, Some(at)) = (reached.contains(&l.site.key()), SectionSite::of_family(&l.site)) {
             appeared.push(at);
         }
     }

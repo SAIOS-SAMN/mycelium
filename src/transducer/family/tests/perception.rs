@@ -899,12 +899,12 @@ fn perceive_frames_joins_bodies_across_frames() {
     );
 }
 
-/// Audit N-3 — A SITE OF A BASE WITH ONE AXIS HAS NO GRID PLANE, and its
-/// section is refused by name.
+/// Audit N-3 — A SITE OF A BASE WITH ONE AXIS HAS NO SENSOR PLANE, and its
+/// section site is refused.
 #[test]
-fn on_grid_refuses_site_without_grid_plane() {
-    use crate::transducer::family::perceive::on_grid;
-    assert_eq!(on_grid(&Site::of([4, 5, 0])), Some((4, 5)), "a site of n = 3 has its section");
-    assert_eq!(on_grid(&Site::of([4])), None, "a site of n = 1 has no grid plane");
+fn of_family_refuses_site_without_plane() {
+    use crate::transducer::spelled::SectionSite;
+    assert_eq!(SectionSite::of_family(&Site::of([4, 5, 0])), Some(SectionSite::on_plane([4, 5])), "a site of n = 3 has its section site");
+    assert_eq!(SectionSite::of_family(&Site::of([4])), None, "a site of n = 1 has no sensor plane");
 }
 

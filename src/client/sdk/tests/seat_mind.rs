@@ -310,7 +310,7 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
 /// count `0x100 + 16·from + to`; a hue map alone is its hue counts; the
 /// outputs cross as the solve act writes grids.
 #[test]
-fn grid_steps_reads_task_before_seat() {
+fn symmetry_steps_reads_task_before_seat() {
     crate::transducer::raster::stand_on(0);
     use crate::client::sdk::rule::{sentence, Step};
     use crate::client::sdk::seat_mind::task::*;
@@ -341,20 +341,20 @@ fn grid_steps_reads_task_before_seat() {
     };
     let x = crate::transducer::family::SectionSample::from(vec![vec![1, 2, 0], vec![1, 0, 0], vec![0, 0, 0]]);
     for (i, kind) in D4.iter().enumerate() {
-        let Some(step) = Step::grid_motion(*kind, (3, 3), (3, 3)) else { panic!("{kind:?} fits a square") };
+        let Some(step) = Step::symmetry_motion(*kind, (3, 3), (3, 3)) else { panic!("{kind:?} fits a square") };
         let family = vec![(x.clone(), recolour(1, 3, &apply(*kind, &x)))];
         let rule = match sentence(&[step, Step::Hue(vec![(1, 3)])], &family, &NoCrystal) {
             Ok(r) => r,
             Err(e) => panic!("{kind:?} mints: {e:?}"),
         };
-        assert_eq!(grid_steps(&rule, (3, 3), (3, 3)), Ok(vec![i as u64 + 1, hue_step(1, 3)]), "{kind:?}");
+        assert_eq!(symmetry_steps(&rule, (3, 3), (3, 3)), Ok(vec![i as u64 + 1, hue_step(1, 3)]), "{kind:?}");
     }
     let hue_only = match sentence(&[Step::Hue(vec![(2, 5)])], &[(x.clone(), recolour(2, 5, &x))], &NoCrystal) {
         Ok(r) => r,
         Err(e) => panic!("the hue map mints: {e:?}"),
     };
     let shape = |g: &crate::transducer::family::SectionSample| (g.extents()[0], g.extents()[1]);
-    assert_eq!(grid_steps(&hue_only, shape(&x), shape(&x)), Ok(vec![0x100 + 16 * 2 + 5]));
+    assert_eq!(symmetry_steps(&hue_only, shape(&x), shape(&x)), Ok(vec![0x100 + 16 * 2 + 5]));
     let outs = vec![x.clone(), vec![vec![4]].into()];
     let args = solve_args(&hue_only, &outs, None, &[9]).expect("writes");
     let [Arg::Bytes(tape), Arg::Bytes(samples), Arg::Count(9)] = args.as_slice() else { panic!("{args:?}") };

@@ -8,7 +8,12 @@ use crate::transducer::anchor::EvidenceOf;
 /// An item of a one-byte address, `nf` footprint sites and `ns` scene sites:
 /// `σ = 2 + 1 + 4 + 16·nf + 4 + 17·ns`.
 fn item(nf: i64, ns: i64) -> EvidenceOf<Vec<u8>> {
-    EvidenceOf { addr: vec![7], footprint: (0..nf).map(|i| (i, 0)).collect(), scene: (0..ns).map(|i| (i, 0, 1)).collect() }
+    use crate::transducer::spelled::{PaintedSite, SectionSite};
+    EvidenceOf {
+        addr: vec![7],
+        footprint: (0..nf).map(|i| SectionSite::on_plane([i, 0])).collect(),
+        scene: (0..ns).map(|i| PaintedSite::on_plane([i, 0], 1)).collect(),
+    }
 }
 
 fn stroke() -> crate::physics::Budget {
