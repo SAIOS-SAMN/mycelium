@@ -4,7 +4,7 @@
 
 > **Scope.** Mycelium is a network that hosts AI agents as minds and lets them work inside hosted universes — cosmological simulations from galaxies down to planets, games, scientific simulations and world models — each run by a kernel under the Concordance. Peer kernels are listed in README › Peer kernels.
 >
-> **Components:** the wire and its transport, the gate (`xtask`), the shared algebra (`src/core/`, `src/transducer/`), the courts (verification, admission, settlement), the SDK, and the documentation. No game term.
+> **Components:** the wire and its transport, the gate (`gate/`), the shared algebra (`src/core/`, `src/transducer/`), the courts (verification, admission, settlement), the SDK, and the documentation. No game term.
 
 **Status:** plan, version 1 (2026-10-31). This document is the plan of
 work for every component Mycelium brings over from its precursor
@@ -189,9 +189,10 @@ and the pin store in the home, may remain after the first commit.
 ### 3.2 ~~Mutation audit~~
 
 **Status** Retired (2026-11-04, ruled theatre). The catalogue and the
-`gate mutate` subcommand are removed from `xtask`; a law is guarded by
-its claims and, where a regression recurs, by a type in the drift
-register (`xtask/lint/drift.rs`).
+`gate mutate` subcommand were removed from `xtask` (itself removed when
+the gate became workspace tests); a law is guarded by its claims and,
+where a regression recurs, by a type in the drift register
+(`gate/src/drift.rs`).
 
 ### 3.3 Named refusals in `learn_form`
 
@@ -793,7 +794,9 @@ mapping from the spaces world models already declare.
   (`mycelium-server`, `mycelium-client`, `mycelium-soak`), and the members
   `forms`, `mycelium-sdk` (`sdk/`) and `mycelium-source-arc-agi`
   (`sources/arc-agi`), each at 0.3.0-rc.3, under one lock file and
-  one lint table (`[workspace.lints]`). `xtask` stays outside it.
+  one lint table (`[workspace.lints]`). The gate is the member `gate`,
+  whose tests read the tree (the earlier `xtask`, outside the workspace,
+  was removed).
 - The SDK is the crate `mycelium-sdk` (`sdk/`), re-exporting the library's
   client surface in modules: `voice`, `session`, `task`, `rule`, `seat`,
   `wallet`, `readings`, `mind`, `wire` (`WIRE_VERSION`, `ACT_TABLE`),
@@ -879,7 +882,7 @@ the crate's public API. This section is the design of it.
 
 | Phase | Delivers | Accepted when |
 |---|---|---|
-| **P1: workspace** (Built) | A `[workspace]` with `mycelium`, `forms` and `mycelium-sdk` as members; `xtask` stays outside it. | The gate passes on the workspace; `forms` builds as a member; the server's and the SDK's builds share one lock file. |
+| **P1: workspace** (Built) | A `[workspace]` with `mycelium`, `forms` and `mycelium-sdk` as members; the gate was `xtask`, outside it, and is now the member `gate`. | The gate passes on the workspace; `forms` builds as a member; the server's and the SDK's builds share one lock file. |
 | **P2: the surface** (Built) | `mycelium-sdk` re-exporting §4.2's surface; the client example (`sdk/examples/client.rs`) ported to depend on it alone. | The example builds and runs end to end against a local network with `mycelium-sdk` as its only Mycelium dependency; a compile test imports every surface item. |
 | **P3: features and dependencies** | The `server` feature on `mycelium`; the SDK's `noise`, `rules` and `seats` features. | The SDK builds with default features off and pulls none of the server-only crates; each feature builds alone. |
 | **P4: documentation and examples** | docs.rs documentation, the depths, one example per arm, a lease and a seat. | Every example builds; each POW++ example is paid on a local network (README › *Quick start*). |

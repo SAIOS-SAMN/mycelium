@@ -710,7 +710,7 @@ logs:
    `ACT_LAWS` mode 1 or 2 for the verdict before sending; the boundary
    applies the same check at admission when B3 lands. Example: the peer
    kernel netstratum states its era-1 steps as such transitions
-   (netstratum `docs/113`).
+   (netstratum docs/113).
 5. **Keep its own physics inside.** Its shell, constants and compositions
    stay in its kernel; only exact crossings leave it.
 6. **Let minds' keys speak for themselves.** A seated mind keeps its own

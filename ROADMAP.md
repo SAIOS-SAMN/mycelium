@@ -40,7 +40,7 @@ xylarium pin it. The table below is kept as the record of what it closed.
 
 **1a. In progress: v0.4.0.** A new break, in which word, chart and task
 addresses, act layouts and signing domains may change (CHANGELOG ›
-Unreleased). Merged so far, each with its PR:
+Unreleased, held in `changes/`). Merged so far, each with its PR:
 - Track 26 S4b–S4d: rank-`n` perception, transduction as factorisation,
   the hypha serving any rank and the claim of factorisation (#80); the
   word machinery on `SectionSample`/`SectionSite`, `family::Grid` retired,
@@ -284,7 +284,8 @@ Apache-2.0, a client conformance read, and bindings for other languages
 after it.
 
 1. **P1, workspace (Built):** `mycelium`, `forms` and `mycelium-sdk` as
-   members of one workspace, `xtask` outside it. *Accepted when* the gate
+   members of one workspace (the gate was then `xtask`, outside it; it is
+   now the member `gate`). *Accepted when* the gate
    passes on the workspace and the members share one lock file.
 2. **P2, the surface (Built):** `mycelium-sdk` re-exporting the surface, and
    the client example (`sdk/examples/client.rs`) depending on it alone. *Accepted when* the
@@ -426,10 +427,10 @@ commit. The phases run in order after track 26 S2 and D2.5 (#27) merge.
    - `observe/fleet.rs` → `observe/phase.rs`.
    - Vague names:
      - `tuniversal/ops.rs` → `navigate.rs`;
-     - the 13 `tests/common.rs` → `tests/fixtures.rs`;
+     - the 13 module test files `common.rs` → `fixtures.rs`;
      - `cga/tests/generic.rs` → `rank_n.rs`;
-     - `tests/g_cga.rs` → `conformal_algebra.rs`;
-     - `tests/alpha_plan.rs` → `word_lifecycle.rs`.
+     - `g_cga.rs` → `tests/conformal_algebra.rs`;
+     - `alpha_plan.rs` → `tests/word_lifecycle.rs`.
    - **Metaphor module names become function names.** A doctrine term
      may stay as a type's name with its GLOSSARY row, never as a file's
      name. For example:
@@ -770,7 +771,8 @@ is open.
 **Test assurance**
 
 9. ~~Mutation audit~~ (**Retired** 2026-11-04, ruled theatre; the
-   catalogue and `gate mutate` are removed from `xtask`).
+   catalogue and `gate mutate` were removed from `xtask`, itself since
+   removed).
 10. **Fault-injection campaign and invariant auditor** (**Specified**;
     [MU-PRECURSORS §3.6](docs/MU-PRECURSORS.md#36-fault-injection-campaign-and-invariant-auditor)).
     Ten named fault classes (`InvalidSignature`, `Resend` (a valid act
@@ -1115,7 +1117,7 @@ Each phase is one commit:
    grid predicate and `push_grid`'s refusal (D4.3), each reply's own
    header length (D4.6), and `UNIT_BOND` deleted (D2.4).
 2. **NC2, the register and its gate** (D1.4): the `OpenNumber` carrier,
-   the NUMBERS lint in `xtask`, the class-tagging pass, then the
+   the NUMBERS lint in the gate (`gate/src/numbers.rs`), the class-tagging pass, then the
    inline-literal phase. From here no new constant lands.
 3. **NC3, entries with no open question blocking them**, among them the
    exact throat fit (D1.2 Phase A), the task address refusing an
@@ -1405,10 +1407,10 @@ for each phase:
 3. Write the claims named below first, as statements of the algebra
    (MU-STANDARDS 3.1). Include the `compile_fail` doc tests that prove a
    wrong structure does not compile.
-4. Build the phase. Run the gate (`cd xtask && cargo run`), the scoped
-   tests of the touched modules (`cargo test --release -p <crate>
-   <module>`), and `scripts/check` before the pull request.
-5. Register each guard the phase builds in `xtask/lint/drift.rs`
+4. Build the phase, and hold it to
+   [AGENTS › Definition of done](AGENTS.md#definition-of-done) before the
+   pull request.
+5. Register each guard the phase builds in `gate/src/drift.rs`
    (regression, ruling, guarding type, claim); the gate refuses an entry
    whose type or claim is missing.
 6. Open the pull request with the template's drift checklist ticked. A
@@ -1435,7 +1437,7 @@ Each phase lands on its own branch, one item per commit:
      `admit_backfilled`, `admit_equivocation`, `Court::admit_receipt`,
      `Court::admit_backfill`, `ReceiptChain::admit_unreached`. The
      founding outcome once named `Reconstructed` is `FoundingEvent`.
-   - The register `xtask/lint/drift.rs` lists each guard (regression,
+   - The register `gate/src/drift.rs` lists each guard (regression,
      ruling, guarding type, claim). The gate refuses an entry whose type
      or claim is missing.
    - Claims: `address_has_no_equality`, `predecessor_has_no_equality`,
@@ -1530,8 +1532,8 @@ Each phase lands on its own branch, one item per commit:
    each body is held by its boundary; incidences are read between boundary arcs; a site
    lifts as turns in ℚ/ℤ. The transduction is **Built** (the v0.3.0
    transduction work, [#25](https://github.com/SAIOS-SAMN/mycelium/issues/25),
-   closed): `CommonRefinement` and `src/transducer/family/refine.rs` are
-   deleted. X5's guard remains to land, so that no common refinement
+   closed): `src/transducer/family/refine.rs` was removed with
+   `CommonRefinement`. X5's guard remains to land, so that no common refinement
    re-enters past the sensor.
    - Claims: `common_refinement_unreachable_from_cognition`
      (`compile_fail`), `site_lifts_to_turns_of_its_own_periods`,
@@ -1558,8 +1560,9 @@ so no file or identifier of the core library is named for a dataset. The
 hypha holds tasks as families of samples and knows no source.
 
 **How to build a phase:** as in track 25 (a branch; the specification read
-whole; the claims first; the gate; the scoped tests; one commit; a pull
-request that names #32). Run heavy builds one at a time.
+whole; the claims first; the
+[Definition of done](AGENTS.md#definition-of-done); one commit; a pull
+request that names #32).
 
 Each phase is one commit:
 

@@ -27,12 +27,11 @@ and those documents differ, the documents govern.
    ROADMAP track it belongs to, and [`docs/MU-RECURSION.md`](docs/MU-RECURSION.md)'s
    preamble (the laws). Search for each section a code comment cites
    before changing that code.
-5. **Build and check the tree** first, as
-   [CONTRIBUTING › Getting started](CONTRIBUTING.md#getting-started)
-   says: `cargo build --release`, then `cd xtask && cargo run`.
-6. **Work one phase**, as the ROADMAP track's *How to build a phase*
-   says where it has one: a branch, the claims first, the build, the
-   gate, the scoped tests, `scripts/check`, then a pull request that
+5. **Check the tree first**: run the two commands of the
+   [Definition of done](#definition-of-done) on the unchanged tree.
+6. **Work one item**, as the ROADMAP track's *How to build a phase*
+   says where it has one: a worktree and branch, the claims first, then
+   the [Definition of done](#definition-of-done), then a pull request that
    names the issue (`Closes #N`).
 
 Questions of design that the specification does not settle are not
@@ -56,7 +55,7 @@ lawful at one site and a defect at another.
 | A boolean or scalar for a disagreement or a decision with magnitude | A residue (the composed motion, the differing boundary or holonomy), a graded reading, a named refusal | MU-HOSTING §5a.10; MU-STANDARDS 2.12 |
 | A reading used outside its scope: identity (an address) computed from a ground, a symbol's meaning or a frame fixing; a perspective applied before addressing | Identity from the posted samples' content alone (hypha); the ground and meanings deduced in the mind (client); perspectives taken after intake (sensor) | MU-SENSING §6.1 |
 | Code written for one data source (a module or type named for a dataset, a fixed palette, a ground of `0`, two axes or three coordinates fixed, a fixed cell size) | A generic sensor over samples of any rank: symbols compared by equality, the ground, the periods and every gauge deduced, perspective as a sensor motion; a source contributes only a decoder kept outside `src/` | MU-SENSING; MU-RECURSION 71 |
-| A constant chosen for a governing quantity | A live reading derived from the state, or an entry in the open-physics register | MU-DERIVATIONS; `xtask/lint/numbers.rs` |
+| A constant chosen for a governing quantity | A live reading derived from the state, or an entry in the open-physics register | MU-DERIVATIONS; `gate/src/numbers.rs` |
 | A network of routes, a tree or a graph of crossings | Events with past and future cones on the TUniversal ledger; the universal core tube is the vertex | MU-HOSTING §5a.5 |
 
 ## Before writing
@@ -87,9 +86,73 @@ lawful at one site and a defect at another.
 - Keep public documents general. Integration specifics of a particular
   peer kernel belong in that kernel's own repository.
 
+## Definition of done
+
+Every developer of this tree is an AI agent; no person is in the loop
+(coordinator ruling). A change is done when both commands pass on its
+branch, run in its own worktree:
+
+```sh
+cargo clippy --release --workspace --all-targets -- -D warnings
+cargo test --release --workspace
+```
+
+Nothing else is required, with one addition: a change to the wire or the
+mesh also runs `scripts/quickstart DIR BASE_PORT`. It brings up a
+three-hypha network from nothing, works the SDK client, the conformance
+suite and a house against it, then runs `scripts/observer` over its mesh
+and `scripts/timeline` over the client's journal; either failing fails
+the run. It then serves until stopped.
+
+What the two commands hold:
+
+- **Clippy** reads every member and target with warnings denied. The lint
+  policy is one table, `[workspace.lints]` in `Cargo.toml`, taken by every
+  member (`[lints] workspace = true`), with the disallowed types and
+  methods in `clippy.toml`. A deliberate site carries
+  `#[expect(…, reason = "…")]` (MU-STANDARDS 4.3).
+- **The tests** include the gate: the crate `gate/`, whose tests read the
+  repository's source tree for what the compiler cannot (the reading
+  bound, the Euclidean vocabulary, the numbers gate and its register, the
+  drift register, the shared-law table against `forms::LAW_IDS`, the
+  repository paths the documents cite, the changelog fragments;
+  MU-STANDARDS 4.1). They include the durable-admission drill
+  (`tests/durable.rs`), which runs under `--release` only. A scoped run
+  while working is `cargo test --release` with a filter; it does not
+  replace the whole run.
+- **The corpus.** `MYCELIUM_CORPUS` names the ARC-AGI-2 corpus's data
+  directory, the one holding `training/` and `evaluation/`; where it is
+  unset, `data/arc-agi-2` under the repository root is read. Only the
+  decoder's crate (`sources/arc-agi`) and `scripts/quickstart` read it.
+  Without a corpus, the decoder's corpus tests fail; no other test reads
+  one.
+
+How the work is held:
+
+- **One worktree per item.** Each item is built in a `git worktree` of
+  its own on its own branch, never in a shared checkout.
+- **One item per commit.** A commit holds one claim, its tests and its
+  documents (MU-STANDARDS 5.1); its first line states the claim, its body
+  what changed, why, and the results of the two commands.
+- **The changelog is fragments.** A change adds its CHANGELOG entry as a
+  file of its own, `changes/<branch or topic>.md`, holding exactly the
+  entry's markdown, opened by its `### ` heading (a gate test refuses
+  anything else under `changes/`). Nothing is written under
+  `CHANGELOG.md`'s Unreleased; at release time the fragments are
+  assembled into the release's section there, newest first by the commit
+  that added each, and removed.
+- **Merge main before the pull request**, then run the two commands again
+  on the merged tree.
+- **The memory cap.** A build runs inside a systemd scope that caps its
+  memory, with its parallel jobs capped:
+  `systemd-run --user --scope -p MemoryMax=… -p MemorySwapMax=0 env CARGO_BUILD_JOBS=… cargo …`.
+  The values belong to the machine, not the repository. One build runs
+  at a time.
+
 ## Before a pull request
 
-- Gate: `cd xtask && cargo run`. Then `scripts/check`.
+- The [Definition of done](#definition-of-done) holds on the branch with
+  main merged in.
 - Tick the drift checklist in the pull request template.
 - If the change touches the wire, the ledger layout, a law version or the
   Concordance, mark it under *Network contract*. It then needs operator
