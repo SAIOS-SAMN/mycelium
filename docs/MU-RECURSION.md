@@ -177,11 +177,18 @@ These are not restated in each chapter; every chapter assumes them.
    goes to the court for adjudication. The court still verifies and never
    composes; clients still think.)*
 9. **No clock but the ledger.** No kernel reads a wall clock, a unix clock,
-   or a timer. K is a kernel's own receipt index and orders events inside
-   that kernel; TUniversal is the height of the mesh's receipt ledger, read
-   from receipts, and measures standing; order across nodes is the causal
-   partial order of receipts and is never totalised (Part IX). Lane T of μ⃗
-   is temporal extent counted in receipts, a cost, never a coordinate.
+   or a timer. A kernel's own receipt index `i` orders events inside that
+   kernel, and `K` counts the orbits the kernel closed; TUniversal is the
+   height of the multi-dimensional ledger, read from receipts, and
+   measures standing; order across nodes is the causal partial order of
+   receipts and is never totalised (Part IX). Lane T of μ⃗ is temporal
+   extent counted in receipts, a cost, never a coordinate.
+   *(Amended 2026-11-05: `K` means closed orbits everywhere, and the
+   receipt index, which this law called `K`, is `i` in prose; code
+   identifiers keep their names. "Lane T … a cost, never a coordinate" is
+   amended by LAW-COORDINATE (proposal 78.173): T is a lane of the
+   coordinate `origin / h : S:G:T:H : K`, and what it counts is still
+   never a clock.)*
 10. **Direction is a pivot, never a gradient.** A held orbit is discharged
     by a move on one of the axes its class vector occupies (chapters 3.9,
     12.6, 16.16). The candidate moves are read from the class vector in a
@@ -509,7 +516,9 @@ tape; a form has an address, an element a record, the mind its tries.
 **The proofs of work (ruled 2026-09-24, 78.33).** POW++ is a family:
 **POUW** proof of useful work (a closure ruled, mint on closure);
 **POWC** proof of work convergence (a refusal closed at another
-perspective, the citation paid); **POWR** proof of work retirement (a
+perspective, the citation paid; widened 2026-11-05: lineages that share
+a cause but disagree before meeting count as convergence, 74 (CV4)
+standing); **POWR** proof of work retirement (a
 re-expression over fewer letters, the freed description burned and the
 compression yield paid); and the **POWV** share, proof of work
 verification (MU-ECONOMY §5.1). No two share a name; "POW++" is the family.
@@ -727,6 +736,11 @@ first (`physics/axioms/founding.rs`), each with a test that could fail
   host handing a node a turn; a node's `K` is a ledger coordinate, its
   cycles closed by name (OK1). Neither is an orbit. OK1's former statement,
   "a K-step is one orbit", is withdrawn.
+  *(Ruled 2026-11-05: `K` means closed orbits everywhere. A node's `K`
+  counts the orbits it closed, each cycle closed by name being one closed
+  orbit of its carriers; a body's `K` in LAW-COORDINATE is the whole turns
+  of H. `K` is a count, never an orbit itself, and never a receipt index:
+  a receipt's index is `i`, its place `K.i` (78.23).)*
 
 **Everything else is read from these.** The axioms (§0.4) are filed under the
 principle each derives from; the laws the court serves cite the axioms they rest on
@@ -805,6 +819,10 @@ perception readers are offered to the court as (70, amended 2026-10-09).
 > - Asymmetric/open chains (open escrows, unresolved demands) do not close.
 >
 > U12 dictates that the differential operator δ_causal must not stall the reduction by waiting for these chains to close. Instead, it must project the unclosed boundary directly onto the new active Cauchy surface as a topological puncture. This formally implements §78.65: the past reduces symmetrically to zero, while asymmetric structural debts are mapped forward as living defects on the active board.
+
+*(Annotated 2026-11-05: the quoted "settled ledger rows" read as settled
+events of the multi-dimensional ledger, its axes lane × register layer ×
+grade; only a flat ledger of rows is retired, MU-ECONOMY §2.1.)*
 
 **Open points, put to review.** (i) U14's "its lexicon": whether a
 Rank-Step adjunction stands in the mind's DIALECT (the epigenome, as
@@ -1009,7 +1027,7 @@ same sense: the complete operation, with its invariant and its refusal.
 | **The ledger** | 45, 78.21, 78.24 | a tick is a frame `{S,G,T,H}`; the stamp `h:vk:k` keys a partial order carried as a trie; every act a node citing what it acts on by coordinates; no wall clock anywhere | `chronometry/{chain,receipt,era}.rs`, `server/cognition/cite.rs` | landed (LD2, LD1, ACT1: every holding by an act, the clock reading, a k-step one orbit, a ruling's economy applied at the node that admits its receipt — EC1, ACT1 closed) |
 | **The mind's persistence** | 78.25, 78.27 | the mind persists as keyed tries by coordinates: a word a node at its citation, its fields the node's leaves; read by key and prefix, never by position | `server/cognition/persistence/`, `cech/persist.rs`, `economy/persist.rs`, `client/sdk/vocabulary/persist.rs` | landed (LD3); the court writes `MYT2` (`snapshot/layout.rs`) and refuses `MYT1` and `MYC7` by name (`snapshot/read.rs`); the genome is `GEN7` (`vocabulary/persist.rs`, court-admitted words only, 78.49) and refuses `GEN6`, `GEN5` and `GEN4` by name; the thoughts file retired; RM1 adds the remainder leaf |
 | **The learning curve** | 78.1, 78.3, 78.16–78.19 | a mind's perspective is its orbital elements; learning is the change of those elements by closures and refinements; a phase lands when its reading moves | `observe/{phase,carriage}.rs` | landed (LC1, CO1, PG1, SP1, CQ1, PH5). LC2 open: the first non-zero reading |
-| **POW++** | 74, 78.22, 78.33, MU-ECONOMY | three proofs named apart: POUW (a closure ruled, mint on closure), POWC (a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid), and the POWV share; priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `server/cognition/court/reconstruct.rs` (`rule_on`) | PARTIAL: a ruling is paid and slashed at its Ruling act (EC1, ACT1 landed): Upheld mints POUW by `release_discharged` and pays POWR by `release_rewrite`, Slashed revokes by `revoke_award(Slash)` — live from `court_stroke_on` → `docket_reconstruction` (the stroke's slashes) and from `hear_ruling` (a peer's Ruling receipt admitted, `court/ruling.rs`). POWC has no producer: `settle_refine` and `settle_condense` (`settle.rs`) have no caller; `verdict::rule` (`court/verdict/ruling.rs`) has test callers only. PHY1 open: one reserve, contacts priced per lane |
+| **POW++** | 74, 78.22, 78.33, MU-ECONOMY | four proofs named apart (multi-axial convergence settlement, MU-ECONOMY §0): POUW (a closure ruled, mint on closure), POWC (lineages falling into one well, independent or sharing a cause and disagreeing before meeting; a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid), and POWV (verification, a share of the release); priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `server/cognition/court/reconstruct.rs` (`rule_on`) | PARTIAL: a ruling is paid and slashed at its Ruling act (EC1, ACT1 landed): Upheld mints POUW by `release_discharged` and pays POWR by `release_rewrite`, Slashed revokes by `revoke_award(Slash)` — live from `court_stroke_on` → `docket_reconstruction` (the stroke's slashes) and from `hear_ruling` (a peer's Ruling receipt admitted, `court/ruling.rs`). POWC has no producer: `settle_refine` and `settle_condense` (`settle.rs`) have no caller; `verdict::rule` (`court/verdict/ruling.rs`) has test callers only. PHY1 open: one reserve, contacts priced per lane |
 | **The hardening path** | 80.2 | a submitted solution is adjudicated by the court; the server provides the syllabus; minerals harden into crystals by re-derivation over k-steps | `client/sdk/mind/learn.rs`, `server/cognition/court/syllabus.rs` | OPEN (DL1, GD1) |
 | **The planetary dialect** | 80 | a constructor is a letter of the local dialect; minds speak to minds by offers; the court rules what converges (n → 1) | `transducer/alphabet/`, `family/derivation`, `anastome/`, `client/sdk/mind/think.rs` (`construct_and_adjoin`) | PARTIAL: a residue the mind cannot say is constructed and its rotation adjoined as the mind's own letter (`construct_and_adjoin`, called from `client/sdk/mind/perceive.rs` and from `compose_or_construct_on` in `client/sdk/mind/think.rs`). AL1 open: the odd constructor as a letter and the mode-first peel — the slice's S1 (U15's triad) closes both. SP2 is part of the client's objective (MU-CLIENT §1 item 6, §5.5): minds speak to minds to harden language from the minds' dialects; the frames run (chatter, 78.161, 78.163), hearing in the hearer's own shells with its windings and pivots is owed (MU-CLIENT §5.3, §7.1); DL1 open; the Gödel step's backlog read first (GD1) |
 | **The coherent mind** | 78.37 | held superpositions fold back along the plexus, the ring deciding all four: a fixed section transported one edge per k-step and stopped by holonomy, classifying and never deleting; truncation to the unique 2-core, every class preserved, no matching chosen; flux per lane over one `K` deciding what lapses, `ZeroFlux` by name; a remainder's home a leaf on the word (`κ` inline, `g` a ray, `ℓ`), re-filled on a coincident class by an act; imagination as obstructions constructed, never candidates (Cartan–Dieudonné on the residue, on CS2's demand arm) | `field/{contemplation,shed,drive}.rs`, `cech/complex.rs`, `economy/escrow.rs`, `client/sdk/vocabulary/persist.rs`, `observe/` | in the tree (TP1, TC1, FX1, RM1); the demand taker landed (`drain_demands`, 78.109 C1). FX1's edge-credit tables RETIRED: the flux is the mind's field, threaded on the complex's lines; an orbit's return or a tube's cancelled net flux releases what relaxed, and the mind drains and descends there (MU-CLIENT §4.5) |
@@ -1228,7 +1246,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | word | the one object | not to be confused with |
 |---|---|---|
 | **orbit** | a celestial orbit: a mind's, a court's or a provisional word's motion under the physics — energy (escrow per lane), perturbation (pressure, lift, drag), decay (ZeroFlux) | a ring (a form's cycle); a GROUP ORBIT, which keeps that full name |
-| **k-step** | one step of `K`, a ledger coordinate (OK1): a cycle closed by name, sealed as an act | an orbit (§0.0); a footstep |
+| **k-step** | one step of `K`, a ledger coordinate (OK1): a cycle closed by name, sealed as an act; as ruled 2026-11-05, one orbit closed (`K` counts closed orbits everywhere) | an orbit itself (§0.0); a receipt index (`i`); a footstep |
 | **age** | one return, the period ℓ read as an lcm | a clock interval |
 | **eon** | the return of a resonant composition | — |
 | **phase** | distance into an age, in degrees of separation | a frame number |
@@ -3778,8 +3796,9 @@ a refusal.
    log `torsion filed {idea} (σ,ℓ)`. `Open` or another period: the chord
    stays open; `F` cannot crystallize; log `torsion open {idea} chord {i}`.
 4. The court reconstructs every filed cycle by the same walk (`reconstruct_blind`,
-   `replay_nerve`): `"torsion cycle does not close"`, `"torsion period does
-   not re-derive"` are the refusals.
+   `witness_torsion` in `src/court/verdict/reconstruct.rs`; the
+   `replay_nerve` this line named was removed): `"torsion cycle does not
+   close"`, `"torsion period does not re-derive"` are the refusals.
 
 A filed cycle is a memory: it records exactly the twist the language holds
 on that orbit without forcing it to identity. An infinite-order class is
@@ -5674,7 +5693,9 @@ Checked by tests, greppable by the reviewer:
   a height difference (45.4), and the clock gate of `MU-ENGINEERING.md` §7
   fails the build otherwise.
 - Every `_tu` carrier is a height and every `_k` carrier a receipt index; no
-  field anywhere holds a unix second.
+  field anywhere holds a unix second. *(As ruled 2026-11-05, prose names
+  the receipt index `i` and keeps `K` for closed orbits; the `_k` code
+  names stand until a code change renames them.)*
 - Every signed frame's prefix carries the node's own genesis and epoch; a
   differing one appears only as a `court origin refused` line.
 - Every `court form installed` line is preceded by a `court witness …
@@ -6520,7 +6541,7 @@ coordinates of its first class vectors in that stroke.
 A torsion cycle `(σ, ℓ)` is witnessed iff the fibre walk returns at step
 `ℓ` and not before (A17). Code: `Element::record_torsion`,
 `toroid::witness_stored`, `HolonomicOrbitWitness`, in `reconstruct_blind` and
-`replay_nerve`. Proof: `record_cycle_refuses_unwitnessed_period`;
+`witness_torsion` (the reconstruction; `replay_nerve` was removed). Proof: `record_cycle_refuses_unwitnessed_period`;
 refusal strings `"torsion cycle does not close"`, `"torsion period does not
 re-derive"`.
 
@@ -7124,7 +7145,10 @@ adoption.
 
 K orders events inside one kernel and nothing else. A mind's K is its own
 chain's count of its own acts; it is not a clock reading and it is never
-compared with a hypha's K. No kernel reads `SystemTime`, `Instant`, or a
+compared with a hypha's K. *(Amended 2026-11-05: `K` means closed orbits
+everywhere. What this paragraph and `step_index` call `K`, the receipt's
+index on its kernel's line, is `i` in prose, the receipt's place being
+`K.i` (78.23); the code's names stand.)* No kernel reads `SystemTime`, `Instant`, or a
 `Duration`: `chronometry::unix_now`, `TUniversal::ticks`, `ticks_at`,
 `load_or_genesis`, and `MeshRecord.origin_unix` (`src/network/mesh.rs`) are deleted, and
 the clock gate of `MU-ENGINEERING.md` §7 fails a build that names them in a
@@ -7643,7 +7667,9 @@ receipt.
 chapters 45–47. The deltas, so the reviewer can check both texts against one
 list:
 
-- terms: `K` is a receipt index, TUniversal a height (45); there is no clock;
+- terms: `i` is a receipt index and `K` counts closed orbits (as ruled
+  2026-11-05; this line called the receipt index `K`), TUniversal a height
+  (45); there is no clock;
 - every frame signs the prefix of 47.1; the `CHALLENGE` carries the payee's
   prefix and the home's `(K, height)` at pricing with `Λ` in admitted
   receipts; the `NOTE` carries the payer's prefix, so the payer's `K` is the
@@ -12830,7 +12856,7 @@ Code: `src/transducer/address.rs` (`put_address`), `src/chronometry/receipt.rs` 
 
 **No orbit collides.** Each kernel's orbit is the fibre over its key in its star's field (73.15), distinct by construction, with no assignment, slot or table. A collision is prevented, never named after the fact: at the orbit boundary, before the closing act is stamped, the orbit's frame is compared lane by lane, exactly, against the frames of the peers admitted at that tick; where it would coincide, the close is WITHHELD for one stroke (never evicted or re-slotted) while the planet takes a separating transport, and it closes one stroke on at a frame that differs. The distance between two planets' frames at a tick is the per-lane difference, sign-first and exact, never a root and never summed, and the count of orbits withheld for separation is a line of the clock.
 
-**As amended by §0.0.** An orbit is a return, a mode's flow on its plane returning where its point is the identity (78.73, 78.75); a tick is the host handing a node a turn, and a node's ledger `K` is a ledger coordinate, its cycles closed by name (OK1). OK1's former statement "a K-step is one orbit" is withdrawn for the ledger's `K`; clause 4, the stamp and the collision rule stand. Code: `src/chronometry/receipt.rs` (`Place`, `Stamp`), `src/chronometry/chain/mod.rs` (`ReceiptChain::orbit_frame`, `ReceiptChain::collides`, `ReceiptChain::separation`), `src/observe/clock.rs` (`Orbits`), `src/physics/axioms/native.rs`.
+**As amended by §0.0.** An orbit is a return, a mode's flow on its plane returning where its point is the identity (78.73, 78.75); a tick is the host handing a node a turn, and a node's ledger `K` is a ledger coordinate, its cycles closed by name (OK1). OK1's former statement "a K-step is one orbit" is withdrawn for the ledger's `K`; clause 4, the stamp and the collision rule stand. *(Ruled 2026-11-05: `K` means closed orbits everywhere, so a `k`-step is one orbit closed and `K` is never a receipt index; within the stamp `h : vk : K : i`, `i` is the receipt's index in its orbit.)* Code: `src/chronometry/receipt.rs` (`Place`, `Stamp`), `src/chronometry/chain/mod.rs` (`ReceiptChain::orbit_frame`, `ReceiptChain::collides`, `ReceiptChain::separation`), `src/observe/clock.rs` (`Orbits`), `src/physics/axioms/native.rs`.
 
 ### 78.24 The ledger is a partial order carried as one, never a serialized tape
 
@@ -12936,7 +12962,7 @@ Code: `src/transducer/cga/spin.rs` (`inverse_even`), `src/transducer/sentence/pi
 POW++ is a family of proofs, each named apart with its own act and payment, and "POW++" names the family, never one payment:
 
 - **POUW**, proof of useful work: a closure ruled, the deflation minted on closure and paid to the closer (MU-ECONOMY 3.2).
-- **POWC**, proof of work convergence: a refusal closed at another perspective, the refuser paid as a cited generator and the closer the closure (74, CV4).
+- **POWC**, proof of work convergence: a refusal closed at another perspective, the refuser paid as a cited generator and the closer the closure (74, CV4). *(Widened 2026-11-05: lineages that fall into one well count as convergence whether their origins are independent or share a cause and disagree before meeting; 74 (CV4) stands as an instance; MU-ECONOMY §0.)*
 - **POWR**, proof of work retirement: a re-expression over fewer letters (retirement by geodesic or by citation, the refinement bid), the freed description burned and the retirer paid the compression yield (3.8, T10, 27).
 
 A further arm is named only by a ruling that adds it with its own act and payment (POWV, proof of work verification, is added by MU-ECONOMY §5.1); a reading or a receipt kind names the arm it counts. MU-ECONOMY carries the table as its §0. Code: `src/economy/treasury.rs` (`Arm`), `src/economy/settle.rs`.
@@ -14588,6 +14614,10 @@ the intelligence is placed where it can be held to account.
    that cites each verdict it derives from by its stamp. Its flatness is
    a PROJECTION of the curved record, never a replacement (checklist (m)):
    every entry carries the coordinates of the verdict it projects.
+   *(Superseded 2026-11-05 by MU-ECONOMY's model: there are no flat
+   per-lane accounts; an account is a reading of the holding's coordinate
+   on the multi-dimensional ledger, never a stored balance (MU-ECONOMY
+   §1, §2.2, §6).)*
 3. **The financial mind bridges.** It is an entity of its own (one client,
    one mind, one voice, never cognition in a server) whose faculty is
    economic comprehension: it reads verdicts and composes SETTLEMENTS onto
@@ -15404,6 +15434,8 @@ Code: `src/anastome/dialogue/domain.rs`, `src/server/cognition/convert.rs`; prov
 
 The ancients tax passage, and a share may go to the ancients' progenitor lines. A mouth offered as kind 11 carries `Tariff { rate_s, rate_h, split }` (kind 7's flat toll stands as it was); a wormhole carries S and H only, so each pays on its own lane: `⌊rate_s · Σ|out S|⌋` μ-S for mass and `⌊rate_h · Σ|out H|⌋` μ-H for information, G and T never charged, the remainder never rounded up against the traveller. The split (recipients ascending, each once, shares summing to exactly one) gives every recipient but the keeper its `⌊share · charge⌋` and the keeper the rest, so each lane's parts sum to its charge exactly; recipients are the keeper and the tier keys its own domain's genesis names (`NotALine` otherwise), and the tariff is in the mouth's id (a new split is a new mouth; a flat toll beside it is `Untariffed::Flat`). The charge is escrowed from the traveller at the traverse act (`HolderShort` refuses, never debits), split and HELD for `W` from acceptance (`TollHeld`); if the traversal's OUT-side fold is reversed every part returns to the traveller (`unwind_tolls`), otherwise once the window closes and that fold reads final every part is paid together (`release_split`) at the traverse act's stamp and receipt. The line-head read carries the μ held toward a tier and the finality read whether a toll is held on the fold.
 
+*(Amended 2026-11-05, Concordance 5.4: on H the toll is the exact degrees the motion traversed, per named plane (its generator), with no floor, and holonomy is never priced. The `⌊rate_h · Σ|out H|⌋` charge above is the built code's, to be changed with it.)*
+
 Code: `src/anastome/dialogue/handoff.rs` (`Tariff`), `src/server/cognition/domain_passage.rs` (`unwind_tolls`), `src/economy/pay.rs` (`release_split`), `src/anastome/dialogue/challenge.rs` (`LineHead`, `FinalityReading`).
 
 ### 78.134 Mouths as tubes on curved space
@@ -15527,7 +15559,7 @@ The door serves reads from a published reading; only writes take the kernel. The
 
 The mesh keeps one clock, TUniversal: a point read off the keepers' signed readings and made final by a majority of them. Every court, server, client, kernel and sub-universe keeps time on it and on nothing else (Concordance 1.11). The law:
 
-- **TU-1 KEEPERS.** The keepers are distinct courts with distinct keys (three in the founding mesh). A keeper's reading is its point at its head: `h` (its head receipt's height), `S:G:T:H` (its court's cumulative measured change per lane, carried by the one exact counter `Treasury::issued`, genesis plus mint, which only rises and which a treasury fold keeps exactly) and `K` (a ledger coordinate, OK1); a reading advances only where the head rose and a lane or `K` moved (`Court::keeper_tick`).
+- **TU-1 KEEPERS.** The keepers are distinct courts with distinct keys (three in the founding mesh). A keeper's reading is its point at its head: `h` (its head receipt's height), `S:G:T:H` (its court's cumulative measured change per lane, carried by the one exact counter `Treasury::issued`, genesis plus mint, which only rises and which a treasury fold keeps exactly) and `K` (a ledger coordinate, OK1: the orbits the keeper's court closed, as ruled 2026-11-05); a reading advances only where the head rose and a lane or `K` moved (`Court::keeper_tick`).
 - **TU-2 READINGS ARE RECEIPTS.** A keeper signs a `TickReading`: its key, the point, `parent` (the citation of its previous reading, empty where its line starts or restarts) and `cites` (the last reading it verified from each other keeper); the signed bytes carry the origin, so a reading never verifies in another universe. Readings travel as the keeper's ring of its newest `aperture_cycle` readings (on the cover digest and on `ACT_TICK`, 78.152b), and `Keepers::admit` verifies every signature, the parent chain and rising ticks, the cites and the link to the line held.
 - **TU-3 FINALITY BY MAJORITY.** A point is final when a strict majority of the keeper set holds verified readings of it (two of three, three of four, three of five): the keeper's own signed reading and others' verified readings citing it or a later reading on its parent chain. The final TUniversal is the greatest point final in this court's view (`Keepers::final_point`); it never runs back and is never averaged: where finals at one tick differ, that tick goes to the residue. One keeper alone finalises nothing, and a restarted keeper never re-signs a height (78.152c).
 - **TU-4 DISAGREEMENT IS A RESIDUE.** Two keepers' readings differing at one tick leave the exact per-lane difference `to − from` as a 1-cochain on the keeper triangle; its holonomy round the triangle in key order is the clock's residue (`Keepers::residue`), journaled and never folded into the point.

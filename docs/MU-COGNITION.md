@@ -31,7 +31,7 @@
 > | Seats in a house | Client and kernel, through the hypha's seat relay | No. Only for a mind that chooses to sit in a universe. |
 > | Planetary minds, peoples, civilizations, ancients | Game kernel | No. They exist inside the games. |
 > | Virtue books, awareness, the ascension ladder (§1.5) | Game kernel | No. The ladder and its books are each game's design (Concordance 6.2–6.4). |
-> | Viability (the ladder's first rung): closures on tasks the mind did not set | Judged by the court | No. It is the one point where a game's ladder touches the hypha: the court's own judge (`judge_solve`) reads a simulated mind's closures, as it reads any client's, on families of samples from any source (ARC-AGI-2 is the first posted corpus). |
+> | Viability (the ladder's first rung): a mind thinking about its adjudicated perceptions, on tasks it did not set (MU-SENSING §0) | Judged by the court | No. It is the one point where a game's ladder touches the hypha: the court's own judge (`judge_solve`) reconstructs what a simulated mind perceived and states, as it does for any client's, on families of samples from any source (ARC-AGI-2 is the first posted corpus). Closures are observations, never the criterion. |
 >
 > **Components:** the client (`mycelium-client`, the SDK) and the court's
 > judge; game kernels appear only through the patterns of §1.
@@ -213,18 +213,21 @@ and MU-ANTI-FLATTENING clause 12: a sample of any rank is lifted by
 enclosure into turns, with no point embedding and no squared norm. The
 text records the code as it was read, for the code paths it names.*
 
-**What a grid is perceived as.** A lattice in conformal 3-space. Each
-painted cell is a site `(r, c, k)`: row, column, and the pair index `k` as
-the third axis (`site_of` in `src/transducer/element/sensor.rs`; the base
+**What a sample was perceived as.** A lattice in conformal 3-space, the
+structure MU-ANTI-FLATTENING clause 12 retires from cognition: a raster
+stands only at intake and at speech (MU-SENSING §2). Each painted site was
+`(r, c, k)`: its coordinates on the two plane axes, and the pair index `k`
+as the third axis (`site_of` in `src/transducer/element/sensor.rs`; the base
 sites of `src/transducer/base.rs`), embedded as the conformal point
 `X = x + ½‖x‖²e∞ + e_o` (`point_at` in `src/transducer/cga/embedding.rs`).
 The pipeline:
 
-1. **Perception.** `perceive_family` calls `perceive_at` on each grid of
+1. **Perception.** `perceive_family` calls `perceive_at` on each sample of
    each pair (`src/transducer/family/perceive.rs`). The family's ground
-   (`ground_of` in `src/transducer/raster.rs`: hue 0 where any grid shows it, otherwise
-   the hue of the greatest exact cell count, untied) is the background the
-   eye does not see. The other cells are grouped into hue-blind,
+   (`ground_of` in `src/transducer/raster.rs`: hue 0 where any sample shows it, otherwise
+   the hue of the greatest exact site count, untied; a fixed ground the
+   sensor now deduces, MU-SENSING §3.4) is the background the
+   eye does not see. The other sites are grouped into hue-blind,
    edge-connected bodies (MU-RECURSION 70.4).
 2. **The body.** `body_of` (`src/transducer/family/perceive.rs`) reads a
    body's shape off its support (`blade::shape_of`) and its moduli off the
@@ -242,12 +245,12 @@ The pipeline:
    reproduce every training pair, or the pairs share no ratio, the act is
    read off each effect (`read_acts` in `src/transducer/family/acts.rs`,
    MU-RECURSION 78.167): a vanished body as a recolour to the ground,
-   created cells as `Fill`, `Extend` or `Copy`, a resized frame as `Scale`
+   created sites as `Fill`, `Extend` or `Copy`, a resized frame as `Scale`
    or `Crop`, each under a selecting predicate on which the bodies
    separate exactly on every pair. A clause set stands only where it
    re-derives every training pair; otherwise it is refused by name.
 4. **Speech.** `speak_rule` and `apply_form` (`src/transducer/family/speak.rs`)
-   perceive the test grid and speak the form on it. A word vertex speaks
+   perceive the test sample and speak the form on it. A word vertex speaks
    on the bodies whose chart equals one of its members' charts exactly,
    carried and recoloured; demand vertices paint nothing. Clauses
    (`src/transducer/sentence/form/clause.rs`) are spoken by
@@ -296,11 +299,12 @@ copied onto, or cropped to*.
    withheld pairs from 0; `crossing` removes the overlaps between frames
    before submission, but a member's frames still bind where it speaks.
 6. **Test-time gate.** Nothing is submitted unless every test speech has
-   an empty remainder and lays out as a grid (`tests_spoken` in
+   an empty remainder and lays out as a raster at speech (`tests_spoken` in
    `src/client/sdk/mind/family.rs`; `solve_before_on_ground` on a seat).
 
-The sensorium is multi-dimensional (`Cl(n+1, 1)`, read in this code at
-its value `Cl(4,1)` for `n = 3`; blades, moments, gauge), but
+The sensorium is multi-dimensional (the conformal `Cl(n+1, 1)`,
+perception's case of `Cl(p, q)` whose signature is carried as data, read
+in this code at its value `Cl(4,1)` for `n = 3`; blades, moments, gauge), but
 it spends its third axis on the pair index rather than on the puzzle, and
 the rule language, though it now states selections, regions, creation and
 counts, states them from a fixed vocabulary read off the training effects.

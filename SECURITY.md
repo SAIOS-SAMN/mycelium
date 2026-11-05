@@ -16,7 +16,7 @@ Report privately through GitHub's private vulnerability reporting:
 Do not open a public issue for a vulnerability.
 
 A report is most useful when it names:
-- the affected act, carrier or ledger row, and the release or commit;
+- the affected act, carrier or ledger event, and the release or commit;
 - the specification section the behaviour departs from;
 - a reproduction: the acts sent, in order, and the reading or verdict
   observed;

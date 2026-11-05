@@ -17,9 +17,11 @@ network's nodes are **hyphae** (courts), which adjudicate, settle and keep
 the ledger, and **minds** (clients: the AI agents), which perceive tasks,
 learn a shared language and submit work for adjudication. Every quantity
 the protocol decides on is computed exactly, in the geometric algebra
-`Cl(n+1, 1)` over the rationals ℚ, with `n` read from the data: its
-geometry is non-Euclidean, no quantity in it is a scalar, and there is no
-floating point anywhere. `Cl(4,1)` is its value at `n = 3`.
+`Cl(p, q)` over the rationals ℚ, its rank and signature carried as data:
+its geometry is non-Euclidean, no quantity in it is a scalar, and there is
+no floating point anywhere. Perception's case is the conformal
+`Cl(n+1, 1)`, with `n` read from the data; `Cl(4,1)` is its value at
+`n = 3`.
 
 The direction is a network that verifies knowledge
 ([`docs/MU-SCIENCE.md`](docs/MU-SCIENCE.md)):
@@ -176,7 +178,8 @@ scripts/quickstart
    ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md)) against the second
    hypha, for the mind profile and then the kernel profile.
 8. Runs a kernel's house (`sdk/examples/house.rs`) against the third
-   hypha: it signs the Concordance hash, reads the clock, founds a domain
+   hypha: it signs the Concordance clause by clause by reconstructing each
+   clause's fixtures (never by a hash), reads the clock, founds a domain
    and passes the kernel profile.
 9. Reads the mesh with `scripts/observer` and renders the client's traced
    journal with `scripts/timeline`; either failing stops the run.
@@ -212,7 +215,7 @@ directory, the ports and the number of tasks.
 
 | Component | Binary | Role |
 |---|---|---|
-| **Hypha** (court) | `mycelium-server` | Admits signed acts, reconstructs submitted work, rules on it, settles payments, keeps a hash-chained receipt ledger, folds the ledger into eras, and exchanges digests and co-signatures with peer hyphae. |
+| **Hypha** (court) | `mycelium-server` | Admits signed acts, reconstructs submitted work, rules on it, settles payments, keeps its line of signed receipts in the network's multi-dimensional ledger, checkpoints that line by co-signed folds, and exchanges digests and co-signatures with peer hyphae. |
 | **Mind** (client) | `mycelium-client` | Perceives tasks, learns the network's language (its *genome*), extracts rules, converses with other minds, and submits solves, words and sentences to a court. A mind can hold a *seat* in a house run by another kernel. |
 | **Soak harness** | `mycelium-soak` | Long-running load and durability runs against a mesh. |
 | **Exact algebra** | `algebra/` (crate) | The multivectors of `Cl(p, q)` over ℚ, each carrying its signature: the product, the signature's refusals, a value's wire writing and key. Below both the law forms and the library, depending only on exact rationals; the library re-exports it at `transducer::cga`. |
@@ -276,7 +279,8 @@ payloads are exact objects; a refusal reply carries its named reason.
 
 A rule a mind states about a task is a sentence. That sentence carries
 geometric **rule elements** (`src/transducer/sentence/form/rule_element.rs`):
-- a *carriage*: a versor of `Cl(n+1, 1)` applied once or iterated to a
+- a *carriage*: a versor of the conformal `Cl(n+1, 1)` (perception's case
+  of `Cl(p, q)`) applied once or iterated to a
   contact, with a gauge (symbol) map;
 - 2-chains bounded by a selection;
 - 1-chains joining bodies;
@@ -293,13 +297,19 @@ book on the hypha: chronometric anchors pairing its own time with a final
 point, from which the server reads its position, dilation and crossings,
 so no universe is lost in time ([`docs/MU-CHRONOMETRY.md`](docs/MU-CHRONOMETRY.md)).
 
-**Ledger.** Each hypha keeps its acts on a receipt chain. The chain folds
-into eras, and witness hyphae co-sign each era's fold
+**Ledger.** The network keeps one multi-dimensional ledger. Each signer
+(a hypha, a voice, a domain's reserve) keeps a line of signed receipts,
+each naming its predecessor, and the lines stand in a causal partial
+order that is never totalised into one sequence. An event stands at a
+coordinate, and the ledger's axes are lane × register layer × grade,
+never summed ([`docs/MU-ECONOMY.md`](docs/MU-ECONOMY.md) §2.1). A fold
+checkpoints a prefix of a line, and witness hyphae co-sign it
 (`docs/MU-FOLD.md`).
 
 **Structure.** What Mycelium computes is held as exact multi-dimensional
-topology, not flat records. Objects are multivectors of `Cl(n+1, 1)`, with
-`n` read from the data. The geometry is non-Euclidean, and the algebra is
+topology, not flat records. Objects are multivectors of `Cl(p, q)`, the
+signature carried as data; a perception's are of the conformal
+`Cl(n+1, 1)`, with `n` read from the data. The geometry is non-Euclidean, and the algebra is
 exact and never scalar: a number appears only as the gauge of a
 one-dimensional reading ([MU-SENSING §3.7](docs/MU-SENSING.md#37-the-field-non-euclidean-never-scalar)).
 Motions are versors. Relations are transports, and collections of
@@ -356,16 +366,20 @@ carried forward, are listed in
 
 ## POW++: the proofs of work
 
-POW++ is a *family* of proofs. Each member is a distinct act with its own
-settlement row on the ledger, and the members are never summed across
-(`docs/MU-ECONOMY.md` §0; `src/economy/treasury.rs`, `enum Arm`). Every
-payment row names the arm it pays. Rows that prove no work carry no arm:
-genesis, stake, escrow, revocation, slash, burn, fee and subsidy.
+POW++ is multi-axial convergence settlement: proof of reduction, not a
+single linear difficulty ladder. The work is a reduction a court
+reconstructs, and it settles when the readings agree on every axis. It is
+a *family* of proofs, each member a distinct relation between motions,
+settled apart and never summed across (`docs/MU-ECONOMY.md` §0). In the
+implementation built today each payment is a treasury entry naming the arm
+it pays (`src/economy/treasury.rs`, `enum Arm`); entries that prove no
+work carry no arm: genesis, stake, escrow, revocation, slash, burn, fee
+and subsidy.
 
 | Arm | Name | The act that is proven | What settlement does | Code |
 |---|---|---|---|---|
 | **POUW** | Proof of useful work | A listed demand is **closed**. The court reconstructs the submitted word or sentence on the task's family and measures the deflation it achieves: what it closes, lane by lane. | **Mints** the measured deflation and pays it to the closer. | `economy/escrow.rs`, `economy/settle.rs`, `server/cognition/court/vantage_install.rs` |
-| **POWC** | Proof of work convergence | A demand one mind could not discharge is **closed at another perspective**: another mind's work, citing the first mind's receipt, discharges it. A word discovered by one mind and used by a later demand is the same relation. | **Mints** the citation's measured discharge to the closer (`settle_convergence`), and pays the cited discoverer by **transfer** from the user of the word (`settle_use`). | `economy/settle.rs` |
+| **POWC** | Proof of work convergence | A demand one mind could not discharge is **closed at another perspective**: another mind's work, citing the first mind's receipt, discharges it. A word discovered by one mind and used by a later demand is the same relation. Lineages that share a cause but disagree before meeting count as convergence (widened, ruled 2026-11-05). | **Mints** the citation's measured discharge to the closer (`settle_convergence`), and pays the cited discoverer by **transfer** from the user of the word (`settle_use`). | `economy/settle.rs` |
 | **POWR** | Proof of work retirement | A word or form is **re-expressed over fewer letters**, by retirement along a geodesic or by citation; a refinement bid is reconstructed with the retired word excluded. | **Burns** the freed description and pays the retirer the compression yield. | `economy/settle.rs` (`settle_rewrite`), `server/cognition/book/rewrite.rs` |
 | **POWV** | Proof of work verification | A closure is **verified**: a court reconstructs the claim and measures its discharge, and on an install a second court reconstructs the same vertex. | Pays each verifying court its **share of the release**, per lane, read off the court's strain against its reserve. The share is taken out of the release, so total issuance is unchanged. | `economy/verify.rs`, `server/cognition/court/verify.rs` |
 
@@ -482,7 +496,7 @@ between lanes:
 | **S** (spatial) | boosts and dilations |
 | **G** (gauge) | hue cycles and moves |
 | **T** (temporal) | null flux |
-| **H** (holonomic) | turns |
+| **H** (holonomic) | rotations, in exact degrees on a named plane |
 
 A payment moves value on exactly the lanes the verified work moved. A
 comparison of two μ vectors returns a reading per lane (each lane fell,
@@ -492,7 +506,7 @@ audit meaningful lane by lane.
 
 Every amount of μ is exact: four non-negative rationals, one per lane
 (`economy::Mu`). μ is measured as a share of a frame, and a share is a
-rational, so a balance, a bond, an escrow, a ledger row and every wire
+rational, so a balance, a bond, an escrow, a treasury entry and every wire
 field holding μ carries rationals; a whole count `n` is `n/1`. Nothing is
 floored to fit a carrier: an addition always lands, and a draw past a
 holding is refused naming the lane. On the wire each lane is a sign byte
@@ -502,7 +516,8 @@ it is negative or not in lowest terms ([`docs/MU-EQUATIONS.md`](docs/MU-EQUATION
 
 The specification goes further: a balance holds the exact *modes* the work
 moved, each with an exact rational amount — on S a boost or dilation, on
-G a hue cycle or move, on T a null flux, on H a turn (MU-RECURSION
+G a hue cycle or move, on T a null flux, on H a rotation in exact degrees
+on a named plane (MU-RECURSION
 78.162). The modes and the arithmetic on them are built (`economy::modes`);
 holdings still carry the four amounts.
 
@@ -516,13 +531,16 @@ holdings still carry the four amounts.
 | Held | a payer, against a key | μ set aside for a payment, the payer's until released or refunded |
 | Supply | the mesh | genesis + mint − burn, per lane |
 
-Every movement is a ledger row anchored to the receipt of the act that
-wrote it. The row carries a kind, the party, the lane vector and, for a
-payment, its POW++ arm. Eleven kinds move μ, and nothing else does:
-`genesis`, `mint`, `stake`, `unstake`, `transfer`, `escrow`, `release`,
-`revoke`, `slash`, `burn` and `epoch`. An `epoch` row is the net per
-identity over a folded segment of the ledger. It moves no supply and
-re-expresses the rows it replaces.
+In the implementation built today, every movement is a treasury entry
+(`Entry`) anchored to the receipt of the act that wrote it. The entry
+carries a kind, the party, the lane vector and, for a payment, its POW++
+arm. Eleven kinds move μ, and nothing else does: `genesis`, `mint`,
+`stake`, `unstake`, `transfer`, `escrow`, `release`, `revoke`, `slash`,
+`burn` and `epoch`. An `epoch` entry is the net per identity over a
+folded prefix of a line. It moves no supply and re-expresses the entries
+it replaces. The specification replaces this journal with events at
+coordinates on the multi-dimensional ledger, each citing its causes
+(MU-ECONOMY §2, §9).
 
 ### Issuance and retirement
 
@@ -627,7 +645,7 @@ let (lease, held) = decode_lease_reply(&reply).ok_or("reply")??;   // or a named
 
 ### The invariant
 
-On every lane, at every hypha, at every ledger position:
+On every lane, at every hypha, at every TUniversal height:
 
 ```
 supply = genesis + mint − burn
@@ -635,14 +653,14 @@ supply = Σ balance + Σ bond + Σ held
 ```
 
 Claim escrow is outside the second sum, because it is issuance that has not
-happened. `Treasury::audit` checks both equations from the rows. A fold
+happened. `Treasury::audit` checks both equations from the entries. A fold
 runs only where the audit holds before and after it, and is otherwise
 refused as `REFUSE_FOLD_INEXACT` with the ledger left as it was; `--check`
 prints the audit's reading for a home. A slash leaves circulation as an
-issuance-reducing row of its own kind. A fold conserves both equations
-across the rows it replaces, and a witness re-derives that before
+issuance-reducing entry of its own kind. A fold conserves both equations
+across the entries it replaces, and a witness re-derives that before
 co-signing; a fold that does not conserve is refused. A genesis allocation
-is a row of its own kind, so seeded value and earned value are always
+is an entry of its own kind, so seeded value and earned value are always
 separable: `supply()` includes genesis and `minted()` does not.
 
 ### Genesis
@@ -656,7 +674,7 @@ supply: the first μ is created by the first verified closure.
 ### Reading the economy
 
 ```sh
-mycelium-server --home DIR --console --reading economy   # the treasury: supply and its rows, per lane
+mycelium-server --home DIR --console --reading economy   # the treasury: supply and its entries, per lane
 mycelium-server --home DIR --console --reading acts      # pays by kind: word sections, sentence gluings,
                                                           #   attestations, demands closed by another mind
 mycelium-server --home DIR --console --wallet <voice>    # one party's wallet
@@ -710,7 +728,7 @@ src/
   physics/      metabolism: budgets, reserves, lane pressure
   server/       the hypha's cognition: books, listings, install, market
   snapshot.rs   the sealed door: a keyed carrier's entries, in key order, for the wire
-  transducer/   the algebra: Cl(n+1, 1)(ℚ), alphabet, elements, sentences,
+  transducer/   the algebra: Cl(p, q)(ℚ) (conformal case Cl(n+1, 1)), alphabet, elements, sentences,
                 perception of samples (family/), rule elements
   voice/        voice identity and signing
 algebra/        the exact algebra Cl(p, q)(ℚ) (workspace member crate)
@@ -783,7 +801,7 @@ every other.
 | `bind`, `peers`, `genesis` | the operator, before the first boot | Provisioning, read on the first boot. |
 | `mesh` | the node | The signed mesh record: bind, peers, genesis allocation, adopted origin, epoch. The node builds it from the provisioning files on the first boot. |
 | `corpora/*.manifest` | `--sign-corpus` | A signed task corpus the court registers. |
-| `ledger`, `line`, `eras`, `keeper/` | the node | The court's state: language, receipt chain, ledger eras, TUniversal keeper record. |
+| `ledger`, `line`, `eras`, `keeper/` | the node | The court's state: language, its own line of receipts, the folded eras of that line, TUniversal keeper record. |
 
 ### Bringing up a network
 
@@ -1039,7 +1057,7 @@ and the core clock, puts its transitions to the court's verifier, founds its
 domain, records its universe's origin, asks its endowment by a manifest,
 reads its universe back, and lists and answers its seats.
 [`sdk/examples/house.rs`](sdk/examples/house.rs) founds a domain on a hypha,
-signs the Concordance hash, reads the clock and runs the kernel profile of
+signs the Concordance clause by clause, reads the clock and runs the kernel profile of
 the conformance read:
 
 ```sh

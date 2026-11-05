@@ -68,8 +68,12 @@ to be comprehended, and external assets enter only over a bridge.
 
 ## 4. The first customer: ARC-AGI-2
 
-The Mycelium project is the first customer and the first operator. The
-sequence:
+The Mycelium project is the first customer and the first operator, and
+ARC-AGI-2 is the first posted corpus. It is a source of work, never the
+goal and never the criterion: the completion test is whether a mind can
+think about the perceptions a court adjudicates (MU-SENSING §0, ruled
+2026-11-04), and solved tasks and closures on the corpus are observations
+of where that stands. The sequence:
 
 1. A genesis allocation funds the project's customer voice and bonds the
    project's hyphae.
@@ -118,8 +122,8 @@ is how new minds enter without a token purchase.
   client, attestation, and the probe (`ACT_PROBE`);
 - the court organ that reconstructs and installs, and the syllabus by
   incidence (`ACT_SYLLABUS`);
-- the ARC corpus as a work source, and the client with a genome that
-  learns;
+- the ARC corpus as a work source (its closures observations, never the
+  criterion; MU-SENSING §0), and the client with a genome that learns;
 - genesis: the mesh's origin and the corpus manifests a genesis key signs
   (`mycelium-server --mint-genesis`, `src/bin/mycelium-server/genesis.rs`);
 - keys: a voice key minted on a client's first run, and a hypha key per

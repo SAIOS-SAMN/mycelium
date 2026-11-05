@@ -17,7 +17,7 @@ The hypha (the mycelium-server) is the court of many universes. A kernel is a pr
   - **To sign a clause, a kernel reconstructs its fixtures.** The kernel presents, signed under its key, its reconstruction of each of the clause's joint-read fixtures. The hypha reconstructs the same fixtures and admits the signature only where the kernel reached the same exact objects (MU-SCIENCE §5.0).
   - **A kernel that cannot read a clause is denied.** A kernel whose reconstructions do not reach the fixtures' objects is refused by name, naming the clause and the fixture (`NotSignatory`). That is a lack of the reading the clause requires, and a signature on its own never stands in for the reading.
   - **The rest stands:** signing is clause by clause (§11), the network clauses cannot be vetoed, and a changed clause is read as signed until the new version is read and signed.
-  *Status:* **Built** (v0.4.0, ROADMAP track 24 B2), for the clauses with joint-read fixtures: LAW-PASSAGE v2 (`FORMS-PASSAGE` v3, 2.11 of draft 5) and LAW-COORDINATE v1 (`FORMS-COORDINATE` v1, proposal 78.173). The passage is a network clause; the coordinate stands at kernel standing, signable and vetoable, until its fixtures are joint-read agreed and its clause is drafted. The hypha's clause register (`physics::laws::clauses`) names each clause by its law id and version and holds its fixtures as exact inputs, with the hypha's own reconstruction of each; the address is that content written out. `ACT_LAWS` mode 7 serves the register; on mode 8 a kernel presents, signed under its key, its reconstruction of each fixture of each clause it enables, or its veto. The hypha admits each clause only on the same exact objects, or refuses `NotSignatory` naming the clause and the fixture; a veto of a network clause is refused `NetworkVetoed`. The hash of this file's bytes (`CONCORDANCE_HASH`, computed by `build.rs`) and the whole-text signature are retired. Next: the signed clause set recorded per domain, and `NotSignatory` applied at the universal core tube (B3, B4).
+  *Status:* **Built** (v0.4.0, ROADMAP track 24 B2), the signing, for the clauses with joint-read fixtures: LAW-PASSAGE v2 (`FORMS-PASSAGE` v3, proposal 78.172's four fixtures) and LAW-COORDINATE v1 (`FORMS-COORDINATE` v2, proposal 78.173). The clause text of draft 5's 2.11 is not built into this agreement and is not in force (§12): it is held pending LAW-PASSAGE v3, netstratum's pole-swap proposal of 2026-11-05. The passage is a network clause; the coordinate stands at kernel standing, signable and vetoable, until its fixtures are joint-read agreed and its clause is drafted. The hypha's clause register (`physics::laws::clauses`) names each clause by its law id and version and holds its fixtures as exact inputs, with the hypha's own reconstruction of each; the address is that content written out. `ACT_LAWS` mode 7 serves the register; on mode 8 a kernel presents, signed under its key, its reconstruction of each fixture of each clause it enables, or its veto. The hypha admits each clause only on the same exact objects, or refuses `NotSignatory` naming the clause and the fixture; a veto of a network clause is refused `NetworkVetoed`. The hash of this file's bytes (`CONCORDANCE_HASH`, computed by `build.rs`) and the whole-text signature are retired. Next: the signed clause set recorded per domain, and `NotSignatory` applied at the universal core tube (B3, B4).
 - CLAUSE BY CLAUSE. A kernel signs a clause set: each clause of this
   agreement, by its content address and its reconstructed fixtures (§0
   SIGNING BY ADJUDICATED READING), never by a hash of its bytes, enabled or
@@ -155,6 +155,10 @@ Reading the map:
       exact core alone, never on the mind or the court; a kernel links it by
       path at a pinned commit, and its wire is the forms' arguments and
       results as decoded exact values (1.4) (A1).
+      *(Note, 2026-11-05: `Cl(n+1, 1)` here and in OBSERVER is not the only
+      algebra. The algebra is `Cl(p, q)`(ℚ) with its signature carried as
+      data, the conformal `Cl(n+1, 1)` being perception's case; that
+      amendment to this clause is in draft 5 (§12), not yet signed.)*
     - EACH UNIVERSE'S SHELL, its own: its constants, its matter, and its
       COMPOSITION of the forms (time stepping, ocean, bodies), plus any law
       it keeps for itself. It reaches the core only radially, through the
@@ -374,7 +378,7 @@ own physics (2.10), unseen by the hypha.
     the markets and from the ancients' own decisions (ruled 2026-10-08).
 5.2 EXOTICS are what a species finds rare from its locality and its ability to traverse space and time. They emerge; no list is declared.
 5.3 CONVERSION is reserve to reserve, through core tubes, and never mints value. Peoples and federations reach the network only by converting into an ancients' reserve.
-5.4 TOLLS. A tube's tariff charges per unit carried: on S, floor(rate_s x the mass carried); on H, floor(rate_h x the information carried); never on G or T. The charge is split at acceptance by the tariff's vector: each recipient other than the keeper receives the floor of its share, and the keeper the rest, exactly, per lane. Recipients are the keeper and its own domain's lines (for a core tube, both domains'). The parts are held for the challenge window the acceptance opens (4.5: closed at a sealed reach and return of every other keeper; amended 2026-10-31) and are released, or refunded, all together.
+5.4 TOLLS. A tube's tariff charges per unit carried: on S, floor(rate_s x the mass carried); on H, the exact degrees the motion traversed, per named plane (its generator), with no floor (ruled 2026-11-05; the text before it read "floor(rate_h x the information carried)"); never on G or T. Holonomy is never priced (ruled 2026-11-05). The charge is split at acceptance by the tariff's vector: each recipient other than the keeper receives the floor of its share, and the keeper the rest, exactly, per lane. Recipients are the keeper and its own domain's lines (for a core tube, both domains'). The parts are held for the challenge window the acceptance opens (4.5: closed at a sealed reach and return of every other keeper; amended 2026-10-31) and are released, or refunded, all together.
 5.5 PROOF OF USEFUL WORK. A passage delivered through the ancients' throats or along the progenitors' roads is a receipt on the keeper's lane. Tolls paid within a universe on any other network stay in that universe's own ledgers.
 5.6 A UNIVERSE'S VALUE to the network is a VECTOR, each channel in its own physical unit, with each reported both as the current rate and as the whole-history stock, per universe, per people and per throat face:
   passages      mass x proper distance delivered, and the count
@@ -401,14 +405,20 @@ No channel is converted into another by a declared rate; how the channels are pr
   1 unaware; 2 observed (unseen); 3 petitions: quarantine or ascend; 4 hears anastome; 5 rides the roads (under the keepers' tolls); 6 speaks anastome; 7 builds roads - only as a progenitor line, with the ancients as keepers.
 A lower species never needs to open a wormhole: stewards query a progenitor line, by resources, for the roads a realm needs.
 6.2a VIABILITY, the ladder's floor. A planetary mind proves it is viable by
-    closing tasks it did not set, judged from outside (1.9): families of
-    samples from any source, at any rank, read by a mind whose own world is
-    not flat; ARC-AGI-2 is the first posted corpus. A mind
+    thinking about the perceptions a court adjudicates, judged from outside
+    (1.9): "The test is whether a mind can think about the perception of
+    the senses that are adjudicated" ("MU-SENSING §0"). Its perceptions are
+    of families of samples from any source, at any rank, read by a mind
+    whose own world is not flat, on tasks it did not set; ARC-AGI-2 is the
+    first posted corpus. A mind
     that cannot is not yet viable; it grows, evolves and tries again. Minds in
     the games and minds linked to the hypha are the same kind of mind, measured
     the same way (ruled 2026-10-08). Curved holes
-    (5.7) remain the ancients' work. Corpus outcomes are observations, never
-    the goal; the test is MU-SENSING §0.
+    (5.7) remain the ancients' work. Corpus outcomes, solved tasks and
+    closures are observations, never the goal or the criterion.
+    *(Clause text changed 2026-11-05 to conform to the ruled completion
+    test of 2026-11-04; it read "proves it is viable by closing tasks it
+    did not set".)*
     ONLY THE UNIVERSAL CORE FACES THE HYPHA FOR ITS UNIVERSE (ruled
     2026-10-08; extended 2026-10-14 to EVERY SIGNATORY; amended 2026-10-14,
     MU-RECURSION 78.165; amended 2026-11-02, 78.169): a law the hypha
@@ -527,8 +537,11 @@ UNCHANGED, and why:
 
 ## 12. Proposed amendment (draft 5), 2026-11-05: LAW-PASSAGE v2
 
-**Proposed amendment (draft 5): not signed, not in force.** Mycelium
-proposes it under §0 AMENDING, for the maintainer's approval, from:
+**Proposed amendment (draft 5): not signed, not in force.** 2.11 is held
+pending LAW-PASSAGE v3, netstratum's pole-swap proposal of 2026-11-05;
+the hypha's register serves `FORMS-PASSAGE` v3 for signing (§0), which
+puts no clause text in force. Mycelium proposes it under §0 AMENDING, for
+the maintainer's approval, from:
 - the operators' rulings of 2026-11-05: the passage law, and the
   algebra's signature as data;
 - the joint read of proposal

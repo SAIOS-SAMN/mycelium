@@ -229,9 +229,13 @@ not set (Concordance 1.9), never its activity.
 
 ## Part III — Signing
 
-A mind signs this charter by presenting a signature over its version's
-hash when it opens a session, as a kernel signs the Concordance
-(**Specified**: the session does not yet carry it). A new version binds a
+A mind signs this charter when it opens a session, by its reading of the
+charter's version, never by a signature over a hash of its text: a hash
+proves no reading (MU-ANTI-FLATTENING 13), as a kernel signs the
+Concordance clause by clause by reconstructing each clause's fixtures
+(Concordance §0). How a mind shows its reading of an article is to be
+stated with the signing (**Specified**: the session does not yet carry
+it). A new version binds a
 mind when it signs that version. Until signing is built, these articles
 describe what the network as built already guarantees, each marked with
 its status.

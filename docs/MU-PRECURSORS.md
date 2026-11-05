@@ -44,7 +44,8 @@ Mycelium's current types, admission path and treasury.
 ### 0.1 The laws every component keeps
 
 1. **Exact arithmetic.** Values are exact integers or rationals of any
-   size, or exact multivectors of Cl(n+1,1)(ℚ). No floating point, in code
+   size, or exact multivectors of Cl(p,q)(ℚ), the signature carried as data
+   (perception's conformal case Cl(n+1,1)(ℚ)). No floating point, in code
    or in tests (`clippy::float_arithmetic` is denied crate-wide).
 2. **No scalar selection.** Nothing is chosen by a score, a minimum of a
    functional, or a magnitude. Where a rule needs an order, the rule names
@@ -424,7 +425,7 @@ not a fault campaign.
   split, rolling isolation, and an asymmetric partition.
 - **Exact invariants,** audited after every campaign:
   1. **Conservation by ledger audit:** every node's balances, bonds and
-     holds re-derive from its own ledger rows, and
+     holds re-derive from the ledger events it holds, and
      `supply = genesis + mint − burn = Σbalance + Σbond + Σheld` holds per
      lane (`Treasury::audit`).
   2. **Once per work across the mesh:** each work is paid once; a node
@@ -439,8 +440,8 @@ not a fault campaign.
   through the accused lets a lie cancel out of the check.
 - **Concurrent faults target separate nodes.** Faults in one campaign are
   scheduled on disjoint nodes, so no fault breaks another's precondition.
-- **Typed readings, never log text.** The auditor reads ledger rows and
-  receipts as decoded values through the treasury and the receipt chain.
+- **Typed readings, never log text.** The auditor reads ledger events and
+  receipts as decoded values through the treasury and the signers' lines.
 - **Soak to dry.** The campaign runner enumerates every (topology, fault
   subset) up to a size and reports a violation with its seed; each
   violation becomes a regression claim.
@@ -895,7 +896,8 @@ the crate's public API. This section is the design of it.
 P2: `sdk/tests/surface.rs` imports every surface item, one `use` per item,
 and `sdk/examples/client.rs` ran end to end on a local network from
 `scripts/quickstart` (the law register read at version 4, tasks solved and
-paid by bounty, others refused by name). P5: the statement
+paid by bounty, others refused by name: observations that the path runs
+end to end, never a criterion of what a mind completes, MU-SENSING §0). P5: the statement
 ([MU-CONFORMANCE](MU-CONFORMANCE.md)) is held in the repository and served
 by every hypha (`ACT_LAWS` mode 6); `sdk/tests/conformance.rs` claims that
 the client example and the reference mind conform in process and that a
@@ -918,7 +920,7 @@ and the kernel profile passed every MUST act against a local network.
 | **Golden-byte tests:** stored encodings compared byte for byte | Conformance is by decoded value (Concordance 1.4) | Decoded claims and round-trip identities |
 | **Enumeration sieves:** candidate positions, rules or parameters listed and filtered | Search over what the algebra can read directly | Hermite and Smith forms, reduction, measured holes |
 | **Quorum constants:** a fixed count of agreeing parties as a threshold | A constant where the law names a vantage | Two independent bonded vantages, by rule |
-| **Log scraping:** invariants read from text output | Text is not a typed value | Typed readings (`observe`), decoded ledger rows |
+| **Log scraping:** invariants read from text output | Text is not a typed value | Typed readings (`observe`), decoded ledger events |
 
 ---
 

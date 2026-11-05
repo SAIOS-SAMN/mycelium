@@ -18,7 +18,9 @@ excluded from the reasoning path.
    retained graded multivector manifold.
 3. Multi-dimensional perceptual axes (holonomy, harmonic spectrum, torsion,
    scale) exist as intrinsic grades or fibre coordinates on the
-   `Cl(n+1, 1)` blade (clause 7; `Cl(4,1)` at `n = 3`), not as standalone
+   `Cl(n+1, 1)` blade (clause 7; `Cl(4,1)` at `n = 3`; the conformal
+   algebra, perception's case of `Cl(p, q)` whose signature is carried as
+   data), not as standalone
    `*_cells` lookup tables.
 4. An operation that collapses manifold curvature into a flat 0-dimensional
    scalar or hash comparison, bypassing geometric deduction, is a structural

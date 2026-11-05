@@ -296,8 +296,10 @@ never the place two nodes meet.
 
 The mind's field is built of one exact mathematics, the same the hypha runs:
 
-- **The algebra.** `Cl(n+1,1)(ℚ)`, `n` read at intake (71, A.15), exact over
-  ℚ (law 1), carried sparse up to `MAX_N` (`algebra/src/multivector.rs`). A
+- **The algebra.** `Cl(p, q)(ℚ)`, the signature carried as data; the
+  field's perceptions live in its conformal case `Cl(n+1,1)(ℚ)`, `n` read
+  at intake (71, A.15), exact over ℚ (law 1), carried sparse up to `MAX_N`
+  (`algebra/src/multivector.rs`). A
   dimension is paid for by a closure (A.6) and read as the grade of a span
   (`core::span`, A18) or a bracket-closed basis (`cech::lie_close`, 78.11).
 - **The register — the star.** The axioms the physics states, each with its

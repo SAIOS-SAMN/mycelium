@@ -81,8 +81,9 @@ those physics agree, where they diverge, and what each has proven.
   never by issuance.
 
 **P4 — Exactness.**
-- Every admitted object is exact: ℚ, the multivectors of `Cl(n+1, 1)`(ℚ)
-  with `n` read from the data (`Cl(4,1)` at `n = 3`), or a
+- Every admitted object is exact: ℚ, the multivectors of `Cl(p, q)`(ℚ)
+  with the signature carried as data (perception's case the conformal
+  `Cl(n+1, 1)`, `n` read from the data, `Cl(4,1)` at `n = 3`), or a
   finite discrete structure with a canonical encoding.
 - Floating-point results are data a kernel may hold and commit. They are
   never admitted as verified knowledge unless restated exactly.
@@ -138,7 +139,9 @@ This section restates, for science kernels, the physics the Concordance
 already rules (Concordance 1.14, 2.2 and 2.10):
 - **The innermost shell** is Mycelium's: the universal law forms, in the
   `forms` crate, over a universe's constants and exact in `Cl(n+1, 1)`(ℚ), with
-  L0's register and verifier at its core. A form fixes no constant.
+  L0's register and verifier at its core (draft 5 amends this to
+  `Cl(p, q)`(ℚ), the signature as data, the conformal case for a
+  perception; Concordance §12). A form fixes no constant.
 - **Each universe's shell** is its own: its constants, its matter, its
   composition of the forms, and any law it keeps for itself. It reaches the
   core only through the seam and narrows, never widens (MU-RECURSION
@@ -158,7 +161,7 @@ shell.
 | **The Concordance** | The agreement every kernel signs: units, topology, the economy between universes, breaches and convergence, conduct | `docs/MU-CONCORDANCE.md` |
 | **The alphabet** | Seventeen seed letters, exact rotations, which never change; letters for further primes are added only by court rulings (MU-ALPHABET §6) | `docs/MU-ALPHABET.md`, `src/transducer/alphabet/` |
 | **Anastome** | The wire: signed speech acts whose payloads are exact geometric objects, each with one canonical encoding | `src/anastome/` |
-| **Exact arithmetic** | ℚ and `Cl(n+1, 1)`(ℚ), `n` read from the data (`Cl(4,1)` at `n = 3`); no floating point in anything admitted | Throughout |
+| **Exact arithmetic** | ℚ and `Cl(p, q)`(ℚ), the signature carried as data, with perception's conformal case `Cl(n+1, 1)`(ℚ), `n` read from the data (`Cl(4,1)` at `n = 3`); no floating point in anything admitted | Throughout |
 | **The proofs of work** | POUW, POWC, POWR, the POWV share, and the settlement of each | `docs/MU-ECONOMY.md` |
 
 A kernel cannot amend the universal library unilaterally. It changes only
@@ -464,7 +467,7 @@ basis of cross-universe convergence (§7).
 ## 6. The proofs of work for knowledge
 
 Every verified claim is paid through the POW++ arm that best represents
-the work. The arms and the ledger rows of each are those of MU-ECONOMY §0.
+the work. The arms and the settlement events of each are those of MU-ECONOMY §0.
 
 ### 6.1 POUW — useful work: knowledge added
 
@@ -485,8 +488,9 @@ measure.
 
 ### 6.2 POWC — convergence: agreement across perspectives and universes
 
-**The act.** Two independent constructions reach one conclusion. There
-are three forms:
+**The act.** Two independent constructions reach one conclusion. As
+widened on 2026-11-05, two lineages that share a cause but disagree before
+they meet count as convergence too (MU-ECONOMY §0). There are three forms:
 
 - **Within a universe:** two different proofs or derivations (different
   vertices) of the same statement, as MU-CLIENT §5.5 defines convergence
