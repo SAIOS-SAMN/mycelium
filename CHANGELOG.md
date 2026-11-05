@@ -42,6 +42,13 @@ such change is named here.
   reconstruct; the `ACT_UPLINK` and `ACT_DOMAIN` judges call them. The
   answers are unchanged. Claim `vertex_admits_only_a_reconstructed_fold`
   (`compile_fail`), registered in the drift register.
+- **Stratum roots compared as locators.** The court's confirmation of a
+  peer's ruled digest (`confirm_peer_holds_on`) compares the stratum root
+  it recomputes from its members, and the root it recorded for a heard
+  word, with the peer's by `Locator::locates` (`locates_stratum`). A mind's
+  rest on a stratum fetched for nothing (`CourtPace::starved`) holds the
+  court's root as a `Locator`. A root that is not 32 bytes locates
+  nothing, where before two such byte strings compared equal.
 
 ### A fold root's signatures cover its place and height (track 24, #91)
 - **Network contract**, inside v0.4.0's break:

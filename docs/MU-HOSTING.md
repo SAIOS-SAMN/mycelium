@@ -1022,7 +1022,7 @@ proposed with the boundary reading (B4).
 | Item | Status | Where |
 |---|---|---|
 | Receipt chain links compared by digest, each record reconstructed (`rederives`) | **Built** | `src/chronometry/chain/mod.rs` |
-| A domain's stratum root recomputed from its members before comparison | **Built** | `src/server/cognition/court/glue.rs` |
+| A domain's stratum root recomputed from its members before comparison, and compared in the address sense (`Locator::locates`, `locates_stratum`); a mind's rest on a stratum fetched for nothing held at the court's root as a `Locator` (`CourtPace::starved`) | **Built** | `src/server/cognition/court/glue.rs`, `src/client/sdk/mind/learn.rs` |
 | A back-filled receipt, admitted by its chain's links, read by no reader (depth, alias, ruling replay, fold shed, founding, equivocation burn, restore) until a frame its signer signed at or above it is admitted (§5a.9, #73) | **Built** | `src/server/cognition/reach.rs` |
 | The Concordance text's digest served and signatures verified over it | **Built** | `build.rs`, `ACT_LAWS` modes 6–8 |
 | Digests typed by sense (`Locator`, `Predecessor`, `Commitment`), with no bare equality, at the admission sites converted first: the receipt line's checks, the signed prefix's claim, the equivocation proof, the signed-reach gate, the ledger's `holds`, `height_of` and era walk, the back-fill chase, a folded citation's recall, and the endowment's manifests | **Built** | `src/court/admission/digest.rs`; track 25, X0 |

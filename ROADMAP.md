@@ -1391,10 +1391,14 @@ Each phase lands on its own branch, one item per commit:
      `Court::hear_uplink` and `Court::hear_domain` reconstruct the act as
      heard. Claim: `vertex_admits_only_a_reconstructed_fold`
      (`compile_fail`), in the drift register.
+   - **Built**, second stage: the stratum root in `court/glue.rs`
+     (`locates_stratum`) and the starved root in
+     `client/sdk/mind/learn.rs` (`CourtPace::starved` holds a `Locator`)
+     are compared in the address sense.
    - Open (the next stage): `Cite::Root`'s hash, still bare, which would
-     drop `PartialEq` from `Cite`; the X4 sites not yet typed
-     (`court/glue.rs` stratum root, `client/sdk/mind/learn.rs` starved
-     root). The report of changed document sentences that put a typed
+     drop `PartialEq` from `Cite`; the stratum root itself
+     (`transducer::sheaf::StratumDigest::root`, a `Vec<u8>`) typed at its
+     source. The report of changed document sentences that put a typed
      term beside an admission verb is not built: it needs a base commit
      the gate does not hold.
 2. **X1, the crossing record.** `Crossing { place, content, holonomy,
