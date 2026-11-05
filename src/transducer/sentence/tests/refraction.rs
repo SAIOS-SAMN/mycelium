@@ -85,7 +85,7 @@ fn refract_reconstructs_as_three_moves() {
                 }
             }
             (Vertex::Frame, Vertex::Frame) => {}
-            _ => panic!("replayed vertices differ"),
+            _ => panic!("reconstructed vertices differ"),
         }
     }
 }

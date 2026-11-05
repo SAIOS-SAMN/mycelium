@@ -36,7 +36,7 @@ fn large() -> Task {
 fn task_by_citation_round_trips_with_envelope() {
     let voice = [4u8; 32];
     let mut reg = TaskRegistry::new();
-    let cite = reg.register(toy()).expect("a grid pair's chain is A5's");
+    let cite = reg.register(toy()).expect("a sample pair's chain is A5's");
     assert_eq!(cite, citation(&task_address(&toy()).expect("addressed")), "the book's id is the citation");
     assert!(reg.section(&cite).is_some_and(|t| t.is_ok_and(|t| t.train == toy().train && t.test == toy().test)), "the citation resolves to the task");
     assert!(reg.task(&[9u8; 32]).is_none(), "an unknown citation names nothing");

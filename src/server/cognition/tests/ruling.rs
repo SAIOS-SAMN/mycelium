@@ -230,7 +230,7 @@ fn resolve_form_agrees_with_by_address_on_cavity_word() {
     assert!(k.by_address(addr.as_bytes()).is_none(), "and the speech reads it the same");
     k.relocate_standing(addr.as_bytes());
     assert!(k.cavity_book.contains(addr.as_bytes()), "relocated onto the cavity");
-    let resolved = k.resolve_form(addr.as_bytes()).expect("a cavity address resolves for replay");
+    let resolved = k.resolve_form(addr.as_bytes()).expect("a cavity address resolves for reconstruction");
     let (_, spoken) = k.by_address(addr.as_bytes()).expect("and the speech's crystal holds it");
     assert_eq!(
         crate::transducer::sentence::form_vertex_key(&spoken),

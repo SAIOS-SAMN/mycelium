@@ -28,7 +28,7 @@ fn on_zero<T>(f: impl FnOnce() -> T) -> T {
 fn digits(rows: &[&str]) -> SectionSample {
     // A byte below '0' is not a hue; the row is the fixture and says so.
     let lines: Vec<Vec<u8>> = rows.iter()
-        .map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect())
+        .map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a sample row is digits")).collect())
         .collect();
     SectionSample::of_lines(&lines).expect("the fixture's lines are a sample")
 }
@@ -142,15 +142,15 @@ fn extract_rule_joins_three_squares_in_one_vertex() {
     assert_eq!(
         acts.scoped().map(|(_, a)| atlas.fibre(&a.chart).len()).sum::<usize>(),
         3,
-        "on the test grid the charts this vertex acts on hold three bodies between them"
+        "on the test sample the charts this vertex acts on hold three bodies between them"
     );
-    let (spoken, grid) = on_zero(|| {
+    let (spoken, sample) = on_zero(|| {
         let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("spoken");
-        let grid = spoken.sample();
-        (spoken, grid)
+        let sample = spoken.sample();
+        (spoken, sample)
     });
     assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
-    assert_eq!(grid, Some(train_out));
+    assert_eq!(sample, Some(train_out));
     let _ = mint_sentence(&rule, &family, &NoCrystal, 0);
 }
 
@@ -204,7 +204,7 @@ fn perceive_speech_refuses_unframed_chain() {
     );
     let ok = moved(&[(1, 2), (2, 1)], [1, 1, 0, 0]);
     let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&ok));
-    assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "a replay-clean word stands");
+    assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "a reconstruction-clean word stands");
 }
 
 /// A single recolour is a one-morphism sentence: one word vertex carrying the gauge, and the form closed.
@@ -253,7 +253,7 @@ fn snapshot_writes_myt3_and_refuses_older_layouts() {
         let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("a recolour extracts");
         let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence");
         let task = mycelium::registry::task_address(&mycelium::transducer::family::Task { train: family.clone(), test: Vec::new() })
-            .expect("a grid pair's chain is A5's, so the task has an identity");
+            .expect("a sample pair's chain is A5's, so the task has an identity");
         k.bind_task_family(&task, family.clone());
         k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken))
     });

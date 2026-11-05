@@ -7,7 +7,7 @@ use crate::cognition::*;
 use crate::transducer::family::{extract_rule, mint_sentence, NoCrystal};
 
 fn digits(rows: &[&str]) -> crate::transducer::family::SectionSample {
-    rows.iter().map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a grid row is digits")).collect()).collect()
+    rows.iter().map(|r| r.bytes().map(|b| b.checked_sub(b'0').expect("a sample row is digits")).collect()).collect()
 }
 
 /// D3 — THE HELD SENTENCES DECOMPOSED FORWARD. A court that holds a sentence

@@ -55,6 +55,73 @@ such change is named here.
 - **Next:** the signed clause set recorded per domain, and `NotSignatory`
   applied at the universal core tube (B3, B4).
 
+### "Grid" (cognition) renamed to "sample" — names and strings left by the prose cleanup (#103)
+- Names only, no behaviour change. The cognition-sense `grid`/`grids`
+  parameters and locals are `sample`/`samples`
+  (`transducer::family::perceive`, `transducer::family::deflation`),
+  matching the sensor's own `Sample`/`SectionSample` vocabulary (already
+  landed for `Speech::grid` → `Speech::sample`, above). The matching test
+  `expect` strings are reworded (`server/tests/route.rs`,
+  `server/cognition/tests/{mint,composed,carriers}.rs`,
+  `anastome/dialogue/tests/task.rs`), as are the `#[expect]` reasons
+  (`transducer/family/{contact,finish}.rs`) and the local in
+  `physics/axioms/tests/frame.rs`.
+
+### "Replay" (verification) renamed to "reconstruct" — names and strings left by the prose cleanup (#103)
+- **Network contract**, inside v0.4.0's break: the wire-visible refusal
+  text changes, the refusal names and codes do not. `REFUSE_PIVOT_INEXACT`
+  is "pivot certificate does not reconstruct" (was "...does not
+  replay"); `REFUSE_UNREAD` is "the reconstruction holds a unit no
+  stroke can read" (was "the replay holds..."); the server's two
+  `SolveRefusal` reasons for `SolveVerdict::Unread` and
+  `SolveVerdict::Unverifiable` reword "replay" to "reconstruction"/
+  "reconstruct" (`bin/mycelium-server/control.rs`). A client that
+  matches refusal text (rather than the refusal name or verdict code)
+  updates the strings it matches.
+- **Kept:** `ReceiptsRequest.replay` (`anastome::dialogue::receipts`) is
+  the era-history sense (78.147: re-apply recorded receipts in order to
+  read history) and is correctly named; this rename does not touch it.
+- Names only, no behaviour change otherwise: the observed reading
+  `glue_replay_refused` is `glue_reconstruction_refused`
+  (`observe::REPLICATION_AXES`).
+
+### The rest of "replay" (verification), and `tests/word_lifecycle.rs`'s "grid": names and strings left by the prose cleanup (#103)
+- Names only, no behaviour change. Rounds out the two renames above with
+  the instances a first pass missed: the test `assert`/`expect`/`panic`
+  strings using "replay" in the verification sense across some twenty
+  test files (`server/cognition/tests/{mint,ruling,relator}.rs`,
+  `client/sdk/tests/rule.rs`, `bin/mycelium-server/judge/tests/offer.rs`,
+  `transducer/alphabet/tests/rotor_key.rs`,
+  `transducer/family/tests/speech.rs`,
+  `transducer/field/tests/contemplation.rs`,
+  `transducer/sentence/{tests/properties,tests/refraction,
+  tests/rotor_class,form/tests/complex,pivot/tests/orbit}.rs`,
+  `transducer/tests/factor.rs`, `tests/word_lifecycle.rs`), each reworded
+  to "reconstruct"/"reconstruction" to match the reconstruction calls
+  and doc comments they sit beside.
+- The same class as `glue_replay_refused` above, caught on a second
+  re-grep: the observed reading `glue_unread`'s description
+  (`observe::REPLICATION_AXES`), the SDK example's `SOLVE_UNREAD` label
+  (`sdk/examples/client.rs`), a stale trace label on the step that calls
+  `docket_reconstruction` (`"court stroke: docket replay"` →
+  `"court stroke: docket reconstruction"`,
+  `server/cognition/court/reconstruct.rs`), and a census carrier name
+  that lagged its own local, already named `reconstruction_memo`
+  (`"replay_memo"` → `"reconstruction_memo"`, `server/cognition/
+  carriers.rs`).
+- `tests/word_lifecycle.rs` also carries the cognition-sense "grid":
+  an `expect` string, an `assert_eq!` string, and the local bound to
+  `spoken.sample()`, reworded to `sample` alongside the file's own
+  `grid`-pair-chain `expect` string, the same pattern fixed in the
+  "grid" entry above.
+- **Left as comments, not names or strings** (a separate, later PR):
+  roughly a dozen remaining `///`/`//` comments still read "replay" in
+  the verification sense (`court/verdict/reconstruct.rs`,
+  `bin/mycelium-soak/delta.rs`, `economy/tests/ledger.rs`,
+  `transducer/mind.rs`, `sources/arc-agi/tests/rule_language.rs`,
+  `tests/word_lifecycle.rs`'s two remaining comments, among others);
+  these are prose, not the names or strings this issue covers.
+
 ### `forms::coordinate` holds LAW-COORDINATE v1, the coordinate a kernel addresses its bodies by (proposal 78.173; track 24 B3)
 - **Network contract:** no wire byte, act, ledger layout or reading
   changes. A new shell, `FORMS-COORDINATE` v1, joins `forms::LAW_IDS`

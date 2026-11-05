@@ -404,7 +404,7 @@ assert_eq!(
 assert_eq!(
     crate::verdict::reconstruct_blind(&minted, &mut super::fixtures::budget()),
     None,
-    "the court replays the minted form from its tape"
+    "the court reconstructs the minted form from its tape"
 );
 // The hypha reads the form back from the tape and measures the same
 // deflation the voice measured.

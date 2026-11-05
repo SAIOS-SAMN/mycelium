@@ -28,7 +28,7 @@ fn witness_vantage_reaches_offered_form_each_ask() {
         let dialogue::Witnessed::Reached { vk, form } =
             h.run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, witness, budget))
         else {
-            panic!("a replay that stood is a vantage");
+            panic!("a reconstruction that stood is a vantage");
         };
         assert_eq!(vk, witness);
         let mut p = 0usize;
@@ -50,7 +50,7 @@ fn witness_vantage_refuses_false_form_each_ask() {
     let w = false_word();
     let first = crate::court_lock::held!(court).expect("the court").run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, witness, budget));
     let dialogue::Witnessed::Refused { vk, why } = first else {
-        panic!("a replay that refused is a refusal");
+        panic!("a reconstruction that refused is a refusal");
     };
     assert_eq!(vk, witness);
     assert!(!why.is_empty(), "the refusal is named");
@@ -60,6 +60,6 @@ fn witness_vantage_refuses_false_form_each_ask() {
     let again = crate::court_lock::held!(court).expect("the court").run(|k, budget| witness_vantage(k, &mut cover, w, home, witness, budget));
     assert!(
         matches!(again, dialogue::Witnessed::Refused { .. }),
-        "heard is not a verdict: the second offer is replayed and refused again"
+        "heard is not a verdict: the second offer is reconstructed and refused again"
     );
 }
