@@ -28,10 +28,19 @@
 use mycelium::transducer::sentence::{form_vertex_key, from_address, Form};
 
 /// The corpus this build reads (`mycelium_source_arc_agi::corpus`). A tree
-/// without it skips rather than passing: an assertion over no data is not a
-/// reading (rule 11).
+/// without it refuses rather than passing: an assertion over no data is not
+/// a reading (rule 11).
 fn corpus() -> String {
     mycelium_source_arc_agi::corpus("training")
+}
+
+/// The corpus directory, or a refusal naming where the corpus is looked
+/// for: a test that finds no corpus fails, never passes having read nothing.
+fn corpus_dir(corpus: &str) -> std::fs::ReadDir {
+    match std::fs::read_dir(corpus) {
+        Ok(dir) => dir,
+        Err(e) => panic!("{corpus} does not read ({e}): no corpus, no reading; set MYCELIUM_CORPUS to the ARC-AGI-2 data directory or place it at data/arc-agi-2"),
+    }
 }
 
 /// How many tasks to extract. The property is per-form and the count is
@@ -135,10 +144,7 @@ fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
 #[test]
 fn from_address_retracts_every_corpus_form() {
     let corpus = corpus();
-    let Ok(dir) = std::fs::read_dir(&corpus) else {
-        eprintln!("  retract: {corpus} does not read — no corpus, no reading");
-        return;
-    };
+    let dir = corpus_dir(&corpus);
     let mut names: Vec<String> = dir
         .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
         .filter(|n| n.ends_with(".json"))
@@ -231,10 +237,7 @@ fn from_address_retracts_every_corpus_form() {
 #[test]
 fn from_address_agrees_on_every_court_reading() {
     let corpus = corpus();
-    let Ok(dir) = std::fs::read_dir(&corpus) else {
-        eprintln!("  predicate guard: {corpus} does not read");
-        return;
-    };
+    let dir = corpus_dir(&corpus);
     let mut names: Vec<String> = dir
         .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
         .filter(|n| n.ends_with(".json"))
@@ -354,8 +357,8 @@ fn form_vertex_key_keeps_carrier_invariants() {
 
     let mut forms: Vec<Form> = Vec::new();
     let corpus = corpus();
-    if let Ok(dir) = std::fs::read_dir(&corpus) {
-        let mut names: Vec<String> = dir
+    {
+        let mut names: Vec<String> = corpus_dir(&corpus)
             .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
             .filter(|n| n.ends_with(".json"))
             .collect();
