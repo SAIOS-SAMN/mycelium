@@ -144,6 +144,27 @@ impl SectionSite {
         Some((corner, extents))
     }
 
+    /// WRITE THE SITE: each coordinate along the plane, in the plane's
+    /// order, eight bytes little-endian; the bytes a planar pair `(a, b)`
+    /// was written in.
+    pub fn put_canonical(&self, buf: &mut Vec<u8>) {
+        for x in self.0 {
+            buf.extend_from_slice(&x.to_le_bytes());
+        }
+    }
+
+    /// READ A SITE [`put_canonical`](Self::put_canonical) wrote at `*p`,
+    /// advancing `*p`; `None` where the bytes end first.
+    pub fn take_canonical(b: &[u8], p: &mut usize) -> Option<SectionSite> {
+        let mut out = [0i64; ALPHABET_SAMPLE_RANK];
+        for slot in out.iter_mut() {
+            let end = p.checked_add(std::mem::size_of::<i64>())?;
+            *slot = i64::from_le_bytes(b.get(*p..end)?.try_into().ok()?);
+            *p = end;
+        }
+        Some(SectionSite(out))
+    }
+
     /// THE SITE ON THE FAMILY'S BASE (MU-SENSING §4): the plane's
     /// coordinates on the family site's plane and the sample's place in its
     /// family on the place axis, under the default perspective of a site of
@@ -310,7 +331,7 @@ impl SectionSample {
     /// THE OFFSET OF A SITE OF THE SECTION in canonical address order, or
     /// `None` where a coordinate leaves its axis: each coordinate of the
     /// plane is written onto the sample axis the plane reads it on.
-    fn offset_of(&self, site: SectionSite) -> Option<usize> {
+    pub(crate) fn offset_of(&self, site: SectionSite) -> Option<usize> {
         let mut canonical = [0i64; ALPHABET_SAMPLE_RANK];
         for (&axis, &c) in self.plane.iter().zip(&site.0) {
             *canonical.get_mut(axis)? = c;

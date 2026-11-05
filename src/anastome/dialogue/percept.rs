@@ -77,7 +77,7 @@ pub const POSTED_TASK: &str = "task";
 /// this writer takes a raster task and places each raster at its position.
 /// `None` where a raster is no sample or a count passes its field.
 pub fn encode_posted_task(task: &crate::transducer::family::Task) -> Option<Vec<u8>> {
-    encode_posted_samples(&PostedTask::of_rasters(task).ok()?).ok()
+    encode_posted_samples(&PostedTask::of_section(task).ok()?).ok()
 }
 
 /// A posted task read back on the alphabet's section (`PostedTask::section`):

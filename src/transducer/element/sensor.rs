@@ -50,6 +50,15 @@ impl From<(i64, i64, i64, u8)> for crate::transducer::blade::Compartment {
     }
 }
 
+/// A PAINTED SITE OF THE SECTION AS A COMPARTMENT of the family's base, in
+/// the frame its scene stands in (the place `0`), read at the sensor.
+impl From<crate::transducer::spelled::PaintedSite> for crate::transducer::blade::Compartment {
+    fn from(p: crate::transducer::spelled::PaintedSite) -> Self {
+        let [r, c] = p.site.coordinates();
+        crate::transducer::blade::Compartment { site: Site::of([r, c, 0]), hue: p.symbol }
+    }
+}
+
 /// The site whose compartment holds a rational point of the base — exact
 /// containment (the floor of a rational is an exact integer, not a
 /// rounding) on every axis. `None` where a coordinate does not fit the base
@@ -220,7 +229,7 @@ pub fn carry_compartment(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64,
 /// on no site. Exact at every scale (a dilated sibling's block, a shrunken
 /// sibling's shared site); None when a base site lands outside the sibling.
 pub fn pullback(
-    base: &[(i64, i64)],
+    base: &[crate::transducer::spelled::SectionSite],
     sibling: &[crate::transducer::sentence::SectionLink],
     v: &Versor,
 ) -> Option<Vec<(u8, u8)>> {
@@ -230,7 +239,8 @@ pub fn pullback(
     let mut sorted: Vec<crate::transducer::sentence::SectionLink> = sibling.to_vec();
     sorted.sort_unstable();
     base.iter()
-        .map(|&(r, c)| {
+        .map(|s| {
+            let [r, c] = s.coordinates();
             let (sr, sc, sk) = site_of(&carry_centre(&inv, r, c, 0)?)?;
             if sk != 0 {
                 return None;

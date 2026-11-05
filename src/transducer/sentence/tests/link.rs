@@ -92,8 +92,9 @@ fn bodies_connect_by_shared_cell_of_grade_n_minus_one() {
         assert_eq!(by_grade(n).len(), surrounding(n).len(), "one set, two orders");
     }
     // At rank 2 the planar reading is the face incidence: an L of three.
-    assert_eq!(incidence_of(&[(0, 0), (0, 1), (1, 0)]), vec![(0, 1), (0, 2)]);
-    assert_eq!(incidence_of(&[(0, 0), (1, 1)]), Vec::<(usize, usize)>::new(), "a corner joins nothing");
+    let on = crate::transducer::spelled::SectionSite::on_plane;
+    assert_eq!(incidence_of(&[on([0, 0]), on([0, 1]), on([1, 0])]), vec![(0, 1), (0, 2)]);
+    assert_eq!(incidence_of(&[on([0, 0]), on([1, 1])]), Vec::<(usize, usize)>::new(), "a corner joins nothing");
 }
 
 /// A LINK OF THE SECTION IS A SITE OF THE SECTION AND ITS TRANSITION

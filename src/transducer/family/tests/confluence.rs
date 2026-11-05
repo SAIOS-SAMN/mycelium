@@ -6,14 +6,15 @@
 use super::fixtures::grid;
 use crate::transducer::family::confluence::{read_pair, Reproduces};
 use crate::transducer::sentence::tests::fixtures::link;
+use crate::transducer::spelled::SectionSite;
 
 fn budget() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(1 << 16)
 }
 
 /// The 441 sites of a 21×21 body carried `rows` down.
-fn block(rows: i64) -> Vec<(i64, i64)> {
-    (0..21).flat_map(|r| (0..21).map(move |c| (r + rows, c))).collect()
+fn block(rows: i64) -> Vec<SectionSite> {
+    (0..21).flat_map(|r| (0..21).map(move |c| SectionSite::on_plane([r + rows, c]))).collect()
 }
 
 /// The translation one row down.
@@ -50,7 +51,8 @@ fn confluence_reads_unread_on_spent_token() {
 #[test]
 fn confluence_off_lattice_image_reads_no() {
     use crate::transducer::family::confluence::{carried_onto, gathered};
-    let (inputs, output) = (vec![(0, 0), (0, 3)], vec![(0, 1), (0, 2)]);
+    let on = SectionSite::on_plane;
+    let (inputs, output) = (vec![on([0, 0]), on([0, 3])], vec![on([0, 1]), on([0, 2])]);
     let ((c_in, _), (c_out, _)) = (gathered(&inputs), gathered(&output));
     let v = c_out.geo(&c_in);
     assert!(crate::transducer::cga::is_versor(&v), "two concentric spheres compose a dilation");

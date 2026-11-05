@@ -1013,16 +1013,16 @@ pub fn measure_lanes(chain: &[crate::transducer::sentence::SectionLink]) -> [u64
     let mut spatial = 0u64;
     let mut gauge = 0u64;
     let ground = crate::transducer::raster::ground();
-    let mut before_pos: Vec<(i64, i64)> = Vec::new();
-    let mut after_pos: Vec<(i64, i64)> = Vec::new();
+    let mut before_pos: Vec<crate::transducer::spelled::SectionSite> = Vec::new();
+    let mut after_pos: Vec<crate::transducer::spelled::SectionSite> = Vec::new();
     for l in chain {
-        let ([r, c], (b, a)) = (l.site.coordinates(), l.transition());
+        let (b, a) = l.transition();
         let (painted_b, painted_a) = (!ground.holds(&b), !ground.holds(&a));
         if painted_b {
-            before_pos.push((r, c));
+            before_pos.push(l.site);
         }
         if painted_a {
-            after_pos.push((r, c));
+            after_pos.push(l.site);
         }
         match (painted_b, painted_a) {
             (true, true) if b != a => gauge += 1,
@@ -1051,7 +1051,7 @@ pub fn measure_lanes(chain: &[crate::transducer::sentence::SectionLink]) -> [u64
 /// one spatial count, none is gauge, and the shell lane is the difference
 /// of the two supports' topology. Equal to `measure_lanes` over those links
 /// on any scope with one ground, and readable where the scope has none.
-pub fn measure_supports(vanished: &[(i64, i64)], appeared: &[(i64, i64)]) -> [u64; 4] {
+pub fn measure_supports(vanished: &[crate::transducer::spelled::SectionSite], appeared: &[crate::transducer::spelled::SectionSite]) -> [u64; 4] {
     let mut spatial = 0u64;
     for _ in vanished.iter().chain(appeared) {
         spatial += 1;

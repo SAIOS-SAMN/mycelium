@@ -42,8 +42,8 @@ fn scene() -> (crate::transducer::family::SectionSample, crate::transducer::fami
     (vec![vec![0, 0, 0], vec![1, 1, 0], vec![0, 0, 0]].into(), vec![vec![0, 0, 0], vec![0, 1, 1], vec![0, 0, 0]].into())
 }
 
-fn envelope(id: [u8; 32]) -> crate::anastome::dialogue::TaskRasters {
-    crate::anastome::dialogue::TaskRasters { id, train: vec![scene()], tests: Vec::new() }
+fn envelope(id: [u8; 32]) -> crate::anastome::dialogue::TaskSection {
+    crate::anastome::dialogue::TaskSection { id, train: vec![scene()], tests: Vec::new() }
 }
 
 /// A SCENE WAITING ON COMPREHENSION STANDS WITH ITS THOUGHTS. With no thought

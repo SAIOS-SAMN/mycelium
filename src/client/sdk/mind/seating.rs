@@ -23,7 +23,7 @@
 
 use crate::anastome::dialogue::seat::{MailRead, Refusal, SignedPost};
 use crate::client::sdk::seat::{seat_fns, MindMail, MindRead, SeatHold, SeatName};
-use crate::client::sdk::seat_mind::task::{decline_args, grid_steps, solve_args, tasks_before, FN_DECLINE, FN_SOLVE};
+use crate::client::sdk::seat_mind::task::{decline_args, symmetry_steps, solve_args, tasks_before, FN_DECLINE, FN_SOLVE};
 use crate::client::sdk::seat_mind::Decision;
 use crate::client::sdk::*;
 
@@ -737,7 +737,7 @@ impl Mind {
             (lines, width)
         };
         let steps = match train.as_slice() {
-            [(a, b), ..] => match grid_steps(&crossed, shapes(a), shapes(b)) {
+            [(a, b), ..] => match symmetry_steps(&crossed, shapes(a), shapes(b)) {
                 Ok(s) => s,
                 Err(_) => Vec::new(),
             },

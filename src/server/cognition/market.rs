@@ -398,8 +398,8 @@ impl Court {
     pub fn deposit_evidence(
         &mut self,
         address: Address,
-        fp: Vec<(i64, i64)>,
-        scene: Vec<(i64, i64, u8)>,
+        fp: Vec<crate::transducer::spelled::SectionSite>,
+        scene: Vec<crate::transducer::spelled::PaintedSite>,
     ) -> bool {
         if fp.is_empty() {
             return false;

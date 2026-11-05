@@ -523,8 +523,10 @@ built with its codec, its reconstruction and its claims.
 
 **The current vocabulary** (`src/transducer/sentence/form/clause.rs`):
 predicates `Pred::{All, Hue, Chart, Cmp, Rank, Touches, Not, And, Any}`
-over coordinates `Coord::{Shell, Height, Width, Top, Left, Bottom, Right,
-Hues, Contacts, Enclosed, Tally, Peers, Radius, Lane}`, with ties named by
+over coordinates `Coord::{Cells, Extent(PlaneAxis), Least(PlaneAxis),
+Greatest(PlaneAxis), Hues, Contacts, Enclosed, Tally, Peers, Radius,
+Lane}` (each coordinate along the plane named by the perspective's plane
+axis it is read along, ROADMAP track 26 S4d), with ties named by
 `Tie::{Hold, Refuse, Then}`; acts `Act::{Recolour, Carry, Fill, Extend,
 Copy, Crop, Scale, Parts, Connect, Echo, Panes, Tile, Bend, Slide,
 Repaint}`; hues `Paint::{Own, Hue, Of}`. The gaps below are read against

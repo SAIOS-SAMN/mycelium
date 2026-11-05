@@ -3,10 +3,17 @@
 // refuses the whole set when spent.
 
 use crate::transducer::anchor::*;
+use crate::transducer::sentence::tests::fixtures::sites;
+use crate::transducer::spelled::{PaintedSite, SectionSite};
 
 /// A scene of four hues in four 2×2 blocks, each block its own component.
-fn quilt() -> Vec<(i64, i64, u8)> {
-    (0..4).flat_map(|r| (0..4).map(move |c| (r, c, u8::try_from(1 + 2 * (r / 2) + c / 2).expect("a hue")))).collect()
+fn quilt() -> Vec<PaintedSite> {
+    (0..4).flat_map(|r| (0..4).map(move |c| PaintedSite::on_plane([r, c], u8::try_from(1 + 2 * (r / 2) + c / 2).expect("a hue")))).collect()
+}
+
+/// The site at the origin of the plane.
+fn origin() -> SectionSite {
+    SectionSite::on_plane([0, 0])
 }
 
 fn stroke(n: usize) -> crate::physics::Budget {
@@ -19,14 +26,14 @@ fn stroke(n: usize) -> crate::physics::Budget {
 #[test]
 fn carrying_set_count_equals_closure() {
     let scene = quilt();
-    let fp = vec![(0, 0)];
+    let fp = sites(&[(0, 0)]);
     let set = derive_carrying_all(&fp, &scene, &mut stroke(1 << 20)).expect("read");
     for (_, t) in set.scoped() {
-        assert!(t.eval(&scene).contains(&(0, 0)), "{t:?} carries the footprint");
+        assert!(t.eval(&scene).contains(&origin()), "{t:?} carries the footprint");
     }
     let mut keys: Vec<Vec<u8>> = candidates(&fp, &scene)
         .into_iter()
-        .filter(|t| t.eval(&scene).contains(&(0, 0)))
+        .filter(|t| t.eval(&scene).contains(&origin()))
         .map(|t| t.key().as_bytes().to_vec())
         .collect();
     keys.sort_unstable();
@@ -40,7 +47,7 @@ fn carrying_set_count_equals_closure() {
 #[test]
 fn carrying_set_keeps_thirty_third_term() {
     let scene = quilt();
-    let fp = vec![(0, 0)];
+    let fp = sites(&[(0, 0)]);
     let set = derive_carrying_all(&fp, &scene, &mut stroke(1 << 20)).expect("read");
     assert!(set.len() > 32, "the fixture's closure carries more than thirty-two terms: {}", set.len());
     let family = vec![(fp.clone(), scene.clone()), (fp, scene)];
@@ -53,7 +60,7 @@ fn carrying_set_keeps_thirty_third_term() {
 #[test]
 fn carrying_set_refuses_spent_token_whole() {
     let scene = quilt();
-    let fp = vec![(0, 0)];
+    let fp = sites(&[(0, 0)]);
     let reply = derive_carrying_all(&fp, &scene, &mut stroke(3));
     assert!(matches!(reply, Err(CarryingRefusal::Unread { terms_read }) if terms_read < candidates(&fp, &scene).len()), "{reply:?}");
 }

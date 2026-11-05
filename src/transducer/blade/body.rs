@@ -9,6 +9,7 @@
 use super::*;
 use crate::transducer::base::Site;
 use crate::transducer::perspective::{family_role, Role};
+use crate::transducer::spelled::{PaintedSite, SectionSite};
 
 /// A compartment as the sensor hands it over: the site it stands at and the hue
 /// it carries (16.4, 51.3, 71.2(1)). The support of a body is a list of
@@ -489,15 +490,15 @@ fn section_axes(n: usize) -> Vec<usize> {
 
 /// A site's coordinates off the sensor's plane: the place, and every further
 /// base axis. The key a section is filed under.
-fn off_grid(s: &Site) -> Vec<i64> {
+fn off_plane(s: &Site) -> Vec<i64> {
     let on = section_axes(s.n());
     s.axes().iter().enumerate().filter(|(i, _)| !on.contains(i)).map(|(_, a)| *a).collect()
 }
 
-/// A site's two coordinates on the sensor's plane. A plane axis the
-/// perspective of a smaller base does not hold is zero there: the inclusion
-/// ℚᵐ ⊂ ℚⁿ (71), as `lift` reads it.
-fn on_grid(s: &Site) -> (i64, i64) {
+/// A site's section site: its coordinates on the sensor's plane. A plane
+/// axis the perspective of a smaller base does not hold is zero there: the
+/// inclusion ℚᵐ ⊂ ℚⁿ (71), as `lift` reads it.
+fn on_plane(s: &Site) -> SectionSite {
     let on = section_axes(s.n());
     #[expect(
         clippy::manual_unwrap_or_default,
@@ -507,22 +508,22 @@ fn on_grid(s: &Site) -> (i64, i64) {
         Some(a) => a,
         None => 0,
     };
-    (at(0), at(1))
+    SectionSite::on_plane(std::array::from_fn(at))
 }
 
-/// ONE SECTION OF A STACK: its coordinates off the grid plane, and its
-/// sites on the plane in row order.
-pub type Section = (Vec<i64>, Vec<(i64, i64)>);
+/// ONE SECTION OF A STACK: its coordinates off the sensor's plane, and its
+/// section sites in canonical order.
+pub type Section = (Vec<i64>, Vec<SectionSite>);
 
 /// THE SECTIONS OF A SUPPORT: its sites grouped by the sites' coordinates off
-/// the grid plane — the frame, and any further axis — each section's sites
-/// in row order: the compartments standing on one grid plane, the sections of
-/// the stack (16.5). The in-plane readings (a section's turns and
-/// perimeter) are taken here and summed over the stack; the topology is
+/// the sensor's plane — the frame, and any further axis — each section's
+/// sites in canonical order: the compartments standing on one plane, the
+/// sections of the stack (16.5). The in-plane readings (a section's turns
+/// and perimeter) are taken here and summed over the stack; the topology is
 /// not, because face adjacency off the plane joins the sections (51.3).
 pub fn sections(support: &[Site]) -> Vec<Section> {
-    let mut by_section: Vec<(Vec<i64>, (i64, i64))> =
-        support.iter().map(|s| (off_grid(s), on_grid(s))).collect();
+    let mut by_section: Vec<(Vec<i64>, SectionSite)> =
+        support.iter().map(|s| (off_plane(s), on_plane(s))).collect();
     by_section.sort_unstable();
     by_section.dedup();
     let mut out: Vec<Section> = Vec::new();
@@ -541,14 +542,16 @@ pub fn sections(support: &[Site]) -> Vec<Section> {
 /// within one section.
 pub(crate) type OpenFaces = (Vec<(i64, i64)>, Vec<(i64, i64)>);
 
-pub(crate) fn boundary_edges(sites: &[(i64, i64)]) -> OpenFaces {
+pub(crate) fn boundary_edges(sites: &[SectionSite]) -> OpenFaces {
     // Which of a compartment's four faces are shared is read off the support's
-    // 1-skeleton (sentence::incidence_of): a row edge (i, j) closes i's
-    // right face and j's left face; a column edge closes i's lower face
-    // and j's upper face. Every face left open is boundary.
+    // 1-skeleton (sentence::incidence_of): an edge along the plane's second
+    // axis (i, j) closes i's face after it and j's face before it; an edge
+    // along the first axis closes i's lower face and j's upper face. Every
+    // face left open is boundary.
     let mut open = vec![[true; 4]; sites.len()]; // up, down, left, right
     for (i, j) in crate::transducer::sentence::incidence_of(sites) {
-        if sites[i].0 == sites[j].0 {
+        let ([ri, _], [rj, _]) = (sites[i].coordinates(), sites[j].coordinates());
+        if ri == rj {
             open[i][3] = false;
             open[j][2] = false;
         } else {
@@ -557,7 +560,7 @@ pub(crate) fn boundary_edges(sites: &[(i64, i64)]) -> OpenFaces {
         }
     }
     let (mut h, mut v) = (Vec::new(), Vec::new());
-    for (i, &(r, c)) in sites.iter().enumerate() {
+    for (i, [r, c]) in sites.iter().map(SectionSite::coordinates).enumerate() {
         if open[i][0] {
             h.push((r, c));
         }
@@ -578,7 +581,7 @@ pub(crate) fn boundary_edges(sites: &[(i64, i64)]) -> OpenFaces {
 
 /// The turning count of one section's boundary: the vertices where a
 /// horizontal and a vertical boundary edge meet.
-fn turns_of_section(sites: &[(i64, i64)]) -> usize {
+fn turns_of_section(sites: &[SectionSite]) -> usize {
     let (h, v) = boundary_edges(sites);
     let mut vertices: Vec<(i64, i64)> = Vec::new();
     for &(r, c) in &h {
@@ -600,7 +603,7 @@ fn turns_of_section(sites: &[(i64, i64)]) -> usize {
 /// The turning count of a body: the sum over its sections of the vertices
 /// where the section's boundary turns. A similarity invariant of the body
 /// (a dilated body turns the same number of times) and a translation off
-/// the grid plane moves no section's boundary.
+/// the sensor's plane moves no section's boundary.
 pub fn turns(support: &[Site]) -> usize {
     sections(support).iter().map(|(_, section)| turns_of_section(section)).sum()
 }
@@ -754,7 +757,7 @@ pub fn moduli(b: &Blade) -> Option<Vec<crate::transducer::stalk::ChartAxis>> {
     Some(crate::transducer::blade::harmonics::Harmonics::of(b)?.axes())
 }
 
-/// THE MODULI OF ONE SECTION — a chain's sites on the grid axes, the frame
+/// THE MODULI OF ONE SECTION — a chain's section sites, the frame
 /// on the pose (16.5): the same reading [`moduli`] gives the section's
 /// shape.
 ///
@@ -763,7 +766,7 @@ pub fn moduli(b: &Blade) -> Option<Vec<crate::transducer::stalk::ChartAxis>> {
 /// its base's `n`, the chart's first axis — and nothing below it is
 /// invented. The physics decides what the section is; the chart only finds
 /// the candidates.
-pub fn section_moduli(sites: &[(i64, i64)]) -> Vec<crate::transducer::stalk::ChartAxis> {
+pub fn section_moduli(sites: &[SectionSite]) -> Vec<crate::transducer::stalk::ChartAxis> {
     let shape = shape_of_section(sites);
     match moduli(&shape.blade) {
         Some(axes) => axes,
@@ -784,10 +787,9 @@ pub fn shape_of<S: Clone + Into<Site>>(support: &[S]) -> Shape {
     Shape { blade: lift(&comp) }
 }
 
-/// Lift the support of ONE SECTION — a chain's sites, which A5 reads at
-/// the sensor as `(r, c)` with the frame on the pose (16.5) — to its shape
-/// in the section's own frame.
-pub fn shape_of_section(sites: &[(i64, i64)]) -> Shape {
-    let comp: Vec<Compartment> = sites.iter().map(|&(r, c)| Compartment::from((r, c, 0, 0u8))).collect();
+/// Lift the support of ONE SECTION — a chain's section sites, with the
+/// frame on the pose (16.5) — to its shape in the section's own frame.
+pub fn shape_of_section(sites: &[SectionSite]) -> Shape {
+    let comp: Vec<Compartment> = sites.iter().map(|&s| Compartment::from(PaintedSite::new(s, 0))).collect();
     Shape { blade: lift(&comp) }
 }

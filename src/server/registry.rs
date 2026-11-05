@@ -90,10 +90,10 @@ pub struct TaskRegistry {
 /// `None` where a member is no sample (an empty or ragged raster): skipping
 /// one would give two different tasks one id (law 2). Nothing is refined
 /// and no stroke is drawn. The raster task's samples are its posted ones
-/// (`PostedTask::of_rasters`), and its address is theirs
+/// (`PostedTask::of_section`), and its address is theirs
 /// ([`task_address_of`]).
 pub fn task_address(task: &Task) -> Option<Address> {
-    Some(task_address_of(&crate::anastome::dialogue::PostedTask::of_rasters(task).ok()?))
+    Some(task_address_of(&crate::anastome::dialogue::PostedTask::of_section(task).ok()?))
 }
 
 /// A POSTED TASK'S IDENTITY, at any rank (track 26 S5): each posted sample's
@@ -300,7 +300,7 @@ impl TaskRegistry {
     /// ([`TaskRegistry::post`]). `None` where a member is no sample (an
     /// empty or ragged raster), so the task has no identity.
     pub fn register(&mut self, task: Task) -> Option<TaskCitation> {
-        Some(self.post(PostedTask::of_rasters(&task).ok()?))
+        Some(self.post(PostedTask::of_section(&task).ok()?))
     }
 
     /// POST a task of any rank (idempotent by content — re-feeding under a

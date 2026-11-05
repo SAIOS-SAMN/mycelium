@@ -86,42 +86,37 @@ pub enum Reproduces {
     Unread,
 }
 
-fn point(r: i64, c: i64) -> Mv {
-    cga::point_at(&[Q::from_integer(r.into()), Q::from_integer(c.into())])
-}
-
-/// A site's coordinates as a key: its row, then its column.
-fn site_key(r: i64, c: i64) -> [u8; 16] {
-    let mut k = [0u8; 16];
-    k[..8].copy_from_slice(&r.to_be_bytes());
-    k[8..].copy_from_slice(&c.to_be_bytes());
-    k
+/// A section site's conformal point: its coordinates along the plane.
+fn point(s: SectionSite) -> Mv {
+    cga::point_at(&s.coordinates().map(|x| Q::from_integer(x.into())))
 }
 
 /// `v` carries every input site onto an output site: the output's sites
 /// keyed once, each input's image read back to its site (a lattice point,
 /// or no compartment of any frame) and looked up — two reads a site, `2·m`
 /// for `m` input sites, on the token (rules 1, 10, 17).
-pub(crate) fn carried_onto(v: &Mv, in_sites: &[(i64, i64)], out_sites: &[(i64, i64)], budget: &mut crate::physics::Budget) -> Reproduces {
+pub(crate) fn carried_onto(v: &Mv, in_sites: &[SectionSite], out_sites: &[SectionSite], budget: &mut crate::physics::Budget) -> Reproduces {
     let mut out: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    for &(r, c) in out_sites {
-        out.insert(site_key(r, c), ());
+    for &s in out_sites {
+        out.insert(site_key(s), ());
     }
-    for &(r, c) in in_sites {
+    for &s in in_sites {
         if !budget.spend() {
             return Reproduces::Unread;
         }
-        let img = v.sandwich(&point(r, c));
-        let Some(at) = cga::base_at(&img, 2) else { return Reproduces::No };
+        let img = v.sandwich(&point(s));
+        let Some(at) = cga::base_at(&img, crate::transducer::alphabet::ALPHABET_SAMPLE_RANK) else { return Reproduces::No };
         if !at.iter().all(num_rational::BigRational::is_integer) {
             return Reproduces::No;
         }
         let Some(site) = crate::transducer::element::sensor::site_at(&at) else { return Reproduces::No };
-        let (Some(rr), Some(cc)) = (site.axis(0), site.axis(1)) else { return Reproduces::No };
+        let Some(landed) = <[i64; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK]>::try_from(site.axes()).ok().map(SectionSite::on_plane) else {
+            return Reproduces::No;
+        };
         if !budget.spend() {
             return Reproduces::Unread;
         }
-        if !out.contains(&site_key(rr, cc)) {
+        if !out.contains(&site_key(landed)) {
             return Reproduces::No;
         }
     }
@@ -129,17 +124,23 @@ pub(crate) fn carried_onto(v: &Mv, in_sites: &[(i64, i64)], out_sites: &[(i64, i
 }
 
 /// The confluence sphere of a set of compartments, and its mass.
-pub(crate) fn gathered(sites: &[(i64, i64)]) -> (Mv, u64) {
-    (sites.iter().fold(Mv::zero(), |s, &(r, c)| s.add(&point(r, c))), sites.len() as u64)
+pub(crate) fn gathered(sites: &[SectionSite]) -> (Mv, u64) {
+    (sites.iter().fold(Mv::zero(), |s, &x| s.add(&point(x))), sites.len() as u64)
 }
 
-fn centre(sites: &[(i64, i64)]) -> Option<(Q, Q)> {
+/// The barycentre of the sites, one exact coordinate per axis of the plane.
+fn centre(sites: &[SectionSite]) -> Option<[Q; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK]> {
     let n = Q::from_integer(i64::try_from(sites.len()).ok()?.into());
     if n.is_zero() {
         return None;
     }
-    let (sr, sc) = sites.iter().fold((Q::zero(), Q::zero()), |(a, b), &(r, c)| (a + Q::from_integer(r.into()), b + Q::from_integer(c.into())));
-    Some((sr / &n, sc / n))
+    let mut sum: [Q; crate::transducer::alphabet::ALPHABET_SAMPLE_RANK] = std::array::from_fn(|_| Q::zero());
+    for s in sites {
+        for (acc, x) in sum.iter_mut().zip(s.coordinates()) {
+            *acc += Q::from_integer(x.into());
+        }
+    }
+    Some(sum.map(|x| x / &n))
 }
 
 pub(crate) fn regime_name(r: cga::PairRegime) -> &'static str {
@@ -152,8 +153,8 @@ pub(crate) fn regime_name(r: cga::PairRegime) -> &'static str {
     }
 }
 
-fn sites_of(b: &Body) -> Vec<(i64, i64)> {
-    b.compartments.iter().filter_map(|l| Some((l.site.axis(0)?, l.site.axis(1)?))).collect()
+fn sites_of(b: &Body) -> Vec<SectionSite> {
+    b.compartments.iter().filter_map(|l| SectionSite::of_family(&l.site)).collect()
 }
 
 /// READ ONE PAIR'S UNSAID OUTPUT BODIES as creations, single carriages and
@@ -165,22 +166,15 @@ pub fn read_pair(x: &SectionSample, y: &SectionSample, remainder: &[crate::trans
         read.unframed = true;
         return read;
     }
-    let unsaid: Vec<(i64, i64)> = remainder
-        .iter()
-        .filter(|l| l.after != 0)
-        .map(|l| {
-            let [r, c] = l.site.coordinates();
-            (r, c)
-        })
-        .collect();
-    let ins: Vec<Vec<(i64, i64)>> = perceive(x).iter().map(sites_of).collect();
+    let unsaid: Vec<SectionSite> = remainder.iter().filter(|l| l.after != 0).map(|l| l.site).collect();
+    let ins: Vec<Vec<SectionSite>> = perceive(x).iter().map(sites_of).collect();
     for out in perceive(y) {
         let out_sites = sites_of(&out);
         let here = out_sites.iter().filter(|s| unsaid.contains(s)).count() as u64;
         if here == 0 {
             continue;
         }
-        let inputs: Vec<&Vec<(i64, i64)>> = ins.iter().filter(|i| i.iter().any(|s| out_sites.contains(s))).collect();
+        let inputs: Vec<&Vec<SectionSite>> = ins.iter().filter(|i| i.iter().any(|s| out_sites.contains(s))).collect();
         match inputs.len() {
             0 => {
                 read.creations += 1;
@@ -195,7 +189,7 @@ pub fn read_pair(x: &SectionSample, y: &SectionSample, remainder: &[crate::trans
             _ => {}
         }
         read.confluence_sites += here;
-        let in_sites: Vec<(i64, i64)> = inputs.iter().flat_map(|i| i.iter().copied()).collect();
+        let in_sites: Vec<SectionSite> = inputs.iter().flat_map(|i| i.iter().copied()).collect();
         let (c_in, m_in) = gathered(&in_sites);
         let (c_out, m_out) = gathered(&out_sites);
         let centre_kept = centre(&in_sites) == centre(&out_sites);

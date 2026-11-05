@@ -228,16 +228,15 @@ pub fn pieces(chain: &[SectionLink]) -> Vec<Vec<SectionLink>> {
 /// and never by looking a coordinate up ([`incidence_of_sites`]). `links`
 /// must be sorted and deduplicated; the pairs are indices into it.
 pub fn incidence(links: &[SectionLink]) -> Vec<(usize, usize)> {
-    let positions: Vec<(i64, i64)> = links.iter().map(|l| { let [a, b] = l.site.coordinates(); (a, b) }).collect();
-    incidence_of(&positions)
+    incidence_of(&element::positions(links))
 }
 
-/// The incidence of a support of the alphabet's section given as sites in
-/// canonical order (sorted, deduplicated): [`incidence_of_sites`] on the
-/// same sites at rank 2.
-pub fn incidence_of(positions: &[(i64, i64)]) -> Vec<(usize, usize)> {
+/// The incidence of a support of the alphabet's section given as section
+/// sites in canonical order (sorted, deduplicated): [`incidence_of_sites`]
+/// on the same sites, each the sample's coordinate vector on the plane.
+pub fn incidence_of(positions: &[SectionSite]) -> Vec<(usize, usize)> {
     let sites: Vec<crate::transducer::base::Site> =
-        positions.iter().map(|&(a, b)| crate::transducer::base::Site::of([a, b])).collect();
+        positions.iter().map(|s| crate::transducer::base::Site::of(s.coordinates())).collect();
     incidence_of_sites(&sites)
 }
 
@@ -325,7 +324,7 @@ pub fn cited_pattern(word: &Element, asg: &[(u8, u8)]) -> Option<Vec<SectionLink
     // One transition per site: an assignment of another length is not this
     // word's, whatever its charge.
     (pos.len() == asg.len()).then_some(())?;
-    let mut pat: Vec<SectionLink> = pos.iter().zip(asg).map(|(&(r, c), &(b, a))| SectionLink::on_plane([r, c], b, a)).collect();
+    let mut pat: Vec<SectionLink> = pos.iter().zip(asg).map(|(&site, &(b, a))| SectionLink::new(site, b, a)).collect();
     pat.sort_unstable();
     Some(pat)
 }
@@ -415,7 +414,8 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[SectionLink]) -> Keyed<Vec
     let pos = element::positions(word.sub());
     let landed: Vec<(u8, u8)> = pos
         .iter()
-        .filter_map(|&(wr, wc)| {
+        .filter_map(|w| {
+            let [wr, wc] = w.coordinates();
             let p = element::carry_centre(v, wr, wc, 0)?;
             let (tr, tc, tk) = element::site_of(&p)?;
             if tk != 0 {
@@ -430,7 +430,8 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[SectionLink]) -> Keyed<Vec
         return agreeing;
     }
     for assignment in word.assignments_by_profile(&element::gauge_key(&landed)) {
-        let ok = pos.iter().zip(&assignment).all(|(&(wr, wc), &(wb, wa))| {
+        let ok = pos.iter().zip(&assignment).all(|(w, &(wb, wa))| {
+            let [wr, wc] = w.coordinates();
             let Some(p) = element::carry_centre(v, wr, wc, 0) else { return true };
             // A centre off the base, or off the section's frame, lands on
             // no site to disagree with.

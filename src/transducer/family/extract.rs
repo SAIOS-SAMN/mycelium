@@ -142,7 +142,7 @@ fn extract_rule_on_ground(
                         let r = family.iter().all(|(x, y)| {
                             crystal
                                 .speak_form(s, x, placement)
-                                .is_some_and(|sp| painted_within_grid(&sp.painted, y))
+                                .is_some_and(|sp| painted_within_sample(&sp.painted, y))
                         });
                         spoken.insert(&key, r);
                         r

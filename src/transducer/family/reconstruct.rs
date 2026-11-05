@@ -170,15 +170,7 @@ pub fn transports(x: &SectionSample, y: &SectionSample) -> Option<Vec<Transport>
 pub fn body_regimes(changes: &[Change]) -> [u64; 5] {
     let mut n = [0u64; 5];
     for ch in changes {
-        let sites = |cells: &[PaintedSite]| {
-            cells
-                .iter()
-                .map(|x| {
-                    let [r, c] = x.site.coordinates();
-                    (r, c)
-                })
-                .collect::<Vec<_>>()
-        };
+        let sites = |cells: &[PaintedSite]| cells.iter().map(|x| x.site).collect::<Vec<_>>();
         let (cin, _) = super::confluence::gathered(&sites(&ch.input));
         let (cout, _) = super::confluence::gathered(&sites(&ch.output));
         let at = match crate::transducer::cga::pair_regime(&[cin, cout], 0, 1) {

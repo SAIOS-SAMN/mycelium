@@ -98,7 +98,7 @@ fn posted_task_round_trips_exact_samples() {
 
 /// TRACK 26 S4d, stage 2b — A PAINTED SITE IS A SITE OF THE SECTION AND ITS
 /// SYMBOL: a sample's painted sites, laid back on their span
-/// (`SectionSite::span_of`, `grid_of_painted`) at the scene's ground, are the
+/// (`SectionSite::span_of`, `sample_of_painted`) at the scene's ground, are the
 /// sample's painted part read from the span's least corner; sites order by
 /// the site, then the symbol; and no site has no span.
 #[test]
@@ -109,7 +109,7 @@ fn painted_sites_round_trip_through_their_span() {
     assert!(painted.windows(2).all(|w| w[0] < w[1]), "canonical address order is the sites' order");
     let span = SectionSite::span_of(painted.iter().map(|p| p.site));
     assert_eq!(span, Some((SectionSite::on_plane([1, 1]), [2, 2])), "the least corner and the extents from it");
-    let laid = crate::transducer::family::grid_of_painted(&painted, 0).expect("a scene on the ground");
+    let laid = crate::transducer::family::sample_of_painted(&painted, 0).expect("a scene on the ground");
     assert_eq!(laid, vec![vec![7, 8], vec![9, 0]], "the painted part, read from the corner");
     assert_eq!(SectionSite::span_of(std::iter::empty()), None, "no site, no span");
 }
@@ -141,4 +141,20 @@ fn section_site_is_the_sample_coordinate_restricted_by_the_perspective() {
     let on_base = SectionSite::on_plane([1, 2]).on_family(4).expect("the alphabet's base");
     assert_eq!(on_base.axes(), &[1, 2, 4], "the plane's coordinates, then the place");
     assert_eq!(SectionSite::of_family(&on_base), Some(SectionSite::on_plane([1, 2])), "and read back off the base");
+}
+
+/// TRACK 26 S4d, stage 2c — A SECTION SITE ROUND-TRIPS THROUGH ITS CANONICAL
+/// BYTES: what `put_canonical` writes `take_canonical` reads back, the cursor
+/// at the end, for coordinates of either sign; bytes that end inside a
+/// coordinate read no site.
+#[test]
+fn section_site_round_trips() {
+    for site in [SectionSite::on_plane([0, 0]), SectionSite::on_plane([-3, 7]), SectionSite::on_plane([i64::MAX, i64::MIN])] {
+        let mut buf = Vec::new();
+        site.put_canonical(&mut buf);
+        let mut p = 0;
+        assert_eq!((SectionSite::take_canonical(&buf, &mut p), p), (Some(site), buf.len()));
+        let short = buf.get(..buf.len() - 1).expect("bytes");
+        assert_eq!(SectionSite::take_canonical(short, &mut 0), None, "a coordinate cut short is no site");
+    }
 }

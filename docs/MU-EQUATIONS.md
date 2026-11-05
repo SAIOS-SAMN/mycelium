@@ -567,7 +567,7 @@ output's centre `c′`, in compartment-centre coordinates.
 
 Sources: MU-RECURSION 78.51(3); MU-CLIENT 78.142. Code:
 `src/transducer/family/statement.rs::carriage` (`About::Body`);
-`src/client/sdk/rule.rs::Step::grid_motion`;
+`src/client/sdk/rule.rs::Step::symmetry_motion`;
 `src/physics/equilibrium.rs::centred`.
 
 #### 2.24 Carrying a compartment's centre

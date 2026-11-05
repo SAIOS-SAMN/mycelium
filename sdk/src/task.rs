@@ -10,7 +10,7 @@
 //! the test inputs to answer, never the answers, each a [`Sample`] of any
 //! rank at its source's symbol width (track 26 S5). A client perceives the
 //! samples at any rank; one whose rule seam spells words takes
-//! [`TaskEnvelope::section`] ([`TaskRasters`]), the alphabet's section,
+//! [`TaskEnvelope::section`] ([`TaskSection`]), the alphabet's section,
 //! refused by name ([`SectionRefusal`]) for a sample of another rank or
 //! width (track 26 S4b).
 //! [`encode_solve_with_rule`] writes the outputs, as samples
@@ -26,7 +26,7 @@ pub use mycelium::anastome::dialogue::{encode_task_by_citation, encode_task_requ
 
 /// A registered task as the registry hands it over, its writer and its
 /// reader, and the envelope read on the alphabet's section.
-pub use mycelium::anastome::dialogue::{decode_task_envelope, encode_task_envelope, TaskEnvelope, TaskRasters};
+pub use mycelium::anastome::dialogue::{decode_task_envelope, encode_task_envelope, TaskEnvelope, TaskSection};
 
 /// Why a sample is off the alphabet's section: its rank, or its width.
 pub use mycelium::transducer::sentence::SectionRefusal;

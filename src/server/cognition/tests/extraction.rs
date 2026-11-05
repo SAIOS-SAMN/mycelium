@@ -91,10 +91,10 @@ assert_eq!(k.basis_len(), 1, "the pair form is one word");
 /// voice. The court lists the minted sentence as spoken.
 #[test]
 fn speak_pair_lists_extracted_form() {
-use crate::transducer::family::{extract_rule_with, grid_of_painted, mint_sentence, NoCrystal};
+use crate::transducer::family::{extract_rule_with, sample_of_painted, mint_sentence, NoCrystal};
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
-let family = vec![(grid_of_painted(&painted(&a), 0).expect("a scene"), grid_of_painted(&painted(&b), 0).expect("a scene"))];
+let family = vec![(sample_of_painted(&painted(&a), 0).expect("a scene"), sample_of_painted(&painted(&b), 0).expect("a scene"))];
 let mut k = Court::new();
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listed = &k.quote().1;
