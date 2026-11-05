@@ -73,9 +73,8 @@ Unreleased). Merged so far, each with its PR:
 
 **2. Waiting on an operator ruling.** Do not start these until the ruling
 is recorded:
-- Concordance draft 4 (MU-CONCORDANCE §11; track 24's B3, and B2's
-  clause sets recorded per domain, wait on it) and draft 5 (§12, held for
-  netstratum's pole-basis wording of 2.11).
+- Concordance draft 5 (MU-CONCORDANCE §12, held for netstratum's
+  pole-basis wording of 2.11).
 - B1: carrying line mouth offers and tier handoff offers in the reserve's
   act, which amends rulings 78.126 and 78.136.
 - The proposed name `AddressOnly`.
@@ -1164,8 +1163,8 @@ computation, and μ minted on a branch.
 **Specified** in
 [`docs/MU-HOSTING.md` §5a](docs/MU-HOSTING.md#5a-the-containment-topology-and-the-boundary-law)
 (the operator's ruling of 2026-11-02; MU-RECURSION 78.169), with the
-Concordance amendments (4.1, 6.2a, §0, 0.1) proposed in
-[MU-CONCORDANCE §11](docs/MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02).
+Concordance amendments (4.1, 6.2a, §0, 0.1), approved 2026-11-05 as
+version 5 ([MU-CONCORDANCE §11](docs/MU-CONCORDANCE.md#11-proposed-amendment-draft-4-2026-11-02)).
 
 The security model is topological and the hypha enforces it: each act is
 an event on the TUniversal ledger with a past cone (what it cites) and a
@@ -1343,8 +1342,9 @@ adjudicated reading (B2). Each phase is one commit:
 6. **B5, nested universes:** a sub-universe's acts only at its parent's
    vertex, with 78.155 R-3.
 
-Depends on: **draft 4** (the amendment's approval and signing; B3's
-shared laws, and B2's clause sets under its §0 SIGNING text). Issue #13
+Draft 4 was approved 2026-11-05 and is written into the Concordance as
+version 5; B3's shared laws and B2's clause sets under its §0 SIGNING
+text proceed as engineering, no longer a ruling dependency. Issue #13
 is no longer an outside dependency: its ruling, **replication by
 reconstruction**, is phase B0. Serves tracks 13, 14 and 15.
 
