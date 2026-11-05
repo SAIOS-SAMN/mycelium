@@ -21,7 +21,9 @@ pub use mycelium::sdk::Session;
 /// How far one exchange may run, in the mind's own strokes.
 pub use mycelium::sdk::TransportAperture;
 
-/// A final point of TUniversal: `origin/h:S:G:T:H:K`.
+/// A final point of TUniversal, `origin/h:S:G:T:H:K`: LAW-COORDINATE v3's
+/// one-component, non-negative case, each base lane one exact non-negative
+/// component, and `K` the orbits closed.
 pub use mycelium::chronometry::tuniversal::TPoint;
 
 /// The voice a session speaks as.

@@ -5,9 +5,12 @@
 
 //! The wallet and leases.
 //!
-//! A wallet is flat by design: per court, a party's balance, bond and holds,
-//! each a [`Mu`] — an exact non-negative rational on each lane `S:G:T:H`,
-//! never summed across lanes. A whole count `n` is the rational `n/1`
+//! A wallet is a reading of the holding's coordinate: a party's holding
+//! stands at a coordinate of the one multi-dimensional ledger (lane × layer
+//! × grade, MU-ECONOMY §2), and the wallet reads it per court as the
+//! balance, bond and holds, each a [`Mu`] — an exact non-negative rational
+//! read on each lane `S:G:T:H`, never summed across lanes, retiring in
+//! v0.5.0 for [`Modes`](crate::task::Modes). A whole count `n` is the rational `n/1`
 //! ([`Mu::counts`]); a draw past a holding is refused naming the lane
 //! ([`MuRefusal::Short`]); every μ field on the wire is the lane codec
 //! [`Mu::put`], refused where a lane is negative or not in lowest terms.
@@ -20,10 +23,12 @@
 //! - a [`LeaseAct`] opens a lease ([`encode_lease`]), answered by
 //!   [`decode_lease_reply`]; a [`CloseLease`] closes it ([`encode_close`]).
 
-/// An amount of μ, exact per lane, and why one was refused.
+/// An amount of μ read exactly per lane (retiring in v0.5.0 for `Modes`),
+/// and why one was refused.
 pub use mycelium::economy::{Mu, MuRefusal};
 
-/// A party's account at one court, and its wallet across courts.
+/// A party's account at one court, and its wallet across courts: readings
+/// of its holding, never a stored balance.
 pub use mycelium::anastome::dialogue::wallet::{Account, Wallet};
 
 /// The wallet read and its reply.

@@ -13,8 +13,14 @@ pub use crate::session::{Session, TPoint};
 /// The task envelope and the verdict codes.
 pub use crate::task::{TaskEnvelope, SOLVE_AGAIN, SOLVE_BOUNTY, SOLVE_NOTHING, SOLVE_UNREAD};
 
-/// An amount of μ, exact per lane.
+/// An amount of μ read exactly per lane: one non-negative rational on each
+/// of S, G, T and H. Built today; it retires in v0.5.0, when every amount
+/// is [`Modes`] (MU-ECONOMY §9).
 pub use crate::wallet::Mu;
+
+/// The modes the verified work moved, each on the lane its kind names: the
+/// carrier of μ, a holding's lanes from v0.5.0 (MU-ECONOMY §1).
+pub use crate::task::Modes;
 
 /// The rule seam's steps, its refusal, and the carriers a rule acts on.
 pub use crate::rule::{Crystal, Element, NoCrystal, NoRule, Step, Symmetry};

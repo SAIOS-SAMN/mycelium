@@ -300,12 +300,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &WireFrame, context: &Cont
             Err(_) => return true,
         };
         let (code, mu, refusal, stamp) = match (pre, open, rule.as_ref(), ground.as_ref()) {
-            // A task the book opens but holds no content for has no ground
+            // A task the court opens but holds no content for has no ground
             // read: refused by name, never judged on a code.
             (None, Some(_), Some(_), None) => (
                 dialogue::SOLVE_NOTHING,
                 Mu::zero(),
-                Some(refused("no such task on this book: its ground is not read", mycelium::transducer::sentence::ObstructionKind::Integrity)),
+                Some(refused("no such task at this court: its ground is not read", mycelium::transducer::sentence::ObstructionKind::Integrity)),
                 None,
             ),
             (Some(pre), _, _, _) => {

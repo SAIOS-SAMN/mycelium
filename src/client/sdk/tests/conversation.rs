@@ -56,8 +56,9 @@ fn court_keeping(keep: fn(&dialogue::SpeechAct) -> bool) -> (String, std::sync::
 }
 
 /// MU-CLIENT §5.3 — A QUESTION IS ANSWERED BY WHAT THE MIND KNOWS, AND THE
-/// MEANING DERIVED. B knows the 90° turn of the sensor plane and remembers
-/// the sound of a SCREW — that turn carried along the axis it turns about —
+/// MEANING DERIVED. B knows the rotation by 90° in the e₁e₂ plane and
+/// remembers the sound of a SCREW — that rotation carried along the axis
+/// orthogonal to its plane —
 /// but does not know it as a word. A says the screw. B posits what it knows:
 /// the turn covers the screw's elliptic mode, and the RESIDUE left is the
 /// slide along the axis; B asks of that alone. A answers it whole (a slide
@@ -68,7 +69,7 @@ fn court_keeping(keep: fn(&dialogue::SpeechAct) -> bool) -> (String, std::sync::
 fn take_in_conversation_derives_meaning_from_posited_residue() {
     use crate::transducer::sentence::rung::{held_rung, known, learn_by};
     let (court, _speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let dir = std::env::temp_dir().join(format!("mycelium-question-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
@@ -124,7 +125,7 @@ fn take_in_conversation_derives_meaning_from_posited_residue() {
 fn compose_or_construct_meets_demand_from_dictionary_first() {
     use crate::transducer::sentence::rung::{held_rung, known, learn_by};
     let (court, _speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let quarter = conformal_of_word(&[(q, false)]);
     let half = conformal_of_word(&[(q, false), (q, false)]);
@@ -160,7 +161,7 @@ fn compose_or_construct_speaks_remainder_ruled_words_compose() {
     let (court, speeches) = court_keeping(|act| !act.sentences.is_empty());
     let n = |v: i64| num_rational::BigRational::from_integer(v.into());
     let chart = crate::transducer::stalk::Invariant::default();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let along = crate::transducer::cga::translator_at(&[n(0), n(0), n(1)]);
     let twice = crate::transducer::cga::translator_at(&[n(0), n(0), n(2)]);
     let quarter = conformal_of_word(&[(q, false)]);
@@ -314,7 +315,7 @@ fn compose_or_construct_speaks_ruled_composition_to_court() {
 fn vantage_reads_word_through_mind_words() {
     use crate::transducer::sentence::rung::{distinct_vantage, learn_by, vantage};
     let (court, _speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let quarter = conformal_of_word(&[(q, false)]);
     let half = conformal_of_word(&[(q, false), (q, false)]);
     let mut mind = Mind::open(&court, Voice::named("observer"));
@@ -344,7 +345,7 @@ fn vantage_reads_word_through_mind_words() {
 fn say_carries_shared_word_to_court_with_hold() {
     use crate::transducer::sentence::rung::{known, learn_by};
     let (court, speeches) = court();
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let dir = std::env::temp_dir().join(format!("mycelium-conversation-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     let mut a = Mind::open(&court, Voice::named("speaker"));
@@ -367,7 +368,7 @@ fn say_carries_shared_word_to_court_with_hold() {
     a.say(&said, &[]);
     // MU-CLIENT §4.4(4) — what A says leaves when A's own field comes round.
     assert!(super::fixtures::bind_a_thought(&mut a, &[]) > 0, "A's orbit returned");
-    // Each mind's field prices what its conversation understood, as its tick
+    // Each mind's field reads what its conversation understood, as its tick
     // does at admission; the court hears once both fields converged.
     let mut act = None;
     for _ in 0..4_000_000u32 {
@@ -447,7 +448,7 @@ fn conformal_of_word(letters: &[(LetterId, bool)]) -> crate::transducer::cga::Mv
 fn factors_of_answers_question_by_word_factors() {
     use crate::client::sdk::mind::chatter::factors_of;
     use crate::transducer::element::conformal_of;
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let two = conformal_of(&Word::from_letters(&[(q, false), (q, false)]), &identity_versor()).expect("a motion");
     let factors = factors_of(&two, &[], b"word");
     assert_eq!(factors.len(), 2, "two letters: {factors:?}");
@@ -458,65 +459,65 @@ fn factors_of_answers_question_by_word_factors() {
     assert!(matches!(atom.as_slice(), [a] if a.motion.projective_eq(&one) && a.gauge == vec![(1, 2)]), "an atom comes back whole: {atom:?}");
 }
 
-/// ONE STROKE PRICES WHAT ITS BUDGET HOLDS (ruled 2026-10-25). One more of
-/// the field's work queued than a stroke's budget reads: the stroke prices
+/// ONE STROKE READS WHAT ITS BUDGET HOLDS (ruled 2026-10-25). One more of
+/// the field's work queued than a stroke's budget reads: the stroke reads
 /// its budget's worth and leaves the rest waiting, and the mind owes strokes
-/// meanwhile; the next stroke prices what is left and owes none for it.
+/// meanwhile; the next stroke reads what is left and owes none for it.
 #[test]
-fn price_hearings_prices_one_budget_rest_wait() {
+fn read_hearings_reads_one_budget_rest_wait() {
     use crate::client::sdk::mind::chatter::FieldWork;
-    let mut mind = Mind::open("127.0.0.1:1", Voice::named("pricing"));
-    let field = mind.pricing_for_test();
+    let mut mind = Mind::open("127.0.0.1:1", Voice::named("reading"));
+    let field = mind.field_work_for_test();
     let reads = crate::physics::Physics::default().stroke().remaining();
     assert!(reads > 0, "a stroke reads something");
     for _ in 0..=reads {
         field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     }
-    assert_eq!(mind.price_hearings(), reads, "its budget's worth priced");
+    assert_eq!(mind.read_hearings(), reads, "its budget's worth read");
     assert!(mind.board.hearings_wait && mind.owes_strokes(), "one left: it waits, and strokes are owed");
-    assert_eq!(mind.price_hearings(), 1, "the one left priced");
+    assert_eq!(mind.read_hearings(), 1, "the one left read");
     assert!(!mind.board.hearings_wait && !mind.owes_strokes(), "nothing waits");
 }
 
 /// THE TASK FIRST (ruled 2026-10-26): while a court's task waits on the
-/// board, or is asked for, no hearing is priced — the work waits, and
-/// strokes are owed; with the pipeline clear, it is priced.
+/// board, or is asked for, no hearing is read — the work waits, and
+/// strokes are owed; with the pipeline clear, it is read.
 #[test]
-fn price_hearings_defers_while_task_waits() {
+fn read_hearings_defers_while_task_waits() {
     use crate::client::sdk::mind::chatter::FieldWork;
     use crate::client::sdk::mind::offer::Offer;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("task first"));
-    let field = mind.pricing_for_test();
+    let field = mind.field_work_for_test();
     field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     let train = crate::transducer::spelled::pairs_of(vec![(vec![vec![1u8, 0], vec![0, 0]], vec![vec![0u8, 1], vec![0, 0]])]);
     let offer = Offer::of(&train);
     mind.board.court.task = Some((crate::anastome::dialogue::TaskSection { id: [2; 32], train, tests: Vec::new() }, offer));
-    assert_eq!(mind.price_hearings(), 0, "a task on the board: no hearing priced");
+    assert_eq!(mind.read_hearings(), 0, "a task on the board: no hearing read");
     assert!(mind.board.hearings_wait && mind.owes_strokes(), "the hearing waits, and strokes are owed");
     mind.board.court.task = None;
     mind.board.court.pulling = true;
-    assert_eq!(mind.price_hearings(), 0, "a task asked for: no hearing priced");
+    assert_eq!(mind.read_hearings(), 0, "a task asked for: no hearing read");
     mind.board.court.pulling = false;
-    assert_eq!(mind.price_hearings(), 1, "the pipeline clear: the hearing is priced");
+    assert_eq!(mind.read_hearings(), 1, "the pipeline clear: the hearing is read");
     assert!(!mind.board.hearings_wait, "nothing waits");
 }
 
 /// A HEARING WAITS AT MOST ACROSS ONE RETURN AT THE DOOR TOO (MU-CLIENT §4.13,
-/// ruled 2026-10-26): one the task pipeline held unpriced crosses the first
+/// ruled 2026-10-26): one the task pipeline held unread crosses the first
 /// return and lapses unread at the second — the buffer is empty, and nothing
 /// is owed for it.
 #[test]
-fn lapse_unpriced_lapses_hearing_at_second_return() {
+fn lapse_field_waiting_lapses_hearing_at_second_return() {
     use crate::client::sdk::mind::chatter::FieldWork;
     let mut mind = Mind::open("127.0.0.1:1", Voice::named("lapsing hearing"));
-    let field = mind.pricing_for_test();
+    let field = mind.field_work_for_test();
     field.send(FieldWork::Hear { speaker: [1; 32], said: Vec::new(), words: Vec::new(), evidence: None }).expect("queued");
     mind.board.court.pulling = true;
-    assert_eq!(mind.price_hearings(), 0, "held: the task is asked for");
-    assert_eq!(mind.lapse_unpriced(), 0, "the first return: it crosses");
-    assert_eq!(mind.board.unpriced_crossed.len(), 1, "waiting across one return");
-    assert_eq!(mind.lapse_unpriced(), 1, "the second return: it lapses unread");
-    assert!(mind.board.unpriced.is_empty() && mind.board.unpriced_crossed.is_empty(), "the buffer is empty");
-    assert_eq!(mind.price_hearings(), 0, "nothing left to price");
+    assert_eq!(mind.read_hearings(), 0, "held: the task is asked for");
+    assert_eq!(mind.lapse_field_waiting(), 0, "the first return: it crosses");
+    assert_eq!(mind.board.field_waiting_crossed.len(), 1, "waiting across one return");
+    assert_eq!(mind.lapse_field_waiting(), 1, "the second return: it lapses unread");
+    assert!(mind.board.field_waiting.is_empty() && mind.board.field_waiting_crossed.is_empty(), "the buffer is empty");
+    assert_eq!(mind.read_hearings(), 0, "nothing left to read");
     assert!(!mind.board.hearings_wait, "nothing owed for it");
 }

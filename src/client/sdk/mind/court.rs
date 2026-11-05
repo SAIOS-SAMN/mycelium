@@ -1,10 +1,10 @@
 // 78.164 — THE COURT, A BOUNDARY: what flows into the field from the hypha
-// (the open book's listings and the listings' demands, the registry's tasks, the
+// (the court's open listings and their demands, the registry's tasks, the
 // language it teaches) and what flows out to it (sentences, probes, solves,
 // colour words), paced by the surface the court itself returns.
 //
 //! The pace is the court's: a quote is asked when the language moved, the
-//! book rose, or a lane's dwell elapsed — a receipt count, never a timer —
+//! court's height rose, or a lane's dwell elapsed — a receipt count, never a timer —
 //! and the T lane neither holds the mind back nor releases it (C4). An
 //! occluded wire asks nothing; the answer to impedance is patience. Every
 //! exchange rides the hypha carrier (MU-CLIENT §5.1): the field asks and
@@ -14,8 +14,8 @@ use crate::client::sdk::*;
 use crate::physics::{Physics, StrokeOutcome};
 use crate::transducer::element::measure_lanes;
 
-/// THE COURT'S PACE, carried from tick to tick: the language and the book
-/// height the court was last asked at, the surface it returned and the dwell
+/// THE COURT'S PACE, carried from tick to tick: the language and the
+/// court's height it was last asked at, the surface it returned and the dwell
 /// left on each lane, and where the sync last stood; and on the carrier
 /// (MU-CLIENT §5.1), the asks in flight — one quote, one task pull, one sync,
 /// one syllabus, a solve per task — and what landed for the tick to think:
@@ -38,14 +38,17 @@ pub(crate) struct CourtPace {
     pub(crate) quoted: Option<YieldQuote>,
     pub(crate) pulling: bool,
     /// MU-CLIENT §7.1 — the task the court sent, with its offer (`offer`),
-    /// at the raster intake (`TaskEnvelope::rasters`, track 26 S5).
+    /// on the alphabet's section (`TaskEnvelope::section`, track 26 S5).
     pub(crate) task: Option<(crate::anastome::dialogue::TaskSection, super::offer::Offer)>,
     pub(crate) syncing: bool,
     pub(crate) schooling: bool,
     pub(crate) solving: crate::network::nerve::Keyed<()>,
     probed: StrokeOutcome,
     /// The solves this mind was paid for since it began (a bounty or a floor
-    /// filed): the one event that raises its balance at a court.
+    /// filed), the events that raise the reading of its holding at a court.
+    /// An observation of the mind's work, never a goal the mind steers by
+    /// (MU-SENSING §0): it is read only as an event marker (a rested stratum
+    /// is fetched again once it moves, `starved`) and by the observer.
     pub(crate) earned: u64,
     /// THE STRATA FETCHED FOR NOTHING, by chart key: the court's root for the
     /// stratum when its fetch brought no word, and `earned` then. Every word
@@ -100,7 +103,7 @@ impl Mind {
     /// lands it relieves the pressure it stood for and builds order. A demand
     /// on a lane the reserve cannot fund waits; a page beyond one tick is
     /// answered across quotes. Where the court is due to be asked again, the
-    /// quote is asked (the language moved, the book rose, or a dwell
+    /// quote is asked (the language moved, the court's height rose, or a dwell
     /// elapsed). Then, while the mind holds no language, the syllabus is
     /// asked for.
     pub(crate) fn quote_inflow(&mut self, outcome: &mut StrokeOutcome) {
@@ -135,7 +138,7 @@ impl Mind {
 
     /// EACH DEMAND OF EACH LISTING, answered by the held closed form that
     /// reproduces it on its own chart (50.5, L8r): one spend per form spoken,
-    /// its probe's closure booked where it lands.
+    /// its probe's closure recorded where it lands.
     fn answer_demands(&mut self, clusters: &[Cluster], outcome: &mut StrokeOutcome) {
         let mut spend = self.stroke();
         for cluster in clusters {
@@ -252,7 +255,7 @@ impl Mind {
     }
 
     /// THE COURT'S LANGUAGE FLOWS IN, where the COURT'S language may have
-    /// moved — its book rose since the last sync, a lane's dwell elapsed, or
+    /// moved — its height rose since the last sync, a lane's dwell elapsed, or
     /// the mind holds no language — never because the mind's own motion moved
     /// (ruled 2026-10-18: a thought held or a dialect word stood is
     /// the mind's, and a sync brings nothing for it; counted, every family a

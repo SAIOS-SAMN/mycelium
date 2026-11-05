@@ -7,14 +7,16 @@
 // D1.4) and the drift register (MU-ANTI-FLATTENING *Drift guards*), each a
 // workspace test of this crate (`src/tests/tree.rs` reads this repository),
 // and the documents read against the tree (MU-STANDARDS 7.1: the paths they
-// cite, `documents.rs`; the shared-law table, `src/tests/documents.rs`).
-// Every other rule is a clippy lint (§4.2) or a type (§4.4).
+// cite, `documents.rs`; the shared-law table, `src/tests/documents.rs`),
+// and the client surface's words against the rulings of 2026-11-04/05
+// (`surface.rs`). Every other rule is a clippy lint (§4.2) or a type (§4.4).
 
 pub mod documents;
 pub mod drift;
 pub mod euclidean;
 pub mod length;
 pub mod numbers;
+pub mod surface;
 
 #[cfg(test)]
 mod tests;

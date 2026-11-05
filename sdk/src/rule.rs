@@ -6,7 +6,8 @@
 //! The rule seam.
 //!
 //! Two routes reach the element a solve carries. A client that reads its
-//! own rule states it as [`Step`]s — motions of `Cl(4,1)(ℚ)`, hue maps, and
+//! own rule states it as [`Step`]s — motions in `Cl(p, q)(ℚ)`, the
+//! signature as data, written as [`Mv`], its conformal case; hue maps; and
 //! the selections, regions, creations and crops of the clause language —
 //! and [`sentence`] speaks them as the sentence the court judges. A client
 //! that reads the family with the library's extractor calls
@@ -75,7 +76,8 @@ pub use mycelium::transducer::sentence::{ObstructionRefusal, SentenceRule};
 /// The element a solve carries as its rule's tape (`Element::to_bytes`).
 pub use mycelium::transducer::element::Element;
 
-/// A multivector of `Cl(4,1)(ℚ)`: a motion step's versor.
+/// A multivector of `Cl(p, q)(ℚ)` in its conformal case (`Cl(n+1, 1)`,
+/// `n` read from the data): a motion step's versor.
 pub use mycelium::transducer::cga::Mv;
 
 /// The physics a budget is drawn from (`Physics::stroke_n`), and the budget

@@ -1,7 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! 78.142 — THE SDK RULE SEAM: a client states a rule as STEPS — rigid
-//! motions in `Cl(4,1)(ℚ)` and hue maps on the fibre — and the seam speaks
+//! motions in `Cl(p, q)(ℚ)`, the signature as data, written as `Mv`, its
+//! conformal case, and hue maps on the fibre — and the seam speaks
 //! them as the sentence the court judges. The sentence is built from the
 //! family's own perception (its bodies' charts), carried by the derivation
 //! the motion peels to, and minted through the one mint
@@ -15,7 +16,7 @@
 //! act on by a typed predicate over each body's own exact coordinates (its
 //! class, hues, shell, extent, position, contact), COUNT and COMPARE them in
 //! an order it names, ties included (Concordance 1.10), address a REGION
-//! the bodies' boundary encloses or touches, CREATE cells relative to them (a line
+//! the bodies' boundary encloses or touches, CREATE sites relative to them (a line
 //! to the border, a template stamped on a seed), and crop the output to one
 //! of them. Such a rule is spoken as the form's CLAUSES
 //! (`sentence::form::clause`), which the court decodes, speaks and judges
@@ -38,7 +39,8 @@ pub use crate::transducer::sentence::form::clause::{
 /// and since 78.143 the selection, region, creation or crop they act under.
 #[derive(Clone, Debug)]
 pub enum Step {
-    /// A versor of `Cl(4,1)(ℚ)` acting on the sites by its sandwich.
+    /// A versor (`Mv`, the conformal case of `Cl(p, q)(ℚ)`) acting on the
+    /// sites by its sandwich.
     Motion(Mv),
     /// A hue map, `(from, to)`; a hue it does not name stands still. Under
     /// a selection a hue sent to 0 is erased; on a region, the hue `0` is
@@ -51,7 +53,7 @@ pub enum Step {
     Region(RegionKind),
     /// A motion read about each selected body's own centre.
     InPlace(Mv),
-    /// CREATE: cells placed relative to each selected body.
+    /// CREATE: sites placed relative to each selected body.
     Create(Create),
     /// SIZE: the output is the extent of the one selected body.
     Crop(Extent),
@@ -62,7 +64,7 @@ pub enum Step {
 /// WHAT A RULE CREATES relative to a selected body.
 #[derive(Clone, Debug)]
 pub enum Create {
-    /// A line from every cell of the body along `ray`, to its stop.
+    /// A line from every site of the body along `ray`, to its stop.
     Extend { ray: (i8, i8), paint: Paint, stop: Stop },
     /// The one body `template` selects, stamped centre on centre onto the
     /// body, which it replaces.
@@ -70,19 +72,25 @@ pub enum Create {
 }
 
 /// THE SIX PLANE SYMMETRIES beside the identity (the dihedral group of the
-/// square, read on a rectangle where the shapes fit). Turns are clockwise
-/// as a plane is read: `Rotate90` sends row `r`, column `c` of an `R × C`
-/// plane to row `c`, column `R − 1 − r`.
+/// square, read on a rectangle where the shapes fit), on the plane of the
+/// perspective's two plane axes, `e₁` the first and `e₂` the second
+/// (`PlaneAxis`). A rotation is named by its generator, written in its
+/// orientation, and its degrees, as a motion: `RotateE2E1By90` carries `e₂`
+/// onto `e₁` and `e₁` onto `−e₂`, so the site at coordinates `(a, b)` of an
+/// `A × B` sample lands at `(b, A − 1 − a)`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Symmetry {
-    Rotate90,
-    Rotate180,
-    Rotate270,
-    /// Mirror left to right: column `c` → `C − 1 − c`.
+    /// 90° in the `e₂e₁` plane.
+    RotateE2E1By90,
+    /// 180° in the `e₂e₁` plane.
+    RotateE2E1By180,
+    /// 270° in the `e₂e₁` plane.
+    RotateE2E1By270,
+    /// The mirror along `e₂`: the second plane coordinate `b` → `B − 1 − b`.
     FlipH,
-    /// Mirror top to bottom: row `r` → `R − 1 − r`.
+    /// The mirror along `e₁`: the first plane coordinate `a` → `A − 1 − a`.
     FlipV,
-    /// Row and column exchanged.
+    /// The two plane axes exchanged.
     Transpose,
 }
 
@@ -121,7 +129,7 @@ pub enum NoRule {
     CitesUnheld(Vec<u8>),
     /// 78.143 — a clause is not stated on a pair of the family, by name: a
     /// tie its order does not name, a coordinate that is not exact, no
-    /// single body where one is asked, a cell landing between cells.
+    /// single body where one is asked, a site landing between sites.
     Unstated(Unstated),
     /// A motion asked of a region: a region is a target of hues, not a body.
     NotOnRegion,
@@ -146,16 +154,17 @@ fn centre((rows, cols): (usize, usize)) -> Option<[Q; 2]> {
 }
 
 impl Symmetry {
-    /// THE LINEAR PART, about the origin, on the base's `e1` (row) and `e2`
-    /// (column): a rotor in the `e1e2` plane for a turn — `1 ∓ e1e2` up to
-    /// scale, a ray, exact — and a vector for a mirror. What
-    /// [`Step::InPlace`] reads about each selected body's own centre.
+    /// THE LINEAR PART, about the origin, on the base's `e1` (the first plane
+    /// axis) and `e2` (the second): a rotor in the `e1e2` plane for a
+    /// rotation — `1 ∓ e1e2` up to scale, a ray, exact — and a vector for a
+    /// mirror. What [`Step::InPlace`] reads about each selected body's own
+    /// centre.
     pub(crate) fn linear(self) -> Mv {
         use crate::transducer::cga::{E1, E2};
         match self {
-            Symmetry::Rotate90 => cga::rotator(&q(1), &q(1)),
-            Symmetry::Rotate180 => cga::rotator(&q(0), &q(1)),
-            Symmetry::Rotate270 => cga::rotator(&q(1), &q(-1)),
+            Symmetry::RotateE2E1By90 => cga::rotator(&q(1), &q(1)),
+            Symmetry::RotateE2E1By180 => cga::rotator(&q(0), &q(1)),
+            Symmetry::RotateE2E1By270 => cga::rotator(&q(1), &q(-1)),
             Symmetry::FlipH => Mv::blade(E2, q(1)),
             Symmetry::FlipV => Mv::blade(E1, q(1)),
             Symmetry::Transpose => Mv::blade(E1, q(1)).sub(&Mv::blade(E2, q(1))),
@@ -164,19 +173,20 @@ impl Symmetry {
 
     /// Does the symmetry exchange the plane's two extents?
     fn exchanges(self) -> bool {
-        matches!(self, Symmetry::Rotate90 | Symmetry::Rotate270 | Symmetry::Transpose)
+        matches!(self, Symmetry::RotateE2E1By90 | Symmetry::RotateE2E1By270 | Symmetry::Transpose)
     }
 }
 
 impl Step {
     /// THE CENTRED RIGID MOTION `T(c′) · L · T(−c)`: the input's centre
-    /// `c = ((R−1)/2, (C−1)/2)` taken to the origin, the symmetry's linear
+    /// `c = ((A−1)/2, (B−1)/2)` taken to the origin, the symmetry's linear
     /// part `L` applied there, and the origin taken to the output's centre
     /// `c′` — half-integers, exact, read in the sensor's compartment-centre
     /// coordinates (each index plus ½, [`centre`]), which is the one frame
     /// the court carries a site in. `None` where the shapes do not fit the
-    /// symmetry: a turn by 90° or 270° and the transpose take `R × C` to
-    /// `C × R`; the 180° turn and the mirrors keep `R × C`. Public for a
+    /// symmetry: a rotation by 90° or 270° in `e₂e₁` and the transpose take
+    /// `A × B` to `B × A`; the rotation by 180° in `e₂e₁` and the mirrors
+    /// keep `A × B`. Public for a
     /// client stating its programs through [`sentence`] (2026-10-22).
     pub fn symmetry_motion(kind: Symmetry, in_shape: (usize, usize), out_shape: (usize, usize)) -> Option<Step> {
         let fits = match kind.exchanges() {
@@ -370,7 +380,7 @@ fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
 /// THE SENTENCE OF A RULE THAT STATES CLAUSES (78.143): a form of its Frame
 /// and the clauses, stated on every pair of the family by name, closing
 /// every pair, minted through the one mint. No vertex names a training
-/// frame or a training cell: the clauses select on whatever scene they are
+/// frame or a training site: the clauses select on whatever scene they are
 /// spoken onto, so the word crosses to pairs it never saw.
 fn clause_sentence(clauses: Vec<Clause>, family: &[(SectionSample, SectionSample)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
     if clauses.is_empty() || family.is_empty() {

@@ -16,13 +16,13 @@ fn slide(r: i64, c: i64) -> Element {
     from_connection(&Word::identity(), &translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a slide spells")
 }
 
-/// The 180° turn of the sensor plane, carried by `(r, c)`: a compartment is
+/// The rotation by 180° in the e₁e₂ plane, carried by `(r, c)`: a compartment is
 /// the unit square at its site, so the square at `(i, j)` lands at
 /// `(r − 1 − i, c − 1 − j)`.
 fn turn_180(r: i64, c: i64) -> Element {
-    let q = LetterId::turn_90((0, 1)).expect("the sensor plane's 90° turn");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let word = Word::from_letters(&[(q, false), (q, false)]);
-    from_connection(&word, &translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("a 180° turn spells")
+    from_connection(&word, &translator_versor(r, c), &[], &Vec::new(), [1, 0, 0, 0]).expect("180° in the e₁e₂ plane spells")
 }
 
 /// TWO CONSTRUCTIONS, ONE CONCLUSION. On `11·· → ··11` the slide by two

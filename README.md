@@ -815,14 +815,16 @@ network.
 mycelium-server --home /srv/myc/a --init     # prints:  genesis line: hypha <vk hex>
 mycelium-server --home /srv/myc/b --init
 mycelium-server --home /srv/myc/c --init
-mycelium-client --home /srv/myc/v1 --init    # prints:  genesis line: voice <vk hex> <S> <G> <T> <H>
+mycelium-client --home /srv/myc/v1 --init    # prints:  genesis line: voice <vk hex> <μ on S> <μ on G> <μ on T> <μ on H>
 ```
 
 **2. Write the genesis allocation.** Collect the printed lines into one
 `genesis` file:
 - one `hypha <vk>` line for each court of the network;
 - one `voice <vk> S G T H` line for each client funded at genesis. The four
-  numbers are its μ allocation on the S, G, T and H lanes.
+  numbers are its μ allocation read on the S, G, T and H lanes, one per
+  lane and never summed: the genesis events that set its holding's
+  coordinate.
 
 Place the same file in every hypha's home. Every court bonds the hyphae
 named here, and each of them is an independent witness
@@ -952,13 +954,13 @@ while the network is a prototype ([`docs/release-keys/`](docs/release-keys/)).
 | `voice` | `Voice`, the voice key (`VoiceKey`, `load_or_mint`), `SigningKey`, the mesh record of a voice home (`load_or_migrate_voice`) |
 | `session` | `Session` (`open`, `speak`, `speak_keyed`, `tuniversal`), `TransportAperture`, `TPoint` |
 | `deferral` | The deferral a hypha with a full worker pool answers every act with, which every client MUST recognise and retry: `read_deferral` (`Deferral { deficit }`), `deferral_of` on a `speak` refusal, `PENDING_CODE` ([`docs/MU-CONFORMANCE.md`](docs/MU-CONFORMANCE.md) §5) |
-| `task` | Task request and envelope, whose train pairs and test inputs are samples of any rank (`Sample`, `TaskEnvelope`; `TaskEnvelope::rasters` for rank 2 at width 1); the sample codec (`push_sample`, `read_sample`, `SampleWire`) and the posted task (`PostedTask`); `encode_solve_with_rule` over sample outputs (`spoken_outputs` places rasters); `decode_solve_verdict` and the `SOLVE_*` codes |
+| `task` | Task request and envelope, whose train pairs and test inputs are samples of any rank (`Sample`, `TaskEnvelope`; `TaskEnvelope::section` for the alphabet's section, `TaskSection`); the sample codec (`push_sample`, `read_sample`, `SampleWire`) and the posted task (`PostedTask`); `encode_solve_with_rule` over sample outputs (`spoken_outputs` places each at its position); `decode_solve_verdict` and the `SOLVE_*` codes |
 | `rule` | The rule seam: `Step`, `Create`, `Symmetry`, `NoRule`, `sentence`, the clause types; `extract_rule`, `mint_sentence_why`, `speak_rule`; `Crystal`, `NoCrystal`, `Element` |
 | `seat` | `SeatName`, `MindMail`, `MindRead`, the seat posts; `Session::{list_seats, take, call, mail, read_mail, seat_post}` |
-| `wallet` | `Mu`, an amount of μ exact per lane, and `MuRefusal`; wallet read; stake and unstake; lease open, reply and close |
-| `readings` | The typed readings a client may ask a hypha for: observer, why, law register, receipts, ledger entries (`encode_entries_request`, `decode_entries_reply`), reserve, probe |
+| `wallet` | The wallet read, a reading of the holding's coordinate on the one multi-dimensional ledger: `Mu`, an amount of μ read exactly per lane (retiring in v0.5.0 for `Modes`), and `MuRefusal`; stake and unstake; lease open, reply and close |
+| `readings` | The typed readings a client may ask a hypha for: observer, why, law register, receipts, the economic events of the multi-dimensional ledger over a span (`encode_entries_request`, `decode_entries_reply`), reserve, probe |
 | `mind` | The reference mind, `Mind::open` and `Mind::open_persistent` |
-| `wire` | `WIRE_VERSION` (`0x0200`, wire v2.0: every μ field four exact rational lanes) and `ACT_TABLE`, every act the SDK may send |
+| `wire` | `WIRE_VERSION` (`0x0200`, wire v2.0: every μ field read on the four base lanes, one exact non-negative component each) and `ACT_TABLE`, every act the SDK may send |
 | `laws` | The L0 law register (`Law`, `LAWS`, `LAW_VERSION` 5, `PARAMETERS`), its read (`encode_register_request`, `decode_register_reply`), and the `forms` law ids (`FORM_LAW_IDS`); every law shared is tabled in [`docs/MU-EQUATIONS.md`](docs/MU-EQUATIONS.md) §11 |
 | `signing` | A kernel's signing helper: the Concordance's clause register read (`ACT_LAWS` mode 7), each fixture reconstructed through `forms` (`reconstruct_fixture`), and the readings signed clause by clause (`sign_concordance`, mode 8) |
 | `house` | A kernel's uplink (its house): domain founding (`DomainGenesis`, `Founded`), the reserve and origin, the universe (`Genesis`, `Geometry`, `UniverseReading`), the endowment (`Manifest`, `Granted`, `EndowmentReading`), the house side of seats (`Post`, `Seats`, `HouseMail`, the listing and mail codecs), laws verify (`Transition`, `TransitionVerdict`, `verify_sized`, `encode_verify_request`, `decode_verify_reply`), the clock (`CoreStamp`, `TPoint`), the Concordance's clause register and signing act (`ConcordanceClause`, `Fixture`, `Signing`, `sign_concordance`, `SigningRefusal`), framing (`WireFrame`, `Lane`) and `HyphaKey`; the wire modules `domain`, `universe`, `endowment`, `seat`, `atlas`, `uplink`, `challenge` whole |
@@ -981,8 +983,9 @@ let session = Session::open("127.0.0.1:7610", voice);
 //    outputs stay with the court. An empty reply means no work is available.
 let reply = session.speak(task::encode_task_request(&key.verifying_key().to_bytes()))?;
 let samples = task::decode_task_envelope(&reply).ok_or("no task")?;
-//    The envelope's samples may be of any rank; the rule seam reads rasters.
-let envelope = samples.rasters().map_err(|_| "not a raster task")?;
+//    The envelope's samples may be of any rank; the rule seam reads the
+//    alphabet's section, and a task off it is refused by name.
+let envelope = samples.section().map_err(|_| "off the alphabet's section")?;
 // 4. Rule: extracted from the train pairs, minted as an element the court
 //    can reconstruct, and spoken on each test input.
 let mut budget = Physics::default().stroke_n(1 << 20);
@@ -997,14 +1000,14 @@ let outputs = task::spoken_outputs(&outputs).map_err(|_| "an output is no sample
 let solve = task::encode_solve_with_rule(&key, &envelope.id, &outputs,
                                          Some(&element.to_bytes().ok_or("tape")?)).ok_or("solve")?;
 let verdict = session.speak(solve)?;
-let (code, paid, refusal, _modes) = task::decode_solve_verdict(&verdict).ok_or("verdict")?;
+let (code, paid, refusal, modes) = task::decode_solve_verdict(&verdict).ok_or("verdict")?;
 ```
 
 The verdict codes are:
 
 | Code | Meaning |
 |---|---|
-| `SOLVE_BOUNTY` | The task's first verified closure; `paid` is the payment, an exact `Mu`. |
+| `SOLVE_BOUNTY` | The task's first verified closure; `modes` are the modes the closure moved (`Modes`, the carrier of μ), and `paid` reads the payment exactly per lane (`Mu`, retiring in v0.5.0). |
 | `SOLVE_AGAIN` | A verified re-solve of a closed task; it pays nothing. |
 | `SOLVE_NOTHING` | A final verdict; `refusal` names the reason (e.g. "form leaves a remainder on the family"). |
 | `SOLVE_UNREAD` | The reconstruction is in progress; sending the same solve again resumes it. |
@@ -1015,8 +1018,8 @@ Running the example against a hypha:
 cargo build --release -p mycelium-sdk --example client
 target/release/examples/client /srv/myc/v1 127.0.0.1:7610 8
 #   voice 1eac4511…
-#   task 65b0c3689cfe3a37… solved: first verified closure (bounty) — paid μ [0, 24, 0, 0]
-#   task d9144a4bc81fd016… solved: first verified closure (bounty) — paid μ [88, 0, 0, 92]
+#   task 65b0c3689cfe3a37… solved: first verified closure (bounty) — paid μ [0, 24, 0, 0]; modes G …
+#   task d9144a4bc81fd016… solved: first verified closure (bounty) — paid μ [88, 0, 0, 92]; modes S … · H …
 #   task da0dfd765fbe3521… not solved (final) — refused: form leaves a remainder on the family
 ```
 
@@ -1082,7 +1085,7 @@ cargo build --release -p mycelium-sdk --example conformance
 target/release/examples/conformance --endpoint 127.0.0.1:7610
 #   passed  MUST laws register: law version 5: 6 laws, each at its coordinate with its statement
 #   passed  MUST task: 4 train pairs, 1 test inputs
-#   passed  MUST solve: solved (bounty), paid μ [88, 0, 0, 92]
+#   passed  MUST solve: solved (bounty), paid μ [88, 0, 0, 92]; modes S … · H …
 #   conforms (profile mind): wire 0x0200, law version 5
 target/release/examples/conformance --endpoint 127.0.0.1:7610 --profile kernel
 ```

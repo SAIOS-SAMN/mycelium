@@ -22,7 +22,8 @@ pub struct Session {
     /// Peer addresses keyed by the contact string's bytes.
     pub(crate) peers: crate::network::nerve::Keyed<String>,
     /// The quote's stroke: quotes run round the nerve in turn, one hypha per
-    /// stroke, so every book is thought about and none is a monologue.
+    /// stroke, so every hypha's listings are thought about and none is a
+    /// monologue.
     pub(crate) strokes: std::cell::Cell<u64>,
     /// Keep-alive streams keyed by destination address.
     pub(crate) streams: RefCell<crate::network::nerve::Keyed<TcpStream>>,

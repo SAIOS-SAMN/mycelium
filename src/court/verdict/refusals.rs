@@ -313,14 +313,16 @@ pub const REFUSE_ORIGIN: &str = "receipt names another genesis or origin epoch";
 /// 47.2 step 4: the claimed height does not re-derive from the parents
 /// named, or the prefix and the receipt it travels with disagree.
 pub const REFUSE_RECEIPT: &str = "receipt height does not re-derive from its parents";
-/// 47.2 step 3: a duplicate frame at a K already held, ignored.
+/// 47.2 step 3: a duplicate frame at a receipt index `i` already held,
+/// ignored.
 pub const REFUSE_RECEIPT_STALE: &str = "receipt index at or below the signer's known head";
 /// 47.2 step 3, MU-HOSTING §5a.9, MU-DERIVATIONS D2.5: a back-filled
 /// receipt that would be held unreached past the process's capacity, the
 /// reads `M_proc` holds at the measured bytes per read (`C = ⌊M_proc / b⌋`).
 pub const REFUSE_UNREACHED_PAST_MEMORY: &str = "back-filled receipt held unreached past the process's memory";
-/// 47.4: two receipts at one K on one chain with different hashes.
-pub const REFUSE_EQUIVOCATION: &str = "two receipts at one K with different chain hashes";
+/// 47.4: two receipts at one line position `i` on one chain with different
+/// hashes.
+pub const REFUSE_EQUIVOCATION: &str = "two receipts at one line position i with different chain hashes";
 /// 47.2 step 2: the signature does not verify over the 47.1 prefix under
 /// the key the frame claims.
 pub const REFUSE_SIGNATURE: &str = "signature does not verify over the signed prefix";
@@ -329,6 +331,7 @@ pub const REFUSE_SIGNATURE: &str = "signature does not verify over the signed pr
 /// base and transport. Decided before any carrier is touched.
 pub const REFUSE_MALFORMED: &str = "act names a payload it does not carry";
 /// 34.1 (I21): an `ACT_EQUIVOCATION` whose two receipts are not 47.4's
-/// proof — two keys, two K, or one chain hash (a duplicate frame). Decided
-/// by `admission::admit_equivocation` before any carrier is touched.
-pub const REFUSE_NOT_EQUIVOCATION: &str = "two receipts that do not share key and K, or do not differ";
+/// proof — two keys, two line positions `i`, or one chain hash (a duplicate
+/// frame). Decided by `admission::admit_equivocation` before any carrier is
+/// touched.
+pub const REFUSE_NOT_EQUIVOCATION: &str = "two receipts that do not share key and line position i, or do not differ";

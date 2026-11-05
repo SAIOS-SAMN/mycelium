@@ -224,7 +224,7 @@ fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskSection, gro
     loop {
         asked += 1;
         let reply = session.speak(act.clone())?;
-        let (code, paid, refusal, _modes) =
+        let (code, paid, refusal, modes) =
             d::decode_solve_verdict(&reply).ok_or_else(|| format!("{} bytes that do not decode as a verdict", reply.len()))?;
         match code {
             d::SOLVE_UNREAD if asked < RESUMES => continue,
@@ -239,7 +239,10 @@ fn solve_one(session: &Speaker, key: &SigningKey, envelope: &d::TaskSection, gro
             }
             d::SOLVE_BOUNTY | d::SOLVE_AGAIN if refusal.is_some() => return Err(format!("code {code} pays and refuses at once")),
             d::SOLVE_AGAIN if !paid.is_zero() => return Err(format!("a repeat closure paid μ {paid}")),
-            d::SOLVE_BOUNTY => return Ok(format!("solved (bounty), paid μ {paid}")),
+            d::SOLVE_BOUNTY => {
+                let modes = modes.as_ref().map_or_else(|| "none carried".to_string(), mycelium::economy::modes::Modes::print);
+                return Ok(format!("solved (bounty), paid μ {paid}; modes {modes}"));
+            }
             d::SOLVE_AGAIN => return Ok("solved again (a repeat closure, verified, paid nothing)".to_string()),
             other => return Err(format!("verdict code {other} is none of the four the statement names")),
         }
@@ -283,10 +286,10 @@ fn mind_loop(session: &Speaker, key: &SigningKey, report: &mut Report) {
     // Track 26 S4b: this client's rule seam spells the alphabet's section;
     // a task of another rank or width is carried exactly and left unread
     // here, never misread.
-    let Ok(rasters) = envelope.section() else {
+    let Ok(section) = envelope.section() else {
         return report.unread("solve", "the task's samples are off the alphabet's section this client spells");
     };
-    let solved = solve(session, key, &rasters);
+    let solved = solve(session, key, &section);
     session.record(report, "solve", solved);
 }
 

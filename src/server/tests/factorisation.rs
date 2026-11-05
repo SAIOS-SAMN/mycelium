@@ -86,7 +86,7 @@ fn court_refuses_a_factorisation_whose_residue_differs() {
     unsigned.signed = false;
     assert_eq!(judge_factorisation(book.task(&cite), &unsigned), refused(REFUSE_FACTOR_UNSIGNED));
     assert_eq!(judge_factorisation(book.task(&cite), &heard(&cite, 2, &f.motion, &f.residue, None)), refused(REFUSE_FACTOR_NO_PAIR));
-    assert_eq!(judge_factorisation(None, &heard(&[9; 32], 0, &f.motion, &f.residue, None)), refused("no such task on this book"));
+    assert_eq!(judge_factorisation(None, &heard(&[9; 32], 0, &f.motion, &f.residue, None)), refused("no such task at this court"));
     let elsewhere = Motion { permutation: f.motion.permutation.clone(), onto: Enclosure::new(vec![2, 2, 4]).expect("an enclosure") };
     let FactorVerdict::Refused { reason } = judge_factorisation(book.task(&cite), &heard(&cite, 0, &elsewhere, &f.residue, None)) else {
         panic!("a motion onto another enclosure is no motion of the pair")

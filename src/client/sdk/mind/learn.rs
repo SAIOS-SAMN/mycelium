@@ -9,7 +9,7 @@ impl Mind {
     /// the client never arbitrates raw corpus; the server decides what is
     /// useful work. One pull is in flight at a time; the envelope lands on
     /// the board as an offer, read to its charts (`offer`), to be taken in
-    /// where it couples (`task_inflow`), none where the book is settled.
+    /// where it couples (`task_inflow`), none where the court's listings are settled.
     /// MU-CLIENT §4.12, §7.1 — WHEN THE MIND ASKS: nothing waits to be taken
     /// in or is being perceived, the reserve stands regenerated on every
     /// lane, and either the field holds strain (`strained`) or the corpus
@@ -128,7 +128,7 @@ impl Mind {
             io::Error::new(io::ErrorKind::InvalidInput, "the rule's record passes a length its field writes")
         })?;
         // A solve that does not fit the lengths the frame writes is not
-        // sent short: it is not sent (47.1). The spoken rasters go out as
+        // sent short: it is not sent (47.1). The spoken outputs go out as
         // samples, each at its place (track 26 S5).
         let spoken = dialogue::spoken_outputs(outputs).ok();
         let Some(act) = spoken.and_then(|s| dialogue::encode_solve_spoken(&key, id, &s, Some(&bytes), stated.as_deref())) else {
@@ -364,7 +364,7 @@ impl Mind {
                     // THE OBSTRUCTION IS KEPT AS MEASURED: two views of one
                     // object whose transition does not vanish. It rode up as
                     // a percept pair (held view → fetched view), a demand on
-                    // the book for the word that carries one onto the other —
+                    // the court's listings for the word that carries one onto the other —
                     // a voice's painted sites at a court, which law 8 refuses
                     // (ruled 2026-09-10). It is held here as the dialect
                     // measured; the contraction protocol (50.9, L8) carries

@@ -7,6 +7,7 @@ use super::super::drift::{lint_drift, REGISTER};
 use super::super::euclidean::lint_euclidean;
 use super::super::length::lint_file_length;
 use super::super::numbers::lint_numbers;
+use super::super::surface::{client_surface, lint_surface};
 use std::path::{Path, PathBuf};
 
 /// The repository root: the gate's manifest sits one level under it.
@@ -78,6 +79,19 @@ fn changes_hold_only_titled_fragments() {
     let read = lint_fragments(&repo().join("changes"), &mut hits).expect("changes/ reads");
     eprintln!("changes: {read} fragments");
     assert!(hits.is_empty(), "changes/ holds what is no fragment:\n{}", hits.join("\n"));
+}
+
+/// THE RULINGS OF 2026-11-04/05 ON THE CLIENT SURFACE (the SDK crate, the
+/// reference mind and its binary, the README): no retired phrase stands —
+/// no quarter or half turn and nothing clockwise, no Concordance hash, no
+/// flat wallet and no ledger row.
+#[test]
+fn client_surface_holds_no_retired_phrase() {
+    let mut hits = Vec::new();
+    let read = lint_surface(&client_surface(repo()), &mut hits).expect("the client surface reads");
+    eprintln!("client surface: {read} files");
+    assert!(read > 0, "the client surface holds files");
+    assert!(hits.is_empty(), "the client surface says what a ruling retired:\n{}", hits.join("\n"));
 }
 
 /// THE DRIFT REGISTER: each registered guard's type is declared and its

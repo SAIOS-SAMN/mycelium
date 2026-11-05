@@ -15,7 +15,7 @@ fn comprehend_demands_missing_element_not_count() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::element::{from_connection, identity_versor};
 
-    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let p5 = LetterId::pythagorean_5((0, 1)).expect("a prime on the same plane");
     let held = Word::from_letters(&[(q, false)]);
     let spoken = Word::from_letters(&[(q, false), (p5, false)]);
@@ -88,7 +88,7 @@ fn stratum_reads_factoring_basis_coarser_than_chart() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::element::{from_connection, identity_versor};
 
-    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
+    let q = LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     let p5 = LetterId::pythagorean_5((0, 1)).expect("a prime on the same plane");
     let mut epi = MindLanguage::new();
     let one = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])

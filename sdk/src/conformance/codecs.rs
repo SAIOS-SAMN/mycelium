@@ -248,20 +248,20 @@ fn laws_alignment() -> Result<String, String> {
 
 fn laws_verify() -> Result<String, String> {
     use mycelium::physics::laws::{verify_sized, Law};
-    let ts = super::probes::transitions().ok_or("the turn carries no body")?;
+    let ts = super::probes::transitions().ok_or("the rotor in e₁e₂ carries no body")?;
     for t in &ts {
         same("the verify request", laws::decode_laws_request(&laws::encode_verify_request(t)), laws::LawsRequest::Verify(t.clone()))?;
         let v = verify_sized(t);
         same("the verdict", laws::decode_verify_reply(&laws::encode_verify_reply(&v)), v)?;
     }
     let [lawful, still] = ts.map(|t| verify_sized(&t));
-    same("the lawful turn admitted", Some(lawful.admitted()), true)?;
+    same("the lawful rotation in e₁e₂ admitted", Some(lawful.admitted()), true)?;
     same("the still height's breaches", Some(still.breaches.iter().map(|(l, _)| *l).collect::<Vec<_>>()), vec![Law::Time])?;
-    Ok("both transitions and the verdict on each decode; the turn admitted, the still height refused on time".to_string())
+    Ok("both transitions and the verdict on each decode; the rotation in e₁e₂ admitted, the still height refused on time".to_string())
 }
 
 fn laws_batch() -> Result<String, String> {
-    let ts = super::probes::transitions().ok_or("the turn carries no body")?.to_vec();
+    let ts = super::probes::transitions().ok_or("the rotor in e₁e₂ carries no body")?.to_vec();
     same("the batch request", laws::decode_laws_request(&laws::encode_batch_request(&ts)), laws::LawsRequest::Batch(ts.clone()))?;
     let verdicts: Vec<_> = ts.iter().map(mycelium::physics::laws::verify_sized).collect();
     same("the batch's verdicts", laws::decode_batch_reply(&laws::encode_batch_reply(&verdicts)), verdicts)?;

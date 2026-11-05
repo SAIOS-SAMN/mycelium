@@ -5,7 +5,7 @@ use crate::client::sdk::*;
 use crate::transducer::element::{Element, Filed, Generator, Remainder, TorsionCycle, FIBRE_SPATIAL};
 
 fn turn_90() -> crate::transducer::alphabet::Rotor {
-    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane");
     crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor()
 }
 

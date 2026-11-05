@@ -112,7 +112,7 @@ fn vent_into_field_withholds_open_flux_from_temporal() {
     assert_eq!(closed, before, "closed, it comes back exactly");
 }
 
-/// A 90° turn on `e₁e₂`, `1 + e₁₂`, at weight `w`.
+/// The rotation by 90° in the `e₁e₂` plane, `1 + e₁₂`, at weight `w`.
 fn cga_turn(w: num_rational::BigRational) -> crate::transducer::cga::Mv {
     use crate::transducer::cga::{Mv, E1, E2};
     Mv::scalar(w.clone()).add(&Mv::blade(E1 | E2, w))

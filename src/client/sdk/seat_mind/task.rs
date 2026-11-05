@@ -15,8 +15,9 @@
 //! carriage (`element::conformal_of_rotor`), and that motion is the D4 kind
 //! whose `Step::symmetry_motion` on the train pair's shapes it EQUALS as an
 //! action on the plane (`same_action`, exact), tried in the house's
-//! order: 1 Rotate90, 2 Rotate180, 3 Rotate270, 4 FlipH, 5 FlipV, 6
-//! Transpose. A motion that is no D4 kind is not pure. Each hue move `from →
+//! order: 1 RotateE2E1By90, 2 RotateE2E1By180, 3 RotateE2E1By270 (90°,
+//! 180° and 270° in the `e₂e₁` plane of the perspective's two plane axes),
+//! 4 FlipH, 5 FlipV, 6 Transpose. The kind codes are unchanged. A motion that is no D4 kind is not pure. Each hue move `from →
 //! to` is the count `0x100 + 16·from + to`.
 
 use super::super::rule::{Step, Symmetry};
@@ -45,7 +46,7 @@ pub fn decline_args(citation: &[u8; 32], stop: u64) -> Vec<Arg> {
 
 /// The D4 kinds in the house's order: kind `i + 1` is `D4[i]`.
 pub const D4: [Symmetry; 6] =
-    [Symmetry::Rotate90, Symmetry::Rotate180, Symmetry::Rotate270, Symmetry::FlipH, Symmetry::FlipV, Symmetry::Transpose];
+    [Symmetry::RotateE2E1By90, Symmetry::RotateE2E1By180, Symmetry::RotateE2E1By270, Symmetry::FlipH, Symmetry::FlipV, Symmetry::Transpose];
 
 /// THE TASKS A PERCEPT PUTS BEFORE THE SEAT: the citations its kind-4
 /// records carry — each `[Key(citation)]` exactly — where it carries no

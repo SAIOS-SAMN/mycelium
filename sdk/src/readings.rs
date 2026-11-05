@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 // §8.1, 78.62 — THE READINGS A CLIENT ASKS A HYPHA FOR: observations, each
-// typed, none moving the book.
+// typed, none moving the ledger.
 
 //! The typed readings a client may ask a hypha for.
 //!
@@ -12,7 +12,8 @@
 //! - the observer's readings, by prefix ([`encode_query`], [`decode_reply`]);
 //! - why a word or act was ruled as it was ([`encode_why`], [`decode_why_reply`]);
 //! - the law register's parameters, core clock and lexicon;
-//! - a court's receipts and the economy's rows over a span;
+//! - a court's receipts and the economic events over a span, events of the
+//!   one multi-dimensional ledger (MU-ECONOMY §2.1);
 //! - a domain's reserve ([`ReserveReading`], also `Session::reserve_reading`);
 //! - the probe's reading of a target.
 
@@ -36,7 +37,8 @@ pub use mycelium::anastome::dialogue::{decode_receipts_reply, encode_receipts_re
 /// A place on a court's chain.
 pub use mycelium::chronometry::Place;
 
-/// The economy's ledger entries over a span.
+/// The economic events over a span: events of the one multi-dimensional
+/// ledger (lane × layer × grade), as one court's line holds them.
 pub use mycelium::anastome::dialogue::{decode_entries_reply, encode_entries_request};
 
 /// A domain's reserve, as the hypha reads it.

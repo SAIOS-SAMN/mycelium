@@ -1,8 +1,9 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 45 — CHRONOMETRY: the receipt is the clock. K orders events inside one
-//! kernel, TUniversal is the height of the receipt ledger, and no kernel
-//! reads a wall clock.
+//! 45 — CHRONOMETRY: the receipt is the clock. The line position `i` orders
+//! a signer's receipts inside one kernel (`K` counts the orbits it closed,
+//! never this index), TUniversal is the height of the receipt ledger, and
+//! no kernel reads a wall clock.
 
 pub mod chain;
 pub mod era;

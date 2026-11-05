@@ -24,7 +24,7 @@ fn drop_dialect_removes_word_from_axis_index() {
     use crate::transducer::stalk::Invariant;
 
     let chart = Invariant::counts(&[1, 7, 11]);
-    let w = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)]);
+    let w = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° in the e₁e₂ plane"), false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
@@ -42,12 +42,13 @@ fn drop_dialect_removes_word_from_axis_index() {
     f.reindex();
     let sentence = as_element_form(&f, [1, 0, 0, 0]).expect("a tape");
 
-    // The coordinates a 90° turn occupies are the slots it is filed
-    // under; a word occupying none files nowhere and would prove nothing.
+    // The coordinates the rotation by 90° in e₁e₂ occupies are the slots it
+    // is filed under; a word occupying none files nowhere and would prove
+    // nothing.
     let axes = ClassVector::of_word(&w)
-        .expect("a 90° turn has a class vector")
+        .expect("90° in the e₁e₂ plane has a class vector")
         .coordinates();
-    assert!(!axes.is_empty(), "a 90° turn occupies a coordinate");
+    assert!(!axes.is_empty(), "90° in the e₁e₂ plane occupies a coordinate");
 
     let mut epi = MindLanguage::new();
     let addr = epi

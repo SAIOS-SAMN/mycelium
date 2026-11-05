@@ -88,7 +88,8 @@ impl Court {
             .sum()
     }
 
-    /// The mesh's algebraic clock — the next K-step index (chronometry import).
+    /// The next line position `i` on this court's receipt chain (chronometry
+    /// import); `K` counts closed orbits and is never this index.
     pub fn k_step(&self) -> u64 {
         self.chain.next_step_index()
     }

@@ -8,7 +8,7 @@
 name = "mycelium-sdk"
 version = "0.3.0-rc.3"
 edition = "2021"
-description = "The client SDK of the Mycelium network: a voice, a session with a hypha, tasks and solves, the rule seam, seats, the wallet and the typed readings, over exact Cl(4,1)(Q) geometric algebra."
+description = "The client SDK of the Mycelium network: a voice, a session with a hypha, tasks and solves, the rule seam, seats, the wallet and the typed readings, over the exact geometric algebra Cl(p,q)(Q), its signature as data, Mv its conformal case."
 license = "Apache-2.0"
 repository = "https://github.com/SAIOS-SAMN/mycelium"
 readme = "../README.md"

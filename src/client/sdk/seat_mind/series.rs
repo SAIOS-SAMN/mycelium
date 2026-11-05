@@ -67,7 +67,7 @@ impl std::fmt::Display for Locator {
 /// Its change from the beat before — a quantity's `Change`, a versor's
 /// carrier — is DERIVED where it is read (`Series::changes`,
 /// `Series::carriers`), never held (Concordance 1.13: a change held two flow
-/// points of the Cl(4,1) algebra each, and grew a seat mind by hundreds of
+/// points of the conformal algebra (`Mv`, the conformal case of Cl(p, q)) each, and grew a seat mind by hundreds of
 /// megabytes, 2026-10-09).
 #[derive(Clone, Debug)]
 pub struct Seen {
