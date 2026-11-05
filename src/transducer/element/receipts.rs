@@ -10,7 +10,7 @@
 //!   so the presentation cannot be in the key. `derivations_compose`,
 //!   `generator_pay` and `unruled_citation` all read it.
 //!
-//!   **The pivots a crystallization rests on** (A20). `reconstruct_certificates`
+//!   **The pivots a crystallization rests on** (A20). `reconstruct_certificates_from`
 //!   un-pivots each against the axis it names.
 //!
 //!   **The filing**, which moved to `Element.filing` at `df1eeaa` and is
@@ -671,11 +671,6 @@ impl ReceiptsEnvelope {
             && self.demands.is_empty()
             && self.remainder.is_empty()
             && self.witness.is_empty()
-    }
-
-    /// The edge at a citation site, by the site's own coordinates.
-    pub fn edge_at(&self, host: &Address) -> Option<&NerveEdge> {
-        self.nerve.iter().find(|e| &e.host() == host)
     }
 
     /// The derivation cite for a vertex address.

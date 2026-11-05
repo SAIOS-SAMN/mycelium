@@ -559,6 +559,7 @@ impl Court {
     /// address, which reads back the bytes the home sent (1.7). `None` where
     /// this court has no section of its own on the class: unmeasured, never
     /// agreement.
+    #[cfg(test)]
     pub fn own_section(&self, inv: &crate::transducer::stalk::Invariant) -> Option<&Element> {
         let cx = self.complexes.get(inv.key().as_bytes())?;
         let sec = cx.sections.get(self.identity.as_slice())?;

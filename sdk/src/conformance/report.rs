@@ -32,7 +32,7 @@ pub enum Finding {
         reason: String,
     },
     /// The hypha's worker pool was full and it answered the act with the
-    /// deferral (see [`crate::deferral`]): nothing was ruled, and the act is
+    /// deferral (see [`crate::session`]): nothing was ruled, and the act is
     /// spoken again later. Never a pass, and never a failure to decode.
     Deferred {
         /// The act's name in the statement.

@@ -143,7 +143,6 @@ impl Court {
             awaiting_rulings,
             persisted: _,
             optimize_cursor: _,
-            syntropic_cursor: _,
             drain_cursor: _,
             quote_cursor: _,
             physics: _,

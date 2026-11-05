@@ -2,7 +2,7 @@
 // hypha it knows. (The refinement bid it once made over chain words is
 // gone: since MU-CLIENT §7.1's doctrine a chain is an open question and
 // never a genome word, so no genome word was left for it to examine; the
-// court consolidates its own language, `retire_redundant`.)
+// court's own consolidation worker is retired too.)
 
 use crate::client::sdk::*;
 

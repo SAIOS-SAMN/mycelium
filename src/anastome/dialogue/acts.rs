@@ -185,9 +185,11 @@ pub const ACT_DIGESTS: u8 = Action::Digests.byte();
 /// Fetch request: `[ACT_FETCH][voice 32][len u8][inv u64·len][n u32][addr 32·n]`.
 /// Reply: the syllabus page shape.
 pub const ACT_FETCH: u8 = Action::Fetch.byte();
-/// Hypha-to-hypha court organ: cover, offer, installed. Clients never send these.
+/// Hypha-to-hypha court organ: cover, offer. Clients never send these.
 pub const ACT_COVER: u8 = Action::Cover.byte();
 pub const ACT_OFFER: u8 = Action::Offer.byte();
+/// RETIRED (2026-11-05): the install two organs signed had no sender and no
+/// handler. Its byte stands so the door refuses it by name.
 pub const ACT_INSTALLED: u8 = Action::Installed.byte();
 /// 78.152b — A KEEPER'S RING PUSHED, court to court:
 /// `[ACT_TICK][keeper vk 32][ring]`, the ring in the cover digest's own codec
@@ -366,10 +368,6 @@ pub const ACT_ROOT: u8 = Action::Root.byte();
 /// to the key's home.
 pub const ACT_PEERS: u8 = Action::Peers.byte();
 
-/// RETIRED with the demand (26, law 8, ruled 2026-09-10): a demand routed on
-/// the nerve to a listing's home. Refused at the door, never routed again.
-pub const ACT_DEMAND_ROUTED: u8 = Action::DemandRouted.byte();
-
 /// A CITATION ON THE WIRE. The versor and the body ARE the operator: the
 /// hearer verifies them by reconstruction and never fetches a copy of the word to
 /// verify against.
@@ -505,8 +503,7 @@ pub struct Offer {
     /// at that stranger's vantage.
     ///
     /// `install_sig` is gone rather than zeroed: 47.3's second signature
-    /// belongs to the install, and `Installed` already carries `sig_home`
-    /// and `sig_peer` for it.
+    /// belongs to the install, whose act is retired.
     pub section: ReceiptSection,
 }
 
@@ -580,18 +577,6 @@ pub enum Ruled {
     Gap { from: Option<crate::chronometry::Place>, to: crate::chronometry::Place },
 }
 
-/// AN INSTALLED word, carrying both hyphae's signatures.
-pub struct Installed {
-    /// The word's address.
-    pub addr: Address,
-    /// The element as a full tape.
-    pub elem: Vec<u8>,
-    /// The HOME's signature.
-    pub sig_home: [u8; 64],
-    /// The WITNESS's signature. Two signatures, two vantages: the pair is
-    /// what makes the install a convergence and not an assertion.
-    pub sig_peer: [u8; 64],
-}
 /// A SOLVE submission: the answers a voice claims for a registered task.
 pub struct SolveAct {
     /// The solving voice.
@@ -711,32 +696,6 @@ pub struct WorkItem {
 /// FORMAT: offset of the served-count field in a quote reply.
 pub const QUOTE_COUNT_AT: usize = 1 + 8 + 32 + 8;
 
-/// docket reply: `[n u32] ( [addr 32][elen u32][element][nv u32][voices 32·nv][μ⃗][Δμ⃗ 32] )…`,
-/// the escrowed μ⃗ four exact rational lanes (`Mu::put`)
-/// — Δμ⃗ is the deflation the word's install measured on a listed demand
-/// (zero when the germ settled nothing on the book): the court's proof of
-/// convergence rides with the word.
-/// The last field is the hypha's k-step at which the word was installed:
-/// the coordinate a court's "since" is read against.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Docket {
-    /// The word's address.
-    pub addr: crate::transducer::address::Address,
-    /// The element itself, as a full tape — the court reconstructs it blind.
-    pub elem: Vec<u8>,
-    /// The voices attesting it.
-    pub voices: Vec<[u8; 32]>,
-    /// The μ⃗ ESCROWED against it: a claim on issuance.
-    pub escrowed: crate::economy::Mu,
-    /// The DEFLATION its install measured on a listed demand — zero when
-    /// the germ settled nothing. The proof of convergence rides with the
-    /// word, and this is not the escrow.
-    pub deflation: [u64; 4],
-    /// The hypha's place on its line at install — the orbit and the act's
-    /// place in it: the coordinate a court's "since" is read against.
-    pub at: crate::chronometry::Place,
-}
-
 /// A SETTLEMENT on the docket: the listing, its chain, the voice, the
 /// utterance that settled it, and the magnitudes before and after as the
 /// hypha measured them. The court reconstructs the utterance and measures for
@@ -775,9 +734,7 @@ pub const RULING_SLASHED: u8 = 0;
 // ATTACHED carried a base and a transport g — a Selection term or a versor on a
 // node is a blob where a coordinate belongs, and neither had a producer.
 // Attachment returns with its producer (an inter-form 2-cell attached along
-// a round) as a cite of the base by its stamp and g as a class record. The
-// bytes are not reused.
-/// Two independent voices verified the same task: a proven root.
-/// FORMAT: verdict ruling byte for a proven root.
-pub const RULING_ROOT: u8 = 5;
+// a round) as a cite of the base by its stamp and g as a class record. 5 is
+// RETIRED the same way (2026-11-05): ROOT, two independent voices verifying
+// one task, had no producer and no reader. The bytes are not reused.
 

@@ -133,12 +133,6 @@ impl<Head: CanonicalCoordinate, Tail: CanonicalCoordinate> CoordinatePath<Head, 
     pub fn new(head: Head, tail: Tail) -> Self {
         CoordinatePath { head, tail }
     }
-
-    pub fn to_address(&self) -> Address {
-        let mut out = Vec::new();
-        self.write_canonical(&mut out);
-        Address::new(out)
-    }
 }
 
 impl<Head: CanonicalCoordinate, Tail: CanonicalCoordinate> CanonicalCoordinate for CoordinatePath<Head, Tail> {
@@ -302,6 +296,7 @@ pub fn take_class_record(b: &[u8], p: &mut usize) -> Option<(Address, u32)> {
 /// No key of one kind is a proper prefix of another of the same kind,
 /// except by stratum (shared coarse coordinates). Length-delimited fields
 /// make a shorter sibling incomparable as a prefix.
+#[cfg(test)]
 pub fn is_proper_prefix(a: &[u8], b: &[u8]) -> bool {
     a.len() < b.len() && b.starts_with(a)
 }

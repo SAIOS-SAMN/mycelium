@@ -412,6 +412,7 @@ impl Form {
     /// one per member path that is evaluated. Keyed by the path, so a caller
     /// asking "what class did this orbit file" gets an answer per path and not
     /// one path's answer for all of them.
+    #[cfg(test)]
     pub fn edge_classes(
         &self,
         lp: &Orbit,

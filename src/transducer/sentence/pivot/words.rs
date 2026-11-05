@@ -312,6 +312,7 @@ pub type GeneratorIndex = Keyed<Keyed<crate::transducer::address::Address>>;
 /// leading 0 that keeps versor charts disjoint from residue charts (M4
 /// step 2), then the rotor's conjugacy axes (15.3). A word with no
 /// conjugacy axes is not a generator and is not filed.
+#[cfg(test)]
 pub fn versor_chart(w: &Word) -> Option<stalk::Invariant> {
     versor_chart_of(&w.rotor())
 }

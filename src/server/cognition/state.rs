@@ -89,8 +89,7 @@ pub struct Court {
     /// ledger is its row's admitting stamp (`admitted_at`, the List act,
     /// 78.24), never a `K` carried beside it. Dwell is measured in ALGEBRAIC
     /// time (K-steps, court-replayable), never a wall clock. Capacity is
-    /// thermodynamic (dynamic_lane_capacity — live memory headroom ×
-    /// per-lane metabolic tension); eviction is by ACTION POTENTIAL, never
+    /// thermodynamic (each lane's room, read off its own bond); eviction is by ACTION POTENTIAL, never
     /// FIFO. No static cap exists.
     pub(crate) pending: crate::network::nerve::Keyed<Element>,
     /// THE CHRONOMETRIC RECEIPT CHAIN — the line position `i` of each receipt
@@ -319,7 +318,7 @@ pub struct Court {
     /// appended there.
     pub(crate) eras_end: u64,
     /// C6: a TEST knob, `None` on any live mesh. Production reads
-    /// `dynamic_lane_capacity`, which is measured; a cap that can be set is
+    /// `lane_room`, which is measured; a cap that can be set is
     /// a free constant (rule 5), so the SETTER is behind `cfg(test)`.
     pub(crate) lane_cap: Option<[u64; 4]>,
     /// Height at first vantage of a standing carrier (listing or docket).
@@ -538,17 +537,12 @@ pub struct Court {
     /// ACT1 (78.21(2)) — the stamp's height and `K` at which this court's
     /// snapshot was last written whole, noted after the write lands.
     pub(crate) persisted: Option<(u64, u64)>,
-    /// Round-robin cursor for syntropic optimization — which generator to test for
-    /// redundancy next (bounds consolidation to one reduce per depleted step).
-    /// Last key the syntropic cursor yielded; the next stroke resumes after
-    /// it. `None` is a circuit that has not started, which is an ABSENCE and
-    /// not an empty key (rule 11): every one of the eight resume cursors
+    /// Round-robin cursor for the condense stroke — which generator to
+    /// condense next (one per depleted or idle step). Last key the cursor
+    /// yielded; the next stroke resumes after it. `None` is a circuit that has not started, which is an ABSENCE and
+    /// not an empty key (rule 11): every one of the seven resume cursors
     /// below reads the same way, and `Keyed::cursor` takes the option.
     pub(crate) optimize_cursor: Option<Vec<u8>>,
-    /// Keyed cursor into `open` for `syntropic_stroke` (rule 10, S13.3):
-    /// the stagnation circuit resumes where the last stroke left off, so a
-    /// docket beyond one budget is read whole across strokes.
-    pub(crate) syntropic_cursor: Option<Vec<u8>>,
     /// Keyed cursor into `open` for `drain_unreachable` (rule 10, S13.3):
     /// the drain resumes where the last stroke left off.
     pub(crate) drain_cursor: Option<Vec<u8>>,

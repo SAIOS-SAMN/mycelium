@@ -133,6 +133,7 @@ impl LinearFunction {
     /// metric. On the generators, `e_i² = ηᵢ`, it is `f̄(eⱼ) = Σᵢ ηᵢ ηⱼ ⟨f(eᵢ)⟩ⱼ eᵢ`
     /// — the images read back through the metric, exact over ℚ. A versor's
     /// action at its weight is its own inverse's transpose, `f̄ ∘ f = 1`.
+    #[cfg(test)]
     pub fn adjoint(&self) -> LinearFunction {
         let eta: Vec<Q> = self.masks.iter().map(|&m| Mv::blade(m, one()).geo(&Mv::blade(m, one())).scalar_part()).collect();
         let images = self

@@ -277,6 +277,7 @@ impl Complex {
     /// the rotor and carriage oriented as a condensed tether stores them,
     /// read projectively against the stored pair. `false` where no tether
     /// stands or the pair is no two vertices.
+    #[cfg(test)]
     pub fn tethered_as(&self, a: &[u8], b: &[u8], g: &Rotor, carriage: &Versor) -> bool {
         let vertices = sorted_verts([a, b]);
         let Some(s) = self.get(&vertices) else { return false };

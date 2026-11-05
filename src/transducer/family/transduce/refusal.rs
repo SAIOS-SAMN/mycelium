@@ -35,10 +35,6 @@ pub enum TransductionRefusal {
     /// A speech whose sample is refused at writing, named by the sample's
     /// own refusal: a measure past the machine word.
     Sample(crate::transducer::sample::SampleRefusal),
-    /// No signed permutation carries every body of one frame onto the
-    /// other's: the pair's change stands as its record (rule 7), never
-    /// dropped.
-    Unenclosed,
     /// A motion stated onto an enclosure that is not the output's: its
     /// speech would stand in another frame than the one it is read against
     /// (MU-SENSING §3.9).

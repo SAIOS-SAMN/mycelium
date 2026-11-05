@@ -124,6 +124,7 @@ impl Factorisation {
     /// by name where a link does not stand on the motion's speech
     /// (`OffSpeech`: a site outside the enclosure, or a symbol of another
     /// width).
+    #[cfg(test)]
     pub fn recomposed(&self, x: &Sample) -> Result<Sample, TransductionRefusal> {
         let spoken = self.motion.spoken(x)?;
         let width = spoken.width();

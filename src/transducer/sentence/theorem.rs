@@ -97,6 +97,7 @@ impl Theorem {
 
     /// THE SATURATED THEOREM over a set of generators: the Lie closure of
     /// the generators' Cayley bivectors, which certifies every nested bracket.
+    #[cfg(test)]
     pub fn saturated(
         holonomies: &[Mv],
         budget: &mut crate::physics::Budget,

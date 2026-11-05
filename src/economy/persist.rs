@@ -21,6 +21,7 @@ impl Entry {
     pub const MIN_TAPE: usize = 1 + 1 + 32 + 4 * 11 + crate::chronometry::Stamp::LEN + 32;
 
     /// This row's tape length.
+    #[cfg(test)]
     pub fn tape_len(&self) -> usize {
         let mut out = Vec::new();
         self.write(&mut out);

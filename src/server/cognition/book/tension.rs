@@ -174,6 +174,7 @@ impl Court {
 
     /// The remainder face of a listing: the unique non-flat chart. Several
     /// open charts are the field, not a representative.
+    #[cfg(test)]
     pub fn face_of(&self, address: &[u8]) -> Option<&crate::transducer::stalk::Invariant> {
         self.field
             .get(address)

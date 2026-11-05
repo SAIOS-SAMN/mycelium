@@ -81,6 +81,7 @@ pub const CUTS: [(&str, crate::transducer::cech::Cut); 2] =
 
 /// A fill's arm in the reading's own order: filled (holonomy 1), congruent,
 /// held as a class, unspellable, unread, open (unasked).
+#[cfg(test)]
 fn arm(f: &Fill) -> usize {
     match f {
         Fill::Filled(..) => 0,
@@ -240,6 +241,7 @@ impl Contemplation {
     /// from; the chain itself, its keys written in order, is that chart's
     /// coordinate, and nothing is chosen from it. Unplaced where they share
     /// none.
+    #[cfg(test)]
     pub fn remainder_reading(&self) -> crate::transducer::cech::RemainderReading {
         let mut count = crate::transducer::cech::RemainderCount::default();
         for s in self.complex.congruent_standing() {
@@ -286,6 +288,7 @@ impl Contemplation {
 
     /// 78.37(1), TP1 — THE MEET GRAPH AS IT STANDS, with the decoherences
     /// since the contemplation began.
+    #[cfg(test)]
     pub fn meet_graph(&self) -> MeetGraph {
         let (advanced, sources, transport) = self.transport_reading();
         let mut m = MeetGraph {

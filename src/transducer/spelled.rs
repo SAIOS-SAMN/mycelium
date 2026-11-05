@@ -299,11 +299,6 @@ impl SectionSample {
         &self.sample
     }
 
-    /// The sample whole, given up.
-    pub fn into_sample(self) -> Sample {
-        self.sample
-    }
-
     /// The perspective the section is read through.
     pub fn perspective(&self) -> &Perspective {
         &self.perspective

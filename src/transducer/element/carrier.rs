@@ -625,6 +625,7 @@ impl Element {
         clippy::disallowed_methods,
         reason = "rule 4 — the largest axis index this word carries is a reading of the axis set, content; a word with no axes has none and refuses"
     )]
+    #[cfg(test)]
     pub fn max_axis(&self) -> Option<u16> {
         self.axes().into_iter().max()
     }
@@ -675,6 +676,7 @@ impl Element {
 
     /// Bind the anchor fibre (germination writes it at birth; the court's
     /// refinement rebinds it).
+    #[cfg(test)]
     pub fn with_anchor(mut self, pi: crate::transducer::anchor::Selection) -> Self {
         self.anchor = Some(pi);
         self
@@ -849,6 +851,7 @@ impl Element {
 
     /// The fibre's total spoken span — base + the volume above it (cycles
     /// count each cycle's full period). `None` past the carrier.
+    #[cfg(test)]
     pub fn fibre_span(&self) -> Option<u64> {
         self.fibre_volume()?.checked_add(1)
     }

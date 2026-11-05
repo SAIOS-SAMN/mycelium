@@ -37,12 +37,9 @@ pub use mycelium::physics::laws::codec::{
 /// on the wire, and a kernel's signing act on mode 8 with its verdict. A
 /// kernel signs by reconstructing each clause's fixtures
 /// ([`crate::signing`]).
+/// The register's read, the signing act and the alignment reading (mode 9)
+/// on the wire are [`crate::signing`]'s.
 pub use mycelium::physics::laws::clauses::CLAUSES;
-/// The register's read, the signing act and the alignment reading
-/// (mode 9) on the wire.
-pub use mycelium::physics::laws::codec::{
-    decode_alignment_reply, decode_concordance_reply, decode_signature_reply, encode_alignment_request, encode_concordance_request, encode_signature_request,
-};
 
 /// Every shell the `forms` crate hosts, `(law id, version)`.
 pub use forms::LAW_IDS as FORM_LAW_IDS;

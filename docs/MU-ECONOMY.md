@@ -629,7 +629,7 @@ lane. It is the implementation v0.5.0 replaces, part by part:
 | `Treasury::supply`, `issued`, `minted` and `audit` (both equations of §6 over ℚ, checked before a snapshot persists) | `src/economy/treasury.rs` | Readings at a height over the cones; two readers converse or collide (§6) |
 | Claims: `escrow_award`, `release_award`, `revoke_award`, `release_discharged`, `mint_claim`, `draw_escrow`, `carry_escrow`, `credit_escrow` | `src/economy/escrow.rs` | A claim as a pending advance (§3.1) |
 | Held value and transfer: `Treasury::pay`, `hold`, `release_held`, `draw_held`, `refund_held` | `src/economy/pay.rs` | Events on the payer's line citing the payer's act (§5) |
-| Settlement: `settle_use`, `settle_convergence`, `settle_recursive`, `settle_rewrite`, `release_rewrite`, `settle_solve`, `settle_verification`, `settle_consilience`, `settle_assembly`, `settle_condense`, `settle_torse`, `settle_refine`, `settle_recall`, `settle_door` | `src/economy/settle.rs` | Each an advance with its causes cited |
+| Settlement: `settle_use`, `settle_convergence`, `settle_recursive`, `settle_rewrite`, `release_rewrite`, `settle_solve`, `settle_verification`, `settle_consilience`, `settle_torse`, `settle_recall`, `settle_door` (the assembly, condense and refine arms retired) | `src/economy/settle.rs` | Each an advance with its causes cited |
 | POWV: `verification_share`, `Court::pay_verification`, `Court::release_verified` | `src/economy/verify.rs`, `src/server/cognition/court/verify.rs` | The share applied per mode (§5.1) |
 | The fold: `nets_of`, `Folded`, `Inexact` | `src/economy/fold.rs` | A checkpoint of a line's prefix, per mode (§6.1) |
 | The tier slash: `economy::forfeit` | `src/economy/forfeit.rs` | Per mode |

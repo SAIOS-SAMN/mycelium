@@ -453,6 +453,7 @@ pub(super) fn carried_on(
 /// residue carried with it. Where the action does not carry `a` onto `b` —
 /// the word is not a word for this body — the refusal names why; a spent
 /// stroke is the typed cut.
+#[cfg(test)]
 pub fn versor_carrying(
     a: &Shape,
     b: &Shape,

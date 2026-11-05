@@ -20,21 +20,22 @@
 //! | Module | What it carries |
 //! |---|---|
 //! | [`voice`] | The identity: the voice key, loaded or minted; the mesh record of a voice home |
-//! | [`session`] | A session with a hypha; the transport aperture; the TUniversal point |
-//! | [`deferral`] | The deferral a full hypha answers every act with: its code, its reader, its per-lane deficit |
+//! | [`session`] | A session with a hypha; the transport aperture; the TUniversal point; the deferral a full hypha answers every act with and its reader; the reference mind, opened on a session |
 //! | [`task`] | Task request and envelope; solve with rule; the verdict and its `SOLVE_*` codes |
 //! | [`rule`] | The rule seam: typed steps and clauses, extraction, minting and speaking a rule |
 //! | [`seat`] | Seats in a house: list, take, call, read mail |
 //! | [`wallet`] | Wallet reading; stake and unstake; lease open, reply and close |
 //! | [`readings`] | The typed readings a client may ask a hypha for |
-//! | [`mind`] | The reference mind, opened on a session |
-//! | [`wire`] | [`WIRE_VERSION`] and the [`ACT_TABLE`] the SDK may send |
 //! | [`laws`] | The L0 law register at its `LAW_VERSION`, its read, and the `forms` law ids |
 //! | [`house`] | A kernel's uplink (its house): domain founding, the universe, the endowment's manifest and grant, the house side of seats, laws verify, the clock, the Concordance's clause register and signing act, framing |
 //! | [`signing`] | A kernel's signing helper: the Concordance's clauses read, each fixture reconstructed through `forms`, and the readings signed clause by clause |
 //! | [`conformance`] | The client conformance statement (two profiles, mind and kernel, each with MUST and MAY acts), its in-process check and its suite on a network |
 //! | [`forms`] | The law forms of the Concordance's nested shells |
 //! | [`prelude`] | The items a client uses first |
+//!
+//! The crate root carries the wire this SDK speaks: [`WIRE_VERSION`], the
+//! [`ACT_TABLE`] the SDK may send, the solve's claim kinds, and the
+//! deferral's code [`PENDING_CODE`] with its writer [`encode_deferral`].
 //!
 //! ## Quick start
 //!
@@ -75,10 +76,8 @@
 #![deny(missing_docs)]
 
 pub mod conformance;
-pub mod deferral;
 pub mod house;
 pub mod laws;
-pub mod mind;
 pub mod prelude;
 pub mod readings;
 pub mod rule;
@@ -88,9 +87,65 @@ pub mod signing;
 pub mod task;
 pub mod voice;
 pub mod wallet;
-pub mod wire;
 
 /// The law forms of the Concordance's nested shells (the `forms` crate),
 /// exact over ℚ.
 pub use ::forms;
-pub use wire::{ACT_TABLE, WIRE_VERSION};
+
+// MU-PRECURSORS §4.2 — THE WIRE COMPATIBILITY STATEMENT: the wire version
+// the SDK speaks and every act it may send, by the library's own codes. An
+// act a court sends a court (an offer, a fold, a keeper's tick) is not in
+// it.
+
+use mycelium::anastome::dialogue::{
+    ACT_ADOPT, ACT_COVER, ACT_DIGESTS, ACT_DOMAIN, ACT_FETCH, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE, ACT_QUOTE,
+    ACT_RECEIPTS, ACT_ENTRIES, ACT_SEAT, ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY,
+};
+
+/// THE SOLVE'S CLAIM KINDS, the byte after its tag (78.126; track 26 S4c):
+/// a solve of outputs, or a claim of factorisation.
+pub use mycelium::anastome::dialogue::{solve_kind, SOLVE_KIND_FACTORISATION, SOLVE_KIND_OUTPUTS};
+
+/// The wire's version, `major << 8 | minor`: `0x0200` is v2.0, every μ field
+/// a reading of the base lanes S, G, T and H, one exact non-negative
+/// component each (the `Mu` codec, retiring in v0.5.0 for `Modes`).
+pub use mycelium::anastome::dialogue::WIRE_VERSION;
+
+/// EVERY ACT THE SDK MAY SEND, `(code, name)`, in code order.
+pub const ACT_TABLE: &[(u8, &str)] = &[
+    (ACT_QUOTE, "quote"),
+    (ACT_TASK, "task"),
+    (ACT_SOLVE, "solve"),
+    (ACT_SYLLABUS, "syllabus"),
+    (ACT_ADOPT, "adopt"),
+    (ACT_DIGESTS, "digests"),
+    (ACT_FETCH, "fetch"),
+    (ACT_PROBE, "probe"),
+    (ACT_PEERS, "peers"),
+    (ACT_SPEECH, "speech"),
+    (ACT_COVER, "cover"),
+    (ACT_RECEIPTS, "receipts"),
+    (ACT_ENTRIES, "entries"),
+    (ACT_OBSERVE, "observe"),
+    (ACT_LAWS, "laws"),
+    (ACT_WHY, "why"),
+    (ACT_WALLET, "wallet"),
+    (ACT_DOMAIN, "domain"),
+    (ACT_SEAT, "seat"),
+];
+
+/// The pending outcome code a deferral leads with.
+pub use mycelium::anastome::dialogue::PENDING_CODE;
+
+/// The deferral's writer (a hypha's): the pending code, no height, the
+/// door's deficit per lane, nothing taught. A client reads a deferral with
+/// [`session::read_deferral`].
+pub use mycelium::anastome::dialogue::encode_deferral;
+
+/// TRANSITIONAL: the deferral's former path, kept only for
+/// `examples/house.rs`, which another change owns; the items stand in
+/// [`session`], and this module goes when that example reads them there.
+#[doc(hidden)]
+pub mod deferral {
+    pub use crate::session::{deferral_of, read_deferral, Deferral};
+}

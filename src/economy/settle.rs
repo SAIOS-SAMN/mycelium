@@ -138,14 +138,6 @@ impl Treasury {
         Some(share)
     }
 
-    pub fn settle_refine(&mut self, bidder: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
-        self.mint_to(bidder, mu, anchor, Some(Arm::Powr))
-    }
-
-    pub fn settle_condense(&mut self, discoverer: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
-        self.mint_to(discoverer, mu, anchor, Some(Arm::Powr))
-    }
-
     pub fn settle_solve(&mut self, voice: [u8; 32], mu: impl Into<Mu>, anchor: Anchor) -> Mu {
         self.mint_to(voice, mu, anchor, Some(Arm::Pouw))
     }
@@ -213,26 +205,6 @@ impl Treasury {
         };
         self.mint_claim(&voices, taken.clone(), anchor);
         taken
-    }
-
-    /// THE ASSEMBLY PREMIUM (7d): a fragmented parent demand's children all
-    /// completed and the overlap strips glued — distributed reassembly is
-    /// substantially-more-useful work, paid ON TOP of the children's own
-    /// settlements: μ⃗_composite = Σμ⃗(Wᵢ) + μ⃗_assembly(overlaps). Split per
-    /// lane across the reassembling voices, each the exact part `mu / n`.
-    pub fn settle_assembly<A: AsRef<[u8]>>(&mut self, voices: &[A], mu: impl Into<Mu>, anchor: Anchor) {
-        let Some(share) = mu.into().part(voices.len()) else {
-            return;
-        };
-        if share.is_zero() {
-            return;
-        }
-        for v in voices {
-            let Ok(who) = <[u8; 32]>::try_from(v.as_ref()) else {
-                continue;
-            };
-            self.mint_to(who, share.clone(), anchor, Some(Arm::Pouw));
-        }
     }
 
     /// PoWc — split the consilience award (the germ's μ⃗ PRICED at the moment's

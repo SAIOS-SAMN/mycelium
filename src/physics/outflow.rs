@@ -332,6 +332,7 @@ impl SourceN {
 /// `sigma` (the module's law): the part of `l` keeping the geoid, the source
 /// it opens at `p`, and that source's outflow and direction on every base
 /// plane.
+#[cfg(test)]
 pub fn outflow_planes(sigma: &Vector, p: &NullPoint, l: &Bivector) -> Result<Vec<PlaneFlow>, OutflowRefusal> {
     let k = keeping(sigma, l)?;
     Ok(SourceN::of(sigma, p, &k)?.planes())

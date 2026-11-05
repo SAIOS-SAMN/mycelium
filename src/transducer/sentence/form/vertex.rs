@@ -41,6 +41,7 @@ impl Vertex {
     /// same reason: a site that knows one chart says one chart, and
     /// `Form::rebase` builds the several-chart case by inserting a member per
     /// chart the rebased vertex acted on.
+    #[cfg(test)]
     pub fn rebased_on(
         by: coord::VertexAt,
         class: coord::Transport,
@@ -182,7 +183,7 @@ impl Vertex {
                 // the vertex stands at — a question about the BASE — and it
                 // read the fibre whole, which since R1 holds one entry per
                 // SECTION. A vertex with two carriages on one chart reported
-                // that chart twice, and `face_pairs` then read `(many,
+                // that chart twice, and the member pairing then read `(many,
                 // many)` where the incidence is `([one], many)` and answered
                 // `None`: the face lost every member pair, so every orbit
                 // through it lost its carriage.
@@ -377,6 +378,7 @@ impl Vertex {
     /// DOES THIS VERTEX ACT ON THE CHART THIS KEY NAMES — a fibre read at
     /// the chart's stratum, for a reader holding the key rather than the
     /// `Invariant` (54.7 R1).
+    #[cfg(test)]
     pub fn acts_on_chart_key(&self, ck: &[u8]) -> bool {
         let p = super::Acting::chart_prefix_bytes(ck);
         self.acts().is_some_and(|a| a.scoped().any(|(k, _)| k.starts_with(&p)))
@@ -434,6 +436,7 @@ impl Vertex {
     /// Since 54.7 R1 the member's key IS `chart ‖ carriage`, so the member is
     /// taken off its key and filed at its new one, and the vertex's address,
     /// derived from its members (54.2), is derived again.
+    #[cfg(test)]
     pub fn set_carriage(&mut self, carriage: crate::transducer::element::Versor) {
         let Vertex::Word { acts, address, derivation, contact } = self else {
             return;

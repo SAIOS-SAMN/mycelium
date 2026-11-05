@@ -126,6 +126,7 @@ impl Mu {
     }
 
     /// Whether every lane is a whole amount.
+    #[cfg(test)]
     pub fn is_integral(&self) -> bool {
         self.0.iter().all(|q| q.is_integer())
     }
@@ -203,6 +204,7 @@ impl Mu {
     /// THE AMOUNT AS FOUR COUNTS, where every lane is a whole number that
     /// fits a `u64`; `None` otherwise — never rounded. The inverse of
     /// [`Mu::counts`].
+    #[cfg(test)]
     pub fn to_counts(&self) -> Option<[u64; 4]> {
         let mut out = [0u64; 4];
         for (o, q) in out.iter_mut().zip(self.0.iter()) {

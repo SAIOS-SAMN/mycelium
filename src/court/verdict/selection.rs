@@ -1,7 +1,9 @@
 // A9 — THE SELECTION TERM: the anchor a family derives, and the key that
 // names it.
 
+#[cfg(test)]
 use crate::network::nerve::Keyed;
+#[cfg(test)]
 use crate::transducer::anchor::{derive_carrying_all, CarryingRefusal, Selection};
 
 /// π* DERIVED FROM A POOLED EVIDENCE FAMILY, BINDING THE WHOLE COMMON SET
@@ -14,6 +16,7 @@ use crate::transducer::anchor::{derive_carrying_all, CarryingRefusal, Selection}
 /// Nothing is chosen by a key or a count: the set is returned in its keys'
 /// order, which orders without consuming. A spent token refuses the whole
 /// derivation, naming how far the evidence it stopped on was read.
+#[cfg(test)]
 pub fn derive_pi(
     family: &[crate::transducer::anchor::Evidence],
     withheld: &[crate::transducer::anchor::Evidence],

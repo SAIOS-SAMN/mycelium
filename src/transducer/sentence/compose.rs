@@ -393,6 +393,7 @@ pub fn teaches<'a>(s: &'a Composition, theorem: &Result<super::theorem::Theorem,
 /// the relation teaches. A sentence that teaches nothing is its demand, not
 /// a word. A word of the next rung composes with [`compose`] exactly as a
 /// word of this one does.
+#[cfg(test)]
 pub fn next_rung(sentences: &[Composition]) -> Vec<Mv> {
     sentences.iter().filter_map(|s| teaches(s, &super::theorem::Theorem::of(s)).cloned()).collect()
 }

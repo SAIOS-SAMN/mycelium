@@ -29,4 +29,4 @@ pub use crate::rule::{Crystal, Element, NoCrystal, NoRule, Step, Symmetry};
 pub use crate::seat::SeatName;
 
 /// The wire version.
-pub use crate::wire::WIRE_VERSION;
+pub use crate::WIRE_VERSION;

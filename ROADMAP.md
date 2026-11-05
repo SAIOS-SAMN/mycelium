@@ -271,7 +271,7 @@ crate's public API, with semantic-versioning guarantees. It includes:
 Today the repository is a workspace of `mycelium`, `forms` and
 `mycelium-sdk` (`sdk/`) under one lock file; the SDK crate re-exports the
 library's client surface in modules (`voice`, `session`, `task`, `rule`,
-`seat`, `wallet`, `readings`, `mind`, `deferral`, `house`, `wire`, `laws`,
+`seat`, `wallet`, `readings`, `house`, `laws`,
 `conformance`, `forms`, `prelude`), `sdk/examples/client.rs` is the complete client on it
 alone, the client conformance read is published
 ([MU-CONFORMANCE](docs/MU-CONFORMANCE.md)), and the MSRV is 1.82.

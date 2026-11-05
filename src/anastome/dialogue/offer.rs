@@ -1,5 +1,5 @@
-// 47.3 — ACT_OFFER and ACT_INSTALLED: what a court offers at first
-// vantage, and what two organs sign when it installs.
+// 47.3 — ACT_OFFER: what a court offers at first vantage. ACT_INSTALLED,
+// what two organs signed when it installed, is retired.
 
 use super::*;
 
@@ -99,22 +99,6 @@ pub fn decode_offer_reply(body: &[u8]) -> Option<Witnessed> {
         // refuses otherwise).
         _ => None,
     }
-}
-
-/// Installed: `[ACT_INSTALLED][addr][elen u32][elem][sig_home 64][sig_peer 64]`.
-pub fn decode_installed(body: &[u8]) -> Option<Installed> {
-    if !act_is(body, ACT_INSTALLED) {
-        return None;
-    }
-    let mut p = 1usize;
-    let addr = take_address(body, &mut p)?;
-    let elen = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
-    p += 4;
-    let elem = body.get(p..p + elen)?.to_vec();
-    p += elen;
-    let sig_home: [u8; 64] = body.get(p..p + 64)?.try_into().ok()?;
-    let sig_peer: [u8; 64] = body.get(p + 64..p + 128)?.try_into().ok()?;
-    Some(Installed { addr, elem, sig_home, sig_peer })
 }
 
 // `offer_signed_prefix` is deleted. 47.1: "Every signature in the tree is

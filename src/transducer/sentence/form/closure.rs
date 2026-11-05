@@ -141,24 +141,6 @@ impl Form {
             .collect()
     }
 
-    /// The `𝒢`-LANE OBSTRUCTIONS A FORM CARRIES: every vertical transition
-    /// that is not a pure displacement, with the class it stands in.
-    ///
-    /// A `Fill::Congruent` here is an intrinsic `ℤ/ℓℤ` symmetry of the body
-    /// — a coordinate the pivot may open, paying `−1` torsion `+1` axes on
-    /// `𝒢` under T21(iii). A standing class is a parallax the form has not
-    /// absorbed, which is `Demand::Dislocation`'s object. Neither is a
-    /// refusal.
-    pub fn gauge_obstructions(
-        &self,
-    ) -> Vec<(coord::VertexAt, crate::transducer::sentence::FibreTransition, crate::transducer::cech::Fill)> {
-        self.fibre_transitions()
-            .into_iter()
-            .filter(|(_, t)| !t.is_vertical())
-            .filter_map(|(i, t)| t.fill().map(|f| (i, t, f)))
-            .collect()
-    }
-
     /// Closed: coheres, no remainder, and no demand vertex (2.2, 50.1);
     /// a sentence with demands is valid, never closed.
     pub fn is_closed(&self) -> bool {

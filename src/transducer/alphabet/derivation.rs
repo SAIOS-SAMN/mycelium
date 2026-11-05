@@ -33,7 +33,7 @@
 //! that do not compose to it are a refusal at that vertex.
 //!
 //! A `Word` for a cited vertex is resolved through the crystal on the
-//! mind and the ruled cover on the court (`word_with`). Everything that
+//! mind and the ruled cover on the court. Everything that
 //! only needs the action — the sandwich, the class, the chart, the key —
 //! reads `rotor()` and resolves nothing.
 
@@ -142,40 +142,9 @@ impl Derivation {
         }
     }
 
-    /// The word a cited vertex spells, resolved: the generators composed
-    /// from what the reader holds, times the residue. `None` for a
-    /// citation the reader cannot resolve — which is the deferral of 21
-    /// step 3 at the caller, never a smaller word.
-    ///
-    /// Only a caller that needs LETTERS asks for this. The action is
-    /// `rotor()` and costs no resolution.
-    pub fn word_with<R>(&self, resolve: &R) -> Option<Word>
-    where
-        R: Fn(&Address, &Address) -> Option<Word>,
-    {
-        if self.is_spelled() {
-            return Some(self.residue.clone());
-        }
-        let mut w = Word::identity();
-        for (form, vertex, e) in &self.generators {
-            w = w.compose(&power_of(&resolve(form, vertex)?, *e));
-        }
-        let w = w.compose(&self.residue);
-        // A TRANSPORTED vertex in letters is `g w g⁻¹`, where the alphabet
-        // spells `g`; where it does not, there are no letters to give, and
-        // the action stays `rotor()` (rule 11: never a smaller word).
-        match &self.conjugator {
-            None => Some(w.normal_form()),
-            Some(g) => match crate::transducer::alphabet::factor_rotor(g) {
-                Some(Ok(gw)) => Some(gw.compose(&w).compose(&gw.inverse()).normal_form()),
-                _ => None,
-            },
-        }
-    }
-
     /// The word this vertex spells when it spells one on its own: the
     /// residue, and only when nothing is cited. A cited vertex answers
-    /// `None` here and is resolved with [`Derivation::word_with`].
+    /// `None` here.
     pub fn word_local(&self) -> Option<&Word> {
         match self.is_spelled() && self.composed.is_none() {
             true => Some(&self.residue),

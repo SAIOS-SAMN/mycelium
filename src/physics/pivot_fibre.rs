@@ -56,6 +56,7 @@ pub struct Split {
 
 impl Split {
     /// Work is the field and the lift; torsion does none.
+    #[cfg(test)]
     pub fn does_work(&self) -> bool {
         !self.field.is_zero() || !self.lift.is_zero()
     }
@@ -116,6 +117,7 @@ impl PivotFibre {
     }
 
     /// THE CHARGE AS ITS POINT ON THE FIELD'S FLOW (78.75), the plane `Pᵢ∧Pⱼ`.
+    #[cfg(test)]
     pub fn charge_point(&self, r: &Q) -> Option<crate::transducer::cga::FlowPoint> {
         crate::transducer::cga::FlowPoint::of_motion(&self.charge(r))
     }
@@ -148,6 +150,7 @@ impl PivotFibre {
     /// definite complement of the fibre's plane, so this is a true square —
     /// zero only for no twist — exact, where the whole metric is indefinite
     /// and no other part has a size.
+    #[cfg(test)]
     pub fn torque2(&self, g: &Mv) -> Q {
         let t = self.split(g).torsion;
         t.geo(&t.reverse()).scalar_part()
@@ -173,12 +176,14 @@ impl PivotFibre {
     /// THE FIELD LINE THROUGH `X`: the circle through both pivots and `X`,
     /// `Pᵢ ∧ Pⱼ ∧ X` — the path charge takes between the levels, crossing
     /// every one of them once. Zero where `X` is a pivot.
+    #[cfg(test)]
     pub fn field_line(&self, x: &Mv) -> Mv {
         self.blade.wedge_vector(2, x)
     }
 
     /// WHETHER `Z` STANDS ON THE FIELD LINE THROUGH `X` — one charge flow of
     /// this fibre carries one to the other: `Pᵢ ∧ Pⱼ ∧ X ∧ Z = 0`, exact.
+    #[cfg(test)]
     pub fn on_field_line(&self, x: &Mv, z: &Mv) -> bool {
         let line = self.field_line(x);
         !line.is_zero() && line.wedge_vector(3, z).is_zero()

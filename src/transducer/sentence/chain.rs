@@ -289,14 +289,6 @@ pub fn profile(asg: &[(u8, u8)]) -> Vec<((u8, u8), u32)> {
     element::gauge_profile(asg)
 }
 
-/// Two profiles are the same gauge charge when they hold the same classes
-/// in the same proportions. The profile is already reduced to proportions
-/// (a dilation by ρ scales every count by ρ², never the proportions), so
-/// the same charge is the same profile.
-pub fn same_profile(a: &[((u8, u8), u32)], b: &[((u8, u8), u32)]) -> bool {
-    a == b
-}
-
 /// THE ASSIGNMENT A CITED BODY CARRIES, read off it in its support's
 /// order — the order a word's canonical chain stands in, so it compares
 /// with the word's own assignments.
@@ -618,6 +610,7 @@ impl SharedCell {
 
     /// Does the shared cell lie across axis `a` — do the two sites differ
     /// on it? At the frame axis, a contact between two frames (51.3).
+    #[cfg(test)]
     pub fn crosses(&self, a: usize) -> bool {
         self.axes.contains(&a)
     }

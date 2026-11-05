@@ -8,6 +8,7 @@
 use crate::core::Q;
 use crate::transducer::element::{apply_hue_map, assignment, Element};
 use num_bigint::BigInt;
+#[cfg(test)]
 use num_traits::Zero;
 
 /// A fibre winding as an exact rational valency (kept coprime by ℚ reduction).
@@ -112,6 +113,7 @@ pub fn witness_stored(thought: &Element) -> Vec<(u64, HolonomicOrbitWitness)> {
 
 /// The total winding of a thought — Σ valencies of its CLOSED orbits (exact ℚ;
 /// an open orbit contributes nothing: only proven monodromy counts).
+#[cfg(test)]
 pub fn total_winding(witnesses: &[HolonomicOrbitWitness]) -> Q {
     witnesses.iter().fold(Q::zero(), |s, w| match w {
         HolonomicOrbitWitness::Closed { valency, .. } => s + valency.0.clone(),

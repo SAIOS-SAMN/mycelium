@@ -354,6 +354,7 @@ impl Contemplation {
     /// 78.37(1) — the transport's reading: the arrivals at the last step's
     /// `K` (the fronts advanced, edges this k-step), the sources standing,
     /// and what it did since the contemplation began.
+    #[cfg(test)]
     pub fn transport_reading(&self) -> (u64, u64, TransportTally) {
         let at = self.stepped_k;
         let advanced = self.fronts.scoped().filter(|(_, a)| Some(a.k) == at && !a.by.is_empty()).count() as u64;

@@ -16,7 +16,7 @@ use super::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 /// THE SYSTEMS, one per A21 tag. This enumerated seven of nineteen, so a
 /// carrier over the other twelve could not declare itself even in the
-/// runtime form — `for_system` had nothing to name. Every tag `address`
+/// runtime form. Every tag `address`
 /// writes is a system a carrier can be keyed by, and the two lists are the
 /// same list or the declaration is partial by construction.
 pub enum CoordinateSystem {
@@ -85,14 +85,6 @@ pub enum SchemaRefusal {
         expected: CoordinateSystem,
         actual_tag: u8,
     },
-    InvalidDepth {
-        max_depth: usize,
-        requested: usize,
-    },
-    /// The key opened with this system's tag and did not spell its
-    /// coordinates — the refusal that separates a coarse key from a finer
-    /// one written over it, which the tag alone cannot.
-    Stratum(StratumRefusal),
 }
 
 impl std::fmt::Display for SchemaRefusal {
@@ -100,12 +92,6 @@ impl std::fmt::Display for SchemaRefusal {
         match self {
             SchemaRefusal::IncompatibleSystem { expected, actual_tag } => {
                 write!(f, "incompatible coordinate system: expected {expected:?}, got tag {actual_tag}")
-            }
-            SchemaRefusal::InvalidDepth { max_depth, requested } => {
-                write!(f, "invalid depth {requested} over max depth {max_depth}")
-            }
-            SchemaRefusal::Stratum(r) => {
-                write!(f, "{} coordinate `{}`: {}", r.system, r.segment, r.why)
             }
         }
     }
@@ -167,22 +153,6 @@ impl<V: PartialEq, C: Coordinate> PartialEq for Keyed<V, C> {
 
 impl<V: Eq, C: Coordinate> Eq for Keyed<V, C> {}
 
-impl<V> Keyed<V, coord::Any> {
-    /// AN UNDECLARED CARRIER WITH ITS SYSTEM SET AT RUNTIME.
-    ///
-    /// The weaker half of the gate, kept for the carriers that have not yet
-    /// named a coordinate in the type. A carrier that CAN name it does,
-    /// and then this constructor is not reachable for it.
-    pub fn for_system(system: CoordinateSystem) -> Self {
-        Keyed {
-            root: None,
-            n: 0,
-            system,
-            _coord: std::marker::PhantomData,
-        }
-    }
-}
-
 impl<V, C: Coordinate> Keyed<V, C> {
     pub fn new() -> Self {
         Keyed::default()
@@ -207,47 +177,6 @@ impl<V, C: Coordinate> Keyed<V, C> {
             }
         }
         Ok(self.get_raw(key))
-    }
-
-    /// Read a fibre under the declared coordinate system, refusing on a foreign system (Rule 11).
-    pub fn read_fibre<'a>(&'a self, prefix: Prefix<'a>) -> Result<Subtree<'a, V>, SchemaRefusal> {
-        if self.system != CoordinateSystem::Any {
-            if let Some(tag) = crate::transducer::address::tag_of(prefix.as_bytes()) {
-                if let Some(expected) = self.system.tag() {
-                    if tag != expected {
-                        return Err(SchemaRefusal::IncompatibleSystem {
-                            expected: self.system,
-                            actual_tag: tag,
-                        });
-                    }
-                }
-            }
-        }
-        Ok(self.fibre(prefix))
-    }
-
-    /// Truncate a canonical coordinate key by depth (Rule 6).
-    pub fn truncate_key(key: &[u8], depth: usize) -> Option<&[u8]> {
-        if depth == 0 {
-            return Some(&key[..0]);
-        }
-        let tag = crate::transducer::address::tag_of(key)?;
-        match tag {
-            crate::transducer::address::TAG_CHART => {
-                let max_depth = (key.len() - 1) / 8;
-                if depth > max_depth {
-                    return None;
-                }
-                Some(&key[..1 + depth * 8])
-            }
-            _ => {
-                if depth > 1 {
-                    None
-                } else {
-                    Some(key)
-                }
-            }
-        }
     }
 
     /// Bind `key` to `value`; a held key is rebound. Returns the value
@@ -344,20 +273,6 @@ impl<V, C: Coordinate> Keyed<V, C> {
     pub fn drop_at(&mut self, key: &C) -> Option<V> {
         let k = key.encode();
         self.remove_raw(k.as_bytes())
-    }
-
-    /// THE FIBRE OVER A DECLARED COARSER COORDINATE.
-    ///
-    /// `D: Stratum<C>` is the declaration that `D`'s opening bytes are the
-    /// opening of a `C` key — a chart under a carrier of sections. Without
-    /// the bound there is no fibre read, so a byte-prefix coincidence
-    /// cannot be mistaken for a stratum.
-    pub fn fibre_over<D: Stratum<C>>(&self, coarse: &D) -> Result<Subtree<'_, V>, CoordinateRefusal> {
-        let opening = coarse.opening();
-        match Prefix::new(opening.as_bytes()) {
-            Some(p) => Ok(self.fibre(p)),
-            None => Err(D::refuse("the coordinate is empty, which names no stratum")),
-        }
     }
 
     /// THE CARRIER'S ENTRIES, each key DECODED back to the coordinate it is.

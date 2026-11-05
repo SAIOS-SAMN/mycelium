@@ -725,25 +725,6 @@ impl Court {
         self.court_federation.push((Address::from(address), spoken));
     }
 
-    /// Active cover: the identity fibre (so Čech overlap is non-empty after
-    /// the first Cover), plus charts of open listings and of the ruled language.
-    pub fn active_cover(&self) -> Vec<(u8, crate::transducer::stalk::Invariant)> {
-        let mut out = vec![(0, crate::transducer::stalk::invariant_of(&Element::identity()))];
-        for (inv, _) in self.listing_atlas.strata() {
-            out.push((0, inv));
-        }
-        for (inv, _) in self.ruled.strata() {
-            out.push((0, inv));
-        }
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "rule 4 — canonical key order: a chart IS its coordinate vector, and the cover is written in it"
-        )]
-        out.sort_by(|a, b| a.1 .0.cmp(&b.1 .0));
-        out.dedup();
-        out
-    }
-
     /// Whether this address still stands on the quote book.
     pub fn has_listing(&self, address: &[u8]) -> bool {
         self.pending.contains(address)
@@ -752,19 +733,6 @@ impl Court {
     /// Relocate one listing onto the cavity atlas. The address is kept.
     pub fn relocate_listing(&mut self, address: &[u8]) {
         self.relocate_cavity(address);
-    }
-
-    /// Relocate restored demands whose chart no longer homes here. Never dropped.
-    pub fn unlist_foreign(&mut self, home: impl Fn(&Element) -> bool) {
-        let keys: Vec<Address> = self
-            .pending
-            .scoped()
-            .filter(|(_, p)| !home(p))
-            .map(|(_, p)| p.address())
-            .collect();
-        for k in keys {
-            self.relocate_cavity(&k);
-        }
     }
 
 

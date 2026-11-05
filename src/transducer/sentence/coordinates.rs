@@ -230,11 +230,6 @@ impl Coordinates {
         Signature::of_tones(self.holes.iter().map(|h| Tone { kind: h.kind, planes: h.planes, c: h.c.clone(), order: h.order() }).collect())
     }
 
-    /// THE HOLES' KEYS, in order: the fibre a word is found under.
-    pub fn hole_keys(&self) -> impl Iterator<Item = &[u8]> {
-        self.holes.iter().map(|h| h.key.as_slice())
-    }
-
     /// IS THIS WORD `held`'s POWER `k`: the same holes, and on every one the
     /// winding `k` times the held word's — `t/ℓ ≡ k·t₀/ℓ₀ (mod 1)` on a turn,
     /// `λ = k·λ₀` on a count, a named point equal only at `k = 1`. The `k` is
@@ -468,11 +463,6 @@ impl HoleIndex {
             }
         }
         out
-    }
-
-    /// Whether any held word stands on `hole`.
-    pub fn stands_on(&self, hole: &[u8]) -> bool {
-        self.on.get(hole).is_some()
     }
 
     /// The held words standing on `hole`, by key: one fibre, read.

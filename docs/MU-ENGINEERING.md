@@ -102,7 +102,7 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
     `ACT_LAWS`, `ACT_WHY`, `ACT_WALLET` (which also carries signed stake
     and unstake), `ACT_RECEIPTS`, `ACT_ENTRIES`;
   - hypha to hypha (the court organ and the clock): `ACT_COVER`,
-    `ACT_OFFER`, `ACT_INSTALLED`, `ACT_EVIDENCE`, `ACT_ROOT`, `ACT_TICK`,
+    `ACT_OFFER`, `ACT_EVIDENCE`, `ACT_ROOT`, `ACT_TICK`,
     `ACT_FOLD`;
   - domains and tiers: `ACT_UPLINK`, `ACT_DOMAIN`, `ACT_CHALLENGE`,
     `ACT_HANDOFF`;
@@ -110,8 +110,10 @@ Inside every hypha (`server/cognition/`, `court/verdict/`):
   - xSEPTUM: `ACT_EQUIVOCATION` (`MU-RECURSION.md` 47.4) is built and the
     rest of its range is reserved;
   - retired acts (`ACT_PERCEPT`, `ACT_GOSSIP`, `ACT_DEMAND`, `ACT_QUOTE`,
-    `ACT_TEACH`, `ACT_SETTLE`, `ACT_DOCKET`, `ACT_DEMAND_ROUTED`), whose
-    bytes stand only so the door can refuse them by name.
+    `ACT_TEACH`, `ACT_SETTLE`, `ACT_DOCKET`, `ACT_INSTALLED`), whose
+    bytes stand only so the door can refuse them by name; the routed
+    demand's byte (0x14) stands in `Action::DemandRouted` alone, with no
+    constant.
 
   The receipts a court seals carry the court's own actions, in the court
   range from `COURT_RANGE` upward.

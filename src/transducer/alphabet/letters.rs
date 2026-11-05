@@ -69,6 +69,7 @@ pub const fn slot_of_axis(axis: usize) -> Option<u8> {
 /// off-plane channel, carried by the conformal algebra's `e₊` (65.6). Every
 /// slot is its axis's slot and no other (`tests` holds the two against
 /// each other).
+#[cfg(test)]
 pub const fn axis_of_slot(slot: u8) -> Option<usize> {
     match slot as usize {
         s if s < ALPHABET_SAMPLE_RANK => Some(s),

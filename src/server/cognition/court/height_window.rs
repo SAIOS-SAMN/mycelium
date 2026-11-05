@@ -158,6 +158,7 @@ pub fn window_over(window: &[KStepReceipt], at_h0: &CoverReading, at_h1: &CoverR
 impl Court {
     /// The cover as it stands now: every ruled stratum with the words it
     /// holds, every chart with the sections this court holds on it.
+    #[cfg(test)]
     pub fn cover_reading(&self) -> CoverReading {
         let mut strata = Keyed::new();
         for (inv, members) in self.ruled.strata() {

@@ -30,7 +30,6 @@ fn register_reply_carries_every_law() {
 /// `FORMS-SHARES` 1, `FORMS-COORDINATE` 3.
 #[test]
 fn form_law_ids_equal_forms_shells() {
-    assert_eq!(FORM_LAW_IDS, mycelium_sdk::forms::LAW_IDS);
     assert_eq!(
         FORM_LAW_IDS,
         [

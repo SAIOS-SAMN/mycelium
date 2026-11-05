@@ -147,6 +147,7 @@ impl Court {
     /// depth reached, in depth order, as a Vec of relations: the reading
     /// the instrument prints beside the count of adjoined generators.
     /// Never a total and never an average (law 5).
+    #[cfg(test)]
     pub fn generators_by_depth(&self) -> Vec<(usize, u64)> {
         let mut rows: crate::network::nerve::Keyed<u64> = crate::network::nerve::Keyed::new();
         for (address, ()) in self.ruled_addrs.scoped() {

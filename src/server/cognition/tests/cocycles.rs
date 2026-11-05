@@ -240,14 +240,14 @@ fn fibre_volume_total_counts_filed_form_cycle() {
 }
 
 /// THE TORSE STROKE tightens mathematics to physics: a swap family (1→4 and
-/// 4→1 at one site) installs as base + section; the syntropic stroke extracts
+/// 4→1 at one site) installs as base + section; the condense stroke extracts
 /// the ℤ/2 cycle — sections condense to (σ, 2) — and the extracted
 /// mathematical torsion RELIEVES the physical torsion charge (booked as
 /// syntropic order, per lane, never a scalar).
 /// A second vantage here is `glue_local`'s two fixture keys (§3.4's
 /// wire-identifier exception): this test proves nothing about 47.3's witness.
 #[test]
-fn optimize_extracts_swap_cycle_and_relieves_torsion() {
+fn condense_stroke_extracts_swap_cycle_and_relieves_torsion() {
 let mut k = Court::new();
 let a = vec![(0, 0, 1), (0, 1, 9)];
 let b = vec![(0, 0, 4), (0, 1, 9)]; // (0,0): 1→4
@@ -263,7 +263,8 @@ match speak_pair(&mut k, &fwd, &rev, [2; 32]) {
     o => panic!("{o:?}"),
 }
 assert!(!k.basis().is_empty(), "the pair forms stand");
-k.optimize();
+k.condense_stroke();
+k.condense_stroke();
 assert!(
     matches!(speak_pair(&mut k, &a, &b, [3; 32]), Outcome::Decomposed(_) | Outcome::GermPending),
     "the forward pair still speaks or its residue pends"

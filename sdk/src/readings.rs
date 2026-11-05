@@ -11,7 +11,7 @@
 //!
 //! - the observer's readings, by prefix ([`encode_query`], [`decode_reply`]);
 //! - why a word or act was ruled as it was ([`encode_why`], [`decode_why_reply`]);
-//! - the law register's parameters, core clock and lexicon;
+//! - the law register's parameters and lexicon;
 //! - a court's receipts and the economic events over a span, events of the
 //!   one multi-dimensional ledger (MU-ECONOMY §2.1);
 //! - a domain's reserve ([`ReserveReading`], also `Session::reserve_reading`);
@@ -24,10 +24,10 @@ pub use mycelium::observe::{decode_reply, encode_query, KeyedReading, Reading};
 /// Why: the ask, the answer, and the codec of each.
 pub use mycelium::anastome::dialogue::why::{decode_why_reply, encode_why, Why, WhyAsk};
 
-/// The law register: parameters, core clock and lexicon.
+/// The law register: parameters and lexicon (the core clock is read with
+/// [`crate::house::encode_clock_request`]).
 pub use mycelium::physics::laws::codec::{
-    decode_clock_reply, decode_lexicon_reply, decode_parameters_reply, encode_clock_request, encode_lexicon_request,
-    encode_parameters_request, ServedTerm,
+    decode_lexicon_reply, decode_parameters_reply, encode_lexicon_request, encode_parameters_request, ServedTerm,
 };
 /// The vocabulary a lexicon term belongs to.
 pub use mycelium::physics::laws::lexicon::Vocabulary;

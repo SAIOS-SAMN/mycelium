@@ -214,6 +214,7 @@ impl Transduction {
     }
 
     /// Does the re-period keep every period: both frames of one enclosure?
+    #[cfg(test)]
     pub fn keeps_periods(&self) -> bool {
         self.from.enclosure.is_same_periods(&self.to.enclosure)
     }

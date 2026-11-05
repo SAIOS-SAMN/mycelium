@@ -100,6 +100,7 @@ impl SymbolSet {
 
     /// THE SYMBOL SET OF RASTERS AT INTAKE (one byte per site), walked in
     /// the order given, each raster's sites in canonical address order.
+    #[cfg(test)]
     pub fn of_rasters<'a>(rasters: impl IntoIterator<Item = &'a [Vec<u8>]>) -> SymbolSet {
         let mut set = SymbolSet::empty(1);
         for raster in rasters {
@@ -113,6 +114,7 @@ impl SymbolSet {
     /// THE SYMBOL SET OF A FAMILY OF PAIRS: each pair's two members in the
     /// order the pair gives them, read as samples. A family of no pair
     /// holds no symbol.
+    #[cfg(test)]
     pub fn of_pairs(family: &[super::family::TrainPair]) -> SymbolSet {
         SymbolSet::of_section(family.iter().flat_map(|(x, y)| [x.sample(), y.sample()]))
     }
@@ -120,6 +122,7 @@ impl SymbolSet {
     /// THE SYMBOL SET OF SAMPLES ON THE ALPHABET'S SECTION, one byte each:
     /// every sample there is at the section's one width, so the set is
     /// read whole; samples of no width hold no symbol.
+    #[cfg(test)]
     fn of_section<'a>(samples: impl IntoIterator<Item = &'a Sample>) -> SymbolSet {
         match SymbolSet::of_samples(samples) {
             Ok(set) => set,

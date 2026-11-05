@@ -58,6 +58,7 @@ use super::*;
 /// `u·u` and `u·v` are THE METRIC ON VECTORS (78.28(4), VA2): each `u` is a
 /// body's deviatoric harmonic, a 2-vector, and its square is its own
 /// content, not a sum of squares deciding what an element is.
+#[cfg(test)]
 pub fn relative_double_angle(
     ua: &[BigRational; 2],
     ub: &[BigRational; 2],
@@ -305,6 +306,7 @@ impl NoPose {
     /// — is P; the one arm a demand retires (D3, `RotorPrime`), oblique, is
     /// D; a bodiless pair has nothing to pose, I. An unoriented pair is a
     /// held stabilizer beyond `ℤ₂` (FR1c), NOT a refusal: `None`.
+    #[cfg(test)]
     pub fn obstruction_kind(self) -> Option<crate::transducer::sentence::ObstructionKind> {
         use crate::transducer::sentence::ObstructionKind;
         match self {
