@@ -34,8 +34,14 @@ such change is named here.
   reconstructs each fixture through `forms`. Registered: `FORMS-PASSAGE`
   v3 (LAW-PASSAGE v2's four fixtures) and `FORMS-COORDINATE` v1
   (LAW-COORDINATE v1's order, eight sexagesimal sectors, seven `within`
-  readings, two ranges), both network clauses. A wording change of the
-  Concordance changes no clause. The library depends on `forms`.
+  readings, two ranges). The passage is a network clause (standing 0),
+  never vetoed. The coordinate is registered at kernel standing (1),
+  signable and vetoable, until 78.173's fixtures are joint-read agreed
+  and its clause is drafted: a clause whose fixtures no other kernel has
+  read is not made unvetoable. A wording change of the Concordance
+  changes no clause. The types are `ConcordanceClause` and
+  `ConcordanceClauseId`, named apart from the rule language's clause
+  (`transducer::sentence::form::clause`). The library depends on `forms`.
 - **Retired:** `physics::laws::concordance` (`CONCORDANCE_HASH`,
   `CONCORDANCE`, `ConcordanceSignature`, `ConcordanceRefusal`,
   `verify_concordance_signature`, `SIGNATURE_LEN`), `build.rs` and its

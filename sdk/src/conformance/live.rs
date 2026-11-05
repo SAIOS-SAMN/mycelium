@@ -54,7 +54,7 @@ fn laws_statement(session: &Speaker, report: &mut Report) {
 
 /// The hypha's clause register against the SDK's: the same clauses, each
 /// with the same fixtures' inputs.
-fn read_clauses(session: &Speaker) -> Result<Vec<crate::signing::Clause>, String> {
+fn read_clauses(session: &Speaker) -> Result<Vec<crate::signing::ConcordanceClause>, String> {
     let reply = session.speak(laws::encode_concordance_request())?;
     let served = match laws::decode_concordance_reply(&reply) {
         Some(Ok(served)) => served,
@@ -72,7 +72,7 @@ fn read_clauses(session: &Speaker) -> Result<Vec<crate::signing::Clause>, String
 /// The signing act on the served clauses: the SDK's own reconstructions,
 /// every clause enabled, admitted on each clause; and one fixture's object
 /// presented wrong, refused `NotSignatory` naming that clause and fixture.
-fn sign_clauses(session: &Speaker, key: &SigningKey, served: &[crate::signing::Clause]) -> Result<String, String> {
+fn sign_clauses(session: &Speaker, key: &SigningKey, served: &[crate::signing::ConcordanceClause]) -> Result<String, String> {
     use crate::signing::{sign_concordance, Admitted, Assent, Choice, Signing, SigningRefusal};
     let signed = sign_concordance(key, served, |_| Assent::Enabled).ok_or("a served fixture the SDK does not reconstruct")?;
     let reply = session.speak(laws::encode_signature_request(&signed))?;

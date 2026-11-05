@@ -323,7 +323,7 @@ pub fn encode_concordance_reply(held: &Result<Vec<super::clauses::Registered>, s
 
 /// The register a reply carries, read whole: the clauses served, or the
 /// clause the hypha refused.
-pub fn decode_concordance_reply(b: &[u8]) -> Option<Result<Vec<super::clauses::Clause>, super::clauses::RegisterRefusal>> {
+pub fn decode_concordance_reply(b: &[u8]) -> Option<Result<Vec<super::clauses::ConcordanceClause>, super::clauses::RegisterRefusal>> {
     let mut p = 1;
     let (head, _) = b.split_first()?;
     let read = match head {

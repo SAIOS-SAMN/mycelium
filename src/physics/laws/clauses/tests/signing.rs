@@ -117,7 +117,7 @@ fn admit_refuses_unsigned_and_malformed() {
 fn concordance_modes_round_trip() {
     let held = held();
     assert_eq!(decode_laws_request(&encode_concordance_request()), Some(LawsRequest::Concordance));
-    let served: Vec<Clause> = held.iter().map(|r| r.clause.clone()).collect();
+    let served: Vec<ConcordanceClause> =held.iter().map(|r| r.clause.clone()).collect();
     assert_eq!(decode_concordance_reply(&encode_concordance_reply(&Ok(held.clone()))), Some(Ok(served)));
     let refused = RegisterRefusal { id: held[0].clause.id.clone() };
     assert_eq!(decode_concordance_reply(&encode_concordance_reply(&Err(refused.clone()))), Some(Err(refused)));

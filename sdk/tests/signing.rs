@@ -4,10 +4,10 @@
 // of each served fixture reaches the hypha's object, and a signing act over
 // the served register is admitted on every clause.
 
-use mycelium_sdk::signing::{decode_concordance_reply, reconstruct_fixture, sign_concordance, Admitted, Assent, SigningRefusal};
+use mycelium_sdk::signing::{decode_concordance_reply, reconstruct_fixture, sign_concordance, Admitted, Assent, ConcordanceClause, SigningRefusal, Standing};
 
 /// The register as a hypha serves it, read back.
-fn served() -> Option<Vec<mycelium_sdk::signing::Clause>> {
+fn served() -> Option<Vec<mycelium_sdk::signing::ConcordanceClause>> {
     let reply = mycelium::physics::laws::codec::encode_concordance_reply(&mycelium::physics::laws::clauses::register());
     decode_concordance_reply(&reply)?.ok()
 }
@@ -25,8 +25,9 @@ fn reconstruct_fixture_agrees_with_register() {
 }
 
 /// A signing act over the served register, every clause enabled, is
-/// admitted on each; the same act with a network clause vetoed is refused
-/// by that clause's name.
+/// admitted on each; with every clause vetoed it is refused by the network
+/// clause's name; with only the kernel clause vetoed it is admitted, that
+/// clause named vetoed.
 #[test]
 fn sign_concordance_admits_served_register() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[11u8; 32]);
@@ -35,6 +36,14 @@ fn sign_concordance_admits_served_register() {
     let admitted: Vec<Admitted> = served.iter().map(|c| Admitted { id: c.id.clone(), assent: Assent::Enabled }).collect();
     assert_eq!(mycelium::physics::laws::clauses::admit_bytes(&signed.to_bytes()), Ok(admitted));
     let vetoed = sign_concordance(&key, &served, |_| Assent::Vetoed).expect("a veto reconstructs nothing");
-    let id = served.iter().map(|c| c.id.clone()).next().expect("a clause");
+    let id = served.iter().find(|c| c.standing == Standing::Network).map(|c| c.id.clone()).expect("a network clause");
     assert_eq!(mycelium::physics::laws::clauses::admit_bytes(&vetoed.to_bytes()), Err(SigningRefusal::NetworkVetoed { id }));
+    let by_standing = |c: &ConcordanceClause| match c.standing {
+        Standing::Network => Assent::Enabled,
+        Standing::Kernel => Assent::Vetoed,
+    };
+    let partial = sign_concordance(&key, &served, by_standing).expect("every enabled fixture reconstructs");
+    let admitted: Vec<Admitted> = served.iter().map(|c| Admitted { id: c.id.clone(), assent: by_standing(c) }).collect();
+    assert!(admitted.iter().any(|a| a.assent == Assent::Vetoed), "a kernel clause is registered");
+    assert_eq!(mycelium::physics::laws::clauses::admit_bytes(&partial.to_bytes()), Ok(admitted));
 }

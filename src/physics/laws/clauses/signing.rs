@@ -16,7 +16,7 @@
 //! is recorded yet: the signed clause set per domain, and `NotSignatory` at
 //! the universal core tube, are B2's next stage and B3/B4.
 
-use super::register::{register, ClauseId, Fixture, Object, Registered, Standing};
+use super::register::{register, ConcordanceClauseId, Fixture, Object, Registered, Standing};
 use super::writing::{put_clause_id, put_content, put_object, take_clause_id, take_content, take_object};
 use crate::transducer::address::{put_key_count, take_key_count};
 use ed25519_dalek::Verifier;
@@ -62,7 +62,7 @@ impl Assent {
 /// ONE CLAUSE AS A KERNEL SIGNS IT: the clause's content, and its choice.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SignedClause {
-    pub id: ClauseId,
+    pub id: ConcordanceClauseId,
     pub fixtures: Vec<Fixture>,
     pub choice: Choice,
 }
@@ -70,7 +70,7 @@ pub struct SignedClause {
 /// ONE CLAUSE ADMITTED: its name and the kernel's assent.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Admitted {
-    pub id: ClauseId,
+    pub id: ConcordanceClauseId,
     pub assent: Assent,
 }
 
@@ -92,16 +92,16 @@ pub enum SigningRefusal {
     Unsigned,
     /// The register holds no clause of this content (no clause of this
     /// name, or one whose fixtures differ).
-    UnknownClause { id: ClauseId },
+    UnknownClause { id: ConcordanceClauseId },
     /// The clause is signed twice in one act.
-    Repeated { id: ClauseId },
+    Repeated { id: ConcordanceClauseId },
     /// A network clause vetoed: no kernel may veto it.
-    NetworkVetoed { id: ClauseId },
+    NetworkVetoed { id: ConcordanceClauseId },
     /// The kernel did not reach a fixture's object: the clause, the
     /// fixture, the object presented and the hypha's reconstruction.
-    NotSignatory { id: ClauseId, fixture: Box<Fixture>, presented: Box<Object>, reconstructed: Box<Object> },
+    NotSignatory { id: ConcordanceClauseId, fixture: Box<Fixture>, presented: Box<Object>, reconstructed: Box<Object> },
     /// This hypha cannot read the clause of its own register.
-    Unregistered { id: ClauseId },
+    Unregistered { id: ConcordanceClauseId },
 }
 
 /// The clauses written out, as signed and carried.

@@ -13,7 +13,7 @@
 //! `[h u64 LE][S][G][T][H][K u64 LE]`. A reader that does not find what it
 //! needs answers `None`, never a default.
 
-use super::register::{Clause, ClauseId, Fixture, Object, Standing};
+use super::register::{ConcordanceClause, ConcordanceClauseId, Fixture, Object, Standing};
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 use crate::transducer::alphabet::{put_q, take_q};
 use algebra::Clifford;
@@ -254,25 +254,25 @@ pub fn take_object(b: &[u8], p: &mut usize) -> Option<Object> {
 }
 
 /// A CLAUSE'S NAME: its law id, then its version.
-pub fn put_clause_id(out: &mut Vec<u8>, id: &ClauseId) {
+pub fn put_clause_id(out: &mut Vec<u8>, id: &ConcordanceClauseId) {
     put_key_bytes(out, id.law.as_bytes());
     out.extend_from_slice(&id.version.to_le_bytes());
 }
 
-pub fn take_clause_id(b: &[u8], p: &mut usize) -> Option<ClauseId> {
+pub fn take_clause_id(b: &[u8], p: &mut usize) -> Option<ConcordanceClauseId> {
     let law = String::from_utf8(take_key_bytes(b, p)?).ok()?;
-    Some(ClauseId { law, version: u16::from_le_bytes(take_array(b, p)?) })
+    Some(ConcordanceClauseId { law, version: u16::from_le_bytes(take_array(b, p)?) })
 }
 
 /// THE CLAUSE'S CONTENT ADDRESS, written out: its name, then each fixture's
 /// input in order.
-pub fn put_content(out: &mut Vec<u8>, id: &ClauseId, fixtures: &[Fixture]) {
+pub fn put_content(out: &mut Vec<u8>, id: &ConcordanceClauseId, fixtures: &[Fixture]) {
     put_clause_id(out, id);
     put_key_count(out, fixtures.len());
     fixtures.iter().for_each(|f| put_fixture(out, f));
 }
 
-pub fn take_content(b: &[u8], p: &mut usize) -> Option<(ClauseId, Vec<Fixture>)> {
+pub fn take_content(b: &[u8], p: &mut usize) -> Option<(ConcordanceClauseId, Vec<Fixture>)> {
     let id = take_clause_id(b, p)?;
     let n = take_key_count(b, p)?;
     let fixtures = (0..n).map(|_| take_fixture(b, p)).collect::<Option<Vec<_>>>()?;
@@ -280,17 +280,17 @@ pub fn take_content(b: &[u8], p: &mut usize) -> Option<(ClauseId, Vec<Fixture>)>
 }
 
 /// A CLAUSE AS SERVED: its name, its standing, then its fixtures.
-pub fn put_clause(out: &mut Vec<u8>, c: &Clause) {
+pub fn put_clause(out: &mut Vec<u8>, c: &ConcordanceClause) {
     put_clause_id(out, &c.id);
     out.push(c.standing.byte());
     put_key_count(out, c.fixtures.len());
     c.fixtures.iter().for_each(|f| put_fixture(out, f));
 }
 
-pub fn take_clause(b: &[u8], p: &mut usize) -> Option<Clause> {
+pub fn take_clause(b: &[u8], p: &mut usize) -> Option<ConcordanceClause> {
     let id = take_clause_id(b, p)?;
     let standing = Standing::of(take_u8(b, p)?)?;
     let n = take_key_count(b, p)?;
     let fixtures = (0..n).map(|_| take_fixture(b, p)).collect::<Option<Vec<_>>>()?;
-    Some(Clause { id, standing, fixtures })
+    Some(ConcordanceClause { id, standing, fixtures })
 }

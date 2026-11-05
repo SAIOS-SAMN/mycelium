@@ -38,9 +38,10 @@
 use forms::algebra::Clifford;
 use forms::coordinate::{Bodies, Sector};
 
-/// The clause register's types: a clause as served, its name and standing,
-/// a fixture's input and the object it reaches.
-pub use mycelium::physics::laws::clauses::{Clause, ClauseId, Fixture, Object, RegisterRefusal, Standing};
+/// The Concordance clause register's types: a Concordance clause as
+/// served (never the rule language's clause, `crate::rule`), its name and
+/// standing, a fixture's input and the object it reaches.
+pub use mycelium::physics::laws::clauses::{ConcordanceClause, ConcordanceClauseId, Fixture, Object, RegisterRefusal, Standing};
 /// The signing act, a clause's choice, the assent admitted and each refusal
 /// by name.
 pub use mycelium::physics::laws::clauses::{Admitted, Assent, Choice, SignedClause, Signing, SigningRefusal};
@@ -85,7 +86,7 @@ pub fn reconstruct_fixture(fixture: &Fixture) -> Option<Object> {
 /// assent `assent` gives it, an enabled clause carrying the kernel's own
 /// reconstruction of each of its fixtures. `None` where a fixture of an
 /// enabled clause does not reconstruct here.
-pub fn sign_concordance(key: &ed25519_dalek::SigningKey, served: &[Clause], assent: impl Fn(&Clause) -> Assent) -> Option<Signing> {
+pub fn sign_concordance(key: &ed25519_dalek::SigningKey, served: &[ConcordanceClause], assent: impl Fn(&ConcordanceClause) -> Assent) -> Option<Signing> {
     let clauses = served
         .iter()
         .map(|c| {

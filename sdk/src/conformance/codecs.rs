@@ -188,7 +188,7 @@ fn laws_statement() -> Result<String, String> {
 }
 
 /// The hypha's clause register, as it is served.
-fn served() -> Result<Vec<crate::signing::Clause>, String> {
+fn served() -> Result<Vec<crate::signing::ConcordanceClause>, String> {
     let held = mycelium::physics::laws::clauses::register().map_err(|r| format!("the register refuses clause {:?}", r.id))?;
     Ok(held.into_iter().map(|r| r.clause).collect())
 }

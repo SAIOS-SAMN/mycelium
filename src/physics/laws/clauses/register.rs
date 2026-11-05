@@ -1,12 +1,14 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-// CONCORDANCE §0, MU-RELEASE §3a steps 3–5 — THE CLAUSE REGISTER: each clause
-// the hypha adjudicates, identified by its content (its law form's id and
-// version, and its joint-read fixtures as exact inputs), with the hypha's
-// own reconstruction of each fixture's object.
+// CONCORDANCE §0, MU-RELEASE §3a steps 3–5 — THE CONCORDANCE CLAUSE REGISTER:
+// each Concordance clause the hypha adjudicates, identified by its content
+// (its law form's id and version, and its joint-read fixtures as exact
+// inputs), with the hypha's own reconstruction of each fixture's object.
 //
-//! A clause is never identified by a digest of text (A21): its address is
-//! its content written out (`writing::put_clause`), so a change of the
+//! "Clause" here is always a clause of the Concordance, never the rule
+//! language's clause (`transducer::sentence::form::clause`). A Concordance
+//! clause is never identified by a digest of text (A21): its address is its
+//! content written out (`writing::put_clause`), so a change of the
 //! Concordance's wording changes no clause, and a change of the law is a new
 //! version of the form. The fixtures are the inputs every kernel
 //! reconstructs to sign the clause; [`reconstruct`] is the hypha's own
@@ -26,18 +28,18 @@ pub const CLAUSES: &[(&str, u16)] = &[
     (forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION),
 ];
 
-/// A CLAUSE'S NAME: its law form's id and version. With the fixtures it is
+/// A CONCORDANCE CLAUSE'S NAME: its law form's id and version. With the fixtures it is
 /// the clause's content address.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ClauseId {
+pub struct ConcordanceClauseId {
     pub law: String,
     pub version: u16,
 }
 
-impl ClauseId {
+impl ConcordanceClauseId {
     /// The clause of the form `(law, version)`.
-    pub fn of(law: &str, version: u16) -> ClauseId {
-        ClauseId { law: law.to_string(), version }
+    pub fn of(law: &str, version: u16) -> ConcordanceClauseId {
+        ConcordanceClauseId { law: law.to_string(), version }
     }
 }
 
@@ -150,28 +152,30 @@ impl PartialEq for Object {
     }
 }
 
-/// A CLAUSE AS SERVED: its name, its standing, and its fixtures' inputs.
+/// A CONCORDANCE CLAUSE AS SERVED: its name, its standing, and its
+/// fixtures' inputs.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Clause {
-    pub id: ClauseId,
+pub struct ConcordanceClause {
+    pub id: ConcordanceClauseId,
     pub standing: Standing,
     pub fixtures: Vec<Fixture>,
 }
 
-/// A CLAUSE AS THE HYPHA HOLDS IT: the clause and the hypha's own
-/// reconstruction of each fixture's object, in the fixtures' order.
+/// A CONCORDANCE CLAUSE AS THE HYPHA HOLDS IT: the Concordance clause and
+/// the hypha's own reconstruction of each fixture's object, in the
+/// fixtures' order.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Registered {
-    pub clause: Clause,
+    pub clause: ConcordanceClause,
     pub reached: Vec<Object>,
 }
 
-/// WHY THE REGISTER STANDS UNREAD: the clause whose fixtures this hypha
+/// WHY THE REGISTER STANDS UNREAD: the Concordance clause whose fixtures this hypha
 /// cannot build or reconstruct (a generator the algebra does not hold, or a
 /// product the algebra refuses).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RegisterRefusal {
-    pub id: ClauseId,
+    pub id: ConcordanceClauseId,
 }
 
 /// THE HYPHA'S RECONSTRUCTION OF ONE FIXTURE, through the law forms: the
@@ -205,21 +209,30 @@ pub fn reconstruct(fixture: &Fixture) -> Option<Object> {
     }
 }
 
-/// One clause registered: its fixtures built, and each reconstructed.
-fn registered(id: ClauseId, fixtures: Option<Vec<Fixture>>) -> Result<Registered, RegisterRefusal> {
+/// One Concordance clause registered at its standing: its fixtures built,
+/// and each reconstructed.
+fn registered(id: ConcordanceClauseId, standing: Standing, fixtures: Option<Vec<Fixture>>) -> Result<Registered, RegisterRefusal> {
     let refused = || RegisterRefusal { id: id.clone() };
     let fixtures = fixtures.ok_or_else(refused)?;
     let reached = fixtures.iter().map(reconstruct).collect::<Option<Vec<_>>>().ok_or_else(refused)?;
-    Ok(Registered { clause: Clause { id: id.clone(), standing: Standing::Network, fixtures }, reached })
+    Ok(Registered { clause: ConcordanceClause { id: id.clone(), standing, fixtures }, reached })
 }
 
-/// THE REGISTER: every clause of [`CLAUSES`], in order, each a network
-/// clause (2.10's innermost shell stands in 0.1's Network row; draft 5 names
-/// 2.11 a network clause), its fixtures built and reconstructed by this
-/// hypha. Refused by the clause whose fixtures the hypha cannot read.
+/// THE REGISTER: every Concordance clause of [`CLAUSES`], in order, its
+/// fixtures built and reconstructed by this hypha; refused by the clause
+/// whose fixtures the hypha cannot read. `FORMS-PASSAGE` is a network
+/// clause (draft 5 names 2.11 one; its fixtures were joint-read by every
+/// kernel). `FORMS-COORDINATE` stands at kernel standing, signable and
+/// vetoable, until 78.173's fixtures are joint-read agreed and its clause
+/// is drafted: a clause whose fixtures no other kernel has read is never
+/// made unvetoable (coordinator's decision, 2026-11-05).
 pub fn register() -> Result<Vec<Registered>, RegisterRefusal> {
     Ok(vec![
-        registered(ClauseId::of(forms::passage::LAW_ID, forms::passage::LAW_VERSION), passage_fixtures())?,
-        registered(ClauseId::of(forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION), Some(coordinate_fixtures()))?,
+        registered(ConcordanceClauseId::of(forms::passage::LAW_ID, forms::passage::LAW_VERSION), Standing::Network, passage_fixtures())?,
+        registered(
+            ConcordanceClauseId::of(forms::coordinate::LAW_ID, forms::coordinate::LAW_VERSION),
+            Standing::Kernel,
+            Some(coordinate_fixtures()),
+        )?,
     ])
 }

@@ -21,10 +21,11 @@ fn clause(law: &str) -> Registered {
     held().into_iter().find(|r| r.clause.id.law == law).expect("a registered clause")
 }
 
-/// A WORDING CHANGE CHANGES NO CLAUSE: every clause is named by its law
-/// form's own id and version and holds the form's fixtures, nothing read
-/// from the Concordance's text; each is a network clause, and the hypha
-/// reaches an object for every fixture.
+/// A WORDING CHANGE CHANGES NO CLAUSE: every Concordance clause is named by
+/// its law form's own id and version and holds the form's fixtures, nothing
+/// read from the Concordance's text; the passage is a network clause and
+/// the coordinate, its fixtures not yet joint-read agreed, a kernel clause;
+/// and the hypha reaches an object for every fixture.
 #[test]
 fn register_equals_forms_law_versions() {
     let held = held();
@@ -32,8 +33,9 @@ fn register_equals_forms_law_versions() {
     let named: Vec<(String, u16)> = CLAUSES.iter().map(|(law, v)| (law.to_string(), *v)).collect();
     assert_eq!(ids, named);
     assert_eq!(named, [("FORMS-PASSAGE".to_string(), forms::passage::LAW_VERSION), ("FORMS-COORDINATE".to_string(), forms::coordinate::LAW_VERSION)]);
+    let standings: Vec<Standing> = held.iter().map(|r| r.clause.standing).collect();
+    assert_eq!(standings, [Standing::Network, Standing::Kernel]);
     for r in &held {
-        assert_eq!(r.clause.standing, Standing::Network, "{}", r.clause.id.law);
         assert!(!r.clause.fixtures.is_empty(), "{}", r.clause.id.law);
         assert_eq!(r.reached.len(), r.clause.fixtures.len(), "{}", r.clause.id.law);
     }

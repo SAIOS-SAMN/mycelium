@@ -24,7 +24,7 @@
 //!
 //! | Group | Items |
 //! |---|---|
-//! | The Concordance | [`Clause`], [`Fixture`], [`Object`], [`sign_concordance`], [`reconstruct_fixture`], [`Signing`], [`SigningRefusal`], modes 7 and 8 |
+//! | The Concordance | [`ConcordanceClause`], [`Fixture`], [`Object`], [`sign_concordance`], [`reconstruct_fixture`], [`Signing`], [`SigningRefusal`], modes 7 and 8 |
 //! | The register and clock | [`encode_register_request`], [`decode_register_reply`], [`encode_clock_request`], [`decode_clock_reply`], [`CoreStamp`], [`TPoint`] |
 //! | Verification (L2) | [`Transition`], [`BodyState`], [`BodyMoments`], [`Flux`], [`verify_sized`], [`encode_verify_request`], [`decode_verify_reply`], [`TransitionVerdict`], [`Breach`], [`Law`] |
 //! | Domain founding | [`DomainGenesis`], [`encode_domain`], [`decode_domain_reply`], [`Founded`]; the reserve, the bond, the origin |
@@ -40,7 +40,7 @@
 /// signing helper, its own reconstruction of each fixture.
 pub use crate::signing::{
     decode_concordance_reply, decode_signature_reply, encode_concordance_request, encode_signature_request, reconstruct_fixture, sign_concordance,
-    Admitted, Assent, Choice, Clause, ClauseId, Fixture, Object, SignedClause, Signing, SigningRefusal, Standing, MODE_CONCORDANCE, MODE_SIGNATURE,
+    Admitted, Assent, Choice, ConcordanceClause, ConcordanceClauseId, Fixture, Object, SignedClause, Signing, SigningRefusal, Standing, MODE_CONCORDANCE, MODE_SIGNATURE,
 };
 
 /// The law register's read (mode 0): the request, the reply at this

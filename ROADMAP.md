@@ -1238,9 +1238,12 @@ adjudicated reading (B2). Each phase is one commit:
      register (`src/physics/laws/clauses/`) holds `FORMS-PASSAGE` v3 (the
      four fixtures of LAW-PASSAGE v2) and `FORMS-COORDINATE` v1 (the
      order, eight sexagesimal sectors, seven `within` readings and two
-     ranges of LAW-COORDINATE v1), each a network clause, with the
-     hypha's own reconstruction of each fixture through `forms`. Mode 7
-     serves it.
+     ranges of LAW-COORDINATE v1), with the hypha's own reconstruction of
+     each fixture through `forms` (`ConcordanceClause`,
+     `ConcordanceClauseId`, named apart from the rule language's clause).
+     The passage is a network clause; the coordinate stands at kernel
+     standing, signable and vetoable, until 78.173's fixtures are
+     joint-read agreed and its clause is drafted. Mode 7 serves it.
    - A kernel signs a clause by presenting its reconstruction of the
      clause's fixtures (mode 8, `clauses::signing::Signing`). The hypha
      admits the signature only on the same exact objects, and a kernel
