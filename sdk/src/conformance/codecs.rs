@@ -216,6 +216,36 @@ fn laws_signature() -> Result<String, String> {
     Ok(format!("{} clauses signed by reconstruction and admitted; the reply reads back", clauses.len()))
 }
 
+/// Track 24 B2 — the alignment request, every kernel's and one kernel's,
+/// and the reading derived from a signing event admitted and one refused:
+/// the admitted clauses converse, the refused one collides with its
+/// residue, and the reply reads back with the history beside it.
+fn laws_alignment() -> Result<String, String> {
+    use crate::signing::{read_alignment, sign_concordance, Alignment, Assent, ClauseReading, SigningEvent, SigningRefusal};
+    same("every kernel's alignment asked", laws::decode_laws_request(&laws::encode_alignment_request(None)), laws::LawsRequest::Alignment(None))?;
+    same("one kernel's alignment asked", laws::decode_laws_request(&laws::encode_alignment_request(Some(&voice()))), laws::LawsRequest::Alignment(Some(voice())))?;
+    let clauses = served()?;
+    let ids: Vec<_> = clauses.iter().map(|c| c.id.clone()).collect();
+    let s = sign_concordance(&key(), &clauses, |_| Assent::Enabled).ok_or("a fixture the SDK does not reconstruct")?;
+    let admitted = mycelium::physics::laws::clauses::admit_bytes(&s.to_bytes());
+    let at = |h: u64| mycelium::chronometry::Stamp::new(h, [3; 32], mycelium::chronometry::Place { k: 0, i: h });
+    let [first, ..] = ids.as_slice() else { return Err("no clause served".to_string()) };
+    let first = first.clone();
+    let residue = SigningRefusal::UnknownClause { id: first.clone() };
+    let events = [
+        SigningEvent { at: at(1), kernel: voice(), reserve: None, verdict: admitted },
+        SigningEvent { at: at(2), kernel: voice(), reserve: Some([4; 32]), verdict: Err(residue.clone()) },
+    ];
+    let kernels = read_alignment(&ids, &events, Some(voice()));
+    let read: Vec<ClauseReading> = kernels.iter().flat_map(|k| k.clauses.iter().map(|c| c.reading.clone())).collect();
+    let mut expected = vec![ClauseReading::Collides { at: at(2), residue: Box::new(residue) }];
+    expected.extend(ids.iter().skip(1).map(|_| ClauseReading::Converses { at: at(1) }));
+    same("the readings derived from the events", Some(read), expected)?;
+    let alignment = Ok(Alignment { kernels, history: mycelium::physics::laws::clauses::history() });
+    same("the alignment reply", laws::decode_alignment_reply(&laws::encode_alignment_reply(&alignment)), alignment)?;
+    Ok(format!("{} clause readings derived from two events, the refused clause collides with its residue; the reply reads back", ids.len()))
+}
+
 fn laws_verify() -> Result<String, String> {
     use mycelium::physics::laws::{verify_sized, Law};
     let ts = super::probes::transitions().ok_or("the turn carries no body")?;
@@ -493,6 +523,7 @@ fn reply_reads(act: &str, reply: &[u8]) -> Option<bool> {
         "laws statement" => d::conformance::decode_statement_reply(reply).is_some(),
         "laws concordance" => laws::decode_concordance_reply(reply).is_some(),
         "laws signature" => laws::decode_signature_reply(reply).is_some(),
+        "laws alignment" => laws::decode_alignment_reply(reply).is_some(),
         "laws clock" => laws::decode_clock_reply(reply).is_some(),
         "laws verify" => laws::decode_verify_reply(reply).is_some(),
         "domain founding" => dom::decode_domain_reply(reply).is_some(),
@@ -536,6 +567,7 @@ fn check(a: &ActRequirement) -> Option<Result<String, String>> {
         "laws statement" => laws_statement(),
         "laws concordance" => laws_concordance(),
         "laws signature" => laws_signature(),
+        "laws alignment" => laws_alignment(),
         "laws verify" => laws_verify(),
         "laws batch" => laws_batch(),
         "domain founding" => domain_founding(),

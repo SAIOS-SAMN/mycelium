@@ -17,7 +17,7 @@ use super::{SOLVE_KIND_FACTORISATION, SOLVE_KIND_OUTPUTS};
 use super::{ACT_DOMAIN, ACT_ENTRIES, ACT_LAWS, ACT_OBSERVE, ACT_PEERS, ACT_PROBE, ACT_QUOTE, ACT_RECEIPTS, ACT_SEAT};
 use super::{ACT_SOLVE, ACT_SPEECH, ACT_SYLLABUS, ACT_TASK, ACT_WALLET, ACT_WHY, WIRE_VERSION};
 use crate::physics::laws::codec::{MODE_BATCH, MODE_CLOCK, MODE_CONCORDANCE, MODE_LEXICON, MODE_PARAMETERS, MODE_REGISTER};
-use crate::physics::laws::codec::{MODE_SIGNATURE, MODE_STATEMENT, MODE_VERIFY};
+use crate::physics::laws::codec::{MODE_ALIGNMENT, MODE_SIGNATURE, MODE_STATEMENT, MODE_VERIFY};
 use crate::physics::laws::clauses::CLAUSES;
 use crate::physics::laws::LAW_VERSION;
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
@@ -179,6 +179,8 @@ const PARAMETERS: &[&str] = &["law version", "parameters"];
 const STATED: &[&str] = &["wire version", "law version", "clauses", "profiles", "acts"];
 const CLAUSE_REGISTER: &[&str] = &["clauses: law id, version, standing, fixtures"];
 const SIGNATURE: &[&str] = &["each clause admitted, enabled or vetoed; or the refusal by name, NotSignatory naming the clause and the fixture"];
+/// Track 24 B2 — the alignment reading, from the signing events on the ledger.
+const ALIGNMENT: &[&str] = &["per kernel: reserve, per clause version: converses, vetoed, collides with the residue, or unread, each at its stamp", "history"];
 const RESERVE: &[&str] = &["current tier", "pending tier", "balance S:G:T:H"];
 const MAIL: &[&str] = &["epoch", "sequence", "mail"];
 const WALLET: &[&str] = &["court", "balance S:G:T:H", "bond S:G:T:H", "held S:G:T:H", "stamp"];
@@ -200,6 +202,7 @@ const MIND: &[ActRequirement] = &[
     may(ACT_LAWS, Some(MODE_STATEMENT), "laws statement", "decode_statement_reply", STATED),
     may(ACT_LAWS, Some(MODE_CONCORDANCE), "laws concordance", "decode_concordance_reply", CLAUSE_REGISTER),
     may(ACT_LAWS, Some(MODE_SIGNATURE), "laws signature", "decode_signature_reply", SIGNATURE),
+    may(ACT_LAWS, Some(MODE_ALIGNMENT), "laws alignment", "decode_alignment_reply", ALIGNMENT),
     may(ACT_QUOTE, None, "quote", "decode_quote_reply", &["height", "surface S:G:T:H", "k", "work items"]),
     may(ACT_RECEIPTS, None, "receipts", "decode_receipts_reply", &["receipts"]),
     may(ACT_ENTRIES, None, "entries", "decode_entries_reply", &["height", "entries"]),
@@ -224,6 +227,7 @@ const KERNEL: &[ActRequirement] = &[
     must(ACT_LAWS, Some(MODE_STATEMENT), "laws statement", "decode_statement_reply", STATED),
     must(ACT_LAWS, Some(MODE_CONCORDANCE), "laws concordance", "decode_concordance_reply", CLAUSE_REGISTER),
     must(ACT_LAWS, Some(MODE_SIGNATURE), "laws signature", "decode_signature_reply", SIGNATURE),
+    must(ACT_LAWS, Some(MODE_ALIGNMENT), "laws alignment", "decode_alignment_reply", ALIGNMENT),
     must(ACT_LAWS, Some(MODE_CLOCK), "laws clock", "decode_clock_reply", CLOCK),
     must(ACT_LAWS, Some(MODE_VERIFY), "laws verify", "decode_verify_reply", VERDICT),
     must(ACT_DOMAIN, None, "domain founding", "decode_domain_reply", FOUNDED),

@@ -72,7 +72,7 @@ fn read_clauses(session: &Speaker) -> Result<Vec<crate::signing::ConcordanceClau
 /// The signing act on the served clauses: the SDK's own reconstructions,
 /// every clause enabled, admitted on each clause; and one fixture's object
 /// presented wrong, refused `NotSignatory` naming that clause and fixture.
-fn sign_clauses(session: &Speaker, key: &SigningKey, served: &[crate::signing::ConcordanceClause]) -> Result<String, String> {
+fn sign_clauses(session: &Speaker, key: &SigningKey, served: &[crate::signing::ConcordanceClause]) -> Result<(String, Option<crate::signing::ConcordanceClauseId>), String> {
     use crate::signing::{sign_concordance, Admitted, Assent, Choice, Signing, SigningRefusal};
     let signed = sign_concordance(key, served, |_| Assent::Enabled).ok_or("a served fixture the SDK does not reconstruct")?;
     let reply = session.speak(laws::encode_signature_request(&signed))?;
@@ -94,28 +94,66 @@ fn sign_clauses(session: &Speaker, key: &SigningKey, served: &[crate::signing::C
         }
         _ => None,
     });
-    let Some((id, fixture)) = moved else { return Ok(format!("{} clauses signed by reconstruction and admitted", served.len())) };
+    let Some((id, fixture)) = moved else { return Ok((format!("{} clauses signed by reconstruction and admitted", served.len()), None)) };
     let reply = session.speak(laws::encode_signature_request(&Signing::sign(key, wrong)))?;
     match laws::decode_signature_reply(&reply) {
-        Some(Err(SigningRefusal::NotSignatory { id: i, fixture: f, .. })) if i == id && *f == fixture => {
-            Ok(format!("{} clauses signed by reconstruction and admitted; a fixture not reached refused NotSignatory, naming {} v{}", served.len(), id.law, id.version))
-        }
+        Some(Err(SigningRefusal::NotSignatory { id: i, fixture: f, .. })) if i == id && *f == fixture => Ok((
+            format!("{} clauses signed by reconstruction and admitted; a fixture not reached refused NotSignatory, naming {} v{}", served.len(), id.law, id.version),
+            Some(id),
+        )),
         other => Err(format!("a fixture not reached answered {other:?}, not NotSignatory naming {} v{}", id.law, id.version)),
     }
 }
 
-/// The hypha's clause register against the SDK's, and a signing act over it
-/// by the SDK's own reconstructions (MAY for a mind, MUST for a kernel).
+/// Track 24 B2 — the key's alignment read from the hypha after its two
+/// signings: the clause whose fixture was presented wrong collides, its
+/// residue the `NotSignatory` naming it; every other served clause
+/// converses; the history stands beside it.
+fn read_alignment(session: &Speaker, key: &SigningKey, served: &[crate::signing::ConcordanceClause], collided: Option<&crate::signing::ConcordanceClauseId>) -> Result<String, String> {
+    use crate::signing::{ClauseReading, SigningRefusal};
+    let kernel = key.verifying_key().to_bytes();
+    let reply = session.speak(laws::encode_alignment_request(Some(&kernel)))?;
+    let read = match laws::decode_alignment_reply(&reply) {
+        Some(Ok(read)) => read,
+        Some(Err(refusal)) => return Err(format!("the alignment refused: {refusal:?}")),
+        None => return Err(format!("{} bytes that are no alignment reading", reply.len())),
+    };
+    let [k] = read.kernels.as_slice() else { return Err(format!("{} kernels read for one key", read.kernels.len())) };
+    for c in served {
+        let reading = k.clauses.iter().find(|r| r.id == c.id).map(|r| &r.reading);
+        let lawful = match (reading, collided == Some(&c.id)) {
+            (Some(ClauseReading::Collides { residue, .. }), true) => matches!(**residue, SigningRefusal::NotSignatory { ref id, .. } if *id == c.id),
+            (Some(ClauseReading::Converses { .. }), false) => true,
+            _ => false,
+        };
+        if !lawful {
+            return Err(format!("{} v{} read as {reading:?}", c.id.law, c.id.version));
+        }
+    }
+    Ok(format!("{} clauses read from the ledger, each as signed; {} signings of the past beside them", served.len(), read.history.len()))
+}
+
+/// The hypha's clause register against the SDK's, a signing act over it by
+/// the SDK's own reconstructions, and the alignment the hypha's ledger then
+/// reads (MAY for a mind, MUST for a kernel).
 fn laws_concordance(session: &Speaker, key: &SigningKey, report: &mut Report) {
     let served = read_clauses(session);
     let clauses = served.as_ref().ok().cloned();
     session.record(report, "laws concordance", served.map(|s| format!("the served register equals the SDK's: {} clauses", s.len())));
-    match clauses {
-        Some(served) => {
-            let signed = sign_clauses(session, key, &served);
-            session.record(report, "laws signature", signed);
+    let Some(served) = clauses else {
+        report.unread("laws signature", "no clause register read to sign");
+        report.unread("laws alignment", "no clause register read to sign");
+        return;
+    };
+    let signed = sign_clauses(session, key, &served);
+    let collided = signed.as_ref().ok().map(|(_, id)| id.clone());
+    session.record(report, "laws signature", signed.map(|(said, _)| said));
+    match collided {
+        Some(collided) => {
+            let aligned = read_alignment(session, key, &served, collided.as_ref());
+            session.record(report, "laws alignment", aligned);
         }
-        None => report.unread("laws signature", "no clause register read to sign"),
+        None => report.unread("laws alignment", "no signing admitted to read"),
     }
 }
 

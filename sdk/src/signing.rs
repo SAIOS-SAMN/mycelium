@@ -45,10 +45,18 @@ pub use mycelium::physics::laws::clauses::{ConcordanceClause, ConcordanceClauseI
 /// The signing act, a clause's choice, the assent admitted and each refusal
 /// by name.
 pub use mycelium::physics::laws::clauses::{Admitted, Assent, Choice, SignedClause, Signing, SigningRefusal};
-/// The register's read (`ACT_LAWS` mode 7) and the signing act presented and
-/// judged (mode 8).
+/// The register's read (`ACT_LAWS` mode 7), the signing act presented,
+/// judged and recorded on the hypha's ledger (mode 8), and the alignment
+/// reading derived from the recorded signings (mode 9).
 pub use mycelium::physics::laws::codec::{
-    decode_concordance_reply, decode_signature_reply, encode_concordance_request, encode_signature_request, MODE_CONCORDANCE, MODE_SIGNATURE,
+    decode_alignment_reply, decode_concordance_reply, decode_signature_reply, encode_alignment_request, encode_concordance_request, encode_signature_request, MODE_ALIGNMENT,
+    MODE_CONCORDANCE, MODE_SIGNATURE,
+};
+/// The alignment reading: per kernel and per clause version, converses,
+/// vetoed, collides (with the residue) or unread, derived from the signing
+/// events; and the signings of the past, served beside it as history.
+pub use mycelium::physics::laws::clauses::{
+    read_alignment, Alignment, AlignmentRefusal, ClauseAlignment, ClauseReading, HistoricalSigning, KernelAlignment, Mechanism, SigningEvent,
 };
 
 /// THE KERNEL'S RECONSTRUCTION OF ONE FIXTURE, through the law forms: the

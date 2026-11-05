@@ -28,6 +28,7 @@ const HOUSE_EXAMPLE: &[&str] = &[
     "laws statement",
     "laws concordance",
     "laws signature",
+    "laws alignment",
     "laws clock",
     "laws verify",
     "domain founding",
