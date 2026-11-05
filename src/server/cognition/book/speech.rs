@@ -581,6 +581,7 @@ impl Court {
 
 
     /// The court's voice, heard on its verdicts.
+    #[cfg(test)]
     pub fn set_court_voice(&mut self, voice: [u8; 32]) {
         self.court_voice = Some(voice);
     }

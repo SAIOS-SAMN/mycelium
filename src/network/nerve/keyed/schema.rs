@@ -194,6 +194,7 @@ impl<V> Stratified<V> {
     /// says so there; the full depth is an exact read, which is
     /// [`Stratified::get`]. Both are refused here so that a site cannot ask
     /// for a projection and receive one of those by accident.
+    #[cfg(test)]
     pub fn fibre_at_depth(&self, key: &[u8], depth: usize) -> Result<Subtree<'_, V>, StratumRefusal> {
         if depth == 0 {
             return Err(StratumRefusal {

@@ -324,6 +324,7 @@ impl Rotor {
 
     /// Same conjugacy-and-scale class: the invariants agree as rationals.
     /// A non-versor has no class.
+    #[cfg(test)]
     pub fn class_eq(&self, other: &Rotor) -> bool {
         match (self.class_invariants(), other.class_invariants()) {
             (Some(a), Some(b)) => a == b,
@@ -550,6 +551,7 @@ impl Rotor {
     ///
     /// This is a reading and never a gate (§2.3): it says which blades
     /// carry content, and the caller decides what that means.
+    #[cfg(test)]
     pub fn off_plane_blades(&self, plane: (u8, u8)) -> Vec<usize> {
         let keep = (1usize << plane.0) | (1usize << plane.1);
         (1..16)

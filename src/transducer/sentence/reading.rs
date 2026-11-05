@@ -4,12 +4,16 @@
 //! its moduli, puncturing a held word the body deepens, and deconstructing
 //! the whole chain into the words that speak it and the residue that stays.
 
+#[cfg(test)]
 use crate::network::nerve::Keyed;
 use crate::transducer::blade::{self, Shape};
 use crate::transducer::element::{self, Element};
+#[cfg(test)]
+use crate::transducer::sentence::chain::section_site_key;
 use crate::transducer::sentence::chain::{
-    gauge_of, pieces, section_site_key, reconstruct_at, reconstruct_operators, Cite, HeldCite, SectionLink, Located, Puncture, Sentence,
+    gauge_of, pieces, reconstruct_at, reconstruct_operators, Cite, HeldCite, SectionLink, Located, Puncture, Sentence,
 };
+#[cfg(test)]
 use crate::transducer::sentence::form::Vertex;
 use crate::transducer::stalk::{self, Stalks};
 
@@ -57,6 +61,7 @@ pub fn no_held(_inv: &stalk::Invariant, _piece: &[SectionLink], _budget: &mut cr
 /// here is not a word for this body. The cite carries the body in its own
 /// frame — the frame the action was evaluated in — and the vertex's
 /// address, which names the word and never the chain.
+#[cfg(test)]
 pub fn vertex_cites(vertex: &Vertex, piece: &[SectionLink], budget: &mut crate::physics::Budget) -> Option<HeldCite> {
     let Vertex::Word { acts, .. } = vertex else {
         return None;
@@ -77,6 +82,7 @@ pub fn vertex_cites(vertex: &Vertex, piece: &[SectionLink], budget: &mut crate::
 
 /// The reconstruction test at ONE member: the rotor under that member's
 /// dilator carried onto the body's frame, verified compartment by compartment.
+#[cfg(test)]
 fn vertex_cites_by(
     vertex: &Vertex,
     carriage: &crate::transducer::element::Versor,

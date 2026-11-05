@@ -610,6 +610,7 @@ impl SharedCell {
 
     /// Does the shared cell lie across axis `a` — do the two sites differ
     /// on it? At the frame axis, a contact between two frames (51.3).
+    #[cfg(test)]
     pub fn crosses(&self, a: usize) -> bool {
         self.axes.contains(&a)
     }

@@ -142,6 +142,7 @@ impl Perspective {
     /// permutation of the axes. Relabelling the axes moves the roles with
     /// them, so a percept read under the relabelled perspective is the
     /// original permuted exactly (MU-SENSING §3.6).
+    #[cfg(test)]
     pub fn relabelled(&self, order: &[usize]) -> Option<Perspective> {
         let mut seen = vec![false; self.roles.len()];
         let mut roles = Vec::with_capacity(order.len());
@@ -166,6 +167,7 @@ pub fn family_plane(n: usize) -> Option<(usize, usize)> {
 /// THE SENSOR PLANE OF THE ALPHABET'S BASE as two base axes (a base of
 /// `alphabet::ALPHABET_BASE_N` coordinates under the default perspective):
 /// the plane the letters' sensor slots stand for.
+#[cfg(test)]
 pub fn alphabet_base_plane() -> Option<(usize, usize)> {
     family_plane(crate::transducer::alphabet::ALPHABET_BASE_N)
 }

@@ -44,6 +44,7 @@ impl Contemplation {
         (n, kept)
     }
 
+    #[cfg(test)]
     pub fn seed_horizon(&mut self, records: &[ClassRecord]) -> usize {
         self.seed_horizon_with(records).0
     }

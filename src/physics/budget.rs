@@ -194,6 +194,7 @@ impl Reserve {
 
     /// Is this reserve spent on every lane? A mind with nothing left
     /// anywhere yields; one with anything left on any lane does not.
+    #[cfg(test)]
     pub fn is_spent(&self) -> bool {
         self.lanes.iter().all(|&l| l == 0)
     }

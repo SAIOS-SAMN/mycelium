@@ -113,6 +113,7 @@ pub struct Layer {
 /// One layer of one SECTION: the planar reading a stack's layers are
 /// assembled from (16.5), each section peeled in its own frame, as
 /// painted sites.
+#[cfg(test)]
 struct SectionLayer {
     kind: LayerKind,
     painted: Vec<crate::transducer::spelled::PaintedSite>,
@@ -156,7 +157,9 @@ impl LayerKind {
 }
 
 /// Residue of the outline peel: the content still riding inward.
+#[cfg(test)]
 struct OutlineStep;
+#[cfg(test)]
 impl LayerStep for OutlineStep {
     type Residue = Vec<crate::transducer::spelled::PaintedSite>;
     type Core = SectionLayer;
@@ -173,7 +176,9 @@ impl LayerStep for OutlineStep {
     }
 }
 
+#[cfg(test)]
 struct CountGov(Option<usize>);
+#[cfg(test)]
 impl ShrinkGovernor for CountGov {
     type Residue = Vec<crate::transducer::spelled::PaintedSite>;
     fn read(&mut self, residue: &Vec<crate::transducer::spelled::PaintedSite>) -> LayerMotion {
@@ -189,6 +194,7 @@ impl ShrinkGovernor for CountGov {
     }
 }
 
+#[cfg(test)]
 fn scale_factor(num: usize, den: usize) -> Option<(LayerKind, i64)> {
     if den == 0 || num == den {
         return None;
@@ -209,6 +215,7 @@ fn scale_factor(num: usize, den: usize) -> Option<(LayerKind, i64)> {
 /// taken from the residue the last layer left; the governor reads shrink.
 /// Scale layers only when a frame ratio is supplied and is not one.
 /// Cut is not produced here: it is taken only with sites a face names.
+#[cfg(test)]
 pub fn peel_body(compartments: &[(i64, i64, i64, u8)]) -> Vec<Layer> {
     peel_body_scaled(compartments, None)
 }
@@ -217,6 +224,7 @@ pub fn peel_body(compartments: &[(i64, i64, i64, u8)]) -> Vec<Layer> {
 /// of the body is peeled in its own plane, and the layers of one kind are
 /// one layer of the body, lifted back to the layers' frames. `scale` is
 /// ((h_out, h_in), (w_out, w_in)).
+#[cfg(test)]
 pub fn peel_body_scaled(
     compartments: &[(i64, i64, i64, u8)],
     scale: Option<((usize, usize), (usize, usize))>,
@@ -259,6 +267,7 @@ pub fn peel_body_scaled(
     out
 }
 
+#[cfg(test)]
 fn peel_section_scaled(
     painted: &[crate::transducer::spelled::PaintedSite],
     scale: Option<((usize, usize), (usize, usize))>,

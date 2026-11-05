@@ -114,6 +114,7 @@ impl TPoint {
     /// TWO WRITINGS COMPARED AS THE POINTS THEY WRITE: each read back
     /// ([`TPoint::parse`]) and ordered by the point's own order (origin,
     /// `h`, each lane's exact value, `K`). `None` where either is no point.
+    #[cfg(test)]
     pub fn compare_writings(a: &str, b: &str) -> Option<std::cmp::Ordering> {
         Some(TPoint::parse(a)?.cmp(&TPoint::parse(b)?))
     }

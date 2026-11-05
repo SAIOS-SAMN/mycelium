@@ -6,6 +6,7 @@
 //! address, chart or lane, never by a rank over the whole of it.
 
 use crate::cognition::*;
+#[cfg(test)]
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
@@ -13,6 +14,7 @@ use crate::transducer::element::Element;
 /// μ⃗ is which is the whole question: `escrowed` is what was staked against
 /// the word, `deflation` is what it MEASURED. A row where those two swap
 /// places is a mint for unmeasured work.
+#[cfg(test)]
 pub struct Docketed {
     /// The listing the word answers.
     pub addr: Address,
@@ -254,6 +256,7 @@ impl Court {
     /// on. It read `book_gen`, the count of listings written, so every
     /// voice read `[h 0]` while the chain stood thousands of receipts high
     /// and "quote asked when the height advanced" never fired (I39).
+    #[cfg(test)]
     pub fn book_height(&self) -> u64 {
         self.height()
     }
@@ -778,11 +781,13 @@ impl Court {
 
     /// THE DOCKET (Step 5): every provisional word, exported for the court's
     /// blind reconstruction + confluence audit — (element, attesting voices, escrowed μ⃗).
+    #[cfg(test)]
     pub fn dockets(&self) -> Vec<Docketed> {
         self.dockets_since(0)
     }
 
     /// The provisional words installed past a court's "since" k-step.
+    #[cfg(test)]
     pub fn dockets_since(&self, since_k: u64) -> Vec<Docketed> {
         self.provisional
             .scoped()

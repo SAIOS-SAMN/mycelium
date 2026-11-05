@@ -22,6 +22,7 @@ use crate::transducer::torsion_witness::{self, HolonomicOrbitWitness};
 /// carries and whose class is filed on torsion; every orbit of the
 /// recomputed spanning forest is projectively identity or filed finite
 /// torsion. The trajectory is checked by the caller on the element.
+#[cfg(test)]
 pub fn reconstruct_form(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
@@ -35,6 +36,7 @@ pub fn reconstruct_form(
 /// through `crystal` (the court's genome). `NoCrystal` is only for a tape
 /// with no Glued vertex. The reason alone; `reconstruct_form_at` carries the
 /// coordinate.
+#[cfg(test)]
 pub fn reconstruct_form_with(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
@@ -158,6 +160,7 @@ fn face_rederives(
 /// [`derivations_compose`] by name, for the pre-B6 parity oracle. The
 /// reader is otherwise reached only through the whole verdict, and the
 /// guard has to ask it on its own so a divergence has ONE line.
+#[cfg(test)]
 pub fn derivations_compose_at(
     f: &Form,
     env: &crate::transducer::element::ReceiptsEnvelope,
@@ -355,6 +358,7 @@ pub(crate) fn witnesses_carry_primes(f: &Form, meter: &mut Meter<'_>, from: usiz
 /// does not carry its body, the face whose edge does not re-derive, the
 /// chart with the links no demand declares; every other refusal is of the
 /// whole tape.
+#[cfg(test)]
 pub fn reconstruct_form_at(
     spoken: &Element,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,

@@ -174,6 +174,7 @@ impl TaskRegistry {
 
     /// The admitted claims of factorisation recorded under a task's
     /// citation.
+    #[cfg(test)]
     pub fn factorisations_of(&self, id: &[u8]) -> usize {
         self.factorisations.fibre_at(id).map_or(0, |f| f.count())
     }
@@ -258,6 +259,7 @@ impl TaskRegistry {
 
     /// THE KEYS THE BOOK'S INDEX HOLDS, as written: one citation per task,
     /// read so that what an index entry copies is measured, never assumed.
+    #[cfg(test)]
     pub fn index_keys(&self) -> Vec<Vec<u8>> {
         self.by_id.scoped().map(|(k, _)| k).collect()
     }

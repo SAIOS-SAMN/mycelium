@@ -296,6 +296,7 @@ pub fn take_class_record(b: &[u8], p: &mut usize) -> Option<(Address, u32)> {
 /// No key of one kind is a proper prefix of another of the same kind,
 /// except by stratum (shared coarse coordinates). Length-delimited fields
 /// make a shorter sibling incomparable as a prefix.
+#[cfg(test)]
 pub fn is_proper_prefix(a: &[u8], b: &[u8]) -> bool {
     a.len() < b.len() && b.starts_with(a)
 }

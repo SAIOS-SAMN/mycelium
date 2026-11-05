@@ -214,6 +214,7 @@ impl Court {
     }
 
     /// The claims standing on `who`'s stake, per lane, exactly.
+    #[cfg(test)]
     pub fn claims_on(&self, party: &[u8; 32]) -> Mu {
         let mut total = Mu::zero();
         let Some(fibre) = self.atlas.claims.fibre_at(party) else { return total };

@@ -19,6 +19,7 @@ pub type Compartment = crate::transducer::blade::Compartment;
 /// candidates. The symbol the unpainted sites hold is the caller's, named:
 /// never a ground this reader defaults to. `None` where the box's sites
 /// pass the machine word.
+#[cfg(test)]
 pub fn sample_of_painted(painted: &[PaintedSite], void: u8) -> Option<SectionSample> {
     // The span is read over every site, so no member is chosen here; no
     // site at all is the one-site canvas.

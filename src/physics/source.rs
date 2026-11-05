@@ -85,6 +85,7 @@ impl WhiteHoleSource {
 
     /// THE SLIVER AT PARAMETER `t`: `1 + tN`, exact (`N² = 0`, so the flow is
     /// its own first order). Slivers compose by adding the slivers' parameters.
+    #[cfg(test)]
     pub fn sliver(&self, t: &Q) -> Mv {
         Mv::scalar(Q::from_integer(1.into())).add(&self.generator.scale(t))
     }

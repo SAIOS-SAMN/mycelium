@@ -223,6 +223,7 @@ pub fn rho_of(v: &Versor) -> Option<Q> {
 /// connection (51.2's asserted second reading) — are both built from it.
 /// One reading, two realisations, rather than one realisation two readers
 /// have to agree about (rule 12).
+#[cfg(test)]
 pub fn displacement_of(v: &Versor) -> Option<Vec<Q>> {
     origin_image(v)
 }
@@ -236,6 +237,7 @@ pub fn displacement_of(v: &Versor) -> Option<Vec<Q>> {
 ///
 /// A zero displacement is the identity and not a refusal: standing still is
 /// a reading.
+#[cfg(test)]
 pub fn transvection_of(v: &Versor) -> Option<Versor> {
     let t = displacement_of(v)?;
     if t.iter().all(|x| x.is_zero()) {

@@ -26,7 +26,9 @@
 //! well-founded order on a finite alphabet, so no reduction can loop. The
 //! orientation is not a choice made here — it is read off the order.
 
-use super::{plane_of, LetterId, Word};
+#[cfg(test)]
+use super::plane_of;
+use super::{LetterId, Word};
 use crate::network::nerve::Keyed;
 
 /// A rewrite rule `lhs → rhs`, oriented so the right side is strictly
@@ -341,6 +343,7 @@ pub fn complete(seed: &[Rule], budget: &mut crate::physics::Budget) -> (Vec<Rule
 /// Is every critical pair of this system resolved? The definition of local
 /// confluence, checked rather than assumed — a completion that spent its
 /// budget answers `false` here and says so.
+#[cfg(test)]
 pub fn is_confluent(rules: &[Rule], budget: &mut crate::physics::Budget) -> Option<bool> {
     for a in rules {
         for b in rules {
@@ -388,6 +391,7 @@ impl Word {
 /// The plane a rule acts on, where all its letters share one. A reading for
 /// a caller that wants the rules of one plane; `None` where the rule spans
 /// planes, which the commutators do.
+#[cfg(test)]
 pub fn rule_plane(r: &Rule) -> Option<(u8, u8)> {
     let mut held: Option<(u8, u8)> = None;
     for (id, _) in r.lhs.letters() {

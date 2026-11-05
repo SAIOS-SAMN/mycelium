@@ -157,6 +157,7 @@ pub(crate) fn stand_on(g: u8) {
 /// before a task is addressed: no decoder hands its tasks through it, and
 /// a task's identity reads no frame fixing (MU-SENSING §3.4, scope
 /// separation).
+#[cfg(test)]
 pub fn frame_fixed_on_ground(task: Task) -> Task {
     // The perspective open on this thread stands, as `on_ground_of` keeps
     // it; with none open, the train family's deduced reading.

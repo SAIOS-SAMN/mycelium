@@ -95,11 +95,13 @@ impl PlaneForm {
     }
 
     /// Same conjugacy class: the representatives agree as coefficients.
+    #[cfg(test)]
     pub fn conjugacy_eq(&self, other: &PlaneForm) -> bool {
         self.conjugacy_rep() == other.conjugacy_rep()
     }
 
     /// Conjugacy representative written out. Class identity is [`conjugacy_eq`].
+    #[cfg(test)]
     pub fn conjugacy_key(&self) -> crate::transducer::address::Address {
         let r = self.conjugacy_rep();
         let mut buf = vec![crate::transducer::address::TAG_PLANE, r.orientation as u8];
@@ -130,6 +132,7 @@ impl PlaneForm {
     }
 
     /// The 180°-turn acting on exponents: `S R S⁻¹ = R⁻¹`.
+    #[cfg(test)]
     pub fn conjugate_by(&self, by: &PlaneForm) -> PlaneForm {
         if !by.orientation {
             *self

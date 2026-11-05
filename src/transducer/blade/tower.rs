@@ -287,12 +287,14 @@ fn site_harmonic(
 /// THE DEVIATORIC VECTOR (55.3) on the region tower: `u = ((I_ii − I_jj)/2,
 /// I_ij)/M₀`, turning at `2φ`; `None` where the second moment is isotropic
 /// — a single compartment, a square, a cross — which [`quartic_harmonic`] orients.
+#[cfg(test)]
 pub fn deviatoric(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
     harmonic(blade, plane, Tower::Region, Harmonic::Two)
 }
 
 /// THE FOURTH HARMONIC on the region tower, turning at `4φ`: the `D₄`
 /// discriminator a square's second moment cannot give.
+#[cfg(test)]
 pub fn quartic_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
     harmonic(blade, plane, Tower::Region, Harmonic::Four)
 }
@@ -300,6 +302,7 @@ pub fn quartic_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRati
 /// THE THIRD HARMONIC on the region tower (68), turning at `3φ`: odd where
 /// `u` and `h₄` are even, so it tells `φ` from `φ + π`. `None` exactly on a
 /// body with 2-fold symmetry, whose `ℤ₂` gauge freedom is real.
+#[cfg(test)]
 pub fn third_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
     harmonic(blade, plane, Tower::Region, Harmonic::Three)
 }
@@ -376,6 +379,7 @@ pub fn dilation(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Dilation,
 }
 
 /// Whether some similarity of the lattice carries the pair.
+#[cfg(test)]
 pub fn dilation_certified(a: &Blade, b: &Blade, plane: (usize, usize)) -> bool {
     dilation(a, b, plane).is_ok()
 }
@@ -393,6 +397,7 @@ pub fn chirality_on(b: &Blade, plane: (usize, usize), tower: Tower) -> Option<(B
 }
 
 /// The chirality on the region tower.
+#[cfg(test)]
 pub fn chirality(b: &Blade, plane: (usize, usize)) -> Option<(BigRational, BigRational)> {
     chirality_on(b, plane, Tower::Region)
 }

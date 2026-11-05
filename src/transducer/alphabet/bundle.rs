@@ -21,7 +21,9 @@
 //! `𝒮`, the hue permutation on `𝒢`'s cover. The base carries `𝒽`.
 
 use super::{Rotor, Word};
-use crate::transducer::element::{self, Versor};
+#[cfg(test)]
+use crate::transducer::element;
+use crate::transducer::element::Versor;
 
 /// THE BASE of a word: the conjugacy class its rotor stands in.
 ///
@@ -186,6 +188,7 @@ pub fn conjugation(a: &Word, b: &Word) -> Option<Conjugation> {
 
 /// The first conjugator the solve finds, for a caller that wants the rotor
 /// rather than a spelling.
+#[cfg(test)]
 pub fn solve_conjugator_rotor(a: &Rotor, b: &Rotor) -> Option<Rotor> {
     conjugators(a, b).into_iter().next()
 }
@@ -395,6 +398,7 @@ impl Rotor {
 ///
 /// Keyed, never a scan: the base key IS the coordinate, so this is a read at
 /// it (law 3).
+#[cfg(test)]
 pub fn by_base(sections: &[(Word, Section)]) -> crate::network::nerve::Keyed<Vec<Word>> {
     let mut out: crate::network::nerve::Keyed<Vec<Word>> = crate::network::nerve::Keyed::new();
     for (w, s) in sections {
@@ -440,6 +444,7 @@ pub fn section_of(held: &[Word], w: &Word) -> Option<(Word, Word)> {
 
 /// The identity fibre: no conjugator, identity carriage, no recolour. The
 /// coordinate a base stands at over itself.
+#[cfg(test)]
 pub fn trivial_fibre() -> Fibre {
     Fibre {
         gauge: Some(Word::identity()),

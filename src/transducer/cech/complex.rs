@@ -216,6 +216,7 @@ impl Complex {
     }
 
     /// The torsion wound on a vertex, where any is.
+    #[cfg(test)]
     pub fn wound_at(&self, v: &[u8]) -> Option<&crate::transducer::cga::Mv> {
         self.wound.get(v)
     }
@@ -624,6 +625,7 @@ impl Complex {
     }
 
     /// Drop every simplex that contains `vertex`. Used when wells merge.
+    #[cfg(test)]
     pub fn drop_vertex(&mut self, vertex: &[u8]) {
         // No class is dropped silently: the holes on the vertex are
         // cauterized and its frozen classes pass from cold to heat, each
@@ -673,6 +675,7 @@ impl Complex {
         self.sections.remove(vertex);
     }
 
+    #[cfg(test)]
     pub fn simplex_count(&self) -> usize {
         self.by_key.len()
     }

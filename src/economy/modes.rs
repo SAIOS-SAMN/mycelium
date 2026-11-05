@@ -201,11 +201,13 @@ impl Modes {
     }
 
     /// The modes held on one lane, each with its amount.
+    #[cfg(test)]
     pub fn on_lane(&self, lane: u8) -> impl Iterator<Item = (&Mode, &Q)> {
         self.modes().filter(move |(m, _)| m.lane() == lane)
     }
 
     /// The amount held of one mode; `None` where it is not held.
+    #[cfg(test)]
     pub fn amount_of(&self, mode: &Mode) -> Option<&Q> {
         self.held.get(&mode.key()?).map(|(_, a)| a)
     }

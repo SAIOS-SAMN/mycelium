@@ -44,6 +44,7 @@ impl Court {
 
     /// The chronometric anchor, public (settlement callers outside the
     /// court — the registry's solve settlements — bind to the same chain).
+    #[cfg(test)]
     pub fn anchor_pub(&self) -> crate::economy::Anchor {
         self.anchor()
     }

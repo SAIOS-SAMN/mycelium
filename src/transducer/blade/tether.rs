@@ -54,6 +54,7 @@ impl Contact {
     /// and its negation are one sphere with inside and outside exchanged, so
     /// `Apart` swaps with `Contained`, the two tangencies with one another,
     /// and `Intersecting` is fixed. `σ ∘ σ = id`.
+    #[cfg(test)]
     pub fn antipodal(self) -> Contact {
         match self {
             Contact::Apart => Contact::Contained,
@@ -65,6 +66,7 @@ impl Contact {
     }
 
     /// Both tangencies are contact interfaces.
+    #[cfg(test)]
     pub fn is_tangent(self) -> bool {
         matches!(self, Contact::TangentExternal | Contact::TangentInternal)
     }

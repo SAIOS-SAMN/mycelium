@@ -42,6 +42,7 @@ pub struct Surgery {
 
 impl Surgery {
     /// Construct a hole-filling surgery from the sites of the hole.
+    #[cfg(test)]
     pub fn fill_hole(hole: Vec<Site>) -> Self {
         let mut delta = hole;
         delta.sort_unstable();

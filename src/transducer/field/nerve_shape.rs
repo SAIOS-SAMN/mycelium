@@ -228,6 +228,7 @@ impl Contemplation {
     }
 
     /// TC1 — the nerve's shape as it stands.
+    #[cfg(test)]
     pub fn core_reading(&self) -> CoreReading {
         let deg = self.degrees_among(&self.nerve_vertices());
         let mut r = CoreReading::default();

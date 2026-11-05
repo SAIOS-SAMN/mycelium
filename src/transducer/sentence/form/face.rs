@@ -95,6 +95,7 @@ impl Form {
     /// THE STAR OF A VERTEX: an overlap from the Frame's chart — its tag
     /// alone (Q-B1) — to every member of the vertex at every frame it stands
     /// on, oriented Frame-first.
+    #[cfg(test)]
     pub fn star_overlaps(&self, v: &coord::VertexAt) -> Vec<(coord::Overlap, FormFace)> {
         let Some(vertex) = self.vertices.at(v) else { return Vec::new() };
         let mut out = Vec::new();
@@ -204,6 +205,7 @@ impl Form {
     /// measured from the members at the overlap's frame, the edge carried in
     /// by whatever measured it, producer `Place`. `None` where the place does
     /// not derive, and nothing is put (rule 11).
+    #[cfg(test)]
     pub fn place_overlap(&mut self, from: coord::ChartAt, to: coord::ChartAt, edge: Option<Transport>) -> Option<coord::Overlap> {
         let place = self.face_place(&from, &to, edge)?;
         let o = coord::Overlap { from, to };

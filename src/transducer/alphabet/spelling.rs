@@ -511,6 +511,7 @@ fn closed_spelling(
 /// The spelling peel itself: the nest of syllables and, when the peel
 /// stalls, the standing arc (the Gaussian remainder the alphabet cannot
 /// speak) — carried out whole for the caller to hold as thought.
+#[cfg(test)]
 pub fn spell_peel(block: &[[Q; 2]; 2]) -> Option<(PeelNest<SpellResidueView, SpellCore>, Q)> {
     spell_peel_on(sensor_plane(), block)
 }
@@ -618,6 +619,7 @@ pub struct SpellResidueView {
 
 /// The block of a lattice isometry given by the images of the row step
 /// and the column step — the sensor's way of reading a motion, spelled.
+#[cfg(test)]
 pub fn spell_images(row_image: (i64, i64), col_image: (i64, i64)) -> Option<Spelling> {
     spell(&[[q(row_image.0), q(col_image.0)], [q(row_image.1), q(col_image.1)]])
 }

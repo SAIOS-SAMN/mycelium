@@ -437,6 +437,7 @@ impl Presentation {
     }
 
     /// How many offered word vertices stand refused.
+    #[cfg(test)]
     pub fn refusals_len(&self) -> usize {
         self.refusals.len()
     }

@@ -139,6 +139,7 @@ impl Blade {
     }
 
     /// Every extracted body is invertible by construction (`r² ≥ 1/6 > 0`).
+    #[cfg(test)]
     pub fn is_invertible(&self) -> bool {
         crate::transducer::cga::is_versor(&self.spatial)
     }
@@ -195,6 +196,7 @@ impl Blade {
     /// the body reflected across the plane's first axis (the off-diagonal
     /// moment changes sign). `None` for a plane the body's base does not
     /// have.
+    #[cfg(test)]
     pub fn harmonic_on_plane(&self, plane: (usize, usize), mirrored: bool) -> Option<[BigRational; 2]> {
         let (i, j) = plane;
         let (di, dj, x) = (self.moment2(i, i)?, self.moment2(j, j)?, self.moment2(i, j)?);

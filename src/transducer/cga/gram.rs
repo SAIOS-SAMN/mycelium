@@ -60,18 +60,21 @@ pub struct GramReading {
 impl GramReading {
     /// Zero directions from a null direction in the span's metric: the
     /// degenerate — affine — part.
+    #[cfg(test)]
     pub fn degenerate(&self) -> usize {
         let (p, q, _) = self.signature;
         self.rank - (p + q)
     }
 
     /// Zero directions from linear dependence among the constructors.
+    #[cfg(test)]
     pub fn dependent(&self) -> usize {
         let (_, _, z) = self.signature;
         z - self.degenerate()
     }
 
     /// Whether every pair's product is of finite order.
+    #[cfg(test)]
     pub fn crystallographic(&self) -> bool {
         self.pairs.iter().all(|(_, _, r)| matches!(r, PairRegime::Finite(_)))
     }

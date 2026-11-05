@@ -432,6 +432,7 @@ impl Element {
     /// orbit is never generated to ask whether one assignment is on it.
     /// (`matching_assignment`, which answered a position in `assignments()`,
     /// retired with its last reader — 78.43(1).)
+    #[cfg(test)]
     pub fn matches_chain(&self, chain: &[SectionLink]) -> bool {
         if self.sub.is_empty() || positions(&self.sub) != positions(chain) {
             return false;

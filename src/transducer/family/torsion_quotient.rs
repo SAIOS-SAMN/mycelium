@@ -47,6 +47,7 @@ use crate::transducer::perspective::{family_role, Role};
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::Versor;
 use num_rational::BigRational;
+#[cfg(test)]
 use num_traits::Zero;
 
 /// One piece a frame carries.
@@ -176,6 +177,7 @@ impl Said {
     /// THE CERTAINTY that the pair is one algorithm up to torsion: the
     /// fibres that agreed over those observed, exact; `None` before any was
     /// observed.
+    #[cfg(test)]
     pub fn certainty(&self) -> Option<BigRational> {
         (self.observed > 0).then(|| BigRational::new(self.agree.into(), self.observed.into()))
     }
@@ -186,6 +188,7 @@ impl Said {
 
     /// 78.74 — THE BINDING CERTAINTY: agreeing binding over observed
     /// binding, exact; `None` before any was observed.
+    #[cfg(test)]
     pub fn binding_certainty(&self) -> Option<BigRational> {
         (!self.bind_observed.is_zero()).then(|| &self.bind_agree / &self.bind_observed)
     }

@@ -144,6 +144,7 @@ impl Word {
 
     /// Same conjugacy class: rotor invariants first (15.3). The plane form
     /// is a sensor section, not the identity of the class.
+    #[cfg(test)]
     pub fn same_class(&self, other: &Word) -> bool {
         match (self.rotor().class_invariants(), other.rotor().class_invariants()) {
             (Some(a), Some(b)) => a == b,
@@ -298,6 +299,7 @@ impl Word {
 
     /// Two words are the same vertex: rotor first. A missing plane form is
     /// not an exception when the rotors agree.
+    #[cfg(test)]
     pub fn same_form(&self, other: &Word) -> bool {
         if !self.rotor().projective_eq(&other.rotor()) {
             return false;

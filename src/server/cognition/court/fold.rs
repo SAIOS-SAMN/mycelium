@@ -50,6 +50,7 @@ impl Court {
     /// head. A prefix that is not final proposes nothing
     /// (`REFUSE_FOLD_OPEN`); a ledger that does not conserve over it
     /// proposes nothing (`REFUSE_FOLD_INEXACT`).
+    #[cfg(test)]
     pub fn propose_fold(&mut self) -> Result<Proposal, &'static str> {
         let head = self.fold_head().ok_or(REFUSE_FOLD_OPEN)?;
         self.propose_fold_at(head)

@@ -68,6 +68,7 @@ impl Stalks {
 
     /// Members at prefix depth `d` of `inv`. A read on the trie; chart-space
     /// neighbourhood is prefix depth, never a norm.
+    #[cfg(test)]
     pub fn fibre_at_depth(&self, inv: &Invariant, d: usize) -> Vec<Vec<u8>> {
         let n = d.min(inv.0.len());
         self.root.fibre(&inv.0[..n])

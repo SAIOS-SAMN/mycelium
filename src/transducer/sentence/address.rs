@@ -396,6 +396,7 @@ pub(crate) fn held_form(
 /// the 1-simplices from the NEW geometry, which is where they should come
 /// from after a move. Only the derivations and the certificates, which the
 /// key excludes as evidence, come from the mind.
+#[cfg(test)]
 pub fn remint_form(f: &Form, mag: [u64; 4], from: &Element) -> Option<Element> {
     let mut e = as_element_form(f, mag)?;
     e.filing = from.filing().clone();

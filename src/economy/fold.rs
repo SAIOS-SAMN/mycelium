@@ -135,6 +135,7 @@ impl Treasury {
     /// the rows below a head need not be a prefix of it, and a bisection
     /// would read short where one stands out of line. The walk stays a
     /// count over the journal; the page alone is copied.
+    #[cfg(test)]
     pub fn rows_below_page(&self, head: Place, skip: usize, n: usize) -> (u64, Vec<Entry>) {
         rows_below_page_of(&self.entries, head, skip, n)
     }

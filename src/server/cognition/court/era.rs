@@ -188,6 +188,7 @@ impl Court {
     /// from the eras this court witnessed for it and what it admitted of
     /// it, never past a hole: each receipt read names the one before it as
     /// its predecessor.
+    #[cfg(test)]
     pub fn receipts_range(&self, signer: &[u8; 32], after: Option<Place>, upto: Place, budget: usize) -> Vec<KStepReceipt> {
         self.receipts_page(signer, after, upto, budget, usize::MAX)
     }

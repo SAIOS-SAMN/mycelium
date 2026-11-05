@@ -197,6 +197,7 @@ pub fn note_orbit(period: Option<crate::transducer::cga::Period>) {
 }
 
 /// Read the ledger and clear it.
+#[cfg(test)]
 pub fn take_metabolism() -> Metabolism {
     METABOLISM.with(|c| c.replace(Metabolism::default()))
 }

@@ -62,6 +62,7 @@ pub fn decode_quote_request(body: &[u8]) -> Option<([u8; 32], Vec<crate::transdu
 }
 
 
+#[cfg(test)]
 pub fn encode_quote_reply(
     height: u64,
     surface: &[u64; 4],

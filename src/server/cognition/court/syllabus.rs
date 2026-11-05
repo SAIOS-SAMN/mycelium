@@ -486,10 +486,12 @@ impl Court {
         out
     }
 
+    #[cfg(test)]
     pub fn ruled_digests(&self) -> Vec<crate::transducer::sheaf::StratumDigest> {
         crate::transducer::sheaf::digests(&self.ruled)
     }
 
+    #[cfg(test)]
     pub fn ruled_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
         self.ruled.fibre(inv).to_vec()
     }
@@ -534,6 +536,7 @@ impl Court {
     /// `heard` grows with peers × corpus — so the mesh paid O(P² · S · C)
     /// for addresses that could not be used. Read from the chart's own
     /// fibre, the cost is the stratum.
+    #[cfg(test)]
     pub fn fetch_have(&self, inv: &crate::transducer::stalk::Invariant) -> Vec<Vec<u8>> {
         let mut h: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for a in self.ruled.fibre(inv) {

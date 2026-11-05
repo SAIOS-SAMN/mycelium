@@ -102,6 +102,7 @@ pub type CoverCoordinates = (Vec<u8>, Vec<coord::CoverSite>);
 /// numbers cannot drift apart (law 12). Each chart comes with its section's
 /// coordinates, which key its cells (KB1): two carriages over one region are
 /// two sections because the carriages differ, and nothing merges them.
+#[cfg(test)]
 pub fn read_nerve(charts: &[CoverCoordinates]) -> NerveReading {
     let footprints: Vec<Vec<coord::CoverSite>> = charts.iter().map(|(_, f)| f.clone()).collect();
     let support = support_of_cover(&footprints);
@@ -262,6 +263,7 @@ pub fn cells_by_grade(cells: impl Iterator<Item = (usize, Option<Mv>)>) -> Vec<(
 /// valence)`. The charts standing over an element are kept in the cover's
 /// own order and deduplicated as they arrive, so the reading does not depend
 /// on the order the elements were read.
+#[cfg(test)]
 pub fn support_of_cover(
     charts: &[Vec<coord::CoverSite>],
 ) -> crate::network::nerve::Keyed<Vec<usize>, coord::CoverSite> {

@@ -1167,6 +1167,7 @@ impl ReceiptChain {
 
     /// A chain rehydrated from its own line alone, in `K` order, on no
     /// root — a line whose receipts cite no peer.
+    #[cfg(test)]
     pub fn from_receipts(receipts: Vec<KStepReceipt>) -> Option<ReceiptChain> {
         let vk = receipts.iter().map(|r| r.stamp.vk).next().map_or([0u8; 32], |v| v);
         Self::from_nodes(None, vk, receipts)

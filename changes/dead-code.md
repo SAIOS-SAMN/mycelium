@@ -46,3 +46,11 @@
   kind, so the door refuses byte 0x22 by name, and `decode_installed` and
   its `Installed` record are removed; `TransductionRefusal::Unenclosed`,
   never produced, gives way to the produced `PairRelation::Unenclosed`.
+- 168 functions only the library's own tests call move under
+  `#[cfg(test)]` where they stand, with the private helpers, types and
+  imports only they use: test-only wrappers of a live variant
+  (`reconstruct_form`, `encode_quote_reply`, ...), readings and counters
+  the tests assert on (`Court::dockets`, `docket_circuits`, `heard_len`,
+  ...), and the doc-named theorem, register and math readings, which stay
+  in their files as proof objects so their documents' citations hold. No
+  test loses a capability.
